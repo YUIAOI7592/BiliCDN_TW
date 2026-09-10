@@ -4,6 +4,8 @@
 
 v1.6.0 將正式 v1.5.5 拆成 JavaScript 模組，再用 esbuild 打包為 **一份 Tampermonkey userscript**。不改 2x 假定、AV1 預設、CDN catalog、演算法、測速額度或控制中心操作；Worker 仍預設關閉。
 
+目前為本機候選：建置／255 項測試已通過，但正式安全報告仍標記 partial coverage，尚未完成發布驗收、推送或建立版本標籤。原因見 [公開安全摘要](docs/SECURITY_REVIEW_v1.6.0.md)。
+
 ## 安裝與操作
 
 交付檔位於 [Release/v1.6.0](Release/v1.6.0/)，只需安裝其中的 BiliCDN_TW_1.6.0.user.js，不需安裝 Node 或 esbuild。使用 Tampermonkey 選單「⚙️ 開啟 BiliCDN 控制中心」。沒有遠端自動更新網址。
