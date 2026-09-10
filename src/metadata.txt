@@ -1,0 +1,34 @@
+// ==UserScript==
+// @name         Bilibili CDN 台灣優化
+// @namespace    BiliCDN_TW
+// @version      1.5.5
+// @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+// @author       jiyunshi <chocosensei214@gmail.com>
+// @license      MIT
+// @icon         https://i0.hdslb.com/bfs/static/jinkela/long/images/512.png
+// @run-at       document-start
+// @match        https://www.bilibili.com/video/*
+// @match        https://www.bilibili.com/bangumi/play/*
+// @match        https://www.bilibili.com/list/*
+// @match        https://www.bilibili.com/festival/*
+// @match        https://www.bilibili.com/medialist/play/*
+// @match        https://www.bilibili.com/watchlater/*
+// @match        https://www.bilibili.com/blackboard/*
+// @match        https://www.bilibili.com/mooc/*
+// @match        https://www.bilibili.com/cheese/*
+// @match        https://www.bilibili.com/v/*
+// @match        https://www.bilibili.com/documentary/*
+// @match        https://www.bilibili.com/variety/*
+// @match        https://www.bilibili.com/tv/*
+// @match        https://www.bilibili.com/guochuang/*
+// @match        https://www.bilibili.com/movie/*
+// @match        https://www.bilibili.com/anime/*
+// @match        https://www.bilibili.com/match/*
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_deleteValue
+// @grant        GM_registerMenuCommand
+// @grant        GM_setClipboard
+// @grant        GM_info
+// @grant        unsafeWindow
+// ==/UserScript==

@@ -1,0 +1,38 @@
+// ── 使用者設定 ────────────────────────────────────────────────────────
+// 一般使用者不需要修改；安裝後重整 Bilibili 影片頁即可使用。
+// CustomCDN：留空 = 自動輪換；填 host = 固定該 CDN；填 'null' = 清除 GM 設定
+var CustomCDN = ''
+
+// ExcludeHostKeywords：host 名稱含這些子字串就不會被選用/probe/重導向
+// 例：['cosov']、['cos']（含 cosov）、['ov.bilivideo']（不建議，海外節點全排）
+// 動態調整請使用 Tampermonkey「BiliCDN 控制中心 → CDN 選路」。
+//
+// 2026-08-20：cosov 維持排除。中間一度以「一次 16KB range 請求回 206」為由解除，
+// 隨即被實機推翻——**單次小範圍請求不等於持續播放**。實際開影片時 cosov 會：
+//   (1) 對 PROBE_PATH（/crossdomain.xml）**必定**回 403 → 每輪探測固定產生一行紅字；
+//   (2) 對真實 m4s 回 `ERR_FAILED 514` 且**不帶 Access-Control-Allow-Origin**，
+//       瀏覽器直接報 CORS 錯誤（實測 URL 上是 os=cosovbv、bw=22M 的 4K/HDR 串流）。
+// 同一批 log 裡另外四個新增鏡像（alib / ali02 / bos / tf-all-tx）零錯誤，所以問題確實
+// 只在 cosov。詳見 CHANGELOG 實驗記錄實驗 4 與實驗 5。
+var ExcludeHostKeywords = ['cosov']
+
+// BlockHttpDNS：true = 永遠阻擋；false = 永遠放行；'auto' = 短測 + 評分 + 記憶網路環境
+var BlockHttpDNS = 'auto'
+
+// PreferredVideoCodec：'av1' = 相同畫質優先 AV1，再退回 HEVC、AVC；'hevc' = 優先 HEVC；
+// 'avc' = 最保守、優先 AVC；'auto' = 完全保留 Bilibili 原順序。AV1 只有在 representation
+// 帶有實際 codec string 且 MediaSource/canPlayType 回報可播放時才會主動提升；Media Capabilities
+// 明確回報不支援、不順暢或非節能解碼時，AV1/HEVC 會降到 AVC 後面。
+var PreferredVideoCodec = 'av1'
+
+// BlockWebRTC：true = 阻擋 WebRTC（擋 Bilibili PCDN/P2P 傳輸，跨國連線建議開）；
+// false = 放行（頁面其他功能，或其他擴充功能，若也用到 WebRTC 才需要關）
+var BlockWebRTC = true
+
+// EnableWorkerIntercept：是否攔截 new Worker() 並改寫其內部 segment 請求的 CDN host。
+// 這段機制涉及動態 Worker 包裝，對目前播放器是否真的有作用仍需實測；v1.4.0 預設 false，
+// 先避免實驗性攔截影響播放。要驗證時可暫時改成 true，播放數部影片後查看
+// 控制中心「進階 → 顯示 Worker 使用量」中 mediaSeen > 0 才代表 Worker 真的抓過影片分段。
+// 設定面板 checkbox 控制的是整體 CDN 改寫；這個變數則控制 Worker 攔截機制本身。
+var EnableWorkerIntercept = false
+

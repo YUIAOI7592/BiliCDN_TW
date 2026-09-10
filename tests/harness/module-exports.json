@@ -1,0 +1,1629 @@
+{
+  "settings": [
+    {
+      "name": "CustomCDN",
+      "mutable": true
+    },
+    {
+      "name": "ExcludeHostKeywords",
+      "mutable": true
+    },
+    {
+      "name": "BlockHttpDNS",
+      "mutable": true
+    },
+    {
+      "name": "PreferredVideoCodec",
+      "mutable": true
+    },
+    {
+      "name": "BlockWebRTC",
+      "mutable": true
+    },
+    {
+      "name": "EnableWorkerIntercept",
+      "mutable": true
+    },
+    {
+      "name": "VERSION",
+      "mutable": false
+    },
+    {
+      "name": "parseVer",
+      "mutable": false
+    },
+    {
+      "name": "verGte",
+      "mutable": false
+    }
+  ],
+  "events": [
+    {
+      "name": "PluginName",
+      "mutable": false
+    },
+    {
+      "name": "Config",
+      "mutable": false
+    },
+    {
+      "name": "DiagnosticLog",
+      "mutable": false
+    },
+    {
+      "name": "log",
+      "mutable": false
+    },
+    {
+      "name": "err",
+      "mutable": false
+    }
+  ],
+  "runtime": [
+    {
+      "name": "disabled",
+      "mutable": true
+    },
+    {
+      "name": "runtimeGeneration",
+      "mutable": true
+    },
+    {
+      "name": "runtimeAbortController",
+      "mutable": true
+    },
+    {
+      "name": "runtimeTimeouts",
+      "mutable": false
+    },
+    {
+      "name": "clearRuntimeTimeout",
+      "mutable": false
+    },
+    {
+      "name": "scheduleRuntimeTimeout",
+      "mutable": false
+    },
+    {
+      "name": "stopRuntimeGeneration",
+      "mutable": false
+    },
+    {
+      "name": "beginRuntimeGeneration",
+      "mutable": false
+    },
+    {
+      "name": "captureRuntimeGeneration",
+      "mutable": false
+    },
+    {
+      "name": "isRuntimeGenerationActive",
+      "mutable": false
+    },
+    {
+      "name": "reportMeasurementFailure",
+      "mutable": false
+    },
+    {
+      "name": "uiInjectStatus",
+      "mutable": true
+    }
+  ],
+  "catalog": [
+    {
+      "name": "INITIAL_DEAD_HOSTS_TW",
+      "mutable": false
+    },
+    {
+      "name": "PLAYURL_PREFIXES",
+      "mutable": false
+    },
+    {
+      "name": "isPlayUrlApi",
+      "mutable": false
+    },
+    {
+      "name": "PREFERRED_CDN_LIST_RAW",
+      "mutable": false
+    },
+    {
+      "name": "TRUSTED_CDN_CATALOG",
+      "mutable": false
+    },
+    {
+      "name": "TRUSTED_CDN_CATALOG_SET",
+      "mutable": false
+    },
+    {
+      "name": "CATALOG_OVERRIDES_KEY",
+      "mutable": false
+    },
+    {
+      "name": "matchesHeaderExclude",
+      "mutable": false
+    },
+    {
+      "name": "catalogOverrides",
+      "mutable": false
+    },
+    {
+      "name": "isCatalogAutoEnabled",
+      "mutable": false
+    },
+    {
+      "name": "matchesExclude",
+      "mutable": false
+    },
+    {
+      "name": "isValidCustomCdnHost",
+      "mutable": false
+    },
+    {
+      "name": "PREFERRED_CDN_LIST",
+      "mutable": false
+    },
+    {
+      "name": "rebuildPreferredCdnList",
+      "mutable": false
+    }
+  ],
+  "health": [
+    {
+      "name": "BLACKLIST_EXPIRE_MS",
+      "mutable": false
+    },
+    {
+      "name": "CDN_FAIL_THRESHOLD",
+      "mutable": false
+    },
+    {
+      "name": "HARD_FAIL_STATUSES",
+      "mutable": false
+    },
+    {
+      "name": "CDN_SOFT_BLOCK_MS",
+      "mutable": false
+    },
+    {
+      "name": "CDN_SOFT_BLOCK_ESCALATE",
+      "mutable": false
+    },
+    {
+      "name": "CDN_HEALTH_KEY",
+      "mutable": false
+    },
+    {
+      "name": "CDN_HEALTH_TTL",
+      "mutable": false
+    },
+    {
+      "name": "createRestrictionStore",
+      "mutable": false
+    },
+    {
+      "name": "blacklistRecords",
+      "mutable": false
+    },
+    {
+      "name": "blacklistSet",
+      "mutable": false
+    },
+    {
+      "name": "DEAD_HOSTS_KEY",
+      "mutable": false
+    },
+    {
+      "name": "DEAD_HOSTS_TTL",
+      "mutable": false
+    },
+    {
+      "name": "DEAD_HOSTS_DNS_TTL",
+      "mutable": false
+    },
+    {
+      "name": "DEAD_HOSTS_TIMEOUT_TTL",
+      "mutable": false
+    },
+    {
+      "name": "isDnsReason",
+      "mutable": false
+    },
+    {
+      "name": "isTimeoutReason",
+      "mutable": false
+    },
+    {
+      "name": "deadTtlFor",
+      "mutable": false
+    },
+    {
+      "name": "deadHostRecords",
+      "mutable": false
+    },
+    {
+      "name": "knownDeadHosts",
+      "mutable": false
+    },
+    {
+      "name": "markHostDead",
+      "mutable": false
+    },
+    {
+      "name": "listDeadHosts",
+      "mutable": false
+    },
+    {
+      "name": "reviveDeadHost",
+      "mutable": false
+    },
+    {
+      "name": "clearDeadHosts",
+      "mutable": false
+    },
+    {
+      "name": "activeCdnList",
+      "mutable": false
+    },
+    {
+      "name": "refreshingRestrictions",
+      "mutable": true
+    },
+    {
+      "name": "refreshExpiredRestrictions",
+      "mutable": false
+    },
+    {
+      "name": "countUsableCandidates",
+      "mutable": false
+    },
+    {
+      "name": "MIN_USABLE_POOL",
+      "mutable": false
+    },
+    {
+      "name": "addToBlacklist",
+      "mutable": false
+    },
+    {
+      "name": "clearBlacklist",
+      "mutable": false
+    },
+    {
+      "name": "cdnFailCount",
+      "mutable": false
+    },
+    {
+      "name": "cdnSoftBlockUntil",
+      "mutable": false
+    },
+    {
+      "name": "THROUGHPUT_SCHEMA_KEY",
+      "mutable": false
+    },
+    {
+      "name": "THROUGHPUT_SCHEMA_VER",
+      "mutable": false
+    },
+    {
+      "name": "CDN_HEALTH_CAPS",
+      "mutable": false
+    },
+    {
+      "name": "throughputSchemaStale",
+      "mutable": false
+    },
+    {
+      "name": "cdnHealth",
+      "mutable": false
+    },
+    {
+      "name": "CDN_THROUGHPUT_ALPHA",
+      "mutable": false
+    },
+    {
+      "name": "cdnHealthSaveTimer",
+      "mutable": true
+    },
+    {
+      "name": "scheduleCdnHealthSave",
+      "mutable": false
+    },
+    {
+      "name": "getRequiredStreamMbps",
+      "mutable": false
+    },
+    {
+      "name": "ensureCdnHealth",
+      "mutable": false
+    },
+    {
+      "name": "KNOWN_BAD_TW_HOSTS",
+      "mutable": false
+    },
+    {
+      "name": "isPresumedDnsFailHost",
+      "mutable": false
+    },
+    {
+      "name": "isCdnSoftBlocked",
+      "mutable": false
+    },
+    {
+      "name": "recordCdnLatency",
+      "mutable": false
+    },
+    {
+      "name": "softBlockCdn",
+      "mutable": false
+    },
+    {
+      "name": "MIN_THROUGHPUT_SAMPLE_BYTES",
+      "mutable": false
+    },
+    {
+      "name": "MIN_THROUGHPUT_SAMPLE_MS",
+      "mutable": false
+    },
+    {
+      "name": "XHR_TIMEOUT_MIN_ELAPSED_MS",
+      "mutable": false
+    },
+    {
+      "name": "XHR_TIMEOUT_HOST_GAP_MS",
+      "mutable": false
+    },
+    {
+      "name": "TRUSTED_XHR_TIMEOUT_EVIDENCE",
+      "mutable": false
+    },
+    {
+      "name": "acceptedXhrTimeoutAt",
+      "mutable": false
+    },
+    {
+      "name": "recordCdnThroughput",
+      "mutable": false
+    },
+    {
+      "name": "recordCdnPenalty",
+      "mutable": false
+    },
+    {
+      "name": "recordCdnHealthSuccess",
+      "mutable": false
+    },
+    {
+      "name": "UCB_EXPLORE_C",
+      "mutable": false
+    },
+    {
+      "name": "THROUGHPUT_HALFLIFE_MS",
+      "mutable": false
+    },
+    {
+      "name": "JITTER_WEIGHT",
+      "mutable": false
+    },
+    {
+      "name": "JITTER_PENALTY_CAP",
+      "mutable": false
+    },
+    {
+      "name": "JITTER_PRIOR_CV",
+      "mutable": false
+    },
+    {
+      "name": "JITTER_PRIOR_WEIGHT",
+      "mutable": false
+    },
+    {
+      "name": "getEffectiveSamples",
+      "mutable": false
+    },
+    {
+      "name": "getTotalEffectiveSamples",
+      "mutable": false
+    },
+    {
+      "name": "getCdnHealthScore",
+      "mutable": false
+    },
+    {
+      "name": "isCdnStronglyBad",
+      "mutable": false
+    },
+    {
+      "name": "lastChosenCdn",
+      "mutable": true
+    },
+    {
+      "name": "CDN_STICKY_MARGIN",
+      "mutable": false
+    },
+    {
+      "name": "getHealthyCdnList",
+      "mutable": false
+    },
+    {
+      "name": "recent403",
+      "mutable": false
+    },
+    {
+      "name": "GLOBAL_403_WINDOW_MS",
+      "mutable": false
+    },
+    {
+      "name": "GLOBAL_403_HOSTS",
+      "mutable": false
+    },
+    {
+      "name": "isGlobal403Burst",
+      "mutable": false
+    },
+    {
+      "name": "retract403Penalty",
+      "mutable": false
+    },
+    {
+      "name": "recordCdnFailure",
+      "mutable": false
+    },
+    {
+      "name": "recordCdnSuccess",
+      "mutable": false
+    },
+    {
+      "name": "peekBestCdn",
+      "mutable": false
+    },
+    {
+      "name": "getBestCdn",
+      "mutable": false
+    },
+    {
+      "name": "promoteBestCdnNow",
+      "mutable": false
+    },
+    {
+      "name": "resolvedCdn",
+      "mutable": false
+    },
+    {
+      "name": "getCurrentCdn",
+      "mutable": false
+    },
+    {
+      "name": "peekCurrentCdn",
+      "mutable": false
+    },
+    {
+      "name": "getCdnShortName",
+      "mutable": false
+    },
+    {
+      "name": "STARTUP_PICK",
+      "mutable": false
+    }
+  ],
+  "rate": [
+    {
+      "name": "ASSUMED_PLAYBACK_RATE",
+      "mutable": false
+    },
+    {
+      "name": "MAX_NETWORK_PLAYBACK_RATE",
+      "mutable": false
+    },
+    {
+      "name": "playbackRateState",
+      "mutable": false
+    },
+    {
+      "name": "resetPlaybackRateState",
+      "mutable": false
+    },
+    {
+      "name": "getEffectivePlaybackRate",
+      "mutable": false
+    },
+    {
+      "name": "syncPlaybackRateFromVideo",
+      "mutable": false
+    },
+    {
+      "name": "seekGraceUntil",
+      "mutable": true
+    },
+    {
+      "name": "getSeekGraceMs",
+      "mutable": false
+    },
+    {
+      "name": "bumpSeekGrace",
+      "mutable": false
+    },
+    {
+      "name": "inSeekGrace",
+      "mutable": false
+    }
+  ],
+  "mediaPolicy": [
+    {
+      "name": "SettingsBarTitle",
+      "mutable": false
+    },
+    {
+      "name": "mediaUrlPolicy",
+      "mutable": false
+    },
+    {
+      "name": "MEDIA_URL_MAX_LENGTH",
+      "mutable": false
+    },
+    {
+      "name": "PCDN_SOURCE_SUFFIXES",
+      "mutable": false
+    },
+    {
+      "name": "PCDN_SOURCE_HOSTS",
+      "mutable": false
+    },
+    {
+      "name": "hostHasSuffix",
+      "mutable": false
+    },
+    {
+      "name": "parseMediaHttpUrl",
+      "mutable": false
+    },
+    {
+      "name": "classifyMediaDelivery",
+      "mutable": false
+    },
+    {
+      "name": "isMediaDeliveryPath",
+      "mutable": false
+    },
+    {
+      "name": "isAkamaiUrl",
+      "mutable": false
+    },
+    {
+      "name": "isBiliVideoUrl",
+      "mutable": false
+    },
+    {
+      "name": "getBiliVideoCdn",
+      "mutable": false
+    },
+    {
+      "name": "isHttpDnsUrl",
+      "mutable": false
+    },
+    {
+      "name": "isBiliJsonMetadataApi",
+      "mutable": false
+    },
+    {
+      "name": "pageDiscoveredCdn",
+      "mutable": true
+    },
+    {
+      "name": "discoverCdnFromPage",
+      "mutable": false
+    },
+    {
+      "name": "noteDiscoveredCdn",
+      "mutable": false
+    },
+    {
+      "name": "isUnstableCdnHost",
+      "mutable": false
+    },
+    {
+      "name": "getFallbackCdnHost",
+      "mutable": false
+    },
+    {
+      "name": "PCDN_RESOURCE_PATH",
+      "mutable": false
+    },
+    {
+      "name": "isPcdnResourceUrl",
+      "mutable": false
+    },
+    {
+      "name": "isLiveBvcUrl",
+      "mutable": false
+    },
+    {
+      "name": "rewriteUnstableMediaUrl",
+      "mutable": false
+    }
+  ],
+  "evidence": [
+    {
+      "name": "redirectStats",
+      "mutable": false
+    },
+    {
+      "name": "segmentByteAccountedUrls",
+      "mutable": false
+    },
+    {
+      "name": "SEGMENT_DEDUP_WINDOW_MS",
+      "mutable": false
+    },
+    {
+      "name": "segmentDedupKey",
+      "mutable": false
+    },
+    {
+      "name": "noteSegmentAccounted",
+      "mutable": false
+    },
+    {
+      "name": "wasSegmentAccounted",
+      "mutable": false
+    },
+    {
+      "name": "noteSegmentBytes",
+      "mutable": false
+    }
+  ],
+  "media": [
+    {
+      "name": "currentStreamBitsPerSec",
+      "mutable": true
+    },
+    {
+      "name": "streamProfile",
+      "mutable": true
+    },
+    {
+      "name": "DEFAULT_BUFFER_TARGET_BYTES",
+      "mutable": false
+    },
+    {
+      "name": "MIN_BUFFER_TARGET_BYTES",
+      "mutable": false
+    },
+    {
+      "name": "MAX_BUFFER_TARGET_BYTES",
+      "mutable": false
+    },
+    {
+      "name": "baseBufferTargetBytes",
+      "mutable": true
+    },
+    {
+      "name": "clamp",
+      "mutable": false
+    },
+    {
+      "name": "setBufferTargetFromBitrate",
+      "mutable": false
+    },
+    {
+      "name": "getBufferTargetBytes",
+      "mutable": false
+    },
+    {
+      "name": "getWatchdogRequiredBps",
+      "mutable": false
+    },
+    {
+      "name": "REPRESENTATION_REGISTRY_MAX",
+      "mutable": false
+    },
+    {
+      "name": "AUDIO_REGISTRY_MAX",
+      "mutable": false
+    },
+    {
+      "name": "REPRESENTATION_OBSERVATION_TTL_MS",
+      "mutable": false
+    },
+    {
+      "name": "representationRegistry",
+      "mutable": false
+    },
+    {
+      "name": "audioRepresentationRegistry",
+      "mutable": false
+    },
+    {
+      "name": "muxedRepresentationRegistry",
+      "mutable": false
+    },
+    {
+      "name": "playinfoEpoch",
+      "mutable": true
+    },
+    {
+      "name": "mediaObservations",
+      "mutable": true
+    },
+    {
+      "name": "lastVideoTransportObservation",
+      "mutable": true
+    },
+    {
+      "name": "observedVideoRepresentation",
+      "mutable": true
+    },
+    {
+      "name": "streamEstimate",
+      "mutable": true
+    },
+    {
+      "name": "resetMediaDelivery",
+      "mutable": false
+    },
+    {
+      "name": "resetRepresentationRegistry",
+      "mutable": false
+    },
+    {
+      "name": "representationIdentity",
+      "mutable": false
+    },
+    {
+      "name": "registerMediaRepresentation",
+      "mutable": false
+    },
+    {
+      "name": "rebuildRepresentationRegistry",
+      "mutable": false
+    },
+    {
+      "name": "lookupMediaRepresentation",
+      "mutable": false
+    },
+    {
+      "name": "captureMediaRequest",
+      "mutable": false
+    },
+    {
+      "name": "mediaContextActive",
+      "mutable": false
+    },
+    {
+      "name": "mediaHeightMatches",
+      "mutable": false
+    },
+    {
+      "name": "noteObservedVideoRepresentation",
+      "mutable": false
+    },
+    {
+      "name": "observeMediaTransfer",
+      "mutable": false
+    },
+    {
+      "name": "freshMediaObservation",
+      "mutable": false
+    },
+    {
+      "name": "getAttributedVideoHost",
+      "mutable": false
+    },
+    {
+      "name": "getMediaDeliverySnapshot",
+      "mutable": false
+    },
+    {
+      "name": "playbackQualityBaseline",
+      "mutable": true
+    },
+    {
+      "name": "playbackQualitySnapshot",
+      "mutable": true
+    },
+    {
+      "name": "resetPlaybackQuality",
+      "mutable": false
+    },
+    {
+      "name": "samplePlaybackQuality",
+      "mutable": false
+    },
+    {
+      "name": "syncStreamBitrateFromVideo",
+      "mutable": false
+    },
+    {
+      "name": "resetStreamProfile",
+      "mutable": false
+    }
+  ],
+  "httpdns": [
+    {
+      "name": "HTTPDNS_PROFILE_KEY",
+      "mutable": false
+    },
+    {
+      "name": "HTTPDNS_STATE_KEY",
+      "mutable": false
+    },
+    {
+      "name": "HTTPDNS_TRIAL_MS",
+      "mutable": false
+    },
+    {
+      "name": "HTTPDNS_COMMIT_MS",
+      "mutable": false
+    },
+    {
+      "name": "HTTPDNS_PROFILE_TTL",
+      "mutable": false
+    },
+    {
+      "name": "HTTPDNS_SCORE_MARGIN",
+      "mutable": false
+    },
+    {
+      "name": "normalizeHttpDnsMode",
+      "mutable": false
+    },
+    {
+      "name": "httpDnsMode",
+      "mutable": true
+    },
+    {
+      "name": "HttpDnsAutoPilot",
+      "mutable": false
+    },
+    {
+      "name": "getHttpDnsStatus",
+      "mutable": false
+    },
+    {
+      "name": "shouldBlockHttpDns",
+      "mutable": false
+    },
+    {
+      "name": "setHttpDnsMode",
+      "mutable": false
+    }
+  ],
+  "rewrite": [
+    {
+      "name": "normalizeMediaUrl",
+      "mutable": false
+    },
+    {
+      "name": "isMediaSegmentUrl",
+      "mutable": false
+    },
+    {
+      "name": "_redirectLogTs",
+      "mutable": false
+    },
+    {
+      "name": "_redirectLogTotal",
+      "mutable": false
+    },
+    {
+      "name": "REDIRECT_LOG_COOLDOWN",
+      "mutable": false
+    },
+    {
+      "name": "QUIET_REDIRECT_AFTER",
+      "mutable": false
+    },
+    {
+      "name": "QUIET_REDIRECT_EVERY",
+      "mutable": false
+    },
+    {
+      "name": "logRedirect",
+      "mutable": false
+    },
+    {
+      "name": "needsRedirect",
+      "mutable": false
+    },
+    {
+      "name": "hostLockedStreams",
+      "mutable": false
+    },
+    {
+      "name": "preservedOriginalStreamUrls",
+      "mutable": false
+    },
+    {
+      "name": "rewrittenStreamOrigins",
+      "mutable": false
+    },
+    {
+      "name": "REWRITTEN_STREAM_ORIGIN_MAX",
+      "mutable": false
+    },
+    {
+      "name": "streamUrlIdentity",
+      "mutable": false
+    },
+    {
+      "name": "rememberRewrittenStreamUrl",
+      "mutable": false
+    },
+    {
+      "name": "getOriginalStreamUrl",
+      "mutable": false
+    },
+    {
+      "name": "streamLockKey",
+      "mutable": false
+    },
+    {
+      "name": "isHostLockedStream",
+      "mutable": false
+    },
+    {
+      "name": "noteHostLockedStream",
+      "mutable": false
+    },
+    {
+      "name": "decideMediaRewrite",
+      "mutable": false
+    },
+    {
+      "name": "replaceUrlHost",
+      "mutable": false
+    },
+    {
+      "name": "buildBackupUrls",
+      "mutable": false
+    },
+    {
+      "name": "sanitizePlayInfoUrls",
+      "mutable": false
+    },
+    {
+      "name": "pickStreamUrls",
+      "mutable": false
+    },
+    {
+      "name": "withOriginalStreamFallback",
+      "mutable": false
+    },
+    {
+      "name": "transformStreamItem",
+      "mutable": false
+    }
+  ],
+  "codec": [
+    {
+      "name": "getDashCodecString",
+      "mutable": false
+    },
+    {
+      "name": "normalizeCodecName",
+      "mutable": false
+    },
+    {
+      "name": "VIDEO_CODEC_PREFERENCES",
+      "mutable": false
+    },
+    {
+      "name": "resolvedVideoCodecPreference",
+      "mutable": false
+    },
+    {
+      "name": "CODEC_CAPABILITY_MAX",
+      "mutable": false
+    },
+    {
+      "name": "codecCapability",
+      "mutable": false
+    },
+    {
+      "name": "codecQueryQueue",
+      "mutable": true
+    },
+    {
+      "name": "codecQueriesInFlight",
+      "mutable": true
+    },
+    {
+      "name": "activeCodecConfigurations",
+      "mutable": true
+    },
+    {
+      "name": "codecResumeItems",
+      "mutable": true
+    },
+    {
+      "name": "lastCodecDecision",
+      "mutable": true
+    },
+    {
+      "name": "parseRepresentationFrameRate",
+      "mutable": false
+    },
+    {
+      "name": "getRepresentationCodecConfig",
+      "mutable": false
+    },
+    {
+      "name": "codecConfigurationKey",
+      "mutable": false
+    },
+    {
+      "name": "summarizeCodecCapability",
+      "mutable": false
+    },
+    {
+      "name": "getRepresentationCapability",
+      "mutable": false
+    },
+    {
+      "name": "invalidateCodecQueries",
+      "mutable": false
+    },
+    {
+      "name": "pumpCodecQueries",
+      "mutable": false
+    },
+    {
+      "name": "clearCodecPlayinfo",
+      "mutable": false
+    },
+    {
+      "name": "enqueueCodecQuery",
+      "mutable": false
+    },
+    {
+      "name": "prepareCodecConfigurations",
+      "mutable": false
+    },
+    {
+      "name": "getCurrentCodecDiagnostics",
+      "mutable": false
+    },
+    {
+      "name": "getCodecCapabilityState",
+      "mutable": false
+    },
+    {
+      "name": "canPlayDashVideoItem",
+      "mutable": false
+    },
+    {
+      "name": "normalizeDashCodecPreference",
+      "mutable": false
+    }
+  ],
+  "playurl": [
+    {
+      "name": "playInfoTransformer",
+      "mutable": false
+    },
+    {
+      "name": "isBiliFragmentUrl",
+      "mutable": false
+    }
+  ],
+  "transport": [
+    {
+      "name": "interceptNetResponse",
+      "mutable": false
+    }
+  ],
+  "workerStats": [
+    {
+      "name": "biliCdnWorkers",
+      "mutable": false
+    },
+    {
+      "name": "workerControlPorts",
+      "mutable": false
+    },
+    {
+      "name": "getWorkerCdnTarget",
+      "mutable": false
+    },
+    {
+      "name": "WORKER_STATS_KEY",
+      "mutable": false
+    },
+    {
+      "name": "WORKER_STATS_SAVE_MS",
+      "mutable": false
+    },
+    {
+      "name": "WORKER_STATS_MAX_SAMPLES",
+      "mutable": false
+    },
+    {
+      "name": "WORKER_STAT_COUNTER_MAX",
+      "mutable": false
+    },
+    {
+      "name": "sanitizeWorkerCounter",
+      "mutable": false
+    },
+    {
+      "name": "sanitizeWorkerTimestamp",
+      "mutable": false
+    },
+    {
+      "name": "sanitizeWorkerSample",
+      "mutable": false
+    },
+    {
+      "name": "workerStats",
+      "mutable": false
+    },
+    {
+      "name": "workerStatsSaveTimer",
+      "mutable": true
+    },
+    {
+      "name": "flushWorkerStats",
+      "mutable": false
+    },
+    {
+      "name": "scheduleWorkerStatsSave",
+      "mutable": false
+    },
+    {
+      "name": "bumpWorkerStats",
+      "mutable": false
+    },
+    {
+      "name": "summarizeWorkerStats",
+      "mutable": false
+    }
+  ],
+  "failures": [
+    {
+      "name": "forcedRedirectHosts",
+      "mutable": false
+    },
+    {
+      "name": "FORCED_REDIRECT_TTL",
+      "mutable": false
+    },
+    {
+      "name": "FORCED_REDIRECT_MAX",
+      "mutable": false
+    },
+    {
+      "name": "sweepForcedRedirectHosts",
+      "mutable": false
+    },
+    {
+      "name": "addForcedRedirect",
+      "mutable": false
+    },
+    {
+      "name": "isForcedRedirect",
+      "mutable": false
+    },
+    {
+      "name": "getWorkerForceList",
+      "mutable": false
+    },
+    {
+      "name": "handleVerifiedSegmentFailure",
+      "mutable": false
+    }
+  ],
+  "worker": [
+    {
+      "name": "buildWorkerPolicy",
+      "mutable": false
+    },
+    {
+      "name": "syncWorkerCdnTarget",
+      "mutable": false
+    },
+    {
+      "name": "syncWorkerDisabledState",
+      "mutable": false
+    },
+    {
+      "name": "setupClassicWorkerIntercept",
+      "mutable": false
+    }
+  ],
+  "dom": [
+    {
+      "name": "waitForElm",
+      "mutable": false
+    },
+    {
+      "name": "fromHTML",
+      "mutable": false
+    }
+  ],
+  "latency": [
+    {
+      "name": "PROBE_PATH",
+      "mutable": false
+    },
+    {
+      "name": "PROBE_CACHE_KEY",
+      "mutable": false
+    },
+    {
+      "name": "PROBE_CACHE_TTL",
+      "mutable": false
+    },
+    {
+      "name": "PROBE_TIMEOUT_MS",
+      "mutable": false
+    },
+    {
+      "name": "PROBE_SLOW_STRIKES",
+      "mutable": false
+    },
+    {
+      "name": "PROBE_TIMEOUT_STRIKES",
+      "mutable": false
+    },
+    {
+      "name": "CONFIRM_TIMEOUT_MS",
+      "mutable": false
+    },
+    {
+      "name": "confirmHostReachable",
+      "mutable": false
+    },
+    {
+      "name": "segConnCheckAt",
+      "mutable": false
+    },
+    {
+      "name": "SEG_CONN_CHECK_COOLDOWN",
+      "mutable": false
+    },
+    {
+      "name": "handleSegmentConnError",
+      "mutable": false
+    },
+    {
+      "name": "probeCdnLatency",
+      "mutable": false
+    }
+  ],
+  "bakeoff": [
+    {
+      "name": "THRPT_PROBE_BYTES",
+      "mutable": false
+    },
+    {
+      "name": "THRPT_PROBE_MIN_BYTES",
+      "mutable": false
+    },
+    {
+      "name": "THRPT_PROBE_TIMEOUT",
+      "mutable": false
+    },
+    {
+      "name": "THRPT_BAKEOFF_COOLDOWN",
+      "mutable": false
+    },
+    {
+      "name": "THRPT_SAMPLE_FRESH_MS",
+      "mutable": false
+    },
+    {
+      "name": "switchMarginFor",
+      "mutable": false
+    },
+    {
+      "name": "BAKEOFF_TS_KEY",
+      "mutable": false
+    },
+    {
+      "name": "TRUSTED_BAKEOFF_CAPABILITY",
+      "mutable": false
+    },
+    {
+      "name": "TRUSTED_BAKEOFF_MIN_GAP",
+      "mutable": false
+    },
+    {
+      "name": "trustedBakeoffLastAt",
+      "mutable": false
+    },
+    {
+      "name": "trustedBakeoffRequest",
+      "mutable": false
+    },
+    {
+      "name": "getLastBakeoffAt",
+      "mutable": false
+    },
+    {
+      "name": "setLastBakeoffAt",
+      "mutable": false
+    },
+    {
+      "name": "bakeoffRunning",
+      "mutable": true
+    },
+    {
+      "name": "bakeoffTimer",
+      "mutable": true
+    },
+    {
+      "name": "lastSampleSegmentUrl",
+      "mutable": true
+    },
+    {
+      "name": "bakeoffNullStreak",
+      "mutable": true
+    },
+    {
+      "name": "bakeoffEpoch",
+      "mutable": true
+    },
+    {
+      "name": "bakeoffAbortController",
+      "mutable": true
+    },
+    {
+      "name": "crossTabShouldBakeoff",
+      "mutable": true
+    },
+    {
+      "name": "onBakeoffStart",
+      "mutable": true
+    },
+    {
+      "name": "probeCdnThroughput",
+      "mutable": false
+    },
+    {
+      "name": "getPlayingCdnHost",
+      "mutable": false
+    },
+    {
+      "name": "getWarmCdnHost",
+      "mutable": false
+    },
+    {
+      "name": "STARTUP_MIN_BUFFER_SEC",
+      "mutable": false
+    },
+    {
+      "name": "MAX_STARTUP_DEFERS",
+      "mutable": false
+    },
+    {
+      "name": "bakeoffStartupDefers",
+      "mutable": true
+    },
+    {
+      "name": "isStartupBuffering",
+      "mutable": false
+    },
+    {
+      "name": "runThroughputBakeoff",
+      "mutable": false
+    },
+    {
+      "name": "doBakeoff",
+      "mutable": false
+    },
+    {
+      "name": "scheduleBakeoff",
+      "mutable": false
+    }
+  ],
+  "hints": [
+    {
+      "name": "runtimeHintIds",
+      "mutable": false
+    },
+    {
+      "name": "preconnectCdn",
+      "mutable": false
+    },
+    {
+      "name": "preconnectBatch",
+      "mutable": false
+    },
+    {
+      "name": "clearRuntimeConnectionHints",
+      "mutable": false
+    }
+  ],
+  "probe": [
+    {
+      "name": "reorderRunning",
+      "mutable": true
+    },
+    {
+      "name": "PROBE_DEFER_CHECK_MS",
+      "mutable": false
+    },
+    {
+      "name": "MAX_PROBE_DEFERS",
+      "mutable": false
+    },
+    {
+      "name": "deferStartupProbes",
+      "mutable": true
+    },
+    {
+      "name": "probeDeferCount",
+      "mutable": true
+    },
+    {
+      "name": "probeDeferTimer",
+      "mutable": true
+    },
+    {
+      "name": "hasUsableCdnHealth",
+      "mutable": false
+    },
+    {
+      "name": "scheduleDeferredLatencyProbe",
+      "mutable": false
+    },
+    {
+      "name": "reorderCdnsByLatency",
+      "mutable": false
+    }
+  ],
+  "watchdog": [
+    {
+      "name": "Watchdog",
+      "mutable": false
+    }
+  ],
+  "trustedUI": [
+    {
+      "name": "TrustedMenuUI",
+      "mutable": false
+    }
+  ],
+  "report": [
+    {
+      "name": "getPageTypeLabel",
+      "mutable": false
+    },
+    {
+      "name": "readDiagnosticHidden",
+      "mutable": true
+    },
+    {
+      "name": "readPlaybackDiagnostic",
+      "mutable": false
+    },
+    {
+      "name": "buildDiagReport",
+      "mutable": false
+    }
+  ],
+  "controls": [
+    {
+      "name": "controlResult",
+      "mutable": false
+    },
+    {
+      "name": "copyDiagReport",
+      "mutable": false
+    },
+    {
+      "name": "BiliCDNControls",
+      "mutable": false
+    }
+  ],
+  "snapshot": [
+    {
+      "name": "describePlaybackBuffer",
+      "mutable": false
+    },
+    {
+      "name": "PUBLIC_DIAG_HOST_MAX",
+      "mutable": false
+    },
+    {
+      "name": "publicFinite",
+      "mutable": false
+    },
+    {
+      "name": "publicHost",
+      "mutable": false
+    },
+    {
+      "name": "deepFreezePublic",
+      "mutable": false
+    },
+    {
+      "name": "buildPublicDiagnosticSnapshot",
+      "mutable": false
+    },
+    {
+      "name": "publicDiagnosticSnapshot",
+      "mutable": true
+    },
+    {
+      "name": "refreshPublicDiagnosticSnapshot",
+      "mutable": false
+    }
+  ],
+  "catalogControls": [
+    {
+      "name": "cdnProbeStarted",
+      "mutable": true
+    },
+    {
+      "name": "startCdnProbe",
+      "mutable": false
+    },
+    {
+      "name": "persistCatalogOverrides",
+      "mutable": false
+    },
+    {
+      "name": "reconcileCatalogCandidates",
+      "mutable": false
+    },
+    {
+      "name": "setCatalogOverride",
+      "mutable": false
+    },
+    {
+      "name": "resetCatalogOverrides",
+      "mutable": false
+    },
+    {
+      "name": "applyCatalogSelection",
+      "mutable": false
+    },
+    {
+      "name": "reloadAfterFeedback",
+      "mutable": false
+    }
+  ],
+  "views": [
+    {
+      "name": "showResetLearningDialog",
+      "mutable": false
+    },
+    {
+      "name": "showDiagnosticDialog",
+      "mutable": false
+    },
+    {
+      "name": "showDeadReviveDialog",
+      "mutable": false
+    },
+    {
+      "name": "showWorkerStatsDialog",
+      "mutable": false
+    },
+    {
+      "name": "showAsyncControlResult",
+      "mutable": false
+    },
+    {
+      "name": "runSmartReassessment",
+      "mutable": false
+    },
+    {
+      "name": "showRoutingCenter",
+      "mutable": false
+    },
+    {
+      "name": "showMaintenanceCenter",
+      "mutable": false
+    },
+    {
+      "name": "showAdvancedCenter",
+      "mutable": false
+    },
+    {
+      "name": "showControlCenter",
+      "mutable": false
+    }
+  ],
+  "application": []
+}
