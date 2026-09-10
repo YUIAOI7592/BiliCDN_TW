@@ -47,7 +47,7 @@ export async function build({ testing = false, sourceTransform, write = true } =
   const inputs = [...new Set([...Object.keys(worker.metafile.inputs), ...Object.keys(result.metafile.inputs)].filter(p=>p.startsWith('src/')))].sort();
   for (const p of ['src/metadata.txt','src/settings.txt','scripts/build.mjs','package.json','package-lock.json','release.json']) if(!inputs.includes(p))inputs.push(p);
   inputs.sort();
-  const manifest = { version: release.version, tools: { node: process.versions.node, esbuild: esbuild.version }, options: buildOptions,
+  const manifest = { version: release.version, tools: { node: process.versions.node, npm: release.npmVersion, esbuild: esbuild.version }, options: buildOptions,
     sources: Object.fromEntries(inputs.map(p=>[p,hash(readFileSync(p))])), workerSha256: hash(workerSource), userscriptSha256: hash(output) };
   if (write) {
     mkdirSync('dist', {recursive:true});
