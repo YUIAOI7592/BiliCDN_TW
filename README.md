@@ -4,7 +4,7 @@
 
 v1.6.0 將正式 v1.5.5 拆成 JavaScript 模組，再用 esbuild 打包為 **一份 Tampermonkey userscript**。不改 2x 假定、AV1 預設、CDN catalog、演算法、測速額度或控制中心操作；Worker 仍預設關閉。
 
-目前為本機候選：建置／255 項測試已通過，但正式安全報告仍標記 partial coverage，尚未完成發布驗收、推送或建立版本標籤。原因見 [公開安全摘要](docs/SECURITY_REVIEW_v1.6.0.md)。
+目前以候選版本公開於 main：建置／255 項測試已通過，但正式安全報告仍標記 partial coverage，尚未完成正式發布驗收或建立版本標籤。依使用者指示，程式碼公開與正式發布分開處理；原因見 [公開安全摘要](docs/SECURITY_REVIEW_v1.6.0.md)。
 
 ## 安裝與操作
 
