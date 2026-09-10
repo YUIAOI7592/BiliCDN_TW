@@ -1,0 +1,15 @@
+{
+  "name": "bilicdn-tw",
+  "version": "1.5.5",
+  "private": true,
+  "description": "Locally built, modular BiliCDN Taiwan userscript",
+  "license": "MIT",
+  "engines": { "node": ">=26.8.1" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/test.mjs",
+    "verify": "node scripts/verify.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "devDependencies": { "esbuild": "0.28.2" }
+}
