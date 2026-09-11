@@ -55,14 +55,14 @@
     "src/settings.txt": "209dc021919eb62d7e19df84ef07c9d6589f9484b3d3645fce84b1c019477ae6",
     "src/transport/evidence.mjs": "394acfc29f6c628b64a4bd8c3ae9a78694e5c02e6484b560c206848d129b0579",
     "src/transport/interceptors.mjs": "0c18460a1ef463271ce9d0347f70bdeca6a6db955c331aa86eea6823c0ce5779",
-    "src/ui/control-center.mjs": "d5283e0b5d0f993ebad83186f6ddb72b269dee2a7745bd3e38c568cd39d7ed3d",
+    "src/ui/control-center.mjs": "1fdcb9229aff0f044430c08e2f929bb3a1a7a768dd9e21dbbd1f6bef51224b22",
     "src/ui/dom.mjs": "543673deaacf4ea80e7c16f9e28b9678a43651a72b18376172b80c9966b55383",
     "src/ui/player-panel.mjs": "744721cb887306513c22e7265e338be306303160a029884874a75fd1807fde97",
-    "src/ui/trusted.mjs": "f29a49b3c99d7c76d9c8d64265e9d5a86713e97bc6f3d745fab73bbc95168ff8",
+    "src/ui/trusted.mjs": "3eaae705f508442b276a4d451b003842deb267bebfe96e16d63c8d2add14daa7",
     "src/worker/controller.mjs": "d45d51c9d91d5b85e4d9d93990aad5d7c3bbf09d15634e270d95808b6e21fd4e",
     "src/worker/entry.mjs": "8047aadea37e846a8dbed319b206b72a992f3d2de657a02c09e8b0409509d04a",
     "src/worker/statistics.mjs": "cca7caa039b8ec8381128a0d93eea7b90fef23b4fadd486db53b438581be53d8"
   },
   "workerSha256": "7486d86f379c0a126af245f5fae67c966f33af742eaa6e496f3e680d139f0617",
-  "userscriptSha256": "13ce7885b469ab9c9a07a399045d1d6094579ff0f3e9133704ba59cb88e17b91"
+  "userscriptSha256": "0186bb2d7a0093b474c0f750d9856d7293b6df82d42c8a2f3c708b5f40f730e5"
 }

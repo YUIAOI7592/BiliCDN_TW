@@ -7,6 +7,8 @@ const showResetLearningDialog = () => deps.TrustedMenuUI.openConfirm({
         '固定 CDN 與 catalog override 不會被清除。此操作無法復原。',
     ],
     confirmLabel: '確認重置',
+    cancelLabel: '返回節點維護',
+    onCancel: () => showMaintenanceCenter(),
     danger: true,
     onConfirm: () => {
         const result = deps.BiliCDNControls.reset()
@@ -25,6 +27,8 @@ const showDiagnosticDialog = () => {
         text: deps.buildDiagReport(),
         copyLabel: '複製報告',
         onCopy: () => { deps.copyDiagReport().catch(() => {}) },
+        closeLabel: '返回控制中心',
+        onClose: () => showControlCenter(),
     })
 }
 
@@ -32,6 +36,7 @@ const showDeadReviveDialog = () => {
     const dead = deps.listDeadHosts().map(entry => entry.host).filter(host => deps.TRUSTED_CDN_CATALOG_SET.has(host))
     if (!dead.length) {
         deps.TrustedMenuUI.toast('目前沒有可救回的 dead catalog 節點', 'info')
+        showMaintenanceCenter()
         return false
     }
     return deps.TrustedMenuUI.openChoice({
@@ -43,6 +48,9 @@ const showDeadReviveDialog = () => {
         })),
         selected: [0],
         confirmLabel: '救回節點',
+        cancelLabel: '返回節點維護',
+        onCancel: () => showMaintenanceCenter(),
+        navigateOnConfirm: true,
         onConfirm: picked => {
             const index = picked[0]
             const host = Number.isInteger(index) ? dead[index] : null
@@ -53,6 +61,7 @@ const showDeadReviveDialog = () => {
             deps.syncWorkerCdnTarget()
             deps.refreshPublicDiagnosticSnapshot()
             deps.TrustedMenuUI.toast(result.message, result.ok ? 'success' : 'warning')
+            showMaintenanceCenter()
         },
     })
 }
@@ -69,7 +78,12 @@ const showWorkerStatsDialog = () => {
         '觀察天數=' + stats.observedDays,
         '判讀=' + stats.verdict,
     ]
-    return deps.TrustedMenuUI.openText({ title: 'Worker 使用量', text: lines.join('\n') })
+    return deps.TrustedMenuUI.openText({
+        title: 'Worker 使用量',
+        text: lines.join('\n'),
+        closeLabel: '返回進階設定',
+        onClose: () => showAdvancedCenter(),
+    })
 }
 
 const showAsyncControlResult = async (startMessage, operation) => {
@@ -123,6 +137,8 @@ const showRoutingCenter = () => {
         routes,
         fixedSelected,
         catalogSelected,
+        backLabel: '返回控制中心',
+        onBack: () => showControlCenter(),
         onDefaults: () => {
             const result = deps.restoreAutomaticDefaults()
             deps.refreshPublicDiagnosticSnapshot()
@@ -162,6 +178,7 @@ const showMaintenanceCenter = () => {
                     const result = deps.BiliCDNControls.clearSoft()
                     deps.refreshPublicDiagnosticSnapshot()
                     deps.TrustedMenuUI.toast(result.message, result.status === 'empty' ? 'info' : 'success')
+                    showMaintenanceCenter()
                 },
             },
             { label: '救回單一 dead catalog 節點', action: 'revive-dead', onActivate: showDeadReviveDialog },
@@ -183,6 +200,7 @@ const showAdvancedCenter = () => deps.TrustedMenuUI.openActions({
                 const result = deps.BiliCDNControls.verbose(!deps.Config.verbose)
                 deps.refreshPublicDiagnosticSnapshot()
                 deps.TrustedMenuUI.toast(result.message, result.ok ? 'success' : 'warning')
+                showAdvancedCenter()
             },
         },
         { label: '顯示 Worker 使用量', action: 'worker-stats', onActivate: showWorkerStatsDialog },
@@ -211,7 +229,10 @@ function showControlCenter() {
                 + (deps.EnableWorkerIntercept ? ('created=' + worker.created + ' rewrites=' + worker.rewrites) : '停用'),
         ],
         items: [
-            { label: '重新評估節點', action: 'reassess', onActivate: runSmartReassessment },
+            { label: '重新評估節點', action: 'reassess', onActivate: () => {
+                runSmartReassessment()
+                showControlCenter()
+            } },
             { label: 'CDN 選路', action: 'routing', onActivate: showRoutingCenter },
             { label: '診斷', action: 'diagnostics', onActivate: showDiagnosticDialog },
             { label: '節點維護', action: 'maintenance', onActivate: showMaintenanceCenter },

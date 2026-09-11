@@ -224,7 +224,9 @@ const TrustedMenuUI = (() => {
         return { capability, backdrop, panel, body, actions, close }
     }
 
-    const addAction = (dialog, { label, action, tone = '', onActivate, closeOnActivate = true }) => {
+    const addAction = (dialog, {
+        label, action, tone = '', onActivate, closeOnActivate = true, navigateOnActivate = false,
+    }) => {
         const button = make('button', label, {
             className: 'btn' + (tone ? ' ' + tone : ''),
             action,
@@ -233,17 +235,32 @@ const TrustedMenuUI = (() => {
         button.type = 'button'
         dom.addEvent(button, 'click', event => {
             if (!event || !event.isTrusted || activeCapability !== dialog.capability) return
+            if (navigateOnActivate) {
+                const session = uiSession
+                closeView()
+                try { if (typeof onActivate === 'function') onActivate() }
+                finally { if (!activeModal && uiSession === session) closeDialog() }
+                return
+            }
             if (closeOnActivate) closeDialog(true)
-            onActivate()
+            if (typeof onActivate === 'function') onActivate()
         })
         dom.append(dialog.actions, button)
         return button
     }
 
-    const openConfirm = ({ title, paragraphs, confirmLabel = '確認', danger = false, onConfirm }) => {
+    const openConfirm = ({
+        title, paragraphs, confirmLabel = '確認', danger = false, onConfirm,
+        cancelLabel = '取消', onCancel,
+    }) => {
         const dialog = beginDialog({ title, paragraphs, requiresCapability: true })
         if (!dialog) return false
-        addAction(dialog, { label: '取消', action: 'cancel-secondary', onActivate: () => {} })
+        addAction(dialog, {
+            label: cancelLabel,
+            action: typeof onCancel === 'function' ? 'back' : 'cancel-secondary',
+            onActivate: onCancel || (() => {}),
+            navigateOnActivate: typeof onCancel === 'function',
+        })
         addAction(dialog, {
             label: confirmLabel,
             action: 'confirm',
@@ -255,7 +272,8 @@ const TrustedMenuUI = (() => {
 
     const openChoice = ({
         title, paragraphs, choices = [], multiple = false, selected = [], confirmLabel = '套用',
-        onConfirm, secondaryLabel = '', onSecondary,
+        onConfirm, secondaryLabel = '', onSecondary, cancelLabel = '取消', onCancel,
+        navigateOnConfirm = false,
     }) => {
         const dialog = beginDialog({ title, paragraphs, requiresCapability: true })
         if (!dialog) return false
@@ -304,7 +322,12 @@ const TrustedMenuUI = (() => {
             dom.append(list, button)
         })
         dom.append(dialog.body, list)
-        addAction(dialog, { label: '取消', action: 'cancel-secondary', onActivate: () => {} })
+        addAction(dialog, {
+            label: cancelLabel,
+            action: typeof onCancel === 'function' ? 'back' : 'cancel-secondary',
+            onActivate: onCancel || (() => {}),
+            navigateOnActivate: typeof onCancel === 'function',
+        })
         if (secondaryLabel && typeof onSecondary === 'function') {
             addAction(dialog, { label: secondaryLabel, action: 'secondary', onActivate: onSecondary })
         }
@@ -313,11 +336,15 @@ const TrustedMenuUI = (() => {
             action: 'confirm',
             tone: 'primary',
             onActivate: () => { if (typeof onConfirm === 'function') onConfirm([...picked].sort((a, b) => a - b)) },
+            navigateOnActivate: navigateOnConfirm,
         })
         return true
     }
 
-    const openText = ({ title, paragraphs, text = '', copyLabel = '', onCopy }) => {
+    const openText = ({
+        title, paragraphs, text = '', copyLabel = '', onCopy,
+        closeLabel = '關閉', onClose,
+    }) => {
         const dialog = beginDialog({ title, paragraphs, requiresCapability: false })
         if (!dialog) return false
         const area = make('textarea', bounded(text, 48 * 1024), { action: 'manual-copy-text', maxText: 48 * 1024 })
@@ -326,9 +353,16 @@ const TrustedMenuUI = (() => {
         area.readOnly = true
         area.setAttribute('readonly', '')
         dom.append(dialog.body, area)
-        addAction(dialog, { label: '關閉', action: 'cancel-secondary', onActivate: () => {} })
+        addAction(dialog, {
+            label: closeLabel,
+            action: typeof onClose === 'function' ? 'back' : 'cancel-secondary',
+            onActivate: onClose || (() => {}),
+            navigateOnActivate: typeof onClose === 'function',
+        })
         if (copyLabel && typeof onCopy === 'function') {
-            addAction(dialog, { label: copyLabel, action: 'copy', tone: 'primary', onActivate: onCopy })
+            addAction(dialog, {
+                label: copyLabel, action: 'copy', tone: 'primary', onActivate: onCopy, closeOnActivate: false,
+            })
         }
         return true
     }
@@ -354,7 +388,10 @@ const TrustedMenuUI = (() => {
         return true
     }
 
-    const openRouting = ({ title, paragraphs, routes = [], fixedSelected = 0, catalogSelected = [], onConfirm, onDefaults }) => {
+    const openRouting = ({
+        title, paragraphs, routes = [], fixedSelected = 0, catalogSelected = [], onConfirm, onDefaults,
+        backLabel = '取消', onBack,
+    }) => {
         const dialog = beginDialog({ title, paragraphs, requiresCapability: true })
         if (!dialog) return false
         let routeIndex = Number.isInteger(fixedSelected) ? fixedSelected : 0
@@ -406,13 +443,19 @@ const TrustedMenuUI = (() => {
             dom.append(catalogList, button)
         })
         dom.append(dialog.body, catalogList)
-        addAction(dialog, { label: '取消', action: 'cancel-secondary', onActivate: () => {} })
+        addAction(dialog, {
+            label: backLabel,
+            action: typeof onBack === 'function' ? 'back' : 'cancel-secondary',
+            onActivate: onBack || (() => {}),
+            navigateOnActivate: typeof onBack === 'function',
+        })
         if (typeof onDefaults === 'function') addAction(dialog, {
-            label: '恢復自動預設', action: 'routing-defaults', onActivate: onDefaults,
+            label: '恢復自動預設', action: 'routing-defaults', onActivate: onDefaults, closeOnActivate: false,
         })
         addAction(dialog, {
             label: '套用', action: 'confirm', tone: 'primary',
             onActivate: () => { if (typeof onConfirm === 'function') onConfirm({ routeIndex, enabled: [...enabled].sort((a, b) => a - b) }) },
+            closeOnActivate: false,
         })
         return true
     }

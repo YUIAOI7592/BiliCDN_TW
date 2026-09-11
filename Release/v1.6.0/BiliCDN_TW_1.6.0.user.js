@@ -6023,7 +6023,14 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
         }
         return { capability, backdrop, panel, body, actions, close };
       }, "beginDialog");
-      const addAction = /* @__PURE__ */ __name((dialog, { label, action, tone = "", onActivate, closeOnActivate = true }) => {
+      const addAction = /* @__PURE__ */ __name((dialog, {
+        label,
+        action,
+        tone = "",
+        onActivate,
+        closeOnActivate = true,
+        navigateOnActivate = false
+      }) => {
         const button = make("button", label, {
           className: "btn" + (tone ? " " + tone : ""),
           action,
@@ -6032,17 +6039,40 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
         button.type = "button";
         dom.addEvent(button, "click", (event) => {
           if (!event || !event.isTrusted || activeCapability !== dialog.capability) return;
+          if (navigateOnActivate) {
+            const session = uiSession;
+            closeView();
+            try {
+              if (typeof onActivate === "function") onActivate();
+            } finally {
+              if (!activeModal && uiSession === session) closeDialog();
+            }
+            return;
+          }
           if (closeOnActivate) closeDialog(true);
-          onActivate();
+          if (typeof onActivate === "function") onActivate();
         });
         dom.append(dialog.actions, button);
         return button;
       }, "addAction");
-      const openConfirm = /* @__PURE__ */ __name(({ title, paragraphs, confirmLabel = "確認", danger = false, onConfirm }) => {
+      const openConfirm = /* @__PURE__ */ __name(({
+        title,
+        paragraphs,
+        confirmLabel = "確認",
+        danger = false,
+        onConfirm,
+        cancelLabel = "取消",
+        onCancel
+      }) => {
         const dialog = beginDialog({ title, paragraphs, requiresCapability: true });
         if (!dialog) return false;
-        addAction(dialog, { label: "取消", action: "cancel-secondary", onActivate: /* @__PURE__ */ __name(() => {
-        }, "onActivate") });
+        addAction(dialog, {
+          label: cancelLabel,
+          action: typeof onCancel === "function" ? "back" : "cancel-secondary",
+          onActivate: onCancel || (() => {
+          }),
+          navigateOnActivate: typeof onCancel === "function"
+        });
         addAction(dialog, {
           label: confirmLabel,
           action: "confirm",
@@ -6062,7 +6092,10 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
         confirmLabel = "套用",
         onConfirm,
         secondaryLabel = "",
-        onSecondary
+        onSecondary,
+        cancelLabel = "取消",
+        onCancel,
+        navigateOnConfirm = false
       }) => {
         const dialog = beginDialog({ title, paragraphs, requiresCapability: true });
         if (!dialog) return false;
@@ -6113,8 +6146,13 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
           dom.append(list, button);
         });
         dom.append(dialog.body, list);
-        addAction(dialog, { label: "取消", action: "cancel-secondary", onActivate: /* @__PURE__ */ __name(() => {
-        }, "onActivate") });
+        addAction(dialog, {
+          label: cancelLabel,
+          action: typeof onCancel === "function" ? "back" : "cancel-secondary",
+          onActivate: onCancel || (() => {
+          }),
+          navigateOnActivate: typeof onCancel === "function"
+        });
         if (secondaryLabel && typeof onSecondary === "function") {
           addAction(dialog, { label: secondaryLabel, action: "secondary", onActivate: onSecondary });
         }
@@ -6124,11 +6162,20 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
           tone: "primary",
           onActivate: /* @__PURE__ */ __name(() => {
             if (typeof onConfirm === "function") onConfirm([...picked].sort((a, b) => a - b));
-          }, "onActivate")
+          }, "onActivate"),
+          navigateOnActivate: navigateOnConfirm
         });
         return true;
       }, "openChoice");
-      const openText = /* @__PURE__ */ __name(({ title, paragraphs, text = "", copyLabel = "", onCopy }) => {
+      const openText = /* @__PURE__ */ __name(({
+        title,
+        paragraphs,
+        text = "",
+        copyLabel = "",
+        onCopy,
+        closeLabel = "關閉",
+        onClose
+      }) => {
         const dialog = beginDialog({ title, paragraphs, requiresCapability: false });
         if (!dialog) return false;
         const area = make("textarea", bounded(text, 48 * 1024), { action: "manual-copy-text", maxText: 48 * 1024 });
@@ -6137,10 +6184,21 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
         area.readOnly = true;
         area.setAttribute("readonly", "");
         dom.append(dialog.body, area);
-        addAction(dialog, { label: "關閉", action: "cancel-secondary", onActivate: /* @__PURE__ */ __name(() => {
-        }, "onActivate") });
+        addAction(dialog, {
+          label: closeLabel,
+          action: typeof onClose === "function" ? "back" : "cancel-secondary",
+          onActivate: onClose || (() => {
+          }),
+          navigateOnActivate: typeof onClose === "function"
+        });
         if (copyLabel && typeof onCopy === "function") {
-          addAction(dialog, { label: copyLabel, action: "copy", tone: "primary", onActivate: onCopy });
+          addAction(dialog, {
+            label: copyLabel,
+            action: "copy",
+            tone: "primary",
+            onActivate: onCopy,
+            closeOnActivate: false
+          });
         }
         return true;
       }, "openText");
@@ -6168,7 +6226,17 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
         }, "onActivate") });
         return true;
       }, "openActions");
-      const openRouting = /* @__PURE__ */ __name(({ title, paragraphs, routes = [], fixedSelected = 0, catalogSelected = [], onConfirm, onDefaults }) => {
+      const openRouting = /* @__PURE__ */ __name(({
+        title,
+        paragraphs,
+        routes = [],
+        fixedSelected = 0,
+        catalogSelected = [],
+        onConfirm,
+        onDefaults,
+        backLabel = "取消",
+        onBack
+      }) => {
         const dialog = beginDialog({ title, paragraphs, requiresCapability: true });
         if (!dialog) return false;
         let routeIndex = Number.isInteger(fixedSelected) ? fixedSelected : 0;
@@ -6225,12 +6293,18 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
           dom.append(catalogList, button);
         });
         dom.append(dialog.body, catalogList);
-        addAction(dialog, { label: "取消", action: "cancel-secondary", onActivate: /* @__PURE__ */ __name(() => {
-        }, "onActivate") });
+        addAction(dialog, {
+          label: backLabel,
+          action: typeof onBack === "function" ? "back" : "cancel-secondary",
+          onActivate: onBack || (() => {
+          }),
+          navigateOnActivate: typeof onBack === "function"
+        });
         if (typeof onDefaults === "function") addAction(dialog, {
           label: "恢復自動預設",
           action: "routing-defaults",
-          onActivate: onDefaults
+          onActivate: onDefaults,
+          closeOnActivate: false
         });
         addAction(dialog, {
           label: "套用",
@@ -6238,7 +6312,8 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
           tone: "primary",
           onActivate: /* @__PURE__ */ __name(() => {
             if (typeof onConfirm === "function") onConfirm({ routeIndex, enabled: [...enabled].sort((a, b) => a - b) });
-          }, "onActivate")
+          }, "onActivate"),
+          closeOnActivate: false
         });
         return true;
       }, "openRouting");
@@ -7220,6 +7295,8 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
         "固定 CDN 與 catalog override 不會被清除。此操作無法復原。"
       ],
       confirmLabel: "確認重置",
+      cancelLabel: "返回節點維護",
+      onCancel: /* @__PURE__ */ __name(() => showMaintenanceCenter(), "onCancel"),
       danger: true,
       onConfirm: /* @__PURE__ */ __name(() => {
         const result = deps.BiliCDNControls.reset();
@@ -7239,13 +7316,16 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
         onCopy: /* @__PURE__ */ __name(() => {
           deps.copyDiagReport().catch(() => {
           });
-        }, "onCopy")
+        }, "onCopy"),
+        closeLabel: "返回控制中心",
+        onClose: /* @__PURE__ */ __name(() => showControlCenter(), "onClose")
       });
     }, "showDiagnosticDialog");
     const showDeadReviveDialog = /* @__PURE__ */ __name(() => {
       const dead = deps.listDeadHosts().map((entry) => entry.host).filter((host) => deps.TRUSTED_CDN_CATALOG_SET.has(host));
       if (!dead.length) {
         deps.TrustedMenuUI.toast("目前沒有可救回的 dead catalog 節點", "info");
+        showMaintenanceCenter();
         return false;
       }
       return deps.TrustedMenuUI.openChoice({
@@ -7257,6 +7337,9 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
         })),
         selected: [0],
         confirmLabel: "救回節點",
+        cancelLabel: "返回節點維護",
+        onCancel: /* @__PURE__ */ __name(() => showMaintenanceCenter(), "onCancel"),
+        navigateOnConfirm: true,
         onConfirm: /* @__PURE__ */ __name((picked) => {
           const index = picked[0];
           const host = Number.isInteger(index) ? dead[index] : null;
@@ -7265,6 +7348,7 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
           deps.syncWorkerCdnTarget();
           deps.refreshPublicDiagnosticSnapshot();
           deps.TrustedMenuUI.toast(result.message, result.ok ? "success" : "warning");
+          showMaintenanceCenter();
         }, "onConfirm")
       });
     }, "showDeadReviveDialog");
@@ -7280,7 +7364,12 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
         "觀察天數=" + stats.observedDays,
         "判讀=" + stats.verdict
       ];
-      return deps.TrustedMenuUI.openText({ title: "Worker 使用量", text: lines.join("\n") });
+      return deps.TrustedMenuUI.openText({
+        title: "Worker 使用量",
+        text: lines.join("\n"),
+        closeLabel: "返回進階設定",
+        onClose: /* @__PURE__ */ __name(() => showAdvancedCenter(), "onClose")
+      });
     }, "showWorkerStatsDialog");
     const showAsyncControlResult = /* @__PURE__ */ __name(async (startMessage, operation) => {
       const progress = deps.TrustedMenuUI.toast(startMessage, "info", { sticky: true });
@@ -7325,6 +7414,8 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
         routes,
         fixedSelected,
         catalogSelected,
+        backLabel: "返回控制中心",
+        onBack: /* @__PURE__ */ __name(() => showControlCenter(), "onBack"),
         onDefaults: /* @__PURE__ */ __name(() => {
           const result = deps.restoreAutomaticDefaults();
           deps.refreshPublicDiagnosticSnapshot();
@@ -7367,6 +7458,7 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
               const result = deps.BiliCDNControls.clearSoft();
               deps.refreshPublicDiagnosticSnapshot();
               deps.TrustedMenuUI.toast(result.message, result.status === "empty" ? "info" : "success");
+              showMaintenanceCenter();
             }, "onActivate")
           },
           { label: "救回單一 dead catalog 節點", action: "revive-dead", onActivate: showDeadReviveDialog },
@@ -7389,6 +7481,7 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
             const result = deps.BiliCDNControls.verbose(!deps.Config.verbose);
             deps.refreshPublicDiagnosticSnapshot();
             deps.TrustedMenuUI.toast(result.message, result.ok ? "success" : "warning");
+            showAdvancedCenter();
           }, "onActivate")
         },
         { label: "顯示 Worker 使用量", action: "worker-stats", onActivate: showWorkerStatsDialog },
@@ -7410,7 +7503,10 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
           "異常節點：" + abnormal + "｜HTTPDNS：" + httpdns.mode + "｜Worker：" + (deps.EnableWorkerIntercept ? "created=" + worker.created + " rewrites=" + worker.rewrites : "停用")
         ],
         items: [
-          { label: "重新評估節點", action: "reassess", onActivate: runSmartReassessment },
+          { label: "重新評估節點", action: "reassess", onActivate: /* @__PURE__ */ __name(() => {
+            runSmartReassessment();
+            showControlCenter();
+          }, "onActivate") },
           { label: "CDN 選路", action: "routing", onActivate: showRoutingCenter },
           { label: "診斷", action: "diagnostics", onActivate: showDiagnosticDialog },
           { label: "節點維護", action: "maintenance", onActivate: showMaintenanceCenter },

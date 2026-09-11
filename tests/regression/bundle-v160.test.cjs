@@ -57,6 +57,30 @@ test('v160 uninstrumented menus retain closed shadow, reject forged clicks and e
  await F.spa(h);const after=state(h);button.dispatchEvent(new F.FakeEvent('click',{isTrusted:true}));assert.deepEqual(state(h),after);
  open(h);F.click(h,'advanced');F.click(h,'verbose-toggle');assert.equal(h.gm.get('verbose'),true);
 });
+test('v160 control center keeps one session while navigating every non-destructive child view',()=>{
+ const h=load({gmSeed:{disabled:true}}),prior=h.document.createElement('button');
+ h.document.body.appendChild(prior);prior.focus();open(h);
+ const title=()=>F.ui(h).querySelector('h2')?.textContent;
+ const expectMain=()=>{assert.equal(title(),'BiliCDN 控制中心');assert.ok(F.ui(h).querySelector('[data-ui-action="routing"]'))};
+ expectMain();F.click(h,'routing');assert.equal(title(),'CDN 選路');F.click(h,'back');expectMain();
+ F.click(h,'diagnostics');assert.equal(title(),'BiliCDN 診斷資訊');F.click(h,'back');expectMain();
+ F.click(h,'maintenance');assert.equal(title(),'節點維護');F.click(h,'back');expectMain();
+ F.click(h,'advanced');assert.equal(title(),'進階');F.click(h,'worker-stats');assert.equal(title(),'Worker 使用量');
+ F.click(h,'back');assert.equal(title(),'進階');F.click(h,'back');expectMain();
+ F.ui(h).dispatchEvent(new F.FakeEvent('keydown',{key:'Escape',isTrusted:true}));
+ assert.equal(F.ui(h).querySelector('h2'),null);assert.equal(h.document.activeElement,prior);
+});
+test('v160 control-center actions return to their parent view instead of silently closing',async()=>{
+ const h=load({gmSeed:{disabled:true}}),title=()=>F.ui(h).querySelector('h2')?.textContent;
+ open(h);F.click(h,'maintenance');F.click(h,'clear-soft');assert.equal(title(),'節點維護');
+ F.click(h,'revive-dead');assert.equal(title(),'節點維護');
+ F.click(h,'reset-all');assert.equal(title(),'重置所有學習狀態？');F.click(h,'back');assert.equal(title(),'節點維護');
+ F.click(h,'back');assert.equal(title(),'BiliCDN 控制中心');
+ F.click(h,'advanced');F.click(h,'verbose-toggle');assert.equal(h.gm.get('verbose'),true);assert.equal(title(),'進階');
+ F.click(h,'worker-stats');F.click(h,'back');assert.equal(title(),'進階');F.click(h,'back');
+ F.click(h,'diagnostics');F.click(h,'copy');await F.settle();assert.equal(title(),'BiliCDN 診斷資訊');
+ F.click(h,'back');assert.equal(title(),'BiliCDN 控制中心');
+});
 test('v160 post-build HTTPDNS and codec header settings are live runtime settings',async()=>{
  for(const preferredVideoCodec of ['auto','avc','hevc','av1']){
   const h=load({preferredVideoCodec,sourceTransform:s=>s.replace("var BlockHttpDNS = 'auto'",'var BlockHttpDNS = true')});

@@ -1,5 +1,5 @@
 diff --git a/baseline/BiliCDN_TW_1.3.4.original.user.js b/Release/v1.6.0/BiliCDN_TW_1.6.0.user.js
-index 4841912..9549e47 100644
+index 4841912..700c78c 100644
 --- a/baseline/BiliCDN_TW_1.3.4.original.user.js
 +++ b/Release/v1.6.0/BiliCDN_TW_1.6.0.user.js
 @@ -1,7 +1,7 @@
@@ -3951,7 +3951,24 @@ index 4841912..9549e47 100644
 -
 -    const onTargetReached = (watchdogStats) => {
 -        if (httpDnsMode !== 'auto') return
--        const sample = {
++          const trialSample = subtractBaseline(sample, trialBaseline);
++          const score = recordSample("allow", trialSample);
++          autoState.trialScore = score;
++          commitDecision("block", "trial-stall:" + reason, score);
++          trialBaseline = null;
++          deps.redirectStats.httpdnsAutoSwitch++;
++          return true;
++        }
++        if (shouldBlock() && deps.redirectStats.httpdns > 0) {
++          recordSample("block", sample);
++          startTrialAllow(reason, sample);
++          return true;
++        }
++        return false;
++      }, "onStall");
++      const onTargetReached = /* @__PURE__ */ __name((watchdogStats) => {
++        if (httpDnsMode !== "auto") return;
+         const sample = {
 -            totalBytes: watchdogStats.totalBytes || 0,
 -            stallEvents: watchdogStats.stallEvents || 0,
 -            switchCount: watchdogStats.switchCount || 0,
@@ -3971,7 +3988,24 @@ index 4841912..9549e47 100644
 -        if (httpDnsMode !== 'auto') return
 -        if (autoState.phase !== 'trial-allow') return
 -        if (autoState.allowUntil > Date.now()) return
--        const sample = {
++          totalBytes: watchdogStats.totalBytes || 0,
++          stallEvents: watchdogStats.stallEvents || 0,
++          switchCount: watchdogStats.switchCount || 0,
++          hardFailCount: watchdogStats.hardFailCount || 0,
++          elapsedSec: watchdogStats.elapsedSec || 1,
++          reachedTarget: true
++        };
++        if (autoState.phase === "trial-allow" && autoState.trialStartedAt > 0) {
++          endTrialAllow("target-reached", sample);
++          return;
++        }
++        recordSample(shouldBlock() ? "block" : "allow", sample);
++      }, "onTargetReached");
++      const tick = /* @__PURE__ */ __name((watchdogStats) => {
++        if (httpDnsMode !== "auto") return;
++        if (autoState.phase !== "trial-allow") return;
++        if (autoState.allowUntil > Date.now()) return;
+         const sample = {
 -            totalBytes: watchdogStats.totalBytes || 0,
 -            stallEvents: watchdogStats.stallEvents || 0,
 -            switchCount: watchdogStats.switchCount || 0,
@@ -4019,42 +4053,6 @@ index 4841912..9549e47 100644
 -    }
 -
 -    return {
-+          const trialSample = subtractBaseline(sample, trialBaseline);
-+          const score = recordSample("allow", trialSample);
-+          autoState.trialScore = score;
-+          commitDecision("block", "trial-stall:" + reason, score);
-+          trialBaseline = null;
-+          deps.redirectStats.httpdnsAutoSwitch++;
-+          return true;
-+        }
-+        if (shouldBlock() && deps.redirectStats.httpdns > 0) {
-+          recordSample("block", sample);
-+          startTrialAllow(reason, sample);
-+          return true;
-+        }
-+        return false;
-+      }, "onStall");
-+      const onTargetReached = /* @__PURE__ */ __name((watchdogStats) => {
-+        if (httpDnsMode !== "auto") return;
-+        const sample = {
-+          totalBytes: watchdogStats.totalBytes || 0,
-+          stallEvents: watchdogStats.stallEvents || 0,
-+          switchCount: watchdogStats.switchCount || 0,
-+          hardFailCount: watchdogStats.hardFailCount || 0,
-+          elapsedSec: watchdogStats.elapsedSec || 1,
-+          reachedTarget: true
-+        };
-+        if (autoState.phase === "trial-allow" && autoState.trialStartedAt > 0) {
-+          endTrialAllow("target-reached", sample);
-+          return;
-+        }
-+        recordSample(shouldBlock() ? "block" : "allow", sample);
-+      }, "onTargetReached");
-+      const tick = /* @__PURE__ */ __name((watchdogStats) => {
-+        if (httpDnsMode !== "auto") return;
-+        if (autoState.phase !== "trial-allow") return;
-+        if (autoState.allowUntil > Date.now()) return;
-+        const sample = {
 +          totalBytes: watchdogStats.totalBytes || 0,
 +          stallEvents: watchdogStats.stallEvents || 0,
 +          switchCount: watchdogStats.switchCount || 0,
@@ -6532,7 +6530,7 @@ index 4841912..9549e47 100644
          created: workerStats.created,
          netCalls: workerStats.netCalls,
          mediaSeen: workerStats.mediaSeen,
-@@ -2739,2820 +3986,5992 @@ const summarizeWorkerStats = () => {
+@@ -2739,2820 +3986,6088 @@ const summarizeWorkerStats = () => {
          bytesMB: +((workerStats.bytes || 0) / 1024 / 1024).toFixed(2),
          observedDays: days,
          samples: [...workerStats.samples],
@@ -6574,6 +6572,18 @@ index 4841912..9549e47 100644
 -            worker.postMessage({ __biliCdnSetTarget: target, __biliCdnForce: force })
 -        } catch {
 -            biliCdnWorkers.delete(worker)
+-        }
+-    })
+-}
+-
+-// 使用者透過設定面板 checkbox 停用/啟用時同步通知既有 Worker，
+-// 否則已建立的 Worker 會在「停用」後仍持續改寫 segment host（disabled 只擋新建 Worker）。
+-const syncWorkerDisabledState = () => {
+-    biliCdnWorkers.forEach(worker => {
+-        try {
+-            worker.postMessage({ __biliCdnDisabled: disabled })
+-        } catch {
+-            biliCdnWorkers.delete(worker)
 +        verdict
 +      };
 +    }, "summarizeWorkerStats");
@@ -6607,31 +6617,6 @@ index 4841912..9549e47 100644
 +      for (const [host, expireAt] of forcedRedirectHosts) {
 +        if (!deps.isValidCustomCdnHost(host) || !Number.isFinite(expireAt) || expireAt <= now) {
 +          forcedRedirectHosts.delete(host);
-         }
--    })
--}
--
--// 使用者透過設定面板 checkbox 停用/啟用時同步通知既有 Worker，
--// 否則已建立的 Worker 會在「停用」後仍持續改寫 segment host（disabled 只擋新建 Worker）。
--const syncWorkerDisabledState = () => {
--    biliCdnWorkers.forEach(worker => {
--        try {
--            worker.postMessage({ __biliCdnDisabled: disabled })
--        } catch {
--            biliCdnWorkers.delete(worker)
-+      }
-+    }, "sweepForcedRedirectHosts");
-+    const addForcedRedirect = /* @__PURE__ */ __name((host, ttl) => {
-+      host = typeof host === "string" ? host.trim().toLowerCase() : "";
-+      if (!deps.isValidCustomCdnHost(host)) return false;
-+      sweepForcedRedirectHosts();
-+      if (!forcedRedirectHosts.has(host) && forcedRedirectHosts.size >= FORCED_REDIRECT_MAX) {
-+        let oldestHost = null, oldestExpiry = Infinity;
-+        for (const [candidate, expireAt] of forcedRedirectHosts) {
-+          if (expireAt < oldestExpiry) {
-+            oldestHost = candidate;
-+            oldestExpiry = expireAt;
-+          }
          }
 -    })
 -}
@@ -6768,6 +6753,92 @@ index 4841912..9549e47 100644
 -            });
 -        } else if (rewritten !== url) {
 -            input = rewritten;
++      }
++    }, "sweepForcedRedirectHosts");
++    const addForcedRedirect = /* @__PURE__ */ __name((host, ttl) => {
++      host = typeof host === "string" ? host.trim().toLowerCase() : "";
++      if (!deps.isValidCustomCdnHost(host)) return false;
++      sweepForcedRedirectHosts();
++      if (!forcedRedirectHosts.has(host) && forcedRedirectHosts.size >= FORCED_REDIRECT_MAX) {
++        let oldestHost = null, oldestExpiry = Infinity;
++        for (const [candidate, expireAt] of forcedRedirectHosts) {
++          if (expireAt < oldestExpiry) {
++            oldestHost = candidate;
++            oldestExpiry = expireAt;
++          }
+         }
+-        return OriginalFetch(input, init).then((resp) => {
+-            try {
+-                // 跟主執行緒同一個教訓：resp 在收到 header 就 resolve，body 通常還在傳。
+-                // 用 content-length 在這一刻一次性入帳會把整包位元組記在 TTFB 那一刻，
+-                // 造成主執行緒的 Watchdog 看到「這秒突然滿血、之後好幾秒卻是 0 位元組」
+-                // 的假停滯。改用 tee() 逐 chunk 節流回報，比照主執行緒的做法。
+-                if (resp && resp.body && typeof resp.body.tee === 'function' && biliCdnIsMedia(resp.url || rewritten)) {
+-                    const [forCaller, forCount] = resp.body.tee();
+-                    const out = new Response(forCaller, { status: resp.status, statusText: resp.statusText, headers: resp.headers });
+-                    const reader = forCount.getReader();
+-                    let pending = 0, lastReport = 0;
+-                    const flush = (force) => {
+-                        const now = Date.now();
+-                        if (!pending) return;
+-                        if (!force && now - lastReport < BILICDN_REPORT_MS) return;
+-                        lastReport = now;
+-                        biliCdnNoteSeg(resp.url || rewritten, pending);
+-                        pending = 0;
+-                    };
+-                    const pump = () => reader.read().then(({ done, value }) => {
+-                        if (value && value.byteLength) { pending += value.byteLength; flush(false); }
+-                        if (done) { flush(true); return; }
+-                        return pump();
+-                    }).catch(() => flush(true));
+-                    pump();
+-                    return out;
+-                }
+-                // 沒有 tee()（極舊環境或 opaque/no-body 回應）：退回一次性用 content-length
+-                // 概算，跟主執行緒同款 fallback 保持一致，避免這條路徑直接零位元組入帳。
+-                if (resp && biliCdnIsMedia(resp.url || rewritten)) {
+-                    const cl = resp.headers && resp.headers.get && resp.headers.get('content-length');
+-                    const bytes = cl ? (parseInt(cl, 10) || 0) : 0;
+-                    if (bytes) biliCdnNoteSeg(resp.url || rewritten, bytes);
+-                }
+-            } catch (e) {}
+-            return resp;
+-        });
+-    };
+-}
+-if (self.XMLHttpRequest) {
+-    const OriginalXHR = self.XMLHttpRequest;
+-    self.XMLHttpRequest = class XMLHttpRequest extends OriginalXHR {
+-        open(method, url, ...rest) {
+-            const rewritten = biliCdnRewrite(String(url));
+-            try {
+-                let lastLoaded = 0;
+-                // XHR 的 'load' 要等整包下載完才觸發，跟主執行緒同樣的問題：大 segment 下載
+-                // 期間主執行緒完全看不到進度。改掛 'progress'，用累計 loaded 的增量即時回報。
+-                this.addEventListener('progress', (e) => {
+-                    try {
+-                        if (!biliCdnIsMedia(rewritten)) return;
+-                        const loaded = (e && e.loaded) || 0;
+-                        const delta = loaded - lastLoaded;
+-                        if (delta > 0) { lastLoaded = loaded; biliCdnNoteSeg(rewritten, delta); }
+-                    } catch (e) {}
+-                });
+-                this.addEventListener('load', () => {
+-                    try {
+-                        if (!biliCdnIsMedia(rewritten)) return;
+-                        const cl = this.getResponseHeader && this.getResponseHeader('content-length');
+-                        let n = cl ? parseInt(cl, 10) : 0;
+-                        if (!n && this.response) {
+-                            if (this.response.byteLength) n = this.response.byteLength;
+-                            else if (typeof this.response === 'string') n = this.response.length;
+-                        }
+-                        // progress 已經逐步報過 lastLoaded，這裡只補沒被 progress 算到的尾巴，避免重複入帳
+-                        const remaining = Math.max(0, n - lastLoaded);
+-                        if (remaining) biliCdnNoteSeg(rewritten, remaining);
+-                    } catch (e) {}
+-                });
+-            } catch (e) {}
+-            return super.open(method, rewritten, ...rest);
 +        if (oldestHost) forcedRedirectHosts.delete(oldestHost);
 +      }
 +      const duration = Number.isFinite(+ttl) ? Math.max(1e3, Math.min(FORCED_REDIRECT_TTL, +ttl)) : FORCED_REDIRECT_TTL;
@@ -6843,43 +6914,6 @@ index 4841912..9549e47 100644
 +          }, true);
 +          return false;
          }
--        return OriginalFetch(input, init).then((resp) => {
--            try {
--                // 跟主執行緒同一個教訓：resp 在收到 header 就 resolve，body 通常還在傳。
--                // 用 content-length 在這一刻一次性入帳會把整包位元組記在 TTFB 那一刻，
--                // 造成主執行緒的 Watchdog 看到「這秒突然滿血、之後好幾秒卻是 0 位元組」
--                // 的假停滯。改用 tee() 逐 chunk 節流回報，比照主執行緒的做法。
--                if (resp && resp.body && typeof resp.body.tee === 'function' && biliCdnIsMedia(resp.url || rewritten)) {
--                    const [forCaller, forCount] = resp.body.tee();
--                    const out = new Response(forCaller, { status: resp.status, statusText: resp.statusText, headers: resp.headers });
--                    const reader = forCount.getReader();
--                    let pending = 0, lastReport = 0;
--                    const flush = (force) => {
--                        const now = Date.now();
--                        if (!pending) return;
--                        if (!force && now - lastReport < BILICDN_REPORT_MS) return;
--                        lastReport = now;
--                        biliCdnNoteSeg(resp.url || rewritten, pending);
--                        pending = 0;
--                    };
--                    const pump = () => reader.read().then(({ done, value }) => {
--                        if (value && value.byteLength) { pending += value.byteLength; flush(false); }
--                        if (done) { flush(true); return; }
--                        return pump();
--                    }).catch(() => flush(true));
--                    pump();
--                    return out;
--                }
--                // 沒有 tee()（極舊環境或 opaque/no-body 回應）：退回一次性用 content-length
--                // 概算，跟主執行緒同款 fallback 保持一致，避免這條路徑直接零位元組入帳。
--                if (resp && biliCdnIsMedia(resp.url || rewritten)) {
--                    const cl = resp.headers && resp.headers.get && resp.headers.get('content-length');
--                    const bytes = cl ? (parseInt(cl, 10) || 0) : 0;
--                    if (bytes) biliCdnNoteSeg(resp.url || rewritten, bytes);
--                }
--            } catch (e) {}
--            return resp;
--        });
 +      }
 +      if (deps.HARD_FAIL_STATUSES.has(numericStatus)) {
 +        deps.recordCdnFailure(cdn, true, numericStatus);
@@ -6926,39 +6960,10 @@ index 4841912..9549e47 100644
 +      }
      };
 -}
--if (self.XMLHttpRequest) {
--    const OriginalXHR = self.XMLHttpRequest;
--    self.XMLHttpRequest = class XMLHttpRequest extends OriginalXHR {
--        open(method, url, ...rest) {
--            const rewritten = biliCdnRewrite(String(url));
--            try {
--                let lastLoaded = 0;
--                // XHR 的 'load' 要等整包下載完才觸發，跟主執行緒同樣的問題：大 segment 下載
--                // 期間主執行緒完全看不到進度。改掛 'progress'，用累計 loaded 的增量即時回報。
--                this.addEventListener('progress', (e) => {
--                    try {
--                        if (!biliCdnIsMedia(rewritten)) return;
--                        const loaded = (e && e.loaded) || 0;
--                        const delta = loaded - lastLoaded;
--                        if (delta > 0) { lastLoaded = loaded; biliCdnNoteSeg(rewritten, delta); }
--                    } catch (e) {}
--                });
--                this.addEventListener('load', () => {
--                    try {
--                        if (!biliCdnIsMedia(rewritten)) return;
--                        const cl = this.getResponseHeader && this.getResponseHeader('content-length');
--                        let n = cl ? parseInt(cl, 10) : 0;
--                        if (!n && this.response) {
--                            if (this.response.byteLength) n = this.response.byteLength;
--                            else if (typeof this.response === 'string') n = this.response.length;
--                        }
--                        // progress 已經逐步報過 lastLoaded，這裡只補沒被 progress 算到的尾巴，避免重複入帳
--                        const remaining = Math.max(0, n - lastLoaded);
--                        if (remaining) biliCdnNoteSeg(rewritten, remaining);
--                    } catch (e) {}
--                });
--            } catch (e) {}
--            return super.open(method, rewritten, ...rest);
+-`
+-
+-        const classicWorkerPatch = (originalUrl) => `
+-${sharedWorkerPatch(originalUrl)}
 +  }
 +  __name(createFailures, "createFailures");
 +
@@ -6995,13 +7000,7 @@ index 4841912..9549e47 100644
 +          } catch {
 +          }
 +          deps.biliCdnWorkers.delete(worker);
-         }
--    };
--}
--`
--
--        const classicWorkerPatch = (originalUrl) => `
--${sharedWorkerPatch(originalUrl)}
++        }
 +      });
 +    }, "syncWorkerCdnTarget");
 +    const syncWorkerDisabledState = /* @__PURE__ */ __name(() => {
@@ -7706,7 +7705,9 @@ index 4841912..9549e47 100644
              } else {
 -                markHostDead(cdn, 'DNS')
 -                finish({ ms: Infinity, reason: 'DNS' })
--            }
++              deps.softBlockCdn(cdn, "probe-timeout", 10 * 60 * 1e3);
++              finish({ ms: PROBE_TIMEOUT_MS, reason: "timeout-1st" });
+             }
 -        })
 -    })
 -})
@@ -7819,9 +7820,7 @@ index 4841912..9549e47 100644
 -                    done({ cdn })   // 只有 cdn 會被讀；數值已在上一行入帳
 -                } else done(null)
 -                return
-+              deps.softBlockCdn(cdn, "probe-timeout", 10 * 60 * 1e3);
-+              finish({ ms: PROBE_TIMEOUT_MS, reason: "timeout-1st" });
-             }
+-            }
 -            bytes += value ? value.length : 0
 -            pump()
 -        }).catch(() => done(null))
@@ -9708,19 +9707,6 @@ index 4841912..9549e47 100644
 +          lastBufferedEnd = be;
 +          deps.DiagnosticLog.setDecision("player-nudge");
 +          return;
-+        }
-+        if (deps.inSeekGrace()) {
-+          stallCount = 0;
-+          lastBufferedEnd = be;
-+          interruptRecovery();
-+          deps.DiagnosticLog.setDecision("seek-grace");
-+          return;
-+        }
-+        if (Date.now() - lastNudgeDetectAt < 3e3) {
-+          stallCount = 0;
-+          lastBufferedEnd = be;
-+          deps.DiagnosticLog.setDecision("nudge-grace", { remainingMs: 3e3 - (Date.now() - lastNudgeDetectAt) });
-+          return;
          }
 -
 -        // buffered.end 在超前緩衝充足時播放中常不變（僅 start 前移），勿當停滯
@@ -9741,6 +9727,19 @@ index 4841912..9549e47 100644
 -        // 剛開播/換片幾秒內的 slow-start 緩衝期：只累積 lastBufferedEnd 基準，不判定停滯，
 -        // 讓連線先把速度跑起來，避免才剛連上就急著換節點。
 -        const graceMs = highBitrate ? STARTUP_GRACE_MS_HIGH : STARTUP_GRACE_MS
++        if (deps.inSeekGrace()) {
++          stallCount = 0;
++          lastBufferedEnd = be;
++          interruptRecovery();
++          deps.DiagnosticLog.setDecision("seek-grace");
++          return;
++        }
++        if (Date.now() - lastNudgeDetectAt < 3e3) {
++          stallCount = 0;
++          lastBufferedEnd = be;
++          deps.DiagnosticLog.setDecision("nudge-grace", { remainingMs: 3e3 - (Date.now() - lastNudgeDetectAt) });
++          return;
++        }
 +        const bufferAhead = Math.max(0, be - ct);
 +        const playing = !v.paused && !v.seeking && v.readyState >= 2;
 +        const streamMbps = deps.currentStreamBitsPerSec / 1e6;
@@ -10509,7 +10508,14 @@ index 4841912..9549e47 100644
 +        }
 +        return { capability, backdrop, panel, body, actions, close };
 +      }, "beginDialog");
-+      const addAction = /* @__PURE__ */ __name((dialog, { label, action, tone = "", onActivate, closeOnActivate = true }) => {
++      const addAction = /* @__PURE__ */ __name((dialog, {
++        label,
++        action,
++        tone = "",
++        onActivate,
++        closeOnActivate = true,
++        navigateOnActivate = false
++      }) => {
 +        const button = make("button", label, {
 +          className: "btn" + (tone ? " " + tone : ""),
 +          action,
@@ -10518,17 +10524,40 @@ index 4841912..9549e47 100644
 +        button.type = "button";
 +        dom.addEvent(button, "click", (event) => {
 +          if (!event || !event.isTrusted || activeCapability !== dialog.capability) return;
++          if (navigateOnActivate) {
++            const session = uiSession;
++            closeView();
++            try {
++              if (typeof onActivate === "function") onActivate();
++            } finally {
++              if (!activeModal && uiSession === session) closeDialog();
++            }
++            return;
++          }
 +          if (closeOnActivate) closeDialog(true);
-+          onActivate();
++          if (typeof onActivate === "function") onActivate();
 +        });
 +        dom.append(dialog.actions, button);
 +        return button;
 +      }, "addAction");
-+      const openConfirm = /* @__PURE__ */ __name(({ title, paragraphs, confirmLabel = "確認", danger = false, onConfirm }) => {
++      const openConfirm = /* @__PURE__ */ __name(({
++        title,
++        paragraphs,
++        confirmLabel = "確認",
++        danger = false,
++        onConfirm,
++        cancelLabel = "取消",
++        onCancel
++      }) => {
 +        const dialog = beginDialog({ title, paragraphs, requiresCapability: true });
 +        if (!dialog) return false;
-+        addAction(dialog, { label: "取消", action: "cancel-secondary", onActivate: /* @__PURE__ */ __name(() => {
-+        }, "onActivate") });
++        addAction(dialog, {
++          label: cancelLabel,
++          action: typeof onCancel === "function" ? "back" : "cancel-secondary",
++          onActivate: onCancel || (() => {
++          }),
++          navigateOnActivate: typeof onCancel === "function"
++        });
 +        addAction(dialog, {
 +          label: confirmLabel,
 +          action: "confirm",
@@ -10548,7 +10577,10 @@ index 4841912..9549e47 100644
 +        confirmLabel = "套用",
 +        onConfirm,
 +        secondaryLabel = "",
-+        onSecondary
++        onSecondary,
++        cancelLabel = "取消",
++        onCancel,
++        navigateOnConfirm = false
 +      }) => {
 +        const dialog = beginDialog({ title, paragraphs, requiresCapability: true });
 +        if (!dialog) return false;
@@ -10632,8 +10664,13 @@ index 4841912..9549e47 100644
 +          dom.append(list, button);
 +        });
 +        dom.append(dialog.body, list);
-+        addAction(dialog, { label: "取消", action: "cancel-secondary", onActivate: /* @__PURE__ */ __name(() => {
-+        }, "onActivate") });
++        addAction(dialog, {
++          label: cancelLabel,
++          action: typeof onCancel === "function" ? "back" : "cancel-secondary",
++          onActivate: onCancel || (() => {
++          }),
++          navigateOnActivate: typeof onCancel === "function"
++        });
 +        if (secondaryLabel && typeof onSecondary === "function") {
 +          addAction(dialog, { label: secondaryLabel, action: "secondary", onActivate: onSecondary });
 +        }
@@ -10643,11 +10680,20 @@ index 4841912..9549e47 100644
 +          tone: "primary",
 +          onActivate: /* @__PURE__ */ __name(() => {
 +            if (typeof onConfirm === "function") onConfirm([...picked].sort((a, b) => a - b));
-+          }, "onActivate")
++          }, "onActivate"),
++          navigateOnActivate: navigateOnConfirm
 +        });
 +        return true;
 +      }, "openChoice");
-+      const openText = /* @__PURE__ */ __name(({ title, paragraphs, text = "", copyLabel = "", onCopy }) => {
++      const openText = /* @__PURE__ */ __name(({
++        title,
++        paragraphs,
++        text = "",
++        copyLabel = "",
++        onCopy,
++        closeLabel = "關閉",
++        onClose
++      }) => {
 +        const dialog = beginDialog({ title, paragraphs, requiresCapability: false });
 +        if (!dialog) return false;
 +        const area = make("textarea", bounded(text, 48 * 1024), { action: "manual-copy-text", maxText: 48 * 1024 });
@@ -10656,10 +10702,21 @@ index 4841912..9549e47 100644
 +        area.readOnly = true;
 +        area.setAttribute("readonly", "");
 +        dom.append(dialog.body, area);
-+        addAction(dialog, { label: "關閉", action: "cancel-secondary", onActivate: /* @__PURE__ */ __name(() => {
-+        }, "onActivate") });
++        addAction(dialog, {
++          label: closeLabel,
++          action: typeof onClose === "function" ? "back" : "cancel-secondary",
++          onActivate: onClose || (() => {
++          }),
++          navigateOnActivate: typeof onClose === "function"
++        });
 +        if (copyLabel && typeof onCopy === "function") {
-+          addAction(dialog, { label: copyLabel, action: "copy", tone: "primary", onActivate: onCopy });
++          addAction(dialog, {
++            label: copyLabel,
++            action: "copy",
++            tone: "primary",
++            onActivate: onCopy,
++            closeOnActivate: false
++          });
 +        }
 +        return true;
 +      }, "openText");
@@ -10688,7 +10745,17 @@ index 4841912..9549e47 100644
 +        }, "onActivate") });
 +        return true;
 +      }, "openActions");
-+      const openRouting = /* @__PURE__ */ __name(({ title, paragraphs, routes = [], fixedSelected = 0, catalogSelected = [], onConfirm, onDefaults }) => {
++      const openRouting = /* @__PURE__ */ __name(({
++        title,
++        paragraphs,
++        routes = [],
++        fixedSelected = 0,
++        catalogSelected = [],
++        onConfirm,
++        onDefaults,
++        backLabel = "取消",
++        onBack
++      }) => {
 +        const dialog = beginDialog({ title, paragraphs, requiresCapability: true });
 +        if (!dialog) return false;
 +        let routeIndex = Number.isInteger(fixedSelected) ? fixedSelected : 0;
@@ -10745,12 +10812,18 @@ index 4841912..9549e47 100644
 +          dom.append(catalogList, button);
 +        });
 +        dom.append(dialog.body, catalogList);
-+        addAction(dialog, { label: "取消", action: "cancel-secondary", onActivate: /* @__PURE__ */ __name(() => {
-+        }, "onActivate") });
++        addAction(dialog, {
++          label: backLabel,
++          action: typeof onBack === "function" ? "back" : "cancel-secondary",
++          onActivate: onBack || (() => {
++          }),
++          navigateOnActivate: typeof onBack === "function"
++        });
 +        if (typeof onDefaults === "function") addAction(dialog, {
 +          label: "恢復自動預設",
 +          action: "routing-defaults",
-+          onActivate: onDefaults
++          onActivate: onDefaults,
++          closeOnActivate: false
 +        });
 +        addAction(dialog, {
 +          label: "套用",
@@ -10758,7 +10831,8 @@ index 4841912..9549e47 100644
 +          tone: "primary",
 +          onActivate: /* @__PURE__ */ __name(() => {
 +            if (typeof onConfirm === "function") onConfirm({ routeIndex, enabled: [...enabled].sort((a, b) => a - b) });
-+          }, "onActivate")
++          }, "onActivate"),
++          closeOnActivate: false
 +        });
 +        return true;
 +      }, "openRouting");
@@ -12030,6 +12104,8 @@ index 4841912..9549e47 100644
 +        "固定 CDN 與 catalog override 不會被清除。此操作無法復原。"
 +      ],
 +      confirmLabel: "確認重置",
++      cancelLabel: "返回節點維護",
++      onCancel: /* @__PURE__ */ __name(() => showMaintenanceCenter(), "onCancel"),
 +      danger: true,
 +      onConfirm: /* @__PURE__ */ __name(() => {
 +        const result = deps.BiliCDNControls.reset();
@@ -12049,13 +12125,16 @@ index 4841912..9549e47 100644
 +        onCopy: /* @__PURE__ */ __name(() => {
 +          deps.copyDiagReport().catch(() => {
 +          });
-+        }, "onCopy")
++        }, "onCopy"),
++        closeLabel: "返回控制中心",
++        onClose: /* @__PURE__ */ __name(() => showControlCenter(), "onClose")
 +      });
 +    }, "showDiagnosticDialog");
 +    const showDeadReviveDialog = /* @__PURE__ */ __name(() => {
 +      const dead = deps.listDeadHosts().map((entry) => entry.host).filter((host) => deps.TRUSTED_CDN_CATALOG_SET.has(host));
 +      if (!dead.length) {
 +        deps.TrustedMenuUI.toast("目前沒有可救回的 dead catalog 節點", "info");
++        showMaintenanceCenter();
 +        return false;
 +      }
 +      return deps.TrustedMenuUI.openChoice({
@@ -12067,6 +12146,9 @@ index 4841912..9549e47 100644
 +        })),
 +        selected: [0],
 +        confirmLabel: "救回節點",
++        cancelLabel: "返回節點維護",
++        onCancel: /* @__PURE__ */ __name(() => showMaintenanceCenter(), "onCancel"),
++        navigateOnConfirm: true,
 +        onConfirm: /* @__PURE__ */ __name((picked) => {
 +          const index = picked[0];
 +          const host = Number.isInteger(index) ? dead[index] : null;
@@ -12075,6 +12157,7 @@ index 4841912..9549e47 100644
 +          deps.syncWorkerCdnTarget();
 +          deps.refreshPublicDiagnosticSnapshot();
 +          deps.TrustedMenuUI.toast(result.message, result.ok ? "success" : "warning");
++          showMaintenanceCenter();
 +        }, "onConfirm")
 +      });
 +    }, "showDeadReviveDialog");
@@ -12090,7 +12173,12 @@ index 4841912..9549e47 100644
 +        "觀察天數=" + stats.observedDays,
 +        "判讀=" + stats.verdict
 +      ];
-+      return deps.TrustedMenuUI.openText({ title: "Worker 使用量", text: lines.join("\n") });
++      return deps.TrustedMenuUI.openText({
++        title: "Worker 使用量",
++        text: lines.join("\n"),
++        closeLabel: "返回進階設定",
++        onClose: /* @__PURE__ */ __name(() => showAdvancedCenter(), "onClose")
++      });
 +    }, "showWorkerStatsDialog");
 +    const showAsyncControlResult = /* @__PURE__ */ __name(async (startMessage, operation) => {
 +      const progress = deps.TrustedMenuUI.toast(startMessage, "info", { sticky: true });
@@ -12135,6 +12223,8 @@ index 4841912..9549e47 100644
 +        routes,
 +        fixedSelected,
 +        catalogSelected,
++        backLabel: "返回控制中心",
++        onBack: /* @__PURE__ */ __name(() => showControlCenter(), "onBack"),
 +        onDefaults: /* @__PURE__ */ __name(() => {
 +          const result = deps.restoreAutomaticDefaults();
 +          deps.refreshPublicDiagnosticSnapshot();
@@ -12177,6 +12267,7 @@ index 4841912..9549e47 100644
 +              const result = deps.BiliCDNControls.clearSoft();
 +              deps.refreshPublicDiagnosticSnapshot();
 +              deps.TrustedMenuUI.toast(result.message, result.status === "empty" ? "info" : "success");
++              showMaintenanceCenter();
 +            }, "onActivate")
 +          },
 +          { label: "救回單一 dead catalog 節點", action: "revive-dead", onActivate: showDeadReviveDialog },
@@ -12199,6 +12290,7 @@ index 4841912..9549e47 100644
 +            const result = deps.BiliCDNControls.verbose(!deps.Config.verbose);
 +            deps.refreshPublicDiagnosticSnapshot();
 +            deps.TrustedMenuUI.toast(result.message, result.ok ? "success" : "warning");
++            showAdvancedCenter();
 +          }, "onActivate")
 +        },
 +        { label: "顯示 Worker 使用量", action: "worker-stats", onActivate: showWorkerStatsDialog },
@@ -12220,7 +12312,10 @@ index 4841912..9549e47 100644
 +          "異常節點：" + abnormal + "｜HTTPDNS：" + httpdns.mode + "｜Worker：" + (deps.EnableWorkerIntercept ? "created=" + worker.created + " rewrites=" + worker.rewrites : "停用")
 +        ],
 +        items: [
-+          { label: "重新評估節點", action: "reassess", onActivate: runSmartReassessment },
++          { label: "重新評估節點", action: "reassess", onActivate: /* @__PURE__ */ __name(() => {
++            runSmartReassessment();
++            showControlCenter();
++          }, "onActivate") },
 +          { label: "CDN 選路", action: "routing", onActivate: showRoutingCenter },
 +          { label: "診斷", action: "diagnostics", onActivate: showDiagnosticDialog },
 +          { label: "節點維護", action: "maintenance", onActivate: showMaintenanceCenter },

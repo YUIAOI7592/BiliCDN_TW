@@ -1,5 +1,5 @@
 diff --git a/tests/fixtures/BiliCDN_TW_1.5.5.user.js b/Release/v1.6.0/BiliCDN_TW_1.6.0.user.js
-index ed7eaf4..9549e47 100644
+index ed7eaf4..700c78c 100644
 --- a/tests/fixtures/BiliCDN_TW_1.5.5.user.js
 +++ b/Release/v1.6.0/BiliCDN_TW_1.6.0.user.js
 @@ -1,7 +1,7 @@
@@ -6428,21 +6428,6 @@ index ed7eaf4..9549e47 100644
 -            }
 -            if (isHttpDnsUrl(urlStr)) {
 -                redirectStats.httpdnsAllowed++
--            }
--
--            if (!disabled && isMediaSegmentUrl(urlStr)) {
--                const mappedOriginalUrl = getOriginalStreamUrl(urlStr)
--                this._originalUrl = mappedOriginalUrl
--                this._hostRewriteAttempt = mappedOriginalUrl !== urlStr
--                const norm = normalizeMediaUrl(urlStr)
--                this._originCdn = norm.originCdn || getBiliVideoCdn(urlStr)
--                if (norm.changed) {
--                    this._redirectedCdn = norm.targetCdn
--                    this._restoredOriginal = !!norm.restoredOriginal
--                    // 復原到原始簽名 URL 不是「再改一次 host」，後續 403 應按原 host 真實失敗處理。
--                    this._hostRewriteAttempt = !norm.restoredOriginal
--                    url = norm.url
--                }
 +          mediaListenerCleanup.get(this)?.();
 +          deps.DiagnosticLog.updateRequest(diagnosticRequests.get(this), "reopened");
 +          diagnosticRequests.delete(this);
@@ -6491,6 +6476,21 @@ index ed7eaf4..9549e47 100644
 +              this._hostRewriteAttempt = !norm.restoredOriginal;
 +              url = norm.url;
              }
+-
+-            if (!disabled && isMediaSegmentUrl(urlStr)) {
+-                const mappedOriginalUrl = getOriginalStreamUrl(urlStr)
+-                this._originalUrl = mappedOriginalUrl
+-                this._hostRewriteAttempt = mappedOriginalUrl !== urlStr
+-                const norm = normalizeMediaUrl(urlStr)
+-                this._originCdn = norm.originCdn || getBiliVideoCdn(urlStr)
+-                if (norm.changed) {
+-                    this._redirectedCdn = norm.targetCdn
+-                    this._restoredOriginal = !!norm.restoredOriginal
+-                    // 復原到原始簽名 URL 不是「再改一次 host」，後續 403 應按原 host 真實失敗處理。
+-                    this._hostRewriteAttempt = !norm.restoredOriginal
+-                    url = norm.url
+-                }
+-            }
 -
 -            this._interceptUrl = String(url)
 -            return super.open(method, url, ...rest)
@@ -8374,39 +8374,11 @@ index ed7eaf4..9549e47 100644
 -                }, 5 * 60 * 1000)
 -                return true
 +              if (channel && channel.port2) channel.port2.close();
-+            } catch {
-+            }
-+            cleanupWorker(worker);
-+            return false;
-+          }
-+        }, "registerWorker");
-+        unsafeWindow.Worker = (_a = class extends OriginalWorker {
-+          constructor(scriptURL, options) {
-+            if (deps.disabled) return super(scriptURL, options);
-+            let originalUrl, source, blobUrl, capability;
-+            try {
-+              originalUrl = new URL(String(scriptURL), location.href).href;
-+              if (originalUrl.startsWith("blob:") || originalUrl.startsWith("data:")) {
-+                return super(scriptURL, options);
-+              }
-+              const isModule = !!(options && options.type === "module");
-+              if (isModule && new URL(originalUrl).origin !== location.origin) {
-+                return super(scriptURL, options);
-+              }
-+              capability = createWorkerCapability();
-+              if (!capability || !NativeBlob || !NativeCreateObjectURL || !NativeMessageChannel) {
-+                return super(scriptURL, options);
-+              }
-+              deps.log("[Worker] patched: " + originalUrl);
-+              source = isModule ? moduleWorkerPatch(originalUrl, capability) : classicWorkerPatch(originalUrl, capability);
-+              const blob = new NativeBlob([source], { type: "application/javascript" });
-+              blobUrl = NativeCreateObjectURL(blob);
              } catch {
 -                try { if (channel && channel.port1) channel.port1.close() } catch {}
 -                try { if (channel && channel.port2) channel.port2.close() } catch {}
 -                cleanupWorker(worker)
 -                return false
-+              return super(scriptURL, options);
              }
 -        }
 -
@@ -8447,6 +8419,40 @@ index ed7eaf4..9549e47 100644
 -                }
 -                bumpWorkerStats({ created: 1, sample: originalUrl })
 -                return worker
++            cleanupWorker(worker);
++            return false;
++          }
++        }, "registerWorker");
++        unsafeWindow.Worker = (_a = class extends OriginalWorker {
++          constructor(scriptURL, options) {
++            if (deps.disabled) return super(scriptURL, options);
++            let originalUrl, source, blobUrl, capability;
++            try {
++              originalUrl = new URL(String(scriptURL), location.href).href;
++              if (originalUrl.startsWith("blob:") || originalUrl.startsWith("data:")) {
++                return super(scriptURL, options);
++              }
++              const isModule = !!(options && options.type === "module");
++              if (isModule && new URL(originalUrl).origin !== location.origin) {
++                return super(scriptURL, options);
++              }
++              capability = createWorkerCapability();
++              if (!capability || !NativeBlob || !NativeCreateObjectURL || !NativeMessageChannel) {
++                return super(scriptURL, options);
++              }
++              deps.log("[Worker] patched: " + originalUrl);
++              source = isModule ? moduleWorkerPatch(originalUrl, capability) : classicWorkerPatch(originalUrl, capability);
++              const blob = new NativeBlob([source], { type: "application/javascript" });
++              blobUrl = NativeCreateObjectURL(blob);
++            } catch {
++              return super(scriptURL, options);
+             }
+-
+-            terminate() {
+-                cleanupWorker(this)
+-                if (typeof OriginalWorkerTerminate === 'function') {
+-                    return OriginalWorkerTerminate.call(this)
+-                }
 +            const worker = super(blobUrl, options);
 +            if (!registerWorker(worker, capability, blobUrl)) {
 +              try {
@@ -8458,20 +8464,6 @@ index ed7eaf4..9549e47 100644
 +              } catch {
 +              }
 +              return new OriginalWorker(scriptURL, options);
-             }
--
--            terminate() {
--                cleanupWorker(this)
--                if (typeof OriginalWorkerTerminate === 'function') {
--                    return OriginalWorkerTerminate.call(this)
--                }
-+            deps.bumpWorkerStats({ created: 1, sample: originalUrl });
-+            return worker;
-+          }
-+          terminate() {
-+            cleanupWorker(this);
-+            if (typeof OriginalWorkerTerminate === "function") {
-+              return OriginalWorkerTerminate.call(this);
              }
 -        }
 -        unsafeWindow.Worker.__biliCdnPatched = true
@@ -8486,6 +8478,14 @@ index ed7eaf4..9549e47 100644
 -    let timer = null
 -    const observer = new MutationObserver(() => {
 -        const found = document.querySelector(selector)
++            deps.bumpWorkerStats({ created: 1, sample: originalUrl });
++            return worker;
++          }
++          terminate() {
++            cleanupWorker(this);
++            if (typeof OriginalWorkerTerminate === "function") {
++              return OriginalWorkerTerminate.call(this);
++            }
 +          }
 +        }, __name(_a, "Worker"), _a);
 +        unsafeWindow.Worker.__biliCdnPatched = true;
@@ -9558,11 +9558,7 @@ index ed7eaf4..9549e47 100644
 -                }
 -            } else {
 -                bakeoffNullStreak = 0
-+          if (ok.length === 0) {
-+            bakeoffNullStreak++;
-+            if (bakeoffNullStreak === 3) {
-+              deps.err("[Bakeoff] 連續 3 輪測速全部失敗，可能被 CDN 防盜鏈擋下。可由 Tampermonkey 選單開啟 verbose 觀察，或回報此訊息。");
-             }
+-            }
 -        }
 -
 -        // 這輪賽馬所屬的片子已經被切掉了：拿到的樣本仍照樣入帳（對 CDN 的真實吞吐量測量，
@@ -9575,7 +9571,11 @@ index ed7eaf4..9549e47 100644
 -        ok.forEach(r => {
 -            if (!activeCdnList.includes(r.cdn) && !blacklistSet.has(r.cdn) && !knownDeadHosts.has(r.cdn)) {
 -                activeCdnList.push(r.cdn)
--            }
++          if (ok.length === 0) {
++            bakeoffNullStreak++;
++            if (bakeoffNullStreak === 3) {
++              deps.err("[Bakeoff] 連續 3 輪測速全部失敗，可能被 CDN 防盜鏈擋下。可由 Tampermonkey 選單開啟 verbose 觀察，或回報此訊息。");
+             }
 -        })
 -
 -        // 只重新排序，不縮減集合 —— 跟 reorderCdnsByLatency 裡同一個修正
@@ -11444,7 +11444,7 @@ index ed7eaf4..9549e47 100644
                  :host{all:initial;color-scheme:dark}
                  *{box-sizing:border-box}
                  .toasts{position:fixed;top:18px;right:18px;width:min(380px,calc(100vw - 36px));display:grid;gap:8px;pointer-events:none;font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-@@ -6000,1945 +5848,4130 @@ const TrustedMenuUI = (() => {
+@@ -6000,1945 +5848,4226 @@ const TrustedMenuUI = (() => {
                  button{font:inherit}.btn{border:1px solid #4b5563;border-radius:7px;background:#1f2937;color:#f9fafb;padding:7px 13px;cursor:pointer}.btn.primary{border-color:#0284c7;background:#0369a1}.btn.danger{border-color:#be123c;background:#9f1239}.btn:disabled{opacity:.45;cursor:not-allowed}
                  @media(max-width:600px){.toasts{top:10px;right:10px;width:calc(100vw - 20px)}.backdrop{padding:10px}.dialog{max-height:90vh}}
                  @media(prefers-reduced-motion:no-preference){.toast,.dialog{animation:biliCdnIn .14s ease-out}@keyframes biliCdnIn{from{opacity:.25;transform:translateY(-5px)}to{opacity:1;transform:none}}}
@@ -11793,7 +11793,14 @@ index ed7eaf4..9549e47 100644
 +        }
 +        return { capability, backdrop, panel, body, actions, close };
 +      }, "beginDialog");
-+      const addAction = /* @__PURE__ */ __name((dialog, { label, action, tone = "", onActivate, closeOnActivate = true }) => {
++      const addAction = /* @__PURE__ */ __name((dialog, {
++        label,
++        action,
++        tone = "",
++        onActivate,
++        closeOnActivate = true,
++        navigateOnActivate = false
++      }) => {
 +        const button = make("button", label, {
 +          className: "btn" + (tone ? " " + tone : ""),
 +          action,
@@ -11802,17 +11809,33 @@ index ed7eaf4..9549e47 100644
 +        button.type = "button";
 +        dom.addEvent(button, "click", (event) => {
 +          if (!event || !event.isTrusted || activeCapability !== dialog.capability) return;
++          if (navigateOnActivate) {
++            const session = uiSession;
++            closeView();
++            try {
++              if (typeof onActivate === "function") onActivate();
++            } finally {
++              if (!activeModal && uiSession === session) closeDialog();
++            }
++            return;
++          }
 +          if (closeOnActivate) closeDialog(true);
-+          onActivate();
++          if (typeof onActivate === "function") onActivate();
 +        });
 +        dom.append(dialog.actions, button);
 +        return button;
 +      }, "addAction");
-+      const openConfirm = /* @__PURE__ */ __name(({ title, paragraphs, confirmLabel = "確認", danger = false, onConfirm }) => {
++      const openConfirm = /* @__PURE__ */ __name(({
++        title,
++        paragraphs,
++        confirmLabel = "確認",
++        danger = false,
++        onConfirm,
++        cancelLabel = "取消",
++        onCancel
++      }) => {
 +        const dialog = beginDialog({ title, paragraphs, requiresCapability: true });
 +        if (!dialog) return false;
-+        addAction(dialog, { label: "取消", action: "cancel-secondary", onActivate: /* @__PURE__ */ __name(() => {
-+        }, "onActivate") });
          addAction(dialog, {
 -            label: confirmLabel,
 -            action: 'confirm',
@@ -11835,6 +11858,13 @@ index ed7eaf4..9549e47 100644
 -        }))
 -        const picked = new Set([].concat(selected || []).filter(index => Number.isInteger(index)
 -            && index >= 0 && index < safeChoices.length))
++          label: cancelLabel,
++          action: typeof onCancel === "function" ? "back" : "cancel-secondary",
++          onActivate: onCancel || (() => {
++          }),
++          navigateOnActivate: typeof onCancel === "function"
++        });
++        addAction(dialog, {
 +          label: confirmLabel,
 +          action: "confirm",
 +          tone: danger ? "danger" : "primary",
@@ -11853,7 +11883,10 @@ index ed7eaf4..9549e47 100644
 +        confirmLabel = "套用",
 +        onConfirm,
 +        secondaryLabel = "",
-+        onSecondary
++        onSecondary,
++        cancelLabel = "取消",
++        onCancel,
++        navigateOnConfirm = false
 +      }) => {
 +        const dialog = beginDialog({ title, paragraphs, requiresCapability: true });
 +        if (!dialog) return false;
@@ -11941,8 +11974,13 @@ index ed7eaf4..9549e47 100644
 +          dom.append(list, button);
 +        });
 +        dom.append(dialog.body, list);
-+        addAction(dialog, { label: "取消", action: "cancel-secondary", onActivate: /* @__PURE__ */ __name(() => {
-+        }, "onActivate") });
++        addAction(dialog, {
++          label: cancelLabel,
++          action: typeof onCancel === "function" ? "back" : "cancel-secondary",
++          onActivate: onCancel || (() => {
++          }),
++          navigateOnActivate: typeof onCancel === "function"
++        });
 +        if (secondaryLabel && typeof onSecondary === "function") {
 +          addAction(dialog, { label: secondaryLabel, action: "secondary", onActivate: onSecondary });
          }
@@ -12013,11 +12051,20 @@ index ed7eaf4..9549e47 100644
 +          tone: "primary",
 +          onActivate: /* @__PURE__ */ __name(() => {
 +            if (typeof onConfirm === "function") onConfirm([...picked].sort((a, b) => a - b));
-+          }, "onActivate")
++          }, "onActivate"),
++          navigateOnActivate: navigateOnConfirm
 +        });
 +        return true;
 +      }, "openChoice");
-+      const openText = /* @__PURE__ */ __name(({ title, paragraphs, text = "", copyLabel = "", onCopy }) => {
++      const openText = /* @__PURE__ */ __name(({
++        title,
++        paragraphs,
++        text = "",
++        copyLabel = "",
++        onCopy,
++        closeLabel = "關閉",
++        onClose
++      }) => {
 +        const dialog = beginDialog({ title, paragraphs, requiresCapability: false });
 +        if (!dialog) return false;
 +        const area = make("textarea", bounded(text, 48 * 1024), { action: "manual-copy-text", maxText: 48 * 1024 });
@@ -12026,10 +12073,21 @@ index ed7eaf4..9549e47 100644
 +        area.readOnly = true;
 +        area.setAttribute("readonly", "");
 +        dom.append(dialog.body, area);
-+        addAction(dialog, { label: "關閉", action: "cancel-secondary", onActivate: /* @__PURE__ */ __name(() => {
-+        }, "onActivate") });
++        addAction(dialog, {
++          label: closeLabel,
++          action: typeof onClose === "function" ? "back" : "cancel-secondary",
++          onActivate: onClose || (() => {
++          }),
++          navigateOnActivate: typeof onClose === "function"
++        });
 +        if (copyLabel && typeof onCopy === "function") {
-+          addAction(dialog, { label: copyLabel, action: "copy", tone: "primary", onActivate: onCopy });
++          addAction(dialog, {
++            label: copyLabel,
++            action: "copy",
++            tone: "primary",
++            onActivate: onCopy,
++            closeOnActivate: false
++          });
 +        }
 +        return true;
 +      }, "openText");
@@ -12073,7 +12131,17 @@ index ed7eaf4..9549e47 100644
 +        }, "onActivate") });
 +        return true;
 +      }, "openActions");
-+      const openRouting = /* @__PURE__ */ __name(({ title, paragraphs, routes = [], fixedSelected = 0, catalogSelected = [], onConfirm, onDefaults }) => {
++      const openRouting = /* @__PURE__ */ __name(({
++        title,
++        paragraphs,
++        routes = [],
++        fixedSelected = 0,
++        catalogSelected = [],
++        onConfirm,
++        onDefaults,
++        backLabel = "取消",
++        onBack
++      }) => {
 +        const dialog = beginDialog({ title, paragraphs, requiresCapability: true });
 +        if (!dialog) return false;
 +        let routeIndex = Number.isInteger(fixedSelected) ? fixedSelected : 0;
@@ -12152,13 +12220,6 @@ index ed7eaf4..9549e47 100644
 +          dom.append(catalogList, button);
 +        });
 +        dom.append(dialog.body, catalogList);
-+        addAction(dialog, { label: "取消", action: "cancel-secondary", onActivate: /* @__PURE__ */ __name(() => {
-+        }, "onActivate") });
-+        if (typeof onDefaults === "function") addAction(dialog, {
-+          label: "恢復自動預設",
-+          action: "routing-defaults",
-+          onActivate: onDefaults
-+        });
          addAction(dialog, {
 -            label: '套用', action: 'confirm', tone: 'primary',
 -            onActivate: () => { if (typeof onConfirm === 'function') onConfirm({ routeIndex, enabled: [...enabled].sort((a, b) => a - b) }) },
@@ -12211,12 +12272,26 @@ index ed7eaf4..9549e47 100644
 -        out.errorCode = !error ? 0 : Number.isInteger(error.code) && error.code >= 1 && error.code <= 4 ? error.code : null
 -        if (out.currentTime === null || !v.buffered) return out
 -        let end = out.currentTime
++          label: backLabel,
++          action: typeof onBack === "function" ? "back" : "cancel-secondary",
++          onActivate: onBack || (() => {
++          }),
++          navigateOnActivate: typeof onBack === "function"
++        });
++        if (typeof onDefaults === "function") addAction(dialog, {
++          label: "恢復自動預設",
++          action: "routing-defaults",
++          onActivate: onDefaults,
++          closeOnActivate: false
++        });
++        addAction(dialog, {
 +          label: "套用",
 +          action: "confirm",
 +          tone: "primary",
 +          onActivate: /* @__PURE__ */ __name(() => {
 +            if (typeof onConfirm === "function") onConfirm({ routeIndex, enabled: [...enabled].sort((a, b) => a - b) });
-+          }, "onActivate")
++          }, "onActivate"),
++          closeOnActivate: false
 +        });
 +        return true;
 +      }, "openRouting");
@@ -13957,6 +14032,8 @@ index ed7eaf4..9549e47 100644
 +        "固定 CDN 與 catalog override 不會被清除。此操作無法復原。"
 +      ],
 +      confirmLabel: "確認重置",
++      cancelLabel: "返回節點維護",
++      onCancel: /* @__PURE__ */ __name(() => showMaintenanceCenter(), "onCancel"),
 +      danger: true,
 +      onConfirm: /* @__PURE__ */ __name(() => {
 +        const result = deps.BiliCDNControls.reset();
@@ -13976,13 +14053,16 @@ index ed7eaf4..9549e47 100644
 +        onCopy: /* @__PURE__ */ __name(() => {
 +          deps.copyDiagReport().catch(() => {
 +          });
-+        }, "onCopy")
++        }, "onCopy"),
++        closeLabel: "返回控制中心",
++        onClose: /* @__PURE__ */ __name(() => showControlCenter(), "onClose")
 +      });
 +    }, "showDiagnosticDialog");
 +    const showDeadReviveDialog = /* @__PURE__ */ __name(() => {
 +      const dead = deps.listDeadHosts().map((entry) => entry.host).filter((host) => deps.TRUSTED_CDN_CATALOG_SET.has(host));
 +      if (!dead.length) {
 +        deps.TrustedMenuUI.toast("目前沒有可救回的 dead catalog 節點", "info");
++        showMaintenanceCenter();
 +        return false;
 +      }
 +      return deps.TrustedMenuUI.openChoice({
@@ -14072,6 +14152,9 @@ index ed7eaf4..9549e47 100644
 -            ? '目前使用固定 CDN；候選勾選會保留，恢復自動後生效。'
 -            : '固定節點優先於候選設定。至少保留一個非 presumed 自動候選。'],
 +        confirmLabel: "救回節點",
++        cancelLabel: "返回節點維護",
++        onCancel: /* @__PURE__ */ __name(() => showMaintenanceCenter(), "onCancel"),
++        navigateOnConfirm: true,
 +        onConfirm: /* @__PURE__ */ __name((picked) => {
 +          const index = picked[0];
 +          const host = Number.isInteger(index) ? dead[index] : null;
@@ -14080,6 +14163,7 @@ index ed7eaf4..9549e47 100644
 +          deps.syncWorkerCdnTarget();
 +          deps.refreshPublicDiagnosticSnapshot();
 +          deps.TrustedMenuUI.toast(result.message, result.ok ? "success" : "warning");
++          showMaintenanceCenter();
 +        }, "onConfirm")
 +      });
 +    }, "showDeadReviveDialog");
@@ -14095,7 +14179,12 @@ index ed7eaf4..9549e47 100644
 +        "觀察天數=" + stats.observedDays,
 +        "判讀=" + stats.verdict
 +      ];
-+      return deps.TrustedMenuUI.openText({ title: "Worker 使用量", text: lines.join("\n") });
++      return deps.TrustedMenuUI.openText({
++        title: "Worker 使用量",
++        text: lines.join("\n"),
++        closeLabel: "返回進階設定",
++        onClose: /* @__PURE__ */ __name(() => showAdvancedCenter(), "onClose")
++      });
 +    }, "showWorkerStatsDialog");
 +    const showAsyncControlResult = /* @__PURE__ */ __name(async (startMessage, operation) => {
 +      const progress = deps.TrustedMenuUI.toast(startMessage, "info", { sticky: true });
@@ -14174,6 +14263,8 @@ index ed7eaf4..9549e47 100644
 -    return TrustedMenuUI.openActions({
 -        title: '節點維護',
 -        paragraphs: ['soft=' + softCount + '、dead=' + deadCount + '、black=' + blackCount],
++        backLabel: "返回控制中心",
++        onBack: /* @__PURE__ */ __name(() => showControlCenter(), "onBack"),
 +        onDefaults: /* @__PURE__ */ __name(() => {
 +          const result = deps.restoreAutomaticDefaults();
 +          deps.refreshPublicDiagnosticSnapshot();
@@ -14237,6 +14328,7 @@ index ed7eaf4..9549e47 100644
 +              const result = deps.BiliCDNControls.clearSoft();
 +              deps.refreshPublicDiagnosticSnapshot();
 +              deps.TrustedMenuUI.toast(result.message, result.status === "empty" ? "info" : "success");
++              showMaintenanceCenter();
 +            }, "onActivate")
 +          },
 +          { label: "救回單一 dead catalog 節點", action: "revive-dead", onActivate: showDeadReviveDialog },
@@ -14264,6 +14356,7 @@ index ed7eaf4..9549e47 100644
 +            const result = deps.BiliCDNControls.verbose(!deps.Config.verbose);
 +            deps.refreshPublicDiagnosticSnapshot();
 +            deps.TrustedMenuUI.toast(result.message, result.ok ? "success" : "warning");
++            showAdvancedCenter();
 +          }, "onActivate")
          },
 -        { label: '顯示 Worker 使用量', action: 'worker-stats', onActivate: showWorkerStatsDialog },
@@ -14329,7 +14422,10 @@ index ed7eaf4..9549e47 100644
 -    interceptNetResponse((response, url, valid) => {
 -        if (disabled || !valid() || !isPlayUrlApi(url)) return
 -        if (response === null || response === undefined) return
-+          { label: "重新評估節點", action: "reassess", onActivate: runSmartReassessment },
++          { label: "重新評估節點", action: "reassess", onActivate: /* @__PURE__ */ __name(() => {
++            runSmartReassessment();
++            showControlCenter();
++          }, "onActivate") },
 +          { label: "CDN 選路", action: "routing", onActivate: showRoutingCenter },
 +          { label: "診斷", action: "diagnostics", onActivate: showDiagnosticDialog },
 +          { label: "節點維護", action: "maintenance", onActivate: showMaintenanceCenter },

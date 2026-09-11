@@ -30,7 +30,7 @@
 8. 不恢復自動更新 URL，避免自訂版被上游覆寫。
 9. 完成後才升版，並產出 CHANGELOG、TEST_REPORT、incremental/cumulative no-index patch 與 SHA-256。
 10. VM/mock、靜態檢查與真實 Chrome/Tampermonkey 驗證必須分開描述。
-11. 模組來源是唯一建置輸入，不依賴未公開 archive／development。正式 bundle 不得含測試介面。提交訊息附實際模型與推理強度；本輪已確認 GPT-6 Astra xhigh。
+11. 模組來源是唯一建置輸入，不依賴未公開 archive／development。正式 bundle 不得含測試介面。提交訊息附執行當下實際顯示的模型與推理強度，不得沿用過期的硬編碼模型名稱。
 
 ## 必須重新驗證的不變量
 

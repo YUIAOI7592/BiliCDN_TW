@@ -219,8 +219,9 @@ test('v1.5.3: reset cancel is inert while verbose and soft-clear report exact st
     const h = loadUserscript(v144, { gmSeed: { disabled: true } })
     menu(h, '重置').callback()
     const beforeCancel = h.gmWrites.length
-    trusted(h, action(h, 'cancel-secondary'))
+    trusted(h, action(h, 'back'))
     assert.equal(h.gmWrites.length, beforeCancel)
+    assert.match(treeText(uiRoot(h)), /節點維護/)
 
     menu(h, 'verbose').callback()
     assert.equal(h.gm.get('verbose'), true)

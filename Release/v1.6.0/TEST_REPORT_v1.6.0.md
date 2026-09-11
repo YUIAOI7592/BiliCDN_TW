@@ -1,4 +1,4 @@
-# v1.6.0 候選驗證報告
+# v1.6.0 驗證報告
 
 ## 基準與工具
 
@@ -8,10 +8,11 @@ Node 26.8.1、npm 11.19.0、esbuild 0.28.2，無其他直接開發依賴／執�
 
 ## 模組抽離回歸
 
-- 255／255 通過，0 失敗／skip：原有 230、新增 16、固定歷史 review 9。
+- 257／257 通過，0 失敗／skip：原有 230、新增 18、固定歷史 review 9。
 - CS 子集 19 項包含在總數內，不另加總。
 - timeout capability／128 KiB／3 秒／30 秒、重複 send、Watchdog 歸因／回收、Fetch 單 reader／cancel、host-lock、PCDN、XHR JSON、SPA／停用、2x／codec、診斷與可信 UI 回歸通過。
 - 新增實例隔離、import 無副作用、正式 bundle 無測試介面、檔頭 Worker／HTTPDNS／codec 開關。
+- 控制中心新增完整導覽回歸：CDN 選路、診斷、節點維護、進階與 Worker 統計可在同一 session 往返；操作後留在父畫面、複製不關窗、取消確認不寫 GM、舊 capability 失效且 Escape 回復原焦點。
 - 未插樁產物經 Fetch／XHR／選單／Worker 入口測試。healthy／seek／真實失敗三組 250 秒流程與 v1.5.5 的请求、probe 及 Range bytes 相同，Verbose 開／關均相同。
 
 ## 本機封裝與重建
@@ -21,18 +22,20 @@ Node 26.8.1、npm 11.19.0、esbuild 0.28.2，無其他直接開發依賴／執�
 - 只靠 Git 追蹤檔案的乾淨本機 checkout，經 `npm ci` 及完整 verify 通過。
 - PowerShell／sh 兩套入口均通過同一 Node verifier。
 - 40 個建置來源雜湊吻合；公開相對文件連結有效，沒有追蹤個人診斷、raw 安全資料、archive、development、dist、node_modules 或 CI workflow。
-- userscript SHA-256：`13ce7885b469ab9c9a07a399045d1d6094579ff0f3e9133704ba59cb88e17b91`。
+- userscript SHA-256：`0186bb2d7a0093b474c0f750d9856d7293b6df82d42c8a2f3c708b5f40f730e5`。
 
-## 正式安全流程與候選公開
+## 正式安全流程與發布
 
 Codex Security scan `6691213c-80bd-4019-8598-c5ef4b605b4d` 已完成封存，可回報 findings 為 0；**正式 coverage 仍為 partial**。工具保留兩筆先前的進行中檢查點，與 47／47 已完成檔案審查工作紀錄不一致。詳見 [公開安全摘要](../../docs/SECURITY_REVIEW_v1.6.0.md)。
 
 固定掃描 range：`5a8acc93a36aa05cd14d6758694c992134e136bb` → `48536c624398a722c46f3f9986ba79f4b21a64e9`。最後文件／校驗清單更新不改已審 userscript、來源或建置工具。
 
-依 2026-09-11 使用者指示，本版以候選版本公開 main，不以 VM 子集替代正式 coverage，也不修改 sealed 報告。不建立 v1.6.0 正式標籤，不自動安裝。公開程式碼與完成正式發布驗收分開處理。
+依 2026-09-11 使用者指示，本版正式發布 v1.6.0、推送版本標籤並建立 GitHub Release。不以 VM 子集替代正式 coverage，也不修改 sealed 報告；發布仍明示 partial coverage 與實機驗收界線。
 
 ## 驗收界線
 
-自動測試為 Node VM／mock 或靜態／建置檢查，不是真實 Chrome／Tampermonkey／Bilibili／RTX 5080 驗證。仍須實測 1080p／4K 2x、seek、切畫質、SPA、背景切回及控制中心，不自動安裝。
+2026-09-11 的真實 Chrome／Tampermonkey 探索測試在「自動畫質＋2x」下完成播放、連續 seek、畫質自動調整及控制中心多個畫面檢查，並實際發現舊版 CDN 選路「取消」會關閉整個控制中心。重新安裝修正版後，已實機確認 CDN 選路、診斷、節點維護、進階／Worker 統計的單次開啟往返、診斷複製及 Escape 關閉；未執行會清除學習資料的破壞性操作。
+
+自動測試為 Node VM／mock 或靜態／建置檢查，不等於完整 Chrome／Tampermonkey／Bilibili／RTX 5080 驗證。背景切回及實際硬體解碼仍未完整驗證。
 
 不改算法、不保證最高速度變快。probe 計入 bytes 有上限，但瀏覽器緩衝／跨額度 chunk 可能有額外 wire bytes，不宣稱絕對零超收。

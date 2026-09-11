@@ -43,13 +43,15 @@ test('v153 codec: actual configuration, nonblocking response and current versus 
     assert.equal(F.json(h, 'lastCodecDecision').groups[0].capability, 'good')
 })
 
-test('v153 UI: menu navigation and toast actions restore the original focus', () => {
+test('v160 UI: menu navigation stays in one session and Escape restores the original focus', () => {
     const h = F.load({ gmSeed: { disabled: true } })
     const prior = h.document.createElement('button'); h.document.body.appendChild(prior); prior.focus()
     h.menus[0].callback(); F.click(h, 'maintenance'); F.click(h, 'back'); F.click(h, 'diagnostics')
     F.ui(h).dispatchEvent(new F.FakeEvent('keydown', { key: 'Escape', isTrusted: true }))
     assert.equal(h.document.activeElement === prior, true)
     h.menus[0].callback(); F.click(h, 'advanced'); F.click(h, 'verbose-toggle')
+    assert.equal(F.ui(h).querySelector('h2').textContent, '進階')
+    F.ui(h).dispatchEvent(new F.FakeEvent('keydown', { key: 'Escape', isTrusted: true }))
     assert.equal(h.document.activeElement === prior, true)
 })
 
