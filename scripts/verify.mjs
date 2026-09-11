@@ -8,7 +8,7 @@ import { command, sha256, readJson, filesUnder } from './lib.mjs';
 export function verifyPatches(config,dir,script){
  const workspace=process.cwd(),scratch=mkdtempSync(join(tmpdir(),'bilicdn-verify-'));
  try{
-  for(const [label,from]of [[config.previousVersion,`tests/fixtures/BiliCDN_TW_${config.previousVersion}.user.js`],[config.upstreamVersion,`baseline/BiliCDN_TW_${config.upstreamVersion}.original.user.js`]]){
+  for(const [label,from]of [[config.previousVersion,config.previousPath||`tests/fixtures/BiliCDN_TW_${config.previousVersion}.user.js`],[config.upstreamVersion,`baseline/BiliCDN_TW_${config.upstreamVersion}.original.user.js`]]){
    const cwd=join(scratch,label);mkdirSync(dirname(join(cwd,from)),{recursive:true});copyFileSync(from,join(cwd,from));
    const patch=resolve(dir,`v${label}_to_v${config.version}.patch.diff`);
    command('git',['-c','core.autocrlf=false','apply','--check',patch],{cwd});
@@ -22,7 +22,7 @@ export function verifyPatches(config,dir,script){
  }
 }
 export async function verify(){
- const config=readJson('release.json'),dir=`Release/v${config.version}`,script=`${dir}/BiliCDN_TW_${config.version}.user.js`;
+ const config=readJson('release.json'),dir=`Release/v${config.version}`,script=`${dir}/${config.artifactName||`BiliCDN_TW_${config.version}.user.js`}`;
  if(process.versions.node!==config.nodeVersion)throw Error(`Validated Node version is ${config.nodeVersion}; found ${process.versions.node}`);
  for(const [file,digest]of Object.entries(readJson('tests/fixtures/SHA256.json')))if(sha256(readFileSync('tests/fixtures/'+file))!==digest)throw Error('Fixture changed: '+file);
  const first=await build({write:false}),second=await build();await build({testing:true});

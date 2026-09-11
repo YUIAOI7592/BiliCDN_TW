@@ -8,11 +8,11 @@ export async function packageRelease(){
  const config=readJson('release.json'),version=config.version;
  if(version===config.previousVersion)throw Error('Do not package until modular extraction is accepted and version is bumped');
  const dir=`Release/v${version}`;
- const previous=`tests/fixtures/BiliCDN_TW_${config.previousVersion}.user.js`;
+ const previous=config.previousPath||`tests/fixtures/BiliCDN_TW_${config.previousVersion}.user.js`;
  const upstream=`baseline/BiliCDN_TW_${config.upstreamVersion}.original.user.js`;
  if(sha256(readFileSync(previous))!==config.previousSha256||sha256(readFileSync(upstream))!==config.upstreamSha256)throw Error('Immutable input hash mismatch');
  const result=await build();await build({testing:true});mkdirSync(dir,{recursive:true});
- const script=`${dir}/BiliCDN_TW_${version}.user.js`;
+ const script=`${dir}/${config.artifactName||`BiliCDN_TW_${version}.user.js`}`;
  writeFileSync(script,result.output);
  copyFileSync('dist/build-manifest.json',`${dir}/BUILD_MANIFEST_v${version}.json`);
  for(const [label,from]of [[config.previousVersion,previous],[config.upstreamVersion,upstream]]){

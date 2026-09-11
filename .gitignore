@@ -13,6 +13,7 @@ coverage/
 /review/
 /Release/*
 !/Release/v1.6.0/
+!/Release/v1.6.1/
 /.work/
 /.agents/
 /.codex/

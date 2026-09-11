@@ -7,15 +7,15 @@
 
 以 jiyunshi 的「Bilibili CDN 台灣優化」官方 v1.3.4 為基礎的個人修改版。重點是台灣線路的 CDN 選路、兩倍速播放穩定性與有界診斷，不保證任何節點或影片一定更快。
 
-v1.6.0 將正式 v1.5.5 拆成 JavaScript 模組，再用 esbuild 打包為 **一份 Tampermonkey userscript**。不改 2x 假定、AV1 預設、CDN catalog、演算法、測速額度或控制中心操作；Worker 仍預設關閉。
+v1.6.0 將正式 v1.5.5 拆成 JavaScript 模組，再用 esbuild 打包為 **一份 Tampermonkey userscript**。v1.6.1 補上只指向本儲存庫 GitHub Release 的自動更新入口；播放邏輯不變。
 
-v1.6.0 已完成建置／257 項自動測試與修正後的控制中心實機操作確認，並依使用者指示正式發布。正式安全報告仍如實標記 partial coverage，不宣稱完整安全驗收；原因見 [公開安全摘要](docs/SECURITY_REVIEW_v1.6.0.md)。
+v1.6.1 已完成建置與自動測試；播放功能沿用已實機初步確認的 v1.6.0。正式安全報告仍如實標記 partial coverage，不宣稱完整安全驗收；原因見 [公開安全摘要](docs/SECURITY_REVIEW_v1.6.0.md)。
 
 ## 安裝與操作
 
-交付檔位於 [Release/v1.6.0](Release/v1.6.0/)，只需安裝其中的 BiliCDN_TW_1.6.0.user.js，不需安裝 Node 或 esbuild。使用 Tampermonkey 選單「⚙️ 開啟 BiliCDN 控制中心」。沒有遠端自動更新網址。
+只需安裝 [BiliCDN_TW.user.js](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js)，不需安裝 Node 或 esbuild。v1.6.1 起，Tampermonkey 只會從本儲存庫的最新正式 Release 檢查與下載更新。使用選單「⚙️ 開啟 BiliCDN 控制中心」。
 
-發布驗證與安全狀態以 [TEST_REPORT](Release/v1.6.0/TEST_REPORT_v1.6.0.md) 為準。VM 測試不等於 Chrome／Tampermonkey 實機驗證；仍需測試 1080p／4K 2x、seek、切畫質、SPA、背景切回及控制中心。
+發布驗證與安全狀態以 [TEST_REPORT](Release/v1.6.1/TEST_REPORT_v1.6.1.md) 為準。VM 測試不等於 Chrome／Tampermonkey 實機驗證；仍需測試 1080p／4K 2x、seek、切畫質、SPA、背景切回及控制中心。
 
 ## 本機開發
 

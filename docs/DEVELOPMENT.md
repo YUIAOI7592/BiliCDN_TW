@@ -9,9 +9,9 @@
 5. `npm run verify` 驗證兩次建置一致、syntax、全部測試、CS 子集、實際 patch 套用與 SHA。
 6. 對固定 range 執行正式 Codex Security。受阻則保留候選，不以 VM 子集代替。
 7. 更新報告、再次 package／verify，在乾淨本機 checkout 用 lockfile 重建，檢查公開檔案。
-8. 確認完成後手動推送 main／版本標籤；不自動安裝瀏覽器腳本。
+8. 確認完成後手動推送 main／版本標籤；GitHub Release 只上傳單一 `BiliCDN_TW.user.js`，不把內部報告或 patch 當附件。
 
-沒有 CI/CD、GitHub Actions 或自動部署。兩套 verify shell 只轉呼共同 Node 邏輯。manifest 不帶時間戳／絕對路徑，SHA 使用 repo-relative 路徑。
+沒有 CI/CD、GitHub Actions 或自動部署。兩套 verify shell 只轉呼共同 Node 邏輯。manifest 不帶時間戳／絕對路徑，SHA 使用 repo-relative 路徑。userscript 的更新與下載網址固定指向本儲存庫最新正式 Release 的單一同名附件。
 
 唯一建置依賴為 esbuild 及必要平台套件。不提交 node_modules、dist、個人診斷、raw 安全工作檔、archive 或 development；必要舊版樣本已按原 bytes 放 fixtures。
 

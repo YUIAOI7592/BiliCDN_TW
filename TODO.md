@@ -1,5 +1,11 @@
 # 待辦
 
+## v1.6.1
+
+- [x] 將 update／download URL 固定指向本儲存庫 latest Release 的單一 `BiliCDN_TW.user.js`。
+- [x] GitHub Release 只保留 userscript；內部報告與 patch 不再作為 Release Assets。
+- [x] 完整 package／verify；GitHub Release 僅上傳單一 userscript。
+
 ## v1.6.0
 
 - [x] 固定正式 v1.5.5、必要樣本與 SHA。

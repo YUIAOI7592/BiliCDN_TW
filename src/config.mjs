@@ -12,7 +12,7 @@ let BlockWebRTC = input.BlockWebRTC
 
 let EnableWorkerIntercept = input.EnableWorkerIntercept
 
-const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.6.0'
+const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.6.1'
 
 const parseVer = (v) => String(v || '0').split('.').map(n => parseInt(n, 10) || 0)
 

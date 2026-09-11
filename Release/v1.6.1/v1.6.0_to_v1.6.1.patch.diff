@@ -1,0 +1,29 @@
+diff --git a/Release/v1.6.0/BiliCDN_TW_1.6.0.user.js b/Release/v1.6.1/BiliCDN_TW.user.js
+index 700c78c..9e2f3ab 100644
+--- a/Release/v1.6.0/BiliCDN_TW_1.6.0.user.js
++++ b/Release/v1.6.1/BiliCDN_TW.user.js
+@@ -1,10 +1,14 @@
+ // ==UserScript==
+ // @name         Bilibili CDN 台灣優化
+ // @namespace    BiliCDN_TW
+-// @version      1.6.0
++// @version      1.6.1
+ // @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+ // @author       jiyunshi <chocosensei214@gmail.com>
+ // @license      MIT
++// @homepageURL  https://github.com/YUIAOI7592/BiliCDN_TW
++// @supportURL   https://github.com/YUIAOI7592/BiliCDN_TW/issues
++// @updateURL    https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js
++// @downloadURL  https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js
+ // @icon         https://i0.hdslb.com/bfs/static/jinkela/long/images/512.png
+ // @run-at       document-start
+ // @match        https://www.bilibili.com/video/*
+@@ -86,7 +90,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let PreferredVideoCodec = input.PreferredVideoCodec;
+     let BlockWebRTC = input.BlockWebRTC;
+     let EnableWorkerIntercept = input.EnableWorkerIntercept;
+-    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.6.0";
++    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.6.1";
+     const parseVer = /* @__PURE__ */ __name((v) => String(v || "0").split(".").map((n) => parseInt(n, 10) || 0), "parseVer");
+     const verGte = /* @__PURE__ */ __name((a, b) => {
+       const A = parseVer(a), B = parseVer(b);
