@@ -76,8 +76,15 @@ const buildDiagReport = () => {
         '頁面發現 CDN：' + (deps.pageDiscoveredCdn ? deps.pageDiscoveredCdn.split('.')[0] : '（無）'),
         '改寫統計：' + JSON.stringify(deps.redirectStats),
         'HTTPDNS：' + httpDns.mode + (httpDns.ttlMin ? '（' + httpDns.ttlMin + 'm）' : ''),
-        'Worker 量測：created=' + ws.created + ' netCalls=' + ws.netCalls + ' mediaSeen=' + ws.mediaSeen
-            + ' rewrites=' + ws.rewrites + ' 觀察' + ws.observedDays + '天 判讀=' + ws.verdict,
+        'Worker 本分頁量測：install=' + ws.installState + ' constructors=' + ws.session.constructorCalls
+            + ' wrapped=' + ws.session.wrapped + ' ready=' + ws.session.bootstrapReady
+            + ' netCalls=' + ws.session.netCalls + ' mediaSeen=' + ws.session.mediaSeen
+            + ' rewrites=' + ws.session.rewrites + ' bytes=' + ws.session.bytesMB + 'MB replaced=' + ws.session.replacements,
+        'Worker 安全放行：' + JSON.stringify(ws.session.bypass),
+        'Worker 建立失敗：' + JSON.stringify(ws.session.failures),
+        'Worker 累計量測：created=' + ws.created + ' ready=' + ws.bootstrapReady
+            + ' constructors=' + ws.constructorCalls + ' netCalls=' + ws.netCalls + ' mediaSeen=' + ws.mediaSeen
+            + ' rewrites=' + ws.rewrites + ' bytes=' + ws.bytesMB + 'MB 觀察' + ws.observedDays + '天 判讀=' + ws.verdict,
     ]
     const history = deps.DiagnosticLog.snapshot()
     lines.splice(5, 0,

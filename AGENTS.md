@@ -4,7 +4,7 @@
 
 目前不可變上游基準：`baseline/BiliCDN_TW_1.3.4.original.user.js`
 
-目前模組化候選：`src/` → `Release/v1.6.1/BiliCDN_TW.user.js`（驗收／安全狀態以本版 TEST_REPORT 為準）。
+目前模組化候選：`src/` → `Release/v1.6.2/BiliCDN_TW.user.js`（驗收／安全狀態以本版 TEST_REPORT 為準）。
 
 不可變重構基準：`tests/fixtures/BiliCDN_TW_1.5.5.user.js`（正式 v1.5.5 的原 bytes，非 development 草稿）。
 

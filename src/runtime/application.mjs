@@ -457,6 +457,7 @@ get DiagnosticLog(){return deps.DiagnosticLog},
     // One shared state cycle, independent of panel injection/visibility. No active networking here.
     setInterval(() => {
         deps.refreshExpiredRestrictions()
+        deps.checkWorkerInterceptState()
         deps.samplePlaybackQuality()
         if (!deps.disabled) deps.DiagnosticLog.sample(deps.readPlaybackDiagnostic())
         deps.refreshPublicDiagnosticSnapshot()

@@ -319,6 +319,7 @@ const buildContext = ({
     clipboardImpl = null, gmClipboardImpl = null,
     mediaCapabilities = null, mediaSourceSupport = null, now = Date.now(),
     gmContext = null, locks = null, pageGlobals = {}, initialUrl = 'https://www.bilibili.com/video/BV1test',
+    messageChannelImpl = undefined, blobImpl = undefined,
 } = {}) => {
     const gm = gmContext && gmContext.gm instanceof Map ? gmContext.gm : new Map()
     Object.entries(gmSeed).forEach(([key, value]) => { if (!gm.has(key)) gm.set(key, value) })
@@ -454,8 +455,8 @@ const buildContext = ({
         MutationObserver: FakeMutationObserver,
         PerformanceObserver: HarnessPerformanceObserver,
         BroadcastChannel: class extends FakeEventTarget { postMessage() {} close() {} },
-        MessageChannel: HarnessMessageChannel,
-        Blob: HarnessBlob,
+        MessageChannel: messageChannelImpl === undefined ? HarnessMessageChannel : messageChannelImpl,
+        Blob: blobImpl === undefined ? HarnessBlob : blobImpl,
         TextEncoder,
         TextDecoder,
         structuredClone,

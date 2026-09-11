@@ -1,5 +1,13 @@
 # 待辦
 
+## v1.6.2
+
+- [x] 將 Worker 的「0」拆成安裝狀態、constructor 呼叫、安全放行、包裝、bootstrap、網路與媒體觀察。
+- [x] 以私有 MessagePort 的固定 `ready` schema 確認 Worker bootstrap，不接受普通 Worker message。
+- [x] 偵測已安裝的 Worker constructor 是否被頁面替換；只記錄，不自動重裝。
+- [x] 診斷報告、唯讀快照與控制中心同步顯示本分頁及累計結果，不公開 Worker URL。
+- [x] 保持 Worker 預設關閉，不改播放、CDN 選路或主動量測參數。
+
 ## v1.6.1
 
 - [x] 將 update／download URL 固定指向本儲存庫 latest Release 的單一 `BiliCDN_TW.user.js`。

@@ -300,6 +300,8 @@ get mediaObservations() { return media.mediaObservations; },
 get runtimeGeneration() { return runtime.runtimeGeneration; },
 get playinfoEpoch() { return media.playinfoEpoch; },
 get bumpWorkerStats() { return workerStats.bumpWorkerStats; },
+get setWorkerInstallState() { return workerStats.setWorkerInstallState; },
+get noteWorkerDiagnostic() { return workerStats.noteWorkerDiagnostic; },
 get log() { return events.log; }
 });
 dom = createDom({
@@ -702,6 +704,7 @@ get clearRuntimeTimeout() { return runtime.clearRuntimeTimeout; },
 get probeDeferTimer() { return probe.probeDeferTimer; }, set probeDeferTimer(value) { probe.probeDeferTimer = value; },
 get probeDeferCount() { return probe.probeDeferCount; }, set probeDeferCount(value) { probe.probeDeferCount = value; },
 get syncWorkerDisabledState() { return worker.syncWorkerDisabledState; },
+get checkWorkerInterceptState() { return worker.checkWorkerInterceptState; },
 get uiInjectStatus() { return runtime.uiInjectStatus; }, set uiInjectStatus(value) { runtime.uiInjectStatus = value; },
 get fromHTML() { return dom.fromHTML; },
 get SettingsBarTitle() { return mediaPolicy.SettingsBarTitle; },

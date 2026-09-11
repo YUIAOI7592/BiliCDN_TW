@@ -70,12 +70,18 @@ const showWorkerStatsDialog = () => {
     const stats = deps.BiliCDNControls.workerStats()
     const lines = [
         'Worker 攔截：' + (deps.EnableWorkerIntercept ? '已開啟' : '預設關閉（目前數值為 0 屬正常）'),
-        'created=' + stats.created,
-        'netCalls=' + stats.netCalls,
-        'mediaSeen=' + stats.mediaSeen,
-        'rewrites=' + stats.rewrites,
-        'bytes=' + stats.bytesMB + ' MB',
-        '觀察天數=' + stats.observedDays,
+        '本分頁安裝狀態=' + stats.installState,
+        '本分頁 constructor 呼叫=' + stats.session.constructorCalls,
+        '本分頁成功包裝=' + stats.session.wrapped,
+        '本分頁 bootstrap 確認=' + stats.session.bootstrapReady,
+        '本分頁安全放行=' + JSON.stringify(stats.session.bypass),
+        '本分頁建立失敗=' + JSON.stringify(stats.session.failures),
+        '本分頁 constructor 被替換=' + stats.session.replacements,
+        '本分頁 netCalls=' + stats.session.netCalls + ' mediaSeen=' + stats.session.mediaSeen
+            + ' rewrites=' + stats.session.rewrites + ' bytes=' + stats.session.bytesMB + ' MB',
+        '累計 created=' + stats.created + ' ready=' + stats.bootstrapReady + ' constructors=' + stats.constructorCalls,
+        '累計 netCalls=' + stats.netCalls + ' mediaSeen=' + stats.mediaSeen + ' rewrites=' + stats.rewrites,
+        '累計 bytes=' + stats.bytesMB + ' MB｜觀察天數=' + stats.observedDays,
         '判讀=' + stats.verdict,
     ]
     return deps.TrustedMenuUI.openText({
@@ -226,7 +232,9 @@ function showControlCenter() {
                 + '）｜' + deps.describePlaybackBuffer(stats),
             '串流：' + deps.streamEstimate.videoMbps + '+' + deps.streamEstimate.audioMbps + ' Mbps｜codec 排序首位：' + codecLead,
             '異常節點：' + abnormal + '｜HTTPDNS：' + httpdns.mode + '｜Worker：'
-                + (deps.EnableWorkerIntercept ? ('created=' + worker.created + ' rewrites=' + worker.rewrites) : '停用'),
+                + (deps.EnableWorkerIntercept
+                    ? (worker.installState + '；本頁呼叫=' + worker.session.constructorCalls + '／包裝=' + worker.session.wrapped)
+                    : '停用'),
         ],
         items: [
             { label: '重新評估節點', action: 'reassess', onActivate: () => {

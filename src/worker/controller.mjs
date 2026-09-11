@@ -1,6 +1,9 @@
 import { WORKER_SOURCE } from 'bilicdn:worker';
 // State belongs to this instance; dependencies are the explicitly wired internal ports.
 export function createWorker(deps) {
+let installedWorkerConstructor = null
+let workerReplacementNoted = false
+
 const buildWorkerPolicy = () => {
     const target = deps.getWorkerCdnTarget()
     if (!deps.isValidCustomCdnHost(target)) return null
@@ -25,6 +28,7 @@ const syncWorkerCdnTarget = () => {
             if (!record || !record.port) throw new Error('missing private Worker control port')
             record.port.postMessage(message)
         } catch {
+            deps.noteWorkerDiagnostic('port-failure')
             try { record && record.port && record.port.close() } catch {}
             deps.biliCdnWorkers.delete(worker)
         }
@@ -40,14 +44,30 @@ const setupClassicWorkerIntercept = () => {
     // 維持空 Set——syncWorkerCdnTarget()/syncWorkerDisabledState() 的 forEach 在空 Set
     // 上單純不做事，不會因為開關關閉而丟例外。程式碼刻意保留不刪，等 workerStats()
     // 數據確認這段真的沒用後，才在未來版本整段移除（見 CHANGELOG）。
-    if (!deps.EnableWorkerIntercept) return
+    if (!deps.EnableWorkerIntercept) {
+        deps.setWorkerInstallState('disabled')
+        return
+    }
+    deps.setWorkerInstallState('installing')
+    deps.noteWorkerDiagnostic('install-attempt')
     try {
         const OriginalWorker = unsafeWindow.Worker
-        if (!OriginalWorker || OriginalWorker.__biliCdnPatched) return
+        if (!OriginalWorker) {
+            deps.noteWorkerDiagnostic('no-worker')
+            deps.setWorkerInstallState('unavailable')
+            return
+        }
+        if (OriginalWorker.__biliCdnPatched) {
+            deps.setWorkerInstallState('already-patched')
+            return
+        }
 
         const preferred = [...new Set(deps.PREFERRED_CDN_LIST.filter(deps.isValidCustomCdnHost))]
         const targetHost = deps.getWorkerCdnTarget()
-        if (!deps.isValidCustomCdnHost(targetHost)) return
+        if (!deps.isValidCustomCdnHost(targetHost)) {
+            deps.setWorkerInstallState('invalid-target')
+            return
+        }
         const forceList = deps.getWorkerForceList()
 
         const sharedWorkerPatch = (originalUrl, capability) => {
@@ -111,8 +131,16 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
             const expected = [...keys].sort()
             return actual.length === expected.length && actual.every((key, index) => key === expected[index])
         }
-        const handlePrivateWorkerReport = data => {
+        const handlePrivateWorkerReport = (data, worker) => {
             if (deps.disabled) return false
+            if (hasExactWorkerKeys(data, ['version', 'type'])
+                && data.version === 1 && data.type === 'ready') {
+                const record = deps.workerControlPorts.get(worker)
+                if (!record || record.ready) return false
+                record.ready = true
+                deps.noteWorkerDiagnostic('bootstrap-ready')
+                return true
+            }
             if (hasExactWorkerKeys(data, ['version', 'type', 'host', 'bytes'])
                 && data.version === 1 && data.type === 'bytes'
                 && deps.isValidCustomCdnHost(data.host)
@@ -154,10 +182,10 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
             let channel = null
             try {
                 channel = new NativeMessageChannel()
-                const record = { port: channel.port1, blobUrl, revokeTimer: null }
+                const record = { port: channel.port1, blobUrl, revokeTimer: null, ready: false }
                 deps.workerControlPorts.set(worker, record)
                 deps.biliCdnWorkers.add(worker)
-                channel.port1.onmessage = event => { handlePrivateWorkerReport(event && event.data) }
+                channel.port1.onmessage = event => { handlePrivateWorkerReport(event && event.data, worker) }
                 try { channel.port1.start() } catch {}
                 OriginalWorkerPostMessage.call(worker, { __biliCdnBootstrap: capability }, [channel.port2])
                 const policy = buildWorkerPolicy()
@@ -177,22 +205,41 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
             }
         }
 
-        unsafeWindow.Worker = class Worker extends OriginalWorker {
+        installedWorkerConstructor = class Worker extends OriginalWorker {
             constructor(scriptURL, options) {
-                if (deps.disabled) return super(scriptURL, options)
+                deps.noteWorkerDiagnostic('constructor-call')
+                if (deps.disabled) {
+                    deps.noteWorkerDiagnostic('bypass-disabled')
+                    return super(scriptURL, options)
+                }
                 let originalUrl, source, blobUrl, capability
                 try {
                     originalUrl = new URL(String(scriptURL), location.href).href
-                    if (originalUrl.startsWith('blob:') || originalUrl.startsWith('data:')) {
+                    if (originalUrl.startsWith('blob:')) {
+                        deps.noteWorkerDiagnostic('bypass-blob')
+                        return super(scriptURL, options)
+                    }
+                    if (originalUrl.startsWith('data:')) {
+                        deps.noteWorkerDiagnostic('bypass-data')
                         return super(scriptURL, options)
                     }
                     const isModule = !!(options && options.type === 'module')
                     if (isModule && new URL(originalUrl).origin !== location.origin) {
+                        deps.noteWorkerDiagnostic('bypass-cross-origin-module')
                         return super(scriptURL, options)
                     }
                     capability = createWorkerCapability()
                     // 安全亂數、Blob 或私有 MessagePort 任一不可用時，不做功能較弱的降級攔截。
-                    if (!capability || !NativeBlob || !NativeCreateObjectURL || !NativeMessageChannel) {
+                    if (!capability) {
+                        deps.noteWorkerDiagnostic('bypass-no-random')
+                        return super(scriptURL, options)
+                    }
+                    if (!NativeBlob || !NativeCreateObjectURL) {
+                        deps.noteWorkerDiagnostic('bypass-no-blob-api')
+                        return super(scriptURL, options)
+                    }
+                    if (!NativeMessageChannel) {
+                        deps.noteWorkerDiagnostic('bypass-no-message-channel')
                         return super(scriptURL, options)
                     }
                     deps.log('[Worker] patched: ' + originalUrl)
@@ -202,17 +249,27 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
                     const blob = new NativeBlob([source], { type: 'application/javascript' })
                     blobUrl = NativeCreateObjectURL(blob)
                 } catch {
+                    if (!originalUrl) deps.noteWorkerDiagnostic('resolve-failure')
+                    else deps.noteWorkerDiagnostic('build-failure')
                     return super(scriptURL, options)
                 }
-                const worker = super(blobUrl, options)
+                let worker
+                try {
+                    worker = super(blobUrl, options)
+                } catch {
+                    deps.noteWorkerDiagnostic('constructor-failure')
+                    try { if (NativeRevokeObjectURL) NativeRevokeObjectURL(blobUrl) } catch {}
+                    return new OriginalWorker(scriptURL, options)
+                }
                 if (!registerWorker(worker, capability, blobUrl)) {
+                    deps.noteWorkerDiagnostic('register-failure')
                     try {
                         if (typeof OriginalWorkerTerminate === 'function') OriginalWorkerTerminate.call(worker)
                     } catch {}
                     try { if (NativeRevokeObjectURL) NativeRevokeObjectURL(blobUrl) } catch {}
                     return new OriginalWorker(scriptURL, options)
                 }
-                deps.bumpWorkerStats({ created: 1, sample: originalUrl })
+                deps.noteWorkerDiagnostic('wrapped', originalUrl)
                 return worker
             }
 
@@ -223,13 +280,33 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
                 }
             }
         }
+        unsafeWindow.Worker = installedWorkerConstructor
         unsafeWindow.Worker.__biliCdnPatched = true
-    } catch (e) {}
+        deps.setWorkerInstallState('installed')
+    } catch (e) {
+        deps.noteWorkerDiagnostic('install-failure')
+        deps.setWorkerInstallState('failed')
+    }
+}
+
+const checkWorkerInterceptState = () => {
+    if (!deps.EnableWorkerIntercept || !installedWorkerConstructor || workerReplacementNoted) return
+    try {
+        if (unsafeWindow.Worker === installedWorkerConstructor) return
+        workerReplacementNoted = true
+        deps.noteWorkerDiagnostic('constructor-replaced')
+        deps.setWorkerInstallState('replaced')
+    } catch {
+        workerReplacementNoted = true
+        deps.noteWorkerDiagnostic('constructor-replaced')
+        deps.setWorkerInstallState('replaced')
+    }
 }
 
 setupClassicWorkerIntercept()
 return { /* TEST_EXPORTS:worker */
 get syncWorkerCdnTarget() { return syncWorkerCdnTarget; },
-get syncWorkerDisabledState() { return syncWorkerDisabledState; }
+get syncWorkerDisabledState() { return syncWorkerDisabledState; },
+get checkWorkerInterceptState() { return checkWorkerInterceptState; }
 };
 }

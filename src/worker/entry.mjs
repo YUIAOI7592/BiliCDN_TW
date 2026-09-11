@@ -84,6 +84,7 @@ const biliCdnBootstrap = (event) => {
     BILICDN_CONTROL_PORT.onmessage = (portEvent) => { biliCdnApplyPolicy(portEvent && portEvent.data); };
     try { BILICDN_CONTROL_PORT.start(); } catch (e) {}
     BILICDN_NATIVE_REMOVE_EVENT('message', biliCdnBootstrap);
+    biliCdnPostPrivate({ version: 1, type: 'ready' });
     biliCdnFlushStat();
 };
 BILICDN_NATIVE_ADD_EVENT('message', biliCdnBootstrap);

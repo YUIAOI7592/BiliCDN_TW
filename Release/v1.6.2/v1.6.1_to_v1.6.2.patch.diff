@@ -1,0 +1,515 @@
+diff --git a/Release/v1.6.1/BiliCDN_TW.user.js b/Release/v1.6.2/BiliCDN_TW.user.js
+index 9e2f3ab..76c0a60 100644
+--- a/Release/v1.6.1/BiliCDN_TW.user.js
++++ b/Release/v1.6.2/BiliCDN_TW.user.js
+@@ -1,7 +1,7 @@
+ // ==UserScript==
+ // @name         Bilibili CDN 台灣優化
+ // @namespace    BiliCDN_TW
+-// @version      1.6.1
++// @version      1.6.2
+ // @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+ // @author       jiyunshi <chocosensei214@gmail.com>
+ // @license      MIT
+@@ -90,7 +90,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let PreferredVideoCodec = input.PreferredVideoCodec;
+     let BlockWebRTC = input.BlockWebRTC;
+     let EnableWorkerIntercept = input.EnableWorkerIntercept;
+-    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.6.1";
++    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.6.2";
+     const parseVer = /* @__PURE__ */ __name((v) => String(v || "0").split(".").map((n) => parseInt(n, 10) || 0), "parseVer");
+     const verGte = /* @__PURE__ */ __name((a, b) => {
+       const A = parseVer(a), B = parseVer(b);
+@@ -3911,6 +3911,46 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     const WORKER_STATS_SAVE_MS = 5e3;
+     const WORKER_STATS_MAX_SAMPLES = 5;
+     const WORKER_STAT_COUNTER_MAX = 1e9;
++    const WORKER_INSTALL_STATES = /* @__PURE__ */ new Set([
++      "disabled",
++      "pending",
++      "installing",
++      "installed",
++      "unavailable",
++      "already-patched",
++      "invalid-target",
++      "failed",
++      "replaced"
++    ]);
++    const WORKER_DIAGNOSTIC_COUNTERS = Object.freeze({
++      "install-attempt": "installAttempts",
++      "install-failure": "installFailures",
++      "no-worker": "noWorker",
++      "constructor-call": "constructorCalls",
++      "wrapped": "created",
++      "bootstrap-ready": "bootstrapReady",
++      "bypass-disabled": "bypassDisabled",
++      "bypass-blob": "bypassBlob",
++      "bypass-data": "bypassData",
++      "bypass-cross-origin-module": "bypassCrossOriginModule",
++      "bypass-no-random": "bypassNoRandom",
++      "bypass-no-blob-api": "bypassNoBlobApi",
++      "bypass-no-message-channel": "bypassNoMessageChannel",
++      "resolve-failure": "resolveFailures",
++      "build-failure": "buildFailures",
++      "constructor-failure": "constructorFailures",
++      "register-failure": "registerFailures",
++      "port-failure": "portFailures",
++      "constructor-replaced": "replacements"
++    });
++    const WORKER_COUNTER_KEYS = Object.freeze([.../* @__PURE__ */ new Set([
++      "created",
++      "netCalls",
++      "mediaSeen",
++      "rewrites",
++      "bytes",
++      ...Object.values(WORKER_DIAGNOSTIC_COUNTERS)
++    ])]);
+     const sanitizeWorkerCounter = /* @__PURE__ */ __name((value) => Number.isFinite(+value) ? Math.max(0, Math.min(WORKER_STAT_COUNTER_MAX, Math.trunc(+value))) : 0, "sanitizeWorkerCounter");
+     const sanitizeWorkerTimestamp = /* @__PURE__ */ __name((value) => Number.isFinite(+value) ? Math.max(0, Math.trunc(+value)) : 0, "sanitizeWorkerTimestamp");
+     const sanitizeWorkerSample = /* @__PURE__ */ __name((value) => {
+@@ -3921,23 +3961,29 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         return null;
+       }
+     }, "sanitizeWorkerSample");
++    const emptyWorkerStats = /* @__PURE__ */ __name(() => ({
++      ...Object.fromEntries(WORKER_COUNTER_KEYS.map((key) => [key, 0])),
++      firstAt: 0,
++      lastAt: 0,
++      samples: []
++    }), "emptyWorkerStats");
+     const workerStats = (() => {
+       try {
+         const raw = JSON.parse(GM_getValue(WORKER_STATS_KEY) || "{}") || {};
+         return {
+-          created: sanitizeWorkerCounter(raw.created),
+-          netCalls: sanitizeWorkerCounter(raw.netCalls),
+-          mediaSeen: sanitizeWorkerCounter(raw.mediaSeen),
+-          rewrites: sanitizeWorkerCounter(raw.rewrites),
+-          bytes: sanitizeWorkerCounter(raw.bytes),
++          ...Object.fromEntries(WORKER_COUNTER_KEYS.map((key) => [key, sanitizeWorkerCounter(raw[key])])),
+           firstAt: sanitizeWorkerTimestamp(raw.firstAt),
+           lastAt: sanitizeWorkerTimestamp(raw.lastAt),
+           samples: Array.isArray(raw.samples) ? raw.samples.map(sanitizeWorkerSample).filter(Boolean).slice(0, WORKER_STATS_MAX_SAMPLES) : []
+         };
+       } catch {
+-        return { created: 0, netCalls: 0, mediaSeen: 0, rewrites: 0, bytes: 0, firstAt: 0, lastAt: 0, samples: [] };
++        return emptyWorkerStats();
+       }
+     })();
++    const sessionWorkerStats = {
++      installState: deps.EnableWorkerIntercept ? "pending" : "disabled",
++      ...Object.fromEntries(WORKER_COUNTER_KEYS.map((key) => [key, 0]))
++    };
+     let workerStatsSaveTimer = null;
+     const flushWorkerStats = /* @__PURE__ */ __name(() => {
+       if (workerStatsSaveTimer) {
+@@ -3961,9 +4007,13 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const now = Date.now();
+       if (!workerStats.firstAt) workerStats.firstAt = now;
+       workerStats.lastAt = now;
+-      ["created", "netCalls", "mediaSeen", "rewrites", "bytes"].forEach((k) => {
+-        const delta = sanitizeWorkerCounter(patch[k]);
+-        if (delta) workerStats[k] = Math.min(WORKER_STAT_COUNTER_MAX, workerStats[k] + delta);
++      WORKER_COUNTER_KEYS.forEach((key) => {
++        const delta = sanitizeWorkerCounter(patch[key]);
++        if (!delta) return;
++        workerStats[key] = Math.min(WORKER_STAT_COUNTER_MAX, workerStats[key] + delta);
++        if (["netCalls", "mediaSeen", "rewrites", "bytes"].includes(key)) {
++          sessionWorkerStats[key] = Math.min(WORKER_STAT_COUNTER_MAX, sessionWorkerStats[key] + delta);
++        }
+       });
+       const sample = sanitizeWorkerSample(patch.sample);
+       if (sample && !workerStats.samples.includes(sample)) {
+@@ -3972,18 +4022,71 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       scheduleWorkerStatsSave();
+     }, "bumpWorkerStats");
++    const setWorkerInstallState = /* @__PURE__ */ __name((state) => {
++      if (!WORKER_INSTALL_STATES.has(state)) return false;
++      sessionWorkerStats.installState = state;
++      return true;
++    }, "setWorkerInstallState");
++    const noteWorkerDiagnostic = /* @__PURE__ */ __name((code, sample) => {
++      const key = WORKER_DIAGNOSTIC_COUNTERS[code];
++      if (!key) return false;
++      sessionWorkerStats[key] = Math.min(WORKER_STAT_COUNTER_MAX, sessionWorkerStats[key] + 1);
++      bumpWorkerStats({ [key]: 1, ...code === "wrapped" ? { sample } : {} });
++      return true;
++    }, "noteWorkerDiagnostic");
+     window.addEventListener("pagehide", flushWorkerStats);
+     const summarizeWorkerStats = /* @__PURE__ */ __name(() => {
+       const days = workerStats.firstAt ? Math.max(1, Math.round((Date.now() - workerStats.firstAt) / 864e5)) : 0;
+-      let verdict = deps.EnableWorkerIntercept ? "尚無資料（先播放影片數分鐘再查）" : "Worker 攔截目前停用；要量測需將 EnableWorkerIntercept 改為 true 後重整";
+-      if (workerStats.firstAt) {
+-        if (workerStats.created === 0) verdict = "完全沒攔到 Worker → 可考慮移除";
+-        else if (workerStats.netCalls === 0) verdict = "有 Worker 但從未發出網路請求 → 可考慮移除";
+-        else if (workerStats.mediaSeen === 0) verdict = "有網路請求但都不是影片分段 → 可考慮移除";
+-        else verdict = "有攔到影片分段 → 建議保留";
++      const s = sessionWorkerStats;
++      const bypassTotal = s.bypassDisabled + s.bypassBlob + s.bypassData + s.bypassCrossOriginModule + s.bypassNoRandom + s.bypassNoBlobApi + s.bypassNoMessageChannel;
++      const failureTotal = s.installFailures + s.resolveFailures + s.buildFailures + s.constructorFailures + s.registerFailures + s.portFailures;
++      let verdict = "Worker 攔截目前停用；開啟後重整才能量測";
++      if (deps.EnableWorkerIntercept) {
++        if (s.installState === "unavailable") verdict = "此頁載入時沒有可攔截的 Worker constructor";
++        else if (s.installState === "already-patched") verdict = "Worker 已被其他實例標記為攔截；本實例無法判讀其內部活動";
++        else if (s.installState === "invalid-target") verdict = "沒有合法 catalog target，攔截器未安裝";
++        else if (s.installState === "failed") verdict = "攔截器安裝失敗；請複製診斷報告";
++        else if (s.installState === "replaced") verdict = "攔截器安裝後被頁面替換，後續 Worker 不在量測範圍";
++        else if (s.constructorCalls === 0) verdict = "攔截器已安裝，但本分頁尚未呼叫可見的 Worker constructor";
++        else if (s.created === 0 && bypassTotal > 0) verdict = "已看見 Worker 呼叫，但全部依安全／來源規則原樣放行";
++        else if (s.created === 0 && failureTotal > 0) verdict = "已看見 Worker 呼叫，但包裝或私有通道建立失敗";
++        else if (s.created > 0 && s.bootstrapReady === 0) verdict = "已建立包裝 Worker，但尚未收到私有 bootstrap 確認";
++        else if (s.netCalls === 0) verdict = "本分頁已確認包裝 Worker，但尚未觀察到其網路請求";
++        else if (s.mediaSeen === 0) verdict = "本分頁 Worker 有網路請求，但尚未觀察到媒體分段";
++        else verdict = "Worker 已觀察到媒體分段；攔截功能在此頁有實際用途";
+       }
+       return {
++        installState: s.installState,
++        session: {
++          constructorCalls: s.constructorCalls,
++          wrapped: s.created,
++          bootstrapReady: s.bootstrapReady,
++          bypass: {
++            disabled: s.bypassDisabled,
++            blob: s.bypassBlob,
++            data: s.bypassData,
++            crossOriginModule: s.bypassCrossOriginModule,
++            noRandom: s.bypassNoRandom,
++            noBlobApi: s.bypassNoBlobApi,
++            noMessageChannel: s.bypassNoMessageChannel
++          },
++          failures: {
++            install: s.installFailures,
++            resolve: s.resolveFailures,
++            build: s.buildFailures,
++            constructor: s.constructorFailures,
++            register: s.registerFailures,
++            port: s.portFailures
++          },
++          replacements: s.replacements,
++          netCalls: s.netCalls,
++          mediaSeen: s.mediaSeen,
++          rewrites: s.rewrites,
++          bytesMB: +((s.bytes || 0) / 1024 / 1024).toFixed(2)
++        },
+         created: workerStats.created,
++        bootstrapReady: workerStats.bootstrapReady,
++        constructorCalls: workerStats.constructorCalls,
+         netCalls: workerStats.netCalls,
+         mediaSeen: workerStats.mediaSeen,
+         rewrites: workerStats.rewrites,
+@@ -4006,6 +4109,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get bumpWorkerStats() {
+         return bumpWorkerStats;
+       },
++      get setWorkerInstallState() {
++        return setWorkerInstallState;
++      },
++      get noteWorkerDiagnostic() {
++        return noteWorkerDiagnostic;
++      },
+       get summarizeWorkerStats() {
+         return summarizeWorkerStats;
+       }
+@@ -4162,10 +4271,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+   __name(createFailures, "createFailures");
+ 
+   // embedded:worker
+-  var WORKER_SOURCE = '(() => {\n  var __defProp = Object.defineProperty;\n  var __name = (target, value) => __defProp(target, "name", { value, configurable: true });\n\n  // src/policy/url-policy.mjs\n  function createMediaUrlPolicy() {\n    const MEDIA_URL_MAX_LENGTH = 16 * 1024;\n    const PCDN_SOURCE_SUFFIXES = Object.freeze([\n      "szbdyd.com",\n      "mountaintoys.cn",\n      "nexusedgeio.com",\n      "ahdohpiechei.com"\n    ]);\n    const PCDN_SOURCE_HOSTS = Object.freeze(/* @__PURE__ */ new Set([\n      "upos-sz-mirror14b.bilivideo.com"\n    ]));\n    const IPV4_HOST_RE = /^(?:\\d{1,3}\\.){3}\\d{1,3}$/;\n    const MEDIA_PATH_RE = /\\.(?:m4s|mp4|flv|m3u8)$/i;\n    const hostHasSuffix = /* @__PURE__ */ __name((host, suffix) => host === suffix || host.endsWith("." + suffix), "hostHasSuffix");\n    const parseMediaHttpUrl = /* @__PURE__ */ __name((value) => {\n      if (typeof value !== "string" || !value || value.length > MEDIA_URL_MAX_LENGTH) return null;\n      try {\n        const u = new URL(value.startsWith("//") ? "https:" + value : value);\n        return u.protocol === "http:" || u.protocol === "https:" ? u : null;\n      } catch {\n        return null;\n      }\n    }, "parseMediaHttpUrl");\n    const isMediaDeliveryPath = /* @__PURE__ */ __name((path) => !!path && (MEDIA_PATH_RE.test(path) || path.includes("/upgcxcode/") || path.startsWith("/v1/resource") || path.includes("/live-bvc/")), "isMediaDeliveryPath");\n    const classifyMediaDelivery = /* @__PURE__ */ __name((value) => {\n      const u = parseMediaHttpUrl(value);\n      if (!u || !isMediaDeliveryPath(u.pathname)) return Object.freeze({ kind: "unknown", reason: "invalid-or-non-media", host: "" });\n      const host = u.hostname.toLowerCase();\n      if (u.pathname.includes("/live-bvc/")) return Object.freeze({ kind: "live", reason: "live-bvc", host });\n      const firstLabel = host.split(".")[0];\n      const mcdn = /\\.mcdn\\.bilivideo\\.(?:cn|com|net)$/i.test(host);\n      const knownSuffix = PCDN_SOURCE_SUFFIXES.some((suffix) => hostHasSuffix(host, suffix));\n      const knownHost = PCDN_SOURCE_HOSTS.has(host);\n      const redirectHost = firstLabel.startsWith("upos-") && firstLabel.includes("302");\n      const querySignal = String(u.searchParams.get("os") || "").toLowerCase() === "mcdn";\n      const nonDefaultPort = !!u.port && u.port !== "80" && u.port !== "443";\n      const ipPort = IPV4_HOST_RE.test(host) && nonDefaultPort;\n      if (mcdn || knownSuffix || knownHost || redirectHost || querySignal || ipPort) {\n        const reason = mcdn ? "mcdn-host" : knownSuffix ? "known-pcdn-suffix" : knownHost ? "known-pcdn-host" : redirectHost ? "upos-302" : querySignal ? "os-mcdn" : "ip-port";\n        return Object.freeze({ kind: "pcdn", reason, host });\n      }\n      if (nonDefaultPort) return Object.freeze({ kind: "suspected-pcdn", reason: "non-default-port", host });\n      return Object.freeze({ kind: "normal", reason: "normal", host });\n    }, "classifyMediaDelivery");\n    const decide = /* @__PURE__ */ __name((value) => {\n      const parsed = parseMediaHttpUrl(value);\n      const delivery = classifyMediaDelivery(value);\n      if (!parsed || delivery.kind === "unknown") return { action: "pass", reason: "invalid-or-non-media", delivery };\n      if (parsed.pathname.startsWith("/v1/resource")) return { action: "pass", reason: "resource", delivery };\n      if (delivery.kind === "live" || delivery.kind === "suspected-pcdn") return { action: "pass", reason: delivery.kind, delivery };\n      const host = parsed.hostname;\n      const sourceAllowed = delivery.kind === "pcdn" || /\\.bilivideo\\.(?:com|cn|net)$/i.test(host) || host.endsWith(".akamaized.net");\n      return { action: sourceAllowed ? "rewrite" : "pass", reason: sourceAllowed ? "media" : "unknown-source", delivery };\n    }, "decide");\n    return {\n      parse: parseMediaHttpUrl,\n      classify: classifyMediaDelivery,\n      decide,\n      isMediaPath: isMediaDeliveryPath,\n      suffixes: PCDN_SOURCE_SUFFIXES,\n      hosts: PCDN_SOURCE_HOSTS,\n      hostHasSuffix,\n      maxLength: MEDIA_URL_MAX_LENGTH,\n      mediaPathPattern: MEDIA_PATH_RE\n    };\n  }\n  __name(createMediaUrlPolicy, "createMediaUrlPolicy");\n\n  // src/worker/entry.mjs\n  function installWorker(configuration) {\n    var _a;\n    const BILICDN_BASE = configuration.originalUrl;\n    const BILICDN_BOOTSTRAP_TOKEN = configuration.capability;\n    const BILICDN_CATALOG = Object.freeze(configuration.catalog);\n    const BILICDN_CATALOG_SET = new Set(BILICDN_CATALOG);\n    const BILICDN_PCDN_SUFFIXES = Object.freeze(configuration.suffixes);\n    const BILICDN_PCDN_HOSTS = new Set(configuration.hosts);\n    const BILICDN_URL_MAX = 16 * 1024;\n    const BILICDN_BYTES_MAX = 256 * 1024 * 1024;\n    const BILICDN_STAT_MAX = 1e4;\n    const BILICDN_REPORT_MS = 200;\n    let BILICDN_TARGET_HOST = configuration.target;\n    let BILICDN_FORCE = configuration.force;\n    let BILICDN_PREFERRED = configuration.preferred;\n    let BILICDN_EXCLUDED = configuration.excluded;\n    let BILICDN_DISABLED = false;\n    let BILICDN_CONTROL_PORT = null;\n    let BILICDN_STAT = { netCalls: 0, mediaSeen: 0, rewrites: 0 };\n    let BILICDN_STAT_TIMER = null;\n    const BILICDN_NATIVE_ADD_EVENT = self.addEventListener.bind(self);\n    const BILICDN_NATIVE_REMOVE_EVENT = self.removeEventListener.bind(self);\n    const BILICDN_NATIVE_STOP_IMMEDIATE = typeof Event !== "undefined" && Event.prototype && Event.prototype.stopImmediatePropagation;\n    const biliCdnCatalogArray = /* @__PURE__ */ __name((value) => {\n      if (!Array.isArray(value) || value.length > BILICDN_CATALOG.length) return null;\n      const out = [];\n      for (const entry of value) {\n        if (typeof entry !== "string") return null;\n        const host = entry.trim().toLowerCase();\n        if (!BILICDN_CATALOG_SET.has(host)) return null;\n        if (out.indexOf(host) === -1) out.push(host);\n      }\n      return out;\n    }, "biliCdnCatalogArray");\n    const biliCdnApplyPolicy = /* @__PURE__ */ __name((data) => {\n      if (!data || data.version !== 1 || data.type !== "policy" || typeof data.target !== "string" || !BILICDN_CATALOG_SET.has(data.target) || typeof data.disabled !== "boolean") return false;\n      const preferredNext = biliCdnCatalogArray(data.preferred);\n      const forceNext = biliCdnCatalogArray(data.force);\n      const excludedNext = biliCdnCatalogArray(data.excluded);\n      if (!preferredNext || !forceNext || !excludedNext) return false;\n      BILICDN_TARGET_HOST = data.target;\n      BILICDN_PREFERRED = preferredNext;\n      BILICDN_FORCE = forceNext;\n      BILICDN_EXCLUDED = excludedNext;\n      BILICDN_DISABLED = data.disabled;\n      return true;\n    }, "biliCdnApplyPolicy");\n    const biliCdnPostPrivate = /* @__PURE__ */ __name((message) => {\n      if (!BILICDN_CONTROL_PORT) return false;\n      try {\n        BILICDN_CONTROL_PORT.postMessage(message);\n        return true;\n      } catch (e) {\n        return false;\n      }\n    }, "biliCdnPostPrivate");\n    const biliCdnFlushStat = /* @__PURE__ */ __name(() => {\n      if (!BILICDN_STAT.netCalls && !BILICDN_STAT.mediaSeen && !BILICDN_STAT.rewrites) return;\n      if (biliCdnPostPrivate({\n        version: 1,\n        type: "stats",\n        netCalls: BILICDN_STAT.netCalls,\n        mediaSeen: BILICDN_STAT.mediaSeen,\n        rewrites: BILICDN_STAT.rewrites\n      })) BILICDN_STAT = { netCalls: 0, mediaSeen: 0, rewrites: 0 };\n    }, "biliCdnFlushStat");\n    const biliCdnBumpStat = /* @__PURE__ */ __name((key) => {\n      if (!Object.prototype.hasOwnProperty.call(BILICDN_STAT, key)) return;\n      BILICDN_STAT[key] = Math.min(BILICDN_STAT_MAX, BILICDN_STAT[key] + 1);\n      if (!BILICDN_STAT_TIMER) {\n        BILICDN_STAT_TIMER = setTimeout(() => {\n          BILICDN_STAT_TIMER = null;\n          biliCdnFlushStat();\n        }, BILICDN_REPORT_MS);\n      }\n    }, "biliCdnBumpStat");\n    const biliCdnBootstrap = /* @__PURE__ */ __name((event) => {\n      const data = event && event.data;\n      const ports = event && event.ports;\n      if (BILICDN_CONTROL_PORT || !data || data.__biliCdnBootstrap !== BILICDN_BOOTSTRAP_TOKEN || !ports || ports.length !== 1 || !ports[0]) return;\n      try {\n        if (typeof BILICDN_NATIVE_STOP_IMMEDIATE === "function") BILICDN_NATIVE_STOP_IMMEDIATE.call(event);\n        else event.stopImmediatePropagation();\n      } catch (e) {\n        try {\n          event.stopImmediatePropagation();\n        } catch (e2) {\n        }\n      }\n      BILICDN_CONTROL_PORT = ports[0];\n      BILICDN_CONTROL_PORT.onmessage = (portEvent) => {\n        biliCdnApplyPolicy(portEvent && portEvent.data);\n      };\n      try {\n        BILICDN_CONTROL_PORT.start();\n      } catch (e) {\n      }\n      BILICDN_NATIVE_REMOVE_EVENT("message", biliCdnBootstrap);\n      biliCdnFlushStat();\n    }, "biliCdnBootstrap");\n    BILICDN_NATIVE_ADD_EVENT("message", biliCdnBootstrap);\n    const biliCdnAbs = /* @__PURE__ */ __name((url) => {\n      const raw = String(url);\n      if (!raw || raw.length > BILICDN_URL_MAX) return null;\n      try {\n        return new URL(raw, BILICDN_BASE).href;\n      } catch {\n        return null;\n      }\n    }, "biliCdnAbs");\n    const biliCdnHostSuffix = /* @__PURE__ */ __name((host, suffix) => host === suffix || host.endsWith("." + suffix), "biliCdnHostSuffix");\n    const biliCdnIsUnstable = /* @__PURE__ */ __name((host) => {\n      if (!host) return false;\n      const normalized = String(host).toLowerCase();\n      const first = normalized.split(".")[0];\n      return /\\.mcdn\\.bilivideo\\.(cn|com|net)$/i.test(normalized) || BILICDN_PCDN_SUFFIXES.some((suffix) => biliCdnHostSuffix(normalized, suffix)) || BILICDN_PCDN_HOSTS.has(normalized) || first.startsWith("upos-") && first.includes("302") || /^cn-[a-z]{2,8}-/i.test(normalized) && normalized.endsWith(".bilivideo.com");\n    }, "biliCdnIsUnstable");\n    const BILICDN_MEDIA_POLICY = createMediaUrlPolicy();\n    const biliCdnClassify = /* @__PURE__ */ __name((url) => BILICDN_MEDIA_POLICY.classify(url).kind, "biliCdnClassify");\n    const biliCdnNoteSeg = /* @__PURE__ */ __name((url, bytes) => {\n      if (!Number.isFinite(bytes) || !Number.isInteger(bytes) || bytes <= 0 || bytes > BILICDN_BYTES_MAX) return;\n      try {\n        const host = new URL(url).hostname.toLowerCase();\n        if (BILICDN_CATALOG_SET.has(host)) {\n          biliCdnPostPrivate({ version: 1, type: "bytes", host, bytes });\n        }\n      } catch (e) {\n      }\n    }, "biliCdnNoteSeg");\n    const biliCdnIsMedia = /* @__PURE__ */ __name((url) => {\n      if (typeof url !== "string" || !url || url.length > BILICDN_URL_MAX) return false;\n      try {\n        const u = new URL(url);\n        const host = u.hostname;\n        const verdict = biliCdnClassify(url);\n        if (verdict === "pcdn" || verdict === "suspected-pcdn" || verdict === "live") return true;\n        if (!(host.endsWith(".bilivideo.com") || host.endsWith(".bilivideo.cn") || host.endsWith(".bilivideo.net"))) return false;\n        return /\\.(m4s|mp4|flv|m3u8)$/i.test(u.pathname) || u.pathname.includes("/upgcxcode/");\n      } catch {\n        return false;\n      }\n    }, "biliCdnIsMedia");\n    const biliCdnNeedsRedirect = /* @__PURE__ */ __name((host, verdict) => !!host && (verdict === "pcdn" || biliCdnIsUnstable(host) || BILICDN_EXCLUDED.indexOf(host) !== -1 || BILICDN_FORCE.indexOf(host) !== -1 || BILICDN_PREFERRED.indexOf(host) === -1), "biliCdnNeedsRedirect");\n    const biliCdnRewrite = /* @__PURE__ */ __name((url) => {\n      try {\n        if (BILICDN_DISABLED) return url;\n        biliCdnBumpStat("netCalls");\n        const absolute = biliCdnAbs(url);\n        if (!absolute || !biliCdnIsMedia(absolute)) return url;\n        biliCdnBumpStat("mediaSeen");\n        const parsed = new URL(absolute);\n        const verdict = biliCdnClassify(absolute);\n        if (BILICDN_MEDIA_POLICY.decide(absolute).action !== "rewrite") return url;\n        if (/^\\/v1\\/resource/.test(parsed.pathname)) return absolute;\n        if (!biliCdnNeedsRedirect(parsed.hostname, verdict) || parsed.hostname === BILICDN_TARGET_HOST) return absolute;\n        if (!BILICDN_CATALOG_SET.has(BILICDN_TARGET_HOST)) return absolute;\n        parsed.hostname = BILICDN_TARGET_HOST;\n        parsed.port = "";\n        if (parsed.href.length > BILICDN_URL_MAX) return url;\n        biliCdnBumpStat("rewrites");\n        return parsed.toString();\n      } catch {\n        return url;\n      }\n    }, "biliCdnRewrite");\n    if (self.fetch) {\n      const OriginalFetch = self.fetch.bind(self);\n      const biliCdnCloneResponse = /* @__PURE__ */ __name((resp, body) => {\n        const out = new Response(body, { status: resp.status, statusText: resp.statusText, headers: resp.headers });\n        ["url", "redirected", "type"].forEach((key) => {\n          try {\n            Object.defineProperty(out, key, { value: resp[key], configurable: true });\n          } catch (e) {\n          }\n        });\n        return out;\n      }, "biliCdnCloneResponse");\n      self.fetch = (input, init) => {\n        const url = input instanceof Request ? input.url : String(input);\n        const rewritten = biliCdnRewrite(url);\n        if (rewritten !== url && input instanceof Request) {\n          input = new Request(rewritten, {\n            method: input.method,\n            headers: input.headers,\n            body: input.method === "GET" || input.method === "HEAD" ? void 0 : input.body,\n            mode: input.mode === "navigate" ? "same-origin" : input.mode,\n            credentials: input.credentials,\n            cache: input.cache,\n            redirect: input.redirect,\n            referrer: input.referrer,\n            referrerPolicy: input.referrerPolicy,\n            integrity: input.integrity,\n            keepalive: input.keepalive,\n            signal: input.signal\n          });\n        } else if (rewritten !== url) {\n          input = rewritten;\n        }\n        return OriginalFetch(input, init).then((resp) => {\n          try {\n            const mediaUrl = resp && (resp.url || rewritten);\n            if (!resp || !resp.body || typeof resp.body.getReader !== "function" || typeof ReadableStream === "undefined" || !biliCdnIsMedia(mediaUrl)) return resp;\n            const reader = resp.body.getReader();\n            let pending = 0, lastReport = 0;\n            const flush = /* @__PURE__ */ __name((force) => {\n              const now = Date.now();\n              if (!pending) return;\n              if (!force && now - lastReport < BILICDN_REPORT_MS) return;\n              lastReport = now;\n              biliCdnNoteSeg(mediaUrl, pending);\n              pending = 0;\n            }, "flush");\n            const body = new ReadableStream({\n              pull(controller) {\n                return reader.read().then(({ done, value }) => {\n                  if (done) {\n                    flush(true);\n                    controller.close();\n                    return;\n                  }\n                  if (value && value.byteLength) {\n                    pending += value.byteLength;\n                    flush(false);\n                  }\n                  if (value !== void 0) controller.enqueue(value);\n                }).catch((error) => {\n                  flush(true);\n                  controller.error(error);\n                });\n              },\n              cancel(reason) {\n                flush(true);\n                try {\n                  return Promise.resolve(reader.cancel(reason)).catch(() => {\n                  });\n                } catch (e) {\n                  return Promise.resolve();\n                }\n              }\n            });\n            return biliCdnCloneResponse(resp, body);\n          } catch (e) {\n            return resp;\n          }\n        });\n      };\n    }\n    if (self.XMLHttpRequest) {\n      const OriginalXHR = self.XMLHttpRequest;\n      self.XMLHttpRequest = (_a = class extends OriginalXHR {\n        open(method, url, ...rest) {\n          const rewritten = biliCdnRewrite(String(url));\n          try {\n            let lastLoaded = 0;\n            this.addEventListener("progress", (e) => {\n              try {\n                if (!e || e.isTrusted !== true) return;\n                if (!biliCdnIsMedia(rewritten)) return;\n                const loaded = e && e.loaded || 0;\n                const delta = loaded - lastLoaded;\n                if (delta > 0) {\n                  lastLoaded = loaded;\n                  biliCdnNoteSeg(rewritten, delta);\n                }\n              } catch (e2) {\n              }\n            });\n            this.addEventListener("load", (e) => {\n              try {\n                if (!e || e.isTrusted !== true) return;\n                if (!biliCdnIsMedia(rewritten)) return;\n                const cl = this.getResponseHeader && this.getResponseHeader("content-length");\n                let n = cl ? parseInt(cl, 10) : 0;\n                if (!n && this.response) {\n                  if (this.response.byteLength) n = this.response.byteLength;\n                  else if (typeof this.response === "string") n = this.response.length;\n                }\n                const remaining = Math.max(0, n - lastLoaded);\n                if (remaining) biliCdnNoteSeg(rewritten, remaining);\n              } catch (e2) {\n              }\n            });\n          } catch (e) {\n          }\n          return super.open(method, rewritten, ...rest);\n        }\n      }, __name(_a, "XMLHttpRequest"), _a);\n    }\n  }\n  __name(installWorker, "installWorker");\n  installWorker(__BiliCDNWorkerConfiguration);\n})();\n';
++  var WORKER_SOURCE = '(() => {\n  var __defProp = Object.defineProperty;\n  var __name = (target, value) => __defProp(target, "name", { value, configurable: true });\n\n  // src/policy/url-policy.mjs\n  function createMediaUrlPolicy() {\n    const MEDIA_URL_MAX_LENGTH = 16 * 1024;\n    const PCDN_SOURCE_SUFFIXES = Object.freeze([\n      "szbdyd.com",\n      "mountaintoys.cn",\n      "nexusedgeio.com",\n      "ahdohpiechei.com"\n    ]);\n    const PCDN_SOURCE_HOSTS = Object.freeze(/* @__PURE__ */ new Set([\n      "upos-sz-mirror14b.bilivideo.com"\n    ]));\n    const IPV4_HOST_RE = /^(?:\\d{1,3}\\.){3}\\d{1,3}$/;\n    const MEDIA_PATH_RE = /\\.(?:m4s|mp4|flv|m3u8)$/i;\n    const hostHasSuffix = /* @__PURE__ */ __name((host, suffix) => host === suffix || host.endsWith("." + suffix), "hostHasSuffix");\n    const parseMediaHttpUrl = /* @__PURE__ */ __name((value) => {\n      if (typeof value !== "string" || !value || value.length > MEDIA_URL_MAX_LENGTH) return null;\n      try {\n        const u = new URL(value.startsWith("//") ? "https:" + value : value);\n        return u.protocol === "http:" || u.protocol === "https:" ? u : null;\n      } catch {\n        return null;\n      }\n    }, "parseMediaHttpUrl");\n    const isMediaDeliveryPath = /* @__PURE__ */ __name((path) => !!path && (MEDIA_PATH_RE.test(path) || path.includes("/upgcxcode/") || path.startsWith("/v1/resource") || path.includes("/live-bvc/")), "isMediaDeliveryPath");\n    const classifyMediaDelivery = /* @__PURE__ */ __name((value) => {\n      const u = parseMediaHttpUrl(value);\n      if (!u || !isMediaDeliveryPath(u.pathname)) return Object.freeze({ kind: "unknown", reason: "invalid-or-non-media", host: "" });\n      const host = u.hostname.toLowerCase();\n      if (u.pathname.includes("/live-bvc/")) return Object.freeze({ kind: "live", reason: "live-bvc", host });\n      const firstLabel = host.split(".")[0];\n      const mcdn = /\\.mcdn\\.bilivideo\\.(?:cn|com|net)$/i.test(host);\n      const knownSuffix = PCDN_SOURCE_SUFFIXES.some((suffix) => hostHasSuffix(host, suffix));\n      const knownHost = PCDN_SOURCE_HOSTS.has(host);\n      const redirectHost = firstLabel.startsWith("upos-") && firstLabel.includes("302");\n      const querySignal = String(u.searchParams.get("os") || "").toLowerCase() === "mcdn";\n      const nonDefaultPort = !!u.port && u.port !== "80" && u.port !== "443";\n      const ipPort = IPV4_HOST_RE.test(host) && nonDefaultPort;\n      if (mcdn || knownSuffix || knownHost || redirectHost || querySignal || ipPort) {\n        const reason = mcdn ? "mcdn-host" : knownSuffix ? "known-pcdn-suffix" : knownHost ? "known-pcdn-host" : redirectHost ? "upos-302" : querySignal ? "os-mcdn" : "ip-port";\n        return Object.freeze({ kind: "pcdn", reason, host });\n      }\n      if (nonDefaultPort) return Object.freeze({ kind: "suspected-pcdn", reason: "non-default-port", host });\n      return Object.freeze({ kind: "normal", reason: "normal", host });\n    }, "classifyMediaDelivery");\n    const decide = /* @__PURE__ */ __name((value) => {\n      const parsed = parseMediaHttpUrl(value);\n      const delivery = classifyMediaDelivery(value);\n      if (!parsed || delivery.kind === "unknown") return { action: "pass", reason: "invalid-or-non-media", delivery };\n      if (parsed.pathname.startsWith("/v1/resource")) return { action: "pass", reason: "resource", delivery };\n      if (delivery.kind === "live" || delivery.kind === "suspected-pcdn") return { action: "pass", reason: delivery.kind, delivery };\n      const host = parsed.hostname;\n      const sourceAllowed = delivery.kind === "pcdn" || /\\.bilivideo\\.(?:com|cn|net)$/i.test(host) || host.endsWith(".akamaized.net");\n      return { action: sourceAllowed ? "rewrite" : "pass", reason: sourceAllowed ? "media" : "unknown-source", delivery };\n    }, "decide");\n    return {\n      parse: parseMediaHttpUrl,\n      classify: classifyMediaDelivery,\n      decide,\n      isMediaPath: isMediaDeliveryPath,\n      suffixes: PCDN_SOURCE_SUFFIXES,\n      hosts: PCDN_SOURCE_HOSTS,\n      hostHasSuffix,\n      maxLength: MEDIA_URL_MAX_LENGTH,\n      mediaPathPattern: MEDIA_PATH_RE\n    };\n  }\n  __name(createMediaUrlPolicy, "createMediaUrlPolicy");\n\n  // src/worker/entry.mjs\n  function installWorker(configuration) {\n    var _a;\n    const BILICDN_BASE = configuration.originalUrl;\n    const BILICDN_BOOTSTRAP_TOKEN = configuration.capability;\n    const BILICDN_CATALOG = Object.freeze(configuration.catalog);\n    const BILICDN_CATALOG_SET = new Set(BILICDN_CATALOG);\n    const BILICDN_PCDN_SUFFIXES = Object.freeze(configuration.suffixes);\n    const BILICDN_PCDN_HOSTS = new Set(configuration.hosts);\n    const BILICDN_URL_MAX = 16 * 1024;\n    const BILICDN_BYTES_MAX = 256 * 1024 * 1024;\n    const BILICDN_STAT_MAX = 1e4;\n    const BILICDN_REPORT_MS = 200;\n    let BILICDN_TARGET_HOST = configuration.target;\n    let BILICDN_FORCE = configuration.force;\n    let BILICDN_PREFERRED = configuration.preferred;\n    let BILICDN_EXCLUDED = configuration.excluded;\n    let BILICDN_DISABLED = false;\n    let BILICDN_CONTROL_PORT = null;\n    let BILICDN_STAT = { netCalls: 0, mediaSeen: 0, rewrites: 0 };\n    let BILICDN_STAT_TIMER = null;\n    const BILICDN_NATIVE_ADD_EVENT = self.addEventListener.bind(self);\n    const BILICDN_NATIVE_REMOVE_EVENT = self.removeEventListener.bind(self);\n    const BILICDN_NATIVE_STOP_IMMEDIATE = typeof Event !== "undefined" && Event.prototype && Event.prototype.stopImmediatePropagation;\n    const biliCdnCatalogArray = /* @__PURE__ */ __name((value) => {\n      if (!Array.isArray(value) || value.length > BILICDN_CATALOG.length) return null;\n      const out = [];\n      for (const entry of value) {\n        if (typeof entry !== "string") return null;\n        const host = entry.trim().toLowerCase();\n        if (!BILICDN_CATALOG_SET.has(host)) return null;\n        if (out.indexOf(host) === -1) out.push(host);\n      }\n      return out;\n    }, "biliCdnCatalogArray");\n    const biliCdnApplyPolicy = /* @__PURE__ */ __name((data) => {\n      if (!data || data.version !== 1 || data.type !== "policy" || typeof data.target !== "string" || !BILICDN_CATALOG_SET.has(data.target) || typeof data.disabled !== "boolean") return false;\n      const preferredNext = biliCdnCatalogArray(data.preferred);\n      const forceNext = biliCdnCatalogArray(data.force);\n      const excludedNext = biliCdnCatalogArray(data.excluded);\n      if (!preferredNext || !forceNext || !excludedNext) return false;\n      BILICDN_TARGET_HOST = data.target;\n      BILICDN_PREFERRED = preferredNext;\n      BILICDN_FORCE = forceNext;\n      BILICDN_EXCLUDED = excludedNext;\n      BILICDN_DISABLED = data.disabled;\n      return true;\n    }, "biliCdnApplyPolicy");\n    const biliCdnPostPrivate = /* @__PURE__ */ __name((message) => {\n      if (!BILICDN_CONTROL_PORT) return false;\n      try {\n        BILICDN_CONTROL_PORT.postMessage(message);\n        return true;\n      } catch (e) {\n        return false;\n      }\n    }, "biliCdnPostPrivate");\n    const biliCdnFlushStat = /* @__PURE__ */ __name(() => {\n      if (!BILICDN_STAT.netCalls && !BILICDN_STAT.mediaSeen && !BILICDN_STAT.rewrites) return;\n      if (biliCdnPostPrivate({\n        version: 1,\n        type: "stats",\n        netCalls: BILICDN_STAT.netCalls,\n        mediaSeen: BILICDN_STAT.mediaSeen,\n        rewrites: BILICDN_STAT.rewrites\n      })) BILICDN_STAT = { netCalls: 0, mediaSeen: 0, rewrites: 0 };\n    }, "biliCdnFlushStat");\n    const biliCdnBumpStat = /* @__PURE__ */ __name((key) => {\n      if (!Object.prototype.hasOwnProperty.call(BILICDN_STAT, key)) return;\n      BILICDN_STAT[key] = Math.min(BILICDN_STAT_MAX, BILICDN_STAT[key] + 1);\n      if (!BILICDN_STAT_TIMER) {\n        BILICDN_STAT_TIMER = setTimeout(() => {\n          BILICDN_STAT_TIMER = null;\n          biliCdnFlushStat();\n        }, BILICDN_REPORT_MS);\n      }\n    }, "biliCdnBumpStat");\n    const biliCdnBootstrap = /* @__PURE__ */ __name((event) => {\n      const data = event && event.data;\n      const ports = event && event.ports;\n      if (BILICDN_CONTROL_PORT || !data || data.__biliCdnBootstrap !== BILICDN_BOOTSTRAP_TOKEN || !ports || ports.length !== 1 || !ports[0]) return;\n      try {\n        if (typeof BILICDN_NATIVE_STOP_IMMEDIATE === "function") BILICDN_NATIVE_STOP_IMMEDIATE.call(event);\n        else event.stopImmediatePropagation();\n      } catch (e) {\n        try {\n          event.stopImmediatePropagation();\n        } catch (e2) {\n        }\n      }\n      BILICDN_CONTROL_PORT = ports[0];\n      BILICDN_CONTROL_PORT.onmessage = (portEvent) => {\n        biliCdnApplyPolicy(portEvent && portEvent.data);\n      };\n      try {\n        BILICDN_CONTROL_PORT.start();\n      } catch (e) {\n      }\n      BILICDN_NATIVE_REMOVE_EVENT("message", biliCdnBootstrap);\n      biliCdnPostPrivate({ version: 1, type: "ready" });\n      biliCdnFlushStat();\n    }, "biliCdnBootstrap");\n    BILICDN_NATIVE_ADD_EVENT("message", biliCdnBootstrap);\n    const biliCdnAbs = /* @__PURE__ */ __name((url) => {\n      const raw = String(url);\n      if (!raw || raw.length > BILICDN_URL_MAX) return null;\n      try {\n        return new URL(raw, BILICDN_BASE).href;\n      } catch {\n        return null;\n      }\n    }, "biliCdnAbs");\n    const biliCdnHostSuffix = /* @__PURE__ */ __name((host, suffix) => host === suffix || host.endsWith("." + suffix), "biliCdnHostSuffix");\n    const biliCdnIsUnstable = /* @__PURE__ */ __name((host) => {\n      if (!host) return false;\n      const normalized = String(host).toLowerCase();\n      const first = normalized.split(".")[0];\n      return /\\.mcdn\\.bilivideo\\.(cn|com|net)$/i.test(normalized) || BILICDN_PCDN_SUFFIXES.some((suffix) => biliCdnHostSuffix(normalized, suffix)) || BILICDN_PCDN_HOSTS.has(normalized) || first.startsWith("upos-") && first.includes("302") || /^cn-[a-z]{2,8}-/i.test(normalized) && normalized.endsWith(".bilivideo.com");\n    }, "biliCdnIsUnstable");\n    const BILICDN_MEDIA_POLICY = createMediaUrlPolicy();\n    const biliCdnClassify = /* @__PURE__ */ __name((url) => BILICDN_MEDIA_POLICY.classify(url).kind, "biliCdnClassify");\n    const biliCdnNoteSeg = /* @__PURE__ */ __name((url, bytes) => {\n      if (!Number.isFinite(bytes) || !Number.isInteger(bytes) || bytes <= 0 || bytes > BILICDN_BYTES_MAX) return;\n      try {\n        const host = new URL(url).hostname.toLowerCase();\n        if (BILICDN_CATALOG_SET.has(host)) {\n          biliCdnPostPrivate({ version: 1, type: "bytes", host, bytes });\n        }\n      } catch (e) {\n      }\n    }, "biliCdnNoteSeg");\n    const biliCdnIsMedia = /* @__PURE__ */ __name((url) => {\n      if (typeof url !== "string" || !url || url.length > BILICDN_URL_MAX) return false;\n      try {\n        const u = new URL(url);\n        const host = u.hostname;\n        const verdict = biliCdnClassify(url);\n        if (verdict === "pcdn" || verdict === "suspected-pcdn" || verdict === "live") return true;\n        if (!(host.endsWith(".bilivideo.com") || host.endsWith(".bilivideo.cn") || host.endsWith(".bilivideo.net"))) return false;\n        return /\\.(m4s|mp4|flv|m3u8)$/i.test(u.pathname) || u.pathname.includes("/upgcxcode/");\n      } catch {\n        return false;\n      }\n    }, "biliCdnIsMedia");\n    const biliCdnNeedsRedirect = /* @__PURE__ */ __name((host, verdict) => !!host && (verdict === "pcdn" || biliCdnIsUnstable(host) || BILICDN_EXCLUDED.indexOf(host) !== -1 || BILICDN_FORCE.indexOf(host) !== -1 || BILICDN_PREFERRED.indexOf(host) === -1), "biliCdnNeedsRedirect");\n    const biliCdnRewrite = /* @__PURE__ */ __name((url) => {\n      try {\n        if (BILICDN_DISABLED) return url;\n        biliCdnBumpStat("netCalls");\n        const absolute = biliCdnAbs(url);\n        if (!absolute || !biliCdnIsMedia(absolute)) return url;\n        biliCdnBumpStat("mediaSeen");\n        const parsed = new URL(absolute);\n        const verdict = biliCdnClassify(absolute);\n        if (BILICDN_MEDIA_POLICY.decide(absolute).action !== "rewrite") return url;\n        if (/^\\/v1\\/resource/.test(parsed.pathname)) return absolute;\n        if (!biliCdnNeedsRedirect(parsed.hostname, verdict) || parsed.hostname === BILICDN_TARGET_HOST) return absolute;\n        if (!BILICDN_CATALOG_SET.has(BILICDN_TARGET_HOST)) return absolute;\n        parsed.hostname = BILICDN_TARGET_HOST;\n        parsed.port = "";\n        if (parsed.href.length > BILICDN_URL_MAX) return url;\n        biliCdnBumpStat("rewrites");\n        return parsed.toString();\n      } catch {\n        return url;\n      }\n    }, "biliCdnRewrite");\n    if (self.fetch) {\n      const OriginalFetch = self.fetch.bind(self);\n      const biliCdnCloneResponse = /* @__PURE__ */ __name((resp, body) => {\n        const out = new Response(body, { status: resp.status, statusText: resp.statusText, headers: resp.headers });\n        ["url", "redirected", "type"].forEach((key) => {\n          try {\n            Object.defineProperty(out, key, { value: resp[key], configurable: true });\n          } catch (e) {\n          }\n        });\n        return out;\n      }, "biliCdnCloneResponse");\n      self.fetch = (input, init) => {\n        const url = input instanceof Request ? input.url : String(input);\n        const rewritten = biliCdnRewrite(url);\n        if (rewritten !== url && input instanceof Request) {\n          input = new Request(rewritten, {\n            method: input.method,\n            headers: input.headers,\n            body: input.method === "GET" || input.method === "HEAD" ? void 0 : input.body,\n            mode: input.mode === "navigate" ? "same-origin" : input.mode,\n            credentials: input.credentials,\n            cache: input.cache,\n            redirect: input.redirect,\n            referrer: input.referrer,\n            referrerPolicy: input.referrerPolicy,\n            integrity: input.integrity,\n            keepalive: input.keepalive,\n            signal: input.signal\n          });\n        } else if (rewritten !== url) {\n          input = rewritten;\n        }\n        return OriginalFetch(input, init).then((resp) => {\n          try {\n            const mediaUrl = resp && (resp.url || rewritten);\n            if (!resp || !resp.body || typeof resp.body.getReader !== "function" || typeof ReadableStream === "undefined" || !biliCdnIsMedia(mediaUrl)) return resp;\n            const reader = resp.body.getReader();\n            let pending = 0, lastReport = 0;\n            const flush = /* @__PURE__ */ __name((force) => {\n              const now = Date.now();\n              if (!pending) return;\n              if (!force && now - lastReport < BILICDN_REPORT_MS) return;\n              lastReport = now;\n              biliCdnNoteSeg(mediaUrl, pending);\n              pending = 0;\n            }, "flush");\n            const body = new ReadableStream({\n              pull(controller) {\n                return reader.read().then(({ done, value }) => {\n                  if (done) {\n                    flush(true);\n                    controller.close();\n                    return;\n                  }\n                  if (value && value.byteLength) {\n                    pending += value.byteLength;\n                    flush(false);\n                  }\n                  if (value !== void 0) controller.enqueue(value);\n                }).catch((error) => {\n                  flush(true);\n                  controller.error(error);\n                });\n              },\n              cancel(reason) {\n                flush(true);\n                try {\n                  return Promise.resolve(reader.cancel(reason)).catch(() => {\n                  });\n                } catch (e) {\n                  return Promise.resolve();\n                }\n              }\n            });\n            return biliCdnCloneResponse(resp, body);\n          } catch (e) {\n            return resp;\n          }\n        });\n      };\n    }\n    if (self.XMLHttpRequest) {\n      const OriginalXHR = self.XMLHttpRequest;\n      self.XMLHttpRequest = (_a = class extends OriginalXHR {\n        open(method, url, ...rest) {\n          const rewritten = biliCdnRewrite(String(url));\n          try {\n            let lastLoaded = 0;\n            this.addEventListener("progress", (e) => {\n              try {\n                if (!e || e.isTrusted !== true) return;\n                if (!biliCdnIsMedia(rewritten)) return;\n                const loaded = e && e.loaded || 0;\n                const delta = loaded - lastLoaded;\n                if (delta > 0) {\n                  lastLoaded = loaded;\n                  biliCdnNoteSeg(rewritten, delta);\n                }\n              } catch (e2) {\n              }\n            });\n            this.addEventListener("load", (e) => {\n              try {\n                if (!e || e.isTrusted !== true) return;\n                if (!biliCdnIsMedia(rewritten)) return;\n                const cl = this.getResponseHeader && this.getResponseHeader("content-length");\n                let n = cl ? parseInt(cl, 10) : 0;\n                if (!n && this.response) {\n                  if (this.response.byteLength) n = this.response.byteLength;\n                  else if (typeof this.response === "string") n = this.response.length;\n                }\n                const remaining = Math.max(0, n - lastLoaded);\n                if (remaining) biliCdnNoteSeg(rewritten, remaining);\n              } catch (e2) {\n              }\n            });\n          } catch (e) {\n          }\n          return super.open(method, rewritten, ...rest);\n        }\n      }, __name(_a, "XMLHttpRequest"), _a);\n    }\n  }\n  __name(installWorker, "installWorker");\n  installWorker(__BiliCDNWorkerConfiguration);\n})();\n';
+ 
+   // src/worker/controller.mjs
+   function createWorker(deps) {
++    let installedWorkerConstructor = null;
++    let workerReplacementNoted = false;
+     const buildWorkerPolicy = /* @__PURE__ */ __name(() => {
+       const target = deps.getWorkerCdnTarget();
+       if (!deps.isValidCustomCdnHost(target)) return null;
+@@ -4189,6 +4300,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           if (!record || !record.port) throw new Error("missing private Worker control port");
+           record.port.postMessage(message);
+         } catch {
++          deps.noteWorkerDiagnostic("port-failure");
+           try {
+             record && record.port && record.port.close();
+           } catch {
+@@ -4202,13 +4314,29 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     }, "syncWorkerDisabledState");
+     const setupClassicWorkerIntercept = /* @__PURE__ */ __name(() => {
+       var _a;
+-      if (!deps.EnableWorkerIntercept) return;
++      if (!deps.EnableWorkerIntercept) {
++        deps.setWorkerInstallState("disabled");
++        return;
++      }
++      deps.setWorkerInstallState("installing");
++      deps.noteWorkerDiagnostic("install-attempt");
+       try {
+         const OriginalWorker = unsafeWindow.Worker;
+-        if (!OriginalWorker || OriginalWorker.__biliCdnPatched) return;
++        if (!OriginalWorker) {
++          deps.noteWorkerDiagnostic("no-worker");
++          deps.setWorkerInstallState("unavailable");
++          return;
++        }
++        if (OriginalWorker.__biliCdnPatched) {
++          deps.setWorkerInstallState("already-patched");
++          return;
++        }
+         const preferred = [...new Set(deps.PREFERRED_CDN_LIST.filter(deps.isValidCustomCdnHost))];
+         const targetHost = deps.getWorkerCdnTarget();
+-        if (!deps.isValidCustomCdnHost(targetHost)) return;
++        if (!deps.isValidCustomCdnHost(targetHost)) {
++          deps.setWorkerInstallState("invalid-target");
++          return;
++        }
+         const forceList = deps.getWorkerForceList();
+         const sharedWorkerPatch = /* @__PURE__ */ __name((originalUrl, capability) => {
+           const configuration = {
+@@ -4265,8 +4393,15 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+           const expected = [...keys].sort();
+           return actual.length === expected.length && actual.every((key, index) => key === expected[index]);
+         }, "hasExactWorkerKeys");
+-        const handlePrivateWorkerReport = /* @__PURE__ */ __name((data) => {
++        const handlePrivateWorkerReport = /* @__PURE__ */ __name((data, worker) => {
+           if (deps.disabled) return false;
++          if (hasExactWorkerKeys(data, ["version", "type"]) && data.version === 1 && data.type === "ready") {
++            const record = deps.workerControlPorts.get(worker);
++            if (!record || record.ready) return false;
++            record.ready = true;
++            deps.noteWorkerDiagnostic("bootstrap-ready");
++            return true;
++          }
+           if (hasExactWorkerKeys(data, ["version", "type", "host", "bytes"]) && data.version === 1 && data.type === "bytes" && deps.isValidCustomCdnHost(data.host) && Number.isInteger(data.bytes) && data.bytes > 0 && data.bytes <= 256 * 1024 * 1024) {
+             if (deps.Watchdog && deps.Watchdog.noteExternalBytes) deps.Watchdog.noteExternalBytes(data.host, data.bytes);
+             deps.mediaObservations.unknown = {
+@@ -4316,11 +4451,11 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+           let channel = null;
+           try {
+             channel = new NativeMessageChannel();
+-            const record = { port: channel.port1, blobUrl, revokeTimer: null };
++            const record = { port: channel.port1, blobUrl, revokeTimer: null, ready: false };
+             deps.workerControlPorts.set(worker, record);
+             deps.biliCdnWorkers.add(worker);
+             channel.port1.onmessage = (event) => {
+-              handlePrivateWorkerReport(event && event.data);
++              handlePrivateWorkerReport(event && event.data, worker);
+             };
+             try {
+               channel.port1.start();
+@@ -4352,21 +4487,40 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+             return false;
+           }
+         }, "registerWorker");
+-        unsafeWindow.Worker = (_a = class extends OriginalWorker {
++        installedWorkerConstructor = (_a = class extends OriginalWorker {
+           constructor(scriptURL, options) {
+-            if (deps.disabled) return super(scriptURL, options);
++            deps.noteWorkerDiagnostic("constructor-call");
++            if (deps.disabled) {
++              deps.noteWorkerDiagnostic("bypass-disabled");
++              return super(scriptURL, options);
++            }
+             let originalUrl, source, blobUrl, capability;
+             try {
+               originalUrl = new URL(String(scriptURL), location.href).href;
+-              if (originalUrl.startsWith("blob:") || originalUrl.startsWith("data:")) {
++              if (originalUrl.startsWith("blob:")) {
++                deps.noteWorkerDiagnostic("bypass-blob");
++                return super(scriptURL, options);
++              }
++              if (originalUrl.startsWith("data:")) {
++                deps.noteWorkerDiagnostic("bypass-data");
+                 return super(scriptURL, options);
+               }
+               const isModule = !!(options && options.type === "module");
+               if (isModule && new URL(originalUrl).origin !== location.origin) {
++                deps.noteWorkerDiagnostic("bypass-cross-origin-module");
+                 return super(scriptURL, options);
+               }
+               capability = createWorkerCapability();
+-              if (!capability || !NativeBlob || !NativeCreateObjectURL || !NativeMessageChannel) {
++              if (!capability) {
++                deps.noteWorkerDiagnostic("bypass-no-random");
++                return super(scriptURL, options);
++              }
++              if (!NativeBlob || !NativeCreateObjectURL) {
++                deps.noteWorkerDiagnostic("bypass-no-blob-api");
++                return super(scriptURL, options);
++              }
++              if (!NativeMessageChannel) {
++                deps.noteWorkerDiagnostic("bypass-no-message-channel");
+                 return super(scriptURL, options);
+               }
+               deps.log("[Worker] patched: " + originalUrl);
+@@ -4374,10 +4528,23 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+               const blob = new NativeBlob([source], { type: "application/javascript" });
+               blobUrl = NativeCreateObjectURL(blob);
+             } catch {
++              if (!originalUrl) deps.noteWorkerDiagnostic("resolve-failure");
++              else deps.noteWorkerDiagnostic("build-failure");
+               return super(scriptURL, options);
+             }
+-            const worker = super(blobUrl, options);
++            let worker;
++            try {
++              worker = super(blobUrl, options);
++            } catch {
++              deps.noteWorkerDiagnostic("constructor-failure");
++              try {
++                if (NativeRevokeObjectURL) NativeRevokeObjectURL(blobUrl);
++              } catch {
++              }
++              return new OriginalWorker(scriptURL, options);
++            }
+             if (!registerWorker(worker, capability, blobUrl)) {
++              deps.noteWorkerDiagnostic("register-failure");
+               try {
+                 if (typeof OriginalWorkerTerminate === "function") OriginalWorkerTerminate.call(worker);
+               } catch {
+@@ -4388,7 +4555,7 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+               }
+               return new OriginalWorker(scriptURL, options);
+             }
+-            deps.bumpWorkerStats({ created: 1, sample: originalUrl });
++            deps.noteWorkerDiagnostic("wrapped", originalUrl);
+             return worker;
+           }
+           terminate() {
+@@ -4398,10 +4565,27 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+             }
+           }
+         }, __name(_a, "Worker"), _a);
++        unsafeWindow.Worker = installedWorkerConstructor;
+         unsafeWindow.Worker.__biliCdnPatched = true;
++        deps.setWorkerInstallState("installed");
+       } catch (e) {
++        deps.noteWorkerDiagnostic("install-failure");
++        deps.setWorkerInstallState("failed");
+       }
+     }, "setupClassicWorkerIntercept");
++    const checkWorkerInterceptState = /* @__PURE__ */ __name(() => {
++      if (!deps.EnableWorkerIntercept || !installedWorkerConstructor || workerReplacementNoted) return;
++      try {
++        if (unsafeWindow.Worker === installedWorkerConstructor) return;
++        workerReplacementNoted = true;
++        deps.noteWorkerDiagnostic("constructor-replaced");
++        deps.setWorkerInstallState("replaced");
++      } catch {
++        workerReplacementNoted = true;
++        deps.noteWorkerDiagnostic("constructor-replaced");
++        deps.setWorkerInstallState("replaced");
++      }
++    }, "checkWorkerInterceptState");
+     setupClassicWorkerIntercept();
+     return {
+       get syncWorkerCdnTarget() {
+@@ -4409,6 +4593,9 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+       },
+       get syncWorkerDisabledState() {
+         return syncWorkerDisabledState;
++      },
++      get checkWorkerInterceptState() {
++        return checkWorkerInterceptState;
+       }
+     };
+   }
+@@ -6436,7 +6623,10 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+         "頁面發現 CDN：" + (deps.pageDiscoveredCdn ? deps.pageDiscoveredCdn.split(".")[0] : "（無）"),
+         "改寫統計：" + JSON.stringify(deps.redirectStats),
+         "HTTPDNS：" + httpDns.mode + (httpDns.ttlMin ? "（" + httpDns.ttlMin + "m）" : ""),
+-        "Worker 量測：created=" + ws.created + " netCalls=" + ws.netCalls + " mediaSeen=" + ws.mediaSeen + " rewrites=" + ws.rewrites + " 觀察" + ws.observedDays + "天 判讀=" + ws.verdict
++        "Worker 本分頁量測：install=" + ws.installState + " constructors=" + ws.session.constructorCalls + " wrapped=" + ws.session.wrapped + " ready=" + ws.session.bootstrapReady + " netCalls=" + ws.session.netCalls + " mediaSeen=" + ws.session.mediaSeen + " rewrites=" + ws.session.rewrites + " bytes=" + ws.session.bytesMB + "MB replaced=" + ws.session.replacements,
++        "Worker 安全放行：" + JSON.stringify(ws.session.bypass),
++        "Worker 建立失敗：" + JSON.stringify(ws.session.failures),
++        "Worker 累計量測：created=" + ws.created + " ready=" + ws.bootstrapReady + " constructors=" + ws.constructorCalls + " netCalls=" + ws.netCalls + " mediaSeen=" + ws.mediaSeen + " rewrites=" + ws.rewrites + " bytes=" + ws.bytesMB + "MB 觀察" + ws.observedDays + "天 判讀=" + ws.verdict
+       ];
+       const history = deps.DiagnosticLog.snapshot();
+       lines.splice(
+@@ -7124,7 +7314,22 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+         },
+         worker: {
+           enabled: !!deps.EnableWorkerIntercept,
++          installState: String(ws.installState || "disabled").slice(0, 32),
++          session: {
++            constructorCalls: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.constructorCalls))),
++            wrapped: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.wrapped))),
++            bootstrapReady: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.bootstrapReady))),
++            bypass: Object.fromEntries(Object.entries(ws.session && ws.session.bypass || {}).slice(0, 8).map(([key, value]) => [String(key).slice(0, 32), Math.max(0, Math.trunc(publicFinite(value)))])),
++            failures: Object.fromEntries(Object.entries(ws.session && ws.session.failures || {}).slice(0, 8).map(([key, value]) => [String(key).slice(0, 32), Math.max(0, Math.trunc(publicFinite(value)))])),
++            replacements: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.replacements))),
++            netCalls: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.netCalls))),
++            mediaSeen: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.mediaSeen))),
++            rewrites: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.rewrites))),
++            bytesMB: Math.max(0, publicFinite(ws.session && ws.session.bytesMB))
++          },
+           created: Math.max(0, Math.trunc(publicFinite(ws.created))),
++          bootstrapReady: Math.max(0, Math.trunc(publicFinite(ws.bootstrapReady))),
++          constructorCalls: Math.max(0, Math.trunc(publicFinite(ws.constructorCalls))),
+           netCalls: Math.max(0, Math.trunc(publicFinite(ws.netCalls))),
+           mediaSeen: Math.max(0, Math.trunc(publicFinite(ws.mediaSeen))),
+           rewrites: Math.max(0, Math.trunc(publicFinite(ws.rewrites))),
+@@ -7360,12 +7565,17 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+       const stats = deps.BiliCDNControls.workerStats();
+       const lines = [
+         "Worker 攔截：" + (deps.EnableWorkerIntercept ? "已開啟" : "預設關閉（目前數值為 0 屬正常）"),
+-        "created=" + stats.created,
+-        "netCalls=" + stats.netCalls,
+-        "mediaSeen=" + stats.mediaSeen,
+-        "rewrites=" + stats.rewrites,
+-        "bytes=" + stats.bytesMB + " MB",
+-        "觀察天數=" + stats.observedDays,
++        "本分頁安裝狀態=" + stats.installState,
++        "本分頁 constructor 呼叫=" + stats.session.constructorCalls,
++        "本分頁成功包裝=" + stats.session.wrapped,
++        "本分頁 bootstrap 確認=" + stats.session.bootstrapReady,
++        "本分頁安全放行=" + JSON.stringify(stats.session.bypass),
++        "本分頁建立失敗=" + JSON.stringify(stats.session.failures),
++        "本分頁 constructor 被替換=" + stats.session.replacements,
++        "本分頁 netCalls=" + stats.session.netCalls + " mediaSeen=" + stats.session.mediaSeen + " rewrites=" + stats.session.rewrites + " bytes=" + stats.session.bytesMB + " MB",
++        "累計 created=" + stats.created + " ready=" + stats.bootstrapReady + " constructors=" + stats.constructorCalls,
++        "累計 netCalls=" + stats.netCalls + " mediaSeen=" + stats.mediaSeen + " rewrites=" + stats.rewrites,
++        "累計 bytes=" + stats.bytesMB + " MB｜觀察天數=" + stats.observedDays,
+         "判讀=" + stats.verdict
+       ];
+       return deps.TrustedMenuUI.openText({
+@@ -7504,7 +7714,7 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+           "狀態：" + (deps.disabled ? "停用" : "啟用") + "｜模式：" + (deps.resolvedCdn ? "固定" : "自動") + "｜選路建議：" + deps.getCdnShortName(),
+           "倍速：" + deps.playbackRateState.effectiveRate + "x（" + (deps.playbackRateState.confirmed ? "已確認" : "假定") + "）｜" + deps.describePlaybackBuffer(stats),
+           "串流：" + deps.streamEstimate.videoMbps + "+" + deps.streamEstimate.audioMbps + " Mbps｜codec 排序首位：" + codecLead,
+-          "異常節點：" + abnormal + "｜HTTPDNS：" + httpdns.mode + "｜Worker：" + (deps.EnableWorkerIntercept ? "created=" + worker.created + " rewrites=" + worker.rewrites : "停用")
++          "異常節點：" + abnormal + "｜HTTPDNS：" + httpdns.mode + "｜Worker：" + (deps.EnableWorkerIntercept ? worker.installState + "；本頁呼叫=" + worker.session.constructorCalls + "／包裝=" + worker.session.wrapped : "停用")
+         ],
+         items: [
+           { label: "重新評估節點", action: "reassess", onActivate: /* @__PURE__ */ __name(() => {
+@@ -8111,6 +8321,7 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+     });
+     setInterval(() => {
+       deps.refreshExpiredRestrictions();
++      deps.checkWorkerInterceptState();
+       deps.samplePlaybackQuality();
+       if (!deps.disabled) deps.DiagnosticLog.sample(deps.readPlaybackDiagnostic());
+       deps.refreshPublicDiagnosticSnapshot();
+@@ -8825,6 +9036,12 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+       get bumpWorkerStats() {
+         return workerStats.bumpWorkerStats;
+       },
++      get setWorkerInstallState() {
++        return workerStats.setWorkerInstallState;
++      },
++      get noteWorkerDiagnostic() {
++        return workerStats.noteWorkerDiagnostic;
++      },
+       get log() {
+         return events.log;
+       }
+@@ -10021,6 +10238,9 @@ import(${JSON.stringify(originalUrl)}).catch((e) => { try { console.error('[Bili
+       get syncWorkerDisabledState() {
+         return worker.syncWorkerDisabledState;
+       },
++      get checkWorkerInterceptState() {
++        return worker.checkWorkerInterceptState;
++      },
+       get uiInjectStatus() {
+         return runtime.uiInjectStatus;
+       },

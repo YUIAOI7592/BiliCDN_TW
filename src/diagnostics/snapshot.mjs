@@ -132,7 +132,24 @@ const buildPublicDiagnosticSnapshot = () => {
         },
         worker: {
             enabled: !!deps.EnableWorkerIntercept,
+            installState: String(ws.installState || 'disabled').slice(0, 32),
+            session: {
+                constructorCalls: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.constructorCalls))),
+                wrapped: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.wrapped))),
+                bootstrapReady: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.bootstrapReady))),
+                bypass: Object.fromEntries(Object.entries((ws.session && ws.session.bypass) || {})
+                    .slice(0, 8).map(([key, value]) => [String(key).slice(0, 32), Math.max(0, Math.trunc(publicFinite(value)))])),
+                failures: Object.fromEntries(Object.entries((ws.session && ws.session.failures) || {})
+                    .slice(0, 8).map(([key, value]) => [String(key).slice(0, 32), Math.max(0, Math.trunc(publicFinite(value)))])),
+                replacements: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.replacements))),
+                netCalls: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.netCalls))),
+                mediaSeen: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.mediaSeen))),
+                rewrites: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.rewrites))),
+                bytesMB: Math.max(0, publicFinite(ws.session && ws.session.bytesMB)),
+            },
             created: Math.max(0, Math.trunc(publicFinite(ws.created))),
+            bootstrapReady: Math.max(0, Math.trunc(publicFinite(ws.bootstrapReady))),
+            constructorCalls: Math.max(0, Math.trunc(publicFinite(ws.constructorCalls))),
             netCalls: Math.max(0, Math.trunc(publicFinite(ws.netCalls))),
             mediaSeen: Math.max(0, Math.trunc(publicFinite(ws.mediaSeen))),
             rewrites: Math.max(0, Math.trunc(publicFinite(ws.rewrites))),
