@@ -2,6 +2,8 @@
 
 目前模組化候選為 v1.8.2，以不可變 v1.8.1 為基準。Catalog 始終獨立參賽；Native 僅用本片完整 URL。舊 transform 不再自行提升 Akamai，頁面內嵌資料改存受限候選，known-family exact URL 成功完成後才解鎖。健康播放評級不改 affinity；來源接管不構成換線。來源仍為正式 v1.5.5，不使用 development 草稿。
 
+v1.8.2 尚未推送或發布：本機 327 項及獨立 CS 17 項通過，首輪安全掃描 3 項 Low 已修補；最終掃描已封存但有 2 項 deferred HTTP method admission，不能稱為安全驗收完成。詳見本版 TEST_REPORT。不要略過這兩項直接發布，也不要重跑已完成的所有歷史實機測試來替代此邊界判定。
+
 - 上游：baseline/BiliCDN_TW_1.3.4.original.user.js，SHA-256 acaa3d61c169a0a39ef403d7442e1decc1b20540ea9ada3e8cf5e459bb88f579。
 - 重構基準：tests/fixtures/BiliCDN_TW_1.5.5.user.js，SHA-256 fccf8ca10c9086b8edae3ba9b170b14ff5c92451ccd921c5834960e5624b441f。
 - 原始碼 src；目前候選交付 Release/v1.8.2；暫存 dist。驗收與安全掃描狀態見本版 TEST_REPORT，不以舊版通過狀態代替。

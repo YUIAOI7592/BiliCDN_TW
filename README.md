@@ -21,7 +21,7 @@ v1.8.1 將 Native 評級與換線權限分離：健康播放中的 probe／bakeo
 
 v1.8.2 統一 Catalog／Native URL 決策，移除舊 Akamai 提升旁路；只有內嵌資料時，也能在 exact 影片請求成功後建立受限歸因與一次起播測速。內建 Catalog 不必出現在本片資料即可參賽；Native 資格不授予換 host 或 preconnect 權限。診斷分開計畫、實際觀察及來源提示。
 
-發布驗證與安全狀態以 [TEST_REPORT](Release/v1.8.2/TEST_REPORT_v1.8.2.md) 為準。VM 測試不等於 Chrome／Tampermonkey 實機驗證；仍需測試自動畫質、1080p／4K 2x、seek、畫質升降、SPA、背景切回、陌生節點探索與控制中心。
+v1.8.2 目前是未發布候選，安全覆核仍有兩項 HTTP 方法證據待釐清；不代表 latest Release 已更新。發布驗證與安全狀態以 [TEST_REPORT](Release/v1.8.2/TEST_REPORT_v1.8.2.md) 為準。VM 測試不等於 Chrome／Tampermonkey 實機驗證；仍需測試自動畫質、1080p／4K 2x、seek、畫質升降、SPA、背景切回、陌生節點探索與控制中心。
 
 ## 本機開發
 

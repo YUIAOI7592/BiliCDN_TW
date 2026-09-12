@@ -22,7 +22,16 @@ Codex Security 首輪 v1.8.1→未發布候選 `2b235af` 差異掃描已完成�
 2. 衝突頁面候選失去 context 後，退回 legacy 改寫旁路。
 3. XHR 公開 responseURL／header／status 可遮蔽，讓無關原生完成被誤認為頁面候選成功。
 
-首輪候選不發布，原 bytes 與 SHA 保存在 `tests/fixtures/BiliCDN_TW_1.8.2.pre-security.user.js` 作負向控制。修補採 exact 已完成樣本、來源感知測速守門、原生 XHR accessor 快照與私有 request state；獨立覆核再補 native silent reopen、HEAD 空 payload 及 URL canonicalization。修補後差異掃描待完成，不以 VM 子集代替。
+首輪候選不發布，原 bytes 與 SHA 保存在 `tests/fixtures/BiliCDN_TW_1.8.2.pre-security.user.js` 作負向控制。修補採 exact 已完成樣本、來源感知測速守門、原生 XHR accessor 快照與私有 request state；獨立覆核再補 native silent reopen、HEAD 空 payload 及 URL canonicalization。
+
+最終候選 `184bdce6282401534b5def151a51300044ed2a32` 的完整 v1.8.1→候選差異掃描已封存：`466a66a9-681a-4df2-a095-2bccc7e06c6b`。17／17 審查面已檢查，但兩項 HTTP method admission 候選維持 **deferred**，coverage 為 partial；不是零問題安全通過，**目前不發布 GitHub Release**：
+
+- Fetch 非 GET 的 exact URL 成功非空回應也可解鎖頁面候選。
+- XHR 使用原生 prototype.open 在 OPENED 狀態重新開啟同 URL，可能讓快取的 GET 與實際方法不同；實際同 URL 非空回應仍可解鎖。
+
+未插樁 bundle VM 已重現上述資格與 Ledger 變化；不同 query 與空 payload 反例均不解鎖。尚未證明真實已知 CDN 存在可利用的方法差異回應，也未以 Chrome 驗證同狀態原生 reopen。原批准計畫要求真實媒體成功，未明文規定 GET-only；掃描上下文新增的 GET 保證不可冒充使用者原要求。仍須釐清方法證據與 GET 媒體資格的邊界，不能因缺實機證據就宣稱安全。
+
+候選 userscript SHA-256：`2875f7341f3e40f67b5b4c8783f1c8564d13581cb054e66b7a73b3100f2345d6`。第二輪掃描工具跨任務 aggregate 為 5,588,732 tokens（含 cached input 5,292,544）；第一輪為 11,501,808 tokens。第二輪 scan goal 另計 274,381 tokens／約 11 分鐘，與 aggregate 計量範圍不同，不加總；以上不是帳單或實機驗證時間。
 
 新增攻擊面為 page-hint→成功 exact Transport→Ledger／主動 probe／Catalog URL。page-hint 自身不得寫 GM、測速或授權 Native primary；已知家族必須 exact URL 同版本成功終態，第三方頁面 URL 不解鎖。Catalog 權限不因 Native 評級擴張。SECURITY.md 的舊全面 page-state 禁令尚待精確政策差異確認；此限制差異不是安全豁免。
 
