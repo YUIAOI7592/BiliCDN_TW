@@ -9,7 +9,7 @@ npm test 先重建，再遞迴執行 *.test.js／*.test.cjs／*.test.mjs。產�
 - reproductions：固定 v1.5.1 的歷史 review 9 項，不是新版缺陷。
 - unit：模組實例隔離、政策、import 無副作用及產物邊界。
 
-目前 `npm test` 功能套件 317 項、無 skip；依使用者要求，v1.8.3～v1.8.6 不執行獨立 CS 子集或 Code Security。v1.8.6 新增固定 v1.8.5 history 前 playinfo 時序與短片結尾 Watchdog 誤判重現，並覆蓋快速 SPA、舊值不回填、duration 延長、緩衝缺口及播放器控制中心按鈕。歷史安全與舊版重現檔仍保留，但不以其結果替目前版本背書。
+目前 `npm test` 功能套件 322 項、無 skip；依使用者要求，v1.8.3～v1.8.7 不執行獨立 CS 子集或 Code Security。v1.8.7 新增真實瀏覽器發現的 playurl-before-history SPA 競態重現，覆蓋 Fetch／XHR 接納、錯片隔離與無法確認的多 P 邊界；v1.8.6 的 `__playinfo__` 時序、片尾 Watchdog 與播放器按鈕案例仍保留。歷史安全與舊版重現檔仍保留，但不以其結果替目前版本背書。
 
 舊版重現執行原單檔。新版內部測試使用獨立 test build 的模組 getter，不能發布；harness 先核對指定正式檔與 build 相同。instrument:false 完全執行正式檔，另測頁面快照、Fetch／XHR、選單及網站 Worker 身分不變。
 

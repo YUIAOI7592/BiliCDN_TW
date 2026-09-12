@@ -407,7 +407,38 @@ export function createApplication(deps) {
             + location.pathname + '），SPA 換片偵測可能失效；CDN 改寫本身仍可正常運作。')
     }
     let currentVideoKey = getVideoKey()
+    let lastSpaPlayurlAdoption = null
     let spaHooked = false
+    const playurlTargetsVideoKey = (requestUrl, videoKey) => {
+        let request
+        try { request = new URL(String(requestUrl), location.href) } catch { return false }
+        const [base, part = ''] = String(videoKey || '').toLowerCase().split('#p')
+        if (!base || !/^(?:bv[0-9a-z]+|av\d+|ep\d+)$/i.test(base)) return false
+        if (part) {
+            // A bvid alone cannot distinguish parts of a multi-P video. Only
+            // adopt when the request itself carries the exact part number.
+            if (request.searchParams.get('p') !== part) return false
+        }
+        if (base.startsWith('bv')) {
+            return String(request.searchParams.get('bvid') || '').toLowerCase() === base
+        }
+        if (base.startsWith('av')) {
+            const aid = String(request.searchParams.get('avid') || request.searchParams.get('aid') || '')
+            return aid === base.slice(2)
+        }
+        const epid = String(request.searchParams.get('ep_id') || request.searchParams.get('epid') || '')
+        return epid === base.slice(2)
+    }
+    const canAdoptSpaPlayurl = (requestUrl, requestRuntime) => {
+        if (deps.disabled || !requestRuntime || !lastSpaPlayurlAdoption) return false
+        const currentRuntime = deps.captureRuntimeGeneration()
+        if (!deps.isRuntimeGenerationActive(currentRuntime)) return false
+        const adoption = lastSpaPlayurlAdoption
+        return requestRuntime.generation === adoption.fromGeneration
+            && currentRuntime.generation === adoption.toGeneration
+            && currentVideoKey === adoption.videoKey
+            && playurlTargetsVideoKey(requestUrl, currentVideoKey)
+    }
     const attachPendingAssignmentToNavigation = (beforeKey, afterKey) => {
         const assigned = latestPagePlayInfoAssignment
         if (!assigned || assigned.state !== 'pending' || assigned.observedKey !== beforeKey) return false
@@ -436,7 +467,9 @@ export function createApplication(deps) {
             assigned.state = pendingPagePlayInfo ? 'adopted' : 'superseded'
             latestPagePlayInfoAssignment = null
         }
+        const previousRuntime = deps.captureRuntimeGeneration()
         currentVideoKey = key
+        lastSpaPlayurlAdoption = null
         deps.DiagnosticLog.record('runtime', { reason: 'spa' }, true)
         deps.TrustedMenuUI.invalidate()
         deps.stopRuntimeGeneration()
@@ -459,7 +492,14 @@ export function createApplication(deps) {
         try { deps.Watchdog.reset() } catch {}
         try { deps.HttpDnsAutoPilot.onWatchdogReset() } catch {}
         if (!deps.disabled) {
-            deps.beginRuntimeGeneration()
+            const nextRuntime = deps.beginRuntimeGeneration()
+            if (nextRuntime) {
+                lastSpaPlayurlAdoption = {
+                    fromGeneration: previousRuntime.generation,
+                    toGeneration: nextRuntime.generation,
+                    videoKey: key,
+                }
+            }
             // A new value may have been assigned after pushState but before this
             // delayed SPA boundary. Rebuild it only after the old pool is cleared;
             // never repopulate from an unchanged value belonging to the prior page.
@@ -545,6 +585,7 @@ export function createApplication(deps) {
     }
     const stopRuntimeFeatures = () => {
         runtimeStarted = false
+        lastSpaPlayurlAdoption = null
         clearPagePlayInfoSettleTimer()
         if (latestPagePlayInfoAssignment) latestPagePlayInfoAssignment.state = 'superseded'
         latestPagePlayInfoAssignment = null
@@ -620,5 +661,6 @@ get DiagnosticLog(){return deps.DiagnosticLog},
 
 return { /* TEST_EXPORTS:application */
 get getPagePlayInfoLifecycle() { return () => ({ ...pagePlayInfoLifecycle }); },
+get canAdoptSpaPlayurl() { return canAdoptSpaPlayurl; },
 };
 }

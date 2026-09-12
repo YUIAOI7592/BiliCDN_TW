@@ -304,7 +304,8 @@ get recordCdnThroughput() { return health.recordCdnThroughput; },
 get playbackRateState() { return rate.playbackRateState; },
 get resolveRequestRoute() { return nativeRoutes.resolveRequestRoute; },
 get noteNativeRouteFailure() { return nativeRoutes.noteNativeFailure; },
-get recordNativeThroughput() { return nativeRoutes.recordNativeThroughput; }
+get recordNativeThroughput() { return nativeRoutes.recordNativeThroughput; },
+get canAdoptSpaPlayurl() { return application?.canAdoptSpaPlayurl; }
 });
 failures = createFailures({
 get TRUSTED_CDN_CATALOG() { return catalog.TRUSTED_CDN_CATALOG; },
@@ -734,6 +735,8 @@ get bakeoffTimer() { return bakeoff.bakeoffTimer; }, set bakeoffTimer(value) { b
 get bakeoffAbortController() { return bakeoff.bakeoffAbortController; }, set bakeoffAbortController(value) { bakeoff.bakeoffAbortController = value; },
 get HttpDnsAutoPilot() { return httpdns.HttpDnsAutoPilot; },
 get beginRuntimeGeneration() { return runtime.beginRuntimeGeneration; },
+get captureRuntimeGeneration() { return runtime.captureRuntimeGeneration; },
+get isRuntimeGenerationActive() { return runtime.isRuntimeGenerationActive; },
 get startCdnProbe() { return catalogControls.startCdnProbe; },
 get refreshPublicDiagnosticSnapshot() { return snapshot.refreshPublicDiagnosticSnapshot; },
 get log() { return events.log; },

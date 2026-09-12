@@ -1,12 +1,20 @@
 # 待辦
 
+## v1.8.7
+
+- [x] 以真實 Chrome/CDP 確認 SPA playurl 請求存在，但其回應因 generation reset 被丟棄。
+- [x] 只接納緊鄰 SPA 且 `bvid`／`aid`／`epid` 與目前頁面精確相符的 Fetch／XHR 回應。
+- [x] 保持錯片、停用／重啟及無法確認的多 P 回應隔離。
+- [x] 322 項功能回歸通過；不執行安全掃描。
+- [ ] 安裝 v1.8.7 後實機確認多次 SPA 皆能重建 Route Pool。
+
 ## v1.8.6
 
 - [x] 修正新 `__playinfo__` 在 history 前指派後被 SPA reset 清除，並保持未變更舊值不回填。
 - [x] 修正 contiguous buffer 已到 duration 時 Watchdog 因低於五秒危險線誤發 recovery。
 - [x] 播放器設定面板新增可信控制中心按鈕，可在停用狀態使用並可由注入看門狗重建。
 - [x] 317 項功能回歸通過；不執行安全掃描。
-- [ ] 安裝 v1.8.6 後實機驗收多次 SPA、短片結尾、背景播放與面板按鈕。
+- [x] 實機確認自動畫質＋2x、seek、20 秒非焦點續播、完整緩衝片尾與面板按鈕；另發現 SPA playurl generation 競態，由 v1.8.7 修正。
 
 ## v1.8.5
 

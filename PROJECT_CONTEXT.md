@@ -1,12 +1,12 @@
 # 專案交接脈絡
 
-目前交付為 v1.8.6，以不可變 v1.8.5（SHA-256 d600ffb24e012638ccdef4f18894bbd6d0a818af5be8c08df10685bc0cfed89d）為基準。v1.8.6 補齊新 `__playinfo__` 在 `pushState`／`replaceState` 之前指派的 SPA 時序，並保留未變更舊值不回填的邊界。另外修正短片已緩衝到結尾卻被 Watchdog 當成低緩衝卡頓，以及在播放器設定面板新增直接開啟可信控制中心的按鈕。
+目前交付為 v1.8.7，以不可變 v1.8.6（SHA-256 a1ffdbd81337a0ca19bda738c39bfc7e550d32a75a359759701b86a9d57630ce）為基準。v1.8.7 修正真實 SPA 中新影片 playurl 請求先於 history 切換發出、回應晚於 generation reset 完成而被誤丟棄的問題；只接納緊鄰該次 SPA 且影片識別精確吻合的 Fetch／XHR 回應。v1.8.6 的 `__playinfo__` 時序、片尾 Watchdog 與播放器控制中心按鈕維持不變。
 
-本版依使用者要求不執行 Code Security 掃描或獨立安全子集；必要功能回歸、封裝與實機狀態分開記錄於 TEST_REPORT。v1.8.5 實機進一步發現 history 前指派仍可造成 Pool 遺失，以及 86.8 秒短片在緩衝已精確到達 duration 時觸發一次無效 Watchdog recovery。v1.8.6 已以固定舊版重現及新版驗收覆蓋這兩個分支；真實 Chrome 安裝後驗收仍需由使用者完成。
+本版依使用者要求不執行 Code Security 掃描或獨立安全子集；必要功能回歸、封裝與實機狀態分開記錄於 TEST_REPORT。v1.8.6 真實 Chrome 已確認播放器按鈕、2x seek、20 秒非焦點續播與完整緩衝片尾正常，但連續站內 SPA 顯示 API／頁面 Route Pool 為零。CDP 封包確認 playurl 確實存在，根因是請求與 generation 切換的競態；v1.8.7 已加入固定重現與精確接納規則，安裝後仍需再次實機驗證 Pool 重建。
 
 - 上游：baseline/BiliCDN_TW_1.3.4.original.user.js，SHA-256 acaa3d61c169a0a39ef403d7442e1decc1b20540ea9ada3e8cf5e459bb88f579。
 - 重構基準：tests/fixtures/BiliCDN_TW_1.5.5.user.js，SHA-256 fccf8ca10c9086b8edae3ba9b170b14ff5c92451ccd921c5834960e5624b441f。
-- 原始碼 src；目前交付 Release/v1.8.6；暫存 dist。功能驗收狀態見本版 TEST_REPORT，不以舊版通過狀態代替。
+- 原始碼 src；目前交付 Release/v1.8.7；暫存 dist。功能驗收狀態見本版 TEST_REPORT，不以舊版通過狀態代替。
 - v1.8.0 已由 v1.8.1 取代；v1.8.1 的正式 Codex Security 差異掃描狀態以本版 TEST_REPORT 為準，掃描不等於 Chrome／Tampermonkey 實機播放驗證。
 
 runtime 持有 generation，playback 持有 epoch／registry，transport 持有單次請求終態，routing 保留 catalog health、Native host-only Ledger、Route Affinity、處分及 Watchdog 回收來源區別。完整 signed URL 只在目前 epoch 的 route group 中存在；新 epoch、SPA、停用或重啟即清除。健康 probe 不能改 Route Affinity；真實 Transport／Watchdog recovery 才能開啟換線邊界。所有實例由主入口建立，import 不讀 GM／DOM 或啟動網路。v1.7.0 起不讀取或覆寫 `unsafeWindow.Worker`。

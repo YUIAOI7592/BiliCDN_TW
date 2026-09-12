@@ -4,9 +4,9 @@
 
 目前不可變上游基準：`baseline/BiliCDN_TW_1.3.4.original.user.js`
 
-目前模組化交付：`src/` → `Release/v1.8.6/BiliCDN_TW.user.js`（功能驗證狀態以本版 TEST_REPORT 為準）。
+目前模組化交付：`src/` → `Release/v1.8.7/BiliCDN_TW.user.js`（功能驗證狀態以本版 TEST_REPORT 為準）。
 
-v1.8.6 遵照使用者要求不執行 Code Security 掃描或獨立安全子集。npm test／verify 預設執行功能回歸。SPA 換片時，`__playinfo__` 在 history 前、history 後 reset 前或 reset 後指派都必須在正確新 generation 重建 page-hint route pool；未變更的舊值不得回填。已緩衝至有限媒體結尾時，Watchdog 不得以低緩衝危險線發起修復。播放器面板的控制中心按鈕只能以可信 click 開啟既有 closed-Shadow-DOM UI，不新增公開控制介面或網路行為。禁止判定仍必須同時約束原始、Native、Catalog、固定與備援 URL；不可因候選耗盡自動清除 black/dead。
+v1.8.7 遵照使用者要求不執行 Code Security 掃描或獨立安全子集。npm test／verify 預設執行功能回歸。Bilibili 在 SPA 中可先發出新影片 playurl、再切換 history；其回應只可在緊鄰的 SPA generation 且 `bvid`／`aid`／`epid` 與目前頁面精確相符時接納，不能接納其他舊片、停用／重啟或無法確認的多 P 回應。原有 `__playinfo__` 時序、片尾 Watchdog 與播放器控制中心按鈕不變。禁止判定仍必須同時約束原始、Native、Catalog、固定與備援 URL；不可因候選耗盡自動清除 black/dead。
 
 不可變重構基準：`tests/fixtures/BiliCDN_TW_1.5.5.user.js`（正式 v1.5.5 的原 bytes，非 development 草稿）。
 

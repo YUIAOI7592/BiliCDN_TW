@@ -30,10 +30,20 @@ const interceptNetResponse = (function (theWindow) {
     const diagnosticRequests = new WeakMap()
     const mediaListenerCleanup = new WeakMap()
     const mediaSendInFlight = new WeakSet()
+    const playurlResponseValid = (runtime, url, signal = null) => {
+        if (signal?.aborted) return false
+        if (deps.isRuntimeGenerationActive(runtime)) return true
+        // Bilibili can start the next video's playurl request immediately before
+        // pushState. Its body then arrives after the SPA boundary has invalidated
+        // the request's generation. The application only grants this narrow
+        // exception when the request identifies the current page exactly and the
+        // token belongs to the immediately preceding SPA generation.
+        try { return deps.canAdoptSpaPlayurl?.(url, runtime) === true } catch { return false }
+    }
     const transformPlayurlOnce = (xhr, kind, raw) => {
         const context = playurlRequests.get(xhr)
         const valid = () => !!context && playurlRequests.get(xhr) === context
-            && deps.isRuntimeGenerationActive(context.runtime)
+            && playurlResponseValid(context.runtime, context.url)
         if (!valid()) return raw
         // text and response (text mode) share a cache; JSON never mutates the browser-owned object.
         const cached = context.cache
@@ -714,7 +724,7 @@ const interceptNetResponse = (function (theWindow) {
         if (!deps.isPlayUrlApi(urlStr)) return OriginalFetch(input, init)
         const playurlRuntime = deps.captureRuntimeGeneration()
         const playurlSignal = init?.signal || (input instanceof Request ? input.signal : null)
-        const valid = () => deps.isRuntimeGenerationActive(playurlRuntime) && !playurlSignal?.aborted
+        const valid = () => playurlResponseValid(playurlRuntime, urlStr, playurlSignal)
         return OriginalFetch(input, init).then(response => {
             if (!valid()) return response
             return response.text().then(text => {
