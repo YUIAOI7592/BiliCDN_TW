@@ -31,7 +31,7 @@ export async function verify(){
  for(const source of filesUnder('src').filter(p=>p.endsWith('.mjs')))command(process.execPath,['--check',source]);
  if(!existsSync(script)||readFileSync(script,'utf8')!==second.output)throw Error('Release differs from build; run npm run package');
  process.env.BILICDN_TEST_TARGET=resolve(script);
- runTests();runTests({security:true});
+ runTests({functional:true});
  verifyPatches(config,dir,script);
  const manifest=readFileSync(`${dir}/SHA256SUMS_v${config.version}.txt`,'utf8');
  for(const row of manifest.trim().split('\n')){
@@ -40,6 +40,6 @@ export async function verify(){
  }
  const tracked=command('git',['-c',`safe.directory=${process.cwd().replaceAll('\\','/')}`,'ls-files']).trim().split('\n');
  if(tracked.some(p=>/^(archive|development|review|security|\.work|node_modules|dist)\/|\.github\/workflows\//.test(p)))throw Error('Private/build/CI files are tracked');
- console.log('Verified syntax, immutable fixtures, deterministic build, all tests, CS subset, both applied patches, checksums and tracked exclusions.');
+ console.log('Verified syntax, immutable fixtures, deterministic build, functional regressions, both applied patches, checksums and tracked exclusions. No security scan or security subset executed.');
 }
 if(process.argv[1]&&resolve(process.argv[1])===resolve('scripts/verify.mjs'))await verify();

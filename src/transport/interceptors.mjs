@@ -123,6 +123,11 @@ const interceptNetResponse = (function (theWindow) {
             this._blockAbort = false
             this._blockedDone = false
             this._blockedBody = ''
+            this._localBlocked = false
+            this._localBlockDone = false
+            this._localBlockSent = false
+            this._openArgs = [nativeMethod, urlStr, rest]
+            this._savedHeaders = []
             this._originCdn = null
             this._redirectedCdn = null
             this._originalUrl = urlStr
@@ -141,6 +146,7 @@ const interceptNetResponse = (function (theWindow) {
             // Non-GET requests keep their original URL/body and cannot become
             // routing, media health, or active-measurement evidence.
             if (requestState.httpMethod !== 'GET' && deps.isMediaSegmentUrl(urlStr)) {
+                if (deps.isHostAllowed && !deps.isHostAllowed(deps.parseMediaHttpUrl(urlStr)?.hostname)) this._localBlocked = true
                 return openNative(this, nativeMethod, url, rest)
             }
 
@@ -162,6 +168,10 @@ const interceptNetResponse = (function (theWindow) {
                 requestState.originalUrl = mappedOriginalUrl
                 requestState.hostRewriteAttempt = mappedOriginalUrl !== urlStr
                 const nativeRoute = deps.resolveRequestRoute(urlStr, mediaRequests.get(this))
+                if (nativeRoute?.action === 'block') {
+                    this._localBlocked = true
+                    return openNative(this, nativeMethod, urlStr, rest)
+                }
                 mediaRequests.get(this).routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null
                 const norm = nativeRoute
                     ? { url: nativeRoute.url, changed: nativeRoute.url !== urlStr, originCdn: deps.parseMediaHttpUrl(urlStr)?.hostname,
@@ -212,22 +222,78 @@ const interceptNetResponse = (function (theWindow) {
             this._blockAbort = false
             this._blockedDone = false
             this._blockedBody = ''
+            this._localBlocked = false
+            this._localBlockDone = false
+            this._localBlockSent = false
             this._biliRequestSeq = (this._biliRequestSeq || 0) + 1
             return super.abort()
         }
-        get readyState()  { return this._blockedDone ? 4 : super.readyState }
-        get status()      { return this._blockedDone ? 503 : super.status }
-        get statusText()  { return this._blockedDone ? 'Service Unavailable' : super.statusText }
-        get responseURL() { return this._blockedDone ? (this._interceptUrl || '') : super.responseURL }
+        get readyState()  { return this._localBlockDone ? 4 : this._blockedDone ? 4 : super.readyState }
+        get status()      { return this._localBlocked ? 0 : this._blockedDone ? 503 : super.status }
+        get statusText()  { return this._localBlocked ? '' : this._blockedDone ? 'Service Unavailable' : super.statusText }
+        get responseURL() { return this._localBlocked ? '' : this._blockedDone ? (this._interceptUrl || '') : super.responseURL }
         getResponseHeader(name) {
+            if (this._localBlocked) return null
             if (!this._blockedDone) return super.getResponseHeader(name)
             return String(name).toLowerCase() === 'content-type' ? 'application/json' : null
         }
         getAllResponseHeaders() {
+            if (this._localBlocked) return ''
             return this._blockedDone ? 'content-type: application/json\r\n' : super.getAllResponseHeaders()
         }
 
+        setRequestHeader(name, value) {
+            super.setRequestHeader(name, value)
+            this._savedHeaders?.push([String(name), String(value)])
+        }
+        _deliverLocalBlock() {
+            if (this._localBlockSent) throw new DOMException('Request already sent', 'InvalidStateError')
+            this._localBlockSent = true
+            const seq = this._biliRequestSeq
+            const finish = () => {
+                this._blockedTimer = null
+                if (seq !== this._biliRequestSeq || !this._localBlocked) return
+                this._localBlockDone = true
+                deps.DiagnosticLog.record('route-blocked', { reason: 'host-restricted', method: 'xhr' }, true)
+                for (const type of ['readystatechange', 'error', 'loadend']) {
+                    this.dispatchEvent(new Event(type))
+                    if (seq !== this._biliRequestSeq || !this._localBlocked) break
+                }
+            }
+            if (this._openArgs?.[2]?.[0] === false) {
+                this._localBlockDone = true
+                throw new DOMException('BiliCDN host restricted', 'NetworkError')
+            }
+            this._blockedTimer = setTimeout(finish, 0)
+        }
         send(...args) {
+            // Revalidate between open and send without touching any in-flight request.
+            if (!mediaSendInFlight.has(this) && this._openArgs && !this._blockAbort) {
+                const currentHost = deps.parseMediaHttpUrl(this._interceptUrl)?.hostname
+                if (this._localBlocked || (!deps.disabled && deps.isHostAllowed && !deps.isHostAllowed(currentHost)
+                    && deps.isMediaSegmentUrl(this._interceptUrl))) {
+                    if (this._localBlockSent) throw new DOMException('Request already sent', 'InvalidStateError')
+                    const [method, original, rest] = this._openArgs
+                    const decision = deps.disabled ? { url: original }
+                        : method.toUpperCase() !== 'GET' ? { url: original, action: deps.isHostAllowed(deps.parseMediaHttpUrl(original)?.hostname) ? 'pass' : 'block' }
+                        : deps.resolveRequestRoute(original, mediaRequests.get(this))
+                    this._localBlocked = decision?.action === 'block'
+                    if (this._localBlocked) return this._deliverLocalBlock()
+                    const next = decision?.url || original
+                    const headers = [...this._savedHeaders]
+                    openNative(this, method, next, rest)
+                    for (const [name,value] of headers) super.setRequestHeader(name,value)
+                    this._interceptUrl = next
+                    const state = mediaRequests.get(this)?.transport
+                    if (state) {
+                        state.interceptUrl = next; state.targetCdn = deps.parseMediaHttpUrl(next)?.hostname
+                        state.hostRewriteAttempt = next !== state.originalUrl && decision?.type !== 'native-signed' && decision?.action !== 'restore'
+                        this._hostRewriteAttempt = state.hostRewriteAttempt
+                        this._redirectedCdn = state.targetCdn
+                        mediaRequests.get(this).routeDecision = { type: decision?.type, host: state.targetCdn, changed: next !== original }
+                    }
+                }
+            }
             if (this._biliJsonMetadata && !deps.disabled) {
                 try { this.setRequestHeader('Accept', 'application/json, text/plain, */*') } catch {}
             }
@@ -378,6 +444,7 @@ const interceptNetResponse = (function (theWindow) {
         }
 
         get responseText() {
+            if (this._localBlocked) return ''
             if (this._blockedDone) return this._blockedBody
             if (this.readyState !== this.DONE) return super.responseText
             if (deps.disabled) return super.responseText
@@ -385,6 +452,7 @@ const interceptNetResponse = (function (theWindow) {
             return transformPlayurlOnce(this, 'text', super.responseText)
         }
         get response() {
+            if (this._localBlocked) return this.responseType === '' || this.responseType === 'text' ? '' : null
             if (this._blockedDone) {
                 if (this.responseType === 'json') {
                     try { return JSON.parse(this._blockedBody) } catch { return null }
@@ -553,7 +621,14 @@ const interceptNetResponse = (function (theWindow) {
             try { normalized = new NativeRequest(wasRequest ? input : new URL(urlStr, location.href).href, init) }
             catch (error) { return Promise.reject(error) }
             const normalizedMethod = invoke(requestMethodGetter, normalized, [])
-            if (normalizedMethod !== 'GET') return OriginalFetch(normalized)
+            if (normalizedMethod !== 'GET') {
+                if (deps.isHostAllowed && !deps.isHostAllowed(deps.parseMediaHttpUrl(urlStr)?.hostname)) {
+                    deps.noteHostRestriction?.(deps.parseMediaHttpUrl(urlStr)?.hostname, null)
+                    deps.DiagnosticLog.record('route-blocked', { reason: 'host-restricted', method: 'fetch' }, true)
+                    return Promise.reject(new TypeError('BiliCDN host restricted'))
+                }
+                return OriginalFetch(normalized)
+            }
             if (wasRequest) { input = normalized; init = undefined }
             else init = { method: normalizedMethod, headers: normalized.headers, signal: normalized.signal,
                 credentials: normalized.credentials, mode: normalized.mode, cache: normalized.cache,
@@ -565,6 +640,10 @@ const interceptNetResponse = (function (theWindow) {
             mediaContext.httpMethod = 'GET'
             const mappedOriginalUrl = deps.getOriginalStreamUrl(urlStr)
             const nativeRoute = deps.resolveRequestRoute(urlStr, mediaContext)
+            if (nativeRoute?.action === 'block') {
+                deps.DiagnosticLog.record('route-blocked', { reason: 'host-restricted', method: 'fetch' }, true)
+                return Promise.reject(new TypeError('BiliCDN host restricted'))
+            }
             mediaContext.routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null
             const norm = nativeRoute
                 ? { url: nativeRoute.url, changed: nativeRoute.url !== urlStr, originCdn: deps.parseMediaHttpUrl(urlStr)?.hostname,

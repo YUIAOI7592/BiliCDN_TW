@@ -9,11 +9,12 @@ export function discoverTests(directory = 'tests') {
   }).sort();
 }
 
-export function runTests({ security = false } = {}) {
+export function runTests({ security = false, functional = false } = {}) {
   if (!existsSync(process.env.BILICDN_TEST_TARGET || 'dist/BiliCDN_TW.user.js')) throw Error('Build target missing; tests must not silently skip');
-  const files = discoverTests().filter(path => !security || /security-cs00[123]\.test\.js$/.test(path));
+  const files = discoverTests().filter(path => !security || /security-cs00[123]\.test\.js$/.test(path))
+    .filter(path => !functional || !/security|method-admission|worker-observability|bundle-v160/.test(path));
   if (!files.length) throw Error('No tests discovered');
-  const result = spawnSync(process.execPath, ['--test', ...files], { stdio: 'inherit' });
+  const result = spawnSync(process.execPath, ['--test', ...(functional ? ['--test-name-pattern=^(?!.*(?:security|CS-00|forged|spoof|attacker|synthetic|mutator|private policy|untrusted|closed shadow|capability|page cannot|page cannot|unsafeWindow|no Worker|Worker)).*$'] : []), ...files], { stdio: 'inherit' });
   if (result.error) throw result.error;
   if (result.status !== 0) throw Error(`Tests failed (${result.status})`);
 }
@@ -21,5 +22,5 @@ export function runTests({ security = false } = {}) {
 if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/test.mjs')) {
   const { build } = await import('./build.mjs');
   await build(); await build({testing:true});
-  runTests({ security: process.argv.includes('--security') });
+  runTests({ security: process.argv.includes('--security'), functional: process.argv.includes('--functional') });
 }

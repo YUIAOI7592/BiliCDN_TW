@@ -98,7 +98,7 @@ const applyCatalogSelection = selectedIndices => {
     Object.keys(deps.catalogOverrides).forEach(host => delete deps.catalogOverrides[host])
     deps.TRUSTED_CDN_CATALOG.forEach((host, index) => {
         const enabled = selected.has(index)
-        const headerDefault = !deps.matchesHeaderExclude(host)
+        const headerDefault = !deps.matchesHeaderExclude(host) && !(deps.INITIAL_DEAD_HOSTS_TW || []).includes(host)
         if (enabled !== headerDefault) deps.catalogOverrides[host] = enabled
     })
     persistCatalogOverrides()

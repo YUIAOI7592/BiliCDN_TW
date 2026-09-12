@@ -404,8 +404,7 @@ const KNOWN_BAD_TW_HOSTS = new Set(deps.INITIAL_DEAD_HOSTS_TW)
 
 const isPresumedDnsFailHost = (host) => {
     if (!host || !KNOWN_BAD_TW_HOSTS.has(host)) return false
-    const h = cdnHealth[host]
-    return !h || ((h.successes || 0) === 0 && (h.samples || 0) === 0)
+    return deps.catalogOverrides?.[host] !== true
 }
 
 const isCdnSoftBlocked = (cdn) => {
@@ -549,12 +548,8 @@ const recordCdnHealthSuccess = (cdn, requestStartedAt) => {
     h.lastSuccessAt = now
     h.lastSeen = now
     // v1.4.0：成功只證明「連得通」，不代表速度夠快，因此不再遞減 slowSamples。
-    // 只有在失敗／軟隔離之後才新發出的請求成功，才允許清除處分；避免隔離前已在途的
-    // 舊請求稍後完成，反過來把剛下的新處分與失敗計數立刻撤銷。
-    if (mayRecover && requestStartedAt >= (h.lastSoftBlockAt || 0) && cdnSoftBlockUntil[cdn]) {
-        delete cdnSoftBlockUntil[cdn]
-        h.lastSoftBlockReason = ''
-    }
+    // 既有在途請求完成也不能解除處分；到期或明確維護操作才解除。
+    // Success updates observations, never revokes an active restriction.
     scheduleCdnHealthSave()
     return mayRecover
 }
@@ -660,7 +655,7 @@ const getHealthyCdnList = (opts) => {
     //   [Transport] upos-sz-mirrorcosov → upos-sz-mirrorhwov（非白名單，累計 1 次）
     // 「被懲罰過但連得到」永遠優於「乾淨但連不到」。
     const mk = (cdn, index) => ({ cdn, index, health: cdnHealth[cdn], score: getCdnHealthScore(cdn, opts) })
-    const all = activeCdnList.map(mk)
+    const all = activeCdnList.filter(c => !deps.isHostAllowed || deps.isHostAllowed(c)).map(mk)
     const reachable  = all.filter(item => !isPresumedDnsFailHost(item.cdn))
     // ★ 上面那條「可達優先於乾淨」的規則有個更上游的漏洞：cdnFailCount 只是「記帳」，
     // 但累積到 CDN_FAIL_THRESHOLD（2 次）就會 addToBlacklist()，而黑名單是直接把節點
@@ -675,7 +670,8 @@ const getHealthyCdnList = (opts) => {
     let base = reachable
     if (!base.length) {
         const salvaged = deps.PREFERRED_CDN_LIST
-            .filter(c => !isPresumedDnsFailHost(c) && !knownDeadHosts.has(c) && !deps.matchesExclude(c))
+            .filter(c => !isPresumedDnsFailHost(c) && !knownDeadHosts.has(c) && !blacklistSet.has(c)
+                && !deps.matchesExclude(c) && !isCdnSoftBlocked(c) && (!deps.isHostAllowed || deps.isHostAllowed(c)))
             .map(mk)
         base = salvaged.length ? salvaged : all
     }
@@ -785,7 +781,7 @@ const recordCdnSuccess = (cdn, requestStartedAt) => {
 
 const peekBestCdn = (opts) => {
     const healthy = getHealthyCdnList(opts)
-    if (!healthy.length) return activeCdnList[0] || null
+    if (!healthy.length) return null
     let pick = healthy[0]
     if (lastChosenCdn && lastChosenCdn !== pick && healthy.includes(lastChosenCdn)) {
         const curScore = getCdnHealthScore(lastChosenCdn, opts)
@@ -813,21 +809,8 @@ const getBestCdn = (opts) => {
         lastChosenCdn = pick
         return pick
     }
-    if (activeCdnList.length > 0) {
-        activeCdnList.forEach(c => { cdnFailCount[c] = 0 })
-        return activeCdnList[0]
-    }
-    deps.err('[警告] 所有白名單節點均失效，自動重置黑名單')
-    clearBlacklist()
-    if (activeCdnList.length > 0) return activeCdnList[0]
-    // 連黑名單清掉後仍無節點 → 代表白名單幾乎全被標死（網路/VPN 變動或誤判殘留）。
-    // 救回非預設（學習而來）的死節點，避免完全沒節點可用而失效。
-    const allPreferredDead = deps.PREFERRED_CDN_LIST.every(c => knownDeadHosts.has(c) || blacklistSet.has(c))
-    if (allPreferredDead) {
-        deps.err('[警告] 白名單全數標死，自動清除死節點重新啟用')
-        clearDeadHosts()
-    }
-    return activeCdnList[0] || null
+    // Exhaustion is not authority to erase a restriction.
+    return null
 }
 
 const promoteBestCdnNow = () => {
@@ -880,9 +863,9 @@ const resolvedCdn = (() => {
     return stored
 })()
 
-const getCurrentCdn   = (opts) => resolvedCdn || getBestCdn(opts)
+const getCurrentCdn   = (opts) => resolvedCdn && (!deps.isHostAllowed || deps.isHostAllowed(resolvedCdn)) ? resolvedCdn : getBestCdn(opts)
 
-const peekCurrentCdn  = (opts) => resolvedCdn || peekBestCdn(opts)
+const peekCurrentCdn  = (opts) => resolvedCdn && (!deps.isHostAllowed || deps.isHostAllowed(resolvedCdn)) ? resolvedCdn : peekBestCdn(opts)
 
 const getCdnShortName = () => { const c = peekCurrentCdn(); return c ? c.split('.')[0] : 'N/A' }
 

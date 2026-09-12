@@ -129,7 +129,9 @@ test('v1.5.3 R1/R2 normal mp4 and m3u8 still enter main Fetch/XHR interception a
 
 test('v1.5.3 R2 protected URL matrix reaches Fetch, XHR, playurl and sink unchanged', async () => {
     const h = load()
-    const hosts = [ali, 'upos-sz-mirrorcosov.bilivideo.com', 'upos-sz-unlisted.bilivideo.com']
+    // Forbidden hosts are separately covered by v183: protected paths cannot
+    // be rewritten, so they must locally fail instead of using an excluded host.
+    const hosts = [ali, 'upos-sz-mirrorcos.bilivideo.com', 'upos-sz-unlisted.bilivideo.com']
     const urls = hosts.flatMap(host => [
         `https://${host}:8443/upgcxcode/guard.m4s?sig=x`,
         `https://${host}/live-bvc/1/guard.m3u8`,

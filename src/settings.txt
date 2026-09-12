@@ -1,9 +1,11 @@
 // ── 使用者設定 ────────────────────────────────────────────────────────
 // 一般使用者不需要修改；安裝後重整 Bilibili 影片頁即可使用。
-// CustomCDN：留空 = 自動輪換；填 host = 固定該 CDN；填 'null' = 清除 GM 設定
+// CustomCDN：留空 = 自動選路；填 host = 固定該 CDN；填 'null' = 清除 GM 設定
+// 固定也不豁免禁止規則；被禁止時保留設定並暫用合格替代。
 var CustomCDN = ''
 
-// ExcludeHostKeywords：host 名稱含這些子字串就不會被選用/probe/重導向
+// ExcludeHostKeywords：禁止使用匹配 host，包含原始／備援 URL、probe 與 preconnect。
+// 沒有合法替代路線時本地阻止請求；有效 black/dead/soft 不因成功或固定設定解除。
 // 例：['cosov']、['cos']（含 cosov）、['ov.bilivideo']（不建議，海外節點全排）
 // 動態調整請使用 Tampermonkey「BiliCDN 控制中心 → CDN 選路」。
 //

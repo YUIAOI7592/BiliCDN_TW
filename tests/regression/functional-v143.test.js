@@ -145,14 +145,14 @@ test('v1.5.3: trusted menu can explicitly enable cosov without exposing a page m
     assert.equal(Object.values(h.pageWindow.BiliCDN).some(value => typeof value === 'function'), false)
 })
 
-test('v1.5.3: fixed catalog CDN takes precedence over an automatic-routing override', { skip: !fs.existsSync(v143) }, () => {
+test('v183: fixed catalog setting is retained but cannot bypass a disabled host', { skip: !fs.existsSync(v143) }, () => {
     const fixed = 'upos-sz-mirrorcosov.bilivideo.com'
     const h = loadUserscript(v143, {
         gmSeed: { disabled: true, catalogOverrides_v1: { [fixed]: false } },
         customCdn: fixed,
     })
     assert.equal(h.evaluate('resolvedCdn'), fixed)
-    assert.equal(h.evaluate('getCurrentCdn()'), fixed)
+    assert.notEqual(h.evaluate('getCurrentCdn()'), fixed)
 })
 
 test('v1.5.3: disabling does not cancel a player Fetch body and suppresses its stale statistics', { skip: !fs.existsSync(v143) }, async () => {

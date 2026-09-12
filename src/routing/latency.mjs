@@ -15,6 +15,7 @@ const PROBE_TIMEOUT_STRIKES = 3
 const CONFIRM_TIMEOUT_MS = 10000
 
 const confirmHostReachable = (cdn, timeoutMs, runtimeToken = deps.captureRuntimeGeneration()) => new Promise((resolve) => {
+    if (deps.isHostAllowed && !deps.isHostAllowed(cdn)) return resolve(null)
     if (!deps.isRuntimeGenerationActive(runtimeToken)) return resolve(null)
     let settled = false
     let to = null
@@ -81,6 +82,7 @@ const handleSegmentConnError = (cdn, bytesReceived) => {
 }
 
 const probeCdnLatency = (cdn, runtimeToken = deps.captureRuntimeGeneration()) => new Promise((resolve) => {
+    if (deps.isHostAllowed && !deps.isHostAllowed(cdn)) return resolve({ cdn, ms: Infinity, reason: 'ineligible' })
     if (!deps.isRuntimeGenerationActive(runtimeToken)) return resolve({ cdn, ms: Infinity, cancelled: true })
     if (deps.knownDeadHosts.has(cdn)) return resolve({ cdn, ms: Infinity })
 

@@ -5,12 +5,12 @@ const runtimeHintIds = new Set()
 const preconnectCdn = (cdn, force) => {
     try {
         if (!deps.isValidCustomCdnHost(cdn)) return
+        if (deps.isHostAllowed && !deps.isHostAllowed(cdn)) return
         // presumed（已知在台灣不解析、本機從無成功紀錄）也要擋：preconnect 走的一樣是
         // DNS 解析，對 NXDOMAIN 的 host 熱身換不到任何東西。這裡的呼叫端目前都先經過
         // getHealthyCdnList()（會濾掉 presumed），但那是呼叫端的性質、不是這個函式的保證——
         // 死節點機制的設計目標寫的是「跳過所有 probe/preconnect」，就該在這裡也守住。
-        const fixedTarget = (() => { try { return !!deps.resolvedCdn && cdn === deps.resolvedCdn } catch { return false } })()
-        if (!fixedTarget && (deps.knownDeadHosts.has(cdn) || deps.blacklistSet.has(cdn) || deps.isCdnSoftBlocked(cdn)
+        if ((deps.knownDeadHosts.has(cdn) || deps.blacklistSet.has(cdn) || deps.isCdnSoftBlocked(cdn)
             || deps.matchesExclude(cdn) || deps.isPresumedDnsFailHost(cdn))) return
         const id = 'bilicdn-preconn-' + cdn
         const existing = document.getElementById(id)

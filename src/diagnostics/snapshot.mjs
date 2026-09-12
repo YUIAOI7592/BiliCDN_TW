@@ -95,6 +95,7 @@ const buildPublicDiagnosticSnapshot = () => {
                 : 'assumed',
         },
         mediaDelivery: deps.getMediaDeliverySnapshot(),
+        hostRestrictions: deps.hostRestrictionSummary?.() || {},
         nativeRouting: {
             selectedRouteType: ['catalog-generated','native-signed','root-original'].includes(native.currentRouteType)
                 ? native.currentRouteType : 'unknown',

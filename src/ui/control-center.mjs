@@ -104,7 +104,8 @@ const showRoutingCenter = () => {
             label: host,
             detail: [
                 host === deps.resolvedCdn ? '目前固定' : '',
-                '檔頭預設=' + (deps.matchesHeaderExclude(host) ? '停用' : '啟用'),
+                '使用狀態=' + (deps.hostRestriction?.(host).allowed === false ? '禁止使用' : '允許'),
+                '禁止原因=' + (deps.hostRestriction?.(host).reasons.join('、') || '無'),
                 Object.prototype.hasOwnProperty.call(deps.catalogOverrides, host) ? 'override' : '',
                 deps.knownDeadHosts.has(host) ? 'dead' : '',
                 deps.isPresumedDnsFailHost(host) ? 'presumed' : '',
@@ -118,8 +119,8 @@ const showRoutingCenter = () => {
     return deps.TrustedMenuUI.openRouting({
         title: 'CDN 選路',
         paragraphs: [deps.resolvedCdn
-            ? '目前使用固定 CDN；Native signed route 不會成為 primary，候選勾選會保留，恢復自動後生效。'
-            : '此頁只管理可信 catalog；Native 評級不會加入 catalog。至少保留一個非 presumed 自動候選。'],
+            ? '固定 CDN 也須遵守禁止規則；被禁時暫用合格替代，設定保留。未勾選禁止原始及備援請求。'
+            : '未勾選即禁止使用，包含原始及備援請求。勾選不清除 black／dead／soft；沒有替代路線會阻止請求。'],
         routes,
         fixedSelected,
         catalogSelected,

@@ -53,6 +53,7 @@ let onBakeoffStart        = () => {}
 const probeRouteThroughput = (candidate, sampleUrl, probeBytes, externalSignal, recordSample = null) => new Promise((resolve) => {
     const runtimeToken = deps.captureRuntimeGeneration()
     const cdn = candidate?.host
+    if (deps.isHostAllowed && !deps.isHostAllowed(cdn)) return resolve({ status: 'ineligible', accepted: false, bytes: 0 })
     const native = candidate?.type === 'native-signed'
     const sample = native ? candidate.url : sampleUrl
     const sampleContext = native ? candidate : deps.captureRouteContext(sample)

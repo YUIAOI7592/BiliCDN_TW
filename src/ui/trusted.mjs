@@ -429,7 +429,7 @@ const TrustedMenuUI = (() => {
             dom.append(routeList, button)
         })
         dom.append(dialog.body, routeList)
-        dom.append(dialog.body, make('h3', '自動選路候選', { className: 'section-title' }))
+        dom.append(dialog.body, make('h3', '節點使用許可（未勾選＝禁止使用）', { className: 'section-title' }))
         const catalogList = make('div', null, { className: 'choices' })
         routes.slice(1, 65).forEach((route, index) => {
             const button = make('button', null, { className: 'choice', action: 'catalog-' + index })

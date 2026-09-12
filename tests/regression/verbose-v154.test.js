@@ -134,6 +134,7 @@ test('v154 transport: HTTP, network and body errors are distinct; abort forwards
     for(const outcome of ['http','network-error','body-error','abort']) {
         let originalReason
         const h=load({fetchImpl:async url=>String(url).includes('/x/player/')?new Response(JSON.stringify(F.payload())):
+            String(url).includes('/crossdomain.xml')?new Response('ok'):
             outcome==='http'?new Response('denied',{status:503}):outcome==='network-error'?Promise.reject(Error('https://SECRET')):
             new Response(new ReadableStream({pull(c){if(outcome==='body-error')c.error(Error('https://SECRET'))},cancel(r){originalReason=r}}))})
         await F.prime(h)

@@ -72,7 +72,7 @@ const reorderCdnsByLatency = async (force) => {
                     // 醃在快取裡整整兩小時：之後每次載入都照著那份短清單重建，池子再也長不回來
                     //（使用者實測回報 active 只剩 1 個節點，就是這樣來的）。
                     // 現在快取裡有的照原順序放前面，其餘「當下沒有任何理由排除」的候選補在後面。
-                    const usable = (c) => !deps.blacklistSet.has(c) && !deps.knownDeadHosts.has(c)
+                    const usable = (c) => (!deps.isHostAllowed || deps.isHostAllowed(c)) && !deps.blacklistSet.has(c) && !deps.knownDeadHosts.has(c)
                         && !deps.isCdnSoftBlocked(c) && deps.PREFERRED_CDN_LIST.includes(c)
                     deps.activeCdnList.length = 0
                     cached.list.forEach(c => { if (usable(c)) deps.activeCdnList.push(c) })
@@ -100,6 +100,7 @@ const reorderCdnsByLatency = async (force) => {
         deferStartupProbes = false
 
         const candidates = deps.PREFERRED_CDN_LIST.filter(h => {
+            if (deps.isHostAllowed && !deps.isHostAllowed(h)) return false
             if (deps.knownDeadHosts.has(h) || deps.isCdnSoftBlocked(h)) return false
             // 已知在台灣不解析的節點一律不發探測請求：那個請求**必定**失敗、必定在
             // console 印一行 ERR_NAME_NOT_RESOLVED，而它換不到任何新資訊——

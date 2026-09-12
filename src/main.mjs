@@ -2,6 +2,7 @@ import { createSettings } from './config.mjs';
 import { createEvents } from './diagnostics/events.mjs';
 import { createRuntime } from './runtime/generation.mjs';
 import { createCatalog } from './policy/catalog.mjs';
+import { createHostAccess } from './policy/host-access.mjs';
 import { createHealth } from './routing/health.mjs';
 import { createNativeRoutes } from './routing/native-routes.mjs';
 import { createRate } from './playback/rate.mjs';
@@ -57,6 +58,16 @@ let snapshot;
 let catalogControls;
 let views;
 let application;
+const hostAccess = createHostAccess({
+get matchesExclude() { return catalog.matchesExclude; },
+get initialDead() { return catalog.INITIAL_DEAD_HOSTS_TW; },
+get overrides() { return catalog.catalogOverrides; },
+get catalog() { return catalog.TRUSTED_CDN_CATALOG_SET; },
+get black() { return health?.blacklistSet; },
+get dead() { return health?.knownDeadHosts; },
+get soft() { return health?.isCdnSoftBlocked; },
+get nativeBlocked() { return nativeRoutes?.isHostSoftBlocked; }
+});
 settings = createSettings({
 
 }, settingsInput);
@@ -76,6 +87,8 @@ catalog = createCatalog({
 get ExcludeHostKeywords() { return settings.ExcludeHostKeywords; }
 });
 health = createHealth({
+get isHostAllowed() { return hostAccess.allowed; },
+get catalogOverrides() { return catalog.catalogOverrides; },
 get TRUSTED_CDN_CATALOG_SET() { return catalog.TRUSTED_CDN_CATALOG_SET; },
 get VERSION() { return settings.VERSION; },
 get verGte() { return settings.verGte; },
@@ -100,6 +113,10 @@ get CustomCDN() { return settings.CustomCDN; },
 get PluginName() { return events.PluginName; }
 });
 nativeRoutes = createNativeRoutes({
+get noteHostDiscovery() { return hostAccess.discover; },
+get isHostAllowed() { return hostAccess.allowed; },
+get noteHostRestriction() { return hostAccess.note; },
+get getHealthyCdnList() { return health.getHealthyCdnList; },
 get isBiliVideoUrl() { return mediaPolicy.isBiliVideoUrl; },
 get gmGet() { return key => GM_getValue(key); },
 get gmSet() { return (key, value) => GM_setValue(key, value); },
@@ -191,6 +208,7 @@ get redirectStats() { return evidence.redirectStats; },
 get PROBE_CACHE_KEY() { return latency.PROBE_CACHE_KEY; }
 });
 rewrite = createRewrite({
+get isHostAllowed() { return hostAccess.allowed; },
 get redirectStats() { return evidence.redirectStats; },
 get parseMediaHttpUrl() { return mediaPolicy.parseMediaHttpUrl; },
 get classifyMediaDelivery() { return mediaPolicy.classifyMediaDelivery; },
@@ -255,6 +273,8 @@ get planUnregisteredItem() { return nativeRoutes.planUnregisteredItem; },
 get applySignedRoutePlan() { return nativeRoutes.applySignedRoutePlan; }
 });
 transport = createTransport({
+get isHostAllowed() { return hostAccess.allowed; },
+get noteHostRestriction() { return hostAccess.note; },
 get parseMediaHttpUrl() { return mediaPolicy.parseMediaHttpUrl; },
 get disabled() { return runtime.disabled; },
 get DiagnosticLog() { return events.DiagnosticLog; },
@@ -318,6 +338,7 @@ dom = createDom({
 
 });
 latency = createLatency({
+get isHostAllowed() { return hostAccess.allowed; },
 get captureRuntimeGeneration() { return runtime.captureRuntimeGeneration; },
 get isRuntimeGenerationActive() { return runtime.isRuntimeGenerationActive; },
 get clearRuntimeTimeout() { return runtime.clearRuntimeTimeout; },
@@ -339,6 +360,7 @@ get softBlockCdn() { return health.softBlockCdn; },
 get cdnHealth() { return health.cdnHealth; }
 });
 bakeoff = createBakeoff({
+get isHostAllowed() { return hostAccess.allowed; },
 get captureRuntimeGeneration() { return runtime.captureRuntimeGeneration; },
 get isRuntimeGenerationActive() { return runtime.isRuntimeGenerationActive; },
 get isValidCustomCdnHost() { return catalog.isValidCustomCdnHost; },
@@ -387,6 +409,7 @@ get getObservedRouteHost() { return nativeRoutes.getObservedRouteHost; },
 get setNativeBakeoffDiagnostics() { return nativeRoutes.setLastBakeoff; }
 });
 hints = createHints({
+get isHostAllowed() { return hostAccess.allowed; },
 get isValidCustomCdnHost() { return catalog.isValidCustomCdnHost; },
 get resolvedCdn() { return health.resolvedCdn; },
 get knownDeadHosts() { return health.knownDeadHosts; },
@@ -396,6 +419,7 @@ get matchesExclude() { return catalog.matchesExclude; },
 get isPresumedDnsFailHost() { return health.isPresumedDnsFailHost; }
 });
 probe = createProbe({
+get isHostAllowed() { return hostAccess.allowed; },
 get activeCdnList() { return health.activeCdnList; },
 get cdnHealth() { return health.cdnHealth; },
 get knownDeadHosts() { return health.knownDeadHosts; },
@@ -478,6 +502,9 @@ trustedUI = createTrustedUI({
 get Watchdog() { return { getVideo: watchdog.Watchdog.getVideo }; }
 });
 report = createReport({
+get resolvedCdn() { return health.resolvedCdn; },
+get hostRestrictionSummary() { return hostAccess.summary; },
+get hostRestriction() { return hostAccess.restriction; },
 get playbackRateState() { return rate.playbackRateState; },
 get Watchdog() { return watchdog.Watchdog; },
 get DiagnosticLog() { return events.DiagnosticLog; },
@@ -570,6 +597,7 @@ get matchesExclude() { return catalog.matchesExclude; },
 get getHealthyCdnList() { return health.getHealthyCdnList; }
 });
 snapshot = createSnapshot({
+get hostRestrictionSummary() { return hostAccess.summary; },
 get playbackRateState() { return rate.playbackRateState; },
 get ASSUMED_PLAYBACK_RATE() { return rate.ASSUMED_PLAYBACK_RATE; },
 get Watchdog() { return watchdog.Watchdog; },
@@ -603,6 +631,7 @@ get uiInjectStatus() { return runtime.uiInjectStatus; },
 get err() { return events.err; }
 });
 catalogControls = createCatalogControls({
+get INITIAL_DEAD_HOSTS_TW() { return catalog.INITIAL_DEAD_HOSTS_TW; },
 get disabled() { return runtime.disabled; },
 get getCurrentCdn() { return health.getCurrentCdn; },
 get STARTUP_PICK() { return health.STARTUP_PICK; },
@@ -630,6 +659,7 @@ get isPresumedDnsFailHost() { return health.isPresumedDnsFailHost; },
 get controlResult() { return controls.controlResult; }
 });
 views = createViews({
+get hostRestriction() { return hostAccess.restriction; },
 get TrustedMenuUI() { return trustedUI.TrustedMenuUI; },
 get BiliCDNControls() { return controls.BiliCDNControls; },
 get refreshPublicDiagnosticSnapshot() { return snapshot.refreshPublicDiagnosticSnapshot; },

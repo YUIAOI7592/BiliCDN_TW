@@ -21,7 +21,9 @@ v1.8.1 將 Native 評級與換線權限分離：健康播放中的 probe／bakeo
 
 v1.8.2 統一 Catalog／Native URL 決策，移除舊 Akamai 提升旁路；只有內嵌資料時，也能在 exact 影片請求成功後建立受限歸因與一次起播測速。內建 Catalog 不必出現在本片資料即可參賽；Native 資格不授予換 host 或 preconnect 權限。診斷分開計畫、實際觀察及來源提示。
 
-v1.8.2 目前是未發布候選，安全覆核仍有兩項 HTTP 方法證據待釐清；不代表 latest Release 已更新。發布驗證與安全狀態以 [TEST_REPORT](Release/v1.8.2/TEST_REPORT_v1.8.2.md) 為準。VM 測試不等於 Chrome／Tampermonkey 實機驗證；仍需測試自動畫質、1080p／4K 2x、seek、畫質升降、SPA、背景切回、陌生節點探索與控制中心。
+v1.8.3 恢復 black／dead／soft、設定排除與預設不可用節點的禁止效力：原始、Native、Catalog、固定及備援都不是例外。候選耗盡不再自動清黑名單；沒有合法替代時本地阻止，不取消在途播放器請求。勾選啟用只解除設定層排除，仍須等待處分到期或明確維護解除。
+
+本版不執行 Code Security 掃描，功能驗證與限制見 [TEST_REPORT](Release/v1.8.3/TEST_REPORT_v1.8.3.md)。黑名單修復不等於其他卡頓已解決；發布後以自動畫質＋2x 實測被禁 host 的新請求、替代播放、seek、SPA 與背景切回。VM 結果不等於 Chrome／Tampermonkey 實機驗收。
 
 ## 本機開發
 
@@ -35,7 +37,7 @@ npm run package
 npm run verify
 ```
 
-build 建立 dist；test 先重建再遞迴測試；package 在本機產生 userscript、來源清單、雙 patch 與 SHA；verify 驗證正式產物、全部測試、CS 子集及實際 patch 套用。兩套 scripts/verify shell 使用共同 Node 邏輯。
+build 建立 dist；test 先重建再跑功能回歸；package 在本機產生 userscript、來源清單、雙 patch 與 SHA；verify 驗證正式產物、功能回歸及實際 patch 套用，不啟動安全掃描／獨立 CS 子集。兩套 verify shell 使用共同 Node 邏輯。
 
 **沒有 CI/CD、GitHub Actions、自動發布、遙測或執行期套件依賴。** esbuild 只是本機工具。
 

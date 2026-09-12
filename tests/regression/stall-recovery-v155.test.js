@@ -118,7 +118,10 @@ test('v155 timeout: same-host terminal events are coalesced before every punitiv
     await F.prime(h);const c=request(h);body(c);h.clock.advance(3000);end(c)
     assert.equal(health(h).failures,1)
     h.clock.advance(30000);const d=request(h);body(d);h.clock.advance(3000);end(d)
-    assert.equal(health(h).failures,2)
+    // v183 refuses the still-soft-blocked original; another request must not
+    // keep using it simply because the failure throttle has elapsed.
+    assert.notEqual(new URL(d.url).hostname,F.ali)
+    assert.equal(health(h).failures,1)
 })
 
 test('v155 XHR reuse releases previous listeners and only latest request can complete',async()=>{

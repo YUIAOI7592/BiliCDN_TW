@@ -10,7 +10,7 @@ const DiagnosticLog = (() => {
     const encoder = new TextEncoder()
     const codes = new Set(('runtime verbose settings-read settings-write settings-verify exception '
         + 'request headers body eof no-body http network-error body-error abort reopened detached '
-        + 'rewrite measurement watchdog recovery breaker host-lock clipboard sample').split(' '))
+        + 'rewrite measurement watchdog recovery breaker host-lock clipboard sample route-blocked').split(' '))
     const enums = new Set(('fetch xhr video audio muxed unknown non-catalog headers body '
         + 'settings-read settings-write settings-verify startup active disabled spa epoch '
         + 'interceptor transform fetch-body playurl-body playurl-clone measurement watchdog snapshot '
@@ -21,7 +21,7 @@ const DiagnosticLog = (() => {
         + 'attempt progress no-progress interrupted no-attribution attributed received httpdns '
         + 'accepted skipped complete cancelled failed timeout partial latency-only '
         + 'http network-error body-error abort eof no-body reopened detached automatic manual '
-        + 'fixed no-segment busy hidden not-applicable host-lock forbidden insufficient ineligible').split(' '))
+        + 'fixed no-segment busy hidden not-applicable host-lock forbidden insufficient ineligible host-restricted').split(' '))
     const keys = new Set(('generation epoch id method kind originalHost targetHost finalHost host '
         + 'status bytes startAt responseAt endAt ageMs phase stage reason enabled persisted '
         + 'readyState networkState currentTime duration bufferAheadSec observedRate effectiveRate '

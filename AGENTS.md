@@ -4,7 +4,9 @@
 
 目前不可變上游基準：`baseline/BiliCDN_TW_1.3.4.original.user.js`
 
-目前模組化候選：`src/` → `Release/v1.8.2/BiliCDN_TW.user.js`（驗收／安全狀態以本版 TEST_REPORT 為準）。
+目前模組化交付：`src/` → `Release/v1.8.3/BiliCDN_TW.user.js`（功能驗證狀態以本版 TEST_REPORT 為準）。
+
+v1.8.3 遵照使用者要求不執行 Code Security 掃描或獨立安全子集。npm test／verify 預設執行功能回歸。禁止判定必須同時約束原始、Native、Catalog、固定與備援 URL；不可因候選耗盡自動清除 black/dead，無合法替代則本地阻止，不取消在途播放器請求。
 
 不可變重構基準：`tests/fixtures/BiliCDN_TW_1.5.5.user.js`（正式 v1.5.5 的原 bytes，非 development 草稿）。
 

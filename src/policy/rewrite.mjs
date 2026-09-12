@@ -205,9 +205,10 @@ const decideMediaRewrite = (urlStr, preserveFallback = false) => {
 
 const replaceUrlHost = (urlStr, targetHost) => {
     const decision = decideMediaRewrite(urlStr)
-    if (decision.action === 'restore') return decision.url
+    if (decision.action === 'restore') return !deps.isHostAllowed || deps.isHostAllowed(deps.parseMediaHttpUrl(decision.url)?.hostname) ? decision.url : null
     if (decision.action !== 'rewrite') return null
     const host = targetHost || deps.getCurrentCdn()
+    if (deps.isHostAllowed && !deps.isHostAllowed(host)) return null
     if (!deps.isValidCustomCdnHost(host)) return null
     const u = deps.parseMediaHttpUrl(urlStr)
     if (u.hostname === host) return urlStr
@@ -222,7 +223,7 @@ const buildBackupUrls = (biliSrcUrl, primaryUrl) => {
     let primaryHost, sourceHost
     try { primaryHost = new URL(primaryUrl || biliSrcUrl).hostname } catch { primaryHost = '' }
     try { sourceHost = new URL(biliSrcUrl).hostname } catch { sourceHost = '' }
-    if (deps.resolvedCdn) {
+    if (deps.resolvedCdn && (!deps.isHostAllowed || deps.isHostAllowed(deps.resolvedCdn))) {
         const u = rememberRewrittenStreamUrl(replaceUrlHost(biliSrcUrl, deps.resolvedCdn), biliSrcUrl)
         return u && u !== primaryUrl ? [u] : []
     }
@@ -319,8 +320,8 @@ const pickStreamUrls = (item, isDash) => {
 
 const withOriginalStreamFallback = (generated, originalUrl, primaryUrl) => {
     originalUrl = getOriginalStreamUrl(originalUrl)
-    const out = [...new Set((generated || []).filter(Boolean))]
-    if (originalUrl && originalUrl !== primaryUrl) {
+    const out = [...new Set((generated || []).filter(url => url && (!deps.isHostAllowed || deps.isHostAllowed(deps.parseMediaHttpUrl(url)?.hostname))))]
+    if (originalUrl && originalUrl !== primaryUrl && (!deps.isHostAllowed || deps.isHostAllowed(deps.parseMediaHttpUrl(originalUrl)?.hostname))) {
         const existing = out.indexOf(originalUrl)
         if (existing !== -1) out.splice(existing, 1)
         preservedOriginalStreamUrls.add(originalUrl)

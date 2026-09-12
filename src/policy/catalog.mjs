@@ -79,15 +79,7 @@ const catalogOverrides = (() => {
     } else if (raw != null) {
         dirty = true
     }
-    // 正常選單不會產生「所有可用節點都關閉」；若 GM 被外部手動改成這種狀態，回到檔頭預設。
-    const nonPresumed = TRUSTED_CDN_CATALOG.filter(host => !INITIAL_DEAD_HOSTS_TW.includes(host))
-    const hasUsable = nonPresumed.some(host => Object.prototype.hasOwnProperty.call(out, host)
-        ? out[host]
-        : !matchesHeaderExclude(host))
-    if (!hasUsable) {
-        Object.keys(out).forEach(host => delete out[host])
-        dirty = true
-    }
+    // Even an exhausted persisted selection must not silently re-enable hosts.
     try {
         if (dirty) {
             if (Object.keys(out).length) GM_setValue(CATALOG_OVERRIDES_KEY, { ...out })
@@ -100,6 +92,7 @@ const catalogOverrides = (() => {
 const isCatalogAutoEnabled = host => {
     if (!TRUSTED_CDN_CATALOG_SET.has(host)) return false
     if (Object.prototype.hasOwnProperty.call(catalogOverrides, host)) return catalogOverrides[host]
+    if (INITIAL_DEAD_HOSTS_TW.includes(host)) return false
     return !matchesHeaderExclude(host)
 }
 

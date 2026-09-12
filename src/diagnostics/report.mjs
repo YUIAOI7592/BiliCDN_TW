@@ -52,6 +52,10 @@ const buildDiagReport = () => {
         'UA：' + navigator.userAgent,
         '面板注入狀態：' + deps.uiInjectStatus,
         '停用狀態：' + deps.disabled,
+        '節點禁止／替代結果：' + JSON.stringify(deps.hostRestrictionSummary?.() || {}),
+        '禁止規則：black／dead／soft、設定排除及預設不可用均生效；固定或原始 URL 不例外；無替代即阻止',
+        '固定節點狀態：' + (deps.resolvedCdn ? deps.resolvedCdn + '｜' + (deps.hostRestriction?.(deps.resolvedCdn).allowed === false
+            ? '暫時禁止，設定保留；原因=' + deps.hostRestriction(deps.resolvedCdn).reasons.join('、') : '允許') : '自動'),
         '候選順序：' + (deps.activeCdnList.map(c => c.split('.')[0]).join(' > ') || '（無）'),
         '真正可選節點：' + (deps.getHealthyCdnList().map(c => c.split('.')[0]).join(' > ') || '（無）'),
         '黑名單（24h）：' + ([...deps.blacklistSet].map(c => c.split('.')[0]).join(', ') || '（無）'),
