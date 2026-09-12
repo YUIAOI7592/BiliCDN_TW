@@ -1,47 +1,122 @@
 # BiliCDN_TW
 
 > [!IMPORTANT]
-> **原作者與原始腳本：** [jiyunshi－Bilibili CDN 台灣優化](https://greasyfork.org/zh-TW/scripts/579776-bilibili-cdn-%E5%8F%B0%E7%81%A3%E5%84%AA%E5%8C%96)。本儲存庫是在該 MIT 授權腳本基礎上製作的個人改版，並非原作者的官方版本。
+> **原作者與原始腳本：** [jiyunshi－Bilibili CDN 台灣優化](https://greasyfork.org/zh-TW/scripts/579776-bilibili-cdn-%E5%8F%B0%E7%81%A3%E5%84%AA%E5%8C%96)。本儲存庫是基於原作者 MIT 授權腳本製作的個人修改版，並非原作者的官方版本。
 >
-> **AI 協作聲明：** 本個人改版的維護者不具程式撰寫能力；分析、修改、測試與文件主要由 AI 協助完成。自動測試與安全掃描不能取代真實瀏覽器驗證，使用前請理解相關限制與風險。
+> **AI 協作聲明：** 本修改版的維護者本人不具備自行撰寫程式的能力；程式分析、修改、測試與文件主要由 AI 協助完成。使用者應自行判斷是否適合安裝。
 
-以 jiyunshi 的「Bilibili CDN 台灣優化」官方 v1.3.4 為基礎的個人修改版。重點是台灣線路的 CDN 選路、兩倍速播放穩定性與有界診斷，不保證任何節點或影片一定更快。
+BiliCDN_TW 是一支供 Tampermonkey 使用的 Bilibili userscript，主要針對台灣連線觀看影片時的 CDN 選路與卡頓恢復進行調整。
 
-v1.6.0 將正式 v1.5.5 拆成 JavaScript 模組，再用 esbuild 打包為 **一份 Tampermonkey userscript**。v1.7.0 依實機觀察結果完整移除 Worker 攔截：3 次可見 constructor 全為安全放行的 Blob Worker，成功包裝、媒體請求與改寫皆為 0；網站自己的 Worker 現在完全交由瀏覽器處理。播放邏輯不變。
+腳本會觀察播放器實際使用的媒體路線、緩衝與傳輸狀態，從可用的 CDN 中選擇較合適的路線；播放正常時維持既有路線，只有在新影片開始、使用者變更設定、傳輸失敗或 Watchdog 確認停滯時才允許重新選路。
 
-v1.8.0 新增每個 playinfo 專屬的 Native signed route pool，以及只保存 hostname 健康資料的評級 Ledger；該版存在健康播放時可能反覆換路的問題，已由 v1.8.1 取代。
+## 主要功能
 
-v1.8.1 將 Native 評級與換線權限分離：健康播放中的 probe／bakeoff 只更新評級，不再改變下一筆請求。Route Affinity 只在新 playinfo、真實 Transport 失敗、Watchdog 已確認卡頓或可信固定／自動設定時改變；自動畫質／codec 預取不再被誤算為 CDN 切換。非 catalog 路線仍只能重用同一 representation 的 exact signed URL，不會取得 catalog、合成換 host、preconnect 或 forced redirect 權限。
+- **自動 CDN 選路：** 依延遲、吞吐、失敗紀錄與目前播放需求評估內建 CDN Catalog。
+- **原生路線評級：** 可辨識影片本身提供的 signed route，使用同一 representation 的原始完整 URL，不會自行合成陌生 CDN 網址。
+- **穩定路線優先：** 健康播放期間的測速只更新評級，不會因單次測速結果反覆換線。
+- **卡頓監測：** Watchdog 觀察播放進度、連續前方緩衝與低資料狀態，在符合條件時重新評估路線。
+- **自動畫質支援：** 跟隨 Bilibili 播放器目前使用的畫質與 Codec，SPA 換片後會由 playurl、播放器 MPD 或實際傳輸重建 Route Pool。
+- **Codec 偏好：** 預設優先 AV1，再依實際瀏覽器能力退回 HEVC 或 AVC；不依 UA 或顯示卡型號猜測。
+- **節點限制：** 使用者停用、預設不可用、black、dead 與 soft-block 狀態會同時約束原始、Catalog、Native、固定及備援路線。
+- **本機診斷：** 提供緩衝、播放速率、representation、路由、MPD 同步、掉幀與近期錯誤摘要，方便回報問題。
 
-主執行緒 Fetch／XHR、2x 假定、AV1、Watchdog 與 Worker 移除狀態維持不變。歷史安全狀態見 [公開安全摘要](docs/SECURITY_REVIEW_v1.6.0.md)。
+腳本不負責強制將播放器設為 2x。它會使用已觀察到的播放速率計算需求；尚未確認速率時，會保守地按 2x 規劃。
 
-## 安裝與操作
+## 安裝
 
-只需安裝 [BiliCDN_TW.user.js](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js)，不需安裝 Node 或 esbuild。v1.6.1 起，Tampermonkey 只會從本儲存庫的最新正式 Release 檢查與下載更新。使用選單「⚙️ 開啟 BiliCDN 控制中心」。
+### 需求
 
-v1.8.2 統一 Catalog／Native URL 決策，移除舊 Akamai 提升旁路；只有內嵌資料時，也能在 exact 影片請求成功後建立受限歸因與一次起播測速。內建 Catalog 不必出現在本片資料即可參賽；Native 資格不授予換 host 或 preconnect 權限。診斷分開計畫、實際觀察及來源提示。
+- 支援 userscript 的瀏覽器
+- [Tampermonkey](https://www.tampermonkey.net/)
+- 已登入或未登入的 Bilibili 網頁版；高畫質是否可用仍由帳號、影片與 Bilibili 決定
 
-v1.8.3 恢復 black／dead／soft、設定排除與預設不可用節點的禁止效力：原始、Native、Catalog、固定及備援都不是例外。候選耗盡不再自動清黑名單；沒有合法替代時本地阻止，不取消在途播放器請求。勾選啟用只解除設定層排除，仍須等待處分到期或明確維護解除。
+本專案主要使用 **Google Chrome + Tampermonkey** 進行實機驗證，其他瀏覽器可能可以運作，但不在目前主要驗證範圍內。
 
-v1.8.4 修正兩個實機發現的播放鏈問題：頁面 URL 被禁止規則改寫到 Catalog 後，成功的 Fetch／XHR 現在能正確建立 representation 與路由後態；Watchdog recovery 會持續約束後續相同 Native 請求，不再只增加切換計數卻繼續重打原 host。原始 Native URL不會因此被解鎖或取得測速權限。
+### 安裝步驟
 
-v1.8.5 修正站內 SPA 換片後 `__playinfo__`、representation 與 route pool 失聯。即使初始頁面資料早於 userscript 存在，後續 setter 仍會被觀察；若新值在延遲 SPA reset 前同步出現，會延後到新 generation 重建。頁面直接替換 property 時，既有一秒狀態週期也會重新掛回，不增加網路或額外 timer。
+1. 安裝 Tampermonkey。
+2. 點擊 [安裝最新版 BiliCDN_TW.user.js](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js)。
+3. 在 Tampermonkey 安裝頁確認腳本來源後按下安裝。
+4. 重新整理已開啟的 Bilibili 影片頁面。
 
-v1.8.6 補齊 playinfo 在 history 前出現的 SPA 時序，修正已緩衝到結尾的短片被 Watchdog 誤判卡頓，並在播放器設定面板加入「⚙️ 開啟 BiliCDN 控制中心」。按鈕只開啟現有的私有對話框，不會因瀏覽介面新增網路行為。
+腳本的 `updateURL` 與 `downloadURL` 都指向本儲存庫的 latest Release；正式更新只會下載單一 `BiliCDN_TW.user.js`。
 
-v1.8.7 修正真實 SPA 中「新影片 playurl 先發出、history 後切換、回應最後完成」時被 generation 隔離誤丟棄的問題。只有緊鄰這次 SPA 且請求中的影片識別與目前頁面精確相符時才接納；其他舊片與無法確認的多 P 回應仍維持隔離。
+## 如何使用
 
-v1.8.8 接續修正「下一支影片 playurl 在點擊推薦前已完成」的 SPA 路徑。跨片回應先以有界、本分頁記憶體暫存，只有精確相符的目的頁成為目前頁面後才建立新 generation 的可信 Route Pool；不同頁面及停用前資料不能被採用。
+安裝並重新整理 Bilibili 後，腳本預設以自動模式運作，通常不需要手動設定。
 
-v1.8.9 修正真實播放器完成下一片 playurl XHR 後、尚未讀取 `response`／`responseText` 就先執行 SPA 的最後一個缺口。攔截器在可信原生 DONE 事件先建立一次快取與精確目的頁暫存，頁面稍後讀取仍沿用同一份結果。
+### 播放器面板
 
-v1.9.0 在 SPA 沒有新 playurl／`__playinfo__` 時，只讀播放器現有的 manifest／MPD 重建目前 Route Pool；首筆媒體請求若仍沒有 context，會同步重讀一次並以 exact URL 建立有限的 transport bootstrap。這些來源不會新增 API／媒體請求，也不會把 signed URL 寫入 GM 或公開診斷；可信 playurl 稍後抵達時仍具有最高優先權。
+1. 在 Bilibili 播放器點擊齒輪。
+2. 選擇「更多播放設定」。
+3. 面板會顯示：
+   - 「攔截修改影片 CDN」開關
+   - 目前模式、Catalog 建議與播放速率
+   - 連續前方緩衝秒數
+   - 「⚙️ 開啟 BiliCDN 控制中心」按鈕
 
-本版不執行 Code Security 掃描，功能驗證與限制見 [TEST_REPORT](Release/v1.9.0/TEST_REPORT_v1.9.0.md)。自動結果不能替代 Chrome／Tampermonkey 實機驗收；更新後應以站內推薦連續換片、自動畫質＋2x、短片結尾、背景切回與面板按鈕驗收。
+關閉「攔截修改影片 CDN」後，腳本會停止 URL 改寫與主動量測，但不會取消播放器已經開始的請求。
+
+### 控制中心
+
+控制中心可從播放器面板按鈕開啟，也可使用 Tampermonkey 選單中的「⚙️ 開啟 BiliCDN 控制中心」。
+
+控制中心包含：
+
+- **重新評估節點：** 使用既有測速預算重新評估目前候選。
+- **CDN 選路：** 使用自動模式、固定可信 Catalog 節點，以及啟用或停用個別節點。
+- **診斷：** 查看或複製目前播放及近期事件報告；可開啟 Verbose 以收集更詳細的後續紀錄。
+- **節點維護：** 查看限制狀態、清理暫時處分或重置學習資料。
+
+固定 CDN 仍須遵守 black、dead、soft-block 與禁止規則。被禁止的固定節點會保留設定，但腳本會暫時使用合格替代路線。
+
+## 自動選路如何運作
+
+候選分為兩類：
+
+- **Catalog：** 腳本內建且可安全進行 host 改寫的可信 CDN 清單，不必出現在本片 playinfo 中也能參與評估。
+- **Native signed route：** Bilibili 為目前影片及 representation 提供的完整媒體 URL。只能原樣使用該 URL，不能因此取得 Catalog 的換 host 或 preconnect 權限。
+
+腳本會維持目前已確認的 Route Affinity。自動畫質或 Codec 改變時，會優先延續相同 host；Native 路線只有在新 representation 也提供相同 host 的完整 URL 時才能延續，否則回到安全的 Catalog 路線。
+
+主動測速每輪最多四個候選，Native 最多占用其中一個名額。測速不會取消或重送播放器已開始的媒體請求。
+
+## 本機資料與隱私
+
+所有學習與診斷資料都留在本機，不會上傳到本專案或其他遙測服務。
+
+- Catalog 健康、black／dead／soft-block、設定與 Native host 評級保存在 Tampermonkey 的本機 GM 儲存空間。
+- Native Ledger 只保存去敏的 hostname 與有限健康數值，不保存 path、query、token 或完整 signed URL。
+- 完整 signed URL 只存在目前頁面的記憶體 Route Pool；換片、SPA generation 失效、停用或重新整理後即清除。
+- Verbose 事件只保存在目前分頁的有界記憶體中，重新整理後清空。
+- 腳本不包含遙測、分析服務或執行期第三方依賴。
+
+「重置所有學習狀態」會清除 CDN health、Native 評級、blacklist、dead／soft-block、probe cache、HTTPDNS 學習與 Watchdog 統計；固定 CDN 與 Catalog 啟用設定不會一併刪除。
+
+## 遇到問題時
+
+1. 確認 Tampermonkey 中的 BiliCDN_TW 已啟用。
+2. 重新整理 Bilibili 影片頁面。
+3. 確認播放器面板顯示「攔截修改影片 CDN」已開啟。
+4. 先使用自動畫質與自動選路重現問題。
+5. 若問題可重現，先在「控制中心 → 診斷」開啟 Verbose，再播放至問題再次發生。
+6. 複製診斷報告並附至 [GitHub Issues](https://github.com/YUIAOI7592/BiliCDN_TW/issues)。診斷主要供後續分析，不要求使用者自行判讀。
+
+開啟 Verbose 只能收集開啟後的事件，無法補回先前未記錄的詳細資料。
+
+## 已知限制
+
+- CDN 表現會隨地區、ISP、時間、影片與 Bilibili 服務狀態變化，腳本不保證一定比原生路線快。
+- 自動畫質升降由 Bilibili 播放器決定；腳本只依目前 representation 調整路由，不會強制維持 4K 或 8K。
+- Media Capabilities 回報良好不代表已證明硬體解碼，也不代表一定能以 2x 流暢播放。
+- 部分錯誤只能由瀏覽器回報為一般網路失敗，診斷不會猜測其必然是 DNS、CORS 或特定 HTTP 原因。
+- VM、單元測試與靜態檢查不能替代真實 Chrome／Tampermonkey、實際網路及硬體解碼驗證。
 
 ## 本機開發
 
-驗收工具鏈：Node **26.8.1**、npm **11.19.0**、esbuild **0.28.2**。
+一般使用者不需要安裝 Node.js 或 esbuild；正式 Release 已經是可直接安裝的單一 userscript。
+
+開發環境使用 Node.js、npm 與精確鎖定的 esbuild 0.28.2：
 
 ```sh
 npm ci
@@ -51,14 +126,12 @@ npm run package
 npm run verify
 ```
 
-build 建立 dist；test 先重建再跑功能回歸；package 在本機產生 userscript、來源清單、雙 patch 與 SHA；verify 驗證正式產物、功能回歸及實際 patch 套用，不啟動安全掃描／獨立 CS 子集。兩套 verify shell 使用共同 Node 邏輯。
+模組來源位於 `src/`，esbuild 只負責在本機打包，不會進入 userscript 執行環境。本專案沒有 CI/CD、GitHub Actions 或自動發布。
 
-**沒有 CI/CD、GitHub Actions、自動發布、遙測或執行期套件依賴。** esbuild 只是本機工具。
+更多技術資料請參閱 [架構](docs/ARCHITECTURE.md)、[開發與發布](docs/DEVELOPMENT.md) 與 [測試說明](tests/README.md)。版本變更請查看 [GitHub Releases](https://github.com/YUIAOI7592/BiliCDN_TW/releases) 中對應版本的 CHANGELOG。
 
-## 文件與歸屬
+## 授權與免責
 
-- [架構](docs/ARCHITECTURE.md)、[開發與發布](docs/DEVELOPMENT.md)、[測試](tests/README.md)
-- [安全政策](SECURITY.md)、[公開安全摘要](docs/SECURITY_REVIEW_v1.6.0.md)
-- [上游來源與雜湊](UPSTREAM_MANIFEST.md)、[MIT](LICENSE)、[建置工具授權](docs/THIRD_PARTY_NOTICES.md)
+本專案沿用原作者的 [MIT License](LICENSE)，並保留原作者歸屬。建置工具授權請見 [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md)。
 
-只公開必要固定程式碼樣本，不公開個人診斷、原始安全工作檔、完整封存、舊草稿或暫存；樣本不是使用者瀏覽紀錄。
+本軟體按現狀提供，不保證適用於所有帳號、地區、影片、瀏覽器或網路環境。安裝、設定與使用風險由使用者自行承擔。
