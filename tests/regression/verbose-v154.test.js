@@ -225,7 +225,7 @@ test('v154 XHR: trusted headers/progress/403/error/reopen and synthetic events h
     const before=F.json(h,'DiagnosticLog.snapshot()')
     x.dispatchEvent(new F.FakeEvent('error',{isTrusted:false}))
     assert.deepEqual(F.json(h,'DiagnosticLog.snapshot()').pending,before.pending)
-    x._readyState=2;x._status=200;x.dispatchEvent(new F.FakeEvent('readystatechange',{isTrusted:true}))
+    x._readyState=2;x._status=200;x.emitNativeEvent(new F.FakeEvent('readystatechange',{isTrusted:true}))
     x.progress(8000)
     assert.equal(F.json(h,'DiagnosticLog.snapshot()').pending[0].phase,'body')
     x.open('GET',F.mediaUrl('audio',F.other));x.send();x.fail()

@@ -1,5 +1,5 @@
 diff --git a/baseline/BiliCDN_TW_1.3.4.original.user.js b/Release/v1.8.2/BiliCDN_TW.user.js
-index 4841912..870ad0a 100644
+index 4841912..c641452 100644
 --- a/baseline/BiliCDN_TW_1.3.4.original.user.js
 +++ b/Release/v1.8.2/BiliCDN_TW.user.js
 @@ -1,10 +1,14 @@
@@ -42,7 +42,7 @@ index 4841912..870ad0a 100644
  //
  // 2026-08-20：cosov 維持排除。中間一度以「一次 16KB range 請求回 206」為由解除，
  // 隨即被實機推翻——**單次小範圍請求不等於持續播放**。實際開影片時 cosov 會：
-@@ -55,1635 +59,3498 @@ var ExcludeHostKeywords = ['cosov']
+@@ -55,1635 +59,3499 @@ var ExcludeHostKeywords = ['cosov']
  // BlockHttpDNS：true = 永遠阻擋；false = 永遠放行；'auto' = 短測 + 評分 + 記憶網路環境
  var BlockHttpDNS = 'auto'
  
@@ -883,7 +883,7 @@ index 4841912..870ad0a 100644
 +      }
      } catch {
 -        return new Set()
-     }
+-    }
 -})()
 -
 -// 升級/首次安裝：清掉舊黑名單 + probe 快取
@@ -948,7 +948,7 @@ index 4841912..870ad0a 100644
 -    if (h) { h.probeTimeouts = 0; h.failures = 0 }
 -    if (!activeCdnList.includes(host) && !blacklistSet.has(host) && PREFERRED_CDN_LIST.includes(host)) {
 -        activeCdnList.push(host)
--    }
+     }
 -    delete cdnFailCount[host]
 -    delete cdnSoftBlockUntil[host]
 -    // 探測快取裡存的是「救回之前」的候選清單，不清掉的話下次載入又會照著舊清單重建，
@@ -3041,14 +3041,14 @@ index 4841912..870ad0a 100644
 +                primaryHost = fallback;
 +              }
 +              suppressedSwitches.representation++;
-             }
++            }
 +          } else {
 +            const catalogUrl = catalogUrlFor(group, plannedAffinity.host);
 +            if (catalogUrl) {
 +              primary = catalogUrl;
 +              primaryType = "catalog-generated";
 +              primaryHost = plannedAffinity.host;
-+            }
+             }
 +          }
 +        } else {
 +          const chosen = chooseRatedNative();
@@ -3322,6 +3322,7 @@ index 4841912..870ad0a 100644
 +      const group = groups.get(routeContext.groupId), parsed = parseEligibleUrl(url);
 +      if (!group || !parsed) return { accepted: false, status: "not-native" };
 +      if (group.source === "page-hint") {
++        if (context.httpMethod !== "GET") return { accepted: false, status: "unverified-method" };
 +        if (source === "transport" && group.unlocked.has(routeContext.requestedUrl) && context.routeDecision?.changed && context.routeDecision.type === "catalog-generated" && context.routeDecision.host === parsed.host && deps.TRUSTED_CDN_CATALOG_SET.has(parsed.host) && deps.replaceUrlHost?.(routeContext.requestedUrl, parsed.host) === parsed.url && Number.isSafeInteger(bytes) && bytes > 0) {
 +          context.pageCompleted = true;
 +          context.pageCatalogCompleted = true;
@@ -4977,7 +4978,24 @@ index 4841912..870ad0a 100644
 -
 -    const onTargetReached = (watchdogStats) => {
 -        if (httpDnsMode !== 'auto') return
--        const sample = {
++          const trialSample = subtractBaseline(sample, trialBaseline);
++          const score = recordSample("allow", trialSample);
++          autoState.trialScore = score;
++          commitDecision("block", "trial-stall:" + reason, score);
++          trialBaseline = null;
++          deps.redirectStats.httpdnsAutoSwitch++;
++          return true;
++        }
++        if (shouldBlock() && deps.redirectStats.httpdns > 0) {
++          recordSample("block", sample);
++          startTrialAllow(reason, sample);
++          return true;
++        }
++        return false;
++      }, "onStall");
++      const onTargetReached = /* @__PURE__ */ __name((watchdogStats) => {
++        if (httpDnsMode !== "auto") return;
+         const sample = {
 -            totalBytes: watchdogStats.totalBytes || 0,
 -            stallEvents: watchdogStats.stallEvents || 0,
 -            switchCount: watchdogStats.switchCount || 0,
@@ -4997,7 +5015,24 @@ index 4841912..870ad0a 100644
 -        if (httpDnsMode !== 'auto') return
 -        if (autoState.phase !== 'trial-allow') return
 -        if (autoState.allowUntil > Date.now()) return
--        const sample = {
++          totalBytes: watchdogStats.totalBytes || 0,
++          stallEvents: watchdogStats.stallEvents || 0,
++          switchCount: watchdogStats.switchCount || 0,
++          hardFailCount: watchdogStats.hardFailCount || 0,
++          elapsedSec: watchdogStats.elapsedSec || 1,
++          reachedTarget: true
++        };
++        if (autoState.phase === "trial-allow" && autoState.trialStartedAt > 0) {
++          endTrialAllow("target-reached", sample);
++          return;
++        }
++        recordSample(shouldBlock() ? "block" : "allow", sample);
++      }, "onTargetReached");
++      const tick = /* @__PURE__ */ __name((watchdogStats) => {
++        if (httpDnsMode !== "auto") return;
++        if (autoState.phase !== "trial-allow") return;
++        if (autoState.allowUntil > Date.now()) return;
+         const sample = {
 -            totalBytes: watchdogStats.totalBytes || 0,
 -            stallEvents: watchdogStats.stallEvents || 0,
 -            switchCount: watchdogStats.switchCount || 0,
@@ -5045,42 +5080,6 @@ index 4841912..870ad0a 100644
 -    }
 -
 -    return {
-+          const trialSample = subtractBaseline(sample, trialBaseline);
-+          const score = recordSample("allow", trialSample);
-+          autoState.trialScore = score;
-+          commitDecision("block", "trial-stall:" + reason, score);
-+          trialBaseline = null;
-+          deps.redirectStats.httpdnsAutoSwitch++;
-+          return true;
-+        }
-+        if (shouldBlock() && deps.redirectStats.httpdns > 0) {
-+          recordSample("block", sample);
-+          startTrialAllow(reason, sample);
-+          return true;
-+        }
-+        return false;
-+      }, "onStall");
-+      const onTargetReached = /* @__PURE__ */ __name((watchdogStats) => {
-+        if (httpDnsMode !== "auto") return;
-+        const sample = {
-+          totalBytes: watchdogStats.totalBytes || 0,
-+          stallEvents: watchdogStats.stallEvents || 0,
-+          switchCount: watchdogStats.switchCount || 0,
-+          hardFailCount: watchdogStats.hardFailCount || 0,
-+          elapsedSec: watchdogStats.elapsedSec || 1,
-+          reachedTarget: true
-+        };
-+        if (autoState.phase === "trial-allow" && autoState.trialStartedAt > 0) {
-+          endTrialAllow("target-reached", sample);
-+          return;
-+        }
-+        recordSample(shouldBlock() ? "block" : "allow", sample);
-+      }, "onTargetReached");
-+      const tick = /* @__PURE__ */ __name((watchdogStats) => {
-+        if (httpDnsMode !== "auto") return;
-+        if (autoState.phase !== "trial-allow") return;
-+        if (autoState.allowUntil > Date.now()) return;
-+        const sample = {
 +          totalBytes: watchdogStats.totalBytes || 0,
 +          stallEvents: watchdogStats.stallEvents || 0,
 +          switchCount: watchdogStats.switchCount || 0,
@@ -5116,7 +5115,7 @@ index 4841912..870ad0a 100644
          shouldBlock,
          getStatus,
          onStall,
-@@ -1691,3868 +3558,7310 @@ const HttpDnsAutoPilot = (() => {
+@@ -1691,3868 +3559,7588 @@ const HttpDnsAutoPilot = (() => {
          tick,
          reset,
          setMode,
@@ -6208,65 +6207,6 @@ index 4841912..870ad0a 100644
 -    let video_info
 -    if (playInfo.result) {
 -        video_info = playInfo.result.dash === undefined ? playInfo.result.video_info : playInfo.result
--        if (!video_info || !video_info.dash) {
--            if (playInfo.result.durl || playInfo.result.durls) video_info = playInfo.result
--            if (video_info && video_info.durl)  video_info.durl.forEach(i => transformStreamItem(i, false))
--            if (video_info && video_info.durls) video_info.durls.forEach(d => d.durl && d.durl.forEach(i => transformStreamItem(i, false)))
--            sanitizePlayInfoUrls(video_info || playInfo.result)
--            return
--        }
--    } else {
--        video_info = playInfo.data
--    }
--
--    try {
--        const dash = video_info && video_info.dash
--        if (dash) {
--            normalizeDashCodecPreference(dash)
--
--            // 只動 minBufferTime；不能加 maxBufferLength —
--            // 4K AV1 + FLAC 設大會觸發 SourceBuffer QuotaExceeded → DecodeError 6003
--            // 4K/高碼率用 2s：4.0 會讓 seek 後多等 ~2s 才開播（長片拖曳特明顯）
--            try {
--                const vids = (dash.video || [])
--                const auds = (dash.audio || [])
--                const maxV = vids.reduce((m, v) => Math.max(m, v.bandwidth || 0), 0)
--                const maxA = auds.reduce((m, a) => Math.max(m, a.bandwidth || 0), 0)
--                const is4K = vids.some(v => (v.height || 0) >= 2160 || (v.bandwidth || 0) > 12e6)
--                // 4K：首播先讓畫面更快進入 canplay；穩定度交給 Watchdog/HEVC/CDN 切換處理。
--                const minBuf = is4K ? 1.0 : 3.0
--                // v1.3.3：記下完整畫質清單，讓 Watchdog 之後能用實際播放的畫質校正碼率
--                // （見 syncStreamBitrateFromVideo）。這裡的 maxV 只當起播前的初估值，
--                // 起播那 3~5 秒 Watchdog 本來就在 grace 期不判定，校正得及。
--                streamProfile = {
--                    reps: vids
--                        .map(v => ({ height: v.height || 0, bandwidth: v.bandwidth || 0 }))
--                        .filter(r => r.bandwidth > 0 && r.height > 0),
--                    audioBps: maxA,
--                }
--                setBufferTargetFromBitrate(maxV + maxA, is4K || (maxV + maxA) > 12e6)
--                dash.minBufferTime   = minBuf
--                dash.min_buffer_time = minBuf
--            } catch {}
--
--            const extras = []
--            if (dash.flac  && dash.flac.audio)  [].concat(dash.flac.audio).forEach(i  => extras.push(i))
--            if (dash.dolby && dash.dolby.audio)  [].concat(dash.dolby.audio).forEach(i => extras.push(i))
--
--            transformList(dash.video, true)
--            transformList(dash.audio, true)
--            transformList(extras,     true)
--            sanitizePlayInfoUrls(dash)
--
--            // 拿一條真實視訊 segment 當賽馬樣本（純 bilivideo 來源時才跑；Akamai 為主不適用）
--            try {
--                const sample = dash.video && dash.video[0] && (dash.video[0].base_url || dash.video[0].baseUrl)
--                if (sample && isBiliVideoUrl(sample) && !isAkamaiUrl(sample)) scheduleBakeoff(sample)
--            } catch {}
--
--        } else if (video_info && video_info.durl) {
--            video_info.durl.forEach(i => transformStreamItem(i, false))
--            sanitizePlayInfoUrls(video_info)
 +          const rankDiff = codecRank(a.item) - codecRank(b.item);
 +          return rankDiff || a.originalIndex - b.originalIndex;
 +        });
@@ -6280,74 +6220,7 @@ index 4841912..870ad0a 100644
 +            selected: kind,
 +            capability: getRepresentationCapability(selected).capability
 +          });
-         }
--    } catch (e) {
--        if (video_info && video_info.durl) video_info.durl.forEach(i => transformStreamItem(i, false))
--        else err('playInfoTransformer 例外：', e)
--    }
--}
--
--// 是否為影片 m4s / flv segment
--const isBiliFragmentUrl = (url) => {
--    if (!url || !isBiliVideoUrl(url)) return false
--    try {
--        const path = new URL(url).pathname
--        return path.endsWith('.m4s') || path.endsWith('.flv') || path.includes('/upgcxcode/')
--    } catch {
--        return /bilivideo\.com|bilivideo\.cn/.test(url) &&
--               (url.includes('.m4s') || url.includes('.flv') || url.includes('/upgcxcode/'))
--    }
--}
--
--// ── Network 攔截（XHR + Fetch）─────────────────────────────────────────
--// 兩層攔截：
--//   1. playurl API 層 (XHR responseText/response、Fetch response) → 改寫 base_url + backup_url
--//   2. Transport 層 (m4s/flv segment) → 非白名單/黑名單 CDN 即時改寫成最佳白名單
--const interceptNetResponse = (function (theWindow) {
--    const interceptors = []
--    const interceptNetResponse = (handler) => interceptors.push(handler)
--    // v1.3.4：handler 的例外必須就地吃掉。這個函式是從 responseText / response 的
--    // **getter** 裡呼叫的——一旦讓例外往外傳，播放器讀一次屬性就等於踩到一次
--    // `throw`，playurl 根本解不出來，整支影片直接不能播。任何改寫失敗都應該
--    // 退化成「不改寫」，而不是「讓頁面壞掉」。
--    const handleInterceptedResponse = (response, url) =>
--        interceptors.reduce((m, h) => {
--            let r
--            try { r = h(m, url) } catch (e) { err('攔截器例外，略過此次改寫：', e); return m }
--            return r !== undefined ? r : m
--        }, response)
--
--    // playurl 回應的改寫成本不低（JSON.parse → sanitizePlayInfoUrls 走訪整包幾百個字串
--    // 欄位 → JSON.stringify；4K 多畫質 + 多 backup 的回應可以到幾百 KB），而
--    // responseText / response 是 **getter** —— 播放器每讀一次屬性就整套重跑一次。
--    // 兩個後果都不能接受：
--    //   1. 速度：這段完全落在起播的關鍵路徑上（playurl 到手到第一個 segment 發出之間），
--    //      讀兩次就是兩倍成本，而播放器「先看長度／try 一次 parse／再正式 parse」這種
--    //      多次讀取的寫法非常常見。
--    //   2. 正確性：redirectStats 的計數（含診斷面板拿來判讀的 pcdnSkipped）會按
--    //      「被讀幾次」而不是「有幾包回應」累加，被不明倍率灌水，失去判讀價值。
--    // 以「原始值」當 key 記憶化：同一個 XHR 實例、同一份原始回應只轉換一次。
--    // responseText 與 response 各自存一格——它們可能被交替讀取，共用一格會互相沖掉，
--    // 反而每次都 miss。
--    const transformPlayurlOnce = (xhr, kind, raw) => {
--        const key    = '_biliPlayurlCache_' + kind
--        const cached = xhr[key]
--        if (cached && cached.raw === raw) return cached.out
--        const out = handleInterceptedResponse(raw, xhr._interceptUrl || xhr.responseURL)
--        try { xhr[key] = { raw, out } } catch {}
--        return out
--    }
--
--    // ── XHR ──────────────────────────────────────────────────
--    const OriginalXMLHttpRequest = theWindow.XMLHttpRequest
--    class XMLHttpRequest extends OriginalXMLHttpRequest {
--        open(method, url, ...rest) {
--            const urlStr = String(url)
--            this._biliJsonMetadata = isBiliJsonMetadataApi(urlStr)
--
--            if (disabled) {
--                this._interceptUrl = urlStr
--                return super.open(method, url, ...rest)
++        }
 +      });
 +      if (normalized.length) dash.video = normalized;
 +      lastCodecDecision = { preference: resolvedVideoCodecPreference, groups: decisions };
@@ -6428,21 +6301,26 @@ index 4841912..870ad0a 100644
 +            if (sample && deps.isBiliVideoUrl(sample) && !deps.isAkamaiUrl(sample)) {
 +              startupVideoSampleScheduled = true;
 +              deps.scheduleBakeoff(sample);
-             }
--
--            // HTTPDNS 依 true / false / auto 判斷是否直接 abort
--            if (isHttpDnsUrl(urlStr) && shouldBlockHttpDns()) {
--                this._blockAbort   = true
--                this._interceptUrl = urlStr
--                redirectStats.httpdns++
--                return super.open(method, urlStr, ...rest)
++            }
 +          }
 +        });
 +      }, "transformList");
 +      let video_info;
 +      if (playInfo.result) {
 +        video_info = playInfo.result.dash === void 0 ? playInfo.result.video_info : playInfo.result;
-+        if (!video_info || !video_info.dash) {
+         if (!video_info || !video_info.dash) {
+-            if (playInfo.result.durl || playInfo.result.durls) video_info = playInfo.result
+-            if (video_info && video_info.durl)  video_info.durl.forEach(i => transformStreamItem(i, false))
+-            if (video_info && video_info.durls) video_info.durls.forEach(d => d.durl && d.durl.forEach(i => transformStreamItem(i, false)))
+-            sanitizePlayInfoUrls(video_info || playInfo.result)
+-            return
+-        }
+-    } else {
+-        video_info = playInfo.data
+-    }
+-
+-    try {
+-        const dash = video_info && video_info.dash
 +          if (playInfo.result.durl || playInfo.result.durls) video_info = playInfo.result;
 +          if (video_info && video_info.durl) transformList(video_info.durl, false);
 +          if (video_info && video_info.durls) video_info.durls.forEach((d) => transformList(d.durl, false));
@@ -6453,7 +6331,52 @@ index 4841912..870ad0a 100644
 +      }
 +      try {
 +        const dash = video_info && video_info.dash;
-+        if (dash) {
+         if (dash) {
+-            normalizeDashCodecPreference(dash)
+-
+-            // 只動 minBufferTime；不能加 maxBufferLength —
+-            // 4K AV1 + FLAC 設大會觸發 SourceBuffer QuotaExceeded → DecodeError 6003
+-            // 4K/高碼率用 2s：4.0 會讓 seek 後多等 ~2s 才開播（長片拖曳特明顯）
+-            try {
+-                const vids = (dash.video || [])
+-                const auds = (dash.audio || [])
+-                const maxV = vids.reduce((m, v) => Math.max(m, v.bandwidth || 0), 0)
+-                const maxA = auds.reduce((m, a) => Math.max(m, a.bandwidth || 0), 0)
+-                const is4K = vids.some(v => (v.height || 0) >= 2160 || (v.bandwidth || 0) > 12e6)
+-                // 4K：首播先讓畫面更快進入 canplay；穩定度交給 Watchdog/HEVC/CDN 切換處理。
+-                const minBuf = is4K ? 1.0 : 3.0
+-                // v1.3.3：記下完整畫質清單，讓 Watchdog 之後能用實際播放的畫質校正碼率
+-                // （見 syncStreamBitrateFromVideo）。這裡的 maxV 只當起播前的初估值，
+-                // 起播那 3~5 秒 Watchdog 本來就在 grace 期不判定，校正得及。
+-                streamProfile = {
+-                    reps: vids
+-                        .map(v => ({ height: v.height || 0, bandwidth: v.bandwidth || 0 }))
+-                        .filter(r => r.bandwidth > 0 && r.height > 0),
+-                    audioBps: maxA,
+-                }
+-                setBufferTargetFromBitrate(maxV + maxA, is4K || (maxV + maxA) > 12e6)
+-                dash.minBufferTime   = minBuf
+-                dash.min_buffer_time = minBuf
+-            } catch {}
+-
+-            const extras = []
+-            if (dash.flac  && dash.flac.audio)  [].concat(dash.flac.audio).forEach(i  => extras.push(i))
+-            if (dash.dolby && dash.dolby.audio)  [].concat(dash.dolby.audio).forEach(i => extras.push(i))
+-
+-            transformList(dash.video, true)
+-            transformList(dash.audio, true)
+-            transformList(extras,     true)
+-            sanitizePlayInfoUrls(dash)
+-
+-            // 拿一條真實視訊 segment 當賽馬樣本（純 bilivideo 來源時才跑；Akamai 為主不適用）
+-            try {
+-                const sample = dash.video && dash.video[0] && (dash.video[0].base_url || dash.video[0].baseUrl)
+-                if (sample && isBiliVideoUrl(sample) && !isAkamaiUrl(sample)) scheduleBakeoff(sample)
+-            } catch {}
+-
+-        } else if (video_info && video_info.durl) {
+-            video_info.durl.forEach(i => transformStreamItem(i, false))
+-            sanitizePlayInfoUrls(video_info)
 +          deps.normalizeDashCodecPreference(dash);
 +          try {
 +            const vids = dash.video || [];
@@ -6476,9 +6399,7 @@ index 4841912..870ad0a 100644
 +            if (nativeTransportSource) {
 +              deps.rebuildRepresentationRegistry(false);
 +              deps.setBufferTargetFromBitrate(maxV + maxA, is4K || maxV + maxA > 12e6);
-             }
--            if (isHttpDnsUrl(urlStr)) {
--                redirectStats.httpdnsAllowed++
++            }
 +            dash.minBufferTime = minBuf;
 +            dash.min_buffer_time = minBuf;
 +          } catch {
@@ -6492,7 +6413,10 @@ index 4841912..870ad0a 100644
 +        } else if (video_info && (video_info.durl || video_info.durls)) {
 +          transformList(video_info.durl, false);
 +          (video_info.durls || []).forEach((d) => transformList(d.durl, false));
-+        }
+         }
+-    } catch (e) {
+-        if (video_info && video_info.durl) video_info.durl.forEach(i => transformStreamItem(i, false))
+-        else err('playInfoTransformer 例外：', e)
 +      } catch (e) {
 +        if (video_info && video_info.durl) transformList(video_info.durl, false);
 +        else deps.err("playInfoTransformer 例外：", e);
@@ -6519,6 +6443,322 @@ index 4841912..870ad0a 100644
 +    };
 +  }
 +  __name(createPlayurl, "createPlayurl");
++
++  // src/transport/xhr-facade.mjs
++  function createXhrFacade(ManagedXHR, NativeXHR) {
++    const instances = /* @__PURE__ */ new WeakMap();
++    const add = NativeXHR.prototype.addEventListener;
++    const objectMembers = new Set(Reflect.ownKeys(Object.prototype));
++    const descriptors = /* @__PURE__ */ new Map();
++    const intrinsicPrototype = /* @__PURE__ */ Object.create(null);
++    const nativeKeys = /* @__PURE__ */ new Set();
++    for (let p = NativeXHR.prototype; p && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
++      for (const key of Reflect.ownKeys(p)) if (!objectMembers.has(key) && !nativeKeys.has(key)) {
++        nativeKeys.add(key);
++        Object.defineProperty(intrinsicPrototype, key, Object.getOwnPropertyDescriptor(p, key));
++      }
+     }
+-}
+-
+-// 是否為影片 m4s / flv segment
+-const isBiliFragmentUrl = (url) => {
+-    if (!url || !isBiliVideoUrl(url)) return false
+-    try {
+-        const path = new URL(url).pathname
+-        return path.endsWith('.m4s') || path.endsWith('.flv') || path.includes('/upgcxcode/')
+-    } catch {
+-        return /bilivideo\.com|bilivideo\.cn/.test(url) &&
+-               (url.includes('.m4s') || url.includes('.flv') || url.includes('/upgcxcode/'))
++    Object.setPrototypeOf(ManagedXHR.prototype, Object.freeze(intrinsicPrototype));
++    for (let p = ManagedXHR.prototype; p && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
++      for (const key of Reflect.ownKeys(p)) if (!objectMembers.has(key) && !descriptors.has(key)) {
++        descriptors.set(key, Object.getOwnPropertyDescriptor(p, key));
++      }
+     }
+-}
+-
+-// ── Network 攔截（XHR + Fetch）─────────────────────────────────────────
+-// 兩層攔截：
+-//   1. playurl API 層 (XHR responseText/response、Fetch response) → 改寫 base_url + backup_url
+-//   2. Transport 層 (m4s/flv segment) → 非白名單/黑名單 CDN 即時改寫成最佳白名單
+-const interceptNetResponse = (function (theWindow) {
+-    const interceptors = []
+-    const interceptNetResponse = (handler) => interceptors.push(handler)
+-    // v1.3.4：handler 的例外必須就地吃掉。這個函式是從 responseText / response 的
+-    // **getter** 裡呼叫的——一旦讓例外往外傳，播放器讀一次屬性就等於踩到一次
+-    // `throw`，playurl 根本解不出來，整支影片直接不能播。任何改寫失敗都應該
+-    // 退化成「不改寫」，而不是「讓頁面壞掉」。
+-    const handleInterceptedResponse = (response, url) =>
+-        interceptors.reduce((m, h) => {
+-            let r
+-            try { r = h(m, url) } catch (e) { err('攔截器例外，略過此次改寫：', e); return m }
+-            return r !== undefined ? r : m
+-        }, response)
+-
+-    // playurl 回應的改寫成本不低（JSON.parse → sanitizePlayInfoUrls 走訪整包幾百個字串
+-    // 欄位 → JSON.stringify；4K 多畫質 + 多 backup 的回應可以到幾百 KB），而
+-    // responseText / response 是 **getter** —— 播放器每讀一次屬性就整套重跑一次。
+-    // 兩個後果都不能接受：
+-    //   1. 速度：這段完全落在起播的關鍵路徑上（playurl 到手到第一個 segment 發出之間），
+-    //      讀兩次就是兩倍成本，而播放器「先看長度／try 一次 parse／再正式 parse」這種
+-    //      多次讀取的寫法非常常見。
+-    //   2. 正確性：redirectStats 的計數（含診斷面板拿來判讀的 pcdnSkipped）會按
+-    //      「被讀幾次」而不是「有幾包回應」累加，被不明倍率灌水，失去判讀價值。
+-    // 以「原始值」當 key 記憶化：同一個 XHR 實例、同一份原始回應只轉換一次。
+-    // responseText 與 response 各自存一格——它們可能被交替讀取，共用一格會互相沖掉，
+-    // 反而每次都 miss。
+-    const transformPlayurlOnce = (xhr, kind, raw) => {
+-        const key    = '_biliPlayurlCache_' + kind
+-        const cached = xhr[key]
+-        if (cached && cached.raw === raw) return cached.out
+-        const out = handleInterceptedResponse(raw, xhr._interceptUrl || xhr.responseURL)
+-        try { xhr[key] = { raw, out } } catch {}
+-        return out
++    const eventTypes = ["readystatechange", "loadstart", "progress", "abort", "error", "load", "timeout", "loadend"];
++    const eventFields = /* @__PURE__ */ new Map();
++    for (const ctor of [typeof ProgressEvent === "function" ? ProgressEvent : null, Event]) {
++      for (let p = ctor?.prototype; p && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
++        for (const key of Reflect.ownKeys(p)) if (!eventFields.has(key)) eventFields.set(key, Object.getOwnPropertyDescriptor(p, key));
++      }
+     }
+-
+-    // ── XHR ──────────────────────────────────────────────────
+-    const OriginalXMLHttpRequest = theWindow.XMLHttpRequest
+-    class XMLHttpRequest extends OriginalXMLHttpRequest {
+-        open(method, url, ...rest) {
+-            const urlStr = String(url)
+-            this._biliJsonMetadata = isBiliJsonMetadataApi(urlStr)
+-
+-            if (disabled) {
+-                this._interceptUrl = urlStr
+-                return super.open(method, url, ...rest)
+-            }
+-
+-            // HTTPDNS 依 true / false / auto 判斷是否直接 abort
+-            if (isHttpDnsUrl(urlStr) && shouldBlockHttpDns()) {
+-                this._blockAbort   = true
+-                this._interceptUrl = urlStr
+-                redirectStats.httpdns++
+-                return super.open(method, urlStr, ...rest)
++    const eventRead = /* @__PURE__ */ __name((event, key) => {
++      const d = eventFields.get(key);
++      if (d?.get) {
++        try {
++          return d.get.call(event);
++        } catch {
++          return void 0;
++        }
++      }
++      const own = Object.getOwnPropertyDescriptor(event, key);
++      if (own && "value" in own) return own.value;
++      if (key === "isTrusted" && own?.get && own.configurable === false) return own.get.call(event);
++      return d?.value;
++    }, "eventRead");
++    const eventCall = /* @__PURE__ */ __name((event, key) => eventFields.get(key)?.value?.call(event), "eventCall");
++    function events(backend, facade) {
++      const rows = /* @__PURE__ */ new Map(), handlers = /* @__PURE__ */ new Map(), relays = /* @__PURE__ */ new Map();
++      const views = /* @__PURE__ */ new WeakMap();
++      const view = /* @__PURE__ */ __name((event, publicOwned = false) => {
++        if (views.has(event)) return views.get(event);
++        let stopped = false, immediate = false, active = false, passive = false;
++        const result = publicOwned ? event : Object.create(Object.getPrototypeOf(event));
++        for (const key of publicOwned ? [] : [
++          "type",
++          "isTrusted",
++          "timeStamp",
++          "bubbles",
++          "cancelable",
++          "composed",
++          "eventPhase",
++          "loaded",
++          "total",
++          "lengthComputable"
++        ]) {
++          Object.defineProperty(result, key, { configurable: true, enumerable: true, value: eventRead(event, key) });
++        }
++        const prevent = /* @__PURE__ */ __name(() => eventCall(event, "preventDefault"), "prevent");
++        const stop = /* @__PURE__ */ __name(() => eventCall(event, "stopPropagation"), "stop");
++        const stopImmediate = /* @__PURE__ */ __name(() => eventCall(event, "stopImmediatePropagation"), "stopImmediate");
++        Object.defineProperties(result, {
++          target: { value: facade },
++          currentTarget: { get: /* @__PURE__ */ __name(() => active ? facade : null, "get") },
++          srcElement: { value: facade },
++          composedPath: { value: /* @__PURE__ */ __name(() => active ? [facade] : [], "value") },
++          preventDefault: { value: /* @__PURE__ */ __name(() => {
++            if (!passive) prevent();
++          }, "value") },
++          stopPropagation: { value: /* @__PURE__ */ __name(() => {
++            stopped = true;
++            stop();
++          }, "value") },
++          stopImmediatePropagation: { value: /* @__PURE__ */ __name(() => {
++            immediate = stopped = true;
++            stopImmediate();
++          }, "value") },
++          defaultPrevented: { get: /* @__PURE__ */ __name(() => eventRead(event, "defaultPrevented"), "get") },
++          cancelBubble: { get: /* @__PURE__ */ __name(() => stopped || eventRead(event, "cancelBubble"), "get"), set: /* @__PURE__ */ __name((value) => {
++            if (value) {
++              stopped = true;
++              stop();
+             }
+-            if (isHttpDnsUrl(urlStr)) {
+-                redirectStats.httpdnsAllowed++
++          }, "set") }
++        });
++        const state = { event: result, immediate: /* @__PURE__ */ __name(() => immediate, "immediate"), active: /* @__PURE__ */ __name((value) => {
++          active = value;
++        }, "active"), passive: /* @__PURE__ */ __name((value) => {
++          passive = value;
++        }, "passive") };
++        views.set(event, state);
++        return state;
++      }, "view");
++      const dispatch = /* @__PURE__ */ __name((event, publicOwned = false) => {
++        const state = view(event, publicOwned), type = eventRead(event, "type");
++        state.active(true);
++        for (const row of [...rows.get(type) || []]) {
++          if (!(rows.get(type) || []).includes(row)) continue;
++          if (row.once) off(type, row.callback, row.capture);
++          state.passive(row.passive);
++          try {
++            if (typeof row.callback === "function") row.callback.call(facade, state.event);
++            else row.callback.handleEvent.call(row.callback, state.event);
++          } catch (error) {
++            setTimeout(() => {
++              throw error;
++            }, 0);
++          }
++          if (state.immediate()) break;
++        }
++        state.passive(false);
++        state.active(false);
++        return !eventRead(event, "defaultPrevented");
++      }, "dispatch");
++      const ensure = /* @__PURE__ */ __name((type) => {
++        if (relays.has(type)) return;
++        const relay = /* @__PURE__ */ __name((event) => dispatch(event), "relay");
++        relays.set(type, relay);
++        add.call(backend, type, relay);
++      }, "ensure");
++      const off = /* @__PURE__ */ __name((type, callback, options) => {
++        type = String(type);
++        const capture = typeof options === "boolean" ? options : !!options?.capture;
++        const list = rows.get(type) || [], index = list.findIndex((r) => r.callback === callback && r.capture === capture);
++        if (index >= 0) {
++          const [row] = list.splice(index, 1);
++          row.abortCleanup?.();
++        }
++      }, "off");
++      const on = /* @__PURE__ */ __name((type, callback, options) => {
++        type = String(type);
++        if (!callback || typeof callback !== "function" && typeof callback !== "object") return;
++        const capture = typeof options === "boolean" ? options : !!options?.capture;
++        const signal = typeof options === "object" ? options?.signal : null;
++        if (signal?.aborted) return;
++        const list = rows.get(type) || [];
++        if (list.some((r) => r.callback === callback && r.capture === capture)) return;
++        const row = { callback, capture, once: !!options?.once, passive: !!options?.passive };
++        if (signal) {
++          const abort = /* @__PURE__ */ __name(() => off(type, callback, capture), "abort");
++          signal.addEventListener("abort", abort, { once: true });
++          row.abortCleanup = () => signal.removeEventListener("abort", abort);
++        }
++        list.push(row);
++        rows.set(type, list);
++        ensure(type);
++      }, "on");
++      Object.defineProperties(facade, {
++        addEventListener: { configurable: true, writable: true, value: on },
++        removeEventListener: { configurable: true, writable: true, value: off },
++        // Never dispatch a caller-owned event on the backend: the retained
++        // original event would otherwise reveal its native target afterwards.
++        dispatchEvent: { configurable: true, writable: true, value: /* @__PURE__ */ __name((event) => {
++          if (!event || typeof event.type !== "string") throw new TypeError("Invalid event");
++          return dispatch(event, true);
++        }, "value") }
++      });
++      for (const type of eventTypes) Object.defineProperty(facade, "on" + type, {
++        configurable: true,
++        enumerable: true,
++        get: /* @__PURE__ */ __name(() => handlers.get(type)?.callback || null, "get"),
++        set: /* @__PURE__ */ __name((callback) => {
++          const prior = handlers.get(type);
++          if (prior && typeof callback === "function") {
++            prior.callback = callback;
++            return;
++          }
++          if (prior) off(type, prior.listener);
++          handlers.delete(type);
++          if (typeof callback !== "function") return;
++          const entry = { callback };
++          const listener = /* @__PURE__ */ __name((event) => {
++            if (entry.callback.call(facade, event) === false) event.preventDefault();
++          }, "listener");
++          entry.listener = listener;
++          handlers.set(type, entry);
++          on(type, listener);
++        }, "set")
++      });
++    }
++    __name(events, "events");
++    const _PublicXHR = class _PublicXHR {
++      constructor() {
++        const backend = new ManagedXHR();
++        instances.set(this, backend);
++        events(backend, this);
++        for (const key of Reflect.ownKeys(backend)) if (!(key in this)) {
++          Object.defineProperty(this, key, {
++            configurable: true,
++            enumerable: true,
++            get: /* @__PURE__ */ __name(() => backend[key], "get"),
++            set: /* @__PURE__ */ __name((value) => {
++              backend[key] = value;
++            }, "set")
++          });
++        }
++      }
++    };
++    __name(_PublicXHR, "PublicXHR");
++    let PublicXHR = _PublicXHR;
++    Object.setPrototypeOf(PublicXHR.prototype, NativeXHR.prototype);
++    Object.setPrototypeOf(PublicXHR, NativeXHR);
++    for (const [key, d] of descriptors) {
++      if (["addEventListener", "removeEventListener", "dispatchEvent"].includes(key) || typeof key === "string" && key.startsWith("on")) continue;
++      const receiver = /* @__PURE__ */ __name((self) => {
++        const backend = instances.get(self);
++        if (!backend) throw new TypeError("Illegal invocation");
++        return backend;
++      }, "receiver");
++      if (typeof d.value === "function") Object.defineProperty(PublicXHR.prototype, key, {
++        configurable: true,
++        writable: true,
++        value: /* @__PURE__ */ __name(function(...args) {
++          return d.value.apply(receiver(this), args);
++        }, "value")
++      });
++      else if (d.get || d.set) Object.defineProperty(PublicXHR.prototype, key, {
++        configurable: true,
++        enumerable: d.enumerable,
++        get: d.get ? function() {
++          const backend = receiver(this), value = d.get.call(backend);
++          if (key !== "upload" || !value) return value;
++          if (!uploads.has(this)) {
++            const facade = {};
++            events(value, facade);
++            uploads.set(this, facade);
++          }
++          return uploads.get(this);
++        } : void 0,
++        set: d.set ? function(value) {
++          d.set.call(receiver(this), value);
++        } : void 0
++      });
++      else Object.defineProperty(PublicXHR.prototype, key, d);
++    }
++    const uploads = /* @__PURE__ */ new WeakMap();
++    return PublicXHR;
++  }
++  __name(createXhrFacade, "createXhrFacade");
 +
 +  // src/transport/interceptors.mjs
 +  function createTransport(deps) {
@@ -6668,6 +6908,7 @@ index 4841912..870ad0a 100644
 +            httpMethod: nativeMethod.toUpperCase()
 +          };
 +          mediaRequests.get(this).transport = requestState;
++          mediaRequests.get(this).httpMethod = requestState.httpMethod;
 +          if (this._blockedTimer) {
 +            clearTimeout(this._blockedTimer);
 +            this._blockedTimer = null;
@@ -6687,6 +6928,9 @@ index 4841912..870ad0a 100644
 +          this._biliJsonMetadata = deps.isBiliJsonMetadataApi(urlStr);
 +          if (deps.disabled) {
 +            this._interceptUrl = urlStr;
++            return openNative(this, nativeMethod, url, rest);
++          }
++          if (requestState.httpMethod !== "GET" && deps.isMediaSegmentUrl(urlStr)) {
 +            return openNative(this, nativeMethod, url, rest);
 +          }
 +          if (deps.isHttpDnsUrl(urlStr) && deps.shouldBlockHttpDns()) {
@@ -7106,8 +7350,11 @@ index 4841912..870ad0a 100644
 +      };
 +      __name(_XMLHttpRequest, "XMLHttpRequest");
 +      let XMLHttpRequest = _XMLHttpRequest;
-+      theWindow.XMLHttpRequest = XMLHttpRequest;
++      theWindow.XMLHttpRequest = createXhrFacade(XMLHttpRequest, OriginalXMLHttpRequest);
 +      const OriginalFetch = theWindow.fetch;
++      const NativeRequest = Request;
++      const requestUrlGetter = Object.getOwnPropertyDescriptor(NativeRequest.prototype, "url").get;
++      const requestMethodGetter = Object.getOwnPropertyDescriptor(NativeRequest.prototype, "method").get;
 +      const cloneResponseWithBody = /* @__PURE__ */ __name((source, body, preserveEntityHeaders = true) => {
 +        const headers = new Headers(source.headers);
 +        if (!preserveEntityHeaders) {
@@ -7504,7 +7751,7 @@ index 4841912..870ad0a 100644
 +      }, "wrapMeasuredFetchResponse");
 +      theWindow.fetch = (input, init) => {
 +        if (deps.disabled) return OriginalFetch(input, init);
-+        const urlStr = input instanceof Request ? input.url : String(input);
++        const urlStr = input instanceof NativeRequest ? requestUrlGetter.call(input) : String(input);
 +        if (deps.isHttpDnsUrl(urlStr) && deps.shouldBlockHttpDns()) {
 +          deps.redirectStats.httpdns++;
 +          try {
@@ -7676,9 +7923,35 @@ index 4841912..870ad0a 100644
 -        } else if (rewritten !== url) {
 -            input = rewritten;
 +        if (deps.isMediaSegmentUrl(urlStr)) {
++          let normalized;
++          const wasRequest = input instanceof NativeRequest;
++          try {
++            normalized = new NativeRequest(wasRequest ? input : new URL(urlStr, location.href).href, init);
++          } catch (error) {
++            return Promise.reject(error);
++          }
++          const normalizedMethod = requestMethodGetter.call(normalized);
++          if (normalizedMethod !== "GET") return OriginalFetch(normalized);
++          if (wasRequest) {
++            input = normalized;
++            init = void 0;
++          } else init = {
++            method: normalizedMethod,
++            headers: normalized.headers,
++            signal: normalized.signal,
++            credentials: normalized.credentials,
++            mode: normalized.mode,
++            cache: normalized.cache,
++            redirect: normalized.redirect,
++            referrer: normalized.referrer,
++            referrerPolicy: normalized.referrerPolicy,
++            integrity: normalized.integrity,
++            keepalive: normalized.keepalive
++          };
 +          const requestRuntimeToken = deps.captureRuntimeGeneration();
 +          const mediaContext = deps.captureMediaRequest(urlStr, requestRuntimeToken);
 +          mediaContext.method = "fetch";
++          mediaContext.httpMethod = "GET";
 +          const mappedOriginalUrl = deps.getOriginalStreamUrl(urlStr);
 +          const nativeRoute = deps.resolveRequestRoute(urlStr, mediaContext);
 +          mediaContext.routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null;
@@ -7749,6 +8022,13 @@ index 4841912..870ad0a 100644
 +          if (!valid()) return response;
 +          return response.text().then((text) => {
 +            let out = text;
++            try {
++              const transformed = valid() ? handleInterceptedResponse(text, urlStr, valid) : text;
++              if (typeof transformed === "string") out = transformed;
++            } catch {
++              deps.DiagnosticLog.fault("transform");
++            }
++            const nullBody = response.status === 204 || response.status === 205 || response.status === 304;
              try {
 -                // 跟主執行緒同一個教訓：resp 在收到 header 就 resolve，body 通常還在傳。
 -                // 用 content-length 在這一刻一次性入帳會把整包位元組記在 TTFB 那一刻，
@@ -7784,13 +8064,6 @@ index 4841912..870ad0a 100644
 -                }
 -            } catch (e) {}
 -            return resp;
-+              const transformed = valid() ? handleInterceptedResponse(text, urlStr, valid) : text;
-+              if (typeof transformed === "string") out = transformed;
-+            } catch {
-+              deps.DiagnosticLog.fault("transform");
-+            }
-+            const nullBody = response.status === 204 || response.status === 205 || response.status === 304;
-+            try {
 +              return cloneResponseWithBody(response, nullBody ? null : out, out === text);
 +            } catch (e) {
 +              deps.DiagnosticLog.fault("playurl-clone");

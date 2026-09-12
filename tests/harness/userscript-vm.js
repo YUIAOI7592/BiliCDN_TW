@@ -188,10 +188,14 @@ class FakeDocument extends FakeEventTarget {
     getClosedShadowRoot(host) { return this._closedShadowRoots.get(host) || null }
 }
 
+const xhrBrands = new WeakSet()
 class FakeXMLHttpRequest extends FakeEventTarget {
     static DONE = 4
     constructor() {
         super()
+        xhrBrands.add(this)
+        this.url = ''
+        this.method = ''
         this.DONE = FakeXMLHttpRequest.DONE
         this._readyState = 0
         this._status = 0
@@ -203,6 +207,7 @@ class FakeXMLHttpRequest extends FakeEventTarget {
         this._headers = new Map()
     }
     open(method, url) {
+        if (!xhrBrands.has(this)) throw new TypeError('Illegal invocation')
         delete this.sent
         this.method = method
         this.url = String(url)
@@ -213,6 +218,7 @@ class FakeXMLHttpRequest extends FakeEventTarget {
         if (this.sent && this._readyState !== FakeXMLHttpRequest.DONE) throw new Error('InvalidStateError')
         this.sent = true
     }
+    emitNativeEvent(event) { return this.dispatchEvent(event) }
     abort() {
         delete this.sent
         this.aborted = true

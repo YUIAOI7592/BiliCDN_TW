@@ -598,6 +598,7 @@ const recordNativeThroughput = (context, url, bytes, durationMs, playbackRate, s
     const group = groups.get(routeContext.groupId), parsed = parseEligibleUrl(url)
     if (!group || !parsed) return { accepted: false, status: 'not-native' }
     if (group.source === 'page-hint') {
+        if (context.httpMethod !== 'GET') return { accepted: false, status: 'unverified-method' }
         // An already-unlocked signed sample may be safely rewritten to Catalog
         // at a recovery boundary. Observe that actual response without unlocking
         // another page URL or creating a Native record for a Catalog host.

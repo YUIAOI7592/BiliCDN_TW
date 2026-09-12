@@ -8,7 +8,7 @@ const F = require('../harness/v153-fixture')
 const previous = path.join(F.root, 'tests/fixtures/BiliCDN_TW_1.5.4.user.js')
 const target = require('../harness/current-script')
 const load = (options = {}, file = target) => F.load({gmSeed:{verbose:true}, ...options}, file)
-const ev = (x, type, trusted = true) => x.dispatchEvent(new F.FakeEvent(type, {isTrusted:trusted}))
+const ev = (x, type, trusted = true) => x[trusted ? 'emitNativeEvent' : 'dispatchEvent'](new F.FakeEvent(type, {isTrusted:trusted}))
 const request = (h, url = F.mediaUrl('av1')) => {
     const x = new h.pageWindow.XMLHttpRequest(); x.open('GET', url); x.send(); return x
 }

@@ -1,3 +1,4 @@
+import { createXhrFacade } from './xhr-facade.mjs'
 // State belongs to this instance; dependencies are the explicitly wired internal ports.
 export function createTransport(deps) {
 const interceptNetResponse = (function (theWindow) {
@@ -110,6 +111,7 @@ const interceptNetResponse = (function (theWindow) {
             const requestState = { originalUrl: urlStr, interceptUrl: urlStr, originCdn: null,
                 targetCdn: null, hostRewriteAttempt: false, httpMethod: nativeMethod.toUpperCase() }
             mediaRequests.get(this).transport = requestState
+            mediaRequests.get(this).httpMethod = requestState.httpMethod
             // XMLHttpRequest 物件可被重複 open()。每次請求都要清掉上一輪的自訂狀態，
             // 否則先前的 HTTPDNS abort、重導 host 或 response 快取會污染下一個 URL。
             if (this._blockedTimer) { clearTimeout(this._blockedTimer); this._blockedTimer = null }
@@ -129,6 +131,12 @@ const interceptNetResponse = (function (theWindow) {
 
             if (deps.disabled) {
                 this._interceptUrl = urlStr
+                return openNative(this, nativeMethod, url, rest)
+            }
+
+            // Non-GET requests keep their original URL/body and cannot become
+            // routing, media health, or active-measurement evidence.
+            if (requestState.httpMethod !== 'GET' && deps.isMediaSegmentUrl(urlStr)) {
                 return openNative(this, nativeMethod, url, rest)
             }
 
@@ -385,10 +393,13 @@ const interceptNetResponse = (function (theWindow) {
             return transformPlayurlOnce(this, 'response', super.response)
         }
     }
-    theWindow.XMLHttpRequest = XMLHttpRequest
+    theWindow.XMLHttpRequest = createXhrFacade(XMLHttpRequest, OriginalXMLHttpRequest)
 
     // ── Fetch ────────────────────────────────────────────────
     const OriginalFetch = theWindow.fetch
+    const NativeRequest = Request
+    const requestUrlGetter = Object.getOwnPropertyDescriptor(NativeRequest.prototype, 'url').get
+    const requestMethodGetter = Object.getOwnPropertyDescriptor(NativeRequest.prototype, 'method').get
 
     const cloneResponseWithBody = (source, body, preserveEntityHeaders = true) => {
         const headers = new Headers(source.headers)
@@ -502,7 +513,7 @@ const interceptNetResponse = (function (theWindow) {
 
     theWindow.fetch = (input, init) => {
         if (deps.disabled) return OriginalFetch(input, init)
-        const urlStr = (input instanceof Request) ? input.url : String(input)
+        const urlStr = (input instanceof NativeRequest) ? requestUrlGetter.call(input) : String(input)
 
         if (deps.isHttpDnsUrl(urlStr) && deps.shouldBlockHttpDns()) {
             deps.redirectStats.httpdns++
@@ -531,9 +542,23 @@ const interceptNetResponse = (function (theWindow) {
         }
 
         if (deps.isMediaSegmentUrl(urlStr)) {
+            // Normalize once with native Request semantics (including init
+            // precedence and getters), then dispatch exactly that snapshot.
+            let normalized
+            const wasRequest = input instanceof NativeRequest
+            try { normalized = new NativeRequest(wasRequest ? input : new URL(urlStr, location.href).href, init) }
+            catch (error) { return Promise.reject(error) }
+            const normalizedMethod = requestMethodGetter.call(normalized)
+            if (normalizedMethod !== 'GET') return OriginalFetch(normalized)
+            if (wasRequest) { input = normalized; init = undefined }
+            else init = { method: normalizedMethod, headers: normalized.headers, signal: normalized.signal,
+                credentials: normalized.credentials, mode: normalized.mode, cache: normalized.cache,
+                redirect: normalized.redirect, referrer: normalized.referrer,
+                referrerPolicy: normalized.referrerPolicy, integrity: normalized.integrity, keepalive: normalized.keepalive }
             const requestRuntimeToken = deps.captureRuntimeGeneration()
             const mediaContext = deps.captureMediaRequest(urlStr, requestRuntimeToken)
             mediaContext.method = 'fetch'
+            mediaContext.httpMethod = 'GET'
             const mappedOriginalUrl = deps.getOriginalStreamUrl(urlStr)
             const nativeRoute = deps.resolveRequestRoute(urlStr, mediaContext)
             mediaContext.routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null

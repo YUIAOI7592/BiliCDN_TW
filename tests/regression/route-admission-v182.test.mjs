@@ -35,7 +35,7 @@ function routesHarness() {
 function pageGroup(h, address=url(A), changes={}) {
  const item={...payload().data.dash.video[0],base_url:address,backup_url:[],...changes}
  const id=h.routes.registerSignedRouteGroup(item,true,'video','page-hint')
- return {id,item,context:{route:h.routes.captureRouteContext(address),method:'xhr'}}
+ return {id,item,context:{route:h.routes.captureRouteContext(address),method:'xhr',httpMethod:'GET'}}
 }
 test('v182 only the completed exact page URL unlocks, never sibling signatures or GM-seeded ratings',()=>{
  const h=routesHarness(); const {id,context}=pageGroup(h,url(A),{backup_url:[url('alt.akamaized.net')]})
@@ -108,7 +108,7 @@ test('v182 Catalog response after page-route recovery is observed without unlock
  const h=routesHarness();const {context}=pageGroup(h)
  h.routes.recordNativeThroughput(context,url(A),131072,100,2)
  h.routes.beginRouteRecovery('verified-native-failure',A)
- const next={route:h.routes.captureRouteContext(url(A)),method:'fetch',routeDecision:{changed:true,type:'catalog-generated',host:C}}
+ const next={route:h.routes.captureRouteContext(url(A)),method:'fetch',httpMethod:'GET',routeDecision:{changed:true,type:'catalog-generated',host:C}}
  assert.equal(h.routes.recordNativeThroughput(next,url(C),131072,100,2).status,'catalog-observed')
  const d=h.routes.diagnostics();assert.equal(d.routeAffinity.host,C)
  assert.equal(d.routeAffinity.type,'catalog-generated');assert.equal(d.observedHostChanges,1)

@@ -55,11 +55,12 @@ test('v182 security native XHR completion cannot be relabeled by instance or lat
   const h=F.load({instrument:false,pageGlobals:{__playinfo__:page(item(B,[]))}},file);F.video(h,1080)
   const x=new h.pageWindow.XMLHttpRequest();x.open('GET',B)
   const nativeProto=Object.getPrototypeOf(h.pageWindow.XMLHttpRequest.prototype)
-  nativeProto.open.call(x,'GET','https://www.bilibili.com/unrelated')
+  if(file===current)assert.throws(()=>nativeProto.open.call(x,'GET','https://www.bilibili.com/unrelated'),TypeError)
+  else nativeProto.open.call(x,'GET','https://www.bilibili.com/unrelated')
   const destination=mode==='instance'?x:h.pageWindow.XMLHttpRequest.prototype
   Object.defineProperty(destination,'responseURL',{configurable:true,get:()=>B})
   destination.getResponseHeader=()=>String(131072)
-  x.send();x.respond({status:200,response:new Uint8Array(131072).buffer})
+  x.send();x.respond({status:200,response:new Uint8Array(131072).buffer,responseURL:'https://www.bilibili.com/unrelated'})
   await h.timers.advanceAsync(1100)
   assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.unlockedUrls,file===vulnerable?1:0,mode)
   assert.equal(h.gmWrites.some(w=>w.key==='nativeRouteRatings_v1'),file===vulnerable,mode)
@@ -84,15 +85,15 @@ test('v182 security native status/size/empty final URL cannot be replaced with p
  }
 })
 
-test('v182 security direct native reopen invalidates page context even when final URL later matches',async()=>{
+test('v182 security direct native reopen is brand-rejected while the original GET remains intact',async()=>{
  const h=F.load({instrument:false,pageGlobals:{__playinfo__:page(item(B,[]))}});F.video(h,1080)
  const x=new h.pageWindow.XMLHttpRequest();x.open('GET',B);x.send()
- Object.getPrototypeOf(h.pageWindow.XMLHttpRequest.prototype).open.call(x,'GET',B)
+ assert.throws(()=>Object.getPrototypeOf(h.pageWindow.XMLHttpRequest.prototype).open.call(x,'POST',B),TypeError)
  // Model the native OPENED event missing from the old minimal mock open().
  x.dispatchEvent(new F.FakeEvent('readystatechange',{isTrusted:true}))
  x.respond({status:206,response:new ArrayBuffer(131072)})
  await h.timers.advanceAsync(1100)
- assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.unlockedUrls,0)
+ assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.unlockedUrls,1)
 })
 
 test('v182 security legitimate exact XHR bytes and completion still admit the page backup',async()=>{
@@ -157,10 +158,10 @@ test('v182 silent native reopen and URL-less network errors cannot penalize the 
   const h=F.load({instrument:false,pageGlobals:{__playinfo__:page(item(B,[]))},fetchImpl:async()=>new Response(new ArrayBuffer(131072),{status:206})})
   F.video(h,1080);await F.consume(h,B);await h.timers.advanceAsync(1100)
   const x=new h.pageWindow.XMLHttpRequest();x.open('GET',B)
-  if(mode==='unrelated')Object.getPrototypeOf(h.pageWindow.XMLHttpRequest.prototype).open.call(x,'GET','https://www.bilibili.com/unrelated')
+  if(mode==='unrelated')assert.throws(()=>Object.getPrototypeOf(h.pageWindow.XMLHttpRequest.prototype).open.call(x,'GET','https://www.bilibili.com/unrelated'),TypeError)
   x.send();if(mode==='empty')x._responseURL=''
   x.fail();await h.timers.advanceAsync(1100)
   const ledger=JSON.parse(h.gmWrites.filter(w=>w.key==='nativeRouteRatings_v1').at(-1).value)
-  assert.equal(ledger.video[new URL(B).hostname].failures,mode==='genuine-url'?1:0,mode)
+  assert.equal(ledger.video[new URL(B).hostname].failures,mode==='empty'?0:1,mode)
  }
 })

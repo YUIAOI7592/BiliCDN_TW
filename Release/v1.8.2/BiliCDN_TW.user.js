@@ -2176,6 +2176,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
       const group = groups.get(routeContext.groupId), parsed = parseEligibleUrl(url);
       if (!group || !parsed) return { accepted: false, status: "not-native" };
       if (group.source === "page-hint") {
+        if (context.httpMethod !== "GET") return { accepted: false, status: "unverified-method" };
         if (source === "transport" && group.unlocked.has(routeContext.requestedUrl) && context.routeDecision?.changed && context.routeDecision.type === "catalog-generated" && context.routeDecision.host === parsed.host && deps.TRUSTED_CDN_CATALOG_SET.has(parsed.host) && deps.replaceUrlHost?.(routeContext.requestedUrl, parsed.host) === parsed.url && Number.isSafeInteger(bytes) && bytes > 0) {
           context.pageCompleted = true;
           context.pageCatalogCompleted = true;
@@ -4351,6 +4352,251 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
   }
   __name(createPlayurl, "createPlayurl");
 
+  // src/transport/xhr-facade.mjs
+  function createXhrFacade(ManagedXHR, NativeXHR) {
+    const instances = /* @__PURE__ */ new WeakMap();
+    const add = NativeXHR.prototype.addEventListener;
+    const objectMembers = new Set(Reflect.ownKeys(Object.prototype));
+    const descriptors = /* @__PURE__ */ new Map();
+    const intrinsicPrototype = /* @__PURE__ */ Object.create(null);
+    const nativeKeys = /* @__PURE__ */ new Set();
+    for (let p = NativeXHR.prototype; p && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
+      for (const key of Reflect.ownKeys(p)) if (!objectMembers.has(key) && !nativeKeys.has(key)) {
+        nativeKeys.add(key);
+        Object.defineProperty(intrinsicPrototype, key, Object.getOwnPropertyDescriptor(p, key));
+      }
+    }
+    Object.setPrototypeOf(ManagedXHR.prototype, Object.freeze(intrinsicPrototype));
+    for (let p = ManagedXHR.prototype; p && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
+      for (const key of Reflect.ownKeys(p)) if (!objectMembers.has(key) && !descriptors.has(key)) {
+        descriptors.set(key, Object.getOwnPropertyDescriptor(p, key));
+      }
+    }
+    const eventTypes = ["readystatechange", "loadstart", "progress", "abort", "error", "load", "timeout", "loadend"];
+    const eventFields = /* @__PURE__ */ new Map();
+    for (const ctor of [typeof ProgressEvent === "function" ? ProgressEvent : null, Event]) {
+      for (let p = ctor?.prototype; p && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
+        for (const key of Reflect.ownKeys(p)) if (!eventFields.has(key)) eventFields.set(key, Object.getOwnPropertyDescriptor(p, key));
+      }
+    }
+    const eventRead = /* @__PURE__ */ __name((event, key) => {
+      const d = eventFields.get(key);
+      if (d?.get) {
+        try {
+          return d.get.call(event);
+        } catch {
+          return void 0;
+        }
+      }
+      const own = Object.getOwnPropertyDescriptor(event, key);
+      if (own && "value" in own) return own.value;
+      if (key === "isTrusted" && own?.get && own.configurable === false) return own.get.call(event);
+      return d?.value;
+    }, "eventRead");
+    const eventCall = /* @__PURE__ */ __name((event, key) => eventFields.get(key)?.value?.call(event), "eventCall");
+    function events(backend, facade) {
+      const rows = /* @__PURE__ */ new Map(), handlers = /* @__PURE__ */ new Map(), relays = /* @__PURE__ */ new Map();
+      const views = /* @__PURE__ */ new WeakMap();
+      const view = /* @__PURE__ */ __name((event, publicOwned = false) => {
+        if (views.has(event)) return views.get(event);
+        let stopped = false, immediate = false, active = false, passive = false;
+        const result = publicOwned ? event : Object.create(Object.getPrototypeOf(event));
+        for (const key of publicOwned ? [] : [
+          "type",
+          "isTrusted",
+          "timeStamp",
+          "bubbles",
+          "cancelable",
+          "composed",
+          "eventPhase",
+          "loaded",
+          "total",
+          "lengthComputable"
+        ]) {
+          Object.defineProperty(result, key, { configurable: true, enumerable: true, value: eventRead(event, key) });
+        }
+        const prevent = /* @__PURE__ */ __name(() => eventCall(event, "preventDefault"), "prevent");
+        const stop = /* @__PURE__ */ __name(() => eventCall(event, "stopPropagation"), "stop");
+        const stopImmediate = /* @__PURE__ */ __name(() => eventCall(event, "stopImmediatePropagation"), "stopImmediate");
+        Object.defineProperties(result, {
+          target: { value: facade },
+          currentTarget: { get: /* @__PURE__ */ __name(() => active ? facade : null, "get") },
+          srcElement: { value: facade },
+          composedPath: { value: /* @__PURE__ */ __name(() => active ? [facade] : [], "value") },
+          preventDefault: { value: /* @__PURE__ */ __name(() => {
+            if (!passive) prevent();
+          }, "value") },
+          stopPropagation: { value: /* @__PURE__ */ __name(() => {
+            stopped = true;
+            stop();
+          }, "value") },
+          stopImmediatePropagation: { value: /* @__PURE__ */ __name(() => {
+            immediate = stopped = true;
+            stopImmediate();
+          }, "value") },
+          defaultPrevented: { get: /* @__PURE__ */ __name(() => eventRead(event, "defaultPrevented"), "get") },
+          cancelBubble: { get: /* @__PURE__ */ __name(() => stopped || eventRead(event, "cancelBubble"), "get"), set: /* @__PURE__ */ __name((value) => {
+            if (value) {
+              stopped = true;
+              stop();
+            }
+          }, "set") }
+        });
+        const state = { event: result, immediate: /* @__PURE__ */ __name(() => immediate, "immediate"), active: /* @__PURE__ */ __name((value) => {
+          active = value;
+        }, "active"), passive: /* @__PURE__ */ __name((value) => {
+          passive = value;
+        }, "passive") };
+        views.set(event, state);
+        return state;
+      }, "view");
+      const dispatch = /* @__PURE__ */ __name((event, publicOwned = false) => {
+        const state = view(event, publicOwned), type = eventRead(event, "type");
+        state.active(true);
+        for (const row of [...rows.get(type) || []]) {
+          if (!(rows.get(type) || []).includes(row)) continue;
+          if (row.once) off(type, row.callback, row.capture);
+          state.passive(row.passive);
+          try {
+            if (typeof row.callback === "function") row.callback.call(facade, state.event);
+            else row.callback.handleEvent.call(row.callback, state.event);
+          } catch (error) {
+            setTimeout(() => {
+              throw error;
+            }, 0);
+          }
+          if (state.immediate()) break;
+        }
+        state.passive(false);
+        state.active(false);
+        return !eventRead(event, "defaultPrevented");
+      }, "dispatch");
+      const ensure = /* @__PURE__ */ __name((type) => {
+        if (relays.has(type)) return;
+        const relay = /* @__PURE__ */ __name((event) => dispatch(event), "relay");
+        relays.set(type, relay);
+        add.call(backend, type, relay);
+      }, "ensure");
+      const off = /* @__PURE__ */ __name((type, callback, options) => {
+        type = String(type);
+        const capture = typeof options === "boolean" ? options : !!options?.capture;
+        const list = rows.get(type) || [], index = list.findIndex((r) => r.callback === callback && r.capture === capture);
+        if (index >= 0) {
+          const [row] = list.splice(index, 1);
+          row.abortCleanup?.();
+        }
+      }, "off");
+      const on = /* @__PURE__ */ __name((type, callback, options) => {
+        type = String(type);
+        if (!callback || typeof callback !== "function" && typeof callback !== "object") return;
+        const capture = typeof options === "boolean" ? options : !!options?.capture;
+        const signal = typeof options === "object" ? options?.signal : null;
+        if (signal?.aborted) return;
+        const list = rows.get(type) || [];
+        if (list.some((r) => r.callback === callback && r.capture === capture)) return;
+        const row = { callback, capture, once: !!options?.once, passive: !!options?.passive };
+        if (signal) {
+          const abort = /* @__PURE__ */ __name(() => off(type, callback, capture), "abort");
+          signal.addEventListener("abort", abort, { once: true });
+          row.abortCleanup = () => signal.removeEventListener("abort", abort);
+        }
+        list.push(row);
+        rows.set(type, list);
+        ensure(type);
+      }, "on");
+      Object.defineProperties(facade, {
+        addEventListener: { configurable: true, writable: true, value: on },
+        removeEventListener: { configurable: true, writable: true, value: off },
+        // Never dispatch a caller-owned event on the backend: the retained
+        // original event would otherwise reveal its native target afterwards.
+        dispatchEvent: { configurable: true, writable: true, value: /* @__PURE__ */ __name((event) => {
+          if (!event || typeof event.type !== "string") throw new TypeError("Invalid event");
+          return dispatch(event, true);
+        }, "value") }
+      });
+      for (const type of eventTypes) Object.defineProperty(facade, "on" + type, {
+        configurable: true,
+        enumerable: true,
+        get: /* @__PURE__ */ __name(() => handlers.get(type)?.callback || null, "get"),
+        set: /* @__PURE__ */ __name((callback) => {
+          const prior = handlers.get(type);
+          if (prior && typeof callback === "function") {
+            prior.callback = callback;
+            return;
+          }
+          if (prior) off(type, prior.listener);
+          handlers.delete(type);
+          if (typeof callback !== "function") return;
+          const entry = { callback };
+          const listener = /* @__PURE__ */ __name((event) => {
+            if (entry.callback.call(facade, event) === false) event.preventDefault();
+          }, "listener");
+          entry.listener = listener;
+          handlers.set(type, entry);
+          on(type, listener);
+        }, "set")
+      });
+    }
+    __name(events, "events");
+    const _PublicXHR = class _PublicXHR {
+      constructor() {
+        const backend = new ManagedXHR();
+        instances.set(this, backend);
+        events(backend, this);
+        for (const key of Reflect.ownKeys(backend)) if (!(key in this)) {
+          Object.defineProperty(this, key, {
+            configurable: true,
+            enumerable: true,
+            get: /* @__PURE__ */ __name(() => backend[key], "get"),
+            set: /* @__PURE__ */ __name((value) => {
+              backend[key] = value;
+            }, "set")
+          });
+        }
+      }
+    };
+    __name(_PublicXHR, "PublicXHR");
+    let PublicXHR = _PublicXHR;
+    Object.setPrototypeOf(PublicXHR.prototype, NativeXHR.prototype);
+    Object.setPrototypeOf(PublicXHR, NativeXHR);
+    for (const [key, d] of descriptors) {
+      if (["addEventListener", "removeEventListener", "dispatchEvent"].includes(key) || typeof key === "string" && key.startsWith("on")) continue;
+      const receiver = /* @__PURE__ */ __name((self) => {
+        const backend = instances.get(self);
+        if (!backend) throw new TypeError("Illegal invocation");
+        return backend;
+      }, "receiver");
+      if (typeof d.value === "function") Object.defineProperty(PublicXHR.prototype, key, {
+        configurable: true,
+        writable: true,
+        value: /* @__PURE__ */ __name(function(...args) {
+          return d.value.apply(receiver(this), args);
+        }, "value")
+      });
+      else if (d.get || d.set) Object.defineProperty(PublicXHR.prototype, key, {
+        configurable: true,
+        enumerable: d.enumerable,
+        get: d.get ? function() {
+          const backend = receiver(this), value = d.get.call(backend);
+          if (key !== "upload" || !value) return value;
+          if (!uploads.has(this)) {
+            const facade = {};
+            events(value, facade);
+            uploads.set(this, facade);
+          }
+          return uploads.get(this);
+        } : void 0,
+        set: d.set ? function(value) {
+          d.set.call(receiver(this), value);
+        } : void 0
+      });
+      else Object.defineProperty(PublicXHR.prototype, key, d);
+    }
+    const uploads = /* @__PURE__ */ new WeakMap();
+    return PublicXHR;
+  }
+  __name(createXhrFacade, "createXhrFacade");
+
   // src/transport/interceptors.mjs
   function createTransport(deps) {
     const interceptNetResponse = (function(theWindow) {
@@ -4491,6 +4737,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
             httpMethod: nativeMethod.toUpperCase()
           };
           mediaRequests.get(this).transport = requestState;
+          mediaRequests.get(this).httpMethod = requestState.httpMethod;
           if (this._blockedTimer) {
             clearTimeout(this._blockedTimer);
             this._blockedTimer = null;
@@ -4510,6 +4757,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
           this._biliJsonMetadata = deps.isBiliJsonMetadataApi(urlStr);
           if (deps.disabled) {
             this._interceptUrl = urlStr;
+            return openNative(this, nativeMethod, url, rest);
+          }
+          if (requestState.httpMethod !== "GET" && deps.isMediaSegmentUrl(urlStr)) {
             return openNative(this, nativeMethod, url, rest);
           }
           if (deps.isHttpDnsUrl(urlStr) && deps.shouldBlockHttpDns()) {
@@ -4772,8 +5022,11 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
       };
       __name(_XMLHttpRequest, "XMLHttpRequest");
       let XMLHttpRequest = _XMLHttpRequest;
-      theWindow.XMLHttpRequest = XMLHttpRequest;
+      theWindow.XMLHttpRequest = createXhrFacade(XMLHttpRequest, OriginalXMLHttpRequest);
       const OriginalFetch = theWindow.fetch;
+      const NativeRequest = Request;
+      const requestUrlGetter = Object.getOwnPropertyDescriptor(NativeRequest.prototype, "url").get;
+      const requestMethodGetter = Object.getOwnPropertyDescriptor(NativeRequest.prototype, "method").get;
       const cloneResponseWithBody = /* @__PURE__ */ __name((source, body, preserveEntityHeaders = true) => {
         const headers = new Headers(source.headers);
         if (!preserveEntityHeaders) {
@@ -4895,7 +5148,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
       }, "wrapMeasuredFetchResponse");
       theWindow.fetch = (input, init) => {
         if (deps.disabled) return OriginalFetch(input, init);
-        const urlStr = input instanceof Request ? input.url : String(input);
+        const urlStr = input instanceof NativeRequest ? requestUrlGetter.call(input) : String(input);
         if (deps.isHttpDnsUrl(urlStr) && deps.shouldBlockHttpDns()) {
           deps.redirectStats.httpdns++;
           try {
@@ -4921,9 +5174,35 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
           else init = Object.assign({}, init, { headers });
         }
         if (deps.isMediaSegmentUrl(urlStr)) {
+          let normalized;
+          const wasRequest = input instanceof NativeRequest;
+          try {
+            normalized = new NativeRequest(wasRequest ? input : new URL(urlStr, location.href).href, init);
+          } catch (error) {
+            return Promise.reject(error);
+          }
+          const normalizedMethod = requestMethodGetter.call(normalized);
+          if (normalizedMethod !== "GET") return OriginalFetch(normalized);
+          if (wasRequest) {
+            input = normalized;
+            init = void 0;
+          } else init = {
+            method: normalizedMethod,
+            headers: normalized.headers,
+            signal: normalized.signal,
+            credentials: normalized.credentials,
+            mode: normalized.mode,
+            cache: normalized.cache,
+            redirect: normalized.redirect,
+            referrer: normalized.referrer,
+            referrerPolicy: normalized.referrerPolicy,
+            integrity: normalized.integrity,
+            keepalive: normalized.keepalive
+          };
           const requestRuntimeToken = deps.captureRuntimeGeneration();
           const mediaContext = deps.captureMediaRequest(urlStr, requestRuntimeToken);
           mediaContext.method = "fetch";
+          mediaContext.httpMethod = "GET";
           const mappedOriginalUrl = deps.getOriginalStreamUrl(urlStr);
           const nativeRoute = deps.resolveRequestRoute(urlStr, mediaContext);
           mediaContext.routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null;
