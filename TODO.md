@@ -5,7 +5,7 @@
 - [x] 統一 Catalog／Native 決策，Catalog 不受本片名單限制。
 - [x] 頁面候選 exact 成功解鎖、來源接管與一次起播排程。
 - [x] 診斷區分候選、計畫、產生來源與實際觀察。
-- [x] 315 項 VM／靜態回歸通過；正式包裝與安全狀態見本版 TEST_REPORT。
+- [x] 327 項 VM／靜態回歸、17 項獨立安全子集、可重現建置及雙 patch 通過；安全掃描狀態見本版 TEST_REPORT。
 - [ ] 自動畫質至少四分鐘 Chrome／Tampermonkey、2x／4K／seek／SPA／背景切回交叉驗收。
 - [ ] SECURITY.md 精確政策差異確認後，將舊 page-compat 禁令更新為受限候選規則；新資料流仍在本版安全掃描範圍。
 

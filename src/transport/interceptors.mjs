@@ -49,15 +49,67 @@ const interceptNetResponse = (function (theWindow) {
 
     // ── XHR ──────────────────────────────────────────────────
     const OriginalXMLHttpRequest = theWindow.XMLHttpRequest
+    const nativeGetters = Object.create(null)
+    for (const key of ['readyState', 'status', 'responseURL', 'response', 'responseText']) {
+        for (let proto = OriginalXMLHttpRequest.prototype; proto; proto = Object.getPrototypeOf(proto)) {
+            const descriptor = Object.getOwnPropertyDescriptor(proto, key)
+            if (descriptor) { nativeGetters[key] = descriptor.get; break }
+        }
+    }
+    const readNative = (xhr, key) => { try { return nativeGetters[key]?.call(xhr) } catch { return undefined } }
+    const nativeHeader = OriginalXMLHttpRequest.prototype.getResponseHeader
+    const nativeOpen = OriginalXMLHttpRequest.prototype.open
+    const nativeAddListener = OriginalXMLHttpRequest.prototype.addEventListener
+    const nativeRemoveListener = OriginalXMLHttpRequest.prototype.removeEventListener
+    const ownedOpen = new WeakSet(), observedXhr = new WeakMap()
+    const clearOpenObserver = xhr => {
+        const listener = observedXhr.get(xhr)
+        if (listener) nativeRemoveListener.call(xhr, 'readystatechange', listener)
+        observedXhr.delete(xhr)
+    }
+    const openNative = (xhr, method, url, rest) => {
+        clearOpenObserver(xhr)
+        if (mediaRequests.get(xhr)?.route?.source === 'page-hint') {
+            const listener = event => {
+                // A caller can invoke the original prototype directly. A new native
+                // OPENED outside our open() invalidates, rather than reuses, authority.
+                if (event?.isTrusted === true && readNative(xhr, 'readyState') === 1 && !ownedOpen.has(xhr)) {
+                    mediaListenerCleanup.get(xhr)?.()
+                    clearOpenObserver(xhr)
+                    mediaRequests.delete(xhr); playurlRequests.delete(xhr)
+                }
+            }
+            observedXhr.set(xhr, listener)
+            nativeAddListener.call(xhr, 'readystatechange', listener)
+        }
+        ownedOpen.add(xhr)
+        try { return nativeOpen.call(xhr, method, url, ...rest) } finally { ownedOpen.delete(xhr) }
+    }
+    const arrayBufferSize = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'byteLength')?.get
+    const blobSize = typeof Blob === 'function' ? Object.getOwnPropertyDescriptor(Blob.prototype, 'size')?.get : null
+    const nativeEvidence = xhr => {
+        const response = readNative(xhr, 'response')
+        let size = 0, length = null
+        try { size = arrayBufferSize.call(response) } catch {}
+        if (!size) { try { size = blobSize?.call(response) || 0 } catch {} }
+        if (!size) { const text = readNative(xhr, 'responseText'); if (typeof text === 'string') size = text.length }
+        try { length = nativeHeader.call(xhr, 'content-length') } catch {}
+        return { responseURL: readNative(xhr, 'responseURL'), response: { byteLength: size }, verifiedPayloadBytes: size,
+            getResponseHeader: () => length }
+    }
     class XMLHttpRequest extends OriginalXMLHttpRequest {
         open(method, url, ...rest) {
             mediaListenerCleanup.get(this)?.()
             deps.DiagnosticLog.updateRequest(diagnosticRequests.get(this), 'reopened')
             diagnosticRequests.delete(this)
             const urlStr = String(url)
+            const nativeMethod = String(method)
             playurlRequests.set(this, { runtime: deps.captureRuntimeGeneration(), url: urlStr, cache: null })
             mediaRequests.set(this, deps.captureMediaRequest(urlStr))
             mediaRequests.get(this).method = 'xhr'
+            const requestState = { originalUrl: urlStr, interceptUrl: urlStr, originCdn: null,
+                targetCdn: null, hostRewriteAttempt: false, httpMethod: nativeMethod.toUpperCase() }
+            mediaRequests.get(this).transport = requestState
             // XMLHttpRequest 物件可被重複 open()。每次請求都要清掉上一輪的自訂狀態，
             // 否則先前的 HTTPDNS abort、重導 host 或 response 快取會污染下一個 URL。
             if (this._blockedTimer) { clearTimeout(this._blockedTimer); this._blockedTimer = null }
@@ -77,7 +129,7 @@ const interceptNetResponse = (function (theWindow) {
 
             if (deps.disabled) {
                 this._interceptUrl = urlStr
-                return super.open(method, url, ...rest)
+                return openNative(this, nativeMethod, url, rest)
             }
 
             // HTTPDNS 依 true / false / auto 判斷是否直接 abort
@@ -85,7 +137,7 @@ const interceptNetResponse = (function (theWindow) {
                 this._blockAbort   = true
                 this._interceptUrl = urlStr
                 deps.redirectStats.httpdns++
-                return super.open(method, urlStr, ...rest)
+                return openNative(this, nativeMethod, urlStr, rest)
             }
             if (deps.isHttpDnsUrl(urlStr)) {
                 deps.redirectStats.httpdnsAllowed++
@@ -95,6 +147,8 @@ const interceptNetResponse = (function (theWindow) {
                 const mappedOriginalUrl = deps.getOriginalStreamUrl(urlStr)
                 this._originalUrl = mappedOriginalUrl
                 this._hostRewriteAttempt = mappedOriginalUrl !== urlStr
+                requestState.originalUrl = mappedOriginalUrl
+                requestState.hostRewriteAttempt = mappedOriginalUrl !== urlStr
                 const nativeRoute = deps.resolveRequestRoute(urlStr, mediaRequests.get(this))
                 mediaRequests.get(this).routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null
                 const norm = nativeRoute
@@ -102,17 +156,21 @@ const interceptNetResponse = (function (theWindow) {
                         targetCdn: nativeRoute.host, nativeRoute: nativeRoute.type === 'native-signed', restoredOriginal: nativeRoute.action === 'restore' }
                     : deps.normalizeMediaUrl(urlStr)
                 this._originCdn = norm.originCdn || deps.getBiliVideoCdn(urlStr)
+                requestState.originCdn = norm.originCdn || deps.getBiliVideoCdn(urlStr)
                 if (norm.changed) {
                     this._redirectedCdn = norm.targetCdn
                     this._restoredOriginal = !!norm.restoredOriginal
                     // 復原到原始簽名 URL 不是「再改一次 host」，後續 403 應按原 host 真實失敗處理。
                     this._hostRewriteAttempt = !norm.restoredOriginal && !norm.nativeRoute
+                    requestState.targetCdn = norm.targetCdn
+                    requestState.hostRewriteAttempt = !norm.restoredOriginal && !norm.nativeRoute
                     url = norm.url
                 }
             }
 
             this._interceptUrl = String(url)
-            return super.open(method, url, ...rest)
+            requestState.interceptUrl = String(url)
+            return openNative(this, nativeMethod, url, rest)
         }
 
         _deliverBlockedHttpDns() {
@@ -133,6 +191,7 @@ const interceptNetResponse = (function (theWindow) {
         }
         abort() {
             mediaListenerCleanup.get(this)?.()
+            clearOpenObserver(this)
             deps.DiagnosticLog.updateRequest(diagnosticRequests.get(this), 'abort')
             diagnosticRequests.delete(this)
             playurlRequests.delete(this)
@@ -168,16 +227,16 @@ const interceptNetResponse = (function (theWindow) {
 
             // status=0 本身不代表失敗：等待原生 error/timeout/abort 區分原因。
             // 每輪 open/send 只結算一次；取消、舊 generation/epoch 不產生健康副作用。
-            if (this._originCdn) {
+            const requestState = mediaRequests.get(this)?.transport
+            if (requestState?.originCdn) {
                 // 原生 XHR 會拒絕同一次 open 的重複 send。讓它直接拋回呼叫端，不能先覆蓋
                 // 第一個仍在途請求的 listener/診斷 owner，否則之後 open() 無法完整清理。
                 if (mediaSendInFlight.has(this)) return super.send(...args)
-                const cdn  = this._redirectedCdn || this._originCdn
+                const cdn  = requestState.targetCdn || requestState.originCdn
                 const self = this
-                const requestSeq = this._biliRequestSeq
                 const mediaContext = mediaRequests.get(this)
                 const requestRuntimeToken = mediaContext?.runtime || deps.captureRuntimeGeneration()
-                const diagnosticId = deps.DiagnosticLog.request('xhr', mediaContext, this._originalUrl || this._interceptUrl, this._interceptUrl)
+                const diagnosticId = deps.DiagnosticLog.request('xhr', mediaContext, requestState.originalUrl, requestState.interceptUrl)
                 diagnosticRequests.set(this, diagnosticId)
                 const segStartedAt = Date.now()
                 const segStartedMonotonic = performance.now()
@@ -189,33 +248,39 @@ const interceptNetResponse = (function (theWindow) {
                 const cleanup = () => {
                     settled = true
                     mediaSendInFlight.delete(self)
-                    listeners.forEach(([type, listener]) => self.removeEventListener(type, listener))
+                    clearOpenObserver(self)
+                    listeners.forEach(([type, listener]) => nativeRemoveListener.call(self, type, listener))
                     if (mediaListenerCleanup.get(self) === cleanup) mediaListenerCleanup.delete(self)
                 }
                 mediaListenerCleanup.set(self, cleanup)
-                const active = () => !settled && self._biliRequestSeq === requestSeq && deps.mediaContextActive(mediaContext)
+                const active = () => !settled && mediaRequests.get(self) === mediaContext && deps.mediaContextActive(mediaContext)
                 const listen = (type, callback) => {
                     const listener = e => {
                         if (e?.isTrusted !== true) return
                         if (!active()) { cleanup(); return }
                         try { callback(e) } catch { deps.DiagnosticLog.fault('interceptor') }
                     }
-                    listeners.push([type, listener]); self.addEventListener(type, listener)
+                    listeners.push([type, listener]); nativeAddListener.call(self, type, listener)
                 }
                 listen('abort', () => { cleanup(); deps.DiagnosticLog.updateRequest(diagnosticId, 'abort') })
                 const fail = kind => {
                     cleanup()
                     deps.DiagnosticLog.updateRequest(diagnosticId, 'network-error', { reason: kind, bytes: lastProgressLoaded })
-                    deps.noteNativeRouteFailure(mediaContext, self._interceptUrl, 0, kind)
+                    // OPENED -> OPENED native reopen may emit no event. Without a
+                    // current intrinsic URL there is no proof this failure belongs
+                    // to the page candidate. Keep the error observation, not a penalty.
+                    if (mediaContext?.route?.source === 'page-hint'
+                        && readNative(self, 'responseURL') !== deps.parseMediaHttpUrl(requestState.interceptUrl)?.href) return
+                    deps.noteNativeRouteFailure(mediaContext, requestState.interceptUrl, 0, kind)
                     deps.handleVerifiedSegmentFailure({
                         cdn,
-                        url: self._interceptUrl,
+                        url: requestState.interceptUrl,
                         kind,
                         bytesReceived: lastProgressLoaded,
                         requestElapsedMs: Math.max(0, performance.now() - segStartedMonotonic),
                         timeoutEvidence: kind === 'timeout' ? deps.TRUSTED_XHR_TIMEOUT_EVIDENCE : null,
-                        hostRewriteAttempt: self._hostRewriteAttempt,
-                        originalUrl: self._originalUrl,
+                        hostRewriteAttempt: requestState.hostRewriteAttempt,
+                        originalUrl: requestState.originalUrl,
                     })
                 }
                 listen('error', () => fail('network-error'))
@@ -232,54 +297,62 @@ const interceptNetResponse = (function (theWindow) {
                     const delta = loaded - lastProgressLoaded
                     if (delta > 0) {
                         lastProgressLoaded = loaded
-                        deps.observeMediaTransfer(mediaContext, self.responseURL || self._interceptUrl, delta, 'xhr')
+                        const finalUrl = readNative(self, 'responseURL')
+                        deps.observeMediaTransfer(mediaContext, finalUrl || requestState.interceptUrl, delta, 'xhr')
                         deps.Watchdog.noteExternalBytes(cdn, delta)
                         // 邊下載邊刷新去重標記（而不是只在下載完當下標一次）：
                         // 大 segment 下載期間，PerformanceObserver 的 resource-timing entry
                         // 理論上要等整包傳完才會送達，但送達時機沒有跟我們的量測同步保證，
                         // 持續刷新能避免「量測還沒完成、entry 卻先到」造成 onEntry() 重複入帳，
                         // 也避免下載耗時超過去重視窗（5s）導致標記提早過期。
-                        deps.noteSegmentAccounted(self._interceptUrl)
-                        if (self.responseURL && self.responseURL !== self._interceptUrl) {
-                            deps.noteSegmentAccounted(self.responseURL)
+                        deps.noteSegmentAccounted(requestState.interceptUrl)
+                        if (finalUrl && finalUrl !== requestState.interceptUrl) {
+                            deps.noteSegmentAccounted(finalUrl)
                         }
                     }
                 })
                 listen('readystatechange', () => {
-                    if (self.readyState === 2) deps.DiagnosticLog.updateRequest(diagnosticId, 'headers', { status: self.status, finalHost: self.responseURL || self._interceptUrl })
-                    if (self.readyState !== XMLHttpRequest.DONE) return
+                    const readyState = readNative(self, 'readyState'), status = readNative(self, 'status')
+                    const finalUrl = readNative(self, 'responseURL')
+                    if (readyState === 2) deps.DiagnosticLog.updateRequest(diagnosticId, 'headers', { status, finalHost: finalUrl || requestState.interceptUrl })
+                    if (readyState !== 4) return
                     // status 0 DONE precedes native error/abort in browsers: do not prematurely settle it.
-                    if (self.status <= 0) return
+                    if (!Number.isFinite(status) || status <= 0) return
                     cleanup()
-                    deps.DiagnosticLog.updateRequest(diagnosticId, self.status >= 400 ? 'http' : 'eof', {
-                        status: self.status, finalHost: self.responseURL || self._interceptUrl, bytes: lastProgressLoaded,
+                    deps.DiagnosticLog.updateRequest(diagnosticId, status >= 400 ? 'http' : 'eof', {
+                        status, finalHost: finalUrl || requestState.interceptUrl, bytes: lastProgressLoaded,
                     })
-                    if (deps.HARD_FAIL_STATUSES.has(self.status)) {
-                        deps.noteNativeRouteFailure(mediaContext, self._interceptUrl, self.status, 'http')
+                    if (mediaContext?.route?.source === 'page-hint'
+                        && (!finalUrl || finalUrl !== deps.parseMediaHttpUrl(requestState.interceptUrl)?.href)) return
+                    if (deps.HARD_FAIL_STATUSES.has(status)) {
+                        deps.noteNativeRouteFailure(mediaContext, requestState.interceptUrl, status, 'http')
                         deps.handleVerifiedSegmentFailure({
                             cdn,
-                            url: self._interceptUrl,
-                            status: self.status,
-                            hostRewriteAttempt: self._hostRewriteAttempt,
-                            originalUrl: self._originalUrl,
+                            url: requestState.interceptUrl,
+                            status,
+                            hostRewriteAttempt: requestState.hostRewriteAttempt,
+                            originalUrl: requestState.originalUrl,
                         })
-                    } else if (self.status >= 500) {
-                        deps.noteNativeRouteFailure(mediaContext, self._interceptUrl, self.status, 'http')
+                    } else if (status >= 500) {
+                        deps.noteNativeRouteFailure(mediaContext, requestState.interceptUrl, status, 'http')
                         deps.handleVerifiedSegmentFailure({
                             cdn,
-                            url: self._interceptUrl,
-                            status: self.status,
-                            hostRewriteAttempt: self._hostRewriteAttempt,
-                            originalUrl: self._originalUrl,
+                            url: requestState.interceptUrl,
+                            status,
+                            hostRewriteAttempt: requestState.hostRewriteAttempt,
+                            originalUrl: requestState.originalUrl,
                         })
-                    } else if (self.status >= 200 && self.status < 400) {
+                    } else if (status >= 200 && status < 400) {
+                        const evidence = nativeEvidence(self)
+                        if (mediaContext?.route?.source === 'page-hint'
+                            && (requestState.httpMethod !== 'GET' || !(evidence.verifiedPayloadBytes > 0))) return
                         deps.recordCdnSuccess(cdn, segStartedAt)
                         // 只有觀察到 ≥2 次 progress（真的分批收到）才信任「扣掉 TTFB」的起點；
                         // 小 segment 常常一個 read 就整包到齊，firstByteAt 幾乎等於下載完成時間，
                         // 相減會逼近 0ms，Math.max(1,...) 的下限反而把 Mbps 撐爆成離譜的天文數字。
                         // 這種情況退回含 TTFB 的完整耗時，寧可略為低估也不要產生失真的極端值。
                         const durationBase = progressEvents >= 2 ? (firstByteAt || segStartedAt) : segStartedAt
-                        deps.noteSegmentBytes(cdn, self, durationBase, self._interceptUrl, lastProgressLoaded, requestRuntimeToken, mediaContext)
+                        deps.noteSegmentBytes(cdn, evidence, durationBase, requestState.interceptUrl, lastProgressLoaded, requestRuntimeToken, mediaContext)
                     }
                 })
                 mediaSendInFlight.add(this)

@@ -54,18 +54,22 @@ const probeRouteThroughput = (candidate, sampleUrl, probeBytes, externalSignal, 
     const runtimeToken = deps.captureRuntimeGeneration()
     const cdn = candidate?.host
     const native = candidate?.type === 'native-signed'
+    const sample = native ? candidate.url : sampleUrl
+    const sampleContext = native ? candidate : deps.captureRouteContext(sample)
+    const sampleAllowed = () => deps.isRouteSampleAllowed(sample, sampleContext)
     const eligible = deps.isRuntimeGenerationActive(runtimeToken) && (native || (deps.isValidCustomCdnHost(cdn)
         && !deps.blacklistSet.has(cdn) && !deps.knownDeadHosts.has(cdn) && !deps.matchesExclude(cdn) && !deps.isPresumedDnsFailHost(cdn)))
     const decision = native ? null : deps.decideMediaRewrite(sampleUrl)
     // Native routes are exact signed URLs from the current representation group. Never synthesize them.
-    const target = native ? candidate.url : eligible && decision.action === 'rewrite' ? deps.replaceUrlHost(sampleUrl, cdn) : null
+    const target = eligible && sampleAllowed()
+        ? native ? candidate.url : decision.action === 'rewrite' ? deps.replaceUrlHost(sampleUrl, cdn) : null : null
     if (!target) return resolve({ status: 'ineligible', accepted: false, bytes: 0 })
     const wantBytes = Math.min(probeBytes || THRPT_PROBE_BYTES, 768 * 1024)
     const ctrl = new AbortController()
     const t0 = performance.now()
     let ttfb = 0, bytes = 0, settled = false, reader = null, to = null, successResponse = false
     const signals = [...new Set([externalSignal, runtimeToken.signal].filter(Boolean))]
-    const active = () => deps.isRuntimeGenerationActive(runtimeToken) && !signals.some(signal => signal.aborted)
+    const active = () => deps.isRuntimeGenerationActive(runtimeToken) && sampleAllowed() && !signals.some(signal => signal.aborted)
     const finish = (completion) => {
         if (settled) return
         settled = true
@@ -165,7 +169,8 @@ const runThroughputBakeoff = async (sampleUrl, skipIfFast = true, trustedRequest
     const skipped = reason => { deps.DiagnosticLog.record('measurement', { reason, requested: false }); return undefined }
     if (deps.disabled || deps.resolvedCdn || bakeoffRunning) return skipped(deps.disabled ? 'disabled' : deps.resolvedCdn ? 'fixed' : 'busy')
     if (deps.inSeekGrace()) return skipped('seek-grace')
-    if (!sampleUrl || (!deps.isBiliVideoUrl(sampleUrl) && !deps.canUseRouteSample(sampleUrl))) return skipped('no-segment')
+    if (!sampleUrl || !deps.isRouteSampleAllowed(sampleUrl)) return skipped('no-segment')
+    const sampleContext = deps.captureRouteContext(sampleUrl)
     // 綁定節點的串流換 host 必定 403，測了也拿不到任何有效樣本（見 hostLockedStreams）
     if (deps.isHostLockedStream(sampleUrl)) return skipped('host-lock')
     const runtimeToken = deps.captureRuntimeGeneration()
@@ -219,15 +224,15 @@ const runThroughputBakeoff = async (sampleUrl, skipIfFast = true, trustedRequest
         return navigator.locks.request('bilicdn-bakeoff', { ifAvailable: true }, (lock) => {
             if (!lock) return skipped('busy')
             if (!deps.isRuntimeGenerationActive(runtimeToken)) return
-            return doBakeoff(sampleUrl, runtimeToken)
+            return doBakeoff(sampleUrl, runtimeToken, sampleContext)
         })
     }
     if (!crossTabShouldBakeoff()) return  // 沒有 Web Locks：只保留既有提示，不冒充權威互斥
-    return doBakeoff(sampleUrl, runtimeToken)
+    return doBakeoff(sampleUrl, runtimeToken, sampleContext)
 }
 
-const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration()) => {
-    if (!deps.isRuntimeGenerationActive(runtimeToken)) return
+const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration(), sampleContext = deps.captureRouteContext(sampleUrl)) => {
+    if (!deps.isRuntimeGenerationActive(runtimeToken) || !deps.isRouteSampleAllowed(sampleUrl, sampleContext)) return
     deps.DiagnosticLog.record('measurement', { reason: 'accepted', requested: true })
     bakeoffRunning = true
     // 先寫再測：把時間戳提早寫進共用儲存，其他分頁在這一輪還沒跑完時就會被冷卻擋下，
@@ -284,7 +289,7 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
         const ok = []
         const outcomes = []
         for (const candidate of candidates) {
-            if (!deps.isRuntimeGenerationActive(runtimeToken) || myEpoch !== bakeoffEpoch) break
+            if (!deps.isRuntimeGenerationActive(runtimeToken) || myEpoch !== bakeoffEpoch || !deps.isRouteSampleAllowed(sampleUrl, sampleContext)) break
             // 這條串流已知綁定節點 → 剩下的候選不用試了，每一台都會 403（見 hostLockedStreams）
             if (deps.isHostLockedStream(sampleUrl)) break
             const r = candidate.type === 'native-signed'
@@ -292,7 +297,7 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
                 : await probeCdnThroughput(candidate.host, sampleUrl, probeBytes, mySignal)
             // 換 host 拿到 403：登記這條串流，立刻中止本輪。不中止的話剩下的候選會
             // 一顆一顆各再產生一行 403 紅字（使用者實測一輪就看到 3 行）。
-            if (!deps.isRuntimeGenerationActive(runtimeToken) || myEpoch !== bakeoffEpoch) return { status: 'cancelled', outcomes }
+            if (!deps.isRuntimeGenerationActive(runtimeToken) || myEpoch !== bakeoffEpoch || !deps.isRouteSampleAllowed(sampleUrl, sampleContext)) return { status: 'cancelled', outcomes }
             if (r) outcomes.push({ type: candidate.type, host: candidate.host, ...r })
             if (r && r.forbidden) {
                 if (candidate.type === 'native-signed') deps.noteNativeRouteFailure({ route: candidate }, candidate.url, 403, 'http')

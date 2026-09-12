@@ -59,6 +59,7 @@ const noteSegmentBytes = (cdn, xhr, startedAt, url, alreadyReportedBytes, runtim
                 }
             } catch {}
         }
+        if (mediaContext?.route?.source === 'page-hint') bytes = xhr.verifiedPayloadBytes || 0
         if (!bytes) return
         const durationMs = Math.max(1, Date.now() - startedAt)
         const remaining  = Math.max(0, bytes - (alreadyReportedBytes || 0))
@@ -67,8 +68,12 @@ const noteSegmentBytes = (cdn, xhr, startedAt, url, alreadyReportedBytes, runtim
             if (cdn) deps.Watchdog.noteExternalBytes(cdn, remaining)
         }
         if (cdn) deps.recordCdnThroughput(cdn, bytes, durationMs, deps.playbackRateState.effectiveRate)
-        deps.recordNativeThroughput(mediaContext, xhr.responseURL || url, bytes, durationMs,
-            deps.playbackRateState.effectiveRate, 'transport')
+        // Page admission needs an actual final URL, never a fallback to the URL
+        // that the caller originally claimed it would request.
+        if (mediaContext?.route?.source !== 'page-hint' || xhr.responseURL) {
+            deps.recordNativeThroughput(mediaContext, xhr.responseURL || url, bytes, durationMs,
+                deps.playbackRateState.effectiveRate, 'transport')
+        }
         if (mediaContext?.pageCompleted) deps.observeMediaTransfer(mediaContext, xhr.responseURL || url, bytes, 'xhr')
         noteSegmentAccounted(url)
         if (xhr.responseURL && xhr.responseURL !== url) noteSegmentAccounted(xhr.responseURL)

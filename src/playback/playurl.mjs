@@ -28,8 +28,8 @@ const playInfoTransformer = (playInfo, options = null) => {
             if (nativeTransportSource && !isDash) deps.registerMediaRepresentation(deps.muxedRepresentationRegistry,
                 { urls: deps.pickStreamUrls(item, false).validUrls }, 'muxed', deps.AUDIO_REGISTRY_MAX)
             // The page-global __playinfo__ hook is fail-open compatibility input, not a
-            // capability for Native exploration or persistent rating. Only an intercepted
-            // playurl transport response can populate the exact signed-route pool.
+            // capability for Native exploration or persistent rating. Stage page hints
+            // separately; exact successful transport is required before their admission.
             const routeGroup = deps.registerSignedRouteGroup(item, isDash, kind, nativeTransportSource ? 'trusted-api' : 'page-hint')
             if (routeGroup) deps.applySignedRoutePlan(item, isDash, routeGroup)
             else deps.planUnregisteredItem(item, isDash, nativeTransportSource)

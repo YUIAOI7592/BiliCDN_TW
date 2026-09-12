@@ -100,6 +100,7 @@ get CustomCDN() { return settings.CustomCDN; },
 get PluginName() { return events.PluginName; }
 });
 nativeRoutes = createNativeRoutes({
+get isBiliVideoUrl() { return mediaPolicy.isBiliVideoUrl; },
 get gmGet() { return key => GM_getValue(key); },
 get gmSet() { return (key, value) => GM_setValue(key, value); },
 get gmDelete() { return key => GM_deleteValue(key); },
@@ -380,6 +381,8 @@ get PROBE_CACHE_KEY() { return latency.PROBE_CACHE_KEY; },
 get getNativeProbeCandidate() { return nativeRoutes.getNativeProbeCandidate; },
 get recordNativeProbe() { return nativeRoutes.recordNativeProbe; },
 get canUseRouteSample() { return nativeRoutes.canUseRouteSample; },
+get isRouteSampleAllowed() { return nativeRoutes.isRouteSampleAllowed; },
+get captureRouteContext() { return nativeRoutes.captureRouteContext; },
 get getObservedRouteHost() { return nativeRoutes.getObservedRouteHost; },
 get setNativeBakeoffDiagnostics() { return nativeRoutes.setLastBakeoff; }
 });

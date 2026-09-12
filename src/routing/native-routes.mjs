@@ -273,7 +273,7 @@ const registerSignedRouteGroup = (item, isDash, kind = 'video', source = 'truste
         epoch: deps.playinfoEpoch, kind, height: int(item.height, 10000), codec,
         bandwidth: finite(item.bandwidth, 0, 1e10), originalOrder: ++groupSeq,
         source, unlocked: new Set(), ambiguous: false, generatedUrls: new Set(),
-        routes: [], rootOriginal: null, invalidHosts: new Set(),
+        routes: [], rootOriginal: null, verifiedSample: null, invalidHosts: new Set(),
         currentRouteType: 'unknown', currentHost: null,
         catalogFallback: null, transportEvidence: new Map(), revision: ++routeRevision,
         isDash: !!isDash,
@@ -315,7 +315,8 @@ const captureRouteContext = url => {
 const routeContextActive = context => !!context && context.epoch === deps.playinfoEpoch
     && groups.has(context.groupId) && !groups.get(context.groupId).ambiguous
 const findNative = (group, host) => group?.routes.find(route => route.host === host && !deps.TRUSTED_CDN_CATALOG_SET.has(host)) || null
-const routeEligible = (group, route) => !!route && (group.source !== 'page-hint' || group.unlocked.has(route.url))
+const routeEligible = (group, route) => !!group && !group.ambiguous && !!route
+    && (group.source !== 'page-hint' || group.unlocked.has(route.url))
 const pageRepresentation = context => {
     const route = context?.route || context
     if (!routeContextActive(route)) return null
@@ -340,9 +341,16 @@ const setPlannedAffinity = (next, reason) => {
         lastPlannedRoute = { ...plannedAffinity, revision: ++routeRevision }
     }
 }
-const catalogUrlFor = (group, host) => {
-    if (!group?.rootOriginal || !deps.TRUSTED_CDN_CATALOG_SET.has(host)) return null
-    try { return deps.replaceUrlHost?.(group.rootOriginal, host) || null } catch { return null }
+const usableGroupSample = (group, requestedUrl = null) => {
+    if (!group || group.ambiguous) return null
+    if (group.source !== 'page-hint') return group.rootOriginal
+    const sample = requestedUrl || group.verifiedSample
+    return group.unlocked.has(sample) && group.routes.some(route => route.url === sample) ? sample : null
+}
+const catalogUrlFor = (group, host, requestedUrl = null) => {
+    const sample = usableGroupSample(group, requestedUrl)
+    if (!sample || !deps.TRUSTED_CDN_CATALOG_SET.has(host)) return null
+    try { return deps.replaceUrlHost?.(sample, host) || null } catch { return null }
 }
 const applySignedRoutePlan = (item, isDash, groupId) => {
     const group = groups.get(groupId)
@@ -429,8 +437,17 @@ const planUnregisteredItem = (item, isDash, trusted) => {
 }
 
 const resolveRequestRoute = (url, context) => {
-    const routeContext = context?.route || context
+    const routeContext = context?.route || (context?.groupId ? context : null)
     if (!routeContextActive(routeContext)) {
+        const parsed = parseEligibleUrl(url)
+        // Lost/ambiguous evidence is an explicit pass, never legacy rewrite authority.
+        if (routeContext || (parsed && (pageExact.has(parsed.url) || identityGroups.has(parsed.identity)))) {
+            const decision = deps.decideMediaRewrite?.(url, true)
+            const restored = decision?.action === 'restore' ? decision.url : url
+            const fixed = deps.resolvedCdn && deps.replaceUrlHost?.(restored, deps.resolvedCdn)
+            return { url: fixed || restored, host: deps.parseMediaHttpUrl(fixed || restored)?.hostname || null,
+                type: fixed ? 'catalog-generated' : 'root-original', action: fixed ? 'rewrite' : restored !== url ? 'restore' : 'pass' }
+        }
         const norm = deps.normalizeMediaUrl?.(url)
         return norm ? { ...norm, host: norm.targetCdn || norm.originCdn, type: norm.changed && !norm.restoredOriginal ? 'catalog-generated' : 'root-original',
             action: norm.restoredOriginal ? 'restore' : norm.changed ? 'rewrite' : 'pass' } : null
@@ -466,7 +483,7 @@ const resolveRequestRoute = (url, context) => {
             if (!selected || !routeEligible(group, selected) || group.invalidHosts.has(selected.host)) return pass
             return { url: selected.url, host: selected.host, type: 'native-signed', groupId: group.id, revision: group.revision }
         }
-        const target = catalogUrlFor(group, plannedAffinity.host)
+        const target = catalogUrlFor(group, plannedAffinity.host, group.source === 'page-hint' ? requested?.url : null)
         if (target) return { url: target, host: plannedAffinity.host, type: 'catalog-generated', groupId: group.id, revision: group.revision }
     }
     const selected = findNative(group, group.currentRouteType === 'native-signed' ? group.currentHost : null)
@@ -491,7 +508,7 @@ const activateGroup = (group, reason) => {
         activeRepresentation = { groupId: group.id, height: group.height, codec: group.codec, bandwidth: group.bandwidth,
             revision: ++representationRevision, confirmedAt: Date.now(), reason }
         lastAutoQualityReason = reason
-        deps.onActiveRepresentation?.(group.rootOriginal, group.id, { switched })
+        deps.onActiveRepresentation?.(usableGroupSample(group), group.id, { switched })
     }
     tentativeRepresentation = null
 }
@@ -595,7 +612,7 @@ const recordNativeThroughput = (context, url, bytes, durationMs, playbackRate, s
         }
         if (source !== 'transport' || routeContext.requestedUrl !== parsed.url || !isKnownFamily(parsed.host)
             || !Number.isSafeInteger(bytes) || bytes <= 0 || !group.routes.some(route => route.url === parsed.url)) return { accepted: false, status: 'unverified' }
-        group.unlocked.add(parsed.url); context.pageCompleted = true
+        group.unlocked.add(parsed.url); group.verifiedSample = parsed.url; context.pageCompleted = true
         observeTransport(context, parsed.url, bytes, context.method || 'fetch')
         if (!plannedAffinity && activeRepresentation?.groupId === group.id) {
             plannedAffinity = { type: deps.TRUSTED_CDN_CATALOG_SET.has(parsed.host) ? 'catalog-generated' : 'native-signed',
@@ -705,6 +722,22 @@ const canUseRouteSample = url => {
     return !!group && !!parsed && !group.ambiguous && group.epoch === deps.playinfoEpoch
         && group.routes.some(route => route.url === parsed.url && routeEligible(group, route))
 }
+// Preserve the legacy unregistered Catalog sample path, but never let its URL
+// family shortcut grant authority to pending/ambiguous page candidates. Captured
+// context prevents a queued probe from reinterpreting a deleted group as legacy.
+const isRouteSampleAllowed = (url, context = null) => {
+    const parsed = parseEligibleUrl(url)
+    if (context && !routeContextActive(context)) return false
+    const known = parsed && (pageExact.has(parsed.url) || identityGroups.has(parsed.identity))
+    const group = context ? groups.get(context.groupId) : groupForUrl(url)
+    if (group) {
+        if (!parsed || group.ambiguous || group.epoch !== deps.playinfoEpoch) return false
+        return group.source === 'page-hint'
+            ? group.unlocked.has(parsed.url) && group.routes.some(route => route.url === parsed.url)
+            : group.routes.some(route => route.identity === parsed.identity)
+    }
+    return !known && !!deps.isBiliVideoUrl?.(url)
+}
 const getNativeProbeCandidate = sampleUrl => {
     if (deps.resolvedCdn || deps.disabled) return null
     const group = getActiveGroup(sampleUrl)
@@ -805,7 +838,7 @@ return {
     LEDGER_KEY, resetPool, clearLedger, registerSignedRouteGroup, applySignedRoutePlan, planUnregisteredItem, pageRepresentation, retainAffinityForTrustedPlayinfo, scheduleStartupSample,
     captureRouteContext, routeContextActive, resolveRequestRoute, isProtectedSignedUrl,
     observeTransport, recordNativeThroughput, noteNativeFailure, getNativeProbeCandidate,
-    recordNativeProbe, setLastBakeoff, beginRouteRecovery, diagnostics, canUseRouteSample, getObservedRouteHost, flushLedger: saveNow,
+    recordNativeProbe, setLastBakeoff, beginRouteRecovery, diagnostics, canUseRouteSample, isRouteSampleAllowed, getObservedRouteHost, flushLedger: saveNow,
     get activeRepresentation() { return activeRepresentation },
     get routeRevision() { return routeRevision },
     get groups() { return groups },
