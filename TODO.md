@@ -1,5 +1,14 @@
 # 待辦
 
+## v1.8.4
+
+- [x] 修正被排除頁面 URL 改寫到 Catalog 後，成功 Fetch／XHR 無法建立 representation 的循環依賴。
+- [x] 將腳本產生且完成的 Catalog URL 與原始 Native 解鎖分開保存；不授予 Native 評級或 probe 權限。
+- [x] Watchdog recovery affinity 持續覆蓋 exact Native fallback，讓後續重複 Range 真正改走 Catalog。
+- [x] 累計資料診斷正名為含快取重送的觀察媒體位元組，不冒充 wire bytes。
+- [x] 298 項功能回歸通過，新增 6 項模組／正式 bundle Fetch／XHR 案例；不執行安全掃描。
+- [ ] 安裝 v1.8.4 後重測先前會反覆請求同一 Akamai Range 的影片，以及自動畫質、2x、seek、背景分頁。
+
 ## v1.8.3
 
 - [x] 共用禁止判定涵蓋 black/dead/soft、設定排除及預設不可用節點。
@@ -7,8 +16,7 @@
 - [x] 移除候選耗盡自動清除處分及成功樣本解除 soft 的旁路。
 - [x] 節點清單與報告標示禁止原因、替代／阻止計數；不執行安全掃描。
 - [x] 292 項功能回歸、語法、重現建置、双 patch 套用及 SHA 通過。
-- [ ] 安裝新 Release 後，以自動畫質＋2x 真實瀏覽器驗證禁止 host 無新請求及替代播放。
-- [ ] 媒體識別失聯、換片候選清空、未改寫仍卡頓，另行追查；本版不宣稱全部解決。
+- [x] 實機驗證禁止 host 替代、三支影片、自動畫質＋2x、seek 與背景分頁；同時發現 Native recovery 與改寫歸因問題，由 v1.8.4 修正。
 
 ## v1.8.2
 

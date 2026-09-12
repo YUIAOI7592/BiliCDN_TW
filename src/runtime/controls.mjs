@@ -325,7 +325,7 @@ const BiliCDNControls = {
     buf() {
         const s = deps.Watchdog.stats()
         console.group('[BiliCDN] 緩衝狀態')
-        console.log('累計下載:', s.totalMB + 'MB / ' + s.targetMB + 'MB',
+        console.log('累計觀察媒體資料（含快取重送，非 wire bytes）:', s.totalMB + 'MB / ' + s.targetMB + 'MB',
             s.reachedTarget ? '✓ 已達標' : '⌛ 未達標')
         console.log('buffer ahead:', s.bufferAheadSec + 's | buffered end:', s.bufferedEndSec + 's'
             + ' | currentTime:', s.videoTimeSec + 's',

@@ -503,7 +503,8 @@ const Watchdog = (() => {
 
     return {
         // Fetch／XHR 的進度位元組沒有完整 duration，故不更新單節點吞吐 EWMA；
-        // 仍計入總量，讓累計下載與 Watchdog 的 bps 判斷保持一致。
+        // 仍計入總量，讓媒體位元組觀察與 Watchdog 的 bps 判斷保持一致。
+        // 瀏覽器快取重送也可能出現在這裡，因此它不是 wire bytes 計數器。
         noteExternalBytes(host, bytes) {
             if (deps.disabled || !Number.isSafeInteger(bytes) || bytes <= 0 || bytes > 256 * 1024 * 1024) return
             totalBytes = Math.min(Number.MAX_SAFE_INTEGER, totalBytes + bytes)

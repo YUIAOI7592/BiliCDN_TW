@@ -75,6 +75,7 @@ const buildPublicDiagnosticSnapshot = () => {
         buffer: {
             totalMB: Math.max(0, publicFinite(wd.totalMB)), // compatibility alias: cumulative downloaded MB, NOT buffered MB
             downloadedMB: Math.max(0, publicFinite(wd.totalMB)),
+            observedMediaMB: Math.max(0, publicFinite(wd.totalMB)),
             available: wd.readyState >= 0,
             playableSec: wd.readyState >= 0 ? +(wd.bufferAheadSec / (deps.playbackRateState.confirmed ? deps.playbackRateState.observedRate : deps.ASSUMED_PLAYBACK_RATE)).toFixed(2) : null,
             targetMB: Math.max(0, publicFinite(wd.targetMB)),

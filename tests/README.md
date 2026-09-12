@@ -9,7 +9,7 @@ npm test 先重建，再遞迴執行 *.test.js／*.test.cjs／*.test.mjs。產�
 - reproductions：固定 v1.5.1 的歷史 review 9 項，不是新版缺陷。
 - unit：模組實例隔離、政策、import 無副作用及產物邊界。
 
-目前完整套件 327 項，無 skip；獨立 CS-001～003 子集 17 項另跑，但不重複加總為產品案例數。v1.8.2 新增固定 v1.8.1 重現、exact 頁面候選解鎖、Catalog 獨立競賽、query／redirect／假事件／取消／舊版本拒絕、來源接管、provenance 與 250 秒未插樁流程。另固定未發布的 pre-security 候選 bytes 作 3 項安全問題的負向控制，12 項修補案例涵蓋樣本、衝突與 XHR 來源驗證；该 fixture 不是可安裝交付。歷史 Akamai 提升測試改經可信 playurl 協調器，而非要求已移除的舊 transform 直接選路。
+目前 `npm test` 功能套件 298 項、無 skip；依使用者要求，v1.8.3／v1.8.4 不執行獨立 CS 子集或 Code Security。v1.8.4 新增 6 項：Catalog 改寫後 representation provenance、原始 Native 不解鎖、Watchdog recovery affinity，以及正式 bundle 的 Fetch／XHR 終態與重複 Range 後續路由。歷史安全與舊版重現檔仍保留，但不以其結果替目前版本背書。
 
 舊版重現執行原單檔。新版內部測試使用獨立 test build 的模組 getter，不能發布；harness 先核對指定正式檔與 build 相同。instrument:false 完全執行正式檔，另測頁面快照、Fetch／XHR、選單及網站 Worker 身分不變。
 

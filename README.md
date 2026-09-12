@@ -23,7 +23,9 @@ v1.8.2 統一 Catalog／Native URL 決策，移除舊 Akamai 提升旁路；只�
 
 v1.8.3 恢復 black／dead／soft、設定排除與預設不可用節點的禁止效力：原始、Native、Catalog、固定及備援都不是例外。候選耗盡不再自動清黑名單；沒有合法替代時本地阻止，不取消在途播放器請求。勾選啟用只解除設定層排除，仍須等待處分到期或明確維護解除。
 
-本版不執行 Code Security 掃描，功能驗證與限制見 [TEST_REPORT](Release/v1.8.3/TEST_REPORT_v1.8.3.md)。黑名單修復不等於其他卡頓已解決；發布後以自動畫質＋2x 實測被禁 host 的新請求、替代播放、seek、SPA 與背景切回。VM 結果不等於 Chrome／Tampermonkey 實機驗收。
+v1.8.4 修正兩個實機發現的播放鏈問題：頁面 URL 被禁止規則改寫到 Catalog 後，成功的 Fetch／XHR 現在能正確建立 representation 與路由後態；Watchdog recovery 會持續約束後續相同 Native 請求，不再只增加切換計數卻繼續重打原 host。原始 Native URL不會因此被解鎖或取得測速權限。
+
+本版不執行 Code Security 掃描，功能驗證與限制見 [TEST_REPORT](Release/v1.8.4/TEST_REPORT_v1.8.4.md)。自動結果不能替代 Chrome／Tampermonkey 實機驗收；更新後仍以自動畫質＋2x 重測先前會重複 Range 的影片。
 
 ## 本機開發
 

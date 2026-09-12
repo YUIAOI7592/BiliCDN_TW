@@ -86,7 +86,7 @@ const buildDiagReport = () => {
                 + '（觀察到的請求；來源=' + entry.source + '；年齡=' + (entry.ageSec == null ? '無資料' : entry.ageSec + '秒') + '）'
         }),
         deps.describePlaybackBuffer(buffer),
-        '累計下載（非目前緩衝）：' + buffer.totalMB + ' MB',
+        '累計觀察媒體資料（含快取重送，非 wire bytes／目前緩衝）：' + buffer.totalMB + ' MB',
         '播放倍速：' + deps.playbackRateState.effectiveRate + 'x（'
             + (deps.playbackRateState.confirmed ? '已確認' : '假定') + '，來源=' + deps.playbackRateState.source + '）',
         'Codec 偏好：' + deps.resolvedVideoCodecPreference + '；最近排序首位=' + JSON.stringify(deps.lastCodecDecision.groups),
