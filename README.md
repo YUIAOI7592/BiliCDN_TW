@@ -31,7 +31,9 @@ v1.8.6 補齊 playinfo 在 history 前出現的 SPA 時序，修正已緩衝到�
 
 v1.8.7 修正真實 SPA 中「新影片 playurl 先發出、history 後切換、回應最後完成」時被 generation 隔離誤丟棄的問題。只有緊鄰這次 SPA 且請求中的影片識別與目前頁面精確相符時才接納；其他舊片與無法確認的多 P 回應仍維持隔離。
 
-本版不執行 Code Security 掃描，功能驗證與限制見 [TEST_REPORT](Release/v1.8.7/TEST_REPORT_v1.8.7.md)。自動結果不能替代 Chrome／Tampermonkey 實機驗收；更新後應以站內推薦連續換片、自動畫質＋2x、短片結尾、背景切回與面板按鈕驗收。
+v1.8.8 接續修正「下一支影片 playurl 在點擊推薦前已完成」的 SPA 路徑。跨片回應先以有界、本分頁記憶體暫存，只有精確相符的目的頁成為目前頁面後才建立新 generation 的可信 Route Pool；不同頁面及停用前資料不能被採用。
+
+本版不執行 Code Security 掃描，功能驗證與限制見 [TEST_REPORT](Release/v1.8.8/TEST_REPORT_v1.8.8.md)。自動結果不能替代 Chrome／Tampermonkey 實機驗收；更新後應以站內推薦連續換片、自動畫質＋2x、短片結尾、背景切回與面板按鈕驗收。
 
 ## 本機開發
 

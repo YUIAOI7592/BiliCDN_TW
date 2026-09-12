@@ -1,0 +1,168 @@
+diff --git a/Release/v1.8.7/BiliCDN_TW.user.js b/Release/v1.8.8/BiliCDN_TW.user.js
+index 82e60ab..99ff900 100644
+--- a/Release/v1.8.7/BiliCDN_TW.user.js
++++ b/Release/v1.8.8/BiliCDN_TW.user.js
+@@ -1,7 +1,7 @@
+ // ==UserScript==
+ // @name         Bilibili CDN 台灣優化
+ // @namespace    BiliCDN_TW
+-// @version      1.8.7
++// @version      1.8.8
+ // @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+ // @author       jiyunshi <chocosensei214@gmail.com>
+ // @license      MIT
+@@ -83,7 +83,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let BlockHttpDNS = input.BlockHttpDNS;
+     let PreferredVideoCodec = input.PreferredVideoCodec;
+     let BlockWebRTC = input.BlockWebRTC;
+-    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.8.7";
++    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.8.8";
+     const parseVer = /* @__PURE__ */ __name((v) => String(v || "0").split(".").map((n) => parseInt(n, 10) || 0), "parseVer");
+     const verGte = /* @__PURE__ */ __name((a, b) => {
+       const A = parseVer(a), B = parseVer(b);
+@@ -8920,12 +8920,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       if (response === null || response === void 0) return;
+       try {
+         if (Object.prototype.toString.call(response) === "[object Object]") {
+-          deps.playInfoTransformer(response, { trustedTransport: true });
++          if (!handleTrustedPlayurlResponse(response, url)) return response;
+           return response;
+         }
+         if (typeof response !== "string") return response;
+         const playInfo = JSON.parse(response);
+-        deps.playInfoTransformer(playInfo, { trustedTransport: true });
++        if (!handleTrustedPlayurlResponse(playInfo, url)) return response;
+         return JSON.stringify(playInfo);
+       } catch {
+         deps.DiagnosticLog.fault("transform");
+@@ -9289,28 +9289,84 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     }, "warnIfVideoKeyUnresolvable");
+     let currentVideoKey = getVideoKey();
+     let lastSpaPlayurlAdoption = null;
++    const STAGED_PLAYINFO_MAX = 8;
++    const STAGED_PLAYINFO_ENTRY_MAX = 1024 * 1024;
++    const STAGED_PLAYINFO_TOTAL_MAX = 2 * 1024 * 1024;
++    const stagedTrustedPlayinfos = /* @__PURE__ */ new Map();
++    let stagedTrustedPlayinfoBytes = 0;
+     let spaHooked = false;
+-    const playurlTargetsVideoKey = /* @__PURE__ */ __name((requestUrl, videoKey) => {
++    const playurlRequestVideoKey = /* @__PURE__ */ __name((requestUrl) => {
+       let request;
+       try {
+         request = new URL(String(requestUrl), location.href);
+       } catch {
+-        return false;
++        return null;
+       }
+-      const [base, part = ""] = String(videoKey || "").toLowerCase().split("#p");
+-      if (!base || !/^(?:bv[0-9a-z]+|av\d+|ep\d+)$/i.test(base)) return false;
+-      if (part) {
+-        if (request.searchParams.get("p") !== part) return false;
++      const part = String(request.searchParams.get("p") || "");
++      const suffix = part ? "#p" + part : "";
++      const bvid = String(request.searchParams.get("bvid") || "").toLowerCase();
++      if (/^bv[0-9a-z]+$/i.test(bvid)) return bvid + suffix;
++      const aid = String(request.searchParams.get("avid") || request.searchParams.get("aid") || "");
++      if (/^\d+$/.test(aid)) return "av" + aid + suffix;
++      const epid = String(request.searchParams.get("ep_id") || request.searchParams.get("epid") || "");
++      if (/^\d+$/.test(epid)) return "ep" + epid + suffix;
++      return null;
++    }, "playurlRequestVideoKey");
++    const clearStagedTrustedPlayinfos = /* @__PURE__ */ __name(() => {
++      stagedTrustedPlayinfos.clear();
++      stagedTrustedPlayinfoBytes = 0;
++    }, "clearStagedTrustedPlayinfos");
++    const stageTrustedPlayinfo = /* @__PURE__ */ __name((targetKey, playInfo) => {
++      if (!targetKey || targetKey === currentVideoKey || !playInfo) return false;
++      let serialized;
++      try {
++        serialized = JSON.stringify(playInfo);
++      } catch {
++        return false;
+       }
+-      if (base.startsWith("bv")) {
+-        return String(request.searchParams.get("bvid") || "").toLowerCase() === base;
++      const bytes = serialized.length;
++      if (!bytes || bytes > STAGED_PLAYINFO_ENTRY_MAX) return false;
++      const previous = stagedTrustedPlayinfos.get(targetKey);
++      if (previous) stagedTrustedPlayinfoBytes -= previous.bytes;
++      stagedTrustedPlayinfos.delete(targetKey);
++      while (stagedTrustedPlayinfos.size >= STAGED_PLAYINFO_MAX || stagedTrustedPlayinfoBytes + bytes > STAGED_PLAYINFO_TOTAL_MAX) {
++        const oldestKey = stagedTrustedPlayinfos.keys().next().value;
++        if (!oldestKey) break;
++        const oldest = stagedTrustedPlayinfos.get(oldestKey);
++        stagedTrustedPlayinfoBytes -= oldest?.bytes || 0;
++        stagedTrustedPlayinfos.delete(oldestKey);
++      }
++      if (stagedTrustedPlayinfoBytes + bytes > STAGED_PLAYINFO_TOTAL_MAX) return false;
++      stagedTrustedPlayinfos.set(targetKey, { serialized, bytes });
++      stagedTrustedPlayinfoBytes += bytes;
++      return true;
++    }, "stageTrustedPlayinfo");
++    const takeStagedTrustedPlayinfo = /* @__PURE__ */ __name((targetKey) => {
++      const staged = stagedTrustedPlayinfos.get(targetKey);
++      if (!staged) return null;
++      stagedTrustedPlayinfos.delete(targetKey);
++      stagedTrustedPlayinfoBytes -= staged.bytes;
++      try {
++        return JSON.parse(staged.serialized);
++      } catch {
++        return null;
+       }
+-      if (base.startsWith("av")) {
+-        const aid = String(request.searchParams.get("avid") || request.searchParams.get("aid") || "");
+-        return aid === base.slice(2);
++    }, "takeStagedTrustedPlayinfo");
++    const handleTrustedPlayurlResponse = /* @__PURE__ */ __name((playInfo, requestUrl) => {
++      const targetKey = playurlRequestVideoKey(requestUrl);
++      if (targetKey && targetKey !== currentVideoKey) {
++        stageTrustedPlayinfo(targetKey, playInfo);
++        return false;
+       }
+-      const epid = String(request.searchParams.get("ep_id") || request.searchParams.get("epid") || "");
+-      return epid === base.slice(2);
++      deps.playInfoTransformer(playInfo, { trustedTransport: true });
++      return true;
++    }, "handleTrustedPlayurlResponse");
++    const playurlTargetsVideoKey = /* @__PURE__ */ __name((requestUrl, videoKey) => {
++      const requestKey = playurlRequestVideoKey(requestUrl);
++      const normalizedVideoKey = String(videoKey || "").toLowerCase();
++      if (!requestKey || !normalizedVideoKey) return false;
++      if (normalizedVideoKey.includes("#p") && !requestKey.includes("#p")) return false;
++      return requestKey === normalizedVideoKey;
+     }, "playurlTargetsVideoKey");
+     const canAdoptSpaPlayurl = /* @__PURE__ */ __name((requestUrl, requestRuntime) => {
+       if (deps.disabled || !requestRuntime || !lastSpaPlayurlAdoption) return false;
+@@ -9387,6 +9443,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             videoKey: key
+           };
+         }
++        const stagedTrustedPlayInfo = takeStagedTrustedPlayinfo(key);
++        if (stagedTrustedPlayInfo) {
++          try {
++            deps.playInfoTransformer(stagedTrustedPlayInfo, { trustedTransport: true });
++          } catch {
++            deps.DiagnosticLog.fault("transform");
++          }
++        }
+         if (pendingPagePlayInfo) {
+           const applied = transformPagePlayInfo(pendingPagePlayInfo, true);
+           setPagePlayInfoLifecycle("adopted", pendingTiming, applied);
+@@ -9470,6 +9534,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     const stopRuntimeFeatures = /* @__PURE__ */ __name(() => {
+       runtimeStarted = false;
+       lastSpaPlayurlAdoption = null;
++      clearStagedTrustedPlayinfos();
+       clearPagePlayInfoSettleTimer();
+       if (latestPagePlayInfoAssignment) latestPagePlayInfoAssignment.state = "superseded";
+       latestPagePlayInfoAssignment = null;
+@@ -9596,6 +9661,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       },
+       get canAdoptSpaPlayurl() {
+         return canAdoptSpaPlayurl;
++      },
++      get setRuntimeDisabled() {
++        return setRuntimeDisabled;
+       }
+     };
+   }

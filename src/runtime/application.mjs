@@ -11,12 +11,12 @@ export function createApplication(deps) {
         try {
             // XHR responseType='json' 會直接提供物件；舊版一律 JSON.parse(object) 而跳過改寫。
             if (Object.prototype.toString.call(response) === '[object Object]') {
-                deps.playInfoTransformer(response, { trustedTransport: true })
+                if (!handleTrustedPlayurlResponse(response, url)) return response
                 return response
             }
             if (typeof response !== 'string') return response
             const playInfo = JSON.parse(response)
-            deps.playInfoTransformer(playInfo, { trustedTransport: true })
+            if (!handleTrustedPlayurlResponse(playInfo, url)) return response
             return JSON.stringify(playInfo)
         } catch { deps.DiagnosticLog.fault('transform') }
     })
@@ -408,26 +408,84 @@ export function createApplication(deps) {
     }
     let currentVideoKey = getVideoKey()
     let lastSpaPlayurlAdoption = null
+    // Bilibili may finish fetching a recommended video's playurl before the
+    // user clicks the card. That response belongs to a future SPA boundary:
+    // applying it immediately would overwrite the current video's pool, while
+    // discarding it leaves the next page with no route/representation data.
+    // Keep a small in-memory, identifier-keyed staging area. It contains no GM
+    // persistence and is cleared by stop/disable; only the exact destination
+    // key can consume it at a later SPA boundary.
+    const STAGED_PLAYINFO_MAX = 8
+    const STAGED_PLAYINFO_ENTRY_MAX = 1024 * 1024
+    const STAGED_PLAYINFO_TOTAL_MAX = 2 * 1024 * 1024
+    const stagedTrustedPlayinfos = new Map()
+    let stagedTrustedPlayinfoBytes = 0
     let spaHooked = false
-    const playurlTargetsVideoKey = (requestUrl, videoKey) => {
+    const playurlRequestVideoKey = requestUrl => {
         let request
-        try { request = new URL(String(requestUrl), location.href) } catch { return false }
-        const [base, part = ''] = String(videoKey || '').toLowerCase().split('#p')
-        if (!base || !/^(?:bv[0-9a-z]+|av\d+|ep\d+)$/i.test(base)) return false
-        if (part) {
-            // A bvid alone cannot distinguish parts of a multi-P video. Only
-            // adopt when the request itself carries the exact part number.
-            if (request.searchParams.get('p') !== part) return false
-        }
-        if (base.startsWith('bv')) {
-            return String(request.searchParams.get('bvid') || '').toLowerCase() === base
-        }
-        if (base.startsWith('av')) {
-            const aid = String(request.searchParams.get('avid') || request.searchParams.get('aid') || '')
-            return aid === base.slice(2)
-        }
+        try { request = new URL(String(requestUrl), location.href) } catch { return null }
+        const part = String(request.searchParams.get('p') || '')
+        const suffix = part ? '#p' + part : ''
+        const bvid = String(request.searchParams.get('bvid') || '').toLowerCase()
+        if (/^bv[0-9a-z]+$/i.test(bvid)) return bvid + suffix
+        const aid = String(request.searchParams.get('avid') || request.searchParams.get('aid') || '')
+        if (/^\d+$/.test(aid)) return 'av' + aid + suffix
         const epid = String(request.searchParams.get('ep_id') || request.searchParams.get('epid') || '')
-        return epid === base.slice(2)
+        if (/^\d+$/.test(epid)) return 'ep' + epid + suffix
+        return null
+    }
+    const clearStagedTrustedPlayinfos = () => {
+        stagedTrustedPlayinfos.clear()
+        stagedTrustedPlayinfoBytes = 0
+    }
+    const stageTrustedPlayinfo = (targetKey, playInfo) => {
+        if (!targetKey || targetKey === currentVideoKey || !playInfo) return false
+        let serialized
+        try { serialized = JSON.stringify(playInfo) } catch { return false }
+        const bytes = serialized.length
+        if (!bytes || bytes > STAGED_PLAYINFO_ENTRY_MAX) return false
+        const previous = stagedTrustedPlayinfos.get(targetKey)
+        if (previous) stagedTrustedPlayinfoBytes -= previous.bytes
+        stagedTrustedPlayinfos.delete(targetKey)
+        while (stagedTrustedPlayinfos.size >= STAGED_PLAYINFO_MAX
+            || stagedTrustedPlayinfoBytes + bytes > STAGED_PLAYINFO_TOTAL_MAX) {
+            const oldestKey = stagedTrustedPlayinfos.keys().next().value
+            if (!oldestKey) break
+            const oldest = stagedTrustedPlayinfos.get(oldestKey)
+            stagedTrustedPlayinfoBytes -= oldest?.bytes || 0
+            stagedTrustedPlayinfos.delete(oldestKey)
+        }
+        if (stagedTrustedPlayinfoBytes + bytes > STAGED_PLAYINFO_TOTAL_MAX) return false
+        stagedTrustedPlayinfos.set(targetKey, { serialized, bytes })
+        stagedTrustedPlayinfoBytes += bytes
+        return true
+    }
+    const takeStagedTrustedPlayinfo = targetKey => {
+        const staged = stagedTrustedPlayinfos.get(targetKey)
+        if (!staged) return null
+        stagedTrustedPlayinfos.delete(targetKey)
+        stagedTrustedPlayinfoBytes -= staged.bytes
+        try { return JSON.parse(staged.serialized) } catch { return null }
+    }
+    const handleTrustedPlayurlResponse = (playInfo, requestUrl) => {
+        const targetKey = playurlRequestVideoKey(requestUrl)
+        // Unidentified responses keep the existing same-generation behavior.
+        // Identified future-video responses are returned untouched and staged;
+        // the matching SPA boundary will build its trusted state from a clone.
+        if (targetKey && targetKey !== currentVideoKey) {
+            stageTrustedPlayinfo(targetKey, playInfo)
+            return false
+        }
+        deps.playInfoTransformer(playInfo, { trustedTransport: true })
+        return true
+    }
+    const playurlTargetsVideoKey = (requestUrl, videoKey) => {
+        const requestKey = playurlRequestVideoKey(requestUrl)
+        const normalizedVideoKey = String(videoKey || '').toLowerCase()
+        if (!requestKey || !normalizedVideoKey) return false
+        // A bvid-only request cannot distinguish parts of a multi-P video.
+        if (normalizedVideoKey.includes('#p') && !requestKey.includes('#p')) return false
+        return requestKey === normalizedVideoKey
     }
     const canAdoptSpaPlayurl = (requestUrl, requestRuntime) => {
         if (deps.disabled || !requestRuntime || !lastSpaPlayurlAdoption) return false
@@ -499,6 +557,14 @@ export function createApplication(deps) {
                     toGeneration: nextRuntime.generation,
                     videoKey: key,
                 }
+            }
+            // A recommended-video playurl may have completed while the previous
+            // page was still active. Adopt only the entry keyed to this exact SPA
+            // destination, after the old generation and pool have been cleared.
+            const stagedTrustedPlayInfo = takeStagedTrustedPlayinfo(key)
+            if (stagedTrustedPlayInfo) {
+                try { deps.playInfoTransformer(stagedTrustedPlayInfo, { trustedTransport: true }) }
+                catch { deps.DiagnosticLog.fault('transform') }
             }
             // A new value may have been assigned after pushState but before this
             // delayed SPA boundary. Rebuild it only after the old pool is cleared;
@@ -586,6 +652,7 @@ export function createApplication(deps) {
     const stopRuntimeFeatures = () => {
         runtimeStarted = false
         lastSpaPlayurlAdoption = null
+        clearStagedTrustedPlayinfos()
         clearPagePlayInfoSettleTimer()
         if (latestPagePlayInfoAssignment) latestPagePlayInfoAssignment.state = 'superseded'
         latestPagePlayInfoAssignment = null
@@ -662,5 +729,6 @@ get DiagnosticLog(){return deps.DiagnosticLog},
 return { /* TEST_EXPORTS:application */
 get getPagePlayInfoLifecycle() { return () => ({ ...pagePlayInfoLifecycle }); },
 get canAdoptSpaPlayurl() { return canAdoptSpaPlayurl; },
+get setRuntimeDisabled() { return setRuntimeDisabled; },
 };
 }

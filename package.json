@@ -1,6 +1,6 @@
 {
   "name": "bilicdn-tw",
-  "version": "1.8.7",
+  "version": "1.8.8",
   "private": true,
   "description": "Locally built, modular BiliCDN Taiwan userscript",
   "license": "MIT",

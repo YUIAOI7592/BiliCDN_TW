@@ -99,7 +99,7 @@ test('v181 a healthy Native probe updates rating but cannot alter the next reque
 })
 
 test('v181 page-compatible __playinfo__ transformation cannot erase a trusted Akamai route pool', async () => {
-    const h = loadUserscript(target, { fetchImpl: async input => {
+    const h = loadUserscript(target, { initialUrl: 'https://www.bilibili.com/video/BVroute181', fetchImpl: async input => {
         const url = input instanceof Request ? input.url : String(input)
         return url.startsWith(api) ? new Response(JSON.stringify(payload())) : new Response(new Uint8Array(1024))
     } })

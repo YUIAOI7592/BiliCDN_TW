@@ -5,6 +5,7 @@ const { loadUserscript } = require('../harness/userscript-vm')
 const target = require('../harness/current-script')
 
 const api = 'https://api.bilibili.com/x/player/wbi/playurl?bvid=BVnative'
+const page = 'https://www.bilibili.com/video/BVnative'
 const catalog = 'upos-sz-mirrorali.bilivideo.com'
 const native = 'upos-sz-newedge.bilivideo.com'
 const signed = host => `https://${host}/upgcxcode/01/23/native.m4s?deadline=999&token=super-secret`
@@ -35,6 +36,7 @@ const seed = () => {
 
 test('v180 production entry ranks a confirmed Native signed URL without reconstructing its query', async () => {
     const h = loadUserscript(target, {
+        initialUrl: page,
         gmSeed: seed(),
         fetchImpl: async input => {
             const url = input instanceof Request ? input.url : String(input)
@@ -56,6 +58,7 @@ test('v180 production entry ranks a confirmed Native signed URL without reconstr
 test('v180 Native signed 403 invalidates only that epoch route and never creates catalog host-lock', async () => {
     let rejectNative = true
     const h = loadUserscript(target, {
+        initialUrl: page,
         gmSeed: seed(),
         fetchImpl: async input => {
             const url = input instanceof Request ? input.url : String(input)
@@ -77,7 +80,7 @@ test('v180 Native signed 403 invalidates only that epoch route and never creates
 })
 
 test('v180 public snapshot and report expose bounded route state without signed URL material', async () => {
-    const h = loadUserscript(target, { gmSeed: seed(), fetchImpl: async url => String(url).startsWith(api)
+    const h = loadUserscript(target, { initialUrl: page, gmSeed: seed(), fetchImpl: async url => String(url).startsWith(api)
         ? new Response(JSON.stringify(payload())) : new Response(new Uint8Array(1024)) })
     await (await h.pageWindow.fetch(api)).json()
     const publicText = JSON.stringify(h.pageWindow.BiliCDN)
@@ -88,7 +91,7 @@ test('v180 public snapshot and report expose bounded route state without signed 
 })
 
 test('v180 Native route never enters catalog, preconnect, or forced-redirect authority', async () => {
-    const h = loadUserscript(target, { gmSeed: seed(), fetchImpl: async url => String(url).startsWith(api)
+    const h = loadUserscript(target, { initialUrl: page, gmSeed: seed(), fetchImpl: async url => String(url).startsWith(api)
         ? new Response(JSON.stringify(payload())) : new Response(new Uint8Array(1024)) })
     await (await h.pageWindow.fetch(api)).json()
     assert.equal(h.evaluate(`TRUSTED_CDN_CATALOG_SET.has('${native}')`), false)
@@ -111,7 +114,7 @@ test('v180 a completed non-catalog XHR can passively admit its signed host witho
     const thirdParty = 'edge.example.test'
     const customPayload = payload()
     customPayload.data.dash.video[0].backup_url = [signed(thirdParty)]
-    const h = loadUserscript(target, { gmSeed: seed(), fetchImpl: async input => {
+    const h = loadUserscript(target, { initialUrl: page, gmSeed: seed(), fetchImpl: async input => {
         const url = input instanceof Request ? input.url : String(input)
         return url.startsWith(api) ? new Response(JSON.stringify(customPayload)) : new Response(new Uint8Array(1024))
     } })
@@ -129,7 +132,7 @@ test('v180 a completed non-catalog XHR can passively admit its signed host witho
 test('v180 Native exploration replaces one existing bakeoff slot and keeps the four-candidate cap', async () => {
     const initial = seed()
     initial.nativeRouteRatings_v1 = JSON.stringify({ version: 1, video: {}, audio: {} })
-    const h = loadUserscript(target, { gmSeed: initial, fetchImpl: async input => {
+    const h = loadUserscript(target, { initialUrl: page, gmSeed: initial, fetchImpl: async input => {
         const url = input instanceof Request ? input.url : String(input)
         if (url.startsWith(api)) return new Response(JSON.stringify(payload()))
         return new Response(new Uint8Array(384 * 1024), { status: 206 })

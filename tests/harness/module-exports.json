@@ -1525,5 +1525,10 @@
       "mutable": false
     }
   ],
-  "application": []
+  "application": [
+    {
+      "name": "setRuntimeDisabled",
+      "mutable": false
+    }
+  ]
 }
