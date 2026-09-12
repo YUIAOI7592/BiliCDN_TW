@@ -1,5 +1,5 @@
 diff --git a/baseline/BiliCDN_TW_1.3.4.original.user.js b/Release/v1.8.2/BiliCDN_TW.user.js
-index 4841912..c462a9d 100644
+index 4841912..6a01b38 100644
 --- a/baseline/BiliCDN_TW_1.3.4.original.user.js
 +++ b/Release/v1.8.2/BiliCDN_TW.user.js
 @@ -1,10 +1,14 @@
@@ -5115,7 +5115,7 @@ index 4841912..c462a9d 100644
          shouldBlock,
          getStatus,
          onStall,
-@@ -1691,3868 +3559,7594 @@ const HttpDnsAutoPilot = (() => {
+@@ -1691,3868 +3559,7597 @@ const HttpDnsAutoPilot = (() => {
          tick,
          reset,
          setMode,
@@ -7972,10 +7972,13 @@ index 4841912..c462a9d 100644
 +          const hostRewriteAttempt = !norm.restoredOriginal && !norm.nativeRoute && (norm.changed || mappedOriginalUrl !== urlStr);
 +          const targetCdn = norm.targetCdn || norm.originCdn || deps.getBiliVideoCdn(urlStr);
 +          const effectiveUrl = norm.changed ? norm.url : urlStr;
-+          const fetchInput = input instanceof Request ? new Request(effectiveUrl, {
-+            method: input.method,
++          const fetchInput = input instanceof NativeRequest ? new NativeRequest(effectiveUrl, {
++            // normalizedMethod was read through the captured native
++            // getter above.  Never re-enter the page-mutable Request
++            // prototype after that trust decision.
++            method: normalizedMethod,
 +            headers: input.headers,
-+            body: input.method === "GET" || input.method === "HEAD" ? void 0 : input.body,
++            body: void 0,
 +            mode: input.mode === "navigate" ? "same-origin" : input.mode,
 +            credentials: input.credentials,
 +            cache: input.cache,

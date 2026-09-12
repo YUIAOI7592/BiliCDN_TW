@@ -34,6 +34,26 @@ test('method admission: Request own URL/method shadows cannot attest another nat
  const response=await h.pageWindow.fetch(request);await response.arrayBuffer();await h.timers.advanceAsync(1100)
  assert.equal(unlocked(h),0);const call=h.fetchCalls.find(c=>c.url===real);assert.equal(call.input.method,'POST');assert.equal(await call.input.text(),'body')
 })
+test('method admission: Request prototype mutation after native GET attestation cannot dispatch POST',async()=>{
+ const h=setup(),original=Object.getOwnPropertyDescriptor(Request.prototype,'method'),methodGetter=original.get
+ let reads=0
+ try{
+  const request=new Request(U,{method:'GET'})
+  const response=await h.pageWindow.fetch(request,{
+   get method(){
+    reads++
+    Object.defineProperty(Request.prototype,'method',{configurable:true,get(){return 'POST'}})
+    return 'GET'
+   }
+  })
+  await response.arrayBuffer();await h.timers.advanceAsync(1100)
+  const call=h.fetchCalls.find(c=>c.url===U)
+  assert.equal(reads,1)
+  assert.equal(Reflect.apply(methodGetter,call.input,[]),'GET')
+  assert.equal(unlocked(h),1)
+  assert.equal(h.gmWrites.some(x=>x.key==='nativeRouteRatings_v1'),true)
+ }finally{Object.defineProperty(Request.prototype,'method',original)}
+})
 test('method admission: private XHR rejects native reopen and preserves normal GET, POST stays unqualified',async()=>{
  for(const method of ['GET','POST']){
   const h=setup(),x=new h.pageWindow.XMLHttpRequest();x.open(method,U)

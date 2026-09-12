@@ -575,11 +575,14 @@ const interceptNetResponse = (function (theWindow) {
             const targetCdn = norm.targetCdn || norm.originCdn || deps.getBiliVideoCdn(urlStr)
             const effectiveUrl = norm.changed ? norm.url : urlStr
 
-            const fetchInput = (input instanceof Request)
-                ? new Request(effectiveUrl, {
-                    method:         input.method,
+            const fetchInput = (input instanceof NativeRequest)
+                ? new NativeRequest(effectiveUrl, {
+                    // normalizedMethod was read through the captured native
+                    // getter above.  Never re-enter the page-mutable Request
+                    // prototype after that trust decision.
+                    method:         normalizedMethod,
                     headers:        input.headers,
-                    body:           (input.method === 'GET' || input.method === 'HEAD') ? undefined : input.body,
+                    body:           undefined,
                     mode:           input.mode === 'navigate' ? 'same-origin' : input.mode,
                     credentials:    input.credentials,
                     cache:          input.cache,
