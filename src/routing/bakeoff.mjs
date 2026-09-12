@@ -50,12 +50,15 @@ let crossTabShouldBakeoff = () => true
 
 let onBakeoffStart        = () => {}
 
-const probeCdnThroughput = (cdn, sampleUrl, probeBytes, externalSignal) => new Promise((resolve) => {
+const probeRouteThroughput = (candidate, sampleUrl, probeBytes, externalSignal, recordSample = null) => new Promise((resolve) => {
     const runtimeToken = deps.captureRuntimeGeneration()
-    const eligible = deps.isRuntimeGenerationActive(runtimeToken) && deps.isValidCustomCdnHost(cdn)
-        && !deps.blacklistSet.has(cdn) && !deps.knownDeadHosts.has(cdn) && !deps.matchesExclude(cdn) && !deps.isPresumedDnsFailHost(cdn)
-    const decision = deps.decideMediaRewrite(sampleUrl)
-    const target = eligible && decision.action === 'rewrite' ? deps.replaceUrlHost(sampleUrl, cdn) : null
+    const cdn = candidate?.host
+    const native = candidate?.type === 'native-signed'
+    const eligible = deps.isRuntimeGenerationActive(runtimeToken) && (native || (deps.isValidCustomCdnHost(cdn)
+        && !deps.blacklistSet.has(cdn) && !deps.knownDeadHosts.has(cdn) && !deps.matchesExclude(cdn) && !deps.isPresumedDnsFailHost(cdn)))
+    const decision = native ? null : deps.decideMediaRewrite(sampleUrl)
+    // Native routes are exact signed URLs from the current representation group. Never synthesize them.
+    const target = native ? candidate.url : eligible && decision.action === 'rewrite' ? deps.replaceUrlHost(sampleUrl, cdn) : null
     if (!target) return resolve({ status: 'ineligible', accepted: false, bytes: 0 })
     const wantBytes = Math.min(probeBytes || THRPT_PROBE_BYTES, 768 * 1024)
     const ctrl = new AbortController()
@@ -76,16 +79,21 @@ const probeCdnThroughput = (cdn, sampleUrl, probeBytes, externalSignal) => new P
         else if (completion === 'forbidden') result.forbidden = true
         else if (successResponse && (completion === 'complete' || completion === 'timeout')) {
             const durationMs = Math.max(1, performance.now() - t0 - ttfb)
-            let sample = { accepted: false }
-            if (bytes >= THRPT_PROBE_MIN_BYTES) {
-                sample = deps.recordCdnThroughput(cdn, bytes, durationMs, deps.playbackRateState.effectiveRate)
-                deps.recordCdnLatency(cdn, Math.max(1, ttfb))
-            }
+            let sample = native
+                ? { accepted: bytes >= 128 * 1024 && durationMs >= 5, bytes, durationMs,
+                    mbps: bytes * 8 / durationMs / 1000 }
+                : { accepted: false }
+            if (!native && bytes >= THRPT_PROBE_MIN_BYTES && recordSample) sample = recordSample(cdn, bytes, durationMs, Math.max(1, ttfb))
             result.status = sample.accepted ? (completion === 'timeout' ? 'partial' : 'complete')
                 : bytes >= THRPT_PROBE_MIN_BYTES ? 'latency-only' : 'insufficient'
             result.accepted = !!sample.accepted
             if (sample.accepted) {
                 result.cdn = cdn
+                result.host = cdn
+                result.type = native ? 'native-signed' : 'catalog-generated'
+                result.durationMs = durationMs
+                result.mbps = sample.mbps
+                result.ttfbMs = Math.max(1, ttfb)
                 result.partial = completion === 'timeout'
                 if (result.partial) deps.redirectStats.partialProbeSamples = Math.min(10000, deps.redirectStats.partialProbeSamples + 1)
             }
@@ -123,6 +131,15 @@ const probeCdnThroughput = (cdn, sampleUrl, probeBytes, externalSignal) => new P
     }).catch(error => finish(error?.name === 'AbortError' ? 'cancelled' : 'failed'))
 })
 
+// Historical test/debug name retained for the catalog-only probe contract.
+const probeCdnThroughput = (cdn, sampleUrl, probeBytes, externalSignal) =>
+    probeRouteThroughput({ type: 'catalog-generated', host: cdn }, sampleUrl, probeBytes, externalSignal,
+        (_host, bytes, durationMs, ttfb) => {
+            const sample = deps.recordCdnThroughput(cdn, bytes, durationMs, deps.playbackRateState.effectiveRate)
+            deps.recordCdnLatency(cdn, ttfb)
+            return sample
+        })
+
 const getPlayingCdnHost = () => {
     return deps.getAttributedVideoHost()
 }
@@ -148,7 +165,7 @@ const runThroughputBakeoff = async (sampleUrl, skipIfFast = true, trustedRequest
     const skipped = reason => { deps.DiagnosticLog.record('measurement', { reason, requested: false }); return undefined }
     if (deps.disabled || deps.resolvedCdn || bakeoffRunning) return skipped(deps.disabled ? 'disabled' : deps.resolvedCdn ? 'fixed' : 'busy')
     if (deps.inSeekGrace()) return skipped('seek-grace')
-    if (!sampleUrl || !deps.isBiliVideoUrl(sampleUrl)) return skipped('no-segment')
+    if (!sampleUrl || (!deps.isBiliVideoUrl(sampleUrl) && !deps.getNativeProbeCandidate(sampleUrl))) return skipped('no-segment')
     // 綁定節點的串流換 host 必定 403，測了也拿不到任何有效樣本（見 hostLockedStreams）
     if (deps.isHostLockedStream(sampleUrl)) return skipped('host-lock')
     const runtimeToken = deps.captureRuntimeGeneration()
@@ -231,7 +248,7 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
     try {
         const now         = Date.now()
         const playingHost = getPlayingCdnHost()
-        const candidates  = deps.PREFERRED_CDN_LIST
+        const catalogCandidates  = deps.PREFERRED_CDN_LIST
             .filter(c => !deps.blacklistSet.has(c) && !deps.knownDeadHosts.has(c) && !deps.isCdnSoftBlocked(c) && !deps.matchesExclude(c))
             // ★ 這一行是使用者實測回報的 bug 修正：賽馬只擋 knownDeadHosts，但「已知在台灣
             // 不解析、還沒被標死」的節點不在其中，於是賽馬會拿**真實 segment URL**去打它們，
@@ -256,23 +273,37 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
                 if (aNever !== bNever) return aNever ? -1 : 1
                 return ((ah && ah.lastThroughputAt) || 0) - ((bh && bh.lastThroughputAt) || 0)
             })
-            .slice(0, 4)
+        const nativeCandidate = deps.getNativeProbeCandidate(sampleUrl)
+        // Exploration consumes one existing slot; total candidate count remains capped at four.
+        const candidates = catalogCandidates.slice(0, nativeCandidate ? 3 : 4)
+            .map(host => ({ type: 'catalog-generated', host }))
+        if (nativeCandidate) candidates.push(nativeCandidate)
 
         // 高碼率（4K）用較大測速量，分得出節點快慢；一般畫質維持小量省頻寬
         const probeBytes = (deps.currentStreamBitsPerSec / 1e6 >= 12) ? 768 * 1024 : THRPT_PROBE_BYTES
         const ok = []
         const outcomes = []
-        for (const c of candidates) {
+        for (const candidate of candidates) {
             if (!deps.isRuntimeGenerationActive(runtimeToken) || myEpoch !== bakeoffEpoch) break
             // 這條串流已知綁定節點 → 剩下的候選不用試了，每一台都會 403（見 hostLockedStreams）
             if (deps.isHostLockedStream(sampleUrl)) break
-            const r = await probeCdnThroughput(c, sampleUrl, probeBytes, mySignal)
+            const r = candidate.type === 'native-signed'
+                ? await probeRouteThroughput(candidate, sampleUrl, probeBytes, mySignal)
+                : await probeCdnThroughput(candidate.host, sampleUrl, probeBytes, mySignal)
             // 換 host 拿到 403：登記這條串流，立刻中止本輪。不中止的話剩下的候選會
             // 一顆一顆各再產生一行 403 紅字（使用者實測一輪就看到 3 行）。
             if (!deps.isRuntimeGenerationActive(runtimeToken) || myEpoch !== bakeoffEpoch) return { status: 'cancelled', outcomes }
-            if (r) outcomes.push({ host: c, ...r })
-            if (r && r.forbidden) { deps.noteHostLockedStream(sampleUrl); break }
-            if (r && r.accepted) ok.push(r)
+            if (r) outcomes.push({ type: candidate.type, host: candidate.host, ...r })
+            if (r && r.forbidden) {
+                if (candidate.type === 'native-signed') deps.noteNativeRouteFailure({ route: candidate }, candidate.url, 403, 'http')
+                else { deps.noteHostLockedStream(sampleUrl); break }
+            }
+            if (r && r.accepted) {
+                if (candidate.type === 'native-signed') {
+                    const recorded = deps.recordNativeProbe(candidate, r, r.ttfbMs)
+                    if (recorded?.accepted) ok.push({ ...r, native: true })
+                } else ok.push(r)
+            }
         }
 
         // 測速被防盜鏈擋掉時 probeCdnThroughput 只會靜默回 null，賽馬形同失效但完全沒有
@@ -297,7 +328,7 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
         if (stale) return
 
         // 確保探到的候選在 activeCdnList 內，否則 getHealthyCdnList 不會納入排序
-        ok.forEach(r => {
+        ok.filter(r => !r.native).forEach(r => {
             if (!deps.activeCdnList.includes(r.cdn) && !deps.blacklistSet.has(r.cdn) && !deps.knownDeadHosts.has(r.cdn)) {
                 deps.activeCdnList.push(r.cdn)
             }
@@ -337,6 +368,7 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
         const status = ok.length ? 'completed' : outcomes.some(r => r.forbidden) ? 'forbidden'
             : outcomes.some(r => r.status === 'latency-only') ? 'latency-only'
             : candidates.length ? 'failed' : 'no-candidates'
+        deps.setNativeBakeoffDiagnostics(outcomes)
         return { status, outcomes, samples: ok.length }
     } finally {
         if (runtimeToken.signal) runtimeToken.signal.removeEventListener('abort', onRuntimeAbort)

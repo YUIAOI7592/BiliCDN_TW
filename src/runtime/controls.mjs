@@ -190,6 +190,7 @@ const BiliCDNControls = {
         deps.hostLockedStreams.clear()
         deps.preservedOriginalStreamUrls.clear()
         deps.rewrittenStreamOrigins.clear()
+        deps.clearNativeRouteLedger()
         deps.pageDiscoveredCdn = null
         try { GM_deleteValue(deps.PROBE_CACHE_KEY) } catch {}
         deps.Watchdog.reset()

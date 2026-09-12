@@ -26,6 +26,7 @@ const deepFreezePublic = (value, seen = new WeakSet()) => {
 const buildPublicDiagnosticSnapshot = () => {
     const wd = deps.Watchdog.stats()
     const hd = deps.getHttpDnsStatus()
+    const native = deps.getNativeRouteDiagnostics()
     const health = {}
     deps.TRUSTED_CDN_CATALOG.slice(0, PUBLIC_DIAG_HOST_MAX).forEach(host => {
         const h = deps.cdnHealth[host]
@@ -94,6 +95,26 @@ const buildPublicDiagnosticSnapshot = () => {
                 : 'assumed',
         },
         mediaDelivery: deps.getMediaDeliverySnapshot(),
+        nativeRouting: {
+            selectedRouteType: ['catalog-generated','native-signed','root-original'].includes(native.currentRouteType)
+                ? native.currentRouteType : 'catalog-generated',
+            routeRevision: Math.max(0, Math.trunc(publicFinite(native.routeRevision))),
+            activeRepresentation: native.active ? {
+                height: Math.max(0, Math.trunc(publicFinite(native.active.height))),
+                codec: ['av1','hevc','avc','other'].includes(native.active.codec) ? native.active.codec : 'other',
+            } : null,
+            tentativeRepresentation: native.tentative ? {
+                height: Math.max(0, Math.trunc(publicFinite(native.tentative.height))),
+                codec: ['av1','hevc','avc','other'].includes(native.tentative.codec) ? native.tentative.codec : 'other',
+            } : null,
+            currentGroupNativeCount: Math.max(0, Math.min(4, Math.trunc(publicFinite(native.groupNativeCount)))),
+            states: Object.fromEntries(['unknown','provisional','confirmed','invalid']
+                .map(key => [key, Math.max(0, Math.trunc(publicFinite(native.counts?.[key])))])),
+            ledgerSize: {
+                video: Math.max(0, Math.min(48, Math.trunc(publicFinite(native.ledger?.video)))),
+                audio: Math.max(0, Math.min(16, Math.trunc(publicFinite(native.ledger?.audio)))),
+            },
+        },
         playbackQuality: { ...deps.playbackQualitySnapshot },
         currentCodecConfigurations: deps.getCurrentCodecDiagnostics(),
         streamEstimate: {

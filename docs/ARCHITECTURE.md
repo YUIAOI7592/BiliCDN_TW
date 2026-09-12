@@ -1,4 +1,4 @@
-# v1.6.0 架構
+# v1.8.0 架構
 
 `.mjs` import/export 連接模組，狀態存在工廠實例閉包；沒有共用的可變全域大物件。`src/main.mjs` 明確建立實例並連接有限的依賴 getter／必要 setter。延後讀取維持既有循環關係，但不把所有狀態交給每個模組。
 
@@ -7,7 +7,7 @@
 | config / settings | 檔頭設定及版本，執行時傳入，非 define |
 | runtime | generation、主動取消、SPA／visibility／WebRTC、啟停、指定控制命令 |
 | policy | catalog、URL 分類、root-original／host-lock、sink 守門 |
-| routing | health／限制／UCB、verified failure、probe／bakeoff／HTTPDNS |
+| routing | catalog health／限制／UCB、Native signed route pool／host-only Ledger、verified failure、probe／bakeoff／HTTPDNS |
 | transport | Fetch／XHR、request sequence、terminal-once、bytes 去重與證據 |
 | playback | 倍速、epoch、representation、codec 查詢、Watchdog |
 | diagnostics | 有界事件、報告、唯讀快照，不從 log 觸發控制 |
@@ -16,6 +16,10 @@
 UI 只取得指定操作、健康狀態副本及 Watchdog 唯讀方法。privileged commands 位於 runtime/controls，不透過 page API 公開。匯入主模組本身不讀 GM／DOM 或啟動網路。
 
 v1.7.0 不再包含 Worker 子系統或獨立 Worker bundle。網站 Worker 保持瀏覽器原生處理，主腳本不讀取或替換 constructor，也不建立 Worker 用 Blob／MessageChannel。
+
+v1.8.0 在 `routing/native-routes.mjs` 分開兩種生命週期：完整 signed URL 只進目前 playinfo epoch 的 representation group；跨影片 Ledger 只保留 hostname 與有界健康數值。Catalog 與 Native Route 共用純評分尺度，但成員、持久資料與權限完全分離。Native route 只能重用同組已保存的 exact URL，不得合成 hostname，也不能觸發 preconnect 或 forced redirect。主動探索最多替換 bakeoff 四個候選中的一個。
+
+自動畫質以 active representation 驅動 Native 探索：`videoHeight` 匹配可立即確認；沒有高度證據時須八秒內同組兩筆有效影片傳輸。音訊、預取、舊 epoch 與 PerformanceObserver 都不能確認影片 group。第一筆顯著勝出的 probe 只建立 60 秒 provisional route，真實播放器傳輸完成後才轉為 confirmed。
 
 主程式為私有 IIFE、無 globalName。metadata 第一，其後為私有可編輯設定，再進入打包閉包。只有一份可執行 userscript，無 chunk、Node API、@require 或外部 source map；map 只留 dist。
 

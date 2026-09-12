@@ -44,7 +44,7 @@ const wasSegmentAccounted = (url) => {
 }
 
 const noteSegmentBytes = (cdn, xhr, startedAt, url, alreadyReportedBytes, runtimeToken, mediaContext) => {
-    if (!cdn || deps.disabled || (runtimeToken && !deps.isRuntimeGenerationActive(runtimeToken))) return
+    if (deps.disabled || (runtimeToken && !deps.isRuntimeGenerationActive(runtimeToken))) return
     try {
         let bytes = 0
         const cl = xhr.getResponseHeader && xhr.getResponseHeader('content-length')
@@ -64,9 +64,11 @@ const noteSegmentBytes = (cdn, xhr, startedAt, url, alreadyReportedBytes, runtim
         const remaining  = Math.max(0, bytes - (alreadyReportedBytes || 0))
         if (remaining) {
             deps.observeMediaTransfer(mediaContext, xhr.responseURL || url, remaining, 'xhr')
-            deps.Watchdog.noteExternalBytes(cdn, remaining)
+            if (cdn) deps.Watchdog.noteExternalBytes(cdn, remaining)
         }
-        deps.recordCdnThroughput(cdn, bytes, durationMs, deps.playbackRateState.effectiveRate)
+        if (cdn) deps.recordCdnThroughput(cdn, bytes, durationMs, deps.playbackRateState.effectiveRate)
+        deps.recordNativeThroughput(mediaContext, xhr.responseURL || url, bytes, durationMs,
+            deps.playbackRateState.effectiveRate, 'transport')
         noteSegmentAccounted(url)
         if (xhr.responseURL && xhr.responseURL !== url) noteSegmentAccounted(xhr.responseURL)
     } catch {}

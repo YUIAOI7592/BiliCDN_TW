@@ -1,5 +1,15 @@
 # 待辦
 
+## v1.8.0
+
+- [x] 建立目前 playinfo epoch 專屬的 Signed Route Pool；完整 URL 不持久化、不進診斷或頁面快照。
+- [x] 建立 video 48／audio 16 筆 host-only Native Route Rating Ledger，含六小時 TTL、LRU 與跨分頁時間戳合併。
+- [x] 讓 confirmed Native 與 Catalog 共用純評分尺度，但不授予 catalog、換 host、preconnect 或 forced redirect 權限。
+- [x] 將陌生 Native 探索限制在既有 bakeoff 四個名額中的一個；保留既有 bytes、timeout、冷卻與週期。
+- [x] 以 video height 或八秒內兩筆影片傳輸確認 active representation，隔離預取、音訊與舊 epoch。
+- [x] 重新設計診斷，分開目前請求路線、Catalog 建議、active/tentative representation、Ledger 與 bakeoff 後態。
+- [x] 完成 289 項自動測試、17 項 CS 子集、雙 patch、重現建置及 14／14 Codex Security 差異掃描。
+
 ## v1.7.0
 
 - [x] 依 v1.6.3 實機樣本完整移除 Worker controller、runtime、statistics、設定與獨立 bundle。
@@ -48,3 +58,4 @@
 - 跨分頁 GM 原子協調與跨播放器辨識。
 - Worker 去留已在 v1.7.0 決定為移除；除非未來有新的真實需求證據與完整安全設計，不重新引入。
 - 不建構 CI/CD，不新增按鈕或圖表。
+- Native Ledger 的跨分頁寫入仍為時間戳合併而非原子交易；不新增跨分頁協定。

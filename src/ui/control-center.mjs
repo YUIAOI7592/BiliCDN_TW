@@ -3,7 +3,7 @@ export function createViews(deps) {
 const showResetLearningDialog = () => deps.TrustedMenuUI.openConfirm({
     title: '重置所有學習狀態？',
     paragraphs: [
-        '將清除 CDN health、blacklist、dead／soft block、probe cache、HTTPDNS 學習及 Watchdog 統計。',
+        '將清除 CDN health、Native Route 評級、blacklist、dead／soft block、probe cache、HTTPDNS 學習及 Watchdog 統計。',
         '固定 CDN 與 catalog override 不會被清除。此操作無法復原。',
     ],
     confirmLabel: '確認重置',
@@ -118,8 +118,8 @@ const showRoutingCenter = () => {
     return deps.TrustedMenuUI.openRouting({
         title: 'CDN 選路',
         paragraphs: [deps.resolvedCdn
-            ? '目前使用固定 CDN；候選勾選會保留，恢復自動後生效。'
-            : '固定節點優先於候選設定。至少保留一個非 presumed 自動候選。'],
+            ? '目前使用固定 CDN；Native signed route 不會成為 primary，候選勾選會保留，恢復自動後生效。'
+            : '此頁只管理可信 catalog；Native 評級不會加入 catalog。至少保留一個非 presumed 自動候選。'],
         routes,
         fixedSelected,
         catalogSelected,
@@ -182,6 +182,8 @@ function showControlCenter() {
     const codecLead = deps.lastCodecDecision.groups && deps.lastCodecDecision.groups[0]
         ? (deps.lastCodecDecision.groups[0].selected || '未知')
         : '尚無資料'
+    const native = deps.getNativeRouteDiagnostics()
+    const rep = native.active ? native.active.height + 'p/' + native.active.codec : '尚未確認'
     return deps.TrustedMenuUI.openActions({
         title: 'BiliCDN 控制中心',
         paragraphs: [
@@ -190,6 +192,10 @@ function showControlCenter() {
             '倍速：' + deps.playbackRateState.effectiveRate + 'x（' + (deps.playbackRateState.confirmed ? '已確認' : '假定')
                 + '）｜' + deps.describePlaybackBuffer(stats),
             '串流：' + deps.streamEstimate.videoMbps + '+' + deps.streamEstimate.audioMbps + ' Mbps｜codec 排序首位：' + codecLead,
+            'Representation：' + rep + '｜路線：' + native.currentRouteType
+                + '｜Catalog fallback：' + (native.catalogFallback ? native.catalogFallback.split('.')[0] : '無'),
+            'Native 評級：本群組 ' + native.groupNativeCount + ' 條｜confirmed=' + native.counts.confirmed
+                + '｜provisional=' + native.counts.provisional + '｜unknown=' + native.counts.unknown,
             '異常節點：' + abnormal + '｜HTTPDNS：' + httpdns.mode,
         ],
         items: [

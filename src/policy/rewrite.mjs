@@ -80,6 +80,7 @@ const normalizeMediaUrl = (urlStr) => {
 
 const isMediaSegmentUrl = (url) => {
     if (!url) return false
+    if (deps.isProtectedSignedUrl(url)) return true
     const delivery = deps.classifyMediaDelivery(url)
     if (delivery.kind === 'pcdn' || delivery.kind === 'suspected-pcdn' || delivery.kind === 'live') return true
     if (deps.isBiliFragmentUrl(url)) return true
@@ -241,6 +242,9 @@ const sanitizePlayInfoUrls = (root) => {
 
     const rewrite = (value) => {
         if (typeof value !== 'string' || value.length < 12) return value
+        // Native signed routes are exact, current-epoch URLs. They may appear in the final
+        // route plan as a primary or backup and must not be converted into a catalog URL.
+        if (deps.isProtectedSignedUrl(value)) return value
         // 便宜快篩：涵蓋 Bilibili CDN 與已知 PCDN 家族，省下對其餘文字欄位 new URL() 的成本。
         // playurl 回應在 4K 多畫質 + 多 backup 時可能有幾百個字串欄位，這個成本會被放大。
         if (!/(?:\.bilivideo\.|szbdyd\.com|mountaintoys\.cn|nexusedgeio\.com|ahdohpiechei\.com)/i.test(value)) return value

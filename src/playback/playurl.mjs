@@ -1,6 +1,6 @@
 // State belongs to this instance; dependencies are the explicitly wired internal ports.
 export function createPlayurl(deps) {
-const playInfoTransformer = (playInfo) => {
+const playInfoTransformer = (playInfo, options = null) => {
     if (!playInfo) return
     if (playInfo.code !== undefined && playInfo.code !== 0) {
         return
@@ -15,12 +15,28 @@ const playInfoTransformer = (playInfo) => {
 
     // 三個呼叫端都不接回傳值，原本回傳的 { total, akamai } 只是白算一輪。
     // 只保留真正需要的副作用：逐個 item 改寫。
-    const transformList = (list, isDash) => {
+    const nativeTransportSource = options?.trustedTransport === true
+    let startupVideoSampleScheduled = false
+    const transformList = (list, isDash, kind = 'muxed') => {
         if (!Array.isArray(list)) return
         list.forEach(item => {
             if (!isDash) deps.registerMediaRepresentation(deps.muxedRepresentationRegistry,
                 { urls: deps.pickStreamUrls(item, false).validUrls }, 'muxed', deps.AUDIO_REGISTRY_MAX)
+            // The page-global __playinfo__ hook is fail-open compatibility input, not a
+            // capability for Native exploration or persistent rating. Only an intercepted
+            // playurl transport response can populate the exact signed-route pool.
+            const routeGroup = nativeTransportSource ? deps.registerSignedRouteGroup(item, isDash, kind) : null
             deps.transformStreamItem(item, isDash)
+            if (routeGroup) deps.applySignedRoutePlan(item, isDash, routeGroup)
+            // Preserve v1.7.0 catalog startup measurement without binding Native exploration
+            // to dash.video[0]. Native exploration waits for active representation evidence.
+            if (nativeTransportSource && kind === 'video' && !startupVideoSampleScheduled) {
+                const sample = item.base_url || item.baseUrl
+                if (sample && deps.isBiliVideoUrl(sample) && !deps.isAkamaiUrl(sample)) {
+                    startupVideoSampleScheduled = true
+                    deps.scheduleBakeoff(sample)
+                }
+            }
         })
     }
 
@@ -82,16 +98,10 @@ const playInfoTransformer = (playInfo) => {
             if (dash.flac  && dash.flac.audio)  [].concat(dash.flac.audio).forEach(i  => extras.push(i))
             if (dash.dolby && dash.dolby.audio)  [].concat(dash.dolby.audio).forEach(i => extras.push(i))
 
-            transformList(dash.video, true)
-            transformList(dash.audio, true)
-            transformList(extras,     true)
+            transformList(dash.video, true, 'video')
+            transformList(dash.audio, true, 'audio')
+            transformList(extras,     true, 'audio')
             deps.sanitizePlayInfoUrls(dash)
-
-            // 拿一條真實視訊 segment 當賽馬樣本（純 bilivideo 來源時才跑；Akamai 為主不適用）
-            try {
-                const sample = dash.video && dash.video[0] && (dash.video[0].base_url || dash.video[0].baseUrl)
-                if (sample && deps.isBiliVideoUrl(sample) && !deps.isAkamaiUrl(sample)) deps.scheduleBakeoff(sample)
-            } catch {}
 
         } else if (video_info && (video_info.durl || video_info.durls)) {
             transformList(video_info.durl, false)

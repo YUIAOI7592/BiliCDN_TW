@@ -25,6 +25,11 @@
 3. probe、bakeoff、timer 與其他可造成流量放大的路徑。
 4. 無界容器、統計數值及跨分頁資料。
 5. Fetch／XHR 取消、錯誤與 response body 的生命週期。
+6. playurl 到 Native 主動 probe、GM Ledger 與播放器 exact signed URL 的三條資料流。
+
+## Native Route 邊界
+
+v1.8.0 將非 catalog 的原生 signed URL 視為不可信媒體路線，而不是可信 CDN。完整 URL 只能存在於目前 playinfo epoch，跨影片僅保存經驗證的 hostname 健康評級。Native 評級不得授予 catalog 成員資格、合成換 host、preconnect 或 forced redirect 權限；第三方網域需先有可歸因的真實播放器傳輸成功，才可持久評級及日後主動探索。
 
 ## 不得誤述
 

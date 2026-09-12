@@ -43,6 +43,8 @@ const readPlaybackDiagnostic = (v) => {
 const buildDiagReport = () => {
     const buffer = deps.Watchdog.stats()
     const httpDns = deps.getHttpDnsStatus()
+    const native = deps.getNativeRouteDiagnostics()
+    const routeHost = native.currentHost ? native.currentHost.split('.')[0] : '（無新鮮後態）'
     const lines = [
         '[BiliCDN_TW 診斷報告]',
         '版本：' + deps.VERSION,
@@ -56,7 +58,15 @@ const buildDiagReport = () => {
         '持久死節點：' + (deps.listDeadHosts()
             .map(e => e.host.split('.')[0] + '(' + e.reason + '，剩 ' + e.daysLeft + 'd)')
             .join(', ') || '（無）'),
-        '選路建議：' + deps.getCdnShortName(),
+        '目前請求路線：' + native.currentRouteType + '｜' + routeHost + '（Route Plan 不等於播放器已成功使用）',
+        'Catalog 改寫建議：' + deps.getCdnShortName(),
+        '目前 representation：' + (native.active ? JSON.stringify(native.active) : '未確認')
+            + '｜tentative=' + (native.tentative ? JSON.stringify(native.tentative) : '無')
+            + '｜routeRevision=' + native.routeRevision,
+        'Native Route：當前群組=' + native.groupNativeCount + '｜狀態=' + JSON.stringify(native.counts)
+            + '｜Ledger=' + JSON.stringify(native.ledger),
+        '最近 bakeoff 路線結果：' + JSON.stringify(native.lastBakeoff)
+            + '｜自動畫質原因=' + native.autoQualityReason,
         ...['video', 'audio'].map(kind => {
             const entry = deps.getMediaDeliverySnapshot()[kind]
             return (kind === 'video' ? '最近影片 CDN：' : '最近音訊 CDN：')

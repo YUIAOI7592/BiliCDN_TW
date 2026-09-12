@@ -4,7 +4,7 @@
 
 目前不可變上游基準：`baseline/BiliCDN_TW_1.3.4.original.user.js`
 
-目前模組化候選：`src/` → `Release/v1.7.0/BiliCDN_TW.user.js`（驗收／安全狀態以本版 TEST_REPORT 為準）。
+目前模組化候選：`src/` → `Release/v1.8.0/BiliCDN_TW.user.js`（驗收／安全狀態以本版 TEST_REPORT 為準）。
 
 不可變重構基準：`tests/fixtures/BiliCDN_TW_1.5.5.user.js`（正式 v1.5.5 的原 bytes，非 development 草稿）。
 
@@ -26,11 +26,12 @@
 4. 頁面 JavaScript、console、合成事件與遠端 URL 欄位皆不可信。
 5. 先建立問題重現與 VM harness，再修改 userscript；每項變更後執行相關測試與 diff 檢查。
 6. v1.7.0 已完整移除 Worker 攔截；不得重新讀取／替換 `unsafeWindow.Worker`，也不得加入相容 stub 或 Blob 攔截旁路。
-7. 不新增遙測、資料上傳、執行期第三方依賴或新的遠端程式碼載入。唯一建置工具例外為精確鎖定 esbuild 0.28.2 與其必要平台套件；提交 lockfile，不提交 node_modules。不得設定 CI/CD、GitHub Actions 或自動發布。
-8. 自動更新只能指向本儲存庫的 `releases/latest/download/BiliCDN_TW.user.js`，不得指回上游或其他遠端程式碼。
-9. 完成後才升版，並產出 CHANGELOG、TEST_REPORT、incremental/cumulative no-index patch 與 SHA-256。
-10. VM/mock、靜態檢查與真實 Chrome/Tampermonkey 驗證必須分開描述。
-11. 模組來源是唯一建置輸入，不依賴未公開 archive／development。正式 bundle 不得含測試介面。提交訊息附執行當下實際顯示的模型與推理強度，不得沿用過期的硬編碼模型名稱。
+7. v1.8.0 的 Native Route 評級只保存 host 健康；完整 signed URL 僅限目前 playinfo epoch，且不得藉評級取得 catalog、換 host、preconnect 或 forced redirect 權限。
+8. 不新增遙測、資料上傳、執行期第三方依賴或新的遠端程式碼載入。唯一建置工具例外為精確鎖定 esbuild 0.28.2 與其必要平台套件；提交 lockfile，不提交 node_modules。不得設定 CI/CD、GitHub Actions 或自動發布。
+9. 自動更新只能指向本儲存庫的 `releases/latest/download/BiliCDN_TW.user.js`，不得指回上游或其他遠端程式碼。
+10. 完成後才升版，並產出 CHANGELOG、TEST_REPORT、incremental/cumulative no-index patch 與 SHA-256。
+11. VM/mock、靜態檢查與真實 Chrome/Tampermonkey 驗證必須分開描述。
+12. 模組來源是唯一建置輸入，不依賴未公開 archive／development。正式 bundle 不得含測試介面。提交訊息附執行當下實際顯示的模型與推理強度，不得沿用過期的硬編碼模型名稱。
 
 ## 必須重新驗證的不變量
 
@@ -38,6 +39,7 @@
 - host-locked 原始 URL、PCDN `/v1/resource`、XHR `responseType=json` 與 contiguous buffered range 正確。
 - 停用狀態停止改寫與所有腳本主動網路行為，但不取消播放器自己的請求。
 - `CustomCDN`、改寫 target 與 preconnect 只能命中可信 catalog。
+- Native signed route 只能從目前 epoch、相同 representation group 的 exact URL 取用；其 Ledger 不得包含 URL、path、query 或 token。
 - 未確認倍速按 2x 規劃，AV1 能力排序不依賴 UA 或 GPU 型號猜測。
 - 頁面只能取得無函式、無敏感 URL／cookie／IP 的有界唯讀診斷。
 - Watchdog 懲罰只歸給新鮮同 epoch 的影片 Fetch/XHR 觀察，不以音訊、PerformanceObserver 或排名猜測。

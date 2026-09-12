@@ -11,12 +11,12 @@ export function createApplication(deps) {
         try {
             // XHR responseType='json' 會直接提供物件；舊版一律 JSON.parse(object) 而跳過改寫。
             if (Object.prototype.toString.call(response) === '[object Object]') {
-                deps.playInfoTransformer(response)
+                deps.playInfoTransformer(response, { trustedTransport: true })
                 return response
             }
             if (typeof response !== 'string') return response
             const playInfo = JSON.parse(response)
-            deps.playInfoTransformer(playInfo)
+            deps.playInfoTransformer(playInfo, { trustedTransport: true })
             return JSON.stringify(playInfo)
         } catch { deps.DiagnosticLog.fault('transform') }
     })
@@ -48,7 +48,7 @@ export function createApplication(deps) {
     const transformInitialPlayInfo = () => {
         if (deps.disabled) return
         const safeTransform = (value) => {
-            try { deps.playInfoTransformer(value) }
+            try { deps.playInfoTransformer(value, { trustedTransport: false }) }
             catch { deps.DiagnosticLog.fault('transform') }
         }
         if (unsafeWindow.__playinfo__) {

@@ -584,10 +584,8 @@ const getTotalEffectiveSamples = () => {
     return n
 }
 
-const getCdnHealthScore = (cdn, opts) => {
-    const h = cdnHealth[cdn]
-    const required = getRequiredStreamMbps(undefined, 'steady')
-
+const scoreRouteHealth = (h, { required, failureCount = 0, softBlocked = false, exploreBonus = 0 } = {}) => {
+    required = Number.isFinite(required) && required > 0 ? required : getRequiredStreamMbps(undefined, 'steady')
     // ── reward：正規化到 0~1（達到 2 倍需求速度即視為滿分，避免高速節點之間的絕對差距
     // 把分數尺度撐爆，導致 explore 項在快節點之間完全失去作用）
     let throughput = (h && h.samples && h.lastThroughputAt) ? h.ewmaMbps : 0
@@ -599,16 +597,10 @@ const getCdnHealthScore = (cdn, opts) => {
 
     // ── explore：標準 UCB1，用折舊後的有效樣本數，讓久沒用的節點自然回到探索池
     // exploit 模式（起播）直接歸零：見上方 getCdnHealthScore 的完整說明。
-    const nEff  = getEffectiveSamples(cdn)
-    const total = getTotalEffectiveSamples()
-    const exploreBonus = (opts && opts.exploit)
-        ? 0
-        : UCB_EXPLORE_C * Math.sqrt(Math.log(total + 1) / (nEff + 1))
-
     // ── penalty：同樣換算到 0~1 級距，延遲探測（探測 RTT，資訊量低）權重壓到最多 10%
-    const failPenalty    = Math.min(0.6, ((cdnFailCount[cdn] || 0) * 0.15) + (h ? h.failures * 0.10 : 0))
+    const failPenalty    = Math.min(0.6, ((failureCount || 0) * 0.15) + (h ? h.failures * 0.10 : 0))
     const slowPenalty    = Math.min(0.4, h ? h.slowSamples * 0.10 : 0)
-    const softPenalty    = isCdnSoftBlocked(cdn) ? 1.5 : 0   // 大於 1：一定排到最後
+    const softPenalty    = softBlocked ? 1.5 : 0   // 大於 1：一定排到最後
     const latencyPenalty = h && h.latencyMs ? Math.min(0.10, h.latencyMs / 3000) : 0
     // ── 抖動懲罰：緩衝夠不夠看均速，卡不卡頓看的是穩不穩定。同樣均速 20Mbps，
     // 15~35 抖動的節點比穩定 18~22 的節點更容易讓緩衝瞬間見底、觸發卡頓。用變異係數
@@ -625,6 +617,21 @@ const getCdnHealthScore = (cdn, opts) => {
         : 0
 
     return reward + exploreBonus - failPenalty - slowPenalty - softPenalty - latencyPenalty - jitterPenalty
+}
+
+const getCdnHealthScore = (cdn, opts) => {
+    const h = cdnHealth[cdn]
+    const nEff  = getEffectiveSamples(cdn)
+    const total = getTotalEffectiveSamples()
+    const exploreBonus = (opts && opts.exploit)
+        ? 0
+        : UCB_EXPLORE_C * Math.sqrt(Math.log(total + 1) / (nEff + 1))
+    return scoreRouteHealth(h, {
+        required: getRequiredStreamMbps(undefined, 'steady'),
+        failureCount: cdnFailCount[cdn] || 0,
+        softBlocked: isCdnSoftBlocked(cdn),
+        exploreBonus,
+    })
 }
 
 const isCdnStronglyBad = (cdn) => {
@@ -912,6 +919,7 @@ get TRUSTED_XHR_TIMEOUT_EVIDENCE() { return TRUSTED_XHR_TIMEOUT_EVIDENCE; },
 get acceptedXhrTimeoutAt() { return acceptedXhrTimeoutAt; },
 get recordCdnThroughput() { return recordCdnThroughput; },
 get recordCdnPenalty() { return recordCdnPenalty; },
+get scoreRouteHealth() { return scoreRouteHealth; },
 get getCdnHealthScore() { return getCdnHealthScore; },
 get isCdnStronglyBad() { return isCdnStronglyBad; },
 get lastChosenCdn() { return lastChosenCdn; }, set lastChosenCdn(value) { lastChosenCdn = value; },

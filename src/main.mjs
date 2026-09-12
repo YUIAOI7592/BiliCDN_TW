@@ -3,6 +3,7 @@ import { createEvents } from './diagnostics/events.mjs';
 import { createRuntime } from './runtime/generation.mjs';
 import { createCatalog } from './policy/catalog.mjs';
 import { createHealth } from './routing/health.mjs';
+import { createNativeRoutes } from './routing/native-routes.mjs';
 import { createRate } from './playback/rate.mjs';
 import { createMediaPolicy } from './policy/media.mjs';
 import { createEvidence } from './transport/evidence.mjs';
@@ -32,6 +33,7 @@ let events;
 let runtime;
 let catalog;
 let health;
+let nativeRoutes;
 let rate;
 let mediaPolicy;
 let evidence;
@@ -97,6 +99,32 @@ get preconnectCdn() { return hints.preconnectCdn; },
 get CustomCDN() { return settings.CustomCDN; },
 get PluginName() { return events.PluginName; }
 });
+nativeRoutes = createNativeRoutes({
+get gmGet() { return key => GM_getValue(key); },
+get gmSet() { return (key, value) => GM_setValue(key, value); },
+get gmDelete() { return key => GM_deleteValue(key); },
+get TRUSTED_CDN_CATALOG_SET() { return catalog.TRUSTED_CDN_CATALOG_SET; },
+get parseMediaHttpUrl() { return mediaPolicy.parseMediaHttpUrl; },
+get classifyMediaDelivery() { return mediaPolicy.classifyMediaDelivery; },
+get mediaUrlPolicy() { return mediaPolicy.mediaUrlPolicy; },
+get isMediaSegmentUrl() { return rewrite.isMediaSegmentUrl; },
+get normalizeCodecName() { return codec.normalizeCodecName; },
+get playinfoEpoch() { return media.playinfoEpoch; },
+get resolvedCdn() { return health.resolvedCdn; },
+get disabled() { return runtime.disabled; },
+get peekCurrentCdn() { return health.peekCurrentCdn; },
+get getRequiredStreamMbps() { return health.getRequiredStreamMbps; },
+get getCdnHealthScore() { return health.getCdnHealthScore; },
+get scoreRouteHealth() { return health.scoreRouteHealth; },
+get cdnHealth() { return health.cdnHealth; },
+get playbackRateState() { return rate.playbackRateState; },
+get getVideo() { return watchdog.Watchdog.getVideo; },
+get DiagnosticLog() { return events.DiagnosticLog; },
+get onActiveRepresentation() { return (sampleUrl, _groupId, transition) => {
+    if (transition?.switched) try { watchdog.Watchdog.noteCdnSwitched(); } catch {}
+    bakeoff.scheduleBakeoff(sampleUrl)
+}; }
+});
 rate = createRate({
 get currentStreamBitsPerSec() { return media.currentStreamBitsPerSec; }
 });
@@ -122,6 +150,7 @@ get isRuntimeGenerationActive() { return runtime.isRuntimeGenerationActive; },
 get observeMediaTransfer() { return media.observeMediaTransfer; },
 get Watchdog() { return watchdog.Watchdog; },
 get recordCdnThroughput() { return health.recordCdnThroughput; },
+get recordNativeThroughput() { return nativeRoutes.recordNativeThroughput; },
 get playbackRateState() { return rate.playbackRateState; }
 });
 media = createMedia({
@@ -141,7 +170,10 @@ get hostLockedStreams() { return rewrite.hostLockedStreams; },
 get preservedOriginalStreamUrls() { return rewrite.preservedOriginalStreamUrls; },
 get rewrittenStreamOrigins() { return rewrite.rewrittenStreamOrigins; },
 get seekGraceUntil() { return rate.seekGraceUntil; }, set seekGraceUntil(value) { rate.seekGraceUntil = value; },
-get resetPlaybackRateState() { return rate.resetPlaybackRateState; }
+get resetPlaybackRateState() { return rate.resetPlaybackRateState; },
+get resetNativeRoutePool() { return nativeRoutes.resetPool; },
+get captureNativeRouteContext() { return nativeRoutes.captureRouteContext; },
+get observeNativeTransport() { return nativeRoutes.observeTransport; }
 });
 httpdns = createHttpdns({
 get BlockHttpDNS() { return settings.BlockHttpDNS; }, set BlockHttpDNS(value) { settings.BlockHttpDNS = value; },
@@ -175,7 +207,8 @@ get MEDIA_URL_MAX_LENGTH() { return mediaPolicy.MEDIA_URL_MAX_LENGTH; },
 get getHealthyCdnList() { return health.getHealthyCdnList; },
 get STARTUP_PICK() { return health.STARTUP_PICK; },
 get isBiliVideoUrl() { return mediaPolicy.isBiliVideoUrl; },
-get noteDiscoveredCdn() { return mediaPolicy.noteDiscoveredCdn; }
+get noteDiscoveredCdn() { return mediaPolicy.noteDiscoveredCdn; },
+get isProtectedSignedUrl() { return nativeRoutes.isProtectedSignedUrl; }
 });
 codec = createCodec({
 get PreferredVideoCodec() { return settings.PreferredVideoCodec; },
@@ -206,7 +239,9 @@ get isAkamaiUrl() { return mediaPolicy.isAkamaiUrl; },
 get scheduleBakeoff() { return bakeoff.scheduleBakeoff; },
 get err() { return events.err; },
 get parseMediaHttpUrl() { return mediaPolicy.parseMediaHttpUrl; },
-get mediaUrlPolicy() { return mediaPolicy.mediaUrlPolicy; }
+get mediaUrlPolicy() { return mediaPolicy.mediaUrlPolicy; },
+get registerSignedRouteGroup() { return nativeRoutes.registerSignedRouteGroup; },
+get applySignedRoutePlan() { return nativeRoutes.applySignedRoutePlan; }
 });
 transport = createTransport({
 get disabled() { return runtime.disabled; },
@@ -234,7 +269,10 @@ get recordCdnSuccess() { return health.recordCdnSuccess; },
 get noteSegmentBytes() { return evidence.noteSegmentBytes; },
 get isPlayUrlApi() { return catalog.isPlayUrlApi; },
 get recordCdnThroughput() { return health.recordCdnThroughput; },
-get playbackRateState() { return rate.playbackRateState; }
+get playbackRateState() { return rate.playbackRateState; },
+get resolveRequestRoute() { return nativeRoutes.resolveRequestRoute; },
+get noteNativeRouteFailure() { return nativeRoutes.noteNativeFailure; },
+get recordNativeThroughput() { return nativeRoutes.recordNativeThroughput; }
 });
 failures = createFailures({
 get TRUSTED_CDN_CATALOG() { return catalog.TRUSTED_CDN_CATALOG; },
@@ -326,7 +364,10 @@ get getHealthyCdnList() { return health.getHealthyCdnList; },
 get addForcedRedirect() { return failures.addForcedRedirect; },
 get log() { return events.log; },
 get promoteBestCdnNow() { return health.promoteBestCdnNow; },
-get PROBE_CACHE_KEY() { return latency.PROBE_CACHE_KEY; }
+get PROBE_CACHE_KEY() { return latency.PROBE_CACHE_KEY; },
+get getNativeProbeCandidate() { return nativeRoutes.getNativeProbeCandidate; },
+get recordNativeProbe() { return nativeRoutes.recordNativeProbe; },
+get setNativeBakeoffDiagnostics() { return nativeRoutes.setLastBakeoff; }
 });
 hints = createHints({
 get isValidCustomCdnHost() { return catalog.isValidCustomCdnHost; },
@@ -440,6 +481,7 @@ get streamEstimate() { return media.streamEstimate; },
 get playbackQualitySnapshot() { return media.playbackQualitySnapshot; },
 get pageDiscoveredCdn() { return mediaPolicy.pageDiscoveredCdn; },
 get redirectStats() { return evidence.redirectStats; },
+get getNativeRouteDiagnostics() { return nativeRoutes.diagnostics; },
 get Config() { return events.Config; }
 });
 controls = createControls({
@@ -460,6 +502,7 @@ get getCdnHealthScore() { return health.getCdnHealthScore; },
 get playbackRateState() { return rate.playbackRateState; },
 get streamEstimate() { return media.streamEstimate; },
 get getMediaDeliverySnapshot() { return media.getMediaDeliverySnapshot; },
+get getNativeRouteDiagnostics() { return nativeRoutes.diagnostics; },
 get playbackQualitySnapshot() { return media.playbackQualitySnapshot; },
 get getCurrentCodecDiagnostics() { return codec.getCurrentCodecDiagnostics; },
 get resolvedVideoCodecPreference() { return codec.resolvedVideoCodecPreference; },
@@ -490,6 +533,7 @@ get HttpDnsAutoPilot() { return httpdns.HttpDnsAutoPilot; },
 get hostLockedStreams() { return rewrite.hostLockedStreams; },
 get preservedOriginalStreamUrls() { return rewrite.preservedOriginalStreamUrls; },
 get rewrittenStreamOrigins() { return rewrite.rewrittenStreamOrigins; },
+get clearNativeRouteLedger() { return nativeRoutes.clearLedger; },
 get PROBE_CACHE_KEY() { return latency.PROBE_CACHE_KEY; },
 get Watchdog() { return watchdog.Watchdog; },
 get setHttpDnsMode() { return httpdns.setHttpDnsMode; },
@@ -530,6 +574,7 @@ get pageDiscoveredCdn() { return mediaPolicy.pageDiscoveredCdn; },
 get redirectStats() { return evidence.redirectStats; },
 get getEffectivePlaybackRate() { return rate.getEffectivePlaybackRate; },
 get getMediaDeliverySnapshot() { return media.getMediaDeliverySnapshot; },
+get getNativeRouteDiagnostics() { return nativeRoutes.diagnostics; },
 get playbackQualitySnapshot() { return media.playbackQualitySnapshot; },
 get getCurrentCodecDiagnostics() { return codec.getCurrentCodecDiagnostics; },
 get streamEstimate() { return media.streamEstimate; },
@@ -597,7 +642,8 @@ get disabled() { return runtime.disabled; },
 get getCdnShortName() { return health.getCdnShortName; },
 get playbackRateState() { return Object.freeze({ ...rate.playbackRateState }); },
 get describePlaybackBuffer() { return snapshot.describePlaybackBuffer; },
-get streamEstimate() { return Object.freeze({ ...media.streamEstimate }); }
+get streamEstimate() { return Object.freeze({ ...media.streamEstimate }); },
+get getNativeRouteDiagnostics() { return nativeRoutes.diagnostics; }
 });
 if (typeof GM_registerMenuCommand === 'function') views.registerControlMenu(GM_registerMenuCommand);
 application = createApplication({

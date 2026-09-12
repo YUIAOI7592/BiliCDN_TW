@@ -65,6 +65,7 @@ const resetMediaDelivery = () => {
 
 const resetRepresentationRegistry = () => {
     playinfoEpoch++
+    deps.resetNativeRoutePool()
     deps.DiagnosticLog.boundary(deps.runtimeGeneration, playinfoEpoch, 'epoch')
     representationRegistry.clear()
     audioRepresentationRegistry.clear()
@@ -115,7 +116,7 @@ const lookupMediaRepresentation = (url) => {
 }
 
 const captureMediaRequest = (url, runtime = deps.captureRuntimeGeneration()) => ({
-    runtime, epoch: playinfoEpoch, rep: lookupMediaRepresentation(url),
+    runtime, epoch: playinfoEpoch, rep: lookupMediaRepresentation(url), route: deps.captureNativeRouteContext(url),
 })
 
 const mediaContextActive = context => !!context && context.epoch === playinfoEpoch && deps.isRuntimeGenerationActive(context.runtime)
@@ -143,6 +144,7 @@ const noteObservedVideoRepresentation = (url, context = captureMediaRequest(url)
 
 const observeMediaTransfer = (context, url, bytes, source) => {
     if (!mediaContextActive(context) || !Number.isSafeInteger(bytes) || bytes <= 0 || bytes > 256 * 1024 * 1024) return
+    deps.observeNativeTransport(context, url, bytes, source)
     let host = '', classification = 'non-catalog'
     try {
         const parsed = new URL(url, location.href)

@@ -94,13 +94,17 @@ const interceptNetResponse = (function (theWindow) {
                 const mappedOriginalUrl = deps.getOriginalStreamUrl(urlStr)
                 this._originalUrl = mappedOriginalUrl
                 this._hostRewriteAttempt = mappedOriginalUrl !== urlStr
-                const norm = deps.normalizeMediaUrl(urlStr)
+                const nativeRoute = deps.resolveRequestRoute(urlStr, mediaRequests.get(this))
+                const norm = nativeRoute
+                    ? { url: nativeRoute.url, changed: nativeRoute.url !== urlStr, originCdn: nativeRoute.host,
+                        targetCdn: nativeRoute.host, nativeRoute: true }
+                    : deps.normalizeMediaUrl(urlStr)
                 this._originCdn = norm.originCdn || deps.getBiliVideoCdn(urlStr)
                 if (norm.changed) {
                     this._redirectedCdn = norm.targetCdn
                     this._restoredOriginal = !!norm.restoredOriginal
                     // 復原到原始簽名 URL 不是「再改一次 host」，後續 403 應按原 host 真實失敗處理。
-                    this._hostRewriteAttempt = !norm.restoredOriginal
+                    this._hostRewriteAttempt = !norm.restoredOriginal && !norm.nativeRoute
                     url = norm.url
                 }
             }
@@ -200,6 +204,7 @@ const interceptNetResponse = (function (theWindow) {
                 const fail = kind => {
                     cleanup()
                     deps.DiagnosticLog.updateRequest(diagnosticId, 'network-error', { reason: kind, bytes: lastProgressLoaded })
+                    deps.noteNativeRouteFailure(mediaContext, self._interceptUrl, 0, kind)
                     deps.handleVerifiedSegmentFailure({
                         cdn,
                         url: self._interceptUrl,
@@ -248,6 +253,7 @@ const interceptNetResponse = (function (theWindow) {
                         status: self.status, finalHost: self.responseURL || self._interceptUrl, bytes: lastProgressLoaded,
                     })
                     if (deps.HARD_FAIL_STATUSES.has(self.status)) {
+                        deps.noteNativeRouteFailure(mediaContext, self._interceptUrl, self.status, 'http')
                         deps.handleVerifiedSegmentFailure({
                             cdn,
                             url: self._interceptUrl,
@@ -256,6 +262,7 @@ const interceptNetResponse = (function (theWindow) {
                             originalUrl: self._originalUrl,
                         })
                     } else if (self.status >= 500) {
+                        deps.noteNativeRouteFailure(mediaContext, self._interceptUrl, self.status, 'http')
                         deps.handleVerifiedSegmentFailure({
                             cdn,
                             url: self._interceptUrl,
@@ -353,7 +360,10 @@ const interceptNetResponse = (function (theWindow) {
             if (!deps.isRuntimeGenerationActive(requestRuntimeToken)) return
             if (counted) {
                 const durationBase = chunkCount >= 2 ? (firstChunkAt || fetchStartedAt) : fetchStartedAt
-                deps.recordCdnThroughput(cdn, counted, Math.max(1, Date.now() - durationBase), deps.playbackRateState.effectiveRate)
+                const durationMs = Math.max(1, Date.now() - durationBase)
+                deps.recordCdnThroughput(cdn, counted, durationMs, deps.playbackRateState.effectiveRate)
+                deps.recordNativeThroughput(mediaContext, res.url || effectiveUrl, counted, durationMs,
+                    deps.playbackRateState.effectiveRate, 'transport')
             }
             deps.recordCdnSuccess(cdn, fetchStartedAt)
         }
@@ -364,6 +374,7 @@ const interceptNetResponse = (function (theWindow) {
             deps.DiagnosticLog.updateRequest(diagnosticId, error && error.name === 'AbortError' ? 'abort' : 'body-error', { bytes: counted })
             if (!deps.isRuntimeGenerationActive(requestRuntimeToken)) return
             if (error && error.name === 'AbortError') return
+            deps.noteNativeRouteFailure(mediaContext, effectiveUrl, 0, 'body-error')
             deps.handleVerifiedSegmentFailure({
                 ...(failureContext || {}),
                 cdn,
@@ -444,10 +455,16 @@ const interceptNetResponse = (function (theWindow) {
         }
 
         if (deps.isMediaSegmentUrl(urlStr)) {
+            const requestRuntimeToken = deps.captureRuntimeGeneration()
+            const mediaContext = deps.captureMediaRequest(urlStr, requestRuntimeToken)
             const mappedOriginalUrl = deps.getOriginalStreamUrl(urlStr)
-            const norm = deps.normalizeMediaUrl(urlStr)
+            const nativeRoute = deps.resolveRequestRoute(urlStr, mediaContext)
+            const norm = nativeRoute
+                ? { url: nativeRoute.url, changed: nativeRoute.url !== urlStr, originCdn: nativeRoute.host,
+                    targetCdn: nativeRoute.host, nativeRoute: true }
+                : deps.normalizeMediaUrl(urlStr)
             const hostRewriteAttempt = !norm.restoredOriginal
-                && (norm.changed || mappedOriginalUrl !== urlStr)
+                && !norm.nativeRoute && (norm.changed || mappedOriginalUrl !== urlStr)
             const targetCdn = norm.targetCdn || norm.originCdn || deps.getBiliVideoCdn(urlStr)
             const effectiveUrl = norm.changed ? norm.url : urlStr
 
@@ -469,8 +486,6 @@ const interceptNetResponse = (function (theWindow) {
                 : effectiveUrl
 
             const fetchStartedAt = Date.now()
-            const requestRuntimeToken = deps.captureRuntimeGeneration()
-            const mediaContext = deps.captureMediaRequest(urlStr, requestRuntimeToken)
             const diagnosticId = deps.DiagnosticLog.request('fetch', mediaContext, mappedOriginalUrl, effectiveUrl)
             return OriginalFetch(fetchInput, init).then(res => {
                 deps.DiagnosticLog.updateRequest(diagnosticId, 'headers', { status: res.status, finalHost: res.url || effectiveUrl })
@@ -478,23 +493,29 @@ const interceptNetResponse = (function (theWindow) {
                 if (res.ok) return wrapMeasuredFetchResponse(res, targetCdn, effectiveUrl, fetchStartedAt, failureContext, requestRuntimeToken, mediaContext, diagnosticId)
                 deps.DiagnosticLog.updateRequest(diagnosticId, 'http')
 
-                if (deps.isRuntimeGenerationActive(requestRuntimeToken)) deps.handleVerifiedSegmentFailure({
+                if (deps.isRuntimeGenerationActive(requestRuntimeToken)) {
+                    deps.noteNativeRouteFailure(mediaContext, effectiveUrl, res.status, 'http')
+                    deps.handleVerifiedSegmentFailure({
                     ...failureContext,
                     cdn: targetCdn,
                     url: effectiveUrl,
                     status: res.status,
-                })
+                    })
+                }
                 return res
             }).catch(error => {
                 deps.DiagnosticLog.updateRequest(diagnosticId, error && error.name === 'AbortError' ? 'abort' : 'network-error')
                 if (error && error.name === 'AbortError') throw error
-                if (deps.isRuntimeGenerationActive(requestRuntimeToken)) deps.handleVerifiedSegmentFailure({
+                if (deps.isRuntimeGenerationActive(requestRuntimeToken)) {
+                    deps.noteNativeRouteFailure(mediaContext, effectiveUrl, 0, 'network-error')
+                    deps.handleVerifiedSegmentFailure({
                     cdn: targetCdn,
                     url: effectiveUrl,
                     kind: 'network-error',
                     hostRewriteAttempt,
                     originalUrl: mappedOriginalUrl,
-                })
+                    })
+                }
                 throw error
             })
         }
