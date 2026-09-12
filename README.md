@@ -9,7 +9,9 @@
 
 v1.6.0 將正式 v1.5.5 拆成 JavaScript 模組，再用 esbuild 打包為 **一份 Tampermonkey userscript**。v1.7.0 依實機觀察結果完整移除 Worker 攔截：3 次可見 constructor 全為安全放行的 Blob Worker，成功包裝、媒體請求與改寫皆為 0；網站自己的 Worker 現在完全交由瀏覽器處理。播放邏輯不變。
 
-v1.8.0 新增每個 playinfo 專屬的 Native signed route pool，以及只保存 hostname 健康資料的評級 Ledger。非 catalog 路線可使用同一個 representation 內已取得的 exact signed URL 參與選路，但永遠不會取得 catalog、合成換 host、preconnect 或 forced redirect 權限。陌生節點只占用既有 bakeoff 四個名額中的一個，不提高測速流量、timeout 或冷卻。
+v1.8.0 新增每個 playinfo 專屬的 Native signed route pool，以及只保存 hostname 健康資料的評級 Ledger；該版存在健康播放時可能反覆換路的問題，已由 v1.8.1 取代。
+
+v1.8.1 將 Native 評級與換線權限分離：健康播放中的 probe／bakeoff 只更新評級，不再改變下一筆請求。Route Affinity 只在新 playinfo、真實 Transport 失敗、Watchdog 已確認卡頓或可信固定／自動設定時改變；自動畫質／codec 預取不再被誤算為 CDN 切換。非 catalog 路線仍只能重用同一 representation 的 exact signed URL，不會取得 catalog、合成換 host、preconnect 或 forced redirect 權限。
 
 主執行緒 Fetch／XHR、2x 假定、AV1、Watchdog 與 Worker 移除狀態維持不變。歷史安全狀態見 [公開安全摘要](docs/SECURITY_REVIEW_v1.6.0.md)。
 
@@ -17,7 +19,7 @@ v1.8.0 新增每個 playinfo 專屬的 Native signed route pool，以及只保�
 
 只需安裝 [BiliCDN_TW.user.js](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js)，不需安裝 Node 或 esbuild。v1.6.1 起，Tampermonkey 只會從本儲存庫的最新正式 Release 檢查與下載更新。使用選單「⚙️ 開啟 BiliCDN 控制中心」。
 
-發布驗證與安全狀態以 [TEST_REPORT](Release/v1.8.0/TEST_REPORT_v1.8.0.md) 為準。VM 測試不等於 Chrome／Tampermonkey 實機驗證；仍需測試自動畫質、1080p／4K 2x、seek、畫質升降、SPA、背景切回、陌生節點探索與控制中心。
+發布驗證與安全狀態以 [TEST_REPORT](Release/v1.8.1/TEST_REPORT_v1.8.1.md) 為準。VM 測試不等於 Chrome／Tampermonkey 實機驗證；仍需測試自動畫質、1080p／4K 2x、seek、畫質升降、SPA、背景切回、陌生節點探索與控制中心。
 
 ## 本機開發
 

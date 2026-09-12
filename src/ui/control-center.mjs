@@ -192,10 +192,12 @@ function showControlCenter() {
             '倍速：' + deps.playbackRateState.effectiveRate + 'x（' + (deps.playbackRateState.confirmed ? '已確認' : '假定')
                 + '）｜' + deps.describePlaybackBuffer(stats),
             '串流：' + deps.streamEstimate.videoMbps + '+' + deps.streamEstimate.audioMbps + ' Mbps｜codec 排序首位：' + codecLead,
-            'Representation：' + rep + '｜路線：' + native.currentRouteType
+            'Representation：' + rep + '｜觀察路線：' + native.currentRouteType
                 + '｜Catalog fallback：' + (native.catalogFallback ? native.catalogFallback.split('.')[0] : '無'),
+            '計畫路線：' + (native.plannedRoute ? native.plannedRoute.type + '/' + native.plannedRoute.host.split('.')[0] : '尚未建立')
+                + '｜最近合法邊界：' + (native.lastRouteBoundary?.reason || '無'),
             'Native 評級：本群組 ' + native.groupNativeCount + ' 條｜confirmed=' + native.counts.confirmed
-                + '｜provisional=' + native.counts.provisional + '｜unknown=' + native.counts.unknown,
+                + '｜probe-qualified=' + (native.counts.probeQualified || 0) + '｜unknown=' + native.counts.unknown,
             '異常節點：' + abnormal + '｜HTTPDNS：' + httpdns.mode,
         ],
         items: [

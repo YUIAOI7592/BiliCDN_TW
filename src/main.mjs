@@ -120,10 +120,12 @@ get cdnHealth() { return health.cdnHealth; },
 get playbackRateState() { return rate.playbackRateState; },
 get getVideo() { return watchdog.Watchdog.getVideo; },
 get DiagnosticLog() { return events.DiagnosticLog; },
-get onActiveRepresentation() { return (sampleUrl, _groupId, transition) => {
-    if (transition?.switched) try { watchdog.Watchdog.noteCdnSwitched(); } catch {}
-    bakeoff.scheduleBakeoff(sampleUrl)
-}; }
+// Representation changes and CDN changes are independent.  Auto-quality/codec
+// prefetch may move the active representation without moving the media host, so
+// this callback may update the sample pointer but must never grant switch grace
+// or schedule another measurement round.
+get onActiveRepresentation() { return (sampleUrl) => bakeoff.noteActiveSample(sampleUrl); },
+get replaceUrlHost() { return rewrite.replaceUrlHost; }
 });
 rate = createRate({
 get currentStreamBitsPerSec() { return media.currentStreamBitsPerSec; }
@@ -299,7 +301,8 @@ get currentStreamBitsPerSec() { return media.currentStreamBitsPerSec; },
 get playbackRateState() { return rate.playbackRateState; },
 get runThroughputBakeoff() { return bakeoff.runThroughputBakeoff; },
 get trustedBakeoffRequest() { return bakeoff.trustedBakeoffRequest; },
-get reportMeasurementFailure() { return runtime.reportMeasurementFailure; }
+get reportMeasurementFailure() { return runtime.reportMeasurementFailure; },
+get beginRouteRecovery() { return nativeRoutes.beginRouteRecovery; }
 });
 dom = createDom({
 
@@ -454,7 +457,8 @@ get getBufferTargetBytes() { return media.getBufferTargetBytes; },
 get getWatchdogRequiredBps() { return media.getWatchdogRequiredBps; },
 get resetMediaDelivery() { return media.resetMediaDelivery; },
 get getRequiredStreamMbps() { return health.getRequiredStreamMbps; },
-get getCdnHealthScore() { return health.getCdnHealthScore; }
+get getCdnHealthScore() { return health.getCdnHealthScore; },
+get beginRouteRecovery() { return nativeRoutes.beginRouteRecovery; }
 });
 trustedUI = createTrustedUI({
 get Watchdog() { return { getVideo: watchdog.Watchdog.getVideo }; }

@@ -97,7 +97,7 @@ const interceptNetResponse = (function (theWindow) {
                 const nativeRoute = deps.resolveRequestRoute(urlStr, mediaRequests.get(this))
                 const norm = nativeRoute
                     ? { url: nativeRoute.url, changed: nativeRoute.url !== urlStr, originCdn: nativeRoute.host,
-                        targetCdn: nativeRoute.host, nativeRoute: true }
+                        targetCdn: nativeRoute.host, nativeRoute: nativeRoute.type === 'native-signed' }
                     : deps.normalizeMediaUrl(urlStr)
                 this._originCdn = norm.originCdn || deps.getBiliVideoCdn(urlStr)
                 if (norm.changed) {
@@ -461,7 +461,7 @@ const interceptNetResponse = (function (theWindow) {
             const nativeRoute = deps.resolveRequestRoute(urlStr, mediaContext)
             const norm = nativeRoute
                 ? { url: nativeRoute.url, changed: nativeRoute.url !== urlStr, originCdn: nativeRoute.host,
-                    targetCdn: nativeRoute.host, nativeRoute: true }
+                    targetCdn: nativeRoute.host, nativeRoute: nativeRoute.type === 'native-signed' }
                 : deps.normalizeMediaUrl(urlStr)
             const hostRewriteAttempt = !norm.restoredOriginal
                 && !norm.nativeRoute && (norm.changed || mappedOriginalUrl !== urlStr)

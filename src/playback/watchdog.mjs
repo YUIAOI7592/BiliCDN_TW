@@ -250,6 +250,7 @@ const Watchdog = (() => {
         if (deps.HttpDnsAutoPilot.onStall(reason, getWatchdogSample())) {
             deps.DiagnosticLog.record('recovery', { actionId: recoverySequence, reason: 'httpdns', reselected: true }, true)
             deps.promoteBestCdnNow()
+            deps.beginRouteRecovery?.('watchdog-httpdns', deps.getAttributedVideoHost())
             deps.reorderCdnsByLatency(true).catch(deps.reportMeasurementFailure())
             return
         }
@@ -274,6 +275,7 @@ const Watchdog = (() => {
 
         try { GM_deleteValue(deps.PROBE_CACHE_KEY) } catch {}
         deps.promoteBestCdnNow()
+        deps.beginRouteRecovery?.('watchdog', playingHost)
         // 保留原本的預熱提示數與時機。現用／建議節點只補缺提示；
         // 是否建立或保留連線由瀏覽器決定，不把 DOM 操作當 socket 控制。
         const warmHost = playingHost || deps.getWarmCdnHost()

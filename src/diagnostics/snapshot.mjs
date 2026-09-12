@@ -99,6 +99,7 @@ const buildPublicDiagnosticSnapshot = () => {
             selectedRouteType: ['catalog-generated','native-signed','root-original'].includes(native.currentRouteType)
                 ? native.currentRouteType : 'catalog-generated',
             routeRevision: Math.max(0, Math.trunc(publicFinite(native.routeRevision))),
+            representationRevision: Math.max(0, Math.trunc(publicFinite(native.representationRevision))),
             activeRepresentation: native.active ? {
                 height: Math.max(0, Math.trunc(publicFinite(native.active.height))),
                 codec: ['av1','hevc','avc','other'].includes(native.active.codec) ? native.active.codec : 'other',
@@ -108,8 +109,12 @@ const buildPublicDiagnosticSnapshot = () => {
                 codec: ['av1','hevc','avc','other'].includes(native.tentative.codec) ? native.tentative.codec : 'other',
             } : null,
             currentGroupNativeCount: Math.max(0, Math.min(4, Math.trunc(publicFinite(native.groupNativeCount)))),
-            states: Object.fromEntries(['unknown','provisional','confirmed','invalid']
+            states: Object.fromEntries(['unknown','provisional','probeQualified','confirmed','invalid']
                 .map(key => [key, Math.max(0, Math.trunc(publicFinite(native.counts?.[key])))])),
+            suppressedSwitches: {
+                probeHealthy: Math.max(0, Math.trunc(publicFinite(native.suppressedSwitches?.probeHealthy))),
+                representation: Math.max(0, Math.trunc(publicFinite(native.suppressedSwitches?.representation))),
+            },
             ledgerSize: {
                 video: Math.max(0, Math.min(48, Math.trunc(publicFinite(native.ledger?.video)))),
                 audio: Math.max(0, Math.min(16, Math.trunc(publicFinite(native.ledger?.audio)))),

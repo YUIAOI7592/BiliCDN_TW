@@ -5,22 +5,26 @@ const playInfoTransformer = (playInfo, options = null) => {
     if (playInfo.code !== undefined && playInfo.code !== 0) {
         return
     }
-    // 每包新的 playinfo 都是一個 representation epoch；不可讓前一包 URL identity 汙染判讀。
-    deps.clearCodecPlayinfo()
-    deps.resetRepresentationRegistry()
-    deps.streamEstimate = { source: 'unknown', codec: 'other', height: 0, videoMbps: 0, audioMbps: 0 }
-    deps.streamProfile = null
-    deps.currentStreamBitsPerSec = 0
-    deps.baseBufferTargetBytes = deps.DEFAULT_BUFFER_TARGET_BYTES
+    const nativeTransportSource = options?.trustedTransport === true
+    // Only an intercepted playurl transport response owns the playinfo epoch.
+    // The page-global compatibility hook is untrusted and may mutate a view for
+    // playback compatibility, but it must not erase or replace trusted state.
+    if (nativeTransportSource) {
+        deps.clearCodecPlayinfo()
+        deps.resetRepresentationRegistry()
+        deps.streamEstimate = { source: 'unknown', codec: 'other', height: 0, videoMbps: 0, audioMbps: 0 }
+        deps.streamProfile = null
+        deps.currentStreamBitsPerSec = 0
+        deps.baseBufferTargetBytes = deps.DEFAULT_BUFFER_TARGET_BYTES
+    }
 
     // 三個呼叫端都不接回傳值，原本回傳的 { total, akamai } 只是白算一輪。
     // 只保留真正需要的副作用：逐個 item 改寫。
-    const nativeTransportSource = options?.trustedTransport === true
     let startupVideoSampleScheduled = false
     const transformList = (list, isDash, kind = 'muxed') => {
         if (!Array.isArray(list)) return
         list.forEach(item => {
-            if (!isDash) deps.registerMediaRepresentation(deps.muxedRepresentationRegistry,
+            if (nativeTransportSource && !isDash) deps.registerMediaRepresentation(deps.muxedRepresentationRegistry,
                 { urls: deps.pickStreamUrls(item, false).validUrls }, 'muxed', deps.AUDIO_REGISTRY_MAX)
             // The page-global __playinfo__ hook is fail-open compatibility input, not a
             // capability for Native exploration or persistent rating. Only an intercepted
@@ -73,7 +77,7 @@ const playInfoTransformer = (playInfo, options = null) => {
                 // v1.3.3：記下完整畫質清單，讓 Watchdog 之後能用實際播放的畫質校正碼率
                 // （見 syncStreamBitrateFromVideo）。這裡的 maxV 只當起播前的初估值，
                 // 起播那 3~5 秒 Watchdog 本來就在 grace 期不判定，校正得及。
-                deps.streamProfile = {
+                if (nativeTransportSource) deps.streamProfile = {
                     reps: vids
                         .map(v => ({
                             height: v.height || 0,
@@ -88,8 +92,10 @@ const playInfoTransformer = (playInfo, options = null) => {
                         .filter(a => a && typeof a === 'object')
                         .map(a => ({ bandwidth: a.bandwidth || 0, urls: deps.pickStreamUrls(a, true).validUrls })),
                 }
-                deps.rebuildRepresentationRegistry()
-                deps.setBufferTargetFromBitrate(maxV + maxA, is4K || (maxV + maxA) > 12e6)
+                if (nativeTransportSource) {
+                    deps.rebuildRepresentationRegistry()
+                    deps.setBufferTargetFromBitrate(maxV + maxA, is4K || (maxV + maxA) > 12e6)
+                }
                 dash.minBufferTime   = minBuf
                 dash.min_buffer_time = minBuf
             } catch {}

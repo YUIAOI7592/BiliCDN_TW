@@ -345,25 +345,11 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
             rest.forEach(c => deps.activeCdnList.push(c))
         }
 
-        if (!stale) {
-            const best = deps.activeCdnList[0]
-            // 勝者明顯比現用節點快 → 將舊主機加入強制改寫表（中途切換、不 reload）
-            if (best && playingHost && best !== playingHost) {
-                const hb = deps.cdnHealth[best], ho = deps.cdnHealth[playingHost]
-                const mb = (hb && hb.samples) ? hb.ewmaMbps : 0
-                const mo = (ho && ho.samples) ? ho.ewmaMbps : 0
-                if (deps.getAttributedVideoHost() === playingHost && mb > 0 && mb > mo * switchMarginFor(hb ? hb.samples : 0)) {
-                    deps.addForcedRedirect(playingHost)
-                    // 跟 Watchdog 換節點一樣要給新連線寬限，否則會出現使用者 log 裡那種
-                    // 「賽馬切到 cos → 下一個 tick 就懲罰 cos」的序列。
-                    try { deps.Watchdog.noteCdnSwitched() } catch {}
-                    deps.log('[Bakeoff] 中途切換 ' + playingHost.split('.')[0] + ' → ' + best.split('.')[0]
-                        + '（' + mo.toFixed(1) + '→' + mb.toFixed(1) + ' Mbps）')
-                }
-            }
-        }
-
-        deps.promoteBestCdnNow()
+        // Measurements update ranking for the next legal selection boundary.
+        // A faster result is not evidence that a healthy, buffered stream should
+        // be disrupted, so bakeoff never creates a forced redirect or grants
+        // switch grace. Verified transport failure and Watchdog recovery retain
+        // their existing authority to change the route.
         try { GM_setValue(deps.PROBE_CACHE_KEY, JSON.stringify({ t: Date.now(), list: [...deps.activeCdnList] })) } catch {}
         const status = ok.length ? 'completed' : outcomes.some(r => r.forbidden) ? 'forbidden'
             : outcomes.some(r => r.status === 'latency-only') ? 'latency-only'
@@ -394,6 +380,9 @@ const scheduleBakeoff = (sampleUrl) => {
         runThroughputBakeoff(lastSampleSegmentUrl).catch(deps.reportMeasurementFailure())
     }, highBitrate ? 4000 : 1500)
 }
+const noteActiveSample = (sampleUrl) => {
+    if (typeof sampleUrl === 'string' && sampleUrl) lastSampleSegmentUrl = sampleUrl
+}
 return { /* TEST_EXPORTS:bakeoff */
 get TRUSTED_BAKEOFF_MIN_GAP() { return TRUSTED_BAKEOFF_MIN_GAP; },
 get trustedBakeoffLastAt() { return trustedBakeoffLastAt; },
@@ -411,6 +400,7 @@ get getWarmCdnHost() { return getWarmCdnHost; },
 get bakeoffStartupDefers() { return bakeoffStartupDefers; }, set bakeoffStartupDefers(value) { bakeoffStartupDefers = value; },
 get isStartupBuffering() { return isStartupBuffering; },
 get runThroughputBakeoff() { return runThroughputBakeoff; },
+get noteActiveSample() { return noteActiveSample; },
 get scheduleBakeoff() { return scheduleBakeoff; }
 };
 }

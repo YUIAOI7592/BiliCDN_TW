@@ -175,7 +175,9 @@ test('v155 recovery records resulting state and counts attempts separately from 
 })
 
 test('v155 observed route changes require fresh same-epoch video transport, not audio or rank',async()=>{
-    const h=load();F.video(h);await F.prime(h)
+    const payload=F.payload()
+    payload.data.dash.video[0].backup_url=[F.mediaUrl('av1',F.other)]
+    const h=load({payload});F.video(h);await F.prime(h)
     const a=request(h);body(a);assert.equal(h.evaluate('Watchdog.stats().observedSwitchCount'),0)
     const audio=request(h,F.mediaUrl('audio',F.other));body(audio)
     assert.equal(h.evaluate('Watchdog.stats().observedSwitchCount'),0)

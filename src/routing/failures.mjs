@@ -101,6 +101,7 @@ const handleVerifiedSegmentFailure = ({
     deps.DiagnosticLog.record('recovery', { host: cdn, reason: isNetworkError || isTimeout ? kind : 'http', status: numericStatus,
         punished: true, reselected: true, preconnect: true }, true)
     deps.promoteBestCdnNow()
+    deps.beginRouteRecovery?.('verified-transport', cdn)
     deps.preconnectBatch(deps.getHealthyCdnList().slice(0, 3), true)
     if (deps.lastSampleSegmentUrl && (deps.currentStreamBitsPerSec / 1e6 >= 12 || deps.playbackRateState.effectiveRate >= 1.75)) {
         deps.runThroughputBakeoff(deps.lastSampleSegmentUrl, false, deps.trustedBakeoffRequest('verified-failure')).catch(deps.reportMeasurementFailure())

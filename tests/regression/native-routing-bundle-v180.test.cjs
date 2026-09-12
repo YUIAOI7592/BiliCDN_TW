@@ -101,7 +101,7 @@ test('v180 forged page-global playinfo cannot admit Native routes or schedule ac
     const h = loadUserscript(target, { gmSeed: seed(), pageGlobals: { __playinfo__: payload() } })
     h.evaluate('refreshPublicDiagnosticSnapshot()')
     assert.equal(JSON.stringify(h.pageWindow.BiliCDN.nativeRouting.states),
-        JSON.stringify({ unknown: 0, provisional: 0, confirmed: 0, invalid: 0 }))
+        JSON.stringify({ unknown: 0, provisional: 0, probeQualified: 0, confirmed: 0, invalid: 0 }))
     assert.equal(h.gmWrites.some(write => write.key === 'nativeRouteRatings_v1'), false)
     assert.equal(h.evaluate('bakeoffTimer'), null)
 })

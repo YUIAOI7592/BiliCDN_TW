@@ -31,6 +31,8 @@
 
 v1.8.0 將非 catalog 的原生 signed URL 視為不可信媒體路線，而不是可信 CDN。完整 URL 只能存在於目前 playinfo epoch，跨影片僅保存經驗證的 hostname 健康評級。Native 評級不得授予 catalog 成員資格、合成換 host、preconnect 或 forced redirect 權限；第三方網域需先有可歸因的真實播放器傳輸成功，才可持久評級及日後主動探索。
 
+v1.8.1 將評級與換線權限分離。健康播放期間的 probe／bakeoff 只能更新評級；Route Affinity 只可在可信 playurl 新 epoch、verified Transport failure、Watchdog recovery 或可信使用者固定／自動設定邊界改變。頁面 `__playinfo__` 相容 hook 不得建立、清除或提交 Native state。
+
 ## 不得誤述
 
 v1.7.0 不攔截網站 Worker；任何重新引入 Worker 包裝、私有通道或政策同步的變更都必須視為新增攻擊面重新審查。

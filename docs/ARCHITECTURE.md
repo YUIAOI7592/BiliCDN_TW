@@ -1,4 +1,4 @@
-# v1.8.0 架構
+# v1.8.1 架構
 
 `.mjs` import/export 連接模組，狀態存在工廠實例閉包；沒有共用的可變全域大物件。`src/main.mjs` 明確建立實例並連接有限的依賴 getter／必要 setter。延後讀取維持既有循環關係，但不把所有狀態交給每個模組。
 
@@ -17,9 +17,11 @@ UI 只取得指定操作、健康狀態副本及 Watchdog 唯讀方法。privile
 
 v1.7.0 不再包含 Worker 子系統或獨立 Worker bundle。網站 Worker 保持瀏覽器原生處理，主腳本不讀取或替換 constructor，也不建立 Worker 用 Blob／MessageChannel。
 
-v1.8.0 在 `routing/native-routes.mjs` 分開兩種生命週期：完整 signed URL 只進目前 playinfo epoch 的 representation group；跨影片 Ledger 只保留 hostname 與有界健康數值。Catalog 與 Native Route 共用純評分尺度，但成員、持久資料與權限完全分離。Native route 只能重用同組已保存的 exact URL，不得合成 hostname，也不能觸發 preconnect 或 forced redirect。主動探索最多替換 bakeoff 四個候選中的一個。
+v1.8.0 在 `routing/native-routes.mjs` 分開兩種生命週期：完整 signed URL 只進目前 playinfo epoch 的 representation group；跨影片 Ledger 只保留 hostname 與有界健康數值。v1.8.1 再加入 session Route Affinity，把「評級」與「換線權」分開。健康 probe／bakeoff 只更新排名；新 playinfo、verified Transport failure、Watchdog recovery 或可信固定／自動設定才是合法 route transition boundary。
 
-自動畫質以 active representation 驅動 Native 探索：`videoHeight` 匹配可立即確認；沒有高度證據時須八秒內同組兩筆有效影片傳輸。音訊、預取、舊 epoch 與 PerformanceObserver 都不能確認影片 group。第一筆顯著勝出的 probe 只建立 60 秒 provisional route，真實播放器傳輸完成後才轉為 confirmed。
+自動畫質以 active representation 驅動 Native 探索：初始 group 可用有效影片傳輸加高度吻合確認；其後切換必須有兩筆連續同組完成證據，舊 active group 插入即重新計數。同高度不同 codec 不因 `videoHeight` 單獨確認。representation 改變只更新測速樣本指向，不建立 route grace 或新 bakeoff；顯著勝出的 probe 只成為 `probe-qualified` 評級。
+
+Route Affinity 優先跨 representation 延續 host。Catalog 可依既有安全改寫生成該 group URL；Native 必須由新 group 提供同 host 的 exact signed URL，否則整個 epoch 降級回 Catalog，不能合成 Native URL或在舊 group 返回時反覆彈跳。planned route 與 observed host 分開記錄，只有後續影片 Fetch／XHR 才能證明實際 host 變更。
 
 主程式為私有 IIFE、無 globalName。metadata 第一，其後為私有可編輯設定，再進入打包閉包。只有一份可執行 userscript，無 chunk、Node API、@require 或外部 source map；map 只留 dist。
 

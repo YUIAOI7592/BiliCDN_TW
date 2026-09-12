@@ -85,7 +85,7 @@ test('v180 new third-party host requires a real attributed transfer before ledge
     assert.equal(h.routes.ledgers.video.get(THIRD_PARTY).transportSamples, 1)
 })
 
-test('v180 a clearly superior known-family probe can provisionally select only its exact signed URL', () => {
+test('v181 a clearly superior known-family probe is rating-only during healthy playback', () => {
     const h = makeHarness()
     const original = nativeUrl(NATIVE)
     const catalog = nativeUrl(CATALOG)
@@ -99,9 +99,8 @@ test('v180 a clearly superior known-family probe can provisionally select only i
     assert.equal(candidate.host, NATIVE)
     const result = h.routes.recordNativeProbe(candidate, { accepted: true, bytes: 384 * 1024, durationMs: 100 }, 20)
     assert.equal(result.accepted, true)
-    assert.deepEqual(h.routes.resolveRequestRoute(catalog, context), {
-        url: original, host: NATIVE, type: 'native-signed', groupId: group, revision: h.routes.groups.get(group).revision,
-    })
+    assert.equal(h.routes.resolveRequestRoute(catalog, context), null)
+    assert.equal(h.routes.diagnostics().counts.probeQualified, 1)
 })
 
 test('v180 fixed catalog mode disables native primary while retaining signed fallback', () => {
@@ -177,7 +176,7 @@ test('v180 route pool retains at most four exact signed hosts and protects only 
     assert.equal(h.routes.isProtectedSignedUrl(urls[4]), false)
 })
 
-test('v180 auto-quality confirmation changes active group only after height match or two requests', () => {
+test('v181 auto-quality change requires consecutive transport evidence after initial activation', () => {
     let height = 0
     const h = makeHarness()
     h.deps.getVideo = () => ({ videoHeight: height })
@@ -196,8 +195,12 @@ test('v180 auto-quality confirmation changes active group only after height matc
     height = 720
     const secondContext = { route: h.routes.captureRouteContext(secondUrl) }
     h.routes.observeTransport(secondContext, secondUrl, 64 * 1024, 'fetch')
+    assert.equal(h.routes.diagnostics().active.height, 1080)
+    assert.equal(h.routes.diagnostics().tentative.height, 720)
+    const secondContext2 = { route: h.routes.captureRouteContext(secondUrl) }
+    h.routes.observeTransport(secondContext2, secondUrl, 64 * 1024, 'fetch')
     assert.equal(h.routes.diagnostics().active.height, 720)
-    assert.equal(h.routes.diagnostics().autoQualityReason, 'video-height-match')
+    assert.equal(h.routes.diagnostics().autoQualityReason, 'consecutive-video-transfers')
 })
 
 test('v180 provisional promotion requires a comparable fresh Catalog sample and expires locally', () => {

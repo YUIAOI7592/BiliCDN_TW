@@ -1,5 +1,14 @@
 # 待辦
 
+## v1.8.1
+
+- [x] 建立 session Route Affinity；representation group 只保存 exact signed URL，不再各自擁有健康中途換線權。
+- [x] 移除 probe／bakeoff 的健康中途 forced redirect；評級勝出只供下一個合法選路邊界使用。
+- [x] 分離 representation revision、planned route 與 observed host；只有後續影片 Transport 才形成實際 host 後態。
+- [x] 自動畫質／codec 切換要求連續兩筆同組影片傳輸；同高度預取不再單筆切換 active group。
+- [x] 將 `__playinfo__` 限制為 page-compatible 轉換，不能清除、建立或提交 Native 狀態。
+- [x] 完成 296 項自動測試、17 項 CS 子集、雙 patch、重現建置及 13／13 v1.8.0→v1.8.1 Codex Security 差異掃描。
+
 ## v1.8.0
 
 - [x] 建立目前 playinfo epoch 專屬的 Signed Route Pool；完整 URL 不持久化、不進診斷或頁面快照。
@@ -9,6 +18,7 @@
 - [x] 以 video height 或八秒內兩筆影片傳輸確認 active representation，隔離預取、音訊與舊 epoch。
 - [x] 重新設計診斷，分開目前請求路線、Catalog 建議、active/tentative representation、Ledger 與 bakeoff 後態。
 - [x] 完成 289 項自動測試、17 項 CS 子集、雙 patch、重現建置及 14／14 Codex Security 差異掃描。
+- [x] 標記為存在健康播放反覆換路問題的歷史版本；由 v1.8.1 取代。
 
 ## v1.7.0
 

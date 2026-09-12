@@ -9,7 +9,7 @@ npm test 先重建，再遞迴執行 *.test.js／*.test.cjs／*.test.mjs。產�
 - reproductions：固定 v1.5.1 的歷史 review 9 項，不是新版缺陷。
 - unit：模組實例隔離、政策、import 無副作用及產物邊界。
 
-目前完整套件 289 項，無 skip；獨立 CS-001～003 子集 17 項另跑，但不重複加總為產品案例數。v1.8.0 新增 Native signed route admission、Ledger、正式 Fetch／XHR、bakeoff 名額、自動畫質與診斷去敏案例。
+目前完整套件 296 項，無 skip；獨立 CS-001～003 子集 17 項另跑，但不重複加總為產品案例數。v1.8.1 新增 Route Affinity、健康 probe 僅評級、連續 representation 證據、合法故障換路、跨畫質 exact Native URL、Catalog 降級與 `__playinfo__` 狀態隔離案例。
 
 舊版重現執行原單檔。新版內部測試使用獨立 test build 的模組 getter，不能發布；harness 先核對指定正式檔與 build 相同。instrument:false 完全執行正式檔，另測頁面快照、Fetch／XHR、選單及網站 Worker 身分不變。
 
