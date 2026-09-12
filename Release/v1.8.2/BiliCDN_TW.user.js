@@ -4354,6 +4354,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
 
   // src/transport/xhr-facade.mjs
   function createXhrFacade(ManagedXHR, NativeXHR) {
+    const invoke = Reflect.apply;
     const instances = /* @__PURE__ */ new WeakMap();
     const add = NativeXHR.prototype.addEventListener;
     const objectMembers = new Set(Reflect.ownKeys(Object.prototype));
@@ -4383,17 +4384,20 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
       const d = eventFields.get(key);
       if (d?.get) {
         try {
-          return d.get.call(event);
+          return invoke(d.get, event, []);
         } catch {
           return void 0;
         }
       }
       const own = Object.getOwnPropertyDescriptor(event, key);
       if (own && "value" in own) return own.value;
-      if (key === "isTrusted" && own?.get && own.configurable === false) return own.get.call(event);
+      if (key === "isTrusted" && own?.get && own.configurable === false) return invoke(own.get, event, []);
       return d?.value;
     }, "eventRead");
-    const eventCall = /* @__PURE__ */ __name((event, key) => eventFields.get(key)?.value?.call(event), "eventCall");
+    const eventCall = /* @__PURE__ */ __name((event, key) => {
+      const fn = eventFields.get(key)?.value;
+      return fn ? invoke(fn, event, []) : void 0;
+    }, "eventCall");
     function events(backend, facade) {
       const rows = /* @__PURE__ */ new Map(), handlers = /* @__PURE__ */ new Map(), relays = /* @__PURE__ */ new Map();
       const views = /* @__PURE__ */ new WeakMap();
@@ -4458,8 +4462,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
           if (row.once) off(type, row.callback, row.capture);
           state.passive(row.passive);
           try {
-            if (typeof row.callback === "function") row.callback.call(facade, state.event);
-            else row.callback.handleEvent.call(row.callback, state.event);
+            if (typeof row.callback === "function") invoke(row.callback, facade, [state.event]);
+            else invoke(row.callback.handleEvent, row.callback, [state.event]);
           } catch (error) {
             setTimeout(() => {
               throw error;
@@ -4475,7 +4479,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
         if (relays.has(type)) return;
         const relay = /* @__PURE__ */ __name((event) => dispatch(event), "relay");
         relays.set(type, relay);
-        add.call(backend, type, relay);
+        invoke(add, backend, [type, relay]);
       }, "ensure");
       const off = /* @__PURE__ */ __name((type, callback, options) => {
         type = String(type);
@@ -4529,7 +4533,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
           if (typeof callback !== "function") return;
           const entry = { callback };
           const listener = /* @__PURE__ */ __name((event) => {
-            if (entry.callback.call(facade, event) === false) event.preventDefault();
+            if (invoke(entry.callback, facade, [event]) === false) event.preventDefault();
           }, "listener");
           entry.listener = listener;
           handlers.set(type, entry);
@@ -4570,14 +4574,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
         configurable: true,
         writable: true,
         value: /* @__PURE__ */ __name(function(...args) {
-          return d.value.apply(receiver(this), args);
+          return invoke(d.value, receiver(this), args);
         }, "value")
       });
       else if (d.get || d.set) Object.defineProperty(PublicXHR.prototype, key, {
         configurable: true,
         enumerable: d.enumerable,
         get: d.get ? function() {
-          const backend = receiver(this), value = d.get.call(backend);
+          const backend = receiver(this), value = invoke(d.get, backend, []);
           if (key !== "upload" || !value) return value;
           if (!uploads.has(this)) {
             const facade = {};
@@ -4587,7 +4591,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
           return uploads.get(this);
         } : void 0,
         set: d.set ? function(value) {
-          d.set.call(receiver(this), value);
+          invoke(d.set, receiver(this), [value]);
         } : void 0
       });
       else Object.defineProperty(PublicXHR.prototype, key, d);
@@ -4599,6 +4603,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
 
   // src/transport/interceptors.mjs
   function createTransport(deps) {
+    const invoke = Reflect.apply;
     const interceptNetResponse = (function(theWindow) {
       const interceptors = [];
       const interceptNetResponse2 = /* @__PURE__ */ __name((handler) => interceptors.push(handler), "interceptNetResponse");
@@ -4652,7 +4657,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
       }
       const readNative = /* @__PURE__ */ __name((xhr, key) => {
         try {
-          return nativeGetters[key]?.call(xhr);
+          const getter = nativeGetters[key];
+          return getter ? invoke(getter, xhr, []) : void 0;
         } catch {
           return void 0;
         }
@@ -4664,7 +4670,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
       const ownedOpen = /* @__PURE__ */ new WeakSet(), observedXhr = /* @__PURE__ */ new WeakMap();
       const clearOpenObserver = /* @__PURE__ */ __name((xhr) => {
         const listener = observedXhr.get(xhr);
-        if (listener) nativeRemoveListener.call(xhr, "readystatechange", listener);
+        if (listener) invoke(nativeRemoveListener, xhr, ["readystatechange", listener]);
         observedXhr.delete(xhr);
       }, "clearOpenObserver");
       const openNative = /* @__PURE__ */ __name((xhr, method, url, rest) => {
@@ -4679,11 +4685,11 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
             }
           }, "listener");
           observedXhr.set(xhr, listener);
-          nativeAddListener.call(xhr, "readystatechange", listener);
+          invoke(nativeAddListener, xhr, ["readystatechange", listener]);
         }
         ownedOpen.add(xhr);
         try {
-          return nativeOpen.call(xhr, method, url, ...rest);
+          return invoke(nativeOpen, xhr, [method, url, ...rest]);
         } finally {
           ownedOpen.delete(xhr);
         }
@@ -4694,12 +4700,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
         const response = readNative(xhr, "response");
         let size = 0, length = null;
         try {
-          size = arrayBufferSize.call(response);
+          size = invoke(arrayBufferSize, response, []);
         } catch {
         }
-        if (!size) {
+        if (!size && blobSize) {
           try {
-            size = blobSize?.call(response) || 0;
+            size = invoke(blobSize, response, []) || 0;
           } catch {
           }
         }
@@ -4708,7 +4714,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
           if (typeof text === "string") size = text.length;
         }
         try {
-          length = nativeHeader.call(xhr, "content-length");
+          length = invoke(nativeHeader, xhr, ["content-length"]);
         } catch {
         }
         return {
@@ -4887,7 +4893,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
               settled = true;
               mediaSendInFlight.delete(self);
               clearOpenObserver(self);
-              listeners.forEach(([type, listener]) => nativeRemoveListener.call(self, type, listener));
+              listeners.forEach(([type, listener]) => invoke(nativeRemoveListener, self, [type, listener]));
               if (mediaListenerCleanup.get(self) === cleanup) mediaListenerCleanup.delete(self);
             }, "cleanup");
             mediaListenerCleanup.set(self, cleanup);
@@ -4906,7 +4912,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
                 }
               }, "listener");
               listeners.push([type, listener]);
-              nativeAddListener.call(self, type, listener);
+              invoke(nativeAddListener, self, [type, listener]);
             }, "listen");
             listen("abort", () => {
               cleanup();
@@ -5148,7 +5154,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
       }, "wrapMeasuredFetchResponse");
       theWindow.fetch = (input, init) => {
         if (deps.disabled) return OriginalFetch(input, init);
-        const urlStr = input instanceof NativeRequest ? requestUrlGetter.call(input) : String(input);
+        const urlStr = input instanceof NativeRequest ? invoke(requestUrlGetter, input, []) : String(input);
         if (deps.isHttpDnsUrl(urlStr) && deps.shouldBlockHttpDns()) {
           deps.redirectStats.httpdns++;
           try {
@@ -5181,7 +5187,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
           } catch (error) {
             return Promise.reject(error);
           }
-          const normalizedMethod = requestMethodGetter.call(normalized);
+          const normalizedMethod = invoke(requestMethodGetter, normalized, []);
           if (normalizedMethod !== "GET") return OriginalFetch(normalized);
           if (wasRequest) {
             input = normalized;
@@ -5291,7 +5297,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
           });
         });
       };
-      interceptNetResponse2.rawFetch = OriginalFetch.bind(theWindow);
+      interceptNetResponse2.rawFetch = (...args) => invoke(OriginalFetch, theWindow, args);
       return interceptNetResponse2;
     })(unsafeWindow);
     return {

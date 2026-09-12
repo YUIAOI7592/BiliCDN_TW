@@ -1,6 +1,7 @@
 // The public object has no native XHR brand. Native prototype calls cannot
 // bypass managed open(), and page-owned properties never reach the backend.
 export function createXhrFacade(ManagedXHR, NativeXHR) {
+    const invoke = Reflect.apply
     const instances = new WeakMap()
     const add = NativeXHR.prototype.addEventListener
     const objectMembers = new Set(Reflect.ownKeys(Object.prototype))
@@ -30,17 +31,20 @@ export function createXhrFacade(ManagedXHR, NativeXHR) {
     const eventRead = (event, key) => {
         const d = eventFields.get(key)
         if (d?.get) {
-            try { return d.get.call(event) }
+            try { return invoke(d.get, event, []) }
             catch { return undefined } // Plain readystatechange Event is not a ProgressEvent.
         }
         // Native isTrusted is a nonconfigurable own accessor. Plain data fields
         // also support non-browser Event implementations without invoking getters.
         const own = Object.getOwnPropertyDescriptor(event, key)
         if (own && 'value' in own) return own.value
-        if (key === 'isTrusted' && own?.get && own.configurable === false) return own.get.call(event)
+        if (key === 'isTrusted' && own?.get && own.configurable === false) return invoke(own.get, event, [])
         return d?.value
     }
-    const eventCall = (event, key) => eventFields.get(key)?.value?.call(event)
+    const eventCall = (event, key) => {
+        const fn = eventFields.get(key)?.value
+        return fn ? invoke(fn, event, []) : undefined
+    }
     function events(backend, facade) {
         const rows = new Map(), handlers = new Map(), relays = new Map()
         const views = new WeakMap()
@@ -77,8 +81,8 @@ export function createXhrFacade(ManagedXHR, NativeXHR) {
                 if (row.once) off(type, row.callback, row.capture)
                 state.passive(row.passive)
                 try {
-                    if (typeof row.callback === 'function') row.callback.call(facade, state.event)
-                    else row.callback.handleEvent.call(row.callback, state.event)
+                    if (typeof row.callback === 'function') invoke(row.callback, facade, [state.event])
+                    else invoke(row.callback.handleEvent, row.callback, [state.event])
                 } catch (error) { setTimeout(() => { throw error }, 0) }
                 if (state.immediate()) break
             }
@@ -88,7 +92,7 @@ export function createXhrFacade(ManagedXHR, NativeXHR) {
         const ensure = type => {
             if (relays.has(type)) return
             const relay = event => dispatch(event)
-            relays.set(type, relay); add.call(backend, type, relay)
+            relays.set(type, relay); invoke(add, backend, [type, relay])
         }
         const off = (type, callback, options) => {
             type = String(type)
@@ -132,7 +136,7 @@ export function createXhrFacade(ManagedXHR, NativeXHR) {
                 handlers.delete(type)
                 if (typeof callback !== 'function') return
                 const entry = { callback }
-                const listener = event => { if (entry.callback.call(facade, event) === false) event.preventDefault() }
+                const listener = event => { if (invoke(entry.callback, facade, [event]) === false) event.preventDefault() }
                 entry.listener = listener; handlers.set(type, entry); on(type, listener)
             },
         })
@@ -157,17 +161,17 @@ export function createXhrFacade(ManagedXHR, NativeXHR) {
             || typeof key === 'string' && key.startsWith('on')) continue
         const receiver = self => { const backend = instances.get(self); if (!backend) throw new TypeError('Illegal invocation'); return backend }
         if (typeof d.value === 'function') Object.defineProperty(PublicXHR.prototype, key, {
-            configurable: true, writable: true, value: function (...args) { return d.value.apply(receiver(this), args) },
+            configurable: true, writable: true, value: function (...args) { return invoke(d.value, receiver(this), args) },
         })
         else if (d.get || d.set) Object.defineProperty(PublicXHR.prototype, key, {
             configurable: true, enumerable: d.enumerable,
             get: d.get ? function () {
-                const backend = receiver(this), value = d.get.call(backend)
+                const backend = receiver(this), value = invoke(d.get, backend, [])
                 if (key !== 'upload' || !value) return value
                 if (!uploads.has(this)) { const facade = {}; events(value, facade); uploads.set(this, facade) }
                 return uploads.get(this)
             } : undefined,
-            set: d.set ? function (value) { d.set.call(receiver(this), value) } : undefined,
+            set: d.set ? function (value) { invoke(d.set, receiver(this), [value]) } : undefined,
         })
         else Object.defineProperty(PublicXHR.prototype, key, d)
     }

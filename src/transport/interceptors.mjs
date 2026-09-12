@@ -1,6 +1,7 @@
 import { createXhrFacade } from './xhr-facade.mjs'
 // State belongs to this instance; dependencies are the explicitly wired internal ports.
 export function createTransport(deps) {
+const invoke = Reflect.apply
 const interceptNetResponse = (function (theWindow) {
     const interceptors = []
     const interceptNetResponse = (handler) => interceptors.push(handler)
@@ -57,7 +58,10 @@ const interceptNetResponse = (function (theWindow) {
             if (descriptor) { nativeGetters[key] = descriptor.get; break }
         }
     }
-    const readNative = (xhr, key) => { try { return nativeGetters[key]?.call(xhr) } catch { return undefined } }
+    const readNative = (xhr, key) => { try {
+        const getter = nativeGetters[key]
+        return getter ? invoke(getter, xhr, []) : undefined
+    } catch { return undefined } }
     const nativeHeader = OriginalXMLHttpRequest.prototype.getResponseHeader
     const nativeOpen = OriginalXMLHttpRequest.prototype.open
     const nativeAddListener = OriginalXMLHttpRequest.prototype.addEventListener
@@ -65,7 +69,7 @@ const interceptNetResponse = (function (theWindow) {
     const ownedOpen = new WeakSet(), observedXhr = new WeakMap()
     const clearOpenObserver = xhr => {
         const listener = observedXhr.get(xhr)
-        if (listener) nativeRemoveListener.call(xhr, 'readystatechange', listener)
+        if (listener) invoke(nativeRemoveListener, xhr, ['readystatechange', listener])
         observedXhr.delete(xhr)
     }
     const openNative = (xhr, method, url, rest) => {
@@ -81,20 +85,20 @@ const interceptNetResponse = (function (theWindow) {
                 }
             }
             observedXhr.set(xhr, listener)
-            nativeAddListener.call(xhr, 'readystatechange', listener)
+            invoke(nativeAddListener, xhr, ['readystatechange', listener])
         }
         ownedOpen.add(xhr)
-        try { return nativeOpen.call(xhr, method, url, ...rest) } finally { ownedOpen.delete(xhr) }
+        try { return invoke(nativeOpen, xhr, [method, url, ...rest]) } finally { ownedOpen.delete(xhr) }
     }
     const arrayBufferSize = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'byteLength')?.get
     const blobSize = typeof Blob === 'function' ? Object.getOwnPropertyDescriptor(Blob.prototype, 'size')?.get : null
     const nativeEvidence = xhr => {
         const response = readNative(xhr, 'response')
         let size = 0, length = null
-        try { size = arrayBufferSize.call(response) } catch {}
-        if (!size) { try { size = blobSize?.call(response) || 0 } catch {} }
+        try { size = invoke(arrayBufferSize, response, []) } catch {}
+        if (!size && blobSize) { try { size = invoke(blobSize, response, []) || 0 } catch {} }
         if (!size) { const text = readNative(xhr, 'responseText'); if (typeof text === 'string') size = text.length }
-        try { length = nativeHeader.call(xhr, 'content-length') } catch {}
+        try { length = invoke(nativeHeader, xhr, ['content-length']) } catch {}
         return { responseURL: readNative(xhr, 'responseURL'), response: { byteLength: size }, verifiedPayloadBytes: size,
             getResponseHeader: () => length }
     }
@@ -257,7 +261,7 @@ const interceptNetResponse = (function (theWindow) {
                     settled = true
                     mediaSendInFlight.delete(self)
                     clearOpenObserver(self)
-                    listeners.forEach(([type, listener]) => nativeRemoveListener.call(self, type, listener))
+                    listeners.forEach(([type, listener]) => invoke(nativeRemoveListener, self, [type, listener]))
                     if (mediaListenerCleanup.get(self) === cleanup) mediaListenerCleanup.delete(self)
                 }
                 mediaListenerCleanup.set(self, cleanup)
@@ -268,7 +272,7 @@ const interceptNetResponse = (function (theWindow) {
                         if (!active()) { cleanup(); return }
                         try { callback(e) } catch { deps.DiagnosticLog.fault('interceptor') }
                     }
-                    listeners.push([type, listener]); nativeAddListener.call(self, type, listener)
+                    listeners.push([type, listener]); invoke(nativeAddListener, self, [type, listener])
                 }
                 listen('abort', () => { cleanup(); deps.DiagnosticLog.updateRequest(diagnosticId, 'abort') })
                 const fail = kind => {
@@ -513,7 +517,7 @@ const interceptNetResponse = (function (theWindow) {
 
     theWindow.fetch = (input, init) => {
         if (deps.disabled) return OriginalFetch(input, init)
-        const urlStr = (input instanceof NativeRequest) ? requestUrlGetter.call(input) : String(input)
+        const urlStr = (input instanceof NativeRequest) ? invoke(requestUrlGetter, input, []) : String(input)
 
         if (deps.isHttpDnsUrl(urlStr) && deps.shouldBlockHttpDns()) {
             deps.redirectStats.httpdns++
@@ -548,7 +552,7 @@ const interceptNetResponse = (function (theWindow) {
             const wasRequest = input instanceof NativeRequest
             try { normalized = new NativeRequest(wasRequest ? input : new URL(urlStr, location.href).href, init) }
             catch (error) { return Promise.reject(error) }
-            const normalizedMethod = requestMethodGetter.call(normalized)
+            const normalizedMethod = invoke(requestMethodGetter, normalized, [])
             if (normalizedMethod !== 'GET') return OriginalFetch(normalized)
             if (wasRequest) { input = normalized; init = undefined }
             else init = { method: normalizedMethod, headers: normalized.headers, signal: normalized.signal,
@@ -651,7 +655,7 @@ const interceptNetResponse = (function (theWindow) {
     // 測速（probeCdnThroughput/confirmHostReachable）也是用 fetch 發請求，Tampermonkey
     // sandbox 模式下 window.fetch 會轉發到這裡被改寫的 unsafeWindow.fetch——測速請求會
     // 被自己的攔截層改寫到別的節點，量出來的速度記到錯的 CDN 頭上。掛出原生 fetch 供繞過。
-    interceptNetResponse.rawFetch = OriginalFetch.bind(theWindow)
+    interceptNetResponse.rawFetch = (...args) => invoke(OriginalFetch, theWindow, args)
     return interceptNetResponse
 })(unsafeWindow)
 return { /* TEST_EXPORTS:transport */

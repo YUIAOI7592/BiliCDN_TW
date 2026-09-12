@@ -1,5 +1,5 @@
 diff --git a/Release/v1.8.1/BiliCDN_TW.user.js b/Release/v1.8.2/BiliCDN_TW.user.js
-index 8841693..c641452 100644
+index 8841693..c462a9d 100644
 --- a/Release/v1.8.1/BiliCDN_TW.user.js
 +++ b/Release/v1.8.2/BiliCDN_TW.user.js
 @@ -1,7 +1,7 @@
@@ -754,12 +754,13 @@ index 8841693..c641452 100644
          }
        } catch (e) {
          if (video_info && video_info.durl) transformList(video_info.durl, false);
-@@ -4196,6 +4352,251 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4196,8 +4352,258 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
    }
    __name(createPlayurl, "createPlayurl");
  
 +  // src/transport/xhr-facade.mjs
 +  function createXhrFacade(ManagedXHR, NativeXHR) {
++    const invoke = Reflect.apply;
 +    const instances = /* @__PURE__ */ new WeakMap();
 +    const add = NativeXHR.prototype.addEventListener;
 +    const objectMembers = new Set(Reflect.ownKeys(Object.prototype));
@@ -789,17 +790,20 @@ index 8841693..c641452 100644
 +      const d = eventFields.get(key);
 +      if (d?.get) {
 +        try {
-+          return d.get.call(event);
++          return invoke(d.get, event, []);
 +        } catch {
 +          return void 0;
 +        }
 +      }
 +      const own = Object.getOwnPropertyDescriptor(event, key);
 +      if (own && "value" in own) return own.value;
-+      if (key === "isTrusted" && own?.get && own.configurable === false) return own.get.call(event);
++      if (key === "isTrusted" && own?.get && own.configurable === false) return invoke(own.get, event, []);
 +      return d?.value;
 +    }, "eventRead");
-+    const eventCall = /* @__PURE__ */ __name((event, key) => eventFields.get(key)?.value?.call(event), "eventCall");
++    const eventCall = /* @__PURE__ */ __name((event, key) => {
++      const fn = eventFields.get(key)?.value;
++      return fn ? invoke(fn, event, []) : void 0;
++    }, "eventCall");
 +    function events(backend, facade) {
 +      const rows = /* @__PURE__ */ new Map(), handlers = /* @__PURE__ */ new Map(), relays = /* @__PURE__ */ new Map();
 +      const views = /* @__PURE__ */ new WeakMap();
@@ -864,8 +868,8 @@ index 8841693..c641452 100644
 +          if (row.once) off(type, row.callback, row.capture);
 +          state.passive(row.passive);
 +          try {
-+            if (typeof row.callback === "function") row.callback.call(facade, state.event);
-+            else row.callback.handleEvent.call(row.callback, state.event);
++            if (typeof row.callback === "function") invoke(row.callback, facade, [state.event]);
++            else invoke(row.callback.handleEvent, row.callback, [state.event]);
 +          } catch (error) {
 +            setTimeout(() => {
 +              throw error;
@@ -881,7 +885,7 @@ index 8841693..c641452 100644
 +        if (relays.has(type)) return;
 +        const relay = /* @__PURE__ */ __name((event) => dispatch(event), "relay");
 +        relays.set(type, relay);
-+        add.call(backend, type, relay);
++        invoke(add, backend, [type, relay]);
 +      }, "ensure");
 +      const off = /* @__PURE__ */ __name((type, callback, options) => {
 +        type = String(type);
@@ -935,7 +939,7 @@ index 8841693..c641452 100644
 +          if (typeof callback !== "function") return;
 +          const entry = { callback };
 +          const listener = /* @__PURE__ */ __name((event) => {
-+            if (entry.callback.call(facade, event) === false) event.preventDefault();
++            if (invoke(entry.callback, facade, [event]) === false) event.preventDefault();
 +          }, "listener");
 +          entry.listener = listener;
 +          handlers.set(type, entry);
@@ -976,14 +980,14 @@ index 8841693..c641452 100644
 +        configurable: true,
 +        writable: true,
 +        value: /* @__PURE__ */ __name(function(...args) {
-+          return d.value.apply(receiver(this), args);
++          return invoke(d.value, receiver(this), args);
 +        }, "value")
 +      });
 +      else if (d.get || d.set) Object.defineProperty(PublicXHR.prototype, key, {
 +        configurable: true,
 +        enumerable: d.enumerable,
 +        get: d.get ? function() {
-+          const backend = receiver(this), value = d.get.call(backend);
++          const backend = receiver(this), value = invoke(d.get, backend, []);
 +          if (key !== "upload" || !value) return value;
 +          if (!uploads.has(this)) {
 +            const facade = {};
@@ -993,7 +997,7 @@ index 8841693..c641452 100644
 +          return uploads.get(this);
 +        } : void 0,
 +        set: d.set ? function(value) {
-+          d.set.call(receiver(this), value);
++          invoke(d.set, receiver(this), [value]);
 +        } : void 0
 +      });
 +      else Object.defineProperty(PublicXHR.prototype, key, d);
@@ -1005,8 +1009,11 @@ index 8841693..c641452 100644
 +
    // src/transport/interceptors.mjs
    function createTransport(deps) {
++    const invoke = Reflect.apply;
      const interceptNetResponse = (function(theWindow) {
-@@ -4239,14 +4640,104 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const interceptors = [];
+       const interceptNetResponse2 = /* @__PURE__ */ __name((handler) => interceptors.push(handler), "interceptNetResponse");
+@@ -4239,14 +4645,105 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
          return out;
        }, "transformPlayurlOnce");
        const OriginalXMLHttpRequest = theWindow.XMLHttpRequest;
@@ -1022,7 +1029,8 @@ index 8841693..c641452 100644
 +      }
 +      const readNative = /* @__PURE__ */ __name((xhr, key) => {
 +        try {
-+          return nativeGetters[key]?.call(xhr);
++          const getter = nativeGetters[key];
++          return getter ? invoke(getter, xhr, []) : void 0;
 +        } catch {
 +          return void 0;
 +        }
@@ -1034,7 +1042,7 @@ index 8841693..c641452 100644
 +      const ownedOpen = /* @__PURE__ */ new WeakSet(), observedXhr = /* @__PURE__ */ new WeakMap();
 +      const clearOpenObserver = /* @__PURE__ */ __name((xhr) => {
 +        const listener = observedXhr.get(xhr);
-+        if (listener) nativeRemoveListener.call(xhr, "readystatechange", listener);
++        if (listener) invoke(nativeRemoveListener, xhr, ["readystatechange", listener]);
 +        observedXhr.delete(xhr);
 +      }, "clearOpenObserver");
 +      const openNative = /* @__PURE__ */ __name((xhr, method, url, rest) => {
@@ -1049,11 +1057,11 @@ index 8841693..c641452 100644
 +            }
 +          }, "listener");
 +          observedXhr.set(xhr, listener);
-+          nativeAddListener.call(xhr, "readystatechange", listener);
++          invoke(nativeAddListener, xhr, ["readystatechange", listener]);
 +        }
 +        ownedOpen.add(xhr);
 +        try {
-+          return nativeOpen.call(xhr, method, url, ...rest);
++          return invoke(nativeOpen, xhr, [method, url, ...rest]);
 +        } finally {
 +          ownedOpen.delete(xhr);
 +        }
@@ -1064,12 +1072,12 @@ index 8841693..c641452 100644
 +        const response = readNative(xhr, "response");
 +        let size = 0, length = null;
 +        try {
-+          size = arrayBufferSize.call(response);
++          size = invoke(arrayBufferSize, response, []);
 +        } catch {
 +        }
-+        if (!size) {
++        if (!size && blobSize) {
 +          try {
-+            size = blobSize?.call(response) || 0;
++            size = invoke(blobSize, response, []) || 0;
 +          } catch {
 +          }
 +        }
@@ -1078,7 +1086,7 @@ index 8841693..c641452 100644
 +          if (typeof text === "string") size = text.length;
 +        }
 +        try {
-+          length = nativeHeader.call(xhr, "content-length");
++          length = invoke(nativeHeader, xhr, ["content-length"]);
 +        } catch {
 +        }
 +        return {
@@ -1111,7 +1119,7 @@ index 8841693..c641452 100644
            if (this._blockedTimer) {
              clearTimeout(this._blockedTimer);
              this._blockedTimer = null;
-@@ -4266,13 +4757,16 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4266,13 +4763,16 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
            this._biliJsonMetadata = deps.isBiliJsonMetadataApi(urlStr);
            if (deps.disabled) {
              this._interceptUrl = urlStr;
@@ -1130,7 +1138,7 @@ index 8841693..c641452 100644
            }
            if (deps.isHttpDnsUrl(urlStr)) {
              deps.redirectStats.httpdnsAllowed++;
-@@ -4281,24 +4775,32 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4281,24 +4781,32 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
              const mappedOriginalUrl = deps.getOriginalStreamUrl(urlStr);
              this._originalUrl = mappedOriginalUrl;
              this._hostRewriteAttempt = mappedOriginalUrl !== urlStr;
@@ -1166,7 +1174,7 @@ index 8841693..c641452 100644
          }
          _deliverBlockedHttpDns() {
            const body = '{"code":-1,"message":"blocked by BiliCDN","data":null}';
-@@ -4320,6 +4822,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4320,6 +4828,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
          }
          abort() {
            mediaListenerCleanup.get(this)?.();
@@ -1174,7 +1182,7 @@ index 8841693..c641452 100644
            deps.DiagnosticLog.updateRequest(diagnosticRequests.get(this), "abort");
            diagnosticRequests.delete(this);
            playurlRequests.delete(this);
-@@ -4364,14 +4867,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4364,14 +4873,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
              this._deliverBlockedHttpDns();
              return;
            }
@@ -1193,13 +1201,13 @@ index 8841693..c641452 100644
              diagnosticRequests.set(this, diagnosticId);
              const segStartedAt = Date.now();
              const segStartedMonotonic = performance.now();
-@@ -4383,11 +4886,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4383,11 +4892,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
              const cleanup = /* @__PURE__ */ __name(() => {
                settled = true;
                mediaSendInFlight.delete(self);
 -              listeners.forEach(([type, listener]) => self.removeEventListener(type, listener));
 +              clearOpenObserver(self);
-+              listeners.forEach(([type, listener]) => nativeRemoveListener.call(self, type, listener));
++              listeners.forEach(([type, listener]) => invoke(nativeRemoveListener, self, [type, listener]));
                if (mediaListenerCleanup.get(self) === cleanup) mediaListenerCleanup.delete(self);
              }, "cleanup");
              mediaListenerCleanup.set(self, cleanup);
@@ -1208,16 +1216,16 @@ index 8841693..c641452 100644
              const listen = /* @__PURE__ */ __name((type, callback) => {
                const listener = /* @__PURE__ */ __name((e) => {
                  if (e?.isTrusted !== true) return;
-@@ -4402,7 +4906,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4402,7 +4912,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
                  }
                }, "listener");
                listeners.push([type, listener]);
 -              self.addEventListener(type, listener);
-+              nativeAddListener.call(self, type, listener);
++              invoke(nativeAddListener, self, [type, listener]);
              }, "listen");
              listen("abort", () => {
                cleanup();
-@@ -4411,16 +4915,17 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4411,16 +4921,17 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
              const fail = /* @__PURE__ */ __name((kind) => {
                cleanup();
                deps.DiagnosticLog.updateRequest(diagnosticId, "network-error", { reason: kind, bytes: lastProgressLoaded });
@@ -1239,7 +1247,7 @@ index 8841693..c641452 100644
                });
              }, "fail");
              listen("error", () => fail("network-error"));
-@@ -4433,46 +4938,52 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4433,46 +4944,52 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
                const delta = loaded - lastProgressLoaded;
                if (delta > 0) {
                  lastProgressLoaded = loaded;
@@ -1316,7 +1324,7 @@ index 8841693..c641452 100644
                }
              });
              mediaSendInFlight.add(this);
-@@ -4511,8 +5022,11 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4511,8 +5028,11 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
        };
        __name(_XMLHttpRequest, "XMLHttpRequest");
        let XMLHttpRequest = _XMLHttpRequest;
@@ -1329,7 +1337,7 @@ index 8841693..c641452 100644
        const cloneResponseWithBody = /* @__PURE__ */ __name((source, body, preserveEntityHeaders = true) => {
          const headers = new Headers(source.headers);
          if (!preserveEntityHeaders) {
-@@ -4568,6 +5082,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4568,6 +5088,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
                deps.playbackRateState.effectiveRate,
                "transport"
              );
@@ -1337,16 +1345,16 @@ index 8841693..c641452 100644
            }
            deps.recordCdnSuccess(cdn, fetchStartedAt);
          }, "finishSuccess");
-@@ -4633,7 +5148,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4633,7 +5154,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
        }, "wrapMeasuredFetchResponse");
        theWindow.fetch = (input, init) => {
          if (deps.disabled) return OriginalFetch(input, init);
 -        const urlStr = input instanceof Request ? input.url : String(input);
-+        const urlStr = input instanceof NativeRequest ? requestUrlGetter.call(input) : String(input);
++        const urlStr = input instanceof NativeRequest ? invoke(requestUrlGetter, input, []) : String(input);
          if (deps.isHttpDnsUrl(urlStr) && deps.shouldBlockHttpDns()) {
            deps.redirectStats.httpdns++;
            try {
-@@ -4659,16 +5174,45 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4659,16 +5180,45 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
            else init = Object.assign({}, init, { headers });
          }
          if (deps.isMediaSegmentUrl(urlStr)) {
@@ -1357,7 +1365,7 @@ index 8841693..c641452 100644
 +          } catch (error) {
 +            return Promise.reject(error);
 +          }
-+          const normalizedMethod = requestMethodGetter.call(normalized);
++          const normalizedMethod = invoke(requestMethodGetter, normalized, []);
 +          if (normalizedMethod !== "GET") return OriginalFetch(normalized);
 +          if (wasRequest) {
 +            input = normalized;
@@ -1394,7 +1402,16 @@ index 8841693..c641452 100644
            } : deps.normalizeMediaUrl(urlStr);
            const hostRewriteAttempt = !norm.restoredOriginal && !norm.nativeRoute && (norm.changed || mappedOriginalUrl !== urlStr);
            const targetCdn = norm.targetCdn || norm.originCdn || deps.getBiliVideoCdn(urlStr);
-@@ -5199,16 +5743,19 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -4747,7 +5297,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           });
+         });
+       };
+-      interceptNetResponse2.rawFetch = OriginalFetch.bind(theWindow);
++      interceptNetResponse2.rawFetch = (...args) => invoke(OriginalFetch, theWindow, args);
+       return interceptNetResponse2;
+     })(unsafeWindow);
+     return {
+@@ -5199,16 +5749,19 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
        const runtimeToken = deps.captureRuntimeGeneration();
        const cdn = candidate?.host;
        const native = candidate?.type === "native-signed";
@@ -1416,7 +1433,7 @@ index 8841693..c641452 100644
        const finish = /* @__PURE__ */ __name((completion) => {
          if (settled) return;
          settled = true;
-@@ -5228,21 +5775,21 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -5228,21 +5781,21 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
          else if (completion === "forbidden") result.forbidden = true;
          else if (successResponse && (completion === "complete" || completion === "timeout")) {
            const durationMs = Math.max(1, performance.now() - t0 - ttfb);
@@ -1444,7 +1461,7 @@ index 8841693..c641452 100644
              result.ttfbMs = Math.max(1, ttfb);
              result.partial = completion === "timeout";
              if (result.partial) deps.redirectStats.partialProbeSamples = Math.min(1e4, deps.redirectStats.partialProbeSamples + 1);
-@@ -5301,7 +5848,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -5301,7 +5854,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
        }
      ), "probeCdnThroughput");
      const getPlayingCdnHost = /* @__PURE__ */ __name(() => {
@@ -1453,7 +1470,7 @@ index 8841693..c641452 100644
      }, "getPlayingCdnHost");
      const getWarmCdnHost = /* @__PURE__ */ __name(() => getPlayingCdnHost() || deps.resolvedCdn || deps.lastChosenCdn || deps.activeCdnList[0] || null, "getWarmCdnHost");
      const STARTUP_MIN_BUFFER_SEC = 12;
-@@ -5324,7 +5871,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -5324,7 +5877,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
        }, "skipped");
        if (deps.disabled || deps.resolvedCdn || bakeoffRunning) return skipped(deps.disabled ? "disabled" : deps.resolvedCdn ? "fixed" : "busy");
        if (deps.inSeekGrace()) return skipped("seek-grace");
@@ -1463,7 +1480,7 @@ index 8841693..c641452 100644
        if (deps.isHostLockedStream(sampleUrl)) return skipped("host-lock");
        const runtimeToken = deps.captureRuntimeGeneration();
        if (!deps.isRuntimeGenerationActive(runtimeToken)) return;
-@@ -5352,20 +5900,20 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -5352,20 +5906,20 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
        const preCheckHost = getPlayingCdnHost() || getWarmCdnHost();
        const preHealth = preCheckHost && deps.cdnHealth[preCheckHost];
        if (skipIfFast && preHealth && preHealth.samples && preHealth.lastThroughputAt && Date.now() - preHealth.lastThroughputAt < THRPT_SAMPLE_FRESH_MS && preHealth.ewmaMbps >= deps.getRequiredStreamMbps(void 0, "startup") * 1.5) {
@@ -1489,7 +1506,7 @@ index 8841693..c641452 100644
        deps.DiagnosticLog.record("measurement", { reason: "accepted", requested: true });
        bakeoffRunning = true;
        setLastBakeoffAt(Date.now());
-@@ -5401,10 +5949,10 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -5401,10 +5955,10 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
          const ok = [];
          const outcomes = [];
          for (const candidate of candidates) {
@@ -1502,7 +1519,7 @@ index 8841693..c641452 100644
            if (r) outcomes.push({ type: candidate.type, host: candidate.host, ...r });
            if (r && r.forbidden) {
              if (candidate.type === "native-signed") deps.noteNativeRouteFailure({ route: candidate }, candidate.url, 403, "http");
-@@ -6933,11 +7481,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -6933,11 +7487,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
          "真正可選節點：" + (deps.getHealthyCdnList().map((c) => c.split(".")[0]).join(" > ") || "（無）"),
          "黑名單（24h）：" + ([...deps.blacklistSet].map((c) => c.split(".")[0]).join(", ") || "（無）"),
          "持久死節點：" + (deps.listDeadHosts().map((e) => e.host.split(".")[0] + "(" + e.reason + "，剩 " + e.daysLeft + "d)").join(", ") || "（無）"),
@@ -1517,7 +1534,7 @@ index 8841693..c641452 100644
          "最近 bakeoff 路線結果：" + JSON.stringify(native.lastBakeoff) + "（測速只更新評級）｜自動畫質原因=" + native.autoQualityReason,
          ...["video", "audio"].map((kind) => {
            const entry = deps.getMediaDeliverySnapshot()[kind];
-@@ -7590,7 +8139,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -7590,7 +8145,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
          },
          mediaDelivery: deps.getMediaDeliverySnapshot(),
          nativeRouting: {
@@ -1528,7 +1545,7 @@ index 8841693..c641452 100644
            routeRevision: Math.max(0, Math.trunc(publicFinite(native.routeRevision))),
            representationRevision: Math.max(0, Math.trunc(publicFinite(native.representationRevision))),
            activeRepresentation: native.active ? {
-@@ -7615,6 +8166,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -7615,6 +8172,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
          playbackQuality: { ...deps.playbackQualitySnapshot },
          currentCodecConfigurations: deps.getCurrentCodecDiagnostics(),
          streamEstimate: {
@@ -1536,7 +1553,7 @@ index 8841693..c641452 100644
            source: deps.streamEstimate.source === "observed-representation" ? "observed-representation" : deps.streamEstimate.source === "conservative-height-max" ? "conservative-height-max" : "unknown",
            codec: ["av1", "hevc", "avc", "other"].includes(deps.streamEstimate.codec) ? deps.streamEstimate.codec : "other",
            height: Math.max(0, Math.trunc(publicFinite(deps.streamEstimate.height))),
-@@ -7980,12 +8532,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -7980,12 +8538,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
        return deps.TrustedMenuUI.openActions({
          title: "BiliCDN 控制中心",
          paragraphs: [
@@ -1553,7 +1570,7 @@ index 8841693..c641452 100644
            "異常節點：" + abnormal + "｜HTTPDNS：" + httpdns.mode
          ],
          items: [
-@@ -8068,7 +8622,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -8068,7 +8628,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
          const rate = (deps.playbackRateState.confirmed ? deps.playbackRateState.observedRate : deps.ASSUMED_PLAYBACK_RATE) + "x" + (deps.playbackRateState.confirmed ? "" : "（未確認，按 2x 估算）");
          const softCount = Object.keys(deps.cdnSoftBlockUntil).filter(deps.isCdnSoftBlocked).length;
          const abnormalCount = deps.blacklistSet.size + deps.knownDeadHosts.size + softCount;
@@ -1562,7 +1579,7 @@ index 8841693..c641452 100644
          if (abnormalCount > 0) {
            html += '<div style="color:#ffb74d;margin-top:2px;">異常節點：' + abnormalCount + "（請由控制中心查看）</div>";
          }
-@@ -8734,6 +9288,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -8734,6 +9294,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
        }
      });
      nativeRoutes = createNativeRoutes({
@@ -1572,7 +1589,7 @@ index 8841693..c641452 100644
        get gmGet() {
          return (key) => GM_getValue(key);
        },
-@@ -8801,6 +9358,21 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -8801,6 +9364,21 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
        get onActiveRepresentation() {
          return (sampleUrl) => bakeoff.noteActiveSample(sampleUrl);
        },
@@ -1594,7 +1611,7 @@ index 8841693..c641452 100644
        get replaceUrlHost() {
          return rewrite.replaceUrlHost;
        }
-@@ -8938,6 +9510,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -8938,6 +9516,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
        get captureNativeRouteContext() {
          return nativeRoutes.captureRouteContext;
        },
@@ -1604,7 +1621,7 @@ index 8841693..c641452 100644
        get observeNativeTransport() {
          return nativeRoutes.observeTransport;
        }
-@@ -9127,7 +9702,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -9127,7 +9708,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
          return mediaPolicy.isAkamaiUrl;
        },
        get scheduleBakeoff() {
@@ -1613,7 +1630,7 @@ index 8841693..c641452 100644
        },
        get err() {
          return events.err;
-@@ -9141,11 +9716,20 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -9141,11 +9722,20 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
        get registerSignedRouteGroup() {
          return nativeRoutes.registerSignedRouteGroup;
        },
@@ -1634,7 +1651,7 @@ index 8841693..c641452 100644
        get disabled() {
          return runtime.disabled;
        },
-@@ -9498,6 +10082,18 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+@@ -9498,6 +10088,18 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
        get recordNativeProbe() {
          return nativeRoutes.recordNativeProbe;
        },

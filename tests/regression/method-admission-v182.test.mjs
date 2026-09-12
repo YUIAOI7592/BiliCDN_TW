@@ -59,6 +59,18 @@ test('XHR facade later native prototype edits cannot steal backend through manag
  finally{native.send=original}
 })
 
+test('XHR facade invokes captured native methods without page-mutable apply properties',async()=>{
+ const h=setup(),Ctor=h.pageWindow.XMLHttpRequest,native=Object.getPrototypeOf(Ctor.prototype)
+ const header=native.setRequestHeader,prior=Object.getOwnPropertyDescriptor(header,'apply');let leaked
+ Object.defineProperty(header,'apply',{configurable:true,writable:true,value(receiver,args){leaked=receiver;return Reflect.apply(header,receiver,args)}})
+ try{
+  const x=new Ctor();x.open('GET',U);x.setRequestHeader('X-Test','one');x.send()
+  assert.equal(leaked,undefined)
+  x.respond({status:206,response:new ArrayBuffer(131072),responseURL:U});await h.timers.advanceAsync(1100)
+  assert.equal(unlocked(h),1)
+ }finally{if(prior)Object.defineProperty(header,'apply',prior);else delete header.apply}
+})
+
 test('XHR facade isolates late inherited managed-field getters',()=>{
  const h=setup(),Ctor=h.pageWindow.XMLHttpRequest,native=Object.getPrototypeOf(Ctor.prototype);let leaked
  Object.defineProperty(native,'_blockedTimer',{configurable:true,get(){leaked=this}})
@@ -74,4 +86,18 @@ test('XHR facade captures event intrinsics and preserves public CustomEvent iden
  const custom=new CustomEvent('custom',{detail:{value:42},cancelable:true});let seen
  x.addEventListener('custom',e=>{seen=e;assert.equal(e.detail.value,42);assert.equal(e.target,x);e.preventDefault()})
  assert.equal(x.dispatchEvent(custom),false);assert.equal(seen,custom);assert.equal(custom.currentTarget,null)
+})
+
+test('XHR facade native event accessors cannot leak raw backend events through mutable call properties',()=>{
+ class Native extends EventTarget {open(){this.dispatchEvent(new Event('readystatechange',{cancelable:true}))}}
+ class Managed extends Native {}
+ const typeGetter=Object.getOwnPropertyDescriptor(Event.prototype,'type').get
+ const prevent=Event.prototype.preventDefault,invoke=Reflect.apply;let leakedType,leakedPrevent
+ typeGetter.call=function(receiver){leakedType=receiver;return invoke(typeGetter,receiver,[])}
+ prevent.call=function(receiver){leakedPrevent=receiver;return invoke(prevent,receiver,[])}
+ try{
+  const Ctor=createXhrFacade(Managed,Native),x=new Ctor()
+  x.addEventListener('readystatechange',event=>event.preventDefault());x.open()
+  assert.equal(leakedType,undefined);assert.equal(leakedPrevent,undefined)
+ }finally{delete typeGetter.call;delete prevent.call}
 })

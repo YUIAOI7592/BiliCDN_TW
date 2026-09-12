@@ -55,12 +55,12 @@
     "src/runtime/generation.mjs": "a8296e4873b317fa5696d1d77d3d0137fefb54e06409c69be820675f3c333972",
     "src/settings.txt": "b133c75df565eb6eec001b5ead1f7344ba62ff501f4231e2f0e9dcf9facfbb7f",
     "src/transport/evidence.mjs": "00760062293b895bc26f70bf0cb6ae076a46e12b85725db4ca2af22d854f6a2a",
-    "src/transport/interceptors.mjs": "f61be3f9960a229827dc5aa299dff4b10baa6478782696ecd8ee4e284f682785",
-    "src/transport/xhr-facade.mjs": "c6f4af69b80ef5d4dceaff31a762c8182da2a49f4854018f60cc60c6fd67656b",
+    "src/transport/interceptors.mjs": "a28c9aa4ea6f86726561031094dc61b4609d78b7a31ef10edd49d58d5a042975",
+    "src/transport/xhr-facade.mjs": "a50fa7f1828b15b9510738324469261e03a830f0ad4bf6364cb9145345a41099",
     "src/ui/control-center.mjs": "fc727b11ef6f1618c3643b159e6d22575dc9396aa74d517887e74646bfb8cc48",
     "src/ui/dom.mjs": "543673deaacf4ea80e7c16f9e28b9678a43651a72b18376172b80c9966b55383",
     "src/ui/player-panel.mjs": "c89579ef85358dba77c7cc7d9845c19b5ecf1d6c3bde2ca629feeeb57987cfa2",
     "src/ui/trusted.mjs": "eb479cbfcac4e5aef30ce9ce93ceadc49c1e9e695a5cb7e4999fdffe570410a7"
   },
-  "userscriptSha256": "041d4f47322840058b273f0c6ba52c7a9e01d5a8b244de68ba3ca86b956391fe"
+  "userscriptSha256": "429d310b61ad31408c384d601912844c3d7d736f9371161eefe52ebf3bd8f943"
 }
