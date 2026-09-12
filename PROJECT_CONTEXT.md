@@ -1,12 +1,12 @@
 # 專案交接脈絡
 
-目前交付為 v1.8.8，以不可變 v1.8.7（SHA-256 781293f07fcffc094964b52ba0dfb493dc25215b154199b3f6f5a6076568874b）為基準。v1.8.8 修正下一支影片 playurl 在使用者點擊站內推薦前已完成、之後被 SPA reset 清除的問題；精確辨識的跨片回應會以有界記憶體暫存，只有相符目的頁成為目前頁面後才建立新 generation 的可信 Route Pool。
+目前交付為 v1.8.9，以不可變 v1.8.8（SHA-256 da0f9e7a886f7052c684a4f99cea83d5bfa3fe9a1a6dd7334e65e5d0a8acb35d）為基準。v1.8.9 修正真實播放器完成下一片 playurl XHR、但尚未讀取 response getter 就先 SPA 的缺口；原生 DONE 事件會先建立一次轉換快取及精確目的頁暫存，之後由相符的新 generation 採用。
 
-本版依使用者要求不執行 Code Security 掃描或獨立安全子集；必要功能回歸、封裝與實機狀態分開記錄於 TEST_REPORT。真實 Chrome 已確認 v1.8.7 仍可能因 playurl 在點擊推薦前完成而於換頁後顯示 `API 0／頁面 0／no-playinfo`；v1.8.8 已加入固定重現與跨片預抓接續，安裝後仍需實機複驗 Pool 重建。
+本版依使用者要求不執行 Code Security 掃描或獨立安全子集；必要功能回歸、封裝與實機狀態分開記錄於 TEST_REPORT。真實 Chrome v1.8.8 已確認未讀取 XHR getter 的已完成預抓仍會在換頁後顯示 `API 0／頁面 0／no-playinfo`；v1.8.9 已加入對應固定重現，安裝後仍需實機複驗 Pool 重建。
 
 - 上游：baseline/BiliCDN_TW_1.3.4.original.user.js，SHA-256 acaa3d61c169a0a39ef403d7442e1decc1b20540ea9ada3e8cf5e459bb88f579。
 - 重構基準：tests/fixtures/BiliCDN_TW_1.5.5.user.js，SHA-256 fccf8ca10c9086b8edae3ba9b170b14ff5c92451ccd921c5834960e5624b441f。
-- 原始碼 src；目前交付 Release/v1.8.8；暫存 dist。功能驗收狀態見本版 TEST_REPORT，不以舊版通過狀態代替。
+- 原始碼 src；目前交付 Release/v1.8.9；暫存 dist。功能驗收狀態見本版 TEST_REPORT，不以舊版通過狀態代替。
 - v1.8.0 已由 v1.8.1 取代；v1.8.1 的正式 Codex Security 差異掃描狀態以本版 TEST_REPORT 為準，掃描不等於 Chrome／Tampermonkey 實機播放驗證。
 
 runtime 持有 generation，playback 持有 epoch／registry，transport 持有單次請求終態，routing 保留 catalog health、Native host-only Ledger、Route Affinity、處分及 Watchdog 回收來源區別。完整 signed URL 只在目前 epoch 的 route group 中存在；新 epoch、SPA、停用或重啟即清除。健康 probe 不能改 Route Affinity；真實 Transport／Watchdog recovery 才能開啟換線邊界。所有實例由主入口建立，import 不讀 GM／DOM 或啟動網路。v1.7.0 起不讀取或覆寫 `unsafeWindow.Worker`。

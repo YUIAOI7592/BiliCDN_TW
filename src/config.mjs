@@ -10,7 +10,7 @@ let PreferredVideoCodec = input.PreferredVideoCodec
 
 let BlockWebRTC = input.BlockWebRTC
 
-const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.8.8'
+const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.8.9'
 
 const parseVer = (v) => String(v || '0').split('.').map(n => parseInt(n, 10) || 0)
 

@@ -4,9 +4,9 @@
 
 目前不可變上游基準：`baseline/BiliCDN_TW_1.3.4.original.user.js`
 
-目前模組化交付：`src/` → `Release/v1.8.8/BiliCDN_TW.user.js`（功能驗證狀態以本版 TEST_REPORT 為準）。
+目前模組化交付：`src/` → `Release/v1.8.9/BiliCDN_TW.user.js`（功能驗證狀態以本版 TEST_REPORT 為準）。
 
-v1.8.8 遵照使用者要求不執行 Code Security 掃描或獨立安全子集。npm test／verify 預設執行功能回歸。Bilibili 可能在使用者點擊推薦前完成下一片 playurl；跨片回應只能以有界、本分頁記憶體暫存，並在精確相符的 SPA 目的頁成為目前頁面後接納。不能接納其他影片、停用／重啟前資料或無法確認的多 P 回應，也不能把暫存內容寫入 GM／診斷。原有 `__playinfo__` 時序、片尾 Watchdog 與播放器控制中心按鈕不變。禁止判定仍必須同時約束原始、Native、Catalog、固定與備援 URL；不可因候選耗盡自動清除 black/dead。
+v1.8.9 遵照使用者要求不執行 Code Security 掃描或獨立安全子集。npm test／verify 預設執行功能回歸。Bilibili 可能在使用者點擊推薦前完成下一片 playurl，且尚未讀取 XHR response getter 就先 SPA；攔截器必須在可信原生 DONE 事件先完成一次轉換快取，再以有界、本分頁記憶體暫存，並只在精確相符的 SPA 目的頁成為目前頁面後接納。不能接納其他影片、停用／重啟前資料或無法確認的多 P 回應，也不能把暫存內容寫入 GM／診斷。原有 `__playinfo__` 時序、片尾 Watchdog 與播放器控制中心按鈕不變。禁止判定仍必須同時約束原始、Native、Catalog、固定與備援 URL；不可因候選耗盡自動清除 black/dead。
 
 不可變重構基準：`tests/fixtures/BiliCDN_TW_1.5.5.user.js`（正式 v1.5.5 的原 bytes，非 development 草稿）。
 

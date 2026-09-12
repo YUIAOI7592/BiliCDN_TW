@@ -1,0 +1,82 @@
+diff --git a/Release/v1.8.8/BiliCDN_TW.user.js b/Release/v1.8.9/BiliCDN_TW.user.js
+index 99ff900..3951d61 100644
+--- a/Release/v1.8.8/BiliCDN_TW.user.js
++++ b/Release/v1.8.9/BiliCDN_TW.user.js
+@@ -1,7 +1,7 @@
+ // ==UserScript==
+ // @name         Bilibili CDN 台灣優化
+ // @namespace    BiliCDN_TW
+-// @version      1.8.8
++// @version      1.8.9
+ // @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+ // @author       jiyunshi <chocosensei214@gmail.com>
+ // @license      MIT
+@@ -83,7 +83,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let BlockHttpDNS = input.BlockHttpDNS;
+     let PreferredVideoCodec = input.PreferredVideoCodec;
+     let BlockWebRTC = input.BlockWebRTC;
+-    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.8.8";
++    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.8.9";
+     const parseVer = /* @__PURE__ */ __name((v) => String(v || "0").split(".").map((n) => parseInt(n, 10) || 0), "parseVer");
+     const verGte = /* @__PURE__ */ __name((a, b) => {
+       const A = parseVer(a), B = parseVer(b);
+@@ -4794,14 +4794,20 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const nativeOpen = OriginalXMLHttpRequest.prototype.open;
+       const nativeAddListener = OriginalXMLHttpRequest.prototype.addEventListener;
+       const nativeRemoveListener = OriginalXMLHttpRequest.prototype.removeEventListener;
+-      const ownedOpen = /* @__PURE__ */ new WeakSet(), observedXhr = /* @__PURE__ */ new WeakMap();
++      const ownedOpen = /* @__PURE__ */ new WeakSet(), observedXhr = /* @__PURE__ */ new WeakMap(), observedPlayurlXhr = /* @__PURE__ */ new WeakMap();
+       const clearOpenObserver = /* @__PURE__ */ __name((xhr) => {
+         const listener = observedXhr.get(xhr);
+         if (listener) invoke(nativeRemoveListener, xhr, ["readystatechange", listener]);
+         observedXhr.delete(xhr);
+       }, "clearOpenObserver");
++      const clearPlayurlObserver = /* @__PURE__ */ __name((xhr) => {
++        const listener = observedPlayurlXhr.get(xhr);
++        if (listener) invoke(nativeRemoveListener, xhr, ["readystatechange", listener]);
++        observedPlayurlXhr.delete(xhr);
++      }, "clearPlayurlObserver");
+       const openNative = /* @__PURE__ */ __name((xhr, method, url, rest) => {
+         clearOpenObserver(xhr);
++        clearPlayurlObserver(xhr);
+         if (mediaRequests.get(xhr)?.route?.source === "page-hint") {
+           const listener = /* @__PURE__ */ __name((event) => {
+             if (event?.isTrusted === true && readNative(xhr, "readyState") === 1 && !ownedOpen.has(xhr)) {
+@@ -4816,7 +4822,28 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         }
+         ownedOpen.add(xhr);
+         try {
+-          return invoke(nativeOpen, xhr, [method, url, ...rest]);
++          const result = invoke(nativeOpen, xhr, [method, url, ...rest]);
++          const context = playurlRequests.get(xhr);
++          if (context && deps.isPlayUrlApi(String(url))) {
++            const listener = /* @__PURE__ */ __name((event) => {
++              if (event?.isTrusted !== true || readNative(xhr, "readyState") !== 4) return;
++              clearPlayurlObserver(xhr);
++              if (playurlRequests.get(xhr) !== context) return;
++              try {
++                const responseType = String(xhr.responseType || "");
++                if (responseType === "json") {
++                  transformPlayurlOnce(xhr, "response", readNative(xhr, "response"));
++                } else if (responseType === "" || responseType === "text") {
++                  transformPlayurlOnce(xhr, "text", readNative(xhr, "responseText"));
++                }
++              } catch {
++                deps.DiagnosticLog.fault("transform");
++              }
++            }, "listener");
++            observedPlayurlXhr.set(xhr, listener);
++            invoke(nativeAddListener, xhr, ["readystatechange", listener]);
++          }
++          return result;
+         } finally {
+           ownedOpen.delete(xhr);
+         }
+@@ -4966,6 +4993,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         abort() {
+           mediaListenerCleanup.get(this)?.();
+           clearOpenObserver(this);
++          clearPlayurlObserver(this);
+           deps.DiagnosticLog.updateRequest(diagnosticRequests.get(this), "abort");
+           diagnosticRequests.delete(this);
+           playurlRequests.delete(this);

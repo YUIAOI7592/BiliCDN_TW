@@ -1,12 +1,20 @@
 # 待辦
 
+## v1.8.9
+
+- [x] 真實 Chrome 確認 v1.8.8 的下一片 playurl XHR 已在 SPA 前完成，但頁面尚未讀取 response getter，因此既有 staging 未執行。
+- [x] 在原生 XHR DONE 事件主動完成一次 playurl 轉換／快取；文字與 JSON 回應均不等待頁面 getter。
+- [x] 保持精確目的頁、generation、容量及停用清理邊界；不改播放器請求與路由算法。
+- [x] 329 項功能回歸通過；不執行 Code Security 或獨立安全子集。
+- [ ] 安裝 v1.8.9 後實機確認多次 SPA 皆能重建 API Route Pool。
+
 ## v1.8.8
 
 - [x] 以真實 Chrome/CDP 確認部分站內推薦的 playurl 在點擊前已完成，換頁後沒有新 playurl 請求。
 - [x] 以有界、本分頁記憶體暫存精確辨識的跨片 Fetch／XHR playurl，於相符 SPA 目的頁接續。
 - [x] 不同目的頁與停用／重新啟用不能採用舊暫存；同片 playurl 維持立即處理。
 - [x] 327 項功能回歸通過；不執行安全掃描。
-- [ ] 安裝 v1.8.8 後實機確認多次 SPA 皆能重建 Route Pool。
+- [x] 安裝 v1.8.8 後實機複驗，發現 XHR 完成但尚未讀取 getter 的實際順序仍使 Pool 為零，由 v1.8.9 修正。
 
 ## v1.8.7
 

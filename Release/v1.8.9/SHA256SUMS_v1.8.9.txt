@@ -1,0 +1,6 @@
+f576c98827f5f72cde5122d9b3ea98dbaf4d0c9185706f61ea575dceea86b265  Release/v1.8.9/BUILD_MANIFEST_v1.8.9.json
+c2f0db083c7821326d20a6d7dfc9b4e9dc010773756ef4a557c545c65fa7d3f3  Release/v1.8.9/BiliCDN_TW.user.js
+691ac7516655ddc7e355c1f99f11fc3def8d4cc8c7468a2bbdf0eb338c535f47  Release/v1.8.9/CHANGELOG_v1.8.9.md
+612fe27c678e7ed1f0ba2a2e1fcd234134ce8976a4f00447cf6d57c32cb8963b  Release/v1.8.9/TEST_REPORT_v1.8.9.md
+4901d991271ab797042cdb605fb5e5416ea04df2b426abb162e89971c4690a68  Release/v1.8.9/v1.3.4_to_v1.8.9.patch.diff
+d02abb6018d21cd5320221aad2e5d0b8bcf4433cbd599e8f0a709cb259a68fc1  Release/v1.8.9/v1.8.8_to_v1.8.9.patch.diff

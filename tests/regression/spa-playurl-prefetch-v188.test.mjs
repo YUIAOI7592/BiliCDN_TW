@@ -71,6 +71,45 @@ test('a completed XHR prefetch is staged and adopted by the matching later SPA',
     assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.trustedGroups, 1)
 })
 
+test('a completed XHR prefetch is staged even when the player has not read a response getter before SPA', async () => {
+    const h = loadUserscript(target, {
+        initialUrl: 'https://www.bilibili.com/video/BVold',
+        instrument: true,
+        gmSeed: { disabled: false, blicdnVersion: '1.8.8' },
+    })
+    const xhr = new h.pageWindow.XMLHttpRequest()
+    xhr.open('GET', 'https://api.bilibili.com/x/player/wbi/playurl?bvid=BVnext')
+    xhr.send()
+    xhr.respond({ status: 200, responseText: JSON.stringify(payload()) })
+
+    // Match the real player ordering: the native request has completed, but the
+    // application navigates before consulting responseText/response.
+    h.pageWindow.history.pushState({}, '', '/video/BVnext')
+    await h.timers.advanceAsync(0)
+    refresh(h)
+    assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.trustedGroups, 1)
+})
+
+test('an unread JSON XHR prefetch is staged without mutating the browser-owned response object', async () => {
+    const raw = payload()
+    const h = loadUserscript(target, {
+        initialUrl: 'https://www.bilibili.com/video/BVold',
+        instrument: true,
+        gmSeed: { disabled: false, blicdnVersion: '1.8.8' },
+    })
+    const xhr = new h.pageWindow.XMLHttpRequest()
+    xhr.open('GET', 'https://api.bilibili.com/x/player/wbi/playurl?bvid=BVnext')
+    xhr.responseType = 'json'
+    xhr.send()
+    xhr.respond({ status: 200, response: raw })
+
+    assert.equal(raw.data.dash.video[0].base_url, original)
+    h.pageWindow.history.pushState({}, '', '/video/BVnext')
+    await h.timers.advanceAsync(0)
+    refresh(h)
+    assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.trustedGroups, 1)
+})
+
 test('staged playinfo cannot populate a different SPA destination', async () => {
     const h = loadUserscript(target, {
         initialUrl: 'https://www.bilibili.com/video/BVold',

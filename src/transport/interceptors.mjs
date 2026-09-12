@@ -76,14 +76,20 @@ const interceptNetResponse = (function (theWindow) {
     const nativeOpen = OriginalXMLHttpRequest.prototype.open
     const nativeAddListener = OriginalXMLHttpRequest.prototype.addEventListener
     const nativeRemoveListener = OriginalXMLHttpRequest.prototype.removeEventListener
-    const ownedOpen = new WeakSet(), observedXhr = new WeakMap()
+    const ownedOpen = new WeakSet(), observedXhr = new WeakMap(), observedPlayurlXhr = new WeakMap()
     const clearOpenObserver = xhr => {
         const listener = observedXhr.get(xhr)
         if (listener) invoke(nativeRemoveListener, xhr, ['readystatechange', listener])
         observedXhr.delete(xhr)
     }
+    const clearPlayurlObserver = xhr => {
+        const listener = observedPlayurlXhr.get(xhr)
+        if (listener) invoke(nativeRemoveListener, xhr, ['readystatechange', listener])
+        observedPlayurlXhr.delete(xhr)
+    }
     const openNative = (xhr, method, url, rest) => {
         clearOpenObserver(xhr)
+        clearPlayurlObserver(xhr)
         if (mediaRequests.get(xhr)?.route?.source === 'page-hint') {
             const listener = event => {
                 // A caller can invoke the original prototype directly. A new native
@@ -98,7 +104,34 @@ const interceptNetResponse = (function (theWindow) {
             invoke(nativeAddListener, xhr, ['readystatechange', listener])
         }
         ownedOpen.add(xhr)
-        try { return invoke(nativeOpen, xhr, [method, url, ...rest]) } finally { ownedOpen.delete(xhr) }
+        try {
+            const result = invoke(nativeOpen, xhr, [method, url, ...rest])
+            const context = playurlRequests.get(xhr)
+            if (context && deps.isPlayUrlApi(String(url))) {
+                // The player can finish a recommended video's playurl XHR and
+                // navigate before it ever reads response/responseText. Getter-only
+                // interception therefore misses the completed prefetch and the SPA
+                // reset starts with an empty route pool. Observe the native DONE
+                // transition before page listeners run, transform/cache once, and
+                // let the normal exact-video-key staging boundary decide ownership.
+                const listener = event => {
+                    if (event?.isTrusted !== true || readNative(xhr, 'readyState') !== 4) return
+                    clearPlayurlObserver(xhr)
+                    if (playurlRequests.get(xhr) !== context) return
+                    try {
+                        const responseType = String(xhr.responseType || '')
+                        if (responseType === 'json') {
+                            transformPlayurlOnce(xhr, 'response', readNative(xhr, 'response'))
+                        } else if (responseType === '' || responseType === 'text') {
+                            transformPlayurlOnce(xhr, 'text', readNative(xhr, 'responseText'))
+                        }
+                    } catch { deps.DiagnosticLog.fault('transform') }
+                }
+                observedPlayurlXhr.set(xhr, listener)
+                invoke(nativeAddListener, xhr, ['readystatechange', listener])
+            }
+            return result
+        } finally { ownedOpen.delete(xhr) }
     }
     const arrayBufferSize = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'byteLength')?.get
     const blobSize = typeof Blob === 'function' ? Object.getOwnPropertyDescriptor(Blob.prototype, 'size')?.get : null
@@ -224,6 +257,7 @@ const interceptNetResponse = (function (theWindow) {
         abort() {
             mediaListenerCleanup.get(this)?.()
             clearOpenObserver(this)
+            clearPlayurlObserver(this)
             deps.DiagnosticLog.updateRequest(diagnosticRequests.get(this), 'abort')
             diagnosticRequests.delete(this)
             playurlRequests.delete(this)
