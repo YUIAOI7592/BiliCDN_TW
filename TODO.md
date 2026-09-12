@@ -1,12 +1,21 @@
 # 待辦
 
+## v1.9.0
+
+- [x] 真實 Chrome 確認部分 SPA 沒有新 playurl，`__playinfo__` 仍是舊物件，但目前 `player.__core().getMpd()` 已含新片 signed representation。
+- [x] 加入 manifest／MPD 有界只讀同步；不修改播放器、不新增 Bilibili API 或媒體請求。
+- [x] 首筆 Fetch／XHR context miss 同步重讀一次，仍失敗時以 exact URL 建立最多 16 組 transport bootstrap。
+- [x] 固定 playurl API > player MPD > page-hint > transport bootstrap 優先序；可信 API 可接管較低層資料。
+- [x] 覆蓋暫時不可讀、快速連續 SPA、暫態舊 MPD、停用、去敏及兩種網路入口。
+- [ ] 安裝 v1.9.0 後，以多次站內推薦 SPA 實機確認播放器 MPD Route Pool、representation、背景續播與控制中心診斷。
+
 ## v1.8.9
 
 - [x] 真實 Chrome 確認 v1.8.8 的下一片 playurl XHR 已在 SPA 前完成，但頁面尚未讀取 response getter，因此既有 staging 未執行。
 - [x] 在原生 XHR DONE 事件主動完成一次 playurl 轉換／快取；文字與 JSON 回應均不等待頁面 getter。
 - [x] 保持精確目的頁、generation、容量及停用清理邊界；不改播放器請求與路由算法。
 - [x] 329 項功能回歸通過；不執行 Code Security 或獨立安全子集。
-- [ ] 安裝 v1.8.9 後實機確認多次 SPA 皆能重建 API Route Pool。
+- [x] 安裝 v1.8.9 後實機確認仍有不發新 playurl 的 SPA，改由 v1.9.0 的播放器 MPD 同步補齊。
 
 ## v1.8.8
 

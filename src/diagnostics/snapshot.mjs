@@ -28,6 +28,7 @@ const buildPublicDiagnosticSnapshot = () => {
     const hd = deps.getHttpDnsStatus()
     const native = deps.getNativeRouteDiagnostics()
     const playinfoLifecycle = deps.getPagePlayInfoLifecycle()
+    const playerManifest = deps.getPlayerManifestDiagnostics()
     const health = {}
     deps.TRUSTED_CDN_CATALOG.slice(0, PUBLIC_DIAG_HOST_MAX).forEach(host => {
         const h = deps.cdnHealth[host]
@@ -131,6 +132,19 @@ const buildPublicDiagnosticSnapshot = () => {
                     ? playinfoLifecycle.timing : 'none',
                 applied: typeof playinfoLifecycle?.applied === 'boolean' ? playinfoLifecycle.applied : null,
                 updatedAt: Math.max(0, publicFinite(playinfoLifecycle?.updatedAt)),
+            },
+            playerManifest: {
+                state: ['idle','waiting-player','waiting-match','waiting-core','waiting-mpd','adopted','superseded','transport-bootstrap','unsupported','expired']
+                    .includes(playerManifest?.state) ? playerManifest.state : 'unsupported',
+                source: ['none','player-mpd','transport-bootstrap'].includes(playerManifest?.source) ? playerManifest.source : 'none',
+                reason: String(playerManifest?.reason || 'none').slice(0, 48),
+                attempts: Math.max(0, Math.min(100, Math.trunc(publicFinite(playerManifest?.attempts)))),
+                elapsedMs: Math.max(0, Math.min(60000, Math.trunc(publicFinite(playerManifest?.elapsedMs)))),
+                coreChanged: !!playerManifest?.coreChanged,
+                videoGroups: Math.max(0, Math.min(128, Math.trunc(publicFinite(playerManifest?.videoGroups)))),
+                audioGroups: Math.max(0, Math.min(64, Math.trunc(publicFinite(playerManifest?.audioGroups)))),
+                transportBootstrapCount: Math.max(0, Math.min(16, Math.trunc(publicFinite(playerManifest?.transportBootstrapCount)))),
+                pendingRetries: Math.max(0, Math.min(6, Math.trunc(publicFinite(playerManifest?.pendingRetries)))),
             },
         },
         playbackQuality: { ...deps.playbackQualitySnapshot },

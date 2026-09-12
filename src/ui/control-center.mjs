@@ -184,6 +184,7 @@ function showControlCenter() {
         ? (deps.lastCodecDecision.groups[0].selected || '未知')
         : '尚無資料'
     const native = deps.getNativeRouteDiagnostics()
+    const playerManifest = deps.getPlayerManifestDiagnostics()
     const rep = native.active ? native.active.height + 'p/' + native.active.codec : '尚未確認'
     return deps.TrustedMenuUI.openActions({
         title: 'BiliCDN 控制中心',
@@ -200,7 +201,11 @@ function showControlCenter() {
             'Native 評級：本群組 ' + native.groupNativeCount + ' 條｜confirmed=' + native.counts.confirmed
                 + '｜probe-qualified=' + (native.counts.probeQualified || 0) + '｜unknown=' + native.counts.unknown,
             '播放資料：API ' + native.admission.trustedGroups + ' 組／頁面 ' + native.admission.pageGroups
-                + ' 組｜已解鎖 URL：' + native.admission.unlockedUrls + '｜等待：' + native.admission.waitingReason,
+                + ' 組／播放器 MPD ' + (native.admission.playerMpdGroups || 0) + ' 組／首請求兜底 '
+                + (native.admission.transportGroups || 0) + ' 組｜已解鎖 URL：' + native.admission.unlockedUrls
+                + '｜等待：' + native.admission.waitingReason,
+            '播放器同步：' + playerManifest.state + '｜來源：' + playerManifest.source
+                + '｜嘗試：' + playerManifest.attempts + '｜首請求兜底：' + playerManifest.transportBootstrapCount,
             '內建 Catalog 獨立參賽；頁面只限制 Native 來源。每輪最多四個候選，Native 最多一個名額。',
             '異常節點：' + abnormal + '｜HTTPDNS：' + httpdns.mode,
         ],

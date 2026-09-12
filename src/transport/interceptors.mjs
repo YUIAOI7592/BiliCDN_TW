@@ -153,6 +153,9 @@ const interceptNetResponse = (function (theWindow) {
             const urlStr = String(url)
             const nativeMethod = String(method)
             playurlRequests.set(this, { runtime: deps.captureRuntimeGeneration(), url: urlStr, cache: null })
+            if (!deps.disabled && nativeMethod.toUpperCase() === 'GET' && deps.isMediaSegmentUrl(urlStr)) {
+                try { deps.reconcileMediaRequest?.(urlStr) } catch { deps.DiagnosticLog.fault('player-manifest') }
+            }
             mediaRequests.set(this, deps.captureMediaRequest(urlStr))
             mediaRequests.get(this).method = 'xhr'
             const requestState = { originalUrl: urlStr, interceptUrl: urlStr, originCdn: null,
@@ -679,6 +682,7 @@ const interceptNetResponse = (function (theWindow) {
                 redirect: normalized.redirect, referrer: normalized.referrer,
                 referrerPolicy: normalized.referrerPolicy, integrity: normalized.integrity, keepalive: normalized.keepalive }
             const requestRuntimeToken = deps.captureRuntimeGeneration()
+            try { deps.reconcileMediaRequest?.(urlStr) } catch { deps.DiagnosticLog.fault('player-manifest') }
             const mediaContext = deps.captureMediaRequest(urlStr, requestRuntimeToken)
             mediaContext.method = 'fetch'
             mediaContext.httpMethod = 'GET'

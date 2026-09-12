@@ -5,11 +5,15 @@ const playInfoTransformer = (playInfo, options = null) => {
     if (playInfo.code !== undefined && playInfo.code !== 0) {
         return
     }
-    const nativeTransportSource = options?.trustedTransport === true
+    const source = options?.source === 'player-mpd' ? 'player-mpd'
+        : options?.trustedTransport === true ? 'trusted-api' : 'page-hint'
+    const nativeTransportSource = source === 'trusted-api'
+    const ownsCurrentState = nativeTransportSource || source === 'player-mpd'
+    const allowsCatalogPlanning = ownsCurrentState
     // Only an intercepted playurl transport response owns the playinfo epoch.
     // The page-global compatibility hook is untrusted and may mutate a view for
     // playback compatibility, but it must not erase or replace trusted state.
-    if (nativeTransportSource) {
+    if (ownsCurrentState) {
         deps.retainAffinityForTrustedPlayinfo()
         deps.clearCodecPlayinfo()
         deps.resetRepresentationRegistry()
@@ -25,14 +29,14 @@ const playInfoTransformer = (playInfo, options = null) => {
     const transformList = (list, isDash, kind = 'muxed') => {
         if (!Array.isArray(list)) return
         list.forEach(item => {
-            if (nativeTransportSource && !isDash) deps.registerMediaRepresentation(deps.muxedRepresentationRegistry,
+            if (ownsCurrentState && !isDash) deps.registerMediaRepresentation(deps.muxedRepresentationRegistry,
                 { urls: deps.pickStreamUrls(item, false).validUrls }, 'muxed', deps.AUDIO_REGISTRY_MAX)
             // The page-global __playinfo__ hook is fail-open compatibility input, not a
             // capability for Native exploration or persistent rating. Stage page hints
             // separately; exact successful transport is required before their admission.
-            const routeGroup = deps.registerSignedRouteGroup(item, isDash, kind, nativeTransportSource ? 'trusted-api' : 'page-hint')
+            const routeGroup = deps.registerSignedRouteGroup(item, isDash, kind, source)
             if (routeGroup) deps.applySignedRoutePlan(item, isDash, routeGroup)
-            else deps.planUnregisteredItem(item, isDash, nativeTransportSource)
+            else deps.planUnregisteredItem(item, isDash, allowsCatalogPlanning)
             // Preserve v1.7.0 catalog startup measurement without binding Native exploration
             // to dash.video[0]. Native exploration waits for active representation evidence.
             if (nativeTransportSource && kind === 'video' && !startupVideoSampleScheduled) {
@@ -77,7 +81,7 @@ const playInfoTransformer = (playInfo, options = null) => {
                 // v1.3.3：記下完整畫質清單，讓 Watchdog 之後能用實際播放的畫質校正碼率
                 // （見 syncStreamBitrateFromVideo）。這裡的 maxV 只當起播前的初估值，
                 // 起播那 3~5 秒 Watchdog 本來就在 grace 期不判定，校正得及。
-                if (nativeTransportSource) deps.streamProfile = {
+                if (ownsCurrentState) deps.streamProfile = {
                     reps: vids
                         .map(v => ({
                             height: v.height || 0,
@@ -88,11 +92,12 @@ const playInfoTransformer = (playInfo, options = null) => {
                         }))
                         .filter(r => r.bandwidth > 0 && r.height > 0),
                     audioBps: maxA,
+                    source,
                     audioReps: [...auds, ...[].concat(dash.flac?.audio || []), ...[].concat(dash.dolby?.audio || [])]
                         .filter(a => a && typeof a === 'object')
                         .map(a => ({ bandwidth: a.bandwidth || 0, urls: deps.pickStreamUrls(a, true).validUrls })),
                 }
-                if (nativeTransportSource) {
+                if (ownsCurrentState) {
                     deps.rebuildRepresentationRegistry(false)
                     deps.setBufferTargetFromBitrate(maxV + maxA, is4K || (maxV + maxA) > 12e6)
                 }

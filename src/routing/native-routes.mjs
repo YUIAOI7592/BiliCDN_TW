@@ -170,8 +170,9 @@ let candidateSerial = 0
 let startupScheduled = false
 let retainedAffinity = null
 let upgradingSource = false
+const requiresTransportUnlock = source => ['page-hint', 'player-mpd', 'transport-observed'].includes(source)
 const retainAffinityForTrustedPlayinfo = () => {
-    upgradingSource = [...groups.values()].some(g => g.source === 'page-hint')
+    upgradingSource = [...groups.values()].some(g => g.source !== 'trusted-api')
     retainedAffinity = upgradingSource && routeAffinity ? { ...routeAffinity } : null
 }
 const scheduleStartupSample = url => {
@@ -201,7 +202,8 @@ const parseEligibleUrl = url => {
 const routeState = (kind, host, group) => {
     const record = ledgers[kind]?.get(host)
     if (group?.invalidHosts?.has(host)) return 'invalid'
-    if (group?.ambiguous || (group?.source === 'page-hint' && !group.routes.some(r => r.host === host && group.unlocked.has(r.url)))) return 'unknown'
+    if (group?.ambiguous || (requiresTransportUnlock(group?.source)
+        && !group.routes.some(r => r.host === host && group.unlocked.has(r.url)))) return 'unknown'
     if (record?.transportSamples > 0) return 'confirmed'
     if (record?.probeSamples > 0 && record.lastThroughputAt
         && Date.now() - record.lastThroughputAt <= SAMPLE_FRESH_MS) return 'probe-qualified'
@@ -255,7 +257,7 @@ const registerSignedRouteGroup = (item, isDash, kind = 'video', source = 'truste
     if ([...groups.values()].filter(group => group.kind === kind).length >= groupLimit) return null
     const codec = deps.normalizeCodecName?.(item) || 'other'
     const urls = rawUrls(item, isDash).map(parseEligibleUrl).filter(Boolean)
-    if (source === 'page-hint') {
+    if (requiresTransportUnlock(source)) {
         const existing = urls.map(route => pageExact.get(route.url)).filter(Boolean)
         if (existing.length) {
             for (const id of existing) {
@@ -266,7 +268,7 @@ const registerSignedRouteGroup = (item, isDash, kind = 'video', source = 'truste
             }
             return null
         }
-        // Page input cannot replace a group admitted by an intercepted API.
+        // Page/player observations cannot replace a group admitted by an intercepted API.
         if (urls.some(route => identityGroups.has(route.identity))) return null
     }
     const group = {
@@ -291,12 +293,12 @@ const registerSignedRouteGroup = (item, isDash, kind = 'video', source = 'truste
         group.routes.push({ ...parsed, order: group.routes.length })
         deps.noteHostDiscovery?.(parsed.host)
         protectedUrls.add(parsed.url)
-        if (source === 'page-hint') pageExact.set(parsed.url, group.id)
+        if (requiresTransportUnlock(source)) pageExact.set(parsed.url, group.id)
         else if (!identityGroups.has(parsed.identity)) identityGroups.set(parsed.identity, group.id)
         else if (identityGroups.get(parsed.identity) !== group.id) identityGroups.set(parsed.identity, null)
         const ledgerKind = kind === 'audio' ? 'audio' : 'video'
         const historical = ledgers[ledgerKind].get(parsed.host)
-        if (historical && source !== 'page-hint') { historical.lastSeen = Date.now(); touchedLedger = true }
+        if (historical && source === 'trusted-api') { historical.lastSeen = Date.now(); touchedLedger = true }
     }
     if (!group.routes.length) return null
     groups.set(group.id, group)
@@ -320,16 +322,16 @@ const routeContextActive = context => !!context && context.epoch === deps.playin
 const findNative = (group, host) => group?.routes.find(route => route.host === host && !deps.TRUSTED_CDN_CATALOG_SET.has(host)) || null
 const routeEligible = (group, route) => !!group && !group.ambiguous && !!route
     && (!deps.isHostAllowed || deps.isHostAllowed(route.host))
-    && (group.source !== 'page-hint' || group.unlocked.has(route.url))
+    && (!requiresTransportUnlock(group.source) || group.unlocked.has(route.url))
 const pageRepresentation = context => {
     const route = context?.route || context
     if (!routeContextActive(route)) return null
     const group = groups.get(route.groupId)
     const catalogVerified = !!context?.pageCatalogCompleted && !!group.catalogSample
         && group.verifiedCatalogUrls.has(group.catalogSample)
-    if (group.source !== 'page-hint'
+    if (!requiresTransportUnlock(group.source)
         || (!group.unlocked.has(route.requestedUrl) && !catalogVerified)) return null
-    return { kind: group.kind, height: group.height, bandwidth: group.bandwidth, codec: group.codec, source: 'page-hint' }
+    return { kind: group.kind, height: group.height, bandwidth: group.bandwidth, codec: group.codec, source: group.source }
 }
 
 const rememberGeneratedUrl = (group, url) => {
@@ -494,6 +496,14 @@ const planUnregisteredItem = (item, isDash, trusted) => {
     setItemUrls(item, isDash, primary, backups)
 }
 
+const registerTransportBootstrap = url => {
+    const existing = captureRouteContext(url)
+    if (existing) return existing.groupId
+    const item = { base_url: url, baseUrl: url, backup_url: [], backupUrl: [] }
+    const groupId = registerSignedRouteGroup(item, true, 'unknown', 'transport-observed')
+    return groupId || null
+}
+
 const resolveRequestRouteUnchecked = (url, context) => {
     const routeContext = context?.route || (context?.groupId ? context : null)
     if (!routeContextActive(routeContext)) {
@@ -513,8 +523,25 @@ const resolveRequestRouteUnchecked = (url, context) => {
     const group = groups.get(routeContext.groupId)
     const requested = parseEligibleUrl(url)
     const pass = { url, host: requested?.host || null, type: 'root-original', action: 'pass', groupId: group.id, revision: group.revision }
+    // Transport bootstrap adds exact attribution only.  Until richer player/API
+    // metadata arrives it must preserve the legacy URL normalization decision.
+    if (group.source === 'transport-observed') {
+        const norm = deps.normalizeMediaUrl?.(url)
+        return norm ? { ...norm, host: norm.targetCdn || norm.originCdn,
+            type: norm.changed && !norm.restoredOriginal ? 'catalog-generated' : 'root-original',
+            action: norm.restoredOriginal ? 'restore' : norm.changed ? 'rewrite' : 'pass',
+            groupId: group.id, revision: group.revision } : pass
+    }
     const restored = deps.decideMediaRewrite?.(url, true)
-    if (restored && restored.action !== 'rewrite') return { ...pass, url: restored.url,
+    // The cloned player MPD is not returned to the player, so preserving its
+    // root URL as a playurl backup must not prevent the current request from
+    // following an already-established Catalog plan.  Host locks and every
+    // policy-level pass/restore reason still win; only the internal
+    // original-backup marker is bypassed for this exact, current MPD group.
+    const playerMpdCatalogPlan = group.source === 'player-mpd'
+        && restored?.reason === 'original-backup'
+        && plannedAffinity?.type === 'catalog-generated'
+    if (restored && restored.action !== 'rewrite' && !playerMpdCatalogPlan) return { ...pass, url: restored.url,
         host: deps.parseMediaHttpUrl(restored.url)?.hostname || pass.host, action: restored.action }
     if (deps.resolvedCdn) {
         const fixed = deps.replaceUrlHost?.(url, deps.resolvedCdn)
@@ -531,7 +558,7 @@ const resolveRequestRouteUnchecked = (url, context) => {
     // arrived in playurl.  That is a browser/player fallback, not permission for
     // this script to synthesize another host.  Preserve it unless a verified
     // recovery boundary has marked that exact host as the route to avoid.
-    if (exactSignedRoute && !plannedAffinity?.enforced && !avoidedHosts.has(exactSignedRoute.host)
+    if (exactSignedRoute && group.source !== 'player-mpd' && !plannedAffinity?.enforced && !avoidedHosts.has(exactSignedRoute.host)
         && plannedAffinity?.type !== 'native-signed'
         && (!plannedAffinity || exactSignedRoute.host !== plannedAffinity.host)) {
         return { url: exactSignedRoute.url, host: exactSignedRoute.host, type: 'root-original',
@@ -635,7 +662,7 @@ const observeTransport = (context, url, bytes, source) => {
     const group = groups.get(routeContext.groupId)
     const parsed = parseEligibleUrl(url)
     if (!group || !parsed) return
-    if (group.source === 'page-hint' && (!context.pageCompleted
+    if (requiresTransportUnlock(group.source) && (!context.pageCompleted
         || (!context.pageCatalogCompleted && (routeContext.requestedUrl !== parsed.url || !group.unlocked.has(parsed.url))))) return
     const route = findNative(group, parsed.host)
     if (group.kind === 'video') {
@@ -695,7 +722,7 @@ const recordNativeThroughput = (context, url, bytes, durationMs, playbackRate, s
     if (!routeContextActive(routeContext)) return { accepted: false, status: 'stale' }
     const group = groups.get(routeContext.groupId), parsed = parseEligibleUrl(url)
     if (!group || !parsed) return { accepted: false, status: 'not-native' }
-    if (group.source === 'page-hint') {
+    if (requiresTransportUnlock(group.source)) {
         if (context.httpMethod !== 'GET') return { accepted: false, status: 'unverified-method' }
         // A successful script-generated Catalog request proves the emitted
         // representation route even when the excluded original URL was never
@@ -841,7 +868,7 @@ const isRouteSampleAllowed = (url, context = null) => {
     const group = context ? groups.get(context.groupId) : groupForUrl(url)
     if (group) {
         if (!parsed || group.ambiguous || group.epoch !== deps.playinfoEpoch) return false
-        return group.source === 'page-hint'
+        return requiresTransportUnlock(group.source)
             ? (group.unlocked.has(parsed.url) && group.routes.some(route => route.url === parsed.url))
                 || (group.verifiedCatalogUrls.has(parsed.url) && group.generatedUrls.has(parsed.url))
             : group.routes.some(route => route.identity === parsed.identity)
@@ -924,10 +951,12 @@ const diagnostics = () => {
         routeRevision, representationRevision, observedHostChanges,
         currentRouteType: routeAffinity?.type || plannedAffinity?.type || activeGroup?.currentRouteType || 'unknown',
         admission: { pageGroups: [...groups.values()].filter(g => g.source === 'page-hint').length,
-            trustedGroups: [...groups.values()].filter(g => g.source !== 'page-hint').length,
+            playerMpdGroups: [...groups.values()].filter(g => g.source === 'player-mpd').length,
+            transportGroups: [...groups.values()].filter(g => g.source === 'transport-observed').length,
+            trustedGroups: [...groups.values()].filter(g => g.source === 'trusted-api').length,
             unlockedUrls: [...groups.values()].reduce((n,g) => n + g.unlocked.size, 0),
             catalogVerifiedUrls: [...groups.values()].reduce((n,g) => n + g.verifiedCatalogUrls.size, 0),
-            pendingUrls: [...groups.values()].filter(g => g.source === 'page-hint').reduce((n,g) => n + g.routes.length - g.unlocked.size, 0),
+            pendingUrls: [...groups.values()].filter(g => requiresTransportUnlock(g.source)).reduce((n,g) => n + g.routes.length - g.unlocked.size, 0),
             ambiguousGroups: [...groups.values()].filter(g => g.ambiguous).length,
             startupScheduled, waitingReason: !groups.size ? 'no-playinfo' : !activeRepresentation ? 'awaiting-video-completion' : 'active' },
         currentHost: routeAffinity?.host || plannedAffinity?.host || activeGroup?.currentHost || null,
@@ -947,7 +976,7 @@ const diagnostics = () => {
 
 return {
     isHostSoftBlocked: host => ['video','audio'].some(kind => isSoftBlocked(ledgers[kind].get(host))),
-    LEDGER_KEY, resetPool, clearLedger, registerSignedRouteGroup, applySignedRoutePlan, planUnregisteredItem, pageRepresentation, retainAffinityForTrustedPlayinfo, scheduleStartupSample,
+    LEDGER_KEY, resetPool, clearLedger, registerSignedRouteGroup, registerTransportBootstrap, applySignedRoutePlan, planUnregisteredItem, pageRepresentation, retainAffinityForTrustedPlayinfo, scheduleStartupSample,
     captureRouteContext, routeContextActive, resolveRequestRoute, isProtectedSignedUrl,
     observeTransport, recordNativeThroughput, noteNativeFailure, getNativeProbeCandidate,
     recordNativeProbe, setLastBakeoff, beginRouteRecovery, diagnostics, canUseRouteSample, isRouteSampleAllowed, getObservedRouteHost, flushLedger: saveNow,

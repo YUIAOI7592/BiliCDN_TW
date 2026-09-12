@@ -162,7 +162,7 @@ const observeMediaTransfer = (context, url, bytes, source) => {
     const observation = { host: trustedHost, classification: trustedHost ? 'catalog' :
         (classification === 'pcdn' || classification === 'suspected-pcdn' ? classification : 'non-catalog'),
         source, kind, height: rep?.height || 0, observedAt: Date.now(), bytes,
-        generation: context.runtime.generation, epoch: context.epoch, metadataSource: pageRep ? 'page-hint' : 'trusted-api' }
+        generation: context.runtime.generation, epoch: context.epoch, metadataSource: pageRep?.source || 'trusted-api' }
     const previous = mediaObservations[kind]
     if (previous && previous.host === observation.host && previous.source === source) {
         observation.bytes = Math.min(Number.MAX_SAFE_INTEGER, previous.bytes + bytes)
@@ -171,11 +171,13 @@ const observeMediaTransfer = (context, url, bytes, source) => {
     if (pageRep && kind === 'video' && mediaHeightMatches(rep)) {
         observedVideoRepresentation = { ...rep, observedAt: Date.now() }
         const audioBps = streamProfile?.audioBps || pageAudioBps
-        if (!streamProfile || streamProfile.source === 'page-hint') streamProfile = { reps: [rep], audioBps, source: 'page-hint' }
+        if (!streamProfile || ['page-hint','transport-observed'].includes(streamProfile.source)) {
+            streamProfile = { reps: [rep], audioBps, source: pageRep.source }
+        }
     }
     if (pageRep && kind === 'audio') {
         pageAudioBps = Math.max(pageAudioBps, rep.bandwidth)
-        if (streamProfile?.source === 'page-hint') streamProfile.audioBps = pageAudioBps
+        if (['page-hint','player-mpd','transport-observed'].includes(streamProfile?.source)) streamProfile.audioBps = pageAudioBps
     }
     if (kind === 'video' && mediaHeightMatches(rep)) {
         noteObservedVideoRepresentation(url, context)

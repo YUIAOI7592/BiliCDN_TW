@@ -476,6 +476,7 @@ export function createApplication(deps) {
             stageTrustedPlayinfo(targetKey, playInfo)
             return false
         }
+        deps.supersedePlayerManifestSync('trusted-api')
         deps.playInfoTransformer(playInfo, { trustedTransport: true })
         return true
     }
@@ -530,6 +531,7 @@ export function createApplication(deps) {
         lastSpaPlayurlAdoption = null
         deps.DiagnosticLog.record('runtime', { reason: 'spa' }, true)
         deps.TrustedMenuUI.invalidate()
+        deps.cancelPlayerManifestSync('spa')
         deps.stopRuntimeGeneration()
         deps.cdnProbeStarted = false
         closeCrossTab()
@@ -563,7 +565,10 @@ export function createApplication(deps) {
             // destination, after the old generation and pool have been cleared.
             const stagedTrustedPlayInfo = takeStagedTrustedPlayinfo(key)
             if (stagedTrustedPlayInfo) {
-                try { deps.playInfoTransformer(stagedTrustedPlayInfo, { trustedTransport: true }) }
+                try {
+                    deps.supersedePlayerManifestSync('trusted-api')
+                    deps.playInfoTransformer(stagedTrustedPlayInfo, { trustedTransport: true })
+                }
                 catch { deps.DiagnosticLog.fault('transform') }
             }
             // A new value may have been assigned after pushState but before this
@@ -575,6 +580,7 @@ export function createApplication(deps) {
             } else {
                 setPagePlayInfoLifecycle(assigned ? 'superseded' : 'no-new-assignment', 'none')
             }
+            if (!stagedTrustedPlayInfo) deps.startPlayerManifestSync(key, 'spa')
             setupCrossTab()
             deps.startCdnProbe()
             setupSeekPrewarm()
@@ -616,6 +622,7 @@ export function createApplication(deps) {
         deps.refreshExpiredRestrictions()
         backgroundPlaybackEnabled = true
         applyPageHooks()
+        deps.startPlayerManifestSync(currentVideoKey, 'initial')
         if (deps.codecResumeItems.length) deps.prepareCodecConfigurations(deps.codecResumeItems)
         blockWebRtc() // applyPageHooks 只跑一次；重新啟用時仍要再次套用
         deps.startCdnProbe()
@@ -656,6 +663,7 @@ export function createApplication(deps) {
         clearPagePlayInfoSettleTimer()
         if (latestPagePlayInfoAssignment) latestPagePlayInfoAssignment.state = 'superseded'
         latestPagePlayInfoAssignment = null
+        deps.cancelPlayerManifestSync('disabled')
         deps.stopRuntimeGeneration()
         deps.cdnProbeStarted = false
         backgroundPlaybackEnabled = false

@@ -44,6 +44,7 @@ const buildDiagReport = () => {
     const buffer = deps.Watchdog.stats()
     const httpDns = deps.getHttpDnsStatus()
     const native = deps.getNativeRouteDiagnostics()
+    const playerManifest = deps.getPlayerManifestDiagnostics()
     const routeHost = native.currentHost ? native.currentHost.split('.')[0] : '（無新鮮後態）'
     const lines = [
         '[BiliCDN_TW 診斷報告]',
@@ -52,6 +53,8 @@ const buildDiagReport = () => {
         'UA：' + navigator.userAgent,
         '面板注入狀態：' + deps.uiInjectStatus,
         'Playinfo 生命週期：' + JSON.stringify(deps.getPagePlayInfoLifecycle()),
+        '播放器 Manifest 同步：' + JSON.stringify(playerManifest)
+            + '（只讀 player/core；不開啟統計面板、不新增網路）',
         '停用狀態：' + deps.disabled,
         '節點禁止／替代結果：' + JSON.stringify(deps.hostRestrictionSummary?.() || {}),
         '禁止規則：black／dead／soft、設定排除及預設不可用均生效；固定或原始 URL 不例外；無替代即阻止',
@@ -72,7 +75,8 @@ const buildDiagReport = () => {
             + '｜routeRevision=' + native.routeRevision,
         'Native Route：當前群組=' + native.groupNativeCount + '｜狀態=' + JSON.stringify(native.counts)
             + '｜Ledger=' + JSON.stringify(native.ledger),
-        '候選來源／解鎖：' + JSON.stringify(native.admission) + '（頁面候選只解鎖已成功的 exact URL；內建 Catalog 獨立參賽）',
+        '候選來源／解鎖：' + JSON.stringify(native.admission)
+            + '（優先序=playurl API > player-mpd > page-hint > transport-bootstrap；內建 Catalog 獨立參賽）',
         '路由後態：planned=' + JSON.stringify(native.plannedRoute)
             + '｜本 epoch 觀察到的影片 host 變更=' + native.observedHostChanges
             + '｜observed=' + JSON.stringify(native.lastObservedRoute)

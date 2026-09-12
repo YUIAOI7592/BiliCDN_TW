@@ -35,7 +35,9 @@ v1.8.8 接續修正「下一支影片 playurl 在點擊推薦前已完成」的 
 
 v1.8.9 修正真實播放器完成下一片 playurl XHR 後、尚未讀取 `response`／`responseText` 就先執行 SPA 的最後一個缺口。攔截器在可信原生 DONE 事件先建立一次快取與精確目的頁暫存，頁面稍後讀取仍沿用同一份結果。
 
-本版不執行 Code Security 掃描，功能驗證與限制見 [TEST_REPORT](Release/v1.8.9/TEST_REPORT_v1.8.9.md)。自動結果不能替代 Chrome／Tampermonkey 實機驗收；更新後應以站內推薦連續換片、自動畫質＋2x、短片結尾、背景切回與面板按鈕驗收。
+v1.9.0 在 SPA 沒有新 playurl／`__playinfo__` 時，只讀播放器現有的 manifest／MPD 重建目前 Route Pool；首筆媒體請求若仍沒有 context，會同步重讀一次並以 exact URL 建立有限的 transport bootstrap。這些來源不會新增 API／媒體請求，也不會把 signed URL 寫入 GM 或公開診斷；可信 playurl 稍後抵達時仍具有最高優先權。
+
+本版不執行 Code Security 掃描，功能驗證與限制見 [TEST_REPORT](Release/v1.9.0/TEST_REPORT_v1.9.0.md)。自動結果不能替代 Chrome／Tampermonkey 實機驗收；更新後應以站內推薦連續換片、自動畫質＋2x、短片結尾、背景切回與面板按鈕驗收。
 
 ## 本機開發
 

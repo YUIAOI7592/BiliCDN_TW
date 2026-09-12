@@ -13,6 +13,7 @@ import { createHttpdns } from './routing/httpdns.mjs';
 import { createRewrite } from './policy/rewrite.mjs';
 import { createCodec } from './playback/codec.mjs';
 import { createPlayurl } from './playback/playurl.mjs';
+import { createPlayerManifest } from './playback/player-manifest.mjs';
 import { createTransport } from './transport/interceptors.mjs';
 import { createFailures } from './routing/failures.mjs';
 import { createDom } from './ui/dom.mjs';
@@ -43,6 +44,7 @@ let httpdns;
 let rewrite;
 let codec;
 let playurl;
+let playerManifest;
 let transport;
 let failures;
 let dom;
@@ -272,6 +274,16 @@ get retainAffinityForTrustedPlayinfo() { return nativeRoutes.retainAffinityForTr
 get planUnregisteredItem() { return nativeRoutes.planUnregisteredItem; },
 get applySignedRoutePlan() { return nativeRoutes.applySignedRoutePlan; }
 });
+playerManifest = createPlayerManifest({
+get disabled() { return runtime.disabled; },
+get captureRuntimeGeneration() { return runtime.captureRuntimeGeneration; },
+get isRuntimeGenerationActive() { return runtime.isRuntimeGenerationActive; },
+get parseMediaHttpUrl() { return mediaPolicy.parseMediaHttpUrl; },
+get playInfoTransformer() { return playurl.playInfoTransformer; },
+get captureNativeRouteContext() { return nativeRoutes.captureRouteContext; },
+get registerTransportBootstrap() { return nativeRoutes.registerTransportBootstrap; },
+get DiagnosticLog() { return events.DiagnosticLog; }
+});
 transport = createTransport({
 get isHostAllowed() { return hostAccess.allowed; },
 get noteHostRestriction() { return hostAccess.note; },
@@ -281,6 +293,7 @@ get DiagnosticLog() { return events.DiagnosticLog; },
 get isRuntimeGenerationActive() { return runtime.isRuntimeGenerationActive; },
 get captureRuntimeGeneration() { return runtime.captureRuntimeGeneration; },
 get captureMediaRequest() { return media.captureMediaRequest; },
+get reconcileMediaRequest() { return playerManifest.reconcileMediaRequest; },
 get isBiliJsonMetadataApi() { return mediaPolicy.isBiliJsonMetadataApi; },
 get isHttpDnsUrl() { return mediaPolicy.isHttpDnsUrl; },
 get shouldBlockHttpDns() { return httpdns.shouldBlockHttpDns; },
@@ -504,6 +517,7 @@ get Watchdog() { return { getVideo: watchdog.Watchdog.getVideo }; }
 });
 report = createReport({
 get getPagePlayInfoLifecycle() { return application?.getPagePlayInfoLifecycle || (() => ({ state: 'no-new-assignment', timing: 'initial', updatedAt: 0 })); },
+get getPlayerManifestDiagnostics() { return playerManifest.diagnostics; },
 get resolvedCdn() { return health.resolvedCdn; },
 get hostRestrictionSummary() { return hostAccess.summary; },
 get hostRestriction() { return hostAccess.restriction; },
@@ -600,6 +614,7 @@ get getHealthyCdnList() { return health.getHealthyCdnList; }
 });
 snapshot = createSnapshot({
 get getPagePlayInfoLifecycle() { return application?.getPagePlayInfoLifecycle || (() => ({ state: 'no-new-assignment', timing: 'initial', updatedAt: 0 })); },
+get getPlayerManifestDiagnostics() { return playerManifest.diagnostics; },
 get hostRestrictionSummary() { return hostAccess.summary; },
 get playbackRateState() { return rate.playbackRateState; },
 get ASSUMED_PLAYBACK_RATE() { return rate.ASSUMED_PLAYBACK_RATE; },
@@ -694,7 +709,8 @@ get getCdnShortName() { return health.getCdnShortName; },
 get playbackRateState() { return Object.freeze({ ...rate.playbackRateState }); },
 get describePlaybackBuffer() { return snapshot.describePlaybackBuffer; },
 get streamEstimate() { return Object.freeze({ ...media.streamEstimate }); },
-get getNativeRouteDiagnostics() { return nativeRoutes.diagnostics; }
+get getNativeRouteDiagnostics() { return nativeRoutes.diagnostics; },
+get getPlayerManifestDiagnostics() { return playerManifest.diagnostics; }
 });
 if (typeof GM_registerMenuCommand === 'function') views.registerControlMenu(GM_registerMenuCommand);
 application = createApplication({
@@ -702,6 +718,9 @@ get interceptNetResponse() { return transport.interceptNetResponse; },
 get disabled() { return runtime.disabled; }, set disabled(value) { runtime.disabled = value; },
 get isPlayUrlApi() { return catalog.isPlayUrlApi; },
 get playInfoTransformer() { return playurl.playInfoTransformer; },
+get startPlayerManifestSync() { return playerManifest.start; },
+get cancelPlayerManifestSync() { return playerManifest.cancel; },
+get supersedePlayerManifestSync() { return playerManifest.supersede; },
 get DiagnosticLog() { return events.DiagnosticLog; },
 get BlockWebRTC() { return settings.BlockWebRTC; },
 get readDiagnosticHidden() { return report.readDiagnosticHidden; }, set readDiagnosticHidden(value) { report.readDiagnosticHidden = value; },
