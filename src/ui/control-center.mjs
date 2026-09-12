@@ -219,6 +219,7 @@ function showControlCenter() {
 const registerControlMenu = register => register('⚙️ 開啟 BiliCDN 控制中心', showControlCenter)
 return { /* TEST_EXPORTS:views */
 get registerControlMenu() { return registerControlMenu; },
+get showControlCenter() { return showControlCenter; },
 
 };
 }

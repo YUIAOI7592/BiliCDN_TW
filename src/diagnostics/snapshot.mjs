@@ -27,6 +27,7 @@ const buildPublicDiagnosticSnapshot = () => {
     const wd = deps.Watchdog.stats()
     const hd = deps.getHttpDnsStatus()
     const native = deps.getNativeRouteDiagnostics()
+    const playinfoLifecycle = deps.getPagePlayInfoLifecycle()
     const health = {}
     deps.TRUSTED_CDN_CATALOG.slice(0, PUBLIC_DIAG_HOST_MAX).forEach(host => {
         const h = deps.cdnHealth[host]
@@ -122,6 +123,14 @@ const buildPublicDiagnosticSnapshot = () => {
             ledgerSize: {
                 video: Math.max(0, Math.min(48, Math.trunc(publicFinite(native.ledger?.video)))),
                 audio: Math.max(0, Math.min(16, Math.trunc(publicFinite(native.ledger?.audio)))),
+            },
+            playinfoLifecycle: {
+                state: ['pending', 'adopted', 'superseded', 'no-new-assignment'].includes(playinfoLifecycle?.state)
+                    ? playinfoLifecycle.state : 'no-new-assignment',
+                timing: ['initial', 'current-page', 'before-history', 'after-history', 'post-reset', 'polled', 'none'].includes(playinfoLifecycle?.timing)
+                    ? playinfoLifecycle.timing : 'none',
+                applied: typeof playinfoLifecycle?.applied === 'boolean' ? playinfoLifecycle.applied : null,
+                updatedAt: Math.max(0, publicFinite(playinfoLifecycle?.updatedAt)),
             },
         },
         playbackQuality: { ...deps.playbackQualitySnapshot },

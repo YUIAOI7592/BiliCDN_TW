@@ -408,6 +408,25 @@ const Watchdog = (() => {
             return
         }
 
+        // A short video's remaining duration may be below the generic danger line
+        // even though its current contiguous range already reaches the media end.
+        // No CDN can add useful buffer beyond duration, so this is a terminally
+        // healthy state rather than a stall/recovery trigger.
+        const duration = playback.duration
+        const bufferedToEnd = Number.isFinite(duration) && duration > 0
+            && be >= duration - 0.1 && ct <= duration + 0.1
+        if (bufferedToEnd) {
+            stallCount = 0
+            lastBufferedEnd = be
+            byteSamples = []
+            interruptRecovery()
+            deps.DiagnosticLog.setDecision('buffered-to-end', {
+                bufferAheadSec: Math.max(0, be - ct),
+                remainingSec: Math.max(0, duration - ct),
+            })
+            return
+        }
+
         // buffered.end 在超前緩衝充足時播放中常不變（僅 start 前移），勿當停滯
         const bufferAhead = Math.max(0, be - ct)
         const playing = !v.paused && !v.seeking && v.readyState >= 2

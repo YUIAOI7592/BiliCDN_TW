@@ -502,6 +502,7 @@ trustedUI = createTrustedUI({
 get Watchdog() { return { getVideo: watchdog.Watchdog.getVideo }; }
 });
 report = createReport({
+get getPagePlayInfoLifecycle() { return application?.getPagePlayInfoLifecycle || (() => ({ state: 'no-new-assignment', timing: 'initial', updatedAt: 0 })); },
 get resolvedCdn() { return health.resolvedCdn; },
 get hostRestrictionSummary() { return hostAccess.summary; },
 get hostRestriction() { return hostAccess.restriction; },
@@ -597,6 +598,7 @@ get matchesExclude() { return catalog.matchesExclude; },
 get getHealthyCdnList() { return health.getHealthyCdnList; }
 });
 snapshot = createSnapshot({
+get getPagePlayInfoLifecycle() { return application?.getPagePlayInfoLifecycle || (() => ({ state: 'no-new-assignment', timing: 'initial', updatedAt: 0 })); },
 get hostRestrictionSummary() { return hostAccess.summary; },
 get playbackRateState() { return rate.playbackRateState; },
 get ASSUMED_PLAYBACK_RATE() { return rate.ASSUMED_PLAYBACK_RATE; },
@@ -718,6 +720,7 @@ get bumpSeekGrace() { return rate.bumpSeekGrace; },
 get syncPlaybackRateFromVideo() { return rate.syncPlaybackRateFromVideo; },
 get PluginName() { return events.PluginName; },
 get TrustedMenuUI() { return trustedUI.TrustedMenuUI; },
+get openControlCenter() { return views.showControlCenter; },
 get stopRuntimeGeneration() { return runtime.stopRuntimeGeneration; },
 get cdnProbeStarted() { return catalogControls.cdnProbeStarted; }, set cdnProbeStarted(value) { catalogControls.cdnProbeStarted = value; },
 get clearRuntimeConnectionHints() { return hints.clearRuntimeConnectionHints; },

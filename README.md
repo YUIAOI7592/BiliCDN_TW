@@ -27,7 +27,9 @@ v1.8.4 修正兩個實機發現的播放鏈問題：頁面 URL 被禁止規則�
 
 v1.8.5 修正站內 SPA 換片後 `__playinfo__`、representation 與 route pool 失聯。即使初始頁面資料早於 userscript 存在，後續 setter 仍會被觀察；若新值在延遲 SPA reset 前同步出現，會延後到新 generation 重建。頁面直接替換 property 時，既有一秒狀態週期也會重新掛回，不增加網路或額外 timer。
 
-本版不執行 Code Security 掃描，功能驗證與限制見 [TEST_REPORT](Release/v1.8.5/TEST_REPORT_v1.8.5.md)。自動結果不能替代 Chrome／Tampermonkey 實機驗收；更新後應以站內推薦連續換片、自動畫質＋2x 核對 route pool 與緩衝。
+v1.8.6 補齊 playinfo 在 history 前出現的 SPA 時序，修正已緩衝到結尾的短片被 Watchdog 誤判卡頓，並在播放器設定面板加入「⚙️ 開啟 BiliCDN 控制中心」。按鈕只開啟現有的私有對話框，不會因瀏覽介面新增網路行為。
+
+本版不執行 Code Security 掃描，功能驗證與限制見 [TEST_REPORT](Release/v1.8.6/TEST_REPORT_v1.8.6.md)。自動結果不能替代 Chrome／Tampermonkey 實機驗收；更新後應以站內推薦連續換片、自動畫質＋2x、短片結尾與面板按鈕驗收。
 
 ## 本機開發
 

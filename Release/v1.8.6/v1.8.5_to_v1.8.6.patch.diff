@@ -1,0 +1,345 @@
+diff --git a/Release/v1.8.5/BiliCDN_TW.user.js b/Release/v1.8.6/BiliCDN_TW.user.js
+index f6e8480..63b0faa 100644
+--- a/Release/v1.8.5/BiliCDN_TW.user.js
++++ b/Release/v1.8.6/BiliCDN_TW.user.js
+@@ -1,7 +1,7 @@
+ // ==UserScript==
+ // @name         Bilibili CDN 台灣優化
+ // @namespace    BiliCDN_TW
+-// @version      1.8.5
++// @version      1.8.6
+ // @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+ // @author       jiyunshi <chocosensei214@gmail.com>
+ // @license      MIT
+@@ -83,7 +83,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let BlockHttpDNS = input.BlockHttpDNS;
+     let PreferredVideoCodec = input.PreferredVideoCodec;
+     let BlockWebRTC = input.BlockWebRTC;
+-    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.8.5";
++    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.8.6";
+     const parseVer = /* @__PURE__ */ __name((v) => String(v || "0").split(".").map((n) => parseInt(n, 10) || 0), "parseVer");
+     const verGte = /* @__PURE__ */ __name((a, b) => {
+       const A = parseVer(a), B = parseVer(b);
+@@ -143,7 +143,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const encoder = new TextEncoder();
+       const codes = new Set("runtime verbose settings-read settings-write settings-verify exception request headers body eof no-body http network-error body-error abort reopened detached rewrite measurement watchdog recovery breaker host-lock clipboard sample route-blocked".split(" "));
+       const enums = new Set("fetch xhr video audio muxed unknown non-catalog headers body settings-read settings-write settings-verify startup active disabled spa epoch interceptor transform fetch-body playurl-body playurl-clone measurement watchdog snapshot health-save clipboard-gm clipboard-standard clipboard-manual page-hook ui no-video invalid-state no-metadata media-error ended paused seeking seek-grace background-gap player-nudge nudge-grace startup-grace switch-grace target-reached healthy low-data buffered-stall too-slow stall-count cooldown breaker attempt progress no-progress interrupted no-attribution attributed received httpdns accepted skipped complete cancelled failed timeout partial latency-only http network-error body-error abort eof no-body reopened detached automatic manual fixed no-segment busy hidden not-applicable host-lock forbidden insufficient ineligible host-restricted".split(" "));
+-      const keys = new Set("generation epoch id method kind originalHost targetHost finalHost host status bytes startAt responseAt endAt ageMs phase stage reason enabled persisted readyState networkState currentTime duration bufferAheadSec observedRate effectiveRate paused seeking ended available valid errorCode hidden waitMs count remainingMs punished reselected preconnect requested received switchCount stallCount breakerSec outcome actionId".split(" "));
++      const keys = new Set("generation epoch id method kind originalHost targetHost finalHost host status bytes startAt responseAt endAt ageMs phase stage reason enabled persisted readyState networkState currentTime duration bufferAheadSec observedRate effectiveRate paused seeking ended available valid errorCode hidden waitMs count remainingMs remainingSec punished reselected preconnect requested received switchCount stallCount breakerSec outcome actionId".split(" "));
+       const state = {
+         startedAt: Date.now(),
+         verboseChangedAt: Date.now(),
+@@ -6859,6 +6859,19 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           deps.DiagnosticLog.setDecision("nudge-grace", { remainingMs: 3e3 - (Date.now() - lastNudgeDetectAt) });
+           return;
+         }
++        const duration = playback.duration;
++        const bufferedToEnd = Number.isFinite(duration) && duration > 0 && be >= duration - 0.1 && ct <= duration + 0.1;
++        if (bufferedToEnd) {
++          stallCount = 0;
++          lastBufferedEnd = be;
++          byteSamples = [];
++          interruptRecovery();
++          deps.DiagnosticLog.setDecision("buffered-to-end", {
++            bufferAheadSec: Math.max(0, be - ct),
++            remainingSec: Math.max(0, duration - ct)
++          });
++          return;
++        }
+         const bufferAhead = Math.max(0, be - ct);
+         const playing = !v.paused && !v.seeking && v.readyState >= 2;
+         const streamMbps = deps.currentStreamBitsPerSec / 1e6;
+@@ -7678,6 +7691,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         "頁面型態：" + getPageTypeLabel(),
+         "UA：" + navigator.userAgent,
+         "面板注入狀態：" + deps.uiInjectStatus,
++        "Playinfo 生命週期：" + JSON.stringify(deps.getPagePlayInfoLifecycle()),
+         "停用狀態：" + deps.disabled,
+         "節點禁止／替代結果：" + JSON.stringify(deps.hostRestrictionSummary?.() || {}),
+         "禁止規則：black／dead／soft、設定排除及預設不可用均生效；固定或原始 URL 不例外；無替代即阻止",
+@@ -8278,6 +8292,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const wd = deps.Watchdog.stats();
+       const hd = deps.getHttpDnsStatus();
+       const native = deps.getNativeRouteDiagnostics();
++      const playinfoLifecycle = deps.getPagePlayInfoLifecycle();
+       const health = {};
+       deps.TRUSTED_CDN_CATALOG.slice(0, PUBLIC_DIAG_HOST_MAX).forEach((host) => {
+         const h = deps.cdnHealth[host];
+@@ -8368,6 +8383,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           ledgerSize: {
+             video: Math.max(0, Math.min(48, Math.trunc(publicFinite(native.ledger?.video)))),
+             audio: Math.max(0, Math.min(16, Math.trunc(publicFinite(native.ledger?.audio))))
++          },
++          playinfoLifecycle: {
++            state: ["pending", "adopted", "superseded", "no-new-assignment"].includes(playinfoLifecycle?.state) ? playinfoLifecycle.state : "no-new-assignment",
++            timing: ["initial", "current-page", "before-history", "after-history", "post-reset", "polled", "none"].includes(playinfoLifecycle?.timing) ? playinfoLifecycle.timing : "none",
++            applied: typeof playinfoLifecycle?.applied === "boolean" ? playinfoLifecycle.applied : null,
++            updatedAt: Math.max(0, publicFinite(playinfoLifecycle?.updatedAt))
+           }
+         },
+         playbackQuality: { ...deps.playbackQualitySnapshot },
+@@ -8766,6 +8787,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     return {
+       get registerControlMenu() {
+         return registerControlMenu;
++      },
++      get showControlCenter() {
++        return showControlCenter;
+       }
+     };
+   }
+@@ -8790,8 +8814,28 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     }, "pickMainSettingsAnchor");
+     let renderVisibleStatus = /* @__PURE__ */ __name(() => {
+     }, "renderVisibleStatus");
++    const ensureControlCenterButton = /* @__PURE__ */ __name((settingsBar) => {
++      if (!settingsBar || settingsBar.querySelector("#bilicdn-control-center-button")) return;
++      const button = document.createElement("button");
++      button.id = "bilicdn-control-center-button";
++      button.type = "button";
++      button.textContent = "⚙️ 開啟 BiliCDN 控制中心";
++      button.setAttribute("aria-label", "開啟 BiliCDN 控制中心");
++      button.style.cssText = 'display:block;width:100%;margin:3px 0 6px;padding:6px 8px;border:1px solid #4fc3f7;border-radius:5px;background:#16384a;color:#e1f5fe;font:12px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;cursor:pointer;';
++      button.addEventListener("click", (event) => {
++        if (!event || !event.isTrusted) return;
++        event.preventDefault();
++        event.stopPropagation();
++        deps.openControlCenter();
++      });
++      settingsBar.appendChild(button);
++    }, "ensureControlCenterButton");
+     const buildUI = /* @__PURE__ */ __name((settingsBar) => {
+-      if (!settingsBar || settingsBar.querySelector("#bilicdn-status-panel")) return;
++      if (!settingsBar) return;
++      if (settingsBar.querySelector("#bilicdn-status-panel")) {
++        ensureControlCenterButton(settingsBar);
++        return;
++      }
+       deps.uiInjectStatus = "ok";
+       settingsBar.appendChild(deps.fromHTML(
+         '<div class="bpx-player-ctrl-setting-others-title">' + deps.SettingsBarTitle + "</div>"
+@@ -8843,11 +8887,13 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }, "renderVisibleStatus");
+       settingsBar.appendChild(checkBoxWrapper);
+       settingsBar.appendChild(statusPanel);
++      ensureControlCenterButton(settingsBar);
+     }, "buildUI");
+     const ensureUiPresent = /* @__PURE__ */ __name(() => {
+-      if (document.querySelector("#bilicdn-status-panel")) return;
+       const bar = pickMainSettingsAnchor(document.querySelector(".bpx-player-ctrl-setting-others"));
+-      if (bar) buildUI(bar);
++      if (!bar) return;
++      if (bar.querySelector("#bilicdn-status-panel") && bar.querySelector("#bilicdn-control-center-button")) return;
++      buildUI(bar);
+     }, "ensureUiPresent");
+     deps.waitForElm(".bpx-player-ctrl-setting-others", 3e4).then((found) => buildUI(pickMainSettingsAnchor(found))).catch(() => {
+       deps.uiInjectStatus = "timeout";
+@@ -8908,10 +8954,24 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let pagePlayInfoSetter = null;
+     let lastObservedPagePlayInfo = null;
+     let hasObservedPagePlayInfo = false;
+-    let currentPagePlayInfoValue = null;
+     let pagePlayInfoAssignmentSerial = 0;
+     let lastSpaBoundaryAssignmentSerial = 0;
+     let latestPagePlayInfoAssignment = null;
++    let pagePlayInfoSettleTimer = null;
++    let pagePlayInfoLifecycle = Object.freeze({ state: "no-new-assignment", timing: "initial", updatedAt: Date.now() });
++    const setPagePlayInfoLifecycle = /* @__PURE__ */ __name((state, timing, applied = null) => {
++      pagePlayInfoLifecycle = Object.freeze({
++        state: ["pending", "adopted", "superseded", "no-new-assignment"].includes(state) ? state : "no-new-assignment",
++        timing: ["initial", "current-page", "before-history", "after-history", "post-reset", "polled", "none"].includes(timing) ? timing : "none",
++        ...typeof applied === "boolean" ? { applied } : {},
++        updatedAt: Date.now()
++      });
++    }, "setPagePlayInfoLifecycle");
++    const clearPagePlayInfoSettleTimer = /* @__PURE__ */ __name(() => {
++      if (!pagePlayInfoSettleTimer) return;
++      clearTimeout(pagePlayInfoSettleTimer);
++      pagePlayInfoSettleTimer = null;
++    }, "clearPagePlayInfoSettleTimer");
+     const readPagePlayInfo = /* @__PURE__ */ __name(() => {
+       try {
+         return unsafeWindow.__playinfo__;
+@@ -8927,7 +8987,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       lastObservedPagePlayInfo = value;
+       try {
+         deps.playInfoTransformer(value, { trustedTransport: false });
+-        currentPagePlayInfoValue = value;
+         return true;
+       } catch {
+         deps.DiagnosticLog.fault("transform");
+@@ -8940,8 +8999,31 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         key = getVideoKey();
+       } catch {
+       }
+-      latestPagePlayInfoAssignment = { value, key, serial: ++pagePlayInfoAssignmentSerial };
+-      if (!deps.disabled && key === currentVideoKey) transformPagePlayInfo(value, true);
++      if (latestPagePlayInfoAssignment?.state === "pending") {
++        latestPagePlayInfoAssignment.state = "superseded";
++        setPagePlayInfoLifecycle("superseded", latestPagePlayInfoAssignment.timing);
++      }
++      clearPagePlayInfoSettleTimer();
++      const assignment = {
++        value,
++        observedKey: key,
++        destinationKey: key !== currentVideoKey ? key : null,
++        serial: ++pagePlayInfoAssignmentSerial,
++        state: "pending",
++        timing: key === currentVideoKey ? "current-page" : "after-history"
++      };
++      latestPagePlayInfoAssignment = assignment;
++      setPagePlayInfoLifecycle("pending", assignment.timing);
++      let applied = false;
++      if (!deps.disabled && key === currentVideoKey) applied = transformPagePlayInfo(value, true);
++      pagePlayInfoSettleTimer = setTimeout(() => {
++        pagePlayInfoSettleTimer = null;
++        if (latestPagePlayInfoAssignment !== assignment || assignment.state !== "pending") return;
++        if (assignment.destinationKey && assignment.destinationKey !== currentVideoKey) return;
++        assignment.state = "settled";
++        latestPagePlayInfoAssignment = null;
++        setPagePlayInfoLifecycle("adopted", assignment.timing, applied);
++      }, 0);
+     }, "notePagePlayInfoAssignment");
+     const installPagePlayInfoHook = /* @__PURE__ */ __name(() => {
+       let descriptor;
+@@ -8977,7 +9059,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     const observePagePlayInfo = /* @__PURE__ */ __name(() => {
+       if (deps.disabled) return false;
+       const current = installPagePlayInfoHook();
+-      return transformPagePlayInfo(current);
++      const hadObserved = hasObservedPagePlayInfo;
++      const transformed = transformPagePlayInfo(current);
++      if (transformed && (!latestPagePlayInfoAssignment || latestPagePlayInfoAssignment.value !== current)) {
++        setPagePlayInfoLifecycle("adopted", hadObserved ? "polled" : "initial", true);
++      }
++      return transformed;
+     }, "observePagePlayInfo");
+     const transformInitialPlayInfo = /* @__PURE__ */ __name(() => observePagePlayInfo(), "transformInitialPlayInfo");
+     let backgroundPlaybackEnabled = !deps.disabled;
+@@ -9193,14 +9280,29 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     }, "warnIfVideoKeyUnresolvable");
+     let currentVideoKey = getVideoKey();
+     let spaHooked = false;
++    const attachPendingAssignmentToNavigation = /* @__PURE__ */ __name((beforeKey, afterKey) => {
++      const assigned = latestPagePlayInfoAssignment;
++      if (!assigned || assigned.state !== "pending" || assigned.observedKey !== beforeKey) return false;
++      if (assigned.value !== readPagePlayInfo()) return false;
++      assigned.destinationKey = afterKey;
++      assigned.timing = "before-history";
++      setPagePlayInfoLifecycle("pending", assigned.timing);
++      return true;
++    }, "attachPendingAssignmentToNavigation");
+     const onSpaNavigate = /* @__PURE__ */ __name(() => {
+       const key = getVideoKey();
+       warnIfVideoKeyUnresolvable();
+       if (key === currentVideoKey) return;
+       const assigned = latestPagePlayInfoAssignment;
+       const currentValue = readPagePlayInfo();
+-      const pendingPagePlayInfo = assigned && assigned.serial > lastSpaBoundaryAssignmentSerial && assigned.value === currentValue && (assigned.key === key || currentValue !== currentPagePlayInfoValue) ? currentValue : null;
+-      if (assigned) lastSpaBoundaryAssignmentSerial = assigned.serial;
++      const pendingPagePlayInfo = assigned && assigned.state === "pending" && assigned.serial > lastSpaBoundaryAssignmentSerial && assigned.value === currentValue && assigned.destinationKey === key ? currentValue : null;
++      const pendingTiming = pendingPagePlayInfo ? assigned.timing : "none";
++      lastSpaBoundaryAssignmentSerial = pagePlayInfoAssignmentSerial;
++      clearPagePlayInfoSettleTimer();
++      if (assigned) {
++        assigned.state = pendingPagePlayInfo ? "adopted" : "superseded";
++        latestPagePlayInfoAssignment = null;
++      }
+       currentVideoKey = key;
+       deps.DiagnosticLog.record("runtime", { reason: "spa" }, true);
+       deps.TrustedMenuUI.invalidate();
+@@ -9237,7 +9339,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       if (!deps.disabled) {
+         deps.beginRuntimeGeneration();
+-        if (pendingPagePlayInfo) transformPagePlayInfo(pendingPagePlayInfo, true);
++        if (pendingPagePlayInfo) {
++          const applied = transformPagePlayInfo(pendingPagePlayInfo, true);
++          setPagePlayInfoLifecycle("adopted", pendingTiming, applied);
++        } else {
++          setPagePlayInfoLifecycle(assigned ? "superseded" : "no-new-assignment", "none");
++        }
+         setupCrossTab();
+         deps.startCdnProbe();
+         setupSeekPrewarm();
+@@ -9253,7 +9360,17 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         const orig = h[name];
+         if (!orig || orig.__biliCdnHooked) return;
+         const wrapped = /* @__PURE__ */ __name(function(...args) {
++          let beforeKey = null;
++          try {
++            beforeKey = getVideoKey();
++          } catch {
++          }
+           const r = orig.apply(this, args);
++          try {
++            const afterKey = getVideoKey();
++            if (afterKey !== beforeKey) attachPendingAssignmentToNavigation(beforeKey, afterKey);
++          } catch {
++          }
+           try {
+             setTimeout(onSpaNavigate, 0);
+           } catch {
+@@ -9304,6 +9421,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     }, "startRuntimeFeatures");
+     const stopRuntimeFeatures = /* @__PURE__ */ __name(() => {
+       runtimeStarted = false;
++      clearPagePlayInfoSettleTimer();
++      if (latestPagePlayInfoAssignment) latestPagePlayInfoAssignment.state = "superseded";
++      latestPagePlayInfoAssignment = null;
+       deps.stopRuntimeGeneration();
+       deps.cdnProbeStarted = false;
+       backgroundPlaybackEnabled = false;
+@@ -9371,6 +9491,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get TrustedMenuUI() {
+         return deps.TrustedMenuUI;
+       },
++      get openControlCenter() {
++        return deps.openControlCenter;
++      },
+       get Watchdog() {
+         return { stats: deps.Watchdog.stats };
+       },
+@@ -9418,7 +9541,11 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     }, 1e3);
+     deps.refreshPublicDiagnosticSnapshot();
+     setInterval(panel.ensureUiPresent, 1500);
+-    return {};
++    return {
++      get getPagePlayInfoLifecycle() {
++        return () => ({ ...pagePlayInfoLifecycle });
++      }
++    };
+   }
+   __name(createApplication, "createApplication");
+ 
+@@ -10689,6 +10816,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+     });
+     report = createReport({
++      get getPagePlayInfoLifecycle() {
++        return application?.getPagePlayInfoLifecycle || (() => ({ state: "no-new-assignment", timing: "initial", updatedAt: 0 }));
++      },
+       get resolvedCdn() {
+         return health.resolvedCdn;
+       },
+@@ -10972,6 +11102,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+     });
+     snapshot = createSnapshot({
++      get getPagePlayInfoLifecycle() {
++        return application?.getPagePlayInfoLifecycle || (() => ({ state: "no-new-assignment", timing: "initial", updatedAt: 0 }));
++      },
+       get hostRestrictionSummary() {
+         return hostAccess.summary;
+       },
+@@ -11339,6 +11472,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get TrustedMenuUI() {
+         return trustedUI.TrustedMenuUI;
+       },
++      get openControlCenter() {
++        return views.showControlCenter;
++      },
+       get stopRuntimeGeneration() {
+         return runtime.stopRuntimeGeneration;
+       },

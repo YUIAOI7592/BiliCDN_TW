@@ -25,7 +25,7 @@ const DiagnosticLog = (() => {
     const keys = new Set(('generation epoch id method kind originalHost targetHost finalHost host '
         + 'status bytes startAt responseAt endAt ageMs phase stage reason enabled persisted '
         + 'readyState networkState currentTime duration bufferAheadSec observedRate effectiveRate '
-        + 'paused seeking ended available valid errorCode hidden waitMs count remainingMs '
+        + 'paused seeking ended available valid errorCode hidden waitMs count remainingMs remainingSec '
         + 'punished reselected preconnect requested received switchCount stallCount breakerSec '
         + 'outcome actionId').split(' '))
     const state = { startedAt: Date.now(), verboseChangedAt: Date.now(), persisted: null,

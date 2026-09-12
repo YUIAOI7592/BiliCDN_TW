@@ -53,10 +53,26 @@ export function createApplication(deps) {
     let pagePlayInfoSetter = null
     let lastObservedPagePlayInfo = null
     let hasObservedPagePlayInfo = false
-    let currentPagePlayInfoValue = null
     let pagePlayInfoAssignmentSerial = 0
     let lastSpaBoundaryAssignmentSerial = 0
     let latestPagePlayInfoAssignment = null
+    let pagePlayInfoSettleTimer = null
+    let pagePlayInfoLifecycle = Object.freeze({ state: 'no-new-assignment', timing: 'initial', updatedAt: Date.now() })
+
+    const setPagePlayInfoLifecycle = (state, timing, applied = null) => {
+        pagePlayInfoLifecycle = Object.freeze({
+            state: ['pending', 'adopted', 'superseded', 'no-new-assignment'].includes(state) ? state : 'no-new-assignment',
+            timing: ['initial', 'current-page', 'before-history', 'after-history', 'post-reset', 'polled', 'none'].includes(timing)
+                ? timing : 'none',
+            ...(typeof applied === 'boolean' ? { applied } : {}),
+            updatedAt: Date.now(),
+        })
+    }
+    const clearPagePlayInfoSettleTimer = () => {
+        if (!pagePlayInfoSettleTimer) return
+        clearTimeout(pagePlayInfoSettleTimer)
+        pagePlayInfoSettleTimer = null
+    }
 
     const readPagePlayInfo = () => {
         try { return unsafeWindow.__playinfo__ }
@@ -69,7 +85,6 @@ export function createApplication(deps) {
         lastObservedPagePlayInfo = value
         try {
             deps.playInfoTransformer(value, { trustedTransport: false })
-            currentPagePlayInfoValue = value
             return true
         } catch {
             deps.DiagnosticLog.fault('transform')
@@ -79,11 +94,38 @@ export function createApplication(deps) {
     const notePagePlayInfoAssignment = (value) => {
         let key = null
         try { key = getVideoKey() } catch {}
-        latestPagePlayInfoAssignment = { value, key, serial: ++pagePlayInfoAssignmentSerial }
+        if (latestPagePlayInfoAssignment?.state === 'pending') {
+            latestPagePlayInfoAssignment.state = 'superseded'
+            setPagePlayInfoLifecycle('superseded', latestPagePlayInfoAssignment.timing)
+        }
+        clearPagePlayInfoSettleTimer()
+        const assignment = {
+            value,
+            observedKey: key,
+            destinationKey: key !== currentVideoKey ? key : null,
+            serial: ++pagePlayInfoAssignmentSerial,
+            state: 'pending',
+            timing: key === currentVideoKey ? 'current-page' : 'after-history',
+        }
+        latestPagePlayInfoAssignment = assignment
+        setPagePlayInfoLifecycle('pending', assignment.timing)
         // pushState schedules the SPA reset for the next task. If Bilibili assigns
         // the new value synchronously in between, defer transformation until that
         // reset has established the new generation and empty route pool.
-        if (!deps.disabled && key === currentVideoKey) transformPagePlayInfo(value, true)
+        let applied = false
+        if (!deps.disabled && key === currentVideoKey) applied = transformPagePlayInfo(value, true)
+        // Keep a same-task assignment available to the history wrapper. A normal
+        // same-page assignment settles on the next task so a later unrelated SPA
+        // cannot reuse it. If history already attached a destination key, the SPA
+        // boundary owns settlement instead.
+        pagePlayInfoSettleTimer = setTimeout(() => {
+            pagePlayInfoSettleTimer = null
+            if (latestPagePlayInfoAssignment !== assignment || assignment.state !== 'pending') return
+            if (assignment.destinationKey && assignment.destinationKey !== currentVideoKey) return
+            assignment.state = 'settled'
+            latestPagePlayInfoAssignment = null
+            setPagePlayInfoLifecycle('adopted', assignment.timing, applied)
+        }, 0)
     }
     const installPagePlayInfoHook = () => {
         let descriptor
@@ -119,7 +161,12 @@ export function createApplication(deps) {
     const observePagePlayInfo = () => {
         if (deps.disabled) return false
         const current = installPagePlayInfoHook()
-        return transformPagePlayInfo(current)
+        const hadObserved = hasObservedPagePlayInfo
+        const transformed = transformPagePlayInfo(current)
+        if (transformed && (!latestPagePlayInfoAssignment || latestPagePlayInfoAssignment.value !== current)) {
+            setPagePlayInfoLifecycle('adopted', hadObserved ? 'polled' : 'initial', true)
+        }
+        return transformed
     }
     const transformInitialPlayInfo = () => observePagePlayInfo()
 
@@ -361,6 +408,15 @@ export function createApplication(deps) {
     }
     let currentVideoKey = getVideoKey()
     let spaHooked = false
+    const attachPendingAssignmentToNavigation = (beforeKey, afterKey) => {
+        const assigned = latestPagePlayInfoAssignment
+        if (!assigned || assigned.state !== 'pending' || assigned.observedKey !== beforeKey) return false
+        if (assigned.value !== readPagePlayInfo()) return false
+        assigned.destinationKey = afterKey
+        assigned.timing = 'before-history'
+        setPagePlayInfoLifecycle('pending', assigned.timing)
+        return true
+    }
     const onSpaNavigate = () => {
         const key = getVideoKey()
         warnIfVideoKeyUnresolvable()
@@ -368,11 +424,18 @@ export function createApplication(deps) {
         const assigned = latestPagePlayInfoAssignment
         const currentValue = readPagePlayInfo()
         const pendingPagePlayInfo = assigned
+            && assigned.state === 'pending'
             && assigned.serial > lastSpaBoundaryAssignmentSerial
             && assigned.value === currentValue
-            && (assigned.key === key || currentValue !== currentPagePlayInfoValue)
+            && assigned.destinationKey === key
             ? currentValue : null
-        if (assigned) lastSpaBoundaryAssignmentSerial = assigned.serial
+        const pendingTiming = pendingPagePlayInfo ? assigned.timing : 'none'
+        lastSpaBoundaryAssignmentSerial = pagePlayInfoAssignmentSerial
+        clearPagePlayInfoSettleTimer()
+        if (assigned) {
+            assigned.state = pendingPagePlayInfo ? 'adopted' : 'superseded'
+            latestPagePlayInfoAssignment = null
+        }
         currentVideoKey = key
         deps.DiagnosticLog.record('runtime', { reason: 'spa' }, true)
         deps.TrustedMenuUI.invalidate()
@@ -400,7 +463,12 @@ export function createApplication(deps) {
             // A new value may have been assigned after pushState but before this
             // delayed SPA boundary. Rebuild it only after the old pool is cleared;
             // never repopulate from an unchanged value belonging to the prior page.
-            if (pendingPagePlayInfo) transformPagePlayInfo(pendingPagePlayInfo, true)
+            if (pendingPagePlayInfo) {
+                const applied = transformPagePlayInfo(pendingPagePlayInfo, true)
+                setPagePlayInfoLifecycle('adopted', pendingTiming, applied)
+            } else {
+                setPagePlayInfoLifecycle(assigned ? 'superseded' : 'no-new-assignment', 'none')
+            }
             setupCrossTab()
             deps.startCdnProbe()
             setupSeekPrewarm()
@@ -416,7 +484,13 @@ export function createApplication(deps) {
             const orig = h[name]
             if (!orig || orig.__biliCdnHooked) return
             const wrapped = function (...args) {
+                let beforeKey = null
+                try { beforeKey = getVideoKey() } catch {}
                 const r = orig.apply(this, args)
+                try {
+                    const afterKey = getVideoKey()
+                    if (afterKey !== beforeKey) attachPendingAssignmentToNavigation(beforeKey, afterKey)
+                } catch {}
                 try { setTimeout(onSpaNavigate, 0) } catch {}
                 return r
             }
@@ -471,6 +545,9 @@ export function createApplication(deps) {
     }
     const stopRuntimeFeatures = () => {
         runtimeStarted = false
+        clearPagePlayInfoSettleTimer()
+        if (latestPagePlayInfoAssignment) latestPagePlayInfoAssignment.state = 'superseded'
+        latestPagePlayInfoAssignment = null
         deps.stopRuntimeGeneration()
         deps.cdnProbeStarted = false
         backgroundPlaybackEnabled = false
@@ -511,6 +588,7 @@ get SettingsBarTitle(){return deps.SettingsBarTitle},
 get disabled(){return deps.disabled},
 get setRuntimeDisabled(){return setRuntimeDisabled},
 get TrustedMenuUI(){return deps.TrustedMenuUI},
+get openControlCenter(){return deps.openControlCenter},
 get Watchdog(){return { stats: deps.Watchdog.stats }},
 get describePlaybackBuffer(){return deps.describePlaybackBuffer},
 get resolvedCdn(){return deps.resolvedCdn},
@@ -541,6 +619,6 @@ get DiagnosticLog(){return deps.DiagnosticLog},
 
 
 return { /* TEST_EXPORTS:application */
-
+get getPagePlayInfoLifecycle() { return () => ({ ...pagePlayInfoLifecycle }); },
 };
 }

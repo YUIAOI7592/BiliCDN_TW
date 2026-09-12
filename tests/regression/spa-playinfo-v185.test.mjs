@@ -59,6 +59,57 @@ test('v185 preserves a new __playinfo__ assigned synchronously after pushState b
     assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.waitingReason, 'awaiting-video-completion')
 })
 
+test('v185 reproduction: a new __playinfo__ assigned before pushState is cleared by the SPA reset', async () => {
+    const h = load('Release/v1.8.5/BiliCDN_TW.user.js')
+    h.pageWindow.__playinfo__ = next()
+    h.pageWindow.history.pushState({}, '', '/video/BVnext')
+    await h.timers.advanceAsync(0)
+
+    assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.pageGroups, 0)
+    assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.waitingReason, 'no-playinfo')
+})
+
+test('v186 carries a same-task pre-history assignment into the new generation', async () => {
+    const h = load()
+    h.pageWindow.__playinfo__ = next()
+    h.pageWindow.history.pushState({}, '', '/video/BVnext')
+    await h.timers.advanceAsync(0)
+    h.evaluate('refreshPublicDiagnosticSnapshot()')
+
+    assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.pageGroups, 1)
+    assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.waitingReason, 'awaiting-video-completion')
+    assert.deepEqual(JSON.parse(JSON.stringify(h.pageWindow.BiliCDN.nativeRouting.playinfoLifecycle)), {
+        state: 'adopted', timing: 'before-history', applied: true, updatedAt: 1800000000000,
+    })
+})
+
+test('v186 settles an earlier same-page assignment and never reuses it on a later SPA', async () => {
+    const h = load()
+    h.pageWindow.__playinfo__ = next()
+    await h.timers.advanceAsync(0)
+    h.pageWindow.history.pushState({}, '', '/video/BVlater')
+    await h.timers.advanceAsync(0)
+    h.evaluate('refreshPublicDiagnosticSnapshot()')
+
+    assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.pageGroups, 0)
+    assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.waitingReason, 'no-playinfo')
+    assert.equal(h.pageWindow.BiliCDN.nativeRouting.playinfoLifecycle.state, 'no-new-assignment')
+})
+
+test('v186 only adopts the newest assignment across rapid SPA transitions', async () => {
+    const h = load()
+    h.pageWindow.__playinfo__ = next()
+    h.pageWindow.history.pushState({}, '', '/video/BVmiddle')
+    h.pageWindow.__playinfo__ = playinfo(host('upos-tf-all-tx'), 'final', 1080)
+    h.pageWindow.history.pushState({}, '', '/video/BVfinal')
+    await h.timers.advanceAsync(0)
+    h.evaluate('refreshPublicDiagnosticSnapshot()')
+
+    assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.pageGroups, 1)
+    assert.equal(h.pageWindow.BiliCDN.nativeRouting.playinfoLifecycle.state, 'adopted')
+    assert.equal(h.pageWindow.BiliCDN.nativeRouting.playinfoLifecycle.timing, 'before-history')
+})
+
 test('v185 does not repopulate an SPA route pool from the previous page value', async () => {
     const h = load()
     h.pageWindow.history.pushState({}, '', '/video/BVnext')

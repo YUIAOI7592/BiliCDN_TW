@@ -23,8 +23,28 @@ export function createPlayerPanel(deps) {
     // 注入的 UI 會被連根拔起。buildUI 抽成可重入函式、由 statusTimer 常駐偵測，
     // 面板消失時直接重建，取代原本「只注入一次、掉了就再也回不來」的作法。
     let renderVisibleStatus = () => {}
+    const ensureControlCenterButton = (settingsBar) => {
+        if (!settingsBar || settingsBar.querySelector('#bilicdn-control-center-button')) return
+        const button = document.createElement('button')
+        button.id = 'bilicdn-control-center-button'
+        button.type = 'button'
+        button.textContent = '⚙️ 開啟 BiliCDN 控制中心'
+        button.setAttribute('aria-label', '開啟 BiliCDN 控制中心')
+        button.style.cssText = 'display:block;width:100%;margin:3px 0 6px;padding:6px 8px;border:1px solid #4fc3f7;border-radius:5px;background:#16384a;color:#e1f5fe;font:12px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;cursor:pointer;'
+        button.addEventListener('click', event => {
+            if (!event || !event.isTrusted) return
+            event.preventDefault()
+            event.stopPropagation()
+            deps.openControlCenter()
+        })
+        settingsBar.appendChild(button)
+    }
     const buildUI = (settingsBar) => {
-        if (!settingsBar || settingsBar.querySelector('#bilicdn-status-panel')) return
+        if (!settingsBar) return
+        if (settingsBar.querySelector('#bilicdn-status-panel')) {
+            ensureControlCenterButton(settingsBar)
+            return
+        }
         deps.uiInjectStatus = 'ok'
 
         settingsBar.appendChild(deps.fromHTML(
@@ -102,6 +122,7 @@ export function createPlayerPanel(deps) {
 
         settingsBar.appendChild(checkBoxWrapper)
         settingsBar.appendChild(statusPanel)
+        ensureControlCenterButton(settingsBar)
     }
 
     // 常駐看門狗：waitForElm 只重試 30 秒，若第一次就逾時（網路慢、番劇頁載入久），
@@ -109,9 +130,10 @@ export function createPlayerPanel(deps) {
     // 不受那次逾時影響，持續每 1.5 秒檢查一次；面板存在時直接休眠 no-op，
     // 面板消失（含「從未建立」與「被拔掉」兩種情況）時才動手找錨點重建。
     const ensureUiPresent = () => {
-        if (document.querySelector('#bilicdn-status-panel')) return
         const bar = pickMainSettingsAnchor(document.querySelector('.bpx-player-ctrl-setting-others'))
-        if (bar) buildUI(bar)   // buildUI 開頭已有防重入判斷，找到錨點但面板已存在時會自行 no-op
+        if (!bar) return
+        if (bar.querySelector('#bilicdn-status-panel') && bar.querySelector('#bilicdn-control-center-button')) return
+        buildUI(bar)   // buildUI 開頭已有防重入判斷，找到錨點但面板已存在時會自行 no-op
     }
 
     deps.waitForElm('.bpx-player-ctrl-setting-others', 30000)
