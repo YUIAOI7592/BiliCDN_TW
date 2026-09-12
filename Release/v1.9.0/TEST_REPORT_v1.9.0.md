@@ -17,6 +17,14 @@
 - `node --check`、可重現建置、封裝、incremental／cumulative patch 套用及 SHA-256 由 `npm run verify` 驗證。
 - 依使用者要求，不執行 Code Security 掃描或獨立安全子集。
 
-## 實機界線
+## 真實 Chrome／Tampermonkey 複驗
 
-上述 Chrome 觀察用來確認 v1.8.9 缺口及 player MPD 的可用時序；v1.9.0 安裝後的播放複驗另行執行。應以自動畫質＋2x 連續切換多支站內推薦，檢查控制中心顯示 player MPD 已採用、representation／Route Pool 不再長期為零，並覆蓋 seek、背景切回與短片片尾。Node／VM 結果不冒充 Chrome 實際播放證據。
+2026-09-13 使用 Chrome 153、Tampermonkey 與已安裝的 v1.9.0，以自動畫質、2x 及站內 SPA 連續切換實測：
+
+- `BV1d7b16bEuG`：播放器實際提供 4K／8K；強制 8K 時確認 `4320p/AV1`、約 33.2 Mbps、player MPD 10 組、Native 當前群組 1，前方緩衝約 18–23 秒。回到自動後 B 站降至 `720p/HEVC`，Route Pool 未遺失。
+- `BV1kd2HB7EjM`：標題雖稱 8K，播放器最高為 4K；自動 4K、2x 下確認 `1620p/HEVC`、player MPD 9 組，前方緩衝回升至約 72 秒。
+- `BV1fyXzBgEsC`：自動 4K、2x 下確認 `2160p/HEVC`、player MPD 9 組、同步第一次嘗試即採用，前方緩衝約 66–73 秒。
+
+三支影片的控制中心均顯示播放器同步為 `adopted`、來源為 `player-mpd`；SPA 後 representation 與 Route Pool 均能重建，未觀察到健康播放期間反覆換 host。第一支 8K 顯示自動畫質會在高負載時由 B 站主動降級，這不等同腳本 Route Pool 失效。
+
+這些結果是本機單一帳號、裝置及網路的功能證據，不代表所有地區、影片、硬體解碼或長時間播放情境。Node／VM 結果仍不冒充 Chrome 實際播放證據。
