@@ -29,8 +29,15 @@ v1.8.4 真實 Chrome／Tampermonkey 第一輪測試涵蓋四支影片、自動�
 
 依使用者要求，本版不執行 Code Security 掃描或獨立安全子集。
 
-## 實機驗收界線
+## 真實 Chrome／Tampermonkey 驗證
 
-目前實機證據來自 v1.8.4；v1.8.5 安裝前不能宣稱 SPA 修補已在 Tampermonkey 通過。更新後應從站內推薦連續切換至少兩支影片，確認每次新頁都出現非零 page/trusted groups、representation 能由影片傳輸確認、2x buffer 持續補充且健康播放不反覆換 host。
+將本機正式產物覆蓋至 Tampermonkey 後，在同一 Chrome 分頁從 `BV1D9cuzcEok` 的站內推薦連續切換至 `BV1v9bR6dEse`、`BV1wE6EBsEKT`：
 
-VM／本機結果不等於真實 Chrome 驗收。真正隱藏分頁及 4K 仍須另行實測。
+- 三頁的播放器設定均出現 BiliCDN 面板，使用自動畫質與 2.0x。
+- 第一次換片初期曾顯示 0 秒連續緩衝，約 10 秒後補至 72.64 秒，播放位置由 00:32 前進至 01:05。
+- 第二次換片在 00:32 時已有 68.71 秒連續前方緩衝。
+- 兩次換片後面板均重新呈現 Catalog 建議與已確認 2x，未重現 v1.8.4 長期 `no-playinfo` 後的面板／媒體狀態失聯。
+
+瀏覽器自動化執行於與頁面分離的擴充功能世界，不能直接讀取 Tampermonkey 主世界中的 `window.BiliCDN`；因此本次實機證據以同一頁籤的站內換片、播放器進度及 BiliCDN 面板後態為準，不宣稱直接讀取了 Native Pool 內部值。303 項功能測試另直接覆蓋 reset 前後 playinfo 時序、Pool 重建與舊值不回填。
+
+VM／本機結果不等於實機播放；本次也未涵蓋真正隱藏分頁及 4K。

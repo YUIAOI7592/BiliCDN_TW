@@ -2,7 +2,7 @@
 
 目前交付為 v1.8.5，以不可變 v1.8.4（SHA-256 17e38f523c0cd0aed1c6c607d8a1c9bf141e9a3bd9036a409964e934c2ae44c5）為基準。v1.8.5 修正初始 `__playinfo__` 已存在時未安裝後續觀察，以及 `pushState` 後、延遲 SPA reset 前同步指派的新值會被清除兩種時序。換片後的 page-hint route pool、representation 與媒體歸因可在新 generation 重建，未變更的舊值不會回填。
 
-本版依使用者要求不執行 Code Security 掃描或獨立安全子集；必要功能回歸、封裝與實機狀態分開記錄於 TEST_REPORT。v1.8.4 實機已確認 Akamai 停滯後可切到 Catalog 並恢復緩衝，也實際發現站內 SPA 換片後 `pageGroups=0 / no-playinfo`，由 v1.8.5 修正。
+本版依使用者要求不執行 Code Security 掃描或獨立安全子集；必要功能回歸、封裝與實機狀態分開記錄於 TEST_REPORT。v1.8.4 實機已確認 Akamai 停滯後可切到 Catalog 並恢復緩衝，也實際發現站內 SPA 換片後 `pageGroups=0 / no-playinfo`。v1.8.5 已在同一 Chrome 分頁連續換兩支站內推薦影片，自動畫質、2x 與 BiliCDN 面板均重新建立，連續緩衝恢復至約 69～73 秒。
 
 - 上游：baseline/BiliCDN_TW_1.3.4.original.user.js，SHA-256 acaa3d61c169a0a39ef403d7442e1decc1b20540ea9ada3e8cf5e459bb88f579。
 - 重構基準：tests/fixtures/BiliCDN_TW_1.5.5.user.js，SHA-256 fccf8ca10c9086b8edae3ba9b170b14ff5c92451ccd921c5834960e5624b441f。

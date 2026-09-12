@@ -6,7 +6,7 @@
 - [x] 新 playinfo 在 `pushState` 與延遲 reset 之間同步指派時，延後到新 generation 重建。
 - [x] 未變更的舊值不會在 SPA reset 後回填；頁面替換 configurable data property 時會由既有狀態週期重新掛回。
 - [x] 303 項功能回歸通過；不執行安全掃描。
-- [ ] 安裝 v1.8.5 後以站內推薦連續 SPA 換片，確認 `pageGroups > 0`、representation 可重建且播放維持流暢。
+- [x] 安裝 v1.8.5 後以站內推薦連續換兩支影片；自動畫質、2x 與 BiliCDN 面板均重建，連續緩衝分別恢復至 72.64／68.71 秒。Pool 內部值由 303 項功能測試覆蓋，瀏覽器擴充功能隔離世界無法直接讀取 Tampermonkey 主世界快照。
 
 ## v1.8.4
 
