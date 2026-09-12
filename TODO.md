@@ -1,5 +1,13 @@
 # 待辦
 
+## v1.8.5
+
+- [x] 初始 `__playinfo__` 已存在時仍安裝後續 SPA 指派觀察。
+- [x] 新 playinfo 在 `pushState` 與延遲 reset 之間同步指派時，延後到新 generation 重建。
+- [x] 未變更的舊值不會在 SPA reset 後回填；頁面替換 configurable data property 時會由既有狀態週期重新掛回。
+- [x] 303 項功能回歸通過；不執行安全掃描。
+- [ ] 安裝 v1.8.5 後以站內推薦連續 SPA 換片，確認 `pageGroups > 0`、representation 可重建且播放維持流暢。
+
 ## v1.8.4
 
 - [x] 修正被排除頁面 URL 改寫到 Catalog 後，成功 Fetch／XHR 無法建立 representation 的循環依賴。
@@ -7,7 +15,7 @@
 - [x] Watchdog recovery affinity 持續覆蓋 exact Native fallback，讓後續重複 Range 真正改走 Catalog。
 - [x] 累計資料診斷正名為含快取重送的觀察媒體位元組，不冒充 wire bytes。
 - [x] 298 項功能回歸通過，新增 6 項模組／正式 bundle Fetch／XHR 案例；不執行安全掃描。
-- [ ] 安裝 v1.8.4 後重測先前會反覆請求同一 Akamai Range 的影片，以及自動畫質、2x、seek、背景分頁。
+- [x] 安裝 v1.8.4 後實測四支影片、自動畫質、2x、seek、非焦點視窗及 Akamai 停滯恢復；另發現 SPA playinfo 失聯，由 v1.8.5 修正。
 
 ## v1.8.3
 

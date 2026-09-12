@@ -1,0 +1,169 @@
+diff --git a/Release/v1.8.4/BiliCDN_TW.user.js b/Release/v1.8.5/BiliCDN_TW.user.js
+index 5abc8ad..f6e8480 100644
+--- a/Release/v1.8.4/BiliCDN_TW.user.js
++++ b/Release/v1.8.5/BiliCDN_TW.user.js
+@@ -1,7 +1,7 @@
+ // ==UserScript==
+ // @name         Bilibili CDN 台灣優化
+ // @namespace    BiliCDN_TW
+-// @version      1.8.4
++// @version      1.8.5
+ // @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+ // @author       jiyunshi <chocosensei214@gmail.com>
+ // @license      MIT
+@@ -83,7 +83,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let BlockHttpDNS = input.BlockHttpDNS;
+     let PreferredVideoCodec = input.PreferredVideoCodec;
+     let BlockWebRTC = input.BlockWebRTC;
+-    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.8.4";
++    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.8.5";
+     const parseVer = /* @__PURE__ */ __name((v) => String(v || "0").split(".").map((n) => parseInt(n, 10) || 0), "parseVer");
+     const verGte = /* @__PURE__ */ __name((a, b) => {
+       const A = parseVer(a), B = parseVer(b);
+@@ -8904,29 +8904,82 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         }
+       });
+     }, "restoreWebRtc");
+-    const transformInitialPlayInfo = /* @__PURE__ */ __name(() => {
+-      if (deps.disabled) return;
+-      const safeTransform = /* @__PURE__ */ __name((value) => {
+-        try {
+-          deps.playInfoTransformer(value, { trustedTransport: false });
+-        } catch {
+-          deps.DiagnosticLog.fault("transform");
+-        }
+-      }, "safeTransform");
+-      if (unsafeWindow.__playinfo__) {
+-        safeTransform(unsafeWindow.__playinfo__);
+-      } else {
+-        let internal = unsafeWindow.__playinfo__;
++    let pagePlayInfoGetter = null;
++    let pagePlayInfoSetter = null;
++    let lastObservedPagePlayInfo = null;
++    let hasObservedPagePlayInfo = false;
++    let currentPagePlayInfoValue = null;
++    let pagePlayInfoAssignmentSerial = 0;
++    let lastSpaBoundaryAssignmentSerial = 0;
++    let latestPagePlayInfoAssignment = null;
++    const readPagePlayInfo = /* @__PURE__ */ __name(() => {
++      try {
++        return unsafeWindow.__playinfo__;
++      } catch {
++        deps.DiagnosticLog.fault("page-hook");
++        return void 0;
++      }
++    }, "readPagePlayInfo");
++    const transformPagePlayInfo = /* @__PURE__ */ __name((value, force = false) => {
++      if (deps.disabled || value === null || value === void 0) return false;
++      if (!force && hasObservedPagePlayInfo && value === lastObservedPagePlayInfo) return false;
++      hasObservedPagePlayInfo = true;
++      lastObservedPagePlayInfo = value;
++      try {
++        deps.playInfoTransformer(value, { trustedTransport: false });
++        currentPagePlayInfoValue = value;
++        return true;
++      } catch {
++        deps.DiagnosticLog.fault("transform");
++        return false;
++      }
++    }, "transformPagePlayInfo");
++    const notePagePlayInfoAssignment = /* @__PURE__ */ __name((value) => {
++      let key = null;
++      try {
++        key = getVideoKey();
++      } catch {
++      }
++      latestPagePlayInfoAssignment = { value, key, serial: ++pagePlayInfoAssignmentSerial };
++      if (!deps.disabled && key === currentVideoKey) transformPagePlayInfo(value, true);
++    }, "notePagePlayInfoAssignment");
++    const installPagePlayInfoHook = /* @__PURE__ */ __name(() => {
++      let descriptor;
++      try {
++        descriptor = Object.getOwnPropertyDescriptor(unsafeWindow, "__playinfo__");
++      } catch {
++        return readPagePlayInfo();
++      }
++      if (descriptor?.get === pagePlayInfoGetter && descriptor?.set === pagePlayInfoSetter) {
++        return readPagePlayInfo();
++      }
++      const current = readPagePlayInfo();
++      const isData = !descriptor || Object.prototype.hasOwnProperty.call(descriptor, "value");
++      if (!isData || descriptor?.configurable === false || descriptor?.writable === false) return current;
++      let internal = current;
++      pagePlayInfoGetter = /* @__PURE__ */ __name(() => internal, "pagePlayInfoGetter");
++      pagePlayInfoSetter = /* @__PURE__ */ __name((value) => {
++        internal = value;
++        notePagePlayInfoAssignment(value);
++      }, "pagePlayInfoSetter");
++      try {
+         Object.defineProperty(unsafeWindow, "__playinfo__", {
+-          get: /* @__PURE__ */ __name(() => internal, "get"),
+-          set: /* @__PURE__ */ __name((v) => {
+-            if (!deps.disabled) safeTransform(v);
+-            internal = v;
+-          }, "set"),
+-          configurable: true
++          configurable: true,
++          enumerable: !!descriptor?.enumerable,
++          get: pagePlayInfoGetter,
++          set: pagePlayInfoSetter
+         });
++      } catch {
++        deps.DiagnosticLog.fault("page-hook");
+       }
+-    }, "transformInitialPlayInfo");
++      return current;
++    }, "installPagePlayInfoHook");
++    const observePagePlayInfo = /* @__PURE__ */ __name(() => {
++      if (deps.disabled) return false;
++      const current = installPagePlayInfoHook();
++      return transformPagePlayInfo(current);
++    }, "observePagePlayInfo");
++    const transformInitialPlayInfo = /* @__PURE__ */ __name(() => observePagePlayInfo(), "transformInitialPlayInfo");
+     let backgroundPlaybackEnabled = !deps.disabled;
+     let visibilitySpoofInstalled = false;
+     let tabReallyHidden = false;
+@@ -9011,7 +9064,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     }, "closeCrossTab");
+     let pageHooksApplied = false;
+     const applyPageHooks = /* @__PURE__ */ __name(() => {
+-      if (deps.disabled || pageHooksApplied) return;
++      if (deps.disabled) return;
+       const step = /* @__PURE__ */ __name((name, fn) => {
+         try {
+           fn();
+@@ -9020,6 +9073,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         }
+       }, "step");
+       step("transformInitialPlayInfo", transformInitialPlayInfo);
++      if (pageHooksApplied) return;
+       step("blockWebRtc", blockWebRtc);
+       step("installVisibilitySpoof", installVisibilitySpoof);
+       pageHooksApplied = true;
+@@ -9143,6 +9197,10 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const key = getVideoKey();
+       warnIfVideoKeyUnresolvable();
+       if (key === currentVideoKey) return;
++      const assigned = latestPagePlayInfoAssignment;
++      const currentValue = readPagePlayInfo();
++      const pendingPagePlayInfo = assigned && assigned.serial > lastSpaBoundaryAssignmentSerial && assigned.value === currentValue && (assigned.key === key || currentValue !== currentPagePlayInfoValue) ? currentValue : null;
++      if (assigned) lastSpaBoundaryAssignmentSerial = assigned.serial;
+       currentVideoKey = key;
+       deps.DiagnosticLog.record("runtime", { reason: "spa" }, true);
+       deps.TrustedMenuUI.invalidate();
+@@ -9179,6 +9237,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       if (!deps.disabled) {
+         deps.beginRuntimeGeneration();
++        if (pendingPagePlayInfo) transformPagePlayInfo(pendingPagePlayInfo, true);
+         setupCrossTab();
+         deps.startCdnProbe();
+         setupSeekPrewarm();
+@@ -9351,6 +9410,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     });
+     setInterval(() => {
+       deps.refreshExpiredRestrictions();
++      observePagePlayInfo();
+       deps.samplePlaybackQuality();
+       if (!deps.disabled) deps.DiagnosticLog.sample(deps.readPlaybackDiagnostic());
+       deps.refreshPublicDiagnosticSnapshot();

@@ -1,12 +1,12 @@
 # 專案交接脈絡
 
-目前交付為 v1.8.4，以不可變 v1.8.3（SHA-256 a55b80eb3d23cf9c15145399978b532117c2b2bce5205615a8d2d7d1ebcac4f6）為基準。頁面候選被改寫到 Catalog 後，成功終態會以獨立的 Catalog 證據建立 representation，不解鎖原始 Native URL；Watchdog recovery affinity 會實際約束後續相同請求直到 epoch 改變。v1.8.3 的共用 host-access 禁止效力保持不變。
+目前交付為 v1.8.5，以不可變 v1.8.4（SHA-256 17e38f523c0cd0aed1c6c607d8a1c9bf141e9a3bd9036a409964e934c2ae44c5）為基準。v1.8.5 修正初始 `__playinfo__` 已存在時未安裝後續觀察，以及 `pushState` 後、延遲 SPA reset 前同步指派的新值會被清除兩種時序。換片後的 page-hint route pool、representation 與媒體歸因可在新 generation 重建，未變更的舊值不會回填。
 
-本版依使用者要求不執行 Code Security 掃描或獨立安全子集；必要功能回歸、封裝與實機狀態分開記錄於 TEST_REPORT。v1.8.3 實機已重現 Native 相同 Range 反覆交付但 buffer／影格不前進，以及 Catalog 成功播放仍無 representation 歸因；v1.8.4 修正 recovery 不生效與改寫 provenance 失聯，仍須使用者更新後重測真實影片。
+本版依使用者要求不執行 Code Security 掃描或獨立安全子集；必要功能回歸、封裝與實機狀態分開記錄於 TEST_REPORT。v1.8.4 實機已確認 Akamai 停滯後可切到 Catalog 並恢復緩衝，也實際發現站內 SPA 換片後 `pageGroups=0 / no-playinfo`，由 v1.8.5 修正。
 
 - 上游：baseline/BiliCDN_TW_1.3.4.original.user.js，SHA-256 acaa3d61c169a0a39ef403d7442e1decc1b20540ea9ada3e8cf5e459bb88f579。
 - 重構基準：tests/fixtures/BiliCDN_TW_1.5.5.user.js，SHA-256 fccf8ca10c9086b8edae3ba9b170b14ff5c92451ccd921c5834960e5624b441f。
-- 原始碼 src；目前交付 Release/v1.8.4；暫存 dist。功能驗收狀態見本版 TEST_REPORT，不以舊版通過狀態代替。
+- 原始碼 src；目前交付 Release/v1.8.5；暫存 dist。功能驗收狀態見本版 TEST_REPORT，不以舊版通過狀態代替。
 - v1.8.0 已由 v1.8.1 取代；v1.8.1 的正式 Codex Security 差異掃描狀態以本版 TEST_REPORT 為準，掃描不等於 Chrome／Tampermonkey 實機播放驗證。
 
 runtime 持有 generation，playback 持有 epoch／registry，transport 持有單次請求終態，routing 保留 catalog health、Native host-only Ledger、Route Affinity、處分及 Watchdog 回收來源區別。完整 signed URL 只在目前 epoch 的 route group 中存在；新 epoch、SPA、停用或重啟即清除。健康 probe 不能改 Route Affinity；真實 Transport／Watchdog recovery 才能開啟換線邊界。所有實例由主入口建立，import 不讀 GM／DOM 或啟動網路。v1.7.0 起不讀取或覆寫 `unsafeWindow.Worker`。

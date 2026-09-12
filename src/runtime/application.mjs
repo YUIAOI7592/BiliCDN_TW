@@ -45,23 +45,83 @@ export function createApplication(deps) {
         })
     }
 
-    const transformInitialPlayInfo = () => {
-        if (deps.disabled) return
-        const safeTransform = (value) => {
-            try { deps.playInfoTransformer(value, { trustedTransport: false }) }
-            catch { deps.DiagnosticLog.fault('transform') }
-        }
-        if (unsafeWindow.__playinfo__) {
-            safeTransform(unsafeWindow.__playinfo__)
-        } else {
-            let internal = unsafeWindow.__playinfo__
-            Object.defineProperty(unsafeWindow, '__playinfo__', {
-                get: () => internal,
-                set: v => { if (!deps.disabled) safeTransform(v); internal = v },
-                configurable: true
-            })
+    // __playinfo__ may already exist when Tampermonkey starts this script. The old
+    // branch transformed that one value but installed no setter, so a later SPA
+    // assignment was invisible. Keep a best-effort accessor plus a polling fallback
+    // for pages that replace the configurable data property with defineProperty().
+    let pagePlayInfoGetter = null
+    let pagePlayInfoSetter = null
+    let lastObservedPagePlayInfo = null
+    let hasObservedPagePlayInfo = false
+    let currentPagePlayInfoValue = null
+    let pagePlayInfoAssignmentSerial = 0
+    let lastSpaBoundaryAssignmentSerial = 0
+    let latestPagePlayInfoAssignment = null
+
+    const readPagePlayInfo = () => {
+        try { return unsafeWindow.__playinfo__ }
+        catch { deps.DiagnosticLog.fault('page-hook'); return undefined }
+    }
+    const transformPagePlayInfo = (value, force = false) => {
+        if (deps.disabled || value === null || value === undefined) return false
+        if (!force && hasObservedPagePlayInfo && value === lastObservedPagePlayInfo) return false
+        hasObservedPagePlayInfo = true
+        lastObservedPagePlayInfo = value
+        try {
+            deps.playInfoTransformer(value, { trustedTransport: false })
+            currentPagePlayInfoValue = value
+            return true
+        } catch {
+            deps.DiagnosticLog.fault('transform')
+            return false
         }
     }
+    const notePagePlayInfoAssignment = (value) => {
+        let key = null
+        try { key = getVideoKey() } catch {}
+        latestPagePlayInfoAssignment = { value, key, serial: ++pagePlayInfoAssignmentSerial }
+        // pushState schedules the SPA reset for the next task. If Bilibili assigns
+        // the new value synchronously in between, defer transformation until that
+        // reset has established the new generation and empty route pool.
+        if (!deps.disabled && key === currentVideoKey) transformPagePlayInfo(value, true)
+    }
+    const installPagePlayInfoHook = () => {
+        let descriptor
+        try { descriptor = Object.getOwnPropertyDescriptor(unsafeWindow, '__playinfo__') }
+        catch { return readPagePlayInfo() }
+        if (descriptor?.get === pagePlayInfoGetter && descriptor?.set === pagePlayInfoSetter) {
+            return readPagePlayInfo()
+        }
+
+        const current = readPagePlayInfo()
+        // Do not replace an unrelated accessor or a non-configurable/non-writable
+        // data property. The shared one-second state cycle still observes identity
+        // changes without altering the page's descriptor semantics.
+        const isData = !descriptor || Object.prototype.hasOwnProperty.call(descriptor, 'value')
+        if (!isData || descriptor?.configurable === false || descriptor?.writable === false) return current
+
+        let internal = current
+        pagePlayInfoGetter = () => internal
+        pagePlayInfoSetter = value => {
+            internal = value // store first: transformation failure must remain fail-open
+            notePagePlayInfoAssignment(value)
+        }
+        try {
+            Object.defineProperty(unsafeWindow, '__playinfo__', {
+                configurable: true,
+                enumerable: !!descriptor?.enumerable,
+                get: pagePlayInfoGetter,
+                set: pagePlayInfoSetter,
+            })
+        } catch { deps.DiagnosticLog.fault('page-hook') }
+        return current
+    }
+    const observePagePlayInfo = () => {
+        if (deps.disabled) return false
+        const current = installPagePlayInfoHook()
+        return transformPagePlayInfo(current)
+    }
+    const transformInitialPlayInfo = () => observePagePlayInfo()
 
     // ── 背景續播：偽裝 Page Visibility ──────────────────────────────────
     // 切換視窗/分頁時，瀏覽器會送 visibilitychange=hidden，bili 播放器收到後
@@ -145,11 +205,12 @@ export function createApplication(deps) {
 
     let pageHooksApplied = false
     const applyPageHooks = () => {
-        if (deps.disabled || pageHooksApplied) return
+        if (deps.disabled) return
         const step = (name, fn) => {
             try { fn() } catch { deps.DiagnosticLog.fault('page-hook') }
         }
         step('transformInitialPlayInfo', transformInitialPlayInfo)
+        if (pageHooksApplied) return
         step('blockWebRtc', blockWebRtc)
         step('installVisibilitySpoof', installVisibilitySpoof)
         pageHooksApplied = true
@@ -304,6 +365,14 @@ export function createApplication(deps) {
         const key = getVideoKey()
         warnIfVideoKeyUnresolvable()
         if (key === currentVideoKey) return
+        const assigned = latestPagePlayInfoAssignment
+        const currentValue = readPagePlayInfo()
+        const pendingPagePlayInfo = assigned
+            && assigned.serial > lastSpaBoundaryAssignmentSerial
+            && assigned.value === currentValue
+            && (assigned.key === key || currentValue !== currentPagePlayInfoValue)
+            ? currentValue : null
+        if (assigned) lastSpaBoundaryAssignmentSerial = assigned.serial
         currentVideoKey = key
         deps.DiagnosticLog.record('runtime', { reason: 'spa' }, true)
         deps.TrustedMenuUI.invalidate()
@@ -328,6 +397,10 @@ export function createApplication(deps) {
         try { deps.HttpDnsAutoPilot.onWatchdogReset() } catch {}
         if (!deps.disabled) {
             deps.beginRuntimeGeneration()
+            // A new value may have been assigned after pushState but before this
+            // delayed SPA boundary. Rebuild it only after the old pool is cleared;
+            // never repopulate from an unchanged value belonging to the prior page.
+            if (pendingPagePlayInfo) transformPagePlayInfo(pendingPagePlayInfo, true)
             setupCrossTab()
             deps.startCdnProbe()
             setupSeekPrewarm()
@@ -454,6 +527,10 @@ get DiagnosticLog(){return deps.DiagnosticLog},
     // One shared state cycle, independent of panel injection/visibility. No active networking here.
     setInterval(() => {
         deps.refreshExpiredRestrictions()
+        // Bilibili occasionally replaces the __playinfo__ data property during
+        // SPA navigation. Re-arm the accessor or observe a new value without
+        // introducing another timer or any network activity.
+        observePagePlayInfo()
         deps.samplePlaybackQuality()
         if (!deps.disabled) deps.DiagnosticLog.sample(deps.readPlaybackDiagnostic())
         deps.refreshPublicDiagnosticSnapshot()
