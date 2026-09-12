@@ -333,7 +333,7 @@ test('v1.5.3: player-panel mutators statically require trusted events', () => {
     assert.doesNotMatch(source, /(?:resetBtn|reportBtn)\.addEventListener/)
 })
 
-test('v1.5.3: routing, playback, codec, probe, and bakeoff constants match v1.5.2', () => {
+test('current routing, playback, codec, probe, and bakeoff constants match v1.5.2 except the deliberate Worker default', () => {
     const readConfig = file => {
         const h = loadUserscript(file, { gmSeed: { disabled: true } })
         return JSON.parse(h.evaluate(`JSON.stringify({
@@ -347,5 +347,11 @@ test('v1.5.3: routing, playback, codec, probe, and bakeoff constants match v1.5.
             catalog: TRUSTED_CDN_CATALOG,
         })`))
     }
-    assert.deepEqual(readConfig(v144), readConfig(v143))
+    const current = readConfig(v144)
+    const previous = readConfig(v143)
+    assert.equal(current.worker, true)
+    assert.equal(previous.worker, false)
+    delete current.worker
+    delete previous.worker
+    assert.deepEqual(current, previous)
 })

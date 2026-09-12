@@ -30,9 +30,9 @@ var PreferredVideoCodec = 'av1'
 var BlockWebRTC = true
 
 // EnableWorkerIntercept：是否攔截 new Worker() 並改寫其內部 segment 請求的 CDN host。
-// 這段機制涉及動態 Worker 包裝，對目前播放器是否真的有作用仍需實測；v1.4.0 預設 false，
-// 先避免實驗性攔截影響播放。要驗證時可暫時改成 true，播放數部影片後查看
+// 這段機制涉及動態 Worker 包裝，對目前播放器是否真的有作用仍需實測；v1.6.3 預設 true，
+// 用於蒐集真實使用證據。播放數部影片後查看
 // 控制中心「進階 → 顯示 Worker 使用量」中 mediaSeen > 0 才代表 Worker 真的抓過影片分段。
-// 設定面板 checkbox 控制的是整體 CDN 改寫；這個變數則控制 Worker 攔截機制本身。
-var EnableWorkerIntercept = false
-
+// 若遇到相容性問題可改成 false；設定面板 checkbox 控制的是整體 CDN 改寫，
+// 這個變數則控制 Worker 攔截機制本身。
+var EnableWorkerIntercept = true

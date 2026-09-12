@@ -8,13 +8,25 @@ const target = require('../harness/current-script');
 const load = options => loadUserscript(target, { instrument: false, gmSeed: { disabled: false }, ...options });
 const snapshot = h => JSON.parse(JSON.stringify(h.pageWindow.BiliCDN));
 
-test('v162 default-off path still does not touch Worker, Blob or MessageChannel', () => {
-    const h = load();
+test('current explicit opt-out still does not touch Worker, Blob or MessageChannel', () => {
+    const h = load({ enableWorkerIntercept: false });
     assert.equal(snapshot(h).worker.installState, 'disabled');
     assert.equal(snapshot(h).worker.session.constructorCalls, 0);
     assert.equal(h.getMessageChannelCount(), 0);
     assert.equal(h.blobStore.size, 0);
     assert.equal(h.workerInstances.length, 0);
+});
+
+test('v163 default-on path installs the interceptor without creating a Worker or active network work', () => {
+    const h = load();
+    const off = load({ enableWorkerIntercept: false });
+    assert.equal(snapshot(h).worker.enabled, true);
+    assert.equal(snapshot(h).worker.installState, 'installed');
+    assert.equal(snapshot(h).worker.session.constructorCalls, 0);
+    assert.equal(h.getMessageChannelCount(), 0);
+    assert.equal(h.blobStore.size, 0);
+    assert.equal(h.workerInstances.length, 0);
+    assert.equal(h.fetchCalls.length, off.fetchCalls.length, 'installing the interceptor adds no active network request');
 });
 
 test('v162 enabled interceptor distinguishes no constructor call from a wrapped Worker', async t => {

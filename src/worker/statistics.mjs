@@ -20,6 +20,7 @@ const WORKER_DIAGNOSTIC_COUNTERS = Object.freeze({
     'constructor-call': 'constructorCalls',
     'wrapped': 'created',
     'bootstrap-ready': 'bootstrapReady',
+    'bootstrap-timeout': 'bootstrapTimeouts',
     'bypass-disabled': 'bypassDisabled',
     'bypass-blob': 'bypassBlob',
     'bypass-data': 'bypassData',
@@ -117,7 +118,7 @@ const summarizeWorkerStats = () => {
     const bypassTotal = s.bypassDisabled + s.bypassBlob + s.bypassData + s.bypassCrossOriginModule
         + s.bypassNoRandom + s.bypassNoBlobApi + s.bypassNoMessageChannel
     const failureTotal = s.installFailures + s.resolveFailures + s.buildFailures + s.constructorFailures
-        + s.registerFailures + s.portFailures
+        + s.registerFailures + s.portFailures + s.bootstrapTimeouts
     let verdict = 'Worker 攔截目前停用；開啟後重整才能量測'
     if (deps.EnableWorkerIntercept) {
         if (s.installState === 'unavailable') verdict = '此頁載入時沒有可攔截的 Worker constructor'
@@ -147,6 +148,7 @@ const summarizeWorkerStats = () => {
             failures: {
                 install: s.installFailures, resolve: s.resolveFailures, build: s.buildFailures,
                 constructor: s.constructorFailures, register: s.registerFailures, port: s.portFailures,
+                bootstrap: s.bootstrapTimeouts,
             },
             replacements: s.replacements,
             netCalls: s.netCalls,

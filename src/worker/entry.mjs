@@ -11,18 +11,142 @@ const BILICDN_URL_MAX = 16 * 1024;
 const BILICDN_BYTES_MAX = 256 * 1024 * 1024;
 const BILICDN_STAT_MAX = 10000;
 const BILICDN_REPORT_MS = 200;
+const BILICDN_BOOTSTRAP_TIMEOUT_MS = 1000;
+const BILICDN_MODULE_WORKER = configuration.moduleWorker === true;
 let BILICDN_TARGET_HOST = configuration.target;
 let BILICDN_FORCE = configuration.force;
 let BILICDN_PREFERRED = configuration.preferred;
 let BILICDN_EXCLUDED = configuration.excluded;
-let BILICDN_DISABLED = false;
+let BILICDN_DISABLED = configuration.disabled === true;
 let BILICDN_CONTROL_PORT = null;
+let BILICDN_CONTROL_SEND = null;
 let BILICDN_STAT = { netCalls: 0, mediaSeen: 0, rewrites: 0 };
 let BILICDN_STAT_TIMER = null;
+let BILICDN_ORIGINAL_STARTED = false;
+let BILICDN_PENDING_MESSAGES_ACTIVE = true;
+let BILICDN_PENDING_MESSAGES = [];
+let BILICDN_BOOTSTRAP_FALLBACK = false;
+let BILICDN_BOOTSTRAP_TIMER = null;
 const BILICDN_NATIVE_ADD_EVENT = self.addEventListener.bind(self);
 const BILICDN_NATIVE_REMOVE_EVENT = self.removeEventListener.bind(self);
+const BILICDN_NATIVE_DISPATCH_EVENT = self.dispatchEvent.bind(self);
+const BILICDN_NATIVE_REFLECT_APPLY = Reflect.apply;
+const BILICDN_NATIVE_MESSAGE_EVENT = typeof MessageEvent === 'function' ? MessageEvent : null;
 const BILICDN_NATIVE_STOP_IMMEDIATE = typeof Event !== 'undefined'
     && Event.prototype && Event.prototype.stopImmediatePropagation;
+const BILICDN_NATIVE_MESSAGE_DATA_GETTER = typeof MessageEvent === 'function'
+    && MessageEvent.prototype
+    ? Object.getOwnPropertyDescriptor(MessageEvent.prototype, 'data')?.get
+    : null;
+const BILICDN_NATIVE_MESSAGE_PORTS_GETTER = typeof MessageEvent === 'function'
+    && MessageEvent.prototype
+    ? Object.getOwnPropertyDescriptor(MessageEvent.prototype, 'ports')?.get
+    : null;
+const BILICDN_NATIVE_PORT_CLOSE = typeof MessagePort === 'function'
+    && MessagePort.prototype && typeof MessagePort.prototype.close === 'function'
+    ? MessagePort.prototype.close
+    : null;
+const biliCdnReadMessageData = (event) => {
+    if (!event) return undefined;
+    if (typeof BILICDN_NATIVE_MESSAGE_DATA_GETTER === 'function') {
+        try {
+            const value = BILICDN_NATIVE_REFLECT_APPLY(BILICDN_NATIVE_MESSAGE_DATA_GETTER, event, []);
+            if (value !== undefined) return value;
+        } catch (e) {}
+    }
+    return event.data;
+};
+const biliCdnReadMessagePorts = (event) => {
+    if (!event) return undefined;
+    if (typeof BILICDN_NATIVE_MESSAGE_PORTS_GETTER === 'function') {
+        try {
+            const value = BILICDN_NATIVE_REFLECT_APPLY(BILICDN_NATIVE_MESSAGE_PORTS_GETTER, event, []);
+            if (value !== undefined) return value;
+        } catch (e) {}
+    }
+    return event.ports;
+};
+const biliCdnStopMessage = (event) => {
+    try {
+        if (typeof BILICDN_NATIVE_STOP_IMMEDIATE === 'function') {
+            BILICDN_NATIVE_REFLECT_APPLY(BILICDN_NATIVE_STOP_IMMEDIATE, event, []);
+        } else event.stopImmediatePropagation();
+        return true;
+    } catch (e) {
+        try { event.stopImmediatePropagation(); return true; } catch (e2) { return false; }
+    }
+};
+const biliCdnCloseTransferredPort = (port) => {
+    try {
+        if (port && typeof BILICDN_NATIVE_PORT_CLOSE === 'function') {
+            BILICDN_NATIVE_REFLECT_APPLY(BILICDN_NATIVE_PORT_CLOSE, port, []);
+        } else if (port && typeof port.close === 'function') port.close();
+    } catch (e) {}
+};
+const biliCdnDisablePrivatePolicy = () => {
+    // 沒有 authenticated private port 時，wrapper 只能作原 Worker 的透明載入器。
+    // 清掉初始 policy，避免 controller 已放棄追蹤後仍留下不可停用的改寫能力。
+    BILICDN_DISABLED = true;
+    BILICDN_TARGET_HOST = '';
+    BILICDN_FORCE = [];
+    BILICDN_PREFERRED = [];
+    BILICDN_EXCLUDED = [];
+    BILICDN_CONTROL_PORT = null;
+    BILICDN_CONTROL_SEND = null;
+};
+const BILICDN_NATIVE_IMPORT_SCRIPTS = !BILICDN_MODULE_WORKER && typeof self.importScripts === 'function'
+    ? self.importScripts.bind(self)
+    : null;
+const BILICDN_NATIVE_URL = URL;
+if (BILICDN_NATIVE_IMPORT_SCRIPTS) {
+    self.importScripts = (...urls) => BILICDN_NATIVE_IMPORT_SCRIPTS(...urls.map((url) => {
+        try { return new BILICDN_NATIVE_URL(String(url), BILICDN_BASE).href; } catch { return url; }
+    }));
+}
+const biliCdnQueuePendingMessage = (event) => {
+    if (!BILICDN_PENDING_MESSAGES_ACTIVE) return;
+    if (!biliCdnStopMessage(event)) return;
+    BILICDN_PENDING_MESSAGES.push(event);
+};
+const biliCdnFinishPendingMessages = (replay) => {
+    if (!BILICDN_PENDING_MESSAGES_ACTIVE) return;
+    BILICDN_PENDING_MESSAGES_ACTIVE = false;
+    BILICDN_NATIVE_REMOVE_EVENT('message', biliCdnQueuePendingMessage);
+    const pending = BILICDN_PENDING_MESSAGES;
+    BILICDN_PENDING_MESSAGES = [];
+    if (!replay) return;
+    for (const event of pending) {
+        try {
+            const replayEvent = BILICDN_NATIVE_MESSAGE_EVENT
+                ? new BILICDN_NATIVE_MESSAGE_EVENT('message', {
+                    data: biliCdnReadMessageData(event),
+                    ports: biliCdnReadMessagePorts(event) || [],
+                })
+                : event;
+            BILICDN_NATIVE_DISPATCH_EVENT(replayEvent);
+        } catch (e) {}
+    }
+};
+const biliCdnStartOriginal = () => {
+    if (BILICDN_ORIGINAL_STARTED) return;
+    BILICDN_ORIGINAL_STARTED = true;
+    if (BILICDN_MODULE_WORKER) {
+        import(BILICDN_BASE).then(
+            () => { biliCdnFinishPendingMessages(true); },
+            (e) => {
+                biliCdnFinishPendingMessages(false);
+                try { console.error('[BiliCDN] worker module import 失敗', e); } catch (e2) {}
+            });
+        return;
+    }
+    try {
+        if (BILICDN_NATIVE_IMPORT_SCRIPTS) BILICDN_NATIVE_IMPORT_SCRIPTS(BILICDN_BASE);
+        biliCdnFinishPendingMessages(!!BILICDN_NATIVE_IMPORT_SCRIPTS);
+    } catch (e) {
+        biliCdnFinishPendingMessages(false);
+        throw e;
+    }
+};
 const biliCdnCatalogArray = (value) => {
     if (!Array.isArray(value) || value.length > BILICDN_CATALOG.length) return null;
     const out = [];
@@ -50,8 +174,8 @@ const biliCdnApplyPolicy = (data) => {
     return true;
 };
 const biliCdnPostPrivate = (message) => {
-    if (!BILICDN_CONTROL_PORT) return false;
-    try { BILICDN_CONTROL_PORT.postMessage(message); return true; } catch (e) { return false; }
+    if (!BILICDN_CONTROL_PORT || !BILICDN_CONTROL_SEND) return false;
+    try { BILICDN_CONTROL_SEND(message); return true; } catch (e) { return false; }
 };
 const biliCdnFlushStat = () => {
     if (!BILICDN_STAT.netCalls && !BILICDN_STAT.mediaSeen && !BILICDN_STAT.rewrites) return;
@@ -70,24 +194,53 @@ const biliCdnBumpStat = (key) => {
     }
 };
 const biliCdnBootstrap = (event) => {
-    const data = event && event.data;
-    const ports = event && event.ports;
+    const data = biliCdnReadMessageData(event);
+    const ports = biliCdnReadMessagePorts(event);
     if (BILICDN_CONTROL_PORT || !data || data.__biliCdnBootstrap !== BILICDN_BOOTSTRAP_TOKEN
         || !ports || ports.length !== 1 || !ports[0]) return;
-    try {
-        if (typeof BILICDN_NATIVE_STOP_IMMEDIATE === 'function') BILICDN_NATIVE_STOP_IMMEDIATE.call(event);
-        else event.stopImmediatePropagation();
-    } catch (e) {
-        try { event.stopImmediatePropagation(); } catch (e2) {}
+    biliCdnStopMessage(event);
+    if (BILICDN_BOOTSTRAP_FALLBACK) {
+        // 原始 Worker 已由 timeout fail-open 啟動。遲到的 capability/port 仍須攔下，
+        // 但不再建立控制通道，避免原始程式在同 realm 取得 transferred port。
+        BILICDN_NATIVE_REMOVE_EVENT('message', biliCdnBootstrap);
+        biliCdnCloseTransferredPort(ports[0]);
+        return;
     }
-    BILICDN_CONTROL_PORT = ports[0];
-    BILICDN_CONTROL_PORT.onmessage = (portEvent) => { biliCdnApplyPolicy(portEvent && portEvent.data); };
+    if (BILICDN_BOOTSTRAP_TIMER) { clearTimeout(BILICDN_BOOTSTRAP_TIMER); BILICDN_BOOTSTRAP_TIMER = null; }
+    const controlPort = ports[0];
+    const controlSend = typeof controlPort.postMessage === 'function'
+        ? controlPort.postMessage.bind(controlPort)
+        : null;
+    if (!controlSend) {
+        BILICDN_NATIVE_REMOVE_EVENT('message', biliCdnBootstrap);
+        biliCdnCloseTransferredPort(controlPort);
+        BILICDN_BOOTSTRAP_FALLBACK = true;
+        biliCdnDisablePrivatePolicy();
+        biliCdnStartOriginal();
+        return;
+    }
+    BILICDN_CONTROL_PORT = controlPort;
+    BILICDN_CONTROL_SEND = controlSend;
+    BILICDN_CONTROL_PORT.onmessage = (portEvent) => { biliCdnApplyPolicy(biliCdnReadMessageData(portEvent)); };
     try { BILICDN_CONTROL_PORT.start(); } catch (e) {}
     BILICDN_NATIVE_REMOVE_EVENT('message', biliCdnBootstrap);
     biliCdnPostPrivate({ version: 1, type: 'ready' });
     biliCdnFlushStat();
+    // 私有 port、handler 與原生 send 已先固定；原始 Worker 到這裡才取得執行權，
+    // 無法在 bootstrap 前透過 prototype poisoning 竊取 capability/MessagePort。
+    biliCdnStartOriginal();
 };
 BILICDN_NATIVE_ADD_EVENT('message', biliCdnBootstrap);
+BILICDN_NATIVE_ADD_EVENT('message', biliCdnQueuePendingMessage);
+BILICDN_BOOTSTRAP_TIMER = setTimeout(() => {
+    BILICDN_BOOTSTRAP_TIMER = null;
+    if (BILICDN_CONTROL_PORT || BILICDN_ORIGINAL_STARTED) return;
+    BILICDN_BOOTSTRAP_FALLBACK = true;
+    // 安全通道建立失敗時以可用性優先：清除初始 policy 後只啟動原 Worker，
+    // 不保留改寫、stats 或任何 controller 已無法撤銷的能力。
+    biliCdnDisablePrivatePolicy();
+    biliCdnStartOriginal();
+}, BILICDN_BOOTSTRAP_TIMEOUT_MS);
 // Worker 被包成 blob 之後 self.location 會變成 blob:https://...，相對 URL 必須用原 script 當基準。
 const biliCdnAbs = (url) => {
     const raw = String(url);

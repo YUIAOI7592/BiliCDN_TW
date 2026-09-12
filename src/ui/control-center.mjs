@@ -69,7 +69,7 @@ const showDeadReviveDialog = () => {
 const showWorkerStatsDialog = () => {
     const stats = deps.BiliCDNControls.workerStats()
     const lines = [
-        'Worker 攔截：' + (deps.EnableWorkerIntercept ? '已開啟' : '預設關閉（目前數值為 0 屬正常）'),
+        'Worker 攔截：' + (deps.EnableWorkerIntercept ? '已開啟（v1.6.3 預設）' : '已由檔頭設定關閉（目前數值為 0 屬正常）'),
         '本分頁安裝狀態=' + stats.installState,
         '本分頁 constructor 呼叫=' + stats.session.constructorCalls,
         '本分頁成功包裝=' + stats.session.wrapped,

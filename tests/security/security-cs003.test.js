@@ -19,8 +19,8 @@ test('CS-003 reproduction: v1.4.0 generated Worker accepts public target message
     assert.match(source, /BILICDN_TARGET_HOST = data\.__biliCdnSetTarget/)
 })
 
-test('CS-003 fixed: default false never patches Worker or creates a blob', { skip: !fs.existsSync(v141) }, () => {
-    const h = loadUserscript(v141, { gmSeed: { disabled: false } })
+test('CS-003 fixed: explicit false never patches Worker or creates a blob', { skip: !fs.existsSync(v141) }, () => {
+    const h = loadUserscript(v141, { gmSeed: { disabled: false }, enableWorkerIntercept: false })
     assert.equal(h.pageWindow.Worker.name, 'FakeWorker')
     assert.equal(h.blobStore.size, 0)
     assert.equal(h.getMessageChannelCount(), 0)
@@ -74,12 +74,16 @@ test('CS-003 fixed: ordinary messages cannot change policy; the private port can
         try { bootstrap.transfer[0].close() } catch {}
     })
 
-    wh.dispatchMessage({ __biliCdnSetTarget: 'httpdns.bilivideo.com', __biliCdnDisabled: true })
-    assert.equal(originalMessages.length, 1)
+    assert.equal(originalMessages.length, 0,
+        'the original Worker is intentionally held until authenticated bootstrap')
     const bootstrapEvent = wh.dispatchMessage(bootstrap.data, bootstrap.transfer)
     assert.equal(bootstrapEvent.__stopImmediate, true)
-    assert.equal(originalMessages.length, 1)
+    assert.equal(originalMessages.length, 0)
     await new Promise(resolve => setImmediate(resolve))
+
+    wh.dispatchMessage({ __biliCdnSetTarget: 'httpdns.bilivideo.com', __biliCdnDisabled: true })
+    assert.equal(originalMessages.length, 1,
+        'ordinary application messages remain visible after constructor-time bootstrap')
 
     const unstable = 'https://cn-hk-eq-bcache-01.bilivideo.com/upgcxcode/video.m4s?token=kept'
     await wh.self.fetch(unstable)
@@ -146,6 +150,9 @@ test('CS-003 fixed: private Worker reports reject unbounded or malformed values'
         try { workerPort.close() } catch {}
     })
     const catalogHost = h.evaluate('TRUSTED_CDN_CATALOG[0]')
+
+    workerPort.postMessage({ version: 1, type: 'ready' })
+    await new Promise(resolve => setImmediate(resolve))
 
     workerPort.postMessage({ version: 1, type: 'bytes', host: 'attacker.example', bytes: 1024 })
     workerPort.postMessage({ version: 1, type: 'bytes', host: catalogHost, bytes: -1 })

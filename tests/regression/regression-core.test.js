@@ -17,7 +17,7 @@ test('v1.5.3 static invariants remain present', { skip: !fs.existsSync(target) }
     assert.match(source, /mappedOriginalUrl/)
     assert.match(source, /responseType\s*===\s*['"]json['"]/)
     assert.match(source, /buffered\.start\(i\)[\s\S]{0,180}buffered\.end\(i\)/)
-    assert.match(source, /var EnableWorkerIntercept = false/)
+    assert.match(source, /var EnableWorkerIntercept = true/)
 })
 
 test('two-times playback keeps proportional bitrate requirement', { skip: !fs.existsSync(target) }, () => {

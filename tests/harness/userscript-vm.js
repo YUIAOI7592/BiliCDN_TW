@@ -46,10 +46,22 @@ class FakeEvent {
     preventDefault() { this.defaultPrevented = true }
     stopPropagation() { this.__stopPropagation = true }
     stopImmediatePropagation() { this.__stopImmediate = true }
+    get data() { return this._data }
+    set data(value) { this._data = value }
 }
 
 class FakeProgressEvent extends FakeEvent {
     constructor(type, init = {}) { super(type, init); this.loaded = Number(init.loaded) || 0 }
+}
+
+class FakeMessageEvent extends FakeEvent {
+    constructor(type, init = {}) {
+        super(type, init)
+        this.data = init.data
+        this.ports = init.ports || []
+    }
+    get data() { return this._data }
+    set data(value) { this._data = value }
 }
 
 class FakeElement extends FakeEventTarget {
@@ -446,6 +458,7 @@ const buildContext = ({
         AbortController,
         DOMException,
         Event: FakeEvent,
+        MessageEvent: typeof MessageEvent === 'function' ? MessageEvent : FakeMessageEvent,
         ProgressEvent: FakeProgressEvent,
         EventTarget: FakeEventTarget,
         Document: FakeDocument,
@@ -528,8 +541,11 @@ const loadUserscript = (scriptPath, options = {}) => {
             source = fs.readFileSync(path.resolve(__dirname, '../../dist/BiliCDN_TW.test.user.js'), 'utf8')
         }
     }
-    if (options.enableWorkerIntercept === true) {
-        source = source.replace('var EnableWorkerIntercept = false', 'var EnableWorkerIntercept = true')
+    if (typeof options.enableWorkerIntercept === 'boolean') {
+        source = source.replace(
+            /var EnableWorkerIntercept = (?:true|false)/,
+            `var EnableWorkerIntercept = ${options.enableWorkerIntercept}`,
+        )
     }
     if (Object.prototype.hasOwnProperty.call(options, 'customCdn')) {
         source = source.replace("var CustomCDN = ''", `var CustomCDN = ${JSON.stringify(options.customCdn)}`)
@@ -551,6 +567,12 @@ const loadUserscript = (scriptPath, options = {}) => {
 }
 
 const runGeneratedClassicWorker = (source, { fetchImpl, onImport } = {}) => {
+    // 每個生成 Worker 使用獨立的 MessageEvent prototype，讓 prototype-poisoning
+    // 安全測試不會在 Node 平行執行其他測試檔時互相污染。
+    class HarnessWorkerMessageEvent extends FakeMessageEvent {
+        get data() { return super.data }
+        set data(value) { super.data = value }
+    }
     const self = new FakeEventTarget()
     const fetchCalls = []
     const imports = []
@@ -584,6 +606,7 @@ const runGeneratedClassicWorker = (source, { fetchImpl, onImport } = {}) => {
         Response,
         ReadableStream,
         Event: FakeEvent,
+        MessageEvent: HarnessWorkerMessageEvent,
         ProgressEvent: FakeProgressEvent,
         XMLHttpRequest: FakeXMLHttpRequest,
         ...timerHarness,
@@ -599,9 +622,7 @@ const runGeneratedClassicWorker = (source, { fetchImpl, onImport } = {}) => {
         imports,
         timers: timerHarness,
         dispatchMessage(data, ports = []) {
-            const event = new FakeEvent('message')
-            event.data = data
-            event.ports = ports
+            const event = new HarnessWorkerMessageEvent('message', { data, ports })
             self.dispatchEvent(event)
             return event
         },

@@ -1,5 +1,13 @@
 # 待辦
 
+## v1.6.3
+
+- [x] 依使用者明確要求，將 `EnableWorkerIntercept` 預設改為 `true`，讓 v1.6.2 的可觀測性實際收集資料。
+- [x] 保留檔頭明確 opt-out；設為 `false` 時仍不得讀取／替換 Worker 或建立 Blob、MessageChannel。
+- [x] 驗證預設安裝攔截器本身不建立 Worker、Blob、MessageChannel 或增加主動網路請求。
+- [x] 修補頁面預先替換 `unsafeWindow.Worker` 取得 bootstrap capability／port 的信任邊界。
+- [x] 將 classic／module 原始 Worker 延後至 authenticated bootstrap，固定 MessagePort／MessageEvent 原生方法並要求 `ready` 後才接受回報。
+
 ## v1.6.2
 
 - [x] 將 Worker 的「0」拆成安裝狀態、constructor 呼叫、安全放行、包裝、bootstrap、網路與媒體觀察。
@@ -30,5 +38,5 @@
 
 - 頻寬算法替換：目前需求不足，不與重構混做。
 - 跨分頁 GM 原子協調、跨播放器辨識、Worker 跨 generation／host-lock 協定。
-- Worker 去留／預設：需實際使用證據，目前 false。
+- Worker 去留：v1.6.3 起預設啟用以蒐集實際證據；取得足夠樣本後再決定保留或移除。
 - 不建構 CI/CD，不新增按鈕或圖表。
