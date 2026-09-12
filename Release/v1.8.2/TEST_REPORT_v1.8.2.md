@@ -12,7 +12,7 @@
 - 新增 19 項：固定 v1.8.1 旁路重現、exact-only admission、第三方限制、重複／衝突／過期候選、來源接管、重複終態、容量、Fetch cancel／403／body error、XHR redirect／假事件／重新 open、Catalog 未列在頁面仍參賽、健康不換線、產生來源與實際 Catalog recovery 觀察。
 - 未插樁正式 userscript 的 Akamai-only 頁面 250 秒 healthy／seek／failure VM 流程：兩版非 probe 請求均 57 次；v1.8.1 probe 為 0，本版為 8（恢復一次起播加既有週期，各四候選），每輪 Native 最多 1、Range 額度不超過既有 768 KiB。healthy／seek 的實際請求 host 序列相同。故障流程另檢查既有額度；不將這個 trace 當成所有故障恢復皆已實測。
 - bytes 指程式 Range／採樣額度；不宣稱瀏覽器 wire bytes 絕無跨 chunk 超收。
-- 修補後產物 `node scripts/verify.mjs`：327／327，0 skip，獨立 CS 子集 17／17；語法、固定 fixture SHA、可重現建置、兩份 patch 實際套用及 SHA 均通過。安全掃描後另補的 12 項涵蓋 exact backup、非同步撤銷、XHR 屬性遮蔽、native reopen、HEAD／空 body 與等價 URL。安全子集不重複計入總數。
+- 最終產物 `node scripts/verify.mjs`：338／338，0 skip，獨立 CS 子集 17／17；語法、固定 fixture SHA、可重現建置、兩份 patch 實際套用及 SHA 均通過。新增方法邊界案例涵蓋非 GET Fetch、Request/init precedence、原生 XHR reopen、私有 facade、可變 `.call/.apply` 與 Request prototype method TOCTOU。安全子集不重複計入總數。
 
 ## 安全流程
 
@@ -24,14 +24,20 @@ Codex Security 首輪 v1.8.1→未發布候選 `2b235af` 差異掃描已完成�
 
 首輪候選不發布，原 bytes 與 SHA 保存在 `tests/fixtures/BiliCDN_TW_1.8.2.pre-security.user.js` 作負向控制。修補採 exact 已完成樣本、來源感知測速守門、原生 XHR accessor 快照與私有 request state；獨立覆核再補 native silent reopen、HEAD 空 payload 及 URL canonicalization。
 
-最終候選 `184bdce6282401534b5def151a51300044ed2a32` 的完整 v1.8.1→候選差異掃描已封存：`466a66a9-681a-4df2-a095-2bccc7e06c6b`。17／17 審查面已檢查，但兩項 HTTP method admission 候選維持 **deferred**，coverage 為 partial；不是零問題安全通過，**目前不發布 GitHub Release**：
+候選 `184bdce6282401534b5def151a51300044ed2a32` 的完整 v1.8.1→候選差異掃描已封存：`466a66a9-681a-4df2-a095-2bccc7e06c6b`。17／17 審查面檢查後留下兩項 deferred HTTP method admission：
 
 - Fetch 非 GET 的 exact URL 成功非空回應也可解鎖頁面候選。
 - XHR 使用原生 prototype.open 在 OPENED 狀態重新開啟同 URL，可能讓快取的 GET 與實際方法不同；實際同 URL 非空回應仍可解鎖。
 
-未插樁 bundle VM 已重現上述資格與 Ledger 變化；不同 query 與空 payload 反例均不解鎖。尚未證明真實已知 CDN 存在可利用的方法差異回應，也未以 Chrome 驗證同狀態原生 reopen。原批准計畫要求真實媒體成功，未明文規定 GET-only；掃描上下文新增的 GET 保證不可冒充使用者原要求。仍須釐清方法證據與 GET 媒體資格的邊界，不能因缺實機證據就宣稱安全。
+兩項均以未插樁 bundle VM 重現，隨後修正為 GET-only 資格：Fetch 先用原生 Request 語意正規化；非 GET 不建立媒體 context。XHR 公開物件改為無原生 brand 的 facade，頁面不能用原生 prototype 重新開啟其私有 backend。正常 GET、POST body、XHR text/json／事件／upload／abort 另有相容性測試。
 
-候選 userscript SHA-256：`2875f7341f3e40f67b5b4c8783f1c8564d13581cb054e66b7a73b3100f2345d6`。第二輪掃描工具跨任務 aggregate 為 5,588,732 tokens（含 cached input 5,292,544）；第一輪為 11,501,808 tokens。第二輪 scan goal 另計 274,381 tokens／約 11 分鐘，與 aggregate 計量範圍不同，不加總；以上不是帳單或實機驗證時間。
+後續 immutable 修補差異掃描 `49222e17-3ae5-49fe-aa52-507cd10730bf` 發現一項 Low／High confidence：呼叫捕捉的原生函式時仍使用其頁面可變 `.call/.apply` 屬性，可能洩漏私有 XHR backend 並在舊 GET context 下改成 POST。修補改用初始化時捕捉的 `Reflect.apply`，focused VM 的 `backendLeaked` 由 true 變為 false。
+
+再覆核 `bb39b855f19ce7ade3fb1db5d5fe05fb9b46f3ed`→`4cd773eefa403cf8e00f142f246e8cd608a9dbd3`，scan `a70f5299-b1b7-478a-bed1-1b62ea8802c2` 發現一項 Low／High confidence：原生 getter 已確認 GET 後，重建 Request 又讀取頁面可變 `Request.prototype.method`，可造成實際 POST 但沿用 GET 證據。修補後直接使用已驗證 scalar 與捕捉的 NativeRequest；focused PoC 結果為 `actualMethod=GET, unlocked=1, ledger=true`，表示合法 GET 行為保留。
+
+最後修補差異 `4cd773eefa403cf8e00f142f246e8cd608a9dbd3`→`ba9983aaba926ad3884bafa33b5fe6933c432470` 的 Codex Security scan `167989fe-f26f-42c9-a3dc-fbe99947bf3f` 已完成，coverage complete，3／3 production surface，0 finding。這是最後窄範圍修補差異的結論，不宣稱取代實機播放驗證，也不把各輪掃描誤合併為一次全庫零問題掃描。
+
+最終 userscript SHA-256：`e2be3130304706060acfef3dd2edecbc7f4422445f14c7a61a0049050a0cabb1`。
 
 新增攻擊面為 page-hint→成功 exact Transport→Ledger／主動 probe／Catalog URL。page-hint 自身不得寫 GM、測速或授權 Native primary；已知家族必須 exact URL 同版本成功終態，第三方頁面 URL 不解鎖。Catalog 權限不因 Native 評級擴張。SECURITY.md 的舊全面 page-state 禁令尚待精確政策差異確認；此限制差異不是安全豁免。
 
