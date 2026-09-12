@@ -194,7 +194,7 @@ const runThroughputBakeoff = async (sampleUrl, skipIfFast = true, trustedRequest
         return
     }
 
-    // 多分頁互斥：優先用 Web Locks API（同源真互斥鎖，跨分頁跨 Worker 都有效，分頁關閉
+    // 多分頁互斥：優先用 Web Locks API（同源真互斥鎖，分頁關閉
     // 時瀏覽器自動釋放）。原本只用 BroadcastChannel 心跳判斷「其他分頁是否在測速」，
     // 但那只能盡量避免——兩個分頁幾乎同時決定要測速時，心跳訊息還沒送達對方就都已經
     // 開始了。ifAvailable:true 拿不到鎖立刻回呼 null，不排隊等待。
@@ -316,7 +316,7 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
 
         if (!stale) {
             const best = deps.activeCdnList[0]
-            // 勝者明顯比現用節點快 → 強制 worker 把舊主機改寫到勝者（中途切換、不 reload）
+            // 勝者明顯比現用節點快 → 將舊主機加入強制改寫表（中途切換、不 reload）
             if (best && playingHost && best !== playingHost) {
                 const hb = deps.cdnHealth[best], ho = deps.cdnHealth[playingHost]
                 const mb = (hb && hb.samples) ? hb.ewmaMbps : 0

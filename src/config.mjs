@@ -10,9 +10,7 @@ let PreferredVideoCodec = input.PreferredVideoCodec
 
 let BlockWebRTC = input.BlockWebRTC
 
-let EnableWorkerIntercept = input.EnableWorkerIntercept
-
-const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.6.3'
+const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.7.0'
 
 const parseVer = (v) => String(v || '0').split('.').map(n => parseInt(n, 10) || 0)
 
@@ -27,7 +25,6 @@ get ExcludeHostKeywords() { return ExcludeHostKeywords; }, set ExcludeHostKeywor
 get BlockHttpDNS() { return BlockHttpDNS; }, set BlockHttpDNS(value) { BlockHttpDNS = value; },
 get PreferredVideoCodec() { return PreferredVideoCodec; }, set PreferredVideoCodec(value) { PreferredVideoCodec = value; },
 get BlockWebRTC() { return BlockWebRTC; }, set BlockWebRTC(value) { BlockWebRTC = value; },
-get EnableWorkerIntercept() { return EnableWorkerIntercept; }, set EnableWorkerIntercept(value) { EnableWorkerIntercept = value; },
 get VERSION() { return VERSION; },
 get verGte() { return verGte; }
 };

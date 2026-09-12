@@ -92,24 +92,7 @@ const BiliCDNControls = {
             discovered: deps.pageDiscoveredCdn,
             httpdns: deps.getHttpDnsStatus(),
             uiInjectStatus: deps.uiInjectStatus,
-            workerStats: deps.summarizeWorkerStats(),
         }
-    },
-    // Worker 攔截有效性量測（改進工單 B）：用真實數據決定 setupClassicWorkerIntercept()
-    // 這 250 行的去留。所有數字只存在本機，回報請直接複製本方法輸出貼給開發者。
-    workerStats() {
-        const s = deps.summarizeWorkerStats()
-        console.group('[BiliCDN] Worker 攔截量測')
-        console.log('created（攔到幾次 new Worker）:', s.created)
-        console.log('netCalls（Worker 內發出幾次網路請求）:', s.netCalls)
-        console.log('mediaSeen（其中幾次是影片分段）:', s.mediaSeen)
-        console.log('rewrites（實際改寫幾次）:', s.rewrites)
-        console.log('累計位元組:', s.bytesMB + ' MB')
-        console.log('已觀察天數:', s.observedDays)
-        console.log('Worker script hostname 樣本:', s.samples)
-        console.log('判讀:', s.verdict)
-        console.groupEnd()
-        return s
     },
     // 診斷報告一鍵複製（改進工單 F）：回報問題時直接貼給開發者，省掉來回追問。
     // 不含完整影片網址／cookie／IP，只有 host 與統計數字。
@@ -382,7 +365,6 @@ const BiliCDNControls = {
         if (deps.lastChosenCdn && !deps.PREFERRED_CDN_LIST.includes(deps.lastChosenCdn)) deps.lastChosenCdn = null
         if (deps.pageDiscoveredCdn && deps.matchesExclude(deps.pageDiscoveredCdn)) deps.pageDiscoveredCdn = null
         try { GM_deleteValue(deps.PROBE_CACHE_KEY) } catch {}
-        deps.syncWorkerCdnTarget()
         deps.log('已加入排除：' + kw + '，剩餘：'
             + deps.activeCdnList.map(c => c.split('.')[0]).join(', '))
         return [...deps.ExcludeHostKeywords]
@@ -405,7 +387,6 @@ const BiliCDNControls = {
             deps.activeCdnList.splice(0, deps.activeCdnList.length, ...ranked, ...rest)
         }
         try { GM_deleteValue(deps.PROBE_CACHE_KEY) } catch {}
-        deps.syncWorkerCdnTarget()
         deps.log('已移除排除：' + kw + '，當前：'
             + deps.activeCdnList.map(c => c.split('.')[0]).join(', '))
         return [...deps.ExcludeHostKeywords]

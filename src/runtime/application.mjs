@@ -326,7 +326,6 @@ export function createApplication(deps) {
         if (deps.bakeoffAbortController) { try { deps.bakeoffAbortController.abort() } catch {} ; deps.bakeoffAbortController = null }
         try { deps.Watchdog.reset() } catch {}
         try { deps.HttpDnsAutoPilot.onWatchdogReset() } catch {}
-        deps.syncWorkerCdnTarget()
         if (!deps.disabled) {
             deps.beginRuntimeGeneration()
             setupCrossTab()
@@ -420,7 +419,6 @@ export function createApplication(deps) {
             clearInterval(periodicBakeoffTimer)
             periodicBakeoffTimer = null
         }
-        deps.syncWorkerDisabledState()
     }
     const setRuntimeDisabled = (nextDisabled) => {
         deps.TrustedMenuUI.invalidate()
@@ -428,7 +426,6 @@ export function createApplication(deps) {
         GM_setValue('disabled', deps.disabled)
         if (deps.disabled) stopRuntimeFeatures()
         else startRuntimeFeatures()
-        deps.syncWorkerDisabledState()
         deps.refreshPublicDiagnosticSnapshot()
         return deps.disabled
     }
@@ -457,7 +454,6 @@ get DiagnosticLog(){return deps.DiagnosticLog},
     // One shared state cycle, independent of panel injection/visibility. No active networking here.
     setInterval(() => {
         deps.refreshExpiredRestrictions()
-        deps.checkWorkerInterceptState()
         deps.samplePlaybackQuality()
         if (!deps.disabled) deps.DiagnosticLog.sample(deps.readPlaybackDiagnostic())
         deps.refreshPublicDiagnosticSnapshot()

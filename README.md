@@ -7,15 +7,15 @@
 
 以 jiyunshi 的「Bilibili CDN 台灣優化」官方 v1.3.4 為基礎的個人修改版。重點是台灣線路的 CDN 選路、兩倍速播放穩定性與有界診斷，不保證任何節點或影片一定更快。
 
-v1.6.0 將正式 v1.5.5 拆成 JavaScript 模組，再用 esbuild 打包為 **一份 Tampermonkey userscript**。v1.6.1 補上本儲存庫的自動更新入口；v1.6.2 改善 Worker 診斷盲區；v1.6.3 預設啟用 Worker 攔截以取得實機證據，並加固 page／Worker 私有通道的信任邊界；播放邏輯不變。
+v1.6.0 將正式 v1.5.5 拆成 JavaScript 模組，再用 esbuild 打包為 **一份 Tampermonkey userscript**。v1.7.0 依實機觀察結果完整移除 Worker 攔截：3 次可見 constructor 全為安全放行的 Blob Worker，成功包裝、媒體請求與改寫皆為 0；網站自己的 Worker 現在完全交由瀏覽器處理。播放邏輯不變。
 
-v1.6.3 已完成建置與自動測試；播放功能沿用已實機初步確認的 v1.6.1。Worker 攔截現在預設開啟，但是否命中 Bilibili 當前播放器仍須實機蒐集；VM 不冒充 Bilibili 實機證據。歷史安全狀態見 [公開安全摘要](docs/SECURITY_REVIEW_v1.6.0.md)。
+v1.7.0 保留主執行緒 Fetch／XHR、CDN 選路、2x 假定、AV1、Watchdog 與既有量測參數。上述 Worker 樣本只支持本個人版刪除該功能，不代表所有 Bilibili 頁面都不使用 Worker。歷史安全狀態見 [公開安全摘要](docs/SECURITY_REVIEW_v1.6.0.md)。
 
 ## 安裝與操作
 
 只需安裝 [BiliCDN_TW.user.js](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js)，不需安裝 Node 或 esbuild。v1.6.1 起，Tampermonkey 只會從本儲存庫的最新正式 Release 檢查與下載更新。使用選單「⚙️ 開啟 BiliCDN 控制中心」。
 
-發布驗證與安全狀態以 [TEST_REPORT](Release/v1.6.3/TEST_REPORT_v1.6.3.md) 為準。VM 測試不等於 Chrome／Tampermonkey 實機驗證；仍需測試 1080p／4K 2x、seek、切畫質、SPA、背景切回、控制中心及 Worker 診斷。
+發布驗證與安全狀態以 [TEST_REPORT](Release/v1.7.0/TEST_REPORT_v1.7.0.md) 為準。VM 測試不等於 Chrome／Tampermonkey 實機驗證；仍需測試自動畫質、1080p／4K 2x、seek、切畫質、SPA、背景切回、控制中心，並確認網站自己的 Worker 正常運作。
 
 ## 本機開發
 

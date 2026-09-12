@@ -2,9 +2,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const path = require('node:path');
 const { MessagePort } = require('node:worker_threads');
 const { loadUserscript, runGeneratedClassicWorker } = require('../harness/userscript-vm');
-const target = require('../harness/current-script');
+const target = path.resolve(__dirname, '../../Release/v1.6.3/BiliCDN_TW.user.js');
 
 const load = options => loadUserscript(target, {
     instrument: false,

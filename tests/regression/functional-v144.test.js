@@ -22,8 +22,8 @@ const menu = (h, text) => {
     // Historical action names are reached through the actual single control-center menu.
     const paths = { '重置': ['maintenance','reset-all'], '顯示診斷': ['diagnostics'],
         '複製診斷': ['diagnostics','copy'], '立即測速': ['reassess'], '手動延遲': ['reassess'],
-        '固定 CDN': ['routing'], '切換 catalog': ['routing'], verbose: ['advanced','verbose-toggle'],
-        'Worker 使用量': ['advanced','worker-stats'], 'soft block': ['maintenance','clear-soft'],
+        '固定 CDN': ['routing'], '切換 catalog': ['routing'], verbose: ['diagnostics','text-action'],
+        'soft block': ['maintenance','clear-soft'],
         '救回單一': ['maintenance','revive-dead'] }
     assert.ok(paths[text], 'unknown historical action')
     return { callback() {
@@ -99,7 +99,7 @@ test('v1.4.3 reproduction: clipboard rejection is only reported to console', asy
 
 test('v1.5.3: every Tampermonkey menu produces a toast or dialog without console', async () => {
     const labels = ['重置', '顯示診斷', '複製診斷', '立即測速', '手動延遲', '固定 CDN',
-        'verbose', 'Worker 使用量', 'soft block', '救回單一', '切換 catalog']
+        'verbose', 'soft block', '救回單一', '切換 catalog']
     for (const label of labels) {
         const h = loadUserscript(v144, { gmSeed: { disabled: true } })
         menu(h, label).callback()
@@ -207,7 +207,7 @@ test('v1.5.3: missing secure randomness refuses mutating dialogs without GM writ
 test('v1.5.3: menu feedback itself performs no active network requests', async () => {
     const h = loadUserscript(v144, { gmSeed: { disabled: true } })
     const before = h.fetchCalls.length
-    for (const label of ['顯示診斷', '複製診斷', '固定 CDN', 'verbose', 'Worker 使用量',
+    for (const label of ['顯示診斷', '複製診斷', '固定 CDN', 'verbose',
         'soft block', '救回單一', '切換 catalog']) {
         menu(h, label).callback()
         await settleTurns()
@@ -314,7 +314,7 @@ test('v1.5.3: replacing an open dialog preserves the original focus target', () 
     h.document.body.appendChild(prior)
     prior.focus()
     h.evaluate('showDiagnosticDialog()')
-    h.evaluate('showWorkerStatsDialog()')
+    h.evaluate('showRoutingCenter()')
     uiRoot(h).dispatchEvent(new h.context.Event('keydown', { isTrusted: true, key: 'Escape' }))
     assert.equal(h.document.activeElement, prior)
 })
@@ -333,12 +333,11 @@ test('v1.5.3: player-panel mutators statically require trusted events', () => {
     assert.doesNotMatch(source, /(?:resetBtn|reportBtn)\.addEventListener/)
 })
 
-test('current routing, playback, codec, probe, and bakeoff constants match v1.5.2 except the deliberate Worker default', () => {
+test('current routing, playback, codec, probe, and bakeoff constants match v1.5.2', () => {
     const readConfig = file => {
         const h = loadUserscript(file, { gmSeed: { disabled: true } })
         return JSON.parse(h.evaluate(`JSON.stringify({
             codec: PreferredVideoCodec,
-            worker: EnableWorkerIntercept,
             ucb: UCB_EXPLORE_C,
             probeTimeout: PROBE_TIMEOUT_MS,
             confirmTimeout: CONFIRM_TIMEOUT_MS,
@@ -349,9 +348,5 @@ test('current routing, playback, codec, probe, and bakeoff constants match v1.5.
     }
     const current = readConfig(v144)
     const previous = readConfig(v143)
-    assert.equal(current.worker, true)
-    assert.equal(previous.worker, false)
-    delete current.worker
-    delete previous.worker
     assert.deepEqual(current, previous)
 })

@@ -41,16 +41,6 @@ const isForcedRedirect = (host) => {
     return true
 }
 
-const getWorkerForceList = () => {
-    sweepForcedRedirectHosts()
-    const out = new Set([...forcedRedirectHosts.keys()].filter(isForcedRedirect))
-    deps.PREFERRED_CDN_LIST.forEach(h => {
-        if (deps.isCdnSoftBlocked(h) || deps.isCdnStronglyBad(h)) out.add(h)
-    })
-    out.delete(deps.getWorkerCdnTarget())
-    return [...out]
-}
-
 const handleVerifiedSegmentFailure = ({
     cdn, url, status = 0, kind = 'http', bytesReceived = 0,
     requestElapsedMs = 0, timeoutEvidence = null,
@@ -112,7 +102,6 @@ const handleVerifiedSegmentFailure = ({
         punished: true, reselected: true, preconnect: true }, true)
     deps.promoteBestCdnNow()
     deps.preconnectBatch(deps.getHealthyCdnList().slice(0, 3), true)
-    deps.syncWorkerCdnTarget()
     if (deps.lastSampleSegmentUrl && (deps.currentStreamBitsPerSec / 1e6 >= 12 || deps.playbackRateState.effectiveRate >= 1.75)) {
         deps.runThroughputBakeoff(deps.lastSampleSegmentUrl, false, deps.trustedBakeoffRequest('verified-failure')).catch(deps.reportMeasurementFailure())
     }
@@ -122,7 +111,6 @@ return { /* TEST_EXPORTS:failures */
 get forcedRedirectHosts() { return forcedRedirectHosts; },
 get addForcedRedirect() { return addForcedRedirect; },
 get isForcedRedirect() { return isForcedRedirect; },
-get getWorkerForceList() { return getWorkerForceList; },
 get handleVerifiedSegmentFailure() { return handleVerifiedSegmentFailure; }
 };
 }

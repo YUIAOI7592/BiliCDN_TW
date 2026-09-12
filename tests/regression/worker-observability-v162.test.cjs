@@ -1,14 +1,15 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const path = require('node:path');
 const F = require('../harness/v153-fixture');
 const { loadUserscript, runGeneratedClassicWorker } = require('../harness/userscript-vm');
-const target = require('../harness/current-script');
+const target = path.resolve(__dirname, '../../Release/v1.6.3/BiliCDN_TW.user.js');
 
 const load = options => loadUserscript(target, { instrument: false, gmSeed: { disabled: false }, ...options });
 const snapshot = h => JSON.parse(JSON.stringify(h.pageWindow.BiliCDN));
 
-test('current explicit opt-out still does not touch Worker, Blob or MessageChannel', () => {
+test('historical v163 explicit opt-out does not touch Worker, Blob or MessageChannel', () => {
     const h = load({ enableWorkerIntercept: false });
     assert.equal(snapshot(h).worker.installState, 'disabled');
     assert.equal(snapshot(h).worker.session.constructorCalls, 0);
@@ -17,7 +18,7 @@ test('current explicit opt-out still does not touch Worker, Blob or MessageChann
     assert.equal(h.workerInstances.length, 0);
 });
 
-test('v163 default-on path installs the interceptor without creating a Worker or active network work', () => {
+test('historical v163 default-on path installs the interceptor without creating a Worker or active network work', () => {
     const h = load();
     const off = load({ enableWorkerIntercept: false });
     assert.equal(snapshot(h).worker.enabled, true);

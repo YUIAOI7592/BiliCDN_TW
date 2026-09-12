@@ -500,8 +500,8 @@ const Watchdog = (() => {
     }
 
     return {
-        // 由 Worker 透過 MessagePort 回報的 segment 下載量（主執行緒 PerformanceObserver 看不到 Worker 流量）。
-        // 無 duration 故不更新單節點吞吐 EWMA，但計入總量讓面板 MB 正確、Watchdog 的 bps 判斷不再對 4K 半盲。
+        // Fetch／XHR 的進度位元組沒有完整 duration，故不更新單節點吞吐 EWMA；
+        // 仍計入總量，讓累計下載與 Watchdog 的 bps 判斷保持一致。
         noteExternalBytes(host, bytes) {
             if (deps.disabled || !Number.isSafeInteger(bytes) || bytes <= 0 || bytes > 256 * 1024 * 1024) return
             totalBytes = Math.min(Number.MAX_SAFE_INTEGER, totalBytes + bytes)

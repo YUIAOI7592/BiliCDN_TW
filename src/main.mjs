@@ -12,9 +12,7 @@ import { createRewrite } from './policy/rewrite.mjs';
 import { createCodec } from './playback/codec.mjs';
 import { createPlayurl } from './playback/playurl.mjs';
 import { createTransport } from './transport/interceptors.mjs';
-import { createWorkerStats } from './worker/statistics.mjs';
 import { createFailures } from './routing/failures.mjs';
-import { createWorker } from './worker/controller.mjs';
 import { createDom } from './ui/dom.mjs';
 import { createLatency } from './routing/latency.mjs';
 import { createBakeoff } from './routing/bakeoff.mjs';
@@ -43,9 +41,7 @@ let rewrite;
 let codec;
 let playurl;
 let transport;
-let workerStats;
 let failures;
-let worker;
 let dom;
 let latency;
 let bakeoff;
@@ -98,7 +94,6 @@ get getWarmCdnHost() { return bakeoff.getWarmCdnHost; },
 get preconnectBatch() { return hints.preconnectBatch; },
 get inSeekGrace() { return rate.inSeekGrace; },
 get preconnectCdn() { return hints.preconnectCdn; },
-get syncWorkerCdnTarget() { return worker.syncWorkerCdnTarget; },
 get CustomCDN() { return settings.CustomCDN; },
 get PluginName() { return events.PluginName; }
 });
@@ -241,22 +236,9 @@ get isPlayUrlApi() { return catalog.isPlayUrlApi; },
 get recordCdnThroughput() { return health.recordCdnThroughput; },
 get playbackRateState() { return rate.playbackRateState; }
 });
-workerStats = createWorkerStats({
-get resolvedCdn() { return health.resolvedCdn; },
-get lastChosenCdn() { return health.lastChosenCdn; },
-get peekBestCdn() { return health.peekBestCdn; },
-get activeCdnList() { return health.activeCdnList; },
-get PREFERRED_CDN_LIST() { return catalog.PREFERRED_CDN_LIST; },
-get isValidCustomCdnHost() { return catalog.isValidCustomCdnHost; },
-get EnableWorkerIntercept() { return settings.EnableWorkerIntercept; }
-});
 failures = createFailures({
 get TRUSTED_CDN_CATALOG() { return catalog.TRUSTED_CDN_CATALOG; },
 get isValidCustomCdnHost() { return catalog.isValidCustomCdnHost; },
-get PREFERRED_CDN_LIST() { return catalog.PREFERRED_CDN_LIST; },
-get isCdnSoftBlocked() { return health.isCdnSoftBlocked; },
-get isCdnStronglyBad() { return health.isCdnStronglyBad; },
-get getWorkerCdnTarget() { return workerStats.getWorkerCdnTarget; },
 get disabled() { return runtime.disabled; },
 get isMediaSegmentUrl() { return rewrite.isMediaSegmentUrl; },
 get DiagnosticLog() { return events.DiagnosticLog; },
@@ -274,35 +256,12 @@ get publicFinite() { return snapshot.publicFinite; },
 get promoteBestCdnNow() { return health.promoteBestCdnNow; },
 get preconnectBatch() { return hints.preconnectBatch; },
 get getHealthyCdnList() { return health.getHealthyCdnList; },
-get syncWorkerCdnTarget() { return worker.syncWorkerCdnTarget; },
 get lastSampleSegmentUrl() { return bakeoff.lastSampleSegmentUrl; },
 get currentStreamBitsPerSec() { return media.currentStreamBitsPerSec; },
 get playbackRateState() { return rate.playbackRateState; },
 get runThroughputBakeoff() { return bakeoff.runThroughputBakeoff; },
 get trustedBakeoffRequest() { return bakeoff.trustedBakeoffRequest; },
 get reportMeasurementFailure() { return runtime.reportMeasurementFailure; }
-});
-worker = createWorker({
-get getWorkerCdnTarget() { return workerStats.getWorkerCdnTarget; },
-get isValidCustomCdnHost() { return catalog.isValidCustomCdnHost; },
-get getWorkerForceList() { return failures.getWorkerForceList; },
-get PREFERRED_CDN_LIST() { return catalog.PREFERRED_CDN_LIST; },
-get TRUSTED_CDN_CATALOG() { return catalog.TRUSTED_CDN_CATALOG; },
-get matchesExclude() { return catalog.matchesExclude; },
-get disabled() { return runtime.disabled; },
-get biliCdnWorkers() { return workerStats.biliCdnWorkers; },
-get workerControlPorts() { return workerStats.workerControlPorts; },
-get EnableWorkerIntercept() { return settings.EnableWorkerIntercept; },
-get PCDN_SOURCE_SUFFIXES() { return mediaPolicy.PCDN_SOURCE_SUFFIXES; },
-get PCDN_SOURCE_HOSTS() { return mediaPolicy.PCDN_SOURCE_HOSTS; },
-get Watchdog() { return watchdog.Watchdog; },
-get mediaObservations() { return media.mediaObservations; },
-get runtimeGeneration() { return runtime.runtimeGeneration; },
-get playinfoEpoch() { return media.playinfoEpoch; },
-get bumpWorkerStats() { return workerStats.bumpWorkerStats; },
-get setWorkerInstallState() { return workerStats.setWorkerInstallState; },
-get noteWorkerDiagnostic() { return workerStats.noteWorkerDiagnostic; },
-get log() { return events.log; }
 });
 dom = createDom({
 
@@ -399,7 +358,6 @@ get isCdnSoftBlocked() { return health.isCdnSoftBlocked; },
 get PREFERRED_CDN_LIST() { return catalog.PREFERRED_CDN_LIST; },
 get promoteBestCdnNow() { return health.promoteBestCdnNow; },
 get preconnectBatch() { return hints.preconnectBatch; },
-get syncWorkerCdnTarget() { return worker.syncWorkerCdnTarget; },
 get isPresumedDnsFailHost() { return health.isPresumedDnsFailHost; },
 get probeCdnLatency() { return latency.probeCdnLatency; },
 get log() { return events.log; },
@@ -464,12 +422,10 @@ report = createReport({
 get playbackRateState() { return rate.playbackRateState; },
 get Watchdog() { return watchdog.Watchdog; },
 get DiagnosticLog() { return events.DiagnosticLog; },
-get summarizeWorkerStats() { return workerStats.summarizeWorkerStats; },
 get getHttpDnsStatus() { return httpdns.getHttpDnsStatus; },
 get VERSION() { return settings.VERSION; },
 get uiInjectStatus() { return runtime.uiInjectStatus; },
 get disabled() { return runtime.disabled; },
-get EnableWorkerIntercept() { return settings.EnableWorkerIntercept; },
 get activeCdnList() { return health.activeCdnList; },
 get getHealthyCdnList() { return health.getHealthyCdnList; },
 get blacklistSet() { return health.blacklistSet; },
@@ -514,7 +470,6 @@ get redirectStats() { return evidence.redirectStats; },
 get pageDiscoveredCdn() { return mediaPolicy.pageDiscoveredCdn; }, set pageDiscoveredCdn(value) { mediaPolicy.pageDiscoveredCdn = value; },
 get getHttpDnsStatus() { return httpdns.getHttpDnsStatus; },
 get uiInjectStatus() { return runtime.uiInjectStatus; },
-get summarizeWorkerStats() { return workerStats.summarizeWorkerStats; },
 get disabled() { return runtime.disabled; },
 get resolvedCdn() { return health.resolvedCdn; },
 get lastSampleSegmentUrl() { return bakeoff.lastSampleSegmentUrl; },
@@ -550,13 +505,11 @@ get isValidCustomCdnHost() { return catalog.isValidCustomCdnHost; },
 get ExcludeHostKeywords() { return settings.ExcludeHostKeywords; },
 get rebuildPreferredCdnList() { return catalog.rebuildPreferredCdnList; },
 get matchesExclude() { return catalog.matchesExclude; },
-get syncWorkerCdnTarget() { return worker.syncWorkerCdnTarget; },
 get getHealthyCdnList() { return health.getHealthyCdnList; }
 });
 snapshot = createSnapshot({
 get playbackRateState() { return rate.playbackRateState; },
 get ASSUMED_PLAYBACK_RATE() { return rate.ASSUMED_PLAYBACK_RATE; },
-get summarizeWorkerStats() { return workerStats.summarizeWorkerStats; },
 get Watchdog() { return watchdog.Watchdog; },
 get getHttpDnsStatus() { return httpdns.getHttpDnsStatus; },
 get TRUSTED_CDN_CATALOG() { return catalog.TRUSTED_CDN_CATALOG; },
@@ -583,7 +536,6 @@ get streamEstimate() { return media.streamEstimate; },
 get resolvedVideoCodecPreference() { return codec.resolvedVideoCodecPreference; },
 get getCodecCapabilityState() { return codec.getCodecCapabilityState; },
 get lastCodecDecision() { return codec.lastCodecDecision; },
-get EnableWorkerIntercept() { return settings.EnableWorkerIntercept; },
 get uiInjectStatus() { return runtime.uiInjectStatus; },
 get err() { return events.err; }
 });
@@ -608,7 +560,6 @@ get pageDiscoveredCdn() { return mediaPolicy.pageDiscoveredCdn; }, set pageDisco
 get PROBE_CACHE_KEY() { return latency.PROBE_CACHE_KEY; },
 get clearRuntimeConnectionHints() { return hints.clearRuntimeConnectionHints; },
 get promoteBestCdnNow() { return health.promoteBestCdnNow; },
-get syncWorkerCdnTarget() { return worker.syncWorkerCdnTarget; },
 get refreshPublicDiagnosticSnapshot() { return snapshot.refreshPublicDiagnosticSnapshot; },
 get TRUSTED_CDN_CATALOG() { return catalog.TRUSTED_CDN_CATALOG; },
 get matchesHeaderExclude() { return catalog.matchesHeaderExclude; },
@@ -625,8 +576,6 @@ get copyDiagReport() { return controls.copyDiagReport; },
 get listDeadHosts() { return health.listDeadHosts; },
 get TRUSTED_CDN_CATALOG_SET() { return new Set(catalog.TRUSTED_CDN_CATALOG_SET); },
 get controlResult() { return controls.controlResult; },
-get syncWorkerCdnTarget() { return worker.syncWorkerCdnTarget; },
-get EnableWorkerIntercept() { return settings.EnableWorkerIntercept; },
 get lastSampleSegmentUrl() { return bakeoff.lastSampleSegmentUrl; },
 get resolvedCdn() { return health.resolvedCdn; },
 get TRUSTED_CDN_CATALOG() { return catalog.TRUSTED_CDN_CATALOG; },
@@ -642,7 +591,6 @@ get isCdnSoftBlocked() { return health.isCdnSoftBlocked; },
 get blacklistSet() { return new Set(health.blacklistSet); },
 get Config() { return Object.freeze({ ...events.Config }); },
 get Watchdog() { return { stats: watchdog.Watchdog.stats }; },
-get summarizeWorkerStats() { return workerStats.summarizeWorkerStats; },
 get getHttpDnsStatus() { return httpdns.getHttpDnsStatus; },
 get lastCodecDecision() { return JSON.parse(JSON.stringify(codec.lastCodecDecision)); },
 get disabled() { return runtime.disabled; },
@@ -688,7 +636,6 @@ get bakeoffEpoch() { return bakeoff.bakeoffEpoch; }, set bakeoffEpoch(value) { b
 get bakeoffTimer() { return bakeoff.bakeoffTimer; }, set bakeoffTimer(value) { bakeoff.bakeoffTimer = value; },
 get bakeoffAbortController() { return bakeoff.bakeoffAbortController; }, set bakeoffAbortController(value) { bakeoff.bakeoffAbortController = value; },
 get HttpDnsAutoPilot() { return httpdns.HttpDnsAutoPilot; },
-get syncWorkerCdnTarget() { return worker.syncWorkerCdnTarget; },
 get beginRuntimeGeneration() { return runtime.beginRuntimeGeneration; },
 get startCdnProbe() { return catalogControls.startCdnProbe; },
 get refreshPublicDiagnosticSnapshot() { return snapshot.refreshPublicDiagnosticSnapshot; },
@@ -703,8 +650,6 @@ get reportMeasurementFailure() { return runtime.reportMeasurementFailure; },
 get clearRuntimeTimeout() { return runtime.clearRuntimeTimeout; },
 get probeDeferTimer() { return probe.probeDeferTimer; }, set probeDeferTimer(value) { probe.probeDeferTimer = value; },
 get probeDeferCount() { return probe.probeDeferCount; }, set probeDeferCount(value) { probe.probeDeferCount = value; },
-get syncWorkerDisabledState() { return worker.syncWorkerDisabledState; },
-get checkWorkerInterceptState() { return worker.checkWorkerInterceptState; },
 get uiInjectStatus() { return runtime.uiInjectStatus; }, set uiInjectStatus(value) { runtime.uiInjectStatus = value; },
 get fromHTML() { return dom.fromHTML; },
 get SettingsBarTitle() { return mediaPolicy.SettingsBarTitle; },

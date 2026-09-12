@@ -1,5 +1,13 @@
 # 待辦
 
+## v1.7.0
+
+- [x] 依 v1.6.3 實機樣本完整移除 Worker controller、runtime、statistics、設定與獨立 bundle。
+- [x] 保留 v1.6.3 Worker 測試作歷史重現；現行 CS-003 改驗證攻擊面不存在及網站 Worker 身分／參數不變。
+- [x] 從診斷、唯讀快照與控制中心移除 Worker 欄位，刪除進階頁並把 Verbose 併入診斷。
+- [x] 升級時最佳努力刪除舊 `workerStats_v1`，不影響其他 GM 設定與健康資料。
+- [x] build manifest 移除 Worker source 與 `workerSha256`，正式產物不含 bootstrap、policy 或 MessageChannel。
+
 ## v1.6.3
 
 - [x] 依使用者明確要求，將 `EnableWorkerIntercept` 預設改為 `true`，讓 v1.6.2 的可觀測性實際收集資料。
@@ -25,7 +33,7 @@
 ## v1.6.0
 
 - [x] 固定正式 v1.5.5、必要樣本與 SHA。
-- [x] esbuild 0.28.2、私有模組實例、獨立 Worker 與共用 URL 政策。
+- [x] esbuild 0.28.2、私有模組實例與當時的獨立 Worker；v1.7.0 已移除 Worker 建置路徑。
 - [x] 舊回歸、新增未插樁／實例測試及 250 秒資源比較。
 - [x] 雙 patch 實際套用、乾淨 checkout、公開內容與兩套 verify。
 - [ ] 解決正式 Codex Security 封存 coverage 與已完成審查的狀態不一致；既有 sealed 報告不得改寫。
@@ -37,6 +45,6 @@
 ## 刻意延後
 
 - 頻寬算法替換：目前需求不足，不與重構混做。
-- 跨分頁 GM 原子協調、跨播放器辨識、Worker 跨 generation／host-lock 協定。
-- Worker 去留：v1.6.3 起預設啟用以蒐集實際證據；取得足夠樣本後再決定保留或移除。
+- 跨分頁 GM 原子協調與跨播放器辨識。
+- Worker 去留已在 v1.7.0 決定為移除；除非未來有新的真實需求證據與完整安全設計，不重新引入。
 - 不建構 CI/CD，不新增按鈕或圖表。

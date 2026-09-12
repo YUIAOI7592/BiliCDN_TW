@@ -3,7 +3,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const path = require('node:path')
-const { loadUserscript, runGeneratedClassicWorker } = require('../harness/userscript-vm')
+const { loadUserscript } = require('../harness/userscript-vm')
 const root = path.resolve(__dirname, '../..')
 const target = require('../harness/current-script')
 const previous = path.join(root, 'tests/fixtures/BiliCDN_TW_1.5.1.user.js')
@@ -35,14 +35,8 @@ const setVideo = (h, rate = 2) => {
     return v
 }
 
-test('R1/R2 URL limits, protocol-relative and media guards agree at real main and Worker Fetch sinks', async t => {
-    const h = load({ enableWorkerIntercept: true })
-    const worker = new h.pageWindow.Worker('https://www.bilibili.com/fixture-worker.js')
-    const bootstrap = worker.messages.find(m => m.data.__biliCdnBootstrap)
-    const wh = runGeneratedClassicWorker(h.blobStore.get(worker.scriptURL).parts.map(String).join(''))
-    t.after(() => { worker.terminate(); bootstrap.transfer[0].close() })
-    wh.dispatchMessage(bootstrap.data, bootstrap.transfer)
-    await settle()
+test('R1/R2 URL limits, protocol-relative and media guards remain enforced at the real main Fetch sink', async () => {
+    const h = load()
     const prefix = 'https://node.mountaintoys.cn/upgcxcode/a.m4s?sig='
     for (const url of [
         `//${other}:8443/upgcxcode/a.m4s`, `//${other}/live-bvc/a.m3u8`,
@@ -50,15 +44,12 @@ test('R1/R2 URL limits, protocol-relative and media guards agree at real main an
         prefix + 'x'.repeat(16385 - prefix.length), `https://${other}/not-media.txt`,
     ]) {
         await h.pageWindow.fetch(url)
-        await wh.self.fetch(url)
         assert.equal(h.fetchCalls.at(-1).url, url)
-        assert.equal(wh.fetchCalls.at(-1).url, url)
     }
     for (const url of ['//node.mountaintoys.cn/upgcxcode/a.m4s?sig=x',
         `https://${'long'.repeat(20)}.mountaintoys.cn/upgcxcode/a.m4s?sig=` + 'x'.repeat(16190 - 80)]) {
         await h.pageWindow.fetch(url)
-        await wh.self.fetch(url)
-        assert.equal(new URL(h.fetchCalls.at(-1).url).hostname, new URL(wh.fetchCalls.at(-1).url).hostname)
+        assert.equal(h.evaluate(`TRUSTED_CDN_CATALOG_SET.has(${JSON.stringify(new URL(h.fetchCalls.at(-1).url).hostname)})`), true)
     }
     const source = `https://${other}/upgcxcode/a.m4s?sig=`
     const boundary = source + 'x'.repeat(16384 - source.length)

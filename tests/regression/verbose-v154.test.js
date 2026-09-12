@@ -8,7 +8,16 @@ const F = require('../harness/v153-fixture')
 const previous = path.join(F.root, 'tests/fixtures/BiliCDN_TW_1.5.3.user.js')
 const target = require('../harness/current-script')
 const load = options => F.load(options, target)
-const verboseMenu = h => { h.menus[0].callback(); F.click(h, 'advanced'); F.click(h, 'verbose-toggle') }
+const verboseMenu = h => {
+    h.menus[0].callback()
+    if (F.ui(h).querySelector('[data-ui-action="advanced"]')) {
+        F.click(h, 'advanced')
+        F.click(h, 'verbose-toggle')
+    } else {
+        F.click(h, 'diagnostics')
+        F.click(h, 'text-action')
+    }
+}
 const starve = async (h, state = 1) => {
     const v = F.video(h); v.paused = false
     await F.prime(h)
@@ -149,9 +158,9 @@ test('v154 pending cap and forged events cannot overwrite settings or punitive e
     assert.equal(before.pending.length,64);assert.ok(before.pendingEvicted>=16)
     h.context.console.error('fragment error https://evil.invalid/SECRET')
     h.pageWindow.dispatchEvent(new F.FakeEvent('message',{isTrusted:false}))
-    h.menus[0].callback();F.click(h,'advanced')
+    h.menus[0].callback();F.click(h,'diagnostics')
     const writes=h.gmWrites.length
-    F.ui(h).querySelector('[data-ui-action="verbose-toggle"]').dispatchEvent(new F.FakeEvent('click',{isTrusted:false}))
+    F.ui(h).querySelector('[data-ui-action="text-action"]').dispatchEvent(new F.FakeEvent('click',{isTrusted:false}))
     assert.equal(h.gmWrites.length,writes)
     assert.equal(F.json(h,'DiagnosticLog.snapshot()').pending.length,64)
     assert.doesNotMatch(h.evaluate('buildDiagReport()'),/SECRET|evil.invalid/)

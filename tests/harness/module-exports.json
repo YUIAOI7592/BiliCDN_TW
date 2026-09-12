@@ -21,10 +21,6 @@
       "mutable": true
     },
     {
-      "name": "EnableWorkerIntercept",
-      "mutable": true
-    },
-    {
       "name": "VERSION",
       "mutable": false
     },
@@ -1111,72 +1107,6 @@
       "mutable": false
     }
   ],
-  "workerStats": [
-    {
-      "name": "biliCdnWorkers",
-      "mutable": false
-    },
-    {
-      "name": "workerControlPorts",
-      "mutable": false
-    },
-    {
-      "name": "getWorkerCdnTarget",
-      "mutable": false
-    },
-    {
-      "name": "WORKER_STATS_KEY",
-      "mutable": false
-    },
-    {
-      "name": "WORKER_STATS_SAVE_MS",
-      "mutable": false
-    },
-    {
-      "name": "WORKER_STATS_MAX_SAMPLES",
-      "mutable": false
-    },
-    {
-      "name": "WORKER_STAT_COUNTER_MAX",
-      "mutable": false
-    },
-    {
-      "name": "sanitizeWorkerCounter",
-      "mutable": false
-    },
-    {
-      "name": "sanitizeWorkerTimestamp",
-      "mutable": false
-    },
-    {
-      "name": "sanitizeWorkerSample",
-      "mutable": false
-    },
-    {
-      "name": "workerStats",
-      "mutable": false
-    },
-    {
-      "name": "workerStatsSaveTimer",
-      "mutable": true
-    },
-    {
-      "name": "flushWorkerStats",
-      "mutable": false
-    },
-    {
-      "name": "scheduleWorkerStatsSave",
-      "mutable": false
-    },
-    {
-      "name": "bumpWorkerStats",
-      "mutable": false
-    },
-    {
-      "name": "summarizeWorkerStats",
-      "mutable": false
-    }
-  ],
   "failures": [
     {
       "name": "forcedRedirectHosts",
@@ -1203,29 +1133,7 @@
       "mutable": false
     },
     {
-      "name": "getWorkerForceList",
-      "mutable": false
-    },
-    {
       "name": "handleVerifiedSegmentFailure",
-      "mutable": false
-    }
-  ],
-  "worker": [
-    {
-      "name": "buildWorkerPolicy",
-      "mutable": false
-    },
-    {
-      "name": "syncWorkerCdnTarget",
-      "mutable": false
-    },
-    {
-      "name": "syncWorkerDisabledState",
-      "mutable": false
-    },
-    {
-      "name": "setupClassicWorkerIntercept",
       "mutable": false
     }
   ],
@@ -1597,10 +1505,6 @@
       "mutable": false
     },
     {
-      "name": "showWorkerStatsDialog",
-      "mutable": false
-    },
-    {
       "name": "showAsyncControlResult",
       "mutable": false
     },
@@ -1614,10 +1518,6 @@
     },
     {
       "name": "showMaintenanceCenter",
-      "mutable": false
-    },
-    {
-      "name": "showAdvancedCenter",
       "mutable": false
     },
     {

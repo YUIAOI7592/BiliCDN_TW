@@ -49,8 +49,8 @@ test('v160 UI: menu navigation stays in one session and Escape restores the orig
     h.menus[0].callback(); F.click(h, 'maintenance'); F.click(h, 'back'); F.click(h, 'diagnostics')
     F.ui(h).dispatchEvent(new F.FakeEvent('keydown', { key: 'Escape', isTrusted: true }))
     assert.equal(h.document.activeElement === prior, true)
-    h.menus[0].callback(); F.click(h, 'advanced'); F.click(h, 'verbose-toggle')
-    assert.equal(F.ui(h).querySelector('h2').textContent, '進階')
+    h.menus[0].callback(); F.click(h, 'diagnostics'); F.click(h, 'text-action')
+    assert.equal(F.ui(h).querySelector('h2').textContent, 'BiliCDN 診斷資訊')
     F.ui(h).dispatchEvent(new F.FakeEvent('keydown', { key: 'Escape', isTrusted: true }))
     assert.equal(h.document.activeElement === prior, true)
 })
@@ -163,7 +163,7 @@ test('v153 UI: Tab cycles privately, stale buttons cannot act, and removed origi
     assert.equal(h.document.activeElement === last, true)
     shadow.dispatchEvent(new F.FakeEvent('keydown', { key: 'Tab', isTrusted: true }))
     assert.equal(h.document.activeElement === first, true)
-    const stale = F.click(h, 'advanced'); const writes = h.gmWrites.length
+    const stale = F.click(h, 'diagnostics'); const writes = h.gmWrites.length
     stale.dispatchEvent(new F.FakeEvent('click', { isTrusted: true }))
     assert.equal(h.gmWrites.length, writes)
     prior.remove(); shadow.dispatchEvent(new F.FakeEvent('keydown', { key: 'Escape', isTrusted: true }))

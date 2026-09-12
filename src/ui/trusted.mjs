@@ -343,9 +343,11 @@ const TrustedMenuUI = (() => {
 
     const openText = ({
         title, paragraphs, text = '', copyLabel = '', onCopy,
+        actionLabel = '', onAction,
         closeLabel = '關閉', onClose,
     }) => {
-        const dialog = beginDialog({ title, paragraphs, requiresCapability: false })
+        const hasAction = !!actionLabel && typeof onAction === 'function'
+        const dialog = beginDialog({ title, paragraphs, requiresCapability: hasAction })
         if (!dialog) return false
         const area = make('textarea', bounded(text, 48 * 1024), { action: 'manual-copy-text', maxText: 48 * 1024 })
         area.className = 'report'
@@ -362,6 +364,11 @@ const TrustedMenuUI = (() => {
         if (copyLabel && typeof onCopy === 'function') {
             addAction(dialog, {
                 label: copyLabel, action: 'copy', tone: 'primary', onActivate: onCopy, closeOnActivate: false,
+            })
+        }
+        if (hasAction) {
+            addAction(dialog, {
+                label: actionLabel, action: 'text-action', onActivate: onAction, navigateOnActivate: true,
             })
         }
         return true

@@ -15,12 +15,8 @@ const hash = value => createHash('sha256').update(value).digest('hex');
 export async function build({ testing = false, sourceTransform, write = true } = {}) {
   const release = JSON.parse(readFileSync('release.json', 'utf8'));
   if (esbuild.version !== release.esbuildVersion) throw Error('Unexpected esbuild version');
-  const worker = await esbuild.build({ ...buildOptions, entryPoints: ['src/worker/entry.mjs'], metafile: true });
-  const workerSource = worker.outputFiles[0].text;
   const testExports = testing ? JSON.parse(readFileSync('tests/harness/module-exports.json', 'utf8')) : null;
-  const plugins = [{ name: 'private-worker-source', setup(build) {
-    build.onResolve({ filter: /^bilicdn:worker$/ }, () => ({ path: 'worker', namespace: 'embedded' }));
-    build.onLoad({ filter: /.*/, namespace: 'embedded' }, () => ({ contents: `export const WORKER_SOURCE = ${JSON.stringify(workerSource)};`, loader: 'js' }));
+  const plugins = [{ name: 'test-bridge-loader', setup(build) {
     build.onLoad({ filter: /\.mjs$/ }, args => {
       let contents = readFileSync(args.path, 'utf8');
       if (!testing) return { contents: contents.replace(/\/\* TEST_(?:EXPORTS:\w+|BRIDGE) \*\//g, ''), loader: 'js' };
@@ -43,12 +39,12 @@ export async function build({ testing = false, sourceTransform, write = true } =
   if (sourceTransform) settings = sourceTransform(settings);
   const metadata = readFileSync('src/metadata.txt','utf8').replace(/(@version\s+)\S+/, `$1${release.version}`);
   const code = result.outputFiles.find(f=>f.path.endsWith('.js')).text;
-  const output = `${metadata}\n(function () {\n${settings}\nconst __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, PreferredVideoCodec, BlockWebRTC, EnableWorkerIntercept };\n${code}\n})();\n`;
-  const inputs = [...new Set([...Object.keys(worker.metafile.inputs), ...Object.keys(result.metafile.inputs)].filter(p=>p.startsWith('src/')))].sort();
+  const output = `${metadata}\n(function () {\n${settings}\nconst __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, PreferredVideoCodec, BlockWebRTC };\n${code}\n})();\n`;
+  const inputs = [...new Set(Object.keys(result.metafile.inputs).filter(p=>p.startsWith('src/')))].sort();
   for (const p of ['src/metadata.txt','src/settings.txt','scripts/build.mjs','package.json','package-lock.json','release.json']) if(!inputs.includes(p))inputs.push(p);
   inputs.sort();
   const manifest = { version: release.version, tools: { node: process.versions.node, npm: release.npmVersion, esbuild: esbuild.version }, options: buildOptions,
-    sources: Object.fromEntries(inputs.map(p=>[p,hash(readFileSync(p))])), workerSha256: hash(workerSource), userscriptSha256: hash(output) };
+    sources: Object.fromEntries(inputs.map(p=>[p,hash(readFileSync(p))])), userscriptSha256: hash(output) };
   if (write) {
     mkdirSync('dist', {recursive:true});
     writeFileSync(`dist/BiliCDN_TW${testing?'.test':''}.user.js`, output);

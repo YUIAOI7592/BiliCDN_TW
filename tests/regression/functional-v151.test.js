@@ -4,7 +4,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const path = require('node:path')
 const fs = require('node:fs')
-const { loadUserscript, runGeneratedClassicWorker } = require('../harness/userscript-vm')
+const { loadUserscript } = require('../harness/userscript-vm')
 
 const root = path.resolve(__dirname, '../..')
 const baseline = path.join(root, 'tests', 'fixtures', 'BiliCDN_TW_1.5.0.user.js')
@@ -94,33 +94,21 @@ test('v1.5.3 rewrites explicit PCDN only through trusted targets and guards spec
     assert.equal(h.evaluate(`Object.prototype.hasOwnProperty.call(cdnHealth, 'node.edge.mountaintoys.cn')`), false)
 })
 
-test('v1.5.3 main and Worker sinks share the PCDN, catalog, resource, and live guards', async t => {
-    const h = loadUserscript(target, { gmSeed: { disabled: false }, enableWorkerIntercept: true })
-    const worker = new h.pageWindow.Worker('https://www.bilibili.com/player-v151-worker.js')
-    const bootstrap = worker.messages.find(message => message.data && message.data.__biliCdnBootstrap)
-    assert.ok(bootstrap)
-    const blob = h.blobStore.get(worker.scriptURL)
-    const wh = runGeneratedClassicWorker(blob.parts.map(String).join(''))
-    t.after(() => {
-        try { worker.terminate() } catch {}
-        try { bootstrap.transfer[0].close() } catch {}
-    })
-    wh.dispatchMessage(bootstrap.data, bootstrap.transfer)
-    await settle()
-
+test('v1.7.0 main sink retains the PCDN, catalog, resource, and live guards', async () => {
+    const h = loadUserscript(target, { gmSeed: { disabled: false } })
     const explicit = 'https://node.edge.mountaintoys.cn/upgcxcode/a.m4s?sig=x'
     const suspected = 'https://upos-sz-mirroraliov.bilivideo.com:8443/upgcxcode/a.m4s?sig=x'
     const resource = 'https://node.mcdn.bilivideo.net:8082/v1/resource/a.m4s?sig=x'
     const live = 'https://upos-sz-mirrorali.bilivideo.com/live-bvc/1/live.m3u8?sig=x'
-    await wh.self.fetch(explicit)
-    const explicitHost = new URL(wh.fetchCalls.at(-1).url).hostname
+    await h.pageWindow.fetch(explicit)
+    const explicitHost = new URL(h.fetchCalls.at(-1).url).hostname
     assert.equal(h.evaluate(`TRUSTED_CDN_CATALOG_SET.has(${JSON.stringify(explicitHost)})`), true)
-    await wh.self.fetch(suspected)
-    assert.equal(new URL(wh.fetchCalls.at(-1).url).host, 'upos-sz-mirroraliov.bilivideo.com:8443')
-    await wh.self.fetch(resource)
-    assert.equal(new URL(wh.fetchCalls.at(-1).url).hostname, 'node.mcdn.bilivideo.net')
-    await wh.self.fetch(live)
-    assert.equal(new URL(wh.fetchCalls.at(-1).url).pathname, '/live-bvc/1/live.m3u8')
+    await h.pageWindow.fetch(suspected)
+    assert.equal(new URL(h.fetchCalls.at(-1).url).host, 'upos-sz-mirroraliov.bilivideo.com:8443')
+    await h.pageWindow.fetch(resource)
+    assert.equal(new URL(h.fetchCalls.at(-1).url).hostname, 'node.mcdn.bilivideo.net')
+    await h.pageWindow.fetch(live)
+    assert.equal(new URL(h.fetchCalls.at(-1).url).pathname, '/live-bvc/1/live.m3u8')
     assert.equal(h.evaluate(`addForcedRedirect('node.edge.mountaintoys.cn')`), false)
 })
 
@@ -252,14 +240,14 @@ test('v1.5.3 exposes one menu and routes all maintenance through the trusted con
     const h = loadUserscript(target, { gmSeed: { disabled: true } })
     assert.deepEqual(h.menus.map(item => item.label), ['⚙️ 開啟 BiliCDN 控制中心'])
     h.menus[0].callback()
-    for (const name of ['reassess', 'routing', 'diagnostics', 'maintenance', 'advanced']) {
+    for (const name of ['reassess', 'routing', 'diagnostics', 'maintenance']) {
         assert.ok(action(h, name), `missing control-center action ${name}`)
     }
     const writes = h.gmWrites.length
-    action(h, 'advanced').click()
+    action(h, 'diagnostics').click()
     assert.equal(h.gmWrites.length, writes)
-    trusted(h, action(h, 'advanced'))
-    assert.ok(action(h, 'verbose-toggle'))
+    trusted(h, action(h, 'diagnostics'))
+    assert.ok(action(h, 'text-action'))
 })
 
 test('v1.5.3 control-center browsing reaches all former functions without active network', () => {
@@ -277,8 +265,8 @@ test('v1.5.3 control-center browsing reaches all former functions without active
     open(); trusted(h, action(h, 'maintenance'))
     for (const name of ['clear-soft', 'revive-dead', 'reset-all', 'back']) assert.ok(action(h, name))
 
-    open(); trusted(h, action(h, 'advanced'))
-    for (const name of ['verbose-toggle', 'worker-stats', 'back']) assert.ok(action(h, name))
+    open(); trusted(h, action(h, 'diagnostics'))
+    for (const name of ['text-action', 'copy', 'back']) assert.ok(action(h, name))
 
     open(); trusted(h, action(h, 'reassess'))
     assert.deepEqual({ fetch: h.fetchCalls.length, preconnect: h.preconnects.length, workers: h.workerInstances.length }, before)

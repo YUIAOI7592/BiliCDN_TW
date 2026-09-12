@@ -83,7 +83,6 @@ const reorderCdnsByLatency = async (force) => {
                         probeDeferCount = 0
                         deps.promoteBestCdnNow()
                         deps.preconnectBatch(deps.activeCdnList.slice(0, 3))
-                        deps.syncWorkerCdnTarget()
                         return
                     }
                 }
@@ -208,7 +207,6 @@ const reorderCdnsByLatency = async (force) => {
         probeDeferCount = 0
         if (deps.activeCdnList[0]) {
             deps.preconnectBatch(deps.activeCdnList.slice(0, 3), force)
-            deps.syncWorkerCdnTarget()
         }
     } finally {
         reorderRunning = false

@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'), assert=require('node:assert/strict'), path=require('node:path');
 const F=require('../harness/v153-fixture');
-const { loadUserscript, runGeneratedClassicWorker }=require('../harness/userscript-vm');
+const { loadUserscript }=require('../harness/userscript-vm');
 const target=require('../harness/current-script');
 const baseline=path.resolve(__dirname,'../fixtures/BiliCDN_TW_1.5.5.user.js');
 const load=(options={},file=target)=>F.load({instrument:false,...options},file);
@@ -55,7 +55,7 @@ test('v160 uninstrumented menus retain closed shadow, reject forged clicks and e
  const before=state(h),button=F.ui(h).querySelector('[data-ui-action="reassess"]');
  button.click();button.dispatchEvent(new F.FakeEvent('click',{isTrusted:false}));assert.deepEqual(state(h),before);
  await F.spa(h);const after=state(h);button.dispatchEvent(new F.FakeEvent('click',{isTrusted:true}));assert.deepEqual(state(h),after);
- open(h);F.click(h,'advanced');F.click(h,'verbose-toggle');assert.equal(h.gm.get('verbose'),true);
+ open(h);F.click(h,'diagnostics');F.click(h,'text-action');assert.equal(h.gm.get('verbose'),true);
 });
 test('v160 control center keeps one session while navigating every non-destructive child view',()=>{
  const h=load({gmSeed:{disabled:true}}),prior=h.document.createElement('button');
@@ -65,8 +65,6 @@ test('v160 control center keeps one session while navigating every non-destructi
  expectMain();F.click(h,'routing');assert.equal(title(),'CDN 選路');F.click(h,'back');expectMain();
  F.click(h,'diagnostics');assert.equal(title(),'BiliCDN 診斷資訊');F.click(h,'back');expectMain();
  F.click(h,'maintenance');assert.equal(title(),'節點維護');F.click(h,'back');expectMain();
- F.click(h,'advanced');assert.equal(title(),'進階');F.click(h,'worker-stats');assert.equal(title(),'Worker 使用量');
- F.click(h,'back');assert.equal(title(),'進階');F.click(h,'back');expectMain();
  F.ui(h).dispatchEvent(new F.FakeEvent('keydown',{key:'Escape',isTrusted:true}));
  assert.equal(F.ui(h).querySelector('h2'),null);assert.equal(h.document.activeElement,prior);
 });
@@ -76,9 +74,8 @@ test('v160 control-center actions return to their parent view instead of silentl
  F.click(h,'revive-dead');assert.equal(title(),'節點維護');
  F.click(h,'reset-all');assert.equal(title(),'重置所有學習狀態？');F.click(h,'back');assert.equal(title(),'節點維護');
  F.click(h,'back');assert.equal(title(),'BiliCDN 控制中心');
- F.click(h,'advanced');F.click(h,'verbose-toggle');assert.equal(h.gm.get('verbose'),true);assert.equal(title(),'進階');
- F.click(h,'worker-stats');F.click(h,'back');assert.equal(title(),'進階');F.click(h,'back');
- F.click(h,'diagnostics');F.click(h,'copy');await F.settle();assert.equal(title(),'BiliCDN 診斷資訊');
+ F.click(h,'diagnostics');F.click(h,'text-action');assert.equal(h.gm.get('verbose'),true);assert.equal(title(),'BiliCDN 診斷資訊');
+ F.click(h,'copy');await F.settle();assert.equal(title(),'BiliCDN 診斷資訊');
  F.click(h,'back');assert.equal(title(),'BiliCDN 控制中心');
 });
 test('v160 post-build HTTPDNS and codec header settings are live runtime settings',async()=>{
@@ -89,21 +86,15 @@ test('v160 post-build HTTPDNS and codec header settings are live runtime setting
   await h.timers.advanceAsync(0);assert.equal(x.status,503);
  }
 });
-test('v160 post-build Worker enable keeps private policy, ordinary-message isolation and reader cancellation',async t=>{
- const h=load({enableWorkerIntercept:true});
- const worker=new h.pageWindow.Worker('https://www.bilibili.com/v160-worker.js');
- const boot=worker.messages.find(m=>m.data.__biliCdnBootstrap);t.after(()=>{worker.terminate();boot.transfer[0].close()});
- const generated=h.blobStore.get(worker.scriptURL).parts.map(String).join('');
- assert.doesNotMatch(generated,/createMediaUrlPolicy\.toString\(\)/);
- const reasons=[],wh=runGeneratedClassicWorker(generated,{fetchImpl:async()=>new Response(new ReadableStream({pull(c){c.enqueue(new Uint8Array(8))},cancel(r){reasons.push(r)}}))});
- wh.dispatchMessage(boot.data,boot.transfer);await F.settle();
- wh.dispatchMessage({__biliCdnSetTarget:'attacker.example',__biliCdnDisabled:true});
- const r=await wh.self.fetch('https://n.mountaintoys.cn/upgcxcode/w.m4s'),reader=r.body.getReader();
- await reader.read();const reason={cancel:'original'};await reader.cancel(reason);assert.deepEqual(reasons,[reason]);
- assert.ok(snapshot(h).catalog.some(x=>x.host===new URL(wh.fetchCalls.at(-1).url).hostname));
- await wh.self.fetch('https://n.mountaintoys.cn/v1/resource/w.m4s');
- assert.equal(new URL(wh.fetchCalls.at(-1).url).hostname,'n.mountaintoys.cn');
- worker.terminate();assert.equal(worker.terminated,true);
+test('v170 leaves site Worker construction completely untouched',()=>{
+ class SiteWorker { constructor(url,options){this.url=url;this.options=options;SiteWorker.calls.push([url,options])} }
+ SiteWorker.calls=[];
+ const h=load({pageGlobals:{Worker:SiteWorker}}),before={blob:h.blobStore.size,channel:h.getMessageChannelCount(),writes:h.gmWrites.length};
+ assert.equal(h.pageWindow.Worker,SiteWorker);
+ for(const [url,options]of [['https://www.bilibili.com/site.js',undefined],['blob:https://www.bilibili.com/site',undefined],['data:text/javascript,0',undefined],['https://www.bilibili.com/site.mjs',{type:'module'}]])new h.pageWindow.Worker(url,options);
+ assert.deepEqual(SiteWorker.calls.map(x=>x[0]),['https://www.bilibili.com/site.js','blob:https://www.bilibili.com/site','data:text/javascript,0','https://www.bilibili.com/site.mjs']);
+ assert.deepEqual({blob:h.blobStore.size,channel:h.getMessageChannelCount(),writes:h.gmWrites.length},before);
+ assert.equal('worker' in snapshot(h),false);
 });
 test('v160 uninstrumented 250s traces match v155: healthy, seek and real failure with verbose off/on',async t=>{
  for(const scenario of ['healthy','seek','failure'])await t.test(scenario,async()=>{

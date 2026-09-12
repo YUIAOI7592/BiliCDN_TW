@@ -17,7 +17,7 @@ test('v1.5.3 static invariants remain present', { skip: !fs.existsSync(target) }
     assert.match(source, /mappedOriginalUrl/)
     assert.match(source, /responseType\s*===\s*['"]json['"]/)
     assert.match(source, /buffered\.start\(i\)[\s\S]{0,180}buffered\.end\(i\)/)
-    assert.match(source, /var EnableWorkerIntercept = true/)
+    assert.doesNotMatch(source, /EnableWorkerIntercept|bilicdn:worker|__biliCdnBootstrap/)
 })
 
 test('two-times playback keeps proportional bitrate requirement', { skip: !fs.existsSync(target) }, () => {
@@ -134,7 +134,7 @@ test('contiguous buffered range and seek grace use the current playback position
 
 test('disabled mode leaves Fetch/XHR/Worker untouched and starts no probe or bakeoff', { skip: !fs.existsSync(target) }, async () => {
     const original = 'https://cn-hk-eq-bcache-01.bilivideo.com/upgcxcode/disabled.m4s?token=kept'
-    const h = loadUserscript(target, { gmSeed: { disabled: true }, enableWorkerIntercept: true })
+    const h = loadUserscript(target, { gmSeed: { disabled: true } })
     const before = h.fetchCalls.length
     await h.pageWindow.fetch(original)
     assert.equal(h.fetchCalls.at(-1).url, original)

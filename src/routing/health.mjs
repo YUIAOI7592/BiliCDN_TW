@@ -87,6 +87,11 @@ const knownDeadHosts = deadHostRecords.index
 try {
     const installedVersion = GM_getValue('blicdnVersion')
     if (installedVersion !== deps.VERSION) {
+        // v1.7.0 已移除 Worker 攔截；舊統計只在版本遷移時最佳努力清除。
+        // 刪除失敗不得影響播放，也不新增持久 migration key。
+        if (!installedVersion || !deps.verGte(installedVersion, '1.7.0')) {
+            try { GM_deleteValue('workerStats_v1') } catch {}
+        }
         // 1.1.0+ 改用實測下載速度挑節點；舊 probe 快取是延遲排序，一律清掉重學
         GM_deleteValue('probeCache_v1')
         // 舊版殘留的 '4.4.6'..'4.7.0' 字串跟本專案 1.x 版本序列對不上（疑似複製自其他腳本），
@@ -835,7 +840,6 @@ const promoteBestCdnNow = () => {
     const warmList = activeCdnList.slice(0, 3)
     deps.preconnectBatch(warmList.filter(h => h !== playingNow), !deps.inSeekGrace())
     if (playingNow) deps.preconnectCdn(playingNow, false)
-    deps.syncWorkerCdnTarget()
     return best
 }
 

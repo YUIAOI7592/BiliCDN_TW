@@ -60,7 +60,6 @@ const reconcileCatalogCandidates = () => {
     deps.clearRuntimeConnectionHints()
     deps.promoteBestCdnNow()
     if (!deps.disabled) deps.preconnectBatch(deps.getHealthyCdnList().slice(0, 3), false)
-    deps.syncWorkerCdnTarget()
     deps.refreshPublicDiagnosticSnapshot()
 }
 

@@ -28,11 +28,3 @@ var PreferredVideoCodec = 'av1'
 // BlockWebRTC：true = 阻擋 WebRTC（擋 Bilibili PCDN/P2P 傳輸，跨國連線建議開）；
 // false = 放行（頁面其他功能，或其他擴充功能，若也用到 WebRTC 才需要關）
 var BlockWebRTC = true
-
-// EnableWorkerIntercept：是否攔截 new Worker() 並改寫其內部 segment 請求的 CDN host。
-// 這段機制涉及動態 Worker 包裝，對目前播放器是否真的有作用仍需實測；v1.6.3 預設 true，
-// 用於蒐集真實使用證據。播放數部影片後查看
-// 控制中心「進階 → 顯示 Worker 使用量」中 mediaSeen > 0 才代表 Worker 真的抓過影片分段。
-// 若遇到相容性問題可改成 false；設定面板 checkbox 控制的是整體 CDN 改寫，
-// 這個變數則控制 Worker 攔截機制本身。
-var EnableWorkerIntercept = true

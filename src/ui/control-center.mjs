@@ -27,6 +27,13 @@ const showDiagnosticDialog = () => {
         text: deps.buildDiagReport(),
         copyLabel: '複製報告',
         onCopy: () => { deps.copyDiagReport().catch(() => {}) },
+        actionLabel: deps.Config.verbose ? '關閉 verbose' : '開啟 verbose',
+        onAction: () => {
+            const result = deps.BiliCDNControls.verbose(!deps.Config.verbose)
+            deps.refreshPublicDiagnosticSnapshot()
+            deps.TrustedMenuUI.toast(result.message, result.ok ? 'success' : 'warning')
+            showDiagnosticDialog()
+        },
         closeLabel: '返回控制中心',
         onClose: () => showControlCenter(),
     })
@@ -58,37 +65,10 @@ const showDeadReviveDialog = () => {
             const result = stillDead && deps.TRUSTED_CDN_CATALOG_SET.has(host)
                 ? deps.BiliCDNControls.revive(host)
                 : deps.controlResult(false, 'stale', '節點狀態已改變，請重新開啟選單')
-            deps.syncWorkerCdnTarget()
             deps.refreshPublicDiagnosticSnapshot()
             deps.TrustedMenuUI.toast(result.message, result.ok ? 'success' : 'warning')
             showMaintenanceCenter()
         },
-    })
-}
-
-const showWorkerStatsDialog = () => {
-    const stats = deps.BiliCDNControls.workerStats()
-    const lines = [
-        'Worker 攔截：' + (deps.EnableWorkerIntercept ? '已開啟（v1.6.3 預設）' : '已由檔頭設定關閉（目前數值為 0 屬正常）'),
-        '本分頁安裝狀態=' + stats.installState,
-        '本分頁 constructor 呼叫=' + stats.session.constructorCalls,
-        '本分頁成功包裝=' + stats.session.wrapped,
-        '本分頁 bootstrap 確認=' + stats.session.bootstrapReady,
-        '本分頁安全放行=' + JSON.stringify(stats.session.bypass),
-        '本分頁建立失敗=' + JSON.stringify(stats.session.failures),
-        '本分頁 constructor 被替換=' + stats.session.replacements,
-        '本分頁 netCalls=' + stats.session.netCalls + ' mediaSeen=' + stats.session.mediaSeen
-            + ' rewrites=' + stats.session.rewrites + ' bytes=' + stats.session.bytesMB + ' MB',
-        '累計 created=' + stats.created + ' ready=' + stats.bootstrapReady + ' constructors=' + stats.constructorCalls,
-        '累計 netCalls=' + stats.netCalls + ' mediaSeen=' + stats.mediaSeen + ' rewrites=' + stats.rewrites,
-        '累計 bytes=' + stats.bytesMB + ' MB｜觀察天數=' + stats.observedDays,
-        '判讀=' + stats.verdict,
-    ]
-    return deps.TrustedMenuUI.openText({
-        title: 'Worker 使用量',
-        text: lines.join('\n'),
-        closeLabel: '返回進階設定',
-        onClose: () => showAdvancedCenter(),
     })
 }
 
@@ -194,29 +174,8 @@ const showMaintenanceCenter = () => {
     })
 }
 
-const showAdvancedCenter = () => deps.TrustedMenuUI.openActions({
-    title: '進階',
-    paragraphs: [
-        'Verbose 目前' + (deps.Config.verbose ? '已開啟' : '已關閉') + '。',
-        'Worker 攔截只能在檔頭設定；此處僅顯示使用量。',
-    ],
-    items: [
-        {
-            label: deps.Config.verbose ? '關閉 verbose' : '開啟 verbose', action: 'verbose-toggle', onActivate: () => {
-                const result = deps.BiliCDNControls.verbose(!deps.Config.verbose)
-                deps.refreshPublicDiagnosticSnapshot()
-                deps.TrustedMenuUI.toast(result.message, result.ok ? 'success' : 'warning')
-                showAdvancedCenter()
-            },
-        },
-        { label: '顯示 Worker 使用量', action: 'worker-stats', onActivate: showWorkerStatsDialog },
-        { label: '返回控制中心', action: 'back', onActivate: () => showControlCenter() },
-    ],
-})
-
 function showControlCenter() {
     const stats = deps.Watchdog.stats()
-    const worker = deps.summarizeWorkerStats()
     const httpdns = deps.getHttpDnsStatus()
     const abnormal = deps.blacklistSet.size + deps.knownDeadHosts.size
         + Object.keys(deps.cdnSoftBlockUntil).filter(deps.isCdnSoftBlocked).length
@@ -231,10 +190,7 @@ function showControlCenter() {
             '倍速：' + deps.playbackRateState.effectiveRate + 'x（' + (deps.playbackRateState.confirmed ? '已確認' : '假定')
                 + '）｜' + deps.describePlaybackBuffer(stats),
             '串流：' + deps.streamEstimate.videoMbps + '+' + deps.streamEstimate.audioMbps + ' Mbps｜codec 排序首位：' + codecLead,
-            '異常節點：' + abnormal + '｜HTTPDNS：' + httpdns.mode + '｜Worker：'
-                + (deps.EnableWorkerIntercept
-                    ? (worker.installState + '；本頁呼叫=' + worker.session.constructorCalls + '／包裝=' + worker.session.wrapped)
-                    : '停用'),
+            '異常節點：' + abnormal + '｜HTTPDNS：' + httpdns.mode,
         ],
         items: [
             { label: '重新評估節點', action: 'reassess', onActivate: () => {
@@ -244,7 +200,6 @@ function showControlCenter() {
             { label: 'CDN 選路', action: 'routing', onActivate: showRoutingCenter },
             { label: '診斷', action: 'diagnostics', onActivate: showDiagnosticDialog },
             { label: '節點維護', action: 'maintenance', onActivate: showMaintenanceCenter },
-            { label: '進階', action: 'advanced', onActivate: showAdvancedCenter },
         ],
     })
 }

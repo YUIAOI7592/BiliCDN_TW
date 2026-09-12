@@ -1,0 +1,6 @@
+1536d381cb83d0ea9b744fbe35015bd09348f87d30c607a6d99ea049e2c5a369  Release/v1.7.0/BUILD_MANIFEST_v1.7.0.json
+61dce8a100d3cb6112c960f5a77d92bdc17e4d4c1ef76d325c1aea5f689777f1  Release/v1.7.0/BiliCDN_TW.user.js
+dae71f8553070a25d727a5c0de36e8b5bae7ca0bae830820a504600d484d054f  Release/v1.7.0/CHANGELOG_v1.7.0.md
+e1eec96ff267405b599ea8df18c2d559c47f961da9c9615e3af48b4c3882da7a  Release/v1.7.0/TEST_REPORT_v1.7.0.md
+fa3a43631baf597be6c7c9de06dcf5251016c3ccda250c978ee6cacbb703aacb  Release/v1.7.0/v1.3.4_to_v1.7.0.patch.diff
+7c6c492bb4d487a2022bbbc4c94b653eb7721aaadaf834d2e5ad2971024d56f8  Release/v1.7.0/v1.6.3_to_v1.7.0.patch.diff

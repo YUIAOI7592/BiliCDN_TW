@@ -16,6 +16,8 @@ coverage/
 !/Release/v1.6.1/
 !/Release/v1.6.2/
 !/Release/v1.6.3/
+!/Release/v1.7.0/
+!/Release/v1.7.0/**
 /.work/
 /.agents/
 /.codex/

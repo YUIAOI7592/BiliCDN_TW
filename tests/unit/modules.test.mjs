@@ -32,9 +32,7 @@ test('v160 fixed historical fixtures remain byte-identical including v155 final 
   assert.equal(manifest['BiliCDN_TW_1.5.5.user.js'],'fccf8ca10c9086b8edae3ba9b170b14ff5c92451ccd921c5834960e5624b441f');
 });
 test('v160 importing all main modules does not read GM, Worker, DOM or install network/timers', async () => {
-  const result=await esbuild.build({...buildOptions,stdin:{contents:"import './src/main.mjs'",resolveDir:process.cwd()},plugins:[{
-    name:'unused-worker',setup(b){b.onResolve({filter:/^bilicdn:worker$/},()=>({path:'worker',namespace:'test'}));b.onLoad({filter:/.*/,namespace:'test'},()=>({contents:'export const WORKER_SOURCE="";'}));}
-  }]});
+  const result=await esbuild.build({...buildOptions,stdin:{contents:"import './src/main.mjs'",resolveDir:process.cwd()}});
   assert.doesNotThrow(()=>vm.runInNewContext(result.outputFiles[0].text,{}));
 });
 test('v160 only test builds contain the module-state bridge; UI has no raw GM access',()=>{

@@ -1,0 +1,1316 @@
+diff --git a/Release/v1.6.3/BiliCDN_TW.user.js b/Release/v1.7.0/BiliCDN_TW.user.js
+index 15fd88b..727a1b2 100644
+--- a/Release/v1.6.3/BiliCDN_TW.user.js
++++ b/Release/v1.7.0/BiliCDN_TW.user.js
+@@ -1,7 +1,7 @@
+ // ==UserScript==
+ // @name         Bilibili CDN 台灣優化
+ // @namespace    BiliCDN_TW
+-// @version      1.6.3
++// @version      1.7.0
+ // @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+ // @author       jiyunshi <chocosensei214@gmail.com>
+ // @license      MIT
+@@ -69,15 +69,7 @@ var PreferredVideoCodec = 'av1'
+ // false = 放行（頁面其他功能，或其他擴充功能，若也用到 WebRTC 才需要關）
+ var BlockWebRTC = true
+ 
+-// EnableWorkerIntercept：是否攔截 new Worker() 並改寫其內部 segment 請求的 CDN host。
+-// 這段機制涉及動態 Worker 包裝，對目前播放器是否真的有作用仍需實測；v1.6.3 預設 true，
+-// 用於蒐集真實使用證據。播放數部影片後查看
+-// 控制中心「進階 → 顯示 Worker 使用量」中 mediaSeen > 0 才代表 Worker 真的抓過影片分段。
+-// 若遇到相容性問題可改成 false；設定面板 checkbox 控制的是整體 CDN 改寫，
+-// 這個變數則控制 Worker 攔截機制本身。
+-var EnableWorkerIntercept = true
+-
+-const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, PreferredVideoCodec, BlockWebRTC, EnableWorkerIntercept };
++const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, PreferredVideoCodec, BlockWebRTC };
+ (() => {
+   var __defProp = Object.defineProperty;
+   var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+@@ -89,8 +81,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let BlockHttpDNS = input.BlockHttpDNS;
+     let PreferredVideoCodec = input.PreferredVideoCodec;
+     let BlockWebRTC = input.BlockWebRTC;
+-    let EnableWorkerIntercept = input.EnableWorkerIntercept;
+-    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.6.3";
++    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.7.0";
+     const parseVer = /* @__PURE__ */ __name((v) => String(v || "0").split(".").map((n) => parseInt(n, 10) || 0), "parseVer");
+     const verGte = /* @__PURE__ */ __name((a, b) => {
+       const A = parseVer(a), B = parseVer(b);
+@@ -130,12 +121,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       set BlockWebRTC(value) {
+         BlockWebRTC = value;
+       },
+-      get EnableWorkerIntercept() {
+-        return EnableWorkerIntercept;
+-      },
+-      set EnableWorkerIntercept(value) {
+-        EnableWorkerIntercept = value;
+-      },
+       get VERSION() {
+         return VERSION;
+       },
+@@ -714,6 +699,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     try {
+       const installedVersion = GM_getValue("blicdnVersion");
+       if (installedVersion !== deps.VERSION) {
++        if (!installedVersion || !deps.verGte(installedVersion, "1.7.0")) {
++          try {
++            GM_deleteValue("workerStats_v1");
++          } catch {
++          }
++        }
+         GM_deleteValue("probeCache_v1");
+         if (!installedVersion || !deps.verGte(installedVersion, "1.0.0")) {
+           GM_setValue("cdnBlacklist", "[]");
+@@ -1294,7 +1285,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const warmList = activeCdnList.slice(0, 3);
+       deps.preconnectBatch(warmList.filter((h) => h !== playingNow), !deps.inSeekGrace());
+       if (playingNow) deps.preconnectCdn(playingNow, false);
+-      deps.syncWorkerCdnTarget();
+       return best;
+     }, "promoteBestCdnNow");
+     const resolvedCdn = (() => {
+@@ -3902,228 +3892,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+   }
+   __name(createTransport, "createTransport");
+ 
+-  // src/worker/statistics.mjs
+-  function createWorkerStats(deps) {
+-    const biliCdnWorkers = /* @__PURE__ */ new Set();
+-    const workerControlPorts = /* @__PURE__ */ new WeakMap();
+-    const getWorkerCdnTarget = /* @__PURE__ */ __name(() => [deps.resolvedCdn, deps.lastChosenCdn, deps.peekBestCdn(), deps.activeCdnList[0], deps.PREFERRED_CDN_LIST[0]].find(deps.isValidCustomCdnHost) || "", "getWorkerCdnTarget");
+-    const WORKER_STATS_KEY = "workerStats_v1";
+-    const WORKER_STATS_SAVE_MS = 5e3;
+-    const WORKER_STATS_MAX_SAMPLES = 5;
+-    const WORKER_STAT_COUNTER_MAX = 1e9;
+-    const WORKER_INSTALL_STATES = /* @__PURE__ */ new Set([
+-      "disabled",
+-      "pending",
+-      "installing",
+-      "installed",
+-      "unavailable",
+-      "already-patched",
+-      "invalid-target",
+-      "failed",
+-      "replaced"
+-    ]);
+-    const WORKER_DIAGNOSTIC_COUNTERS = Object.freeze({
+-      "install-attempt": "installAttempts",
+-      "install-failure": "installFailures",
+-      "no-worker": "noWorker",
+-      "constructor-call": "constructorCalls",
+-      "wrapped": "created",
+-      "bootstrap-ready": "bootstrapReady",
+-      "bootstrap-timeout": "bootstrapTimeouts",
+-      "bypass-disabled": "bypassDisabled",
+-      "bypass-blob": "bypassBlob",
+-      "bypass-data": "bypassData",
+-      "bypass-cross-origin-module": "bypassCrossOriginModule",
+-      "bypass-no-random": "bypassNoRandom",
+-      "bypass-no-blob-api": "bypassNoBlobApi",
+-      "bypass-no-message-channel": "bypassNoMessageChannel",
+-      "resolve-failure": "resolveFailures",
+-      "build-failure": "buildFailures",
+-      "constructor-failure": "constructorFailures",
+-      "register-failure": "registerFailures",
+-      "port-failure": "portFailures",
+-      "constructor-replaced": "replacements"
+-    });
+-    const WORKER_COUNTER_KEYS = Object.freeze([.../* @__PURE__ */ new Set([
+-      "created",
+-      "netCalls",
+-      "mediaSeen",
+-      "rewrites",
+-      "bytes",
+-      ...Object.values(WORKER_DIAGNOSTIC_COUNTERS)
+-    ])]);
+-    const sanitizeWorkerCounter = /* @__PURE__ */ __name((value) => Number.isFinite(+value) ? Math.max(0, Math.min(WORKER_STAT_COUNTER_MAX, Math.trunc(+value))) : 0, "sanitizeWorkerCounter");
+-    const sanitizeWorkerTimestamp = /* @__PURE__ */ __name((value) => Number.isFinite(+value) ? Math.max(0, Math.trunc(+value)) : 0, "sanitizeWorkerTimestamp");
+-    const sanitizeWorkerSample = /* @__PURE__ */ __name((value) => {
+-      try {
+-        const host = new URL(String(value)).hostname.toLowerCase();
+-        return host.length <= 253 && /^[a-z0-9.-]+$/.test(host) ? host : null;
+-      } catch {
+-        return null;
+-      }
+-    }, "sanitizeWorkerSample");
+-    const emptyWorkerStats = /* @__PURE__ */ __name(() => ({
+-      ...Object.fromEntries(WORKER_COUNTER_KEYS.map((key) => [key, 0])),
+-      firstAt: 0,
+-      lastAt: 0,
+-      samples: []
+-    }), "emptyWorkerStats");
+-    const workerStats = (() => {
+-      try {
+-        const raw = JSON.parse(GM_getValue(WORKER_STATS_KEY) || "{}") || {};
+-        return {
+-          ...Object.fromEntries(WORKER_COUNTER_KEYS.map((key) => [key, sanitizeWorkerCounter(raw[key])])),
+-          firstAt: sanitizeWorkerTimestamp(raw.firstAt),
+-          lastAt: sanitizeWorkerTimestamp(raw.lastAt),
+-          samples: Array.isArray(raw.samples) ? raw.samples.map(sanitizeWorkerSample).filter(Boolean).slice(0, WORKER_STATS_MAX_SAMPLES) : []
+-        };
+-      } catch {
+-        return emptyWorkerStats();
+-      }
+-    })();
+-    const sessionWorkerStats = {
+-      installState: deps.EnableWorkerIntercept ? "pending" : "disabled",
+-      ...Object.fromEntries(WORKER_COUNTER_KEYS.map((key) => [key, 0]))
+-    };
+-    let workerStatsSaveTimer = null;
+-    const flushWorkerStats = /* @__PURE__ */ __name(() => {
+-      if (workerStatsSaveTimer) {
+-        clearTimeout(workerStatsSaveTimer);
+-        workerStatsSaveTimer = null;
+-      }
+-      try {
+-        GM_setValue(WORKER_STATS_KEY, JSON.stringify(workerStats));
+-      } catch {
+-      }
+-    }, "flushWorkerStats");
+-    const scheduleWorkerStatsSave = /* @__PURE__ */ __name(() => {
+-      if (workerStatsSaveTimer) return;
+-      workerStatsSaveTimer = setTimeout(() => {
+-        workerStatsSaveTimer = null;
+-        flushWorkerStats();
+-      }, WORKER_STATS_SAVE_MS);
+-    }, "scheduleWorkerStatsSave");
+-    const bumpWorkerStats = /* @__PURE__ */ __name((patch) => {
+-      if (!patch || typeof patch !== "object") return;
+-      const now = Date.now();
+-      if (!workerStats.firstAt) workerStats.firstAt = now;
+-      workerStats.lastAt = now;
+-      WORKER_COUNTER_KEYS.forEach((key) => {
+-        const delta = sanitizeWorkerCounter(patch[key]);
+-        if (!delta) return;
+-        workerStats[key] = Math.min(WORKER_STAT_COUNTER_MAX, workerStats[key] + delta);
+-        if (["netCalls", "mediaSeen", "rewrites", "bytes"].includes(key)) {
+-          sessionWorkerStats[key] = Math.min(WORKER_STAT_COUNTER_MAX, sessionWorkerStats[key] + delta);
+-        }
+-      });
+-      const sample = sanitizeWorkerSample(patch.sample);
+-      if (sample && !workerStats.samples.includes(sample)) {
+-        workerStats.samples.push(sample);
+-        if (workerStats.samples.length > WORKER_STATS_MAX_SAMPLES) workerStats.samples.shift();
+-      }
+-      scheduleWorkerStatsSave();
+-    }, "bumpWorkerStats");
+-    const setWorkerInstallState = /* @__PURE__ */ __name((state) => {
+-      if (!WORKER_INSTALL_STATES.has(state)) return false;
+-      sessionWorkerStats.installState = state;
+-      return true;
+-    }, "setWorkerInstallState");
+-    const noteWorkerDiagnostic = /* @__PURE__ */ __name((code, sample) => {
+-      const key = WORKER_DIAGNOSTIC_COUNTERS[code];
+-      if (!key) return false;
+-      sessionWorkerStats[key] = Math.min(WORKER_STAT_COUNTER_MAX, sessionWorkerStats[key] + 1);
+-      bumpWorkerStats({ [key]: 1, ...code === "wrapped" ? { sample } : {} });
+-      return true;
+-    }, "noteWorkerDiagnostic");
+-    window.addEventListener("pagehide", flushWorkerStats);
+-    const summarizeWorkerStats = /* @__PURE__ */ __name(() => {
+-      const days = workerStats.firstAt ? Math.max(1, Math.round((Date.now() - workerStats.firstAt) / 864e5)) : 0;
+-      const s = sessionWorkerStats;
+-      const bypassTotal = s.bypassDisabled + s.bypassBlob + s.bypassData + s.bypassCrossOriginModule + s.bypassNoRandom + s.bypassNoBlobApi + s.bypassNoMessageChannel;
+-      const failureTotal = s.installFailures + s.resolveFailures + s.buildFailures + s.constructorFailures + s.registerFailures + s.portFailures + s.bootstrapTimeouts;
+-      let verdict = "Worker 攔截目前停用；開啟後重整才能量測";
+-      if (deps.EnableWorkerIntercept) {
+-        if (s.installState === "unavailable") verdict = "此頁載入時沒有可攔截的 Worker constructor";
+-        else if (s.installState === "already-patched") verdict = "Worker 已被其他實例標記為攔截；本實例無法判讀其內部活動";
+-        else if (s.installState === "invalid-target") verdict = "沒有合法 catalog target，攔截器未安裝";
+-        else if (s.installState === "failed") verdict = "攔截器安裝失敗；請複製診斷報告";
+-        else if (s.installState === "replaced") verdict = "攔截器安裝後被頁面替換，後續 Worker 不在量測範圍";
+-        else if (s.constructorCalls === 0) verdict = "攔截器已安裝，但本分頁尚未呼叫可見的 Worker constructor";
+-        else if (s.created === 0 && bypassTotal > 0) verdict = "已看見 Worker 呼叫，但全部依安全／來源規則原樣放行";
+-        else if (s.created === 0 && failureTotal > 0) verdict = "已看見 Worker 呼叫，但包裝或私有通道建立失敗";
+-        else if (s.created > 0 && s.bootstrapReady === 0) verdict = "已建立包裝 Worker，但尚未收到私有 bootstrap 確認";
+-        else if (s.netCalls === 0) verdict = "本分頁已確認包裝 Worker，但尚未觀察到其網路請求";
+-        else if (s.mediaSeen === 0) verdict = "本分頁 Worker 有網路請求，但尚未觀察到媒體分段";
+-        else verdict = "Worker 已觀察到媒體分段；攔截功能在此頁有實際用途";
+-      }
+-      return {
+-        installState: s.installState,
+-        session: {
+-          constructorCalls: s.constructorCalls,
+-          wrapped: s.created,
+-          bootstrapReady: s.bootstrapReady,
+-          bypass: {
+-            disabled: s.bypassDisabled,
+-            blob: s.bypassBlob,
+-            data: s.bypassData,
+-            crossOriginModule: s.bypassCrossOriginModule,
+-            noRandom: s.bypassNoRandom,
+-            noBlobApi: s.bypassNoBlobApi,
+-            noMessageChannel: s.bypassNoMessageChannel
+-          },
+-          failures: {
+-            install: s.installFailures,
+-            resolve: s.resolveFailures,
+-            build: s.buildFailures,
+-            constructor: s.constructorFailures,
+-            register: s.registerFailures,
+-            port: s.portFailures,
+-            bootstrap: s.bootstrapTimeouts
+-          },
+-          replacements: s.replacements,
+-          netCalls: s.netCalls,
+-          mediaSeen: s.mediaSeen,
+-          rewrites: s.rewrites,
+-          bytesMB: +((s.bytes || 0) / 1024 / 1024).toFixed(2)
+-        },
+-        created: workerStats.created,
+-        bootstrapReady: workerStats.bootstrapReady,
+-        constructorCalls: workerStats.constructorCalls,
+-        netCalls: workerStats.netCalls,
+-        mediaSeen: workerStats.mediaSeen,
+-        rewrites: workerStats.rewrites,
+-        bytesMB: +((workerStats.bytes || 0) / 1024 / 1024).toFixed(2),
+-        observedDays: days,
+-        samples: [...workerStats.samples],
+-        verdict
+-      };
+-    }, "summarizeWorkerStats");
+-    return {
+-      get biliCdnWorkers() {
+-        return biliCdnWorkers;
+-      },
+-      get workerControlPorts() {
+-        return workerControlPorts;
+-      },
+-      get getWorkerCdnTarget() {
+-        return getWorkerCdnTarget;
+-      },
+-      get bumpWorkerStats() {
+-        return bumpWorkerStats;
+-      },
+-      get setWorkerInstallState() {
+-        return setWorkerInstallState;
+-      },
+-      get noteWorkerDiagnostic() {
+-        return noteWorkerDiagnostic;
+-      },
+-      get summarizeWorkerStats() {
+-        return summarizeWorkerStats;
+-      }
+-    };
+-  }
+-  __name(createWorkerStats, "createWorkerStats");
+-
+   // src/routing/failures.mjs
+   function createFailures(deps) {
+     const forcedRedirectHosts = /* @__PURE__ */ new Map();
+@@ -4162,15 +3930,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       if (!t) return false;
+       return true;
+     }, "isForcedRedirect");
+-    const getWorkerForceList = /* @__PURE__ */ __name(() => {
+-      sweepForcedRedirectHosts();
+-      const out = new Set([...forcedRedirectHosts.keys()].filter(isForcedRedirect));
+-      deps.PREFERRED_CDN_LIST.forEach((h) => {
+-        if (deps.isCdnSoftBlocked(h) || deps.isCdnStronglyBad(h)) out.add(h);
+-      });
+-      out.delete(deps.getWorkerCdnTarget());
+-      return [...out];
+-    }, "getWorkerForceList");
+     const handleVerifiedSegmentFailure = /* @__PURE__ */ __name(({
+       cdn,
+       url,
+@@ -4246,7 +4005,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }, true);
+       deps.promoteBestCdnNow();
+       deps.preconnectBatch(deps.getHealthyCdnList().slice(0, 3), true);
+-      deps.syncWorkerCdnTarget();
+       if (deps.lastSampleSegmentUrl && (deps.currentStreamBitsPerSec / 1e6 >= 12 || deps.playbackRateState.effectiveRate >= 1.75)) {
+         deps.runThroughputBakeoff(deps.lastSampleSegmentUrl, false, deps.trustedBakeoffRequest("verified-failure")).catch(deps.reportMeasurementFailure());
+       }
+@@ -4262,9 +4020,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get isForcedRedirect() {
+         return isForcedRedirect;
+       },
+-      get getWorkerForceList() {
+-        return getWorkerForceList;
+-      },
+       get handleVerifiedSegmentFailure() {
+         return handleVerifiedSegmentFailure;
+       }
+@@ -4272,394 +4027,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+   }
+   __name(createFailures, "createFailures");
+ 
+-  // embedded:worker
+-  var WORKER_SOURCE = '(() => {\n  var __defProp = Object.defineProperty;\n  var __name = (target, value) => __defProp(target, "name", { value, configurable: true });\n\n  // src/policy/url-policy.mjs\n  function createMediaUrlPolicy() {\n    const MEDIA_URL_MAX_LENGTH = 16 * 1024;\n    const PCDN_SOURCE_SUFFIXES = Object.freeze([\n      "szbdyd.com",\n      "mountaintoys.cn",\n      "nexusedgeio.com",\n      "ahdohpiechei.com"\n    ]);\n    const PCDN_SOURCE_HOSTS = Object.freeze(/* @__PURE__ */ new Set([\n      "upos-sz-mirror14b.bilivideo.com"\n    ]));\n    const IPV4_HOST_RE = /^(?:\\d{1,3}\\.){3}\\d{1,3}$/;\n    const MEDIA_PATH_RE = /\\.(?:m4s|mp4|flv|m3u8)$/i;\n    const hostHasSuffix = /* @__PURE__ */ __name((host, suffix) => host === suffix || host.endsWith("." + suffix), "hostHasSuffix");\n    const parseMediaHttpUrl = /* @__PURE__ */ __name((value) => {\n      if (typeof value !== "string" || !value || value.length > MEDIA_URL_MAX_LENGTH) return null;\n      try {\n        const u = new URL(value.startsWith("//") ? "https:" + value : value);\n        return u.protocol === "http:" || u.protocol === "https:" ? u : null;\n      } catch {\n        return null;\n      }\n    }, "parseMediaHttpUrl");\n    const isMediaDeliveryPath = /* @__PURE__ */ __name((path) => !!path && (MEDIA_PATH_RE.test(path) || path.includes("/upgcxcode/") || path.startsWith("/v1/resource") || path.includes("/live-bvc/")), "isMediaDeliveryPath");\n    const classifyMediaDelivery = /* @__PURE__ */ __name((value) => {\n      const u = parseMediaHttpUrl(value);\n      if (!u || !isMediaDeliveryPath(u.pathname)) return Object.freeze({ kind: "unknown", reason: "invalid-or-non-media", host: "" });\n      const host = u.hostname.toLowerCase();\n      if (u.pathname.includes("/live-bvc/")) return Object.freeze({ kind: "live", reason: "live-bvc", host });\n      const firstLabel = host.split(".")[0];\n      const mcdn = /\\.mcdn\\.bilivideo\\.(?:cn|com|net)$/i.test(host);\n      const knownSuffix = PCDN_SOURCE_SUFFIXES.some((suffix) => hostHasSuffix(host, suffix));\n      const knownHost = PCDN_SOURCE_HOSTS.has(host);\n      const redirectHost = firstLabel.startsWith("upos-") && firstLabel.includes("302");\n      const querySignal = String(u.searchParams.get("os") || "").toLowerCase() === "mcdn";\n      const nonDefaultPort = !!u.port && u.port !== "80" && u.port !== "443";\n      const ipPort = IPV4_HOST_RE.test(host) && nonDefaultPort;\n      if (mcdn || knownSuffix || knownHost || redirectHost || querySignal || ipPort) {\n        const reason = mcdn ? "mcdn-host" : knownSuffix ? "known-pcdn-suffix" : knownHost ? "known-pcdn-host" : redirectHost ? "upos-302" : querySignal ? "os-mcdn" : "ip-port";\n        return Object.freeze({ kind: "pcdn", reason, host });\n      }\n      if (nonDefaultPort) return Object.freeze({ kind: "suspected-pcdn", reason: "non-default-port", host });\n      return Object.freeze({ kind: "normal", reason: "normal", host });\n    }, "classifyMediaDelivery");\n    const decide = /* @__PURE__ */ __name((value) => {\n      const parsed = parseMediaHttpUrl(value);\n      const delivery = classifyMediaDelivery(value);\n      if (!parsed || delivery.kind === "unknown") return { action: "pass", reason: "invalid-or-non-media", delivery };\n      if (parsed.pathname.startsWith("/v1/resource")) return { action: "pass", reason: "resource", delivery };\n      if (delivery.kind === "live" || delivery.kind === "suspected-pcdn") return { action: "pass", reason: delivery.kind, delivery };\n      const host = parsed.hostname;\n      const sourceAllowed = delivery.kind === "pcdn" || /\\.bilivideo\\.(?:com|cn|net)$/i.test(host) || host.endsWith(".akamaized.net");\n      return { action: sourceAllowed ? "rewrite" : "pass", reason: sourceAllowed ? "media" : "unknown-source", delivery };\n    }, "decide");\n    return {\n      parse: parseMediaHttpUrl,\n      classify: classifyMediaDelivery,\n      decide,\n      isMediaPath: isMediaDeliveryPath,\n      suffixes: PCDN_SOURCE_SUFFIXES,\n      hosts: PCDN_SOURCE_HOSTS,\n      hostHasSuffix,\n      maxLength: MEDIA_URL_MAX_LENGTH,\n      mediaPathPattern: MEDIA_PATH_RE\n    };\n  }\n  __name(createMediaUrlPolicy, "createMediaUrlPolicy");\n\n  // src/worker/entry.mjs\n  function installWorker(configuration) {\n    var _a;\n    const BILICDN_BASE = configuration.originalUrl;\n    const BILICDN_BOOTSTRAP_TOKEN = configuration.capability;\n    const BILICDN_CATALOG = Object.freeze(configuration.catalog);\n    const BILICDN_CATALOG_SET = new Set(BILICDN_CATALOG);\n    const BILICDN_PCDN_SUFFIXES = Object.freeze(configuration.suffixes);\n    const BILICDN_PCDN_HOSTS = new Set(configuration.hosts);\n    const BILICDN_URL_MAX = 16 * 1024;\n    const BILICDN_BYTES_MAX = 256 * 1024 * 1024;\n    const BILICDN_STAT_MAX = 1e4;\n    const BILICDN_REPORT_MS = 200;\n    const BILICDN_BOOTSTRAP_TIMEOUT_MS = 1e3;\n    const BILICDN_MODULE_WORKER = configuration.moduleWorker === true;\n    let BILICDN_TARGET_HOST = configuration.target;\n    let BILICDN_FORCE = configuration.force;\n    let BILICDN_PREFERRED = configuration.preferred;\n    let BILICDN_EXCLUDED = configuration.excluded;\n    let BILICDN_DISABLED = configuration.disabled === true;\n    let BILICDN_CONTROL_PORT = null;\n    let BILICDN_CONTROL_SEND = null;\n    let BILICDN_STAT = { netCalls: 0, mediaSeen: 0, rewrites: 0 };\n    let BILICDN_STAT_TIMER = null;\n    let BILICDN_ORIGINAL_STARTED = false;\n    let BILICDN_PENDING_MESSAGES_ACTIVE = true;\n    let BILICDN_PENDING_MESSAGES = [];\n    let BILICDN_BOOTSTRAP_FALLBACK = false;\n    let BILICDN_BOOTSTRAP_TIMER = null;\n    const BILICDN_NATIVE_ADD_EVENT = self.addEventListener.bind(self);\n    const BILICDN_NATIVE_REMOVE_EVENT = self.removeEventListener.bind(self);\n    const BILICDN_NATIVE_DISPATCH_EVENT = self.dispatchEvent.bind(self);\n    const BILICDN_NATIVE_REFLECT_APPLY = Reflect.apply;\n    const BILICDN_NATIVE_MESSAGE_EVENT = typeof MessageEvent === "function" ? MessageEvent : null;\n    const BILICDN_NATIVE_STOP_IMMEDIATE = typeof Event !== "undefined" && Event.prototype && Event.prototype.stopImmediatePropagation;\n    const BILICDN_NATIVE_MESSAGE_DATA_GETTER = typeof MessageEvent === "function" && MessageEvent.prototype ? Object.getOwnPropertyDescriptor(MessageEvent.prototype, "data")?.get : null;\n    const BILICDN_NATIVE_MESSAGE_PORTS_GETTER = typeof MessageEvent === "function" && MessageEvent.prototype ? Object.getOwnPropertyDescriptor(MessageEvent.prototype, "ports")?.get : null;\n    const BILICDN_NATIVE_PORT_CLOSE = typeof MessagePort === "function" && MessagePort.prototype && typeof MessagePort.prototype.close === "function" ? MessagePort.prototype.close : null;\n    const biliCdnReadMessageData = /* @__PURE__ */ __name((event) => {\n      if (!event) return void 0;\n      if (typeof BILICDN_NATIVE_MESSAGE_DATA_GETTER === "function") {\n        try {\n          const value = BILICDN_NATIVE_REFLECT_APPLY(BILICDN_NATIVE_MESSAGE_DATA_GETTER, event, []);\n          if (value !== void 0) return value;\n        } catch (e) {\n        }\n      }\n      return event.data;\n    }, "biliCdnReadMessageData");\n    const biliCdnReadMessagePorts = /* @__PURE__ */ __name((event) => {\n      if (!event) return void 0;\n      if (typeof BILICDN_NATIVE_MESSAGE_PORTS_GETTER === "function") {\n        try {\n          const value = BILICDN_NATIVE_REFLECT_APPLY(BILICDN_NATIVE_MESSAGE_PORTS_GETTER, event, []);\n          if (value !== void 0) return value;\n        } catch (e) {\n        }\n      }\n      return event.ports;\n    }, "biliCdnReadMessagePorts");\n    const biliCdnStopMessage = /* @__PURE__ */ __name((event) => {\n      try {\n        if (typeof BILICDN_NATIVE_STOP_IMMEDIATE === "function") {\n          BILICDN_NATIVE_REFLECT_APPLY(BILICDN_NATIVE_STOP_IMMEDIATE, event, []);\n        } else event.stopImmediatePropagation();\n        return true;\n      } catch (e) {\n        try {\n          event.stopImmediatePropagation();\n          return true;\n        } catch (e2) {\n          return false;\n        }\n      }\n    }, "biliCdnStopMessage");\n    const biliCdnCloseTransferredPort = /* @__PURE__ */ __name((port) => {\n      try {\n        if (port && typeof BILICDN_NATIVE_PORT_CLOSE === "function") {\n          BILICDN_NATIVE_REFLECT_APPLY(BILICDN_NATIVE_PORT_CLOSE, port, []);\n        } else if (port && typeof port.close === "function") port.close();\n      } catch (e) {\n      }\n    }, "biliCdnCloseTransferredPort");\n    const biliCdnDisablePrivatePolicy = /* @__PURE__ */ __name(() => {\n      BILICDN_DISABLED = true;\n      BILICDN_TARGET_HOST = "";\n      BILICDN_FORCE = [];\n      BILICDN_PREFERRED = [];\n      BILICDN_EXCLUDED = [];\n      BILICDN_CONTROL_PORT = null;\n      BILICDN_CONTROL_SEND = null;\n    }, "biliCdnDisablePrivatePolicy");\n    const BILICDN_NATIVE_IMPORT_SCRIPTS = !BILICDN_MODULE_WORKER && typeof self.importScripts === "function" ? self.importScripts.bind(self) : null;\n    const BILICDN_NATIVE_URL = URL;\n    if (BILICDN_NATIVE_IMPORT_SCRIPTS) {\n      self.importScripts = (...urls) => BILICDN_NATIVE_IMPORT_SCRIPTS(...urls.map((url) => {\n        try {\n          return new BILICDN_NATIVE_URL(String(url), BILICDN_BASE).href;\n        } catch {\n          return url;\n        }\n      }));\n    }\n    const biliCdnQueuePendingMessage = /* @__PURE__ */ __name((event) => {\n      if (!BILICDN_PENDING_MESSAGES_ACTIVE) return;\n      if (!biliCdnStopMessage(event)) return;\n      BILICDN_PENDING_MESSAGES.push(event);\n    }, "biliCdnQueuePendingMessage");\n    const biliCdnFinishPendingMessages = /* @__PURE__ */ __name((replay) => {\n      if (!BILICDN_PENDING_MESSAGES_ACTIVE) return;\n      BILICDN_PENDING_MESSAGES_ACTIVE = false;\n      BILICDN_NATIVE_REMOVE_EVENT("message", biliCdnQueuePendingMessage);\n      const pending = BILICDN_PENDING_MESSAGES;\n      BILICDN_PENDING_MESSAGES = [];\n      if (!replay) return;\n      for (const event of pending) {\n        try {\n          const replayEvent = BILICDN_NATIVE_MESSAGE_EVENT ? new BILICDN_NATIVE_MESSAGE_EVENT("message", {\n            data: biliCdnReadMessageData(event),\n            ports: biliCdnReadMessagePorts(event) || []\n          }) : event;\n          BILICDN_NATIVE_DISPATCH_EVENT(replayEvent);\n        } catch (e) {\n        }\n      }\n    }, "biliCdnFinishPendingMessages");\n    const biliCdnStartOriginal = /* @__PURE__ */ __name(() => {\n      if (BILICDN_ORIGINAL_STARTED) return;\n      BILICDN_ORIGINAL_STARTED = true;\n      if (BILICDN_MODULE_WORKER) {\n        import(BILICDN_BASE).then(\n          () => {\n            biliCdnFinishPendingMessages(true);\n          },\n          (e) => {\n            biliCdnFinishPendingMessages(false);\n            try {\n              console.error("[BiliCDN] worker module import 失敗", e);\n            } catch (e2) {\n            }\n          }\n        );\n        return;\n      }\n      try {\n        if (BILICDN_NATIVE_IMPORT_SCRIPTS) BILICDN_NATIVE_IMPORT_SCRIPTS(BILICDN_BASE);\n        biliCdnFinishPendingMessages(!!BILICDN_NATIVE_IMPORT_SCRIPTS);\n      } catch (e) {\n        biliCdnFinishPendingMessages(false);\n        throw e;\n      }\n    }, "biliCdnStartOriginal");\n    const biliCdnCatalogArray = /* @__PURE__ */ __name((value) => {\n      if (!Array.isArray(value) || value.length > BILICDN_CATALOG.length) return null;\n      const out = [];\n      for (const entry of value) {\n        if (typeof entry !== "string") return null;\n        const host = entry.trim().toLowerCase();\n        if (!BILICDN_CATALOG_SET.has(host)) return null;\n        if (out.indexOf(host) === -1) out.push(host);\n      }\n      return out;\n    }, "biliCdnCatalogArray");\n    const biliCdnApplyPolicy = /* @__PURE__ */ __name((data) => {\n      if (!data || data.version !== 1 || data.type !== "policy" || typeof data.target !== "string" || !BILICDN_CATALOG_SET.has(data.target) || typeof data.disabled !== "boolean") return false;\n      const preferredNext = biliCdnCatalogArray(data.preferred);\n      const forceNext = biliCdnCatalogArray(data.force);\n      const excludedNext = biliCdnCatalogArray(data.excluded);\n      if (!preferredNext || !forceNext || !excludedNext) return false;\n      BILICDN_TARGET_HOST = data.target;\n      BILICDN_PREFERRED = preferredNext;\n      BILICDN_FORCE = forceNext;\n      BILICDN_EXCLUDED = excludedNext;\n      BILICDN_DISABLED = data.disabled;\n      return true;\n    }, "biliCdnApplyPolicy");\n    const biliCdnPostPrivate = /* @__PURE__ */ __name((message) => {\n      if (!BILICDN_CONTROL_PORT || !BILICDN_CONTROL_SEND) return false;\n      try {\n        BILICDN_CONTROL_SEND(message);\n        return true;\n      } catch (e) {\n        return false;\n      }\n    }, "biliCdnPostPrivate");\n    const biliCdnFlushStat = /* @__PURE__ */ __name(() => {\n      if (!BILICDN_STAT.netCalls && !BILICDN_STAT.mediaSeen && !BILICDN_STAT.rewrites) return;\n      if (biliCdnPostPrivate({\n        version: 1,\n        type: "stats",\n        netCalls: BILICDN_STAT.netCalls,\n        mediaSeen: BILICDN_STAT.mediaSeen,\n        rewrites: BILICDN_STAT.rewrites\n      })) BILICDN_STAT = { netCalls: 0, mediaSeen: 0, rewrites: 0 };\n    }, "biliCdnFlushStat");\n    const biliCdnBumpStat = /* @__PURE__ */ __name((key) => {\n      if (!Object.prototype.hasOwnProperty.call(BILICDN_STAT, key)) return;\n      BILICDN_STAT[key] = Math.min(BILICDN_STAT_MAX, BILICDN_STAT[key] + 1);\n      if (!BILICDN_STAT_TIMER) {\n        BILICDN_STAT_TIMER = setTimeout(() => {\n          BILICDN_STAT_TIMER = null;\n          biliCdnFlushStat();\n        }, BILICDN_REPORT_MS);\n      }\n    }, "biliCdnBumpStat");\n    const biliCdnBootstrap = /* @__PURE__ */ __name((event) => {\n      const data = biliCdnReadMessageData(event);\n      const ports = biliCdnReadMessagePorts(event);\n      if (BILICDN_CONTROL_PORT || !data || data.__biliCdnBootstrap !== BILICDN_BOOTSTRAP_TOKEN || !ports || ports.length !== 1 || !ports[0]) return;\n      biliCdnStopMessage(event);\n      if (BILICDN_BOOTSTRAP_FALLBACK) {\n        BILICDN_NATIVE_REMOVE_EVENT("message", biliCdnBootstrap);\n        biliCdnCloseTransferredPort(ports[0]);\n        return;\n      }\n      if (BILICDN_BOOTSTRAP_TIMER) {\n        clearTimeout(BILICDN_BOOTSTRAP_TIMER);\n        BILICDN_BOOTSTRAP_TIMER = null;\n      }\n      const controlPort = ports[0];\n      const controlSend = typeof controlPort.postMessage === "function" ? controlPort.postMessage.bind(controlPort) : null;\n      if (!controlSend) {\n        BILICDN_NATIVE_REMOVE_EVENT("message", biliCdnBootstrap);\n        biliCdnCloseTransferredPort(controlPort);\n        BILICDN_BOOTSTRAP_FALLBACK = true;\n        biliCdnDisablePrivatePolicy();\n        biliCdnStartOriginal();\n        return;\n      }\n      BILICDN_CONTROL_PORT = controlPort;\n      BILICDN_CONTROL_SEND = controlSend;\n      BILICDN_CONTROL_PORT.onmessage = (portEvent) => {\n        biliCdnApplyPolicy(biliCdnReadMessageData(portEvent));\n      };\n      try {\n        BILICDN_CONTROL_PORT.start();\n      } catch (e) {\n      }\n      BILICDN_NATIVE_REMOVE_EVENT("message", biliCdnBootstrap);\n      biliCdnPostPrivate({ version: 1, type: "ready" });\n      biliCdnFlushStat();\n      biliCdnStartOriginal();\n    }, "biliCdnBootstrap");\n    BILICDN_NATIVE_ADD_EVENT("message", biliCdnBootstrap);\n    BILICDN_NATIVE_ADD_EVENT("message", biliCdnQueuePendingMessage);\n    BILICDN_BOOTSTRAP_TIMER = setTimeout(() => {\n      BILICDN_BOOTSTRAP_TIMER = null;\n      if (BILICDN_CONTROL_PORT || BILICDN_ORIGINAL_STARTED) return;\n      BILICDN_BOOTSTRAP_FALLBACK = true;\n      biliCdnDisablePrivatePolicy();\n      biliCdnStartOriginal();\n    }, BILICDN_BOOTSTRAP_TIMEOUT_MS);\n    const biliCdnAbs = /* @__PURE__ */ __name((url) => {\n      const raw = String(url);\n      if (!raw || raw.length > BILICDN_URL_MAX) return null;\n      try {\n        return new URL(raw, BILICDN_BASE).href;\n      } catch {\n        return null;\n      }\n    }, "biliCdnAbs");\n    const biliCdnHostSuffix = /* @__PURE__ */ __name((host, suffix) => host === suffix || host.endsWith("." + suffix), "biliCdnHostSuffix");\n    const biliCdnIsUnstable = /* @__PURE__ */ __name((host) => {\n      if (!host) return false;\n      const normalized = String(host).toLowerCase();\n      const first = normalized.split(".")[0];\n      return /\\.mcdn\\.bilivideo\\.(cn|com|net)$/i.test(normalized) || BILICDN_PCDN_SUFFIXES.some((suffix) => biliCdnHostSuffix(normalized, suffix)) || BILICDN_PCDN_HOSTS.has(normalized) || first.startsWith("upos-") && first.includes("302") || /^cn-[a-z]{2,8}-/i.test(normalized) && normalized.endsWith(".bilivideo.com");\n    }, "biliCdnIsUnstable");\n    const BILICDN_MEDIA_POLICY = createMediaUrlPolicy();\n    const biliCdnClassify = /* @__PURE__ */ __name((url) => BILICDN_MEDIA_POLICY.classify(url).kind, "biliCdnClassify");\n    const biliCdnNoteSeg = /* @__PURE__ */ __name((url, bytes) => {\n      if (!Number.isFinite(bytes) || !Number.isInteger(bytes) || bytes <= 0 || bytes > BILICDN_BYTES_MAX) return;\n      try {\n        const host = new URL(url).hostname.toLowerCase();\n        if (BILICDN_CATALOG_SET.has(host)) {\n          biliCdnPostPrivate({ version: 1, type: "bytes", host, bytes });\n        }\n      } catch (e) {\n      }\n    }, "biliCdnNoteSeg");\n    const biliCdnIsMedia = /* @__PURE__ */ __name((url) => {\n      if (typeof url !== "string" || !url || url.length > BILICDN_URL_MAX) return false;\n      try {\n        const u = new URL(url);\n        const host = u.hostname;\n        const verdict = biliCdnClassify(url);\n        if (verdict === "pcdn" || verdict === "suspected-pcdn" || verdict === "live") return true;\n        if (!(host.endsWith(".bilivideo.com") || host.endsWith(".bilivideo.cn") || host.endsWith(".bilivideo.net"))) return false;\n        return /\\.(m4s|mp4|flv|m3u8)$/i.test(u.pathname) || u.pathname.includes("/upgcxcode/");\n      } catch {\n        return false;\n      }\n    }, "biliCdnIsMedia");\n    const biliCdnNeedsRedirect = /* @__PURE__ */ __name((host, verdict) => !!host && (verdict === "pcdn" || biliCdnIsUnstable(host) || BILICDN_EXCLUDED.indexOf(host) !== -1 || BILICDN_FORCE.indexOf(host) !== -1 || BILICDN_PREFERRED.indexOf(host) === -1), "biliCdnNeedsRedirect");\n    const biliCdnRewrite = /* @__PURE__ */ __name((url) => {\n      try {\n        if (BILICDN_DISABLED) return url;\n        biliCdnBumpStat("netCalls");\n        const absolute = biliCdnAbs(url);\n        if (!absolute || !biliCdnIsMedia(absolute)) return url;\n        biliCdnBumpStat("mediaSeen");\n        const parsed = new URL(absolute);\n        const verdict = biliCdnClassify(absolute);\n        if (BILICDN_MEDIA_POLICY.decide(absolute).action !== "rewrite") return url;\n        if (/^\\/v1\\/resource/.test(parsed.pathname)) return absolute;\n        if (!biliCdnNeedsRedirect(parsed.hostname, verdict) || parsed.hostname === BILICDN_TARGET_HOST) return absolute;\n        if (!BILICDN_CATALOG_SET.has(BILICDN_TARGET_HOST)) return absolute;\n        parsed.hostname = BILICDN_TARGET_HOST;\n        parsed.port = "";\n        if (parsed.href.length > BILICDN_URL_MAX) return url;\n        biliCdnBumpStat("rewrites");\n        return parsed.toString();\n      } catch {\n        return url;\n      }\n    }, "biliCdnRewrite");\n    if (self.fetch) {\n      const OriginalFetch = self.fetch.bind(self);\n      const biliCdnCloneResponse = /* @__PURE__ */ __name((resp, body) => {\n        const out = new Response(body, { status: resp.status, statusText: resp.statusText, headers: resp.headers });\n        ["url", "redirected", "type"].forEach((key) => {\n          try {\n            Object.defineProperty(out, key, { value: resp[key], configurable: true });\n          } catch (e) {\n          }\n        });\n        return out;\n      }, "biliCdnCloneResponse");\n      self.fetch = (input, init) => {\n        const url = input instanceof Request ? input.url : String(input);\n        const rewritten = biliCdnRewrite(url);\n        if (rewritten !== url && input instanceof Request) {\n          input = new Request(rewritten, {\n            method: input.method,\n            headers: input.headers,\n            body: input.method === "GET" || input.method === "HEAD" ? void 0 : input.body,\n            mode: input.mode === "navigate" ? "same-origin" : input.mode,\n            credentials: input.credentials,\n            cache: input.cache,\n            redirect: input.redirect,\n            referrer: input.referrer,\n            referrerPolicy: input.referrerPolicy,\n            integrity: input.integrity,\n            keepalive: input.keepalive,\n            signal: input.signal\n          });\n        } else if (rewritten !== url) {\n          input = rewritten;\n        }\n        return OriginalFetch(input, init).then((resp) => {\n          try {\n            const mediaUrl = resp && (resp.url || rewritten);\n            if (!resp || !resp.body || typeof resp.body.getReader !== "function" || typeof ReadableStream === "undefined" || !biliCdnIsMedia(mediaUrl)) return resp;\n            const reader = resp.body.getReader();\n            let pending = 0, lastReport = 0;\n            const flush = /* @__PURE__ */ __name((force) => {\n              const now = Date.now();\n              if (!pending) return;\n              if (!force && now - lastReport < BILICDN_REPORT_MS) return;\n              lastReport = now;\n              biliCdnNoteSeg(mediaUrl, pending);\n              pending = 0;\n            }, "flush");\n            const body = new ReadableStream({\n              pull(controller) {\n                return reader.read().then(({ done, value }) => {\n                  if (done) {\n                    flush(true);\n                    controller.close();\n                    return;\n                  }\n                  if (value && value.byteLength) {\n                    pending += value.byteLength;\n                    flush(false);\n                  }\n                  if (value !== void 0) controller.enqueue(value);\n                }).catch((error) => {\n                  flush(true);\n                  controller.error(error);\n                });\n              },\n              cancel(reason) {\n                flush(true);\n                try {\n                  return Promise.resolve(reader.cancel(reason)).catch(() => {\n                  });\n                } catch (e) {\n                  return Promise.resolve();\n                }\n              }\n            });\n            return biliCdnCloneResponse(resp, body);\n          } catch (e) {\n            return resp;\n          }\n        });\n      };\n    }\n    if (self.XMLHttpRequest) {\n      const OriginalXHR = self.XMLHttpRequest;\n      self.XMLHttpRequest = (_a = class extends OriginalXHR {\n        open(method, url, ...rest) {\n          const rewritten = biliCdnRewrite(String(url));\n          try {\n            let lastLoaded = 0;\n            this.addEventListener("progress", (e) => {\n              try {\n                if (!e || e.isTrusted !== true) return;\n                if (!biliCdnIsMedia(rewritten)) return;\n                const loaded = e && e.loaded || 0;\n                const delta = loaded - lastLoaded;\n                if (delta > 0) {\n                  lastLoaded = loaded;\n                  biliCdnNoteSeg(rewritten, delta);\n                }\n              } catch (e2) {\n              }\n            });\n            this.addEventListener("load", (e) => {\n              try {\n                if (!e || e.isTrusted !== true) return;\n                if (!biliCdnIsMedia(rewritten)) return;\n                const cl = this.getResponseHeader && this.getResponseHeader("content-length");\n                let n = cl ? parseInt(cl, 10) : 0;\n                if (!n && this.response) {\n                  if (this.response.byteLength) n = this.response.byteLength;\n                  else if (typeof this.response === "string") n = this.response.length;\n                }\n                const remaining = Math.max(0, n - lastLoaded);\n                if (remaining) biliCdnNoteSeg(rewritten, remaining);\n              } catch (e2) {\n              }\n            });\n          } catch (e) {\n          }\n          return super.open(method, rewritten, ...rest);\n        }\n      }, __name(_a, "XMLHttpRequest"), _a);\n    }\n  }\n  __name(installWorker, "installWorker");\n  installWorker(__BiliCDNWorkerConfiguration);\n})();\n';
+-
+-  // src/worker/controller.mjs
+-  function createWorker(deps) {
+-    let installedWorkerConstructor = null;
+-    let workerReplacementNoted = false;
+-    const buildWorkerPolicy = /* @__PURE__ */ __name(() => {
+-      const target = deps.getWorkerCdnTarget();
+-      if (!deps.isValidCustomCdnHost(target)) return null;
+-      const catalogSubset = /* @__PURE__ */ __name((values) => [...new Set(values.filter(deps.isValidCustomCdnHost))], "catalogSubset");
+-      return {
+-        version: 1,
+-        type: "policy",
+-        target,
+-        force: catalogSubset(deps.getWorkerForceList()),
+-        preferred: catalogSubset(deps.PREFERRED_CDN_LIST),
+-        excluded: catalogSubset(deps.TRUSTED_CDN_CATALOG.filter(deps.matchesExclude)),
+-        disabled: !!deps.disabled
+-      };
+-    }, "buildWorkerPolicy");
+-    const syncWorkerCdnTarget = /* @__PURE__ */ __name(() => {
+-      const message = buildWorkerPolicy();
+-      if (!message) return;
+-      deps.biliCdnWorkers.forEach((worker) => {
+-        const record = deps.workerControlPorts.get(worker);
+-        try {
+-          if (!record || typeof record.sendPolicy !== "function") throw new Error("missing private Worker control port");
+-          record.sendPolicy(message);
+-        } catch {
+-          deps.noteWorkerDiagnostic("port-failure");
+-          try {
+-            if (record && record.revokeTimer) clearTimeout(record.revokeTimer);
+-          } catch {
+-          }
+-          try {
+-            if (record && record.handshakeTimer) clearTimeout(record.handshakeTimer);
+-          } catch {
+-          }
+-          try {
+-            if (record && typeof record.closePort === "function") record.closePort();
+-          } catch {
+-          }
+-          try {
+-            if (record && record.blobUrl && record.revokeBlob) record.revokeBlob(record.blobUrl);
+-          } catch {
+-          }
+-          deps.workerControlPorts.delete(worker);
+-          deps.biliCdnWorkers.delete(worker);
+-        }
+-      });
+-    }, "syncWorkerCdnTarget");
+-    const syncWorkerDisabledState = /* @__PURE__ */ __name(() => {
+-      syncWorkerCdnTarget();
+-    }, "syncWorkerDisabledState");
+-    const setupClassicWorkerIntercept = /* @__PURE__ */ __name(() => {
+-      var _a;
+-      if (!deps.EnableWorkerIntercept) {
+-        deps.setWorkerInstallState("disabled");
+-        return;
+-      }
+-      deps.setWorkerInstallState("installing");
+-      deps.noteWorkerDiagnostic("install-attempt");
+-      try {
+-        const OriginalWorker = typeof Worker === "function" ? Worker : null;
+-        if (!OriginalWorker) {
+-          deps.noteWorkerDiagnostic("no-worker");
+-          deps.setWorkerInstallState("unavailable");
+-          return;
+-        }
+-        const preferred = [...new Set(deps.PREFERRED_CDN_LIST.filter(deps.isValidCustomCdnHost))];
+-        const targetHost = deps.getWorkerCdnTarget();
+-        if (!deps.isValidCustomCdnHost(targetHost)) {
+-          deps.setWorkerInstallState("invalid-target");
+-          return;
+-        }
+-        const forceList = deps.getWorkerForceList();
+-        const sharedWorkerPatch = /* @__PURE__ */ __name((originalUrl, capability, moduleWorker) => {
+-          const configuration = {
+-            originalUrl,
+-            capability,
+-            catalog: [...deps.TRUSTED_CDN_CATALOG],
+-            suffixes: [...deps.PCDN_SOURCE_SUFFIXES],
+-            hosts: [...deps.PCDN_SOURCE_HOSTS],
+-            target: targetHost,
+-            force: forceList,
+-            preferred,
+-            excluded: deps.TRUSTED_CDN_CATALOG.filter(deps.matchesExclude),
+-            disabled: !!deps.disabled,
+-            moduleWorker: !!moduleWorker
+-          };
+-          return "(function(){ const __BiliCDNWorkerConfiguration = " + JSON.stringify(configuration) + ";\n" + WORKER_SOURCE + "\n})();";
+-        }, "sharedWorkerPatch");
+-        const classicWorkerPatch = /* @__PURE__ */ __name((originalUrl, capability) => sharedWorkerPatch(originalUrl, capability, false), "classicWorkerPatch");
+-        const moduleWorkerPatch = /* @__PURE__ */ __name((originalUrl, capability) => sharedWorkerPatch(originalUrl, capability, true), "moduleWorkerPatch");
+-        const OriginalWorkerPostMessage = OriginalWorker.prototype.postMessage;
+-        const OriginalWorkerTerminate = OriginalWorker.prototype.terminate;
+-        const NativeReflectApply = Reflect.apply;
+-        const NativeMessageEventDataGetter = typeof MessageEvent === "function" && MessageEvent.prototype ? Object.getOwnPropertyDescriptor(MessageEvent.prototype, "data")?.get : null;
+-        const readNativeMessageData = /* @__PURE__ */ __name((event) => {
+-          if (!event) return void 0;
+-          if (typeof NativeMessageEventDataGetter === "function") {
+-            try {
+-              const value = NativeReflectApply(NativeMessageEventDataGetter, event, []);
+-              if (value !== void 0) return value;
+-            } catch {
+-            }
+-          }
+-          return event.data;
+-        }, "readNativeMessageData");
+-        const NativeMessageChannel = typeof MessageChannel === "function" ? MessageChannel : null;
+-        const NativeBlob = typeof Blob === "function" ? Blob : null;
+-        const NativeCreateObjectURL = URL && typeof URL.createObjectURL === "function" ? URL.createObjectURL.bind(URL) : null;
+-        const NativeRevokeObjectURL = URL && typeof URL.revokeObjectURL === "function" ? URL.revokeObjectURL.bind(URL) : null;
+-        const NativeGetRandomValues = typeof crypto !== "undefined" && crypto && typeof crypto.getRandomValues === "function" ? crypto.getRandomValues.bind(crypto) : null;
+-        const createWorkerCapability = /* @__PURE__ */ __name(() => {
+-          if (!NativeGetRandomValues) return null;
+-          try {
+-            const bytes = new Uint8Array(16);
+-            NativeGetRandomValues(bytes);
+-            return [...bytes].map((value) => value.toString(16).padStart(2, "0")).join("");
+-          } catch {
+-            return null;
+-          }
+-        }, "createWorkerCapability");
+-        const isBoundedWorkerStat = /* @__PURE__ */ __name((value) => Number.isInteger(value) && value >= 0 && value <= 1e4, "isBoundedWorkerStat");
+-        const hasExactWorkerKeys = /* @__PURE__ */ __name((value, keys) => {
+-          if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+-          const actual = Object.keys(value).sort();
+-          const expected = [...keys].sort();
+-          return actual.length === expected.length && actual.every((key, index) => key === expected[index]);
+-        }, "hasExactWorkerKeys");
+-        const handlePrivateWorkerReport = /* @__PURE__ */ __name((data, worker) => {
+-          if (deps.disabled) return false;
+-          const record = deps.workerControlPorts.get(worker);
+-          if (hasExactWorkerKeys(data, ["version", "type"]) && data.version === 1 && data.type === "ready") {
+-            if (!record || record.ready) return false;
+-            try {
+-              if (record.handshakeTimer) clearTimeout(record.handshakeTimer);
+-            } catch {
+-            }
+-            record.handshakeTimer = null;
+-            record.ready = true;
+-            deps.noteWorkerDiagnostic("bootstrap-ready");
+-            return true;
+-          }
+-          if (!record || !record.ready) return false;
+-          if (hasExactWorkerKeys(data, ["version", "type", "host", "bytes"]) && data.version === 1 && data.type === "bytes" && deps.isValidCustomCdnHost(data.host) && Number.isInteger(data.bytes) && data.bytes > 0 && data.bytes <= 256 * 1024 * 1024) {
+-            if (deps.Watchdog && deps.Watchdog.noteExternalBytes) deps.Watchdog.noteExternalBytes(data.host, data.bytes);
+-            deps.mediaObservations.unknown = {
+-              host: data.host,
+-              classification: "catalog",
+-              source: "worker",
+-              kind: "unknown",
+-              height: 0,
+-              observedAt: Date.now(),
+-              bytes: data.bytes,
+-              generation: deps.runtimeGeneration,
+-              epoch: deps.playinfoEpoch
+-            };
+-            deps.bumpWorkerStats({ bytes: data.bytes });
+-            return true;
+-          }
+-          if (hasExactWorkerKeys(data, ["version", "type", "netCalls", "mediaSeen", "rewrites"]) && data.version === 1 && data.type === "stats" && isBoundedWorkerStat(data.netCalls) && isBoundedWorkerStat(data.mediaSeen) && isBoundedWorkerStat(data.rewrites)) {
+-            deps.bumpWorkerStats({
+-              netCalls: data.netCalls,
+-              mediaSeen: data.mediaSeen,
+-              rewrites: data.rewrites
+-            });
+-            return true;
+-          }
+-          return false;
+-        }, "handlePrivateWorkerReport");
+-        const cleanupWorker = /* @__PURE__ */ __name((worker) => {
+-          const record = deps.workerControlPorts.get(worker);
+-          deps.biliCdnWorkers.delete(worker);
+-          deps.workerControlPorts.delete(worker);
+-          if (!record) return;
+-          try {
+-            if (record.revokeTimer) clearTimeout(record.revokeTimer);
+-          } catch {
+-          }
+-          try {
+-            if (record.handshakeTimer) clearTimeout(record.handshakeTimer);
+-          } catch {
+-          }
+-          try {
+-            if (typeof record.closePort === "function") record.closePort();
+-          } catch {
+-          }
+-          try {
+-            if (record.blobUrl && NativeRevokeObjectURL) NativeRevokeObjectURL(record.blobUrl);
+-          } catch {
+-          }
+-        }, "cleanupWorker");
+-        const registerWorker = /* @__PURE__ */ __name((worker, capability, blobUrl) => {
+-          if (!NativeMessageChannel || typeof OriginalWorkerPostMessage !== "function") return false;
+-          let channel = null;
+-          try {
+-            channel = new NativeMessageChannel();
+-            const sendPolicy = typeof channel.port1.postMessage === "function" ? channel.port1.postMessage.bind(channel.port1) : null;
+-            const closePort = typeof channel.port1.close === "function" ? channel.port1.close.bind(channel.port1) : null;
+-            const startPort = typeof channel.port1.start === "function" ? channel.port1.start.bind(channel.port1) : null;
+-            if (!sendPolicy || !closePort) throw new Error("invalid private Worker control port");
+-            const record = {
+-              port: channel.port1,
+-              sendPolicy,
+-              closePort,
+-              revokeBlob: NativeRevokeObjectURL,
+-              blobUrl,
+-              revokeTimer: null,
+-              handshakeTimer: null,
+-              ready: false
+-            };
+-            deps.workerControlPorts.set(worker, record);
+-            deps.biliCdnWorkers.add(worker);
+-            channel.port1.onmessage = (event) => {
+-              handlePrivateWorkerReport(readNativeMessageData(event), worker);
+-            };
+-            try {
+-              if (startPort) startPort();
+-            } catch {
+-            }
+-            NativeReflectApply(
+-              OriginalWorkerPostMessage,
+-              worker,
+-              [{ __biliCdnBootstrap: capability }, [channel.port2]]
+-            );
+-            const policy = buildWorkerPolicy();
+-            if (!policy) throw new Error("invalid initial Worker policy");
+-            sendPolicy(policy);
+-            record.handshakeTimer = setTimeout(() => {
+-              record.handshakeTimer = null;
+-              if (record.ready || deps.workerControlPorts.get(worker) !== record) return;
+-              deps.noteWorkerDiagnostic("bootstrap-timeout");
+-              try {
+-                if (record.revokeTimer) clearTimeout(record.revokeTimer);
+-              } catch {
+-              }
+-              record.revokeTimer = null;
+-              try {
+-                record.closePort();
+-              } catch {
+-              }
+-              try {
+-                if (record.blobUrl && record.revokeBlob) record.revokeBlob(record.blobUrl);
+-              } catch {
+-              }
+-              record.blobUrl = "";
+-              deps.workerControlPorts.delete(worker);
+-              deps.biliCdnWorkers.delete(worker);
+-            }, 2e3);
+-            record.revokeTimer = setTimeout(() => {
+-              record.revokeTimer = null;
+-              try {
+-                if (NativeRevokeObjectURL) NativeRevokeObjectURL(blobUrl);
+-              } catch {
+-              }
+-              record.blobUrl = "";
+-            }, 5 * 60 * 1e3);
+-            return true;
+-          } catch {
+-            try {
+-              if (channel && channel.port1 && typeof channel.port1.close === "function") channel.port1.close();
+-            } catch {
+-            }
+-            try {
+-              if (channel && channel.port2 && typeof channel.port2.close === "function") channel.port2.close();
+-            } catch {
+-            }
+-            cleanupWorker(worker);
+-            return false;
+-          }
+-        }, "registerWorker");
+-        installedWorkerConstructor = (_a = class extends OriginalWorker {
+-          constructor(scriptURL, options) {
+-            deps.noteWorkerDiagnostic("constructor-call");
+-            if (deps.disabled) {
+-              deps.noteWorkerDiagnostic("bypass-disabled");
+-              return super(scriptURL, options);
+-            }
+-            let originalUrl, source, blobUrl, capability;
+-            try {
+-              originalUrl = new URL(String(scriptURL), location.href).href;
+-              if (originalUrl.startsWith("blob:")) {
+-                deps.noteWorkerDiagnostic("bypass-blob");
+-                return super(scriptURL, options);
+-              }
+-              if (originalUrl.startsWith("data:")) {
+-                deps.noteWorkerDiagnostic("bypass-data");
+-                return super(scriptURL, options);
+-              }
+-              const isModule = !!(options && options.type === "module");
+-              if (isModule && new URL(originalUrl).origin !== location.origin) {
+-                deps.noteWorkerDiagnostic("bypass-cross-origin-module");
+-                return super(scriptURL, options);
+-              }
+-              capability = createWorkerCapability();
+-              if (!capability) {
+-                deps.noteWorkerDiagnostic("bypass-no-random");
+-                return super(scriptURL, options);
+-              }
+-              if (!NativeBlob || !NativeCreateObjectURL) {
+-                deps.noteWorkerDiagnostic("bypass-no-blob-api");
+-                return super(scriptURL, options);
+-              }
+-              if (!NativeMessageChannel) {
+-                deps.noteWorkerDiagnostic("bypass-no-message-channel");
+-                return super(scriptURL, options);
+-              }
+-              deps.log("[Worker] patched: " + originalUrl);
+-              source = isModule ? moduleWorkerPatch(originalUrl, capability) : classicWorkerPatch(originalUrl, capability);
+-              const blob = new NativeBlob([source], { type: "application/javascript" });
+-              blobUrl = NativeCreateObjectURL(blob);
+-            } catch {
+-              if (!originalUrl) deps.noteWorkerDiagnostic("resolve-failure");
+-              else deps.noteWorkerDiagnostic("build-failure");
+-              return super(scriptURL, options);
+-            }
+-            let worker;
+-            try {
+-              worker = super(blobUrl, options);
+-            } catch {
+-              deps.noteWorkerDiagnostic("constructor-failure");
+-              try {
+-                if (NativeRevokeObjectURL) NativeRevokeObjectURL(blobUrl);
+-              } catch {
+-              }
+-              return new OriginalWorker(scriptURL, options);
+-            }
+-            if (!registerWorker(worker, capability, blobUrl)) {
+-              deps.noteWorkerDiagnostic("register-failure");
+-              try {
+-                if (typeof OriginalWorkerTerminate === "function") NativeReflectApply(OriginalWorkerTerminate, worker, []);
+-              } catch {
+-              }
+-              try {
+-                if (NativeRevokeObjectURL) NativeRevokeObjectURL(blobUrl);
+-              } catch {
+-              }
+-              return new OriginalWorker(scriptURL, options);
+-            }
+-            deps.noteWorkerDiagnostic("wrapped", originalUrl);
+-            return worker;
+-          }
+-          terminate() {
+-            cleanupWorker(this);
+-            if (typeof OriginalWorkerTerminate === "function") {
+-              return NativeReflectApply(OriginalWorkerTerminate, this, []);
+-            }
+-          }
+-        }, __name(_a, "Worker"), _a);
+-        unsafeWindow.Worker = installedWorkerConstructor;
+-        unsafeWindow.Worker.__biliCdnPatched = true;
+-        deps.setWorkerInstallState("installed");
+-      } catch (e) {
+-        deps.noteWorkerDiagnostic("install-failure");
+-        deps.setWorkerInstallState("failed");
+-      }
+-    }, "setupClassicWorkerIntercept");
+-    const checkWorkerInterceptState = /* @__PURE__ */ __name(() => {
+-      if (!deps.EnableWorkerIntercept || !installedWorkerConstructor || workerReplacementNoted) return;
+-      try {
+-        if (unsafeWindow.Worker === installedWorkerConstructor) return;
+-        workerReplacementNoted = true;
+-        deps.noteWorkerDiagnostic("constructor-replaced");
+-        deps.setWorkerInstallState("replaced");
+-      } catch {
+-        workerReplacementNoted = true;
+-        deps.noteWorkerDiagnostic("constructor-replaced");
+-        deps.setWorkerInstallState("replaced");
+-      }
+-    }, "checkWorkerInterceptState");
+-    setupClassicWorkerIntercept();
+-    return {
+-      get syncWorkerCdnTarget() {
+-        return syncWorkerCdnTarget;
+-      },
+-      get syncWorkerDisabledState() {
+-        return syncWorkerDisabledState;
+-      },
+-      get checkWorkerInterceptState() {
+-        return checkWorkerInterceptState;
+-      }
+-    };
+-  }
+-  __name(createWorker, "createWorker");
+-
+   // src/ui/dom.mjs
+   function createDom(deps) {
+     const waitForElm = /* @__PURE__ */ __name((selector, timeoutMs) => new Promise((resolve, reject) => {
+@@ -5426,7 +4793,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+                 probeDeferCount = 0;
+                 deps.promoteBestCdnNow();
+                 deps.preconnectBatch(deps.activeCdnList.slice(0, 3));
+-                deps.syncWorkerCdnTarget();
+                 return;
+               }
+             }
+@@ -5483,7 +4849,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         probeDeferCount = 0;
+         if (deps.activeCdnList[0]) {
+           deps.preconnectBatch(deps.activeCdnList.slice(0, 3), force);
+-          deps.syncWorkerCdnTarget();
+         }
+       } finally {
+         reorderRunning = false;
+@@ -5907,8 +5272,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         }
+       }, "tick");
+       return {
+-        // 由 Worker 透過 MessagePort 回報的 segment 下載量（主執行緒 PerformanceObserver 看不到 Worker 流量）。
+-        // 無 duration 故不更新單節點吞吐 EWMA，但計入總量讓面板 MB 正確、Watchdog 的 bps 判斷不再對 4K 半盲。
++        // Fetch／XHR 的進度位元組沒有完整 duration，故不更新單節點吞吐 EWMA；
++        // 仍計入總量，讓累計下載與 Watchdog 的 bps 判斷保持一致。
+         noteExternalBytes(host, bytes) {
+           if (deps.disabled || !Number.isSafeInteger(bytes) || bytes <= 0 || bytes > 256 * 1024 * 1024) return;
+           totalBytes = Math.min(Number.MAX_SAFE_INTEGER, totalBytes + bytes);
+@@ -6423,10 +5788,13 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         text = "",
+         copyLabel = "",
+         onCopy,
++        actionLabel = "",
++        onAction,
+         closeLabel = "關閉",
+         onClose
+       }) => {
+-        const dialog = beginDialog({ title, paragraphs, requiresCapability: false });
++        const hasAction = !!actionLabel && typeof onAction === "function";
++        const dialog = beginDialog({ title, paragraphs, requiresCapability: hasAction });
+         if (!dialog) return false;
+         const area = make("textarea", bounded(text, 48 * 1024), { action: "manual-copy-text", maxText: 48 * 1024 });
+         area.className = "report";
+@@ -6450,6 +5818,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             closeOnActivate: false
+           });
+         }
++        if (hasAction) {
++          addAction(dialog, {
++            label: actionLabel,
++            action: "text-action",
++            onActivate: onAction,
++            navigateOnActivate: true
++          });
++        }
+         return true;
+       }, "openText");
+       const openActions = /* @__PURE__ */ __name(({ title, paragraphs, items = [] }) => {
+@@ -6652,7 +6028,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       return out;
+     }, "readPlaybackDiagnostic");
+     const buildDiagReport = /* @__PURE__ */ __name(() => {
+-      const ws = deps.summarizeWorkerStats();
+       const buffer = deps.Watchdog.stats();
+       const httpDns = deps.getHttpDnsStatus();
+       const lines = [
+@@ -6662,7 +6037,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         "UA：" + navigator.userAgent,
+         "面板注入狀態：" + deps.uiInjectStatus,
+         "停用狀態：" + deps.disabled,
+-        "Worker 攔截開關：" + deps.EnableWorkerIntercept,
+         "候選順序：" + (deps.activeCdnList.map((c) => c.split(".")[0]).join(" > ") || "（無）"),
+         "真正可選節點：" + (deps.getHealthyCdnList().map((c) => c.split(".")[0]).join(" > ") || "（無）"),
+         "黑名單（24h）：" + ([...deps.blacklistSet].map((c) => c.split(".")[0]).join(", ") || "（無）"),
+@@ -6681,11 +6055,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         "播放影格（自本次觀察起；唯讀）：" + (deps.playbackQualitySnapshot.available ? JSON.stringify(deps.playbackQualitySnapshot) : "無資料"),
+         "頁面發現 CDN：" + (deps.pageDiscoveredCdn ? deps.pageDiscoveredCdn.split(".")[0] : "（無）"),
+         "改寫統計：" + JSON.stringify(deps.redirectStats),
+-        "HTTPDNS：" + httpDns.mode + (httpDns.ttlMin ? "（" + httpDns.ttlMin + "m）" : ""),
+-        "Worker 本分頁量測：install=" + ws.installState + " constructors=" + ws.session.constructorCalls + " wrapped=" + ws.session.wrapped + " ready=" + ws.session.bootstrapReady + " netCalls=" + ws.session.netCalls + " mediaSeen=" + ws.session.mediaSeen + " rewrites=" + ws.session.rewrites + " bytes=" + ws.session.bytesMB + "MB replaced=" + ws.session.replacements,
+-        "Worker 安全放行：" + JSON.stringify(ws.session.bypass),
+-        "Worker 建立失敗：" + JSON.stringify(ws.session.failures),
+-        "Worker 累計量測：created=" + ws.created + " ready=" + ws.bootstrapReady + " constructors=" + ws.constructorCalls + " netCalls=" + ws.netCalls + " mediaSeen=" + ws.mediaSeen + " rewrites=" + ws.rewrites + " bytes=" + ws.bytesMB + "MB 觀察" + ws.observedDays + "天 判讀=" + ws.verdict
++        "HTTPDNS：" + httpDns.mode + (httpDns.ttlMin ? "（" + httpDns.ttlMin + "m）" : "")
+       ];
+       const history = deps.DiagnosticLog.snapshot();
+       lines.splice(
+@@ -6845,26 +6215,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           redirects: { ...deps.redirectStats },
+           discovered: deps.pageDiscoveredCdn,
+           httpdns: deps.getHttpDnsStatus(),
+-          uiInjectStatus: deps.uiInjectStatus,
+-          workerStats: deps.summarizeWorkerStats()
++          uiInjectStatus: deps.uiInjectStatus
+         };
+       },
+-      // Worker 攔截有效性量測（改進工單 B）：用真實數據決定 setupClassicWorkerIntercept()
+-      // 這 250 行的去留。所有數字只存在本機，回報請直接複製本方法輸出貼給開發者。
+-      workerStats() {
+-        const s = deps.summarizeWorkerStats();
+-        console.group("[BiliCDN] Worker 攔截量測");
+-        console.log("created（攔到幾次 new Worker）:", s.created);
+-        console.log("netCalls（Worker 內發出幾次網路請求）:", s.netCalls);
+-        console.log("mediaSeen（其中幾次是影片分段）:", s.mediaSeen);
+-        console.log("rewrites（實際改寫幾次）:", s.rewrites);
+-        console.log("累計位元組:", s.bytesMB + " MB");
+-        console.log("已觀察天數:", s.observedDays);
+-        console.log("Worker script hostname 樣本:", s.samples);
+-        console.log("判讀:", s.verdict);
+-        console.groupEnd();
+-        return s;
+-      },
+       // 診斷報告一鍵複製（改進工單 F）：回報問題時直接貼給開發者，省掉來回追問。
+       // 不含完整影片網址／cookie／IP，只有 host 與統計數字。
+       report() {
+@@ -7204,7 +6557,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           GM_deleteValue(deps.PROBE_CACHE_KEY);
+         } catch {
+         }
+-        deps.syncWorkerCdnTarget();
+         deps.log("已加入排除：" + kw + "，剩餘：" + deps.activeCdnList.map((c) => c.split(".")[0]).join(", "));
+         return [...deps.ExcludeHostKeywords];
+       },
+@@ -7230,7 +6582,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           GM_deleteValue(deps.PROBE_CACHE_KEY);
+         } catch {
+         }
+-        deps.syncWorkerCdnTarget();
+         deps.log("已移除排除：" + kw + "，當前：" + deps.activeCdnList.map((c) => c.split(".")[0]).join(", "));
+         return [...deps.ExcludeHostKeywords];
+       },
+@@ -7272,7 +6623,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       return Object.freeze(value);
+     }, "deepFreezePublic");
+     const buildPublicDiagnosticSnapshot = /* @__PURE__ */ __name(() => {
+-      const ws = deps.summarizeWorkerStats();
+       const wd = deps.Watchdog.stats();
+       const hd = deps.getHttpDnsStatus();
+       const health = {};
+@@ -7371,29 +6721,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           decision: String(hd && hd.decision || "").slice(0, 32),
+           scores
+         },
+-        worker: {
+-          enabled: !!deps.EnableWorkerIntercept,
+-          installState: String(ws.installState || "disabled").slice(0, 32),
+-          session: {
+-            constructorCalls: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.constructorCalls))),
+-            wrapped: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.wrapped))),
+-            bootstrapReady: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.bootstrapReady))),
+-            bypass: Object.fromEntries(Object.entries(ws.session && ws.session.bypass || {}).slice(0, 8).map(([key, value]) => [String(key).slice(0, 32), Math.max(0, Math.trunc(publicFinite(value)))])),
+-            failures: Object.fromEntries(Object.entries(ws.session && ws.session.failures || {}).slice(0, 8).map(([key, value]) => [String(key).slice(0, 32), Math.max(0, Math.trunc(publicFinite(value)))])),
+-            replacements: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.replacements))),
+-            netCalls: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.netCalls))),
+-            mediaSeen: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.mediaSeen))),
+-            rewrites: Math.max(0, Math.trunc(publicFinite(ws.session && ws.session.rewrites))),
+-            bytesMB: Math.max(0, publicFinite(ws.session && ws.session.bytesMB))
+-          },
+-          created: Math.max(0, Math.trunc(publicFinite(ws.created))),
+-          bootstrapReady: Math.max(0, Math.trunc(publicFinite(ws.bootstrapReady))),
+-          constructorCalls: Math.max(0, Math.trunc(publicFinite(ws.constructorCalls))),
+-          netCalls: Math.max(0, Math.trunc(publicFinite(ws.netCalls))),
+-          mediaSeen: Math.max(0, Math.trunc(publicFinite(ws.mediaSeen))),
+-          rewrites: Math.max(0, Math.trunc(publicFinite(ws.rewrites))),
+-          bytesMB: Math.max(0, publicFinite(ws.bytesMB))
+-        },
+         uiInjectStatus: String(deps.uiInjectStatus || "pending").slice(0, 32)
+       });
+     }, "buildPublicDiagnosticSnapshot");
+@@ -7476,7 +6803,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       deps.clearRuntimeConnectionHints();
+       deps.promoteBestCdnNow();
+       if (!deps.disabled) deps.preconnectBatch(deps.getHealthyCdnList().slice(0, 3), false);
+-      deps.syncWorkerCdnTarget();
+       deps.refreshPublicDiagnosticSnapshot();
+     }, "reconcileCatalogCandidates");
+     const setCatalogOverride = /* @__PURE__ */ __name((host, enabled) => {
+@@ -7585,6 +6911,13 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           deps.copyDiagReport().catch(() => {
+           });
+         }, "onCopy"),
++        actionLabel: deps.Config.verbose ? "關閉 verbose" : "開啟 verbose",
++        onAction: /* @__PURE__ */ __name(() => {
++          const result = deps.BiliCDNControls.verbose(!deps.Config.verbose);
++          deps.refreshPublicDiagnosticSnapshot();
++          deps.TrustedMenuUI.toast(result.message, result.ok ? "success" : "warning");
++          showDiagnosticDialog();
++        }, "onAction"),
+         closeLabel: "返回控制中心",
+         onClose: /* @__PURE__ */ __name(() => showControlCenter(), "onClose")
+       });
+@@ -7613,37 +6946,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           const host = Number.isInteger(index) ? dead[index] : null;
+           const stillDead = host && deps.listDeadHosts().some((entry) => entry.host === host);
+           const result = stillDead && deps.TRUSTED_CDN_CATALOG_SET.has(host) ? deps.BiliCDNControls.revive(host) : deps.controlResult(false, "stale", "節點狀態已改變，請重新開啟選單");
+-          deps.syncWorkerCdnTarget();
+           deps.refreshPublicDiagnosticSnapshot();
+           deps.TrustedMenuUI.toast(result.message, result.ok ? "success" : "warning");
+           showMaintenanceCenter();
+         }, "onConfirm")
+       });
+     }, "showDeadReviveDialog");
+-    const showWorkerStatsDialog = /* @__PURE__ */ __name(() => {
+-      const stats = deps.BiliCDNControls.workerStats();
+-      const lines = [
+-        "Worker 攔截：" + (deps.EnableWorkerIntercept ? "已開啟（v1.6.3 預設）" : "已由檔頭設定關閉（目前數值為 0 屬正常）"),
+-        "本分頁安裝狀態=" + stats.installState,
+-        "本分頁 constructor 呼叫=" + stats.session.constructorCalls,
+-        "本分頁成功包裝=" + stats.session.wrapped,
+-        "本分頁 bootstrap 確認=" + stats.session.bootstrapReady,
+-        "本分頁安全放行=" + JSON.stringify(stats.session.bypass),
+-        "本分頁建立失敗=" + JSON.stringify(stats.session.failures),
+-        "本分頁 constructor 被替換=" + stats.session.replacements,
+-        "本分頁 netCalls=" + stats.session.netCalls + " mediaSeen=" + stats.session.mediaSeen + " rewrites=" + stats.session.rewrites + " bytes=" + stats.session.bytesMB + " MB",
+-        "累計 created=" + stats.created + " ready=" + stats.bootstrapReady + " constructors=" + stats.constructorCalls,
+-        "累計 netCalls=" + stats.netCalls + " mediaSeen=" + stats.mediaSeen + " rewrites=" + stats.rewrites,
+-        "累計 bytes=" + stats.bytesMB + " MB｜觀察天數=" + stats.observedDays,
+-        "判讀=" + stats.verdict
+-      ];
+-      return deps.TrustedMenuUI.openText({
+-        title: "Worker 使用量",
+-        text: lines.join("\n"),
+-        closeLabel: "返回進階設定",
+-        onClose: /* @__PURE__ */ __name(() => showAdvancedCenter(), "onClose")
+-      });
+-    }, "showWorkerStatsDialog");
+     const showAsyncControlResult = /* @__PURE__ */ __name(async (startMessage, operation) => {
+       const progress = deps.TrustedMenuUI.toast(startMessage, "info", { sticky: true });
+       try {
+@@ -7740,30 +7048,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         ]
+       });
+     }, "showMaintenanceCenter");
+-    const showAdvancedCenter = /* @__PURE__ */ __name(() => deps.TrustedMenuUI.openActions({
+-      title: "進階",
+-      paragraphs: [
+-        "Verbose 目前" + (deps.Config.verbose ? "已開啟" : "已關閉") + "。",
+-        "Worker 攔截只能在檔頭設定；此處僅顯示使用量。"
+-      ],
+-      items: [
+-        {
+-          label: deps.Config.verbose ? "關閉 verbose" : "開啟 verbose",
+-          action: "verbose-toggle",
+-          onActivate: /* @__PURE__ */ __name(() => {
+-            const result = deps.BiliCDNControls.verbose(!deps.Config.verbose);
+-            deps.refreshPublicDiagnosticSnapshot();
+-            deps.TrustedMenuUI.toast(result.message, result.ok ? "success" : "warning");
+-            showAdvancedCenter();
+-          }, "onActivate")
+-        },
+-        { label: "顯示 Worker 使用量", action: "worker-stats", onActivate: showWorkerStatsDialog },
+-        { label: "返回控制中心", action: "back", onActivate: /* @__PURE__ */ __name(() => showControlCenter(), "onActivate") }
+-      ]
+-    }), "showAdvancedCenter");
+     function showControlCenter() {
+       const stats = deps.Watchdog.stats();
+-      const worker = deps.summarizeWorkerStats();
+       const httpdns = deps.getHttpDnsStatus();
+       const abnormal = deps.blacklistSet.size + deps.knownDeadHosts.size + Object.keys(deps.cdnSoftBlockUntil).filter(deps.isCdnSoftBlocked).length;
+       const codecLead = deps.lastCodecDecision.groups && deps.lastCodecDecision.groups[0] ? deps.lastCodecDecision.groups[0].selected || "未知" : "尚無資料";
+@@ -7773,7 +7059,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           "狀態：" + (deps.disabled ? "停用" : "啟用") + "｜模式：" + (deps.resolvedCdn ? "固定" : "自動") + "｜選路建議：" + deps.getCdnShortName(),
+           "倍速：" + deps.playbackRateState.effectiveRate + "x（" + (deps.playbackRateState.confirmed ? "已確認" : "假定") + "）｜" + deps.describePlaybackBuffer(stats),
+           "串流：" + deps.streamEstimate.videoMbps + "+" + deps.streamEstimate.audioMbps + " Mbps｜codec 排序首位：" + codecLead,
+-          "異常節點：" + abnormal + "｜HTTPDNS：" + httpdns.mode + "｜Worker：" + (deps.EnableWorkerIntercept ? worker.installState + "；本頁呼叫=" + worker.session.constructorCalls + "／包裝=" + worker.session.wrapped : "停用")
++          "異常節點：" + abnormal + "｜HTTPDNS：" + httpdns.mode
+         ],
+         items: [
+           { label: "重新評估節點", action: "reassess", onActivate: /* @__PURE__ */ __name(() => {
+@@ -7782,8 +7068,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           }, "onActivate") },
+           { label: "CDN 選路", action: "routing", onActivate: showRoutingCenter },
+           { label: "診斷", action: "diagnostics", onActivate: showDiagnosticDialog },
+-          { label: "節點維護", action: "maintenance", onActivate: showMaintenanceCenter },
+-          { label: "進階", action: "advanced", onActivate: showAdvancedCenter }
++          { label: "節點維護", action: "maintenance", onActivate: showMaintenanceCenter }
+         ]
+       });
+     }
+@@ -8203,7 +7488,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         deps.HttpDnsAutoPilot.onWatchdogReset();
+       } catch {
+       }
+-      deps.syncWorkerCdnTarget();
+       if (!deps.disabled) {
+         deps.beginRuntimeGeneration();
+         setupCrossTab();
+@@ -8306,7 +7590,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         clearInterval(periodicBakeoffTimer);
+         periodicBakeoffTimer = null;
+       }
+-      deps.syncWorkerDisabledState();
+     }, "stopRuntimeFeatures");
+     const setRuntimeDisabled = /* @__PURE__ */ __name((nextDisabled) => {
+       deps.TrustedMenuUI.invalidate();
+@@ -8314,7 +7597,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       GM_setValue("disabled", deps.disabled);
+       if (deps.disabled) stopRuntimeFeatures();
+       else startRuntimeFeatures();
+-      deps.syncWorkerDisabledState();
+       deps.refreshPublicDiagnosticSnapshot();
+       return deps.disabled;
+     }, "setRuntimeDisabled");
+@@ -8380,7 +7662,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     });
+     setInterval(() => {
+       deps.refreshExpiredRestrictions();
+-      deps.checkWorkerInterceptState();
+       deps.samplePlaybackQuality();
+       if (!deps.disabled) deps.DiagnosticLog.sample(deps.readPlaybackDiagnostic());
+       deps.refreshPublicDiagnosticSnapshot();
+@@ -8408,9 +7689,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let codec;
+     let playurl;
+     let transport;
+-    let workerStats;
+     let failures;
+-    let worker;
+     let dom;
+     let latency;
+     let bakeoff;
+@@ -8519,9 +7798,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get preconnectCdn() {
+         return hints.preconnectCdn;
+       },
+-      get syncWorkerCdnTarget() {
+-        return worker.syncWorkerCdnTarget;
+-      },
+       get CustomCDN() {
+         return settings.CustomCDN;
+       },
+@@ -8928,29 +8204,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         return rate.playbackRateState;
+       }
+     });
+-    workerStats = createWorkerStats({
+-      get resolvedCdn() {
+-        return health.resolvedCdn;
+-      },
+-      get lastChosenCdn() {
+-        return health.lastChosenCdn;
+-      },
+-      get peekBestCdn() {
+-        return health.peekBestCdn;
+-      },
+-      get activeCdnList() {
+-        return health.activeCdnList;
+-      },
+-      get PREFERRED_CDN_LIST() {
+-        return catalog.PREFERRED_CDN_LIST;
+-      },
+-      get isValidCustomCdnHost() {
+-        return catalog.isValidCustomCdnHost;
+-      },
+-      get EnableWorkerIntercept() {
+-        return settings.EnableWorkerIntercept;
+-      }
+-    });
+     failures = createFailures({
+       get TRUSTED_CDN_CATALOG() {
+         return catalog.TRUSTED_CDN_CATALOG;
+@@ -8958,18 +8211,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get isValidCustomCdnHost() {
+         return catalog.isValidCustomCdnHost;
+       },
+-      get PREFERRED_CDN_LIST() {
+-        return catalog.PREFERRED_CDN_LIST;
+-      },
+-      get isCdnSoftBlocked() {
+-        return health.isCdnSoftBlocked;
+-      },
+-      get isCdnStronglyBad() {
+-        return health.isCdnStronglyBad;
+-      },
+-      get getWorkerCdnTarget() {
+-        return workerStats.getWorkerCdnTarget;
+-      },
+       get disabled() {
+         return runtime.disabled;
+       },
+@@ -9021,9 +8262,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get getHealthyCdnList() {
+         return health.getHealthyCdnList;
+       },
+-      get syncWorkerCdnTarget() {
+-        return worker.syncWorkerCdnTarget;
+-      },
+       get lastSampleSegmentUrl() {
+         return bakeoff.lastSampleSegmentUrl;
+       },
+@@ -9043,68 +8281,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         return runtime.reportMeasurementFailure;
+       }
+     });
+-    worker = createWorker({
+-      get getWorkerCdnTarget() {
+-        return workerStats.getWorkerCdnTarget;
+-      },
+-      get isValidCustomCdnHost() {
+-        return catalog.isValidCustomCdnHost;
+-      },
+-      get getWorkerForceList() {
+-        return failures.getWorkerForceList;
+-      },
+-      get PREFERRED_CDN_LIST() {
+-        return catalog.PREFERRED_CDN_LIST;
+-      },
+-      get TRUSTED_CDN_CATALOG() {
+-        return catalog.TRUSTED_CDN_CATALOG;
+-      },
+-      get matchesExclude() {
+-        return catalog.matchesExclude;
+-      },
+-      get disabled() {
+-        return runtime.disabled;
+-      },
+-      get biliCdnWorkers() {
+-        return workerStats.biliCdnWorkers;
+-      },
+-      get workerControlPorts() {
+-        return workerStats.workerControlPorts;
+-      },
+-      get EnableWorkerIntercept() {
+-        return settings.EnableWorkerIntercept;
+-      },
+-      get PCDN_SOURCE_SUFFIXES() {
+-        return mediaPolicy.PCDN_SOURCE_SUFFIXES;
+-      },
+-      get PCDN_SOURCE_HOSTS() {
+-        return mediaPolicy.PCDN_SOURCE_HOSTS;
+-      },
+-      get Watchdog() {
+-        return watchdog.Watchdog;
+-      },
+-      get mediaObservations() {
+-        return media.mediaObservations;
+-      },
+-      get runtimeGeneration() {
+-        return runtime.runtimeGeneration;
+-      },
+-      get playinfoEpoch() {
+-        return media.playinfoEpoch;
+-      },
+-      get bumpWorkerStats() {
+-        return workerStats.bumpWorkerStats;
+-      },
+-      get setWorkerInstallState() {
+-        return workerStats.setWorkerInstallState;
+-      },
+-      get noteWorkerDiagnostic() {
+-        return workerStats.noteWorkerDiagnostic;
+-      },
+-      get log() {
+-        return events.log;
+-      }
+-    });
+     dom = createDom({});
+     latency = createLatency({
+       get captureRuntimeGeneration() {
+@@ -9368,9 +8544,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get preconnectBatch() {
+         return hints.preconnectBatch;
+       },
+-      get syncWorkerCdnTarget() {
+-        return worker.syncWorkerCdnTarget;
+-      },
+       get isPresumedDnsFailHost() {
+         return health.isPresumedDnsFailHost;
+       },
+@@ -9551,9 +8724,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get DiagnosticLog() {
+         return events.DiagnosticLog;
+       },
+-      get summarizeWorkerStats() {
+-        return workerStats.summarizeWorkerStats;
+-      },
+       get getHttpDnsStatus() {
+         return httpdns.getHttpDnsStatus;
+       },
+@@ -9566,9 +8736,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get disabled() {
+         return runtime.disabled;
+       },
+-      get EnableWorkerIntercept() {
+-        return settings.EnableWorkerIntercept;
+-      },
+       get activeCdnList() {
+         return health.activeCdnList;
+       },
+@@ -9700,9 +8867,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get uiInjectStatus() {
+         return runtime.uiInjectStatus;
+       },
+-      get summarizeWorkerStats() {
+-        return workerStats.summarizeWorkerStats;
+-      },
+       get disabled() {
+         return runtime.disabled;
+       },
+@@ -9811,9 +8975,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get matchesExclude() {
+         return catalog.matchesExclude;
+       },
+-      get syncWorkerCdnTarget() {
+-        return worker.syncWorkerCdnTarget;
+-      },
+       get getHealthyCdnList() {
+         return health.getHealthyCdnList;
+       }
+@@ -9825,9 +8986,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get ASSUMED_PLAYBACK_RATE() {
+         return rate.ASSUMED_PLAYBACK_RATE;
+       },
+-      get summarizeWorkerStats() {
+-        return workerStats.summarizeWorkerStats;
+-      },
+       get Watchdog() {
+         return watchdog.Watchdog;
+       },
+@@ -9906,9 +9064,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get lastCodecDecision() {
+         return codec.lastCodecDecision;
+       },
+-      get EnableWorkerIntercept() {
+-        return settings.EnableWorkerIntercept;
+-      },
+       get uiInjectStatus() {
+         return runtime.uiInjectStatus;
+       },
+@@ -9983,9 +9138,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get promoteBestCdnNow() {
+         return health.promoteBestCdnNow;
+       },
+-      get syncWorkerCdnTarget() {
+-        return worker.syncWorkerCdnTarget;
+-      },
+       get refreshPublicDiagnosticSnapshot() {
+         return snapshot.refreshPublicDiagnosticSnapshot;
+       },
+@@ -10030,12 +9182,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get controlResult() {
+         return controls.controlResult;
+       },
+-      get syncWorkerCdnTarget() {
+-        return worker.syncWorkerCdnTarget;
+-      },
+-      get EnableWorkerIntercept() {
+-        return settings.EnableWorkerIntercept;
+-      },
+       get lastSampleSegmentUrl() {
+         return bakeoff.lastSampleSegmentUrl;
+       },
+@@ -10081,9 +9227,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get Watchdog() {
+         return { stats: watchdog.Watchdog.stats };
+       },
+-      get summarizeWorkerStats() {
+-        return workerStats.summarizeWorkerStats;
+-      },
+       get getHttpDnsStatus() {
+         return httpdns.getHttpDnsStatus;
+       },
+@@ -10243,9 +9386,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get HttpDnsAutoPilot() {
+         return httpdns.HttpDnsAutoPilot;
+       },
+-      get syncWorkerCdnTarget() {
+-        return worker.syncWorkerCdnTarget;
+-      },
+       get beginRuntimeGeneration() {
+         return runtime.beginRuntimeGeneration;
+       },
+@@ -10294,12 +9434,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       set probeDeferCount(value) {
+         probe.probeDeferCount = value;
+       },
+-      get syncWorkerDisabledState() {
+-        return worker.syncWorkerDisabledState;
+-      },
+-      get checkWorkerInterceptState() {
+-        return worker.checkWorkerInterceptState;
+-      },
+       get uiInjectStatus() {
+         return runtime.uiInjectStatus;
+       },
