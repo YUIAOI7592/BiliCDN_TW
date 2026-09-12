@@ -58,8 +58,8 @@ const buildDiagReport = () => {
         '持久死節點：' + (deps.listDeadHosts()
             .map(e => e.host.split('.')[0] + '(' + e.reason + '，剩 ' + e.daysLeft + 'd)')
             .join(', ') || '（無）'),
-        'Route Affinity：' + native.currentRouteType + '｜' + routeHost
-            + '（以影片 Transport 後態確認；representation 改變不等於換路）',
+        '路由狀態：' + native.currentRouteType + '｜' + routeHost
+            + '（計畫與 Transport 觀察分列如下；representation 改變不等於換路）',
         'Catalog 改寫建議：' + deps.getCdnShortName(),
         '目前 representation：' + (native.active ? JSON.stringify(native.active) : '未確認')
             + '｜tentative=' + (native.tentative ? JSON.stringify(native.tentative) : '無')
@@ -67,7 +67,9 @@ const buildDiagReport = () => {
             + '｜routeRevision=' + native.routeRevision,
         'Native Route：當前群組=' + native.groupNativeCount + '｜狀態=' + JSON.stringify(native.counts)
             + '｜Ledger=' + JSON.stringify(native.ledger),
+        '候選來源／解鎖：' + JSON.stringify(native.admission) + '（頁面候選只解鎖已成功的 exact URL；內建 Catalog 獨立參賽）',
         '路由後態：planned=' + JSON.stringify(native.plannedRoute)
+            + '｜本 epoch 觀察到的影片 host 變更=' + native.observedHostChanges
             + '｜observed=' + JSON.stringify(native.lastObservedRoute)
             + '｜boundary=' + JSON.stringify(native.lastRouteBoundary)
             + '｜穩定性守門=' + JSON.stringify(native.suppressedSwitches),

@@ -19,7 +19,9 @@ v1.8.1 將 Native 評級與換線權限分離：健康播放中的 probe／bakeo
 
 只需安裝 [BiliCDN_TW.user.js](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js)，不需安裝 Node 或 esbuild。v1.6.1 起，Tampermonkey 只會從本儲存庫的最新正式 Release 檢查與下載更新。使用選單「⚙️ 開啟 BiliCDN 控制中心」。
 
-發布驗證與安全狀態以 [TEST_REPORT](Release/v1.8.1/TEST_REPORT_v1.8.1.md) 為準。VM 測試不等於 Chrome／Tampermonkey 實機驗證；仍需測試自動畫質、1080p／4K 2x、seek、畫質升降、SPA、背景切回、陌生節點探索與控制中心。
+v1.8.2 統一 Catalog／Native URL 決策，移除舊 Akamai 提升旁路；只有內嵌資料時，也能在 exact 影片請求成功後建立受限歸因與一次起播測速。內建 Catalog 不必出現在本片資料即可參賽；Native 資格不授予換 host 或 preconnect 權限。診斷分開計畫、實際觀察及來源提示。
+
+發布驗證與安全狀態以 [TEST_REPORT](Release/v1.8.2/TEST_REPORT_v1.8.2.md) 為準。VM 測試不等於 Chrome／Tampermonkey 實機驗證；仍需測試自動畫質、1080p／4K 2x、seek、畫質升降、SPA、背景切回、陌生節點探索與控制中心。
 
 ## 本機開發
 

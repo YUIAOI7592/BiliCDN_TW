@@ -57,6 +57,7 @@ const interceptNetResponse = (function (theWindow) {
             const urlStr = String(url)
             playurlRequests.set(this, { runtime: deps.captureRuntimeGeneration(), url: urlStr, cache: null })
             mediaRequests.set(this, deps.captureMediaRequest(urlStr))
+            mediaRequests.get(this).method = 'xhr'
             // XMLHttpRequest 物件可被重複 open()。每次請求都要清掉上一輪的自訂狀態，
             // 否則先前的 HTTPDNS abort、重導 host 或 response 快取會污染下一個 URL。
             if (this._blockedTimer) { clearTimeout(this._blockedTimer); this._blockedTimer = null }
@@ -95,9 +96,10 @@ const interceptNetResponse = (function (theWindow) {
                 this._originalUrl = mappedOriginalUrl
                 this._hostRewriteAttempt = mappedOriginalUrl !== urlStr
                 const nativeRoute = deps.resolveRequestRoute(urlStr, mediaRequests.get(this))
+                mediaRequests.get(this).routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null
                 const norm = nativeRoute
-                    ? { url: nativeRoute.url, changed: nativeRoute.url !== urlStr, originCdn: nativeRoute.host,
-                        targetCdn: nativeRoute.host, nativeRoute: nativeRoute.type === 'native-signed' }
+                    ? { url: nativeRoute.url, changed: nativeRoute.url !== urlStr, originCdn: deps.parseMediaHttpUrl(urlStr)?.hostname,
+                        targetCdn: nativeRoute.host, nativeRoute: nativeRoute.type === 'native-signed', restoredOriginal: nativeRoute.action === 'restore' }
                     : deps.normalizeMediaUrl(urlStr)
                 this._originCdn = norm.originCdn || deps.getBiliVideoCdn(urlStr)
                 if (norm.changed) {
@@ -364,6 +366,7 @@ const interceptNetResponse = (function (theWindow) {
                 deps.recordCdnThroughput(cdn, counted, durationMs, deps.playbackRateState.effectiveRate)
                 deps.recordNativeThroughput(mediaContext, res.url || effectiveUrl, counted, durationMs,
                     deps.playbackRateState.effectiveRate, 'transport')
+                if (mediaContext?.pageCompleted) deps.observeMediaTransfer(mediaContext, res.url || effectiveUrl, counted, 'fetch')
             }
             deps.recordCdnSuccess(cdn, fetchStartedAt)
         }
@@ -457,11 +460,13 @@ const interceptNetResponse = (function (theWindow) {
         if (deps.isMediaSegmentUrl(urlStr)) {
             const requestRuntimeToken = deps.captureRuntimeGeneration()
             const mediaContext = deps.captureMediaRequest(urlStr, requestRuntimeToken)
+            mediaContext.method = 'fetch'
             const mappedOriginalUrl = deps.getOriginalStreamUrl(urlStr)
             const nativeRoute = deps.resolveRequestRoute(urlStr, mediaContext)
+            mediaContext.routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null
             const norm = nativeRoute
-                ? { url: nativeRoute.url, changed: nativeRoute.url !== urlStr, originCdn: nativeRoute.host,
-                    targetCdn: nativeRoute.host, nativeRoute: nativeRoute.type === 'native-signed' }
+                ? { url: nativeRoute.url, changed: nativeRoute.url !== urlStr, originCdn: deps.parseMediaHttpUrl(urlStr)?.hostname,
+                    targetCdn: nativeRoute.host, nativeRoute: nativeRoute.type === 'native-signed', restoredOriginal: nativeRoute.action === 'restore' }
                 : deps.normalizeMediaUrl(urlStr)
             const hostRewriteAttempt = !norm.restoredOriginal
                 && !norm.nativeRoute && (norm.changed || mappedOriginalUrl !== urlStr)

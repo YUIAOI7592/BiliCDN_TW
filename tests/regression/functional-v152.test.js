@@ -150,7 +150,7 @@ test('v1.5.3 R2 protected URL matrix reaches Fetch, XHR, playurl and sink unchan
 test('v1.5.3 R1 original backup and root mapping survive repeated normalization', async () => {
     const original = 'https://node.nexusedgeio.com/upgcxcode/original.m4s?os=mcdn&sig=x'
     const h = load()
-    const item = h.evaluate(`(() => { const i={base_url:${JSON.stringify(original)},backup_url:[]};transformStreamItem(i,true);return i })()`)
+    const item = h.evaluate(`(() => { const i={base_url:${JSON.stringify(original)},backup_url:[]};playInfoTransformer({data:{dash:{video:[i],audio:[]}}},{trustedTransport:true});return i })()`)
     assert.equal(item.backup_url.at(-1), original)
     await h.pageWindow.fetch(original)
     assert.equal(h.fetchCalls.at(-1).url, original)

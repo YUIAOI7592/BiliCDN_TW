@@ -330,66 +330,8 @@ const withOriginalStreamFallback = (generated, originalUrl, primaryUrl) => {
     return out
 }
 
-const transformStreamItem = (item, isDash) => {
-    if (!item) return false
-    isDash = isDash !== false
-
-    const { validUrls, akamaiUrl, biliSrcUrl, preferWhitelistPrimary } = pickStreamUrls(item, isDash)
-
-    validUrls.forEach(u => {
-        try {
-            const h = new URL(u).hostname
-            if (!deps.isUnstableCdnHost(h) && (h.endsWith('.bilivideo.com') || h.endsWith('.bilivideo.cn'))) {
-                deps.noteDiscoveredCdn(h)
-            }
-        } catch {}
-    })
-
-    if (!akamaiUrl && biliSrcUrl) {
-        try {
-            const srcHost = new URL(biliSrcUrl).hostname
-            deps.noteDiscoveredCdn(srcHost)
-        } catch {}
-    }
-
-    if (akamaiUrl && !preferWhitelistPrimary) {
-        if (isDash) { item.base_url = akamaiUrl; item.baseUrl = akamaiUrl }
-        else         { item.url = akamaiUrl }
-        // v1.3.3：buildBackupUrls 可能回空陣列（沒有可用的白名單候選、或來源是
-        // 不可改寫的 PCDN 特化網址）。舊寫法會直接把空陣列蓋上去，等於把 B 站原本
-        // 給的備援流全部刪掉 —— 主流一失敗就無路可退。空的就不動。
-        const backups = withOriginalStreamFallback(buildBackupUrls(biliSrcUrl, akamaiUrl), biliSrcUrl, akamaiUrl)
-        if (backups.length) {
-            item.backup_url = backups
-            item.backupUrl  = backups
-        }
-    } else if (biliSrcUrl) {
-        // v1.3.3：這裡就是「使用者剛點進影片、正要起播」的那一刻，
-        // 用 exploit 模式挑節點，不讓 UCB 的探索加成拿起播當賭注。
-        const bestCdn = deps.getCurrentCdn(deps.STARTUP_PICK)
-        const primUrl = bestCdn
-            ? rememberRewrittenStreamUrl(replaceUrlHost(biliSrcUrl, bestCdn), biliSrcUrl)
-            : biliSrcUrl
-        if (primUrl) {
-            if (isDash) { item.base_url = primUrl; item.baseUrl = primUrl }
-            else         { item.url = primUrl }
-        }
-        // v1.3.3：同上，空陣列不覆蓋（見 Akamai 分支的說明）。
-        let backups = buildBackupUrls(biliSrcUrl, primUrl || biliSrcUrl)
-        if (akamaiUrl && !backups.includes(akamaiUrl)) {
-            backups.unshift(akamaiUrl)
-        }
-        backups = withOriginalStreamFallback(backups, biliSrcUrl, primUrl || biliSrcUrl)
-        if (backups.length) {
-            item.backup_url = backups
-            item.backupUrl  = backups
-        }
-    } else {
-        return false
-    }
-
-    return !!akamaiUrl
-}
+// Parsing only. Route coordination owns primary and backup selection.
+const transformStreamItem = (item, isDash = true) => pickStreamUrls(item, isDash)
 return { /* TEST_EXPORTS:rewrite */
 get normalizeMediaUrl() { return normalizeMediaUrl; },
 get isMediaSegmentUrl() { return isMediaSegmentUrl; },
@@ -402,6 +344,8 @@ get isHostLockedStream() { return isHostLockedStream; },
 get noteHostLockedStream() { return noteHostLockedStream; },
 get decideMediaRewrite() { return decideMediaRewrite; },
 get replaceUrlHost() { return replaceUrlHost; },
+get withOriginalStreamFallback() { return withOriginalStreamFallback; },
+get buildBackupUrls() { return buildBackupUrls; },
 get sanitizePlayInfoUrls() { return sanitizePlayInfoUrls; },
 get pickStreamUrls() { return pickStreamUrls; },
 get transformStreamItem() { return transformStreamItem; }

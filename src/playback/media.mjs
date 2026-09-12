@@ -54,6 +54,7 @@ let mediaObservations = { video: null, audio: null, muxed: null, unknown: null }
 let lastVideoTransportObservation = null
 
 let observedVideoRepresentation = null
+let pageAudioBps = 0
 
 let streamEstimate = { source: 'unknown', codec: 'other', height: 0, videoMbps: 0, audioMbps: 0 }
 
@@ -61,6 +62,7 @@ const resetMediaDelivery = () => {
     mediaObservations = { video: null, audio: null, muxed: null, unknown: null }
     lastVideoTransportObservation = null
     observedVideoRepresentation = null
+    pageAudioBps = 0
 }
 
 const resetRepresentationRegistry = () => {
@@ -98,8 +100,8 @@ const registerMediaRepresentation = (registry, rep, kind, limit) => {
     })
 }
 
-const rebuildRepresentationRegistry = () => {
-    resetRepresentationRegistry()
+const rebuildRepresentationRegistry = (reset = true) => {
+    if (reset) resetRepresentationRegistry()
     if (!streamProfile || !Array.isArray(streamProfile.reps)) return
     streamProfile.reps.forEach(rep => {
         if (!rep || !Number.isFinite(+rep.bandwidth) || +rep.bandwidth <= 0) return
@@ -154,20 +156,30 @@ const observeMediaTransfer = (context, url, bytes, source) => {
     } catch { return }
     const trustedHost = deps.TRUSTED_CDN_CATALOG_SET.has(host) ? host : null
     // A redirect to an unrelated resource is not evidence for the original representation.
-    const rep = lookupMediaRepresentation(url) === context.rep ? context.rep : null
+    const pageRep = deps.pageRepresentation(context)
+    const rep = pageRep || (lookupMediaRepresentation(url) === context.rep ? context.rep : null)
     const kind = rep && ['video', 'audio', 'muxed'].includes(rep.kind) ? rep.kind : 'unknown'
     const observation = { host: trustedHost, classification: trustedHost ? 'catalog' :
         (classification === 'pcdn' || classification === 'suspected-pcdn' ? classification : 'non-catalog'),
         source, kind, height: rep?.height || 0, observedAt: Date.now(), bytes,
-        generation: context.runtime.generation, epoch: context.epoch }
+        generation: context.runtime.generation, epoch: context.epoch, metadataSource: pageRep ? 'page-hint' : 'trusted-api' }
     const previous = mediaObservations[kind]
     if (previous && previous.host === observation.host && previous.source === source) {
         observation.bytes = Math.min(Number.MAX_SAFE_INTEGER, previous.bytes + bytes)
     }
     mediaObservations[kind] = observation
+    if (pageRep && kind === 'video' && mediaHeightMatches(rep)) {
+        observedVideoRepresentation = { ...rep, observedAt: Date.now() }
+        const audioBps = streamProfile?.audioBps || pageAudioBps
+        if (!streamProfile || streamProfile.source === 'page-hint') streamProfile = { reps: [rep], audioBps, source: 'page-hint' }
+    }
+    if (pageRep && kind === 'audio') {
+        pageAudioBps = Math.max(pageAudioBps, rep.bandwidth)
+        if (streamProfile?.source === 'page-hint') streamProfile.audioBps = pageAudioBps
+    }
     if (kind === 'video' && mediaHeightMatches(rep)) {
         noteObservedVideoRepresentation(url, context)
-        if (source === 'fetch' || source === 'xhr') {
+        if (!pageRep && (source === 'fetch' || source === 'xhr')) {
             deps.Watchdog.noteVideoTransport(lastVideoTransportObservation, observation)
             lastVideoTransportObservation = observation
         }
@@ -185,7 +197,7 @@ const getAttributedVideoHost = () => freshMediaObservation(lastVideoTransportObs
 const getMediaDeliverySnapshot = () => Object.fromEntries(Object.entries(mediaObservations).map(([kind, observation]) => [kind,
     observation ? { host: observation.host, classification: observation.classification, source: observation.source,
         ageSec: Math.max(0, Math.round((Date.now() - observation.observedAt) / 1000)),
-        bytes: observation.bytes, fresh: freshMediaObservation(observation) }
+        bytes: observation.bytes, metadataSource: observation.metadataSource || 'unknown', fresh: freshMediaObservation(observation) }
         : { host: null, classification: 'unknown', source: 'none', ageSec: null, bytes: 0, fresh: false },
 ]))
 
@@ -253,6 +265,7 @@ const syncStreamBitrateFromVideo = (videoEl) => {
     const total = bestBps + (streamProfile.audioBps || 0)
     streamEstimate = {
         source: estimateSource,
+        metadataSource: streamProfile.source || 'trusted-api',
         codec: selectedCodec,
         height: Math.max(0, Math.trunc(h)),
         videoMbps: +(bestBps / 1e6).toFixed(3),

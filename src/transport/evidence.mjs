@@ -69,6 +69,7 @@ const noteSegmentBytes = (cdn, xhr, startedAt, url, alreadyReportedBytes, runtim
         if (cdn) deps.recordCdnThroughput(cdn, bytes, durationMs, deps.playbackRateState.effectiveRate)
         deps.recordNativeThroughput(mediaContext, xhr.responseURL || url, bytes, durationMs,
             deps.playbackRateState.effectiveRate, 'transport')
+        if (mediaContext?.pageCompleted) deps.observeMediaTransfer(mediaContext, xhr.responseURL || url, bytes, 'xhr')
         noteSegmentAccounted(url)
         if (xhr.responseURL && xhr.responseURL !== url) noteSegmentAccounted(xhr.responseURL)
     } catch {}

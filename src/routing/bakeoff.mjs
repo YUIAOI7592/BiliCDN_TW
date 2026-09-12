@@ -141,7 +141,7 @@ const probeCdnThroughput = (cdn, sampleUrl, probeBytes, externalSignal) =>
         })
 
 const getPlayingCdnHost = () => {
-    return deps.getAttributedVideoHost()
+    return deps.getObservedRouteHost() || deps.getAttributedVideoHost()
 }
 
 const getWarmCdnHost = () => getPlayingCdnHost() || deps.resolvedCdn || deps.lastChosenCdn || deps.activeCdnList[0] || null
@@ -165,7 +165,7 @@ const runThroughputBakeoff = async (sampleUrl, skipIfFast = true, trustedRequest
     const skipped = reason => { deps.DiagnosticLog.record('measurement', { reason, requested: false }); return undefined }
     if (deps.disabled || deps.resolvedCdn || bakeoffRunning) return skipped(deps.disabled ? 'disabled' : deps.resolvedCdn ? 'fixed' : 'busy')
     if (deps.inSeekGrace()) return skipped('seek-grace')
-    if (!sampleUrl || (!deps.isBiliVideoUrl(sampleUrl) && !deps.getNativeProbeCandidate(sampleUrl))) return skipped('no-segment')
+    if (!sampleUrl || (!deps.isBiliVideoUrl(sampleUrl) && !deps.canUseRouteSample(sampleUrl))) return skipped('no-segment')
     // 綁定節點的串流換 host 必定 403，測了也拿不到任何有效樣本（見 hostLockedStreams）
     if (deps.isHostLockedStream(sampleUrl)) return skipped('host-lock')
     const runtimeToken = deps.captureRuntimeGeneration()
@@ -208,7 +208,7 @@ const runThroughputBakeoff = async (sampleUrl, skipIfFast = true, trustedRequest
     if (skipIfFast && preHealth && preHealth.samples && preHealth.lastThroughputAt
         && (Date.now() - preHealth.lastThroughputAt) < THRPT_SAMPLE_FRESH_MS
         && preHealth.ewmaMbps >= deps.getRequiredStreamMbps(undefined, 'startup') * 1.5) {
-        return
+        return skipped('healthy-cache')
     }
 
     // 多分頁互斥：優先用 Web Locks API（同源真互斥鎖，分頁關閉

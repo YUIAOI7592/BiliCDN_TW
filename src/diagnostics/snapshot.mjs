@@ -97,7 +97,9 @@ const buildPublicDiagnosticSnapshot = () => {
         mediaDelivery: deps.getMediaDeliverySnapshot(),
         nativeRouting: {
             selectedRouteType: ['catalog-generated','native-signed','root-original'].includes(native.currentRouteType)
-                ? native.currentRouteType : 'catalog-generated',
+                ? native.currentRouteType : 'unknown',
+            admission: { ...native.admission },
+            catalogSuggestionMeaning: 'currentCdn is a catalog suggestion, not an observed route',
             routeRevision: Math.max(0, Math.trunc(publicFinite(native.routeRevision))),
             representationRevision: Math.max(0, Math.trunc(publicFinite(native.representationRevision))),
             activeRepresentation: native.active ? {
@@ -123,6 +125,7 @@ const buildPublicDiagnosticSnapshot = () => {
         playbackQuality: { ...deps.playbackQualitySnapshot },
         currentCodecConfigurations: deps.getCurrentCodecDiagnostics(),
         streamEstimate: {
+            metadataSource: deps.streamEstimate.metadataSource || 'unknown',
             source: deps.streamEstimate.source === 'observed-representation'
                 ? 'observed-representation'
                 : (deps.streamEstimate.source === 'conservative-height-max' ? 'conservative-height-max' : 'unknown'),

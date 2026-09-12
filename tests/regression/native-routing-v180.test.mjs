@@ -46,6 +46,7 @@ function makeHarness(seed = null) {
         getVideo: () => ({ videoHeight: 1080 }),
         DiagnosticLog: { fault() {} },
         onActiveRepresentation() {},
+        replaceUrlHost(value, host) { const u = new URL(value); u.hostname = host; return u.href },
     }
     return { routes: createNativeRoutes(deps), deps, catalogHealth, get stored() { return stored },
         setFixed(value) { fixed = value }, setEpoch(value) { epoch = value } }
@@ -99,7 +100,7 @@ test('v181 a clearly superior known-family probe is rating-only during healthy p
     assert.equal(candidate.host, NATIVE)
     const result = h.routes.recordNativeProbe(candidate, { accepted: true, bytes: 384 * 1024, durationMs: 100 }, 20)
     assert.equal(result.accepted, true)
-    assert.equal(h.routes.resolveRequestRoute(catalog, context), null)
+    assert.equal(h.routes.resolveRequestRoute(catalog, context).url, catalog)
     assert.equal(h.routes.diagnostics().counts.probeQualified, 1)
 })
 
@@ -110,7 +111,7 @@ test('v180 fixed catalog mode disables native primary while retaining signed fal
     item.base_url = nativeUrl(CATALOG); item.backup_url = []
     h.routes.applySignedRoutePlan(item, true, group)
     const context = { route: h.routes.captureRouteContext(item.base_url) }
-    assert.equal(h.routes.resolveRequestRoute(item.base_url, context), null)
+    assert.equal(h.routes.resolveRequestRoute(item.base_url, context).url, item.base_url)
     assert.ok(item.backup_url.some(url => new URL(url).hostname === NATIVE))
 })
 
@@ -217,7 +218,7 @@ test('v180 provisional promotion requires a comparable fresh Catalog sample and 
     h.routes.observeTransport(second, catalog, 64 * 1024, 'xhr')
     const candidate = h.routes.getNativeProbeCandidate(catalog)
     h.routes.recordNativeProbe(candidate, { accepted: true, bytes: 384 * 1024, durationMs: 100 }, 20)
-    assert.equal(h.routes.resolveRequestRoute(catalog, first), null)
+    assert.equal(h.routes.resolveRequestRoute(catalog, first).url, catalog)
     h.catalogHealth[CATALOG].samples = 3
     h.catalogHealth[CATALOG].lastThroughputAt = Date.now()
     const later = h.routes.getNativeProbeCandidate(catalog)

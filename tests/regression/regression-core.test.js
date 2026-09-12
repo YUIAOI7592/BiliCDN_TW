@@ -79,7 +79,7 @@ test('host-lock restoration, backup ordering, and PCDN guard remain intact', { s
     const result = h.evaluate(`(() => {
         const original = 'https://cn-hk-eq-bcache-01.bilivideo.com/upgcxcode/locked.m4s?token=signed&os=lockedbv'
         const item = { base_url: original, backup_url: [] }
-        transformStreamItem(item, true)
+        playInfoTransformer({data:{dash:{video:[item],audio:[]}}}, {trustedTransport:true})
         const rewritten = item.base_url
         noteHostLockedStream(original)
         const restored = normalizeMediaUrl(rewritten)

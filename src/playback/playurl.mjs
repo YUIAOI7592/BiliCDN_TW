@@ -10,6 +10,7 @@ const playInfoTransformer = (playInfo, options = null) => {
     // The page-global compatibility hook is untrusted and may mutate a view for
     // playback compatibility, but it must not erase or replace trusted state.
     if (nativeTransportSource) {
+        deps.retainAffinityForTrustedPlayinfo()
         deps.clearCodecPlayinfo()
         deps.resetRepresentationRegistry()
         deps.streamEstimate = { source: 'unknown', codec: 'other', height: 0, videoMbps: 0, audioMbps: 0 }
@@ -29,9 +30,9 @@ const playInfoTransformer = (playInfo, options = null) => {
             // The page-global __playinfo__ hook is fail-open compatibility input, not a
             // capability for Native exploration or persistent rating. Only an intercepted
             // playurl transport response can populate the exact signed-route pool.
-            const routeGroup = nativeTransportSource ? deps.registerSignedRouteGroup(item, isDash, kind) : null
-            deps.transformStreamItem(item, isDash)
+            const routeGroup = deps.registerSignedRouteGroup(item, isDash, kind, nativeTransportSource ? 'trusted-api' : 'page-hint')
             if (routeGroup) deps.applySignedRoutePlan(item, isDash, routeGroup)
+            else deps.planUnregisteredItem(item, isDash, nativeTransportSource)
             // Preserve v1.7.0 catalog startup measurement without binding Native exploration
             // to dash.video[0]. Native exploration waits for active representation evidence.
             if (nativeTransportSource && kind === 'video' && !startupVideoSampleScheduled) {
@@ -51,7 +52,6 @@ const playInfoTransformer = (playInfo, options = null) => {
             if (playInfo.result.durl || playInfo.result.durls) video_info = playInfo.result
             if (video_info && video_info.durl) transformList(video_info.durl, false)
             if (video_info && video_info.durls) video_info.durls.forEach(d => transformList(d.durl, false))
-            deps.sanitizePlayInfoUrls(video_info || playInfo.result)
             return
         }
     } else {
@@ -93,7 +93,7 @@ const playInfoTransformer = (playInfo, options = null) => {
                         .map(a => ({ bandwidth: a.bandwidth || 0, urls: deps.pickStreamUrls(a, true).validUrls })),
                 }
                 if (nativeTransportSource) {
-                    deps.rebuildRepresentationRegistry()
+                    deps.rebuildRepresentationRegistry(false)
                     deps.setBufferTargetFromBitrate(maxV + maxA, is4K || (maxV + maxA) > 12e6)
                 }
                 dash.minBufferTime   = minBuf
@@ -107,12 +107,10 @@ const playInfoTransformer = (playInfo, options = null) => {
             transformList(dash.video, true, 'video')
             transformList(dash.audio, true, 'audio')
             transformList(extras,     true, 'audio')
-            deps.sanitizePlayInfoUrls(dash)
 
         } else if (video_info && (video_info.durl || video_info.durls)) {
             transformList(video_info.durl, false)
             ;(video_info.durls || []).forEach(d => transformList(d.durl, false))
-            deps.sanitizePlayInfoUrls(video_info)
         }
     } catch (e) {
         if (video_info && video_info.durl) transformList(video_info.durl, false)

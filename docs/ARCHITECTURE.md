@@ -1,6 +1,12 @@
-# v1.8.1 架構
+# v1.8.2 架構
 
 `.mjs` import/export 連接模組，狀態存在工廠實例閉包；沒有共用的可變全域大物件。`src/main.mjs` 明確建立實例並連接有限的依賴 getter／必要 setter。延後讀取維持既有循環關係，但不把所有狀態交給每個模組。
+
+v1.8.2 的兩階段選路：Catalog 選路器從合格內建清單提出建議（不受本片 host 清單限制），路由協調器再比較符合資格的本片 Native signed route。主動測速仍最多四個名額，其中 Native 最多一個；健康播放只更新評級。
+
+頁面 `__playinfo__` 僅建立記憶體 page-hint 候選，不能覆蓋可信 API Pool。每個 known-family exact URL 必須在當前 generation／候選版本經 Fetch EOF 或可信 XHR 成功終態確認，才解鎖該 URL；redirect、query 改變、取消與合成事件不解鎖。其他第三方頁面 URL 不取得 Ledger／probe 權限。合計 128 video／64 audio group、每組四條、16 KiB／URL、1 MiB 字元上限；衝突保持 ambiguous。page-hint 碼率不提供 Watchdog 處罰歸因。
+
+第一個可用的頁面影片完成樣本只安排一次起播量測；可信 API 稍後接管保留已觀察 affinity 與排程旗標。診斷的 root-original、catalog-generated 依請求及產生來源證據區分，不以 host 成員資格猜測；host 變更計數只由後續影片觀察增加。
 
 | 區域 | 所有權／責任 |
 | --- | --- |

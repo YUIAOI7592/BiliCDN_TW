@@ -125,6 +125,11 @@ get DiagnosticLog() { return events.DiagnosticLog; },
 // this callback may update the sample pointer but must never grant switch grace
 // or schedule another measurement round.
 get onActiveRepresentation() { return (sampleUrl) => bakeoff.noteActiveSample(sampleUrl); },
+get scheduleObservedSample() { return (sampleUrl) => bakeoff.scheduleBakeoff(sampleUrl); },
+get buildBackupUrls() { return rewrite.buildBackupUrls; },
+get preserveOriginalFallback() { return rewrite.withOriginalStreamFallback; },
+get normalizeMediaUrl() { return rewrite.normalizeMediaUrl; },
+get decideMediaRewrite() { return rewrite.decideMediaRewrite; },
 get replaceUrlHost() { return rewrite.replaceUrlHost; }
 });
 rate = createRate({
@@ -175,6 +180,7 @@ get seekGraceUntil() { return rate.seekGraceUntil; }, set seekGraceUntil(value) 
 get resetPlaybackRateState() { return rate.resetPlaybackRateState; },
 get resetNativeRoutePool() { return nativeRoutes.resetPool; },
 get captureNativeRouteContext() { return nativeRoutes.captureRouteContext; },
+get pageRepresentation() { return nativeRoutes.pageRepresentation; },
 get observeNativeTransport() { return nativeRoutes.observeTransport; }
 });
 httpdns = createHttpdns({
@@ -238,14 +244,17 @@ get rebuildRepresentationRegistry() { return media.rebuildRepresentationRegistry
 get setBufferTargetFromBitrate() { return media.setBufferTargetFromBitrate; },
 get isBiliVideoUrl() { return mediaPolicy.isBiliVideoUrl; },
 get isAkamaiUrl() { return mediaPolicy.isAkamaiUrl; },
-get scheduleBakeoff() { return bakeoff.scheduleBakeoff; },
+get scheduleBakeoff() { return nativeRoutes.scheduleStartupSample; },
 get err() { return events.err; },
 get parseMediaHttpUrl() { return mediaPolicy.parseMediaHttpUrl; },
 get mediaUrlPolicy() { return mediaPolicy.mediaUrlPolicy; },
 get registerSignedRouteGroup() { return nativeRoutes.registerSignedRouteGroup; },
+get retainAffinityForTrustedPlayinfo() { return nativeRoutes.retainAffinityForTrustedPlayinfo; },
+get planUnregisteredItem() { return nativeRoutes.planUnregisteredItem; },
 get applySignedRoutePlan() { return nativeRoutes.applySignedRoutePlan; }
 });
 transport = createTransport({
+get parseMediaHttpUrl() { return mediaPolicy.parseMediaHttpUrl; },
 get disabled() { return runtime.disabled; },
 get DiagnosticLog() { return events.DiagnosticLog; },
 get isRuntimeGenerationActive() { return runtime.isRuntimeGenerationActive; },
@@ -370,6 +379,8 @@ get promoteBestCdnNow() { return health.promoteBestCdnNow; },
 get PROBE_CACHE_KEY() { return latency.PROBE_CACHE_KEY; },
 get getNativeProbeCandidate() { return nativeRoutes.getNativeProbeCandidate; },
 get recordNativeProbe() { return nativeRoutes.recordNativeProbe; },
+get canUseRouteSample() { return nativeRoutes.canUseRouteSample; },
+get getObservedRouteHost() { return nativeRoutes.getObservedRouteHost; },
 get setNativeBakeoffDiagnostics() { return nativeRoutes.setLastBakeoff; }
 });
 hints = createHints({

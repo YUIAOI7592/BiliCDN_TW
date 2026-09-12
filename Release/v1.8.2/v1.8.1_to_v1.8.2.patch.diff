@@ -1,0 +1,890 @@
+diff --git a/Release/v1.8.1/BiliCDN_TW.user.js b/Release/v1.8.2/BiliCDN_TW.user.js
+index 8841693..c8a577c 100644
+--- a/Release/v1.8.1/BiliCDN_TW.user.js
++++ b/Release/v1.8.2/BiliCDN_TW.user.js
+@@ -1,7 +1,7 @@
+ // ==UserScript==
+ // @name         Bilibili CDN 台灣優化
+ // @namespace    BiliCDN_TW
+-// @version      1.8.1
++// @version      1.8.2
+ // @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+ // @author       jiyunshi <chocosensei214@gmail.com>
+ // @license      MIT
+@@ -81,7 +81,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let BlockHttpDNS = input.BlockHttpDNS;
+     let PreferredVideoCodec = input.PreferredVideoCodec;
+     let BlockWebRTC = input.BlockWebRTC;
+-    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.8.1";
++    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.8.2";
+     const parseVer = /* @__PURE__ */ __name((v) => String(v || "0").split(".").map((n) => parseInt(n, 10) || 0), "parseVer");
+     const verGte = /* @__PURE__ */ __name((a, b) => {
+       const A = parseVer(a), B = parseVer(b);
+@@ -1664,9 +1664,24 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let routeAffinity = null;
+     let lastPlannedRoute = null;
+     let lastObservedRoute = null;
++    let observedHostChanges = 0;
+     let lastRouteBoundary = null;
+     let suppressedSwitches = { probeHealthy: 0, representation: 0 };
+     let avoidedHosts = /* @__PURE__ */ new Set();
++    let pageExact = /* @__PURE__ */ new Map();
++    let candidateSerial = 0;
++    let startupScheduled = false;
++    let retainedAffinity = null;
++    let upgradingSource = false;
++    const retainAffinityForTrustedPlayinfo = /* @__PURE__ */ __name(() => {
++      upgradingSource = [...groups.values()].some((g) => g.source === "page-hint");
++      retainedAffinity = upgradingSource && routeAffinity ? { ...routeAffinity } : null;
++    }, "retainAffinityForTrustedPlayinfo");
++    const scheduleStartupSample = /* @__PURE__ */ __name((url) => {
++      if (startupScheduled || deps.disabled || deps.resolvedCdn) return;
++      startupScheduled = true;
++      deps.scheduleObservedSample?.(url);
++    }, "scheduleStartupSample");
+     const parseEligibleUrl = /* @__PURE__ */ __name((url) => {
+       if (typeof url !== "string" || !url || url.length > URL_MAX) return null;
+       let parsed;
+@@ -1675,7 +1690,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       } catch {
+         return null;
+       }
+-      if (!parsed || !/^https?:$/.test(parsed.protocol)) return null;
++      if (!parsed || parsed.username || parsed.password || !/^https?:$/.test(parsed.protocol)) return null;
+       if (parsed.protocol !== "https:" || parsed.port && parsed.port !== "443") return null;
+       const host = safeHost(parsed.hostname);
+       if (!host || isIpLiteral(host)) return null;
+@@ -1690,6 +1705,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     const routeState = /* @__PURE__ */ __name((kind, host, group) => {
+       const record = ledgers[kind]?.get(host);
+       if (group?.invalidHosts?.has(host)) return "invalid";
++      if (group?.ambiguous || group?.source === "page-hint" && !group.routes.some((r) => r.host === host && group.unlocked.has(r.url))) return "unknown";
+       if (record?.transportSamples > 0) return "confirmed";
+       if (record?.probeSamples > 0 && record.lastThroughputAt && Date.now() - record.lastThroughputAt <= SAMPLE_FRESH_MS) return "probe-qualified";
+       return "unknown";
+@@ -1720,39 +1736,70 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       consecutiveVideoEvidence = { groupId: null, count: 0 };
+       plannedAffinity = null;
+       routeAffinity = null;
++      if (retainedAffinity) {
++        routeAffinity = retainedAffinity;
++        plannedAffinity = {
++          type: deps.TRUSTED_CDN_CATALOG_SET.has(retainedAffinity.host) ? "catalog-generated" : "native-signed",
++          host: retainedAffinity.host,
++          reason: "source-upgrade",
++          setAt: Date.now()
++        };
++        retainedAffinity = null;
++      }
++      pageExact = /* @__PURE__ */ new Map();
++      if (!upgradingSource) startupScheduled = false;
++      upgradingSource = false;
+       lastPlannedRoute = null;
+       lastObservedRoute = null;
+       lastRouteBoundary = null;
++      observedHostChanges = 0;
+       avoidedHosts = /* @__PURE__ */ new Set();
+       suppressedSwitches = { probeHealthy: 0, representation: 0 };
+       lastAutoQualityReason = "epoch-reset";
+       routeRevision++;
+       representationRevision++;
+     }, "resetPool");
+-    const rawUrls = /* @__PURE__ */ __name((item, isDash) => isDash ? [item?.base_url, item?.baseUrl, ...Array.isArray(item?.backup_url) ? item.backup_url : [], ...Array.isArray(item?.backupUrl) ? item.backupUrl : []] : [item?.url, ...Array.isArray(item?.backup_url) ? item.backup_url : [], ...Array.isArray(item?.backupUrl) ? item.backupUrl : []], "rawUrls");
+-    const registerSignedRouteGroup = /* @__PURE__ */ __name((item, isDash, kind = "video") => {
++    const rawUrls = /* @__PURE__ */ __name((item, isDash) => isDash ? [item?.base_url, item?.baseUrl, ...Array.isArray(item?.backup_url) ? item.backup_url.slice(0, 8) : [], ...Array.isArray(item?.backupUrl) ? item.backupUrl.slice(0, 8) : []] : [item?.url, ...Array.isArray(item?.backup_url) ? item.backup_url.slice(0, 8) : [], ...Array.isArray(item?.backupUrl) ? item.backupUrl.slice(0, 8) : []], "rawUrls");
++    const registerSignedRouteGroup = /* @__PURE__ */ __name((item, isDash, kind = "video", source = "trusted-api") => {
+       if (!item || poolChars >= POOL_URL_CHARS_MAX) return null;
++      const primary = rawUrls(item, isDash).find((value) => typeof value === "string" && value);
++      if (!parseEligibleUrl(primary)) return null;
+       kind = ["video", "audio", "muxed"].includes(kind) ? kind : "unknown";
+       const groupLimit = kind === "video" ? VIDEO_GROUP_LIMIT : AUDIO_GROUP_LIMIT;
+       if ([...groups.values()].filter((group2) => group2.kind === kind).length >= groupLimit) return null;
+       const codec = deps.normalizeCodecName?.(item) || "other";
++      const urls = rawUrls(item, isDash).map(parseEligibleUrl).filter(Boolean);
++      if (source === "page-hint") {
++        const existing = urls.map((route) => pageExact.get(route.url)).filter(Boolean);
++        if (existing.length) {
++          for (const id of existing) {
++            const old = groups.get(id);
++            if (old && (old.kind !== kind || old.height !== int(item.height, 1e4) || old.codec !== codec || old.bandwidth !== finite(item.bandwidth, 0, 1e10) || urls.some((route) => !old.routes.some((prior) => prior.url === route.url)))) old.ambiguous = true;
++          }
++          return null;
++        }
++        if (urls.some((route) => identityGroups.has(route.identity))) return null;
++      }
+       const group = {
+-        id: `${deps.playinfoEpoch}:${kind}:${++groupSeq}`,
++        id: `${deps.playinfoEpoch}:${kind}:${++candidateSerial}`,
+         epoch: deps.playinfoEpoch,
+         kind,
+         height: int(item.height, 1e4),
+         codec,
+         bandwidth: finite(item.bandwidth, 0, 1e10),
+-        originalOrder: groupSeq,
++        originalOrder: ++groupSeq,
++        source,
++        unlocked: /* @__PURE__ */ new Set(),
++        ambiguous: false,
++        generatedUrls: /* @__PURE__ */ new Set(),
+         routes: [],
+         rootOriginal: null,
+         invalidHosts: /* @__PURE__ */ new Set(),
+-        currentRouteType: "catalog-generated",
++        currentRouteType: "unknown",
+         currentHost: null,
+         catalogFallback: null,
+         transportEvidence: /* @__PURE__ */ new Map(),
+         revision: ++routeRevision,
+-        itemRef: item,
+         isDash: !!isDash
+       };
+       const seenHosts = /* @__PURE__ */ new Set();
+@@ -1766,11 +1813,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         poolChars += parsed.url.length;
+         group.routes.push({ ...parsed, order: group.routes.length });
+         protectedUrls.add(parsed.url);
+-        if (!identityGroups.has(parsed.identity)) identityGroups.set(parsed.identity, group.id);
++        if (source === "page-hint") pageExact.set(parsed.url, group.id);
++        else if (!identityGroups.has(parsed.identity)) identityGroups.set(parsed.identity, group.id);
+         else if (identityGroups.get(parsed.identity) !== group.id) identityGroups.set(parsed.identity, null);
+         const ledgerKind = kind === "audio" ? "audio" : "video";
+         const historical = ledgers[ledgerKind].get(parsed.host);
+-        if (historical) {
++        if (historical && source !== "page-hint") {
+           historical.lastSeen = Date.now();
+           touchedLedger = true;
+         }
+@@ -1782,15 +1830,31 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     }, "registerSignedRouteGroup");
+     const groupForUrl = /* @__PURE__ */ __name((url) => {
+       const parsed = parseEligibleUrl(url);
+-      const id = parsed && identityGroups.get(parsed.identity);
+-      return id ? groups.get(id) || null : null;
++      const id = parsed && (identityGroups.get(parsed.identity) || pageExact.get(parsed.url));
++      const group = id && groups.get(id);
++      return group && !group.ambiguous ? group : null;
+     }, "groupForUrl");
+     const captureRouteContext = /* @__PURE__ */ __name((url) => {
+       const group = groupForUrl(url);
+-      return group ? { groupId: group.id, epoch: group.epoch, revision: group.revision } : null;
++      return group ? {
++        groupId: group.id,
++        epoch: group.epoch,
++        revision: group.revision,
++        source: group.source,
++        requestedUrl: parseEligibleUrl(url)?.url,
++        generated: group.generatedUrls.has(parseEligibleUrl(url)?.url)
++      } : null;
+     }, "captureRouteContext");
+-    const routeContextActive = /* @__PURE__ */ __name((context) => !!context && context.epoch === deps.playinfoEpoch && groups.has(context.groupId), "routeContextActive");
++    const routeContextActive = /* @__PURE__ */ __name((context) => !!context && context.epoch === deps.playinfoEpoch && groups.has(context.groupId) && !groups.get(context.groupId).ambiguous, "routeContextActive");
+     const findNative = /* @__PURE__ */ __name((group, host) => group?.routes.find((route) => route.host === host && !deps.TRUSTED_CDN_CATALOG_SET.has(host)) || null, "findNative");
++    const routeEligible = /* @__PURE__ */ __name((group, route) => !!route && (group.source !== "page-hint" || group.unlocked.has(route.url)), "routeEligible");
++    const pageRepresentation = /* @__PURE__ */ __name((context) => {
++      const route = context?.route || context;
++      if (!routeContextActive(route)) return null;
++      const group = groups.get(route.groupId);
++      if (group.source !== "page-hint" || !group.unlocked.has(route.requestedUrl)) return null;
++      return { kind: group.kind, height: group.height, bandwidth: group.bandwidth, codec: group.codec, source: "page-hint" };
++    }, "pageRepresentation");
+     const setItemUrls = /* @__PURE__ */ __name((item, isDash, primary, backups) => {
+       if (isDash) {
+         item.base_url = primary;
+@@ -1822,8 +1886,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     const applySignedRoutePlan = /* @__PURE__ */ __name((item, isDash, groupId) => {
+       const group = groups.get(groupId);
+       if (!group) return null;
++      if (group.source === "page-hint" && !deps.resolvedCdn) return null;
+       const transformed = rawUrls(item, isDash).filter((value) => typeof value === "string");
+-      const legacyPrimary = transformed[0] || group.rootOriginal;
++      const legacyPrimary = deps.replaceUrlHost?.(group.rootOriginal, deps.resolvedCdn || deps.peekCurrentCdn()) || group.rootOriginal;
+       const legacyHost = (() => {
+         try {
+           return new URL(legacyPrimary).hostname;
+@@ -1839,7 +1904,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const chooseRatedNative = /* @__PURE__ */ __name(() => {
+         const required = deps.getRequiredStreamMbps(void 0, "startup");
+         const catalogScore = group.catalogFallback ? deps.getCdnHealthScore(group.catalogFallback, { exploit: true }) : 0;
+-        const eligible = group.routes.filter((route) => !deps.TRUSTED_CDN_CATALOG_SET.has(route.host) && !group.invalidHosts.has(route.host)).map((route) => ({ route, record: recordFor(ledgerKind, route.host) })).filter((entry) => routeState(ledgerKind, entry.route.host, group) !== "unknown" && !isSoftBlocked(entry.record)).map((entry) => ({ ...entry, score: scoreRecord(entry.record, required) })).sort((a, b) => b.score - a.score || a.route.order - b.route.order);
++        const eligible = group.routes.filter((route) => routeEligible(group, route) && !deps.TRUSTED_CDN_CATALOG_SET.has(route.host) && !group.invalidHosts.has(route.host)).map((route) => ({ route, record: recordFor(ledgerKind, route.host) })).filter((entry) => routeState(ledgerKind, entry.route.host, group) !== "unknown" && !isSoftBlocked(entry.record)).map((entry) => ({ ...entry, score: scoreRecord(entry.record, required) })).sort((a, b) => b.score - a.score || a.route.order - b.route.order);
+         const chosen = eligible[0];
+         return chosen && chosen.score >= catalogScore + STICKY_MARGIN ? chosen.route : null;
+       }, "chooseRatedNative");
+@@ -1847,7 +1912,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         if (group.kind === "video" && plannedAffinity) {
+           if (plannedAffinity.type === "native-signed") {
+             const retained = findNative(group, plannedAffinity.host);
+-            if (retained && !group.invalidHosts.has(retained.host)) {
++            if (retained && routeEligible(group, retained) && !group.invalidHosts.has(retained.host)) {
+               primary = retained.url;
+               primaryType = "native-signed";
+               primaryHost = retained.host;
+@@ -1884,7 +1949,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           }
+         }
+       }
+-      const catalogBackups = transformed.slice(1).filter((url) => {
++      const catalogBackups = (deps.buildBackupUrls?.(group.rootOriginal, primary) || transformed.slice(1)).filter((url) => {
+         try {
+           return deps.TRUSTED_CDN_CATALOG_SET.has(new URL(url).hostname);
+         } catch {
+@@ -1898,16 +1963,50 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }).slice(0, 2).map((route) => route.url);
+       const backups = [...new Set([...catalogBackups, ...nativeBackups, group.rootOriginal].filter((url) => url && url !== primary))];
+       setItemUrls(item, isDash, primary, backups);
++      for (const url of [primary, ...backups]) {
++        protectedUrls.add(url);
++        if (!group.routes.some((route) => route.url === url) && deps.TRUSTED_CDN_CATALOG_SET.has(deps.parseMediaHttpUrl(url)?.hostname)) group.generatedUrls.add(url);
++      }
++      deps.preserveOriginalFallback?.(backups, group.rootOriginal, primary);
+       group.currentRouteType = primaryType;
+       group.currentHost = primaryHost;
+       group.revision = ++routeRevision;
+       return { groupId, primaryType, primaryHost, catalogFallback: group.catalogFallback, revision: group.revision };
+     }, "applySignedRoutePlan");
++    const planUnregisteredItem = /* @__PURE__ */ __name((item, isDash, trusted) => {
++      if (!trusted || !item) return;
++      const original = rawUrls(item, isDash).find((value) => typeof value === "string");
++      const primary = original && deps.replaceUrlHost?.(original, deps.resolvedCdn || deps.peekCurrentCdn());
++      if (!primary) return;
++      const backups = deps.preserveOriginalFallback?.(deps.buildBackupUrls?.(original, primary) || [], original, primary) || [];
++      setItemUrls(item, isDash, primary, backups);
++    }, "planUnregisteredItem");
+     const resolveRequestRoute = /* @__PURE__ */ __name((url, context) => {
+       const routeContext = context?.route || context;
+-      if (deps.resolvedCdn || !routeContextActive(routeContext)) return null;
++      if (!routeContextActive(routeContext)) {
++        const norm = deps.normalizeMediaUrl?.(url);
++        return norm ? {
++          ...norm,
++          host: norm.targetCdn || norm.originCdn,
++          type: norm.changed && !norm.restoredOriginal ? "catalog-generated" : "root-original",
++          action: norm.restoredOriginal ? "restore" : norm.changed ? "rewrite" : "pass"
++        } : null;
++      }
+       const group = groups.get(routeContext.groupId);
+       const requested = parseEligibleUrl(url);
++      const pass = { url, host: requested?.host || null, type: "root-original", action: "pass", groupId: group.id, revision: group.revision };
++      const restored = deps.decideMediaRewrite?.(url, true);
++      if (restored && restored.action !== "rewrite") return {
++        ...pass,
++        url: restored.url,
++        host: deps.parseMediaHttpUrl(restored.url)?.hostname || pass.host,
++        action: restored.action
++      };
++      if (deps.resolvedCdn) {
++        const fixed = deps.replaceUrlHost?.(url, deps.resolvedCdn);
++        return fixed ? { ...pass, url: fixed, host: deps.resolvedCdn, type: "catalog-generated", action: "rewrite" } : pass;
++      }
++      if (group.source === "page-hint" && (!requested || !group.unlocked.has(requested.url))) return pass;
+       const exactSignedRoute = requested ? group.routes.find((route) => route.url === requested.url) || null : null;
+       if (exactSignedRoute && !avoidedHosts.has(exactSignedRoute.host) && plannedAffinity?.type !== "native-signed" && (!plannedAffinity || exactSignedRoute.host !== plannedAffinity.host)) {
+         return {
+@@ -1921,14 +2020,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       if (group.kind === "video" && plannedAffinity) {
+         if (plannedAffinity.type === "native-signed") {
+           const selected2 = findNative(group, plannedAffinity.host);
+-          if (!selected2 || group.invalidHosts.has(selected2.host)) return null;
++          if (!selected2 || !routeEligible(group, selected2) || group.invalidHosts.has(selected2.host)) return pass;
+           return { url: selected2.url, host: selected2.host, type: "native-signed", groupId: group.id, revision: group.revision };
+         }
+         const target = catalogUrlFor(group, plannedAffinity.host);
+         if (target) return { url: target, host: plannedAffinity.host, type: "catalog-generated", groupId: group.id, revision: group.revision };
+       }
+       const selected = findNative(group, group.currentRouteType === "native-signed" ? group.currentHost : null);
+-      return selected && !group.invalidHosts.has(selected.host) ? { url: selected.url, host: selected.host, type: "native-signed", groupId: group.id, revision: group.revision } : null;
++      return selected && !group.invalidHosts.has(selected.host) ? { url: selected.url, host: selected.host, type: "native-signed", groupId: group.id, revision: group.revision } : pass;
+     }, "resolveRequestRoute");
+     const isProtectedSignedUrl = /* @__PURE__ */ __name((url) => {
+       try {
+@@ -1964,20 +2063,31 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       tentativeRepresentation = null;
+     }, "activateGroup");
+-    const observeAffinity = /* @__PURE__ */ __name((group, parsed, source) => {
++    const observeAffinity = /* @__PURE__ */ __name((group, parsed, source, context) => {
+       if (!group || group.kind !== "video" || activeRepresentation?.groupId !== group.id || !parsed?.host) return;
+-      const type = deps.TRUSTED_CDN_CATALOG_SET.has(parsed.host) ? "catalog-generated" : findNative(group, parsed.host) ? "native-signed" : "root-original";
++      const type = context?.routeDecision?.changed && context.routeDecision.host === parsed.host ? context.routeDecision.type : context?.route?.generated && group.generatedUrls.has(parsed.url) ? "catalog-generated" : "root-original";
+       if (!routeAffinity || routeAffinity.host !== parsed.host || routeAffinity.type !== type) {
++        const priorHost = routeAffinity?.host || lastObservedRoute?.host;
++        const hostChanged = !!priorHost && priorHost !== parsed.host;
++        if (hostChanged) observedHostChanges = Math.min(1e6, observedHostChanges + 1);
+         routeAffinity = { type, host: parsed.host, confirmedAt: Date.now(), source };
+-        lastObservedRoute = { ...routeAffinity, revision: routeRevision };
++        lastObservedRoute = {
++          ...routeAffinity,
++          revision: routeRevision,
++          reason: hostChanged ? "observed-host-change" : lastObservedRoute ? "provenance-update" : "first-observation",
++          metadataSource: group.source
++        };
+       }
++      routeAffinity.confirmedAt = Date.now();
+     }, "observeAffinity");
++    const getObservedRouteHost = /* @__PURE__ */ __name(() => !deps.disabled && routeAffinity && Date.now() - routeAffinity.confirmedAt <= 3e4 ? routeAffinity.host : null, "getObservedRouteHost");
+     const observeTransport = /* @__PURE__ */ __name((context, url, bytes, source) => {
+       const routeContext = context?.route;
+       if (!routeContextActive(routeContext) || !Number.isSafeInteger(bytes) || bytes <= 0 || !["xhr", "fetch"].includes(source)) return;
+       const group = groups.get(routeContext.groupId);
+       const parsed = parseEligibleUrl(url);
+       if (!group || !parsed) return;
++      if (group.source === "page-hint" && (!context.pageCompleted || !context.pageCatalogCompleted && (routeContext.requestedUrl !== parsed.url || !group.unlocked.has(parsed.url)))) return;
+       const route = findNative(group, parsed.host);
+       if (group.kind === "video") {
+         let matchesHeight = false;
+@@ -2009,7 +2119,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             activateGroup(group, sameHeight ? "consecutive-same-height-transfers" : "consecutive-video-transfers");
+           }
+         }
+-        observeAffinity(group, parsed, source);
++        observeAffinity(group, parsed, source, context);
+       }
+       if (!route) return;
+     }, "observeTransport");
+@@ -2044,8 +2154,31 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const routeContext = context?.route;
+       if (!routeContextActive(routeContext)) return { accepted: false, status: "stale" };
+       const group = groups.get(routeContext.groupId), parsed = parseEligibleUrl(url);
+-      if (!group || !parsed || !findNative(group, parsed.host)) return { accepted: false, status: "not-native" };
+-      if (source === "transport" && context.nativeCompletionRecorded !== `${group.id}:${parsed.host}`) {
++      if (!group || !parsed) return { accepted: false, status: "not-native" };
++      if (group.source === "page-hint") {
++        if (source === "transport" && group.unlocked.has(routeContext.requestedUrl) && context.routeDecision?.changed && context.routeDecision.type === "catalog-generated" && context.routeDecision.host === parsed.host && deps.TRUSTED_CDN_CATALOG_SET.has(parsed.host) && deps.replaceUrlHost?.(routeContext.requestedUrl, parsed.host) === parsed.url && Number.isSafeInteger(bytes) && bytes > 0) {
++          context.pageCompleted = true;
++          context.pageCatalogCompleted = true;
++          observeTransport(context, parsed.url, bytes, context.method || "fetch");
++          return { accepted: false, status: "catalog-observed" };
++        }
++        if (source !== "transport" || routeContext.requestedUrl !== parsed.url || !isKnownFamily(parsed.host) || !Number.isSafeInteger(bytes) || bytes <= 0 || !group.routes.some((route) => route.url === parsed.url)) return { accepted: false, status: "unverified" };
++        group.unlocked.add(parsed.url);
++        context.pageCompleted = true;
++        observeTransport(context, parsed.url, bytes, context.method || "fetch");
++        if (!plannedAffinity && activeRepresentation?.groupId === group.id) {
++          plannedAffinity = {
++            type: deps.TRUSTED_CDN_CATALOG_SET.has(parsed.host) ? "catalog-generated" : "native-signed",
++            host: parsed.host,
++            reason: "observed-original",
++            setAt: Date.now()
++          };
++        }
++        if (group.kind === "video" && activeRepresentation?.groupId === group.id) scheduleStartupSample(parsed.url);
++      }
++      if (!findNative(group, parsed.host)) return { accepted: false, status: "not-native" };
++      if (context.nativeCompletionRecorded === `${group.id}:${parsed.host}`) return { accepted: false, status: "duplicate" };
++      if (source === "transport") {
+         context.nativeCompletionRecorded = `${group.id}:${parsed.host}`;
+         const kind = group.kind === "audio" ? "audio" : "video";
+         const record = ensureRecordFromTransport(kind, parsed.host);
+@@ -2074,6 +2207,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       if (!routeContextActive(routeContext)) return false;
+       const group = groups.get(routeContext.groupId), parsed = parseEligibleUrl(url);
+       if (!group || !parsed || !findNative(group, parsed.host)) return false;
++      if (!routeEligible(group, group.routes.find((route) => route.url === parsed.url))) return false;
+       if ([403, 451, 959].includes(+status)) {
+         group.invalidHosts.add(parsed.host);
+         avoidedHosts.add(parsed.host);
+@@ -2107,7 +2241,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       const required = deps.getRequiredStreamMbps(void 0, "steady");
+       const catalogScore = fallback ? deps.getCdnHealthScore(fallback, { exploit: true }) : 0;
+-      const native = group.routes.filter((route) => route.host !== failedHost && !deps.TRUSTED_CDN_CATALOG_SET.has(route.host) && !group.invalidHosts.has(route.host)).map((route) => ({ route, record: recordFor("video", route.host) })).filter((entry) => entry.record && routeState("video", entry.route.host, group) !== "unknown" && !isSoftBlocked(entry.record)).map((entry) => ({ ...entry, score: scoreRecord(entry.record, required) })).sort((a, b) => b.score - a.score || a.route.order - b.route.order)[0];
++      const native = group.routes.filter((route) => routeEligible(group, route) && route.host !== failedHost && !deps.TRUSTED_CDN_CATALOG_SET.has(route.host) && !group.invalidHosts.has(route.host)).map((route) => ({ route, record: recordFor("video", route.host) })).filter((entry) => entry.record && routeState("video", entry.route.host, group) !== "unknown" && !isSoftBlocked(entry.record)).map((entry) => ({ ...entry, score: scoreRecord(entry.record, required) })).sort((a, b) => b.score - a.score || a.route.order - b.route.order)[0];
+       if (native && (!fallback || native.score >= catalogScore + STICKY_MARGIN)) {
+         return { type: "native-signed", host: native.route.host };
+       }
+@@ -2142,13 +2276,17 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       if (activeRepresentation?.groupId && groups.has(activeRepresentation.groupId)) return groups.get(activeRepresentation.groupId);
+       return null;
+     }, "getActiveGroup");
++    const canUseRouteSample = /* @__PURE__ */ __name((url) => {
++      const group = getActiveGroup(url), parsed = parseEligibleUrl(url);
++      return !!group && !!parsed && !group.ambiguous && group.epoch === deps.playinfoEpoch && group.routes.some((route) => route.url === parsed.url && routeEligible(group, route));
++    }, "canUseRouteSample");
+     const getNativeProbeCandidate = /* @__PURE__ */ __name((sampleUrl) => {
+       if (deps.resolvedCdn || deps.disabled) return null;
+       const group = getActiveGroup(sampleUrl);
+       if (!group || group.epoch !== deps.playinfoEpoch) return null;
+       const kind = "video";
+       const now = Date.now();
+-      const candidates = group.routes.filter((route2) => !deps.TRUSTED_CDN_CATALOG_SET.has(route2.host) && !group.invalidHosts.has(route2.host) && (isKnownFamily(route2.host) || recordFor(kind, route2.host)?.transportSamples > 0)).filter((route2) => !isSoftBlocked(recordFor(kind, route2.host))).filter((route2) => {
++      const candidates = group.routes.filter((route2) => routeEligible(group, route2) && !deps.TRUSTED_CDN_CATALOG_SET.has(route2.host) && !group.invalidHosts.has(route2.host) && (isKnownFamily(route2.host) || recordFor(kind, route2.host)?.transportSamples > 0)).filter((route2) => !isSoftBlocked(recordFor(kind, route2.host))).filter((route2) => {
+         const record = recordFor(kind, route2.host);
+         return !(record?.samples && record.lastThroughputAt && now - record.lastThroughputAt < SAMPLE_FRESH_MS);
+       }).sort((a, b) => {
+@@ -2163,6 +2301,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     const recordNativeProbe = /* @__PURE__ */ __name((candidate, result, latencyMs) => {
+       const group = candidate && groups.get(candidate.groupId);
+       if (!group || candidate.epoch !== deps.playinfoEpoch || !findNative(group, candidate.host)) return { accepted: false, status: "stale" };
++      if (!routeEligible(group, group.routes.find((route) => route.url === candidate.url))) return { accepted: false, status: "unverified" };
+       if (latencyMs) recordNativeLatency(group.id, candidate.host, latencyMs);
+       if (!result?.accepted) return result || { accepted: false, status: "failed" };
+       const sample = updateThroughput("video", candidate.host, result.bytes, result.durationMs, deps.playbackRateState.effectiveRate, "probe");
+@@ -2215,7 +2354,17 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         } : null,
+         routeRevision,
+         representationRevision,
+-        currentRouteType: routeAffinity?.type || plannedAffinity?.type || activeGroup?.currentRouteType || "catalog-generated",
++        observedHostChanges,
++        currentRouteType: routeAffinity?.type || plannedAffinity?.type || activeGroup?.currentRouteType || "unknown",
++        admission: {
++          pageGroups: [...groups.values()].filter((g) => g.source === "page-hint").length,
++          trustedGroups: [...groups.values()].filter((g) => g.source !== "page-hint").length,
++          unlockedUrls: [...groups.values()].reduce((n, g) => n + g.unlocked.size, 0),
++          pendingUrls: [...groups.values()].filter((g) => g.source === "page-hint").reduce((n, g) => n + g.routes.length - g.unlocked.size, 0),
++          ambiguousGroups: [...groups.values()].filter((g) => g.ambiguous).length,
++          startupScheduled,
++          waitingReason: !groups.size ? "no-playinfo" : !activeRepresentation ? "awaiting-video-completion" : "active"
++        },
+         currentHost: routeAffinity?.host || plannedAffinity?.host || activeGroup?.currentHost || null,
+         catalogFallback: activeGroup?.catalogFallback || deps.peekCurrentCdn(),
+         groupNativeCount: activeGroup ? activeGroup.routes.filter((route) => !deps.TRUSTED_CDN_CATALOG_SET.has(route.host)).length : 0,
+@@ -2240,6 +2389,10 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       clearLedger,
+       registerSignedRouteGroup,
+       applySignedRoutePlan,
++      planUnregisteredItem,
++      pageRepresentation,
++      retainAffinityForTrustedPlayinfo,
++      scheduleStartupSample,
+       captureRouteContext,
+       routeContextActive,
+       resolveRequestRoute,
+@@ -2252,6 +2405,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       setLastBakeoff,
+       beginRouteRecovery,
+       diagnostics,
++      canUseRouteSample,
++      getObservedRouteHost,
+       flushLedger: saveNow,
+       get activeRepresentation() {
+         return activeRepresentation;
+@@ -2670,6 +2825,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           deps.playbackRateState.effectiveRate,
+           "transport"
+         );
++        if (mediaContext?.pageCompleted) deps.observeMediaTransfer(mediaContext, xhr.responseURL || url, bytes, "xhr");
+         noteSegmentAccounted(url);
+         if (xhr.responseURL && xhr.responseURL !== url) noteSegmentAccounted(xhr.responseURL);
+       } catch {
+@@ -2726,11 +2882,13 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let mediaObservations = { video: null, audio: null, muxed: null, unknown: null };
+     let lastVideoTransportObservation = null;
+     let observedVideoRepresentation = null;
++    let pageAudioBps = 0;
+     let streamEstimate = { source: "unknown", codec: "other", height: 0, videoMbps: 0, audioMbps: 0 };
+     const resetMediaDelivery = /* @__PURE__ */ __name(() => {
+       mediaObservations = { video: null, audio: null, muxed: null, unknown: null };
+       lastVideoTransportObservation = null;
+       observedVideoRepresentation = null;
++      pageAudioBps = 0;
+     }, "resetMediaDelivery");
+     const resetRepresentationRegistry = /* @__PURE__ */ __name(() => {
+       playinfoEpoch++;
+@@ -2766,8 +2924,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         else registry.set(key, safeRep);
+       });
+     }, "registerMediaRepresentation");
+-    const rebuildRepresentationRegistry = /* @__PURE__ */ __name(() => {
+-      resetRepresentationRegistry();
++    const rebuildRepresentationRegistry = /* @__PURE__ */ __name((reset = true) => {
++      if (reset) resetRepresentationRegistry();
+       if (!streamProfile || !Array.isArray(streamProfile.reps)) return;
+       streamProfile.reps.forEach((rep) => {
+         if (!rep || !Number.isFinite(+rep.bandwidth) || +rep.bandwidth <= 0) return;
+@@ -2822,7 +2980,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         return;
+       }
+       const trustedHost = deps.TRUSTED_CDN_CATALOG_SET.has(host) ? host : null;
+-      const rep = lookupMediaRepresentation(url) === context.rep ? context.rep : null;
++      const pageRep = deps.pageRepresentation(context);
++      const rep = pageRep || (lookupMediaRepresentation(url) === context.rep ? context.rep : null);
+       const kind = rep && ["video", "audio", "muxed"].includes(rep.kind) ? rep.kind : "unknown";
+       const observation = {
+         host: trustedHost,
+@@ -2833,16 +2992,26 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         observedAt: Date.now(),
+         bytes,
+         generation: context.runtime.generation,
+-        epoch: context.epoch
++        epoch: context.epoch,
++        metadataSource: pageRep ? "page-hint" : "trusted-api"
+       };
+       const previous = mediaObservations[kind];
+       if (previous && previous.host === observation.host && previous.source === source) {
+         observation.bytes = Math.min(Number.MAX_SAFE_INTEGER, previous.bytes + bytes);
+       }
+       mediaObservations[kind] = observation;
++      if (pageRep && kind === "video" && mediaHeightMatches(rep)) {
++        observedVideoRepresentation = { ...rep, observedAt: Date.now() };
++        const audioBps = streamProfile?.audioBps || pageAudioBps;
++        if (!streamProfile || streamProfile.source === "page-hint") streamProfile = { reps: [rep], audioBps, source: "page-hint" };
++      }
++      if (pageRep && kind === "audio") {
++        pageAudioBps = Math.max(pageAudioBps, rep.bandwidth);
++        if (streamProfile?.source === "page-hint") streamProfile.audioBps = pageAudioBps;
++      }
+       if (kind === "video" && mediaHeightMatches(rep)) {
+         noteObservedVideoRepresentation(url, context);
+-        if (source === "fetch" || source === "xhr") {
++        if (!pageRep && (source === "fetch" || source === "xhr")) {
+           deps.Watchdog.noteVideoTransport(lastVideoTransportObservation, observation);
+           lastVideoTransportObservation = observation;
+         }
+@@ -2858,6 +3027,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         source: observation.source,
+         ageSec: Math.max(0, Math.round((Date.now() - observation.observedAt) / 1e3)),
+         bytes: observation.bytes,
++        metadataSource: observation.metadataSource || "unknown",
+         fresh: freshMediaObservation(observation)
+       } : { host: null, classification: "unknown", source: "none", ageSec: null, bytes: 0, fresh: false }
+     ])), "getMediaDeliverySnapshot");
+@@ -2938,6 +3108,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const total = bestBps + (streamProfile.audioBps || 0);
+       streamEstimate = {
+         source: estimateSource,
++        metadataSource: streamProfile.source || "trusted-api",
+         codec: selectedCodec,
+         height: Math.max(0, Math.trunc(h)),
+         videoMbps: +(bestBps / 1e6).toFixed(3),
+@@ -3660,63 +3831,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       return out;
+     }, "withOriginalStreamFallback");
+-    const transformStreamItem = /* @__PURE__ */ __name((item, isDash) => {
+-      if (!item) return false;
+-      isDash = isDash !== false;
+-      const { validUrls, akamaiUrl, biliSrcUrl, preferWhitelistPrimary } = pickStreamUrls(item, isDash);
+-      validUrls.forEach((u) => {
+-        try {
+-          const h = new URL(u).hostname;
+-          if (!deps.isUnstableCdnHost(h) && (h.endsWith(".bilivideo.com") || h.endsWith(".bilivideo.cn"))) {
+-            deps.noteDiscoveredCdn(h);
+-          }
+-        } catch {
+-        }
+-      });
+-      if (!akamaiUrl && biliSrcUrl) {
+-        try {
+-          const srcHost = new URL(biliSrcUrl).hostname;
+-          deps.noteDiscoveredCdn(srcHost);
+-        } catch {
+-        }
+-      }
+-      if (akamaiUrl && !preferWhitelistPrimary) {
+-        if (isDash) {
+-          item.base_url = akamaiUrl;
+-          item.baseUrl = akamaiUrl;
+-        } else {
+-          item.url = akamaiUrl;
+-        }
+-        const backups = withOriginalStreamFallback(buildBackupUrls(biliSrcUrl, akamaiUrl), biliSrcUrl, akamaiUrl);
+-        if (backups.length) {
+-          item.backup_url = backups;
+-          item.backupUrl = backups;
+-        }
+-      } else if (biliSrcUrl) {
+-        const bestCdn = deps.getCurrentCdn(deps.STARTUP_PICK);
+-        const primUrl = bestCdn ? rememberRewrittenStreamUrl(replaceUrlHost(biliSrcUrl, bestCdn), biliSrcUrl) : biliSrcUrl;
+-        if (primUrl) {
+-          if (isDash) {
+-            item.base_url = primUrl;
+-            item.baseUrl = primUrl;
+-          } else {
+-            item.url = primUrl;
+-          }
+-        }
+-        let backups = buildBackupUrls(biliSrcUrl, primUrl || biliSrcUrl);
+-        if (akamaiUrl && !backups.includes(akamaiUrl)) {
+-          backups.unshift(akamaiUrl);
+-        }
+-        backups = withOriginalStreamFallback(backups, biliSrcUrl, primUrl || biliSrcUrl);
+-        if (backups.length) {
+-          item.backup_url = backups;
+-          item.backupUrl = backups;
+-        }
+-      } else {
+-        return false;
+-      }
+-      return !!akamaiUrl;
+-    }, "transformStreamItem");
++    const transformStreamItem = /* @__PURE__ */ __name((item, isDash = true) => pickStreamUrls(item, isDash), "transformStreamItem");
+     return {
+       get normalizeMediaUrl() {
+         return normalizeMediaUrl;
+@@ -3751,6 +3866,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get replaceUrlHost() {
+         return replaceUrlHost;
+       },
++      get withOriginalStreamFallback() {
++        return withOriginalStreamFallback;
++      },
++      get buildBackupUrls() {
++        return buildBackupUrls;
++      },
+       get sanitizePlayInfoUrls() {
+         return sanitizePlayInfoUrls;
+       },
+@@ -4085,6 +4206,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       const nativeTransportSource = options?.trustedTransport === true;
+       if (nativeTransportSource) {
++        deps.retainAffinityForTrustedPlayinfo();
+         deps.clearCodecPlayinfo();
+         deps.resetRepresentationRegistry();
+         deps.streamEstimate = { source: "unknown", codec: "other", height: 0, videoMbps: 0, audioMbps: 0 };
+@@ -4102,9 +4224,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             "muxed",
+             deps.AUDIO_REGISTRY_MAX
+           );
+-          const routeGroup = nativeTransportSource ? deps.registerSignedRouteGroup(item, isDash, kind) : null;
+-          deps.transformStreamItem(item, isDash);
++          const routeGroup = deps.registerSignedRouteGroup(item, isDash, kind, nativeTransportSource ? "trusted-api" : "page-hint");
+           if (routeGroup) deps.applySignedRoutePlan(item, isDash, routeGroup);
++          else deps.planUnregisteredItem(item, isDash, nativeTransportSource);
+           if (nativeTransportSource && kind === "video" && !startupVideoSampleScheduled) {
+             const sample = item.base_url || item.baseUrl;
+             if (sample && deps.isBiliVideoUrl(sample) && !deps.isAkamaiUrl(sample)) {
+@@ -4121,7 +4243,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           if (playInfo.result.durl || playInfo.result.durls) video_info = playInfo.result;
+           if (video_info && video_info.durl) transformList(video_info.durl, false);
+           if (video_info && video_info.durls) video_info.durls.forEach((d) => transformList(d.durl, false));
+-          deps.sanitizePlayInfoUrls(video_info || playInfo.result);
+           return;
+         }
+       } else {
+@@ -4150,7 +4271,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+               audioReps: [...auds, ...[].concat(dash.flac?.audio || []), ...[].concat(dash.dolby?.audio || [])].filter((a) => a && typeof a === "object").map((a) => ({ bandwidth: a.bandwidth || 0, urls: deps.pickStreamUrls(a, true).validUrls }))
+             };
+             if (nativeTransportSource) {
+-              deps.rebuildRepresentationRegistry();
++              deps.rebuildRepresentationRegistry(false);
+               deps.setBufferTargetFromBitrate(maxV + maxA, is4K || maxV + maxA > 12e6);
+             }
+             dash.minBufferTime = minBuf;
+@@ -4163,11 +4284,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           transformList(dash.video, true, "video");
+           transformList(dash.audio, true, "audio");
+           transformList(extras, true, "audio");
+-          deps.sanitizePlayInfoUrls(dash);
+         } else if (video_info && (video_info.durl || video_info.durls)) {
+           transformList(video_info.durl, false);
+           (video_info.durls || []).forEach((d) => transformList(d.durl, false));
+-          deps.sanitizePlayInfoUrls(video_info);
+         }
+       } catch (e) {
+         if (video_info && video_info.durl) transformList(video_info.durl, false);
+@@ -4247,6 +4366,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           const urlStr = String(url);
+           playurlRequests.set(this, { runtime: deps.captureRuntimeGeneration(), url: urlStr, cache: null });
+           mediaRequests.set(this, deps.captureMediaRequest(urlStr));
++          mediaRequests.get(this).method = "xhr";
+           if (this._blockedTimer) {
+             clearTimeout(this._blockedTimer);
+             this._blockedTimer = null;
+@@ -4282,12 +4402,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             this._originalUrl = mappedOriginalUrl;
+             this._hostRewriteAttempt = mappedOriginalUrl !== urlStr;
+             const nativeRoute = deps.resolveRequestRoute(urlStr, mediaRequests.get(this));
++            mediaRequests.get(this).routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null;
+             const norm = nativeRoute ? {
+               url: nativeRoute.url,
+               changed: nativeRoute.url !== urlStr,
+-              originCdn: nativeRoute.host,
++              originCdn: deps.parseMediaHttpUrl(urlStr)?.hostname,
+               targetCdn: nativeRoute.host,
+-              nativeRoute: nativeRoute.type === "native-signed"
++              nativeRoute: nativeRoute.type === "native-signed",
++              restoredOriginal: nativeRoute.action === "restore"
+             } : deps.normalizeMediaUrl(urlStr);
+             this._originCdn = norm.originCdn || deps.getBiliVideoCdn(urlStr);
+             if (norm.changed) {
+@@ -4568,6 +4690,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+               deps.playbackRateState.effectiveRate,
+               "transport"
+             );
++            if (mediaContext?.pageCompleted) deps.observeMediaTransfer(mediaContext, res.url || effectiveUrl, counted, "fetch");
+           }
+           deps.recordCdnSuccess(cdn, fetchStartedAt);
+         }, "finishSuccess");
+@@ -4661,14 +4784,17 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         if (deps.isMediaSegmentUrl(urlStr)) {
+           const requestRuntimeToken = deps.captureRuntimeGeneration();
+           const mediaContext = deps.captureMediaRequest(urlStr, requestRuntimeToken);
++          mediaContext.method = "fetch";
+           const mappedOriginalUrl = deps.getOriginalStreamUrl(urlStr);
+           const nativeRoute = deps.resolveRequestRoute(urlStr, mediaContext);
++          mediaContext.routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null;
+           const norm = nativeRoute ? {
+             url: nativeRoute.url,
+             changed: nativeRoute.url !== urlStr,
+-            originCdn: nativeRoute.host,
++            originCdn: deps.parseMediaHttpUrl(urlStr)?.hostname,
+             targetCdn: nativeRoute.host,
+-            nativeRoute: nativeRoute.type === "native-signed"
++            nativeRoute: nativeRoute.type === "native-signed",
++            restoredOriginal: nativeRoute.action === "restore"
+           } : deps.normalizeMediaUrl(urlStr);
+           const hostRewriteAttempt = !norm.restoredOriginal && !norm.nativeRoute && (norm.changed || mappedOriginalUrl !== urlStr);
+           const targetCdn = norm.targetCdn || norm.originCdn || deps.getBiliVideoCdn(urlStr);
+@@ -5301,7 +5427,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+     ), "probeCdnThroughput");
+     const getPlayingCdnHost = /* @__PURE__ */ __name(() => {
+-      return deps.getAttributedVideoHost();
++      return deps.getObservedRouteHost() || deps.getAttributedVideoHost();
+     }, "getPlayingCdnHost");
+     const getWarmCdnHost = /* @__PURE__ */ __name(() => getPlayingCdnHost() || deps.resolvedCdn || deps.lastChosenCdn || deps.activeCdnList[0] || null, "getWarmCdnHost");
+     const STARTUP_MIN_BUFFER_SEC = 12;
+@@ -5324,7 +5450,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }, "skipped");
+       if (deps.disabled || deps.resolvedCdn || bakeoffRunning) return skipped(deps.disabled ? "disabled" : deps.resolvedCdn ? "fixed" : "busy");
+       if (deps.inSeekGrace()) return skipped("seek-grace");
+-      if (!sampleUrl || !deps.isBiliVideoUrl(sampleUrl) && !deps.getNativeProbeCandidate(sampleUrl)) return skipped("no-segment");
++      if (!sampleUrl || !deps.isBiliVideoUrl(sampleUrl) && !deps.canUseRouteSample(sampleUrl)) return skipped("no-segment");
+       if (deps.isHostLockedStream(sampleUrl)) return skipped("host-lock");
+       const runtimeToken = deps.captureRuntimeGeneration();
+       if (!deps.isRuntimeGenerationActive(runtimeToken)) return;
+@@ -5352,7 +5478,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const preCheckHost = getPlayingCdnHost() || getWarmCdnHost();
+       const preHealth = preCheckHost && deps.cdnHealth[preCheckHost];
+       if (skipIfFast && preHealth && preHealth.samples && preHealth.lastThroughputAt && Date.now() - preHealth.lastThroughputAt < THRPT_SAMPLE_FRESH_MS && preHealth.ewmaMbps >= deps.getRequiredStreamMbps(void 0, "startup") * 1.5) {
+-        return;
++        return skipped("healthy-cache");
+       }
+       if (navigator.locks && navigator.locks.request) {
+         return navigator.locks.request("bilicdn-bakeoff", { ifAvailable: true }, (lock) => {
+@@ -6933,11 +7059,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         "真正可選節點：" + (deps.getHealthyCdnList().map((c) => c.split(".")[0]).join(" > ") || "（無）"),
+         "黑名單（24h）：" + ([...deps.blacklistSet].map((c) => c.split(".")[0]).join(", ") || "（無）"),
+         "持久死節點：" + (deps.listDeadHosts().map((e) => e.host.split(".")[0] + "(" + e.reason + "，剩 " + e.daysLeft + "d)").join(", ") || "（無）"),
+-        "Route Affinity：" + native.currentRouteType + "｜" + routeHost + "（以影片 Transport 後態確認；representation 改變不等於換路）",
++        "路由狀態：" + native.currentRouteType + "｜" + routeHost + "（計畫與 Transport 觀察分列如下；representation 改變不等於換路）",
+         "Catalog 改寫建議：" + deps.getCdnShortName(),
+         "目前 representation：" + (native.active ? JSON.stringify(native.active) : "未確認") + "｜tentative=" + (native.tentative ? JSON.stringify(native.tentative) : "無") + "｜representationRevision=" + native.representationRevision + "｜routeRevision=" + native.routeRevision,
+         "Native Route：當前群組=" + native.groupNativeCount + "｜狀態=" + JSON.stringify(native.counts) + "｜Ledger=" + JSON.stringify(native.ledger),
+-        "路由後態：planned=" + JSON.stringify(native.plannedRoute) + "｜observed=" + JSON.stringify(native.lastObservedRoute) + "｜boundary=" + JSON.stringify(native.lastRouteBoundary) + "｜穩定性守門=" + JSON.stringify(native.suppressedSwitches),
++        "候選來源／解鎖：" + JSON.stringify(native.admission) + "（頁面候選只解鎖已成功的 exact URL；內建 Catalog 獨立參賽）",
++        "路由後態：planned=" + JSON.stringify(native.plannedRoute) + "｜本 epoch 觀察到的影片 host 變更=" + native.observedHostChanges + "｜observed=" + JSON.stringify(native.lastObservedRoute) + "｜boundary=" + JSON.stringify(native.lastRouteBoundary) + "｜穩定性守門=" + JSON.stringify(native.suppressedSwitches),
+         "最近 bakeoff 路線結果：" + JSON.stringify(native.lastBakeoff) + "（測速只更新評級）｜自動畫質原因=" + native.autoQualityReason,
+         ...["video", "audio"].map((kind) => {
+           const entry = deps.getMediaDeliverySnapshot()[kind];
+@@ -7590,7 +7717,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         },
+         mediaDelivery: deps.getMediaDeliverySnapshot(),
+         nativeRouting: {
+-          selectedRouteType: ["catalog-generated", "native-signed", "root-original"].includes(native.currentRouteType) ? native.currentRouteType : "catalog-generated",
++          selectedRouteType: ["catalog-generated", "native-signed", "root-original"].includes(native.currentRouteType) ? native.currentRouteType : "unknown",
++          admission: { ...native.admission },
++          catalogSuggestionMeaning: "currentCdn is a catalog suggestion, not an observed route",
+           routeRevision: Math.max(0, Math.trunc(publicFinite(native.routeRevision))),
+           representationRevision: Math.max(0, Math.trunc(publicFinite(native.representationRevision))),
+           activeRepresentation: native.active ? {
+@@ -7615,6 +7744,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         playbackQuality: { ...deps.playbackQualitySnapshot },
+         currentCodecConfigurations: deps.getCurrentCodecDiagnostics(),
+         streamEstimate: {
++          metadataSource: deps.streamEstimate.metadataSource || "unknown",
+           source: deps.streamEstimate.source === "observed-representation" ? "observed-representation" : deps.streamEstimate.source === "conservative-height-max" ? "conservative-height-max" : "unknown",
+           codec: ["av1", "hevc", "avc", "other"].includes(deps.streamEstimate.codec) ? deps.streamEstimate.codec : "other",
+           height: Math.max(0, Math.trunc(publicFinite(deps.streamEstimate.height))),
+@@ -7980,12 +8110,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       return deps.TrustedMenuUI.openActions({
+         title: "BiliCDN 控制中心",
+         paragraphs: [
+-          "狀態：" + (deps.disabled ? "停用" : "啟用") + "｜模式：" + (deps.resolvedCdn ? "固定" : "自動") + "｜選路建議：" + deps.getCdnShortName(),
++          "狀態：" + (deps.disabled ? "停用" : "啟用") + "｜模式：" + (deps.resolvedCdn ? "固定" : "自動") + "｜Catalog 建議：" + deps.getCdnShortName(),
+           "倍速：" + deps.playbackRateState.effectiveRate + "x（" + (deps.playbackRateState.confirmed ? "已確認" : "假定") + "）｜" + deps.describePlaybackBuffer(stats),
+-          "串流：" + deps.streamEstimate.videoMbps + "+" + deps.streamEstimate.audioMbps + " Mbps｜codec 排序首位：" + codecLead,
++          "串流：" + (deps.streamEstimate.source === "unknown" ? "尚無資料" : deps.streamEstimate.videoMbps + "+" + deps.streamEstimate.audioMbps + " Mbps") + "｜codec 排序首位：" + codecLead,
+           "Representation：" + rep + "｜觀察路線：" + native.currentRouteType + "｜Catalog fallback：" + (native.catalogFallback ? native.catalogFallback.split(".")[0] : "無"),
+           "計畫路線：" + (native.plannedRoute ? native.plannedRoute.type + "/" + native.plannedRoute.host.split(".")[0] : "尚未建立") + "｜最近合法邊界：" + (native.lastRouteBoundary?.reason || "無"),
+           "Native 評級：本群組 " + native.groupNativeCount + " 條｜confirmed=" + native.counts.confirmed + "｜probe-qualified=" + (native.counts.probeQualified || 0) + "｜unknown=" + native.counts.unknown,
++          "播放資料：API " + native.admission.trustedGroups + " 組／頁面 " + native.admission.pageGroups + " 組｜已解鎖 URL：" + native.admission.unlockedUrls + "｜等待：" + native.admission.waitingReason,
++          "內建 Catalog 獨立參賽；頁面只限制 Native 來源。每輪最多四個候選，Native 最多一個名額。",
+           "異常節點：" + abnormal + "｜HTTPDNS：" + httpdns.mode
+         ],
+         items: [
+@@ -8068,7 +8200,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         const rate = (deps.playbackRateState.confirmed ? deps.playbackRateState.observedRate : deps.ASSUMED_PLAYBACK_RATE) + "x" + (deps.playbackRateState.confirmed ? "" : "（未確認，按 2x 估算）");
+         const softCount = Object.keys(deps.cdnSoftBlockUntil).filter(deps.isCdnSoftBlocked).length;
+         const abnormalCount = deps.blacklistSet.size + deps.knownDeadHosts.size + softCount;
+-        let html = '<div style="color:#4fc3f7;">' + mode + "｜" + deps.getCdnShortName() + "｜" + rate + '</div><div style="margin-top:3px;color:#90caf9;font-size:10px;">' + bufferText + "</div>";
++        let html = '<div style="color:#4fc3f7;">' + mode + "｜Catalog 建議：" + deps.getCdnShortName() + "｜" + rate + '</div><div style="margin-top:3px;color:#90caf9;font-size:10px;">' + bufferText + "</div>";
+         if (abnormalCount > 0) {
+           html += '<div style="color:#ffb74d;margin-top:2px;">異常節點：' + abnormalCount + "（請由控制中心查看）</div>";
+         }
+@@ -8801,6 +8933,21 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get onActiveRepresentation() {
+         return (sampleUrl) => bakeoff.noteActiveSample(sampleUrl);
+       },
++      get scheduleObservedSample() {
++        return (sampleUrl) => bakeoff.scheduleBakeoff(sampleUrl);
++      },
++      get buildBackupUrls() {
++        return rewrite.buildBackupUrls;
++      },
++      get preserveOriginalFallback() {
++        return rewrite.withOriginalStreamFallback;
++      },
++      get normalizeMediaUrl() {
++        return rewrite.normalizeMediaUrl;
++      },
++      get decideMediaRewrite() {
++        return rewrite.decideMediaRewrite;
++      },
+       get replaceUrlHost() {
+         return rewrite.replaceUrlHost;
+       }
+@@ -8938,6 +9085,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get captureNativeRouteContext() {
+         return nativeRoutes.captureRouteContext;
+       },
++      get pageRepresentation() {
++        return nativeRoutes.pageRepresentation;
++      },
+       get observeNativeTransport() {
+         return nativeRoutes.observeTransport;
+       }
+@@ -9127,7 +9277,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         return mediaPolicy.isAkamaiUrl;
+       },
+       get scheduleBakeoff() {
+-        return bakeoff.scheduleBakeoff;
++        return nativeRoutes.scheduleStartupSample;
+       },
+       get err() {
+         return events.err;
+@@ -9141,11 +9291,20 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get registerSignedRouteGroup() {
+         return nativeRoutes.registerSignedRouteGroup;
+       },
++      get retainAffinityForTrustedPlayinfo() {
++        return nativeRoutes.retainAffinityForTrustedPlayinfo;
++      },
++      get planUnregisteredItem() {
++        return nativeRoutes.planUnregisteredItem;
++      },
+       get applySignedRoutePlan() {
+         return nativeRoutes.applySignedRoutePlan;
+       }
+     });
+     transport = createTransport({
++      get parseMediaHttpUrl() {
++        return mediaPolicy.parseMediaHttpUrl;
++      },
+       get disabled() {
+         return runtime.disabled;
+       },
+@@ -9498,6 +9657,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get recordNativeProbe() {
+         return nativeRoutes.recordNativeProbe;
+       },
++      get canUseRouteSample() {
++        return nativeRoutes.canUseRouteSample;
++      },
++      get getObservedRouteHost() {
++        return nativeRoutes.getObservedRouteHost;
++      },
+       get setNativeBakeoffDiagnostics() {
+         return nativeRoutes.setLastBakeoff;
+       }

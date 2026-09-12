@@ -82,7 +82,7 @@ export function createPlayerPanel(deps) {
             const softCount = Object.keys(deps.cdnSoftBlockUntil).filter(deps.isCdnSoftBlocked).length
             const abnormalCount = deps.blacklistSet.size + deps.knownDeadHosts.size + softCount
             let html = '<div style="color:#4fc3f7;">'
-                + mode + '｜' + deps.getCdnShortName() + '｜' + rate
+                + mode + '｜Catalog 建議：' + deps.getCdnShortName() + '｜' + rate
                 + '</div>'
                 + '<div style="margin-top:3px;color:#90caf9;font-size:10px;">'
                 + bufferText + '</div>'
