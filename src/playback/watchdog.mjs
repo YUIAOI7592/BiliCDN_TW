@@ -310,8 +310,12 @@ const Watchdog = (() => {
     const tick = () => {
         if (deps.disabled) { deps.DiagnosticLog.setDecision('disabled'); return }
         const v = getVideo()
-        if (!v) { deps.resetPlaybackRateState(); stallCount = 0; interruptRecovery(); deps.DiagnosticLog.setDecision('no-video'); return }
+        if (!v) {
+            deps.VideoCoreRecovery?.tick(null, { available: false, valid: false })
+            deps.resetPlaybackRateState(); stallCount = 0; interruptRecovery(); deps.DiagnosticLog.setDecision('no-video'); return
+        }
         const playback = deps.readPlaybackDiagnostic(v)
+        deps.VideoCoreRecovery?.tick(v, playback)
         const unavailable = !playback.valid ? 'invalid-state'
             : playback.errorCode ? 'media-error'
             : playback.ended || (playback.duration > 0 && playback.currentTime >= playback.duration) ? 'ended'
@@ -564,6 +568,9 @@ const Watchdog = (() => {
             switchTimes = []; switchBreakerUntil = 0; burstPunished = []; switchGraceUntil = 0
             cachedVideo = null
             Object.keys(perCdnBytes).forEach(k => delete perCdnBytes[k])
+        },
+        checkNow() {
+            try { tick() } catch { deps.DiagnosticLog.fault('watchdog') }
         },
         stats() {
             const state = deps.readPlaybackDiagnostic()

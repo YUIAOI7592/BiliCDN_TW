@@ -155,13 +155,17 @@ class FakeDocument extends FakeEventTarget {
         super()
         this._closedShadowRoots = new WeakMap()
         this.readyState = 'loading'
-        this.hidden = false
-        this.visibilityState = 'visible'
+        this._hidden = false
+        this._visibilityState = 'visible'
         this.activeElement = null
         this.head = new FakeElement('head', this)
         this.body = new FakeElement('body', this)
         this.documentElement = new FakeElement('html', this)
     }
+    get hidden() { return this._hidden }
+    set hidden(value) { this._hidden = !!value }
+    get visibilityState() { return this._visibilityState }
+    set visibilityState(value) { this._visibilityState = String(value) }
     createElement(tag) {
         const el = new FakeElement(tag, this)
         if (tag === 'template') el.content = { firstElementChild: new FakeElement('div', this) }

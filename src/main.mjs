@@ -1,4 +1,5 @@
 import { createSettings } from './config.mjs';
+import { createStartup } from './playback/startup.mjs';
 import { createEvents } from './diagnostics/events.mjs';
 import { createRuntime } from './runtime/generation.mjs';
 import { createCatalog } from './policy/catalog.mjs';
@@ -14,6 +15,7 @@ import { createRewrite } from './policy/rewrite.mjs';
 import { createCodec } from './playback/codec.mjs';
 import { createPlayurl } from './playback/playurl.mjs';
 import { createPlayerManifest } from './playback/player-manifest.mjs';
+import { createVideoCoreRecovery } from './playback/video-core-recovery.mjs';
 import { createTransport } from './transport/interceptors.mjs';
 import { createFailures } from './routing/failures.mjs';
 import { createDom } from './ui/dom.mjs';
@@ -45,6 +47,7 @@ let rewrite;
 let codec;
 let playurl;
 let playerManifest;
+let videoCoreRecovery;
 let transport;
 let failures;
 let dom;
@@ -60,6 +63,10 @@ let snapshot;
 let catalogControls;
 let views;
 let application;
+const startup = createStartup({
+    get inSeekGrace() { return rate.inSeekGrace; },
+    get DiagnosticLog() { return events.DiagnosticLog; }
+});
 const hostAccess = createHostAccess({
 get matchesExclude() { return catalog.matchesExclude; },
 get initialDead() { return catalog.INITIAL_DEAD_HOSTS_TW; },
@@ -79,6 +86,8 @@ get TRUSTED_CDN_CATALOG_SET() { return catalog.TRUSTED_CDN_CATALOG_SET; },
 get mediaContextActive() { return media.mediaContextActive; }
 });
 runtime = createRuntime({
+get resetStartup() { return startup.reset; },
+get resetVideoCoreRecovery() { return videoCoreRecovery?.reset; },
 get DiagnosticLog() { return events.DiagnosticLog; },
 get playinfoEpoch() { return media.playinfoEpoch; },
 get resetMediaDelivery() { return media.resetMediaDelivery; },
@@ -115,6 +124,8 @@ get CustomCDN() { return settings.CustomCDN; },
 get PluginName() { return events.PluginName; }
 });
 nativeRoutes = createNativeRoutes({
+get STARTUP_PICK() { return health.STARTUP_PICK; },
+get preconnectCdn() { return hints.preconnectCdn; },
 get noteHostDiscovery() { return hostAccess.discover; },
 get isHostAllowed() { return hostAccess.allowed; },
 get noteHostRestriction() { return hostAccess.note; },
@@ -374,6 +385,7 @@ get softBlockCdn() { return health.softBlockCdn; },
 get cdnHealth() { return health.cdnHealth; }
 });
 bakeoff = createBakeoff({
+get startup() { return startup; },
 get isHostAllowed() { return hostAccess.allowed; },
 get captureRuntimeGeneration() { return runtime.captureRuntimeGeneration; },
 get isRuntimeGenerationActive() { return runtime.isRuntimeGenerationActive; },
@@ -433,6 +445,8 @@ get matchesExclude() { return catalog.matchesExclude; },
 get isPresumedDnsFailHost() { return health.isPresumedDnsFailHost; }
 });
 probe = createProbe({
+get startup() { return startup; },
+get DiagnosticLog() { return events.DiagnosticLog; },
 get isHostAllowed() { return hostAccess.allowed; },
 get activeCdnList() { return health.activeCdnList; },
 get cdnHealth() { return health.cdnHealth; },
@@ -459,7 +473,21 @@ get probeCdnLatency() { return latency.probeCdnLatency; },
 get log() { return events.log; },
 get getHealthyCdnList() { return health.getHealthyCdnList; }
 });
+videoCoreRecovery = createVideoCoreRecovery({
+get runtimeGeneration() { return runtime.runtimeGeneration; },
+get playinfoEpoch() { return media.playinfoEpoch; },
+get getMediaDeliverySnapshot() { return media.getMediaDeliverySnapshot; },
+get playbackQualitySnapshot() { return media.playbackQualitySnapshot; },
+get inspectPlayerLiveness() { return playerManifest.inspectLiveness; },
+get getPlayer() { return () => { try { return unsafeWindow.player } catch { return null } }; },
+get beginRouteRecovery() { return nativeRoutes.beginRouteRecovery; },
+get getNativeRouteDiagnostics() { return nativeRoutes.diagnostics; },
+get getAttributedVideoHost() { return media.getAttributedVideoHost; },
+get resolvedCdn() { return health.resolvedCdn; },
+get DiagnosticLog() { return events.DiagnosticLog; }
+});
 watchdog = createWatchdog({
+get VideoCoreRecovery() { return videoCoreRecovery; },
 get cdnHealth() { return health.cdnHealth; },
 get cdnSoftBlockUntil() { return health.cdnSoftBlockUntil; },
 get activeCdnList() { return health.activeCdnList; },
@@ -516,6 +544,8 @@ trustedUI = createTrustedUI({
 get Watchdog() { return { getVideo: watchdog.Watchdog.getVideo }; }
 });
 report = createReport({
+get startupSummary() { return startup.summary; },
+get videoCoreSummary() { return videoCoreRecovery.summary; },
 get getPagePlayInfoLifecycle() { return application?.getPagePlayInfoLifecycle || (() => ({ state: 'no-new-assignment', timing: 'initial', updatedAt: 0 })); },
 get getPlayerManifestDiagnostics() { return playerManifest.diagnostics; },
 get resolvedCdn() { return health.resolvedCdn; },
@@ -613,6 +643,8 @@ get matchesExclude() { return catalog.matchesExclude; },
 get getHealthyCdnList() { return health.getHealthyCdnList; }
 });
 snapshot = createSnapshot({
+get startupSummary() { return startup.summary; },
+get videoCoreSummary() { return videoCoreRecovery.summary; },
 get getPagePlayInfoLifecycle() { return application?.getPagePlayInfoLifecycle || (() => ({ state: 'no-new-assignment', timing: 'initial', updatedAt: 0 })); },
 get getPlayerManifestDiagnostics() { return playerManifest.diagnostics; },
 get hostRestrictionSummary() { return hostAccess.summary; },
@@ -714,6 +746,9 @@ get getPlayerManifestDiagnostics() { return playerManifest.diagnostics; }
 });
 if (typeof GM_registerMenuCommand === 'function') views.registerControlMenu(GM_registerMenuCommand);
 application = createApplication({
+get startup() { return startup; },
+get noteForegroundVisible() { return videoCoreRecovery.noteForeground; },
+get wakeWatchdog() { return watchdog.Watchdog.checkNow; },
 get interceptNetResponse() { return transport.interceptNetResponse; },
 get disabled() { return runtime.disabled; }, set disabled(value) { runtime.disabled = value; },
 get isPlayUrlApi() { return catalog.isPlayUrlApi; },

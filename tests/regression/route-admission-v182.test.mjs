@@ -145,7 +145,9 @@ test('v182 uninstrumented Akamai-only page starts catalog measurements within th
  const p=payload();p.data.dash.video[0].base_url=url(A);p.data.dash.video[0].backup_url=[]
  const h=F.load({instrument:false,pageGlobals:{__playinfo__:p},fetchImpl:async()=>new Response(new Uint8Array(384*1024),{status:206})})
  const v=F.video(h,1080);v.paused=false
- await F.consume(h,url(A));await h.timers.advanceAsync(5000)
+ await F.consume(h,url(A))
+ for(let tick=1;tick<=4;tick++){v.currentTime=tick;await h.timers.advanceAsync(1000)}
+ await h.timers.advanceAsync(2000)
  const probes=h.fetchCalls.filter(c=>new Headers(c.init?.headers).has('Range'))
  assert.ok(probes.length>0);assert.ok(probes.length<=4)
  assert.ok(probes.some(c=>new URL(c.url).hostname.endsWith('.bilivideo.com')))

@@ -1,12 +1,12 @@
 {
-  "version": "1.9.0",
+  "version": "1.9.2",
   "artifactName": "BiliCDN_TW.user.js",
-  "previousVersion": "1.8.9",
-  "previousPath": "Release/v1.8.9/BiliCDN_TW.user.js",
+  "previousVersion": "1.9.0",
+  "previousPath": "Release/v1.9.0/BiliCDN_TW.user.js",
   "upstreamVersion": "1.3.4",
   "nodeVersion": "26.8.1",
   "npmVersion": "11.19.0",
   "esbuildVersion": "0.28.2",
-  "previousSha256": "c2f0db083c7821326d20a6d7dfc9b4e9dc010773756ef4a557c545c65fa7d3f3",
+  "previousSha256": "f7628173de6fce49bd8606ac31ab647a7bd02152bc6ab6b93c437524ead74f9f",
   "upstreamSha256": "acaa3d61c169a0a39ef403d7442e1decc1b20540ea9ada3e8cf5e459bb88f579"
 }

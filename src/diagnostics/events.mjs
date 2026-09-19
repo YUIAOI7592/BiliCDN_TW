@@ -10,7 +10,7 @@ const DiagnosticLog = (() => {
     const encoder = new TextEncoder()
     const codes = new Set(('runtime verbose settings-read settings-write settings-verify exception '
         + 'request headers body eof no-body http network-error body-error abort reopened detached '
-        + 'rewrite measurement watchdog recovery breaker host-lock clipboard sample route-blocked').split(' '))
+        + 'rewrite measurement watchdog recovery breaker host-lock clipboard sample route-blocked startup-measurement video-core').split(' '))
     const enums = new Set(('fetch xhr video audio muxed unknown non-catalog headers body '
         + 'settings-read settings-write settings-verify startup active disabled spa epoch '
         + 'interceptor transform fetch-body playurl-body playurl-clone measurement watchdog snapshot '
@@ -21,13 +21,15 @@ const DiagnosticLog = (() => {
         + 'attempt progress no-progress interrupted no-attribution attributed received httpdns '
         + 'accepted skipped complete cancelled failed timeout partial latency-only '
         + 'http network-error body-error abort eof no-body reopened detached automatic manual '
-        + 'fixed no-segment busy hidden not-applicable host-lock forbidden insufficient ineligible host-restricted').split(' '))
+        + 'fixed no-segment busy hidden not-applicable host-lock forbidden insufficient ineligible host-restricted '
+        + 'latency throughput waiting menu verified-failure startup-exhausted startup-waiting healthy-cache '
+        + 'waiting-metadata video-init-dead reloading recovered reload-failed unavailable core-uninitialized').split(' '))
     const keys = new Set(('generation epoch id method kind originalHost targetHost finalHost host '
         + 'status bytes startAt responseAt endAt ageMs phase stage reason enabled persisted '
         + 'readyState networkState currentTime duration bufferAheadSec observedRate effectiveRate '
         + 'paused seeking ended available valid errorCode hidden waitMs count remainingMs remainingSec '
         + 'punished reselected preconnect requested received switchCount stallCount breakerSec '
-        + 'outcome actionId').split(' '))
+        + 'outcome actionId playableSec progressTicks coreInitialized resumeToken reloadCount videoAgeSec audioAgeSec').split(' '))
     const state = { startedAt: Date.now(), verboseChangedAt: Date.now(), persisted: null,
         evicted: 0, expired: 0, rejected: 0, pendingEvicted: 0, failures: 0 }
     let seq = 0, nextRequest = 0, lastSampleAt = 0

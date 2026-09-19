@@ -1,0 +1,1103 @@
+diff --git a/Release/v1.9.0/BiliCDN_TW.user.js b/Release/v1.9.2/BiliCDN_TW.user.js
+index 9e2eac1..546361a 100644
+--- a/Release/v1.9.0/BiliCDN_TW.user.js
++++ b/Release/v1.9.2/BiliCDN_TW.user.js
+@@ -1,7 +1,7 @@
+ // ==UserScript==
+ // @name         Bilibili CDN 台灣優化
+ // @namespace    BiliCDN_TW
+-// @version      1.9.0
++// @version      1.9.2
+ // @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+ // @author       jiyunshi <chocosensei214@gmail.com>
+ // @license      MIT
+@@ -83,7 +83,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let BlockHttpDNS = input.BlockHttpDNS;
+     let PreferredVideoCodec = input.PreferredVideoCodec;
+     let BlockWebRTC = input.BlockWebRTC;
+-    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.9.0";
++    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.9.2";
+     const parseVer = /* @__PURE__ */ __name((v) => String(v || "0").split(".").map((n) => parseInt(n, 10) || 0), "parseVer");
+     const verGte = /* @__PURE__ */ __name((a, b) => {
+       const A = parseVer(a), B = parseVer(b);
+@@ -133,6 +133,92 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+   }
+   __name(createSettings, "createSettings");
+ 
++  // src/playback/startup.mjs
++  function createStartup(deps) {
++    let video = null, previous = null, ticks = 0, safe = false, reason = "no-video";
++    let healthAvailable = false, cacheAvailable = false;
++    const measurements = { latency: null, throughput: null };
++    const listeners = /* @__PURE__ */ new Set();
++    let playableSec = null;
++    const notify = /* @__PURE__ */ __name(() => {
++      if (!safe) for (const fn of [...listeners]) {
++        try {
++          fn();
++        } catch {
++        }
++      }
++    }, "notify");
++    const reset = /* @__PURE__ */ __name(() => {
++      video = null;
++      previous = null;
++      ticks = 0;
++      safe = false;
++      reason = "no-video";
++      playableSec = null;
++      healthAvailable = cacheAvailable = false;
++      measurements.latency = measurements.throughput = null;
++      notify();
++    }, "reset");
++    const update = /* @__PURE__ */ __name((v, s) => {
++      if (v !== video) {
++        video = v;
++        previous = null;
++        ticks = 0;
++      }
++      const valid = s?.available && s.valid && Number.isFinite(s.currentTime) && Number.isFinite(s.bufferAheadSec);
++      const rate = Number.isFinite(s?.effectiveRate) && s.effectiveRate > 0 ? s.effectiveRate : 2;
++      playableSec = valid ? Math.max(0, s.bufferAheadSec / rate) : null;
++      const eligible = valid && !s.paused && !s.seeking && !s.ended && s.errorCode === 0 && !deps.inSeekGrace();
++      ticks = eligible && previous !== null && s.currentTime - previous > 0.05 ? Math.min(2, ticks + 1) : 0;
++      previous = eligible ? s.currentTime : null;
++      const toEnd = valid && Number.isFinite(s.duration) && s.duration > 0 && s.currentTime + s.bufferAheadSec >= s.duration - 0.1 && s.currentTime <= s.duration + 0.1;
++      reason = !s?.available ? "no-video" : !valid ? "invalid-state" : s.errorCode !== 0 ? "media-error" : s.ended ? "ended" : s.paused ? "paused" : s.seeking || deps.inSeekGrace() ? "seek-grace" : ticks < 2 ? "no-progress" : playableSec < 12 && !toEnd ? "low-data" : "healthy";
++      safe = eligible && ticks === 2 && (playableSec >= 12 || toEnd);
++      notify();
++    }, "update");
++    const note = /* @__PURE__ */ __name((kind, outcome, count = 0, mode = "automatic") => {
++      const next = { outcome, reason, count, mode };
++      const old = measurements[kind];
++      measurements[kind] = next;
++      if (!old || old.outcome !== outcome || old.reason !== reason || old.mode !== mode) {
++        deps.DiagnosticLog.record("startup-measurement", {
++          kind,
++          outcome,
++          reason,
++          count,
++          phase: mode,
++          playableSec,
++          progressTicks: ticks
++        }, true);
++      }
++    }, "note");
++    return {
++      reset,
++      update,
++      note,
++      allowed: /* @__PURE__ */ __name(() => safe && !deps.inSeekGrace(), "allowed"),
++      watch: /* @__PURE__ */ __name((fn) => {
++        listeners.add(fn);
++        return () => listeners.delete(fn);
++      }, "watch"),
++      availability: /* @__PURE__ */ __name((health, cache) => {
++        healthAvailable = !!health;
++        cacheAvailable = !!cache;
++      }, "availability"),
++      summary: /* @__PURE__ */ __name(() => ({
++        safe,
++        reason,
++        playableSec,
++        progressTicks: ticks,
++        healthAvailable,
++        cacheAvailable,
++        latency: measurements.latency && { ...measurements.latency },
++        throughput: measurements.throughput && { ...measurements.throughput }
++      }), "summary")
++    };
++  }
++  __name(createStartup, "createStartup");
++
+   // src/diagnostics/events.mjs
+   function createEvents(deps) {
+     const PluginName = "BiliCDN_TW_v" + deps.VERSION;
+@@ -141,9 +227,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const critical = [], detail = [], pending = /* @__PURE__ */ new Map();
+       const TTL = 15 * 60 * 1e3;
+       const encoder = new TextEncoder();
+-      const codes = new Set("runtime verbose settings-read settings-write settings-verify exception request headers body eof no-body http network-error body-error abort reopened detached rewrite measurement watchdog recovery breaker host-lock clipboard sample route-blocked".split(" "));
+-      const enums = new Set("fetch xhr video audio muxed unknown non-catalog headers body settings-read settings-write settings-verify startup active disabled spa epoch interceptor transform fetch-body playurl-body playurl-clone measurement watchdog snapshot health-save clipboard-gm clipboard-standard clipboard-manual page-hook ui no-video invalid-state no-metadata media-error ended paused seeking seek-grace background-gap player-nudge nudge-grace startup-grace switch-grace target-reached healthy low-data buffered-stall too-slow stall-count cooldown breaker attempt progress no-progress interrupted no-attribution attributed received httpdns accepted skipped complete cancelled failed timeout partial latency-only http network-error body-error abort eof no-body reopened detached automatic manual fixed no-segment busy hidden not-applicable host-lock forbidden insufficient ineligible host-restricted".split(" "));
+-      const keys = new Set("generation epoch id method kind originalHost targetHost finalHost host status bytes startAt responseAt endAt ageMs phase stage reason enabled persisted readyState networkState currentTime duration bufferAheadSec observedRate effectiveRate paused seeking ended available valid errorCode hidden waitMs count remainingMs remainingSec punished reselected preconnect requested received switchCount stallCount breakerSec outcome actionId".split(" "));
++      const codes = new Set("runtime verbose settings-read settings-write settings-verify exception request headers body eof no-body http network-error body-error abort reopened detached rewrite measurement watchdog recovery breaker host-lock clipboard sample route-blocked startup-measurement video-core".split(" "));
++      const enums = new Set("fetch xhr video audio muxed unknown non-catalog headers body settings-read settings-write settings-verify startup active disabled spa epoch interceptor transform fetch-body playurl-body playurl-clone measurement watchdog snapshot health-save clipboard-gm clipboard-standard clipboard-manual page-hook ui no-video invalid-state no-metadata media-error ended paused seeking seek-grace background-gap player-nudge nudge-grace startup-grace switch-grace target-reached healthy low-data buffered-stall too-slow stall-count cooldown breaker attempt progress no-progress interrupted no-attribution attributed received httpdns accepted skipped complete cancelled failed timeout partial latency-only http network-error body-error abort eof no-body reopened detached automatic manual fixed no-segment busy hidden not-applicable host-lock forbidden insufficient ineligible host-restricted latency throughput waiting menu verified-failure startup-exhausted startup-waiting healthy-cache waiting-metadata video-init-dead reloading recovered reload-failed unavailable core-uninitialized".split(" "));
++      const keys = new Set("generation epoch id method kind originalHost targetHost finalHost host status bytes startAt responseAt endAt ageMs phase stage reason enabled persisted readyState networkState currentTime duration bufferAheadSec observedRate effectiveRate paused seeking ended available valid errorCode hidden waitMs count remainingMs remainingSec punished reselected preconnect requested received switchCount stallCount breakerSec outcome actionId playableSec progressTicks coreInitialized resumeToken reloadCount videoAgeSec audioAgeSec".split(" "));
+       const state = {
+         startedAt: Date.now(),
+         verboseChangedAt: Date.now(),
+@@ -389,6 +475,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       return timer;
+     }, "scheduleRuntimeTimeout");
+     const stopRuntimeGeneration = /* @__PURE__ */ __name(() => {
++      deps.resetStartup?.();
++      deps.resetVideoCoreRecovery?.();
+       runtimeGeneration++;
+       deps.DiagnosticLog.boundary(runtimeGeneration, deps.playinfoEpoch, disabled ? "disabled" : "active");
+       deps.resetMediaDelivery();
+@@ -1678,7 +1766,24 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let observedHostChanges = 0;
+     let lastRouteBoundary = null;
+     let suppressedSwitches = { probeHealthy: 0, representation: 0 };
+-    let avoidedHosts = /* @__PURE__ */ new Set();
++    let avoidedHosts = /* @__PURE__ */ new Map();
++    const avoidHost = /* @__PURE__ */ __name((host, durationMs = Infinity) => {
++      host = safeHost(host);
++      if (!host) return false;
++      const until = Number.isFinite(durationMs) ? Date.now() + Math.max(0, durationMs) : Infinity;
++      avoidedHosts.set(host, until);
++      return true;
++    }, "avoidHost");
++    const isHostAvoided = /* @__PURE__ */ __name((host) => {
++      host = safeHost(host);
++      if (!host || !avoidedHosts.has(host)) return false;
++      const until = avoidedHosts.get(host);
++      if (until !== Infinity && until <= Date.now()) {
++        avoidedHosts.delete(host);
++        return false;
++      }
++      return true;
++    }, "isHostAvoided");
+     let pageExact = /* @__PURE__ */ new Map();
+     let generatedExact = /* @__PURE__ */ new Map();
+     let candidateSerial = 0;
+@@ -1767,7 +1872,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       lastObservedRoute = null;
+       lastRouteBoundary = null;
+       observedHostChanges = 0;
+-      avoidedHosts = /* @__PURE__ */ new Set();
++      avoidedHosts = /* @__PURE__ */ new Map();
+       suppressedSwitches = { probeHealthy: 0, representation: 0 };
+       lastAutoQualityReason = "epoch-reset";
+       routeRevision++;
+@@ -1911,6 +2016,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const changed = !plannedAffinity || plannedAffinity.type !== next.type || plannedAffinity.host !== next.host || !!plannedAffinity.enforced !== !!enforced;
+       plannedAffinity = { type: next.type, host: next.host, setAt: Date.now(), reason, enforced: !!enforced };
+       if (changed) {
++        if (next.type === "catalog-generated") deps.preconnectCdn?.(next.host, false);
+         lastPlannedRoute = { ...plannedAffinity, revision: ++routeRevision };
+       }
+     }, "setPlannedAffinity");
+@@ -1950,7 +2056,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         return null;
+       }
+       const transformed = rawUrls(item, isDash).filter((value) => typeof value === "string");
+-      const legacyPrimary = deps.replaceUrlHost?.(group.rootOriginal, deps.resolvedCdn || deps.peekCurrentCdn()) || group.rootOriginal;
++      const legacyPrimary = deps.replaceUrlHost?.(group.rootOriginal, deps.resolvedCdn || deps.peekCurrentCdn(deps.STARTUP_PICK)) || group.rootOriginal;
+       const legacyHost = (() => {
+         try {
+           return new URL(legacyPrimary).hostname;
+@@ -1958,7 +2064,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           return null;
+         }
+       })();
+-      group.catalogFallback = deps.TRUSTED_CDN_CATALOG_SET.has(legacyHost) ? legacyHost : deps.peekCurrentCdn();
++      group.catalogFallback = deps.TRUSTED_CDN_CATALOG_SET.has(legacyHost) ? legacyHost : deps.peekCurrentCdn(deps.STARTUP_PICK);
+       let primary = legacyPrimary;
+       let primaryType = deps.TRUSTED_CDN_CATALOG_SET.has(legacyHost) ? "catalog-generated" : "root-original";
+       let primaryHost = legacyHost;
+@@ -1979,7 +2085,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+               primaryType = "native-signed";
+               primaryHost = retained.host;
+             } else {
+-              const fallback = group.catalogFallback || deps.peekCurrentCdn();
++              const fallback = group.catalogFallback || deps.peekCurrentCdn(deps.STARTUP_PICK);
+               if (fallback) setPlannedAffinity({ type: "catalog-generated", host: fallback }, "native-unavailable", true);
+               const catalogUrl = catalogUrlFor(group, fallback);
+               if (catalogUrl) {
+@@ -2053,7 +2159,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         return;
+       }
+       const original = rawUrls(item, isDash).find((value) => typeof value === "string");
+-      const primary = original && deps.replaceUrlHost?.(original, deps.resolvedCdn || deps.peekCurrentCdn());
++      const primary = original && deps.replaceUrlHost?.(original, deps.resolvedCdn || deps.peekCurrentCdn(deps.STARTUP_PICK));
+       if (!primary) {
+         if (deps.isHostAllowed) setItemUrls(item, isDash, original, rawUrls(item, isDash).slice(1));
+         return;
+@@ -2119,7 +2225,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       if (group.source === "page-hint" && (!requested || !group.unlocked.has(requested.url) && !group.verifiedCatalogUrls.has(requested.url)) && !plannedAffinity?.enforced) return pass;
+       const exactSignedRoute = requested ? group.routes.find((route) => route.url === requested.url) || null : null;
+-      if (exactSignedRoute && group.source !== "player-mpd" && !plannedAffinity?.enforced && !avoidedHosts.has(exactSignedRoute.host) && plannedAffinity?.type !== "native-signed" && (!plannedAffinity || exactSignedRoute.host !== plannedAffinity.host)) {
++      if (exactSignedRoute && group.source !== "player-mpd" && !plannedAffinity?.enforced && !isHostAvoided(exactSignedRoute.host) && plannedAffinity?.type !== "native-signed" && (!plannedAffinity || exactSignedRoute.host !== plannedAffinity.host)) {
+         return {
+           url: exactSignedRoute.url,
+           host: exactSignedRoute.host,
+@@ -2367,7 +2473,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       if (!routeEligible(group, group.routes.find((route) => route.url === parsed.url))) return false;
+       if ([403, 451, 959].includes(+status)) {
+         group.invalidHosts.add(parsed.host);
+-        avoidedHosts.add(parsed.host);
++        avoidHost(parsed.host);
+         if (group.currentHost === parsed.host) {
+           group.currentRouteType = "catalog-generated";
+           group.currentHost = group.catalogFallback;
+@@ -2391,8 +2497,10 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       beginRouteRecovery("verified-native-failure", parsed.host);
+       return true;
+     }, "noteNativeFailure");
+-    const chooseRecoveryRoute = /* @__PURE__ */ __name((group, failedHost) => {
+-      const fallback = [deps.resolvedCdn, deps.peekCurrentCdn(), group?.catalogFallback].find((host) => host && (!deps.isHostAllowed || deps.isHostAllowed(host))) || null;
++    const chooseRecoveryRoute = /* @__PURE__ */ __name((group, failedHost, options = null) => {
++      const fixed = deps.resolvedCdn;
++      const fallbackCandidates = fixed ? [fixed] : [deps.peekCurrentCdn(), group?.catalogFallback, ...deps.getHealthyCdnList?.() || []];
++      const fallback = fallbackCandidates.find((host) => host && (fixed || !Number.isFinite(options?.temporaryMs) || host !== failedHost && !isHostAvoided(host)) && (!deps.isHostAllowed || deps.isHostAllowed(host))) || null;
+       if (!group || group.kind !== "video" || deps.resolvedCdn) {
+         return fallback ? { type: "catalog-generated", host: fallback } : null;
+       }
+@@ -2404,11 +2512,11 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       return fallback ? { type: "catalog-generated", host: fallback } : null;
+     }, "chooseRecoveryRoute");
+-    const beginRouteRecovery = /* @__PURE__ */ __name((reason, failedHost = null) => {
++    const beginRouteRecovery = /* @__PURE__ */ __name((reason, failedHost = null, options = null) => {
+       const host = safeHost(failedHost);
+-      if (host) avoidedHosts.add(host);
++      if (host) avoidHost(host, Number.isFinite(options?.temporaryMs) ? options.temporaryMs : Infinity);
+       const group = activeRepresentation?.groupId ? groups.get(activeRepresentation.groupId) : null;
+-      const next = chooseRecoveryRoute(group, host);
++      const next = chooseRecoveryRoute(group, host, options);
+       lastRouteBoundary = {
+         reason: String(reason || "recovery").slice(0, 48),
+         failedHost: host || null,
+@@ -4526,6 +4634,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let audioGroups = 0;
+     let transportBootstrapCount = 0;
+     let lastReadAt = 0;
++    let livenessCore = null;
++    let coreRevision = 0;
++    let coreInitialized = null;
+     const safeGet = /* @__PURE__ */ __name((object, names) => {
+       if (!object) return void 0;
+       for (const name of names) {
+@@ -4645,6 +4756,38 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       reason = why;
+     }, "setState");
+     const active = /* @__PURE__ */ __name(() => !!runtime && !deps.disabled && deps.isRuntimeGenerationActive(runtime), "active");
++    const inspectLiveness = /* @__PURE__ */ __name(() => {
++      if (!active()) return { coreInitialized: null, coreRevision, videoGroups, audioGroups, lastReadAt };
++      const player = (() => {
++        try {
++          return unsafeWindow.player;
++        } catch {
++          return null;
++        }
++      })();
++      const core = safeCall(player, "__core");
++      if (core && core !== livenessCore) {
++        livenessCore = core;
++        coreRevision++;
++      }
++      let initialized = null;
++      try {
++        if (typeof core?.state?.initialized === "boolean") initialized = core.state.initialized;
++      } catch {
++      }
++      coreInitialized = initialized;
++      let liveVideoGroups = videoGroups, liveAudioGroups = audioGroups;
++      try {
++        const mpd = safeCall(core, "getMpd");
++        if (mpd && typeof mpd === "object") {
++          if (Array.isArray(mpd.video)) liveVideoGroups = Math.min(VIDEO_MAX, mpd.video.length);
++          if (Array.isArray(mpd.audio)) liveAudioGroups = Math.min(AUDIO_MAX, mpd.audio.length);
++        }
++      } catch {
++      }
++      lastReadAt = Date.now();
++      return { coreInitialized, coreRevision, videoGroups: liveVideoGroups, audioGroups: liveAudioGroups, lastReadAt };
++    }, "inspectLiveness");
+     const reconcileNow = /* @__PURE__ */ __name((trigger = "manual") => {
+       if (!active()) {
+         setState("expired", "generation");
+@@ -4673,6 +4816,15 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         setState("waiting-core", trigger);
+         return false;
+       }
++      if (core !== livenessCore) {
++        livenessCore = core;
++        coreRevision++;
++      }
++      try {
++        coreInitialized = typeof core?.state?.initialized === "boolean" ? core.state.initialized : null;
++      } catch {
++        coreInitialized = null;
++      }
+       coreChanged = !!lastCore && lastCore !== core;
+       lastCore = core;
+       if (previousAcceptedCore && previousAcceptedKey !== expectedKey && core === previousAcceptedCore) {
+@@ -4686,7 +4838,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       const generation = runtime.generation;
+       if (acceptedGeneration === generation && acceptedFingerprint === cloned.fingerprint) {
+-        setState("adopted", "unchanged");
++        setState("adopted", coreInitialized === false ? "core-uninitialized" : "unchanged");
+         clearTimers();
+         return true;
+       }
+@@ -4723,6 +4875,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       audioGroups = 0;
+       transportBootstrapCount = 0;
+       lastCore = null;
++      livenessCore = null;
++      coreRevision = 0;
++      coreInitialized = null;
+       setState("waiting-player", startReason);
+       if (reconcileNow(startReason)) return true;
+       for (const delay of RETRY_DELAYS) {
+@@ -4770,6 +4925,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       attempts: Math.max(0, attempts),
+       elapsedMs: startedAt ? Math.max(0, Date.now() - startedAt) : 0,
+       coreChanged,
++      coreInitialized,
++      coreRevision,
+       videoGroups,
+       audioGroups,
+       adoptedAt,
+@@ -4777,10 +4934,289 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       transportBootstrapCount,
+       pendingRetries: timers.size
+     }), "diagnostics");
+-    return { start: start2, cancel, supersede, reconcileNow, reconcileMediaRequest, diagnostics };
++    return { start: start2, cancel, supersede, reconcileNow, reconcileMediaRequest, inspectLiveness, diagnostics };
+   }
+   __name(createPlayerManifest, "createPlayerManifest");
+ 
++  // src/playback/video-core-recovery.mjs
++  function createVideoCoreRecovery(deps) {
++    const MIN_PAUSE_MS = 30 * 1e3;
++    const STRONG_WAIT_MS = 10 * 1e3;
++    const WEAK_WAIT_MS = 15 * 1e3;
++    const RELOAD_TIMEOUT_MS = 15 * 1e3;
++    const RELOAD_COOLDOWN_MS = 90 * 1e3;
++    const MAX_RELOADS_PER_GENERATION = 2;
++    let generation = -1;
++    let video = null;
++    let previouslyPaused = null;
++    let pauseStartedAt = 0;
++    let hadHealthyVideo = false;
++    let resumeToken = 0;
++    let resume = null;
++    let state = "healthy";
++    let reloadCount = 0;
++    let lastReloadAt = 0;
++    let breakerUntil = 0;
++    let foregroundAt = 0;
++    const now = /* @__PURE__ */ __name(() => deps.now ? deps.now() : Date.now(), "now");
++    const bounded = /* @__PURE__ */ __name((value) => Number.isFinite(+value) ? +value : null, "bounded");
++    const mediaSnapshot = /* @__PURE__ */ __name(() => {
++      try {
++        return deps.getMediaDeliverySnapshot() || {};
++      } catch {
++        return {};
++      }
++    }, "mediaSnapshot");
++    const frameCount = /* @__PURE__ */ __name(() => {
++      try {
++        const quality = deps.playbackQualitySnapshot;
++        return quality?.available && Number.isSafeInteger(quality.totalFrames) ? quality.totalFrames : null;
++      } catch {
++        return null;
++      }
++    }, "frameCount");
++    const coreLiveness = /* @__PURE__ */ __name(() => {
++      try {
++        return deps.inspectPlayerLiveness() || {};
++      } catch {
++        return {};
++      }
++    }, "coreLiveness");
++    const mediaAdvanced = /* @__PURE__ */ __name((current, baseline, elapsedMs) => {
++      if (!current?.fresh) return false;
++      if (!baseline) return current.ageSec != null && current.ageSec * 1e3 <= elapsedMs + 1100;
++      if (current.host === baseline.host && current.source === baseline.source) return current.bytes > baseline.bytes;
++      return current.ageSec != null && current.ageSec * 1e3 <= elapsedMs + 1100;
++    }, "mediaAdvanced");
++    const record = /* @__PURE__ */ __name((stage, extra = {}) => {
++      deps.DiagnosticLog.record("video-core", {
++        stage,
++        resumeToken,
++        reloadCount,
++        breakerSec: Math.max(0, Math.ceil((breakerUntil - now()) / 1e3)),
++        ...extra
++      }, true);
++    }, "record");
++    const reset = /* @__PURE__ */ __name(() => {
++      generation = deps.runtimeGeneration;
++      video = null;
++      previouslyPaused = null;
++      pauseStartedAt = 0;
++      hadHealthyVideo = false;
++      resumeToken = 0;
++      resume = null;
++      state = "healthy";
++      reloadCount = 0;
++      lastReloadAt = 0;
++      breakerUntil = 0;
++      foregroundAt = 0;
++    }, "reset");
++    const fail = /* @__PURE__ */ __name((reason) => {
++      if (!resume) return;
++      state = reason === "breaker" ? "breaker" : "reload-failed";
++      breakerUntil = Math.max(breakerUntil, now() + RELOAD_COOLDOWN_MS);
++      record(state, { reason });
++      resume = null;
++    }, "fail");
++    const safePlayerCall = /* @__PURE__ */ __name((player, name, ...args) => {
++      try {
++        const fn = player?.[name];
++        return typeof fn === "function" ? fn.apply(player, args) : void 0;
++      } catch (error) {
++        throw error;
++      }
++    }, "safePlayerCall");
++    const restore = /* @__PURE__ */ __name((player, currentVideo) => {
++      const pending = resume;
++      if (!pending || pending.generation !== deps.runtimeGeneration) return false;
++      const duration = bounded(currentVideo?.duration);
++      const target = duration && duration > 0 ? Math.max(0, Math.min(pending.currentTime, Math.max(0, duration - 0.05))) : Math.max(0, pending.currentTime);
++      try {
++        safePlayerCall(player, "seek", target);
++      } catch {
++      }
++      try {
++        safePlayerCall(player, "setPlaybackRate", pending.rate);
++      } catch {
++      }
++      if (pending.wasPlaying && !pending.playRequested) {
++        pending.playRequested = true;
++        try {
++          const result = safePlayerCall(player, "play");
++          if (result && typeof result.catch === "function") result.catch(() => {
++          });
++        } catch {
++        }
++      }
++      state = "recovered";
++      record("recovered", { currentTime: target, effectiveRate: pending.rate });
++      resume = null;
++      return true;
++    }, "restore");
++    const startReload = /* @__PURE__ */ __name((currentVideo, playback, liveness) => {
++      const t = now();
++      if (!resume || resume.reloadAttempted) return;
++      if (reloadCount >= MAX_RELOADS_PER_GENERATION || t < breakerUntil || t - lastReloadAt < RELOAD_COOLDOWN_MS) {
++        fail("breaker");
++        return;
++      }
++      const player = deps.getPlayer();
++      if (!player || typeof player.reload !== "function") {
++        fail("unavailable");
++        return;
++      }
++      resume.reloadAttempted = true;
++      resume.reloadStartedAt = t;
++      resume.currentTime = Math.max(0, bounded(playback.currentTime) || 0);
++      resume.rate = bounded(playback.effectiveRate) > 0 ? playback.effectiveRate : 2;
++      resume.wasPlaying = playback.paused === false;
++      reloadCount++;
++      lastReloadAt = t;
++      state = "reloading";
++      let failedHost = null;
++      if (!deps.resolvedCdn) {
++        try {
++          failedHost = deps.getNativeRouteDiagnostics()?.currentHost || deps.getAttributedVideoHost?.() || null;
++        } catch {
++        }
++        try {
++          deps.beginRouteRecovery("video-init-dead", failedHost, { temporaryMs: 2 * 60 * 1e3 });
++        } catch {
++        }
++      }
++      record("reloading", {
++        coreInitialized: liveness.coreInitialized,
++        currentTime: resume.currentTime,
++        effectiveRate: resume.rate
++      });
++      try {
++        const result = safePlayerCall(player, "reload");
++        if (result && typeof result.catch === "function") result.catch(() => fail("failed"));
++      } catch {
++        fail("failed");
++      }
++    }, "startReload");
++    const beginResume = /* @__PURE__ */ __name((playback, snapshots) => {
++      const t = now();
++      resumeToken++;
++      resume = {
++        token: resumeToken,
++        generation: deps.runtimeGeneration,
++        startedAt: t,
++        currentTime: Math.max(0, bounded(playback.currentTime) || 0),
++        rate: bounded(playback.effectiveRate) > 0 ? playback.effectiveRate : 2,
++        videoBaseline: snapshots.video ? { ...snapshots.video } : null,
++        audioBaseline: snapshots.audio ? { ...snapshots.audio } : null,
++        frameBaseline: frameCount(),
++        reloadAttempted: false,
++        reloadStartedAt: 0,
++        playRequested: false,
++        wasPlaying: true
++      };
++      state = "waiting-metadata";
++      record("waiting-metadata");
++    }, "beginResume");
++    const tick = /* @__PURE__ */ __name((currentVideo, playback) => {
++      if (generation !== deps.runtimeGeneration) reset();
++      const t = now();
++      const snapshots = mediaSnapshot();
++      const frames = frameCount();
++      const dimensionsReady = !!currentVideo && Number(currentVideo.videoWidth) > 0 && Number(currentVideo.videoHeight) > 0;
++      const videoEvidence = dimensionsReady || playback?.readyState >= 2 || snapshots.video?.fresh && snapshots.video.bytes > 0 || frames !== null && frames > 0;
++      if (videoEvidence) hadHealthyVideo = true;
++      if (!currentVideo || !playback?.available || !playback.valid) {
++        if (!resume?.reloadAttempted) {
++          resume = null;
++          state = "healthy";
++        }
++        video = currentVideo || null;
++        previouslyPaused = null;
++        return;
++      }
++      if (currentVideo !== video && !resume?.reloadAttempted) {
++        video = currentVideo;
++        previouslyPaused = playback.paused;
++        pauseStartedAt = playback.paused ? t : 0;
++        return;
++      }
++      video = currentVideo;
++      if (playback.paused) {
++        if (previouslyPaused !== true) pauseStartedAt = t;
++        previouslyPaused = true;
++        if (!resume?.reloadAttempted) {
++          resume = null;
++          state = "healthy";
++        }
++        return;
++      }
++      if (previouslyPaused === true) {
++        const pausedFor = pauseStartedAt ? t - pauseStartedAt : 0;
++        if (pausedFor >= MIN_PAUSE_MS && hadHealthyVideo) beginResume(playback, snapshots);
++      }
++      previouslyPaused = false;
++      if (!resume) return;
++      if (resume.generation !== deps.runtimeGeneration || playback.seeking || playback.ended || playback.errorCode) {
++        resume = null;
++        state = "healthy";
++        return;
++      }
++      const elapsed = t - (resume.reloadStartedAt || resume.startedAt);
++      const videoAdvanced = mediaAdvanced(snapshots.video, resume.videoBaseline, t - resume.startedAt);
++      const frameAdvanced = frames !== null && resume.frameBaseline !== null && frames > resume.frameBaseline;
++      const metadataRecovered = playback.readyState >= 1 && dimensionsReady;
++      if (metadataRecovered || videoAdvanced || frameAdvanced) {
++        if (resume.reloadAttempted) restore(deps.getPlayer(), currentVideo);
++        else {
++          resume = null;
++          state = "healthy";
++        }
++        return;
++      }
++      if (resume.reloadAttempted) {
++        if (elapsed >= RELOAD_TIMEOUT_MS) fail("timeout");
++        return;
++      }
++      const liveness = coreLiveness();
++      const audioAdvanced = mediaAdvanced(snapshots.audio, resume.audioBaseline, t - resume.startedAt);
++      const stagnant = Math.abs((bounded(playback.currentTime) || 0) - resume.currentTime) <= 0.1;
++      const deadShape = playback.readyState === 0 && !dimensionsReady && liveness.videoGroups > 0;
++      const strong = liveness.coreInitialized === false;
++      const supportingEvidence = strong ? audioAdvanced || playback.bufferAheadSec > 0 || stagnant : audioAdvanced;
++      const wait = strong ? STRONG_WAIT_MS : WEAK_WAIT_MS;
++      if (deadShape && supportingEvidence && t - resume.startedAt >= wait) {
++        state = "video-init-dead";
++        record("video-init-dead", {
++          coreInitialized: liveness.coreInitialized,
++          waitMs: t - resume.startedAt
++        });
++        startReload(currentVideo, playback, liveness);
++      }
++    }, "tick");
++    const noteForeground = /* @__PURE__ */ __name(() => {
++      foregroundAt = now();
++    }, "noteForeground");
++    const summary = /* @__PURE__ */ __name(() => {
++      const live = coreLiveness(), snapshots = mediaSnapshot(), t = now();
++      return {
++        state,
++        coreInitialized: typeof live.coreInitialized === "boolean" ? live.coreInitialized : null,
++        coreRevision: Number.isSafeInteger(live.coreRevision) ? live.coreRevision : 0,
++        videoGroups: Math.max(0, Number(live.videoGroups) || 0),
++        audioGroups: Math.max(0, Number(live.audioGroups) || 0),
++        resumeToken,
++        reloadCount,
++        waitingSec: resume ? Math.max(0, Math.round((t - resume.startedAt) / 1e3)) : 0,
++        videoAgeSec: snapshots.video?.ageSec ?? null,
++        audioAgeSec: snapshots.audio?.ageSec ?? null,
++        breakerSec: Math.max(0, Math.ceil((breakerUntil - t) / 1e3)),
++        foregroundAgeSec: foregroundAt ? Math.max(0, Math.round((t - foregroundAt) / 1e3)) : null
++      };
++    }, "summary");
++    reset();
++    return { reset, tick, noteForeground, summary };
++  }
++  __name(createVideoCoreRecovery, "createVideoCoreRecovery");
++
+   // src/transport/xhr-facade.mjs
+   function createXhrFacade(ManagedXHR, NativeXHR) {
+     const invoke = Reflect.apply;
+@@ -6421,6 +6857,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     const MAX_STARTUP_DEFERS = 3;
+     let bakeoffStartupDefers = 0;
+     const isStartupBuffering = /* @__PURE__ */ __name(() => {
++      if (deps.startup) return !deps.startup.allowed();
+       try {
+         const st = deps.Watchdog.stats();
+         if (!st || st.readyState < 0) return false;
+@@ -6447,18 +6884,22 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       if (trustedReason) {
+         const last = trustedBakeoffLastAt[trustedReason] || 0;
+         if (now - last < TRUSTED_BAKEOFF_MIN_GAP[trustedReason]) return skipped("cooldown");
+-        trustedBakeoffLastAt[trustedReason] = now;
+       } else if (now - getLastBakeoffAt() < THRPT_BAKEOFF_COOLDOWN) {
+         return skipped("cooldown");
+       }
+-      if (skipIfFast && bakeoffStartupDefers < MAX_STARTUP_DEFERS && isStartupBuffering()) {
++      if (!trustedReason && isStartupBuffering()) {
++        if (bakeoffStartupDefers >= MAX_STARTUP_DEFERS) {
++          deps.startup?.note("throughput", "skipped", bakeoffStartupDefers);
++          return skipped("startup-exhausted");
++        }
+         bakeoffStartupDefers++;
++        deps.startup?.note("throughput", "waiting", bakeoffStartupDefers);
+         const deferEpoch = bakeoffEpoch;
+         if (!bakeoffTimer) {
+           bakeoffTimer = deps.scheduleRuntimeTimeout(() => {
+             bakeoffTimer = null;
+             if (deferEpoch !== bakeoffEpoch) return;
+-            runThroughputBakeoff(lastSampleSegmentUrl).catch(deps.reportMeasurementFailure());
++            runThroughputBakeoff(lastSampleSegmentUrl, skipIfFast).catch(deps.reportMeasurementFailure());
+           }, 2e3);
+         }
+         return;
+@@ -6472,13 +6913,16 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         return navigator.locks.request("bilicdn-bakeoff", { ifAvailable: true }, (lock) => {
+           if (!lock) return skipped("busy");
+           if (!deps.isRuntimeGenerationActive(runtimeToken)) return;
+-          return doBakeoff(sampleUrl, runtimeToken, sampleContext);
++          if (!trustedReason && isStartupBuffering()) return skipped("startup-waiting");
++          if (trustedReason) trustedBakeoffLastAt[trustedReason] = Date.now();
++          return doBakeoff(sampleUrl, runtimeToken, sampleContext, trustedReason);
+         });
+       }
+       if (!crossTabShouldBakeoff()) return;
+-      return doBakeoff(sampleUrl, runtimeToken, sampleContext);
++      if (trustedReason) trustedBakeoffLastAt[trustedReason] = Date.now();
++      return doBakeoff(sampleUrl, runtimeToken, sampleContext, trustedReason);
+     }, "runThroughputBakeoff");
+-    const doBakeoff = /* @__PURE__ */ __name(async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration(), sampleContext = deps.captureRouteContext(sampleUrl)) => {
++    const doBakeoff = /* @__PURE__ */ __name(async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration(), sampleContext = deps.captureRouteContext(sampleUrl), trustedReason = null) => {
+       if (!deps.isRuntimeGenerationActive(runtimeToken) || !deps.isRouteSampleAllowed(sampleUrl, sampleContext)) return;
+       deps.DiagnosticLog.record("measurement", { reason: "accepted", requested: true });
+       bakeoffRunning = true;
+@@ -6486,6 +6930,10 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const myEpoch = bakeoffEpoch;
+       bakeoffAbortController = new AbortController();
+       const mySignal = bakeoffAbortController.signal;
++      const onUnsafe = /* @__PURE__ */ __name(() => bakeoffAbortController?.abort(), "onUnsafe");
++      const unwatch = !trustedReason && deps.startup ? deps.startup.watch(onUnsafe) : () => {
++      };
++      deps.startup?.note("throughput", "accepted", bakeoffStartupDefers, trustedReason || "automatic");
+       const onRuntimeAbort = /* @__PURE__ */ __name(() => {
+         try {
+           bakeoffAbortController && bakeoffAbortController.abort();
+@@ -6515,6 +6963,10 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         const ok = [];
+         const outcomes = [];
+         for (const candidate of candidates) {
++          if (!trustedReason && isStartupBuffering()) {
++            onUnsafe();
++            break;
++          }
+           if (!deps.isRuntimeGenerationActive(runtimeToken) || myEpoch !== bakeoffEpoch || !deps.isRouteSampleAllowed(sampleUrl, sampleContext)) break;
+           if (deps.isHostLockedStream(sampleUrl)) break;
+           const r = candidate.type === "native-signed" ? await probeRouteThroughput(candidate, sampleUrl, probeBytes, mySignal) : await probeCdnThroughput(candidate.host, sampleUrl, probeBytes, mySignal);
+@@ -6533,8 +6985,10 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+               if (recorded?.accepted) ok.push({ ...r, native: true });
+             } else ok.push(r);
+           }
++          if (mySignal.aborted) break;
+         }
+         if (!deps.isRuntimeGenerationActive(runtimeToken)) return;
++        if (mySignal.aborted) deps.startup?.note("throughput", "interrupted", bakeoffStartupDefers);
+         if (candidates.length) {
+           if (ok.length === 0) {
+             bakeoffNullStreak++;
+@@ -6567,6 +7021,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         deps.setNativeBakeoffDiagnostics(outcomes);
+         return { status, outcomes, samples: ok.length };
+       } finally {
++        unwatch();
+         if (runtimeToken.signal) runtimeToken.signal.removeEventListener("abort", onRuntimeAbort);
+         bakeoffRunning = false;
+         if (bakeoffAbortController && bakeoffAbortController.signal === mySignal) bakeoffAbortController = null;
+@@ -6746,18 +7201,20 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       if (probeDeferTimer) return;
+       if (probeDeferCount >= MAX_PROBE_DEFERS) {
+         deferStartupProbes = false;
++        deps.startup?.note("latency", "skipped", probeDeferCount);
+         return;
+       }
+       probeDeferCount++;
+       probeDeferTimer = deps.scheduleRuntimeTimeout(() => {
+         probeDeferTimer = null;
+-        if (deps.isStartupBuffering()) {
++        if (deps.startup ? !deps.startup.allowed() : deps.isStartupBuffering()) {
+           scheduleDeferredLatencyProbe();
+           return;
+         }
+         deferStartupProbes = false;
+         reorderCdnsByLatency().catch(deps.reportMeasurementFailure());
+       }, PROBE_DEFER_CHECK_MS);
++      deps.startup?.note("latency", "waiting", probeDeferCount);
+     }, "scheduleDeferredLatencyProbe");
+     const reorderCdnsByLatency = /* @__PURE__ */ __name(async (force) => {
+       if (deps.disabled) return;
+@@ -6773,10 +7230,13 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       reorderRunning = true;
+       try {
++        let cacheAvailable = false;
+         if (!force) {
+           try {
+             const cached = JSON.parse(GM_getValue(deps.PROBE_CACHE_KEY) || "null");
+             if (cached && Date.now() - cached.t < deps.PROBE_CACHE_TTL && Array.isArray(cached.list)) {
++              cacheAvailable = true;
++              deps.startup?.availability(hasUsableCdnHealth(), true);
+               const usable = /* @__PURE__ */ __name((c) => (!deps.isHostAllowed || deps.isHostAllowed(c)) && !deps.blacklistSet.has(c) && !deps.knownDeadHosts.has(c) && !deps.isCdnSoftBlocked(c) && deps.PREFERRED_CDN_LIST.includes(c), "usable");
+               deps.activeCdnList.length = 0;
+               cached.list.forEach((c) => {
+@@ -6795,7 +7255,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           } catch {
+           }
+         }
+-        if (deferStartupProbes && !force && hasUsableCdnHealth()) {
++        deps.startup?.availability(hasUsableCdnHealth(), cacheAvailable);
++        if (!force && (deps.startup ? !deps.startup.allowed() : deferStartupProbes && hasUsableCdnHealth())) {
+           scheduleDeferredLatencyProbe();
+           return;
+         }
+@@ -6806,7 +7267,24 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           if (deps.isPresumedDnsFailHost(h)) return false;
+           return true;
+         });
+-        const results = await Promise.all(candidates.map((cdn) => deps.probeCdnLatency(cdn, runtimeToken)));
++        const controller = new AbortController();
++        const onAbort = /* @__PURE__ */ __name(() => controller.abort(), "onAbort");
++        runtimeToken.signal?.addEventListener("abort", onAbort, { once: true });
++        const unwatch = !force && deps.startup ? deps.startup.watch(onAbort) : () => {
++        };
++        deps.startup?.note("latency", "accepted", probeDeferCount, force ? "manual" : "automatic");
++        let results;
++        try {
++          const measurementToken = { ...runtimeToken, signal: controller.signal };
++          results = await Promise.all(candidates.map((cdn) => deps.probeCdnLatency(cdn, measurementToken)));
++        } finally {
++          unwatch();
++          runtimeToken.signal?.removeEventListener("abort", onAbort);
++        }
++        if (controller.signal.aborted) {
++          if (deps.isRuntimeGenerationActive(runtimeToken)) deps.startup?.note("latency", "interrupted", probeDeferCount);
++          return;
++        }
+         if (!deps.isRuntimeGenerationActive(runtimeToken)) return;
+         const sortKey = /* @__PURE__ */ __name((r) => {
+           if (!Number.isFinite(r.ms)) return Infinity;
+@@ -7146,6 +7624,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         }
+         const v = getVideo();
+         if (!v) {
++          deps.VideoCoreRecovery?.tick(null, { available: false, valid: false });
+           deps.resetPlaybackRateState();
+           stallCount = 0;
+           interruptRecovery();
+@@ -7153,6 +7632,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           return;
+         }
+         const playback = deps.readPlaybackDiagnostic(v);
++        deps.VideoCoreRecovery?.tick(v, playback);
+         const unavailable = !playback.valid ? "invalid-state" : playback.errorCode ? "media-error" : playback.ended || playback.duration > 0 && playback.currentTime >= playback.duration ? "ended" : playback.paused ? "paused" : playback.seeking ? "seeking" : playback.readyState === 0 ? "no-metadata" : null;
+         if (unavailable) {
+           stallCount = 0;
+@@ -7357,6 +7837,13 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           cachedVideo = null;
+           Object.keys(perCdnBytes).forEach((k) => delete perCdnBytes[k]);
+         },
++        checkNow() {
++          try {
++            tick();
++          } catch {
++            deps.DiagnosticLog.fault("watchdog");
++          }
++        },
+         stats() {
+           const state = deps.readPlaybackDiagnostic();
+           const targetBytes = deps.getBufferTargetBytes();
+@@ -8045,15 +8532,18 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const httpDns = deps.getHttpDnsStatus();
+       const native = deps.getNativeRouteDiagnostics();
+       const playerManifest = deps.getPlayerManifestDiagnostics();
++      const videoCore = deps.videoCoreSummary?.() || null;
+       const routeHost = native.currentHost ? native.currentHost.split(".")[0] : "（無新鮮後態）";
+       const lines = [
+         "[BiliCDN_TW 診斷報告]",
++        "起播量測：" + JSON.stringify(deps.startupSummary?.() || null),
+         "版本：" + deps.VERSION,
+         "頁面型態：" + getPageTypeLabel(),
+         "UA：" + navigator.userAgent,
+         "面板注入狀態：" + deps.uiInjectStatus,
+         "Playinfo 生命週期：" + JSON.stringify(deps.getPagePlayInfoLifecycle()),
+         "播放器 Manifest 同步：" + JSON.stringify(playerManifest) + "（只讀 player/core；不開啟統計面板、不新增網路）",
++        "影片核心狀態：" + JSON.stringify(videoCore) + "（reload 呼叫不等於恢復；須有後續 metadata、影片 Transport 或影格證據）",
+         "停用狀態：" + deps.disabled,
+         "節點禁止／替代結果：" + JSON.stringify(deps.hostRestrictionSummary?.() || {}),
+         "禁止規則：black／dead／soft、設定排除及預設不可用均生效；固定或原始 URL 不例外；無替代即阻止",
+@@ -8656,6 +9146,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const native = deps.getNativeRouteDiagnostics();
+       const playinfoLifecycle = deps.getPagePlayInfoLifecycle();
+       const playerManifest = deps.getPlayerManifestDiagnostics();
++      const startup = deps.startupSummary?.() || {};
++      const videoCore = deps.videoCoreSummary?.() || {};
+       const health = {};
+       deps.TRUSTED_CDN_CATALOG.slice(0, PUBLIC_DIAG_HOST_MAX).forEach((host) => {
+         const h = deps.cdnHealth[host];
+@@ -8721,6 +9213,27 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           confirmed: !!deps.playbackRateState.confirmed,
+           source: ["assumed", "initial", "ratechange", "watchdog", "performance"].includes(deps.playbackRateState.source) ? deps.playbackRateState.source : "assumed"
+         },
++        startupMeasurement: {
++          safe: !!startup.safe,
++          reason: String(startup.reason || "no-video").slice(0, 32),
++          playableSec: startup.playableSec == null ? null : Math.max(0, publicFinite(startup.playableSec)),
++          progressTicks: Math.max(0, Math.min(2, Math.trunc(publicFinite(startup.progressTicks)))),
++          healthAvailable: !!startup.healthAvailable,
++          cacheAvailable: !!startup.cacheAvailable
++        },
++        videoCore: {
++          state: ["healthy", "waiting-metadata", "video-init-dead", "reloading", "recovered", "reload-failed", "breaker"].includes(videoCore.state) ? videoCore.state : "healthy",
++          coreInitialized: typeof videoCore.coreInitialized === "boolean" ? videoCore.coreInitialized : null,
++          coreRevision: Math.max(0, Math.trunc(publicFinite(videoCore.coreRevision))),
++          videoGroups: Math.max(0, Math.min(128, Math.trunc(publicFinite(videoCore.videoGroups)))),
++          audioGroups: Math.max(0, Math.min(64, Math.trunc(publicFinite(videoCore.audioGroups)))),
++          resumeToken: Math.max(0, Math.trunc(publicFinite(videoCore.resumeToken))),
++          reloadCount: Math.max(0, Math.min(2, Math.trunc(publicFinite(videoCore.reloadCount)))),
++          waitingSec: Math.max(0, Math.min(60, Math.trunc(publicFinite(videoCore.waitingSec)))),
++          videoAgeSec: videoCore.videoAgeSec == null ? null : Math.max(0, Math.trunc(publicFinite(videoCore.videoAgeSec))),
++          audioAgeSec: videoCore.audioAgeSec == null ? null : Math.max(0, Math.trunc(publicFinite(videoCore.audioAgeSec))),
++          breakerSec: Math.max(0, Math.trunc(publicFinite(videoCore.breakerSec)))
++        },
+         mediaDelivery: deps.getMediaDeliverySnapshot(),
+         hostRestrictions: deps.hostRestrictionSummary?.() || {},
+         nativeRouting: {
+@@ -8760,6 +9273,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             attempts: Math.max(0, Math.min(100, Math.trunc(publicFinite(playerManifest?.attempts)))),
+             elapsedMs: Math.max(0, Math.min(6e4, Math.trunc(publicFinite(playerManifest?.elapsedMs)))),
+             coreChanged: !!playerManifest?.coreChanged,
++            coreInitialized: typeof playerManifest?.coreInitialized === "boolean" ? playerManifest.coreInitialized : null,
++            coreRevision: Math.max(0, Math.min(1e3, Math.trunc(publicFinite(playerManifest?.coreRevision)))),
+             videoGroups: Math.max(0, Math.min(128, Math.trunc(publicFinite(playerManifest?.videoGroups)))),
+             audioGroups: Math.max(0, Math.min(64, Math.trunc(publicFinite(playerManifest?.audioGroups)))),
+             transportBootstrapCount: Math.max(0, Math.min(16, Math.trunc(publicFinite(playerManifest?.transportBootstrapCount)))),
+@@ -9480,6 +9995,15 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             deps.preconnectBatch(hosts, true);
+           } catch {
+           }
++          try {
++            deps.noteForegroundVisible?.();
++          } catch {
++          }
++          try {
++            deps.wakeWatchdog?.();
++          } catch {
++          }
++          return;
+         }
+         e.stopImmediatePropagation();
+       }, "onVisRaw");
+@@ -10023,7 +10547,11 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       deps.refreshExpiredRestrictions();
+       observePagePlayInfo();
+       deps.samplePlaybackQuality();
+-      if (!deps.disabled) deps.DiagnosticLog.sample(deps.readPlaybackDiagnostic());
++      if (!deps.disabled) {
++        const playback = deps.readPlaybackDiagnostic();
++        deps.startup.update(deps.Watchdog.getVideo(), playback);
++        deps.DiagnosticLog.sample(playback);
++      }
+       deps.refreshPublicDiagnosticSnapshot();
+       panel.renderVisibleStatus();
+     }, 1e3);
+@@ -10060,6 +10588,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let codec;
+     let playurl;
+     let playerManifest;
++    let videoCoreRecovery;
+     let transport;
+     let failures;
+     let dom;
+@@ -10075,6 +10604,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let catalogControls;
+     let views;
+     let application;
++    const startup = createStartup({
++      get inSeekGrace() {
++        return rate.inSeekGrace;
++      },
++      get DiagnosticLog() {
++        return events.DiagnosticLog;
++      }
++    });
+     const hostAccess = createHostAccess({
+       get matchesExclude() {
+         return catalog.matchesExclude;
+@@ -10114,6 +10651,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+     });
+     runtime = createRuntime({
++      get resetStartup() {
++        return startup.reset;
++      },
++      get resetVideoCoreRecovery() {
++        return videoCoreRecovery?.reset;
++      },
+       get DiagnosticLog() {
+         return events.DiagnosticLog;
+       },
+@@ -10210,6 +10753,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+     });
+     nativeRoutes = createNativeRoutes({
++      get STARTUP_PICK() {
++        return health.STARTUP_PICK;
++      },
++      get preconnectCdn() {
++        return hints.preconnectCdn;
++      },
+       get noteHostDiscovery() {
+         return hostAccess.discover;
+       },
+@@ -10937,6 +11486,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+     });
+     bakeoff = createBakeoff({
++      get startup() {
++        return startup;
++      },
+       get isHostAllowed() {
+         return hostAccess.allowed;
+       },
+@@ -11106,6 +11658,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+     });
+     probe = createProbe({
++      get startup() {
++        return startup;
++      },
++      get DiagnosticLog() {
++        return events.DiagnosticLog;
++      },
+       get isHostAllowed() {
+         return hostAccess.allowed;
+       },
+@@ -11182,7 +11740,51 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         return health.getHealthyCdnList;
+       }
+     });
++    videoCoreRecovery = createVideoCoreRecovery({
++      get runtimeGeneration() {
++        return runtime.runtimeGeneration;
++      },
++      get playinfoEpoch() {
++        return media.playinfoEpoch;
++      },
++      get getMediaDeliverySnapshot() {
++        return media.getMediaDeliverySnapshot;
++      },
++      get playbackQualitySnapshot() {
++        return media.playbackQualitySnapshot;
++      },
++      get inspectPlayerLiveness() {
++        return playerManifest.inspectLiveness;
++      },
++      get getPlayer() {
++        return () => {
++          try {
++            return unsafeWindow.player;
++          } catch {
++            return null;
++          }
++        };
++      },
++      get beginRouteRecovery() {
++        return nativeRoutes.beginRouteRecovery;
++      },
++      get getNativeRouteDiagnostics() {
++        return nativeRoutes.diagnostics;
++      },
++      get getAttributedVideoHost() {
++        return media.getAttributedVideoHost;
++      },
++      get resolvedCdn() {
++        return health.resolvedCdn;
++      },
++      get DiagnosticLog() {
++        return events.DiagnosticLog;
++      }
++    });
+     watchdog = createWatchdog({
++      get VideoCoreRecovery() {
++        return videoCoreRecovery;
++      },
+       get cdnHealth() {
+         return health.cdnHealth;
+       },
+@@ -11343,6 +11945,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+     });
+     report = createReport({
++      get startupSummary() {
++        return startup.summary;
++      },
++      get videoCoreSummary() {
++        return videoCoreRecovery.summary;
++      },
+       get getPagePlayInfoLifecycle() {
+         return application?.getPagePlayInfoLifecycle || (() => ({ state: "no-new-assignment", timing: "initial", updatedAt: 0 }));
+       },
+@@ -11632,6 +12240,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+     });
+     snapshot = createSnapshot({
++      get startupSummary() {
++        return startup.summary;
++      },
++      get videoCoreSummary() {
++        return videoCoreRecovery.summary;
++      },
+       get getPagePlayInfoLifecycle() {
+         return application?.getPagePlayInfoLifecycle || (() => ({ state: "no-new-assignment", timing: "initial", updatedAt: 0 }));
+       },
+@@ -11927,6 +12541,15 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     });
+     if (typeof GM_registerMenuCommand === "function") views.registerControlMenu(GM_registerMenuCommand);
+     application = createApplication({
++      get startup() {
++        return startup;
++      },
++      get noteForegroundVisible() {
++        return videoCoreRecovery.noteForeground;
++      },
++      get wakeWatchdog() {
++        return watchdog.Watchdog.checkNow;
++      },
+       get interceptNetResponse() {
+         return transport.interceptNetResponse;
+       },

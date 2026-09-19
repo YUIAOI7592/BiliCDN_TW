@@ -29,6 +29,8 @@ const buildPublicDiagnosticSnapshot = () => {
     const native = deps.getNativeRouteDiagnostics()
     const playinfoLifecycle = deps.getPagePlayInfoLifecycle()
     const playerManifest = deps.getPlayerManifestDiagnostics()
+    const startup = deps.startupSummary?.() || {}
+    const videoCore = deps.videoCoreSummary?.() || {}
     const health = {}
     deps.TRUSTED_CDN_CATALOG.slice(0, PUBLIC_DIAG_HOST_MAX).forEach(host => {
         const h = deps.cdnHealth[host]
@@ -97,6 +99,28 @@ const buildPublicDiagnosticSnapshot = () => {
                 ? deps.playbackRateState.source
                 : 'assumed',
         },
+        startupMeasurement: {
+            safe: !!startup.safe,
+            reason: String(startup.reason || 'no-video').slice(0, 32),
+            playableSec: startup.playableSec == null ? null : Math.max(0, publicFinite(startup.playableSec)),
+            progressTicks: Math.max(0, Math.min(2, Math.trunc(publicFinite(startup.progressTicks)))),
+            healthAvailable: !!startup.healthAvailable,
+            cacheAvailable: !!startup.cacheAvailable,
+        },
+        videoCore: {
+            state: ['healthy','waiting-metadata','video-init-dead','reloading','recovered','reload-failed','breaker']
+                .includes(videoCore.state) ? videoCore.state : 'healthy',
+            coreInitialized: typeof videoCore.coreInitialized === 'boolean' ? videoCore.coreInitialized : null,
+            coreRevision: Math.max(0, Math.trunc(publicFinite(videoCore.coreRevision))),
+            videoGroups: Math.max(0, Math.min(128, Math.trunc(publicFinite(videoCore.videoGroups)))),
+            audioGroups: Math.max(0, Math.min(64, Math.trunc(publicFinite(videoCore.audioGroups)))),
+            resumeToken: Math.max(0, Math.trunc(publicFinite(videoCore.resumeToken))),
+            reloadCount: Math.max(0, Math.min(2, Math.trunc(publicFinite(videoCore.reloadCount)))),
+            waitingSec: Math.max(0, Math.min(60, Math.trunc(publicFinite(videoCore.waitingSec)))),
+            videoAgeSec: videoCore.videoAgeSec == null ? null : Math.max(0, Math.trunc(publicFinite(videoCore.videoAgeSec))),
+            audioAgeSec: videoCore.audioAgeSec == null ? null : Math.max(0, Math.trunc(publicFinite(videoCore.audioAgeSec))),
+            breakerSec: Math.max(0, Math.trunc(publicFinite(videoCore.breakerSec))),
+        },
         mediaDelivery: deps.getMediaDeliverySnapshot(),
         hostRestrictions: deps.hostRestrictionSummary?.() || {},
         nativeRouting: {
@@ -141,6 +165,8 @@ const buildPublicDiagnosticSnapshot = () => {
                 attempts: Math.max(0, Math.min(100, Math.trunc(publicFinite(playerManifest?.attempts)))),
                 elapsedMs: Math.max(0, Math.min(60000, Math.trunc(publicFinite(playerManifest?.elapsedMs)))),
                 coreChanged: !!playerManifest?.coreChanged,
+                coreInitialized: typeof playerManifest?.coreInitialized === 'boolean' ? playerManifest.coreInitialized : null,
+                coreRevision: Math.max(0, Math.min(1000, Math.trunc(publicFinite(playerManifest?.coreRevision)))),
                 videoGroups: Math.max(0, Math.min(128, Math.trunc(publicFinite(playerManifest?.videoGroups)))),
                 audioGroups: Math.max(0, Math.min(64, Math.trunc(publicFinite(playerManifest?.audioGroups)))),
                 transportBootstrapCount: Math.max(0, Math.min(16, Math.trunc(publicFinite(playerManifest?.transportBootstrapCount)))),

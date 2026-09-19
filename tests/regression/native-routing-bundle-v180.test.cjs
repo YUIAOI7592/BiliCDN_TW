@@ -140,6 +140,12 @@ test('v180 Native exploration replaces one existing bakeoff slot and keeps the f
     const item = (await (await h.pageWindow.fetch(api)).json()).data.dash.video[0]
     await (await h.pageWindow.fetch(item.base_url)).arrayBuffer()
     await (await h.pageWindow.fetch(item.base_url)).arrayBuffer()
+    h.evaluate(`(() => {
+        const v = globalThis.__startupTestVideo || (globalThis.__startupTestVideo = {})
+        const base = { available: true, valid: true, paused: false, seeking: false, ended: false,
+            errorCode: 0, duration: 600, bufferAheadSec: 30, effectiveRate: 2 }
+        update(v, { ...base, currentTime: 1 }); update(v, { ...base, currentTime: 2 }); update(v, { ...base, currentTime: 3 })
+    })()`)
     const before = h.fetchCalls.length
     await h.evaluate(`doBakeoff(${JSON.stringify(item.base_url)}, captureRuntimeGeneration())`)
     const probes = h.fetchCalls.slice(before).filter(call => call.init?.headers?.Range)

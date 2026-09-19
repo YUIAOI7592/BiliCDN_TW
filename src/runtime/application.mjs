@@ -211,6 +211,12 @@ export function createApplication(deps) {
             if (!tabReallyHidden) {
                 const hosts = [...new Set([deps.resolvedCdn, ...deps.activeCdnList].filter(Boolean))].slice(0, 3)
                 try { deps.preconnectBatch(hosts, true) } catch {}
+                // Hidden transitions remain isolated so background video keeps
+                // downloading.  The genuine visible transition is allowed to
+                // reach Bilibili, whose player uses it to resume/rebuild media.
+                try { deps.noteForegroundVisible?.() } catch {}
+                try { deps.wakeWatchdog?.() } catch {}
+                return
             }
             e.stopImmediatePropagation()
         }
@@ -726,7 +732,11 @@ get DiagnosticLog(){return deps.DiagnosticLog},
         // introducing another timer or any network activity.
         observePagePlayInfo()
         deps.samplePlaybackQuality()
-        if (!deps.disabled) deps.DiagnosticLog.sample(deps.readPlaybackDiagnostic())
+        if (!deps.disabled) {
+            const playback = deps.readPlaybackDiagnostic()
+            deps.startup.update(deps.Watchdog.getVideo(), playback)
+            deps.DiagnosticLog.sample(playback)
+        }
         deps.refreshPublicDiagnosticSnapshot()
         panel.renderVisibleStatus()
     }, 1000)

@@ -163,7 +163,21 @@ let lastObservedRoute = null
 let observedHostChanges = 0
 let lastRouteBoundary = null
 let suppressedSwitches = { probeHealthy: 0, representation: 0 }
-let avoidedHosts = new Set()
+let avoidedHosts = new Map()
+const avoidHost = (host, durationMs = Infinity) => {
+    host = safeHost(host)
+    if (!host) return false
+    const until = Number.isFinite(durationMs) ? Date.now() + Math.max(0, durationMs) : Infinity
+    avoidedHosts.set(host, until)
+    return true
+}
+const isHostAvoided = host => {
+    host = safeHost(host)
+    if (!host || !avoidedHosts.has(host)) return false
+    const until = avoidedHosts.get(host)
+    if (until !== Infinity && until <= Date.now()) { avoidedHosts.delete(host); return false }
+    return true
+}
 let pageExact = new Map()
 let generatedExact = new Map()
 let candidateSerial = 0
@@ -240,7 +254,7 @@ const resetPool = () => {
     upgradingSource = false
     lastPlannedRoute = null; lastObservedRoute = null; lastRouteBoundary = null
     observedHostChanges = 0
-    avoidedHosts = new Set()
+    avoidedHosts = new Map()
     suppressedSwitches = { probeHealthy: 0, representation: 0 }
     lastAutoQualityReason = 'epoch-reset'; routeRevision++; representationRevision++
 }
@@ -368,6 +382,7 @@ const setPlannedAffinity = (next, reason, enforced = false) => {
         || !!plannedAffinity.enforced !== !!enforced
     plannedAffinity = { type: next.type, host: next.host, setAt: Date.now(), reason, enforced: !!enforced }
     if (changed) {
+        if (next.type === 'catalog-generated') deps.preconnectCdn?.(next.host, false)
         lastPlannedRoute = { ...plannedAffinity, revision: ++routeRevision }
     }
 }
@@ -404,9 +419,9 @@ const applySignedRoutePlan = (item, isDash, groupId) => {
         return null
     }
     const transformed = rawUrls(item, isDash).filter(value => typeof value === 'string')
-    const legacyPrimary = deps.replaceUrlHost?.(group.rootOriginal, deps.resolvedCdn || deps.peekCurrentCdn()) || group.rootOriginal
+    const legacyPrimary = deps.replaceUrlHost?.(group.rootOriginal, deps.resolvedCdn || deps.peekCurrentCdn(deps.STARTUP_PICK)) || group.rootOriginal
     const legacyHost = (() => { try { return new URL(legacyPrimary).hostname } catch { return null } })()
-    group.catalogFallback = deps.TRUSTED_CDN_CATALOG_SET.has(legacyHost) ? legacyHost : deps.peekCurrentCdn()
+    group.catalogFallback = deps.TRUSTED_CDN_CATALOG_SET.has(legacyHost) ? legacyHost : deps.peekCurrentCdn(deps.STARTUP_PICK)
     let primary = legacyPrimary
     let primaryType = deps.TRUSTED_CDN_CATALOG_SET.has(legacyHost) ? 'catalog-generated' : 'root-original'
     let primaryHost = legacyHost
@@ -433,7 +448,7 @@ const applySignedRoutePlan = (item, isDash, groupId) => {
                     // A Native affinity cannot be synthesized for a representation that did
                     // not receive that exact signed host. Downgrade the epoch to one Catalog
                     // affinity so returning to an earlier group cannot bounce back to Native.
-                    const fallback = group.catalogFallback || deps.peekCurrentCdn()
+                    const fallback = group.catalogFallback || deps.peekCurrentCdn(deps.STARTUP_PICK)
                     if (fallback) setPlannedAffinity({ type: 'catalog-generated', host: fallback }, 'native-unavailable', true)
                     const catalogUrl = catalogUrlFor(group, fallback)
                     if (catalogUrl) { primary = catalogUrl; primaryType = 'catalog-generated'; primaryHost = fallback }
@@ -490,7 +505,7 @@ const planUnregisteredItem = (item, isDash, trusted) => {
     if (!item) return
     if (!trusted) { if (deps.isHostAllowed) setItemUrls(item, isDash, rawUrls(item, isDash)[0], rawUrls(item, isDash).slice(1)); return }
     const original = rawUrls(item, isDash).find(value => typeof value === 'string')
-    const primary = original && deps.replaceUrlHost?.(original, deps.resolvedCdn || deps.peekCurrentCdn())
+    const primary = original && deps.replaceUrlHost?.(original, deps.resolvedCdn || deps.peekCurrentCdn(deps.STARTUP_PICK))
     if (!primary) { if (deps.isHostAllowed) setItemUrls(item, isDash, original, rawUrls(item, isDash).slice(1)); return }
     const backups = deps.preserveOriginalFallback?.(deps.buildBackupUrls?.(original, primary) || [], original, primary) || []
     setItemUrls(item, isDash, primary, backups)
@@ -558,7 +573,7 @@ const resolveRequestRouteUnchecked = (url, context) => {
     // arrived in playurl.  That is a browser/player fallback, not permission for
     // this script to synthesize another host.  Preserve it unless a verified
     // recovery boundary has marked that exact host as the route to avoid.
-    if (exactSignedRoute && group.source !== 'player-mpd' && !plannedAffinity?.enforced && !avoidedHosts.has(exactSignedRoute.host)
+    if (exactSignedRoute && group.source !== 'player-mpd' && !plannedAffinity?.enforced && !isHostAvoided(exactSignedRoute.host)
         && plannedAffinity?.type !== 'native-signed'
         && (!plannedAffinity || exactSignedRoute.host !== plannedAffinity.host)) {
         return { url: exactSignedRoute.url, host: exactSignedRoute.host, type: 'root-original',
@@ -787,7 +802,7 @@ const noteNativeFailure = (context, url, status = 0, failureKind = 'http') => {
     if (!routeEligible(group, group.routes.find(route => route.url === parsed.url))) return false
     if ([403,451,959].includes(+status)) {
         group.invalidHosts.add(parsed.host)
-        avoidedHosts.add(parsed.host)
+        avoidHost(parsed.host)
         if (group.currentHost === parsed.host) {
             group.currentRouteType = 'catalog-generated'; group.currentHost = group.catalogFallback
         }
@@ -809,9 +824,15 @@ const noteNativeFailure = (context, url, status = 0, failureKind = 'http') => {
     return true
 }
 
-const chooseRecoveryRoute = (group, failedHost) => {
-    const fallback = [deps.resolvedCdn, deps.peekCurrentCdn(), group?.catalogFallback]
-        .find(host => host && (!deps.isHostAllowed || deps.isHostAllowed(host))) || null
+const chooseRecoveryRoute = (group, failedHost, options = null) => {
+    const fixed = deps.resolvedCdn
+    const fallbackCandidates = fixed
+        ? [fixed]
+        : [deps.peekCurrentCdn(), group?.catalogFallback, ...(deps.getHealthyCdnList?.() || [])]
+    const fallback = fallbackCandidates.find(host => host
+        && (fixed || !Number.isFinite(options?.temporaryMs)
+            || (host !== failedHost && !isHostAvoided(host)))
+        && (!deps.isHostAllowed || deps.isHostAllowed(host))) || null
     if (!group || group.kind !== 'video' || deps.resolvedCdn) {
         return fallback ? { type: 'catalog-generated', host: fallback } : null
     }
@@ -831,11 +852,11 @@ const chooseRecoveryRoute = (group, failedHost) => {
     return fallback ? { type: 'catalog-generated', host: fallback } : null
 }
 
-const beginRouteRecovery = (reason, failedHost = null) => {
+const beginRouteRecovery = (reason, failedHost = null, options = null) => {
     const host = safeHost(failedHost)
-    if (host) avoidedHosts.add(host)
+    if (host) avoidHost(host, Number.isFinite(options?.temporaryMs) ? options.temporaryMs : Infinity)
     const group = activeRepresentation?.groupId ? groups.get(activeRepresentation.groupId) : null
-    const next = chooseRecoveryRoute(group, host)
+    const next = chooseRecoveryRoute(group, host, options)
     lastRouteBoundary = { reason: String(reason || 'recovery').slice(0, 48), failedHost: host || null,
         at: Date.now(), adopted: next ? { ...next } : null }
     routeAffinity = null

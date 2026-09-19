@@ -1,5 +1,15 @@
 # 待辦
 
+## v1.9.2
+
+- [x] 保留 v1.9.1 的隔夜首次播放保護；自動 probe／bakeoff 只在播放進度與可播放緩衝成立後啟動。
+- [x] 辨識長暫停恢復後 audio 活著、video core 未初始化的 `video-init-dead` 狀態。
+- [x] 每個 resume token 最多一次 `player.reload()`，恢復位置、倍速與播放意圖；逾時、缺 API 與失敗受 breaker 限制。
+- [x] 自動模式只做兩分鐘分頁內路線暫避；固定 CDN、black／dead／soft／設定排除不被繞過。
+- [x] hidden 事件繼續隔離，真實 visible 事件可送達 Bilibili；Manifest 診斷分開顯示資料接納與 core 活性。
+- [x] 349 項功能回歸、語法、可重現建置、patch 套用及 SHA-256 通過；未執行 Code Security。
+- [ ] 安裝後以真實 Chrome／Tampermonkey 驗證長時間暫停、切換視窗、恢復播放，確認只重載一次且不循環。
+
 ## v1.9.0
 
 - [x] 真實 Chrome 確認部分 SPA 沒有新 playurl，`__playinfo__` 仍是舊物件，但目前 `player.__core().getMpd()` 已含新片 signed representation。

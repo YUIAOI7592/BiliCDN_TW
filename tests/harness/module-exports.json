@@ -1525,6 +1525,7 @@
       "mutable": false
     }
   ],
+  "startup": [],
   "application": [
     {
       "name": "setRuntimeDisabled",

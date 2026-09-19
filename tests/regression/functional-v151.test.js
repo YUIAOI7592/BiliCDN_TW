@@ -216,6 +216,12 @@ test('v1.5.3 bakeoff fairness reaches candidates behind the first round', async 
         },
     })
     await settle()
+    h.evaluate(`(() => {
+        const v = globalThis.__startupTestVideo || (globalThis.__startupTestVideo = {})
+        const base = { available: true, valid: true, paused: false, seeking: false, ended: false,
+            errorCode: 0, duration: 600, bufferAheadSec: 30, effectiveRate: 2 }
+        update(v, { ...base, currentTime: 1 }); update(v, { ...base, currentTime: 2 }); update(v, { ...base, currentTime: 3 })
+    })()`)
     const initialFetches = h.fetchCalls.length
     h.evaluate(`(() => {
         knownDeadHosts.clear()

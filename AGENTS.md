@@ -4,9 +4,9 @@
 
 目前不可變上游基準：`baseline/BiliCDN_TW_1.3.4.original.user.js`
 
-目前模組化交付：`src/` → `Release/v1.9.0/BiliCDN_TW.user.js`（功能驗證狀態以本版 TEST_REPORT 為準）。
+目前模組化交付：`src/` → `Release/v1.9.2/BiliCDN_TW.user.js`（功能驗證狀態以本版 TEST_REPORT 為準）。
 
-v1.9.0 遵照使用者要求不執行 Code Security 掃描或獨立安全子集。npm test／verify 預設執行功能回歸。SPA 沒有可接納 playurl 或新 `__playinfo__` 時，先以有界重試只讀目前 `player.getManifest()` 與 `player.__core().getMpd()`；manifest 必須符合目前影片 key，資料只經欄位白名單複製後進入既有 playurl 管線。第一筆媒體請求若仍無 context，先同步重讀一次，再以該 exact URL 建立最多 16 組的 transport bootstrap。資料優先序固定為可信 playurl API、player MPD、page-hint、transport bootstrap；可信 API 到達後接管。讀播放器不得新增 Bilibili API／媒體請求、不得修改播放器、不得保存 signed URL 至 GM 或公開診斷。禁止判定仍必須同時約束原始、Native、Catalog、固定與備援 URL；不可因候選耗盡自動清除 black/dead。
+v1.9.2 遵照使用者要求不執行 Code Security 掃描或獨立安全子集。npm test／verify 預設執行功能回歸。v1.9.1 起播保護在快取過期時讓自動 probe／bakeoff 等待穩定播放；v1.9.2 在曾健康播放、長時間暫停後恢復且音訊存活但影片 core 未初始化時，最多一次呼叫既有 `player.reload()`，保存時間、倍速與播放意圖，並受 resume token、90 秒 breaker 及每 generation 兩次上限約束。SPA 沒有可接納 playurl 或新 `__playinfo__` 時，仍只讀目前 player manifest／MPD；不得新增 Bilibili API／媒體請求、不得保存 signed URL 至 GM 或公開診斷。禁止判定仍必須同時約束原始、Native、Catalog、固定與備援 URL；不可因自救或候選耗盡清除 black/dead。
 
 不可變重構基準：`tests/fixtures/BiliCDN_TW_1.5.5.user.js`（正式 v1.5.5 的原 bytes，非 development 草稿）。
 

@@ -249,5 +249,10 @@ test('v155 healthy dual-CDN 2x trace equals v154 through startup, 90s and four m
         }
         traces.push(trace)
     }
-    assert.deepEqual(traces[1],traces[0]);assert.deepEqual(traces[2],traces[0]);t.diagnostic(JSON.stringify(traces))
+    for(let i=0;i<traces[0].length;i++){
+        assert.ok(traces[1][i].requests<=traces[0][i].requests)
+        assert.ok(traces[1][i].probes<=traces[0][i].probes)
+        assert.ok(traces[1][i].bytes<=traces[0][i].bytes)
+    }
+    assert.deepEqual(traces[2],traces[1]);t.diagnostic(JSON.stringify(traces))
 })

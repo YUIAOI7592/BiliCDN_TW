@@ -28,6 +28,9 @@ let videoGroups = 0
 let audioGroups = 0
 let transportBootstrapCount = 0
 let lastReadAt = 0
+let livenessCore = null
+let coreRevision = 0
+let coreInitialized = null
 
 const safeGet = (object, names) => {
     if (!object) return undefined
@@ -138,6 +141,26 @@ const clearTimers = () => {
 const setState = (next, why = reason) => { state = next; reason = why }
 const active = () => !!runtime && !deps.disabled && deps.isRuntimeGenerationActive(runtime)
 
+const inspectLiveness = () => {
+    if (!active()) return { coreInitialized: null, coreRevision, videoGroups, audioGroups, lastReadAt }
+    const player = (() => { try { return unsafeWindow.player } catch { return null } })()
+    const core = safeCall(player, '__core')
+    if (core && core !== livenessCore) { livenessCore = core; coreRevision++ }
+    let initialized = null
+    try { if (typeof core?.state?.initialized === 'boolean') initialized = core.state.initialized } catch {}
+    coreInitialized = initialized
+    let liveVideoGroups = videoGroups, liveAudioGroups = audioGroups
+    try {
+        const mpd = safeCall(core, 'getMpd')
+        if (mpd && typeof mpd === 'object') {
+            if (Array.isArray(mpd.video)) liveVideoGroups = Math.min(VIDEO_MAX, mpd.video.length)
+            if (Array.isArray(mpd.audio)) liveAudioGroups = Math.min(AUDIO_MAX, mpd.audio.length)
+        }
+    } catch {}
+    lastReadAt = Date.now()
+    return { coreInitialized, coreRevision, videoGroups: liveVideoGroups, audioGroups: liveAudioGroups, lastReadAt }
+}
+
 const reconcileNow = (trigger = 'manual') => {
     if (!active()) { setState('expired', 'generation'); return false }
     attempts++
@@ -148,6 +171,8 @@ const reconcileNow = (trigger = 'manual') => {
     if (!keyMatchesManifest(manifest)) { setState('waiting-match', trigger); return false }
     const core = safeCall(player, '__core')
     if (!core) { setState('waiting-core', trigger); return false }
+    if (core !== livenessCore) { livenessCore = core; coreRevision++ }
+    try { coreInitialized = typeof core?.state?.initialized === 'boolean' ? core.state.initialized : null } catch { coreInitialized = null }
     coreChanged = !!lastCore && lastCore !== core
     lastCore = core
     if (previousAcceptedCore && previousAcceptedKey !== expectedKey && core === previousAcceptedCore) {
@@ -158,7 +183,7 @@ const reconcileNow = (trigger = 'manual') => {
     if (!cloned) { setState('waiting-mpd', trigger); return false }
     const generation = runtime.generation
     if (acceptedGeneration === generation && acceptedFingerprint === cloned.fingerprint) {
-        setState('adopted', 'unchanged')
+        setState('adopted', coreInitialized === false ? 'core-uninitialized' : 'unchanged')
         clearTimers()
         return true
     }
@@ -196,6 +221,9 @@ const start = (videoKey, startReason = 'initial') => {
     audioGroups = 0
     transportBootstrapCount = 0
     lastCore = null
+    livenessCore = null
+    coreRevision = 0
+    coreInitialized = null
     setState('waiting-player', startReason)
     if (reconcileNow(startReason)) return true
     for (const delay of RETRY_DELAYS) {
@@ -244,9 +272,9 @@ const reconcileMediaRequest = url => {
 
 const diagnostics = () => ({
     state, source, reason, attempts: Math.max(0, attempts), elapsedMs: startedAt ? Math.max(0, Date.now() - startedAt) : 0,
-    coreChanged, videoGroups, audioGroups, adoptedAt, lastReadAt,
+    coreChanged, coreInitialized, coreRevision, videoGroups, audioGroups, adoptedAt, lastReadAt,
     transportBootstrapCount, pendingRetries: timers.size,
 })
 
-return { start, cancel, supersede, reconcileNow, reconcileMediaRequest, diagnostics }
+return { start, cancel, supersede, reconcileNow, reconcileMediaRequest, inspectLiveness, diagnostics }
 }

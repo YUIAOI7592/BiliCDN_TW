@@ -22,15 +22,17 @@ const scheduleDeferredLatencyProbe = () => {
     if (probeDeferCount >= MAX_PROBE_DEFERS) {
         // 讓夠了。放行，交給之後自然會發生的觸發點（換片、卡頓、週期性重評估）。
         deferStartupProbes = false
+        deps.startup?.note('latency', 'skipped', probeDeferCount)
         return
     }
     probeDeferCount++
     probeDeferTimer = deps.scheduleRuntimeTimeout(() => {
         probeDeferTimer = null
-        if (deps.isStartupBuffering()) { scheduleDeferredLatencyProbe(); return }
+        if (deps.startup ? !deps.startup.allowed() : deps.isStartupBuffering()) { scheduleDeferredLatencyProbe(); return }
         deferStartupProbes = false
         reorderCdnsByLatency().catch(deps.reportMeasurementFailure())
     }, PROBE_DEFER_CHECK_MS)
+    deps.startup?.note('latency', 'waiting', probeDeferCount)
 }
 
 const reorderCdnsByLatency = async (force) => {
@@ -62,11 +64,14 @@ const reorderCdnsByLatency = async (force) => {
     reorderRunning = true
 
     try {
+        let cacheAvailable = false
         // Cache hit → 完全不發探測請求
         if (!force) {
             try {
                 const cached = JSON.parse(GM_getValue(deps.PROBE_CACHE_KEY) || 'null')
                 if (cached && (Date.now() - cached.t) < deps.PROBE_CACHE_TTL && Array.isArray(cached.list)) {
+                    cacheAvailable = true
+                    deps.startup?.availability(hasUsableCdnHealth(), true)
                     // 快取只決定「順序」，不決定「成員」。
                     // 舊版是照著快取清單重建 activeCdnList，於是某一輪縮水後的結果會被
                     // 醃在快取裡整整兩小時：之後每次載入都照著那份短清單重建，池子再也長不回來
@@ -91,7 +96,8 @@ const reorderCdnsByLatency = async (force) => {
 
         // ★ 起播讓路：快取沒命中、但已經有健康資料足以決定節點時，把「真的發探測請求」
         // 延後到起播緩衝建立之後（見上方 deferStartupProbes 說明）。
-        if (deferStartupProbes && !force && hasUsableCdnHealth()) {
+        deps.startup?.availability(hasUsableCdnHealth(), cacheAvailable)
+        if (!force && (deps.startup ? !deps.startup.allowed() : deferStartupProbes && hasUsableCdnHealth())) {
             scheduleDeferredLatencyProbe()
             return
         }
@@ -129,7 +135,22 @@ const reorderCdnsByLatency = async (force) => {
             if (deps.isPresumedDnsFailHost(h)) return false
             return true
         })
-        const results = await Promise.all(candidates.map(cdn => deps.probeCdnLatency(cdn, runtimeToken)))
+        const controller = new AbortController()
+        const onAbort = () => controller.abort()
+        runtimeToken.signal?.addEventListener('abort', onAbort, { once: true })
+        const unwatch = !force && deps.startup ? deps.startup.watch(onAbort) : () => {}
+        deps.startup?.note('latency', 'accepted', probeDeferCount, force ? 'manual' : 'automatic')
+        let results
+        try {
+            const measurementToken = { ...runtimeToken, signal: controller.signal }
+            results = await Promise.all(candidates.map(cdn => deps.probeCdnLatency(cdn, measurementToken)))
+        } finally {
+            unwatch(); runtimeToken.signal?.removeEventListener('abort', onAbort)
+        }
+        if (controller.signal.aborted) {
+            if (deps.isRuntimeGenerationActive(runtimeToken)) deps.startup?.note('latency', 'interrupted', probeDeferCount)
+            return
+        }
         if (!deps.isRuntimeGenerationActive(runtimeToken)) return
         // ★ 排序用「跨輪平滑後的估計值」，不是這一輪的原始值。
         // 單輪的 r.ms 幾乎完全由「這條連線當下是冷是熱」決定（實測冷熱差距：ali 冷 6.4s

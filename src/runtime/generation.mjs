@@ -26,6 +26,8 @@ const scheduleRuntimeTimeout = (callback, delay) => {
 }
 
 const stopRuntimeGeneration = () => {
+    deps.resetStartup?.()
+    deps.resetVideoCoreRecovery?.()
     runtimeGeneration++
     deps.DiagnosticLog.boundary(runtimeGeneration, deps.playinfoEpoch, disabled ? 'disabled' : 'active')
     deps.resetMediaDelivery()

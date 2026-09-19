@@ -45,9 +45,11 @@ const buildDiagReport = () => {
     const httpDns = deps.getHttpDnsStatus()
     const native = deps.getNativeRouteDiagnostics()
     const playerManifest = deps.getPlayerManifestDiagnostics()
+    const videoCore = deps.videoCoreSummary?.() || null
     const routeHost = native.currentHost ? native.currentHost.split('.')[0] : '（無新鮮後態）'
     const lines = [
         '[BiliCDN_TW 診斷報告]',
+        '起播量測：' + JSON.stringify(deps.startupSummary?.() || null),
         '版本：' + deps.VERSION,
         '頁面型態：' + getPageTypeLabel(),
         'UA：' + navigator.userAgent,
@@ -55,6 +57,8 @@ const buildDiagReport = () => {
         'Playinfo 生命週期：' + JSON.stringify(deps.getPagePlayInfoLifecycle()),
         '播放器 Manifest 同步：' + JSON.stringify(playerManifest)
             + '（只讀 player/core；不開啟統計面板、不新增網路）',
+        '影片核心狀態：' + JSON.stringify(videoCore)
+            + '（reload 呼叫不等於恢復；須有後續 metadata、影片 Transport 或影格證據）',
         '停用狀態：' + deps.disabled,
         '節點禁止／替代結果：' + JSON.stringify(deps.hostRestrictionSummary?.() || {}),
         '禁止規則：black／dead／soft、設定排除及預設不可用均生效；固定或原始 URL 不例外；無替代即阻止',

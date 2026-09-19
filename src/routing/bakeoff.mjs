@@ -158,6 +158,7 @@ const MAX_STARTUP_DEFERS     = 3
 let bakeoffStartupDefers     = 0
 
 const isStartupBuffering = () => {
+    if (deps.startup) return !deps.startup.allowed()
     try {
         const st = deps.Watchdog.stats()
         if (!st || st.readyState < 0) return false   // 頁面上沒有播放器，無從判斷
@@ -184,7 +185,6 @@ const runThroughputBakeoff = async (sampleUrl, skipIfFast = true, trustedRequest
     if (trustedReason) {
         const last = trustedBakeoffLastAt[trustedReason] || 0
         if (now - last < TRUSTED_BAKEOFF_MIN_GAP[trustedReason]) return skipped('cooldown')
-        trustedBakeoffLastAt[trustedReason] = now
     } else if (now - getLastBakeoffAt() < THRPT_BAKEOFF_COOLDOWN) {
         // 一般自動路徑維持既有 90 秒全域冷卻；只有閉包內 capability 能走受限緊急路徑。
         return skipped('cooldown')
@@ -193,14 +193,19 @@ const runThroughputBakeoff = async (sampleUrl, skipIfFast = true, trustedRequest
     // ★ 起播保護：緩衝還沒到 STARTUP_MIN_BUFFER_SEC 就先讓路，每 2 秒再看一次。
     // 有上限（MAX_STARTUP_DEFERS）—— 否則遇到「怎麼都緩衝不起來」的爛節點時，
     // 這個保護反而會讓賽馬永遠不跑，錯過換掉爛節點的機會。
-    if (skipIfFast && bakeoffStartupDefers < MAX_STARTUP_DEFERS && isStartupBuffering()) {
+    if (!trustedReason && isStartupBuffering()) {
+        if (bakeoffStartupDefers >= MAX_STARTUP_DEFERS) {
+            deps.startup?.note('throughput', 'skipped', bakeoffStartupDefers)
+            return skipped('startup-exhausted')
+        }
         bakeoffStartupDefers++
+        deps.startup?.note('throughput', 'waiting', bakeoffStartupDefers)
         const deferEpoch = bakeoffEpoch
         if (!bakeoffTimer) {
             bakeoffTimer = deps.scheduleRuntimeTimeout(() => {
                 bakeoffTimer = null
                 if (deferEpoch !== bakeoffEpoch) return
-                runThroughputBakeoff(lastSampleSegmentUrl).catch(deps.reportMeasurementFailure())
+                runThroughputBakeoff(lastSampleSegmentUrl, skipIfFast).catch(deps.reportMeasurementFailure())
             }, 2000)
         }
         return
@@ -225,14 +230,17 @@ const runThroughputBakeoff = async (sampleUrl, skipIfFast = true, trustedRequest
         return navigator.locks.request('bilicdn-bakeoff', { ifAvailable: true }, (lock) => {
             if (!lock) return skipped('busy')
             if (!deps.isRuntimeGenerationActive(runtimeToken)) return
-            return doBakeoff(sampleUrl, runtimeToken, sampleContext)
+            if (!trustedReason && isStartupBuffering()) return skipped('startup-waiting')
+            if (trustedReason) trustedBakeoffLastAt[trustedReason] = Date.now()
+            return doBakeoff(sampleUrl, runtimeToken, sampleContext, trustedReason)
         })
     }
     if (!crossTabShouldBakeoff()) return  // 沒有 Web Locks：只保留既有提示，不冒充權威互斥
-    return doBakeoff(sampleUrl, runtimeToken, sampleContext)
+    if (trustedReason) trustedBakeoffLastAt[trustedReason] = Date.now()
+    return doBakeoff(sampleUrl, runtimeToken, sampleContext, trustedReason)
 }
 
-const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration(), sampleContext = deps.captureRouteContext(sampleUrl)) => {
+const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration(), sampleContext = deps.captureRouteContext(sampleUrl), trustedReason = null) => {
     if (!deps.isRuntimeGenerationActive(runtimeToken) || !deps.isRouteSampleAllowed(sampleUrl, sampleContext)) return
     deps.DiagnosticLog.record('measurement', { reason: 'accepted', requested: true })
     bakeoffRunning = true
@@ -244,6 +252,9 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
     const myEpoch = bakeoffEpoch
     bakeoffAbortController = new AbortController()
     const mySignal = bakeoffAbortController.signal
+    const onUnsafe = () => bakeoffAbortController?.abort()
+    const unwatch = !trustedReason && deps.startup ? deps.startup.watch(onUnsafe) : () => {}
+    deps.startup?.note('throughput', 'accepted', bakeoffStartupDefers, trustedReason || 'automatic')
     const onRuntimeAbort = () => { try { bakeoffAbortController && bakeoffAbortController.abort() } catch {} }
     if (runtimeToken.signal) runtimeToken.signal.addEventListener('abort', onRuntimeAbort, { once: true })
     onBakeoffStart()                      // 通知其他分頁本分頁開始賽馬
@@ -290,6 +301,7 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
         const ok = []
         const outcomes = []
         for (const candidate of candidates) {
+            if (!trustedReason && isStartupBuffering()) { onUnsafe(); break }
             if (!deps.isRuntimeGenerationActive(runtimeToken) || myEpoch !== bakeoffEpoch || !deps.isRouteSampleAllowed(sampleUrl, sampleContext)) break
             // 這條串流已知綁定節點 → 剩下的候選不用試了，每一台都會 403（見 hostLockedStreams）
             if (deps.isHostLockedStream(sampleUrl)) break
@@ -310,11 +322,13 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
                     if (recorded?.accepted) ok.push({ ...r, native: true })
                 } else ok.push(r)
             }
+            if (mySignal.aborted) break
         }
 
         // 測速被防盜鏈擋掉時 probeCdnThroughput 只會靜默回 null，賽馬形同失效但完全沒有
         // 訊息。連續 3 輪「有候選但全部失敗」才示警，避免單次網路抖動誤報。
         if (!deps.isRuntimeGenerationActive(runtimeToken)) return
+        if (mySignal.aborted) deps.startup?.note('throughput', 'interrupted', bakeoffStartupDefers)
         if (candidates.length) {
             if (ok.length === 0) {
                 bakeoffNullStreak++
@@ -363,6 +377,7 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
         deps.setNativeBakeoffDiagnostics(outcomes)
         return { status, outcomes, samples: ok.length }
     } finally {
+        unwatch()
         if (runtimeToken.signal) runtimeToken.signal.removeEventListener('abort', onRuntimeAbort)
         bakeoffRunning = false
         if (bakeoffAbortController && bakeoffAbortController.signal === mySignal) bakeoffAbortController = null

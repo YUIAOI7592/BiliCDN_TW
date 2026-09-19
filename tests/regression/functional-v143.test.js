@@ -21,6 +21,15 @@ const settleTurns = async (count = 4) => {
     for (let i = 0; i < count; i++) await new Promise(resolve => setImmediate(resolve))
 }
 
+const markStartupSafe = h => h.evaluate(`(() => {
+    const v = globalThis.__startupTestVideo || (globalThis.__startupTestVideo = {})
+    const base = { available: true, valid: true, paused: false, seeking: false, ended: false,
+        errorCode: 0, duration: 600, bufferAheadSec: 30, effectiveRate: 2 }
+    update(v, { ...base, currentTime: 1 })
+    update(v, { ...base, currentTime: 2 })
+    update(v, { ...base, currentTime: 3 })
+})()`)
+
 test('v1.4.2 reproduction: disabling leaves pending latency probes alive and able to update health', async () => {
     const pending = []
     const h = loadUserscript(v142, {
@@ -47,6 +56,9 @@ test('v1.5.3: disabling aborts pending latency probes and rejects stale health w
             pending.push({ resolve, reject, signal })
         }),
     })
+    markStartupSafe(h)
+    h.evaluate('reorderCdnsByLatency()')
+    await settleTurns()
     assert.ok(pending.length > 0)
     h.context.__auditStopRuntime()
     assert.equal(pending.filter(entry => entry.signal && entry.signal.aborted).length, pending.length)
@@ -258,6 +270,8 @@ test('v1.5.3: visibility interception is gated off when runtime is disabled', { 
         'const setRuntimeDisabled = globalThis.__auditSetRuntimeDisabled = (nextDisabled) => {'
     )
     const h = loadUserscript(v143, { gmSeed: { disabled: false }, sourceTransform: transform })
+    h.document._hidden = true
+    h.document._visibilityState = 'hidden'
     const activeEvent = new h.context.Event('visibilitychange')
     h.document.dispatchEvent(activeEvent)
     assert.equal(activeEvent.__stopImmediate, true)
@@ -265,6 +279,13 @@ test('v1.5.3: visibility interception is gated off when runtime is disabled', { 
     const disabledEvent = new h.context.Event('visibilitychange')
     h.document.dispatchEvent(disabledEvent)
     assert.equal(disabledEvent.__stopImmediate, undefined)
+
+    h.document._hidden = false
+    h.document._visibilityState = 'visible'
+    h.context.__auditSetRuntimeDisabled(false)
+    const visibleEvent = new h.context.Event('visibilitychange')
+    h.document.dispatchEvent(visibleEvent)
+    assert.equal(visibleEvent.__stopImmediate, undefined)
 })
 
 test('v1.5.3: HTTPDNS AutoPilot performs a trial and commits a healthy allow result', { skip: !fs.existsSync(v143) }, () => {
@@ -364,6 +385,8 @@ test('v1.5.3: shared Web Lock prevents two tabs from running bakeoff concurrentl
         locks,
         gmSeed: { disabled: false, probeCache_v1: cache },
     })
+    markStartupSafe(a)
+    markStartupSafe(b)
     await settleTurns()
     const sample = `https://${cdn}/upgcxcode/lock-test.m4s?token=kept`
     const aRun = a.evaluate(`runThroughputBakeoff(${JSON.stringify(sample)}, false)`)
