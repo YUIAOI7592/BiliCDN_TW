@@ -1,5 +1,14 @@
 # 待辦
 
+## v1.9.4
+
+- [x] 真實 Chrome 確認 Bilibili 的播放按鈕會呼叫目前主影片元素的 `play()`，而非公開 `window.player.play()`／core `play()`。
+- [x] 長暫停期間只暫時包裝目前主影片元素 `play()`；transient user activation 成立才建立可信播放意圖。
+- [x] 即使死影片仍回報 paused，4 秒強證據後也能單次呼叫 `player.reload()`，並由外層 player 保存位置與倍速。
+- [x] 核心重建與 CDN 路由、暫避、健康學習、probe、preconnect 及節點處分完全隔離。
+- [x] 363 項功能回歸通過；未執行 Code Security。
+- [ ] 安裝 v1.9.4 後，以真實 Chrome／Tampermonkey 重現長暫停死核心，確認只重載一次並恢復位置、2x 與播放意圖。
+
 ## v1.9.3
 
 - [x] 以一秒 freshness gate 合併 black／dead GM 同步，每個 store 每輪只讀一次，精確到期可立即刷新。

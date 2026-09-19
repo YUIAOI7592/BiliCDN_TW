@@ -484,10 +484,9 @@ get getMediaDeliverySnapshot() { return media.getMediaDeliverySnapshot; },
 get playbackQualitySnapshot() { return media.playbackQualitySnapshot; },
 get inspectPlayerLiveness() { return playerManifest.inspectLiveness; },
 get getPlayer() { return () => { try { return unsafeWindow.player } catch { return null } }; },
-get beginRouteRecovery() { return nativeRoutes.beginRouteRecovery; },
-get getNativeRouteDiagnostics() { return nativeRoutes.diagnostics; },
-get getAttributedVideoHost() { return media.getAttributedVideoHost; },
-get resolvedCdn() { return health.resolvedCdn; },
+get isUserActivationActive() { return () => {
+    try { return unsafeWindow.navigator?.userActivation?.isActive === true } catch { return false }
+}; },
 get DiagnosticLog() { return events.DiagnosticLog; }
 });
 watchdog = createWatchdog({

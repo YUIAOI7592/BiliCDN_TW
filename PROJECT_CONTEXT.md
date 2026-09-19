@@ -1,12 +1,12 @@
 # 專案交接脈絡
 
-目前交付為 v1.9.3，以不可變 v1.9.2（SHA-256 2ad6b39b9d7b0a13e75a73c3984611afcc69c78cbe90a2e62ddb1f92ec5f0084）為封裝基準。限制狀態每秒只同步一次 GM、到期可立即越過 freshness gate；Watchdog 與 seek 預熱共用主影片 resolver，背景或折疊造成零尺寸時仍保留已連接影片。v1.9.1 的隔夜起播保護與 v1.9.2 的長暫停影片核心重建完整保留。
+目前交付為 v1.9.4，以不可變 v1.9.3（SHA-256 e104f9b0d83bd8e9043f987792c606d0c3c8b64ec2934e652a60562799b1fc46）為封裝基準。長暫停恢復以目前主影片元素的 `play()` 與 transient user activation 建立播放意圖，即使死影片仍維持 paused 也能受限地重建核心；保存位置優先讀外層 player，且重建不再改變 CDN 路線或學習狀態。v1.9.3 的限制狀態 freshness gate、共用主影片 resolver，以及 v1.9.1 的隔夜起播保護完整保留。
 
 本版依使用者要求不執行 Code Security 掃描或獨立安全子集；必要功能回歸、封裝與實機狀態分開記錄於 TEST_REPORT。播放器來源只經有界欄位複製，不修改 core、不中斷請求，也不額外呼叫 Bilibili API。資料優先序為可信 playurl API、player MPD、page-hint、transport bootstrap；完整 signed URL 仍只活在目前 epoch 的記憶體 Route Pool。
 
 - 上游：baseline/BiliCDN_TW_1.3.4.original.user.js，SHA-256 acaa3d61c169a0a39ef403d7442e1decc1b20540ea9ada3e8cf5e459bb88f579。
 - 重構基準：tests/fixtures/BiliCDN_TW_1.5.5.user.js，SHA-256 fccf8ca10c9086b8edae3ba9b170b14ff5c92451ccd921c5834960e5624b441f。
-- 原始碼 src；目前交付 Release/v1.9.3；暫存 dist。功能驗收狀態見本版 TEST_REPORT，不以舊版通過狀態代替。
+- 原始碼 src；目前交付 Release/v1.9.4；暫存 dist。功能驗收狀態見本版 TEST_REPORT，不以舊版通過狀態代替。
 - v1.8.0 已由 v1.8.1 取代；v1.8.1 的正式 Codex Security 差異掃描狀態以本版 TEST_REPORT 為準，掃描不等於 Chrome／Tampermonkey 實機播放驗證。
 
 runtime 持有 generation，playback 持有 epoch／registry，transport 持有單次請求終態，routing 保留 catalog health、Native host-only Ledger、Route Affinity、處分及 Watchdog 回收來源區別。完整 signed URL 只在目前 epoch 的 route group 中存在；新 epoch、SPA、停用或重啟即清除。健康 probe 不能改 Route Affinity；真實 Transport／Watchdog recovery 才能開啟換線邊界。所有實例由主入口建立，import 不讀 GM／DOM 或啟動網路。v1.7.0 起不讀取或覆寫 `unsafeWindow.Worker`。

@@ -23,13 +23,17 @@ const DiagnosticLog = (() => {
         + 'http network-error body-error abort eof no-body reopened detached automatic manual '
         + 'fixed no-segment busy hidden not-applicable host-lock forbidden insufficient ineligible host-restricted '
         + 'latency throughput waiting menu verified-failure startup-exhausted startup-waiting healthy-cache '
-        + 'waiting-metadata video-init-dead reloading recovered reload-failed unavailable core-uninitialized').split(' '))
+        + 'pause-armed play-intent waiting-metadata video-init-dead reloading recovered recovered-paused '
+        + 'reload-failed hook-unavailable unavailable core-uninitialized installed not-installed lost '
+        + 'trusted-media-play paused-transition none not-called pending resolved rejected').split(' '))
     const keys = new Set(('generation epoch id method kind originalHost targetHost finalHost host '
         + 'status bytes startAt responseAt endAt ageMs phase stage reason enabled persisted '
         + 'readyState networkState currentTime duration bufferAheadSec observedRate effectiveRate '
         + 'paused seeking ended available valid errorCode hidden waitMs count remainingMs remainingSec '
         + 'punished reselected preconnect requested received switchCount stallCount breakerSec '
-        + 'outcome actionId playableSec progressTicks coreInitialized resumeToken reloadCount videoAgeSec audioAgeSec').split(' '))
+        + 'outcome actionId playableSec progressTicks coreInitialized resumeToken reloadCount videoAgeSec audioAgeSec '
+        + 'playHookState intentSource userActivationAccepted pauseSec intentAgeSec savedPositionSec savedRate '
+        + 'postReloadPlayOutcome').split(' '))
     const state = { startedAt: Date.now(), verboseChangedAt: Date.now(), persisted: null,
         evicted: 0, expired: 0, rejected: 0, pendingEvicted: 0, failures: 0 }
     let seq = 0, nextRequest = 0, lastSampleAt = 0

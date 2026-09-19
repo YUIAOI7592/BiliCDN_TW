@@ -4,9 +4,9 @@
 
 目前不可變上游基準：`baseline/BiliCDN_TW_1.3.4.original.user.js`
 
-目前模組化交付：`src/` → `Release/v1.9.3/BiliCDN_TW.user.js`（功能驗證狀態以本版 TEST_REPORT 為準）。
+目前模組化交付：`src/` → `Release/v1.9.4/BiliCDN_TW.user.js`（功能驗證狀態以本版 TEST_REPORT 為準）。
 
-v1.9.3 遵照使用者要求不執行 Code Security 掃描或獨立安全子集。npm test／verify 預設執行功能回歸。限制狀態以一秒 freshness gate 合併 GM 同步，到期可立即越過 gate；Watchdog 與 seek 預熱共用主影片 resolver，零尺寸但仍連接的影片不能被當成不存在。v1.9.1 起播保護與 v1.9.2 長暫停核心重建完整保留。SPA 沒有可接納 playurl 或新 `__playinfo__` 時，仍只讀目前 player manifest／MPD；不得新增 Bilibili API／媒體請求、不得保存 signed URL 至 GM 或公開診斷。禁止判定仍必須同時約束原始、Native、Catalog、固定與備援 URL；不可因自救或候選耗盡清除 black/dead。
+v1.9.4 遵照使用者要求不執行 Code Security 掃描或獨立安全子集。npm test／verify 預設執行功能回歸。長暫停後只在目前主影片元素的 `play()` 由同一瞬間的 transient user activation 呼叫時建立可信播放意圖；不得改回 DOM selector、全域鍵盤監聽或永久 player patch。死核心重建只能呼叫既有 `player.reload()`，保存外層播放器位置／倍速，且不得觸發路由恢復、暫避、probe、preconnect 或節點處分。v1.9.3 的限制狀態 freshness gate 與共用影片 resolver、v1.9.1 起播保護均完整保留。SPA 沒有可接納 playurl 或新 `__playinfo__` 時，仍只讀目前 player manifest／MPD；不得新增 Bilibili API／媒體請求、不得保存 signed URL 至 GM 或公開診斷。禁止判定仍必須同時約束原始、Native、Catalog、固定與備援 URL；不可因自救或候選耗盡清除 black/dead。
 
 不可變重構基準：`tests/fixtures/BiliCDN_TW_1.5.5.user.js`（正式 v1.5.5 的原 bytes，非 development 草稿）。
 

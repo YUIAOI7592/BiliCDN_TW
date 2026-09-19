@@ -1,0 +1,579 @@
+diff --git a/Release/v1.9.3/BiliCDN_TW.user.js b/Release/v1.9.4/BiliCDN_TW.user.js
+index 795238c..39189f9 100644
+--- a/Release/v1.9.3/BiliCDN_TW.user.js
++++ b/Release/v1.9.4/BiliCDN_TW.user.js
+@@ -1,7 +1,7 @@
+ // ==UserScript==
+ // @name         Bilibili CDN 台灣優化
+ // @namespace    BiliCDN_TW
+-// @version      1.9.3
++// @version      1.9.4
+ // @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+ // @author       jiyunshi <chocosensei214@gmail.com>
+ // @license      MIT
+@@ -228,8 +228,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const TTL = 15 * 60 * 1e3;
+       const encoder = new TextEncoder();
+       const codes = new Set("runtime verbose settings-read settings-write settings-verify exception request headers body eof no-body http network-error body-error abort reopened detached rewrite measurement watchdog recovery breaker host-lock clipboard sample route-blocked startup-measurement video-core".split(" "));
+-      const enums = new Set("fetch xhr video audio muxed unknown non-catalog headers body settings-read settings-write settings-verify startup active disabled spa epoch interceptor transform fetch-body playurl-body playurl-clone measurement watchdog snapshot health-save clipboard-gm clipboard-standard clipboard-manual page-hook ui no-video invalid-state no-metadata media-error ended paused seeking seek-grace background-gap player-nudge nudge-grace startup-grace switch-grace target-reached healthy low-data buffered-stall too-slow stall-count cooldown breaker attempt progress no-progress interrupted no-attribution attributed received httpdns accepted skipped complete cancelled failed timeout partial latency-only http network-error body-error abort eof no-body reopened detached automatic manual fixed no-segment busy hidden not-applicable host-lock forbidden insufficient ineligible host-restricted latency throughput waiting menu verified-failure startup-exhausted startup-waiting healthy-cache waiting-metadata video-init-dead reloading recovered reload-failed unavailable core-uninitialized".split(" "));
+-      const keys = new Set("generation epoch id method kind originalHost targetHost finalHost host status bytes startAt responseAt endAt ageMs phase stage reason enabled persisted readyState networkState currentTime duration bufferAheadSec observedRate effectiveRate paused seeking ended available valid errorCode hidden waitMs count remainingMs remainingSec punished reselected preconnect requested received switchCount stallCount breakerSec outcome actionId playableSec progressTicks coreInitialized resumeToken reloadCount videoAgeSec audioAgeSec".split(" "));
++      const enums = new Set("fetch xhr video audio muxed unknown non-catalog headers body settings-read settings-write settings-verify startup active disabled spa epoch interceptor transform fetch-body playurl-body playurl-clone measurement watchdog snapshot health-save clipboard-gm clipboard-standard clipboard-manual page-hook ui no-video invalid-state no-metadata media-error ended paused seeking seek-grace background-gap player-nudge nudge-grace startup-grace switch-grace target-reached healthy low-data buffered-stall too-slow stall-count cooldown breaker attempt progress no-progress interrupted no-attribution attributed received httpdns accepted skipped complete cancelled failed timeout partial latency-only http network-error body-error abort eof no-body reopened detached automatic manual fixed no-segment busy hidden not-applicable host-lock forbidden insufficient ineligible host-restricted latency throughput waiting menu verified-failure startup-exhausted startup-waiting healthy-cache pause-armed play-intent waiting-metadata video-init-dead reloading recovered recovered-paused reload-failed hook-unavailable unavailable core-uninitialized installed not-installed lost trusted-media-play paused-transition none not-called pending resolved rejected".split(" "));
++      const keys = new Set("generation epoch id method kind originalHost targetHost finalHost host status bytes startAt responseAt endAt ageMs phase stage reason enabled persisted readyState networkState currentTime duration bufferAheadSec observedRate effectiveRate paused seeking ended available valid errorCode hidden waitMs count remainingMs remainingSec punished reselected preconnect requested received switchCount stallCount breakerSec outcome actionId playableSec progressTicks coreInitialized resumeToken reloadCount videoAgeSec audioAgeSec playHookState intentSource userActivationAccepted pauseSec intentAgeSec savedPositionSec savedRate postReloadPlayOutcome".split(" "));
+       const state = {
+         startedAt: Date.now(),
+         verboseChangedAt: Date.now(),
+@@ -4968,6 +4968,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+   // src/playback/video-core-recovery.mjs
+   function createVideoCoreRecovery(deps) {
+     const MIN_PAUSE_MS = 30 * 1e3;
++    const TRUSTED_STRONG_WAIT_MS = 4 * 1e3;
+     const STRONG_WAIT_MS = 10 * 1e3;
+     const WEAK_WAIT_MS = 15 * 1e3;
+     const RELOAD_TIMEOUT_MS = 15 * 1e3;
+@@ -4975,9 +4976,13 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     const MAX_RELOADS_PER_GENERATION = 2;
+     let generation = -1;
+     let video = null;
++    let lastPlayback = null;
+     let previouslyPaused = null;
+     let pauseStartedAt = 0;
++    let pauseArmedRecorded = false;
+     let hadHealthyVideo = false;
++    let lastStablePosition = 0;
++    let lastStableRate = 2;
+     let resumeToken = 0;
+     let resume = null;
+     let state = "healthy";
+@@ -4985,6 +4990,17 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let lastReloadAt = 0;
+     let breakerUntil = 0;
+     let foregroundAt = 0;
++    let hookState = "not-installed";
++    let hookedMedia = null;
++    let hookedPlayer = null;
++    let hookedPlay = null;
++    let originalPlay = null;
++    let originalPlayOwnDescriptor = null;
++    let playHookFailureRecorded = false;
++    let internalPlayDepth = 0;
++    let intentSource = "none";
++    let userActivationAccepted = false;
++    let postReloadPlayOutcome = "not-called";
+     const now = /* @__PURE__ */ __name(() => deps.now ? deps.now() : Date.now(), "now");
+     const bounded = /* @__PURE__ */ __name((value) => Number.isFinite(+value) ? +value : null, "bounded");
+     const mediaSnapshot = /* @__PURE__ */ __name(() => {
+@@ -5024,12 +5040,163 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         ...extra
+       }, true);
+     }, "record");
++    const safePlayerCall = /* @__PURE__ */ __name((player, name, ...args) => {
++      const fn = player?.[name];
++      return typeof fn === "function" ? fn.apply(player, args) : void 0;
++    }, "safePlayerCall");
++    const readPlayerNumber = /* @__PURE__ */ __name((player, name) => {
++      try {
++        return bounded(safePlayerCall(player, name));
++      } catch {
++        return null;
++      }
++    }, "readPlayerNumber");
++    const readUserActivation = /* @__PURE__ */ __name(() => {
++      try {
++        return deps.isUserActivationActive?.() === true;
++      } catch {
++        return false;
++      }
++    }, "readUserActivation");
++    const captureResumeValues = /* @__PURE__ */ __name((player, playback = lastPlayback) => {
++      const playerTime = readPlayerNumber(player, "getCurrentTime");
++      const playerRate = readPlayerNumber(player, "getPlaybackRate");
++      const playbackTime = bounded(playback?.currentTime);
++      const playbackRate = bounded(playback?.effectiveRate);
++      return {
++        currentTime: Math.max(0, playerTime ?? (lastStablePosition > 0 ? lastStablePosition : playbackTime) ?? 0),
++        rate: playerRate > 0 ? playerRate : playbackRate > 0 ? playbackRate : lastStableRate > 0 ? lastStableRate : 2
++      };
++    }, "captureResumeValues");
++    const uninstallPlayHook = /* @__PURE__ */ __name(() => {
++      const media = hookedMedia, wrapped = hookedPlay, original = originalPlay;
++      const ownDescriptor = originalPlayOwnDescriptor;
++      hookedMedia = null;
++      hookedPlayer = null;
++      hookedPlay = null;
++      originalPlay = null;
++      originalPlayOwnDescriptor = null;
++      if (media && wrapped) {
++        try {
++          if (media.play === wrapped) {
++            if (ownDescriptor) Object.defineProperty(media, "play", ownDescriptor);
++            else delete media.play;
++            if (media.play === wrapped && original) Reflect.set(media, "play", original, media);
++          }
++        } catch {
++          try {
++            if (media.play === wrapped && original) Reflect.set(media, "play", original, media);
++          } catch {
++          }
++        }
++      }
++      if (hookState === "installed") hookState = "not-installed";
++    }, "uninstallPlayHook");
++    const beginResume = /* @__PURE__ */ __name((playback, snapshots, source, values) => {
++      const t = now();
++      resumeToken++;
++      intentSource = source;
++      postReloadPlayOutcome = "not-called";
++      resume = {
++        token: resumeToken,
++        generation: deps.runtimeGeneration,
++        startedAt: t,
++        deadSince: 0,
++        currentTime: Math.max(0, bounded(values?.currentTime) ?? bounded(playback?.currentTime) ?? 0),
++        rate: bounded(values?.rate) > 0 ? values.rate : bounded(playback?.effectiveRate) > 0 ? playback.effectiveRate : 2,
++        videoBaseline: snapshots.video ? { ...snapshots.video } : null,
++        audioBaseline: snapshots.audio ? { ...snapshots.audio } : null,
++        frameBaseline: frameCount(),
++        reloadAttempted: false,
++        reloadStartedAt: 0,
++        playRequested: false,
++        wasPlaying: true,
++        intentSource: source
++      };
++      state = source === "trusted-media-play" ? "play-intent" : "waiting-metadata";
++      record(state, {
++        intentSource: source,
++        userActivationAccepted,
++        currentTime: resume.currentTime,
++        effectiveRate: resume.rate
++      });
++    }, "beginResume");
++    const noteTrustedPlayIntent = /* @__PURE__ */ __name((player, values) => {
++      userActivationAccepted = true;
++      if (resume) return;
++      const t = now(), playback = lastPlayback;
++      const pausedFor = pauseStartedAt ? t - pauseStartedAt : 0;
++      if (!hadHealthyVideo || pausedFor < MIN_PAUSE_MS || !playback?.available || !playback.valid || playback.seeking || playback.ended || playback.errorCode) return;
++      if (reloadCount >= MAX_RELOADS_PER_GENERATION || t < breakerUntil || lastReloadAt && t - lastReloadAt < RELOAD_COOLDOWN_MS) {
++        state = "breaker";
++        record("breaker", { reason: "cooldown", userActivationAccepted: true });
++        return;
++      }
++      beginResume(playback, mediaSnapshot(), "trusted-media-play", values);
++    }, "noteTrustedPlayIntent");
++    const installPlayHook = /* @__PURE__ */ __name((media, player) => {
++      if (!media || typeof media.play !== "function") return false;
++      if (hookedMedia === media && hookedPlayer === player && media.play === hookedPlay) {
++        hookState = "installed";
++        return true;
++      }
++      if (hookedMedia || hookedPlay) uninstallPlayHook();
++      const original = media.play;
++      const ownDescriptor = (() => {
++        try {
++          return Object.getOwnPropertyDescriptor(media, "play") || null;
++        } catch {
++          return null;
++        }
++      })();
++      let wrapped;
++      try {
++        wrapped = new Proxy(original, {
++          apply(target, thisArg, args) {
++            const accepted = internalPlayDepth === 0 && readUserActivation();
++            const values = accepted ? captureResumeValues(player) : null;
++            try {
++              return Reflect.apply(target, thisArg, args);
++            } finally {
++              if (accepted) noteTrustedPlayIntent(player, values);
++            }
++          }
++        });
++        if (!Reflect.set(media, "play", wrapped, media) || media.play !== wrapped) throw Error("play-not-writable");
++      } catch {
++        hookState = "unavailable";
++        if (!playHookFailureRecorded) {
++          playHookFailureRecorded = true;
++          state = "hook-unavailable";
++          record("hook-unavailable", { reason: "unavailable" });
++        }
++        return false;
++      }
++      hookedMedia = media;
++      hookedPlayer = player;
++      hookedPlay = wrapped;
++      originalPlay = original;
++      originalPlayOwnDescriptor = ownDescriptor;
++      hookState = "installed";
++      return true;
++    }, "installPlayHook");
++    const clearResume = /* @__PURE__ */ __name((nextState = "healthy") => {
++      resume = null;
++      intentSource = "none";
++      state = nextState;
++      uninstallPlayHook();
++    }, "clearResume");
+     const reset = /* @__PURE__ */ __name(() => {
++      uninstallPlayHook();
+       generation = deps.runtimeGeneration;
+       video = null;
++      lastPlayback = null;
+       previouslyPaused = null;
+       pauseStartedAt = 0;
++      pauseArmedRecorded = false;
+       hadHealthyVideo = false;
++      lastStablePosition = 0;
++      lastStableRate = 2;
+       resumeToken = 0;
+       resume = null;
+       state = "healthy";
+@@ -5037,6 +5204,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       lastReloadAt = 0;
+       breakerUntil = 0;
+       foregroundAt = 0;
++      hookState = "not-installed";
++      playHookFailureRecorded = false;
++      internalPlayDepth = 0;
++      intentSource = "none";
++      userActivationAccepted = false;
++      postReloadPlayOutcome = "not-called";
+     }, "reset");
+     const fail = /* @__PURE__ */ __name((reason) => {
+       if (!resume) return;
+@@ -5044,15 +5217,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       breakerUntil = Math.max(breakerUntil, now() + RELOAD_COOLDOWN_MS);
+       record(state, { reason });
+       resume = null;
++      intentSource = "none";
++      uninstallPlayHook();
+     }, "fail");
+-    const safePlayerCall = /* @__PURE__ */ __name((player, name, ...args) => {
+-      try {
+-        const fn = player?.[name];
+-        return typeof fn === "function" ? fn.apply(player, args) : void 0;
+-      } catch (error) {
+-        throw error;
+-      }
+-    }, "safePlayerCall");
+     const restore = /* @__PURE__ */ __name((player, currentVideo) => {
+       const pending = resume;
+       if (!pending || pending.generation !== deps.runtimeGeneration) return false;
+@@ -5066,24 +5233,41 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         safePlayerCall(player, "setPlaybackRate", pending.rate);
+       } catch {
+       }
++      state = "recovered";
++      const token = pending.token, tokenGeneration = pending.generation;
++      record("recovered", { currentTime: target, effectiveRate: pending.rate, intentSource: pending.intentSource });
+       if (pending.wasPlaying && !pending.playRequested) {
+         pending.playRequested = true;
++        postReloadPlayOutcome = "pending";
+         try {
++          internalPlayDepth++;
+           const result = safePlayerCall(player, "play");
+-          if (result && typeof result.catch === "function") result.catch(() => {
+-          });
++          internalPlayDepth--;
++          if (result && typeof result.then === "function") {
++            Promise.resolve(result).then(() => {
++              if (tokenGeneration === deps.runtimeGeneration && resumeToken === token) postReloadPlayOutcome = "resolved";
++            }, () => {
++              if (tokenGeneration !== deps.runtimeGeneration || resumeToken !== token) return;
++              postReloadPlayOutcome = "rejected";
++              state = "recovered-paused";
++              record("recovered-paused", { reason: "rejected", currentTime: target, effectiveRate: pending.rate });
++            });
++          } else postReloadPlayOutcome = "resolved";
+         } catch {
++          internalPlayDepth = Math.max(0, internalPlayDepth - 1);
++          postReloadPlayOutcome = "rejected";
++          state = "recovered-paused";
++          record("recovered-paused", { reason: "rejected", currentTime: target, effectiveRate: pending.rate });
+         }
+       }
+-      state = "recovered";
+-      record("recovered", { currentTime: target, effectiveRate: pending.rate });
+       resume = null;
++      uninstallPlayHook();
+       return true;
+     }, "restore");
+-    const startReload = /* @__PURE__ */ __name((currentVideo, playback, liveness) => {
++    const startReload = /* @__PURE__ */ __name((liveness) => {
+       const t = now();
+       if (!resume || resume.reloadAttempted) return;
+-      if (reloadCount >= MAX_RELOADS_PER_GENERATION || t < breakerUntil || t - lastReloadAt < RELOAD_COOLDOWN_MS) {
++      if (reloadCount >= MAX_RELOADS_PER_GENERATION || t < breakerUntil || lastReloadAt && t - lastReloadAt < RELOAD_COOLDOWN_MS) {
+         fail("breaker");
+         return;
+       }
+@@ -5094,27 +5278,15 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       resume.reloadAttempted = true;
+       resume.reloadStartedAt = t;
+-      resume.currentTime = Math.max(0, bounded(playback.currentTime) || 0);
+-      resume.rate = bounded(playback.effectiveRate) > 0 ? playback.effectiveRate : 2;
+-      resume.wasPlaying = playback.paused === false;
+       reloadCount++;
+       lastReloadAt = t;
+       state = "reloading";
+-      let failedHost = null;
+-      if (!deps.resolvedCdn) {
+-        try {
+-          failedHost = deps.getNativeRouteDiagnostics()?.currentHost || deps.getAttributedVideoHost?.() || null;
+-        } catch {
+-        }
+-        try {
+-          deps.beginRouteRecovery("video-init-dead", failedHost, { temporaryMs: 2 * 60 * 1e3 });
+-        } catch {
+-        }
+-      }
++      uninstallPlayHook();
+       record("reloading", {
+         coreInitialized: liveness.coreInitialized,
+         currentTime: resume.currentTime,
+-        effectiveRate: resume.rate
++        effectiveRate: resume.rate,
++        intentSource: resume.intentSource
+       });
+       try {
+         const result = safePlayerCall(player, "reload");
+@@ -5123,68 +5295,75 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         fail("failed");
+       }
+     }, "startReload");
+-    const beginResume = /* @__PURE__ */ __name((playback, snapshots) => {
+-      const t = now();
+-      resumeToken++;
+-      resume = {
+-        token: resumeToken,
+-        generation: deps.runtimeGeneration,
+-        startedAt: t,
+-        currentTime: Math.max(0, bounded(playback.currentTime) || 0),
+-        rate: bounded(playback.effectiveRate) > 0 ? playback.effectiveRate : 2,
+-        videoBaseline: snapshots.video ? { ...snapshots.video } : null,
+-        audioBaseline: snapshots.audio ? { ...snapshots.audio } : null,
+-        frameBaseline: frameCount(),
+-        reloadAttempted: false,
+-        reloadStartedAt: 0,
+-        playRequested: false,
+-        wasPlaying: true
+-      };
+-      state = "waiting-metadata";
+-      record("waiting-metadata");
+-    }, "beginResume");
+     const tick = /* @__PURE__ */ __name((currentVideo, playback) => {
+       if (generation !== deps.runtimeGeneration) reset();
+-      const t = now();
+-      const snapshots = mediaSnapshot();
+-      const frames = frameCount();
++      const t = now(), snapshots = mediaSnapshot(), frames = frameCount();
+       const dimensionsReady = !!currentVideo && Number(currentVideo.videoWidth) > 0 && Number(currentVideo.videoHeight) > 0;
+       const videoEvidence = dimensionsReady || playback?.readyState >= 2 || snapshots.video?.fresh && snapshots.video.bytes > 0 || frames !== null && frames > 0;
+       if (videoEvidence) hadHealthyVideo = true;
++      if (dimensionsReady && playback?.readyState >= 1) {
++        const position = bounded(playback.currentTime), rate = bounded(playback.effectiveRate);
++        if (position !== null) lastStablePosition = Math.max(0, position);
++        if (rate > 0) lastStableRate = rate;
++      }
++      lastPlayback = playback && typeof playback === "object" ? { ...playback } : null;
+       if (!currentVideo || !playback?.available || !playback.valid) {
+-        if (!resume?.reloadAttempted) {
+-          resume = null;
+-          state = "healthy";
+-        }
++        if (!resume?.reloadAttempted) clearResume("healthy");
+         video = currentVideo || null;
+         previouslyPaused = null;
+         return;
+       }
+       if (currentVideo !== video && !resume?.reloadAttempted) {
++        clearResume("healthy");
+         video = currentVideo;
+         previouslyPaused = playback.paused;
+         pauseStartedAt = playback.paused ? t : 0;
++        pauseArmedRecorded = false;
+         return;
+       }
+       video = currentVideo;
+-      if (playback.paused) {
+-        if (previouslyPaused !== true) pauseStartedAt = t;
++      if (playback.paused && !resume) {
++        if (previouslyPaused !== true) {
++          pauseStartedAt = t;
++          pauseArmedRecorded = false;
++          userActivationAccepted = false;
++          intentSource = "none";
++          postReloadPlayOutcome = "not-called";
++        }
+         previouslyPaused = true;
+-        if (!resume?.reloadAttempted) {
+-          resume = null;
+-          state = "healthy";
++        if (hadHealthyVideo && !playback.seeking && !playback.ended && !playback.errorCode && reloadCount < MAX_RELOADS_PER_GENERATION && t >= breakerUntil) {
++          const installed = installPlayHook(currentVideo, deps.getPlayer());
++          const pausedFor = pauseStartedAt ? t - pauseStartedAt : 0;
++          if (installed && pausedFor >= MIN_PAUSE_MS && !pauseArmedRecorded) {
++            pauseArmedRecorded = true;
++            state = "pause-armed";
++            record("pause-armed", { pauseSec: Math.floor(pausedFor / 1e3), playHookState: hookState });
++          }
++        } else {
++          uninstallPlayHook();
++          if (state === "pause-armed" || state === "hook-unavailable") state = "healthy";
+         }
+         return;
+       }
+-      if (previouslyPaused === true) {
++      if (playback.paused && resume?.intentSource !== "trusted-media-play") {
++        clearResume("healthy");
++        previouslyPaused = true;
++        return;
++      }
++      if (!playback.paused && previouslyPaused === true && !resume) {
+         const pausedFor = pauseStartedAt ? t - pauseStartedAt : 0;
+-        if (pausedFor >= MIN_PAUSE_MS && hadHealthyVideo) beginResume(playback, snapshots);
++        if (pausedFor >= MIN_PAUSE_MS && hadHealthyVideo) {
++          userActivationAccepted = false;
++          beginResume(playback, snapshots, "paused-transition", captureResumeValues(deps.getPlayer(), playback));
++        }
++      }
++      if (!playback.paused) previouslyPaused = false;
++      if (!resume) {
++        uninstallPlayHook();
++        return;
+       }
+-      previouslyPaused = false;
+-      if (!resume) return;
+       if (resume.generation !== deps.runtimeGeneration || playback.seeking || playback.ended || playback.errorCode) {
+-        resume = null;
+-        state = "healthy";
++        clearResume("healthy");
+         return;
+       }
+       const elapsed = t - (resume.reloadStartedAt || resume.startedAt);
+@@ -5193,10 +5372,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const metadataRecovered = playback.readyState >= 1 && dimensionsReady;
+       if (metadataRecovered || videoAdvanced || frameAdvanced) {
+         if (resume.reloadAttempted) restore(deps.getPlayer(), currentVideo);
+-        else {
+-          resume = null;
+-          state = "healthy";
+-        }
++        else clearResume("healthy");
+         return;
+       }
+       if (resume.reloadAttempted) {
+@@ -5208,15 +5384,24 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const stagnant = Math.abs((bounded(playback.currentTime) || 0) - resume.currentTime) <= 0.1;
+       const deadShape = playback.readyState === 0 && !dimensionsReady && liveness.videoGroups > 0;
+       const strong = liveness.coreInitialized === false;
+-      const supportingEvidence = strong ? audioAdvanced || playback.bufferAheadSec > 0 || stagnant : audioAdvanced;
+-      const wait = strong ? STRONG_WAIT_MS : WEAK_WAIT_MS;
+-      if (deadShape && supportingEvidence && t - resume.startedAt >= wait) {
+-        state = "video-init-dead";
+-        record("video-init-dead", {
+-          coreInitialized: liveness.coreInitialized,
+-          waitMs: t - resume.startedAt
+-        });
+-        startReload(currentVideo, playback, liveness);
++      const trustedStrong = strong && resume.intentSource === "trusted-media-play";
++      const supportingEvidence = trustedStrong ? true : strong ? audioAdvanced || playback.bufferAheadSec > 0 || stagnant : audioAdvanced;
++      const wait = trustedStrong ? TRUSTED_STRONG_WAIT_MS : strong ? STRONG_WAIT_MS : WEAK_WAIT_MS;
++      if (deadShape) {
++        if (!resume.deadSince) resume.deadSince = t;
++        state = "waiting-metadata";
++        if (supportingEvidence && t - resume.deadSince >= wait) {
++          state = "video-init-dead";
++          record("video-init-dead", {
++            coreInitialized: liveness.coreInitialized,
++            waitMs: t - resume.deadSince,
++            intentSource: resume.intentSource
++          });
++          startReload(liveness);
++        }
++      } else {
++        resume.deadSince = 0;
++        state = "waiting-metadata";
+       }
+     }, "tick");
+     const noteForeground = /* @__PURE__ */ __name(() => {
+@@ -5236,7 +5421,15 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         videoAgeSec: snapshots.video?.ageSec ?? null,
+         audioAgeSec: snapshots.audio?.ageSec ?? null,
+         breakerSec: Math.max(0, Math.ceil((breakerUntil - t) / 1e3)),
+-        foregroundAgeSec: foregroundAt ? Math.max(0, Math.round((t - foregroundAt) / 1e3)) : null
++        foregroundAgeSec: foregroundAt ? Math.max(0, Math.round((t - foregroundAt) / 1e3)) : null,
++        playHookState: hookState,
++        intentSource,
++        userActivationAccepted,
++        pauseSec: pauseStartedAt && previouslyPaused === true ? Math.max(0, Math.floor((t - pauseStartedAt) / 1e3)) : 0,
++        intentAgeSec: resume ? Math.max(0, Math.floor((t - resume.startedAt) / 1e3)) : 0,
++        savedPositionSec: resume ? resume.currentTime : null,
++        savedRate: resume ? resume.rate : null,
++        postReloadPlayOutcome
+       };
+     }, "summary");
+     reset();
+@@ -9257,7 +9450,19 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           cacheAvailable: !!startup.cacheAvailable
+         },
+         videoCore: {
+-          state: ["healthy", "waiting-metadata", "video-init-dead", "reloading", "recovered", "reload-failed", "breaker"].includes(videoCore.state) ? videoCore.state : "healthy",
++          state: [
++            "healthy",
++            "pause-armed",
++            "play-intent",
++            "waiting-metadata",
++            "video-init-dead",
++            "reloading",
++            "recovered",
++            "recovered-paused",
++            "reload-failed",
++            "breaker",
++            "hook-unavailable"
++          ].includes(videoCore.state) ? videoCore.state : "healthy",
+           coreInitialized: typeof videoCore.coreInitialized === "boolean" ? videoCore.coreInitialized : null,
+           coreRevision: Math.max(0, Math.trunc(publicFinite(videoCore.coreRevision))),
+           videoGroups: Math.max(0, Math.min(128, Math.trunc(publicFinite(videoCore.videoGroups)))),
+@@ -9267,7 +9472,15 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           waitingSec: Math.max(0, Math.min(60, Math.trunc(publicFinite(videoCore.waitingSec)))),
+           videoAgeSec: videoCore.videoAgeSec == null ? null : Math.max(0, Math.trunc(publicFinite(videoCore.videoAgeSec))),
+           audioAgeSec: videoCore.audioAgeSec == null ? null : Math.max(0, Math.trunc(publicFinite(videoCore.audioAgeSec))),
+-          breakerSec: Math.max(0, Math.trunc(publicFinite(videoCore.breakerSec)))
++          breakerSec: Math.max(0, Math.trunc(publicFinite(videoCore.breakerSec))),
++          playHookState: ["not-installed", "installed", "lost", "unavailable"].includes(videoCore.playHookState) ? videoCore.playHookState : "not-installed",
++          intentSource: ["none", "trusted-media-play", "paused-transition"].includes(videoCore.intentSource) ? videoCore.intentSource : "none",
++          userActivationAccepted: !!videoCore.userActivationAccepted,
++          pauseSec: Math.max(0, Math.min(86400, Math.trunc(publicFinite(videoCore.pauseSec)))),
++          intentAgeSec: Math.max(0, Math.min(60, Math.trunc(publicFinite(videoCore.intentAgeSec)))),
++          savedPositionSec: videoCore.savedPositionSec == null ? null : Math.max(0, publicFinite(videoCore.savedPositionSec)),
++          savedRate: videoCore.savedRate == null ? null : Math.max(0, Math.min(16, publicFinite(videoCore.savedRate))),
++          postReloadPlayOutcome: ["not-called", "pending", "resolved", "rejected"].includes(videoCore.postReloadPlayOutcome) ? videoCore.postReloadPlayOutcome : "not-called"
+         },
+         mediaDelivery: deps.getMediaDeliverySnapshot(),
+         hostRestrictions: deps.hostRestrictionSummary?.() || {},
+@@ -11755,17 +11968,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           }
+         };
+       },
+-      get beginRouteRecovery() {
+-        return nativeRoutes.beginRouteRecovery;
+-      },
+-      get getNativeRouteDiagnostics() {
+-        return nativeRoutes.diagnostics;
+-      },
+-      get getAttributedVideoHost() {
+-        return media.getAttributedVideoHost;
+-      },
+-      get resolvedCdn() {
+-        return health.resolvedCdn;
++      get isUserActivationActive() {
++        return () => {
++          try {
++            return unsafeWindow.navigator?.userActivation?.isActive === true;
++          } catch {
++            return false;
++          }
++        };
+       },
+       get DiagnosticLog() {
+         return events.DiagnosticLog;

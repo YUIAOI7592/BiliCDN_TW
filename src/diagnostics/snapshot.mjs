@@ -108,7 +108,8 @@ const buildPublicDiagnosticSnapshot = () => {
             cacheAvailable: !!startup.cacheAvailable,
         },
         videoCore: {
-            state: ['healthy','waiting-metadata','video-init-dead','reloading','recovered','reload-failed','breaker']
+            state: ['healthy','pause-armed','play-intent','waiting-metadata','video-init-dead','reloading',
+                'recovered','recovered-paused','reload-failed','breaker','hook-unavailable']
                 .includes(videoCore.state) ? videoCore.state : 'healthy',
             coreInitialized: typeof videoCore.coreInitialized === 'boolean' ? videoCore.coreInitialized : null,
             coreRevision: Math.max(0, Math.trunc(publicFinite(videoCore.coreRevision))),
@@ -120,6 +121,17 @@ const buildPublicDiagnosticSnapshot = () => {
             videoAgeSec: videoCore.videoAgeSec == null ? null : Math.max(0, Math.trunc(publicFinite(videoCore.videoAgeSec))),
             audioAgeSec: videoCore.audioAgeSec == null ? null : Math.max(0, Math.trunc(publicFinite(videoCore.audioAgeSec))),
             breakerSec: Math.max(0, Math.trunc(publicFinite(videoCore.breakerSec))),
+            playHookState: ['not-installed','installed','lost','unavailable'].includes(videoCore.playHookState)
+                ? videoCore.playHookState : 'not-installed',
+            intentSource: ['none','trusted-media-play','paused-transition'].includes(videoCore.intentSource)
+                ? videoCore.intentSource : 'none',
+            userActivationAccepted: !!videoCore.userActivationAccepted,
+            pauseSec: Math.max(0, Math.min(86400, Math.trunc(publicFinite(videoCore.pauseSec)))),
+            intentAgeSec: Math.max(0, Math.min(60, Math.trunc(publicFinite(videoCore.intentAgeSec)))),
+            savedPositionSec: videoCore.savedPositionSec == null ? null : Math.max(0, publicFinite(videoCore.savedPositionSec)),
+            savedRate: videoCore.savedRate == null ? null : Math.max(0, Math.min(16, publicFinite(videoCore.savedRate))),
+            postReloadPlayOutcome: ['not-called','pending','resolved','rejected'].includes(videoCore.postReloadPlayOutcome)
+                ? videoCore.postReloadPlayOutcome : 'not-called',
         },
         mediaDelivery: deps.getMediaDeliverySnapshot(),
         hostRestrictions: deps.hostRestrictionSummary?.() || {},
