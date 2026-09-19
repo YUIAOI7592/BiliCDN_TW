@@ -16,6 +16,7 @@ import { createCodec } from './playback/codec.mjs';
 import { createPlayurl } from './playback/playurl.mjs';
 import { createPlayerManifest } from './playback/player-manifest.mjs';
 import { createVideoCoreRecovery } from './playback/video-core-recovery.mjs';
+import { createVideoResolver } from './playback/video-resolver.mjs';
 import { createTransport } from './transport/interceptors.mjs';
 import { createFailures } from './routing/failures.mjs';
 import { createDom } from './ui/dom.mjs';
@@ -66,6 +67,9 @@ let application;
 const startup = createStartup({
     get inSeekGrace() { return rate.inSeekGrace; },
     get DiagnosticLog() { return events.DiagnosticLog; }
+});
+const videoResolver = createVideoResolver({
+    queryVideos: () => document.querySelectorAll('video'),
 });
 const hostAccess = createHostAccess({
 get matchesExclude() { return catalog.matchesExclude; },
@@ -487,6 +491,7 @@ get resolvedCdn() { return health.resolvedCdn; },
 get DiagnosticLog() { return events.DiagnosticLog; }
 });
 watchdog = createWatchdog({
+get getPrimaryVideo() { return videoResolver.get; },
 get VideoCoreRecovery() { return videoCoreRecovery; },
 get cdnHealth() { return health.cdnHealth; },
 get cdnSoftBlockUntil() { return health.cdnSoftBlockUntil; },
@@ -746,6 +751,8 @@ get getPlayerManifestDiagnostics() { return playerManifest.diagnostics; }
 });
 if (typeof GM_registerMenuCommand === 'function') views.registerControlMenu(GM_registerMenuCommand);
 application = createApplication({
+get getPrimaryVideo() { return videoResolver.get; },
+get resetPrimaryVideo() { return videoResolver.reset; },
 get startup() { return startup; },
 get noteForegroundVisible() { return videoCoreRecovery.noteForeground; },
 get wakeWatchdog() { return watchdog.Watchdog.checkNow; },
@@ -763,8 +770,6 @@ get err() { return events.err; },
 get resolvedCdn() { return health.resolvedCdn; },
 get activeCdnList() { return health.activeCdnList; },
 get preconnectBatch() { return hints.preconnectBatch; },
-get crossTabShouldBakeoff() { return bakeoff.crossTabShouldBakeoff; }, set crossTabShouldBakeoff(value) { bakeoff.crossTabShouldBakeoff = value; },
-get onBakeoffStart() { return bakeoff.onBakeoffStart; }, set onBakeoffStart(value) { bakeoff.onBakeoffStart = value; },
 get isValidCustomCdnHost() { return catalog.isValidCustomCdnHost; },
 get matchesExclude() { return catalog.matchesExclude; },
 get getPlayingCdnHost() { return bakeoff.getPlayingCdnHost; },

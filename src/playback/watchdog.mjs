@@ -169,19 +169,9 @@ const Watchdog = (() => {
         } catch {}
     }
 
-    // onEntry() 每個 segment 都呼叫一次 getVideo()，4K 下可能每秒好幾次全文件 querySelectorAll。
-    // 快取命中的 video 元素，只有它被拔掉（換片重建播放器）才重新掃描。
-    let cachedVideo = null
-    const getVideo = () => {
-        if (cachedVideo && cachedVideo.isConnected && cachedVideo.clientWidth) return cachedVideo
-        let best = null, bestArea = 0
-        document.querySelectorAll('video').forEach(v => {
-            const a = (v.clientWidth || 0) * (v.clientHeight || 0)
-            if (a > bestArea) { bestArea = a; best = v }
-        })
-        cachedVideo = best
-        return best
-    }
+    // Watchdog、PerformanceObserver 與 seek 預熱共用同一個 resolver；元素尺寸暫時
+    // 歸零時仍保留已連接影片，但 SPA 出現新的可見播放器時會改選新元素。
+    const getVideo = () => deps.getPrimaryVideo()
 
     const bufferedEnd = (v) => {
         try {

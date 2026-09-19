@@ -227,35 +227,6 @@ export function createApplication(deps) {
         }, true)
     }
 
-    // ── 多分頁協調（BroadcastChannel）──────────────────────────────────
-    // 多開分頁時，真正的互斥只交給 runThroughputBakeoff 內的 navigator.locks。
-    // BroadcastChannel 是頁面可偽造的來源，只保留為診斷提示，不能決定是否允許賽馬。
-    const TAB_ID = Math.random().toString(36).slice(2) + Date.now().toString(36)
-    const FOREIGN_BAKEOFF_QUIET = 8000
-    let crossTabChannel = null
-    let foreignBakeoffAt = 0
-
-    const setupCrossTab = () => {
-        if (crossTabChannel || typeof BroadcastChannel === 'undefined') return
-        try { crossTabChannel = new BroadcastChannel('bilicdn_tw') } catch { return }
-        crossTabChannel.onmessage = (ev) => {
-            const d = ev && ev.data
-            if (!d || d.id === TAB_ID) return
-            if (d.type === 'bakeoff') foreignBakeoffAt = Date.now()
-        }
-        deps.crossTabShouldBakeoff = () => true
-        deps.onBakeoffStart = () => { try { crossTabChannel.postMessage({ type: 'bakeoff', id: TAB_ID }) } catch {} }
-    }
-    const closeCrossTab = () => {
-        if (crossTabChannel) {
-            try { crossTabChannel.close() } catch {}
-            crossTabChannel = null
-        }
-        foreignBakeoffAt = 0
-        deps.crossTabShouldBakeoff = () => true
-        deps.onBakeoffStart = () => {}
-    }
-
     let pageHooksApplied = false
     const applyPageHooks = () => {
         if (deps.disabled) return
@@ -294,14 +265,7 @@ export function createApplication(deps) {
         let attachStartedAt = Date.now()
         let attachTimer = null
 
-        const findVideo = () => {
-            let best = null, bestArea = 0
-            document.querySelectorAll('video').forEach(v => {
-                const a = (v.clientWidth || 0) * (v.clientHeight || 0)
-                if (a > bestArea) { bestArea = a; best = v }
-            })
-            return best
-        }
+        const findVideo = () => deps.getPrimaryVideo()
 
         // 優先提示最近觀察到的影片 Fetch/XHR 節點，音訊不覆蓋此來源。
         // 無新鮮影片觀察時維持選路候選預熱；preconnect 只是瀏覽器提示，
@@ -539,8 +503,8 @@ export function createApplication(deps) {
         deps.TrustedMenuUI.invalidate()
         deps.cancelPlayerManifestSync('spa')
         deps.stopRuntimeGeneration()
+        deps.resetPrimaryVideo()
         deps.cdnProbeStarted = false
-        closeCrossTab()
         if (stopSeekPrewarm) stopSeekPrewarm()
         deps.clearRuntimeConnectionHints()
         deps.forcedRedirectHosts.clear()
@@ -587,7 +551,6 @@ export function createApplication(deps) {
                 setPagePlayInfoLifecycle(assigned ? 'superseded' : 'no-new-assignment', 'none')
             }
             if (!stagedTrustedPlayInfo) deps.startPlayerManifestSync(key, 'spa')
-            setupCrossTab()
             deps.startCdnProbe()
             setupSeekPrewarm()
         }
@@ -624,8 +587,9 @@ export function createApplication(deps) {
     const startRuntimeFeatures = () => {
         if (runtimeStarted || deps.disabled) return
         runtimeStarted = true
+        deps.resetPrimaryVideo()
         deps.beginRuntimeGeneration()
-        deps.refreshExpiredRestrictions()
+        deps.refreshExpiredRestrictions(true)
         backgroundPlaybackEnabled = true
         applyPageHooks()
         deps.startPlayerManifestSync(currentVideoKey, 'initial')
@@ -634,7 +598,6 @@ export function createApplication(deps) {
         deps.startCdnProbe()
         deps.Watchdog.start()
         hookHistory()
-        setupCrossTab()
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', deps.discoverCdnFromPage, { once: true })
         } else {
@@ -671,6 +634,7 @@ export function createApplication(deps) {
         latestPagePlayInfoAssignment = null
         deps.cancelPlayerManifestSync('disabled')
         deps.stopRuntimeGeneration()
+        deps.resetPrimaryVideo()
         deps.cdnProbeStarted = false
         backgroundPlaybackEnabled = false
         restoreWebRtc()
@@ -681,7 +645,6 @@ export function createApplication(deps) {
         if (deps.probeDeferTimer) { deps.clearRuntimeTimeout(deps.probeDeferTimer); deps.probeDeferTimer = null }
         deps.probeDeferCount = 0
         deps.clearRuntimeConnectionHints()
-        closeCrossTab()
         if (stopSeekPrewarm) stopSeekPrewarm()
         if (keepWarmTimer) {
             clearInterval(keepWarmTimer)

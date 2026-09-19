@@ -46,10 +46,6 @@ let bakeoffEpoch         = 0
 
 let bakeoffAbortController = null
 
-let crossTabShouldBakeoff = () => true
-
-let onBakeoffStart        = () => {}
-
 const probeRouteThroughput = (candidate, sampleUrl, probeBytes, externalSignal, recordSample = null) => new Promise((resolve) => {
     const runtimeToken = deps.captureRuntimeGeneration()
     const cdn = candidate?.host
@@ -222,10 +218,9 @@ const runThroughputBakeoff = async (sampleUrl, skipIfFast = true, trustedRequest
         return skipped('healthy-cache')
     }
 
-    // 多分頁互斥：優先用 Web Locks API（同源真互斥鎖，分頁關閉
-    // 時瀏覽器自動釋放）。原本只用 BroadcastChannel 心跳判斷「其他分頁是否在測速」，
-    // 但那只能盡量避免——兩個分頁幾乎同時決定要測速時，心跳訊息還沒送達對方就都已經
-    // 開始了。ifAvailable:true 拿不到鎖立刻回呼 null，不排隊等待。
+    // 多分頁互斥使用 Web Locks API（同源真互斥鎖，分頁關閉時瀏覽器自動釋放）。
+    // ifAvailable:true 拿不到鎖立刻回呼 null，不排隊等待。不支援 Web Locks 時仍由
+    // 本分頁 bakeoffRunning、共用冷卻、generation 與起播保護約束，維持既有實際行為。
     if (navigator.locks && navigator.locks.request) {
         return navigator.locks.request('bilicdn-bakeoff', { ifAvailable: true }, (lock) => {
             if (!lock) return skipped('busy')
@@ -235,7 +230,6 @@ const runThroughputBakeoff = async (sampleUrl, skipIfFast = true, trustedRequest
             return doBakeoff(sampleUrl, runtimeToken, sampleContext, trustedReason)
         })
     }
-    if (!crossTabShouldBakeoff()) return  // 沒有 Web Locks：只保留既有提示，不冒充權威互斥
     if (trustedReason) trustedBakeoffLastAt[trustedReason] = Date.now()
     return doBakeoff(sampleUrl, runtimeToken, sampleContext, trustedReason)
 }
@@ -257,7 +251,6 @@ const doBakeoff = async (sampleUrl, runtimeToken = deps.captureRuntimeGeneration
     deps.startup?.note('throughput', 'accepted', bakeoffStartupDefers, trustedReason || 'automatic')
     const onRuntimeAbort = () => { try { bakeoffAbortController && bakeoffAbortController.abort() } catch {} }
     if (runtimeToken.signal) runtimeToken.signal.addEventListener('abort', onRuntimeAbort, { once: true })
-    onBakeoffStart()                      // 通知其他分頁本分頁開始賽馬
     // 註：不在此 clear forcedRedirectHosts。它是有 10 分鐘 TTL 的 Map（見上方宣告處），
     // 到期會自然過期讓該節點重新進入候選池，不需要也不該在賽馬時手動清空——
     // 手動清空只在 SPA 換片（新的 base_url，舊節點的改寫紀錄已經沒有意義）時做。
@@ -414,8 +407,6 @@ get bakeoffTimer() { return bakeoffTimer; }, set bakeoffTimer(value) { bakeoffTi
 get lastSampleSegmentUrl() { return lastSampleSegmentUrl; }, set lastSampleSegmentUrl(value) { lastSampleSegmentUrl = value; },
 get bakeoffEpoch() { return bakeoffEpoch; }, set bakeoffEpoch(value) { bakeoffEpoch = value; },
 get bakeoffAbortController() { return bakeoffAbortController; }, set bakeoffAbortController(value) { bakeoffAbortController = value; },
-get crossTabShouldBakeoff() { return crossTabShouldBakeoff; }, set crossTabShouldBakeoff(value) { crossTabShouldBakeoff = value; },
-get onBakeoffStart() { return onBakeoffStart; }, set onBakeoffStart(value) { onBakeoffStart = value; },
 get getPlayingCdnHost() { return getPlayingCdnHost; },
 get getWarmCdnHost() { return getWarmCdnHost; },
 get bakeoffStartupDefers() { return bakeoffStartupDefers; }, set bakeoffStartupDefers(value) { bakeoffStartupDefers = value; },

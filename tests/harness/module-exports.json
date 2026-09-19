@@ -1275,14 +1275,6 @@
       "mutable": true
     },
     {
-      "name": "crossTabShouldBakeoff",
-      "mutable": true
-    },
-    {
-      "name": "onBakeoffStart",
-      "mutable": true
-    },
-    {
       "name": "probeCdnThroughput",
       "mutable": false
     },

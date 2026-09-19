@@ -345,6 +345,7 @@ const buildContext = ({
 } = {}) => {
     const gm = gmContext && gmContext.gm instanceof Map ? gmContext.gm : new Map()
     Object.entries(gmSeed).forEach(([key, value]) => { if (!gm.has(key)) gm.set(key, value) })
+    const gmReads = gmContext && Array.isArray(gmContext.gmReads) ? gmContext.gmReads : []
     const gmWrites = gmContext && Array.isArray(gmContext.gmWrites) ? gmContext.gmWrites : []
     const menus = []
     const logs = []
@@ -356,6 +357,7 @@ const buildContext = ({
     const performanceObservers = []
     const blobStore = new Map()
     let messageChannelCount = 0
+    let broadcastChannelCount = 0
     const HarnessMessageChannel = function MessageChannel() {
         messageChannelCount++
         return new NodeMessageChannel()
@@ -477,14 +479,18 @@ const buildContext = ({
         Node: FakeElement,
         MutationObserver: FakeMutationObserver,
         PerformanceObserver: HarnessPerformanceObserver,
-        BroadcastChannel: class extends FakeEventTarget { postMessage() {} close() {} },
+        BroadcastChannel: class extends FakeEventTarget {
+            constructor(...args) { super(...args); broadcastChannelCount++ }
+            postMessage() {}
+            close() {}
+        },
         MessageChannel: messageChannelImpl === undefined ? HarnessMessageChannel : messageChannelImpl,
         Blob: blobImpl === undefined ? HarnessBlob : blobImpl,
         TextEncoder,
         TextDecoder,
         structuredClone,
         GM_info: { script: { version: '1.4.0' } },
-        GM_getValue(key, fallback) { return gm.has(key) ? gm.get(key) : fallback },
+        GM_getValue(key, fallback) { gmReads.push({ key }); return gm.has(key) ? gm.get(key) : fallback },
         GM_setValue(key, value) { gmWrites.push({ op: 'set', key, value }); gm.set(key, value) },
         GM_deleteValue(key) { gmWrites.push({ op: 'delete', key }); gm.delete(key) },
         GM_registerMenuCommand(label, callback) { menus.push({ label, callback }); return menus.length },
@@ -513,6 +519,7 @@ const buildContext = ({
         document,
         location,
         gm,
+        gmReads,
         gmWrites,
         menus,
         logs,
@@ -523,6 +530,7 @@ const buildContext = ({
         workerInstances,
         performanceObservers,
         blobStore,
+        get broadcastChannelCount() { return broadcastChannelCount },
         emitPerformanceEntries(entries) {
             const list = { getEntries: () => Array.from(entries || []) }
             performanceObservers.forEach(observer => observer.callback(list))

@@ -1,0 +1,419 @@
+diff --git a/Release/v1.9.2/BiliCDN_TW.user.js b/Release/v1.9.3/BiliCDN_TW.user.js
+index 546361a..795238c 100644
+--- a/Release/v1.9.2/BiliCDN_TW.user.js
++++ b/Release/v1.9.3/BiliCDN_TW.user.js
+@@ -1,7 +1,7 @@
+ // ==UserScript==
+ // @name         Bilibili CDN 台灣優化
+ // @namespace    BiliCDN_TW
+-// @version      1.9.2
++// @version      1.9.3
+ // @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+ // @author       jiyunshi <chocosensei214@gmail.com>
+ // @license      MIT
+@@ -83,7 +83,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let BlockHttpDNS = input.BlockHttpDNS;
+     let PreferredVideoCodec = input.PreferredVideoCodec;
+     let BlockWebRTC = input.BlockWebRTC;
+-    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.9.2";
++    const VERSION = typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version || "1.9.3";
+     const parseVer = /* @__PURE__ */ __name((v) => String(v || "0").split(".").map((n) => parseInt(n, 10) || 0), "parseVer");
+     const verGte = /* @__PURE__ */ __name((a, b) => {
+       const A = parseVer(a), B = parseVer(b);
+@@ -749,10 +749,17 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     const CDN_HEALTH_TTL = 6 * 60 * 60 * 1e3;
+     const createRestrictionStore = /* @__PURE__ */ __name((key, hostField, ttlFor) => {
+       const records = /* @__PURE__ */ new Map(), index = /* @__PURE__ */ new Set();
++      let nextExpiryAt = Infinity;
+       const read = /* @__PURE__ */ __name(() => {
+-        let raw;
++        let rawValue, raw;
+         try {
+-          raw = JSON.parse(GM_getValue(key) || "[]");
++          rawValue = GM_getValue(key);
++        } catch {
++          rawValue = void 0;
++        }
++        const rawText = typeof rawValue === "string" ? rawValue : rawValue == null ? "[]" : String(rawValue);
++        try {
++          raw = JSON.parse(rawText);
+         } catch {
+           raw = [];
+         }
+@@ -766,42 +773,55 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           const value = hostField === "host" ? { host, expireAt, reason } : { cdn: host, expireAt };
+           if (!entries.has(host) || expireAt > entries.get(host).expireAt) entries.set(host, value);
+         }
+-        return entries;
++        return { entries, rawText };
+       }, "read");
+       const adopt = /* @__PURE__ */ __name((next) => {
+         records.clear();
+         index.clear();
++        nextExpiryAt = Infinity;
+         for (const [host, entry] of next) {
+           records.set(host, entry);
+           index.add(host);
++          if (entry.expireAt < nextExpiryAt) nextExpiryAt = entry.expireAt;
+         }
+       }, "adopt");
+-      const persist = /* @__PURE__ */ __name((next) => {
++      const persist = /* @__PURE__ */ __name((next, observedRawText) => {
+         const serialized = JSON.stringify([...next.values()]);
+         try {
+-          if ((GM_getValue(key) || "[]") !== serialized) GM_setValue(key, serialized);
++          if (observedRawText !== serialized) GM_setValue(key, serialized);
+         } catch {
+         }
+         adopt(next);
+       }, "persist");
+       const refresh = /* @__PURE__ */ __name((write = true) => {
+-        const next = read();
+-        if (write) persist(next);
+-        else adopt(next);
++        const observed = read();
++        if (write) persist(observed.entries, observed.rawText);
++        else adopt(observed.entries);
+       }, "refresh");
+       const remove = /* @__PURE__ */ __name((host) => {
+-        const next = read();
+-        next.delete(host);
+-        persist(next);
++        const observed = read();
++        observed.entries.delete(host);
++        persist(observed.entries, observed.rawText);
+       }, "remove");
+       const add = /* @__PURE__ */ __name((host, reason = "unknown") => {
+         if (!deps.TRUSTED_CDN_CATALOG_SET.has(host)) return;
+-        const next = read();
++        const observed = read(), next = observed.entries;
+         if (!next.has(host)) next.set(host, hostField === "host" ? { host, expireAt: Date.now() + ttlFor(reason), reason } : { cdn: host, expireAt: Date.now() + ttlFor(reason) });
+-        persist(next);
++        persist(next, observed.rawText);
+       }, "add");
+       refresh(false);
+-      return { records, index, refresh, add, remove, clear: /* @__PURE__ */ __name(() => persist(/* @__PURE__ */ new Map()), "clear") };
++      return {
++        records,
++        index,
++        refresh,
++        add,
++        remove,
++        clear: /* @__PURE__ */ __name(() => {
++          const observed = read();
++          persist(/* @__PURE__ */ new Map(), observed.rawText);
++        }, "clear"),
++        nextExpiryAt: /* @__PURE__ */ __name(() => nextExpiryAt, "nextExpiryAt")
++      };
+     }, "createRestrictionStore");
+     const blacklistRecords = createRestrictionStore("cdnBlacklist", "cdn", () => BLACKLIST_EXPIRE_MS);
+     const blacklistSet = blacklistRecords.index;
+@@ -877,19 +897,26 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     }, "clearDeadHosts");
+     const activeCdnList = deps.PREFERRED_CDN_LIST.filter((c) => !blacklistSet.has(c) && !knownDeadHosts.has(c));
+     let refreshingRestrictions = false;
+-    const refreshExpiredRestrictions = /* @__PURE__ */ __name(() => {
+-      if (deps.disabled || refreshingRestrictions) return;
++    let lastRestrictionRefreshAt = 0;
++    const RESTRICTION_REFRESH_MS = 1e3;
++    const refreshExpiredRestrictions = /* @__PURE__ */ __name((force = false) => {
++      if (deps.disabled || refreshingRestrictions) return false;
++      const now = Date.now();
++      const expiryDue = Math.min(blacklistRecords.nextExpiryAt(), deadHostRecords.nextExpiryAt()) <= now;
++      if (!force && !expiryDue && now - lastRestrictionRefreshAt < RESTRICTION_REFRESH_MS) return false;
+       refreshingRestrictions = true;
+       try {
+         const before = /* @__PURE__ */ new Set([...blacklistSet, ...knownDeadHosts]);
+         blacklistRecords.refresh();
+         deadHostRecords.refresh();
++        lastRestrictionRefreshAt = now;
+         for (let i = activeCdnList.length - 1; i >= 0; i--) {
+           if (blacklistSet.has(activeCdnList[i]) || knownDeadHosts.has(activeCdnList[i])) activeCdnList.splice(i, 1);
+         }
+         for (const host of before) {
+           if (!blacklistSet.has(host) && !knownDeadHosts.has(host) && deps.PREFERRED_CDN_LIST.includes(host) && !activeCdnList.includes(host)) activeCdnList.push(host);
+         }
++        return true;
+       } finally {
+         refreshingRestrictions = false;
+       }
+@@ -5217,6 +5244,44 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+   }
+   __name(createVideoCoreRecovery, "createVideoCoreRecovery");
+ 
++  // src/playback/video-resolver.mjs
++  function createVideoResolver({ queryVideos }) {
++    let cachedVideo2 = null;
++    const areaOf = /* @__PURE__ */ __name((video) => {
++      if (!video) return 0;
++      return Math.max(0, Number(video.clientWidth) || 0) * Math.max(0, Number(video.clientHeight) || 0);
++    }, "areaOf");
++    const connected = /* @__PURE__ */ __name((video) => !!video && video.isConnected !== false, "connected");
++    const get = /* @__PURE__ */ __name(() => {
++      const cachedConnected = connected(cachedVideo2);
++      if (cachedConnected && areaOf(cachedVideo2) > 0) return cachedVideo2;
++      let first = null, best = null, bestArea = 0;
++      let videos = [];
++      try {
++        videos = queryVideos ? queryVideos() : [];
++      } catch {
++        videos = [];
++      }
++      for (const video of videos || []) {
++        if (!connected(video)) continue;
++        if (!first) first = video;
++        const area = areaOf(video);
++        if (area > bestArea) {
++          bestArea = area;
++          best = video;
++        }
++      }
++      if (best) cachedVideo2 = best;
++      else if (!cachedConnected) cachedVideo2 = first;
++      return cachedVideo2;
++    }, "get");
++    const reset = /* @__PURE__ */ __name(() => {
++      cachedVideo2 = null;
++    }, "reset");
++    return { get, reset };
++  }
++  __name(createVideoResolver, "createVideoResolver");
++
+   // src/transport/xhr-facade.mjs
+   function createXhrFacade(ManagedXHR, NativeXHR) {
+     const invoke = Reflect.apply;
+@@ -6737,9 +6802,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let bakeoffNullStreak = 0;
+     let bakeoffEpoch = 0;
+     let bakeoffAbortController = null;
+-    let crossTabShouldBakeoff = /* @__PURE__ */ __name(() => true, "crossTabShouldBakeoff");
+-    let onBakeoffStart = /* @__PURE__ */ __name(() => {
+-    }, "onBakeoffStart");
+     const probeRouteThroughput = /* @__PURE__ */ __name((candidate, sampleUrl, probeBytes, externalSignal, recordSample = null) => new Promise((resolve) => {
+       const runtimeToken = deps.captureRuntimeGeneration();
+       const cdn = candidate?.host;
+@@ -6918,7 +6980,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           return doBakeoff(sampleUrl, runtimeToken, sampleContext, trustedReason);
+         });
+       }
+-      if (!crossTabShouldBakeoff()) return;
+       if (trustedReason) trustedBakeoffLastAt[trustedReason] = Date.now();
+       return doBakeoff(sampleUrl, runtimeToken, sampleContext, trustedReason);
+     }, "runThroughputBakeoff");
+@@ -6941,7 +7002,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         }
+       }, "onRuntimeAbort");
+       if (runtimeToken.signal) runtimeToken.signal.addEventListener("abort", onRuntimeAbort, { once: true });
+-      onBakeoffStart();
+       try {
+         const now = Date.now();
+         const playingHost = getPlayingCdnHost();
+@@ -7084,18 +7144,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       set bakeoffAbortController(value) {
+         bakeoffAbortController = value;
+       },
+-      get crossTabShouldBakeoff() {
+-        return crossTabShouldBakeoff;
+-      },
+-      set crossTabShouldBakeoff(value) {
+-        crossTabShouldBakeoff = value;
+-      },
+-      get onBakeoffStart() {
+-        return onBakeoffStart;
+-      },
+-      set onBakeoffStart(value) {
+-        onBakeoffStart = value;
+-      },
+       get getPlayingCdnHost() {
+         return getPlayingCdnHost;
+       },
+@@ -7487,20 +7535,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         } catch {
+         }
+       }, "onEntry");
+-      let cachedVideo = null;
+-      const getVideo = /* @__PURE__ */ __name(() => {
+-        if (cachedVideo && cachedVideo.isConnected && cachedVideo.clientWidth) return cachedVideo;
+-        let best = null, bestArea = 0;
+-        document.querySelectorAll("video").forEach((v) => {
+-          const a = (v.clientWidth || 0) * (v.clientHeight || 0);
+-          if (a > bestArea) {
+-            bestArea = a;
+-            best = v;
+-          }
+-        });
+-        cachedVideo = best;
+-        return best;
+-      }, "getVideo");
++      const getVideo = /* @__PURE__ */ __name(() => deps.getPrimaryVideo(), "getVideo");
+       const bufferedEnd = /* @__PURE__ */ __name((v) => {
+         try {
+           if (!v) return 0;
+@@ -10013,43 +10048,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         if (backgroundPlaybackEnabled) e.stopImmediatePropagation();
+       }, true);
+     }, "installVisibilitySpoof");
+-    const TAB_ID = Math.random().toString(36).slice(2) + Date.now().toString(36);
+-    const FOREIGN_BAKEOFF_QUIET = 8e3;
+-    let crossTabChannel = null;
+-    let foreignBakeoffAt = 0;
+-    const setupCrossTab = /* @__PURE__ */ __name(() => {
+-      if (crossTabChannel || typeof BroadcastChannel === "undefined") return;
+-      try {
+-        crossTabChannel = new BroadcastChannel("bilicdn_tw");
+-      } catch {
+-        return;
+-      }
+-      crossTabChannel.onmessage = (ev) => {
+-        const d = ev && ev.data;
+-        if (!d || d.id === TAB_ID) return;
+-        if (d.type === "bakeoff") foreignBakeoffAt = Date.now();
+-      };
+-      deps.crossTabShouldBakeoff = () => true;
+-      deps.onBakeoffStart = () => {
+-        try {
+-          crossTabChannel.postMessage({ type: "bakeoff", id: TAB_ID });
+-        } catch {
+-        }
+-      };
+-    }, "setupCrossTab");
+-    const closeCrossTab = /* @__PURE__ */ __name(() => {
+-      if (crossTabChannel) {
+-        try {
+-          crossTabChannel.close();
+-        } catch {
+-        }
+-        crossTabChannel = null;
+-      }
+-      foreignBakeoffAt = 0;
+-      deps.crossTabShouldBakeoff = () => true;
+-      deps.onBakeoffStart = () => {
+-      };
+-    }, "closeCrossTab");
+     let pageHooksApplied = false;
+     const applyPageHooks = /* @__PURE__ */ __name(() => {
+       if (deps.disabled) return;
+@@ -10078,17 +10076,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const ATTACH_TIMEOUT_MS = 3e4;
+       let attachStartedAt = Date.now();
+       let attachTimer = null;
+-      const findVideo = /* @__PURE__ */ __name(() => {
+-        let best = null, bestArea = 0;
+-        document.querySelectorAll("video").forEach((v) => {
+-          const a = (v.clientWidth || 0) * (v.clientHeight || 0);
+-          if (a > bestArea) {
+-            bestArea = a;
+-            best = v;
+-          }
+-        });
+-        return best;
+-      }, "findVideo");
++      const findVideo = /* @__PURE__ */ __name(() => deps.getPrimaryVideo(), "findVideo");
+       const seekWarmHosts = /* @__PURE__ */ __name(() => {
+         const hosts = [];
+         const push = /* @__PURE__ */ __name((h) => {
+@@ -10298,8 +10286,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       deps.TrustedMenuUI.invalidate();
+       deps.cancelPlayerManifestSync("spa");
+       deps.stopRuntimeGeneration();
++      deps.resetPrimaryVideo();
+       deps.cdnProbeStarted = false;
+-      closeCrossTab();
+       if (stopSeekPrewarm) stopSeekPrewarm();
+       deps.clearRuntimeConnectionHints();
+       deps.forcedRedirectHosts.clear();
+@@ -10353,7 +10341,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           setPagePlayInfoLifecycle(assigned ? "superseded" : "no-new-assignment", "none");
+         }
+         if (!stagedTrustedPlayInfo) deps.startPlayerManifestSync(key, "spa");
+-        setupCrossTab();
+         deps.startCdnProbe();
+         setupSeekPrewarm();
+       }
+@@ -10396,8 +10383,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     const startRuntimeFeatures = /* @__PURE__ */ __name(() => {
+       if (runtimeStarted || deps.disabled) return;
+       runtimeStarted = true;
++      deps.resetPrimaryVideo();
+       deps.beginRuntimeGeneration();
+-      deps.refreshExpiredRestrictions();
++      deps.refreshExpiredRestrictions(true);
+       backgroundPlaybackEnabled = true;
+       applyPageHooks();
+       deps.startPlayerManifestSync(currentVideoKey, "initial");
+@@ -10406,7 +10394,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       deps.startCdnProbe();
+       deps.Watchdog.start();
+       hookHistory();
+-      setupCrossTab();
+       if (document.readyState === "loading") {
+         document.addEventListener("DOMContentLoaded", deps.discoverCdnFromPage, { once: true });
+       } else {
+@@ -10437,6 +10424,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       latestPagePlayInfoAssignment = null;
+       deps.cancelPlayerManifestSync("disabled");
+       deps.stopRuntimeGeneration();
++      deps.resetPrimaryVideo();
+       deps.cdnProbeStarted = false;
+       backgroundPlaybackEnabled = false;
+       restoreWebRtc();
+@@ -10460,7 +10448,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       deps.probeDeferCount = 0;
+       deps.clearRuntimeConnectionHints();
+-      closeCrossTab();
+       if (stopSeekPrewarm) stopSeekPrewarm();
+       if (keepWarmTimer) {
+         clearInterval(keepWarmTimer);
+@@ -10612,6 +10599,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         return events.DiagnosticLog;
+       }
+     });
++    const videoResolver = createVideoResolver({
++      queryVideos: /* @__PURE__ */ __name(() => document.querySelectorAll("video"), "queryVideos")
++    });
+     const hostAccess = createHostAccess({
+       get matchesExclude() {
+         return catalog.matchesExclude;
+@@ -11782,6 +11772,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+     });
+     watchdog = createWatchdog({
++      get getPrimaryVideo() {
++        return videoResolver.get;
++      },
+       get VideoCoreRecovery() {
+         return videoCoreRecovery;
+       },
+@@ -12541,6 +12534,12 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     });
+     if (typeof GM_registerMenuCommand === "function") views.registerControlMenu(GM_registerMenuCommand);
+     application = createApplication({
++      get getPrimaryVideo() {
++        return videoResolver.get;
++      },
++      get resetPrimaryVideo() {
++        return videoResolver.reset;
++      },
+       get startup() {
+         return startup;
+       },
+@@ -12598,18 +12597,6 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get preconnectBatch() {
+         return hints.preconnectBatch;
+       },
+-      get crossTabShouldBakeoff() {
+-        return bakeoff.crossTabShouldBakeoff;
+-      },
+-      set crossTabShouldBakeoff(value) {
+-        bakeoff.crossTabShouldBakeoff = value;
+-      },
+-      get onBakeoffStart() {
+-        return bakeoff.onBakeoffStart;
+-      },
+-      set onBakeoffStart(value) {
+-        bakeoff.onBakeoffStart = value;
+-      },
+       get isValidCustomCdnHost() {
+         return catalog.isValidCustomCdnHost;
+       },

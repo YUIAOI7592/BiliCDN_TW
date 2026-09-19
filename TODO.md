@@ -1,5 +1,13 @@
 # 待辦
 
+## v1.9.3
+
+- [x] 以一秒 freshness gate 合併 black／dead GM 同步，每個 store 每輪只讀一次，精確到期可立即刷新。
+- [x] Watchdog 與 seek 預熱共用影片 resolver；零尺寸影片保持可觀察，SPA／停用／重啟清除快取。
+- [x] 移除不具互斥效力的 BroadcastChannel；Web Locks、冷卻與不支援 Web Locks 的既有行為不變。
+- [x] 354 項功能回歸通過；未執行 Code Security。
+- [ ] 安裝 v1.9.3 後以真實 Chrome／Tampermonkey 驗證背景、最小化、seek、SPA 與長暫停恢復。
+
 ## v1.9.2
 
 - [x] 保留 v1.9.1 的隔夜首次播放保護；自動 probe／bakeoff 只在播放進度與可播放緩衝成立後啟動。

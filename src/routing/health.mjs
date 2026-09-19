@@ -16,9 +16,12 @@ const CDN_HEALTH_TTL = 6 * 60 * 60 * 1000
 
 const createRestrictionStore = (key, hostField, ttlFor) => {
     const records = new Map(), index = new Set()
+    let nextExpiryAt = Infinity
     const read = () => {
-        let raw
-        try { raw = JSON.parse(GM_getValue(key) || '[]') } catch { raw = [] }
+        let rawValue, raw
+        try { rawValue = GM_getValue(key) } catch { rawValue = undefined }
+        const rawText = typeof rawValue === 'string' ? rawValue : (rawValue == null ? '[]' : String(rawValue))
+        try { raw = JSON.parse(rawText) } catch { raw = [] }
         const entries = new Map(), now = Date.now()
         if (Array.isArray(raw)) for (const entry of raw) {
             const host = entry?.[hostField]
@@ -29,34 +32,50 @@ const createRestrictionStore = (key, hostField, ttlFor) => {
             const value = hostField === 'host' ? { host, expireAt, reason } : { cdn: host, expireAt }
             if (!entries.has(host) || expireAt > entries.get(host).expireAt) entries.set(host, value)
         }
-        return entries
+        return { entries, rawText }
     }
     const adopt = (next) => {
         records.clear(); index.clear()
-        for (const [host, entry] of next) { records.set(host, entry); index.add(host) }
+        nextExpiryAt = Infinity
+        for (const [host, entry] of next) {
+            records.set(host, entry)
+            index.add(host)
+            if (entry.expireAt < nextExpiryAt) nextExpiryAt = entry.expireAt
+        }
     }
-    const persist = (next) => {
+    const persist = (next, observedRawText) => {
         const serialized = JSON.stringify([...next.values()])
-        try { if ((GM_getValue(key) || '[]') !== serialized) GM_setValue(key, serialized) } catch {}
+        try { if (observedRawText !== serialized) GM_setValue(key, serialized) } catch {}
         adopt(next)
     }
     const refresh = (write = true) => {
         // Re-read immediately before expiry cleanup: another tab may have extended a restriction.
-        const next = read()
-        if (write) persist(next)
-        else adopt(next)
+        const observed = read()
+        if (write) persist(observed.entries, observed.rawText)
+        else adopt(observed.entries)
     }
-    const remove = (host) => { const next = read(); next.delete(host); persist(next) }
+    const remove = (host) => {
+        const observed = read()
+        observed.entries.delete(host)
+        persist(observed.entries, observed.rawText)
+    }
     const add = (host, reason = 'unknown') => {
         if (!deps.TRUSTED_CDN_CATALOG_SET.has(host)) return
-        const next = read()
+        const observed = read(), next = observed.entries
         if (!next.has(host)) next.set(host, hostField === 'host'
             ? { host, expireAt: Date.now() + ttlFor(reason), reason }
             : { cdn: host, expireAt: Date.now() + ttlFor(reason) })
-        persist(next)
+        persist(next, observed.rawText)
     }
     refresh(false)
-    return { records, index, refresh, add, remove, clear: () => persist(new Map()) }
+    return {
+        records, index, refresh, add, remove,
+        clear: () => {
+            const observed = read()
+            persist(new Map(), observed.rawText)
+        },
+        nextExpiryAt: () => nextExpiryAt,
+    }
 }
 
 const blacklistRecords = createRestrictionStore('cdnBlacklist', 'cdn', () => BLACKLIST_EXPIRE_MS)
@@ -145,14 +164,20 @@ const clearDeadHosts = () => {
 const activeCdnList = deps.PREFERRED_CDN_LIST.filter(c => !blacklistSet.has(c) && !knownDeadHosts.has(c))
 
 let refreshingRestrictions = false
+let lastRestrictionRefreshAt = 0
+const RESTRICTION_REFRESH_MS = 1000
 
-const refreshExpiredRestrictions = () => {
-    if (deps.disabled || refreshingRestrictions) return
+const refreshExpiredRestrictions = (force = false) => {
+    if (deps.disabled || refreshingRestrictions) return false
+    const now = Date.now()
+    const expiryDue = Math.min(blacklistRecords.nextExpiryAt(), deadHostRecords.nextExpiryAt()) <= now
+    if (!force && !expiryDue && now - lastRestrictionRefreshAt < RESTRICTION_REFRESH_MS) return false
     refreshingRestrictions = true
     try {
         const before = new Set([...blacklistSet, ...knownDeadHosts])
         blacklistRecords.refresh()
         deadHostRecords.refresh()
+        lastRestrictionRefreshAt = now
         for (let i = activeCdnList.length - 1; i >= 0; i--) {
             if (blacklistSet.has(activeCdnList[i]) || knownDeadHosts.has(activeCdnList[i])) activeCdnList.splice(i, 1)
         }
@@ -160,6 +185,7 @@ const refreshExpiredRestrictions = () => {
             if (!blacklistSet.has(host) && !knownDeadHosts.has(host)
                 && deps.PREFERRED_CDN_LIST.includes(host) && !activeCdnList.includes(host)) activeCdnList.push(host)
         }
+        return true
     } finally { refreshingRestrictions = false }
 }
 
