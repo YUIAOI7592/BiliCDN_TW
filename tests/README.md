@@ -9,7 +9,7 @@ npm test 先重建，再遞迴執行 *.test.js／*.test.cjs／*.test.mjs。產�
 - reproductions：固定 v1.5.1 的歷史 review 9 項，不是新版缺陷。
 - unit：模組實例隔離、政策、import 無副作用及產物邊界。
 
-目前 `npm test` 功能套件 363 項、無 skip；依使用者要求，v1.8.3～v1.9.4 不執行獨立 CS 子集或 Code Security。v1.9.4 固定重現「外層 player 保留位置但死影片仍 paused」的長暫停故障，涵蓋 transient user activation、目前主影片元素 `play()` 包裝相容性、player 實例替換、seek／ended／media error 排除、位置／2x 恢復、單次 reload、breaker 及 CDN 路由隔離；v1.9.3 的 restriction freshness gate、影片 resolver 與 v1.9.1 的起播保護仍保留。歷史安全與舊版重現檔仍保留，但不以其結果替目前版本背書。
+目前 `npm test` 功能套件 371 項、無 skip；依使用者要求，v1.8.3～v1.9.5 不執行獨立 CS 子集或 Code Security。v1.9.5 固定重現 Native Akamai 音訊 failure 後同一 audio group 被尾端出口重新選回的故障，涵蓋 kind-specific avoid、exact/current/backup/probe 資格、Catalog fallback、影片 affinity 隔離，以及 fallback 後 core 明確終止時共用單次 reload。v1.9.4 的長暫停恢復、v1.9.3 的 restriction freshness gate、影片 resolver 與 v1.9.1 的起播保護仍保留。歷史安全與舊版重現檔仍保留，但不以其結果替目前版本背書。
 
 舊版重現執行原單檔。新版內部測試使用獨立 test build 的模組 getter，不能發布；harness 先核對指定正式檔與 build 相同。instrument:false 完全執行正式檔，另測頁面快照、Fetch／XHR、選單及網站 Worker 身分不變。
 

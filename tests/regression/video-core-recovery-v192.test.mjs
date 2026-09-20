@@ -366,3 +366,75 @@ test('reload timeout enters a 90-second breaker and cannot loop', () => {
     f.recovery.tick(f.video, f.playback)
     assert.equal(f.calls.filter(call => call[0] === 'reload').length, 1)
 })
+
+test('verified route failure reloads once only after the planned fallback ends in a dead core', async () => {
+    const f = fixture()
+    f.recovery.tick(f.video, f.playback)
+    f.setPlayerTime(349.434)
+    assert.equal(f.recovery.armTransportFailure({
+        generation: 1, epoch: 2, groupId: '2:audio:7', kind: 'audio',
+        failedHost: 'upos-hz-mirrorakam.akamaized.net',
+        fallback: { type: 'catalog-generated', host: 'upos-sz-mirrorali.bilivideo.com' },
+        revision: 9,
+    }), true)
+    assert.equal(f.recovery.summary().intentSource, 'verified-route-failure')
+    assert.equal(f.recovery.summary().savedPositionSec, 349.434)
+
+    f.playback.readyState = 0
+    f.video.videoWidth = 0
+    f.video.videoHeight = 0
+    f.setLiveness({ coreInitialized: false })
+    f.recovery.tick(f.video, f.playback)
+    f.advance(4000)
+    f.recovery.tick(f.video, f.playback)
+    await Promise.resolve()
+    assert.equal(f.calls.filter(call => call[0] === 'reload').length, 1)
+
+    f.advance(1000)
+    f.playback.readyState = 1
+    f.video.videoWidth = 1920
+    f.video.videoHeight = 1080
+    f.setLiveness({ coreInitialized: true, coreRevision: 2 })
+    f.recovery.tick(f.video, f.playback)
+    await Promise.resolve()
+    assert.deepEqual(f.calls.slice(-3), [['seek', 349.434], ['rate', 2], ['play']])
+})
+
+test('verified route failure never reloads while playback stays healthy', () => {
+    const f = fixture()
+    f.recovery.tick(f.video, f.playback)
+    assert.equal(f.recovery.armTransportFailure({
+        generation: 1, epoch: 2, groupId: '2:audio:7', kind: 'audio',
+        failedHost: 'upos-hz-mirrorakam.akamaized.net',
+        fallback: { type: 'catalog-generated', host: 'upos-sz-mirrorali.bilivideo.com' },
+        revision: 9,
+    }), true)
+    f.advance(1000)
+    f.quality.totalFrames++
+    f.playback.currentTime++
+    f.recovery.tick(f.video, f.playback)
+    f.advance(20_000)
+    f.recovery.tick(f.video, f.playback)
+    assert.equal(f.calls.filter(call => call[0] === 'reload').length, 0)
+    assert.equal(f.recovery.summary().state, 'healthy')
+})
+
+test('route failure cannot arm recovery for startup, paused playback, stale epochs, or missing fallback', () => {
+    const base = { generation: 1, epoch: 2, groupId: '2:audio:7', kind: 'audio',
+        failedHost: 'upos-hz-mirrorakam.akamaized.net',
+        fallback: { type: 'catalog-generated', host: 'upos-sz-mirrorali.bilivideo.com' }, revision: 9 }
+    const startup = fixture()
+    assert.equal(startup.recovery.armTransportFailure(base), false)
+
+    const paused = fixture()
+    paused.recovery.tick(paused.video, paused.playback)
+    paused.playback.paused = true
+    paused.recovery.tick(paused.video, paused.playback)
+    assert.equal(paused.recovery.armTransportFailure(base), false)
+
+    const active = fixture()
+    active.recovery.tick(active.video, active.playback)
+    assert.equal(active.recovery.armTransportFailure({...base, epoch: 1}), false)
+    assert.equal(active.recovery.armTransportFailure({...base, fallback: null}), false)
+    assert.equal(active.calls.filter(call => call[0] === 'reload').length, 0)
+})

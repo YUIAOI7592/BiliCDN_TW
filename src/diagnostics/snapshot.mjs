@@ -123,7 +123,7 @@ const buildPublicDiagnosticSnapshot = () => {
             breakerSec: Math.max(0, Math.trunc(publicFinite(videoCore.breakerSec))),
             playHookState: ['not-installed','installed','lost','unavailable'].includes(videoCore.playHookState)
                 ? videoCore.playHookState : 'not-installed',
-            intentSource: ['none','trusted-media-play','paused-transition'].includes(videoCore.intentSource)
+            intentSource: ['none','trusted-media-play','paused-transition','verified-route-failure'].includes(videoCore.intentSource)
                 ? videoCore.intentSource : 'none',
             userActivationAccepted: !!videoCore.userActivationAccepted,
             pauseSec: Math.max(0, Math.min(86400, Math.trunc(publicFinite(videoCore.pauseSec)))),
@@ -132,6 +132,13 @@ const buildPublicDiagnosticSnapshot = () => {
             savedRate: videoCore.savedRate == null ? null : Math.max(0, Math.min(16, publicFinite(videoCore.savedRate))),
             postReloadPlayOutcome: ['not-called','pending','resolved','rejected'].includes(videoCore.postReloadPlayOutcome)
                 ? videoCore.postReloadPlayOutcome : 'not-called',
+            routeFailure: videoCore.routeFailure ? {
+                kind: videoCore.routeFailure.kind === 'audio' ? 'audio' : 'video',
+                fallbackType: ['catalog-generated','native-signed'].includes(videoCore.routeFailure.fallbackType)
+                    ? videoCore.routeFailure.fallbackType : 'unknown',
+                waitingForRetry: !!videoCore.routeFailure.waitingForRetry,
+                revision: Math.max(0, Math.trunc(publicFinite(videoCore.routeFailure.revision))),
+            } : null,
         },
         mediaDelivery: deps.getMediaDeliverySnapshot(),
         hostRestrictions: deps.hostRestrictionSummary?.() || {},

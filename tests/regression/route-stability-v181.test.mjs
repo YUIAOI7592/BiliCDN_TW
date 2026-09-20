@@ -130,7 +130,7 @@ test('v181 a legal recovery boundary may adopt an exact rated Native route and a
         { type: 'native-signed', host: AKAMAI })
     assert.equal(h.routes.resolveRequestRoute(catalog, catalogContext).url, native)
 
-    const nativeContext = { route: h.routes.captureRouteContext(native) }
+    const nativeContext = { route: h.routes.captureRouteContext(native), method: 'xhr', httpMethod: 'GET' }
     assert.equal(h.routes.noteNativeFailure(nativeContext, native, 503, 'http'), true)
     assert.equal(h.routes.diagnostics().plannedRoute.type, 'catalog-generated')
     assert.equal(h.routes.diagnostics().plannedRoute.host, CATALOG)

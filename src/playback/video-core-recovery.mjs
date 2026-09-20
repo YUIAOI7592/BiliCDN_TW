@@ -1,8 +1,7 @@
-// Recover the Bilibili DASH failure where a long-paused player keeps its
-// wrapper state but loses the underlying video core. A dead core can leave
-// HTMLVideoElement.paused=true even after the user presses Play, so a real
-// paused -> playing transition cannot be the only resume signal. Bilibili's
-// controls call the active media element's play(), not the public player API.
+// Recover the Bilibili DASH failure where the wrapper keeps its playback
+// state but loses the underlying video core. Long-pause recovery is armed by
+// a trusted media play call; verified route failure recovery is armed only
+// after the affected representation group has a different legal fallback.
 export function createVideoCoreRecovery(deps) {
 const MIN_PAUSE_MS = 30 * 1000
 const TRUSTED_STRONG_WAIT_MS = 4 * 1000
@@ -119,10 +118,37 @@ const beginResume = (playback, snapshots, source, values) => {
         audioBaseline: snapshots.audio ? { ...snapshots.audio } : null,
         frameBaseline: frameCount(), reloadAttempted: false, reloadStartedAt: 0,
         playRequested: false, wasPlaying: true, intentSource: source,
+        sawDeadShape: false, routeFailure: null,
     }
     state = source === 'trusted-media-play' ? 'play-intent' : 'waiting-metadata'
     record(state, { intentSource: source, userActivationAccepted, currentTime: resume.currentTime,
         effectiveRate: resume.rate })
+}
+const armTransportFailure = details => {
+    const t = now(), playback = lastPlayback
+    const fallback = details?.fallback
+    if (resume || !hadHealthyVideo || !playback?.available || !playback.valid || playback.paused
+        || playback.seeking || playback.ended || playback.errorCode
+        || details?.generation !== deps.runtimeGeneration || details?.epoch !== deps.playinfoEpoch
+        || !['video','audio'].includes(details?.kind) || typeof details?.groupId !== 'string'
+        || !details.groupId || typeof details?.failedHost !== 'string' || !details.failedHost
+        || !fallback || !['catalog-generated','native-signed'].includes(fallback.type)
+        || typeof fallback.host !== 'string' || !fallback.host || fallback.host === details.failedHost
+        || !Number.isSafeInteger(details?.revision) || details.revision < 0) return false
+    if (reloadCount >= MAX_RELOADS_PER_GENERATION || t < breakerUntil
+        || (lastReloadAt && t - lastReloadAt < RELOAD_COOLDOWN_MS)) return false
+    userActivationAccepted = false
+    beginResume(playback, mediaSnapshot(), 'verified-route-failure', captureResumeValues(deps.getPlayer(), playback))
+    resume.routeFailure = {
+        kind: details.kind, failedHost: details.failedHost, groupId: details.groupId,
+        fallbackType: fallback.type, fallbackHost: fallback.host,
+        epoch: details.epoch, revision: details.revision,
+    }
+    record('route-failure-armed', {
+        kind: details.kind, failedHost: details.failedHost, fallbackType: fallback.type,
+        fallbackHost: fallback.host, revision: details.revision,
+    })
+    return true
 }
 const noteTrustedPlayIntent = (player, values) => {
     userActivationAccepted = true
@@ -360,8 +386,12 @@ const tick = (currentVideo, playback) => {
     const elapsed = t - (resume.reloadStartedAt || resume.startedAt)
     const videoAdvanced = mediaAdvanced(snapshots.video, resume.videoBaseline, t - resume.startedAt)
     const frameAdvanced = frames !== null && resume.frameBaseline !== null && frames > resume.frameBaseline
+    const routeFailure = resume.intentSource === 'verified-route-failure'
+    const positionAdvanced = Number.isFinite(playback.currentTime)
+        && playback.currentTime > resume.currentTime + 0.05
     const metadataRecovered = playback.readyState >= 1 && dimensionsReady
-    if (metadataRecovered || videoAdvanced || frameAdvanced) {
+        && (!routeFailure || resume.reloadAttempted || resume.sawDeadShape)
+    if (metadataRecovered || videoAdvanced || frameAdvanced || (routeFailure && positionAdvanced)) {
         if (resume.reloadAttempted) restore(deps.getPlayer(), currentVideo)
         else clearResume('healthy')
         return
@@ -376,12 +406,18 @@ const tick = (currentVideo, playback) => {
     const stagnant = Math.abs((bounded(playback.currentTime) || 0) - resume.currentTime) <= 0.1
     const deadShape = playback.readyState === 0 && !dimensionsReady && liveness.videoGroups > 0
     const strong = liveness.coreInitialized === false
-    const trustedStrong = strong && resume.intentSource === 'trusted-media-play'
-    const supportingEvidence = trustedStrong ? true : strong
+    const fastStrong = strong && ['trusted-media-play','verified-route-failure'].includes(resume.intentSource)
+    if (routeFailure && !strong) {
+        resume.deadSince = 0
+        state = 'waiting-metadata'
+        return
+    }
+    const supportingEvidence = fastStrong ? true : strong
         ? audioAdvanced || playback.bufferAheadSec > 0 || stagnant
         : audioAdvanced
-    const wait = trustedStrong ? TRUSTED_STRONG_WAIT_MS : strong ? STRONG_WAIT_MS : WEAK_WAIT_MS
+    const wait = fastStrong ? TRUSTED_STRONG_WAIT_MS : strong ? STRONG_WAIT_MS : WEAK_WAIT_MS
     if (deadShape) {
+        resume.sawDeadShape = true
         if (!resume.deadSince) resume.deadSince = t
         state = 'waiting-metadata'
         if (supportingEvidence && t - resume.deadSince >= wait) {
@@ -410,10 +446,16 @@ const summary = () => {
         intentAgeSec: resume ? Math.max(0, Math.floor((t - resume.startedAt) / 1000)) : 0,
         savedPositionSec: resume ? resume.currentTime : null,
         savedRate: resume ? resume.rate : null,
+        routeFailure: resume?.routeFailure ? {
+            kind: resume.routeFailure.kind, failedHost: resume.routeFailure.failedHost,
+            groupId: resume.routeFailure.groupId, fallbackType: resume.routeFailure.fallbackType,
+            fallbackHost: resume.routeFailure.fallbackHost, revision: resume.routeFailure.revision,
+            waitingForRetry: !resume.reloadAttempted,
+        } : null,
         postReloadPlayOutcome,
     }
 }
 
 reset()
-return { reset, tick, noteForeground, summary }
+return { reset, tick, noteForeground, armTransportFailure, summary }
 }

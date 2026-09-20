@@ -1,5 +1,13 @@
 # 待辦
 
+## v1.9.5
+
+- [x] 將 Native route 的來源歸因與可選資格分離，soft block、invalid、kind-specific avoid 與 host restriction 約束所有出口。
+- [x] Native 音訊 Transport 失敗只為同一 audio group 建立 Catalog fallback，影片 Route Affinity 與影片切換計數不變。
+- [x] probe／預取失敗不得啟動播放核心重建；只有合法 fallback 後 core 明確終止才共用既有單次 reload。
+- [x] 371 項功能回歸、語法、可重現建置、patch 套用及 SHA-256 通過；未執行 Code Security。
+- [ ] 安裝 v1.9.5 後，以真實 Chrome／Tampermonkey 觀察 Akamai 音訊失敗或等效故障，確認後續 audio request 改走 Catalog 且影片 affinity 不變。
+
 ## v1.9.4
 
 - [x] 真實 Chrome 確認 Bilibili 的播放按鈕會呼叫目前主影片元素的 `play()`，而非公開 `window.player.play()`／core `play()`。

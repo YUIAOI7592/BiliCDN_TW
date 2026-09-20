@@ -85,6 +85,7 @@ const buildDiagReport = () => {
             + '｜本 epoch 觀察到的影片 host 變更=' + native.observedHostChanges
             + '｜observed=' + JSON.stringify(native.lastObservedRoute)
             + '｜boundary=' + JSON.stringify(native.lastRouteBoundary)
+            + '｜group recovery=' + JSON.stringify(native.recoveryOverrides)
             + '｜穩定性守門=' + JSON.stringify(native.suppressedSwitches),
         '最近 bakeoff 路線結果：' + JSON.stringify(native.lastBakeoff)
             + '（測速只更新評級）｜自動畫質原因=' + native.autoQualityReason,

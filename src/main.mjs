@@ -145,6 +145,7 @@ get mediaUrlPolicy() { return mediaPolicy.mediaUrlPolicy; },
 get isMediaSegmentUrl() { return rewrite.isMediaSegmentUrl; },
 get normalizeCodecName() { return codec.normalizeCodecName; },
 get playinfoEpoch() { return media.playinfoEpoch; },
+get runtimeGeneration() { return runtime.runtimeGeneration; },
 get resolvedCdn() { return health.resolvedCdn; },
 get disabled() { return runtime.disabled; },
 get peekCurrentCdn() { return health.peekCurrentCdn; },
@@ -165,7 +166,8 @@ get buildBackupUrls() { return rewrite.buildBackupUrls; },
 get preserveOriginalFallback() { return rewrite.withOriginalStreamFallback; },
 get normalizeMediaUrl() { return rewrite.normalizeMediaUrl; },
 get decideMediaRewrite() { return rewrite.decideMediaRewrite; },
-get replaceUrlHost() { return rewrite.replaceUrlHost; }
+get replaceUrlHost() { return rewrite.replaceUrlHost; },
+get armTransportFailure() { return details => videoCoreRecovery?.armTransportFailure?.(details) || false; }
 });
 rate = createRate({
 get currentStreamBitsPerSec() { return media.currentStreamBitsPerSec; }

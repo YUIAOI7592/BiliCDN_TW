@@ -20,6 +20,7 @@ test('v181 reproduction: page compatibility promotes Akamai with no Native pool'
 
 function routesHarness() {
  let epoch=1, fixed=null, saved=null, schedules=0
+ const arms=[]
  const deps={gmGet:()=>null,gmSet:(_k,v)=>{saved=v},gmDelete(){},TRUSTED_CDN_CATALOG_SET:new Set([C]),
  parseMediaHttpUrl:v=>new URL(v,'https://www.bilibili.com/'),classifyMediaDelivery:()=>({kind:'native'}),
  mediaUrlPolicy:{decide:()=>({action:'rewrite'}),isMediaPath:p=>p.startsWith('/upgcxcode/')},
@@ -28,15 +29,92 @@ function routesHarness() {
  getCdnHealthScore:()=>0.3,scoreRouteHealth:r=>Math.min(1,(r?.ewmaMbps||0)/8),
  replaceUrlHost:(v,h)=>{const u=new URL(v);u.hostname=h;return u.href},
  playbackRateState:{effectiveRate:2},getVideo:()=>({videoHeight:1080}),
+ runtimeGeneration:1,armTransportFailure:details=>{arms.push(details);return true},
  scheduleObservedSample:()=>schedules++,DiagnosticLog:{fault(){}},onActiveRepresentation(){},cdnHealth:{}}
  const routes=createNativeRoutes(deps)
- return {routes,deps,setEpoch:n=>epoch=n,setFixed:v=>fixed=v,get schedules(){return schedules},get saved(){return saved}}
+ return {routes,deps,arms,setEpoch:n=>epoch=n,setFixed:v=>fixed=v,get schedules(){return schedules},get saved(){return saved}}
 }
 function pageGroup(h, address=url(A), changes={}) {
  const item={...payload().data.dash.video[0],base_url:address,backup_url:[],...changes}
  const id=h.routes.registerSignedRouteGroup(item,true,'video','page-hint')
  return {id,item,context:{route:h.routes.captureRouteContext(address),method:'xhr',httpMethod:'GET'}}
 }
+
+function trustedGroup(h, kind, address, changes = {}) {
+ const base = kind === 'audio'
+  ? {id:30280,bandwidth:128000,codecs:'mp4a.40.2',mimeType:'audio/mp4'}
+  : payload().data.dash.video[0]
+ const item={...base,base_url:address,backup_url:[],...changes}
+ const id=h.routes.registerSignedRouteGroup(item,true,kind,'trusted-api')
+ return {id,item,context:{route:h.routes.captureRouteContext(address),method:'xhr',httpMethod:'GET'}}
+}
+
+test('v195 reproduction: a verified Native audio failure reroutes only that audio group',()=>{
+ const h=routesHarness()
+ const video=trustedGroup(h,'video',url(C))
+ h.routes.applySignedRoutePlan(video.item,true,video.id)
+ h.routes.observeTransport(video.context,url(C),131072,'xhr')
+ const before=h.routes.diagnostics()
+ assert.equal(before.active.height,1080)
+ assert.equal(before.currentHost,C)
+
+ const audioUrl=url(A).replace('video.m4s','audio.m4s')
+ const catalogAudioUrl=url(C).replace('video.m4s','audio.m4s')
+ const audio=trustedGroup(h,'audio',audioUrl)
+ assert.equal(h.routes.resolveRequestRoute(audioUrl,audio.context).host,A)
+ assert.equal(h.routes.noteNativeFailure(audio.context,audioUrl,0,'network-error'),true)
+
+ const retry=h.routes.resolveRequestRoute(audioUrl,audio.context)
+ assert.equal(retry.type,'catalog-generated')
+ assert.equal(retry.host,C)
+ assert.equal(retry.url,catalogAudioUrl)
+ assert.equal(h.routes.groups.get(audio.id).recoveryOverride.host,C)
+ assert.equal(h.routes.groups.get(video.id).currentHost,C)
+ assert.deepEqual(h.arms.map(entry=>({kind:entry.kind,groupId:entry.groupId,failedHost:entry.failedHost,
+  fallback:entry.fallback})),[{kind:'audio',groupId:audio.id,failedHost:A,
+  fallback:{type:'catalog-generated',host:C}}])
+ const after=h.routes.diagnostics()
+ assert.equal(after.currentHost,C)
+ assert.equal(after.lastRouteBoundary.kind,'audio')
+ assert.equal(after.lastRouteBoundary.groupId,audio.id)
+})
+
+test('v195 audio recovery avoidance is kind-scoped and failure attribution survives the soft block',()=>{
+ const h=routesHarness()
+ const audioUrl=url(A).replace('video.m4s','audio.m4s')
+ const audio=trustedGroup(h,'audio',audioUrl)
+ const video=trustedGroup(h,'video',url(A))
+ const videoGroup=h.routes.groups.get(video.id)
+ videoGroup.currentRouteType='native-signed';videoGroup.currentHost=A
+ assert.equal(h.routes.noteNativeFailure(audio.context,audioUrl,0,'network-error'),true)
+ assert.equal(h.routes.noteNativeFailure(audio.context,audioUrl,503,'http'),true)
+ assert.equal(h.routes.resolveRequestRoute(url(A),video.context).host,A)
+ assert.equal(h.routes.groups.get(video.id).recoveryOverride,null)
+})
+
+test('v195 a Native probe rejection updates route eligibility but never arms playback recovery',()=>{
+ const h=routesHarness()
+ const video=trustedGroup(h,'video',url(A))
+ const candidate={...video.context.route,url:url(A),host:A,type:'native-signed'}
+ assert.equal(h.routes.noteNativeFailure({route:candidate},url(A),403,'http'),true)
+ assert.equal(h.arms.length,0)
+ assert.equal(h.routes.groups.get(video.id).recoveryOverride,null)
+})
+
+test('v195 a soft-blocked or avoided Native route cannot escape through exact or current-route exits',()=>{
+ const h=routesHarness()
+ const audioUrl=url(A).replace('video.m4s','audio.m4s')
+ const audio=trustedGroup(h,'audio',audioUrl)
+ const group=h.routes.groups.get(audio.id)
+ group.currentRouteType='native-signed';group.currentHost=A
+ assert.equal(h.routes.resolveRequestRoute(audioUrl,audio.context).host,A)
+ h.routes.noteNativeFailure(audio.context,audioUrl,0,'network-error')
+ for(const context of [audio.context,{route:h.routes.captureRouteContext(audioUrl),method:'fetch',httpMethod:'GET'}]){
+  const next=h.routes.resolveRequestRoute(audioUrl,context)
+  assert.notEqual(next.host,A)
+  assert.equal(next.host,C)
+ }
+})
 test('v182 only the completed exact page URL unlocks, never sibling signatures or GM-seeded ratings',()=>{
  const h=routesHarness(); const {id,context}=pageGroup(h,url(A),{backup_url:[url('alt.akamaized.net')]})
  h.routes.recordNativeThroughput(context,url(A)+'&changed=1',131072,100,2)
@@ -167,6 +245,23 @@ test('v182 uninstrumented XHR requires native completion and cannot promote a re
   await h.timers.advanceAsync(1000)
   assert.equal(h.pageWindow.BiliCDN.nativeRouting.admission.unlockedUrls,mode==='success'?1:0,mode)
  }
+})
+test('v195 uninstrumented XHR moves a failed Native audio group to Catalog without rewriting video',async()=>{
+ const audioUrl=url(A).replace('video.m4s','audio.m4s')
+ const p=payload()
+ p.data.dash.audio=[{id:30280,bandwidth:128000,codecs:'mp4a.40.2',mimeType:'audio/mp4',base_url:audioUrl,backup_url:[]}]
+ const h=F.load({instrument:false,pageGlobals:{__playinfo__:p}})
+ const v=F.video(h,1080);v.paused=false
+
+ const completed=new h.pageWindow.XMLHttpRequest();completed.open('GET',audioUrl);completed.send()
+ completed.respond({status:206,response:new Uint8Array(131072).buffer,responseURL:audioUrl})
+ const failed=new h.pageWindow.XMLHttpRequest();failed.open('GET',audioUrl);failed.send();failed.fail()
+ const retry=new h.pageWindow.XMLHttpRequest();retry.open('GET',audioUrl)
+ assert.notEqual(new URL(retry.url).hostname,A)
+ assert.match(new URL(retry.url).hostname,/\.bilivideo\.com$/)
+ assert.equal(new URL(retry.url).pathname,new URL(audioUrl).pathname)
+ assert.equal(new URL(retry.url).search,new URL(audioUrl).search)
+ assert.equal(h.pageWindow.BiliCDN.mediaDelivery.video.host,null)
 })
 test('v182 uninstrumented 250-second auto-quality/seek trace preserves actual Native hosts and measurement budget',async t=>{
  for(const scenario of ['healthy','seek','failure']){
