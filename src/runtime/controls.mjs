@@ -99,6 +99,17 @@ const BiliCDNControls = {
     report() {
         return copyDiagReport()
     },
+    markIncident() {
+        const result = deps.DiagnosticLog.markIncident('manual-stall')
+        return result.ok
+            ? controlResult(true, 'incident-marked', '已保存前 60 秒脈絡，並開始收集後續 30 秒', { id: result.id })
+            : controlResult(false, 'incident-failed', '無法建立事故記錄')
+    },
+    clearIncident() {
+        const cleared = deps.DiagnosticLog.clearIncident()
+        return controlResult(true, cleared ? 'incident-cleared' : 'incident-empty',
+            cleared ? '事故記錄已清除；播放與學習狀態未變更' : '目前沒有事故記錄')
+    },
     // 注意：這是**改寫統計**，不是 Watchdog 的播放統計。換節點次數 / 卡頓次數 /
     // 斷路器狀態在內部 buffer 診斷；改寫統計與播放統計是不同入口。
     stats() {

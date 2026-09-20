@@ -60,8 +60,23 @@ const mediaAdvanced = (current, baseline, elapsedMs) => {
     return current.ageSec != null && current.ageSec * 1000 <= elapsedMs + 1100
 }
 const record = (stage, extra = {}) => {
+    const routeFailure = resume?.routeFailure || null
+    const actionId = extra.actionId || routeFailure?.actionId
     deps.DiagnosticLog.record('video-core', {
-        stage, resumeToken, reloadCount, breakerSec: Math.max(0, Math.ceil((breakerUntil - now()) / 1000)), ...extra,
+        stage, resumeToken, reloadCount, breakerSec: Math.max(0, Math.ceil((breakerUntil - now()) / 1000)),
+        actionId, groupOrdinal: routeFailure?.groupOrdinal, routeRevision: routeFailure?.revision,
+        routeType: routeFailure?.fallbackType, ...extra,
+    }, true)
+    const routeStage = ({ 'route-failure-armed': 'core-waiting', reloading: 'reload-requested',
+        recovered: 'core-recovered', 'recovered-paused': 'core-recovered',
+        'reload-failed': 'reload-failed' })[stage]
+    if (actionId && routeStage) deps.DiagnosticLog.record('route', {
+        stage: routeStage, actionId, reason: extra.reason || stage,
+        kind: routeFailure?.kind, failedHost: routeFailure?.failedHost,
+        fallbackHost: routeFailure?.fallbackHost, fallbackType: routeFailure?.fallbackType,
+        routeType: routeFailure?.fallbackType, routeRevision: routeFailure?.revision,
+        groupOrdinal: routeFailure?.groupOrdinal,
+        waitingForRetry: !['core-recovered', 'reload-failed'].includes(routeStage),
     }, true)
 }
 const safePlayerCall = (player, name, ...args) => {
@@ -142,11 +157,12 @@ const armTransportFailure = details => {
     resume.routeFailure = {
         kind: details.kind, failedHost: details.failedHost, groupId: details.groupId,
         fallbackType: fallback.type, fallbackHost: fallback.host,
-        epoch: details.epoch, revision: details.revision,
+        epoch: details.epoch, revision: details.revision, actionId: details.actionId,
+        groupOrdinal: deps.DiagnosticLog.groupOrdinal?.(details.groupId) || null,
     }
     record('route-failure-armed', {
         kind: details.kind, failedHost: details.failedHost, fallbackType: fallback.type,
-        fallbackHost: fallback.host, revision: details.revision,
+        fallbackHost: fallback.host, routeRevision: details.revision,
     })
     return true
 }
@@ -448,8 +464,9 @@ const summary = () => {
         savedRate: resume ? resume.rate : null,
         routeFailure: resume?.routeFailure ? {
             kind: resume.routeFailure.kind, failedHost: resume.routeFailure.failedHost,
-            groupId: resume.routeFailure.groupId, fallbackType: resume.routeFailure.fallbackType,
-            fallbackHost: resume.routeFailure.fallbackHost, revision: resume.routeFailure.revision,
+            groupOrdinal: resume.routeFailure.groupOrdinal, fallbackType: resume.routeFailure.fallbackType,
+            fallbackHost: resume.routeFailure.fallbackHost, routeRevision: resume.routeFailure.revision,
+            actionId: resume.routeFailure.actionId || null,
             waitingForRetry: !resume.reloadAttempted,
         } : null,
         postReloadPlayOutcome,

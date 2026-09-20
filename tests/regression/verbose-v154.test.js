@@ -15,7 +15,8 @@ const verboseMenu = h => {
         F.click(h, 'verbose-toggle')
     } else {
         F.click(h, 'diagnostics')
-        F.click(h, 'text-action')
+        if (F.ui(h).querySelector('[data-ui-action="verbose-toggle"]')) F.click(h, 'verbose-toggle')
+        else F.click(h, 'text-action')
     }
 }
 const starve = async (h, state = 1) => {
@@ -67,16 +68,17 @@ test('v154 starvation: readyState 1/2/3/4 repair without blaming audio', async (
         if (state === 1) assert.match(h.evaluate('buildDiagReport()'), /low-data/)
     }
 })
-test('v154 recorder: bounded rings, TTL, deduplication, privacy and reload reset', async () => {
+test('v196 recorder: bounded failure/context rings, dropped-field evidence, privacy and reload reset', async () => {
     const h = load({ gmSeed: { disabled: true, verbose: true } })
-    h.evaluate(`for(let i=0;i<400;i++) { DiagnosticLog.record('request',{id:i,host:'https://evil.invalid/private?token=SECRET',reason:'PRIVATE'}); DiagnosticLog.record('exception',{id:i},true) }`)
+    h.evaluate(`for(let i=0;i<400;i++) { DiagnosticLog.record('measurement',{host:'https://evil.invalid/private?token=SECRET',reason:'accepted',privateField:'PRIVATE'}); DiagnosticLog.record('exception',{stage:'snapshot',privateField:'PRIVATE'},true) }`)
     let s = F.json(h, 'DiagnosticLog.snapshot()')
-    assert.equal(s.detail.length, 192); assert.equal(s.critical.length, 64)
-    assert.ok(s.evicted > 0); assert.doesNotMatch(JSON.stringify(s), /SECRET|PRIVATE|evil.invalid|token=/)
-    assert.ok([...s.detail, ...s.critical].every(e => Buffer.byteLength(JSON.stringify(e)) <= 1024))
+    assert.ok(s.detail.length > 0 && s.detail.length <= 256)
+    assert.ok(s.critical.length > 0 && s.critical.length <= 256)
+    assert.ok(s.droppedFields > 0); assert.doesNotMatch(JSON.stringify(s), /SECRET|PRIVATE|evil.invalid|token=/)
+    assert.ok([...s.detail, ...s.critical].every(e => Buffer.byteLength(JSON.stringify(e)) <= 2048))
     h.evaluate(`DiagnosticLog.record('watchdog',{reason:'paused'}); DiagnosticLog.record('watchdog',{reason:'paused'})`)
     assert.equal(F.json(h, 'DiagnosticLog.snapshot()').detail.at(-1).count, 2)
-    h.evaluate(`Config.verbose=false; DiagnosticLog.record('request',{id:999}); DiagnosticLog.fault('snapshot')`)
+    h.evaluate(`Config.verbose=false; DiagnosticLog.record('measurement',{reason:'accepted'}); DiagnosticLog.fault('snapshot')`)
     assert.equal(F.json(h, 'DiagnosticLog.snapshot()').critical.at(-1).code, 'exception')
     h.clock.advance(15 * 60 * 1000 + 1)
     s = F.json(h, 'DiagnosticLog.snapshot()'); assert.equal(s.critical.length, 0); assert.equal(s.detail.length, 0)
@@ -96,7 +98,10 @@ test('v154 recorder: actual Fetch headers/body/pending/EOF and epoch detach', as
     assert.equal(F.json(h, 'DiagnosticLog.snapshot()').pending[0].phase, 'body')
     body.enqueue(new Uint8Array(99)); body.close(); await r.arrayBuffer()
     assert.equal(F.json(h, 'DiagnosticLog.snapshot()').pending.length, 0)
-    assert.equal(F.json(h, 'DiagnosticLog.snapshot()').detail.at(-1).code, 'eof')
+    let finished = F.json(h, 'DiagnosticLog.snapshot()')
+    assert.equal(finished.aggregates.at(-1).successCount, 1)
+    assert.equal(finished.successSummary.at(-1).successCount, 1)
+    assert.equal([...finished.critical, ...finished.detail].some(e => ['request','headers','eof'].includes(e.code)), false)
     const stale = h.pageWindow.fetch(F.mediaUrl('av1')); const complete = headers
     await F.spa(h); const count = F.json(h, 'DiagnosticLog.snapshot()').detail.length
     complete(); const old = await stale; body.close(); await old.arrayBuffer()
@@ -117,12 +122,12 @@ test('v154 diagnostics: console failure, poisoned event data and oversized outpu
     const h = load({gmSeed:{verbose:true}}); F.video(h)
     h.context.console.log = () => { throw Error('console SECRET') }
     h.context.console.error = h.context.console.log
-    h.evaluate(`DiagnosticLog.record('request', {get id(){throw Error('getter SECRET')}})`)
+    h.evaluate(`DiagnosticLog.record('measurement', {get host(){throw Error('getter SECRET')}})`)
     await F.prime(h); await F.consume(h,F.mediaUrl('av1'))
     h.menus[0].callback(); F.click(h,'diagnostics')
-    h.evaluate(`for(let i=0;i<400;i++){DiagnosticLog.record('request',{id:i,bytes:999999999,originalHost:'${F.ali}',targetHost:'${F.other}',finalHost:'${F.ali}',startAt:1800000000000,responseAt:1800000000001,endAt:1800000000002,ageMs:100,phase:'body',reason:'complete',method:'fetch',kind:'video'});DiagnosticLog.record('exception',{id:i,stage:'fetch-body'},true)}`)
+    h.evaluate(`for(let i=0;i<400;i++){DiagnosticLog.record('measurement',{bytes:999999999,host:'${F.ali}',reason:'complete',privateField:'SECRET'});DiagnosticLog.record('exception',{stage:'fetch-body'},true)}`)
     const report=h.evaluate('buildDiagReport()')
-    assert.ok(Buffer.byteLength(report)<=65536); assert.doesNotMatch(report,/SECRET|sig=fixture|upgcxcode/)
+    assert.ok(Buffer.byteLength(report)<=98304); assert.doesNotMatch(report,/SECRET|sig=fixture|upgcxcode/)
     assert.ok(F.json(h,'DiagnosticLog.snapshot()').failures > 0)
     assert.match(report,/匯出截斷：/)
     const publicState=F.json(h,'buildPublicDiagnosticSnapshot()')
@@ -146,7 +151,7 @@ test('v154 transport: HTTP, network and body errors are distinct; abort forwards
         }
         const snapshot=F.json(h,'DiagnosticLog.snapshot()')
         assert.equal(snapshot.pending.length,0)
-        if(outcome!=='abort')assert.ok(snapshot.critical.some(e=>e.code===outcome))
+        if(outcome!=='abort')assert.ok(snapshot.critical.some(e=>e.code==='request-failure'&&e.data.failureKind===outcome))
         else assert.equal(h.evaluate(`cdnHealth['${F.ali}']?.failures || 0`),0)
         assert.doesNotMatch(h.evaluate('buildDiagReport()'),/SECRET|PRIVATE/)
     }
@@ -161,7 +166,7 @@ test('v154 pending cap and forged events cannot overwrite settings or punitive e
     h.pageWindow.dispatchEvent(new F.FakeEvent('message',{isTrusted:false}))
     h.menus[0].callback();F.click(h,'diagnostics')
     const writes=h.gmWrites.length
-    F.ui(h).querySelector('[data-ui-action="text-action"]').dispatchEvent(new F.FakeEvent('click',{isTrusted:false}))
+    F.ui(h).querySelector('[data-ui-action="incident-mark"]').dispatchEvent(new F.FakeEvent('click',{isTrusted:false}))
     assert.equal(h.gmWrites.length,writes)
     assert.equal(F.json(h,'DiagnosticLog.snapshot()').pending.length,64)
     assert.doesNotMatch(h.evaluate('buildDiagReport()'),/SECRET|evil.invalid/)
@@ -236,8 +241,8 @@ test('v154 XHR: trusted headers/progress/403/error/reopen and synthetic events h
     assert.equal(F.json(h,'DiagnosticLog.snapshot()').pending[0].phase,'body')
     x.open('GET',F.mediaUrl('audio',F.other));x.send();x.fail()
     const s=F.json(h,'DiagnosticLog.snapshot()')
-    assert.equal(s.pending.length,0);assert.ok(s.detail.some(e=>e.code==='reopened'))
-    assert.ok(s.critical.some(e=>e.code==='network-error'&&e.data.kind==='audio'))
+    assert.equal(s.pending.length,0);assert.ok(s.aggregates.some(e=>e.abortCount>=1))
+    assert.ok(s.critical.some(e=>e.code==='request-failure'&&e.data.failureKind==='network-error'&&e.data.kind==='audio'))
     const locked=load({gmSeed:{verbose:true,CustomCDN:F.other},fetchImpl:async url=>String(url).includes('/x/player/')?
         new Response(JSON.stringify(F.payload())):new Response('no',{status:403})})
     await F.prime(locked);locked.evaluate(`addForcedRedirect('${F.ali}')`)
@@ -266,12 +271,12 @@ test('v154 actual XHR abort method closes pending once without punishment or aff
     x.abort();x.abort()
     let s=F.json(h,'DiagnosticLog.snapshot()')
     assert.equal(s.pending.length,0)
-    assert.equal(s.detail.filter(e=>e.code==='abort').length,1)
+    assert.equal(s.aggregates.reduce((n,e)=>n+e.abortCount,0),1)
     assert.equal(h.evaluate(`cdnHealth['${F.ali}']?.failures || 0`),0)
     x.open('GET',F.mediaUrl('audio',F.other));x.send()
     assert.equal(F.json(h,'DiagnosticLog.snapshot()').pending.length,1)
     x.abort()
     s=F.json(h,'DiagnosticLog.snapshot()')
     assert.equal(s.pending.length,0)
-    assert.equal(s.detail.filter(e=>e.code==='abort').length,2)
+    assert.equal(s.aggregates.reduce((n,e)=>n+e.abortCount,0),2)
 })

@@ -43,14 +43,14 @@ test('v155 fixed v154 SHA and reproduction: XHR timeout is logged but never repa
 test('v155 actual XHR timeout: repair once, preserve partial bytes, never infer DNS',async()=>{
     const h=load();await F.prime(h);const x=request(h);body(x);h.clock.advance(5000);end(x)
     assert.equal(health(h).failures,1);assert.equal(health(h).forced,true);assert.equal(health(h).dead,false)
-    const s=history(h), error=s.critical.find(e=>e.code==='network-error')
-    assert.equal(error.data.reason,'timeout');assert.equal(error.data.status,206);assert.equal(error.data.bytes,468443)
+    const s=history(h), error=s.critical.find(e=>e.code==='request-failure'&&e.data.failureKind==='timeout')
+    assert.equal(error.data.status,206);assert.equal(error.data.bytes,468443)
     assert.equal(s.pending.length,0)
     const bytes=h.evaluate('Watchdog.stats().totalMB'), calls=h.fetchCalls.length
     ev(x,'timeout');ev(x,'error');x.progress(900000);x.respond({status:200})
     assert.equal(health(h).failures,1);assert.equal(h.evaluate('Watchdog.stats().totalMB'),bytes)
     assert.equal(h.fetchCalls.length,calls)
-    assert.equal(history(h).critical.filter(e=>e.code==='network-error').length,1)
+    assert.equal(history(h).critical.filter(e=>e.code==='request-failure'&&e.data.failureKind==='timeout').length,1)
 })
 
 test('v155 timeout keeps captured HTTP 200 metadata while applying the same evidence gate',async()=>{
@@ -58,8 +58,8 @@ test('v155 timeout keeps captured HTTP 200 metadata while applying the same evid
     x._status=200;x._readyState=2;ev(x,'readystatechange');x.progress(128*1024)
     h.clock.advance(3000);end(x)
     assert.equal(health(h).failures,1)
-    const error=history(h).critical.find(e=>e.code==='network-error')
-    assert.equal(error.data.status,200);assert.equal(error.data.reason,'timeout')
+    const error=history(h).critical.find(e=>e.code==='request-failure'&&e.data.failureKind==='timeout')
+    assert.equal(error.data.status,200)
 })
 
 test('v155 timeout isolation: forged, aborted, seek, old epoch, disabled and SPA cannot punish',async t=>{

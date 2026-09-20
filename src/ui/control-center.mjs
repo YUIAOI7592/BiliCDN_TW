@@ -27,13 +27,27 @@ const showDiagnosticDialog = () => {
         text: deps.buildDiagReport(),
         copyLabel: '複製報告',
         onCopy: () => { deps.copyDiagReport().catch(() => {}) },
-        actionLabel: deps.Config.verbose ? '關閉 verbose' : '開啟 verbose',
+        actionLabel: deps.Config.verbose ? '關閉 Verbose' : '開啟 Verbose',
         onAction: () => {
             const result = deps.BiliCDNControls.verbose(!deps.Config.verbose)
             deps.refreshPublicDiagnosticSnapshot()
             deps.TrustedMenuUI.toast(result.message, result.ok ? 'success' : 'warning')
             showDiagnosticDialog()
         },
+        actions: [
+            { label: '標記剛剛卡頓', action: 'incident-mark', onActivate: () => {
+                const result = deps.BiliCDNControls.markIncident()
+                deps.refreshPublicDiagnosticSnapshot()
+                deps.TrustedMenuUI.toast(result.message, result.ok ? 'success' : 'warning')
+                showDiagnosticDialog()
+            } },
+            { label: '清除事故記錄', action: 'incident-clear', onActivate: () => {
+                const result = deps.BiliCDNControls.clearIncident()
+                deps.refreshPublicDiagnosticSnapshot()
+                deps.TrustedMenuUI.toast(result.message, result.status === 'incident-empty' ? 'info' : 'success')
+                showDiagnosticDialog()
+            } },
+        ],
         closeLabel: '返回控制中心',
         onClose: () => showControlCenter(),
     })

@@ -108,30 +108,61 @@ const buildDiagReport = () => {
         'HTTPDNS：' + httpDns.mode + (httpDns.ttlMin ? '（' + httpDns.ttlMin + 'm）' : ''),
     ]
     const history = deps.DiagnosticLog.snapshot()
+    const successCount = history.aggregateTotals?.successCount
+        ?? (history.successSummary || []).reduce((sum, item) => sum + (item.successCount || 0), 0)
+    const evidenceStart = history.incident?.coverageStart || history.startedAt
+    const evidenceEnd = history.incident?.endedAt || history.incident?.captureUntil || Date.now()
     lines.splice(5, 0,
         'Verbose：' + (deps.Config.verbose ? '已開啟' : '已關閉') + '；' + (history.persisted === true ? '設定已確認儲存' : '本分頁已套用，未確認儲存'),
-        '紀錄：僅本分頁記憶體，重整清空；起點=' + history.startedAt + '；Verbose 最近切換=' + history.verboseChangedAt,
+        '紀錄：僅本分頁記憶體，player.reload 後保留、整頁重整清空；起點=' + history.startedAt
+            + '；Verbose 最近切換=' + history.verboseChangedAt,
+        '證據完整度：' + JSON.stringify({
+            coverageStart: evidenceStart, coverageEnd: evidenceEnd,
+            incident: history.incident ? history.incident.state : 'none',
+            trigger: history.incident?.reason || null,
+            successRequests: successCount,
+            evicted: history.evicted, aggregateEvicted: history.aggregateEvicted,
+            incidentReplaced: history.incidentReplaced, truncated: !!history.incident?.truncated,
+            droppedFields: history.droppedFields, droppedFieldNames: history.droppedFieldNames,
+        }),
         '播放器現況：' + JSON.stringify(readPlaybackDiagnostic()),
         'Watchdog 決策：' + JSON.stringify(history.decision),
         'Watchdog 統計（修復嘗試不等於已換路；影片換 host 只代表觀察到的請求）：' + JSON.stringify({
             switchCount: buffer.switchCount, recoveryAttemptCount: buffer.recoveryAttemptCount,
             observedSwitchCount: buffer.observedSwitchCount, stallCount: buffer.stallCount, breakerSec: buffer.breakerSec }),
         '紀錄容量：' + JSON.stringify({ evicted: history.evicted, expired: history.expired, rejected: history.rejected,
-            pendingEvicted: history.pendingEvicted, recorderFailures: history.failures }),
+            pendingEvicted: history.pendingEvicted, aggregateEvicted: history.aggregateEvicted,
+            droppedFields: history.droppedFields, recorderFailures: history.failures }),
     )
-    // Priority: current state, critical history, pending requests, then newest detail.
-    const limit = 64 * 1024, reserve = 256
-    let text = lines.join('\n'), omitted = 0
-    if (deps.DiagnosticLog.size(text) > limit / 2) { text = text.slice(0, 8000); omitted++ }
+    // Priority: frozen/capturing incident, current state, critical history, pending, verbose summaries.
+    const limit = 96 * 1024, reserve = 512
+    let text = lines[0], omitted = 0
     const append = line => {
         if (deps.DiagnosticLog.size(text) + deps.DiagnosticLog.size(line) + 1 > limit - reserve) { omitted++; return }
         text += '\n' + line
     }
+    append('事故時間線（最高優先）：')
+    if (history.incident) {
+        append(JSON.stringify({
+            id: history.incident.id, state: history.incident.state, reason: history.incident.reason,
+            triggerCode: history.incident.triggerCode, coverageStart: history.incident.coverageStart,
+            firstTriggerAt: history.incident.firstTriggerAt, lastTriggerAt: history.incident.lastTriggerAt,
+            captureUntil: history.incident.captureUntil, endedAt: history.incident.endedAt,
+            evicted: history.incident.evicted, truncated: history.incident.truncated,
+        }))
+        history.incident.events.forEach(e => append(JSON.stringify(e)))
+    } else append('目前只有健康觀察，不能證明先前故障。若剛剛發生卡頓，請立即按「標記剛剛卡頓」。')
+    append('目前狀態：')
+    lines.slice(1).forEach(append)
     append('近期關鍵事件（新到舊）：')
     history.critical.slice().reverse().forEach(e => append(JSON.stringify(e)))
     append('等待中的請求（非完整網路面板；不包含已脫離 generation 的請求）：')
     history.pending.forEach(e => append(JSON.stringify(e)))
-    append('Verbose 近期細節（新到舊；開啟前未收集的細節無法補回）：')
+    append('最近成功影片／音訊傳輸彙總：')
+    history.successSummary.forEach(e => append(JSON.stringify(e)))
+    append('Verbose 五秒流量彙總：')
+    history.aggregates.forEach(e => append(JSON.stringify(e)))
+    append('Verbose 評分／週期細節（新到舊）：')
     history.detail.slice().reverse().forEach(e => append(JSON.stringify(e)))
     return text + '\n匯出截斷：' + (omitted ? omitted + ' 筆／區段未匯出' : '無')
 }

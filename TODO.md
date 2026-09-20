@@ -1,5 +1,14 @@
 # 待辦
 
+## v1.9.6
+
+- [x] 將 Verbose 改為額外成功流量、候選評分及週期快照；重要失敗、fallback、Watchdog 與 core 因果始終記錄。
+- [x] 成功媒體請求按五秒與 route/group/host 彙總，不再逐筆保存 request／headers／eof。
+- [x] 建立前 60 秒、後 30 秒且最多 90 秒的可凍結事故時間線；控制中心可手動標記或清除，且不產生網路或 GM 寫入。
+- [x] 明確事件 schema、欄位丟棄計數、同 action ID 因果鏈、外部 host 別名及 Catalog route type 後態完成。
+- [x] 378 項功能回歸通過；語法、可重現建置、patch 套用及 SHA-256 由本版 verify 驗證；未執行 Code Security。
+- [ ] 安裝 v1.9.6 後，於下一次真實卡頓／黑屏後標記事故並匯出報告，驗證單份報告可回答失敗路線、fallback 後態與 core 結果。
+
 ## v1.9.5
 
 - [x] 將 Native route 的來源歸因與可選資格分離，soft block、invalid、kind-specific avoid 與 host restriction 約束所有出口。

@@ -218,7 +218,9 @@ const interceptNetResponse = (function (theWindow) {
                     this._localBlocked = true
                     return openNative(this, nativeMethod, urlStr, rest)
                 }
-                mediaRequests.get(this).routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null
+                mediaRequests.get(this).routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host,
+                    changed: nativeRoute.url !== urlStr, revision: nativeRoute.revision,
+                    decisionId: nativeRoute.decisionId, actionId: nativeRoute.actionId } : null
                 const norm = nativeRoute
                     ? { url: nativeRoute.url, changed: nativeRoute.url !== urlStr, originCdn: deps.parseMediaHttpUrl(urlStr)?.hostname,
                         targetCdn: nativeRoute.host, nativeRoute: nativeRoute.type === 'native-signed', restoredOriginal: nativeRoute.action === 'restore' }
@@ -337,7 +339,9 @@ const interceptNetResponse = (function (theWindow) {
                         state.hostRewriteAttempt = next !== state.originalUrl && decision?.type !== 'native-signed' && decision?.action !== 'restore'
                         this._hostRewriteAttempt = state.hostRewriteAttempt
                         this._redirectedCdn = state.targetCdn
-                        mediaRequests.get(this).routeDecision = { type: decision?.type, host: state.targetCdn, changed: next !== original }
+                        mediaRequests.get(this).routeDecision = { type: decision?.type, host: state.targetCdn,
+                            changed: next !== original, revision: decision?.revision,
+                            decisionId: decision?.decisionId, actionId: decision?.actionId }
                     }
                 }
             }
@@ -692,7 +696,9 @@ const interceptNetResponse = (function (theWindow) {
                 deps.DiagnosticLog.record('route-blocked', { reason: 'host-restricted', method: 'fetch' }, true)
                 return Promise.reject(new TypeError('BiliCDN host restricted'))
             }
-            mediaContext.routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null
+            mediaContext.routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host,
+                changed: nativeRoute.url !== urlStr, revision: nativeRoute.revision,
+                decisionId: nativeRoute.decisionId, actionId: nativeRoute.actionId } : null
             const norm = nativeRoute
                 ? { url: nativeRoute.url, changed: nativeRoute.url !== urlStr, originCdn: deps.parseMediaHttpUrl(urlStr)?.hostname,
                     targetCdn: nativeRoute.host, nativeRoute: nativeRoute.type === 'native-signed', restoredOriginal: nativeRoute.action === 'restore' }

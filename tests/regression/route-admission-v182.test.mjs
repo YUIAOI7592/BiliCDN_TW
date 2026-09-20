@@ -20,7 +20,8 @@ test('v181 reproduction: page compatibility promotes Akamai with no Native pool'
 
 function routesHarness() {
  let epoch=1, fixed=null, saved=null, schedules=0
- const arms=[]
+ const arms=[], events=[]
+ let actionSeq=0
  const deps={gmGet:()=>null,gmSet:(_k,v)=>{saved=v},gmDelete(){},TRUSTED_CDN_CATALOG_SET:new Set([C]),
  parseMediaHttpUrl:v=>new URL(v,'https://www.bilibili.com/'),classifyMediaDelivery:()=>({kind:'native'}),
  mediaUrlPolicy:{decide:()=>({action:'rewrite'}),isMediaPath:p=>p.startsWith('/upgcxcode/')},
@@ -30,9 +31,11 @@ function routesHarness() {
  replaceUrlHost:(v,h)=>{const u=new URL(v);u.hostname=h;return u.href},
  playbackRateState:{effectiveRate:2},getVideo:()=>({videoHeight:1080}),
  runtimeGeneration:1,armTransportFailure:details=>{arms.push(details);return true},
- scheduleObservedSample:()=>schedules++,DiagnosticLog:{fault(){}},onActiveRepresentation(){},cdnHealth:{}}
+ scheduleObservedSample:()=>schedules++,DiagnosticLog:{fault(){},record:(code,data)=>events.push({code,data}),
+  nextActionId:prefix=>`${prefix}-${++actionSeq}`,groupOrdinal:id=>id?Number(String(id).split(':').at(-1))||1:null},
+ onActiveRepresentation(){},cdnHealth:{}}
  const routes=createNativeRoutes(deps)
- return {routes,deps,arms,setEpoch:n=>epoch=n,setFixed:v=>fixed=v,get schedules(){return schedules},get saved(){return saved}}
+ return {routes,deps,arms,events,setEpoch:n=>epoch=n,setFixed:v=>fixed=v,get schedules(){return schedules},get saved(){return saved}}
 }
 function pageGroup(h, address=url(A), changes={}) {
  const item={...payload().data.dash.video[0],base_url:address,backup_url:[],...changes}
@@ -77,6 +80,9 @@ test('v195 reproduction: a verified Native audio failure reroutes only that audi
  assert.equal(after.currentHost,C)
  assert.equal(after.lastRouteBoundary.kind,'audio')
  assert.equal(after.lastRouteBoundary.groupId,audio.id)
+ const chain=h.events.filter(event=>event.code==='route'&&event.data.actionId)
+ assert.deepEqual(chain.map(event=>event.data.stage).slice(-2),['failure-detected','fallback-planned'])
+ assert.equal(new Set(chain.slice(-2).map(event=>event.data.actionId)).size,1)
 })
 
 test('v195 audio recovery avoidance is kind-scoped and failure attribution survives the soft block',()=>{

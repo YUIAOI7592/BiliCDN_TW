@@ -18,7 +18,7 @@ BiliCDN_TW 是一支供 Tampermonkey 使用的 Bilibili userscript，主要針�
 - **自動畫質支援：** 跟隨 Bilibili 播放器目前使用的畫質與 Codec，SPA 換片後會由 playurl、播放器 MPD 或實際傳輸重建 Route Pool。
 - **Codec 偏好：** 預設優先 AV1，再依實際瀏覽器能力退回 HEVC 或 AVC；不依 UA 或顯示卡型號猜測。
 - **節點限制：** 使用者停用、預設不可用、black、dead 與 soft-block 狀態會同時約束原始、Catalog、Native、固定及備援路線。
-- **本機診斷：** 提供緩衝、播放速率、representation、路由、MPD 同步、掉幀與近期錯誤摘要，方便回報問題。
+- **本機診斷：** 以失敗與恢復因果為主，保留緩衝、representation、實際路由、fallback 與播放器 core 結果，方便只靠一份報告追查問題。
 
 腳本不負責強制將播放器設為 2x。它會使用已觀察到的播放速率計算需求；尚未確認速率時，會保守地按 2x 規劃。
 
@@ -65,7 +65,7 @@ BiliCDN_TW 是一支供 Tampermonkey 使用的 Bilibili userscript，主要針�
 
 - **重新評估節點：** 使用既有測速預算重新評估目前候選。
 - **CDN 選路：** 使用自動模式、固定可信 Catalog 節點，以及啟用或停用個別節點。
-- **診斷：** 查看或複製目前播放及近期事件報告；可開啟 Verbose 以收集更詳細的後續紀錄。
+- **診斷：** 查看或複製目前播放與事故時間線；可手動「標記剛剛卡頓」，也可開啟 Verbose 增加成功流量彙總、候選評分與週期快照。
 - **節點維護：** 查看限制狀態、清理暫時處分或重置學習資料。
 
 固定 CDN 仍須遵守 black、dead、soft-block 與禁止規則。被禁止的固定節點會保留設定，但腳本會暫時使用合格替代路線。
@@ -88,7 +88,7 @@ BiliCDN_TW 是一支供 Tampermonkey 使用的 Bilibili userscript，主要針�
 - Catalog 健康、black／dead／soft-block、設定與 Native host 評級保存在 Tampermonkey 的本機 GM 儲存空間。
 - Native Ledger 只保存去敏的 hostname 與有限健康數值，不保存 path、query、token 或完整 signed URL。
 - 完整 signed URL 只存在目前頁面的記憶體 Route Pool；換片、SPA generation 失效、停用或重新整理後即清除。
-- Verbose 事件只保存在目前分頁的有界記憶體中，重新整理後清空。
+- 重要失敗、fallback 與 core 恢復事件不依賴 Verbose；事故時間線與 Verbose 資料都只保存在目前分頁的有界記憶體，`player.reload()` 後仍存在，完整重新整理後清空。
 - 腳本不包含遙測、分析服務或執行期第三方依賴。
 
 「重置所有學習狀態」會清除 CDN health、Native 評級、blacklist、dead／soft-block、probe cache、HTTPDNS 學習與 Watchdog 統計；固定 CDN 與 Catalog 啟用設定不會一併刪除。
@@ -99,10 +99,10 @@ BiliCDN_TW 是一支供 Tampermonkey 使用的 Bilibili userscript，主要針�
 2. 重新整理 Bilibili 影片頁面。
 3. 確認播放器面板顯示「攔截修改影片 CDN」已開啟。
 4. 先使用自動畫質與自動選路重現問題。
-5. 若問題可重現，先在「控制中心 → 診斷」開啟 Verbose，再播放至問題再次發生。
-6. 複製診斷報告並附至 [GitHub Issues](https://github.com/YUIAOI7592/BiliCDN_TW/issues)。診斷主要供後續分析，不要求使用者自行判讀。
+5. 卡頓或黑屏後立刻開啟「控制中心 → 診斷」，按「標記剛剛卡頓」；腳本會保留前 60 秒脈絡並收集後續 30 秒。自動辨識到傳輸失敗、Watchdog 修復或 core 死亡時則會自行建立事故。
+6. 等待約 30 秒後複製診斷報告並附至 [GitHub Issues](https://github.com/YUIAOI7592/BiliCDN_TW/issues)。診斷主要供後續分析，不要求使用者自行判讀。
 
-開啟 Verbose 只能收集開啟後的事件，無法補回先前未記錄的詳細資料。
+一般故障不必預先開啟 Verbose。Verbose 只會增加開啟後的成功流量彙總、評分與週期狀態，無法補回先前未記錄的這些額外細節。
 
 ## 已知限制
 

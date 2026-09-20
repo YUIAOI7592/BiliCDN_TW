@@ -1,0 +1,1379 @@
+diff --git a/Release/v1.9.5/BiliCDN_TW.user.js b/Release/v1.9.6/BiliCDN_TW.user.js
+index 9045440..7c82082 100644
+--- a/Release/v1.9.5/BiliCDN_TW.user.js
++++ b/Release/v1.9.6/BiliCDN_TW.user.js
+@@ -1,7 +1,7 @@
+ // ==UserScript==
+ // @name         Bilibili CDN 台灣優化
+ // @namespace    BiliCDN_TW
+-// @version      1.9.5
++// @version      1.9.6
+ // @description  改善台灣網路觀看 Bilibili 影片時的 CDN 連線穩定度，支援自動切換與卡頓監測
+ // @author       jiyunshi <chocosensei214@gmail.com>
+ // @license      MIT
+@@ -224,94 +224,506 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     const PluginName = "BiliCDN_TW_v" + deps.VERSION;
+     const Config = { verbose: false };
+     const DiagnosticLog = (() => {
+-      const critical = [], detail = [], pending = /* @__PURE__ */ new Map();
++      const nowMs = typeof deps.now === "function" ? deps.now : () => Date.now();
++      const scheduleTimeout = typeof deps.setTimeout === "function" ? deps.setTimeout : setTimeout;
++      const cancelTimeout = typeof deps.clearTimeout === "function" ? deps.clearTimeout : clearTimeout;
++      const critical = [], detail = [], pending = /* @__PURE__ */ new Map(), aggregates = /* @__PURE__ */ new Map();
++      const rolling = [], externalAliases = /* @__PURE__ */ new Map(), groupOrdinals = /* @__PURE__ */ new Map();
+       const TTL = 15 * 60 * 1e3;
++      const CONTEXT_MS = 60 * 1e3;
++      const POST_MS = 30 * 1e3;
++      const MAX_POST_MS = 90 * 1e3;
++      const CRITICAL_BYTES = 64 * 1024;
++      const ROLLING_BYTES = 32 * 1024;
++      const INCIDENT_BYTES = 64 * 1024;
+       const encoder = new TextEncoder();
+-      const codes = new Set("runtime verbose settings-read settings-write settings-verify exception request headers body eof no-body http network-error body-error abort reopened detached rewrite measurement watchdog recovery breaker host-lock clipboard sample route-blocked startup-measurement video-core".split(" "));
+-      const enums = new Set("fetch xhr video audio muxed unknown non-catalog headers body settings-read settings-write settings-verify startup active disabled spa epoch interceptor transform fetch-body playurl-body playurl-clone measurement watchdog snapshot health-save clipboard-gm clipboard-standard clipboard-manual page-hook ui no-video invalid-state no-metadata media-error ended paused seeking seek-grace background-gap player-nudge nudge-grace startup-grace switch-grace target-reached healthy low-data buffered-stall too-slow stall-count cooldown breaker attempt progress no-progress interrupted no-attribution attributed received httpdns accepted skipped complete cancelled failed timeout partial latency-only http network-error body-error abort eof no-body reopened detached automatic manual fixed no-segment busy hidden not-applicable host-lock forbidden insufficient ineligible host-restricted latency throughput waiting menu verified-failure startup-exhausted startup-waiting healthy-cache pause-armed play-intent waiting-metadata video-init-dead reloading recovered recovered-paused reload-failed hook-unavailable unavailable core-uninitialized installed not-installed lost trusted-media-play paused-transition none not-called pending resolved rejected".split(" "));
+-      const keys = new Set("generation epoch id method kind originalHost targetHost finalHost host status bytes startAt responseAt endAt ageMs phase stage reason enabled persisted readyState networkState currentTime duration bufferAheadSec observedRate effectiveRate paused seeking ended available valid errorCode hidden waitMs count remainingMs remainingSec punished reselected preconnect requested received switchCount stallCount breakerSec outcome actionId playableSec progressTicks coreInitialized resumeToken reloadCount videoAgeSec audioAgeSec playHookState intentSource userActivationAccepted pauseSec intentAgeSec savedPositionSec savedRate postReloadPlayOutcome".split(" "));
++      const codes = new Set("runtime verbose settings-read settings-write settings-verify exception request-failure request-summary http network-error body-error rewrite measurement watchdog recovery breaker host-lock clipboard sample route-blocked startup-measurement video-core route representation incident".split(" "));
++      const commonFields = /* @__PURE__ */ new Set(["generation", "epoch"]);
++      const schemas = Object.freeze({
++        runtime: ["reason"],
++        verbose: ["enabled", "persisted"],
++        "settings-read": [],
++        "settings-write": [],
++        "settings-verify": [],
++        exception: ["stage"],
++        rewrite: ["originalHost", "targetHost", "routeType", "decisionId"],
++        measurement: [
++          "host",
++          "reason",
++          "status",
++          "bytes",
++          "received",
++          "requested",
++          "outcome",
++          "kind",
++          "routeType",
++          "groupOrdinal",
++          "decisionId",
++          "waitMs"
++        ],
++        watchdog: [
++          "reason",
++          "readyState",
++          "networkState",
++          "currentTime",
++          "duration",
++          "bufferAheadSec",
++          "observedRate",
++          "effectiveRate",
++          "paused",
++          "seeking",
++          "ended",
++          "available",
++          "valid",
++          "errorCode",
++          "hidden",
++          "remainingMs",
++          "remainingSec"
++        ],
++        recovery: [
++          "stage",
++          "reason",
++          "outcome",
++          "actionId",
++          "host",
++          "originalHost",
++          "targetHost",
++          "finalHost",
++          "kind",
++          "status",
++          "count",
++          "punished",
++          "reselected",
++          "preconnect",
++          "requested",
++          "received",
++          "switchCount",
++          "stallCount",
++          "currentTime",
++          "bufferAheadSec",
++          "routeType",
++          "routeRevision",
++          "decisionId",
++          "groupOrdinal",
++          "failureKind",
++          "fallbackType",
++          "fallbackHost",
++          "waitingForRetry",
++          "waitMs"
++        ],
++        breaker: ["stage", "reason", "count", "remainingMs", "remainingSec", "actionId"],
++        "host-lock": ["host", "status", "kind", "routeType", "groupOrdinal", "decisionId"],
++        clipboard: ["stage", "outcome"],
++        sample: [
++          "readyState",
++          "networkState",
++          "currentTime",
++          "duration",
++          "bufferAheadSec",
++          "observedRate",
++          "effectiveRate",
++          "paused",
++          "seeking",
++          "ended",
++          "available",
++          "valid",
++          "errorCode",
++          "hidden"
++        ],
++        "route-blocked": [
++          "reason",
++          "method",
++          "kind",
++          "host",
++          "originalHost",
++          "targetHost",
++          "routeType",
++          "groupOrdinal",
++          "routeRevision",
++          "decisionId",
++          "actionId"
++        ],
++        "startup-measurement": [
++          "kind",
++          "outcome",
++          "reason",
++          "count",
++          "phase",
++          "playableSec",
++          "progressTicks",
++          "requested",
++          "received"
++        ],
++        "video-core": [
++          "stage",
++          "reason",
++          "outcome",
++          "actionId",
++          "kind",
++          "host",
++          "failedHost",
++          "fallbackHost",
++          "fallbackType",
++          "groupOrdinal",
++          "routeType",
++          "routeRevision",
++          "decisionId",
++          "waitingForRetry",
++          "coreInitialized",
++          "resumeToken",
++          "reloadCount",
++          "videoAgeSec",
++          "audioAgeSec",
++          "playHookState",
++          "intentSource",
++          "userActivationAccepted",
++          "pauseSec",
++          "intentAgeSec",
++          "savedPositionSec",
++          "savedRate",
++          "postReloadPlayOutcome",
++          "currentTime",
++          "effectiveRate",
++          "waitMs",
++          "remainingMs",
++          "breakerSec"
++        ],
++        route: [
++          "stage",
++          "reason",
++          "outcome",
++          "actionId",
++          "decisionId",
++          "kind",
++          "host",
++          "failedHost",
++          "originalHost",
++          "targetHost",
++          "finalHost",
++          "routeType",
++          "routeRevision",
++          "groupOrdinal",
++          "failureKind",
++          "status",
++          "fallbackType",
++          "fallbackHost",
++          "waitingForRetry"
++        ],
++        representation: ["stage", "reason", "kind", "groupOrdinal", "routeRevision", "height", "codec"],
++        incident: ["stage", "reason", "incidentId", "incidentReplaced", "triggerCode"],
++        "request-failure": [
++          "id",
++          "method",
++          "kind",
++          "originalHost",
++          "targetHost",
++          "finalHost",
++          "status",
++          "bytes",
++          "startAt",
++          "responseAt",
++          "endAt",
++          "phase",
++          "reason",
++          "failureKind",
++          "ttfbMs",
++          "elapsedMs",
++          "progressCount",
++          "maxNoProgressMs",
++          "routeType",
++          "groupOrdinal",
++          "routeRevision",
++          "decisionId",
++          "actionId"
++        ],
++        "request-summary": [
++          "bucketStart",
++          "bucketEnd",
++          "kind",
++          "targetHost",
++          "finalHost",
++          "routeType",
++          "groupOrdinal",
++          "requestCount",
++          "successCount",
++          "abortCount",
++          "bytes",
++          "ttfbMs",
++          "elapsedMs",
++          "progressCount",
++          "maxNoProgressMs",
++          "status",
++          "lastSuccessAt"
++        ]
++      });
++      const hostFields = /* @__PURE__ */ new Set(["host", "failedHost", "originalHost", "targetHost", "finalHost", "fallbackHost"]);
++      const numberFields = new Set("generation epoch id status bytes startAt responseAt endAt ageMs readyState networkState currentTime duration bufferAheadSec observedRate effectiveRate errorCode waitMs count breakerSec remainingMs remainingSec switchCount stallCount playableSec progressTicks resumeToken reloadCount videoAgeSec audioAgeSec pauseSec intentAgeSec savedPositionSec savedRate routeRevision groupOrdinal bucketStart bucketEnd requestCount successCount abortCount ttfbMs elapsedMs progressCount maxNoProgressMs lastSuccessAt height incidentReplaced".split(" "));
++      const booleanFields = new Set("enabled persisted received requested punished reselected preconnect paused seeking ended available valid hidden coreInitialized userActivationAccepted waitingForRetry".split(" "));
++      const tokenFields = new Set("method kind phase stage reason outcome routeType decisionId actionId failureKind fallbackType codec playHookState intentSource postReloadPlayOutcome incidentId triggerCode".split(" "));
+       const state = {
+-        startedAt: Date.now(),
+-        verboseChangedAt: Date.now(),
++        startedAt: nowMs(),
++        verboseChangedAt: nowMs(),
+         persisted: null,
+         evicted: 0,
+         expired: 0,
+         rejected: 0,
+         pendingEvicted: 0,
+-        failures: 0
++        failures: 0,
++        droppedFields: 0,
++        droppedFieldNames: [],
++        incidentReplaced: 0,
++        aggregateEvicted: 0,
++        lastRecorderFailure: null
+       };
+-      let seq = 0, nextRequest = 0, lastSampleAt = 0;
++      let seq = 0, nextRequest = 0, nextAction = 0, nextIncident = 0, lastSampleAt = 0;
+       let context = { generation: 0, epoch: 0 };
+-      let decision = null;
++      let decision = null, incident = null, incidentTimer = null;
+       const size = /* @__PURE__ */ __name((text) => encoder.encode(text).byteLength, "size");
+       const finite = /* @__PURE__ */ __name((x) => typeof x === "number" && Number.isFinite(x) && Math.abs(x) <= Number.MAX_SAFE_INTEGER, "finite");
++      const safeToken = /* @__PURE__ */ __name((value) => typeof value === "string" && value.length <= 64 && /^[a-z0-9][a-z0-9._:-]*$/i.test(value) ? value : null, "safeToken");
++      const aliasExternal = /* @__PURE__ */ __name((h) => {
++        if (!externalAliases.has(h) && externalAliases.size < 64) externalAliases.set(h, "external#" + (externalAliases.size + 1));
++        return externalAliases.get(h) || "external#overflow";
++      }, "aliasExternal");
+       const host = /* @__PURE__ */ __name((value) => {
+         try {
+           const h = typeof value === "string" && value.length <= 16384 ? value.includes("/") ? new URL(value, "https://www.bilibili.com").hostname : value : "";
+-          return deps.TRUSTED_CDN_CATALOG_SET.has(h) ? h : "non-catalog";
++          const normalized = String(h || "").toLowerCase().replace(/\.$/, "");
++          if (!normalized) return "unknown";
++          if (deps.TRUSTED_CDN_CATALOG_SET.has(normalized) || /(^|\.)(?:bilivideo\.(?:com|cn|net)|akamaized\.net)$/.test(normalized)) return normalized;
++          return aliasExternal(normalized);
+         } catch {
+-          return "non-catalog";
++          return "external#invalid";
+         }
+       }, "host");
+-      const clean = /* @__PURE__ */ __name((data) => {
++      const noteDropped = /* @__PURE__ */ __name((key) => {
++        state.droppedFields++;
++        if (typeof key === "string" && !state.droppedFieldNames.includes(key) && state.droppedFieldNames.length < 16) {
++          state.droppedFieldNames.push(key.slice(0, 48));
++        }
++      }, "noteDropped");
++      const clean = /* @__PURE__ */ __name((code, data) => {
+         const out = {};
+-        for (const key of Object.keys(data).slice(0, 40)) {
+-          if (!keys.has(key)) continue;
+-          const value = data[key];
+-          if (/Host$/.test(key) || key === "host") out[key] = value === null ? null : host(value);
+-          else if (value === null || typeof value === "boolean" || finite(value)) out[key] = value;
+-          else if (typeof value === "string" && enums.has(value)) out[key] = value;
++        const allowed = /* @__PURE__ */ new Set([...schemas[code] || [], ...commonFields]);
++        let keys;
++        try {
++          keys = Object.keys(data).slice(0, 64);
++        } catch {
++          state.failures++;
++          return out;
++        }
++        for (const key of keys) {
++          if (!allowed.has(key)) {
++            noteDropped(key);
++            continue;
++          }
++          let value;
++          try {
++            value = data[key];
++          } catch {
++            state.failures++;
++            noteDropped(key);
++            continue;
++          }
++          if (hostFields.has(key)) out[key] = value === null ? null : host(value);
++          else if (numberFields.has(key) && finite(value)) out[key] = value;
++          else if (booleanFields.has(key) && (typeof value === "boolean" || value === null)) out[key] = value;
++          else if (tokenFields.has(key)) {
++            if (value === null || value === void 0) {
++              if (value === null) out[key] = null;
++              continue;
++            }
++            const token = (key === "actionId" || key === "decisionId") && finite(value) ? String(value) : safeToken(value);
++            if (token !== null) out[key] = token;
++            else noteDropped(key);
++          } else if (value === null) out[key] = null;
++          else noteDropped(key);
+         }
+         return out;
+       }, "clean");
++      const entryBytes = /* @__PURE__ */ __name((entry) => size(JSON.stringify(entry)), "entryBytes");
++      const trimRing = /* @__PURE__ */ __name((ring, maxBytes, maxCount = 512) => {
++        let total = ring.reduce((n, entry) => n + entryBytes(entry), 0);
++        while (ring.length && (ring.length > maxCount || total > maxBytes)) {
++          total -= entryBytes(ring.shift());
++          state.evicted++;
++        }
++      }, "trimRing");
++      const trimAggregates = /* @__PURE__ */ __name(() => {
++        let total = [...aggregates.values()].reduce((n, entry) => n + size(JSON.stringify(entry)), 0);
++        while (aggregates.size && total > ROLLING_BYTES) {
++          const key = aggregates.keys().next().value;
++          const entry = aggregates.get(key);
++          aggregates.delete(key);
++          total -= size(JSON.stringify(entry));
++          state.aggregateEvicted++;
++        }
++      }, "trimAggregates");
+       const prune = /* @__PURE__ */ __name(() => {
+-        const cutoff = Date.now() - TTL;
+-        for (const ring of [critical, detail]) {
+-          while (ring.length && ring[0].lastAt < cutoff) {
+-            ring.shift();
+-            state.expired++;
+-          }
++        const now = nowMs(), cutoff = now - TTL, rollingCutoff = now - CONTEXT_MS;
++        while (critical.length && critical[0].lastAt < cutoff) {
++          critical.shift();
++          state.expired++;
++        }
++        while (detail.length && detail[0].lastAt < cutoff) {
++          detail.shift();
++          state.expired++;
++        }
++        while (rolling.length && rolling[0].lastAt < rollingCutoff) rolling.shift();
++        for (const [key, aggregate] of aggregates) {
++          if (aggregate.bucketEnd < rollingCutoff) aggregates.delete(key);
+         }
+       }, "prune");
++      const appendDedup = /* @__PURE__ */ __name((ring, entry) => {
++        const previous = ring[ring.length - 1];
++        if (previous === entry) return previous;
++        if (previous && previous.code === entry.code && JSON.stringify(previous.data) === JSON.stringify(entry.data)) {
++          previous.lastAt = entry.lastAt;
++          previous.count = Math.min(1e4, previous.count + 1);
++          return previous;
++        }
++        ring.push(entry);
++        return entry;
++      }, "appendDedup");
++      const incidentTrigger = /* @__PURE__ */ __name((code, data) => {
++        if (code === "exception" || code === "request-failure" || code === "route-blocked" || code === "host-lock" || code === "breaker") return true;
++        if (code === "route") return [
++          "failure-detected",
++          "fallback-planned",
++          "no-fallback",
++          "reload-requested",
++          "reload-failed",
++          "core-waiting"
++        ].includes(data.stage);
++        if (code === "video-core") return [
++          "route-failure-armed",
++          "video-init-dead",
++          "reloading",
++          "reload-failed",
++          "breaker"
++        ].includes(data.stage);
++        if (code === "recovery") return ["attempt", "no-progress", "interrupted"].includes(data.outcome) || ["attributed", "no-attribution"].includes(data.reason);
++        return false;
++      }, "incidentTrigger");
++      const trimIncident = /* @__PURE__ */ __name(() => {
++        if (!incident) return;
++        let total = size(JSON.stringify(incident));
++        while (incident.events.length > 1 && total > INCIDENT_BYTES) {
++          const removable = incident.events.findIndex((entry) => entry.seq !== incident.triggerSeq);
++          if (removable < 0) break;
++          incident.events.splice(removable, 1);
++          incident.evicted++;
++          total = size(JSON.stringify(incident));
++        }
++        incident.truncated = total > INCIDENT_BYTES;
++      }, "trimIncident");
++      const freezeIncident = /* @__PURE__ */ __name(() => {
++        if (!incident || incident.state !== "capturing") return;
++        incident.state = "frozen";
++        incident.endedAt = nowMs();
++        incidentTimer = null;
++        trimIncident();
++      }, "freezeIncident");
++      const scheduleIncidentFreeze = /* @__PURE__ */ __name(() => {
++        if (incidentTimer) cancelTimeout(incidentTimer);
++        if (!incident || incident.state !== "capturing") return;
++        incidentTimer = scheduleTimeout(freezeIncident, Math.max(0, incident.captureUntil - nowMs()));
++      }, "scheduleIncidentFreeze");
++      const startIncident = /* @__PURE__ */ __name((reason, triggerCode, triggerEntry = null) => {
++        const now = nowMs();
++        if (incident?.state === "capturing") {
++          incident.lastTriggerAt = now;
++          incident.captureUntil = Math.min(incident.hardUntil, now + POST_MS);
++          if (triggerEntry && !incident.events.some((entry) => entry.seq === triggerEntry.seq)) incident.events.push(triggerEntry);
++          scheduleIncidentFreeze();
++          return incident.id;
++        }
++        if (incident) state.incidentReplaced++;
++        incident = {
++          id: "incident-" + ++nextIncident,
++          state: "capturing",
++          reason: safeToken(reason) || "unknown",
++          triggerCode: safeToken(triggerCode) || "unknown",
++          startedAt: now,
++          firstTriggerAt: now,
++          lastTriggerAt: now,
++          triggerSeq: triggerEntry?.seq || null,
++          coverageStart: Math.max(state.startedAt, now - CONTEXT_MS),
++          captureUntil: now + POST_MS,
++          hardUntil: now + MAX_POST_MS,
++          endedAt: null,
++          evicted: 0,
++          truncated: false,
++          events: rolling.filter((entry) => entry.lastAt >= now - CONTEXT_MS)
++        };
++        if (triggerEntry && !incident.events.some((entry) => entry.seq === triggerEntry.seq)) incident.events.push(triggerEntry);
++        trimIncident();
++        scheduleIncidentFreeze();
++        return incident.id;
++      }, "startIncident");
++      const appendIncident = /* @__PURE__ */ __name((entry) => {
++        if (!incident || incident.state !== "capturing") return;
++        if (entry.firstAt <= incident.hardUntil && !incident.events.some((item) => item.seq === entry.seq)) {
++          incident.events.push(entry);
++          trimIncident();
++        }
++      }, "appendIncident");
+       const record = /* @__PURE__ */ __name((code, data = {}, important = false) => {
+         try {
+           if (!codes.has(code)) {
+             state.rejected++;
+-            return;
++            return null;
+           }
+-          if (!important && !Config.verbose) return;
++          const fields = { ...context, ...clean(code, data) };
++          const forced = important || incidentTrigger(code, fields);
++          if (!forced && !Config.verbose && !["runtime", "representation", "route"].includes(code)) return null;
+           prune();
+-          const fields = { ...context, ...clean(data) };
+-          const now = Date.now(), ring = important ? critical : detail;
+-          const previous = ring[ring.length - 1];
+-          if (previous && previous.seq === seq && previous.code === code && JSON.stringify(previous.data) === JSON.stringify(fields)) {
+-            previous.lastAt = now;
+-            previous.count = Math.min(1e4, previous.count + 1);
+-            return;
+-          }
++          const now = nowMs();
+           const entry = { seq: ++seq, firstAt: now, lastAt: now, count: 1, code, data: fields };
+-          if (size(JSON.stringify(entry)) > 1024) {
++          if (entryBytes(entry) > 2048) {
+             state.rejected++;
+-            return;
+-          }
+-          ring.push(entry);
+-          if (ring.length > (important ? 64 : 192)) {
+-            ring.shift();
+-            state.evicted++;
++            return null;
+           }
++          const stored = forced ? appendDedup(critical, entry) : appendDedup(detail, entry);
++          appendDedup(rolling, stored);
++          trimRing(critical, CRITICAL_BYTES, 256);
++          trimRing(detail, ROLLING_BYTES, 256);
++          trimRing(rolling, ROLLING_BYTES, 256);
++          appendIncident(stored);
++          if (incidentTrigger(code, fields)) startIncident(fields.reason || fields.stage || code, code, stored);
+           try {
+-            if (Config.verbose) console.log("[BiliCDN evidence]", JSON.stringify(entry));
++            if (Config.verbose) console.log("[BiliCDN evidence]", JSON.stringify(stored));
+           } catch {
+           }
++          return stored;
+         } catch {
+           state.failures++;
++          return null;
+         }
+       }, "record");
+       const fault = /* @__PURE__ */ __name((stage) => record("exception", { stage }, true), "fault");
+       const requestActive = /* @__PURE__ */ __name((r) => r && r.generation === context.generation && r.epoch === context.epoch, "requestActive");
++      const groupOrdinal = /* @__PURE__ */ __name((groupId) => {
++        if (!groupId) return null;
++        if (!groupOrdinals.has(groupId)) groupOrdinals.set(groupId, groupOrdinals.size + 1);
++        return groupOrdinals.get(groupId);
++      }, "groupOrdinal");
++      const nextActionId = /* @__PURE__ */ __name((prefix = "action") => (safeToken(prefix) || "action") + "-" + ++nextAction, "nextActionId");
++      const routeMeta = /* @__PURE__ */ __name((media) => {
++        const routeDecision = media?.routeDecision || null;
++        return {
++          routeType: safeToken(routeDecision?.type) || "unknown",
++          groupOrdinal: groupOrdinal(media?.route?.groupId),
++          routeRevision: finite(routeDecision?.revision) ? routeDecision.revision : finite(media?.route?.revision) ? media.route.revision : null,
++          decisionId: safeToken(routeDecision?.decisionId) || nextActionId("decision"),
++          actionId: safeToken(routeDecision?.actionId)
++        };
++      }, "routeMeta");
+       const request = /* @__PURE__ */ __name((method, media, original, target) => {
+         try {
+           if (!deps.mediaContextActive(media)) return null;
++          const meta = routeMeta(media);
++          const now = nowMs();
+           const r = {
+             id: ++nextRequest,
+             generation: media.runtime.generation,
+@@ -321,48 +733,127 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             originalHost: host(original),
+             targetHost: host(target),
+             finalHost: null,
+-            startAt: Date.now(),
++            startAt: now,
+             responseAt: null,
++            endAt: null,
+             bytes: 0,
+             status: null,
+-            phase: "headers"
++            phase: "headers",
++            progressCount: 0,
++            lastProgressAt: now,
++            maxNoProgressMs: 0,
++            ...meta
+           };
+           pending.set(r.id, r);
+           if (pending.size > 64) {
+             pending.delete(pending.keys().next().value);
+             state.pendingEvicted++;
+           }
+-          record("request", r);
++          if (r.actionId) record("route", {
++            stage: "fallback-requested",
++            actionId: r.actionId,
++            decisionId: r.decisionId,
++            kind: r.kind,
++            targetHost: r.targetHost,
++            routeType: r.routeType,
++            groupOrdinal: r.groupOrdinal,
++            routeRevision: r.routeRevision,
++            waitingForRetry: true
++          }, true);
+           return r.id;
+         } catch {
+           state.failures++;
+           return null;
+         }
+       }, "request");
++      const aggregateTerminal = /* @__PURE__ */ __name((r, code) => {
++        const bucketStart = Math.floor(r.startAt / 5e3) * 5e3;
++        const key = [bucketStart, r.kind, r.routeType, r.groupOrdinal ?? 0, r.targetHost, r.finalHost || "unknown"].join("|");
++        let a = aggregates.get(key);
++        if (!a) {
++          a = {
++            bucketStart,
++            bucketEnd: bucketStart + 4999,
++            kind: r.kind,
++            routeType: r.routeType,
++            groupOrdinal: r.groupOrdinal,
++            targetHost: r.targetHost,
++            finalHost: r.finalHost,
++            requestCount: 0,
++            successCount: 0,
++            abortCount: 0,
++            bytes: 0,
++            ttfbMs: 0,
++            elapsedMs: 0,
++            progressCount: 0,
++            maxNoProgressMs: 0,
++            status: null,
++            lastSuccessAt: null
++          };
++          aggregates.set(key, a);
++        }
++        a.requestCount++;
++        if (["eof", "no-body"].includes(code) && (!r.status || r.status < 400)) {
++          a.successCount++;
++          a.lastSuccessAt = r.endAt;
++        } else if (["abort", "reopened", "detached"].includes(code)) a.abortCount++;
++        a.bytes += Math.max(0, r.bytes || 0);
++        a.ttfbMs = Math.max(a.ttfbMs, r.responseAt ? r.responseAt - r.startAt : 0);
++        a.elapsedMs = Math.max(a.elapsedMs, r.endAt - r.startAt);
++        a.progressCount += r.progressCount;
++        a.maxNoProgressMs = Math.max(
++          a.maxNoProgressMs,
++          r.maxNoProgressMs,
++          r.endAt - (r.lastProgressAt || r.startAt)
++        );
++        a.status = r.status;
++        if (aggregates.size > 192) {
++          aggregates.delete(aggregates.keys().next().value);
++          state.aggregateEvicted++;
++        }
++        trimAggregates();
++      }, "aggregateTerminal");
++      const failureEvent = /* @__PURE__ */ __name((r, code) => record("request-failure", {
++        ...r,
++        failureKind: safeToken(r.reason) || code,
++        ttfbMs: r.responseAt ? r.responseAt - r.startAt : 0,
++        elapsedMs: r.endAt - r.startAt
++      }, true), "failureEvent");
+       const updateRequest = /* @__PURE__ */ __name((id, code, data = {}) => {
++        let recorderStage = "lookup";
+         try {
+           const r = pending.get(id);
+           if (!requestActive(r)) return;
+-          Object.assign(r, clean(data));
++          recorderStage = "clean";
++          Object.assign(r, clean("request-failure", data));
++          const now = nowMs();
+           if (code === "headers") {
+-            r.responseAt = Date.now();
++            r.responseAt = now;
+             r.phase = "body";
++            return;
+           }
+-          if (code === "body") return;
+-          const terminal = code !== "headers";
+-          if (terminal) {
+-            r.endAt = Date.now();
+-            pending.delete(id);
++          if (code === "body") {
++            r.progressCount++;
++            r.maxNoProgressMs = Math.max(r.maxNoProgressMs, now - r.lastProgressAt);
++            r.lastProgressAt = now;
++            return;
+           }
+-          record(code, r, ["http", "network-error", "body-error"].includes(code));
++          r.endAt = now;
++          pending.delete(id);
++          recorderStage = "aggregate";
++          aggregateTerminal(r, code);
++          recorderStage = "failure-event";
++          if (["http", "network-error", "body-error"].includes(code)) failureEvent(r, code);
+         } catch {
+           state.failures++;
++          state.lastRecorderFailure = recorderStage;
+         }
+       }, "updateRequest");
+       const boundary = /* @__PURE__ */ __name((generation, epoch, reason) => {
+         try {
+           for (const id of [...pending.keys()]) updateRequest(id, "detached");
+           context = { generation, epoch };
++          groupOrdinals.clear();
+           record("runtime", { reason }, true);
+         } catch {
+           state.failures++;
+@@ -370,13 +861,46 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }, "boundary");
+       const setDecision = /* @__PURE__ */ __name((reason, data = {}) => {
+         try {
+-          const next = { ...context, reason, ...clean(data) };
+-          if (!decision || decision.reason !== reason || decision.generation !== context.generation) record("watchdog", next, reason === "low-data");
+-          decision = { ...next, updatedAt: Date.now() };
++          const next = { ...context, reason, ...clean("watchdog", data) };
++          if (!decision || decision.reason !== reason || decision.generation !== context.generation) {
++            record("watchdog", next, ["low-data", "buffered-stall", "too-slow", "breaker"].includes(reason));
++          }
++          decision = { ...next, updatedAt: nowMs() };
+         } catch {
+           state.failures++;
+         }
+       }, "setDecision");
++      const markIncident = /* @__PURE__ */ __name((reason = "manual") => {
++        try {
++          const id = startIncident(reason, "manual");
++          record("incident", {
++            stage: "manual-mark",
++            reason,
++            incidentId: id,
++            incidentReplaced: state.incidentReplaced,
++            triggerCode: "manual"
++          }, true);
++          return { ok: true, id };
++        } catch {
++          state.failures++;
++          return { ok: false, id: null };
++        }
++      }, "markIncident");
++      const clearIncident = /* @__PURE__ */ __name(() => {
++        if (incidentTimer) cancelTimeout(incidentTimer);
++        incidentTimer = null;
++        const hadIncident = !!incident;
++        incident = null;
++        return hadIncident;
++      }, "clearIncident");
++      const aggregateSnapshot = /* @__PURE__ */ __name(() => [...aggregates.values()].map((a) => ({ ...a })), "aggregateSnapshot");
++      const aggregateTotals = /* @__PURE__ */ __name(() => aggregateSnapshot().reduce((totals, entry) => {
++        totals.requestCount += entry.requestCount || 0;
++        totals.successCount += entry.successCount || 0;
++        totals.abortCount += entry.abortCount || 0;
++        totals.bytes += entry.bytes || 0;
++        return totals;
++      }, { requestCount: 0, successCount: 0, abortCount: 0, bytes: 0 }), "aggregateTotals");
+       return Object.freeze({
+         record,
+         fault,
+@@ -386,20 +910,38 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         setDecision,
+         host,
+         size,
++        nextActionId,
++        groupOrdinal,
++        markIncident,
++        clearIncident,
+         verbose(persisted) {
+           state.persisted = persisted;
+-          state.verboseChangedAt = Date.now();
++          state.verboseChangedAt = nowMs();
+           record("verbose", { enabled: Config.verbose, persisted }, true);
+         },
+         sample(data) {
+-          if (Date.now() - lastSampleAt >= 5e3) {
+-            lastSampleAt = Date.now();
++          if (nowMs() - lastSampleAt >= 5e3) {
++            lastSampleAt = nowMs();
+             record("sample", data);
+           }
+         },
+         summary() {
+           prune();
+-          return { ...state, verbose: Config.verbose, critical: critical.length, detail: detail.length, pending: pending.size };
++          return {
++            ...state,
++            droppedFieldNames: [...state.droppedFieldNames],
++            verbose: Config.verbose,
++            critical: critical.length,
++            detail: detail.length,
++            pending: pending.size,
++            aggregates: aggregates.size,
++            incident: incident ? {
++              state: incident.state,
++              reason: incident.reason,
++              startedAt: incident.startedAt,
++              coverageStart: incident.coverageStart
++            } : null
++          };
+         },
+         snapshot() {
+           prune();
+@@ -407,9 +949,13 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             ...state,
+             verbose: Config.verbose,
+             decision,
++            incident,
+             critical,
+-            detail,
+-            pending: [...pending.values()].map((r) => ({ ...r, ageMs: Math.max(0, Date.now() - r.startAt) }))
++            detail: Config.verbose ? detail : [],
++            aggregates: Config.verbose ? aggregateSnapshot() : [],
++            aggregateTotals: aggregateTotals(),
++            successSummary: aggregateSnapshot().filter((a) => a.successCount > 0).slice(-12),
++            pending: [...pending.values()].map((r) => ({ ...r, ageMs: Math.max(0, nowMs() - r.startAt) }))
+           }));
+         }
+       });
+@@ -1670,6 +2216,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     let evicted = 0;
+     let loadRejected = 0;
+     let saveTimer = null;
++    let diagnosticActionSeq = 0;
++    const diagnosticActionId = /* @__PURE__ */ __name((prefix) => deps.DiagnosticLog?.nextActionId?.(prefix) || String(prefix || "action") + "-" + ++diagnosticActionSeq, "diagnosticActionId");
++    const diagnosticGroupOrdinal = /* @__PURE__ */ __name((groupId) => deps.DiagnosticLog?.groupOrdinal?.(groupId) || null, "diagnosticGroupOrdinal");
+     const loadLedger = /* @__PURE__ */ __name(() => {
+       let raw = null;
+       try {
+@@ -2231,7 +2780,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       }
+       const group = groups.get(routeContext.groupId);
+       const requested = parseEligibleUrl(url);
+-      const pass = { url, host: requested?.host || null, type: "root-original", action: "pass", groupId: group.id, revision: group.revision };
++      const passType = requested && group.generatedUrls.has(requested.url) ? "catalog-generated" : "root-original";
++      const pass = { url, host: requested?.host || null, type: passType, action: "pass", groupId: group.id, revision: group.revision };
+       if (group.source === "transport-observed") {
+         const norm = deps.normalizeMediaUrl?.(url);
+         return norm ? {
+@@ -2267,7 +2817,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             action: "rewrite",
+             groupId: group.id,
+             revision: group.revision,
+-            recovery: true
++            recovery: true,
++            actionId: recovery.actionId
+           };
+         } else if (recovery.type === "catalog-generated") {
+           const target = catalogUrlFor(
+@@ -2283,7 +2834,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             action: "rewrite",
+             groupId: group.id,
+             revision: group.revision,
+-            recovery: true
++            recovery: true,
++            actionId: recovery.actionId
+           };
+         }
+         group.recoveryOverride = null;
+@@ -2316,17 +2868,22 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       return selected && routeSelectable(group, selected) ? { url: selected.url, host: selected.host, type: "native-signed", groupId: group.id, revision: group.revision } : pass;
+     }, "resolveRequestRouteUnchecked");
+     const resolveRequestRoute = /* @__PURE__ */ __name((url, context) => {
++      const rc = context?.route || (context?.groupId ? context : null);
++      const group = routeContextActive(rc) ? groups.get(rc.groupId) : null;
++      const stamp = /* @__PURE__ */ __name((value) => value ? {
++        ...value,
++        decisionId: value.decisionId || diagnosticActionId("decision"),
++        revision: Number.isFinite(value.revision) ? value.revision : group?.revision
++      } : value, "stamp");
+       const decision = resolveRequestRouteUnchecked(url, context);
+-      if (!deps.isHostAllowed || deps.disabled) return decision;
++      if (!deps.isHostAllowed || deps.disabled) return stamp(decision);
+       const effective = decision?.url || url;
+       const host = deps.parseMediaHttpUrl(effective)?.hostname;
+       if (deps.isHostAllowed(host)) {
+         const sourceHost = deps.parseMediaHttpUrl(url)?.hostname;
+         if (sourceHost && !deps.isHostAllowed(sourceHost)) deps.noteHostRestriction?.(sourceHost, host);
+-        return decision;
++        return stamp(decision);
+       }
+-      const rc = context?.route || (context?.groupId ? context : null);
+-      const group = routeContextActive(rc) ? groups.get(rc.groupId) : null;
+       const catalog = [.../* @__PURE__ */ new Set([deps.resolvedCdn, ...deps.getHealthyCdnList?.() || [], deps.peekCurrentCdn()])].filter((h) => h && deps.isHostAllowed(h) && deps.TRUSTED_CDN_CATALOG_SET.has(h));
+       for (const target of catalog) {
+         const next = deps.replaceUrlHost?.(url, target);
+@@ -2334,7 +2891,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         if (next && deps.isHostAllowed(actual)) {
+           if (group?.kind === "video") setPlannedAffinity({ type: "catalog-generated", host: actual }, "host-restricted");
+           deps.noteHostRestriction?.(host, actual);
+-          return { url: next, host: actual, type: "catalog-generated", action: "rewrite", groupId: group?.id };
++          return stamp({ url: next, host: actual, type: "catalog-generated", action: "rewrite", groupId: group?.id });
+         }
+       }
+       const native = group?.routes.find((r) => routeSelectable(group, r));
+@@ -2342,10 +2899,10 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         deps.noteHostRestriction?.(host, native.host);
+         const type = deps.TRUSTED_CDN_CATALOG_SET.has(native.host) ? "root-original" : "native-signed";
+         if (group.kind === "video") setPlannedAffinity({ type, host: native.host }, "host-restricted");
+-        return { url: native.url, host: native.host, type, groupId: group.id };
++        return stamp({ url: native.url, host: native.host, type, groupId: group.id });
+       }
+       deps.noteHostRestriction?.(host, null);
+-      return { url, host, type: "blocked", action: "block", reason: "host-restricted" };
++      return stamp({ url, host, type: "blocked", action: "block", reason: "host-restricted" });
+     }, "resolveRequestRoute");
+     const isProtectedSignedUrl = /* @__PURE__ */ __name((url) => {
+       try {
+@@ -2376,6 +2933,15 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           confirmedAt: Date.now(),
+           reason
+         };
++        deps.DiagnosticLog?.record?.("representation", {
++          stage: switched ? "changed" : "confirmed",
++          reason,
++          kind: "video",
++          groupOrdinal: diagnosticGroupOrdinal(group.id),
++          routeRevision: group.revision,
++          height: group.height,
++          codec: group.codec
++        }, true);
+         lastAutoQualityReason = reason;
+         deps.onActiveRepresentation?.(usableGroupSample(group), group.id, { switched });
+       }
+@@ -2383,7 +2949,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     }, "activateGroup");
+     const observeAffinity = /* @__PURE__ */ __name((group, parsed, source, context) => {
+       if (!group || group.kind !== "video" || activeRepresentation?.groupId !== group.id || !parsed?.host) return;
+-      const type = context?.routeDecision?.changed && context.routeDecision.host === parsed.host ? context.routeDecision.type : context?.route?.generated && group.generatedUrls.has(parsed.url) ? "catalog-generated" : "root-original";
++      const type = context?.routeDecision?.host === parsed.host ? context.routeDecision.type : context?.route?.generated && group.generatedUrls.has(parsed.url) ? "catalog-generated" : "root-original";
+       if (!routeAffinity || routeAffinity.host !== parsed.host || routeAffinity.type !== type) {
+         const priorHost = routeAffinity?.host || lastObservedRoute?.host;
+         const hostChanged = !!priorHost && priorHost !== parsed.host;
+@@ -2395,6 +2961,17 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           reason: hostChanged ? "observed-host-change" : lastObservedRoute ? "provenance-update" : "first-observation",
+           metadataSource: group.source
+         };
++        deps.DiagnosticLog?.record?.("route", {
++          stage: hostChanged ? "observed-host-change" : "first-observation",
++          reason: lastObservedRoute.reason,
++          actionId: context?.routeDecision?.actionId,
++          decisionId: context?.routeDecision?.decisionId,
++          kind: "video",
++          finalHost: parsed.host,
++          routeType: type,
++          routeRevision: context?.routeDecision?.revision || group.revision,
++          groupOrdinal: diagnosticGroupOrdinal(group.id)
++        }, true);
+       }
+       routeAffinity.confirmedAt = Date.now();
+     }, "observeAffinity");
+@@ -2402,12 +2979,24 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+     const noteRecoveryObserved = /* @__PURE__ */ __name((group, parsed, source) => {
+       const recovery = group?.recoveryOverride;
+       if (!recovery || !parsed?.host || parsed.host !== recovery.host) return;
++      const firstObservation = !recovery.observedAt;
+       recovery.observedAt = Date.now();
+       recovery.observedHost = parsed.host;
+       if (lastRouteBoundary?.groupId === group.id && lastRouteBoundary.revision === recovery.revision) {
+         lastRouteBoundary.observed = { host: parsed.host, source: String(source || "transport").slice(0, 16), at: recovery.observedAt };
+         lastRouteBoundary.waitingForRetry = false;
+       }
++      if (firstObservation) deps.DiagnosticLog?.record?.("route", {
++        stage: "fallback-observed",
++        reason: recovery.reason,
++        actionId: recovery.actionId,
++        kind: routeKind(group.kind),
++        finalHost: parsed.host,
++        routeType: recovery.type,
++        routeRevision: recovery.revision,
++        groupOrdinal: diagnosticGroupOrdinal(group.id),
++        waitingForRetry: false
++      }, true);
+     }, "noteRecoveryObserved");
+     const observeTransport = /* @__PURE__ */ __name((context, url, bytes, source) => {
+       const routeContext = context?.route;
+@@ -2550,7 +3139,21 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const kind = routeKind(group.kind);
+       const verifiedTransport = ["xhr", "fetch"].includes(context?.method) && context?.httpMethod === "GET";
+       const submitRecovery = /* @__PURE__ */ __name((reason) => {
+-        const fallback = beginRouteRecovery(reason, parsed.host, { routeContext, kind });
++        const actionId = diagnosticActionId("route");
++        deps.DiagnosticLog?.record?.("route", {
++          stage: "failure-detected",
++          reason,
++          actionId,
++          kind,
++          failedHost: parsed.host,
++          status: +status || 0,
++          failureKind,
++          routeType: context?.routeDecision?.type || "native-signed",
++          routeRevision: context?.routeDecision?.revision || group.revision,
++          decisionId: context?.routeDecision?.decisionId,
++          groupOrdinal: diagnosticGroupOrdinal(group.id)
++        }, true);
++        const fallback = beginRouteRecovery(reason, parsed.host, { routeContext, kind, actionId, failureKind, status });
+         if (fallback) deps.armTransportFailure?.({
+           generation: deps.runtimeGeneration,
+           epoch: group.epoch,
+@@ -2558,7 +3161,8 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           kind,
+           failedHost: parsed.host,
+           fallback: { type: fallback.type, host: fallback.host },
+-          revision: group.revision
++          revision: group.revision,
++          actionId
+         });
+         return fallback;
+       }, "submitRecovery");
+@@ -2605,6 +3209,16 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       const group = contextualGroup || (activeRepresentation?.groupId ? groups.get(activeRepresentation.groupId) : null);
+       const kind = routeKind(options?.kind || group?.kind);
+       if (host) avoidHost(kind, host, Number.isFinite(options?.temporaryMs) ? options.temporaryMs : Infinity);
++      const actionId = options?.actionId || diagnosticActionId("route");
++      if (!options?.actionId) deps.DiagnosticLog?.record?.("route", {
++        stage: "failure-detected",
++        reason: String(reason || "recovery").slice(0, 48),
++        actionId,
++        kind,
++        failedHost: host || null,
++        routeRevision: group?.revision || routeRevision,
++        groupOrdinal: diagnosticGroupOrdinal(group?.id)
++      }, true);
+       const next = chooseRecoveryRoute(group, host, options);
+       lastRouteBoundary = {
+         reason: String(reason || "recovery").slice(0, 48),
+@@ -2614,18 +3228,31 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         at: Date.now(),
+         adopted: next ? { ...next } : null,
+         observed: null,
+-        waitingForRetry: !!next
++        waitingForRetry: !!next,
++        actionId
+       };
+       if (!next) {
+         if (group) {
+           group.recoveryOverride = null;
+           group.revision = ++routeRevision;
+         } else routeRevision++;
++        deps.DiagnosticLog?.record?.("route", {
++          stage: "no-fallback",
++          reason: lastRouteBoundary.reason,
++          actionId,
++          kind,
++          failedHost: host || null,
++          failureKind: options?.failureKind,
++          status: Number(options?.status) || 0,
++          routeRevision,
++          groupOrdinal: diagnosticGroupOrdinal(group?.id),
++          waitingForRetry: false
++        }, true);
+         return null;
+       }
+       if (group) {
+         const revision = ++routeRevision;
+-        group.recoveryOverride = { ...next, reason: lastRouteBoundary.reason, setAt: Date.now(), revision };
++        group.recoveryOverride = { ...next, reason: lastRouteBoundary.reason, setAt: Date.now(), revision, actionId };
+         group.currentRouteType = next.type;
+         group.currentHost = next.host;
+         group.revision = revision;
+@@ -2635,6 +3262,19 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         routeAffinity = null;
+         setPlannedAffinity(next, lastRouteBoundary.reason, true);
+       }
++      deps.DiagnosticLog?.record?.("route", {
++        stage: "fallback-planned",
++        reason: lastRouteBoundary.reason,
++        actionId,
++        kind,
++        failedHost: host || null,
++        fallbackType: next.type,
++        fallbackHost: next.host,
++        routeType: next.type,
++        routeRevision: lastRouteBoundary.revision || routeRevision,
++        groupOrdinal: diagnosticGroupOrdinal(group?.id),
++        waitingForRetry: true
++      }, true);
+       return { ...next };
+     }, "beginRouteRecovery");
+     const getActiveGroup = /* @__PURE__ */ __name((sampleUrl) => {
+@@ -2765,6 +3405,7 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           host: group.recoveryOverride.host,
+           reason: group.recoveryOverride.reason,
+           revision: group.recoveryOverride.revision,
++          actionId: group.recoveryOverride.actionId || null,
+           observedHost: group.recoveryOverride.observedHost || null,
+           waitingForRetry: !group.recoveryOverride.observedAt
+         })),
+@@ -5116,13 +5757,39 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       return current.ageSec != null && current.ageSec * 1e3 <= elapsedMs + 1100;
+     }, "mediaAdvanced");
+     const record = /* @__PURE__ */ __name((stage, extra = {}) => {
++      const routeFailure = resume?.routeFailure || null;
++      const actionId = extra.actionId || routeFailure?.actionId;
+       deps.DiagnosticLog.record("video-core", {
+         stage,
+         resumeToken,
+         reloadCount,
+         breakerSec: Math.max(0, Math.ceil((breakerUntil - now()) / 1e3)),
++        actionId,
++        groupOrdinal: routeFailure?.groupOrdinal,
++        routeRevision: routeFailure?.revision,
++        routeType: routeFailure?.fallbackType,
+         ...extra
+       }, true);
++      const routeStage = {
++        "route-failure-armed": "core-waiting",
++        reloading: "reload-requested",
++        recovered: "core-recovered",
++        "recovered-paused": "core-recovered",
++        "reload-failed": "reload-failed"
++      }[stage];
++      if (actionId && routeStage) deps.DiagnosticLog.record("route", {
++        stage: routeStage,
++        actionId,
++        reason: extra.reason || stage,
++        kind: routeFailure?.kind,
++        failedHost: routeFailure?.failedHost,
++        fallbackHost: routeFailure?.fallbackHost,
++        fallbackType: routeFailure?.fallbackType,
++        routeType: routeFailure?.fallbackType,
++        routeRevision: routeFailure?.revision,
++        groupOrdinal: routeFailure?.groupOrdinal,
++        waitingForRetry: !["core-recovered", "reload-failed"].includes(routeStage)
++      }, true);
+     }, "record");
+     const safePlayerCall = /* @__PURE__ */ __name((player, name, ...args) => {
+       const fn = player?.[name];
+@@ -5221,14 +5888,16 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         fallbackType: fallback.type,
+         fallbackHost: fallback.host,
+         epoch: details.epoch,
+-        revision: details.revision
++        revision: details.revision,
++        actionId: details.actionId,
++        groupOrdinal: deps.DiagnosticLog.groupOrdinal?.(details.groupId) || null
+       };
+       record("route-failure-armed", {
+         kind: details.kind,
+         failedHost: details.failedHost,
+         fallbackType: fallback.type,
+         fallbackHost: fallback.host,
+-        revision: details.revision
++        routeRevision: details.revision
+       });
+       return true;
+     }, "armTransportFailure");
+@@ -5551,10 +6220,11 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         routeFailure: resume?.routeFailure ? {
+           kind: resume.routeFailure.kind,
+           failedHost: resume.routeFailure.failedHost,
+-          groupId: resume.routeFailure.groupId,
++          groupOrdinal: resume.routeFailure.groupOrdinal,
+           fallbackType: resume.routeFailure.fallbackType,
+           fallbackHost: resume.routeFailure.fallbackHost,
+-          revision: resume.routeFailure.revision,
++          routeRevision: resume.routeFailure.revision,
++          actionId: resume.routeFailure.actionId || null,
+           waitingForRetry: !resume.reloadAttempted
+         } : null,
+         postReloadPlayOutcome
+@@ -6088,7 +6758,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+               this._localBlocked = true;
+               return openNative(this, nativeMethod, urlStr, rest);
+             }
+-            mediaRequests.get(this).routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null;
++            mediaRequests.get(this).routeDecision = nativeRoute ? {
++              type: nativeRoute.type,
++              host: nativeRoute.host,
++              changed: nativeRoute.url !== urlStr,
++              revision: nativeRoute.revision,
++              decisionId: nativeRoute.decisionId,
++              actionId: nativeRoute.actionId
++            } : null;
+             const norm = nativeRoute ? {
+               url: nativeRoute.url,
+               changed: nativeRoute.url !== urlStr,
+@@ -6217,7 +6894,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+                 state.hostRewriteAttempt = next !== state.originalUrl && decision?.type !== "native-signed" && decision?.action !== "restore";
+                 this._hostRewriteAttempt = state.hostRewriteAttempt;
+                 this._redirectedCdn = state.targetCdn;
+-                mediaRequests.get(this).routeDecision = { type: decision?.type, host: state.targetCdn, changed: next !== original };
++                mediaRequests.get(this).routeDecision = {
++                  type: decision?.type,
++                  host: state.targetCdn,
++                  changed: next !== original,
++                  revision: decision?.revision,
++                  decisionId: decision?.decisionId,
++                  actionId: decision?.actionId
++                };
+               }
+             }
+           }
+@@ -6587,7 +7271,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             deps.DiagnosticLog.record("route-blocked", { reason: "host-restricted", method: "fetch" }, true);
+             return Promise.reject(new TypeError("BiliCDN host restricted"));
+           }
+-          mediaContext.routeDecision = nativeRoute ? { type: nativeRoute.type, host: nativeRoute.host, changed: nativeRoute.url !== urlStr } : null;
++          mediaContext.routeDecision = nativeRoute ? {
++            type: nativeRoute.type,
++            host: nativeRoute.host,
++            changed: nativeRoute.url !== urlStr,
++            revision: nativeRoute.revision,
++            decisionId: nativeRoute.decisionId,
++            actionId: nativeRoute.actionId
++          } : null;
+           const norm = nativeRoute ? {
+             url: nativeRoute.url,
+             changed: nativeRoute.url !== urlStr,
+@@ -8646,15 +9337,17 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         onCopy,
+         actionLabel = "",
+         onAction,
++        actions = [],
+         closeLabel = "關閉",
+         onClose
+       }) => {
+         const hasAction = !!actionLabel && typeof onAction === "function";
+-        const dialog = beginDialog({ title, paragraphs, requiresCapability: hasAction });
++        const extraActions = Array.isArray(actions) ? actions.slice(0, 4).filter((item) => item && item.label && item.action && typeof item.onActivate === "function") : [];
++        const dialog = beginDialog({ title, paragraphs, requiresCapability: hasAction || extraActions.length > 0 });
+         if (!dialog) return false;
+-        const area = make("textarea", bounded(text, 48 * 1024), { action: "manual-copy-text", maxText: 48 * 1024 });
++        const area = make("textarea", bounded(text, 96 * 1024), { action: "manual-copy-text", maxText: 96 * 1024 });
+         area.className = "report";
+-        area.value = bounded(text, 48 * 1024);
++        area.value = bounded(text, 96 * 1024);
+         area.readOnly = true;
+         area.setAttribute("readonly", "");
+         dom.append(dialog.body, area);
+@@ -8682,6 +9375,14 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+             navigateOnActivate: true
+           });
+         }
++        extraActions.forEach((item) => addAction(dialog, {
++          label: item.label,
++          action: item.action,
++          tone: item.tone,
++          onActivate: item.onActivate,
++          navigateOnActivate: item.navigateOnActivate !== false,
++          closeOnActivate: item.closeOnActivate
++        }));
+         return true;
+       }, "openText");
+       const openActions = /* @__PURE__ */ __name(({ title, paragraphs, items = [] }) => {
+@@ -8931,11 +9632,27 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         "HTTPDNS：" + httpDns.mode + (httpDns.ttlMin ? "（" + httpDns.ttlMin + "m）" : "")
+       ];
+       const history = deps.DiagnosticLog.snapshot();
++      const successCount = history.aggregateTotals?.successCount ?? (history.successSummary || []).reduce((sum, item) => sum + (item.successCount || 0), 0);
++      const evidenceStart = history.incident?.coverageStart || history.startedAt;
++      const evidenceEnd = history.incident?.endedAt || history.incident?.captureUntil || Date.now();
+       lines.splice(
+         5,
+         0,
+         "Verbose：" + (deps.Config.verbose ? "已開啟" : "已關閉") + "；" + (history.persisted === true ? "設定已確認儲存" : "本分頁已套用，未確認儲存"),
+-        "紀錄：僅本分頁記憶體，重整清空；起點=" + history.startedAt + "；Verbose 最近切換=" + history.verboseChangedAt,
++        "紀錄：僅本分頁記憶體，player.reload 後保留、整頁重整清空；起點=" + history.startedAt + "；Verbose 最近切換=" + history.verboseChangedAt,
++        "證據完整度：" + JSON.stringify({
++          coverageStart: evidenceStart,
++          coverageEnd: evidenceEnd,
++          incident: history.incident ? history.incident.state : "none",
++          trigger: history.incident?.reason || null,
++          successRequests: successCount,
++          evicted: history.evicted,
++          aggregateEvicted: history.aggregateEvicted,
++          incidentReplaced: history.incidentReplaced,
++          truncated: !!history.incident?.truncated,
++          droppedFields: history.droppedFields,
++          droppedFieldNames: history.droppedFieldNames
++        }),
+         "播放器現況：" + JSON.stringify(readPlaybackDiagnostic()),
+         "Watchdog 決策：" + JSON.stringify(history.decision),
+         "Watchdog 統計（修復嘗試不等於已換路；影片換 host 只代表觀察到的請求）：" + JSON.stringify({
+@@ -8950,15 +9667,13 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           expired: history.expired,
+           rejected: history.rejected,
+           pendingEvicted: history.pendingEvicted,
++          aggregateEvicted: history.aggregateEvicted,
++          droppedFields: history.droppedFields,
+           recorderFailures: history.failures
+         })
+       );
+-      const limit = 64 * 1024, reserve = 256;
+-      let text = lines.join("\n"), omitted = 0;
+-      if (deps.DiagnosticLog.size(text) > limit / 2) {
+-        text = text.slice(0, 8e3);
+-        omitted++;
+-      }
++      const limit = 96 * 1024, reserve = 512;
++      let text = lines[0], omitted = 0;
+       const append = /* @__PURE__ */ __name((line) => {
+         if (deps.DiagnosticLog.size(text) + deps.DiagnosticLog.size(line) + 1 > limit - reserve) {
+           omitted++;
+@@ -8966,11 +9681,34 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+         }
+         text += "\n" + line;
+       }, "append");
++      append("事故時間線（最高優先）：");
++      if (history.incident) {
++        append(JSON.stringify({
++          id: history.incident.id,
++          state: history.incident.state,
++          reason: history.incident.reason,
++          triggerCode: history.incident.triggerCode,
++          coverageStart: history.incident.coverageStart,
++          firstTriggerAt: history.incident.firstTriggerAt,
++          lastTriggerAt: history.incident.lastTriggerAt,
++          captureUntil: history.incident.captureUntil,
++          endedAt: history.incident.endedAt,
++          evicted: history.incident.evicted,
++          truncated: history.incident.truncated
++        }));
++        history.incident.events.forEach((e) => append(JSON.stringify(e)));
++      } else append("目前只有健康觀察，不能證明先前故障。若剛剛發生卡頓，請立即按「標記剛剛卡頓」。");
++      append("目前狀態：");
++      lines.slice(1).forEach(append);
+       append("近期關鍵事件（新到舊）：");
+       history.critical.slice().reverse().forEach((e) => append(JSON.stringify(e)));
+       append("等待中的請求（非完整網路面板；不包含已脫離 generation 的請求）：");
+       history.pending.forEach((e) => append(JSON.stringify(e)));
+-      append("Verbose 近期細節（新到舊；開啟前未收集的細節無法補回）：");
++      append("最近成功影片／音訊傳輸彙總：");
++      history.successSummary.forEach((e) => append(JSON.stringify(e)));
++      append("Verbose 五秒流量彙總：");
++      history.aggregates.forEach((e) => append(JSON.stringify(e)));
++      append("Verbose 評分／週期細節（新到舊）：");
+       history.detail.slice().reverse().forEach((e) => append(JSON.stringify(e)));
+       return text + "\n匯出截斷：" + (omitted ? omitted + " 筆／區段未匯出" : "無");
+     }, "buildDiagReport");
+@@ -9096,6 +9834,18 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       report() {
+         return copyDiagReport();
+       },
++      markIncident() {
++        const result = deps.DiagnosticLog.markIncident("manual-stall");
++        return result.ok ? controlResult(true, "incident-marked", "已保存前 60 秒脈絡，並開始收集後續 30 秒", { id: result.id }) : controlResult(false, "incident-failed", "無法建立事故記錄");
++      },
++      clearIncident() {
++        const cleared = deps.DiagnosticLog.clearIncident();
++        return controlResult(
++          true,
++          cleared ? "incident-cleared" : "incident-empty",
++          cleared ? "事故記錄已清除；播放與學習狀態未變更" : "目前沒有事故記錄"
++        );
++      },
+       // 注意：這是**改寫統計**，不是 Watchdog 的播放統計。換節點次數 / 卡頓次數 /
+       // 斷路器狀態在內部 buffer 診斷；改寫統計與播放統計是不同入口。
+       stats() {
+@@ -9885,13 +10635,27 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+           deps.copyDiagReport().catch(() => {
+           });
+         }, "onCopy"),
+-        actionLabel: deps.Config.verbose ? "關閉 verbose" : "開啟 verbose",
++        actionLabel: deps.Config.verbose ? "關閉 Verbose" : "開啟 Verbose",
+         onAction: /* @__PURE__ */ __name(() => {
+           const result = deps.BiliCDNControls.verbose(!deps.Config.verbose);
+           deps.refreshPublicDiagnosticSnapshot();
+           deps.TrustedMenuUI.toast(result.message, result.ok ? "success" : "warning");
+           showDiagnosticDialog();
+         }, "onAction"),
++        actions: [
++          { label: "標記剛剛卡頓", action: "incident-mark", onActivate: /* @__PURE__ */ __name(() => {
++            const result = deps.BiliCDNControls.markIncident();
++            deps.refreshPublicDiagnosticSnapshot();
++            deps.TrustedMenuUI.toast(result.message, result.ok ? "success" : "warning");
++            showDiagnosticDialog();
++          }, "onActivate") },
++          { label: "清除事故記錄", action: "incident-clear", onActivate: /* @__PURE__ */ __name(() => {
++            const result = deps.BiliCDNControls.clearIncident();
++            deps.refreshPublicDiagnosticSnapshot();
++            deps.TrustedMenuUI.toast(result.message, result.status === "incident-empty" ? "info" : "success");
++            showDiagnosticDialog();
++          }, "onActivate") }
++        ],
+         closeLabel: "返回控制中心",
+         onClose: /* @__PURE__ */ __name(() => showControlCenter(), "onClose")
+       });
+@@ -12800,6 +13564,9 @@ const __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, Prefer
+       get copyDiagReport() {
+         return controls.copyDiagReport;
+       },
++      get DiagnosticLog() {
++        return events.DiagnosticLog;
++      },
+       get listDeadHosts() {
+         return health.listDeadHosts;
+       },

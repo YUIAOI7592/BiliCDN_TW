@@ -344,14 +344,17 @@ const TrustedMenuUI = (() => {
     const openText = ({
         title, paragraphs, text = '', copyLabel = '', onCopy,
         actionLabel = '', onAction,
+        actions = [],
         closeLabel = '關閉', onClose,
     }) => {
         const hasAction = !!actionLabel && typeof onAction === 'function'
-        const dialog = beginDialog({ title, paragraphs, requiresCapability: hasAction })
+        const extraActions = Array.isArray(actions) ? actions.slice(0, 4)
+            .filter(item => item && item.label && item.action && typeof item.onActivate === 'function') : []
+        const dialog = beginDialog({ title, paragraphs, requiresCapability: hasAction || extraActions.length > 0 })
         if (!dialog) return false
-        const area = make('textarea', bounded(text, 48 * 1024), { action: 'manual-copy-text', maxText: 48 * 1024 })
+        const area = make('textarea', bounded(text, 96 * 1024), { action: 'manual-copy-text', maxText: 96 * 1024 })
         area.className = 'report'
-        area.value = bounded(text, 48 * 1024)
+        area.value = bounded(text, 96 * 1024)
         area.readOnly = true
         area.setAttribute('readonly', '')
         dom.append(dialog.body, area)
@@ -371,6 +374,11 @@ const TrustedMenuUI = (() => {
                 label: actionLabel, action: 'text-action', onActivate: onAction, navigateOnActivate: true,
             })
         }
+        extraActions.forEach(item => addAction(dialog, {
+            label: item.label, action: item.action, tone: item.tone,
+            onActivate: item.onActivate, navigateOnActivate: item.navigateOnActivate !== false,
+            closeOnActivate: item.closeOnActivate,
+        }))
         return true
     }
 

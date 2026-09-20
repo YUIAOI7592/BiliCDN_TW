@@ -63,6 +63,10 @@ const ledgers = { video: new Map(), audio: new Map() }
 let evicted = 0
 let loadRejected = 0
 let saveTimer = null
+let diagnosticActionSeq = 0
+const diagnosticActionId = prefix => deps.DiagnosticLog?.nextActionId?.(prefix)
+    || String(prefix || 'action') + '-' + (++diagnosticActionSeq)
+const diagnosticGroupOrdinal = groupId => deps.DiagnosticLog?.groupOrdinal?.(groupId) || null
 const loadLedger = () => {
     let raw = null
     try { raw = JSON.parse(deps.gmGet(LEDGER_KEY) || 'null') } catch { loadRejected++ }
@@ -545,7 +549,12 @@ const resolveRequestRouteUnchecked = (url, context) => {
     }
     const group = groups.get(routeContext.groupId)
     const requested = parseEligibleUrl(url)
-    const pass = { url, host: requested?.host || null, type: 'root-original', action: 'pass', groupId: group.id, revision: group.revision }
+    // A URL produced while assembling the playurl plan remains Catalog-generated
+    // even when the transport coordinator can pass it through unchanged.  Keep
+    // that provenance at request start instead of reclassifying by host later.
+    const passType = requested && group.generatedUrls.has(requested.url)
+        ? 'catalog-generated' : 'root-original'
+    const pass = { url, host: requested?.host || null, type: passType, action: 'pass', groupId: group.id, revision: group.revision }
     // Transport bootstrap adds exact attribution only.  Until richer player/API
     // metadata arrives it must preserve the legacy URL normalization decision.
     if (group.source === 'transport-observed') {
@@ -579,14 +588,14 @@ const resolveRequestRouteUnchecked = (url, context) => {
             const selected = findNative(group, recovery.host)
             if (selected && routeSelectable(group, selected)) return {
                 url: selected.url, host: selected.host, type: 'native-signed', action: 'rewrite',
-                groupId: group.id, revision: group.revision, recovery: true,
+                groupId: group.id, revision: group.revision, recovery: true, actionId: recovery.actionId,
             }
         } else if (recovery.type === 'catalog-generated') {
             const target = catalogUrlFor(group, recovery.host,
                 group.source === 'page-hint' ? requested?.url : null, true)
             if (target) return {
                 url: target, host: recovery.host, type: 'catalog-generated', action: 'rewrite',
-                groupId: group.id, revision: group.revision, recovery: true,
+                groupId: group.id, revision: group.revision, recovery: true, actionId: recovery.actionId,
             }
         }
         group.recoveryOverride = null
@@ -623,17 +632,21 @@ const resolveRequestRouteUnchecked = (url, context) => {
 // Every exit, including original, stale context and legacy normalization, passes
 // through this destination gate. Signed provenance never overrides a restriction.
 const resolveRequestRoute = (url, context) => {
+    const rc = context?.route || (context?.groupId ? context : null)
+    const group = routeContextActive(rc) ? groups.get(rc.groupId) : null
+    const stamp = value => value ? { ...value,
+        decisionId: value.decisionId || diagnosticActionId('decision'),
+        revision: Number.isFinite(value.revision) ? value.revision : group?.revision,
+    } : value
     const decision = resolveRequestRouteUnchecked(url, context)
-    if (!deps.isHostAllowed || deps.disabled) return decision
+    if (!deps.isHostAllowed || deps.disabled) return stamp(decision)
     const effective = decision?.url || url
     const host = deps.parseMediaHttpUrl(effective)?.hostname
     if (deps.isHostAllowed(host)) {
         const sourceHost = deps.parseMediaHttpUrl(url)?.hostname
         if (sourceHost && !deps.isHostAllowed(sourceHost)) deps.noteHostRestriction?.(sourceHost, host)
-        return decision
+        return stamp(decision)
     }
-    const rc = context?.route || (context?.groupId ? context : null)
-    const group = routeContextActive(rc) ? groups.get(rc.groupId) : null
     const catalog = [...new Set([deps.resolvedCdn, ...(deps.getHealthyCdnList?.() || []), deps.peekCurrentCdn()])]
         .filter(h => h && deps.isHostAllowed(h) && deps.TRUSTED_CDN_CATALOG_SET.has(h))
     // Only replace a host through the existing signed/path guard. In particular
@@ -644,7 +657,7 @@ const resolveRequestRoute = (url, context) => {
         if (next && deps.isHostAllowed(actual)) {
             if (group?.kind === 'video') setPlannedAffinity({ type: 'catalog-generated', host: actual }, 'host-restricted')
             deps.noteHostRestriction?.(host, actual)
-            return { url: next, host: actual, type: 'catalog-generated', action: 'rewrite', groupId: group?.id }
+            return stamp({ url: next, host: actual, type: 'catalog-generated', action: 'rewrite', groupId: group?.id })
         }
     }
     const native = group?.routes.find(r => routeSelectable(group, r))
@@ -652,10 +665,10 @@ const resolveRequestRoute = (url, context) => {
         deps.noteHostRestriction?.(host, native.host)
         const type = deps.TRUSTED_CDN_CATALOG_SET.has(native.host) ? 'root-original' : 'native-signed'
         if (group.kind === 'video') setPlannedAffinity({ type, host: native.host }, 'host-restricted')
-        return { url: native.url, host: native.host, type, groupId: group.id }
+        return stamp({ url: native.url, host: native.host, type, groupId: group.id })
     }
     deps.noteHostRestriction?.(host, null)
-    return { url, host, type: 'blocked', action: 'block', reason: 'host-restricted' }
+    return stamp({ url, host, type: 'blocked', action: 'block', reason: 'host-restricted' })
 }
 const isProtectedSignedUrl = url => {
     try { return protectedUrls.has(deps.parseMediaHttpUrl(url)?.href) } catch { return false }
@@ -673,6 +686,9 @@ const activateGroup = (group, reason) => {
         const switched = !!activeRepresentation
         activeRepresentation = { groupId: group.id, height: group.height, codec: group.codec, bandwidth: group.bandwidth,
             revision: ++representationRevision, confirmedAt: Date.now(), reason }
+        deps.DiagnosticLog?.record?.('representation', { stage: switched ? 'changed' : 'confirmed', reason,
+            kind: 'video', groupOrdinal: diagnosticGroupOrdinal(group.id), routeRevision: group.revision,
+            height: group.height, codec: group.codec }, true)
         lastAutoQualityReason = reason
         deps.onActiveRepresentation?.(usableGroupSample(group), group.id, { switched })
     }
@@ -680,7 +696,7 @@ const activateGroup = (group, reason) => {
 }
 const observeAffinity = (group, parsed, source, context) => {
     if (!group || group.kind !== 'video' || activeRepresentation?.groupId !== group.id || !parsed?.host) return
-    const type = context?.routeDecision?.changed && context.routeDecision.host === parsed.host
+    const type = context?.routeDecision?.host === parsed.host
         ? context.routeDecision.type : context?.route?.generated && group.generatedUrls.has(parsed.url)
             ? 'catalog-generated' : 'root-original'
     if (!routeAffinity || routeAffinity.host !== parsed.host || routeAffinity.type !== type) {
@@ -690,6 +706,11 @@ const observeAffinity = (group, parsed, source, context) => {
         routeAffinity = { type, host: parsed.host, confirmedAt: Date.now(), source }
         lastObservedRoute = { ...routeAffinity, revision: routeRevision,
             reason: hostChanged ? 'observed-host-change' : lastObservedRoute ? 'provenance-update' : 'first-observation', metadataSource: group.source }
+        deps.DiagnosticLog?.record?.('route', { stage: hostChanged ? 'observed-host-change' : 'first-observation',
+            reason: lastObservedRoute.reason, actionId: context?.routeDecision?.actionId,
+            decisionId: context?.routeDecision?.decisionId, kind: 'video', finalHost: parsed.host,
+            routeType: type, routeRevision: context?.routeDecision?.revision || group.revision,
+            groupOrdinal: diagnosticGroupOrdinal(group.id) }, true)
         // Observation confirms what happened on the wire; it does not itself
         // grant authority to change the route plan.  Only the initial epoch or a
         // verified recovery boundary may replace plannedAffinity.
@@ -700,12 +721,17 @@ const getObservedRouteHost = () => !deps.disabled && routeAffinity && Date.now()
 const noteRecoveryObserved = (group, parsed, source) => {
     const recovery = group?.recoveryOverride
     if (!recovery || !parsed?.host || parsed.host !== recovery.host) return
+    const firstObservation = !recovery.observedAt
     recovery.observedAt = Date.now()
     recovery.observedHost = parsed.host
     if (lastRouteBoundary?.groupId === group.id && lastRouteBoundary.revision === recovery.revision) {
         lastRouteBoundary.observed = { host: parsed.host, source: String(source || 'transport').slice(0, 16), at: recovery.observedAt }
         lastRouteBoundary.waitingForRetry = false
     }
+    if (firstObservation) deps.DiagnosticLog?.record?.('route', { stage: 'fallback-observed',
+        reason: recovery.reason, actionId: recovery.actionId, kind: routeKind(group.kind),
+        finalHost: parsed.host, routeType: recovery.type, routeRevision: recovery.revision,
+        groupOrdinal: diagnosticGroupOrdinal(group.id), waitingForRetry: false }, true)
 }
 const observeTransport = (context, url, bytes, source) => {
     const routeContext = context?.route
@@ -841,11 +867,18 @@ const noteNativeFailure = (context, url, status = 0, failureKind = 'http') => {
     const kind = routeKind(group.kind)
     const verifiedTransport = ['xhr','fetch'].includes(context?.method) && context?.httpMethod === 'GET'
     const submitRecovery = reason => {
-        const fallback = beginRouteRecovery(reason, parsed.host, { routeContext, kind })
+        const actionId = diagnosticActionId('route')
+        deps.DiagnosticLog?.record?.('route', { stage: 'failure-detected', reason, actionId, kind,
+            failedHost: parsed.host, status: +status || 0, failureKind,
+            routeType: context?.routeDecision?.type || 'native-signed',
+            routeRevision: context?.routeDecision?.revision || group.revision,
+            decisionId: context?.routeDecision?.decisionId,
+            groupOrdinal: diagnosticGroupOrdinal(group.id) }, true)
+        const fallback = beginRouteRecovery(reason, parsed.host, { routeContext, kind, actionId, failureKind, status })
         if (fallback) deps.armTransportFailure?.({
             generation: deps.runtimeGeneration, epoch: group.epoch, groupId: group.id, kind,
             failedHost: parsed.host, fallback: { type: fallback.type, host: fallback.host },
-            revision: group.revision,
+            revision: group.revision, actionId,
         })
         return fallback
     }
@@ -904,18 +937,27 @@ const beginRouteRecovery = (reason, failedHost = null, options = null) => {
     const group = contextualGroup || (activeRepresentation?.groupId ? groups.get(activeRepresentation.groupId) : null)
     const kind = routeKind(options?.kind || group?.kind)
     if (host) avoidHost(kind, host, Number.isFinite(options?.temporaryMs) ? options.temporaryMs : Infinity)
+    const actionId = options?.actionId || diagnosticActionId('route')
+    if (!options?.actionId) deps.DiagnosticLog?.record?.('route', { stage: 'failure-detected',
+        reason: String(reason || 'recovery').slice(0, 48), actionId, kind, failedHost: host || null,
+        routeRevision: group?.revision || routeRevision,
+        groupOrdinal: diagnosticGroupOrdinal(group?.id) }, true)
     const next = chooseRecoveryRoute(group, host, options)
     lastRouteBoundary = { reason: String(reason || 'recovery').slice(0, 48), failedHost: host || null,
         groupId: group?.id || null, kind, at: Date.now(), adopted: next ? { ...next } : null,
-        observed: null, waitingForRetry: !!next }
+        observed: null, waitingForRetry: !!next, actionId }
     if (!next) {
         if (group) { group.recoveryOverride = null; group.revision = ++routeRevision }
         else routeRevision++
+        deps.DiagnosticLog?.record?.('route', { stage: 'no-fallback', reason: lastRouteBoundary.reason,
+            actionId, kind, failedHost: host || null, failureKind: options?.failureKind,
+            status: Number(options?.status) || 0, routeRevision,
+            groupOrdinal: diagnosticGroupOrdinal(group?.id), waitingForRetry: false }, true)
         return null
     }
     if (group) {
         const revision = ++routeRevision
-        group.recoveryOverride = { ...next, reason: lastRouteBoundary.reason, setAt: Date.now(), revision }
+        group.recoveryOverride = { ...next, reason: lastRouteBoundary.reason, setAt: Date.now(), revision, actionId }
         group.currentRouteType = next.type
         group.currentHost = next.host
         group.revision = revision
@@ -925,6 +967,10 @@ const beginRouteRecovery = (reason, failedHost = null, options = null) => {
         routeAffinity = null
         setPlannedAffinity(next, lastRouteBoundary.reason, true)
     }
+    deps.DiagnosticLog?.record?.('route', { stage: 'fallback-planned', reason: lastRouteBoundary.reason,
+        actionId, kind, failedHost: host || null, fallbackType: next.type, fallbackHost: next.host,
+        routeType: next.type, routeRevision: lastRouteBoundary.revision || routeRevision,
+        groupOrdinal: diagnosticGroupOrdinal(group?.id), waitingForRetry: true }, true)
     return { ...next }
 }
 
@@ -1053,6 +1099,7 @@ const diagnostics = () => {
             groupId: group.id, kind: routeKind(group.kind), type: group.recoveryOverride.type,
             host: group.recoveryOverride.host, reason: group.recoveryOverride.reason,
             revision: group.recoveryOverride.revision,
+            actionId: group.recoveryOverride.actionId || null,
             observedHost: group.recoveryOverride.observedHost || null,
             waitingForRetry: !group.recoveryOverride.observedAt,
         })),

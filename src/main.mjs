@@ -722,6 +722,7 @@ get refreshPublicDiagnosticSnapshot() { return snapshot.refreshPublicDiagnosticS
 get reloadAfterFeedback() { return catalogControls.reloadAfterFeedback; },
 get buildDiagReport() { return report.buildDiagReport; },
 get copyDiagReport() { return controls.copyDiagReport; },
+get DiagnosticLog() { return events.DiagnosticLog; },
 get listDeadHosts() { return health.listDeadHosts; },
 get TRUSTED_CDN_CATALOG_SET() { return new Set(catalog.TRUSTED_CDN_CATALOG_SET); },
 get controlResult() { return controls.controlResult; },
