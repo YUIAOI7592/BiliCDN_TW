@@ -120,6 +120,13 @@ equal(restrictions.has(TRUSTED_CATALOG[0], 'video'), false, 'newer remote remova
 await restrictions.add({ host: TRUSTED_CATALOG[0], type: 'black', kind: 'all', reason: 'test', expireAt: now + 1000 })
 await restrictions.remove(TRUSTED_CATALOG[0], 'black')
 equal(restrictions.has(TRUSTED_CATALOG[0], 'video'), false, 'restriction removal applies immediately')
+const legacyUserRestriction = new FakeStorage()
+legacyUserRestriction.set('bilicdn.v2.restrictions', { schema: 2, updatedAt: now, records: [{ host: TRUSTED_CATALOG[0],
+  type: 'black', kind: 'video', reason: 'user', createdAt: now, updatedAt: now, expireAt: now + 60_000 }] })
+const restoredUserRestriction = new RestrictionStore(legacyUserRestriction, () => now)
+equal(restoredUserRestriction.has(TRUSTED_CATALOG[0], 'audio', 'black'), true,
+  'existing user-created video blacklist also protects audio after update')
+equal(restoredUserRestriction.list()[0]?.kind, 'all', 'existing user-created blacklist displays its effective scope')
 
 const settings = new SettingsStore(storage, () => now), evidenceStore = new EvidenceStore(storage, () => now), session = new SessionStore()
 await evidenceStore.record(TRUSTED_CATALOG[0], 'video', { requestId: 'remote-clear', at: now, source: 'transport', outcome: 'success', throughputMbps: 8, ttfbMs: 20, failureKind: null })
@@ -362,6 +369,15 @@ const forbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/test/o
 const outputItem = { id: 80, codecid: 13, height: 1080, bandwidth: 1_000_000, base_url: forbiddenUrl, backup_url: [forbiddenUrl] }
 outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
 check(![outputItem.base_url, ...outputItem.backup_url].some(url => url.includes('mirrorcosov')), 'forbidden original cannot remain in playurl primary or backup')
+const exceptionalForbidden = `${forbiddenUrl}&os=mcdn`
+equal(outputRoutes.apply(exceptionalForbidden).url, null, 'default-unavailable source cannot pass through PCDN guard')
+equal(outputRoutes.apply(forbiddenUrl.replace('/upgcxcode/', '/live-bvc/')).url, null, 'default-unavailable live source is locally blocked without host replacement')
+equal(outputRoutes.apply(forbiddenUrl.replace('/upgcxcode/', '/v1/resource/')).url, null, 'default-unavailable resource source is locally blocked')
+equal(outputRoutes.apply('https://upos-sz-mirrorali.bilivideo.com/live-bvc/test/output/1.m4s?k=1').decision.action, 'pass', 'unrestricted live source remains untouched')
+const exceptionalItem = { ...outputItem, base_url: exceptionalForbidden, backup_url: [exceptionalForbidden] }
+outputAdapter.transform({ data: { dash: { video: [exceptionalItem], audio: [] } } })
+equal(exceptionalItem.base_url, '', 'playurl cannot emit a default-unavailable PCDN-marked primary')
+equal(exceptionalItem.backup_url.length, 0, 'playurl cannot emit a default-unavailable PCDN-marked backup')
 const alternateOutput = outputItem.backup_url.find(url => new URL(url).host !== new URL(outputItem.base_url).host)
 check(alternateOutput, 'playurl includes a legal alternate backup')
 const fallbackApplied = outputRoutes.apply(alternateOutput ?? '')
@@ -400,6 +416,25 @@ for (const type of ['black', 'dead'] as const) {
 }
 await outputSettings.update({ fixedHost: null })
 outputRoutes.invalidateForUserSetting()
+const ungroupedHost = TRUSTED_CATALOG[0]
+const ungroupedUrl = `https://${ungroupedHost}/upgcxcode/test/ungrouped/1.m4s?k=1`
+await outputRestrictions.add({ host: ungroupedHost, type: 'black', kind: 'audio', reason: 'ungrouped-audio', expireAt: now + 60_000 })
+check(outputRoutes.apply(ungroupedUrl).decision.host !== ungroupedHost,
+  'ungrouped media cannot use a host with an audio-only blacklist')
+await outputRestrictions.remove(ungroupedHost, 'black')
+const audioScopedUrl = `https://${ungroupedHost}/upgcxcode/test/audio/1.m4s?k=1`
+const audioScopedRep = outputVault.register({ generation: outputState.generation, epoch: outputState.epoch, kind: 'audio',
+  key: 'scope-audio', height: 0, codec: 'other', bandwidth: 128_000, urls: [audioScopedUrl], source: 'trusted-api' })
+check(audioScopedRep, 'matched audio representation exists for blacklist coverage')
+await outputRestrictions.add({ host: ungroupedHost, type: 'black', kind: 'all', reason: 'user', expireAt: now + 60_000 })
+check(outputRoutes.apply(audioScopedUrl).decision.host !== ungroupedHost, 'user-wide blacklist excludes matched audio route')
+equal(outputRoutes.apply(`${audioScopedUrl}&os=mcdn`).url, null, 'user-wide blacklist locally blocks an exceptional audio route')
+await outputRestrictions.remove(ungroupedHost, 'black')
+for (const type of ['black', 'dead'] as const) {
+  await outputRestrictions.add({ host: ungroupedHost, type, kind: 'all', reason: 'exceptional', expireAt: now + 60_000 })
+  equal(outputRoutes.apply(`${ungroupedUrl}&os=mcdn`).url, null, `${type} blocks PCDN-marked Catalog host`)
+  await outputRestrictions.remove(ungroupedHost, type)
+}
 const unknownQuery = alternateOutput!.replace('k=1', 'k=unknown')
 check(outputRoutes.apply(unknownQuery).decision.reason !== 'player-fallback', 'weak query match is not a backup capability')
 await outputEvidence.record(TRUSTED_CATALOG[0], 'video', { requestId: 'fresh-challenger', at: now, source: 'transport', outcome: 'success', throughputMbps: 10, ttfbMs: 1, failureKind: null })
@@ -448,11 +483,22 @@ check(new URL(actualXhr.url).host !== initiallySentHost, 'restriction added afte
 await outputSettings.update({ catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map(host => [host, false])) })
 const blockedXhr = new FakeXhr(); blockedXhr.open('GET', forbiddenUrl); blockedXhr.send()
 equal(blockedXhr.nativeSends, 0, 'no-alternative XHR never sends forbidden native request')
+const exceptionalXhr = new FakeXhr(); exceptionalXhr.open('GET', exceptionalForbidden); exceptionalXhr.send()
+equal(exceptionalXhr.nativeSends, 0, 'XHR does not send default-unavailable PCDN-marked media')
 const fetchCountBeforeBlock = nativeFetchCalls
 let fetchBlocked = false
 try { await fakeWindow.fetch(forbiddenUrl) } catch { fetchBlocked = true }
 check(fetchBlocked, 'no-alternative Fetch rejects locally')
 equal(nativeFetchCalls, fetchCountBeforeBlock, 'blocked Fetch sends no native request')
+let exceptionalFetchBlocked = false
+try { await fakeWindow.fetch(exceptionalForbidden) } catch { exceptionalFetchBlocked = true }
+check(exceptionalFetchBlocked, 'Fetch does not send default-unavailable PCDN-marked media')
+equal(nativeFetchCalls, fetchCountBeforeBlock, 'exceptional Fetch does not reach native transport')
+await outputSettings.update({ disabled: true })
+const enabledAfterOpen = new FakeXhr(); enabledAfterOpen.open('GET', forbiddenUrl)
+await outputSettings.update({ disabled: false })
+enabledAfterOpen.send()
+equal(enabledAfterOpen.nativeSends, 0, 'XHR opened while disabled rechecks restriction when enabled before send')
 await outputSettings.update({ disabled: true })
 const disabledXhr = new FakeXhr(); disabledXhr.open('GET', forbiddenUrl); disabledXhr.send()
 equal(disabledXhr.url, forbiddenUrl, 'disabled adapter preserves website original request')

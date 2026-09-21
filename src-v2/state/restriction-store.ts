@@ -30,10 +30,13 @@ const parsePayload = (value: unknown, now: number): RestrictionPayload => {
     const row = item as Record<string, unknown>
     const host = safeHost(row.host)
     const type = row.type === 'black' || row.type === 'dead' ? row.type : null
-    const kind = row.kind === 'video' || row.kind === 'audio' || row.kind === 'all' ? row.kind : 'all'
+    const storedKind = row.kind === 'video' || row.kind === 'audio' || row.kind === 'all' ? row.kind : 'all'
+    const reason = String(row.reason ?? '').slice(0, 64)
+    // The previous control-center button saved a video-only row despite presenting it as a host blacklist.
+    const kind = type === 'black' && storedKind === 'video' && reason === 'user' ? 'all' : storedKind
     const expireAt = Number(row.expireAt)
     if (!host || !type || !Number.isFinite(expireAt) || expireAt <= now || expireAt > now + 30 * 24 * 60 * 60_000) continue
-    records.push(Object.freeze({ host, type, kind, reason: String(row.reason ?? '').slice(0, 64),
+    records.push(Object.freeze({ host, type, kind, reason,
       createdAt: Math.min(now, Math.max(0, Number(row.createdAt) || now)), expireAt,
       updatedAt: Math.min(now + 5 * 60_000, Math.max(0, Number(row.updatedAt) || now)) }))
   }

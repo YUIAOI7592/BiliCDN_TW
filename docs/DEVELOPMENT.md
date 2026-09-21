@@ -46,4 +46,4 @@ Do not label VM or mock results as real playback. Preserve a user’s existing p
 
 ## Packaging and release
 
-`npm run package` writes only the userscript, changelog, test report, build manifest and SHA-256 list under the current `Release/v<version>/`. Do not add patch files. The GitHub Release asset is only the userscript. For v2.0.1, publish after automated verification; perform targeted Chrome acceptance after the user updates. Do not describe pending browser checks as passed.
+`npm run package` writes only the userscript, changelog, test report, build manifest and SHA-256 list under the current `Release/v<version>/`. Do not add patch files. The GitHub Release asset is only the userscript. For v2.0.4, publish after automated verification; perform targeted Chrome acceptance after the user updates. Do not describe pending browser checks as passed.

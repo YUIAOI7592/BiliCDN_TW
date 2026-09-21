@@ -99,15 +99,15 @@ export class ControlCenter {
       this.#button('CDN 與播放設定', () => this.#renderSettings()),
       this.#button('診斷與事故記錄', () => this.#renderDiagnostics()),
       this.#button('重新評估一個安全候選', () => { this.deps.measurement.requestManual(); this.#renderOverview() }),
-      this.#button('將目前影片路線加入黑名單 24 小時', async () => {
+      this.#button('將目前影片 CDN 加入影片與音訊黑名單 24 小時', async () => {
         const host = this.deps.routes.latestVideoHost()
-        if (host) await this.deps.restrictions.add({ host, type: 'black', kind: 'video', reason: 'user', expireAt: this.deps.now() + 24 * 60 * 60 * 1000 })
+        if (host) await this.deps.restrictions.add({ host, type: 'black', kind: 'all', reason: 'user', expireAt: this.deps.now() + 24 * 60 * 60 * 1000 })
         this.deps.routes.invalidateForUserSetting(); this.#renderOverview()
       }, 'danger'),
       this.#button('清除 v2 學習資料', async () => { await this.deps.evidence.clear(); await this.deps.restrictions.clear(); this.deps.storageDelete('bilicdn.v2.meta'); this.#renderOverview() }, 'danger'),
       this.#button('恢復 v2 預設設定', async () => { await this.deps.settings.reset(); this.deps.routes.invalidateForUserSetting(); this.#renderOverview() }, 'danger'),
     )
-    const blacklistButton = [...actions.querySelectorAll('button')].find(button => button.textContent?.startsWith('將目前影片路線'))
+    const blacklistButton = [...actions.querySelectorAll('button')].find(button => button.textContent?.startsWith('將目前影片 CDN'))
     if (blacklistButton && !this.deps.routes.latestVideoHost()) {
       blacklistButton.disabled = true
       blacklistButton.textContent = '尚無 60 秒內成功歸因的影片回應，無法指定黑名單節點'
@@ -135,10 +135,13 @@ export class ControlCenter {
     for (const host of TRUSTED_CATALOG) {
       const defaultEnabled = !DEFAULT_UNAVAILABLE_HOSTS.has(host)
       const enabled = settings.catalogOverrides[host] ?? defaultEnabled
+      const penalties = this.deps.restrictions.list().filter(row => row.host === host)
+        .map(row => `${row.type}（${row.kind === 'all' ? '影片＋音訊' : row.kind === 'video' ? '影片' : '音訊'}）`)
+      const detail = `${defaultEnabled ? '內建 Catalog' : '預設不可用；勾選後才允許'}${penalties.length ? `｜仍受有效處分禁止：${penalties.join('、')}` : ''}`
       rows.append(this.#toggle(host, enabled, async value => {
         await this.deps.settings.update({ catalogOverrides: { ...this.deps.settings.get().catalogOverrides, [host]: value } })
         this.deps.routes.invalidateForUserSetting()
-      }, defaultEnabled ? '內建 Catalog' : '預設不可用；勾選後才允許'))
+      }, detail))
     }
     body.append(rows); foot.append(this.#button('返回', () => this.#renderOverview()))
   }
@@ -158,7 +161,7 @@ export class ControlCenter {
 
   #readModel(): Readonly<Record<string, unknown>> {
     const now = this.deps.now(), evidence = this.deps.evidence.list().slice(0, 96).map(row => ({ host: row.host, kind: row.kind, ...evidenceMetrics(row, now) }))
-    return Object.freeze({ version: GM_info?.script?.version ?? '2.0.3', settings: this.deps.settings.get(), session: this.deps.session.get(),
+    return Object.freeze({ version: GM_info?.script?.version ?? '2.0.4', settings: this.deps.settings.get(), session: this.deps.session.get(),
       monitor: this.deps.monitor.snapshot(), recovery: this.deps.recovery.snapshot(), measurement: this.deps.measurement.snapshot(),
       routes: this.deps.routes.snapshot(), restrictions: this.deps.restrictions.list(), evidence })
   }

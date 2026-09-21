@@ -2,11 +2,11 @@
 
 ## 現行產品
 
-- 現行版本：v2.0.3；先發布，更新後再做真實 Chrome 針對性驗收。未完成實機驗收不得宣稱實機通過。
+- 現行版本：v2.0.4；先發布，更新後再做真實 Chrome 針對性驗收。未完成實機驗收不得宣稱實機通過。
 - 唯一正式來源：`src-v2/`。
 - 正式入口：`src-v2/entry.ts`。
 - 目標平台：最新版 Chrome＋Tampermonkey。
-- 正式產物：`Release/v2.0.3/BiliCDN_TW.user.js`。
+- 正式產物：`Release/v2.0.4/BiliCDN_TW.user.js`。
 - v1.9.6 僅作功能參考，不是建置輸入或相容目標。
 
 v2 是全新 TypeScript 架構。它不讀取 v1 設定或學習資料，不提供 `unsafeWindow.BiliCDN`、檔頭設定、舊 snapshot alias、migration 或測試 bridge。

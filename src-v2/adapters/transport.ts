@@ -196,7 +196,7 @@ export class TransportAdapter {
         if (meta.targetUrl !== meta.originalUrl) reopen(meta.originalUrl)
         Reflect.apply(originalSend, this, [body ?? null]); return
       }
-      if (meta.applied) {
+      if (!meta.playurl && meta.method === 'GET' && isMedia(meta.originalUrl)) {
         const next = self.routes.apply(meta.originalUrl)
         if (next.url && next.url !== meta.targetUrl) {
           reopen(next.url)

@@ -111,20 +111,23 @@ export class RouteCoordinator {
     if (!parsed) return { decision: this.#pass('invalid-url', null, kindHint ?? 'video'), url, context: null, streamKey: null, sourceHost: null }
     const streamKey = mediaIdentity(url)
     if (parsed.kind === 'live' || parsed.kind === 'resource' || parsed.kind === 'pcdn' || parsed.kind === 'suspected-pcdn') {
+      // These URLs cannot be safely rewritten, but that never grants an exception to a host restriction.
+      const restriction = this.#hardRestriction(parsed.host, kindHint)
+      if (restriction) return { decision: this.#block(restriction, parsed.host), url: null, context: null, streamKey, sourceHost: parsed.host }
       return { decision: this.#pass(parsed.kind, parsed.host, kindHint ?? 'video'), url, context: null, streamKey, sourceHost: parsed.host }
     }
     const match = this.vault.match(url)
     const context = match.status === 'matched' ? match.context : null
-    const kind = context?.kind ?? kindHint ?? 'video'
+    const kind = context?.kind ?? kindHint ?? null
     if (streamKey && this.#hostLockedStreams.has(streamKey)) {
       const original = context ? this.vault.rootUrl(context.representation) ?? url : url
       const originalHost = parseMediaUrl(original)?.host ?? parsed.host
       const hard = this.#hardRestriction(originalHost, kind)
-      const decision = hard ? this.#block(hard, originalHost) : this.#pass('host-locked', originalHost, kind)
-      this.#remember(decision, context, kind)
+      const decision = hard ? this.#block(hard, originalHost) : this.#pass('host-locked', originalHost, kind ?? 'video')
+      this.#remember(decision, context, kind ?? 'video')
       return { decision, url: hard ? null : original, context, streamKey, sourceHost: originalHost }
     }
-    const playbackDemand = demand ?? { kind, requiredMbps: kind === 'audio' ? 0.5 : 8, highDemand: false }
+    const playbackDemand = demand ?? { kind: kind ?? 'video', requiredMbps: kind === 'audio' ? 0.5 : 8, highDemand: false }
     let decision = context ? this.#plans.get(context.representation) : streamKey ? this.#streamPlans.get(streamKey) : null
     const outputRole = context ? this.vault.outputRole(context.representation, url) : null
     // Playurl preplans every quality before any route has proved successful.
@@ -138,7 +141,7 @@ export class RouteCoordinator {
       const catalogIndex = TRUSTED_CATALOG.indexOf(parsed.host as typeof TRUSTED_CATALOG[number])
       const native = this.vault.candidates(context.representation, this.#unlockedNative.get(context.representation) ?? new Set()).native
         .find(candidate => candidate.host === parsed.host && this.vault.resolve(candidate.handle, context) === parsed.url.href)
-      const candidate = catalogIndex >= 0 ? { type: 'catalog-generated' as const, host: parsed.host, kind, catalogIndex } : native
+      const candidate = catalogIndex >= 0 ? { type: 'catalog-generated' as const, host: parsed.host, kind: context.kind, catalogIndex } : native
       if (candidate) {
         decision = { action: 'rewrite', id: this.#nextId(), reason: 'player-fallback', routeType: candidate.type, host: parsed.host, candidate, ranking: [] }
         this.session.noteDecision(decision.id)
@@ -147,17 +150,17 @@ export class RouteCoordinator {
     }
     if (!decision || decision.action === 'block' || !this.#decisionAllowed(decision, context, kind)) decision = context
       ? this.#choose(context, playbackDemand, 'request', null)
-      : this.#catalogOnly(playbackDemand, parsed.host)
+      : this.#catalogOnly(playbackDemand, parsed.host, kind)
     let applied = this.#materialize(url, decision, context)
     if (decision.action === 'rewrite' && decision.candidate.type === 'catalog-generated' && applied === null) {
       const restriction = this.#hardRestriction(parsed.host, kind)
-      decision = restriction ? this.#block(restriction, parsed.host) : this.#pass('catalog-host-not-replaceable', parsed.host, kind)
+      decision = restriction ? this.#block(restriction, parsed.host) : this.#pass('catalog-host-not-replaceable', parsed.host, kind ?? 'video')
       applied = restriction ? null : url
     }
     const finalHost = applied ? parseMediaUrl(applied)?.host : null
     const finalRestriction = finalHost ? this.#hardRestriction(finalHost, kind) : null
     if (finalHost && finalRestriction) { decision = this.#block(finalRestriction, finalHost); applied = null }
-    this.#remember(decision, context, kind)
+    this.#remember(decision, context, kind ?? 'video')
     if (context) { this.#plans.set(context.representation, decision); this.#requestedRepresentations.add(context.representation) }
     else if (streamKey) {
       this.#streamPlans.set(streamKey, decision)
@@ -350,8 +353,8 @@ export class RouteCoordinator {
     return decision
   }
 
-  #catalogOnly(demand: PlaybackDemand, originalHost: string): RouteDecision {
-    const settings = this.settings.get(), restriction = this.restrictions.snapshot(demand.kind)
+  #catalogOnly(demand: PlaybackDemand, originalHost: string, knownKind: MediaKind | null): RouteDecision {
+    const settings = this.settings.get(), restriction = this.#restrictionSnapshot(knownKind)
     const candidates: CatalogCandidate[] = TRUSTED_CATALOG.map((host, index) => ({ type: 'catalog-generated', host, kind: demand.kind, catalogIndex: index }))
     const id = this.#nextId()
     const decision = chooseRoute({ candidates, evidenceFor: (host, kind) => this.evidence.get(host, kind),
@@ -360,7 +363,7 @@ export class RouteCoordinator {
         blackHosts: restriction.blackHosts, deadHosts: restriction.deadHosts, hostLocked: new Set() }, demand,
       fixedHost: settings.fixedHost, current: this.session.get().affinity, boundary: 'request', failedHost: null }, this.clock, id)
     if (decision.action === 'block') {
-      const forbidden = this.#hardRestriction(originalHost, demand.kind)
+      const forbidden = this.#hardRestriction(originalHost, knownKind)
       return forbidden ? this.#block(forbidden, originalHost) : this.#pass('catalog-unavailable', originalHost, demand.kind)
     }
     return decision
@@ -381,8 +384,14 @@ export class RouteCoordinator {
     return { action: 'block', id: this.#nextId(), reason, routeType: 'root-original', host, ranking: Object.freeze([]) }
   }
 
-  #hardRestriction(host: string, kind: MediaKind): 'catalog-disabled' | 'default-unavailable' | 'black' | 'dead' | 'circuit-open' | null {
-    const settings = this.settings.get(), restriction = this.restrictions.snapshot(kind), evidence = this.evidence.get(host, kind)
+  #restrictionSnapshot(kind: MediaKind | null): ReturnType<RestrictionStore['snapshot']> {
+    if (kind) return this.restrictions.snapshot(kind)
+    const video = this.restrictions.snapshot('video'), audio = this.restrictions.snapshot('audio')
+    return { blackHosts: new Set([...video.blackHosts, ...audio.blackHosts]), deadHosts: new Set([...video.deadHosts, ...audio.deadHosts]) }
+  }
+
+  #hardRestriction(host: string, kind: MediaKind | null): 'catalog-disabled' | 'default-unavailable' | 'black' | 'dead' | 'circuit-open' | null {
+    const settings = this.settings.get(), restriction = this.#restrictionSnapshot(kind), evidence = kind ? this.evidence.get(host, kind) : null
     if (restriction.blackHosts.has(host)) return 'black'
     if (restriction.deadHosts.has(host)) return 'dead'
     if (settings.catalogOverrides[host] === false) return 'catalog-disabled'
@@ -391,7 +400,7 @@ export class RouteCoordinator {
     return null
   }
 
-  #decisionAllowed(decision: RouteDecision, context: RouteIdentity | null, kind: MediaKind): boolean {
+  #decisionAllowed(decision: RouteDecision, context: RouteIdentity | null, kind: MediaKind | null): boolean {
     if (decision.action === 'block' || !decision.host || this.#hardRestriction(decision.host, kind)) return false
     if (decision.action === 'pass') return true
     const candidate = decision.candidate
