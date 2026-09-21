@@ -3,7 +3,7 @@ import type { PlayerPort, VideoSnapshot } from './ports.ts'
 
 interface ResumeToken {
   readonly id: RecoveryActionId
-  readonly source: 'trusted-player-play' | 'paused-transition' | 'route-failure' | 'watchdog'
+  readonly source: 'trusted-player-play' | 'paused-transition' | 'route-failure' | 'watchdog' | 'startup-failure'
   readonly startedAt: number
   readonly savedPositionSec: number
   readonly savedRate: number
@@ -30,7 +30,8 @@ export class RecoveryController {
   #pauseAt = 0
   #hadHealthy = false
   #lastHealthyTime = 0
-  #lastHealthyRate = 2
+  #lastHealthyRate = 1
+  #startupReloaded = false
   #token: ResumeToken | null = null
   #serial = 0
   #reloadCount = 0
@@ -57,13 +58,19 @@ export class RecoveryController {
     this.#lifecycleSerial++; this.#lastFrames = null; this.#lastSnapshot = null
     this.#lastTickAt = 0; this.#deadTicks = 0; this.#deadReported = false
     this.#unhook(); this.#pauseAt = 0; this.#hadHealthy = false; this.#lastHealthyTime = 0; this.#token = null
-    this.#reloadCount = 0; this.#breakerUntil = 0
+    this.#reloadCount = 0; this.#breakerUntil = 0; this.#startupReloaded = false; this.#lastHealthyRate = 1
     this.#state = Object.freeze({ state: 'healthy', source: null, pauseSec: 0, reloadCount: 0, breakerSec: 0 })
   }
 
   armRouteFailure(source: 'route-failure' | 'watchdog', snapshot: VideoSnapshot): void {
     if (this.#token || snapshot.paused || snapshot.seeking || snapshot.ended || snapshot.mediaError || !this.#hadHealthy) return
     this.#begin(source, true)
+  }
+
+  armStartupFailure(snapshot: VideoSnapshot): void {
+    if (this.#token || this.#startupReloaded || snapshot.paused || snapshot.seeking || snapshot.ended || snapshot.mediaError
+      || !snapshot.available || snapshot.playableBufferSec >= 1) return
+    this.#begin('startup-failure', true)
   }
 
   tick(snapshot: VideoSnapshot): void {
@@ -112,7 +119,10 @@ export class RecoveryController {
       || (snapshot.frames !== null && token.baselineFrames !== null && snapshot.frames > token.baselineFrames))) { this.#finish('recovered'); return }
     const dead = snapshot.readyState === 0 && snapshot.width === 0 && snapshot.height === 0 && snapshot.manifestHasVideo
       && snapshot.coreInitialized === false
-    if (!token.reloadingAt && dead && now - token.startedAt >= 4000) this.#reload(token)
+    const startupStalled = token.source === 'startup-failure' && snapshot.readyState < 2 && snapshot.playableBufferSec < 1
+      && snapshot.currentTime <= token.baselinePositionSec + 0.05
+      && (snapshot.frames === null || token.baselineFrames === null || snapshot.frames <= token.baselineFrames)
+    if (!token.reloadingAt && (dead || startupStalled) && now - token.startedAt >= 4000) this.#reload(token)
     if (token.reloadingAt && now - token.reloadingAt >= 15_000) { this.#breakerUntil = now + 90_000; this.#finish('failed', 'reload-timeout') }
   }
 
@@ -150,7 +160,7 @@ export class RecoveryController {
     const snapshot = this.player.snapshot()
     this.#token = { id: recoveryActionId(`core-${++this.#serial}`), source, startedAt: now,
       savedPositionSec: Math.max(0, this.player.currentTime() || this.#lastHealthyTime),
-      savedRate: this.player.playbackRate() > 0 ? this.player.playbackRate() : this.#lastHealthyRate || 2,
+      savedRate: this.player.playbackRate() > 0 ? this.player.playbackRate() : this.#lastHealthyRate || 1,
       wasPlaying, baselinePositionSec: snapshot.currentTime, baselineFrames: snapshot.frames, reloadingAt: 0, restored: false }
     this.#state = Object.freeze({ state: 'play-intent', source, pauseSec: this.#pauseAt ? Math.floor((now - this.#pauseAt) / 1000) : 0,
       reloadCount: this.#reloadCount, breakerSec: 0 })
@@ -159,6 +169,7 @@ export class RecoveryController {
   #reload(token: ResumeToken): void {
     if (this.now() < this.#breakerUntil || this.#reloadCount >= 2) { this.#finish('breaker'); return }
     token.reloadingAt = this.now(); this.#reloadCount++
+    if (token.source === 'startup-failure') this.#startupReloaded = true
     this.#breakerUntil = this.now() + 90_000
     this.#emit({ type: 'recovery', at: this.now(), action: { action: 'player-reload', id: token.id,
       savedPositionSec: token.savedPositionSec, savedRate: token.savedRate } })

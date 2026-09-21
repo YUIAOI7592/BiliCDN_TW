@@ -2,6 +2,7 @@ import { isPlayurlApi } from '../domain/catalog.ts'
 import { isHttpDnsUrl, parseMediaUrl } from '../domain/url-policy.ts'
 import { requestId, type FailureKind, type RequestContext, type RouteType, type TransportObservation, type GenerationId, type EpochId } from '../domain/model.ts'
 import type { RouteCoordinator, AppliedRouteDecision } from '../application/route-coordinator.ts'
+import type { MeasurementController } from '../application/measurement-controller.ts'
 import type { SessionStore } from '../state/session-store.ts'
 import type { SettingsStore } from '../state/settings-store.ts'
 import type { PlayurlAdapter } from './playurl.ts'
@@ -27,6 +28,8 @@ interface XhrMeta {
   headers: [string, string][]
   username?: string | null
   password?: string | null
+  pendingSend: boolean
+  abortedBeforeSend: boolean
 }
 
 const urlOf = (input: RequestInfo | URL): string => typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
@@ -51,6 +54,7 @@ export class TransportAdapter {
     private readonly settings: SettingsStore,
     private readonly routes: RouteCoordinator,
     private readonly playurl: PlayurlAdapter,
+    private readonly measurement: MeasurementController,
     private readonly now: () => number,
   ) {}
 
@@ -94,6 +98,13 @@ export class TransportAdapter {
       }
       const parsed = parseMediaUrl(originalUrl)
       if (!parsed || parsed.kind === 'unknown' || !['GET', ''].includes(String(init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase())) {
+        return await Reflect.apply(original, this, [input, init]) as Response
+      }
+      const generation = self.session.get().generation
+      if (self.measurement.willGateStartup(originalUrl)) {
+        await self.measurement.prepareStartup(originalUrl, init?.signal ?? (input instanceof Request ? input.signal : null))
+      } else self.measurement.noteUnpreflighted('no-safe-startup-candidate')
+      if (self.settings.get().disabled || !self.session.isGeneration(generation)) {
         return await Reflect.apply(original, this, [input, init]) as Response
       }
       const applied = self.routes.apply(originalUrl)
@@ -167,7 +178,8 @@ export class TransportAdapter {
     const open: typeof XMLHttpRequest.prototype.open = function(this: XMLHttpRequest, method: string, url: string | URL,
       async: boolean = true, username?: string | null, password?: string | null): void {
       const originalUrl = String(url), playurl = isPlayurlApi(originalUrl)
-      self.#xhrMeta.get(this)?.cleanup()
+      const previous = self.#xhrMeta.get(this)
+      if (previous) { previous.abortedBeforeSend = true; previous.cleanup() }
       let applied: AppliedRouteDecision | null = null, targetUrl = originalUrl
       if (!self.settings.get().disabled && !playurl && isMedia(originalUrl) && method.toUpperCase() === 'GET') {
         applied = self.routes.apply(originalUrl)
@@ -178,6 +190,7 @@ export class TransportAdapter {
         transformedText: null, transformedJson: undefined, request: null,
         generation: self.session.get().generation, epoch: self.session.get().epoch,
         responseKey: `api-xhr-${++self.#requestSerial}`, cleanup: () => undefined, async, headers: [],
+        pendingSend: false, abortedBeforeSend: false,
         ...(username !== undefined ? { username } : {}), ...(password !== undefined ? { password } : {}) })
       if (username !== undefined) Reflect.apply(originalOpen, this, [method, targetUrl, async, username, password])
       else Reflect.apply(originalOpen, this, [method, targetUrl, async])
@@ -186,13 +199,17 @@ export class TransportAdapter {
     const send: typeof XMLHttpRequest.prototype.send = function(this: XMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null): void {
       const meta = self.#xhrMeta.get(this)
       if (!meta) { Reflect.apply(originalSend, this, [body ?? null]); return }
+      if (meta.pendingSend) throw new DOMException('send already called', 'InvalidStateError')
+      const perform = (): void => {
+      if (meta.abortedBeforeSend || self.#xhrMeta.get(this) !== meta) return
+      meta.pendingSend = false
       const reopen = (url: string): void => {
         const responseType = this.responseType, timeout = this.timeout, credentials = this.withCredentials
         Reflect.apply(originalOpen, this, [meta.method, url, meta.async, meta.username ?? null, meta.password ?? null])
         this.responseType = responseType; this.timeout = timeout; this.withCredentials = credentials
         for (const [key, value] of meta.headers) Reflect.apply(originalSetHeader, this, [key, value])
       }
-      if (self.settings.get().disabled) {
+      if (self.settings.get().disabled || !self.session.isGeneration(meta.generation)) {
         if (meta.targetUrl !== meta.originalUrl) reopen(meta.originalUrl)
         Reflect.apply(originalSend, this, [body ?? null]); return
       }
@@ -237,10 +254,29 @@ export class TransportAdapter {
         this.removeEventListener('load', load); this.removeEventListener('error', error); this.removeEventListener('timeout', timeout); this.removeEventListener('abort', abort)
       }
       Reflect.apply(originalSend, this, [body ?? null])
+      }
+      if (meta.async && !meta.playurl && meta.method === 'GET' && isMedia(meta.originalUrl)
+        && !self.settings.get().disabled && this.timeout === 0
+        && self.measurement.willGateStartup(meta.originalUrl)) {
+        meta.pendingSend = true
+        void self.measurement.prepareStartup(meta.originalUrl).then(perform, perform)
+        return
+      }
+      if (!meta.playurl && isMedia(meta.originalUrl)) {
+        if (!meta.async) self.measurement.noteUnpreflighted('synchronous-xhr')
+        else if (this.timeout > 0) self.measurement.noteUnpreflighted('xhr-explicit-timeout')
+        else self.measurement.noteUnpreflighted('no-safe-startup-candidate')
+      }
+      perform()
     }
 
-    const abort: typeof XMLHttpRequest.prototype.abort = function(this: XMLHttpRequest): void { Reflect.apply(originalAbort, this, []) }
+    const abort: typeof XMLHttpRequest.prototype.abort = function(this: XMLHttpRequest): void {
+      const meta = self.#xhrMeta.get(this)
+      if (meta?.pendingSend) { meta.abortedBeforeSend = true; meta.pendingSend = false }
+      Reflect.apply(originalAbort, this, [])
+    }
     const setHeader: typeof XMLHttpRequest.prototype.setRequestHeader = function(this: XMLHttpRequest, name: string, value: string): void {
+      if (self.#xhrMeta.get(this)?.pendingSend) throw new DOMException('send already called', 'InvalidStateError')
       Reflect.apply(originalSetHeader, this, [name, value])
       self.#xhrMeta.get(this)?.headers.push([name, value])
     }

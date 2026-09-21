@@ -1,4 +1,4 @@
-import { catalogIndex, TRUSTED_CATALOG_SET } from '../domain/catalog.ts'
+import { catalogIndex } from '../domain/catalog.ts'
 import { isKnownNativeFamily, parseMediaUrl } from '../domain/url-policy.ts'
 import {
   representationId, signedRouteHandle, type EpochId, type GenerationId, type MediaKind, type NativeCandidate,
@@ -127,7 +127,7 @@ export class SignedRouteVault {
     const group = this.#groups.get(representation)
     if (!group) return { native: Object.freeze([]), root: null }
     const invalid = this.#invalid.get(representation) ?? new Set<string>()
-    const native = group.routes.filter(route => !invalid.has(route.host) && !TRUSTED_CATALOG_SET.has(route.host)
+    const native = group.routes.filter(route => !invalid.has(route.host)
       && (route.activelyExplorable || unlockedHosts.has(route.host))).map(route => Object.freeze({
       type: 'native-signed' as const, host: route.host, kind: group.identity.kind, catalogIndex: catalogIndex(route.host),
       route: group.identity, handle: route.handle, activelyExplorable: route.activelyExplorable,

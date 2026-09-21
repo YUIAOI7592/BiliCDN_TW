@@ -66,8 +66,8 @@ export const rankRoutes = (input: RankRoutesInput, now: number): readonly RouteR
     const sufficientA = (a.demandRatio ?? 0) >= 1.35
     const sufficientB = (b.demandRatio ?? 0) >= 1.35
     if (sufficientA !== sufficientB) return sufficientA ? -1 : 1
-    if (stateRank(a.state) !== stateRank(b.state)) return stateRank(b.state) - stateRank(a.state)
     if ((a.demandRatio ?? -1) !== (b.demandRatio ?? -1)) return (b.demandRatio ?? -1) - (a.demandRatio ?? -1)
+    if (stateRank(a.state) !== stateRank(b.state)) return stateRank(b.state) - stateRank(a.state)
     if ((a.medianTtfbMs ?? Number.MAX_SAFE_INTEGER) !== (b.medianTtfbMs ?? Number.MAX_SAFE_INTEGER)) {
       return (a.medianTtfbMs ?? Number.MAX_SAFE_INTEGER) - (b.medianTtfbMs ?? Number.MAX_SAFE_INTEGER)
     }
@@ -85,11 +85,16 @@ export const chooseRoute = (input: RankRoutesInput, clock: Clock, id: DecisionId
     return { action: 'rewrite', id, reason: 'healthy-affinity', routeType: candidate.type, host: candidate.host, candidate, ranking }
   }
   const fixed = input.fixedHost ? ranking.find(row => row.eligible && row.candidate.host === input.fixedHost) : null
+  const original = ranking.find(row => row.eligible && row.candidate.type === 'root-original')
+  if (!fixed && input.boundary === 'startup' && original) {
+    return { action: 'pass', id, reason: 'startup-original-pending-preflight', routeType: 'root-original', host: original.candidate.host, ranking }
+  }
   const selected = fixed ?? ranking.find(row => row.eligible && row.candidate.type !== 'root-original' && (
     row.state === 'proven' && (row.demandRatio ?? 0) >= 1.35
-  )) ?? ranking.find(row => row.eligible && row.candidate.type !== 'root-original' && row.successCount > 0)
+  )) ?? ranking.find(row => row.eligible && row.candidate.type !== 'root-original' && row.successCount > 0
+    && (row.demandRatio ?? 0) >= 1.35)
+    ?? original
     ?? ranking.find(row => row.eligible && row.candidate.type === 'catalog-generated')
-    ?? ranking.find(row => row.eligible && row.candidate.type === 'root-original')
   if (!selected) {
     const first = ranking[0]
     return { action: 'block', id, reason: first?.reasons[0] ?? 'invalid-url', routeType: first?.candidate.type ?? 'root-original', host: first?.candidate.host ?? null, ranking }

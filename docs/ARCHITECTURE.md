@@ -38,7 +38,7 @@ Persistent stores use distinct `bilicdn.v2.*` keys. Signed routes and session st
 ## Application controllers
 
 - `RouteCoordinator` produces every `RouteDecision`, applies affinity and plans group-aware fallback.
-- `MeasurementController` runs at most one safe challenger and only records evidence.
+- `MeasurementController` owns one bounded, player-request-triggered startup preflight and later sequential safe rounds of up to three challengers. Neither changes a healthy route.
 - `RecoveryController` arbitrates Watchdog, transport and player-core recovery.
 - `LifecycleController` invalidates generations for SPA, enable/disable and page data changes.
 - `PlayerMonitor` samples the player on a one-second cadence and feeds typed observations.
@@ -63,10 +63,11 @@ Adapters do not own route state or impose penalties.
 1. A trusted playurl response or bounded page/player hint establishes representation groups.
 2. The vault stores exact Native URLs for the active generation/epoch.
 3. The coordinator admits current candidates, applies restrictions and ranks them.
-4. The transport adapter asks for a decision at request start and records its decision context.
-5. Completion yields a typed observation and evidence update.
-6. Verified failure may open a media-kind circuit and request group-aware fallback.
-7. The observed post-decision host, not the plan alone, confirms the route outcome.
+4. The first eligible Fetch/async XHR media request can wait up to three seconds for parallel legal-route preflight. All requests in that window share one deadline; an unsupported entrance passes without preflight.
+5. The transport adapter asks for a decision at dispatch and records its immutable request context.
+6. Completion yields a typed observation and evidence update. Verified failure may open a media-kind circuit and request group-aware fallback.
+7. A no-progress cold start can submit one legal different-host fallback without penalizing the original and arm the existing one-shot core recovery.
+8. The observed post-decision host, not the plan alone, confirms the route outcome.
 
 Healthy measurements never change affinity.
 

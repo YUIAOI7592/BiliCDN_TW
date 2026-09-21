@@ -161,7 +161,7 @@ export class ControlCenter {
 
   #readModel(): Readonly<Record<string, unknown>> {
     const now = this.deps.now(), evidence = this.deps.evidence.list().slice(0, 96).map(row => ({ host: row.host, kind: row.kind, ...evidenceMetrics(row, now) }))
-    return Object.freeze({ version: GM_info?.script?.version ?? '2.0.4', settings: this.deps.settings.get(), session: this.deps.session.get(),
+    return Object.freeze({ version: GM_info?.script?.version ?? '2.1.0', settings: this.deps.settings.get(), session: this.deps.session.get(),
       monitor: this.deps.monitor.snapshot(), recovery: this.deps.recovery.snapshot(), measurement: this.deps.measurement.snapshot(),
       routes: this.deps.routes.snapshot(), restrictions: this.deps.restrictions.list(), evidence })
   }

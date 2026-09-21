@@ -83,6 +83,25 @@ const coldInput = { ...restrictionInput, restrictions: { ...restrictionInput.res
 const cold = chooseRoute(coldInput, clock, decisionId('d2'))
 equal(cold.action, 'rewrite', 'cold start rewrites to catalog default')
 equal(cold.host, candidate.host, 'cold start chooses first eligible catalog')
+const coldRoot = { type: 'root-original' as const, host: 'upos-hz-mirrorakam.akamaized.net', kind: 'video' as const,
+  catalogIndex: Number.MAX_SAFE_INTEGER, route: null, handle: null }
+const coldWithRoot = chooseRoute({ ...coldInput, candidates: [candidate, coldRoot] }, clock, decisionId('d2-root'))
+equal(coldWithRoot.action, 'pass', 'cold start with a legal signed original does not blindly use first Catalog')
+const secondCatalog = { type: 'catalog-generated' as const, host: TRUSTED_CATALOG[1], kind: 'video' as const, catalogIndex: 1 }
+const measured = new Map<string, ReturnType<typeof addEvidenceSample>>([
+  [candidate.host, addEvidenceSample(emptyEvidence(candidate.host, 'video'), { requestId: 'catalog-first', at: now,
+    source: 'challenge', outcome: 'success', throughputMbps: 20, ttfbMs: 20, failureKind: null }, now)],
+  [secondCatalog.host, addEvidenceSample(emptyEvidence(secondCatalog.host, 'video'), { requestId: 'catalog-second', at: now,
+    source: 'challenge', outcome: 'success', throughputMbps: 40, ttfbMs: 40, failureKind: null }, now)],
+])
+const fairDecision = chooseRoute({ ...coldInput, candidates: [candidate, secondCatalog, coldRoot],
+  evidenceFor: host => measured.get(host) ?? null, boundary: 'new-epoch' }, clock, decisionId('fair-selection'))
+equal(fairDecision.host, secondCatalog.host, 'new epoch ranks measured safety margin before Catalog static order')
+const insufficientDecision = chooseRoute({ ...coldInput, candidates: [candidate, coldRoot],
+  evidenceFor: host => host === candidate.host ? addEvidenceSample(emptyEvidence(host, 'video'), { requestId: 'slow', at: now,
+    source: 'challenge', outcome: 'success', throughputMbps: 5, ttfbMs: 10, failureKind: null }, now) : null,
+  boundary: 'new-epoch' }, clock, decisionId('insufficient-selection'))
+equal(insufficientDecision.action, 'pass', 'insufficient measured throughput preserves the legal original')
 
 const parsed = parseMediaUrl('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/1.m4s?token=x')
 equal(parsed?.kind, 'normal', 'media URL recognized')
@@ -145,10 +164,14 @@ check(liveRep, 'controller fixture representation exists')
 const coordinator = new RouteCoordinator(clock, session, settings, restrictions, evidenceStore, liveVault)
 if (liveRep) {
   const plan = coordinator.plan(liveRep, { kind: 'video', requiredMbps: 7.5, highDemand: false }, 'startup')
-  equal(plan.host, TRUSTED_CATALOG[0], 'coordinator cold plan uses first available catalog')
-  const applied = coordinator.apply(liveVault.rootUrl(liveRep) ?? '')
+  equal(plan.action, 'pass', 'cold startup preserves the legal original until preflight completes')
+  const startupRoot = liveVault.rootUrl(liveRep) ?? ''
+  const catalogChoice = coordinator.startupOptions(startupRoot)?.candidates.find(candidate => candidate.type === 'catalog-generated')
+  check(catalogChoice, 'startup offers a Catalog challenger absent from playinfo')
+  if (catalogChoice) coordinator.commitStartupChoice(startupRoot, catalogChoice, 'test-preflight')
+  const applied = coordinator.apply(startupRoot)
   equal(applied.decision.action, 'rewrite', 'planned catalog decision is applied')
-  check(applied.url?.includes(TRUSTED_CATALOG[0]), 'applied URL uses planned host')
+  check(applied.url?.includes(catalogChoice?.host ?? ''), 'applied URL uses the preflight winner')
   await coordinator.observe({ generation: state.generation, epoch: state.epoch, decisionId: applied.decision.id,
     representation: liveRep, kind: 'video', routeType: 'catalog-generated', originalHost: applied.sourceHost ?? '',
     targetHost: applied.decision.host ?? '', finalHost: applied.decision.host, streamKey: applied.streamKey,
@@ -156,6 +179,14 @@ if (liveRep) {
   const restored = coordinator.apply(applied.url ?? '')
   equal(restored.decision.reason, 'host-locked', '403 host-lock is remembered for the exact stream')
   equal(restored.url, liveVault.rootUrl(liveRep), 'host-lock restores exact root signed URL')
+  await restrictions.add({ host: 'upos-sz-mirrorali.bilivideo.com', type: 'black', kind: 'all',
+    reason: 'cold-start-test', expireAt: now + 60_000 })
+  check(!coordinator.startupOptions(startupRoot)?.candidates.some(candidate => candidate.host === 'upos-sz-mirrorali.bilivideo.com'),
+    'startup preflight never probes a blacklisted original host')
+  const restrictedFallback = coordinator.apply(startupRoot)
+  check(restrictedFallback.url !== startupRoot && restrictedFallback.decision.host !== 'upos-sz-mirrorali.bilivideo.com',
+    'host-locked blacklisted original uses a different legal fallback')
+  await restrictions.remove('upos-sz-mirrorali.bilivideo.com', 'black')
 }
 for (let index = 0; index < 40; index++) {
   const group = liveVault.register({ generation: state.generation, epoch: state.epoch, kind: 'video', key: `diagnostic:${index}`,
@@ -182,9 +213,11 @@ const playurlStub = { transform(): boolean { transformed++; return true } }
 let disabled = false, blockHttpDns = true
 const settingsStub = { get: () => ({ disabled, blockHttpDns }) }
 let nativeFetchCalls = 0, cancelReason: unknown = null
+const nativeFetchUrls: string[] = []
 const nativeFetch = async (input: RequestInfo | URL): Promise<Response> => {
   nativeFetchCalls++
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+  nativeFetchUrls.push(url)
   if (url.includes('/player/wbi/playurl')) return new Response(JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } }), { status: 200 })
   let emitted = false
   return new Response(new ReadableStream<Uint8Array>({
@@ -195,6 +228,7 @@ const nativeFetch = async (input: RequestInfo | URL): Promise<Response> => {
 
 class FakeXhr extends EventTarget {
   method = ''; url = ''; readyState = 0; status = 200; responseURL = ''; responseType: XMLHttpRequestResponseType = ''
+  timeout = 0; withCredentials = false
   payload: unknown = { ok: true }; nativeSends = 0
   get response(): unknown { return this.payload }
   get responseText(): string { return JSON.stringify(this.payload) }
@@ -208,7 +242,8 @@ const originalWorker = function WorkerIdentity() { return undefined }
 const fakeWindow = { fetch: nativeFetch, XMLHttpRequest: FakeXhr, Worker: originalWorker, navigator: globalThis.navigator }
 Object.defineProperty(globalThis, 'unsafeWindow', { configurable: true, value: fakeWindow })
 Object.defineProperty(globalThis, 'location', { configurable: true, value: new URL('https://www.bilibili.com/video/BVtest/') })
-const transport = new TransportAdapter(runtimeSession, settingsStub as never, routeStub as never, playurlStub as never, () => now)
+const measurementStub = { willGateStartup: (): boolean => false, prepareStartup: async (): Promise<void> => {}, noteUnpreflighted(): void {} }
+const transport = new TransportAdapter(runtimeSession, settingsStub as never, routeStub as never, playurlStub as never, measurementStub as never, () => now)
 transport.install()
 const mediaResponse = await fakeWindow.fetch(passDecision.url ?? '')
 const mediaReader = mediaResponse.body?.getReader()
@@ -226,6 +261,40 @@ disabled = true
 await fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
 equal(nativeFetchCalls, beforeHttpDns + 1, 'disabled mode passes site fetch through')
 disabled = false
+const gatedUrl = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/gated.m4s'
+const gateControl: { release: () => void } = { release: () => undefined }
+let gateReady = false
+measurementStub.willGateStartup = () => true
+measurementStub.prepareStartup = async () => { await new Promise<void>(resolve => { gateControl.release = resolve }); gateReady = true }
+routeStub.apply = (url: string): AppliedRouteDecision => gateReady ? { ...passDecision,
+  decision: { action: 'rewrite', id: decisionId('gated-rewrite'), reason: 'preflight', routeType: 'catalog-generated',
+    host: TRUSTED_CATALOG[0], candidate: { type: 'catalog-generated', host: TRUSTED_CATALOG[0], kind: 'video', catalogIndex: 0 }, ranking: [] },
+  url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]) } : { ...passDecision, url }
+const beforeGate = nativeFetchCalls
+const gatedFetch = fakeWindow.fetch(gatedUrl)
+equal(nativeFetchCalls, beforeGate, 'Fetch player request waits before native dispatch')
+gateControl.release()
+await gatedFetch
+equal(new URL(nativeFetchUrls.at(-1) ?? '').host, TRUSTED_CATALOG[0], 'Fetch dispatch uses preflight winner')
+gateReady = false
+const gatedXhr = new FakeXhr()
+gatedXhr.open('GET', gatedUrl)
+gatedXhr.send()
+equal(gatedXhr.nativeSends, 0, 'async XHR send waits before native dispatch')
+gateControl.release()
+await new Promise(resolve => setTimeout(resolve, 0))
+equal(gatedXhr.nativeSends, 1, 'async XHR sends exactly once after preflight')
+equal(new URL(gatedXhr.url).host, TRUSTED_CATALOG[0], 'XHR dispatch uses preflight winner')
+gateReady = false
+const abortedXhr = new FakeXhr()
+abortedXhr.open('GET', gatedUrl); abortedXhr.send(); abortedXhr.abort()
+gateControl.release()
+await new Promise(resolve => setTimeout(resolve, 0))
+equal(abortedXhr.nativeSends, 0, 'XHR abort during preflight never dispatches the website request')
+const finiteTimeoutXhr = new FakeXhr(); finiteTimeoutXhr.timeout = 5000
+finiteTimeoutXhr.open('GET', gatedUrl); finiteTimeoutXhr.send()
+equal(finiteTimeoutXhr.nativeSends, 1, 'explicit XHR timeout bypasses delay to preserve native timeout semantics')
+measurementStub.willGateStartup = () => false
 const xhr = new FakeXhr()
 xhr.responseType = 'json'
 xhr.payload = { code: 0, data: { dash: { video: [], audio: [] } } }
@@ -291,6 +360,71 @@ equal(seeks[0], 349.434, 'core recovery restores saved position')
 equal(rates[0], 2, 'core recovery restores 2x')
 equal(plays, 1, 'core recovery restores play intent once')
 
+const startupSession = new SessionStore(), startupGeneration = startupSession.beginGeneration(false)
+const startupVault = new SignedRouteVault(); startupVault.reset(startupGeneration.generation, startupGeneration.epoch)
+const startupRoot = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/startup/video.m4s?k=1'
+const startupRep = startupVault.register({ generation: startupGeneration.generation, epoch: startupGeneration.epoch,
+  kind: 'video', key: 'startup:80', height: 1080, codec: 'av1', bandwidth: 3_000_000, urls: [startupRoot], source: 'trusted-api' })
+check(startupRep, 'startup stall fixture has a representation')
+let stallNow = now, startupReloads = 0
+const stallRoutes = new RouteCoordinator({ now: () => stallNow }, startupSession, new SettingsStore(new FakeStorage(), () => stallNow),
+  new RestrictionStore(new FakeStorage(), () => stallNow), new EvidenceStore(new FakeStorage(), () => stallNow), startupVault)
+if (startupRep) {
+  const exactCatalogBackup = `https://${TRUSTED_CATALOG[0]}/upgcxcode/startup/video.m4s?k=backup-exact`
+  startupVault.register({ generation: startupGeneration.generation, epoch: startupGeneration.epoch, kind: 'video',
+    key: 'startup:80', height: 1080, codec: 'av1', bandwidth: 3_000_000, urls: [exactCatalogBackup], source: 'trusted-api' })
+  const signedBackup = stallRoutes.startupOptions(startupRoot)?.candidates.find(candidate => candidate.host === TRUSTED_CATALOG[0])
+  equal(signedBackup?.type, 'native-signed', 'Catalog-host signed backup competes as its own exact Native URL')
+  equal(signedBackup?.url, exactCatalogBackup, 'signed backup retains its original query instead of synthesizing a URL')
+  const incompatibleCatalog = stallRoutes.startupOptions(startupRoot)?.candidates.find(candidate => candidate.type === 'catalog-generated')
+  if (incompatibleCatalog) {
+    stallRoutes.noteStartupProbeResult(incompatibleCatalog, 403)
+    check(!stallRoutes.startupOptions(startupRoot)?.candidates.some(candidate => candidate.host === incompatibleCatalog.host),
+      'Catalog 403 excludes only this stream-host pairing from startup fallback')
+  }
+  const unmatchedStartup = stallRoutes.apply('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/startup/unmatched.m4s?k=1')
+  equal(unmatchedStartup.decision.action, 'pass', 'unattributed first media request never blindly rewrites to first Catalog')
+  const initial = stallRoutes.apply(startupRoot)
+  const fallback = stallRoutes.recoverStartup(startupRep, { kind: 'video', requiredMbps: 8, highDemand: false },
+    initial.decision.host ?? '', [])
+  check(fallback && fallback.host !== initial.decision.host, 'unconfirmed startup stall commits a different legal host')
+  equal(stallRoutes.apply(startupRoot).decision.host, fallback?.host, 'next startup request uses committed fallback')
+  const firstFairProbe = stallRoutes.challenge(startupRep, { kind: 'video', requiredMbps: 8, highDemand: false }, false)
+  const secondFairProbe = stallRoutes.challenge(startupRep, { kind: 'video', requiredMbps: 8, highDemand: false }, false)
+  check(firstFairProbe && secondFairProbe && firstFairProbe.decision.host !== secondFairProbe.decision.host,
+    'failed or unmeasured challenger is not selected again in the same round')
+  if (firstFairProbe) {
+    await stallRoutes.recordChallenge(firstFairProbe, 0, 100, 50, 'failure', null)
+    equal(stallRoutes.snapshot().affinity, null, 'active probe failure does not change playback affinity')
+  }
+}
+const deadStartup: VideoSnapshot = { ...playerSnapshot, currentTime: 0, readyState: 0, width: 0, height: 0,
+  frames: 0, bufferAheadSec: 0, playableBufferSec: 0, coreInitialized: false, paused: false }
+const startupRecovery = new RecoveryController({ ...recoveryPlayer, snapshot: () => deadStartup, reload: () => { startupReloads++ },
+  currentTime: () => 0, playbackRate: () => 1 } as PlayerPort, () => stallNow)
+startupRecovery.armStartupFailure(deadStartup)
+stallNow += 4000; startupRecovery.tick(deadStartup)
+equal(startupReloads, 1, 'cold-start dead core reloads once despite no prior healthy frames')
+stallNow += 4000; startupRecovery.tick(deadStartup)
+equal(startupReloads, 1, 'startup recovery does not loop reload')
+let softFallbacks = 0, startupArms = 0
+const stallMonitor = new PlayerMonitor({ ...recoveryPlayer, snapshot: () => deadStartup, syncManifest: () => true } as PlayerPort,
+  startupSession, new SettingsStore(new FakeStorage(), () => stallNow), startupVault,
+  { firstMediaAt: () => now, latestRequested: () => ({ targetHost: 'upos-sz-mirrorali.bilivideo.com', representation: startupRep,
+    generation: startupGeneration.generation, epoch: startupGeneration.epoch }),
+    recoverStartup: () => { softFallbacks++; return { host: TRUSTED_CATALOG[0] } }, pendingMediaCount: () => 0,
+    observePlaybackRate: () => undefined } as never,
+  { tick: () => undefined } as never,
+  { tick: () => undefined, isRecovering: () => false, armStartupFailure: () => { startupArms++ } } as never,
+  () => true, () => stallNow)
+stallNow = now + 14_000; stallMonitor.tick()
+equal(softFallbacks, 0, 'unconfirmed startup stall waits fifteen seconds')
+stallNow = now + 15_000; stallMonitor.tick()
+equal(softFallbacks, 1, 'unconfirmed startup stall submits one different route')
+equal(startupArms, 1, 'unconfirmed startup stall arms bounded player recovery')
+stallNow = now + 16_000; stallMonitor.tick()
+equal(softFallbacks, 1, 'startup stall fallback is not repeated each tick')
+
 let challengeCalls = 0, challengeFetches = 0, challengeRecords = 0
 const challengeApplied: AppliedRouteDecision = { decision: { action: 'rewrite', id: decisionId('challenge'), reason: 'test',
   routeType: 'catalog-generated', host: TRUSTED_CATALOG[1], candidate: { type: 'catalog-generated', host: TRUSTED_CATALOG[1], kind: 'video', catalogIndex: 1 }, ranking: [] },
@@ -305,9 +439,71 @@ measurement.tick(baseMeasurement)
 equal(challengeCalls, 0, 'low buffer prevents challenger selection and network')
 measurement.tick({ ...baseMeasurement, playableBufferSec: 30 })
 await new Promise(resolve => setTimeout(resolve, 0))
-equal(challengeCalls, 1, 'safe playback selects one challenger')
-equal(challengeFetches, 1, 'safe challenger performs one bounded request')
-equal(challengeRecords, 1, 'challenge updates evidence once')
+equal(challengeCalls, 3, 'safe playback considers up to three fair challengers')
+equal(challengeFetches, 3, 'each safe challenger performs one bounded request')
+equal(challengeRecords, 3, 'each valid challenger updates evidence once')
+
+const preflightOptions = stallRoutes.startupOptions(startupRoot)
+check(preflightOptions && preflightOptions.candidates.length >= 2, 'preflight offers original and legal Catalog candidate')
+if (preflightOptions) {
+  let preflightFetches = 0, committedHost: string | null = null, startupSamples = 0
+  const preflightRoutes = { startupOptions: () => preflightOptions,
+    commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
+      committedHost = candidate?.host ?? null
+      return candidate ? { host: candidate.host } : null
+    }, recordStartupSuccess: async () => { startupSamples++ }, noteStartupProbeResult: () => undefined }
+  const preflightFetch = async (input: RequestInfo | URL): Promise<Response> => {
+    preflightFetches++
+    const host = new URL(String(input)).host
+    const length = host === preflightOptions.candidates.find(candidate => candidate.type === 'catalog-generated')?.host ? 256 * 1024 : 70 * 1024
+    return new Response(new Uint8Array(length), { status: 206 })
+  }
+  const preflight = new MeasurementController(preflightRoutes as never, new FakeStorage(), preflightFetch as typeof fetch, () => now)
+  const abortedStartup = new AbortController(); abortedStartup.abort()
+  let abortRejected = false
+  try { await preflight.prepareStartup(startupRoot, abortedStartup.signal) } catch { abortRejected = true }
+  equal(abortRejected, true, 'already-aborted player request rejects startup gate')
+  equal(preflightFetches, 0, 'already-aborted player request starts no probe')
+  await preflight.prepareStartup(startupRoot)
+  equal(committedHost, preflightOptions.candidates.find(candidate => candidate.type === 'catalog-generated')?.host,
+    'faster qualified Catalog wins bounded preflight')
+  equal(preflightFetches, preflightOptions.candidates.length, 'cold window probes no more than three distinct routes')
+  check(startupSamples > 0, 'valid full startup sample contributes to later evidence')
+  await preflight.prepareStartup(startupRoot)
+  equal(preflightFetches, preflightOptions.candidates.length, 'startup preflight runs only once per tab')
+  const timeoutRoutes = { ...preflightRoutes, commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
+    committedHost = candidate?.host ?? null
+    return candidate ? { host: candidate.host } : null
+  } }
+  let hangingProbes = 0
+  const hangingFetch = async (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    hangingProbes++
+    return await new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true })
+    })
+  }
+  const timedPreflight = new MeasurementController(timeoutRoutes as never, new FakeStorage(), hangingFetch as typeof fetch, () => now)
+  const gateStarted = Date.now()
+  await timedPreflight.prepareStartup(startupRoot)
+  check(Date.now() - gateStarted < 3500, 'cold preflight releases a hanging player request within the three-second window')
+  equal(hangingProbes, preflightOptions.candidates.length, 'startup deadline bounds all parallel probes in one window')
+  equal(committedHost, preflightOptions.candidates.find(candidate => candidate.original)?.host,
+    'inconclusive preflight releases the legal original')
+  const cachedHost = preflightOptions.candidates.find(candidate => candidate.type === 'catalog-generated')?.host
+  const cachedOptions = { ...preflightOptions, candidates: preflightOptions.candidates.map(candidate =>
+    candidate.host === cachedHost ? { ...candidate, cachedSafeMbps: 1000 } : candidate) }
+  const ranges = new Map<string, string>()
+  const compatibilityFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const host = new URL(String(input)).host
+    ranges.set(host, String((init?.headers as Record<string, string> | undefined)?.Range ?? ''))
+    return new Response(new Uint8Array(host === cachedHost ? 16 * 1024 : 70 * 1024), { status: 206 })
+  }
+  const cachedPreflight = new MeasurementController({ ...preflightRoutes, startupOptions: () => cachedOptions } as never,
+    new FakeStorage(), compatibilityFetch as typeof fetch, () => now)
+  await cachedPreflight.prepareStartup(startupRoot)
+  equal(ranges.get(cachedHost ?? ''), 'bytes=0-16383', 'cross-tab Catalog evidence requires only a 16 KiB current-URL compatibility range')
+  equal(committedHost, cachedHost, 'compatible recent Catalog sample can win without redownloading a full throughput sample')
+}
 
 // Observing playback must never override the user's speed selection.
 let selectedRate = 1, rateWrites = 0, observedRate = 0
@@ -316,7 +512,7 @@ const ratePlayer: PlayerPort = { ...recoveryPlayer,
   playbackRate: () => selectedRate, setRate: () => { rateWrites++ },
 }
 const rateMonitor = new PlayerMonitor(ratePlayer, session, settings, vault,
-  { observePlaybackRate: (rate: number) => { observedRate = rate } } as never,
+  { observePlaybackRate: (rate: number) => { observedRate = rate }, firstMediaAt: () => 0 } as never,
   { tick: () => undefined } as never, { tick: () => undefined, isRecovering: () => false } as never,
   () => true, () => now)
 for (const rate of [1, 1.5, 0.75, 2, 1]) {
@@ -470,7 +666,7 @@ equal(gapRecorder.snapshot().incident, null, 'initial dead-looking startup witho
 
 await outputSettings.update({ catalogOverrides: {}, fixedHost: null })
 outputRoutes.invalidateForUserSetting()
-const realAdapter = new TransportAdapter(outputSession, outputSettings, outputRoutes, outputAdapter, () => now)
+const realAdapter = new TransportAdapter(outputSession, outputSettings, outputRoutes, outputAdapter, measurementStub as never, () => now)
 realAdapter.install()
 const actualXhr = new FakeXhr()
 actualXhr.open('GET', forbiddenUrl)
@@ -508,9 +704,12 @@ realAdapter.dispose()
 if (liveRep) {
   const root = liveVault.rootUrl(liveRep)!, lockedHost = new URL(root).host
   await restrictions.add({ host: lockedHost, type: 'dead', kind: 'all', reason: 'host-lock-test', expireAt: now + 60_000 })
-  equal(coordinator.apply(root).url, null, 'host-lock never restores a dead root')
+  const deadRootFallback = coordinator.apply(root)
+  check(deadRootFallback.url !== root && deadRootFallback.decision.host !== lockedHost,
+    'host-lock never restores a dead root and may choose a legal alternative')
   const lockedPlan = coordinator.plan(liveRep, { kind: 'video', requiredMbps: 3, highDemand: false }, 'startup')
-  equal(coordinator.playerOutput(liveRep, root, lockedPlan, [root]).primary, '', 'host-locked dead root cannot leak through playurl output')
+  check(coordinator.playerOutput(liveRep, root, lockedPlan, [root]).primary !== root,
+    'host-locked dead root cannot leak through playurl output')
 }
 
 let intentClock = now, intentReloads = 0, activation = false
@@ -549,7 +748,7 @@ outputAdapter.transform({ data: { dash: { video: [], audio: [audioItem] } } })
 const beforeAudioAffinity = outputSession.get().affinity
 const nativeAudioApplied = outputRoutes.apply(nativeAudioUrl)
 equal(nativeAudioApplied.url, nativeAudioUrl, 'eligible Native backup uses its own full signed URL')
-equal(nativeAudioApplied.decision.routeType, 'native-signed', 'Native backup remains Native, not a synthesized Catalog URL')
+equal(nativeAudioApplied.decision.routeType, 'root-original', 'cold-start signed original remains unchanged before preflight')
 equal(outputSession.get().affinity, beforeAudioAffinity, 'audio backup request does not alter video affinity')
 const audioRep = nativeAudioApplied.context!.representation
 outputVault.invalidate(audioRep, new URL(nativeAudioUrl).host)

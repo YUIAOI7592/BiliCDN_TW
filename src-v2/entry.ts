@@ -40,7 +40,7 @@ export const start = (): void => {
   let lifecycle: LifecycleController | null = null
   const pagePlayinfo = new PagePlayinfoAdapter((payload, serial) => lifecycle?.acceptPageAssignment(payload, serial))
   lifecycle = new LifecycleController(session, settings, vault, routes, playurl, pagePlayinfo, monitor, now)
-  const transport = new TransportAdapter(session, settings, routes, playurl, now)
+  const transport = new TransportAdapter(session, settings, routes, playurl, measurement, now)
   const webRtc = new WebRtcAdapter(settings)
   const diagnostics = new DiagnosticRecorder(now, () => settings.get().verbose)
   const center = new ControlCenter({ settings, restrictions, evidence, session, routes, measurement, monitor, recovery,
