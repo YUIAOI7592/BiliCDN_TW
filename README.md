@@ -1,5 +1,10 @@
 # BiliCDN_TW
 
+> [!IMPORTANT]
+> **原作者與原始腳本：** [jiyunshi－Bilibili CDN 台灣優化](https://greasyfork.org/zh-TW/scripts/579776-bilibili-cdn-%E5%8F%B0%E7%81%A3%E5%84%AA%E5%8C%96)。本儲存庫源自原作者 MIT 授權腳本的個人修改專案；v2 是以 TypeScript 重新設計與重構的版本，並非原作者的官方版本。
+>
+> **AI 協作聲明：** 本修改版的維護者本人不具備自行撰寫程式的能力；程式分析、修改、測試與文件主要由 AI 協助完成。使用者應自行判斷是否適合安裝。
+
 BiliCDN_TW 是給台灣網路環境使用的 Bilibili Tampermonkey 腳本。它會在不取消播放器既有請求的前提下，從可信 Catalog CDN 與目前影片提供的 Native signed route 中選擇可用路線，並在已驗證的傳輸故障或播放器核心失效時協助恢復播放。
 
 本專案只支援最新版 Google Chrome 與 Tampermonkey。
