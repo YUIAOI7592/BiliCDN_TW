@@ -1,63 +1,56 @@
-import * as esbuild from 'esbuild';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
-import { resolve } from 'node:path';
+import * as esbuild from 'esbuild'
+import { createHash } from 'node:crypto'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 export const buildOptions = Object.freeze({
-  bundle: true, platform: 'browser', format: 'iife', splitting: false,
-  target: 'esnext', minify: false, treeShaking: false, keepNames: true,
-  charset: 'utf8', legalComments: 'inline', write: false,
-  // keepNames must not introduce a new static-block browser requirement.
-  supported: { 'class-static-blocks': false },
-});
-const hash = value => createHash('sha256').update(value).digest('hex');
+  bundle: true,
+  platform: 'browser',
+  format: 'iife',
+  splitting: false,
+  target: ['chrome120'],
+  minify: false,
+  treeShaking: true,
+  keepNames: true,
+  charset: 'utf8',
+  legalComments: 'inline',
+  sourcemap: 'external',
+  write: false,
+})
 
-export async function build({ testing = false, sourceTransform, write = true } = {}) {
-  const release = JSON.parse(readFileSync('release.json', 'utf8'));
-  if (esbuild.version !== release.esbuildVersion) throw Error('Unexpected esbuild version');
-  const testExports = testing ? JSON.parse(readFileSync('tests/harness/module-exports.json', 'utf8')) : null;
-  const plugins = [{ name: 'test-bridge-loader', setup(build) {
-    build.onLoad({ filter: /\.mjs$/ }, args => {
-      let contents = readFileSync(args.path, 'utf8');
-      if (!testing) return { contents: contents.replace(/\/\* TEST_(?:EXPORTS:\w+|BRIDGE) \*\//g, ''), loader: 'js' };
-      if (sourceTransform) contents = sourceTransform(contents);
-      contents = contents.replace(/\/\* TEST_EXPORTS:(\w+) \*\//g, (marker, group, offset) => {
-        const existing = contents.slice(offset + marker.length);
-        return testExports[group].filter(({name}) => !existing.includes(`get ${name}()`)).map(({name,mutable}) =>
-          `get ${name}(){return ${name}},${mutable?`set ${name}(v){${name}=v},`:''}`).join('\n');
-      });
-      contents = contents.replace('/* TEST_BRIDGE */',
-        `for (const instance of [${Object.keys(testExports).join(',')}]) { for(const key of Object.keys(instance)) Object.defineProperty(globalThis, key, {...Object.getOwnPropertyDescriptor(instance,key), configurable:true}); }`);
-      return { contents, loader: 'js' };
-    });
-  }}];
-  const result = await esbuild.build({ ...buildOptions, metafile: true,
-    stdin: { contents: "import { start } from './src/main.mjs'; start(__BiliCDNSettings);", resolveDir: process.cwd(), sourcefile: 'entry.mjs' }, plugins,
-    sourcemap: 'external', outfile: 'dist/BiliCDN_TW.user.js',
-  });
-  let settings = readFileSync('src/settings.txt', 'utf8');
-  if (sourceTransform) settings = sourceTransform(settings);
-  const metadata = readFileSync('src/metadata.txt','utf8').replace(/(@version\s+)\S+/, `$1${release.version}`);
-  const code = result.outputFiles.find(f=>f.path.endsWith('.js')).text;
-  const output = `${metadata}\n(function () {\n${settings}\nconst __BiliCDNSettings = { CustomCDN, ExcludeHostKeywords, BlockHttpDNS, PreferredVideoCodec, BlockWebRTC };\n${code}\n})();\n`;
-  const inputs = [...new Set(Object.keys(result.metafile.inputs).filter(p=>p.startsWith('src/')))].sort();
-  for (const p of ['src/metadata.txt','src/settings.txt','scripts/build.mjs','package.json','package-lock.json','release.json']) if(!inputs.includes(p))inputs.push(p);
-  inputs.sort();
-  const manifest = { version: release.version, tools: { node: process.versions.node, npm: release.npmVersion, esbuild: esbuild.version }, options: buildOptions,
-    sources: Object.fromEntries(inputs.map(p=>[p,hash(readFileSync(p))])), userscriptSha256: hash(output) };
-  if (write) {
-    mkdirSync('dist', {recursive:true});
-    writeFileSync(`dist/BiliCDN_TW${testing?'.test':''}.user.js`, output);
-    if(!testing) {
-      writeFileSync('dist/build-manifest.json', JSON.stringify(manifest,null,2)+'\n');
-      writeFileSync('dist/BiliCDN_TW.user.js.map', result.outputFiles.find(f=>f.path.endsWith('.map')).contents);
-    }
+const hash = value => createHash('sha256').update(value).digest('hex')
+
+export async function build({ write = true } = {}) {
+  const release = JSON.parse(readFileSync('release.json', 'utf8'))
+  if (esbuild.version !== release.esbuildVersion) throw Error(`Expected esbuild ${release.esbuildVersion}; found ${esbuild.version}`)
+  const result = await esbuild.build({ ...buildOptions,
+    stdin: { contents: "import '././src-v2/entry.ts'", resolveDir: process.cwd(), sourcefile: 'v2-entry.ts' },
+    outfile: 'dist/BiliCDN_TW.user.js', metafile: true })
+  const metadata = readFileSync('src-v2/metadata.txt', 'utf8').replace(/(@version\s+)\S+/, `$1${release.version}`)
+  const codeFile = result.outputFiles.find(file => file.path.endsWith('.js'))
+  const mapFile = result.outputFiles.find(file => file.path.endsWith('.map'))
+  if (!codeFile || !mapFile) throw Error('esbuild did not return JavaScript and source map outputs')
+  const output = `${metadata.trimEnd()}\n\n${codeFile.text}`
+  const inputs = Object.keys(result.metafile.inputs).filter(path => path.startsWith('src-v2/')).sort()
+  for (const path of ['scripts/build.mjs', 'package.json', 'package-lock.json', 'release.json', 'tsconfig.json']) if (!inputs.includes(path)) inputs.push(path)
+  inputs.sort()
+  const manifest = {
+    version: release.version,
+    tools: { node: process.versions.node, npm: release.npmVersion, typescript: release.typescriptVersion, esbuild: esbuild.version },
+    options: buildOptions,
+    sources: Object.fromEntries(inputs.map(path => [path, hash(readFileSync(path))])),
+    userscriptSha256: hash(output),
   }
-  return { output, manifest };
+  if (write) {
+    mkdirSync('dist', { recursive: true })
+    writeFileSync('dist/BiliCDN_TW.user.js', output)
+    writeFileSync('dist/BiliCDN_TW.user.js.map', mapFile.contents)
+    writeFileSync('dist/build-manifest.json', `${JSON.stringify(manifest, null, 2)}\n`)
+  }
+  return { output, manifest }
 }
 
-if(process.argv[1]&&resolve(process.argv[1])===resolve('scripts/build.mjs')) {
-  await build();
-  await build({testing:true});
-  console.log('Built one private userscript and a separate, non-release test entry.');
+if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/build.mjs')) {
+  const result = await build()
+  console.log(`Built BiliCDN_TW v${result.manifest.version}: ${result.manifest.userscriptSha256}`)
 }

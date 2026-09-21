@@ -1,40 +1,36 @@
-# BiliCDN_TW 安全政策
+# Trust boundaries and data handling
 
-## 信任邊界
+This file documents runtime trust boundaries. It is not a request to run a security scanner.
 
-這是具有 Tampermonkey GM 權限、在 Bilibili 頁面執行的 userscript。下列來源一律視為不可信：
+## Untrusted inputs
 
-- Bilibili 頁面及第三方 JavaScript
-- `unsafeWindow` 上的物件與函式
-- `console` 輸出與頁面合成事件
-- playurl／CDN 回應中的 URL、host、數值與巢狀欄位
-- BroadcastChannel 與 PerformanceObserver 資料
+Page JavaScript, `__playinfo__`, player manifests, playurl payloads, media URLs, response headers, console output and synthetic DOM events are untrusted.
 
-## 受保護資產
+- URLs are parsed and admitted by `domain/url-policy.ts` before routing.
+- Native URLs remain in `SignedRouteVault` and are exposed internally only through opaque handles.
+- Unknown external hosts require natural attributable transport success before they can receive evidence; they are never actively probed first.
+- Control-center actions require trusted user events and run inside a closed Shadow DOM.
 
-- GM 持久設定與健康資料
-- CDN catalog 與選路完整性
-- 使用者頻寬與播放可用性
-- 簽名媒體 URL 的 path／query
-- 診斷資料隱私
+## Persistent data
 
-## 審查重點
+Only the four `bilicdn.v2.*` namespaces are used. Schemas, record counts, numeric values and timestamps are bounded. Stores merge under Chrome Web Locks when available and subscribe through Tampermonkey value-change listeners.
 
-1. 不可信來源到 GM 寫入與控制函式的資料流。
-2. 不可信 host 到 URL hostname、Fetch、XHR 與 preconnect 的資料流。
-3. probe、bakeoff、timer 與其他可造成流量放大的路徑。
-4. 無界容器、統計數值及跨分頁資料。
-5. Fetch／XHR 取消、錯誤與 response body 的生命週期。
-6. playurl 到 Native 主動 probe、GM Ledger 與播放器 exact signed URL 的三條資料流。
+Signed URLs, paths, queries, tokens, player objects, representation state and incident timelines are never persisted.
 
-## Native Route 邊界
+## Network authority
 
-v1.8.0 將非 catalog 的原生 signed URL 視為不可信媒體路線，而不是可信 CDN。完整 URL 只能存在於目前 playinfo epoch，跨影片僅保存經驗證的 hostname 健康評級。Native 評級不得授予 catalog 成員資格、合成換 host、preconnect 或 forced redirect 權限；第三方網域需先有可歸因的真實播放器傳輸成功，才可持久評級及日後主動探索。
+- Adapters normalize outside observations; only application controllers may initiate routing, measurement or recovery.
+- `MeasurementController` is the only component that starts active probes.
+- `RouteCoordinator` is the only component that changes affinity or commits fallback.
+- `RecoveryController` is the only component that reloads the player core.
+- Diagnostics consume typed events and cannot impose penalties or control playback.
 
-v1.8.1 將評級與換線權限分離。健康播放期間的 probe／bakeoff 只能更新評級；Route Affinity 只可在可信 playurl 新 epoch、verified Transport failure、Watchdog recovery 或可信使用者固定／自動設定邊界改變。頁面 `__playinfo__` 相容 hook 不得建立、清除或提交 Native state。
+## Browser behavior
 
-## 不得誤述
+The script does not replace or inspect `Worker`, does not create Worker blobs or message channels, and does not load remote code. WebRTC and visibility overrides are reversible and restore only values still owned by the script.
 
-v1.7.0 不攔截網站 Worker；任何重新引入 Worker 包裝、私有通道或政策同步的變更都必須視為新增攻擊面重新審查。
+## Reporting
 
-沒有真實 Chrome、Tampermonkey 與 Bilibili 實機證據時，不得宣稱特定 CDN、CORS／Range、4K／AV1／HEVC、背景播放、seek 或 SPA 已通過正式環境驗證。
+Diagnostic output is bounded and redacted. It may contain normalized Catalog or known Native hostnames; unknown third-party hosts receive a per-tab alias. It must not contain media URLs, paths, queries, tokens, video IDs, cookies, IP addresses or player/core objects.
+
+Please report runtime bugs through the repository issue tracker. Do not include unredacted browser network exports.

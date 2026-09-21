@@ -1,26 +1,22 @@
-import { readdirSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import * as esbuild from 'esbuild'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { join, resolve, sep } from 'node:path'
+import { tmpdir } from 'node:os'
+import { command } from './lib.mjs'
 
-export function discoverTests(directory = 'tests') {
-  return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
-    const path = `${directory}/${entry.name}`;
-    return entry.isDirectory() ? discoverTests(path) : /\.test\.(?:[cm]?js)$/.test(path) ? [path] : [];
-  }).sort();
+export async function runTests() {
+  const scratch = mkdtempSync(join(tmpdir(), 'bilicdn-v2-tests-'))
+  try {
+    const outfile = join(scratch, 'tests.mjs')
+    await esbuild.build({ stdin: { contents: "import '././tests-v2/run.ts'", resolveDir: process.cwd(), sourcefile: 'v2-tests.ts' },
+      outfile, bundle: true, platform: 'node', format: 'esm', target: 'node26', logLevel: 'warning' })
+    const output = command(process.execPath, [outfile])
+    process.stdout.write(output)
+  } finally {
+    const absolute = resolve(scratch), parent = resolve(tmpdir())
+    if (!absolute.startsWith(`${parent}${sep}`) || !absolute.split(sep).at(-1)?.startsWith('bilicdn-v2-tests-')) throw Error('Refusing unsafe cleanup')
+    rmSync(absolute, { recursive: true })
+  }
 }
 
-export function runTests({ security = false, functional = false } = {}) {
-  if (!existsSync(process.env.BILICDN_TEST_TARGET || 'dist/BiliCDN_TW.user.js')) throw Error('Build target missing; tests must not silently skip');
-  const files = discoverTests().filter(path => !security || /security-cs00[123]\.test\.js$/.test(path))
-    .filter(path => !functional || !/security|method-admission|worker-observability|bundle-v160/.test(path));
-  if (!files.length) throw Error('No tests discovered');
-  const result = spawnSync(process.execPath, ['--test', ...(functional ? ['--test-name-pattern=^(?!.*(?:security|CS-00|forged|spoof|attacker|synthetic|mutator|private policy|untrusted|closed shadow|capability|page cannot|page cannot|unsafeWindow|no Worker|Worker)).*$'] : []), ...files], { stdio: 'inherit' });
-  if (result.error) throw result.error;
-  if (result.status !== 0) throw Error(`Tests failed (${result.status})`);
-}
-
-if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/test.mjs')) {
-  const { build } = await import('./build.mjs');
-  await build(); await build({testing:true});
-  runTests({ security: process.argv.includes('--security'), functional: process.argv.includes('--functional') });
-}
+if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/test.mjs')) await runTests()

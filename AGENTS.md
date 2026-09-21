@@ -1,53 +1,53 @@
-# Codex 開發指引
+# Codex development guide — BiliCDN_TW v2
 
-## 工作標的
+## Current target
 
-目前不可變上游基準：`baseline/BiliCDN_TW_1.3.4.original.user.js`
+- Source of truth: `src-v2/`.
+- Entry point: `src-v2/entry.ts`.
+- Tests: `tests-v2/`.
+- Release output: `Release/v2.0.0/BiliCDN_TW.user.js`.
+- Historical v1 releases and tags are references only; v2 build and tests must not import them.
 
-目前模組化交付：`src/` → `Release/v1.9.6/BiliCDN_TW.user.js`（功能驗證狀態以本版 TEST_REPORT 為準）。
+## Required workflow
 
-v1.9.6 遵照使用者要求不執行 Code Security 掃描或獨立安全子集。npm test／verify 預設執行功能回歸。診斷為失敗導向事故記錄器：重要 Transport、fallback、Watchdog 與 core 因果始終記錄，成功請求只作五秒彙總；事故只存在本分頁記憶體，`player.reload()` 不清除、完整頁面重新整理才清除。Verbose 只增加成功流量、候選評分與週期快照，不得改變播放、選路、學習或主動網路。Native signed URL 的來源驗證只供成功／失敗歸因；所有 exact、current、backup 與 probe 出口都必須另經 soft block、invalid、kind-specific recovery avoid 及既有 host restriction。真實 Native 音訊失敗只能建立同一 audio group 的 Catalog fallback，不得改影片 Route Affinity。fallback 後只有 core 明確未初始化、MPD 仍有影片 group 且四秒沒有影片恢復，才可共用既有 `player.reload()` 狀態機。SPA 沒有可接納 playurl 或新 `__playinfo__` 時，仍只讀目前 player manifest／MPD；不得新增 Bilibili API／媒體請求、不得保存 signed URL 至 GM 或公開診斷。禁止判定仍必須同時約束原始、Native、Catalog、固定與備援 URL；不可因自救或候選耗盡清除 black/dead。
+1. Read `PROJECT_CONTEXT.md`, `SECURITY.md`, `docs/ARCHITECTURE.md` and `docs/DEVELOPMENT.md`.
+2. Reproduce a behavior with a domain, controller or adapter contract test before changing runtime logic.
+3. Preserve the layer direction: domain → state → application → adapters/UI composition. Lower layers never import higher layers.
+4. Use `apply_patch` for source edits and preserve unrelated user changes.
+5. Run `npm run typecheck`, `npm run architecture`, `npm test` and `npm run verify` before release.
+6. Record automated and real Chrome/Tampermonkey results separately.
 
-不可變重構基準：`tests/fixtures/BiliCDN_TW_1.5.5.user.js`（正式 v1.5.5 的原 bytes，非 development 草稿）。
+## Architectural rules
 
-上一輪自訂 v1.3.3～v1.4.4 專案已封存於：`archive/pre-upstream-v1.3.4-20260904/`
+- `domain` is pure and must not read GM, DOM, Fetch, XHR, clocks or timers.
+- Importing a module must not read GM, mutate the page, create a timer or start network work.
+- `entry.ts` only composes ports, stores and controllers.
+- No dynamic dependency bags, cross-module setters or public mutable Maps/Sets/timers.
+- `RouteCoordinator` exclusively changes route affinity.
+- `MeasurementController` exclusively starts active probes.
+- `RecoveryController` exclusively reloads the player core.
+- Every asynchronous task must validate its generation before committing state.
+- Full Native URLs remain in `SignedRouteVault`; all other components use an opaque handle and bounded metadata.
+- Diagnostics are read-only consumers of typed events.
 
-## 必讀順序
+## Required invariants
 
-1. `PROJECT_CONTEXT.md`
-2. `SECURITY.md`
-3. `UPSTREAM_MANIFEST.md`
-4. 上游 v1.3.4 userscript
-5. 需要比較舊修補時，再讀封存目錄中的報告、測試與 patch
+- Catalog targets are trusted built-ins only; Native targets are exact current-epoch URLs.
+- Restrictions apply to original, Native, Catalog, fixed and fallback routes.
+- Video and audio health/recovery remain isolated.
+- Healthy exploration never changes the current host.
+- Fetch remains single-reader and propagates cancel reasons.
+- XHR text/json/reuse/timeout/abort behavior remains compatible.
+- Stop all script rewrite and active network behavior while disabled without cancelling website requests.
+- Never read, replace or wrap the site Worker constructor.
+- Never persist or report signed URL/path/query/token, cookie, IP or player/core objects.
+- Codec capability checks do not block playurl; dropped frames remain diagnostic only.
 
-## 開發原則
+## Release rules
 
-1. 先完整審核上游 v1.3.4，不把舊 v1.4.4 patch 整包套用到新版本。
-2. 逐項確認上游是否已修正、改寫或移除舊問題，只移植仍適用的修補。
-3. 優先維持兩倍速播放功能，不為安全而無證據地減損功能。
-4. 頁面 JavaScript、console、合成事件與遠端 URL 欄位皆不可信。
-5. 先建立問題重現與 VM harness，再修改 userscript；每項變更後執行相關測試與 diff 檢查。
-6. v1.7.0 已完整移除 Worker 攔截；不得重新讀取／替換 `unsafeWindow.Worker`，也不得加入相容 stub 或 Blob 攔截旁路。
-7. v1.8.1 的 Native Route 評級只保存 host 健康；完整 signed URL 僅限目前 playinfo epoch，且不得藉評級取得 catalog、換 host、preconnect 或 forced redirect 權限。健康播放中的 probe 只能更新評級，只有新 epoch、verified Transport failure、Watchdog recovery 或可信固定／自動設定能改變 Route Affinity。
-8. 不新增遙測、資料上傳、執行期第三方依賴或新的遠端程式碼載入。唯一建置工具例外為精確鎖定 esbuild 0.28.2 與其必要平台套件；提交 lockfile，不提交 node_modules。不得設定 CI/CD、GitHub Actions 或自動發布。
-9. 自動更新只能指向本儲存庫的 `releases/latest/download/BiliCDN_TW.user.js`，不得指回上游或其他遠端程式碼。
-10. 完成後才升版，並產出 CHANGELOG、TEST_REPORT、incremental/cumulative no-index patch 與 SHA-256。
-11. VM/mock、靜態檢查與真實 Chrome/Tampermonkey 驗證必須分開描述。
-12. 模組來源是唯一建置輸入，不依賴未公開 archive／development。正式 bundle 不得含測試介面。提交訊息附執行當下實際顯示的模型與推理強度，不得沿用過期的硬編碼模型名稱。
-
-## 必須重新驗證的不變量
-
-- Fetch body 使用單一路徑且取消原因能傳回原 reader，不得使用 `response.body.tee()`。
-- host-locked 原始 URL、PCDN `/v1/resource`、XHR `responseType=json` 與 contiguous buffered range 正確。
-- 停用狀態停止改寫與所有腳本主動網路行為，但不取消播放器自己的請求。
-- `CustomCDN`、改寫 target 與 preconnect 只能命中可信 catalog。
-- Native signed route 只能從目前 epoch、相同 representation group 的 exact URL 取用；其 Ledger 不得包含 URL、path、query 或 token。
-- 未確認倍速按 2x 規劃，AV1 能力排序不依賴 UA 或 GPU 型號猜測。
-- 頁面只能取得無函式、無敏感 URL／cookie／IP 的有界唯讀診斷。
-- Watchdog 懲罰只歸給新鮮同 epoch 的影片 Fetch/XHR 觀察，不以音訊、PerformanceObserver 或排名猜測。
-- 網站 Worker 必須維持原 constructor 身分與原始參數；腳本不得為 Worker 建立 Blob、MessageChannel、listener、timer、GM 寫入或主動網路。
-- Codec 查詢不阻塞 playurl；掉幀只作唯讀診斷，不能觸發網路或處罰。
-- 診斷事件不得成為控制或處罰來源；有界、去敏、只存本分頁記憶體，Console 失敗不得中斷播放。
-- Watchdog 低資料修復仍受播放意圖、讀值、grace、cooldown、breaker 及新鮮影片歸因限制。
-- XHR 原生 timeout 只结算一次，不推論 DNS；舊 epoch、abort、seek 不懲罰。Watchdog 回收不得覆蓋真實 Transport 失敗。
-- 修復嘗試與影片請求換 host 分開；診斷後態必須來自後續觀察，不宣稱已確認播放消費或修復因果。
+- Do not add CI/CD, GitHub Actions, runtime dependencies or remote code loading.
+- Do not generate historical patch artifacts for v2.
+- The GitHub Release contains only `BiliCDN_TW.user.js`.
+- Update URLs remain under this repository’s latest release.
+- This release does not run Code Security unless the user explicitly changes that instruction.
+- Commit messages identify the actual executing model and reasoning setting when that information is available; do not copy stale attribution.

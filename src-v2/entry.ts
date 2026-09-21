@@ -1,0 +1,67 @@
+import { TampermonkeyStorage } from './platform/storage.ts'
+import { SettingsStore } from './state/settings-store.ts'
+import { RestrictionStore } from './state/restriction-store.ts'
+import { EvidenceStore } from './state/evidence-store.ts'
+import { SessionStore } from './state/session-store.ts'
+import { SignedRouteVault } from './state/signed-route-vault.ts'
+import { RouteCoordinator } from './application/route-coordinator.ts'
+import { MeasurementController } from './application/measurement-controller.ts'
+import { RecoveryController } from './application/recovery-controller.ts'
+import { PlayerMonitor } from './application/player-monitor.ts'
+import { LifecycleController } from './application/lifecycle-controller.ts'
+import { PlayurlAdapter } from './adapters/playurl.ts'
+import { PlayerAdapter } from './adapters/player.ts'
+import { PagePlayinfoAdapter } from './adapters/page-playinfo.ts'
+import { TransportAdapter } from './adapters/transport.ts'
+import { VisibilityAdapter } from './adapters/visibility.ts'
+import { WebRtcAdapter } from './adapters/webrtc.ts'
+import { DiagnosticRecorder } from './diagnostics/recorder.ts'
+import { ControlCenter } from './ui/control-center.ts'
+import { PlayerPanel } from './ui/player-panel.ts'
+
+export const start = (): void => {
+  const now = (): number => Date.now()
+  const clock = { now }
+  const storage = new TampermonkeyStorage()
+  const settings = new SettingsStore(storage, now)
+  const restrictions = new RestrictionStore(storage, now)
+  const evidence = new EvidenceStore(storage, now)
+  const session = new SessionStore()
+  const vault = new SignedRouteVault()
+  const routes = new RouteCoordinator(clock, session, settings, restrictions, evidence, vault)
+  const playurl = new PlayurlAdapter(session, vault, routes, settings)
+  const player = new PlayerAdapter(playurl)
+  const recovery = new RecoveryController(player, now)
+  const nativeFetch = unsafeWindow.fetch.bind(unsafeWindow)
+  const measurement = new MeasurementController(routes, storage, nativeFetch, now)
+  const visibility = new VisibilityAdapter()
+  const monitor = new PlayerMonitor(player, session, settings, vault, routes, measurement, recovery,
+    () => visibility.isActuallyVisible(), now)
+  let lifecycle: LifecycleController | null = null
+  const pagePlayinfo = new PagePlayinfoAdapter((payload, serial) => lifecycle?.acceptPageAssignment(payload, serial))
+  lifecycle = new LifecycleController(session, settings, vault, routes, playurl, pagePlayinfo, monitor, now)
+  const transport = new TransportAdapter(session, settings, routes, playurl, now)
+  const webRtc = new WebRtcAdapter(settings)
+  const diagnostics = new DiagnosticRecorder(now, () => settings.get().verbose)
+  const center = new ControlCenter({ settings, restrictions, evidence, session, routes, measurement, monitor, recovery,
+    diagnostics, storageDelete: key => storage.delete(key), now })
+  const panel = new PlayerPanel(center, settings, session, monitor)
+
+  const eventSink = (event: Parameters<DiagnosticRecorder['record']>[0]): void => {
+    diagnostics.record(event)
+    if (event.type === 'recovery' && event.action.action === 'route-fallback') recovery.armRouteFailure('route-failure', player.snapshot())
+  }
+  routes.subscribe(eventSink)
+  recovery.subscribe(eventSink)
+  lifecycle.subscribe(eventSink)
+
+  visibility.setEnabled(!settings.get().disabled)
+  transport.install()
+  webRtc.install()
+  lifecycle.start()
+  panel.start()
+  settings.subscribe(state => visibility.setEnabled(!state.disabled))
+  try { GM_registerMenuCommand('⚙️ 開啟 BiliCDN v2 控制中心', () => center.show()) } catch { /* optional */ }
+}
+
+start()

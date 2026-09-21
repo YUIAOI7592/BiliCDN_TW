@@ -1,18 +1,49 @@
-# 本機開發與手動發布
+# Development
 
-先讀 AGENTS、PROJECT_CONTEXT、SECURITY、UPSTREAM_MANIFEST；不要修改 fixtures、baseline 或歷代正式輸出。
+## Prerequisites
 
-1. Node 26.8.1、npm 11.19.0，執行 `npm ci`。
-2. 修改 src，不直接編輯 dist；`npm test` 先重建再遞迴測試。
-3. 完成抽離／回歸後才更新 release.json、package.json、metadata、fallback 與 lockfile。
-4. 準備 CHANGELOG／TEST_REPORT；`npm run package` 只作本機封裝，不代表安全掃描完成。
-5. `npm run verify` 驗證兩次建置一致、syntax、全部測試、CS 子集、實際 patch 套用與 SHA。
-6. 對固定 range 執行正式 Codex Security。受阻則保留候選，不以 VM 子集代替。
-7. 更新報告、再次 package／verify，在乾淨本機 checkout 用 lockfile 重建，檢查公開檔案。
-8. 確認完成後手動推送 main／版本標籤；GitHub Release 只上傳單一 `BiliCDN_TW.user.js`，不把內部報告或 patch 當附件。
+- Node.js 26.8.1
+- npm 11.19.0
+- Google Chrome and Tampermonkey for real-browser validation
 
-沒有 CI/CD、GitHub Actions 或自動部署。兩套 verify shell 只轉呼共同 Node 邏輯。manifest 不帶時間戳／絕對路徑，SHA 使用 repo-relative 路徑。userscript 的更新與下載網址固定指向本儲存庫最新正式 Release 的單一同名附件。
+Install the exact locked toolchain with `npm ci`.
 
-唯一建置依賴為 esbuild 及必要平台套件。不提交 node_modules、dist、個人診斷、raw 安全工作檔、archive 或 development；必要舊版樣本已按原 bytes 放 fixtures。
+## Commands
 
-若受限工具環境拒絕 esbuild 讀取目錄資訊，不能以跳過建置／測試視為成功。
+```powershell
+npm run typecheck     # strict TypeScript, no emit
+npm run architecture  # dependency direction and cycle check
+npm test              # domain/controller/adapter contracts
+npm run build         # deterministic single-IIFE userscript
+npm run package       # v2 release directory, no patches
+npm run verify        # complete local release verification
+```
+
+`npm run verify` checks the configured Node version, typecheck, architecture, functional tests, two identical builds, JavaScript syntax, forbidden v1/Worker markers and SHA-256 output. It does not run Code Security.
+
+## Adding behavior
+
+1. Put pure eligibility/ranking logic in `domain/` and pass clocks explicitly.
+2. Put durable or session-owned data in a typed state store.
+3. Add a controller method for actions that can alter routing, measurement or recovery.
+4. Keep browser/Tampermonkey quirks inside an adapter.
+5. Emit a typed event rather than letting diagnostics inspect controller internals.
+6. Add a focused test in `tests-v2/run.ts`.
+
+Do not add a public test bridge to the production bundle. Tests are bundled from TypeScript source independently.
+
+## Real Chrome validation
+
+Install the local `dist/BiliCDN_TW.user.js` into Tampermonkey and use separate test tabs. Record:
+
+- script version and Chrome/Tampermonkey versions;
+- page type, quality, codec and playback rate;
+- actual observed video/audio hosts;
+- whether a probe was started and whether the host changed;
+- seek, SPA, background, pause/resume and multi-tab outcomes.
+
+Do not label VM or mock results as real playback. Preserve a user’s existing paused/test tab unless they explicitly authorize changing it.
+
+## Packaging and release
+
+`npm run package` writes only the userscript, changelog, test report, build manifest and SHA-256 list under `Release/v2.0.0/`. Do not add patch files. The GitHub Release asset is only the userscript.
