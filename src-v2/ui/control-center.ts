@@ -83,6 +83,15 @@ export class ControlCenter {
     const affinity = state.affinity ? `${state.affinity.type} / ${state.affinity.host}` : '尚未觀察'
     const summary = document.createElement('p'); summary.className = 'summary'
     summary.textContent = `狀態：${settings.disabled ? '停用' : '啟用'}｜模式：${settings.fixedHost ? `固定 ${settings.fixedHost}` : '自動'}\n路線：${affinity}\n播放：${monitor.watchdog}｜可播放 ${monitor.video.playableBufferSec.toFixed(1)} 秒｜${monitor.video.effectiveRate}x\n核心：${this.deps.recovery.snapshot().state}｜單一挑戰者：${this.deps.measurement.snapshot().state}`
+    const routes = this.deps.routes.snapshot(), latest = routes.latest as Record<string, Record<string, unknown>>
+    for (const [kind, label] of [['video', '影片'], ['audio', '音訊'], ['unknown', '尚未分類媒體']] as const) {
+      const row = latest[kind]
+      if (!row) { if (kind !== 'unknown') summary.textContent += `\n${label}：尚無已歸因請求`; continue }
+      const age = Math.max(0, Math.floor((this.deps.now() - Number(row.observedAt)) / 1000))
+      summary.textContent += `\n${label}：送出 ${row.targetHost ?? '未知'} → 回應 ${row.responseHost ?? '尚未收到'}｜${age} 秒前\n  請求攔截換 host：${row.hostChanged === true ? '是' : row.hostChanged === false ? '否' : '未知'}｜playurl 已改 host：${row.playurlHostChanged === true ? '是' : '否'}｜歸因：${row.attributionStatus ?? '等待資料'}`
+    }
+    const rep = routes.representation as { height: number; codec: string } | null
+    summary.textContent += `\n畫質歸因：${rep ? `${rep.height}p / ${rep.codec}` : String(routes.attribution)}\n量測狀態：${this.deps.measurement.snapshot().reason}`
     body.append(summary)
     const actions = document.createElement('div'); actions.className = 'grid'
     actions.append(
@@ -91,13 +100,18 @@ export class ControlCenter {
       this.#button('診斷與事故記錄', () => this.#renderDiagnostics()),
       this.#button('重新評估一個安全候選', () => { this.deps.measurement.requestManual(); this.#renderOverview() }),
       this.#button('將目前影片路線加入黑名單 24 小時', async () => {
-        const host = this.deps.session.get().affinity?.host
+        const host = this.deps.routes.latestVideoHost()
         if (host) await this.deps.restrictions.add({ host, type: 'black', kind: 'video', reason: 'user', expireAt: this.deps.now() + 24 * 60 * 60 * 1000 })
         this.deps.routes.invalidateForUserSetting(); this.#renderOverview()
       }, 'danger'),
       this.#button('清除 v2 學習資料', async () => { await this.deps.evidence.clear(); await this.deps.restrictions.clear(); this.deps.storageDelete('bilicdn.v2.meta'); this.#renderOverview() }, 'danger'),
       this.#button('恢復 v2 預設設定', async () => { await this.deps.settings.reset(); this.deps.routes.invalidateForUserSetting(); this.#renderOverview() }, 'danger'),
     )
+    const blacklistButton = [...actions.querySelectorAll('button')].find(button => button.textContent?.startsWith('將目前影片路線'))
+    if (blacklistButton && !this.deps.routes.latestVideoHost()) {
+      blacklistButton.disabled = true
+      blacklistButton.textContent = '尚無成功歸因的影片回應，無法指定黑名單節點'
+    }
     body.append(actions)
     foot.append(this.#button('關閉', () => this.close()))
   }
@@ -144,7 +158,7 @@ export class ControlCenter {
 
   #readModel(): Readonly<Record<string, unknown>> {
     const now = this.deps.now(), evidence = this.deps.evidence.list().slice(0, 96).map(row => ({ host: row.host, kind: row.kind, ...evidenceMetrics(row, now) }))
-    return Object.freeze({ version: GM_info?.script?.version ?? '2.0.0', settings: this.deps.settings.get(), session: this.deps.session.get(),
+    return Object.freeze({ version: GM_info?.script?.version ?? '2.0.1', settings: this.deps.settings.get(), session: this.deps.session.get(),
       monitor: this.deps.monitor.snapshot(), recovery: this.deps.recovery.snapshot(), measurement: this.deps.measurement.snapshot(),
       routes: this.deps.routes.snapshot(), restrictions: this.deps.restrictions.list(), evidence })
   }

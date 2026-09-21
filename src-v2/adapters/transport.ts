@@ -1,6 +1,6 @@
 import { isPlayurlApi } from '../domain/catalog.ts'
 import { isHttpDnsUrl, parseMediaUrl } from '../domain/url-policy.ts'
-import type { FailureKind, MediaKind, RouteType, TransportObservation } from '../domain/model.ts'
+import { requestId, type FailureKind, type RequestContext, type RouteType, type TransportObservation, type GenerationId, type EpochId } from '../domain/model.ts'
 import type { RouteCoordinator, AppliedRouteDecision } from '../application/route-coordinator.ts'
 import type { SessionStore } from '../state/session-store.ts'
 import type { SettingsStore } from '../state/settings-store.ts'
@@ -18,11 +18,20 @@ interface XhrMeta {
   playurl: boolean
   transformedText: string | null
   transformedJson: unknown
+  request: RequestContext | null
+  generation: GenerationId
+  epoch: EpochId
+  responseKey: string
+  cleanup: () => void
+  async: boolean
+  headers: [string, string][]
+  username?: string | null
+  password?: string | null
 }
 
 const urlOf = (input: RequestInfo | URL): string => typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
 const hostOf = (value: string): string => { try { return new URL(value, location.href).hostname.toLowerCase() } catch { return '' } }
-const mediaKind = (applied: AppliedRouteDecision): MediaKind | null => applied.context?.kind ?? null
+const isMedia = (url: string): boolean => { const parsed = parseMediaUrl(url); return !!parsed && parsed.kind !== 'unknown' }
 
 const copyResponseSurface = (target: Response, source: Response): Response => {
   for (const key of ['url', 'redirected', 'type'] as const) {
@@ -72,37 +81,40 @@ export class TransportAdapter {
         })
       }
       if (isPlayurlApi(originalUrl)) {
+        const generation = self.session.get().generation, responseKey = `api-fetch-${++self.#requestSerial}`
         const response = await Reflect.apply(original, this, [input, init]) as Response
         let text: string
         try { text = await response.text() } catch { return response }
         try {
           const payload: unknown = JSON.parse(text)
-          self.playurl.transform(payload, 'trusted-api')
+          if (self.session.isGeneration(generation) && !self.settings.get().disabled) self.playurl.transform(payload, 'trusted-api', responseKey)
           text = JSON.stringify(payload)
         } catch { /* preserve original body */ }
         return copyResponseSurface(new Response(text, { status: response.status, statusText: response.statusText, headers: response.headers }), response)
       }
       const parsed = parseMediaUrl(originalUrl)
-      if (!parsed || !['GET', ''].includes(String(init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase())) {
+      if (!parsed || parsed.kind === 'unknown' || !['GET', ''].includes(String(init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase())) {
         return await Reflect.apply(original, this, [input, init]) as Response
       }
       const applied = self.routes.apply(originalUrl)
       if (applied.decision.action === 'block' || !applied.url) throw new TypeError(`BiliCDN blocked media request: ${applied.decision.reason}`)
       const targetInput = applied.url === originalUrl ? input : input instanceof Request ? new Request(applied.url, input) : applied.url
       const startedAt = self.now()
+      const request = self.#request(applied, originalUrl, applied.url, startedAt)
+      self.routes.requestStarted(request)
       let response: Response
       try {
         response = await Reflect.apply(original, this, [targetInput, init]) as Response
       } catch (error) {
         const signal = init?.signal ?? (input instanceof Request ? input.signal : null)
         const aborted = signal?.aborted === true || (error instanceof DOMException && error.name === 'AbortError')
-        void self.#observeFetch(applied, originalUrl, applied.url, null, startedAt, 0, 0, aborted ? 'abort' : 'failure', aborted ? undefined : 'network')
+        void self.#observeFetch(request, applied, originalUrl, applied.url, null, startedAt, 0, 0, aborted ? 'abort' : 'failure', aborted ? undefined : 'network')
         throw error
       }
       const responseAt = self.now()
       if (!response.body) {
         const invalid = applied.decision.routeType === 'native-signed' && [403,451,959].includes(response.status)
-        void self.#observeFetch(applied, originalUrl, applied.url, response, startedAt, responseAt, 0,
+        void self.#observeFetch(request, applied, originalUrl, applied.url, response, startedAt, responseAt, 0,
           response.ok ? 'success' : 'failure', invalid ? 'native-invalid' : response.status >= 500 ? 'http-5xx' : undefined)
         return response
       }
@@ -111,7 +123,7 @@ export class TransportAdapter {
       const settle = (outcome: 'success' | 'abort' | 'failure', failure?: FailureKind): void => {
         if (settled) return
         settled = true
-        void self.#observeFetch(applied, originalUrl, applied.url ?? originalUrl, response, startedAt, responseAt, bytes, outcome, failure)
+        void self.#observeFetch(request, applied, originalUrl, applied.url ?? originalUrl, response, startedAt, responseAt, bytes, outcome, failure)
       }
       const body = new ReadableStream<Uint8Array>({
         async pull(controller) {
@@ -125,7 +137,9 @@ export class TransportAdapter {
             bytes += result.value.byteLength
             controller.enqueue(result.value)
           } catch (error) {
-            settle('failure', 'body')
+            const signal = init?.signal ?? (input instanceof Request ? input.signal : null)
+            if (signal?.aborted) settle('abort')
+            else settle('failure', 'body')
             controller.error(error)
           }
         },
@@ -145,29 +159,51 @@ export class TransportAdapter {
   #installXhr(): void {
     const proto = unsafeWindow.XMLHttpRequest?.prototype
     if (!proto) return
-    const originalOpen = proto.open, originalSend = proto.send, originalAbort = proto.abort
+    const originalOpen = proto.open, originalSend = proto.send, originalAbort = proto.abort, originalSetHeader = proto.setRequestHeader
     const responseDescriptor = Object.getOwnPropertyDescriptor(proto, 'response')
     const responseTextDescriptor = Object.getOwnPropertyDescriptor(proto, 'responseText')
     const self = this
 
     const open: typeof XMLHttpRequest.prototype.open = function(this: XMLHttpRequest, method: string, url: string | URL,
-      async = true, username?: string | null, password?: string | null): void {
+      async: boolean = true, username?: string | null, password?: string | null): void {
       const originalUrl = String(url), playurl = isPlayurlApi(originalUrl)
+      self.#xhrMeta.get(this)?.cleanup()
       let applied: AppliedRouteDecision | null = null, targetUrl = originalUrl
-      if (!self.settings.get().disabled && !playurl && parseMediaUrl(originalUrl)) {
+      if (!self.settings.get().disabled && !playurl && isMedia(originalUrl) && method.toUpperCase() === 'GET') {
         applied = self.routes.apply(originalUrl)
         if (applied.url) targetUrl = applied.url
       }
       self.#xhrMeta.set(this, { method: String(method).toUpperCase(), originalUrl, targetUrl, applied,
         startedAt: 0, responseAt: 0, bytes: 0, settled: false, playurl,
-        transformedText: null, transformedJson: undefined })
+        transformedText: null, transformedJson: undefined, request: null,
+        generation: self.session.get().generation, epoch: self.session.get().epoch,
+        responseKey: `api-xhr-${++self.#requestSerial}`, cleanup: () => undefined, async, headers: [],
+        ...(username !== undefined ? { username } : {}), ...(password !== undefined ? { password } : {}) })
       if (username !== undefined) Reflect.apply(originalOpen, this, [method, targetUrl, async, username, password])
       else Reflect.apply(originalOpen, this, [method, targetUrl, async])
     }
 
     const send: typeof XMLHttpRequest.prototype.send = function(this: XMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null): void {
       const meta = self.#xhrMeta.get(this)
-      if (!meta || self.settings.get().disabled) { Reflect.apply(originalSend, this, [body ?? null]); return }
+      if (!meta) { Reflect.apply(originalSend, this, [body ?? null]); return }
+      const reopen = (url: string): void => {
+        const responseType = this.responseType, timeout = this.timeout, credentials = this.withCredentials
+        Reflect.apply(originalOpen, this, [meta.method, url, meta.async, meta.username ?? null, meta.password ?? null])
+        this.responseType = responseType; this.timeout = timeout; this.withCredentials = credentials
+        for (const [key, value] of meta.headers) Reflect.apply(originalSetHeader, this, [key, value])
+      }
+      if (self.settings.get().disabled) {
+        if (meta.targetUrl !== meta.originalUrl) reopen(meta.originalUrl)
+        Reflect.apply(originalSend, this, [body ?? null]); return
+      }
+      if (meta.applied) {
+        const next = self.routes.apply(meta.originalUrl)
+        if (next.url && next.url !== meta.targetUrl) {
+          reopen(next.url)
+          meta.targetUrl = next.url
+        }
+        meta.applied = next
+      }
       if (self.settings.get().blockHttpDns && isHttpDnsUrl(meta.originalUrl)) {
         queueMicrotask(() => { this.dispatchEvent(new Event('error')); this.dispatchEvent(new Event('loadend')) })
         return
@@ -177,38 +213,53 @@ export class TransportAdapter {
         return
       }
       meta.startedAt = self.now()
+      if (meta.applied) { meta.request = self.#request(meta.applied, meta.originalUrl, meta.targetUrl, meta.startedAt); self.routes.requestStarted(meta.request) }
       const noteHeaders = (): void => { if (!meta.responseAt && this.readyState >= 2) meta.responseAt = self.now() }
       const progress = (event: ProgressEvent): void => { noteHeaders(); meta.bytes = Math.max(meta.bytes, Number(event.loaded) || 0) }
       const settle = (outcome: 'success' | 'abort' | 'failure', failure?: FailureKind): void => {
         if (meta.settled) return
         meta.settled = true
-        if (!meta.applied) return
+        meta.cleanup()
+        if (!meta.applied || !meta.request) return
         const finalUrl = (() => { try { return this.responseURL || meta.targetUrl } catch { return meta.targetUrl } })()
-        void self.routes.observe(self.#observation(meta.applied, meta.originalUrl, meta.targetUrl, finalUrl,
+        void self.routes.observe(self.#observation(meta.request, meta.applied, meta.originalUrl, meta.targetUrl, finalUrl,
           Number(this.status) || 0, meta.bytes, meta.startedAt, meta.responseAt, outcome, failure))
       }
-      this.addEventListener('readystatechange', noteHeaders)
-      this.addEventListener('progress', progress)
-      this.addEventListener('load', () => {
+      const load = (): void => {
         const invalid = meta.applied?.decision.routeType === 'native-signed' && [403,451,959].includes(this.status)
         settle(this.status >= 200 && this.status < 400 ? 'success' : 'failure', invalid ? 'native-invalid' : this.status >= 500 ? 'http-5xx' : undefined)
-      }, { once: true })
-      this.addEventListener('error', () => settle('failure', 'network'), { once: true })
-      this.addEventListener('timeout', () => settle('failure', 'timeout'), { once: true })
-      this.addEventListener('abort', () => settle('abort'), { once: true })
+      }
+      const error = (): void => settle('failure', 'network'), timeout = (): void => settle('failure', 'timeout'), abort = (): void => settle('abort')
+      this.addEventListener('readystatechange', noteHeaders); this.addEventListener('progress', progress)
+      this.addEventListener('load', load); this.addEventListener('error', error); this.addEventListener('timeout', timeout); this.addEventListener('abort', abort)
+      meta.cleanup = () => {
+        this.removeEventListener('readystatechange', noteHeaders); this.removeEventListener('progress', progress)
+        this.removeEventListener('load', load); this.removeEventListener('error', error); this.removeEventListener('timeout', timeout); this.removeEventListener('abort', abort)
+      }
       Reflect.apply(originalSend, this, [body ?? null])
     }
 
     const abort: typeof XMLHttpRequest.prototype.abort = function(this: XMLHttpRequest): void { Reflect.apply(originalAbort, this, []) }
+    const setHeader: typeof XMLHttpRequest.prototype.setRequestHeader = function(this: XMLHttpRequest, name: string, value: string): void {
+      Reflect.apply(originalSetHeader, this, [name, value])
+      self.#xhrMeta.get(this)?.headers.push([name, value])
+    }
     try {
-      proto.open = open; proto.send = send; proto.abort = abort
+      proto.open = open; proto.send = send; proto.abort = abort; proto.setRequestHeader = setHeader
       if (responseDescriptor?.get && responseDescriptor.configurable) {
         Object.defineProperty(proto, 'response', { ...responseDescriptor, get(this: XMLHttpRequest) {
           const raw: unknown = responseDescriptor.get?.call(this), meta = self.#xhrMeta.get(this)
-          if (!meta?.playurl || self.settings.get().disabled || this.readyState !== 4) return raw
+          if (!meta?.playurl || self.settings.get().disabled || !self.session.isGeneration(meta.generation) || this.readyState !== 4) return raw
           if (this.responseType === 'json' && raw && typeof raw === 'object') {
-            if (meta.transformedJson === undefined) { self.playurl.transform(raw, 'trusted-api'); meta.transformedJson = raw }
+            if (meta.transformedJson === undefined) { self.playurl.transform(raw, 'trusted-api', meta.responseKey); meta.transformedJson = raw }
             return meta.transformedJson
+          }
+          if ((this.responseType === '' || this.responseType === 'text') && typeof raw === 'string') {
+            if (meta.transformedText === null) {
+              try { const payload: unknown = JSON.parse(raw); self.playurl.transform(payload, 'trusted-api', meta.responseKey); meta.transformedText = JSON.stringify(payload) }
+              catch { meta.transformedText = raw }
+            }
+            return meta.transformedText
           }
           return raw
         } })
@@ -216,9 +267,9 @@ export class TransportAdapter {
       if (responseTextDescriptor?.get && responseTextDescriptor.configurable) {
         Object.defineProperty(proto, 'responseText', { ...responseTextDescriptor, get(this: XMLHttpRequest) {
           const raw = String(responseTextDescriptor.get?.call(this) ?? ''), meta = self.#xhrMeta.get(this)
-          if (!meta?.playurl || self.settings.get().disabled || this.readyState !== 4) return raw
+          if (!meta?.playurl || self.settings.get().disabled || !self.session.isGeneration(meta.generation) || this.readyState !== 4) return raw
           if (meta.transformedText !== null) return meta.transformedText
-          try { const payload: unknown = JSON.parse(raw); self.playurl.transform(payload, 'trusted-api'); meta.transformedText = JSON.stringify(payload) }
+          try { const payload: unknown = JSON.parse(raw); self.playurl.transform(payload, 'trusted-api', meta.responseKey); meta.transformedText = JSON.stringify(payload) }
           catch { meta.transformedText = raw }
           return meta.transformedText
         } })
@@ -227,27 +278,38 @@ export class TransportAdapter {
         if (proto.open === open) proto.open = originalOpen
         if (proto.send === send) proto.send = originalSend
         if (proto.abort === abort) proto.abort = originalAbort
+        if (proto.setRequestHeader === setHeader) proto.setRequestHeader = originalSetHeader
         if (responseDescriptor) Object.defineProperty(proto, 'response', responseDescriptor)
         if (responseTextDescriptor) Object.defineProperty(proto, 'responseText', responseTextDescriptor)
       })
     } catch { /* fail-open */ }
   }
 
-  async #observeFetch(applied: AppliedRouteDecision, originalUrl: string, targetUrl: string, response: Response | null,
+  #request(applied: AppliedRouteDecision, originalUrl: string, targetUrl: string, startedAt: number): RequestContext {
+    const state = this.session.get(), matched = applied.attributionStatus ?? (applied.context ? 'matched' : 'waiting-data')
+    return Object.freeze({ requestId: requestId(`request-${++this.#requestSerial}`), generation: state.generation, epoch: state.epoch,
+      decisionId: applied.decision.id, representation: applied.context?.representation ?? null, kind: applied.context?.kind ?? null,
+      attributionStatus: matched, attributionSource: applied.attributionSource ?? (applied.context ? 'exact' : 'none'),
+      decisionStage: 'request', routeType: applied.decision.routeType, originalHost: hostOf(originalUrl), targetHost: hostOf(targetUrl),
+      sourceHost: applied.sourceHost, playurlHostChanged: !!applied.sourceHost && applied.sourceHost !== hostOf(originalUrl),
+      urlChanged: originalUrl !== targetUrl, hostChanged: hostOf(originalUrl) !== hostOf(targetUrl), startedAt })
+  }
+
+  async #observeFetch(request: RequestContext, applied: AppliedRouteDecision, originalUrl: string, targetUrl: string, response: Response | null,
     startedAt: number, responseAt: number, bytes: number, outcome: 'success' | 'abort' | 'failure', failureKind?: FailureKind): Promise<void> {
     const finalUrl = response?.url || targetUrl
-    await this.routes.observe(this.#observation(applied, originalUrl, targetUrl, finalUrl, response?.status ?? 0,
+    await this.routes.observe(this.#observation(request, applied, originalUrl, targetUrl, finalUrl, response?.status ?? 0,
       bytes, startedAt, responseAt, outcome, failureKind))
   }
 
-  #observation(applied: AppliedRouteDecision, originalUrl: string, targetUrl: string, finalUrl: string, status: number,
+  #observation(request: RequestContext, applied: AppliedRouteDecision, originalUrl: string, targetUrl: string, finalUrl: string, status: number,
     bytes: number, startedAt: number, responseAt: number, outcome: 'success' | 'abort' | 'failure', failureKind?: FailureKind): TransportObservation {
-    const state = this.session.get(), completedAt = this.now(), kind = mediaKind(applied)
+    const completedAt = this.now(), kind = request.kind
     const routeType: RouteType = applied.decision.routeType
     return {
-      generation: state.generation, epoch: state.epoch, decisionId: applied.decision.id,
-      representation: applied.context?.representation ?? null, kind, routeType,
-      originalHost: applied.sourceHost ?? hostOf(originalUrl), targetHost: hostOf(targetUrl), finalHost: hostOf(finalUrl) || null,
+      request, generation: request.generation, epoch: request.epoch, decisionId: request.decisionId,
+      representation: request.representation, kind, routeType,
+      originalHost: request.originalHost, targetHost: request.targetHost, finalHost: hostOf(finalUrl) || null,
       streamKey: applied.streamKey,
       status, bytes, ttfbMs: responseAt > 0 ? responseAt - startedAt : null,
       elapsedMs: Math.max(1, completedAt - startedAt), completedAt, outcome,

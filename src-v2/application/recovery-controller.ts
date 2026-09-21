@@ -20,6 +20,9 @@ export interface RecoverySnapshot {
   readonly pauseSec: number
   readonly reloadCount: number
   readonly breakerSec: number
+  readonly reason?: string
+  readonly savedPositionSec?: number
+  readonly savedRate?: number
 }
 
 export class RecoveryController {
@@ -36,6 +39,9 @@ export class RecoveryController {
   #originalPlay: ((...args: unknown[]) => unknown) | null = null
   #wrappedPlay: ((...args: unknown[]) => unknown) | null = null
   #suppress = false
+  #lifecycleSerial = 0
+  #lastFrames: number | null = null
+  #lastSnapshot: VideoSnapshot | null = null
   #state: RecoverySnapshot = Object.freeze({ state: 'healthy', source: null, pauseSec: 0, reloadCount: 0, breakerSec: 0 })
 
   constructor(private readonly player: PlayerPort, private readonly now: () => number) {}
@@ -44,6 +50,8 @@ export class RecoveryController {
   isRecovering(): boolean { return !!this.#token }
 
   reset(): void {
+    if (this.#token) this.#finish('failed', 'lifecycle-ended')
+    this.#lifecycleSerial++; this.#lastFrames = null; this.#lastSnapshot = null
     this.#unhook(); this.#pauseAt = 0; this.#hadHealthy = false; this.#lastHealthyTime = 0; this.#token = null
     this.#reloadCount = 0; this.#breakerUntil = 0
     this.#state = Object.freeze({ state: 'healthy', source: null, pauseSec: 0, reloadCount: 0, breakerSec: 0 })
@@ -56,9 +64,12 @@ export class RecoveryController {
 
   tick(snapshot: VideoSnapshot): void {
     const now = this.now()
-    const healthy = snapshot.available && !snapshot.mediaError && (snapshot.readyState >= 2 || snapshot.width > 0 || snapshot.height > 0 || (snapshot.frames ?? 0) > 0)
+    const newFrames = snapshot.frames !== null && this.#lastFrames !== null && snapshot.frames > this.#lastFrames
+    this.#lastFrames = snapshot.frames; this.#lastSnapshot = snapshot
+    const healthy = snapshot.available && !snapshot.mediaError && (snapshot.readyState >= 2 || snapshot.width > 0 || snapshot.height > 0 || newFrames)
     if (healthy) {
       this.#hadHealthy = true; this.#lastHealthyTime = snapshot.currentTime; this.#lastHealthyRate = snapshot.playbackRate > 0 ? snapshot.playbackRate : 2
+      if (!this.#token && !snapshot.paused && ['failed', 'breaker'].includes(this.#state.state)) this.#finish('recovered', 'healthy-playback-observed')
       if (this.#token) {
         if (this.#token.reloadingAt && !this.#token.restored) this.#restore(this.#token, snapshot)
         else if (!this.#token.reloadingAt && (snapshot.currentTime > this.#token.baselinePositionSec + 0.05
@@ -68,8 +79,9 @@ export class RecoveryController {
     if (snapshot.paused && !snapshot.seeking && !snapshot.ended && this.#hadHealthy && !this.#token) {
       if (!this.#pauseAt) this.#pauseAt = now
       if (now - this.#pauseAt >= 30_000) this.#hook()
-      this.#state = Object.freeze({ state: 'pause-armed', source: null, pauseSec: Math.floor((now - this.#pauseAt) / 1000),
+      if (!['failed', 'breaker'].includes(this.#state.state)) this.#state = Object.freeze({ state: 'pause-armed', source: null, pauseSec: Math.floor((now - this.#pauseAt) / 1000),
         reloadCount: this.#reloadCount, breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - now) / 1000)) })
+      else this.#state = Object.freeze({ ...this.#state, breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - now) / 1000)) })
     } else if (!snapshot.paused && this.#pauseAt && !this.#token) {
       const wasLong = now - this.#pauseAt >= 30_000
       this.#pauseAt = 0; this.#unhook()
@@ -77,13 +89,13 @@ export class RecoveryController {
     }
     const token = this.#token
     if (!token) return
-    if (snapshot.mediaError || snapshot.seeking || snapshot.ended) { this.#finish('failed'); return }
+    if (snapshot.mediaError || snapshot.seeking || snapshot.ended) { this.#finish('failed', snapshot.mediaError ? 'media-error' : snapshot.seeking ? 'seek-interrupted' : 'ended'); return }
     if (healthy && !token.reloadingAt && (snapshot.currentTime > token.baselinePositionSec + 0.05
       || (snapshot.frames !== null && token.baselineFrames !== null && snapshot.frames > token.baselineFrames))) { this.#finish('recovered'); return }
     const dead = snapshot.readyState === 0 && snapshot.width === 0 && snapshot.height === 0 && snapshot.manifestHasVideo
       && snapshot.coreInitialized === false
     if (!token.reloadingAt && dead && now - token.startedAt >= 4000) this.#reload(token)
-    if (token.reloadingAt && now - token.reloadingAt >= 15_000) { this.#breakerUntil = now + 90_000; this.#finish('failed') }
+    if (token.reloadingAt && now - token.reloadingAt >= 15_000) { this.#breakerUntil = now + 90_000; this.#finish('failed', 'reload-timeout') }
   }
 
   dispose(): void { this.#unhook(); this.#listeners.clear() }
@@ -120,7 +132,7 @@ export class RecoveryController {
     const snapshot = this.player.snapshot()
     this.#token = { id: recoveryActionId(`core-${++this.#serial}`), source, startedAt: now,
       savedPositionSec: Math.max(0, this.player.currentTime() || this.#lastHealthyTime),
-      savedRate: Math.max(0.25, Math.min(4, this.player.playbackRate() || this.#lastHealthyRate || 2)),
+      savedRate: this.player.playbackRate() > 0 ? this.player.playbackRate() : this.#lastHealthyRate || 2,
       wasPlaying, baselinePositionSec: snapshot.currentTime, baselineFrames: snapshot.frames, reloadingAt: 0, restored: false }
     this.#state = Object.freeze({ state: 'play-intent', source, pauseSec: this.#pauseAt ? Math.floor((now - this.#pauseAt) / 1000) : 0,
       reloadCount: this.#reloadCount, breakerSec: 0 })
@@ -129,31 +141,50 @@ export class RecoveryController {
   #reload(token: ResumeToken): void {
     if (this.now() < this.#breakerUntil || this.#reloadCount >= 2) { this.#finish('breaker'); return }
     token.reloadingAt = this.now(); this.#reloadCount++
+    this.#breakerUntil = this.now() + 90_000
     this.#emit({ type: 'recovery', at: this.now(), action: { action: 'player-reload', id: token.id,
       savedPositionSec: token.savedPositionSec, savedRate: token.savedRate } })
-    this.#emit({ type: 'core', at: this.now(), state: 'reloading', actionId: token.id })
-    try { this.player.reload() } catch { this.#breakerUntil = this.now() + 90_000; this.#finish('failed'); return }
+    this.#emit({ type: 'core', at: this.now(), state: 'reloading', actionId: token.id, source: token.source,
+      savedPositionSec: token.savedPositionSec, savedRate: token.savedRate, readyState: this.#lastSnapshot?.readyState ?? 0,
+      coreInitialized: this.#lastSnapshot?.coreInitialized ?? null })
+    const lifecycle = this.#lifecycleSerial
+    try {
+      const result = this.player.reload()
+      if (result && typeof (result as Promise<unknown>).then === 'function') void Promise.resolve(result).catch(() => {
+        if (this.#lifecycleSerial === lifecycle && this.#token === token) this.#finish('failed', 'reload-rejected')
+      })
+    } catch (error) { this.#finish('failed', error instanceof Error && error.message === 'player.reload unavailable' ? 'reload-unavailable' : 'reload-threw'); return }
     this.#state = Object.freeze({ state: 'reloading', source: token.source, pauseSec: 0, reloadCount: this.#reloadCount, breakerSec: 0 })
   }
 
   #restore(token: ResumeToken, snapshot: VideoSnapshot): void {
     token.restored = true
     const position = snapshot.duration ? Math.min(token.savedPositionSec, Math.max(0, snapshot.duration - 0.1)) : token.savedPositionSec
-    this.player.seek(position); this.player.setRate(token.savedRate)
+    try { this.player.seek(position); this.player.setRate(token.savedRate) } catch { this.#finish('failed', 'restore-threw'); return }
+    const lifecycle = this.#lifecycleSerial
+    let playResult: unknown
     if (token.wasPlaying) {
       this.#suppress = true
-      try { const result = this.player.play(); if (result && typeof (result as Promise<unknown>).catch === 'function') void (result as Promise<unknown>).catch(() => undefined) }
+      try { playResult = this.player.play() }
+      catch { this.#finish('recovered-paused', 'play-threw'); return }
       finally { this.#suppress = false }
     }
-    this.#emit({ type: 'core', at: this.now(), state: 'recovered', actionId: token.id })
-    this.#finish(token.wasPlaying ? 'recovered' : 'recovered-paused')
+    this.#finish(token.wasPlaying ? 'recovered' : 'recovered-paused', 'core-evidence-restored')
+    if (playResult && typeof (playResult as Promise<unknown>).then === 'function') void Promise.resolve(playResult).catch(() => {
+      if (this.#lifecycleSerial !== lifecycle || this.#token) return
+      this.#state = Object.freeze({ ...this.#state, state: 'recovered-paused', reason: 'play-rejected' })
+      this.#emit({ type: 'core', at: this.now(), state: 'recovered-paused', actionId: token.id, reason: 'play-rejected' })
+    })
   }
 
-  #finish(state: RecoverySnapshot['state']): void {
+  #finish(state: RecoverySnapshot['state'], reason: string = state): void {
     const token = this.#token
-    if (state === 'failed' && token) this.#emit({ type: 'core', at: this.now(), state: 'failed', actionId: token.id })
+    if (token && ['failed', 'recovered', 'recovered-paused'].includes(state)) this.#emit({ type: 'core', at: this.now(),
+      state: state as 'failed' | 'recovered' | 'recovered-paused', actionId: token.id, reason, source: token.source,
+      savedPositionSec: token.savedPositionSec, savedRate: token.savedRate, readyState: this.#lastSnapshot?.readyState ?? 0,
+      coreInitialized: this.#lastSnapshot?.coreInitialized ?? null })
     this.#token = null; this.#pauseAt = 0; this.#unhook()
-    this.#state = Object.freeze({ state, source: token?.source ?? null, pauseSec: 0, reloadCount: this.#reloadCount,
+    this.#state = Object.freeze({ state, reason, ...(token ? { savedPositionSec: token.savedPositionSec, savedRate: token.savedRate } : {}), source: token?.source ?? null, pauseSec: 0, reloadCount: this.#reloadCount,
       breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - this.now()) / 1000)) })
   }
   #emit(event: DomainEvent): void { for (const listener of this.#listeners) listener(event) }

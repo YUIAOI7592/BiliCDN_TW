@@ -42,10 +42,20 @@ const collectDash = (payload: unknown): { readonly video: UnknownRecord[]; reado
 export class PlayurlAdapter {
   #seenTrusted = new WeakSet<object>()
   #seenPage = new WeakMap<object, number>()
+  #responses = new Set<string>()
+  #generation = -1
+  #contentKey = ''
   constructor(private readonly session: SessionStore, private readonly vault: SignedRouteVault,
     private readonly routes: RouteCoordinator, private readonly settings: SettingsStore) {}
 
-  transform(payload: unknown, source: 'trusted-api' | 'player-mpd' | 'page-hint' = 'trusted-api'): boolean {
+  lifecycleKey(): string { const s = this.session.get(); return `${s.generation}:${s.epoch}` }
+
+  transform(payload: unknown, source: 'trusted-api' | 'player-mpd' | 'page-hint' = 'trusted-api', responseKey?: string): boolean {
+    if (this.session.get().disabled) return false
+    if (this.#generation !== Number(this.session.get().generation)) {
+      this.#generation = Number(this.session.get().generation); this.#responses.clear(); this.#contentKey = ''; this.#seenTrusted = new WeakSet()
+    }
+    if (responseKey && this.#responses.has(responseKey)) return true
     const dash = collectDash(payload)
     if (!dash || (!dash.video.length && !dash.audio.length)) return false
     if (payload && typeof payload === 'object') {
@@ -59,12 +69,16 @@ export class PlayurlAdapter {
       }
     }
     this.#sortCodecGroups(dash.video, this.settings.get().codec)
-    if (source === 'trusted-api') {
+    let contentKey = ''
+    try { const pathname = new URL(baseUrl(dash.video[0] ?? dash.audio[0] ?? {})).pathname; contentKey = pathname.slice(0, pathname.lastIndexOf('/')) } catch { /* no trusted media identity */ }
+    if (source === 'trusted-api' && this.#contentKey && contentKey && contentKey !== this.#contentKey) {
       this.session.beginEpoch()
       const state = this.session.get()
       this.vault.reset(state.generation, state.epoch)
       this.routes.resetEpoch()
     }
+    if (source === 'trusted-api' && contentKey) this.#contentKey = contentKey
+    if (responseKey) { this.#responses.add(responseKey); while (this.#responses.size > 128) this.#responses.delete(this.#responses.values().next().value as string) }
     const state = this.session.get()
     for (const [kind, items] of [['video', dash.video], ['audio', dash.audio]] as const) {
       items.forEach((item, index) => {
@@ -74,17 +88,21 @@ export class PlayurlAdapter {
           key: `${String(item.id ?? index)}:${codecName(item)}:${finite(item.height)}`, height: finite(item.height), codec: codecName(item),
           bandwidth, urls, source })
         if (!rep) return
+        if (source === 'player-mpd') return
         const requiredMbps = Math.max(kind === 'audio' ? 0.5 : 2,
-          ((bandwidth || (kind === 'audio' ? 192_000 : 4_000_000)) / 1_000_000) * 2 * 1.25)
+          ((bandwidth || (kind === 'audio' ? 192_000 : 4_000_000)) / 1_000_000) * this.routes.playbackRate() * 1.25)
         const demand: PlaybackDemand = { kind, requiredMbps, highDemand: requiredMbps >= 12 }
-        const decision = this.routes.plan(rep, demand, source === 'trusted-api' || source === 'page-hint' ? 'new-epoch' : 'representation')
+        const decision = this.routes.plan(rep, demand, this.session.get().affinity ? 'representation' : 'startup')
         const applied = this.#apply(primary, decision, rep)
         if (!applied) return
         const catalogBackups = decision.ranking.filter(row => row.eligible && row.candidate.type === 'catalog-generated')
           .slice(0, 2).map(row => {
             try { const u = new URL(primary); u.hostname = row.candidate.host; u.protocol = 'https:'; u.port = ''; return u.href } catch { return '' }
           }).filter(Boolean)
-        rewriteItem(item, applied, [...new Set([...catalogBackups, ...urls])].filter(url => url !== applied).slice(0, 5))
+        const backups = [...new Set([...catalogBackups, ...urls])].filter(url => url !== applied).slice(0, 5)
+        this.vault.registerAlias(rep, applied)
+        for (const url of catalogBackups) this.vault.registerAlias(rep, url)
+        rewriteItem(item, applied, backups)
       })
     }
     return true

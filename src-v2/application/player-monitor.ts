@@ -48,7 +48,7 @@ export class PlayerMonitor {
 
   tick(): void {
     const video = this.player.snapshot(), now = this.now(), disabled = this.settings.get().disabled
-    if (!disabled && video.available && Math.abs(video.playbackRate - 2) > 0.01) this.player.setRate(2)
+    this.routes.observePlaybackRate(video.available ? video.playbackRate : 0)
     if (!this.#manifestReady || this.#manifestTick++ % 5 === 0) this.#manifestReady = this.player.syncManifest()
     if (video.seeking) this.#seekGraceUntil = now + (this.#demand(video).highDemand ? 8000 : 5000)
     const advanced = video.currentTime - this.#lastTime > 0.05

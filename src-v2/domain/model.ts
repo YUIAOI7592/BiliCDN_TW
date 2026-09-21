@@ -4,6 +4,29 @@ export type GenerationId = Brand<number, 'GenerationId'>
 export type EpochId = Brand<number, 'EpochId'>
 export type RepresentationId = Brand<string, 'RepresentationId'>
 export type DecisionId = Brand<string, 'DecisionId'>
+export type RequestId = Brand<string, 'RequestId'>
+export type AttributionStatus = 'matched' | 'waiting-data' | 'weak' | 'ambiguous' | 'detached'
+export type AttributionSource = 'exact' | 'catalog-alias' | 'path-hint' | 'none'
+
+export interface RequestContext {
+  readonly requestId: RequestId
+  readonly generation: GenerationId
+  readonly epoch: EpochId
+  readonly decisionId: DecisionId
+  readonly representation: RepresentationId | null
+  readonly kind: MediaKind | null
+  readonly attributionStatus: AttributionStatus
+  readonly attributionSource: AttributionSource
+  readonly decisionStage: 'request'
+  readonly routeType: RouteType
+  readonly originalHost: string
+  readonly targetHost: string
+  readonly sourceHost: string | null
+  readonly playurlHostChanged: boolean
+  readonly urlChanged: boolean
+  readonly hostChanged: boolean
+  readonly startedAt: number
+}
 export type RecoveryActionId = Brand<string, 'RecoveryActionId'>
 export type SignedRouteHandle = Brand<string, 'SignedRouteHandle'>
 
@@ -99,6 +122,7 @@ export type RouteDecision =
     }
 
 export interface TransportObservation {
+  readonly request?: RequestContext
   readonly generation: GenerationId
   readonly epoch: EpochId
   readonly decisionId: DecisionId | null
@@ -157,11 +181,16 @@ export type RecoveryAction =
   | { readonly action: 'none'; readonly id: RecoveryActionId; readonly reason: string }
 
 export type DomainEvent =
+  | { readonly type: 'route-planned'; readonly at: number; readonly decision: RouteDecision }
+  | { readonly type: 'request-started'; readonly at: number; readonly request: RequestContext }
+  | { readonly type: 'transport-completed'; readonly at: number; readonly observation: TransportObservation; readonly detached: boolean }
+  | { readonly type: 'attribution-changed'; readonly at: number; readonly requestId: RequestId; readonly status: AttributionStatus; readonly kind: MediaKind | null }
+  | { readonly type: 'route-confirmed'; readonly at: number; readonly observation: TransportObservation }
   | { readonly type: 'route-decision'; readonly at: number; readonly decision: RouteDecision }
   | { readonly type: 'transport'; readonly at: number; readonly observation: TransportObservation }
   | { readonly type: 'route-observed'; readonly at: number; readonly routeType: RouteType; readonly host: string; readonly decisionId: DecisionId | null }
   | { readonly type: 'recovery'; readonly at: number; readonly action: RecoveryAction }
-  | { readonly type: 'core'; readonly at: number; readonly state: 'healthy' | 'waiting' | 'reloading' | 'recovered' | 'failed'; readonly actionId: RecoveryActionId | null }
+  | { readonly type: 'core'; readonly at: number; readonly state: 'healthy' | 'waiting' | 'reloading' | 'recovered' | 'recovered-paused' | 'failed'; readonly actionId: RecoveryActionId | null; readonly reason?: string; readonly savedPositionSec?: number; readonly savedRate?: number; readonly source?: string; readonly readyState?: number; readonly coreInitialized?: boolean | null }
   | { readonly type: 'lifecycle'; readonly at: number; readonly generation: GenerationId; readonly epoch: EpochId; readonly reason: string }
 
 export interface Clock {
@@ -172,5 +201,6 @@ export const generationId = (value: number): GenerationId => value as Generation
 export const epochId = (value: number): EpochId => value as EpochId
 export const representationId = (value: string): RepresentationId => value as RepresentationId
 export const decisionId = (value: string): DecisionId => value as DecisionId
+export const requestId = (value: string): RequestId => value as RequestId
 export const recoveryActionId = (value: string): RecoveryActionId => value as RecoveryActionId
 export const signedRouteHandle = (value: string): SignedRouteHandle => value as SignedRouteHandle

@@ -16,6 +16,8 @@ import type { AppliedRouteDecision } from '../src-v2/application/route-coordinat
 import type { DomainEvent, TransportObservation } from '../src-v2/domain/model.ts'
 import { RecoveryController } from '../src-v2/application/recovery-controller.ts'
 import { MeasurementController } from '../src-v2/application/measurement-controller.ts'
+import { PlayerMonitor } from '../src-v2/application/player-monitor.ts'
+import { PlayerAdapter } from '../src-v2/adapters/player.ts'
 import type { PlayerPort, VideoSnapshot } from '../src-v2/application/ports.ts'
 
 let passed = 0
@@ -92,6 +94,9 @@ vault.reset(generation, epoch)
 const rep = vault.register({ generation, epoch, kind: 'video', key: '80:av1', height: 1080, codec: 'av1', bandwidth: 4_000_000,
   urls: ['https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret'], source: 'trusted-api' })
 check(rep, 'signed route registered')
+equal(vault.register({ generation, epoch, kind: 'video', key: '80:av1', height: 1080, codec: 'av1', bandwidth: 4_000_000,
+  urls: ['https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret'], source: 'player-mpd' }), rep,
+  'repeated manifest ingestion preserves representation identity')
 const context = vault.contextForUrl('https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret')
 equal(context?.epoch, epoch, 'exact signed route maps to current epoch')
 const native = rep ? vault.candidates(rep, new Set()).native[0] : null
@@ -160,6 +165,7 @@ const passDecision: AppliedRouteDecision = { decision: { action: 'pass', id: dec
   host: 'upos-sz-mirrorali.bilivideo.com', ranking: [] }, url: 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/runtime.m4s', context: null, streamKey: 'runtime', sourceHost: 'upos-sz-mirrorali.bilivideo.com' }
 const observations: TransportObservation[] = []
 const routeStub = {
+  requestStarted(): void {},
   apply(url: string): AppliedRouteDecision { return { ...passDecision, url } },
   async observe(observation: TransportObservation): Promise<void> { observations.push(observation) },
 }
@@ -249,6 +255,7 @@ const oversizedReport = JSON.parse(recorder.buildReport({ version: '2.0.0', sess
 equal(oversizedReport.current.routes?.planCount, routeReadModel.planCount, 'oversized route read model retains bounded current summary')
 equal(oversizedReport.current.monitor?.watchdog, 'healthy', 'oversized report keeps current playback state')
 check(oversizedReport.recorder.incident?.reason.startsWith('transport:'), 'oversized report keeps incident cause')
+check(((oversizedReport.recorder as { flow?: unknown[] }).flow?.length ?? 0) > 0, 'oversized report preserves successful transport summaries')
 
 let recoveryNow = now, reloads = 0, seeks: number[] = [], rates: number[] = [], plays = 0
 let playerSnapshot: VideoSnapshot = { available: true, paused: false, seeking: false, ended: false, readyState: 4,
@@ -291,5 +298,53 @@ await new Promise(resolve => setTimeout(resolve, 0))
 equal(challengeCalls, 1, 'safe playback selects one challenger')
 equal(challengeFetches, 1, 'safe challenger performs one bounded request')
 equal(challengeRecords, 1, 'challenge updates evidence once')
+
+// Observing playback must never override the user's speed selection.
+let selectedRate = 1, rateWrites = 0, observedRate = 0
+const ratePlayer: PlayerPort = { ...recoveryPlayer,
+  snapshot: () => ({ ...playerSnapshot, playbackRate: selectedRate, effectiveRate: selectedRate, currentTime: 50 }),
+  playbackRate: () => selectedRate, setRate: () => { rateWrites++ },
+}
+const rateMonitor = new PlayerMonitor(ratePlayer, session, settings, vault,
+  { observePlaybackRate: (rate: number) => { observedRate = rate } } as never,
+  { tick: () => undefined } as never, { tick: () => undefined, isRecovering: () => false } as never,
+  () => true, () => now)
+for (const rate of [1, 1.5, 0.75, 2, 1]) {
+  selectedRate = rate
+  rateMonitor.tick(); rateMonitor.tick()
+  equal(observedRate, rate, `monitor observes selected ${rate}x`)
+}
+equal(rateWrites, 0, 'repeated monitoring never writes playback speed')
+
+const adapterVideo = { isConnected: true, paused: false, seeking: false, ended: false, readyState: 4,
+  currentTime: 10, duration: 100, videoWidth: 1920, videoHeight: 1080, playbackRate: 1,
+  buffered: { length: 1, start: () => 0, end: () => 70 }, error: null,
+} as unknown as HTMLVideoElement
+class RateAdapter extends PlayerAdapter {
+  override video(): HTMLVideoElement { return adapterVideo }
+  override player(): Record<string, unknown> { return { getPlaybackRate: () => null } }
+}
+const rateAdapter = new RateAdapter({} as never)
+for (const rate of [1, 1.5, 2, 0.75]) {
+  adapterVideo.playbackRate = rate
+  equal(rateAdapter.snapshot().effectiveRate, rate, `adapter uses real ${rate}x for demand`)
+  equal(rateAdapter.snapshot().playableBufferSec, 60 / rate, `buffer duration respects ${rate}x`)
+  equal(rateAdapter.playbackRate(), rate, 'unavailable player API falls back to video rate')
+}
+adapterVideo.playbackRate = Number.NaN
+equal(rateAdapter.snapshot().effectiveRate, 2, '2x is only the unknown-rate planning fallback')
+
+let savedRateRestored = 0, rateRecoveryNow = now
+const customRatePlayer: PlayerPort = { ...recoveryPlayer, playbackRate: () => 1.5,
+  setRate: value => { savedRateRestored = value } }
+const customRateRecovery = new RecoveryController(customRatePlayer, () => rateRecoveryNow)
+const healthyCustomRate = { ...playerSnapshot, playbackRate: 1.5, effectiveRate: 1.5 }
+customRateRecovery.tick(healthyCustomRate)
+customRateRecovery.armRouteFailure('route-failure', healthyCustomRate)
+rateRecoveryNow += 4000
+customRateRecovery.tick({ ...healthyCustomRate, readyState: 0, width: 0, height: 0, coreInitialized: false })
+rateRecoveryNow += 1000
+customRateRecovery.tick({ ...healthyCustomRate, frames: 2 })
+equal(savedRateRestored, 1.5, 'core recovery restores the saved user rate, not forced 2x')
 
 console.log(`v2 domain and controller tests passed: ${passed}`)

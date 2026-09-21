@@ -44,7 +44,7 @@ export class PlayerAdapter {
         if (start <= currentTime + 0.05 && rangeEnd >= currentTime - 0.05) { end = Math.max(end, rangeEnd); break }
       }
     } catch { /* empty range */ }
-    const rate = safeNumber(video.playbackRate) ?? 1, effectiveRate = rate > 1 ? Math.min(4, rate) : 2
+    const rate = safeNumber(video.playbackRate) ?? 0, effectiveRate = rate > 0 ? rate : 2
     let frames: number | null = null
     try { frames = video.getVideoPlaybackQuality?.().totalVideoFrames ?? null } catch { /* unavailable */ }
     return { available: true, paused: video.paused, seeking: video.seeking, ended: video.ended, readyState: video.readyState,
@@ -59,10 +59,11 @@ export class PlayerAdapter {
     if (!isRecord(mpd)) return false
     const cloned = this.#cloneMpd(mpd)
     if (!cloned) return false
-    const fingerprint = JSON.stringify(cloned)
+    const fingerprint = `${this.playurl.lifecycleKey()}:${JSON.stringify(cloned)}`
     if (fingerprint === this.#manifestFingerprint) return true
-    this.#manifestFingerprint = fingerprint
-    return this.playurl.transform({ code: 0, data: { dash: cloned } }, 'player-mpd')
+    const accepted = this.playurl.transform({ code: 0, data: { dash: cloned } }, 'player-mpd')
+    if (accepted) this.#manifestFingerprint = fingerprint
+    return accepted
   }
 
   reload(): unknown {
@@ -71,7 +72,10 @@ export class PlayerAdapter {
     return Reflect.apply(reload, player, [])
   }
   currentTime(): number { return safeNumber(safeCall(this.player(), 'getCurrentTime')) ?? this.snapshot().currentTime }
-  playbackRate(): number { return safeNumber(safeCall(this.player(), 'getPlaybackRate')) ?? this.snapshot().playbackRate }
+  playbackRate(): number {
+    const rate = safeNumber(safeCall(this.player(), 'getPlaybackRate'))
+    return rate !== null && rate > 0 ? rate : this.snapshot().playbackRate
+  }
   seek(value: number): void {
     const player = this.player(), method = player?.seek
     if (player && typeof method === 'function') { try { Reflect.apply(method, player, [value]); return } catch { /* fallback */ } }
@@ -82,7 +86,7 @@ export class PlayerAdapter {
     if (player && typeof method === 'function') { try { Reflect.apply(method, player, [value]); return } catch { /* fallback */ } }
     const video = this.video(); if (video) video.playbackRate = value
   }
-  play(): unknown { return safeCall(this.player(), 'play') }
+  play(): unknown { const player = this.player(); if (!player || typeof player.play !== 'function') throw new Error('player.play unavailable'); return Reflect.apply(player.play, player, []) }
   reset(): void { this.#cachedVideo = null; this.#manifestFingerprint = '' }
 
   #area(video: HTMLVideoElement): number { return Math.max(0, video.clientWidth) * Math.max(0, video.clientHeight) }

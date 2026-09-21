@@ -79,7 +79,7 @@ export const chooseRoute = (input: RankRoutesInput, clock: Clock, id: DecisionId
   const ranking = rankRoutes(input, clock.now())
   const current = input.current && ranking.find(row => row.eligible && row.candidate.host === input.current?.host)
   const healthyBoundary = input.boundary !== 'verified-failure' && input.boundary !== 'watchdog' && input.boundary !== 'user-setting'
-  if (current && healthyBoundary && input.boundary !== 'new-epoch' && input.boundary !== 'representation') {
+  if (current && healthyBoundary && input.boundary !== 'new-epoch') {
     const candidate = current.candidate
     if (candidate.type === 'root-original') return { action: 'pass', id, reason: 'healthy-affinity', routeType: 'root-original', host: candidate.host, ranking }
     return { action: 'rewrite', id, reason: 'healthy-affinity', routeType: candidate.type, host: candidate.host, candidate, ranking }

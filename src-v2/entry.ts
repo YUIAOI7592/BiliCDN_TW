@@ -54,13 +54,19 @@ export const start = (): void => {
   routes.subscribe(eventSink)
   recovery.subscribe(eventSink)
   lifecycle.subscribe(eventSink)
+  monitor.subscribe(() => diagnostics.tick())
 
   visibility.setEnabled(!settings.get().disabled)
   transport.install()
   webRtc.install()
   lifecycle.start()
   panel.start()
-  settings.subscribe(state => visibility.setEnabled(!state.disabled))
+  let routeSettings = JSON.stringify([settings.get().fixedHost, settings.get().catalogOverrides])
+  settings.subscribe(state => {
+    visibility.setEnabled(!state.disabled)
+    const next = JSON.stringify([state.fixedHost, state.catalogOverrides])
+    if (next !== routeSettings) { routeSettings = next; routes.invalidateForUserSetting() }
+  })
   try { GM_registerMenuCommand('⚙️ 開啟 BiliCDN v2 控制中心', () => center.show()) } catch { /* optional */ }
 }
 

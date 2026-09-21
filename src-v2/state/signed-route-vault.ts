@@ -1,8 +1,8 @@
 import { catalogIndex, TRUSTED_CATALOG_SET } from '../domain/catalog.ts'
-import { isKnownNativeFamily, mediaIdentity, parseMediaUrl } from '../domain/url-policy.ts'
+import { isKnownNativeFamily, parseMediaUrl } from '../domain/url-policy.ts'
 import {
   representationId, signedRouteHandle, type EpochId, type GenerationId, type MediaKind, type NativeCandidate,
-  type RepresentationId, type RootCandidate, type RouteIdentity, type SignedRouteHandle,
+  type RepresentationId, type RootCandidate, type RouteIdentity, type SignedRouteHandle, type AttributionStatus, type AttributionSource,
 } from '../domain/model.ts'
 
 const MAX_VIDEO_GROUPS = 128
@@ -29,7 +29,10 @@ export class SignedRouteVault {
   #generation: GenerationId | null = null
   #epoch: EpochId | null = null
   #groups = new Map<RepresentationId, Group>()
-  #byIdentity = new Map<string, RepresentationId>()
+  #byKey = new Map<string, RepresentationId>()
+  #byUrl = new Map<string, Set<RepresentationId>>()
+  #aliases = new Map<string, Set<RepresentationId>>()
+  #byPath = new Map<string, Set<RepresentationId>>()
   #handles = new Map<SignedRouteHandle, { readonly representation: RepresentationId; readonly url: string }>()
   #invalid = new Map<RepresentationId, Set<string>>()
   #urlChars = 0
@@ -38,36 +41,67 @@ export class SignedRouteVault {
   reset(generation: GenerationId, epoch: EpochId): void {
     this.#generation = generation
     this.#epoch = epoch
-    this.#groups.clear(); this.#byIdentity.clear(); this.#handles.clear(); this.#invalid.clear(); this.#urlChars = 0; this.#serial = 0
+    this.#groups.clear(); this.#byKey.clear(); this.#byUrl.clear(); this.#aliases.clear(); this.#byPath.clear(); this.#handles.clear(); this.#invalid.clear(); this.#urlChars = 0; this.#serial = 0
   }
 
   register(input: RegisterRepresentationInput): RepresentationId | null {
     if (input.generation !== this.#generation || input.epoch !== this.#epoch) return null
+    const key = `${input.kind}:${input.key}:${input.codec}:${input.height}`
+    const priorId = this.#byKey.get(key), prior = priorId ? this.#groups.get(priorId) : undefined
     const cap = input.kind === 'video' ? MAX_VIDEO_GROUPS : MAX_AUDIO_GROUPS
-    if ([...this.#groups.values()].filter(group => group.identity.kind === input.kind).length >= cap) return null
-    const rep = representationId(`${input.kind}:${input.key.slice(0, 128)}:${++this.#serial}`)
-    const routes: StoredRoute[] = []
+    if (!prior && [...this.#groups.values()].filter(group => group.identity.kind === input.kind).length >= cap) return null
+    const rep = priorId ?? representationId(`${input.kind}:group-${++this.#serial}`)
+    const routes: StoredRoute[] = [...(prior?.routes ?? [])]
     for (const raw of [...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP)) {
       const parsed = parseMediaUrl(raw)
       if (!parsed || parsed.kind !== 'normal' || this.#urlChars + raw.length > MAX_URL_CHARS) continue
-      const handle = signedRouteHandle(`route:${this.#serial}:${routes.length + 1}`)
+      if (routes.some(route => route.url === parsed.url.href)) continue
+      if (routes.length >= MAX_URLS_PER_GROUP) { this.registerAlias(rep, parsed.url.href); continue }
+      const handle = signedRouteHandle(`route:${rep}:${routes.length + 1}`)
       routes.push(Object.freeze({ handle, host: parsed.host, url: parsed.url.href, order: routes.length,
         activelyExplorable: isKnownNativeFamily(parsed.host) }))
       this.#handles.set(handle, { representation: rep, url: parsed.url.href })
-      const identity = mediaIdentity(parsed.url.href)
-      if (identity) this.#byIdentity.set(identity, rep)
+      this.#index(this.#byUrl, parsed.url.href, rep)
+      this.#index(this.#byPath, parsed.url.pathname, rep)
       this.#urlChars += parsed.url.href.length
     }
     if (!routes.length) return null
+    this.#byKey.set(key, rep)
     const identity: RouteIdentity = Object.freeze({ generation: input.generation, epoch: input.epoch, representation: rep, kind: input.kind })
     this.#groups.set(rep, Object.freeze({ identity, height: input.height, codec: input.codec.slice(0, 48), bandwidth: input.bandwidth,
-      source: input.source, routes: Object.freeze(routes) }))
+      source: prior?.source === 'trusted-api' ? prior.source : input.source, routes: Object.freeze(routes) }))
     return rep
   }
 
   contextForUrl(url: string): RouteIdentity | null {
-    const identity = mediaIdentity(url), rep = identity ? this.#byIdentity.get(identity) : null
-    return rep ? this.#groups.get(rep)?.identity ?? null : null
+    const match = this.match(url)
+    return match.status === 'matched' ? match.context : null
+  }
+
+  match(url: string): { context: RouteIdentity | null; status: AttributionStatus; source: AttributionSource } {
+    const parsed = parseMediaUrl(url)
+    if (!parsed || parsed.kind !== 'normal') return { context: null, status: 'waiting-data', source: 'none' }
+    for (const [index, source] of [[this.#byUrl, 'exact'], [this.#aliases, 'catalog-alias'], [this.#byPath, 'path-hint']] as const) {
+      const reps = index.get(source === 'path-hint' ? parsed.url.pathname : parsed.url.href)
+      if (!reps?.size) continue
+      if (reps.size !== 1) return { context: null, status: 'ambiguous', source }
+      const rep = [...reps][0], context = rep ? this.#groups.get(rep)?.identity ?? null : null
+      return { context, status: source === 'path-hint' ? 'weak' : 'matched', source }
+    }
+    return { context: null, status: 'waiting-data', source: 'none' }
+  }
+
+  registerAlias(rep: RepresentationId, url: string): void {
+    const parsed = parseMediaUrl(url)
+    if (!parsed || parsed.kind !== 'normal' || this.#aliases.size >= 1024 || this.#urlChars + url.length > MAX_URL_CHARS) return
+    if (!this.#aliases.has(parsed.url.href)) this.#urlChars += parsed.url.href.length
+    this.#index(this.#aliases, parsed.url.href, rep)
+    this.#index(this.#byPath, parsed.url.pathname, rep)
+  }
+
+  #index(index: Map<string, Set<RepresentationId>>, key: string, rep: RepresentationId): void {
+    const rows = index.get(key) ?? new Set<RepresentationId>()
+    rows.add(rep); index.set(key, rows)
   }
 
   candidates(representation: RepresentationId, unlockedHosts: ReadonlySet<string>): { readonly native: readonly NativeCandidate[]; readonly root: RootCandidate | null } {

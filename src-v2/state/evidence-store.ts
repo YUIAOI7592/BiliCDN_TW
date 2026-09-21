@@ -95,8 +95,9 @@ export class EvidenceStore {
     return Object.freeze(Object.values(this.#payload.records).filter(row => !kind || row.kind === kind))
   }
 
-  async record(host: string, kind: MediaKind, sample: EvidenceSample): Promise<RouteEvidence> {
+  async record(host: string, kind: MediaKind, sample: EvidenceSample, valid: () => boolean = () => true): Promise<RouteEvidence> {
     return await this.storage.withLock('routeEvidence', () => {
+      if (!valid()) return this.get(host, kind) ?? emptyEvidence(host, kind)
       const now = this.now(), latest = parsePayload(this.storage.get<unknown>(EVIDENCE_KEY, null), now)
       const key = recordKey(host, kind), prior = latest.records[key] ?? emptyEvidence(host, kind)
       const updated = addEvidenceSample(prior, sample, now)
