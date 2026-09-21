@@ -100,6 +100,10 @@ export class RecoveryController {
       const wasLong = now - this.#pauseAt >= 30_000
       this.#pauseAt = 0; this.#unhook()
       if (wasLong) this.#begin('paused-transition', true)
+      else if (healthy && this.#state.state === 'pause-armed') this.#state = Object.freeze({
+        state: 'healthy', source: null, pauseSec: 0, reloadCount: this.#reloadCount,
+        breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - now) / 1000)),
+      })
     }
     const token = this.#token
     if (!token) return

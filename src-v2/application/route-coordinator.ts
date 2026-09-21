@@ -30,6 +30,7 @@ export class RouteCoordinator {
   #recoverySerial = 0
   #decisions = new Map<DecisionId, DecisionRecord>()
   #plans = new Map<RepresentationId, RouteDecision>()
+  #requestedRepresentations = new Set<RepresentationId>()
   #unlockedNative = new Map<RepresentationId, Set<string>>()
   #listeners = new Set<(event: DomainEvent) => void>()
   #hostLockedStreams = new Set<string>()
@@ -57,6 +58,7 @@ export class RouteCoordinator {
 
   resetEpoch(): void {
     this.#plans.clear(); this.#unlockedNative.clear(); this.#decisions.clear(); this.#hostLockedStreams.clear()
+    this.#requestedRepresentations.clear()
     this.#tentativeRepresentation = null; this.#tentativeTransfers = 0
     this.#streamPlans.clear(); this.#latest.clear(); this.#lastSuccess.clear(); this.#requested.clear()
     this.#effectiveRate = 2
@@ -125,6 +127,13 @@ export class RouteCoordinator {
     const playbackDemand = demand ?? { kind, requiredMbps: kind === 'audio' ? 0.5 : 8, highDemand: false }
     let decision = context ? this.#plans.get(context.representation) : streamKey ? this.#streamPlans.get(streamKey) : null
     const outputRole = context ? this.vault.outputRole(context.representation, url) : null
+    // Playurl preplans every quality before any route has proved successful.
+    // On first use, prefer the now-observed video affinity, not that cold plan.
+    // Explicit player backups and already-requested group recovery stay local.
+    if (context?.kind === 'video' && !this.#requestedRepresentations.has(context.representation)
+      && this.session.get().affinity && outputRole?.role !== 'backup' && !this.settings.get().fixedHost) {
+      decision = this.#choose(context, playbackDemand, 'representation', null)
+    }
     if (context && outputRole?.role === 'backup' && decision?.host !== parsed.host && !this.settings.get().fixedHost && !this.#hardRestriction(parsed.host, kind)) {
       const catalogIndex = TRUSTED_CATALOG.indexOf(parsed.host as typeof TRUSTED_CATALOG[number])
       const native = this.vault.candidates(context.representation, this.#unlockedNative.get(context.representation) ?? new Set()).native
@@ -149,7 +158,7 @@ export class RouteCoordinator {
     const finalRestriction = finalHost ? this.#hardRestriction(finalHost, kind) : null
     if (finalHost && finalRestriction) { decision = this.#block(finalRestriction, finalHost); applied = null }
     this.#remember(decision, context, kind)
-    if (context) this.#plans.set(context.representation, decision)
+    if (context) { this.#plans.set(context.representation, decision); this.#requestedRepresentations.add(context.representation) }
     else if (streamKey) {
       this.#streamPlans.set(streamKey, decision)
       while (this.#streamPlans.size > 192) this.#streamPlans.delete(this.#streamPlans.keys().next().value as string)
@@ -329,7 +338,8 @@ export class RouteCoordinator {
     const candidates = [...catalog, ...routes.native, ...(routes.root ? [routes.root] : [])]
     const id = this.#nextId()
     const current = this.#plans.get(context.representation), affinity = this.session.get().affinity
-    const currentRoute = current && current.action !== 'block' && current.host ? { type: current.routeType, host: current.host }
+    const currentRoute = boundary === 'representation' && context.kind === 'video' && affinity ? { type: affinity.type, host: affinity.host }
+      : current && current.action !== 'block' && current.host ? { type: current.routeType, host: current.host }
       : context.kind === 'video' && affinity ? { type: affinity.type, host: affinity.host } : null
     const decision = chooseRoute({ candidates, evidenceFor: (host, kind) => this.evidence.get(host, kind),
       restrictions: { disabledCatalogHosts, defaultUnavailableHosts, blackHosts: restriction.blackHosts, deadHosts: restriction.deadHosts, hostLocked: new Set() },

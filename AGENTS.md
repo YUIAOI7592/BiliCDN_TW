@@ -5,7 +5,7 @@
 - Source of truth: `src-v2/`.
 - Entry point: `src-v2/entry.ts`.
 - Tests: `tests-v2/`.
-- Release output: `Release/v2.0.2/BiliCDN_TW.user.js`. Publish after automated verification; targeted Chrome acceptance follows the user's update.
+- Release output: `Release/v2.0.3/BiliCDN_TW.user.js`. Publish after automated verification; targeted Chrome acceptance follows the user's update.
 - Historical v1 releases and tags are references only; v2 build and tests must not import them.
 
 ## Required workflow

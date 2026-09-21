@@ -516,4 +516,65 @@ outputVault.reset(nextGeneration.generation, nextGeneration.epoch); outputRoutes
 equal(outputVault.outputRole(audioRep, nativeAudioUrl), null, 'generation reset discards output roles')
 equal(outputRoutes.latestVideoHost(), null, 'generation reset drops old successful host')
 
+// Post-release report: a second representation must not revive a startup plan
+// after the active video has confirmed a working player fallback.
+const transitionStorage = new FakeStorage(), transitionSession = new SessionStore()
+const transitionState = transitionSession.beginGeneration(false), transitionVault = new SignedRouteVault()
+transitionVault.reset(transitionState.generation, transitionState.epoch)
+const transitionSettings = new SettingsStore(transitionStorage, () => now)
+const transitionRestrictions = new RestrictionStore(transitionStorage, () => now)
+const transitionRoutes = new RouteCoordinator(clock, transitionSession, transitionSettings,
+  transitionRestrictions, new EvidenceStore(transitionStorage, () => now), transitionVault)
+const transitionAdapter = new PlayurlAdapter(transitionSession, transitionVault, transitionRoutes, transitionSettings)
+const transitionItems = [1080, 720].map((height, index) => ({ id: 80 - index * 16, codecid: 13, height,
+  bandwidth: 1_000_000, base_url: `https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/transition/${height}/1.m4s?k=1`,
+  backup_url: [`https://upos-hz-mirrorakam.akamaized.net/upgcxcode/transition/${height}/1.m4s?k=2`] }))
+transitionAdapter.transform({ data: { dash: { video: transitionItems, audio: [] } } })
+const firstTransition = transitionItems[0]!, nextTransition = transitionItems[1]!
+const transitionNative = firstTransition.backup_url.find(url => url.includes('.akamaized.net'))!
+const transitionApplied = transitionRoutes.apply(transitionNative)
+for (let index = 0; index < 2; index++) await transitionRoutes.observe({ ...healthyObservation,
+  generation: transitionState.generation, epoch: transitionState.epoch,
+  decisionId: transitionApplied.decision.id, representation: transitionApplied.context!.representation,
+  routeType: 'native-signed', originalHost: 'upos-hz-mirrorakam.akamaized.net',
+  targetHost: 'upos-hz-mirrorakam.akamaized.net', finalHost: 'upos-hz-mirrorakam.akamaized.net', completedAt: now + index })
+equal(transitionSession.get().affinity?.host, 'upos-hz-mirrorakam.akamaized.net', 'first group establishes observed Native affinity')
+const nextTransitionApplied = transitionRoutes.apply(nextTransition.base_url)
+equal(nextTransitionApplied.url, nextTransition.backup_url.find(url => url.includes('.akamaized.net')),
+  'new quality uses its own exact Native URL instead of reviving its startup Catalog plan')
+equal(transitionSession.get().affinity?.representation, transitionApplied.context!.representation,
+  'planning another quality does not fabricate observed affinity')
+const missingNativeItem = { id: 32, codecid: 13, height: 480, bandwidth: 500_000,
+  base_url: 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/transition/480/1.m4s?k=1', backup_url: [] as string[] }
+transitionAdapter.transform({ data: { dash: { video: [missingNativeItem], audio: [] } } })
+const missingNativeApplied = transitionRoutes.apply(missingNativeItem.base_url)
+check(missingNativeApplied.url && !missingNativeApplied.url.includes('.akamaized.net'),
+  'quality missing an exact Native capability falls back without synthesizing Native URL')
+const observedTransitionHost = new URL(nextTransitionApplied.url!).host
+await transitionSettings.update({ fixedHost: TRUSTED_CATALOG[3] })
+transitionRoutes.invalidateForUserSetting()
+equal(transitionRoutes.apply(nextTransition.base_url).decision.host, TRUSTED_CATALOG[3],
+  'explicit fixed CDN overrides inherited Native affinity')
+check(observedTransitionHost !== TRUSTED_CATALOG[3], 'fixed-mode test uses a genuinely different host')
+await transitionSettings.update({ fixedHost: null })
+transitionRoutes.invalidateForUserSetting()
+for (let index = 0; index < 2; index++) await transitionRoutes.observe({ ...healthyObservation,
+  generation: transitionState.generation, epoch: transitionState.epoch,
+  decisionId: transitionApplied.decision.id, representation: transitionApplied.context!.representation,
+  routeType: 'native-signed', targetHost: observedTransitionHost, finalHost: observedTransitionHost, completedAt: now + 10 + index })
+const restrictedTransition = { id: 16, codecid: 13, height: 360, bandwidth: 300_000,
+  base_url: 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/transition/360/1.m4s?k=1',
+  backup_url: ['https://upos-hz-mirrorakam.akamaized.net/upgcxcode/transition/360/1.m4s?k=2'] }
+transitionAdapter.transform({ data: { dash: { video: [restrictedTransition], audio: [] } } })
+await transitionRestrictions.add({ host: observedTransitionHost, type: 'black', kind: 'all', reason: 'regression', expireAt: now + 60_000 })
+check(transitionRoutes.apply(restrictedTransition.base_url).decision.host !== observedTransitionHost,
+  'first-use affinity inheritance cannot bypass a newly blacklisted Native host')
+
+let shortResumeNow = now
+const shortResume = new RecoveryController(recoveryPlayer, () => shortResumeNow)
+shortResume.tick({ ...playerSnapshot, paused: false })
+shortResumeNow += 1000; shortResume.tick({ ...playerSnapshot, paused: true })
+shortResumeNow += 1000; shortResume.tick({ ...playerSnapshot, paused: false, frames: 100 })
+equal(shortResume.snapshot().state, 'healthy', 'normal short resume clears pause-armed diagnostic state')
+
 console.log(`v2 domain and controller tests passed: ${passed}`)
