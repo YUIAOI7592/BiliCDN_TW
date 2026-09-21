@@ -20,6 +20,7 @@ export interface AppliedRouteDecision {
   readonly sourceHost: string | null
   readonly attributionStatus?: AttributionStatus
   readonly attributionSource?: AttributionSource
+  readonly playurlHostChanged?: boolean
 }
 
 interface DecisionRecord { readonly decision: RouteDecision; readonly context: RouteIdentity | null; readonly kind: MediaKind; readonly representation: RepresentationId | null }
@@ -36,6 +37,7 @@ export class RouteCoordinator {
   #tentativeTransfers = 0
   #streamPlans = new Map<string, RouteDecision>()
   #latest = new Map<string, Readonly<Record<string, unknown>>>()
+  #lastSuccess = new Map<string, Readonly<Record<string, unknown>>>()
   #requested = new Map<string, RequestContext>()
   #effectiveRate = 2
 
@@ -56,7 +58,7 @@ export class RouteCoordinator {
   resetEpoch(): void {
     this.#plans.clear(); this.#unlockedNative.clear(); this.#decisions.clear(); this.#hostLockedStreams.clear()
     this.#tentativeRepresentation = null; this.#tentativeTransfers = 0
-    this.#streamPlans.clear(); this.#latest.clear(); this.#requested.clear()
+    this.#streamPlans.clear(); this.#latest.clear(); this.#lastSuccess.clear(); this.#requested.clear()
     this.#effectiveRate = 2
   }
   invalidateForUserSetting(): void { this.#plans.clear(); this.#streamPlans.clear(); this.session.setAffinity(null) }
@@ -72,7 +74,7 @@ export class RouteCoordinator {
   playbackRate(): number { return this.#effectiveRate }
 
   latestVideoHost(): string | null {
-    const row = this.#latest.get('video')
+    const row = this.#lastSuccess.get('video')
     return row?.outcome === 'success' && row.attributionStatus === 'matched' && this.clock.now() - Number(row.observedAt) <= 60_000 && typeof row.responseHost === 'string' ? row.responseHost : null
   }
 
@@ -122,14 +124,30 @@ export class RouteCoordinator {
     }
     const playbackDemand = demand ?? { kind, requiredMbps: kind === 'audio' ? 0.5 : 8, highDemand: false }
     let decision = context ? this.#plans.get(context.representation) : streamKey ? this.#streamPlans.get(streamKey) : null
+    const outputRole = context ? this.vault.outputRole(context.representation, url) : null
+    if (context && outputRole?.role === 'backup' && decision?.host !== parsed.host && !this.settings.get().fixedHost && !this.#hardRestriction(parsed.host, kind)) {
+      const catalogIndex = TRUSTED_CATALOG.indexOf(parsed.host as typeof TRUSTED_CATALOG[number])
+      const native = this.vault.candidates(context.representation, this.#unlockedNative.get(context.representation) ?? new Set()).native
+        .find(candidate => candidate.host === parsed.host && this.vault.resolve(candidate.handle, context) === parsed.url.href)
+      const candidate = catalogIndex >= 0 ? { type: 'catalog-generated' as const, host: parsed.host, kind, catalogIndex } : native
+      if (candidate) {
+        decision = { action: 'rewrite', id: this.#nextId(), reason: 'player-fallback', routeType: candidate.type, host: parsed.host, candidate, ranking: [] }
+        this.session.noteDecision(decision.id)
+        this.#emit({ type: 'route-planned', at: this.clock.now(), decision })
+      }
+    }
     if (!decision || decision.action === 'block' || !this.#decisionAllowed(decision, context, kind)) decision = context
       ? this.#choose(context, playbackDemand, 'request', null)
       : this.#catalogOnly(playbackDemand, parsed.host)
     let applied = this.#materialize(url, decision, context)
     if (decision.action === 'rewrite' && decision.candidate.type === 'catalog-generated' && applied === null) {
-      decision = this.#pass('catalog-host-not-replaceable', parsed.host, kind)
-      applied = url
+      const restriction = this.#hardRestriction(parsed.host, kind)
+      decision = restriction ? this.#block(restriction, parsed.host) : this.#pass('catalog-host-not-replaceable', parsed.host, kind)
+      applied = restriction ? null : url
     }
+    const finalHost = applied ? parseMediaUrl(applied)?.host : null
+    const finalRestriction = finalHost ? this.#hardRestriction(finalHost, kind) : null
+    if (finalHost && finalRestriction) { decision = this.#block(finalRestriction, finalHost); applied = null }
     this.#remember(decision, context, kind)
     if (context) this.#plans.set(context.representation, decision)
     else if (streamKey) {
@@ -138,10 +156,32 @@ export class RouteCoordinator {
     }
     const sourceHost = context ? parseMediaUrl(this.vault.rootUrl(context.representation) ?? url)?.host ?? parsed.host : parsed.host
     if (applied && context) this.vault.registerAlias(context.representation, applied)
-    return { decision, url: applied, context, streamKey, sourceHost, attributionStatus: match.status, attributionSource: match.source }
+    return { decision, url: applied, context, streamKey, sourceHost, attributionStatus: match.status, attributionSource: match.source, playurlHostChanged: outputRole?.hostChanged ?? false }
   }
 
   decisionRecord(id: DecisionId | null): DecisionRecord | null { return id ? this.#decisions.get(id) ?? null : null }
+
+  playerOutput(representation: RepresentationId, original: string, decision: RouteDecision, originals: readonly string[]): { primary: string; backups: readonly string[] } {
+    const context = this.vault.identity(representation)
+    if (!context) return { primary: '', backups: [] }
+    const allowed = (url: string): boolean => {
+      const parsed = parseMediaUrl(url)
+      return !!parsed && parsed.kind === 'normal' && !this.#hardRestriction(parsed.host, context.kind) && !this.vault.isInvalid(representation, parsed.host)
+    }
+    const stream = mediaIdentity(original)
+    const lockedOriginal = stream && this.#hostLockedStreams.has(stream) ? this.vault.rootUrl(representation) : null
+    const primary = lockedOriginal ?? this.#materialize(original, decision, context)
+    if (!primary || !allowed(primary)) return { primary: '', backups: [] }
+    const locked = mediaIdentity(original)
+    const generated = locked && this.#hostLockedStreams.has(locked) ? [] : decision.ranking
+      .filter(row => row.eligible && row.candidate.type === 'catalog-generated')
+      .flatMap(row => { const url = replaceUrlHost(original, row.candidate.host); return url && allowed(url) ? [url] : [] }).slice(0, 2)
+    const backups = lockedOriginal ? [] : [...new Set([...generated, ...originals.filter(allowed)])].filter(url => url !== primary).slice(0, 5)
+    this.vault.registerAlias(representation, primary)
+    for (const url of generated) this.vault.registerAlias(representation, url)
+    this.vault.registerOutput(representation, original, primary, backups)
+    return { primary, backups }
+  }
 
   challenge(representation: RepresentationId, demand: PlaybackDemand, preferNative: boolean): AppliedRouteDecision | null {
     const context = this.vault.identity(representation), root = this.vault.rootUrl(representation)
@@ -155,7 +195,7 @@ export class RouteCoordinator {
     const now = this.clock.now(), currentHost = this.session.get().affinity?.host
     const selected = candidates.find(candidate => {
       if (candidate.host === currentHost) return false
-      if (settings.catalogOverrides[candidate.host] === false || restriction.blackHosts.has(candidate.host) || restriction.deadHosts.has(candidate.host)) return false
+      if (this.#hardRestriction(candidate.host, candidate.kind)) return false
       const evidence = this.evidence.get(candidate.host, candidate.kind)
       return !evidence || !evidence.updatedAt || now - evidence.updatedAt >= 6 * 60 * 60 * 1000
     })
@@ -198,7 +238,10 @@ export class RouteCoordinator {
       originalHost: observation.originalHost, targetHost: observation.targetHost, responseHost: observation.finalHost,
       outcome: observation.outcome, status: observation.status, observedAt: observation.completedAt,
       attributionStatus: request?.attributionStatus ?? (observation.representation ? 'matched' : 'waiting-data') }))
-    if (observation.outcome === 'abort' || !observation.finalHost) return
+    if (observation.outcome === 'success' && observation.finalHost) this.#lastSuccess.set(key, this.#latest.get(key)!)
+    if (observation.outcome === 'abort') return
+    const evidenceHost = observation.finalHost ?? observation.targetHost
+    if (!evidenceHost) return
     if (observation.status === 403 && observation.streamKey && observation.routeType === 'catalog-generated'
       && (observation.request?.sourceHost ?? observation.originalHost) !== observation.targetHost) {
       this.#hostLockedStreams.add(observation.streamKey)
@@ -208,6 +251,7 @@ export class RouteCoordinator {
     const representation = observation.representation
     const requestId = request?.requestId ?? `${Number(observation.generation)}:${Number(observation.epoch)}:${observation.completedAt}:${observation.targetHost}`
     if (observation.outcome === 'success') {
+      if (!observation.finalHost) return
       const throughputMbps = observation.bytes >= 64 * 1024 && observation.elapsedMs > 0
         ? (observation.bytes * 8) / observation.elapsedMs / 1000 : null
       await this.evidence.record(observation.finalHost, observation.kind, {
@@ -238,20 +282,20 @@ export class RouteCoordinator {
     }
     const failureKind = observation.failureKind
     if (failureKind === 'native-invalid' && representation) {
-      this.vault.invalidate(representation, observation.finalHost)
+      this.vault.invalidate(representation, evidenceHost)
       const demand: PlaybackDemand = { kind: observation.kind, requiredMbps: observation.kind === 'audio' ? 0.5 : 8, highDemand: false }
-      this.recover(representation, demand, 'verified-failure', observation.finalHost)
+      this.recover(representation, demand, 'verified-failure', evidenceHost)
       return
     }
     if (!failureKind || !['network','body','timeout','http-5xx'].includes(failureKind)) return
-    await this.evidence.record(observation.finalHost, observation.kind, {
+    await this.evidence.record(evidenceHost, observation.kind, {
       requestId, at: observation.completedAt, source: 'transport', outcome: 'failure', throughputMbps: null,
       ttfbMs: observation.ttfbMs, failureKind,
     }, valid)
     if (!valid()) return
     if (representation) {
       const demand: PlaybackDemand = { kind: observation.kind, requiredMbps: observation.kind === 'audio' ? 0.5 : 8, highDemand: false }
-      this.recover(representation, demand, 'verified-failure', observation.finalHost)
+      this.recover(representation, demand, 'verified-failure', evidenceHost)
     }
   }
 
@@ -266,7 +310,7 @@ export class RouteCoordinator {
         state: row.state, eligible: row.eligible, reasons: row.reasons, safeMbps: row.safeThroughputMbps,
         ratio: row.demandRatio, ttfbMs: row.medianTtfbMs }))),
     }) : null, recentPlans: Object.freeze(recent.map(([representation, decision]) => Object.freeze({ representation, ...summarize(decision) }))),
-      affinity: session.affinity, latest: Object.freeze(Object.fromEntries(this.#latest)), requested: Object.freeze(Object.fromEntries(this.#requested)),
+      affinity: session.affinity, latest: Object.freeze(Object.fromEntries(this.#latest)), lastSuccess: Object.freeze(Object.fromEntries(this.#lastSuccess)), requested: Object.freeze(Object.fromEntries(this.#requested)),
       attribution: session.representation ? 'confirmed' : this.#tentativeRepresentation ? 'awaiting-second-video-transfer' : 'awaiting-matched-video',
       representation: session.representation ? this.vault.groupSummary(session.representation) : null })
   }
@@ -316,7 +360,7 @@ export class RouteCoordinator {
     if (decision.action === 'block') return null
     if (decision.action === 'pass') return original
     if (decision.candidate.type === 'catalog-generated') return replaceUrlHost(original, decision.host)
-    return context ? this.vault.resolve(decision.candidate.handle, context) ?? original : original
+    return context ? this.vault.resolve(decision.candidate.handle, context) : null
   }
 
   #pass(reason: string, host: string | null, kind: MediaKind): RouteDecision {

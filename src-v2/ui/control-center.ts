@@ -88,7 +88,7 @@ export class ControlCenter {
       const row = latest[kind]
       if (!row) { if (kind !== 'unknown') summary.textContent += `\n${label}：尚無已歸因請求`; continue }
       const age = Math.max(0, Math.floor((this.deps.now() - Number(row.observedAt)) / 1000))
-      summary.textContent += `\n${label}：送出 ${row.targetHost ?? '未知'} → 回應 ${row.responseHost ?? '尚未收到'}｜${age} 秒前\n  請求攔截換 host：${row.hostChanged === true ? '是' : row.hostChanged === false ? '否' : '未知'}｜playurl 已改 host：${row.playurlHostChanged === true ? '是' : '否'}｜歸因：${row.attributionStatus ?? '等待資料'}`
+      summary.textContent += `\n${label}：送出 ${row.targetHost ?? '未知'} → 回應 ${row.responseHost ?? '未取得回應 host'}｜${age} 秒前｜結果 ${row.outcome ?? '未知'} / status ${row.status ?? '未知'}\n  請求攔截換 host：${row.hostChanged === true ? '是' : row.hostChanged === false ? '否' : '未知'}｜playurl 已改 host：${row.playurlHostChanged === true ? '是' : '否'}｜歸因：${row.attributionStatus ?? '等待資料'}`
     }
     const rep = routes.representation as { height: number; codec: string } | null
     summary.textContent += `\n畫質歸因：${rep ? `${rep.height}p / ${rep.codec}` : String(routes.attribution)}\n量測狀態：${this.deps.measurement.snapshot().reason}`
@@ -110,7 +110,7 @@ export class ControlCenter {
     const blacklistButton = [...actions.querySelectorAll('button')].find(button => button.textContent?.startsWith('將目前影片路線'))
     if (blacklistButton && !this.deps.routes.latestVideoHost()) {
       blacklistButton.disabled = true
-      blacklistButton.textContent = '尚無成功歸因的影片回應，無法指定黑名單節點'
+      blacklistButton.textContent = '尚無 60 秒內成功歸因的影片回應，無法指定黑名單節點'
     }
     body.append(actions)
     foot.append(this.#button('關閉', () => this.close()))
@@ -158,7 +158,7 @@ export class ControlCenter {
 
   #readModel(): Readonly<Record<string, unknown>> {
     const now = this.deps.now(), evidence = this.deps.evidence.list().slice(0, 96).map(row => ({ host: row.host, kind: row.kind, ...evidenceMetrics(row, now) }))
-    return Object.freeze({ version: GM_info?.script?.version ?? '2.0.1', settings: this.deps.settings.get(), session: this.deps.session.get(),
+    return Object.freeze({ version: GM_info?.script?.version ?? '2.0.2', settings: this.deps.settings.get(), session: this.deps.session.get(),
       monitor: this.deps.monitor.snapshot(), recovery: this.deps.recovery.snapshot(), measurement: this.deps.measurement.snapshot(),
       routes: this.deps.routes.snapshot(), restrictions: this.deps.restrictions.list(), evidence })
   }

@@ -181,6 +181,7 @@ export type RecoveryAction =
   | { readonly action: 'none'; readonly id: RecoveryActionId; readonly reason: string }
 
 export type DomainEvent =
+  | { readonly type: 'core-uninitialized'; readonly at: number; readonly paused: boolean; readonly intentPending: boolean; readonly consecutiveTicks: number }
   | { readonly type: 'route-planned'; readonly at: number; readonly decision: RouteDecision }
   | { readonly type: 'request-started'; readonly at: number; readonly request: RequestContext }
   | { readonly type: 'transport-completed'; readonly at: number; readonly observation: TransportObservation; readonly detached: boolean }

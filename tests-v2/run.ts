@@ -18,6 +18,7 @@ import { RecoveryController } from '../src-v2/application/recovery-controller.ts
 import { MeasurementController } from '../src-v2/application/measurement-controller.ts'
 import { PlayerMonitor } from '../src-v2/application/player-monitor.ts'
 import { PlayerAdapter } from '../src-v2/adapters/player.ts'
+import { PlayurlAdapter } from '../src-v2/adapters/playurl.ts'
 import type { PlayerPort, VideoSnapshot } from '../src-v2/application/ports.ts'
 
 let passed = 0
@@ -193,6 +194,7 @@ class FakeXhr extends EventTarget {
   open(method: string, url: string | URL): void { this.method = method; this.url = String(url); this.responseURL = this.url; this.readyState = 1 }
   send(): void { this.nativeSends++; this.readyState = 4; this.dispatchEvent(new Event('readystatechange')); this.dispatchEvent(new Event('load')); this.dispatchEvent(new Event('loadend')) }
   abort(): void { this.dispatchEvent(new Event('abort')) }
+  setRequestHeader(_name: string, _value: string): void {}
 }
 
 const originalWorker = function WorkerIdentity() { return undefined }
@@ -208,6 +210,7 @@ await mediaReader?.read()
 await mediaReader?.cancel('caller-cancel')
 equal(cancelReason, 'caller-cancel', 'fetch cancel reason reaches original reader')
 equal(observations.at(-1)?.outcome, 'abort', 'cancel settles as abort once')
+equal(observations.at(-1)?.finalHost, null, 'empty response URL never invents a response host')
 const beforeHttpDns = nativeFetchCalls
 const blockedDns = await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
 equal(blockedDns.status, 503, 'HTTPDNS manual block returns local response')
@@ -346,5 +349,171 @@ customRateRecovery.tick({ ...healthyCustomRate, readyState: 0, width: 0, height:
 rateRecoveryNow += 1000
 customRateRecovery.tick({ ...healthyCustomRate, frames: 2 })
 equal(savedRateRestored, 1.5, 'core recovery restores the saved user rate, not forced 2x')
+
+const outputStorage = new FakeStorage(), outputSession = new SessionStore()
+const outputState = outputSession.beginGeneration(false), outputVault = new SignedRouteVault()
+outputVault.reset(outputState.generation, outputState.epoch)
+const outputSettings = new SettingsStore(outputStorage, () => now)
+const outputRestrictions = new RestrictionStore(outputStorage, () => now)
+const outputEvidence = new EvidenceStore(outputStorage, () => now)
+const outputRoutes = new RouteCoordinator(clock, outputSession, outputSettings, outputRestrictions, outputEvidence, outputVault)
+const outputAdapter = new PlayurlAdapter(outputSession, outputVault, outputRoutes, outputSettings)
+const forbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/test/output/1.m4s?k=1'
+const outputItem = { id: 80, codecid: 13, height: 1080, bandwidth: 1_000_000, base_url: forbiddenUrl, backup_url: [forbiddenUrl] }
+outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
+check(![outputItem.base_url, ...outputItem.backup_url].some(url => url.includes('mirrorcosov')), 'forbidden original cannot remain in playurl primary or backup')
+const alternateOutput = outputItem.backup_url.find(url => new URL(url).host !== new URL(outputItem.base_url).host)
+check(alternateOutput, 'playurl includes a legal alternate backup')
+const fallbackApplied = outputRoutes.apply(alternateOutput ?? '')
+equal(fallbackApplied.url, alternateOutput, 'player requested output backup is not pulled back to primary')
+equal(fallbackApplied.decision.reason, 'player-fallback', 'player backup has explicit coordinated decision')
+equal(outputRoutes.apply(outputItem.base_url).url, alternateOutput, 'subsequent group requests retain adopted backup')
+
+let coreClock = now, coreReloads = 0
+const coreRecorder = new DiagnosticRecorder(() => coreClock, () => false)
+const coreObserver = new RecoveryController({ ...recoveryPlayer, reload: () => { coreReloads++ } }, () => coreClock)
+coreObserver.subscribe(event => coreRecorder.record(event))
+coreObserver.tick({ ...playerSnapshot, paused: false, readyState: 4, width: 1920, height: 1080 })
+const deadPaused = { ...playerSnapshot, paused: true, readyState: 0, width: 0, height: 0, frames: 0, coreInitialized: false }
+for (let tick = 0; tick < 5; tick++) { coreClock += 1000; coreObserver.tick(deadPaused) }
+check(coreRecorder.snapshot().incident, 'paused dead core automatically captures an incident')
+equal(coreReloads, 0, 'dead paused core without play intent never reloads')
+coreClock += 31_000; coreRecorder.tick()
+const frozenCore = coreRecorder.snapshot().incident as { id: string; reason: string }
+coreRecorder.mark()
+equal((coreRecorder.snapshot().incident as { id: string }).id, frozenCore.id, 'late manual mark preserves frozen automatic incident')
+for (let tick = 0; tick < 100; tick++) { coreClock += 1000; coreObserver.tick(deadPaused) }
+equal((coreRecorder.snapshot().incident as { id: string }).id, frozenCore.id, 'continuous dead core does not replace its own incident')
+
+const outputRep = outputVault.contextForUrl(outputItem.base_url)!.representation
+const alternateHost = new URL(alternateOutput!).host
+for (const type of ['black', 'dead'] as const) {
+  await outputRestrictions.add({ host: alternateHost, type, kind: 'all', reason: 'regression', expireAt: now + 60_000 })
+  check(outputRoutes.apply(alternateOutput!).decision.host !== alternateHost, `${type} invalidates cached fallback on next request`)
+  await outputSettings.update({ fixedHost: alternateHost })
+  outputRoutes.invalidateForUserSetting()
+  check(outputRoutes.apply(alternateOutput!).decision.host !== alternateHost, `fixed CDN cannot bypass ${type}`)
+  const item = { ...outputItem, base_url: forbiddenUrl, backup_url: [alternateOutput!] }
+  outputAdapter.transform({ data: { dash: { video: [item], audio: [] } } })
+  check(![item.base_url, ...item.backup_url].some(url => url && new URL(url).host === alternateHost), `${type} filtered from all playurl outputs`)
+  await outputRestrictions.remove(alternateHost, type)
+}
+await outputSettings.update({ fixedHost: null })
+outputRoutes.invalidateForUserSetting()
+const unknownQuery = alternateOutput!.replace('k=1', 'k=unknown')
+check(outputRoutes.apply(unknownQuery).decision.reason !== 'player-fallback', 'weak query match is not a backup capability')
+await outputEvidence.record(TRUSTED_CATALOG[0], 'video', { requestId: 'fresh-challenger', at: now, source: 'transport', outcome: 'success', throughputMbps: 10, ttfbMs: 1, failureKind: null })
+check(outputRoutes.challenge(outputRep, { kind: 'video', requiredMbps: 3, highDemand: false }, false)?.decision.host !== TRUSTED_CATALOG[1], 'challenger never selects default unavailable cosov')
+
+const beforeGeneration = outputSession.get()
+await outputRoutes.observe({ ...healthyObservation, generation: beforeGeneration.generation, epoch: beforeGeneration.epoch, representation: outputRep,
+  originalHost: forbiddenUrl, targetHost: TRUSTED_CATALOG[2], finalHost: TRUSTED_CATALOG[2], completedAt: now, decisionId: fallbackApplied.decision.id })
+await outputRoutes.observe({ ...healthyObservation, generation: beforeGeneration.generation, epoch: beforeGeneration.epoch, representation: outputRep,
+  targetHost: TRUSTED_CATALOG[2], finalHost: null, outcome: 'abort', status: 0, completedAt: now + 1 })
+equal(outputRoutes.latestVideoHost(), TRUSTED_CATALOG[2], 'latest abort does not erase last successful video host')
+await outputRoutes.observe({ ...healthyObservation, generation: beforeGeneration.generation, epoch: beforeGeneration.epoch, representation: outputRep,
+  targetHost: TRUSTED_CATALOG[3], finalHost: null, outcome: 'failure', failureKind: 'network', status: 0, completedAt: now + 2 })
+check(outputEvidence.get(TRUSTED_CATALOG[3], 'video')?.circuitUntil! > now, 'no-response network failure still attributed to sent target')
+
+await outputSettings.update({ catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map(host => [host, false])) })
+outputRoutes.invalidateForUserSetting()
+equal(outputRoutes.apply(forbiddenUrl).url, null, 'no legal alternative blocks forbidden source')
+const noOutput = { ...outputItem, base_url: forbiddenUrl, backup_url: [forbiddenUrl] }
+outputAdapter.transform({ data: { dash: { video: [noOutput], audio: [] } } })
+equal(noOutput.base_url, '', 'blocked playurl does not leak original primary')
+equal(noOutput.backup_url.length, 0, 'blocked playurl does not leak original backup')
+
+const gapRecorder = new DiagnosticRecorder(() => coreClock, () => false)
+const gapRecovery = new RecoveryController(recoveryPlayer, () => coreClock)
+gapRecovery.subscribe(event => gapRecorder.record(event))
+gapRecovery.tick(healthyCustomRate)
+for (let i = 0; i < 5; i++) { coreClock += 10_000; gapRecovery.tick(deadPaused) }
+equal(gapRecorder.snapshot().incident, null, 'background timer gaps do not count as continuous dead-core ticks')
+gapRecovery.reset()
+for (let i = 0; i < 5; i++) { coreClock += 1000; gapRecovery.tick(deadPaused) }
+equal(gapRecorder.snapshot().incident, null, 'initial dead-looking startup without previous health is not an incident')
+
+await outputSettings.update({ catalogOverrides: {}, fixedHost: null })
+outputRoutes.invalidateForUserSetting()
+const realAdapter = new TransportAdapter(outputSession, outputSettings, outputRoutes, outputAdapter, () => now)
+realAdapter.install()
+const actualXhr = new FakeXhr()
+actualXhr.open('GET', forbiddenUrl)
+check(!actualXhr.url.includes('mirrorcosov'), 'native XHR open receives rewritten legal host')
+const initiallySentHost = new URL(actualXhr.url).host
+await outputRestrictions.add({ host: initiallySentHost, type: 'black', kind: 'all', reason: 'before-send', expireAt: now + 60_000 })
+actualXhr.send()
+equal(actualXhr.nativeSends, 1, 'XHR sends one replacement request')
+check(new URL(actualXhr.url).host !== initiallySentHost, 'restriction added after open is rechecked before native send')
+await outputSettings.update({ catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map(host => [host, false])) })
+const blockedXhr = new FakeXhr(); blockedXhr.open('GET', forbiddenUrl); blockedXhr.send()
+equal(blockedXhr.nativeSends, 0, 'no-alternative XHR never sends forbidden native request')
+const fetchCountBeforeBlock = nativeFetchCalls
+let fetchBlocked = false
+try { await fakeWindow.fetch(forbiddenUrl) } catch { fetchBlocked = true }
+check(fetchBlocked, 'no-alternative Fetch rejects locally')
+equal(nativeFetchCalls, fetchCountBeforeBlock, 'blocked Fetch sends no native request')
+await outputSettings.update({ disabled: true })
+const disabledXhr = new FakeXhr(); disabledXhr.open('GET', forbiddenUrl); disabledXhr.send()
+equal(disabledXhr.url, forbiddenUrl, 'disabled adapter preserves website original request')
+equal(disabledXhr.nativeSends, 1, 'disabled adapter sends website request once')
+realAdapter.dispose()
+
+if (liveRep) {
+  const root = liveVault.rootUrl(liveRep)!, lockedHost = new URL(root).host
+  await restrictions.add({ host: lockedHost, type: 'dead', kind: 'all', reason: 'host-lock-test', expireAt: now + 60_000 })
+  equal(coordinator.apply(root).url, null, 'host-lock never restores a dead root')
+  const lockedPlan = coordinator.plan(liveRep, { kind: 'video', requiredMbps: 3, highDemand: false }, 'startup')
+  equal(coordinator.playerOutput(liveRep, root, lockedPlan, [root]).primary, '', 'host-locked dead root cannot leak through playurl output')
+}
+
+let intentClock = now, intentReloads = 0, activation = false
+let intentVideo = { ...healthyCustomRate }
+const intentTarget = { play: () => 'original-result' }
+const originalIntentPlay = intentTarget.play
+Object.defineProperty(fakeWindow, 'navigator', { configurable: true, value: { userActivation: { get isActive() { return activation } } } })
+const intentRecovery = new RecoveryController({ ...recoveryPlayer, player: () => intentTarget, snapshot: () => intentVideo,
+  reload: () => { intentReloads++ }, playbackRate: () => 1.5 }, () => intentClock)
+intentRecovery.tick(intentVideo)
+intentVideo = { ...deadPaused }; intentClock += 1000; intentRecovery.tick(intentVideo)
+check(intentTarget.play !== originalIntentPlay, 'play observer installed on first paused tick, not thirty seconds later')
+intentClock += 31_000
+equal(intentTarget.play(), 'original-result', 'play observer preserves original return')
+equal(intentRecovery.isRecovering(), false, 'untrusted play call never arms reload')
+activation = true; intentTarget.play()
+equal(intentRecovery.isRecovering(), true, 'trusted long-pause request arms intent while video stays paused')
+for (let tick = 0; tick < 4; tick++) { intentClock += 1000; intentRecovery.tick(intentVideo) }
+equal(intentReloads, 1, 'dead paused video with valid intent reloads once')
+intentClock += 1000; intentRecovery.tick(intentVideo)
+equal(intentReloads, 1, 'repeated dead ticks cannot loop reload')
+intentRecovery.reset()
+equal(intentTarget.play, originalIntentPlay, 'generation reset restores owned play method')
+
+for (let i = 0; i < 1000; i++) coreRecorder.record({ type: 'transport', at: coreClock, observation: { ...healthyObservation, completedAt: coreClock } })
+equal((coreRecorder.snapshot().incident as { id: string }).id, frozenCore.id, 'one thousand successes retain frozen core incident')
+check(new TextEncoder().encode(JSON.stringify(coreRecorder.snapshot())).length <= 128 * 1024, 'recorder remains within 128 KiB')
+check(new TextEncoder().encode(coreRecorder.buildReport({})).length <= 96 * 1024, 'report remains within 96 KiB')
+check(!coreRecorder.buildReport({}).includes('token=secret'), 'incident report contains no test signed query')
+
+await outputSettings.update({ disabled: false, catalogOverrides: {}, fixedHost: null })
+outputRoutes.invalidateForUserSetting()
+const nativeAudioUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/test/output/audio.m4s?s=exact'
+const audioItem = { id: 30280, base_url: nativeAudioUrl, backup_url: [], bandwidth: 100_000 }
+outputAdapter.transform({ data: { dash: { video: [], audio: [audioItem] } } })
+const beforeAudioAffinity = outputSession.get().affinity
+const nativeAudioApplied = outputRoutes.apply(nativeAudioUrl)
+equal(nativeAudioApplied.url, nativeAudioUrl, 'eligible Native backup uses its own full signed URL')
+equal(nativeAudioApplied.decision.routeType, 'native-signed', 'Native backup remains Native, not a synthesized Catalog URL')
+equal(outputSession.get().affinity, beforeAudioAffinity, 'audio backup request does not alter video affinity')
+const audioRep = nativeAudioApplied.context!.representation
+outputVault.invalidate(audioRep, new URL(nativeAudioUrl).host)
+check(outputRoutes.apply(nativeAudioUrl).url !== nativeAudioUrl, 'invalid Native cannot return through existing backup role')
+const repeatAudio = { id: 30280, base_url: nativeAudioUrl, backup_url: [nativeAudioUrl], bandwidth: 100_000 }
+outputAdapter.transform({ data: { dash: { video: [], audio: [repeatAudio] } } })
+check(![repeatAudio.base_url, ...repeatAudio.backup_url].includes(nativeAudioUrl), 'invalid Native is removed from refreshed player outputs')
+const nextGeneration = outputSession.beginGeneration(false)
+outputVault.reset(nextGeneration.generation, nextGeneration.epoch); outputRoutes.resetEpoch()
+equal(outputVault.outputRole(audioRep, nativeAudioUrl), null, 'generation reset discards output roles')
+equal(outputRoutes.latestVideoHost(), null, 'generation reset drops old successful host')
 
 console.log(`v2 domain and controller tests passed: ${passed}`)

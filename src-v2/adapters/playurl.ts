@@ -1,9 +1,8 @@
-import type { PlaybackDemand, RepresentationId, RouteDecision } from '../domain/model.ts'
+import type { PlaybackDemand } from '../domain/model.ts'
 import type { RouteCoordinator } from '../application/route-coordinator.ts'
 import type { SessionStore } from '../state/session-store.ts'
 import type { SignedRouteVault } from '../state/signed-route-vault.ts'
 import type { SettingsStore, CodecPreference } from '../state/settings-store.ts'
-import { replaceUrlHost } from '../domain/url-policy.ts'
 
 type UnknownRecord = Record<string, unknown>
 const isRecord = (value: unknown): value is UnknownRecord => !!value && typeof value === 'object' && !Array.isArray(value)
@@ -87,22 +86,21 @@ export class PlayurlAdapter {
         const rep = this.vault.register({ generation: state.generation, epoch: state.epoch, kind,
           key: `${String(item.id ?? index)}:${codecName(item)}:${finite(item.height)}`, height: finite(item.height), codec: codecName(item),
           bandwidth, urls, source })
-        if (!rep) return
+        if (!rep) {
+          if (source !== 'player-mpd') {
+            const primaryOutput = this.routes.apply(primary)
+            const backups = primaryOutput.url ? [...new Set(urls.map(url => this.routes.apply(url).url).filter((url): url is string => !!url && url !== primaryOutput.url))].slice(0, 5) : []
+            rewriteItem(item, primaryOutput.url ?? '', backups)
+          }
+          return
+        }
         if (source === 'player-mpd') return
         const requiredMbps = Math.max(kind === 'audio' ? 0.5 : 2,
           ((bandwidth || (kind === 'audio' ? 192_000 : 4_000_000)) / 1_000_000) * this.routes.playbackRate() * 1.25)
         const demand: PlaybackDemand = { kind, requiredMbps, highDemand: requiredMbps >= 12 }
         const decision = this.routes.plan(rep, demand, this.session.get().affinity ? 'representation' : 'startup')
-        const applied = this.#apply(primary, decision, rep)
-        if (!applied) return
-        const catalogBackups = decision.ranking.filter(row => row.eligible && row.candidate.type === 'catalog-generated')
-          .slice(0, 2).map(row => {
-            try { const u = new URL(primary); u.hostname = row.candidate.host; u.protocol = 'https:'; u.port = ''; return u.href } catch { return '' }
-          }).filter(Boolean)
-        const backups = [...new Set([...catalogBackups, ...urls])].filter(url => url !== applied).slice(0, 5)
-        this.vault.registerAlias(rep, applied)
-        for (const url of catalogBackups) this.vault.registerAlias(rep, url)
-        rewriteItem(item, applied, backups)
+        const output = this.routes.playerOutput(rep, primary, decision, urls)
+        rewriteItem(item, output.primary, output.backups)
       })
     }
     return true
@@ -126,13 +124,4 @@ export class PlayurlAdapter {
     })
   }
 
-  #apply(primary: string, decision: RouteDecision, representation: RepresentationId): string | null {
-    if (decision.action === 'block') return null
-    if (decision.action === 'pass') return primary
-    if (decision.candidate.type === 'catalog-generated') {
-      return replaceUrlHost(primary, decision.host) ?? primary
-    }
-    const identity = this.vault.identity(representation)
-    return identity ? this.vault.resolve(decision.candidate.handle, identity) ?? primary : primary
-  }
 }

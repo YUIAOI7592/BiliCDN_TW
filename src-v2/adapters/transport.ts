@@ -221,7 +221,7 @@ export class TransportAdapter {
         meta.settled = true
         meta.cleanup()
         if (!meta.applied || !meta.request) return
-        const finalUrl = (() => { try { return this.responseURL || meta.targetUrl } catch { return meta.targetUrl } })()
+        const finalUrl = (() => { try { return this.responseURL || '' } catch { return '' } })()
         void self.routes.observe(self.#observation(meta.request, meta.applied, meta.originalUrl, meta.targetUrl, finalUrl,
           Number(this.status) || 0, meta.bytes, meta.startedAt, meta.responseAt, outcome, failure))
       }
@@ -291,13 +291,13 @@ export class TransportAdapter {
       decisionId: applied.decision.id, representation: applied.context?.representation ?? null, kind: applied.context?.kind ?? null,
       attributionStatus: matched, attributionSource: applied.attributionSource ?? (applied.context ? 'exact' : 'none'),
       decisionStage: 'request', routeType: applied.decision.routeType, originalHost: hostOf(originalUrl), targetHost: hostOf(targetUrl),
-      sourceHost: applied.sourceHost, playurlHostChanged: !!applied.sourceHost && applied.sourceHost !== hostOf(originalUrl),
+      sourceHost: applied.sourceHost, playurlHostChanged: applied.playurlHostChanged ?? false,
       urlChanged: originalUrl !== targetUrl, hostChanged: hostOf(originalUrl) !== hostOf(targetUrl), startedAt })
   }
 
   async #observeFetch(request: RequestContext, applied: AppliedRouteDecision, originalUrl: string, targetUrl: string, response: Response | null,
     startedAt: number, responseAt: number, bytes: number, outcome: 'success' | 'abort' | 'failure', failureKind?: FailureKind): Promise<void> {
-    const finalUrl = response?.url || targetUrl
+    const finalUrl = response?.url || ''
     await this.routes.observe(this.#observation(request, applied, originalUrl, targetUrl, finalUrl, response?.status ?? 0,
       bytes, startedAt, responseAt, outcome, failureKind))
   }
@@ -309,7 +309,7 @@ export class TransportAdapter {
     return {
       request, generation: request.generation, epoch: request.epoch, decisionId: request.decisionId,
       representation: request.representation, kind, routeType,
-      originalHost: request.originalHost, targetHost: request.targetHost, finalHost: hostOf(finalUrl) || null,
+      originalHost: request.originalHost, targetHost: request.targetHost, finalHost: finalUrl ? hostOf(finalUrl) || null : null,
       streamKey: applied.streamKey,
       status, bytes, ttfbMs: responseAt > 0 ? responseAt - startedAt : null,
       elapsedMs: Math.max(1, completedAt - startedAt), completedAt, outcome,

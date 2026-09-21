@@ -19,14 +19,17 @@ export class DiagnosticRecorder {
   #incident: Incident | null = null
   #serial = 0
   #aliases = new Map<string, string>()
-  #counters = { evicted: 0, incidentReplaced: 0, rankingEvicted: 0, flowEvicted: 0, incidentEvicted: 0, pendingEvicted: 0 }
+  #manualMark: { at: number; reason: string; count: number } | null = null
+  #counters = { evicted: 0, incidentReplaced: 0, rankingEvicted: 0, flowEvicted: 0, incidentEvicted: 0, pendingEvicted: 0, eventsExpired: 0, flowsExpired: 0 }
   constructor(private readonly now: () => number, private readonly verbose: () => boolean) {}
 
   tick(): void {
     if (this.#incident?.state === 'capturing' && this.now() >= this.#incident.captureUntil) this.#incident.state = 'frozen'
     const floor = this.now() - 60_000
-    this.#events = this.#events.filter(event => event.at >= floor)
-    for (const [key, row] of this.#flow) if (row.lastAt < floor) this.#flow.delete(key)
+    const events = this.#events.filter(event => event.at >= floor)
+    this.#counters.eventsExpired += this.#events.length - events.length
+    this.#events = events
+    for (const [key, row] of this.#flow) if (row.lastAt < floor) { this.#flow.delete(key); this.#counters.flowsExpired++ }
     for (const [key, row] of this.#pending) if (this.now() - row.startedAt > 120_000) { this.#pending.delete(key); this.#counters.pendingEvicted++ }
   }
 
@@ -68,11 +71,16 @@ export class DiagnosticRecorder {
     this.#bound()
   }
 
-  mark(reason = 'manual'): void { this.tick(); this.#start(text(reason), this.now()); this.#bound() }
-  clear(): void { this.#incident = null }
+  mark(reason = 'manual'): void {
+    this.tick()
+    this.#manualMark = { at: this.now(), reason: text(reason), count: (this.#manualMark?.count ?? 0) + 1 }
+    if (!this.#incident) this.#start(text(reason), this.now())
+    this.#bound()
+  }
+  clear(): void { this.#incident = null; this.#manualMark = null }
   snapshot(): Readonly<Record<string, unknown>> {
     return Object.freeze({ coverage: { from: this.#events[0]?.at ?? this.now(), to: this.#events.at(-1)?.at ?? this.now() },
-      incident: this.#incident ? structuredClone(this.#incident) : null,
+      incident: this.#incident ? structuredClone(this.#incident) : null, manualMark: this.#manualMark ? { ...this.#manualMark } : null,
       flow: this.#flows(), lastSuccess: Object.fromEntries(this.#lastSuccess), pending: [...this.#pending.values()].map(row => this.#sanitize(row)),
       events: structuredClone(this.#events), rankings: structuredClone(this.#rankings), counters: { ...this.#counters } })
   }
@@ -142,12 +150,13 @@ export class DiagnosticRecorder {
       case 'recovery': data = { action: event.action.action, actionId: event.action.id,
         ...(event.action.action === 'route-fallback' ? { kind: event.action.kind, decision: this.#decision(event.action.decision) }
           : event.action.action === 'player-reload' ? { savedPositionSec: event.action.savedPositionSec, savedRate: event.action.savedRate } : { reason: event.action.reason }) }; important = true; break
-      case 'core': data = { ...event }; important = true; break
+      case 'core': case 'core-uninitialized': data = { ...event }; important = true; break
       case 'lifecycle': data = { generation: event.generation, epoch: event.epoch, reason: event.reason }; important = true; break
     }
     return { at: event.at, type: event.type, data, important }
   }
   #trigger(event: DomainEvent): string | null {
+    if (event.type === 'core-uninitialized') return 'core:uninitialized'
     if ((event.type === 'transport' || event.type === 'transport-completed') && event.observation.outcome === 'failure'
       && !(event.type === 'transport-completed' && event.detached)) return 'transport:' + (event.observation.failureKind ?? 'failure')
     if (event.type === 'recovery') return 'recovery:' + event.action.action

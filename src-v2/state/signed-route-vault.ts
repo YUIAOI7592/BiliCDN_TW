@@ -35,11 +35,13 @@ export class SignedRouteVault {
   #byPath = new Map<string, Set<RepresentationId>>()
   #handles = new Map<SignedRouteHandle, { readonly representation: RepresentationId; readonly url: string }>()
   #invalid = new Map<RepresentationId, Set<string>>()
+  #outputs = new Map<string, { representation: RepresentationId; role: 'primary' | 'backup'; hostChanged: boolean } | null>()
   #urlChars = 0
   #serial = 0
 
   reset(generation: GenerationId, epoch: EpochId): void {
     this.#generation = generation
+    this.#outputs.clear()
     this.#epoch = epoch
     this.#groups.clear(); this.#byKey.clear(); this.#byUrl.clear(); this.#aliases.clear(); this.#byPath.clear(); this.#handles.clear(); this.#invalid.clear(); this.#urlChars = 0; this.#serial = 0
   }
@@ -99,6 +101,23 @@ export class SignedRouteVault {
     this.#index(this.#byPath, parsed.url.pathname, rep)
   }
 
+  registerOutput(rep: RepresentationId, original: string, primary: string, backups: readonly string[]): void {
+    const originalHost = parseMediaUrl(original)?.host
+    for (const [index, url] of [primary, ...backups].entries()) {
+      const parsed = parseMediaUrl(url)
+      if (!parsed || this.#outputs.size >= 1152 || this.#urlChars + url.length > MAX_URL_CHARS) continue
+      const prior = this.#outputs.get(parsed.url.href)
+      if (prior === null || (prior && prior.representation !== rep)) { this.#outputs.set(parsed.url.href, null); continue }
+      if (!this.#outputs.has(parsed.url.href)) this.#urlChars += url.length
+      this.#outputs.set(parsed.url.href, { representation: rep, role: index === 0 ? 'primary' : 'backup', hostChanged: !!originalHost && originalHost !== parsed.host })
+    }
+  }
+
+  outputRole(rep: RepresentationId, url: string): { role: 'primary' | 'backup'; hostChanged: boolean } | null {
+    const parsed = parseMediaUrl(url), row = parsed ? this.#outputs.get(parsed.url.href) : null
+    return row?.representation === rep ? { role: row.role, hostChanged: row.hostChanged } : null
+  }
+
   #index(index: Map<string, Set<RepresentationId>>, key: string, rep: RepresentationId): void {
     const rows = index.get(key) ?? new Set<RepresentationId>()
     rows.add(rep); index.set(key, rows)
@@ -132,6 +151,8 @@ export class SignedRouteVault {
     invalid.add(host.toLowerCase())
     this.#invalid.set(representation, invalid)
   }
+
+  isInvalid(representation: RepresentationId, host: string): boolean { return this.#invalid.get(representation)?.has(host) ?? false }
 
   rootUrl(representation: RepresentationId): string | null {
     return this.#groups.get(representation)?.routes[0]?.url ?? null

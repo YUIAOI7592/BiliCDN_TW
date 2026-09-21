@@ -42,6 +42,9 @@ export class RecoveryController {
   #lifecycleSerial = 0
   #lastFrames: number | null = null
   #lastSnapshot: VideoSnapshot | null = null
+  #lastTickAt = 0
+  #deadTicks = 0
+  #deadReported = false
   #state: RecoverySnapshot = Object.freeze({ state: 'healthy', source: null, pauseSec: 0, reloadCount: 0, breakerSec: 0 })
 
   constructor(private readonly player: PlayerPort, private readonly now: () => number) {}
@@ -52,6 +55,7 @@ export class RecoveryController {
   reset(): void {
     if (this.#token) this.#finish('failed', 'lifecycle-ended')
     this.#lifecycleSerial++; this.#lastFrames = null; this.#lastSnapshot = null
+    this.#lastTickAt = 0; this.#deadTicks = 0; this.#deadReported = false
     this.#unhook(); this.#pauseAt = 0; this.#hadHealthy = false; this.#lastHealthyTime = 0; this.#token = null
     this.#reloadCount = 0; this.#breakerUntil = 0
     this.#state = Object.freeze({ state: 'healthy', source: null, pauseSec: 0, reloadCount: 0, breakerSec: 0 })
@@ -67,6 +71,16 @@ export class RecoveryController {
     const newFrames = snapshot.frames !== null && this.#lastFrames !== null && snapshot.frames > this.#lastFrames
     this.#lastFrames = snapshot.frames; this.#lastSnapshot = snapshot
     const healthy = snapshot.available && !snapshot.mediaError && (snapshot.readyState >= 2 || snapshot.width > 0 || snapshot.height > 0 || newFrames)
+    const deadObservation = this.#hadHealthy && snapshot.available && !snapshot.seeking && !snapshot.ended && !snapshot.mediaError
+      && snapshot.readyState === 0 && snapshot.width === 0 && snapshot.height === 0 && snapshot.manifestHasVideo && snapshot.coreInitialized === false && !newFrames
+    const gap = now - this.#lastTickAt
+    this.#lastTickAt = now
+    this.#deadTicks = deadObservation ? (gap > 0 && gap <= 2000 ? this.#deadTicks + 1 : 1) : 0
+    if (healthy) this.#deadReported = false
+    if (this.#deadTicks >= 4 && !this.#deadReported) {
+      this.#deadReported = true
+      this.#emit({ type: 'core-uninitialized', at: now, paused: snapshot.paused, intentPending: !!this.#token, consecutiveTicks: this.#deadTicks })
+    }
     if (healthy) {
       this.#hadHealthy = true; this.#lastHealthyTime = snapshot.currentTime; this.#lastHealthyRate = snapshot.playbackRate > 0 ? snapshot.playbackRate : 2
       if (!this.#token && !snapshot.paused && ['failed', 'breaker'].includes(this.#state.state)) this.#finish('recovered', 'healthy-playback-observed')
@@ -78,7 +92,7 @@ export class RecoveryController {
     }
     if (snapshot.paused && !snapshot.seeking && !snapshot.ended && this.#hadHealthy && !this.#token) {
       if (!this.#pauseAt) this.#pauseAt = now
-      if (now - this.#pauseAt >= 30_000) this.#hook()
+      this.#hook()
       if (!['failed', 'breaker'].includes(this.#state.state)) this.#state = Object.freeze({ state: 'pause-armed', source: null, pauseSec: Math.floor((now - this.#pauseAt) / 1000),
         reloadCount: this.#reloadCount, breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - now) / 1000)) })
       else this.#state = Object.freeze({ ...this.#state, breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - now) / 1000)) })
