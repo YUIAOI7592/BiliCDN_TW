@@ -21,7 +21,7 @@ export class PlayerPanel {
     const panel = document.createElement('div'); panel.dataset.bilicdnV2Panel = 'true'; panel.style.cssText = 'padding:4px 0 7px;font:11px/1.5 system-ui;color:#dbeafe'
     const status = document.createElement('div'); status.dataset.bilicdnV2Status = 'true'; status.style.cssText = 'padding:2px 0 5px;color:#7dd3fc'
     this.#renderStatus(status)
-    const button = document.createElement('button'); button.type = 'button'; button.textContent = '⚙️ 開啟 BiliCDN 控制中心'
+    const button = document.createElement('button'); button.type = 'button'; button.textContent = '⚙️ 開啟 BiliCDN 設定與診斷'
     button.style.cssText = 'display:block;width:100%;padding:6px 8px;border:1px solid #38bdf8;border-radius:6px;background:#12344a;color:#e0f2fe;cursor:pointer'
     button.addEventListener('click', event => { if (!event.isTrusted) return; event.preventDefault(); event.stopPropagation(); this.center.show(button) })
     panel.append(status, button); anchor.append(panel)
@@ -29,7 +29,7 @@ export class PlayerPanel {
 
   #renderStatus(status: HTMLElement): void {
     const state = this.session.get(), video = this.monitor.snapshot().video
-    status.textContent = `${this.settings.get().disabled ? '已停用' : 'BiliCDN v2'}｜${state.affinity?.host ?? '等待媒體'}｜${video.effectiveRate}x｜緩衝 ${video.playableBufferSec.toFixed(1)} 秒`
+    status.textContent = `${this.settings.get().disabled ? '腳本已停用' : 'BiliCDN 已啟用'}｜選定 CDN：${state.affinity?.host ?? '尚未確認'}｜${video.effectiveRate} 倍速｜可播放約 ${video.playableBufferSec.toFixed(1)} 秒`
   }
 
   #area(anchor: HTMLElement): number {
