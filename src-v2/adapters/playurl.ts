@@ -84,12 +84,13 @@ export class PlayurlAdapter {
       items.forEach((item, index) => {
         const primary = baseUrl(item), urls = [primary, ...backupUrls(item)].filter(Boolean)
         if (parseMediaUrl(primary)?.kind === 'unknown') {
-          this.vault.register({ generation: state.generation, epoch: state.epoch, kind,
+          const rep = this.vault.register({ generation: state.generation, epoch: state.epoch, kind,
             key: `${String(item.id ?? index)}:${codecName(item)}:${finite(item.height)}`, height: finite(item.height),
             codec: codecName(item), bandwidth: finite(item.bandwidth), urls, source })
           if (source !== 'player-mpd') {
-            const permitted = [...new Set(urls.filter(url => this.routes.inspectOriginal(url).url !== null))]
-            rewriteItem(item, permitted[0] ?? '', permitted.slice(1, 6))
+            const output = rep ? this.routes.opaqueOutput(rep, primary, urls, source)
+              : { primary: '', backups: [] }
+            rewriteItem(item, output.primary, output.backups)
           }
           return
         }
@@ -110,7 +111,7 @@ export class PlayurlAdapter {
           ((bandwidth || (kind === 'audio' ? 192_000 : 4_000_000)) / 1_000_000) * this.routes.playbackRate() * 1.25)
         const demand: PlaybackDemand = { kind, requiredMbps, highDemand: requiredMbps >= 12 }
         const decision = this.routes.plan(rep, demand, this.session.get().affinity ? 'representation' : 'startup')
-        const output = this.routes.playerOutput(rep, primary, decision, urls)
+        const output = this.routes.playerOutput(rep, primary, decision, urls, source)
         rewriteItem(item, output.primary, output.backups)
       })
     }

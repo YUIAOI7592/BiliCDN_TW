@@ -1,6 +1,6 @@
 import { addEvidenceSample, emptyEvidence, evidenceMetrics } from '../src-v2/domain/evidence.ts'
 import { chooseRoute, rankRoutes } from '../src-v2/domain/routing.ts'
-import { decisionId, epochId, generationId, representationId } from '../src-v2/domain/model.ts'
+import { decisionId, epochId, generationId, representationId, requestId } from '../src-v2/domain/model.ts'
 import { TRUSTED_CATALOG } from '../src-v2/domain/catalog.ts'
 import { parseMediaUrl, replaceUrlHost } from '../src-v2/domain/url-policy.ts'
 import { SignedRouteVault } from '../src-v2/state/signed-route-vault.ts'
@@ -429,8 +429,10 @@ const startupRep = startupVault.register({ generation: startupGeneration.generat
   kind: 'video', key: 'startup:80', height: 1080, codec: 'av1', bandwidth: 3_000_000, urls: [startupRoot], source: 'trusted-api' })
 check(startupRep, 'startup stall fixture has a representation')
 let stallNow = now, startupReloads = 0
+const stallEvidence = new EvidenceStore(new FakeStorage(), () => stallNow)
+const stallRestrictions = new RestrictionStore(new FakeStorage(), () => stallNow)
 const stallRoutes = new RouteCoordinator({ now: () => stallNow }, startupSession, new SettingsStore(new FakeStorage(), () => stallNow),
-  new RestrictionStore(new FakeStorage(), () => stallNow), new EvidenceStore(new FakeStorage(), () => stallNow), startupVault)
+  stallRestrictions, stallEvidence, startupVault)
 if (startupRep) {
   const exactCatalogBackup = `https://${TRUSTED_CATALOG[0]}/upgcxcode/startup/video.m4s?k=backup-exact`
   startupVault.register({ generation: startupGeneration.generation, epoch: startupGeneration.epoch, kind: 'video',
@@ -443,6 +445,11 @@ if (startupRep) {
     stallRoutes.noteStartupProbeResult(incompatibleCatalog, 403)
     check(!stallRoutes.startupOptions(startupRoot)?.candidates.some(candidate => candidate.host === incompatibleCatalog.host),
       'Catalog 403 excludes only this stream-host pairing from startup fallback')
+    await stallEvidence.record(incompatibleCatalog.host, 'video', { requestId: 'prior-fast-stream', at: stallNow,
+      source: 'transport', outcome: 'success', throughputMbps: 100, ttfbMs: 10, failureKind: null })
+    const laterChoice = stallRoutes.plan(startupRep, { kind: 'video', requiredMbps: 8, highDemand: false }, 'new-epoch')
+    check(laterChoice.host !== incompatibleCatalog.host,
+      'this-stream 403 remains ineligible at a later route ranking boundary despite global speed evidence')
   }
   const unmatchedStartup = stallRoutes.apply('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/startup/unmatched.m4s?k=1')
   equal(unmatchedStartup.decision.action, 'pass', 'unattributed first media request never blindly rewrites to first Catalog')
@@ -459,9 +466,77 @@ if (startupRep) {
     await stallRoutes.recordChallenge(firstFairProbe, 0, 100, 50, 'failure', null)
     equal(stallRoutes.snapshot().affinity, null, 'active probe failure does not change playback affinity')
   }
+  const plannedFallback = (stallRoutes.snapshot().fallback as Record<string, { stage: string }>).video
+  equal(plannedFallback?.stage, 'planned', 'fallback plan is not reported as a sent request')
+  const nextFallback = stallRoutes.apply(startupRoot)
+  check(nextFallback.url && nextFallback.decision.host === fallback?.host, 'fallback remains legal for the next request')
+  const fallbackRequest = { requestId: requestId('fallback-next'), generation: startupGeneration.generation, epoch: startupGeneration.epoch,
+    decisionId: nextFallback.decision.id, representation: startupRep, kind: 'video' as const, attributionStatus: 'matched' as const,
+    attributionSource: 'exact' as const, decisionStage: 'request' as const, routeType: nextFallback.decision.routeType,
+    originalHost: 'upos-sz-mirrorali.bilivideo.com', targetHost: fallback!.host!, sourceHost: 'upos-sz-mirrorali.bilivideo.com',
+    playurlHostChanged: false, playurlOutput: null, urlChanged: true, hostChanged: true, startedAt: stallNow }
+  stallRoutes.requestStarted({ ...fallbackRequest, requestId: requestId('unrelated-same-host'), decisionId: decisionId('unrelated') })
+  equal((stallRoutes.snapshot().fallback as Record<string, { stage: string }>).video?.stage, 'planned',
+    'a same-host request from another decision cannot impersonate the submitted fallback')
+  stallRoutes.requestStarted(fallbackRequest)
+  equal((stallRoutes.snapshot().fallback as Record<string, { stage: string }>).video?.stage, 'entered-hook',
+    'fallback entering the hook is distinct from observed completion')
+  await stallRoutes.observe({ request: fallbackRequest, generation: startupGeneration.generation, epoch: startupGeneration.epoch,
+    decisionId: fallbackRequest.decisionId, representation: startupRep, kind: 'video', routeType: nextFallback.decision.routeType,
+    originalHost: fallbackRequest.originalHost, targetHost: fallbackRequest.targetHost, finalHost: fallbackRequest.targetHost,
+    streamKey: nextFallback.streamKey, status: 206, bytes: 100_000, ttfbMs: 20, elapsedMs: 250,
+    completedAt: stallNow + 250, outcome: 'success' })
+  equal((stallRoutes.snapshot().fallback as Record<string, { stage: string }>).video?.stage, 'response-observed',
+    'fallback is observed only after its own transport response')
+  for (const host of TRUSTED_CATALOG) await stallRestrictions.add({ host, type: 'black', kind: 'all', reason: 'no-route', expireAt: stallNow + 60_000 })
+  const noAlternate = stallRoutes.recover(startupRep, { kind: 'video', requiredMbps: 8, highDemand: false },
+    'verified-failure', fallback!.host)
+  equal(noAlternate.action, 'block', 'all forbidden alternatives yield a blocked recovery decision')
+  equal((stallRoutes.snapshot().fallback as Record<string, unknown>).video, undefined,
+    'no legal fallback clears an older submitted fallback instead of presenting it as current')
+  for (const host of TRUSTED_CATALOG) await stallRestrictions.remove(host, 'black')
+}
+const incompatibleSession = new SessionStore(), incompatibleState = incompatibleSession.beginGeneration(false)
+const incompatibleVault = new SignedRouteVault(); incompatibleVault.reset(incompatibleState.generation, incompatibleState.epoch)
+const incompatibleRoot = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/incompatible/segment.m4s?sig=clip'
+const incompatibleRep = incompatibleVault.register({ generation: incompatibleState.generation, epoch: incompatibleState.epoch,
+  kind: 'video', key: 'incompatible:80', height: 1080, codec: 'av1', bandwidth: 2_000_000,
+  urls: [incompatibleRoot], source: 'trusted-api' })
+check(incompatibleRep, 'Catalog incompatibility fixture has a representation')
+const incompatibleRoutes = new RouteCoordinator(clock, incompatibleSession, new SettingsStore(new FakeStorage(), () => now),
+  new RestrictionStore(new FakeStorage(), () => now), new EvidenceStore(new FakeStorage(), () => now), incompatibleVault)
+if (incompatibleRep) {
+  const badCatalog = incompatibleRoutes.startupOptions(incompatibleRoot)?.candidates.find(candidate => candidate.type === 'catalog-generated')
+  check(badCatalog, 'a Catalog URL can be checked for this stream')
+  incompatibleRoutes.commitStartupChoice(incompatibleRoot, badCatalog ?? null, 'startup-preflight')
+  const failed = incompatibleRoutes.apply(incompatibleRoot)
+  equal(failed.decision.host, badCatalog?.host, 'first media request uses the tested Catalog host')
+  await incompatibleRoutes.observe({ generation: incompatibleState.generation, epoch: incompatibleState.epoch,
+    decisionId: failed.decision.id, representation: incompatibleRep, kind: 'video', routeType: 'catalog-generated',
+    originalHost: new URL(incompatibleRoot).host, targetHost: badCatalog!.host, finalHost: badCatalog!.host,
+    streamKey: failed.streamKey, status: 403, bytes: 0, ttfbMs: 40, elapsedMs: 100,
+    completedAt: now + 100, outcome: 'failure' })
+  const after403 = incompatibleRoutes.apply(incompatibleRoot)
+  check(after403.url && after403.decision.host !== badCatalog?.host,
+    'a per-stream Catalog 403 permits the next request to use a different legal host')
+  equal(after403.decision.host, (incompatibleRoutes.snapshot().fallback as Record<string, { plannedHost: string }>).video?.plannedHost,
+    'Catalog incompatibility fallback plan is actually used by the next request')
 }
 const deadStartup: VideoSnapshot = { ...playerSnapshot, currentTime: 0, readyState: 0, width: 0, height: 0,
   frames: 0, bufferAheadSec: 0, playableBufferSec: 0, coreInitialized: false, paused: false }
+let originalProbeDisabled = false, originalRecoveryTicks = 0, originalFallbacks = 0
+const originalMonitor = new PlayerMonitor({ ...recoveryPlayer, snapshot: () => deadStartup, syncManifest: () => true } as PlayerPort,
+  startupSession, { get: () => ({ disabled: false }) } as never, startupVault,
+  { observePlaybackRate: () => undefined, playbackRate: () => 2, firstMediaAt: () => now,
+    latestRequested: () => ({ targetHost: 'upos-sz-mirrorali.bilivideo.com', representation: startupRep,
+      generation: startupGeneration.generation, epoch: startupGeneration.epoch }), pendingMediaCount: () => 0,
+    recoverStartup: () => { originalFallbacks++; return null }, recover: () => { originalFallbacks++; return null },
+    isOriginalComparison: () => true } as never,
+  { tick: (input: { disabled: boolean }) => { originalProbeDisabled = input.disabled } } as never,
+  { tick: () => { originalRecoveryTicks++ }, isRecovering: () => false } as never, () => true, () => now + 16_000)
+for (let i = 0; i < 17; i++) originalMonitor.tick()
+check(originalProbeDisabled && originalRecoveryTicks === 0 && originalFallbacks === 0,
+  'original comparison mode neither probes nor initiates script route/core recovery')
 const startupRecovery = new RecoveryController({ ...recoveryPlayer, snapshot: () => deadStartup, reload: () => { startupReloads++ },
   currentTime: () => 0, playbackRate: () => 1 } as PlayerPort, () => stallNow)
 startupRecovery.armStartupFailure(deadStartup)
@@ -475,7 +550,7 @@ const stallMonitor = new PlayerMonitor({ ...recoveryPlayer, snapshot: () => dead
   { firstMediaAt: () => now, latestRequested: () => ({ targetHost: 'upos-sz-mirrorali.bilivideo.com', representation: startupRep,
     generation: startupGeneration.generation, epoch: startupGeneration.epoch }),
     recoverStartup: () => { softFallbacks++; return { host: TRUSTED_CATALOG[0] } }, pendingMediaCount: () => 0,
-    observePlaybackRate: () => undefined } as never,
+    observePlaybackRate: () => undefined, isOriginalComparison: () => false } as never,
   { tick: () => undefined } as never,
   { tick: () => undefined, isRecovering: () => false, armStartupFailure: () => { startupArms++ } } as never,
   () => true, () => stallNow)
@@ -574,7 +649,8 @@ const ratePlayer: PlayerPort = { ...recoveryPlayer,
   playbackRate: () => selectedRate, setRate: () => { rateWrites++ },
 }
 const rateMonitor = new PlayerMonitor(ratePlayer, session, settings, vault,
-  { observePlaybackRate: (rate: number) => { observedRate = rate }, firstMediaAt: () => 0 } as never,
+  { observePlaybackRate: (rate: number) => { observedRate = rate }, firstMediaAt: () => 0,
+    isOriginalComparison: () => false } as never,
   { tick: () => undefined } as never, { tick: () => undefined, isRecovering: () => false } as never,
   () => true, () => now)
 for (const rate of [1, 1.5, 0.75, 2, 1]) {
@@ -641,6 +717,10 @@ const opaqueBackup = 'https://upos-sz-mirrorali.bilivideo.com/opaque/video-chunk
 const opaqueItem = { id: 81, codecid: 13, height: 1080, bandwidth: 1_000_000, base_url: opaquePrimary, backup_url: [opaqueBackup] }
 outputAdapter.transform({ data: { dash: { video: [opaqueItem], audio: [] } } }, 'page-hint')
 equal(opaqueItem.base_url, opaquePrimary, 'legal opaque signed primary is not emptied by playurl assembly')
+const opaqueLineage = outputRoutes.apply(opaquePrimary)
+equal(opaqueLineage.attributionStatus, 'weak', 'opaque signed output remains observation-only')
+equal(opaqueLineage.playurlOutput?.outputHost, new URL(opaquePrimary).host,
+  'an exact opaque output still links playurl delivery to the later segment request by host')
 await outputRestrictions.add({ host: 'upos-hz-mirrorakam.akamaized.net', type: 'black', kind: 'all', reason: 'opaque-output', expireAt: now + 60_000 })
 const opaqueRestricted = { ...opaqueItem, base_url: opaquePrimary, backup_url: [opaqueBackup] }
 outputAdapter.transform({ data: { dash: { video: [opaqueRestricted], audio: [] } } }, 'page-hint')
@@ -676,6 +756,13 @@ for (let tick = 0; tick < 100; tick++) { coreClock += 1000; coreObserver.tick(de
 equal((coreRecorder.snapshot().incident as { id: string }).id, frozenCore.id, 'continuous dead core does not replace its own incident')
 
 const outputRep = outputVault.contextForUrl(outputItem.base_url)!.representation
+const playurlLineage = (outputRoutes.apply(outputItem.base_url) as AppliedRouteDecision & {
+  playurlOutput?: { originalHost: string; outputHost: string; source: string; decisionId: string; role: string }
+}).playurlOutput
+equal(playurlLineage?.originalHost, 'upos-sz-mirrorcosov.bilivideo.com', 'playurl lineage retains the original host without retaining a signed URL')
+equal(playurlLineage?.outputHost, new URL(outputItem.base_url).host, 'playurl lineage names the host actually offered to the player')
+equal(playurlLineage?.source, 'trusted-api', 'playurl lineage identifies trusted API output separately from page hints')
+check(!!playurlLineage?.decisionId && playurlLineage.role === 'primary', 'playurl output links its plan to a primary request')
 const alternateHost = new URL(alternateOutput!).host
 for (const type of ['black', 'dead'] as const) {
   await outputRestrictions.add({ host: alternateHost, type, kind: 'all', reason: 'regression', expireAt: now + 60_000 })
@@ -690,6 +777,33 @@ for (const type of ['black', 'dead'] as const) {
 }
 await outputSettings.update({ fixedHost: null })
 outputRoutes.invalidateForUserSetting()
+outputRoutes.setOriginalComparison(true)
+equal(outputSettings.get().fixedHost, null, 'per-tab original comparison does not overwrite saved routing settings')
+const nativeControlUrl = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/control/clip.m4s?signature=private'
+const nativeControlBackup = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/control/clip.m4s?signature=other'
+const controlItem = { id: 240, codecid: 13, height: 1080, bandwidth: 1_000_000,
+  base_url: nativeControlUrl, backup_url: [nativeControlBackup] }
+outputAdapter.transform({ data: { dash: { video: [controlItem], audio: [] } } }, 'page-hint')
+equal(controlItem.base_url, nativeControlUrl, 'original comparison mode does not rewrite a legal playurl primary')
+equal(controlItem.backup_url[0], nativeControlBackup, 'original comparison mode preserves the exact legal signed backup')
+equal(outputRoutes.apply(nativeControlUrl).url, nativeControlUrl, 'original comparison mode passes the exact segment URL')
+equal(outputRoutes.startupOptions(nativeControlUrl), null, 'original comparison mode does not launch cold preflight')
+equal(outputRoutes.challenge(outputVault.contextForUrl(nativeControlUrl)!.representation,
+  { kind: 'video', requiredMbps: 3, highDemand: false }, false), null, 'original comparison mode starts no healthy probe')
+await outputRestrictions.add({ host: 'upos-sz-mirrorali.bilivideo.com', type: 'black', kind: 'all', reason: 'original-mode', expireAt: now + 60_000 })
+equal(outputRoutes.apply(nativeControlUrl).url, null, 'original comparison mode does not bypass a prohibited original host')
+const blockedControlItem = { ...controlItem, base_url: nativeControlUrl, backup_url: [nativeControlBackup] }
+outputAdapter.transform({ data: { dash: { video: [blockedControlItem], audio: [] } } }, 'page-hint')
+equal(blockedControlItem.base_url, nativeControlBackup, 'original comparison promotes an exact legal signed backup when primary is forbidden')
+const promotedRep = outputVault.contextForUrl(nativeControlBackup)!.representation
+const promotedPlan = outputRoutes.snapshot().recentPlans as { id: string; host: string; action: string; reason: string }[]
+check(promotedPlan.some(row => row.host === new URL(nativeControlBackup).host && row.action === 'pass' && row.reason === 'original-backup'),
+  'the reported plan names the backup actually offered to the player, not the blocked primary')
+equal(outputVault.outputRole(promotedRep, nativeControlBackup)?.decisionId,
+  promotedPlan.find(row => row.host === new URL(nativeControlBackup).host && row.reason === 'original-backup')?.id,
+  'promoted backup lineage points to its accurate route decision')
+await outputRestrictions.remove('upos-sz-mirrorali.bilivideo.com', 'black')
+outputRoutes.setOriginalComparison(false)
 const ungroupedHost = TRUSTED_CATALOG[0]
 const ungroupedUrl = `https://${ungroupedHost}/upgcxcode/test/ungrouped/1.m4s?k=1`
 await outputRestrictions.add({ host: ungroupedHost, type: 'black', kind: 'audio', reason: 'ungrouped-audio', expireAt: now + 60_000 })
@@ -746,6 +860,13 @@ await outputSettings.update({ catalogOverrides: {}, fixedHost: null })
 outputRoutes.invalidateForUserSetting()
 const realAdapter = new TransportAdapter(outputSession, outputSettings, outputRoutes, outputAdapter, measurementStub as never, () => now)
 realAdapter.install()
+const tracedXhr = new FakeXhr(); tracedXhr.open('GET', outputItem.base_url); tracedXhr.send()
+await Promise.resolve()
+const tracedVideo = (outputRoutes.snapshot().latest as Record<string, Record<string, unknown>>).video
+equal(tracedXhr.nativeSends, 1, 'playurl output is sent through the native XHR method exactly once')
+equal(tracedVideo?.targetHost, new URL(tracedXhr.url).host, 'route report target matches the URL received by native XHR')
+equal((tracedVideo?.playurlOutput as Record<string, unknown>)?.originalHost, 'upos-sz-mirrorcosov.bilivideo.com',
+  'the completed native request retains the original playurl host lineage')
 const actualXhr = new FakeXhr()
 actualXhr.open('GET', forbiddenUrl)
 check(!actualXhr.url.includes('mirrorcosov'), 'native XHR open receives rewritten legal host')

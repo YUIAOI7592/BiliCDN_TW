@@ -32,6 +32,7 @@ The domain accepts time as an argument and performs no I/O.
 - `EvidenceStore` owns bounded video/audio host evidence.
 - `SignedRouteVault` owns full current-epoch Native URLs behind opaque handles.
 - Exact signed URLs with an unrecognized path may be indexed for observation and host restriction only; they do not become selectable Native routes or active-probe capabilities.
+- The vault also keeps a bounded, current-epoch mapping from playurl output URL to original/output hostname, primary/backup role, source and decision ID. Full URLs remain private to the vault.
 - `SettingsStore` owns the typed v2 product settings.
 
 Persistent stores use distinct `bilicdn.v2.*` keys. Signed routes and session state are memory-only.
@@ -70,6 +71,10 @@ Adapters do not own route state or impose penalties.
 6. Completion yields a typed observation and evidence update. Verified failure may open a media-kind circuit and request group-aware fallback.
 7. A no-progress cold start can submit one legal different-host fallback without penalizing the original and arm the existing one-shot core recovery.
 8. The observed post-decision host, not the plan alone, confirms the route outcome.
+
+Catalog HTTP 403 invalidates only the current stream/host pairing for later ranking, backups and active challengers. Recovery records a bounded per-kind action from plan to hook entry to response or failure; a same-host request from an unrelated decision cannot confirm that action.
+
+The optional original comparison mode lives only in the current tab's coordinator. It uses only exact legal signed URLs supplied by the video, can promote a legal original backup if the primary is forbidden, and suppresses script probes, route changes and core recovery. It does not survive a full reload or retroactively restore URLs already given to the player.
 
 Healthy measurements never change affinity.
 

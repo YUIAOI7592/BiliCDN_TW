@@ -5,7 +5,8 @@ import { mediaIdentity, parseMediaUrl, replaceUrlHost } from '../domain/url-poli
 import {
   decisionId, recoveryActionId, type CatalogCandidate, type Clock, type DecisionId, type DomainEvent, type FailureKind,
   type MediaKind, type PlaybackDemand, type RepresentationId, type RouteDecision, type RouteIdentity,
-  type RouteType, type TransportObservation, type RequestContext, type AttributionStatus, type AttributionSource,
+  type RouteType, type TransportObservation, type RequestContext, type AttributionStatus, type AttributionSource, type PlayurlOutputSummary,
+  type RecoveryActionId,
 } from '../domain/model.ts'
 import type { EvidenceStore } from '../state/evidence-store.ts'
 import type { RestrictionStore } from '../state/restriction-store.ts'
@@ -22,6 +23,7 @@ export interface AppliedRouteDecision {
   readonly attributionStatus?: AttributionStatus
   readonly attributionSource?: AttributionSource
   readonly playurlHostChanged?: boolean
+  readonly playurlOutput?: PlayurlOutputSummary
 }
 
 export interface StartupCandidate {
@@ -40,6 +42,18 @@ export interface StartupOptions {
 }
 
 interface DecisionRecord { readonly decision: RouteDecision; readonly context: RouteIdentity | null; readonly kind: MediaKind; readonly representation: RepresentationId | null }
+interface FallbackProgress {
+  readonly actionId: RecoveryActionId
+  readonly representation: RepresentationId
+  readonly decisionId: DecisionId
+  readonly plannedHost: string
+  readonly routeType: RouteType
+  readonly stage: 'planned' | 'entered-hook' | 'response-observed' | 'request-failed'
+  readonly requestId: string | null
+  readonly responseHost: string | null
+  readonly outcome: TransportObservation['outcome'] | null
+  readonly status: number | null
+}
 
 export class RouteCoordinator {
   #serial = 0
@@ -61,6 +75,8 @@ export class RouteCoordinator {
   #challengeAttempts = new Map<string, number>()
   #firstMediaAt = 0
   #pendingMedia = new Set<string>()
+  #fallbacks = new Map<MediaKind, FallbackProgress>()
+  #originalComparison = false
 
   constructor(
     private readonly clock: Clock,
@@ -83,14 +99,31 @@ export class RouteCoordinator {
     this.#streamPlans.clear(); this.#latest.clear(); this.#lastSuccess.clear(); this.#requested.clear()
     this.#effectiveRate = 2
     this.#challengeAttempts.clear(); this.#firstMediaAt = 0; this.#pendingMedia.clear()
+    this.#fallbacks.clear()
   }
   invalidateForUserSetting(): void { this.#plans.clear(); this.#streamPlans.clear(); this.session.setAffinity(null) }
+  isOriginalComparison(): boolean { return this.#originalComparison }
+  setOriginalComparison(enabled: boolean): void {
+    if (this.#originalComparison === enabled) return
+    this.#originalComparison = enabled
+    this.#fallbacks.clear()
+    this.invalidateForUserSetting()
+  }
 
   requestStarted(request: RequestContext): void {
     if (request.kind && !this.#firstMediaAt) this.#firstMediaAt = request.startedAt
     if (request.kind) this.#pendingMedia.add(request.requestId)
     const key = request.kind ?? 'unknown'
     this.#requested.set(key, request)
+    if (request.kind && request.representation) {
+      const fallback = this.#fallbacks.get(request.kind)
+      if (fallback?.representation === request.representation && fallback.decisionId === request.decisionId
+        && fallback.plannedHost === request.targetHost
+        && fallback.stage === 'planned' && request.generation === this.session.get().generation
+        && request.epoch === this.session.get().epoch) {
+        this.#fallbacks.set(request.kind, { ...fallback, stage: 'entered-hook', requestId: request.requestId })
+      }
+    }
     this.#emit({ type: 'request-started', at: request.startedAt, request })
     this.#emit({ type: 'attribution-changed', at: request.startedAt, requestId: request.requestId, status: request.attributionStatus, kind: request.kind })
   }
@@ -121,7 +154,8 @@ export class RouteCoordinator {
 
   startupOptions(url: string, catalogCursor = 0): StartupOptions | null {
     const parsed = parseMediaUrl(url), match = this.vault.match(url), context = match.status === 'matched' ? match.context : null
-    if (!parsed || parsed.kind !== 'normal' || !parsed.replaceable || !context || this.settings.get().fixedHost || this.session.get().disabled) return null
+    if (!parsed || parsed.kind !== 'normal' || !parsed.replaceable || !context || this.settings.get().fixedHost
+      || this.#originalComparison || this.session.get().disabled) return null
     const bandwidth = this.vault.groupSummary(context.representation)?.bandwidth ?? 0
     const requiredMbps = Math.max(context.kind === 'audio' ? 0.5 : 2,
       ((bandwidth || (context.kind === 'audio' ? 192_000 : 4_000_000)) / 1_000_000) * this.#effectiveRate * 1.25)
@@ -158,11 +192,7 @@ export class RouteCoordinator {
     if (status !== 403 || candidate.type !== 'catalog-generated') return
     const context = candidate.context, current = this.session.get()
     if (context.generation !== current.generation || context.epoch !== current.epoch) return
-    const key = mediaIdentity(candidate.url)
-    if (!key) return
-    const hosts = this.#startupIncompatible.get(key) ?? new Set<string>()
-    hosts.add(candidate.host); this.#startupIncompatible.set(key, hosts)
-    while (this.#startupIncompatible.size > 256) this.#startupIncompatible.delete(this.#startupIncompatible.keys().next().value as string)
+    this.#markIncompatible(candidate.url, candidate.host)
   }
 
   commitStartupChoice(url: string, selected: StartupCandidate | null, reason: string): RouteDecision | null {
@@ -218,6 +248,15 @@ export class RouteCoordinator {
     failedHost: string | null = null): RouteDecision {
     const context = this.vault.identity(representation)
     if (!context) return this.#pass('missing-representation', null, demand.kind)
+    if (this.#originalComparison) {
+      const host = parseMediaUrl(this.vault.rootUrl(representation) ?? '')?.host ?? null
+      const restriction = host ? this.#hardRestriction(host, context.kind) : null
+      const original = restriction && host ? this.#block(restriction, host) : this.#pass('original-observe-only', host, context.kind)
+      this.#plans.set(representation, original)
+      this.#remember(original, context, context.kind)
+      this.#emit({ type: 'route-planned', at: this.clock.now(), decision: original })
+      return original
+    }
     const previous = this.#plans.get(representation)
     if (previous && !['verified-failure', 'watchdog', 'user-setting'].includes(boundary) && this.#decisionAllowed(previous, context, demand.kind)) return previous
     const decision = this.#choose(context, demand, boundary, failedHost)
@@ -227,14 +266,20 @@ export class RouteCoordinator {
 
   recover(representation: RepresentationId, demand: PlaybackDemand, boundary: 'verified-failure' | 'watchdog', failedHost: string | null): RouteDecision {
     const decision = this.plan(representation, demand, boundary, failedHost)
-    this.#emit({ type: 'recovery', at: this.clock.now(), action: {
-      action: 'route-fallback', id: recoveryActionId(`recovery-${++this.#recoverySerial}`), kind: demand.kind, decision,
-    } })
+    if (decision.action !== 'block' && decision.host && decision.host !== failedHost)
+      this.#trackFallback(representation, demand.kind, decision)
+    else {
+      this.#fallbacks.delete(demand.kind)
+      this.#emit({ type: 'recovery', at: this.clock.now(), action: {
+        action: 'none', id: recoveryActionId(`recovery-${++this.#recoverySerial}`), reason: 'no-legal-different-route',
+      } })
+    }
     return decision
   }
 
   recoverStartup(representation: RepresentationId, demand: PlaybackDemand, failedHost: string,
     preferredHosts: readonly string[]): RouteDecision | null {
+    if (this.#originalComparison) return null
     const root = this.vault.rootUrl(representation)
     if (!root || !failedHost || demand.kind !== 'video') return null
     const options = this.startupOptions(root)
@@ -246,22 +291,31 @@ export class RouteCoordinator {
       : preferred ?? alternatives[0]
     if (!selected) return null
     const decision = this.commitStartupChoice(root, selected, 'startup-stall-fallback')
-    if (decision && decision.host !== failedHost) this.#emit({ type: 'recovery', at: this.clock.now(), action: {
-      action: 'route-fallback', id: recoveryActionId(`recovery-${++this.#recoverySerial}`), kind: 'video', decision,
-    } })
+    if (decision && decision.host !== failedHost) this.#trackFallback(representation, 'video', decision)
     return decision && decision.host !== failedHost ? decision : null
   }
 
   apply(url: string, kindHint: MediaKind | null = null, demand?: PlaybackDemand): AppliedRouteDecision {
     const parsed = parseMediaUrl(url)
     if (!parsed) return { decision: this.#pass('invalid-url', null, kindHint ?? 'video'), url, context: null, streamKey: null, sourceHost: null }
+    if (this.#originalComparison) {
+      const inspected = this.inspectOriginal(url)
+      const decision = inspected.decision.action === 'pass'
+        ? this.#pass('original-observe-only', parsed.host, inspected.context?.kind ?? kindHint ?? 'video') : inspected.decision
+      const outputRole = inspected.context ? this.vault.outputRole(inspected.context.representation, url) : null
+      this.#remember(decision, inspected.context, inspected.context?.kind ?? kindHint ?? 'video')
+      return { ...inspected, decision, playurlHostChanged: outputRole?.hostChanged ?? false,
+        ...(outputRole ? { playurlOutput: outputRole } : {}) }
+    }
     const streamKey = mediaIdentity(url)
     if (parsed.kind === 'unknown') {
       const match = this.vault.match(url), context = match.source === 'exact' ? match.context : null
       const restriction = this.#hardRestriction(parsed.host, context?.kind ?? kindHint)
       const decision = restriction ? this.#block(restriction, parsed.host) : this.#pass('opaque-media-observation-only', parsed.host, context?.kind ?? kindHint ?? 'video')
+      const outputRole = context ? this.vault.outputRole(context.representation, url) : null
       return { decision, url: restriction ? null : url, context, streamKey, sourceHost: parsed.host,
-        attributionStatus: match.status, attributionSource: match.source }
+        attributionStatus: match.status, attributionSource: match.source,
+        playurlHostChanged: outputRole?.hostChanged ?? false, ...(outputRole ? { playurlOutput: outputRole } : {}) }
     }
     if (parsed.kind === 'live' || parsed.kind === 'resource' || parsed.kind === 'pcdn' || parsed.kind === 'suspected-pcdn') {
       // These URLs cannot be safely rewritten, but that never grants an exception to a host restriction.
@@ -333,12 +387,34 @@ export class RouteCoordinator {
     }
     const sourceHost = context ? parseMediaUrl(this.vault.rootUrl(context.representation) ?? url)?.host ?? parsed.host : parsed.host
     if (applied && context) this.vault.registerAlias(context.representation, applied)
-    return { decision, url: applied, context, streamKey, sourceHost, attributionStatus: match.status, attributionSource: match.source, playurlHostChanged: outputRole?.hostChanged ?? false }
+    return { decision, url: applied, context, streamKey, sourceHost, attributionStatus: match.status, attributionSource: match.source,
+      playurlHostChanged: outputRole?.hostChanged ?? false, ...(outputRole ? { playurlOutput: outputRole } : {}) }
   }
 
   decisionRecord(id: DecisionId | null): DecisionRecord | null { return id ? this.#decisions.get(id) ?? null : null }
 
-  playerOutput(representation: RepresentationId, original: string, decision: RouteDecision, originals: readonly string[]): { primary: string; backups: readonly string[] } {
+  opaqueOutput(representation: RepresentationId, original: string, originals: readonly string[],
+    source: 'trusted-api' | 'page-hint'): { primary: string; backups: readonly string[] } {
+    const context = this.vault.identity(representation)
+    if (!context) return { primary: '', backups: [] }
+    const permitted = [...new Set(originals)].filter(url => {
+      const parsed = parseMediaUrl(url), match = this.vault.match(url)
+      return !!parsed && match.source === 'exact' && match.context?.representation === representation
+        && !this.#hardRestriction(parsed.host, context.kind) && !this.vault.isInvalid(representation, parsed.host)
+    })
+    const primary = permitted[0] ?? '', backups = permitted.slice(1, 6)
+    if (primary) {
+      const host = parseMediaUrl(primary)!.host
+      const decision = this.#pass(primary === original ? 'opaque-original' : 'opaque-original-backup', host, context.kind)
+      this.#remember(decision, context, context.kind)
+      this.#emit({ type: 'route-planned', at: this.clock.now(), decision })
+      this.vault.registerOutput(representation, original, primary, backups, decision.id, source)
+    }
+    return { primary, backups }
+  }
+
+  playerOutput(representation: RepresentationId, original: string, decision: RouteDecision, originals: readonly string[],
+    source: 'trusted-api' | 'page-hint' = 'trusted-api'): { primary: string; backups: readonly string[] } {
     const context = this.vault.identity(representation)
     if (!context) return { primary: '', backups: [] }
     const allowed = (url: string): boolean => {
@@ -349,12 +425,29 @@ export class RouteCoordinator {
         && !this.#hardRestriction(parsed.host, context.kind) && !this.vault.isInvalid(representation, parsed.host)
     }
     const stream = mediaIdentity(original)
+    if (this.#originalComparison) {
+      const permitted = [...new Set(originals)].filter(allowed)
+      const primary = permitted[0] ?? '', backups = permitted.slice(1, 6)
+      if (primary) {
+        const selectedHost = parseMediaUrl(primary)!.host
+        const outputDecision = primary === original && decision.action === 'pass' && decision.host === selectedHost
+          ? decision : this.#pass('original-backup', selectedHost, context.kind)
+        if (outputDecision !== decision) {
+          this.#plans.set(representation, outputDecision)
+          this.#remember(outputDecision, context, context.kind)
+          this.#emit({ type: 'route-planned', at: this.clock.now(), decision: outputDecision })
+        }
+        this.vault.registerOutput(representation, original, primary, backups, outputDecision.id, source)
+        for (const url of permitted.slice(0, 6)) this.vault.registerAlias(representation, url)
+      }
+      return { primary, backups }
+    }
     const lockedOriginal = stream && this.#hostLockedStreams.has(stream) ? this.vault.rootUrl(representation) : null
     const primary = lockedOriginal && allowed(lockedOriginal) ? lockedOriginal : this.#materialize(original, decision, context)
     if (!primary || !allowed(primary)) return { primary: '', backups: [] }
     const locked = mediaIdentity(original)
     const generated = locked && this.#hostLockedStreams.has(locked) ? [] : decision.ranking
-      .filter(row => row.eligible && row.candidate.type === 'catalog-generated')
+      .filter(row => row.eligible && row.candidate.type === 'catalog-generated' && !this.#incompatible(original, row.candidate.host))
       .flatMap(row => { const url = replaceUrlHost(original, row.candidate.host); return url && allowed(url) ? [url] : [] })
     const primaryHost = parseMediaUrl(primary)?.host
     const usedHosts = new Set(primaryHost ? [primaryHost] : [])
@@ -370,7 +463,7 @@ export class RouteCoordinator {
     const backups = lockedOriginal ? [] : [...distinct, ...sameHost].slice(0, 5)
     this.vault.registerAlias(representation, primary)
     for (const url of backups) this.vault.registerAlias(representation, url)
-    this.vault.registerOutput(representation, original, primary, backups)
+    this.vault.registerOutput(representation, original, primary, backups, decision.id, source)
     return { primary, backups }
   }
 
@@ -378,7 +471,8 @@ export class RouteCoordinator {
     excludedHosts: ReadonlySet<string> = new Set(), catalogCursor = 0): AppliedRouteDecision | null {
     const context = this.vault.identity(representation), root = this.vault.rootUrl(representation)
     const rootKey = root ? mediaIdentity(root) : null
-    if (!context || !root || this.settings.get().fixedHost || (rootKey !== null && this.#hostLockedStreams.has(rootKey))) return null
+    if (!context || !root || this.settings.get().fixedHost || this.#originalComparison
+      || (rootKey !== null && this.#hostLockedStreams.has(rootKey))) return null
     const settings = this.settings.get(), restriction = this.restrictions.snapshot(context.kind)
     const catalog: CatalogCandidate[] = TRUSTED_CATALOG.map((host, index) => ({ type: 'catalog-generated', host, kind: context.kind, catalogIndex: index }))
     const native = this.vault.candidates(representation, this.#unlockedNative.get(representation) ?? new Set()).native
@@ -389,6 +483,7 @@ export class RouteCoordinator {
     const selected = candidates.find(candidate => {
       if (candidate.host === currentHost || excludedHosts.has(candidate.host)) return false
       if (this.#hardRestriction(candidate.host, candidate.kind)) return false
+      if (candidate.type === 'catalog-generated' && this.#incompatible(root, candidate.host)) return false
       const attemptKey = `${context.representation}:${candidate.host}`
       if (now - (this.#challengeAttempts.get(attemptKey) ?? 0) < 6 * 60 * 60_000) return false
       const evidence = this.evidence.get(candidate.host, candidate.kind)
@@ -432,6 +527,13 @@ export class RouteCoordinator {
     const valid = (): boolean => observation.generation === this.session.get().generation && observation.epoch === this.session.get().epoch && !this.session.get().disabled
     this.#emit({ type: 'transport-completed', at: this.clock.now(), observation, detached: !valid() })
     if (!valid()) return
+    if (observation.kind && observation.request) {
+      const fallback = this.#fallbacks.get(observation.kind)
+      if (fallback?.requestId === observation.request.requestId && fallback.stage === 'entered-hook') {
+        this.#fallbacks.set(observation.kind, { ...fallback, stage: observation.status > 0 ? 'response-observed' : 'request-failed',
+          responseHost: observation.finalHost, outcome: observation.outcome, status: observation.status })
+      }
+    }
     const key = observation.kind ?? 'unknown', request = observation.request
     this.#latest.set(key, Object.freeze({ ...(request ?? {}), kind: observation.kind, routeType: observation.routeType,
       originalHost: observation.originalHost, targetHost: observation.targetHost, responseHost: observation.finalHost,
@@ -443,6 +545,7 @@ export class RouteCoordinator {
     if (!evidenceHost) return
     if (observation.status === 403 && observation.streamKey && observation.routeType === 'catalog-generated'
       && (observation.request?.sourceHost ?? observation.originalHost) !== observation.targetHost) {
+      this.#markIncompatibleKey(observation.streamKey, observation.targetHost)
       this.#hostLockedStreams.add(observation.streamKey)
       if (observation.kind === 'video' && observation.representation) this.recoverStartup(observation.representation,
         { kind: 'video', requiredMbps: 8, highDemand: false }, observation.targetHost, [])
@@ -506,14 +609,23 @@ export class RouteCoordinator {
     const summarize = (decision: RouteDecision): Readonly<Record<string, unknown>> => Object.freeze({
       id: decision.id, action: decision.action, reason: decision.reason, routeType: decision.routeType, host: decision.host,
     })
-    return Object.freeze({ planCount: this.#plans.size, activePlan: active ? Object.freeze({ ...summarize(active),
+    return Object.freeze({ originalComparison: this.#originalComparison, planCount: this.#plans.size, activePlan: active ? Object.freeze({ ...summarize(active),
       ranking: Object.freeze(active.ranking.slice(0, 12).map(row => Object.freeze({ host: row.candidate.host, type: row.candidate.type,
         state: row.state, eligible: row.eligible, reasons: row.reasons, safeMbps: row.safeThroughputMbps,
         ratio: row.demandRatio, ttfbMs: row.medianTtfbMs }))),
     }) : null, recentPlans: Object.freeze(recent.map(([representation, decision]) => Object.freeze({ representation, ...summarize(decision) }))),
       affinity: session.affinity, latest: Object.freeze(Object.fromEntries(this.#latest)), lastSuccess: Object.freeze(Object.fromEntries(this.#lastSuccess)), requested: Object.freeze(Object.fromEntries(this.#requested)),
       attribution: session.representation ? 'confirmed' : this.#tentativeRepresentation ? 'awaiting-second-video-transfer' : 'awaiting-matched-video',
-      representation: session.representation ? this.vault.groupSummary(session.representation) : null })
+      representation: session.representation ? this.vault.groupSummary(session.representation) : null,
+      fallback: Object.freeze(Object.fromEntries(this.#fallbacks)) })
+  }
+
+  #trackFallback(representation: RepresentationId, kind: MediaKind, decision: RouteDecision): void {
+    if (!decision.host) return
+    const actionId = recoveryActionId(`recovery-${++this.#recoverySerial}`)
+    this.#fallbacks.set(kind, Object.freeze({ actionId, representation, decisionId: decision.id, plannedHost: decision.host,
+      routeType: decision.routeType, stage: 'planned', requestId: null, responseHost: null, outcome: null, status: null }))
+    this.#emit({ type: 'recovery', at: this.clock.now(), action: { action: 'route-fallback', id: actionId, kind, decision } })
   }
 
   #choose(context: RouteIdentity, demand: PlaybackDemand,
@@ -525,8 +637,10 @@ export class RouteCoordinator {
     const restriction = this.restrictions.snapshot(context.kind)
     const unlocked = this.#unlockedNative.get(context.representation) ?? new Set<string>()
     const routes = this.vault.candidates(context.representation, unlocked)
+    const root = this.vault.rootUrl(context.representation) ?? ''
     const catalog: CatalogCandidate[] = TRUSTED_CATALOG.map((host, index) => Object.freeze({ type: 'catalog-generated', host,
-      kind: context.kind, catalogIndex: index })).filter(candidate => !this.vault.isInvalid(context.representation, candidate.host))
+      kind: context.kind, catalogIndex: index })).filter(candidate => !this.vault.isInvalid(context.representation, candidate.host)
+        && !this.#incompatible(root, candidate.host))
     const candidates = [...catalog, ...routes.native, ...(routes.root ? [routes.root] : [])]
     const id = this.#nextId()
     const current = this.#plans.get(context.representation), affinity = this.session.get().affinity
@@ -593,13 +707,27 @@ export class RouteCoordinator {
     if (decision.action === 'block' || !decision.host || this.#hardRestriction(decision.host, kind)) return false
     if (decision.action === 'pass') return !context || !this.vault.isInvalid(context.representation, decision.host)
     const candidate = decision.candidate
-    if (candidate.type === 'catalog-generated') return true
+    if (candidate.type === 'catalog-generated') return !context || !this.#incompatible(this.vault.rootUrl(context.representation) ?? '', decision.host)
     if (!context) return false
     return this.vault.candidates(context.representation, this.#unlockedNative.get(context.representation) ?? new Set())
       .native.some(route => route.handle === candidate.handle && route.host === decision.host)
   }
 
   #nextId(): DecisionId { return decisionId(`decision-${++this.#serial}`) }
+  #incompatible(url: string, host: string): boolean {
+    const key = mediaIdentity(url)
+    return !!key && (this.#startupIncompatible.get(key)?.has(host) ?? false)
+  }
+  #markIncompatible(url: string, host: string): void {
+    const key = mediaIdentity(url)
+    if (!key) return
+    this.#markIncompatibleKey(key, host)
+  }
+  #markIncompatibleKey(key: string, host: string): void {
+    const hosts = this.#startupIncompatible.get(key) ?? new Set<string>()
+    hosts.add(host); this.#startupIncompatible.set(key, hosts)
+    while (this.#startupIncompatible.size > 256) this.#startupIncompatible.delete(this.#startupIncompatible.keys().next().value as string)
+  }
   #remember(decision: RouteDecision, context: RouteIdentity | null, kind: MediaKind): void {
     this.#decisions.set(decision.id, { decision, context, kind, representation: context?.representation ?? null })
     while (this.#decisions.size > 256) this.#decisions.delete(this.#decisions.keys().next().value as DecisionId)

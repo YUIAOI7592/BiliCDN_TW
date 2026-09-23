@@ -15,7 +15,7 @@ BiliCDN_TW 是給台灣網路環境使用的 Bilibili Tampermonkey 腳本。它�
 - 對影片與音訊分開保存近期傳輸證據，避免音訊故障連坐影片路線。
 - Native signed URL 只在目前影片與畫質生命週期內使用，不跨影片保存。
 - 健康播放期間不因背景量測或其他分頁的新資料換線。
-- 2x 播放、自動畫質、AV1／HEVC 偏好與背景播放支援。
+- 依使用者選擇的倍速（包含 2x）估算頻寬需求，不強制設定播放速度；支援自動畫質、AV1／HEVC 偏好與背景播放。
 - black、dead、使用者停用及預設不可用節點的統一限制。
 - Watchdog、傳輸故障恢復與受限播放器核心重建。
 - WebRTC 阻擋與 HTTPDNS 手動 block／allow。
@@ -31,7 +31,7 @@ BiliCDN_TW 是給台灣網路環境使用的 Bilibili Tampermonkey 腳本。它�
 
 ## 使用方式
 
-腳本預設使用自動選路、2x 播放、AV1 優先、WebRTC 阻擋與 HTTPDNS block。
+腳本預設使用自動選路、AV1 優先、WebRTC 阻擋與 HTTPDNS block；播放倍速由 Bilibili／使用者決定。
 
 可從 Tampermonkey 選單，或播放器設定面板內的「開啟 BiliCDN 控制中心」進入設定：
 
@@ -43,8 +43,11 @@ BiliCDN_TW 是給台灣網路環境使用的 Bilibili Tampermonkey 腳本。它�
 - 開啟 Verbose 診斷。
 - 清除 v2 學習資料或恢復 v2 預設設定。
 - 在播放狀態安全時手動重新評估一個候選。
+- 在額外測試分頁使用「原始對照」：只放行本片合法的原始 signed URL，不進行主動測速或腳本換線；禁止規則仍生效。
 
 固定 CDN 仍受 black、dead、使用者停用、預設不可用及 host-lock 限制；固定設定不會解除處分。
+
+原始對照只在目前分頁生效，完整重新整理即退出。已交付播放器的 URL 無法回收；要做乾淨對照，請先在額外測試分頁啟用，再透過站內換片載入新影片。原始 primary 被禁時可使用該片合法的原始 backup；沒有合法 URL 時仍會阻止請求。
 
 ## 選路原則
 
@@ -76,6 +79,7 @@ BiliCDN_TW 是給台灣網路環境使用的 Bilibili Tampermonkey 腳本。它�
 4. 複製診斷報告並附在 GitHub issue。
 
 診斷不包含 signed URL、影片識別碼、cookie 或 IP。若報告顯示只有健康觀察，代表它不能證明重新整理前或更早發生的故障。
+報告分開列出 playurl 原始／提供播放器的 host、分段請求進入 hook 的 host、回應 host，以及備援計畫、進入 hook、收到回應三個後態；「進入 hook」不等於 Chrome Network 已確認送出。瀏覽器重導向或腳本未攔到的入口，仍須用 Chrome Network 核對。
 
 ## 開發
 

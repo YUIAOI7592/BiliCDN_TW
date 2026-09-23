@@ -406,6 +406,7 @@ export class TransportAdapter {
       attributionStatus: matched, attributionSource: applied.attributionSource ?? (applied.context ? 'exact' : 'none'),
       decisionStage: 'request', routeType: applied.decision.routeType, originalHost: hostOf(originalUrl), targetHost: hostOf(targetUrl),
       sourceHost: applied.sourceHost, playurlHostChanged: applied.playurlHostChanged ?? false,
+      playurlOutput: applied.playurlOutput ?? null,
       urlChanged: originalUrl !== targetUrl, hostChanged: hostOf(originalUrl) !== hostOf(targetUrl), startedAt })
     this.#lastMedia = { requestId: request.requestId, method, kind: request.kind ?? 'unknown', originalHost: request.originalHost,
       targetHost: request.targetHost, hookEntered: true, mediaRecognized: true, nativeCalled: false, responseObserved: false, status: null }

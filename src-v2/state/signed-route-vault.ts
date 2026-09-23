@@ -3,6 +3,7 @@ import { isKnownNativeFamily, parseMediaUrl } from '../domain/url-policy.ts'
 import {
   representationId, signedRouteHandle, type EpochId, type GenerationId, type MediaKind, type NativeCandidate,
   type RepresentationId, type RootCandidate, type RouteIdentity, type SignedRouteHandle, type AttributionStatus, type AttributionSource,
+  type DecisionId,
 } from '../domain/model.ts'
 
 const MAX_VIDEO_GROUPS = 128
@@ -24,6 +25,8 @@ export interface RegisterRepresentationInput {
 
 interface StoredRoute { readonly handle: SignedRouteHandle; readonly host: string; readonly url: string; readonly order: number; readonly activelyExplorable: boolean; readonly selectable: boolean }
 interface Group { readonly identity: RouteIdentity; readonly height: number; readonly codec: string; readonly bandwidth: number; readonly source: RegisterRepresentationInput['source']; readonly routes: readonly StoredRoute[] }
+interface OutputRole { readonly representation: RepresentationId; readonly role: 'primary' | 'backup'; readonly hostChanged: boolean;
+  readonly originalHost: string; readonly outputHost: string; readonly source: 'trusted-api' | 'page-hint'; readonly decisionId: DecisionId }
 
 export class SignedRouteVault {
   #generation: GenerationId | null = null
@@ -35,7 +38,7 @@ export class SignedRouteVault {
   #byPath = new Map<string, Set<RepresentationId>>()
   #handles = new Map<SignedRouteHandle, { readonly representation: RepresentationId; readonly url: string }>()
   #invalid = new Map<RepresentationId, Set<string>>()
-  #outputs = new Map<string, { representation: RepresentationId; role: 'primary' | 'backup'; hostChanged: boolean } | null>()
+  #outputs = new Map<string, OutputRole | null>()
   #urlChars = 0
   #serial = 0
 
@@ -103,21 +106,24 @@ export class SignedRouteVault {
     this.#index(this.#byPath, parsed.url.pathname, rep)
   }
 
-  registerOutput(rep: RepresentationId, original: string, primary: string, backups: readonly string[]): void {
-    const originalHost = parseMediaUrl(original)?.host
+  registerOutput(rep: RepresentationId, original: string, primary: string, backups: readonly string[],
+    decisionId: DecisionId, source: 'trusted-api' | 'page-hint'): void {
+    const originalHost = parseMediaUrl(original)?.host ?? ''
     for (const [index, url] of [primary, ...backups].entries()) {
       const parsed = parseMediaUrl(url)
       if (!parsed || this.#outputs.size >= 1152 || this.#urlChars + url.length > MAX_URL_CHARS) continue
       const prior = this.#outputs.get(parsed.url.href)
       if (prior === null || (prior && prior.representation !== rep)) { this.#outputs.set(parsed.url.href, null); continue }
       if (!this.#outputs.has(parsed.url.href)) this.#urlChars += url.length
-      this.#outputs.set(parsed.url.href, { representation: rep, role: index === 0 ? 'primary' : 'backup', hostChanged: !!originalHost && originalHost !== parsed.host })
+      this.#outputs.set(parsed.url.href, { representation: rep, role: index === 0 ? 'primary' : 'backup',
+        hostChanged: !!originalHost && originalHost !== parsed.host, originalHost, outputHost: parsed.host, source, decisionId })
     }
   }
 
-  outputRole(rep: RepresentationId, url: string): { role: 'primary' | 'backup'; hostChanged: boolean } | null {
+  outputRole(rep: RepresentationId, url: string): Omit<OutputRole, 'representation'> | null {
     const parsed = parseMediaUrl(url), row = parsed ? this.#outputs.get(parsed.url.href) : null
-    return row?.representation === rep ? { role: row.role, hostChanged: row.hostChanged } : null
+    return row?.representation === rep ? { role: row.role, hostChanged: row.hostChanged,
+      originalHost: row.originalHost, outputHost: row.outputHost, source: row.source, decisionId: row.decisionId } : null
   }
 
   #index(index: Map<string, Set<RepresentationId>>, key: string, rep: RepresentationId): void {

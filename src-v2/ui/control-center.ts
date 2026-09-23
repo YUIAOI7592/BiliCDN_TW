@@ -83,7 +83,9 @@ export class ControlCenter {
     const state = this.deps.session.get(), settings = this.deps.settings.get(), monitor = this.deps.monitor.snapshot()
     const affinity = state.affinity ? `${state.affinity.type} / ${state.affinity.host}` : '尚未觀察'
     const summary = document.createElement('p'); summary.className = 'summary'
-    summary.textContent = `狀態：${settings.disabled ? '停用' : '啟用'}｜模式：${settings.fixedHost ? `固定 ${settings.fixedHost}` : '自動'}\n路線：${affinity}\n播放：${monitor.watchdog}｜可播放 ${monitor.video.playableBufferSec.toFixed(1)} 秒｜${monitor.video.effectiveRate}x\n核心：${this.deps.recovery.snapshot().state}｜單一挑戰者：${this.deps.measurement.snapshot().state}`
+    const mode = this.deps.routes.isOriginalComparison() ? '僅本分頁原始對照（只用合法原始 signed URL／不測速；禁止規則仍生效）'
+      : settings.fixedHost ? `固定 ${settings.fixedHost}` : '自動'
+    summary.textContent = `狀態：${settings.disabled ? '停用' : '啟用'}｜模式：${mode}\n路線：${affinity}\n播放：${monitor.watchdog}｜可播放 ${monitor.video.playableBufferSec.toFixed(1)} 秒｜${monitor.video.effectiveRate}x\n核心：${this.deps.recovery.snapshot().state}｜單一挑戰者：${this.deps.measurement.snapshot().state}`
     const hook = this.deps.transport.snapshot()
     summary.textContent += `\n攔截：${hook.hookState}｜Fetch ${hook.fetchInstalled ? '已安裝' : '未安裝'}／XHR ${hook.xhrInstalled ? '已安裝' : '未安裝'}｜進入 hook ${Number(hook.enteredFetch) + Number(hook.enteredXhr)}／辨識媒體 ${hook.mediaRecognized}／原生呼叫 ${hook.nativeCalled}／收到回應 ${hook.responseObserved}`
     const lastHook = hook.lastMediaRequest as Record<string, unknown> | null
@@ -96,9 +98,20 @@ export class ControlCenter {
       if (!row) { if (kind !== 'unknown') summary.textContent += `\n${label}：尚無已歸因請求`; continue }
       const age = Math.max(0, Math.floor((this.deps.now() - Number(row.observedAt)) / 1000))
       summary.textContent += `\n${label}：原生呼叫目標 ${row.targetHost ?? '未知'} → 回應 URL host ${row.responseHost ?? '未取得'}｜${age} 秒前｜結果 ${row.outcome ?? '未知'} / status ${row.status ?? '未知'}\n  請求攔截換 host：${row.hostChanged === true ? '是' : row.hostChanged === false ? '否' : '未知'}｜playurl 已改 host：${row.playurlHostChanged === true ? '是' : '否'}｜歸因：${row.attributionStatus ?? '等待資料'}`
+      const output = row.playurlOutput as Record<string, unknown> | null
+      if (output) summary.textContent += `\n  playurl ${output.source}/${output.role}：原始 ${output.originalHost} → 提供播放器 ${output.outputHost}｜計畫 ${output.decisionId}`
     }
     const rep = routes.representation as { height: number; codec: string } | null
     summary.textContent += `\n畫質歸因：${rep ? `${rep.height}p / ${rep.codec}` : String(routes.attribution)}\n量測狀態：${this.deps.measurement.snapshot().reason}`
+    const fallback = routes.fallback as Record<string, Record<string, unknown>>
+    for (const [kind, label] of [['video', '影片'], ['audio', '音訊']] as const) {
+      const row = fallback[kind]
+      const stage = { planned: '僅計畫', 'entered-hook': '已進入 hook（非網路確認）',
+        'response-observed': '已觀察回應', 'request-failed': '請求失敗' }[String(row?.stage)] ?? '未知'
+      if (row) summary.textContent += `\n${label}備援 ${row.actionId}：計畫 ${row.plannedHost}｜${stage}`
+        + (row.responseHost ? `｜回應 ${row.responseHost} / ${row.status}` : '')
+        + (row.outcome ? `｜${row.outcome}` : '')
+    }
     body.append(summary)
     const actions = document.createElement('div'); actions.className = 'grid'
     actions.append(
@@ -119,6 +132,13 @@ export class ControlCenter {
       blacklistButton.disabled = true
       blacklistButton.textContent = '尚無 60 秒內成功歸因的影片回應，無法指定黑名單節點'
     }
+    if (this.deps.routes.isOriginalComparison()) {
+      const measurementButton = [...actions.querySelectorAll('button')].find(button => button.textContent === '重新評估一個安全候選')
+      if (measurementButton) {
+        measurementButton.disabled = true
+        measurementButton.textContent = '原始觀察模式不進行主動測速'
+      }
+    }
     body.append(actions)
     foot.append(this.#button('關閉', () => this.close()))
   }
@@ -129,8 +149,15 @@ export class ControlCenter {
     const mode = document.createElement('select')
     mode.append(new Option('自動選路', ''), ...TRUSTED_CATALOG.map(host => new Option(`固定：${host}`, host)))
     mode.value = settings.fixedHost ?? ''
-    mode.addEventListener('change', event => { if (!event.isTrusted) return; void this.deps.settings.update({ fixedHost: mode.value || null }).then(() => { this.deps.routes.invalidateForUserSetting(); this.#renderSettings() }) })
+    mode.addEventListener('change', event => { if (!event.isTrusted) return; void this.deps.settings.update({ fixedHost: mode.value || null })
+      .then(() => { this.deps.routes.invalidateForUserSetting(); this.#renderSettings() }) })
     rows.append(this.#row('選路模式', mode))
+    rows.append(this.#toggle('僅本分頁原始對照', this.deps.routes.isOriginalComparison(), enabled => {
+      this.deps.routes.setOriginalComparison(enabled)
+      this.deps.measurement.reset()
+      this.deps.recovery.reset()
+      this.#renderSettings()
+    }, '只用本片提供的合法 signed URL，不合成 CDN host；primary 被禁時可沿用原始 backup。不主動測速或自動換線。已交付播放器的 URL 無法收回；請先開新測試分頁、啟用後再站內換片。完整重新整理會退出本模式。'))
     const codec = document.createElement('select')
     for (const value of ['av1','hevc','avc','auto'] as CodecPreference[]) codec.append(new Option(value.toUpperCase(), value))
     codec.value = settings.codec

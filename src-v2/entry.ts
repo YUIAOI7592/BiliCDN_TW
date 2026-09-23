@@ -50,7 +50,8 @@ export const start = (): void => {
 
   const eventSink = (event: Parameters<DiagnosticRecorder['record']>[0]): void => {
     diagnostics.record(event)
-    if (event.type === 'recovery' && event.action.action === 'route-fallback') recovery.armRouteFailure('route-failure', player.snapshot())
+    if (event.type === 'recovery' && event.action.action === 'route-fallback' && !routes.isOriginalComparison())
+      recovery.armRouteFailure('route-failure', player.snapshot())
   }
   routes.subscribe(eventSink)
   recovery.subscribe(eventSink)

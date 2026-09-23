@@ -8,6 +8,15 @@ export type RequestId = Brand<string, 'RequestId'>
 export type AttributionStatus = 'matched' | 'waiting-data' | 'weak' | 'ambiguous' | 'detached'
 export type AttributionSource = 'exact' | 'catalog-alias' | 'path-hint' | 'none'
 
+export interface PlayurlOutputSummary {
+  readonly originalHost: string
+  readonly outputHost: string
+  readonly role: 'primary' | 'backup'
+  readonly source: 'trusted-api' | 'page-hint'
+  readonly decisionId: DecisionId
+  readonly hostChanged: boolean
+}
+
 export interface RequestContext {
   readonly requestId: RequestId
   readonly generation: GenerationId
@@ -23,6 +32,7 @@ export interface RequestContext {
   readonly targetHost: string
   readonly sourceHost: string | null
   readonly playurlHostChanged: boolean
+  readonly playurlOutput: PlayurlOutputSummary | null
   readonly urlChanged: boolean
   readonly hostChanged: boolean
   readonly startedAt: number

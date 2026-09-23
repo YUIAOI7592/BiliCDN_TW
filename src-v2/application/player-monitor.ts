@@ -56,6 +56,7 @@ export class PlayerMonitor {
 
   tick(): void {
     const video = this.player.snapshot(), now = this.now(), disabled = this.settings.get().disabled
+    const originalMode = this.routes.isOriginalComparison()
     this.routes.observePlaybackRate(video.available ? video.playbackRate : 0)
     if (!this.#manifestReady || this.#manifestTick++ % 5 === 0) this.#manifestReady = this.player.syncManifest()
     if (video.seeking) this.#seekGraceUntil = now + (this.#demand(video).highDemand ? 8000 : 5000)
@@ -67,7 +68,7 @@ export class PlayerMonitor {
     }
     if (video.available && !video.paused && !video.seeking && advanced) this.#stableProgressSec++
     else this.#stableProgressSec = 0
-    this.recovery.tick(video)
+    if (!disabled && !originalMode) this.recovery.tick(video)
     const firstMediaAt = this.routes.firstMediaAt()
     let watchdog: MonitorSnapshot['watchdog'] = 'healthy'
     if (!video.available) { watchdog = 'no-video'; this.#stallTicks = 0 }
@@ -76,7 +77,7 @@ export class PlayerMonitor {
     else if (video.bufferedToEnd) { watchdog = 'buffered-to-end'; this.#stallTicks = 0 }
     else if (advanced || video.playableBufferSec >= 2 || video.readyState >= 3) { watchdog = 'healthy'; this.#stallTicks = 0 }
     else { this.#stallTicks++; watchdog = this.#stallTicks >= 6 ? 'recovering' : 'low-buffer' }
-    if (!disabled && watchdog === 'recovering' && (this.#startupObservedProgress || !firstMediaAt)
+    if (!disabled && !originalMode && watchdog === 'recovering' && (this.#startupObservedProgress || !firstMediaAt)
       && now - this.#lastRecoveryAt >= 30_000) {
       const state = this.session.get(), rep = state.representation
       if (rep) {
@@ -85,7 +86,7 @@ export class PlayerMonitor {
       }
     }
     const startupAge = firstMediaAt ? Math.max(0, now - firstMediaAt) : 0
-    if (!disabled && firstMediaAt && startupAge >= 15_000 && !this.#startupRescueAttempted && !this.#startupObservedProgress
+    if (!disabled && !originalMode && firstMediaAt && startupAge >= 15_000 && !this.#startupRescueAttempted && !this.#startupObservedProgress
       && video.available && !video.paused && !video.seeking && !video.ended && !video.mediaError
       && video.playableBufferSec < 1 && (video.readyState <= 1 || (video.width === 0 && video.height === 0))
       && !this.recovery.isRecovering() && now >= this.#seekGraceUntil) {
@@ -103,7 +104,7 @@ export class PlayerMonitor {
     this.measurement.tick({ generationActive: true, representation: this.session.get().representation, demand,
       stableProgressSec: this.#stableProgressSec, playableBufferSec: video.playableBufferSec,
       visible: this.isVisible(), seeking: video.seeking || now < this.#seekGraceUntil,
-      recovering: this.recovery.isRecovering(), disabled })
+      recovering: this.recovery.isRecovering(), disabled: disabled || originalMode })
     this.#lastTime = video.currentTime
     this.#lastFrames = video.frames
     this.#snapshot = Object.freeze({ video, stableProgressSec: this.#stableProgressSec, watchdog, stallTicks: this.#stallTicks,
