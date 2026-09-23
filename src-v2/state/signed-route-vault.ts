@@ -22,7 +22,7 @@ export interface RegisterRepresentationInput {
   readonly source: 'trusted-api' | 'player-mpd' | 'page-hint' | 'transport'
 }
 
-interface StoredRoute { readonly handle: SignedRouteHandle; readonly host: string; readonly url: string; readonly order: number; readonly activelyExplorable: boolean }
+interface StoredRoute { readonly handle: SignedRouteHandle; readonly host: string; readonly url: string; readonly order: number; readonly activelyExplorable: boolean; readonly selectable: boolean }
 interface Group { readonly identity: RouteIdentity; readonly height: number; readonly codec: string; readonly bandwidth: number; readonly source: RegisterRepresentationInput['source']; readonly routes: readonly StoredRoute[] }
 
 export class SignedRouteVault {
@@ -56,15 +56,16 @@ export class SignedRouteVault {
     const routes: StoredRoute[] = [...(prior?.routes ?? [])]
     for (const raw of [...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP)) {
       const parsed = parseMediaUrl(raw)
-      if (!parsed || parsed.kind !== 'normal' || this.#urlChars + raw.length > MAX_URL_CHARS) continue
+      const opaque = parsed?.kind === 'unknown' && parsed.url.protocol === 'https:' && !parsed.url.port
+      if (!parsed || (parsed.kind !== 'normal' && !opaque) || this.#urlChars + raw.length > MAX_URL_CHARS) continue
       if (routes.some(route => route.url === parsed.url.href)) continue
       if (routes.length >= MAX_URLS_PER_GROUP) { this.registerAlias(rep, parsed.url.href); continue }
       const handle = signedRouteHandle(`route:${rep}:${routes.length + 1}`)
       routes.push(Object.freeze({ handle, host: parsed.host, url: parsed.url.href, order: routes.length,
-        activelyExplorable: isKnownNativeFamily(parsed.host) }))
+        activelyExplorable: !opaque && isKnownNativeFamily(parsed.host), selectable: !opaque }))
       this.#handles.set(handle, { representation: rep, url: parsed.url.href })
       this.#index(this.#byUrl, parsed.url.href, rep)
-      this.#index(this.#byPath, parsed.url.pathname, rep)
+      if (!opaque) this.#index(this.#byPath, parsed.url.pathname, rep)
       this.#urlChars += parsed.url.href.length
     }
     if (!routes.length) return null
@@ -82,13 +83,14 @@ export class SignedRouteVault {
 
   match(url: string): { context: RouteIdentity | null; status: AttributionStatus; source: AttributionSource } {
     const parsed = parseMediaUrl(url)
-    if (!parsed || parsed.kind !== 'normal') return { context: null, status: 'waiting-data', source: 'none' }
+    if (!parsed || (parsed.kind !== 'normal' && parsed.kind !== 'unknown')) return { context: null, status: 'waiting-data', source: 'none' }
     for (const [index, source] of [[this.#byUrl, 'exact'], [this.#aliases, 'catalog-alias'], [this.#byPath, 'path-hint']] as const) {
+      if (parsed.kind === 'unknown' && source !== 'exact') continue
       const reps = index.get(source === 'path-hint' ? parsed.url.pathname : parsed.url.href)
       if (!reps?.size) continue
       if (reps.size !== 1) return { context: null, status: 'ambiguous', source }
       const rep = [...reps][0], context = rep ? this.#groups.get(rep)?.identity ?? null : null
-      return { context, status: source === 'path-hint' ? 'weak' : 'matched', source }
+      return { context, status: source === 'path-hint' || parsed.kind === 'unknown' ? 'weak' : 'matched', source }
     }
     return { context: null, status: 'waiting-data', source: 'none' }
   }
@@ -127,12 +129,12 @@ export class SignedRouteVault {
     const group = this.#groups.get(representation)
     if (!group) return { native: Object.freeze([]), root: null }
     const invalid = this.#invalid.get(representation) ?? new Set<string>()
-    const native = group.routes.filter(route => !invalid.has(route.host)
+    const native = group.routes.filter(route => route.selectable && !invalid.has(route.host)
       && (route.activelyExplorable || unlockedHosts.has(route.host))).map(route => Object.freeze({
       type: 'native-signed' as const, host: route.host, kind: group.identity.kind, catalogIndex: catalogIndex(route.host),
       route: group.identity, handle: route.handle, activelyExplorable: route.activelyExplorable,
     }))
-    const first = group.routes.find(route => !invalid.has(route.host))
+    const first = group.routes.find(route => route.selectable && !invalid.has(route.host))
     const root = first ? Object.freeze({ type: 'root-original' as const, host: first.host, kind: group.identity.kind,
       catalogIndex: Number.MAX_SAFE_INTEGER, route: group.identity, handle: first.handle }) : null
     return { native: Object.freeze(native), root }

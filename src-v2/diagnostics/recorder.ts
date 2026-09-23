@@ -96,6 +96,7 @@ export class DiagnosticRecorder {
     recorder.rankings = []
     const m = readModel, r = m.routes as Record<string, unknown> | undefined
     payload.current = this.#sanitize({ version: m.version, session: m.session, monitor: m.monitor, recovery: m.recovery, measurement: m.measurement,
+      interception: m.interception,
       routes: { planCount: r?.planCount, activePlan: r?.activePlan, affinity: r?.affinity, latest: r?.latest, representation: r?.representation, attribution: r?.attribution },
       evidence: m.evidence, truncated: true })
     output = JSON.stringify(payload)

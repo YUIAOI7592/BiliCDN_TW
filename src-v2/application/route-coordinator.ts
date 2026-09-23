@@ -101,6 +101,24 @@ export class RouteCoordinator {
   pendingMediaCount(): number { return this.#pendingMedia.size }
   latestRequested(kind: MediaKind): RequestContext | null { return this.#requested.get(kind) ?? null }
 
+  recognizesMedia(url: string): boolean {
+    const parsed = parseMediaUrl(url)
+    if (!parsed) return false
+    if (parsed.kind !== 'unknown') return true
+    const match = this.vault.match(url)
+    return match.source === 'exact'
+  }
+
+  inspectOriginal(url: string): AppliedRouteDecision {
+    const parsed = parseMediaUrl(url), match = this.vault.match(url)
+    const context = match.context
+    if (!parsed) return { decision: this.#pass('invalid-url', null, 'video'), url, context: null, streamKey: null, sourceHost: null }
+    const restriction = this.#hardRestriction(parsed.host, context?.kind ?? null)
+    const decision = restriction ? this.#block(restriction, parsed.host) : this.#pass('non-get-original', parsed.host, context?.kind ?? 'video')
+    return { decision, url: restriction ? null : url, context, streamKey: mediaIdentity(url), sourceHost: parsed.host,
+      attributionStatus: context ? 'weak' : match.status, attributionSource: match.source }
+  }
+
   startupOptions(url: string, catalogCursor = 0): StartupOptions | null {
     const parsed = parseMediaUrl(url), match = this.vault.match(url), context = match.status === 'matched' ? match.context : null
     if (!parsed || parsed.kind !== 'normal' || !parsed.replaceable || !context || this.settings.get().fixedHost || this.session.get().disabled) return null
@@ -238,6 +256,13 @@ export class RouteCoordinator {
     const parsed = parseMediaUrl(url)
     if (!parsed) return { decision: this.#pass('invalid-url', null, kindHint ?? 'video'), url, context: null, streamKey: null, sourceHost: null }
     const streamKey = mediaIdentity(url)
+    if (parsed.kind === 'unknown') {
+      const match = this.vault.match(url), context = match.source === 'exact' ? match.context : null
+      const restriction = this.#hardRestriction(parsed.host, context?.kind ?? kindHint)
+      const decision = restriction ? this.#block(restriction, parsed.host) : this.#pass('opaque-media-observation-only', parsed.host, context?.kind ?? kindHint ?? 'video')
+      return { decision, url: restriction ? null : url, context, streamKey, sourceHost: parsed.host,
+        attributionStatus: match.status, attributionSource: match.source }
+    }
     if (parsed.kind === 'live' || parsed.kind === 'resource' || parsed.kind === 'pcdn' || parsed.kind === 'suspected-pcdn') {
       // These URLs cannot be safely rewritten, but that never grants an exception to a host restriction.
       const restriction = this.#hardRestriction(parsed.host, kindHint)
@@ -318,7 +343,10 @@ export class RouteCoordinator {
     if (!context) return { primary: '', backups: [] }
     const allowed = (url: string): boolean => {
       const parsed = parseMediaUrl(url)
-      return !!parsed && parsed.kind === 'normal' && !this.#hardRestriction(parsed.host, context.kind) && !this.vault.isInvalid(representation, parsed.host)
+      const match = parsed?.kind === 'unknown' ? this.vault.match(url) : null
+      const exactOpaque = match?.source === 'exact' && match.context?.representation === representation
+      return !!parsed && (parsed.kind === 'normal' || exactOpaque)
+        && !this.#hardRestriction(parsed.host, context.kind) && !this.vault.isInvalid(representation, parsed.host)
     }
     const stream = mediaIdentity(original)
     const lockedOriginal = stream && this.#hostLockedStreams.has(stream) ? this.vault.rootUrl(representation) : null

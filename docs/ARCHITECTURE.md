@@ -31,6 +31,7 @@ The domain accepts time as an argument and performs no I/O.
 - `RestrictionStore` owns black/dead/user/default restrictions.
 - `EvidenceStore` owns bounded video/audio host evidence.
 - `SignedRouteVault` owns full current-epoch Native URLs behind opaque handles.
+- Exact signed URLs with an unrecognized path may be indexed for observation and host restriction only; they do not become selectable Native routes or active-probe capabilities.
 - `SettingsStore` owns the typed v2 product settings.
 
 Persistent stores use distinct `bilicdn.v2.*` keys. Signed routes and session state are memory-only.
@@ -65,6 +66,7 @@ Adapters do not own route state or impose penalties.
 3. The coordinator admits current candidates, applies restrictions and ranks them.
 4. The first eligible Fetch/async XHR media request can wait up to three seconds for parallel legal-route preflight. All requests in that window share one deadline; an unsupported entrance passes without preflight.
 5. The transport adapter asks for a decision at dispatch and records its immutable request context.
+   It verifies Fetch/XHR hook installation before monitor/UI startup, checks recognized non-GET media without rewriting it, and rechecks XHR at `send()`.
 6. Completion yields a typed observation and evidence update. Verified failure may open a media-kind circuit and request group-aware fallback.
 7. A no-progress cold start can submit one legal different-host fallback without penalizing the original and arm the existing one-shot core recovery.
 8. The observed post-decision host, not the plan alone, confirms the route outcome.
@@ -73,4 +75,4 @@ Healthy measurements never change affinity.
 
 ## Diagnostics
 
-The recorder consumes typed `DomainEvent` values, aggregates successful traffic and preserves bounded failure incidents. UI read models are snapshots; reading them cannot mutate routing or start network work.
+The recorder consumes typed `DomainEvent` values, aggregates successful traffic and preserves bounded failure incidents. UI read models are snapshots; reading them cannot mutate routing or start network work. Hook entry, media recognition, native-call and response stages remain separate from browser Network confirmation.

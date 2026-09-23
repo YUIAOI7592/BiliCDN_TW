@@ -34,16 +34,17 @@ export const start = (): void => {
   const recovery = new RecoveryController(player, now)
   const nativeFetch = unsafeWindow.fetch.bind(unsafeWindow)
   const measurement = new MeasurementController(routes, storage, nativeFetch, now)
+  const transport = new TransportAdapter(session, settings, routes, playurl, measurement, now)
+  transport.install()
   const visibility = new VisibilityAdapter()
   const monitor = new PlayerMonitor(player, session, settings, vault, routes, measurement, recovery,
     () => visibility.isActuallyVisible(), now)
   let lifecycle: LifecycleController | null = null
   const pagePlayinfo = new PagePlayinfoAdapter((payload, serial) => lifecycle?.acceptPageAssignment(payload, serial))
   lifecycle = new LifecycleController(session, settings, vault, routes, playurl, pagePlayinfo, monitor, now)
-  const transport = new TransportAdapter(session, settings, routes, playurl, measurement, now)
   const webRtc = new WebRtcAdapter(settings)
   const diagnostics = new DiagnosticRecorder(now, () => settings.get().verbose)
-  const center = new ControlCenter({ settings, restrictions, evidence, session, routes, measurement, monitor, recovery,
+  const center = new ControlCenter({ settings, restrictions, evidence, session, routes, measurement, monitor, recovery, transport,
     diagnostics, storageDelete: key => storage.delete(key), now })
   const panel = new PlayerPanel(center, settings, session, monitor)
 
@@ -57,7 +58,6 @@ export const start = (): void => {
   monitor.subscribe(() => diagnostics.tick())
 
   visibility.setEnabled(!settings.get().disabled)
-  transport.install()
   webRtc.install()
   lifecycle.start()
   panel.start()

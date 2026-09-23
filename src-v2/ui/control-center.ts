@@ -24,6 +24,7 @@ export interface ControlCenterDependencies {
   readonly monitor: PlayerMonitor
   readonly recovery: RecoveryController
   readonly diagnostics: DiagnosticRecorder
+  readonly transport: { snapshot(): Readonly<Record<string, unknown>> }
   readonly storageDelete: (key: string) => void
   readonly now: () => number
 }
@@ -83,12 +84,18 @@ export class ControlCenter {
     const affinity = state.affinity ? `${state.affinity.type} / ${state.affinity.host}` : '尚未觀察'
     const summary = document.createElement('p'); summary.className = 'summary'
     summary.textContent = `狀態：${settings.disabled ? '停用' : '啟用'}｜模式：${settings.fixedHost ? `固定 ${settings.fixedHost}` : '自動'}\n路線：${affinity}\n播放：${monitor.watchdog}｜可播放 ${monitor.video.playableBufferSec.toFixed(1)} 秒｜${monitor.video.effectiveRate}x\n核心：${this.deps.recovery.snapshot().state}｜單一挑戰者：${this.deps.measurement.snapshot().state}`
+    const hook = this.deps.transport.snapshot()
+    summary.textContent += `\n攔截：${hook.hookState}｜Fetch ${hook.fetchInstalled ? '已安裝' : '未安裝'}／XHR ${hook.xhrInstalled ? '已安裝' : '未安裝'}｜進入 hook ${Number(hook.enteredFetch) + Number(hook.enteredXhr)}／辨識媒體 ${hook.mediaRecognized}／原生呼叫 ${hook.nativeCalled}／收到回應 ${hook.responseObserved}`
+    const lastHook = hook.lastMediaRequest as Record<string, unknown> | null
+    if (lastHook) summary.textContent += `\n最近媒體 hook：${lastHook.method} ${lastHook.kind}｜目標 ${lastHook.targetHost}｜原生呼叫 ${lastHook.nativeCalled ? '是' : '否'}｜回應 ${lastHook.responseObserved ? `是 (${lastHook.status})` : '未觀察'}`
+    const lastBlocked = hook.lastBlocked as Record<string, unknown> | null
+    if (lastBlocked) summary.textContent += `\n最近本地阻止：${lastBlocked.method} ${lastBlocked.host}｜${lastBlocked.reason}｜未呼叫原生網路`
     const routes = this.deps.routes.snapshot(), latest = routes.latest as Record<string, Record<string, unknown>>
     for (const [kind, label] of [['video', '影片'], ['audio', '音訊'], ['unknown', '尚未分類媒體']] as const) {
       const row = latest[kind]
       if (!row) { if (kind !== 'unknown') summary.textContent += `\n${label}：尚無已歸因請求`; continue }
       const age = Math.max(0, Math.floor((this.deps.now() - Number(row.observedAt)) / 1000))
-      summary.textContent += `\n${label}：送出 ${row.targetHost ?? '未知'} → 回應 ${row.responseHost ?? '未取得回應 host'}｜${age} 秒前｜結果 ${row.outcome ?? '未知'} / status ${row.status ?? '未知'}\n  請求攔截換 host：${row.hostChanged === true ? '是' : row.hostChanged === false ? '否' : '未知'}｜playurl 已改 host：${row.playurlHostChanged === true ? '是' : '否'}｜歸因：${row.attributionStatus ?? '等待資料'}`
+      summary.textContent += `\n${label}：原生呼叫目標 ${row.targetHost ?? '未知'} → 回應 URL host ${row.responseHost ?? '未取得'}｜${age} 秒前｜結果 ${row.outcome ?? '未知'} / status ${row.status ?? '未知'}\n  請求攔截換 host：${row.hostChanged === true ? '是' : row.hostChanged === false ? '否' : '未知'}｜playurl 已改 host：${row.playurlHostChanged === true ? '是' : '否'}｜歸因：${row.attributionStatus ?? '等待資料'}`
     }
     const rep = routes.representation as { height: number; codec: string } | null
     summary.textContent += `\n畫質歸因：${rep ? `${rep.height}p / ${rep.codec}` : String(routes.attribution)}\n量測狀態：${this.deps.measurement.snapshot().reason}`
@@ -161,8 +168,9 @@ export class ControlCenter {
 
   #readModel(): Readonly<Record<string, unknown>> {
     const now = this.deps.now(), evidence = this.deps.evidence.list().slice(0, 96).map(row => ({ host: row.host, kind: row.kind, ...evidenceMetrics(row, now) }))
-    return Object.freeze({ version: GM_info?.script?.version ?? '2.1.0', settings: this.deps.settings.get(), session: this.deps.session.get(),
+    return Object.freeze({ version: GM_info?.script?.version ?? '2.1.1', settings: this.deps.settings.get(), session: this.deps.session.get(),
       monitor: this.deps.monitor.snapshot(), recovery: this.deps.recovery.snapshot(), measurement: this.deps.measurement.snapshot(),
+      interception: this.deps.transport.snapshot(),
       routes: this.deps.routes.snapshot(), restrictions: this.deps.restrictions.list(), evidence })
   }
 

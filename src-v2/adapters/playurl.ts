@@ -3,6 +3,7 @@ import type { RouteCoordinator } from '../application/route-coordinator.ts'
 import type { SessionStore } from '../state/session-store.ts'
 import type { SignedRouteVault } from '../state/signed-route-vault.ts'
 import type { SettingsStore, CodecPreference } from '../state/settings-store.ts'
+import { parseMediaUrl } from '../domain/url-policy.ts'
 
 type UnknownRecord = Record<string, unknown>
 const isRecord = (value: unknown): value is UnknownRecord => !!value && typeof value === 'object' && !Array.isArray(value)
@@ -82,6 +83,16 @@ export class PlayurlAdapter {
     for (const [kind, items] of [['video', dash.video], ['audio', dash.audio]] as const) {
       items.forEach((item, index) => {
         const primary = baseUrl(item), urls = [primary, ...backupUrls(item)].filter(Boolean)
+        if (parseMediaUrl(primary)?.kind === 'unknown') {
+          this.vault.register({ generation: state.generation, epoch: state.epoch, kind,
+            key: `${String(item.id ?? index)}:${codecName(item)}:${finite(item.height)}`, height: finite(item.height),
+            codec: codecName(item), bandwidth: finite(item.bandwidth), urls, source })
+          if (source !== 'player-mpd') {
+            const permitted = [...new Set(urls.filter(url => this.routes.inspectOriginal(url).url !== null))]
+            rewriteItem(item, permitted[0] ?? '', permitted.slice(1, 6))
+          }
+          return
+        }
         const bandwidth = finite(item.bandwidth)
         const rep = this.vault.register({ generation: state.generation, epoch: state.epoch, kind,
           key: `${String(item.id ?? index)}:${codecName(item)}:${finite(item.height)}`, height: finite(item.height), codec: codecName(item),

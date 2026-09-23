@@ -119,6 +119,18 @@ equal(vault.register({ generation, epoch, kind: 'video', key: '80:av1', height: 
   'repeated manifest ingestion preserves representation identity')
 const context = vault.contextForUrl('https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret')
 equal(context?.epoch, epoch, 'exact signed route maps to current epoch')
+const protectedUrl = 'https://upos-hz-mirrorakam.akamaized.net/opaque/signed-segment?token=secret'
+const protectedRep = vault.register({ generation, epoch, kind: 'audio', key: '30280:opaque', height: 0, codec: 'other', bandwidth: 192_000,
+  urls: [protectedUrl], source: 'trusted-api' })
+check(protectedRep, 'current-epoch signed URL without a known media suffix is retained')
+equal(vault.match(protectedUrl).context?.kind, 'audio', 'exact protected signed URL is recognized as audio')
+equal(protectedRep ? vault.candidates(protectedRep, new Set()).native.length : -1, 0,
+  'opaque protected URL is observation-only, not a Native selection capability')
+const externalOpaque = 'https://media.example.org/private/chunk?signature=private'
+const externalRep = vault.register({ generation, epoch, kind: 'audio', key: 'external:opaque', height: 0, codec: 'other', bandwidth: 192_000,
+  urls: [externalOpaque], source: 'page-hint' })
+check(externalRep, 'current-epoch external signed URL can be observed without active capability')
+equal(externalRep ? vault.candidates(externalRep, new Set()).native.length : -1, 0, 'external opaque URL never enters Native selection')
 const native = rep ? vault.candidates(rep, new Set()).native[0] : null
 equal(native?.host, 'upos-hz-mirrorakam.akamaized.net', 'known native family can be explored')
 if (rep && native) {
@@ -162,6 +174,17 @@ const liveRep = liveVault.register({ generation: state.generation, epoch: state.
   codec: 'av1', bandwidth: 3_000_000, urls: ['https://upos-sz-mirrorali.bilivideo.com/upgcxcode/c/d/2.m4s?k=1'], source: 'page-hint' })
 check(liveRep, 'controller fixture representation exists')
 const coordinator = new RouteCoordinator(clock, session, settings, restrictions, evidenceStore, liveVault)
+const opaqueAudioUrl = 'https://upos-hz-mirrorakam.akamaized.net/opaque/audio-segment?signature=private'
+const opaqueAudioRep = liveVault.register({ generation: state.generation, epoch: state.epoch, kind: 'audio', key: 'opaque-audio',
+  height: 0, codec: 'other', bandwidth: 192_000, urls: [opaqueAudioUrl], source: 'trusted-api' })
+check(opaqueAudioRep, 'trusted opaque audio URL enters observation-only vault')
+equal(coordinator.recognizesMedia(opaqueAudioUrl), true, 'current-epoch opaque signed URL enters the media hook')
+equal(coordinator.startupOptions(opaqueAudioUrl), null, 'opaque URL cannot start an active probe')
+equal(coordinator.apply(opaqueAudioUrl).attributionStatus, 'weak', 'opaque URL cannot create health evidence')
+await restrictions.add({ host: 'upos-hz-mirrorakam.akamaized.net', type: 'black', kind: 'all', reason: 'opaque-test', expireAt: now + 60_000 })
+equal(coordinator.apply(opaqueAudioUrl).decision.action, 'block', 'opaque exact URL still obeys the blacklist')
+equal(coordinator.inspectOriginal(opaqueAudioUrl).decision.action, 'block', 'non-GET opaque URL obeys the blacklist')
+await restrictions.remove('upos-hz-mirrorakam.akamaized.net', 'black')
 if (liveRep) {
   const plan = coordinator.plan(liveRep, { kind: 'video', requiredMbps: 7.5, highDemand: false }, 'startup')
   equal(plan.action, 'pass', 'cold startup preserves the legal original until preflight completes')
@@ -205,6 +228,8 @@ const passDecision: AppliedRouteDecision = { decision: { action: 'pass', id: dec
 const observations: TransportObservation[] = []
 const routeStub = {
   requestStarted(): void {},
+  recognizesMedia(url: string): boolean { return parseMediaUrl(url)?.kind !== 'unknown' },
+  inspectOriginal(url: string): AppliedRouteDecision { return this.apply(url) },
   apply(url: string): AppliedRouteDecision { return { ...passDecision, url } },
   async observe(observation: TransportObservation): Promise<void> { observations.push(observation) },
 }
@@ -214,7 +239,7 @@ let disabled = false, blockHttpDns = true
 const settingsStub = { get: () => ({ disabled, blockHttpDns }) }
 let nativeFetchCalls = 0, cancelReason: unknown = null
 const nativeFetchUrls: string[] = []
-const nativeFetch = async (input: RequestInfo | URL): Promise<Response> => {
+const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
   nativeFetchCalls++
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
   nativeFetchUrls.push(url)
@@ -242,10 +267,16 @@ const originalWorker = function WorkerIdentity() { return undefined }
 const fakeWindow = { fetch: nativeFetch, XMLHttpRequest: FakeXhr, Worker: originalWorker, navigator: globalThis.navigator }
 Object.defineProperty(globalThis, 'unsafeWindow', { configurable: true, value: fakeWindow })
 Object.defineProperty(globalThis, 'location', { configurable: true, value: new URL('https://www.bilibili.com/video/BVtest/') })
-const measurementStub = { willGateStartup: (): boolean => false, prepareStartup: async (): Promise<void> => {}, noteUnpreflighted(): void {} }
+let skippedPreflightReason = ''
+const measurementStub = { willGateStartup: (): boolean => false, prepareStartup: async (): Promise<void> => {},
+  noteUnpreflighted(reason: string): void { skippedPreflightReason = reason } }
 const transport = new TransportAdapter(runtimeSession, settingsStub as never, routeStub as never, playurlStub as never, measurementStub as never, () => now)
 transport.install()
+equal(transport.snapshot().hookState, 'installed', 'Fetch and XHR hook assignments are verified')
 const mediaResponse = await fakeWindow.fetch(passDecision.url ?? '')
+const firstIntercept = transport.snapshot().lastMediaRequest as { hookEntered: boolean; mediaRecognized: boolean; nativeCalled: boolean; responseObserved: boolean }
+check(firstIntercept.hookEntered && firstIntercept.mediaRecognized && firstIntercept.nativeCalled && firstIntercept.responseObserved,
+  'diagnostic stages distinguish hook entry, media recognition, native invocation and response')
 const mediaReader = mediaResponse.body?.getReader()
 check(mediaReader, 'fetch wrapper returns a readable body')
 await mediaReader?.read()
@@ -276,6 +307,11 @@ equal(nativeFetchCalls, beforeGate, 'Fetch player request waits before native di
 gateControl.release()
 await gatedFetch
 equal(new URL(nativeFetchUrls.at(-1) ?? '').host, TRUSTED_CATALOG[0], 'Fetch dispatch uses preflight winner')
+const requestInput = new Request(gatedUrl, { method: 'GET' })
+measurementStub.willGateStartup = () => false
+await fakeWindow.fetch(requestInput)
+equal(new URL(nativeFetchUrls.at(-1) ?? '').host, TRUSTED_CATALOG[0], 'Fetch Request input dispatch uses the selected host')
+measurementStub.willGateStartup = () => true
 gateReady = false
 const gatedXhr = new FakeXhr()
 gatedXhr.open('GET', gatedUrl)
@@ -294,6 +330,20 @@ equal(abortedXhr.nativeSends, 0, 'XHR abort during preflight never dispatches th
 const finiteTimeoutXhr = new FakeXhr(); finiteTimeoutXhr.timeout = 5000
 finiteTimeoutXhr.open('GET', gatedUrl); finiteTimeoutXhr.send()
 equal(finiteTimeoutXhr.nativeSends, 1, 'explicit XHR timeout bypasses delay to preserve native timeout semantics')
+equal(skippedPreflightReason, 'preflight-skipped:xhr-explicit-timeout', 'XHR timeout is labelled as skipped preflight, not skipped interception')
+const forbiddenNonGetUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/forbidden.m4s'
+routeStub.apply = (url: string): AppliedRouteDecision => ({ ...passDecision, url: url === forbiddenNonGetUrl ? null : url,
+  decision: url === forbiddenNonGetUrl ? { action: 'block', id: decisionId('blocked-non-get'), reason: 'black',
+    routeType: 'root-original', host: 'upos-sz-mirrorcosov.bilivideo.com', ranking: [] } : passDecision.decision })
+const beforeForbidden = nativeFetchCalls
+await fakeWindow.fetch(forbiddenNonGetUrl, { method: 'POST' }).then(() => { throw new Error('blacklisted POST Fetch must reject locally') }, () => undefined)
+equal(nativeFetchCalls, beforeForbidden, 'blacklisted non-GET Fetch never reaches native fetch')
+const forbiddenXhr = new FakeXhr(); forbiddenXhr.open('POST', forbiddenNonGetUrl); forbiddenXhr.send()
+equal(forbiddenXhr.nativeSends, 0, 'blacklisted non-GET XHR never reaches native send')
+equal((transport.snapshot().lastBlocked as { reason: string }).reason, 'black', 'local block diagnostics retain the reason without a URL')
+const forbiddenRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+await fakeWindow.fetch(forbiddenRequest).then(() => { throw new Error('blacklisted Request object must reject locally') }, () => undefined)
+equal(nativeFetchCalls, beforeForbidden, 'blacklisted Request object never reaches native fetch')
 measurementStub.willGateStartup = () => false
 const xhr = new FakeXhr()
 xhr.responseType = 'json'
@@ -304,6 +354,18 @@ void xhr.response
 equal(transformed, 1, 'XHR JSON playurl is transformed lazily once')
 equal(fakeWindow.Worker, originalWorker, 'Worker constructor identity is untouched')
 transport.dispose()
+class UnpatchableXhr extends FakeXhr {}
+Object.defineProperty(UnpatchableXhr.prototype, 'send', { value: FakeXhr.prototype.send, writable: false, configurable: true })
+const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
+Object.defineProperty(globalThis, 'unsafeWindow', { configurable: true, value: partialWindow })
+const originalPartialOpen = UnpatchableXhr.prototype.open
+const partialTransport = new TransportAdapter(runtimeSession, settingsStub as never, routeStub as never, playurlStub as never,
+  measurementStub as never, () => now)
+partialTransport.install()
+equal(partialTransport.snapshot().hookState, 'failed', 'partial hook installation is reported as failed')
+equal(partialWindow.fetch, nativeFetch, 'partial XHR install failure restores fetch')
+equal(UnpatchableXhr.prototype.open, originalPartialOpen, 'partial XHR install failure restores open')
+Object.defineProperty(globalThis, 'unsafeWindow', { configurable: true, value: fakeWindow })
 
 const recorder = new DiagnosticRecorder(() => now, () => false)
 const healthyObservation: TransportObservation = { generation: generationId(1), epoch: epochId(1), decisionId: decisionId('aggregate'),
@@ -574,6 +636,22 @@ const exceptionalItem = { ...outputItem, base_url: exceptionalForbidden, backup_
 outputAdapter.transform({ data: { dash: { video: [exceptionalItem], audio: [] } } })
 equal(exceptionalItem.base_url, '', 'playurl cannot emit a default-unavailable PCDN-marked primary')
 equal(exceptionalItem.backup_url.length, 0, 'playurl cannot emit a default-unavailable PCDN-marked backup')
+const opaquePrimary = 'https://upos-hz-mirrorakam.akamaized.net/opaque/video-chunk?signature=private'
+const opaqueBackup = 'https://upos-sz-mirrorali.bilivideo.com/opaque/video-chunk?signature=private'
+const opaqueItem = { id: 81, codecid: 13, height: 1080, bandwidth: 1_000_000, base_url: opaquePrimary, backup_url: [opaqueBackup] }
+outputAdapter.transform({ data: { dash: { video: [opaqueItem], audio: [] } } }, 'page-hint')
+equal(opaqueItem.base_url, opaquePrimary, 'legal opaque signed primary is not emptied by playurl assembly')
+await outputRestrictions.add({ host: 'upos-hz-mirrorakam.akamaized.net', type: 'black', kind: 'all', reason: 'opaque-output', expireAt: now + 60_000 })
+const opaqueRestricted = { ...opaqueItem, base_url: opaquePrimary, backup_url: [opaqueBackup] }
+outputAdapter.transform({ data: { dash: { video: [opaqueRestricted], audio: [] } } }, 'page-hint')
+equal(opaqueRestricted.base_url, opaqueBackup, 'opaque signed fallback uses its own exact URL when source is forbidden')
+await outputRestrictions.remove('upos-hz-mirrorakam.akamaized.net', 'black')
+const mixedItem = { id: 82, codecid: 13, height: 1080, bandwidth: 1_000_000,
+  base_url: 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/test/mixed/82.m4s?signature=private',
+  backup_url: ['https://upos-hz-mirrorakam.akamaized.net/opaque/mixed-82?signature=private'] }
+outputAdapter.transform({ data: { dash: { video: [mixedItem], audio: [] } } }, 'page-hint')
+check(mixedItem.backup_url.includes('https://upos-hz-mirrorakam.akamaized.net/opaque/mixed-82?signature=private'),
+  'normal primary retains a legal exact opaque signed backup')
 const alternateOutput = outputItem.backup_url.find(url => new URL(url).host !== new URL(outputItem.base_url).host)
 check(alternateOutput, 'playurl includes a legal alternate backup')
 const fallbackApplied = outputRoutes.apply(alternateOutput ?? '')
