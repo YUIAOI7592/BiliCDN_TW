@@ -87,6 +87,7 @@ export class PlayurlAdapter {
           const rep = this.vault.register({ generation: state.generation, epoch: state.epoch, kind,
             key: `${String(item.id ?? index)}:${codecName(item)}:${finite(item.height)}`, height: finite(item.height),
             codec: codecName(item), bandwidth: finite(item.bandwidth), urls, source })
+          if (rep && source !== 'trusted-api' && this.vault.source(rep) === 'trusted-api') return
           if (source !== 'player-mpd') {
             const output = rep ? this.routes.opaqueOutput(rep, primary, urls, source)
               : { primary: '', backups: [] }
@@ -98,6 +99,7 @@ export class PlayurlAdapter {
         const rep = this.vault.register({ generation: state.generation, epoch: state.epoch, kind,
           key: `${String(item.id ?? index)}:${codecName(item)}:${finite(item.height)}`, height: finite(item.height), codec: codecName(item),
           bandwidth, urls, source })
+        if (rep && source !== 'trusted-api' && this.vault.source(rep) === 'trusted-api') return
         if (!rep) {
           if (source !== 'player-mpd') {
             const primaryOutput = this.routes.apply(primary)

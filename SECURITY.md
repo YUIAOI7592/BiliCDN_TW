@@ -8,6 +8,7 @@ Page JavaScript, `__playinfo__`, player manifests, playurl payloads, media URLs,
 
 - URLs are parsed and admitted by `domain/url-policy.ts` before routing.
 - Native URLs remain in `SignedRouteVault` and are exposed internally only through opaque handles.
+- A trusted playurl API representation supersedes lower-trust page and player hints for Native eligibility; revoked handles cannot grant active probing or new health evidence.
 - Unknown external hosts require natural attributable transport success before they can receive evidence; they are never actively probed first.
 - Control-center actions require trusted user events and run inside a closed Shadow DOM.
 
@@ -24,6 +25,7 @@ Signed URLs, paths, queries, tokens, player objects, representation state and in
 - `RouteCoordinator` is the only component that changes affinity or commits fallback.
 - `RecoveryController` is the only component that reloads the player core.
 - Diagnostics consume typed events and cannot impose penalties or control playback.
+- Fetch checks the platform-normalized Request that is sent to the native API. Active probes reject redirects and only accept a direct Range response from the checked host.
 
 ## Browser behavior
 

@@ -45,7 +45,6 @@ interface LastMediaRequest {
   status: number | null
 }
 
-const urlOf = (input: RequestInfo | URL): string => typeof input === 'string' ? input : 'href' in input ? String(input.href) : input.url
 const hostOf = (value: string): string => { try { return new URL(value, location.href).hostname.toLowerCase() } catch { return '' } }
 
 const copyResponseSurface = (target: Response, source: Response): Response => {
@@ -120,16 +119,19 @@ export class TransportAdapter {
     const wrapped: typeof fetch = async function(this: Window & typeof globalThis, input, init) {
       self.#stats.enteredFetch++
       let activeRequest: RequestContext | null = null
-      const native = async (source: RequestInfo | URL): Promise<Response> => {
+      const native = async (source: RequestInfo | URL, originalInit = true): Promise<Response> => {
         self.#stats.nativeCalled++
         self.#noteNativeCall(activeRequest)
-        const response = await Reflect.apply(original, this, [source, init]) as Response
+        const response = await Reflect.apply(original, this, originalInit ? [source, init] : [source]) as Response
         self.#stats.responseObserved++
         self.#noteResponse(activeRequest, response.status)
         return response
       }
       if (self.settings.get().disabled) return await native(input)
-      const originalUrl = urlOf(input)
+      // The same platform-normalized Request supplies policy inputs and native dispatch.
+      // Page-owned href/url expandos and mutable init getters cannot split those destinations.
+      const sourceRequest = new Request(input, init)
+      const originalUrl = sourceRequest.url
       if (self.settings.get().blockHttpDns && isHttpDnsUrl(originalUrl)) {
         return new Response(JSON.stringify({ code: -1, message: 'HTTPDNS blocked by BiliCDN v2' }), {
           status: 503, headers: { 'content-type': 'application/json; charset=utf-8' },
@@ -137,7 +139,7 @@ export class TransportAdapter {
       }
       if (isPlayurlApi(originalUrl)) {
         const generation = self.session.get().generation, responseKey = `api-fetch-${++self.#requestSerial}`
-        const response = await native(input)
+        const response = await native(sourceRequest, false)
         let text: string
         try { text = await response.text() } catch { return response }
         try {
@@ -147,34 +149,40 @@ export class TransportAdapter {
         } catch { /* preserve original body */ }
         return copyResponseSurface(new Response(text, { status: response.status, statusText: response.statusText, headers: response.headers }), response)
       }
-      const sourceRequest = typeof input !== 'string' && !('href' in input) ? input as Request : null
-      const method = String(init?.method ?? sourceRequest?.method ?? 'GET').toUpperCase()
-      if (!self.routes.recognizesMedia(originalUrl)) return await native(input)
+      const method = sourceRequest.method.toUpperCase()
+      if (!self.routes.recognizesMedia(originalUrl)) return await native(sourceRequest, false)
       self.#stats.mediaRecognized++
       const generation = self.session.get().generation
       if (method === 'GET') {
         if (self.measurement.willGateStartup(originalUrl)) {
-          await self.measurement.prepareStartup(originalUrl, init?.signal ?? sourceRequest?.signal ?? null)
+          await self.measurement.prepareStartup(originalUrl, sourceRequest.signal)
         } else self.measurement.noteUnpreflighted('no-safe-startup-candidate')
       }
-      if (self.settings.get().disabled || !self.session.isGeneration(generation)) {
-        return await native(input)
+      if (self.settings.get().disabled) return await native(sourceRequest, false)
+      if (!self.session.isGeneration(generation)) {
+        // Never apply an old route plan after SPA, but still enforce current host restrictions.
+        const original = self.routes.inspectOriginal(originalUrl)
+        if (original.decision.action === 'block' || !original.url) {
+          self.#stats.blocked++; self.#lastBlocked = Object.freeze({ method, host: hostOf(originalUrl), reason: original.decision.reason })
+          throw new TypeError(`BiliCDN blocked media request: ${original.decision.reason}`)
+        }
+        return await native(sourceRequest, false)
       }
       const applied = method === 'GET' ? self.routes.apply(originalUrl) : self.routes.inspectOriginal(originalUrl)
       if (applied.decision.action === 'block' || !applied.url) {
         self.#stats.blocked++; self.#lastBlocked = Object.freeze({ method, host: hostOf(originalUrl), reason: applied.decision.reason })
         throw new TypeError(`BiliCDN blocked media request: ${applied.decision.reason}`)
       }
-      const targetInput = applied.url === originalUrl ? input : sourceRequest ? new Request(applied.url, sourceRequest) : applied.url
+      const targetInput = applied.url === originalUrl ? sourceRequest : new Request(applied.url, sourceRequest)
       const startedAt = self.now()
       const request = self.#request(applied, originalUrl, applied.url, startedAt, method)
       activeRequest = request
       self.routes.requestStarted(request)
       let response: Response
       try {
-        response = await native(targetInput)
+        response = await native(targetInput, false)
       } catch (error) {
-        const signal = init?.signal ?? sourceRequest?.signal ?? null
+        const signal = sourceRequest.signal
         const aborted = signal?.aborted === true || (error instanceof DOMException && error.name === 'AbortError')
         void self.#observeFetch(request, applied, originalUrl, applied.url, null, startedAt, 0, 0, aborted ? 'abort' : 'failure', aborted ? undefined : 'network')
         throw error
@@ -205,7 +213,7 @@ export class TransportAdapter {
             bytes += result.value.byteLength
             controller.enqueue(result.value)
           } catch (error) {
-            const signal = init?.signal ?? sourceRequest?.signal ?? null
+            const signal = sourceRequest.signal
             if (signal?.aborted) settle('abort')
             else settle('failure', 'body')
             controller.error(error)
@@ -402,7 +410,8 @@ export class TransportAdapter {
   #request(applied: AppliedRouteDecision, originalUrl: string, targetUrl: string, startedAt: number, method: string): RequestContext {
     const state = this.session.get(), matched = applied.attributionStatus ?? (applied.context ? 'matched' : 'waiting-data')
     const request: RequestContext = Object.freeze({ requestId: requestId(`request-${++this.#requestSerial}`), generation: state.generation, epoch: state.epoch,
-      decisionId: applied.decision.id, representation: applied.context?.representation ?? null, kind: applied.context?.kind ?? null,
+      decisionId: applied.decision.id, representation: applied.context?.representation ?? null,
+      authorityRevision: applied.context?.authorityRevision ?? null, kind: applied.context?.kind ?? null,
       attributionStatus: matched, attributionSource: applied.attributionSource ?? (applied.context ? 'exact' : 'none'),
       decisionStage: 'request', routeType: applied.decision.routeType, originalHost: hostOf(originalUrl), targetHost: hostOf(targetUrl),
       sourceHost: applied.sourceHost, playurlHostChanged: applied.playurlHostChanged ?? false,

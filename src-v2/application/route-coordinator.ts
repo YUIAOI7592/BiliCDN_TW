@@ -60,6 +60,7 @@ export class RouteCoordinator {
   #recoverySerial = 0
   #decisions = new Map<DecisionId, DecisionRecord>()
   #plans = new Map<RepresentationId, RouteDecision>()
+  #planIdentities = new Map<RepresentationId, RouteIdentity>()
   #requestedRepresentations = new Set<RepresentationId>()
   #unlockedNative = new Map<RepresentationId, Set<string>>()
   #listeners = new Set<(event: DomainEvent) => void>()
@@ -93,7 +94,7 @@ export class RouteCoordinator {
   }
 
   resetEpoch(): void {
-    this.#plans.clear(); this.#unlockedNative.clear(); this.#decisions.clear(); this.#hostLockedStreams.clear(); this.#startupIncompatible.clear()
+    this.#plans.clear(); this.#planIdentities.clear(); this.#unlockedNative.clear(); this.#decisions.clear(); this.#hostLockedStreams.clear(); this.#startupIncompatible.clear()
     this.#requestedRepresentations.clear()
     this.#tentativeRepresentation = null; this.#tentativeTransfers = 0
     this.#streamPlans.clear(); this.#latest.clear(); this.#lastSuccess.clear(); this.#requested.clear()
@@ -101,7 +102,7 @@ export class RouteCoordinator {
     this.#challengeAttempts.clear(); this.#firstMediaAt = 0; this.#pendingMedia.clear()
     this.#fallbacks.clear()
   }
-  invalidateForUserSetting(): void { this.#plans.clear(); this.#streamPlans.clear(); this.session.setAffinity(null) }
+  invalidateForUserSetting(): void { this.#plans.clear(); this.#planIdentities.clear(); this.#streamPlans.clear(); this.session.setAffinity(null) }
   isOriginalComparison(): boolean { return this.#originalComparison }
   setOriginalComparison(enabled: boolean): void {
     if (this.#originalComparison === enabled) return
@@ -191,15 +192,14 @@ export class RouteCoordinator {
   noteStartupProbeResult(candidate: StartupCandidate, status: number | null): void {
     if (status !== 403 || candidate.type !== 'catalog-generated') return
     const context = candidate.context, current = this.session.get()
-    if (context.generation !== current.generation || context.epoch !== current.epoch) return
+    if (context.generation !== current.generation || context.epoch !== current.epoch || !this.vault.isCurrentIdentity(context)) return
     this.#markIncompatible(candidate.url, candidate.host)
   }
 
   commitStartupChoice(url: string, selected: StartupCandidate | null, reason: string): RouteDecision | null {
     if (!selected || this.session.get().disabled) return null
     const match = this.vault.match(url), context = match.status === 'matched' ? match.context : null
-    if (!context || context.generation !== selected.context.generation || context.epoch !== selected.context.epoch
-      || context.representation !== selected.context.representation || this.#hardRestriction(selected.host, context.kind)
+    if (!context || context !== selected.context || this.#hardRestriction(selected.host, context.kind)
       || this.vault.isInvalid(context.representation, selected.host)
       || this.#startupIncompatible.get(mediaIdentity(selected.url) ?? '')?.has(selected.host)) return null
     let decision: RouteDecision
@@ -215,7 +215,7 @@ export class RouteCoordinator {
       if (!native) return null
       decision = { action: 'rewrite', id: this.#nextId(), reason, routeType: 'native-signed', host: selected.host, candidate: native, ranking: [] }
     }
-    this.#plans.set(context.representation, decision)
+    this.#savePlan(context.representation, decision)
     this.session.noteDecision(decision.id)
     this.#remember(decision, context, context.kind)
     this.#emit({ type: 'route-planned', at: this.clock.now(), decision })
@@ -225,7 +225,8 @@ export class RouteCoordinator {
   async recordStartupSuccess(candidate: StartupCandidate, bytes: number, elapsedMs: number, ttfbMs: number | null): Promise<void> {
     if (bytes < 64 * 1024 || elapsedMs <= 0) return
     const context = candidate.context
-    const valid = (): boolean => context.generation === this.session.get().generation && context.epoch === this.session.get().epoch && !this.session.get().disabled
+    const valid = (): boolean => context.generation === this.session.get().generation && context.epoch === this.session.get().epoch
+      && !this.session.get().disabled && this.vault.isCurrentIdentity(context)
     if (!valid()) return
     await this.evidence.record(candidate.host, context.kind, { requestId: `startup:${++this.#serial}:${candidate.host}`,
       at: this.clock.now(), source: 'challenge', outcome: 'success', throughputMbps: bytes * 8 / elapsedMs / 1000,
@@ -252,15 +253,15 @@ export class RouteCoordinator {
       const host = parseMediaUrl(this.vault.rootUrl(representation) ?? '')?.host ?? null
       const restriction = host ? this.#hardRestriction(host, context.kind) : null
       const original = restriction && host ? this.#block(restriction, host) : this.#pass('original-observe-only', host, context.kind)
-      this.#plans.set(representation, original)
+      this.#savePlan(representation, original)
       this.#remember(original, context, context.kind)
       this.#emit({ type: 'route-planned', at: this.clock.now(), decision: original })
       return original
     }
-    const previous = this.#plans.get(representation)
+    const previous = this.#currentPlan(representation)
     if (previous && !['verified-failure', 'watchdog', 'user-setting'].includes(boundary) && this.#decisionAllowed(previous, context, demand.kind)) return previous
     const decision = this.#choose(context, demand, boundary, failedHost)
-    this.#plans.set(representation, decision)
+    this.#savePlan(representation, decision)
     return decision
   }
 
@@ -335,7 +336,7 @@ export class RouteCoordinator {
         const safe = this.#materialize(original, fallback, context)
         const target = safe ? parseMediaUrl(safe)?.host : null
         if (safe && target && target !== originalHost && !this.#hardRestriction(target, context.kind)) {
-          this.#plans.set(context.representation, fallback)
+          this.#savePlan(context.representation, fallback)
           return { decision: fallback, url: safe, context, streamKey, sourceHost: originalHost }
         }
       }
@@ -344,7 +345,7 @@ export class RouteCoordinator {
       return { decision, url: hard ? null : original, context, streamKey, sourceHost: originalHost }
     }
     const playbackDemand = demand ?? { kind: kind ?? 'video', requiredMbps: kind === 'audio' ? 0.5 : 8, highDemand: false }
-    let decision = context ? this.#plans.get(context.representation) : streamKey ? this.#streamPlans.get(streamKey) : null
+    let decision = context ? this.#currentPlan(context.representation) : streamKey ? this.#streamPlans.get(streamKey) : null
     const outputRole = context ? this.vault.outputRole(context.representation, url) : null
     // Playurl preplans every quality before any route has proved successful.
     // On first use, prefer the now-observed video affinity, not that cold plan.
@@ -380,7 +381,7 @@ export class RouteCoordinator {
     const finalRestriction = finalHost ? this.#hardRestriction(finalHost, kind) : null
     if (finalHost && finalRestriction) { decision = this.#block(finalRestriction, finalHost); applied = null }
     this.#remember(decision, context, kind ?? 'video')
-    if (context) { this.#plans.set(context.representation, decision); this.#requestedRepresentations.add(context.representation) }
+    if (context) { this.#savePlan(context.representation, decision); this.#requestedRepresentations.add(context.representation) }
     else if (streamKey) {
       this.#streamPlans.set(streamKey, decision)
       while (this.#streamPlans.size > 192) this.#streamPlans.delete(this.#streamPlans.keys().next().value as string)
@@ -433,7 +434,7 @@ export class RouteCoordinator {
         const outputDecision = primary === original && decision.action === 'pass' && decision.host === selectedHost
           ? decision : this.#pass('original-backup', selectedHost, context.kind)
         if (outputDecision !== decision) {
-          this.#plans.set(representation, outputDecision)
+          this.#savePlan(representation, outputDecision)
           this.#remember(outputDecision, context, context.kind)
           this.#emit({ type: 'route-planned', at: this.clock.now(), decision: outputDecision })
         }
@@ -505,7 +506,8 @@ export class RouteCoordinator {
     outcome: 'success' | 'failure', failureKind: FailureKind | null): Promise<void> {
     const context = applied.context
     if (!context || applied.decision.action !== 'rewrite') return
-    const valid = (): boolean => context.generation === this.session.get().generation && context.epoch === this.session.get().epoch && !this.session.get().disabled
+    const valid = (): boolean => context.generation === this.session.get().generation && context.epoch === this.session.get().epoch
+      && !this.session.get().disabled && this.vault.isCurrentIdentity(context)
     if (!valid()) return
     if (failureKind === 'native-invalid' && applied.decision.routeType === 'native-signed') {
       this.vault.invalidate(context.representation, applied.decision.host)
@@ -524,7 +526,9 @@ export class RouteCoordinator {
 
   async observe(observation: TransportObservation): Promise<void> {
     if (observation.request) this.#pendingMedia.delete(observation.request.requestId)
-    const valid = (): boolean => observation.generation === this.session.get().generation && observation.epoch === this.session.get().epoch && !this.session.get().disabled
+    const valid = (): boolean => observation.generation === this.session.get().generation && observation.epoch === this.session.get().epoch
+      && !this.session.get().disabled && (observation.request?.authorityRevision == null || !observation.representation
+        || this.vault.identity(observation.representation)?.authorityRevision === observation.request.authorityRevision)
     this.#emit({ type: 'transport-completed', at: this.clock.now(), observation, detached: !valid() })
     if (!valid()) return
     if (observation.kind && observation.request) {
@@ -643,7 +647,7 @@ export class RouteCoordinator {
         && !this.#incompatible(root, candidate.host))
     const candidates = [...catalog, ...routes.native, ...(routes.root ? [routes.root] : [])]
     const id = this.#nextId()
-    const current = this.#plans.get(context.representation), affinity = this.session.get().affinity
+    const current = this.#currentPlan(context.representation), affinity = this.session.get().affinity
     const currentRoute = boundary === 'representation' && context.kind === 'video' && affinity ? { type: affinity.type, host: affinity.host }
       : current && current.action !== 'block' && current.host ? { type: current.routeType, host: current.host }
       : context.kind === 'video' && affinity ? { type: affinity.type, host: affinity.host } : null
@@ -711,6 +715,30 @@ export class RouteCoordinator {
     if (!context) return false
     return this.vault.candidates(context.representation, this.#unlockedNative.get(context.representation) ?? new Set())
       .native.some(route => route.handle === candidate.handle && route.host === decision.host)
+  }
+
+  #currentPlan(representation: RepresentationId): RouteDecision | undefined {
+    const current = this.vault.identity(representation), prior = this.#planIdentities.get(representation)
+    if (prior && prior !== current) {
+      this.#plans.delete(representation)
+      this.#planIdentities.delete(representation)
+      this.#unlockedNative.delete(representation)
+      this.#requestedRepresentations.delete(representation)
+      if (this.#tentativeRepresentation === representation) { this.#tentativeRepresentation = null; this.#tentativeTransfers = 0 }
+      for (const [kind, fallback] of this.#fallbacks) if (fallback.representation === representation) this.#fallbacks.delete(kind)
+      for (const key of this.#challengeAttempts.keys()) if (key.startsWith(`${representation}:`)) this.#challengeAttempts.delete(key)
+      const affinity = this.session.get().affinity
+      if (affinity?.representation === representation && affinity.type !== 'catalog-generated') this.session.setAffinity(null)
+    }
+    return this.#plans.get(representation)
+  }
+
+  #savePlan(representation: RepresentationId, decision: RouteDecision): void {
+    this.#currentPlan(representation)
+    const identity = this.vault.identity(representation)
+    if (!identity) return
+    this.#plans.set(representation, decision)
+    this.#planIdentities.set(representation, identity)
   }
 
   #nextId(): DecisionId { return decisionId(`decision-${++this.#serial}`) }

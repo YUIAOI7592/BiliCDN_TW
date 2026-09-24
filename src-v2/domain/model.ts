@@ -23,6 +23,7 @@ export interface RequestContext {
   readonly epoch: EpochId
   readonly decisionId: DecisionId
   readonly representation: RepresentationId | null
+  readonly authorityRevision?: number | null
   readonly kind: MediaKind | null
   readonly attributionStatus: AttributionStatus
   readonly attributionSource: AttributionSource
@@ -51,6 +52,7 @@ export interface RouteIdentity {
   readonly epoch: EpochId
   readonly representation: RepresentationId
   readonly kind: MediaKind
+  readonly authorityRevision: number
 }
 
 interface CandidateBase {

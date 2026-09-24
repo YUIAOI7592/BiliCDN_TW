@@ -41,29 +41,57 @@ export class SignedRouteVault {
   #outputs = new Map<string, OutputRole | null>()
   #urlChars = 0
   #serial = 0
+  #handleSerial = 0
+  #authoritySerial = 0
 
   reset(generation: GenerationId, epoch: EpochId): void {
     this.#generation = generation
     this.#outputs.clear()
     this.#epoch = epoch
-    this.#groups.clear(); this.#byKey.clear(); this.#byUrl.clear(); this.#aliases.clear(); this.#byPath.clear(); this.#handles.clear(); this.#invalid.clear(); this.#urlChars = 0; this.#serial = 0
+    this.#groups.clear(); this.#byKey.clear(); this.#byUrl.clear(); this.#aliases.clear(); this.#byPath.clear(); this.#handles.clear(); this.#invalid.clear(); this.#urlChars = 0; this.#serial = 0; this.#handleSerial = 0; this.#authoritySerial = 0
   }
 
   register(input: RegisterRepresentationInput): RepresentationId | null {
     if (input.generation !== this.#generation || input.epoch !== this.#epoch) return null
     const key = `${input.kind}:${input.key}:${input.codec}:${input.height}`
     const priorId = this.#byKey.get(key), prior = priorId ? this.#groups.get(priorId) : undefined
+    if (prior?.source === 'trusted-api' && input.source !== 'trusted-api') return priorId ?? null
+    const sharedExact = new Set<RepresentationId>()
+    for (const raw of [...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP)) {
+      const parsed = parseMediaUrl(raw)
+      if (!parsed || (parsed.kind !== 'normal' && parsed.kind !== 'unknown')) continue
+      for (const rep of this.#byUrl.get(parsed.url.href) ?? []) {
+        if (this.#groups.get(rep)?.identity.kind === input.kind) sharedExact.add(rep)
+      }
+    }
+    if (input.source !== 'trusted-api') {
+      const authoritative = [...sharedExact].filter(rep => this.#groups.get(rep)?.source === 'trusted-api')
+      if (authoritative.length) return authoritative.length === 1 ? authoritative[0] ?? null : null
+    } else {
+      // A trusted API URL takes exact-URL attribution away from provisional groups,
+      // even when a page hint supplied a different representation key.
+      for (const rep of sharedExact) {
+        if (rep === priorId || this.#groups.get(rep)?.source === 'trusted-api') continue
+        this.#dropGroup(rep)
+      }
+    }
+    const promoted = !!prior && input.source === 'trusted-api' && prior.source !== 'trusted-api'
     const cap = input.kind === 'video' ? MAX_VIDEO_GROUPS : MAX_AUDIO_GROUPS
     if (!prior && [...this.#groups.values()].filter(group => group.identity.kind === input.kind).length >= cap) return null
     const rep = priorId ?? representationId(`${input.kind}:group-${++this.#serial}`)
-    const routes: StoredRoute[] = [...(prior?.routes ?? [])]
+    if (promoted && priorId) {
+      this.#revokeGroupRoutes(priorId, prior)
+      // A provisional URL's failure cannot invalidate a newly authoritative exact URL.
+      this.#invalid.delete(priorId)
+    }
+    const routes: StoredRoute[] = promoted ? [] : [...(prior?.routes ?? [])]
     for (const raw of [...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP)) {
       const parsed = parseMediaUrl(raw)
       const opaque = parsed?.kind === 'unknown' && parsed.url.protocol === 'https:' && !parsed.url.port
       if (!parsed || (parsed.kind !== 'normal' && !opaque) || this.#urlChars + raw.length > MAX_URL_CHARS) continue
       if (routes.some(route => route.url === parsed.url.href)) continue
       if (routes.length >= MAX_URLS_PER_GROUP) { this.registerAlias(rep, parsed.url.href); continue }
-      const handle = signedRouteHandle(`route:${rep}:${routes.length + 1}`)
+      const handle = signedRouteHandle(`route:${rep}:${++this.#handleSerial}`)
       routes.push(Object.freeze({ handle, host: parsed.host, url: parsed.url.href, order: routes.length,
         activelyExplorable: !opaque && isKnownNativeFamily(parsed.host), selectable: !opaque }))
       this.#handles.set(handle, { representation: rep, url: parsed.url.href })
@@ -71,12 +99,55 @@ export class SignedRouteVault {
       if (!opaque) this.#index(this.#byPath, parsed.url.pathname, rep)
       this.#urlChars += parsed.url.href.length
     }
-    if (!routes.length) return null
+    if (!routes.length) {
+      if (promoted) { this.#groups.delete(rep); this.#byKey.delete(key); this.#invalid.delete(rep) }
+      return null
+    }
     this.#byKey.set(key, rep)
-    const identity: RouteIdentity = Object.freeze({ generation: input.generation, epoch: input.epoch, representation: rep, kind: input.kind })
+    const identity: RouteIdentity = !promoted && prior ? prior.identity : Object.freeze({ generation: input.generation,
+      epoch: input.epoch, representation: rep, kind: input.kind, authorityRevision: ++this.#authoritySerial })
     this.#groups.set(rep, Object.freeze({ identity, height: input.height, codec: input.codec.slice(0, 48), bandwidth: input.bandwidth,
       source: prior?.source === 'trusted-api' ? prior.source : input.source, routes: Object.freeze(routes) }))
     return rep
+  }
+
+  source(representation: RepresentationId): RegisterRepresentationInput['source'] | null {
+    return this.#groups.get(representation)?.source ?? null
+  }
+
+  isCurrentIdentity(identity: RouteIdentity): boolean {
+    return identity.generation === this.#generation && identity.epoch === this.#epoch
+      && this.#groups.get(identity.representation)?.identity === identity
+  }
+
+  #revokeGroupRoutes(representation: RepresentationId, group: Group): void {
+    for (const route of group.routes) {
+      this.#handles.delete(route.handle)
+      this.#urlChars -= route.url.length
+    }
+    const remove = (index: Map<string, Set<RepresentationId>>, counted: boolean): void => {
+      for (const [key, rows] of index) {
+        if (!rows.delete(representation)) continue
+        if (!rows.size) { index.delete(key); if (counted) this.#urlChars -= key.length }
+      }
+    }
+    remove(this.#byUrl, false)
+    remove(this.#byPath, false)
+    remove(this.#aliases, true)
+    for (const [url, row] of this.#outputs) {
+      if (row?.representation !== representation) continue
+      this.#outputs.delete(url)
+      this.#urlChars -= url.length
+    }
+  }
+
+  #dropGroup(representation: RepresentationId): void {
+    const group = this.#groups.get(representation)
+    if (!group) return
+    this.#revokeGroupRoutes(representation, group)
+    this.#groups.delete(representation)
+    this.#invalid.delete(representation)
+    for (const [key, rep] of this.#byKey) if (rep === representation) this.#byKey.delete(key)
   }
 
   contextForUrl(url: string): RouteIdentity | null {
@@ -167,7 +238,7 @@ export class SignedRouteVault {
   }
 
   resolve(handle: SignedRouteHandle, identity: RouteIdentity): string | null {
-    if (identity.generation !== this.#generation || identity.epoch !== this.#epoch) return null
+    if (!this.isCurrentIdentity(identity)) return null
     const stored = this.#handles.get(handle)
     return stored?.representation === identity.representation ? stored.url : null
   }

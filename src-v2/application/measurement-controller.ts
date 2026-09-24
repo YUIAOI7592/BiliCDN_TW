@@ -5,6 +5,13 @@ import type { StoragePort } from '../platform/storage.ts'
 const META_KEY = 'bilicdn.v2.meta'
 const COOLDOWN_MS = 10 * 60_000
 const TIMEOUT_MS = 3000
+const directResponseFrom = (response: Response, host: string | null): boolean => {
+  if (!host || response.redirected || !response.url) return false
+  try {
+    const url = new URL(response.url)
+    return url.protocol === 'https:' && !url.port && url.hostname.toLowerCase() === host
+  } catch { return false }
+}
 
 interface MeasurementStatus {
   readonly generationActive: boolean
@@ -167,8 +174,14 @@ export class MeasurementController {
     let bytes = 0, responseAt = 0
     try {
       const response = await this.nativeFetch(candidate.url, { method: 'GET',
-        headers: { Range: 'bytes=0-' + (limit - 1) }, credentials: 'omit', cache: 'no-store', signal })
+        headers: { Range: 'bytes=0-' + (limit - 1) }, credentials: 'omit', cache: 'no-store', redirect: 'error', signal })
       responseAt = this.now()
+      if (!directResponseFrom(response, candidate.host)) {
+        if (response.body) await response.body.cancel('redirected-response')
+        return { candidate, valid: false, safeMbps: null, bytes: 0,
+          elapsedMs: Math.max(1, this.now() - startedAt), ttfbMs: responseAt - startedAt,
+          status: null, reason: 'redirected-response' }
+      }
       if (response.status !== 206 || !response.body) {
         if (response.body) await response.body.cancel('range-required')
         return { candidate, valid: false, safeMbps: null, bytes: 0,
@@ -278,9 +291,12 @@ export class MeasurementController {
     let bytes = 0, responseAt = 0, failure: FailureKind | null = null, ok = false, reason = 'http-status'
     try {
       const response = await this.nativeFetch(applied.url ?? '', { method: 'GET',
-        headers: { Range: 'bytes=0-' + (limit - 1) }, credentials: 'omit', cache: 'no-store', signal: controller.signal })
+        headers: { Range: 'bytes=0-' + (limit - 1) }, credentials: 'omit', cache: 'no-store', redirect: 'error', signal: controller.signal })
       responseAt = this.now()
-      if (response.status !== 206 || !response.body) {
+      if (!directResponseFrom(response, applied.decision.host)) {
+        reason = 'redirected-response'
+        if (response.body) await response.body.cancel('redirected-response')
+      } else if (response.status !== 206 || !response.body) {
         reason = 'http-' + response.status
         if (response.body) await response.body.cancel('range-required')
         if (applied.decision.routeType === 'native-signed' && [403,451,959].includes(response.status)) failure = 'native-invalid'

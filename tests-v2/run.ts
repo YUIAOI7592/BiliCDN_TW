@@ -117,6 +117,118 @@ check(rep, 'signed route registered')
 equal(vault.register({ generation, epoch, kind: 'video', key: '80:av1', height: 1080, codec: 'av1', bandwidth: 4_000_000,
   urls: ['https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret'], source: 'player-mpd' }), rep,
   'repeated manifest ingestion preserves representation identity')
+const authorityVault = new SignedRouteVault(); authorityVault.reset(generation, epoch)
+const hintedUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/hint.m4s?token=hint'
+const trustedUrl = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/api.m4s?token=api'
+const hintedRep = authorityVault.register({ generation, epoch, kind: 'video', key: '80:av1', height: 1080,
+  codec: 'av1', bandwidth: 4_000_000, urls: [hintedUrl], source: 'page-hint' })
+check(hintedRep, 'page hint establishes a provisional group')
+const hintedIdentity = hintedRep ? authorityVault.identity(hintedRep) : null
+const hintedHandle = hintedRep ? authorityVault.candidates(hintedRep, new Set()).native[0]?.handle : null
+const trustedRep = authorityVault.register({ generation, epoch, kind: 'video', key: '80:av1', height: 1080,
+  codec: 'av1', bandwidth: 4_000_000, urls: [trustedUrl], source: 'trusted-api' })
+check(trustedRep, 'trusted API adopts the representation')
+equal(trustedRep ? authorityVault.rootUrl(trustedRep) : null, trustedUrl,
+  'trusted API root replaces the provisional page URL')
+check(!trustedRep || !authorityVault.candidates(trustedRep, new Set()).native.some(route => route.host === 'upos-hz-mirrorakam.akamaized.net'),
+  'page-hint Native route cannot remain selectable after trusted API adoption')
+equal(hintedHandle && hintedRep ? authorityVault.resolve(hintedHandle, authorityVault.identity(hintedRep)!) : null, null,
+  'trusted API adoption revokes the earlier hint handle')
+check(!hintedIdentity || !authorityVault.isCurrentIdentity(hintedIdentity),
+  'an in-flight page-hint identity is retired on trusted API adoption')
+const trustedIdentity = trustedRep ? authorityVault.identity(trustedRep) : null
+const lateHintUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/late.m4s?token=late'
+authorityVault.register({ generation, epoch, kind: 'video', key: '80:av1', height: 1080,
+  codec: 'av1', bandwidth: 4_000_000, urls: [lateHintUrl], source: 'page-hint' })
+equal(trustedRep ? authorityVault.rootUrl(trustedRep) : null, trustedUrl,
+  'late page hints cannot replace the trusted root')
+check(!trustedRep || !authorityVault.candidates(trustedRep, new Set()).native.some(route => route.host === 'upos-hz-mirrorakam.akamaized.net'),
+  'late page hints cannot become Native candidates')
+authorityVault.register({ generation, epoch, kind: 'video', key: '80:av1', height: 1080,
+  codec: 'av1', bandwidth: 4_000_000, urls: [trustedUrl], source: 'trusted-api' })
+equal(trustedRep ? authorityVault.identity(trustedRep) : null, trustedIdentity,
+  'repeated identical trusted data does not invalidate active work')
+const duplicateHintRep = authorityVault.register({ generation, epoch, kind: 'video', key: '999:av1', height: 1080,
+  codec: 'av1', bandwidth: 4_000_000, urls: [trustedUrl], source: 'player-mpd' })
+equal(duplicateHintRep, trustedRep, 'later different-key hint cannot duplicate a trusted exact URL')
+equal(authorityVault.match(trustedUrl).context, trustedIdentity,
+  'trusted exact URL remains unambiguous after a different-key hint')
+const crossKeyVault = new SignedRouteVault(); crossKeyVault.reset(generation, epoch)
+const crossKeyHint = crossKeyVault.register({ generation, epoch, kind: 'video', key: '999:av1', height: 1080,
+  codec: 'av1', bandwidth: 4_000_000, urls: [trustedUrl], source: 'page-hint' })
+const crossKeyTrusted = crossKeyVault.register({ generation, epoch, kind: 'video', key: '80:av1', height: 1080,
+  codec: 'av1', bandwidth: 4_000_000, urls: [trustedUrl], source: 'trusted-api' })
+equal(crossKeyVault.match(trustedUrl).context?.representation, crossKeyTrusted,
+  'trusted API revokes a different-key hint that duplicates its exact URL')
+equal(crossKeyHint ? crossKeyVault.identity(crossKeyHint) : null, null,
+  'different-key provisional group is retired after trusted API adoption')
+const invalidHintVault = new SignedRouteVault(); invalidHintVault.reset(generation, epoch)
+const invalidHintHost = 'upos-hz-mirrorakam.akamaized.net'
+const invalidHintRep = invalidHintVault.register({ generation, epoch, kind: 'video', key: '80:av1', height: 1080,
+  codec: 'av1', bandwidth: 4_000_000, urls: [hintedUrl], source: 'page-hint' })
+check(invalidHintRep, 'provisional route exists before its host is invalidated')
+invalidHintVault.invalidate(invalidHintRep!, invalidHintHost)
+const sameHostTrustedUrl = `https://${invalidHintHost}/upgcxcode/a/b/trusted.m4s?token=trusted`
+const invalidHintTrustedRep = invalidHintVault.register({ generation, epoch, kind: 'video', key: '80:av1', height: 1080,
+  codec: 'av1', bandwidth: 4_000_000, urls: [sameHostTrustedUrl], source: 'trusted-api' })
+check(invalidHintTrustedRep, 'trusted API replaces invalidated provisional route on the same host')
+check(!invalidHintVault.isInvalid(invalidHintTrustedRep!, invalidHintHost),
+  'provisional host invalidation does not poison newly trusted exact URL')
+equal(invalidHintVault.candidates(invalidHintTrustedRep!, new Set()).native[0]?.host, invalidHintHost,
+  'newly trusted Native URL remains selectable after lower-trust promotion')
+const authoritySession = new SessionStore(); authoritySession.beginGeneration(false)
+const authorityState = authoritySession.beginEpoch(), authorityStorage = new FakeStorage()
+const authoritySettings = new SettingsStore(authorityStorage, () => now)
+const authorityRestrictions = new RestrictionStore(authorityStorage, () => now)
+const authorityEvidence = new EvidenceStore(authorityStorage, () => now)
+const plannedVault = new SignedRouteVault(); plannedVault.reset(authorityState.generation, authorityState.epoch)
+const plannedRep = plannedVault.register({ generation: authorityState.generation, epoch: authorityState.epoch,
+  kind: 'video', key: '80:av1:1080', height: 1080, codec: 'av1', bandwidth: 4_000_000,
+  urls: [hintedUrl], source: 'page-hint' })
+check(plannedRep, 'provisional route can be planned before the API arrives')
+const plannedRoutes = new RouteCoordinator(clock, authoritySession, authoritySettings, authorityRestrictions, authorityEvidence, plannedVault)
+const plannedDemand = { kind: 'video' as const, requiredMbps: 8, highDemand: false }
+equal(plannedRep ? plannedRoutes.plan(plannedRep, plannedDemand, 'startup').host : null,
+  'upos-hz-mirrorakam.akamaized.net', 'provisional startup initially follows its signed root')
+const staleStartup = plannedRoutes.startupOptions(hintedUrl)?.candidates[0] ?? null
+const staleChallenge = plannedRep ? plannedRoutes.challenge(plannedRep, plannedDemand, false) : null
+const plannedAdapter = new PlayurlAdapter(authoritySession, plannedVault, plannedRoutes, authoritySettings)
+const trustedPayload = { data: { dash: { video: [{ id: 80, height: 1080, codecs: 'av01', bandwidth: 4_000_000,
+  base_url: trustedUrl, backup_url: [] as string[] }], audio: [] } } }
+check(plannedAdapter.transform(trustedPayload, 'trusted-api'), 'trusted API playurl is adopted')
+equal(plannedRep ? plannedVault.rootUrl(plannedRep) : null, trustedUrl, 'trusted playurl replaces hint root in the live adapter')
+equal(plannedRep ? plannedRoutes.plan(plannedRep, plannedDemand, 'startup').host : null,
+  'upos-sz-mirrorali.bilivideo.com', 'previous provisional plan is invalidated at trusted API adoption')
+const lateHintPayload = { data: { dash: { video: [{ id: 80, height: 1080, codecs: 'av01', bandwidth: 4_000_000,
+  base_url: lateHintUrl, backup_url: [] as string[] }], audio: [] } } }
+plannedAdapter.transform(lateHintPayload, 'page-hint')
+equal(lateHintPayload.data.dash.video[0]?.base_url, lateHintUrl,
+  'late lower-trust page hint does not rewrite or merge into trusted API output')
+if (staleStartup) {
+  await plannedRoutes.recordStartupSuccess(staleStartup, 70 * 1024, 100, 10)
+  equal(authorityEvidence.get(staleStartup.host, 'video'), null,
+    'late preflight result from the retired hint cannot create health evidence')
+}
+if (staleChallenge) {
+  await plannedRoutes.recordChallenge(staleChallenge, 70 * 1024, 100, 10, 'success', null)
+  equal(authorityEvidence.get(staleChallenge.decision.host ?? '', 'video'), null,
+    'late challenger result from the retired hint cannot create health evidence')
+}
+if (plannedRep) {
+  const staleRequest = { requestId: requestId('retired-hint'), generation: authorityState.generation, epoch: authorityState.epoch,
+    decisionId: decisionId('retired-hint'), representation: plannedRep, authorityRevision: 1, kind: 'video' as const,
+    attributionStatus: 'matched' as const, attributionSource: 'exact' as const, decisionStage: 'request' as const,
+    routeType: 'root-original' as const, originalHost: 'upos-hz-mirrorakam.akamaized.net',
+    targetHost: 'upos-hz-mirrorakam.akamaized.net', sourceHost: 'upos-hz-mirrorakam.akamaized.net',
+    playurlHostChanged: false, playurlOutput: null, urlChanged: false, hostChanged: false, startedAt: now }
+  await plannedRoutes.observe({ request: staleRequest, generation: authorityState.generation, epoch: authorityState.epoch,
+    decisionId: staleRequest.decisionId, representation: plannedRep, kind: 'video', routeType: 'root-original',
+    originalHost: staleRequest.originalHost, targetHost: staleRequest.targetHost, finalHost: staleRequest.targetHost,
+    streamKey: 'retired-hint', status: 500, bytes: 0, ttfbMs: 10, elapsedMs: 100, completedAt: now + 100,
+    outcome: 'failure', failureKind: 'http-5xx' })
+  equal(authorityEvidence.get(staleRequest.targetHost, 'video'), null,
+    'retired page-hint transport does not punish its old host after API adoption')
+}
 const context = vault.contextForUrl('https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret')
 equal(context?.epoch, epoch, 'exact signed route maps to current epoch')
 const protectedUrl = 'https://upos-hz-mirrorakam.akamaized.net/opaque/signed-segment?token=secret'
@@ -239,10 +351,16 @@ let disabled = false, blockHttpDns = true
 const settingsStub = { get: () => ({ disabled, blockHttpDns }) }
 let nativeFetchCalls = 0, cancelReason: unknown = null
 const nativeFetchUrls: string[] = []
+const nativeFetchMethods: string[] = []
+const nativeFetchHeaders: (string | null)[] = []
+let streamedRequestBody = ''
 const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
   nativeFetchCalls++
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
   nativeFetchUrls.push(url)
+  nativeFetchMethods.push(input instanceof Request ? input.method : String(_init?.method ?? 'GET'))
+  nativeFetchHeaders.push(input instanceof Request ? input.headers.get('x-bilicdn-test') : null)
+  if (url.includes('/stream-body.m4s') && input instanceof Request) streamedRequestBody = await input.text()
   if (url.includes('/player/wbi/playurl')) return new Response(JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } }), { status: 200 })
   let emitted = false
   return new Response(new ReadableStream<Uint8Array>({
@@ -307,10 +425,42 @@ equal(nativeFetchCalls, beforeGate, 'Fetch player request waits before native di
 gateControl.release()
 await gatedFetch
 equal(new URL(nativeFetchUrls.at(-1) ?? '').host, TRUSTED_CATALOG[0], 'Fetch dispatch uses preflight winner')
+gateReady = false
+const mutableMediaUrl = new URL(gatedUrl)
+const mutableInit: RequestInit = { method: 'GET' }
+const beforeLifecycleGate = nativeFetchCalls
+const lifecycleFetch = fakeWindow.fetch(mutableMediaUrl, mutableInit)
+equal(nativeFetchCalls, beforeLifecycleGate, 'generation-switch Fetch waits at the same startup boundary')
+mutableMediaUrl.hostname = 'upos-sz-mirrorcosov.bilivideo.com'
+mutableInit.method = 'POST'
+runtimeSession.beginGeneration(false)
+gateControl.release()
+await lifecycleFetch
+equal(nativeFetchUrls.at(-1), gatedUrl, 'generation-switch Fetch sends the checked URL, not mutated input')
+equal(nativeFetchMethods.at(-1), 'GET', 'generation-switch Fetch sends the checked method, not mutated init')
+const originalInspect = routeStub.inspectOriginal
+const staleForbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/stale.m4s'
+routeStub.inspectOriginal = (url: string): AppliedRouteDecision => url === staleForbiddenUrl
+  ? { ...passDecision, url: null, decision: { action: 'block', id: decisionId('stale-black'), reason: 'black',
+    routeType: 'root-original', host: 'upos-sz-mirrorcosov.bilivideo.com', ranking: [] } }
+  : { ...passDecision, url }
+gateReady = false
+const beforeStaleForbidden = nativeFetchCalls
+const staleForbiddenFetch = fakeWindow.fetch(staleForbiddenUrl)
+runtimeSession.beginGeneration(false)
+gateControl.release()
+await staleForbiddenFetch.then(() => { throw new Error('stale generation must still block restricted original') }, () => undefined)
+equal(nativeFetchCalls, beforeStaleForbidden, 'stale generation cannot dispatch a restricted original media host')
+routeStub.inspectOriginal = originalInspect
 const requestInput = new Request(gatedUrl, { method: 'GET' })
 measurementStub.willGateStartup = () => false
 await fakeWindow.fetch(requestInput)
 equal(new URL(nativeFetchUrls.at(-1) ?? '').host, TRUSTED_CATALOG[0], 'Fetch Request input dispatch uses the selected host')
+const headerRequest = new Request(gatedUrl, { headers: { 'x-bilicdn-test': 'kept' } })
+await fakeWindow.fetch(headerRequest)
+equal(nativeFetchHeaders.at(-1), 'kept', 'rewritten Request preserves request headers')
+await fakeWindow.fetch(new URL(gatedUrl))
+equal(new URL(nativeFetchUrls.at(-1) ?? '').host, TRUSTED_CATALOG[0], 'URL object is normalized before rewrite')
 measurementStub.willGateStartup = () => true
 gateReady = false
 const gatedXhr = new FakeXhr()
@@ -344,6 +494,30 @@ equal((transport.snapshot().lastBlocked as { reason: string }).reason, 'black', 
 const forbiddenRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
 await fakeWindow.fetch(forbiddenRequest).then(() => { throw new Error('blacklisted Request object must reject locally') }, () => undefined)
 equal(nativeFetchCalls, beforeForbidden, 'blacklisted Request object never reaches native fetch')
+const spoofedRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+Object.defineProperty(spoofedRequest, 'href', { value: 'https://upos-sz-mirrorali.bilivideo.com/live-bvc/allowed.m4s' })
+await fakeWindow.fetch(spoofedRequest).then(() => { throw new Error('forged Request.href must not bypass blocked POST') }, () => undefined)
+equal(nativeFetchCalls, beforeForbidden, 'Fetch checks the Request internal URL, not a forged href expando')
+measurementStub.willGateStartup = () => false
+const converseRequest = new Request(passDecision.url ?? '')
+Object.defineProperty(converseRequest, 'href', { value: forbiddenNonGetUrl })
+await fakeWindow.fetch(converseRequest)
+equal(nativeFetchUrls.at(-1), passDecision.url, 'forged forbidden href cannot block an allowed Request')
+const beforeDnsRequest = nativeFetchCalls
+const spoofedDns = new Request('https://httpdns.bilivideo.com/resolve')
+Object.defineProperty(spoofedDns, 'href', { value: passDecision.url })
+const spoofedDnsResponse = await fakeWindow.fetch(spoofedDns)
+equal(spoofedDnsResponse.status, 503, 'forged Request.href cannot bypass HTTPDNS block')
+equal(nativeFetchCalls, beforeDnsRequest, 'blocked HTTPDNS Request never reaches native fetch')
+routeStub.inspectOriginal = (url: string): AppliedRouteDecision => ({ ...passDecision, url })
+const overrideRequest = new Request(gatedUrl, { method: 'GET' })
+await fakeWindow.fetch(overrideRequest, { method: 'POST' })
+equal(nativeFetchMethods.at(-1), 'POST', 'init.method override is preserved for native Fetch')
+equal(nativeFetchUrls.at(-1), gatedUrl, 'non-GET method override is not rewritten as a GET')
+const streamBody = new ReadableStream<Uint8Array>({ start(controller) { controller.enqueue(new TextEncoder().encode('stream-ok')); controller.close() } })
+await fakeWindow.fetch(new Request('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/stream-body.m4s',
+  { method: 'POST', body: streamBody, duplex: 'half' } as RequestInit))
+equal(streamedRequestBody, 'stream-ok', 'normalized POST Request preserves a streaming body')
 measurementStub.willGateStartup = () => false
 const xhr = new FakeXhr()
 xhr.responseType = 'json'
@@ -563,12 +737,17 @@ stallNow = now + 16_000; stallMonitor.tick()
 equal(softFallbacks, 1, 'startup stall fallback is not repeated each tick')
 
 let challengeCalls = 0, challengeFetches = 0, challengeRecords = 0
+const directRangeResponse = (url: string, bytes: number): Response => {
+  const response = new Response(new Uint8Array(bytes), { status: 206 })
+  Object.defineProperty(response, 'url', { value: url })
+  return response
+}
 const challengeApplied: AppliedRouteDecision = { decision: { action: 'rewrite', id: decisionId('challenge'), reason: 'test',
   routeType: 'catalog-generated', host: TRUSTED_CATALOG[1], candidate: { type: 'catalog-generated', host: TRUSTED_CATALOG[1], kind: 'video', catalogIndex: 1 }, ranking: [] },
-  url: `https://${TRUSTED_CATALOG[1]}/upgcxcode/a/b/challenge.m4s`, context: { generation: generationId(1), epoch: epochId(1), representation: representationId('video:test'), kind: 'video' },
+  url: `https://${TRUSTED_CATALOG[1]}/upgcxcode/a/b/challenge.m4s`, context: { generation: generationId(1), epoch: epochId(1), representation: representationId('video:test'), kind: 'video', authorityRevision: 1 },
   streamKey: 'challenge', sourceHost: TRUSTED_CATALOG[0] }
 const challengeRoutes = { challenge: () => { challengeCalls++; return challengeApplied }, recordChallenge: async () => { challengeRecords++ } }
-const challengeFetch = async (): Promise<Response> => { challengeFetches++; return new Response(new Uint8Array(70 * 1024), { status: 206 }) }
+const challengeFetch = async (): Promise<Response> => { challengeFetches++; return directRangeResponse(challengeApplied.url ?? '', 70 * 1024) }
 const measurement = new MeasurementController(challengeRoutes as never, new FakeStorage(), challengeFetch as typeof fetch, () => now)
 const baseMeasurement = { generationActive: true, representation: representationId('video:test'), demand: { kind: 'video' as const, requiredMbps: 8, highDemand: false },
   stableProgressSec: 20, playableBufferSec: 29, visible: true, seeking: false, recovering: false, disabled: false }
@@ -579,6 +758,40 @@ await new Promise(resolve => setTimeout(resolve, 0))
 equal(challengeCalls, 3, 'safe playback considers up to three fair challengers')
 equal(challengeFetches, 3, 'each safe challenger performs one bounded request')
 equal(challengeRecords, 3, 'each valid challenger updates evidence once')
+let challengeRedirectSetting: RequestRedirect | undefined
+const redirectChallengeFetch = async (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  challengeRedirectSetting = init?.redirect
+  if (init?.redirect === 'error') throw new TypeError('redirect refused')
+  return new Response(new Uint8Array(70 * 1024), { status: 206 })
+}
+let redirectedChallengeSamples = 0
+const redirectChallengeRoutes = { challenge: () => challengeApplied,
+  recordChallenge: async (_route: unknown, _bytes: number, _elapsed: number, _ttfb: number | null, outcome: string) => {
+    if (outcome === 'success') redirectedChallengeSamples++
+  } }
+const redirectChallenge = new MeasurementController(redirectChallengeRoutes as never, new FakeStorage(),
+  redirectChallengeFetch as typeof fetch, () => now)
+redirectChallenge.tick({ ...baseMeasurement, playableBufferSec: 30 })
+await new Promise(resolve => setTimeout(resolve, 0))
+equal(challengeRedirectSetting, 'error', 'healthy challenge forbids HTTP redirects')
+equal(redirectedChallengeSamples, 0, 'redirected challenge cannot add host evidence')
+const redirectedResponse = new Response(new Uint8Array(70 * 1024), { status: 206 })
+Object.defineProperty(redirectedResponse, 'url', { value: 'https://upos-sz-mirrorhwov.bilivideo.com/upgcxcode/a/b/redirected.m4s' })
+let mismatchedChallengeSuccesses = 0
+const mismatchedChallenge = new MeasurementController({ challenge: () => challengeApplied,
+  recordChallenge: async (_route: unknown, _bytes: number, _elapsed: number, _ttfb: number | null, outcome: string) => {
+    if (outcome === 'success') mismatchedChallengeSuccesses++
+  } } as never, new FakeStorage(), (async () => redirectedResponse) as typeof fetch, () => now)
+mismatchedChallenge.tick({ ...baseMeasurement, playableBufferSec: 30 })
+await new Promise(resolve => setTimeout(resolve, 0))
+equal(mismatchedChallengeSuccesses, 0, 'a mismatched response host cannot be credited to the challenged host')
+const missingHostChallenge = new MeasurementController({ challenge: () => challengeApplied,
+  recordChallenge: async (_route: unknown, _bytes: number, _elapsed: number, _ttfb: number | null, outcome: string) => {
+    if (outcome === 'success') mismatchedChallengeSuccesses++
+  } } as never, new FakeStorage(), (async () => new Response(new Uint8Array(70 * 1024), { status: 206 })) as typeof fetch, () => now)
+missingHostChallenge.tick({ ...baseMeasurement, playableBufferSec: 30 })
+await new Promise(resolve => setTimeout(resolve, 0))
+equal(mismatchedChallengeSuccesses, 0, 'a response with no verifiable host cannot create probe evidence')
 
 const preflightOptions = stallRoutes.startupOptions(startupRoot)
 check(preflightOptions && preflightOptions.candidates.length >= 2, 'preflight offers original and legal Catalog candidate')
@@ -593,7 +806,7 @@ if (preflightOptions) {
     preflightFetches++
     const host = new URL(String(input)).host
     const length = host === preflightOptions.candidates.find(candidate => candidate.type === 'catalog-generated')?.host ? 256 * 1024 : 70 * 1024
-    return new Response(new Uint8Array(length), { status: 206 })
+    return directRangeResponse(String(input), length)
   }
   const preflight = new MeasurementController(preflightRoutes as never, new FakeStorage(), preflightFetch as typeof fetch, () => now)
   const abortedStartup = new AbortController(); abortedStartup.abort()
@@ -633,13 +846,35 @@ if (preflightOptions) {
   const compatibilityFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const host = new URL(String(input)).host
     ranges.set(host, String((init?.headers as Record<string, string> | undefined)?.Range ?? ''))
-    return new Response(new Uint8Array(host === cachedHost ? 16 * 1024 : 70 * 1024), { status: 206 })
+    return directRangeResponse(String(input), host === cachedHost ? 16 * 1024 : 70 * 1024)
   }
   const cachedPreflight = new MeasurementController({ ...preflightRoutes, startupOptions: () => cachedOptions } as never,
     new FakeStorage(), compatibilityFetch as typeof fetch, () => now)
   await cachedPreflight.prepareStartup(startupRoot)
   equal(ranges.get(cachedHost ?? ''), 'bytes=0-16383', 'cross-tab Catalog evidence requires only a 16 KiB current-URL compatibility range')
   equal(committedHost, cachedHost, 'compatible recent Catalog sample can win without redownloading a full throughput sample')
+  let startupRedirectMode: RequestRedirect | undefined, redirectStartupSamples = 0
+  const redirectStartup = new MeasurementController({ ...preflightRoutes,
+    recordStartupSuccess: async () => { redirectStartupSamples++ } } as never, new FakeStorage(),
+    (async (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      startupRedirectMode = init?.redirect
+      if (init?.redirect === 'error') throw new TypeError('redirect refused')
+      return new Response(new Uint8Array(70 * 1024), { status: 206 })
+    }) as typeof fetch, () => now)
+  await redirectStartup.prepareStartup(startupRoot)
+  equal(startupRedirectMode, 'error', 'startup probes forbid HTTP redirects')
+  equal(redirectStartupSamples, 0, 'redirected startup probes create no throughput evidence')
+  equal(committedHost, preflightOptions.candidates.find(candidate => candidate.original)?.host,
+    'inconclusive redirected startup releases the legal original')
+  const wrongHostStartup = new MeasurementController({ ...preflightRoutes,
+    recordStartupSuccess: async () => { redirectStartupSamples++ } } as never, new FakeStorage(),
+    (async (): Promise<Response> => {
+      const response = new Response(new Uint8Array(70 * 1024), { status: 206 })
+      Object.defineProperty(response, 'url', { value: 'https://upos-sz-mirrorhwov.bilivideo.com/upgcxcode/a/b/redirected.m4s' })
+      return response
+    }) as typeof fetch, () => now)
+  await wrongHostStartup.prepareStartup(startupRoot)
+  equal(redirectStartupSamples, 0, 'mismatched startup response host creates no throughput evidence')
 }
 
 // Observing playback must never override the user's speed selection.

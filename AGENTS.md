@@ -5,7 +5,7 @@
 - Source of truth: `src-v2/`.
 - Entry point: `src-v2/entry.ts`.
 - Tests: `tests-v2/`.
-- Release output: `Release/v2.1.2/BiliCDN_TW.user.js`. Publish after automated verification; targeted Chrome acceptance follows the user's update.
+- Release output: `Release/v2.1.4/BiliCDN_TW.user.js`. Publish after automated and required security verification; targeted Chrome acceptance follows the user's update.
 - Historical v1 releases and tags are references only; v2 build and tests must not import them.
 
 ## Required workflow
@@ -49,5 +49,5 @@
 - Do not generate historical patch artifacts for v2.
 - The GitHub Release contains only `BiliCDN_TW.user.js`.
 - Update URLs remain under this repository’s latest release.
-- This release does not run Code Security unless the user explicitly changes that instruction.
+- Use Codex Security according to risk: for security-sensitive changes or an explicit user request, not automatically for every release. v2.1.4 requires a security diff scan and verification of its three reported findings before release. `npm run verify` does not include a security scan.
 - Commit messages identify the actual executing model and reasoning setting when that information is available; do not copy stale attribution.
