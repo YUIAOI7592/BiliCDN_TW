@@ -16,7 +16,9 @@ Final source and test working-tree diff scan `73db4cdb-1f96-4ec4-930a-e4b3b2b5f8
 
 ## Chrome/Tampermonkey acceptance
 
-The connected Chrome test profile did not load the v2 control-center host on a separate Bilibili test tab. That tab was closed and is not counted as v2.1.5 acceptance. Following the user's requested order, publish this update first and then test three minutes of playback in a Tampermonkey-enabled Chrome tab, compare video/audio hosts in Chrome Network, and inspect the report after pause and seek. If the transport fault does not recur, record the fault path as **contract-tested, real-browser pending**; do not claim that a real black-screen recovery was observed.
+Post-release acceptance on 2026-09-26 (Asia/Taipei) used a new public Bilibili video tab in Chrome with Tampermonkey. The script's diagnostic report displayed `current.version: "2.1.5"`, confirming that the updated userscript was running. The player showed 1080P high bitrate, AV1 and the user's existing 2x speed. From 01:38:12 to 01:41:26 local time, the same video played continuously for 3 minutes 13 seconds: sampled playback position advanced from 664.9 to 1051.4 seconds, `paused` remained false, and `readyState` remained 4. No black screen was observed at the sampled checks. Chrome Network showed media XHR `206` responses from `upos-hz-mirrorakam.akamaized.net`; the captured Network events do not establish a complete video/audio request inventory or redirect history.
+
+After that video ended, Bilibili automatically opened the next video. In the new video, pause succeeded, a seek moved playback from about 1213 to 261 seconds, playback resumed with `readyState` 4, and a second pause succeeded. The diagnostic report was opened to verify the version before the timed playback; it was not re-inspected after the pause and seek. Chrome and Tampermonkey version numbers were not captured. The user's 2026-09-26 approval formally accepts the observed v2.1.5 normal-playback validation. The transport fault did not recur, so actual black-screen fallback recovery remains **contract-tested, real-browser pending**; no real fallback takeover is claimed.
 
 ---
 
