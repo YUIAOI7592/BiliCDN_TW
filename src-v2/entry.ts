@@ -7,6 +7,7 @@ import { SignedRouteVault } from './state/signed-route-vault.ts'
 import { RouteCoordinator } from './application/route-coordinator.ts'
 import { MeasurementController } from './application/measurement-controller.ts'
 import { RecoveryController } from './application/recovery-controller.ts'
+import type { VideoSnapshot } from './application/ports.ts'
 import { PlayerMonitor } from './application/player-monitor.ts'
 import { LifecycleController } from './application/lifecycle-controller.ts'
 import { PlayurlAdapter } from './adapters/playurl.ts'
@@ -48,15 +49,26 @@ export const start = (): void => {
     diagnostics, storageDelete: key => storage.delete(key), now })
   const panel = new PlayerPanel(center, settings, session, monitor)
 
+  const diagnosticSample = (video: VideoSnapshot, watchdog: string, at: number) => ({
+    at, generation: session.get().generation, epoch: session.get().epoch,
+    enabled: !settings.get().disabled, originalComparison: routes.isOriginalComparison(),
+    currentTimeSec: video.currentTime, frames: video.frames, playableBufferSec: video.playableBufferSec,
+    paused: video.paused, seeking: video.seeking, ended: video.ended, readyState: video.readyState,
+    coreInitialized: video.coreInitialized, watchdog,
+  })
+
   const eventSink = (event: Parameters<DiagnosticRecorder['record']>[0]): void => {
-    diagnostics.record(event)
-    if (event.type === 'recovery' && event.action.action === 'route-fallback' && !routes.isOriginalComparison())
-      recovery.armRouteFailure('route-failure', player.snapshot())
+    diagnostics.record(event, !settings.get().disabled && !routes.isOriginalComparison())
+    if (event.type === 'recovery' && event.action.action === 'route-fallback' && !routes.isOriginalComparison()) {
+      const snapshot = player.snapshot()
+      diagnostics.recordPlayer(diagnosticSample(snapshot, monitor.snapshot().watchdog, event.at))
+      recovery.armRouteFailure('route-failure', snapshot)
+    }
   }
   routes.subscribe(eventSink)
   recovery.subscribe(eventSink)
   lifecycle.subscribe(eventSink)
-  monitor.subscribe(() => diagnostics.tick())
+  monitor.subscribe(snapshot => diagnostics.recordPlayer(diagnosticSample(snapshot.video, snapshot.watchdog, now())))
 
   visibility.setEnabled(!settings.get().disabled)
   webRtc.install()

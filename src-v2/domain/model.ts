@@ -144,6 +144,7 @@ export interface TransportObservation {
   readonly originalHost: string
   readonly targetHost: string
   readonly finalHost: string | null
+  readonly responseUrlMatchesRequest?: boolean
   readonly streamKey: string | null
   readonly status: number
   readonly bytes: number
@@ -188,7 +189,7 @@ export interface RouteAffinity {
 }
 
 export type RecoveryAction =
-  | { readonly action: 'route-fallback'; readonly id: RecoveryActionId; readonly kind: MediaKind; readonly decision: RouteDecision }
+  | { readonly action: 'route-fallback'; readonly id: RecoveryActionId; readonly kind: MediaKind; readonly identity: RouteIdentity; readonly decision: RouteDecision }
   | { readonly action: 'player-reload'; readonly id: RecoveryActionId; readonly savedPositionSec: number; readonly savedRate: number }
   | { readonly action: 'none'; readonly id: RecoveryActionId; readonly reason: string }
 

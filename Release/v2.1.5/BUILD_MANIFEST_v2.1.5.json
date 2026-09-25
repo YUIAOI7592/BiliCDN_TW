@@ -1,0 +1,59 @@
+{
+  "version": "2.1.5",
+  "tools": {
+    "node": "26.8.1",
+    "npm": "11.19.0",
+    "typescript": "7.0.2",
+    "esbuild": "0.28.2"
+  },
+  "options": {
+    "bundle": true,
+    "platform": "browser",
+    "format": "iife",
+    "splitting": false,
+    "target": [
+      "chrome120"
+    ],
+    "minify": false,
+    "treeShaking": true,
+    "keepNames": true,
+    "charset": "utf8",
+    "legalComments": "inline",
+    "sourcemap": "external",
+    "write": false
+  },
+  "sources": {
+    "package-lock.json": "16bc7bc5406a77cff019cd2099fdf51b31361c386f5070bf14ccd85604e5b3aa",
+    "package.json": "166113c6f9efbbed3f8dc3e4a10d9b6d79dca594034f9bca78157ec9df0ada56",
+    "release.json": "39cce90e45562b677cde0cad518572eb0f485822a4dad15d57e979bf065741a3",
+    "scripts/build.mjs": "bac6d8f304b8014df06678801d7c9d6ec5ff17289c16577c340ac8ceaaa67482",
+    "src-v2/adapters/page-playinfo.ts": "9ba8fa561d58e3217cd5a95f11280f99660d5c8525a3e01a5b5a27fb9a3db95d",
+    "src-v2/adapters/player.ts": "f77edf788c5f4cfebd9fd62f4479ead0bfc800ac679cae0ee4159f695a872e2e",
+    "src-v2/adapters/playurl.ts": "75b1b084a13c3ccf513d033e2440cd25cdc375c4ce083a62306c5a4af917c755",
+    "src-v2/adapters/transport.ts": "ff0ba56d62deec573d222f2dceddb8863eeae177137fe8b824d758522a774995",
+    "src-v2/adapters/visibility.ts": "f9d44c7605a33b865ea18a0465bf554040896f5ab0fbaf25671aa2fa07946642",
+    "src-v2/adapters/webrtc.ts": "ca8691de14d1163fc1503bbd6a48233a29363fb6543c451ed16c8c5dd8f8b2e7",
+    "src-v2/application/lifecycle-controller.ts": "0090665d78c10bfb957ffe79944ceebcd420699685072de14a026cc0c94ca04a",
+    "src-v2/application/measurement-controller.ts": "4782acabc414612b19098855bff799fc2cfda60ec70e6461e101e49d43079f26",
+    "src-v2/application/player-monitor.ts": "46c530ea5520f39eb129cf781916dc7110f14e9c99a627a161030fda1bb4e693",
+    "src-v2/application/recovery-controller.ts": "66fc0e089abd725f27a00e889f0478fd0dfb6e17dc2b95b28585f6c49957fe48",
+    "src-v2/application/route-coordinator.ts": "aaf94204b2aa793176780b9a9c4983703523a4ae86677927c8120b9aa52d8a71",
+    "src-v2/diagnostics/recorder.ts": "13ffd7554a2435787009912d97214b5972d4fb5f333c572432babb264b83a28d",
+    "src-v2/domain/catalog.ts": "cf8d363250071cb21641f30f6ce1b30c443e673babb19e05280f020296194786",
+    "src-v2/domain/evidence.ts": "a414c0f2b026d70373ec4b849d92a332c3403047a90df92c5e3411b90fe7015c",
+    "src-v2/domain/model.ts": "7c5c528903c44939d530584d49d1a46542fa4c2c5a2414170e9d9dffd422517b",
+    "src-v2/domain/routing.ts": "c403449cdb908ed5d8672215818e5d4b0de7306a5dbe23fd52a750260d69941d",
+    "src-v2/domain/url-policy.ts": "71d41f9f063773296581b745a3da4d79a16b00f2b39bc28022cf50050cce66e7",
+    "src-v2/entry.ts": "472e523541fb0491b8ac0d4bf8a877ceb8ef5cf72b0416f789d3a723e19d9d1b",
+    "src-v2/platform/storage.ts": "cd6b4672faf60ac39345976fa18d2d40cb348dd717861632e3a407769ad0c07c",
+    "src-v2/state/evidence-store.ts": "22c80c45ab1bf8c5ad328ef921e8f481ff40cbb5e91155827c27a28c18b0e080",
+    "src-v2/state/restriction-store.ts": "d6bbf7f4c5f343f202fec6ad8efb4c5bcccb66436e2933235c48e84f05677ce3",
+    "src-v2/state/session-store.ts": "5927848a4b9b565cbf73139757b29c6778af886749288cde41e633ae32f1c728",
+    "src-v2/state/settings-store.ts": "2e0780e646cfc4c9c15ee0b54326186b8bd056356526589d8f525bf998ca6dbf",
+    "src-v2/state/signed-route-vault.ts": "5194cb980ddc1d991c275f9769bb4c498eb429897228033c29fecbd3085d08f0",
+    "src-v2/ui/control-center.ts": "7b1bea75f0cc5a382d80d8738a433b94c379b47a2b13d597cee7419d2bb0b5a8",
+    "src-v2/ui/player-panel.ts": "ad41378abe087da571afa5407d201d2a5428972dd02b17eff8a994d0f51348ab",
+    "tsconfig.json": "f860e5473f2fbb597de09adb5cac6637e0fdd9caa7bb85a2f6237bacdeaa6313"
+  },
+  "userscriptSha256": "3d929b44eea8054061f9ae9c101640ea6eec41bf8cf2b56b061708bb56889744"
+}

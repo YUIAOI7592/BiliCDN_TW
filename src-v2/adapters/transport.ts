@@ -46,6 +46,9 @@ interface LastMediaRequest {
 }
 
 const hostOf = (value: string): string => { try { return new URL(value, location.href).hostname.toLowerCase() } catch { return '' } }
+const sameUrl = (responseUrl: string, requestUrl: string): boolean => {
+  try { return !!responseUrl && new URL(responseUrl, location.href).href === new URL(requestUrl, location.href).href } catch { return false }
+}
 
 const copyResponseSurface = (target: Response, source: Response): Response => {
   for (const key of ['url', 'redirected', 'type'] as const) {
@@ -320,7 +323,7 @@ export class TransportAdapter {
         if (!meta.applied || !meta.request) return
         const finalUrl = (() => { try { return this.responseURL || '' } catch { return '' } })()
         void self.routes.observe(self.#observation(meta.request, meta.applied, meta.originalUrl, meta.targetUrl, finalUrl,
-          Number(this.status) || 0, meta.bytes, meta.startedAt, meta.responseAt, outcome, failure))
+          Number(this.status) || 0, meta.bytes, meta.startedAt, meta.responseAt, outcome, failure, sameUrl(finalUrl, meta.targetUrl)))
       }
       const load = (): void => {
         const invalid = meta.applied?.decision.routeType === 'native-signed' && [403,451,959].includes(this.status)
@@ -436,17 +439,19 @@ export class TransportAdapter {
     startedAt: number, responseAt: number, bytes: number, outcome: 'success' | 'abort' | 'failure', failureKind?: FailureKind): Promise<void> {
     const finalUrl = response?.url || ''
     await this.routes.observe(this.#observation(request, applied, originalUrl, targetUrl, finalUrl, response?.status ?? 0,
-      bytes, startedAt, responseAt, outcome, failureKind))
+      bytes, startedAt, responseAt, outcome, failureKind, !!response && !response.redirected && sameUrl(finalUrl, targetUrl)))
   }
 
   #observation(request: RequestContext, applied: AppliedRouteDecision, originalUrl: string, targetUrl: string, finalUrl: string, status: number,
-    bytes: number, startedAt: number, responseAt: number, outcome: 'success' | 'abort' | 'failure', failureKind?: FailureKind): TransportObservation {
+    bytes: number, startedAt: number, responseAt: number, outcome: 'success' | 'abort' | 'failure', failureKind?: FailureKind,
+    responseUrlMatchesRequest = false): TransportObservation {
     const completedAt = this.now(), kind = request.kind
     const routeType: RouteType = applied.decision.routeType
     return {
       request, generation: request.generation, epoch: request.epoch, decisionId: request.decisionId,
       representation: request.representation, kind, routeType,
       originalHost: request.originalHost, targetHost: request.targetHost, finalHost: finalUrl ? hostOf(finalUrl) || null : null,
+      responseUrlMatchesRequest,
       streamKey: applied.streamKey,
       status, bytes, ttfbMs: responseAt > 0 ? responseAt - startedAt : null,
       elapsedMs: Math.max(1, completedAt - startedAt), completedAt, outcome,

@@ -625,11 +625,12 @@ export class RouteCoordinator {
   }
 
   #trackFallback(representation: RepresentationId, kind: MediaKind, decision: RouteDecision): void {
-    if (!decision.host) return
+    const identity = this.vault.identity(representation)
+    if (!decision.host || !identity || identity.kind !== kind) return
     const actionId = recoveryActionId(`recovery-${++this.#recoverySerial}`)
     this.#fallbacks.set(kind, Object.freeze({ actionId, representation, decisionId: decision.id, plannedHost: decision.host,
       routeType: decision.routeType, stage: 'planned', requestId: null, responseHost: null, outcome: null, status: null }))
-    this.#emit({ type: 'recovery', at: this.clock.now(), action: { action: 'route-fallback', id: actionId, kind, decision } })
+    this.#emit({ type: 'recovery', at: this.clock.now(), action: { action: 'route-fallback', id: actionId, kind, identity, decision } })
   }
 
   #choose(context: RouteIdentity, demand: PlaybackDemand,

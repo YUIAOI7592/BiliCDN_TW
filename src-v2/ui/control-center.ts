@@ -1,5 +1,6 @@
 import { DEFAULT_UNAVAILABLE_HOSTS, TRUSTED_CATALOG } from '../domain/catalog.ts'
 import { evidenceMetrics } from '../domain/evidence.ts'
+import { assessDemandRatio } from '../domain/routing.ts'
 import type { DiagnosticRecorder } from '../diagnostics/recorder.ts'
 import type { MeasurementController } from '../application/measurement-controller.ts'
 import type { PlayerMonitor } from '../application/player-monitor.ts'
@@ -30,8 +31,8 @@ const playbackLabel = (state: unknown): string => plain(state, {
 
 const recoveryLabel = (state: unknown): string => plain(state, {
   healthy: '正常', 'pause-armed': '已暫停，等待播放', 'play-intent': '正在嘗試繼續播放',
-  waiting: '等待影片恢復', reloading: '正在重建播放器', recovered: '影片已恢復',
-  'recovered-paused': '影片已恢復，等待手動播放', failed: '自動恢復失敗', breaker: '暫停自動恢復，避免反覆重試',
+  waiting: '等待影片恢復', reloading: '正在重建播放器', recovered: '核心觀察到播放進度',
+  'recovered-paused': '核心已恢復，等待手動播放', failed: '自動恢復失敗', breaker: '暫停自動恢復，避免反覆重試',
 })
 
 const recoveryReasonLabel = (reason: unknown): string => plain(reason, {
@@ -162,6 +163,19 @@ export class ControlCenter {
     const lastBlocked = hook.lastBlocked as Record<string, unknown> | null
     if (lastBlocked) summary.textContent += `\n最近擋下的請求：${lastBlocked.host}｜原因：${restrictionLabel(lastBlocked.reason)}｜沒有送給瀏覽器`
     const routes = this.deps.routes.snapshot(), latest = routes.latest as Record<string, Record<string, unknown>>
+    const routeRecovery = this.deps.diagnostics.snapshot().routeRecovery as { attempts: Array<{ host: string | null; stage: string }> }
+    const lastAttempt = routeRecovery.attempts.at(-1)
+    if (lastAttempt) summary.textContent += `\n影片備援接手：${lastAttempt.host ?? '未知 Host'}｜${plain(lastAttempt.stage, {
+      planned: '已選定，尚未看到請求', sent: '已送出請求', 'progress-unconfirmed': '播放器有進度，路線仍待確認',
+      'response-observed': '已收到影片資料，播放接手待確認', 'playback-observed': '播放進度與新路線接手一致',
+      'mixed-evidence': '同時收到其他 Host 資料，無法歸因', unconfirmed: '30 秒內未取得足夠證據',
+      superseded: '已由下一條備援取代', interrupted: '觀察因模式或影片切換中止',
+    })}`
+    const activePlan = routes.activePlan as { host?: string; routeType?: string; ranking?: Array<{ host: string; type: string; ratio: number | null }> } | null
+    const selected = activePlan?.ranking?.find(row => row.host === activePlan.host && row.type === activePlan.routeType)
+    if (activePlan?.host) summary.textContent += `\n目前路線容量：${plain(assessDemandRatio(selected?.ratio ?? null), {
+      'below-required': '低於本次需求', 'below-headroom': '未達安全餘量', 'meets-headroom': '達到安全餘量', unknown: '速度樣本不足',
+    })}${selected?.ratio == null || !Number.isFinite(selected.ratio) ? '' : `（保守速度約為需求的 ${selected.ratio.toFixed(2)} 倍）`}`
     for (const [kind, label] of [['video', '影片'], ['audio', '音訊'], ['unknown', '尚未分類媒體']] as const) {
       const row = latest[kind]
       if (!row) { if (kind !== 'unknown') summary.textContent += `\n${label}：還沒有可確認的請求`; continue }

@@ -41,6 +41,9 @@ const stateRank = (state: RouteRankingEntry['state']): number => ({
   proven: 5, usable: 4, unknown: 3, degraded: 2, 'circuit-open': 1, forbidden: 0,
 })[state]
 
+export const assessDemandRatio = (ratio: number | null): 'unknown' | 'below-required' | 'below-headroom' | 'meets-headroom' =>
+  ratio === null || !Number.isFinite(ratio) ? 'unknown' : ratio < 1 ? 'below-required' : ratio < 1.35 ? 'below-headroom' : 'meets-headroom'
+
 export const rankRoutes = (input: RankRoutesInput, now: number): readonly RouteRankingEntry[] => {
   const entries = input.candidates.map(candidate => {
     const reasons = restrictionReasons(candidate, input, now)
