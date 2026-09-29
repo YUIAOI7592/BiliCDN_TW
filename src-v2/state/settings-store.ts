@@ -8,6 +8,7 @@ export interface SettingsState {
   readonly schema: 2
   readonly disabled: boolean
   readonly fixedHost: string | null
+  readonly considerNativeSources: boolean
   readonly catalogOverrides: Readonly<Record<string, boolean>>
   readonly codec: CodecPreference
   readonly blockWebRtc: boolean
@@ -20,6 +21,7 @@ export const defaultSettings = (now: number): SettingsState => Object.freeze({
   schema: 2,
   disabled: false,
   fixedHost: null,
+  considerNativeSources: false,
   catalogOverrides: Object.freeze({}),
   codec: 'av1',
   blockWebRtc: true,
@@ -44,6 +46,7 @@ const parseSettings = (value: unknown, now: number): SettingsState => {
     schema: 2,
     disabled: raw.disabled === true,
     fixedHost,
+    considerNativeSources: raw.considerNativeSources === true,
     catalogOverrides: Object.freeze(overrides),
     codec,
     blockWebRtc: raw.blockWebRtc !== false,
@@ -55,6 +58,7 @@ const parseSettings = (value: unknown, now: number): SettingsState => {
 
 export class SettingsStore {
   #state: SettingsState
+  #nativeOffPending = 0
   #listeners = new Set<(state: SettingsState) => void>()
   #stopRemote: () => void
 
@@ -69,7 +73,10 @@ export class SettingsStore {
     })
   }
 
-  get(): SettingsState { return this.#state }
+  get(): SettingsState {
+    return this.#nativeOffPending && this.#state.considerNativeSources
+      ? Object.freeze({ ...this.#state, considerNativeSources: false }) : this.#state
+  }
 
   subscribe(listener: (state: SettingsState) => void): () => void {
     this.#listeners.add(listener)
@@ -77,25 +84,39 @@ export class SettingsStore {
   }
 
   async update(change: Partial<Omit<SettingsState, 'schema' | 'updatedAt'>>): Promise<SettingsState> {
-    return await this.storage.withLock('settings', () => {
-      const current = parseSettings(this.storage.get<unknown>(SETTINGS_KEY, null), this.now())
-      const now = this.now()
-      const next = parseSettings({ ...current, ...change, schema: 2, updatedAt: Math.max(now, current.updatedAt + 1) }, now)
-      this.storage.set(SETTINGS_KEY, next)
-      this.#state = next
-      this.#emit()
-      return next
-    })
+    const holdNativeOff = change.considerNativeSources === false
+    if (holdNativeOff) { this.#nativeOffPending++; this.#emit() }
+    try {
+      return await this.storage.withLock('settings', () => {
+        const current = parseSettings(this.storage.get<unknown>(SETTINGS_KEY, null), this.now())
+        const now = this.now()
+        const next = parseSettings({ ...current, ...change, schema: 2, updatedAt: Math.max(now, current.updatedAt + 1) }, now)
+        this.storage.set(SETTINGS_KEY, next)
+        this.#state = next
+        this.#emit()
+        return next
+      })
+    } finally {
+      if (holdNativeOff) { this.#nativeOffPending--; this.#emit() }
+    }
   }
 
   async reset(): Promise<SettingsState> {
-    const next = defaultSettings(this.now())
-    await this.storage.withLock('settings', () => this.storage.set(SETTINGS_KEY, next))
-    this.#state = next
-    this.#emit()
-    return next
+    this.#nativeOffPending++; this.#emit()
+    try {
+      const next = await this.storage.withLock('settings', () => {
+        const now = this.now(), current = parseSettings(this.storage.get<unknown>(SETTINGS_KEY, null), now)
+        const state = parseSettings({ ...defaultSettings(now),
+          updatedAt: Math.max(now, current.updatedAt + 1) }, now)
+        this.storage.set(SETTINGS_KEY, state)
+        return state
+      })
+      this.#state = next
+      this.#emit()
+      return next
+    } finally { this.#nativeOffPending--; this.#emit() }
   }
 
   dispose(): void { this.#stopRemote(); this.#listeners.clear() }
-  #emit(): void { for (const listener of this.#listeners) listener(this.#state) }
+  #emit(): void { const state = this.get(); for (const listener of this.#listeners) listener(state) }
 }

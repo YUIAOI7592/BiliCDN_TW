@@ -227,18 +227,24 @@ export class MeasurementController {
   async #tryStart(status: MeasurementStatus): Promise<void> {
     if (!status.representation || !status.demand || this.#running || this.#planning) return
     this.#planning = true
+    const planningMarker = this.#marker
     try {
       const at = this.now()
       let first: AppliedRouteDecision | null = null, cursor = 0
       await this.storage.withLock('measurement', () => {
+        if (planningMarker !== this.#marker) return
         const meta = this.#meta()
         if (at - (Number(meta.lastChallengeAt) || 0) < COOLDOWN_MS) return
         cursor = Math.max(0, Number(meta.catalogCursor) || 0)
         first = this.routes.challenge(status.representation!, status.demand!, this.#preferNative, new Set(), cursor)
         if (!first?.url) return
+        if (planningMarker !== this.#marker || (this.routes.isCatalogOnly()
+          && first.decision.routeType !== 'catalog-generated')) return
         this.storage.set(META_KEY, { ...meta, schema: 2, lastChallengeAt: at, catalogCursor: cursor + 1, updatedAt: at })
       })
+      if (planningMarker !== this.#marker) return
       const planned = first as AppliedRouteDecision | null
+      if (planned && this.routes.isCatalogOnly() && planned.decision.routeType !== 'catalog-generated') return
       if (!planned?.url) {
         const cooldown = at - (Number(this.#meta().lastChallengeAt) || 0) < COOLDOWN_MS
         this.#snapshot = Object.freeze({ ...this.#snapshot, state: 'waiting',

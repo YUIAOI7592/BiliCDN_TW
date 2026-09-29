@@ -14,6 +14,7 @@ export interface ParsedMediaUrl {
 }
 
 const hasSuffix = (host: string, suffix: string): boolean => host === suffix || host.endsWith(`.${suffix}`)
+export const isKnownPcdnHost = (host: string): boolean => PCDN_SUFFIXES.some(suffix => hasSuffix(host, suffix))
 export const isKnownNativeFamily = (host: string): boolean =>
   /\.bilivideo\.(?:com|cn|net)$/i.test(host) || host.endsWith('.akamaized.net')
 
@@ -31,7 +32,7 @@ export const parseMediaUrl = (value: string): ParsedMediaUrl | null => {
   const label = host.split('.')[0] ?? ''
   const nonDefaultPort = !!url.port && url.port !== '80' && url.port !== '443'
   const pcdn = /\.mcdn\.bilivideo\.(?:com|cn|net)$/i.test(host)
-    || PCDN_SUFFIXES.some(suffix => hasSuffix(host, suffix))
+    || isKnownPcdnHost(host)
     || PCDN_HOSTS.has(host)
     || (label.startsWith('upos-') && label.includes('302'))
     || String(url.searchParams.get('os') ?? '').toLowerCase() === 'mcdn'
@@ -39,6 +40,22 @@ export const parseMediaUrl = (value: string): ParsedMediaUrl | null => {
   if (pcdn) return { url, host, kind: 'pcdn', replaceable: true }
   if (nonDefaultPort || IPV4_RE.test(host)) return { url, host, kind: 'suspected-pcdn', replaceable: false }
   return { url, host, kind: 'normal', replaceable: isKnownNativeFamily(host) }
+}
+
+// Classification may inspect an oversized URL, but rewriting must keep the 16 KiB limit above.
+// This lets strict routing reject recognizable media that cannot be safely materialized.
+export const isOversizedBilibiliMedia = (value: string): boolean => {
+  if (value.length <= MEDIA_URL_MAX_LENGTH) return false
+  let url: URL
+  try { url = new URL(value.startsWith('//') ? `https:${value}` : value) } catch { return false }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return false
+  const host = url.hostname.toLowerCase(), path = url.pathname
+  const mediaPath = MEDIA_PATH_RE.test(path) || path.includes('/upgcxcode/')
+    || path.startsWith('/v1/resource') || path.includes('/live-bvc/')
+  if (!mediaPath) return false
+  if (/\.bilivideo\.(?:com|cn|net)$/.test(host)) return true
+  if (host.startsWith('upos-') && host.endsWith('.akamaized.net')) return true
+  return isKnownPcdnHost(host)
 }
 
 export const replaceUrlHost = (value: string, host: string): string | null => {

@@ -61,10 +61,10 @@ const measurementLabel = (state: unknown, reason: unknown): string => {
 
 const startupLabel = (state: unknown, reason: unknown): string => {
   if (state === 'running') return '正在起播前測試可用路線（最長 3 秒）'
-  if (state === 'complete') return reason === 'measured' ? '已測試並選好起播路線' : '已放行合法路線，測試沒有明確結果'
+  if (state === 'complete') return reason === 'measured' ? '已測試並選好起播路線' : '已選好合法起播路線，測試沒有明確結果'
   if (state === 'skipped') return plain(reason, {
-    'unsupported-or-no-legal-candidate': '這筆請求無法安全預測試，已依原規則處理',
-    'preflight-error': '預測試未完成，已依原規則處理',
+    'unsupported-or-no-legal-candidate': '這筆請求無法安全預測試，後續依目前選路設定處理',
+    'preflight-error': '預測試未完成，後續依目前選路設定處理',
   }, '這筆請求未進行起播預測試')
   return '等待播放器提出第一筆影音請求'
 }
@@ -79,6 +79,8 @@ const attributionLabel = (status: unknown): string => plain(status, {
 const restrictionLabel = (reason: unknown): string => plain(reason, {
   black: '黑名單', dead: '已標記為不可用', 'catalog-disabled': '已在設定中停用',
   'default-unavailable': '預設不使用', 'circuit-open': '近期故障，暫時避開',
+  'catalog-unavailable': '沒有合法的內建 CDN', 'catalog-unreplaceable': '無法安全改寫成內建 CDN',
+  'catalog-only-non-get': '這類請求無法安全改寫成內建 CDN',
 })
 
 export interface ControlCenterDependencies {
@@ -150,14 +152,19 @@ export class ControlCenter {
     const state = this.deps.session.get(), settings = this.deps.settings.get(), monitor = this.deps.monitor.snapshot()
     const affinity = state.affinity ? `${state.affinity.host}（${routeLabel(state.affinity.type)}）` : '尚未確認'
     const summary = document.createElement('p'); summary.className = 'summary'
-    const mode = this.deps.routes.isOriginalComparison() ? '本分頁只用 B 站提供的網址（對照測試）'
-      : settings.fixedHost ? `固定使用 ${settings.fixedHost}` : '自動挑選 CDN'
+    const sourceMode = settings.considerNativeSources ? '可參考 B 站原生來源' : '僅內建 CDN'
+    const mode = settings.disabled ? '腳本已停用，網站自行選擇 CDN'
+      : this.deps.routes.isOriginalComparison() ? '本分頁只用 B 站提供的網址（對照測試）'
+      : settings.fixedHost ? `優先固定 ${settings.fixedHost}（${sourceMode}）` : `自動挑選 CDN（${sourceMode}）`
     const recovery = this.deps.recovery.snapshot(), measurement = this.deps.measurement.snapshot()
     summary.textContent = `腳本：${settings.disabled ? '已停用' : '已啟用'}｜CDN：${mode}\n選定路線：${affinity}（實際請求見下方）\n播放：${playbackLabel(monitor.watchdog)}｜已緩衝約 ${monitor.video.playableBufferSec.toFixed(1)} 秒可播放內容｜${monitor.video.effectiveRate} 倍速\n播放器：${recoveryLabel(recovery.state)}｜測速：${measurementLabel(measurement.state, measurement.reason)}`
     if (recovery.state === 'failed' || recovery.state === 'recovered-paused') summary.textContent += `｜${recoveryReasonLabel(recovery.reason)}`
     if (measurement.startup) summary.textContent += `\n起播前測試：${startupLabel(measurement.startup.state, measurement.startup.reason)}`
     const hook = this.deps.transport.snapshot()
     summary.textContent += `\n請求攔截：${plain(hook.hookState, { installed: '運作中', degraded: '部分失效', failed: '無法啟用', 'not-installed': '未啟用' })}｜腳本看到 ${Number(hook.enteredFetch) + Number(hook.enteredXhr)} 筆請求，其中 ${hook.mediaRecognized} 筆像是影音請求；交給瀏覽器 ${hook.nativeCalled} 筆，看到回應 ${hook.responseObserved} 筆`
+    if (!settings.disabled && !settings.considerNativeSources && !this.deps.routes.isOriginalComparison() && hook.hookState !== 'installed') {
+      summary.textContent += '\n請求攔截未完整，無法確認影音只依內建 CDN 選路；請以 Chrome「網路」面板核對。'
+    }
     const lastHook = hook.lastMediaRequest as Record<string, unknown> | null
     if (lastHook) summary.textContent += `\n最近一筆影音請求：${plain(lastHook.kind, { video: '影片', audio: '音訊', unknown: '尚未分類' })}，送往 ${lastHook.targetHost ?? '未知'}｜${lastHook.nativeCalled ? '已交給瀏覽器' : '未交給瀏覽器'}｜${lastHook.responseObserved ? `收到回應${lastHook.status ? `（HTTP ${lastHook.status}）` : ''}` : '尚未看到回應'}`
     const lastBlocked = hook.lastBlocked as Record<string, unknown> | null
@@ -233,6 +240,13 @@ export class ControlCenter {
     mode.addEventListener('change', event => { if (!event.isTrusted) return; void this.deps.settings.update({ fixedHost: mode.value || null })
       .then(() => { this.deps.routes.invalidateForUserSetting(); this.#renderSettings() }) })
     rows.append(this.#row('要如何選 CDN', mode, '自動模式會參考可用性與測速結果；固定模式優先使用你指定的節點，但仍會避開已禁止使用的節點。'))
+    rows.append(this.#toggle('允許參考 B 站原生來源', settings.considerNativeSources,
+      value => {
+        const pending = this.deps.settings.update({ considerNativeSources: value })
+        if (!value) this.#renderSettings()
+        return pending.then(() => this.#renderSettings())
+      },
+      '預設關閉。關閉時，腳本辨識到的影音只依內建 CDN 清單選路、測速及提供播放器備援；無法安全改寫或沒有合法內建 CDN 時會擋下請求。開啟後，B 站當次提供的原始與備用網址可參與選路。下方的原生對照測試模式獨立運作；已送出的請求不會取消。'))
     rows.append(this.#toggle('測試：只用 B 站原本提供的 CDN', this.deps.routes.isOriginalComparison(), enabled => {
       this.deps.routes.setOriginalComparison(enabled)
       this.deps.measurement.reset()

@@ -26,7 +26,8 @@ export interface RegisterRepresentationInput {
 interface StoredRoute { readonly handle: SignedRouteHandle; readonly host: string; readonly url: string; readonly order: number; readonly activelyExplorable: boolean; readonly selectable: boolean }
 interface Group { readonly identity: RouteIdentity; readonly height: number; readonly codec: string; readonly bandwidth: number; readonly source: RegisterRepresentationInput['source']; readonly routes: readonly StoredRoute[] }
 interface OutputRole { readonly representation: RepresentationId; readonly role: 'primary' | 'backup'; readonly hostChanged: boolean;
-  readonly originalHost: string; readonly outputHost: string; readonly source: 'trusted-api' | 'page-hint'; readonly decisionId: DecisionId }
+  readonly originalHost: string; readonly outputHost: string; readonly source: 'trusted-api' | 'page-hint'; readonly decisionId: DecisionId;
+  readonly catalogGenerated: boolean }
 
 export class SignedRouteVault {
   #generation: GenerationId | null = null
@@ -178,7 +179,7 @@ export class SignedRouteVault {
   }
 
   registerOutput(rep: RepresentationId, original: string, primary: string, backups: readonly string[],
-    decisionId: DecisionId, source: 'trusted-api' | 'page-hint'): void {
+    decisionId: DecisionId, source: 'trusted-api' | 'page-hint', catalogGenerated = false): void {
     const originalHost = parseMediaUrl(original)?.host ?? ''
     for (const [index, url] of [primary, ...backups].entries()) {
       const parsed = parseMediaUrl(url)
@@ -187,14 +188,21 @@ export class SignedRouteVault {
       if (prior === null || (prior && prior.representation !== rep)) { this.#outputs.set(parsed.url.href, null); continue }
       if (!this.#outputs.has(parsed.url.href)) this.#urlChars += url.length
       this.#outputs.set(parsed.url.href, { representation: rep, role: index === 0 ? 'primary' : 'backup',
-        hostChanged: !!originalHost && originalHost !== parsed.host, originalHost, outputHost: parsed.host, source, decisionId })
+        hostChanged: !!originalHost && originalHost !== parsed.host, originalHost, outputHost: parsed.host, source, decisionId,
+        catalogGenerated })
     }
   }
 
   outputRole(rep: RepresentationId, url: string): Omit<OutputRole, 'representation'> | null {
     const parsed = parseMediaUrl(url), row = parsed ? this.#outputs.get(parsed.url.href) : null
     return row?.representation === rep ? { role: row.role, hostChanged: row.hostChanged,
-      originalHost: row.originalHost, outputHost: row.outputHost, source: row.source, decisionId: row.decisionId } : null
+      originalHost: row.originalHost, outputHost: row.outputHost, source: row.source, decisionId: row.decisionId,
+      catalogGenerated: row.catalogGenerated } : null
+  }
+
+  wasPlayerOutput(url: string): boolean {
+    const parsed = parseMediaUrl(url)
+    return !!parsed && this.#outputs.has(parsed.url.href)
   }
 
   #index(index: Map<string, Set<RepresentationId>>, key: string, rep: RepresentationId): void {

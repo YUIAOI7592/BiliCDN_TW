@@ -1,4 +1,4 @@
-import { isPlayurlApi } from '../domain/catalog.ts'
+import { isCatalogHost, isPlayurlApi } from '../domain/catalog.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
 import { requestId, type FailureKind, type RequestContext, type RouteType, type TransportObservation, type GenerationId, type EpochId } from '../domain/model.ts'
 import type { RouteCoordinator, AppliedRouteDecision } from '../application/route-coordinator.ts'
@@ -10,6 +10,7 @@ import type { PlayurlAdapter } from './playurl.ts'
 interface XhrMeta {
   method: string
   originalUrl: string
+  managedBilibili: boolean
   targetUrl: string
   applied: AppliedRouteDecision | null
   startedAt: number
@@ -19,6 +20,7 @@ interface XhrMeta {
   playurl: boolean
   transformedText: string | null
   transformedJson: unknown
+  catalogOnlyAtTransform: boolean | null
   request: RequestContext | null
   generation: GenerationId
   epoch: EpochId
@@ -49,6 +51,11 @@ const hostOf = (value: string): string => { try { return new URL(value, location
 const sameUrl = (responseUrl: string, requestUrl: string): boolean => {
   try { return !!responseUrl && new URL(responseUrl, location.href).href === new URL(requestUrl, location.href).href } catch { return false }
 }
+const catalogTarget = (applied: AppliedRouteDecision | null): boolean => !!applied?.url
+  && applied.decision.action === 'rewrite' && applied.decision.routeType === 'catalog-generated'
+  && isCatalogHost(applied.decision.host) && hostOf(applied.url) === applied.decision.host
+const blockedPlayurl = (): { code: number; message: string } => ({ code: -1, message: 'BiliCDN Catalog route unavailable' })
+const blockedPlayurlText = (): string => JSON.stringify(blockedPlayurl())
 
 const copyResponseSurface = (target: Response, source: Response): Response => {
   for (const key of ['url', 'redirected', 'type'] as const) {
@@ -143,13 +150,23 @@ export class TransportAdapter {
       if (isPlayurlApi(originalUrl)) {
         const generation = self.session.get().generation, responseKey = `api-fetch-${++self.#requestSerial}`
         const response = await native(sourceRequest, false)
+        if (self.settings.get().disabled) return response
+        const catalogOnly = (): boolean => !self.settings.get().disabled && self.routes.isCatalogOnly()
+        const blocked = (): Response => copyResponseSurface(new Response(blockedPlayurlText(), {
+          status: 503, headers: { 'content-type': 'application/json; charset=utf-8' },
+        }), response)
         let text: string
-        try { text = await response.text() } catch { return response }
+        try { text = await response.text() } catch { return catalogOnly() ? blocked() : response }
+        if (self.settings.get().disabled) {
+          return copyResponseSurface(new Response(text, { status: response.status, statusText: response.statusText, headers: response.headers }), response)
+        }
         try {
           const payload: unknown = JSON.parse(text)
-          if (self.session.isGeneration(generation) && !self.settings.get().disabled) self.playurl.transform(payload, 'trusted-api', responseKey)
+          const accepted = self.session.isGeneration(generation) && !self.settings.get().disabled
+            ? self.playurl.transform(payload, 'trusted-api', responseKey) : false
+          if (catalogOnly() && !accepted) return blocked()
           text = JSON.stringify(payload)
-        } catch { /* preserve original body */ }
+        } catch { if (catalogOnly()) return blocked() }
         return copyResponseSurface(new Response(text, { status: response.status, statusText: response.statusText, headers: response.headers }), response)
       }
       const method = sourceRequest.method.toUpperCase()
@@ -163,6 +180,11 @@ export class TransportAdapter {
       }
       if (self.settings.get().disabled) return await native(sourceRequest, false)
       if (!self.session.isGeneration(generation)) {
+        if (self.routes.isCatalogOnly()) {
+          self.#stats.blocked++
+          self.#lastBlocked = Object.freeze({ method, host: hostOf(originalUrl), reason: 'catalog-unavailable' })
+          throw new TypeError('BiliCDN blocked stale media request: catalog-unavailable')
+        }
         // Never apply an old route plan after SPA, but still enforce current host restrictions.
         const original = self.routes.inspectOriginal(originalUrl)
         if (original.decision.action === 'block' || !original.url) {
@@ -172,18 +194,20 @@ export class TransportAdapter {
         return await native(sourceRequest, false)
       }
       const applied = method === 'GET' ? self.routes.apply(originalUrl) : self.routes.inspectOriginal(originalUrl)
-      if (applied.decision.action === 'block' || !applied.url) {
-        self.#stats.blocked++; self.#lastBlocked = Object.freeze({ method, host: hostOf(originalUrl), reason: applied.decision.reason })
-        throw new TypeError(`BiliCDN blocked media request: ${applied.decision.reason}`)
+      if (applied.decision.action === 'block' || !applied.url || (self.routes.isCatalogOnly() && !catalogTarget(applied))) {
+        const reason = applied.decision.action === 'block' ? applied.decision.reason : 'catalog-unavailable'
+        self.#stats.blocked++; self.#lastBlocked = Object.freeze({ method, host: hostOf(originalUrl), reason })
+        throw new TypeError(`BiliCDN blocked media request: ${reason}`)
       }
       const targetInput = applied.url === originalUrl ? sourceRequest : new Request(applied.url, sourceRequest)
+      const outbound = self.routes.isCatalogOnly() ? new Request(targetInput, { redirect: 'error' }) : targetInput
       const startedAt = self.now()
       const request = self.#request(applied, originalUrl, applied.url, startedAt, method)
       activeRequest = request
       self.routes.requestStarted(request)
       let response: Response
       try {
-        response = await native(targetInput, false)
+        response = await native(outbound, false)
       } catch (error) {
         const signal = sourceRequest.signal
         const aborted = signal?.aborted === true || (error instanceof DOMException && error.name === 'AbortError')
@@ -264,9 +288,10 @@ export class TransportAdapter {
         applied = method.toUpperCase() === 'GET' ? self.routes.apply(originalUrl) : self.routes.inspectOriginal(originalUrl)
         if (applied.url) targetUrl = applied.url
       }
-      self.#xhrMeta.set(this, { method: String(method).toUpperCase(), originalUrl, targetUrl, applied,
+      self.#xhrMeta.set(this, { method: String(method).toUpperCase(), originalUrl,
+        managedBilibili: self.routes.isBilibiliMedia(originalUrl), targetUrl, applied,
         startedAt: 0, responseAt: 0, bytes: 0, settled: false, playurl,
-        transformedText: null, transformedJson: undefined, request: null,
+        transformedText: null, transformedJson: undefined, catalogOnlyAtTransform: null, request: null,
         generation: self.session.get().generation, epoch: self.session.get().epoch,
         responseKey: `api-xhr-${++self.#requestSerial}`, cleanup: () => undefined, async, headers: [],
         pendingSend: false, abortedBeforeSend: false,
@@ -288,11 +313,29 @@ export class TransportAdapter {
         this.responseType = responseType; this.timeout = timeout; this.withCredentials = credentials
         for (const [key, value] of meta.headers) Reflect.apply(originalSetHeader, this, [key, value])
       }
-      if (self.settings.get().disabled || !self.session.isGeneration(meta.generation)) {
+      if (self.settings.get().disabled) {
         if (meta.targetUrl !== meta.originalUrl) reopen(meta.originalUrl)
         self.#stats.nativeCalled++; Reflect.apply(originalSend, this, [body ?? null]); return
       }
-      if (!meta.playurl && self.routes.recognizesMedia(meta.originalUrl)) {
+      if (meta.playurl && self.routes.isCatalogOnly() && !['', 'text', 'json'].includes(this.responseType)) {
+        self.#stats.blocked++
+        self.#lastBlocked = Object.freeze({ method: meta.method, host: hostOf(meta.originalUrl), reason: 'playurl-response-type' })
+        queueMicrotask(() => { this.dispatchEvent(new Event('error')); this.dispatchEvent(new Event('loadend')) })
+        return
+      }
+      const strictManaged = self.routes.isCatalogOnly()
+        && (meta.managedBilibili || self.routes.recognizesMedia(meta.originalUrl))
+      if (!self.session.isGeneration(meta.generation) && strictManaged) {
+        self.#stats.blocked++
+        self.#lastBlocked = Object.freeze({ method: meta.method, host: hostOf(meta.originalUrl), reason: 'catalog-unavailable' })
+        queueMicrotask(() => { this.dispatchEvent(new Event('error')); this.dispatchEvent(new Event('loadend')) })
+        return
+      }
+      if (!self.session.isGeneration(meta.generation)) {
+        if (meta.targetUrl !== meta.originalUrl) reopen(meta.originalUrl)
+        self.#stats.nativeCalled++; Reflect.apply(originalSend, this, [body ?? null]); return
+      }
+      if (!meta.playurl && (self.routes.recognizesMedia(meta.originalUrl) || strictManaged)) {
         if (!meta.applied) self.#stats.mediaRecognized++
         const next = meta.method === 'GET' ? self.routes.apply(meta.originalUrl) : self.routes.inspectOriginal(meta.originalUrl)
         if (next.url && next.url !== meta.targetUrl) {
@@ -305,9 +348,11 @@ export class TransportAdapter {
         queueMicrotask(() => { this.dispatchEvent(new Event('error')); this.dispatchEvent(new Event('loadend')) })
         return
       }
-      if (meta.applied?.decision.action === 'block' || (meta.applied && !meta.applied.url)) {
+      if (meta.applied?.decision.action === 'block' || (meta.applied && !meta.applied.url)
+        || (strictManaged && !catalogTarget(meta.applied))) {
         self.#stats.blocked++
-        self.#lastBlocked = Object.freeze({ method: meta.method, host: hostOf(meta.originalUrl), reason: meta.applied.decision.reason })
+        const reason = meta.applied?.decision.action === 'block' ? meta.applied.decision.reason : 'catalog-unavailable'
+        self.#lastBlocked = Object.freeze({ method: meta.method, host: hostOf(meta.originalUrl), reason })
         queueMicrotask(() => { this.dispatchEvent(new Event('error')); this.dispatchEvent(new Event('loadend')) })
         return
       }
@@ -379,28 +424,52 @@ export class TransportAdapter {
       if (responseDescriptor?.get && responseDescriptor.configurable) {
         Object.defineProperty(proto, 'response', { ...responseDescriptor, get(this: XMLHttpRequest) {
           const raw: unknown = responseDescriptor.get?.call(this), meta = self.#xhrMeta.get(this)
-          if (!meta?.playurl || self.settings.get().disabled || !self.session.isGeneration(meta.generation) || this.readyState !== 4) return raw
-          if (this.responseType === 'json' && raw && typeof raw === 'object') {
-            if (meta.transformedJson === undefined) { self.playurl.transform(raw, 'trusted-api', meta.responseKey); meta.transformedJson = raw }
+          if (!meta?.playurl || self.settings.get().disabled) return raw
+          if (this.readyState !== 4) return self.routes.isCatalogOnly()
+            ? (this.responseType === '' || this.responseType === 'text' ? '' : null) : raw
+          if (!self.session.isGeneration(meta.generation) && self.routes.isCatalogOnly()) return blockedPlayurl()
+          if (!self.session.isGeneration(meta.generation)) return raw
+          const strict = self.routes.isCatalogOnly()
+          if (meta.catalogOnlyAtTransform !== strict) {
+            meta.transformedText = null; meta.transformedJson = undefined; meta.catalogOnlyAtTransform = strict
+          }
+          if (this.responseType === 'json') {
+            if (meta.transformedJson === undefined) {
+              try {
+                const accepted = raw && typeof raw === 'object' && self.playurl.transform(raw, 'trusted-api', meta.responseKey)
+                meta.transformedJson = strict && !accepted ? blockedPlayurl() : raw
+              } catch { meta.transformedJson = strict ? blockedPlayurl() : raw }
+            }
             return meta.transformedJson
           }
           if ((this.responseType === '' || this.responseType === 'text') && typeof raw === 'string') {
             if (meta.transformedText === null) {
-              try { const payload: unknown = JSON.parse(raw); self.playurl.transform(payload, 'trusted-api', meta.responseKey); meta.transformedText = JSON.stringify(payload) }
-              catch { meta.transformedText = raw }
+              try {
+                const payload: unknown = JSON.parse(raw), accepted = self.playurl.transform(payload, 'trusted-api', meta.responseKey)
+                meta.transformedText = strict && !accepted ? blockedPlayurlText() : JSON.stringify(payload)
+              } catch { meta.transformedText = strict ? blockedPlayurlText() : raw }
             }
             return meta.transformedText
           }
-          return raw
+          return strict ? blockedPlayurl() : raw
         } })
       }
       if (responseTextDescriptor?.get && responseTextDescriptor.configurable) {
         Object.defineProperty(proto, 'responseText', { ...responseTextDescriptor, get(this: XMLHttpRequest) {
           const raw = String(responseTextDescriptor.get?.call(this) ?? ''), meta = self.#xhrMeta.get(this)
-          if (!meta?.playurl || self.settings.get().disabled || !self.session.isGeneration(meta.generation) || this.readyState !== 4) return raw
+          if (!meta?.playurl || self.settings.get().disabled) return raw
+          if (this.readyState !== 4) return self.routes.isCatalogOnly() ? '' : raw
+          if (!self.session.isGeneration(meta.generation) && self.routes.isCatalogOnly()) return blockedPlayurlText()
+          if (!self.session.isGeneration(meta.generation)) return raw
+          const strict = self.routes.isCatalogOnly()
+          if (meta.catalogOnlyAtTransform !== strict) {
+            meta.transformedText = null; meta.transformedJson = undefined; meta.catalogOnlyAtTransform = strict
+          }
           if (meta.transformedText !== null) return meta.transformedText
-          try { const payload: unknown = JSON.parse(raw); self.playurl.transform(payload, 'trusted-api', meta.responseKey); meta.transformedText = JSON.stringify(payload) }
-          catch { meta.transformedText = raw }
+          try {
+            const payload: unknown = JSON.parse(raw), accepted = self.playurl.transform(payload, 'trusted-api', meta.responseKey)
+            meta.transformedText = strict && !accepted ? blockedPlayurlText() : JSON.stringify(payload)
+          } catch { meta.transformedText = strict ? blockedPlayurlText() : raw }
           return meta.transformedText
         } })
       }

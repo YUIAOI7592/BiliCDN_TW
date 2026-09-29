@@ -19,6 +19,7 @@ import { MeasurementController } from '../src-v2/application/measurement-control
 import { PlayerMonitor } from '../src-v2/application/player-monitor.ts'
 import { PlayerAdapter } from '../src-v2/adapters/player.ts'
 import { PlayurlAdapter } from '../src-v2/adapters/playurl.ts'
+import { PagePlayinfoAdapter } from '../src-v2/adapters/page-playinfo.ts'
 import type { PlayerPort, VideoSnapshot } from '../src-v2/application/ports.ts'
 
 let passed = 0
@@ -37,6 +38,18 @@ class FakeStorage implements StoragePort {
   }
   async withLock<T>(_name: string, task: () => Promise<T> | T): Promise<T> { return await task() }
   remote<T>(key: string, value: T): void { this.values.set(key, structuredClone(value)); for (const listener of this.listeners.get(key) ?? []) listener(value, true) }
+}
+
+class DelayedSettingsStorage extends FakeStorage {
+  holdNextSettingsLock = false
+  releaseSettingsLock: () => void = () => undefined
+  override async withLock<T>(name: string, task: () => Promise<T> | T): Promise<T> {
+    if (name === 'settings' && this.holdNextSettingsLock) {
+      this.holdNextSettingsLock = false
+      await new Promise<void>(resolve => { this.releaseSettingsLock = resolve })
+    }
+    return await super.withLock(name, task)
+  }
 }
 
 const now = 2_000_000_000_000
@@ -179,6 +192,7 @@ equal(invalidHintVault.candidates(invalidHintTrustedRep!, new Set()).native[0]?.
 const authoritySession = new SessionStore(); authoritySession.beginGeneration(false)
 const authorityState = authoritySession.beginEpoch(), authorityStorage = new FakeStorage()
 const authoritySettings = new SettingsStore(authorityStorage, () => now)
+await authoritySettings.update({ considerNativeSources: true })
 const authorityRestrictions = new RestrictionStore(authorityStorage, () => now)
 const authorityEvidence = new EvidenceStore(authorityStorage, () => now)
 const plannedVault = new SignedRouteVault(); plannedVault.reset(authorityState.generation, authorityState.epoch)
@@ -272,6 +286,7 @@ equal(restoredUserRestriction.has(TRUSTED_CATALOG[0], 'audio', 'black'), true,
 equal(restoredUserRestriction.list()[0]?.kind, 'all', 'existing user-created blacklist displays its effective scope')
 
 const settings = new SettingsStore(storage, () => now), evidenceStore = new EvidenceStore(storage, () => now), session = new SessionStore()
+await settings.update({ considerNativeSources: true })
 await evidenceStore.record(TRUSTED_CATALOG[0], 'video', { requestId: 'remote-clear', at: now, source: 'transport', outcome: 'success', throughputMbps: 8, ttfbMs: 20, failureKind: null })
 check(evidenceStore.get(TRUSTED_CATALOG[0], 'video'), 'evidence store records local result')
 storage.remote('bilicdn.v2.routeEvidence', { schema: 2, records: {}, updatedAt: now + 1 })
@@ -280,6 +295,151 @@ const legacyOnly = new FakeStorage(); legacyOnly.set('cdnHealth', { poisoned: tr
 const freshSettings = new SettingsStore(legacyOnly, () => now)
 equal(freshSettings.get().codec, 'av1', 'v2 settings ignore every v1 key')
 equal([...legacyOnly.values.keys()].includes('bilicdn.v2.settings'), false, 'reading defaults does not migrate legacy data')
+equal(freshSettings.get().considerNativeSources, false, 'Native source use defaults off without stored v2 settings')
+const nativeSettingStorage = new FakeStorage()
+nativeSettingStorage.set('bilicdn.v2.settings', { schema: 2, disabled: false, codec: 'hevc', updatedAt: now - 10 })
+const nativeSettings = new SettingsStore(nativeSettingStorage, () => now)
+equal(nativeSettings.get().considerNativeSources, false, 'existing schema 2 settings without Native toggle default off')
+equal(nativeSettings.get().codec, 'hevc', 'missing Native toggle preserves existing schema 2 preferences')
+await nativeSettings.update({ considerNativeSources: true })
+equal(nativeSettings.get().considerNativeSources, true, 'Native source permission can be enabled')
+const nativeOtherTab = new SettingsStore(nativeSettingStorage, () => now)
+equal(nativeOtherTab.get().considerNativeSources, true,
+  'Native source permission persists for another tab')
+nativeSettingStorage.remote('bilicdn.v2.settings', { ...nativeSettings.get(), considerNativeSources: false,
+  updatedAt: nativeSettings.get().updatedAt + 1 })
+equal(nativeSettings.get().considerNativeSources, false, 'remote settings can turn Native source use off')
+equal(nativeOtherTab.get().considerNativeSources, false, 'remote Native switch reaches another open tab')
+nativeSettingStorage.remote('bilicdn.v2.settings', { ...nativeSettings.get(), considerNativeSources: 'true',
+  updatedAt: nativeSettings.get().updatedAt + 1 })
+equal(nativeSettings.get().considerNativeSources, false, 'non-boolean stored Native permission cannot enable Native use')
+await nativeSettings.reset()
+equal(nativeSettings.get().considerNativeSources, false, 'settings reset leaves Native source use off')
+const futureSettingsStorage = new FakeStorage()
+const futureResetTab = new SettingsStore(futureSettingsStorage, () => now)
+const futureOtherTab = new SettingsStore(futureSettingsStorage, () => now)
+futureSettingsStorage.remote('bilicdn.v2.settings', {
+  ...futureResetTab.get(), considerNativeSources: true, updatedAt: now + 60_000,
+})
+equal(futureOtherTab.get().considerNativeSources, true,
+  'other tab receives a Native-on setting with a future timestamp')
+await futureResetTab.reset()
+futureSettingsStorage.remote('bilicdn.v2.settings', futureSettingsStorage.get('bilicdn.v2.settings', null))
+equal(futureOtherTab.get().considerNativeSources, false,
+  'settings reset propagates Native-off across tabs even after a future timestamp')
+const delayedStorage = new DelayedSettingsStorage(), delayedSettings = new SettingsStore(delayedStorage, () => now)
+await delayedSettings.update({ considerNativeSources: true })
+const delayedSession = new SessionStore(), delayedState = delayedSession.beginGeneration(false)
+const delayedVault = new SignedRouteVault(); delayedVault.reset(delayedState.generation, delayedState.epoch)
+const delayedRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/delayed/video.m4s?signature=delayed'
+delayedVault.register({ generation: delayedState.generation, epoch: delayedState.epoch,
+  kind: 'video', key: 'delayed', height: 1080, codec: 'av1', bandwidth: 1_000_000,
+  urls: [delayedRoot], source: 'trusted-api' })
+const delayedRoutes = new RouteCoordinator(clock, delayedSession, delayedSettings,
+  new RestrictionStore(delayedStorage, () => now), new EvidenceStore(delayedStorage, () => now), delayedVault)
+equal(delayedRoutes.apply(delayedRoot).decision.routeType, 'root-original',
+  'delayed-lock fixture initially permits Native-on original')
+delayedStorage.holdNextSettingsLock = true
+const pendingNativeOff = delayedSettings.update({ considerNativeSources: false })
+equal(delayedSettings.get().considerNativeSources, false,
+  'turning Native off takes effect before storage lock callback completes')
+equal(delayedRoutes.apply(delayedRoot).decision.routeType, 'catalog-generated',
+  'pre-dispatch routing obeys pending Native-off update')
+delayedStorage.remote('bilicdn.v2.settings', { ...delayedSettings.get(), considerNativeSources: true, updatedAt: now + 100 })
+equal(delayedSettings.get().considerNativeSources, false,
+  'remote Native-on update cannot reopen Native while a local OFF write is pending')
+delayedStorage.releaseSettingsLock()
+await pendingNativeOff
+equal(delayedSettings.get().considerNativeSources, false, 'pending Native-off write completes with OFF state')
+await delayedSettings.update({ considerNativeSources: true })
+delayedStorage.holdNextSettingsLock = true
+const pendingNativeReset = delayedSettings.reset()
+equal(delayedSettings.get().considerNativeSources, false,
+  'settings reset defaults Native use OFF before storage lock callback completes')
+equal(delayedRoutes.apply(delayedRoot).decision.routeType, 'catalog-generated',
+  'pre-dispatch routing obeys pending settings reset')
+delayedStorage.releaseSettingsLock()
+await pendingNativeReset
+const reuseStorage = new FakeStorage(), reuseSettings = new SettingsStore(reuseStorage, () => now)
+await reuseSettings.update({ considerNativeSources: true })
+const reuseSession = new SessionStore(), reuseState = reuseSession.beginGeneration(false)
+const reuseVault = new SignedRouteVault(); reuseVault.reset(reuseState.generation, reuseState.epoch)
+const reuseRoutes = new RouteCoordinator(clock, reuseSession, reuseSettings,
+  new RestrictionStore(reuseStorage, () => now), new EvidenceStore(reuseStorage, () => now), reuseVault)
+const reusePlayurl = new PlayurlAdapter(reuseSession, reuseVault, reuseRoutes, reuseSettings)
+const reusedPageRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/reuse/page.m4s?signature=page'
+const reusedPagePayload = { data: { dash: { video: [{ id: 80, codecid: 13, height: 1080,
+  bandwidth: 1_000_000, base_url: reusedPageRoot, backup_url: [] as string[] }], audio: [] } } }
+reusePlayurl.transform(reusedPagePayload, 'page-hint')
+equal(reusedPagePayload.data.dash.video[0]?.base_url, reusedPageRoot,
+  'Native-on page hint initially preserves its original URL')
+await reuseSettings.update({ considerNativeSources: false })
+reuseRoutes.invalidateForUserSetting()
+reusePlayurl.transform(reusedPagePayload, 'page-hint')
+check(TRUSTED_CATALOG.includes(new URL(reusedPagePayload.data.dash.video[0]?.base_url ?? '').host as typeof TRUSTED_CATALOG[number]),
+  'same-generation seen page hint is reprocessed to Catalog after Native switch turns off')
+await reuseSettings.update({ considerNativeSources: true })
+await reuseSettings.update({ considerNativeSources: false })
+reusedPagePayload.data.dash.video[0]!.base_url = reusedPageRoot
+reusePlayurl.transform(reusedPagePayload, 'page-hint')
+check(TRUSTED_CATALOG.includes(new URL(reusedPagePayload.data.dash.video[0]?.base_url ?? '').host as typeof TRUSTED_CATALOG[number]),
+  'OFF-to-ON-to-OFF transition without intermediate transform cannot reuse unsafe page-hint cache')
+const mutatedPageRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/reuse/page-mutated.m4s?signature=changed'
+reusedPagePayload.data.dash.video[0]!.base_url = mutatedPageRoot
+reusePlayurl.transform(reusedPagePayload, 'page-hint')
+check(TRUSTED_CATALOG.includes(new URL(reusedPagePayload.data.dash.video[0]?.base_url ?? '').host as typeof TRUSTED_CATALOG[number]),
+  'mutated same-object page hint is re-sanitized while Native stays OFF')
+equal(new URL(reusedPagePayload.data.dash.video[0]?.base_url ?? '').search, new URL(mutatedPageRoot).search,
+  'same-object page hint mutation preserves its newly requested query during Catalog rewrite')
+await reuseSettings.update({ considerNativeSources: true })
+reuseRoutes.invalidateForUserSetting()
+const reusedApiRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/reuse/api.m4s?signature=api'
+const reusedApiPayload = { data: { dash: { video: [{ id: 64, codecid: 13, height: 720,
+  bandwidth: 1_000_000, base_url: reusedApiRoot, backup_url: [] as string[] }], audio: [] } } }
+reusePlayurl.transform(reusedApiPayload, 'trusted-api', 'reuse-api-response')
+equal(reusedApiPayload.data.dash.video[0]?.base_url, reusedApiRoot,
+  'Native-on trusted response initially preserves its original URL')
+await reuseSettings.update({ considerNativeSources: false })
+reuseRoutes.invalidateForUserSetting()
+reusePlayurl.transform(reusedApiPayload, 'trusted-api', 'reuse-api-response')
+check(TRUSTED_CATALOG.includes(new URL(reusedApiPayload.data.dash.video[0]?.base_url ?? '').host as typeof TRUSTED_CATALOG[number]),
+  'same-generation response key is reprocessed to Catalog after Native switch turns off')
+await reuseSettings.update({ considerNativeSources: true })
+await reuseSettings.update({ considerNativeSources: false })
+reusedApiPayload.data.dash.video[0]!.base_url = reusedApiRoot
+reusePlayurl.transform(reusedApiPayload, 'trusted-api', 'reuse-api-response')
+check(TRUSTED_CATALOG.includes(new URL(reusedApiPayload.data.dash.video[0]?.base_url ?? '').host as typeof TRUSTED_CATALOG[number]),
+  'OFF-to-ON-to-OFF transition without intermediate transform cannot reuse unsafe responseKey cache')
+const mutatedApiRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/reuse/api-mutated.m4s?signature=changed-api'
+reusedApiPayload.data.dash.video[0]!.base_url = mutatedApiRoot
+reusePlayurl.transform(reusedApiPayload, 'trusted-api', 'reuse-api-response')
+check(TRUSTED_CATALOG.includes(new URL(reusedApiPayload.data.dash.video[0]?.base_url ?? '').host as typeof TRUSTED_CATALOG[number]),
+  'mutated same-object trusted payload is re-sanitized despite an already-seen responseKey')
+const epochReuseStorage = new FakeStorage(), epochReuseSettings = new SettingsStore(epochReuseStorage, () => now)
+const epochReuseSession = new SessionStore(), epochReuseState = epochReuseSession.beginGeneration(false)
+const epochReuseVault = new SignedRouteVault(); epochReuseVault.reset(epochReuseState.generation, epochReuseState.epoch)
+const epochReuseRoutes = new RouteCoordinator(clock, epochReuseSession, epochReuseSettings,
+  new RestrictionStore(epochReuseStorage, () => now), new EvidenceStore(epochReuseStorage, () => now), epochReuseVault)
+const epochReuseAdapter = new PlayurlAdapter(epochReuseSession, epochReuseVault, epochReuseRoutes, epochReuseSettings)
+const oldEpochRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/epoch-reuse/old/video.m4s?signature=old-epoch'
+const newEpochRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/epoch-reuse/new/video.m4s?signature=new-epoch'
+const oldEpochPayload = { data: { dash: { video: [{ id: 80, codecid: 13, height: 1080,
+  bandwidth: 1_000_000, base_url: oldEpochRoot, backup_url: [] as string[] }], audio: [] } } }
+check(epochReuseAdapter.transform(oldEpochPayload, 'trusted-api'), 'old trusted payload registers a representation')
+const oldEpochRep = epochReuseVault.match(oldEpochRoot).context?.representation
+check(oldEpochRep, 'old trusted payload has a vault identity before epoch reset')
+const nextEpochState = epochReuseSession.beginEpoch()
+epochReuseVault.reset(nextEpochState.generation, nextEpochState.epoch); epochReuseRoutes.resetEpoch()
+const newEpochRep = epochReuseVault.register({ generation: nextEpochState.generation, epoch: nextEpochState.epoch,
+  kind: 'video', key: 'new-epoch', height: 1080, codec: 'av1', bandwidth: 1_000_000,
+  urls: [newEpochRoot], source: 'trusted-api' })
+equal(newEpochRep, oldEpochRep, 'vault representation IDs are reused in a later epoch')
+epochReuseAdapter.transform(oldEpochPayload, 'trusted-api')
+const oldEpochOutput = oldEpochPayload.data.dash.video[0]?.base_url ?? ''
+check(!oldEpochOutput.includes('new-epoch') && (oldEpochOutput === ''
+  || (TRUSTED_CATALOG.includes(new URL(oldEpochOutput).host as typeof TRUSTED_CATALOG[number])
+    && new URL(oldEpochOutput).pathname === new URL(oldEpochRoot).pathname)),
+  'reused old trusted payload cannot inherit a new epoch representation root')
 const liveVault = new SignedRouteVault(), state = session.beginGeneration(false)
 liveVault.reset(state.generation, state.epoch)
 const liveRep = liveVault.register({ generation: state.generation, epoch: state.epoch, kind: 'video', key: '80:av1', height: 1080,
@@ -340,6 +500,8 @@ const passDecision: AppliedRouteDecision = { decision: { action: 'pass', id: dec
 const observations: TransportObservation[] = []
 const routeStub = {
   requestStarted(): void {},
+  isCatalogOnly(): boolean { return false },
+  isBilibiliMedia(url: string): boolean { return /\.bilivideo\.com\/|\.akamaized\.net\//.test(url) },
   recognizesMedia(url: string): boolean { return parseMediaUrl(url)?.kind !== 'unknown' },
   inspectOriginal(url: string): AppliedRouteDecision { return this.apply(url) },
   apply(url: string): AppliedRouteDecision { return { ...passDecision, url } },
@@ -348,10 +510,13 @@ const routeStub = {
 let transformed = 0
 const playurlStub = { transform(): boolean { transformed++; return true } }
 let disabled = false, blockHttpDns = true
-const settingsStub = { get: () => ({ disabled, blockHttpDns }) }
+const settingsStub = { get: () => ({ disabled, blockHttpDns, considerNativeSources: true }) }
 let nativeFetchCalls = 0, cancelReason: unknown = null
+let playurlFetchBody = JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } })
+let playurlFetchOverride: Response | null = null
 const nativeFetchUrls: string[] = []
 const nativeFetchMethods: string[] = []
+const nativeFetchRedirects: RequestRedirect[] = []
 const nativeFetchHeaders: (string | null)[] = []
 let streamedRequestBody = ''
 const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
@@ -359,9 +524,10 @@ const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promi
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
   nativeFetchUrls.push(url)
   nativeFetchMethods.push(input instanceof Request ? input.method : String(_init?.method ?? 'GET'))
+  nativeFetchRedirects.push(input instanceof Request ? input.redirect : String(_init?.redirect ?? 'follow') as RequestRedirect)
   nativeFetchHeaders.push(input instanceof Request ? input.headers.get('x-bilicdn-test') : null)
   if (url.includes('/stream-body.m4s') && input instanceof Request) streamedRequestBody = await input.text()
-  if (url.includes('/player/wbi/playurl')) return new Response(JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } }), { status: 200 })
+  if (url.includes('/player/wbi/playurl')) return playurlFetchOverride ?? new Response(playurlFetchBody, { status: 200 })
   let emitted = false
   return new Response(new ReadableStream<Uint8Array>({
     pull(controller) { if (!emitted) { emitted = true; controller.enqueue(new Uint8Array(70 * 1024)) } },
@@ -371,12 +537,18 @@ const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promi
 
 class FakeXhr extends EventTarget {
   method = ''; url = ''; readyState = 0; status = 200; responseURL = ''; responseType: XMLHttpRequestResponseType = ''
+  finalResponseUrl: string | null = null
+  rawResponseText: string | null = null
+  holdAtLoading = false
   timeout = 0; withCredentials = false
   payload: unknown = { ok: true }; nativeSends = 0
   get response(): unknown { return this.payload }
-  get responseText(): string { return JSON.stringify(this.payload) }
+  get responseText(): string { return this.rawResponseText ?? JSON.stringify(this.payload) }
   open(method: string, url: string | URL): void { this.method = method; this.url = String(url); this.responseURL = this.url; this.readyState = 1 }
-  send(): void { this.nativeSends++; this.readyState = 4; this.dispatchEvent(new Event('readystatechange')); this.dispatchEvent(new Event('load')); this.dispatchEvent(new Event('loadend')) }
+  send(): void { this.nativeSends++; if (this.finalResponseUrl) this.responseURL = this.finalResponseUrl;
+    this.readyState = this.holdAtLoading ? 3 : 4
+    this.dispatchEvent(new Event('readystatechange'))
+    if (!this.holdAtLoading) { this.dispatchEvent(new Event('load')); this.dispatchEvent(new Event('loadend')) } }
   abort(): void { this.dispatchEvent(new Event('abort')) }
   setRequestHeader(_name: string, _value: string): void {}
 }
@@ -746,7 +918,9 @@ check(startupRep, 'startup stall fixture has a representation')
 let stallNow = now, startupReloads = 0
 const stallEvidence = new EvidenceStore(new FakeStorage(), () => stallNow)
 const stallRestrictions = new RestrictionStore(new FakeStorage(), () => stallNow)
-const stallRoutes = new RouteCoordinator({ now: () => stallNow }, startupSession, new SettingsStore(new FakeStorage(), () => stallNow),
+const stallSettings = new SettingsStore(new FakeStorage(), () => stallNow)
+await stallSettings.update({ considerNativeSources: true })
+const stallRoutes = new RouteCoordinator({ now: () => stallNow }, startupSession, stallSettings,
   stallRestrictions, stallEvidence, startupVault)
 if (startupRep) {
   const exactCatalogBackup = `https://${TRUSTED_CATALOG[0]}/upgcxcode/startup/video.m4s?k=backup-exact`
@@ -830,7 +1004,7 @@ if (incompatibleRep) {
     decisionId: failed.decision.id, representation: incompatibleRep, kind: 'video', routeType: 'catalog-generated',
     originalHost: new URL(incompatibleRoot).host, targetHost: badCatalog!.host, finalHost: badCatalog!.host,
     streamKey: failed.streamKey, status: 403, bytes: 0, ttfbMs: 40, elapsedMs: 100,
-    completedAt: now + 100, outcome: 'failure' })
+    completedAt: now + 100, outcome: 'failure', responseUrlMatchesRequest: true })
   const after403 = incompatibleRoutes.apply(incompatibleRoot)
   check(after403.url && after403.decision.host !== badCatalog?.host,
     'a per-stream Catalog 403 permits the next request to use a different legal host')
@@ -887,7 +1061,8 @@ const challengeApplied: AppliedRouteDecision = { decision: { action: 'rewrite', 
   routeType: 'catalog-generated', host: TRUSTED_CATALOG[1], candidate: { type: 'catalog-generated', host: TRUSTED_CATALOG[1], kind: 'video', catalogIndex: 1 }, ranking: [] },
   url: `https://${TRUSTED_CATALOG[1]}/upgcxcode/a/b/challenge.m4s`, context: { generation: generationId(1), epoch: epochId(1), representation: representationId('video:test'), kind: 'video', authorityRevision: 1 },
   streamKey: 'challenge', sourceHost: TRUSTED_CATALOG[0] }
-const challengeRoutes = { challenge: () => { challengeCalls++; return challengeApplied }, recordChallenge: async () => { challengeRecords++ } }
+const challengeRoutes = { isCatalogOnly: () => false,
+  challenge: () => { challengeCalls++; return challengeApplied }, recordChallenge: async () => { challengeRecords++ } }
 const challengeFetch = async (): Promise<Response> => { challengeFetches++; return directRangeResponse(challengeApplied.url ?? '', 70 * 1024) }
 const measurement = new MeasurementController(challengeRoutes as never, new FakeStorage(), challengeFetch as typeof fetch, () => now)
 const baseMeasurement = { generationActive: true, representation: representationId('video:test'), demand: { kind: 'video' as const, requiredMbps: 8, highDemand: false },
@@ -906,7 +1081,7 @@ const redirectChallengeFetch = async (_input: RequestInfo | URL, init?: RequestI
   return new Response(new Uint8Array(70 * 1024), { status: 206 })
 }
 let redirectedChallengeSamples = 0
-const redirectChallengeRoutes = { challenge: () => challengeApplied,
+const redirectChallengeRoutes = { isCatalogOnly: () => false, challenge: () => challengeApplied,
   recordChallenge: async (_route: unknown, _bytes: number, _elapsed: number, _ttfb: number | null, outcome: string) => {
     if (outcome === 'success') redirectedChallengeSamples++
   } }
@@ -919,14 +1094,14 @@ equal(redirectedChallengeSamples, 0, 'redirected challenge cannot add host evide
 const redirectedResponse = new Response(new Uint8Array(70 * 1024), { status: 206 })
 Object.defineProperty(redirectedResponse, 'url', { value: 'https://upos-sz-mirrorhwov.bilivideo.com/upgcxcode/a/b/redirected.m4s' })
 let mismatchedChallengeSuccesses = 0
-const mismatchedChallenge = new MeasurementController({ challenge: () => challengeApplied,
+const mismatchedChallenge = new MeasurementController({ isCatalogOnly: () => false, challenge: () => challengeApplied,
   recordChallenge: async (_route: unknown, _bytes: number, _elapsed: number, _ttfb: number | null, outcome: string) => {
     if (outcome === 'success') mismatchedChallengeSuccesses++
   } } as never, new FakeStorage(), (async () => redirectedResponse) as typeof fetch, () => now)
 mismatchedChallenge.tick({ ...baseMeasurement, playableBufferSec: 30 })
 await new Promise(resolve => setTimeout(resolve, 0))
 equal(mismatchedChallengeSuccesses, 0, 'a mismatched response host cannot be credited to the challenged host')
-const missingHostChallenge = new MeasurementController({ challenge: () => challengeApplied,
+const missingHostChallenge = new MeasurementController({ isCatalogOnly: () => false, challenge: () => challengeApplied,
   recordChallenge: async (_route: unknown, _bytes: number, _elapsed: number, _ttfb: number | null, outcome: string) => {
     if (outcome === 'success') mismatchedChallengeSuccesses++
   } } as never, new FakeStorage(), (async () => new Response(new Uint8Array(70 * 1024), { status: 206 })) as typeof fetch, () => now)
@@ -938,7 +1113,7 @@ const preflightOptions = stallRoutes.startupOptions(startupRoot)
 check(preflightOptions && preflightOptions.candidates.length >= 2, 'preflight offers original and legal Catalog candidate')
 if (preflightOptions) {
   let preflightFetches = 0, committedHost: string | null = null, startupSamples = 0
-  const preflightRoutes = { startupOptions: () => preflightOptions,
+  const preflightRoutes = { isCatalogOnly: () => false, startupOptions: () => preflightOptions,
     commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
       committedHost = candidate?.host ?? null
       return candidate ? { host: candidate.host } : null
@@ -1071,6 +1246,7 @@ const outputStorage = new FakeStorage(), outputSession = new SessionStore()
 const outputState = outputSession.beginGeneration(false), outputVault = new SignedRouteVault()
 outputVault.reset(outputState.generation, outputState.epoch)
 const outputSettings = new SettingsStore(outputStorage, () => now)
+await outputSettings.update({ considerNativeSources: true })
 const outputRestrictions = new RestrictionStore(outputStorage, () => now)
 const outputEvidence = new EvidenceStore(outputStorage, () => now)
 const outputRoutes = new RouteCoordinator(clock, outputSession, outputSettings, outputRestrictions, outputEvidence, outputVault)
@@ -1342,6 +1518,7 @@ const transitionStorage = new FakeStorage(), transitionSession = new SessionStor
 const transitionState = transitionSession.beginGeneration(false), transitionVault = new SignedRouteVault()
 transitionVault.reset(transitionState.generation, transitionState.epoch)
 const transitionSettings = new SettingsStore(transitionStorage, () => now)
+await transitionSettings.update({ considerNativeSources: true })
 const transitionRestrictions = new RestrictionStore(transitionStorage, () => now)
 const transitionRoutes = new RouteCoordinator(clock, transitionSession, transitionSettings,
   transitionRestrictions, new EvidenceStore(transitionStorage, () => now), transitionVault)
@@ -1389,6 +1566,793 @@ transitionAdapter.transform({ data: { dash: { video: [restrictedTransition], aud
 await transitionRestrictions.add({ host: observedTransitionHost, type: 'black', kind: 'all', reason: 'regression', expireAt: now + 60_000 })
 check(transitionRoutes.apply(restrictedTransition.base_url).decision.host !== observedTransitionHost,
   'first-use affinity inheritance cannot bypass a newly blacklisted Native host')
+
+// Native source permission is a routing boundary, including URLs the player already received.
+const catalogStorage = new FakeStorage(), catalogSettings = new SettingsStore(catalogStorage, () => now)
+const catalogSession = new SessionStore(), catalogState = catalogSession.beginGeneration(false)
+const catalogVault = new SignedRouteVault(); catalogVault.reset(catalogState.generation, catalogState.epoch)
+const catalogRestrictions = new RestrictionStore(catalogStorage, () => now)
+const catalogEvidence = new EvidenceStore(catalogStorage, () => now)
+const catalogRoutes = new RouteCoordinator(clock, catalogSession, catalogSettings, catalogRestrictions, catalogEvidence, catalogVault)
+const catalogAdapter = new PlayurlAdapter(catalogSession, catalogVault, catalogRoutes, catalogSettings)
+const catalogVideoRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-only/video.m4s?signature=video-root'
+const catalogVideoBackup = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/catalog-only/backup/video-alt.m4s?signature=video-backup&part=2'
+const catalogAudioRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-only/audio.m4s?signature=audio-root'
+const catalogVideo = { id: 80, codecid: 13, height: 1080, bandwidth: 2_000_000,
+  base_url: catalogVideoRoot, backup_url: [catalogVideoBackup] }
+const catalogAudio = { id: 30280, bandwidth: 192_000, base_url: catalogAudioRoot,
+  backup_url: [] as string[] }
+check(catalogAdapter.transform({ data: { dash: { video: [catalogVideo], audio: [catalogAudio] } } }),
+  'Catalog-only fixture adopts trusted video and audio playurl')
+const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
+const catalogAudioRep = catalogVault.contextForUrl(catalogAudioRoot)?.representation
+check(catalogVideoRep && catalogAudioRep, 'Catalog-only fixture retains both original URLs privately for attribution')
+const catalogDemand = { kind: 'video' as const, requiredMbps: 5, highDemand: false }
+if (catalogVideoRep && catalogAudioRep) {
+  const options = catalogRoutes.startupOptions(catalogVideoRoot)
+  check(options && options.candidates.length > 0, 'Catalog-only startup has legal candidates')
+  check(options?.candidates.every(candidate => candidate.type === 'catalog-generated' && !candidate.original),
+    'Catalog-only startup never probes original or Native backup')
+  const catalogPlan = catalogRoutes.plan(catalogVideoRep, catalogDemand, 'startup')
+  equal(catalogPlan.routeType, 'catalog-generated', 'Catalog-only startup plan never chooses Native')
+  equal(catalogRoutes.apply(catalogVideoRoot).decision.routeType, 'catalog-generated',
+    'Catalog-only video request uses a Catalog decision')
+  equal(catalogRoutes.apply(catalogAudioRoot).decision.routeType, 'catalog-generated',
+    'Catalog-only audio request uses a Catalog decision')
+  check([catalogVideo.base_url, ...catalogVideo.backup_url, catalogAudio.base_url, ...catalogAudio.backup_url]
+    .every(url => !!url && TRUSTED_CATALOG.includes(new URL(url).host as typeof TRUSTED_CATALOG[number])),
+  'Catalog-only player primary and backup URLs all use built-in Catalog hosts')
+  check(![catalogVideo.base_url, ...catalogVideo.backup_url].includes(catalogVideoBackup),
+    'Catalog-only player output does not reuse the exact signed Native backup')
+  const signedBackupApplied = catalogRoutes.apply(catalogVideoBackup)
+  check(signedBackupApplied.url && signedBackupApplied.decision.routeType === 'catalog-generated',
+    'current-epoch signed backup is reselected through a Catalog decision')
+  if (signedBackupApplied.url) {
+    const requested = new URL(catalogVideoBackup), sent = new URL(signedBackupApplied.url)
+    equal(`${sent.pathname}${sent.search}`, `${requested.pathname}${requested.search}`,
+      'Catalog rewrite of signed backup preserves the requested backup path and query')
+  }
+  const deliveredCatalogBackup = catalogVideo.backup_url.find(url => new URL(url).host !== new URL(catalogVideo.base_url).host)
+  check(deliveredCatalogBackup, 'Catalog-only playurl delivers a distinct Catalog backup')
+  if (deliveredCatalogBackup) {
+    const deliveredApplied = catalogRoutes.apply(deliveredCatalogBackup)
+    equal(deliveredApplied.decision.routeType, 'catalog-generated', 'delivered Catalog backup retains Catalog provenance')
+    equal(deliveredApplied.url, deliveredCatalogBackup,
+      'delivered Catalog backup stays on the URL the player requested')
+  }
+  const challenger = catalogRoutes.challenge(catalogVideoRep, catalogDemand, true)
+  equal(challenger?.decision.routeType, 'catalog-generated', 'prefer-Native healthy exploration remains Catalog-only')
+  const failedCatalog = options?.candidates.find(candidate => candidate.type === 'catalog-generated')
+  if (failedCatalog) {
+    catalogRoutes.noteStartupProbeResult(failedCatalog, 403)
+    check(!catalogRoutes.startupOptions(catalogVideoRoot)?.candidates.some(candidate => candidate.host === failedCatalog.host),
+      'Catalog 403 removes that stream-host pairing from Catalog-only preflight')
+    check(catalogRoutes.plan(catalogVideoRep, catalogDemand, 'new-epoch').host !== failedCatalog.host,
+      'Catalog-only ranking does not revive a Catalog 403 host')
+  }
+}
+const opaqueCatalogUrl = 'https://upos-hz-mirrorakam.akamaized.net/opaque/catalog-only-audio?signature=opaque'
+const opaqueCatalogItem = { id: 30281, bandwidth: 192_000, base_url: opaqueCatalogUrl, backup_url: [] as string[] }
+catalogAdapter.transform({ data: { dash: { video: [], audio: [opaqueCatalogItem] } } }, 'page-hint')
+equal(opaqueCatalogItem.base_url, '', 'opaque signed B station audio is removed from Catalog-only player output')
+equal(catalogRoutes.apply(opaqueCatalogUrl).decision.reason, 'catalog-unreplaceable',
+  'opaque signed B station audio blocks rather than passing its Native URL')
+equal(catalogRoutes.inspectOriginal(catalogVideoRoot).decision.reason, 'catalog-only-non-get',
+  'recognized non-GET B station media cannot pass its Native URL')
+equal(catalogRoutes.apply('https://upos-hz-mirrorakam.akamaized.net/live-bvc/catalog-only.m4s').decision.reason,
+  'catalog-unreplaceable', 'non-replaceable B station media cannot pass its Native URL')
+equal(catalogRoutes.apply('https://cdn.example.net/unrelated/media.bin').decision.action, 'pass',
+  'unattributed third-party media keeps its original route')
+await catalogSettings.update({ fixedHost: TRUSTED_CATALOG[3] })
+catalogRoutes.invalidateForUserSetting()
+equal(catalogRoutes.apply(catalogVideoRoot).decision.host, TRUSTED_CATALOG[3],
+  'Catalog-only fixed host selects the requested legal Catalog node')
+await catalogSettings.update({ fixedHost: null, catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map(host => [host, false])) })
+catalogRoutes.invalidateForUserSetting()
+equal(catalogRoutes.apply(catalogVideoRoot).decision.reason, 'catalog-unavailable',
+  'no legal Catalog candidate blocks the original media request')
+if (catalogVideoRep) equal(catalogRoutes.challenge(catalogVideoRep, catalogDemand, true), null,
+  'no legal Catalog candidate starts no healthy probe')
+const noCatalogOutput = { id: 80, codecid: 13, height: 1080, bandwidth: 2_000_000,
+  base_url: catalogVideoRoot, backup_url: [catalogVideoBackup] }
+catalogAdapter.transform({ data: { dash: { video: [noCatalogOutput], audio: [] } } })
+equal(noCatalogOutput.base_url, '', 'no legal Catalog candidate emits no player primary')
+equal(noCatalogOutput.backup_url.length, 0, 'no legal Catalog candidate emits no player backups')
+catalogRoutes.setOriginalComparison(true)
+equal(catalogRoutes.apply(catalogVideoRoot).url, catalogVideoRoot,
+  'per-tab original comparison overrides saved Catalog-only mode')
+catalogRoutes.setOriginalComparison(false)
+await catalogSettings.update({ considerNativeSources: true, catalogOverrides: {} })
+catalogRoutes.invalidateForUserSetting()
+if (catalogVideoRep) {
+  const legacyPlan = catalogRoutes.plan(catalogVideoRep, catalogDemand, 'startup')
+  equal(legacyPlan.routeType, 'root-original', 'enabling Native sources preserves cold-start original route')
+  const nativeStartup = catalogRoutes.startupOptions(catalogVideoRoot)?.candidates.find(candidate => candidate.original)
+  check(nativeStartup, 'enabled Native mode includes the original in preflight')
+  const enabledOutput = catalogRoutes.playerOutput(catalogVideoRep, catalogVideoRoot, legacyPlan,
+    [catalogVideoRoot, catalogVideoBackup])
+  equal(enabledOutput.primary, catalogVideoRoot, 'enabled Native mode may offer the exact original primary')
+  check(enabledOutput.backups.includes(catalogVideoBackup), 'enabled Native mode may offer an exact Native backup')
+  await catalogSettings.update({ considerNativeSources: false })
+  catalogRoutes.invalidateForUserSetting()
+  equal(catalogRoutes.commitStartupChoice(catalogVideoRoot, nativeStartup ?? null, 'late-preflight'), null,
+    'late Native startup result cannot commit after switch to Catalog-only')
+  if (nativeStartup) {
+    await catalogRoutes.recordStartupSuccess(nativeStartup, 70 * 1024, 100, 10)
+    equal(catalogEvidence.get(nativeStartup.host, 'video'), null,
+      'late Native preflight cannot add new health evidence after switch')
+  }
+  equal(catalogRoutes.apply(catalogVideoBackup).decision.routeType, 'catalog-generated',
+    'old player Native backup is rechecked as a Catalog decision after switch')
+  equal(catalogSession.get().affinity, null, 'Native permission switch invalidates route affinity')
+}
+
+const overlapStorage = new FakeStorage(), overlapSession = new SessionStore()
+const overlapState = overlapSession.beginGeneration(false), overlapVault = new SignedRouteVault()
+overlapVault.reset(overlapState.generation, overlapState.epoch)
+const overlapRoot = `https://${TRUSTED_CATALOG[0]}/upgcxcode/catalog-overlap/video.m4s?signature=same-url`
+const overlapRep = overlapVault.register({ generation: overlapState.generation, epoch: overlapState.epoch,
+  kind: 'video', key: 'overlap', height: 1080, codec: 'av1', bandwidth: 1_000_000,
+  urls: [overlapRoot], source: 'trusted-api' })
+const overlapRoutes = new RouteCoordinator(clock, overlapSession, new SettingsStore(overlapStorage, () => now),
+  new RestrictionStore(overlapStorage, () => now), new EvidenceStore(overlapStorage, () => now), overlapVault)
+if (overlapRep) {
+  const sameUrlCatalog = overlapRoutes.apply(overlapRoot)
+  equal(sameUrlCatalog.url, overlapRoot, 'Catalog decision may yield the exact same URL as the original')
+  equal(sameUrlCatalog.decision.routeType, 'catalog-generated',
+    'same-host overlap is authorized by Catalog provenance, not Native provenance')
+  await overlapRoutes.observe({ generation: overlapState.generation, epoch: overlapState.epoch,
+    decisionId: sameUrlCatalog.decision.id, representation: overlapRep, kind: 'video', routeType: 'catalog-generated',
+    originalHost: new URL(overlapRoot).host, targetHost: sameUrlCatalog.decision.host ?? '',
+    finalHost: sameUrlCatalog.decision.host, responseUrlMatchesRequest: true,
+    streamKey: sameUrlCatalog.streamKey, status: 403, bytes: 0, ttfbMs: 20, elapsedMs: 100,
+    completedAt: now + 1, outcome: 'failure' })
+  const afterOverlap403 = overlapRoutes.apply(overlapRoot)
+  check(afterOverlap403.decision.routeType === 'catalog-generated'
+    && afterOverlap403.decision.host !== sameUrlCatalog.decision.host,
+  'Catalog 403 invalidates stream-host pairing even when original host equals Catalog target')
+}
+
+const backup403Storage = new FakeStorage(), backup403Session = new SessionStore()
+const backup403State = backup403Session.beginGeneration(false), backup403Vault = new SignedRouteVault()
+backup403Vault.reset(backup403State.generation, backup403State.epoch)
+const backup403Root = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/backup-403/root.m4s?signature=root'
+const backup403Url = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/backup-403/other.m4s?signature=backup'
+const backup403Rep = backup403Vault.register({ generation: backup403State.generation, epoch: backup403State.epoch,
+  kind: 'video', key: 'backup-403', height: 1080, codec: 'av1', bandwidth: 1_000_000,
+  urls: [backup403Root, backup403Url], source: 'trusted-api' })
+check(backup403Rep, 'known backup 403 fixture has a current-epoch representation')
+const backup403Routes = new RouteCoordinator(clock, backup403Session, new SettingsStore(backup403Storage, () => now),
+  new RestrictionStore(backup403Storage, () => now), new EvidenceStore(backup403Storage, () => now), backup403Vault)
+const backup403First = backup403Routes.apply(backup403Url)
+equal(backup403First.decision.routeType, 'catalog-generated', 'known signed backup initially selects Catalog')
+await backup403Routes.observe({ generation: backup403State.generation, epoch: backup403State.epoch,
+  decisionId: backup403First.decision.id, representation: backup403Rep, kind: 'video', routeType: 'catalog-generated',
+  originalHost: new URL(backup403Url).host, targetHost: backup403First.decision.host ?? '',
+  finalHost: backup403First.decision.host, responseUrlMatchesRequest: true,
+  streamKey: backup403First.streamKey, status: 403, bytes: 0, ttfbMs: 20, elapsedMs: 100,
+  completedAt: now + 2, outcome: 'failure' })
+const backup403Next = backup403Routes.apply(backup403Url)
+check(backup403Next.decision.routeType === 'catalog-generated'
+  && backup403Next.decision.host !== backup403First.decision.host,
+  'known backup request avoids a Catalog host after its own stream gets 403')
+
+const unmatched403Storage = new FakeStorage(), unmatched403Session = new SessionStore()
+unmatched403Session.beginGeneration(false)
+const unmatched403Vault = new SignedRouteVault()
+unmatched403Vault.reset(unmatched403Session.get().generation, unmatched403Session.get().epoch)
+const unmatched403Routes = new RouteCoordinator(clock, unmatched403Session, new SettingsStore(unmatched403Storage, () => now),
+  new RestrictionStore(unmatched403Storage, () => now), new EvidenceStore(unmatched403Storage, () => now), unmatched403Vault)
+const unmatched403Url = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/unmatched-403/video.m4s?signature=unmatched'
+const unmatched403First = unmatched403Routes.apply(unmatched403Url)
+equal(unmatched403First.decision.routeType, 'catalog-generated', 'unattributed B station stream initially selects Catalog')
+await unmatched403Routes.observe({ generation: unmatched403Session.get().generation, epoch: unmatched403Session.get().epoch,
+  decisionId: unmatched403First.decision.id, representation: null, kind: 'video', routeType: 'catalog-generated',
+  originalHost: new URL(unmatched403Url).host, targetHost: unmatched403First.decision.host ?? '',
+  finalHost: unmatched403First.decision.host, responseUrlMatchesRequest: true,
+  streamKey: unmatched403First.streamKey, status: 403, bytes: 0, ttfbMs: 20, elapsedMs: 100,
+  completedAt: now + 3, outcome: 'failure' })
+const unmatched403Next = unmatched403Routes.apply(unmatched403Url)
+check(unmatched403Next.decision.routeType === 'catalog-generated'
+  && unmatched403Next.decision.host !== unmatched403First.decision.host,
+  'unattributed B station stream avoids a Catalog host after its own 403')
+
+const redirectedStorage = new FakeStorage(), redirectedSession = new SessionStore()
+const redirectedState = redirectedSession.beginGeneration(false), redirectedVault = new SignedRouteVault()
+redirectedVault.reset(redirectedState.generation, redirectedState.epoch)
+const redirectedRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/redirected/video.m4s?signature=source'
+const redirectedRep = redirectedVault.register({ generation: redirectedState.generation, epoch: redirectedState.epoch,
+  kind: 'video', key: 'redirected', height: 1080, codec: 'av1', bandwidth: 1_000_000,
+  urls: [redirectedRoot], source: 'trusted-api' })
+check(redirectedRep, 'redirected XHR fixture has trusted representation')
+const redirectedEvidence = new EvidenceStore(redirectedStorage, () => now)
+const redirectedRoutes = new RouteCoordinator(clock, redirectedSession, new SettingsStore(redirectedStorage, () => now),
+  new RestrictionStore(redirectedStorage, () => now), redirectedEvidence, redirectedVault)
+const redirectedFirst = redirectedRoutes.apply(redirectedRoot)
+equal(redirectedFirst.decision.routeType, 'catalog-generated', 'XHR redirect fixture initially selects Catalog')
+const redirectedRequest = { requestId: requestId('catalog-xhr-redirect'), generation: redirectedState.generation,
+  epoch: redirectedState.epoch, decisionId: redirectedFirst.decision.id, representation: redirectedRep,
+  authorityRevision: redirectedRep ? redirectedVault.identity(redirectedRep)?.authorityRevision ?? null : null,
+  kind: 'video' as const, attributionStatus: 'matched' as const, attributionSource: 'exact' as const,
+  decisionStage: 'request' as const, routeType: 'catalog-generated' as const,
+  originalHost: new URL(redirectedRoot).host, targetHost: redirectedFirst.decision.host ?? '',
+  sourceHost: new URL(redirectedRoot).host, playurlHostChanged: false, playurlOutput: null,
+  urlChanged: true, hostChanged: true, startedAt: now }
+redirectedRoutes.requestStarted(redirectedRequest)
+await redirectedRoutes.observe({ request: redirectedRequest, generation: redirectedState.generation,
+  epoch: redirectedState.epoch, decisionId: redirectedFirst.decision.id, representation: redirectedRep,
+  kind: 'video', routeType: 'catalog-generated', originalHost: new URL(redirectedRoot).host,
+  targetHost: redirectedFirst.decision.host ?? '', finalHost: new URL(redirectedRoot).host,
+  responseUrlMatchesRequest: false, streamKey: redirectedFirst.streamKey, status: 206,
+  bytes: 70 * 1024, ttfbMs: 20, elapsedMs: 100, completedAt: now + 1, outcome: 'success' })
+equal(redirectedEvidence.get(new URL(redirectedRoot).host, 'video'), null,
+  'XHR redirected to Native host stays detached from successful health evidence')
+equal(redirectedSession.get().affinity, null, 'XHR redirected to Native host cannot confirm playback affinity')
+const redirectedNext = redirectedRoutes.apply(redirectedRoot)
+check(redirectedNext.decision.routeType === 'catalog-generated'
+  && redirectedNext.decision.host !== redirectedFirst.decision.host,
+  'XHR redirect away from Catalog invalidates that Catalog host for the same stream')
+
+const aliasStorage = new FakeStorage(), aliasSession = new SessionStore()
+const aliasState = aliasSession.beginGeneration(false), aliasVault = new SignedRouteVault()
+aliasVault.reset(aliasState.generation, aliasState.epoch)
+const aliasSettings = new SettingsStore(aliasStorage, () => now)
+const aliasRoutes = new RouteCoordinator(clock, aliasSession, aliasSettings,
+  new RestrictionStore(aliasStorage, () => now), new EvidenceStore(aliasStorage, () => now), aliasVault)
+const aliasAdapter = new PlayurlAdapter(aliasSession, aliasVault, aliasRoutes, aliasSettings)
+const aliasRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/aliases/primary.m4s?signature=primary'
+const aliasBackup = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/aliases/backup.m4s?signature=backup'
+const aliasItem = { id: 90, codecid: 13, height: 1080, bandwidth: 1_000_000,
+  baseUrl: aliasRoot, base_url: aliasRoot, backupUrl: [aliasBackup], backup_url: [aliasBackup] }
+check(aliasAdapter.transform({ data: { dash: { video: [aliasItem], audio: [] } } }),
+  'playurl with both field spellings is transformed')
+equal(aliasItem.baseUrl, aliasItem.base_url,
+  'Catalog-only playurl rewrites both primary field spellings to the same URL')
+equal(JSON.stringify(aliasItem.backupUrl), JSON.stringify(aliasItem.backup_url),
+  'Catalog-only playurl rewrites both backup field spellings to the same URLs')
+check([aliasItem.baseUrl, aliasItem.base_url, ...aliasItem.backupUrl, ...aliasItem.backup_url]
+  .every(url => !!url && TRUSTED_CATALOG.includes(new URL(url).host as typeof TRUSTED_CATALOG[number])),
+  'no Native signed URL remains in either playurl field spelling')
+
+const nestedStorage = new FakeStorage(), nestedSettings = new SettingsStore(nestedStorage, () => now)
+await nestedSettings.update({ considerNativeSources: true })
+const nestedSession = new SessionStore(), nestedState = nestedSession.beginGeneration(false)
+const nestedVault = new SignedRouteVault(); nestedVault.reset(nestedState.generation, nestedState.epoch)
+const nestedRoutes = new RouteCoordinator(clock, nestedSession, nestedSettings,
+  new RestrictionStore(nestedStorage, () => now), new EvidenceStore(nestedStorage, () => now), nestedVault)
+const nestedAdapter = new PlayurlAdapter(nestedSession, nestedVault, nestedRoutes, nestedSettings)
+const nestedVideoRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/video.m4s?signature=video'
+const dolbyRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/dolby.m4s?signature=dolby'
+const dolbyBackup = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/dolby-backup.m4s?signature=dolby-backup'
+const flacRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/flac.m4s?signature=flac'
+const flacBackup = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/flac-backup.m4s?signature=flac-backup'
+const nestedPayload = () => ({ data: { dash: {
+  video: [{ id: 80, codecid: 13, height: 1080, bandwidth: 1_000_000, base_url: nestedVideoRoot, backup_url: [] as string[] }],
+  audio: [] as unknown[],
+  dolby: { audio: [{ id: 30280, bandwidth: 448_000, base_url: dolbyRoot, backup_url: [dolbyBackup] }] },
+  flac: { audio: { id: 30251, bandwidth: 1_000_000, base_url: flacRoot, backup_url: [flacBackup] } },
+} } })
+const nativeOnNested = nestedPayload()
+check(nestedAdapter.transform(nativeOnNested, 'trusted-api'), 'Native-on nested audio fixture accepts valid DASH video')
+equal(nativeOnNested.data.dash.dolby.audio[0]?.base_url, dolbyRoot, 'Native-on preserves legacy Dolby audio URL')
+equal(nativeOnNested.data.dash.flac.audio.base_url, flacRoot, 'Native-on preserves legacy FLAC audio URL')
+await nestedSettings.update({ considerNativeSources: false }); nestedRoutes.invalidateForUserSetting()
+const strictNested = nestedPayload()
+check(nestedAdapter.transform(strictNested, 'trusted-api'), 'Catalog-only nested audio fixture accepts valid DASH video')
+const nestedAudioUrls = [strictNested.data.dash.dolby.audio[0]?.base_url ?? '',
+  ...strictNested.data.dash.dolby.audio[0]!.backup_url, strictNested.data.dash.flac.audio.base_url,
+  ...strictNested.data.dash.flac.audio.backup_url]
+check(nestedAudioUrls.every(url => url === '' || TRUSTED_CATALOG.includes(new URL(url).host as typeof TRUSTED_CATALOG[number])),
+  'Catalog-only playurl rewrites or clears every nested Dolby and FLAC audio primary and backup URL')
+
+const failureStorage = new FakeStorage(), failureSession = new SessionStore()
+const failureState = failureSession.beginGeneration(false), failureVault = new SignedRouteVault()
+failureVault.reset(failureState.generation, failureState.epoch)
+const failureEvidence = new EvidenceStore(failureStorage, () => now)
+const failureRoutes = new RouteCoordinator(clock, failureSession, new SettingsStore(failureStorage, () => now),
+  new RestrictionStore(failureStorage, () => now), failureEvidence, failureVault)
+const failureRoots = {
+  video: 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-failure/video.m4s?signature=video',
+  audio: 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-failure/audio.m4s?signature=audio',
+}
+for (const kind of ['video', 'audio'] as const) {
+  const root = failureRoots[kind]
+  const rep = failureVault.register({ generation: failureState.generation, epoch: failureState.epoch,
+    kind, key: `failure:${kind}`, height: kind === 'video' ? 1080 : 0, codec: kind === 'video' ? 'av1' : 'other',
+    bandwidth: kind === 'video' ? 2_000_000 : 192_000, urls: [root], source: 'trusted-api' })
+  check(rep, `Catalog failure fixture registers ${kind}`)
+  const applied = failureRoutes.apply(root)
+  equal(applied.decision.routeType, 'catalog-generated', `${kind} failure fixture targets Catalog`)
+  const targetHost = applied.decision.host ?? ''
+  const observed: TransportObservation = { generation: failureState.generation, epoch: failureState.epoch,
+    decisionId: applied.decision.id, representation: rep, kind, routeType: 'catalog-generated',
+    originalHost: new URL(root).host, targetHost, finalHost: null, responseUrlMatchesRequest: false,
+    streamKey: applied.streamKey, status: 0, bytes: 0, ttfbMs: null, elapsedMs: 100,
+    completedAt: now + (kind === 'video' ? 1 : 2), outcome: 'failure', failureKind: 'network' }
+  const { failureKind: _failureKind, ...redirected } = observed
+  await failureRoutes.observe({ ...redirected, finalHost: new URL(root).host, status: 206,
+    bytes: 70 * 1024, outcome: 'success' })
+  equal(failureEvidence.get(new URL(root).host, kind), null,
+    `${kind} response redirected to Native host cannot gain success evidence`)
+  equal(failureSession.get().affinity, null, 'detached response cannot establish playback affinity')
+  await failureRoutes.observe(observed)
+  check(failureEvidence.get(targetHost, kind)?.samples.some(sample => sample.outcome === 'failure'),
+    `${kind} Catalog network failure without response host still records transport failure`)
+  check((failureRoutes.snapshot().fallback as Record<string, unknown>)[kind],
+    `${kind} Catalog network failure without response host still plans recovery`)
+}
+
+const dispatchStorage = new FakeStorage(), dispatchSettings = new SettingsStore(dispatchStorage, () => now)
+await dispatchSettings.update({ considerNativeSources: true })
+const dispatchSession = new SessionStore(), dispatchState = dispatchSession.beginGeneration(false)
+const dispatchVault = new SignedRouteVault(); dispatchVault.reset(dispatchState.generation, dispatchState.epoch)
+const dispatchEvidence = new EvidenceStore(dispatchStorage, () => now)
+const dispatchRoutes = new RouteCoordinator(clock, dispatchSession, dispatchSettings,
+  new RestrictionStore(dispatchStorage, () => now), dispatchEvidence, dispatchVault)
+const dispatchPlayurl = new PlayurlAdapter(dispatchSession, dispatchVault, dispatchRoutes, dispatchSettings)
+const dispatchRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/dispatch/video.m4s?signature=private'
+const dispatchNativeBackup = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/dispatch/video.m4s?signature=backup'
+const dispatchItem = { id: 80, codecid: 13, height: 1080, bandwidth: 1_000_000,
+  base_url: dispatchRoot, backup_url: [dispatchNativeBackup] }
+dispatchPlayurl.transform({ data: { dash: { video: [dispatchItem], audio: [] } } })
+let gateDispatch = true
+const dispatchGate: { release: () => void } = { release: () => undefined }
+const dispatchMeasurement = { willGateStartup: () => gateDispatch,
+  prepareStartup: async (): Promise<void> => { await new Promise<void>(resolve => { dispatchGate.release = resolve }) },
+  noteUnpreflighted: (_reason: string): void => undefined }
+const dispatchTransport = new TransportAdapter(dispatchSession, dispatchSettings, dispatchRoutes,
+  dispatchPlayurl, dispatchMeasurement as never, () => now)
+dispatchTransport.install()
+equal(dispatchTransport.snapshot().hookState, 'installed', 'Catalog-only dispatch fixture installs Fetch and XHR hooks')
+const beforeToggleFetch = nativeFetchCalls
+const pendingToggleFetch = fakeWindow.fetch(dispatchRoot)
+equal(nativeFetchCalls, beforeToggleFetch, 'Native-on Fetch can wait for startup before send')
+await dispatchSettings.update({ considerNativeSources: false })
+dispatchRoutes.invalidateForUserSetting()
+dispatchGate.release()
+await pendingToggleFetch
+check(TRUSTED_CATALOG.includes(new URL(nativeFetchUrls.at(-1) ?? '').host as typeof TRUSTED_CATALOG[number]),
+  'Fetch rechecks Catalog-only mode after startup wait before native send')
+equal(nativeFetchRedirects.at(-1), 'error', 'Catalog-only Fetch media request rejects redirects')
+await dispatchSettings.update({ considerNativeSources: true })
+dispatchRoutes.invalidateForUserSetting()
+const pendingToggleXhr = new FakeXhr(); pendingToggleXhr.open('GET', dispatchRoot); pendingToggleXhr.send()
+equal(pendingToggleXhr.nativeSends, 0, 'Native-on XHR can wait for startup before send')
+await dispatchSettings.update({ considerNativeSources: false })
+dispatchRoutes.invalidateForUserSetting()
+dispatchGate.release()
+await new Promise(resolve => setTimeout(resolve, 0))
+equal(pendingToggleXhr.nativeSends, 1, 'XHR waiting across Native switch still sends only once')
+check(TRUSTED_CATALOG.includes(new URL(pendingToggleXhr.url).host as typeof TRUSTED_CATALOG[number]),
+  'XHR rechecks Catalog-only mode after startup wait before native send')
+gateDispatch = false
+const beforeNonGetFetch = nativeFetchCalls
+await fakeWindow.fetch(dispatchRoot, { method: 'POST' }).then(
+  () => { throw new Error('Catalog-only POST Fetch must reject locally') }, () => undefined)
+equal(nativeFetchCalls, beforeNonGetFetch, 'Catalog-only non-GET Fetch never reaches native fetch')
+const directCatalogFetch = await fakeWindow.fetch(dispatchNativeBackup)
+check(directCatalogFetch.status === 206 && TRUSTED_CATALOG.includes(new URL(nativeFetchUrls.at(-1) ?? '').host as typeof TRUSTED_CATALOG[number]),
+  'old Native player backup is rechecked at Fetch dispatch')
+equal(nativeFetchRedirects.at(-1), 'error', 'old player backup Fetch also rejects redirects')
+const blockedPostXhr = new FakeXhr(); blockedPostXhr.open('POST', dispatchRoot); blockedPostXhr.send()
+equal(blockedPostXhr.nativeSends, 0, 'Catalog-only non-GET XHR never reaches native send')
+const catalogXhr = new FakeXhr(); catalogXhr.open('GET', dispatchRoot); catalogXhr.send()
+equal(catalogXhr.nativeSends, 1, 'Catalog-only XHR sends once')
+check(TRUSTED_CATALOG.includes(new URL(catalogXhr.url).host as typeof TRUSTED_CATALOG[number]),
+  'Catalog-only XHR checks its final native send URL')
+const redirectedXhr = new FakeXhr(); redirectedXhr.finalResponseUrl = dispatchRoot
+redirectedXhr.open('GET', dispatchRoot); redirectedXhr.send()
+await Promise.resolve()
+equal(dispatchEvidence.get(new URL(dispatchRoot).host, 'video'), null,
+  'XHR response on a non-Catalog host does not establish successful Native health')
+await dispatchSettings.update({ considerNativeSources: true })
+dispatchRoutes.invalidateForUserSetting()
+const staleOpaqueUrl = 'https://upos-hz-mirrorakam.akamaized.net/opaque/stale-audio?signature=private'
+dispatchVault.register({ generation: dispatchSession.get().generation, epoch: dispatchSession.get().epoch,
+  kind: 'audio', key: 'stale-opaque', height: 0, codec: 'other', bandwidth: 192_000,
+  urls: [staleOpaqueUrl], source: 'trusted-api' })
+const staleOpaqueXhr = new FakeXhr(); staleOpaqueXhr.open('GET', staleOpaqueUrl)
+await dispatchSettings.update({ considerNativeSources: false })
+dispatchRoutes.invalidateForUserSetting()
+const nextDispatchState = dispatchSession.beginGeneration(false)
+dispatchVault.reset(nextDispatchState.generation, nextDispatchState.epoch); dispatchRoutes.resetEpoch()
+staleOpaqueXhr.send()
+equal(staleOpaqueXhr.nativeSends, 0,
+  'XHR opened for opaque Native media cannot leak after Catalog-only switch and SPA generation reset')
+await dispatchSettings.update({ disabled: true })
+const disabledDispatch = new FakeXhr(); disabledDispatch.open('GET', dispatchRoot); disabledDispatch.send()
+equal(disabledDispatch.url, dispatchRoot, 'disabled script preserves website Native XHR URL')
+equal(disabledDispatch.nativeSends, 1, 'disabled script still sends website XHR')
+dispatchTransport.dispose()
+
+const emittedBackupStorage = new FakeStorage(), emittedBackupSettings = new SettingsStore(emittedBackupStorage, () => now)
+await emittedBackupSettings.update({ considerNativeSources: true })
+const emittedBackupSession = new SessionStore(), emittedBackupState = emittedBackupSession.beginGeneration(false)
+const emittedBackupVault = new SignedRouteVault(); emittedBackupVault.reset(emittedBackupState.generation, emittedBackupState.epoch)
+const emittedBackupRoutes = new RouteCoordinator(clock, emittedBackupSession, emittedBackupSettings,
+  new RestrictionStore(emittedBackupStorage, () => now), new EvidenceStore(emittedBackupStorage, () => now), emittedBackupVault)
+const emittedBackupPlayurl = new PlayurlAdapter(emittedBackupSession, emittedBackupVault, emittedBackupRoutes, emittedBackupSettings)
+const emittedBackupRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/emitted-backup/root.m4s?signature=root'
+const emittedThirdPartyBackup = 'https://cdn.example.net/upgcxcode/emitted-backup/final.m4s?signature=old-player-backup'
+const emittedBackupItem = { id: 80, codecid: 13, height: 1080, bandwidth: 1_000_000,
+  base_url: emittedBackupRoot, backup_url: [
+    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/emitted-backup/first.m4s?signature=first',
+    'https://upos-sz-mirroralib.bilivideo.com/upgcxcode/emitted-backup/second.m4s?signature=second',
+    'https://upos-sz-mirrorali02.bilivideo.com/upgcxcode/emitted-backup/third.m4s?signature=third',
+    emittedThirdPartyBackup,
+  ] }
+check(emittedBackupPlayurl.transform({ data: { dash: { video: [emittedBackupItem], audio: [] } } }, 'trusted-api'),
+  'Native-on playurl fixture accepts primary plus four backups')
+check(emittedBackupItem.backup_url.includes(emittedThirdPartyBackup),
+  'Native-on player output can emit a fifth signed route on an arbitrary host')
+const emittedBackupTransport = new TransportAdapter(emittedBackupSession, emittedBackupSettings, emittedBackupRoutes,
+  emittedBackupPlayurl, measurementStub as never, () => now)
+emittedBackupTransport.install()
+await emittedBackupSettings.update({ considerNativeSources: false }); emittedBackupRoutes.invalidateForUserSetting()
+const beforeEmittedBackupFetch = nativeFetchCalls
+let emittedBackupFetchBlocked = false
+try { await fakeWindow.fetch(emittedThirdPartyBackup) } catch { emittedBackupFetchBlocked = true }
+check(emittedBackupFetchBlocked,
+  'Catalog-only Fetch blocks an old emitted Native player backup absent from the current exact vault index')
+equal(nativeFetchCalls, beforeEmittedBackupFetch, 'old emitted player backup never reaches native Fetch after Native is turned off')
+const emittedBackupXhr = new FakeXhr(); emittedBackupXhr.open('GET', emittedThirdPartyBackup); emittedBackupXhr.send()
+equal(emittedBackupXhr.nativeSends, 0, 'Catalog-only XHR blocks an old emitted Native player backup before native send')
+const unrelatedThirdPartyUrl = 'https://media.other-example.org/unrelated/video.m4s?source=site'
+const beforeUnrelatedFetch = nativeFetchCalls
+await fakeWindow.fetch(unrelatedThirdPartyUrl)
+equal(nativeFetchCalls, beforeUnrelatedFetch + 1, 'unrelated third-party media Fetch remains website-owned')
+const unrelatedThirdPartyXhr = new FakeXhr(); unrelatedThirdPartyXhr.open('GET', unrelatedThirdPartyUrl); unrelatedThirdPartyXhr.send()
+equal(unrelatedThirdPartyXhr.nativeSends, 1, 'unrelated third-party media XHR remains website-owned')
+await emittedBackupSettings.update({ considerNativeSources: true }); emittedBackupRoutes.invalidateForUserSetting()
+const outputCapRep = emittedBackupVault.contextForUrl(emittedBackupRoot)?.representation
+check(outputCapRep, 'Native-on output-cap fixture retains a current representation')
+for (let index = 0; index < 1200; index++) {
+  const fillerUrl = `https://fill.example.net/upgcxcode/output-cap/${index}.m4s?signature=filler`
+  emittedBackupVault.registerAlias(outputCapRep!, fillerUrl)
+  emittedBackupVault.registerOutput(outputCapRep!, emittedBackupRoot, fillerUrl, [],
+    decisionId('output-cap-fill'), 'trusted-api')
+}
+const cappedBackupRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/emitted-backup/capped-root.m4s?signature=capped-root'
+const cappedThirdPartyBackup = 'https://cdn.example.net/upgcxcode/emitted-backup/capped-final.m4s?signature=capped-old-backup'
+const cappedBackupItem = { id: 90, codecid: 13, height: 720, bandwidth: 1_000_000,
+  base_url: cappedBackupRoot, backup_url: [
+    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/emitted-backup/capped-first.m4s?signature=first',
+    'https://upos-sz-mirroralib.bilivideo.com/upgcxcode/emitted-backup/capped-second.m4s?signature=second',
+    'https://upos-sz-mirrorali02.bilivideo.com/upgcxcode/emitted-backup/capped-third.m4s?signature=third',
+    cappedThirdPartyBackup,
+  ] }
+check(emittedBackupPlayurl.transform({ data: { dash: { video: [cappedBackupItem], audio: [] } } }, 'trusted-api'),
+  'Native-on output-cap fixture accepts another representation in the current epoch')
+check(!cappedBackupItem.backup_url.includes(cappedThirdPartyBackup),
+  'Native-on player omits an external backup that bounded provenance indexes cannot retain')
+await emittedBackupSettings.update({ considerNativeSources: false }); emittedBackupRoutes.invalidateForUserSetting()
+const beforeCappedBackupFetch = nativeFetchCalls
+await fakeWindow.fetch(cappedThirdPartyBackup)
+equal(nativeFetchCalls, beforeCappedBackupFetch + 1,
+  'a backup withheld from player output remains an unattributable third-party website request')
+const cappedBackupXhr = new FakeXhr(); cappedBackupXhr.open('GET', cappedThirdPartyBackup); cappedBackupXhr.send()
+equal(cappedBackupXhr.nativeSends, 1, 'XHR also leaves an unattributable third-party website request unchanged')
+emittedBackupTransport.dispose()
+
+const pageStorage = new FakeStorage(), pageSettings = new SettingsStore(pageStorage, () => now)
+const pageSession = new SessionStore(), pageState = pageSession.beginGeneration(false)
+const pageVault = new SignedRouteVault(); pageVault.reset(pageState.generation, pageState.epoch)
+const pageRoutes = new RouteCoordinator(clock, pageSession, pageSettings,
+  new RestrictionStore(pageStorage, () => now), new EvidenceStore(pageStorage, () => now), pageVault)
+const pagePlayurl = new PlayurlAdapter(pageSession, pageVault, pageRoutes, pageSettings)
+const assignedAtSetter: string[] = []
+const assignedPayloadAtSetter: string[] = []
+let pageOwnedPlayinfo: unknown = undefined
+Object.defineProperty(fakeWindow, '__playinfo__', { configurable: true,
+  get: () => pageOwnedPlayinfo,
+  set: (value: unknown) => {
+    const item = (value as { data?: { dash?: { video?: { base_url?: string }[] } } })?.data?.dash?.video?.[0]
+    assignedAtSetter.push(item?.base_url ?? '')
+    assignedPayloadAtSetter.push(JSON.stringify(value))
+    pageOwnedPlayinfo = value
+  } })
+const pageInfo = new PagePlayinfoAdapter(payload => pagePlayurl.transform(payload, 'page-hint'),
+  () => pageRoutes.isCatalogOnly())
+pageInfo.install()
+const earlyPageUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/early.m4s?signature=early'
+const earlyPagePayload = { data: { dash: { video: [{ id: 80, codecid: 13, height: 1080,
+  bandwidth: 1_000_000, base_url: earlyPageUrl, backup_url: [] as string[] }], audio: [] } } }
+Reflect.set(fakeWindow, '__playinfo__', earlyPagePayload)
+check(TRUSTED_CATALOG.includes(new URL(assignedAtSetter.at(-1) ?? '').host as typeof TRUSTED_CATALOG[number]),
+  'page-owned configurable setter synchronously receives Catalog-rewritten playinfo in OFF mode')
+equal(assignedAtSetter.at(-1), earlyPagePayload.data.dash.video[0]?.base_url,
+  'setter observes the same sanitized page-hint payload that remains on the page')
+const trustedPageUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/trusted.m4s?signature=trusted'
+const trustedPagePayload = { data: { dash: { video: [{ id: 80, codecid: 13, height: 1080,
+  bandwidth: 1_000_000, base_url: trustedPageUrl, backup_url: [] as string[] }], audio: [] } } }
+pagePlayurl.transform(trustedPagePayload, 'trusted-api')
+const trustedPageRep = pageVault.contextForUrl(trustedPageUrl)?.representation
+check(trustedPageRep, 'trusted API adopts the page-hint representation')
+const trustedPageOutput = trustedPagePayload.data.dash.video[0]?.base_url ?? ''
+const trustedOutputRole = trustedPageRep ? pageVault.outputRole(trustedPageRep, trustedPageOutput) : null
+equal(trustedOutputRole?.source, 'trusted-api', 'trusted Catalog output records API provenance before later hints')
+const latePageUrl = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/page-hint/late.m4s?signature=late'
+const latePagePayload = { data: { dash: { video: [{ id: 80, codecid: 13, height: 1080,
+  bandwidth: 1_000_000, base_url: latePageUrl, backup_url: [] as string[] }], audio: [] } } }
+Reflect.set(fakeWindow, '__playinfo__', latePagePayload)
+check(TRUSTED_CATALOG.includes(new URL(assignedAtSetter.at(-1) ?? '').host as typeof TRUSTED_CATALOG[number]),
+  'late page-hint setter synchronously receives a Catalog URL after trusted API adoption')
+check(latePagePayload.data.dash.video[0]?.base_url !== latePageUrl,
+  'late lower-trust hint is sanitized in its own object before page consumption')
+equal(latePagePayload.data.dash.video[0]?.base_url, trustedPageOutput,
+  'late hint reuses the existing trusted Catalog output URL')
+const roleAfterLateHint = trustedPageRep ? pageVault.outputRole(trustedPageRep, trustedPageOutput) : null
+equal(roleAfterLateHint?.source, trustedOutputRole?.source,
+  'late page hint cannot replace trusted API output source for the same Catalog URL')
+equal(roleAfterLateHint?.decisionId, trustedOutputRole?.decisionId,
+  'late page hint cannot replace trusted API output decision for the same Catalog URL')
+equal(trustedPageRep ? pageVault.rootUrl(trustedPageRep) : null, trustedPageUrl,
+  'late hint cannot replace trusted API root authority')
+check(!trustedPageRep || !pageVault.candidates(trustedPageRep, new Set()).native.some(route => route.host === new URL(latePageUrl).host),
+  'sanitizing late page hint grants no new Native candidate')
+const affinityPageRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/affinity.m4s?signature=affinity'
+const affinityPageRep = pageVault.register({ generation: pageSession.get().generation, epoch: pageSession.get().epoch,
+  kind: 'video', key: 'affinity:64', height: 720, codec: 'av1', bandwidth: 1_000_000,
+  urls: [affinityPageRoot], source: 'trusted-api' })
+check(affinityPageRep, 'separate video representation can establish observed affinity')
+const affinityChoice = pageRoutes.startupOptions(affinityPageRoot)?.candidates.find(candidate =>
+  candidate.type === 'catalog-generated' && candidate.host !== new URL(trustedPageOutput).host)
+check(affinityChoice, 'affinity fixture has a different legal Catalog host')
+pageRoutes.commitStartupChoice(affinityPageRoot, affinityChoice ?? null, 'test-observed-affinity')
+const affinityApplied = pageRoutes.apply(affinityPageRoot)
+equal(affinityApplied.decision.host, affinityChoice?.host, 'separate representation sends its selected Catalog host')
+for (let index = 0; index < 2; index++) await pageRoutes.observe({ generation: pageSession.get().generation,
+  epoch: pageSession.get().epoch, decisionId: affinityApplied.decision.id, representation: affinityPageRep,
+  kind: 'video', routeType: 'catalog-generated', originalHost: new URL(affinityPageRoot).host,
+  targetHost: affinityApplied.decision.host ?? '', finalHost: affinityApplied.decision.host,
+  responseUrlMatchesRequest: true, streamKey: affinityApplied.streamKey, status: 206,
+  bytes: 70 * 1024, ttfbMs: 20, elapsedMs: 100, completedAt: now + index + 1, outcome: 'success' })
+equal(pageSession.get().affinity?.host, affinityChoice?.host, 'two observed requests confirm a different Catalog affinity')
+equal(pageRoutes.apply(trustedPageOutput).decision.host, affinityChoice?.host,
+  'sanitizing late page hint does not consume the trusted representation first-use affinity decision')
+const unsupportedPageUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/unsupported.m4s?signature=unsupported-secret'
+const unsupportedPagePayload = { data: { durl: [{ url: unsupportedPageUrl }] } }
+Reflect.set(fakeWindow, '__playinfo__', unsupportedPagePayload)
+check(!assignedPayloadAtSetter.at(-1)?.includes('signature=unsupported-secret'),
+  'Catalog-only configurable page setter never receives raw signed URL from non-DASH playinfo')
+pageInfo.dispose()
+Reflect.deleteProperty(fakeWindow, '__playinfo__')
+const initialUnsupportedUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/initial.m4s?signature=initial-secret'
+const initialUnsupportedPlayinfo = { data: { durl: [{ url: initialUnsupportedUrl }] } }
+Object.defineProperty(fakeWindow, '__playinfo__', { configurable: true, writable: true, value: initialUnsupportedPlayinfo })
+const initialPageInfo = new PagePlayinfoAdapter(payload => pagePlayurl.transform(payload, 'page-hint'),
+  () => pageRoutes.isCatalogOnly())
+initialPageInfo.install()
+check(!JSON.stringify(Reflect.get(fakeWindow, '__playinfo__'))?.includes('signature=initial-secret'),
+  'Catalog-only installed __playinfo__ getter cannot expose an existing unsupported Native playinfo value')
+initialPageInfo.dispose()
+Reflect.deleteProperty(fakeWindow, '__playinfo__')
+await pageSettings.update({ considerNativeSources: true }); pageRoutes.invalidateForUserSetting()
+Object.defineProperty(fakeWindow, '__playinfo__', { configurable: true, writable: true, value: initialUnsupportedPlayinfo })
+const nativeOnInitialPageInfo = new PagePlayinfoAdapter(payload => pagePlayurl.transform(payload, 'page-hint'),
+  () => pageRoutes.isCatalogOnly())
+nativeOnInitialPageInfo.install()
+equal(Reflect.get(fakeWindow, '__playinfo__'), initialUnsupportedPlayinfo,
+  'Native-on installed __playinfo__ getter preserves an existing unsupported website value')
+nativeOnInitialPageInfo.dispose()
+Reflect.deleteProperty(fakeWindow, '__playinfo__')
+await pageSettings.update({ considerNativeSources: false }); pageRoutes.invalidateForUserSetting()
+let freshPlayinfoReads = 0
+Object.defineProperty(fakeWindow, '__playinfo__', { configurable: true, get: () => ({ data: { durl: [{
+  url: `https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/fresh.m4s?signature=fresh-${++freshPlayinfoReads}`,
+}] } }) })
+const freshPageInfo = new PagePlayinfoAdapter(payload => pagePlayurl.transform(payload, 'page-hint'),
+  () => pageRoutes.isCatalogOnly())
+freshPageInfo.install()
+for (let read = 0; read < 2; read++) {
+  check(!JSON.stringify(Reflect.get(fakeWindow, '__playinfo__'))?.includes('signature=fresh-'),
+    'Catalog-only __playinfo__ accessor getter sanitizes every fresh unsupported Native value')
+}
+await pageSettings.update({ considerNativeSources: true }); pageRoutes.invalidateForUserSetting()
+check(JSON.stringify(Reflect.get(fakeWindow, '__playinfo__'))?.includes('signature=fresh-'),
+  'Native-on __playinfo__ accessor getter preserves fresh website value')
+freshPageInfo.dispose()
+Reflect.deleteProperty(fakeWindow, '__playinfo__')
+
+const apiFailureStorage = new FakeStorage(), apiFailureSettings = new SettingsStore(apiFailureStorage, () => now)
+const apiFailureSession = new SessionStore(), apiFailureState = apiFailureSession.beginGeneration(false)
+const apiFailureVault = new SignedRouteVault(); apiFailureVault.reset(apiFailureState.generation, apiFailureState.epoch)
+const apiFailureRoutes = new RouteCoordinator(clock, apiFailureSession, apiFailureSettings,
+  new RestrictionStore(apiFailureStorage, () => now), new EvidenceStore(apiFailureStorage, () => now), apiFailureVault)
+const apiFailurePlayurl = new PlayurlAdapter(apiFailureSession, apiFailureVault, apiFailureRoutes, apiFailureSettings)
+const apiFailureTransport = new TransportAdapter(apiFailureSession, apiFailureSettings, apiFailureRoutes,
+  apiFailurePlayurl, measurementStub as never, () => now)
+apiFailureTransport.install()
+const apiEndpoint = 'https://api.bilibili.com/x/player/wbi/playurl?cid=contract'
+const leakedNativeUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/api-failure/video.m4s?signature=raw-secret'
+const malformedApi = `{"data":{"dash":{"video":[{"base_url":"${leakedNativeUrl}"}`
+const unsupportedApi = { code: 0, data: { sources: [{ url: leakedNativeUrl }] } }
+const assertNoRawNative = async (read: () => unknown | Promise<unknown>, message: string): Promise<void> => {
+  let value: unknown = null, rejected = false
+  try { value = await read() } catch { rejected = true }
+  check(rejected || !JSON.stringify(value)?.includes('signature=raw-secret'), message)
+}
+playurlFetchBody = malformedApi
+await assertNoRawNative(async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+  'Catalog-only Fetch does not expose a malformed HTTP-200 playurl carrying a signed Native URL')
+playurlFetchBody = JSON.stringify(unsupportedApi)
+await assertNoRawNative(async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+  'Catalog-only Fetch does not expose a non-DASH HTTP-200 playurl carrying a signed Native URL')
+const malformedTextXhr = new FakeXhr(); malformedTextXhr.responseType = 'text'
+malformedTextXhr.payload = malformedApi; malformedTextXhr.rawResponseText = malformedApi
+malformedTextXhr.open('GET', apiEndpoint); malformedTextXhr.send()
+await assertNoRawNative(() => malformedTextXhr.responseText,
+  'Catalog-only XHR text response does not expose malformed playurl signed Native URL')
+await assertNoRawNative(() => malformedTextXhr.response,
+  'Catalog-only XHR response getter does not expose malformed playurl signed Native URL')
+const unsupportedTextXhr = new FakeXhr(); unsupportedTextXhr.responseType = 'text'
+unsupportedTextXhr.payload = JSON.stringify(unsupportedApi); unsupportedTextXhr.rawResponseText = JSON.stringify(unsupportedApi)
+unsupportedTextXhr.open('GET', apiEndpoint); unsupportedTextXhr.send()
+await assertNoRawNative(() => unsupportedTextXhr.responseText,
+  'Catalog-only XHR text response does not expose non-DASH playurl signed Native URL')
+const unsupportedJsonXhr = new FakeXhr(); unsupportedJsonXhr.responseType = 'json'; unsupportedJsonXhr.payload = unsupportedApi
+unsupportedJsonXhr.open('GET', apiEndpoint); unsupportedJsonXhr.send()
+await assertNoRawNative(() => unsupportedJsonXhr.response,
+  'Catalog-only XHR JSON response does not expose non-DASH playurl signed Native URL')
+for (const responseType of ['blob', 'arraybuffer'] as const) {
+  const binaryXhr = new FakeXhr(); binaryXhr.responseType = responseType
+  binaryXhr.open('GET', apiEndpoint); binaryXhr.send()
+  equal(binaryXhr.nativeSends, 0,
+    `Catalog-only XHR ${responseType} playurl is blocked before native send because its response cannot be sanitized`)
+}
+const loadingSignedText = `{"data":{"dash":{"video":[{"base_url":"${leakedNativeUrl}"`
+const loadingTextXhr = new FakeXhr(); loadingTextXhr.responseType = 'text'; loadingTextXhr.holdAtLoading = true
+loadingTextXhr.payload = loadingSignedText; loadingTextXhr.rawResponseText = loadingSignedText
+loadingTextXhr.open('GET', apiEndpoint); loadingTextXhr.send()
+equal(loadingTextXhr.readyState, 3, 'partial playurl XHR fixture is still loading')
+await assertNoRawNative(() => loadingTextXhr.responseText,
+  'Catalog-only XHR LOADING responseText cannot expose a partial signed Native playurl')
+await assertNoRawNative(() => loadingTextXhr.response,
+  'Catalog-only XHR LOADING text response cannot expose a partial signed Native playurl')
+const delayedSitePlayurl = JSON.stringify({ code: 0, data: { dash: { video: [{ id: 80, codecid: 13,
+  height: 1080, bandwidth: 1_000_000, base_url: leakedNativeUrl, backup_url: [] }], audio: [] } } }, null, 2)
+const stalePlayurlTextXhr = new FakeXhr(); stalePlayurlTextXhr.responseType = 'text'
+stalePlayurlTextXhr.payload = delayedSitePlayurl; stalePlayurlTextXhr.rawResponseText = delayedSitePlayurl
+stalePlayurlTextXhr.open('GET', apiEndpoint); stalePlayurlTextXhr.send()
+const stalePlayurlJsonXhr = new FakeXhr(); stalePlayurlJsonXhr.responseType = 'json'
+stalePlayurlJsonXhr.payload = JSON.parse(delayedSitePlayurl) as unknown
+stalePlayurlJsonXhr.open('GET', apiEndpoint); stalePlayurlJsonXhr.send()
+const nextApiFailureState = apiFailureSession.beginGeneration(false)
+apiFailureVault.reset(nextApiFailureState.generation, nextApiFailureState.epoch); apiFailureRoutes.resetEpoch()
+await assertNoRawNative(() => stalePlayurlTextXhr.responseText,
+  'Catalog-only XHR text opened in an old SPA generation never exposes a signed Native playurl after generation reset')
+await assertNoRawNative(() => stalePlayurlTextXhr.response,
+  'Catalog-only XHR response opened in an old SPA generation never exposes a signed Native playurl after generation reset')
+await assertNoRawNative(() => stalePlayurlJsonXhr.response,
+  'Catalog-only XHR JSON opened in an old SPA generation never exposes a signed Native playurl after generation reset')
+let releaseDelayedPlayurl: () => void = () => undefined
+playurlFetchOverride = new Response(new ReadableStream<Uint8Array>({ start(controller) {
+  releaseDelayedPlayurl = () => { controller.enqueue(new TextEncoder().encode(delayedSitePlayurl)); controller.close() }
+} }), { status: 201, headers: { 'x-website-playurl': 'original' } })
+let delayedPlayurlSettled = false
+const delayedPlayurlFetch = fakeWindow.fetch(apiEndpoint).then(response => { delayedPlayurlSettled = true; return response })
+await new Promise(resolve => setTimeout(resolve, 0))
+equal(delayedPlayurlSettled, false, 'website playurl response body remains pending before script is disabled')
+await apiFailureSettings.update({ disabled: true })
+releaseDelayedPlayurl()
+const disabledDuringResponse = await delayedPlayurlFetch
+equal(disabledDuringResponse.status, 201, 'disabled script preserves pending website playurl status')
+equal(disabledDuringResponse.headers.get('x-website-playurl'), 'original',
+  'disabled script preserves pending website playurl headers')
+equal(await disabledDuringResponse.text(), delayedSitePlayurl,
+  'disabled script passes the original pending website playurl body through unchanged')
+playurlFetchOverride = null
+await apiFailureSettings.update({ disabled: false })
+apiFailureTransport.dispose()
+const throwingPlayurl = { transform: (): boolean => { throw new Error('synthetic transform failure') } }
+const throwingTransport = new TransportAdapter(apiFailureSession, apiFailureSettings, apiFailureRoutes,
+  throwingPlayurl as never, measurementStub as never, () => now)
+throwingTransport.install()
+const transformFailurePayload = { code: 0, data: { dash: { video: [{ id: 80, codecid: 13, height: 1080,
+  bandwidth: 1_000_000, base_url: leakedNativeUrl, backup_url: [] }], audio: [] } } }
+playurlFetchBody = JSON.stringify(transformFailurePayload)
+await assertNoRawNative(async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+  'Catalog-only Fetch does not expose signed Native URL after transform throws')
+const throwingTextXhr = new FakeXhr(); throwingTextXhr.responseType = 'text'
+throwingTextXhr.payload = JSON.stringify(transformFailurePayload)
+throwingTextXhr.rawResponseText = JSON.stringify(transformFailurePayload)
+throwingTextXhr.open('GET', apiEndpoint); throwingTextXhr.send()
+await assertNoRawNative(() => throwingTextXhr.responseText,
+  'Catalog-only XHR text does not expose signed Native URL after transform throws')
+const throwingJsonXhr = new FakeXhr(); throwingJsonXhr.responseType = 'json'; throwingJsonXhr.payload = transformFailurePayload
+throwingJsonXhr.open('GET', apiEndpoint); throwingJsonXhr.send()
+await assertNoRawNative(() => throwingJsonXhr.response,
+  'Catalog-only XHR JSON does not expose signed Native URL after transform throws')
+await apiFailureSettings.update({ considerNativeSources: true })
+apiFailureRoutes.invalidateForUserSetting()
+playurlFetchBody = malformedApi
+equal(await (await fakeWindow.fetch(apiEndpoint)).text(), malformedApi,
+  'Native-on Fetch preserves malformed website playurl response')
+const nativeOnXhr = new FakeXhr(); nativeOnXhr.responseType = 'text'
+nativeOnXhr.payload = malformedApi; nativeOnXhr.rawResponseText = malformedApi
+nativeOnXhr.open('GET', apiEndpoint); nativeOnXhr.send()
+equal(nativeOnXhr.responseText, malformedApi, 'Native-on XHR preserves malformed website playurl response')
+const nativeOnLoadingXhr = new FakeXhr(); nativeOnLoadingXhr.responseType = 'text'; nativeOnLoadingXhr.holdAtLoading = true
+nativeOnLoadingXhr.payload = loadingSignedText; nativeOnLoadingXhr.rawResponseText = loadingSignedText
+nativeOnLoadingXhr.open('GET', apiEndpoint); nativeOnLoadingXhr.send()
+equal(nativeOnLoadingXhr.responseText, loadingSignedText, 'Native-on XHR LOADING responseText preserves website partial playurl')
+equal(nativeOnLoadingXhr.response, loadingSignedText, 'Native-on XHR LOADING text response preserves website partial playurl')
+for (const responseType of ['blob', 'arraybuffer'] as const) {
+  const binaryXhr = new FakeXhr(); binaryXhr.responseType = responseType
+  binaryXhr.open('GET', apiEndpoint); binaryXhr.send()
+  equal(binaryXhr.nativeSends, 1, `Native-on XHR ${responseType} playurl retains website dispatch`)
+}
+await apiFailureSettings.update({ disabled: true, considerNativeSources: false })
+equal(await (await fakeWindow.fetch(apiEndpoint)).text(), malformedApi,
+  'disabled script preserves malformed website Fetch playurl response')
+const disabledApiXhr = new FakeXhr(); disabledApiXhr.responseType = 'text'
+disabledApiXhr.payload = malformedApi; disabledApiXhr.rawResponseText = malformedApi
+disabledApiXhr.open('GET', apiEndpoint); disabledApiXhr.send()
+equal(disabledApiXhr.responseText, malformedApi, 'disabled script preserves malformed website XHR playurl response')
+const disabledLoadingXhr = new FakeXhr(); disabledLoadingXhr.responseType = 'text'; disabledLoadingXhr.holdAtLoading = true
+disabledLoadingXhr.payload = loadingSignedText; disabledLoadingXhr.rawResponseText = loadingSignedText
+disabledLoadingXhr.open('GET', apiEndpoint); disabledLoadingXhr.send()
+equal(disabledLoadingXhr.responseText, loadingSignedText, 'disabled script preserves website partial playurl responseText')
+equal(disabledLoadingXhr.response, loadingSignedText, 'disabled script preserves website partial playurl text response')
+for (const responseType of ['blob', 'arraybuffer'] as const) {
+  const binaryXhr = new FakeXhr(); binaryXhr.responseType = responseType
+  binaryXhr.open('GET', apiEndpoint); binaryXhr.send()
+  equal(binaryXhr.nativeSends, 1, `disabled script preserves website XHR ${responseType} playurl dispatch`)
+}
+throwingTransport.dispose()
+playurlFetchBody = JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } })
+
+const oversizedStorage = new FakeStorage(), oversizedSettings = new SettingsStore(oversizedStorage, () => now)
+const oversizedSession = new SessionStore(), oversizedState = oversizedSession.beginGeneration(false)
+const oversizedVault = new SignedRouteVault(); oversizedVault.reset(oversizedState.generation, oversizedState.epoch)
+const oversizedRoutes = new RouteCoordinator(clock, oversizedSession, oversizedSettings,
+  new RestrictionStore(oversizedStorage, () => now), new EvidenceStore(oversizedStorage, () => now), oversizedVault)
+const oversizedPlayurl = new PlayurlAdapter(oversizedSession, oversizedVault, oversizedRoutes, oversizedSettings)
+const oversizedTransport = new TransportAdapter(oversizedSession, oversizedSettings, oversizedRoutes,
+  oversizedPlayurl, measurementStub as never, () => now)
+oversizedTransport.install()
+for (const suffix of ['szbdyd.com', 'mountaintoys.cn', 'nexusedgeio.com', 'ahdohpiechei.com']) {
+  const knownPcdnUrl = `https://node.${suffix}/video.m4s?signature=pcdn-secret`
+  const beforePcdnFetch = nativeFetchCalls
+  let pcdnFetchBlocked = false
+  try { await fakeWindow.fetch(knownPcdnUrl) } catch { pcdnFetchBlocked = true }
+  check(pcdnFetchBlocked, `Catalog-only Fetch blocks known B station PCDN suffix ${suffix} before native dispatch`)
+  equal(nativeFetchCalls, beforePcdnFetch, `known PCDN suffix ${suffix} never reaches native Fetch`)
+  const pcdnXhr = new FakeXhr(); pcdnXhr.open('GET', knownPcdnUrl); pcdnXhr.send()
+  equal(pcdnXhr.nativeSends, 0, `Catalog-only XHR blocks known B station PCDN suffix ${suffix} before native send`)
+}
+const thirdPartyMedia = 'https://cdn.example.net/video.m4s?signature=outside'
+const beforeThirdPartyFetch = nativeFetchCalls
+await fakeWindow.fetch(thirdPartyMedia)
+equal(nativeFetchCalls, beforeThirdPartyFetch + 1, 'unattributed third-party .m4s Fetch remains website-owned')
+const thirdPartyXhr = new FakeXhr(); thirdPartyXhr.open('GET', thirdPartyMedia); thirdPartyXhr.send()
+equal(thirdPartyXhr.nativeSends, 1, 'unattributed third-party .m4s XHR remains website-owned')
+const oversizedBilibiliMedia = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/video.m4s?signature=oversized-secret-'
+  + 'x'.repeat(17 * 1024)
+const beforeOversizedFetch = nativeFetchCalls
+let oversizedFetchBlocked = false
+try { await fakeWindow.fetch(oversizedBilibiliMedia) } catch { oversizedFetchBlocked = true }
+check(oversizedFetchBlocked, 'Catalog-only oversized recognizable B station media Fetch rejects before native dispatch')
+equal(nativeFetchCalls, beforeOversizedFetch,
+  'Catalog-only oversized recognizable B station media Fetch never calls native fetch')
+const oversizedXhr = new FakeXhr(); oversizedXhr.open('GET', oversizedBilibiliMedia); oversizedXhr.send()
+equal(oversizedXhr.nativeSends, 0,
+  'Catalog-only oversized recognizable B station media XHR never calls native send')
+check(!JSON.stringify(oversizedTransport.snapshot()).includes('oversized-secret'),
+  'oversized media block diagnostics never include the signed URL or query')
+await oversizedSettings.update({ considerNativeSources: true }); oversizedRoutes.invalidateForUserSetting()
+const beforeOversizedNativeOn = nativeFetchCalls
+await fakeWindow.fetch(oversizedBilibiliMedia)
+equal(nativeFetchCalls, beforeOversizedNativeOn + 1, 'Native-on oversized website Fetch preserves native dispatch')
+const nativeOnOversizedXhr = new FakeXhr(); nativeOnOversizedXhr.open('GET', oversizedBilibiliMedia); nativeOnOversizedXhr.send()
+equal(nativeOnOversizedXhr.nativeSends, 1, 'Native-on oversized website XHR preserves native dispatch')
+await oversizedSettings.update({ disabled: true, considerNativeSources: false })
+const beforeDisabledOversized = nativeFetchCalls
+await fakeWindow.fetch(oversizedBilibiliMedia)
+equal(nativeFetchCalls, beforeDisabledOversized + 1, 'disabled script preserves oversized website Fetch dispatch')
+const disabledOversizedXhr = new FakeXhr(); disabledOversizedXhr.open('GET', oversizedBilibiliMedia); disabledOversizedXhr.send()
+equal(disabledOversizedXhr.nativeSends, 1, 'disabled script preserves oversized website XHR dispatch')
+oversizedTransport.dispose()
 
 let shortResumeNow = now
 const shortResume = new RecoveryController(recoveryPlayer, () => shortResumeNow)

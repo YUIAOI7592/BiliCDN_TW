@@ -41,7 +41,8 @@ export const start = (): void => {
   const monitor = new PlayerMonitor(player, session, settings, vault, routes, measurement, recovery,
     () => visibility.isActuallyVisible(), now)
   let lifecycle: LifecycleController | null = null
-  const pagePlayinfo = new PagePlayinfoAdapter((payload, serial) => lifecycle?.acceptPageAssignment(payload, serial))
+  const pagePlayinfo = new PagePlayinfoAdapter((payload, serial) => lifecycle?.acceptPageAssignment(payload, serial),
+    () => !settings.get().disabled && routes.isCatalogOnly())
   lifecycle = new LifecycleController(session, settings, vault, routes, playurl, pagePlayinfo, monitor, now)
   const webRtc = new WebRtcAdapter(settings)
   const diagnostics = new DiagnosticRecorder(now, () => settings.get().verbose)
@@ -74,11 +75,17 @@ export const start = (): void => {
   webRtc.install()
   lifecycle.start()
   panel.start()
-  let routeSettings = JSON.stringify([settings.get().fixedHost, settings.get().catalogOverrides])
+  let routeSettings = JSON.stringify([settings.get().fixedHost, settings.get().catalogOverrides, settings.get().considerNativeSources])
+  let nativeSources = settings.get().considerNativeSources
   settings.subscribe(state => {
     visibility.setEnabled(!state.disabled)
-    const next = JSON.stringify([state.fixedHost, state.catalogOverrides])
+    const next = JSON.stringify([state.fixedHost, state.catalogOverrides, state.considerNativeSources])
     if (next !== routeSettings) { routeSettings = next; routes.invalidateForUserSetting() }
+    if (state.considerNativeSources !== nativeSources) {
+      nativeSources = state.considerNativeSources
+      measurement.reset()
+      recovery.reset()
+    }
   })
   try { GM_registerMenuCommand('⚙️ 開啟 BiliCDN v2 控制中心', () => center.show()) } catch { /* optional */ }
 }

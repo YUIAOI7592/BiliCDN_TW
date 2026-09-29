@@ -93,6 +93,9 @@ export type RestrictionReason =
   | 'invalid-url'
   | 'native-stale'
   | 'native-locked'
+  | 'catalog-unavailable'
+  | 'catalog-unreplaceable'
+  | 'catalog-only-non-get'
 
 export interface RouteRankingEntry {
   readonly candidate: RouteCandidate

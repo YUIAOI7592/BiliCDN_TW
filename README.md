@@ -5,7 +5,7 @@
 >
 > **AI 協作聲明：** 本修改版的維護者本人不具備自行撰寫程式的能力；程式分析、修改、測試與文件主要由 AI 協助完成。使用者應自行判斷是否適合安裝。
 
-BiliCDN_TW 是給台灣網路環境使用的 Bilibili Tampermonkey 腳本。它會在不取消播放器既有請求的前提下，從可信 Catalog CDN 與目前影片提供的 Native signed route 中選擇可用路線，並在已驗證的傳輸故障或播放器核心失效時協助恢復播放。
+BiliCDN_TW 是給台灣網路環境使用的 Bilibili Tampermonkey 腳本。正常模式預設只從內建可信 Catalog CDN 選擇可用路線；使用者可另行開啟參考 B 站原生來源的開關。腳本不取消已送出的播放器請求，並在已驗證的傳輸故障或播放器核心失效時協助恢復播放。
 
 本專案只支援最新版 Google Chrome 與 Tampermonkey。
 
@@ -13,7 +13,7 @@ BiliCDN_TW 是給台灣網路環境使用的 Bilibili Tampermonkey 腳本。它�
 
 - 自動選擇與固定指定可信 Catalog CDN。
 - 對影片與音訊分開保存近期傳輸證據，避免音訊故障連坐影片路線。
-- Native signed URL 只在目前影片與畫質生命週期內使用，不跨影片保存。
+- 參考 B 站原生來源的持久開關預設關閉；開啟後，Native signed URL 也只在目前影片與畫質生命週期內使用，不跨影片保存。
 - 健康播放期間不因背景量測或其他分頁的新資料換線。
 - 依使用者選擇的倍速（包含 2x）估算頻寬需求，不強制設定播放速度；支援自動畫質、AV1／HEVC 偏好與背景播放。
 - black、dead、使用者停用及預設不可用節點的統一限制。
@@ -31,12 +31,13 @@ BiliCDN_TW 是給台灣網路環境使用的 Bilibili Tampermonkey 腳本。它�
 
 ## 使用方式
 
-腳本預設使用自動選路、AV1 優先、WebRTC 阻擋與 HTTPDNS block；播放倍速由 Bilibili／使用者決定。
+腳本預設只使用內建 Catalog 自動選路，並採 AV1 優先、WebRTC 阻擋與 HTTPDNS block；播放倍速由 Bilibili／使用者決定。若無法安全生成合法的 Catalog 路線，腳本會在送出前封鎖辨識到的 B 站媒體請求。
 
 可從 Tampermonkey 選單，或播放器設定面板內的「開啟 BiliCDN 控制中心」進入設定：
 
 - 開啟或停用腳本。
 - 選擇自動選路或固定 Catalog CDN。
+- 開啟或關閉「允許參考 B 站原生來源」；預設關閉，開啟後才讓當次合法原始及備用網址參與正常選路。
 - 啟用／停用個別 Catalog 節點。
 - 設定 Codec 偏好。
 - 切換 WebRTC 阻擋與 HTTPDNS block／allow。
@@ -51,12 +52,12 @@ BiliCDN_TW 是給台灣網路環境使用的 Bilibili Tampermonkey 腳本。它�
 
 ## 選路原則
 
-- 新分頁第一筆可歸因的播放器媒體請求可暫緩最多三秒，同時測試本片原始 signed URL、合法備援與內建 Catalog（最多三個不同 host）。無有效結果時放行合法原線；同步 XHR、有明確 timeout 的 XHR、未知或無法安全改寫的媒體入口不強行攔住。
+- 新分頁第一筆可歸因的播放器媒體請求可暫緩最多三秒，測試最多三個合法候選。預設只納入內建 Catalog 候選；即使測速沒有有效結果，也不以原生路線作為備援。辨識到的 B 站媒體若無法安全改寫或沒有合法 Catalog 路線，會在送出前封鎖。同步 XHR 與有明確 timeout 的 XHR 不等待起播測速，但仍須通過送出前的路線檢查。
 - 後續影片與其他分頁可以共用近期 v2 健康證據，但不會盲目沿用「上次 CDN」。
-- 健康播放滿足安全條件後，每十分鐘最多順序量測三個候選，未知／過期優先並輪替 Catalog 與 Native；結果只更新證據，不會在流暢播放中換 host。
+- 健康播放滿足安全條件後，每十分鐘最多順序量測三個候選，未知／過期優先；預設只測內建 Catalog，開啟原生來源參考後才納入合法 Native 候選。結果只更新證據，不會在流暢播放中換 host。
 - 起播後若沒有明確請求失敗、也持續 15 秒沒有影片進度，腳本只嘗試一次合法的不同 host 備援；播放器仍無法恢復時，最多受限重建一次核心。這不能保證網站或網路故障都可自動修復。
 - 只有新播放生命週期、畫質無法沿用、可信設定操作、已驗證傳輸故障或 Watchdog 恢復邊界可以重新選路。
-- Native 路線必須使用當前 epoch、相同 representation group 的完整 signed URL；腳本不合成 Native URL。
+- 開啟原生來源參考後，Native 路線仍必須使用當前 epoch、相同 representation group 的完整 signed URL；腳本不合成 Native URL。原始 Host 若本身在 Catalog 中，腳本生成的 Catalog 網址可能與原始網址相同。
 
 ## 本機資料
 

@@ -48,10 +48,11 @@ export class LifecycleController {
     }))
   }
 
-  acceptPageAssignment(payload: unknown, serial: number): void {
+  acceptPageAssignment(payload: unknown, serial: number): boolean {
     this.#pending = { payload, serial, assignedAt: this.now(), pageKey: this.#pageKey, appliedGeneration: -1 }
-    this.#applyPending()
+    const accepted = this.#applyPending()
     queueMicrotask(() => this.#applyPending())
+    return accepted
   }
 
   dispose(): void {
@@ -76,12 +77,15 @@ export class LifecycleController {
     this.#emit({ type: 'lifecycle', at: this.now(), generation: state.generation, epoch: state.epoch, reason })
   }
 
-  #applyPending(): void {
+  #applyPending(): boolean {
     const pending = this.#pending, state = this.session.get()
-    if (!pending || state.disabled || pending.appliedGeneration === Number(state.generation)) return
+    if (!pending || state.disabled) return false
+    if (pending.appliedGeneration === Number(state.generation)) return true
     const age = this.now() - pending.assignedAt
-    if (age > 5000 || (pending.pageKey !== this.#pageKey && age > 250)) return
-    if (this.playurl.transform(pending.payload, 'page-hint')) pending.appliedGeneration = Number(state.generation)
+    if (age > 5000 || (pending.pageKey !== this.#pageKey && age > 250)) return false
+    const accepted = this.playurl.transform(pending.payload, 'page-hint')
+    if (accepted) pending.appliedGeneration = Number(state.generation)
+    return accepted
   }
 
   #key(): string { return `${location.pathname}${location.search}`.slice(0, 512) }

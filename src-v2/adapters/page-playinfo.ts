@@ -1,11 +1,12 @@
-export type PlayinfoAssignmentListener = (payload: unknown, serial: number) => void
+export type PlayinfoAssignmentListener = (payload: unknown, serial: number) => boolean | void
 
 export class PagePlayinfoAdapter {
   #restore: (() => void) | null = null
   #serial = 0
   #current: unknown = undefined
 
-  constructor(private readonly onAssignment: PlayinfoAssignmentListener) {}
+  constructor(private readonly onAssignment: PlayinfoAssignmentListener,
+    private readonly rewriteBeforePageSetter: () => boolean = () => false) {}
 
   install(): void {
     if (this.#restore) return
@@ -21,12 +22,22 @@ export class PagePlayinfoAdapter {
     this.#current = value
     const adapter = this
     const getter = (): unknown => {
+      let current: unknown
       if (descriptor?.get) {
-        try { return descriptor.get.call(target) } catch { return adapter.#current }
-      }
-      return adapter.#current
+        try { current = descriptor.get.call(target) } catch { current = adapter.#current }
+      } else current = adapter.#current
+      if (!adapter.rewriteBeforePageSetter()) return current
+      try { return adapter.#adopt(current) ? current : undefined } catch { return undefined }
     }
     const setter = (next: unknown): void => {
+      if (adapter.rewriteBeforePageSetter()) {
+        const previous = adapter.#current
+        try {
+          if (!adapter.#adopt(next)) { adapter.#current = previous; return }
+        } catch { adapter.#current = previous; return }
+        if (descriptor?.set) descriptor.set.call(target, next)
+        return
+      }
       if (descriptor?.set) descriptor.set.call(target, next)
       else adapter.#current = next
       adapter.#adopt(next)
@@ -57,8 +68,8 @@ export class PagePlayinfoAdapter {
 
   dispose(): void { this.#restore?.(); this.#restore = null }
 
-  #adopt(payload: unknown): void {
+  #adopt(payload: unknown): boolean {
     this.#current = payload
-    this.onAssignment(payload, ++this.#serial)
+    return this.onAssignment(payload, ++this.#serial) !== false
   }
 }
