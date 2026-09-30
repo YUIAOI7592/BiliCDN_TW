@@ -2,11 +2,11 @@
 
 ## 現行產品
 
-- 開發目標：v2.1.6；將正常模式參考 B 站原生來源改為持久開關，預設關閉。發布前完成自動與安全驗證，實際 Chrome／Tampermonkey 結果另行記錄。
+- 正常模式參考 B 站原生來源為持久開關，預設關閉。發布前完成自動與必要安全驗證，實際 Chrome／Tampermonkey 結果另行記錄。
 - 唯一正式來源：`src-v2/`。
 - 正式入口：`src-v2/entry.ts`。
 - 目標平台：最新版 Chrome＋Tampermonkey。
-- 正式產物：`Release/v2.1.6/BiliCDN_TW.user.js`。
+- 正式產物：`Release/v<version>/BiliCDN_TW.user.js`（`version` 取自 `release.json`）。
 - v1.9.6 僅作功能參考，不是建置輸入或相容目標。
 
 v2 是全新 TypeScript 架構。它不讀取 v1 設定或學習資料，不提供 `unsafeWindow.BiliCDN`、檔頭設定、舊 snapshot alias、migration 或測試 bridge。
@@ -40,4 +40,4 @@ v2 是全新 TypeScript 架構。它不讀取 v1 設定或學習資料，不提�
 - GitHub Release 只附 userscript；CHANGELOG、TEST_REPORT、manifest 與 SHA-256 留在儲存庫。
 - v2 不產生 incremental／cumulative patch，也不依賴舊 bundle fixture。
 - 不建立 CI/CD 或 GitHub Actions。
-- Codex Security 按風險使用：安全敏感變更或使用者明確要求時執行，不強制每版掃描；v2.1.6 的選路與封鎖邊界變更須完成安全差異掃描。`npm run verify` 不包含安全掃描。
+- Codex Security 按風險使用：安全敏感變更或使用者明確要求時執行，不強制每版掃描。`npm run verify` 不包含安全掃描。

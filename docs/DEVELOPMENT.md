@@ -19,7 +19,7 @@ npm run package       # v2 release directory, no patches
 npm run verify        # complete local release verification
 ```
 
-`npm run verify` checks the configured Node version, typecheck, architecture, functional tests, two identical builds, JavaScript syntax, forbidden v1/Worker markers and SHA-256 output. It does not run Codex Security. Run a separate security diff scan for security-sensitive changes or when explicitly requested; it is not mandatory for every release. The v2.1.6 Catalog-only route and dispatch policy change requires that separate scan before publication.
+`npm run verify` checks the configured Node version, typecheck, architecture, functional tests, two identical builds, JavaScript syntax, forbidden v1/Worker markers and SHA-256 output. It does not run Codex Security. Run a separate security diff scan for security-sensitive changes or when explicitly requested; it is not mandatory for every release.
 
 ## Adding behavior
 
@@ -46,4 +46,4 @@ Do not label VM or mock results as real playback. Preserve a user’s existing p
 
 ## Packaging and release
 
-`npm run package` writes only the userscript, changelog, test report, build manifest and SHA-256 list under the current `Release/v<version>/`. Do not add patch files. The GitHub Release asset is only the userscript. Publish v2.1.6 only after automated and required security verification; record any later Chrome/Tampermonkey acceptance separately. Do not describe pending browser checks as passed.
+`npm run package` writes only the userscript, changelog, test report, build manifest and SHA-256 list under `Release/v<version>/`, with `version` from `release.json`. Do not add patch files. The GitHub Release asset is only the userscript. Publish only after automated and required security verification; record any later Chrome/Tampermonkey acceptance separately. Do not describe pending browser checks as passed.
