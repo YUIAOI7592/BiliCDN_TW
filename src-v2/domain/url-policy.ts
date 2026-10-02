@@ -73,6 +73,6 @@ export const mediaIdentity = (value: string): string | null => {
   return parsed ? `${parsed.url.pathname}?${parsed.url.searchParams.toString()}` : null
 }
 
-export const isHttpDnsUrl = (value: string): boolean => {
-  try { return new URL(value, location.href).hostname === 'httpdns.bilivideo.com' } catch { return false }
+export const isHttpDnsUrl = (value: string, baseUrl?: string): boolean => {
+  try { return new URL(value, baseUrl).hostname === 'httpdns.bilivideo.com' } catch { return false }
 }

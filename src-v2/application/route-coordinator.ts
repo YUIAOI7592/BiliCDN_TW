@@ -1,4 +1,6 @@
-import { DEFAULT_UNAVAILABLE_HOSTS, TRUSTED_CATALOG, isCatalogHost } from '../domain/catalog.ts'
+import { catalogRestrictions, catalogCandidates, hardRestriction } from '../domain/route-policy.ts'
+import { originalOutputPlan, backupOutputPlan, catalogOutputPlan } from '../domain/player-output-plan.ts'
+import { TRUSTED_CATALOG, isCatalogHost } from '../domain/catalog.ts'
 import { chooseRoute } from '../domain/routing.ts'
 import { evidenceMetrics } from '../domain/evidence.ts'
 import { isKnownPcdnHost, isOversizedBilibiliMedia, mediaIdentity, parseMediaUrl, replaceUrlHost } from '../domain/url-policy.ts'
@@ -42,7 +44,7 @@ export interface StartupOptions {
 }
 
 interface DecisionRecord { readonly decision: RouteDecision; readonly context: RouteIdentity | null; readonly kind: MediaKind; readonly representation: RepresentationId | null }
-interface FallbackProgress {
+export interface FallbackProgress {
   readonly actionId: RecoveryActionId
   readonly representation: RepresentationId
   readonly decisionId: DecisionId
@@ -53,6 +55,39 @@ interface FallbackProgress {
   readonly responseHost: string | null
   readonly outcome: TransportObservation['outcome'] | null
   readonly status: number | null
+}
+
+export interface RouteTransferSnapshot extends Partial<RequestContext> {
+  readonly kind: MediaKind | null
+  readonly routeType: RouteType
+  readonly originalHost: string
+  readonly targetHost: string
+  readonly responseHost: string | null
+  readonly outcome: TransportObservation['outcome']
+  readonly status: number
+  readonly observedAt: number
+  readonly attributionStatus: AttributionStatus
+}
+type MediaRows<T> = Readonly<Partial<Record<MediaKind | 'unknown', T>>>
+export interface RoutePlanSummary {
+  readonly id: DecisionId; readonly action: RouteDecision['action']; readonly reason: string
+  readonly routeType: RouteType; readonly host: string | null
+}
+export interface RouteRankingSummary {
+  readonly host: string; readonly type: RouteType; readonly state: RouteDecision['ranking'][number]['state']
+  readonly eligible: boolean; readonly reasons: readonly string[]
+  readonly safeMbps: number | null; readonly ratio: number | null; readonly ttfbMs: number | null
+}
+export interface RouteSnapshot {
+  readonly originalComparison: boolean; readonly planCount: number
+  readonly activePlan: (RoutePlanSummary & { readonly ranking: readonly RouteRankingSummary[] }) | null
+  readonly recentPlans: readonly (RoutePlanSummary & { readonly representation: RepresentationId })[]
+  readonly affinity: ReturnType<SessionStore['get']>['affinity']
+  readonly latest: MediaRows<RouteTransferSnapshot>; readonly lastSuccess: MediaRows<RouteTransferSnapshot>
+  readonly requested: MediaRows<RequestContext>
+  readonly attribution: 'confirmed' | 'awaiting-second-video-transfer' | 'awaiting-matched-video'
+  readonly representation: ReturnType<SignedRouteVault['groupSummary']>
+  readonly fallback: Readonly<Partial<Record<MediaKind, Readonly<FallbackProgress>>>>
 }
 
 export class RouteCoordinator {
@@ -69,8 +104,8 @@ export class RouteCoordinator {
   #tentativeRepresentation: RepresentationId | null = null
   #tentativeTransfers = 0
   #streamPlans = new Map<string, RouteDecision>()
-  #latest = new Map<string, Readonly<Record<string, unknown>>>()
-  #lastSuccess = new Map<string, Readonly<Record<string, unknown>>>()
+  #latest = new Map<string, RouteTransferSnapshot>()
+  #lastSuccess = new Map<string, RouteTransferSnapshot>()
   #requested = new Map<string, RequestContext>()
   #effectiveRate = 2
   #challengeAttempts = new Map<string, number>()
@@ -81,11 +116,12 @@ export class RouteCoordinator {
 
   constructor(
     private readonly clock: Clock,
-    private readonly session: SessionStore,
-    private readonly settings: SettingsStore,
-    private readonly restrictions: RestrictionStore,
-    private readonly evidence: EvidenceStore,
-    private readonly vault: SignedRouteVault,
+    private readonly session: Pick<SessionStore, 'get' | 'noteDecision' | 'setAffinity' | 'setRepresentation'>,
+    private readonly settings: Pick<SettingsStore, 'get'>,
+    private readonly restrictions: Pick<RestrictionStore, 'snapshot'>,
+    private readonly evidence: Pick<EvidenceStore, 'get' | 'record'>,
+    private readonly vault: Pick<SignedRouteVault, 'candidates' | 'groupSummary' | 'hosts' | 'identity' | 'invalidate' | 'isCurrentIdentity'
+      | 'isInvalid' | 'match' | 'outputRole' | 'registerAlias' | 'registerOutput' | 'resolve' | 'rootUrl' | 'wasPlayerOutput'>,
   ) {}
 
   subscribe(listener: (event: DomainEvent) => void): () => void {
@@ -527,8 +563,11 @@ export class RouteCoordinator {
     }
     const stream = mediaIdentity(original)
     if (this.#originalComparison) {
-      const permitted = [...new Set(originals)].filter(allowed)
-      const primary = permitted[0] ?? '', backups = permitted.slice(1, 6)
+      const unique = [...new Set(originals)]
+      const candidates = unique.map((url, index) => ({ index, host: parseMediaUrl(url)?.host ?? '', allowed: allowed(url) }))
+      const outputPlan = originalOutputPlan(candidates)
+      const permitted = candidates.filter(candidate => candidate.allowed).map(candidate => unique[candidate.index]!)
+      const primary = outputPlan.primary === null ? '' : unique[outputPlan.primary]!, backups = outputPlan.backups.map(index => unique[index]!)
       if (primary) {
         const selectedHost = parseMediaUrl(primary)!.host
         const outputDecision = primary === original && decision.action === 'pass' && decision.host === selectedHost
@@ -557,13 +596,10 @@ export class RouteCoordinator {
       if (!primary || !allowed(primary) || this.#incompatible(original, decision.host)) return { primary: '', backups: [] }
       const preferred = decision.ranking.filter(row => row.eligible && row.candidate.type === 'catalog-generated')
         .map(row => row.candidate.host)
-      const backups: string[] = []
-      for (const host of [...new Set([...preferred, ...TRUSTED_CATALOG])]) {
-        if (!isCatalogHost(host) || host === decision.host || this.#incompatible(original, host)) continue
-        const candidate = replaceUrlHost(original, host)
-        if (candidate && candidate !== primary && allowed(candidate) && !backups.includes(candidate)) backups.push(candidate)
-        if (backups.length >= 5) break
-      }
+      const unavailable = new Set(TRUSTED_CATALOG.filter(host => this.#incompatible(original, host)
+        || !allowed(replaceUrlHost(original, host) ?? '')))
+      const backups = catalogOutputPlan(decision.host, preferred, unavailable)
+        .flatMap(host => { const url = replaceUrlHost(original, host); return url ? [url] : [] })
       this.vault.registerAlias(representation, primary)
       for (const backup of backups) this.vault.registerAlias(representation, backup)
       if (recordOutput) this.vault.registerOutput(representation, original, primary, backups, decision.id, source, true)
@@ -577,17 +613,9 @@ export class RouteCoordinator {
       .filter(row => row.eligible && row.candidate.type === 'catalog-generated' && !this.#incompatible(original, row.candidate.host))
       .flatMap(row => { const url = replaceUrlHost(original, row.candidate.host); return url && allowed(url) ? [url] : [] })
     const primaryHost = parseMediaUrl(primary)?.host
-    const usedHosts = new Set(primaryHost ? [primaryHost] : [])
-    const distinct: string[] = [], sameHost: string[] = []
-    const append = (url: string): void => {
-      const host = parseMediaUrl(url)?.host
-      if (!host || url === primary || !allowed(url)) return
-      if (usedHosts.has(host)) { if (!sameHost.includes(url)) sameHost.push(url); return }
-      usedHosts.add(host); distinct.push(url)
-    }
-    for (const url of originals) append(url)
-    for (const url of generated) append(url)
-    const backups = lockedOriginal ? [] : [...distinct, ...sameHost].slice(0, 5)
+    const urls = [...new Set([...originals, ...generated])].filter(url => url !== primary)
+    const candidates = urls.map((url, index) => ({ index, host: parseMediaUrl(url)?.host ?? '', allowed: allowed(url) }))
+    const backups = backupOutputPlan(primaryHost ?? null, candidates, !!lockedOriginal).map(index => urls[index]!)
     this.vault.registerAlias(representation, primary)
     for (const url of backups) this.vault.registerAlias(representation, url)
     this.vault.registerOutput(representation, original, primary, backups, decision.id, source)
@@ -605,7 +633,7 @@ export class RouteCoordinator {
     if (!context || !root || this.settings.get().fixedHost || this.#originalComparison
       || (rootKey !== null && this.#hostLockedStreams.has(rootKey))) return null
     const settings = this.settings.get(), restriction = this.restrictions.snapshot(context.kind)
-    const catalog: CatalogCandidate[] = TRUSTED_CATALOG.map((host, index) => ({ type: 'catalog-generated', host, kind: context.kind, catalogIndex: index }))
+    const catalog: CatalogCandidate[] = catalogCandidates(context.kind)
     const native = this.isCatalogOnly() ? [] : this.vault.candidates(representation,
       this.#unlockedNative.get(representation) ?? new Set()).native.filter(candidate => candidate.activelyExplorable)
     const rotatedCatalog = [...catalog.slice(catalogCursor % catalog.length), ...catalog.slice(0, catalogCursor % catalog.length)]
@@ -744,10 +772,10 @@ export class RouteCoordinator {
     }
   }
 
-  snapshot(): Readonly<Record<string, unknown>> {
+  snapshot(): RouteSnapshot {
     const session = this.session.get(), active = session.representation ? this.#plans.get(session.representation) : null
     const recent = [...this.#plans.entries()].filter(([representation]) => representation !== session.representation).slice(-4)
-    const summarize = (decision: RouteDecision): Readonly<Record<string, unknown>> => Object.freeze({
+    const summarize = (decision: RouteDecision): RoutePlanSummary => Object.freeze({
       id: decision.id, action: decision.action, reason: decision.reason, routeType: decision.routeType, host: decision.host,
     })
     return Object.freeze({ originalComparison: this.#originalComparison, planCount: this.#plans.size, activePlan: active ? Object.freeze({ ...summarize(active),
@@ -774,14 +802,12 @@ export class RouteCoordinator {
     boundary: 'startup' | 'new-epoch' | 'representation' | 'request' | 'verified-failure' | 'watchdog' | 'user-setting',
     failedHost: string | null, sourceUrl?: string): RouteDecision {
     const settings = this.settings.get()
-    const disabledCatalogHosts = new Set(TRUSTED_CATALOG.filter(host => settings.catalogOverrides[host] === false))
-    const defaultUnavailableHosts = new Set(TRUSTED_CATALOG.filter(host => DEFAULT_UNAVAILABLE_HOSTS.has(host) && settings.catalogOverrides[host] !== true))
+    const { disabledCatalogHosts, defaultUnavailableHosts } = catalogRestrictions(settings.catalogOverrides)
     const restriction = this.restrictions.snapshot(context.kind)
     const unlocked = this.#unlockedNative.get(context.representation) ?? new Set<string>()
     const routes = this.vault.candidates(context.representation, unlocked)
     const root = sourceUrl ?? this.vault.rootUrl(context.representation) ?? ''
-    const catalog: CatalogCandidate[] = TRUSTED_CATALOG.map((host, index) => Object.freeze({ type: 'catalog-generated', host,
-      kind: context.kind, catalogIndex: index })).filter(candidate => !this.vault.isInvalid(context.representation, candidate.host)
+    const catalog = catalogCandidates(context.kind).filter(candidate => !this.vault.isInvalid(context.representation, candidate.host)
         && !this.#incompatible(root, candidate.host))
     const candidates = this.isCatalogOnly() ? catalog : [...catalog, ...routes.native, ...(routes.root ? [routes.root] : [])]
     const id = this.#nextId()
@@ -800,12 +826,11 @@ export class RouteCoordinator {
 
   #catalogOnly(demand: PlaybackDemand, originalHost: string, knownKind: MediaKind | null, sourceUrl?: string): RouteDecision {
     const settings = this.settings.get(), restriction = this.#restrictionSnapshot(knownKind)
-    const candidates: CatalogCandidate[] = TRUSTED_CATALOG.map((host, index) => ({ type: 'catalog-generated' as const, host, kind: demand.kind, catalogIndex: index }))
+    const candidates: CatalogCandidate[] = catalogCandidates(demand.kind)
       .filter(candidate => !sourceUrl || !this.#incompatible(sourceUrl, candidate.host))
     const id = this.#nextId()
     const decision = chooseRoute({ candidates, evidenceFor: (host, kind) => this.evidence.get(host, kind),
-      restrictions: { disabledCatalogHosts: new Set(TRUSTED_CATALOG.filter(host => settings.catalogOverrides[host] === false)),
-        defaultUnavailableHosts: new Set(TRUSTED_CATALOG.filter(host => DEFAULT_UNAVAILABLE_HOSTS.has(host) && settings.catalogOverrides[host] !== true)),
+      restrictions: { ...catalogRestrictions(settings.catalogOverrides),
         blackHosts: restriction.blackHosts, deadHosts: restriction.deadHosts, hostLocked: new Set() }, demand,
       fixedHost: settings.fixedHost, current: this.session.get().affinity, boundary: 'request', failedHost: null }, this.clock, id)
     if (decision.action === 'block') {
@@ -840,12 +865,8 @@ export class RouteCoordinator {
 
   #hardRestriction(host: string, kind: MediaKind | null): 'catalog-disabled' | 'default-unavailable' | 'black' | 'dead' | 'circuit-open' | null {
     const settings = this.settings.get(), restriction = this.#restrictionSnapshot(kind), evidence = kind ? this.evidence.get(host, kind) : null
-    if (restriction.blackHosts.has(host)) return 'black'
-    if (restriction.deadHosts.has(host)) return 'dead'
-    if (settings.catalogOverrides[host] === false) return 'catalog-disabled'
-    if (DEFAULT_UNAVAILABLE_HOSTS.has(host) && settings.catalogOverrides[host] !== true) return 'default-unavailable'
-    if (evidence && evidence.circuitUntil > this.clock.now()) return 'circuit-open'
-    return null
+    return hardRestriction(host, { ...restriction, overrides: settings.catalogOverrides,
+      circuitUntil: evidence?.circuitUntil ?? 0 }, this.clock.now())
   }
 
   #decisionAllowed(decision: RouteDecision, context: RouteIdentity | null, kind: MediaKind | null): boolean {

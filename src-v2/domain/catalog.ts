@@ -30,9 +30,9 @@ export const catalogIndex = (host: string): number => {
 }
 
 export const PLAYURL_PATH = /\/player\/.*playurl/i
-export const isPlayurlApi = (value: string): boolean => {
+export const isPlayurlApi = (value: string, baseUrl?: string): boolean => {
   try {
-    const url = new URL(value, location.href)
+    const url = new URL(value, baseUrl)
     return url.hostname === 'api.bilibili.com' && PLAYURL_PATH.test(url.pathname)
   } catch {
     return false

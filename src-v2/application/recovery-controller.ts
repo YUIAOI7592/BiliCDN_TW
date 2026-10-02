@@ -36,9 +36,7 @@ export class RecoveryController {
   #serial = 0
   #reloadCount = 0
   #breakerUntil = 0
-  #hookedPlayer: Record<string, unknown> | null = null
-  #originalPlay: ((...args: unknown[]) => unknown) | null = null
-  #wrappedPlay: ((...args: unknown[]) => unknown) | null = null
+  #stopIntent: (() => void) | null = null
   #suppress = false
   #lifecycleSerial = 0
   #lastFrames: number | null = null
@@ -48,7 +46,8 @@ export class RecoveryController {
   #deadReported = false
   #state: RecoverySnapshot = Object.freeze({ state: 'healthy', source: null, pauseSec: 0, reloadCount: 0, breakerSec: 0 })
 
-  constructor(private readonly player: PlayerPort, private readonly now: () => number) {}
+  constructor(private readonly player: Pick<PlayerPort, 'currentTime' | 'observePlayIntent' | 'play' | 'playbackRate' | 'reload' | 'seek' | 'setRate' | 'snapshot'>,
+    private readonly now: () => number) {}
   subscribe(listener: (event: DomainEvent) => void): () => void { this.#listeners.add(listener); return () => this.#listeners.delete(listener) }
   snapshot(): RecoverySnapshot { return this.#state }
   isRecovering(): boolean { return !!this.#token }
@@ -129,30 +128,13 @@ export class RecoveryController {
   dispose(): void { this.#unhook(); this.#listeners.clear() }
 
   #hook(): void {
-    const target = this.player.player(), current = target?.play
-    if (!target || typeof current !== 'function' || (this.#hookedPlayer === target && this.#wrappedPlay === current)) return
     this.#unhook()
-    const original = current as (...args: unknown[]) => unknown, self = this
-    const wrapped = function(this: unknown, ...args: unknown[]): unknown {
-      if (!self.#suppress) {
-        let active = false
-        try { active = unsafeWindow.navigator.userActivation?.isActive === true } catch { /* unsupported */ }
-        if (active && self.#pauseAt && self.now() - self.#pauseAt >= 30_000) self.#begin('trusted-player-play', true)
-      }
-      return Reflect.apply(original, this, args)
-    }
-    try {
-      target.play = wrapped
-      this.#hookedPlayer = target; this.#originalPlay = original; this.#wrappedPlay = wrapped
-    } catch { this.#hookedPlayer = null }
+    this.#stopIntent = this.player.observePlayIntent(() => {
+      if (!this.#suppress && this.#pauseAt && this.now() - this.#pauseAt >= 30_000) this.#begin('trusted-player-play', true)
+    })
   }
 
-  #unhook(): void {
-    if (this.#hookedPlayer && this.#originalPlay && this.#wrappedPlay && this.#hookedPlayer.play === this.#wrappedPlay) {
-      try { this.#hookedPlayer.play = this.#originalPlay } catch { /* site owns method */ }
-    }
-    this.#hookedPlayer = null; this.#originalPlay = null; this.#wrappedPlay = null
-  }
+  #unhook(): void { this.#stopIntent?.(); this.#stopIntent = null }
 
   #begin(source: ResumeToken['source'], wasPlaying: boolean): void {
     const now = this.now()

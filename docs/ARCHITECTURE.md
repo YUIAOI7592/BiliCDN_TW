@@ -11,7 +11,7 @@ domain <- state <- application <- adapters
                                entry
 ```
 
-The architecture check enforces allowed imports and rejects cycles. `entry.ts` is the composition root.
+The architecture check parses the locked TypeScript compiler's AST, checks value/type imports, re-exports and import types, rejects dynamic loading and cycles, and enforces the allowed layer direction. It also rejects browser/GM/clock globals in domain and application modules, affinity/reload calls outside their owners, and direct UI storage/controller mutations. `entry.ts` is the composition root. Independent import-purity tests load every non-entry module with browser, network, storage and timer access trapped.
 
 ## Domain
 
@@ -21,9 +21,10 @@ The architecture check enforces allowed imports and rejects cycles. `entry.ts` i
 - URL admission and host-replacement rules;
 - Catalog definitions;
 - bounded evidence windows, safe throughput and circuits;
-- candidate eligibility and deterministic ranking.
+- candidate eligibility and deterministic ranking;
+- Catalog restriction snapshots and player output plans expressed as trusted hosts or opaque indexes.
 
-The domain accepts time as an argument and performs no I/O.
+The domain accepts time and relative-URL base addresses as arguments and performs no I/O. Output policies cannot submit affinity, start probes, or retain signed URLs.
 
 ## State
 
@@ -35,6 +36,7 @@ The domain accepts time as an argument and performs no I/O.
 - Exact signed URLs with an unrecognized path may be indexed for observation and host restriction only; they do not become selectable Native routes or active-probe capabilities.
 - The vault also keeps a bounded, current-epoch mapping from playurl output URL to original/output hostname, primary/backup role, source and decision ID. Full URLs remain private to the vault.
 - `SettingsStore` owns the typed v2 product settings, including the persisted, default-off option to consider Bilibili-provided Native sources in normal routing.
+- `MeasurementMetaStore` owns the existing `bilicdn.v2.meta` cursor/cooldown record and delegates the existing `measurement` lock. It preserves the storage key and schema.
 
 Persistent stores use distinct `bilicdn.v2.*` keys. Signed routes and session state are memory-only.
 
@@ -46,16 +48,22 @@ Persistent stores use distinct `bilicdn.v2.*` keys. Signed routes and session st
 - `RecoveryController` arbitrates Watchdog, transport and player-core recovery.
 - `LifecycleController` invalidates generations for SPA, enable/disable and page data changes.
 - `PlayerMonitor` samples the player on a one-second cadence and feeds typed observations.
+- `PlayurlController` registers normalized representations, manages content epochs and requests output plans. The playurl adapter owns payload parsing, field compatibility and writeback.
+- `RuntimeController` coordinates settings invalidation, probe/recovery reset, monitor lifecycle and fallback events. `ControlCommands` provides the UI's typed mutation interface and orders comparison, blacklist, reset and data-clear actions.
 
-All asynchronous commits revalidate their generation.
+Controllers receive minimum typed ports. `NavigationPort`, `SchedulerPort` and `PlayerPort.observePlayIntent` keep History wrappers, browser clocks and activation checks outside application policy. `PlayerPort` exposes no raw player/core object. All asynchronous commits revalidate their generation, including metadata updates waiting for a cross-tab lock; disposed lifecycle observers ignore queued page assignments.
 
 ## Adapters
 
 Adapters translate browser/Tampermonkey behavior into typed observations:
 
-- Fetch/XHR and playurl transformation;
+- independent `FetchHookAdapter` and `XhrHookAdapter`, with shared typed dispatch checks and observation construction in `TransportContext`;
+- `TransportAdapter` installs/verifies both hooks, restores partial installations and reports the combined hook snapshot;
+- `RangeProbeAdapter` provides one direct same-host HTTPS 206 reader implementation for startup and health probes; it caps bytes, propagates cancellation and releases readers. `MeasurementController` alone initiates probes and controls deadlines/result commits;
+- playurl parsing and transformation writeback;
 - `__playinfo__` and player manifest ingestion;
 - video/player resolution;
+- `BrowserNavigation` and `BrowserScheduler`, with reversible History ownership and cancellable scheduled work;
 - visibility/background behavior;
 - reversible WebRTC blocking;
 - Tampermonkey storage and value-change listeners.
@@ -86,3 +94,5 @@ Healthy measurements never change affinity.
 ## Diagnostics
 
 The recorder consumes typed `DomainEvent` values, aggregates successful traffic and preserves bounded failure incidents. UI read models are snapshots; reading them cannot mutate routing or start network work. Hook entry, media recognition, native-call and response stages remain separate from browser Network confirmation. The Catalog-only rule applies to script-transformed playurl output and intercepted media dispatch, not to browser traffic outside those entry points.
+
+`RouteSnapshot`, `TransportSnapshot`, `DiagnosticSnapshot` and `ControlCenterSnapshot` expose concrete readonly fields. Diagnostic request serialization uses an explicit bounded field list; unknown external payloads are still validated at adapter/store boundaries. UI commands never access storage keys directly.

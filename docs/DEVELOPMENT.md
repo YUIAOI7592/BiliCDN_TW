@@ -12,14 +12,15 @@ Install the exact locked toolchain with `npm ci`.
 
 ```powershell
 npm run typecheck     # strict TypeScript, no emit
-npm run architecture  # dependency direction and cycle check
-npm test              # domain/controller/adapter contracts
+npm run architecture  # AST dependencies, ownership rules and cycles
+npm test              # all independent contract suites + architecture/import-purity tests
+npm test -- adapters  # one isolated suite (see tests-v2/run.ts)
 npm run build         # deterministic single-IIFE userscript
 npm run package       # v2 release directory, no patches
 npm run verify        # complete local release verification
 ```
 
-`npm run verify` checks the configured Node version, typecheck, architecture, functional tests, two identical builds, JavaScript syntax, forbidden v1/Worker markers and SHA-256 output. It does not run Codex Security. Run a separate security diff scan for security-sensitive changes or when explicitly requested; it is not mandatory for every release.
+`npm run verify` checks the configured Node version, typecheck, architecture, functional tests, two identical builds, JavaScript syntax, forbidden v1/Worker markers and SHA-256 output. Packaging verification uses a temporary directory under `dist/`, then removes it; it does not overwrite a published `Release/v<version>/`. Explicit `npm run package` retains its release-writing behavior. Verify does not run Codex Security. Run a separate security diff scan for security-sensitive changes or when explicitly requested; it is not mandatory for every release.
 
 ## Adding behavior
 
@@ -28,7 +29,11 @@ npm run verify        # complete local release verification
 3. Add a controller method for actions that can alter routing, measurement or recovery.
 4. Keep browser/Tampermonkey quirks inside an adapter.
 5. Emit a typed event rather than letting diagnostics inspect controller internals.
-6. Add a focused test in `tests-v2/run.ts`.
+6. Add a contract to the relevant independent suite under `tests-v2/suites/`, or to the browser-free `tests-v2/domain-boundaries.ts`. Register new suites in `tests-v2/run.ts`.
+
+Each suite runs in its own process and creates its own state. Shared support is limited to assertions, fixture factories, fake storage/clocks and cleanup scopes. Use `satisfies` for port fakes; do not bypass dependency types with `as never`. Register owned resources in `testScope()` and always dispose in `finally`, restoring hooks, subscriptions, globals and timers even when assertions fail. Boundary/architecture tests should fail before changing the matching runtime behavior.
+
+Useful isolated checks include `npm test -- domain-boundaries`, `npm test -- orchestration`, `npm test -- adapter-boundaries`, `npm test -- measurement-state`, `npm test -- architecture` and `npm test -- imports`. A full `npm test` executes all of these as well as the original behavioral suites.
 
 Do not add a public test bridge to the production bundle. Tests are bundled from TypeScript source independently.
 

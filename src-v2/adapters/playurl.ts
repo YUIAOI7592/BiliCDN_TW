@@ -1,9 +1,5 @@
-import type { PlaybackDemand, RepresentationId, MediaKind, RouteIdentity } from '../domain/model.ts'
-import type { RouteCoordinator } from '../application/route-coordinator.ts'
-import type { SessionStore } from '../state/session-store.ts'
-import type { SignedRouteVault } from '../state/signed-route-vault.ts'
-import type { SettingsStore, CodecPreference } from '../state/settings-store.ts'
-import { parseMediaUrl } from '../domain/url-policy.ts'
+import type { PlayurlController, PlayurlItem } from '../application/playurl-controller.ts'
+import type { CodecPreference } from '../state/settings-store.ts'
 
 type UnknownRecord = Record<string, unknown>
 const isRecord = (value: unknown): value is UnknownRecord => !!value && typeof value === 'object' && !Array.isArray(value)
@@ -48,136 +44,23 @@ const collectDash = (payload: unknown, catalogOnly: boolean): { readonly video: 
   return { video: Array.isArray(dash.video) ? dash.video.filter(isRecord) : [], audio }
 }
 
+
 export class PlayurlAdapter {
-  #seenTrusted = new WeakSet<object>()
-  #trustedItems = new WeakMap<object, RouteIdentity>()
-  #seenPage = new WeakMap<object, number>()
-  #responses = new Set<string>()
-  #generation = -1
-  #contentKey = ''
-  constructor(private readonly session: SessionStore, private readonly vault: SignedRouteVault,
-    private readonly routes: RouteCoordinator, private readonly settings: SettingsStore) {}
-
-  lifecycleKey(): string { const s = this.session.get(); return `${s.generation}:${s.epoch}` }
-
+  constructor(private readonly controller: Pick<PlayurlController, 'lifecycleKey' | 'catalogOnly' | 'codecPreference' | 'ingest'>) {}
+  lifecycleKey(): string { return this.controller.lifecycleKey() }
   transform(payload: unknown, source: 'trusted-api' | 'player-mpd' | 'page-hint' = 'trusted-api', responseKey?: string): boolean {
-    if (this.session.get().disabled) return false
-    if (this.#generation !== Number(this.session.get().generation)) {
-      this.#generation = Number(this.session.get().generation); this.#responses.clear(); this.#contentKey = ''
-      this.#seenTrusted = new WeakSet(); this.#trustedItems = new WeakMap()
-    }
-    const catalogOnly = this.routes.isCatalogOnly()
-    if (responseKey && this.#responses.has(responseKey) && !catalogOnly) return true
-    const dash = collectDash(payload, catalogOnly)
-    if (!dash || (!dash.video.length && !dash.audio.length)) return false
-    if (payload && typeof payload === 'object') {
-      if (source === 'trusted-api') {
-        if (this.#seenTrusted.has(payload)) {
-          if (catalogOnly) {
-            for (const [kind, items] of [['video', dash.video], ['audio', dash.audio]] as const) {
-              for (const item of items) {
-                const identity = this.#trustedItems.get(item)
-                if (identity && this.vault.isCurrentIdentity(identity))
-                  this.#sanitizeKnownItem(item, identity.representation, kind, 'trusted-api', true)
-                else rewriteItem(item, '', [])
-              }
-            }
-          }
-          return true
-        }
-        this.#seenTrusted.add(payload)
-      } else if (source === 'page-hint') {
-        const generation = Number(this.session.get().generation)
-        if (this.#seenPage.get(payload) === generation && !catalogOnly) return true
-        this.#seenPage.set(payload, generation)
-      }
-    }
-    this.#sortCodecGroups(dash.video, this.settings.get().codec)
-    let contentKey = ''
-    try { const pathname = new URL(baseUrl(dash.video[0] ?? dash.audio[0] ?? {})).pathname; contentKey = pathname.slice(0, pathname.lastIndexOf('/')) } catch { /* no trusted media identity */ }
-    if (source === 'trusted-api' && this.#contentKey && contentKey && contentKey !== this.#contentKey) {
-      this.session.beginEpoch()
-      const state = this.session.get()
-      this.vault.reset(state.generation, state.epoch)
-      this.routes.resetEpoch()
-      this.#trustedItems = new WeakMap()
-    }
-    if (source === 'trusted-api' && contentKey) this.#contentKey = contentKey
-    if (responseKey) { this.#responses.add(responseKey); while (this.#responses.size > 128) this.#responses.delete(this.#responses.values().next().value as string) }
-    const state = this.session.get()
-    for (const [kind, items] of [['video', dash.video], ['audio', dash.audio]] as const) {
-      items.forEach((item, index) => {
-        const primary = baseUrl(item), urls = [primary, ...backupUrls(item)].filter(Boolean)
-        if (parseMediaUrl(primary)?.kind === 'unknown') {
-          const rep = this.vault.register({ generation: state.generation, epoch: state.epoch, kind,
-            key: `${String(item.id ?? index)}:${codecName(item)}:${finite(item.height)}`, height: finite(item.height),
-            codec: codecName(item), bandwidth: finite(item.bandwidth), urls, source })
-          if (rep && source === 'trusted-api') {
-            const identity = this.vault.identity(rep)
-            if (identity) this.#trustedItems.set(item, identity)
-          }
-          if (rep && source !== 'trusted-api' && this.vault.source(rep) === 'trusted-api') {
-            if (source === 'page-hint' && catalogOnly) this.#sanitizeTrustedHint(item, rep, kind)
-            return
-          }
-          if (source !== 'player-mpd') {
-            const output = rep ? this.routes.opaqueOutput(rep, primary, urls, source)
-              : { primary: '', backups: [] }
-            rewriteItem(item, output.primary, output.backups)
-          }
-          return
-        }
-        const bandwidth = finite(item.bandwidth)
-        const rep = this.vault.register({ generation: state.generation, epoch: state.epoch, kind,
-          key: `${String(item.id ?? index)}:${codecName(item)}:${finite(item.height)}`, height: finite(item.height), codec: codecName(item),
-          bandwidth, urls, source })
-        if (rep && source === 'trusted-api') {
-          const identity = this.vault.identity(rep)
-          if (identity) this.#trustedItems.set(item, identity)
-        }
-        if (rep && source !== 'trusted-api' && this.vault.source(rep) === 'trusted-api') {
-          if (source === 'page-hint' && catalogOnly) this.#sanitizeTrustedHint(item, rep, kind)
-          return
-        }
-        if (!rep) {
-          if (source !== 'player-mpd') {
-            const primaryOutput = this.routes.apply(primary, kind, undefined, true)
-            const backups = this.routes.isCatalogOnly() ? [] : primaryOutput.url
-              ? [...new Set(urls.map(url => this.routes.apply(url).url).filter((url): url is string => !!url && url !== primaryOutput.url))].slice(0, 5) : []
-            const safePrimary = primaryOutput.url && (catalogOnly || this.routes.isBilibiliMedia(primaryOutput.url))
-              ? primaryOutput.url : ''
-            rewriteItem(item, safePrimary, safePrimary
-              ? backups.filter(url => catalogOnly || this.routes.isBilibiliMedia(url)) : [])
-          }
-          return
-        }
-        if (source === 'player-mpd') return
-        const requiredMbps = Math.max(kind === 'audio' ? 0.5 : 2,
-          ((bandwidth || (kind === 'audio' ? 192_000 : 4_000_000)) / 1_000_000) * this.routes.playbackRate() * 1.25)
-        const demand: PlaybackDemand = { kind, requiredMbps, highDemand: requiredMbps >= 12 }
-        const decision = this.routes.plan(rep, demand, this.session.get().affinity ? 'representation' : 'startup')
-        const output = this.routes.playerOutput(rep, primary, decision, urls, source)
-        rewriteItem(item, output.primary, output.backups)
-      })
-    }
+    const dash = collectDash(payload, this.controller.catalogOnly())
+    if (dash) this.#sortCodecGroups(dash.video, this.controller.codecPreference())
+    const normalize = (items: UnknownRecord[]): PlayurlItem[] => items.map((item, index) => ({
+      token: item, key: `${String(item.id ?? index)}:${codecName(item)}:${finite(item.height)}`,
+      height: finite(item.height), codec: codecName(item), bandwidth: finite(item.bandwidth),
+      primary: baseUrl(item), urls: [baseUrl(item), ...backupUrls(item)].filter(Boolean),
+    }))
+    const outputs = this.controller.ingest(dash && isRecord(payload)
+      ? { token: payload, video: normalize(dash.video), audio: normalize(dash.audio) } : null, source, responseKey)
+    if (!outputs) return false
+    for (const output of outputs) if (isRecord(output.token)) rewriteItem(output.token, output.primary, output.backups)
     return true
-  }
-
-  #sanitizeTrustedHint(item: UnknownRecord, representation: RepresentationId, kind: MediaKind): void {
-    this.#sanitizeKnownItem(item, representation, kind, 'page-hint', false)
-  }
-
-  #sanitizeKnownItem(item: UnknownRecord, representation: RepresentationId, kind: MediaKind,
-    source: 'trusted-api' | 'page-hint', recordOutput: boolean): void {
-    const original = this.vault.rootUrl(representation)
-    if (!original) { rewriteItem(item, '', []); return }
-    const bandwidth = this.vault.groupSummary(representation)?.bandwidth ?? 0
-    const requiredMbps = Math.max(kind === 'audio' ? 0.5 : 2,
-      ((bandwidth || (kind === 'audio' ? 192_000 : 4_000_000)) / 1_000_000) * this.routes.playbackRate() * 1.25)
-    const demand: PlaybackDemand = { kind, requiredMbps, highDemand: requiredMbps >= 12 }
-    const decision = this.routes.plan(representation, demand, this.session.get().affinity ? 'representation' : 'startup')
-    const output = this.routes.playerOutput(representation, original, decision, [original], source, recordOutput)
-    rewriteItem(item, output.primary, output.backups)
   }
 
   #sortCodecGroups(items: UnknownRecord[], preference: CodecPreference): void {

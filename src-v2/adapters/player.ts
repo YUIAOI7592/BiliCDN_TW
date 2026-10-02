@@ -1,5 +1,4 @@
-import type { PlayurlAdapter } from './playurl.ts'
-import type { VideoSnapshot } from '../application/ports.ts'
+import type { PlayurlPort, VideoSnapshot } from '../application/ports.ts'
 
 type UnknownRecord = Record<string, unknown>
 const isRecord = (value: unknown): value is UnknownRecord => !!value && typeof value === 'object'
@@ -12,9 +11,24 @@ const safeNumber = (value: unknown): number | null => Number.isFinite(Number(val
 export class PlayerAdapter {
   #cachedVideo: HTMLVideoElement | null = null
   #manifestFingerprint = ''
-  constructor(private readonly playurl: PlayurlAdapter) {}
+  constructor(private readonly playurl: PlayurlPort & { lifecycleKey(): string }) {}
 
-  player(): UnknownRecord | null { try { return isRecord(unsafeWindow.player) ? unsafeWindow.player : null } catch { return null } }
+  protected player(): UnknownRecord | null { try { return isRecord(unsafeWindow.player) ? unsafeWindow.player : null } catch { return null } }
+
+  observePlayIntent(listener: () => void): () => void {
+    const target = this.player(), original = target?.play
+    if (!target || typeof original !== 'function') return () => undefined
+    const wrapped = function(this: unknown, ...args: unknown[]): unknown {
+      let active = false
+      try { active = unsafeWindow.navigator.userActivation?.isActive === true } catch { /* unsupported */ }
+      if (active) listener()
+      return Reflect.apply(original, this, args)
+    }
+    try { target.play = wrapped } catch { return () => undefined }
+    return () => {
+      try { if (target.play === wrapped) target.play = original } catch { /* site owns method */ }
+    }
+  }
 
   video(): HTMLVideoElement | null {
     if (this.#cachedVideo?.isConnected && this.#area(this.#cachedVideo) > 0) return this.#cachedVideo

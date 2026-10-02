@@ -1,11 +1,17 @@
-import type { PlayerPort, VideoSnapshot } from './ports.ts'
+import type { PlayerPort, VideoSnapshot, SchedulerPort } from './ports.ts'
 import type { RouteCoordinator } from './route-coordinator.ts'
 import type { MeasurementController } from './measurement-controller.ts'
 import type { RecoveryController } from './recovery-controller.ts'
 import type { SessionStore } from '../state/session-store.ts'
-import type { SettingsStore } from '../state/settings-store.ts'
 import type { SignedRouteVault } from '../state/signed-route-vault.ts'
 import type { PlaybackDemand } from '../domain/model.ts'
+import type { RequestContext } from '../domain/model.ts'
+
+export interface MonitorRoutes extends Pick<RouteCoordinator, 'observePlaybackRate' | 'isOriginalComparison' | 'firstMediaAt'> {
+  latestRequested(kind: 'video' | 'audio'): Pick<RequestContext, 'generation' | 'epoch' | 'representation' | 'targetHost'> | null
+  recover(...args: Parameters<RouteCoordinator['recover']>): unknown
+  recoverStartup(...args: Parameters<RouteCoordinator['recoverStartup']>): { readonly host: string | null } | null
+}
 
 export interface MonitorSnapshot {
   readonly video: VideoSnapshot
@@ -16,7 +22,7 @@ export interface MonitorSnapshot {
 }
 
 export class PlayerMonitor {
-  #timer: number | null = null
+  #timer: (() => void) | null = null
   #lastTime = 0
   #stableProgressSec = 0
   #stallTicks = 0
@@ -32,26 +38,28 @@ export class PlayerMonitor {
   #listeners = new Set<(snapshot: MonitorSnapshot) => void>()
 
   constructor(
-    private readonly player: PlayerPort,
-    private readonly session: SessionStore,
-    private readonly settings: SettingsStore,
-    private readonly vault: SignedRouteVault,
-    private readonly routes: RouteCoordinator,
-    private readonly measurement: MeasurementController,
-    private readonly recovery: RecoveryController,
+    private readonly player: Pick<PlayerPort, 'snapshot' | 'syncManifest'>,
+    private readonly session: Pick<SessionStore, 'get'>,
+    private readonly settings: { get(): { readonly disabled: boolean } },
+    private readonly vault: Pick<SignedRouteVault, 'groupSummary'>,
+    private readonly routes: MonitorRoutes,
+    private readonly measurement: Pick<MeasurementController, 'tick' | 'cancel' | 'startupFallbackHosts'>,
+    private readonly recovery: Pick<RecoveryController, 'tick' | 'isRecovering' | 'armStartupFailure'>,
     private readonly isVisible: () => boolean,
     private readonly now: () => number,
+    private readonly scheduler: SchedulerPort,
   ) {
     this.#snapshot = Object.freeze({ video: player.snapshot(), stableProgressSec: 0, watchdog: 'no-video', stallTicks: 0,
       startupRescue: { state: 'watching' as const, ageSec: 0 } })
   }
 
-  start(): void { if (this.#timer === null) { this.#timer = window.setInterval(() => this.tick(), 1000); this.tick() } }
-  stop(): void { if (this.#timer !== null) clearInterval(this.#timer); this.#timer = null; this.measurement.cancel('monitor-stop') }
+  start(): void { if (this.#timer === null) { this.#timer = this.scheduler.interval(() => this.tick(), 1000); this.tick() } }
+  stop(): void { this.#timer?.(); this.#timer = null; this.measurement.cancel('monitor-stop') }
   reset(): void { this.#lastTime = 0; this.#stableProgressSec = 0; this.#stallTicks = 0; this.#lastRecoveryAt = 0; this.#seekGraceUntil = 0; this.#manifestTick = 0; this.#manifestReady = false;
     this.#startupRescueAttempted = false; this.#startupObservedProgress = false; this.#lastFrames = null; this.#startupRescueState = 'watching'
-    this.measurement.reset(); this.recovery.reset(); this.player.reset() }
+  }
   snapshot(): MonitorSnapshot { return this.#snapshot }
+  dispose(): void { this.stop(); this.#listeners.clear() }
   subscribe(listener: (snapshot: MonitorSnapshot) => void): () => void { this.#listeners.add(listener); return () => this.#listeners.delete(listener) }
 
   tick(): void {

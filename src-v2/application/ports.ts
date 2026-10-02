@@ -20,7 +20,7 @@ export interface VideoSnapshot {
 }
 
 export interface PlayerPort {
-  player(): Record<string, unknown> | null
+  observePlayIntent(listener: () => void): () => void
   snapshot(): VideoSnapshot
   syncManifest(): boolean
   reload(): unknown
@@ -33,8 +33,36 @@ export interface PlayerPort {
 }
 
 export interface PlayurlPort {
-  transform(payload: unknown, source: 'trusted-api' | 'player-mpd' | 'page-hint'): boolean
+  transform(payload: unknown, source: 'trusted-api' | 'player-mpd' | 'page-hint', responseKey?: string): boolean
 }
+
+export interface SchedulerPort {
+  timeout(task: () => void, delayMs: number): () => void
+  interval(task: () => void, delayMs: number): () => void
+  microtask(task: () => void): void
+}
+
+export interface NavigationPort {
+  key(): string
+  subscribe(listener: () => void): () => void
+}
+
+export interface RangeProbeInput {
+  readonly url: string
+  readonly host: string | null
+  readonly limit: number
+  readonly signal: AbortSignal
+  readonly completionReason: string
+}
+export interface RangeProbeResult {
+  readonly bytes: number
+  readonly elapsedMs: number
+  readonly ttfbMs: number | null
+  readonly status: number | null
+  readonly directRange: boolean
+  readonly reason: string
+}
+export interface RangeProbePort { read(input: RangeProbeInput): Promise<RangeProbeResult> }
 
 export interface PagePlayinfoPort {
   install(): void

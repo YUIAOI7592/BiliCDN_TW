@@ -1,3 +1,8 @@
+import { RangeProbeAdapter } from './adapters/range-probe.ts'
+import { PlayurlController } from './application/playurl-controller.ts'
+import { RuntimeController } from './application/runtime-controller.ts'
+import { ControlCommands } from './application/control-commands.ts'
+import { MeasurementMetaStore } from './state/measurement-meta-store.ts'
 import { TampermonkeyStorage } from './platform/storage.ts'
 import { SettingsStore } from './state/settings-store.ts'
 import { RestrictionStore } from './state/restriction-store.ts'
@@ -7,7 +12,6 @@ import { SignedRouteVault } from './state/signed-route-vault.ts'
 import { RouteCoordinator } from './application/route-coordinator.ts'
 import { MeasurementController } from './application/measurement-controller.ts'
 import { RecoveryController } from './application/recovery-controller.ts'
-import type { VideoSnapshot } from './application/ports.ts'
 import { PlayerMonitor } from './application/player-monitor.ts'
 import { LifecycleController } from './application/lifecycle-controller.ts'
 import { PlayurlAdapter } from './adapters/playurl.ts'
@@ -19,10 +23,13 @@ import { WebRtcAdapter } from './adapters/webrtc.ts'
 import { DiagnosticRecorder } from './diagnostics/recorder.ts'
 import { ControlCenter } from './ui/control-center.ts'
 import { PlayerPanel } from './ui/player-panel.ts'
+import { BrowserScheduler } from './adapters/scheduler.ts'
+import { BrowserNavigation } from './adapters/navigation.ts'
 
 export const start = (): void => {
   const now = (): number => Date.now()
   const clock = { now }
+  const scheduler = new BrowserScheduler()
   const storage = new TampermonkeyStorage()
   const settings = new SettingsStore(storage, now)
   const restrictions = new RestrictionStore(storage, now)
@@ -30,63 +37,34 @@ export const start = (): void => {
   const session = new SessionStore()
   const vault = new SignedRouteVault()
   const routes = new RouteCoordinator(clock, session, settings, restrictions, evidence, vault)
-  const playurl = new PlayurlAdapter(session, vault, routes, settings)
+  const meta = new MeasurementMetaStore(storage, now)
+  const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes, settings))
   const player = new PlayerAdapter(playurl)
   const recovery = new RecoveryController(player, now)
   const nativeFetch = unsafeWindow.fetch.bind(unsafeWindow)
-  const measurement = new MeasurementController(routes, storage, nativeFetch, now)
+  const measurement = new MeasurementController(routes, meta, new RangeProbeAdapter(nativeFetch, now), now, scheduler)
   const transport = new TransportAdapter(session, settings, routes, playurl, measurement, now)
   transport.install()
   const visibility = new VisibilityAdapter()
   const monitor = new PlayerMonitor(player, session, settings, vault, routes, measurement, recovery,
-    () => visibility.isActuallyVisible(), now)
+    () => visibility.isActuallyVisible(), now, scheduler)
+  const diagnostics = new DiagnosticRecorder(now, () => settings.get().verbose)
+  const runtime = new RuntimeController(session, settings, routes, player, monitor, measurement, recovery, visibility, diagnostics, now)
   let lifecycle: LifecycleController | null = null
   const pagePlayinfo = new PagePlayinfoAdapter((payload, serial) => lifecycle?.acceptPageAssignment(payload, serial),
     () => !settings.get().disabled && routes.isCatalogOnly())
-  lifecycle = new LifecycleController(session, settings, vault, routes, playurl, pagePlayinfo, monitor, now)
+  lifecycle = new LifecycleController(session, settings, vault, routes, playurl, pagePlayinfo, runtime, now, new BrowserNavigation(), scheduler)
   const webRtc = new WebRtcAdapter(settings)
-  const diagnostics = new DiagnosticRecorder(now, () => settings.get().verbose)
+  const commands = new ControlCommands(settings, restrictions, evidence, meta, routes, measurement, recovery, now)
   const center = new ControlCenter({ settings, restrictions, evidence, session, routes, measurement, monitor, recovery, transport,
-    diagnostics, storageDelete: key => storage.delete(key), now })
+    diagnostics, commands, now })
   const panel = new PlayerPanel(center, settings, session, monitor)
 
-  const diagnosticSample = (video: VideoSnapshot, watchdog: string, at: number) => ({
-    at, generation: session.get().generation, epoch: session.get().epoch,
-    enabled: !settings.get().disabled, originalComparison: routes.isOriginalComparison(),
-    currentTimeSec: video.currentTime, frames: video.frames, playableBufferSec: video.playableBufferSec,
-    paused: video.paused, seeking: video.seeking, ended: video.ended, readyState: video.readyState,
-    coreInitialized: video.coreInitialized, watchdog,
-  })
-
-  const eventSink = (event: Parameters<DiagnosticRecorder['record']>[0]): void => {
-    diagnostics.record(event, !settings.get().disabled && !routes.isOriginalComparison())
-    if (event.type === 'recovery' && event.action.action === 'route-fallback' && !routes.isOriginalComparison()) {
-      const snapshot = player.snapshot()
-      diagnostics.recordPlayer(diagnosticSample(snapshot, monitor.snapshot().watchdog, event.at))
-      recovery.armRouteFailure('route-failure', snapshot)
-    }
-  }
-  routes.subscribe(eventSink)
-  recovery.subscribe(eventSink)
-  lifecycle.subscribe(eventSink)
-  monitor.subscribe(snapshot => diagnostics.recordPlayer(diagnosticSample(snapshot.video, snapshot.watchdog, now())))
-
-  visibility.setEnabled(!settings.get().disabled)
+  lifecycle.subscribe(event => runtime.record(event))
+  runtime.install()
   webRtc.install()
   lifecycle.start()
   panel.start()
-  let routeSettings = JSON.stringify([settings.get().fixedHost, settings.get().catalogOverrides, settings.get().considerNativeSources])
-  let nativeSources = settings.get().considerNativeSources
-  settings.subscribe(state => {
-    visibility.setEnabled(!state.disabled)
-    const next = JSON.stringify([state.fixedHost, state.catalogOverrides, state.considerNativeSources])
-    if (next !== routeSettings) { routeSettings = next; routes.invalidateForUserSetting() }
-    if (state.considerNativeSources !== nativeSources) {
-      nativeSources = state.considerNativeSources
-      measurement.reset()
-      recovery.reset()
-    }
-  })
   try { GM_registerMenuCommand('⚙️ 開啟 BiliCDN v2 控制中心', () => center.show()) } catch { /* optional */ }
 }
 

@@ -1,3 +1,5 @@
+import type { ControlCommandPort } from '../application/control-commands.ts'
+import type { TransportSnapshot } from '../domain/transport-model.ts'
 import { DEFAULT_UNAVAILABLE_HOSTS, TRUSTED_CATALOG } from '../domain/catalog.ts'
 import { evidenceMetrics } from '../domain/evidence.ts'
 import { assessDemandRatio } from '../domain/routing.ts'
@@ -84,18 +86,31 @@ const restrictionLabel = (reason: unknown): string => plain(reason, {
 })
 
 export interface ControlCenterDependencies {
-  readonly settings: SettingsStore
-  readonly restrictions: RestrictionStore
-  readonly evidence: EvidenceStore
-  readonly session: SessionStore
-  readonly routes: RouteCoordinator
-  readonly measurement: MeasurementController
-  readonly monitor: PlayerMonitor
-  readonly recovery: RecoveryController
-  readonly diagnostics: DiagnosticRecorder
-  readonly transport: { snapshot(): Readonly<Record<string, unknown>> }
-  readonly storageDelete: (key: string) => void
+  readonly settings: Pick<SettingsStore, 'get'>
+  readonly restrictions: Pick<RestrictionStore, 'list'>
+  readonly evidence: Pick<EvidenceStore, 'list'>
+  readonly session: Pick<SessionStore, 'get'>
+  readonly routes: Pick<RouteCoordinator, 'snapshot' | 'isOriginalComparison' | 'latestVideoHost'>
+  readonly measurement: Pick<MeasurementController, 'snapshot'>
+  readonly monitor: Pick<PlayerMonitor, 'snapshot'>
+  readonly recovery: Pick<RecoveryController, 'snapshot'>
+  readonly diagnostics: Pick<DiagnosticRecorder, 'snapshot' | 'buildReport' | 'mark' | 'clear'>
+  readonly transport: { snapshot(): TransportSnapshot }
+  readonly commands: ControlCommandPort
   readonly now: () => number
+}
+
+export interface ControlCenterSnapshot {
+  readonly version: string
+  readonly settings: ReturnType<SettingsStore['get']>
+  readonly session: ReturnType<SessionStore['get']>
+  readonly monitor: ReturnType<PlayerMonitor['snapshot']>
+  readonly recovery: ReturnType<RecoveryController['snapshot']>
+  readonly measurement: ReturnType<MeasurementController['snapshot']>
+  readonly interception: TransportSnapshot
+  readonly routes: ReturnType<RouteCoordinator['snapshot']>
+  readonly restrictions: ReturnType<RestrictionStore['list']>
+  readonly evidence: readonly Readonly<ReturnType<typeof evidenceMetrics> & { host: string; kind: 'video' | 'audio' }>[]
 }
 
 export class ControlCenter {
@@ -165,12 +180,12 @@ export class ControlCenter {
     if (!settings.disabled && !settings.considerNativeSources && !this.deps.routes.isOriginalComparison() && hook.hookState !== 'installed') {
       summary.textContent += '\n請求攔截未完整，無法確認影音只依內建 CDN 選路；請以 Chrome「網路」面板核對。'
     }
-    const lastHook = hook.lastMediaRequest as Record<string, unknown> | null
+    const lastHook = hook.lastMediaRequest
     if (lastHook) summary.textContent += `\n最近一筆影音請求：${plain(lastHook.kind, { video: '影片', audio: '音訊', unknown: '尚未分類' })}，送往 ${lastHook.targetHost ?? '未知'}｜${lastHook.nativeCalled ? '已交給瀏覽器' : '未交給瀏覽器'}｜${lastHook.responseObserved ? `收到回應${lastHook.status ? `（HTTP ${lastHook.status}）` : ''}` : '尚未看到回應'}`
-    const lastBlocked = hook.lastBlocked as Record<string, unknown> | null
+    const lastBlocked = hook.lastBlocked
     if (lastBlocked) summary.textContent += `\n最近擋下的請求：${lastBlocked.host}｜原因：${restrictionLabel(lastBlocked.reason)}｜沒有送給瀏覽器`
-    const routes = this.deps.routes.snapshot(), latest = routes.latest as Record<string, Record<string, unknown>>
-    const routeRecovery = this.deps.diagnostics.snapshot().routeRecovery as { attempts: Array<{ host: string | null; stage: string }> }
+    const routes = this.deps.routes.snapshot(), latest = routes.latest
+    const routeRecovery = this.deps.diagnostics.snapshot().routeRecovery
     const lastAttempt = routeRecovery.attempts.at(-1)
     if (lastAttempt) summary.textContent += `\n影片備援接手：${lastAttempt.host ?? '未知 Host'}｜${plain(lastAttempt.stage, {
       planned: '已選定，尚未看到請求', sent: '已送出請求', 'progress-unconfirmed': '播放器有進度，路線仍待確認',
@@ -178,7 +193,7 @@ export class ControlCenter {
       'mixed-evidence': '同時收到其他 Host 資料，無法歸因', unconfirmed: '30 秒內未取得足夠證據',
       superseded: '已由下一條備援取代', interrupted: '觀察因模式或影片切換中止',
     })}`
-    const activePlan = routes.activePlan as { host?: string; routeType?: string; ranking?: Array<{ host: string; type: string; ratio: number | null }> } | null
+    const activePlan = routes.activePlan
     const selected = activePlan?.ranking?.find(row => row.host === activePlan.host && row.type === activePlan.routeType)
     if (activePlan?.host) summary.textContent += `\n目前路線容量：${plain(assessDemandRatio(selected?.ratio ?? null), {
       'below-required': '低於本次需求', 'below-headroom': '未達安全餘量', 'meets-headroom': '達到安全餘量', unknown: '速度樣本不足',
@@ -188,12 +203,12 @@ export class ControlCenter {
       if (!row) { if (kind !== 'unknown') summary.textContent += `\n${label}：還沒有可確認的請求`; continue }
       const age = Math.max(0, Math.floor((this.deps.now() - Number(row.observedAt)) / 1000))
       summary.textContent += `\n${label}：送往 ${row.targetHost ?? '未知'} → ${row.responseHost ? `回應來自 ${row.responseHost}` : '尚未取得回應來源'}｜${age} 秒前｜${plain(row.outcome, { success: '成功', failure: '失敗', abort: '已取消' })}${row.status ? `（HTTP ${row.status}）` : ''}\n  腳本在送出前換 CDN：${row.hostChanged === true ? '有' : row.hostChanged === false ? '沒有' : '尚未確認'}｜提供播放器時換 CDN：${row.playurlHostChanged === true ? '有' : row.playurlHostChanged === false ? '沒有' : '尚未確認'}｜這筆請求：${attributionLabel(row.attributionStatus)}`
-      const output = row.playurlOutput as Record<string, unknown> | null
+      const output = row.playurlOutput
       if (output) summary.textContent += `\n  播放器取得的${output.role === 'backup' ? '備用' : '主要'}網址：${output.originalHost} → ${output.outputHost}`
     }
-    const rep = routes.representation as { height: number; codec: string } | null
+    const rep = routes.representation
     summary.textContent += `\n目前畫質：${rep ? `${rep.height}p / ${rep.codec}` : attributionLabel(routes.attribution)}`
-    const fallback = routes.fallback as Record<string, Record<string, unknown>>
+    const fallback = routes.fallback
     for (const [kind, label] of [['video', '影片'], ['audio', '音訊']] as const) {
       const row = fallback[kind]
       const stage = plain(row?.stage, { planned: '已選好，但還沒看到新請求', 'entered-hook': '腳本看到新請求，尚未確認有回應',
@@ -204,20 +219,18 @@ export class ControlCenter {
     summary.textContent += '\n※ 上述請求與回應由腳本觀察；要確認瀏覽器實際送出的網址，仍須查看 Chrome「網路」面板。'
     body.append(summary)
     const actions = document.createElement('div'); actions.className = 'grid'
-    const measurementButton = this.#button('安排測速（不會立即換 CDN）', () => { this.deps.measurement.requestManual(); this.#renderOverview() })
+    const measurementButton = this.#button('安排測速（不會立即換 CDN）', () => { this.deps.commands.requestMeasurement(); this.#renderOverview() })
     const blacklistButton = this.#button('封鎖最近成功回應的影片 CDN 24 小時（影片＋音訊）', async () => {
-      const host = this.deps.routes.latestVideoHost()
-      if (host) await this.deps.restrictions.add({ host, type: 'black', kind: 'all', reason: 'user', expireAt: this.deps.now() + 24 * 60 * 60 * 1000 })
-      this.deps.routes.invalidateForUserSetting(); this.#renderOverview()
+      await this.deps.commands.blacklistLatestVideo(); this.#renderOverview()
     }, 'danger')
     actions.append(
-      this.#button(settings.disabled ? '啟用腳本' : '停用腳本', async () => { await this.deps.settings.update({ disabled: !settings.disabled }); this.#renderOverview() }, 'primary'),
+      this.#button(settings.disabled ? '啟用腳本' : '停用腳本', async () => { await this.deps.commands.updateSettings({ disabled: !settings.disabled }); this.#renderOverview() }, 'primary'),
       this.#button('CDN 與播放設定', () => this.#renderSettings()),
       this.#button('查看診斷報告', () => this.#renderDiagnostics()),
       measurementButton,
       blacklistButton,
-      this.#button('清除測速紀錄、黑名單與故障標記', async () => { await this.deps.evidence.clear(); await this.deps.restrictions.clear(); this.deps.storageDelete('bilicdn.v2.meta'); this.#renderOverview() }, 'danger'),
-      this.#button('還原預設設定（不清除測速紀錄）', async () => { await this.deps.settings.reset(); this.deps.routes.invalidateForUserSetting(); this.#renderOverview() }, 'danger'),
+      this.#button('清除測速紀錄、黑名單與故障標記', async () => { await this.deps.commands.clearLearning(); this.#renderOverview() }, 'danger'),
+      this.#button('還原預設設定（不清除測速紀錄）', async () => { await this.deps.commands.resetSettings(); this.#renderOverview() }, 'danger'),
     )
     if (!this.deps.routes.latestVideoHost()) {
       blacklistButton.disabled = true
@@ -237,32 +250,30 @@ export class ControlCenter {
     const mode = document.createElement('select')
     mode.append(new Option('由腳本自動挑選 CDN', ''), ...TRUSTED_CATALOG.map(host => new Option(`固定使用：${host}`, host)))
     mode.value = settings.fixedHost ?? ''
-    mode.addEventListener('change', event => { if (!event.isTrusted) return; void this.deps.settings.update({ fixedHost: mode.value || null })
-      .then(() => { this.deps.routes.invalidateForUserSetting(); this.#renderSettings() }) })
+    mode.addEventListener('change', event => { if (!event.isTrusted) return; void this.deps.commands.updateSettings({ fixedHost: mode.value || null })
+      .then(() => { this.#renderSettings() }) })
     rows.append(this.#row('要如何選 CDN', mode, '自動模式會參考可用性與測速結果；固定模式優先使用你指定的節點，但仍會避開已禁止使用的節點。'))
     rows.append(this.#toggle('允許參考 B 站原生來源', settings.considerNativeSources,
       value => {
-        const pending = this.deps.settings.update({ considerNativeSources: value })
+        const pending = this.deps.commands.updateSettings({ considerNativeSources: value })
         if (!value) this.#renderSettings()
         return pending.then(() => this.#renderSettings())
       },
       '預設關閉。關閉時，腳本辨識到的影音只依內建 CDN 清單選路、測速及提供播放器備援；無法安全改寫或沒有合法內建 CDN 時會擋下請求。開啟後，B 站當次提供的原始與備用網址可參與選路。下方的原生對照測試模式獨立運作；已送出的請求不會取消。'))
     rows.append(this.#toggle('測試：只用 B 站原本提供的 CDN', this.deps.routes.isOriginalComparison(), enabled => {
-      this.deps.routes.setOriginalComparison(enabled)
-      this.deps.measurement.reset()
-      this.deps.recovery.reset()
+      this.deps.commands.setOriginalComparison(enabled)
       this.#renderSettings()
     }, '只影響這個分頁。新影片只用 B 站提供的原始或備用網址；被禁止的 CDN 仍不會使用。測試期間不測速，也不自動換 CDN。請先開新測試分頁、啟用後再點進影片；已經交給播放器的網址不會倒回重選。重新整理頁面即可退出。'))
     const codec = document.createElement('select')
     for (const value of ['av1','hevc','avc','auto'] as CodecPreference[]) codec.append(new Option(({ av1: 'AV1', hevc: 'H.265／HEVC', avc: 'H.264／AVC', auto: '由 B 站決定' })[value], value))
     codec.value = settings.codec
-    codec.addEventListener('change', event => { if (event.isTrusted) void this.deps.settings.update({ codec: codec.value as CodecPreference }) })
+    codec.addEventListener('change', event => { if (event.isTrusted) void this.deps.commands.updateSettings({ codec: codec.value as CodecPreference }) })
     rows.append(this.#row('偏好的影片格式', codec, '下次取得新的影片播放網址時生效；這不會強制改變你現在的播放倍速。'))
-    rows.append(this.#toggle('阻止網頁使用 WebRTC', settings.blockWebRtc, value => this.deps.settings.update({ blockWebRtc: value }),
+    rows.append(this.#toggle('阻止網頁使用 WebRTC', settings.blockWebRtc, value => this.deps.commands.updateSettings({ blockWebRtc: value }),
       '避免網頁建立點對點連線；不熟悉這項功能時，可維持預設值。'))
-    rows.append(this.#toggle('阻止網頁使用 HTTPDNS', settings.blockHttpDns, value => this.deps.settings.update({ blockHttpDns: value }),
+    rows.append(this.#toggle('阻止網頁使用 HTTPDNS', settings.blockHttpDns, value => this.deps.commands.updateSettings({ blockHttpDns: value }),
       '避免網頁透過 HTTPDNS 另行尋找 CDN；不熟悉這項功能時，可維持預設值。'))
-    rows.append(this.#toggle('記錄更多診斷細節', settings.verbose, value => this.deps.settings.update({ verbose: value }),
+    rows.append(this.#toggle('記錄更多診斷細節', settings.verbose, value => this.deps.commands.updateSettings({ verbose: value }),
       '開啟後會多記錄選路與測速資訊；關閉時仍會保留重要故障。記錄只存在目前分頁，重新整理後清空。'))
     for (const host of TRUSTED_CATALOG) {
       const defaultEnabled = !DEFAULT_UNAVAILABLE_HOSTS.has(host)
@@ -271,8 +282,7 @@ export class ControlCenter {
         .map(row => `${restrictionLabel(row.type)}（${row.kind === 'all' ? '影片＋音訊' : row.kind === 'video' ? '影片' : '音訊'}）`)
       const detail = `${defaultEnabled ? '預設可用的內建 CDN' : '預設標為不可用；勾選後才允許'}${penalties.length ? `｜目前仍被禁止：${penalties.join('、')}；勾選不會解除禁止` : ''}`
       rows.append(this.#toggle(host, enabled, async value => {
-        await this.deps.settings.update({ catalogOverrides: { ...this.deps.settings.get().catalogOverrides, [host]: value } })
-        this.deps.routes.invalidateForUserSetting()
+        await this.deps.commands.updateSettings({ catalogOverrides: { ...this.deps.settings.get().catalogOverrides, [host]: value } })
       }, detail))
     }
     body.append(rows); foot.append(this.#button('返回', () => this.#renderOverview()))
@@ -294,7 +304,7 @@ export class ControlCenter {
     )
   }
 
-  #readModel(): Readonly<Record<string, unknown>> {
+  #readModel(): ControlCenterSnapshot {
     const now = this.deps.now(), evidence = this.deps.evidence.list().slice(0, 96).map(row => ({ host: row.host, kind: row.kind, ...evidenceMetrics(row, now) }))
     return Object.freeze({ version: GM_info?.script?.version ?? '2.1.1', settings: this.deps.settings.get(), session: this.deps.session.get(),
       monitor: this.deps.monitor.snapshot(), recovery: this.deps.recovery.snapshot(), measurement: this.deps.measurement.snapshot(),

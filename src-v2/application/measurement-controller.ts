@@ -1,19 +1,11 @@
 import type { AppliedRouteDecision, RouteCoordinator, StartupCandidate, StartupOptions } from './route-coordinator.ts'
 import type { FailureKind, PlaybackDemand, RepresentationId } from '../domain/model.ts'
-import type { StoragePort } from '../platform/storage.ts'
+import type { MeasurementMetaStore } from '../state/measurement-meta-store.ts'
+import type { RangeProbePort, SchedulerPort } from './ports.ts'
 
-const META_KEY = 'bilicdn.v2.meta'
 const COOLDOWN_MS = 10 * 60_000
 const TIMEOUT_MS = 3000
-const directResponseFrom = (response: Response, host: string | null): boolean => {
-  if (!host || response.redirected || !response.url) return false
-  try {
-    const url = new URL(response.url)
-    return url.protocol === 'https:' && !url.port && url.hostname.toLowerCase() === host
-  } catch { return false }
-}
-
-interface MeasurementStatus {
+export interface MeasurementStatus {
   readonly generationActive: boolean
   readonly representation: RepresentationId | null
   readonly demand: PlaybackDemand | null
@@ -23,6 +15,10 @@ interface MeasurementStatus {
   readonly seeking: boolean
   readonly recovering: boolean
   readonly disabled: boolean
+}
+
+export interface MeasurementRoutes extends Pick<RouteCoordinator, 'startupOptions' | 'noteStartupProbeResult' | 'recordStartupSuccess' | 'challenge' | 'isCatalogOnly' | 'recordChallenge'> {
+  commitStartupChoice(...args: Parameters<RouteCoordinator['commitStartupChoice']>): { readonly host: string | null } | null
 }
 
 export interface MeasurementSnapshot {
@@ -63,10 +59,11 @@ export class MeasurementController {
   #snapshot: MeasurementSnapshot = Object.freeze({ state: 'idle', reason: 'startup', lastAttemptAt: 0, host: null })
 
   constructor(
-    private readonly routes: RouteCoordinator,
-    private readonly storage: StoragePort,
-    private readonly nativeFetch: typeof fetch,
+    private readonly routes: MeasurementRoutes,
+    private readonly meta: Pick<MeasurementMetaStore, 'get' | 'update' | 'withLock'>,
+    private readonly probe: RangeProbePort,
     private readonly now: () => number,
+    private readonly scheduler: SchedulerPort,
   ) {}
 
   snapshot(): MeasurementSnapshot { return Object.freeze({ ...this.#snapshot, startup: this.#startupState }) }
@@ -81,6 +78,7 @@ export class MeasurementController {
     this.#snapshot = Object.freeze({ state: 'idle', reason: 'generation', lastAttemptAt: 0, host: null })
   }
   requestManual(): void { this.#manualRequested = true }
+  dispose(): void { this.reset() }
   startupFallbackHosts(): readonly string[] { return this.#startupQualifiedHosts }
   cancel(reason: string): void { this.#running?.controller.abort(reason); this.#running = null }
   willGateStartup(url: string): boolean {
@@ -92,7 +90,7 @@ export class MeasurementController {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
     if (this.#startupUsed) return
     if (!this.#startupPending) {
-      const cursor = Math.max(0, Number(this.#meta().catalogCursor) || 0)
+      const cursor = Math.max(0, Number(this.meta.get().catalogCursor) || 0)
       const options = this.routes.startupOptions(url, cursor)
       if (!options?.candidates.length) {
         this.noteUnpreflighted('unsupported-or-no-legal-candidate')
@@ -109,9 +107,9 @@ export class MeasurementController {
         if (this.#startupController === controller) this.#startupController = null
         if (marker === this.#marker) this.#startupPending = null
       })
-      void this.storage.withLock('measurement', () => {
-        const meta = this.#meta()
-        this.storage.set(META_KEY, { ...meta, schema: 2, catalogCursor: cursor + 1, updatedAt: this.now() })
+      void this.meta.withLock(() => {
+        if (marker !== this.#marker) return
+        this.meta.update({ catalogCursor: cursor + 1 })
       }).catch(() => undefined)
     }
     const pending = this.#startupPending
@@ -135,16 +133,16 @@ export class MeasurementController {
 
   async #runStartup(url: string, options: StartupOptions, controller: AbortController, marker: number): Promise<void> {
     const results: ProbeResult[] = []
-    let timer: ReturnType<typeof setTimeout> | null = null
+    let timer: (() => void) | null = null
     const deadline = new Promise<void>(resolve => {
-      timer = setTimeout(() => { controller.abort('startup-deadline'); resolve() }, TIMEOUT_MS)
+      timer = this.scheduler.timeout(() => { controller.abort('startup-deadline'); resolve() }, TIMEOUT_MS)
     })
     const complete = Promise.all(options.candidates.map(async candidate => {
       const result = await this.#probeStartup(candidate, options.demand, controller.signal)
       if (marker === this.#marker) results.push(result)
     })).then(() => undefined)
     await Promise.race([complete, deadline])
-    if (timer !== null) clearTimeout(timer)
+    if (timer !== null) (timer as () => void)()
     controller.abort('startup-complete')
     if (marker !== this.#marker) return
     for (const result of results) this.routes.noteStartupProbeResult(result.candidate, result.status)
@@ -169,42 +167,12 @@ export class MeasurementController {
   }
 
   async #probeStartup(candidate: StartupCandidate, demand: PlaybackDemand, signal: AbortSignal): Promise<ProbeResult> {
-    const startedAt = this.now()
     const limit = candidate.cachedSafeMbps !== null ? 16 * 1024 : demand.highDemand ? 512 * 1024 : 256 * 1024
-    let bytes = 0, responseAt = 0
-    try {
-      const response = await this.nativeFetch(candidate.url, { method: 'GET',
-        headers: { Range: 'bytes=0-' + (limit - 1) }, credentials: 'omit', cache: 'no-store', redirect: 'error', signal })
-      responseAt = this.now()
-      if (!directResponseFrom(response, candidate.host)) {
-        if (response.body) await response.body.cancel('redirected-response')
-        return { candidate, valid: false, safeMbps: null, bytes: 0,
-          elapsedMs: Math.max(1, this.now() - startedAt), ttfbMs: responseAt - startedAt,
-          status: null, reason: 'redirected-response' }
-      }
-      if (response.status !== 206 || !response.body) {
-        if (response.body) await response.body.cancel('range-required')
-        return { candidate, valid: false, safeMbps: null, bytes: 0,
-          elapsedMs: Math.max(1, this.now() - startedAt), ttfbMs: responseAt - startedAt,
-          status: response.status, reason: 'http-' + response.status }
-      }
-      const reader = response.body.getReader()
-      try {
-        while (bytes < limit && !signal.aborted) {
-          const item = await reader.read()
-          if (item.done) break
-          bytes = Math.min(limit, bytes + item.value.byteLength)
-          if (bytes >= limit) { await reader.cancel('startup-sample-complete'); break }
-        }
-      } finally { try { reader.releaseLock() } catch { /* browser-owned */ } }
-      const valid = candidate.cachedSafeMbps !== null ? bytes > 0 : bytes >= 64 * 1024
-      const elapsedMs = Math.max(1, this.now() - startedAt)
-      return { candidate, valid, safeMbps: valid ? candidate.cachedSafeMbps ?? bytes * 8 / elapsedMs / 1000 * 0.7 : null,
-        bytes, elapsedMs, ttfbMs: responseAt - startedAt, status: response.status, reason: valid ? 'measured' : 'short-response' }
-    } catch {
-      return { candidate, valid: false, safeMbps: null, bytes, elapsedMs: Math.max(1, this.now() - startedAt),
-        ttfbMs: responseAt ? responseAt - startedAt : null, status: null, reason: signal.aborted ? 'cancelled' : 'network' }
-    }
+    const result = await this.probe.read({ url: candidate.url, host: candidate.host, limit, signal, completionReason: 'startup-sample-complete' })
+    const valid = result.directRange && (candidate.cachedSafeMbps !== null ? result.bytes > 0 : result.bytes >= 64 * 1024)
+    return { candidate, ...result, valid,
+      safeMbps: valid ? candidate.cachedSafeMbps ?? result.bytes * 8 / result.elapsedMs / 1000 * 0.7 : null,
+      reason: result.directRange ? valid ? 'measured' : 'short-response' : result.reason }
   }
 
   tick(status: MeasurementStatus): void {
@@ -231,22 +199,22 @@ export class MeasurementController {
     try {
       const at = this.now()
       let first: AppliedRouteDecision | null = null, cursor = 0
-      await this.storage.withLock('measurement', () => {
+      await this.meta.withLock(() => {
         if (planningMarker !== this.#marker) return
-        const meta = this.#meta()
+        const meta = this.meta.get()
         if (at - (Number(meta.lastChallengeAt) || 0) < COOLDOWN_MS) return
         cursor = Math.max(0, Number(meta.catalogCursor) || 0)
         first = this.routes.challenge(status.representation!, status.demand!, this.#preferNative, new Set(), cursor)
         if (!first?.url) return
         if (planningMarker !== this.#marker || (this.routes.isCatalogOnly()
           && first.decision.routeType !== 'catalog-generated')) return
-        this.storage.set(META_KEY, { ...meta, schema: 2, lastChallengeAt: at, catalogCursor: cursor + 1, updatedAt: at })
+        this.meta.update({ lastChallengeAt: at, catalogCursor: cursor + 1 })
       })
       if (planningMarker !== this.#marker) return
       const planned = first as AppliedRouteDecision | null
       if (planned && this.routes.isCatalogOnly() && planned.decision.routeType !== 'catalog-generated') return
       if (!planned?.url) {
-        const cooldown = at - (Number(this.#meta().lastChallengeAt) || 0) < COOLDOWN_MS
+        const cooldown = at - (Number(this.meta.get().lastChallengeAt) || 0) < COOLDOWN_MS
         this.#snapshot = Object.freeze({ ...this.#snapshot, state: 'waiting',
           reason: cooldown ? 'cross-tab-cooldown' : 'no-stale-candidate' })
         return
@@ -293,48 +261,19 @@ export class MeasurementController {
     const controller = new AbortController()
     const cancel = (): void => controller.abort(round.signal.reason)
     round.signal.addEventListener('abort', cancel, { once: true })
-    const timeout = setTimeout(() => controller.abort('timeout'), TIMEOUT_MS)
-    let bytes = 0, responseAt = 0, failure: FailureKind | null = null, ok = false, reason = 'http-status'
-    try {
-      const response = await this.nativeFetch(applied.url ?? '', { method: 'GET',
-        headers: { Range: 'bytes=0-' + (limit - 1) }, credentials: 'omit', cache: 'no-store', redirect: 'error', signal: controller.signal })
-      responseAt = this.now()
-      if (!directResponseFrom(response, applied.decision.host)) {
-        reason = 'redirected-response'
-        if (response.body) await response.body.cancel('redirected-response')
-      } else if (response.status !== 206 || !response.body) {
-        reason = 'http-' + response.status
-        if (response.body) await response.body.cancel('range-required')
-        if (applied.decision.routeType === 'native-signed' && [403,451,959].includes(response.status)) failure = 'native-invalid'
-      } else {
-        const reader = response.body.getReader()
-        try {
-          while (bytes < limit) {
-            const item = await reader.read()
-            if (item.done) break
-            bytes = Math.min(limit, bytes + item.value.byteLength)
-            if (bytes >= limit) { await reader.cancel('sample-complete'); break }
-          }
-          ok = bytes >= 64 * 1024
-          if (!ok) reason = 'short-response'
-        } finally { try { reader.releaseLock() } catch { /* browser-owned */ } }
-      }
-    } catch {
-      if (controller.signal.aborted && controller.signal.reason !== 'timeout') return
-      failure = controller.signal.reason === 'timeout' ? 'timeout' : 'network'
-      reason = failure
-    } finally { clearTimeout(timeout); round.signal.removeEventListener('abort', cancel) }
+    const stopTimeout = this.scheduler.timeout(() => controller.abort('timeout'), TIMEOUT_MS)
+    let result
+    try { result = await this.probe.read({ url: applied.url ?? '', host: applied.decision.host, limit,
+      signal: controller.signal, completionReason: 'sample-complete' }) }
+    finally { stopTimeout(); round.signal.removeEventListener('abort', cancel) }
+    if (marker !== this.#marker || (controller.signal.aborted && controller.signal.reason !== 'timeout')) return
+    const ok = result.directRange && result.bytes >= 64 * 1024
+    const failure: FailureKind | null = applied.decision.routeType === 'native-signed' && [403,451,959].includes(result.status ?? 0)
+      ? 'native-invalid' : result.reason === 'timeout' ? 'timeout' : result.reason === 'network' ? 'network' : null
+    await this.routes.recordChallenge(applied, result.bytes, result.elapsedMs, result.ttfbMs, ok ? 'success' : 'failure', failure)
     if (marker !== this.#marker) return
-    const elapsed = Math.max(1, this.now() - startedAt)
-    await this.routes.recordChallenge(applied, bytes, elapsed, responseAt ? responseAt - startedAt : null,
-      ok ? 'success' : 'failure', failure)
-    this.#snapshot = Object.freeze({ state: ok ? 'complete' : 'failed', reason: ok ? 'sample-recorded' : reason,
+    this.#snapshot = Object.freeze({ state: ok ? 'complete' : 'failed', reason: ok ? 'sample-recorded' : result.directRange ? 'short-response' : result.reason,
       lastAttemptAt: startedAt, host: applied.decision.host })
-  }
-
-  #meta(): Record<string, unknown> {
-    const raw = this.storage.get<unknown>(META_KEY, null)
-    return raw && typeof raw === 'object' ? raw as Record<string, unknown> : {}
   }
 
   #unsafeReason(status: MeasurementStatus): string | null {

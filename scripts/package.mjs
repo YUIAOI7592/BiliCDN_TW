@@ -3,9 +3,9 @@ import { resolve } from 'node:path'
 import { build } from './build.mjs'
 import { filesUnder, readJson, sha256 } from './lib.mjs'
 
-export async function packageRelease() {
+export async function packageRelease({ directory } = {}) {
   const config = readJson('release.json'), version = config.version
-  const dir = `Release/v${version}`
+  const dir = directory ?? `Release/v${version}`
   const result = await build()
   mkdirSync(dir, { recursive: true })
   const script = `${dir}/${config.artifactName}`

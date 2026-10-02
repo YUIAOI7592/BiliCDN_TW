@@ -2,17 +2,41 @@ import type { DomainEvent, RouteDecision, TransportObservation, RequestContext, 
 import { assessDemandRatio } from '../domain/routing.ts'
 import { isCatalogHost } from '../domain/catalog.ts'
 import { isKnownNativeFamily } from '../domain/url-policy.ts'
+import type { PlaybackDiagnosticSample, ReadonlySnapshot } from '../domain/diagnostic-model.ts'
+export type { PlaybackDiagnosticSample } from '../domain/diagnostic-model.ts'
 
-interface SafeEvent { at: number; type: string; data: Record<string, unknown>; important: boolean }
-interface Flow { requests: number; successes: number; failures: number; timeouts: number; aborts: number; zeroByteAborts: number; noResponseAborts: number; bytes: number; lastAt: number; maxElapsedMs: number; maxTtfbMs: number }
-interface Incident { id: string; reason: string; startedAt: number; captureUntil: number; state: 'capturing' | 'frozen'; events: SafeEvent[]; flow: Record<string, unknown>[]; playerTrace: string[];
-  playerTraceFormat: string; playerTraceFlags: string }
-export interface PlaybackDiagnosticSample {
-  readonly at: number; readonly generation: number; readonly epoch: number; readonly enabled: boolean; readonly originalComparison: boolean
-  readonly currentTimeSec: number; readonly frames: number | null; readonly playableBufferSec: number
-  readonly paused: boolean; readonly seeking: boolean; readonly ended: boolean; readonly readyState: number
-  readonly coreInitialized: boolean | null; readonly watchdog: string
+interface DiagnosticRequest extends Omit<RequestContext, 'originalHost' | 'targetHost' | 'requestId' | 'decisionId' | 'representation'> {
+  readonly originalHost: string | null; readonly targetHost: string | null
+  readonly requestId: string; readonly decisionId: string; readonly representation: string | null
 }
+interface DiagnosticTransport extends Partial<Omit<DiagnosticRequest, 'decisionId'>> {
+  readonly decisionId: string | null; readonly generation: RequestContext['generation']; readonly epoch: RequestContext['epoch']
+  readonly kind: TransportObservation['kind']; readonly representation: string | null; readonly routeType: TransportObservation['routeType']
+  readonly originalHost: string | null; readonly targetHost: string | null; readonly responseHost: string | null
+  readonly status: number; readonly bytes: number; readonly ttfbMs: number | null; readonly elapsedMs: number; readonly completedAt: number
+  readonly outcome: TransportObservation['outcome']; readonly failureKind: TransportObservation['failureKind'] | null
+}
+interface DiagnosticDecision {
+  readonly decisionStage: 'plan'; readonly id: string; readonly action: RouteDecision['action']; readonly reason: string
+  readonly routeType: RouteDecision['routeType']; readonly host: string | null; readonly demandRatio: number | null
+  readonly capacityAssessment: ReturnType<typeof assessDemandRatio>
+}
+interface DiagnosticRanking extends DiagnosticDecision {
+  readonly ranking: readonly { readonly host: string | null; readonly state: RouteDecision['ranking'][number]['state']; readonly eligible: boolean
+    readonly reasons: readonly string[]; readonly safeMbps: number | null; readonly demandRatio: number | null; readonly ttfbMs: number | null }[]
+}
+type EventOf<Type extends DomainEvent['type']> = Extract<DomainEvent, { type: Type }>
+type DiagnosticEventData = DiagnosticDecision | DiagnosticRequest | (DiagnosticTransport & { detached?: boolean })
+  | { routeType: RequestContext['routeType']; host: string | null; decisionId: string | null }
+  | Pick<EventOf<'attribution-changed'>, 'requestId' | 'status' | 'kind'>
+  | { action: EventOf<'recovery'>['action']['action']; actionId: string; kind?: RequestContext['kind']; identity?: RouteIdentity
+    decision?: DiagnosticDecision; savedPositionSec?: number; savedRate?: number; reason?: string }
+  | (EventOf<'core' | 'core-uninitialized'> & { meaning?: string })
+  | Pick<EventOf<'lifecycle'>, 'generation' | 'epoch' | 'reason'> | { paused: boolean }
+interface SafeEvent { at: number; type: string; data: DiagnosticEventData; important: boolean }
+interface Flow { requests: number; successes: number; failures: number; timeouts: number; aborts: number; zeroByteAborts: number; noResponseAborts: number; bytes: number; lastAt: number; maxElapsedMs: number; maxTtfbMs: number }
+interface Incident { id: string; reason: string; startedAt: number; captureUntil: number; state: 'capturing' | 'frozen'; events: SafeEvent[]; flow: (Flow & { key: string })[]; playerTrace: string[];
+  playerTraceFormat: string; playerTraceFlags: string }
 type AttemptStage = 'planned' | 'sent' | 'progress-unconfirmed' | 'response-observed' | 'playback-observed' | 'mixed-evidence' | 'unconfirmed' | 'superseded' | 'interrupted'
 interface RouteAttempt {
   actionId: string; decisionId: string; host: string; identity: RouteIdentity; at: number; stage: AttemptStage
@@ -24,15 +48,16 @@ interface RouteAttempt {
 }
 const bytes = (value: unknown): number => new TextEncoder().encode(JSON.stringify(value)).byteLength
 const text = (value: unknown, max = 96): string => String(value ?? '').slice(0, max)
+const field = (value: unknown, key: string): unknown => value && typeof value === 'object' ? Reflect.get(value, key) : undefined
 
 export class DiagnosticRecorder {
   #events: SafeEvent[] = []
   #flow = new Map<string, Flow>()
   #pending = new Map<string, RequestContext>()
-  #lastSuccess = new Map<string, Record<string, unknown>>()
+  #lastSuccess = new Map<string, DiagnosticTransport>()
   #lastConfirmed = new Map<string, string>()
   #lastAttribution = new Map<string, string>()
-  #rankings: Record<string, unknown>[] = []
+  #rankings: DiagnosticRanking[] = []
   #incident: Incident | null = null
   #attempts: RouteAttempt[] = []
   #recentPlayerTrace: { at: number; row: string }[] = []
@@ -156,15 +181,16 @@ export class DiagnosticRecorder {
     this.#lastPaused = sample.paused
     this.#bound()
   }
-  snapshot(): Readonly<Record<string, unknown>> {
+  snapshot(): ReadonlySnapshot<DiagnosticSnapshot> { return this.#capture() }
+  #capture() {
     return Object.freeze({ coverage: { from: this.#events[0]?.at ?? this.now(), to: this.#events.at(-1)?.at ?? this.now() },
       incident: this.#incident ? structuredClone(this.#incident) : null, manualMark: this.#manualMark ? { ...this.#manualMark } : null,
-      flow: this.#flows(), lastSuccess: Object.fromEntries(this.#lastSuccess), pending: [...this.#pending.values()].map(row => this.#sanitize(row)),
+      flow: this.#flows(), lastSuccess: Object.fromEntries(this.#lastSuccess), pending: [...this.#pending.values()].map(row => this.#request(row)),
       events: structuredClone(this.#events), rankings: structuredClone(this.#rankings), routeRecovery: { attempts: this.#attempts.map(row => this.#attemptSummary(row)) }, counters: { ...this.#counters } })
   }
 
-  buildReport(readModel: Readonly<Record<string, unknown>>): string {
-    const recorder = { ...this.snapshot() } as Record<string, unknown>
+  buildReport(readModel: object): string {
+    const recorder = { ...this.#capture() }
     const payload = { title: 'BiliCDN_TW v2 診斷報告', generatedAt: new Date(this.now()).toISOString(),
       evidence: this.#incident ? this.#incident.state + '-incident' : this.#lastSuccess.size ? 'media-observation-only' : 'playback-observation-unattributed',
       current: this.#sanitize(readModel), recorder, export: { truncated: false, rankingDropped: 0, traceDropped: 0, contextDropped: 0, flowDropped: 0, incidentDropped: 0,
@@ -177,7 +203,7 @@ export class DiagnosticRecorder {
     payload.export.rankingDropped = this.#rankings.length
     recorder.rankings = []
     output = JSON.stringify(payload)
-    const events = recorder.events as SafeEvent[], flows = recorder.flow as unknown[], incident = recorder.incident as Incident | null
+    const { events, flow: flows, incident } = recorder
     while (new TextEncoder().encode(output).byteLength > 96 * 1024 && (incident?.playerTrace.length || events.length > 1 || flows.length > 1 || (incident?.events.length ?? 0) > 1)) {
       if (incident?.playerTrace.length) { incident.playerTrace.shift(); payload.export.traceDropped++ }
       else if (events.length > 1) { const i = events.findIndex(row => !row.important); events.splice(i >= 0 ? i : 0, 1); payload.export.contextDropped++ }
@@ -186,17 +212,20 @@ export class DiagnosticRecorder {
       output = JSON.stringify(payload)
     }
     if (new TextEncoder().encode(output).byteLength <= 96 * 1024) return output
-    const m = readModel, r = m.routes as Record<string, unknown> | undefined
+    const m = { version: field(readModel, 'version'), session: field(readModel, 'session'), monitor: field(readModel, 'monitor'),
+      recovery: field(readModel, 'recovery'), measurement: field(readModel, 'measurement'), interception: field(readModel, 'interception') }
+    const r = field(readModel, 'routes')
     payload.current = this.#sanitize({ version: m.version, session: m.session, monitor: m.monitor, recovery: m.recovery, measurement: m.measurement,
       interception: m.interception,
-      routes: { planCount: r?.planCount, activePlan: r?.activePlan, affinity: r?.affinity, latest: r?.latest, representation: r?.representation, attribution: r?.attribution },
+      routes: { planCount: field(r, 'planCount'), activePlan: field(r, 'activePlan'), affinity: field(r, 'affinity'), latest: field(r, 'latest'),
+        representation: field(r, 'representation'), attribution: field(r, 'attribution') },
       truncated: true })
     payload.export.currentReduced = true
     output = JSON.stringify(payload)
     if (new TextEncoder().encode(output).byteLength <= 96 * 1024) return output
-    const latest = (recorder.routeRecovery as { attempts: Record<string, unknown>[] }).attempts.at(-1)
+    const latest = recorder.routeRecovery.attempts.at(-1)
     const summary = { title: payload.title, generatedAt: payload.generatedAt, evidence: payload.evidence,
-      current: this.#sanitize({ version: m.version, monitor: { watchdog: (m.monitor as Record<string, unknown> | undefined)?.watchdog }, truncated: true }),
+      current: this.#sanitize({ version: m.version, monitor: { watchdog: field(m.monitor, 'watchdog') }, truncated: true }),
       recorder: { incident: incident && { id: incident.id, reason: incident.reason, startedAt: incident.startedAt, state: incident.state },
         routeRecovery: { attempts: latest ? [{ actionId: latest.actionId, decisionId: latest.decisionId, host: latest.host, stage: latest.stage }] : [] } },
       export: { ...payload.export, emergencySummary: true } }
@@ -276,7 +305,7 @@ export class DiagnosticRecorder {
     active.stage = 'response-observed'
     active.progressTicks = 0; active.lastProgressAt = null
   }
-  #attemptSummary(row: RouteAttempt): Record<string, unknown> {
+  #attemptSummary(row: RouteAttempt) {
     return { actionId: text(row.actionId), decisionId: text(row.decisionId), host: this.#host(row.host),
       generation: row.identity.generation, epoch: row.identity.epoch, representation: text(row.identity.representation),
       authorityRevision: row.identity.authorityRevision, at: row.at, stage: row.stage,
@@ -303,20 +332,32 @@ export class DiagnosticRecorder {
     while (this.#flow.size > 48 || bytes(this.#flows()) > 12 * 1024) { this.#flow.delete(this.#flow.keys().next().value as string); this.#counters.flowEvicted++ }
     this.#bound()
   }
-  #flows(): Record<string, unknown>[] { return [...this.#flow].map(([key, row]) => ({ key, ...row })) }
-  #transport(o: TransportObservation): Record<string, unknown> {
-    return { ...(o.request ? this.#sanitize(o.request) as Record<string, unknown> : {}),
+  #flows() { return [...this.#flow].map(([key, row]) => ({ key, ...row })) }
+  #request(row: RequestContext): DiagnosticRequest {
+    return { requestId: text(row.requestId, 160), generation: row.generation, epoch: row.epoch,
+      decisionId: text(row.decisionId, 160), representation: row.representation === null ? null : text(row.representation, 160),
+      ...(row.authorityRevision !== undefined ? { authorityRevision: row.authorityRevision } : {}), kind: row.kind,
+      attributionStatus: row.attributionStatus, attributionSource: row.attributionSource, decisionStage: row.decisionStage,
+      routeType: row.routeType, originalHost: this.#host(row.originalHost), targetHost: this.#host(row.targetHost), sourceHost: this.#host(row.sourceHost),
+      playurlHostChanged: row.playurlHostChanged, playurlOutput: row.playurlOutput ? {
+        originalHost: this.#host(row.playurlOutput.originalHost) ?? '', outputHost: this.#host(row.playurlOutput.outputHost) ?? '',
+        role: row.playurlOutput.role, source: row.playurlOutput.source, decisionId: row.playurlOutput.decisionId,
+        hostChanged: row.playurlOutput.hostChanged } : null,
+      urlChanged: row.urlChanged, hostChanged: row.hostChanged, startedAt: row.startedAt }
+  }
+  #transport(o: TransportObservation): DiagnosticTransport {
+    return { ...(o.request ? this.#request(o.request) : {}),
       decisionId: o.decisionId, generation: o.generation, epoch: o.epoch, kind: o.kind, representation: o.representation,
       routeType: o.routeType, originalHost: this.#host(o.originalHost), targetHost: this.#host(o.targetHost), responseHost: this.#host(o.finalHost),
       status: o.status, bytes: o.bytes, ttfbMs: o.ttfbMs, elapsedMs: o.elapsedMs, completedAt: o.completedAt, outcome: o.outcome, failureKind: o.failureKind ?? null }
   }
-  #decision(d: RouteDecision): Record<string, unknown> {
+  #decision(d: RouteDecision): DiagnosticDecision {
     const chosen = d.ranking.find(row => row.candidate.host === d.host && row.candidate.type === d.routeType)
     return { decisionStage: 'plan', id: d.id, action: d.action, reason: d.reason, routeType: d.routeType, host: this.#host(d.host),
       demandRatio: chosen?.demandRatio ?? null, capacityAssessment: assessDemandRatio(chosen?.demandRatio ?? null) }
   }
   #event(event: DomainEvent): SafeEvent {
-    let data: Record<string, unknown> = {}, important = false
+    let data: DiagnosticEventData, important = false
     switch (event.type) {
       case 'route-decision': case 'route-planned': {
         data = this.#decision(event.decision)
@@ -332,7 +373,7 @@ export class DiagnosticRecorder {
       case 'transport': case 'transport-completed': data = { ...this.#transport(event.observation), detached: event.type === 'transport-completed' && event.detached }; important = true; break
       case 'route-confirmed': data = this.#transport(event.observation); important = true; break
       case 'route-observed': data = { routeType: event.routeType, host: this.#host(event.host), decisionId: event.decisionId }; important = true; break
-      case 'request-started': data = this.#sanitize(event.request) as Record<string, unknown>; break
+      case 'request-started': data = this.#request(event.request); break
       case 'attribution-changed': data = { requestId: event.requestId, status: event.status, kind: event.kind }; break
       case 'recovery': data = { action: event.action.action, actionId: event.action.id,
         ...(event.action.action === 'route-fallback' ? { kind: event.action.kind, identity: event.action.identity, decision: this.#decision(event.action.decision) }
@@ -394,4 +435,21 @@ export class DiagnosticRecorder {
     return Object.fromEntries(Object.entries(value).slice(0, 48).filter(([name]) => !['streamKey', 'url', 'path', 'query', 'token'].includes(name))
       .map(([name, item]) => [name, this.#sanitize(item, name, depth + 1)]))
   }
+}
+
+/** Public queries retain the concrete, readonly snapshot shape. */
+export interface DiagnosticSnapshot {
+  readonly coverage: { readonly from: number; readonly to: number }
+  readonly incident: ReadonlySnapshot<Incident> | null
+  readonly manualMark: Readonly<{ at: number; reason: string; count: number }> | null
+  readonly flow: readonly Readonly<Flow & { key: string }>[]
+  readonly lastSuccess: Readonly<Record<string, DiagnosticTransport>>
+  readonly pending: readonly DiagnosticRequest[]
+  readonly events: readonly ReadonlySnapshot<SafeEvent>[]
+  readonly rankings: readonly DiagnosticRanking[]
+  readonly routeRecovery: { readonly attempts: readonly ReadonlySnapshot<Omit<RouteAttempt,
+    'identity' | 'baselineCaptured' | 'progressTicks' | 'lastProgressAt' | 'lastPositionSec' | 'requestIds' | 'responseIds' | 'host'> & {
+      host: string | null; generation: number; epoch: number; representation: string; authorityRevision: number }>[] }
+  readonly counters: Readonly<Record<'evicted' | 'incidentReplaced' | 'rankingEvicted' | 'flowEvicted' | 'incidentEvicted'
+    | 'pendingEvicted' | 'eventsExpired' | 'flowsExpired' | 'traceEvicted' | 'attemptEvicted', number>>
 }
