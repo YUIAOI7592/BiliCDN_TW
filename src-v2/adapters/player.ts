@@ -75,7 +75,7 @@ export class PlayerAdapter {
     if (!cloned) return false
     const fingerprint = `${this.playurl.lifecycleKey()}:${JSON.stringify(cloned)}`
     if (fingerprint === this.#manifestFingerprint) return true
-    const accepted = this.playurl.transform({ code: 0, data: { dash: cloned } }, 'player-mpd')
+    const accepted = this.playurl.transform({ code: 0, data: { dash: cloned } }, 'player-mpd').accepted
     if (accepted) this.#manifestFingerprint = fingerprint
     return accepted
   }

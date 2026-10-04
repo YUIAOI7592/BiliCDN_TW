@@ -1,4 +1,5 @@
-import type { LastMediaRequest, TransportStats, TransportSnapshot } from '../domain/transport-model.ts'
+import type { LastMediaRequest, TransportStats, TransportSnapshot, PlayurlTransportSummary } from '../domain/transport-model.ts'
+import type { PlayurlRejection, PlayurlTransformResult } from '../domain/playurl-model.ts'
 export type { TransportSnapshot } from '../domain/transport-model.ts'
 import type { PlayurlPort } from '../application/ports.ts'
 import type { SettingsState } from '../state/settings-store.ts'
@@ -28,6 +29,8 @@ export const catalogTarget = (applied: AppliedRouteDecision | null): boolean => 
   && isCatalogHost(applied.decision.host) && hostOf(applied.url) === applied.decision.host
 export const blockedPlayurl = (): { code: number; message: string } => ({ code: -1, message: 'BiliCDN Catalog route unavailable' })
 export const blockedPlayurlText = (): string => JSON.stringify(blockedPlayurl())
+export const rejectedPlayurl = (reason: PlayurlRejection): PlayurlTransformResult => ({ accepted: false,
+  formats: [], videoCount: 0, audioCount: 0, segmentCount: 0, upstreamCode: null, reason })
 
 export const copyResponseSurface = (target: Response, source: Response): Response => {
   for (const key of ['url', 'redirected', 'type'] as const) {
@@ -42,6 +45,7 @@ export class TransportContext {
   #stats = { enteredFetch: 0, enteredXhr: 0, mediaRecognized: 0, nativeCalled: 0, responseObserved: 0, blocked: 0 }
   #lastMedia: LastMediaRequest | null = null
   #lastBlocked: TransportStats['lastBlocked'] = null
+  #lastPlayurl: PlayurlTransportSummary | null = null
   constructor(readonly session: Pick<SessionStore, 'get' | 'isGeneration'>, readonly settings: TransportSettings,
     readonly routes: TransportRoutes, readonly playurl: PlayurlPort, readonly measurement: StartupGate, readonly now: () => number) {}
   count(stage: 'enteredFetch' | 'enteredXhr' | 'mediaRecognized' | 'nativeCalled' | 'responseObserved' | 'blocked'): void { this.#stats[stage]++ }
@@ -58,8 +62,21 @@ export class TransportContext {
     this.#stats.blocked++; this.#lastBlocked = Object.freeze({ method, host: hostOf(url), reason })
   }
   nextResponseKey(prefix: string): string { return `${prefix}-${++this.#requestSerial}` }
+  notePlayurl(transport: 'fetch' | 'xhr', status: number, result: PlayurlTransformResult): void {
+    const count = (value: number): number => Number.isFinite(value) ? Math.max(0, Math.min(65_535, Math.trunc(value))) : 0
+    const reasons: readonly PlayurlRejection[] = ['upstream-error', 'unsupported-format', 'malformed-payload',
+      'unreplaceable-source', 'no-legal-route', 'inactive']
+    // Project the fixed diagnostic fields; payloads, errors and URL-bearing result extras never enter this state.
+    this.#lastPlayurl = Object.freeze({ transport, status: Number.isInteger(status) && status >= 0 && status <= 599 ? status : 0,
+      observedAt: this.now(), accepted: result.accepted === true,
+      formats: Object.freeze([...new Set(result.formats.filter(format => ['dash', 'mp4', 'flv'].includes(format)))].slice(0, 3)),
+      videoCount: count(result.videoCount), audioCount: count(result.audioCount), segmentCount: count(result.segmentCount),
+      upstreamCode: Number.isSafeInteger(result.upstreamCode) ? result.upstreamCode : null,
+      reason: result.reason !== null && reasons.includes(result.reason) ? result.reason : null })
+  }
   snapshot(): TransportStats { return Object.freeze({ ...this.#stats,
-    lastMediaRequest: this.#lastMedia ? Object.freeze({ ...this.#lastMedia }) : null, lastBlocked: this.#lastBlocked }) }
+    lastMediaRequest: this.#lastMedia ? Object.freeze({ ...this.#lastMedia }) : null, lastBlocked: this.#lastBlocked,
+    lastPlayurl: this.#lastPlayurl }) }
   request(applied: AppliedRouteDecision, originalUrl: string, targetUrl: string, startedAt: number, method: string): RequestContext {
     const state = this.session.get(), matched = applied.attributionStatus ?? (applied.context ? 'matched' : 'waiting-data')
     const request: RequestContext = Object.freeze({ requestId: requestId(`request-${++this.#requestSerial}`), generation: state.generation, epoch: state.epoch,

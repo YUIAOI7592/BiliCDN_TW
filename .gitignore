@@ -6,8 +6,18 @@ dist/
 coverage/
 .codex/local/
 
-# Private evidence and immutable local history: explicitly selected fixtures are public.
-/archive/
+# Private evidence and immutable local history: curated documentation is public.
+/archive/*
+!/archive/README.md
+!/archive/retired/
+/archive/retired/*
+!/archive/retired/README.md
+!/archive/retired/docs/
+/archive/retired/docs/*
+!/archive/retired/docs/*.md
+!/archive/retired/docs/evidence/
+/archive/retired/docs/evidence/*
+!/archive/retired/docs/evidence/CHROME_v2.1.6_FINAL_SETTINGS_2026-10-01.jpg
 /development/
 /security/
 /review/
@@ -62,6 +72,8 @@ coverage/
 !/Release/v2.1.6/**
 !/Release/v2.1.7/
 !/Release/v2.1.7/**
+!/Release/v2.1.8/
+!/Release/v2.1.8/**
 /.work/
 /.agents/
 /.codex/

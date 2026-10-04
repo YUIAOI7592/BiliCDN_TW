@@ -149,11 +149,13 @@ export class MeasurementController {
     const valid = results.filter(result => result.valid && result.safeMbps !== null)
     const qualified = valid.filter(result => (result.safeMbps ?? 0) / options.demand.requiredMbps >= 1.35)
     const ranked = [...qualified].sort((a, b) => (b.safeMbps ?? 0) - (a.safeMbps ?? 0))
-    let winner = ranked[0]?.candidate ?? options.candidates.find(candidate => candidate.original)
-      ?? [...valid].sort((a, b) => (b.safeMbps ?? 0) - (a.safeMbps ?? 0))[0]?.candidate ?? options.candidates[0] ?? null
+    const catalogOnly = this.routes.isCatalogOnly()
+    const fastestValid = [...valid].sort((a, b) => (b.safeMbps ?? 0) - (a.safeMbps ?? 0))[0]?.candidate ?? null
+    let winner = ranked[0]?.candidate ?? (!catalogOnly ? options.candidates.find(candidate => candidate.original) : null)
+      ?? fastestValid ?? (!catalogOnly ? options.candidates[0] : null) ?? null
     const original = valid.find(result => result.candidate.original)
-    if (winner && original && !winner.original && (original.safeMbps ?? 0) >= (ranked[0]?.safeMbps ?? 0) * 0.9) winner = original.candidate
-    const decision = this.routes.commitStartupChoice(url, winner, valid.length ? 'startup-preflight' : 'startup-inconclusive')
+    if (!catalogOnly && winner && original && !winner.original && (original.safeMbps ?? 0) >= (ranked[0]?.safeMbps ?? 0) * 0.9) winner = original.candidate
+    const decision = winner ? this.routes.commitStartupChoice(url, winner, valid.length ? 'startup-preflight' : 'startup-inconclusive') : null
     this.#startupQualifiedHosts = Object.freeze([...valid].sort((a, b) => (b.safeMbps ?? 0) - (a.safeMbps ?? 0)).map(result => result.candidate.host))
     this.#startupUsed = true
     this.#startupState = Object.freeze({ state: decision ? 'complete' : 'skipped',

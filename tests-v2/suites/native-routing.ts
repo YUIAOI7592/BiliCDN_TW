@@ -91,7 +91,7 @@ const catalogVideo = { id: 80, codecid: 13, height: 1080, bandwidth: 2_000_000,
   base_url: catalogVideoRoot, backup_url: [catalogVideoBackup] }
 const catalogAudio = { id: 30280, bandwidth: 192_000, base_url: catalogAudioRoot,
   backup_url: [] as string[] }
-check(catalogAdapter.transform({ data: { dash: { video: [catalogVideo], audio: [catalogAudio] } } }),
+check(catalogAdapter.transform({ data: { dash: { video: [catalogVideo], audio: [catalogAudio] } } }).accepted,
   'Catalog-only fixture adopts trusted video and audio playurl')
 const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
 const catalogAudioRep = catalogVault.contextForUrl(catalogAudioRoot)?.representation
@@ -313,7 +313,7 @@ const aliasRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/aliases/pr
 const aliasBackup = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/aliases/backup.m4s?signature=backup'
 const aliasItem = { id: 90, codecid: 13, height: 1080, bandwidth: 1_000_000,
   baseUrl: aliasRoot, base_url: aliasRoot, backupUrl: [aliasBackup], backup_url: [aliasBackup] }
-check(aliasAdapter.transform({ data: { dash: { video: [aliasItem], audio: [] } } }),
+check(aliasAdapter.transform({ data: { dash: { video: [aliasItem], audio: [] } } }).accepted,
   'playurl with both field spellings is transformed')
 equal(aliasItem.baseUrl, aliasItem.base_url,
   'Catalog-only playurl rewrites both primary field spellings to the same URL')
@@ -342,12 +342,12 @@ const nestedPayload = () => ({ data: { dash: {
   flac: { audio: { id: 30251, bandwidth: 1_000_000, base_url: flacRoot, backup_url: [flacBackup] } },
 } } })
 const nativeOnNested = nestedPayload()
-check(nestedAdapter.transform(nativeOnNested, 'trusted-api'), 'Native-on nested audio fixture accepts valid DASH video')
+check(nestedAdapter.transform(nativeOnNested, 'trusted-api').accepted, 'Native-on nested audio fixture accepts valid DASH video')
 equal(nativeOnNested.data.dash.dolby.audio[0]?.base_url, dolbyRoot, 'Native-on preserves legacy Dolby audio URL')
 equal(nativeOnNested.data.dash.flac.audio.base_url, flacRoot, 'Native-on preserves legacy FLAC audio URL')
 await nestedSettings.update({ considerNativeSources: false }); nestedRoutes.invalidateForUserSetting()
 const strictNested = nestedPayload()
-check(nestedAdapter.transform(strictNested, 'trusted-api'), 'Catalog-only nested audio fixture accepts valid DASH video')
+check(nestedAdapter.transform(strictNested, 'trusted-api').accepted, 'Catalog-only nested audio fixture accepts valid DASH video')
 const nestedAudioUrls = [strictNested.data.dash.dolby.audio[0]?.base_url ?? '',
   ...strictNested.data.dash.dolby.audio[0]!.backup_url, strictNested.data.dash.flac.audio.base_url,
   ...strictNested.data.dash.flac.audio.backup_url]

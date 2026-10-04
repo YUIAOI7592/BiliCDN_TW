@@ -79,7 +79,7 @@ export class LifecycleController {
     if (pending.appliedGeneration === Number(state.generation)) return true
     const age = this.now() - pending.assignedAt
     if (age > 5000 || (pending.pageKey !== this.#pageKey && age > 250)) return false
-    const accepted = this.playurl.transform(pending.payload, 'page-hint')
+    const accepted = this.playurl.transform(pending.payload, 'page-hint').accepted
     if (accepted) pending.appliedGeneration = Number(state.generation)
     return accepted
   }

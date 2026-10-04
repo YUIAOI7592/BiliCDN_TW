@@ -2,9 +2,11 @@
 
 BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，提供 CDN 選路、有限度的故障恢復與本機診斷。正式支援 **Google Chrome 與 Tampermonkey**。
 
-正常模式預設從腳本的**內建 CDN 清單（Catalog）**選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
+正常模式預設從腳本的**內建 CDN 清單**選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
-目前發行版本為 **[v2.1.7](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.7)**，主要完成模組化整理、測試隔離及取消／延遲提交處理。版本變更見 [CHANGELOG](CHANGELOG.md)。
+目前發行版本為 **[v2.1.7](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.7)**，主要完成模組化整理、測試隔離及取消／延遲提交處理。版本變更見 [CHANGELOG](docs/CHANGELOG.md)，現行指南與歷史紀錄的分類見 [文件索引](docs/INDEX.md)。
+
+**v2.1.8 正在準備發布，包含 MP4／FLV 修正。** `release.json` 已設為 2.1.8，安全差異掃描與發布確認待完成；目前最新安裝連結仍提供已發布的 v2.1.7。依本次安排，先發布 v2.1.8 userscript，再透過 Tampermonkey 標準更新進行目標 MP4 與 DASH 瀏覽器回歸。驗證進度見 [TEST_REPORT](docs/TEST_REPORT.md)。
 
 > [!IMPORTANT]
 > **原作者與原始腳本：** [jiyunshi－Bilibili CDN 台灣優化](https://greasyfork.org/zh-TW/scripts/579776-bilibili-cdn-%E5%8F%B0%E7%81%A3%E5%84%AA%E5%8C%96)。本儲存庫源自原作者 MIT 授權腳本的個人修改專案；v2 是以 TypeScript 重新設計與重構的版本，並非原作者的官方版本。
@@ -31,6 +33,12 @@ GitHub Release 只提供 `BiliCDN_TW.user.js`。建置資訊、校驗碼與驗�
 - **背景播放協助：** 減少頁面切到背景時因可見性事件造成的播放中斷；健康測速仍會檢查分頁是否真的在前景。
 - **連線與節點控制：** 可阻止網頁使用 WebRTC、HTTPDNS，並設定個別 CDN 的可用性。
 - **本機故障診斷：** 保存有限的事故前後狀態，供使用者複製報告排查。
+
+### v2.1.8 MP4／FLV 修正（發布準備中）
+
+目前工作樹增加 MP4／FLV `durl` 播放資料處理，保留原有分段順序、時長與大小，並為每段提供符合目前模式的主備網址。預設模式會從同段原始與備用來源中選擇可安全改寫的來源；只要有必要分段無法產生合法路線，整份已辨識的播放資料便不會部分改寫後放行。
+
+控制中心新增「最近播放資料」摘要，區分 Fetch／XHR、接納結果、DASH／MP4／FLV、影片／音訊／分段數量、上游 HTTP 狀態、數字錯誤代碼及拒絕原因。摘要不包含回應內容或簽名網址。原生來源開關、原生對照、整體停用及固定 CDN 的既有模式繼續適用；在途測速結果不能覆蓋剛選定的固定 CDN。
 
 ## 開啟控制中心
 
@@ -66,7 +74,7 @@ GitHub Release 只提供 `BiliCDN_TW.user.js`。建置資訊、校驗碼與驗�
 | 阻止網頁使用 HTTPDNS | 開啟 |
 | 記錄更多診斷細節 | 關閉 |
 
-影片格式偏好會在下次取得新的播放網址時生效。內建清單有部分節點預設標為不可用，可在設定中勾選允許；**勾選節點或固定 CDN 都不會解除黑名單、故障標記及其他禁止規則**。清單定義見 [catalog.ts](src-v2/domain/catalog.ts)。
+影片格式偏好會在下次取得新的播放網址時生效。內建 Catalog 保留完整 **11 個節點，其中 4 個預設不可用**，可在設定中勾選允許；**勾選節點或固定 CDN 都不會解除黑名單、故障標記及其他禁止規則**。清單定義見 [catalog.ts](src-v2/domain/catalog.ts)。
 
 ### 測速、封鎖與清除資料
 
@@ -80,7 +88,7 @@ GitHub Release 只提供 `BiliCDN_TW.user.js`。建置資訊、校驗碼與驗�
 
 ## 選路、測速與恢復規則
 
-首次符合條件的播放器媒體請求可觸發一次起播預測試，最多等待 **3 秒**、測試 **3 個合法候選**。測試沒有明確結果時，仍須依目前模式選合法路線；預設模式不會因此放行原生來源。同步 XHR 與有明確 timeout 的 XHR 不等待起播測速，仍須通過送出前檢查。
+首次符合條件的播放器媒體請求可觸發一次起播預測試，最多等待 **3 秒**、並行測試 **3 個合法候選**。同一窗口的請求共用期限，MP4／FLV 不會為每一段各開三秒測試。這是探測預算，完整 Catalog 中其餘合法節點仍可參與一般排名、備援及後續健康測速；預設模式的播放器輸出為一條主線及最多五個不同 Host 的合法 Catalog 備用網址。測試沒有明確結果時，仍須依目前模式選合法路線；預設模式不會因此放行原生來源。同步 XHR 與有明確 timeout 的 XHR 不等待起播測速，仍須通過送出前檢查。
 
 健康播放時，符合前景、播放進度與緩衝條件後，每 **10 分鐘**最多順序量測 **3 個候選**，並共用跨分頁冷卻資料。手動安排測速也會遵守這些條件。結果只更新健康證據，**不會因測速結果或其他分頁的新資料，在流暢播放中更換目前 CDN**。
 
@@ -116,15 +124,19 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 ## 目前版本的驗證紀錄
 
+以下為**已發布 v2.1.7** 的證據。v2.1.8 發行候選版另有契約測試與驗證紀錄，不能沿用以下結果當作新修正已通過安全或瀏覽器驗收。目標 MP4 與 DASH Chrome 回歸將在 v2.1.8 發布、Tampermonkey 從標準最新版本網址更新後執行。FLV 目前只有自動契約證據，沒有合法可用樣本時不宣稱實際播放驗收通過。
+
 v2.1.7 發布前已通過型別、架構、**626 項功能斷言**、**18 項架構斷言**、**40 個非入口模組的匯入檢查**，以及可重現建置、JavaScript 語法與封裝校驗。
 
-本次 Codex Security 審閱涵蓋 53 項差異，沒有可報告問題；封存報告仍保留一項中途的覆蓋標記，狀態差異完整記錄於 [TEST_REPORT](TEST_REPORT.md)。自動測試與原始碼審閱的結果，與真實瀏覽器觀察分別記錄。
+本次 Codex Security 審閱涵蓋 53 項差異，沒有可報告問題；封存報告仍保留一項中途的覆蓋標記，狀態差異完整記錄於 [TEST_REPORT](docs/TEST_REPORT.md)。自動測試與原始碼審閱的結果，與真實瀏覽器觀察分別記錄。
 
-**v2.1.6 Chrome／Tampermonkey 驗收已通過並結案。** 該紀錄不代表已完成 v2.1.7 的新差異瀏覽器回歸。詳見 [v2.1.6 驗收紀錄](docs/CHROME_v2.1.6_ACCEPTANCE.md)。
+**v2.1.6 Chrome／Tampermonkey 驗收已通過並結案。** 該紀錄不代表已完成 v2.1.7 的新差異瀏覽器回歸。詳見 [v2.1.6 驗收紀錄](archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md)。
 
 ## 開發與專案結構
 
 正式來源為 `src-v2/`，入口是 `src-v2/entry.ts`，契約測試位於 `tests-v2/`。v2.1.7 將應用協調、瀏覽器操作、路由政策與傳輸協定分開，並以 AST 架構規則、型別化介面與獨立測試套件保護職責邊界。
+
+現行指南、變更紀錄與驗證報告集中於 `docs/`；根目錄保留 README、AGENTS、安全政策、授權及必要建置設定。已退出流程的計畫、研究、驗收與舊工具集中於 [archive/retired](archive/retired/README.md)，來源原件與校驗碼集中於 `baseline/`。封存保留原始證據與位置對照，已發布的 `Release/` 產物維持原位。
 
 開發工具版本由 [release.json](release.json) 與 [package-lock.json](package-lock.json) 鎖定：Node.js **26.8.1**、npm **11.19.0**、TypeScript **7.0.2**、esbuild **0.28.2**。
 
@@ -143,9 +155,9 @@ npm run verify
 - [架構與職責邊界](docs/ARCHITECTURE.md)
 - [開發、測試與發行流程](docs/DEVELOPMENT.md)
 - [信任邊界與資料處理](SECURITY.md)
-- [版本變更](CHANGELOG.md)
-- [驗證與瀏覽器紀錄](TEST_REPORT.md)
+- [版本變更](docs/CHANGELOG.md)
+- [驗證與瀏覽器紀錄](docs/TEST_REPORT.md)
 
 ## 授權
 
-MIT。原作者、原始來源與建置工具的授權資訊見 [LICENSE](LICENSE)、[UPSTREAM_MANIFEST](UPSTREAM_MANIFEST.md) 與 [第三方聲明](docs/THIRD_PARTY_NOTICES.md)。
+MIT。原作者、原始來源與建置工具的授權資訊見 [LICENSE](LICENSE)、[UPSTREAM_MANIFEST](docs/UPSTREAM_MANIFEST.md) 與 [第三方聲明](docs/THIRD_PARTY_NOTICES.md)。

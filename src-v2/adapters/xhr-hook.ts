@@ -2,7 +2,7 @@ import { isPlayurlApi } from '../domain/catalog.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
 import type { FailureKind, RequestContext, GenerationId, EpochId } from '../domain/model.ts'
 import type { AppliedRouteDecision } from '../application/route-coordinator.ts'
-import { type TransportContext, type HookInstallation, sameUrl, blockedPlayurl, blockedPlayurlText } from './transport-context.ts'
+import { type TransportContext, type HookInstallation, sameUrl, blockedPlayurl, blockedPlayurlText, rejectedPlayurl } from './transport-context.ts'
 interface XhrMeta {
   method: string
   originalUrl: string
@@ -85,6 +85,7 @@ export class XhrHookAdapter {
       }
       if (meta.playurl && self.routes.isCatalogOnly() && !['', 'text', 'json'].includes(this.responseType)) {
         self.blocked(meta.method, meta.originalUrl, 'playurl-response-type')
+        self.notePlayurl('xhr', 0, rejectedPlayurl('unsupported-format'))
         queueMicrotask(() => { this.dispatchEvent(new Event('error')); this.dispatchEvent(new Event('loadend')) })
         return
       }
@@ -189,8 +190,10 @@ export class XhrHookAdapter {
           if (!meta?.playurl || self.settings.get().disabled) return raw
           if (this.readyState !== 4) return self.routes.isCatalogOnly()
             ? (this.responseType === '' || this.responseType === 'text' ? '' : null) : raw
-          if (!self.session.isGeneration(meta.generation) && self.routes.isCatalogOnly()) return blockedPlayurl()
-          if (!self.session.isGeneration(meta.generation)) return raw
+          if (!self.session.isGeneration(meta.generation)) {
+            self.notePlayurl('xhr', this.status, rejectedPlayurl('inactive'))
+            return self.routes.isCatalogOnly() ? blockedPlayurl() : raw
+          }
           const strict = self.routes.isCatalogOnly()
           if (meta.catalogOnlyAtTransform !== strict) {
             meta.transformedText = null; meta.transformedJson = undefined; meta.catalogOnlyAtTransform = strict
@@ -198,21 +201,30 @@ export class XhrHookAdapter {
           if (this.responseType === 'json') {
             if (meta.transformedJson === undefined) {
               try {
-                const accepted = raw && typeof raw === 'object' && self.playurl.transform(raw, 'trusted-api', meta.responseKey)
-                meta.transformedJson = strict && !accepted ? blockedPlayurl() : raw
-              } catch { meta.transformedJson = strict ? blockedPlayurl() : raw }
+                const result = self.playurl.transform(raw, 'trusted-api', meta.responseKey)
+                self.notePlayurl('xhr', this.status, result)
+                meta.transformedJson = strict && !result.accepted ? blockedPlayurl() : raw
+              } catch {
+                self.notePlayurl('xhr', this.status, rejectedPlayurl('malformed-payload'))
+                meta.transformedJson = strict ? blockedPlayurl() : raw
+              }
             }
             return meta.transformedJson
           }
           if ((this.responseType === '' || this.responseType === 'text') && typeof raw === 'string') {
             if (meta.transformedText === null) {
               try {
-                const payload: unknown = JSON.parse(raw), accepted = self.playurl.transform(payload, 'trusted-api', meta.responseKey)
-                meta.transformedText = strict && !accepted ? blockedPlayurlText() : JSON.stringify(payload)
-              } catch { meta.transformedText = strict ? blockedPlayurlText() : raw }
+                const payload: unknown = JSON.parse(raw), result = self.playurl.transform(payload, 'trusted-api', meta.responseKey)
+                self.notePlayurl('xhr', this.status, result)
+                meta.transformedText = strict && !result.accepted ? blockedPlayurlText() : JSON.stringify(payload)
+              } catch {
+                self.notePlayurl('xhr', this.status, rejectedPlayurl('malformed-payload'))
+                meta.transformedText = strict ? blockedPlayurlText() : raw
+              }
             }
             return meta.transformedText
           }
+          self.notePlayurl('xhr', this.status, rejectedPlayurl('unsupported-format'))
           return strict ? blockedPlayurl() : raw
         } })
       }
@@ -221,17 +233,23 @@ export class XhrHookAdapter {
           const raw = String(responseTextDescriptor.get?.call(this) ?? ''), meta = xhrMeta.get(this)
           if (!meta?.playurl || self.settings.get().disabled) return raw
           if (this.readyState !== 4) return self.routes.isCatalogOnly() ? '' : raw
-          if (!self.session.isGeneration(meta.generation) && self.routes.isCatalogOnly()) return blockedPlayurlText()
-          if (!self.session.isGeneration(meta.generation)) return raw
+          if (!self.session.isGeneration(meta.generation)) {
+            self.notePlayurl('xhr', this.status, rejectedPlayurl('inactive'))
+            return self.routes.isCatalogOnly() ? blockedPlayurlText() : raw
+          }
           const strict = self.routes.isCatalogOnly()
           if (meta.catalogOnlyAtTransform !== strict) {
             meta.transformedText = null; meta.transformedJson = undefined; meta.catalogOnlyAtTransform = strict
           }
           if (meta.transformedText !== null) return meta.transformedText
           try {
-            const payload: unknown = JSON.parse(raw), accepted = self.playurl.transform(payload, 'trusted-api', meta.responseKey)
-            meta.transformedText = strict && !accepted ? blockedPlayurlText() : JSON.stringify(payload)
-          } catch { meta.transformedText = strict ? blockedPlayurlText() : raw }
+            const payload: unknown = JSON.parse(raw), result = self.playurl.transform(payload, 'trusted-api', meta.responseKey)
+            self.notePlayurl('xhr', this.status, result)
+            meta.transformedText = strict && !result.accepted ? blockedPlayurlText() : JSON.stringify(payload)
+          } catch {
+            self.notePlayurl('xhr', this.status, rejectedPlayurl('malformed-payload'))
+            meta.transformedText = strict ? blockedPlayurlText() : raw
+          }
           return meta.transformedText
         } })
       }

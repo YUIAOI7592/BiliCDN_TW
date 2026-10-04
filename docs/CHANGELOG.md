@@ -1,4 +1,21 @@
-# BiliCDN_TW v2.1.7
+# BiliCDN_TW changelog
+
+> The v2.1.8 entry is release preparation until GitHub publication is confirmed; v2.1.7 is still the latest published version. Older entries describe changes and verification status at their release date. Use [README](../README.md), [TEST_REPORT](TEST_REPORT.md) and the [document index](INDEX.md) for current behavior and evidence. Historical pending language is not the current backlog.
+
+## v2.1.8 — release preparation
+
+MP4/FLV correction prepared for release. Required security review and publication confirmation are pending. At the user's request, publish the userscript first, then update Tampermonkey through the standard latest-release URL and perform the target MP4/DASH Chrome regression. Browser acceptance is not claimed passed; FLV remains automated-only unless a legitimate accessible sample is available.
+
+- Handle recognized MP4/FLV `durl` containers alongside DASH, retaining segment order and metadata. Plan all required progressive outputs before URL writeback; reject failed progressive/mixed output atomically instead of exposing a partially rewritten segment list.
+- Resolve each progressive segment's safe Catalog source through the current Vault handle, allowing a safe same-segment backup source when the primary cannot be rewritten. Preserve Native provenance, attribution and restrictions.
+- Retain all 11 built-in Catalog hosts, including four unavailable by default. Startup probes remain at most three parallel candidates in one shared three-second window; the remaining allowed Catalog candidates stay eligible for ranking, backup planning and later health exploration. Catalog-only player output has at most five distinct backup hosts.
+- When Catalog-only startup has no valid measurement, commit no probe winner and let final dispatch rank the complete remaining legal pool. Preserve safe current DASH query handling and keep rewritable PCDN source capability separate from Native selectability.
+- Invalidate plans and reset measurement/recovery after fixed-host, Catalog-override or Native-source changes, so a pending probe cannot overwrite new fixed-host selection.
+- Replace boolean playurl acceptance with a typed result. Fetch/XHR check `accepted`; strict Fetch rejection retains HTTP 503 and XHR retains native HTTP status. Show one bounded recent format/count/code/reason summary without raw bodies, signed URLs or exception text.
+- Add progressive playurl/routing/transport and safe-summary contract suites. Current automated/security evidence belongs in TEST_REPORT; new Chrome/Tampermonkey regression follows publication and the standard Tampermonkey update. The approved v2.1.6 acceptance remains closed.
+- Set the candidate version to 2.1.8 while preserving previously published Release artifacts. GitHub publication will be recorded only after confirmation.
+
+## v2.1.7
 
 - Separate application orchestration, browser navigation/scheduling/play-intent ports, playurl registration, measurement metadata, route/output policy, Fetch/XHR hooks and bounded Range probing into explicit modules.
 - Keep settings schema/defaults, the built-in Catalog list, Native-source opt-in, original comparison, UI capabilities and diagnostic field meanings compatible with v2.1.6.

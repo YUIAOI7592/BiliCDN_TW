@@ -11,8 +11,8 @@ export async function packageRelease({ directory } = {}) {
   const script = `${dir}/${config.artifactName}`
   writeFileSync(script, result.output)
   copyFileSync('dist/build-manifest.json', `${dir}/BUILD_MANIFEST_v${version}.json`)
-  writeFileSync(`${dir}/CHANGELOG_v${version}.md`, readFileSync('CHANGELOG.md', 'utf8'))
-  writeFileSync(`${dir}/TEST_REPORT_v${version}.md`, readFileSync('TEST_REPORT.md', 'utf8'))
+  writeFileSync(`${dir}/CHANGELOG_v${version}.md`, readFileSync('docs/CHANGELOG.md', 'utf8'))
+  writeFileSync(`${dir}/TEST_REPORT_v${version}.md`, readFileSync('docs/TEST_REPORT.md', 'utf8'))
   const sums = `${dir}/SHA256SUMS_v${version}.txt`
   const rows = filesUnder(dir).filter(file => file !== sums).map(file => `${sha256(readFileSync(file))}  ${file}`)
   writeFileSync(sums, `${rows.join('\n')}\n`)

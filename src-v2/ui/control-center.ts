@@ -184,6 +184,17 @@ export class ControlCenter {
     if (lastHook) summary.textContent += `\n最近一筆影音請求：${plain(lastHook.kind, { video: '影片', audio: '音訊', unknown: '尚未分類' })}，送往 ${lastHook.targetHost ?? '未知'}｜${lastHook.nativeCalled ? '已交給瀏覽器' : '未交給瀏覽器'}｜${lastHook.responseObserved ? `收到回應${lastHook.status ? `（HTTP ${lastHook.status}）` : ''}` : '尚未看到回應'}`
     const lastBlocked = hook.lastBlocked
     if (lastBlocked) summary.textContent += `\n最近擋下的請求：${lastBlocked.host}｜原因：${restrictionLabel(lastBlocked.reason)}｜沒有送給瀏覽器`
+    const playurl = hook.lastPlayurl
+    if (playurl) {
+      const formats = playurl.formats.map(format => plain(format, { dash: 'DASH', mp4: 'MP4', flv: 'FLV' })).join('／') || '未辨識'
+      summary.textContent += `\n最近播放資料：${playurl.transport === 'fetch' ? 'Fetch' : 'XHR'}｜${playurl.accepted ? '已接納' : '未接納'}｜格式：${formats}｜影片 ${playurl.videoCount}、音訊 ${playurl.audioCount}、分段 ${playurl.segmentCount}`
+      if (playurl.status) summary.textContent += `｜上游 HTTP ${playurl.status}`
+      if (playurl.upstreamCode !== null) summary.textContent += `｜上游代碼 ${playurl.upstreamCode}`
+      if (playurl.reason) summary.textContent += `｜原因：${plain(playurl.reason, {
+        'upstream-error': 'B 站回報錯誤', 'unsupported-format': '不支援的資料格式', 'malformed-payload': '播放資料無法解析',
+        'unreplaceable-source': '來源網址無法安全改寫', 'no-legal-route': '沒有合法路線', inactive: '處理時已停用或影片已切換',
+      })}`
+    }
     const routes = this.deps.routes.snapshot(), latest = routes.latest
     const routeRecovery = this.deps.diagnostics.snapshot().routeRecovery
     const lastAttempt = routeRecovery.attempts.at(-1)

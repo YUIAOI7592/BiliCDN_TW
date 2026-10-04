@@ -1,5 +1,7 @@
 # v2.1.6 Chrome acceptance — user approved
 
+> **Historical acceptance record: v2.1.6, passed and closed.** The approval below applies to v2.1.6 and does not establish browser acceptance for v2.1.7 or later versions. See the [documentation index](../../../docs/INDEX.md) for current version and verification records.
+
 Dates: 2026-09-30 and 2026-10-01, Asia/Taipei. This records real Chrome/Tampermonkey observations from additional agent-created Bilibili video tabs. The user's existing tabs were not navigated. No mock, VM or contract result is counted as a browser pass.
 
 **Acceptance status: approved by the user on 2026-10-01.** The user confirmed that acceptance has passed and must not be counted as unfinished work. Acceptance is closed; the observations and evidence limits below are retained as the factual test record, without creating follow-up testing or investigation tasks.

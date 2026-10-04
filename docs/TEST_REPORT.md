@@ -1,8 +1,38 @@
-# BiliCDN_TW v2.1.7 test report
+# BiliCDN_TW v2.1.8 release verification — 2026-10-04
+
+This section records the current MP4 / FLV repair separately from the published v2.1.7 evidence below. At the user's request, version metadata is now 2.1.8 and publication precedes the new Chrome regression so Tampermonkey can use its existing update URL. Publication is being prepared; prior `Release/v*/` snapshots remain unchanged. Current guidance is indexed in [INDEX.md](INDEX.md).
+
+## Reproduction and implementation
+
+The original target page's playurl request returned HTTP 200 / upstream code 0 with one MP4 `durl` segment. The old adapter recognized only DASH, returned rejection, and the Fetch hook exposed a local HTTP 503 / code -1 instead of usable playback data. This investigation did not establish failure of every Catalog host: no media CDN request had started. Contract tests reproduced both the parser rejection and Fetch 503 before runtime edits.
+
+The repair accepts MP4 / FLV segments and recognized mixed DASH branches, preserves segment ordering and non-URL metadata, plans every necessary segment before URL writeback, and rejects a complete strict progressive response on malformed data, capacity failure or unavailable output. Vault-owned source handles provide same-segment Catalog materialization; exact Native authority remains bounded and distinct. Complete Catalog eligibility and ranking are retained while startup probes share one window of up to three candidates / three seconds. Inconclusive Catalog probes commit no winner; dispatch uses the currently legal full pool. Fixed, Catalog and Native setting changes invalidate plans and cancel script probes/recovery. Recent playurl diagnostics contain bounded format/count/status/code/reason fields only.
+
+## Automated verification
+
+On 2026-10-04, `npm run typecheck`, `npm run architecture`, `npm test` and `npm run verify` passed. Results: **891 functional assertions**, **18 architecture assertions**, **42 runtime modules**, and import-purity checks for **41 non-entry modules**. Verify passed deterministic builds, JavaScript syntax, v2-only bundle checks and temporary packaging/checksums; it did not overwrite published Release artifacts. `git diff --check` passed. The normal sandbox prevented esbuild from reading an ancestor directory; the same npm test/verify commands passed with the reviewed execution permission.
+
+The four new isolated suites cover progressive parsing/lifecycle/authority/capacity (139 assertions), full-pool routing and startup/fixed races (58), MP4 Fetch/XHR integration (15), and safe typed playurl summaries (49). Existing DASH, four-mode, settings, provenance, video/audio, Fetch reader/cancellation/normalization and XHR compatibility contracts remain passing. Additional state assertions distinguish Catalog-only source material from Native authority.
+
+## Separate security and browser evidence
+
+Final Codex Security diff scan `447fbcd6-b672-4e0f-a572-e7805ef97e45` is completed and sealed. All **30 authoritative changed-code inventory items** were reviewed, with zero plausible candidates and zero reportable findings. The final semantic submission closed the source surfaces, but the tool retained one superseded intermediate pending-review entry; canonical coverage therefore remains **partial**. That entry names the nine Vault/playurl/transport files subsequently reviewed and closed as `no_issue_found`; it is a retained checkpoint limitation, not an unexamined source surface. The sealed artifacts are preserved unchanged. The immutable reviewed working-tree digest is `07ca765f6c2faae011f89cbf0e27dac032e98f3193a120a9e95570b2ef7efa8a`, against baseline `fa3946ec2807360c8a2b84291c213d624ef4142d`. This was a static changed-code review, not a full repository audit or browser acceptance.
+
+Before packaging, all **43 build-manifest inputs** matched their verified hashes. The v2.1.8 userscript is **285,037 bytes**, SHA-256 **`c2bda1e0be4b086e7622e34d3fba0a6cdfdd5eb612afea700289758112c9eb4f`**. Subsequent edits concern publication evidence and documentation only; application runtime remains unchanged. The scan goal tool reported 723,436 tokens and 1,174 seconds (19 minutes 34 seconds); these are its recorded goal counters, not a billing statement.
+
+After publication, real Chrome/Tampermonkey regression requires the updated script before testing the target MP4's authorized playback/trial for at least ten seconds and recording actual Network hosts, then a DASH regression. The user specified publication followed by Tampermonkey's standard update mechanism. No new playback acceptance is claimed before that update and observation. FLV currently has automated coverage only; no legal live sample has been established.
+
+**v2.1.6 acceptance remains approved and closed.** v2.1.8 publication is now authorized; automated/security and new-browser evidence remain separate.
+
+---
+
+# Published BiliCDN_TW v2.1.7 test report
+
+> Current release evidence is summarized in the first section. All later version/pre-release sections are dated historical records; their pending or unpublished language describes that time, not the current backlog. Document status is indexed in [docs/INDEX.md](INDEX.md). Packaged `Release/v*/` reports remain immutable snapshots.
 
 ## Release scope
 
-Prepared on 2026-10-03 (Asia/Taipei) from baseline `307f9a6f38b5a559e05e32c50c5b3f8ca1636257`, after the completed modularization implementation documented below. This release packages that refactor as v2.1.7. Settings schema/defaults, the Catalog roster, Native-source opt-in, original comparison and UI/diagnostic semantics remain compatible with v2.1.6.
+Released on 2026-10-03 (Asia/Taipei) as [v2.1.7](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.7), commit `03beb91a5fdc34c8bcaf6f623783bfc411737d0e`, from baseline `307f9a6f38b5a559e05e32c50c5b3f8ca1636257`, after the completed modularization implementation documented below. Settings schema/defaults, the Catalog roster, Native-source opt-in, original comparison and UI/diagnostic semantics remain compatible with v2.1.6.
 
 ## Final automated verification
 
@@ -20,9 +50,25 @@ The final implementation diff was reviewed in Codex Security scan `650fe466-dc70
 
 The GitHub Release contains only `BiliCDN_TW.user.js`. Changelog, test report, build manifest and checksums stay in the repository under `Release/v2.1.7/`; prior release directories and unrelated user documentation remain preserved.
 
+Publication readback confirmed v2.1.7 as the latest non-draft/non-prerelease, exactly one uploaded userscript asset, the remote tag matching the release commit, and asset size/SHA-256 matching the verified package above. Current repository documentation can subsequently receive maintenance edits without rewriting the packaged release report.
+
+## First post-release archive verification — 2026-10-03
+
+Historical documents and completed local tools/evidence were moved into `archive/retired/`; current source, tests, tool scripts, configuration, attribution baseline and all Release snapshots retain their locations. Before link adjustments, all 604 relocated files matched their pre-move SHA-256. Subsequent checks confirmed all 592 relocated local files and 327 protected files remain byte-identical. The 11 relocated Markdown files changed relative link targets only; the acceptance screenshot is unchanged. The selective Git ignore rules expose curated archival documentation while retaining private artifacts and the relocation manifest as ignored local data.
+
+All 128 local links/anchors across 25 public Markdown files passed. `npm run verify` passed typecheck, architecture, 626 functional assertions, 18 architecture assertions, 40 non-entry import-purity checks, deterministic build, syntax and temporary packaging/checksums. The initial sandboxed attempt failed because esbuild could not read an ancestor directory; the same command passed with appropriate permissions and no tool/runtime edits. `git diff --check` passed. This is an automated layout regression record, not a new security scan or Chrome/Tampermonkey acceptance. The published v2.1.7 userscript and immutable packaged reports are unchanged.
+
+## Root-document consolidation verification — 2026-10-03
+
+Five active documents were consolidated under `docs/`, and the upstream checksum list moved to `baseline/SHA256SUMS.txt` without changing its contents. Root Markdown files are now README, AGENTS and SECURITY. Packaging retains its versioned output names and reads changelog/report from their new locations. The archive index's accidentally concatenated duplicate project-context block was removed; the authoritative project context remains in `docs/PROJECT_CONTEXT.md`.
+
+All 129 local links/anchors across 25 public Markdown files passed. Baseline checksum validation and `git diff --check` passed. `npm run verify` completed with the same 626 functional/18 architecture assertions and 40-module import-purity coverage, plus deterministic build, syntax and temporary packaging/checksum validation. All source, tests, released artifacts and archived raw evidence remain unchanged; the packaging script changes only its two document input paths. The rebuilt userscript SHA-256 remains the published hash recorded above. No new security scan or real-browser acceptance is claimed.
+
 ---
 
 # Historical modularization verification — before release
+
+> This is the 2026-10-02 pre-release record. Its then-current v2.1.6 metadata and unpublished status were superseded by the v2.1.7 publication section above; the original evidence is retained.
 
 ## Scope and completed stages
 
@@ -63,7 +109,7 @@ The scan tool reported **12,472,914 total tokens**, including **11,789,824 cache
 
 ---
 
-# BiliCDN_TW v2.1.6 test report
+# Historical v2.1.6 test report
 
 ## Scope
 
@@ -81,7 +127,7 @@ Interim Codex Security working-tree diff scan `d3b45965-0037-41aa-b2b9-283d13552
 
 **User approved on 2026-10-01: acceptance passed and is closed.** The user explicitly confirmed that acceptance must not be counted as unfinished work. The coverage limits below remain factual records and do not create pending acceptance, retesting or investigation tasks.
 
-Real Chrome/Tampermonkey acceptance was performed on 2026-09-30 and continued in new user-authorized Chrome tabs on 2026-10-01 (Asia/Taipei), with installed v2.1.6 confirmed. Observed cases cover Catalog-only output/traffic, Native on-to-off synchronization, seek, 720P/2x playback, SPA, fresh fixed Catalog, per-tab original comparison and its exit on reload, whole-script disable/re-enable, settings reset/synchronization, and no-legal-Catalog dispatch blocks with a displayed reason. Two complete fresh-document blocking traces contained zero media requests; an earlier reload interval contained two Native cosov requests whose attribution was not preserved, so that interval remains **unexplained**. Browser coverage did not establish dedicated Fetch/non-GET/opaque cases, active probes, 403/redirect/fallback/core recovery or background/resume; these are recorded coverage limits of the approved acceptance. Chrome reported full version 154.0.8037.58; the tool blocked access to Tampermonkey's version page. Settings were restored to the initial defaults, and one paused test tab was left open. See [docs/CHROME_v2.1.6_ACCEPTANCE.md](docs/CHROME_v2.1.6_ACCEPTANCE.md) for exact counts, limits and the final screenshot. No signed media URLs or HAR exports were retained. This later browser record does not replace the immutable test report packaged with the release.
+Real Chrome/Tampermonkey acceptance was performed on 2026-09-30 and continued in new user-authorized Chrome tabs on 2026-10-01 (Asia/Taipei), with installed v2.1.6 confirmed. Observed cases cover Catalog-only output/traffic, Native on-to-off synchronization, seek, 720P/2x playback, SPA, fresh fixed Catalog, per-tab original comparison and its exit on reload, whole-script disable/re-enable, settings reset/synchronization, and no-legal-Catalog dispatch blocks with a displayed reason. Two complete fresh-document blocking traces contained zero media requests; an earlier reload interval contained two Native cosov requests whose attribution was not preserved, so that interval remains **unexplained**. Browser coverage did not establish dedicated Fetch/non-GET/opaque cases, active probes, 403/redirect/fallback/core recovery or background/resume; these are recorded coverage limits of the approved acceptance. Chrome reported full version 154.0.8037.58; the tool blocked access to Tampermonkey's version page. Settings were restored to the initial defaults, and one paused test tab was left open. See [archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md](../archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md) for exact counts, limits and the final screenshot. No signed media URLs or HAR exports were retained. This later browser record does not replace the immutable test report packaged with the release.
 
 ---
 
@@ -245,7 +291,7 @@ The suite has 148 passing assertions. Additional checks cover different-quality 
 
 Passed on 2026-09-21: `npm run verify` completed types, architecture, all 148 assertions, deterministic double build, syntax, package equality and checksums. No Code Security or independent security suite.
 
-Chrome/Tampermonkey acceptance of v2.0.3 is pending user installation. The supplied v2.0.2 report is user runtime evidence, not a v2.0.3 real-browser test. No natural dead-core reproduction is required for publication. Historical black-screen causes remain unconfirmed. See `docs/POST_RELEASE_v2.0.2.md` for the evidence trail.
+Chrome/Tampermonkey acceptance of v2.0.3 is pending user installation. The supplied v2.0.2 report is user runtime evidence, not a v2.0.3 real-browser test. No natural dead-core reproduction is required for publication. Historical black-screen causes remain unconfirmed. See `archive/retired/docs/POST_RELEASE_v2.0.2.md` for the evidence trail.
 
 Deliverables: `Release/v2.0.3/` script, changelog, report, manifest, SHA-256; GitHub Release attaches only the script. No previous release directory is overwritten.
 

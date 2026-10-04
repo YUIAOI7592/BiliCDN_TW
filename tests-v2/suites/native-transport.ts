@@ -1,3 +1,4 @@
+import { playurlResult } from '../support/playurl.ts'
 import { PlayurlController } from '../../src-v2/application/playurl-controller.ts'
 import { decisionId } from '../../src-v2/domain/model.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
@@ -35,7 +36,7 @@ const routeStub = {
   async observe(observation: TransportObservation): Promise<void> { observations.push(observation) },
 }
 let transformed = 0
-const playurlStub = { transform(): boolean { transformed++; return true } }
+const playurlStub = { transform() { transformed++; return playurlResult(true) } }
 let disabled = false, blockHttpDns = true
 const settingsStub = { get: () => ({ disabled, blockHttpDns, considerNativeSources: true }) }
 let nativeFetchCalls = 0, cancelReason: unknown = null
@@ -186,7 +187,7 @@ const emittedBackupItem = { id: 80, codecid: 13, height: 1080, bandwidth: 1_000_
     'https://upos-sz-mirrorali02.bilivideo.com/upgcxcode/emitted-backup/third.m4s?signature=third',
     emittedThirdPartyBackup,
   ] }
-check(emittedBackupPlayurl.transform({ data: { dash: { video: [emittedBackupItem], audio: [] } } }, 'trusted-api'),
+check(emittedBackupPlayurl.transform({ data: { dash: { video: [emittedBackupItem], audio: [] } } }, 'trusted-api').accepted,
   'Native-on playurl fixture accepts primary plus four backups')
 check(emittedBackupItem.backup_url.includes(emittedThirdPartyBackup),
   'Native-on player output can emit a fifth signed route on an arbitrary host')
@@ -226,7 +227,7 @@ const cappedBackupItem = { id: 90, codecid: 13, height: 720, bandwidth: 1_000_00
     'https://upos-sz-mirrorali02.bilivideo.com/upgcxcode/emitted-backup/capped-third.m4s?signature=third',
     cappedThirdPartyBackup,
   ] }
-check(emittedBackupPlayurl.transform({ data: { dash: { video: [cappedBackupItem], audio: [] } } }, 'trusted-api'),
+check(emittedBackupPlayurl.transform({ data: { dash: { video: [cappedBackupItem], audio: [] } } }, 'trusted-api').accepted,
   'Native-on output-cap fixture accepts another representation in the current epoch')
 check(!cappedBackupItem.backup_url.includes(cappedThirdPartyBackup),
   'Native-on player omits an external backup that bounded provenance indexes cannot retain')
@@ -256,7 +257,7 @@ Object.defineProperty(fakeWindow, '__playinfo__', { configurable: true,
     assignedPayloadAtSetter.push(JSON.stringify(value))
     pageOwnedPlayinfo = value
   } })
-const pageInfo = scope.own(new PagePlayinfoAdapter(payload => pagePlayurl.transform(payload, 'page-hint'),
+const pageInfo = scope.own(new PagePlayinfoAdapter(payload => pagePlayurl.transform(payload, 'page-hint').accepted,
   () => pageRoutes.isCatalogOnly()))
 pageInfo.install()
 const earlyPageUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/early.m4s?signature=early'
@@ -325,7 +326,7 @@ Reflect.deleteProperty(fakeWindow, '__playinfo__')
 const initialUnsupportedUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/initial.m4s?signature=initial-secret'
 const initialUnsupportedPlayinfo = { data: { durl: [{ url: initialUnsupportedUrl }] } }
 Object.defineProperty(fakeWindow, '__playinfo__', { configurable: true, writable: true, value: initialUnsupportedPlayinfo })
-const initialPageInfo = scope.own(new PagePlayinfoAdapter(payload => pagePlayurl.transform(payload, 'page-hint'),
+const initialPageInfo = scope.own(new PagePlayinfoAdapter(payload => pagePlayurl.transform(payload, 'page-hint').accepted,
   () => pageRoutes.isCatalogOnly()))
 initialPageInfo.install()
 check(!JSON.stringify(Reflect.get(fakeWindow, '__playinfo__'))?.includes('signature=initial-secret'),
@@ -334,7 +335,7 @@ initialPageInfo.dispose()
 Reflect.deleteProperty(fakeWindow, '__playinfo__')
 await pageSettings.update({ considerNativeSources: true }); pageRoutes.invalidateForUserSetting()
 Object.defineProperty(fakeWindow, '__playinfo__', { configurable: true, writable: true, value: initialUnsupportedPlayinfo })
-const nativeOnInitialPageInfo = scope.own(new PagePlayinfoAdapter(payload => pagePlayurl.transform(payload, 'page-hint'),
+const nativeOnInitialPageInfo = scope.own(new PagePlayinfoAdapter(payload => pagePlayurl.transform(payload, 'page-hint').accepted,
   () => pageRoutes.isCatalogOnly()))
 nativeOnInitialPageInfo.install()
 equal(Reflect.get(fakeWindow, '__playinfo__'), initialUnsupportedPlayinfo,
@@ -346,7 +347,7 @@ let freshPlayinfoReads = 0
 Object.defineProperty(fakeWindow, '__playinfo__', { configurable: true, get: () => ({ data: { durl: [{
   url: `https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/fresh.m4s?signature=fresh-${++freshPlayinfoReads}`,
 }] } }) })
-const freshPageInfo = scope.own(new PagePlayinfoAdapter(payload => pagePlayurl.transform(payload, 'page-hint'),
+const freshPageInfo = scope.own(new PagePlayinfoAdapter(payload => pagePlayurl.transform(payload, 'page-hint').accepted,
   () => pageRoutes.isCatalogOnly()))
 freshPageInfo.install()
 for (let read = 0; read < 2; read++) {
@@ -449,7 +450,7 @@ equal(await disabledDuringResponse.text(), delayedSitePlayurl,
 playurlFetchOverride = null
 await apiFailureSettings.update({ disabled: false })
 apiFailureTransport.dispose()
-const throwingPlayurl = { transform: (): boolean => { throw new Error('synthetic transform failure') } }
+const throwingPlayurl = { transform: (): never => { throw new Error('synthetic transform failure') } }
 const throwingTransport = scope.own(new TransportAdapter(apiFailureSession, apiFailureSettings, apiFailureRoutes,
   throwingPlayurl, measurementStub, () => now))
 throwingTransport.install()

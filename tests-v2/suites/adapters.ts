@@ -1,3 +1,4 @@
+import { playurlResult } from '../support/playurl.ts'
 import { PlayurlController } from '../../src-v2/application/playurl-controller.ts'
 import { decisionId, epochId, generationId, requestId } from '../../src-v2/domain/model.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
@@ -38,7 +39,7 @@ const routeStub = {
   async observe(observation: TransportObservation): Promise<void> { observations.push(observation) },
 }
 let transformed = 0
-const playurlStub = { transform(): boolean { transformed++; return true } }
+const playurlStub = { transform() { transformed++; return playurlResult(true) } }
 let disabled = false, blockHttpDns = true
 const settingsStub = { get: () => ({ disabled, blockHttpDns, considerNativeSources: true }) }
 let nativeFetchCalls = 0, cancelReason: unknown = null
@@ -475,7 +476,7 @@ const intentTarget = { play: () => 'original-result' }
 const originalIntentPlay = intentTarget.play
 Object.defineProperty(fakeWindow, 'navigator', { configurable: true, value: { userActivation: { get isActive() { return activation } } } })
 class IntentAdapter extends PlayerAdapter { protected override player(): Record<string, unknown> { return intentTarget } }
-const intentAdapter = new IntentAdapter({ transform: () => false, lifecycleKey: () => 'test' })
+const intentAdapter = new IntentAdapter({ transform: () => playurlResult(false), lifecycleKey: () => 'test' })
 const intentRecovery = scope.own(new RecoveryController({ ...recoveryPlayer, observePlayIntent: listener => intentAdapter.observePlayIntent(listener), snapshot: () => intentVideo,
   reload: () => { intentReloads++ }, playbackRate: () => 1.5 }, () => intentClock))
 intentRecovery.tick(intentVideo)

@@ -1,3 +1,4 @@
+import { playurlResult } from '../support/playurl.ts'
 import { measurementRoutes, monitorRoutes, monitorMeasurement, monitorRecovery } from '../support/controllers.ts'
 import { RangeProbeAdapter } from '../../src-v2/adapters/range-probe.ts'
 import { MeasurementMetaStore } from '../../src-v2/state/measurement-meta-store.ts'
@@ -399,7 +400,7 @@ class RateAdapter extends PlayerAdapter {
   override video(): HTMLVideoElement { return adapterVideo }
   override player(): Record<string, unknown> { return { getPlaybackRate: () => null } }
 }
-const rateAdapter = new RateAdapter({ transform: () => false, lifecycleKey: () => 'test' })
+const rateAdapter = new RateAdapter({ transform: () => playurlResult(false), lifecycleKey: () => 'test' })
 for (const rate of [1, 1.5, 2, 0.75]) {
   adapterVideo.playbackRate = rate
   equal(rateAdapter.snapshot().effectiveRate, rate, `adapter uses real ${rate}x for demand`)

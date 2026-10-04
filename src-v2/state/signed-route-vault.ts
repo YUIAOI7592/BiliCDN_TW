@@ -1,5 +1,5 @@
-import { catalogIndex } from '../domain/catalog.ts'
-import { isKnownNativeFamily, parseMediaUrl } from '../domain/url-policy.ts'
+import { catalogIndex, TRUSTED_CATALOG } from '../domain/catalog.ts'
+import { isKnownNativeFamily, parseMediaUrl, replaceUrlHost } from '../domain/url-policy.ts'
 import {
   representationId, signedRouteHandle, type EpochId, type GenerationId, type MediaKind, type NativeCandidate,
   type RepresentationId, type RootCandidate, type RouteIdentity, type SignedRouteHandle, type AttributionStatus, type AttributionSource,
@@ -10,6 +10,13 @@ const MAX_VIDEO_GROUPS = 128
 const MAX_AUDIO_GROUPS = 64
 const MAX_URLS_PER_GROUP = 4
 const MAX_URL_CHARS = 1024 * 1024
+const catalogSource = (raw: string): boolean => {
+  const parsed = parseMediaUrl(raw)
+  if (!parsed?.replaceable || (parsed.kind !== 'normal' && parsed.kind !== 'pcdn')) return false
+  const generated = replaceUrlHost(parsed.url.href, TRUSTED_CATALOG[0])
+  const target = generated ? parseMediaUrl(generated) : null
+  return target?.kind === 'normal' && target.host === TRUSTED_CATALOG[0]
+}
 
 export interface RegisterRepresentationInput {
   readonly generation: GenerationId
@@ -60,7 +67,7 @@ export class SignedRouteVault {
     const sharedExact = new Set<RepresentationId>()
     for (const raw of [...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP)) {
       const parsed = parseMediaUrl(raw)
-      if (!parsed || (parsed.kind !== 'normal' && parsed.kind !== 'unknown')) continue
+      if (!parsed || (parsed.kind !== 'normal' && parsed.kind !== 'unknown' && !catalogSource(raw))) continue
       for (const rep of this.#byUrl.get(parsed.url.href) ?? []) {
         if (this.#groups.get(rep)?.identity.kind === input.kind) sharedExact.add(rep)
       }
@@ -89,15 +96,17 @@ export class SignedRouteVault {
     for (const raw of [...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP)) {
       const parsed = parseMediaUrl(raw)
       const opaque = parsed?.kind === 'unknown' && parsed.url.protocol === 'https:' && !parsed.url.port
-      if (!parsed || (parsed.kind !== 'normal' && !opaque) || this.#urlChars + raw.length > MAX_URL_CHARS) continue
+      const pcdnCatalogSource = parsed?.kind === 'pcdn' && catalogSource(raw)
+      if (!parsed || (parsed.kind !== 'normal' && !opaque && !pcdnCatalogSource) || this.#urlChars + raw.length > MAX_URL_CHARS) continue
       if (routes.some(route => route.url === parsed.url.href)) continue
       if (routes.length >= MAX_URLS_PER_GROUP) { this.registerAlias(rep, parsed.url.href); continue }
       const handle = signedRouteHandle(`route:${rep}:${++this.#handleSerial}`)
       routes.push(Object.freeze({ handle, host: parsed.host, url: parsed.url.href, order: routes.length,
-        activelyExplorable: !opaque && isKnownNativeFamily(parsed.host), selectable: !opaque }))
+        activelyExplorable: !opaque && !pcdnCatalogSource && isKnownNativeFamily(parsed.host),
+        selectable: !opaque && !pcdnCatalogSource }))
       this.#handles.set(handle, { representation: rep, url: parsed.url.href })
       this.#index(this.#byUrl, parsed.url.href, rep)
-      if (!opaque) this.#index(this.#byPath, parsed.url.pathname, rep)
+      if (!opaque && !pcdnCatalogSource) this.#index(this.#byPath, parsed.url.pathname, rep)
       this.#urlChars += parsed.url.href.length
     }
     if (!routes.length) {
@@ -158,9 +167,9 @@ export class SignedRouteVault {
 
   match(url: string): { context: RouteIdentity | null; status: AttributionStatus; source: AttributionSource } {
     const parsed = parseMediaUrl(url)
-    if (!parsed || (parsed.kind !== 'normal' && parsed.kind !== 'unknown')) return { context: null, status: 'waiting-data', source: 'none' }
+    if (!parsed || (parsed.kind !== 'normal' && parsed.kind !== 'unknown' && parsed.kind !== 'pcdn')) return { context: null, status: 'waiting-data', source: 'none' }
     for (const [index, source] of [[this.#byUrl, 'exact'], [this.#aliases, 'catalog-alias'], [this.#byPath, 'path-hint']] as const) {
-      if (parsed.kind === 'unknown' && source !== 'exact') continue
+      if ((parsed.kind === 'unknown' || parsed.kind === 'pcdn') && source !== 'exact') continue
       const reps = index.get(source === 'path-hint' ? parsed.url.pathname : parsed.url.href)
       if (!reps?.size) continue
       if (reps.size !== 1) return { context: null, status: 'ambiguous', source }
@@ -243,6 +252,15 @@ export class SignedRouteVault {
 
   rootUrl(representation: RepresentationId): string | null {
     return this.#groups.get(representation)?.routes[0]?.url ?? null
+  }
+
+  catalogSourceHandle(representation: RepresentationId): SignedRouteHandle | null {
+    const routes = this.#groups.get(representation)?.routes ?? []
+    return routes.find(route => catalogSource(route.url))?.handle ?? null
+  }
+
+  sourceURLs(representation: RepresentationId): readonly string[] {
+    return Object.freeze((this.#groups.get(representation)?.routes ?? []).map(route => route.url))
   }
 
   resolve(handle: SignedRouteHandle, identity: RouteIdentity): string | null {

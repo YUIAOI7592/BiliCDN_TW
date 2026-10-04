@@ -104,7 +104,7 @@ const staleChallenge = plannedRep ? plannedRoutes.challenge(plannedRep, plannedD
 const plannedAdapter = new PlayurlAdapter(new PlayurlController(authoritySession, plannedVault, plannedRoutes, authoritySettings))
 const trustedPayload = { data: { dash: { video: [{ id: 80, height: 1080, codecs: 'av01', bandwidth: 4_000_000,
   base_url: trustedUrl, backup_url: [] as string[] }], audio: [] } } }
-check(plannedAdapter.transform(trustedPayload, 'trusted-api'), 'trusted API playurl is adopted')
+check(plannedAdapter.transform(trustedPayload, 'trusted-api').accepted, 'trusted API playurl is adopted')
 equal(plannedRep ? plannedVault.rootUrl(plannedRep) : null, trustedUrl, 'trusted playurl replaces hint root in the live adapter')
 equal(plannedRep ? plannedRoutes.plan(plannedRep, plannedDemand, 'startup').host : null,
   'upos-sz-mirrorali.bilivideo.com', 'previous provisional plan is invalidated at trusted API adoption')
@@ -161,8 +161,18 @@ if (rep && native) {
 }
 vault.reset(generationId(2), epochId(0))
 equal(context ? vault.resolve(native?.handle ?? signedRouteHandle('missing'), context) : null, null, 'signed route never crosses generation')
-equal(vault.register({ generation: generationId(2), epoch: epochId(0), kind: 'video', key: 'pcdn', height: 720, codec: 'avc', bandwidth: 1,
-  urls: ['https://x.szbdyd.com/a.m4s'], source: 'trusted-api' }), null, 'PCDN never enters signed route vault')
+const pcdnUrl = 'https://x.szbdyd.com/a.m4s'
+const pcdnRep = vault.register({ generation: generationId(2), epoch: epochId(0), kind: 'video', key: 'pcdn', height: 720, codec: 'avc', bandwidth: 1,
+  urls: [pcdnUrl], source: 'trusted-api' })
+check(pcdnRep, 'safe exact PCDN source is held privately for Catalog generation')
+if (pcdnRep) {
+  const identity = vault.identity(pcdnRep), handle = vault.catalogSourceHandle(pcdnRep)
+  equal(identity && handle ? vault.resolve(handle, identity) : null, pcdnUrl,
+    'PCDN Catalog source handle resolves only the current exact signed URL')
+  equal(vault.match(pcdnUrl).context?.representation, pcdnRep, 'exact PCDN source is attributable')
+  equal(vault.candidates(pcdnRep, new Set()).native.length, 0, 'PCDN source never becomes an active Native candidate')
+  equal(vault.candidates(pcdnRep, new Set()).root, null, 'PCDN source never becomes an original fallback')
+}
 
 const storage = new FakeStorage(), restrictions = scope.own(new RestrictionStore(storage, () => now))
 await restrictions.add({ host: TRUSTED_CATALOG[0], type: 'black', kind: 'all', reason: 'test', expireAt: now + 1000 })
@@ -320,7 +330,7 @@ const oldEpochRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/epoch-r
 const newEpochRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/epoch-reuse/new/video.m4s?signature=new-epoch'
 const oldEpochPayload = { data: { dash: { video: [{ id: 80, codecid: 13, height: 1080,
   bandwidth: 1_000_000, base_url: oldEpochRoot, backup_url: [] as string[] }], audio: [] } } }
-check(epochReuseAdapter.transform(oldEpochPayload, 'trusted-api'), 'old trusted payload registers a representation')
+check(epochReuseAdapter.transform(oldEpochPayload, 'trusted-api').accepted, 'old trusted payload registers a representation')
 const oldEpochRep = epochReuseVault.match(oldEpochRoot).context?.representation
 check(oldEpochRep, 'old trusted payload has a vault identity before epoch reset')
 const nextEpochState = epochReuseSession.beginEpoch()

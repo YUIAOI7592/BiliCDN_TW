@@ -1,3 +1,4 @@
+import { playurlResult } from '../support/playurl.ts'
 import { RuntimeController } from '../../src-v2/application/runtime-controller.ts'
 import { LifecycleController } from '../../src-v2/application/lifecycle-controller.ts'
 import { ControlCommands } from '../../src-v2/application/control-commands.ts'
@@ -88,7 +89,7 @@ try {
   let navigationListener: () => void = () => undefined
   const navigation: NavigationPort = { key: () => pageKey, subscribe(listener) { navigationListener = listener; return () => { navigationListener = () => undefined } } }
   const lifecycle = scope.own(new LifecycleController(session, settings, vault, routes,
-    { transform: () => { transformed++; return accept } }, { install: () => undefined, dispose: () => undefined },
+    { transform: () => { transformed++; return playurlResult(accept) } }, { install: () => undefined, dispose: () => undefined },
     monitor, clock.now, navigation, clock))
   equal(typeof location, 'undefined', 'lifecycle contract has no browser globals')
   lifecycle.start(); const initial = session.get().generation; lifecycle.start()

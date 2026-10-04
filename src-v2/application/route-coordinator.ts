@@ -120,7 +120,7 @@ export class RouteCoordinator {
     private readonly settings: Pick<SettingsStore, 'get'>,
     private readonly restrictions: Pick<RestrictionStore, 'snapshot'>,
     private readonly evidence: Pick<EvidenceStore, 'get' | 'record'>,
-    private readonly vault: Pick<SignedRouteVault, 'candidates' | 'groupSummary' | 'hosts' | 'identity' | 'invalidate' | 'isCurrentIdentity'
+    private readonly vault: Pick<SignedRouteVault, 'candidates' | 'catalogSourceHandle' | 'groupSummary' | 'hosts' | 'identity' | 'invalidate' | 'isCurrentIdentity'
       | 'isInvalid' | 'match' | 'outputRole' | 'registerAlias' | 'registerOutput' | 'resolve' | 'rootUrl' | 'wasPlayerOutput'>,
   ) {}
 
@@ -215,8 +215,12 @@ export class RouteCoordinator {
   }
 
   startupOptions(url: string, catalogCursor = 0): StartupOptions | null {
-    const parsed = parseMediaUrl(url), match = this.vault.match(url), context = match.status === 'matched' ? match.context : null
-    if (!parsed || parsed.kind !== 'normal' || !parsed.replaceable || !context || this.settings.get().fixedHost
+    const parsed = parseMediaUrl(url), match = this.vault.match(url)
+    const context = match.status === 'matched' || match.source === 'exact' ? match.context : null
+    const source = context && this.isCatalogOnly() ? this.#catalogSource(context, url) : url
+    const parsedSource = source ? parseMediaUrl(source) : null
+    if (!parsed || !source || !parsedSource || !parsedSource.replaceable
+      || (!this.isCatalogOnly() && parsedSource.kind !== 'normal') || !context || this.settings.get().fixedHost
       || this.#originalComparison || this.session.get().disabled) return null
     const bandwidth = this.vault.groupSummary(context.representation)?.bandwidth ?? 0
     const requiredMbps = Math.max(context.kind === 'audio' ? 0.5 : 2,
@@ -246,10 +250,10 @@ export class RouteCoordinator {
     for (let offset = 0; offset < catalog.length && candidates.length < 3; offset++) {
       const host = catalog[(catalogCursor + offset) % catalog.length]
       if (!host) continue
-      const generated = replaceUrlHost(url, host)
+      const generated = replaceUrlHost(source, host)
       if (generated) add(host, 'catalog-generated', generated, false)
     }
-    return { candidates, demand: { kind: context.kind, requiredMbps, highDemand: requiredMbps >= 12 }, originalHost: parsed.host }
+    return { candidates, demand: { kind: context.kind, requiredMbps, highDemand: requiredMbps >= 12 }, originalHost: parsedSource.host }
   }
 
   noteStartupProbeResult(candidate: StartupCandidate, status: number | null): void {
@@ -260,17 +264,23 @@ export class RouteCoordinator {
   }
 
   commitStartupChoice(url: string, selected: StartupCandidate | null, reason: string): RouteDecision | null {
-    if (!selected || this.session.get().disabled) return null
+    if (!selected || this.session.get().disabled || this.#originalComparison) return null
     if (this.isCatalogOnly() && selected.type !== 'catalog-generated') return null
-    const match = this.vault.match(url), context = match.status === 'matched' ? match.context : null
+    const fixedHost = this.settings.get().fixedHost
+    if (fixedHost && (selected.type !== 'catalog-generated' || selected.host !== fixedHost)) return null
+    const match = this.vault.match(url)
+    const context = match.status === 'matched' || match.source === 'exact' ? match.context : null
     if (!context || context !== selected.context || this.#hardRestriction(selected.host, context.kind)
       || this.vault.isInvalid(context.representation, selected.host)
       || this.#startupIncompatible.get(mediaIdentity(selected.url) ?? '')?.has(selected.host)) return null
+    const source = this.isCatalogOnly() ? this.#catalogSource(context, url) : url
+    if (!source) return null
     let decision: RouteDecision
     if (selected.original) decision = this.#pass(reason, selected.host, context.kind)
     else if (selected.type === 'catalog-generated') {
       const catalogIndex = TRUSTED_CATALOG.indexOf(selected.host as typeof TRUSTED_CATALOG[number])
-      if (catalogIndex < 0 || replaceUrlHost(url, selected.host) !== selected.url) return null
+      if (catalogIndex < 0 || replaceUrlHost(source, selected.host) !== selected.url
+        || parseMediaUrl(selected.url)?.kind !== 'normal') return null
       const candidate: CatalogCandidate = { type: 'catalog-generated', host: selected.host, kind: context.kind, catalogIndex }
       decision = { action: 'rewrite', id: this.#nextId(), reason, routeType: 'catalog-generated', host: selected.host, candidate, ranking: [] }
     } else {
@@ -347,7 +357,8 @@ export class RouteCoordinator {
   recoverStartup(representation: RepresentationId, demand: PlaybackDemand, failedHost: string,
     preferredHosts: readonly string[]): RouteDecision | null {
     if (this.#originalComparison) return null
-    const root = this.vault.rootUrl(representation)
+    const context = this.vault.identity(representation)
+    const root = context && this.isCatalogOnly() ? this.#catalogSource(context) : this.vault.rootUrl(representation)
     if (!root || !failedHost || demand.kind !== 'video') return null
     const options = this.startupOptions(root)
     if (!options) return null
@@ -468,7 +479,7 @@ export class RouteCoordinator {
   #applyCatalogOnly(url: string, parsed: NonNullable<ReturnType<typeof parseMediaUrl>>,
     kindHint: MediaKind | null, demand?: PlaybackDemand): AppliedRouteDecision {
     const match = this.vault.match(url), context = match.status === 'matched' ? match.context : null
-    const root = context ? this.vault.rootUrl(context.representation) : null
+    const root = context ? this.#catalogSource(context, url) : null
     const sourceHost = parseMediaUrl(root ?? url)?.host ?? parsed.host
     const streamKey = mediaIdentity(url)
     const outputRole = context ? this.vault.outputRole(context.representation, url) : null
@@ -478,8 +489,8 @@ export class RouteCoordinator {
       playurlHostChanged: outputRole?.hostChanged ?? false,
       ...(outputRole ? { playurlOutput: outputRole } : {}),
     })
-    const parsedRoot = root ? parseMediaUrl(root) : null
-    if (parsed.kind !== 'normal' || !parsed.replaceable || (root && (parsedRoot?.kind !== 'normal' || !parsedRoot.replaceable))) {
+    const exactPcdn = parsed.kind === 'pcdn' && match.source === 'exact' && !!context
+    if ((parsed.kind !== 'normal' && !exactPcdn) || !parsed.replaceable || (context && !root)) {
       return blocked('catalog-unreplaceable')
     }
     const kind = context?.kind ?? kindHint
@@ -510,7 +521,8 @@ export class RouteCoordinator {
       return blocked('catalog-unavailable')
     }
     const target = replaceUrlHost(url, decision.host)
-    if (!target || parseMediaUrl(target)?.host !== decision.host || this.#hardRestriction(decision.host, kind)
+    if (!target || parseMediaUrl(target)?.kind !== 'normal' || parseMediaUrl(target)?.host !== decision.host
+      || this.#hardRestriction(decision.host, kind)
       || this.#incompatible(url, decision.host)) return blocked('catalog-unavailable')
     this.#remember(decision, context, kind ?? 'video')
     if (context) {
@@ -587,22 +599,22 @@ export class RouteCoordinator {
         : { primary: '', backups: [] }
     }
     if (this.isCatalogOnly()) {
-      const parsedOriginal = parseMediaUrl(original)
-      if (parsedOriginal?.kind !== 'normal' || !parsedOriginal.replaceable || decision.action !== 'rewrite'
+      const sourceUrl = this.#catalogSource(context, original)
+      if (!sourceUrl || decision.action !== 'rewrite'
         || decision.candidate.type !== 'catalog-generated' || !isCatalogHost(decision.host)) {
         return { primary: '', backups: [] }
       }
-      const primary = replaceUrlHost(original, decision.host)
-      if (!primary || !allowed(primary) || this.#incompatible(original, decision.host)) return { primary: '', backups: [] }
+      const primary = replaceUrlHost(sourceUrl, decision.host)
+      if (!primary || !allowed(primary) || this.#incompatible(sourceUrl, decision.host)) return { primary: '', backups: [] }
       const preferred = decision.ranking.filter(row => row.eligible && row.candidate.type === 'catalog-generated')
         .map(row => row.candidate.host)
-      const unavailable = new Set(TRUSTED_CATALOG.filter(host => this.#incompatible(original, host)
-        || !allowed(replaceUrlHost(original, host) ?? '')))
+      const unavailable = new Set(TRUSTED_CATALOG.filter(host => this.#incompatible(sourceUrl, host)
+        || !allowed(replaceUrlHost(sourceUrl, host) ?? '')))
       const backups = catalogOutputPlan(decision.host, preferred, unavailable)
-        .flatMap(host => { const url = replaceUrlHost(original, host); return url ? [url] : [] })
+        .flatMap(host => { const url = replaceUrlHost(sourceUrl, host); return url ? [url] : [] })
       this.vault.registerAlias(representation, primary)
       for (const backup of backups) this.vault.registerAlias(representation, backup)
-      if (recordOutput) this.vault.registerOutput(representation, original, primary, backups, decision.id, source, true)
+      if (recordOutput) this.vault.registerOutput(representation, sourceUrl, primary, backups, decision.id, source, true)
       return { primary, backups: Object.freeze(backups) }
     }
     const lockedOriginal = stream && this.#hostLockedStreams.has(stream) ? this.vault.rootUrl(representation) : null
@@ -628,7 +640,8 @@ export class RouteCoordinator {
 
   challenge(representation: RepresentationId, demand: PlaybackDemand, preferNative: boolean,
     excludedHosts: ReadonlySet<string> = new Set(), catalogCursor = 0): AppliedRouteDecision | null {
-    const context = this.vault.identity(representation), root = this.vault.rootUrl(representation)
+    const context = this.vault.identity(representation)
+    const root = context && this.isCatalogOnly() ? this.#catalogSource(context) : this.vault.rootUrl(representation)
     const rootKey = root ? mediaIdentity(root) : null
     if (!context || !root || this.settings.get().fixedHost || this.#originalComparison
       || (rootKey !== null && this.#hostLockedStreams.has(rootKey))) return null
@@ -653,7 +666,7 @@ export class RouteCoordinator {
     const decision: RouteDecision = { action: 'rewrite', id, reason: 'safe-challenger', routeType: selected.type,
       host: selected.host, candidate: selected, ranking: Object.freeze([]) }
     const url = selected.type === 'catalog-generated' ? replaceUrlHost(root, selected.host) : this.vault.resolve(selected.handle, context)
-    if (!url) return null
+    if (!url || (selected.type === 'catalog-generated' && parseMediaUrl(url)?.kind !== 'normal')) return null
     this.#challengeAttempts.set(`${context.representation}:${selected.host}`, now)
     this.#remember(decision, context, context.kind)
     this.#emit({ type: 'route-planned', at: now, decision })
@@ -806,7 +819,8 @@ export class RouteCoordinator {
     const restriction = this.restrictions.snapshot(context.kind)
     const unlocked = this.#unlockedNative.get(context.representation) ?? new Set<string>()
     const routes = this.vault.candidates(context.representation, unlocked)
-    const root = sourceUrl ?? this.vault.rootUrl(context.representation) ?? ''
+    const root = this.isCatalogOnly() ? this.#catalogSource(context, sourceUrl) ?? '' : sourceUrl ?? this.vault.rootUrl(context.representation) ?? ''
+    if (this.isCatalogOnly() && !root) return this.#block('catalog-unreplaceable', null)
     const catalog = catalogCandidates(context.kind).filter(candidate => !this.vault.isInvalid(context.representation, candidate.host)
         && !this.#incompatible(root, candidate.host))
     const candidates = this.isCatalogOnly() ? catalog : [...catalog, ...routes.native, ...(routes.root ? [routes.root] : [])]
@@ -869,10 +883,27 @@ export class RouteCoordinator {
       circuitUntil: evidence?.circuitUntil ?? 0 }, this.clock.now())
   }
 
+  #catalogSource(context: RouteIdentity, requested?: string): string | null {
+    const handle = this.vault.catalogSourceHandle(context.representation)
+    const source = handle ? this.vault.resolve(handle, context) : null
+    const parsed = source ? parseMediaUrl(source) : null
+    const generated = parsed?.replaceable ? replaceUrlHost(parsed.url.href, TRUSTED_CATALOG[0]) : null
+    if (!generated || parseMediaUrl(generated)?.kind !== 'normal') return null
+    const codec = this.vault.groupSummary(context.representation)?.codec
+    if (requested && codec !== 'mp4' && codec !== 'flv') {
+      const parsedRequested = parseMediaUrl(requested), match = this.vault.match(requested)
+      if (parsedRequested?.kind === 'normal' && parsedRequested.replaceable
+        && match.context?.representation === context.representation
+        && (match.source === 'exact' || match.source === 'catalog-alias')) return parsedRequested.url.href
+    }
+    return parsed!.url.href
+  }
+
   #decisionAllowed(decision: RouteDecision, context: RouteIdentity | null, kind: MediaKind | null): boolean {
     if (decision.action === 'block' || !decision.host || this.#hardRestriction(decision.host, kind)) return false
+    const source = context && this.isCatalogOnly() ? this.#catalogSource(context) : null
     if (this.isCatalogOnly()) return decision.action === 'rewrite' && decision.candidate.type === 'catalog-generated'
-      && isCatalogHost(decision.host) && (!context || !this.#incompatible(this.vault.rootUrl(context.representation) ?? '', decision.host))
+      && isCatalogHost(decision.host) && (!context || !!source && !this.#incompatible(source, decision.host))
     if (decision.action === 'pass') return !context || !this.vault.isInvalid(context.representation, decision.host)
     const candidate = decision.candidate
     if (candidate.type === 'catalog-generated') return !context || !this.#incompatible(this.vault.rootUrl(context.representation) ?? '', decision.host)

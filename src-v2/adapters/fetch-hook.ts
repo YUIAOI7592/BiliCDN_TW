@@ -1,7 +1,7 @@
 import { isPlayurlApi } from '../domain/catalog.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
 import type { FailureKind, RequestContext } from '../domain/model.ts'
-import { type TransportContext, type HookInstallation, copyResponseSurface, blockedPlayurlText } from './transport-context.ts'
+import { type TransportContext, type HookInstallation, copyResponseSurface, blockedPlayurlText, rejectedPlayurl } from './transport-context.ts'
 export class FetchHookAdapter {
   constructor(private readonly context: TransportContext) {}
   install(): HookInstallation | null {
@@ -38,17 +38,26 @@ export class FetchHookAdapter {
           status: 503, headers: { 'content-type': 'application/json; charset=utf-8' },
         }), response)
         let text: string
-        try { text = await response.text() } catch { return catalogOnly() ? blocked() : response }
+        try { text = await response.text() } catch {
+          self.notePlayurl('fetch', response.status, rejectedPlayurl(self.session.isGeneration(generation)
+            && !self.settings.get().disabled ? 'malformed-payload' : 'inactive'))
+          return catalogOnly() ? blocked() : response
+        }
         if (self.settings.get().disabled) {
+          self.notePlayurl('fetch', response.status, rejectedPlayurl('inactive'))
           return copyResponseSurface(new Response(text, { status: response.status, statusText: response.statusText, headers: response.headers }), response)
         }
         try {
           const payload: unknown = JSON.parse(text)
-          const accepted = self.session.isGeneration(generation) && !self.settings.get().disabled
-            ? self.playurl.transform(payload, 'trusted-api', responseKey) : false
-          if (catalogOnly() && !accepted) return blocked()
+          const result = self.session.isGeneration(generation) && !self.settings.get().disabled
+            ? self.playurl.transform(payload, 'trusted-api', responseKey) : rejectedPlayurl('inactive')
+          self.notePlayurl('fetch', response.status, result)
+          if (catalogOnly() && !result.accepted) return blocked()
           text = JSON.stringify(payload)
-        } catch { if (catalogOnly()) return blocked() }
+        } catch {
+          self.notePlayurl('fetch', response.status, rejectedPlayurl('malformed-payload'))
+          if (catalogOnly()) return blocked()
+        }
         return copyResponseSurface(new Response(text, { status: response.status, statusText: response.statusText, headers: response.headers }), response)
       }
       const method = sourceRequest.method.toUpperCase()

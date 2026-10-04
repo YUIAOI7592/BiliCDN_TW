@@ -13,6 +13,7 @@ export interface PlayurlItem {
   readonly bandwidth: number
   readonly primary: string
   readonly urls: readonly string[]
+  readonly progressive?: boolean
 }
 export interface PlayurlInput { readonly token: object; readonly video: readonly PlayurlItem[]; readonly audio: readonly PlayurlItem[] }
 export interface PlayurlOutput { readonly token: object; readonly primary: string; readonly backups: readonly string[] }
@@ -26,11 +27,12 @@ export class PlayurlController {
   #generation = -1
   #contentKey = ''
   constructor(private readonly session: Pick<SessionStore, 'beginEpoch' | 'get'>,
-    private readonly vault: Pick<SignedRouteVault, 'groupSummary' | 'identity' | 'isCurrentIdentity' | 'register' | 'reset' | 'rootUrl' | 'source'>,
+    private readonly vault: Pick<SignedRouteVault, 'groupSummary' | 'identity' | 'isCurrentIdentity' | 'register' | 'reset' | 'rootUrl' | 'source' | 'sourceURLs'>,
     private readonly routes: Pick<RouteCoordinator, 'apply' | 'isBilibiliMedia' | 'isCatalogOnly' | 'opaqueOutput' | 'plan' | 'playbackRate' | 'playerOutput' | 'resetEpoch'>,
     private readonly settings: Pick<SettingsStore, 'get'>) {}
 
   catalogOnly(): boolean { return this.routes.isCatalogOnly() }
+  active(): boolean { return !this.session.get().disabled }
   codecPreference(): ReturnType<SettingsStore['get']>['codec'] { return this.settings.get().codec }
   lifecycleKey(): string { const s = this.session.get(); return `${s.generation}:${s.epoch}` }
 
@@ -83,7 +85,7 @@ export class PlayurlController {
     for (const [kind, items] of [['video', dash.video], ['audio', dash.audio]] as const) {
       items.forEach(item => {
         const primary = item.primary, urls = item.urls
-        if (parseMediaUrl(primary)?.kind === 'unknown') {
+        if (!item.progressive && parseMediaUrl(primary)?.kind === 'unknown') {
           const rep = this.vault.register({ generation: state.generation, epoch: state.epoch, kind,
             key: item.key, height: item.height,
             codec: item.codec, bandwidth: item.bandwidth, urls, source })
@@ -116,6 +118,7 @@ export class PlayurlController {
         }
         if (!rep) {
           if (source !== 'player-mpd') {
+            if (item.progressive) { rewriteItem(item, '', []); return }
             const primaryOutput = this.routes.apply(primary, kind, undefined, true)
             const backups = this.routes.isCatalogOnly() ? [] : primaryOutput.url
               ? [...new Set(urls.map(url => this.routes.apply(url).url).filter((url): url is string => !!url && url !== primaryOutput.url))].slice(0, 5) : []
@@ -131,7 +134,7 @@ export class PlayurlController {
           ((bandwidth || (kind === 'audio' ? 192_000 : 4_000_000)) / 1_000_000) * this.routes.playbackRate() * 1.25)
         const demand: PlaybackDemand = { kind, requiredMbps, highDemand: requiredMbps >= 12 }
         const decision = this.routes.plan(rep, demand, this.session.get().affinity ? 'representation' : 'startup')
-        const output = this.routes.playerOutput(rep, primary, decision, urls, source)
+        const output = this.routes.playerOutput(rep, primary, decision, item.progressive ? this.vault.sourceURLs(rep) : urls, source)
         rewriteItem(item, output.primary, output.backups)
       })
     }
@@ -147,7 +150,7 @@ export class PlayurlController {
       ((bandwidth || (kind === 'audio' ? 192_000 : 4_000_000)) / 1_000_000) * this.routes.playbackRate() * 1.25)
     const demand: PlaybackDemand = { kind, requiredMbps, highDemand: requiredMbps >= 12 }
     const decision = this.routes.plan(representation, demand, this.session.get().affinity ? 'representation' : 'startup')
-    const output = this.routes.playerOutput(representation, original, decision, [original], source, recordOutput)
+    const output = this.routes.playerOutput(representation, original, decision, this.vault.sourceURLs(representation), source, recordOutput)
     rewriteItem(item, output.primary, output.backups)
   }
 

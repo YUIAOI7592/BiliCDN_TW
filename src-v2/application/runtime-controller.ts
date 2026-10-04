@@ -29,13 +29,15 @@ export class RuntimeController {
       this.monitor.subscribe(snapshot => this.diagnostics.recordPlayer(this.#sample(snapshot.video, snapshot.watchdog, this.now()))))
     this.visibility.setEnabled(!this.settings.get().disabled)
     const signature = (state: ReturnType<SettingsStore['get']>): string => JSON.stringify([state.fixedHost, state.catalogOverrides, state.considerNativeSources])
-    let routeSettings = signature(this.settings.get()), nativeSources = this.settings.get().considerNativeSources
+    let routeSettings = signature(this.settings.get())
     this.#stops.push(this.settings.subscribe(state => {
       this.visibility.setEnabled(!state.disabled)
       const next = signature(state)
-      if (next !== routeSettings) { routeSettings = next; this.routes.invalidateForUserSetting() }
-      if (state.considerNativeSources !== nativeSources) {
-        nativeSources = state.considerNativeSources; this.measurement.reset(); this.recovery.reset()
+      if (next !== routeSettings) {
+        routeSettings = next
+        this.routes.invalidateForUserSetting()
+        this.measurement.reset()
+        this.recovery.reset()
       }
     }))
   }

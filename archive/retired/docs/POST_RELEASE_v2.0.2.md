@@ -1,5 +1,7 @@
 # v2.0.2 post-release findings — 2026-09-21
 
+> **Historical incident and repair record: v2.0.2 → v2.0.3.** Pending items and next steps below describe the state at the time of this report. The subsequent targeted browser observations are recorded in [v2.0.3 acceptance](CHROME_v2.0.3_ACCEPTANCE.md); this document does not create current tasks. See the [documentation index](../../../docs/INDEX.md) for current version and verification records.
+
 ## Evidence and limits
 
 The user-installed v2.0.2 report generated at 14:37:55 UTC records successful
@@ -40,7 +42,7 @@ different-quality URL, missing Native capability, fixed mode, newly restricted
 affinity and no fabricated affinity observation. Final release verification is
 recorded separately in the current TEST_REPORT and command output.
 
-## Release / Chrome status
+## Release / Chrome status at the time of this report
 
 Published v2.0.2 remains immutable. These changes are assigned to v2.0.3 and
 are not in the user's installed v2.0.2 userscript.
@@ -48,6 +50,6 @@ Full targeted Chrome acceptance is incomplete; seeing an extra test tab at the
 video end is not evidence that the whole interval was stall-free. Do not mark
 the active goal complete on this evidence. Preserve the user's original tab.
 
-Next: complete negative-path checks and final release verification under a new
+Next step recorded at the time: complete negative-path checks and final release verification under a new
 version, publish the successor, then perform the remaining targeted acceptance
 after installation. Do not overwrite Release/v2.0.2 or its GitHub asset.
