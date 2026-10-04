@@ -1,6 +1,6 @@
 # Development
 
-This is the maintained workflow for the **v2.1.8 release candidate**, including the MP4/FLV correction. The configured version is 2.1.8; security review and publication confirmation are pending, and v2.1.7 remains the latest published bundle. See the [documentation index](INDEX.md), [architecture](ARCHITECTURE.md), [repository guide](../AGENTS.md) and [security policy](../SECURITY.md). Revision-specific test and browser results belong in the [test report](TEST_REPORT.md) and dated acceptance records, not in this command reference.
+This is the maintained workflow for published **v2.1.8**, including the MP4/FLV correction. Publication and automated verification are confirmed; the sealed security review retains a documented intermediate coverage-marker limitation. See the [documentation index](INDEX.md), [architecture](ARCHITECTURE.md), [repository guide](../AGENTS.md) and [security policy](../SECURITY.md). Revision-specific test, security and browser results belong in the [test report](TEST_REPORT.md) and dated acceptance records, not in this command reference.
 
 ## Repository layout and archive maintenance
 
@@ -92,7 +92,7 @@ Do not add a public test bridge to the production bundle. Tests are bundled from
 
 ## Real Chrome validation
 
-For v2.1.8, the user has requested publication before browser updating. Complete automated and required security verification, publish the userscript, confirm the GitHub Release, then update Tampermonkey through the repository's standard [latest-release userscript URL](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js). Until publication is confirmed, that URL still serves the previously published v2.1.7. Browser regression follows the update and is recorded separately from release verification.
+v2.1.8 was published before browser updating, as requested. The user completed the standard Tampermonkey update through the repository's [latest-release userscript URL](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js), and DevTools confirmed v2.1.8. The authorized MP4 trial and an alternative public DASH video each showed continuous playback for over twelve seconds and direct Catalog HTTPS 206 responses. The original MP4 is now members-only; its trial is not full-length public MP4 evidence. No public full-length progressive MP4 or legal live FLV sample was established. These coverage limits and the earlier DASH buffering are recorded in TEST_REPORT separately from automated/security verification, not as new approved tasks.
 
 After the published userscript is updated in Tampermonkey, use separate test tabs. Record:
 
@@ -102,7 +102,7 @@ After the published userscript is updated in Tampermonkey, use separate test tab
 - whether a probe was started and whether the host changed;
 - seek, SPA, background, pause/resume and multi-tab outcomes.
 
-For the new difference, run the target MP4 reproduction and DASH regression, recording format/segment handling, actual video hosts, playback progress and any startup/fixed-host setting race exercised. FLV currently has automated contract evidence only; exercise real FLV playback only if a legitimate accessible sample is available, otherwise retain that explicit evidence limit. These checks are separate from the approved, closed v2.1.6 acceptance and remain pending until actually performed.
+For subsequent relevant changes, confirm an accessible MP4 segment plays for at least 10 seconds and run the DASH regression, recording format/segment handling, actual video hosts, playback progress and any startup/fixed-host setting race exercised. State whether playback covers a trial or full public content. FLV currently has automated contract evidence only; exercise real FLV playback when a legitimate accessible sample is available and record the actual scope. Keep later checks separate from the approved, closed v2.1.6 acceptance and the completed v2.1.8 observations above.
 
 Do not label VM or mock results as real playback. Preserve a user’s existing paused/test tab unless they explicitly authorize changing it.
 

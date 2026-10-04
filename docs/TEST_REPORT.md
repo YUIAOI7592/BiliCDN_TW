@@ -1,6 +1,6 @@
 # BiliCDN_TW v2.1.8 release verification — 2026-10-04
 
-This section records the current MP4 / FLV repair separately from the published v2.1.7 evidence below. At the user's request, version metadata is now 2.1.8 and publication precedes the new Chrome regression so Tampermonkey can use its existing update URL. Publication is being prepared; prior `Release/v*/` snapshots remain unchanged. Current guidance is indexed in [INDEX.md](INDEX.md).
+This section records the published MP4 / FLV repair separately from the v2.1.7 evidence below. At the user's request, v2.1.8 publication precedes the new Chrome regression so Tampermonkey can use its existing update URL. Published on 2026-10-04 (Asia/Taipei) as [v2.1.8](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8), tag/commit `b6e2ff11ef53ce3a338cc197c90edecdf0bb2b60`. Prior `Release/v*/` snapshots remain unchanged. Current guidance is indexed in [INDEX.md](INDEX.md).
 
 ## Reproduction and implementation
 
@@ -20,9 +20,32 @@ Final Codex Security diff scan `447fbcd6-b672-4e0f-a572-e7805ef97e45` is complet
 
 Before packaging, all **43 build-manifest inputs** matched their verified hashes. The v2.1.8 userscript is **285,037 bytes**, SHA-256 **`c2bda1e0be4b086e7622e34d3fba0a6cdfdd5eb612afea700289758112c9eb4f`**. Subsequent edits concern publication evidence and documentation only; application runtime remains unchanged. The scan goal tool reported 723,436 tokens and 1,174 seconds (19 minutes 34 seconds); these are its recorded goal counters, not a billing statement.
 
-After publication, real Chrome/Tampermonkey regression requires the updated script before testing the target MP4's authorized playback/trial for at least ten seconds and recording actual Network hosts, then a DASH regression. The user specified publication followed by Tampermonkey's standard update mechanism. No new playback acceptance is claimed before that update and observation. FLV currently has automated coverage only; no legal live sample has been established.
+After publication, the user completed Tampermonkey's standard update. DevTools confirmed installed version **2.1.8**, including the progressive parser. The real-browser observations below are separate from automated and security evidence. FLV currently has automated coverage only; no legal live sample has been established.
 
-**v2.1.6 acceptance remains approved and closed.** v2.1.8 publication is now authorized; automated/security and new-browser evidence remain separate.
+The sealed findings SHA-256 is `efdc076ba573da8e9437295c83f80cf46366c28cd83e0ae468e676440330fd8a`; coverage SHA-256 is `8ebb2dd034a43582c872fe71d5581309e17fcea229e905e919fbfdd5af123542`.
+
+## Publication confirmation
+
+GitHub readback confirmed v2.1.8 as the latest non-draft/non-prerelease, with exactly one attachment: `BiliCDN_TW.user.js`, 285,037 bytes and GitHub asset digest matching the verified SHA-256 above. Remote `main` and `refs/tags/v2.1.8` both pointed to `b6e2ff11ef53ce3a338cc197c90edecdf0bb2b60`. The user's remote README edit was merged without force push. The latest-release update URL therefore serves the repair. Versioned packaging contains the pre-publication verification snapshot; later publication/browser status is recorded only in these active documents.
+
+A separate new Chrome target tab was opened after publication. Initially, DevTools confirmed **installed version 2.1.7**, without the progressive parser, and the page still showed code -1. That observation is not a v2.1.8 test result. The user then completed the normal Tampermonkey update and DevTools confirmed v2.1.8. Browser-tool policy prevents controlling extension-management pages; no local-file import or bypass was attempted after the user specified normal release updating.
+
+## Chrome / Tampermonkey observations after standard update
+
+Observed on 2026-10-04 (Asia/Taipei) in separate Chrome tabs, using the website's existing playback rate setting (2x after initialization). No playback preference or account entitlement was changed. Only bounded metadata, actual response hosts/statuses and video time/error values were recorded; signed media URLs, paths, queries, tokens and raw payloads were not persisted. Screenshots were limited to the video title and player, excluding signed-in account information.
+
+| Case | Playback observation | Actual Network observation |
+| --- | --- | --- |
+| Original [MP4 target](https://www.bilibili.com/video/BV1Xwa96pE7g/) — authorized trial only | Playurl HTTP 200 / code 0, `format: mp4`, one `durl` segment. Nine samples from 13:48:26.878 to 13:48:43.315 UTC: current time 0.799119 → 4.525805 → 8.623854 → 12.716896 → 16.827735 → 20.922018 → 25.011643 → 29.098042 → trial end 30.296938 seconds. No media error; readyState 4, playing until trial completion. Continuous progress observed for over 12 wall-clock seconds. | HTTPS `upos-sz-mirrorali.bilivideo.com`, direct **206 Media**, no disk cache or media redirect. The event capture for this window was not truncated. |
+| Alternative public [DASH video](https://www.bilibili.com/video/BV1YgT26qETR/) — selected after the user reported the original had become members-only | SSR playinfo code 0, 18 DASH video representations and 3 audio representations, no `durl`. Its upstream `format: flv720` label does not make this a progressive FLV sample. Seven stable samples from 13:54:46.966 to 13:54:59.103 UTC: 365.202979 → 369.262146 → 373.316104 → 377.346458 → 381.420513 → 385.440562 → 389.501470 seconds. All samples playing, readyState 4 and no media error. | Video and audio requests matched their same-stream representation paths in memory only. Actual destinations were Catalog hosts `upos-sz-mirrorali.bilivideo.com` and `upos-sz-mirroraliov.bilivideo.com`, direct HTTPS **206**, with no observed media redirect in the non-truncated capture. |
+
+The earlier DASH window at approximately 95.95 seconds briefly remained at readyState 2 before playback resumed. Some network events reported DNS failures and canceled requests; this record does not claim every Catalog host succeeded or playback never buffered. The later stable window verifies continuous progress for 12.137 wall-clock seconds.
+
+The original uploader now limits the MP4 target to members. Its observed success covers the site's legal 30-second trial, **not full-length member content**. At the user's direction, subsequent normal playback regression used the alternative public DASH video. A public full-length progressive MP4 sample and a legal live FLV sample were not established; those are coverage limits, not new implementation tasks or claims of full-format browser coverage. Local cropped screenshots are retained at `.work/v2.1.8-mp4-chrome-2026-10-04.png` and `.work/v2.1.8-dash-chrome-2026-10-04.png`; they are private evidence and are not Release attachments. No HAR or signed response payload was exported.
+
+After these observations, nine active documents were synchronized with publication/update/browser status. All **103 local links and anchors** in those documents and `git diff --check` passed. This final documentation check did not rerun runtime tests, change application code or alter packaged Release snapshots.
+
+**v2.1.6 acceptance remains approved and closed.** v2.1.8 publication is complete; automated/security and new-browser evidence remain separate.
 
 ---
 

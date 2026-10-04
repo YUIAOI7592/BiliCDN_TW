@@ -1,8 +1,8 @@
 # BiliCDN_TW v2 專案脈絡
 
-本文件是現行產品與開發契約。文件用途及歷史紀錄見 [docs/INDEX.md](INDEX.md)；版本與工具設定以 [release.json](../release.json)、[package.json](../package.json) 和 lockfile 為準。目前正式發行為 [v2.1.7](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.7)。
+本文件是現行產品與開發契約。文件用途及歷史紀錄見 [docs/INDEX.md](INDEX.md)；版本與工具設定以 [release.json](../release.json)、[package.json](../package.json) 和 lockfile 為準。目前正式發行為 [v2.1.8](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8)。
 
-目前工作樹為 **v2.1.8 發行候選版**，包含 MP4／FLV 修正；`release.json` 已設為 2.1.8，必要安全審閱與發布確認待完成。目前已發布版本仍為 v2.1.7。使用者已要求先發布 userscript，再由 Tampermonkey 標準最新版本網址更新並執行新差異的瀏覽器回歸。新增契約與驗證進度見 [TEST_REPORT](TEST_REPORT.md)。
+**v2.1.8 已確認發布**，包含 MP4／FLV 修正；自動驗證及必要安全審閱已完成，封存安全報告的 `partial coverage` 中途標記限制保留於 [TEST_REPORT](TEST_REPORT.md)。依使用者要求先發布 userscript，再完成 Tampermonkey 更新；本次授權的合法 MP4 試看片段與公開 DASH 瀏覽器回歸已完成。完整公開 MP4 尚無現場樣本，FLV 只有自動契約證據，兩者保留為覆蓋限制。
 
 ## 現行產品
 
@@ -41,7 +41,7 @@ v2 是全新 TypeScript 架構。它不讀取 v1 設定或學習資料，不提�
 - `MeasurementMetaStore` 保留既有 metadata key 與量測鎖語意，按需讀取資料；不可把它描述成與設定、限制、證據 store 相同的驗證與訂閱機制。
 - `SignedRouteVault` 集中管理簽名路線授權與索引；適配器的請求狀態、payload 和 manifest fingerprint 仍可能在分頁記憶體中含完整網址，禁止進入持久學習資料及診斷。
 
-## v2.1.8 MP4／FLV 契約（發布準備中）
+## v2.1.8 MP4／FLV 契約
 
 - `PlayurlAdapter` 辨識 root、`data`、`result`、`video_info` 已知容器中的 DASH 與 MP4／FLV `durl`；保留分段順序及原有時長、大小、品質資料，不以 `order` 是否存在或連續作為分段索引。
 - 每段各有 representation 身分。Catalog 改寫使用 Vault 提供的第一個合法、可安全換 Host 的來源 handle，必要時可取自同段備用來源；不以不同片段的 path/query 代替本段來源，不建立第二份 Native 授權索引。
@@ -64,4 +64,4 @@ v2 是全新 TypeScript 架構。它不讀取 v1 設定或學習資料，不提�
 - Codex Security 按風險使用：安全敏感變更或使用者明確要求時執行，不強制每版掃描。`npm run verify` 不包含安全掃描。
 - 程式或發行狀態改變時，同步維護現行指南與最新驗證摘要；歷史文件保留原始日期、版本、觀察及限制，已封裝的 `Release/v*/` 不回寫。
 - v2.1.6 Chrome／Tampermonkey 驗收已由使用者批准通過、已結案；其覆蓋限制與舊文件的待驗收文字不構成現行待辦。v2.1.7 沒有新的瀏覽器結果宣稱。
-- v2.1.8 先完成自動與必要安全驗證後發布 userscript，再由 Tampermonkey 標準最新版本網址更新，執行目標 MP4 與 DASH Chrome 回歸。FLV 若無合法可用樣本，僅記錄自動契約證據及實際播放未驗證的限制。只記錄這次新差異，不重開 v2.1.6 驗收。
+- v2.1.8 已完成發布、Tampermonkey 更新及本次授權的 Chrome 回歸：合法 MP4 試看片段與公開 DASH 均有超過 12 秒的連續播放觀察及 Catalog 直接 HTTPS 206 證據。原 MP4 影片已改會員限定，不宣稱完整公開 MP4 驗收；公開 DASH 較早短暫緩衝後恢復，不宣稱零緩衝。完整公開 MP4 與 FLV 現場覆蓋限制不另列為已批准待辦，也不重開 v2.1.6 驗收。

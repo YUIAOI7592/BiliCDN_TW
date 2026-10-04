@@ -2,7 +2,7 @@
 
 This is current guidance for the v2 source in `src-v2/`, not a versioned audit result. Document roles and historical records are indexed in [docs/INDEX.md](docs/INDEX.md). This file documents runtime trust boundaries; it is not a request to run a security scanner.
 
-The working tree is the **v2.1.8 release candidate**, including the MP4/FLV correction. The configured version is 2.1.8; required security review and publication confirmation are pending, and v2.1.7 remains the latest published bundle. The descriptions below apply to the candidate and do not claim completed security or browser verification. Publication precedes the standard Tampermonkey update and new MP4/DASH browser regression at the user's request.
+This guidance describes published **v2.1.8**, including the MP4/FLV correction. Publication, automated verification and source security review are complete. The canonical sealed security report retains an intermediate `partial coverage` limitation for nine subsequently reviewed files; [TEST_REPORT](docs/TEST_REPORT.md) records that distinction. The installed Tampermonkey version and the authorized Chrome regression have now been observed separately: a legitimate MP4 trial clip and public DASH playback used direct Catalog HTTPS 206 responses. The members-only MP4 trial does not establish complete public MP4 playback; no such field sample was available, and FLV remains covered by automated contracts only. These are evidence limits, not additional approved tasks.
 
 ## Untrusted inputs
 

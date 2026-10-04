@@ -1,6 +1,6 @@
 # v2 architecture
 
-This document describes the **v2.1.8 release candidate** in [src-v2](../src-v2/entry.ts), including the MP4/FLV correction. [release.json](../release.json) is set to 2.1.8; security review and publication confirmation are pending, and v2.1.7 remains the latest published bundle. This is a maintained design reference, not a record of browser acceptance. See the [documentation index](INDEX.md), [development workflow](DEVELOPMENT.md) and [security policy](../SECURITY.md) for their respective scopes.
+This document describes the published **v2.1.8** implementation in [src-v2](../src-v2/entry.ts), including the MP4/FLV correction, with the version set in [release.json](../release.json). Automated verification, the sealed security review and its retained coverage-marker limitation are recorded in the [test report](TEST_REPORT.md). The post-update MP4/DASH browser regression remains pending. This is a maintained design reference, not a record of browser acceptance. See the [documentation index](INDEX.md), [development workflow](DEVELOPMENT.md) and [security policy](../SECURITY.md) for their respective scopes.
 
 ## Dependency direction
 
@@ -75,7 +75,7 @@ Controllers receive typed ports, often narrowed with `Pick`. `NavigationPort`, `
 
 `PlayurlController` begins a new content epoch when a trusted API input changes its content key. This is separate from the lifecycle generation reset.
 
-## Progressive playurl processing (v2.1.8 release candidate)
+## Progressive playurl processing (v2.1.8)
 
 [PlayurlAdapter](../src-v2/adapters/playurl.ts) traverses the recognized root/`data`/`result`/`video_info` containers to a bounded depth and collects DASH plus MP4/FLV `durl` entries. Segment identity includes the branch, format, quality and array index; missing or repeated `order` fields do not collapse different segments. Original segment order and metadata remain in the payload. DASH codec ordering continues independently. The parser rejects malformed payloads, nonzero top-level codes, unsupported formats and oversized video/audio entry counts.
 
@@ -135,4 +135,4 @@ The recorder consumes typed `DomainEvent` values, aggregates successful traffic 
 
 `RouteSnapshot`, `TransportSnapshot`, `DiagnosticSnapshot` and `ControlCenterSnapshot` expose concrete readonly fields. Diagnostic request serialization uses an explicit bounded field list, and report export sanitizes the supplied read model. External payload validation belongs to the relevant adapter/store parser, with the metadata compatibility behavior described above. Product-setting/routing commands use `ControlCommandPort`; UI also invokes diagnostic-only mark, clear and report operations directly. UI does not read or write storage keys directly.
 
-The v2.1.8 candidate's `TransportSnapshot.lastPlayurl` adds one immutable recent result: Fetch/XHR, observation time, native HTTP status, acceptance, recognized DASH/MP4/FLV formats, video/audio/segment counts, numeric upstream code and rejection reason. `TransportContext` copies a fixed field list, deduplicates at most three formats, bounds counts to 0–65,535 and drops non-finite or unsafe-integer upstream codes. Raw payloads, URLs, paths, tokens and exception messages are not copied. Control-center text and the existing diagnostic export consume this summary; acceptance does not establish actual network destination or successful playback.
+The v2.1.8 `TransportSnapshot.lastPlayurl` adds one immutable recent result: Fetch/XHR, observation time, native HTTP status, acceptance, recognized DASH/MP4/FLV formats, video/audio/segment counts, numeric upstream code and rejection reason. `TransportContext` copies a fixed field list, deduplicates at most three formats, bounds counts to 0–65,535 and drops non-finite or unsafe-integer upstream codes. Raw payloads, URLs, paths, tokens and exception messages are not copied. Control-center text and the existing diagnostic export consume this summary; acceptance does not establish actual network destination or successful playback.

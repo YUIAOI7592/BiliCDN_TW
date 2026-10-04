@@ -4,9 +4,9 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 正常模式預設從腳本的**內建 CDN 清單**選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
-目前發行版本為 **[v2.1.7](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.7)**，主要完成模組化整理、測試隔離及取消／延遲提交處理。版本變更見 [CHANGELOG](docs/CHANGELOG.md)，現行指南與歷史紀錄的分類見 [文件索引](docs/INDEX.md)。
+目前發行版本為 **[v2.1.8](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8)**，修正 MP4／FLV 播放資料處理、Catalog 來源選擇與設定切換競態，並新增安全的播放資料摘要。版本變更見 [CHANGELOG](docs/CHANGELOG.md)，現行指南與歷史紀錄的分類見 [文件索引](docs/INDEX.md)。
 
-**v2.1.8 正在準備發布，包含 MP4／FLV 修正。** `release.json` 已設為 2.1.8，安全差異掃描與發布確認待完成；目前最新安裝連結仍提供已發布的 v2.1.7。依本次安排，先發布 v2.1.8 userscript，再透過 Tampermonkey 標準更新進行目標 MP4 與 DASH 瀏覽器回歸。驗證進度見 [TEST_REPORT](docs/TEST_REPORT.md)。
+**v2.1.8 已確認為最新正式 Release，附件只有 userscript。** 自動驗證、安全差異審閱及 Tampermonkey 更新已完成；本次 Chrome 回歸已完成合法 MP4 試看片段與公開 DASH 的播放及 Network 觀察。完整公開 MP4、FLV 現場覆蓋與安全報告的限制詳見 [TEST_REPORT](docs/TEST_REPORT.md)。
 
 > [!IMPORTANT]
 > **原作者與原始腳本：** [jiyunshi－Bilibili CDN 台灣優化](https://greasyfork.org/zh-TW/scripts/579776-bilibili-cdn-%E5%8F%B0%E7%81%A3%E5%84%AA%E5%8C%96)。本儲存庫源自原作者 MIT 授權腳本的個人修改專案；v2 是以 TypeScript 重新設計與重構的版本，並非原作者的官方版本。
@@ -34,9 +34,9 @@ GitHub Release 只提供 `BiliCDN_TW.user.js`。建置資訊、校驗碼與驗�
 - **連線與節點控制：** 可阻止網頁使用 WebRTC、HTTPDNS，並設定個別 CDN 的可用性。
 - **本機故障診斷：** 保存有限的事故前後狀態，供使用者複製報告排查。
 
-### v2.1.8 MP4／FLV 修正（發布準備中）
+### v2.1.8 MP4／FLV 修正
 
-目前工作樹增加 MP4／FLV `durl` 播放資料處理，保留原有分段順序、時長與大小，並為每段提供符合目前模式的主備網址。預設模式會從同段原始與備用來源中選擇可安全改寫的來源；只要有必要分段無法產生合法路線，整份已辨識的播放資料便不會部分改寫後放行。
+v2.1.8 增加 MP4／FLV `durl` 播放資料處理，保留原有分段順序、時長與大小，並為每段提供符合目前模式的主備網址。預設模式會從同段原始與備用來源中選擇可安全改寫的來源；只要有必要分段無法產生合法路線，整份已辨識的播放資料便不會部分改寫後放行。
 
 控制中心新增「最近播放資料」摘要，區分 Fetch／XHR、接納結果、DASH／MP4／FLV、影片／音訊／分段數量、上游 HTTP 狀態、數字錯誤代碼及拒絕原因。摘要不包含回應內容或簽名網址。原生來源開關、原生對照、整體停用及固定 CDN 的既有模式繼續適用；在途測速結果不能覆蓋剛選定的固定 CDN。
 
@@ -124,13 +124,15 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 ## 目前版本的驗證紀錄
 
-以下為**已發布 v2.1.7** 的證據。v2.1.8 發行候選版另有契約測試與驗證紀錄，不能沿用以下結果當作新修正已通過安全或瀏覽器驗收。目標 MP4 與 DASH Chrome 回歸將在 v2.1.8 發布、Tampermonkey 從標準最新版本網址更新後執行。FLV 目前只有自動契約證據，沒有合法可用樣本時不宣稱實際播放驗收通過。
+**已發布 v2.1.8** 的 Tampermonkey 更新已確認，本次授權的 Chrome 回歸已完成：合法 MP4 試看片段連續觀察 12.348 秒；公開 DASH 另有 12.137 秒連續播放窗口，維持網站原有 2x、`readyState=4` 且無播放器錯誤。Network 確認樣本影音直接取得 Catalog 的 HTTPS 206 回應，沒有媒體轉址。DASH 較早曾短暫緩衝後恢復，不宣稱全程零緩衝或每個 Catalog 都成功。
 
-v2.1.7 發布前已通過型別、架構、**626 項功能斷言**、**18 項架構斷言**、**40 個非入口模組的匯入檢查**，以及可重現建置、JavaScript 語法與封裝校驗。
+原 MP4 影片已改為會員限定，因此該證據只涵蓋合法試看片段，不能當作完整公開 MP4 播放驗收。完整公開 MP4 現場樣本尚無，FLV 只有自動契約證據；這些是本次覆蓋限制，不另列為已批准的待辦。詳細瀏覽器觀察與自動驗證分開記錄。
 
-本次 Codex Security 審閱涵蓋 53 項差異，沒有可報告問題；封存報告仍保留一項中途的覆蓋標記，狀態差異完整記錄於 [TEST_REPORT](docs/TEST_REPORT.md)。自動測試與原始碼審閱的結果，與真實瀏覽器觀察分別記錄。
+v2.1.8 發布前已通過型別、**42 個 runtime 模組的架構檢查**、**891 項功能斷言**、**18 項架構斷言**、**41 個非入口模組的匯入檢查**，以及可重現建置、JavaScript 語法與封裝校驗。
 
-**v2.1.6 Chrome／Tampermonkey 驗收已通過並結案。** 該紀錄不代表已完成 v2.1.7 的新差異瀏覽器回歸。詳見 [v2.1.6 驗收紀錄](archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md)。
+本次 Codex Security 的 30 個檔案均已完成審閱，沒有合理候選或可報告問題。正式封存報告仍標示 `partial coverage`：其中 9 個其後已審閱檔案保留了中途的 deferred 標記；此限制及 v2.1.7 的歷史紀錄分別保留於 [TEST_REPORT](docs/TEST_REPORT.md)。自動測試與原始碼審閱的結果，與真實瀏覽器觀察分別記錄。
+
+**v2.1.6 Chrome／Tampermonkey 驗收已通過並結案。** v2.1.8 本次回歸另行記錄，不改寫該歷史驗收。詳見 [v2.1.6 驗收紀錄](archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md)。
 
 ## 開發與專案結構
 

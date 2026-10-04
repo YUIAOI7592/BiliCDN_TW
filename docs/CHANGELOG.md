@@ -1,10 +1,10 @@
 # BiliCDN_TW changelog
 
-> The v2.1.8 entry is release preparation until GitHub publication is confirmed; v2.1.7 is still the latest published version. Older entries describe changes and verification status at their release date. Use [README](../README.md), [TEST_REPORT](TEST_REPORT.md) and the [document index](INDEX.md) for current behavior and evidence. Historical pending language is not the current backlog.
+> v2.1.8 is the latest confirmed published release. Older entries describe changes and verification status at their release date. Use [README](../README.md), [TEST_REPORT](TEST_REPORT.md) and the [document index](INDEX.md) for current behavior and evidence. Historical pending language is not the current backlog.
 
-## v2.1.8 — release preparation
+## v2.1.8
 
-MP4/FLV correction prepared for release. Required security review and publication confirmation are pending. At the user's request, publish the userscript first, then update Tampermonkey through the standard latest-release URL and perform the target MP4/DASH Chrome regression. Browser acceptance is not claimed passed; FLV remains automated-only unless a legitimate accessible sample is available.
+The MP4/FLV correction is [published](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8) as the latest non-draft, non-prerelease release, with only the userscript asset. Automated verification and the security review are complete; all 30 files were reviewed with no plausible or reportable finding. The canonical sealed report retains `partial coverage` and intermediate deferred markers for nine subsequently reviewed files; TEST_REPORT preserves that limitation. At the user's request, publication preceded the standard Tampermonkey update. DevTools confirmed v2.1.8; the authorized MP4 trial and an alternative public DASH video each showed over twelve seconds of continuous playback and direct Catalog HTTPS 206 responses. The original is now members-only, so this does not establish full-length public MP4 playback; no such field sample was available. FLV remains automated-only. TEST_REPORT records these coverage limits and the earlier DASH buffering separately.
 
 - Handle recognized MP4/FLV `durl` containers alongside DASH, retaining segment order and metadata. Plan all required progressive outputs before URL writeback; reject failed progressive/mixed output atomically instead of exposing a partially rewritten segment list.
 - Resolve each progressive segment's safe Catalog source through the current Vault handle, allowing a safe same-segment backup source when the primary cannot be rewritten. Preserve Native provenance, attribution and restrictions.
@@ -13,7 +13,7 @@ MP4/FLV correction prepared for release. Required security review and publicatio
 - Invalidate plans and reset measurement/recovery after fixed-host, Catalog-override or Native-source changes, so a pending probe cannot overwrite new fixed-host selection.
 - Replace boolean playurl acceptance with a typed result. Fetch/XHR check `accepted`; strict Fetch rejection retains HTTP 503 and XHR retains native HTTP status. Show one bounded recent format/count/code/reason summary without raw bodies, signed URLs or exception text.
 - Add progressive playurl/routing/transport and safe-summary contract suites. Current automated/security evidence belongs in TEST_REPORT; new Chrome/Tampermonkey regression follows publication and the standard Tampermonkey update. The approved v2.1.6 acceptance remains closed.
-- Set the candidate version to 2.1.8 while preserving previously published Release artifacts. GitHub publication will be recorded only after confirmation.
+- Publish v2.1.8 from tag commit `b6e2ff11ef53ce3a338cc197c90edecdf0bb2b60`, preserving older Release artifacts. The userscript is 285,037 bytes, SHA-256 `c2bda1e0be4b086e7622e34d3fba0a6cdfdd5eb612afea700289758112c9eb4f`.
 
 ## v2.1.7
 

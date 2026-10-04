@@ -1,6 +1,6 @@
 # 專案文件索引與維護規則
 
-本索引於 **2026-10-04** 更新，區分已發布 **v2.1.7** 與目前 **v2.1.8 發行候選版（MP4／FLV 修正）**。`release.json` 已設為 2.1.8；安全審閱與發布確認待完成，最新已發布版仍為 v2.1.7。它區分持續維護的指南與保留當時證據的歷史紀錄；舊版本的「待驗收」「未發布」或研究建議，不代表目前待辦。
+本索引於 **2026-10-04** 更新，目前最新正式發布版為 **v2.1.8（MP4／FLV 修正）**。自動驗證、安全審閱、GitHub 發布確認、Tampermonkey 更新及本次授權的 Chrome 回歸均已完成。合法 MP4 試看片段與公開 DASH 的現場結果，以及安全報告與格式覆蓋限制，分開記錄於 TEST_REPORT。它區分持續維護的指南與保留當時證據的歷史紀錄；舊版本的「待驗收」「未發布」或研究建議，不代表目前待辦。
 
 產品行為以 [src-v2/entry.ts](../src-v2/entry.ts) 及其模組為準；版本與工具以 [release.json](../release.json)、[package.json](../package.json) 和 [package-lock.json](../package-lock.json) 為準。當指南與程式不一致時，先確認實際行為，再同步修正文檔；歷史觀察仍保留原始版本與日期。
 
@@ -30,14 +30,14 @@
 
 | 文件／產物 | 如何閱讀 |
 | --- | --- |
-| [CHANGELOG](CHANGELOG.md) | v2.1.8 為發布準備；最新已發布版本為 v2.1.7，以下保留各版歷史 |
-| [TEST_REPORT](TEST_REPORT.md) | 依日期／版本分開記錄 v2.1.8 發行準備、v2.1.7 發行及先前驗證證據，包括各次限制 |
-| [v2.1.7 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.7) | 已發布的 userscript；GitHub 附件只有 `BiliCDN_TW.user.js` |
-| [Release/v2.1.7](../Release/v2.1.7/) | 該次封裝的 userscript、報告、變更紀錄、manifest 與 checksum；發布後不回寫 |
+| [CHANGELOG](CHANGELOG.md) | 最新已發布版本為 v2.1.8，以下保留各版歷史 |
+| [TEST_REPORT](TEST_REPORT.md) | 依日期／版本分開記錄 v2.1.8 發行、v2.1.7 發行及先前驗證證據，包括各次限制 |
+| [v2.1.8 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8) | 已確認為最新正式版；GitHub 附件只有 `BiliCDN_TW.user.js` |
+| [Release/v2.1.8](../Release/v2.1.8/) | 該次封裝的 userscript、報告、變更紀錄、manifest 與 checksum；發布後不回寫 |
 
-自動驗證、安全掃描與真實瀏覽器驗收是不同證據。**v2.1.6 Chrome／Tampermonkey 驗收已通過、已結案**；其覆蓋限制不構成待辦。v2.1.7 的文件與自動驗證不宣稱新的 Chrome 驗收結果。安全掃描封存紀錄的 partial coverage 限制仍見最新版 TEST_REPORT，不因文件整理而消失。
+自動驗證、安全掃描與真實瀏覽器驗收是不同證據。**v2.1.6 Chrome／Tampermonkey 驗收已通過、已結案**；其覆蓋限制不構成待辦。v2.1.8 的發布後 Chrome 結果另行記錄，不回寫封裝快照。v2.1.8 安全審閱已完成全部 30 個檔案且無合理候選或可報告問題，但正式封存報告仍保留 9 個其後已審閱檔案的中途 deferred 標記及 `partial coverage` 狀態。此限制與 v2.1.7 的歷史封存限制分別見 TEST_REPORT。
 
-v2.1.8 目前狀態見 [TODO](TODO.md)；依使用者要求先發布 userscript，再透過 Tampermonkey 標準最新版本網址更新並執行目標 MP4／DASH 回歸。已發布版本的測試與安全結果不作這次修正已完成驗收的證據；FLV 若無合法樣本，僅保留自動契約證據。
+v2.1.8 目前狀態見 [TODO](TODO.md)；userscript 已發布，標準更新後的合法 MP4 試看片段與替代公開 DASH 均有超過 12 秒的連續播放及 Catalog 直接 HTTPS 206 證據。原 MP4 已改會員限定，不宣稱完整公開 MP4 驗收；完整公開 MP4 尚無現場樣本，FLV 僅有自動契約證據。這些是覆蓋限制，不另列為已批准待辦。
 
 ## 歷史計畫與瀏覽器紀錄
 
