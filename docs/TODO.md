@@ -6,13 +6,13 @@
 
 v2.1.8 修復、發布、Tampermonkey 標準更新與已安排的 Chrome 回歸均已完成，沒有尚待施作的已批准產品工作。
 
-原 MP4 影片已改會員限定，現場證據只涵蓋合法 30 秒試看片段；另以公開 DASH 影片驗證播放及 Network。完整公開 MP4 與 FLV 尚無現場樣本，保留為覆蓋限制，不另列為已批准待辦。詳細結果見 [TEST_REPORT](TEST_REPORT.md)。
+原 MP4 影片已改會員限定，現場證據只涵蓋合法 30 秒試看片段；另以公開 DASH 影片驗證播放及網路面板（Network）。完整公開 MP4 與 FLV 尚無現場樣本，保留為覆蓋限制，不另列為已批准待辦。詳細結果見 [TEST_REPORT](TEST_REPORT.md)。
 
 ## 已完成／已結案
 
 - **2026-10-07 Markdown 粗體修正完成**：盤點專案 Markdown，修正 README 與三份公開歷史指南的八處失效標記；範圍與渲染驗證見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)。
 - **2026-10-07 單元測試工具遷移完成**：15 契約套件、架構與匯入純度改用 Node 內建測試，新增執行器／清理／時鐘契約；實際驗證見 [工具紀錄](TEST_TOOLING_REPORT.md)。版本維持 v2.1.8。
-- **v2.1.8 已發布**，GitHub 附件只有 userscript；修復及自動／安全審閱完成紀錄見 [TEST_REPORT](TEST_REPORT.md)。sealed 安全報告保留中途 `partial coverage` 標記限制，來源審閱與瀏覽器驗收分開記錄。
+- **v2.1.8 已發布**，GitHub 附件只有使用者腳本；修復及自動／安全審閱完成紀錄見 [TEST_REPORT](TEST_REPORT.md)。已封存且不可變更的安全報告保留中途 `partial coverage` 標記限制，來源審閱與瀏覽器驗收分開記錄。
 - **v2.1.8 Tampermonkey 更新及本次 Chrome 回歸已完成**，涵蓋授權 MP4 試片及公開 DASH；較早 DASH 緩衝及格式限制保留於報告。
 - 四階段模組化改善已於 **v2.1.7** 發布；自動驗證、發布及安全掃描限制見 [歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#published-bilicdn_tw-v217-test-report)。
 - **v2.1.6 Chrome／Tampermonkey 驗收已批准通過、已結案**。歷史覆蓋限制不列為待辦，不因後續文件整理重新開啟；見 [驗收紀錄](../archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md)。
@@ -29,5 +29,5 @@ v2.1.8 修復、發布、Tampermonkey 標準更新與已安排的 Chrome 回歸�
 下列方向須另有需求及證據才安排，不是本次工作或已批准待辦：
 
 - 記住「上次 CDN」的偏好設定。
-- 更積極的起播 preconnect 或挑戰測速頻率。
+- 更積極的起播預先連線（preconnect）或挑戰測速頻率。
 - Chrome＋Tampermonkey 以外的瀏覽器支援。

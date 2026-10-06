@@ -2,130 +2,130 @@
 
 # BiliCDN_TW 變更紀錄
 
-> 依 2026-10-04 發布確認，v2.1.8 是最新正式發行。舊項目描述各版發布當日的變更及驗證狀態。現行行為與證據見 [README](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。歷史 pending 文字不構成目前待辦。
+> 依 2026-10-04 發布確認，v2.1.8 是最新正式發行。舊項目描述各版發布當日的變更及驗證狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。歷史「待完成」文字不構成目前待辦。
 
 ## v2.1.8
 
-2026-10-04 [發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8) MP4／FLV 修正，GitHub Release 附件只有 userscript。自動驗證、安全審閱、標準 Tampermonkey 更新及授權的 MP4 試片／公開 DASH 回歸已完成；詳細證據、安全報告的 `partial coverage`、較早 DASH 緩衝及完整公開 MP4／FLV 覆蓋限制見 [v2.1.8 驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#bilicdn_tw-v218-release-verification--2026-10-04)。下列 Catalog 指內建節點清單，Native 指原生簽名路線。
+2026-10-04 [發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8) MP4／FLV 修正，GitHub Release 附件只有使用者腳本。自動驗證、安全審閱、標準 Tampermonkey 更新及授權的 MP4 試片／公開 DASH 回歸已完成；詳細證據、安全報告的 `partial coverage`、較早 DASH 緩衝及完整公開 MP4／FLV 覆蓋限制見 [v2.1.8 驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#bilicdn_tw-v218-release-verification--2026-10-04)。下列 Catalog 指內建節點清單，Native 指原生簽名路線。
 
-- 在 DASH 之外接納已辨識的 MP4／FLV `durl` 容器，保留分段順序與 metadata。必要漸進式輸出先全部規劃才寫回 URL；漸進式／混合輸出失敗時原子拒絕，不提供部分改寫的分段清單。
-- 透過當前 Vault handle 取得各漸進式分段的安全 Catalog 來源；主來源不可改寫時，可使用同段安全備用來源。保留 Native 來源授權、歸因及限制。
-- 保留全部 11 個 Catalog 內建 Host，其中 4 個預設不可用。起播探測最多三個並行候選，共用三秒窗口；其餘合法 Catalog 候選仍參與排名、備援及後續健康探索。Catalog-only 播放器輸出最多五個不同 Host 的備援。
-- Catalog-only 起播沒有有效量測時，不提交測速贏家，由最終送出對完整剩餘合法池排名。保留安全的當前 DASH query 處理，區分可改寫 PCDN 來源能力與 Native 可選資格。
-- 固定 Host、Catalog override 或原生來源設定變更後，失效計畫並重設量測／恢復，避免等待中的探測覆蓋新固定 Host。
-- 將 boolean playurl 接納結果改為型別化結果。Fetch／XHR 檢查 `accepted`；嚴格 Fetch 拒絕維持 HTTP 503，XHR 保留原生 HTTP 狀態。顯示一筆有界的最近格式／數量／code／原因摘要，不包含原始 body、signed URL 或例外文字。
+- 在 DASH 之外接納已辨識的 MP4／FLV `durl` 容器，保留分段順序與中繼資料。必要漸進式輸出先全部規劃才寫回 URL；漸進式／混合輸出失敗時原子拒絕，不提供部分改寫的分段清單。
+- 透過當前 Vault 的不透明識別碼取得各漸進式分段的安全 Catalog 來源；主來源不可改寫時，可使用同段安全備用來源。保留 Native 來源授權、歸因及限制。
+- 保留全部 11 個 Catalog 內建主機，其中 4 個預設不可用。起播探測最多三個並行候選，共用三秒窗口；其餘合法 Catalog 候選仍參與排名、備援及後續健康探索。僅使用 Catalog 的播放器輸出最多五個不同主機的備援。
+- 僅使用 Catalog 的起播沒有有效量測時，不提交測速贏家，由最終送出對完整剩餘合法池排名。保留安全的當前 DASH 查詢字串處理，區分可改寫 PCDN 來源能力與 Native 可選資格。
+- 固定主機、Catalog 覆寫設定或原生來源設定變更後，失效計畫並重設量測／恢復，避免等待中的探測覆蓋新固定主機。
+- 將布林值形式的 playurl 接納結果改為型別化結果。Fetch／XHR 檢查 `accepted`；嚴格 Fetch 拒絕維持 HTTP 503，XHR 保留原生 HTTP 狀態。顯示一筆有界的最近格式／數量／`code`／原因摘要，不包含原始回應本文、簽名 URL 或例外文字。
 - 新增漸進式 playurl／選路／傳輸及安全摘要契約套件。自動／安全證據集中於 TEST_REPORT；Chrome／Tampermonkey 回歸依序在發布及標準更新後完成。已批准的 v2.1.6 驗收維持結案。
-- 從 tag commit `b6e2ff11ef53ce3a338cc197c90edecdf0bb2b60` 發布 v2.1.8，保留較早 Release 產物。userscript 為 285,037 bytes，SHA-256 `c2bda1e0be4b086e7622e34d3fba0a6cdfdd5eb612afea700289758112c9eb4f`。
+- 從標籤提交 `b6e2ff11ef53ce3a338cc197c90edecdf0bb2b60` 發布 v2.1.8，保留較早 Release 產物。使用者腳本（使用者腳本）為 285,037 bytes，SHA-256 `c2bda1e0be4b086e7622e34d3fba0a6cdfdd5eb612afea700289758112c9eb4f`。
 
 ## v2.1.7
 
-- Separate application orchestration, browser navigation/scheduling/play-intent ports, playurl registration, measurement metadata, route/output policy, Fetch/XHR hooks and bounded Range probing into explicit modules.
-- Keep settings schema/defaults, the built-in Catalog list, Native-source opt-in, original comparison, UI capabilities and diagnostic field meanings compatible with v2.1.6.
-- Prevent disposed lifecycle observers and reset measurement lock waiters from committing old work; handle pre-aborted and interrupted probes with reader cleanup and no valid measurement result.
-- Split behavioral tests into independent suites, add AST dependency/ownership and import-purity checks, and strengthen readonly snapshots and typed test fixtures.
-- Verify package checksums in a temporary directory without overwriting an existing release. No runtime dependencies, remote code, Worker interception or CI/CD are added.
-- Preserve the completed v2.1.6 Chrome acceptance. Automated v2.1.7 verification and source security-review evidence are recorded separately; the security report retains a documented stale coverage marker.
+- 將應用層協調、瀏覽器導覽／排程／播放意圖介面、playurl 登記、量測中繼資料、路線／輸出政策、Fetch／XHR 攔截及有界 Range 探測拆成明確模組。
+- 設定結構與預設值、內建 Catalog 清單、Native 來源選用開關、原線對照、介面能力及診斷欄位語意維持與 v2.1.6 相容。
+- 防止已釋放的生命週期觀察器及量測鎖重設前的等待者提交舊工作；探測已預先取消或中途打斷時清理讀取器，不產生有效量測結果。
+- 將行為測試拆為獨立套件，新增抽象語法樹（AST）的依賴／權責與匯入純度檢查，強化唯讀快照及型別化測試情境。
+- 在暫存目錄驗證封裝校驗值，不覆寫既有發行版。未新增執行期依賴、遠端程式碼、Worker 攔截或 CI/CD。
+- 保留已完成的 v2.1.6 Chrome 驗收。v2.1.7 自動驗證與來源安全審閱證據分開記錄；安全報告保留已說明的過時覆蓋標記。
 
 ## v2.1.6
 
-- Add a persisted switch for considering Bilibili-provided Native sources in normal routing, defaulting to off for existing and new v2 settings. The per-tab original comparison mode remains separate.
-- In default normal mode, offer, probe and dispatch only safely generated built-in Catalog routes. If no allowed Catalog route can be generated, block the media request before dispatch instead of falling back to a Bilibili-provided original or backup URL.
-- Keep exact signed URLs inside the current-epoch vault for attribution and for modes that explicitly use them. Preserve host restrictions, disabled-script pass-through and already-dispatched website requests.
-- When bounded provenance indexes fill, omit an external player backup that cannot be recognized after switching Native sources off.
-- Do not add Catalog hosts, runtime dependencies, remote code or historical patch assets.
+- 新增持久化開關，決定正常選路是否考慮 Bilibili 提供的 Native 來源；既有及新建 v2 設定均預設關閉。每分頁的原線對照模式仍維持獨立。
+- 預設正常模式只提供、探測及送出安全產生的內建 Catalog 路線。無法產生允許的 Catalog 路線時，在送出前阻擋媒體請求，不退回 Bilibili 提供的原始或備用 URL。
+- 精確簽名 URL 保存在當前內容週期的 Vault，供歸因及明確使用這些 URL 的模式使用。保留主機限制、腳本停用時的直通及已送出的網站請求。
+- 有界的來源追溯索引已滿時，省略關閉 Native 來源後無法辨識的外部播放器備援。
+- 未新增 Catalog 主機、執行期依賴、遠端程式碼或歷史修補附件。
 
 ## v2.1.5
 
-- Distinguish a selected fallback, a submitted request, qualifying video data, and playback progress consistent with that route taking over. Progress within the buffer that existed at fallback time is reported as unconfirmed; another successful video host produces mixed evidence.
-- Add a bounded player timeline and per-fallback success, failure, abort and timeout evidence. Keep timeout separate from abort, and label core recovery as player progress rather than CDN confirmation.
-- Show the selected route's conservative speed relative to demand, while retaining the existing decision reason, route choice, CDN roster, probe budget and reload thresholds.
-- Enforce the 128 KiB in-memory and 96 KiB exported diagnostic caps, retaining the incident trigger and latest fallback summary when the report is heavily truncated. No signed media URL or query is added to diagnostics.
-- Complete source-level contracts and security diff review. Real Chrome/Tampermonkey fault reproduction follows installation of this update.
+- 區分選定備援、已送出請求、符合條件的影片資料，以及與該路線接手一致的播放進展。仍在切換備援當時既有緩衝內的進展標為未確認；另一影片主機成功時產生混合證據。
+- 新增有界的播放器時間軸，以及各次備援的成功、失敗、中止與逾時證據。逾時與中止分開；核心恢復標為播放器進展，不視為 CDN 確認。
+- 顯示所選路線的保守速度與需求的關係，保留既有決策原因、路線選擇、CDN 清單、探測預算及重載門檻。
+- 落實記憶體內 128 KiB、匯出 96 KiB 的診斷上限；報告大幅截短時仍保留事故觸發原因及最近備援摘要。診斷不新增簽名媒體 URL 或查詢字串。
+- 完成來源層契約及安全差異審閱。真實 Chrome／Tampermonkey 故障重現安排在安裝此更新後進行。
 
 ## v2.1.4
 
-- Normalize enabled Fetch requests once and use that same Request for host checks and native dispatch, including after a startup wait or SPA generation change. A stale-generation request still checks current host restrictions before dispatch.
-- Replace lower-trust page/player Native candidates when trusted playurl data for the same representation arrives. Revoke old handles, plans, invalid-host flags and late probe/evidence authority; built-in Catalog eligibility remains unchanged.
-- Reject active measurement redirects and require a direct 206 Range response from the admitted host for startup and healthy probes. Keep existing windows, byte caps, cooldown and playback fallback behavior.
-- Use Codex Security according to change risk rather than banning it or requiring it for every release. This release receives a security diff scan and targeted verification of all three findings.
+- 啟用時只正規化 Fetch 請求一次，主機檢查及原生送出均使用同一個 `Request`，包含等待起播或單頁應用（SPA）世代變更之後。過時世代的請求送出前仍檢查當前主機限制。
+- 同一媒體表示的可信 playurl 資料到達時，取代信任較低的頁面／播放器 Native 候選。撤銷舊不透明識別碼、計畫、無效主機標記，以及延遲探測／證據的授權；內建 Catalog 資格不變。
+- 拒絕主動量測重新導向；起播及健康探測必須取得獲准主機直接回傳的 206 Range 回應。保留既有窗口、位元組上限、冷卻及播放備援行為。
+- 依變更風險使用 Codex Security，不一律禁止或要求每次發行都使用。本版執行安全差異掃描，並針對全部三項發現進行驗證。
 
 ## v2.1.3
 
-- Rewrite the control center and player-panel labels in plain Traditional Chinese. The overview now explains playback, selected CDN, actual script-observed request/response hosts, attribution, fallback and measurement without exposing internal status codes as the primary UI.
-- Clarify that the per-tab original comparison mode uses only Bilibili-provided original or backup URLs, does not measure or switch automatically, and applies to new playback after activation. Explain settings, disabled actions and the diagnostic report in user-facing language.
-- Keep the report's raw technical data for troubleshooting. No route, restriction, playback, probe, recovery, storage or network behavior changes; v2.1.2 remains untouched.
+- 以易懂的繁體中文改寫控制中心及播放器面板標籤。總覽說明播放、所選 CDN、腳本實際觀察的請求／回應主機、歸因、備援及量測，主要介面不以內部狀態碼呈現。
+- 說明每分頁原線對照模式只使用 Bilibili 提供的原始或備用 URL，不測速或自動切換，並於啟用後套用至新的播放。以使用者用語解釋設定、停用的操作及診斷報告。
+- 保留報告原始技術資料供排查。路線、限制、播放、探測、恢復、儲存及網路行為均未改變；v2.1.2 保持原貌。
 
 ## v2.1.2
 
-- Link playurl output to later media requests with bounded original/output host, primary/backup, source and decision-ID metadata. Exact signed URLs without a recognized media path remain observation-only but retain this host-level lineage; no signed URL enters diagnostics.
-- Keep a Catalog 403 incompatible only with the current stream/host pairing across later ranking, backup assembly and healthy challenge selection. Do not punish that CDN globally from a compatibility response alone.
-- Track a legal fallback separately as planned, entered-hook, response-observed or request-failed. Tie the after-state to the same decision and request; an unrelated same-host request cannot confirm it. When no legal different route remains, clear the older fallback instead of presenting it as current.
-- Add a per-tab original signed-URL comparison mode for troubleshooting. It creates no synthesized CDN URL, active probe or automatic script route/core recovery; existing black/dead/default restrictions still apply. A forbidden primary may promote its own legal signed backup. Full reload exits the mode.
-- Keep the CDN roster, scoring formula, playback-rate behavior and probe limits unchanged. No Code Security scan or historical patch files.
+- 以有界的原始／輸出主機、主／備援角色、來源及決策 ID 中繼資料，連結 playurl 輸出與後續媒體請求。沒有可辨識媒體路徑的精確簽名 URL 仍僅供觀察，但保留此主機層追溯關係；簽名 URL 不進入診斷。
+- Catalog 403 在後續排名、備援組裝及健康挑戰選取中，只表示當前串流／主機配對不相容。不因單一相容性回應而全域懲罰該 CDN。
+- 分別追蹤合法備援的已規劃、已進入攔截、已觀察回應或請求失敗狀態。後續狀態必須關聯同一決策及請求；無關的同主機請求不能確認備援。沒有合法不同路線時清除較早備援，不將其顯示為當前備援。
+- 新增每分頁原始簽名 URL 對照模式供排查。不產生合成 CDN URL、主動探測或腳本自動路線／核心恢復；既有黑名單、失效及預設限制仍適用。禁止的主來源可提升自身合法簽名備援。完整重新載入會退出此模式。
+- CDN 清單、評分公式、播放速率行為及探測上限不變。未執行 Code Security 掃描，未產生歷史修補檔案。
 
 ## v2.1.1
 
-- Install and verify Fetch/XHR hooks before player monitoring or UI startup; a partial installation rolls back the hooks installed in that attempt and reports its status.
-- Recognize exact current-epoch signed media URLs even when their path lacks a known media suffix. These opaque URLs remain observation-only: no synthesized rewrite, Native selection, health sample or active probe.
-- Recheck recognized GET and non-GET media hosts before dispatch. Non-GET requests preserve their original URL but cannot directly send to a black/dead/disabled host; XHR rechecks at `send()` after settings changes or startup waiting.
-- Preserve legal opaque signed primary and backup URLs in playurl output, while removing prohibited ones. Fetch `Request` input and XHR timeout/abort/reuse behavior remain covered by contracts.
-- Report hook installation, media recognition, native-call and response stages separately. An explicit XHR timeout is labeled as a skipped preflight, not a skipped interception; only Chrome Network can confirm an actual browser request.
-- Preserve the CDN roster, ranking, playback speed, Codec preference and recovery strategy. No Code Security scan or historical patches.
+- 播放器監控或介面啟動前先安裝並驗證 Fetch／XHR 攔截；部分安裝失敗時，回復該次已安裝的攔截並回報狀態。
+- 即使路徑缺少已知媒體副檔名，仍辨識當前內容週期的精確簽名媒體 URL。這些不透明 URL 僅供觀察，不合成改寫、不作 Native 選取、不產生健康樣本或主動探測。
+- 送出前重新檢查已辨識的 GET 及非 GET 媒體主機。非 GET 請求保留原 URL，但不能直接送至黑名單、失效或停用主機；XHR 在設定變更或起播等待後於 `send()` 重新檢查。
+- playurl 輸出保留合法的不透明簽名主來源及備用 URL，移除禁止的來源。Fetch 的 `Request` 輸入及 XHR 逾時／中止／重用行為仍由契約涵蓋。
+- 分別回報攔截安裝、媒體辨識、原生呼叫及回應階段。明確的 XHR 逾時標為略過預檢，不代表略過攔截；只有 Chrome 開發者工具的網路面板（Network）能確認實際瀏覽器請求。
+- 保留 CDN 清單、排名、播放速度、編解碼器偏好及恢復策略。未執行 Code Security 掃描，未產生歷史修補檔案。
 
 ## v2.1.0
 
-- Gate the first attributable player media Fetch or asynchronous XHR behind one shared, at-most-three-second cold-start preflight. Probe up to three different legal exact-signed or Catalog routes in parallel, using bounded Range reads; an inconclusive window releases a legal original or alternative.
-- Reuse recent cross-tab Catalog throughput only after a 16 KiB compatibility response for this video's generated URL. Full startup samples enter the existing evidence store; probing alone never opens a persistent host circuit.
-- Prevent an unattributed first media request from blindly selecting the first Catalog. Preserve exact signed backups, including backups on Catalog hosts, and never send a blacklisted preflight candidate.
-- Detect a no-progress, no-buffer initial stall after 15 seconds and submit at most one legal different-host fallback without penalizing the original. If the player remains stalled, the existing RecoveryController can reload the core once; actual recovery still requires new media evidence.
-- Replace the one-challenger healthy round with up to three sequential, fair candidates under the existing ten-minute cross-tab cooldown. Invalid and HTTP 4xx attempts are bounded and skipped in later rounds; healthy exploration never switches the playback host.
-- Preserve user-selected playback speed, v2 storage, CDN roster, media-kind isolation and strict restrictions. No Code Security scan. Automated results and post-update Chrome acceptance are recorded separately.
+- 首個可歸因的播放器媒體 Fetch 或非同步 XHR 共用一個最長三秒的冷起播預檢閘門。以有界 Range 讀取，並行探測最多三條不同且合法的精確簽名或 Catalog 路線；窗口未得結論時放行合法原線或替代路線。
+- 此影片產生的 URL 取得 16 KiB 相容性回應後，才重用近期跨分頁 Catalog 吞吐量。完整起播樣本寫入既有證據儲存元件；單靠探測永不開啟持久主機斷路器。
+- 防止無法歸因的首個媒體請求盲選第一個 Catalog。保留精確簽名備援，包括 Catalog 主機上的備援；永不送出黑名單預檢候選。
+- 15 秒後偵測沒有進展、沒有緩衝的初始停滯，最多提交一次合法不同主機備援，不懲罰原來源。播放器仍停滯時，既有 `RecoveryController` 可重載核心一次；實際恢復仍須新的媒體證據。
+- 將每輪單一健康挑戰者改為最多三個依序且公平的候選，沿用跨分頁十分鐘冷卻。無效及 HTTP 4xx 嘗試有界，後續輪次略過；健康探索永不切換播放主機。
+- 保留使用者選定的播放速度、v2 儲存、CDN 清單、媒體種類隔離及嚴格限制。未執行 Code Security 掃描。自動結果與更新後 Chrome 驗收分開記錄。
 
 ## v2.0.4
 
-- Apply black, dead, Catalog-disable and default-unavailable restrictions before pass-through for PCDN-marked, live, resource and special-port media URLs. Keep unrestricted special media unchanged; a prohibited host without a safe rewrite is locally blocked.
-- For media without a confirmed representation, screen candidate and outbound hosts against both video and audio restrictions instead of assuming video. Recheck XHR at `send()` even when it was opened while the script was disabled.
-- Make the control-center host blacklist cover both video and audio. Previously saved user-created video-only blacklist rows receive that same effective scope on load; other kind-specific restrictions retain their scope and expiry.
-- Show active black/dead penalties alongside Catalog enable toggles. Preserve settings, evidence, route ranking, playback rate and measurement budget; do not change Worker interception or add active network work.
-- Source-level Fetch/XHR, playurl and controller contracts passed. Browser-driven requests outside these adapters and post-dispatch redirects cannot be blocked retroactively; targeted Chrome acceptance follows installation. No Code Security scan.
+- PCDN 標記、直播、資源及特殊連接埠媒體 URL 直通前，先套用黑名單、失效、Catalog 停用及預設不可用限制。未受限制的特殊媒體保持原狀；禁止主機無法安全改寫時於本機阻擋。
+- 媒體尚未確認所屬媒體表示時，同時依影片及音訊限制篩選候選與送出主機，不預設為影片。即使 XHR 在腳本停用時開啟，仍於 `send()` 重新檢查。
+- 控制中心主機黑名單同時涵蓋影片及音訊。先前已儲存、由使用者建立的僅影片黑名單列，載入後套用同一有效範圍；其他按種類的限制保留其範圍與期限。
+- 在 Catalog 啟用開關旁顯示作用中的黑名單／失效懲罰。保留設定、證據、路線排名、播放速率及量測預算；未變更 Worker 攔截或新增主動網路工作。
+- 來源層 Fetch／XHR、playurl 及控制器契約通過。這些適配器以外由瀏覽器發起的請求，以及送出後重新導向，無法追溯阻擋；針對性 Chrome 驗收安排在安裝後。未執行 Code Security 掃描。
 
 ## v2.0.3
 
-- On first use of a video quality, resolve the observed video affinity against that group's own capabilities instead of reviving its cold startup plan.
-- Preserve exact Native URLs, explicit player backups, existing requested-group recovery, fixed CDN and host restrictions. No new probes or abort penalties.
-- Clear stale pause-armed diagnostics after a healthy short resume; no extra recovery token or reload.
-- Preserve published v2.0.2. Source-level reproductions passed; targeted Chrome acceptance follows user installation. The historical black-screen cause remains unconfirmed.
+- 首次使用某影片畫質時，依該群組自身能力解析已觀察的影片親和主機，不復活其冷起播計畫。
+- 保留精確 Native URL、明確播放器備援、既有請求群組恢復、固定 CDN 及主機限制。未新增探測或中止懲罰。
+- 健康的短暫恢復播放後，清除過時的暫停待命診斷；不增加恢復權杖或重載。
+- 保留已發布的 v2.0.2。來源層重現通過；針對性 Chrome 驗收安排在使用者安裝後。歷史黑畫面原因仍未確認。
 
 ## v2.0.2
 
-- Filter prohibited hosts from player primary/backup output, including blocked roots, invalid Native routes and host-lock restoration. Reuse restriction checks for active challengers.
-- Track bounded exact output roles in the current-epoch vault. A legal player-requested backup receives an explicit coordinated fallback decision instead of being rewritten back to primary; fixed mode and video/audio isolation remain in force.
-- Report responseHost as null when the browser supplies no response URL. Keep sent-target failure attribution and separate last success from the latest abort.
-- Detect sustained uninitialized cores using consecutive valid monitor ticks and automatically capture diagnostic evidence without treating paused state as permission to reload.
-- Install the temporary play observer on the first eligible paused tick; retain the existing trusted long-pause activation and one-shot recovery limits.
-- Preserve automatic frozen incidents when manually marking a stall, count rolling-context expiry separately, and show transport outcome/status alongside hosts.
-- Retain user-selected playback rate, v2 learning/settings, existing CDN roster and measurement budget. No Code Security or CI changes.
-- Chrome acceptance follows publication and user installation; this release does not establish the cause of every historical black screen.
+- 從播放器主／備援輸出篩除禁止主機，包含受阻根來源、無效 Native 路線及主機鎖定還原。主動挑戰者重用限制檢查。
+- 當前內容週期的 Vault 追蹤有界的精確輸出角色。播放器請求合法備援時給予明確協調的備援決策，不改寫回主來源；固定模式及影片／音訊隔離仍有效。
+- 瀏覽器未提供回應 URL 時，`responseHost` 回報 `null`。保留送出目標的失敗歸因，並區分最近成功與最新中止。
+- 以連續有效監控週期偵測持續未初始化的核心，自動擷取診斷證據，不將暫停狀態視為重載授權。
+- 第一個符合條件的暫停監控週期即安裝臨時播放觀察器；保留既有可信長暫停啟動及單次恢復限制。
+- 手動標記停滯時保留自動凍結的事故，分開計算滾動情境到期，並在主機旁顯示傳輸結果／狀態。
+- 保留使用者選定的播放速率、v2 學習／設定、既有 CDN 清單及量測預算。未變更 Code Security 或 CI。
+- Chrome 驗收安排在發布及使用者安裝後；本版不確立所有歷史黑畫面的原因。
 
 ## v2.0.1
 
-- Capture immutable request context at dispatch, retaining generation, epoch, attribution and actual outbound/response hosts independently of active representation.
-- Merge stable representation groups and generated Catalog aliases; keep MPD ingestion read-only and retain eligible committed routes across evidence updates.
-- Aggregate successful transfers, bound ranking details and prioritize incident evidence instead of clearing report event arrays.
-- Preserve player reload failure reasons and handle asynchronous reload/play rejection without retry loops.
-- Show recent request/response attribution and disable current-video blacklisting when no suitable video observation exists.
-- Remove the per-second forced 2x write. Respect the user's playback speed; use 2x only as an unavailable-rate demand estimate and restore the saved speed after core recovery.
-- Retain v2 settings and health data. No Code Security scan, historical patches or CI changes.
-- Publication precedes targeted Chrome acceptance at the user's request; real-browser results are pending, not claimed passed.
+- 送出時擷取不可變的請求情境，保留世代、內容週期、歸因及實際送出／回應主機，不依賴目前啟用的媒體表示。
+- 合併穩定媒體表示群組與產生的 Catalog 別名；MPD 接納維持唯讀，證據更新時保留符合資格的已提交路線。
+- 彙總成功傳輸、限制排名明細，並優先保留事故證據，不清空報告事件陣列。
+- 保留播放器重載失敗原因，處理非同步重載／播放拒絕，不建立重試迴圈。
+- 顯示近期請求／回應歸因；沒有合適影片觀察時，停用封鎖目前影片主機的操作。
+- 移除每秒強制寫入 2x。尊重使用者播放速度；只在無法取得速率時以 2x 估算需求，核心恢復後還原已保存的速度。
+- 保留 v2 設定及健康資料。未執行 Code Security 掃描，未產生歷史修補或變更 CI。
+- 依使用者要求先發布，再作針對性 Chrome 驗收；真實瀏覽器結果仍待驗收，未宣稱通過。
 
 ## v2.0.0
 
-- Rebuilt the runtime in strict TypeScript with explicit domain, state, application, adapter, UI and diagnostic layers.
-- Replaced the v1 router with deterministic Catalog/Native ranking based on bounded video/audio evidence, conservative throughput and per-kind circuits.
-- Added a single safe challenger model; startup performs no active measurement and healthy exploration never changes affinity.
-- Introduced current-epoch opaque Native route handles; full signed URLs are never persisted or reported.
-- Added v2-only settings, restrictions, evidence and coordination storage with Web Locks and Tampermonkey value-change synchronization.
-- Unified transport, Watchdog and player-core recovery under traceable route decisions and recovery actions.
-- Preserved 2x playback, AV1/HEVC preference, auto quality, background playback, WebRTC blocking, manual HTTPDNS policy, strict restrictions, control center and failure-oriented incidents.
-- Removed v1 storage migration, header settings, public page API, compatibility aliases, AutoPilot HTTPDNS, multi-candidate bakeoff, latency probes, old fixtures and historical patch generation.
-- Limited official support to current Chrome and Tampermonkey.
+- 以嚴格 TypeScript 重建執行期，明確分為領域、狀態、應用、適配器、使用者介面（UI）及診斷層。
+- 以有界影片／音訊證據、保守吞吐量及按種類斷路器建立確定性的 Catalog／Native 排名，取代 v1 路由器。
+- 新增單一安全挑戰者模型；起播不作主動量測，健康探索永不改變親和主機。
+- 引入當前內容週期的不透明 Native 路線識別碼；完整簽名 URL 永不持久化或回報。
+- 新增僅供 v2 使用的設定、限制、證據及協調儲存，採用 Web Locks 與 Tampermonkey 值變更同步。
+- 以可追溯路線決策及恢復動作統一傳輸、Watchdog 與播放器核心恢復。
+- 保留 2x 播放、AV1／HEVC 偏好、自動畫質、背景播放、WebRTC 阻擋、手動 HTTPDNS 政策、嚴格限制、控制中心及以失敗為主的事故紀錄。
+- 移除 v1 儲存遷移、標頭設定、公開頁面 API、相容別名、AutoPilot HTTPDNS、多候選競速、延遲探測、舊測試情境及歷史修補產生功能。
+- 官方支援限於當前 Chrome 與 Tampermonkey。

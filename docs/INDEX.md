@@ -1,6 +1,6 @@
 # 專案文件索引與維護規則
 
-本索引於 **2026-10-06** 完成文件重整，**2026-10-07** 更新測試工具導覽。現行版本為 **v2.1.8（MP4／FLV 修正）**；其發布、更新與已安排 Chrome 回歸的完成狀態，以 2026-10-04 的 [TEST_REPORT](TEST_REPORT.md) 為證據。目前工作見 [TODO](TODO.md)，完整公開 MP4／FLV 現場覆蓋及安全報告限制維持原狀。歷史「待驗收」「未發布」或研究建議只描述當時狀態，不自動成為目前待辦。
+本索引於 **2026-10-06** 完成文件重整，**2026-10-07** 更新測試工具導覽及現行文件中文化政策。現行版本為 **v2.1.8（MP4／FLV 修正）**；其發布、更新與已安排 Chrome 回歸的完成狀態，以 2026-10-04 的 [發行驗證報告](TEST_REPORT.md) 為證據。目前工作見 [工作狀態](TODO.md)，完整公開 MP4／FLV 現場覆蓋及安全報告限制維持原狀。歷史「待驗收」「未發布」或研究建議只描述當時狀態，不自動成為目前待辦。
 
 2026-10-07 的 Markdown 粗體渲染盤點與排版修正見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)；後續排版檢查方式列於 DEVELOPMENT。
 
@@ -28,7 +28,13 @@
 | [UPSTREAM_MANIFEST](UPSTREAM_MANIFEST.md) | 上游基準、v1／v2 關係及來源校驗 |
 | [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md) | 作者、授權、工具用途及版本 |
 
-本索引管理文件用途、入口及維護對照。這些指南隨程式或發布狀態更新，不能以舊版規格取代目前實作。現行說明及最新版報告使用繁體中文，程式識別字、設定鍵、命令、數值及授權名稱維持原樣；較早版本紀錄保留原文。
+本索引管理文件用途、入口及維護對照。這些指南隨程式或發布狀態更新，不能以舊版規格取代目前實作。現行說明、變更紀錄及最新版報告使用繁體中文；封存的歷史正文保留原文。
+
+現行中文化範圍為 **14 份 Markdown**：根目錄 README、AGENTS、SECURITY，`docs/` 的十份文件，以及 `tests-v2/MIGRATION.md`。CHANGELOG 的全部版本條目使用繁體中文，仍保留各版當時的驗證狀態；測試遷移對照以中文說明行為，英文欄逐字保留原案例群組。封存正文、82 份 Release Markdown 快照、本機工作資料及第三方／產生的文件不翻譯。繁體中文標題若取代既有標題，必須保留原錨點別名；既有別名及跨文件引用繼續有效。
+
+共用用語為「儲存元件（store）」「測試情境（fixture）」「建立函式（factory）」「中繼資料（metadata）」「原始碼對照（source map）」「報告產生器（reporter）」「堆疊資訊（stack）」。瀏覽器 hook 稱為「攔截」，測試 hook 稱為「測試掛鉤」或「清理掛鉤」。產品名稱、授權名稱、程式識別字、命令、網址、路徑及原始狀態值可以保留英文，必要時補上中文解釋。翻譯必須維持規則強度、條件、數值與證據界線；日期固定的封存正文保持原樣，維護結果另追加有日期的紀錄。
+
+2026-10-07 中文化的實際檢查見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-現行-markdown-文件繁體中文化)。
 
 ## 檔案配置
 
@@ -40,12 +46,12 @@
 
 | 文件／產物 | 閱讀方式 |
 | --- | --- |
-| [CHANGELOG](CHANGELOG.md) | 開頭與 v2.1.8 使用繁體中文，v2.1.7 以下保留原變更紀錄 |
+| [CHANGELOG](CHANGELOG.md) | v2.0.0～v2.1.8 全部條目使用繁體中文；功能差異、順序及當時驗證狀態保留 |
 | [TEST_REPORT](TEST_REPORT.md) | v2.1.8 完整重現、自動、安全、發布及瀏覽器證據；含歷史導覽 |
 | [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md) | v2.0.2～v2.1.7 十二個主要區塊，包括發行前模組化驗證 |
 | [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) | 2026-10-03 三段原整理紀錄及後續有日期的文件檢查 |
 | [v2.1.8 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8) | 2026-10-04 發布讀回；附件只有 `BiliCDN_TW.user.js` |
-| [Release/v2.1.8](../Release/v2.1.8/) | 當次 userscript、報告、變更紀錄、manifest、checksum 快照；發布後不回寫 |
+| [Release/v2.1.8](../Release/v2.1.8/) | 當次使用者腳本、報告、變更紀錄、資訊清單、校驗值快照；發布後不回寫 |
 
 自動驗證、安全掃描與真實瀏覽器驗收分開記錄。v2.1.8 的安全 `partial coverage`、MP4 試片／公開 DASH 觀察、較早 DASH 緩衝及完整公開 MP4／FLV 限制集中於 TEST_REPORT；v2.1.7 的限制見歷史報告。**v2.1.6 Chrome／Tampermonkey 驗收已批准通過、已結案**，歷史覆蓋限制不構成待辦。
 
@@ -74,19 +80,19 @@
 
 ## 不回寫的歷史資料
 
-`Release/v*/`、`baseline/`、封存 v1 程式及安全產物保存當時證據，不作現行 v2 建置／測試輸入。文件維護不修改已封裝報告、checksum、舊測試結果或 sealed 安全掃描。後續狀態更新最新版 TEST_REPORT，或新增有日期／版本的紀錄。
+`Release/v*/`、`baseline/`、封存 v1 程式及安全產物保存當時證據，不作現行 v2 建置／測試輸入。文件維護不修改已封裝報告、校驗值、舊測試結果或已封存且不可變更的安全掃描。後續狀態更新最新版 TEST_REPORT，或新增有日期／版本的紀錄。
 
 ## 維護對照
 
 | 變更來源 | 應檢查文件 |
 | --- | --- |
 | `domain/`、`state/settings-store.ts`、控制中心文字與命令 | README、PROJECT_CONTEXT；預設值、模式、操作名稱及例外 |
-| 儲存 parser／lock／listener、Vault、Fetch／XHR、瀏覽器 hook | SECURITY、ARCHITECTURE；要求、實際保障與平台限制 |
-| 控制器、port、依賴規則及測試支援 | ARCHITECTURE、AGENTS、DEVELOPMENT；權責、生命週期及檢查範圍 |
-| `scripts/`、工具設定、package 及 lockfile | DEVELOPMENT、UPSTREAM_MANIFEST、THIRD_PARTY_NOTICES；命令、用途及輸出 |
+| 儲存解析器／鎖／監聽器、Vault、Fetch／XHR、瀏覽器攔截 | SECURITY、ARCHITECTURE；要求、實際保障與平台限制 |
+| 控制器、介面、依賴規則及測試支援 | ARCHITECTURE、AGENTS、DEVELOPMENT；權責、生命週期及檢查範圍 |
+| `scripts/`、工具設定、package 及依賴鎖定檔 | DEVELOPMENT、UPSTREAM_MANIFEST、THIRD_PARTY_NOTICES；命令、用途及輸出 |
 | 實際測試、安全掃描、瀏覽器驗收 | TEST_REPORT 及對應日期／版本紀錄；只記錄已取得證據 |
-| 測試執行器、scope、FakeClock、型別設定 | TEST_TOOLING_REPORT、測試遷移對照；與產品發行及瀏覽器紀錄分開 |
-| 封裝及 GitHub 發布 | README、CHANGELOG、TEST_REPORT、PROJECT_CONTEXT、本索引；版本、狀態、連結、hash 及附件 |
+| 測試執行器、測試資源範圍、FakeClock、型別設定 | TEST_TOOLING_REPORT、測試遷移對照；與產品發行及瀏覽器紀錄分開 |
+| 封裝及 GitHub 發布 | README、CHANGELOG、TEST_REPORT、PROJECT_CONTEXT、本索引；版本、狀態、連結、雜湊及附件 |
 | 使用者新增、取消或結案範圍 | TODO、PROJECT_CONTEXT 及相關歷史狀態標示 |
 
 每次維護依序檢查：
@@ -94,7 +100,7 @@
 1. 對照程式、設定及腳本核對文字、命令；測試數量只列於有日期／版本的驗證紀錄。
 2. 檢查根目錄、`docs/` 及公開封存的 Markdown 連結、路徑、錨點及用途；新增文件納入索引。完成的歷史文件移至 `archive/retired/docs/`，同步更新連結。
 3. 歷史資料標示適用版本／日期及現行指南入口，保留觀察、取消決定與限制。翻譯標題保留原錨點別名，搬移章節在固定入口留下導引。
-4. 確認舊待辦未重新開啟，signed URL、憑證、IP 及播放器物件未進入文件。
+4. 確認舊待辦未重新開啟，簽名 URL、憑證、IP 及播放器物件未進入文件。
 5. 換版時將上一版完整 TEST_REPORT 加入歷史報告，再更新固定入口及原錨點導引；CHANGELOG 保留舊條目。兩個封裝輸入指向其他文件時使用完整儲存庫 URL，已發布快照不回寫。
 6. 執行 `git diff --check`，確認差異範圍及受保護檔案未改變；實際執行的自動驗證按日期記錄，不將文件檢查寫成新安全掃描或瀏覽器驗收。
 
