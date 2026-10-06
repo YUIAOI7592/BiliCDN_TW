@@ -1,8 +1,8 @@
 # BiliCDN_TW v2 專案脈絡
 
-本文件是現行產品與開發契約。文件用途及歷史紀錄見 [docs/INDEX.md](INDEX.md)；版本與工具設定以 [release.json](../release.json)、[package.json](../package.json) 和 lockfile 為準。目前正式發行為 [v2.1.8](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8)。
+本文件是現行產品與開發契約。文件用途及歷史紀錄見 [文件索引](INDEX.md)；版本與工具設定以 [release.json](../release.json)、[package.json](../package.json) 和 [lockfile](../package-lock.json) 為準。內建節點清單稱為 Catalog，原生簽名路線稱為 Native。
 
-**v2.1.8 已確認發布**，包含 MP4／FLV 修正；自動驗證及必要安全審閱已完成，封存安全報告的 `partial coverage` 中途標記限制保留於 [TEST_REPORT](TEST_REPORT.md)。依使用者要求先發布 userscript，再完成 Tampermonkey 更新；本次授權的合法 MP4 試看片段與公開 DASH 瀏覽器回歸已完成。完整公開 MP4 尚無現場樣本，FLV 只有自動契約證據，兩者保留為覆蓋限制。
+依 **2026-10-04** 紀錄，[v2.1.8](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8) 已發布，包含 MP4／FLV 修正；標準更新及授權的 MP4 試片／公開 DASH 回歸已完成。自動、安全、瀏覽器結果及覆蓋限制見 [驗證報告](TEST_REPORT.md)，目前已批准工作見 [TODO](TODO.md)。
 
 ## 現行產品
 
@@ -18,7 +18,7 @@ v2 是全新 TypeScript 架構。它不讀取 v1 設定或學習資料，不提�
 
 ## 產品不變量
 
-- 首筆可歸因的播放器媒體請求可觸發一次最長三秒、最多三條合法路線並行的起播預測試；等待中的請求共用一個窗口，MP4／FLV 不逐段重開窗口。預設正常模式不以 `root-original` 或 `native-signed` 候選身分探測或回退。
+- 每分頁首筆可歸因的播放器媒體請求可觸發一次最長三秒、最多三條合法路線並行的起播預測試；等待中的請求共用一個窗口，MP4／FLV 不逐段重開窗口。預設正常模式不以 `root-original` 或 `native-signed` 候選身分探測或回退。
 - Catalog 保留 11 個內建節點，其中 4 個預設不可用。探測上限不縮減完整候選池；其餘合法節點可參與排名、備援與後續健康測速。Catalog-only 播放器輸出最多五個與主線及彼此不同 Host 的合法備用網址。
 - 預設正常模式只依內建 Catalog 候選選路、探測和提供播放器網址，不直接採用 B 站提供的原始或備用路線；若 Catalog Host 與原線重合，生成的網址可能與原線相同。無法安全生成合法 Catalog 路線時，在送出前封鎖該媒體請求。
 - 開啟持久原生來源參考開關後，正常模式才可依現有授權與限制條件納入原始及 Native 路線。本分頁原線對照模式獨立於此開關，只使用 B 站提供的合法 exact signed URL，且不進行腳本測速、自動換線或核心恢復。
@@ -43,6 +43,8 @@ v2 是全新 TypeScript 架構。它不讀取 v1 設定或學習資料，不提�
 
 ## v2.1.8 MP4／FLV 契約
 
+以下契約自 v2.1.8 納入。
+
 - `PlayurlAdapter` 辨識 root、`data`、`result`、`video_info` 已知容器中的 DASH 與 MP4／FLV `durl`；保留分段順序及原有時長、大小、品質資料，不以 `order` 是否存在或連續作為分段索引。
 - 每段各有 representation 身分。Catalog 改寫使用 Vault 提供的第一個合法、可安全換 Host 的來源 handle，必要時可取自同段備用來源；不以不同片段的 path/query 代替本段來源，不建立第二份 Native 授權索引。
 - 可安全換成正常 Catalog 目標的 PCDN 來源僅提供生成能力，不因此取得 Native 可選資格；DASH 則保留同 representation 合法 incoming exact／Catalog alias 的既有 path/query 行為。Catalog-only 起播沒有有效測速結果時不提交測速贏家，送出前由完整剩餘合法 Catalog 池正常排名。
@@ -64,4 +66,4 @@ v2 是全新 TypeScript 架構。它不讀取 v1 設定或學習資料，不提�
 - Codex Security 按風險使用：安全敏感變更或使用者明確要求時執行，不強制每版掃描。`npm run verify` 不包含安全掃描。
 - 程式或發行狀態改變時，同步維護現行指南與最新驗證摘要；歷史文件保留原始日期、版本、觀察及限制，已封裝的 `Release/v*/` 不回寫。
 - v2.1.6 Chrome／Tampermonkey 驗收已由使用者批准通過、已結案；其覆蓋限制與舊文件的待驗收文字不構成現行待辦。v2.1.7 沒有新的瀏覽器結果宣稱。
-- v2.1.8 已完成發布、Tampermonkey 更新及本次授權的 Chrome 回歸：合法 MP4 試看片段與公開 DASH 均有超過 12 秒的連續播放觀察及 Catalog 直接 HTTPS 206 證據。原 MP4 影片已改會員限定，不宣稱完整公開 MP4 驗收；公開 DASH 較早短暫緩衝後恢復，不宣稱零緩衝。完整公開 MP4 與 FLV 現場覆蓋限制不另列為已批准待辦，也不重開 v2.1.6 驗收。
+- v2.1.8 的 2026-10-04 完成紀錄與限制見 [TEST_REPORT](TEST_REPORT.md)：完整公開 MP4 尚無現場樣本，FLV 僅有自動契約證據；覆蓋限制不另列為已批准待辦，也不重開 v2.1.6 驗收。

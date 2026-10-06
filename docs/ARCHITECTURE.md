@@ -1,138 +1,156 @@
-# v2 architecture
+<a name="v2-architecture"></a>
 
-This document describes the published **v2.1.8** implementation in [src-v2](../src-v2/entry.ts), including the MP4/FLV correction, with the version set in [release.json](../release.json). Automated verification, the sealed security review and its retained coverage-marker limitation are recorded in the [test report](TEST_REPORT.md). The post-update MP4/DASH browser regression remains pending. This is a maintained design reference, not a record of browser acceptance. See the [documentation index](INDEX.md), [development workflow](DEVELOPMENT.md) and [security policy](../SECURITY.md) for their respective scopes.
+# v2 架構
 
-## Dependency direction
+本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.8** 實作，包含 MP4／FLV 修正；版本以 [release.json](../release.json) 為準。[驗證報告](TEST_REPORT.md) 分別保存自動驗證、安全審閱及其封存覆蓋標記限制、詳細瀏覽器證據。依 2026-10-04 紀錄，更新後已完成授權的合法 MP4 試看片段與公開 DASH Chrome／Tampermonkey 回歸；完整公開 MP4 及合法現場 FLV 樣本尚未建立，維持覆蓋限制，不新增待辦。本文件是持續維護的設計參考；文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
 
-The allowed imports in [architecture-rules.mjs](../scripts/architecture-rules.mjs) are:
+<a name="dependency-direction"></a>
 
-| Importing layer | Allowed target layers |
+## 依賴方向
+
+[architecture-rules.mjs](../scripts/architecture-rules.mjs) 允許的匯入關係如下：
+
+| 匯入層 | 允許的目標層 |
 | --- | --- |
 | `domain` | `domain` |
 | `platform` | `platform` |
-| `state` | `state`, `domain`, `platform` |
-| `application` | `application`, `state`, `domain`, `platform` |
-| `adapters` | `adapters`, `application`, `state`, `domain`, `platform` |
-| `diagnostics` | `diagnostics`, `domain` |
-| `ui` | `ui`, `diagnostics`, `application`, `state`, `domain`, `platform` |
-| `entry.ts` | All composed layers |
+| `state` | `state`、`domain`、`platform` |
+| `application` | `application`、`state`、`domain`、`platform` |
+| `adapters` | `adapters`、`application`、`state`、`domain`、`platform` |
+| `diagnostics` | `diagnostics`、`domain` |
+| `ui` | `ui`、`diagnostics`、`application`、`state`、`domain`、`platform` |
+| `entry.ts` | 所有組合層 |
 
-This is an allowed-import table, not a requirement to import every listed layer. In the current code, state stores import the `StoragePort` type from `platform/storage.ts`; that module also implements Tampermonkey storage. UI modules import application/state types and domain helpers, consume snapshots, and send product mutations through `ControlCommandPort`. UI does not import browser adapters. Diagnostics imports domain models. [entry.ts](../src-v2/entry.ts) constructs and wires these objects and starts the runtime.
+此表列出可以匯入的層，並不要求全部匯入。目前 state store 從 `platform/storage.ts` 匯入 `StoragePort` 型別；該模組也實作 Tampermonkey 儲存。UI 匯入 application／state 型別與 domain helper，消費快照，透過 `ControlCommandPort` 執行產品變更；UI 不匯入瀏覽器適配器。診斷匯入 domain model。[entry.ts](../src-v2/entry.ts) 建立、連接這些物件並啟動執行環境。
 
-The AST check covers runtime `.ts` files under `src-v2/`, excluding declarations. It checks value/type imports, re-exports, import types and import-equals declarations, rejects non-relative imports and dynamic `import()`, and detects dependency cycles. Its additional syntax rules reject named browser/GM globals and direct clock/random calls in domain/application, dotted `setAffinity()` calls outside the coordinator, application-layer dotted `reload()` calls outside recovery, and a listed set of UI mutations outside the command receiver. These are syntax and dependency checks, not a complete proof of runtime effects or ownership.
+AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、import type 及 import-equals 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環。額外語法規則拒絕 domain／application 中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、coordinator 以外的點號 `setAffinity()` 呼叫、recovery 以外 application 層的點號 `reload()` 呼叫，以及 command receiver 以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
 
-The separate import-purity test bundles all non-entry, non-declaration modules together without tree shaking, then imports that bundle in a Node subprocess with a fixed list of browser, network, GM and timer globals plus `Date.now`/`Math.random` trapped. It checks import-time behavior; constructors and methods still need their contract tests.
+獨立的匯入純度測試將全部非入口、非宣告模組打包在一起，停用 tree shaking 並忽略 annotation，再於不載入 `node:test` 的 raw Node 子程序匯入，期限為 3 秒。外層具名案例監督結果，框架不受全域陷阱干擾。測試攔截固定清單中的瀏覽器、網路、GM、計時器全域與 `Date.now`／`Math.random`，檢查匯入時行為；constructor 及方法仍須契約測試。18 項架構規則期待各自使用具名 `node:test` 案例；命令、期限與實際保障範圍見 [測試流程](DEVELOPMENT.md#test-suites-and-isolation)。
 
-## Domain
+<a name="domain"></a>
 
-`domain/` contains pure models and algorithms:
+## 領域層
 
-- branded lifecycle and action IDs;
-- URL admission and host-replacement rules;
-- Catalog definitions;
-- bounded evidence windows, safe throughput and circuits;
-- candidate eligibility and deterministic ranking;
-- Catalog restriction snapshots and player output plans expressed as trusted hosts or opaque indexes.
-- a readonly playurl result model with explicit acceptance, recognized formats, counts, numeric upstream code and a fixed rejection-reason union.
+`domain/` 包含純粹的模型與演算法：
 
-The domain accepts time and relative-URL base addresses as arguments and performs no I/O. Output-policy functions return decisions over hosts or opaque indexes; they do not submit affinity or start probes. URL-policy helpers can inspect URL strings without retaining them.
+- 帶有品牌型別的生命週期及動作 ID；
+- URL 接納及 Host 置換規則；
+- 內建節點清單（Catalog）定義；
+- 有界證據窗口、安全吞吐量及斷路器；
+- 候選資格及確定性排名；
+- 以可信 Host 或不透明索引表達的 Catalog 限制快照及播放器輸出計畫；
+- 唯讀 playurl 結果模型，明確記錄接納結果、辨識格式、數量、數字 upstream code 及固定拒絕原因聯集。
 
-## State
+domain 以參數接收時間與相對 URL 基底，不執行 I/O。輸出政策函式回傳 Host 或不透明索引的決策，不提交 affinity（目前路線綁定）或啟動探測。URL 政策 helper 可以檢查 URL 字串，但不保存它們。
 
-- `SessionStore` stores immutable generation, epoch, representation and affinity snapshots. The coordinator calls `setAffinity`; starting a generation or epoch also clears affinity as part of the session reset.
-- `RestrictionStore` owns expiring black/dead records by host and media kind. Catalog user overrides live in `SettingsStore`, defaults in the domain Catalog, and current-stream host locks in the coordinator/vault.
-- `EvidenceStore` owns bounded video/audio host evidence.
-- `SignedRouteVault` owns full current-epoch Native URLs behind opaque handles.
-- The first trusted playurl API representation replaces lower-trust page-hint/player-MPD routes for the same group. The vault revokes provisional handles and changes the authority identity; the coordinator discards plans and related permissions when their saved identity no longer matches. Later hints cannot restore selectable Native routes for that trusted group.
-- Exact signed URLs with an unrecognized path may be indexed for observation and host restriction only; they do not become selectable Native routes or active-probe capabilities.
-- The vault also keeps a bounded, current-epoch mapping from playurl output URL to original/output hostname, primary/backup role, source and decision ID. It owns selection authority and signed-route indexes and exposes candidates through handles and metadata. Full URL strings still pass through ingestion, output materialization and browser dispatch/probe ports. `PlayerAdapter` also retains a serialized manifest fingerprint until replacement/reset, and XHR keeps per-request URL state in memory; neither is a separate Native authorization index. These URLs are not persisted or included in diagnostic request models.
-- `SettingsStore` owns the typed v2 product settings, including the persisted, default-off option to consider Bilibili-provided Native sources in normal routing.
-- `MeasurementMetaStore` owns the existing cursor/cooldown storage access and exposes the `measurement` lock to its caller.
+<a name="state"></a>
 
-| Store | Persistent key | Read/update behavior |
+## 狀態層
+
+- `SessionStore` 保存不可變的 generation、epoch、representation 及 affinity 快照。coordinator 呼叫 `setAffinity`；啟動 generation 或 epoch 時也會在 session 重設中清除 affinity。
+- `RestrictionStore` 依 Host 與媒體種類管理會到期的 black／dead 紀錄。Catalog 使用者 override 位於 `SettingsStore`，預設值位於 domain Catalog，當前 stream 的 Host lock 位於 coordinator／Vault。
+- `EvidenceStore` 管理有界的影片／音訊 Host 證據。
+- `SignedRouteVault` 以不透明 handle 管理當前 epoch 的完整原生簽名路線（Native）URL。
+- 首次可信 playurl API representation 取代同群組較低信任的 page-hint／player-MPD 路線。Vault 撤銷暫時 handle 並變更授權身分；coordinator 在保存身分不符時丟棄計畫及相關權限。後到提示不得為已可信的群組恢復可選 Native 路線。
+- 路徑無法辨識的 exact signed URL 只可建立觀察及 Host 限制索引，不取得 Native 選路或主動探測能力。
+- Vault 也保存有界、當前 epoch 的 playurl 輸出 URL 對照，包含原始／輸出 Host、主線／備援角色、來源及決策 ID。它擁有選路授權與簽名路線索引，透過 handle 及 metadata 提供候選。完整 URL 仍會經過輸入接納、輸出生成及瀏覽器送出／探測 port。`PlayerAdapter` 在取代／重設前保存序列化 manifest fingerprint，XHR 在記憶體保存每筆請求的 URL 狀態；兩者不得成為另一份 Native 授權索引。這些 URL 不持久化，也不包含在診斷請求模型中。
+- `SettingsStore` 管理型別化 v2 產品設定，包括正常選路是否參考 B 站 Native 來源的持久開關，預設關閉。
+- `MeasurementMetaStore` 管理既有游標／冷卻儲存存取，向呼叫端提供 `measurement` 鎖。
+
+| Store | 持久鍵 | 讀取／更新行為 |
 | --- | --- | --- |
-| `SettingsStore` | `bilicdn.v2.settings` | Parses schema-2 settings, listens for remote changes, and locks updates/reset. Native-source consideration defaults off. |
-| `RestrictionStore` | `bilicdn.v2.restrictions` | Parses bounded expiring records, listens for remote changes, and locks mutations. |
-| `EvidenceStore` | `bilicdn.v2.routeEvidence` | Parses bounded video/audio evidence, listens for remote changes, and locks record/clear operations. |
-| `MeasurementMetaStore` | `bilicdn.v2.meta` | Reads storage on each `get()`; has no value-change listener or cached state. |
+| `SettingsStore` | `bilicdn.v2.settings` | 解析 schema-2 設定，監聽遠端變更，更新／重設時加鎖。原生來源參考預設關閉。 |
+| `RestrictionStore` | `bilicdn.v2.restrictions` | 解析有界、會到期的紀錄，監聽遠端變更，修改時加鎖。 |
+| `EvidenceStore` | `bilicdn.v2.routeEvidence` | 解析有界影片／音訊證據，監聽遠端變更，記錄／清除時加鎖。 |
+| `MeasurementMetaStore` | `bilicdn.v2.meta` | 每次 `get()` 重新讀取儲存；沒有值變更 listener 或快取狀態。 |
 
-[Measurement metadata](../src-v2/state/measurement-meta-store.ts) retains its existing compatibility semantics: it accepts an object, coerces the cursor/timestamp to numbers with zero fallbacks, and clamps the cursor to at least zero. It does not enforce finite-number bounds or validate the stored schema. `update()` merges existing fields, writes schema 2 and `updatedAt`, and does not itself acquire a lock; `clear()` also deletes directly. `MeasurementController` uses `withLock()` around its cursor/cooldown updates and checks its lifecycle marker inside the callback.
+[量測 metadata](../src-v2/state/measurement-meta-store.ts) 保留既有相容語意：接收物件，將游標／時間戳轉為數字並以零作替代，將游標下限設為零。它不強制有限數字上界，也不驗證儲存的 schema。`update()` 合併既有欄位、寫入 schema 2 及 `updatedAt`，不自行取得鎖；`clear()` 也直接刪除。`MeasurementController` 以 `withLock()` 包住游標／冷卻更新，並在 callback 內檢查生命週期標記。
 
-[TampermonkeyStorage](../src-v2/platform/storage.ts) uses `navigator.locks` with a `bilicdn.v2.` name prefix when available; otherwise it runs the callback directly. Cross-tab serialization therefore depends on Web Locks availability. Signed routes and session state are memory-only.
+[TampermonkeyStorage](../src-v2/platform/storage.ts) 在可用時以 `bilicdn.v2.` 名稱前綴使用 `navigator.locks`，否則直接執行 callback。跨分頁序列化取決於 Web Locks 是否可用。簽名路線與 session 狀態僅保存在記憶體。
 
-## Application controllers
+<a name="application-controllers"></a>
 
-- `RouteCoordinator` produces route decisions, applies affinity, plans group-aware fallback, and validates probe/transport results before committing evidence or route invalidation.
-- `MeasurementController` alone initiates active probes. It owns one bounded, player-request-triggered startup preflight with at most three parallel candidates and one shared three-second deadline, followed by later sequential safe rounds of up to three challengers. MP4/FLV segments share that startup window. The coordinator validates startup choices before committing; healthy exploration records evidence without changing affinity.
-- Active startup and healthy probes reject redirects and count only direct 206 Range responses from the admitted host.
-- `RecoveryController` owns player-core reload and resume state. `RouteCoordinator` owns route fallback; `PlayerMonitor` detects watchdog/cold-start conditions, and `RuntimeController` forwards route-fallback events to core recovery.
-- `LifecycleController` begins generations at startup, SPA navigation-key changes and enable/disable changes. Page assignments are bounded pending inputs, not automatic generation changes.
-- `PlayerMonitor` samples the player on a one-second cadence, drives recovery ticks and feeds typed observations.
-- `PlayurlController` registers normalized representations, manages content epochs and requests output plans. The playurl adapter owns payload parsing, field compatibility and writeback.
-- `RuntimeController` coordinates settings invalidation, probe/recovery reset, monitor lifecycle and fallback events. `ControlCommands` provides the UI's typed mutation interface and orders comparison, blacklist, reset and data-clear actions.
+## 應用控制器
 
-Controllers receive typed ports, often narrowed with `Pick`. `NavigationPort`, `SchedulerPort` and `PlayerPort.observePlayIntent` keep History wrappers, timer APIs and activation checks outside application policy. `PlayerPort` exposes no raw player/core object. Lifecycle-sensitive probe/transport commits check the active generation, epoch, route identity or controller marker as appropriate; evidence writes recheck their validity predicate after acquiring the storage lock. Recovery promises use a lifecycle serial/token, and disposed lifecycle observers ignore queued page assignments. These guards concern lifecycle work; ordinary user settings writes are not generation-scoped.
+- `RouteCoordinator` 產生路線決策、套用 affinity、規劃考慮群組的備援，提交證據或路線失效前驗證探測／傳輸結果。
+- 僅 `MeasurementController` 啟動主動探測。它管理每分頁一次、由播放器請求觸發的有界起播預測試：最多三個並行候選，共用三秒期限；後續安全輪次依序量測最多三個挑戰候選。MP4／FLV 分段共用起播窗口。coordinator 在提交前驗證起播選擇；健康探索只記錄證據，不變更 affinity。
+- 主動起播及健康探測拒絕轉址，只計入已接納 Host 的直接 206 Range 回應。
+- `RecoveryController` 管理播放器核心重載及恢復播放狀態。`RouteCoordinator` 管理路線備援；`PlayerMonitor` 偵測 Watchdog／冷啟動條件，`RuntimeController` 將路線備援事件轉交核心恢復。
+- `LifecycleController` 在啟動、SPA navigation key 變更及啟用／停用變更時開始 generation。頁面賦值只作有界待處理輸入，不自動切換 generation。
+- `PlayerMonitor` 每秒取樣播放器，推進恢復 tick 並提供型別化觀察。
+- `PlayurlController` 登記正規化 representation、管理內容 epoch 並請求輸出計畫。playurl 適配器負責 payload 解析、欄位相容及寫回。
+- `RuntimeController` 協調設定失效、探測／恢復重設、monitor 生命週期及備援事件。`ControlCommands` 提供 UI 的型別化修改介面，安排對照、黑名單、重設及資料清除的執行順序。
 
-`PlayurlController` begins a new content epoch when a trusted API input changes its content key. This is separate from the lifecycle generation reset.
+控制器接收型別化 port，常用 `Pick` 縮小介面。`NavigationPort`、`SchedulerPort` 及 `PlayerPort.observePlayIntent` 將 History wrapper、計時器 API 及啟動意圖檢查留在 application 政策之外。`PlayerPort` 不暴露原始播放器／核心物件。生命週期敏感的探測／傳輸提交依情況檢查當前 generation、epoch、路線身分或控制器標記；證據寫入取得儲存鎖後再次檢查有效性條件。恢復 promise 使用生命週期 serial／token，已 dispose 的生命週期 observer 忽略排隊中的頁面賦值。這些防護適用於生命週期工作；一般使用者設定寫入不綁定 generation。
 
-## Progressive playurl processing (v2.1.8)
+可信 API 輸入的內容 key 改變時，`PlayurlController` 開始新的內容 epoch；這與生命週期 generation 重設分開。
 
-[PlayurlAdapter](../src-v2/adapters/playurl.ts) traverses the recognized root/`data`/`result`/`video_info` containers to a bounded depth and collects DASH plus MP4/FLV `durl` entries. Segment identity includes the branch, format, quality and array index; missing or repeated `order` fields do not collapse different segments. Original segment order and metadata remain in the payload. DASH codec ordering continues independently. The parser rejects malformed payloads, nonzero top-level codes, unsupported formats and oversized video/audio entry counts.
+<a name="progressive-playurl-processing-v218"></a>
 
-The controller registers each segment separately, retaining current generation/epoch and trusted-source promotion rules. Progressive Catalog materialization resolves the first safe opaque source handle from `SignedRouteVault` for that segment rather than assuming its first supplied URL can be rewritten. Its exact source path/query stays attached to the segment. The vault may retain a safely rewritable PCDN source for this purpose only when replacement produces a normal built-in Catalog target; that source does not gain Native selectability. This capability must not become a second URL index. DASH retains its prior behavior of preserving a safe incoming exact/Catalog-alias URL for the same representation, including its current query.
+## 漸進式 playurl 處理（v2.1.8）
 
-All recognized progressive or mixed response outputs are planned before URL writeback. A required progressive segment without a legal primary rejects the response without partially replacing its URL fields or dropping the failed segment. This is atomic payload writeback, not rollback of vault/controller registration. Existing DASH-only cleared-field handling remains separate. [PlayurlTransformResult](../src-v2/domain/playurl-model.ts) expresses the outcome; every consumer tests `accepted`, rather than treating the result object itself as truthy.
+[PlayurlAdapter](../src-v2/adapters/playurl.ts) 在有界深度內走訪已辨識的 root／`data`／`result`／`video_info` 容器，收集 DASH 與 MP4／FLV `durl`。分段身分包含分支、格式、畫質及陣列索引；缺少或重複的 `order` 不會合併不同分段。payload 保留原始分段順序與 metadata，DASH codec 排序獨立運作。parser 拒絕格式錯誤的 payload、非零頂層 code、不支援格式及超過容量的影片／音訊項目。
 
-In Catalog-only mode, a rejected Fetch playurl becomes a safe HTTP 503 response. XHR text/json getters expose safe failure content while preserving native HTTP status; unsupported strict XHR response types are rejected before send. The Native-enabled and original-comparison policies remain distinct from whole-script disabled pass-through. Fetch/XHR still recheck settings and lifecycle validity after waits.
+控制器逐段登記，維持當前 generation／epoch 及可信來源提升規則。漸進式 Catalog 生成從 `SignedRouteVault` 取得該段第一個安全不透明來源 handle，不假設第一個提供的 URL 可以改寫。exact source path／query 保持與本段關聯。Vault 僅在換 Host 後能生成正常內建 Catalog 目標時，才可為此保留安全可改寫的 PCDN 來源；它不取得 Native 可選資格，也不得成為第二份 URL 索引。DASH 保留既有行為：同 representation 的安全 incoming exact／Catalog alias URL 連同當前 query 保留。
 
-## Adapters
+所有已辨識的漸進式或混合格式輸出，先完成規劃才寫回 URL。必要分段若沒有合法主線，拒絕整個回應，不部分取代 URL 或丟棄失敗分段。此原子性限於 payload 寫回，不回滾 Vault／控制器登記。既有 DASH-only 清空欄位處理另行維持。[PlayurlTransformResult](../src-v2/domain/playurl-model.ts) 表達結果；每個消費端都檢查 `accepted`，不能只判斷結果物件是否為 truthy。
 
-Adapters translate browser behavior into typed observations:
+Catalog-only 模式下，Fetch 拒絕的 playurl 變成安全 HTTP 503 回應。XHR text／json getter 提供安全失敗內容，保留原生 HTTP 狀態；嚴格模式不支援的 XHR response type 在送出前拒絕。允許 Native、原線對照及整體停用原樣放行的政策維持各自語意。Fetch／XHR 等待後仍重查設定與生命週期有效性。
 
-- independent `FetchHookAdapter` and `XhrHookAdapter`, with shared typed dispatch checks and observation construction in `TransportContext`;
-- `TransportAdapter` installs/verifies both hooks, restores partial installations and reports the combined hook snapshot;
-- `RangeProbeAdapter` provides one direct same-host HTTPS 206 reader implementation for startup and health probes; it caps counted bytes, propagates cancellation and releases readers. The measurement controller owns deadlines and result interpretation; the coordinator owns authority checks and evidence commits. Failed healthy challenges do not open playback circuits;
-- playurl parsing and transformation writeback;
-- `__playinfo__` and player manifest ingestion;
-- video/player resolution;
-- `BrowserNavigation`, which restores History methods only while its wrappers still own them and ignores queued callbacks after unsubscribe;
-- `BrowserScheduler`, which returns cancellation functions for timeouts/intervals and queues non-cancellable microtasks;
-- visibility/background behavior;
-- reversible WebRTC blocking.
+<a name="adapters"></a>
 
-Tampermonkey storage and value-change listeners are implemented in `platform/storage.ts`. Adapters do not own route policy or impose penalties. Application timer ownership is split between measurement deadlines, the player monitor's interval and lifecycle microtasks; recovery advances on monitor ticks. UI remains browser-facing: `PlayerPanel` owns a separate 1.5-second interval and `ControlCenter` queues focus work directly.
+## 適配器
 
-## Route lifecycle
+適配器將瀏覽器行為轉為型別化觀察：
 
-1. A trusted playurl response or bounded page/player hint establishes representation groups.
-2. The vault stores exact Native URLs for the active generation/epoch.
-3. The coordinator admits current candidates, applies restrictions and ranks them. With the Native-source option off, normal routing admits only generated built-in Catalog routes; original and Native signed URLs remain in the vault for attribution and the separate comparison mode.
-4. The first eligible Fetch/async XHR media request can wait up to three seconds for parallel legal-route preflight. All requests in that window share one deadline. With the option off, preflight probes only Catalog routes; a recognizable Bilibili media URL that cannot safely become a legal Catalog route is blocked before dispatch.
-5. The transport adapter asks for a decision at dispatch and records its immutable request context.
-   Fetch policy inputs and native dispatch use the same platform-normalized Request; an added page-owned `href` property cannot select a different checked URL.
-   Hook installation is attempted and its verified status recorded before monitor/UI startup; an installation failure does not prevent the UI from starting. Transport checks recognized non-GET media without rewriting it and rechecks XHR at `send()`. With the option off, a recognized media request that cannot be sent to an allowed Catalog route is blocked before the native call, including non-GET and stale-generation requests.
-6. Completion yields a typed observation and evidence update. Verified failure may open a media-kind circuit and request group-aware fallback.
-7. A no-progress cold start can submit one legal different-host fallback and arm the existing one-shot core recovery. With the option off, that fallback must also be a Catalog route.
-8. The observed post-decision host, not the plan alone, confirms the route outcome.
+- 獨立的 `FetchHookAdapter` 與 `XhrHookAdapter`，透過 `TransportContext` 共用型別化送出檢查及觀察建構；
+- `TransportAdapter` 安裝／驗證兩個 hook，還原不完整安裝並回報整合 hook 快照；
+- `RangeProbeAdapter` 提供起播及健康探測共用的直接同 Host HTTPS 206 reader，限制計入 bytes、傳遞取消並釋放 reader。量測控制器管理期限及結果解讀；coordinator 管理授權檢查與證據提交。失敗的健康挑戰不開啟播放斷路器；
+- playurl 解析及轉換寫回；
+- `__playinfo__` 與播放器 manifest 接納；
+- video／播放器解析；
+- `BrowserNavigation`：僅在 wrapper 仍擁有 History 方法時還原，unsubscribe 後忽略排隊中的 callback；
+- `BrowserScheduler`：為 timeout／interval 回傳取消函式，並排入不可取消的 microtask；
+- 可見性／背景行為；
+- 可還原的 WebRTC 封鎖。
 
-Catalog HTTP 403 invalidates only the current stream/host pairing for later ranking, backups and active challengers. Recovery records a bounded per-kind action from plan to hook entry to response or failure; a same-host request from an unrelated decision cannot confirm that action.
+Tampermonkey 儲存及值變更 listener 由 `platform/storage.ts` 實作。適配器不擁有選路政策或施加懲罰。application 的計時器分別由量測期限、player monitor interval 及生命週期 microtask 管理；恢復由 monitor tick 推進。UI 直接面向瀏覽器：`PlayerPanel` 擁有獨立的 1.5 秒 interval，`ControlCenter` 直接排入 focus 工作。
 
-The persisted Native-source option restores normal routing's prior ability to consider legal original and exact Native signed routes when enabled. With it off, playurl output contains only safely generated Catalog primary and backup URLs; if none is legal, the output has no usable route. It does not cancel a website request already dispatched. Disabling the entire script still leaves website requests unchanged.
+<a name="route-lifecycle"></a>
 
-The optional original comparison mode lives only in the current tab's coordinator and is independent of the persisted Native-source option. It uses only exact legal signed URLs supplied by the video, can promote a legal original backup if the primary is forbidden, and suppresses active probes and automated recovery. Toggling it clears plans/affinity and resets measurement/core recovery. It does not survive a full reload or retroactively restore URLs already given to the player.
+## 路線生命週期
 
-Healthy measurements never change affinity.
+1. 可信 playurl 回應或有界頁面／播放器提示建立 representation 群組。
+2. Vault 保存當前 generation／epoch 的 exact Native URL。
+3. coordinator 接納當前候選、套用限制並排名。原生來源開關關閉時，正常選路只接納生成的內建 Catalog 路線；原始及 Native signed URL 留在 Vault，供歸因及獨立對照模式使用。
+4. 第一筆符合條件的 Fetch／非同步 XHR 媒體請求可等待最多三秒的合法路線並行預測試，同窗口的全部請求共用期限。開關關閉時只探測 Catalog；可辨識的 B 站媒體 URL 若不能安全生成合法 Catalog 路線，送出前封鎖。
+5. 傳輸適配器在送出時請求決策，保存不可變的請求脈絡。
+   Fetch 政策輸入與原生送出使用同一個平台正規化 Request；頁面自行加入的 `href` 屬性不能讓受檢 URL 與送出 URL 不同。
+   monitor／UI 啟動前先嘗試安裝 hook 並記錄驗證狀態；安裝失敗不阻止 UI 啟動。傳輸層檢查可辨識的非 GET 媒體但不改寫，XHR 在 `send()` 重查。開關關閉時，不能送往允許 Catalog 路線的已辨識媒體請求，在原生呼叫前封鎖，包括非 GET 及舊 generation 請求。
+6. 完成後產生型別化觀察並更新證據。已確認失敗可開啟媒體種類斷路器，請求考慮群組的備援。
+7. 冷啟動無進度時可提交一次不同 Host 的合法備援，並啟動既有的一次性核心恢復。原生來源開關關閉時，備援也必須是 Catalog。
+8. 以決策後觀察到的 Host 確認路線結果，不能只憑計畫。
 
-The Catalog retains all 11 built-in hosts, with four unavailable by default. The three-probe startup limit does not narrow ordinary ranking, backup planning or later healthy exploration to those three hosts. Catalog-only output chooses a legal primary and at most five legal backup hosts distinct from the primary and one another. Current black/dead flags, user overrides, default availability, host locks and stream/host incompatibility still apply.
+Catalog HTTP 403 只失效當前 stream／Host 配對，影響後續排名、備援及主動挑戰。恢復依媒體種類記錄從計畫、hook 入口到回應或失敗的有界動作；來自無關決策的同 Host 請求不能確認該動作。
 
-If Catalog-only startup produces no valid probe result, measurement commits no probe winner. Final dispatch performs ordinary ranking over the complete remaining legal Catalog pool; probe 403 results still exclude their current stream/host pairs. This preserves the deadline without granting a failed probe route special priority.
+開啟持久原生來源參考後，正常選路可依原有規則考慮合法原始及 exact Native signed 路線。關閉時，playurl 只輸出安全生成的 Catalog 主備 URL；沒有合法路線時，輸出沒有可用路線。它不取消已送出的網站請求。整體停用仍原樣保留網站請求。
 
-Whole-script disable takes precedence, then tab-local original comparison; normal routing applies fixed/automatic selection and the Native-source switch. Fixed-host, Catalog-override and Native-source changes invalidate plans and reset measurement/recovery. A pending startup result must not override a newly selected fixed host; final dispatch uses current settings and authority.
+原線對照僅存在目前分頁的 coordinator，獨立於持久原生來源開關。它只使用影片提供的合法 exact signed URL；主線被禁止時可提升合法原始備援，並停用主動探測及自動恢復。切換時清除計畫／affinity，重設量測／核心恢復。完整重載後不保留，也不回溯還原已交給播放器的 URL。
 
-## Diagnostics
+健康量測不得變更 affinity。
 
-The recorder consumes typed `DomainEvent` values, aggregates successful traffic and preserves bounded failure incidents. UI read models are snapshots; reading them cannot mutate routing or start network work. Hook entry, media recognition, native-call and response stages remain separate from browser Network confirmation. The Catalog-only rule applies to script-transformed playurl output and intercepted media dispatch, not to browser traffic outside those entry points.
+Catalog 保留全部 11 個內建 Host，其中 4 個預設不可用。起播三個探測的限制不縮小一般排名、備援或後續健康探索的候選池。Catalog-only 輸出選擇合法主線及最多五個與主線及彼此不同 Host 的合法備援。當前 black／dead、使用者 override、預設可用性、Host lock 及 stream／Host 不相容限制仍有效。
 
-`RouteSnapshot`, `TransportSnapshot`, `DiagnosticSnapshot` and `ControlCenterSnapshot` expose concrete readonly fields. Diagnostic request serialization uses an explicit bounded field list, and report export sanitizes the supplied read model. External payload validation belongs to the relevant adapter/store parser, with the metadata compatibility behavior described above. Product-setting/routing commands use `ControlCommandPort`; UI also invokes diagnostic-only mark, clear and report operations directly. UI does not read or write storage keys directly.
+Catalog-only 起播沒有有效探測結果時，不提交測速贏家。最終送出對完整剩餘合法 Catalog 池作一般排名；探測 403 仍排除當前 stream／Host 配對。保留期限限制，不讓失敗探測路線取得特別優先權。
 
-The v2.1.8 `TransportSnapshot.lastPlayurl` adds one immutable recent result: Fetch/XHR, observation time, native HTTP status, acceptance, recognized DASH/MP4/FLV formats, video/audio/segment counts, numeric upstream code and rejection reason. `TransportContext` copies a fixed field list, deduplicates at most three formats, bounds counts to 0–65,535 and drops non-finite or unsafe-integer upstream codes. Raw payloads, URLs, paths, tokens and exception messages are not copied. Control-center text and the existing diagnostic export consume this summary; acceptance does not establish actual network destination or successful playback.
+模式依序套用整體停用、分頁原線對照；正常選路再套用固定／自動選路及原生來源開關。固定 Host、Catalog override 或原生來源設定變更會失效計畫並重設量測／恢復。等待中的起播結果不得覆蓋新固定 Host；最終送出使用當前設定與授權。
+
+<a name="diagnostics"></a>
+
+## 診斷
+
+recorder 消費型別化 `DomainEvent`，彙總成功流量並保存有界失敗事故。UI 讀取模型為快照，讀取不能改變選路或啟動網路工作。hook 入口、媒體辨識、原生呼叫及回應階段與瀏覽器 Network 確認分開。Catalog-only 規則涵蓋腳本改寫的 playurl 輸出及可攔截媒體送出；其他瀏覽器入口的流量須另行觀察。
+
+`RouteSnapshot`、`TransportSnapshot`、`DiagnosticSnapshot` 及 `ControlCenterSnapshot` 提供具體唯讀欄位。診斷請求序列化使用明確的有界欄位清單，匯出時清理傳入的讀取模型。外部 payload 由對應適配器／store parser 驗證，metadata 則保留上述相容行為。產品設定／選路命令使用 `ControlCommandPort`；UI 也直接呼叫僅作診斷的標記、清除及報告操作。UI 不直接讀寫儲存鍵。
+
+自 v2.1.8 起，`TransportSnapshot.lastPlayurl` 保存一筆不可變的最近結果：Fetch／XHR、觀察時間、原生 HTTP 狀態、接納結果、辨識出的 DASH／MP4／FLV 格式、影片／音訊／分段數量、數字 upstream code 及拒絕原因。`TransportContext` 複製固定欄位清單，去重後最多三種格式，數量限制為 0–65,535，丟棄非有限值或非安全整數的 upstream code。不複製原始 payload、URL、path、token 或例外文字。控制中心及既有診斷匯出消費此摘要；接納結果不證明實際網路目的地或播放成功。

@@ -8,7 +8,7 @@
     "node": ">=26.8.1"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node scripts/typecheck.mjs",
     "architecture": "node scripts/architecture-check.mjs",
     "build": "node scripts/build.mjs",
     "test": "node scripts/test.mjs",
@@ -16,6 +16,7 @@
     "package": "node scripts/package.mjs"
   },
   "devDependencies": {
+    "@types/node": "26.6.4",
     "esbuild": "0.28.2",
     "typescript": "7.0.2"
   }

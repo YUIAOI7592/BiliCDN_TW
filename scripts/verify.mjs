@@ -2,13 +2,14 @@ import { existsSync, readFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { resolve, sep } from 'node:path'
 import { build } from './build.mjs'
 import { runTests } from './test.mjs'
+import { typecheck } from './typecheck.mjs'
 import { packageRelease } from './package.mjs'
 import { command, readJson, sha256 } from './lib.mjs'
 
 export async function verify() {
   const config = readJson('release.json')
   if (process.versions.node !== config.nodeVersion) throw Error(`Expected Node ${config.nodeVersion}; found ${process.versions.node}`)
-  command(process.execPath, ['node_modules/typescript/bin/tsc', '--noEmit'])
+  typecheck()
   command(process.execPath, ['scripts/architecture-check.mjs'])
   await runTests()
   const first = await build({ write: false }), second = await build()

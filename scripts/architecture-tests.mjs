@@ -1,12 +1,13 @@
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
 import { tmpdir } from 'node:os'
 import { withProjectAst } from './typescript-ast.mjs'
 import { inspectModule, validateGraph } from './architecture-rules.mjs'
 
-export function testArchitectureRules() {
+function architectureFixture() {
   const scratch = mkdtempSync(join(tmpdir(), 'bilicdn-architecture-'))
-  let assertions = 0
   try {
     const fixtures = {
       'domain/pure.ts': 'export const same = (value: number) => value * 2',
@@ -35,24 +36,26 @@ export function testArchitectureRules() {
     }
     const config = join(scratch, 'tsconfig.json')
     writeFileSync(config, JSON.stringify({ compilerOptions: { noLib: true, noEmit: true, allowImportingTsExtensions: true }, include: ['**/*.ts'] }))
-    withProjectAst(config, program => {
-      const modules = new Map(Object.keys(fixtures).map(name => [name, inspectModule(program.getSourceFile(join(scratch, name)), scratch)]))
-      validateGraph([modules.get('domain/pure.ts')]); assertions++
-      for (const name of Object.keys(fixtures).filter(name => !['domain/pure.ts', 'state/store.ts'].includes(name) && !name.includes('cycle-'))) {
-        let rejected = false
-        try { validateGraph([modules.get(name)]) } catch { rejected = true }
-        if (!rejected) throw Error(`Architecture rule failed to reject ${name}`)
-        assertions++
-      }
-      let rejected = false
-      try { validateGraph([modules.get('domain/cycle-a.ts'), modules.get('domain/cycle-b.ts')]) } catch { rejected = true }
-      if (!rejected) throw Error('Architecture rule failed to reject re-export cycle')
-      assertions++
-    })
-    console.log(`Architecture rule contracts: ${assertions} assertions`)
+    return withProjectAst(config, program => new Map(Object.keys(fixtures).map(name =>
+      [name, inspectModule(program.getSourceFile(join(scratch, name)), scratch)])))
   } finally {
     const target = resolve(scratch), parent = resolve(tmpdir())
     if (!target.startsWith(`${parent}${sep}`) || !target.split(sep).at(-1)?.startsWith('bilicdn-architecture-')) throw Error('Unsafe scratch cleanup')
     rmSync(target, { recursive: true })
   }
 }
+const rejected = ['domain/type-import.ts','domain/re-export.ts','domain/import-type.ts','domain/dynamic.ts',
+  'domain/variable-import.ts','domain/location.ts','domain/qualified.ts','domain/clock.ts','domain/date.ts','domain/gm.ts',
+  'application/location.ts','application/timer.ts','application/reload.ts','adapters/affinity.ts','ui/storage.ts','ui/reset.ts']
+test('pure domain module is allowed', { timeout: 5000 }, () => {
+  const modules = architectureFixture()
+  assert.doesNotThrow(() => validateGraph([modules.get('domain/pure.ts')]))
+})
+for (const name of rejected) test(`reject forbidden architecture: ${name}`, { timeout: 5000 }, () => {
+  const modules = architectureFixture()
+  assert.throws(() => validateGraph([modules.get(name)]), undefined, `Architecture rule failed to reject ${name}`)
+})
+test('reject re-export cycle', { timeout: 5000 }, () => {
+  const modules = architectureFixture()
+  assert.throws(() => validateGraph([modules.get('domain/cycle-a.ts'), modules.get('domain/cycle-b.ts')]), /Import cycle/)
+})

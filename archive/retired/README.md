@@ -1,12 +1,12 @@
 # 已退出現行流程的檔案
 
-整理日期：**2026-10-03**，現行版本 **v2.1.7**。本資料夾集中保存舊版開發／研究／驗證資料；目前程式、命令與文件用途見 [專案文件索引](../../docs/INDEX.md)和[開發流程](../../docs/DEVELOPMENT.md)。
+現行索引整理日期：**2026-10-06**，版本 **v2.1.8**。本資料夾集中保存舊版開發／研究／驗證資料；目前程式、命令與文件用途見 [專案文件索引](../../docs/INDEX.md)及[開發流程](../../docs/DEVELOPMENT.md)。第一次位置整理於 2026-10-03、當時版本 v2.1.7；原搬移數量與驗證紀錄保留於下方有日期說明的歷史段落。
 
 ## 配置
 
 | 位置 | 保存內容 | Git 可見範圍 |
 | --- | --- | --- |
-| `docs/` | 11 份歷史計畫、研究與驗收紀錄 | 經檢查的 Markdown 文件 |
+| `docs/` | 13 份歷史計畫、研究、驗收、版本驗證及文件整理紀錄（2026-10-06 盤點） | 經檢查的 Markdown 文件 |
 | `docs/evidence/` | 已結案 v2.1.6 驗收的最終設定截圖 | 原本已追蹤的指定圖片 |
 | `local/development/` | v1.5.5 開發稿 | 忽略，本機保存 |
 | `local/scripts/` | v1.5.x package／security 準備工具 | 忽略，本機保存 |
@@ -15,7 +15,7 @@
 | `local/work/` | 已完成的一次性工具、舊測試快照、瀏覽器筆記與發行草稿 | 忽略，本機保存 |
 | `local/src/` | 舊版剩下的空 `worker/` 目錄 | 忽略，本機保存 |
 
-`local/relocation-manifest.json` 是本次搬移的本機清單，記錄每個檔案的舊／新路徑、bytes 與原始 SHA-256，以及保留位置的檔案校驗值；不納入公開儲存庫。
+`local/relocation-manifest.json` 是 2026-10-03 第一次搬移的本機清單，記錄每個檔案的舊／新路徑、bytes 與原始 SHA-256，以及保留位置的檔案校驗值；不納入公開儲存庫。
 
 ## 舊位置對照
 
@@ -29,6 +29,8 @@
 | `scripts/package-v153.cjs`、`package-v154.cjs`、`package-v155.cjs`、`prepare-security-v155.cjs` | `archive/retired/local/scripts/` |
 | `.work/clean-v160/`、`.work/v182-security/` | `archive/retired/local/work/` |
 | `.work/` 內已完成的一次性 `.cjs`、舊瀏覽器／preflight 紀錄、v2.1.5／v2.1.6 發行草稿 | `archive/retired/local/work/`，檔名保留 |
+| `docs/TEST_REPORT.md` 的 v2.1.7 至 v2.0.2 歷史正文（2026-10-06） | [docs/TEST_REPORT_HISTORY.md](docs/TEST_REPORT_HISTORY.md)，十二個主要區塊保留原文 |
+| `docs/INDEX.md` 的三段 2026-10-03 整理紀錄（2026-10-06 搬移） | [docs/DOC_MAINTENANCE_HISTORY.md](docs/DOC_MAINTENANCE_HISTORY.md)，原日期及數量保留 |
 
 `.work/npm-cache/`、`.work/dependencies.json` 與 `.codex/` 本機工具資料仍留在原位。既有 `archive/pre-upstream-v1.3.4-20260904/`、授權原件及全部 `Release/` 也維持原位。後續根目錄整理已將來源校驗清單集中到 `baseline/SHA256SUMS.txt`，內容不變。
 
@@ -43,6 +45,8 @@
 
 ## 第一次封存整理的搬移驗證
 
+以下記錄適用於 **2026-10-03／v2.1.7**；其中 11 份文件及其他盤點數量均為當時範圍。
+
 本次 33 組位置調整搬移 **604 個檔案**。搬移後、修正文件相對連結前，604 個 SHA-256 全部與原檔一致；其中本機歷史資料保留原內容。另核對 **327 個現行來源、測試、工具、設定、授權基準與 Release 檔案**，位置及 SHA-256 均未改變。後續的文件連結修正、Git 忽略規則及完整 npm 驗證另行檢查，不作新的 Chrome 驗收證據。
 
 整理完成後，**25 份公開 Markdown 的 128 個本機連結及錨點**檢查通過；**592 個搬移的本機檔案**及 **327 個保留原位檔案**再次核對 SHA-256 一致。本機資料與搬移 manifest 均維持 Git 忽略，公開範圍只有兩份封存索引、11 份歷史文件及指定截圖。
@@ -50,6 +54,8 @@
 `npm run verify` 通過型別、架構、626 項功能斷言、18 項架構斷言、40 個非入口模組匯入檢查、可重現建置、語法與暫存封裝 checksum 驗證。第一次執行因 Windows 沙箱阻擋 esbuild 的上層目錄讀取而失敗，使用適當權限重新執行後完整通過；沒有為此修改工具或程式。`git diff --check` 通過。已發布 Release 內容及驗收狀態保持原狀。
 
 ## 後續根目錄文件整理
+
+以下同樣是 **2026-10-03／v2.1.7** 的歷史結果。2026-10-06 中文化與報告搬移結果另見 [文件維護歷史](docs/DOC_MAINTENANCE_HISTORY.md)。
 
 同日再將五份現行文件集中至 `docs/`，來源校驗清單移至 `baseline/SHA256SUMS.txt`。六份檔案移動前後 bytes 一致，再依新位置修正文件連結與封裝讀取路徑。本機清單為 `local/root-document-relocation.json`，保留原始 SHA-256；第一次搬移清單仍保存當時路徑。
 

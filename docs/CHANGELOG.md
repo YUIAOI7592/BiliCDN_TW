@@ -1,19 +1,21 @@
-# BiliCDN_TW changelog
+<a name="bilicdn_tw-changelog"></a>
 
-> v2.1.8 is the latest confirmed published release. Older entries describe changes and verification status at their release date. Use [README](../README.md), [TEST_REPORT](TEST_REPORT.md) and the [document index](INDEX.md) for current behavior and evidence. Historical pending language is not the current backlog.
+# BiliCDN_TW 變更紀錄
+
+> 依 2026-10-04 發布確認，v2.1.8 是最新正式發行。舊項目描述各版發布當日的變更及驗證狀態。現行行為與證據見 [README](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。歷史 pending 文字不構成目前待辦。
 
 ## v2.1.8
 
-The MP4/FLV correction is [published](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8) as the latest non-draft, non-prerelease release, with only the userscript asset. Automated verification and the security review are complete; all 30 files were reviewed with no plausible or reportable finding. The canonical sealed report retains `partial coverage` and intermediate deferred markers for nine subsequently reviewed files; TEST_REPORT preserves that limitation. At the user's request, publication preceded the standard Tampermonkey update. DevTools confirmed v2.1.8; the authorized MP4 trial and an alternative public DASH video each showed over twelve seconds of continuous playback and direct Catalog HTTPS 206 responses. The original is now members-only, so this does not establish full-length public MP4 playback; no such field sample was available. FLV remains automated-only. TEST_REPORT records these coverage limits and the earlier DASH buffering separately.
+2026-10-04 [發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8) MP4／FLV 修正，GitHub Release 附件只有 userscript。自動驗證、安全審閱、標準 Tampermonkey 更新及授權的 MP4 試片／公開 DASH 回歸已完成；詳細證據、安全報告的 `partial coverage`、較早 DASH 緩衝及完整公開 MP4／FLV 覆蓋限制見 [v2.1.8 驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#bilicdn_tw-v218-release-verification--2026-10-04)。下列 Catalog 指內建節點清單，Native 指原生簽名路線。
 
-- Handle recognized MP4/FLV `durl` containers alongside DASH, retaining segment order and metadata. Plan all required progressive outputs before URL writeback; reject failed progressive/mixed output atomically instead of exposing a partially rewritten segment list.
-- Resolve each progressive segment's safe Catalog source through the current Vault handle, allowing a safe same-segment backup source when the primary cannot be rewritten. Preserve Native provenance, attribution and restrictions.
-- Retain all 11 built-in Catalog hosts, including four unavailable by default. Startup probes remain at most three parallel candidates in one shared three-second window; the remaining allowed Catalog candidates stay eligible for ranking, backup planning and later health exploration. Catalog-only player output has at most five distinct backup hosts.
-- When Catalog-only startup has no valid measurement, commit no probe winner and let final dispatch rank the complete remaining legal pool. Preserve safe current DASH query handling and keep rewritable PCDN source capability separate from Native selectability.
-- Invalidate plans and reset measurement/recovery after fixed-host, Catalog-override or Native-source changes, so a pending probe cannot overwrite new fixed-host selection.
-- Replace boolean playurl acceptance with a typed result. Fetch/XHR check `accepted`; strict Fetch rejection retains HTTP 503 and XHR retains native HTTP status. Show one bounded recent format/count/code/reason summary without raw bodies, signed URLs or exception text.
-- Add progressive playurl/routing/transport and safe-summary contract suites. Current automated/security evidence belongs in TEST_REPORT; new Chrome/Tampermonkey regression follows publication and the standard Tampermonkey update. The approved v2.1.6 acceptance remains closed.
-- Publish v2.1.8 from tag commit `b6e2ff11ef53ce3a338cc197c90edecdf0bb2b60`, preserving older Release artifacts. The userscript is 285,037 bytes, SHA-256 `c2bda1e0be4b086e7622e34d3fba0a6cdfdd5eb612afea700289758112c9eb4f`.
+- 在 DASH 之外接納已辨識的 MP4／FLV `durl` 容器，保留分段順序與 metadata。必要漸進式輸出先全部規劃才寫回 URL；漸進式／混合輸出失敗時原子拒絕，不提供部分改寫的分段清單。
+- 透過當前 Vault handle 取得各漸進式分段的安全 Catalog 來源；主來源不可改寫時，可使用同段安全備用來源。保留 Native 來源授權、歸因及限制。
+- 保留全部 11 個 Catalog 內建 Host，其中 4 個預設不可用。起播探測最多三個並行候選，共用三秒窗口；其餘合法 Catalog 候選仍參與排名、備援及後續健康探索。Catalog-only 播放器輸出最多五個不同 Host 的備援。
+- Catalog-only 起播沒有有效量測時，不提交測速贏家，由最終送出對完整剩餘合法池排名。保留安全的當前 DASH query 處理，區分可改寫 PCDN 來源能力與 Native 可選資格。
+- 固定 Host、Catalog override 或原生來源設定變更後，失效計畫並重設量測／恢復，避免等待中的探測覆蓋新固定 Host。
+- 將 boolean playurl 接納結果改為型別化結果。Fetch／XHR 檢查 `accepted`；嚴格 Fetch 拒絕維持 HTTP 503，XHR 保留原生 HTTP 狀態。顯示一筆有界的最近格式／數量／code／原因摘要，不包含原始 body、signed URL 或例外文字。
+- 新增漸進式 playurl／選路／傳輸及安全摘要契約套件。自動／安全證據集中於 TEST_REPORT；Chrome／Tampermonkey 回歸依序在發布及標準更新後完成。已批准的 v2.1.6 驗收維持結案。
+- 從 tag commit `b6e2ff11ef53ce3a338cc197c90edecdf0bb2b60` 發布 v2.1.8，保留較早 Release 產物。userscript 為 285,037 bytes，SHA-256 `c2bda1e0be4b086e7622e34d3fba0a6cdfdd5eb612afea700289758112c9eb4f`。
 
 ## v2.1.7
 

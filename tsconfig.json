@@ -12,7 +12,8 @@
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": []
   },
-  "include": ["src-v2/**/*.ts", "tests-v2/**/*.ts"]
+  "include": ["src-v2/**/*.ts"]
 }

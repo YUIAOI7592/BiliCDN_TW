@@ -1,64 +1,82 @@
-# Codex development guide — BiliCDN_TW v2
+<a name="codex-development-guide--bilicdn_tw-v2"></a>
 
-## Current target
+# Codex 開發指南 — BiliCDN_TW v2
 
-- Source of truth: `src-v2/`.
-- Entry point: `src-v2/entry.ts`.
-- Tests: `tests-v2/`.
-- Release output: `Release/v<version>/BiliCDN_TW.user.js`, with `version` from `release.json`. Publish after automated and required security verification; record Chrome/Tampermonkey acceptance separately.
-- Historical v1 releases and tags are references only; v2 build and tests must not import them.
-- Current documentation and historical-record status are indexed in `docs/INDEX.md`. Versioned plans, acceptance logs and release snapshots describe their recorded version, not the current backlog.
-- Retired documents live under `archive/retired/docs/`; obsolete local tools and private evidence under `archive/retired/local/`. The archive is not a v2 build/test input; its placement is documented in `archive/retired/README.md`.
+<a name="current-target"></a>
 
-## Required workflow
+## 現行目標
 
-1. Read `docs/PROJECT_CONTEXT.md`, `SECURITY.md`, `docs/ARCHITECTURE.md` and `docs/DEVELOPMENT.md`.
-2. Reproduce a behavior with a domain, controller or adapter contract test before changing runtime logic.
-3. Preserve the layer direction: domain → state → application → adapters/UI composition. Lower layers never import higher layers.
-4. Use `apply_patch` for source edits and preserve unrelated user changes.
-5. Run `npm run typecheck`, `npm run architecture`, `npm test` and `npm run verify` before release.
-6. Record automated and real Chrome/Tampermonkey results separately.
+- 唯一正式來源：`src-v2/`。
+- 入口：`src-v2/entry.ts`。
+- 測試：`tests-v2/`。
+- 發行產物：`Release/v<version>/BiliCDN_TW.user.js`，`version` 取自 `release.json`。通過自動驗證及必要安全驗證後發布；Chrome／Tampermonkey 驗收另行記錄。
+- 歷史 v1 Release 與 tag 僅供參考；v2 建置及測試不得匯入。
+- 現行文件與歷史紀錄的狀態見 `docs/INDEX.md`。有版本的計畫、驗收紀錄及發行快照只描述當時版本；目前工作見 `docs/TODO.md`。
+- 已退出流程的文件位於 `archive/retired/docs/`；舊本機工具與私有證據位於 `archive/retired/local/`。封存不作 v2 建置／測試輸入，配置見 `archive/retired/README.md`。
 
-## Architectural rules
+<a name="required-workflow"></a>
 
-- `domain` is pure and must not read GM, DOM, Fetch, XHR, ambient clocks or timers. Time and relative-URL bases are explicit inputs; injected `Clock` values are allowed.
-- Importing a non-entry module must not read GM, mutate the page, create a timer or start network work. `entry.ts` deliberately starts the composed runtime.
-- `entry.ts` only composes ports, stores and controllers.
-- No dynamic dependency bags, cross-module setters or public mutable Maps/Sets/timers.
-- `RouteCoordinator` exclusively changes route affinity.
-- `MeasurementController` exclusively starts active probes.
-- `RecoveryController` exclusively reloads the player core.
-- Lifecycle-sensitive asynchronous work must validate the applicable generation, epoch, identity or controller marker before committing state.
-- `SignedRouteVault` owns signed route indexes, opaque handles and Native selection authority. Policy helpers use handles and bounded metadata; adapters and execution paths also process in-memory URLs, payloads and manifest fingerprints. Do not create another independently authorizing Native URL index or persist/report these raw values.
-- Diagnostics are read-only consumers of typed events.
+## 必要流程
 
-## Required invariants
+1. 閱讀 `docs/PROJECT_CONTEXT.md`、`SECURITY.md`、`docs/ARCHITECTURE.md` 及 `docs/DEVELOPMENT.md`。
+2. 修改執行期邏輯前，先以 domain、控制器或適配器契約測試重現行為。
+3. 維持分層方向：domain → state → application → adapters／UI 組合。下層不得匯入上層。
+4. 原始碼修改使用 `apply_patch`，保留使用者的無關變更。
+5. 發布前執行 `npm run typecheck`、`npm run architecture`、`npm test` 及 `npm run verify`。
+6. 分開記錄自動驗證與真實 Chrome／Tampermonkey 結果。
 
-- Catalog targets are trusted built-ins only; Native targets are exact current-epoch URLs.
-- Normal routing defaults to Catalog-only; the persisted Native-source switch, tab-local original comparison and whole-script disable retain their distinct semantics.
-- Restrictions apply to original, Native, Catalog, fixed and fallback routes.
-- Video and audio health/recovery remain isolated.
-- Healthy exploration never changes the current host.
-- Fetch remains single-reader and propagates cancel reasons.
-- XHR text/json/reuse/timeout/abort behavior remains compatible.
-- Stop all script rewrite and active network behavior while disabled without cancelling website requests.
-- Never read, replace or wrap the site Worker constructor.
-- Never persist or report signed URL/path/query/token, cookie, IP or player/core objects.
-- Codec capability checks do not block playurl; dropped frames remain diagnostic only.
+契約使用具名 `node:test` 案例，各案例以 fixture factory 重建可變狀態。使用 `testScope(t)` 登記清理，全域替換經 `defineGlobal()`；timer、Hook、subscription 及取消函式由所屬資源明確管理。禁止 only、skipped、todo 或 cancelled 留在完整執行。新套件加入 `scripts/test-registry.mjs`，命令、期限及原契約對照見 `docs/DEVELOPMENT.md` 與 `tests-v2/MIGRATION.md`。工具驗證另按日期記錄於 `docs/TEST_TOOLING_REPORT.md`，不回寫已發布報告。
 
-## Release rules
+<a name="architectural-rules"></a>
 
-- Do not add CI/CD, GitHub Actions, runtime dependencies or remote code loading.
-- Do not generate historical patch artifacts for v2.
-- The GitHub Release contains only `BiliCDN_TW.user.js`.
-- Update URLs remain under this repository’s latest release.
-- Use Codex Security according to risk: for security-sensitive changes or an explicit user request, not automatically for every release. `npm run verify` does not include a security scan.
-- Commit messages identify the actual executing model and reasoning setting when that information is available; do not copy stale attribution.
+## 架構規則
 
-## Documentation maintenance
+- `domain` 必須保持純粹，不得讀取 GM、DOM、Fetch、XHR、環境時鐘或計時器。時間及相對 URL 的基底必須明確傳入；可以使用注入的 `Clock`。
+- 匯入非入口模組時，不得讀取 GM、修改頁面、建立計時器或啟動網路工作。`entry.ts` 負責啟動組合後的執行環境。
+- `entry.ts` 只組合 port、store 與控制器。
+- 不得使用動態依賴集合、跨模組 setter 或公開可變的 Map／Set／計時器。
+- 僅 `RouteCoordinator` 可以變更路線 affinity（目前路線綁定）。
+- 僅 `MeasurementController` 可以啟動主動探測。
+- 僅 `RecoveryController` 可以重載播放器核心。
+- 對生命週期敏感的非同步工作，提交狀態前必須檢查適用的 generation、epoch、身分或控制器標記。
+- `SignedRouteVault` 擁有簽名路線索引、不透明 handle 及原生簽名路線（Native）選路授權。政策 helper 使用 handle 與有界 metadata；適配器與執行路徑也會處理記憶體中的 URL、payload 及 manifest fingerprint。不得建立另一份可獨立授權的 Native URL 索引，也不得持久化或輸出這些原始值。
+- 診斷只能唯讀消費型別化事件。
 
-- Update active guidance with the corresponding source change. Check defaults, ports/ownership, storage behavior, UI labels, test commands and publication status against code/configuration.
-- Use `release.json`, `package.json`, `package-lock.json`, `src-v2/` and `scripts/` as factual inputs; use dated test/browser records as evidence for that version only.
-- Label historical records with their version/date and a link to current guidance. Preserve original observations, limits and cancelled-plan status; do not turn old pending text or approved acceptance limits into current tasks.
-- Keep `docs/INDEX.md`, `docs/TODO.md` and the latest section of `docs/TEST_REPORT.md` consistent. Do not rewrite `Release/v*/` snapshots or sealed security artifacts when correcting current documents.
-- For documentation-only work, verify links, referenced paths/labels, factual consistency and `git diff --check`. Do not claim new runtime tests or browser acceptance unless performed.
+<a name="required-invariants"></a>
+
+## 必要不變量
+
+- 內建節點清單（Catalog）目標僅來自可信內建項目；Native 目標必須是當前 epoch 的 exact URL。
+- 正常選路預設只使用 Catalog；持久原生來源開關、分頁原線對照及整體停用必須維持各自語意。
+- 禁止規則適用於原始、Native、Catalog、固定及備援路線。
+- 影片與音訊的健康／恢復互相隔離。
+- 健康探索不得變更目前 Host。
+- Fetch 維持單一 reader，並傳遞取消原因。
+- XHR 的 text／json／重用／timeout／abort 行為維持相容。
+- 停用期間停止所有腳本改寫及主動網路行為，不取消網站請求。
+- 不得讀取、取代或包裝網站的 Worker constructor。
+- 不得持久化或輸出 signed URL／path／query／token、cookie、IP 或播放器／核心物件。
+- codec 能力檢查不得阻擋 playurl；掉幀僅作診斷。
+
+<a name="release-rules"></a>
+
+## 發行規則
+
+- 不得加入 CI/CD、GitHub Actions、執行期依賴或遠端程式載入。
+- v2 不產生歷史 patch 產物。
+- GitHub Release 只包含 `BiliCDN_TW.user.js`。
+- 更新 URL 維持指向本儲存庫的最新 Release。
+- Codex Security 按風險使用：安全敏感變更或使用者明確要求時執行，不自動要求每版掃描。`npm run verify` 不包含安全掃描。
+- 已知實際執行模型與推理設定時，commit 訊息須記錄該資訊；不得複製過時署名。
+
+<a name="documentation-maintenance"></a>
+
+## 文件維護
+
+- 隨對應原始碼變更更新現行指南。依程式／設定核對預設值、port／權責、儲存行為、UI 名稱、測試命令及發布狀態。
+- 事實來源為 `release.json`、`package.json`、`package-lock.json`、`src-v2/` 及 `scripts/`；有日期的測試／瀏覽器紀錄只作對應版本的證據。
+- 歷史紀錄標示版本／日期並連至現行指南。保留原始觀察、限制及計畫撤銷狀態；不得將舊 pending 文字或已批准驗收的限制轉為現行待辦。
+- 維持 `docs/INDEX.md`、`docs/TODO.md` 與 `docs/TEST_REPORT.md` 最新版內容一致。修正現行文件時，不得回寫 `Release/v*/` 快照或 sealed 安全產物。
+- `docs/TEST_REPORT.md` 保存最新版完整報告與歷史導覽；換版時將上一版完整正文加入 `archive/retired/docs/TEST_REPORT_HISTORY.md`，保留日期、版本、原錨點導引及原始限制。文件整理結果另按日期記入 `archive/retired/docs/DOC_MAINTENANCE_HISTORY.md`。
+- 保留 `docs/CHANGELOG.md`、`docs/TEST_REPORT.md` 兩個封裝輸入路徑；它們指向其他儲存庫文件的連結使用完整儲存庫 URL，確保複製到 Release 後仍可閱讀。
+- 僅修改文件時，檢查連結、引用路徑／名稱、事實一致性及 `git diff --check`。未實際執行時，不得宣稱新的執行期測試或瀏覽器驗收。
