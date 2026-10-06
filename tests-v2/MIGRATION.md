@@ -99,8 +99,8 @@
 | `native-transport.ts` | 214–279 | 啟用 Native 的輸出上限測試情境接納當前內容週期的另一媒體表示。 | `Native-on output-cap fixture accepts another representation in the current epoch [4]` |
 | `native-transport.ts` | 279–303 | 可信 API 接納後，延遲的頁面提示寫入存取器同步收到 Catalog URL。 | `late page-hint setter synchronously receives a Catalog URL after trusted API adoption [5]` |
 | `native-transport.ts` | 303–342 | 親和主機測試情境具有另一合法 Catalog 主機。 | `affinity fixture has a different legal Catalog host [6]` |
-| `native-transport.ts` | 352–356 | 僅使用 Catalog 時，__playinfo__ 存取器的讀取存取器清理每個新取得且不支援的 Native 值。 | `Catalog-only __playinfo__ accessor getter sanitizes every fresh unsupported Native value [7]` |
-| `native-transport.ts` | 356–359 | 啟用 Native 時，__playinfo__ 存取器的讀取存取器保留新取得的網站值。 | `Native-on __playinfo__ accessor getter preserves fresh website value [8]` |
+| `native-transport.ts` | 352–356 | 僅使用 Catalog 時，`__playinfo__` 存取器的讀取存取器清理每個新取得且不支援的 Native 值。 | `Catalog-only __playinfo__ accessor getter sanitizes every fresh unsupported Native value [7]` |
+| `native-transport.ts` | 356–359 | 啟用 Native 時，`__playinfo__` 存取器的讀取存取器保留新取得的網站值。 | `Native-on __playinfo__ accessor getter preserves fresh website value [8]` |
 | `native-transport.ts` | 402–408 | 僅使用 Catalog 時，XHR ${responseType} 的 playurl 回應無法安全清理，因此在原生送出前阻擋。 | `Catalog-only XHR ${responseType} playurl is blocked before native send because its response cannot  [9]` |
 | `native-transport.ts` | 408–485 | 部分 playurl XHR 測試情境仍在載入。 | `partial playurl XHR fixture is still loading [10]` |
 | `native-transport.ts` | 485–490 | 啟用 Native 時，XHR ${responseType} 的 playurl 保留網站送出行為。 | `Native-on XHR ${responseType} playurl retains website dispatch [11]` |
