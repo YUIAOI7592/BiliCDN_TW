@@ -12,10 +12,10 @@
 
 來源為專案原有 11 個 Catalog Host、當次擷取的 [CCB 清單](https://github.com/Kanda-Akihito-Kun/ccb/blob/main/data/cdn.json) 495 筆、[TW/SG 清單](https://github.com/a0972199950/bilibili-cdn-switcher/blob/master/src/cdn-list.json) 20 筆，以及先前選出的五個重點候選；去重後共 **503 個 Host**。來源快照的 SHA-256 分別為 `8c5bad9fe25689416670a8f86ce6fdf1f7088778fa5aa45d14d5d4f0de7ce0d0` 與 `cbfe6b1e8f101f9641cbf732220b82034f956deecdd0b3ecce1ff685bb8ec860`。
 
-- **初篩：**451 個合格 Host 全數接受最多 16 KiB 的 HTTPS Range 請求；最多四個並行、每次三秒。核對直接 `206`、`Content-Range`、完整位元組及與原生回應相同的 SHA-256。每 20 個 Host 更新簽名 URL 並重測原生對照；23 次原生對照均成功。初篩失敗的 213 個 Host 全部再試一次。
-- **複測：**原 Catalog 初篩通過者及選出的外部 Host，使用兩部影片的 video／audio 開頭與合法後段，各做最多 64 KiB 的位元組比對。另對 65 個 Host 進行每輪三次、兩輪相隔至少 30 分鐘的順序 512 KiB video 測量，與同資源原生 Host 交錯比較；390 次成對原生測量均成功。13 個重點 Host 還做了第二部影片的三次 512 KiB 測量。
+- **初篩：** 451 個合格 Host 全數接受最多 16 KiB 的 HTTPS Range 請求；最多四個並行、每次三秒。核對直接 `206`、`Content-Range`、完整位元組及與原生回應相同的 SHA-256。每 20 個 Host 更新簽名 URL 並重測原生對照；23 次原生對照均成功。初篩失敗的 213 個 Host 全部再試一次。
+- **複測：** 原 Catalog 初篩通過者及選出的外部 Host，使用兩部影片的 video／audio 開頭與合法後段，各做最多 64 KiB 的位元組比對。另對 65 個 Host 進行每輪三次、兩輪相隔至少 30 分鐘的順序 512 KiB video 測量，與同資源原生 Host 交錯比較；390 次成對原生測量均成功。13 個重點 Host 還做了第二部影片的三次 512 KiB 測量。
 - **速度欄位：**「安全 Mbps」是實測吞吐量乘以 0.7；最低值是成功樣本中的最低值。成功數不足時，所列速度**不能視為穩定速度**。成對倍數是候選與原生 Host 的中位比值。
-- **用量：**計入探測中的原生對照後，共讀取 **447.30 MiB** 媒體資料，低於 500 MiB 上限。原始簽名 URL、媒體內容、Cookie、IP 及影片 ID 均未寫入報告或專案檔案。
+- **用量：** 計入探測中的原生對照後，共讀取 **447.30 MiB** 媒體資料，低於 500 MiB 上限。原始簽名 URL、媒體內容、Cookie、IP 及影片 ID 均未寫入報告或專案檔案。
 
 ## 總結果
 

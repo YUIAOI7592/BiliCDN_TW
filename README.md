@@ -2,7 +2,7 @@
 
 BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，提供 CDN 選路、有限度的故障恢復與本機診斷。正式支援 **Google Chrome 與 Tampermonkey**。
 
-正常模式預設從腳本的**內建節點清單（Catalog）**選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
+正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
 依 2026-10-04 發布紀錄，目前發行版本為 **[v2.1.8](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8)**，修正 MP4／FLV 播放資料處理、Catalog 來源選擇與設定切換競態，並新增安全的播放資料摘要。版本變更見 [CHANGELOG](docs/CHANGELOG.md)，現行指南與歷史紀錄的分類見 [文件索引](docs/INDEX.md)。
 

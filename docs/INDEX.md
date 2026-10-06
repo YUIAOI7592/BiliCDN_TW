@@ -2,6 +2,8 @@
 
 本索引於 **2026-10-06** 完成文件重整，**2026-10-07** 更新測試工具導覽。現行版本為 **v2.1.8（MP4／FLV 修正）**；其發布、更新與已安排 Chrome 回歸的完成狀態，以 2026-10-04 的 [TEST_REPORT](TEST_REPORT.md) 為證據。目前工作見 [TODO](TODO.md)，完整公開 MP4／FLV 現場覆蓋及安全報告限制維持原狀。歷史「待驗收」「未發布」或研究建議只描述當時狀態，不自動成為目前待辦。
 
+2026-10-07 的 Markdown 粗體渲染盤點與排版修正見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)；後續排版檢查方式列於 DEVELOPMENT。
+
 產品行為以 [src-v2/entry.ts](../src-v2/entry.ts) 及其模組為準；版本與工具以 [release.json](../release.json)、[package.json](../package.json) 及 [package-lock.json](../package-lock.json) 為準。指南與程式不一致時，先確認實際行為再修正文檔，歷史觀察保留原始版本與日期。
 
 閱讀入口：

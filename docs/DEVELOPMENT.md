@@ -24,6 +24,8 @@
 
 `docs/TEST_REPORT.md` 保留最新版完整報告及歷史導覽。換版時將上一版完整正文加入 [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md)，保留版本／日期、觀察、限制及順序，再更新固定入口與原錨點導引。已發布 `Release/v*/` 報告維持當時快照。文件整理的實際檢查另按日期加入 [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)。被封裝的 TEST_REPORT 與 CHANGELOG 指向其他儲存庫文件時使用完整 GitHub URL，使複製到 Release 後仍可查閱。
 
+Markdown 粗體依 [GitHub Flavored Markdown 規格](https://github.github.com/gfm/#emphasis-and-strong-emphasis) 判斷標記兩側的文字、空白與標點。粗體內容以括號、冒號等標點結尾，且後接一般文字時，在閉合 `**` 後加空白，例如 `**時間：** 2026-09-25`、`腳本的 **內建節點清單（Catalog）** 選路`。檢查生成的 HTML 是否包含預期 `<strong>`，並排除程式碼、跳脫字元與 glob 路徑中的字面標記。排版修正保留標題錨點、連結、數值及歷史觀察；Release 與 sealed 證據維持原貌。
+
 <a name="prerequisites"></a>
 
 ## 環境需求

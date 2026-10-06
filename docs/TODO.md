@@ -10,6 +10,7 @@ v2.1.8 修復、發布、Tampermonkey 標準更新與已安排的 Chrome 回歸�
 
 ## 已完成／已結案
 
+- **2026-10-07 Markdown 粗體修正完成**：盤點專案 Markdown，修正 README 與三份公開歷史指南的八處失效標記；範圍與渲染驗證見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)。
 - **2026-10-07 單元測試工具遷移完成**：15 契約套件、架構與匯入純度改用 Node 內建測試，新增執行器／清理／時鐘契約；實際驗證見 [工具紀錄](TEST_TOOLING_REPORT.md)。版本維持 v2.1.8。
 - **v2.1.8 已發布**，GitHub 附件只有 userscript；修復及自動／安全審閱完成紀錄見 [TEST_REPORT](TEST_REPORT.md)。sealed 安全報告保留中途 `partial coverage` 標記限制，來源審閱與瀏覽器驗收分開記錄。
 - **v2.1.8 Tampermonkey 更新及本次 Chrome 回歸已完成**，涵蓋授權 MP4 試片及公開 DASH；較早 DASH 緩衝及格式限制保留於報告。
