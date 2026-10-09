@@ -1,6 +1,6 @@
 # 專案文件索引與維護規則
 
-本索引於 **2026-10-06** 完成文件重整，**2026-10-09** 更新至 **v2.1.9 功能與競態修復**。發行驗證及發布狀態見 [發行驗證報告](TEST_REPORT.md)，目前工作見 [工作狀態](TODO.md)。新版瀏覽器驗收待安排；歷史「待驗收」「未發布」或研究建議只描述當時狀態，不自動成為目前待辦。
+本索引於 **2026-10-06** 完成文件重整，**2026-10-09** 更新至 **v2.1.10 BR-02 發行準備及安裝版待驗收狀態**。發行驗證及發布狀態見 [發行驗證報告](TEST_REPORT.md)，目前工作見 [工作狀態](TODO.md)。新版瀏覽器的實測結果、停滯異常及剩餘範圍見 [驗收紀錄](CHROME_v2.1.9_ACCEPTANCE.md)；歷史「待驗收」「未發布」或研究建議只描述當時狀態，不自動成為目前待辦。
 
 2026-10-07 的 Markdown 粗體渲染盤點與排版修正見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)；後續排版檢查方式列於 DEVELOPMENT。
 
@@ -49,14 +49,19 @@
 
 | 文件／產物 | 閱讀方式 |
 | --- | --- |
-| [CHANGELOG](CHANGELOG.md) | v2.0.0～v2.1.9 全部條目使用繁體中文；功能差異、順序及當時驗證狀態保留 |
-| [TEST_REPORT](TEST_REPORT.md) | v2.1.9 修復、自動、安全、發布及瀏覽器狀態；含歷史導覽 |
-| [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md) | v2.0.2～v2.1.7 十二個主要區塊，包括發行前模組化驗證 |
+| [CHANGELOG](CHANGELOG.md) | v2.0.0～v2.1.10 全部條目使用繁體中文；功能差異、順序及當時驗證狀態保留 |
+| [TEST_REPORT](TEST_REPORT.md) | v2.1.10 BR-02 修復、自動、安全、發布及瀏覽器狀態；含歷史導覽 |
+| [CHROME_v2.1.9_ACCEPTANCE](CHROME_v2.1.9_ACCEPTANCE.md) | 2026-10-09 部分真實瀏覽器驗收、18 個原生 XHR 案例及待定位停滯 |
+| [CHROME_v2.1.9_BR02_XHR_FAILED_OPEN](CHROME_v2.1.9_BR02_XHR_FAILED_OPEN.md) | 持續驗收確認的 XHR 例外安全性缺陷、六個 Chrome 失敗情境、根因與原始重現入口 |
+| [BR02_FIX_REPORT](BR02_FIX_REPORT.md) | v2.1.10 修復、40 個新增正式契約、Chrome 來源隔離驗證、安全審查及安裝版待驗收 |
+| [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md) | v2.0.2～v2.1.9 的歷史完整報告，包括發行前模組化驗證 |
 | [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) | 2026-10-03 三段原整理紀錄及後續有日期的文件檢查 |
+| [v2.1.10 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.10) | BR-02 修復發行準備；附件只有使用者腳本，公開校驗在發布後記錄 |
+| [Release/v2.1.10](../Release/v2.1.10/) | 本次封裝快照；發布後不回寫 |
 | [v2.1.9 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.9) | 2026-10-09 已發布並核對 latest 下載；附件只有 `BiliCDN_TW.user.js` |
 | [Release/v2.1.9](../Release/v2.1.9/) | 當次使用者腳本、報告、變更紀錄、資訊清單、校驗值快照；發布後不回寫 |
 
-自動驗證、安全掃描與真實瀏覽器驗收分開記錄。v2.1.8 的安全 `partial coverage`、MP4 試片／公開 DASH 觀察、較早 DASH 緩衝及完整公開 MP4／FLV 限制均保存於歷史報告；v2.1.9 靜態差異審查為完整覆蓋，瀏覽器驗收待安排。**v2.1.6 Chrome／Tampermonkey 驗收已批准通過、已結案**，歷史覆蓋限制不構成待辦。
+自動驗證、安全掃描與真實瀏覽器驗收分開記錄。v2.1.8 的安全 `partial coverage`、MP4 試片／公開 DASH 觀察、較早 DASH 緩衝及完整公開 MP4／FLV 限制均保存於歷史報告；v2.1.9 發行前靜態差異審查為完整覆蓋，後續 BR-02 修復另有獨立報告，不沿用歷史安全結果。BR-01 停滯與其餘未覆蓋情境仍保留。**v2.1.6 Chrome／Tampermonkey 驗收已批准通過、已結案**，歷史覆蓋限制不構成待辦。
 
 ## 歷史計畫與瀏覽器紀錄
 

@@ -2,7 +2,7 @@
 
 # v2 架構
 
-本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.9** 實作，包含 17 項功能與競態修復；版本以 [release.json](../release.json) 為準。[驗證報告](TEST_REPORT.md) 分別保存自動驗證、安全審查與真實瀏覽器狀態。v2.1.9 的 Chrome／Tampermonkey 尚待驗收；v2.1.8 的 MP4 試片／公開 DASH 觀察及格式覆蓋限制保留於歷史報告。本文件是持續維護的設計參考；文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
+本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.10** 實作，包含 v2.1.9 的 17 項功能與競態修復及 BR-02 XHR 所有權修復；版本以 [release.json](../release.json) 為準。[驗證報告](TEST_REPORT.md) 分別保存自動驗證、安全審查與真實瀏覽器狀態。BR-02 的 Chrome 來源隔離驗證已通過，Tampermonkey 安裝版仍待驗收；既有各版觀察及格式覆蓋限制保留於歷史報告。本文件是持續維護的設計參考；文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
 
 <a name="dependency-direction"></a>
 
@@ -126,7 +126,9 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 Tampermonkey 儲存及值變更監聽器由 `platform/storage.ts` 實作。適配器不擁有選路政策或施加懲罰。應用層的計時器分別由量測期限、播放器監控的週期計時器及生命週期微任務管理；恢復由監控器監控週期推進。UI 直接面向瀏覽器：`PlayerPanel` 擁有獨立的 1.5 秒週期計時器，`ControlCenter` 直接排入焦點工作。
 
-XHR 每次 open 建立獨立 metadata，區分 opened／waiting／sent／terminal。尚未原生送出的取消與本地拒絕由該 metadata 擁有；每個事件回呼後重查所有權，reopen／abort 不讓舊 loadend 或 gate 繼續影響新請求。虛擬終止使用 DONE、空回應及終止事件，abort 完成回到 UNSENT；原生已送出的事件由瀏覽器處理。readyState／response／responseText 與方法攔截共同追蹤安裝所有權，只還原仍由本攔截持有的描述子。同步重開只保留合法選項，非同步重開保留 timeout、responseType、credentials 與 headers。
+XHR 每次 open 建立獨立 metadata，區分 opened／waiting／sent／terminal。參數依序轉換一次後，先暫存新所有權供同步事件使用，原生 open 成功才永久清理舊請求；拋錯只在候選仍為當前所有者時回復，不能覆蓋巢狀成功 open。尚未原生送出的取消與本地拒絕由該 metadata 擁有；每個事件回呼後重查所有權，舊 headers／progress 監聽也先檢查身分。reopen／abort 不讓舊 loadend 或 gate 繼續影響新請求。虛擬終止使用 DONE、空回應及終止事件，abort 完成回到 UNSENT；原生已送出的事件由瀏覽器處理。readyState／response／responseText 與方法攔截共同追蹤安裝所有權，只還原仍由本攔截持有的描述子。同步重開只保留合法選項，非同步重開保留 timeout、responseType、credentials 與 headers。
+
+Chrome 同步選項驗證失敗可能把原生 XHR 清成 UNSENT；只有尚未送出的 waiting 請求可標記 needsNativeOpen，在 gate 釋放時重新準備，再檢查所有權與最新政策；已送出的請求絕不因此重播。以上例外安全性納入 v2.1.10，證據見 [BR-02 修復報告](BR02_FIX_REPORT.md)。
 
 ControlCenter 在開啟、關閉及換頁時更新視圖版本；命令完成與排隊焦點只在仍擁有當前開啟視圖時作用。設定命令完成不代表 UI 必須仍開啟。
 

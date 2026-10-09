@@ -4,9 +4,9 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
-目前正式發行為 **[v2.1.9 功能與競態修復](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.9)**，已於 2026-10-09 發布。本版涵蓋內容切換、播放器恢復、嚴格影音隔離、簽名刷新、XHR 生命週期及設定操作，共 17 項修復。版本變更見 [變更紀錄](docs/CHANGELOG.md)，現行指南與歷史紀錄的分類見 [文件索引](docs/INDEX.md)。
+目前準備發行 **v2.1.10 BR-02 修復**，讓 XHR `open()` 拋錯後保留原請求所有權、終止事件及送出政策。此前 v2.1.9 的 17 項功能與競態修復繼續保留。版本變更見 [變更紀錄](docs/CHANGELOG.md)，現行指南與歷史紀錄的分類見 [文件索引](docs/INDEX.md)。
 
-2026-10-09 已確認 GitHub 最新 Release 為 v2.1.9，附件只有使用者腳本，原有更新網址下載的版本與校驗值一致。自動驗證、安全審查與瀏覽器待驗收範圍見下方[驗證紀錄](#目前版本的驗證紀錄)。
+GitHub Release 附件只有使用者腳本，更新網址維持原位；v2.1.10 公開下載校驗在發布後另行記錄。自動驗證、安全審查與瀏覽器待驗收範圍見下方[驗證紀錄](#目前版本的驗證紀錄)。
 
 > [!IMPORTANT]
 > **原作者與原始腳本：** [jiyunshi－Bilibili CDN 台灣優化](https://greasyfork.org/zh-TW/scripts/579776-bilibili-cdn-%E5%8F%B0%E7%81%A3%E5%84%AA%E5%8C%96)。本儲存庫源自原作者 MIT 授權腳本的個人修改專案；v2 是以 TypeScript 重新設計與重構的版本，並非原作者的官方版本。
@@ -124,7 +124,7 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 ## 目前版本的驗證紀錄
 
-依 **2026-10-09** 的 [v2.1.9 驗證報告](docs/TEST_REPORT.md)，型別、架構、299 個具名測試案例及完整發行驗證均通過。獨立 Codex Security 差異審查完成，41 個變更來源檔均已審閱，沒有可回報發現。新修改的 **Chrome／Tampermonkey 驗收尚未執行**；自動契約不能替代真實播放及原生 XHR 事件驗收。17 項來源／回歸對照及驗收步驟見 [修復報告](docs/FUNCTIONAL_FIX_REPORT.md)。v2.1.8 已完成的 MP4 試片／公開 DASH 觀察、完整公開 MP4／FLV 覆蓋限制與當時安全標記保留於 [歷史報告](archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v218-release-verification--2026-10-04)。
+依 **2026-10-09** 的 [v2.1.10 驗證報告](docs/TEST_REPORT.md)，BR-02 新增 40 個正式契約，全套為 339 個具名案例。獨立 Codex Security 已審閱此次兩個來源／測試差異檔，沒有可報告的新安全發現。真實 Chrome **來源隔離**矩陣 31／31 通過；**Tampermonkey 安裝版仍待更新後驗收**，BR-01 畫質切換停滯維持獨立待定位。修復及前後證據見 [BR-02 報告](docs/BR02_FIX_REPORT.md)。v2.1.9 的部分瀏覽器觀察及 v2.1.8 已完成驗收與限制保留於 [歷史報告](archive/retired/docs/TEST_REPORT_HISTORY.md)。
 
 **v2.1.6 Chrome／Tampermonkey 驗收已通過並結案。** v2.1.8 回歸另行記錄，歷史觀察及限制見 [v2.1.6 驗收紀錄](archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md)。
 

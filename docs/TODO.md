@@ -4,7 +4,9 @@
 
 ## 目前待完成
 
-v2.1.9 已發布；新修改的 Chrome／Tampermonkey 驗收待另行安排，步驟見 [修復對照報告](FUNCTIONAL_FIX_REPORT.md)，發行狀態見 [TEST_REPORT](TEST_REPORT.md)。
+**v2.1.10 正在準備發布 BR-02 修復**，Tampermonkey 安裝版尚未驗收。新增 40 個正式契約與 31 個真實 Chrome 來源隔離案例，安全差異審查與最終結果見 [BR-02 修復報告](BR02_FIX_REPORT.md)。Tampermonkey 修復版矩陣及指定風景影片的播放／暫停／seek 仍待更新後驗收。原 [BR-02 調查](CHROME_v2.1.9_BR02_XHR_FAILED_OPEN.md) 保留當時失敗證據。
+
+前段 18 個原生 XHR 合成輸入案例、R02／R03 控制中心交錯及部分播放情境維持其通過證據。BR-01 指定影片長時間 seeking 停滯的最初原因仍待定位；其餘 gate／恢復／影音故障隔離等情境沒有改標通過。詳見 [本輪瀏覽器紀錄](CHROME_v2.1.9_ACCEPTANCE.md)。
 
 v2.1.8 在 2026-10-04 的修復、發布、Tampermonkey 標準更新與當時已安排的 Chrome 回歸仍維持已完成；該證據不覆蓋v2.1.9 修改。
 

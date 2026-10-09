@@ -28,6 +28,7 @@ interface XhrMeta {
   password?: string | null
   phase: 'opened' | 'waiting' | 'sent' | 'terminal'
   virtualReadyState: number | null
+  needsNativeOpen: boolean
 }
 
 
@@ -59,27 +60,58 @@ export class XhrHookAdapter {
     }
 
     const open: typeof XMLHttpRequest.prototype.open = function(this: XMLHttpRequest, method: string, url: string | URL,
-      async: boolean = true, username?: string | null, password?: string | null): void {
+      async?: boolean, username?: string | null, password?: string | null): void {
+      // Check the receiver before user-controlled argument conversions. Native open still
+      // owns method/URL/options validation and its original exception.
+      readyStateDescriptor?.get?.call(this)
+      if (arguments.length < 2) {
+        Reflect.apply(originalOpen, this, Array.from(arguments))
+        return
+      }
+      // Web IDL converts arguments before entering open's algorithm. Convert once, in
+      // order, before saving an owner: a conversion can itself reopen this XHR.
+      const methodString = `${method}`
+      if (/[^\x00-\xff]/.test(methodString)) throw new TypeError('XHR method must be a ByteString')
+      const originalUrl = `${url}`.toWellFormed()
+      const asynchronous = arguments.length < 3 ? true : Boolean(async)
+      const user = username == null ? null : `${username}`.toWellFormed()
+      const pass = password == null ? null : `${password}`.toWellFormed()
+      const normalizedMethod = /^(DELETE|GET|HEAD|OPTIONS|POST|PUT)$/i.test(methodString) ? methodString.toUpperCase() : methodString
       self.count('enteredXhr')
-      const originalUrl = String(url), playurl = isPlayurlApi(originalUrl, location.href)
+      const playurl = isPlayurlApi(originalUrl, location.href)
       const previous = xhrMeta.get(this)
-      if (previous) { previous.phase = 'terminal'; previous.cleanup() }
       let applied: AppliedRouteDecision | null = null, targetUrl = originalUrl
       if (!self.settings.get().disabled && !playurl && self.routes.recognizesMedia(originalUrl)) {
         self.count('mediaRecognized')
-        applied = method.toUpperCase() === 'GET' ? self.routes.apply(originalUrl) : self.routes.inspectOriginal(originalUrl)
+        applied = normalizedMethod === 'GET' ? self.routes.apply(originalUrl) : self.routes.inspectOriginal(originalUrl)
         if (applied.url) targetUrl = applied.url
       }
-      xhrMeta.set(this, { method: String(method).toUpperCase(), originalUrl,
+      const next: XhrMeta = { method: normalizedMethod, originalUrl,
         managedBilibili: self.routes.isBilibiliMedia(originalUrl), targetUrl, applied,
         startedAt: 0, responseAt: 0, bytes: 0, settled: false, playurl,
         transformedText: null, transformedJson: undefined, catalogOnlyAtTransform: null, request: null,
         generation: self.session.get().generation, epoch: self.session.get().epoch,
-        responseKey: self.nextResponseKey('api-xhr'), cleanup: () => undefined, async, headers: [],
-        phase: 'opened', virtualReadyState: null,
-        ...(username !== undefined ? { username } : {}), ...(password !== undefined ? { password } : {}) })
-      if (username !== undefined) Reflect.apply(originalOpen, this, [method, targetUrl, async, username, password])
-      else Reflect.apply(originalOpen, this, [method, targetUrl, async])
+        responseKey: self.nextResponseKey('api-xhr'), cleanup: () => undefined, async: asynchronous, headers: [],
+        phase: 'opened', virtualReadyState: null, needsNativeOpen: false,
+        username: user, password: pass }
+      // Publish for synchronous readystatechange callbacks, but retain the previous
+      // request intact until native validation succeeds. Nested successful open wins.
+      xhrMeta.set(this, next)
+      try {
+        Reflect.apply(originalOpen, this, [methodString, targetUrl, asynchronous, user, pass])
+      } catch (error) {
+        if (xhrMeta.get(this) === next) {
+          if (previous) {
+            xhrMeta.set(this, previous)
+            // Chrome can reset to UNSENT when rejecting Window synchronous options.
+            // Only our still-unsent waiter may be prepared again; never replay sent work.
+            if (previous.phase === 'waiting' && readyStateDescriptor?.get?.call(this) === 0) previous.needsNativeOpen = true
+          }
+          else xhrMeta.delete(this)
+        }
+        throw error
+      }
+      if (previous) { previous.phase = 'terminal'; previous.cleanup() }
     }
 
     const send: typeof XMLHttpRequest.prototype.send = function(this: XMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null): void {
@@ -96,7 +128,11 @@ export class XhrHookAdapter {
         if (meta.async) { this.responseType = responseType; this.timeout = timeout }
         this.withCredentials = credentials
         for (const [key, value] of meta.headers) Reflect.apply(originalSetHeader, this, [key, value])
-        meta.targetUrl = url
+        meta.targetUrl = url; meta.needsNativeOpen = false
+      }
+      if (meta.needsNativeOpen) {
+        reopen(meta.targetUrl)
+        if (!waiting(this, meta)) return
       }
       if (self.settings.get().disabled) {
         if (meta.targetUrl !== meta.originalUrl) reopen(meta.originalUrl)
@@ -142,8 +178,13 @@ export class XhrHookAdapter {
       if (stale) meta.applied = null
       meta.startedAt = self.now()
       if (meta.applied) { meta.request = self.request(meta.applied, meta.originalUrl, meta.targetUrl, meta.startedAt, meta.method); self.routes.requestStarted(meta.request) }
-      const noteHeaders = (): void => { if (!meta.responseAt && this.readyState >= 2) meta.responseAt = self.now() }
-      const progress = (event: ProgressEvent): void => { noteHeaders(); meta.bytes = Math.max(meta.bytes, Number(event.loaded) || 0) }
+      const noteHeaders = (): void => {
+        if (xhrMeta.get(this) === meta && !meta.responseAt && this.readyState >= 2) meta.responseAt = self.now()
+      }
+      const progress = (event: ProgressEvent): void => {
+        if (xhrMeta.get(this) !== meta) return
+        noteHeaders(); meta.bytes = Math.max(meta.bytes, Number(event.loaded) || 0)
+      }
       const settle = (outcome: 'success' | 'abort' | 'failure', failure?: FailureKind): void => {
         if (meta.settled || xhrMeta.get(this) !== meta) return
         meta.settled = true

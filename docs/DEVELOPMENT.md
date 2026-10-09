@@ -2,7 +2,7 @@
 
 # 開發流程
 
-本文件是 **v2.1.9**（含功能與競態修復）的現行開發流程。各版測試、安全審閱與瀏覽器結果集中於 [驗證報告](TEST_REPORT.md) 及有日期的驗收紀錄。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
+本文件是 **v2.1.10**（含 BR-02 XHR 所有權修復）的現行開發流程。各版測試、安全審閱與瀏覽器結果集中於 [驗證報告](TEST_REPORT.md) 及有日期的驗收紀錄。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
 
 <a name="repository-layout-and-archive-maintenance"></a>
 
@@ -116,6 +116,8 @@ verify 不執行 Codex Security 或 Chrome／Tampermonkey 驗收。安全敏感�
 不得在正式打包產物加入公開測試橋接介面；測試從 TypeScript 來源獨立打包。
 
 2026-10-09 的 [v2.1.9 的 17 項修復](FUNCTIONAL_FIX_REPORT.md) 以 `tests-v2/regressions/functional-races/` 保存具名回歸，分別由 application、progressive-routing、native-transport、adapter-boundaries 及 orchestration 套件匯入；UI 案例位於 control-center。原調查證據不作正式測試輸入。XHR 原生狀態替身區分原生 send 前／後的 abort，模擬同步 setter 例外；ProgressEvent 全域經 testScope 管理。FakeClock／deferred 明確控制晚到、拒絕及鎖取得順序，不能以此宣稱 Chrome 原生事件已驗收。
+
+同日納入 v2.1.10 的 [BR-02 修復](BR02_FIX_REPORT.md) 新增 40 個正式案例，仍由 `npm test -- native-transport` 執行；全套為 339 個。XHR 替身補入 open 參數／方法／URL／同步選項驗證、OPENED→OPENED 不發事件，以及實測 Chrome 同步選項錯誤清成 UNSENT 的邊界。先保存失敗契約，再改來源；原調查證據不覆寫。真正 Chrome 的本機來源隔離頁、Tampermonkey 安裝版驗收及 Node 契約必須分列，不能互相替代。
 
 文件使用「儲存元件（store）」「測試情境（fixture）」「建立函式（factory）」「中繼資料（metadata）」「原始碼對照（source map）」「報告產生器（reporter）」及「堆疊資訊（stack）」；瀏覽器攔截與 `t.after()` 等測試清理掛鉤分開描述。程式識別字、命令及 Node 原始狀態值保持原樣；中文化範圍與封存規則見 [文件政策](INDEX.md#現行指南)。
 
