@@ -1,18 +1,20 @@
 # v2 工作狀態與後續方向
 
-本文件只記錄現行範圍；文件用途見 [索引](INDEX.md)，產品契約見 [PROJECT_CONTEXT](PROJECT_CONTEXT.md)，開發與發布流程見 [DEVELOPMENT](DEVELOPMENT.md)。下列版本完成狀態以 **2026-10-04** 驗證／發布／瀏覽器紀錄為依據；2026-10-06 文件整理見 [維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)。
+本文件只記錄現行範圍；文件用途見 [索引](INDEX.md)，產品契約見 [PROJECT_CONTEXT](PROJECT_CONTEXT.md)，開發與發布流程見 [DEVELOPMENT](DEVELOPMENT.md)。現行狀態更新至 **2026-10-09**；各版完成狀態以其日期的驗證／發布／瀏覽器紀錄為依據；2026-10-06 文件整理見 [維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)。
 
 ## 目前待完成
 
-v2.1.8 修復、發布、Tampermonkey 標準更新與已安排的 Chrome 回歸均已完成，沒有尚待施作的已批准產品工作。
+v2.1.9 的 17 項功能與競態修復已完成自動回歸及獨立安全差異審查，準備發布。新修改的 Chrome／Tampermonkey 驗收待另行安排，步驟見 [修復對照報告](FUNCTIONAL_FIX_REPORT.md)，發行狀態見 [TEST_REPORT](TEST_REPORT.md)。
 
-原 MP4 影片已改會員限定，現場證據只涵蓋合法 30 秒試看片段；另以公開 DASH 影片驗證播放及網路面板（Network）。完整公開 MP4 與 FLV 尚無現場樣本，保留為覆蓋限制，不另列為已批准待辦。詳細結果見 [TEST_REPORT](TEST_REPORT.md)。
+v2.1.8 在 2026-10-04 的修復、發布、Tampermonkey 標準更新與當時已安排的 Chrome 回歸仍維持已完成；該證據不覆蓋v2.1.9 修改。
+
+原 MP4 影片已改會員限定，現場證據只涵蓋合法 30 秒試看片段；另以公開 DASH 影片驗證播放及網路面板（Network）。完整公開 MP4 與 FLV 尚無現場樣本，保留為覆蓋限制，不另列為已批准待辦。詳細結果見 [v2.1.8 歷史報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v218-release-verification--2026-10-04)。
 
 ## 已完成／已結案
 
 - **2026-10-07 Markdown 粗體修正完成**：盤點專案 Markdown，修正 README 與三份公開歷史指南的八處失效標記；範圍與渲染驗證見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)。
 - **2026-10-07 單元測試工具遷移完成**：15 契約套件、架構與匯入純度改用 Node 內建測試，新增執行器／清理／時鐘契約；實際驗證見 [工具紀錄](TEST_TOOLING_REPORT.md)。版本維持 v2.1.8。
-- **v2.1.8 已發布**，GitHub 附件只有使用者腳本；修復及自動／安全審閱完成紀錄見 [TEST_REPORT](TEST_REPORT.md)。已封存且不可變更的安全報告保留中途 `partial coverage` 標記限制，來源審閱與瀏覽器驗收分開記錄。
+- **v2.1.8 已發布**，GitHub 附件只有使用者腳本；修復及自動／安全審閱完成紀錄見 [歷史報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v218-release-verification--2026-10-04)。已封存且不可變更的安全報告保留中途 `partial coverage` 標記限制，來源審閱與瀏覽器驗收分開記錄。
 - **v2.1.8 Tampermonkey 更新及本次 Chrome 回歸已完成**，涵蓋授權 MP4 試片及公開 DASH；較早 DASH 緩衝及格式限制保留於報告。
 - 四階段模組化改善已於 **v2.1.7** 發布；自動驗證、發布及安全掃描限制見 [歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#published-bilicdn_tw-v217-test-report)。
 - **v2.1.6 Chrome／Tampermonkey 驗收已批准通過、已結案**。歷史覆蓋限制不列為待辦，不因後續文件整理重新開啟；見 [驗收紀錄](../archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md)。

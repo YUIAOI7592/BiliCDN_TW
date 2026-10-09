@@ -78,3 +78,20 @@ GitHub README 修正前的段落 DOM 有字面 `**內建節點清單（Catalog�
 - v2.1.8 使用者腳本為 **285,037 bytes**，SHA-256 `c2bda1e0be4b086e7622e34d3fba0a6cdfdd5eb612afea700289758112c9eb4f`，與基準及本機建置產物一致。文件修改未重建或覆寫 Release。
 
 2026-10-04 報告的 **891 項功能斷言**與 2026-10-07 [工具驗證紀錄](../../../docs/TEST_TOOLING_REPORT.md) 的 **215 個案例**維持各自日期與計數語意。此次只記錄文件檢查，未新增執行期測試、Chrome／Tampermonkey 播放驗收、安全掃描或發布宣稱。安全 `partial coverage`、MP4 合法試片／完整公開 MP4／現場 FLV 限制維持原狀；v2.1.6 驗收維持結案，新增 CDN 計畫維持撤銷。
+
+## 2026-10-09 功能與競態修復文件同步
+
+配合基準 `71f7ddd` 上的 17 項未發布修復，更新 PROJECT_CONTEXT、ARCHITECTURE、DEVELOPMENT、TODO、INDEX，新增 [修復對照報告](../../../docs/FUNCTIONAL_FIX_REPORT.md)，並在 TEST_REPORT 開頭新增日期導覽。內容包括嚴格影音恢復隔離、內容週期通知、路線政策版本、樣本 ID 注入、XHR 生命週期與單一 Catalog 設定命令。
+
+TEST_TOOLING_REPORT 另追加 2026-10-09 的登記／替身邊界與 299 案例驗證紀錄。已發布 v2.1.8 的完整報告正文、Release 快照與原日期調查證據均保留，不將新修復或待驗收狀態回寫為舊版事實。
+
+本次執行期驗證與新安全差異審查分別見修復報告及本機交付紀錄；Chrome／Tampermonkey 新差異仍待驗收。安全封存後只補入交付與維護文件，正式來源保持受審版本。文件連結／錨點與 `git diff --check` 已另行核對；版本、依賴與正式發布產物未變更。
+
+
+## 2026-10-09 v2.1.9 發行文件同步
+
+使用者於本機修復交付後授權推送 GitHub 更新。版本升為 v2.1.9，更新 README、SECURITY、PROJECT_CONTEXT、ARCHITECTURE、DEVELOPMENT、INDEX、TODO、CHANGELOG 及修復對照的發行狀態；TEST_REPORT 改為本版完整報告。v2.1.8 完整正文由原提交移入 TEST_REPORT_HISTORY，只調整跨文件的歷史導覽連結，保留原有觀察、數值與限制，固定入口保留舊錨點導引。
+
+本版重新通過 typecheck、architecture、299 案例及完整 verify；安全審查沿用已封存且涵蓋相同執行期來源的結果，另核對只增加 metadata 升版。Chrome／Tampermonkey 新差異維持待驗收；歷史 Release 不回寫。
+
+發行前核對 15 份 Markdown、240 個檔案連結與 61 個錨點引用，無缺漏；`git diff --check` 通過。217 個既有 Release 檔案雜湊未變，v2.1.8 正文搬移符合原提交內容（只調整歷史導覽連結），v2.1.9 四個封裝內容檔案校驗值均一致。發布讀回在完成後另行追加。

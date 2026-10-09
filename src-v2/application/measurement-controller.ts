@@ -199,14 +199,17 @@ export class MeasurementController {
     this.#planning = true
     const planningMarker = this.#marker
     try {
-      const at = this.now()
+      let at = this.now()
       let first: AppliedRouteDecision | null = null, cursor = 0
       await this.meta.withLock(() => {
         if (planningMarker !== this.#marker) return
+        const current = this.#lastStatus
+        if (!current || this.#unsafeReason(current) || current.representation !== status.representation || !current.demand) return
+        at = this.now()
         const meta = this.meta.get()
         if (at - (Number(meta.lastChallengeAt) || 0) < COOLDOWN_MS) return
         cursor = Math.max(0, Number(meta.catalogCursor) || 0)
-        first = this.routes.challenge(status.representation!, status.demand!, this.#preferNative, new Set(), cursor)
+        first = this.routes.challenge(current.representation!, current.demand, this.#preferNative, new Set(), cursor)
         if (!first?.url) return
         if (planningMarker !== this.#marker || (this.routes.isCatalogOnly()
           && first.decision.routeType !== 'catalog-generated')) return

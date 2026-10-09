@@ -1,3 +1,5 @@
+import { installProgressEvent } from "../support/progress-event.ts"
+import { createRuntimeIds } from "../../src-v2/platform/runtime-ids.ts"
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
@@ -13,6 +15,7 @@ import { testScope } from '../support/scope.ts'
 // Earlier expectations run in their own cases; no mutable state crosses a test boundary.
 async function fixture(t: TestContext, scenario: number, parameter = 0): Promise<() => Promise<void>> {
   const scope = testScope(t)
+  installProgressEvent(scope)
 const session = new SessionStore();
 session.beginGeneration(false)
 let strict = true, disabled = false, status = 200, body = '{"code":0}', throws = false, calls = 0
@@ -24,6 +27,7 @@ const accepted = { accepted: true, formats: ['dash', 'mp4', 'flv'], videoCount: 
 let result: PlayurlTransformResult = accepted
 const playurl = { transform() { calls++; if (throws) throw Error(secret); return result } } satisfies PlayurlPort
 const routes = {
+    policyRevision: () => 0,
     isCatalogOnly: () => strict, isBilibiliMedia: () => false, recognizesMedia: () => false,
     apply(): never { throw Error('Unexpected media application') },
     inspectOriginal(): never { throw Error('Unexpected media inspection') },
@@ -45,7 +49,7 @@ const nativeFetch: typeof fetch = async () => responseOverride ?? new Response(b
 const windowFixture = { fetch: nativeFetch, XMLHttpRequest: FakeXhr }
 scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
 scope.defineGlobal('location', { configurable: true, value: new URL('https://www.bilibili.com/') })
-const transport = scope.own(new TransportAdapter(session, settings, routes, playurl, measurement, () => now))
+const transport = scope.own(new TransportAdapter(session, settings, routes, playurl, measurement, () => now, createRuntimeIds()))
 transport.install()
 const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
 if (scenario === 0) return async () => {

@@ -15,7 +15,7 @@ import { deferred } from './support/deferred.ts'
 test('registry aliases, listing and CLI validation do not allocate or execute', { timeout: 5000 }, () => {
   assert.deepEqual(selection('adapters'), selection('suites/adapters'))
   assert.equal(parseArgs(['--list']).list, true)
-  assert.equal(selection().length, 18)
+  assert.equal(selection().length, 19)
   assert.equal(parseArgs(['application','--name','startup']).name, 'startup')
   for (const args of [['missing'],['--unknown'],['--name'],['--name','['],['adapters','state'],['--list','adapters'],['--list','--name','x']])
     assert.throws(() => parseArgs(args), UsageError)

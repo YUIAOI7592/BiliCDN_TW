@@ -26,8 +26,8 @@ interface XhrMeta {
   headers: [string, string][]
   username?: string | null
   password?: string | null
-  pendingSend: boolean
-  abortedBeforeSend: boolean
+  phase: 'opened' | 'waiting' | 'sent' | 'terminal'
+  virtualReadyState: number | null
 }
 
 
@@ -40,14 +40,30 @@ export class XhrHookAdapter {
     const originalOpen = proto.open, originalSend = proto.send, originalAbort = proto.abort, originalSetHeader = proto.setRequestHeader
     const responseDescriptor = Object.getOwnPropertyDescriptor(proto, 'response')
     const responseTextDescriptor = Object.getOwnPropertyDescriptor(proto, 'responseText')
+    const readyStateDescriptor = Object.getOwnPropertyDescriptor(proto, 'readyState')
     const self = this.context, xhrMeta = this.#xhrMeta
+    const waiting = (xhr: XMLHttpRequest, meta: XhrMeta): boolean => xhrMeta.get(xhr) === meta && meta.phase === 'waiting'
+    const finishLocal = (xhr: XMLHttpRequest, meta: XhrMeta, type: 'error' | 'abort'): void => {
+      if (!waiting(xhr, meta)) return
+      meta.phase = 'terminal'; meta.virtualReadyState = 4; meta.cleanup()
+      if (!meta.async) throw new DOMException('BiliCDN blocked request', 'NetworkError')
+      // Each callback can reopen or abort this object. The old request then loses event ownership.
+      const owns = (): boolean => xhrMeta.get(xhr) === meta && meta.virtualReadyState === 4
+      xhr.dispatchEvent(new Event('readystatechange'))
+      if (owns()) xhr.dispatchEvent(new ProgressEvent(type))
+      if (owns()) xhr.dispatchEvent(new ProgressEvent('loadend'))
+    }
+    const rejectLocal = (xhr: XMLHttpRequest, meta: XhrMeta): void => {
+      if (meta.async) queueMicrotask(() => finishLocal(xhr, meta, 'error'))
+      else finishLocal(xhr, meta, 'error')
+    }
 
     const open: typeof XMLHttpRequest.prototype.open = function(this: XMLHttpRequest, method: string, url: string | URL,
       async: boolean = true, username?: string | null, password?: string | null): void {
       self.count('enteredXhr')
       const originalUrl = String(url), playurl = isPlayurlApi(originalUrl, location.href)
       const previous = xhrMeta.get(this)
-      if (previous) { previous.abortedBeforeSend = true; previous.cleanup() }
+      if (previous) { previous.phase = 'terminal'; previous.cleanup() }
       let applied: AppliedRouteDecision | null = null, targetUrl = originalUrl
       if (!self.settings.get().disabled && !playurl && self.routes.recognizesMedia(originalUrl)) {
         self.count('mediaRecognized')
@@ -60,7 +76,7 @@ export class XhrHookAdapter {
         transformedText: null, transformedJson: undefined, catalogOnlyAtTransform: null, request: null,
         generation: self.session.get().generation, epoch: self.session.get().epoch,
         responseKey: self.nextResponseKey('api-xhr'), cleanup: () => undefined, async, headers: [],
-        pendingSend: false, abortedBeforeSend: false,
+        phase: 'opened', virtualReadyState: null,
         ...(username !== undefined ? { username } : {}), ...(password !== undefined ? { password } : {}) })
       if (username !== undefined) Reflect.apply(originalOpen, this, [method, targetUrl, async, username, password])
       else Reflect.apply(originalOpen, this, [method, targetUrl, async])
@@ -69,62 +85,67 @@ export class XhrHookAdapter {
     const send: typeof XMLHttpRequest.prototype.send = function(this: XMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null): void {
       const meta = xhrMeta.get(this)
       if (!meta) { Reflect.apply(originalSend, this, [body ?? null]); return }
-      if (meta.pendingSend) throw new DOMException('send already called', 'InvalidStateError')
+      if (meta.phase !== 'opened' || this.readyState !== 1) throw new DOMException('send invalid state', 'InvalidStateError')
+      meta.phase = 'waiting'
       const perform = (): void => {
-      if (meta.abortedBeforeSend || xhrMeta.get(this) !== meta) return
-      meta.pendingSend = false
+      if (!waiting(this, meta)) return
       const reopen = (url: string): void => {
         const responseType = this.responseType, timeout = this.timeout, credentials = this.withCredentials
         Reflect.apply(originalOpen, this, [meta.method, url, meta.async, meta.username ?? null, meta.password ?? null])
-        this.responseType = responseType; this.timeout = timeout; this.withCredentials = credentials
+        if (!waiting(this, meta)) return
+        if (meta.async) { this.responseType = responseType; this.timeout = timeout }
+        this.withCredentials = credentials
         for (const [key, value] of meta.headers) Reflect.apply(originalSetHeader, this, [key, value])
+        meta.targetUrl = url
       }
       if (self.settings.get().disabled) {
         if (meta.targetUrl !== meta.originalUrl) reopen(meta.originalUrl)
+        if (!waiting(this, meta)) return
+        meta.phase = 'sent'
         self.count('nativeCalled'); Reflect.apply(originalSend, this, [body ?? null]); return
       }
       if (meta.playurl && self.routes.isCatalogOnly() && !['', 'text', 'json'].includes(this.responseType)) {
         self.blocked(meta.method, meta.originalUrl, 'playurl-response-type')
         self.notePlayurl('xhr', 0, rejectedPlayurl('unsupported-format'))
-        queueMicrotask(() => { this.dispatchEvent(new Event('error')); this.dispatchEvent(new Event('loadend')) })
+        rejectLocal(this, meta)
         return
       }
       const strictManaged = self.routes.isCatalogOnly()
         && (meta.managedBilibili || self.routes.recognizesMedia(meta.originalUrl))
       if (!self.session.isGeneration(meta.generation) && strictManaged) {
         self.blocked(meta.method, meta.originalUrl, 'catalog-unavailable')
-        queueMicrotask(() => { this.dispatchEvent(new Event('error')); this.dispatchEvent(new Event('loadend')) })
+        rejectLocal(this, meta)
         return
       }
-      if (!self.session.isGeneration(meta.generation)) {
-        if (meta.targetUrl !== meta.originalUrl) reopen(meta.originalUrl)
-        self.count('nativeCalled'); Reflect.apply(originalSend, this, [body ?? null]); return
-      }
-      if (!meta.playurl && (self.routes.recognizesMedia(meta.originalUrl) || strictManaged)) {
+      const stale = !self.session.isGeneration(meta.generation)
+      if (!meta.playurl && (meta.applied || meta.managedBilibili || self.routes.recognizesMedia(meta.originalUrl) || strictManaged)) {
         if (!meta.applied) self.count('mediaRecognized')
-        const next = meta.method === 'GET' ? self.routes.apply(meta.originalUrl) : self.routes.inspectOriginal(meta.originalUrl)
+        const next = !stale && meta.method === 'GET' ? self.routes.apply(meta.originalUrl) : self.routes.inspectOriginal(meta.originalUrl)
         if (next.url && next.url !== meta.targetUrl) {
           reopen(next.url)
-          meta.targetUrl = next.url
+          if (!waiting(this, meta)) return
         }
         meta.applied = next
       }
       if (self.settings.get().blockHttpDns && isHttpDnsUrl(meta.originalUrl, location.href)) {
-        queueMicrotask(() => { this.dispatchEvent(new Event('error')); this.dispatchEvent(new Event('loadend')) })
+        rejectLocal(this, meta)
         return
       }
       const reason = self.dispatchFailure({ generation: meta.generation, applied: meta.applied, targetUrl: meta.targetUrl, managedMedia: strictManaged })
       if (reason) {
         self.blocked(meta.method, meta.originalUrl, reason)
-        queueMicrotask(() => { this.dispatchEvent(new Event('error')); this.dispatchEvent(new Event('loadend')) })
+        rejectLocal(this, meta)
         return
       }
+      if (!waiting(this, meta)) return
+      // A stale, permitted Native original may be sent, but cannot acquire current-epoch attribution.
+      if (stale) meta.applied = null
       meta.startedAt = self.now()
       if (meta.applied) { meta.request = self.request(meta.applied, meta.originalUrl, meta.targetUrl, meta.startedAt, meta.method); self.routes.requestStarted(meta.request) }
       const noteHeaders = (): void => { if (!meta.responseAt && this.readyState >= 2) meta.responseAt = self.now() }
       const progress = (event: ProgressEvent): void => { noteHeaders(); meta.bytes = Math.max(meta.bytes, Number(event.loaded) || 0) }
       const settle = (outcome: 'success' | 'abort' | 'failure', failure?: FailureKind): void => {
-        if (meta.settled) return
+        if (meta.settled || xhrMeta.get(this) !== meta) return
         meta.settled = true
         meta.cleanup()
         if (meta.responseAt > 0 || this.status > 0) { self.count('responseObserved'); self.noteResponse(meta.request, Number(this.status) || 0) }
@@ -146,12 +167,12 @@ export class XhrHookAdapter {
       }
       self.count('nativeCalled')
       self.noteNativeCall(meta.request)
+      meta.phase = 'sent'
       Reflect.apply(originalSend, this, [body ?? null])
       }
       if (meta.async && !meta.playurl && meta.method === 'GET' && self.routes.recognizesMedia(meta.originalUrl)
         && !self.settings.get().disabled && this.timeout === 0
         && self.measurement.willGateStartup(meta.originalUrl)) {
-        meta.pendingSend = true
         void self.measurement.prepareStartup(meta.originalUrl).then(perform, perform)
         return
       }
@@ -165,34 +186,52 @@ export class XhrHookAdapter {
 
     const abort: typeof XMLHttpRequest.prototype.abort = function(this: XMLHttpRequest): void {
       const meta = xhrMeta.get(this)
-      if (meta?.pendingSend) { meta.abortedBeforeSend = true; meta.pendingSend = false }
+      if (meta?.phase === 'waiting') {
+        finishLocal(this, meta, 'abort')
+        if (xhrMeta.get(this) === meta) meta.virtualReadyState = 0
+        return
+      }
+      if (meta?.virtualReadyState !== null && meta?.virtualReadyState !== undefined) {
+        meta.virtualReadyState = 0
+        return
+      }
       Reflect.apply(originalAbort, this, [])
     }
     const setHeader: typeof XMLHttpRequest.prototype.setRequestHeader = function(this: XMLHttpRequest, name: string, value: string): void {
-      if (xhrMeta.get(this)?.pendingSend) throw new DOMException('send already called', 'InvalidStateError')
+      const meta = xhrMeta.get(this)
+      if (meta && (meta.phase === 'waiting' || meta.virtualReadyState !== null)) throw new DOMException('header invalid state', 'InvalidStateError')
       Reflect.apply(originalSetHeader, this, [name, value])
       xhrMeta.get(this)?.headers.push([name, value])
     }
+    let responseGetter: PropertyDescriptor['get'], responseTextGetter: PropertyDescriptor['get'], readyStateGetter: PropertyDescriptor['get']
     const rollback = (): void => {
       try { if (proto.open === open) proto.open = originalOpen } catch { /* host-owned */ }
       try { if (proto.send === send) proto.send = originalSend } catch { /* host-owned */ }
       try { if (proto.abort === abort) proto.abort = originalAbort } catch { /* host-owned */ }
       try { if (proto.setRequestHeader === setHeader) proto.setRequestHeader = originalSetHeader } catch { /* host-owned */ }
-      try { if (responseDescriptor) Object.defineProperty(proto, 'response', responseDescriptor) } catch { /* host-owned */ }
-      try { if (responseTextDescriptor) Object.defineProperty(proto, 'responseText', responseTextDescriptor) } catch { /* host-owned */ }
+      try { if (responseDescriptor && Object.getOwnPropertyDescriptor(proto, 'response')?.get === responseGetter) Object.defineProperty(proto, 'response', responseDescriptor) } catch { /* host-owned */ }
+      try { if (responseTextDescriptor && Object.getOwnPropertyDescriptor(proto, 'responseText')?.get === responseTextGetter) Object.defineProperty(proto, 'responseText', responseTextDescriptor) } catch { /* host-owned */ }
+      try { if (readyStateDescriptor && Object.getOwnPropertyDescriptor(proto, 'readyState')?.get === readyStateGetter) Object.defineProperty(proto, 'readyState', readyStateDescriptor) } catch { /* host-owned */ }
     }
     try {
       proto.open = open; proto.send = send; proto.abort = abort; proto.setRequestHeader = setHeader
       if (proto.open !== open || proto.send !== send || proto.abort !== abort || proto.setRequestHeader !== setHeader) throw new Error('XHR hook assignment did not stick')
+      if (readyStateDescriptor?.get && readyStateDescriptor.configurable) {
+        readyStateGetter = function(this: XMLHttpRequest): number {
+          return xhrMeta.get(this)?.virtualReadyState ?? readyStateDescriptor.get!.call(this)
+        }
+        Object.defineProperty(proto, 'readyState', { ...readyStateDescriptor, get: readyStateGetter })
+      }
       if (responseDescriptor?.get && responseDescriptor.configurable) {
-        Object.defineProperty(proto, 'response', { ...responseDescriptor, get(this: XMLHttpRequest) {
+        responseGetter = function(this: XMLHttpRequest): unknown {
           const raw: unknown = responseDescriptor.get?.call(this), meta = xhrMeta.get(this)
+          if (meta && meta.virtualReadyState !== null) return this.responseType === '' || this.responseType === 'text' ? '' : null
           if (!meta?.playurl || self.settings.get().disabled) return raw
           if (this.readyState !== 4) return self.routes.isCatalogOnly()
             ? (this.responseType === '' || this.responseType === 'text' ? '' : null) : raw
           if (!self.session.isGeneration(meta.generation)) {
             self.notePlayurl('xhr', this.status, rejectedPlayurl('inactive'))
-            return self.routes.isCatalogOnly() ? blockedPlayurl() : raw
+            return self.routes.isCatalogOnly() ? (this.responseType === '' || this.responseType === 'text' ? blockedPlayurlText() : blockedPlayurl()) : raw
           }
           const strict = self.routes.isCatalogOnly()
           if (meta.catalogOnlyAtTransform !== strict) {
@@ -226,11 +265,13 @@ export class XhrHookAdapter {
           }
           self.notePlayurl('xhr', this.status, rejectedPlayurl('unsupported-format'))
           return strict ? blockedPlayurl() : raw
-        } })
+        }
+        Object.defineProperty(proto, 'response', { ...responseDescriptor, get: responseGetter })
       }
       if (responseTextDescriptor?.get && responseTextDescriptor.configurable) {
-        Object.defineProperty(proto, 'responseText', { ...responseTextDescriptor, get(this: XMLHttpRequest) {
+        responseTextGetter = function(this: XMLHttpRequest): string {
           const raw = String(responseTextDescriptor.get?.call(this) ?? ''), meta = xhrMeta.get(this)
+          if (meta && meta.virtualReadyState !== null) return ''
           if (!meta?.playurl || self.settings.get().disabled) return raw
           if (this.readyState !== 4) return self.routes.isCatalogOnly() ? '' : raw
           if (!self.session.isGeneration(meta.generation)) {
@@ -251,9 +292,14 @@ export class XhrHookAdapter {
             meta.transformedText = strict ? blockedPlayurlText() : raw
           }
           return meta.transformedText
-        } })
+        }
+        Object.defineProperty(proto, 'responseText', { ...responseTextDescriptor, get: responseTextGetter })
       }
-      return { restore: rollback, isInstalled: () => proto.open === open && proto.send === send }
+      return { restore: rollback, isInstalled: () => proto.open === open && proto.send === send
+        && proto.abort === abort && proto.setRequestHeader === setHeader
+        && (!responseGetter || Object.getOwnPropertyDescriptor(proto, 'response')?.get === responseGetter)
+        && (!responseTextGetter || Object.getOwnPropertyDescriptor(proto, 'responseText')?.get === responseTextGetter)
+        && (!readyStateGetter || Object.getOwnPropertyDescriptor(proto, 'readyState')?.get === readyStateGetter) }
     } catch { rollback(); return null }
   }
 

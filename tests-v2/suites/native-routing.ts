@@ -1,3 +1,4 @@
+import { createRuntimeIds } from "../../src-v2/platform/runtime-ids.ts"
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
@@ -33,7 +34,7 @@ const transitionSettings = scope.own(new SettingsStore(transitionStorage, () => 
 await transitionSettings.update({ considerNativeSources: true })
 const transitionRestrictions = scope.own(new RestrictionStore(transitionStorage, () => now))
 const transitionRoutes = new RouteCoordinator(clock, transitionSession, transitionSettings,
-  transitionRestrictions, scope.own(new EvidenceStore(transitionStorage, () => now)), transitionVault)
+  transitionRestrictions, scope.own(new EvidenceStore(transitionStorage, () => now)), transitionVault, createRuntimeIds())
 const transitionAdapter = new PlayurlAdapter(new PlayurlController(transitionSession, transitionVault, transitionRoutes, transitionSettings))
 const transitionItems = [1080, 720].map((height, index) => ({ id: 80 - index * 16, codecid: 13, height,
   bandwidth: 1_000_000, base_url: `https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/transition/${height}/1.m4s?k=1`,
@@ -86,7 +87,7 @@ const catalogVault = new SignedRouteVault();
 catalogVault.reset(catalogState.generation, catalogState.epoch)
 const catalogRestrictions = scope.own(new RestrictionStore(catalogStorage, () => now))
 const catalogEvidence = scope.own(new EvidenceStore(catalogStorage, () => now))
-const catalogRoutes = new RouteCoordinator(clock, catalogSession, catalogSettings, catalogRestrictions, catalogEvidence, catalogVault)
+const catalogRoutes = new RouteCoordinator(clock, catalogSession, catalogSettings, catalogRestrictions, catalogEvidence, catalogVault, createRuntimeIds())
 const catalogAdapter = new PlayurlAdapter(new PlayurlController(catalogSession, catalogVault, catalogRoutes, catalogSettings))
 const catalogVideoRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-only/video.m4s?signature=video-root'
 const catalogVideoBackup = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/catalog-only/backup/video-alt.m4s?signature=video-backup&part=2'
@@ -135,7 +136,7 @@ const catalogVault = new SignedRouteVault();
 catalogVault.reset(catalogState.generation, catalogState.epoch)
 const catalogRestrictions = scope.own(new RestrictionStore(catalogStorage, () => now))
 const catalogEvidence = scope.own(new EvidenceStore(catalogStorage, () => now))
-const catalogRoutes = new RouteCoordinator(clock, catalogSession, catalogSettings, catalogRestrictions, catalogEvidence, catalogVault)
+const catalogRoutes = new RouteCoordinator(clock, catalogSession, catalogSettings, catalogRestrictions, catalogEvidence, catalogVault, createRuntimeIds())
 const catalogAdapter = new PlayurlAdapter(new PlayurlController(catalogSession, catalogVault, catalogRoutes, catalogSettings))
 const catalogVideoRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-only/video.m4s?signature=video-root'
 const catalogVideoBackup = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/catalog-only/backup/video-alt.m4s?signature=video-backup&part=2'
@@ -362,7 +363,7 @@ const overlapRep = overlapVault.register({ generation: overlapState.generation, 
   kind: 'video', key: 'overlap', height: 1080, codec: 'av1', bandwidth: 1_000_000,
   urls: [overlapRoot], source: 'trusted-api' })
 const overlapRoutes = new RouteCoordinator(clock, overlapSession, scope.own(new SettingsStore(overlapStorage, () => now)),
-  scope.own(new RestrictionStore(overlapStorage, () => now)), scope.own(new EvidenceStore(overlapStorage, () => now)), overlapVault)
+  scope.own(new RestrictionStore(overlapStorage, () => now)), scope.own(new EvidenceStore(overlapStorage, () => now)), overlapVault, createRuntimeIds())
 if (scenario === 7) return async () => {
 if (overlapRep) {
   const sameUrlCatalog = overlapRoutes.apply(overlapRoot)
@@ -408,7 +409,7 @@ const backup403Rep = backup403Vault.register({ generation: backup403State.genera
 if (scenario === 8) return async () => {
 assert.ok(backup403Rep, 'known backup 403 fixture has a current-epoch representation')
 const backup403Routes = new RouteCoordinator(clock, backup403Session, scope.own(new SettingsStore(backup403Storage, () => now)),
-  scope.own(new RestrictionStore(backup403Storage, () => now)), scope.own(new EvidenceStore(backup403Storage, () => now)), backup403Vault)
+  scope.own(new RestrictionStore(backup403Storage, () => now)), scope.own(new EvidenceStore(backup403Storage, () => now)), backup403Vault, createRuntimeIds())
 const backup403First = backup403Routes.apply(backup403Url)
 assert.strictEqual(backup403First.decision.routeType, 'catalog-generated', 'known signed backup initially selects Catalog')
 await backup403Routes.observe({ generation: backup403State.generation, epoch: backup403State.epoch,
@@ -426,7 +427,7 @@ unmatched403Session.beginGeneration(false)
 const unmatched403Vault = new SignedRouteVault()
 unmatched403Vault.reset(unmatched403Session.get().generation, unmatched403Session.get().epoch)
 const unmatched403Routes = new RouteCoordinator(clock, unmatched403Session, scope.own(new SettingsStore(unmatched403Storage, () => now)),
-  scope.own(new RestrictionStore(unmatched403Storage, () => now)), scope.own(new EvidenceStore(unmatched403Storage, () => now)), unmatched403Vault)
+  scope.own(new RestrictionStore(unmatched403Storage, () => now)), scope.own(new EvidenceStore(unmatched403Storage, () => now)), unmatched403Vault, createRuntimeIds())
 const unmatched403Url = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/unmatched-403/video.m4s?signature=unmatched'
 const unmatched403First = unmatched403Routes.apply(unmatched403Url)
 assert.strictEqual(unmatched403First.decision.routeType, 'catalog-generated', 'unattributed B station stream initially selects Catalog')
@@ -450,11 +451,11 @@ const redirectedRep = redirectedVault.register({ generation: redirectedState.gen
 assert.ok(redirectedRep, 'redirected XHR fixture has trusted representation')
 const redirectedEvidence = scope.own(new EvidenceStore(redirectedStorage, () => now))
 const redirectedRoutes = new RouteCoordinator(clock, redirectedSession, scope.own(new SettingsStore(redirectedStorage, () => now)),
-  scope.own(new RestrictionStore(redirectedStorage, () => now)), redirectedEvidence, redirectedVault)
+  scope.own(new RestrictionStore(redirectedStorage, () => now)), redirectedEvidence, redirectedVault, createRuntimeIds())
 const redirectedFirst = redirectedRoutes.apply(redirectedRoot)
 assert.strictEqual(redirectedFirst.decision.routeType, 'catalog-generated', 'XHR redirect fixture initially selects Catalog')
 const redirectedRequest = { requestId: requestId('catalog-xhr-redirect'), generation: redirectedState.generation,
-  epoch: redirectedState.epoch, decisionId: redirectedFirst.decision.id, representation: redirectedRep,
+  epoch: redirectedState.epoch, decisionId: redirectedFirst.decision.id, representation: redirectedRep, routePolicyRevision: redirectedRoutes.policyRevision(),
   authorityRevision: redirectedRep ? redirectedVault.identity(redirectedRep)?.authorityRevision ?? null : null,
   kind: 'video' as const, attributionStatus: 'matched' as const, attributionSource: 'exact' as const,
   decisionStage: 'request' as const, routeType: 'catalog-generated' as const,
@@ -474,7 +475,7 @@ assert.strictEqual(redirectedSession.get().affinity, null, 'XHR redirected to Na
 }
 void (backup403Rep);
 const backup403Routes = new RouteCoordinator(clock, backup403Session, scope.own(new SettingsStore(backup403Storage, () => now)),
-  scope.own(new RestrictionStore(backup403Storage, () => now)), scope.own(new EvidenceStore(backup403Storage, () => now)), backup403Vault)
+  scope.own(new RestrictionStore(backup403Storage, () => now)), scope.own(new EvidenceStore(backup403Storage, () => now)), backup403Vault, createRuntimeIds())
 const backup403First = backup403Routes.apply(backup403Url)
 void (backup403First.decision.routeType);
 void ('catalog-generated');
@@ -492,7 +493,7 @@ unmatched403Session.beginGeneration(false)
 const unmatched403Vault = new SignedRouteVault()
 unmatched403Vault.reset(unmatched403Session.get().generation, unmatched403Session.get().epoch)
 const unmatched403Routes = new RouteCoordinator(clock, unmatched403Session, scope.own(new SettingsStore(unmatched403Storage, () => now)),
-  scope.own(new RestrictionStore(unmatched403Storage, () => now)), scope.own(new EvidenceStore(unmatched403Storage, () => now)), unmatched403Vault)
+  scope.own(new RestrictionStore(unmatched403Storage, () => now)), scope.own(new EvidenceStore(unmatched403Storage, () => now)), unmatched403Vault, createRuntimeIds())
 const unmatched403Url = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/unmatched-403/video.m4s?signature=unmatched'
 const unmatched403First = unmatched403Routes.apply(unmatched403Url)
 void (unmatched403First.decision.routeType);
@@ -516,12 +517,12 @@ const redirectedRep = redirectedVault.register({ generation: redirectedState.gen
 void (redirectedRep);
 const redirectedEvidence = scope.own(new EvidenceStore(redirectedStorage, () => now))
 const redirectedRoutes = new RouteCoordinator(clock, redirectedSession, scope.own(new SettingsStore(redirectedStorage, () => now)),
-  scope.own(new RestrictionStore(redirectedStorage, () => now)), redirectedEvidence, redirectedVault)
+  scope.own(new RestrictionStore(redirectedStorage, () => now)), redirectedEvidence, redirectedVault, createRuntimeIds())
 const redirectedFirst = redirectedRoutes.apply(redirectedRoot)
 void (redirectedFirst.decision.routeType);
 void ('catalog-generated');
 const redirectedRequest = { requestId: requestId('catalog-xhr-redirect'), generation: redirectedState.generation,
-  epoch: redirectedState.epoch, decisionId: redirectedFirst.decision.id, representation: redirectedRep,
+  epoch: redirectedState.epoch, decisionId: redirectedFirst.decision.id, representation: redirectedRep, routePolicyRevision: redirectedRoutes.policyRevision(),
   authorityRevision: redirectedRep ? redirectedVault.identity(redirectedRep)?.authorityRevision ?? null : null,
   kind: 'video' as const, attributionStatus: 'matched' as const, attributionSource: 'exact' as const,
   decisionStage: 'request' as const, routeType: 'catalog-generated' as const,
@@ -549,7 +550,7 @@ const aliasState = aliasSession.beginGeneration(false), aliasVault = new SignedR
 aliasVault.reset(aliasState.generation, aliasState.epoch)
 const aliasSettings = scope.own(new SettingsStore(aliasStorage, () => now))
 const aliasRoutes = new RouteCoordinator(clock, aliasSession, aliasSettings,
-  scope.own(new RestrictionStore(aliasStorage, () => now)), scope.own(new EvidenceStore(aliasStorage, () => now)), aliasVault)
+  scope.own(new RestrictionStore(aliasStorage, () => now)), scope.own(new EvidenceStore(aliasStorage, () => now)), aliasVault, createRuntimeIds())
 const aliasAdapter = new PlayurlAdapter(new PlayurlController(aliasSession, aliasVault, aliasRoutes, aliasSettings))
 const aliasRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/aliases/primary.m4s?signature=primary'
 const aliasBackup = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/aliases/backup.m4s?signature=backup'
@@ -570,7 +571,7 @@ const nestedSession = new SessionStore(), nestedState = nestedSession.beginGener
 const nestedVault = new SignedRouteVault();
 nestedVault.reset(nestedState.generation, nestedState.epoch)
 const nestedRoutes = new RouteCoordinator(clock, nestedSession, nestedSettings,
-  scope.own(new RestrictionStore(nestedStorage, () => now)), scope.own(new EvidenceStore(nestedStorage, () => now)), nestedVault)
+  scope.own(new RestrictionStore(nestedStorage, () => now)), scope.own(new EvidenceStore(nestedStorage, () => now)), nestedVault, createRuntimeIds())
 const nestedAdapter = new PlayurlAdapter(new PlayurlController(nestedSession, nestedVault, nestedRoutes, nestedSettings))
 const nestedVideoRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/video.m4s?signature=video'
 const dolbyRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/dolby.m4s?signature=dolby'
@@ -595,7 +596,7 @@ const aliasState = aliasSession.beginGeneration(false), aliasVault = new SignedR
 aliasVault.reset(aliasState.generation, aliasState.epoch)
 const aliasSettings = scope.own(new SettingsStore(aliasStorage, () => now))
 const aliasRoutes = new RouteCoordinator(clock, aliasSession, aliasSettings,
-  scope.own(new RestrictionStore(aliasStorage, () => now)), scope.own(new EvidenceStore(aliasStorage, () => now)), aliasVault)
+  scope.own(new RestrictionStore(aliasStorage, () => now)), scope.own(new EvidenceStore(aliasStorage, () => now)), aliasVault, createRuntimeIds())
 const aliasAdapter = new PlayurlAdapter(new PlayurlController(aliasSession, aliasVault, aliasRoutes, aliasSettings))
 const aliasRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/aliases/primary.m4s?signature=primary'
 const aliasBackup = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/aliases/backup.m4s?signature=backup'
@@ -614,7 +615,7 @@ const nestedSession = new SessionStore(), nestedState = nestedSession.beginGener
 const nestedVault = new SignedRouteVault();
 nestedVault.reset(nestedState.generation, nestedState.epoch)
 const nestedRoutes = new RouteCoordinator(clock, nestedSession, nestedSettings,
-  scope.own(new RestrictionStore(nestedStorage, () => now)), scope.own(new EvidenceStore(nestedStorage, () => now)), nestedVault)
+  scope.own(new RestrictionStore(nestedStorage, () => now)), scope.own(new EvidenceStore(nestedStorage, () => now)), nestedVault, createRuntimeIds())
 const nestedAdapter = new PlayurlAdapter(new PlayurlController(nestedSession, nestedVault, nestedRoutes, nestedSettings))
 const nestedVideoRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/video.m4s?signature=video'
 const dolbyRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/dolby.m4s?signature=dolby'
@@ -654,7 +655,7 @@ const failureState = failureSession.beginGeneration(false), failureVault = new S
 failureVault.reset(failureState.generation, failureState.epoch)
 const failureEvidence = scope.own(new EvidenceStore(failureStorage, () => now))
 const failureRoutes = new RouteCoordinator(clock, failureSession, scope.own(new SettingsStore(failureStorage, () => now)),
-  scope.own(new RestrictionStore(failureStorage, () => now)), failureEvidence, failureVault)
+  scope.own(new RestrictionStore(failureStorage, () => now)), failureEvidence, failureVault, createRuntimeIds())
 const failureRoots = {
   video: 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-failure/video.m4s?signature=video',
   audio: 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-failure/audio.m4s?signature=audio',

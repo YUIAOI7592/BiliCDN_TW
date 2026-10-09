@@ -1,12 +1,14 @@
 # 專案文件索引與維護規則
 
-本索引於 **2026-10-06** 完成文件重整，**2026-10-07** 更新測試工具導覽及現行文件中文化政策。現行版本為 **v2.1.8（MP4／FLV 修正）**；其發布、更新與已安排 Chrome 回歸的完成狀態，以 2026-10-04 的 [發行驗證報告](TEST_REPORT.md) 為證據。目前工作見 [工作狀態](TODO.md)，完整公開 MP4／FLV 現場覆蓋及安全報告限制維持原狀。歷史「待驗收」「未發布」或研究建議只描述當時狀態，不自動成為目前待辦。
+本索引於 **2026-10-06** 完成文件重整，**2026-10-09** 更新至 **v2.1.9 功能與競態修復**。發行驗證及發布狀態見 [發行驗證報告](TEST_REPORT.md)，目前工作見 [工作狀態](TODO.md)。新版瀏覽器驗收待安排；歷史「待驗收」「未發布」或研究建議只描述當時狀態，不自動成為目前待辦。
 
 2026-10-07 的 Markdown 粗體渲染盤點與排版修正見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)；後續排版檢查方式列於 DEVELOPMENT。
 
 產品行為以 [src-v2/entry.ts](../src-v2/entry.ts) 及其模組為準；版本與工具以 [release.json](../release.json)、[package.json](../package.json) 及 [package-lock.json](../package-lock.json) 為準。指南與程式不一致時，先確認實際行為再修正文檔，歷史觀察保留原始版本與日期。
 
 閱讀入口：
+
+2026-10-09 的 [功能與競態修復對照](FUNCTIONAL_FIX_REPORT.md) 記錄 v2.1.9 的 17 項修復、正式回歸及新的瀏覽器待驗收範圍；舊版已發布驗收維持原紀錄。
 
 - 一般使用者：README → 安裝／模式／操作／排查。
 - 開發者：PROJECT_CONTEXT → SECURITY → ARCHITECTURE → DEVELOPMENT，並遵守 AGENTS。
@@ -21,16 +23,17 @@
 | [AGENTS](../AGENTS.md) | 必要開發流程、架構、安全及發行／文件要求 |
 | [ARCHITECTURE](ARCHITECTURE.md) | 依賴、狀態、控制器、適配器、生命週期與診斷 |
 | [DEVELOPMENT](DEVELOPMENT.md) | 環境、命令、測試隔離、建置、瀏覽器檢查及封裝 |
-| [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md) | 2026-10-07 Node 內建測試遷移、工具契約及實際驗證 |
+| [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md) | 2026-10-07 測試遷移及 2026-10-09 套件登記／替身邊界驗證 |
 | [測試遷移對照](../tests-v2/MIGRATION.md) | 原 891 項功能斷言的行為群組、分支及參數矩陣對照 |
 | [SECURITY](../SECURITY.md) | 信任邊界、持久資料、網路權限及診斷限制 |
 | [TODO](TODO.md) | 目前已批准工作、結案事項及未安排方向 |
+| [FUNCTIONAL_FIX_REPORT](FUNCTIONAL_FIX_REPORT.md) | v2.1.9 的 17 項修復、正式契約及瀏覽器驗收步驟 |
 | [UPSTREAM_MANIFEST](UPSTREAM_MANIFEST.md) | 上游基準、v1／v2 關係及來源校驗 |
 | [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md) | 作者、授權、工具用途及版本 |
 
 本索引管理文件用途、入口及維護對照。這些指南隨程式或發布狀態更新，不能以舊版規格取代目前實作。現行說明、變更紀錄及最新版報告使用繁體中文；封存的歷史正文保留原文。
 
-現行中文化範圍為 **14 份 Markdown**：根目錄 README、AGENTS、SECURITY，`docs/` 的十份文件，以及 `tests-v2/MIGRATION.md`。CHANGELOG 的全部版本條目使用繁體中文，仍保留各版當時的驗證狀態；測試遷移對照以中文說明行為，英文欄逐字保留原案例群組。封存正文、82 份 Release Markdown 快照、本機工作資料及第三方／產生的文件不翻譯。繁體中文標題若取代既有標題，必須保留原錨點別名；既有別名及跨文件引用繼續有效。
+2026-10-07 中文化範圍為 **14 份 Markdown**：根目錄 README、AGENTS、SECURITY，`docs/` 的十份文件，以及 `tests-v2/MIGRATION.md`；2026-10-09 新增修復對照報告沿用相同政策。CHANGELOG 的全部版本條目使用繁體中文，仍保留各版當時的驗證狀態；測試遷移對照以中文說明行為，英文欄逐字保留原案例群組。封存正文、82 份 Release Markdown 快照、本機工作資料及第三方／產生的文件不翻譯。繁體中文標題若取代既有標題，必須保留原錨點別名；既有別名及跨文件引用繼續有效。
 
 共用用語為「儲存元件（store）」「測試情境（fixture）」「建立函式（factory）」「中繼資料（metadata）」「原始碼對照（source map）」「報告產生器（reporter）」「堆疊資訊（stack）」。瀏覽器 hook 稱為「攔截」，測試 hook 稱為「測試掛鉤」或「清理掛鉤」。產品名稱、授權名稱、程式識別字、命令、網址、路徑及原始狀態值可以保留英文，必要時補上中文解釋。翻譯必須維持規則強度、條件、數值與證據界線；日期固定的封存正文保持原樣，維護結果另追加有日期的紀錄。
 
@@ -46,14 +49,14 @@
 
 | 文件／產物 | 閱讀方式 |
 | --- | --- |
-| [CHANGELOG](CHANGELOG.md) | v2.0.0～v2.1.8 全部條目使用繁體中文；功能差異、順序及當時驗證狀態保留 |
-| [TEST_REPORT](TEST_REPORT.md) | v2.1.8 完整重現、自動、安全、發布及瀏覽器證據；含歷史導覽 |
+| [CHANGELOG](CHANGELOG.md) | v2.0.0～v2.1.9 全部條目使用繁體中文；功能差異、順序及當時驗證狀態保留 |
+| [TEST_REPORT](TEST_REPORT.md) | v2.1.9 修復、自動、安全、發布及瀏覽器狀態；含歷史導覽 |
 | [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md) | v2.0.2～v2.1.7 十二個主要區塊，包括發行前模組化驗證 |
 | [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) | 2026-10-03 三段原整理紀錄及後續有日期的文件檢查 |
-| [v2.1.8 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8) | 2026-10-04 發布讀回；附件只有 `BiliCDN_TW.user.js` |
-| [Release/v2.1.8](../Release/v2.1.8/) | 當次使用者腳本、報告、變更紀錄、資訊清單、校驗值快照；發布後不回寫 |
+| [v2.1.9 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.9) | 發布狀態見 TEST_REPORT；附件只有 `BiliCDN_TW.user.js` |
+| [Release/v2.1.9](../Release/v2.1.9/) | 當次使用者腳本、報告、變更紀錄、資訊清單、校驗值快照；發布後不回寫 |
 
-自動驗證、安全掃描與真實瀏覽器驗收分開記錄。v2.1.8 的安全 `partial coverage`、MP4 試片／公開 DASH 觀察、較早 DASH 緩衝及完整公開 MP4／FLV 限制集中於 TEST_REPORT；v2.1.7 的限制見歷史報告。**v2.1.6 Chrome／Tampermonkey 驗收已批准通過、已結案**，歷史覆蓋限制不構成待辦。
+自動驗證、安全掃描與真實瀏覽器驗收分開記錄。v2.1.8 的安全 `partial coverage`、MP4 試片／公開 DASH 觀察、較早 DASH 緩衝及完整公開 MP4／FLV 限制均保存於歷史報告；v2.1.9 靜態差異審查為完整覆蓋，瀏覽器驗收待安排。**v2.1.6 Chrome／Tampermonkey 驗收已批准通過、已結案**，歷史覆蓋限制不構成待辦。
 
 ## 歷史計畫與瀏覽器紀錄
 

@@ -1,3 +1,5 @@
+import { installProgressEvent } from "../support/progress-event.ts"
+import { createRuntimeIds } from "../../src-v2/platform/runtime-ids.ts"
 import { deferred } from '../support/deferred.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -28,6 +30,7 @@ import { testScope } from '../support/scope.ts'
 // Earlier expectations run in their own cases; no mutable state crosses a test boundary.
 async function fixture(t: TestContext, scenario: number, parameter = 0): Promise<() => Promise<void>> {
   const scope = testScope(t)
+  installProgressEvent(scope)
 const now = 2_000_000_000_000
 const clock = { now: () => now }
 const runtimeSession = new SessionStore();
@@ -36,6 +39,7 @@ const passDecision: AppliedRouteDecision = { decision: { action: 'pass', id: dec
   host: 'upos-sz-mirrorali.bilivideo.com', ranking: [] }, url: 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/runtime.m4s', context: null, streamKey: 'runtime', sourceHost: 'upos-sz-mirrorali.bilivideo.com' }
 const observations: TransportObservation[] = []
 const routeStub = {
+  policyRevision(): number { return 0 },
   requestStarted(): void {},
   isCatalogOnly(): boolean { return false },
   isBilibiliMedia(url: string): boolean { return /\.bilivideo\.com\/|\.akamaized\.net\//.test(url) },
@@ -72,20 +76,39 @@ const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promi
   }), { status: 206, headers: { 'content-type': 'video/mp4' } })
 }
 class FakeXhr extends EventTarget {
-  method = ''; url = ''; readyState = 0; status = 200; responseURL = ''; responseType: XMLHttpRequestResponseType = ''
+  method = ''; url = ''; readyState = 0; status = 200; responseURL = ''; sync = false; sent = false
+  #responseType: XMLHttpRequestResponseType = ''; #timeout = 0
+  get responseType(): XMLHttpRequestResponseType { return this.#responseType }
+  set responseType(value: XMLHttpRequestResponseType) {
+    if (this.sync) throw new DOMException('synchronous XHR', 'InvalidAccessError')
+    this.#responseType = value
+  }
+  get timeout(): number { return this.#timeout }
+  set timeout(value: number) {
+    if (this.sync) throw new DOMException('synchronous XHR', 'InvalidAccessError')
+    this.#timeout = value
+  }
   finalResponseUrl: string | null = null
   rawResponseText: string | null = null
   holdAtLoading = false
-  timeout = 0; withCredentials = false
+  withCredentials = false
   payload: unknown = { ok: true }; nativeSends = 0
   get response(): unknown { return this.payload }
   get responseText(): string { return this.rawResponseText ?? JSON.stringify(this.payload) }
-  open(method: string, url: string | URL): void { this.method = method; this.url = String(url); this.responseURL = this.url; this.readyState = 1 }
-  send(): void { this.nativeSends++; if (this.finalResponseUrl) this.responseURL = this.finalResponseUrl;
+  open(method: string, url: string | URL, async = true): void { this.method = method; this.url = String(url); this.responseURL = this.url; this.readyState = 1; this.sync = !async; this.sent = false }
+  send(): void {
+    if (this.readyState !== 1 || this.sent) throw new DOMException('send invalid state', 'InvalidStateError')
+    this.sent = true; this.nativeSends++; if (this.finalResponseUrl) this.responseURL = this.finalResponseUrl;
     this.readyState = this.holdAtLoading ? 3 : 4
     this.dispatchEvent(new Event('readystatechange'))
     if (!this.holdAtLoading) { this.dispatchEvent(new Event('load')); this.dispatchEvent(new Event('loadend')) } }
-  abort(): void { this.dispatchEvent(new Event('abort')) }
+  abort(): void {
+    if ((this.readyState === 1 && this.sent) || this.readyState === 2 || this.readyState === 3) {
+      this.readyState = 4; this.sent = false; this.status = 0
+      this.dispatchEvent(new Event('readystatechange')); this.dispatchEvent(new Event('abort')); this.dispatchEvent(new Event('loadend'))
+    }
+    if (this.readyState === 4) this.readyState = 0
+  }
   setRequestHeader(_name: string, _value: string): void {}
 }
 const originalWorker = function WorkerIdentity() { return undefined }
@@ -95,7 +118,7 @@ scope.defineGlobal('location', { configurable: true, value: new URL('https://www
 let skippedPreflightReason = ''
 const measurementStub = { willGateStartup: (): boolean => false, prepareStartup: async (): Promise<void> => {},
   noteUnpreflighted(reason: string): void { skippedPreflightReason = reason } }
-const transport = scope.own(new TransportAdapter(runtimeSession, settingsStub, routeStub, playurlStub, measurementStub, () => now))
+const transport = scope.own(new TransportAdapter(runtimeSession, settingsStub, routeStub, playurlStub, measurementStub, () => now, createRuntimeIds()))
 transport.install()
 if (scenario === 0) return async () => {
 assert.strictEqual(transport.snapshot().hookState, 'installed', 'Fetch and XHR hook assignments are verified')
@@ -380,7 +403,7 @@ const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
 scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
 const originalPartialOpen = UnpatchableXhr.prototype.open
 const partialTransport = scope.own(new TransportAdapter(runtimeSession, settingsStub, routeStub, playurlStub,
-  measurementStub, () => now))
+  measurementStub, () => now, createRuntimeIds()))
 partialTransport.install()
 assert.strictEqual(partialTransport.snapshot().hookState, 'failed', 'partial hook installation is reported as failed')
 assert.strictEqual(partialWindow.fetch, nativeFetch, 'partial XHR install failure restores fetch')
@@ -408,7 +431,7 @@ const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
 scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
 const originalPartialOpen = UnpatchableXhr.prototype.open
 const partialTransport = scope.own(new TransportAdapter(runtimeSession, settingsStub, routeStub, playurlStub,
-  measurementStub, () => now))
+  measurementStub, () => now, createRuntimeIds()))
 partialTransport.install()
 
 
@@ -435,7 +458,7 @@ const outputSettings = scope.own(new SettingsStore(outputStorage, () => now))
 await outputSettings.update({ considerNativeSources: true })
 const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
 const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
-const outputRoutes = new RouteCoordinator(clock, outputSession, outputSettings, outputRestrictions, outputEvidence, outputVault)
+const outputRoutes = new RouteCoordinator(clock, outputSession, outputSettings, outputRestrictions, outputEvidence, outputVault, createRuntimeIds())
 const outputAdapter = new PlayurlAdapter(new PlayurlController(outputSession, outputVault, outputRoutes, outputSettings))
 const forbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/test/output/1.m4s?k=1'
 const outputItem = { id: 80, codecid: 13, height: 1080, bandwidth: 1_000_000, base_url: forbiddenUrl, backup_url: [forbiddenUrl] }
@@ -735,7 +758,7 @@ if (scenario === 13) return async () => {
 assert.strictEqual(gapRecorder.snapshot().incident, null, 'initial dead-looking startup without previous health is not an incident')
 await outputSettings.update({ catalogOverrides: {}, fixedHost: null })
 outputRoutes.invalidateForUserSetting()
-const realAdapter = scope.own(new TransportAdapter(outputSession, outputSettings, outputRoutes, outputAdapter, measurementStub, () => now))
+const realAdapter = scope.own(new TransportAdapter(outputSession, outputSettings, outputRoutes, outputAdapter, measurementStub, () => now, createRuntimeIds()))
 realAdapter.install()
 const tracedXhr = new FakeXhr();
 tracedXhr.open('GET', outputItem.base_url);
@@ -763,7 +786,7 @@ assert.strictEqual(blockedXhr.nativeSends, 0, 'no-alternative XHR never sends fo
 
 await outputSettings.update({ catalogOverrides: {}, fixedHost: null })
 outputRoutes.invalidateForUserSetting()
-const realAdapter = scope.own(new TransportAdapter(outputSession, outputSettings, outputRoutes, outputAdapter, measurementStub, () => now))
+const realAdapter = scope.own(new TransportAdapter(outputSession, outputSettings, outputRoutes, outputAdapter, measurementStub, () => now, createRuntimeIds()))
 realAdapter.install()
 const tracedXhr = new FakeXhr();
 tracedXhr.open('GET', outputItem.base_url);

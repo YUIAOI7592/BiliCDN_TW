@@ -5,12 +5,13 @@ import type { PlayurlPort } from '../application/ports.ts'
 import type { SettingsState } from '../state/settings-store.ts'
 import { isCatalogHost } from '../domain/catalog.ts'
 import { requestId, type FailureKind, type RequestContext, type RouteType, type TransportObservation, type GenerationId } from '../domain/model.ts'
+import type { RuntimeIdPort } from '../platform/runtime-ids.ts'
 import type { RouteCoordinator, AppliedRouteDecision } from '../application/route-coordinator.ts'
 import type { MeasurementController } from '../application/measurement-controller.ts'
 import type { SessionStore } from '../state/session-store.ts'
 
 
-export type TransportRoutes = Pick<RouteCoordinator, 'isCatalogOnly' | 'recognizesMedia' | 'isBilibiliMedia' | 'apply' | 'inspectOriginal' | 'requestStarted' | 'observe'>
+export type TransportRoutes = Pick<RouteCoordinator, 'policyRevision' | 'isCatalogOnly' | 'recognizesMedia' | 'isBilibiliMedia' | 'apply' | 'inspectOriginal' | 'requestStarted' | 'observe'>
 export interface TransportSettings { get(): Pick<SettingsState, 'disabled' | 'blockHttpDns'> }
 export type StartupGate = Pick<MeasurementController, 'willGateStartup' | 'prepareStartup' | 'noteUnpreflighted'>
 export interface HookInstallation { restore(): void; isInstalled(): boolean }
@@ -47,7 +48,8 @@ export class TransportContext {
   #lastBlocked: TransportStats['lastBlocked'] = null
   #lastPlayurl: PlayurlTransportSummary | null = null
   constructor(readonly session: Pick<SessionStore, 'get' | 'isGeneration'>, readonly settings: TransportSettings,
-    readonly routes: TransportRoutes, readonly playurl: PlayurlPort, readonly measurement: StartupGate, readonly now: () => number) {}
+    readonly routes: TransportRoutes, readonly playurl: PlayurlPort, readonly measurement: StartupGate, readonly now: () => number,
+    private readonly ids: RuntimeIdPort) {}
   count(stage: 'enteredFetch' | 'enteredXhr' | 'mediaRecognized' | 'nativeCalled' | 'responseObserved' | 'blocked'): void { this.#stats[stage]++ }
   dispatchFailure(input: DispatchCheck): string | null {
     const strict = input.managedMedia && this.routes.isCatalogOnly()
@@ -79,7 +81,8 @@ export class TransportContext {
     lastPlayurl: this.#lastPlayurl }) }
   request(applied: AppliedRouteDecision, originalUrl: string, targetUrl: string, startedAt: number, method: string): RequestContext {
     const state = this.session.get(), matched = applied.attributionStatus ?? (applied.context ? 'matched' : 'waiting-data')
-    const request: RequestContext = Object.freeze({ requestId: requestId(`request-${++this.#requestSerial}`), generation: state.generation, epoch: state.epoch,
+    const request: RequestContext = Object.freeze({ requestId: requestId(this.ids.next('request')), generation: state.generation, epoch: state.epoch,
+      routePolicyRevision: this.routes.policyRevision(),
       decisionId: applied.decision.id, representation: applied.context?.representation ?? null,
       authorityRevision: applied.context?.authorityRevision ?? null, kind: applied.context?.kind ?? null,
       attributionStatus: matched, attributionSource: applied.attributionSource ?? (applied.context ? 'exact' : 'none'),

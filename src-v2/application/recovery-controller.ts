@@ -76,6 +76,10 @@ export class RecoveryController {
     const now = this.now()
     const newFrames = snapshot.frames !== null && this.#lastFrames !== null && snapshot.frames > this.#lastFrames
     this.#lastFrames = snapshot.frames; this.#lastSnapshot = snapshot
+    if (this.#token && (snapshot.mediaError || snapshot.seeking || snapshot.ended)) {
+      this.#finish('failed', snapshot.mediaError ? 'media-error' : snapshot.seeking ? 'seek-interrupted' : 'ended')
+      return
+    }
     const healthy = snapshot.available && !snapshot.mediaError && (snapshot.readyState >= 2 || snapshot.width > 0 || snapshot.height > 0 || newFrames)
     const deadObservation = this.#hadHealthy && snapshot.available && !snapshot.seeking && !snapshot.ended && !snapshot.mediaError
       && snapshot.readyState === 0 && snapshot.width === 0 && snapshot.height === 0 && snapshot.manifestHasVideo && snapshot.coreInitialized === false && !newFrames
@@ -182,7 +186,7 @@ export class RecoveryController {
     }
     this.#finish(token.wasPlaying ? 'recovered' : 'recovered-paused', 'core-evidence-restored')
     if (playResult && typeof (playResult as Promise<unknown>).then === 'function') void Promise.resolve(playResult).catch(() => {
-      if (this.#lifecycleSerial !== lifecycle || this.#token) return
+      if (this.#lifecycleSerial !== lifecycle || this.#token || token.id !== recoveryActionId(`core-${this.#serial}`)) return
       this.#state = Object.freeze({ ...this.#state, state: 'recovered-paused', reason: 'play-rejected' })
       this.#emit({ type: 'core', at: this.now(), state: 'recovered-paused', actionId: token.id, reason: 'play-rejected' })
     })

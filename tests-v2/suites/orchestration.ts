@@ -1,3 +1,5 @@
+import '../regressions/functional-races/runtime.ts'
+import { createRuntimeIds } from "../../src-v2/platform/runtime-ids.ts"
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
@@ -47,7 +49,7 @@ const runtime = scope.own(new RuntimeController(session, settings, routeControl,
     { reset: () => { calls.push('measurement.reset') } },
     { reset: () => { calls.push('recovery.reset') }, subscribe: () => () => undefined, armRouteFailure: () => { calls.push('recovery.arm') } },
     { setEnabled: () => { calls.push('visibility') } },
-    { record: () => { calls.push('diagnostic.event') }, recordPlayer: () => { calls.push('diagnostic.player') } }, clock.now))
+    { record: () => { calls.push('diagnostic.event') }, recordPlayer: () => { calls.push('diagnostic.player') } }, clock.now, { subscribeEpoch: () => () => undefined }))
 runtime.install();
 runtime.install();
 calls.length = 0
@@ -144,7 +146,7 @@ calls.length = 0;
 await commands.clearLearning()
 assert.strictEqual(calls.join(','), 'evidence.clear,restrictions.clear,meta.clear', 'learning clear order is application-owned')
 assert.strictEqual(storage.values.has('bilicdn.v2.meta'), false, 'measurement metadata cleared through its store')
-const vault = new SignedRouteVault(), routes = new RouteCoordinator(clock, session, settings, restrictions, evidence, vault)
+const vault = new SignedRouteVault(), routes = new RouteCoordinator(clock, session, settings, restrictions, evidence, vault, createRuntimeIds())
 let pageKey = '/video/a', transformed = 0, accept = true
 let navigationListener: () => void = () => undefined
 const navigation: NavigationPort = { key: () => pageKey, subscribe(listener) { navigationListener = listener; return () => { navigationListener = () => undefined } } }
@@ -174,7 +176,7 @@ void (calls.join(','));
 void ('evidence.clear,restrictions.clear,meta.clear');
 void (storage.values.has('bilicdn.v2.meta'));
 void (false);
-const vault = new SignedRouteVault(), routes = new RouteCoordinator(clock, session, settings, restrictions, evidence, vault)
+const vault = new SignedRouteVault(), routes = new RouteCoordinator(clock, session, settings, restrictions, evidence, vault, createRuntimeIds())
 let pageKey = '/video/a', transformed = 0, accept = true
 let navigationListener: () => void = () => undefined
 const navigation: NavigationPort = { key: () => pageKey, subscribe(listener) { navigationListener = listener; return () => { navigationListener = () => undefined } } }

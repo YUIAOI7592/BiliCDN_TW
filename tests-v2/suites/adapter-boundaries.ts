@@ -186,3 +186,4 @@ for (const [status, target, redirected] of [[200, url, false], [206, 'https://ot
 }
 test("already cancelled probe does not start network work [3]", { timeout: 5000 }, async t => { await (await fixture(t, 2))() })
 test("navigation observes history and popstate [4]", { timeout: 5000 }, async t => { await (await fixture(t, 3))() })
+import '../regressions/functional-races/adapter-controls.ts'

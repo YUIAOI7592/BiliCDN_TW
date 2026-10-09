@@ -18,6 +18,7 @@ export interface PlayurlOutputSummary {
 }
 
 export interface RequestContext {
+  readonly routePolicyRevision: number
   readonly requestId: RequestId
   readonly generation: GenerationId
   readonly epoch: EpochId
@@ -213,6 +214,7 @@ export type DomainEvent =
 export interface Clock {
   now(): number
 }
+
 
 export const generationId = (value: number): GenerationId => value as GenerationId
 export const epochId = (value: number): EpochId => value as EpochId

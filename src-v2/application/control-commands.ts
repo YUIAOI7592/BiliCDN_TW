@@ -9,6 +9,7 @@ import type { RecoveryController } from './recovery-controller.ts'
 export type SettingsChange = Partial<Omit<SettingsState, 'schema' | 'updatedAt'>>
 export interface ControlCommandPort {
   updateSettings(change: SettingsChange): Promise<SettingsState>
+  setCatalogEnabled(host: string, enabled: boolean): Promise<SettingsState>
   setOriginalComparison(enabled: boolean): void
   requestMeasurement(): void
   blacklistLatestVideo(): Promise<void>
@@ -16,7 +17,7 @@ export interface ControlCommandPort {
   resetSettings(): Promise<void>
 }
 export class ControlCommands implements ControlCommandPort {
-  constructor(private readonly settings: Pick<SettingsStore, 'update' | 'reset'>,
+  constructor(private readonly settings: Pick<SettingsStore, 'update' | 'reset' | 'setCatalogEnabled'>,
     private readonly restrictions: Pick<RestrictionStore, 'add' | 'clear'>,
     private readonly evidence: Pick<EvidenceStore, 'clear'>,
     private readonly meta: Pick<MeasurementMetaStore, 'clear'>,
@@ -25,6 +26,7 @@ export class ControlCommands implements ControlCommandPort {
     private readonly recovery: Pick<RecoveryController, 'reset'>,
     private readonly now: () => number) {}
   updateSettings(change: SettingsChange): Promise<SettingsState> { return this.settings.update(change) }
+  setCatalogEnabled(host: string, enabled: boolean): Promise<SettingsState> { return this.settings.setCatalogEnabled(host, enabled) }
   setOriginalComparison(enabled: boolean): void {
     this.routes.setOriginalComparison(enabled); this.measurement.reset(); this.recovery.reset()
   }

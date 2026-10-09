@@ -1,4 +1,5 @@
 import type { SessionStore } from '../state/session-store.ts'
+import type { RuntimeIdPort } from '../platform/runtime-ids.ts'
 import type { PlayurlPort } from '../application/ports.ts'
 import { TransportContext, type TransportRoutes, type TransportSettings, type StartupGate, type HookInstallation, type TransportSnapshot } from './transport-context.ts'
 import { FetchHookAdapter } from './fetch-hook.ts'
@@ -12,8 +13,8 @@ export class TransportAdapter {
   #hookReason = 'not-attempted'
   readonly #context: TransportContext
   constructor(session: Pick<SessionStore, 'get' | 'isGeneration'>, settings: TransportSettings, routes: TransportRoutes,
-    playurl: PlayurlPort, measurement: StartupGate, now: () => number) {
-    this.#context = new TransportContext(session, settings, routes, playurl, measurement, now)
+    playurl: PlayurlPort, measurement: StartupGate, now: () => number, ids: RuntimeIdPort) {
+    this.#context = new TransportContext(session, settings, routes, playurl, measurement, now, ids)
   }
   install(): void {
     if (this.#fetch && this.#xhr) return

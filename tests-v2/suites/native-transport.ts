@@ -1,3 +1,5 @@
+import { installProgressEvent } from "../support/progress-event.ts"
+import { createRuntimeIds } from "../../src-v2/platform/runtime-ids.ts"
 import { deferred } from '../support/deferred.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -25,6 +27,7 @@ import { testScope } from '../support/scope.ts'
 // Earlier expectations run in their own cases; no mutable state crosses a test boundary.
 async function fixture(t: TestContext, scenario: number, parameter = 0): Promise<() => Promise<void>> {
   const scope = testScope(t)
+  installProgressEvent(scope)
 const now = 2_000_000_000_000
 const clock = { now: () => now }
 const runtimeSession = new SessionStore();
@@ -99,7 +102,7 @@ const dispatchVault = new SignedRouteVault();
 dispatchVault.reset(dispatchState.generation, dispatchState.epoch)
 const dispatchEvidence = scope.own(new EvidenceStore(dispatchStorage, () => now))
 const dispatchRoutes = new RouteCoordinator(clock, dispatchSession, dispatchSettings,
-  scope.own(new RestrictionStore(dispatchStorage, () => now)), dispatchEvidence, dispatchVault)
+  scope.own(new RestrictionStore(dispatchStorage, () => now)), dispatchEvidence, dispatchVault, createRuntimeIds())
 const dispatchPlayurl = new PlayurlAdapter(new PlayurlController(dispatchSession, dispatchVault, dispatchRoutes, dispatchSettings))
 const dispatchRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/dispatch/video.m4s?signature=private'
 const dispatchNativeBackup = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/dispatch/video.m4s?signature=backup'
@@ -116,7 +119,7 @@ const dispatchMeasurement = { willGateStartup: () => gateDispatch,
   },
   noteUnpreflighted: (_reason: string): void => undefined }
 const dispatchTransport = scope.own(new TransportAdapter(dispatchSession, dispatchSettings, dispatchRoutes,
-  dispatchPlayurl, dispatchMeasurement, () => now))
+  dispatchPlayurl, dispatchMeasurement, () => now, createRuntimeIds()))
 dispatchTransport.install()
 if (scenario === 0) return async () => {
 assert.strictEqual(dispatchTransport.snapshot().hookState, 'installed', 'Catalog-only dispatch fixture installs Fetch and XHR hooks')
@@ -266,7 +269,7 @@ const emittedBackupSession = new SessionStore(), emittedBackupState = emittedBac
 const emittedBackupVault = new SignedRouteVault();
 emittedBackupVault.reset(emittedBackupState.generation, emittedBackupState.epoch)
 const emittedBackupRoutes = new RouteCoordinator(clock, emittedBackupSession, emittedBackupSettings,
-  scope.own(new RestrictionStore(emittedBackupStorage, () => now)), scope.own(new EvidenceStore(emittedBackupStorage, () => now)), emittedBackupVault)
+  scope.own(new RestrictionStore(emittedBackupStorage, () => now)), scope.own(new EvidenceStore(emittedBackupStorage, () => now)), emittedBackupVault, createRuntimeIds())
 const emittedBackupPlayurl = new PlayurlAdapter(new PlayurlController(emittedBackupSession, emittedBackupVault, emittedBackupRoutes, emittedBackupSettings))
 const emittedBackupRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/emitted-backup/root.m4s?signature=root'
 const emittedThirdPartyBackup = 'https://cdn.example.net/upgcxcode/emitted-backup/final.m4s?signature=old-player-backup'
@@ -283,7 +286,7 @@ assert.ok(emittedBackupPlayurl.transform({ data: { dash: { video: [emittedBackup
 assert.ok(emittedBackupItem.backup_url.includes(emittedThirdPartyBackup),
   'Native-on player output can emit a fifth signed route on an arbitrary host')
 const emittedBackupTransport = scope.own(new TransportAdapter(emittedBackupSession, emittedBackupSettings, emittedBackupRoutes,
-  emittedBackupPlayurl, measurementStub, () => now))
+  emittedBackupPlayurl, measurementStub, () => now, createRuntimeIds()))
 emittedBackupTransport.install()
 await emittedBackupSettings.update({ considerNativeSources: false });
 emittedBackupRoutes.invalidateForUserSetting()
@@ -313,7 +316,7 @@ assert.ok(outputCapRep, 'Native-on output-cap fixture retains a current represen
 
 
 const emittedBackupTransport = scope.own(new TransportAdapter(emittedBackupSession, emittedBackupSettings, emittedBackupRoutes,
-  emittedBackupPlayurl, measurementStub, () => now))
+  emittedBackupPlayurl, measurementStub, () => now, createRuntimeIds()))
 emittedBackupTransport.install()
 await emittedBackupSettings.update({ considerNativeSources: false });
 emittedBackupRoutes.invalidateForUserSetting()
@@ -374,7 +377,7 @@ const pageSession = new SessionStore(), pageState = pageSession.beginGeneration(
 const pageVault = new SignedRouteVault();
 pageVault.reset(pageState.generation, pageState.epoch)
 const pageRoutes = new RouteCoordinator(clock, pageSession, pageSettings,
-  scope.own(new RestrictionStore(pageStorage, () => now)), scope.own(new EvidenceStore(pageStorage, () => now)), pageVault)
+  scope.own(new RestrictionStore(pageStorage, () => now)), scope.own(new EvidenceStore(pageStorage, () => now)), pageVault, createRuntimeIds())
 const pagePlayurl = new PlayurlAdapter(new PlayurlController(pageSession, pageVault, pageRoutes, pageSettings))
 const assignedAtSetter: string[] = []
 const assignedPayloadAtSetter: string[] = []
@@ -425,7 +428,7 @@ const pageSession = new SessionStore(), pageState = pageSession.beginGeneration(
 const pageVault = new SignedRouteVault();
 pageVault.reset(pageState.generation, pageState.epoch)
 const pageRoutes = new RouteCoordinator(clock, pageSession, pageSettings,
-  scope.own(new RestrictionStore(pageStorage, () => now)), scope.own(new EvidenceStore(pageStorage, () => now)), pageVault)
+  scope.own(new RestrictionStore(pageStorage, () => now)), scope.own(new EvidenceStore(pageStorage, () => now)), pageVault, createRuntimeIds())
 const pagePlayurl = new PlayurlAdapter(new PlayurlController(pageSession, pageVault, pageRoutes, pageSettings))
 const assignedAtSetter: string[] = []
 const assignedPayloadAtSetter: string[] = []
@@ -604,10 +607,10 @@ const apiFailureSession = new SessionStore(), apiFailureState = apiFailureSessio
 const apiFailureVault = new SignedRouteVault();
 apiFailureVault.reset(apiFailureState.generation, apiFailureState.epoch)
 const apiFailureRoutes = new RouteCoordinator(clock, apiFailureSession, apiFailureSettings,
-  scope.own(new RestrictionStore(apiFailureStorage, () => now)), scope.own(new EvidenceStore(apiFailureStorage, () => now)), apiFailureVault)
+  scope.own(new RestrictionStore(apiFailureStorage, () => now)), scope.own(new EvidenceStore(apiFailureStorage, () => now)), apiFailureVault, createRuntimeIds())
 const apiFailurePlayurl = new PlayurlAdapter(new PlayurlController(apiFailureSession, apiFailureVault, apiFailureRoutes, apiFailureSettings))
 const apiFailureTransport = scope.own(new TransportAdapter(apiFailureSession, apiFailureSettings, apiFailureRoutes,
-  apiFailurePlayurl, measurementStub, () => now))
+  apiFailurePlayurl, measurementStub, () => now, createRuntimeIds()))
 apiFailureTransport.install()
 const apiEndpoint = 'https://api.bilibili.com/x/player/wbi/playurl?cid=contract'
 const leakedNativeUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/api-failure/video.m4s?signature=raw-secret'
@@ -725,7 +728,7 @@ await apiFailureSettings.update({ disabled: false })
 apiFailureTransport.dispose()
 const throwingPlayurl = { transform: (): never => { throw new Error('synthetic transform failure') } }
 const throwingTransport = scope.own(new TransportAdapter(apiFailureSession, apiFailureSettings, apiFailureRoutes,
-  throwingPlayurl, measurementStub, () => now))
+  throwingPlayurl, measurementStub, () => now, createRuntimeIds()))
 throwingTransport.install()
 const transformFailurePayload = { code: 0, data: { dash: { video: [{ id: 80, codecid: 13, height: 1080,
   bandwidth: 1_000_000, base_url: leakedNativeUrl, backup_url: [] }], audio: [] } } }
@@ -818,7 +821,7 @@ await apiFailureSettings.update({ disabled: false })
 apiFailureTransport.dispose()
 const throwingPlayurl = { transform: (): never => { throw new Error('synthetic transform failure') } }
 const throwingTransport = scope.own(new TransportAdapter(apiFailureSession, apiFailureSettings, apiFailureRoutes,
-  throwingPlayurl, measurementStub, () => now))
+  throwingPlayurl, measurementStub, () => now, createRuntimeIds()))
 throwingTransport.install()
 const transformFailurePayload = { code: 0, data: { dash: { video: [{ id: 80, codecid: 13, height: 1080,
   bandwidth: 1_000_000, base_url: leakedNativeUrl, backup_url: [] }], audio: [] } } }
@@ -937,10 +940,10 @@ const oversizedSession = new SessionStore(), oversizedState = oversizedSession.b
 const oversizedVault = new SignedRouteVault();
 oversizedVault.reset(oversizedState.generation, oversizedState.epoch)
 const oversizedRoutes = new RouteCoordinator(clock, oversizedSession, oversizedSettings,
-  scope.own(new RestrictionStore(oversizedStorage, () => now)), scope.own(new EvidenceStore(oversizedStorage, () => now)), oversizedVault)
+  scope.own(new RestrictionStore(oversizedStorage, () => now)), scope.own(new EvidenceStore(oversizedStorage, () => now)), oversizedVault, createRuntimeIds())
 const oversizedPlayurl = new PlayurlAdapter(new PlayurlController(oversizedSession, oversizedVault, oversizedRoutes, oversizedSettings))
 const oversizedTransport = scope.own(new TransportAdapter(oversizedSession, oversizedSettings, oversizedRoutes,
-  oversizedPlayurl, measurementStub, () => now))
+  oversizedPlayurl, measurementStub, () => now, createRuntimeIds()))
 oversizedTransport.install()
 if (scenario === 13) {
  let iteration = 0
@@ -1083,3 +1086,4 @@ for (const suffix of ['szbdyd.com', 'mountaintoys.cn', 'nexusedgeio.com', 'ahdoh
 }
 test("unattributed third-party .m4s Fetch remains website-owned [15]", { timeout: 5000 }, async t => { await (await fixture(t, 14))() })
 test("disabled script preserves oversized website Fetch dispatch [16]", { timeout: 5000 }, async t => { await (await fixture(t, 15))() })
+import '../regressions/functional-races/xhr.ts'

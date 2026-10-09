@@ -23,7 +23,7 @@ export interface MonitorSnapshot {
 
 export class PlayerMonitor {
   #timer: (() => void) | null = null
-  #lastTime = 0
+  #lastTime: number | null = null
   #stableProgressSec = 0
   #stallTicks = 0
   #lastRecoveryAt = 0
@@ -55,7 +55,7 @@ export class PlayerMonitor {
 
   start(): void { if (this.#timer === null) { this.#timer = this.scheduler.interval(() => this.tick(), 1000); this.tick() } }
   stop(): void { this.#timer?.(); this.#timer = null; this.measurement.cancel('monitor-stop') }
-  reset(): void { this.#lastTime = 0; this.#stableProgressSec = 0; this.#stallTicks = 0; this.#lastRecoveryAt = 0; this.#seekGraceUntil = 0; this.#manifestTick = 0; this.#manifestReady = false;
+  reset(): void { this.#lastTime = null; this.#stableProgressSec = 0; this.#stallTicks = 0; this.#lastRecoveryAt = 0; this.#seekGraceUntil = 0; this.#manifestTick = 0; this.#manifestReady = false;
     this.#startupRescueAttempted = false; this.#startupObservedProgress = false; this.#lastFrames = null; this.#startupRescueState = 'watching'
   }
   snapshot(): MonitorSnapshot { return this.#snapshot }
@@ -68,7 +68,7 @@ export class PlayerMonitor {
     this.routes.observePlaybackRate(video.available ? video.playbackRate : 0)
     if (!this.#manifestReady || this.#manifestTick++ % 5 === 0) this.#manifestReady = this.player.syncManifest()
     if (video.seeking) this.#seekGraceUntil = now + (this.#demand(video).highDemand ? 8000 : 5000)
-    const advanced = video.currentTime - this.#lastTime > 0.05
+    const advanced = video.available && this.#lastTime !== null && video.currentTime - this.#lastTime > 0.05
     const newFrames = video.frames !== null && this.#lastFrames !== null && video.frames > this.#lastFrames
     if (advanced || newFrames || video.playableBufferSec >= 1) {
       this.#startupObservedProgress = true
@@ -113,7 +113,7 @@ export class PlayerMonitor {
       stableProgressSec: this.#stableProgressSec, playableBufferSec: video.playableBufferSec,
       visible: this.isVisible(), seeking: video.seeking || now < this.#seekGraceUntil,
       recovering: this.recovery.isRecovering(), disabled: disabled || originalMode })
-    this.#lastTime = video.currentTime
+    this.#lastTime = video.available ? video.currentTime : null
     this.#lastFrames = video.frames
     this.#snapshot = Object.freeze({ video, stableProgressSec: this.#stableProgressSec, watchdog, stallTicks: this.#stallTicks,
       startupRescue: { state: this.#startupRescueState, ageSec: Math.floor(startupAge / 1000) } })

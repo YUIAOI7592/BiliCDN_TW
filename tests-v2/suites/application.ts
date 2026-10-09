@@ -1,3 +1,4 @@
+import { createRuntimeIds } from "../../src-v2/platform/runtime-ids.ts"
 import { FakeClock } from '../support/clock.ts'
 import { deferred, countdown } from '../support/deferred.ts'
 import { test } from 'node:test'
@@ -41,7 +42,7 @@ const liveRep = liveVault.register({ generation: state.generation, epoch: state.
   codec: 'av1', bandwidth: 3_000_000, urls: ['https://upos-sz-mirrorali.bilivideo.com/upgcxcode/c/d/2.m4s?k=1'], source: 'page-hint' })
 if (scenario === 0) return async () => {
 assert.ok(liveRep, 'controller fixture representation exists')
-const coordinator = new RouteCoordinator(clock, session, settings, restrictions, evidenceStore, liveVault)
+const coordinator = new RouteCoordinator(clock, session, settings, restrictions, evidenceStore, liveVault, createRuntimeIds())
 const opaqueAudioUrl = 'https://upos-hz-mirrorakam.akamaized.net/opaque/audio-segment?signature=private'
 const opaqueAudioRep = liveVault.register({ generation: state.generation, epoch: state.epoch, kind: 'audio', key: 'opaque-audio',
   height: 0, codec: 'other', bandwidth: 192_000, urls: [opaqueAudioUrl], source: 'trusted-api' })
@@ -54,7 +55,7 @@ assert.strictEqual(coordinator.apply(opaqueAudioUrl).decision.action, 'block', '
 assert.strictEqual(coordinator.inspectOriginal(opaqueAudioUrl).decision.action, 'block', 'non-GET opaque URL obeys the blacklist')
 }
 
-const coordinator = new RouteCoordinator(clock, session, settings, restrictions, evidenceStore, liveVault)
+const coordinator = new RouteCoordinator(clock, session, settings, restrictions, evidenceStore, liveVault, createRuntimeIds())
 const opaqueAudioUrl = 'https://upos-hz-mirrorakam.akamaized.net/opaque/audio-segment?signature=private'
 const opaqueAudioRep = liveVault.register({ generation: state.generation, epoch: state.epoch, kind: 'audio', key: 'opaque-audio',
   height: 0, codec: 'other', bandwidth: 192_000, urls: [opaqueAudioUrl], source: 'trusted-api' })
@@ -193,7 +194,7 @@ const stallRestrictions = scope.own(new RestrictionStore(new FakeStorage(), () =
 const stallSettings = scope.own(new SettingsStore(new FakeStorage(), () => stallNow))
 await stallSettings.update({ considerNativeSources: true })
 const stallRoutes = new RouteCoordinator({ now: () => stallNow }, startupSession, stallSettings,
-  stallRestrictions, stallEvidence, startupVault)
+  stallRestrictions, stallEvidence, startupVault, createRuntimeIds())
 if (scenario === 4) return async () => {
 if (startupRep) {
   const exactCatalogBackup = `https://${TRUSTED_CATALOG[0]}/upgcxcode/startup/video.m4s?k=backup-exact`
@@ -232,7 +233,7 @@ if (startupRep) {
   assert.strictEqual(plannedFallback?.stage, 'planned', 'fallback plan is not reported as a sent request')
   const nextFallback = stallRoutes.apply(startupRoot)
   assert.ok(nextFallback.url && nextFallback.decision.host === fallback?.host, 'fallback remains legal for the next request')
-  const fallbackRequest = { requestId: requestId('fallback-next'), generation: startupGeneration.generation, epoch: startupGeneration.epoch,
+  const fallbackRequest = { routePolicyRevision: stallRoutes.policyRevision(), requestId: requestId('fallback-next'), generation: startupGeneration.generation, epoch: startupGeneration.epoch,
     decisionId: nextFallback.decision.id, representation: startupRep, kind: 'video' as const, attributionStatus: 'matched' as const,
     attributionSource: 'exact' as const, decisionStage: 'request' as const, routeType: nextFallback.decision.routeType,
     originalHost: 'upos-sz-mirrorali.bilivideo.com', targetHost: fallback!.host!, sourceHost: 'upos-sz-mirrorali.bilivideo.com',
@@ -282,7 +283,7 @@ if (startupRep) {
   }
   const plannedFallback = (stallRoutes.snapshot().fallback).video
   const nextFallback = stallRoutes.apply(startupRoot)
-  const fallbackRequest = { requestId: requestId('fallback-next'), generation: startupGeneration.generation, epoch: startupGeneration.epoch,
+  const fallbackRequest = { routePolicyRevision: stallRoutes.policyRevision(), requestId: requestId('fallback-next'), generation: startupGeneration.generation, epoch: startupGeneration.epoch,
     decisionId: nextFallback.decision.id, representation: startupRep, kind: 'video' as const, attributionStatus: 'matched' as const,
     attributionSource: 'exact' as const, decisionStage: 'request' as const, routeType: nextFallback.decision.routeType,
     originalHost: 'upos-sz-mirrorali.bilivideo.com', targetHost: fallback!.host!, sourceHost: 'upos-sz-mirrorali.bilivideo.com',
@@ -311,7 +312,7 @@ assert.ok(incompatibleRep, 'Catalog incompatibility fixture has a representation
 }
 
 const incompatibleRoutes = new RouteCoordinator(clock, incompatibleSession, scope.own(new SettingsStore(new FakeStorage(), () => now)),
-  scope.own(new RestrictionStore(new FakeStorage(), () => now)), scope.own(new EvidenceStore(new FakeStorage(), () => now)), incompatibleVault)
+  scope.own(new RestrictionStore(new FakeStorage(), () => now)), scope.own(new EvidenceStore(new FakeStorage(), () => now)), incompatibleVault, createRuntimeIds())
 if (scenario === 6) return async () => {
 if (incompatibleRep) {
   const badCatalog = incompatibleRoutes.startupOptions(incompatibleRoot)?.candidates.find(candidate => candidate.type === 'catalog-generated')
@@ -827,3 +828,4 @@ for (const rate of [1, 1.5, 2, 0.75]) {
 test("2x is only the unknown-rate planning fallback [14]", { timeout: 5000 }, async t => { await (await fixture(t, 13))() })
 test("host-lock never restores a dead root and may choose a legal alternative [15]", { timeout: 5000 }, async t => { await (await fixture(t, 14))() })
 test("normal short resume clears pause-armed diagnostic state [16]", { timeout: 5000 }, async t => { await (await fixture(t, 15))() })
+import '../regressions/functional-races/recovery.ts'

@@ -117,15 +117,19 @@ export class ControlCenter {
   #host: HTMLDivElement | null = null
   #shadow: ShadowRoot | null = null
   #opener: HTMLElement | null = null
+  #viewVersion = 0
+  #open = false
   constructor(private readonly deps: ControlCenterDependencies) {}
 
   show(opener?: HTMLElement | null): void {
+    this.#open = true
     this.#opener = opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null)
     this.#ensure()
     this.#renderOverview()
   }
 
   close(): void {
+    this.#open = false; this.#viewVersion++
     if (this.#shadow) this.#shadow.replaceChildren(this.#style())
     const target = this.#opener?.isConnected ? this.#opener : document.querySelector('video') ?? document.body
     if (target instanceof HTMLElement) { try { target.focus({ preventScroll: true }) } catch { /* detached */ } }
@@ -148,6 +152,7 @@ export class ControlCenter {
   #style(): HTMLStyleElement { const style = document.createElement('style'); style.textContent = css; return style }
 
   #shell(title: string): { body: HTMLDivElement; foot: HTMLElement } {
+    const version = ++this.#viewVersion
     const backdrop = document.createElement('div'); backdrop.className = 'backdrop'
     const dialog = document.createElement('section'); dialog.className = 'dialog'; dialog.setAttribute('role', 'dialog'); dialog.setAttribute('aria-modal', 'true')
     const head = document.createElement('header'); head.className = 'head'
@@ -158,7 +163,7 @@ export class ControlCenter {
     const foot = document.createElement('footer'); foot.className = 'foot'
     dialog.append(head, body, foot); backdrop.append(dialog)
     this.#shadow?.replaceChildren(this.#style(), backdrop)
-    queueMicrotask(() => close.focus())
+    queueMicrotask(() => { if (this.#ownsView(version)) close.focus() })
     return { body, foot }
   }
 
@@ -231,17 +236,16 @@ export class ControlCenter {
     body.append(summary)
     const actions = document.createElement('div'); actions.className = 'grid'
     const measurementButton = this.#button('安排測速（不會立即換 CDN）', () => { this.deps.commands.requestMeasurement(); this.#renderOverview() })
-    const blacklistButton = this.#button('封鎖最近成功回應的影片 CDN 24 小時（影片＋音訊）', async () => {
-      await this.deps.commands.blacklistLatestVideo(); this.#renderOverview()
-    }, 'danger')
+    const blacklistButton = this.#button('封鎖最近成功回應的影片 CDN 24 小時（影片＋音訊）', () =>
+      this.#refreshAfter(this.deps.commands.blacklistLatestVideo(), () => this.#renderOverview()), 'danger')
     actions.append(
-      this.#button(settings.disabled ? '啟用腳本' : '停用腳本', async () => { await this.deps.commands.updateSettings({ disabled: !settings.disabled }); this.#renderOverview() }, 'primary'),
+      this.#button(settings.disabled ? '啟用腳本' : '停用腳本', () => this.#refreshAfter(this.deps.commands.updateSettings({ disabled: !settings.disabled }), () => this.#renderOverview()), 'primary'),
       this.#button('CDN 與播放設定', () => this.#renderSettings()),
       this.#button('查看診斷報告', () => this.#renderDiagnostics()),
       measurementButton,
       blacklistButton,
-      this.#button('清除測速紀錄、黑名單與故障標記', async () => { await this.deps.commands.clearLearning(); this.#renderOverview() }, 'danger'),
-      this.#button('還原預設設定（不清除測速紀錄）', async () => { await this.deps.commands.resetSettings(); this.#renderOverview() }, 'danger'),
+      this.#button('清除測速紀錄、黑名單與故障標記', () => this.#refreshAfter(this.deps.commands.clearLearning(), () => this.#renderOverview()), 'danger'),
+      this.#button('還原預設設定（不清除測速紀錄）', () => this.#refreshAfter(this.deps.commands.resetSettings(), () => this.#renderOverview()), 'danger'),
     )
     if (!this.deps.routes.latestVideoHost()) {
       blacklistButton.disabled = true
@@ -261,14 +265,14 @@ export class ControlCenter {
     const mode = document.createElement('select')
     mode.append(new Option('由腳本自動挑選 CDN', ''), ...TRUSTED_CATALOG.map(host => new Option(`固定使用：${host}`, host)))
     mode.value = settings.fixedHost ?? ''
-    mode.addEventListener('change', event => { if (!event.isTrusted) return; void this.deps.commands.updateSettings({ fixedHost: mode.value || null })
-      .then(() => { this.#renderSettings() }) })
+    mode.addEventListener('change', event => { if (!event.isTrusted) return
+      void this.#refreshAfter(this.deps.commands.updateSettings({ fixedHost: mode.value || null }), () => this.#renderSettings()) })
     rows.append(this.#row('要如何選 CDN', mode, '自動模式會參考可用性與測速結果；固定模式優先使用你指定的節點，但仍會避開已禁止使用的節點。'))
     rows.append(this.#toggle('允許參考 B 站原生來源', settings.considerNativeSources,
       value => {
         const pending = this.deps.commands.updateSettings({ considerNativeSources: value })
         if (!value) this.#renderSettings()
-        return pending.then(() => this.#renderSettings())
+        return this.#refreshAfter(pending, () => this.#renderSettings())
       },
       '預設關閉。關閉時，腳本辨識到的影音只依內建 CDN 清單選路、測速及提供播放器備援；無法安全改寫或沒有合法內建 CDN 時會擋下請求。開啟後，B 站當次提供的原始與備用網址可參與選路。下方的原生對照測試模式獨立運作；已送出的請求不會取消。'))
     rows.append(this.#toggle('測試：只用 B 站原本提供的 CDN', this.deps.routes.isOriginalComparison(), enabled => {
@@ -293,7 +297,7 @@ export class ControlCenter {
         .map(row => `${restrictionLabel(row.type)}（${row.kind === 'all' ? '影片＋音訊' : row.kind === 'video' ? '影片' : '音訊'}）`)
       const detail = `${defaultEnabled ? '預設可用的內建 CDN' : '預設標為不可用；勾選後才允許'}${penalties.length ? `｜目前仍被禁止：${penalties.join('、')}；勾選不會解除禁止` : ''}`
       rows.append(this.#toggle(host, enabled, async value => {
-        await this.deps.commands.updateSettings({ catalogOverrides: { ...this.deps.settings.get().catalogOverrides, [host]: value } })
+        await this.deps.commands.setCatalogEnabled(host, value)
       }, detail))
     }
     body.append(rows); foot.append(this.#button('返回', () => this.#renderOverview()))
@@ -321,6 +325,14 @@ export class ControlCenter {
       monitor: this.deps.monitor.snapshot(), recovery: this.deps.recovery.snapshot(), measurement: this.deps.measurement.snapshot(),
       interception: this.deps.transport.snapshot(),
       routes: this.deps.routes.snapshot(), restrictions: this.deps.restrictions.list(), evidence })
+  }
+
+  #ownsView(version: number): boolean { return this.#open && this.#viewVersion === version }
+
+  async #refreshAfter(command: Promise<unknown>, render: () => void): Promise<void> {
+    const version = this.#viewVersion
+    await command
+    if (this.#ownsView(version)) render()
   }
 
   #button(label: string, action: () => void | Promise<void>, tone = ''): HTMLButtonElement {

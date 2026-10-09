@@ -334,7 +334,7 @@ export class DiagnosticRecorder {
   }
   #flows() { return [...this.#flow].map(([key, row]) => ({ key, ...row })) }
   #request(row: RequestContext): DiagnosticRequest {
-    return { requestId: text(row.requestId, 160), generation: row.generation, epoch: row.epoch,
+    return { requestId: text(row.requestId, 160), generation: row.generation, epoch: row.epoch, routePolicyRevision: row.routePolicyRevision,
       decisionId: text(row.decisionId, 160), representation: row.representation === null ? null : text(row.representation, 160),
       ...(row.authorityRevision !== undefined ? { authorityRevision: row.authorityRevision } : {}), kind: row.kind,
       attributionStatus: row.attributionStatus, attributionSource: row.attributionSource, decisionStage: row.decisionStage,

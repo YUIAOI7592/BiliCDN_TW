@@ -1,3 +1,4 @@
+import { createRuntimeIds } from "../../src-v2/platform/runtime-ids.ts"
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { PlayurlAdapter } from '../../src-v2/adapters/playurl.ts'
@@ -42,7 +43,7 @@ const fixture = (scope: TestScope) => {
   const settings = scope.own(new SettingsStore(storage, () => now))
   const restrictions = scope.own(new RestrictionStore(storage, () => now))
   const evidence = scope.own(new EvidenceStore(storage, () => now))
-  const routes = new RouteCoordinator({ now: () => now }, session, settings, restrictions, evidence, vault)
+  const routes = new RouteCoordinator({ now: () => now }, session, settings, restrictions, evidence, vault, createRuntimeIds())
   const adapter = new PlayurlAdapter(new PlayurlController(session, vault, routes, settings))
   return { adapter, storage, session, vault, settings, restrictions, evidence, routes }
 }

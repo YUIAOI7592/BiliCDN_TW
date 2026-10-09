@@ -1,3 +1,5 @@
+import { installProgressEvent } from "../support/progress-event.ts"
+import { createRuntimeIds } from "../../src-v2/platform/runtime-ids.ts"
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
@@ -18,12 +20,13 @@ import { testScope } from '../support/scope.ts'
 // Earlier expectations run in their own cases; no mutable state crosses a test boundary.
 async function fixture(t: TestContext, scenario: number, parameter = 0): Promise<() => Promise<void>> {
   const scope = testScope(t)
+  installProgressEvent(scope)
 const now = () => 2_000_000_000_000, storage = new FakeStorage()
 const settings = scope.own(new SettingsStore(storage, now)), session = new SessionStore(), vault = new SignedRouteVault()
 const state = session.beginGeneration(false);
 vault.reset(state.generation, state.epoch)
 const routes = new RouteCoordinator({ now }, session, settings, scope.own(new RestrictionStore(storage, now)),
-    scope.own(new EvidenceStore(storage, now)), vault)
+    scope.own(new EvidenceStore(storage, now)), vault, createRuntimeIds())
 const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes, settings))
 const original = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/progressive-transport/one.mp4?fixture=primary'
 const fixture = () => ({ code: 0, message: 'OK', data: { format: 'mp4', quality: 64,
@@ -53,7 +56,7 @@ const fakeWindow = { fetch: nativeFetch, XMLHttpRequest: FakeXhr }
 scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
 scope.defineGlobal('location', { configurable: true, value: new URL('https://www.bilibili.com/') })
 const measurement = { willGateStartup: () => false, prepareStartup: async () => undefined, noteUnpreflighted: () => undefined } satisfies ConstructorParameters<typeof TransportAdapter>[4]
-const transport = scope.own(new TransportAdapter(session, settings, routes, playurl, measurement, now))
+const transport = scope.own(new TransportAdapter(session, settings, routes, playurl, measurement, now, createRuntimeIds()))
 transport.install()
 const response = await fakeWindow.fetch(api)
 if (scenario === 0) return async () => {

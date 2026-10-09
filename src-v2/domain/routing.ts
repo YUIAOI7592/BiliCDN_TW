@@ -80,14 +80,14 @@ export const rankRoutes = (input: RankRoutesInput, now: number): readonly RouteR
 
 export const chooseRoute = (input: RankRoutesInput, clock: Clock, id: DecisionId): RouteDecision => {
   const ranking = rankRoutes(input, clock.now())
+  const fixed = input.fixedHost ? ranking.find(row => row.eligible && row.candidate.host === input.fixedHost) : null
   const current = input.current && ranking.find(row => row.eligible && row.candidate.host === input.current?.host)
   const healthyBoundary = input.boundary !== 'verified-failure' && input.boundary !== 'watchdog' && input.boundary !== 'user-setting'
-  if (current && healthyBoundary && input.boundary !== 'new-epoch') {
+  if (!fixed && current && healthyBoundary && input.boundary !== 'new-epoch') {
     const candidate = current.candidate
     if (candidate.type === 'root-original') return { action: 'pass', id, reason: 'healthy-affinity', routeType: 'root-original', host: candidate.host, ranking }
     return { action: 'rewrite', id, reason: 'healthy-affinity', routeType: candidate.type, host: candidate.host, candidate, ranking }
   }
-  const fixed = input.fixedHost ? ranking.find(row => row.eligible && row.candidate.host === input.fixedHost) : null
   const original = ranking.find(row => row.eligible && row.candidate.type === 'root-original')
   if (!fixed && input.boundary === 'startup' && original) {
     return { action: 'pass', id, reason: 'startup-original-pending-preflight', routeType: 'root-original', host: original.candidate.host, ranking }

@@ -2,7 +2,7 @@
 
 # 開發流程
 
-本文件是 **v2.1.8**（含 MP4／FLV 修正）的現行開發流程。各版測試、安全審閱與瀏覽器結果集中於 [驗證報告](TEST_REPORT.md) 及有日期的驗收紀錄。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
+本文件是 **v2.1.9**（含功能與競態修復）的現行開發流程。各版測試、安全審閱與瀏覽器結果集中於 [驗證報告](TEST_REPORT.md) 及有日期的驗收紀錄。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
 
 <a name="repository-layout-and-archive-maintenance"></a>
 
@@ -97,6 +97,7 @@ verify 不執行 Codex Security 或 Chrome／Tampermonkey 驗收。安全敏感�
 | `progressive-routing` | Catalog 來源不透明識別碼、完整候選池、備援上限及設定競態 |
 | `progressive-transport` | MP4 Fetch／XHR 輸出、共用起播窗口及對照／停用模式 |
 | `playurl-summary` | 型別化接納結果、安全最近摘要、狀態語意、生命週期及匯出隱私 |
+| `control-center` | Catalog 單節點更新、遠端設定合併、關閉／切頁後的命令與焦點所有權 |
 
 使用 `npm test -- <selector>` 執行單一套件；執行器也接納 `suites/<selector>` 別名。`npm test -- architecture` 執行 AST 規則測試情境，`npm test -- imports` 執行匯入純度測試，`npm test -- tooling` 使用暫存測試情境驗證測試工具。完整 `npm test` 執行這三項與全部契約套件。
 
@@ -114,6 +115,8 @@ verify 不執行 Codex Security 或 Chrome／Tampermonkey 驗收。安全敏感�
 
 不得在正式打包產物加入公開測試橋接介面；測試從 TypeScript 來源獨立打包。
 
+2026-10-09 的 [v2.1.9 的 17 項修復](FUNCTIONAL_FIX_REPORT.md) 以 `tests-v2/regressions/functional-races/` 保存具名回歸，分別由 application、progressive-routing、native-transport、adapter-boundaries 及 orchestration 套件匯入；UI 案例位於 control-center。原調查證據不作正式測試輸入。XHR 原生狀態替身區分原生 send 前／後的 abort，模擬同步 setter 例外；ProgressEvent 全域經 testScope 管理。FakeClock／deferred 明確控制晚到、拒絕及鎖取得順序，不能以此宣稱 Chrome 原生事件已驗收。
+
 文件使用「儲存元件（store）」「測試情境（fixture）」「建立函式（factory）」「中繼資料（metadata）」「原始碼對照（source map）」「報告產生器（reporter）」及「堆疊資訊（stack）」；瀏覽器攔截與 `t.after()` 等測試清理掛鉤分開描述。程式識別字、命令及 Node 原始狀態值保持原樣；中文化範圍與封存規則見 [文件政策](INDEX.md#現行指南)。
 
 <a name="build-output"></a>
@@ -126,7 +129,7 @@ verify 不執行 Codex Security 或 Chrome／Tampermonkey 驗收。安全敏感�
 
 ## 真實 Chrome 驗證
 
-v2.1.8 的標準 Tampermonkey 更新及 2026-10-04 MP4 試片／公開 DASH 觀察見 [最新版報告](TEST_REPORT.md#chrome--tampermonkey-observations-after-standard-update)。完整公開 MP4、FLV 現場樣本及較早 DASH 緩衝的限制一併保留，不另列為已批准待辦。
+v2.1.8 的標準 Tampermonkey 更新及 2026-10-04 MP4 試片／公開 DASH 觀察見 [歷史報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#chrome--tampermonkey-observations-after-standard-update)。完整公開 MP4、FLV 現場樣本及較早 DASH 緩衝的限制一併保留，不另列為已批准待辦。
 
 已發布使用者腳本在 Tampermonkey 更新後，使用獨立測試分頁，記錄：
 

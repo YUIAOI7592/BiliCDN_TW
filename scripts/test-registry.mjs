@@ -3,7 +3,7 @@ export const suites = Object.freeze([
   { name: 'imports', source: 'tests-v2/imports.ts' },
   ...['domain-boundaries', 'domain', 'state', 'application', 'diagnostics', 'adapters', 'native-routing',
     'native-transport', 'orchestration', 'adapter-boundaries', 'measurement-state', 'progressive-playurl',
-    'progressive-routing', 'progressive-transport', 'playurl-summary'].map(name => ({ name,
+    'progressive-routing', 'progressive-transport', 'playurl-summary', 'control-center'].map(name => ({ name,
     source: name === 'domain-boundaries' ? `tests-v2/${name}.ts` : `tests-v2/suites/${name}.ts` })),
   { name: 'tooling', source: 'tests-v2/tooling.ts' },
 ].map(Object.freeze))

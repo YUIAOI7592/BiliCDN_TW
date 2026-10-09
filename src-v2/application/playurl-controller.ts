@@ -1,4 +1,4 @@
-import type { PlaybackDemand, RepresentationId, MediaKind, RouteIdentity } from '../domain/model.ts'
+import type { PlaybackDemand, RepresentationId, MediaKind, RouteIdentity, GenerationId, EpochId } from '../domain/model.ts'
 import type { RouteCoordinator } from './route-coordinator.ts'
 import type { SessionStore } from '../state/session-store.ts'
 import type { SignedRouteVault } from '../state/signed-route-vault.ts'
@@ -20,6 +20,7 @@ export interface PlayurlOutput { readonly token: object; readonly primary: strin
 type WriteOutput = (item: PlayurlItem, primary: string, backups: readonly string[]) => void
 
 export class PlayurlController {
+  #epochListeners = new Set<(state: { readonly generation: GenerationId; readonly epoch: EpochId }) => void>()
   #seenTrusted = new WeakSet<object>()
   #trustedItems = new WeakMap<object, RouteIdentity>()
   #seenPage = new WeakMap<object, number>()
@@ -32,6 +33,10 @@ export class PlayurlController {
     private readonly settings: Pick<SettingsStore, 'get'>) {}
 
   catalogOnly(): boolean { return this.routes.isCatalogOnly() }
+  subscribeEpoch(listener: (state: { readonly generation: GenerationId; readonly epoch: EpochId }) => void): () => void {
+    this.#epochListeners.add(listener)
+    return () => this.#epochListeners.delete(listener)
+  }
   active(): boolean { return !this.session.get().disabled }
   codecPreference(): ReturnType<SettingsStore['get']>['codec'] { return this.settings.get().codec }
   lifecycleKey(): string { const s = this.session.get(); return `${s.generation}:${s.epoch}` }
@@ -71,13 +76,16 @@ export class PlayurlController {
       }
     }
     let contentKey = ''
-    try { const pathname = new URL((dash.video[0] ?? dash.audio[0])?.primary ?? '').pathname; contentKey = pathname.slice(0, pathname.lastIndexOf('/')) } catch { /* no trusted media identity */ }
+    const parsedContent = parseMediaUrl((dash.video[0] ?? dash.audio[0])?.primary ?? '')
+    if (parsedContent) { const pathname = parsedContent.url.pathname; contentKey = pathname.slice(0, pathname.lastIndexOf('/')) }
     if (source === 'trusted-api' && this.#contentKey && contentKey && contentKey !== this.#contentKey) {
       this.session.beginEpoch()
       const state = this.session.get()
       this.vault.reset(state.generation, state.epoch)
       this.routes.resetEpoch()
       this.#trustedItems = new WeakMap()
+      const identity = Object.freeze({ generation: state.generation, epoch: state.epoch })
+      for (const listener of this.#epochListeners) listener(identity)
     }
     if (source === 'trusted-api' && contentKey) this.#contentKey = contentKey
     if (responseKey) { this.#responses.add(responseKey); while (this.#responses.size > 128) this.#responses.delete(this.#responses.values().next().value as string) }
@@ -107,7 +115,7 @@ export class PlayurlController {
         const bandwidth = item.bandwidth
         const rep = this.vault.register({ generation: state.generation, epoch: state.epoch, kind,
           key: item.key, height: item.height, codec: item.codec,
-          bandwidth, urls, source })
+          bandwidth, urls, source, refreshTrustedSources: source === 'trusted-api' && item.progressive === true })
         if (rep && source === 'trusted-api') {
           const identity = this.vault.identity(rep)
           if (identity) this.#trustedItems.set(item.token, identity)

@@ -1,3 +1,4 @@
+import { createRuntimeIds } from "../../src-v2/platform/runtime-ids.ts"
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
@@ -160,7 +161,7 @@ const plannedRep = plannedVault.register({ generation: authorityState.generation
   kind: 'video', key: '80:av1:1080', height: 1080, codec: 'av1', bandwidth: 4_000_000,
   urls: [hintedUrl], source: 'page-hint' })
 assert.ok(plannedRep, 'provisional route can be planned before the API arrives')
-const plannedRoutes = new RouteCoordinator(clock, authoritySession, authoritySettings, authorityRestrictions, authorityEvidence, plannedVault)
+const plannedRoutes = new RouteCoordinator(clock, authoritySession, authoritySettings, authorityRestrictions, authorityEvidence, plannedVault, createRuntimeIds())
 const plannedDemand = { kind: 'video' as const, requiredMbps: 8, highDemand: false }
 assert.strictEqual(plannedRep ? plannedRoutes.plan(plannedRep, plannedDemand, 'startup').host : null,
   'upos-hz-mirrorakam.akamaized.net', 'provisional startup initially follows its signed root')
@@ -191,7 +192,7 @@ const plannedRep = plannedVault.register({ generation: authorityState.generation
   kind: 'video', key: '80:av1:1080', height: 1080, codec: 'av1', bandwidth: 4_000_000,
   urls: [hintedUrl], source: 'page-hint' })
 void (plannedRep);
-const plannedRoutes = new RouteCoordinator(clock, authoritySession, authoritySettings, authorityRestrictions, authorityEvidence, plannedVault)
+const plannedRoutes = new RouteCoordinator(clock, authoritySession, authoritySettings, authorityRestrictions, authorityEvidence, plannedVault, createRuntimeIds())
 const plannedDemand = { kind: 'video' as const, requiredMbps: 8, highDemand: false }
 void (plannedRep ? plannedRoutes.plan(plannedRep, plannedDemand, 'startup').host : null);
 void ('upos-hz-mirrorakam.akamaized.net');
@@ -244,7 +245,7 @@ void (null);
 if (scenario === 6) return async () => {
 if (plannedRep) {
   const staleRequest = { requestId: requestId('retired-hint'), generation: authorityState.generation, epoch: authorityState.epoch,
-    decisionId: decisionId('retired-hint'), representation: plannedRep, authorityRevision: 1, kind: 'video' as const,
+    decisionId: decisionId('retired-hint'), representation: plannedRep, authorityRevision: 1, routePolicyRevision: plannedRoutes.policyRevision(), kind: 'video' as const,
     attributionStatus: 'matched' as const, attributionSource: 'exact' as const, decisionStage: 'request' as const,
     routeType: 'root-original' as const, originalHost: 'upos-hz-mirrorakam.akamaized.net',
     targetHost: 'upos-hz-mirrorakam.akamaized.net', sourceHost: 'upos-hz-mirrorakam.akamaized.net',
@@ -260,7 +261,7 @@ if (plannedRep) {
 }
 if (plannedRep) {
   const staleRequest = { requestId: requestId('retired-hint'), generation: authorityState.generation, epoch: authorityState.epoch,
-    decisionId: decisionId('retired-hint'), representation: plannedRep, authorityRevision: 1, kind: 'video' as const,
+    decisionId: decisionId('retired-hint'), representation: plannedRep, authorityRevision: 1, routePolicyRevision: plannedRoutes.policyRevision(), kind: 'video' as const,
     attributionStatus: 'matched' as const, attributionSource: 'exact' as const, decisionStage: 'request' as const,
     routeType: 'root-original' as const, originalHost: 'upos-hz-mirrorakam.akamaized.net',
     targetHost: 'upos-hz-mirrorakam.akamaized.net', sourceHost: 'upos-hz-mirrorakam.akamaized.net',
@@ -492,7 +493,7 @@ delayedVault.register({ generation: delayedState.generation, epoch: delayedState
   kind: 'video', key: 'delayed', height: 1080, codec: 'av1', bandwidth: 1_000_000,
   urls: [delayedRoot], source: 'trusted-api' })
 const delayedRoutes = new RouteCoordinator(clock, delayedSession, delayedSettings,
-  scope.own(new RestrictionStore(delayedStorage, () => now)), scope.own(new EvidenceStore(delayedStorage, () => now)), delayedVault)
+  scope.own(new RestrictionStore(delayedStorage, () => now)), scope.own(new EvidenceStore(delayedStorage, () => now)), delayedVault, createRuntimeIds())
 assert.strictEqual(delayedRoutes.apply(delayedRoot).decision.routeType, 'root-original',
   'delayed-lock fixture initially permits Native-on original')
 delayedStorage.holdNextSettingsLock = true
@@ -531,7 +532,7 @@ delayedVault.register({ generation: delayedState.generation, epoch: delayedState
   kind: 'video', key: 'delayed', height: 1080, codec: 'av1', bandwidth: 1_000_000,
   urls: [delayedRoot], source: 'trusted-api' })
 const delayedRoutes = new RouteCoordinator(clock, delayedSession, delayedSettings,
-  scope.own(new RestrictionStore(delayedStorage, () => now)), scope.own(new EvidenceStore(delayedStorage, () => now)), delayedVault)
+  scope.own(new RestrictionStore(delayedStorage, () => now)), scope.own(new EvidenceStore(delayedStorage, () => now)), delayedVault, createRuntimeIds())
 void (delayedRoutes.apply(delayedRoot).decision.routeType);
 void ('root-original');
 delayedStorage.holdNextSettingsLock = true
@@ -562,7 +563,7 @@ const reuseSession = new SessionStore(), reuseState = reuseSession.beginGenerati
 const reuseVault = new SignedRouteVault();
 reuseVault.reset(reuseState.generation, reuseState.epoch)
 const reuseRoutes = new RouteCoordinator(clock, reuseSession, reuseSettings,
-  scope.own(new RestrictionStore(reuseStorage, () => now)), scope.own(new EvidenceStore(reuseStorage, () => now)), reuseVault)
+  scope.own(new RestrictionStore(reuseStorage, () => now)), scope.own(new EvidenceStore(reuseStorage, () => now)), reuseVault, createRuntimeIds())
 const reusePlayurl = new PlayurlAdapter(new PlayurlController(reuseSession, reuseVault, reuseRoutes, reuseSettings))
 const reusedPageRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/reuse/page.m4s?signature=page'
 const reusedPagePayload = { data: { dash: { video: [{ id: 80, codecid: 13, height: 1080,
@@ -654,7 +655,7 @@ const epochReuseSession = new SessionStore(), epochReuseState = epochReuseSessio
 const epochReuseVault = new SignedRouteVault();
 epochReuseVault.reset(epochReuseState.generation, epochReuseState.epoch)
 const epochReuseRoutes = new RouteCoordinator(clock, epochReuseSession, epochReuseSettings,
-  scope.own(new RestrictionStore(epochReuseStorage, () => now)), scope.own(new EvidenceStore(epochReuseStorage, () => now)), epochReuseVault)
+  scope.own(new RestrictionStore(epochReuseStorage, () => now)), scope.own(new EvidenceStore(epochReuseStorage, () => now)), epochReuseVault, createRuntimeIds())
 const epochReuseAdapter = new PlayurlAdapter(new PlayurlController(epochReuseSession, epochReuseVault, epochReuseRoutes, epochReuseSettings))
 const oldEpochRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/epoch-reuse/old/video.m4s?signature=old-epoch'
 const newEpochRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/epoch-reuse/new/video.m4s?signature=new-epoch'
@@ -683,7 +684,7 @@ const epochReuseSession = new SessionStore(), epochReuseState = epochReuseSessio
 const epochReuseVault = new SignedRouteVault();
 epochReuseVault.reset(epochReuseState.generation, epochReuseState.epoch)
 const epochReuseRoutes = new RouteCoordinator(clock, epochReuseSession, epochReuseSettings,
-  scope.own(new RestrictionStore(epochReuseStorage, () => now)), scope.own(new EvidenceStore(epochReuseStorage, () => now)), epochReuseVault)
+  scope.own(new RestrictionStore(epochReuseStorage, () => now)), scope.own(new EvidenceStore(epochReuseStorage, () => now)), epochReuseVault, createRuntimeIds())
 const epochReuseAdapter = new PlayurlAdapter(new PlayurlController(epochReuseSession, epochReuseVault, epochReuseRoutes, epochReuseSettings))
 const oldEpochRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/epoch-reuse/old/video.m4s?signature=old-epoch'
 const newEpochRoot = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/epoch-reuse/new/video.m4s?signature=new-epoch'

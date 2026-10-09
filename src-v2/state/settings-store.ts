@@ -101,6 +101,18 @@ export class SettingsStore {
     }
   }
 
+  async setCatalogEnabled(host: string, enabled: boolean): Promise<SettingsState> {
+    if (!isCatalogHost(host)) throw new TypeError('Unknown Catalog host')
+    return await this.storage.withLock('settings', () => {
+      const now = this.now(), current = parseSettings(this.storage.get<unknown>(SETTINGS_KEY, null), now)
+      const next = parseSettings({ ...current, catalogOverrides: { ...current.catalogOverrides, [host]: enabled },
+        updatedAt: Math.max(now, current.updatedAt + 1) }, now)
+      this.storage.set(SETTINGS_KEY, next)
+      this.#state = next; this.#emit()
+      return next
+    })
+  }
+
   async reset(): Promise<SettingsState> {
     this.#nativeOffPending++; this.#emit()
     try {

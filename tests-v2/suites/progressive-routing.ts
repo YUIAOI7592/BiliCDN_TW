@@ -1,3 +1,4 @@
+import { createRuntimeIds } from "../../src-v2/platform/runtime-ids.ts"
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
@@ -30,7 +31,7 @@ const session = new SessionStore()
 const state = session.beginGeneration(false)
 const vault = new SignedRouteVault()
 vault.reset(state.generation, state.epoch)
-const routes = new RouteCoordinator({ now: () => now }, session, settings, restrictions, evidence, vault)
+const routes = new RouteCoordinator({ now: () => now }, session, settings, restrictions, evidence, vault, createRuntimeIds())
 const demand = { kind: 'video' as const, requiredMbps: 4, highDemand: false }
 const opaque = 'https://upos-hz-mirrorakam.akamaized.net/opaque/progressive/segment-1?token=opaque'
 const segment1 = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/segment-1.mp4?token=backup&part=1'
@@ -228,7 +229,7 @@ const runtime = new RuntimeController(session, settings, routes,
       start: () => undefined, stop: () => undefined, reset: () => undefined },
     { reset: () => { measurementResets++ } },
     { subscribe: () => () => undefined, reset: () => { recoveryResets++ }, armRouteFailure: () => undefined },
-    { setEnabled: () => undefined }, { record: () => undefined, recordPlayer: () => undefined }, () => now)
+    { setEnabled: () => undefined }, { record: () => undefined, recordPlayer: () => undefined }, () => now, { subscribeEpoch: () => () => undefined })
 runtime.install()
 scope.defer(() => runtime.dispose())
 await settings.update({ fixedHost: TRUSTED_CATALOG[4] })
@@ -244,7 +245,7 @@ const pcdnVault = new SignedRouteVault();
 pcdnVault.reset(pcdnState.generation, pcdnState.epoch)
 const pcdnRestrictions = scope.own(new RestrictionStore(pcdnStorage, () => now))
 const pcdnRoutes = new RouteCoordinator({ now: () => now }, pcdnSession, pcdnSettings, pcdnRestrictions,
-    scope.own(new EvidenceStore(pcdnStorage, () => now)), pcdnVault)
+    scope.own(new EvidenceStore(pcdnStorage, () => now)), pcdnVault, createRuntimeIds())
 const pcdnSource = 'https://upos-pc.mcdn.bilivideo.com/upgcxcode/progressive/pcdn-source.mp4?token=pcdn'
 assert.strictEqual(parseMediaUrl(pcdnSource)?.kind, 'pcdn', 'fixture is a recognized PCDN media source')
 const pcdnRep = pcdnVault.register({ generation: pcdnState.generation, epoch: pcdnState.epoch, kind: 'video',
@@ -266,7 +267,7 @@ const pcdnVault = new SignedRouteVault();
 pcdnVault.reset(pcdnState.generation, pcdnState.epoch)
 const pcdnRestrictions = scope.own(new RestrictionStore(pcdnStorage, () => now))
 const pcdnRoutes = new RouteCoordinator({ now: () => now }, pcdnSession, pcdnSettings, pcdnRestrictions,
-    scope.own(new EvidenceStore(pcdnStorage, () => now)), pcdnVault)
+    scope.own(new EvidenceStore(pcdnStorage, () => now)), pcdnVault, createRuntimeIds())
 const pcdnSource = 'https://upos-pc.mcdn.bilivideo.com/upgcxcode/progressive/pcdn-source.mp4?token=pcdn'
 void (parseMediaUrl(pcdnSource)?.kind);
 void ('pcdn');
@@ -337,7 +338,7 @@ const probeVault = new SignedRouteVault();
 probeVault.reset(probeState.generation, probeState.epoch)
 const probeRoutes = new RouteCoordinator({ now: probeClock.now }, probeSession, probeSettings,
     scope.own(new RestrictionStore(probeStorage, probeClock.now)),
-    scope.own(new EvidenceStore(probeStorage, probeClock.now)), probeVault)
+    scope.own(new EvidenceStore(probeStorage, probeClock.now)), probeVault, createRuntimeIds())
 const probeFirst = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/probe-1.mp4?segment=1'
 const probeSecond = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/probe-2.mp4?segment=2'
 const probeRep1 = probeVault.register({ generation: probeState.generation, epoch: probeState.epoch, kind: 'video',
@@ -503,3 +504,4 @@ test("fixed Catalog change cancels a pending startup probe [6]", { timeout: 5000
 test("Catalog source handle resolves exact current-epoch PCDN source [7]", { timeout: 5000 }, async t => { await (await fixture(t, 6))() })
 test("measurement fixture has two independent progressive segments [8]", { timeout: 5000 }, async t => { await (await fixture(t, 7))() })
 test("startup gate remains bounded but open before its deadline [9]", { timeout: 5000 }, async t => { await (await fixture(t, 8))() })
+import '../regressions/functional-races/routing.ts'

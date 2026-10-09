@@ -99,7 +99,7 @@ trace.recordPlayer(traceSample(101, 3, 125))
 if (scenario === 1) return async () => {
 assert.strictEqual(attemptRows().at(-1)?.stage, 'progress-unconfirmed', 'old buffered playback does not verify a fallback')
 const traceRequest = (id: string, decision: string, host: string) => ({ requestId: requestId(id), generation: traceIdentity.generation,
-  epoch: traceIdentity.epoch, decisionId: decisionId(decision), representation: traceRep, authorityRevision: 4,
+  epoch: traceIdentity.epoch, decisionId: decisionId(decision), representation: traceRep, authorityRevision: 4, routePolicyRevision: 0,
   kind: 'video' as const, attributionStatus: 'matched' as const, attributionSource: 'exact' as const,
   decisionStage: 'request' as const, routeType: 'catalog-generated' as const, originalHost: traceHostA,
   targetHost: host, sourceHost: traceHostA, playurlHostChanged: false, playurlOutput: null,
@@ -133,7 +133,7 @@ assert.strictEqual(timedOutFlow.reduce((sum, row) => sum + row.timeouts, 0), 1, 
 void (attemptRows().at(-1)?.stage);
 void ('progress-unconfirmed');
 const traceRequest = (id: string, decision: string, host: string) => ({ requestId: requestId(id), generation: traceIdentity.generation,
-  epoch: traceIdentity.epoch, decisionId: decisionId(decision), representation: traceRep, authorityRevision: 4,
+  epoch: traceIdentity.epoch, decisionId: decisionId(decision), representation: traceRep, authorityRevision: 4, routePolicyRevision: 0,
   kind: 'video' as const, attributionStatus: 'matched' as const, attributionSource: 'exact' as const,
   decisionStage: 'request' as const, routeType: 'catalog-generated' as const, originalHost: traceHostA,
   targetHost: host, sourceHost: traceHostA, playurlHostChanged: false, playurlOutput: null,

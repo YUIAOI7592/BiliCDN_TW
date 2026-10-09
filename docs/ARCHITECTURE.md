@@ -2,11 +2,13 @@
 
 # v2 架構
 
-本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.8** 實作，包含 MP4／FLV 修正；版本以 [release.json](../release.json) 為準。[驗證報告](TEST_REPORT.md) 分別保存自動驗證、安全審閱及其封存覆蓋標記限制、詳細瀏覽器證據。依 2026-10-04 紀錄，更新後已完成授權的合法 MP4 試看片段與公開 DASH Chrome／Tampermonkey 回歸；完整公開 MP4 及合法現場 FLV 樣本尚未建立，維持覆蓋限制，不新增待辦。本文件是持續維護的設計參考；文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
+本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.9** 實作，包含 17 項功能與競態修復；版本以 [release.json](../release.json) 為準。[驗證報告](TEST_REPORT.md) 分別保存自動驗證、安全審查與真實瀏覽器狀態。v2.1.9 的 Chrome／Tampermonkey 尚待驗收；v2.1.8 的 MP4 試片／公開 DASH 觀察及格式覆蓋限制保留於歷史報告。本文件是持續維護的設計參考；文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
 
 <a name="dependency-direction"></a>
 
 ## 依賴方向
+
+v2.1.9 的 [功能與競態修復](FUNCTIONAL_FIX_REPORT.md) 納入下列所有權規則；來源與正式回歸案例可逐項對照。
 
 [architecture-rules.mjs](../scripts/architecture-rules.mjs) 允許的匯入關係如下：
 
@@ -55,6 +57,8 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 - 路徑無法辨識的精確簽名 URL 只可建立觀察及主機限制索引，不取得 Native 選路或主動探測能力。
 - Vault 也保存有界、當前內容週期的 playurl 輸出 URL 對照，包含原始／輸出主機、主線／備援角色、來源及決策 ID。它擁有選路授權與簽名路線索引，透過不透明識別碼及中繼資料提供候選。完整 URL 仍會經過輸入接納、輸出生成及瀏覽器送出／探測介面。`PlayerAdapter` 在取代／重設前保存序列化資訊清單指紋，XHR 在記憶體保存每筆請求的 URL 狀態；兩者不得成為另一份 Native 授權索引。這些 URL 不持久化，也不包含在診斷請求模型中。
 - `SettingsStore` 管理型別化 v2 產品設定，包括正常選路是否參考 B 站 Native 來源的持久開關，預設關閉。
+- `SettingsStore.setCatalogEnabled(host, enabled)` 在 settings 鎖內讀取並合併單一節點；一般 update 與 reset 保留完整設定更新／還原語意。
+- 可信 MP4／FLV 更新替換同段的有界來源集合；變更時 Vault 撤銷舊 handles、aliases、輸出索引並旋轉授權身分。相同正規化集合不輪替，DASH 保留既有查詢字串處理。
 - `MeasurementMetaStore` 管理既有游標／冷卻儲存存取，向呼叫端提供 `measurement` 鎖。
 
 | 儲存元件 | 持久鍵 | 讀取／更新行為 |
@@ -75,7 +79,7 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 - `RouteCoordinator` 產生路線決策、套用親和主機、規劃考慮群組的備援，提交證據或路線失效前驗證探測／傳輸結果。
 - 僅 `MeasurementController` 啟動主動探測。它管理每分頁一次、由播放器請求觸發的有界起播預測試：最多三個並行候選，共用三秒期限；後續安全輪次依序量測最多三個挑戰候選。MP4／FLV 分段共用起播窗口。路線協調器在提交前驗證起播選擇；健康探索只記錄證據，不變更親和主機。
 - 主動起播及健康探測拒絕轉址，只計入已接納主機的直接 206 Range 回應。
-- `RecoveryController` 管理播放器核心重載及恢復播放狀態。`RouteCoordinator` 管理路線備援；`PlayerMonitor` 偵測 Watchdog／冷啟動條件，`RuntimeController` 將路線備援事件轉交核心恢復。
+- `RecoveryController` 管理播放器核心重載及恢復播放狀態。`RouteCoordinator` 管理路線備援；`PlayerMonitor` 偵測 Watchdog／冷啟動條件，`RuntimeController` 只將 video 備援事件轉交影片核心恢復，audio 不能建立影片恢復意圖。
 - `LifecycleController` 在啟動、SPA 導覽鍵變更及啟用／停用變更時開始世代。頁面賦值只作有界待處理輸入，不自動切換世代。
 - `PlayerMonitor` 每秒取樣播放器，推進恢復監控週期並提供型別化觀察。
 - `PlayurlController` 登記正規化媒體表示、管理內容週期並請求輸出計畫。playurl 適配器負責資料內容解析、欄位相容及寫回。
@@ -83,7 +87,13 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 控制器接收型別化介面，常用 `Pick` 縮小介面。`NavigationPort`、`SchedulerPort` 及 `PlayerPort.observePlayIntent` 將 History 包裝函式、計時器 API 及啟動意圖檢查留在應用層政策之外。`PlayerPort` 不暴露原始播放器／核心物件。生命週期敏感的探測／傳輸提交依情況檢查當前世代、內容週期、路線身分或控制器標記；證據寫入取得儲存鎖後再次檢查有效性條件。恢復 Promise 使用生命週期序號／權杖，已釋放的生命週期觀察器忽略排隊中的頁面賦值。這些防護適用於生命週期工作；一般使用者設定寫入不綁定世代。
 
-可信 API 輸入的內容鍵改變時，`PlayurlController` 開始新的內容週期；這與生命週期世代重設分開。
+可信 API 輸入的內容鍵由 `parseMediaUrl` 已接納的正規化 URL 推導。內容鍵改變時，`PlayurlController` 在 Session／Vault／Routes 重設後、登記新表示前，同步通知 generation／epoch。Runtime 訂閱後重設監控、量測、恢復及播放器快取，釋放時取消訂閱。同片畫質切換不通知，每分頁一次的起播預算不重開。
+
+`RouteCoordinator` 擁有單調路線政策修訂號；設定／對照模式失效及內容重設會遞增。`TransportContext` 在建立請求時保存修訂號。傳輸證據寫入維持原生命週期／授權檢查，完成後若政策過期便停止控制副作用；儲存鎖等待後再次檢查，合法固定主機優先於健康親和。
+
+`platform/runtime-ids.ts` 的 factory 由入口呼叫，以 Web Crypto 產生執行環境前綴並注入傳輸及選路控制器。request／startup／challenge ID 在工作建立時分配，同工作重報不換 ID；字串沿用 schema 2 原欄位，上限 64 字元，不帶 URL 或使用者資料。模組匯入不取得亂數。
+
+量測鎖回呼先重查最新安全狀態、表示與控制器標記，才選擇記錄嘗試的候選及提交冷卻；首次播放位置只作基準。恢復在 seek／ended／mediaError 時先終止舊動作，再考慮還原；play Promise 另檢查動作序號，避免晚到拒絕覆寫較新的完成結果。
 
 <a name="progressive-playurl-processing-v218"></a>
 
@@ -115,6 +125,10 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 - 可還原的 WebRTC 封鎖。
 
 Tampermonkey 儲存及值變更監聽器由 `platform/storage.ts` 實作。適配器不擁有選路政策或施加懲罰。應用層的計時器分別由量測期限、播放器監控的週期計時器及生命週期微任務管理；恢復由監控器監控週期推進。UI 直接面向瀏覽器：`PlayerPanel` 擁有獨立的 1.5 秒週期計時器，`ControlCenter` 直接排入焦點工作。
+
+XHR 每次 open 建立獨立 metadata，區分 opened／waiting／sent／terminal。尚未原生送出的取消與本地拒絕由該 metadata 擁有；每個事件回呼後重查所有權，reopen／abort 不讓舊 loadend 或 gate 繼續影響新請求。虛擬終止使用 DONE、空回應及終止事件，abort 完成回到 UNSENT；原生已送出的事件由瀏覽器處理。readyState／response／responseText 與方法攔截共同追蹤安裝所有權，只還原仍由本攔截持有的描述子。同步重開只保留合法選項，非同步重開保留 timeout、responseType、credentials 與 headers。
+
+ControlCenter 在開啟、關閉及換頁時更新視圖版本；命令完成與排隊焦點只在仍擁有當前開啟視圖時作用。設定命令完成不代表 UI 必須仍開啟。
 
 <a name="route-lifecycle"></a>
 

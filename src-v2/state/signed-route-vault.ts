@@ -28,6 +28,7 @@ export interface RegisterRepresentationInput {
   readonly bandwidth: number
   readonly urls: readonly string[]
   readonly source: 'trusted-api' | 'player-mpd' | 'page-hint' | 'transport'
+  readonly refreshTrustedSources?: boolean
 }
 
 interface StoredRoute { readonly handle: SignedRouteHandle; readonly host: string; readonly url: string; readonly order: number; readonly activelyExplorable: boolean; readonly selectable: boolean }
@@ -83,16 +84,22 @@ export class SignedRouteVault {
         this.#dropGroup(rep)
       }
     }
+    const admitted = [...new Set([...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP).map(raw => parseMediaUrl(raw))
+      .filter(parsed => parsed && (parsed.kind === 'normal' || (parsed.kind === 'unknown' && parsed.url.protocol === 'https:' && !parsed.url.port)
+        || (parsed.kind === 'pcdn' && catalogSource(parsed.url.href)))).map(parsed => parsed!.url.href))]
+    const refreshed = !!prior && input.source === 'trusted-api' && prior.source === 'trusted-api' && input.refreshTrustedSources === true
+      && (admitted.length !== prior.routes.length || admitted.some((url, index) => url !== prior.routes[index]?.url))
     const promoted = !!prior && input.source === 'trusted-api' && prior.source !== 'trusted-api'
+    const replaced = promoted || refreshed
     const cap = input.kind === 'video' ? MAX_VIDEO_GROUPS : MAX_AUDIO_GROUPS
     if (!prior && [...this.#groups.values()].filter(group => group.identity.kind === input.kind).length >= cap) return null
     const rep = priorId ?? representationId(`${input.kind}:group-${++this.#serial}`)
-    if (promoted && priorId) {
+    if (replaced && priorId && prior) {
       this.#revokeGroupRoutes(priorId, prior)
       // A provisional URL's failure cannot invalidate a newly authoritative exact URL.
       this.#invalid.delete(priorId)
     }
-    const routes: StoredRoute[] = promoted ? [] : [...(prior?.routes ?? [])]
+    const routes: StoredRoute[] = replaced ? [] : [...(prior?.routes ?? [])]
     for (const raw of [...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP)) {
       const parsed = parseMediaUrl(raw)
       const opaque = parsed?.kind === 'unknown' && parsed.url.protocol === 'https:' && !parsed.url.port
@@ -110,11 +117,11 @@ export class SignedRouteVault {
       this.#urlChars += parsed.url.href.length
     }
     if (!routes.length) {
-      if (promoted) { this.#groups.delete(rep); this.#byKey.delete(key); this.#invalid.delete(rep) }
+      if (replaced) { this.#groups.delete(rep); this.#byKey.delete(key); this.#invalid.delete(rep) }
       return null
     }
     this.#byKey.set(key, rep)
-    const identity: RouteIdentity = !promoted && prior ? prior.identity : Object.freeze({ generation: input.generation,
+    const identity: RouteIdentity = !replaced && prior ? prior.identity : Object.freeze({ generation: input.generation,
       epoch: input.epoch, representation: rep, kind: input.kind, authorityRevision: ++this.#authoritySerial })
     this.#groups.set(rep, Object.freeze({ identity, height: input.height, codec: input.codec.slice(0, 48), bandwidth: input.bandwidth,
       source: prior?.source === 'trusted-api' ? prior.source : input.source, routes: Object.freeze(routes) }))

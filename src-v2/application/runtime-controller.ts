@@ -7,6 +7,7 @@ import type { RouteCoordinator } from './route-coordinator.ts'
 import type { MeasurementController } from './measurement-controller.ts'
 import type { RecoveryController } from './recovery-controller.ts'
 import type { PlayerMonitor } from './player-monitor.ts'
+import type { PlayurlController } from './playurl-controller.ts'
 
 export interface RuntimeDiagnosticPort {
   record(event: DomainEvent, routeObservationEnabled: boolean): void
@@ -22,9 +23,14 @@ export class RuntimeController {
     private readonly measurement: Pick<MeasurementController, 'reset'>,
     private readonly recovery: Pick<RecoveryController, 'subscribe' | 'reset' | 'armRouteFailure'>,
     private readonly visibility: { setEnabled(enabled: boolean): void },
-    private readonly diagnostics: RuntimeDiagnosticPort, private readonly now: () => number) {}
+    private readonly diagnostics: RuntimeDiagnosticPort, private readonly now: () => number,
+    private readonly content: Pick<PlayurlController, 'subscribeEpoch'>) {}
   install(): void {
     if (this.#stops.length) return
+    this.#stops.push(this.content.subscribeEpoch(state => {
+      this.reset()
+      this.record({ type: 'lifecycle', at: this.now(), ...state, reason: 'content-epoch' })
+    }))
     this.#stops.push(this.routes.subscribe(event => this.record(event)), this.recovery.subscribe(event => this.record(event)),
       this.monitor.subscribe(snapshot => this.diagnostics.recordPlayer(this.#sample(snapshot.video, snapshot.watchdog, this.now()))))
     this.visibility.setEnabled(!this.settings.get().disabled)
@@ -43,7 +49,7 @@ export class RuntimeController {
   }
   record(event: DomainEvent): void {
     this.diagnostics.record(event, !this.settings.get().disabled && !this.routes.isOriginalComparison())
-    if (event.type === 'recovery' && event.action.action === 'route-fallback' && !this.routes.isOriginalComparison()) {
+    if (event.type === 'recovery' && event.action.action === 'route-fallback' && event.action.kind === 'video' && !this.routes.isOriginalComparison()) {
       const snapshot = this.player.snapshot()
       this.diagnostics.recordPlayer(this.#sample(snapshot, this.monitor.snapshot().watchdog, event.at))
       this.recovery.armRouteFailure('route-failure', snapshot)

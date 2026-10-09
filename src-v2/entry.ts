@@ -4,6 +4,7 @@ import { RuntimeController } from './application/runtime-controller.ts'
 import { ControlCommands } from './application/control-commands.ts'
 import { MeasurementMetaStore } from './state/measurement-meta-store.ts'
 import { TampermonkeyStorage } from './platform/storage.ts'
+import { createRuntimeIds } from './platform/runtime-ids.ts'
 import { SettingsStore } from './state/settings-store.ts'
 import { RestrictionStore } from './state/restriction-store.ts'
 import { EvidenceStore } from './state/evidence-store.ts'
@@ -36,20 +37,22 @@ export const start = (): void => {
   const evidence = new EvidenceStore(storage, now)
   const session = new SessionStore()
   const vault = new SignedRouteVault()
-  const routes = new RouteCoordinator(clock, session, settings, restrictions, evidence, vault)
+  const ids = createRuntimeIds()
+  const routes = new RouteCoordinator(clock, session, settings, restrictions, evidence, vault, ids)
   const meta = new MeasurementMetaStore(storage, now)
-  const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes, settings))
+  const content = new PlayurlController(session, vault, routes, settings)
+  const playurl = new PlayurlAdapter(content)
   const player = new PlayerAdapter(playurl)
   const recovery = new RecoveryController(player, now)
   const nativeFetch = unsafeWindow.fetch.bind(unsafeWindow)
   const measurement = new MeasurementController(routes, meta, new RangeProbeAdapter(nativeFetch, now), now, scheduler)
-  const transport = new TransportAdapter(session, settings, routes, playurl, measurement, now)
+  const transport = new TransportAdapter(session, settings, routes, playurl, measurement, now, ids)
   transport.install()
   const visibility = new VisibilityAdapter()
   const monitor = new PlayerMonitor(player, session, settings, vault, routes, measurement, recovery,
     () => visibility.isActuallyVisible(), now, scheduler)
   const diagnostics = new DiagnosticRecorder(now, () => settings.get().verbose)
-  const runtime = new RuntimeController(session, settings, routes, player, monitor, measurement, recovery, visibility, diagnostics, now)
+  const runtime = new RuntimeController(session, settings, routes, player, monitor, measurement, recovery, visibility, diagnostics, now, content)
   let lifecycle: LifecycleController | null = null
   const pagePlayinfo = new PagePlayinfoAdapter((payload, serial) => lifecycle?.acceptPageAssignment(payload, serial),
     () => !settings.get().disabled && routes.isCatalogOnly())

@@ -11,6 +11,7 @@ import {
   type RecoveryActionId,
 } from '../domain/model.ts'
 import type { EvidenceStore } from '../state/evidence-store.ts'
+import type { RuntimeIdPort } from '../platform/runtime-ids.ts'
 import type { RestrictionStore } from '../state/restriction-store.ts'
 import type { SessionStore } from '../state/session-store.ts'
 import type { SettingsStore } from '../state/settings-store.ts'
@@ -43,7 +44,7 @@ export interface StartupOptions {
   readonly originalHost: string
 }
 
-interface DecisionRecord { readonly decision: RouteDecision; readonly context: RouteIdentity | null; readonly kind: MediaKind; readonly representation: RepresentationId | null }
+interface DecisionRecord { readonly decision: RouteDecision; readonly context: RouteIdentity | null; readonly kind: MediaKind; readonly representation: RepresentationId | null; readonly policyRevision: number }
 export interface FallbackProgress {
   readonly actionId: RecoveryActionId
   readonly representation: RepresentationId
@@ -91,6 +92,8 @@ export interface RouteSnapshot {
 }
 
 export class RouteCoordinator {
+  #policyRevision = 0
+  #measurementIds = new WeakMap<object, string>()
   #serial = 0
   #recoverySerial = 0
   #decisions = new Map<DecisionId, DecisionRecord>()
@@ -122,6 +125,7 @@ export class RouteCoordinator {
     private readonly evidence: Pick<EvidenceStore, 'get' | 'record'>,
     private readonly vault: Pick<SignedRouteVault, 'candidates' | 'catalogSourceHandle' | 'groupSummary' | 'hosts' | 'identity' | 'invalidate' | 'isCurrentIdentity'
       | 'isInvalid' | 'match' | 'outputRole' | 'registerAlias' | 'registerOutput' | 'resolve' | 'rootUrl' | 'wasPlayerOutput'>,
+    private readonly ids: RuntimeIdPort,
   ) {}
 
   subscribe(listener: (event: DomainEvent) => void): () => void {
@@ -130,6 +134,7 @@ export class RouteCoordinator {
   }
 
   resetEpoch(): void {
+    this.#policyRevision++
     this.#plans.clear(); this.#planIdentities.clear(); this.#unlockedNative.clear(); this.#decisions.clear(); this.#hostLockedStreams.clear(); this.#startupIncompatible.clear()
     this.#requestedRepresentations.clear()
     this.#tentativeRepresentation = null; this.#tentativeTransfers = 0
@@ -139,10 +144,12 @@ export class RouteCoordinator {
     this.#fallbacks.clear()
   }
   invalidateForUserSetting(): void {
+    this.#policyRevision++
     this.#plans.clear(); this.#planIdentities.clear(); this.#streamPlans.clear(); this.#fallbacks.clear()
     this.session.setAffinity(null)
   }
   isOriginalComparison(): boolean { return this.#originalComparison }
+  policyRevision(): number { return this.#policyRevision }
   isCatalogOnly(): boolean { return !this.#originalComparison && !this.settings.get().considerNativeSources }
   setOriginalComparison(enabled: boolean): void {
     if (this.#originalComparison === enabled) return
@@ -236,7 +243,9 @@ export class RouteCoordinator {
       const evidence = this.evidence.get(host, context.kind)
       const cachedSafeMbps = type === 'catalog-generated' && evidence && this.clock.now() - evidence.updatedAt <= 5 * 60_000
         ? evidenceMetrics(evidence, this.clock.now()).safeThroughputMbps : null
-      candidates.push({ host, type, url: candidateUrl, original, cachedSafeMbps, context })
+      const candidate = { host, type, url: candidateUrl, original, cachedSafeMbps, context }
+      this.#measurementId(candidate, 'startup')
+      candidates.push(candidate)
     }
     if (!this.isCatalogOnly()) {
       add(parsed.host, 'root-original', parsed.url.href, true)
@@ -304,7 +313,7 @@ export class RouteCoordinator {
       && !this.session.get().disabled && this.vault.isCurrentIdentity(context)
       && (!this.isCatalogOnly() || candidate.type === 'catalog-generated')
     if (!valid()) return
-    await this.evidence.record(candidate.host, context.kind, { requestId: `startup:${++this.#serial}:${candidate.host}`,
+    await this.evidence.record(candidate.host, context.kind, { requestId: this.#measurementId(candidate, 'startup'),
       at: this.clock.now(), source: 'challenge', outcome: 'success', throughputMbps: bytes * 8 / elapsedMs / 1000,
       ttfbMs, failureKind: null }, valid)
   }
@@ -670,7 +679,9 @@ export class RouteCoordinator {
     this.#challengeAttempts.set(`${context.representation}:${selected.host}`, now)
     this.#remember(decision, context, context.kind)
     this.#emit({ type: 'route-planned', at: now, decision })
-    return { decision, url, context, streamKey: rootKey, sourceHost: parseMediaUrl(root)?.host ?? null }
+    const applied = { decision, url, context, streamKey: rootKey, sourceHost: parseMediaUrl(root)?.host ?? null }
+    this.#measurementId(applied, 'challenge')
+    return applied
   }
 
   async recordChallenge(applied: AppliedRouteDecision, bytes: number, elapsedMs: number, ttfbMs: number | null,
@@ -690,7 +701,7 @@ export class RouteCoordinator {
     // is skipped by the bounded attempt ledger; only player Transport can punish a host.
     if (outcome === 'failure') return
     await this.evidence.record(applied.decision.host, context.kind, {
-      requestId: `challenge:${applied.decision.id}`,
+      requestId: this.#measurementId(applied, 'challenge'),
       at: this.clock.now(), source: 'challenge', outcome,
       throughputMbps: outcome === 'success' && bytes >= 64 * 1024 && elapsedMs > 0 ? (bytes * 8) / elapsedMs / 1000 : null,
       ttfbMs, failureKind,
@@ -705,12 +716,15 @@ export class RouteCoordinator {
     const catalogObserved = (): boolean => !this.isCatalogOnly() || (observation.routeType === 'catalog-generated'
       && isCatalogHost(observation.targetHost) && (observation.finalHost === observation.targetHost
         || (observation.finalHost === null && observation.outcome === 'failure')))
-    if (valid() && this.isCatalogOnly() && observation.routeType === 'catalog-generated'
+    const controlsCurrent = (): boolean => valid() && (observation.request
+      ? observation.request.routePolicyRevision === this.#policyRevision
+      : !!observation.decisionId && this.#decisions.get(observation.decisionId)?.policyRevision === this.#policyRevision)
+    if (controlsCurrent() && this.isCatalogOnly() && observation.routeType === 'catalog-generated'
       && isCatalogHost(observation.targetHost) && observation.finalHost && observation.finalHost !== observation.targetHost
       && observation.streamKey) this.#markIncompatibleKey(observation.streamKey, observation.targetHost)
     this.#emit({ type: 'transport-completed', at: this.clock.now(), observation, detached: !valid() || !catalogObserved() })
     if (!valid() || !catalogObserved()) return
-    if (observation.kind && observation.request) {
+    if (controlsCurrent() && observation.kind && observation.request) {
       const fallback = this.#fallbacks.get(observation.kind)
       if (fallback?.requestId === observation.request.requestId && fallback.stage === 'entered-hook') {
         this.#fallbacks.set(observation.kind, { ...fallback, stage: observation.status > 0 ? 'response-observed' : 'request-failed',
@@ -727,6 +741,7 @@ export class RouteCoordinator {
     const evidenceHost = observation.finalHost ?? observation.targetHost
     if (!evidenceHost) return
     if (observation.status === 403 && observation.streamKey && observation.routeType === 'catalog-generated') {
+      if (!controlsCurrent()) return
       this.#markIncompatibleKey(observation.streamKey, observation.targetHost)
       this.#hostLockedStreams.add(observation.streamKey)
       if (observation.kind === 'video' && observation.representation) this.recoverStartup(observation.representation,
@@ -744,7 +759,7 @@ export class RouteCoordinator {
         requestId, at: observation.completedAt, source: 'transport', outcome: 'success', throughputMbps,
         ttfbMs: observation.ttfbMs, failureKind: null,
       }, () => valid() && catalogObserved())
-      if (!valid() || !catalogObserved()) return
+      if (!controlsCurrent() || !catalogObserved()) return
       if (representation && this.vault.hosts(representation).includes(observation.finalHost)) {
         this.unlockNative(representation, observation.finalHost)
       }
@@ -768,6 +783,7 @@ export class RouteCoordinator {
     }
     const failureKind = observation.failureKind
     if (failureKind === 'native-invalid' && representation) {
+      if (!controlsCurrent()) return
       this.vault.invalidate(representation, evidenceHost)
       const demand: PlaybackDemand = { kind: observation.kind, requiredMbps: observation.kind === 'audio' ? 0.5 : 8, highDemand: false }
       this.recover(representation, demand, 'verified-failure', evidenceHost)
@@ -778,7 +794,7 @@ export class RouteCoordinator {
       requestId, at: observation.completedAt, source: 'transport', outcome: 'failure', throughputMbps: null,
       ttfbMs: observation.ttfbMs, failureKind,
     }, () => valid() && catalogObserved())
-    if (!valid() || !catalogObserved()) return
+    if (!controlsCurrent() || !catalogObserved()) return
     if (representation) {
       const demand: PlaybackDemand = { kind: observation.kind, requiredMbps: observation.kind === 'audio' ? 0.5 : 8, highDemand: false }
       this.recover(representation, demand, 'verified-failure', evidenceHost)
@@ -952,8 +968,13 @@ export class RouteCoordinator {
     while (this.#startupIncompatible.size > 256) this.#startupIncompatible.delete(this.#startupIncompatible.keys().next().value as string)
   }
   #remember(decision: RouteDecision, context: RouteIdentity | null, kind: MediaKind): void {
-    this.#decisions.set(decision.id, { decision, context, kind, representation: context?.representation ?? null })
+    this.#decisions.set(decision.id, { decision, context, kind, representation: context?.representation ?? null, policyRevision: this.#policyRevision })
     while (this.#decisions.size > 256) this.#decisions.delete(this.#decisions.keys().next().value as DecisionId)
   }
   #emit(event: DomainEvent): void { for (const listener of this.#listeners) listener(event) }
+  #measurementId(work: object, kind: 'startup' | 'challenge'): string {
+    let id = this.#measurementIds.get(work)
+    if (!id) { id = this.ids.next(kind); this.#measurementIds.set(work, id) }
+    return id
+  }
 }
