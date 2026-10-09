@@ -53,7 +53,7 @@
 | [TEST_REPORT](TEST_REPORT.md) | v2.1.9 修復、自動、安全、發布及瀏覽器狀態；含歷史導覽 |
 | [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md) | v2.0.2～v2.1.7 十二個主要區塊，包括發行前模組化驗證 |
 | [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) | 2026-10-03 三段原整理紀錄及後續有日期的文件檢查 |
-| [v2.1.9 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.9) | 發布狀態見 TEST_REPORT；附件只有 `BiliCDN_TW.user.js` |
+| [v2.1.9 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.9) | 2026-10-09 已發布並核對 latest 下載；附件只有 `BiliCDN_TW.user.js` |
 | [Release/v2.1.9](../Release/v2.1.9/) | 當次使用者腳本、報告、變更紀錄、資訊清單、校驗值快照；發布後不回寫 |
 
 自動驗證、安全掃描與真實瀏覽器驗收分開記錄。v2.1.8 的安全 `partial coverage`、MP4 試片／公開 DASH 觀察、較早 DASH 緩衝及完整公開 MP4／FLV 限制均保存於歷史報告；v2.1.9 靜態差異審查為完整覆蓋，瀏覽器驗收待安排。**v2.1.6 Chrome／Tampermonkey 驗收已批准通過、已結案**，歷史覆蓋限制不構成待辦。

@@ -4,9 +4,9 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
-**v2.1.9 功能與競態修復**已於 2026-10-09 完成發行驗證，準備發布至 [GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.9)。本版涵蓋內容切換、播放器恢復、嚴格影音隔離、簽名刷新、XHR 生命週期及設定操作，共 17 項修復。版本變更見 [變更紀錄](docs/CHANGELOG.md)，現行指南與歷史紀錄的分類見 [文件索引](docs/INDEX.md)。
+目前正式發行為 **[v2.1.9 功能與競態修復](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.9)**，已於 2026-10-09 發布。本版涵蓋內容切換、播放器恢復、嚴格影音隔離、簽名刷新、XHR 生命週期及設定操作，共 17 項修復。版本變更見 [變更紀錄](docs/CHANGELOG.md)，現行指南與歷史紀錄的分類見 [文件索引](docs/INDEX.md)。
 
-GitHub Release 附件只有使用者腳本；發布前的最新正式版本仍為 v2.1.8。v2.1.9 的自動驗證、安全審查與瀏覽器待驗收範圍見下方[驗證紀錄](#目前版本的驗證紀錄)。
+2026-10-09 已確認 GitHub 最新 Release 為 v2.1.9，附件只有使用者腳本，原有更新網址下載的版本與校驗值一致。自動驗證、安全審查與瀏覽器待驗收範圍見下方[驗證紀錄](#目前版本的驗證紀錄)。
 
 > [!IMPORTANT]
 > **原作者與原始腳本：** [jiyunshi－Bilibili CDN 台灣優化](https://greasyfork.org/zh-TW/scripts/579776-bilibili-cdn-%E5%8F%B0%E7%81%A3%E5%84%AA%E5%8C%96)。本儲存庫源自原作者 MIT 授權腳本的個人修改專案；v2 是以 TypeScript 重新設計與重構的版本，並非原作者的官方版本。

@@ -2,11 +2,11 @@
 
 # BiliCDN_TW 變更紀錄
 
-> v2.1.9 於 2026-10-09 完成發行驗證，準備發布；封裝時最新正式發行仍為 v2.1.8。舊項目描述各版發布當日的變更及驗證狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。歷史「待完成」文字不構成目前待辦。
+> 依 2026-10-09 發布讀回，v2.1.9 是最新正式發行。舊項目描述各版發布當日的變更及驗證狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。歷史「待完成」文字不構成目前待辦。
 
 ## v2.1.9
 
-2026-10-09 功能與競態修復，共 17 項；逐項來源與回歸契約見 [修復對照報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/FUNCTIONAL_FIX_REPORT.md)，發布讀回與驗證範圍見 [v2.1.9 驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+2026-10-09 從提交 `7ef87c0ec456f13895a0ba770a5b7a54baab52a7` [發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.9)功能與競態修復，共 17 項；逐項來源與回歸契約見 [修復對照報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/FUNCTIONAL_FIX_REPORT.md)，發布讀回與驗證範圍見 [v2.1.9 驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
 
 - 內容切換同步撤銷舊量測、監控及恢復工作；seek、首次採樣與晚到 play 結果遵守動作所有權，音訊備援不建立影片重載意圖。
 - MP4／FLV 可信來源刷新時撤銷過期授權；正規化內容鍵、固定主機優先與政策版本檢查避免舊請求重新控制路線。
