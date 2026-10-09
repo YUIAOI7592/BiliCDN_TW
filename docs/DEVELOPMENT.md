@@ -2,7 +2,7 @@
 
 # 開發流程
 
-本文件是 **v2.1.12 BR-04／BR-05 修復**的現行開發流程。各版測試、安全審閱與瀏覽器結果集中於 [驗證報告](TEST_REPORT.md) 及有日期的驗收紀錄。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
+本文件是 **v2.1.12 BR-04／BR-05 修復**的現行開發流程；本版已發布，兩項實際安裝版驗收完成，BR-01 等剩餘範圍獨立。各版測試、安全審閱與瀏覽器結果集中於 [驗證報告](TEST_REPORT.md) 及有日期的驗收紀錄。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
 
 <a name="repository-layout-and-archive-maintenance"></a>
 
@@ -120,6 +120,8 @@ verify 不執行 Codex Security 或 Chrome／Tampermonkey 驗收。安全敏感�
 同日納入 v2.1.10 的 [BR-02 修復](BR02_FIX_REPORT.md) 新增 40 個正式案例，仍由 `npm test -- native-transport` 執行；該版全套為 339 個。XHR 替身補入 open 參數／方法／URL／同步選項驗證、OPENED→OPENED 不發事件，以及實測 Chrome 同步選項錯誤清成 UNSENT 的邊界。先保存失敗契約，再改來源；原調查證據不覆寫。真正 Chrome 的本機來源隔離頁、Tampermonkey 安裝版驗收及 Node 契約必須分列，不能互相替代。
 
 2026-10-10 [BR-04／BR-05 修復](BR04_BR05_FIX_REPORT.md) 新增 66 個案例，全套為 **19 套件、448 案例**。19 個 BR-04 與 16 個 Fetch 整合取消案例由 native-transport 執行；31 個起播等待／取消／清理案例由 measurement-state 匯入。原生 readyState 替身使用 prototype getter，讓安裝時保存的原生 getter 能獨立讀取狀態。內部重新準備最多兩次，每次 open／選項／header 回來都重查 owner、phase、原生 OPENED 與送出政策。取消原因以 signal.reason 原值回傳，不能用 truthiness 替換；單一取消不消耗其他等待者的共用工作。
+
+本版 [安裝版紀錄](CHROME_v2.1.12_ACCEPTANCE.md) 分列真正 singleton 的 35 項矩陣與同片基本回歸。合成攔截除 GET／Range 外必須處理 OPTIONS CORS／credentials；事件從執行前 cursor 分頁，截斷或工具前提不成立的輪次作廢。測試前保存學習資料基準，以 Vault 表示／精確 requestId 限定自有寫入抑制，測後核對、還原實例掛鉤並清理。清理鎖內 Promise 必須明確 await；沒有測試前完整備份時，不得宣稱能復原樣本上限淘汰的歷史。
 
 2026-10-10 [BR-03 本機修復](BR03_FIX_REPORT.md) 新增 43 個案例，全套為 **19 套件、382 案例**。`content.ts` 由 orchestration 匯入、`content-domain.ts` 由 domain 匯入；Fetch／XHR cid 所有權沿用 native-transport，MP4／FLV／混合格式沿用 progressive-playurl，正式登記不變。runtime fixture 可注入真正 MeasurementController 的 probe，利用 FakeClock／deferred 驗證排列保留工作、真正換片撤銷晚到結果。原四個失敗契約已正式移植，紅燈 log 與綠燈驗證分開保存。
 

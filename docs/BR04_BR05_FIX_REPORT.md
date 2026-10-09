@@ -65,4 +65,12 @@ XHR 原生重導仍屬既有瀏覽器限制；取消 reason 不輸出／持久�
 
 最終凍結差異的 Codex Security **9ceb91f0-9690-4372-9e86-8e07ea29c11b** 已封存：12 個變更來源／測試／版本設定檔完整覆蓋、0 可報告發現、0 待驗證候選、沒有快照漂移警告。Snapshot digest 為 codex-security-snapshot/v1:sha256:4ae67faaca413f0591719ff73b61c0d6f30c000a19f0d23fc22cd66ed6a0d213。封存前核對 10 個獨立複核來源／測試的最終 SHA-256，全部一致；另外審查兩份版本設定，只有版本變更。完整報告與 receipt 由 Codex Security 管理保存，與一般 verify 分開。首輪漂移報告保留，未當作最終快照。
 
-v2.1.12 的完整 verify 已通過，正式 448 個案例沒有 failed／cancelled／skipped／todo。正式產物 298,785 bytes，SHA-256 c3874efbf718a3eebcc64cf2591d1a328d7ddde1aac40b7d91faf593f7c6e28d。發布與安裝版結果另按時間追加，不回寫 Release 快照。
+v2.1.12 的完整 verify 已通過，正式 448 個案例沒有 failed／cancelled／skipped／todo。正式產物 298,785 bytes，SHA-256 c3874efbf718a3eebcc64cf2591d1a328d7ddde1aac40b7d91faf593f7c6e28d。發布與安裝版結果如下，不回寫 Release 快照。
+
+## 發布及實際安裝版完成
+
+2026-10-10 04:24:04（Asia/Taipei）從 `cdbb10b3e9ce8f56485dd427dd38d10e848ba005` [發布 v2.1.12](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.12)。main 與 annotated tag peeled commit 一致；04:24:40 未認證公開 latest API／唯一附件下載的版本、大小與 SHA-256 相同。更新 URL 保持既有 Release latest，不新增 CI/CD。
+
+實際 Tampermonkey 已更新，完整程式 body 與發布產物匹配。04:35:09 **35／35 安裝版矩陣通過**，使用原安裝 singleton 的真正共用 gate／RangeProbe，沒有替換 controller 或重設預算；9 類取消原因×兩個時機保留原值，兩個正常 XHR 與未取消 Fetch 均完成，持續失效最多兩次並一次終止，abort／replace 不污染新請求。有效輪前後 routeEvidence 完全相同。04:36:29 同片播放、暫停、恢復與短程 seek 通過，seeking→seeked 約 317 ms，沒有 mediaError。
+
+作廢輪 CORS 攔截錯誤及樣本抑制錯誤單獨保存，不計有效通過。三筆自有合成樣本及其退避已精確清理；最多三筆可能被有界保留淘汰的舊樣本不能重建。有效輪改正所有權與 CORS 並取前後 payload 對照。詳細矩陣、事件、測試工具邊界與清理見 [安裝版紀錄](CHROME_v2.1.12_ACCEPTANCE.md)。本輪修復、發布與兩項安裝版驗收完成，BR-01／其餘產品驗收維持獨立。

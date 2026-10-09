@@ -2,16 +2,16 @@
 
 # BiliCDN_TW 變更紀錄
 
-> v2.1.12 正在準備發布；最新發布讀回與安裝驗收狀態見下方現行驗證報告。舊項目描述各版發布當日的變更及驗證狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。歷史「待完成」文字不構成目前待辦。
+> v2.1.12 已發布，BR-04／BR-05 安裝版驗收通過；BR-01 與其餘完整產品驗收保持獨立。舊項目描述各版發布當日的變更及驗證狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。歷史「待完成」文字不構成目前待辦。
 
 ## v2.1.12
 
-2026-10-10，BR-04／BR-05 修復，交付與驗證見 [修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR04_BR05_FIX_REPORT.md) 與 [現行驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+2026-10-10 04:24:04（Asia/Taipei），從 `cdbb10b3e9ce8f56485dd427dd38d10e848ba005` [發布 v2.1.12](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.12)，04:24:40 公開 latest 核對版本、大小與 SHA-256。交付與驗證見 [修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR04_BR05_FIX_REPORT.md) 與 [現行驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
 
 - XHR 保存原生 readyState getter；內部準備最多兩次，每個同步邊界重查所有權與最新合法目標。gate continuation 例外確實終止，已送出請求不重播。
 - 原生 send 尚未接受的例外清除 pending 歸因，不建立 CDN 失敗樣本；直接 send 保留同步原例外。
 - 起播 gate 取消使用 signal.reason，保留 Error、物件及 falsy 原值；其他 Fetch／XHR waiter 與每分頁預算不受單一取消影響。
-- 新增 66 個正式案例，全套 448 個。真正 Chrome 來源隔離 36／36；BR-02／03 對照各 31／31。安裝版須另取得新版實測。
+- 新增 66 個正式案例，全套 448 個。真正 Chrome 來源隔離 36／36；BR-02／03 對照各 31／31。發布後實際新版 Tampermonkey 35／35 共用 gate 矩陣及同片基本回歸通過；作廢輪與資料清理限制見 [安裝版紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.12_ACCEPTANCE.md)。
 - 產物 298,785 bytes，SHA-256 c3874efbf718a3eebcc64cf2591d1a328d7ddde1aac40b7d91faf593f7c6e28d。schema 2、依賴、公開設定與更新 URL 不變；BR-01 不在此輪修復。
 
 ## v2.1.11

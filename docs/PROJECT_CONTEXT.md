@@ -2,7 +2,7 @@
 
 本文件是現行產品與開發契約。文件用途及歷史紀錄見 [文件索引](INDEX.md)；版本與工具設定以 [release.json](../release.json)、[package.json](../package.json) 和 [依賴鎖定檔](../package-lock.json) 為準。內建節點清單稱為 Catalog，原生簽名路線稱為 Native。
 
-**v2.1.12 BR-04／BR-05 修復**已完成本機來源與正式契約，正依常設授權準備發布。XHR 重新準備有界且確實終止，Fetch gate 取消保留原 reason。保留 BR-02、BR-03 與 v2.1.9 的 17 項修復；schema 2 不變。發布與安裝版結果见 [驗證報告](TEST_REPORT.md)、[修復交付](BR04_BR05_FIX_REPORT.md) 及 [TODO](TODO.md)。
+**v2.1.12 BR-04／BR-05 修復已發布，兩項安裝版驗收通過。** XHR 重新準備有界且確實終止，Fetch gate 取消保留原 reason。保留 BR-02、BR-03 與 v2.1.9 的 17 項修復；schema 2 不變。發布、實際 singleton 的 35 項矩陣、同片基本回歸及作廢輪資料清理限制見 [驗證報告](TEST_REPORT.md)、[安裝版紀錄](CHROME_v2.1.12_ACCEPTANCE.md)、[修復交付](BR04_BR05_FIX_REPORT.md) 及 [TODO](TODO.md)。BR-01 與其餘完整產品驗收未因此結案。
 
 ## 現行產品
 
