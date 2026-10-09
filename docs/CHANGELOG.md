@@ -2,11 +2,11 @@
 
 # BiliCDN_TW 變更紀錄
 
-> 2026-10-09 正在準備 v2.1.10 BR-02 修復發行。舊項目描述各版發布當日的變更及驗證狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。歷史「待完成」文字不構成目前待辦。
+> 依 2026-10-09 發布讀回，v2.1.10 是最新正式發行。舊項目描述各版發布當日的變更及驗證狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。歷史「待完成」文字不構成目前待辦。
 
 ## v2.1.10
 
-2026-10-09，依使用者授權準備發行 BR-02 XHR `open()` 例外安全性修復。原始調查、修復前後契約與真實 Chrome 隔離證據見 [修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR02_FIX_REPORT.md)，發行與更新狀態見 [本版驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+2026-10-09，依使用者授權從提交 `49995fbc29ee638739487b3a27aa5c4a662a8741` [發布 v2.1.10](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.10)，修復 BR-02 XHR `open()` 例外安全性。原始調查、修復前後契約與真實 Chrome 隔離證據見 [修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR02_FIX_REPORT.md)，發行與更新狀態見 [本版驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
 
 - 參數先依原生順序轉換一次，候選 metadata 暫存後才呼叫原生 open；成功才釋放舊請求，失敗保留原所有權與例外。
 - 同步事件中的 send／abort／再次 open 遵守最新所有權；failed open 不再吞終止事件、倒退虛擬 DONE 或錯誤允許第二次 send。

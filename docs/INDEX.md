@@ -1,6 +1,6 @@
 # 專案文件索引與維護規則
 
-本索引於 **2026-10-06** 完成文件重整，**2026-10-09** 更新至 **v2.1.10 BR-02 發行準備及安裝版待驗收狀態**。發行驗證及發布狀態見 [發行驗證報告](TEST_REPORT.md)，目前工作見 [工作狀態](TODO.md)。新版瀏覽器的實測結果、停滯異常及剩餘範圍見 [驗收紀錄](CHROME_v2.1.9_ACCEPTANCE.md)；歷史「待驗收」「未發布」或研究建議只描述當時狀態，不自動成為目前待辦。
+本索引於 **2026-10-06** 完成文件重整，**2026-10-09** 更新至 **v2.1.10 BR-02 已發布及安裝版待驗收狀態**。發行驗證及發布狀態見 [發行驗證報告](TEST_REPORT.md)，目前工作見 [工作狀態](TODO.md)。新版瀏覽器的實測結果、停滯異常及剩餘範圍見 [驗收紀錄](CHROME_v2.1.9_ACCEPTANCE.md)；歷史「待驗收」「未發布」或研究建議只描述當時狀態，不自動成為目前待辦。
 
 2026-10-07 的 Markdown 粗體渲染盤點與排版修正見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)；後續排版檢查方式列於 DEVELOPMENT。
 
@@ -56,7 +56,7 @@
 | [BR02_FIX_REPORT](BR02_FIX_REPORT.md) | v2.1.10 修復、40 個新增正式契約、Chrome 來源隔離驗證、安全審查及安裝版待驗收 |
 | [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md) | v2.0.2～v2.1.9 的歷史完整報告，包括發行前模組化驗證 |
 | [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) | 2026-10-03 三段原整理紀錄及後續有日期的文件檢查 |
-| [v2.1.10 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.10) | BR-02 修復發行準備；附件只有使用者腳本，公開校驗在發布後記錄 |
+| [v2.1.10 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.10) | 2026-10-09 已發布；唯一附件及公開 latest 版本、大小、SHA-256 均核對一致 |
 | [Release/v2.1.10](../Release/v2.1.10/) | 本次封裝快照；發布後不回寫 |
 | [v2.1.9 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.9) | 2026-10-09 已發布並核對 latest 下載；附件只有 `BiliCDN_TW.user.js` |
 | [Release/v2.1.9](../Release/v2.1.9/) | 當次使用者腳本、報告、變更紀錄、資訊清單、校驗值快照；發布後不回寫 |
