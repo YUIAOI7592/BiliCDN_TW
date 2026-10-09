@@ -1,4 +1,4 @@
-import type { PlayurlTransformResult } from '../domain/playurl-model.ts'
+import type { PlayurlTransformResult, PlayurlRequestContext } from '../domain/playurl-model.ts'
 
 export interface VideoSnapshot {
   readonly available: boolean
@@ -35,7 +35,7 @@ export interface PlayerPort {
 }
 
 export interface PlayurlPort {
-  transform(payload: unknown, source: 'trusted-api' | 'player-mpd' | 'page-hint', responseKey?: string): PlayurlTransformResult
+  transform(payload: unknown, source: 'trusted-api' | 'player-mpd' | 'page-hint', responseKey?: string, context?: PlayurlRequestContext): PlayurlTransformResult
 }
 
 export interface SchedulerPort {

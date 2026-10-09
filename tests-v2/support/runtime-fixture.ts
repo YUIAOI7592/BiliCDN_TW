@@ -8,6 +8,7 @@ import { SettingsStore } from '../../src-v2/state/settings-store.ts'
 import { RestrictionStore } from '../../src-v2/state/restriction-store.ts'
 import { EvidenceStore } from '../../src-v2/state/evidence-store.ts'
 import { MeasurementMetaStore } from '../../src-v2/state/measurement-meta-store.ts'
+import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
 import { SignedRouteVault } from '../../src-v2/state/signed-route-vault.ts'
 import { RouteCoordinator } from '../../src-v2/application/route-coordinator.ts'
 import { PlayurlController } from '../../src-v2/application/playurl-controller.ts'
@@ -18,7 +19,7 @@ import { RuntimeController } from '../../src-v2/application/runtime-controller.t
 import { LifecycleController } from '../../src-v2/application/lifecycle-controller.ts'
 import { ControlCommands } from '../../src-v2/application/control-commands.ts'
 import { DiagnosticRecorder } from '../../src-v2/diagnostics/recorder.ts'
-import type { PlayerPort, VideoSnapshot } from '../../src-v2/application/ports.ts'
+import type { PlayerPort, VideoSnapshot, RangeProbePort } from '../../src-v2/application/ports.ts'
 import type { TransportSnapshot } from '../../src-v2/domain/transport-model.ts'
 
 export const blankVideo = (): VideoSnapshot => ({ available: true, paused: false, seeking: false, ended: false,
@@ -29,7 +30,7 @@ export const media = (content: number) => ({ code: 0, data: { dash: { video: [{ 
   bandwidth: 4_000_000, base_url: `https://upos-sz-mirrorali.bilivideo.com/upgcxcode/01/02/${content}/${content}-1-30080.m4s?fixture=${content}`,
   backup_url: [] }], audio: [] } } })
 
-export function fixture(t: TestContext, storage: FakeStorage = new FakeStorage()) {
+export function fixture(t: TestContext, storage: FakeStorage = new FakeStorage(), probe?: RangeProbePort) {
   const scope = testScope(t), clock = scope.own(new FakeClock())
   const settings = scope.own(new SettingsStore(storage, clock.now))
   const restrictions = scope.own(new RestrictionStore(storage, clock.now))
@@ -49,7 +50,7 @@ export function fixture(t: TestContext, storage: FakeStorage = new FakeStorage()
     setRate: value => { calls.rates.push(value) }, play: () => { calls.plays++ }, reset: () => { calls.resets++ },
   }
   const recovery = scope.own(new RecoveryController(player, clock.now))
-  const measurement = { reset: () => undefined, cancel: () => undefined, tick: () => undefined,
+  const measurement = probe ? scope.own(new MeasurementController(routes, meta, probe, clock.now, clock)) : { reset: () => undefined, cancel: () => undefined, tick: () => undefined,
     startupFallbackHosts: () => [], requestManual: () => undefined,
     snapshot: () => ({ state: 'idle' as const, reason: 'fixture', lastAttemptAt: 0, host: null }) }
   const monitor = scope.own(new PlayerMonitor(player, session, settings, vault, routes, measurement, recovery, () => true, clock.now, clock))
@@ -66,7 +67,7 @@ export function fixture(t: TestContext, storage: FakeStorage = new FakeStorage()
     nativeCalled: 0, responseObserved: 0, blocked: 0, lastMediaRequest: null, lastBlocked: null,
     lastPlayurl: null, hookState: 'installed', hookReason: 'fixture', fetchInstalled: true, xhrInstalled: true, note: '' }) }
   const deps = { settings, restrictions, evidence, session, routes, measurement, monitor, recovery, diagnostics, commands, transport, now: clock.now }
-  return { scope, clock, content, runtime, settings, session, vault, routes, playurl, recovery, lifecycle, calls, commands, diagnostics, deps,
+  return { scope, clock, content, runtime, settings, session, vault, routes, playurl, recovery, measurement, lifecycle, calls, commands, diagnostics, deps,
     setVideo: (next: VideoSnapshot) => { video = next },
     navigate: () => { navigationKey = '/video/next'; onNavigate() }, video: () => video }
 }

@@ -1,4 +1,6 @@
 import { isPlayurlApi } from '../domain/catalog.ts'
+import { playurlRequestContext } from '../domain/playurl-content.ts'
+import type { PlayurlRequestContext } from '../domain/playurl-model.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
 import type { FailureKind, RequestContext, GenerationId, EpochId } from '../domain/model.ts'
 import type { AppliedRouteDecision } from '../application/route-coordinator.ts'
@@ -14,6 +16,7 @@ interface XhrMeta {
   bytes: number
   settled: boolean
   playurl: boolean
+  requestContext: PlayurlRequestContext
   transformedText: string | null
   transformedJson: unknown
   catalogOnlyAtTransform: boolean | null
@@ -89,6 +92,7 @@ export class XhrHookAdapter {
       const next: XhrMeta = { method: normalizedMethod, originalUrl,
         managedBilibili: self.routes.isBilibiliMedia(originalUrl), targetUrl, applied,
         startedAt: 0, responseAt: 0, bytes: 0, settled: false, playurl,
+        requestContext: playurlRequestContext(originalUrl, location.href),
         transformedText: null, transformedJson: undefined, catalogOnlyAtTransform: null, request: null,
         generation: self.session.get().generation, epoch: self.session.get().epoch,
         responseKey: self.nextResponseKey('api-xhr'), cleanup: () => undefined, async: asynchronous, headers: [],
@@ -281,7 +285,7 @@ export class XhrHookAdapter {
           if (this.responseType === 'json') {
             if (meta.transformedJson === undefined) {
               try {
-                const result = self.playurl.transform(raw, 'trusted-api', meta.responseKey)
+                const result = self.playurl.transform(raw, 'trusted-api', meta.responseKey, meta.requestContext)
                 self.notePlayurl('xhr', this.status, result)
                 meta.transformedJson = strict && !result.accepted ? blockedPlayurl() : raw
               } catch {
@@ -294,7 +298,7 @@ export class XhrHookAdapter {
           if ((this.responseType === '' || this.responseType === 'text') && typeof raw === 'string') {
             if (meta.transformedText === null) {
               try {
-                const payload: unknown = JSON.parse(raw), result = self.playurl.transform(payload, 'trusted-api', meta.responseKey)
+                const payload: unknown = JSON.parse(raw), result = self.playurl.transform(payload, 'trusted-api', meta.responseKey, meta.requestContext)
                 self.notePlayurl('xhr', this.status, result)
                 meta.transformedText = strict && !result.accepted ? blockedPlayurlText() : JSON.stringify(payload)
               } catch {
@@ -325,7 +329,7 @@ export class XhrHookAdapter {
           }
           if (meta.transformedText !== null) return meta.transformedText
           try {
-            const payload: unknown = JSON.parse(raw), result = self.playurl.transform(payload, 'trusted-api', meta.responseKey)
+            const payload: unknown = JSON.parse(raw), result = self.playurl.transform(payload, 'trusted-api', meta.responseKey, meta.requestContext)
             self.notePlayurl('xhr', this.status, result)
             meta.transformedText = strict && !result.accepted ? blockedPlayurlText() : JSON.stringify(payload)
           } catch {

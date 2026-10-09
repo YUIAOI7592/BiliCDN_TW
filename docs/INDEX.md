@@ -1,6 +1,6 @@
 # 專案文件索引與維護規則
 
-本索引於 **2026-10-06** 完成文件重整，**2026-10-09** 更新至 **v2.1.10 BR-02 已發布及安裝版待驗收狀態**。發行驗證及發布狀態見 [發行驗證報告](TEST_REPORT.md)，目前工作見 [工作狀態](TODO.md)。新版瀏覽器的實測結果、停滯異常及剩餘範圍見 [驗收紀錄](CHROME_v2.1.9_ACCEPTANCE.md)；歷史「待驗收」「未發布」或研究建議只描述當時狀態，不自動成為目前待辦。
+本索引於 **2026-10-06** 完成文件重整，**2026-10-10** 更新至 **v2.1.11 BR-03 發行準備**；設定版本為 v2.1.11，公開發布讀回完成後另記錄。現行驗證與歷史發布狀態見 [驗證報告](TEST_REPORT.md)，目前工作見 [工作狀態](TODO.md)。[BR-03 修復報告](BR03_FIX_REPORT.md) 分列 382 個正式案例、獨立安全審查、Chrome 來源隔離與修復版待安裝驗收；既有瀏覽器實測及 BR-01 異常保留於 [v2.1.10 紀錄](CHROME_v2.1.10_ACCEPTANCE.md)。歷史「待驗收」「未發布」或研究建議只描述當時狀態，不自動成為目前待辦。
 
 2026-10-07 的 Markdown 粗體渲染盤點與排版修正見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)；後續排版檢查方式列於 DEVELOPMENT。
 
@@ -23,7 +23,7 @@
 | [AGENTS](../AGENTS.md) | 必要開發流程、架構、安全及發行／文件要求 |
 | [ARCHITECTURE](ARCHITECTURE.md) | 依賴、狀態、控制器、適配器、生命週期與診斷 |
 | [DEVELOPMENT](DEVELOPMENT.md) | 環境、命令、測試隔離、建置、瀏覽器檢查及封裝 |
-| [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md) | 2026-10-07 測試遷移及 2026-10-09 套件登記／替身邊界驗證 |
+| [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md) | 測試遷移、套件登記、BR-02 替身校準及 2026-10-10 BR-03 交錯契約驗證 |
 | [測試遷移對照](../tests-v2/MIGRATION.md) | 原 891 項功能斷言的行為群組、分支及參數矩陣對照 |
 | [SECURITY](../SECURITY.md) | 信任邊界、持久資料、網路權限及診斷限制 |
 | [TODO](TODO.md) | 目前已批准工作、結案事項及未安排方向 |
@@ -50,10 +50,13 @@
 | 文件／產物 | 閱讀方式 |
 | --- | --- |
 | [CHANGELOG](CHANGELOG.md) | v2.0.0～v2.1.10 全部條目使用繁體中文；功能差異、順序及當時驗證狀態保留 |
-| [TEST_REPORT](TEST_REPORT.md) | v2.1.10 BR-02 修復、自動、安全、發布及瀏覽器狀態；含歷史導覽 |
+| [TEST_REPORT](TEST_REPORT.md) | BR-03 本機修復／382 案例／安全／Chrome 隔離結果；保留 v2.1.10 發布與原驗收正文及歷史導覽 |
 | [CHROME_v2.1.9_ACCEPTANCE](CHROME_v2.1.9_ACCEPTANCE.md) | 2026-10-09 部分真實瀏覽器驗收、18 個原生 XHR 案例及待定位停滯 |
 | [CHROME_v2.1.9_BR02_XHR_FAILED_OPEN](CHROME_v2.1.9_BR02_XHR_FAILED_OPEN.md) | 持續驗收確認的 XHR 例外安全性缺陷、六個 Chrome 失敗情境、根因與原始重現入口 |
-| [BR02_FIX_REPORT](BR02_FIX_REPORT.md) | v2.1.10 修復、40 個新增正式契約、Chrome 來源隔離驗證、安全審查及安裝版待驗收 |
+| [BR02_FIX_REPORT](BR02_FIX_REPORT.md) | v2.1.10 修復、40 個新增正式契約、來源隔離驗證、安全審查及後續安裝版證據／gate 限制 |
+| [CHROME_v2.1.10_ACCEPTANCE](CHROME_v2.1.10_ACCEPTANCE.md) | 68 個安裝版 XHR 案例執行通過、同片操作、87.8 秒 seek 追加觀察及未完成範圍 |
+| [CHROME_v2.1.10_BR03_CONTENT_EPOCH](CHROME_v2.1.10_BR03_CONTENT_EPOCH.md) | 相同 DASH 清單排列誤觸 epoch、音訊授權失效、來源／安裝版重現與修正方向 |
+| [BR03_FIX_REPORT](BR03_FIX_REPORT.md) | BR-03 本機修復、43 個新增正式契約、修復前後結果、安全差異審查、Chrome 來源隔離及安裝版待驗收 |
 | [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md) | v2.0.2～v2.1.9 的歷史完整報告，包括發行前模組化驗證 |
 | [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) | 2026-10-03 三段原整理紀錄及後續有日期的文件檢查 |
 | [v2.1.10 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.10) | 2026-10-09 已發布；唯一附件及公開 latest 版本、大小、SHA-256 均核對一致 |

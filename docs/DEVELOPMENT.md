@@ -2,7 +2,7 @@
 
 # 開發流程
 
-本文件是 **v2.1.10**（含 BR-02 XHR 所有權修復）的現行開發流程。各版測試、安全審閱與瀏覽器結果集中於 [驗證報告](TEST_REPORT.md) 及有日期的驗收紀錄。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
+本文件是 **v2.1.11 BR-03 發行準備**的現行開發流程。各版測試、安全審閱與瀏覽器結果集中於 [驗證報告](TEST_REPORT.md) 及有日期的驗收紀錄。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
 
 <a name="repository-layout-and-archive-maintenance"></a>
 
@@ -117,7 +117,11 @@ verify 不執行 Codex Security 或 Chrome／Tampermonkey 驗收。安全敏感�
 
 2026-10-09 的 [v2.1.9 的 17 項修復](FUNCTIONAL_FIX_REPORT.md) 以 `tests-v2/regressions/functional-races/` 保存具名回歸，分別由 application、progressive-routing、native-transport、adapter-boundaries 及 orchestration 套件匯入；UI 案例位於 control-center。原調查證據不作正式測試輸入。XHR 原生狀態替身區分原生 send 前／後的 abort，模擬同步 setter 例外；ProgressEvent 全域經 testScope 管理。FakeClock／deferred 明確控制晚到、拒絕及鎖取得順序，不能以此宣稱 Chrome 原生事件已驗收。
 
-同日納入 v2.1.10 的 [BR-02 修復](BR02_FIX_REPORT.md) 新增 40 個正式案例，仍由 `npm test -- native-transport` 執行；全套為 339 個。XHR 替身補入 open 參數／方法／URL／同步選項驗證、OPENED→OPENED 不發事件，以及實測 Chrome 同步選項錯誤清成 UNSENT 的邊界。先保存失敗契約，再改來源；原調查證據不覆寫。真正 Chrome 的本機來源隔離頁、Tampermonkey 安裝版驗收及 Node 契約必須分列，不能互相替代。
+同日納入 v2.1.10 的 [BR-02 修復](BR02_FIX_REPORT.md) 新增 40 個正式案例，仍由 `npm test -- native-transport` 執行；該版全套為 339 個。XHR 替身補入 open 參數／方法／URL／同步選項驗證、OPENED→OPENED 不發事件，以及實測 Chrome 同步選項錯誤清成 UNSENT 的邊界。先保存失敗契約，再改來源；原調查證據不覆寫。真正 Chrome 的本機來源隔離頁、Tampermonkey 安裝版驗收及 Node 契約必須分列，不能互相替代。
+
+2026-10-10 [BR-03 本機修復](BR03_FIX_REPORT.md) 新增 43 個案例，全套為 **19 套件、382 案例**。`content.ts` 由 orchestration 匯入、`content-domain.ts` 由 domain 匯入；Fetch／XHR cid 所有權沿用 native-transport，MP4／FLV／混合格式沿用 progressive-playurl，正式登記不變。runtime fixture 可注入真正 MeasurementController 的 probe，利用 FakeClock／deferred 驗證排列保留工作、真正換片撤銷晚到結果。原四個失敗契約已正式移植，紅燈 log 與綠燈驗證分開保存。
+
+內容識別修改須同時驗證請求 cid 正規化／所有權、可信來源、精確父目錄備援與容量。cid 僅從已辨識請求提取，不能從 payload 或頁面推測；低信任提示不更新基準。新增內部 context 不得進入診斷／持久資料或取代 Vault 授權。具體契約見 [架構](ARCHITECTURE.md#application-controllers)。
 
 文件使用「儲存元件（store）」「測試情境（fixture）」「建立函式（factory）」「中繼資料（metadata）」「原始碼對照（source map）」「報告產生器（reporter）」及「堆疊資訊（stack）」；瀏覽器攔截與 `t.after()` 等測試清理掛鉤分開描述。程式識別字、命令及 Node 原始狀態值保持原樣；中文化範圍與封存規則見 [文件政策](INDEX.md#現行指南)。
 
@@ -145,6 +149,10 @@ v2.1.8 的標準 Tampermonkey 更新及 2026-10-04 MP4 試片／公開 DASH 觀�
 
 不得把 VM 或模擬結果稱為真實播放。未經使用者明確授權，不改變其既有暫停／測試分頁。
 
+2026-10-09～10 的 [v2.1.10 安裝版紀錄](CHROME_v2.1.10_ACCEPTANCE.md) 分列 68 個 XHR 案例執行、實際播放與未完成 gate／影音隔離。[BR-03 原調查](CHROME_v2.1.10_BR03_CONTENT_EPOCH.md) 的四個獨立來源契約仍保存在 `.work/chrome-v2.1.10/2026-10-09/`；未修復來源當時 2 通過／2 失敗、退出碼 1，不納入通過數。原入口會匯入目前來源，不能重跑後覆寫當時失敗紀錄。移植後的正式回歸由 `npm test -- orchestration` 執行。
+
+BR-03 修復輪的 `.work/functional-fixes/br03/2026-10-10-c836a17/RERUN.md` 記錄本機來源隔離與先裝 Request 攔截的重跑步驟。真實 Chrome 的 BR-03 31／31、BR-02 31／31 是來源隔離結果；既有 v2.1.10 同片播放正常也不代表修復產物已安裝。發布並更新後須另跑安裝版矩陣。網站僅使用指定風景影片，畫質切換與 seek 分開操作；不變更 Chrome 設定、不停用其他腳本。工具中斷、過期 interception id 或事件截斷的輪次作廢，先保持攔截並卸載頁面後才清理。
+
 <a name="packaging-and-release"></a>
 
 ## 封裝與發行
@@ -159,4 +167,4 @@ v2.1.8 的標準 Tampermonkey 更新及 2026-10-04 MP4 試片／公開 DASH 觀�
 
 [package.mjs](../scripts/package.mjs) 覆寫這些具名檔案，不清空既有 Release 目錄。校驗值清單納入該目錄已存在的全部檔案，校驗值本身除外。封裝前檢查目標目錄；不得為了驗證已發布版本而執行此命令。暫存封裝驗證使用 `npm run verify`。
 
-不得加入修補、CI/CD 或 GitHub Actions。本機封裝不等於發布。GitHub Release 附件只有使用者腳本，更新 URL 保持指向本儲存庫最新 Release。發布前執行 `npm run typecheck`、`npm run architecture`、`npm test`、`npm run verify` 及必要安全驗證。真實 Chrome／Tampermonkey 驗收另行記錄，未執行的瀏覽器檢查不得寫成通過。
+依 [AGENTS 發行規則](../AGENTS.md#release-rules)，本專案功能修復完成並通過必要自動及安全驗證後，預設自主提交、遞增修補版本、封裝、推送 main／標籤及發布 GitHub Release，不再等待使用者重複要求；當次明確限定只調查或保留本機修改時遵守該範圍。完成後核對公開 latest 更新的版本、大小與 SHA-256。不得加入修補、CI/CD 或 GitHub Actions。本機封裝不等於發布。GitHub Release 附件只有使用者腳本，更新 URL 保持指向本儲存庫最新 Release。發布前執行 `npm run typecheck`、`npm run architecture`、`npm test`、`npm run verify` 及必要安全驗證。真實 Chrome／Tampermonkey 驗收另行記錄，未執行的瀏覽器檢查不得寫成通過。

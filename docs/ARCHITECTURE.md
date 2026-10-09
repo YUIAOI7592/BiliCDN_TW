@@ -2,7 +2,7 @@
 
 # v2 架構
 
-本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.10** 實作，包含 v2.1.9 的 17 項功能與競態修復及 BR-02 XHR 所有權修復；版本以 [release.json](../release.json) 為準。[驗證報告](TEST_REPORT.md) 分別保存自動驗證、安全審查與真實瀏覽器狀態。BR-02 的 Chrome 來源隔離驗證已通過，Tampermonkey 安裝版仍待驗收；既有各版觀察及格式覆蓋限制保留於歷史報告。本文件是持續維護的設計參考；文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
+本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.11 BR-03 發行準備**狀態，包含既有 17 項功能與競態修復及 BR-02 XHR 所有權修復；版本以 [release.json](../release.json) 為準。[驗證報告](TEST_REPORT.md) 分開保存自動、安全與瀏覽器證據。BR-03 的 Chrome 來源隔離已通過，修復版 Tampermonkey 安裝驗收待完成；已發布 BR-02 的部分驗收與 gate 限制見 [原紀錄](CHROME_v2.1.10_ACCEPTANCE.md)。本文件是持續維護的設計參考；文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
 
 <a name="dependency-direction"></a>
 
@@ -37,6 +37,7 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 - 帶有品牌型別的生命週期及動作 ID；
 - URL 接納及主機置換規則；
+- 請求 cid 正規化及有界、順序無關的內容父目錄集合比較（`playurl-content.ts`）；
 - 內建節點清單（Catalog）定義；
 - 有界證據窗口、安全吞吐量及斷路器；
 - 候選資格及確定性排名；
@@ -87,7 +88,13 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 控制器接收型別化介面，常用 `Pick` 縮小介面。`NavigationPort`、`SchedulerPort` 及 `PlayerPort.observePlayIntent` 將 History 包裝函式、計時器 API 及啟動意圖檢查留在應用層政策之外。`PlayerPort` 不暴露原始播放器／核心物件。生命週期敏感的探測／傳輸提交依情況檢查當前世代、內容週期、路線身分或控制器標記；證據寫入取得儲存鎖後再次檢查有效性條件。恢復 Promise 使用生命週期序號／權杖，已釋放的生命週期觀察器忽略排隊中的頁面賦值。這些防護適用於生命週期工作；一般使用者設定寫入不綁定世代。
 
-可信 API 輸入的內容鍵由 `parseMediaUrl` 已接納的正規化 URL 推導。內容鍵改變時，`PlayurlController` 在 Session／Vault／Routes 重設後、登記新表示前，同步通知 generation／epoch。Runtime 訂閱後重設監控、量測、恢復及播放器快取，釋放時取消訂閱。同片畫質切換不通知，每分頁一次的起播預算不重開。
+`PlayurlRequestContext` 是內部唯讀 `{ contentId: string | null }`，由 `PlayurlPort.transform` 可選第四參數明確傳入。Fetch 在 await 前從既有平台 Request.url 保存 cid；XHR 在一次參數轉換後建立候選 metadata，failed open 回復舊 metadata，成功重入保留新請求 context。getter 不改讀當前頁面身分。只有現有 `isPlayurlApi` 接納的 URL 可供解析；唯一一個最多 20 位十進位字串，去除前導零，全零／重複／空白／負數／小數／超長均為缺失，避免 Number 精度損失。
+
+`PlayurlController` 私有保存 cid 及已觀察的完整父目錄集合。兩側有效 cid 相同便沿用，不同便換片；任一側缺少時，從各 primary 經 `parseMediaUrl` 取父目錄，忽略主機／查詢／排列。有影片只比影片，兩側純音訊才比音訊，音訊交集不能掩蓋影片變更。交集沿用並合併歷史，支援完整清單與互斥子集往返；非空無交集或型態改變則重設。首次 cid 對齊既有目錄後綁定，無法對齊先重設。無 cid 且沒有有效目錄不變更基準。影片 128／音訊 64 上限，優先本次集合、舊集合按固定字串排序填入，不因淘汰本身增加 epoch。
+
+只有 trusted-api 更新內容基準，保留重複回應／同物件防篡改及 generation 防護；低信任提示不觸發換片或擴充歷史，generation 改變清空全部基準。cid／目錄不持久化、不進診斷，也不提供 Native 授權。沒有有效 cid 或共同路徑的同片無法可靠辨識，仍保守重設；此修復不新增 API 逆序回應政策。來源與回歸詳見 [BR-03 修復報告](BR03_FIX_REPORT.md)。
+
+真正內容改變時，`PlayurlController` 在 Session／Vault／Routes 重設後、登記新表示前，同步通知 generation／epoch。Runtime 訂閱後重設監控、量測、恢復及播放器快取，釋放時取消訂閱。同片排列及 cid 可對齊的畫質／編碼切換不通知，每分頁一次的起播預算不重開。
 
 `RouteCoordinator` 擁有單調路線政策修訂號；設定／對照模式失效及內容重設會遞增。`TransportContext` 在建立請求時保存修訂號。傳輸證據寫入維持原生命週期／授權檢查，完成後若政策過期便停止控制副作用；儲存鎖等待後再次檢查，合法固定主機優先於健康親和。
 

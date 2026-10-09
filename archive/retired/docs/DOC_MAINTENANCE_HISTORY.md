@@ -125,3 +125,24 @@ TEST_TOOLING_REPORT 另追加 2026-10-09 的登記／替身邊界與 299 案例�
 本版重新驗證自動套件及產物，安全審查沿用相同執行期來源已封存結果，另確認 metadata 升版差異。Chrome 31 個來源隔離案例與 Tampermonkey 安裝版待驗收繼續分列；發布後的標籤、公開下載及文件核對結果另行追加。
 
 20:58（Asia/Taipei）完成 v2.1.10 發布，標籤提交 `49995fbc29ee638739487b3a27aa5c4a662a8741`。公開 latest 讀回為 2.1.10、293,972 bytes，SHA-256 與本機驗證產物一致。257 個既有 Release 檔案雜湊不變，前版完整報告正文保存一致，兩個受審來源／測試檔未再變更；另外只修改版本 metadata。發布後補寫現行文件，安裝版驗收維持待完成。18 份變更／新增 Markdown（含本版封裝報告）的 278 個本機或同儲存庫連結及 64 個錨點核對通過，`git diff --check` 通過。
+
+## 2026-10-10 v2.1.10 安裝版驗收及 BR-03 調查
+
+新增 [安裝版紀錄](../../../docs/CHROME_v2.1.10_ACCEPTANCE.md) 與 [BR-03 詳細報告](../../../docs/CHROME_v2.1.10_BR03_CONTENT_EPOCH.md)，同步 INDEX、TODO、TEST_REPORT、BR02_FIX_REPORT、PROJECT_CONTEXT、ARCHITECTURE、DEVELOPMENT。實際安裝版 68 個 XHR 案例執行通過；真正 startup gate 與有效音訊備援隔離尚未完成，沒有將來源隔離結果改成安裝版通過。
+
+BR-03 四個獨立來源契約為 2 通過／2 失敗，實際安裝版相同清單排列 epoch 2→3、正常對照 4→4。BR-01 另觀察到同片切換加 seek 87.8 秒後以 1080p 恢復，epoch 維持 0，沒有推定與 BR-03 同根因。工具初版斷言錯誤、一次代理誤點與網路捕捉截斷均保留限制。
+
+本輪依「找到問題並交付詳細報告」條件完成自主測試，不宣稱全套產品驗收完成。只新增私有證據／失敗入口及現行文件，原始來源、正式測試、建置脚本、版本、Release 快照與已封存安全產物未修改。沒有提交、推送、新 npm 發行驗證或新安全掃描；文件連結、錨點及 `git diff --check` 的實際結果存入 `.work/chrome-v2.1.10/2026-10-09/document-checks.json`。
+
+## 2026-10-10 BR-03 本機修復文件同步
+
+新增 [BR-03 修復報告](../../../docs/BR03_FIX_REPORT.md)，同步 PROJECT_CONTEXT、ARCHITECTURE、DEVELOPMENT、SECURITY、TODO、INDEX 及 TEST_REPORT，並在 TEST_TOOLING_REPORT 追加正式契約與工具紀錄。記錄請求 cid／有界目錄策略、43 個新增案例與全套 382 個通過、14 個來源／測試檔安全審查、Chrome BR-03／BR-02 各 31 個來源隔離案例及工具作廢輪的限制。
+
+狀態為「BR-03 本機修復、未發布」，修復版 Tampermonkey 安裝驗收仍待執行。既有安裝版同片短程正常不代表 BR-01 結案；真正 gate、R04 完整驗收均保留。開始時未提交的驗收文件與原調查證據保留；TEST_REPORT 在前方新增本機結果，後方保留 v2.1.10 發布與原驗收全文及錨點，Release 不回寫。
+
+安全封存後只補交付文件及私有重跑說明，受審來源／正式測試未再改變。文件連結、錨點、`git diff --check`、受審雜湊及 Release／原驗收檔保留檢查，最後存入 `.work/functional-fixes/br03/2026-10-10-c836a17/document-checks.json` 與 `final-checks.json`。沒有升版、提交、推送或發布。
+
+
+## 2026-10-10 v2.1.11 發行準備與預設發布授權
+
+保留 v2.1.10 的完整 TEST_REPORT 正文、日期、原錨點與限制，加入 TEST_REPORT_HISTORY，再更新固定報告入口與現行指南。AGENTS 保存使用者要求的修復後自主提交／升版／推送／Release 規則。新版本只沿用已封存的 BR-03 安全審查與實際來源隔離證據，修復版安裝驗收仍待完成。既有 Release、原調查與安全產物不回寫；文件檢查及發布讀回保存於本機 `.work/release-v2.1.11/`。

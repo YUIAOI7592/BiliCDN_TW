@@ -47,6 +47,26 @@ const fixture = (scope: TestScope) => {
   const adapter = new PlayurlAdapter(new PlayurlController(session, vault, routes, settings))
   return { adapter, storage, session, vault, settings, restrictions, evidence, routes }
 }
+
+for (const format of ['mp4', 'flv', 'mixed'] as const) {
+  test(`BR-03 ${format} same-cid source refresh preserves epoch and different cid revokes old authority`, t => {
+    const f = fixture(testScope(t)), extension = format === 'flv' ? 'flv' : 'mp4'
+    const make = (directory: string) => ({ code: 0, data: { format: extension, quality: 80,
+      durl: [segment(`${directory}/part-1`, 1, extension), segment(`${directory}/part-2`, 2, extension)],
+      ...(format === 'mixed' ? { dash: { video: [dashItem(`${directory}/codec/video`)], audio: [dashItem(`${directory}/audio/sound`, 'audio')] } } : {}) } })
+    const first = make('initial')
+    assert.equal(f.adapter.transform(first, 'trusted-api', undefined, { contentId: '100' }).accepted, true)
+    const identity = f.vault.match(first.data.durl[0]!.url).context
+    assert.ok(identity)
+    const epoch = Number(f.session.get().epoch)
+    for (let i = 0; i < 6; i++) assert.equal(f.adapter.transform(make(`refresh-${i}`), 'trusted-api', undefined, { contentId: '100' }).accepted, true)
+    assert.equal(Number(f.session.get().epoch), epoch)
+    assert.equal(f.vault.isCurrentIdentity(identity), false, 'progressive signed-source rotation still revokes its old route identity')
+    const current = make('refresh-5')
+    assert.equal(f.adapter.transform(current, 'trusted-api', undefined, { contentId: '200' }).accepted, true)
+    assert.equal(Number(f.session.get().epoch), epoch + 1)
+  })
+}
 test("HTTP 200/code 0 MP4 durl is accepted [1]", { timeout: 5000 }, async t => {
  const scope=testScope(t)
 {

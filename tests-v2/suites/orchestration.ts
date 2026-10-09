@@ -1,4 +1,5 @@
 import '../regressions/functional-races/runtime.ts'
+import '../regressions/functional-races/content.ts'
 import { createRuntimeIds } from "../../src-v2/platform/runtime-ids.ts"
 import { test } from 'node:test'
 import assert from 'node:assert/strict'

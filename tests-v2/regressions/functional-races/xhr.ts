@@ -20,7 +20,7 @@ const apiUrl = 'https://api.bilibili.com/x/player/wbi/playurl?cid=1000'
 const payload = () => ({ code: 0, data: { dash: { video: [{ id: 80, codecid: 7, height: 1080,
   bandwidth: 1_000_000, base_url: originalUrl, backup_url: [] }], audio: [] } } })
 
-async function fixture(t: TestContext, native = true, gate = false) {
+async function fixture(t: TestContext, native = true, gate = false, fetchResponse?: () => Promise<Response>) {
   const scope = testScope(t), now = () => 2_000_000_000_000
   installProgressEvent(scope)
   // Minimal native state model follows https://xhr.spec.whatwg.org/#the-abort()-method.
@@ -107,6 +107,7 @@ async function fixture(t: TestContext, native = true, gate = false) {
   const nativeFetch: typeof fetch = async input => {
     const url = input instanceof Request ? input.url : String(input)
     fetchCalls.push(url)
+    if (fetchResponse) return await fetchResponse()
     return new Response(url.includes('/playurl') ? JSON.stringify(payload()) : null, { status: 200 })
   }
   const nativeOpen = NativeXhr.prototype.open
@@ -128,6 +129,67 @@ async function fixture(t: TestContext, native = true, gate = false) {
 
 const blockedUrl = 'https://httpdns.bilivideo.com/bilicdn-browser-contract'
 const ordinaryUrl = 'https://example.invalid/synthetic-control'
+
+function captureContentContexts(f: Awaited<ReturnType<typeof fixture>>) {
+  const seen: unknown[] = [], original = f.playurl.transform.bind(f.playurl)
+  f.playurl.transform = (body, source, key, ...context: unknown[]) => {
+    seen.push(context[0])
+    return Reflect.apply(original, f.playurl, [body, source, key, ...context])
+  }
+  return seen
+}
+
+test('BR-03 Fetch captures the once-normalized request cid before awaiting its response', async t => {
+  const pending = deferred<Response>(), f = await fixture(t, true, false, () => pending.promise)
+  t.after(() => pending.resolve(new Response('{}')))
+  const seen = captureContentContexts(f)
+  let conversions = 0, cid = '0009007199254740993'
+  const input = { toString: () => { conversions++; return apiUrl.replace('1000', cid) } }
+  const response = f.fakeWindow.fetch(input as unknown as string)
+  cid = '42'
+  pending.resolve(new Response(JSON.stringify(payload())))
+  await (await response).text()
+  assert.equal(conversions, 1)
+  assert.deepEqual(seen, [{ contentId: '9007199254740993' }])
+  assert.ok(f.fetchCalls[0]!.endsWith('cid=0009007199254740993'))
+})
+
+for (const type of ['text', 'json'] as const) {
+  test(`BR-03 XHR ${type} failed open keeps the original cid and repeated getters transform once`, async t => {
+    const f = await fixture(t), seen = captureContentContexts(f), xhr = new f.NativeXhr()
+    let conversions = 0
+    xhr.open('GET', { toString: () => { conversions++; return apiUrl } } as unknown as URL)
+    xhr.responseType = type; xhr.send()
+    assert.throws(() => xhr.open('BAD METHOD', apiUrl.replace('1000', '2000')), { name: 'SyntaxError' })
+    xhr.complete()
+    void xhr.response; void xhr.response
+    if (type === 'text') void xhr.responseText
+    assert.equal(conversions, 1)
+    assert.deepEqual(seen, [{ contentId: '1000' }])
+    xhr.open('GET', apiUrl.replace('1000', '3000')); xhr.send(); xhr.complete(); void xhr.response
+    assert.deepEqual(seen, [{ contentId: '1000' }, { contentId: '3000' }])
+  })
+}
+
+test('BR-03 XHR successful synchronous open reentry owns the new cid', async t => {
+  const f = await fixture(t), seen = captureContentContexts(f), xhr = new f.NativeXhr()
+  xhr.addEventListener('readystatechange', () => {
+    if (xhr.readyState === 1) { xhr.open('GET', apiUrl.replace('1000', '2000')); xhr.send() }
+  }, { once: true })
+  xhr.open('GET', apiUrl)
+  xhr.complete(); void xhr.responseText
+  assert.equal(xhr.nativeSends, 1)
+  assert.deepEqual(seen, [{ contentId: '2000' }])
+})
+
+for (const query of ['cid=0', 'cid=000', 'cid=', 'cid=1&cid=1', 'cid=%201', 'cid=1+', 'cid=-1', 'cid=1.5', 'cid=123456789012345678901', 'bvid=123']) {
+  test(`BR-03 transport treats invalid request identity ${query} as missing`, async t => {
+    const f = await fixture(t), seen = captureContentContexts(f), url = apiUrl.split('?')[0] + '?' + query
+    await (await f.fakeWindow.fetch(url)).text()
+    const xhr = new f.NativeXhr(); xhr.open('GET', url); xhr.send(); xhr.complete(); void xhr.responseText
+    assert.deepEqual(seen, [{ contentId: null }, { contentId: null }])
+  })
+}
 
 async function blockedFixture(t: TestContext) {
   const f = await fixture(t), xhr = new f.NativeXhr(), events: string[] = []

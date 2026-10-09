@@ -1,4 +1,5 @@
 import { test } from 'node:test'
+import '../regressions/functional-races/content-domain.ts'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
 import { addEvidenceSample, emptyEvidence, evidenceMetrics } from '../../src-v2/domain/evidence.ts'

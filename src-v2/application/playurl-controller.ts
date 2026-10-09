@@ -4,6 +4,8 @@ import type { SessionStore } from '../state/session-store.ts'
 import type { SignedRouteVault } from '../state/signed-route-vault.ts'
 import type { SettingsStore } from '../state/settings-store.ts'
 import { parseMediaUrl } from '../domain/url-policy.ts'
+import { observePlayurlContent, type PlayurlContentIdentity } from '../domain/playurl-content.ts'
+import type { PlayurlRequestContext } from '../domain/playurl-model.ts'
 
 export interface PlayurlItem {
   readonly token: object
@@ -26,7 +28,7 @@ export class PlayurlController {
   #seenPage = new WeakMap<object, number>()
   #responses = new Set<string>()
   #generation = -1
-  #contentKey = ''
+  #contentIdentity: PlayurlContentIdentity | null = null
   constructor(private readonly session: Pick<SessionStore, 'beginEpoch' | 'get'>,
     private readonly vault: Pick<SignedRouteVault, 'groupSummary' | 'identity' | 'isCurrentIdentity' | 'register' | 'reset' | 'rootUrl' | 'source' | 'sourceURLs'>,
     private readonly routes: Pick<RouteCoordinator, 'apply' | 'isBilibiliMedia' | 'isCatalogOnly' | 'opaqueOutput' | 'plan' | 'playbackRate' | 'playerOutput' | 'resetEpoch'>,
@@ -41,12 +43,12 @@ export class PlayurlController {
   codecPreference(): ReturnType<SettingsStore['get']>['codec'] { return this.settings.get().codec }
   lifecycleKey(): string { const s = this.session.get(); return `${s.generation}:${s.epoch}` }
 
-  ingest(payload: PlayurlInput | null, source: 'trusted-api' | 'player-mpd' | 'page-hint' = 'trusted-api', responseKey?: string): readonly PlayurlOutput[] | null {
+  ingest(payload: PlayurlInput | null, source: 'trusted-api' | 'player-mpd' | 'page-hint' = 'trusted-api', responseKey?: string, context?: PlayurlRequestContext): readonly PlayurlOutput[] | null {
     const outputs: PlayurlOutput[] = []
     const rewriteItem: WriteOutput = (item, primary, backups) => { outputs.push({ token: item.token, primary, backups }) }
     if (this.session.get().disabled) return null
     if (this.#generation !== Number(this.session.get().generation)) {
-      this.#generation = Number(this.session.get().generation); this.#responses.clear(); this.#contentKey = ''
+      this.#generation = Number(this.session.get().generation); this.#responses.clear(); this.#contentIdentity = null
       this.#seenTrusted = new WeakSet(); this.#trustedItems = new WeakMap()
     }
     const catalogOnly = this.routes.isCatalogOnly()
@@ -75,19 +77,20 @@ export class PlayurlController {
         this.#seenPage.set(payload.token, generation)
       }
     }
-    let contentKey = ''
-    const parsedContent = parseMediaUrl((dash.video[0] ?? dash.audio[0])?.primary ?? '')
-    if (parsedContent) { const pathname = parsedContent.url.pathname; contentKey = pathname.slice(0, pathname.lastIndexOf('/')) }
-    if (source === 'trusted-api' && this.#contentKey && contentKey && contentKey !== this.#contentKey) {
-      this.session.beginEpoch()
-      const state = this.session.get()
-      this.vault.reset(state.generation, state.epoch)
-      this.routes.resetEpoch()
-      this.#trustedItems = new WeakMap()
-      const identity = Object.freeze({ generation: state.generation, epoch: state.epoch })
-      for (const listener of this.#epochListeners) listener(identity)
+    if (source === 'trusted-api') {
+      const next = observePlayurlContent(this.#contentIdentity, dash.video.map(item => item.primary),
+        dash.audio.map(item => item.primary), context)
+      this.#contentIdentity = next.identity
+      if (next.changed) {
+        this.session.beginEpoch()
+        const state = this.session.get()
+        this.vault.reset(state.generation, state.epoch)
+        this.routes.resetEpoch()
+        this.#trustedItems = new WeakMap()
+        const identity = Object.freeze({ generation: state.generation, epoch: state.epoch })
+        for (const listener of this.#epochListeners) listener(identity)
+      }
     }
-    if (source === 'trusted-api' && contentKey) this.#contentKey = contentKey
     if (responseKey) { this.#responses.add(responseKey); while (this.#responses.size > 128) this.#responses.delete(this.#responses.values().next().value as string) }
     const state = this.session.get()
     for (const [kind, items] of [['video', dash.video], ['audio', dash.audio]] as const) {

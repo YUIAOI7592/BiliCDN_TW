@@ -1,6 +1,6 @@
 import type { PlayurlController, PlayurlItem } from '../application/playurl-controller.ts'
 import type { CodecPreference } from '../state/settings-store.ts'
-import type { PlayurlFormat, PlayurlRejection, PlayurlTransformResult } from '../domain/playurl-model.ts'
+import type { PlayurlFormat, PlayurlRejection, PlayurlTransformResult, PlayurlRequestContext } from '../domain/playurl-model.ts'
 import { parseMediaUrl } from '../domain/url-policy.ts'
 
 type UnknownRecord = Record<string, unknown>
@@ -33,7 +33,7 @@ const rewriteItem = (item: UnknownRecord, primary: string, backups: readonly str
 export class PlayurlAdapter {
   constructor(private readonly controller: Pick<PlayurlController, 'lifecycleKey' | 'catalogOnly' | 'codecPreference' | 'ingest' | 'active'>) {}
   lifecycleKey(): string { return this.controller.lifecycleKey() }
-  transform(payload: unknown, source: 'trusted-api' | 'player-mpd' | 'page-hint' = 'trusted-api', responseKey?: string): PlayurlTransformResult {
+  transform(payload: unknown, source: 'trusted-api' | 'player-mpd' | 'page-hint' = 'trusted-api', responseKey?: string, context?: PlayurlRequestContext): PlayurlTransformResult {
     const root = isRecord(payload) ? payload : null
     const code = root?.code
     const upstreamCode = typeof code === 'number' && Number.isInteger(code) && code >= -2147483648 && code <= 2147483647 ? code : null
@@ -100,7 +100,7 @@ export class PlayurlAdapter {
     if (failure) return result(failure)
     if (video.length > 128 || audio.length > 64) return result('malformed-payload')
     if (!video.length && !audio.length) return result('unsupported-format')
-    const outputs = this.controller.ingest({ token: root, video, audio }, source, responseKey)
+    const outputs = this.controller.ingest({ token: root, video, audio }, source, responseKey, context)
     if (!outputs) return result(this.controller.active() ? 'no-legal-route' : 'inactive')
     if (this.controller.catalogOnly() && outputs.some(output => !output.primary)) {
       // DASH page hints retain their existing cleared-field safety contract.

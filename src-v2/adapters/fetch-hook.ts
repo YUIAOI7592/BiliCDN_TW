@@ -1,4 +1,5 @@
 import { isPlayurlApi } from '../domain/catalog.ts'
+import { playurlRequestContext } from '../domain/playurl-content.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
 import type { FailureKind, RequestContext } from '../domain/model.ts'
 import { type TransportContext, type HookInstallation, copyResponseSurface, blockedPlayurlText, rejectedPlayurl } from './transport-context.ts'
@@ -31,6 +32,7 @@ export class FetchHookAdapter {
       }
       if (isPlayurlApi(originalUrl, location.href)) {
         const generation = self.session.get().generation, responseKey = self.nextResponseKey('api-fetch')
+        const requestContext = playurlRequestContext(originalUrl)
         const response = await native(sourceRequest, false)
         if (self.settings.get().disabled) return response
         const catalogOnly = (): boolean => !self.settings.get().disabled && self.routes.isCatalogOnly()
@@ -50,7 +52,7 @@ export class FetchHookAdapter {
         try {
           const payload: unknown = JSON.parse(text)
           const result = self.session.isGeneration(generation) && !self.settings.get().disabled
-            ? self.playurl.transform(payload, 'trusted-api', responseKey) : rejectedPlayurl('inactive')
+            ? self.playurl.transform(payload, 'trusted-api', responseKey, requestContext) : rejectedPlayurl('inactive')
           self.notePlayurl('fetch', response.status, result)
           if (catalogOnly() && !result.accepted) return blocked()
           text = JSON.stringify(payload)
