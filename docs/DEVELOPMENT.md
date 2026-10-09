@@ -2,7 +2,7 @@
 
 # 開發流程
 
-本文件是 **v2.1.11 BR-03 發行準備**的現行開發流程。各版測試、安全審閱與瀏覽器結果集中於 [驗證報告](TEST_REPORT.md) 及有日期的驗收紀錄。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
+本文件是 **v2.1.11 BR-03 修復**的現行開發流程。各版測試、安全審閱與瀏覽器結果集中於 [驗證報告](TEST_REPORT.md) 及有日期的驗收紀錄。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
 
 <a name="repository-layout-and-archive-maintenance"></a>
 

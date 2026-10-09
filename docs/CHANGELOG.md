@@ -2,11 +2,11 @@
 
 # BiliCDN_TW 變更紀錄
 
-> 2026-10-10 正在準備 v2.1.11 BR-03 更新；最新已發布版暫為 v2.1.10。舊項目描述各版發布當日的變更及驗證狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。歷史「待完成」文字不構成目前待辦。
+> 依 2026-10-10 發布讀回，v2.1.11 是最新正式發行。舊項目描述各版發布當日的變更及驗證狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。歷史「待完成」文字不構成目前待辦。
 
 ## v2.1.11
 
-2026-10-10，BR-03 修復納入 v2.1.11 發行準備。修復前後契約、安全與 Chrome 來源隔離見 [BR-03 報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR03_FIX_REPORT.md)，發布讀回見 [本版驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+2026-10-10 01:52（Asia/Taipei），從提交 `d3d1bc3185d51b62891920135b4126441e059696` [發布 v2.1.11](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.11)，修復 BR-03；01:53 公開 latest 下載的版本、大小與 SHA-256 已核對。修復前後契約、安全與 Chrome 來源隔離見 [BR-03 報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR03_FIX_REPORT.md)，發布讀回見 [本版驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
 
 - 以所屬 playurl 請求的唯一、有效 cid 優先識別內容；相同 cid 的清單排列或完全不同畫質／編碼組仍保留 epoch，不同 cid 即使共用路徑也同步撤銷舊工作。
 - 缺少 cid 時，以順序無關的完整父目錄集合備援；影片／音訊分開、容量為 128／64，保留重疊歷史並確定性淘汰。無 cid 也無共同路徑時保守重設。

@@ -2,7 +2,7 @@
 
 # v2 架構
 
-本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.11 BR-03 發行準備**狀態，包含既有 17 項功能與競態修復及 BR-02 XHR 所有權修復；版本以 [release.json](../release.json) 為準。[驗證報告](TEST_REPORT.md) 分開保存自動、安全與瀏覽器證據。BR-03 的 Chrome 來源隔離已通過，修復版 Tampermonkey 安裝驗收待完成；已發布 BR-02 的部分驗收與 gate 限制見 [原紀錄](CHROME_v2.1.10_ACCEPTANCE.md)。本文件是持續維護的設計參考；文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
+本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.11 BR-03 修復**狀態，包含既有 17 項功能與競態修復及 BR-02 XHR 所有權修復；版本以 [release.json](../release.json) 為準。[驗證報告](TEST_REPORT.md) 分開保存自動、安全與瀏覽器證據。BR-03 的 Chrome 來源隔離已通過，修復版 Tampermonkey 安裝驗收待完成；已發布 BR-02 的部分驗收與 gate 限制見 [原紀錄](CHROME_v2.1.10_ACCEPTANCE.md)。本文件是持續維護的設計參考；文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
 
 <a name="dependency-direction"></a>
 
