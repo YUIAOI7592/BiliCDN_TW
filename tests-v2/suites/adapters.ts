@@ -76,7 +76,10 @@ const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promi
   }), { status: 206, headers: { 'content-type': 'video/mp4' } })
 }
 class FakeXhr extends EventTarget {
-  method = ''; url = ''; readyState = 0; status = 200; responseURL = ''; sync = false; sent = false
+  #state = 0
+  get readyState() { return this.#state }
+  set readyState(value: number) { this.#state = value }
+  method = ''; url = ''; status = 200; responseURL = ''; sync = false; sent = false
   #responseType: XMLHttpRequestResponseType = ''; #timeout = 0
   get responseType(): XMLHttpRequestResponseType { return this.#responseType }
   set responseType(value: XMLHttpRequestResponseType) {

@@ -1,6 +1,12 @@
 # 專案文件索引與維護規則
 
-本索引於 **2026-10-06** 完成文件重整，**2026-10-10** 更新至 **v2.1.11 BR-03 已發布**；01:52 正式發布、01:53 公開更新讀回確認一致（Asia/Taipei），設定版本為 v2.1.11。現行驗證與歷史發布狀態見 [驗證報告](TEST_REPORT.md)，目前工作見 [工作狀態](TODO.md)。[BR-03 修復報告](BR03_FIX_REPORT.md) 分列 382 個正式案例、獨立安全審查、Chrome 來源隔離與修復版待安裝驗收；既有瀏覽器實測及 BR-01 異常保留於 [v2.1.10 紀錄](CHROME_v2.1.10_ACCEPTANCE.md)。歷史「待驗收」「未發布」或研究建議只描述當時狀態，不自動成為目前待辦。
+**歷史瀏覽器狀態：2026-10-10 03:02–03:36 已續測 BR-01 與剩餘領域，交付 [完整覆蓋報告](CHROME_v2.1.11_REMAINING_ACCEPTANCE.md)。** BR-01 seeking 的救援抑制機制已定位，原始網路起因未證實；新增 [BR-05 Fetch 取消原因遺失](CHROME_v2.1.11_BR05_FETCH_ABORT_REASON.md)。42 個新增受控案例、真 gate 與真 SDK 核心替換有結果，真正背景操作仍未取得 hidden 前提；**產品驗收未全通過，BR-04／05 未修復**。正式來源及 Release 未修改。
+
+**2026-10-10 02:58 先前續測：BR-04 已在真正 Chrome 155／v2.1.11 安裝版確認。** 當輪達成找問題並交付詳細報告的替代完成條件；新的續測目標沒有以此提前退出。見 [BR-04 報告](CHROME_v2.1.11_BR04_XHR_REENTRANT_PREPARE.md)。下方中途暫停文字保留其時間點。
+
+**2026-10-10 02:42 中途狀態：v2.1.11 安裝版驗收部分完成，當時依使用者要求暫停。** BR-03 31 個有效案例與 BR-02 42 個對照通過，當時 BR-04 僅 Node 重現；見 [中途報告](CHROME_v2.1.11_PROGRESS.md)。下文發行時的待安裝文字保留其當時範圍。
+
+本索引於 **2026-10-10** 更新至 **v2.1.12 BR-04／BR-05 修復及發布準備**。現行版本以 release.json 為準，最新發布／瀏覽器結果見 [驗證報告](TEST_REPORT.md)，目前工作見 [TODO](TODO.md)。此前 v2.1.11 記錄只描述其當時版本。
 
 2026-10-07 的 Markdown 粗體渲染盤點與排版修正見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)；後續排版檢查方式列於 DEVELOPMENT。
 
@@ -50,12 +56,17 @@
 | 文件／產物 | 閱讀方式 |
 | --- | --- |
 | [CHANGELOG](CHANGELOG.md) | v2.0.0～v2.1.10 全部條目使用繁體中文；功能差異、順序及當時驗證狀態保留 |
-| [TEST_REPORT](TEST_REPORT.md) | BR-03 本機修復／382 案例／安全／Chrome 隔離結果；保留 v2.1.10 發布與原驗收正文及歷史導覽 |
+| [BR04_BR05_FIX_REPORT](BR04_BR05_FIX_REPORT.md) | 有界 XHR 準備、取消 reason、66 新契約、來源隔離及分列安裝驗收 |
+| [TEST_REPORT](TEST_REPORT.md) | v2.1.12／448 案例／安全／Chrome 隔離及發布讀回；歷史完整正文另存 archive |
 | [CHROME_v2.1.9_ACCEPTANCE](CHROME_v2.1.9_ACCEPTANCE.md) | 2026-10-09 部分真實瀏覽器驗收、18 個原生 XHR 案例及待定位停滯 |
 | [CHROME_v2.1.9_BR02_XHR_FAILED_OPEN](CHROME_v2.1.9_BR02_XHR_FAILED_OPEN.md) | 持續驗收確認的 XHR 例外安全性缺陷、六個 Chrome 失敗情境、根因與原始重現入口 |
 | [BR02_FIX_REPORT](BR02_FIX_REPORT.md) | v2.1.10 修復、40 個新增正式契約、來源隔離驗證、安全審查及後續安裝版證據／gate 限制 |
 | [CHROME_v2.1.10_ACCEPTANCE](CHROME_v2.1.10_ACCEPTANCE.md) | 68 個安裝版 XHR 案例執行通過、同片操作、87.8 秒 seek 追加觀察及未完成範圍 |
 | [CHROME_v2.1.10_BR03_CONTENT_EPOCH](CHROME_v2.1.10_BR03_CONTENT_EPOCH.md) | 相同 DASH 清單排列誤觸 epoch、音訊授權失效、來源／安裝版重現與修正方向 |
+| [CHROME_v2.1.11_PROGRESS](CHROME_v2.1.11_PROGRESS.md) | 安裝版 31 個 BR-03／42 個 BR-02 對照、部分 gate／R04、同片回歸、暫定 BR-04 Node 失敗及暫停檢查點 |
+| [CHROME_v2.1.11_BR04_XHR_REENTRANT_PREPARE](CHROME_v2.1.11_BR04_XHR_REENTRANT_PREPARE.md) | 續測確認內部 XHR 準備遭同步重入失效，真 gate／原生對照、根因、重跑及清理證據 |
+| [CHROME_v2.1.11_REMAINING_ACCEPTANCE](CHROME_v2.1.11_REMAINING_ACCEPTANCE.md) | BR-01 救援抑制定位、正常網站／真 gate／真 SDK／42 個新增受控案例、完整剩餘覆蓋與原生限制 |
+| [CHROME_v2.1.11_BR05_FETCH_ABORT_REASON](CHROME_v2.1.11_BR05_FETCH_ABORT_REASON.md) | 真 gate Fetch 遺失取消原因，Chrome 原生對照、Node 3 pass／4 fail、位置與最小修正方向 |
 | [BR03_FIX_REPORT](BR03_FIX_REPORT.md) | BR-03 本機修復、43 個新增正式契約、修復前後結果、安全差異審查、Chrome 來源隔離及安裝版待驗收 |
 | [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md) | v2.0.2～v2.1.9 的歷史完整報告，包括發行前模組化驗證 |
 | [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) | 2026-10-03 三段原整理紀錄及後續有日期的文件檢查 |

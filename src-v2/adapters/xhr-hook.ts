@@ -123,27 +123,39 @@ export class XhrHookAdapter {
       if (!meta) { Reflect.apply(originalSend, this, [body ?? null]); return }
       if (meta.phase !== 'opened' || this.readyState !== 1) throw new DOMException('send invalid state', 'InvalidStateError')
       meta.phase = 'waiting'
+      let nativeAccepted = false
       const perform = (): void => {
       if (!waiting(this, meta)) return
+      const responseType = this.responseType, requestTimeout = this.timeout, credentials = this.withCredentials
+      let preparations = 0
+      const nativeReady = (): boolean => waiting(this, meta) && readyStateDescriptor?.get?.call(this) === 1
       const reopen = (url: string): void => {
-        const responseType = this.responseType, timeout = this.timeout, credentials = this.withCredentials
+        if (++preparations > 2) throw new DOMException('XHR preparation did not stabilize', 'InvalidStateError')
         Reflect.apply(originalOpen, this, [meta.method, url, meta.async, meta.username ?? null, meta.password ?? null])
         if (!waiting(this, meta)) return
-        if (meta.async) { this.responseType = responseType; this.timeout = timeout }
+        if (!nativeReady()) { meta.needsNativeOpen = true; return }
+        if (meta.async) {
+          this.responseType = responseType
+          if (!nativeReady()) { if (waiting(this, meta)) meta.needsNativeOpen = true; return }
+          this.timeout = requestTimeout
+          if (!nativeReady()) { if (waiting(this, meta)) meta.needsNativeOpen = true; return }
+        }
         this.withCredentials = credentials
-        for (const [key, value] of meta.headers) Reflect.apply(originalSetHeader, this, [key, value])
+        if (!nativeReady()) { if (waiting(this, meta)) meta.needsNativeOpen = true; return }
+        for (const [key, value] of meta.headers) {
+          Reflect.apply(originalSetHeader, this, [key, value])
+          if (!nativeReady()) { if (waiting(this, meta)) meta.needsNativeOpen = true; return }
+        }
         meta.targetUrl = url; meta.needsNativeOpen = false
       }
-      if (meta.needsNativeOpen) {
-        reopen(meta.targetUrl)
-        if (!waiting(this, meta)) return
-      }
-      if (self.settings.get().disabled) {
-        if (meta.targetUrl !== meta.originalUrl) reopen(meta.originalUrl)
-        if (!waiting(this, meta)) return
-        meta.phase = 'sent'
-        self.count('nativeCalled'); Reflect.apply(originalSend, this, [body ?? null]); return
-      }
+      // Every native preparation can synchronously change ownership, native state or
+      // policy. Recompute the decision before attribution, with at most two opens.
+      let disabled = false, stale = false
+      for (;;) {
+      if (!waiting(this, meta)) return
+      disabled = self.settings.get().disabled
+      let targetUrl = meta.originalUrl, applied: AppliedRouteDecision | null = null
+      if (!disabled) {
       if (meta.playurl && self.routes.isCatalogOnly() && !['', 'text', 'json'].includes(this.responseType)) {
         self.blocked(meta.method, meta.originalUrl, 'playurl-response-type')
         self.notePlayurl('xhr', 0, rejectedPlayurl('unsupported-format'))
@@ -157,29 +169,36 @@ export class XhrHookAdapter {
         rejectLocal(this, meta)
         return
       }
-      const stale = !self.session.isGeneration(meta.generation)
+      stale = !self.session.isGeneration(meta.generation)
       if (!meta.playurl && (meta.applied || meta.managedBilibili || self.routes.recognizesMedia(meta.originalUrl) || strictManaged)) {
         if (!meta.applied) self.count('mediaRecognized')
-        const next = !stale && meta.method === 'GET' ? self.routes.apply(meta.originalUrl) : self.routes.inspectOriginal(meta.originalUrl)
-        if (next.url && next.url !== meta.targetUrl) {
-          reopen(next.url)
-          if (!waiting(this, meta)) return
-        }
-        meta.applied = next
+        applied = !stale && meta.method === 'GET' ? self.routes.apply(meta.originalUrl) : self.routes.inspectOriginal(meta.originalUrl)
+        if (applied.url) targetUrl = applied.url
       }
       if (self.settings.get().blockHttpDns && isHttpDnsUrl(meta.originalUrl, location.href)) {
         rejectLocal(this, meta)
         return
       }
-      const reason = self.dispatchFailure({ generation: meta.generation, applied: meta.applied, targetUrl: meta.targetUrl, managedMedia: strictManaged })
+      const reason = self.dispatchFailure({ generation: meta.generation, applied, targetUrl, managedMedia: strictManaged })
       if (reason) {
         self.blocked(meta.method, meta.originalUrl, reason)
         rejectLocal(this, meta)
         return
       }
+      }
       if (!waiting(this, meta)) return
-      // A stale, permitted Native original may be sent, but cannot acquire current-epoch attribution.
-      if (stale) meta.applied = null
+      if (meta.needsNativeOpen || !nativeReady() || targetUrl !== meta.targetUrl) {
+        reopen(targetUrl)
+        continue
+      }
+      meta.applied = stale ? null : applied
+      break
+      }
+      if (!waiting(this, meta)) return
+      if (disabled) {
+        meta.phase = 'sent'
+        self.count('nativeCalled'); Reflect.apply(originalSend, this, [body ?? null]); nativeAccepted = true; return
+      }
       meta.startedAt = self.now()
       if (meta.applied) { meta.request = self.request(meta.applied, meta.originalUrl, meta.targetUrl, meta.startedAt, meta.method); self.routes.requestStarted(meta.request) }
       const noteHeaders = (): void => {
@@ -213,12 +232,33 @@ export class XhrHookAdapter {
       self.count('nativeCalled')
       self.noteNativeCall(meta.request)
       meta.phase = 'sent'
-      Reflect.apply(originalSend, this, [body ?? null])
+      try { Reflect.apply(originalSend, this, [body ?? null]) } catch (error) {
+        // Native did not accept dispatch. Release attribution without blaming the
+        // CDN; the deferred caller owns local error events, direct send still throws.
+        if (!meta.settled && xhrMeta.get(this) === meta) {
+          meta.cleanup()
+          if (meta.applied && meta.request) void self.routes.observe(self.observation(meta.request,
+            meta.applied, meta.originalUrl, meta.targetUrl, '', 0, 0, meta.startedAt, 0, 'abort', undefined, false))
+        }
+        throw error
+      }
+      nativeAccepted = true
       }
       if (meta.async && !meta.playurl && meta.method === 'GET' && self.routes.recognizesMedia(meta.originalUrl)
         && !self.settings.get().disabled && this.timeout === 0
         && self.measurement.willGateStartup(meta.originalUrl)) {
-        void self.measurement.prepareStartup(meta.originalUrl).then(perform, perform)
+        const release = (): void => {
+          try { perform() } catch {
+            // send() already returned to the caller. A preparation/dispatch exception
+            // must terminate this waiter, unless native events or a newer owner won.
+            if (!nativeAccepted && xhrMeta.get(this) === meta && !meta.settled
+              && (meta.phase === 'waiting' || meta.phase === 'sent')) {
+              meta.phase = 'waiting'
+              finishLocal(this, meta, 'error')
+            }
+          }
+        }
+        void self.measurement.prepareStartup(meta.originalUrl).then(release, release)
         return
       }
       if (!meta.playurl && self.routes.recognizesMedia(meta.originalUrl)) {

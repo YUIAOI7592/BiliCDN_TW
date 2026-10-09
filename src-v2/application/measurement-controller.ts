@@ -5,6 +5,8 @@ import type { RangeProbePort, SchedulerPort } from './ports.ts'
 
 const COOLDOWN_MS = 10 * 60_000
 const TIMEOUT_MS = 3000
+const cancellationReason = (signal: AbortSignal): unknown => 'reason' in signal
+  ? signal.reason : new DOMException('Aborted', 'AbortError')
 export interface MeasurementStatus {
   readonly generationActive: boolean
   readonly representation: RepresentationId | null
@@ -87,7 +89,7 @@ export class MeasurementController {
 
   /** The player request, never a page hint, authorizes this one bounded startup window. */
   async prepareStartup(url: string, signal: AbortSignal | null = null): Promise<void> {
-    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+    if (signal?.aborted) throw cancellationReason(signal)
     if (this.#startupUsed) return
     if (!this.#startupPending) {
       const cursor = Math.max(0, Number(this.meta.get().catalogCursor) || 0)
@@ -115,11 +117,11 @@ export class MeasurementController {
     const pending = this.#startupPending
     if (!pending) return
     if (!signal) { await pending; return }
-    if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
+    if (signal.aborted) throw cancellationReason(signal)
     let onAbort: (() => void) | null = null
     try {
       await Promise.race([pending, new Promise<never>((_resolve, reject) => {
-        onAbort = () => reject(new DOMException('Aborted', 'AbortError'))
+        onAbort = () => reject(cancellationReason(signal))
         signal.addEventListener('abort', onAbort, { once: true })
       })])
     } finally { if (onAbort) signal.removeEventListener('abort', onAbort) }

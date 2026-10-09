@@ -2,7 +2,7 @@
 
 # v2 架構
 
-本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.11 BR-03 修復**狀態，包含既有 17 項功能與競態修復及 BR-02 XHR 所有權修復；版本以 [release.json](../release.json) 為準。[驗證報告](TEST_REPORT.md) 分開保存自動、安全與瀏覽器證據。BR-03 的 Chrome 來源隔離已通過，修復版 Tampermonkey 安裝驗收待完成；已發布 BR-02 的部分驗收與 gate 限制見 [原紀錄](CHROME_v2.1.10_ACCEPTANCE.md)。本文件是持續維護的設計參考；文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
+本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.12 BR-04／BR-05 修復**狀態，保留 BR-02、BR-03 與既有 17 項功能修復；版本以 [release.json](../release.json) 為準。[驗證報告](TEST_REPORT.md) 分開保存自動、安全與瀏覽器證據。最新交付見 [BR-04／BR-05 報告](BR04_BR05_FIX_REPORT.md)，BR-01 與其餘完整驗收仍獨立追蹤。本文件是持續維護的設計參考；文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
 
 <a name="dependency-direction"></a>
 
@@ -117,6 +117,10 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 <a name="adapters"></a>
 
 ## 適配器
+
+XHR waiting 請求的內部原生 open 準備最多兩次，包含政策目標變更的 reopen。每次 open、responseType、timeout、credentials 及每個 header 還原後，均以安裝時保存的原生 readyState getter 加上 metadata 身分／phase 判斷能否繼續；準備後重新計算最新合法目標，完全穩定才建立歸因及 send。gate continuation 的未交付原生例外只終止仍擁有當前請求的 waiter，依序送出一次 readystatechange／error／loadend，保留 DONE 與空回應。直接 send 的原生例外仍同步拋出；未接受的 native send 清除 pending 歸因而不記錄 CDN 失敗樣本，已送出請求不重播。
+
+起播等待的三個取消邊界使用 signal.reason 原值，包括物件身分與 falsy 值；只有缺少 reason 能力才建立 AbortError。拒絕只屬於該等待者，共用 probe controller 與每分頁預算維持原語意，各完成路徑以 finally 移除 listener。
 
 適配器將瀏覽器行為轉為型別化觀察：
 

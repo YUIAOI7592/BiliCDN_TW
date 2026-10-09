@@ -4,9 +4,9 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
-目前正式發行為 **[v2.1.11 BR-03 修復](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.11)**，已於 2026-10-10 發布，以請求所屬 cid 與有界父目錄集合穩定識別內容，避免相同 DASH 清單排列／畫質／編碼變更誤觸換片。v2.1.10 的 BR-02 XHR 所有權及 v2.1.9 的 17 項功能與競態修復繼續保留。版本變更見 [變更紀錄](docs/CHANGELOG.md)，現行指南與歷史紀錄的分類見 [文件索引](docs/INDEX.md)。
+目前 **v2.1.12 BR-04／BR-05 修復**正在準備發布：XHR 等待起播時的內部重新準備最多兩次，持續重入會確實終止；Fetch 取消保留 caller reason 原值與物件身分。保留 BR-02、BR-03 與 17 項功能修復，schema 2 不變。正式發布與安裝版狀態見 [驗證報告](docs/TEST_REPORT.md)；更新網址保持 [最新 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest)。
 
-GitHub Release 附件只有使用者腳本，更新網址維持原位；2026-10-10 01:53（Asia/Taipei）已核對公開 latest 下載的 v2.1.11 版本、296,341 bytes 與 SHA-256 均一致。自動驗證、安全審查與瀏覽器待驗收範圍見下方[驗證紀錄](#目前版本的驗證紀錄)。
+GitHub Release 附件只有使用者腳本，更新網址維持原位。發布後核對公開 latest 版本、大小與 SHA-256；來源隔離及 Node 不代替 Tampermonkey 安裝驗收。
 
 > [!IMPORTANT]
 > **原作者與原始腳本：** [jiyunshi－Bilibili CDN 台灣優化](https://greasyfork.org/zh-TW/scripts/579776-bilibili-cdn-%E5%8F%B0%E7%81%A3%E5%84%AA%E5%8C%96)。本儲存庫源自原作者 MIT 授權腳本的個人修改專案；v2 是以 TypeScript 重新設計與重構的版本，並非原作者的官方版本。
@@ -124,7 +124,7 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 ## 目前版本的驗證紀錄
 
-依 **2026-10-10** 的 [v2.1.11 驗證報告](docs/TEST_REPORT.md)，BR-03 新增 43 個正式契約，全套 382 個具名案例與必要發行驗證通過。獨立 Codex Security 完整審閱 14 個來源／測試差異檔，沒有可報告發現。真實 Chrome **來源隔離** BR-03 31／31、BR-02 31／31 通過；**Tampermonkey v2.1.11 安裝版仍待更新後驗收**，BR-01、真正 startup gate 與完整影音故障隔離保持獨立待定位／驗收。修復及前後證據見 [BR-03 報告](docs/BR03_FIX_REPORT.md)，較早 BR-02 安裝版部分結果見 [v2.1.10 紀錄](docs/CHROME_v2.1.10_ACCEPTANCE.md)。v2.1.9 的部分瀏覽器觀察及 v2.1.8 已完成驗收與限制保留於 [歷史報告](archive/retired/docs/TEST_REPORT_HISTORY.md)。
+依 **2026-10-10** 的 [v2.1.12 驗證報告](docs/TEST_REPORT.md)，新增 66 個正式契約、全套 448 個具名案例通過。Chrome 來源隔離 BR-04／05 36／36，BR-02／03 各 31／31。安全及發布狀態分列於報告；新版 Tampermonkey 安裝矩陣另驗，BR-01 與其餘完整產品驗收保持獨立。詳細對照見 [修復交付](docs/BR04_BR05_FIX_REPORT.md)。
 
 **v2.1.6 Chrome／Tampermonkey 驗收已通過並結案。** v2.1.8 回歸另行記錄，歷史觀察及限制見 [v2.1.6 驗收紀錄](archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md)。
 

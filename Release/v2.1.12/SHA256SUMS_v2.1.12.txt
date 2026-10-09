@@ -1,0 +1,4 @@
+7ff88aadde089d6f739f83c18a9085516e3b06eba2b6d1996f64c3ac37efc066  Release/v2.1.12/BUILD_MANIFEST_v2.1.12.json
+c3874efbf718a3eebcc64cf2591d1a328d7ddde1aac40b7d91faf593f7c6e28d  Release/v2.1.12/BiliCDN_TW.user.js
+dbc8e6c9e710d0c974c5072c955bd7d2b8ecfec67585101cc7c35f3ebfd703e5  Release/v2.1.12/CHANGELOG_v2.1.12.md
+edbd3fda4a25f4e62145b9031d4f5610d0d6f89b3e8b7dd42fd27bb6f26a0131  Release/v2.1.12/TEST_REPORT_v2.1.12.md

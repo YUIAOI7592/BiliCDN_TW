@@ -14,13 +14,15 @@ import { SignedRouteVault } from '../../../src-v2/state/signed-route-vault.ts'
 import { testScope } from '../../support/scope.ts'
 import { deferred } from '../../support/deferred.ts'
 import { FakeStorage } from '../../support/storage.ts'
+import { startupAbortFixture } from '../../support/startup-abort.ts'
+import type { StartupGate } from '../../../src-v2/adapters/transport-context.ts'
 
 const originalUrl = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/11/22/1000/1000-1-30080.m4s?test=synthetic'
 const apiUrl = 'https://api.bilibili.com/x/player/wbi/playurl?cid=1000'
 const payload = () => ({ code: 0, data: { dash: { video: [{ id: 80, codecid: 7, height: 1080,
   bandwidth: 1_000_000, base_url: originalUrl, backup_url: [] }], audio: [] } } })
 
-async function fixture(t: TestContext, native = true, gate = false, fetchResponse?: () => Promise<Response>) {
+async function fixture(t: TestContext, native = true, gate = false, fetchResponse?: () => Promise<Response>, startup?: StartupGate) {
   const scope = testScope(t), now = () => 2_000_000_000_000
   installProgressEvent(scope)
   // Minimal native state model follows https://xhr.spec.whatwg.org/#the-abort()-method.
@@ -30,18 +32,25 @@ async function fixture(t: TestContext, native = true, gate = false, fetchRespons
     #state = 0
     get readyState() { return this.#state }
     status = 0; responseURL = ''; syncMode = false
-    #responseType: XMLHttpRequestResponseType = ''; #timeout = 0
+    #responseType: XMLHttpRequestResponseType = ''; #timeout = 0; #credentials = false
+    onRestore: ((option: 'responseType' | 'timeout' | 'credentials' | 'header') => void) | null = null
+    sendError: Error | null = null
+    successfulOpens = 0
     get responseType() { return this.#responseType }
     set responseType(value: XMLHttpRequestResponseType) {
       if (this.syncMode) throw new DOMException('Window synchronous XHR responseType cannot be set', 'InvalidAccessError')
       this.#responseType = value
+      this.onRestore?.('responseType')
     }
     get timeout() { return this.#timeout }
     set timeout(value: number) {
       if (this.syncMode) throw new DOMException('Window synchronous XHR timeout cannot be set', 'InvalidAccessError')
       this.#timeout = value
+      this.onRestore?.('timeout')
     }
-    withCredentials = false; method = ''; url = ''; nativeSends = 0; sendInvoked = false
+    get withCredentials() { return this.#credentials }
+    set withCredentials(value: boolean) { this.#credentials = value; this.onRestore?.('credentials') }
+    method = ''; url = ''; nativeSends = 0; sendInvoked = false
     user: string | null = null; password: string | null = null; headers: [string, string][] = []
     raw = JSON.stringify(payload())
     open(method: string, url: string | URL, _async?: boolean, _user?: string | null, _password?: string | null) {
@@ -61,6 +70,7 @@ async function fixture(t: TestContext, native = true, gate = false, fetchRespons
         throw new DOMException('synchronous options', 'InvalidAccessError')
       }
       const changed = this.#state !== 1
+      this.successfulOpens++
       this.method = /^(DELETE|GET|HEAD|OPTIONS|POST|PUT)$/i.test(normalizedMethod) ? normalizedMethod.toUpperCase() : normalizedMethod
       this.url = parsed.href; this.#state = 1; this.sendInvoked = false; this.syncMode = !async
       this.status = 0; this.responseURL = ''
@@ -69,6 +79,7 @@ async function fixture(t: TestContext, native = true, gate = false, fetchRespons
     }
     send(_body?: unknown) {
       if (this.readyState !== 1 || this.sendInvoked) throw new DOMException('send invalid state', 'InvalidStateError')
+      if (this.sendError) throw this.sendError
       this.sendInvoked = true; this.nativeSends++
     }
     abort() {
@@ -82,6 +93,7 @@ async function fixture(t: TestContext, native = true, gate = false, fetchRespons
     setRequestHeader(_name: string, _value: string) {
       if (this.readyState !== 1 || this.sendInvoked) throw new DOMException('header invalid state', 'InvalidStateError')
       this.headers.push([_name, _value])
+      this.onRestore?.('header')
     }
     complete() {
       this.#state = 4; this.sendInvoked = false; this.status = 200; this.responseURL = this.url
@@ -114,7 +126,7 @@ async function fixture(t: TestContext, native = true, gate = false, fetchRespons
   const fakeWindow = { fetch: nativeFetch, XMLHttpRequest: NativeXhr }
   scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
   scope.defineGlobal('location', { configurable: true, value: new URL('https://www.bilibili.com/video/BVsynthetic') })
-  const transport = scope.own(new TransportAdapter(session, settings, routes, playurl, {
+  const transport = scope.own(new TransportAdapter(session, settings, routes, playurl, startup ?? {
     willGateStartup: () => gate, prepareStartup: () => wait.promise, noteUnpreflighted: () => undefined,
   }, now, createRuntimeIds()))
   transport.install()
@@ -124,7 +136,7 @@ async function fixture(t: TestContext, native = true, gate = false, fetchRespons
     const next = session.beginGeneration(false)
     vault.reset(next.generation, next.epoch); routes.resetEpoch()
   }
-  return { session, settings, restrictions, routes, playurl, now, fakeWindow, NativeXhr, nativeOpen, wait, transport, fetchCalls, advanceGeneration }
+  return { session, settings, restrictions, evidence, routes, playurl, now, fakeWindow, NativeXhr, nativeOpen, wait, transport, fetchCalls, advanceGeneration }
 }
 
 const blockedUrl = 'https://httpdns.bilivideo.com/bilicdn-browser-contract'
@@ -447,6 +459,125 @@ test('BR-02 failed sync open never replays an already-sent native request', asyn
   assert.equal(xhr.readyState, 0); assert.equal(xhr.nativeSends, 1)
   assert.throws(() => xhr.send(), { name: 'InvalidStateError' })
 })
+
+for (const failure of ['syntax', 'sync-once', 'sync-always'] as const) {
+  test(`BR-04 preparation callback ${failure} has bounded dispatch and termination`, async t => {
+    const f = await fixture(t, true, true), xhr = new f.NativeXhr(), terminal: string[] = []
+    xhr.open('GET', originalUrl, true, 'synthetic-user', 'synthetic-password')
+    xhr.responseType = 'json'; xhr.withCredentials = true; xhr.setRequestHeader('x-synthetic', 'kept'); xhr.send()
+    assert.throws(() => xhr.open('GET', ordinaryUrl, false), { name: 'InvalidAccessError' })
+    const before = xhr.successfulOpens
+    let callbacks = 0
+    xhr.addEventListener('readystatechange', () => {
+      if (xhr.readyState !== 1) return
+      callbacks++
+      if (failure === 'syntax') assert.throws(() => xhr.open('BAD METHOD', ordinaryUrl), { name: 'SyntaxError' })
+      else assert.throws(() => xhr.open('GET', ordinaryUrl, false), { name: 'InvalidAccessError' })
+    }, { once: failure !== 'sync-always' })
+    for (const type of ['error', 'load', 'loadend']) xhr.addEventListener(type, () => terminal.push(type))
+    f.wait.resolve(); await f.wait.promise; await Promise.resolve()
+    assert.equal(xhr.successfulOpens - before, failure === 'syntax' ? 1 : 2)
+    assert.equal(callbacks, failure === 'sync-always' ? 2 : 1)
+    if (failure === 'sync-always') {
+      assert.equal(xhr.nativeSends, 0); assert.equal(xhr.readyState, 4); assert.equal(xhr.response, null)
+      assert.deepEqual(terminal, ['error', 'loadend'])
+      assert.equal(f.transport.snapshot().nativeCalled, 0, 'failed preparation is not a native send')
+      assert.throws(() => xhr.send(), { name: 'InvalidStateError' })
+    } else {
+      assert.equal(xhr.nativeSends, 1); assert.equal(xhr.url, originalUrl)
+      assert.equal(xhr.withCredentials, true); assert.equal(xhr.user, 'synthetic-user'); assert.equal(xhr.password, 'synthetic-password')
+      assert.deepEqual(xhr.headers, [['x-synthetic', 'kept']]); xhr.complete()
+      assert.deepEqual(terminal, ['load', 'loadend'])
+    }
+  })
+}
+
+for (const option of ['responseType', 'timeout', 'credentials', 'header'] as const) {
+  for (const action of ['invalidate', 'abort', 'replace'] as const) {
+    test(`BR-04 ${option} restoration respects ${action} ownership`, async t => {
+      const f = await fixture(t, true, true), xhr = new f.NativeXhr(), events: string[] = []
+      xhr.open('GET', originalUrl); xhr.responseType = 'json'; xhr.setRequestHeader('x-synthetic', 'kept'); xhr.send()
+      assert.throws(() => xhr.open('GET', ordinaryUrl, false), { name: 'InvalidAccessError' })
+      xhr.onRestore = key => {
+        if (key !== option) return
+        xhr.onRestore = null
+        if (action === 'invalidate') assert.throws(() => xhr.open('GET', ordinaryUrl, false), { name: 'InvalidAccessError' })
+        else if (action === 'abort') xhr.abort()
+        else { xhr.open('POST', ordinaryUrl); xhr.send() }
+      }
+      for (const type of ['abort', 'error', 'loadend']) xhr.addEventListener(type, () => events.push(type))
+      f.wait.resolve(); await f.wait.promise; await Promise.resolve()
+      assert.equal(xhr.nativeSends, action === 'abort' ? 0 : 1)
+      assert.equal(xhr.url, action === 'replace' ? ordinaryUrl : originalUrl)
+      assert.deepEqual(events, action === 'abort' ? ['abort', 'loadend'] : [])
+      if (action !== 'abort') xhr.complete()
+    })
+  }
+}
+
+test('BR-04 deferred native send exception terminates once while immediate send throws unchanged', async t => {
+  const f = await fixture(t, true, true), xhr = new f.NativeXhr(), events: string[] = []
+  const failure = new DOMException('synthetic dispatch failure', 'InvalidStateError')
+  xhr.open('GET', originalUrl); xhr.sendError = failure; xhr.send()
+  for (const type of ['readystatechange', 'error', 'loadend']) xhr.addEventListener(type, () => events.push(type))
+  f.wait.resolve(); await f.wait.promise; await Promise.resolve()
+  assert.deepEqual(events, ['readystatechange', 'error', 'loadend']); assert.equal(xhr.readyState, 4)
+  assert.equal(xhr.nativeSends, 0); assert.throws(() => xhr.send(), { name: 'InvalidStateError' })
+  assert.equal(f.routes.pendingMediaCount(), 0, 'failed native dispatch releases pending media attribution')
+  assert.equal(f.evidence.list().length, 0, 'a local dispatch exception is not a CDN failure sample')
+  const immediate = new f.NativeXhr(); immediate.open('POST', ordinaryUrl); immediate.sendError = failure
+  assert.throws(() => immediate.send(), error => error === failure)
+})
+
+for (const [label, makeReason] of [
+  ['object', () => ({ tag: 'fetch-owned-object' })], ['Error', () => new Error('fetch-owned-error')],
+  ['string', () => 'fetch-owned-string'], ['zero', () => 0], ['false', () => false],
+  ['empty-string', () => ''], ['null', () => null], ['default', () => undefined],
+] as const) {
+  for (const timing of ['pre-aborted', 'waiting'] as const) {
+    test(`BR-05 managed Fetch ${timing} preserves ${label} while other Fetch and XHR finish`, async t => {
+      const startup = startupAbortFixture(t), f = await fixture(t, true, false, undefined, startup.measurement)
+      const controller = new AbortController(), reason = makeReason(), xhr = new f.NativeXhr()
+      xhr.open('GET', originalUrl); xhr.send()
+      const other = f.fakeWindow.fetch(originalUrl)
+      if (timing === 'pre-aborted') controller.abort(reason)
+      const pending = f.fakeWindow.fetch(originalUrl, { signal: controller.signal })
+      if (timing === 'waiting') controller.abort(reason)
+      const caught = await pending.then(() => ({ rejected: false, reason: undefined }), reason => ({ rejected: true, reason }))
+      assert.equal(caught.rejected, true); assert.strictEqual(caught.reason, controller.signal.reason)
+      assert.equal(startup.probeSignals.length, 1); assert.equal(startup.probeSignals[0]!.aborted, false)
+      assert.equal(f.fetchCalls.length, 0); assert.equal(xhr.nativeSends, 0)
+      startup.complete(); assert.equal((await other).status, 200); await Promise.resolve()
+      assert.equal(xhr.nativeSends, 1); assert.equal(f.fetchCalls.length, 1); assert.equal(startup.commits(), 1)
+      xhr.complete()
+    })
+  }
+}
+
+for (const action of ['disable', 'blacklist', 'change-host'] as const) {
+  test(`BR-04 preparation callback rechecks ${action} before native dispatch`, async t => {
+    const f = await fixture(t, false, true), xhr = new f.NativeXhr()
+    await f.settings.update({ fixedHost: 'upos-sz-mirroraliov.bilivideo.com' }); f.routes.invalidateForUserSetting()
+    xhr.open('GET', originalUrl); xhr.responseType = 'json'; xhr.send()
+    assert.throws(() => xhr.open('GET', ordinaryUrl, false), { name: 'InvalidAccessError' })
+    const getSettings = f.settings.get.bind(f.settings), settings = getSettings()
+    const inspectOriginal = f.routes.inspectOriginal.bind(f.routes)
+    xhr.addEventListener('readystatechange', () => {
+      if (action === 'disable') f.settings.get = () => ({ ...settings, disabled: true })
+      else if (action === 'change-host') {
+        f.settings.get = () => ({ ...settings, fixedHost: 'upos-sz-mirrorcos.bilivideo.com' }); f.routes.invalidateForUserSetting()
+      } else {
+        f.advanceGeneration()
+        f.routes.inspectOriginal = url => ({ ...inspectOriginal(url), url: null,
+          decision: { action: 'block', id: inspectOriginal(url).decision.id, reason: 'black', routeType: 'root-original', host: null, ranking: [] } })
+      }
+    }, { once: true })
+    f.wait.resolve(); await f.wait.promise; await Promise.resolve()
+    assert.equal(xhr.nativeSends, action === 'blacklist' ? 0 : 1)
+    if (action === 'disable') assert.equal(xhr.url, originalUrl)
+    if (action === 'change-host') assert.equal(new URL(xhr.url).hostname, 'upos-sz-mirrorcos.bilivideo.com')
+  })
+}
 
 test('B2 gated abort exposes DONE then UNSENT with empty response and exactly one terminal sequence', async t => {
   const f = await fixture(t, true, true), xhr = new f.NativeXhr(), events: string[] = []

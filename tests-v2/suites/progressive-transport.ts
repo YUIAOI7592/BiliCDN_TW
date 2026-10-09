@@ -42,7 +42,10 @@ const nativeFetch = async (input: RequestInfo | URL): Promise<Response> => {
       headers: { 'content-type': 'application/json' } }) : new Response(new Uint8Array(70 * 1024), { status: 206 })
   }
 class FakeXhr extends EventTarget {
-    url = ''; method = ''; readyState = 0; status = 200; responseURL = ''; timeout = 0; withCredentials = false
+    #state = 0
+    get readyState() { return this.#state }
+    set readyState(value: number) { this.#state = value }
+    url = ''; method = ''; status = 200; responseURL = ''; timeout = 0; withCredentials = false
     responseType: XMLHttpRequestResponseType = ''; payload: unknown = fixture(); nativeSends = 0
     get response(): unknown { return this.responseType === 'json' ? this.payload : JSON.stringify(this.payload) }
     get responseText(): string { return JSON.stringify(this.payload) }

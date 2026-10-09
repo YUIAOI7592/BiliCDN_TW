@@ -9,6 +9,7 @@ import { FakeStorage } from '../support/storage.ts'
 import { FakeClock } from '../support/clock.ts'
 import { measurementRoutes } from '../support/controllers.ts'
 import { testScope } from '../support/scope.ts'
+import '../regressions/functional-races/startup-abort.ts'
 
 // Each call creates fresh resources and replays only this fixture's prerequisite transitions.
 // Earlier expectations run in their own cases; no mutable state crosses a test boundary.

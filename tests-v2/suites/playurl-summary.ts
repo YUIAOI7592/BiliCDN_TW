@@ -36,7 +36,10 @@ const routes = {
 const settings = { get: () => ({ disabled, blockHttpDns: false }) } satisfies TransportSettings
 const measurement = { willGateStartup: () => false, async prepareStartup() {}, noteUnpreflighted() {} } satisfies StartupGate
 class FakeXhr extends EventTarget {
-    readyState = 0; status = 200; responseURL = ''; responseType: XMLHttpRequestResponseType = ''
+    #state = 0
+    get readyState() { return this.#state }
+    set readyState(value: number) { this.#state = value }
+    status = 200; responseURL = ''; responseType: XMLHttpRequestResponseType = ''
     timeout = 0; withCredentials = false; payload: unknown = { code: 0 }; rawText: string | null = null
     get response(): unknown { return this.responseType === 'json' ? this.payload : this.responseText }
     get responseText(): string { return this.rawText ?? JSON.stringify(this.payload) }
