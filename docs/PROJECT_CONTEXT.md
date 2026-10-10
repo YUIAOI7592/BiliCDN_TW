@@ -2,7 +2,7 @@
 
 本文件是現行產品與開發契約。文件用途及歷史紀錄見 [文件索引](INDEX.md)；版本與工具設定以 [release.json](../release.json)、[package.json](../package.json) 和 [依賴鎖定檔](../package-lock.json) 為準。內建節點清單稱為 Catalog，原生簽名路線稱為 Native。
 
-**BR-08 已完成本機修復，驗證／發布中；BR-01 完整安裝驗收仍未完成。** 本輪修復外層進度列漏辨，將拖曳保護涵蓋監控的停滯、watchdog、冷起播及所有核心恢復入口。公開發行基準仍為 v2.1.15；新版來源隔離、發布核對及實際安裝結果分開記錄，不預填通過。原 [BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 的失敗與 inner 對照保持原狀，現行工作見 [驗證報告](TEST_REPORT.md) 與 [TODO](TODO.md)。Auto 長 seek 的 15／30／15、既有修復及 schema 2 不變；自然網路起因與其他驗收獨立追蹤。
+**BR-08 完整拖曳契約修復與 v2.1.16 發布完成；BR-01 完整安裝驗收仍未完成。** 本輪修復外層進度列漏辨，將拖曳保護涵蓋監控的停滯、watchdog、冷起播及所有核心恢復入口。公開發行基準為 v2.1.16，必要驗證、來源隔離及公開產物核對完成；2026-10-10 21:11:07.331（Asia/Taipei）已核對實際新版完整本體、唯一 singleton 及 hooks。Auto 1／2 倍 wrapper／inner 的四個超過 32 秒拖曳窗口及釋放取得有效保護證據，正常播放／暫停／短 seek 及約 12 秒 video-only 延遲後恢復已取得證據、腳本重載 0；完整停滯退出與其餘安裝矩陣仍待完成。原 [BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 的失敗與 inner 對照保持原狀，現行工作見 [驗證報告](TEST_REPORT.md) 與 [TODO](TODO.md)。Auto 長 seek 的 15／30／15、既有修復及 schema 2 不變；自然網路起因與其他驗收獨立追蹤。
 
 BR-07 修復與 v2.1.15 發布已完成，實際安裝版取得部分驗收。可信 keydown／keyup 同派送實際 seek 涵蓋網站右鍵提交；該版正式 574 案例、最終 verify、獨立安全差異及 Chrome 來源隔離通過，公開 latest 版本／大小／SHA-256 與實際 body／singleton 1 核對完成。Auto 1／2 倍正常鍵盤及新 15 秒寬限有證據，續測再發現 BR-08。歷史結果見 [BR-07 修復報告](BR07_FIX_REPORT.md) 與 [v2.1.15 安裝版](CHROME_v2.1.15_ACCEPTANCE.md)。
 

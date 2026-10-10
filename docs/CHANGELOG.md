@@ -2,18 +2,18 @@
 
 # BiliCDN_TW 變更紀錄
 
-> v2.1.16 BR-08 完整拖曳契約本機修復與必要驗證完成，待發布；實際新版 Tampermonkey 與 BR-01 完整安裝驗收仍未完成。舊條目保留其當時狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。
+> v2.1.16 已發布，BR-08 完整拖曳契約修復、必要驗證與公開產物核對完成；實際新版完整本體／singleton／hooks 已核對，Auto 1／2 倍拖曳、基本播放與約 12 秒 video-only 延遲後恢復已有部分證據，BR-01 完整安裝驗收仍未完成。舊條目保留其當時狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。
 
 ## v2.1.16
 
-2026-10-10，基準 v2.1.15／`f0c2d39`，**BR-08 本機修復及必要驗證完成，待發布與公開產物核對**。修復／案例對照見 [BR-08 修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR08_FIX_REPORT.md)，來源隔離與實際新版結果分列於 [v2.1.16 驗收紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.16_ACCEPTANCE.md)；[v2.1.15 原缺陷](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 與歷史 Release 保留原樣。
+2026-10-10 **21:05:38（Asia/Taipei）** [發布 v2.1.16](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.16)，基準 v2.1.15／`f0c2d39`，發行提交／peeled tag `ff0cb07063032aeb49a9e52ccc630685bec46cf8`，annotated tag `0dc8c0590ad3a63282c029fdc0d2e3ab56c1bbbe`；遠端 main 在發布時匹配。唯一腳本 **320,794 bytes**，SHA-256 `5eaeb8444503886244b06f81cb24a81081720a0ea5dcb978c284c776eb05e8d4`；21:06:11.073 無登入公開 latest 的版本、大小與校驗值匹配。**BR-08 修復與發布完成**；21:07:51 的實際 v2.1.15 觀察保留，21:11:07.331 指定影片已核對 v2.1.16 完整本體、singleton 1 及 hooks，開始取得新版安裝證據。修復／案例對照見 [BR-08 修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR08_FIX_REPORT.md)，來源隔離與實際新版結果分列於 [v2.1.16 驗收紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.16_ACCEPTANCE.md)；[v2.1.15 原缺陷](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 與歷史 Release 保留原樣。
 
 - 補入目前播放器區域內的 `.bpx-player-progress-wrap` 命中，沿用既有 inner／舊版／slider；可信進度按下即取得拖曳保護，涵蓋未提交 seek 的預覽。單一手勢綁定 pointerId、媒體、播放器及內容生命週期，同指標可信結束事件才能釋放；新手勢、同步重入及舊終止事件維持所有權。
 - VisibilityAdapter 在既有可信失焦／真正 hidden guard 前通知內部 control-loss，入口明確注入並清理訂閱；監聽器例外不破壞原 guard。reset、媒體／播放器替換及生命週期失效撤銷手勢，不新增拖曳 timeout 或 pointer capture。
 - Monitor 的停滯／watchdog／冷起播三個入口均排除 dragging，清除舊停滯與連續計數而不消耗起播嘗試。Recovery 在讀取保存值前後核對 controls，提交前重查資格、生命週期／操作／媒體／核心、既有 token、breaker 與重載額度；晚到 reload／play 的所有權防護保留。
 - 一般停滯於釋放後第一個合資格 tick 建立新 15／30 秒期限，位置 0 有效；未進展冷起播仍依原 firstMediaAt 與既有一次性預算評估，可能釋放後立即救援。Auto／ABR、15／30／15、影音隔離、Vault／政策規則、公開 API／應用層快照及 schema 2 不變。
 - 原七個正確契約先保存 **3 fail／4 pass**，修復後通過；全套 **637 正式案例**、typecheck、architecture、verify **v2.1.16** 與 diff 檢查通過。獨立 Codex Security 最終差異 **14／14 完整覆蓋、0 可報告發現**；Chrome 來源隔離 **31 個有效案例通過**，兩個無效校準窗口排除，清理完成。
-- **實際新版安裝驗收待完成**：指定風景影片、Auto 1／2 倍分開取得 BR-08 持續拖曳及釋放、完整 15／30／15、操作／晚到 SDK／真正背景與交叉回歸矩陣。來源隔離及 Node 契約不能替代安裝版，原 87.785 秒自然網路起因及其餘完整產品驗收保持獨立。
+- **實際新版安裝驗收部分完成**：指定風景影片 Auto 1／2 倍的 wrapper／inner 四個超過 32 秒拖曳窗口均有保護與釋放證據、腳本重載 0；正常播放／暫停／短 seek 與約 12 秒 video-only 延遲後的實際時間／影格恢復取得證據。延遲兩窗各在無進度達 15 秒後提交一次合法路線備援，audio 通行、核心重載 0、受控學習樣本 0。2 倍的後續 recovered 獨立觀察與前窗有缺口，未計連續時序；釋放後網站提前暫停／換核心只證明撤銷，完整 15／30／15、操作／晚到 SDK／真正背景與交叉回歸矩陣仍待完成。來源隔離及 Node 契約不能替代安裝版，原 87.785 秒自然網路起因及其餘完整產品驗收保持獨立。
 
 ## v2.1.15
 

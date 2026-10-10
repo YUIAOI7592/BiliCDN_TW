@@ -2,7 +2,7 @@
 
 # 信任邊界與資料處理
 
-本文件是 `src-v2/` **BR-08 完整拖曳契約本機修復**（保留 BR-01～07）的執行期信任邊界指南，目前驗證／發布中；BR-01 完整安裝驗收仍未完成。設定版本以 release.json 為準，發布及安裝驗收見 [驗證報告](docs/TEST_REPORT.md)，安全差異與 Chrome／Tampermonkey 分列，不能互相替代。原 [BR-08 進度拖曳漏辨](docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 是功能缺陷證據，未當成已解決的安全發現。文件用途見 [文件索引](docs/INDEX.md)，本文件本身不要求啟動安全掃描。
+本文件是 `src-v2/` **v2.1.16 BR-08 完整拖曳契約**（保留 BR-01～07）的執行期信任邊界指南。BR-08 修復、必要驗證及發布／公開產物核對完成；2026-10-10 21:11:07.331（Asia/Taipei）實際 Chrome 已核對 v2.1.16 完整本體、唯一 singleton 及 hooks，BR-01 完整安裝驗收仍未完成，已有新版 Auto 1／2 倍拖曳保護、基本播放及約 12 秒 video-only 延遲後恢復的部分證據。設定版本以 release.json 為準，發布及安裝驗收見 [驗證報告](docs/TEST_REPORT.md)，安全差異與 Chrome／Tampermonkey 分列，不能互相替代。原 [BR-08 進度拖曳漏辨](docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 是功能缺陷證據，未當成已解決的安全發現。文件用途見 [文件索引](docs/INDEX.md)，本文件本身不要求啟動安全掃描。
 
 <a name="untrusted-inputs"></a>
 

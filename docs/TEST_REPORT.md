@@ -4,7 +4,7 @@
 
 基準 **v2.1.15／f0c2d39**，開始時工作目錄乾淨。BR-08 完整拖曳契約已完成本機修復：進度列外層及其子節點取得立即保護，私有手勢核對指標／媒體／播放器／內容所有權；可信失焦與真正 hidden 在既有事件 guard 阻擋前通知 PlayerAdapter。Monitor 三個救援入口與 Recovery token 建立均拒絕 dragging，提交前重查最新資格。Auto、15／30／15 秒、重載額度、breaker、影音隔離、公開 API／應用層快照與 schema 2 保持原契約。
 
-**BR-08 必要自動驗證、安全差異與 Chrome 來源隔離通過；v2.1.16 待正式發布與公開產物核對。BR-01 完整安裝版尚未完成。** 詳見 [修復對照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR08_FIX_REPORT.md)、[新版安裝矩陣](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.16_ACCEPTANCE.md)。v2.1.15 原失敗及歷史 Release 保留，不將舊版或模型結果計為新版安裝通過。
+**BR-08 修復與 v2.1.16 發布完成；正式／安全／Chrome 來源隔離及公開產物核對通過。新版完整本體與 singleton 已核對，Auto 1／2 倍拖曳保護、正常播放及約 12 秒延遲恢復取得安裝證據；BR-01 完整安裝矩陣仍未完成。** 詳見 [修復對照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR08_FIX_REPORT.md)、[新版安裝矩陣](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.16_ACCEPTANCE.md)。v2.1.15 原失敗及歷史 Release 保留，不將舊版或模型結果計為新版安裝通過。
 
 ## 自動驗證與先行失敗契約
 
@@ -43,15 +43,29 @@
 
 ## 發布與安裝版
 
-設定已升為 **v2.1.16**，GitHub 發布前 main 仍為 f0c2d39，版本標籤未使用；正式封裝、提交、標籤／Release 及公開 latest 的版本／大小／SHA-256 尚待完成。本段將於發布讀回後更新；發行快照保留封裝時狀態，不事後回寫。
+v2.1.16 於 **2026-10-10T13:05:38Z（Asia/Taipei 21:05:38）** [正式發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.16)。發行提交／peeled tag `ff0cb07063032aeb49a9e52ccc630685bec46cf8`，標籤物件 `0dc8c0590ad3a63282c029fdc0d2e3ab56c1bbbe`；發布時遠端 main 一致。唯一附件 `BiliCDN_TW.user.js`，**320,794 bytes**，SHA-256 `5eaeb8444503886244b06f81cb24a81081720a0ea5dcb978c284c776eb05e8d4`。**13:06:11.073Z** 無登入公開 latest 讀回版本、大小與雜湊匹配。發布後文件更新不改發行標籤或 Release 快照。
 
-[新版安裝矩陣](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.16_ACCEPTANCE.md) 需實際新版完整 body／唯一 singleton／hooks 身分才開始計分。只用指定風景影片 Auto 1／2 倍，BR-08 按住 31 秒、正常／12 秒延遲、完整停滯期限、新操作與晚到 SDK、真正背景、生命週期／政策／影音隔離及實際 BR-02～05 交叉矩陣均另列。缺少真背景、完整無進度或真正 pending gate 前提時保持待驗收；不以舊版／Node／來源隔離替代。
+[新版安裝矩陣](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.16_ACCEPTANCE.md) 於 **13:11:07.331Z** 核對已載入的完整 body 與 v2.1.16 匹配、沒有截斷，ControlCenter／Runtime 各 1，實際 Fetch／XHR hooks 與共用控制器／ID 來源一致。只用指定風景影片 Auto 1／2 倍；每次同片刷新重新取得身分。
+
+| 新版實際安裝項目 | 證據與結果 |
+| --- | --- |
+| wrapper／inner × Auto 1／2 | 四窗主連續記錄 32.116～32.212 秒；初始 nonpaused seeking／低緩衝，已命中手勢全採樣 dragging=true，無新增 route／core action，reloadCount 0，可信釋放 false |
+| 正常播放／暫停恢復／短 seek | 1／2 倍分開，實際時間與影格前進、無核心重載；正常 Auto 解析度變化不列缺陷 |
+| 約 12 秒 video-only | 1 倍窗口 hold 12.215 秒＋20 秒連續尾段，2347.898058→2361.768725 秒／24540→25439 影格、healthy／recovered；2 倍 hold 12.129 秒＋15 秒連續尾段取得進度、獨立後續觀察 recovered；audio 通行，各有一次合法 15 秒備援、兩窗重載 0 |
+| 學習與記錄完整性 | 主窗口沒有截斷／dropped／pump errors；四拖曳窗確認 IDs 24／24／24／12，延遲窗累積 10，memory／persisted 0 匹配、unclassified 0；沒有受控 startup／challenge 工作，不冒充真 gate 樣本驗收 |
+| 既有原線對照控制 | false→true→false 精確復原、generation／epoch 不變、播放時間前進／重載 0；無有效 token，不計帶動作政策撤銷 |
+| 實際 XHR／原生 Blob 對照 | **33／33 對通過**、66 次執行／588 完整事件；BR-02 原生所有權、例外、同步／終止事件重入及 text/json 子集；首次 32／33 的原生同錯測試期待校準保留，非產品缺陷 |
+| 最終工具清理 | 14:09:11.153Z body／singleton／共用控制器再核對；patterns 空、held 0、方法完整描述子還原、timer／live XHR observers 0、observer 遮蔽移除；10 個受控 IDs 記憶體及持久零匹配，設定精確復原 |
+
+四拖曳窗網站在約 19～20 秒 paused／外部核心替換，不能計完整 30 秒重載與重載後 15 秒退出。前三窗 32 秒後有 42～50 秒 Network 讀取空檔，不宣稱整段持續處理；第四窗 12 個 start 中只保存 11 個腳本 completion，最後一筆以原生 Network canceled 收束，不補造腳本事件。2 倍延遲的首次進度與後續 recovered 間 Network 空檔 73.179 秒、重接首批 truncated=true，僅後續獨立媒體狀態可用，不計完整連續窗口。詳列原始檔、逐窗限制及清理於安裝矩陣，不因工具清理倒寫歷史缺口。
 
 <a name="歷史驗證導覽"></a>
 
 ## 剩餘限制與歷史
 
-BR-08 本機修復完成，發布與安裝驗收分開。網站提前 pause／error／外部換核心、事件截斷或缺失只證明列明的撤銷，不算完整期限。沒有新前提不重複無效窗口。原 87.785 秒自然網路起因、缺少有效 cid 且無共同路徑時的保守重設及其他產品完整驗收仍獨立。
+BR-08 修復與發布完成，安裝矩陣已有上述部分通過。13:07:51.193Z 更新前舊版身分仍保留於 installed/update-prerequisite.json；13:11:07.331Z 起使用實際新版計分，兩者分列。完整 15／30／15、新操作／晚到 SDK 與位置還原、帶 token 的生命週期／政策／影音隔離仍待有效前提。真正背景工具阻塞，原生 hidden=false 不算背景；實際 singleton gate 因網站顯式 XHR timeout 而 skipped，不能算 BR-04／05 pending gate。網站提前 pause／error／外部換核心、事件截斷或缺失只證明列明的撤銷，不算完整期限，沒有新前提不重複同樣失效窗口。原 87.785 秒自然網路起因、缺少有效 cid 且無共同路徑時的保守重設及其他產品完整驗收仍獨立。本輪安裝窗口未確認新功能缺陷。
+
+另有一次 Auto 新表示附近位置 2913.218677→0.307 秒的未定位觀察，距原線對照復原 174.648 秒，沒有新腳本恢復／重載、core 或 epoch 改變。這不是已證實政策／腳本缺陷，亦不能用即時模式旗標復原代替完整播放相容。長時間後 observer 採樣達 2000 列上限，淘汰旗標為 true，關鍵事件仍保存；因果及 Network 缺口在安裝報告明列，不補算整段完整觀察。最後清理的 Network readback 截斷亦保留，不能回填先前時序。Blob 原生對照的資源清理與安裝故障觀察器清理各自保存，虛擬政策／媒體歸因／pending gate／cid 等子項沒有因此通過。
 
 <a name="bilicdn_tw-v2115-release-verification--2026-10-10"></a>
 <a name="bilicdn_tw-v2114-release-verification--2026-10-10"></a>

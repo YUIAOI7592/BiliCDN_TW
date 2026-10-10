@@ -4,7 +4,7 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
-目前最新公開版本 **v2.1.15 已發布**，修復 BR-07 的 keyup 尋位所有權；該版實際 Auto 1／2 倍的正常鍵盤及新寬限有證據，續測確認 [BR-08 進度列外層拖曳漏辨](docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md)。**BR-08 現已本機修復，驗證／發布中；BR-01 完整安裝驗收仍未完成。** 新來源保護外層與內層的有效進度拖曳，按住期間不建立監控救援或核心恢復意圖；正式驗證、公開產物與實際新版安裝結果分開記錄，未取得證據的項目不標通過。Auto 的 15／30／15 秒及 schema 2 不變。發布／安裝結果見 [驗證報告](docs/TEST_REPORT.md)，更新網址保持 [最新 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest)。
+目前最新公開版本 **v2.1.16 已發布，BR-08 完整拖曳契約修復與公開更新核對完成；BR-01 完整安裝驗收仍未完成。** 新版保護外層與內層的有效進度拖曳，按住期間不建立監控救援或核心恢復意圖。2026-10-10 21:11:07.331（Asia/Taipei）已核對指定影片實際載入 v2.1.16 完整本體、唯一 singleton 及 hooks；Auto 1／2 倍的 wrapper／inner 四個超過 32 秒拖曳窗口取得保護與釋放證據，正常播放／暫停／短 seek、約 12 秒 video-only 延遲後恢復也取得新版證據，均無腳本重載。完整停滯退出及其餘安裝矩陣仍待完成，正式驗證、公開產物與實際安裝結果分開記錄。Auto 的 15／30／15 秒及 schema 2 不變。原 [BR-08 報告](docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 保留，發布／安裝結果見 [驗證報告](docs/TEST_REPORT.md)，更新網址保持 [最新 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest)。
 
 GitHub Release 附件只有使用者腳本，更新網址維持原位。發布後核對公開 latest 版本、大小與 SHA-256；來源隔離及 Node 不代替 Tampermonkey 安裝驗收。
 
@@ -124,7 +124,7 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 ## 目前版本的驗證紀錄
 
-**2026-10-10 本輪 BR-08：** 原七正式契約先保存 3 fail／4 pass，最終 BR-08 63／63（application 34／adapters 29）、全套 19 套件／637 正式案例及 v2.1.16 verify 通過；最終獨立安全差異 14／14 覆蓋、0 可報告發現。Chrome 來源隔離 31 個有效通過，2 個無效輸入校準排除；自有 iframe 的合成媒體與 FakeClock 不代替實際 Tampermonkey 安裝驗收。發布及剩餘矩陣見 [BR-08 修復](docs/BR08_FIX_REPORT.md)、[最新版驗證](docs/TEST_REPORT.md) 與 [v2.1.16 安裝版](docs/CHROME_v2.1.16_ACCEPTANCE.md)。
+**2026-10-10 本輪 BR-08 修復及 v2.1.16 發布完成：** 原七正式契約先保存 3 fail／4 pass，最終 BR-08 63／63（application 34／adapters 29）、全套 19 套件／637 正式案例及 v2.1.16 verify 通過；最終獨立安全差異 14／14 覆蓋、0 可報告發現。Chrome 來源隔離 31 個有效通過，2 個無效輸入校準排除；自有 iframe 的合成媒體與 FakeClock 不代替實際 Tampermonkey 安裝驗收。21:05:38（Asia/Taipei）已發布，遠端 main／標籤、唯一附件 **320,794 bytes** 及公開 latest 版本／SHA-256 核對一致；21:11:07.331 已核對實際新版完整本體／singleton 1／hooks。Auto 1／2 倍的 wrapper／inner 各持續按住超過 32 秒，四個有效窗口均有 dragging 保護、釋放後 dragging=false 且沒有腳本重載；正常播放／暫停／短 seek 及約 12 秒 video-only 延遲後的時間／影格恢復均有證據。延遲兩窗各在連續無進度達 15 秒後提交一次合法路線備援，audio 通行、核心重載 0、受控記憶體／持久樣本 0；2 倍的後續 recovered 獨立觀察與先前窗口間有缺口，未當成連續時序。釋放後的網站提前暫停／換核心不能計入完整 BR-01 逾時，其餘矩陣仍待完成。發布及剩餘矩陣見 [BR-08 修復](docs/BR08_FIX_REPORT.md)、[最新版驗證](docs/TEST_REPORT.md) 與 [v2.1.16 安裝版](docs/CHROME_v2.1.16_ACCEPTANCE.md)。
 
 **2026-10-10 歷史 BR-07（v2.1.15）：** 原五契約 2 fail／3 pass→修復後 5／5；BR-06／BR-07 **100／100**（40＋60）、全套 **19 套件／574 正式案例**、typecheck、**44 個執行期模組**架構與最終 verify **v2.1.15** 通過，Chrome 來源隔離 **40／40 有效案例**通過；獨立安全差異完整覆蓋，**0 可報告發現、無未處理候選**。公開 latest 已核對 **2.1.15、317,487 bytes** 及 SHA-256 一致；實際完整本體／singleton 1 也已核對。[安裝驗收](docs/CHROME_v2.1.15_ACCEPTANCE.md) 有正常 Auto 1／2 倍、鍵盤新寬限與約 12 秒影片延遲後恢復證據，但新 BR-08 拖曳缺陷及未成立的完整逾時、背景／SDK 等矩陣仍未完成。BR-08 私有正確契約 **3 fail／4 pass** 是缺陷證據，與發布前 574 正式通過分列。原生 auto-repeat、IME／nested／替換的完整 Chrome 覆蓋未宣稱完成。v2.1.14 原報告保留在 [歷史報告](archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2114-release-verification--2026-10-10)，自然網路起因與其他產品矩陣保持各自範圍。
 

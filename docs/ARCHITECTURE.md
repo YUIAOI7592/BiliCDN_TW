@@ -2,7 +2,7 @@
 
 # v2 架構
 
-本文件描述 [src-v2](../src-v2/entry.ts) 的 **BR-08 完整拖曳契約本機修復**，目前驗證／發布中；保留 BR-01～07 與既有 17 項。發行版本以 [release.json](../release.json) 為準；發布／安裝狀態見 [驗證報告](TEST_REPORT.md)。BR-01 完整安裝驗收仍未完成，原自然網路起因與其他完整驗收獨立追蹤，來源隔離不代替安裝版。文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
+本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.16 BR-08 完整拖曳契約**；修復、必要驗證及發布／公開產物核對完成，保留 BR-01～07 與既有 17 項。發行版本以 [release.json](../release.json) 為準；發布／安裝狀態見 [驗證報告](TEST_REPORT.md)。2026-10-10 21:11:07.331（Asia/Taipei）實際 Chrome 已核對 v2.1.16 完整本體、唯一 singleton 及 hooks；新版 Auto 1／2 倍拖曳、基本播放及約 12 秒 video-only 延遲後恢復已有部分證據，BR-01 完整安裝驗收仍未完成。原自然網路起因與其他完整驗收獨立追蹤，來源隔離不代替安裝版。文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
 
 修復背景：[BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 在 v2.1.14 安裝版確認網站右鍵於 keyup 尋位。該修復為 keyup 建立獨立同派送候選，不沿用已結束的 keydown；當次派送沒有可觀察的新 seek 仍保守不歸因。v2.1.15 真實 Auto 1／2 倍已驗證正常鍵盤修訂及新 15 秒寬限，續測確認 [BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 外層進度拖曳漏辨。原觀察及失敗結果保留，本輪不以本機修復宣稱新版安裝驗收完成。
 

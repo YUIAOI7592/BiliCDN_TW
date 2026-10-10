@@ -1,6 +1,6 @@
 # BR-08 修復與驗證 — 2026-10-10
 
-基準 **v2.1.15／f0c2d39**；目標 **v2.1.16**。採用完整拖曳契約，已完成本機修復及必要驗證，正式發布／公開產物核對待完成；BR-01 安裝版完整驗收另列。[原始 BR-08 報告](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md)、歷史 Release 與原紅燈保持不變。現行入口：[最新版驗證](TEST_REPORT.md)、[工作狀態](TODO.md)、[v2.1.16 安裝矩陣](CHROME_v2.1.16_ACCEPTANCE.md)。
+基準 **v2.1.15／f0c2d39**，已發布 **v2.1.16**。採用完整拖曳契約，修復、必要驗證及公開產物核對完成。Chrome 已取得實際新版完整本體、唯一 singleton 與 hooks；Auto 1／2 倍 wrapper／inner 拖曳保護與釋放、正常播放／短 seek 及約 12 秒 video-only 延遲恢復通過，**BR-01 安裝版完整矩陣仍未完成**。[原始 BR-08 報告](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md)、歷史 Release 與原紅燈保持不變。現行入口：[最新版驗證](TEST_REPORT.md)、[工作狀態](TODO.md)、[v2.1.16 安裝矩陣](CHROME_v2.1.16_ACCEPTANCE.md)。
 
 ## 缺陷與修復結果
 
@@ -60,6 +60,16 @@ Chrome 最終來源隔離 **31 有效通過／0 有效失敗**，另 2 無效輸
 
 ## 發布及剩餘驗收
 
-v2.1.16 待正式封裝／提交／推送 main／標籤／Release及公開 latest 核對；完成後更新此處，不回寫封裝快照。只附使用者腳本，更新網址不變。
+v2.1.16 於 **2026-10-10T13:05:38Z（Asia/Taipei 21:05:38）** [正式發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.16)。發行提交／peeled tag `ff0cb07063032aeb49a9e52ccc630685bec46cf8`，標籤物件 `0dc8c0590ad3a63282c029fdc0d2e3ab56c1bbbe`；發布時遠端 main 一致。唯一附件 `BiliCDN_TW.user.js`，**320,794 bytes**，SHA-256 `5eaeb8444503886244b06f81cb24a81081720a0ea5dcb978c284c776eb05e8d4`。**13:06:11.073Z** 無登入公開 latest 讀回版本、大小與雜湊匹配。發布後文件更新不改發行標籤或 Release 快照。
 
-新版 [BR-01 安裝矩陣](CHROME_v2.1.16_ACCEPTANCE.md) 尚未取得新版執行 body／singleton，因此不開始計分。只用指定風景影片、Auto 1／2 倍分開。原 87.785 秒自然網路起因保持獨立；真正 background、完整停滯、pending startup gate 及晚到 SDK 的必要前提不成立時保持待驗收，不能替換網站 getter／controller 或強制維持播放來製造通過。
+新版 [BR-01 安裝矩陣](CHROME_v2.1.16_ACCEPTANCE.md) 於 **13:11:07.331Z** 取得完整 body216Match、ControlCenter／Runtime 各 1、實際共用 hooks／控制器身分，後續同片刷新重新核對。Auto 1／2 倍 wrapper／inner 四窗主連續記錄 32.116～32.212 秒：已命中手勢全採樣 dragging=true、無新增 route／core action、reloadCount 0，可信釋放讀回 false。網站約 19～20 秒先 paused／外部換核心，因此只計拖曳保護及釋放，不能計完整 30 秒重載或放開後最新位置還原。前三窗 32 秒後的 Network 讀取空檔與第四窗一筆腳本 completion 缺口在安裝報告明列，不補算完成。
+
+正常 Auto 1／2 倍可信播放、暫停／恢復、短 seek 取得時間及影格增量；精確 video-only 窗口分別 **12.215／12.129 秒**後放行，audio 通行，兩窗實際進度恢復、核心重載 0。真進度首次在 19.307／26.180 秒，各有一次符合 15 秒政策的影片備援，不能說沒有備援。1 倍連續記錄至 32.445 秒 healthy／recovered；2 倍先連續 15 秒尾段取得進度，再於獨立後續觀察取得 recovered，73.179 秒空檔後首批 Network 截斷，不計連續完整窗口。四個拖曳窗已確認受控 IDs 24／24／24／12，延遲窗累積 10，記憶體及持久樣本零匹配；沒有實際受控 startup／challenge 工作，不宣稱真 gate 過濾驗收完成。
+
+只用指定風景影片、Auto 1／2 倍分開，沒有強制畫質或修改網站媒體 getter／controller／timeout。原線對照控制 false→true→false 精確復原，但沒有有效 token，不能替代待完成的政策撤銷。真正 hidden 因工具能力阻塞仍待；每次自然 startup gate 因網站 XHR 顯式 timeout 而 skipped，未驗收 pending gate。完整 15／30／15、帶動作的新操作／晚到 SDK、生命週期／政策／影音隔離與近 0 還原仍待有效前提。沒有確認新功能缺陷；原 87.785 秒自然網路起因保持獨立。
+
+另記錄 Auto 新表示附近一次 2913.218677→0.307 秒的位置跳變，距模式恢復 174.648 秒，沒有新腳本恢復／重載或 epoch 變更；缺少 SDK／完整 Network 因果證據，保留未定位而不命名為新已確認缺陷。細節、採樣淘汰限制與續查條件見安裝矩陣。
+
+實際新版 XHR hooks 與未攔截 NativeXhr 的自有 Blob **33／33 對通過**：BR-02 原生 OPENED／sent／DONE、failed open 例外／身分、同步與終止事件重入、text／json getter 相容。首次 32／33 的唯一兩邊同錯是測試對未 send 時 abort 的期待錯誤，原始紀錄保留，未改產品來源。虛擬政策失敗／媒體歸因／pending gate／cid 仍待；不把 33 對加到 637 正式案例或計成兩倍速各 33 對。Blob 控制資源全清理。
+
+14:09:11.153Z 最終 body／singleton／共用控制器再核對，patterns 空、held 0、四項觀察方法描述子還原、timer 清除、live XHR observers 0、observer 自有遮蔽移除，10 個受控 IDs 記憶體及持久零匹配，腳本 enabled／原線對照 false 精確復原。長時間後的採樣淘汰與 Network readback 截斷不補算歷史完整性；網站 Auto 1 倍正常暫停，畫面與續行檢查點另存。
