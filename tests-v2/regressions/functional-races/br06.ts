@@ -20,6 +20,8 @@ function fixture(t: TestContext) {
   class DomElement extends EventTarget {
     currentTime = 120
     seeking = false
+    readyState = 4
+    playbackRate = 1
     tagName = 'DIV'
     isContentEditable = false
     role = ''
@@ -79,10 +81,10 @@ function fixture(t: TestContext) {
   const site = {
     __core: () => core,
     getCurrentTime: () => video.currentTime,
-    getPlaybackRate: () => 1,
+    getPlaybackRate: () => video.playbackRate,
     seek(this: unknown, value: number, ...args: unknown[]): unknown { return Reflect.apply(seekEffect, this, [value, ...args]) },
     reload(): unknown { effects.reloads++; return reloadEffect() },
-    setPlaybackRate(): void {}, play(): unknown { return playEffect() },
+    setPlaybackRate(rate: number): void { video.playbackRate = rate }, play(): unknown { return playEffect() },
   }
   let core = { state: { initialized: true } }, owner = site
   class Player extends PlayerAdapter {
@@ -163,6 +165,109 @@ function rightOnKeyup(t: TestContext) {
   })
   return f
 }
+
+for (const phase of ['keydown', 'keyup'] as const) {
+  test(`BR-01 native uninitialized ${phase} seek owns the new target without a seeking event`, t => {
+    const f = fixture(t), before = f.player.controls().userRevision
+    f.video.readyState = 0
+    f.onKey(() => undefined); f.onKeyup(() => undefined)
+    const command = () => { f.video.currentTime = 0; f.player.controls() }
+    if (phase === 'keydown') f.onKey(command); else f.onKeyup(command)
+    if (phase === 'keydown') f.key(true); else f.keyup(true)
+    assert.equal(f.video.seeking, false, 'HAVE_NOTHING stores the seek target without starting native seeking')
+    assert.equal(f.player.controls().userRevision, before + 1)
+    assert.equal(f.player.controls().targetSec, 0)
+  })
+}
+
+test('BR-01 uninitialized trusted keyboard target receives a new full stall deadline', t => {
+  const f = fixture(t)
+  f.pointerSeek(900); f.clock.advance(8000); f.monitor.tick()
+  f.video.readyState = 0; f.video.seeking = false
+  f.patch({ readyState: 0, width: 0, height: 0, playableBufferSec: 0, bufferAheadSec: 0, coreInitialized: false })
+  f.onKey(() => undefined); f.onKeyup(() => { f.video.currentTime = 5 })
+  f.keyup(true); f.monitor.tick()
+  f.clock.advance(14999); f.monitor.tick()
+  assert.equal(f.effects.fallbacks, 0, 'the old 8-second stall must not consume the new user grace')
+  f.clock.advance(1); f.monitor.tick(); assert.equal(f.effects.fallbacks, 1)
+})
+
+test('BR-01 trusted uninitialized seek revokes an active reload and ignores its late rejection', async t => {
+  const f = fixture(t), pending = deferred<void>()
+  f.pointerSeek(900)
+  f.onReload(() => {
+    f.video.readyState = 0; f.video.seeking = false; f.video.currentTime = 0
+    f.patch({ readyState: 0, width: 0, height: 0, playableBufferSec: 0, bufferAheadSec: 0, coreInitialized: false })
+    return pending.promise
+  })
+  f.clock.advance(15000); f.monitor.tick()
+  f.clock.advance(15000); f.monitor.tick()
+  assert.equal(f.effects.reloads, 1); assert.equal(f.recovery.isRecovering(), true)
+  const revision = f.player.controls().userRevision
+  f.onKey(() => undefined); f.onKeyup(() => { f.video.currentTime = 5 })
+  f.keyup(true); f.monitor.tick()
+  assert.equal(f.player.controls().userRevision, revision + 1)
+  assert.equal(f.recovery.isRecovering(), false, 'the earlier reload no longer owns the new trusted target')
+  const state = f.recovery.snapshot()
+  pending.reject(new Error('late owned reload rejection'))
+  await Promise.resolve(); await Promise.resolve()
+  assert.deepEqual(f.recovery.snapshot(), state)
+  assert.equal(f.video.currentTime, 5)
+})
+
+for (const kind of ['synthetic', 'editable', 'late', 'unchanged', 'initialized', 'core-replaced', 'script-restore'] as const) {
+  test(`BR-01 uninitialized keyboard control ${kind} cannot grant a user deadline`, t => {
+    const f = fixture(t), before = f.player.controls().userRevision
+    f.video.readyState = kind === 'initialized' ? 4 : 0
+    if (kind === 'editable') f.body.tagName = 'INPUT'
+    f.onKey(() => undefined)
+    f.onKeyup(() => {
+      if (kind === 'late') { f.clock.timeout(() => { f.video.currentTime = 5 }, 0); return }
+      if (kind === 'unchanged') return
+      if (kind === 'core-replaced') f.replaceCore()
+      if (kind === 'script-restore') { f.player.seek(5); return }
+      f.video.currentTime = 5
+    })
+    if (kind === 'script-restore') f.onSeek(position => { f.video.currentTime = position })
+    f.keyup(kind !== 'synthetic'); f.clock.advance(0)
+    assert.equal(f.player.controls().userRevision, before)
+  })
+}
+
+for (const rate of [1, 2]) {
+  test(`BR-01 uninitialized keyboard seek preserves exact 15/30/15 boundaries at ${rate}x`, t => {
+    const f = fixture(t)
+    f.video.playbackRate = rate
+    f.pointerSeek(900); f.clock.advance(8000); f.monitor.tick()
+    f.video.readyState = 0; f.video.seeking = false
+    f.patch({ readyState: 0, width: 0, height: 0, playableBufferSec: 0, bufferAheadSec: 0,
+      coreInitialized: false, playbackRate: rate, effectiveRate: rate })
+    f.onKey(() => undefined); f.onKeyup(() => { f.video.currentTime = 5 })
+    f.keyup(true); f.monitor.tick()
+    f.clock.advance(14999); f.monitor.tick(); assert.equal(f.effects.fallbacks, 0)
+    f.clock.advance(1); f.monitor.tick(); assert.equal(f.effects.fallbacks, 1)
+    f.clock.advance(14999); f.monitor.tick(); assert.equal(f.effects.reloads, 0)
+    f.clock.advance(1); f.monitor.tick(); assert.equal(f.effects.reloads, 1)
+    assert.equal(f.recovery.snapshot().state, 'reloading')
+    f.clock.advance(14999); f.monitor.tick(); assert.equal(f.recovery.isRecovering(), true)
+    f.clock.advance(1); f.monitor.tick(); assert.equal(f.recovery.isRecovering(), false)
+    assert.equal(f.recovery.snapshot().reason, 'reload-timeout')
+    for (let i = 0; i < 3; i++) { f.clock.advance(1000); f.monitor.tick() }
+    assert.equal(f.effects.reloads, 1)
+  })
+}
+
+test('BR-01 uninitialized position getter replacement cannot commit a stale keyboard candidate', t => {
+  const f = fixture(t), before = f.player.controls().userRevision
+  f.video.readyState = 0; f.onKey(() => undefined)
+  f.onKeyup(() => {
+    let replaced = false
+    Object.defineProperty(f.video, 'currentTime', { configurable: true,
+      get() { if (!replaced) { replaced = true; f.replaceVideo(); f.player.controls() }; return 5 } })
+  })
+  f.keyup(true)
+  assert.equal(f.player.controls().userRevision, before)
+})
 
 test('BR-07 trusted right seek during keyup acquires one new user revision', t => {
   const f = rightOnKeyup(t), before = f.player.controls().userRevision

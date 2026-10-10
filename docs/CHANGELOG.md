@@ -2,6 +2,12 @@
 
 # BiliCDN_TW 變更紀錄
 
+## v2.1.19
+
+- 修正 BR-01 自有重載後空媒體的可信鍵盤尋位漏取得新使用者身分；有限新目標即使沒有 seeking，也可在同一可信派送及穩定核心下取得完整新寬限。
+- 保存私有 keyboardRevision／core，提交及清理重查同步重入所有權；pendingSeek、腳本還原、Auto／ABR、15／30／15、schema 2 與路線授權保持。
+- 新增 14 正式案例，全套 755 項通過；Chrome 原生來源隔離 30／30 與獨立安全 2／2、0 發現完成。發布與完整安裝 BR-01 判定另見 [最新驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+
 > v2.1.18 已正式發布，修復 BR-09；公開更新產物、實際完整新版身分及同片 Auto1／2 基本回歸通過。自動驗證、安全差異、Chrome 來源隔離與安裝窗口各自記錄於 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)；舊條目保留當時狀態。
 
 ## v2.1.18

@@ -1,5 +1,11 @@
 # BiliCDN_TW v2 專案脈絡
 
+## 現行 BR-01 空媒體鍵盤修復（v2.1.19）
+
+可信 keydown／keyup 的實際有限新目標，在 seeking 或原生 HAVE_NOTHING 下可取得一次新使用者修訂；後者另要求捕捉核心未變且非 internalReload。候選仍須同一派送／版本／媒體／播放器／內容及真正可見，internalSeek／pendingSeek 來源抑制不變。未知位置只撤銷過期還原，不能猜成使用者。公開 API、schema 2、Auto／ABR 和 15／30／15 不變。
+
+本機正式 755 契約、整合驗證及 Chrome 原生可信輸入來源隔離 30／30 通過；安全凍結差異 2／2、0 發現已封存。發布與實際新版完整 BR-01 安裝判定以 [最新驗證](TEST_REPORT.md) 及 [修復報告](BR01_NATIVE_KEYBOARD_FIX_REPORT.md) 為準，下列版本段落保留當時範圍。
+
 ## 現行 BR-09 契約（v2.1.18）
 
 PlayerAdapter 在目前媒體／播放器／內容生命週期內保存一筆私有原生位置基準。HAVE_NOTHING 期間觀察到不同的有限位置（包含 0），即撤銷過期位置還原；不要求 seeking 事件，也不依 SDK 快取判定。正常已初始化播放進度不增加 seek 修訂。腳本自有 reload 的初始歸零及 pendingSeek／內部還原保留來源抑制。

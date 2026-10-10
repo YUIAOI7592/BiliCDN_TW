@@ -2,6 +2,12 @@
 
 # v2 架構
 
+## 現行 BR-01 空媒體鍵盤修復（v2.1.19）
+
+可信 keydown／keyup 的實際有限新目標，在 seeking 或原生 HAVE_NOTHING 下可取得一次新使用者修訂；後者另要求捕捉核心未變且非 internalReload。候選仍須同一派送／版本／媒體／播放器／內容及真正可見，internalSeek／pendingSeek 來源抑制不變。未知位置只撤銷過期還原，不能猜成使用者。公開 API、schema 2、Auto／ABR 和 15／30／15 不變。
+
+本機正式 755 契約、整合驗證及 Chrome 原生可信輸入來源隔離 30／30 通過；安全凍結差異 2／2、0 發現已封存。發布與實際新版完整 BR-01 安裝判定以 [最新驗證](TEST_REPORT.md) 及 [修復報告](BR01_NATIVE_KEYBOARD_FIX_REPORT.md) 為準，下列版本段落保留當時範圍。
+
 ## 現行差異：BR-09（v2.1.18）
 
 PlayerAdapter.controls 在確認鍵盤觀察後採樣原生位置；私有 NativePosition 僅一筆，保存媒體、播放器、lifecycle、位置及 readyState。HAVE_NOTHING 的未知有限目標變更更新既有 targetSec／seekRevision，Recovery 沿用原所有權檢查撤銷保存位置。沒有新增應用層介面、診斷事件、持久欄位或第二授權索引。
@@ -118,7 +124,7 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 量測鎖回呼先重查最新安全狀態、表示與控制器標記，才選擇記錄嘗試的候選及提交冷卻；首次播放位置只作基準。普通恢復在 seek／ended／mediaError 時先終止舊動作，再考慮還原；只有仍擁有停滯／操作修訂的 BR-01 stall 意圖可處理持續 seeking。play Promise 檢查生命週期與當前 token，避免晚到拒絕覆寫較新結果。
 
-`PlayerControlSnapshot` 只提供媒體／核心不透明數字識別、seek／使用者操作修訂、拖曳、目標位置及自有 reload 修訂。PlayerAdapter 觀察播放器區域可信 pointer／非 seek key，後者僅 keydown；BR-07 的 seek 鍵可來自 BODY／頁面。keydown／keyup 捕捉皆只保存一筆私有候選，排除 editable／控制中心／組字／Ctrl／Meta／Alt／合成輸入；候選的事件仍派送、同播放器／媒體／生命週期、真正可見且有限位置改變並 seeking，才更新一次 userRevision。site.seek、媒體觀察、controls 與該事件種類的 window 冒泡皆可確認；同派送去重，keydown、repeat、keyup 各自造成新 seek 時各自取得修訂。新事件撤銷上一候選，外層冒泡／timeout 必須檢查候選身分。eventPhase NONE 拒絕派送後工作，可取消零延遲 timeout 只清理參照，不提供延遲窗口或鍵盤按住狀態。入口注入 Scheduler 與真正可見性查詢，DOM／事件不交給應用層。一般 site seek 更新觀察修訂，腳本 seek 使用內部標記並清除候選；pendingSeek 保守抑制來源，不因可信輸入全面清空。reset 移除監聽器，僅在仍擁有方法時還原 wrapper。Monitor 仍以新使用者修訂重開停滯，網站／Auto 的單純 seekRevision 保留原期限。BODY 播放／倍速另採私有 keydown 候選：Space、k／K 或既有倍速鍵須在該派送內確實改變 paused／有限 rate，且核心也仍相同，才能增加一次 userRevision；腳本的還原方法不消費此候選。頁面核心標記是因果觀察，並非認證：等待自有 reload 時未經可觀察方法的外部替換仍有辨識限制。
+`PlayerControlSnapshot` 只提供媒體／核心不透明數字識別、seek／使用者操作修訂、拖曳、目標位置及自有 reload 修訂。PlayerAdapter 觀察播放器區域可信 pointer／非 seek key，後者僅 keydown；BR-07 的 seek 鍵可來自 BODY／頁面。keydown／keyup 捕捉皆只保存一筆私有候選，排除 editable／控制中心／組字／Ctrl／Meta／Alt／合成輸入；候選的事件仍派送、同播放器／媒體／生命週期、真正可見且有限位置改變，並 seeking 或 readyState 0／捕捉核心未變／非 internalReload，才更新一次 userRevision。site.seek、媒體觀察、controls 與該事件種類的 window 冒泡皆可確認；同派送去重，keydown、repeat、keyup 各自造成新 seek 時各自取得修訂。新事件撤銷上一候選，外層冒泡／timeout 必須檢查候選身分。eventPhase NONE 拒絕派送後工作，可取消零延遲 timeout 只清理參照，不提供延遲窗口或鍵盤按住狀態。入口注入 Scheduler 與真正可見性查詢，DOM／事件不交給應用層。一般 site seek 更新觀察修訂，腳本 seek 使用內部標記並清除候選；pendingSeek 保守抑制來源，不因可信輸入全面清空。reset 移除監聽器，僅在仍擁有方法時還原 wrapper。Monitor 仍以新使用者修訂重開停滯，網站／Auto 的單純 seekRevision 保留原期限。BODY 播放／倍速另採私有 keydown 候選：Space、k／K 或既有倍速鍵須在該派送內確實改變 paused／有限 rate，且核心也仍相同，才能增加一次 userRevision；腳本的還原方法不消費此候選。頁面核心標記是因果觀察，並非認證：等待自有 reload 時未經可觀察方法的外部替換仍有辨識限制。
 
 BR-08 進度命中使用 target.closest 的 `.bpx-player-progress-wrap, .bpx-player-progress, .bilibili-player-video-progress, [role="slider"]`，命中祖先仍須位於目前播放器區域；不向下搜尋子節點。可信進度 pointerdown 立即建立單一私有手勢，不要求 seeking 或位置改變。手勢保存 pointerId、媒體、播放器與內容生命週期，controls.dragging 由有效所有者推導。新合法進度按下取代舊手勢，非進度按下保留有效手勢；只有同指標可信 pointerup／pointercancel／lostpointercapture 釋放。同步重入須核對觀察版本及手勢物件，不能覆寫或清除較新手勢；hidden、失焦、reset、媒體／播放器替換及內容失效撤銷手勢，不新增 timeout 或 pointer capture。
 

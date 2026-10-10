@@ -81,3 +81,5 @@ coverage/
 /.codex/
 /scripts/package-v*.cjs
 /scripts/prepare-security-*.cjs
+!/Release/v2.1.19/
+!/Release/v2.1.19/**

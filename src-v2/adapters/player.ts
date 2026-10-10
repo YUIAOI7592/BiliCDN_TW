@@ -46,6 +46,8 @@ interface KeyboardSeek {
   readonly player: UnknownRecord | null
   readonly lifecycle: string
   readonly position: number
+  readonly core: unknown
+  readonly revision: number
   stop: () => void
 }
 interface KeyboardPlayback {
@@ -211,7 +213,7 @@ export class PlayerAdapter {
           || target instanceof HTMLElement && target.isContentEditable)
       if (event.composedPath().some(editable) || event.target && editable(event.target)) return
       if (['ArrowLeft', 'ArrowRight', 'Home', 'End', 'j', 'J', 'l', 'L'].includes(event.key)) {
-        this.#beginKeyboardSeek(event, video, player)
+        this.#beginKeyboardSeek(event, video, player, revision)
       } else if (event.type === 'keydown' && ['ArrowUp', 'ArrowDown', ' ', 'k', 'K'].includes(event.key)) {
         const inside = inRegion(event)
         if (revision !== this.#keyboardRevision) return
@@ -254,10 +256,13 @@ export class PlayerAdapter {
     }
   }
 
-  #beginKeyboardSeek(event: KeyboardEvent, video: HTMLVideoElement, player: UnknownRecord | null): void {
-    if (!Number.isFinite(video.currentTime)) return
+  #beginKeyboardSeek(event: KeyboardEvent, video: HTMLVideoElement, player: UnknownRecord | null, revision: number): void {
+    const position = video.currentTime, core = safeCall(player, '__core'), lifecycle = this.playurl.lifecycleKey()
+    if (!Number.isFinite(position) || revision !== this.#keyboardRevision
+      || video !== this.#controlVideo || player !== this.#seekOwner) return
     const candidate: KeyboardSeek = { event, video, player, lifecycle: this.playurl.lifecycleKey(),
-      position: video.currentTime, stop: () => undefined }
+      position, core, revision, stop: () => undefined }
+    if (lifecycle !== candidate.lifecycle || revision !== this.#keyboardRevision) return
     this.#keyboardSeek = candidate
     // A late bubble observer covers direct currentTime writes without wrapping media accessors.
     const type = event.type
@@ -276,18 +281,32 @@ export class PlayerAdapter {
     if (!candidate) return
     try {
       // A timer only releases references. Dispatch ownership, not elapsed time, grants attribution.
+      if (candidate.event.eventPhase === Event.NONE || candidate.revision !== this.#keyboardRevision || candidate.video !== this.#controlVideo
+        || candidate.player !== this.#seekOwner || candidate.video !== this.video() || candidate.player !== this.player()
+        || candidate.lifecycle !== this.playurl.lifecycleKey() || !this.environment.isActuallyVisible()) {
+        if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek()
+        return
+      }
+      const position = candidate.video.currentTime, seeking = candidate.video.seeking, readyState = candidate.video.readyState
+      const core = safeCall(candidate.player, '__core')
+      // HAVE_NOTHING stores a finite seek target without emitting seeking.
+      // Only the same trusted dispatch and unchanged core can attribute that
+      // target; playback increments and SDK reload resets are not user seeks.
+      const actualSeek = seeking || readyState === 0 && core === candidate.core && !this.#internalReload
+      if (this.#keyboardSeek !== candidate || candidate.revision !== this.#keyboardRevision) return
       if (candidate.event.eventPhase === Event.NONE || candidate.video !== this.#controlVideo
         || candidate.player !== this.#seekOwner || candidate.video !== this.video() || candidate.player !== this.player()
         || candidate.lifecycle !== this.playurl.lifecycleKey() || !this.environment.isActuallyVisible()) {
-        this.#clearKeyboardSeek(); return
+        if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek()
+        return
       }
-      if (this.#internalSeek || !candidate.video.seeking || !Number.isFinite(candidate.video.currentTime)
-        || candidate.video.currentTime === candidate.position || candidate.video.currentTime === this.#pendingSeek) return
-      if (this.#targetSec !== candidate.video.currentTime) this.#seekRevision++
-      this.#targetSec = candidate.video.currentTime
+      if (this.#keyboardSeek !== candidate || candidate.revision !== this.#keyboardRevision || this.#internalSeek || !actualSeek
+        || !Number.isFinite(position) || position === candidate.position || position === this.#pendingSeek) return
+      if (this.#targetSec !== position) this.#seekRevision++
+      this.#targetSec = position
       this.#advanceUser()
       this.#clearKeyboardSeek()
-    } catch { this.#clearKeyboardSeek() }
+    } catch { if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek() }
   }
 
   #clearKeyboardSeek(): void {

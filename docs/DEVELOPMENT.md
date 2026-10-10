@@ -2,6 +2,12 @@
 
 # 開發流程
 
+## 現行 BR-01 空媒體鍵盤回歸（v2.1.19）
+
+既有 application 套件明確匯入 br06.ts；新增 14 正式案例，重跑 `npm test -- application --name 'BR-01.*uninitialized'`。先保存四項失敗／七項正常對照，再改執行期；1／2 倍精確期限、活躍 reload／晚到拒絕、來源排除及 getter 重入都必須成立。完整 755 契約、typecheck、architecture、verify 和來源隔離 30／30 通過；安全掃描獨立封存。新版完整安裝矩陣與來源／Node 結果分列，見 [修復報告](BR01_NATIVE_KEYBOARD_FIX_REPORT.md)、[最新版驗證](TEST_REPORT.md)。
+
+下列版本段落保留當時範圍，現行版本取自 release.json。
+
 ## 現行 BR-09 回歸（v2.1.18）
 
 正式 application 明確匯入 `tests-v2/regressions/functional-races/br09.ts`。原五契約先於來源修改保存 2 fail／3 pass，擴充後 25 個新增案例全部通過；全套 19 套件／741 項、application 256、adapters 102。使用 testScope／FakeClock／deferred，沒有調查目錄輸入。
