@@ -2,16 +2,17 @@
 
 # BiliCDN_TW 變更紀錄
 
-> BR-07 本機修復與 v2.1.15 發行準備進行中，完整 BR-01 安裝驗收待完成；必要檢查未完成前不宣稱發布。舊條目保留其當時版本狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。
+> v2.1.15 已發布，BR-07 必要驗證與公開更新核對完成；實際新版已有部分安裝驗收，新增 BR-08 尚未修復、完整 BR-01 未結案。舊條目保留其當時狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。
 
-## v2.1.15（準備中）
+## v2.1.15
 
-2026-10-10，基準 v2.1.14／9d98d09。修復網站右方向鍵 keyup 提交未取得使用者身分的 BR-07；必要驗證與發布讀回待完成。交付見 [BR-07 修復](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR07_FIX_REPORT.md)，原 [缺陷報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 保留。
+2026-10-10 **18:57:18（Asia/Taipei）** [發布 v2.1.15](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.15)，基準 v2.1.14／9d98d09，發行提交／peeled tag `3f7c73335a58dd89d4bc8a4209b7ecf3c70acaf8`。唯一腳本 **317,487 bytes**，SHA-256 `affedbeef854462c60fd5fd68947fc4c37ef7ddb7bd2922e72fed6cca6b342bf`；18:57:38 無登入公開 latest 核對匹配。BR-07 修復與發布完成，實際完整新版 body／singleton 1 已於 19:04:00 核對，安裝結果分列。交付見 [BR-07 修復](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR07_FIX_REPORT.md)，原 [缺陷報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 保留。
 
 - 同時捕捉可信 keydown／keyup，各自建立同派送候選；每派送實際新 seek 更新一次使用者修訂，同派送多入口去重，repeat 或 keyup 各自新尋位各自計數。
 - 冒泡確認與清理使用實際事件種類；重入與舊 timeout 維持候選所有權，派送後工作不能取得身分。不引入按住狀態、延遲窗口或新的公開 API／持久欄位。
-- 原五契約先保存 2 fail／3 pass→最小修復 5／5；BR-06／BR-07 **100／100**（40＋60）、全套 **19 套件／574 正式案例**、typecheck、**44 個執行期模組**架構及最終 verify **v2.1.15** 通過。Chrome 來源隔離 40／40 有效案例通過；獨立安全差異兩個來源／測試檔完整覆蓋、0 可報告發現。公開讀回及新版安裝驗收仍待完成。
+- 原五契約先保存 2 fail／3 pass→修復後 5／5；BR-06／BR-07 **100／100**（40＋60）、全套 **19 套件／574 正式案例**、typecheck、**44 個執行期模組**架構與最終 verify **v2.1.15** 通過，Chrome 來源隔離 **40／40 有效案例**通過；獨立安全差異完整覆蓋，**0 可報告發現、無未處理候選**。新版實際安裝驗收分列待完成，Release 快照保留封裝時狀態。
 - Auto、15／30／15、腳本還原來源抑制、影音隔離、Vault 授權及 schema 2 不變；[新版安裝矩陣](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.15_ACCEPTANCE.md) 與來源隔離分列。
+- 發布後 Auto 1／2 倍正常鍵盤及新 15 秒寬限通過；約 12 秒 video-only 釋放後有進度、各一次備援而無核心重載。2 倍達 30 秒一次重載，其後 paused，完整 15 秒退出仍待驗收。續測新增 **[BR-08 外層進度拖曳漏辨](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md)**：按住期間 15.079 秒誤觸備援，尚未修復；私有七契約 3 fail／4 pass 與正式 574 分列。本輪只補報告，不改已發布來源／產物。
 
 ## v2.1.14
 

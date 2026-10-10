@@ -92,10 +92,12 @@
 
 原五正確契約移入既有 application 鍵盤回歸模組，修改執行期前 **2 fail／3 pass，退出碼 1**，最小修復後 **5／5**。正式測試情境分開設定事件種類與網站提交階段，避免 BR-06 模型將左右鍵都假定在 keydown 尋位；Node eventPhase 與可信事件仍是契約模型，Chrome 原生輸入另行驗證。
 
-擴充為 60 個 BR-07，BR-06／BR-07 **100／100**（40＋60）、全套 **19 套件／574 正式案例**、typecheck、**44 個執行期模組**架構及升版前 verify **v2.1.14** 通過。派送／重入／清理／來源抑制及 Adapter→Monitor→Recovery 沿用具名 node:test、FakeClock／deferred／testScope，不匯入調查目錄或新增登記。證據存於 `.work/functional-fixes/br07/2026-10-10-9d98d09/`，紅燈不計入通過數、歷史原件不覆寫。
+擴充為 60 個 BR-07，BR-06／BR-07 **100／100**（40＋60）、全套 **19 套件／574 正式案例**、typecheck、**44 個執行期模組**架構及升版前 verify **v2.1.14** 與最終 verify **v2.1.15** 通過。派送／重入／清理／來源抑制及 Adapter→Monitor→Recovery 沿用具名 node:test、FakeClock／deferred／testScope，不匯入調查目錄或新增登記。證據存於 `.work/functional-fixes/br07/2026-10-10-9d98d09/`，紅燈不計入通過數、歷史原件不覆寫。
 
 Chrome 修復來源隔離 **40／40 個有效案例通過**：真正可信 keydown／keyup、BODY／播放器焦點及 Auto 1／2 倍模型、八種 keyup、直接／停止傳播尋位、keydown／keyup 各自新 seek、位置 0、排除／方法相容、腳本還原、Event.NONE 延後及合成輸入、15／30／15 精確邊界與失敗後不重試。使用自有 iframe 的合成媒體／FakeClock，沒有修改網站 getter／控制器，不代替實際 Tampermonkey singleton。
 
 `source/chrome-results.json` 共 42 份記錄，40 份有效 pass=true；初始校準觀察及 timer 尚未完成的無效觀察不列通過，後者已由 timer 收束的有效列替代，沒有確認新缺陷。800 ms 持鍵只產生 keydown／keyup 兩事件，**未證明原生 auto-repeat**；IME、nested 派送及媒體／播放器替換仍為正式模型證據，未宣稱完整 Chrome 覆蓋。清理後 browser／synthetic timer pending 均 0、seek／reload wrapper 已還原、自有 root 移除、iframe 殘留 0。
 
-安全掃描、升版驗證、發布與實際安裝版另列，不沿用上一版結果。
+本輪 Codex Security 差異掃描 3e3d133e-7f39-4bf8-a0ba-d22d188a639a 已封存、complete／0 可報告發現／無未處理候選；v2.1.15 最終 verify、封裝及公開更新核對完成。使用者更新後，實際完整 body／singleton 1 已核對，正常鍵盤、新寬限與約 12 秒延遲後進度有證據，與來源隔離分列。續測新增 [BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 外層拖曳命中缺口，私有七正確契約 **3 fail／4 pass、exit 1** 與發布前 574 正式通過分列，私有完整型別檢查通過；沒有修改來源或正式登記。本輪文件整理未新增執行期測試通過宣稱。最終 107 受控 IDs 學習匹配皆 0、自有資源清理完成；完整 BR-01、真正 hidden／晚到 SDK 等仍未結案，見 [安裝矩陣](CHROME_v2.1.15_ACCEPTANCE.md)。
+
+發布後文件同步實際檢查：13 份現行文件／新 BR-08 報告，278 連結、33 顯式錨點，無失效路徑或錨點；git diff --check 通過。v2.1.14 完整 TEST_REPORT 正文仍逐字保存在歷史，原 BR-07／安裝文件未變；本輪未修改 runtime／tests／config／Release 或安全封存。只記錄文件檢查，不算新的正式測試或安全掃描。

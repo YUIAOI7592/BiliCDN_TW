@@ -2,11 +2,13 @@
 
 本文件是現行產品與開發契約。文件用途及歷史紀錄見 [文件索引](INDEX.md)；版本與工具設定以 [release.json](../release.json)、[package.json](../package.json) 和 [依賴鎖定檔](../package-lock.json) 為準。內建節點清單稱為 Catalog，原生簽名路線稱為 Native。
 
-**BR-07 本機修復與 v2.1.15 發行準備進行中；目前已發布版本仍為 v2.1.14，完整 BR-01 驗收未結案。** 新實作分別辨識可信 keydown／keyup 派送內的實際 seek，修補網站右鍵在 keyup 提交的入口；原調查保留在 [BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md)。Auto 長 seek／活核心停滯仍使用有界 15／30／15 秒救援，恢復須有實際播放進度。BR-01～06、既有 17 項修復及 schema 2 不變。本輪證據見 [修復報告](BR07_FIX_REPORT.md)、[驗證報告](TEST_REPORT.md)、[安裝版](CHROME_v2.1.15_ACCEPTANCE.md) 及 [TODO](TODO.md)；原自然網路起因與其餘完整驗收獨立追蹤。
+**BR-07 修復與 v2.1.15 發布完成，實際安裝版已取得部分驗收；新 BR-08 尚未修復，完整 BR-01 未結案。** 新實作分別辨識可信 keydown／keyup 同派送實際 seek，涵蓋網站右鍵提交。正式 574 案例、最終 verify、獨立安全差異及 Chrome 來源隔離通過，公開 latest 版本／大小／SHA-256 與實際 body／singleton 1 核對完成。Auto 1／2 倍正常鍵盤及新 15 秒寬限有證據；[BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 確認外層進度拖曳未設 dragging、按住時誤觸影片備援。原調查保留在 [BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md)，Auto 長 seek 的 15／30／15、BR-01～06、既有 17 項及 schema 2 不變。交付見 [修復報告](BR07_FIX_REPORT.md)、[驗證報告](TEST_REPORT.md)、[安裝版](CHROME_v2.1.15_ACCEPTANCE.md) 與 [TODO](TODO.md)；自然網路起因與其他驗收獨立追蹤。
 
 ## 現行產品
 
 2026-10-10 的 [BR-07 修復](BR07_FIX_REPORT.md) 以既有 BR-06 同派送機制同時觀察 keydown／keyup。BODY／頁面可信 ArrowLeft／Right、Home／End、j/J、l/L 先建立私有候選，僅該派送內的實際有限尋位取得一次新修訂；同派送多入口觀察去重，keydown、repeat、keyup 各自造成新 seek 時各自計數。editable／控制中心／IME／Ctrl／Meta／Alt、合成／忽略命令、延後工作及腳本還原不重開期限。Shift／repeat 必須確實造成新 seek。沒有按住狀態或延遲關聯窗口；pendingSeek 的保守腳本來源抑制保持。Monitor 的網站／Auto 重綁語意、15／30／15 與真 hidden 撤銷不變；正式契約、來源隔離及完整安裝結果分列。
+
+已確認的產品契約仍為「拖曳期間不建立救援，釋放後從最新目標建立基準」。目前適配器只辨識內層進度 selector，10 px 的功能性 wrapper 外圈未命中 4 px 內層；BR-08 在 Auto 2 倍真實按住期間 15.079 秒發生 video fallback，內層按住超過 16 秒正常抑制。此差異尚未修復，不能把契約描述當成全部命中區已正確實作。
 
 v2.1.9 包含以 `71f7ddd` 為基準的 **17 項功能與競態修復**；修復及新增契約見 [修復對照報告](FUNCTIONAL_FIX_REPORT.md)。schema 2、持久鍵及舊樣本相容性維持不變；2026-10-04 的已發布驗收不構成本次修復的瀏覽器證據。
 

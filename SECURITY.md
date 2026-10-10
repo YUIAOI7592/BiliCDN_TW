@@ -2,7 +2,7 @@
 
 # 信任邊界與資料處理
 
-本文件是 `src-v2/` 本機 BR-07 修復（預定 v2.1.15、可信 keydown／keyup 同派送 seek 歸因，保留 BR-01～06）的執行期信任邊界指南。設定版本以 release.json 為準，發布／驗收狀態以 [驗證報告](docs/TEST_REPORT.md) 為準。文件用途與歷史紀錄見 [文件索引](docs/INDEX.md)。本文件本身不要求啟動安全掃描。
+本文件是 `src-v2/` **v2.1.15 BR-07 修復**（可信 keydown／keyup 同派送 seek 歸因，保留 BR-01～06）的執行期信任邊界指南。設定版本以 release.json 為準，發布及安裝驗收見 [驗證報告](docs/TEST_REPORT.md)；本輪安全差異已獨立封存，不能代替 Chrome／Tampermonkey 驗收。安裝續測新增 [BR-08 進度拖曳漏辨](docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md)，目前為未修復的功能缺陷，沒有將其算作已解決的安全發現。文件用途見 [文件索引](docs/INDEX.md)，本文件本身不要求啟動安全掃描。
 
 <a name="untrusted-inputs"></a>
 
