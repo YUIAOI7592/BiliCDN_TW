@@ -2,13 +2,13 @@
 
 # BiliCDN_TW 變更紀錄
 
-> v2.1.14 BR-06 修復已完成發布準備；實際新版 Auto 安裝矩陣、原自然網路起因及其餘產品驗收分列。舊條目保留其當時版本狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。
+> v2.1.14 已發布並核對實際安裝；續測確認 BR-07 右鍵 keyup 所有權缺口，完整 BR-01 驗收未結案。舊條目保留其當時版本狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。
 
 ## v2.1.14
 
-2026-10-10，基準 v2.1.13／45a4420，BR-06 本機修復與必要驗證完成；發布讀回及安裝版另追加，不以來源隔離代替 Tampermonkey。見 [BR-06 交付](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR06_FIX_REPORT.md)。
+2026-10-10 15:55:30（Asia/Taipei）已發布，基準 v2.1.13／45a4420，發行提交／標籤 `056d1a4a9607ed8e96dda45880ec4f82522230a2`。唯一腳本 317,276 bytes，SHA-256 `fc2a38d182fd94b3c2ffc786510e858f99f41d702ed279a6c88da7edc0d6c02a`，公開 latest 與實際安裝本體已核對。見 [BR-06 交付](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR06_FIX_REPORT.md)。發布後調查確認 [BR-07](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.14_BR07_KEYUP_SEEK.md)：原策略漏掉網站右鍵 keyup，尚未修復；封裝快照保留發布準備當時狀態。
 
-- BODY／頁面可信 seek 鍵只在同一派送內實際尋位時取得一次新使用者身分與完整寬限；不使用 250 ms 窗口。
+- BODY／頁面可信 seek 鍵只在同一 keydown 派送內實際尋位時取得一次新使用者身分與完整寬限；不使用 250 ms 窗口。
 - 排除 editable／控制中心／IME／修飾鍵／合成／忽略命令／延後工作及腳本還原；候選綁定生命週期／媒體／播放器，私有參照、計時器與 listener 確實清理。
 - 原 2 fail／3 pass 保留，新增 40 正式契約，全套 514／verify 通過；独立安全差異 7 檔、0 可報告發現，Chrome 來源隔離 15／15，安裝矩陣分列。
 - Auto、15／30／15、影音隔離、BR-02～05、Vault 授權、schema 2、公開設定與更新 URL 保持原契約。
@@ -70,7 +70,7 @@
 
 ## v2.1.8
 
-2026-10-04 [發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8) MP4／FLV 修正，GitHub Release 附件只有使用者腳本。自動驗證、安全審閱、標準 Tampermonkey 更新及授權的 MP4 試片／公開 DASH 回歸已完成；詳細證據、安全報告的 `partial coverage`、較早 DASH 緩衝及完整公開 MP4／FLV 覆蓋限制見 [v2.1.8 驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#bilicdn_tw-v218-release-verification--2026-10-04)。下列 Catalog 指內建節點清單，Native 指原生簽名路線。
+2026-10-04 [發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.8) MP4／FLV 修正，GitHub Release 附件只有使用者腳本。自動驗證、安全審閱、標準 Tampermonkey 更新及授權的 MP4 試片／公開 DASH 回歸已完成；詳細證據、安全報告的 `partial coverage`、較早 DASH 緩衝及完整公開 MP4／FLV 覆蓋限制見 [v2.1.8 驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v218-release-verification--2026-10-04)。下列 Catalog 指內建節點清單，Native 指原生簽名路線。
 
 - 在 DASH 之外接納已辨識的 MP4／FLV `durl` 容器，保留分段順序與中繼資料。必要漸進式輸出先全部規劃才寫回 URL；漸進式／混合輸出失敗時原子拒絕，不提供部分改寫的分段清單。
 - 透過當前 Vault 的不透明識別碼取得各漸進式分段的安全 Catalog 來源；主來源不可改寫時，可使用同段安全備用來源。保留 Native 來源授權、歸因及限制。

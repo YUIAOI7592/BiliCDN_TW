@@ -4,7 +4,7 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
-目前 **v2.1.14 BR-06 鍵盤 seek 修復已完成發布準備**：BODY／頁面可信 seek 鍵於同一派送內確實尋位，才取得新使用者身分與完整寬限。Auto 長 seek 有界救援保留，恢復須有播放進度；BR-01～05、既有功能修復及 schema 2 不變。發布讀回與完整安裝版矩陣見 [驗證報告](docs/TEST_REPORT.md)。更新網址保持 [最新 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest)。
+目前 **v2.1.14 已發布並核對實際安裝**。BR-06 修復同一 keydown 派送內的尋位身分；現場續測發現網站右方向鍵於 keyup 才尋位，仍可能沿用舊救援期限，已列為 [BR-07 未修復問題](docs/CHROME_v2.1.14_BR07_KEYUP_SEEK.md)。Auto 長 seek 有界救援及 schema 2 不變，完整 BR-01 驗收尚未結案。發布讀回與安裝矩陣見 [驗證報告](docs/TEST_REPORT.md)，更新網址保持 [最新 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest)。
 
 GitHub Release 附件只有使用者腳本，更新網址維持原位。發布後核對公開 latest 版本、大小與 SHA-256；來源隔離及 Node 不代替 Tampermonkey 安裝驗收。
 
@@ -124,7 +124,7 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 ## 目前版本的驗證紀錄
 
-依 **2026-10-10** 的 [v2.1.14 驗證報告](docs/TEST_REPORT.md)，BR-06 新增 40 正式契約，全套 514／完整 verify 通過；獨立安全差異 7 檔無可報告發現，Chrome 來源隔離 15／15。新版安裝矩陣須先核對執行 body／singleton，不以 Node／來源隔離或 v2.1.13 結果代替；詳見 [修復交付](docs/BR06_FIX_REPORT.md) 與 [安裝版紀錄](docs/CHROME_v2.1.14_ACCEPTANCE.md)。v2.1.13 的部分 Auto 與 v2.1.12 共用 gate 35／35 保留其歷史範圍，原自然網路起因及其餘完整產品驗收仍分列。
+依 **2026-10-10** 的 [v2.1.14 驗證報告](docs/TEST_REPORT.md)，發布前 BR-06 新增 40 正式契約，全套 514／完整 verify 通過；獨立安全差異 7 檔無可報告發現，Chrome 來源隔離 15／15。實際新版 body／singleton 已核對，一般 Auto 播放與左鍵有正常證據，右鍵 keyup 所有權則確認 BR-07；私有正確契約 2 fail／3 pass 與既有正式 BR-06 40／40 分列。詳見 [修復交付](docs/BR06_FIX_REPORT.md) 與 [安裝版紀錄](docs/CHROME_v2.1.14_ACCEPTANCE.md)。歷史驗收、原自然網路起因及其餘完整產品矩陣保持各自範圍。
 
 **v2.1.6 Chrome／Tampermonkey 驗收已通過並結案。** v2.1.8 回歸另行記錄，歷史觀察及限制見 [v2.1.6 驗收紀錄](archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md)。
 

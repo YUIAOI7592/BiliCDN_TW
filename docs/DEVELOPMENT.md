@@ -4,6 +4,8 @@
 
 本文件是 **v2.1.14 BR-06 修復**的現行開發流程；發布與實際安裝版狀態見 [驗證報告](TEST_REPORT.md)，不得以來源隔離代替安裝驗收。各版原始證據保留。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
 
+2026-10-10 安裝續測的 [BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 顯示：正式 BR-06 模型的左右鍵皆在 keydown 尋位，網站右鍵卻在 keyup 提交。下一輪正式契約須先依原生左右鍵時序校準；既有 40／40 通過不能抵銷私有正確契約的 2 fail／3 pass。每個故障窗口先取得新游標，完整檢查 truncated／dropped；晚到收尾截斷只作狀態與清理證據，不補算完整逾時驗收。
+
 <a name="repository-layout-and-archive-maintenance"></a>
 
 ## 儲存庫配置與封存維護

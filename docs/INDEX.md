@@ -1,8 +1,8 @@
 # 專案文件索引與維護規則
 
-**現行交付：v2.1.14 BR-06 本機修復與發布準備完成。** [修復對照](BR06_FIX_REPORT.md) 分列正式 40 個新契約、全套 514／verify、安全差異 7 檔及 Chrome 來源隔離 15／15。發布讀回見 [TEST_REPORT](TEST_REPORT.md)，實際新版完整 BR-01 矩陣見 [安裝驗收](CHROME_v2.1.14_ACCEPTANCE.md)；以下 v2.1.13／較早日期段落僅保留當時觀察，不代表現行修復狀態。
+**現行交付：v2.1.14 已發布及核對實際安裝；續測確認 [BR-07 右方向鍵 keyup 所有權缺口](CHROME_v2.1.14_BR07_KEYUP_SEEK.md)，未修復。** Auto 1／2 倍新右鍵後 6.995／7.673 秒便備援，完整 BR-01 未結案。[修復對照](BR06_FIX_REPORT.md) 保留 BR-06 的 40 正式契約、全套 514／verify、安全差異及來源隔離結果，其 keydown 模型不能代替實際右鍵驗收。發布讀回見 [TEST_REPORT](TEST_REPORT.md)，逐項矩陣見 [安裝驗收](CHROME_v2.1.14_ACCEPTANCE.md)；以下 v2.1.13／較早日期段落僅保留當時觀察。
 
-**最新續測：2026-10-10 約 13:45–13:57 確認 [BR-06 鍵盤 seek 所有權缺口](CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md)，未修復。** 實際 Auto 1／2 倍的新 BODY 方向鍵 seek 沿用舊停滯期限，8.205／6.986 秒便備援；滑鼠對照通過，獨立正確契約 2 fail／3 pass。已達成找問題並交付報告的退出條件，完整 BR-01 安裝驗收仍未通過，來源與 Release 沒有修改。
+**先前續測：2026-10-10 約 13:45–13:57 確認 [BR-06 鍵盤 seek 所有權缺口](CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md)，當時未修復。** 實際 Auto 1／2 倍的新 BODY 方向鍵 seek 沿用舊停滯期限，8.205／6.986 秒便備援；滑鼠對照通過，獨立正確契約 2 fail／3 pass。當輪達成找問題並交付報告的退出條件，來源與 Release 沒有修改。
 
 **2026-10-10 現行交付：[BR-01 A／B／C 修復](BR01_FIX_REPORT.md) 及 v2.1.13 發布完成。** Auto 長 seek 有界救援，474 正式案例／verify、安全差異及來源隔離 22／22 通過；公開產物與實際新版 body 已核對，[安裝版](CHROME_v2.1.13_ACCEPTANCE.md) 的 Auto 延遲恢復取得部分證據，完整矩陣未結案。原自然網路起因與其他完整驗收不因此結案。[v2.1.12 原調查](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) 保留原始失敗證據。
 
@@ -12,7 +12,7 @@
 
 **2026-10-10 02:42 中途狀態：v2.1.11 安裝版驗收部分完成，當時依使用者要求暫停。** BR-03 31 個有效案例與 BR-02 42 個對照通過，當時 BR-04 僅 Node 重現；見 [中途報告](CHROME_v2.1.11_PROGRESS.md)。下文發行時的待安裝文字保留其當時範圍。
 
-本索引於 **2026-10-10** 更新至 **v2.1.14 BR-06 修復／發布準備與 BR-01 完整驗收**，實際發布與剩餘矩陣以 [TEST_REPORT](TEST_REPORT.md)／[TODO](TODO.md) 為準。v2.1.12 的 35 項已完成安裝驗收保持其當時範圍；下方有日期紀錄不代替現行狀態。
+本索引於 **2026-10-10** 更新至 **v2.1.14 發布、BR-07 調查與 BR-01 剩餘驗收**，實際發布與剩餘矩陣以 [TEST_REPORT](TEST_REPORT.md)／[TODO](TODO.md) 為準。v2.1.12 的 35 項已完成安裝驗收保持其當時範圍；下方有日期紀錄不代替現行狀態。
 
 2026-10-07 的 Markdown 粗體渲染盤點與排版修正見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)；後續排版檢查方式列於 DEVELOPMENT。
 

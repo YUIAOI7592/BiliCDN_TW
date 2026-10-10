@@ -4,6 +4,8 @@
 
 本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.14 BR-06 鍵盤 seek 修復**，保留 BR-01～05 與既有 17 項功能修復。版本以 [release.json](../release.json) 為準；發布／安裝版狀態見 [驗證報告](TEST_REPORT.md) 及 [BR-06 交付](BR06_FIX_REPORT.md)。原自然網路起因與其他完整驗收獨立追蹤。文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
 
+現行限制：[BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 已在 v2.1.14 安裝版確認，網站右鍵在 keyup 尋位，超出 keydown 候選的派送生命週期，故不會更新 userRevision。此入口尚未修復；不能以延長清理 timer 或將所有 seekRevision 當作使用者操作取代命令所有權設計。
+
 <a name="dependency-direction"></a>
 
 ## 依賴方向
