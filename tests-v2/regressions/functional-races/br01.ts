@@ -20,6 +20,7 @@ function fixture(t: TestContext) {
   let onReload: () => unknown = () => undefined, onSeek: () => void = () => undefined, onPlay: () => unknown = () => undefined
   const player = { snapshot: () => video, currentTime: () => video.currentTime, playbackRate: () => video.playbackRate,
   controls: () => controls,
+    ownedReload: (revision: number) => controls.reloadRevision === revision,
     syncManifest: () => true, reset() {}, observePlayIntent: () => () => {}, reload() { effects.reloads++; return onReload() },
     seek(value: number) { effects.seeks.push(value); onSeek() }, setRate() {}, play() { effects.plays++; return onPlay() } } satisfies PlayerPort
   const recovery = scope.own(new RecoveryController(player, clock.now, () => visible && !disabled))
@@ -113,6 +114,17 @@ test('BR-01 a marked replacement from this reload can restore once', t => {
   f.onReload(() => f.controls({ reloadRevision: 1 }))
   f.ticks(30); f.controls({ coreId: 2, coreReloadRevision: 1 }); f.set({ seeking: false, readyState: 3 }); f.monitor.tick()
   assert.deepEqual(f.effects.seeks, [978]); assert.equal(f.effects.plays, 1)
+})
+
+test('BR-01 review watchdog: first progressing tick cannot submit a second fallback while recovery awaits confirmation', t => {
+  const f = longSeek(t)
+  f.onReload(() => {
+    f.controls({ reloadRevision: 1, coreId: 0 }); f.set({ paused: true, seeking: false, currentTime: 0, frames: 0, readyState: 0, width: 0, height: 0 })
+  })
+  f.ticks(30); f.controls({ coreId: 2, coreReloadRevision: 1 });
+  f.set({ readyState: 3, width: 1280, height: 720, currentTime: 978 }); f.onPlay(() => f.set({ paused: false })); f.monitor.tick()
+  f.set({ currentTime: 979, frames: 30 }); f.ticks(1)
+  assert.equal(f.recovery.isRecovering(), true); assert.equal(f.effects.fallbacks, 1)
 })
 test('BR-01 rejection of reload terminates only its own intent', async t => {
   const f = longSeek(t), pending = deferred<void>()

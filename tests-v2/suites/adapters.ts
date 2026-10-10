@@ -989,3 +989,4 @@ test("eligible Native backup uses its own full signed URL [17]", { timeout: 5000
 import { idleControls } from "../support/player.ts"
 import '../regressions/functional-races/br01-player.ts'
 import '../regressions/functional-races/br08-player.ts'
+import '../regressions/functional-races/br01-reload-controls.ts'

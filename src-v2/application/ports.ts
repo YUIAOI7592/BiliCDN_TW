@@ -34,6 +34,7 @@ export interface PlayerControlSnapshot {
 
 export interface PlayerPort {
   controls(): PlayerControlSnapshot
+  readonly ownedReload?: (revision: number) => boolean
   observePlayIntent(listener: () => void): () => void
   snapshot(): VideoSnapshot
   syncManifest(): boolean

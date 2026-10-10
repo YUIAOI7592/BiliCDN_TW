@@ -2,7 +2,9 @@
 
 # v2 架構
 
-本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.16 BR-08 完整拖曳契約**；修復、必要驗證及發布／公開產物核對完成，保留 BR-01～07 與既有 17 項。發行版本以 [release.json](../release.json) 為準；發布／安裝狀態見 [驗證報告](TEST_REPORT.md)。2026-10-10 21:11:07.331（Asia/Taipei）實際 Chrome 已核對 v2.1.16 完整本體、唯一 singleton 及 hooks；新版 Auto 1／2 倍拖曳、基本播放及約 12 秒 video-only 延遲後恢復已有部分證據，BR-01 完整安裝驗收仍未完成。原自然網路起因與其他完整驗收獨立追蹤，來源隔離不代替安裝版。文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
+**2026-10-11 現行架構為 v2.1.17 BR-01 SDK 重載後續恢復候選修復，尚未發布。** 正式契約、typecheck、44 個執行期模組架構、全套 19 套件／716／716 與最終 verify v2.1.17 通過；獨立安全差異 11／11 項、0 候選／0 可報告發現，Chrome 最後來源隔離 22／22 通過。掃描主機的整體工作目錄變動警告與四個凍結執行期檔案的雜湊核對分列，不能宣稱整體快照一致。已發布／安裝基準仍為 v2.1.16；發布與公開核對待完成，新版安裝驗收另列，詳見 [本輪修復](BR01_FOLLOWTHROUGH_FIX_REPORT.md) 與 [驗證報告](TEST_REPORT.md)。
+
+本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.17 BR-01 後續恢復契約**，保留 BR-08 完整拖曳及 BR-01～07 與既有 17 項。版本以 [release.json](../release.json) 為準；發布／安裝狀態見 [驗證報告](TEST_REPORT.md)。2026-10-10 21:11:07.331（Asia/Taipei）已核對實際 v2.1.16 完整本體、唯一 singleton 及 hooks；該版 Auto 1／2 倍拖曳、基本播放及約 12 秒 video-only 延遲後恢復已有部分證據，BR-01 完整安裝驗收仍未完成。v2.1.17 最後來源隔離使用自有 iframe、合成媒體／FakeClock，其中 12 個控制模型與 10 個真正可信輸入、31 秒模型拖曳均只證明對應來源契約。原自然網路起因與其他完整驗收獨立追蹤，來源隔離不代替安裝版。文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
 
 修復背景：[BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 在 v2.1.14 安裝版確認網站右鍵於 keyup 尋位。該修復為 keyup 建立獨立同派送候選，不沿用已結束的 keydown；當次派送沒有可觀察的新 seek 仍保守不歸因。v2.1.15 真實 Auto 1／2 倍已驗證正常鍵盤修訂及新 15 秒寬限，續測確認 [BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 外層進度拖曳漏辨。原觀察及失敗結果保留，本輪不以本機修復宣稱新版安裝驗收完成。
 
@@ -104,13 +106,19 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 量測鎖回呼先重查最新安全狀態、表示與控制器標記，才選擇記錄嘗試的候選及提交冷卻；首次播放位置只作基準。普通恢復在 seek／ended／mediaError 時先終止舊動作，再考慮還原；只有仍擁有停滯／操作修訂的 BR-01 stall 意圖可處理持續 seeking。play Promise 檢查生命週期與當前 token，避免晚到拒絕覆寫較新結果。
 
-`PlayerControlSnapshot` 只提供媒體／核心不透明數字識別、seek／使用者操作修訂、拖曳、目標位置及自有 reload 修訂。PlayerAdapter 觀察播放器區域可信 pointer／非 seek key，後者僅 keydown；BR-07 的 seek 鍵可來自 BODY／頁面。keydown／keyup 捕捉皆只保存一筆私有候選，排除 editable／控制中心／組字／Ctrl／Meta／Alt／合成輸入；候選的事件仍派送、同播放器／媒體／生命週期、真正可見且有限位置改變並 seeking，才更新一次 userRevision。site.seek、媒體觀察、controls 與該事件種類的 window 冒泡皆可確認；同派送去重，keydown、repeat、keyup 各自造成新 seek 時各自取得修訂。新事件撤銷上一候選，外層冒泡／timeout 必須檢查候選身分。eventPhase NONE 拒絕派送後工作，可取消零延遲 timeout 只清理參照，不提供延遲窗口或鍵盤按住狀態。入口注入 Scheduler 與真正可見性查詢，DOM／事件不交給應用層。一般 site seek 更新觀察修訂，腳本 seek 使用內部標記並清除候選；pendingSeek 保守抑制來源，不因可信輸入全面清空。reset 移除監聽器，僅在仍擁有方法時還原 wrapper。Monitor 仍以新使用者修訂重開停滯，網站／Auto 的單純 seekRevision 保留原期限。頁面核心標記是因果觀察，並非認證：等待自有 reload 時未經可觀察方法的外部替換仍有辨識限制。
+`PlayerControlSnapshot` 只提供媒體／核心不透明數字識別、seek／使用者操作修訂、拖曳、目標位置及自有 reload 修訂。PlayerAdapter 觀察播放器區域可信 pointer／非 seek key，後者僅 keydown；BR-07 的 seek 鍵可來自 BODY／頁面。keydown／keyup 捕捉皆只保存一筆私有候選，排除 editable／控制中心／組字／Ctrl／Meta／Alt／合成輸入；候選的事件仍派送、同播放器／媒體／生命週期、真正可見且有限位置改變並 seeking，才更新一次 userRevision。site.seek、媒體觀察、controls 與該事件種類的 window 冒泡皆可確認；同派送去重，keydown、repeat、keyup 各自造成新 seek 時各自取得修訂。新事件撤銷上一候選，外層冒泡／timeout 必須檢查候選身分。eventPhase NONE 拒絕派送後工作，可取消零延遲 timeout 只清理參照，不提供延遲窗口或鍵盤按住狀態。入口注入 Scheduler 與真正可見性查詢，DOM／事件不交給應用層。一般 site seek 更新觀察修訂，腳本 seek 使用內部標記並清除候選；pendingSeek 保守抑制來源，不因可信輸入全面清空。reset 移除監聽器，僅在仍擁有方法時還原 wrapper。Monitor 仍以新使用者修訂重開停滯，網站／Auto 的單純 seekRevision 保留原期限。BODY 播放／倍速另採私有 keydown 候選：Space、k／K 或既有倍速鍵須在該派送內確實改變 paused／有限 rate，且核心也仍相同，才能增加一次 userRevision；腳本的還原方法不消費此候選。頁面核心標記是因果觀察，並非認證：等待自有 reload 時未經可觀察方法的外部替換仍有辨識限制。
 
 BR-08 進度命中使用 target.closest 的 `.bpx-player-progress-wrap, .bpx-player-progress, .bilibili-player-video-progress, [role="slider"]`，命中祖先仍須位於目前播放器區域；不向下搜尋子節點。可信進度 pointerdown 立即建立單一私有手勢，不要求 seeking 或位置改變。手勢保存 pointerId、媒體、播放器與內容生命週期，controls.dragging 由有效所有者推導。新合法進度按下取代舊手勢，非進度按下保留有效手勢；只有同指標可信 pointerup／pointercancel／lostpointercapture 釋放。同步重入須核對觀察版本及手勢物件，不能覆寫或清除較新手勢；hidden、失焦、reset、媒體／播放器替換及內容失效撤銷手勢，不新增 timeout 或 pointer capture。
 
-`VisibilityAdapter.subscribeControlLoss(listener): () => void` 是適配器內部通知。既有可信 blur／真正 hidden guard 在 stopImmediatePropagation 前通知 PlayerAdapter，單一 listener 的例外不破壞原 guard。入口明確注入，取消函式由播放器控制觀察管理，reset／重新綁定清理；controls() 仍以真正可見性查詢防漏。公開 API、PlayerControlSnapshot、應用層介面與 schema 2 不變，不傳遞 DOM／事件或播放器物件到應用層。
+`VisibilityAdapter.subscribeControlLoss(listener): () => void` 是適配器內部通知。既有可信 blur／真正 hidden guard 在 stopImmediatePropagation 前通知 PlayerAdapter，單一 listener 的例外不破壞原 guard。入口明確注入，取消函式由播放器控制觀察管理，reset／重新綁定清理；controls() 仍以真正可見性查詢防漏。BR-08 不變更公開 API、PlayerControlSnapshot、應用層介面與 schema 2，不傳遞 DOM／事件或播放器物件到應用層。
 
 PlayerMonitor 擁有單一停滯段。15 秒合法 video 備援與 Runtime 通知合併同一 token；30 秒最多一次 core reload；重載後 15 秒沒有進度釋放 token。Auto 表示／網站 seek 更新撤銷舊動作、重新綁定最新請求，但不重開同段時限／額度。新的使用者操作與真 hidden／pause／失效結束舊段。首次有效進度結束計時，RecoveryController 等兩個連續有效採樣才 recovered。
+
+本輪 BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean` 查詢自有 reload 所有權，不把 DOM 或核心物件交給應用層。PlayerAdapter 私有紀錄本次 reload 修訂、原媒體／播放器／核心、生命週期、使用者修訂與第一個替換核心，最多有界保存 15 秒；每次查詢重查身分及真正可見性。暫時空核心可等待，但舊核心在空隙後回來、第二次替換、新操作、hidden／control-loss 或 reset 撤銷所有權。還原 wrapper 與 timer 清理各自核對物件／方法所有權，不能清掉較新工作。
+
+`RecoveryController.ongoingStallReload` 提供 Monitor 唯讀資格查詢；只有同停滯 token 與合法自有 reload 才可跨過 SDK 暫時 paused／空核心，Monitor 不在此期間重建停滯或取消同一救援。首個非零替換核心須標記等於本次修訂、初始化狀態不是 false，並通過健康觀察，才可還原；不能把空核心上的舊標記當成資格。SDK 自行 seek 只更新目前目標與觀察身分，禁止舊位置還原；有效的倍速／播放意圖仍受本次 token、最新路線授權與期限限制。新的可信操作、可觀察的外部 reload 或第二次核心替換撤銷該例外；首個替換的因果觀察不能認證所有未經可觀察方法的外部替換，普通 pause 政策保持。
+
+重載後無進度達 15 秒先完成一次失敗終止並釋放 token，不能因 adapter 自有觀察到期只留下模糊 ownership-ended。真正時間／影格進度仍須操作、媒體／核心與 seek 修訂一致；首次有效進度停止無進度重載計時，兩次連續有效採樣才 recovered，SDK 位置跳躍及保留尺寸不算進度。已還原且有首次進度時，`ongoingStallReload` 另以相同穩定所有者維持最多 15 秒的確認資格，不延長 adapter 的 pause／空核心租期，也不授予新的 seek／rate／play 或核心接納；未形成持續進度仍失敗。終止後保存失敗停滯的 userRevision／mediaId，SDK 自行 resume 不重開救援；真正進度或新的使用者／媒體所有權才可清除此抑制。跨租期確認、同步重入、晚到完成及清理均已由本輪最終正式契約與來源隔離驗證，實際新版安裝另列。
 
 停滯、舊 watchdog、冷起播三個監控救援入口皆排除 dragging，拖曳期間清除舊停滯及 watchdog 連續計數，不消耗一次性起播救援嘗試。一般停滯在釋放後第一個合資格 tick 從最新位置建立新 15／30 秒基準；冷起播仍按原 firstMediaAt 重評，可能立即救援，不新增全域釋放寬限或重開起播預算。
 

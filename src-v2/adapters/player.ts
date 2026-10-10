@@ -7,6 +7,27 @@ const safeCall = (target: unknown, name: string, ...args: unknown[]): unknown =>
   try { const fn = target[name]; return typeof fn === 'function' ? Reflect.apply(fn, target, args) : undefined } catch { return undefined }
 }
 const safeNumber = (value: unknown): number | null => Number.isFinite(Number(value)) ? Number(value) : null
+const sameDescriptor = (left: PropertyDescriptor | undefined, right: PropertyDescriptor | undefined): boolean =>
+  left === undefined || right === undefined ? left === right
+    : left.value === right.value && left.get === right.get && left.set === right.set
+      && left.writable === right.writable && left.enumerable === right.enumerable && left.configurable === right.configurable
+
+// Use the SDK's setter when present. Cleanup owns both the method and its
+// descriptor, and removes a shadow created over an inherited data method.
+const observeMethod = (target: UnknownRecord, name: string, original: unknown, wrapped: unknown): (() => void) => {
+  const before = Object.getOwnPropertyDescriptor(target, name)
+  target[name] = wrapped
+  const installed = Object.getOwnPropertyDescriptor(target, name)
+  return () => {
+    try {
+      if (!sameDescriptor(Object.getOwnPropertyDescriptor(target, name), installed) || target[name] !== wrapped
+        || !sameDescriptor(Object.getOwnPropertyDescriptor(target, name), installed)) return
+      if (!before && installed) Reflect.deleteProperty(target, name)
+      else if (before && 'value' in before) Object.defineProperty(target, name, before)
+      else target[name] = original
+    } catch { /* a newer SDK or script owns the method */ }
+  }
+}
 
 interface ControlEnvironment {
   readonly scheduler: Pick<SchedulerPort, 'timeout'>
@@ -26,6 +47,29 @@ interface KeyboardSeek {
   readonly lifecycle: string
   readonly position: number
   stop: () => void
+}
+interface KeyboardPlayback {
+  readonly event: KeyboardEvent
+  readonly video: HTMLVideoElement
+  readonly player: UnknownRecord | null
+  readonly core: unknown
+  readonly lifecycle: string
+  readonly paused: boolean
+  readonly rate: number
+  readonly kind: 'pause' | 'rate'
+  readonly revision: number
+  stop: () => void
+}
+interface OwnedReload {
+  readonly revision: number
+  readonly video: HTMLVideoElement
+  readonly player: UnknownRecord
+  readonly lifecycle: string
+  readonly userRevision: number
+  readonly sourceCore: unknown
+  replacement: unknown
+  sawNull: boolean
+  cancel: () => void
 }
 
 export class PlayerAdapter {
@@ -49,15 +93,20 @@ export class PlayerAdapter {
   #reloadCore: unknown = null
   #awaitReloadCore = false
   #keyboardSeek: KeyboardSeek | null = null
+  #keyboardPlayback: KeyboardPlayback | null = null
+  #keyboardRevision = 0
+  #ownedReload: OwnedReload | null = null
   constructor(private readonly playurl: PlayurlPort & { lifecycleKey(): string }, private readonly environment: ControlEnvironment) {}
 
   protected player(): UnknownRecord | null { try { return isRecord(unsafeWindow.player) ? unsafeWindow.player : null } catch { return null } }
 
   controls(): PlayerControlSnapshot {
+    const reloadOwner = this.#ownedReload
     const video = this.video(), player = this.player(), core = safeCall(player, '__core')
     if (video !== this.#controlVideo || player !== this.#seekOwner) this.#observeControls(video, player)
     this.#validateDrag()
     this.#confirmKeyboardSeek()
+    this.#confirmKeyboardPlayback()
     if (video?.seeking && Number.isFinite(video.currentTime) && video.currentTime !== this.#targetSec) {
       this.#targetSec = video.currentTime
       if (!this.#internalSeek && this.#pendingSeek !== video.currentTime) this.#seekRevision++
@@ -68,9 +117,8 @@ export class PlayerAdapter {
       if (id === undefined) { id = ++this.#objectSerial; this.#objects.set(object, id) }
       return id
     }
-    if (this.#awaitReloadCore && core && core !== this.#reloadCore) {
-      this.#coreReloadRevision = this.#reloadRevision; this.#awaitReloadCore = false
-    } else if (!this.#awaitReloadCore && core !== this.#reloadCore) this.#coreReloadRevision = 0
+    if (reloadOwner) this.#validateOwnedReload(video, player, core, reloadOwner)
+    else if (!this.#ownedReload && !this.#awaitReloadCore && core !== this.#reloadCore) this.#coreReloadRevision = 0
     this.#reloadCore = core
     return Object.freeze({ mediaId: identity(video), coreId: identity(core), seekRevision: this.#seekRevision,
       userRevision: this.#userRevision, dragging: this.#drag !== null, targetSec: this.#targetSec,
@@ -91,7 +139,8 @@ export class PlayerAdapter {
       const revision = ++this.#pointerRevision
       if (!this.environment.isActuallyVisible() || !inRegion(event) || revision !== this.#pointerRevision) return
       this.#clearKeyboardSeek()
-      this.#userRevision++
+      this.#clearKeyboardPlayback()
+      this.#advanceUser()
       const lifecycle = this.playurl.lifecycleKey()
       const hit = event.target instanceof Element
         ? event.target.closest('.bpx-player-progress-wrap, .bpx-player-progress, .bilibili-player-video-progress, [role="slider"]') : null
@@ -110,11 +159,15 @@ export class PlayerAdapter {
       if (this.#drag === drag) { this.#drag = null; this.#pointerRevision++ }
     }
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) listen(document, type, release)
-    const controlLoss = (): void => { this.#drag = null; this.#pointerRevision++; this.#clearKeyboardSeek() }
+    const controlLoss = (): void => {
+      this.#drag = null; this.#pointerRevision++; this.#clearKeyboardSeek(); this.#clearKeyboardPlayback(); this.#clearOwnedReload()
+    }
     listen(window, 'blur', event => { if (event.isTrusted) controlLoss() })
     this.#controlStops.push(this.environment.subscribeControlLoss(controlLoss))
     const observeKeyboard: EventListener = event => {
+      const revision = ++this.#keyboardRevision
       this.#clearKeyboardSeek()
+      this.#clearKeyboardPlayback()
       if (!(event instanceof KeyboardEvent) || !event.isTrusted || event.isComposing || event.keyCode === 229
         || event.ctrlKey || event.metaKey || event.altKey || !this.environment.isActuallyVisible()) return
       const editable = (target: EventTarget): boolean => target instanceof Element
@@ -123,7 +176,12 @@ export class PlayerAdapter {
       if (event.composedPath().some(editable) || event.target && editable(event.target)) return
       if (['ArrowLeft', 'ArrowRight', 'Home', 'End', 'j', 'J', 'l', 'L'].includes(event.key)) {
         this.#beginKeyboardSeek(event, video, player)
-      } else if (event.type === 'keydown' && inRegion(event) && ['ArrowUp', 'ArrowDown', ' ', 'k', 'K'].includes(event.key)) this.#userRevision++
+      } else if (event.type === 'keydown' && ['ArrowUp', 'ArrowDown', ' ', 'k', 'K'].includes(event.key)) {
+        const inside = inRegion(event)
+        if (revision !== this.#keyboardRevision) return
+        if (inside) this.#advanceUser()
+        else this.#beginKeyboardPlayback(event, video, player, revision)
+      }
     }
     for (const type of ['keydown', 'keyup']) listen(document, type, observeKeyboard)
     listen(video, 'seeking', () => {
@@ -137,12 +195,11 @@ export class PlayerAdapter {
     const reload = player?.reload
     if (player && typeof reload === 'function') {
       const wrapped = function(this: unknown, ...args: unknown[]): unknown {
-        if (!adapter.#internalReload) { adapter.#seekRevision++; adapter.#awaitReloadCore = false; adapter.#coreReloadRevision = 0 }
+        if (!adapter.#internalReload) { adapter.#seekRevision++; adapter.#clearOwnedReload() }
         return Reflect.apply(reload, this, args)
       }
       try {
-        player.reload = wrapped
-        this.#controlStops.push(() => { try { if (player.reload === wrapped) player.reload = reload } catch { /* newer owner */ } })
+        this.#controlStops.push(observeMethod(player, 'reload', reload, wrapped))
       } catch { /* core identity still revokes unmarked replacements */ }
     }
     if (player && typeof original === 'function') {
@@ -156,8 +213,7 @@ export class PlayerAdapter {
         finally { adapter.#confirmKeyboardSeek() }
       }
       try {
-        player.seek = wrapped
-        this.#controlStops.push(() => { try { if (player.seek === wrapped) player.seek = original } catch { /* newer owner */ } })
+        this.#controlStops.push(observeMethod(player, 'seek', original, wrapped))
       } catch { /* observation through media events remains available */ }
     }
   }
@@ -193,7 +249,7 @@ export class PlayerAdapter {
         || candidate.video.currentTime === candidate.position || candidate.video.currentTime === this.#pendingSeek) return
       if (this.#targetSec !== candidate.video.currentTime) this.#seekRevision++
       this.#targetSec = candidate.video.currentTime
-      this.#userRevision++
+      this.#advanceUser()
       this.#clearKeyboardSeek()
     } catch { this.#clearKeyboardSeek() }
   }
@@ -202,6 +258,80 @@ export class PlayerAdapter {
     const candidate = this.#keyboardSeek
     this.#keyboardSeek = null
     candidate?.stop()
+  }
+
+  #beginKeyboardPlayback(event: KeyboardEvent, video: HTMLVideoElement, player: UnknownRecord | null, revision: number): void {
+    const candidate: KeyboardPlayback = { event, video, player, core: safeCall(player, '__core'),
+      lifecycle: this.playurl.lifecycleKey(), paused: video.paused, rate: video.playbackRate,
+      kind: [' ', 'k', 'K'].includes(event.key) ? 'pause' : 'rate', revision, stop: () => undefined }
+    if (revision !== this.#keyboardRevision || video !== this.#controlVideo || player !== this.#seekOwner) return
+    this.#keyboardPlayback = candidate
+    const finish = (observed: Event): void => {
+      if (observed === event && this.#keyboardPlayback === candidate) this.#confirmKeyboardPlayback()
+    }
+    window.addEventListener(event.type, finish)
+    const cancel = this.environment.scheduler.timeout(() => {
+      if (this.#keyboardPlayback === candidate) this.#clearKeyboardPlayback()
+    }, 0)
+    candidate.stop = () => { cancel(); window.removeEventListener(event.type, finish) }
+  }
+
+  #confirmKeyboardPlayback(): void {
+    const candidate = this.#keyboardPlayback
+    if (!candidate) return
+    try {
+      const eligible = candidate.event.eventPhase !== Event.NONE && candidate.revision === this.#keyboardRevision
+        && candidate.video === this.#controlVideo && candidate.player === this.#seekOwner
+        && candidate.video === this.video() && candidate.player === this.player()
+        && candidate.core === safeCall(candidate.player, '__core') && candidate.lifecycle === this.playurl.lifecycleKey()
+        && this.environment.isActuallyVisible()
+      const changed = candidate.kind === 'pause' ? candidate.video.paused !== candidate.paused
+        : Number.isFinite(candidate.video.playbackRate) && candidate.video.playbackRate !== candidate.rate
+      if (this.#keyboardPlayback !== candidate || candidate.revision !== this.#keyboardRevision) return
+      if (!eligible) { this.#clearKeyboardPlayback(); return }
+      if (changed) { this.#advanceUser(); this.#clearKeyboardPlayback() }
+    } catch { if (this.#keyboardPlayback === candidate) this.#clearKeyboardPlayback() }
+  }
+
+  #clearKeyboardPlayback(): void {
+    const candidate = this.#keyboardPlayback
+    this.#keyboardPlayback = null
+    candidate?.stop()
+  }
+
+  #advanceUser(): void { this.#userRevision++; this.#clearOwnedReload() }
+
+  #clearOwnedReload(): void {
+    const owner = this.#ownedReload
+    this.#ownedReload = null; this.#awaitReloadCore = false; this.#coreReloadRevision = 0
+    owner?.cancel()
+  }
+
+  #validateOwnedReload(video: HTMLVideoElement | null, player: UnknownRecord | null, core: unknown, owner: OwnedReload): void {
+    if (this.#ownedReload !== owner) return
+    const valid = video === owner.video && player === owner.player && owner.revision === this.#reloadRevision
+      && owner.lifecycle === this.playurl.lifecycleKey() && owner.userRevision === this.#userRevision
+      && this.environment.isActuallyVisible()
+    if (this.#ownedReload !== owner) return
+    if (!valid) { this.#clearOwnedReload(); return }
+    if (owner.replacement) {
+      if (core !== owner.replacement) this.#clearOwnedReload()
+      return
+    }
+    if (!core) { owner.sawNull = true; return }
+    if (core === owner.sourceCore) {
+      if (owner.sawNull) this.#clearOwnedReload()
+      return
+    }
+    owner.replacement = core; this.#coreReloadRevision = owner.revision; this.#awaitReloadCore = false
+  }
+
+  ownedReload(revision: number): boolean {
+    this.#confirmKeyboardPlayback()
+    const owner = this.#ownedReload
+    if (!owner || owner.revision !== revision) return false
+    this.#validateOwnedReload(this.video(), this.player(), safeCall(owner.player, '__core'), owner)
+    return this.#ownedReload === owner
   }
 
   #validateDrag(): void {
@@ -215,6 +345,7 @@ export class PlayerAdapter {
 
   #clearControls(): void {
     this.#clearKeyboardSeek()
+    this.#clearKeyboardPlayback(); this.#keyboardRevision++; this.#clearOwnedReload()
     for (const stop of this.#controlStops.splice(0).reverse()) stop()
     this.#controlVideo = null; this.#seekOwner = null; this.#drag = null; this.#pointerRevision++; this.#pendingSeek = null
   }
@@ -228,10 +359,7 @@ export class PlayerAdapter {
       if (active) listener()
       return Reflect.apply(original, this, args)
     }
-    try { target.play = wrapped } catch { return () => undefined }
-    return () => {
-      try { if (target.play === wrapped) target.play = original } catch { /* site owns method */ }
-    }
+    try { return observeMethod(target, 'play', original, wrapped) } catch { return () => undefined }
   }
 
   video(): HTMLVideoElement | null {
@@ -285,11 +413,38 @@ export class PlayerAdapter {
   }
 
   reload(): unknown {
-    const player = this.player(), reload = player?.reload
+    this.#clearKeyboardPlayback()
+    const userRevision = this.#userRevision, beforeRevision = this.#reloadRevision
+    const player = this.player(), video = this.video(), lifecycle = this.playurl.lifecycleKey()
+    const sourceCore = safeCall(player, '__core'), reload = player?.reload
     if (!player || typeof reload !== 'function') throw new Error('player.reload unavailable')
-    this.#reloadCore = safeCall(player, '__core'); this.#reloadRevision++; this.#awaitReloadCore = true; this.#internalReload++
-    try { return Reflect.apply(reload, player, []) }
-    catch (error) { this.#awaitReloadCore = false; throw error }
+    const currentPlayer = this.player(), currentVideo = this.video(), currentCore = safeCall(player, '__core')
+    const visible = this.environment.isActuallyVisible(), currentLifecycle = this.playurl.lifecycleKey()
+    if (userRevision !== this.#userRevision || beforeRevision !== this.#reloadRevision || currentPlayer !== player
+      || currentVideo !== video || currentCore !== sourceCore || currentLifecycle !== lifecycle || !visible) {
+      throw new Error('player.reload ownership ended')
+    }
+    this.#clearOwnedReload()
+    this.#reloadCore = sourceCore; const revision = ++this.#reloadRevision
+    const owner: OwnedReload | null = video ? { revision, video, player, lifecycle, userRevision,
+      sourceCore: this.#reloadCore, replacement: null, sawNull: false, cancel: () => undefined } : null
+    this.#ownedReload = owner; this.#awaitReloadCore = owner !== null
+    if (owner) owner.cancel = this.environment.scheduler.timeout(() => {
+      if (this.#ownedReload === owner) this.#clearOwnedReload()
+    }, 15_000)
+    if (this.#ownedReload !== owner || this.#reloadRevision !== revision || this.#userRevision !== userRevision) {
+      if (this.#ownedReload === owner) this.#clearOwnedReload()
+      throw new Error('player.reload ownership ended')
+    }
+    this.#internalReload++
+    try {
+      const result: unknown = Reflect.apply(reload, player, [])
+      if (result && (typeof result === 'object' || typeof result === 'function')) void Promise.resolve(result).catch(() => {
+        if (this.#ownedReload === owner) this.#clearOwnedReload()
+      })
+      return result
+    }
+    catch (error) { if (this.#ownedReload === owner) this.#clearOwnedReload(); throw error }
     finally { this.#internalReload-- }
   }
   currentTime(): number { return safeNumber(safeCall(this.player(), 'getCurrentTime')) ?? this.snapshot().currentTime }
@@ -299,6 +454,7 @@ export class PlayerAdapter {
   }
   seek(value: number): void {
     this.#clearKeyboardSeek()
+    this.#clearKeyboardPlayback()
     this.#internalSeek++; this.#pendingSeek = value
     try {
       const player = this.player(), method = player?.seek
@@ -307,11 +463,12 @@ export class PlayerAdapter {
     } finally { this.#internalSeek-- }
   }
   setRate(value: number): void {
+    this.#clearKeyboardPlayback()
     const player = this.player(), method = player?.setPlaybackRate
     if (player && typeof method === 'function') { try { Reflect.apply(method, player, [value]); return } catch { /* fallback */ } }
     const video = this.video(); if (video) video.playbackRate = value
   }
-  play(): unknown { const player = this.player(); if (!player || typeof player.play !== 'function') throw new Error('player.play unavailable'); return Reflect.apply(player.play, player, []) }
+  play(): unknown { this.#clearKeyboardPlayback(); const player = this.player(); if (!player || typeof player.play !== 'function') throw new Error('player.play unavailable'); return Reflect.apply(player.play, player, []) }
   reset(): void { this.#clearControls(); this.#awaitReloadCore = false; this.#coreReloadRevision = 0; this.#seekRevision++; this.#userRevision++; this.#targetSec = null; this.#cachedVideo = null; this.#manifestFingerprint = '' }
 
   #area(video: HTMLVideoElement): number { return Math.max(0, video.clientWidth) * Math.max(0, video.clientHeight) }

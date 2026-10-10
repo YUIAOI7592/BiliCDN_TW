@@ -2,7 +2,9 @@
 
 # 信任邊界與資料處理
 
-本文件是 `src-v2/` **v2.1.16 BR-08 完整拖曳契約**（保留 BR-01～07）的執行期信任邊界指南。BR-08 修復、必要驗證及發布／公開產物核對完成；2026-10-10 21:11:07.331（Asia/Taipei）實際 Chrome 已核對 v2.1.16 完整本體、唯一 singleton 及 hooks，BR-01 完整安裝驗收仍未完成，已有新版 Auto 1／2 倍拖曳保護、基本播放及約 12 秒 video-only 延遲後恢復的部分證據。設定版本以 release.json 為準，發布及安裝驗收見 [驗證報告](docs/TEST_REPORT.md)，安全差異與 Chrome／Tampermonkey 分列，不能互相替代。原 [BR-08 進度拖曳漏辨](docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 是功能缺陷證據，未當成已解決的安全發現。文件用途見 [文件索引](docs/INDEX.md)，本文件本身不要求啟動安全掃描。
+**2026-10-11 目前政策維護對象為 v2.1.17 BR-01 SDK 重載後續恢復候選版，修復與必要驗證完成，尚未發布。** typecheck、44 個執行期模組架構、19 套件／716／716 與最終 verify v2.1.17 通過；本輪獨立 Codex Security 差異 `39e2743e-185d-4c7d-a04d-f6580e61385a` 已封存，11／11 差異項、0 候選／0 可報告發現。主機另警告整體工作目錄變動；四個執行期檔案與凍結來源雜湊一致，不宣稱整體目錄快照一致。最後 Chrome 來源隔離 22／22（12 個控制模型＋10 個真正可信輸入）通過並完成清理；自有 iframe、合成媒體／FakeClock 及 31 秒模型拖曳不代表新版安裝驗收。已發布／安裝基準仍為 v2.1.16，發布／公開核對及新版安裝結果各自待完成。新增內部所有權證明不放寬既有網路授權、持久資料或診斷限制。
+
+本文件是 `src-v2/` **v2.1.17 BR-01 後續恢復契約**的執行期信任邊界指南，保留 BR-08 完整拖曳及 BR-01～07。BR-08 與 v2.1.16 的修復、必要驗證及發布／公開產物核對為上一輪完成證據；2026-10-10 21:11:07.331（Asia/Taipei）實際 Chrome 已核對該版完整本體、唯一 singleton 及 hooks，BR-01 完整安裝驗收仍未完成，已有 Auto 1／2 倍拖曳保護、基本播放及約 12 秒 video-only 延遲後恢復的部分證據。設定版本以 release.json 為準，本輪修復見 [後續修復報告](docs/BR01_FOLLOWTHROUGH_FIX_REPORT.md)，發布及安裝驗收見 [驗證報告](docs/TEST_REPORT.md)；安全差異與 Chrome／Tampermonkey 分列，不能互相替代。原 [BR-08 進度拖曳漏辨](docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 是功能缺陷證據，未當成已解決的安全發現。文件用途見 [文件索引](docs/INDEX.md)，本文件本身不要求啟動安全掃描。
 
 <a name="untrusted-inputs"></a>
 
@@ -60,6 +62,12 @@ Chrome Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒
 <a name="browser-behavior"></a>
 
 ## 瀏覽器行為
+
+本輪 BODY／頁面焦點的 Space、k／K 及既有倍速鍵以私有 keydown 候選關聯實際控制變化；須 isTrusted、真正可見、同播放器／媒體／核心／生命週期，且事件仍在派送。只有 paused 或有限 playbackRate 在該派送內確實改變，才取得一次 userRevision。editable／封閉控制中心／IME／Ctrl／Meta／Alt、合成或忽略命令及派送後工作不能取得身分。播放器區域的既有 keydown 操作觀察及下述 BR-07 seek 鍵規則保留；腳本的還原方法清除自己的候選，不能冒充使用者操作。零延遲 timeout 僅釋放參照，清理確認候選及監聽器所有權。
+
+自有 SDK reload 的 pause／空核心例外僅屬本次合法 stall token 與 reload 修訂，透過 `PlayerPort.ownedReload(revision)` 回傳有界布林證明；DOM／核心／事件留在適配器私有記憶體。最多接納本次第一個替換核心，原核心在空隙後回來、第二次替換、新可信操作、hidden／control-loss 或生命週期失效都撤銷。空核心上的舊 reload 標記不具資格；首個非零替換須標記相符、初始化狀態不是 false 並通過健康觀察，每個 seek／setRate／play 前仍核對最新 video 請求、Vault、政策／限制與 token。
+
+SDK 初始化的未知 seek 撤銷舊位置還原，不猜成可信操作，不覆寫 SDK 最新目標；其餘合法播放意圖仍受重載後 15 秒無進度期限與所有權檢查。只有實際時間／影格進度才能停止無進度計時，兩個連續有效採樣才 recovered；保留尺寸、readyState 或初始化 seek 跳躍不能清除失敗／breaker。已還原且首次進度被接納後，以同一穩定所有者維持最多 15 秒的確認資格，不延長 pause／空核心租期、不授予還原副作用或新核心接納；未形成持續進度仍失敗。終止後 SDK resume 不重開救援，真正進度或新的使用者／媒體所有權才可清除失敗停滯抑制。觀察租期到期、同步重入與晚到 Promise 不能復活或回寫舊動作，也不能否定已接納的合法進度。此內部證明不授予 Native 權限，不新增持久或診斷識別資料；未經可觀察方法的外部核心替換仍有既有辨識限制，不能把頁面標記描述成認證。
 
 BR-01 的控制觀察僅提供取消／動作所有權，不授予 Native 權限。可信 pointer／非 seek key 需 isTrusted 與播放器區域；非 seek key 僅觀察 keydown。BR-07 的 seek 鍵可來自頁面焦點，但排除 editable／控制中心／組字／Ctrl／Meta／Alt，須真正可見、該可信 keydown 或 keyup 尚在派送、同播放器／媒體／生命週期，且實際有限位置改變並 seeking 才取得一次使用者修訂。同派送的 wrapper／媒體／controls／冒泡觀察去重；keydown、repeat、keyup 若各自形成新 seek，各自取得一次身分，沒有位置變化則不計數。eventPhase NONE、腳本還原及晚到工作不能取得新寬限；鍵盤不建立按住狀態或延遲窗口。零延遲 timer 僅釋放私有事件參照，清理綁定實際事件種類且舊回呼確認候選身分。pendingSeek 保守抑制腳本還原，不因可信輸入全面清空；來源無法可靠辨識時不猜測使用者歸因。媒體及 page seek／reload 另有觀察修訂。core reload／還原仍核對最新 video 請求、Vault／政策／禁止／固定路線、操作及核心身分。自有 reload 的替換標記來自頁面觀察，無法認證所有未經可觀察方法的外部替換。監聽器由 adapter reset 清理，seek／reload wrapper 還原確認目前所有權；不把 DOM／事件／核心物件交給應用層或診斷。
 

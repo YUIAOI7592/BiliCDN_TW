@@ -19,6 +19,7 @@ export const monitorMeasurement = (overrides: Partial<MonitorMeasurement> = {}):
 export const monitorRecovery = (overrides: Partial<MonitorRecovery> = {}): MonitorRecovery => ({
   tick: () => undefined, isRecovering: () => false, armStartupFailure: () => undefined,
   armStall: () => undefined, cancelStall: () => undefined,
+  ongoingStallReload: () => false,
   rejectStall: () => undefined,
   snapshot: () => ({ state: 'healthy', source: null, pauseSec: 0, reloadCount: 0, breakerSec: 0 }), ...overrides,
 } satisfies MonitorRecovery)

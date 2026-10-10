@@ -2,7 +2,13 @@
 
 # 開發流程
 
-本文件是 **v2.1.16 BR-08 完整拖曳契約**的現行開發流程。修復、必要驗證及發布／公開產物核對完成；2026-10-10 21:11:07.331（Asia/Taipei）實際 Chrome 已核對 v2.1.16 完整本體、唯一 singleton 及 hooks，Auto 1／2 倍拖曳、基本播放及約 12 秒 video-only 延遲後恢復取得部分證據，BR-01 完整安裝驗收仍未完成。正式發布及實際安裝版狀態見 [驗證報告](TEST_REPORT.md)，不得以來源隔離代替安裝驗收。各版原始證據保留，其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
+**2026-10-11 現行候選版 v2.1.17 的 BR-01 SDK 重載後續恢復修復與必要驗證完成，尚未發布。** typecheck、44 個執行期模組架構、全套 19 套件／716／716 與最終 verify v2.1.17 通過；本輪 adapters 102／102、application 231／231。獨立安全差異 11／11 項、0 候選／0 可報告發現，最後 Chrome 來源隔離 22／22；完整結果見 [後續修復報告](BR01_FOLLOWTHROUGH_FIX_REPORT.md) 與 [驗證報告](TEST_REPORT.md)。已發布與安裝基準仍為 v2.1.16，封裝／發布與公開核對待完成，修補版安裝矩陣分開記錄。
+
+本輪先移植 `functional-races/br01-followthrough.ts` 的六個正確 application 契約，在來源 SHA 未變時保存 **3 fail／3 pass**，再修執行期；播放器的 `br01-reload-controls.ts` 另保存 BODY 播放／倍速入口 **10 fail／20 pass**。它們由既有 application／adapters 套件明確匯入，與 v2.1.16 的 637 個基準通過分列，不把調查目錄當正式輸入。最終擴充契約使用真正 Adapter→Monitor→Recovery，涵蓋自有 reload 暫時 pause／null、第一個標記核心、SDK seek 取消舊位置、完整 15 秒無進度退出、首次進度與兩個連續進度跨過 15 秒觀察租期的確認、終止後 SDK resume 不重試，以及同步讀取重入／晚到 Promise／方法描述子與計時器清理。最後執行期來源凍結後通過全套及 verify；安全掃描主機另有整體工作目錄變動警告，四個執行期檔案與凍結雜湊一致不等於整體目錄快照一致。
+
+Chrome 的手動實際 Adapter.reload 校準沒有 Recovery token，僅證明 SDK 原生時序，不算自動救援通過。Auto 1 倍取得立即排空、連續 15 秒且無截斷的 Network 批次；2 倍首個歷史批次 truncated=true，其後批次完整不能補齊缺口。最後來源隔離 **22／22** 分為 **12 個控制模型＋10 個真正可信輸入**，合成媒體／FakeClock 限於自有 iframe；31 秒拖曳是模型時間，不能寫成網站長停滯驗收。來源工具最後 timers=0、自有根節點已移除、輔助程序已停止。新版 Tampermonkey 尚未載入修補產物前，安裝版矩陣保持待驗收；不替換網站媒體 getter 或修改 timeout 製造長停滯前提。
+
+本文件是 **v2.1.17 BR-01 後續恢復契約**的現行開發流程，保留 BR-08 完整拖曳與既有修復。v2.1.16 修復、必要驗證及發布／公開產物核對是上一輪已完成證據；2026-10-10 21:11:07.331（Asia/Taipei）實際 Chrome 已核對該版完整本體、唯一 singleton 及 hooks，Auto 1／2 倍拖曳、基本播放及約 12 秒 video-only 延遲後恢復取得部分證據，BR-01 完整安裝驗收仍未完成。正式發布及實際安裝版狀態見 [驗證報告](TEST_REPORT.md)，不得以來源隔離代替安裝驗收。各版原始證據保留，其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
 
 2026-10-10 安裝續測的 [BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 顯示網站右鍵在 keyup 提交。現行正式鍵盤替身分別設定事件種類與網站提交階段，不能再假定左右鍵都在 keydown；先移植原五正確契約，保存未修來源 2 fail／3 pass，再修改來源。每個可信派送的實際新 seek 各自計數，同派送多入口去重；沒有位置變化、派送後工作與腳本還原不計數。擴充正式／安全／Chrome 結果見 [BR-07 修復報告](BR07_FIX_REPORT.md)，不沿用上一版 40／40。每個故障窗口先取得新游標，完整檢查 truncated／dropped；晚到收尾截斷只作狀態與清理證據，不補算完整逾時驗收。
 

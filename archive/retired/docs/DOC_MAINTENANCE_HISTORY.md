@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-10-11 BR-01 followthrough 最終待發布文件
+
+將 BR01_FOLLOWTHROUGH_FIX_REPORT、TEST_REPORT 與 CHANGELOG 更新為 v2.1.17 本機修復通過、待發布。記錄最終 19 套件／716 項、adapters102／application231、typecheck、44 個 runtime 模組 architecture、verify 與 diff 檢查，以及 Chrome 來源隔離 22 項（12 個控制模型、10 個真正可信輸入）。首輪來源還原的重複 fallback／lease 跨期兩個缺口已補正式契約修復；原紅燈保留。第一核心替換的錯誤預期校準排除，改以第二核心替換驗證所有權。
+
+獨立安全掃描記錄 scan ID、11／11 覆蓋與零候選／發現，不公開私有機器路徑；如實保留宿主工作目錄變動警告，以及掃描後三份版本 JSON 另行核對的範圍限制。來源 bundle 身分與清理證據分列，指標 31 秒標為 FakeClock 模型時間，不算安裝網站窗口。v2.1.17 尚未發布，公開 latest 與新版實際安裝矩陣不預填通過。
+
+上一版 TEST_REPORT 完整正文與既有歷史維持原樣，本次不修改 TEST_REPORT_HISTORY；現行 v2.1.17 新日期錨點與草稿舊錨點均保留導覽。連結與差異檢查按文件維護執行，不宣稱新增執行期或安裝版測試。
+
+## 2026-10-10 BR-01 followthrough 文件與 v2.1.17 候選準備
+
+新增 BR01_FOLLOWTHROUGH_FIX_REPORT，更新固定 TEST_REPORT 與 CHANGELOG，分列 v2.1.16 實際 SDK／BODY 因果、正式 3 fail／3 pass、Player 50 局部契約、進度與終止後 resume 追加紅燈、來源首輪期限及後續多餘 fallback／lease 跨期反證。最新完整驗證、安全、最後來源隔離、發布與新版安裝結果保持待填，沒有沿用 v2.1.16 的 637 或舊安全掃描宣稱本輪通過。
+
+v2.1.16 TEST_REPORT 完整 11,474 bytes 正文、原日期／錨點／發布 SHA、部分安裝結果與原始 Network／observer 限制原樣加入 TEST_REPORT_HISTORY，SHA-256 `829ec0af4b26d95be2f16176aaa816bc8cd645f3e32143a99a97863d35040228`。封存只新增、歷史刪除 0；私有原文副本與被封存段落逐位元組核對。舊 Release、調查及安全封存不修改。本紀錄為文件整理，不是新增程式或瀏覽器驗證。
+
 ## 2026-10-10 BR-08 修復文件與 v2.1.16 發行準備
 
 同步現行產品／架構／開發／安全指南、README、TODO、INDEX、CHANGELOG，新增 BR08_FIX_REPORT 及 CHROME_v2.1.16_ACCEPTANCE。新版 TEST_REPORT 記錄63個 BR-08 契約／637正式案例、最終獨立安全14/14零發現、31個有效Chrome來源隔離及2個無效校準；新版安裝版未預填通過。上一版 v2.1.15 TEST_REPORT 完整正文連同 BR-08 原失敗、清理及限制保存到 TEST_REPORT_HISTORY，原日期／錨點與歷史 Release 不改寫。
