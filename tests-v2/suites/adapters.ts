@@ -870,7 +870,7 @@ const originalIntentPlay = intentTarget.play
 Object.defineProperty(fakeWindow, 'navigator', { configurable: true, value: { userActivation: { get isActive() { return activation } } } })
 class IntentAdapter extends PlayerAdapter { protected override player(): Record<string, unknown> { return intentTarget } }
 const intentAdapter = new IntentAdapter({ transform: () => playurlResult(false), lifecycleKey: () => 'test' },
-  { scheduler: { timeout: () => () => undefined }, isActuallyVisible: () => true })
+  { scheduler: { timeout: () => () => undefined }, isActuallyVisible: () => true, subscribeControlLoss: () => () => undefined })
 const intentRecovery = scope.own(new RecoveryController({ ...recoveryPlayer, observePlayIntent: listener => intentAdapter.observePlayIntent(listener), snapshot: () => intentVideo,
   reload: () => { intentReloads++ }, playbackRate: () => 1.5 }, () => intentClock))
 intentRecovery.tick(intentVideo)
@@ -988,3 +988,4 @@ test("play observer installed on first paused tick, not thirty seconds later [16
 test("eligible Native backup uses its own full signed URL [17]", { timeout: 5000 }, async t => { await (await fixture(t, 16))() })
 import { idleControls } from "../support/player.ts"
 import '../regressions/functional-races/br01-player.ts'
+import '../regressions/functional-races/br08-player.ts'

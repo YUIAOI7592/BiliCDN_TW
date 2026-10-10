@@ -43,7 +43,7 @@
 
 ## 發布與安裝版
 
-設定已升為 **v2.1.16**，GitHub 發布前 main 仍為 f0c2d39，版本標籤未使用；正式封裝、提交、標籤／Release 及公開 latest 的版本／大小／SHA-256 尚待完成。本段將於發布讀回後更新；發行快照保留封裝時狀態，不事後回寫。
+設定已升為 **v2.1.16**，GitHub 發布前 main 仍為 f0c2d39，版本標籤未使用；正式封裝、提交、標籤／Release 及公開 latest 的版本／大小／SHA-256 尚待完成。本段將於發布读回後更新；發行快照保留封裝時狀態，不事後回寫。
 
 [新版安裝矩陣](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.16_ACCEPTANCE.md) 需實際新版完整 body／唯一 singleton／hooks 身分才開始計分。只用指定風景影片 Auto 1／2 倍，BR-08 按住 31 秒、正常／12 秒延遲、完整停滯期限、新操作與晚到 SDK、真正背景、生命週期／政策／影音隔離及實際 BR-02～05 交叉矩陣均另列。缺少真背景、完整無進度或真正 pending gate 前提時保持待驗收；不以舊版／Node／來源隔離替代。
 

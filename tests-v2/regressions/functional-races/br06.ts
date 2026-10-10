@@ -99,7 +99,7 @@ function fixture(t: TestContext) {
   const player = new Player({ lifecycleKey: () => lifecycle, transform: () => ({ accepted: true, formats: [],
     videoCount: 0, audioCount: 0, segmentCount: 0, upstreamCode: 0, reason: null }) }, {
     scheduler: { timeout(callback, delay) { timeoutCallbacks.push(callback); return clock.timeout(callback, delay) } },
-    isActuallyVisible: () => visible })
+    isActuallyVisible: () => visible, subscribeControlLoss: () => () => undefined })
   scope.defer(() => player.reset())
   const recovery = scope.own(new RecoveryController(player, clock.now, () => visible))
   scope.defer(recovery.subscribe(event => {

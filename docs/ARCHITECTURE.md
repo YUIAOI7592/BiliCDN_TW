@@ -2,9 +2,9 @@
 
 # v2 架構
 
-本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.15 BR-07 keydown／keyup seek 修復**，保留 BR-01～06 與既有 17 項。設定版本以 [release.json](../release.json) 為準；發布／安裝狀態見 [驗證報告](TEST_REPORT.md) 及 [BR-07 交付](BR07_FIX_REPORT.md)。原自然網路起因與其他完整驗收獨立追蹤，來源隔離不代替安裝版。文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
+本文件描述 [src-v2](../src-v2/entry.ts) 的 **BR-08 完整拖曳契約本機修復**，目前驗證／發布中；保留 BR-01～07 與既有 17 項。發行版本以 [release.json](../release.json) 為準；發布／安裝狀態見 [驗證報告](TEST_REPORT.md)。BR-01 完整安裝驗收仍未完成，原自然網路起因與其他完整驗收獨立追蹤，來源隔離不代替安裝版。文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
 
-修復背景：[BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 在 v2.1.14 安裝版確認網站右鍵於 keyup 尋位。新實作為該 keyup 建立獨立同派送候選，不沿用已結束的 keydown；當次派送沒有可觀察的新 seek 仍保守不歸因。v2.1.15 真實 Auto 1／2 倍已驗證正常鍵盤修訂及新 15 秒寬限，完整 BR-01 仍未結案；續測新增 [BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 外層進度拖曳漏辨，未擴修。原觀察及失敗結果保留。
+修復背景：[BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 在 v2.1.14 安裝版確認網站右鍵於 keyup 尋位。該修復為 keyup 建立獨立同派送候選，不沿用已結束的 keydown；當次派送沒有可觀察的新 seek 仍保守不歸因。v2.1.15 真實 Auto 1／2 倍已驗證正常鍵盤修訂及新 15 秒寬限，續測確認 [BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 外層進度拖曳漏辨。原觀察及失敗結果保留，本輪不以本機修復宣稱新版安裝驗收完成。
 
 <a name="dependency-direction"></a>
 
@@ -104,13 +104,17 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 量測鎖回呼先重查最新安全狀態、表示與控制器標記，才選擇記錄嘗試的候選及提交冷卻；首次播放位置只作基準。普通恢復在 seek／ended／mediaError 時先終止舊動作，再考慮還原；只有仍擁有停滯／操作修訂的 BR-01 stall 意圖可處理持續 seeking。play Promise 檢查生命週期與當前 token，避免晚到拒絕覆寫較新結果。
 
-`PlayerControlSnapshot` 只提供媒體／核心不透明數字識別、seek／使用者操作修訂、拖曳、目標位置及自有 reload 修訂。PlayerAdapter 觀察播放器區域可信 pointer／非 seek key，後者僅 keydown；BR-07 的 seek 鍵可來自 BODY／頁面。keydown／keyup 捕捉皆只保存一筆私有候選，排除 editable／控制中心／組字／Ctrl／Meta／Alt／合成輸入；候選的事件仍派送、同播放器／媒體／生命週期、真正可見且有限位置改變並 seeking，才更新一次 userRevision。site.seek、媒體觀察、controls 與該事件種類的 window 冒泡皆可確認；同派送去重，keydown、repeat、keyup 各自造成新 seek 時各自取得修訂。新事件撤銷上一候選，外層冒泡／timeout 必須檢查候選身分。eventPhase NONE 拒絕派送後工作，可取消零延遲 timeout 只清理參照，不提供延遲窗口或按住狀態。入口注入 Scheduler 與真正可見性查詢，DOM／事件不交給應用層。一般 site seek 更新觀察修訂，腳本 seek 使用內部標記並清除候選；pendingSeek 保守抑制來源，不因可信輸入全面清空。reset 移除監聽器，僅在仍擁有方法時還原 wrapper。Monitor 仍以新使用者修訂重開停滯，網站／Auto 的單純 seekRevision 保留原期限。頁面核心標記是因果觀察，並非認證：等待自有 reload 時未經可觀察方法的外部替換仍有辨識限制。
+`PlayerControlSnapshot` 只提供媒體／核心不透明數字識別、seek／使用者操作修訂、拖曳、目標位置及自有 reload 修訂。PlayerAdapter 觀察播放器區域可信 pointer／非 seek key，後者僅 keydown；BR-07 的 seek 鍵可來自 BODY／頁面。keydown／keyup 捕捉皆只保存一筆私有候選，排除 editable／控制中心／組字／Ctrl／Meta／Alt／合成輸入；候選的事件仍派送、同播放器／媒體／生命週期、真正可見且有限位置改變並 seeking，才更新一次 userRevision。site.seek、媒體觀察、controls 與該事件種類的 window 冒泡皆可確認；同派送去重，keydown、repeat、keyup 各自造成新 seek 時各自取得修訂。新事件撤銷上一候選，外層冒泡／timeout 必須檢查候選身分。eventPhase NONE 拒絕派送後工作，可取消零延遲 timeout 只清理參照，不提供延遲窗口或鍵盤按住狀態。入口注入 Scheduler 與真正可見性查詢，DOM／事件不交給應用層。一般 site seek 更新觀察修訂，腳本 seek 使用內部標記並清除候選；pendingSeek 保守抑制來源，不因可信輸入全面清空。reset 移除監聽器，僅在仍擁有方法時還原 wrapper。Monitor 仍以新使用者修訂重開停滯，網站／Auto 的單純 seekRevision 保留原期限。頁面核心標記是因果觀察，並非認證：等待自有 reload 時未經可觀察方法的外部替換仍有辨識限制。
 
-拖曳辨識目前為 target.closest 的 `.bpx-player-progress, .bilibili-player-video-progress, [role="slider"]`；功能性 `.bpx-player-progress-wrap` 自身不在集合，closest 不會向下找到其內層。BR-08 已證明 wrapper 可正常觸發網站 seek，卻保持 dragging=false，讓 Monitor 的 `!controls.dragging` 資格錯誤成立。修復方向與對照另立報告；本版來源未修改，30 秒重載後果僅為私有模型證據，不能當作實際安裝版已重現。
+BR-08 進度命中使用 target.closest 的 `.bpx-player-progress-wrap, .bpx-player-progress, .bilibili-player-video-progress, [role="slider"]`，命中祖先仍須位於目前播放器區域；不向下搜尋子節點。可信進度 pointerdown 立即建立單一私有手勢，不要求 seeking 或位置改變。手勢保存 pointerId、媒體、播放器與內容生命週期，controls.dragging 由有效所有者推導。新合法進度按下取代舊手勢，非進度按下保留有效手勢；只有同指標可信 pointerup／pointercancel／lostpointercapture 釋放。同步重入須核對觀察版本及手勢物件，不能覆寫或清除較新手勢；hidden、失焦、reset、媒體／播放器替換及內容失效撤銷手勢，不新增 timeout 或 pointer capture。
+
+`VisibilityAdapter.subscribeControlLoss(listener): () => void` 是適配器內部通知。既有可信 blur／真正 hidden guard 在 stopImmediatePropagation 前通知 PlayerAdapter，單一 listener 的例外不破壞原 guard。入口明確注入，取消函式由播放器控制觀察管理，reset／重新綁定清理；controls() 仍以真正可見性查詢防漏。公開 API、PlayerControlSnapshot、應用層介面與 schema 2 不變，不傳遞 DOM／事件或播放器物件到應用層。
 
 PlayerMonitor 擁有單一停滯段。15 秒合法 video 備援與 Runtime 通知合併同一 token；30 秒最多一次 core reload；重載後 15 秒沒有進度釋放 token。Auto 表示／網站 seek 更新撤銷舊動作、重新綁定最新請求，但不重開同段時限／額度。新的使用者操作與真 hidden／pause／失效結束舊段。首次有效進度結束計時，RecoveryController 等兩個連續有效採樣才 recovered。
 
-`RouteCoordinator.recoveryEligible` 為唯讀查詢：核對請求 generation／epoch／政策／授權修訂、Vault video 身分、身分綁定計畫、固定主機及現行限制。RecoveryController 在 reload 及 seek／rate／play 每個副作用前重查捕獲資格、媒體／核心／操作所有權；重載替換只接納標記相符的自有替換。已初始化核心的普通等待亦有 30 秒上限，既有死核心／冷起播 4 秒及長暫停觸發維持。
+停滯、舊 watchdog、冷起播三個監控救援入口皆排除 dragging，拖曳期間清除舊停滯及 watchdog 連續計數，不消耗一次性起播救援嘗試。一般停滯在釋放後第一個合資格 tick 從最新位置建立新 15／30 秒基準；冷起播仍按原 firstMediaAt 重評，可能立即救援，不新增全域釋放寬限或重開起播預算。
+
+`RouteCoordinator.recoveryEligible` 為唯讀查詢：核對請求 generation／epoch／政策／授權修訂、Vault video 身分、身分綁定計畫、固定主機及現行限制。RecoveryController 建立 token 前讀取控制基準，位置／倍速各讀取一次，收集後重新取 controls 與最新資格，再核對生命週期、媒體／核心／seek／使用者修訂、現有 token、breaker 及總額；拖曳不得建立恢復意圖。reload 及 seek／rate／play 每個副作用前仍重查捕獲資格與所有權；重載替換只接納標記相符的自有替換。已初始化核心的普通等待亦有 30 秒上限，既有死核心／冷起播 4 秒及長暫停觸發維持。
 
 <a name="progressive-playurl-processing-v218"></a>
 

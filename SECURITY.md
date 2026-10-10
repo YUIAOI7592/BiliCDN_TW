@@ -2,7 +2,7 @@
 
 # 信任邊界與資料處理
 
-本文件是 `src-v2/` **v2.1.15 BR-07 修復**（可信 keydown／keyup 同派送 seek 歸因，保留 BR-01～06）的執行期信任邊界指南。設定版本以 release.json 為準，發布及安裝驗收見 [驗證報告](docs/TEST_REPORT.md)；本輪安全差異已獨立封存，不能代替 Chrome／Tampermonkey 驗收。安裝續測新增 [BR-08 進度拖曳漏辨](docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md)，目前為未修復的功能缺陷，沒有將其算作已解決的安全發現。文件用途見 [文件索引](docs/INDEX.md)，本文件本身不要求啟動安全掃描。
+本文件是 `src-v2/` **BR-08 完整拖曳契約本機修復**（保留 BR-01～07）的執行期信任邊界指南，目前驗證／發布中；BR-01 完整安裝驗收仍未完成。設定版本以 release.json 為準，發布及安裝驗收見 [驗證報告](docs/TEST_REPORT.md)，安全差異與 Chrome／Tampermonkey 分列，不能互相替代。原 [BR-08 進度拖曳漏辨](docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 是功能缺陷證據，未當成已解決的安全發現。文件用途見 [文件索引](docs/INDEX.md)，本文件本身不要求啟動安全掃描。
 
 <a name="untrusted-inputs"></a>
 
@@ -61,7 +61,13 @@ Chrome Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒
 
 ## 瀏覽器行為
 
-BR-01 的控制觀察僅提供取消／動作所有權，不授予 Native 權限。可信 pointer／非 seek key 需 isTrusted 與播放器區域；非 seek key 僅觀察 keydown。BR-07 的 seek 鍵可來自頁面焦點，但排除 editable／控制中心／組字／Ctrl／Meta／Alt，須真正可見、該可信 keydown 或 keyup 尚在派送、同播放器／媒體／生命週期，且實際有限位置改變並 seeking 才取得一次使用者修訂。同派送的 wrapper／媒體／controls／冒泡觀察去重；keydown、repeat、keyup 若各自形成新 seek，各自取得一次身分，沒有位置變化則不計數。eventPhase NONE、腳本還原及晚到工作不能取得新寬限；不建立按住狀態或延遲窗口。零延遲 timer 僅釋放私有事件參照，清理綁定實際事件種類且舊回呼確認候選身分。pendingSeek 保守抑制腳本還原，不因可信輸入全面清空；來源無法可靠辨識時不猜測使用者歸因。媒體及 page seek／reload 另有觀察修訂。core reload／還原仍核對最新 video 請求、Vault／政策／禁止／固定路線、操作及核心身分。自有 reload 的替換標記來自頁面觀察，無法認證所有未經可觀察方法的外部替換。監聽器由 adapter reset 清理，seek／reload wrapper 還原確認目前所有權；不把 DOM／事件／核心物件交給應用層或診斷。
+BR-01 的控制觀察僅提供取消／動作所有權，不授予 Native 權限。可信 pointer／非 seek key 需 isTrusted 與播放器區域；非 seek key 僅觀察 keydown。BR-07 的 seek 鍵可來自頁面焦點，但排除 editable／控制中心／組字／Ctrl／Meta／Alt，須真正可見、該可信 keydown 或 keyup 尚在派送、同播放器／媒體／生命週期，且實際有限位置改變並 seeking 才取得一次使用者修訂。同派送的 wrapper／媒體／controls／冒泡觀察去重；keydown、repeat、keyup 若各自形成新 seek，各自取得一次身分，沒有位置變化則不計數。eventPhase NONE、腳本還原及晚到工作不能取得新寬限；鍵盤不建立按住狀態或延遲窗口。零延遲 timer 僅釋放私有事件參照，清理綁定實際事件種類且舊回呼確認候選身分。pendingSeek 保守抑制腳本還原，不因可信輸入全面清空；來源無法可靠辨識時不猜測使用者歸因。媒體及 page seek／reload 另有觀察修訂。core reload／還原仍核對最新 video 請求、Vault／政策／禁止／固定路線、操作及核心身分。自有 reload 的替換標記來自頁面觀察，無法認證所有未經可觀察方法的外部替換。監聽器由 adapter reset 清理，seek／reload wrapper 還原確認目前所有權；不把 DOM／事件／核心物件交給應用層或診斷。
+
+BR-08 指標拖曳使用目前播放器區域內的可信 pointerdown 及已知進度祖先，包含功能性 `.bpx-player-progress-wrap`；命中祖先不能跨出播放器區域。尚未 seeking 或改位置的預覽也取得保護，但不因此授予新的選路／探測權限。單一私有手勢保存 pointerId、媒體、播放器及生命週期；新合法進度按下取代舊手勢，同指標可信 pointerup／pointercancel／lostpointercapture 才可釋放。合成事件、別的指標及非進度按下不撤銷當前手勢，同步重入後核對觀察版本與物件身分。
+
+真正 hidden、可信失焦及生命週期／媒體／播放器失效撤銷手勢。VisibilityAdapter 的既有 guard 在阻擋事件前發布內部 control-loss 通知；入口注入，控制觀察取消訂閱，失敗 listener 不破壞 guard，controls() 保留真正可見性防漏。通知不把 DOM／事件交給應用層，不改網站可見性覆寫、不新增 pointer capture 或拖曳 timeout。
+
+監控停滯、watchdog 及冷起播都排除 dragging，拖曳清除舊停滯及連續計數，不消耗起播救援嘗試。Recovery 收集位置／倍速前後核對 controls，提交 token 前重新檢查最新有效資格、生命週期、媒體／核心／操作、已存在 token、breaker 與總額；既有每個副作用及晚到 Promise 所有權檢查保留。一般停滯釋放後取得新 15／30 秒；冷起播保留原 firstMediaAt，可能立即救援，不重開預算。公開 API、應用層快照及 schema 2 不變，也不新增持久或診斷識別資料。
 
 腳本不取代或檢視 `Worker`，不建立 Worker 二進位資料物件（Blob）或訊息通道，也不載入遠端程式。
 

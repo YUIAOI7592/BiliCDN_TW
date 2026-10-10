@@ -725,7 +725,7 @@ class RateAdapter extends PlayerAdapter {
   override player(): Record<string, unknown> { return { getPlaybackRate: () => null } }
 }
 const rateAdapter = new RateAdapter({ transform: () => playurlResult(false), lifecycleKey: () => 'test' },
-  { scheduler: { timeout: () => () => undefined }, isActuallyVisible: () => true })
+  { scheduler: { timeout: () => () => undefined }, isActuallyVisible: () => true, subscribeControlLoss: () => () => undefined })
 if (scenario === 12) {
  let iteration = 0
 for (const rate of [1, 1.5, 2, 0.75]) {
@@ -834,4 +834,5 @@ test("normal short resume clears pause-armed diagnostic state [16]", { timeout: 
 import '../regressions/functional-races/recovery.ts'
 import '../regressions/functional-races/br01.ts'
 import '../regressions/functional-races/br06.ts'
+import '../regressions/functional-races/br08.ts'
 import { idleControls } from "../support/player.ts"

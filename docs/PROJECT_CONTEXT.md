@@ -2,13 +2,17 @@
 
 本文件是現行產品與開發契約。文件用途及歷史紀錄見 [文件索引](INDEX.md)；版本與工具設定以 [release.json](../release.json)、[package.json](../package.json) 和 [依賴鎖定檔](../package-lock.json) 為準。內建節點清單稱為 Catalog，原生簽名路線稱為 Native。
 
-**BR-07 修復與 v2.1.15 發布完成，實際安裝版已取得部分驗收；新 BR-08 尚未修復，完整 BR-01 未結案。** 新實作分別辨識可信 keydown／keyup 同派送實際 seek，涵蓋網站右鍵提交。正式 574 案例、最終 verify、獨立安全差異及 Chrome 來源隔離通過，公開 latest 版本／大小／SHA-256 與實際 body／singleton 1 核對完成。Auto 1／2 倍正常鍵盤及新 15 秒寬限有證據；[BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 確認外層進度拖曳未設 dragging、按住時誤觸影片備援。原調查保留在 [BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md)，Auto 長 seek 的 15／30／15、BR-01～06、既有 17 項及 schema 2 不變。交付見 [修復報告](BR07_FIX_REPORT.md)、[驗證報告](TEST_REPORT.md)、[安裝版](CHROME_v2.1.15_ACCEPTANCE.md) 與 [TODO](TODO.md)；自然網路起因與其他驗收獨立追蹤。
+**BR-08 已完成本機修復，驗證／發布中；BR-01 完整安裝驗收仍未完成。** 本輪修復外層進度列漏辨，將拖曳保護涵蓋監控的停滯、watchdog、冷起播及所有核心恢復入口。公開發行基準仍為 v2.1.15；新版來源隔離、發布核對及實際安裝結果分開記錄，不預填通過。原 [BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 的失敗與 inner 對照保持原狀，現行工作見 [驗證報告](TEST_REPORT.md) 與 [TODO](TODO.md)。Auto 長 seek 的 15／30／15、既有修復及 schema 2 不變；自然網路起因與其他驗收獨立追蹤。
+
+BR-07 修復與 v2.1.15 發布已完成，實際安裝版取得部分驗收。可信 keydown／keyup 同派送實際 seek 涵蓋網站右鍵提交；該版正式 574 案例、最終 verify、獨立安全差異及 Chrome 來源隔離通過，公開 latest 版本／大小／SHA-256 與實際 body／singleton 1 核對完成。Auto 1／2 倍正常鍵盤及新 15 秒寬限有證據，續測再發現 BR-08。歷史結果見 [BR-07 修復報告](BR07_FIX_REPORT.md) 與 [v2.1.15 安裝版](CHROME_v2.1.15_ACCEPTANCE.md)。
 
 ## 現行產品
 
-2026-10-10 的 [BR-07 修復](BR07_FIX_REPORT.md) 以既有 BR-06 同派送機制同時觀察 keydown／keyup。BODY／頁面可信 ArrowLeft／Right、Home／End、j/J、l/L 先建立私有候選，僅該派送內的實際有限尋位取得一次新修訂；同派送多入口觀察去重，keydown、repeat、keyup 各自造成新 seek 時各自計數。editable／控制中心／IME／Ctrl／Meta／Alt、合成／忽略命令、延後工作及腳本還原不重開期限。Shift／repeat 必須確實造成新 seek。沒有按住狀態或延遲關聯窗口；pendingSeek 的保守腳本來源抑制保持。Monitor 的網站／Auto 重綁語意、15／30／15 與真 hidden 撤銷不變；正式契約、來源隔離及完整安裝結果分列。
+2026-10-10 的 [BR-07 修復](BR07_FIX_REPORT.md) 以既有 BR-06 同派送機制同時觀察 keydown／keyup。BODY／頁面可信 ArrowLeft／Right、Home／End、j/J、l/L 先建立私有候選，僅該派送內的實際有限尋位取得一次新修訂；同派送多入口觀察去重，keydown、repeat、keyup 各自造成新 seek 時各自計數。editable／控制中心／IME／Ctrl／Meta／Alt、合成／忽略命令、延後工作及腳本還原不重開期限。Shift／repeat 必須確實造成新 seek。鍵盤不建立按住狀態或延遲關聯窗口；pendingSeek 的保守腳本來源抑制保持。Monitor 的網站／Auto 重綁語意、15／30／15 與真 hidden 撤銷不變；正式契約、來源隔離及完整安裝結果分列。
 
-已確認的產品契約仍為「拖曳期間不建立救援，釋放後從最新目標建立基準」。目前適配器只辨識內層進度 selector，10 px 的功能性 wrapper 外圈未命中 4 px 內層；BR-08 在 Auto 2 倍真實按住期間 15.079 秒發生 video fallback，內層按住超過 16 秒正常抑制。此差異尚未修復，不能把契約描述當成全部命中區已正確實作。
+BR-08 的完整拖曳契約由單一私有手勢持有：目前播放器區域內的可信進度 pointerdown（含 `.bpx-player-progress-wrap`）立即保護尚未提交 seek 的預覽，保存 pointerId、媒體、播放器及內容生命週期。相同可信指標的 pointerup／pointercancel／lostpointercapture 才可釋放，允許移出命中區後結束；非進度按下、其他指標或合成終止不能撤銷當前手勢。真正 hidden、可信失焦、reset、媒體／播放器替換及內容失效撤銷手勢，不新增 timeout 或 pointer capture。
+
+拖曳期間清除舊停滯段與 watchdog 計數，監控不提交備援，Recovery 不建立新 token；舊 token 在所有權檢查時失效，晚到 Promise 不復活。普通 BR-01 停滯在釋放後第一個合資格 tick 從最新位置重新取得 15／30 秒期限，位置 0 有效。尚無播放進度、未提交 seek 的冷起播依原 firstMediaAt 重評，可能釋放後立即救援；不新增全域釋放寬限，也不重開每分頁起播預算。
 
 v2.1.9 包含以 `71f7ddd` 為基準的 **17 項功能與競態修復**；修復及新增契約見 [修復對照報告](FUNCTIONAL_FIX_REPORT.md)。schema 2、持久鍵及舊樣本相容性維持不變；2026-10-04 的已發布驗收不構成本次修復的瀏覽器證據。
 

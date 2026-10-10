@@ -42,7 +42,8 @@ function fixture(t: TestContext) {
     override video(): HTMLVideoElement { return video as unknown as HTMLVideoElement }
   }
   const player = new Player({ lifecycleKey: () => 'fixture', transform: () => ({ accepted: true, formats: [],
-    videoCount: 0, audioCount: 0, segmentCount: 0, upstreamCode: 0, reason: null }) }, { scheduler: clock, isActuallyVisible: () => true })
+    videoCount: 0, audioCount: 0, segmentCount: 0, upstreamCode: 0, reason: null }) }, { scheduler: clock, isActuallyVisible: () => true,
+      subscribeControlLoss: () => () => undefined })
   scope.defer(() => player.reset()); player.controls()
   return { player, site, video, document, window, marker, seen, core: (value: object) => { core = value },
     fail: (value: Error) => { failure = value } }

@@ -1,6 +1,12 @@
 export class VisibilityAdapter {
   #restores: (() => void)[] = []
   #nativeHidden: (() => boolean) | null = null
+  #controlLoss = new Set<() => void>()
+
+  subscribeControlLoss(listener: () => void): () => void {
+    this.#controlLoss.add(listener)
+    return () => { this.#controlLoss.delete(listener) }
+  }
 
   install(): void {
     if (this.#restores.length) return
@@ -12,10 +18,17 @@ export class VisibilityAdapter {
     }
     this.#spoof('hidden', false)
     this.#spoof('visibilityState', 'visible')
-    const guard = (event: Event): void => { if (this.#nativeHidden?.()) event.stopImmediatePropagation() }
+    const guard = (event: Event): void => {
+      if (!this.#nativeHidden?.()) return
+      if (event.isTrusted) this.#notifyControlLoss()
+      event.stopImmediatePropagation()
+    }
     document.addEventListener('visibilitychange', guard, true)
     document.addEventListener('webkitvisibilitychange', guard, true)
-    const blurGuard = (event: Event): void => event.stopImmediatePropagation()
+    const blurGuard = (event: Event): void => {
+      if (event.isTrusted) this.#notifyControlLoss()
+      event.stopImmediatePropagation()
+    }
     window.addEventListener('blur', blurGuard, true)
     this.#restores.push(() => document.removeEventListener('visibilitychange', guard, true))
     this.#restores.push(() => document.removeEventListener('webkitvisibilitychange', guard, true))
@@ -29,6 +42,13 @@ export class VisibilityAdapter {
   dispose(): void {
     for (const restore of this.#restores.splice(0).reverse()) { try { restore() } catch { /* fail-open */ } }
     this.#nativeHidden = null
+  }
+
+  #notifyControlLoss(): void {
+    for (const listener of [...this.#controlLoss]) {
+      if (!this.#controlLoss.has(listener)) continue
+      try { listener() } catch { /* a failed observer cannot bypass the existing guard */ }
+    }
   }
 
   #spoof(key: 'hidden' | 'visibilityState', value: boolean | string): void {

@@ -43,7 +43,8 @@ export const start = (): void => {
   const content = new PlayurlController(session, vault, routes, settings)
   const playurl = new PlayurlAdapter(content)
   const visibility = new VisibilityAdapter()
-  const player = new PlayerAdapter(playurl, { scheduler, isActuallyVisible: () => visibility.isActuallyVisible() })
+  const player = new PlayerAdapter(playurl, { scheduler, isActuallyVisible: () => visibility.isActuallyVisible(),
+    subscribeControlLoss: listener => visibility.subscribeControlLoss(listener) })
   const recovery = new RecoveryController(player, now,
     () => !settings.get().disabled && !routes.isOriginalComparison() && visibility.isActuallyVisible(), () => {
       const request = routes.latestRequested('video')

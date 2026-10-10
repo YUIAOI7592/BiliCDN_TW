@@ -109,13 +109,14 @@ export class PlayerMonitor {
     const firstMediaAt = this.routes.firstMediaAt()
     let watchdog: MonitorSnapshot['watchdog'] = 'healthy'
     if (!video.available) { watchdog = 'no-video'; this.#stallTicks = 0 }
+    else if (controls.dragging) { watchdog = 'seek-grace'; this.#stallTicks = 0 }
     else if (video.paused || video.ended) { watchdog = 'paused'; this.#stallTicks = 0 }
     else if (video.seeking && (!this.#stall || now - this.#stall.startedAt < 15_000)) { watchdog = 'seek-grace'; this.#stallTicks = 0 }
     else if (this.#stall && now - this.#stall.startedAt >= 15_000) { watchdog = 'recovering'; this.#stallTicks = Math.floor((now - this.#stall.startedAt) / 1000) }
     else if (video.bufferedToEnd) { watchdog = 'buffered-to-end'; this.#stallTicks = 0 }
     else if (advanced || video.playableBufferSec >= 2 || video.readyState >= 3) { watchdog = 'healthy'; this.#stallTicks = 0 }
     else { this.#stallTicks++; watchdog = this.#stallTicks >= 6 ? 'recovering' : 'low-buffer' }
-    if (!this.#stall && !disabled && !originalMode && visible && watchdog === 'recovering' && (this.#startupObservedProgress || !firstMediaAt)
+    if (!this.#stall && !controls.dragging && !disabled && !originalMode && visible && watchdog === 'recovering' && (this.#startupObservedProgress || !firstMediaAt)
       && now - this.#lastRecoveryAt >= 30_000) {
       const state = this.session.get(), rep = state.representation
       if (rep) {
@@ -124,7 +125,7 @@ export class PlayerMonitor {
       }
     }
     const startupAge = firstMediaAt ? Math.max(0, now - firstMediaAt) : 0
-    if (!disabled && !originalMode && visible && firstMediaAt && startupAge >= 15_000 && !this.#startupRescueAttempted && !this.#startupObservedProgress
+    if (!controls.dragging && !disabled && !originalMode && visible && firstMediaAt && startupAge >= 15_000 && !this.#startupRescueAttempted && !this.#startupObservedProgress
       && video.available && !video.paused && !video.seeking && !video.ended && !video.mediaError
       && video.playableBufferSec < 1 && (video.readyState <= 1 || (video.width === 0 && video.height === 0))
       && !this.recovery.isRecovering() && now >= this.#seekGraceUntil) {

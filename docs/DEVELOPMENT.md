@@ -2,11 +2,15 @@
 
 # 開發流程
 
-本文件是 **v2.1.15 BR-07 修復**的現行開發流程；正式發布及實際安裝版狀態見 [驗證報告](TEST_REPORT.md)，不得以來源隔離代替安裝驗收。各版原始證據保留，其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
+本文件是 **BR-08 完整拖曳契約本機修復**的現行開發流程，目前驗證／發布中；正式發布及實際安裝版狀態見 [驗證報告](TEST_REPORT.md)，BR-01 完整安裝驗收仍未完成，不得以來源隔離代替安裝驗收。各版原始證據保留，其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
 
 2026-10-10 安裝續測的 [BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 顯示網站右鍵在 keyup 提交。現行正式鍵盤替身分別設定事件種類與網站提交階段，不能再假定左右鍵都在 keydown；先移植原五正確契約，保存未修來源 2 fail／3 pass，再修改來源。每個可信派送的實際新 seek 各自計數，同派送多入口去重；沒有位置變化、派送後工作與腳本還原不計數。擴充正式／安全／Chrome 結果見 [BR-07 修復報告](BR07_FIX_REPORT.md)，不沿用上一版 40／40。每個故障窗口先取得新游標，完整檢查 truncated／dropped；晚到收尾截斷只作狀態與清理證據，不補算完整逾時驗收。
 
-發布後實際 v2.1.15 新增 [BR-08 進度拖曳漏辨](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md)：網站功能性 wrapper 命中區與腳本 inner selector 必須分開建模，不能讓 closest 錯誤匹配子節點。私有七個正確契約 3 fail／4 pass、型別檢查通過，未登記到正式套件，也未修來源；與發布前 574 正式通過分列。真正可信 pointerdown、持續按住、有效內容／核心及正常 inner 對照由 Chrome 證明，Node 模型不能替代。依本輪新缺陷退出條件收尾，不擴修或重新發布。
+發布後實際 v2.1.15 新增 [BR-08 進度拖曳漏辨](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md)：網站功能性 wrapper 命中區與腳本 inner selector 必須分開建模，不能讓 closest 錯誤匹配子節點。當時私有七個正確契約 3 fail／4 pass，未登記正式套件或修來源，與發布前 574 正式通過分列。本輪先移植到正式 application 回歸並保存同樣 3 fail／4 pass、來源 SHA 未變，再修改執行期；原失敗檔不覆寫。真正可信 pointerdown、持續按住、有效內容／核心及正常 inner 對照由 Chrome 證明，Node 模型不能替代。
+
+BR-08 的 `functional-races/br08.ts` 由 application 明確匯入，覆蓋真正 Adapter→Monitor→Recovery、所有救援入口、精確期限、保存值讀取重入及晚到 Promise；`br08-player.ts` 由 adapters 匯入，覆蓋命中祖先、pointerId、可信終止、hidden／blur guard 與訂閱清理。原七契約、擴充紅燈及提交前資格重查的紅燈／綠燈分開保存，正式替身不匯入調查目錄。手勢替身分開指標 ID、可信性與命中元素，`closest()` 只搜尋祖先；可見性整合須使用真正 VisibilityAdapter 的阻擋 guard，不能以裸事件目標代替。
+
+PlayerAdapter 的內部 control-loss 訂閱由入口注入、控制觀察 reset／重綁取消。拖曳按下即可保護未提交 seek 的預覽；同指標可信釋放及生命週期／可見性失效結束手勢。Monitor 所有救援入口排除拖曳並清除舊停滯／watchdog 計數，Recovery 在提交 token 前重新核對最新資格及所有權。一般停滯釋放後重開 15／30 秒，未提交 seek 的冷起播仍依原 firstMediaAt，不能把兩種期限合併成全域釋放寬限。
 
 <a name="repository-layout-and-archive-maintenance"></a>
 
@@ -145,7 +149,11 @@ verify 不執行 Codex Security 或 Chrome／Tampermonkey 驗收。安全敏感�
 
 BR-01 正式控制器契約在 application 的 functional-races/br01.ts，適配器方法／清理契約在 adapters 的 br01-player.ts；BR-06／BR-07 的 functional-races/br06.ts 由 application 明確匯入，使用真正 Adapter／Monitor／Recovery。keydown／keyup、提交階段及重入邊界由正式替身明確建模。Node 可信事件及派送是型別化契約模型；Chrome 可信按鍵與監聽器間 microtask 另作證據，不能互換。精確 14,999／15,000、29,999／30,000、重載後 15,000 ms 使用 FakeClock；實際網站另以 Auto 的 1／2 倍速與完整合併 Fetch／Network 游標驗證。故障注入須先精確送出前攔截、音訊通行並抑制 owned 受控樣本持久化。每個有效窗口須逐一核對游標／hasMore／truncated；工具狀態用同一可變物件保存，窗口結束立即清空 Fetch patterns，不能在模型等待期間保留未處理的 Request 攔截。背景以原生 Document.prototype.hidden getter與 Runtime 實際可見性比對，不使用被腳本維持為 visible 的 instance getter。網站提前暫停／外部換核心時，應驗證撤銷並將尚未形成的逾時前提列待驗收。重跑及限制見 [BR-07 修復報告](BR07_FIX_REPORT.md) 與 [v2.1.15 安裝紀錄](CHROME_v2.1.15_ACCEPTANCE.md)。
 
-主要使用與驗收場景以 **Auto 畫質**為主，固定畫質作必要邊界對照；Auto 正常調整解析度不能單獨判為功能異常。畫質操作與 seek 分開，記錄實際影格／緩衝進度、使用者最新操作及網站重試，不以選單文字或 timeout 設定值代替事件。2026-10-10 的 [BR-01 Auto 調查](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) 分列有效／作廢輪、控制器候選失敗契約與正式測試；其重跑前提見 `.work/functional-review/br01/2026-10-10-c924b02/RERUN.md`。
+BR-08 新版安裝版先核對完整執行本體、singleton 與 hooks，再於指定風景影片的 Auto 1／2 倍分開量取 wrapper／inner 並持續按住 31 秒。有效故障期間須有 dragging=true 且沒有監控備援或核心重載；釋放後使用最新位置。來源隔離的合成媒體與 FakeClock 只在自有 iframe，真正可信指標及事件 guard 另留 Chrome 證據。網站提前 pause／error／換核心、原生 hidden 前提不成立或事件截斷不能算完整逾時通過；無新前提不重複相同失效窗口。
+
+學習抑制須涵蓋真正 transport／startup／challenge 樣本身分並保留至晚到收束，不只攔截網站 requestId。實際 SDK 邊界只控制自有回傳 Promise，保存完整方法描述子，清理時僅還原仍屬工具的包裝並移除自有繼承遮蔽。最後核對 held=0、patterns 空、自有資源及受控樣本零匹配；缺少的歷史事件不能補算完成。真正 singleton startup gate 必須由新載入同片的自然請求啟動，不改網站 timeout 或重建控制器／預算；同片自然 cid／epoch 與真正背景沒有必要前提時保持待驗收。
+
+主要使用與驗收場景以 **Auto 畫質**為主；本輪網站只使用使用者指定的風景影片，Auto 1／2 倍分開，不切換影片、不強制畫質，也不修改 Chrome 設定或停用其他腳本。Auto 正常調整解析度不能單獨判為功能異常。畫質操作與 seek 分開，記錄實際影格／緩衝進度、使用者最新操作及網站重試，不以選單文字或 timeout 設定值代替事件。2026-10-10 的 [BR-01 Auto 調查](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) 分列有效／作廢輪、控制器候選失敗契約與正式測試；其重跑前提見 `.work/functional-review/br01/2026-10-10-c924b02/RERUN.md`。
 
 v2.1.8 的標準 Tampermonkey 更新及 2026-10-04 MP4 試片／公開 DASH 觀察見 [歷史報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#chrome--tampermonkey-observations-after-standard-update)。完整公開 MP4、FLV 現場樣本及較早 DASH 緩衝的限制一併保留，不另列為已批准待辦。
 

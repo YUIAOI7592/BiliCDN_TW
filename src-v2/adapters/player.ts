@@ -11,6 +11,13 @@ const safeNumber = (value: unknown): number | null => Number.isFinite(Number(val
 interface ControlEnvironment {
   readonly scheduler: Pick<SchedulerPort, 'timeout'>
   readonly isActuallyVisible: () => boolean
+  readonly subscribeControlLoss: (listener: () => void) => () => void
+}
+interface ProgressDrag {
+  readonly pointerId: number
+  readonly video: HTMLVideoElement
+  readonly player: UnknownRecord | null
+  readonly lifecycle: string
 }
 interface KeyboardSeek {
   readonly event: KeyboardEvent
@@ -28,7 +35,8 @@ export class PlayerAdapter {
   #objectSerial = 0
   #seekRevision = 0
   #userRevision = 0
-  #dragging = false
+  #drag: ProgressDrag | null = null
+  #pointerRevision = 0
   #targetSec: number | null = null
   #internalSeek = 0
   #pendingSeek: number | null = null
@@ -48,6 +56,7 @@ export class PlayerAdapter {
   controls(): PlayerControlSnapshot {
     const video = this.video(), player = this.player(), core = safeCall(player, '__core')
     if (video !== this.#controlVideo || player !== this.#seekOwner) this.#observeControls(video, player)
+    this.#validateDrag()
     this.#confirmKeyboardSeek()
     if (video?.seeking && Number.isFinite(video.currentTime) && video.currentTime !== this.#targetSec) {
       this.#targetSec = video.currentTime
@@ -64,7 +73,7 @@ export class PlayerAdapter {
     } else if (!this.#awaitReloadCore && core !== this.#reloadCore) this.#coreReloadRevision = 0
     this.#reloadCore = core
     return Object.freeze({ mediaId: identity(video), coreId: identity(core), seekRevision: this.#seekRevision,
-      userRevision: this.#userRevision, dragging: this.#dragging, targetSec: this.#targetSec,
+      userRevision: this.#userRevision, dragging: this.#drag !== null, targetSec: this.#targetSec,
       reloadRevision: this.#reloadRevision, coreReloadRevision: this.#coreReloadRevision })
   }
 
@@ -78,13 +87,32 @@ export class PlayerAdapter {
     const region = video.closest('.bpx-player-container, .bilibili-player') ?? video.parentElement
     const inRegion = (event: Event): boolean => event.target instanceof Node && !!region?.contains(event.target)
     listen(document, 'pointerdown', event => {
-      if (!event.isTrusted || !inRegion(event)) return
+      if (!event.isTrusted) return
+      const revision = ++this.#pointerRevision
+      if (!this.environment.isActuallyVisible() || !inRegion(event) || revision !== this.#pointerRevision) return
       this.#clearKeyboardSeek()
       this.#userRevision++
-      this.#dragging = event.target instanceof Element && !!event.target.closest('.bpx-player-progress, .bilibili-player-video-progress, [role="slider"]')
+      const lifecycle = this.playurl.lifecycleKey()
+      const hit = event.target instanceof Element
+        ? event.target.closest('.bpx-player-progress-wrap, .bpx-player-progress, .bilibili-player-video-progress, [role="slider"]') : null
+      if (!hit || !region?.contains(hit) || typeof PointerEvent !== 'function' || !(event instanceof PointerEvent)) return
+      const pointerId = event.pointerId
+      if (!Number.isInteger(pointerId)) return
+      const current = video === this.video() && player === this.player() && lifecycle === this.playurl.lifecycleKey()
+        && this.environment.isActuallyVisible()
+      if (!current || video !== this.#controlVideo || player !== this.#seekOwner || revision !== this.#pointerRevision) return
+      this.#drag = { pointerId, video, player, lifecycle }
     })
-    const release = (): void => { this.#dragging = false }
-    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture', 'blur']) listen(type === 'blur' ? window : document, type, release)
+    const release: EventListener = event => {
+      const drag = this.#drag
+      if (!drag || !event.isTrusted || typeof PointerEvent !== 'function' || !(event instanceof PointerEvent)
+        || event.pointerId !== drag.pointerId) return
+      if (this.#drag === drag) { this.#drag = null; this.#pointerRevision++ }
+    }
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) listen(document, type, release)
+    const controlLoss = (): void => { this.#drag = null; this.#pointerRevision++; this.#clearKeyboardSeek() }
+    listen(window, 'blur', event => { if (event.isTrusted) controlLoss() })
+    this.#controlStops.push(this.environment.subscribeControlLoss(controlLoss))
     const observeKeyboard: EventListener = event => {
       this.#clearKeyboardSeek()
       if (!(event instanceof KeyboardEvent) || !event.isTrusted || event.isComposing || event.keyCode === 229
@@ -176,10 +204,19 @@ export class PlayerAdapter {
     candidate?.stop()
   }
 
+  #validateDrag(): void {
+    const drag = this.#drag
+    if (!drag) return
+    if (drag.video !== this.#controlVideo || drag.player !== this.#seekOwner || drag.video !== this.video()
+      || drag.player !== this.player() || drag.lifecycle !== this.playurl.lifecycleKey() || !this.environment.isActuallyVisible()) {
+      if (this.#drag === drag) { this.#drag = null; this.#pointerRevision++ }
+    }
+  }
+
   #clearControls(): void {
     this.#clearKeyboardSeek()
     for (const stop of this.#controlStops.splice(0).reverse()) stop()
-    this.#controlVideo = null; this.#seekOwner = null; this.#dragging = false; this.#pendingSeek = null
+    this.#controlVideo = null; this.#seekOwner = null; this.#drag = null; this.#pointerRevision++; this.#pendingSeek = null
   }
 
   observePlayIntent(listener: () => void): () => void {

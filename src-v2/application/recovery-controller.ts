@@ -179,14 +179,23 @@ export class RecoveryController {
   #unhook(): void { this.#stopIntent?.(); this.#stopIntent = null }
 
   #begin(source: ResumeToken['source'], wasPlaying: boolean, valid: () => boolean = this.captureEligibility(), stall: StallRecoveryIntent | null = null): void {
-    const now = this.now()
-    if (this.#token || !this.isActive() || !valid() || now < this.#breakerUntil || this.#reloadCount >= 2) return
-    const snapshot = this.player.snapshot()
+    const lifecycle = this.#lifecycleSerial, before = this.player.controls()
+    if (this.#token || before.dragging || !this.isActive() || !valid()
+      || this.now() < this.#breakerUntil || this.#reloadCount >= 2) return
+    // Adapter reads can synchronously run site code. Collect each saved value once,
+    // then validate the preparation owner before committing a recovery action.
+    const position = stall?.targetSec ?? this.player.currentTime(), rate = this.player.playbackRate()
+    const snapshot = this.player.snapshot(), controls = this.player.controls(), now = this.now()
+    const eligible = this.isActive() && valid()
+    if (!eligible || this.#lifecycleSerial !== lifecycle || this.#token || controls.dragging
+      || now < this.#breakerUntil || this.#reloadCount >= 2 || snapshot.ended || snapshot.mediaError
+      || controls.mediaId !== before.mediaId || controls.coreId !== before.coreId
+      || controls.seekRevision !== before.seekRevision || controls.userRevision !== before.userRevision) return
     this.#token = { id: recoveryActionId(`core-${++this.#serial}`), source, startedAt: now,
-      savedPositionSec: Math.max(0, stall?.targetSec ?? (Number.isFinite(this.player.currentTime()) ? this.player.currentTime() : this.#lastHealthyTime)),
-      savedRate: this.player.playbackRate() > 0 ? this.player.playbackRate() : this.#lastHealthyRate || 1,
+      savedPositionSec: Math.max(0, Number.isFinite(position) ? position : this.#lastHealthyTime),
+      savedRate: rate > 0 ? rate : this.#lastHealthyRate || 1,
       wasPlaying, baselinePositionSec: snapshot.currentTime, baselineFrames: snapshot.frames, reloadingAt: 0, restored: false,
-      controls: this.player.controls(), valid, stall, firstProgressAt: null, initiallyPaused: snapshot.paused }
+      controls, valid, stall, firstProgressAt: null, initiallyPaused: snapshot.paused }
     this.#state = Object.freeze({ state: 'play-intent', source, pauseSec: this.#pauseAt ? Math.floor((now - this.#pauseAt) / 1000) : 0,
       reloadCount: this.#reloadCount, breakerSec: 0 })
   }
