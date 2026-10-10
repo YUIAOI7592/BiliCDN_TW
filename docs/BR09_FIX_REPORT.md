@@ -1,6 +1,6 @@
 # BR-09 修復與交付 — v2.1.18／2026-10-11
 
-**來源修復通過，發布流程正在完成；實際修補版安裝不通過：尚未載入新版。** 本輪只修 BR-09，不擴展 BR-01 的整體重複驗收。原 [失敗報告](CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK.md)及 v2.1.17 [最後二元判定](BR01_v2.1.17_FINAL_ACCEPTANCE.md)保持原事實。
+**BR-09 修復與 v2.1.18 正式發布通過；實際新版身分及 Auto1／2 基本回歸通過。** 03:13:23（Asia/Taipei）發布，main／tag／唯一附件及無認證公開 latest 完整核對；334,747 bytes／SHA-256 `812fa114b1b99d0a38f4d1df9622bce416147b05c048693d68ce4b24b16831c9`。本輪只修 BR-09，不擴展 BR-01 的整體重複驗收。原 [失敗報告](CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK.md)及 v2.1.17 [最後二元判定](BR01_v2.1.17_FINAL_ACCEPTANCE.md)保持原事實。
 
 ## 根因與修改
 
@@ -45,10 +45,10 @@ Chrome 自有 iframe 使用真正原生媒體／WAV Blob，確認實際 playback
 
 新證據 `.work/functional-fixes/br09/2026-10-11-7ad32ef/`：baseline、before-contracts、expanded-contracts、application、adapters、all-tests、typecheck、architecture、chrome-source-rates、installed-before-identity 與 CHECKPOINT。原調查目錄不回寫。
 
-來源入口 `br09-native.ts` 透過本機 esbuild 封裝為 `br09-native.js` 後，只注入自有同源 iframe；呼叫該入口的 runNative 矩陣，最後移除 iframe 與 Blob。不得把私有入口加入正式測試 registry 或產品 bundle。執行 body／版本核對使用指定影片當前實際 userscript，不以 release.json 代替安裝身分。
+來源入口 `br09-native.ts` 透過本機 esbuild 封裝為 `br09-native.js` 後，只注入自有同源 iframe；呼叫該入口的 runNativeRecovery／runNativeBoundary 矩陣，最後移除 iframe 與 Blob。不得把私有入口加入正式測試 registry 或產品 bundle。執行 body／版本核對使用指定影片當前實際 userscript，不以 release.json 代替安裝身分。
 
 ## 限制及下一個判定
 
 完全未經採樣、SDK 或媒體事件觀察的原生位置往返無法可靠辨識；本輪不建立網站 currentTime 全域 setter hook、不猜測這類操作身分。原 87.785 秒自然網路起因仍未定位。BR-01 其餘二元不通過項目不是本輪新修復範圍。
 
-發布後須实际載入 v2.1.18，核對完整 body／唯一 singleton，再做同片 Auto1／2 基本回歸及可達的未知目標窗口。沒有實際載入就判安裝不通過（版本前提），不能使用來源隔離代替。不再重複要求發布授權。
+更新後 **2026-10-10T19:17:48.347Z** 已實際核對 v2.1.18 完整 IIFE 328,497 字元、Runtime／ControlCenter／PlayerAdapter 各唯一 1；同片 Auto1／2 的基本播放、UI 暫停／恢復、公用 SDK 短 seek 後時間／影格進度通過，reloadCount=0。沒有安裝長故障攔截、改媒體 getter 或新控制器。原缺陷的未知目標因果矩陣仍明確屬來源隔離，沒有宣稱網站 singleton 完整故障重現；BR-01 整體不通過狀態不因此結案。

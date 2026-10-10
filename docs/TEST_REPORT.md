@@ -2,7 +2,7 @@
 
 # BiliCDN_TW v2.1.18 BR-09 修復與發布驗證 — 2026-10-11
 
-基準 v2.1.17／`7ad32efb6fba09300f61c333812642efc6acb6f5`；保留原有未提交的驗收文件。BR-09 正式修復、完整測試、Chrome 來源隔離、獨立安全差異與 v2.1.18 最終 verify 通過；封裝與發布核對另列，未執行項目不提前計為通過。詳見 [修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR09_FIX_REPORT.md)。
+基準 v2.1.17／`7ad32efb6fba09300f61c333812642efc6acb6f5`；保留原有未提交的驗收文件。**BR-09 修復與 v2.1.18 正式發布通過**：正式契約、整合 verify、Chrome 來源隔離、安全差異及公開更新產物核對全部完成。更新後完整 v2.1.18 執行本體及同片 Auto1／2 基本回歸通過，與原生來源因果矩陣分列。詳見 [修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR09_FIX_REPORT.md)。
 
 ## 先紅後綠與自動驗證
 
@@ -15,7 +15,7 @@
 | npm run architecture | 44 個 runtime 模組通過 |
 | npm test | 19 套件／741 項通過；0 fail／skip／todo／cancelled |
 | npm run verify v2.1.18 | 退出 0；741 契約、確定性建置、語法、v2-only、封裝及校驗通過 |
-| git diff --check | 退出 0；發布前再次核對 |
+| git diff --check／staged check | 發行提交前退出 0；後續純文件變更另重查 |
 
 工具 Node 26.8.1／npm 11.19.0／TypeScript 7.0.2／esbuild 0.28.2。私有證據 `.work/functional-fixes/br09/2026-10-11-7ad32ef/` 保存 before-contracts、expanded-contracts、all-tests、typecheck、architecture 與原生來源矩陣。修復前紅燈不計入完整測試綠燈，正式套件不匯入調查目錄。
 
@@ -31,9 +31,15 @@ Codex Security `ad0243d6-46b4-4245-a78e-1a1e8cc58f9c` 於 **2026-10-10T19:07:25.
 
 ## 發布與安裝判定
 
-本版尚未完成發布核對，不提前填入遠端提交、標籤、附件或公開下載結果。依常設授權完成必要驗證後直接發布；Release 只附 `BiliCDN_TW.user.js`，公開 latest 必須核對版本／大小／SHA-256。
+[v2.1.18 正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.18) 於 **2026-10-10T19:13:23Z／2026-10-11 03:13:23（Asia/Taipei）** 發布。發行提交、發布時遠端 main 及 peeled tag 均為 **`1de7851a3ae5499423e34390dd0a7ebdc6f278bc`**；annotated tag ref **`6e9cd1fc334aa12193cca8cbbbe41f87618743d4`**。後续純文件提交使 main 前進，不改發行標籤與 Release 快照。
 
-實際修補版安裝目前 **不通過：尚未載入 v2.1.18**。最近於 **2026-10-10T19:02:29.710Z** 核對指定影片完整 body 仍是 v2.1.17、matchingScripts=1。來源隔離與 Node 結果不能取代實際新版。BR-01 v2.1.17 [整體不通過判定](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_v2.1.17_FINAL_ACCEPTANCE.md)保留，本輪不重跑全部 BR-01 或把其餘證據空缺當已修程式缺陷。
+唯一附件 **BiliCDN_TW.user.js，334,747 bytes**；SHA-256 **`812fa114b1b99d0a38f4d1df9622bce416147b05c048693d68ce4b24b16831c9`**。**2026-10-10T19:13:46.8251059Z** 無認證公開 latest 下載核對 v2.1.18、大小、雜湊及完整產物相同（exact=true）。封裝時的 TEST_REPORT 保存發布前快照，不回寫。
+
+發布後首輪 **19:14:49.220Z** 仍 exact v2.1.17 的不通過（版本前提）保留。使用者更新後，同一指定影片 **2026-10-10T19:17:48.347Z** 完整 v2.1.18 IIFE **328,497 字元**與發行本體相符，matchingScripts=1、無截斷／未讀事件。唯讀實際 Hook 閉包／prototype 查詢確認 Runtime／ControlCenter／PlayerAdapter 各 1；沒有新增公開橋接或更換控制器。
+
+**新版正常 Auto1／2 基本回歸通過**：各自時間與影格前進、UI 暫停／恢復及公用 SDK 約 5 秒短 seek 後繼續播放，reloadCount=0／recovering=false／無 mediaError。1 倍初次速度由實際 SDK 設定（原 UI locator timeout 保留為工具紀錄），2 倍選單由真正 UI 選擇；兩速皆補齊 UI 暫停／恢復。短 seek 是實際網站 SDK，不冒充可信指標／鍵盤操作或故障中所有權矩陣。原缺陷的原生 Blob 因果矩陣仍是來源隔離；沒有在網站 singleton 製造完整未知目標歸零故障。
+
+BR-01 v2.1.17 [整體不通過判定](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_v2.1.17_FINAL_ACCEPTANCE.md)保留，本輪不重跑全部 BR-01 或把其餘證據空缺當已修程式缺陷。
 
 ## 限制與歷史導覽
 

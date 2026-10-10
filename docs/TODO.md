@@ -2,9 +2,9 @@
 
 ## 現行 BR-09 交付
 
-BR-09 本機修復通過：25 個新增正式契約、全套 741 項、v2.1.18 最終 verify、Chrome 來源隔離 8 個恢復案例＋4 個原生邊界、安全差異 3／3 覆蓋且 0 發現。正在完成自動發布及公開核對，結果見 [BR-09 修復](BR09_FIX_REPORT.md)、[TEST_REPORT](TEST_REPORT.md)。
+BR-09 修復與 v2.1.18 正式發布通過：25 個新增正式契約、全套 741 項、最終 verify、Chrome 來源隔離 8 個恢復案例＋4 個原生邊界、安全差異 3／3 覆蓋且 0 發現。03:13:23（Asia/Taipei）發布，main／tag／唯一腳本及公開 latest 的 v2.1.18／334,747 bytes／SHA-256 核對一致；見 [BR-09 修復](BR09_FIX_REPORT.md)、[TEST_REPORT](TEST_REPORT.md)。
 
-實際 v2.1.18 安裝驗收目前不通過：尚未載入修補產物，最近完整執行 body 是 v2.1.17。這是版本前提未成立，不是修補契約失敗；[本版安裝紀錄](CHROME_v2.1.18_ACCEPTANCE.md) 分列。BR-01 v2.1.17 整體不通過的二元判定保留；本輪只修 BR-09，不反覆擴測 BR-01。原自然網路起因獨立未定位。
+實際 v2.1.18 完整執行本體、Runtime／ControlCenter／PlayerAdapter 各唯一 1 及 Auto1／2 基本播放、UI 暫停／恢復、公用 SDK 短 seek 後進度通過；reloadCount=0。原未知目標歸零的原生因果矩陣為來源隔離，沒有冒充網站 singleton 故障窗口；[本版安裝紀錄](CHROME_v2.1.18_ACCEPTANCE.md) 分列。BR-01 v2.1.17 整體不通過的二元判定保留；本輪只修 BR-09，不反覆擴測 BR-01。原自然網路起因獨立未定位。
 
 ## v2.1.17 及更早工作歷史
 

@@ -4,7 +4,7 @@
 
 - [BR-09 修復報告](BR09_FIX_REPORT.md)：來源／25 項回歸對照、先紅後綠、安全差異、來源隔離及限制。
 - [最新版測試與發布](TEST_REPORT.md)：741 項及本版 verify／公開產物核對。
-- [v2.1.18 Chrome 紀錄](CHROME_v2.1.18_ACCEPTANCE.md)：原生來源隔離通過；實際安裝未載入時判不通過，兩者分列。
+- [v2.1.18 Chrome 紀錄](CHROME_v2.1.18_ACCEPTANCE.md)：原生來源隔離、實際完整新版身分及 Auto1／2 基本回歸通過；因果模型與網站窗口分列。
 - [BR-09 原失敗報告](CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK.md) 與 [BR-01 v2.1.17 最終判定](BR01_v2.1.17_FINAL_ACCEPTANCE.md)：保留歷史因果及二元結果。
 
 下列 v2.1.17 與更早狀態只描述原時間點；BR-09 已修的現行來源以以上入口為準。

@@ -2,7 +2,7 @@
 
 # BiliCDN_TW 變更紀錄
 
-> 現行來源 v2.1.18 修復 BR-09。自動驗證、安全差異、Chrome 來源隔離、發布與實際安裝各自記錄於 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)；舊條目保留當時狀態。
+> v2.1.18 已正式發布，修復 BR-09；公開更新產物、實際完整新版身分及同片 Auto1／2 基本回歸通過。自動驗證、安全差異、Chrome 來源隔離與安裝窗口各自記錄於 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)；舊條目保留當時狀態。
 
 ## v2.1.18
 
