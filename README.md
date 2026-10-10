@@ -4,7 +4,7 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
-目前 **v2.1.12 BR-04／BR-05 修復已發布，兩項安裝版驗收通過**：XHR 等待起播時的內部重新準備最多兩次，持續重入會確實終止；Fetch 取消保留 caller reason 原值與物件身分。保留 BR-02、BR-03 與 17 項功能修復，schema 2 不變。正式發布與安裝版狀態見 [驗證報告](docs/TEST_REPORT.md)；更新網址保持 [最新 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest)。
+目前 **v2.1.13 BR-01 本機修復通過必要驗證，正在發布**：Auto 長 seek 最多一次合法 video 備援／核心重載，等待有界、恢復須有播放進度。保留 BR-02～05 與既有功能修復，schema 2 不變。正式發布與安裝版狀態見 [驗證報告](docs/TEST_REPORT.md)；更新網址保持 [最新 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest)。
 
 GitHub Release 附件只有使用者腳本，更新網址維持原位。發布後核對公開 latest 版本、大小與 SHA-256；來源隔離及 Node 不代替 Tampermonkey 安裝驗收。
 

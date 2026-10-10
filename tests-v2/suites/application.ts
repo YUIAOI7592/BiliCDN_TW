@@ -128,6 +128,7 @@ let playerSnapshot: VideoSnapshot = { available: true, paused: false, seeking: f
   bufferAheadSec: 30, playableBufferSec: 15, bufferedToEnd: false, frames: 1000, mediaError: false,
   coreInitialized: true, manifestHasVideo: true }
 const recoveryPlayer: PlayerPort = {
+  controls: idleControls,
   observePlayIntent: () => () => undefined, snapshot: () => playerSnapshot, syncManifest: () => true, reload: () => { reloads++ },
   currentTime: () => 349.434, playbackRate: () => 2, seek: value => { seeks.push(value) }, setRate: value => { rates.push(value) },
   play: () => { plays++; return Promise.resolve() }, reset: () => undefined,
@@ -158,6 +159,7 @@ let playerSnapshot: VideoSnapshot = { available: true, paused: false, seeking: f
   bufferAheadSec: 30, playableBufferSec: 15, bufferedToEnd: false, frames: 1000, mediaError: false,
   coreInitialized: true, manifestHasVideo: true }
 const recoveryPlayer: PlayerPort = {
+  controls: idleControls,
   observePlayIntent: () => () => undefined, snapshot: () => playerSnapshot, syncManifest: () => true, reload: () => { reloads++ },
   currentTime: () => 349.434, playbackRate: () => 2, seek: value => { seeks.push(value) }, setRate: value => { rates.push(value) },
   play: () => { plays++; return Promise.resolve() }, reset: () => undefined,
@@ -347,7 +349,7 @@ const deadStartup: VideoSnapshot = { ...playerSnapshot, currentTime: 0, readySta
   frames: 0, bufferAheadSec: 0, playableBufferSec: 0, coreInitialized: false, paused: false }
 let originalProbeDisabled = false, originalRecoveryTicks = 0, originalFallbacks = 0
 const originalMonitor = scope.own(new PlayerMonitor({ ...recoveryPlayer, snapshot: () => deadStartup, syncManifest: () => true } satisfies PlayerPort, startupSession, { get: () => ({ disabled: false }) }, startupVault, monitorRoutes({ observePlaybackRate: () => undefined, firstMediaAt: () => now,
-    latestRequested: () => ({ targetHost: 'upos-sz-mirrorali.bilivideo.com', representation: startupRep,
+    latestRequested: () => ({ routePolicyRevision: 0, targetHost: 'upos-sz-mirrorali.bilivideo.com', representation: startupRep,
       generation: startupGeneration.generation, epoch: startupGeneration.epoch }),
     recoverStartup: () => { originalFallbacks++; return null }, recover: () => { originalFallbacks++; return null },
     isOriginalComparison: () => true }), monitorMeasurement({ tick: (input: { disabled: boolean }) => { originalProbeDisabled = input.disabled } }), monitorRecovery({ tick: () => { originalRecoveryTicks++ }, isRecovering: () => false }), () => true, () => now + 16_000, new BrowserScheduler()))
@@ -365,7 +367,7 @@ stallNow += 4000;
 startupRecovery.tick(deadStartup)
 assert.strictEqual(startupReloads, 1, 'startup recovery does not loop reload')
 let softFallbacks = 0, startupArms = 0
-const stallMonitor = scope.own(new PlayerMonitor({ ...recoveryPlayer, snapshot: () => deadStartup, syncManifest: () => true } satisfies PlayerPort, startupSession, scope.own(new SettingsStore(new FakeStorage(), () => stallNow)), startupVault, monitorRoutes({ firstMediaAt: () => now, latestRequested: () => ({ targetHost: 'upos-sz-mirrorali.bilivideo.com', representation: startupRep,
+const stallMonitor = scope.own(new PlayerMonitor({ ...recoveryPlayer, snapshot: () => deadStartup, syncManifest: () => true } satisfies PlayerPort, startupSession, scope.own(new SettingsStore(new FakeStorage(), () => stallNow)), startupVault, monitorRoutes({ firstMediaAt: () => now, latestRequested: () => ({ routePolicyRevision: 0, targetHost: 'upos-sz-mirrorali.bilivideo.com', representation: startupRep,
     generation: startupGeneration.generation, epoch: startupGeneration.epoch }),
     recoverStartup: () => { softFallbacks++; return { host: TRUSTED_CATALOG[0] } },
     observePlaybackRate: () => undefined, isOriginalComparison: () => false }), monitorMeasurement({ tick: () => undefined }), monitorRecovery({ tick: () => undefined, isRecovering: () => false, armStartupFailure: () => { startupArms++ } }), () => true, () => stallNow, new BrowserScheduler()))
@@ -409,7 +411,7 @@ stallNow += 4000;
 startupRecovery.tick(deadStartup)
 
 let softFallbacks = 0, startupArms = 0
-const stallMonitor = scope.own(new PlayerMonitor({ ...recoveryPlayer, snapshot: () => deadStartup, syncManifest: () => true } satisfies PlayerPort, startupSession, scope.own(new SettingsStore(new FakeStorage(), () => stallNow)), startupVault, monitorRoutes({ firstMediaAt: () => now, latestRequested: () => ({ targetHost: 'upos-sz-mirrorali.bilivideo.com', representation: startupRep,
+const stallMonitor = scope.own(new PlayerMonitor({ ...recoveryPlayer, snapshot: () => deadStartup, syncManifest: () => true } satisfies PlayerPort, startupSession, scope.own(new SettingsStore(new FakeStorage(), () => stallNow)), startupVault, monitorRoutes({ firstMediaAt: () => now, latestRequested: () => ({ routePolicyRevision: 0, targetHost: 'upos-sz-mirrorali.bilivideo.com', representation: startupRep,
     generation: startupGeneration.generation, epoch: startupGeneration.epoch }),
     recoverStartup: () => { softFallbacks++; return { host: TRUSTED_CATALOG[0] } },
     observePlaybackRate: () => undefined, isOriginalComparison: () => false }), monitorMeasurement({ tick: () => undefined }), monitorRecovery({ tick: () => undefined, isRecovering: () => false, armStartupFailure: () => { startupArms++ } }), () => true, () => stallNow, new BrowserScheduler()))
@@ -829,3 +831,5 @@ test("2x is only the unknown-rate planning fallback [14]", { timeout: 5000 }, as
 test("host-lock never restores a dead root and may choose a legal alternative [15]", { timeout: 5000 }, async t => { await (await fixture(t, 14))() })
 test("normal short resume clears pause-armed diagnostic state [16]", { timeout: 5000 }, async t => { await (await fixture(t, 15))() })
 import '../regressions/functional-races/recovery.ts'
+import '../regressions/functional-races/br01.ts'
+import { idleControls } from "../support/player.ts"

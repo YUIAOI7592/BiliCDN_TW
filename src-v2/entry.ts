@@ -43,12 +43,16 @@ export const start = (): void => {
   const content = new PlayurlController(session, vault, routes, settings)
   const playurl = new PlayurlAdapter(content)
   const player = new PlayerAdapter(playurl)
-  const recovery = new RecoveryController(player, now)
+  const visibility = new VisibilityAdapter()
+  const recovery = new RecoveryController(player, now,
+    () => !settings.get().disabled && !routes.isOriginalComparison() && visibility.isActuallyVisible(), () => {
+      const request = routes.latestRequested('video')
+      return () => !!request && routes.recoveryEligible(request) && routes.latestRequested('video')?.representation === request.representation
+    })
   const nativeFetch = unsafeWindow.fetch.bind(unsafeWindow)
   const measurement = new MeasurementController(routes, meta, new RangeProbeAdapter(nativeFetch, now), now, scheduler)
   const transport = new TransportAdapter(session, settings, routes, playurl, measurement, now, ids)
   transport.install()
-  const visibility = new VisibilityAdapter()
   const monitor = new PlayerMonitor(player, session, settings, vault, routes, measurement, recovery,
     () => visibility.isActuallyVisible(), now, scheduler)
   const diagnostics = new DiagnosticRecorder(now, () => settings.get().verbose)

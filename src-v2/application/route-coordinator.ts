@@ -182,6 +182,16 @@ export class RouteCoordinator {
   pendingMediaCount(): number { return this.#pendingMedia.size }
   latestRequested(kind: MediaKind): RequestContext | null { return this.#requested.get(kind) ?? null }
 
+  recoveryEligible(request: Pick<RequestContext, 'generation' | 'epoch' | 'representation' | 'authorityRevision' | 'routePolicyRevision'>): boolean {
+    const state = this.session.get(), settings = this.settings.get()
+    if (settings.disabled || this.#originalComparison || request.routePolicyRevision !== this.#policyRevision
+      || request.generation !== state.generation || request.epoch !== state.epoch || !request.representation) return false
+    const identity = this.vault.identity(request.representation), decision = this.#plans.get(request.representation)
+    return !!identity && identity.kind === 'video' && identity.authorityRevision === request.authorityRevision
+      && this.vault.isCurrentIdentity(identity) && !!decision && this.#planIdentities.get(request.representation) === identity
+      && (!settings.fixedHost || decision.host === settings.fixedHost) && this.#decisionAllowed(decision, identity, 'video')
+  }
+
   recognizesMedia(url: string): boolean {
     const parsed = parseMediaUrl(url)
     if (!parsed) return this.isCatalogOnly() && this.isBilibiliMedia(url)

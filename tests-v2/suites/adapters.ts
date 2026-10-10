@@ -446,6 +446,7 @@ let playerSnapshot: VideoSnapshot = { available: true, paused: false, seeking: f
   bufferAheadSec: 30, playableBufferSec: 15, bufferedToEnd: false, frames: 1000, mediaError: false,
   coreInitialized: true, manifestHasVideo: true }
 const recoveryPlayer: PlayerPort = {
+  controls: idleControls,
   observePlayIntent: () => () => undefined, snapshot: () => playerSnapshot, syncManifest: () => true, reload: () => { reloads++ },
   currentTime: () => 349.434, playbackRate: () => 2, seek: value => { seeks.push(value) }, setRate: value => { rates.push(value) },
   play: () => { plays++; return Promise.resolve() }, reset: () => undefined,
@@ -984,3 +985,5 @@ test("initial dead-looking startup without previous health is not an incident [1
 test("XHR does not send default-unavailable PCDN-marked media [15]", { timeout: 5000 }, async t => { await (await fixture(t, 14))() })
 test("play observer installed on first paused tick, not thirty seconds later [16]", { timeout: 5000 }, async t => { await (await fixture(t, 15))() })
 test("eligible Native backup uses its own full signed URL [17]", { timeout: 5000 }, async t => { await (await fixture(t, 16))() })
+import { idleControls } from "../support/player.ts"
+import '../regressions/functional-races/br01-player.ts'

@@ -1,4 +1,4 @@
-import type { PlayurlPort, VideoSnapshot } from '../application/ports.ts'
+import type { PlayurlPort, VideoSnapshot, PlayerControlSnapshot } from '../application/ports.ts'
 
 type UnknownRecord = Record<string, unknown>
 const isRecord = (value: unknown): value is UnknownRecord => !!value && typeof value === 'object'
@@ -11,9 +11,105 @@ const safeNumber = (value: unknown): number | null => Number.isFinite(Number(val
 export class PlayerAdapter {
   #cachedVideo: HTMLVideoElement | null = null
   #manifestFingerprint = ''
+  #objects = new WeakMap<object, number>()
+  #objectSerial = 0
+  #seekRevision = 0
+  #userRevision = 0
+  #dragging = false
+  #targetSec: number | null = null
+  #internalSeek = 0
+  #pendingSeek: number | null = null
+  #controlStops: (() => void)[] = []
+  #controlVideo: HTMLVideoElement | null = null
+  #seekOwner: UnknownRecord | null = null
+  #reloadRevision = 0
+  #coreReloadRevision = 0
+  #internalReload = 0
+  #reloadCore: unknown = null
+  #awaitReloadCore = false
   constructor(private readonly playurl: PlayurlPort & { lifecycleKey(): string }) {}
 
   protected player(): UnknownRecord | null { try { return isRecord(unsafeWindow.player) ? unsafeWindow.player : null } catch { return null } }
+
+  controls(): PlayerControlSnapshot {
+    const video = this.video(), player = this.player(), core = safeCall(player, '__core')
+    if (video !== this.#controlVideo || player !== this.#seekOwner) this.#observeControls(video, player)
+    if (video?.seeking && Number.isFinite(video.currentTime) && video.currentTime !== this.#targetSec) {
+      this.#targetSec = video.currentTime
+      if (!this.#internalSeek && this.#pendingSeek !== video.currentTime) this.#seekRevision++
+    }
+    const identity = (object: unknown): number => {
+      if (!object || (typeof object !== 'object' && typeof object !== 'function')) return 0
+      let id = this.#objects.get(object)
+      if (id === undefined) { id = ++this.#objectSerial; this.#objects.set(object, id) }
+      return id
+    }
+    if (this.#awaitReloadCore && core && core !== this.#reloadCore) {
+      this.#coreReloadRevision = this.#reloadRevision; this.#awaitReloadCore = false
+    } else if (!this.#awaitReloadCore && core !== this.#reloadCore) this.#coreReloadRevision = 0
+    this.#reloadCore = core
+    return Object.freeze({ mediaId: identity(video), coreId: identity(core), seekRevision: this.#seekRevision,
+      userRevision: this.#userRevision, dragging: this.#dragging, targetSec: this.#targetSec,
+      reloadRevision: this.#reloadRevision, coreReloadRevision: this.#coreReloadRevision })
+  }
+
+  #observeControls(video: HTMLVideoElement | null, player: UnknownRecord | null): void {
+    this.#clearControls(); this.#controlVideo = video; this.#seekOwner = player
+    if (!video) return
+    const listen = (target: EventTarget, type: string, listener: EventListener): void => {
+      target.addEventListener(type, listener, true)
+      this.#controlStops.push(() => target.removeEventListener(type, listener, true))
+    }
+    const region = video.closest('.bpx-player-container, .bilibili-player') ?? video.parentElement
+    const inRegion = (event: Event): boolean => event.target instanceof Node && !!region?.contains(event.target)
+    listen(document, 'pointerdown', event => {
+      if (!event.isTrusted || !inRegion(event)) return
+      this.#userRevision++
+      this.#dragging = event.target instanceof Element && !!event.target.closest('.bpx-player-progress, .bilibili-player-video-progress, [role="slider"]')
+    })
+    const release = (): void => { this.#dragging = false }
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture', 'blur']) listen(type === 'blur' ? window : document, type, release)
+    listen(document, 'keydown', event => {
+      if (!event.isTrusted || !inRegion(event) || !(event instanceof KeyboardEvent)) return
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ', 'Home', 'End', 'k', 'K', 'j', 'J', 'l', 'L'].includes(event.key)) this.#userRevision++
+    })
+    listen(video, 'seeking', () => {
+      const position = Number.isFinite(video.currentTime) ? video.currentTime : null
+      if (!this.#internalSeek && position !== this.#pendingSeek) this.#seekRevision++
+      this.#targetSec = position
+    })
+    listen(video, 'seeked', () => { this.#pendingSeek = null })
+    const original = player?.seek, adapter = this
+    const reload = player?.reload
+    if (player && typeof reload === 'function') {
+      const wrapped = function(this: unknown, ...args: unknown[]): unknown {
+        if (!adapter.#internalReload) { adapter.#seekRevision++; adapter.#awaitReloadCore = false; adapter.#coreReloadRevision = 0 }
+        return Reflect.apply(reload, this, args)
+      }
+      try {
+        player.reload = wrapped
+        this.#controlStops.push(() => { try { if (player.reload === wrapped) player.reload = reload } catch { /* newer owner */ } })
+      } catch { /* core identity still revokes unmarked replacements */ }
+    }
+    if (player && typeof original === 'function') {
+      const wrapped = function(this: unknown, ...args: unknown[]): unknown {
+        if (!adapter.#internalSeek) {
+          adapter.#seekRevision++
+          adapter.#targetSec = typeof args[0] === 'number' && Number.isFinite(args[0]) ? Math.max(0, args[0]) : null
+        }
+        return Reflect.apply(original, this, args)
+      }
+      try {
+        player.seek = wrapped
+        this.#controlStops.push(() => { try { if (player.seek === wrapped) player.seek = original } catch { /* newer owner */ } })
+      } catch { /* observation through media events remains available */ }
+    }
+  }
+
+  #clearControls(): void {
+    for (const stop of this.#controlStops.splice(0).reverse()) stop()
+    this.#controlVideo = null; this.#seekOwner = null; this.#dragging = false; this.#pendingSeek = null
+  }
 
   observePlayIntent(listener: () => void): () => void {
     const target = this.player(), original = target?.play
@@ -83,7 +179,10 @@ export class PlayerAdapter {
   reload(): unknown {
     const player = this.player(), reload = player?.reload
     if (!player || typeof reload !== 'function') throw new Error('player.reload unavailable')
-    return Reflect.apply(reload, player, [])
+    this.#reloadCore = safeCall(player, '__core'); this.#reloadRevision++; this.#awaitReloadCore = true; this.#internalReload++
+    try { return Reflect.apply(reload, player, []) }
+    catch (error) { this.#awaitReloadCore = false; throw error }
+    finally { this.#internalReload-- }
   }
   currentTime(): number { return safeNumber(safeCall(this.player(), 'getCurrentTime')) ?? this.snapshot().currentTime }
   playbackRate(): number {
@@ -91,9 +190,12 @@ export class PlayerAdapter {
     return rate !== null && rate > 0 ? rate : this.snapshot().playbackRate
   }
   seek(value: number): void {
-    const player = this.player(), method = player?.seek
-    if (player && typeof method === 'function') { try { Reflect.apply(method, player, [value]); return } catch { /* fallback */ } }
-    const video = this.video(); if (video) video.currentTime = value
+    this.#internalSeek++; this.#pendingSeek = value
+    try {
+      const player = this.player(), method = player?.seek
+      if (player && typeof method === 'function') { Reflect.apply(method, player, [value]); return }
+      const video = this.video(); if (video) video.currentTime = value
+    } finally { this.#internalSeek-- }
   }
   setRate(value: number): void {
     const player = this.player(), method = player?.setPlaybackRate
@@ -101,7 +203,7 @@ export class PlayerAdapter {
     const video = this.video(); if (video) video.playbackRate = value
   }
   play(): unknown { const player = this.player(); if (!player || typeof player.play !== 'function') throw new Error('player.play unavailable'); return Reflect.apply(player.play, player, []) }
-  reset(): void { this.#cachedVideo = null; this.#manifestFingerprint = '' }
+  reset(): void { this.#clearControls(); this.#awaitReloadCore = false; this.#coreReloadRevision = 0; this.#seekRevision++; this.#userRevision++; this.#targetSec = null; this.#cachedVideo = null; this.#manifestFingerprint = '' }
 
   #area(video: HTMLVideoElement): number { return Math.max(0, video.clientWidth) * Math.max(0, video.clientHeight) }
   #cloneMpd(mpd: UnknownRecord): UnknownRecord | null {

@@ -13,6 +13,7 @@ import { SignedRouteVault } from '../../src-v2/state/signed-route-vault.ts'
 import { RouteCoordinator } from '../../src-v2/application/route-coordinator.ts'
 import { PlayurlController } from '../../src-v2/application/playurl-controller.ts'
 import { PlayurlAdapter } from '../../src-v2/adapters/playurl.ts'
+import { TransportContext } from '../../src-v2/adapters/transport-context.ts'
 import { RecoveryController } from '../../src-v2/application/recovery-controller.ts'
 import { PlayerMonitor } from '../../src-v2/application/player-monitor.ts'
 import { RuntimeController } from '../../src-v2/application/runtime-controller.ts'
@@ -44,6 +45,7 @@ export function fixture(t: TestContext, storage: FakeStorage = new FakeStorage()
   let onNavigate: () => void = () => undefined
   const calls = { seeks: [] as number[], rates: [] as number[], plays: 0, reloads: 0, resets: 0 }
   const player: PlayerPort = {
+  controls: idleControls,
     snapshot: () => video, currentTime: () => video.currentTime, playbackRate: () => video.playbackRate,
     syncManifest: () => false, observePlayIntent: () => () => undefined,
     reload: () => { calls.reloads++ }, seek: value => { calls.seeks.push(value) },
@@ -67,7 +69,17 @@ export function fixture(t: TestContext, storage: FakeStorage = new FakeStorage()
     nativeCalled: 0, responseObserved: 0, blocked: 0, lastMediaRequest: null, lastBlocked: null,
     lastPlayurl: null, hookState: 'installed', hookReason: 'fixture', fetchInstalled: true, xhrInstalled: true, note: '' }) }
   const deps = { settings, restrictions, evidence, session, routes, measurement, monitor, recovery, diagnostics, commands, transport, now: clock.now }
+  const request = (url: string): void => {
+    scope.defineGlobal('location', { configurable: true, value: new URL('https://www.bilibili.com/video/synthetic') })
+    const applied = routes.apply(url, 'video')
+    if (!applied || !applied.url) throw new Error('Fixture requires an authorized route')
+    const context = new TransportContext(session, settings, routes, playurl,
+      { willGateStartup: () => false, prepareStartup: async () => undefined, noteUnpreflighted: () => undefined }, clock.now, createRuntimeIds())
+    const started = context.request(applied, url, applied.url, clock.now(), 'GET')
+    routes.requestStarted(started)
+  }
   return { scope, clock, content, runtime, settings, session, vault, routes, playurl, recovery, measurement, lifecycle, calls, commands, diagnostics, deps,
-    setVideo: (next: VideoSnapshot) => { video = next },
+    request, setVideo: (next: VideoSnapshot) => { video = next },
     navigate: () => { navigationKey = '/video/next'; onNavigate() }, video: () => video }
 }
+import { idleControls } from "./player.ts"

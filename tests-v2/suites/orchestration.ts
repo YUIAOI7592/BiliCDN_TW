@@ -36,6 +36,7 @@ const video: VideoSnapshot = { available: true, paused: false, seeking: false, e
     coreInitialized: true, manifestHasVideo: true }
 let routeListener: (event: DomainEvent) => void = () => undefined, comparison = false
 const routeControl = {
+    latestRequested: () => null, recoveryEligible: () => true,
     subscribe(listener: (event: DomainEvent) => void) { routeListener = listener; return () => { routeListener = () => undefined } },
     isOriginalComparison: () => comparison, invalidateForUserSetting: () => { calls.push('routes.invalidate') },
   } satisfies ConstructorParameters<typeof RuntimeController>[2]

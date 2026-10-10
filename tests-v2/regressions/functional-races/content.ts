@@ -204,6 +204,7 @@ for (const changed of [false, true]) test(`BR-03 pending recovery ${changed ? 'i
   f.clock.advance(1000)
   const identity = f.vault.match(first.data.dash.video[0]!.base_url).context
   assert.ok(identity)
+  f.request(first.data.dash.video[0]!.base_url)
   f.routes.recover(identity.representation, { kind: 'video', requiredMbps: 8, highDemand: false }, 'verified-failure', TRUSTED_CATALOG[0])
   f.setVideo(blankVideo()); f.clock.advance(4000)
   assert.equal(f.calls.reloads, 1)

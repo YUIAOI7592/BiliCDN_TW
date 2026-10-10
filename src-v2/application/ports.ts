@@ -21,7 +21,19 @@ export interface VideoSnapshot {
   readonly manifestHasVideo: boolean
 }
 
+export interface PlayerControlSnapshot {
+  readonly mediaId: number
+  readonly coreId: number
+  readonly seekRevision: number
+  readonly userRevision: number
+  readonly dragging: boolean
+  readonly targetSec: number | null
+  readonly reloadRevision: number
+  readonly coreReloadRevision: number
+}
+
 export interface PlayerPort {
+  controls(): PlayerControlSnapshot
   observePlayIntent(listener: () => void): () => void
   snapshot(): VideoSnapshot
   syncManifest(): boolean

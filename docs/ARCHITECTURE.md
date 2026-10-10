@@ -2,7 +2,7 @@
 
 # v2 架構
 
-本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.12 BR-04／BR-05 修復**狀態，保留 BR-02、BR-03 與既有 17 項功能修復；版本以 [release.json](../release.json) 為準。[驗證報告](TEST_REPORT.md) 分開保存自動、安全與瀏覽器證據。最新交付見 [BR-04／BR-05 報告](BR04_BR05_FIX_REPORT.md)，BR-01 與其餘完整驗收仍獨立追蹤。本文件是持續維護的設計參考；文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
+本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.13 BR-01 修復**，保留 BR-02～05 與既有 17 項功能修復。版本以 [release.json](../release.json) 為準；本機驗證／發布／安裝版狀態見 [驗證報告](TEST_REPORT.md) 及 [BR-01 交付](BR01_FIX_REPORT.md)。原自然網路起因與其他完整驗收獨立追蹤。文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
 
 <a name="dependency-direction"></a>
 
@@ -100,7 +100,13 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 `platform/runtime-ids.ts` 的 factory 由入口呼叫，以 Web Crypto 產生執行環境前綴並注入傳輸及選路控制器。request／startup／challenge ID 在工作建立時分配，同工作重報不換 ID；字串沿用 schema 2 原欄位，上限 64 字元，不帶 URL 或使用者資料。模組匯入不取得亂數。
 
-量測鎖回呼先重查最新安全狀態、表示與控制器標記，才選擇記錄嘗試的候選及提交冷卻；首次播放位置只作基準。恢復在 seek／ended／mediaError 時先終止舊動作，再考慮還原；play Promise 另檢查動作序號，避免晚到拒絕覆寫較新的完成結果。
+量測鎖回呼先重查最新安全狀態、表示與控制器標記，才選擇記錄嘗試的候選及提交冷卻；首次播放位置只作基準。普通恢復在 seek／ended／mediaError 時先終止舊動作，再考慮還原；只有仍擁有停滯／操作修訂的 BR-01 stall 意圖可處理持續 seeking。play Promise 檢查生命週期與當前 token，避免晚到拒絕覆寫較新結果。
+
+`PlayerControlSnapshot` 只提供媒體／核心不透明數字識別、seek／使用者操作修訂、拖曳、目標位置及自有 reload 修訂。PlayerAdapter 觀察播放器區域可信 pointer／key 操作，媒體事件及 site seek 改變另列觀察修訂；腳本 seek 使用內部標記。reset 移除監聽器，僅在仍擁有方法時還原 wrapper。頁面核心標記是因果觀察，並非認證：等待自有 reload 時未經可觀察方法的外部替換仍有辨識限制。
+
+PlayerMonitor 擁有單一停滯段。15 秒合法 video 備援與 Runtime 通知合併同一 token；30 秒最多一次 core reload；重載後 15 秒沒有進度釋放 token。Auto 表示／網站 seek 更新撤銷舊動作、重新綁定最新請求，但不重開同段時限／額度。新的使用者操作與真 hidden／pause／失效結束舊段。首次有效進度結束計時，RecoveryController 等兩個連續有效採樣才 recovered。
+
+`RouteCoordinator.recoveryEligible` 為唯讀查詢：核對請求 generation／epoch／政策／授權修訂、Vault video 身分、身分綁定計畫、固定主機及現行限制。RecoveryController 在 reload 及 seek／rate／play 每個副作用前重查捕獲資格、媒體／核心／操作所有權；重載替換只接納標記相符的自有替換。已初始化核心的普通等待亦有 30 秒上限，既有死核心／冷起播 4 秒及長暫停觸發維持。
 
 <a name="progressive-playurl-processing-v218"></a>
 

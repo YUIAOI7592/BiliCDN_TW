@@ -37,6 +37,7 @@ for (const boundary of ['generation', 'epoch'] as const) {
     f.clock.advance(1000)
     const identity = f.vault.match(initial.data.dash.video[0]!.base_url).context
     assert.ok(identity)
+    f.request(initial.data.dash.video[0]!.base_url)
     // Real route fallback event reaches RuntimeController, which arms core recovery.
     f.routes.recover(identity.representation, { kind: 'video', requiredMbps: 8, highDemand: false }, 'verified-failure', TRUSTED_CATALOG[0])
     assert.equal(f.recovery.isRecovering(), true)
@@ -66,6 +67,7 @@ for (const kind of ['video', 'audio'] as const) {
       height: kind === 'video' ? 1080 : 0, codec: kind === 'video' ? 'avc' : 'aac', bandwidth: kind === 'video' ? 4_000_000 : 192_000,
       urls: [original], source: 'trusted-api' })
     assert.ok(rep)
+    if (kind === 'video') f.request(original)
     f.setVideo({ ...blankVideo(), readyState: 4, width: 1920, height: 1080, playableBufferSec: 40, coreInitialized: true })
     f.clock.advance(1000)
     const fallback = f.routes.recover(rep, { kind, requiredMbps: kind === 'video' ? 8 : 0.5, highDemand: false }, 'verified-failure', TRUSTED_CATALOG[0])

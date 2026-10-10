@@ -32,6 +32,7 @@ function recoveryFixture(t: TestContext) {
   const effects: { seeks: number[]; rates: number[]; plays: number; reloads: number } = { seeks: [], rates: [], plays: 0, reloads: 0 }
   let play: () => unknown = () => undefined
   const player = { snapshot: () => video, currentTime: () => video.currentTime,
+  controls: idleControls,
     playbackRate: () => video.playbackRate, observePlayIntent: () => () => undefined,
     reload: () => { effects.reloads++ }, seek: (value: number) => { effects.seeks.push(value) },
     setRate: (value: number) => { effects.rates.push(value) }, play: () => { effects.plays++; return play() },
@@ -52,7 +53,10 @@ test('C-01 control: healthy core recovery restores saved position and user rate'
   f.set({ readyState: 3, width: 1920, height: 1080, coreInitialized: true })
   f.tick()
   assert.deepEqual(f.effects.seeks, [120]); assert.deepEqual(f.effects.rates, [1.5])
-  assert.equal(f.effects.plays, 1); assert.equal(f.recovery.snapshot().state, 'recovered')
+  assert.equal(f.effects.plays, 1); assert.equal(f.recovery.snapshot().state, 'waiting')
+  f.set({ currentTime: 121, frames: 130 }); f.tick()
+  f.set({ currentTime: 122, frames: 160 }); f.tick()
+  assert.equal(f.recovery.snapshot().state, 'recovered')
 })
 
 test('C-01 control: seeking before the core becomes healthy cancels recovery', t => {
@@ -227,13 +231,14 @@ function stalledStartup(t: TestContext, initialPosition: number, progressing = f
     bufferedToEnd: false, frames: 0, mediaError: false, coreInitialized: false, manifestHasVideo: true }
   let reloads = 0, startupFallbacks = 0, watchdogFallbacks = 0
   const player = { snapshot: () => video, currentTime: () => video.currentTime,
+  controls: idleControls,
     playbackRate: () => video.playbackRate, observePlayIntent: () => () => undefined,
     reload: () => { reloads++ }, seek: () => undefined, setRate: () => undefined,
     play: () => undefined, reset: () => undefined, syncManifest: () => true } satisfies PlayerPort
   const recovery = scope.own(new RecoveryController(player, clock.now)); scope.defer(() => recovery.reset())
   const start = clock.now(), state = f.session.get()
   const routes = monitorRoutes({ firstMediaAt: () => start,
-    latestRequested: () => ({ generation: state.generation, epoch: state.epoch, representation: f.representation, targetHost: 'upos-sz-mirrorali.bilivideo.com' }),
+    latestRequested: () => ({ routePolicyRevision: 0, generation: state.generation, epoch: state.epoch, representation: f.representation, targetHost: 'upos-sz-mirrorali.bilivideo.com' }),
     recover: () => { watchdogFallbacks++; recovery.armRouteFailure('route-failure', video) },
     recoverStartup: () => { startupFallbacks++; return { host: 'upos-sz-mirrorcos.bilivideo.com' } } })
   const monitor = scope.own(new PlayerMonitor(player, f.session, f.settings, f.vault, routes,
@@ -286,6 +291,8 @@ test('C-05 repro: old restore play rejection must not overwrite a later complete
   const f = recoveryFixture(t), firstPlay = deferred<void>()
   f.setPlay(() => firstPlay.promise)
   f.set({ readyState: 3, width: 1920, height: 1080, coreInitialized: true }); f.tick()
+  f.set({ currentTime: 121, frames: 130 }); f.tick()
+  f.set({ currentTime: 122, frames: 160 }); f.tick()
   assert.equal(f.recovery.snapshot().state, 'recovered')
   f.clock.advance(90_000)
   f.setPlay(() => undefined)
@@ -297,8 +304,11 @@ test('C-05 repro: old restore play rejection must not overwrite a later complete
     mediaError: false, coreInitialized: true, manifestHasVideo: true })
   f.set({ readyState: 0, width: 0, height: 0, coreInitialized: false }); f.clock.advance(4000); f.tick()
   f.set({ readyState: 3, width: 1920, height: 1080, coreInitialized: true }); f.tick()
+  f.set({ currentTime: 221, frames: 190 }); f.tick()
+  f.set({ currentTime: 222, frames: 220 }); f.tick()
   assert.equal(f.effects.reloads, 2); assert.equal(f.recovery.snapshot().state, 'recovered')
   firstPlay.reject(new Error('synthetic old-action rejection')); await Promise.resolve()
   assert.equal(f.recovery.snapshot().state, 'recovered', 'the previous action no longer owns current recovery status')
   assert.equal(f.recovery.snapshot().savedPositionSec, 220)
 })
+import { idleControls } from "../../support/player.ts"

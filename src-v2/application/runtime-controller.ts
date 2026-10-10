@@ -17,7 +17,7 @@ export class RuntimeController {
   #stops: (() => void)[] = []
   constructor(private readonly session: Pick<SessionStore, 'get'>,
     private readonly settings: Pick<SettingsStore, 'get' | 'subscribe'>,
-    private readonly routes: Pick<RouteCoordinator, 'subscribe' | 'isOriginalComparison' | 'invalidateForUserSetting'>,
+    private readonly routes: Pick<RouteCoordinator, 'subscribe' | 'isOriginalComparison' | 'invalidateForUserSetting' | 'latestRequested' | 'recoveryEligible'>,
     private readonly player: Pick<PlayerPort, 'snapshot' | 'reset'>,
     private readonly monitor: Pick<PlayerMonitor, 'subscribe' | 'snapshot' | 'start' | 'stop' | 'reset'>,
     private readonly measurement: Pick<MeasurementController, 'reset'>,
@@ -52,7 +52,9 @@ export class RuntimeController {
     if (event.type === 'recovery' && event.action.action === 'route-fallback' && event.action.kind === 'video' && !this.routes.isOriginalComparison()) {
       const snapshot = this.player.snapshot()
       this.diagnostics.recordPlayer(this.#sample(snapshot, this.monitor.snapshot().watchdog, event.at))
-      this.recovery.armRouteFailure('route-failure', snapshot)
+      const request = this.routes.latestRequested('video')
+      this.recovery.armRouteFailure('route-failure', snapshot, () => !!request && this.routes.recoveryEligible(request)
+        && this.routes.latestRequested('video')?.representation === request.representation)
     }
   }
   start(): void { this.monitor.start() }
