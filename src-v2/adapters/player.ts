@@ -85,7 +85,7 @@ export class PlayerAdapter {
     })
     const release = (): void => { this.#dragging = false }
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture', 'blur']) listen(type === 'blur' ? window : document, type, release)
-    listen(document, 'keydown', event => {
+    const observeKeyboard: EventListener = event => {
       this.#clearKeyboardSeek()
       if (!(event instanceof KeyboardEvent) || !event.isTrusted || event.isComposing || event.keyCode === 229
         || event.ctrlKey || event.metaKey || event.altKey || !this.environment.isActuallyVisible()) return
@@ -95,8 +95,9 @@ export class PlayerAdapter {
       if (event.composedPath().some(editable) || event.target && editable(event.target)) return
       if (['ArrowLeft', 'ArrowRight', 'Home', 'End', 'j', 'J', 'l', 'L'].includes(event.key)) {
         this.#beginKeyboardSeek(event, video, player)
-      } else if (inRegion(event) && ['ArrowUp', 'ArrowDown', ' ', 'k', 'K'].includes(event.key)) this.#userRevision++
-    })
+      } else if (event.type === 'keydown' && inRegion(event) && ['ArrowUp', 'ArrowDown', ' ', 'k', 'K'].includes(event.key)) this.#userRevision++
+    }
+    for (const type of ['keydown', 'keyup']) listen(document, type, observeKeyboard)
     listen(video, 'seeking', () => {
       const position = Number.isFinite(video.currentTime) ? video.currentTime : null
       if (!this.#internalSeek && position !== this.#pendingSeek) this.#seekRevision++
@@ -139,12 +140,15 @@ export class PlayerAdapter {
       position: video.currentTime, stop: () => undefined }
     this.#keyboardSeek = candidate
     // A late bubble observer covers direct currentTime writes without wrapping media accessors.
-    const finish = (observed: Event): void => { if (observed === event) this.#confirmKeyboardSeek() }
-    window.addEventListener('keydown', finish)
+    const type = event.type
+    const finish = (observed: Event): void => {
+      if (observed === event && this.#keyboardSeek === candidate) this.#confirmKeyboardSeek()
+    }
+    window.addEventListener(type, finish)
     const cancel = this.environment.scheduler.timeout(() => {
       if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek()
     }, 0)
-    candidate.stop = () => { cancel(); window.removeEventListener('keydown', finish) }
+    candidate.stop = () => { cancel(); window.removeEventListener(type, finish) }
   }
 
   #confirmKeyboardSeek(): void {

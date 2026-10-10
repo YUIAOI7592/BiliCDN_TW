@@ -2,9 +2,9 @@
 
 # 開發流程
 
-本文件是 **v2.1.14 BR-06 修復**的現行開發流程；發布與實際安裝版狀態見 [驗證報告](TEST_REPORT.md)，不得以來源隔離代替安裝驗收。各版原始證據保留。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
+本文件是 **BR-07 本機修復、預定 v2.1.15** 的現行開發流程；發布與實際安裝版狀態見 [驗證報告](TEST_REPORT.md)，不得以來源隔離代替安裝驗收。各版原始證據保留。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
 
-2026-10-10 安裝續測的 [BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 顯示：正式 BR-06 模型的左右鍵皆在 keydown 尋位，網站右鍵卻在 keyup 提交。下一輪正式契約須先依原生左右鍵時序校準；既有 40／40 通過不能抵銷私有正確契約的 2 fail／3 pass。每個故障窗口先取得新游標，完整檢查 truncated／dropped；晚到收尾截斷只作狀態與清理證據，不補算完整逾時驗收。
+2026-10-10 安裝續測的 [BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 顯示網站右鍵在 keyup 提交。現行正式鍵盤替身分別設定事件種類與網站提交階段，不能再假定左右鍵都在 keydown；先移植原五正確契約，保存未修來源 2 fail／3 pass，再修改來源。每個可信派送的實際新 seek 各自計數，同派送多入口去重；沒有位置變化、派送後工作與腳本還原不計數。擴充正式／安全／Chrome 結果見 [BR-07 修復報告](BR07_FIX_REPORT.md)，不沿用上一版 40／40。每個故障窗口先取得新游標，完整檢查 truncated／dropped；晚到收尾截斷只作狀態與清理證據，不補算完整逾時驗收。
 
 <a name="repository-layout-and-archive-maintenance"></a>
 
@@ -141,7 +141,7 @@ verify 不執行 Codex Security 或 Chrome／Tampermonkey 驗收。安全敏感�
 
 ## 真實 Chrome 驗證
 
-BR-01 正式控制器契約在 application 的 functional-races/br01.ts，適配器方法／清理契約在 adapters 的 br01-player.ts；BR-06 的 functional-races/br06.ts 由 application 明確匯入，使用真正 Adapter／Monitor／Recovery。Node 可信事件及派送是型別化契約模型；Chrome 可信按鍵與監聽器間 microtask 另作證據，不能互換。精確 14,999／15,000、29,999／30,000、重載後 15,000 ms 使用 FakeClock；實際網站另以 Auto 的 1／2 倍速與完整合併 Fetch／Network 游標驗證。故障注入須先精確送出前攔截、音訊通行並抑制 owned 受控樣本持久化。每個有效窗口須逐一核對游標／hasMore／truncated；工具狀態用同一可變物件保存，窗口結束立即清空 Fetch patterns，不能在模型等待期間保留未處理的 Request 攔截。背景以原生 Document.prototype.hidden getter與 Runtime 實際可見性比對，不使用被腳本維持為 visible 的 instance getter。網站提前暫停／外部換核心時，應驗證撤銷並將尚未形成的逾時前提列待驗收。重跑及限制見 [BR-06 修復報告](BR06_FIX_REPORT.md) 與 [v2.1.14 安裝紀錄](CHROME_v2.1.14_ACCEPTANCE.md)。
+BR-01 正式控制器契約在 application 的 functional-races/br01.ts，適配器方法／清理契約在 adapters 的 br01-player.ts；BR-06／BR-07 的 functional-races/br06.ts 由 application 明確匯入，使用真正 Adapter／Monitor／Recovery。keydown／keyup、提交階段及重入邊界由正式替身明確建模。Node 可信事件及派送是型別化契約模型；Chrome 可信按鍵與監聽器間 microtask 另作證據，不能互換。精確 14,999／15,000、29,999／30,000、重載後 15,000 ms 使用 FakeClock；實際網站另以 Auto 的 1／2 倍速與完整合併 Fetch／Network 游標驗證。故障注入須先精確送出前攔截、音訊通行並抑制 owned 受控樣本持久化。每個有效窗口須逐一核對游標／hasMore／truncated；工具狀態用同一可變物件保存，窗口結束立即清空 Fetch patterns，不能在模型等待期間保留未處理的 Request 攔截。背景以原生 Document.prototype.hidden getter與 Runtime 實際可見性比對，不使用被腳本維持為 visible 的 instance getter。網站提前暫停／外部換核心時，應驗證撤銷並將尚未形成的逾時前提列待驗收。重跑及限制見 [BR-07 修復報告](BR07_FIX_REPORT.md) 與 [v2.1.15 安裝紀錄](CHROME_v2.1.15_ACCEPTANCE.md)。
 
 主要使用與驗收場景以 **Auto 畫質**為主，固定畫質作必要邊界對照；Auto 正常調整解析度不能單獨判為功能異常。畫質操作與 seek 分開，記錄實際影格／緩衝進度、使用者最新操作及網站重試，不以選單文字或 timeout 設定值代替事件。2026-10-10 的 [BR-01 Auto 調查](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) 分列有效／作廢輪、控制器候選失敗契約與正式測試；其重跑前提見 `.work/functional-review/br01/2026-10-10-c924b02/RERUN.md`。
 

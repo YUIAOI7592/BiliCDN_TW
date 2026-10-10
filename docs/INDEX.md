@@ -1,6 +1,6 @@
 # 專案文件索引與維護規則
 
-**現行交付：v2.1.14 已發布及核對實際安裝；續測確認 [BR-07 右方向鍵 keyup 所有權缺口](CHROME_v2.1.14_BR07_KEYUP_SEEK.md)，未修復。** Auto 1／2 倍新右鍵後 6.995／7.673 秒便備援，完整 BR-01 未結案。[修復對照](BR06_FIX_REPORT.md) 保留 BR-06 的 40 正式契約、全套 514／verify、安全差異及來源隔離結果，其 keydown 模型不能代替實際右鍵驗收。發布讀回見 [TEST_REPORT](TEST_REPORT.md)，逐項矩陣見 [安裝驗收](CHROME_v2.1.14_ACCEPTANCE.md)；以下 v2.1.13／較早日期段落僅保留當時觀察。
+**現行交付：BR-07 本機修復與 v2.1.15 發行準備。** 原契約 2 fail／3 pass→5／5；BR-06／BR-07 **100／100**（40＋60）、全套 **19 套件／574 正式案例**、typecheck、**44 個執行期模組**架構及升版前 verify **v2.1.14** 通過，Chrome 來源隔離 40／40 通過。安全審查、發布及新版安裝驗收待完成。見 [BR-07 修復](BR07_FIX_REPORT.md)、[TEST_REPORT](TEST_REPORT.md) 及 [v2.1.15 安裝矩陣](CHROME_v2.1.15_ACCEPTANCE.md)。v2.1.14 原 [缺陷報告](CHROME_v2.1.14_BR07_KEYUP_SEEK.md)、[安裝紀錄](CHROME_v2.1.14_ACCEPTANCE.md) 及完整歷史保留，完整 BR-01 未結案；以下較早日期只描述當時。
 
 **先前續測：2026-10-10 約 13:45–13:57 確認 [BR-06 鍵盤 seek 所有權缺口](CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md)，當時未修復。** 實際 Auto 1／2 倍的新 BODY 方向鍵 seek 沿用舊停滯期限，8.205／6.986 秒便備援；滑鼠對照通過，獨立正確契約 2 fail／3 pass。當輪達成找問題並交付報告的退出條件，來源與 Release 沒有修改。
 
@@ -12,7 +12,7 @@
 
 **2026-10-10 02:42 中途狀態：v2.1.11 安裝版驗收部分完成，當時依使用者要求暫停。** BR-03 31 個有效案例與 BR-02 42 個對照通過，當時 BR-04 僅 Node 重現；見 [中途報告](CHROME_v2.1.11_PROGRESS.md)。下文發行時的待安裝文字保留其當時範圍。
 
-本索引於 **2026-10-10** 更新至 **v2.1.14 發布、BR-07 調查與 BR-01 剩餘驗收**，實際發布與剩餘矩陣以 [TEST_REPORT](TEST_REPORT.md)／[TODO](TODO.md) 為準。v2.1.12 的 35 項已完成安裝驗收保持其當時範圍；下方有日期紀錄不代替現行狀態。
+本索引於 **2026-10-10** 更新至 **BR-07 本機修復、v2.1.15 發行準備與 BR-01 剩餘驗收**，實際發布與剩餘矩陣以 [TEST_REPORT](TEST_REPORT.md)／[TODO](TODO.md) 為準。v2.1.12 的 35 項已完成安裝驗收保持其當時範圍；下方有日期紀錄不代替現行狀態。
 
 2026-10-07 的 Markdown 粗體渲染盤點與排版修正見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)；後續排版檢查方式列於 DEVELOPMENT。
 
@@ -35,7 +35,7 @@
 | [AGENTS](../AGENTS.md) | 必要開發流程、架構、安全及發行／文件要求 |
 | [ARCHITECTURE](ARCHITECTURE.md) | 依賴、狀態、控制器、適配器、生命週期與診斷 |
 | [DEVELOPMENT](DEVELOPMENT.md) | 環境、命令、測試隔離、建置、瀏覽器檢查及封裝 |
-| [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md) | 測試遷移、套件登記、BR-02 替身校準及 2026-10-10 BR-03 交錯契約驗證 |
+| [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md) | 測試遷移、套件登記、XHR 原生替身及 BR-07 keydown／keyup 提交階段校準 |
 | [測試遷移對照](../tests-v2/MIGRATION.md) | 原 891 項功能斷言的行為群組、分支及參數矩陣對照 |
 | [SECURITY](../SECURITY.md) | 信任邊界、持久資料、網路權限及診斷限制 |
 | [TODO](TODO.md) | 目前已批准工作、結案事項及未安排方向 |
@@ -66,7 +66,11 @@
 | [BR01_FIX_REPORT](BR01_FIX_REPORT.md) | Auto 15／30／15 秒有界救援、26 新契約、安全差異、來源隔離、發布及安裝版分列 |
 | [CHROME_v2.1.12_ACCEPTANCE](CHROME_v2.1.12_ACCEPTANCE.md) | 實際新版產物身分、35 項共用 gate 矩陣、同片基本回歸、作廢輪及資料清理限制 |
 | [CHROME_v2.1.12_BR01_AUTO_INVESTIGATION](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) | Auto 影片延遲／正常 seek、救援抑制鏈、無界意圖與誤標恢復、獨立重現、原自然起因與政策限制 |
-| [TEST_REPORT](TEST_REPORT.md) | v2.1.13／474 案例／安全／Chrome 隔離／發布及安裝結果；歷史完整正文另存 archive |
+| [BR07_FIX_REPORT](BR07_FIX_REPORT.md) | keydown／keyup 各派送實際 seek 所有權、正式失敗契約、必要驗證及發布對照 |
+| [CHROME_v2.1.15_ACCEPTANCE](CHROME_v2.1.15_ACCEPTANCE.md) | 新版身分、Auto 1／2 倍、BR-07 原始窗口及完整 BR-01 剩餘矩陣 |
+| [CHROME_v2.1.14_BR07_KEYUP_SEEK](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) | v2.1.14 原始右鍵 keyup 缺陷、原生時序、有效停滯窗口與清理限制 |
+| [CHROME_v2.1.14_ACCEPTANCE](CHROME_v2.1.14_ACCEPTANCE.md) | v2.1.14 實際本體／singleton、正常對照、BR-07 失敗與待驗收矩陣 |
+| [TEST_REPORT](TEST_REPORT.md) | v2.1.15 本輪修復／整合／安全／Chrome／發布及安裝狀態；歷史完整正文另存 archive |
 | [CHROME_v2.1.13_ACCEPTANCE](CHROME_v2.1.13_ACCEPTANCE.md) | 新版 body、Auto 1／2 倍速影片延遲、一次重載、網站暫停撤銷、清理與待驗收矩陣 |
 | [CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP](CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md) | 可信 BODY 方向鍵漏掉使用者修訂，Auto 1／2 倍提早備援、滑鼠對照、獨立失敗契約、根因與剩餘驗收 |
 | [CHROME_v2.1.9_ACCEPTANCE](CHROME_v2.1.9_ACCEPTANCE.md) | 2026-10-09 部分真實瀏覽器驗收、18 個原生 XHR 案例及待定位停滯 |
