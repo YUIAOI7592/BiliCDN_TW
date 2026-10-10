@@ -1,6 +1,25 @@
 # 專案文件索引與維護規則
 
+## 現行 BR-09（v2.1.18）
+
+- [BR-09 修復報告](BR09_FIX_REPORT.md)：來源／25 項回歸對照、先紅後綠、安全差異、來源隔離及限制。
+- [最新版測試與發布](TEST_REPORT.md)：741 項及本版 verify／公開產物核對。
+- [v2.1.18 Chrome 紀錄](CHROME_v2.1.18_ACCEPTANCE.md)：原生來源隔離通過；實際安裝未載入時判不通過，兩者分列。
+- [BR-09 原失敗報告](CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK.md) 與 [BR-01 v2.1.17 最終判定](BR01_v2.1.17_FINAL_ACCEPTANCE.md)：保留歷史因果及二元結果。
+
+下列 v2.1.17 與更早狀態只描述原時間點；BR-09 已修的現行來源以以上入口為準。
+
+## v2.1.17 與更早判定歷史
+
+
+
 <a name="br01-followthrough-status"></a>
+
+**2026-10-11 最新判定：[BR-01 v2.1.17 安裝驗收整體不通過，本輪判定完成](BR01_v2.1.17_FINAL_ACCEPTANCE.md)。** Auto2完整15／30／重載後15秒通過，單次實際重載、釋放意圖並至少三tick不重試；Auto1完整期限與其餘不通過項目逐一給出前提／證據原因。正常同版子集保留，安裝XHR原生8／8對照通過，資源及123個已分類受控ID零學習匹配核對完成。BR-09仍是已確認未修來源問題，本輪不擴修；正式來源／測試／Release不變。[TODO](TODO.md)保存現行二元判定，下文保留較早輪次及發布時的歷史状态，不取代本輪結論。
+
+### 本輪之前的同版紀錄
+
+**2026-10-11 最新續測：[BR-09 歸零目標漏撤銷舊位置還原](CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK.md) 已確認來源缺口，未修復。** Node正確契約2 fail／3 pass；Chrome原生Blob來源隔離unknown-zero的0被還原為0.25，三個正常對照通過。完整網站singleton因果仍分列，不把3152→2037回退直接歸因；BR-01完整安裝驗收未完成。本輪只交付報告、重跑入口與清理證據，未改正式來源／測試／Release。現行續查以[TODO](TODO.md)及[v2.1.17安裝矩陣](CHROME_v2.1.17_ACCEPTANCE.md#2026-10-11-續測與-br-09)為準，下段保留本版發布時證據。
 
 **2026-10-11 現行版本 v2.1.17：BR-01 SDK 重載後續恢復修復、必要驗證、正式發布及公開產物核對完成；新版安裝驗收已有部分證據，完整矩陣未結案。** 原 application **3 fail／3 pass**、BODY 播放／倍速入口 **10 fail／20 pass** 先於執行期修補保存；最後全套 **19 套件／716／716**、typecheck、**44 個執行期模組**架構及 verify **v2.1.17** 通過。獨立安全差異 **11／11 項、0 候選／0 可報告發現**，Chrome 最後來源隔離 **22／22**（12 個控制模型＋10 個真正可信輸入）通過並完成清理；自有 iframe／合成媒體／FakeClock 與 31 秒模型拖曳不代表安裝驗收。掃描的整體工作目錄變動警告保留，四個凍結執行期檔案雜湊一致不等於整體快照一致。[v2.1.17](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.17) 於 00:31:14（Asia/Taipei）發布，唯一 **332,575 bytes** 腳本與無認證公開 latest 的版本／大小／SHA-256 核對一致；00:34:48.957 已核對指定影片完整新版執行本體、唯一 Runtime／ControlCenter 及 hooks。Auto 1／2 倍正常暫停／恢復／短 seek 與各一次真正自有 SDK 重載後續恢復子集取得證據；完整期限、精確延遲、真正背景／gate 與晚到 SDK 等剩餘項目仍待驗收。現行契約見 [後續修復報告](BR01_FOLLOWTHROUGH_FIX_REPORT.md)、[PROJECT_CONTEXT](PROJECT_CONTEXT.md#br01-owned-sdk-reload)、[架構](ARCHITECTURE.md)、[開發流程](DEVELOPMENT.md) 與 [TODO](TODO.md)。手動實際 SDK 校準不等於控制器救援；原 87.785 秒自然網路起因仍待定位，已有 timeout 不能單獨證明 CDN 故障。
 
@@ -76,6 +95,7 @@
 | [BR01_FIX_REPORT](BR01_FIX_REPORT.md) | v2.1.13 A／B／C 原修復：Auto 15／30／15 秒有界救援、26 新契約、安全差異、來源隔離與當時發布／安裝；不包含目前 SDK 後續恢復修補 |
 | [BR01_FOLLOWTHROUGH_FIX_REPORT](BR01_FOLLOWTHROUGH_FIX_REPORT.md) | v2.1.17 自有 reload／BODY 操作、SDK seek、跨租期進度與終止後不重試；先行失敗、716 正式契約、安全差異、22 個來源隔離及分列交付／安裝狀態 |
 | [CHROME_v2.1.17_ACCEPTANCE](CHROME_v2.1.17_ACCEPTANCE.md) | v2.1.17 完整實際本體、Auto 1／2 倍正常操作與自有 SDK 重載後續恢復子集；22 個來源隔離、舊版 SDK 校準、清理及完整安裝矩陣剩餘限制分列 |
+| [CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK](CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK.md) | 未初始化媒體歸零漏撤銷舊還原；Node紅燈、原生Chrome來源隔離與網站未定回退分列；未修復 |
 | [CHROME_v2.1.12_ACCEPTANCE](CHROME_v2.1.12_ACCEPTANCE.md) | 實際新版產物身分、35 項共用 gate 矩陣、同片基本回歸、作廢輪及資料清理限制 |
 | [CHROME_v2.1.12_BR01_AUTO_INVESTIGATION](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) | Auto 影片延遲／正常 seek、救援抑制鏈、無界意圖與誤標恢復、獨立重現、原自然起因與政策限制 |
 | [BR07_FIX_REPORT](BR07_FIX_REPORT.md) | keydown／keyup 各派送實際 seek 所有權、正式失敗契約、必要驗證及發布對照 |

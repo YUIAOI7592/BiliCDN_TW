@@ -836,4 +836,5 @@ import '../regressions/functional-races/br01.ts'
 import '../regressions/functional-races/br06.ts'
 import '../regressions/functional-races/br08.ts'
 import '../regressions/functional-races/br01-followthrough.ts'
+import '../regressions/functional-races/br09.ts'
 import { idleControls } from "../support/player.ts"

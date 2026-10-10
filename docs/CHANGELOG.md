@@ -2,7 +2,14 @@
 
 # BiliCDN_TW 變更紀錄
 
-> v2.1.17 已正式發布；本輪 BR-01 自有 reload 過渡與操作所有權修復通過必要整合檢查、安全差異審查、Chrome 來源隔離及公開更新產物核對。實際新版已載入，Auto 1／2 倍正常操作與自有重載恢復取得部分通過；BR-01 完整安裝矩陣與自然網路起因保持未完成。舊條目保留當時狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。
+> 現行來源 v2.1.18 修復 BR-09。自動驗證、安全差異、Chrome 來源隔離、發布與實際安裝各自記錄於 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)；舊條目保留當時狀態。
+
+## v2.1.18
+
+- 修正未初始化媒體位置改變（包含 0）沒有 seeking 事件時，舊保存位置仍可能回寫的 BR-09。
+- 新增私有單筆原生位置基準及同步重入／生命周期核對；保留自有 reload 初始歸零與 pendingSeek 來源抑制，不授予新使用者修訂或重開救援期限。
+- 新增 25 個正式回歸；全套 741 項與 Chrome 原生 1／2 倍速來源隔離通過。實際修補版安裝結果另列，BR-01 整體判定不因本輪自動結案。
+- 完全未被觀察的原生位置往返維持明列限制，不新增 API、設定、schema 或 Auto／ABR 政策。
 
 ## v2.1.17
 

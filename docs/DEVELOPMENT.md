@@ -2,6 +2,16 @@
 
 # 開發流程
 
+## 現行 BR-09 回歸（v2.1.18）
+
+正式 application 明確匯入 `tests-v2/regressions/functional-races/br09.ts`。原五契約先於來源修改保存 2 fail／3 pass，擴充後 25 個新增案例全部通過；全套 19 套件／741 項、application 256、adapters 102。使用 testScope／FakeClock／deferred，沒有調查目錄輸入。
+
+局部重跑：`npm test -- application --name BR-09`。檢查未知零／非零、正常初始 reload 零、pendingSeek、公用 seek 去重、正常播放、非有限位置、同步 getter 重入／替換、原例外及晚到 Promise。Chrome 原生 Blob 的 1／2 倍速来源隔離另列，不作實際安裝證據。安全差異掃描與 verify 分開，版本／文件／封裝差異於封存後獨立核對。詳見 [修復報告](BR09_FIX_REPORT.md) 與 [最新版驗證](TEST_REPORT.md)。
+
+## v2.1.17 流程與證據歷史
+
+
+
 **2026-10-11 現行 v2.1.17 的 BR-01 SDK 重載後續恢復修復、必要驗證、正式發布及公開產物核對完成；新版安裝驗收已有部分證據，完整矩陣未結案。** typecheck、44 個執行期模組架構、全套 19 套件／716／716 與最終 verify v2.1.17 通過；本輪 adapters 102／102、application 231／231。獨立安全差異 11／11 項、0 候選／0 可報告發現，最後 Chrome 來源隔離 22／22；完整結果見 [後續修復報告](BR01_FOLLOWTHROUGH_FIX_REPORT.md) 與 [驗證報告](TEST_REPORT.md)。[v2.1.17](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.17) 於 00:31:14（Asia/Taipei）發布，唯一 332,575 bytes 腳本與無認證公開 latest 核對一致；00:34:48.957（Asia/Taipei）已核對指定影片的完整新版執行本體、唯一 Runtime／ControlCenter 及 hooks。Auto 1／2 倍正常暫停／恢復／短 seek 與各一次真正自有 SDK 重載後續恢復子集取得證據，剩餘項目見 [v2.1.17 安裝矩陣](CHROME_v2.1.17_ACCEPTANCE.md)。
 
 本輪先移植 `functional-races/br01-followthrough.ts` 的六個正確 application 契約，在來源 SHA 未變時保存 **3 fail／3 pass**，再修執行期；播放器的 `br01-reload-controls.ts` 另保存 BODY 播放／倍速入口 **10 fail／20 pass**。它們由既有 application／adapters 套件明確匯入，與 v2.1.16 的 637 個基準通過分列，不把調查目錄當正式輸入。最終擴充契約使用真正 Adapter→Monitor→Recovery，涵蓋自有 reload 暫時 pause／null、第一個標記核心、SDK seek 取消舊位置、完整 15 秒無進度退出、首次進度與兩個連續進度跨過 15 秒觀察租期的確認、終止後 SDK resume 不重試，以及同步讀取重入／晚到 Promise／方法描述子與計時器清理。最後執行期來源凍結後通過全套及 verify；安全掃描主機另有整體工作目錄變動警告，四個執行期檔案與凍結雜湊一致不等於整體目錄快照一致。

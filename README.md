@@ -4,7 +4,7 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
-目前最新公開版本 **v2.1.16 已發布，BR-08 完整拖曳契約修復與公開更新核對完成；BR-01 完整安裝驗收仍未完成。** 新版保護外層與內層的有效進度拖曳，按住期間不建立監控救援或核心恢復意圖。2026-10-10 21:11:07.331（Asia/Taipei）已核對指定影片實際載入 v2.1.16 完整本體、唯一 singleton 及 hooks；Auto 1／2 倍的 wrapper／inner 四個超過 32 秒拖曳窗口取得保護與釋放證據，正常播放／暫停／短 seek、約 12 秒 video-only 延遲後恢復也取得新版證據，均無腳本重載。完整停滯退出及其餘安裝矩陣仍待完成，正式驗證、公開產物與實際安裝結果分開記錄。Auto 的 15／30／15 秒及 schema 2 不變。原 [BR-08 報告](docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 保留，發布／安裝結果見 [驗證報告](docs/TEST_REPORT.md)，更新網址保持 [最新 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest)。
+目前來源版本 **v2.1.18** 修復 BR-09：未初始化媒體的新尋位目標（包含 0）會撤銷舊保存位置的還原，保留正常自有重載及腳本還原。15／30／15 秒、Auto／ABR 與 schema 2 不變。本版修復、驗證、發布及實際安裝分開記錄於 [BR-09 報告](docs/BR09_FIX_REPORT.md) 與 [最新版驗證](docs/TEST_REPORT.md)；更新網址保持 [最新 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest)。BR-01 v2.1.17 整體安裝判定不通過，本輪修補不取代其完整驗收。
 
 GitHub Release 附件只有使用者腳本，更新網址維持原位。發布後核對公開 latest 版本、大小與 SHA-256；來源隔離及 Node 不代替 Tampermonkey 安裝驗收。
 

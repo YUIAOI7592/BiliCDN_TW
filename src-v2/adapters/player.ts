@@ -71,6 +71,13 @@ interface OwnedReload {
   sawNull: boolean
   cancel: () => void
 }
+interface NativePosition {
+  readonly video: HTMLVideoElement
+  readonly player: UnknownRecord | null
+  readonly lifecycle: string
+  readonly position: number
+  readonly readyState: number
+}
 
 export class PlayerAdapter {
   #cachedVideo: HTMLVideoElement | null = null
@@ -96,6 +103,8 @@ export class PlayerAdapter {
   #keyboardPlayback: KeyboardPlayback | null = null
   #keyboardRevision = 0
   #ownedReload: OwnedReload | null = null
+  #nativePosition: NativePosition | null = null
+  #controlRevision = 0
   constructor(private readonly playurl: PlayurlPort & { lifecycleKey(): string }, private readonly environment: ControlEnvironment) {}
 
   protected player(): UnknownRecord | null { try { return isRecord(unsafeWindow.player) ? unsafeWindow.player : null } catch { return null } }
@@ -107,6 +116,7 @@ export class PlayerAdapter {
     this.#validateDrag()
     this.#confirmKeyboardSeek()
     this.#confirmKeyboardPlayback()
+    if (video) this.#observeNativePosition(video, player)
     if (video?.seeking && Number.isFinite(video.currentTime) && video.currentTime !== this.#targetSec) {
       this.#targetSec = video.currentTime
       if (!this.#internalSeek && this.#pendingSeek !== video.currentTime) this.#seekRevision++
@@ -123,6 +133,32 @@ export class PlayerAdapter {
     return Object.freeze({ mediaId: identity(video), coreId: identity(core), seekRevision: this.#seekRevision,
       userRevision: this.#userRevision, dragging: this.#drag !== null, targetSec: this.#targetSec,
       reloadRevision: this.#reloadRevision, coreReloadRevision: this.#coreReloadRevision })
+  }
+
+  #observeNativePosition(video: HTMLVideoElement, player: UnknownRecord | null, knownReloadZero = false): void {
+    const before = this.#nativePosition, revision = this.#controlRevision
+    const seekRevision = this.#seekRevision, userRevision = this.#userRevision, pendingSeek = this.#pendingSeek
+    const lifecycle = this.playurl.lifecycleKey(), position = video.currentTime, readyState = video.readyState
+    const currentVideo = this.video(), currentPlayer = this.player(), currentLifecycle = this.playurl.lifecycleKey()
+    if (revision !== this.#controlRevision || this.#nativePosition !== before || video !== this.#controlVideo
+      || player !== this.#seekOwner || currentVideo !== video || currentPlayer !== player || lifecycle !== currentLifecycle
+      || seekRevision !== this.#seekRevision || userRevision !== this.#userRevision || pendingSeek !== this.#pendingSeek
+      || !Number.isFinite(position)) return
+    this.#nativePosition = { video, player, lifecycle, position, readyState }
+    if (!before || before.video !== video || before.player !== player || before.lifecycle !== lifecycle
+      || readyState !== 0 || before.position === position) return
+    const owner = this.#ownedReload
+    // Native load() resets to zero without seeking. Only this call's initial
+    // reset is exempt; an observed later target (including zero) revokes restore.
+    const initialReloadZero = position === 0 && owner?.video === video && owner.player === player && owner.lifecycle === lifecycle
+      && (knownReloadZero || this.#internalReload > 0 && before.readyState !== 0)
+    if (initialReloadZero) return
+    const alreadyObserved = this.#targetSec === position
+    this.#targetSec = position
+    if (!this.#internalSeek && position !== this.#pendingSeek) {
+      this.#pendingSeek = null
+      if (!alreadyObserved) this.#seekRevision++
+    }
   }
 
   #observeControls(video: HTMLVideoElement | null, player: UnknownRecord | null): void {
@@ -344,6 +380,7 @@ export class PlayerAdapter {
   }
 
   #clearControls(): void {
+    this.#controlRevision++; this.#nativePosition = null
     this.#clearKeyboardSeek()
     this.#clearKeyboardPlayback(); this.#keyboardRevision++; this.#clearOwnedReload()
     for (const stop of this.#controlStops.splice(0).reverse()) stop()
@@ -437,6 +474,7 @@ export class PlayerAdapter {
       throw new Error('player.reload ownership ended')
     }
     this.#internalReload++
+    const beforePosition = this.#nativePosition
     try {
       const result: unknown = Reflect.apply(reload, player, [])
       if (result && (typeof result === 'object' || typeof result === 'function')) void Promise.resolve(result).catch(() => {
@@ -445,7 +483,15 @@ export class PlayerAdapter {
       return result
     }
     catch (error) { if (this.#ownedReload === owner) this.#clearOwnedReload(); throw error }
-    finally { this.#internalReload-- }
+    finally {
+      try {
+        if (video && this.#ownedReload === owner) this.#observeNativePosition(video, player, this.#nativePosition === beforePosition)
+      } catch {
+        // An observation failure must not replace the SDK's result/exception
+        // or retain our method-source marker. The saved position is uncertain.
+        if (this.#ownedReload === owner) this.#seekRevision++
+      } finally { this.#internalReload-- }
+    }
   }
   currentTime(): number { return safeNumber(safeCall(this.player(), 'getCurrentTime')) ?? this.snapshot().currentTime }
   playbackRate(): number {

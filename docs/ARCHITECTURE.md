@@ -2,6 +2,18 @@
 
 # v2 架構
 
+## 現行差異：BR-09（v2.1.18）
+
+PlayerAdapter.controls 在確認鍵盤觀察後採樣原生位置；私有 NativePosition 僅一筆，保存媒體、播放器、lifecycle、位置及 readyState。HAVE_NOTHING 的未知有限目標變更更新既有 targetSec／seekRevision，Recovery 沿用原所有權檢查撤銷保存位置。沒有新增應用層介面、診斷事件、持久欄位或第二授權索引。
+
+原生 getter 可同步重入，因此提交基準前重查控制版本、原基準、操作修訂、pendingSeek 與當前媒體／播放器／內容；清理增加版本並撤銷基準。自有 reload 返回時同步記錄正常初始零，觀察例外不能改寫 SDK 回傳或原例外，內部來源標記在 finally 釋放。正常播放時間增量不算 seek；未知目標不授予 userRevision。
+
+[BR-09 修復](BR09_FIX_REPORT.md) 記錄正式 25 個新增契約、來源隔離與採樣限制；現行發布／安裝判定以 [TEST_REPORT](TEST_REPORT.md) 為準。
+
+## v2.1.17 發布與驗收歷史
+
+
+
 **2026-10-11 現行架構為已發布 v2.1.17 的 BR-01 SDK 重載後續恢復修復；實際新版安裝驗收已有部分證據，完整矩陣未結案。** 正式契約、typecheck、44 個執行期模組架構、全套 19 套件／716／716 與最終 verify v2.1.17 通過；獨立安全差異 11／11 項、0 候選／0 可報告發現，Chrome 最後來源隔離 22／22 通過。掃描主機的整體工作目錄變動警告與四個凍結執行期檔案的雜湊核對分列，不能宣稱整體快照一致。[v2.1.17](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.17) 正式發布及公開版本／唯一腳本／SHA-256 核對完成；00:34:48.957（Asia/Taipei）已核對指定影片的完整新版執行本體、唯一 Runtime／ControlCenter 及 hooks。Auto 1／2 倍正常暫停／恢復／短 seek，以及各一次真正自有 SDK 重載後續恢復子集取得證據，詳見 [本輪修復](BR01_FOLLOWTHROUGH_FIX_REPORT.md)、[v2.1.17 安裝矩陣](CHROME_v2.1.17_ACCEPTANCE.md) 與 [驗證報告](TEST_REPORT.md)。
 
 本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.17 BR-01 後續恢復契約**，保留 BR-08 完整拖曳及 BR-01～07 與既有 17 項。版本以 [release.json](../release.json) 為準；發布／安裝狀態見 [驗證報告](TEST_REPORT.md)。上一輪於 2026-10-10 21:11:07.331（Asia/Taipei）核對實際 v2.1.16 完整本體、唯一 singleton 及 hooks；該版 Auto 1／2 倍拖曳、基本播放及約 12 秒 video-only 延遲後恢復的證據保留其版本。v2.1.17 的實際自有重載已觀察 SDK pause／null／第一個標記核心、SDK 整秒 seek 保留與 rate／play 還原後兩次時間／影格進度；未回寫舊位置。完整 15／30／重載後 15 秒失敗退出、精確 12 秒 video-only 延遲、真正 hidden、真正 pending startup gate 及晚到 SDK 操作矩陣仍待驗收；網路處理缺口與歷史滾動淘汰（everDropped=true；最終 dropped=false）不補算歷史時序。v2.1.17 最後來源隔離使用自有 iframe、合成媒體／FakeClock，其中 12 個控制模型與 10 個真正可信輸入、31 秒模型拖曳均只證明對應來源契約。原自然網路起因與其他完整驗收獨立追蹤，來源隔離不代替安裝版。文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
