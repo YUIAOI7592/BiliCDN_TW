@@ -139,7 +139,7 @@ verify 不執行 Codex Security 或 Chrome／Tampermonkey 驗收。安全敏感�
 
 ## 真實 Chrome 驗證
 
-BR-01 正式控制器契約在 application 的 functional-races/br01.ts，適配器方法／清理契約在 adapters 的 br01-player.ts。精確 14,999／15,000、29,999／30,000、重載後 15,000 ms 使用 FakeClock；實際網站另以 Auto 的 1／2 倍速與完整合併 Fetch／Network 游標驗證。故障注入須先精確送出前攔截、音訊通行並抑制 owned 受控樣本持久化。重跑及限制見 [修復報告](BR01_FIX_REPORT.md)。
+BR-01 正式控制器契約在 application 的 functional-races/br01.ts，適配器方法／清理契約在 adapters 的 br01-player.ts。精確 14,999／15,000、29,999／30,000、重載後 15,000 ms 使用 FakeClock；實際網站另以 Auto 的 1／2 倍速與完整合併 Fetch／Network 游標驗證。故障注入須先精確送出前攔截、音訊通行並抑制 owned 受控樣本持久化。每個有效窗口須逐一核對游標／hasMore／truncated；工具狀態用同一可變物件保存，窗口結束立即清空 Fetch patterns，不能在模型等待期間保留未處理的 Request 攔截。網站提前暫停／外部換核心時，應驗證撤銷並將尚未形成的逾時前提列待驗收。重跑及限制見 [修復報告](BR01_FIX_REPORT.md) 與 [v2.1.13 安裝紀錄](CHROME_v2.1.13_ACCEPTANCE.md)。
 
 主要使用與驗收場景以 **Auto 畫質**為主，固定畫質作必要邊界對照；Auto 正常調整解析度不能單獨判為功能異常。畫質操作與 seek 分開，記錄實際影格／緩衝進度、使用者最新操作及網站重試，不以選單文字或 timeout 設定值代替事件。2026-10-10 的 [BR-01 Auto 調查](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) 分列有效／作廢輪、控制器候選失敗契約與正式測試；其重跑前提見 `.work/functional-review/br01/2026-10-10-c924b02/RERUN.md`。
 

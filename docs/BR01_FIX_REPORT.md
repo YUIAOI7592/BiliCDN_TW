@@ -1,6 +1,6 @@
 # BR-01 修復交付 — v2.1.13／2026-10-10
 
-基準 v2.1.12／c924b0216fe0a8f7a624f391d44b36660daca433，保留原未提交調查文件。**A／B／C 本機修復、正式契約、verify、安全差異及 Chrome 來源隔離完成；發布正在執行，實際新版安裝版待驗收。** 本文後續記錄發布／安裝讀回，不回寫原 [調查](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) 或歷史 Release。
+基準 v2.1.12／c924b0216fe0a8f7a624f391d44b36660daca433，保留原未提交調查文件。**A／B／C 修復、正式契約、verify、安全差異、Chrome 來源隔離與 v2.1.13 發布完成；實際新版部分安裝版驗收已取得證據，完整矩陣未結案。** 本文記錄發布／安裝讀回，不回寫原 [調查](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) 或歷史 Release。
 
 ## 行為及來源對照
 
@@ -51,9 +51,11 @@ Codex Security 6aa22069-fc37-4842-a30c-2727ece75b37，17 個變更來源／測�
 
 ## 發布與安裝版
 
-待發布 v2.1.13，預定唯一腳本 314,188 bytes，SHA-256 646515874ea4088b11830907826c5d1275f823c155a5fb1523999a9755ffa816。公開 latest、遠端 main／tag、唯一附件及實際載入 body 必須發布後讀回，本段尚不宣稱完成。
+v2.1.13 已於 2026-10-10T05:07:23Z／台北 13:07:23 [發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.13)。main 與標籤來源提交 fc2b3b5ed58e307d8c87e2326769cfa8a390cf46 核對一致；Release 唯一附件 BiliCDN_TW.user.js，314,188 bytes，SHA-256 646515874ea4088b11830907826c5d1275f823c155a5fb1523999a9755ffa816。無登入公開 latest API／下載核對版本、大小及雜湊；Chrome 實際執行 body 完整包含該腳本，singleton 一個。發布後只追加現行驗收文件，版本標籤與 Release 快照不回寫。
 
-安裝後只用指定 [風景影片](https://www.bilibili.com/video/BV1tFZZBQE57/)，Auto 1／2 倍分開、正常播放／pause／seek、約 12 秒 video-only 延遲及超過 30 秒停滯，核對一次重載與終止、最新位置及清理。精確 Request stage 攔截先安裝；音訊通行，同一 Fetch／Network 游標完全捕捉，受控 owned request ID 的證據寫入抑制且保留晚到過濾。未實際載入新版不得以舊版或隔離替代。
+實際新版只用指定 [風景影片](https://www.bilibili.com/video/BV1tFZZBQE57/)，Auto 1／2 倍分開取得受控 12 秒 video-only 延遲證據。1 倍尋位約 16.772 秒、一次備援／零重載後恢復；2 倍尋位約 34.395 秒、一次備援及一次核心重載後恢復。重載後網站自行調整位置使舊 token 以 stall-ended 撤銷，後續兩次實際進度才恢復狀態。65 秒持有輪在約第 24 秒由網站自行暫停／外部換核心，腳本明確撤銷且沒有繼續重載，不能算作「重載後 15 秒無進度逾時」通過。詳見 [安裝版紀錄](CHROME_v2.1.13_ACCEPTANCE.md)。
+
+有效故障窗口同一 Fetch／Network 游標沒有截斷，影片歸因直接查當前 Vault，其餘含音訊立即通行。受控 owned IDs 的記憶體及持久樣本命中均 0（98 IDs、62 次寫入抑制），schema 2 保留；原生網站 abort／timeout 沒有重新送出。已解除攔截、清理自己所有觀察器／hooks；校準作廢輪、標記速率更正及 UI 暫時缺失的限制全部保留。完整安裝版逾時、故障期間新操作／hidden／晚到結果等矩陣仍須續行。
 
 ## 限制與續行
 

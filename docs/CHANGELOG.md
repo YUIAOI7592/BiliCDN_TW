@@ -2,11 +2,11 @@
 
 # BiliCDN_TW 變更紀錄
 
-> v2.1.13 BR-01 本機修復通過必要驗證，正在發布；安裝版、原自然網路起因及其餘完整產品驗收分列。舊條目保留其當時版本狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。
+> v2.1.13 已發布 BR-01 A／B／C 修復；實際新版 Auto 已有部分有效驗收，完整安裝矩陣、原自然網路起因及其餘產品驗收分列。舊條目保留其當時版本狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。
 
 ## v2.1.13
 
-2026-10-10，修復 BR-01 A／B／C；基準 c924b0216fe0a8f7a624f391d44b36660daca433。發布／公開產物及安裝版證據另補現行驗證報告，封裝快照保留發布準備狀態。見 [BR-01 交付](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_FIX_REPORT.md)。
+2026-10-10 13:07（Asia/Taipei）已發布，修復 BR-01 A／B／C；基準 c924b0216fe0a8f7a624f391d44b36660daca433，來源／標籤 fc2b3b5ed58e307d8c87e2326769cfa8a390cf46。唯一腳本 314,188 bytes，SHA-256 646515874ea4088b11830907826c5d1275f823c155a5fb1523999a9755ffa816，公開 latest 與實際載入 body 核對一致。安裝版部分結果及待完成矩陣見 [驗收紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.13_ACCEPTANCE.md)；封裝快照保留發布準備當時狀態。見 [BR-01 交付](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_FIX_REPORT.md)。
 
 - Auto 長 seek／活核心停滯：15 秒最多一次合法 video 備援，30 秒最多一次核心重載，重載後 15 秒無進度確實退出；網站重試與表示切換不延長同段期限。
 - 新使用者操作、drag／pause／hidden／失效撤銷舊還原；最新位置包含 0，操作前重查 Vault／政策／核心／媒體身分。音訊備援仍不建立影片恢復。

@@ -2,7 +2,7 @@
 
 本文件是現行產品與開發契約。文件用途及歷史紀錄見 [文件索引](INDEX.md)；版本與工具設定以 [release.json](../release.json)、[package.json](../package.json) 和 [依賴鎖定檔](../package-lock.json) 為準。內建節點清單稱為 Catalog，原生簽名路線稱為 Native。
 
-**v2.1.13 BR-01 本機修復已通過必要驗證，正在發布。** Auto 長 seek／活核心停滯使用有界 15／30／15 秒救援，恢復須有實際播放進度。保留 BR-02～05 與 v2.1.9 的 17 項修復，schema 2 不變。最新結果見 [驗證報告](TEST_REPORT.md)、[BR-01 修復](BR01_FIX_REPORT.md) 及 [TODO](TODO.md)。安裝版、原 87.785 秒自然網路起因及其餘完整驗收分開追蹤；v2.1.12 的已完成驗收保持歷史範圍。
+**v2.1.13 已發布 BR-01 A／B／C 修復，公開產物與實際安裝 body 已核對。** Auto 長 seek／活核心停滯使用有界 15／30／15 秒救援，恢復須有實際播放進度。保留 BR-02～05 與 v2.1.9 的 17 項修復，schema 2 不變。最新結果見 [驗證報告](TEST_REPORT.md)、[BR-01 修復](BR01_FIX_REPORT.md) 及 [TODO](TODO.md)。[安裝版](CHROME_v2.1.13_ACCEPTANCE.md) 已取得部分 Auto 恢復／撤銷證據，未完成的逾時／操作矩陣、原 87.785 秒自然網路起因及其餘完整驗收分開追蹤；v2.1.12 的已完成驗收保持歷史範圍。
 
 ## 現行產品
 
