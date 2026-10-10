@@ -2,16 +2,20 @@
 
 # BiliCDN_TW 變更紀錄
 
-> v2.1.16 仍為公開已發布版；本輪 BR-01 自有 reload 過渡與操作所有權修復 v2.1.17 已通過必要整合檢查、安全差異審查及 Chrome 來源隔離，待發布。新版安裝矩陣、BR-01 完整安裝驗收與自然網路起因保持未完成。舊條目保留當時狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。
+> v2.1.17 已正式發布；本輪 BR-01 自有 reload 過渡與操作所有權修復通過必要整合檢查、安全差異審查、Chrome 來源隔離及公開更新產物核對。實際新版已載入，Auto 1／2 倍正常操作與自有重載恢復取得部分通過；BR-01 完整安裝矩陣與自然網路起因保持未完成。舊條目保留當時狀態。現行行為與證據見 [使用指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/README.md)、[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md)。
 
-## v2.1.17（本機修復通過，待發布）
+## v2.1.17
 
-2026-10-11；基準 v2.1.16／`1e376978c757c0a1e622668fd04fdaad658dc7ef`，開始時工作目錄乾淨。實際 Auto 1／2 SDK reload 的同步 pause／null-core 過渡與 BODY Space pause／resume 校準，確認舊恢復動作會被自身正常初始化撤銷，而 BODY 新操作沒有新使用者修訂。詳見 [BR-01 後續修復](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_FOLLOWTHROUGH_FIX_REPORT.md)。手動 SDK 方法窗口不代表 Controller 自動救援；原外部核心切換與自然停滯原因仍獨立。
+2026-10-11 **00:31:14（Asia/Taipei）** [發布 v2.1.17](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.17)，發行提交／peeled tag `1b87d3f759e479e67650e291b5a8d8f107102145`，annotated tag ref `87109266a5044055dffae653000f376ca6f0c80c`；發布時 main 匹配。唯一腳本 **332,575 bytes**，SHA-256 `4bb4601a91e5e752595a5a8ec1b4d8905036954f299d578ca93209c059ce6a06`；00:31:40 無認證公開 latest 的完整產物、版本、大小與校驗值匹配。00:32:42.615 的 exact v2.1.16 觀察保留；**00:34:48.957** 已核對新版完整 IIFE（329,134 字元）與 Release 執行本體一致、唯一 Runtime／ControlCenter，開始新版部分驗收。
+
+基準 v2.1.16／`1e376978c757c0a1e622668fd04fdaad658dc7ef`，開始時工作目錄乾淨。實際 Auto 1／2 SDK reload 的同步 pause／null-core 過渡與 BODY Space pause／resume 校準，確認舊恢復動作會被自身正常初始化撤銷，而 BODY 新操作沒有新使用者修訂。詳見 [BR-01 後續修復](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_FOLLOWTHROUGH_FIX_REPORT.md)。手動 SDK 方法窗口不代表 Controller 自動救援；原外部核心切換與自然停滯原因仍獨立。
 
 - PlayerAdapter 新增內部唯讀 own reload 證明，核對同 SDK／媒體／內容／user／reload 修訂、最多 15 秒及首個精確標記核心；新使用者操作、第二核心替換、外部 reload、hidden、reset、throw／reject 撤銷。SDK 未知初始化 seek 撤銷過期位置還原，不猜測為新用戶或重新計時。
 - BODY/page 可信同一 keydown 派送內，Space／k/K 的 paused 或 ArrowUp／Down 的 rate 確實變化才取得一次修訂；既有 region 行為、輸入排除、派送後與腳本來源抑制維持。方法 cleanup 核對完整描述子／函式，繼承 shadow 及舊 Promise／timer／讀取所有權另有契約。
 - Monitor／Recovery 協調有界自有準備、終止優先、兩個實際進度與初始化／seek 採樣基準；新操作仍撤銷舊還原。來源隔離捕捉的 lease 跨期與重複 fallback 均補正式契約並修復；failed 後 SDK resume 不建立重複救援。Auto、15／30／15、重載額度、breaker、影音隔離、公開 API 與 schema 2 不變。
-- 原正式六項 **3 fail／3 pass**、BODY 原 30 項 **10 fail／20 pass** 保存；Player 新 50 契約、adapters **102／102**、application **231／231** 通過。最終 **19 套件／716 項**、typecheck、architecture（44 個 runtime 模組）、verify 及 diff 檢查通過；獨立安全 **11／11 覆蓋、0 候選／發現**，最後 Chrome 來源隔離 **22／22**（12 個控制模型、10 個真正可信輸入）通過。安全掃描後三份版本 JSON 變更另行核對；來源 iframe 的合成媒體／FakeClock 不是新版安裝證據。發行產物與 [v2.1.17 安裝矩陣](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.17_ACCEPTANCE.md) 仍待取得；上一版完整 TEST_REPORT、Release 與安全封存不改寫。
+- 原正式六項 **3 fail／3 pass**、BODY 原 30 項 **10 fail／20 pass** 保存；Player 新 50 契約、adapters **102／102**、application **231／231** 通過。最終 **19 套件／716 項**、typecheck、architecture（44 個 runtime 模組）、verify 及 diff 檢查通過；獨立安全 **11／11 覆蓋、0 候選／發現**，最後 Chrome 來源隔離 **22／22**（12 個控制模型、10 個真正可信輸入）通過。安全掃描後三份版本 JSON 變更另行核對；來源 iframe 的合成媒體／FakeClock 不是新版安裝證據。[v2.1.17 安裝矩陣](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.17_ACCEPTANCE.md) 仍待完成；上一版完整 TEST_REPORT、Release 快照與安全封存不改寫，後續文件 main 不改發行標籤。
+- 實際 Auto 1／2 倍 BODY Space pause／resume、鍵盤短 seek 與時間／影格進度正常；兩段各一次自動自有重載恢復，累計 reloadCount1／2，SDK新整數目標保留，Adapter 沒有回寫舊保存位置。原受控長窗口先遭網站 pause／外部核心撤銷，更晚恢復不回填完整15／30／post15；Network pump／截斷限制及 Auto 1 兩次12秒未成立前提保留。完整逾時、真正背景／gate、晚到SDK及其他操作矩陣仍待，沒有新已確認缺陷。
+- 安裝工具12項完整描述子還原、timer／liveXHR／held歸零、patterns空；已知2,027 request ID記憶體／持久零匹配，保留歷史drop與startup／challenge未成立限制。原錯誤postcheck的TypeError保存，後續獨立正確核對工具entry移除及正常Auto1播放；不能據清理結果補算完整安裝矩陣。
 
 ## v2.1.16
 

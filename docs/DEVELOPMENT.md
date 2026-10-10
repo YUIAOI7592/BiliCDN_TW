@@ -2,11 +2,13 @@
 
 # 開發流程
 
-**2026-10-11 現行候選版 v2.1.17 的 BR-01 SDK 重載後續恢復修復與必要驗證完成，尚未發布。** typecheck、44 個執行期模組架構、全套 19 套件／716／716 與最終 verify v2.1.17 通過；本輪 adapters 102／102、application 231／231。獨立安全差異 11／11 項、0 候選／0 可報告發現，最後 Chrome 來源隔離 22／22；完整結果見 [後續修復報告](BR01_FOLLOWTHROUGH_FIX_REPORT.md) 與 [驗證報告](TEST_REPORT.md)。已發布與安裝基準仍為 v2.1.16，封裝／發布與公開核對待完成，修補版安裝矩陣分開記錄。
+**2026-10-11 現行 v2.1.17 的 BR-01 SDK 重載後續恢復修復、必要驗證、正式發布及公開產物核對完成；新版安裝驗收已有部分證據，完整矩陣未結案。** typecheck、44 個執行期模組架構、全套 19 套件／716／716 與最終 verify v2.1.17 通過；本輪 adapters 102／102、application 231／231。獨立安全差異 11／11 項、0 候選／0 可報告發現，最後 Chrome 來源隔離 22／22；完整結果見 [後續修復報告](BR01_FOLLOWTHROUGH_FIX_REPORT.md) 與 [驗證報告](TEST_REPORT.md)。[v2.1.17](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.17) 於 00:31:14（Asia/Taipei）發布，唯一 332,575 bytes 腳本與無認證公開 latest 核對一致；00:34:48.957（Asia/Taipei）已核對指定影片的完整新版執行本體、唯一 Runtime／ControlCenter 及 hooks。Auto 1／2 倍正常暫停／恢復／短 seek 與各一次真正自有 SDK 重載後續恢復子集取得證據，剩餘項目見 [v2.1.17 安裝矩陣](CHROME_v2.1.17_ACCEPTANCE.md)。
 
 本輪先移植 `functional-races/br01-followthrough.ts` 的六個正確 application 契約，在來源 SHA 未變時保存 **3 fail／3 pass**，再修執行期；播放器的 `br01-reload-controls.ts` 另保存 BODY 播放／倍速入口 **10 fail／20 pass**。它們由既有 application／adapters 套件明確匯入，與 v2.1.16 的 637 個基準通過分列，不把調查目錄當正式輸入。最終擴充契約使用真正 Adapter→Monitor→Recovery，涵蓋自有 reload 暫時 pause／null、第一個標記核心、SDK seek 取消舊位置、完整 15 秒無進度退出、首次進度與兩個連續進度跨過 15 秒觀察租期的確認、終止後 SDK resume 不重試，以及同步讀取重入／晚到 Promise／方法描述子與計時器清理。最後執行期來源凍結後通過全套及 verify；安全掃描主機另有整體工作目錄變動警告，四個執行期檔案與凍結雜湊一致不等於整體目錄快照一致。
 
-Chrome 的手動實際 Adapter.reload 校準沒有 Recovery token，僅證明 SDK 原生時序，不算自動救援通過。Auto 1 倍取得立即排空、連續 15 秒且無截斷的 Network 批次；2 倍首個歷史批次 truncated=true，其後批次完整不能補齊缺口。最後來源隔離 **22／22** 分為 **12 個控制模型＋10 個真正可信輸入**，合成媒體／FakeClock 限於自有 iframe；31 秒拖曳是模型時間，不能寫成網站長停滯驗收。來源工具最後 timers=0、自有根節點已移除、輔助程序已停止。新版 Tampermonkey 尚未載入修補產物前，安裝版矩陣保持待驗收；不替換網站媒體 getter 或修改 timeout 製造長停滯前提。
+Chrome 的 v2.1.16 手動實際 Adapter.reload 校準沒有 Recovery token，僅證明 SDK 原生時序，不算自動救援通過。Auto 1 倍取得立即排空、連續 15 秒且無截斷的 Network 批次；2 倍首個歷史批次 truncated=true，其後批次完整不能補齊缺口。最後來源隔離 **22／22** 分為 **12 個控制模型＋10 個真正可信輸入**，合成媒體／FakeClock 限於自有 iframe；31 秒拖曳是模型時間，不能寫成網站長停滯驗收。來源工具最後 timers=0、自有根節點已移除、輔助程序已停止。實際載入 v2.1.17 後的 Auto 1／2 倍真正 Recovery 自有 reload，已跨過 SDK pause／null／第一個標記核心，保留 SDK 整秒 seek、還原 rate／play，兩次時間／影格進度後 recovered，且沒有 Adapter.seek 回寫舊位置；這是安裝版後續恢復子集，不能補成完整期限或精確延遲通過。故障窗口的處理缺口與未匹配的 Auto 新路徑保留限制；Auto 1 倍 Network 有截斷及 76.071 秒處理空隙，歷史滾動曾淘汰事件（everDropped=true；最終 dropped=false），不能補算既有時序。沒有成立的 seek 前提不得計入 12 秒 video-only 延遲。完整 15／30／重載後 15 秒失敗退出、真正 hidden、真正 pending gate 與晚到 SDK 操作矩陣仍待有效證據，不替換網站媒體 getter 或修改 timeout 製造前提。
+
+v2.1.17 安裝工具收尾已核對 12／12 自有方法描述子還原、timer／liveXHR=0、held=0、攔截 patterns 空與觀察器移除，最後 Auto 1 倍有實際健康進度。2,027 個已分類受控 request ID 的記憶體／持久樣本匹配皆為 0，四個學習攔截 hook 的所有權在清理前確認；這只證明受控資料與自有資源清理，不能補齊既有事件缺口或覆蓋未分類工作。
 
 本文件是 **v2.1.17 BR-01 後續恢復契約**的現行開發流程，保留 BR-08 完整拖曳與既有修復。v2.1.16 修復、必要驗證及發布／公開產物核對是上一輪已完成證據；2026-10-10 21:11:07.331（Asia/Taipei）實際 Chrome 已核對該版完整本體、唯一 singleton 及 hooks，Auto 1／2 倍拖曳、基本播放及約 12 秒 video-only 延遲後恢復取得部分證據，BR-01 完整安裝驗收仍未完成。正式發布及實際安裝版狀態見 [驗證報告](TEST_REPORT.md)，不得以來源隔離代替安裝驗收。各版原始證據保留，其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
 

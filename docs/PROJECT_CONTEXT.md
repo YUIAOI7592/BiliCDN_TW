@@ -2,7 +2,7 @@
 
 本文件是現行產品與開發契約。文件用途及歷史紀錄見 [文件索引](INDEX.md)；版本與工具設定以 [release.json](../release.json)、[package.json](../package.json) 和 [依賴鎖定檔](../package-lock.json) 為準。內建節點清單稱為 Catalog，原生簽名路線稱為 Native。
 
-**2026-10-11 現行候選版 v2.1.17：BR-01 SDK 重載後續恢復修復及必要驗證完成，尚未發布。** 自有 SDK reload 的暫時 paused／空核心、初始化 seek 撤銷舊位置還原、BODY 播放／倍速鍵的實際新操作，以及進度確認與終止後不重試均已納入正式契約。全套 **19 套件／716／716 正式案例**、typecheck、**44 個執行期模組**架構檢查及最終 verify **v2.1.17** 通過；獨立 Codex Security 差異 **11／11 項、0 候選／0 可報告發現**。掃描主機另警告整體工作目錄變動；四個執行期檔案與凍結來源雜湊一致，不能據此宣稱整體目錄快照一致。Chrome 最後來源隔離 **22／22**（12 個控制模型＋10 個真正可信輸入）通過並完成清理；自有 iframe、合成媒體／FakeClock 與 31 秒模型拖曳不代表新版安裝驗收。已發布及目前安裝基準仍為 v2.1.16，封裝／發布及公開產物核對待完成，新版安裝矩陣另列。詳見 [BR-01 後續修復](BR01_FOLLOWTHROUGH_FIX_REPORT.md)、[驗證報告](TEST_REPORT.md) 與 [TODO](TODO.md)。
+**2026-10-11 現行版本 v2.1.17：BR-01 SDK 重載後續恢復修復、必要驗證、正式發布及公開產物核對完成；新版安裝驗收已有部分證據，完整矩陣未結案。** 自有 SDK reload 的暫時 paused／空核心、初始化 seek 撤銷舊位置還原、BODY 播放／倍速鍵的實際新操作，以及進度確認與終止後不重試均已納入正式契約。全套 **19 套件／716／716 正式案例**、typecheck、**44 個執行期模組**架構檢查及最終 verify **v2.1.17** 通過；獨立 Codex Security 差異 **11／11 項、0 候選／0 可報告發現**。掃描主機另警告整體工作目錄變動；四個執行期檔案與凍結來源雜湊一致，不能據此宣稱整體目錄快照一致。Chrome 最後來源隔離 **22／22**（12 個控制模型＋10 個真正可信輸入）通過並完成清理；自有 iframe、合成媒體／FakeClock 與 31 秒模型拖曳不代表新版安裝驗收。[v2.1.17](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.17) 於 00:31:14（Asia/Taipei）發布，唯一 **332,575 bytes** 腳本及無認證公開 latest 的版本／大小／SHA-256 核對一致；**00:34:48.957 已核對指定影片的完整 v2.1.17 執行本體、唯一 Runtime／ControlCenter 及 hooks**。Auto 1／2 倍正常暫停／恢復／短 seek，以及各一次真正腳本自有 SDK 重載後續恢復取得安裝版證據；完整期限、背景與 gate 等剩餘項目仍待驗收。詳見 [BR-01 後續修復](BR01_FOLLOWTHROUGH_FIX_REPORT.md)、[v2.1.17 安裝矩陣](CHROME_v2.1.17_ACCEPTANCE.md)、[驗證報告](TEST_REPORT.md) 與 [TODO](TODO.md)。
 
 ### 已發布基準與上一輪安裝證據
 
@@ -22,7 +22,7 @@ SDK 初始化若自行尋位，仍立即撤銷舊位置還原，不把它猜成�
 
 BODY／頁面焦點的可信 Space、k／K 與既有倍速鍵，只在同一 keydown 派送內確實改變 paused 或有限 playbackRate 時取得一次新 userRevision。按鍵本身、忽略命令、合成事件、輸入欄位／控制中心、組字／修飾鍵與派送後工作都不能取得身分；沿用真正可見性及播放器／媒體／核心／內容所有權檢查。播放器區域的既有操作觀察及 BR-06／07 seek 派送規則保持。
 
-手動呼叫 v2.1.16 實際安裝版 Adapter.reload 的 Chrome 校準，已分別觀察 Auto 1／2 倍同步 native pause、空核心、第一個標記新核心及 SDK 整秒 seek；它沒有經由 Recovery token 啟動，只校準 SDK 時序。v2.1.17 最後的 22 個來源隔離案例另驗證控制器契約與真正可信輸入，仍不能替代修補版安裝驗收。原 87.785 秒自然停滯的完整因果仍待定位：既有證據含先前 video timeout 與非零傳輸 bytes，但欠缺原始 timeout 設定、完整 Network 及 SDK 操作者，不能據此認定 CDN 故障。其他剩餘驗收繼續分列。
+手動呼叫 v2.1.16 實際安裝版 Adapter.reload 的 Chrome 校準，已分別觀察 Auto 1／2 倍同步 native pause、空核心、第一個標記新核心及 SDK 整秒 seek；它沒有經由 Recovery token 啟動，只校準 SDK 時序。v2.1.17 最後的 22 個來源隔離案例另驗證控制器契約與真正可信輸入，仍不能替代修補版安裝驗收。實際載入 v2.1.17 後，Auto 1／2 倍各觀察一次 Recovery 啟動的自有 reload：跨過 SDK pause／空核心、接納第一個標記新核心、保留 SDK 整秒 seek，再還原倍速／播放意圖，兩次時間／影格進度後 recovered；未呼叫 Adapter.seek 回寫舊位置。這些證據只證明自有重載後續恢復子集；攔截窗口釋放後的恢復、網站提前暫停／外部換核心與失敗的 seek 前提不補算完整 15／30／重載後 15 秒退出。Auto 1 倍 Network 有截斷及 76.071 秒處理空隙，歷史滾動觀察曾淘汰事件（everDropped=true；最終 dropped=false），不能補成連續證據。原 87.785 秒自然停滯的完整因果仍待定位：既有證據含先前 video timeout 與非零傳輸 bytes，但欠缺原始 timeout 設定、完整 Network 及 SDK 操作者，不能據此認定 CDN 故障。其他剩餘驗收繼續分列。
 
 2026-10-10 的 [BR-07 修復](BR07_FIX_REPORT.md) 以既有 BR-06 同派送機制同時觀察 keydown／keyup。BODY／頁面可信 ArrowLeft／Right、Home／End、j/J、l/L 先建立私有候選，僅該派送內的實際有限尋位取得一次新修訂；同派送多入口觀察去重，keydown、repeat、keyup 各自造成新 seek 時各自計數。editable／控制中心／IME／Ctrl／Meta／Alt、合成／忽略命令、延後工作及腳本還原不重開期限。Shift／repeat 必須確實造成新 seek。鍵盤不建立按住狀態或延遲關聯窗口；pendingSeek 的保守腳本來源抑制保持。Monitor 的網站／Auto 重綁語意、15／30／15 與真 hidden 撤銷不變；正式契約、來源隔離及完整安裝結果分列。
 

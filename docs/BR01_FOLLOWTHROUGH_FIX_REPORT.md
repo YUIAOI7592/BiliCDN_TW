@@ -1,6 +1,6 @@
 # BR-01 後續修復：自有重載過渡與操作所有權
 
-日期：2026-10-11；基準 **v2.1.16／1e376978c757c0a1e622668fd04fdaad658dc7ef**。本輪 v2.1.17 已完成本機修復、必要整合檢查、獨立安全差異審查與 Chrome 來源隔離，**待發布，尚未取得新版安裝驗收**。最新版結果見 [固定驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)；[v2.1.16 安裝證據](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.16_ACCEPTANCE.md) 保留原始限制。
+日期：2026-10-11；基準 **v2.1.16／1e376978c757c0a1e622668fd04fdaad658dc7ef**。本輪 v2.1.17 已完成修復、必要整合檢查、獨立安全差異審查與 Chrome 來源隔離，於 **00:31:14（Asia/Taipei）正式發布**。實際新版已載入，正常 Auto 1／2 倍與自有重載恢復取得部分通過；**BR-01 完整安裝驗收仍未完成**。最新版結果見 [固定驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)；[v2.1.16 安裝證據](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.16_ACCEPTANCE.md) 保留原始限制。
 
 ## 問題與已確認因果
 
@@ -47,14 +47,24 @@ git diff --check
 
 所有案例使用具名 node:test、testScope、FakeClock、deferred 與完整型別模型。Node 的 trusted 派送僅作契約，真 Chrome 可信輸入、原生 SDK 方法及實際安裝分別驗證。完整正式套件不允許 only／skip／todo／cancelled／預期失敗。
 
-## 待完成門檻與證據位置
+## 發布、剩餘驗收與證據位置
 
 最終 **19 套件／716 項正式契約全部通過**；typecheck、architecture（44 個 runtime 模組）、npm run verify 與 git diff --check 均通過。verify 包含確定性建置、語法、儲存命名空間及封裝校驗，不包含安全掃描。正式完整執行沒有 only／skip／todo／cancelled 或預期失敗。
 
 獨立 Codex Security 差異掃描 `39e2743e-185d-4c7d-a04d-f6580e61385a` 已封存：**11／11 檔案覆蓋、0 候選、0 發現**。最終四份 runtime 雜湊與掃描時一致。掃描宿主曾回報工作目錄變動，因此不宣稱整體 snapshot 始終不變；其後三份版本 JSON 遞增屬掃描外變更，由主代理另行核對。安全機器產物保留於私有存放位置。
 
-v2.1.17 **尚未發布**；依常設授權發布後仍須核對 main／tag／唯一腳本與公開 latest 的版本、大小、SHA-256。尚未載入實際新版，不計任何新版安裝通過。
+[v2.1.17 正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.17) 於 2026-10-10T16:31:14Z 發布，即 2026-10-11 00:31:14（Asia/Taipei）。發行提交／peeled tag 為 `1b87d3f759e479e67650e291b5a8d8f107102145`，發布時遠端 main 相同；annotated tag ref 為 `87109266a5044055dffae653000f376ca6f0c80c`。唯一附件 `BiliCDN_TW.user.js` **332,575 bytes**，SHA-256 **`4bb4601a91e5e752595a5a8ec1b4d8905036954f299d578ca93209c059ce6a06`**；16:31:40Z 的無認證公開 latest 核對版本、大小與完整產物一致。後續文件提交不改發行標籤或 Release 快照。
 
-安裝驗收只使用指定風景影片 Auto 1／2 倍，取得完整 15／30／15、新 BODY pause／seek／拖曳／rate、晚到 SDK、真正背景、生命週期／政策／影音隔離及真 pending startup gate 剩餘矩陣；詳見 [v2.1.17 安裝驗收紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.17_ACCEPTANCE.md)。網站提前 pause／error／外部換核心只證明撤銷；截斷窗口與缺少自然前提列待驗收。不能替換網站媒體 getter、控制器或維持假播放製造通過。
+16:32:42.615Z 仍為完整 v2.1.16 的觀察保留。使用者更新後，**16:34:48.957Z／00:34:48.957（Asia/Taipei）** 核對實際 v2.1.17 完整 IIFE（329,134 字元）與 Release 執行本體相符、唯一 Runtime／ControlCenter；Release 腳本仍為上述 332,575 bytes。新結果只計此新版身分下的窗口。
 
-私有新證據在 `.work/functional-fixes/br01-followthrough/2026-10-10-1e37697/`：`evidence/CAUSAL_REPORT.md` 整合因果與證據限制；`application/` 與 `player/` 保存正式紅燈／綠燈；`tests-final.txt` 與 `verify-final.txt` 保存整合結果；`source/` 保存首輪反證、最後矩陣與清理。安全結果獨立封存；發行及安裝資料取得後再保存。原調查、v2.1.16 Release 與歷史安全封存保持原狀。
+實際 Auto **1／2 倍** BODY Space pause／resume、鍵盤短 seek 與時間／影格進度已取得正常對照。兩個獨立後段停滯分別由 Recovery 自動呼叫一次 Adapter.reload，**Auto 2 累計 reloadCount=1、Auto 1 累計=2**，均接納本次標記核心、還原合法倍速／播放意圖並到達 `recovered`；不是單段重載兩次。SDK 更新整數目標後，Adapter 沒有 seek 回寫舊保存位置（2 倍 1516.967991→1516、1 倍 1836.172853→1836），之後有實際時間及影格進度。
+
+原 Auto 2 長攔截窗口先被網站 pause／外部核心替換撤銷，後續自動恢復屬獨立 episode，不能回填原窗口完整 15／30／post15。Auto 2 Network 有未持續 pump、未知分類放行與後段未捕捉的限制；Auto 1 followthrough 的直接重載／恢復事件保留，但其 `everDropped=true`／Network 截斷不作完整故障時序。Auto 1 兩個 12 秒嘗試分別未提交 seek、進度列 locator timeout，均不計通過。這些樣本未確認新功能缺陷。
+
+**仍待完成：** 有效完整 15／30／重載後 15 秒失敗釋放、12 秒 video-only 受控延遲、真正 hidden、真正 pending singleton gate，以及新操作／晚到 SDK 完成和拒絕／生命週期／政策／影音隔離的完整矩陣。
+
+16:56:37.369Z 最終清理：12／12 工具描述子仍由工具持有且完整還原、timer 清除、live XHR=0、observerFaults=0、held=0、patterns 空。已知 2,027 個受控 request ID 的記憶體／持久樣本零匹配，unclassified=0、四個分類 hook 均持有；本輪 startup／challenge 數均0，不能代替真 gate 驗收。historical everDropped=true 保留，不補未觀測歷史。初次清理後查詢錯讀 `deps.runtime` 造成 TypeError，原記錄未刪；16:57:30.601Z 獨立正確 postcheck 確認觀察器 entry 不存在、generation1／epoch0、Auto1／readyState4／paused=false／位置2225.339652。最後風景截圖與 Auto／倍速 DOM 證據分列。
+
+剩餘安裝驗收只使用指定風景影片 Auto 1／2 倍；詳見 [v2.1.17 安裝驗收紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.17_ACCEPTANCE.md)。網站提前 pause／error／外部換核心只證明撤銷；截斷窗口與缺少自然前提列待驗收。不能替換網站媒體 getter、控制器或維持假播放製造通過。
+
+私有新證據在 `.work/functional-fixes/br01-followthrough/2026-10-10-1e37697/`：`evidence/CAUSAL_REPORT.md` 整合因果與證據限制；`application/` 與 `player/` 保存正式紅燈／綠燈；`tests-final.txt` 與 `verify-final.txt` 保存整合結果；`source/` 保存首輪反證、最後矩陣與清理。`installed-v217-identity.json`、`installed-normal-auto1-controls.json`、`installed-auto1-sdk-followthrough.json` 及 `installed-review/auto2-long-stall/` 分列新版身分、正常操作、自有恢復與原攔截窗口限制；12 秒未成立前提、`installed-cleanup.json` 的原 postcheck 錯誤、`installed-cleanup-postcheck.json` 的獨立確認及最後風景截圖也保留。安全結果獨立封存。原調查、Release 快照與歷史安全封存保持原狀。

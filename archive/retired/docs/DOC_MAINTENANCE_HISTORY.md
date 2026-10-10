@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-10-11 v2.1.17 部分安裝證據更新
+
+00:34:48.957（Asia/Taipei）核對實際新版完整 IIFE 與 Release 執行本體一致、唯一 Runtime／ControlCenter，補寫 BR01_FOLLOWTHROUGH_FIX_REPORT、TEST_REPORT 與 CHANGELOG。Auto 1／2 倍正常 BODY Space pause／resume、鍵盤短 seek 及實際時間／影格進度已有證據；兩個後段停滯各完成一次自動自有重載，累計 reloadCount1／2，SDK最新整數目標沒有被 Adapter 舊位置還原覆寫。
+
+原 Auto 2 長故障窗口先被網站 pause／外部核心替換撤銷，後段自有恢復獨立記錄，不能補算完整15／30／post15；Network未連續pump／未知放行／後段缺口、Auto 1 歷史drop與Network截斷均保留。Auto 1 未提交seek及locator timeout兩個12秒嘗試不計通過。沒有新已確認缺陷；完整逾時、真正hidden／singleton gate、晚到SDK及其他操作矩陣仍待。只更新現行文件，Release快照、TEST_REPORT_HISTORY與所有既有維護段落不回寫。
+
+00:56:37.369 最終清理12項完整描述子、timer／liveXHR／held及patterns均核對，已知2,027 request ID記憶體／持久零匹配，歷史drop與startup／challenge為0的範圍限制保存。清理後首個工具查詢錯讀deps.runtime產生TypeError，原證據不刪；00:57:30.601獨立正確postcheck確認observer entry移除、generation1／epoch0與Auto1正常播放。最後風景截圖控制列隱藏，Auto／倍速另用DOM證據；清理不補算尚未成立的完整窗口。
+
+## 2026-10-11 v2.1.17 發布後文件狀態
+
+00:31:14（Asia/Taipei）正式發布 v2.1.17，發行提交／peeled tag `1b87d3f759e479e67650e291b5a8d8f107102145` 與發布時 main 匹配；annotated tag ref `87109266a5044055dffae653000f376ca6f0c80c`。唯一腳本 332,575 bytes，SHA-256 `4bb4601a91e5e752595a5a8ec1b4d8905036954f299d578ca93209c059ce6a06`，00:31:40 的無認證公開 latest 核對完整產物、版本、大小及校驗值一致。只補 BR01_FOLLOWTHROUGH_FIX_REPORT、TEST_REPORT 與 CHANGELOG 的已發布事實，維護紀錄另增本段。
+
+00:32:42.615 指定同片重新載入仍 exact v2.1.16（317,353 字元），必要手動更新已提出，全部新版實際安裝矩陣保持待完成。發布後只提交現行文件，main 的後續文件提交與 v2.1.17 發行標籤分列；Release/v2.1.17 封裝快照、所有原歷史及安全封存不回寫。本次連結／差異檢查不新增執行期或安裝版驗收結果。
+
 ## 2026-10-11 BR-01 followthrough 最終待發布文件
 
 將 BR01_FOLLOWTHROUGH_FIX_REPORT、TEST_REPORT 與 CHANGELOG 更新為 v2.1.17 本機修復通過、待發布。記錄最終 19 套件／716 項、adapters102／application231、typecheck、44 個 runtime 模組 architecture、verify 與 diff 檢查，以及 Chrome 來源隔離 22 項（12 個控制模型、10 個真正可信輸入）。首輪來源還原的重複 fallback／lease 跨期兩個缺口已補正式契約修復；原紅燈保留。第一核心替換的錯誤預期校準排除，改以第二核心替換驗證所有權。
