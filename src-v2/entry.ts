@@ -42,8 +42,8 @@ export const start = (): void => {
   const meta = new MeasurementMetaStore(storage, now)
   const content = new PlayurlController(session, vault, routes, settings)
   const playurl = new PlayurlAdapter(content)
-  const player = new PlayerAdapter(playurl)
   const visibility = new VisibilityAdapter()
+  const player = new PlayerAdapter(playurl, { scheduler, isActuallyVisible: () => visibility.isActuallyVisible() })
   const recovery = new RecoveryController(player, now,
     () => !settings.get().disabled && !routes.isOriginalComparison() && visibility.isActuallyVisible(), () => {
       const request = routes.latestRequested('video')

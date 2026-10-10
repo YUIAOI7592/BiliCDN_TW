@@ -869,7 +869,8 @@ const intentTarget = { play: () => 'original-result' }
 const originalIntentPlay = intentTarget.play
 Object.defineProperty(fakeWindow, 'navigator', { configurable: true, value: { userActivation: { get isActive() { return activation } } } })
 class IntentAdapter extends PlayerAdapter { protected override player(): Record<string, unknown> { return intentTarget } }
-const intentAdapter = new IntentAdapter({ transform: () => playurlResult(false), lifecycleKey: () => 'test' })
+const intentAdapter = new IntentAdapter({ transform: () => playurlResult(false), lifecycleKey: () => 'test' },
+  { scheduler: { timeout: () => () => undefined }, isActuallyVisible: () => true })
 const intentRecovery = scope.own(new RecoveryController({ ...recoveryPlayer, observePlayIntent: listener => intentAdapter.observePlayIntent(listener), snapshot: () => intentVideo,
   reload: () => { intentReloads++ }, playbackRate: () => 1.5 }, () => intentClock))
 intentRecovery.tick(intentVideo)

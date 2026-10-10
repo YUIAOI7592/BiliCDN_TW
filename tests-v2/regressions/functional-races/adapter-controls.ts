@@ -79,7 +79,8 @@ test('CONTROL player: disconnecting cached video changes snapshot and buffer acc
   let videos = [first]
   scope.defineGlobal('document', { configurable: true, value: { querySelectorAll: () => videos } })
   scope.defineGlobal('unsafeWindow', { configurable: true, value: { player: {} } })
-  const adapter = new PlayerAdapter({ transform: () => playurlResult(true), lifecycleKey: () => '1:0' })
+  const adapter = new PlayerAdapter({ transform: () => playurlResult(true), lifecycleKey: () => '1:0' },
+    { scheduler: { timeout: () => () => undefined }, isActuallyVisible: () => true })
   scope.defer(() => adapter.reset())
   assert.equal(adapter.snapshot().playableBufferSec, 10)
   first.isConnected = false; videos = [first, second]

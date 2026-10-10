@@ -4,7 +4,7 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
-目前 **v2.1.13 已發布 BR-01 A／B／C 修復**：Auto 長 seek 最多一次合法 video 備援／核心重載，等待有界、恢復須有播放進度。保留 BR-02～05 與既有功能修復，schema 2 不變。實際新版 Auto 已取得部分驗收證據，完整安裝版矩陣尚未結案；見 [驗證報告](docs/TEST_REPORT.md)。更新網址保持 [最新 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest)。
+目前 **v2.1.14 BR-06 鍵盤 seek 修復已完成發布準備**：BODY／頁面可信 seek 鍵於同一派送內確實尋位，才取得新使用者身分與完整寬限。Auto 長 seek 有界救援保留，恢復須有播放進度；BR-01～05、既有功能修復及 schema 2 不變。發布讀回與完整安裝版矩陣見 [驗證報告](docs/TEST_REPORT.md)。更新網址保持 [最新 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest)。
 
 GitHub Release 附件只有使用者腳本，更新網址維持原位。發布後核對公開 latest 版本、大小與 SHA-256；來源隔離及 Node 不代替 Tampermonkey 安裝驗收。
 
@@ -124,7 +124,7 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 ## 目前版本的驗證紀錄
 
-依 **2026-10-10** 的 [v2.1.13 驗證報告](docs/TEST_REPORT.md)，新增 26 個正式契約、全套 474 個具名案例與完整 verify 通過；獨立安全差異審查無可報告發現，Chrome 來源隔離 22／22。公開更新產物及實際安裝 body 已核對；Auto 1／2 倍速的受控影片延遲已取得恢復證據，2 倍速取得一次核心重載。65 秒故障窗口由網站提前暫停，不能證明重載後 15 秒逾時；完整安裝版矩陣仍待完成。詳見 [修復交付](docs/BR01_FIX_REPORT.md) 與 [安裝版紀錄](docs/CHROME_v2.1.13_ACCEPTANCE.md)。v2.1.12 的共用 gate 35／35 保留其 [歷史驗收範圍](docs/CHROME_v2.1.12_ACCEPTANCE.md)。
+依 **2026-10-10** 的 [v2.1.14 驗證報告](docs/TEST_REPORT.md)，BR-06 新增 40 正式契約，全套 514／完整 verify 通過；獨立安全差異 7 檔無可報告發現，Chrome 來源隔離 15／15。新版安裝矩陣須先核對執行 body／singleton，不以 Node／來源隔離或 v2.1.13 結果代替；詳見 [修復交付](docs/BR06_FIX_REPORT.md) 與 [安裝版紀錄](docs/CHROME_v2.1.14_ACCEPTANCE.md)。v2.1.13 的部分 Auto 與 v2.1.12 共用 gate 35／35 保留其歷史範圍，原自然網路起因及其餘完整產品驗收仍分列。
 
 **v2.1.6 Chrome／Tampermonkey 驗收已通過並結案。** v2.1.8 回歸另行記錄，歷史觀察及限制見 [v2.1.6 驗收紀錄](archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md)。
 

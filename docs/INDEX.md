@@ -1,5 +1,9 @@
 # 專案文件索引與維護規則
 
+**現行交付：v2.1.14 BR-06 本機修復與發布準備完成。** [修復對照](BR06_FIX_REPORT.md) 分列正式 40 個新契約、全套 514／verify、安全差異 7 檔及 Chrome 來源隔離 15／15。發布讀回見 [TEST_REPORT](TEST_REPORT.md)，實際新版完整 BR-01 矩陣見 [安裝驗收](CHROME_v2.1.14_ACCEPTANCE.md)；以下 v2.1.13／較早日期段落僅保留當時觀察，不代表現行修復狀態。
+
+**最新續測：2026-10-10 約 13:45–13:57 確認 [BR-06 鍵盤 seek 所有權缺口](CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md)，未修復。** 實際 Auto 1／2 倍的新 BODY 方向鍵 seek 沿用舊停滯期限，8.205／6.986 秒便備援；滑鼠對照通過，獨立正確契約 2 fail／3 pass。已達成找問題並交付報告的退出條件，完整 BR-01 安裝驗收仍未通過，來源與 Release 沒有修改。
+
 **2026-10-10 現行交付：[BR-01 A／B／C 修復](BR01_FIX_REPORT.md) 及 v2.1.13 發布完成。** Auto 長 seek 有界救援，474 正式案例／verify、安全差異及來源隔離 22／22 通過；公開產物與實際新版 body 已核對，[安裝版](CHROME_v2.1.13_ACCEPTANCE.md) 的 Auto 延遲恢復取得部分證據，完整矩陣未結案。原自然網路起因與其他完整驗收不因此結案。[v2.1.12 原調查](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) 保留原始失敗證據。
 
 **歷史瀏覽器狀態：2026-10-10 03:02–03:36 已續測 BR-01 與剩餘領域，交付 [完整覆蓋報告](CHROME_v2.1.11_REMAINING_ACCEPTANCE.md)。** BR-01 seeking 的救援抑制機制已定位，原始網路起因未證實；新增 [BR-05 Fetch 取消原因遺失](CHROME_v2.1.11_BR05_FETCH_ABORT_REASON.md)。42 個新增受控案例、真 gate 與真 SDK 核心替換有結果，真正背景操作仍未取得 hidden 前提；**產品驗收未全通過，BR-04／05 未修復**。正式來源及 Release 未修改。
@@ -8,7 +12,7 @@
 
 **2026-10-10 02:42 中途狀態：v2.1.11 安裝版驗收部分完成，當時依使用者要求暫停。** BR-03 31 個有效案例與 BR-02 42 個對照通過，當時 BR-04 僅 Node 重現；見 [中途報告](CHROME_v2.1.11_PROGRESS.md)。下文發行時的待安裝文字保留其當時範圍。
 
-本索引於 **2026-10-10** 更新至 **v2.1.13 BR-01 發布／部分安裝版驗收**，實際發布與剩餘矩陣以 [TEST_REPORT](TEST_REPORT.md)／[TODO](TODO.md) 為準。v2.1.12 的 35 項已完成安裝驗收保持其當時範圍；下方有日期紀錄不代替現行狀態。
+本索引於 **2026-10-10** 更新至 **v2.1.14 BR-06 修復／發布準備與 BR-01 完整驗收**，實際發布與剩餘矩陣以 [TEST_REPORT](TEST_REPORT.md)／[TODO](TODO.md) 為準。v2.1.12 的 35 項已完成安裝驗收保持其當時範圍；下方有日期紀錄不代替現行狀態。
 
 2026-10-07 的 Markdown 粗體渲染盤點與排版修正見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)；後續排版檢查方式列於 DEVELOPMENT。
 
@@ -64,6 +68,7 @@
 | [CHROME_v2.1.12_BR01_AUTO_INVESTIGATION](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) | Auto 影片延遲／正常 seek、救援抑制鏈、無界意圖與誤標恢復、獨立重現、原自然起因與政策限制 |
 | [TEST_REPORT](TEST_REPORT.md) | v2.1.13／474 案例／安全／Chrome 隔離／發布及安裝結果；歷史完整正文另存 archive |
 | [CHROME_v2.1.13_ACCEPTANCE](CHROME_v2.1.13_ACCEPTANCE.md) | 新版 body、Auto 1／2 倍速影片延遲、一次重載、網站暫停撤銷、清理與待驗收矩陣 |
+| [CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP](CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md) | 可信 BODY 方向鍵漏掉使用者修訂，Auto 1／2 倍提早備援、滑鼠對照、獨立失敗契約、根因與剩餘驗收 |
 | [CHROME_v2.1.9_ACCEPTANCE](CHROME_v2.1.9_ACCEPTANCE.md) | 2026-10-09 部分真實瀏覽器驗收、18 個原生 XHR 案例及待定位停滯 |
 | [CHROME_v2.1.9_BR02_XHR_FAILED_OPEN](CHROME_v2.1.9_BR02_XHR_FAILED_OPEN.md) | 持續驗收確認的 XHR 例外安全性缺陷、六個 Chrome 失敗情境、根因與原始重現入口 |
 | [BR02_FIX_REPORT](BR02_FIX_REPORT.md) | v2.1.10 修復、40 個新增正式契約、來源隔離驗證、安全審查及後續安裝版證據／gate 限制 |

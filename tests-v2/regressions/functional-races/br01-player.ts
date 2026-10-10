@@ -2,6 +2,7 @@ import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { PlayerAdapter } from '../../../src-v2/adapters/player.ts'
 import { testScope } from '../../support/scope.ts'
+import { FakeClock } from '../../support/clock.ts'
 
 class Target extends EventTarget {
   readonly listeners = new Map<string, Set<EventListenerOrEventListenerObject | null>>()
@@ -16,7 +17,7 @@ class Target extends EventTarget {
 }
 
 function fixture(t: TestContext) {
-  const scope = testScope(t), document = new Target(), window = new Target()
+  const scope = testScope(t), document = new Target(), window = new Target(), clock = scope.own(new FakeClock())
   let core: object = {}, failure: Error | null = null
   const marker = {}, seen: unknown[][] = []
   class Element extends Target {
@@ -41,7 +42,7 @@ function fixture(t: TestContext) {
     override video(): HTMLVideoElement { return video as unknown as HTMLVideoElement }
   }
   const player = new Player({ lifecycleKey: () => 'fixture', transform: () => ({ accepted: true, formats: [],
-    videoCount: 0, audioCount: 0, segmentCount: 0, upstreamCode: 0, reason: null }) })
+    videoCount: 0, audioCount: 0, segmentCount: 0, upstreamCode: 0, reason: null }) }, { scheduler: clock, isActuallyVisible: () => true })
   scope.defer(() => player.reset()); player.controls()
   return { player, site, video, document, window, marker, seen, core: (value: object) => { core = value },
     fail: (value: Error) => { failure = value } }

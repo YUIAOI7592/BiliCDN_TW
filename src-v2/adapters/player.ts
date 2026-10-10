@@ -1,4 +1,4 @@
-import type { PlayurlPort, VideoSnapshot, PlayerControlSnapshot } from '../application/ports.ts'
+import type { PlayurlPort, VideoSnapshot, PlayerControlSnapshot, SchedulerPort } from '../application/ports.ts'
 
 type UnknownRecord = Record<string, unknown>
 const isRecord = (value: unknown): value is UnknownRecord => !!value && typeof value === 'object'
@@ -7,6 +7,19 @@ const safeCall = (target: unknown, name: string, ...args: unknown[]): unknown =>
   try { const fn = target[name]; return typeof fn === 'function' ? Reflect.apply(fn, target, args) : undefined } catch { return undefined }
 }
 const safeNumber = (value: unknown): number | null => Number.isFinite(Number(value)) ? Number(value) : null
+
+interface ControlEnvironment {
+  readonly scheduler: Pick<SchedulerPort, 'timeout'>
+  readonly isActuallyVisible: () => boolean
+}
+interface KeyboardSeek {
+  readonly event: KeyboardEvent
+  readonly video: HTMLVideoElement
+  readonly player: UnknownRecord | null
+  readonly lifecycle: string
+  readonly position: number
+  stop: () => void
+}
 
 export class PlayerAdapter {
   #cachedVideo: HTMLVideoElement | null = null
@@ -27,13 +40,15 @@ export class PlayerAdapter {
   #internalReload = 0
   #reloadCore: unknown = null
   #awaitReloadCore = false
-  constructor(private readonly playurl: PlayurlPort & { lifecycleKey(): string }) {}
+  #keyboardSeek: KeyboardSeek | null = null
+  constructor(private readonly playurl: PlayurlPort & { lifecycleKey(): string }, private readonly environment: ControlEnvironment) {}
 
   protected player(): UnknownRecord | null { try { return isRecord(unsafeWindow.player) ? unsafeWindow.player : null } catch { return null } }
 
   controls(): PlayerControlSnapshot {
     const video = this.video(), player = this.player(), core = safeCall(player, '__core')
     if (video !== this.#controlVideo || player !== this.#seekOwner) this.#observeControls(video, player)
+    this.#confirmKeyboardSeek()
     if (video?.seeking && Number.isFinite(video.currentTime) && video.currentTime !== this.#targetSec) {
       this.#targetSec = video.currentTime
       if (!this.#internalSeek && this.#pendingSeek !== video.currentTime) this.#seekRevision++
@@ -64,19 +79,29 @@ export class PlayerAdapter {
     const inRegion = (event: Event): boolean => event.target instanceof Node && !!region?.contains(event.target)
     listen(document, 'pointerdown', event => {
       if (!event.isTrusted || !inRegion(event)) return
+      this.#clearKeyboardSeek()
       this.#userRevision++
       this.#dragging = event.target instanceof Element && !!event.target.closest('.bpx-player-progress, .bilibili-player-video-progress, [role="slider"]')
     })
     const release = (): void => { this.#dragging = false }
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture', 'blur']) listen(type === 'blur' ? window : document, type, release)
     listen(document, 'keydown', event => {
-      if (!event.isTrusted || !inRegion(event) || !(event instanceof KeyboardEvent)) return
-      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ', 'Home', 'End', 'k', 'K', 'j', 'J', 'l', 'L'].includes(event.key)) this.#userRevision++
+      this.#clearKeyboardSeek()
+      if (!(event instanceof KeyboardEvent) || !event.isTrusted || event.isComposing || event.keyCode === 229
+        || event.ctrlKey || event.metaKey || event.altKey || !this.environment.isActuallyVisible()) return
+      const editable = (target: EventTarget): boolean => target instanceof Element
+        && (!!target.closest('input, textarea, select, [role="textbox"], #bilicdn-v2-control-center')
+          || target instanceof HTMLElement && target.isContentEditable)
+      if (event.composedPath().some(editable) || event.target && editable(event.target)) return
+      if (['ArrowLeft', 'ArrowRight', 'Home', 'End', 'j', 'J', 'l', 'L'].includes(event.key)) {
+        this.#beginKeyboardSeek(event, video, player)
+      } else if (inRegion(event) && ['ArrowUp', 'ArrowDown', ' ', 'k', 'K'].includes(event.key)) this.#userRevision++
     })
     listen(video, 'seeking', () => {
       const position = Number.isFinite(video.currentTime) ? video.currentTime : null
       if (!this.#internalSeek && position !== this.#pendingSeek) this.#seekRevision++
       this.#targetSec = position
+      this.#confirmKeyboardSeek()
     })
     listen(video, 'seeked', () => { this.#pendingSeek = null })
     const original = player?.seek, adapter = this
@@ -95,9 +120,11 @@ export class PlayerAdapter {
       const wrapped = function(this: unknown, ...args: unknown[]): unknown {
         if (!adapter.#internalSeek) {
           adapter.#seekRevision++
+          adapter.#pendingSeek = null
           adapter.#targetSec = typeof args[0] === 'number' && Number.isFinite(args[0]) ? Math.max(0, args[0]) : null
         }
-        return Reflect.apply(original, this, args)
+        try { return Reflect.apply(original, this, args) }
+        finally { adapter.#confirmKeyboardSeek() }
       }
       try {
         player.seek = wrapped
@@ -106,7 +133,47 @@ export class PlayerAdapter {
     }
   }
 
+  #beginKeyboardSeek(event: KeyboardEvent, video: HTMLVideoElement, player: UnknownRecord | null): void {
+    if (!Number.isFinite(video.currentTime)) return
+    const candidate: KeyboardSeek = { event, video, player, lifecycle: this.playurl.lifecycleKey(),
+      position: video.currentTime, stop: () => undefined }
+    this.#keyboardSeek = candidate
+    // A late bubble observer covers direct currentTime writes without wrapping media accessors.
+    const finish = (observed: Event): void => { if (observed === event) this.#confirmKeyboardSeek() }
+    window.addEventListener('keydown', finish)
+    const cancel = this.environment.scheduler.timeout(() => {
+      if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek()
+    }, 0)
+    candidate.stop = () => { cancel(); window.removeEventListener('keydown', finish) }
+  }
+
+  #confirmKeyboardSeek(): void {
+    const candidate = this.#keyboardSeek
+    if (!candidate) return
+    try {
+      // A timer only releases references. Dispatch ownership, not elapsed time, grants attribution.
+      if (candidate.event.eventPhase === Event.NONE || candidate.video !== this.#controlVideo
+        || candidate.player !== this.#seekOwner || candidate.video !== this.video() || candidate.player !== this.player()
+        || candidate.lifecycle !== this.playurl.lifecycleKey() || !this.environment.isActuallyVisible()) {
+        this.#clearKeyboardSeek(); return
+      }
+      if (this.#internalSeek || !candidate.video.seeking || !Number.isFinite(candidate.video.currentTime)
+        || candidate.video.currentTime === candidate.position || candidate.video.currentTime === this.#pendingSeek) return
+      if (this.#targetSec !== candidate.video.currentTime) this.#seekRevision++
+      this.#targetSec = candidate.video.currentTime
+      this.#userRevision++
+      this.#clearKeyboardSeek()
+    } catch { this.#clearKeyboardSeek() }
+  }
+
+  #clearKeyboardSeek(): void {
+    const candidate = this.#keyboardSeek
+    this.#keyboardSeek = null
+    candidate?.stop()
+  }
+
   #clearControls(): void {
+    this.#clearKeyboardSeek()
     for (const stop of this.#controlStops.splice(0).reverse()) stop()
     this.#controlVideo = null; this.#seekOwner = null; this.#dragging = false; this.#pendingSeek = null
   }
@@ -190,6 +257,7 @@ export class PlayerAdapter {
     return rate !== null && rate > 0 ? rate : this.snapshot().playbackRate
   }
   seek(value: number): void {
+    this.#clearKeyboardSeek()
     this.#internalSeek++; this.#pendingSeek = value
     try {
       const player = this.player(), method = player?.seek

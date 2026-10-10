@@ -2,7 +2,7 @@
 
 # 開發流程
 
-本文件是 **v2.1.13 BR-01 修復**的現行開發流程；發布與實際安裝版狀態見 [驗證報告](TEST_REPORT.md)，不得以來源隔離代替安裝驗收。各版原始證據保留。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
+本文件是 **v2.1.14 BR-06 修復**的現行開發流程；發布與實際安裝版狀態見 [驗證報告](TEST_REPORT.md)，不得以來源隔離代替安裝驗收。各版原始證據保留。其他規則見 [文件索引](INDEX.md)、[架構](ARCHITECTURE.md)、[儲存庫指南](../AGENTS.md) 及 [安全政策](../SECURITY.md)。下文以 Catalog 表示內建節點清單，以 Native 表示原生簽名路線。
 
 <a name="repository-layout-and-archive-maintenance"></a>
 
@@ -139,7 +139,7 @@ verify 不執行 Codex Security 或 Chrome／Tampermonkey 驗收。安全敏感�
 
 ## 真實 Chrome 驗證
 
-BR-01 正式控制器契約在 application 的 functional-races/br01.ts，適配器方法／清理契約在 adapters 的 br01-player.ts。精確 14,999／15,000、29,999／30,000、重載後 15,000 ms 使用 FakeClock；實際網站另以 Auto 的 1／2 倍速與完整合併 Fetch／Network 游標驗證。故障注入須先精確送出前攔截、音訊通行並抑制 owned 受控樣本持久化。每個有效窗口須逐一核對游標／hasMore／truncated；工具狀態用同一可變物件保存，窗口結束立即清空 Fetch patterns，不能在模型等待期間保留未處理的 Request 攔截。網站提前暫停／外部換核心時，應驗證撤銷並將尚未形成的逾時前提列待驗收。重跑及限制見 [修復報告](BR01_FIX_REPORT.md) 與 [v2.1.13 安裝紀錄](CHROME_v2.1.13_ACCEPTANCE.md)。
+BR-01 正式控制器契約在 application 的 functional-races/br01.ts，適配器方法／清理契約在 adapters 的 br01-player.ts；BR-06 的 functional-races/br06.ts 由 application 明確匯入，使用真正 Adapter／Monitor／Recovery。Node 可信事件及派送是型別化契約模型；Chrome 可信按鍵與監聽器間 microtask 另作證據，不能互換。精確 14,999／15,000、29,999／30,000、重載後 15,000 ms 使用 FakeClock；實際網站另以 Auto 的 1／2 倍速與完整合併 Fetch／Network 游標驗證。故障注入須先精確送出前攔截、音訊通行並抑制 owned 受控樣本持久化。每個有效窗口須逐一核對游標／hasMore／truncated；工具狀態用同一可變物件保存，窗口結束立即清空 Fetch patterns，不能在模型等待期間保留未處理的 Request 攔截。背景以原生 Document.prototype.hidden getter與 Runtime 實際可見性比對，不使用被腳本維持為 visible 的 instance getter。網站提前暫停／外部換核心時，應驗證撤銷並將尚未形成的逾時前提列待驗收。重跑及限制見 [BR-06 修復報告](BR06_FIX_REPORT.md) 與 [v2.1.14 安裝紀錄](CHROME_v2.1.14_ACCEPTANCE.md)。
 
 主要使用與驗收場景以 **Auto 畫質**為主，固定畫質作必要邊界對照；Auto 正常調整解析度不能單獨判為功能異常。畫質操作與 seek 分開，記錄實際影格／緩衝進度、使用者最新操作及網站重試，不以選單文字或 timeout 設定值代替事件。2026-10-10 的 [BR-01 Auto 調查](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) 分列有效／作廢輪、控制器候選失敗契約與正式測試；其重跑前提見 `.work/functional-review/br01/2026-10-10-c924b02/RERUN.md`。
 

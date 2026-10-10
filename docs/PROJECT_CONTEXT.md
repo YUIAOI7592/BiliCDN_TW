@@ -2,9 +2,11 @@
 
 本文件是現行產品與開發契約。文件用途及歷史紀錄見 [文件索引](INDEX.md)；版本與工具設定以 [release.json](../release.json)、[package.json](../package.json) 和 [依賴鎖定檔](../package-lock.json) 為準。內建節點清單稱為 Catalog，原生簽名路線稱為 Native。
 
-**v2.1.13 已發布 BR-01 A／B／C 修復，公開產物與實際安裝 body 已核對。** Auto 長 seek／活核心停滯使用有界 15／30／15 秒救援，恢復須有實際播放進度。保留 BR-02～05 與 v2.1.9 的 17 項修復，schema 2 不變。最新結果見 [驗證報告](TEST_REPORT.md)、[BR-01 修復](BR01_FIX_REPORT.md) 及 [TODO](TODO.md)。[安裝版](CHROME_v2.1.13_ACCEPTANCE.md) 已取得部分 Auto 恢復／撤銷證據，未完成的逾時／操作矩陣、原 87.785 秒自然網路起因及其餘完整驗收分開追蹤；v2.1.12 的已完成驗收保持歷史範圍。
+**v2.1.14 BR-06 本機修復與發布準備完成；實際安裝版完整驗收另列。** 同派送可信鍵盤 seek 取得新使用者修訂，Auto 長 seek／活核心停滯仍使用有界 15／30／15 秒救援，恢復須有實際播放進度。保留 BR-01～05 與 v2.1.9 的 17 項修復，schema 2 不變。最新發布讀回與結果見 [驗證報告](TEST_REPORT.md)、[BR-06 修復](BR06_FIX_REPORT.md) 及 [TODO](TODO.md)。[v2.1.14 安裝版](CHROME_v2.1.14_ACCEPTANCE.md) 的逾時／操作矩陣、原 87.785 秒自然網路起因及其餘完整驗收分開追蹤；v2.1.13 部分證據及 v2.1.12 已完成驗收保持歷史範圍。
 
 ## 現行產品
+
+2026-10-10 確認的 [BR-06 原缺陷](CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md) 已在本機修復。BODY／頁面可信 ArrowLeft／Right、Home／End、j/J、l/L 先建立私有候選，僅同次派送內的實際有限尋位取得一次新修訂；editable／控制中心／IME／Ctrl／Meta／Alt、合成／忽略命令、延後工作及腳本還原不重開期限。Shift／repeat 必須確實造成新 seek。Monitor 的網站／Auto 重綁語意、15／30／15 與真 hidden 撤銷不變；完整安裝版結果不能以來源隔離代替。
 
 v2.1.9 包含以 `71f7ddd` 為基準的 **17 項功能與競態修復**；修復及新增契約見 [修復對照報告](FUNCTIONAL_FIX_REPORT.md)。schema 2、持久鍵及舊樣本相容性維持不變；2026-10-04 的已發布驗收不構成本次修復的瀏覽器證據。
 

@@ -2,7 +2,7 @@
 
 # 信任邊界與資料處理
 
-本文件是 `src-v2/` 現行 v2.1.13（BR-01 有界恢復，保留 BR-02～05）的執行期信任邊界指南。文件用途與歷史紀錄見 [文件索引](docs/INDEX.md)；各版自動、安全及瀏覽器證據見 [驗證報告](docs/TEST_REPORT.md)。本文件本身不要求啟動安全掃描。
+本文件是 `src-v2/` 現行 v2.1.14（BR-06 同派送鍵盤 seek 歸因，保留 BR-01～05）的執行期信任邊界指南。文件用途與歷史紀錄見 [文件索引](docs/INDEX.md)；各版自動、安全及瀏覽器證據見 [驗證報告](docs/TEST_REPORT.md)。本文件本身不要求啟動安全掃描。
 
 <a name="untrusted-inputs"></a>
 
@@ -61,7 +61,7 @@ Chrome Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒
 
 ## 瀏覽器行為
 
-BR-01 的控制觀察僅提供取消／動作所有權，不授予 Native 權限。可信 pointer／key 需 isTrusted 與播放器區域；媒體及 page seek／reload 另有觀察修訂。core reload／還原仍核對最新 video 請求、Vault／政策／禁止／固定路線、操作及核心身分。自有 reload 的替換標記來自頁面觀察，無法認證所有未經可觀察方法的外部替換。監聽器由 adapter reset 清理，seek／reload wrapper 還原確認目前所有權；不把 DOM／核心物件交給應用層或診斷。
+BR-01 的控制觀察僅提供取消／動作所有權，不授予 Native 權限。可信 pointer／非 seek key 需 isTrusted 與播放器區域；BR-06 seek 鍵可來自頁面焦點，但排除 editable／控制中心／組字／Ctrl／Meta／Alt，須真正可見、同一可信 keydown 尚在派送、同播放器／媒體／生命週期，且實際有限位置改變並 seeking 才取得一次使用者修訂。eventPhase NONE、腳本還原及晚到工作不能取得新寬限；零延遲 timer 僅釋放私有事件參照，舊清理確認候選身分。媒體及 page seek／reload 另有觀察修訂。core reload／還原仍核對最新 video 請求、Vault／政策／禁止／固定路線、操作及核心身分。自有 reload 的替換標記來自頁面觀察，無法認證所有未經可觀察方法的外部替換。監聽器由 adapter reset 清理，seek／reload wrapper 還原確認目前所有權；不把 DOM／事件／核心物件交給應用層或診斷。
 
 腳本不取代或檢視 `Worker`，不建立 Worker 二進位資料物件（Blob）或訊息通道，也不載入遠端程式。
 

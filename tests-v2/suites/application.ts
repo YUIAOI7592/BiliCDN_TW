@@ -724,7 +724,8 @@ class RateAdapter extends PlayerAdapter {
   override video(): HTMLVideoElement { return adapterVideo }
   override player(): Record<string, unknown> { return { getPlaybackRate: () => null } }
 }
-const rateAdapter = new RateAdapter({ transform: () => playurlResult(false), lifecycleKey: () => 'test' })
+const rateAdapter = new RateAdapter({ transform: () => playurlResult(false), lifecycleKey: () => 'test' },
+  { scheduler: { timeout: () => () => undefined }, isActuallyVisible: () => true })
 if (scenario === 12) {
  let iteration = 0
 for (const rate of [1, 1.5, 2, 0.75]) {
@@ -832,4 +833,5 @@ test("host-lock never restores a dead root and may choose a legal alternative [1
 test("normal short resume clears pause-armed diagnostic state [16]", { timeout: 5000 }, async t => { await (await fixture(t, 15))() })
 import '../regressions/functional-races/recovery.ts'
 import '../regressions/functional-races/br01.ts'
+import '../regressions/functional-races/br06.ts'
 import { idleControls } from "../support/player.ts"

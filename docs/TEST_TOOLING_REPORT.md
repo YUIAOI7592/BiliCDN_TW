@@ -83,3 +83,7 @@
 ## 2026-10-10 — BR-04／BR-05 契約
 
 新增 66 個具名正式案例：native-transport 的 19 個 BR-04＋16 個 Fetch 整合，measurement-state 匯入 31 個 startup-abort。四個既有 XHR 替身用 prototype readyState getter／private state 對齊原生 getter 捕捉。型別完整的共用 startup-abort support 使用 FakeClock／deferred／testScope；沒有 as never 介面逃逸、only／skip／todo／cancelled。v2.1.12 全套 448 個通過，工具版本不變；修復／前後失敗與 Chrome 證據分開保存。
+
+## 2026-10-10 — BR-06 正式契約與原生派送校準
+
+原五契約移入 application，未修來源 2 fail／3 pass，再擴充 40 個具名案例、全套 514。真 Adapter／Monitor／Recovery、FakeClock／deferred／testScope 明確清理；既有 suite 匯入，無新 registry／調查输入。Node EventTarget 在監聽器之間清 eventPhase，替身明確建模 Chrome 派送；真正 trusted Chrome keydown 的監聽器間 microtask 看到 phase 1，沒有提前撤銷。首輪校準／錯誤欄位結果保留，正式與來源矩陣分列，不冒充安裝版。typecheck、architecture、全套 test／verify 通過；獨立安全 7 檔與來源隔離 15／15 完成。詳見 BR06_FIX_REPORT。

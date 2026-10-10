@@ -2,6 +2,8 @@
 
 BR-01 A／B／C 修復與發布完成，**實際安裝版已取得部分有效證據，完整矩陣未結案**。本紀錄不代替 [來源隔離／正式契約](BR01_FIX_REPORT.md)，不將原 87.785 秒自然網路原因或其餘完整產品驗收標為完成。
 
+**後續 13:45–13:57 續測已確認 [BR-06 鍵盤 seek 所有權缺口](CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md)，未修復，完整 BR-01 安裝驗收未通過。** 下方原始窗口保留其當時範圍；新的失敗、滑鼠對照及剩餘項目見末段與詳細報告。
+
 ## 產物與測試前提
 
 - 2026-10-10 13:07:23（Asia/Taipei）發布 [v2.1.13](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.13)；來源／標籤提交 fc2b3b5ed58e307d8c87e2326769cfa8a390cf46。main、peeled tag 與唯一 Release 附件已讀回。
@@ -60,3 +62,11 @@ node .work/functional-fixes/br01/2026-10-10-c924b02/analyze-installed.mjs
 ```
 
 分析檢查通過只代表這些有效證據窗口一致；它不是全部安裝版矩陣或自然網路原因結案。
+
+## 13:45–13:57 續測：BR-06 已確認
+
+實際 v2.1.13 body／singleton 再次核對，仍只使用指定影片、Auto，分開 1／2 倍。受控 video-only 延遲期間，在 BODY 焦點的新可信 ArrowRight 實際將目標向前移 5 秒，但 userRevision 未增加；1／2 倍分別在新操作後 8.205／6.986 秒備援。故障中第二次滑鼠 seek 則更新 userRevision，約 14.3 秒對照窗口無備援、保持 seek-grace。三個有效窗口分別持有 7／9／8 個 video、各放行 4 個 audio，全部事件游標完整，沒有 pause／hidden／error 中斷前提。
+
+獨立正確契約為 2 fail／3 pass，既有正式 BR-01 26 個案例重跑通過但未覆蓋此鍵盤入口。根因、精確位置、修正方向、作廢工具校準及重跑見 [BR-06 報告](CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md)。新證據存於 .work/functional-review/br01-remaining/2026-10-10-45a4420/，沒有覆寫前述紀錄。62 個受控 IDs 在記憶體／持久資料命中均 0；恢復後移除自有觀察器與攔截、關閉自建分頁。
+
+已完成本次「找到問題並撰寫詳細報告」的自主目標，沒有修復或升版。鍵盤所有權需修復；安裝版重載後完整 15 秒無進度退出、拖曳／pointercancel、故障中 pause／倍速、晚到 reload／play、真正 hidden 與其餘核心交錯繼續保留待驗收，不能改標為通過。
