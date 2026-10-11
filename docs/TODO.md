@@ -2,7 +2,9 @@
 
 ## 現行 BR-01（v2.1.20）
 
-已修正新paused-transition保存過期SDK位置的缺口，新增16正式契約；[修正與驗證](BR01_NATIVE_POSITION_FIX_REPORT.md) 及 [最新發布狀態](TEST_REPORT.md) 各自記錄。v2.1.19已實際安裝並续測；以下19:58Z舊版觀察保留其時間點，不再是目前安裝阻塞。
+已修正新paused-transition保存過期SDK位置的缺口，新增16正式契約，全套771與完整verify通過；v2.1.20已正式發布，main／tag／唯一附件／公開latest版本、大小與SHA-256核對一致。[修正與驗證](BR01_NATIVE_POSITION_FIX_REPORT.md) 及 [最新發布狀態](TEST_REPORT.md) 各自記錄。05:12:19.828Z完整本體仍v2.1.19，新版安裝前提不通過，已請使用者手動更新後續測。以下19:58Z舊版觀察保留其時間點。
+
+更新後05:17:15.659Z已核對完整v2.1.20與唯一singleton，必要手動更新已完成，目標工具已恢復active。新版新意圖保存最新目標／0、Auto1／2基本播放與短seek／12秒影片延遲、31秒拖曳及原生取消、可信控制撤銷後晚到拒絕子項通過。自然Auto2真實stall重載並恢復有媒體／動作證據，但Network長歷史截斷，不能算完整窗口。[本版二元續測](CHROME_v2.1.20_BR01_ACCEPTANCE.md) 列明界線與清理；完整失敗期限及其餘矩陣**目前不通過，持續執行原目標**。下一個窗口只在真實stall重載後開始影片延遲，前段通行且持續排空Network，不製造媒體狀態或重設控制器。
 
 BR-01 **完整安裝判定不通過**，有效子項與不足項見 [v2.1.19續測](BR01_v2.1.19_INSTALLED_CONTINUATION.md)。正常Auto1／2、播放中12秒延遲與Auto1完整15／30／post15有證據；Auto2完整停滯、pointercancel／失焦全矩陣、晚到SDK、真正hidden、自然pending gate及其他交叉全矩陣不足。接續須核對修補版完整本體／唯一singleton，先驗證新意圖保存最新native目標，再逐項取得有效證據，不靠提前pause／外部核心撤銷或Node補算。原自然87.785秒網路起因独立未定位。
 

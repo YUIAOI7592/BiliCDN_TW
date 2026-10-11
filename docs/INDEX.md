@@ -3,6 +3,7 @@
 ## 現行 v2.1.20 BR-01
 
 - [新意圖位置保存修正](BR01_NATIVE_POSITION_FIX_REPORT.md)：實際過期SDK值、根因、16正式契約、安全差異、Chrome原生／控制模型分列。
+- [v2.1.20 實際安裝續測](CHROME_v2.1.20_BR01_ACCEPTANCE.md)：完整本體／唯一singleton、新目標與0保存通過、原生拖曳取消及晚到拒絕、自然成功恢復子項與完整矩陣界線。
 - [v2.1.19實際續測](BR01_v2.1.19_INSTALLED_CONTINUATION.md)：有效子項通過與完整矩陣不通過的二元判定、清理證據。
 - [最新驗證與發布](TEST_REPORT.md)、[工作狀態](TODO.md)：新版安裝身分與下一個實際窗口。
 
