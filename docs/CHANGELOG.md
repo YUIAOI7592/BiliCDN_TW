@@ -2,6 +2,12 @@
 
 # BiliCDN_TW 變更紀錄
 
+## v2.1.21
+
+- 修正控制中心設定按鈕的 Enter／空白鍵被背後頁面快捷鍵取消，保留按鈕與表單原生預設操作、Escape 關閉及可信事件檢查。
+- 在目前 ShadowRoot 的鍵盤冒泡邊界隔離；關閉／宿主重建清理監聽器，不新增焦點循環或全域攔截。
+- 新增 10 個正式鍵盤契約；自動驗證、安全差異、來源與實際安裝分列於 [最新驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [BR-10 報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR10_FIX_REPORT.md)。BR-01 依使用者決定保持跳過。
+
 ## v2.1.20
 
 - 修正原生HAVE_NOTHING已保存新尋位目標時，新建立的恢復意圖仍讀取SDK舊位置。有限原生currentTime包含0優先，正常初始化後的SDK語意與例外回退保留。

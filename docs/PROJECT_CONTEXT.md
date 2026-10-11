@@ -1,6 +1,6 @@
 # BiliCDN_TW v2 專案脈絡
 
-本文件保存現行產品契約與交付邊界；來源為 `src-v2/`，入口 `src-v2/entry.ts`，正式測試 `tests-v2/`。版本由 [release.json](../release.json) 決定，目前 **v2.1.20**。歷史修復過程見 [INDEX](INDEX.md)，已取得證據見 [TEST_REPORT](TEST_REPORT.md)，目前工作只看 [TODO](TODO.md)。
+本文件保存現行產品契約與交付邊界；來源為 `src-v2/`，入口 `src-v2/entry.ts`，正式測試 `tests-v2/`。版本由 [release.json](../release.json) 決定，目前 **v2.1.21**。歷史修復過程見 [INDEX](INDEX.md)，已取得證據見 [TEST_REPORT](TEST_REPORT.md)，目前工作只看 [TODO](TODO.md)。
 
 ## 現行產品
 
@@ -10,7 +10,7 @@
 
 設定預設啟用腳本、自動 Catalog 選路、Native 來源參考關閉、WebRTC／HTTPDNS 阻擋開啟、詳細診斷關閉。Catalog 共 11 項，4 項預設不可用；使用者勾選或固定主機不能解除黑名單、故障或其他禁止規則。單節點設定在鎖內合併，控制中心過期視圖回呼不能重新開窗或搶焦點。
 
-現行已知 UI 缺陷：[BR-10](IAB_v2.1.20_BR10_CONTROL_CENTER_KEYBOARD.md) 已確認 v2.1.20 控制中心的 Enter／Space 可被頁面快捷鍵取消，Enter 另將焦點移到彈幕輸入框。這是鍵盤派送隔離缺口，與過期視圖回呼及已跳過的 BR-01 分開；本輪尚未修復。
+控制中心以當前封閉 ShadowRoot 的冒泡邊界隔離可信 keydown／keypress／keyup，讓 Enter／Space 及表單維持原生預設操作；Escape 關閉。關閉與宿主重建會清理監聽器。不新增焦點循環，亦無法撤銷外層捕捉階段已做的取消。BR-10 的來源修復與實際安裝結果分列於 [修復報告](BR10_FIX_REPORT.md)。
 
 ## 選路與量測
 

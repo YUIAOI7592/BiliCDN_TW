@@ -4,7 +4,7 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
-目前版本為 **v2.1.20**，以 [release.json](release.json) 為準。最新版修復、發布核對與實際安裝證據分列於 [驗證報告](docs/TEST_REPORT.md)，現行工作見 [TODO](docs/TODO.md)。已發布不等於整份功能矩陣通過。
+目前版本為 **v2.1.21**，以 [release.json](release.json) 為準。最新版修復、發布核對與實際安裝證據分列於 [驗證報告](docs/TEST_REPORT.md)，現行工作見 [TODO](docs/TODO.md)。已發布不等於整份功能矩陣通過。
 
 從 2026-10-11 起，來源隔離、安裝版與發布後瀏覽器回歸均只用內建瀏覽器，執行方式見 [IAB 測試方案](docs/IAB_TESTING.md)。原 Chrome 紀錄保留其版本及環境，不換名算成新的通過結果。
 
@@ -126,7 +126,7 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 ## 目前版本的驗證紀錄
 
-[TEST_REPORT](docs/TEST_REPORT.md) 保存 v2.1.20 的正式契約、安全差異、來源隔離、發布核對與安裝子項證據；[文件索引](docs/INDEX.md) 提供各版完整歷史。
+[TEST_REPORT](docs/TEST_REPORT.md) 保存 v2.1.21 的正式契約、安全差異、來源隔離、發布核對與安裝子項證據；[文件索引](docs/INDEX.md) 提供各版完整歷史。
 
 2026-10-11 的內建瀏覽器核對已證明 Tampermonkey 載入完整 v2.1.20、可信輸入、基本播放／控制中心及精確合成 Fetch／XHR 攔截可用。先前背景窗口沒有充分證明真實切換，已作廢，不能推論產品或內建瀏覽器失敗。詳見 [可用性紀錄](docs/IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md)。
 

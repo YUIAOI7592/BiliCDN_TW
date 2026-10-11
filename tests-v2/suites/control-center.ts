@@ -17,25 +17,73 @@ class QueuedSettingsStorage extends FakeStorage {
   async drain(): Promise<void> { while (this.tasks.length) await this.tasks.shift()!(); await Promise.resolve() }
 }
 
-// Minimal DOM implements construction and event dispatch only. It does not model layout,
-// real trust, native focus behavior, or browser rendering. Trusted flags model user handlers.
+// Event-path contract model, not a browser or evidence of real isTrusted/default actions.
+class UiEvent {
+  defaultPrevented = false; stopped = false; eventPhase = 0
+  target: Element; currentTarget: Element | null = null
+  constructor(readonly type: string, target: Element, readonly key = '', readonly isTrusted = true) { this.target = target }
+  preventDefault() { this.defaultPrevented = true }
+  stopPropagation() { this.stopped = true }
+}
+type UiListener = (event: UiEvent) => void
 class Element {
-  children: Element[] = []; listeners = new Map<string, ((event: any) => void)[]>()
+  children: Element[] = []; listeners = new Map<string, { callback: UiListener; capture: boolean }[]>()
+  parent: Element | null = null
   dataset: Record<string, string> = {}; style: Record<string, string> = {}; textContent = ''
   className = ''; type = ''; value = ''; checked = false; disabled = false; readOnly = false
-  id = ''; isConnected = true; shadow: Element | null = null
+  id = ''; shadow: Element | null = null
+  get isConnected(): boolean { return this.tag === 'document' || this.parent?.isConnected === true }
   constructor(readonly tag = 'div') {}
-  append(...elements: Element[]) { this.children.push(...elements) }
-  replaceChildren(...elements: Element[]) { this.children = elements }
+  append(...elements: Element[]) { for (const element of elements) { element.parent = this; this.children.push(element) } }
+  replaceChildren(...elements: Element[]) { for (const child of this.children) child.parent = null; this.children = []; this.append(...elements) }
   setAttribute(_name: string, _value: string) {}
-  attachShadow(_options: { mode: string }) { this.shadow = new Element('shadow'); return this.shadow }
-  addEventListener(type: string, listener: (event: any) => void) {
-    const rows = this.listeners.get(type) ?? []; rows.push(listener); this.listeners.set(type, rows)
+  attachShadow(_options: { mode: string }) { this.shadow = new Element('shadow'); this.shadow.parent = this; return this.shadow }
+  addEventListener(type: string, callback: UiListener, capture = false) {
+    const rows = this.listeners.get(type) ?? []
+    if (!rows.some(row => row.callback === callback && row.capture === capture)) rows.push({ callback, capture })
+    this.listeners.set(type, rows)
   }
-  emit(type: string) { for (const listener of this.listeners.get(type) ?? []) listener({ isTrusted: true, preventDefault() {}, stopPropagation() {} }) }
+  removeEventListener(type: string, callback: UiListener, capture = false) {
+    this.listeners.set(type, (this.listeners.get(type) ?? []).filter(row => row.callback !== callback || row.capture !== capture))
+  }
+  emit(type: string, key = '', trusted = true): UiEvent {
+    const event = new UiEvent(type, this, key, trusted), path: Element[] = []
+    for (let node: Element | null = this; node; node = node.parent) path.push(node)
+    const shadowIndex = path.findIndex(node => node.tag === 'shadow')
+    const invoke = (node: Element, capture: boolean) => {
+      event.currentTarget = node; event.eventPhase = node === this ? 2 : capture ? 1 : 3
+      event.target = shadowIndex >= 0 && path.indexOf(node) > shadowIndex ? path[shadowIndex + 1]! : this
+      for (const row of [...node.listeners.get(type) ?? []]) {
+        if (row.capture === capture && node.listeners.get(type)?.includes(row)) row.callback(event)
+      }
+    }
+    for (const node of [...path].reverse()) { invoke(node, true); if (event.stopped) break }
+    if (!event.stopped) for (const node of path) { invoke(node, false); if (event.stopped) break }
+    event.eventPhase = 0; event.currentTarget = null
+    return event
+  }
   focusCount = 0
   focus(_options?: unknown) { this.focusCount++ }
   flatten(): Element[] { return [this, ...this.children.flatMap(child => child.flatten()), ...(this.shadow?.flatten() ?? [])] }
+}
+
+for (const key of ['Enter', ' ']) {
+  for (const interferes of [false, true]) {
+    test(`BR-10 ${key === ' ' ? 'Space' : key} activation contract ${interferes ? 'isolates page bubble shortcuts' : 'preserves no-shortcut control'}`, t => {
+      const f = ui(t), button = f.button('CDN 與播放設定'), external = new Element('input')
+      f.doc.append(external); let pageCalls = 0
+      if (interferes) f.doc.addEventListener('keydown', event => {
+        pageCalls++; event.preventDefault(); if (event.key === 'Enter') external.focus()
+      })
+      const down = button.emit('keydown', key)
+      const press = button.emit('keypress', key)
+      const up = button.emit('keyup', key)
+      // Model the contract that the native default action remains eligible. IAB proves actual activation.
+      if (!down.defaultPrevented && !press.defaultPrevented && !up.defaultPrevented) button.emit('click')
+      assert.equal(f.doc.flatten().find(e => e.tag === 'h2')?.textContent, 'CDN 與播放設定')
+      assert.equal(pageCalls, 0); assert.equal(external.focusCount, 0)
+    })
+  }
 }
 
 test('R03 completing an older command cannot replace the settings view or take focus', async t => {
@@ -49,6 +97,88 @@ test('R03 completing an older command cannot replace the settings view or take f
   assert.equal(f.doc.flatten().find(e => e.tag === 'h2'), heading)
   assert.equal(heading?.textContent, 'CDN 與播放設定')
   const close = f.button('關閉'); assert.equal(close.focusCount, 1)
+})
+
+test('BR-10 all keyboard phases preserve control defaults and stop only outer bubbling', t => {
+  const f = ui(t); f.button('CDN 與播放設定').emit('click')
+  const controls = f.doc.flatten().filter(e => ['button', 'input', 'select'].includes(e.tag))
+  let captures = 0, bubbles = 0, targets = 0
+  f.doc.addEventListener('keydown', () => { captures++ }, true)
+  for (const type of ['keydown', 'keypress', 'keyup']) f.doc.addEventListener(type, () => { bubbles++ })
+  for (const control of controls) {
+    control.addEventListener('keydown', () => { targets++ })
+    for (const key of ['Enter', ' ', 'Tab', 'ArrowDown', 'c']) {
+      for (const type of ['keydown', 'keypress', 'keyup']) assert.equal(control.emit(type, key).defaultPrevented, false)
+    }
+  }
+  assert.equal(captures, controls.length * 5); assert.equal(targets, captures); assert.equal(bubbles, 0)
+  f.button('返回').emit('click'); f.button('查看診斷報告').emit('click')
+  const report = f.doc.flatten().find(e => e.tag === 'textarea'); assert.ok(report)
+  assert.equal(report.emit('keydown', 'c').defaultPrevented, false)
+  assert.equal(bubbles, 0)
+})
+
+test('BR-10 outer capture cancellation remains observable rather than being claimed repaired', t => {
+  const f = ui(t), button = f.button('CDN 與播放設定')
+  f.doc.addEventListener('keydown', event => event.preventDefault(), true)
+  assert.equal(button.emit('keydown', 'Enter').defaultPrevented, true)
+  assert.equal(f.doc.flatten().find(e => e.tag === 'h2')?.textContent, 'BiliCDN v2 控制中心')
+})
+
+test('BR-10 synthetic keyboard click and change cannot close or execute settings commands', t => {
+  const f = ui(t), before = f.settings.get()
+  const stop = f.button('停用腳本')
+  assert.equal(stop.emit('keydown', 'Escape', false).defaultPrevented, false)
+  stop.emit('click', '', false)
+  assert.equal(f.storage.tasks.length, 0)
+  f.button('CDN 與播放設定').emit('click')
+  const input = f.toggle('阻止網頁使用 HTTPDNS'); input.checked = false; input.emit('change', '', false)
+  assert.equal(f.storage.tasks.length, 0); assert.deepEqual(f.settings.get(), before)
+  assert.equal(f.doc.flatten().filter(e => e.className === 'dialog').length, 1)
+})
+
+test('BR-10 reopen installs one boundary and Escape removes all three listeners', t => {
+  const f = ui(t), host = f.doc.flatten().find(e => e.id === 'bilicdn-v2-control-center')!
+  const shadow = host.shadow!
+  f.center.show(); f.center.show()
+  for (const type of ['keydown', 'keypress', 'keyup']) assert.equal(shadow.listeners.get(type)?.length, 1)
+  let closingCalls = 0
+  const close = f.center.close.bind(f.center)
+  f.center.close = () => { closingCalls++; close() }
+  const event = f.button('關閉').emit('keydown', 'Escape')
+  assert.equal(event.defaultPrevented, true); assert.equal(closingCalls, 1)
+  for (const type of ['keydown', 'keypress', 'keyup']) assert.equal(shadow.listeners.get(type)?.length, 0)
+  let pageCalls = 0; f.doc.addEventListener('keydown', () => { pageCalls++ })
+  assert.equal(host.emit('keydown', 'Enter').defaultPrevented, false); assert.equal(pageCalls, 1)
+  f.center.show()
+  for (const type of ['keydown', 'keypress', 'keyup']) assert.equal(shadow.listeners.get(type)?.length, 1)
+})
+
+test('BR-10 outside keys and stale nodes cannot affect the current center', t => {
+  const f = ui(t), oldButton = f.button('CDN 與播放設定')
+  const oldHost = f.doc.flatten().find(e => e.id === 'bilicdn-v2-control-center')!, oldShadow = oldHost.shadow!
+  const retained = [...oldShadow.listeners.get('keydown') ?? []]
+  let pageCalls = 0; f.doc.addEventListener('keydown', () => { pageCalls++ })
+  const outside = new Element('button'); f.doc.append(outside)
+  outside.emit('keydown', 'Enter'); assert.equal(pageCalls, 1)
+  oldHost.parent = null; f.doc.children = f.doc.children.filter(e => e !== oldHost)
+  f.center.show()
+  for (const type of ['keydown', 'keypress', 'keyup']) assert.equal(oldShadow.listeners.get(type)?.length, 0)
+  const stale = new UiEvent('keydown', oldButton, 'Escape'); stale.currentTarget = oldShadow
+  for (const row of retained) row.callback(stale)
+  assert.equal(stale.defaultPrevented, false)
+  assert.equal(f.doc.flatten().filter(e => e.className === 'dialog').length, 1)
+  oldButton.emit('keydown', 'Escape')
+  assert.equal(f.doc.flatten().filter(e => e.className === 'dialog').length, 1)
+})
+
+test('BR-10 target-side synchronous close and reopen leaves only the new event boundary', t => {
+  const f = ui(t), button = f.button('CDN 與播放設定')
+  button.addEventListener('keydown', () => { f.center.close(); f.center.show() })
+  button.emit('keydown', 'Enter')
+  const shadow = f.doc.flatten().find(e => e.id === 'bilicdn-v2-control-center')!.shadow!
+  for (const type of ['keydown', 'keypress', 'keyup']) assert.equal(shadow.listeners.get(type)?.length, 1)
+  assert.equal(f.doc.flatten().filter(e => e.className === 'dialog').length, 1)
 })
 
 test('R03 a queued initial focus cannot steal focus after close', t => {
@@ -70,6 +200,7 @@ test('R02 a pending single-host edit merges the latest remote settings under loc
 })
 function ui(t: TestContext) {
   const storage = new QueuedSettingsStorage(), f = fixture(t, storage), doc = new Element('document')
+  f.scope.defineGlobal('GM_info', { configurable: true, value: { script: { version: 'contract' } } })
   const body = new Element('body'), video = new Element('video'); doc.append(body, video)
   f.scope.defineGlobal('HTMLElement', { configurable: true, value: Element })
   f.scope.defineGlobal('document', { configurable: true, value: { documentElement: doc, body, activeElement: null,

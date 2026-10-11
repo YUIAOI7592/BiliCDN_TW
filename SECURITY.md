@@ -2,9 +2,9 @@
 
 # 信任邊界與資料處理
 
-本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準（目前 v2.1.20）。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [修復索引](docs/INDEX.md)，不把歷史掃描當成新差異的驗證。
+本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準（目前 v2.1.21）。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [修復索引](docs/INDEX.md)，不把歷史掃描當成新差異的驗證。
 
-瀏覽器驗證只使用 **Codex 內建瀏覽器＋Tampermonkey**，資料隔離、送出前攔截與清理依 [IAB_TESTING](docs/IAB_TESTING.md)。來源隔離、環境校準與實際安裝各自判定；本次文件整理沒有執行新安全掃描或產品驗收。
+瀏覽器驗證只使用 **Codex 內建瀏覽器＋Tampermonkey**，資料隔離、送出前攔截與清理依 [IAB_TESTING](docs/IAB_TESTING.md)。來源隔離、環境校準與實際安裝各自判定；本版 BR-10 差異審查與來源證據見 [修復報告](docs/BR10_FIX_REPORT.md)。
 
 <a name="untrusted-inputs"></a>
 
@@ -17,7 +17,7 @@
 - 可信 playurl API 的媒體表示會取代較低信任的頁面及播放器提示所授予的 Native 資格；已撤銷的不透明識別碼不得啟動主動探測或建立新的健康證據。
 - BR-03 的 cid 僅來自所屬、已辨識的 API 請求，保存在 Fetch 閉包／XHR metadata 及控制器私有狀態。只作內容關聯，不是回應驗證或 Native 授權。父目錄備援上限為影片 128／音訊 64；低信任提示不更新基準。cid 與目錄不得輸出到診斷或持久資料。請求重用、failed open、同步重入均維持 context 所有權。
 - 未知外部主機必須先有自然發生、可歸因的成功傳輸才可取得證據；不得預先主動探測。
-- 控制中心在封閉 Shadow DOM 內執行，操作必須來自可信使用者事件。
+- 控制中心在封閉 Shadow DOM 內執行，操作必須來自可信使用者事件。BR-10 僅在當前 UI 自有冒泡邊界停止可信鍵盤傳播，不合成 click、不替代命令，保留原 click／change 信任檢查。關閉／重建清理監聽器並核對宿主身分；不修改全域事件原型或外層監聽器。外層 capture 先執行屬已知限制，須另以實際網站驗證。
 
 已辨識的 MP4／FLV `durl` 分段及 DASH 別名仍是不可信資料內容。漸進式／混合格式輸出先完成規劃才寫回 URL；必要分段若沒有合法主線，不得丟棄該段或輸出部分改寫的成功結果。這是資料內容寫回的原子性，不保證回滾 Vault／控制器登記。型別化 playurl 結果的 `accepted` 必須由每個消費端檢查。嚴格模式下，Fetch 拒絕的 playurl 使用 HTTP 503；XHR 提供安全失敗內容，保留原生 HTTP 狀態。
 

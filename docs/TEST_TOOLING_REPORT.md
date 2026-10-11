@@ -116,3 +116,8 @@ Chrome 修復來源隔離 **40／40 個有效案例通過**：真正可信 keydo
 本輪 Codex Security 差異掃描 3e3d133e-7f39-4bf8-a0ba-d22d188a639a 已封存、complete／0 可報告發現／無未處理候選；v2.1.15 最終 verify、封裝及公開更新核對完成。使用者更新後，實際完整 body／singleton 1 已核對，正常鍵盤、新寬限與約 12 秒延遲後進度有證據，與來源隔離分列。續測新增 [BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 外層拖曳命中缺口，私有七正確契約 **3 fail／4 pass、exit 1** 與發布前 574 正式通過分列，私有完整型別檢查通過；沒有修改來源或正式登記。本輪文件整理未新增執行期測試通過宣稱。最終 107 受控 IDs 學習匹配皆 0、自有資源清理完成；完整 BR-01、真正 hidden／晚到 SDK 等仍未結案，見 [安裝矩陣](CHROME_v2.1.15_ACCEPTANCE.md)。
 
 發布後文件同步實際檢查：13 份現行文件／新 BR-08 報告，278 連結、33 顯式錨點，無失效路徑或錨點；git diff --check 通過。v2.1.14 完整 TEST_REPORT 正文仍逐字保存在歷史，原 BR-07／安裝文件未變；本輪未修改 runtime／tests／config／Release 或安全封存。只記錄文件檢查，不算新的正式測試或安全掃描。
+
+
+## 2026-10-11 BR-10 控制中心事件契約
+
+補齊事件路徑、capture／bubble、取消旗標、封閉 ShadowRoot 的外層 retarget 與 listener 移除模型。未改執行期時 11 案為 9 pass／2 fail（Enter／Space 干擾契約）；修復後新增邊界共 17／17，原 7 案保留。模型預設啟動僅作契約；真正原生啟動另由 IAB 四組來源對照與指定影片兩組可信按鍵證明，見 [BR-10 修復](BR10_FIX_REPORT.md)。

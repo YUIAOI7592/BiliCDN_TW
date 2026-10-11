@@ -119,17 +119,20 @@ export class ControlCenter {
   #opener: HTMLElement | null = null
   #viewVersion = 0
   #open = false
+  #releaseKeyboard: (() => void) | null = null
   constructor(private readonly deps: ControlCenterDependencies) {}
 
   show(opener?: HTMLElement | null): void {
     this.#open = true
     this.#opener = opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null)
     this.#ensure()
+    this.#observeKeyboard()
     this.#renderOverview()
   }
 
   close(): void {
     this.#open = false; this.#viewVersion++
+    this.#clearKeyboard()
     if (this.#shadow) this.#shadow.replaceChildren(this.#style())
     const target = this.#opener?.isConnected ? this.#opener : document.querySelector('video') ?? document.body
     if (target instanceof HTMLElement) { try { target.focus({ preventScroll: true }) } catch { /* detached */ } }
@@ -137,16 +140,37 @@ export class ControlCenter {
 
   #ensure(): void {
     if (this.#host?.isConnected && this.#shadow) return
+    this.#clearKeyboard()
     this.#host = document.createElement('div')
     this.#host.id = 'bilicdn-v2-control-center'
     this.#shadow = this.#host.attachShadow({ mode: 'closed' })
     this.#shadow.append(this.#style())
     document.documentElement.append(this.#host)
-    this.#shadow.addEventListener('keydown', event => {
-      const keyboard = event as KeyboardEvent
-      if (!keyboard.isTrusted || keyboard.key !== 'Escape') return
-      event.preventDefault(); event.stopPropagation(); this.close()
-    })
+  }
+
+  #clearKeyboard(): void {
+    this.#releaseKeyboard?.()
+    this.#releaseKeyboard = null
+  }
+
+  #observeKeyboard(): void {
+    if (this.#releaseKeyboard || !this.#host || !this.#shadow) return
+    const host = this.#host, shadow = this.#shadow
+    const onKeyboard = (event: Event): void => {
+      if (!event.isTrusted || !this.#open || this.#host !== host || this.#shadow !== shadow
+        || !host.isConnected || event.currentTarget !== shadow) return
+      // Keep native controls' default actions; only isolate the page's bubble shortcuts.
+      // An outer capture listener has already run and cannot be undone here.
+      event.stopPropagation()
+      if (event.type === 'keydown' && (event as KeyboardEvent).key === 'Escape') {
+        event.preventDefault(); this.close()
+      }
+    }
+    const types = ['keydown', 'keypress', 'keyup'] as const
+    for (const type of types) shadow.addEventListener(type, onKeyboard)
+    this.#releaseKeyboard = () => {
+      for (const type of types) shadow.removeEventListener(type, onKeyboard)
+    }
   }
 
   #style(): HTMLStyleElement { const style = document.createElement('style'); style.textContent = css; return style }

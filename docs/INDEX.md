@@ -1,10 +1,10 @@
 # 專案文件索引與維護規則
 
-更新：2026-10-11。現行版本 **v2.1.20**，依 [release.json](../release.json)、[package.json](../package.json)、[package-lock.json](../package-lock.json) 與 [src-v2](../src-v2/entry.ts) 核對。
+更新：2026-10-11。現行版本 **v2.1.21**，依 [release.json](../release.json)、[package.json](../package.json)、[package-lock.json](../package-lock.json) 與 [src-v2](../src-v2/entry.ts) 核對。
 
 **目前決定：依使用者要求跳過 BR-01。** 剩餘專項驗收已退出現行待辦，不再自主續測或阻擋其他工作／發布；既有修復、正式回歸及證據保留，不把跳過改記為通過。只有使用者明確要求才恢復。現行範圍以 [TODO](TODO.md) 為準，下方逐輪結果保留當時判定。
 
-**最新第 6 輪：BR-10 控制中心鍵盤衝突已重現、未修復。** 繼續 BR-01 以外的 TODO 時，新的原生鍵盤能力校準通過，但實際安裝的設定按鈕被頁面按鍵處理取消；來源正常／失敗對照已完成。P04／P05 剩餘 UI 子項沒有補算通過，其他已通過結果沿用，沒有反覆重開無前提 gate。見 [BR-10 與第 6 輪報告](IAB_v2.1.20_BR10_CONTROL_CENTER_KEYBOARD.md)。
+**BR-10 本機修復通過，v2.1.21 正在完成發布。** 控制中心正式套件 17／17、全套 788／788；獨立安全差異審查 0 發現。內建瀏覽器來源隔離四組及指定影片 Enter／Space 兩组通過，焦點保持控制中心。新版安裝 BR-10／P04／P05 尚未執行，不以來源結果代替。見 [修復報告](BR10_FIX_REPORT.md)。
 
 **今後所有瀏覽器測試只用 Codex 內建瀏覽器＋Tampermonkey。** 唯一方案是 [IAB_TESTING](IAB_TESTING.md)；[TODO](TODO.md) 記錄目前狀態，[TEST_REPORT](TEST_REPORT.md) 記錄版本證據。先前 [收集器修復與第 5 輪](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md) 完成工具隔離驗證及 30 個 tooling 契約，新增 B02 滑鼠 1 倍 30 秒尾段、P03 同片自然 cid／epoch 通過，該輪沒有新確認的產品缺陷。其他失效窗口按前提停止，最終資源及分頁清理完成；前 4 輪有效結果沿用，固定矩陣未完整通過。只改工具、測試與文件，沒有產品來源修改、升版或發布。
 
@@ -35,6 +35,7 @@
 | [IAB TODO 第 4 輪](IAB_v2.1.20_TODO_R4_2026-10-11.md) | 19 項新增通過、兩次 B02 無效窗口與工具閉包對照；最終清理完成 |
 | [收集器修復與 IAB 第 5 輪](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md) | 工具契約／隔離、B02 滑鼠 1 倍尾段與 P03 同片通過；其他前提中斷後停止 |
 | [BR-10 與 IAB 第 6 輪](IAB_v2.1.20_BR10_CONTROL_CENTER_KEYBOARD.md) | 非 BR-01 TODO 續行；控制中心 Enter／Space 衝突的安裝證據、來源對照與修正方向 |
+| [BR-10 修復與發布](BR10_FIX_REPORT.md) | 鍵盤隔離修復、正式契約、安全及來源／安裝 UI 證據 |
 | [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md) | 測試遷移、套件登記、XHR 原生替身及 BR-07 keydown／keyup 提交階段校準 |
 | [測試遷移對照](../tests-v2/MIGRATION.md) | 原 891 項功能斷言的行為群組、分支及參數矩陣對照 |
 | [SECURITY](../SECURITY.md) | 信任邊界、持久資料、網路權限及診斷限制 |
@@ -60,7 +61,8 @@ Markdown 格式依 [GFM 約定](DEVELOPMENT.md#markdown-format) 維護；格式�
 
 | 版本／範圍 | 修復與調查 | 實際安裝／階段紀錄 |
 | --- | --- | --- |
-| v2.1.20 | [新意圖原生位置保存](BR01_NATIVE_POSITION_FIX_REPORT.md)、[最新版完整驗證](TEST_REPORT.md) | [BR-01 安裝子項、事件缺口與清理](CHROME_v2.1.20_BR01_ACCEPTANCE.md) |
+| v2.1.21 | [BR-10 鍵盤隔離](BR10_FIX_REPORT.md)、[最新版完整驗證](TEST_REPORT.md) | 本輪來源／安裝分列 |
+| v2.1.20 | [新意圖原生位置保存](BR01_NATIVE_POSITION_FIX_REPORT.md)、[完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2120-release-verification--2026-10-11) | [BR-01 安裝子項、事件缺口與清理](CHROME_v2.1.20_BR01_ACCEPTANCE.md) |
 | v2.1.19 | [空媒體鍵盤所有權](BR01_NATIVE_KEYBOARD_FIX_REPORT.md) | [安裝續測二元判定與新位置缺陷](BR01_v2.1.19_INSTALLED_CONTINUATION.md) |
 | v2.1.18 | [BR-09 修復](BR09_FIX_REPORT.md) | [安裝紀錄](CHROME_v2.1.18_ACCEPTANCE.md) |
 | v2.1.17 | [SDK 後續恢復](BR01_FOLLOWTHROUGH_FIX_REPORT.md)、[BR-09 原調查](CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK.md) | [安裝矩陣](CHROME_v2.1.17_ACCEPTANCE.md)、[當輪二元判定](BR01_v2.1.17_FINAL_ACCEPTANCE.md) |
