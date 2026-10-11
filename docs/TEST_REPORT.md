@@ -2,6 +2,12 @@
 
 # BiliCDN_TW v2.1.20 BR-01 新意圖位置保存驗證 — 2026-10-11
 
+## 2026-10-11 IAB 收集器修復與第 5 輪
+
+以 `f5f26e3` 為基準，[第 5 輪](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md) **收集器修復、7 個新增正式契約及 IAB loopback 隔離通過；完整 tooling 30／30、typecheck 通過。** 新增 B02 第二次滑鼠 seek 1 倍的 30 秒尾段通過：新修訂後 16.459 秒備援一次、31.460 秒實際 reload 一次，保存最新目標。P03 兩個自然 API 均與原請求 cid 相符，epoch 維持 0，限定同片安裝子項通過。
+
+B02 播放器焦點／滑鼠 2 倍在新操作後約 19.7 秒由網站換核心並暫停；B03 1 倍修正命中後 dragging 成立，但 22.596 秒後前提中斷。B06 空核心期間的新按鍵未取得修訂，無產品判定；沒有反覆開相同失效窗口。最終 3 文件、20 個包裝及 timer／訂閱清理，held／patterns／分頁為零，107 個受控 request 樣本零匹配。B03 cleanup 的 4 筆取消／放行競合錯誤保留，不補算通過。沒有新確認的產品缺陷，固定矩陣未完整通過；缺口見 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。只改測試工具、契約與文件，未改產品來源、升版、完整 verify 或安全封存。
+
 ## 2026-10-11 IAB 第 4 輪
 
 以 `14ea6a5` 為基準，[TODO 第 4 輪](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/IAB_v2.1.20_TODO_R4_2026-10-11.md) **新增實際安裝／原生 XHR timeout 2 案，以及內建瀏覽器來源隔離格式與 hook 資源 17 項通過，沒有新確認的產品缺陷。** 前 3 輪有效結果沿用。B02 播放器焦點 2 倍的未觀察尾段嘗試兩次，均在新按鍵前被收集器中斷，不算產品通過或失敗；未再跑無新前提的背景、gate 或既知無效故障窗口。

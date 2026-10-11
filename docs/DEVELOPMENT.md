@@ -155,6 +155,8 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 本方案沒有現成一鍵瀏覽器執行器；每輪需保存工具操作與重跑入口。工具不支援的必要步驟列具體阻塞，不能改用外部瀏覽器或繞過限制。詳見 [判定與時間上限](IAB_TESTING.md#verdict)、[證據目錄](IAB_TESTING.md#evidence)。
 
+[iab-event-collector.mjs](../scripts/iab-event-collector.mjs) 是注入 IAB CDP capability 的主機端事件收集工具，不建立瀏覽器連線或計時器，也不包含產品控制器。每個窗口使用新實例；跨呼叫狀態留在實例，完整登記暫停 ID 後才分類。呼叫端負責 finally 清理、停止條件及樣本隔離。正式契約歸入 `npm test -- tooling`；自有 loopback 隔離與安裝版結果分列，見 [第 5 輪](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md)。
+
 <a name="packaging-and-release"></a>
 
 ## 封裝與發行

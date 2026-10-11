@@ -2,7 +2,7 @@
 
 更新：2026-10-11。現行版本 **v2.1.20**，依 [release.json](../release.json)、[package.json](../package.json)、[package-lock.json](../package-lock.json) 與 [src-v2](../src-v2/entry.ts) 核對。
 
-**今後所有瀏覽器測試只用 Codex 內建瀏覽器＋Tampermonkey。** 唯一方案是 [IAB_TESTING](IAB_TESTING.md)；[TODO](TODO.md) 記錄目前狀態，[TEST_REPORT](TEST_REPORT.md) 記錄版本證據。最新 [IAB TODO 第 4 輪](IAB_v2.1.20_TODO_R4_2026-10-11.md) 新增 XHR 真正逾時 2 案與來源隔離格式／hook 17 項通過，沒有新確認的產品缺陷；兩次 B02 尾段嘗試因工具收集器失效，不算通過。最終資源及分頁清理完成；前 3 輪有效結果沿用，固定矩陣未完整通過。沒有改來源、升版或發布。
+**今後所有瀏覽器測試只用 Codex 內建瀏覽器＋Tampermonkey。** 唯一方案是 [IAB_TESTING](IAB_TESTING.md)；[TODO](TODO.md) 記錄目前狀態，[TEST_REPORT](TEST_REPORT.md) 記錄版本證據。最新 [收集器修復與第 5 輪](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md) 完成工具隔離驗證及 30 個 tooling 契約，新增 B02 滑鼠 1 倍 30 秒尾段、P03 同片自然 cid／epoch 通過，沒有新確認的產品缺陷。其他失效窗口按前提停止，最終資源及分頁清理完成；前 4 輪有效結果沿用，固定矩陣未完整通過。只改工具、測試與文件，沒有產品來源修改、升版或發布。
 
 [內建瀏覽器可用性紀錄](IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md) 已確認一般操作、完整腳本身分與合成傳輸能力；背景窗口已作廢並撤回能力失敗判定。它不等於 BR-01 完整通過。歷史 Chrome 報告維持原環境，不改名成 IAB 證據。
 
@@ -29,6 +29,7 @@
 | [BR-01 IAB 第 2 輪](IAB_v2.1.20_BR01_R2_2026-10-11.md) | 新操作、inner 拖曳、晚到 SDK、等待中政策撤銷與獨立 XHR 子集；累計缺口見 TODO |
 | [IAB TODO 第 3 輪](IAB_v2.1.20_TODO_R3_2026-10-11.md) | XHR 同步／取消、雙分頁設定與診斷子項；工具／自然前提不足時停止，不重測既有通過案例 |
 | [IAB TODO 第 4 輪](IAB_v2.1.20_TODO_R4_2026-10-11.md) | 19 項新增通過、兩次 B02 無效窗口與工具閉包對照；最終清理完成 |
+| [收集器修復與 IAB 第 5 輪](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md) | 工具契約／隔離、B02 滑鼠 1 倍尾段與 P03 同片通過；其他前提中斷後停止 |
 | [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md) | 測試遷移、套件登記、XHR 原生替身及 BR-07 keydown／keyup 提交階段校準 |
 | [測試遷移對照](../tests-v2/MIGRATION.md) | 原 891 項功能斷言的行為群組、分支及參數矩陣對照 |
 | [SECURITY](../SECURITY.md) | 信任邊界、持久資料、網路權限及診斷限制 |

@@ -11,6 +11,7 @@ import { inspectImportPurity } from '../scripts/import-purity.mjs'
 import { testScope } from './support/scope.ts'
 import { FakeClock } from './support/clock.ts'
 import { deferred } from './support/deferred.ts'
+import './regressions/iab-event-collector.ts'
 
 test('registry aliases, listing and CLI validation do not allocate or execute', { timeout: 5000 }, () => {
   assert.deepEqual(selection('adapters'), selection('suites/adapters'))

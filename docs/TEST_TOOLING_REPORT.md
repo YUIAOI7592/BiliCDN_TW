@@ -1,4 +1,20 @@
-# 測試工具驗證紀錄 — 2026-10-07
+<a name="測試工具驗證紀錄--2026-10-07"></a>
+
+# 測試工具驗證紀錄
+
+## 2026-10-11 IAB 收集器
+
+基準 `f5f26e3`、產品版本 v2.1.20。第 4 輪的閉包失效證據保留；新增主機端 [IabEventCollector](../scripts/iab-event-collector.mjs) 與 [7 個正式契約](../tests-v2/regressions/iab-event-collector.ts)，由既有 tooling 套件匯入。工具以實例保存跨呼叫狀態、先登記整批暫停請求、分頁去重、失效後停止持有，並區分有原生終止證據與未解決的放行錯誤。
+
+- `npm test -- tooling`：**30／30**；fail／skipped／todo／cancelled 均為 0。
+- `npm run typecheck`：通過；Windows／Node 26.8.1／npm 11.19.0。
+- IAB 自有 loopback：正常 Fetch／XHR、跨呼叫開關、分類例外及原生 abort 通過；無產品或正式 GM 儲存，服務／分頁已清理。
+- 執行方法與保存來源逐一比對一致；沒有外部瀏覽器控制或遠端程式載入。
+- 網站後續結果另見 [第 5 輪報告](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md)。產品來源、版本及 Release 不變；未重跑產品完整測試／verify 或安全掃描。
+
+證據位於 `.work/iab-testing/2026-10-11-v2.1.20-f5f26e3-r5/`。以下各日期保留當時範圍與結果。
+
+## 2026-10-07 工具遷移
 
 本紀錄適用於 v2.1.8 工作樹的開發工具與測試遷移。產品來源、版本號及已發布 Release 保持原狀；2026-10-04 的發行、安全及瀏覽器證據見 [TEST_REPORT](TEST_REPORT.md)，不以本次工具檢查取代。命令與資源責任見 [開發流程](DEVELOPMENT.md#test-suites-and-isolation)，原行為對照見 [MIGRATION](../tests-v2/MIGRATION.md)。
 
