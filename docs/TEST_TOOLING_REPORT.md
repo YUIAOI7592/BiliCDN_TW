@@ -2,7 +2,20 @@
 
 # 測試工具驗證紀錄
 
-各節依日期保存當時的測試工具與契約模型證據，不把舊版本數量當成現行執行結果。最新事件模型更新為 [BR-10 控制中心](#2026-10-11-br-10-控制中心事件契約)；現行命令見 [DEVELOPMENT](DEVELOPMENT.md#test-suites-and-isolation)，v2.1.21 的完整驗證及實際 IAB 安裝結果見 [TEST_REPORT](TEST_REPORT.md)。
+各節依日期保存當時的測試工具與契約模型證據，不把舊版本數量當成現行執行結果。最新通道校準為 [P05 PowerShell 讀回](#2026-10-12-p05-powershell-讀回)；最新事件模型更新仍為 [BR-10 控制中心](#2026-10-11-br-10-控制中心事件契約)。現行命令見 [DEVELOPMENT](DEVELOPMENT.md#test-suites-and-isolation)，v2.1.21 的完整驗證及實際 IAB 安裝結果見 [TEST_REPORT](TEST_REPORT.md)。
+
+## 2026-10-12 P05 PowerShell 讀回
+
+基準 v2.1.21／`99dd071`，PowerShell 7.6.5、Node 26.8.1、npm 11.19.0。未新增正式工具套件或修改產品，以下是環境證據，不併入 788 個既有正式案例。
+
+- 隔離層內 `Get-Clipboard -Raw` 讀空，但原生 `OpenClipboard` 回報存取被拒；不能把正常命令退出視為有效讀回。
+- 隔離層外可讀 Windows 剪貼簿；同一長存程序將文字及七種 HGLOBAL 格式留在記憶體，沒有輸出原內容或寫入檔案。
+- 自有 loopback 頁真正 Ctrl+C／Ctrl+V 的 61 字元合成文字逐字相符，IAB API 讀回也相符；PowerShell 每 100 ms、最多 5 秒仍讀原文字，序號不變，證明本輪共同通道未建立。
+- 第一個隔離服務的 IAB 連線逾時；確認主機側服務可讀 200 後只重試一次，頁面成功載入，不把最初網路錯誤算成剪貼簿產品缺陷。
+- Windows 原文字及格式未變，無需寫回；保存程序退出 0、服務 listener 為零。IAB 原內容未保存，合成文字保留；錯誤頁顯式清理受 URL 政策阻擋，不宣稱全部清理通過。
+- 按校準停止條件未重跑真實 P05。沒有新的 typecheck／architecture／npm test／verify／安全掃描，只有本次文件格式、連結、事實及差異檢查。
+
+詳見 [通道調查與重跑條件](P05_COPY_CHANNEL_REPORT_2026-10-12.md)。私有工具、metadata 與截圖存於 `.work/functional-fixes/p05-copy/2026-10-12-99dd071/`，不進正式測試、封裝或發布。
 
 ## 2026-10-11 IAB 收集器
 

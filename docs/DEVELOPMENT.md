@@ -155,6 +155,8 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 本方案沒有現成一鍵瀏覽器執行器；每輪需保存工具操作與重跑入口。工具不支援的必要步驟列具體阻塞，不能改用外部瀏覽器或繞過限制。詳見 [判定與時間上限](IAB_TESTING.md#verdict)、[證據目錄](IAB_TESTING.md#evidence)。
 
+剪貼簿驗證必須先證明真正複製／貼上與預定讀回共用通道，並能完整復原原資料。2026-10-12 的 IAB 原生複製及 API 讀回相符，PowerShell 卻讀到未變的 Windows 原內容；隔離層內另有原生存取被拒證據。這些是測試通道限制，不是產品複製失敗。校準未成立時不操作實際 P05、不做推測性來源修改；詳見 [剪貼簿規則](IAB_TESTING.md#剪貼簿校準與保護) 與 [通道調查](P05_COPY_CHANNEL_REPORT_2026-10-12.md)。
+
 [iab-event-collector.mjs](../scripts/iab-event-collector.mjs) 是注入 IAB CDP capability 的主機端事件收集工具，不建立瀏覽器連線或計時器，也不包含產品控制器。每個窗口使用新實例；跨呼叫狀態留在實例，完整登記暫停 ID 後才分類。呼叫端負責 finally 清理、停止條件及樣本隔離。正式契約歸入 `npm test -- tooling`；自有 loopback 隔離與安裝版結果分列，見 [第 5 輪](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md)。
 
 <a name="packaging-and-release"></a>
