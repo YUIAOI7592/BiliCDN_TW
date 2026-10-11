@@ -1,6 +1,12 @@
 # BiliCDN_TW v2 專案脈絡
 
-## 現行 BR-01 空媒體鍵盤修復（v2.1.19）
+## 現行 BR-01 新意圖位置保存（v2.1.20）
+
+新恢復意圖在原生 HAVE_NOTHING 下保存有限 currentTime，包含0，避免 SDK 的尋位前快取覆蓋新目標。已初始化媒體保留 SDK 讀取語意；非有限值或原生讀取例外回退。位置只是觀察，不授予新使用者修訂或路線資格；Recovery 保留保存前後及每個副作用前的所有權重查。Auto／ABR、15／30／15、schema2不變。
+
+來源／正式契約與真實安裝分列，見 [修正](BR01_NATIVE_POSITION_FIX_REPORT.md)、[v2.1.19續測二元判定](BR01_v2.1.19_INSTALLED_CONTINUATION.md) 及 [最新驗證](TEST_REPORT.md)。完整安裝矩陣不因本機修正自動通過；下列版本段落保留發布時範圍。
+
+## v2.1.19 空媒體鍵盤修復紀錄
 
 可信 keydown／keyup 的實際有限新目標，在 seeking 或原生 HAVE_NOTHING 下可取得一次新使用者修訂；後者另要求捕捉核心未變且非 internalReload。候選仍須同一派送／版本／媒體／播放器／內容及真正可見，internalSeek／pendingSeek 來源抑制不變。未知位置只撤銷過期還原，不能猜成使用者。公開 API、schema 2、Auto／ABR 和 15／30／15 不變。
 

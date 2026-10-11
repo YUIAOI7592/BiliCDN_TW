@@ -261,3 +261,63 @@ test('BR-09 late reload rejection cannot revive a reset recovery or restore its 
   f.ready(); f.clock.advance(1000); f.recovery.tick(f.player.snapshot())
   assert.deepEqual(f.effects.seeks, []); assert.equal(f.effects.plays, 0)
 })
+
+// BR-01 installed v2.1.19: a new paused-transition saved the SDK's cached
+// pre-keyup position although the native HAVE_NOTHING target had moved.
+for (const rate of [1, 2] as const) {
+  for (const target of [0, 5, 978]) {
+    test(`BR-01 native position ${rate}x target ${target}: capture the finite HAVE_NOTHING target before cached SDK time`, t => {
+      const f = fixture(t, rate)
+      f.video.readyState = 0; f.video.currentTime = target
+      assert.equal(f.site.getCurrentTime(), 120, 'the site SDK still reports its cached position')
+      assert.equal(f.player.currentTime(), target, 'a new intent must save the native target, including zero')
+    })
+
+    test(`BR-01 native position ${rate}x target ${target}: new paused-transition restores the latest target`, t => {
+      const f = fixture(t, rate), core = f.site.__core()
+      assert.ok(core); core.state.initialized = false
+      f.video.readyState = 0; f.video.currentTime = target
+      f.video.videoWidth = 0; f.video.videoHeight = 0; f.video.paused = true
+      f.player.controls(); f.recovery.tick(f.player.snapshot())
+      f.clock.advance(30_000); f.video.paused = false
+      f.recovery.tick(f.player.snapshot())
+      assert.equal(f.recovery.snapshot().source, 'paused-transition')
+      f.clock.advance(4000); f.recovery.tick(f.player.snapshot())
+      assert.equal(f.effects.reloads, 1)
+      f.ready(); f.clock.advance(1000); f.recovery.tick(f.player.snapshot())
+      assert.deepEqual(f.effects.seeks, [target])
+      assert.equal(f.recovery.snapshot().savedPositionSec, target)
+      assert.equal(f.video.currentTime, target)
+      assert.equal(f.video.playbackRate, rate)
+      assert.equal(f.effects.plays, 1)
+    })
+  }
+}
+
+test('BR-01 native position control: initialized media retains SDK reader semantics', t => {
+  const f = fixture(t); f.video.currentTime = 199; f.site.getCurrentTime = () => 120
+  assert.equal(f.video.readyState, 4); assert.equal(f.player.currentTime(), 120)
+})
+
+test('BR-01 native position control: invalid HAVE_NOTHING targets fall back to the finite SDK time', t => {
+  const f = fixture(t); f.video.readyState = 0
+  for (const target of [NaN, Infinity, -Infinity]) {
+    f.video.currentTime = target; assert.equal(f.player.currentTime(), 120)
+  }
+})
+
+test('BR-01 native position control: native getter exceptions preserve the SDK fallback', t => {
+  const f = fixture(t); f.video.readyState = 0
+  f.video.onRead = () => { throw Error('native position unavailable') }
+  assert.equal(f.player.currentTime(), 120)
+})
+
+test('BR-01 native position control: synchronous media replacement cannot commit a new recovery with the old target', t => {
+  const f = fixture(t); f.video.readyState = 0; f.video.currentTime = 978
+  const snapshot = f.player.snapshot()
+  f.video.onRead = () => { f.video.onRead = () => f.replaceVideo(333) }
+  f.recovery.armRouteFailure('watchdog', snapshot, () => true)
+  assert.equal(f.recovery.isRecovering(), false)
+  assert.deepEqual(f.effects.seeks, []); assert.equal(f.effects.reloads, 0)
+  assert.equal(snapshot.currentTime, 978)
+})

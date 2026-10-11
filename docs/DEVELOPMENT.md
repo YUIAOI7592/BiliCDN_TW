@@ -2,7 +2,13 @@
 
 # 開發流程
 
-## 現行 BR-01 空媒體鍵盤回歸（v2.1.19）
+## 現行 BR-01 新意圖位置回歸（v2.1.20）
+
+既有 application 匯入 br09.ts，新增16案：1／2倍 ×0、5、978的新目標讀取與 paused-transition 還原，以及四個正常／重入對照。重跑 `npm test -- application --name 'BR-01 native position'`。先保存未修來源12fail／4pass；修正測試參數後以不可變git原來源建置再確認12fail／29pass（含25舊案），正式來源不回滾。最終型別與套件均須通過，不以執行測試而未型別檢查取代完整驗證。
+
+Chrome原生空video位置讀取與自有iframe恢復模型分列，不能冒充安裝singleton。[最新驗證](TEST_REPORT.md) 記錄發布與新版完整矩陣，安全封存與封存後test-only參數修正分列。下列版本段落為原日期紀錄。
+
+## v2.1.19 空媒體鍵盤回歸紀錄
 
 既有 application 套件明確匯入 br06.ts；新增 14 正式案例，重跑 `npm test -- application --name 'BR-01.*uninitialized'`。先保存四項失敗／七項正常對照，再改執行期；1／2 倍精確期限、活躍 reload／晚到拒絕、來源排除及 getter 重入都必須成立。完整 755 契約、typecheck、architecture、verify 和來源隔離 30／30 通過；安全掃描獨立封存。新版完整安裝矩陣與來源／Node 結果分列，見 [修復報告](BR01_NATIVE_KEYBOARD_FIX_REPORT.md)、[最新版驗證](TEST_REPORT.md)。
 

@@ -2,7 +2,13 @@
 
 # 信任邊界與資料處理
 
-## 現行 BR-01 空媒體鍵盤所有權（v2.1.19）
+## 現行 BR-01 新意圖位置觀察（v2.1.20）
+
+HAVE_NOTHING的有限原生位置（包含0）優先於SDK快取，仅作新意圖保存值，不授予事件信任、userRevision、Vault身分或恢復資格。Recovery保存前後及副作用前的生命週期／路線／控制所有權檢查不變。新增try只涵蓋native readyState／currentTime；不宣稱video選取或所有snapshot getter的普遍例外安全。沒有新增網路／持久化／資料輸出。
+
+本輪安全差異封存與封存後單行測試參數修正各自記錄於 [修正報告](docs/BR01_NATIVE_POSITION_FIX_REPORT.md)。來源模型不能替代新版真實安裝。[v2.1.19續測](docs/BR01_v2.1.19_INSTALLED_CONTINUATION.md) 保留不通過的完整矩陣與新位置保存缺陷，不回寫舊安全產物。以下版本段落保留原日期政策及證據。
+
+## v2.1.19 空媒體鍵盤所有權紀錄
 
 HAVE_NOTHING 保存有限新目標而沒有 seeking 時，只在同一可信派送、捕捉核心不變、非 internalReload，且候選／觀察版本、媒體／播放器／生命週期及真正可見性仍有效時，取得一次 userRevision。getter／SDK 返回後重查，pendingSeek／internalSeek 保守來源抑制不變；未知、合成、派送後及換核心不得取得新寬限。控制身分不授予 Native／探測權限，路線／Vault 仍獨立核對。
 

@@ -83,3 +83,5 @@ coverage/
 /scripts/prepare-security-*.cjs
 !/Release/v2.1.19/
 !/Release/v2.1.19/**
+!/Release/v2.1.20/
+!/Release/v2.1.20/**

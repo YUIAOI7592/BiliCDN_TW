@@ -512,7 +512,18 @@ export class PlayerAdapter {
       } finally { this.#internalReload-- }
     }
   }
-  currentTime(): number { return safeNumber(safeCall(this.player(), 'getCurrentTime')) ?? this.snapshot().currentTime }
+  currentTime(): number {
+    const video = this.video()
+    try {
+      // HAVE_NOTHING can already hold a new native seek target while the SDK
+      // reader still returns its cached pre-seek time. Zero is a valid target.
+      if (video?.readyState === 0) {
+        const position = video.currentTime
+        if (Number.isFinite(position)) return position
+      }
+    } catch { /* preserve the SDK fallback when native observation is unavailable */ }
+    return safeNumber(safeCall(this.player(), 'getCurrentTime')) ?? this.snapshot().currentTime
+  }
   playbackRate(): number {
     const rate = safeNumber(safeCall(this.player(), 'getPlaybackRate'))
     return rate !== null && rate > 0 ? rate : this.snapshot().playbackRate

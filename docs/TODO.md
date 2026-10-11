@@ -1,6 +1,12 @@
 # v2 工作狀態與後續方向
 
-## 現行 BR-01 空媒體鍵盤修復（v2.1.19）
+## 現行 BR-01（v2.1.20）
+
+已修正新paused-transition保存過期SDK位置的缺口，新增16正式契約；[修正與驗證](BR01_NATIVE_POSITION_FIX_REPORT.md) 及 [最新發布狀態](TEST_REPORT.md) 各自記錄。v2.1.19已實際安裝並续測；以下19:58Z舊版觀察保留其時間點，不再是目前安裝阻塞。
+
+BR-01 **完整安裝判定不通過**，有效子項與不足項見 [v2.1.19續測](BR01_v2.1.19_INSTALLED_CONTINUATION.md)。正常Auto1／2、播放中12秒延遲與Auto1完整15／30／post15有證據；Auto2完整停滯、pointercancel／失焦全矩陣、晚到SDK、真正hidden、自然pending gate及其他交叉全矩陣不足。接續須核對修補版完整本體／唯一singleton，先驗證新意圖保存最新native目標，再逐項取得有效證據，不靠提前pause／外部核心撤銷或Node補算。原自然87.785秒網路起因独立未定位。
+
+## v2.1.19 發布與更新前紀錄
 
 v2.1.19 本機正式 755 項、完整 verify、30 項 Chrome 原生可信鍵盤來源隔離、安全差異 2／2 且 0 發現、正式發布及公開產物核對通過。19:58:35Z 指定影片仍 exact v2.1.18，安裝新版前提不通過；已開啟實際 Tampermonkey 更新確認頁，工具禁止操作擴充功能協定，需使用者完成該頁更新。原 BR-01 完整矩陣繼續逐項取得有效證據，不能以本機結果代替。見 [本輪修復](BR01_NATIVE_KEYBOARD_FIX_REPORT.md) 及 [最新驗證](TEST_REPORT.md)。
 

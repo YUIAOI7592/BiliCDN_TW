@@ -2,7 +2,13 @@
 
 # v2 架構
 
-## 現行 BR-01 空媒體鍵盤修復（v2.1.19）
+## 現行 BR-01 新意圖位置保存（v2.1.20）
+
+PlayerAdapter.currentTime 在目前 video.readyState===0 時一次讀取原生位置，有限值（包含0）優先；其他情況保留 SDK／snapshot 回退。RecoveryController.#begin 仍保存前後核對 mediaId、coreId、seekRevision、userRevision、lifecycleSerial 與資格，再建立 token。這不新增控制快照欄位、持久狀態或 Native 授權來源。
+
+原生 getter 例外回退只涵蓋該次readyState／currentTime讀取，不聲稱所有video選取或snapshot getter均安全。正式與來源隔離結果、完整安裝判定見 [修正](BR01_NATIVE_POSITION_FIX_REPORT.md) 與 [最新驗證](TEST_REPORT.md)。以下各版為歷史契約。
+
+## v2.1.19 空媒體鍵盤修復紀錄
 
 可信 keydown／keyup 的實際有限新目標，在 seeking 或原生 HAVE_NOTHING 下可取得一次新使用者修訂；後者另要求捕捉核心未變且非 internalReload。候選仍須同一派送／版本／媒體／播放器／內容及真正可見，internalSeek／pendingSeek 來源抑制不變。未知位置只撤銷過期還原，不能猜成使用者。公開 API、schema 2、Auto／ABR 和 15／30／15 不變。
 
