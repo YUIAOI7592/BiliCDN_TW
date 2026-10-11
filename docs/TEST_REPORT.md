@@ -2,6 +2,14 @@
 
 # BiliCDN_TW v2.1.20 BR-01 新意圖位置保存驗證 — 2026-10-11
 
+## 2026-10-11 IAB 第 3 輪
+
+依使用者要求，只用內建瀏覽器續做可執行 TODO，沿用既有通過結果。以 `783ece1` 為基準完成 [TODO 第 3 輪](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/IAB_v2.1.20_TODO_R3_2026-10-11.md)：**新增 XHR 同步／abort／本地終止 10 案、雙分頁 Catalog 合併／GM 同步與診斷讀取子項通過；沒有新確認的產品缺陷，本輪未取得完整通過。** timeout 子項因事件截斷及工具逾時無產品判定，B06 新晚到成功窗口被網站在實際 SDK 前換核心／暫停而作廢，停止重複嘗試。
+
+三個文件實例的完整 v2.1.20／Tampermonkey 5.5.1 身分與唯一 singleton 均核對。兩頁設定已精確復原，受控 31 個 request 的記憶體／持久樣本零匹配，6 個 SDK／證據包裝及 4 個設定 listener 清理，自有分頁為 0。只更新瀏覽器證據與文件，沒有改執行期來源、完整 npm／verify／安全重跑或新 Release。具體再開前提及未執行項見 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
+
+保存證據的 12 個一致性斷言、5 份文件的 GFM／16 表格／142 連結與 `git diff --check` 通過。這些檢查不代替新的執行期測試。
+
 ## 2026-10-11 IAB 第 2 輪
 
 依使用者指示，先提交／推送第 1 輪文件為 `24dcdfd`，再完成 [BR-01 內建瀏覽器第 2 輪](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/IAB_v2.1.20_BR01_R2_2026-10-11.md)。**新增播放器焦點／滑鼠 seek、inner 長按、2 倍晚到 SDK 拒絕及 pending 政策撤銷子項通過；沒有新確認的產品缺陷，固定矩陣仍未取得完整通過。** 第 1 輪有效核心期限沿用。真背景校準沒有 hidden 轉換、原生 repeat／cancel 能力不足、部分安裝交錯沒有成立；具體原因見新報告。
