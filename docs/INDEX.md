@@ -2,7 +2,7 @@
 
 更新：2026-10-11。現行版本 **v2.1.20**，依 [release.json](../release.json)、[package.json](../package.json)、[package-lock.json](../package-lock.json) 與 [src-v2](../src-v2/entry.ts) 核對。
 
-**今後所有瀏覽器測試只用 Codex 內建瀏覽器＋Tampermonkey。** 唯一方案是 [IAB_TESTING](IAB_TESTING.md)；[TODO](TODO.md) 記錄目前工作與停止狀態，[TEST_REPORT](TEST_REPORT.md) 記錄已取得的版本證據。這次只有方案與文件重寫，沒有啟動新的 BR-01 測試、改來源、升版或發布。
+**今後所有瀏覽器測試只用 Codex 內建瀏覽器＋Tampermonkey。** 唯一方案是 [IAB_TESTING](IAB_TESTING.md)；[TODO](TODO.md) 記錄目前狀態，[TEST_REPORT](TEST_REPORT.md) 記錄版本證據。使用者後續授權的 [BR-01 IAB 第 1 輪](IAB_v2.1.20_BR01_R1_2026-10-11.md) 已收束：核心期限 Auto 1／2 倍通過，固定矩陣未完整通過；沒有改來源、升版或發布。
 
 [內建瀏覽器可用性紀錄](IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md) 已確認一般操作、完整腳本身分與合成傳輸能力；背景窗口已作廢並撤回能力失敗判定。它不等於 BR-01 完整通過。歷史 Chrome 報告維持原環境，不改名成 IAB 證據。
 
@@ -25,6 +25,7 @@
 | [IAB_TESTING](IAB_TESTING.md) | 唯一瀏覽器測試方案；固定矩陣、真背景校準、資料隔離、判定及停止條件 |
 | [TEST_REPORT](TEST_REPORT.md) | 最新版自動、安全、來源隔離、發布與實際安裝證據 |
 | [IAB 可用性紀錄](IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md) | 2026-10-11 能力實測與背景窗口作廢原因 |
+| [BR-01 IAB 第 1 輪](IAB_v2.1.20_BR01_R1_2026-10-11.md) | v2.1.20 的新安裝／來源證據、完整期限通過及明確缺口 |
 | [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md) | 測試遷移、套件登記、XHR 原生替身及 BR-07 keydown／keyup 提交階段校準 |
 | [測試遷移對照](../tests-v2/MIGRATION.md) | 原 891 項功能斷言的行為群組、分支及參數矩陣對照 |
 | [SECURITY](../SECURITY.md) | 信任邊界、持久資料、網路權限及診斷限制 |

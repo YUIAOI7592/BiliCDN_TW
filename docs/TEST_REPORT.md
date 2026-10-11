@@ -2,6 +2,14 @@
 
 # BiliCDN_TW v2.1.20 BR-01 新意圖位置保存驗證 — 2026-10-11
 
+## 2026-10-11 IAB 第 1 輪
+
+使用者另行要求重啟後，以 v2.1.20／`0d036f4` 執行並收束 [BR-01 內建瀏覽器第 1 輪](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/IAB_v2.1.20_BR01_R1_2026-10-11.md)。**核心 15／30／15 秒救援在 Auto 1／2 倍均通過；固定矩陣未取得完整通過，沒有新確認的產品缺陷。** 正常播放、12 秒延遲、wrapper 故障長按與音訊隔離另有有效安裝證據。背景前提、原生特殊輸入、晚到 SDK 操作矩陣及部分未執行子項的具體原因見該報告，不以來源隔離代替安裝結果。
+
+本輪來源隔離最終 S03 為 74 個情境通過，自有新模型型別檢查及 8 個證據複核斷言通過；未重跑完整 npm／verify／安全掃描。正式來源與發布產物未修改，沒有升版、提交或推送。自有測試頁／服務已收束，設定復原，受控樣本零匹配；工具錯誤頁的自動關閉尚未觀察，單獨列明。當前狀態以 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md) 為準。
+
+## 先前的環境與文件工作
+
 2026-10-11 使用者停止自主故障測試後，另授權的 [內建瀏覽器 Tampermonkey 可用性重新驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md) 確認完整 v2.1.20、唯一實例、可信輸入、控制中心及合成 Fetch／XHR 攔截通過。背景窗口因實際切換與 getter 未充分校準而無效，已撤回背景能力失敗判定；selectedTab 2→3→2 與 prototype getter=false／Runtime visible=true 保留為觀察。今後瀏覽器測試只使用內建瀏覽器＋Tampermonkey，BR-01 自主目標保持停止；本次環境確認沒有重跑 npm 或修改發布快照，也不增加 BR-01 通過項目。
 
 ## 2026-10-11 文件方案更新
