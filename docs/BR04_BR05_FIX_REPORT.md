@@ -60,7 +60,6 @@ BR-02 與 BR-03 來源隔離相容性矩陣各 **31／31** 通過，BR-03 合成
 
 XHR 原生重導仍屬既有瀏覽器限制；取消 reason 不輸出／持久化。BR-01 長 seek 的網路起因與恢復政策、真正 background、SDK 自然拒絕及其餘完整 R04 驗收保持獨立待完成，見 [TODO](TODO.md)。本輪只修 BR-04／05。
 
-
 ## 最終修復驗證追加
 
 最終凍結差異的 Codex Security **9ceb91f0-9690-4372-9e86-8e07ea29c11b** 已封存：12 個變更來源／測試／版本設定檔完整覆蓋、0 可報告發現、0 待驗證候選、沒有快照漂移警告。Snapshot digest 為 codex-security-snapshot/v1:sha256:4ae67faaca413f0591719ff73b61c0d6f30c000a19f0d23fc22cd66ed6a0d213。封存前核對 10 個獨立複核來源／測試的最終 SHA-256，全部一致；另外審查兩份版本設定，只有版本變更。完整報告與 receipt 由 Codex Security 管理保存，與一般 verify 分開。首輪漂移報告保留，未當作最終快照。

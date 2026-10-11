@@ -2,31 +2,9 @@
 
 # 信任邊界與資料處理
 
-## 現行 BR-01 新意圖位置觀察（v2.1.20）
+本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準（目前 v2.1.20）。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [修復索引](docs/INDEX.md)，不把歷史掃描當成新差異的驗證。
 
-HAVE_NOTHING的有限原生位置（包含0）優先於SDK快取，仅作新意圖保存值，不授予事件信任、userRevision、Vault身分或恢復資格。Recovery保存前後及副作用前的生命週期／路線／控制所有權檢查不變。新增try只涵蓋native readyState／currentTime；不宣稱video選取或所有snapshot getter的普遍例外安全。沒有新增網路／持久化／資料輸出。
-
-本輪安全差異封存與封存後單行測試參數修正各自記錄於 [修正報告](docs/BR01_NATIVE_POSITION_FIX_REPORT.md)。來源模型不能替代新版真實安裝。[v2.1.19續測](docs/BR01_v2.1.19_INSTALLED_CONTINUATION.md) 保留不通過的完整矩陣與新位置保存缺陷，不回寫舊安全產物。以下版本段落保留原日期政策及證據。
-
-## v2.1.19 空媒體鍵盤所有權紀錄
-
-HAVE_NOTHING 保存有限新目標而沒有 seeking 時，只在同一可信派送、捕捉核心不變、非 internalReload，且候選／觀察版本、媒體／播放器／生命週期及真正可見性仍有效時，取得一次 userRevision。getter／SDK 返回後重查，pendingSeek／internalSeek 保守來源抑制不變；未知、合成、派送後及換核心不得取得新寬限。控制身分不授予 Native／探測權限，路線／Vault 仍獨立核對。
-
-Codex Security `d3d31ada-7afb-4e77-9fb4-e0378a0db1d2` 已封存，2／2 凍結來源／測試項、0 候選／0 發現。來源隔離 30／30 不代表完整安裝驗收；版本／文件／產物另行核對。詳見 [本輪修復](docs/BR01_NATIVE_KEYBOARD_FIX_REPORT.md)。下列版本段落保留當時範圍。
-
-## 現行 BR-09 所有權邊界（v2.1.18）
-
-有限的原生位置觀察僅撤銷過期還原，不產生可信使用者身分或路線授權。原生媒體／播放器／lifecycle／操作修訂在 getter 返回後再次核對；reset、媒體及播放器替換清除私有單筆基準。自有 reload 初始零與 pendingSeek 的來源標記保持，正常播放增量不算 seek；原生值及物件不輸出至診斷或持久資料。
-
-本輪 Codex Security 差異 `ad0243d6-46b4-4245-a78e-1a1e8cc58f9c` 已封存，3／3 來源／測試項覆蓋、0 候選／0 發現。它是凍結執行期差異的安全審查；後續版本、文件及產物另行核對，不宣稱全儲存庫審查或實際安裝通過。完全未被採样觀察的原生位置往返無法推定。見 [BR-09 修復](docs/BR09_FIX_REPORT.md) 與 [驗證](docs/TEST_REPORT.md)。
-
-## v2.1.17 發布與驗收歷史
-
-
-
-**2026-10-11 目前政策維護對象為已發布 v2.1.17 的 BR-01 SDK 重載後續恢復契約，修復、必要驗證、發布與公開產物核對完成；實際新版安裝驗收已有部分證據，完整矩陣未結案。** typecheck、44 個執行期模組架構、19 套件／716／716 與最終 verify v2.1.17 通過；本輪獨立 Codex Security 差異 `39e2743e-185d-4c7d-a04d-f6580e61385a` 已封存，11／11 差異項、0 候選／0 可報告發現。主機另警告整體工作目錄變動；四個執行期檔案與凍結來源雜湊一致，不宣稱整體目錄快照一致。最後 Chrome 來源隔離 22／22（12 個控制模型＋10 個真正可信輸入）通過並完成清理；自有 iframe、合成媒體／FakeClock 及 31 秒模型拖曳不代表新版安裝驗收。[v2.1.17](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.17) 的公開版本／唯一腳本／SHA-256 核對完成，00:34:48.957（Asia/Taipei）已核對指定影片完整新版執行本體、唯一 Runtime／ControlCenter 及 hooks。Auto 1／2 倍正常控制與各一次真正自有 SDK 重載後續恢復取得安裝子集證據；完整期限、真正背景／gate、晚到 SDK 等仍待驗收。新增內部所有權證明不放寬既有網路授權、持久資料或診斷限制。
-
-本文件是 `src-v2/` **v2.1.17 BR-01 後續恢復契約**的執行期信任邊界指南，保留 BR-08 完整拖曳及 BR-01～07。BR-08 與 v2.1.16 的修復、必要驗證及發布／公開產物核對為上一輪完成證據；2026-10-10 21:11:07.331（Asia/Taipei）實際 Chrome 核對該版完整本體、唯一 singleton 及 hooks，該版 Auto 1／2 倍拖曳保護、基本播放及約 12 秒 video-only 延遲後恢復保留其日期與範圍。v2.1.17 的安裝工具已還原 12／12 自有方法完整描述子，timer／liveXHR=0、held=0、patterns 空且觀察器移除；2,027 個已分類受控 request ID 的記憶體／持久樣本匹配皆 0，四個學習攔截 hook 的清理前所有權已確認。這些結果只證明受控資料及自有資源清理，Network 處理缺口與歷史滾動淘汰（everDropped=true；最終 dropped=false）不能補算歷史時序或未分類工作。設定版本以 release.json 為準，本輪修復見 [後續修復報告](docs/BR01_FOLLOWTHROUGH_FIX_REPORT.md)，發布及安裝驗收見 [驗證報告](docs/TEST_REPORT.md) 與 [v2.1.17 安裝矩陣](docs/CHROME_v2.1.17_ACCEPTANCE.md)；安全差異與 Chrome／Tampermonkey 分列，不能互相替代。原 [BR-08 進度拖曳漏辨](docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 是功能缺陷證據，未當成已解決的安全發現。文件用途見 [文件索引](docs/INDEX.md)，本文件本身不要求啟動安全掃描。
+瀏覽器驗證只使用 **Codex 內建瀏覽器＋Tampermonkey**，資料隔離、送出前攔截與清理依 [IAB_TESTING](docs/IAB_TESTING.md)。來源隔離、環境校準與實際安裝各自判定；本次文件整理沒有執行新安全掃描或產品驗收。
 
 <a name="untrusted-inputs"></a>
 
@@ -57,7 +35,7 @@ Vault 可以保存可改寫的 PCDN URL，僅在換主機後成為正常內建�
 
 `MeasurementMetaStore` 按需重新讀取物件，轉換游標／冷卻欄位，更新時保留既有原始欄位；沒有值變更監聽器，也沒有完整資料結構或有限上界驗證。量測控制器在規劃寫入時使用它的 `measurement` 鎖；`get`、`update`、`clear` 不自行取得鎖。見 [measurement-meta-store.ts](src-v2/state/measurement-meta-store.ts)。
 
-Chrome Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒有跨分頁序列化。Tampermonkey 監聽器 API 不可用時也有替代路徑。同步能力取決於平台 API 是否可用。
+Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒有跨分頁序列化。Tampermonkey 監聽器 API 不可用時也有替代路徑。同步能力取決於平台 API 是否可用。
 
 產品自有持久資料為設定、限制、主機證據及量測游標／時間中繼資料。不得新增持久化的簽名 URL、路徑、查詢字串、權杖、播放器物件、媒體表示狀態或事故時間線。中繼資料的原始欄位合併不提供通用儲存清理能力。
 
@@ -73,7 +51,7 @@ Chrome Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒
 - 啟用時，Fetch 檢查的 Request 與原生 API 送出的 Request 是同一個平台正規化物件。主動探測拒絕轉址，只接納受檢主機的直接 Range 回應。
 - 正常選路預設使用生成的內建 Catalog 路線。開啟原生來源參考後，僅接納合法且符合當前身分的精確路線；分頁原線對照獨立運作。整體停用會原樣放行網站請求，停止腳本主動量測／恢復。
 - `trusted-api` 來源標籤依辨識出的 playurl 請求端點決定，不是密碼學來源保證，也不證明最終回應來源。仍須保留授權提升及已撤銷不透明識別碼的檢查。
-- 僅使用 Catalog 媒體 Fetch 使用 `redirect: 'error'`。XHR 無法事先阻止轉址；觀察到非 Catalog 最終主機時，不確認為 Catalog 路線。未經已安裝 Fetch／XHR 攔截的請求及已送出的網站請求不在攔截範圍內；實際目的地須由 Chrome 開發者工具的網路面板（Network）證據確認。
+- 僅使用 Catalog 媒體 Fetch 使用 `redirect: 'error'`。XHR 無法事先阻止轉址；觀察到非 Catalog 最終主機時，不確認為 Catalog 路線。未經已安裝 Fetch／XHR 攔截的請求及已送出的網站請求不在攔截範圍內；本專案的實際目的地確認使用內建瀏覽器 Network 證據，另記錄事件完整性。
 
 候選清單保留全部 11 個 Catalog 主機，其中 4 個預設不可用。起播預算為每分頁一次、最多 3 個並行探測、共用 3 秒期限，MP4／FLV 不逐段建立預算。未探測候選在排名、備用輸出及後續探索前仍須通過相同限制與安全 URL 生成檢查。僅使用 Catalog 最多輸出 5 個與主線及彼此不同主機的備用網址。
 
@@ -85,7 +63,7 @@ Chrome Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒
 
 ## 瀏覽器行為
 
-本輪 BODY／頁面焦點的 Space、k／K 及既有倍速鍵以私有 keydown 候選關聯實際控制變化；須 isTrusted、真正可見、同播放器／媒體／核心／生命週期，且事件仍在派送。只有 paused 或有限 playbackRate 在該派送內確實改變，才取得一次 userRevision。editable／封閉控制中心／IME／Ctrl／Meta／Alt、合成或忽略命令及派送後工作不能取得身分。播放器區域的既有 keydown 操作觀察及下述 BR-07 seek 鍵規則保留；腳本的還原方法清除自己的候選，不能冒充使用者操作。零延遲 timeout 僅釋放參照，清理確認候選及監聽器所有權。
+BODY／頁面焦點的 Space、k／K 及既有倍速鍵以私有 keydown 候選關聯實際控制變化；須 isTrusted、真正可見、同播放器／媒體／核心／生命週期，且事件仍在派送。只有 paused 或有限 playbackRate 在該派送內確實改變，才取得一次 userRevision。editable／封閉控制中心／IME／Ctrl／Meta／Alt、合成或忽略命令及派送後工作不能取得身分。播放器區域的既有 keydown 操作觀察及下述 BR-07 seek 鍵規則保留；腳本的還原方法清除自己的候選，不能冒充使用者操作。零延遲 timeout 僅釋放參照，清理確認候選及監聽器所有權。
 
 自有 SDK reload 的 pause／空核心例外僅屬本次合法 stall token 與 reload 修訂，透過 `PlayerPort.ownedReload(revision)` 回傳有界布林證明；DOM／核心／事件留在適配器私有記憶體。最多接納本次第一個替換核心，原核心在空隙後回來、第二次替換、新可信操作、hidden／control-loss 或生命週期失效都撤銷。空核心上的舊 reload 標記不具資格；首個非零替換須標記相符、初始化狀態不是 false 並通過健康觀察，每個 seek／setRate／play 前仍核對最新 video 請求、Vault、政策／限制與 token。
 
@@ -103,6 +81,25 @@ BR-08 指標拖曳使用目前播放器區域內的可信 pointerdown 及已知�
 
 WebRTC 還原前會確認已安裝的讀取存取器／寫入存取器仍屬於本腳本。可見性清理會移除監聽器，嘗試還原保存的 `document` 屬性描述子或移除自有屬性；目前可見性實作還原前沒有檢查屬性描述子所有權。描述攔截時必須依各自的還原行為說明。
 
+<a name="native-position-boundary"></a>
+
+## 原生位置觀察邊界
+
+未初始化媒體的有限原生位置（包含 0）優先於 SDK 快取，僅作新意圖保存值；未知目標變更只撤銷過期還原，不授予可信 userRevision、Vault 身分或恢復資格。新可信鍵盤目標另需同一 keydown／keyup 派送、捕捉核心不變、非 internalReload 與既有來源抑制。getter／SDK 返回後重查媒體、播放器、生命週期與操作修訂。
+
+原生 readyState／currentTime 的例外回退不涵蓋全部頁面 getter。自有 reload 初始零、pendingSeek／internalSeek、正常播放增量及未知位置往返各有邊界；完全沒有被採樣的變化無法推定。新增觀察不產生網路、持久欄位或診斷識別。
+
+<a name="test-instrumentation"></a>
+
+## 測試工具與資料邊界
+
+- 只在內建瀏覽器使用當前工具允許的控制介面；不繞過擴充功能頁面或工具安全限制，不換外部瀏覽器執行測試。
+- 先精確比對 video／audio，再於送出前持有自有匹配請求；禁止規則／HTTPDNS 合成案例不得真的外送。完整簽名 URL 僅在測試記憶體比對，不寫入文件、截圖或事件輸出。
+- 受控 transport／startup／challenge ID 必須在故障前具有寫入抑制，保留到晚到提交收束。不能以清空學習或整份舊資料覆蓋來清理受控樣本；無法隔離便不開始該故障窗。
+- 只控制工具持有的回應或實際 SDK 方法的自有回傳邊界。保存 receiver、參數、例外與完整描述子，還原時確認所有權，不能覆寫其他腳本的新包裝。
+- 不修改網站媒體 getter、重建 singleton 或重設預算來製造通過。背景測試區分 document 實例偽裝、已校準原生 getter 與 Runtime 資格；不以合成事件、面板隱藏或單一工具 ID 代替真正背景。
+- 每窗保存事件完整性與清理結果。原始播放器／核心／DOM 物件不輸出；報告只保留有界狀態、次數、時間與不透明測試 ID。
+
 <a name="reporting"></a>
 
 ## 回報
@@ -113,7 +110,6 @@ WebRTC 還原前會確認已安裝的讀取存取器／寫入存取器仍屬於�
 
 執行期問題請透過儲存庫問題追蹤區回報，不要附上未遮蔽的瀏覽器網路匯出檔。
 
-
 ## XHR 準備與取消原因
 
-XHR 每個等待請求內部最多兩次原生 open；每個同步還原边界重查 owner／phase／原生 OPENED，最新政策與原生目標一致才歸因及送出。未被原生接受的 dispatch 例外清除 pending 歸因，不記錄 CDN 失敗樣本；已送出請求不重播。本地終止事件逐個檢查所有權，不能污染重用的請求。起播 gate 的 AbortSignal reason 只回傳 caller，不輸出、持久化或傳給共用 probe controller；falsy 原值也必須保留。
+XHR 每個等待請求內部最多兩次原生 open；每個同步還原邊界重查 owner／phase／原生 OPENED，最新政策與原生目標一致才歸因及送出。未被原生接受的 dispatch 例外清除 pending 歸因，不記錄 CDN 失敗樣本；已送出請求不重播。本地終止事件逐個檢查所有權，不能污染重用的請求。起播 gate 的 AbortSignal reason 只回傳 caller，不輸出、持久化或傳給共用 probe controller；falsy 原值也必須保留。

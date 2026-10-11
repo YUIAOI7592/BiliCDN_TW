@@ -9,7 +9,7 @@
 - 唯一正式來源：`src-v2/`。
 - 入口：`src-v2/entry.ts`。
 - 測試：`tests-v2/`。
-- 發行產物：`Release/v<version>/BiliCDN_TW.user.js`，`version` 取自 `release.json`。通過自動驗證及必要安全驗證後發布；Chrome／Tampermonkey 驗收另行記錄。
+- 發行產物：`Release/v<version>/BiliCDN_TW.user.js`，`version` 取自 `release.json`。通過自動驗證及必要安全驗證後發布；Codex 內建瀏覽器／Tampermonkey 驗收另行記錄。
 - 歷史 v1 Release 與標籤僅供參考；v2 建置及測試不得匯入。
 - 現行文件與歷史紀錄的狀態見 `docs/INDEX.md`。有版本的計畫、驗收紀錄及發行快照只描述當時版本；目前工作見 `docs/TODO.md`。
 - 已退出流程的文件位於 `archive/retired/docs/`；舊本機工具與私有證據位於 `archive/retired/local/`。封存不作 v2 建置／測試輸入，配置見 `archive/retired/README.md`。
@@ -23,7 +23,16 @@
 3. 維持分層方向：領域層 → 狀態層 → 應用層 → 適配器層／UI 組合。下層不得匯入上層。
 4. 原始碼修改使用 `apply_patch`，保留使用者的無關變更。
 5. 發布前執行 `npm run typecheck`、`npm run architecture`、`npm test` 及 `npm run verify`。
-6. 分開記錄自動驗證與真實 Chrome／Tampermonkey 結果。
+6. 分開記錄自動驗證、內建瀏覽器來源隔離與 Tampermonkey 實際安裝版結果。
+
+**唯一瀏覽器測試環境為 Codex 內建瀏覽器＋Tampermonkey。** 依 [IAB_TESTING](docs/IAB_TESTING.md) 執行環境校準、來源隔離、安裝版驗收與發布後回歸；不得改用外部 Chrome／Edge、獨立 Playwright／Puppeteer 或 headless 瀏覽器。Node 契約、型別、架構與建置驗證仍按原流程執行。工具阻塞須保存具體原因，不能自行改換瀏覽器。
+
+- 每次新載入、重新連線或版本／執行個體改變時，核對實際管理器、完整腳本本體、版本、唯一 singleton 與 hooks；工具能力通過不等於產品功能通過。
+- 網站只使用使用者指定風景影片 `BV1tFZZBQE57`，以 Auto 畫質、1／2 倍速分開驗證；不切影片、不強制畫質、不改瀏覽器設定或停用其他腳本。
+- 背景先以新增分頁並實際切換校準。網站所見 `document.hidden=false` 是腳本既有前景偽裝；須分別核對經校準的原生 getter 與 Runtime 實際可見性。隱藏面板、工具 selectedTab 或 queued 回應均不能單獨證明背景；共用同一 getter 的兩個讀值也不是獨立證據。
+- 有效案例明確判定通過／不通過。前提不成立或事件遺失的窗口記為無效，列明原因，不能判成產品缺陷或算通過；同一無效方法沒有新前提不得重跑。執行次數、期限及結案範圍遵守 IAB_TESTING。
+- 故障注入前建立精確攔截、完整事件游標及受控樣本抑制；結束後核對自有攔截、請求、包裝、訂閱、計時器與學習樣本清理。不得用修改媒體 getter、重建控制器或重設預算製造安裝版證據。
+- 已停止的自主目標不得因改文件、校準環境或發布而自行恢復。目前工作與啟動狀態以 [TODO](docs/TODO.md) 為準。
 
 契約使用具名 `node:test` 案例，各案例以測試情境建立函式重建可變狀態。使用 `testScope(t)` 登記清理，全域替換經 `defineGlobal()`；計時器、攔截、訂閱及取消函式由所屬資源明確管理。禁止僅執行標記（`only`）、略過（`skipped`）、待實作（`todo`）或取消（`cancelled`）留在完整執行。新套件加入 `scripts/test-registry.mjs`，命令、期限及原契約對照見 `docs/DEVELOPMENT.md` 與 `tests-v2/MIGRATION.md`。工具驗證另按日期記錄於 `docs/TEST_TOOLING_REPORT.md`，不回寫已發布報告。
 
@@ -64,7 +73,7 @@
 
 - 使用者已授權本專案的預設修復交付流程：功能修復完成且通過必要自動驗證及按風險要求的安全驗證後，直接提交、遞增修補版本、封裝、推送 GitHub main／版本標籤並發布正式 GitHub Release，讓 Tampermonkey 的既有更新網址取得新版；不需使用者每次重複要求推送或再次確認。僅推送原始碼不算完成腳本更新交付。
 - 若當次使用者明確要求只調查、起草計畫、保留本機修改或暫緩發布，遵守該次範圍；不得把未完成修復或失敗驗證當成可發布結果。若工具或權限實際阻塞，完成可做的準備並具體回報阻塞原因。
-- 發布後核對遠端 main、版本標籤、唯一腳本附件，以及公開 latest 更新下載的版本、大小與 SHA-256；真實 Chrome／Tampermonkey 安裝版驗收另行記錄，未實測不得宣稱通過。
+- 發布後核對遠端 main、版本標籤、唯一腳本附件，以及公開 latest 更新下載的版本、大小與 SHA-256；Codex 內建瀏覽器的 Tampermonkey 安裝版驗收另行記錄，未實測不得宣稱通過。
 - 不得加入 CI/CD、GitHub Actions、執行期依賴或遠端程式載入。
 - v2 不產生歷史修補產物。
 - GitHub Release 只包含 `BiliCDN_TW.user.js`。
@@ -76,6 +85,7 @@
 
 ## 文件維護
 
+- Markdown 依 GitHub Flavored Markdown（GFM）及 [專案格式約定](docs/DEVELOPMENT.md#markdown-format) 維護；檢查實際解析的標題、清單、表格、粗體、程式碼與連結。格式整理保留原文含義、錨點及歷史證據，不改寫 Release／不可變封存。
 - 隨對應原始碼變更更新現行指南。依程式／設定核對預設值、介面／權責、儲存行為、UI 名稱、測試命令及發布狀態。
 - 事實來源為 `release.json`、`package.json`、`package-lock.json`、`src-v2/` 及 `scripts/`；有日期的測試／瀏覽器紀錄只作對應版本的證據。
 - 歷史紀錄標示版本／日期並連至現行指南。保留原始觀察、限制及計畫撤銷狀態；不得將舊待完成文字或已批准驗收的限制轉為現行待辦。

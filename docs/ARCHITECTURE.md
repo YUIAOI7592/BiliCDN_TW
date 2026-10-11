@@ -2,35 +2,9 @@
 
 # v2 架構
 
-## 現行 BR-01 新意圖位置保存（v2.1.20）
+本文件描述目前 `src-v2/` 的職責與契約，版本以 [release.json](../release.json) 為準（目前 v2.1.20）。版本別修復及驗證數字移由 [索引](INDEX.md) 與 [TEST_REPORT](TEST_REPORT.md) 保存；本文件不代表新一次驗證通過。
 
-PlayerAdapter.currentTime 在目前 video.readyState===0 時一次讀取原生位置，有限值（包含0）優先；其他情況保留 SDK／snapshot 回退。RecoveryController.#begin 仍保存前後核對 mediaId、coreId、seekRevision、userRevision、lifecycleSerial 與資格，再建立 token。這不新增控制快照欄位、持久狀態或 Native 授權來源。
-
-原生 getter 例外回退只涵蓋該次readyState／currentTime讀取，不聲稱所有video選取或snapshot getter均安全。正式與來源隔離結果、完整安裝判定見 [修正](BR01_NATIVE_POSITION_FIX_REPORT.md) 與 [最新驗證](TEST_REPORT.md)。以下各版為歷史契約。
-
-## v2.1.19 空媒體鍵盤修復紀錄
-
-可信 keydown／keyup 的實際有限新目標，在 seeking 或原生 HAVE_NOTHING 下可取得一次新使用者修訂；後者另要求捕捉核心未變且非 internalReload。候選仍須同一派送／版本／媒體／播放器／內容及真正可見，internalSeek／pendingSeek 來源抑制不變。未知位置只撤銷過期還原，不能猜成使用者。公開 API、schema 2、Auto／ABR 和 15／30／15 不變。
-
-本機正式 755 契約、整合驗證及 Chrome 原生可信輸入來源隔離 30／30 通過；安全凍結差異 2／2、0 發現已封存。發布與實際新版完整 BR-01 安裝判定以 [最新驗證](TEST_REPORT.md) 及 [修復報告](BR01_NATIVE_KEYBOARD_FIX_REPORT.md) 為準，下列版本段落保留當時範圍。
-
-## 現行差異：BR-09（v2.1.18）
-
-PlayerAdapter.controls 在確認鍵盤觀察後採樣原生位置；私有 NativePosition 僅一筆，保存媒體、播放器、lifecycle、位置及 readyState。HAVE_NOTHING 的未知有限目標變更更新既有 targetSec／seekRevision，Recovery 沿用原所有權檢查撤銷保存位置。沒有新增應用層介面、診斷事件、持久欄位或第二授權索引。
-
-原生 getter 可同步重入，因此提交基準前重查控制版本、原基準、操作修訂、pendingSeek 與當前媒體／播放器／內容；清理增加版本並撤銷基準。自有 reload 返回時同步記錄正常初始零，觀察例外不能改寫 SDK 回傳或原例外，內部來源標記在 finally 釋放。正常播放時間增量不算 seek；未知目標不授予 userRevision。
-
-[BR-09 修復](BR09_FIX_REPORT.md) 記錄正式 25 個新增契約、來源隔離與採樣限制；現行發布／安裝判定以 [TEST_REPORT](TEST_REPORT.md) 為準。
-
-## v2.1.17 發布與驗收歷史
-
-
-
-**2026-10-11 現行架構為已發布 v2.1.17 的 BR-01 SDK 重載後續恢復修復；實際新版安裝驗收已有部分證據，完整矩陣未結案。** 正式契約、typecheck、44 個執行期模組架構、全套 19 套件／716／716 與最終 verify v2.1.17 通過；獨立安全差異 11／11 項、0 候選／0 可報告發現，Chrome 最後來源隔離 22／22 通過。掃描主機的整體工作目錄變動警告與四個凍結執行期檔案的雜湊核對分列，不能宣稱整體快照一致。[v2.1.17](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.17) 正式發布及公開版本／唯一腳本／SHA-256 核對完成；00:34:48.957（Asia/Taipei）已核對指定影片的完整新版執行本體、唯一 Runtime／ControlCenter 及 hooks。Auto 1／2 倍正常暫停／恢復／短 seek，以及各一次真正自有 SDK 重載後續恢復子集取得證據，詳見 [本輪修復](BR01_FOLLOWTHROUGH_FIX_REPORT.md)、[v2.1.17 安裝矩陣](CHROME_v2.1.17_ACCEPTANCE.md) 與 [驗證報告](TEST_REPORT.md)。
-
-本文件描述 [src-v2](../src-v2/entry.ts) 的 **v2.1.17 BR-01 後續恢復契約**，保留 BR-08 完整拖曳及 BR-01～07 與既有 17 項。版本以 [release.json](../release.json) 為準；發布／安裝狀態見 [驗證報告](TEST_REPORT.md)。上一輪於 2026-10-10 21:11:07.331（Asia/Taipei）核對實際 v2.1.16 完整本體、唯一 singleton 及 hooks；該版 Auto 1／2 倍拖曳、基本播放及約 12 秒 video-only 延遲後恢復的證據保留其版本。v2.1.17 的實際自有重載已觀察 SDK pause／null／第一個標記核心、SDK 整秒 seek 保留與 rate／play 還原後兩次時間／影格進度；未回寫舊位置。完整 15／30／重載後 15 秒失敗退出、精確 12 秒 video-only 延遲、真正 hidden、真正 pending startup gate 及晚到 SDK 操作矩陣仍待驗收；網路處理缺口與歷史滾動淘汰（everDropped=true；最終 dropped=false）不補算歷史時序。v2.1.17 最後來源隔離使用自有 iframe、合成媒體／FakeClock，其中 12 個控制模型與 10 個真正可信輸入、31 秒模型拖曳均只證明對應來源契約。原自然網路起因與其他完整驗收獨立追蹤，來源隔離不代替安裝版。文件分工見 [索引](INDEX.md)、[開發流程](DEVELOPMENT.md) 及 [安全政策](../SECURITY.md)。
-
-修復背景：[BR-07](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) 在 v2.1.14 安裝版確認網站右鍵於 keyup 尋位。該修復為 keyup 建立獨立同派送候選，不沿用已結束的 keydown；當次派送沒有可觀察的新 seek 仍保守不歸因。v2.1.15 真實 Auto 1／2 倍已驗證正常鍵盤修訂及新 15 秒寬限，續測確認 [BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 外層進度拖曳漏辨。原觀察及失敗結果保留，本輪不以本機修復宣稱新版安裝驗收完成。
+瀏覽器測試只使用 **Codex 內建瀏覽器＋Tampermonkey**，依 [IAB_TESTING](IAB_TESTING.md) 分開來源隔離、實際安裝與環境校準。應用層注入的模型與原生事件不可混為安裝版證據。
 
 <a name="dependency-direction"></a>
 
@@ -138,11 +112,11 @@ BR-08 進度命中使用 target.closest 的 `.bpx-player-progress-wrap, .bpx-pla
 
 PlayerMonitor 擁有單一停滯段。15 秒合法 video 備援與 Runtime 通知合併同一 token；30 秒最多一次 core reload；重載後 15 秒沒有進度釋放 token。Auto 表示／網站 seek 更新撤銷舊動作、重新綁定最新請求，但不重開同段時限／額度。新的使用者操作與真 hidden／pause／失效結束舊段。首次有效進度結束計時，RecoveryController 等兩個連續有效採樣才 recovered。
 
-本輪 BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean` 查詢自有 reload 所有權，不把 DOM 或核心物件交給應用層。PlayerAdapter 私有紀錄本次 reload 修訂、原媒體／播放器／核心、生命週期、使用者修訂與第一個替換核心，最多有界保存 15 秒；每次查詢重查身分及真正可見性。暫時空核心可等待，但舊核心在空隙後回來、第二次替換、新操作、hidden／control-loss 或 reset 撤銷所有權。還原 wrapper 與 timer 清理各自核對物件／方法所有權，不能清掉較新工作。
+BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean` 查詢自有 reload 所有權，不把 DOM 或核心物件交給應用層。PlayerAdapter 私有紀錄本次 reload 修訂、原媒體／播放器／核心、生命週期、使用者修訂與第一個替換核心，最多有界保存 15 秒；每次查詢重查身分及真正可見性。暫時空核心可等待，但舊核心在空隙後回來、第二次替換、新操作、hidden／control-loss 或 reset 撤銷所有權。還原 wrapper 與 timer 清理各自核對物件／方法所有權，不能清掉較新工作。
 
 `RecoveryController.ongoingStallReload` 提供 Monitor 唯讀資格查詢；只有同停滯 token 與合法自有 reload 才可跨過 SDK 暫時 paused／空核心，Monitor 不在此期間重建停滯或取消同一救援。首個非零替換核心須標記等於本次修訂、初始化狀態不是 false，並通過健康觀察，才可還原；不能把空核心上的舊標記當成資格。SDK 自行 seek 只更新目前目標與觀察身分，禁止舊位置還原；有效的倍速／播放意圖仍受本次 token、最新路線授權與期限限制。新的可信操作、可觀察的外部 reload 或第二次核心替換撤銷該例外；首個替換的因果觀察不能認證所有未經可觀察方法的外部替換，普通 pause 政策保持。
 
-重載後無進度達 15 秒先完成一次失敗終止並釋放 token，不能因 adapter 自有觀察到期只留下模糊 ownership-ended。真正時間／影格進度仍須操作、媒體／核心與 seek 修訂一致；首次有效進度停止無進度重載計時，兩次連續有效採樣才 recovered，SDK 位置跳躍及保留尺寸不算進度。已還原且有首次進度時，`ongoingStallReload` 另以相同穩定所有者維持最多 15 秒的確認資格，不延長 adapter 的 pause／空核心租期，也不授予新的 seek／rate／play 或核心接納；未形成持續進度仍失敗。終止後保存失敗停滯的 userRevision／mediaId，SDK 自行 resume 不重開救援；真正進度或新的使用者／媒體所有權才可清除此抑制。跨租期確認、同步重入、晚到完成及清理均已由本輪最終正式契約與來源隔離驗證，實際新版安裝另列。
+重載後無進度達 15 秒先完成一次失敗終止並釋放 token，不能因 adapter 自有觀察到期只留下模糊 ownership-ended。真正時間／影格進度仍須操作、媒體／核心與 seek 修訂一致；首次有效進度停止無進度重載計時，兩次連續有效採樣才 recovered，SDK 位置跳躍及保留尺寸不算進度。已還原且有首次進度時，`ongoingStallReload` 另以相同穩定所有者維持最多 15 秒的確認資格，不延長 adapter 的 pause／空核心租期，也不授予新的 seek／rate／play 或核心接納；未形成持續進度仍失敗。終止後保存失敗停滯的 userRevision／mediaId，SDK 自行 resume 不重開救援；真正進度或新的使用者／媒體所有權才可清除此抑制。跨租期確認、同步重入、晚到完成及清理由正式契約覆蓋；具體版本的執行結果及安裝證據見 TEST_REPORT。
 
 停滯、舊 watchdog、冷起播三個監控救援入口皆排除 dragging，拖曳期間清除舊停滯及 watchdog 連續計數，不消耗一次性起播救援嘗試。一般停滯在釋放後第一個合資格 tick 從最新位置建立新 15／30 秒基準；冷起播仍按原 firstMediaAt 重評，可能立即救援，不新增全域釋放寬限或重開起播預算。
 
@@ -188,6 +162,26 @@ XHR 每次 open 建立獨立 metadata，區分 opened／waiting／sent／termina
 Chrome 同步選項驗證失敗可能把原生 XHR 清成 UNSENT；只有尚未送出的 waiting 請求可標記 needsNativeOpen，在 gate 釋放時重新準備，再檢查所有權與最新政策；已送出的請求絕不因此重播。以上例外安全性納入 v2.1.10，證據見 [BR-02 修復報告](BR02_FIX_REPORT.md)。
 
 ControlCenter 在開啟、關閉及換頁時更新視圖版本；命令完成與排隊焦點只在仍擁有當前開啟視圖時作用。設定命令完成不代表 UI 必須仍開啟。
+
+<a name="native-position-ownership"></a>
+
+## 原生位置與保存值
+
+PlayerAdapter 的私有 NativePosition 只保存一筆媒體、播放器、生命週期、有限位置及 readyState 基準。HAVE_NOTHING 的未知目標變更更新既有 targetSec／seekRevision，撤銷過期位置還原；未取得可信派送證據時不增加 userRevision。getter 返回後重查觀察版本、原基準、操作修訂、pendingSeek 及當前所有者；reset／替換清除基準，自有 reload 初始零另有來源標記。
+
+`currentTime()` 在目前 video.readyState===0 時一次讀取原生位置，有限值（包含 0）優先於 SDK 快取；其他情況保留 SDK／snapshot 回退。例外回退只涵蓋該次原生 readyState／currentTime 讀取，不保證 video 選取或所有 snapshot getter 例外安全。Recovery 在保存前後及副作用前繼續核對 mediaId、coreId、seekRevision、userRevision、lifecycleSerial、路線與資格；保存值不授予新權限。
+
+<a name="visibility-boundary"></a>
+
+## 網站前景偽裝與內部可見性
+
+[VisibilityAdapter](../src-v2/adapters/visibility.ts) 安裝時保存 Document.prototype 的 hidden getter，再於 document 實例覆寫 hidden=false、visibilityState=visible。網站因此看到前景；`isActuallyVisible()` 透過保存的 getter 查詢內部資格。Runtime／監控／量測使用此資格，不從被覆寫的頁面值推斷前景。
+
+真正 hidden 與可信 blur 的 guard 在阻擋事件前通知控制失效，供 PlayerAdapter 清理手勢及所有權。背景播放本身可持續；背景停止的是不合資格的主動量測／救援與舊還原提交。
+
+保存 getter 缺失時會退回 visibilityState；讀取拋錯時按現有 fail-open 行為視為未隱藏，dispose 後查詢也回傳可見。因此可見性查詢本身不是原生 getter 來源或背景能力的保證，測試仍須先校準。
+
+測試需要校準保存的 getter 來源與真正分頁切換。prototype 讀值與 Runtime 若共用 getter，並非兩份獨立原生證明；面板隱藏或工具選取 ID 也不是原生 hidden 的證據。步驟與無效窗口判定見 [IAB_TESTING 的 E04](IAB_TESTING.md#visibility)。可見性清理的描述子所有權限制見 [SECURITY](../SECURITY.md#browser-behavior)。
 
 <a name="route-lifecycle"></a>
 

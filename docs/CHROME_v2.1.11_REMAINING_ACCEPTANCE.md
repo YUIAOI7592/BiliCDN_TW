@@ -59,9 +59,9 @@
 
 ## 新缺陷及附帶觀察
 
-**BR-05 P2 已確認：**真正 gate Fetch 未保留取消原因。Chrome 原生對照保持原因，安裝版控制器丟失；獨立 Node 契約 **3 control pass／4 contract fail、exit 1**。详细入口、位置、影響及修正方向見 [BR-05 報告](CHROME_v2.1.11_BR05_FETCH_ABORT_REASON.md)。本輪未修復。
+**BR-05 P2 已確認：** 真正 gate Fetch 未保留取消原因。Chrome 原生對照保持原因，安裝版控制器丟失；獨立 Node 契約 **3 control pass／4 contract fail、exit 1**。详细入口、位置、影響及修正方向見 [BR-05 報告](CHROME_v2.1.11_BR05_FETCH_ABORT_REASON.md)。本輪未修復。
 
-**BR-04 仍未修復：**二次 sync failed open 令內部準備失效，先前 Chrome 複核成立。本輪沒有以重現它取代其他驗收，也沒有重新算通過。
+**BR-04 仍未修復：** 二次 sync failed open 令內部準備失效，先前 Chrome 複核成立。本輪沒有以重現它取代其他驗收，也沒有重新算通過。
 
 另有兩個**待複核觀察**，不新增確認缺陷或修復政策：
 

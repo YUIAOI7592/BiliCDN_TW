@@ -1,74 +1,17 @@
 # 專案文件索引與維護規則
 
-## 現行 v2.1.20 BR-01
+更新：2026-10-11。現行版本 **v2.1.20**，依 [release.json](../release.json)、[package.json](../package.json)、[package-lock.json](../package-lock.json) 與 [src-v2](../src-v2/entry.ts) 核對。
 
-- [新意圖位置保存修正](BR01_NATIVE_POSITION_FIX_REPORT.md)：實際過期SDK值、根因、16正式契約、安全差異、Chrome原生／控制模型分列。
-- [v2.1.20 實際安裝續測](CHROME_v2.1.20_BR01_ACCEPTANCE.md)：完整本體／唯一singleton、新目標與0保存通過、原生拖曳取消及晚到拒絕、自然成功恢復子項與完整矩陣界線。
-- [v2.1.19實際續測](BR01_v2.1.19_INSTALLED_CONTINUATION.md)：有效子項通過與完整矩陣不通過的二元判定、清理證據。
-- [最新驗證與發布](TEST_REPORT.md)、[工作狀態](TODO.md)：新版安裝身分與下一個實際窗口。
+**今後所有瀏覽器測試只用 Codex 內建瀏覽器＋Tampermonkey。** 唯一方案是 [IAB_TESTING](IAB_TESTING.md)；[TODO](TODO.md) 記錄目前工作與停止狀態，[TEST_REPORT](TEST_REPORT.md) 記錄已取得的版本證據。這次只有方案與文件重寫，沒有啟動新的 BR-01 測試、改來源、升版或發布。
 
-## v2.1.19 發布時紀錄
+[內建瀏覽器可用性紀錄](IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md) 已確認一般操作、完整腳本身分與合成傳輸能力；背景窗口已作廢並撤回能力失敗判定。它不等於 BR-01 完整通過。歷史 Chrome 報告維持原環境，不改名成 IAB 證據。
 
-- [空媒體鍵盤修復](BR01_NATIVE_KEYBOARD_FIX_REPORT.md)：現場缺口、來源／14 契約對照、先紅後綠、安全及原生來源隔離。
-- [最新驗證](TEST_REPORT.md)：發布、產物與實際安裝狀態。
-- [工作狀態](TODO.md)：原 BR-01 完整矩陣與有效現場判定。
+閱讀順序：
 
-下列版本段落保留當時證據，不把歷史未修狀態轉作現行缺陷。
-
-## 現行 BR-09（v2.1.18）
-
-- [BR-09 修復報告](BR09_FIX_REPORT.md)：來源／25 項回歸對照、先紅後綠、安全差異、來源隔離及限制。
-- [最新版測試與發布](TEST_REPORT.md)：741 項及本版 verify／公開產物核對。
-- [v2.1.18 Chrome 紀錄](CHROME_v2.1.18_ACCEPTANCE.md)：原生來源隔離、實際完整新版身分及 Auto1／2 基本回歸通過；因果模型與網站窗口分列。
-- [BR-09 原失敗報告](CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK.md) 與 [BR-01 v2.1.17 最終判定](BR01_v2.1.17_FINAL_ACCEPTANCE.md)：保留歷史因果及二元結果。
-
-下列 v2.1.17 與更早狀態只描述原時間點；BR-09 已修的現行來源以以上入口為準。
-
-## v2.1.17 與更早判定歷史
-
-
-
-<a name="br01-followthrough-status"></a>
-
-**2026-10-11 最新判定：[BR-01 v2.1.17 安裝驗收整體不通過，本輪判定完成](BR01_v2.1.17_FINAL_ACCEPTANCE.md)。** Auto2完整15／30／重載後15秒通過，單次實際重載、釋放意圖並至少三tick不重試；Auto1完整期限與其餘不通過項目逐一給出前提／證據原因。正常同版子集保留，安裝XHR原生8／8對照通過，資源及123個已分類受控ID零學習匹配核對完成。BR-09仍是已確認未修來源問題，本輪不擴修；正式來源／測試／Release不變。[TODO](TODO.md)保存現行二元判定，下文保留較早輪次及發布時的歷史状态，不取代本輪結論。
-
-### 本輪之前的同版紀錄
-
-**2026-10-11 最新續測：[BR-09 歸零目標漏撤銷舊位置還原](CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK.md) 已確認來源缺口，未修復。** Node正確契約2 fail／3 pass；Chrome原生Blob來源隔離unknown-zero的0被還原為0.25，三個正常對照通過。完整網站singleton因果仍分列，不把3152→2037回退直接歸因；BR-01完整安裝驗收未完成。本輪只交付報告、重跑入口與清理證據，未改正式來源／測試／Release。現行續查以[TODO](TODO.md)及[v2.1.17安裝矩陣](CHROME_v2.1.17_ACCEPTANCE.md#2026-10-11-續測與-br-09)為準，下段保留本版發布時證據。
-
-**2026-10-11 現行版本 v2.1.17：BR-01 SDK 重載後續恢復修復、必要驗證、正式發布及公開產物核對完成；新版安裝驗收已有部分證據，完整矩陣未結案。** 原 application **3 fail／3 pass**、BODY 播放／倍速入口 **10 fail／20 pass** 先於執行期修補保存；最後全套 **19 套件／716／716**、typecheck、**44 個執行期模組**架構及 verify **v2.1.17** 通過。獨立安全差異 **11／11 項、0 候選／0 可報告發現**，Chrome 最後來源隔離 **22／22**（12 個控制模型＋10 個真正可信輸入）通過並完成清理；自有 iframe／合成媒體／FakeClock 與 31 秒模型拖曳不代表安裝驗收。掃描的整體工作目錄變動警告保留，四個凍結執行期檔案雜湊一致不等於整體快照一致。[v2.1.17](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.17) 於 00:31:14（Asia/Taipei）發布，唯一 **332,575 bytes** 腳本與無認證公開 latest 的版本／大小／SHA-256 核對一致；00:34:48.957 已核對指定影片完整新版執行本體、唯一 Runtime／ControlCenter 及 hooks。Auto 1／2 倍正常暫停／恢復／短 seek 與各一次真正自有 SDK 重載後續恢復子集取得證據；完整期限、精確延遲、真正背景／gate 與晚到 SDK 等剩餘項目仍待驗收。現行契約見 [後續修復報告](BR01_FOLLOWTHROUGH_FIX_REPORT.md)、[PROJECT_CONTEXT](PROJECT_CONTEXT.md#br01-owned-sdk-reload)、[架構](ARCHITECTURE.md)、[開發流程](DEVELOPMENT.md) 與 [TODO](TODO.md)。手動實際 SDK 校準不等於控制器救援；原 87.785 秒自然網路起因仍待定位，已有 timeout 不能單獨證明 CDN 故障。
-
-### v2.1.16 已發布基準
-
-**現行交付：BR-08 完整拖曳契約修復與 v2.1.16 發布完成；BR-01 完整安裝版驗收已有部分證據，仍未完成。** 全套 **637 正式案例**、typecheck、architecture、verify **v2.1.16** 與 diff 檢查通過；獨立安全差異 **14／14 覆蓋、0 可報告發現**，Chrome 來源隔離 **31 個有效案例通過**，兩個無效校準窗口排除並完成清理。21:05:38（Asia/Taipei）已發布，遠端 main／標籤、唯一 **320,794 bytes** 腳本及公開 latest 版本／SHA-256 核對一致；21:11:07.331 已核對實際新版完整本體／singleton 1／hooks。Auto 1／2 倍 wrapper／inner 四個超過 32 秒拖曳窗口與釋放、正常播放／暫停／短 seek、約 12 秒 video-only 延遲後恢復均有證據，腳本重載 0；完整逾時及其餘矩陣仍待完成，來源隔離不能代替安裝版。見 [BR-08 修復](BR08_FIX_REPORT.md)、[TEST_REPORT](TEST_REPORT.md)、[v2.1.16 安裝矩陣](CHROME_v2.1.16_ACCEPTANCE.md) 與 [TODO](TODO.md)。以下日期及「未修復」保留原輪次狀態。
-
-新版實際 XHR hook 與 NativeXhr 的 Blob **33／33 成對對照**通過，僅涵蓋 BR-02 原生所有權、例外、事件重入及 getter 子集；Catalog／HTTPDNS 虛擬拒絕、媒體歸因、真正 pending gate 與 cid／epoch 仍待驗收，正式案例仍為 637。另有模式復原約 174.648 秒後 **2913 → 0.307 秒**的 Auto 位置跳變待定位；沒有新路線／核心動作或生命週期變更，SDK／完整 Network 不足且採樣上限 dropped，未確認腳本缺陷。兩者的證據範圍與續查條件見 [v2.1.16 安裝紀錄](CHROME_v2.1.16_ACCEPTANCE.md) 與 [TODO](TODO.md)。
-
-**歷史交付：BR-07 修復與 v2.1.15 發布完成；當時實際新版部分驗收，新 BR-08 未修、完整 BR-01 未完成。** BR-06／BR-07 **100／100**（40＋60）、全套 **19 套件／574 正式案例**、typecheck、**44 個執行期模組**架構與最終 verify **v2.1.15** 通過；來源隔離 **40／40 有效案例**，獨立安全完整覆蓋／0 可報告發現。公開 latest **2.1.15／317,487 bytes／SHA-256** 與實際完整 body／singleton 1 已核對，Auto 1／2 倍正常鍵盤及新 15 秒寬限取得證據。續測確認 [BR-08 進度列外層拖曳漏辨](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md)，已報告並清理，未擴修。見 [BR-07 修復](BR07_FIX_REPORT.md)、[TEST_REPORT](TEST_REPORT.md) 及 [安裝矩陣](CHROME_v2.1.15_ACCEPTANCE.md)。v2.1.14 原 [缺陷](CHROME_v2.1.14_BR07_KEYUP_SEEK.md)、[安裝](CHROME_v2.1.14_ACCEPTANCE.md)、更新前 10:59Z 中途觀察與完整歷史保留；以下較早日期只描述當時。
-
-**先前續測：2026-10-10 約 13:45–13:57 確認 [BR-06 鍵盤 seek 所有權缺口](CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md)，當時未修復。** 實際 Auto 1／2 倍的新 BODY 方向鍵 seek 沿用舊停滯期限，8.205／6.986 秒便備援；滑鼠對照通過，獨立正確契約 2 fail／3 pass。當輪達成找問題並交付報告的退出條件，來源與 Release 沒有修改。
-
-**2026-10-10 歷史交付：[BR-01 A／B／C 修復](BR01_FIX_REPORT.md) 及 v2.1.13 發布完成。** Auto 長 seek 有界救援，474 正式案例／verify、安全差異及來源隔離 22／22 通過；公開產物與實際新版 body 已核對，[安裝版](CHROME_v2.1.13_ACCEPTANCE.md) 的 Auto 延遲恢復取得部分證據，完整矩陣未結案。原自然網路起因與其他完整驗收不因此結案。[v2.1.12 原調查](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) 保留原始失敗證據。
-
-**歷史瀏覽器狀態：2026-10-10 03:02–03:36 已續測 BR-01 與剩餘領域，交付 [完整覆蓋報告](CHROME_v2.1.11_REMAINING_ACCEPTANCE.md)。** BR-01 seeking 的救援抑制機制已定位，原始網路起因未證實；新增 [BR-05 Fetch 取消原因遺失](CHROME_v2.1.11_BR05_FETCH_ABORT_REASON.md)。42 個新增受控案例、真 gate 與真 SDK 核心替換有結果，真正背景操作仍未取得 hidden 前提；**產品驗收未全通過，BR-04／05 未修復**。正式來源及 Release 未修改。
-
-**2026-10-10 02:58 先前續測：BR-04 已在真正 Chrome 155／v2.1.11 安裝版確認。** 當輪達成找問題並交付詳細報告的替代完成條件；新的續測目標沒有以此提前退出。見 [BR-04 報告](CHROME_v2.1.11_BR04_XHR_REENTRANT_PREPARE.md)。下方中途暫停文字保留其時間點。
-
-**2026-10-10 02:42 中途狀態：v2.1.11 安裝版驗收部分完成，當時依使用者要求暫停。** BR-03 31 個有效案例與 BR-02 42 個對照通過，當時 BR-04 僅 Node 重現；見 [中途報告](CHROME_v2.1.11_PROGRESS.md)。下文發行時的待安裝文字保留其當時範圍。
-
-本索引於 **2026-10-11** 更新至 **v2.1.17 BR-01 後續恢復修復、必要驗證、正式發布與公開核對完成、實際新版部分安裝驗收**，保留 v2.1.16 發布／公開產物及部分安裝證據。本輪完整證據見 [TEST_REPORT](TEST_REPORT.md) 與 [v2.1.17 安裝矩陣](CHROME_v2.1.17_ACCEPTANCE.md)；剩餘範圍以 [TODO](TODO.md) 為準。已分類受控資料與工具清理完成不補齊 Network 缺口或歷史滾動淘汰（everDropped=true；最終 dropped=false）；完整安裝矩陣未結案。v2.1.12 的 35 項安裝驗收保留其當時範圍，下方歷史日期不代替現行狀態。
-
-2026-10-07 的 Markdown 粗體渲染盤點與排版修正見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-markdown-粗體渲染修正)；後續排版檢查方式列於 DEVELOPMENT。
-
-產品行為以 [src-v2/entry.ts](../src-v2/entry.ts) 及其模組為準；版本與工具以 [release.json](../release.json)、[package.json](../package.json) 及 [package-lock.json](../package-lock.json) 為準。指南與程式不一致時，先確認實際行為再修正文檔，歷史觀察保留原始版本與日期。
-
-閱讀入口：
-
-2026-10-09 的 [功能與競態修復對照](FUNCTIONAL_FIX_REPORT.md) 記錄 v2.1.9 的 17 項修復、正式回歸及新的瀏覽器待驗收範圍；舊版已發布驗收維持原紀錄。
-
-- 一般使用者：README → 安裝／模式／操作／排查。
-- 開發者：PROJECT_CONTEXT → SECURITY → ARCHITECTURE → DEVELOPMENT，並遵守 AGENTS。
-- 維護者：TODO → 最新 TEST_REPORT → CHANGELOG；追溯舊證據時進入歷史報告與封存索引。
+- 使用者：README → 模式／設定／排查。
+- 開發者：AGENTS → PROJECT_CONTEXT → SECURITY → ARCHITECTURE → DEVELOPMENT。
+- 測試：TODO → IAB_TESTING → 對應版本 TEST_REPORT／原始證據。
+- 追溯：本頁下方版本目錄 → 修復／安裝報告 → 封存與 Release 快照。
 
 ## 現行指南
 
@@ -79,70 +22,53 @@
 | [AGENTS](../AGENTS.md) | 必要開發流程、架構、安全及發行／文件要求 |
 | [ARCHITECTURE](ARCHITECTURE.md) | 依賴、狀態、控制器、適配器、生命週期與診斷 |
 | [DEVELOPMENT](DEVELOPMENT.md) | 環境、命令、測試隔離、建置、瀏覽器檢查及封裝 |
+| [IAB_TESTING](IAB_TESTING.md) | 唯一瀏覽器測試方案；固定矩陣、真背景校準、資料隔離、判定及停止條件 |
+| [TEST_REPORT](TEST_REPORT.md) | 最新版自動、安全、來源隔離、發布與實際安裝證據 |
+| [IAB 可用性紀錄](IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md) | 2026-10-11 能力實測與背景窗口作廢原因 |
 | [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md) | 測試遷移、套件登記、XHR 原生替身及 BR-07 keydown／keyup 提交階段校準 |
 | [測試遷移對照](../tests-v2/MIGRATION.md) | 原 891 項功能斷言的行為群組、分支及參數矩陣對照 |
 | [SECURITY](../SECURITY.md) | 信任邊界、持久資料、網路權限及診斷限制 |
 | [TODO](TODO.md) | 目前已批准工作、結案事項及未安排方向 |
-| [FUNCTIONAL_FIX_REPORT](FUNCTIONAL_FIX_REPORT.md) | v2.1.9 的 17 項修復、正式契約及瀏覽器驗收步驟 |
 | [UPSTREAM_MANIFEST](UPSTREAM_MANIFEST.md) | 上游基準、v1／v2 關係及來源校驗 |
 | [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md) | 作者、授權、工具用途及版本 |
 
-本索引管理文件用途、入口及維護對照。這些指南隨程式或發布狀態更新，不能以舊版規格取代目前實作。現行說明、變更紀錄及最新版報告使用繁體中文；封存的歷史正文保留原文。
+現行指南以繁體中文維護；識別字、命令及原始狀態值保留英文。歷史正文不翻譯或重寫，標題改名保留被引用錨點。「儲存元件」「測試情境」「建立函式」「中繼資料」「原始碼對照」「報告產生器」「堆疊資訊」用語保持一致；瀏覽器攔截與測試清理掛鉤分開描述。
 
-2026-10-07 中文化範圍為 **14 份 Markdown**：根目錄 README、AGENTS、SECURITY，`docs/` 的十份文件，以及 `tests-v2/MIGRATION.md`；2026-10-09 新增修復對照報告沿用相同政策。CHANGELOG 的全部版本條目使用繁體中文，仍保留各版當時的驗證狀態；測試遷移對照以中文說明行為，英文欄逐字保留原案例群組。封存正文、82 份 Release Markdown 快照、本機工作資料及第三方／產生的文件不翻譯。繁體中文標題若取代既有標題，必須保留原錨點別名；既有別名及跨文件引用繼續有效。
-
-共用用語為「儲存元件（store）」「測試情境（fixture）」「建立函式（factory）」「中繼資料（metadata）」「原始碼對照（source map）」「報告產生器（reporter）」「堆疊資訊（stack）」。瀏覽器 hook 稱為「攔截」，測試 hook 稱為「測試掛鉤」或「清理掛鉤」。產品名稱、授權名稱、程式識別字、命令、網址、路徑及原始狀態值可以保留英文，必要時補上中文解釋。翻譯必須維持規則強度、條件、數值與證據界線；日期固定的封存正文保持原樣，維護結果另追加有日期的紀錄。
-
-2026-10-07 中文化的實際檢查見 [文件維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-07-現行-markdown-文件繁體中文化)。
+Markdown 格式依 [GFM 約定](DEVELOPMENT.md#markdown-format) 維護；格式整理檢查實際解析與連結，不改動歷史結果、程式碼、Release 快照或不可變封存。
 
 ## 檔案配置
 
-根目錄保留 README、AGENTS、SECURITY、LICENSE 及必要建置設定；其餘現行文件集中於 `docs/`。封裝固定讀取 `docs/CHANGELOG.md`、`docs/TEST_REPORT.md`，來源原件及校驗清單位於 `baseline/`。
+根目錄保留 README、AGENTS、SECURITY、LICENSE 與必要設定；現行指南集中 docs。封裝固定讀取 CHANGELOG、TEST_REPORT，兩者連到儲存庫文件使用完整 GitHub URL。Release／baseline／封存不作 v2 建置或測試輸入。
 
-歷史報告、整理紀錄、計畫、研究、驗收及截圖集中於 [archive/retired](../archive/retired/README.md)。[封存總覽](../archive/README.md) 說明公開文件與忽略的本機資料分區。2026-10-07 盤點為 **29 份公開 Markdown**：根目錄 3 份、`docs/` 10 份、封存索引 2 份、歷史文件 13 份及測試遷移對照 1 份；不計入 Release 快照或私有本機封存。2026-10-06 的 27 份盤點及更早數字保留於 [有日期的維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)。
+本次整理前的九份指南完整保存於 [IAB_GUIDES_BEFORE_2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)，包括當時尚未提交的能力核對文字；它只作歷史快照，不是下一輪操作方案。[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) 追加本次實際檢查，[封存總覽](../archive/README.md) 與 [退出流程資料](../archive/retired/README.md) 保留原配置。
+
+<a name="br01-followthrough-status"></a>
 
 ## 發行與驗證紀錄
 
-| 文件／產物 | 閱讀方式 |
-| --- | --- |
-| [CHANGELOG](CHANGELOG.md) | v2.0.0～v2.1.17 條目使用繁體中文；功能差異、順序及當時驗證狀態保留，v2.1.17 發布／公開產物核對完成 |
-| [BR04_BR05_FIX_REPORT](BR04_BR05_FIX_REPORT.md) | 有界 XHR 準備、取消 reason、66 新契約、來源隔離及分列安裝驗收 |
-| [BR01_FIX_REPORT](BR01_FIX_REPORT.md) | v2.1.13 A／B／C 原修復：Auto 15／30／15 秒有界救援、26 新契約、安全差異、來源隔離與當時發布／安裝；不包含目前 SDK 後續恢復修補 |
-| [BR01_FOLLOWTHROUGH_FIX_REPORT](BR01_FOLLOWTHROUGH_FIX_REPORT.md) | v2.1.17 自有 reload／BODY 操作、SDK seek、跨租期進度與終止後不重試；先行失敗、716 正式契約、安全差異、22 個來源隔離及分列交付／安裝狀態 |
-| [CHROME_v2.1.17_ACCEPTANCE](CHROME_v2.1.17_ACCEPTANCE.md) | v2.1.17 完整實際本體、Auto 1／2 倍正常操作與自有 SDK 重載後續恢復子集；22 個來源隔離、舊版 SDK 校準、清理及完整安裝矩陣剩餘限制分列 |
-| [CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK](CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK.md) | 未初始化媒體歸零漏撤銷舊還原；Node紅燈、原生Chrome來源隔離與網站未定回退分列；未修復 |
-| [CHROME_v2.1.12_ACCEPTANCE](CHROME_v2.1.12_ACCEPTANCE.md) | 實際新版產物身分、35 項共用 gate 矩陣、同片基本回歸、作廢輪及資料清理限制 |
-| [CHROME_v2.1.12_BR01_AUTO_INVESTIGATION](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) | Auto 影片延遲／正常 seek、救援抑制鏈、無界意圖與誤標恢復、獨立重現、原自然起因與政策限制 |
-| [BR07_FIX_REPORT](BR07_FIX_REPORT.md) | keydown／keyup 各派送實際 seek 所有權、正式失敗契約、必要驗證及發布對照 |
-| [BR08_FIX_REPORT](BR08_FIX_REPORT.md) | 完整拖曳命中／手勢所有權、control-loss、監控與恢復提交門檻、正式契約、獨立安全、來源隔離及發布核對；安裝版分列 |
-| [CHROME_v2.1.16_ACCEPTANCE](CHROME_v2.1.16_ACCEPTANCE.md) | BR-08 來源隔離與實際新版安裝證據分列；BR-01 剩餘矩陣、前提、清理及待驗收狀態 |
-| [CHROME_v2.1.15_ACCEPTANCE](CHROME_v2.1.15_ACCEPTANCE.md) | 實際新版完整身分、Auto 1／2 倍正常／故障窗口、BR-08 新缺陷、未成立矩陣與最終清理 |
-| [CHROME_v2.1.15_BR08_PROGRESS_DRAG](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) | P2 外層命中區長拖曳漏辨，現場 15 秒備援、正常 inner 反證、私有 3 fail／4 pass 與修復方向 |
-| [CHROME_v2.1.14_BR07_KEYUP_SEEK](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) | v2.1.14 原始右鍵 keyup 缺陷、原生時序、有效停滯窗口與清理限制 |
-| [CHROME_v2.1.14_ACCEPTANCE](CHROME_v2.1.14_ACCEPTANCE.md) | v2.1.14 實際本體／singleton、正常對照、BR-07 失敗與待驗收矩陣 |
-| [TEST_REPORT](TEST_REPORT.md) | v2.1.17 本輪修復／最終整合／安全／來源隔離、已完成發布／公開核對與待新版安裝狀態；v2.1.16 完整正文另存 archive |
-| [CHROME_v2.1.13_ACCEPTANCE](CHROME_v2.1.13_ACCEPTANCE.md) | 新版 body、Auto 1／2 倍速影片延遲、一次重載、網站暫停撤銷、清理與待驗收矩陣 |
-| [CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP](CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md) | 可信 BODY 方向鍵漏掉使用者修訂，Auto 1／2 倍提早備援、滑鼠對照、獨立失敗契約、根因與剩餘驗收 |
-| [CHROME_v2.1.9_ACCEPTANCE](CHROME_v2.1.9_ACCEPTANCE.md) | 2026-10-09 部分真實瀏覽器驗收、18 個原生 XHR 案例及待定位停滯 |
-| [CHROME_v2.1.9_BR02_XHR_FAILED_OPEN](CHROME_v2.1.9_BR02_XHR_FAILED_OPEN.md) | 持續驗收確認的 XHR 例外安全性缺陷、六個 Chrome 失敗情境、根因與原始重現入口 |
-| [BR02_FIX_REPORT](BR02_FIX_REPORT.md) | v2.1.10 修復、40 個新增正式契約、來源隔離驗證、安全審查及後續安裝版證據／gate 限制 |
-| [CHROME_v2.1.10_ACCEPTANCE](CHROME_v2.1.10_ACCEPTANCE.md) | 68 個安裝版 XHR 案例執行通過、同片操作、87.8 秒 seek 追加觀察及未完成範圍 |
-| [CHROME_v2.1.10_BR03_CONTENT_EPOCH](CHROME_v2.1.10_BR03_CONTENT_EPOCH.md) | 相同 DASH 清單排列誤觸 epoch、音訊授權失效、來源／安裝版重現與修正方向 |
-| [CHROME_v2.1.11_PROGRESS](CHROME_v2.1.11_PROGRESS.md) | 安裝版 31 個 BR-03／42 個 BR-02 對照、部分 gate／R04、同片回歸、暫定 BR-04 Node 失敗及暫停檢查點 |
-| [CHROME_v2.1.11_BR04_XHR_REENTRANT_PREPARE](CHROME_v2.1.11_BR04_XHR_REENTRANT_PREPARE.md) | 續測確認內部 XHR 準備遭同步重入失效，真 gate／原生對照、根因、重跑及清理證據 |
-| [CHROME_v2.1.11_REMAINING_ACCEPTANCE](CHROME_v2.1.11_REMAINING_ACCEPTANCE.md) | BR-01 救援抑制定位、正常網站／真 gate／真 SDK／42 個新增受控案例、完整剩餘覆蓋與原生限制 |
-| [CHROME_v2.1.11_BR05_FETCH_ABORT_REASON](CHROME_v2.1.11_BR05_FETCH_ABORT_REASON.md) | 真 gate Fetch 遺失取消原因，Chrome 原生對照、Node 3 pass／4 fail、位置與最小修正方向 |
-| [BR03_FIX_REPORT](BR03_FIX_REPORT.md) | BR-03 本機修復、43 個新增正式契約、修復前後結果、安全差異審查、Chrome 來源隔離及安裝版待驗收 |
-| [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md) | v2.0.2～v2.1.9 的歷史完整報告，包括發行前模組化驗證 |
-| [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) | 2026-10-03 三段原整理紀錄及後續有日期的文件檢查 |
-| [v2.1.16 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.16) | 2026-10-10 已發布；遠端 main／標籤、唯一腳本及公開 latest 版本、大小、SHA-256 核對一致 |
-| [Release/v2.1.16](../Release/v2.1.16/) | BR-08 封裝快照；保持發布準備當時內容，發布後不回寫 |
-| [v2.1.10 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.10) | 2026-10-09 已發布；唯一附件及公開 latest 版本、大小、SHA-256 均核對一致 |
-| [Release/v2.1.10](../Release/v2.1.10/) | 本次封裝快照；發布後不回寫 |
-| [v2.1.9 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.9) | 2026-10-09 已發布並核對 latest 下載；附件只有 `BiliCDN_TW.user.js` |
-| [Release/v2.1.9](../Release/v2.1.9/) | 當次使用者腳本、報告、變更紀錄、資訊清單、校驗值快照；發布後不回寫 |
+本表只說明各版報告的用途。過去「未修復」「正在續行」「待安裝」等文字描述當時時間點，不能覆蓋目前 TODO。新版整份矩陣沒有取得有效通過時，不以修復發布或舊子項代替。
 
-自動驗證、安全掃描與真實瀏覽器驗收分開記錄。v2.1.8 的安全 `partial coverage`、MP4 試片／公開 DASH 觀察、較早 DASH 緩衝及完整公開 MP4／FLV 限制均保存於歷史報告；v2.1.9 發行前靜態差異審查為完整覆蓋，後續 BR-02 修復另有獨立報告，不沿用歷史安全結果。BR-01 停滯與其餘未覆蓋情境仍保留。**v2.1.6 Chrome／Tampermonkey 驗收已批准通過、已結案**，歷史覆蓋限制不構成待辦。
+| 版本／範圍 | 修復與調查 | 實際安裝／階段紀錄 |
+| --- | --- | --- |
+| v2.1.20 | [新意圖原生位置保存](BR01_NATIVE_POSITION_FIX_REPORT.md)、[最新版完整驗證](TEST_REPORT.md) | [BR-01 安裝子項、事件缺口與清理](CHROME_v2.1.20_BR01_ACCEPTANCE.md) |
+| v2.1.19 | [空媒體鍵盤所有權](BR01_NATIVE_KEYBOARD_FIX_REPORT.md) | [安裝續測二元判定與新位置缺陷](BR01_v2.1.19_INSTALLED_CONTINUATION.md) |
+| v2.1.18 | [BR-09 修復](BR09_FIX_REPORT.md) | [安裝紀錄](CHROME_v2.1.18_ACCEPTANCE.md) |
+| v2.1.17 | [SDK 後續恢復](BR01_FOLLOWTHROUGH_FIX_REPORT.md)、[BR-09 原調查](CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK.md) | [安裝矩陣](CHROME_v2.1.17_ACCEPTANCE.md)、[當輪二元判定](BR01_v2.1.17_FINAL_ACCEPTANCE.md) |
+| v2.1.16 | [BR-08 完整拖曳修復](BR08_FIX_REPORT.md) | [安裝紀錄](CHROME_v2.1.16_ACCEPTANCE.md) |
+| v2.1.15 | [BR-07 keyup 修復](BR07_FIX_REPORT.md)、[BR-08 原調查](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) | [安裝紀錄](CHROME_v2.1.15_ACCEPTANCE.md) |
+| v2.1.14 | [BR-06 鍵盤修復](BR06_FIX_REPORT.md)、[BR-07 原調查](CHROME_v2.1.14_BR07_KEYUP_SEEK.md) | [安裝紀錄](CHROME_v2.1.14_ACCEPTANCE.md) |
+| v2.1.13 | [BR-01 Auto 有界救援](BR01_FIX_REPORT.md)、[BR-06 原調查](CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md) | [安裝紀錄](CHROME_v2.1.13_ACCEPTANCE.md) |
+| v2.1.12 | [BR-04／05 修復](BR04_BR05_FIX_REPORT.md)、[BR-01 Auto 原調查](CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md) | [安裝 gate／回歸矩陣](CHROME_v2.1.12_ACCEPTANCE.md) |
+| v2.1.11 | [BR-03 修復](BR03_FIX_REPORT.md)、[BR-04 原調查](CHROME_v2.1.11_BR04_XHR_REENTRANT_PREPARE.md)、[BR-05 原調查](CHROME_v2.1.11_BR05_FETCH_ABORT_REASON.md) | [中途紀錄](CHROME_v2.1.11_PROGRESS.md)、[領域覆蓋](CHROME_v2.1.11_REMAINING_ACCEPTANCE.md) |
+| v2.1.10 | [BR-02 修復](BR02_FIX_REPORT.md)、[BR-03 原調查](CHROME_v2.1.10_BR03_CONTENT_EPOCH.md) | [安裝紀錄](CHROME_v2.1.10_ACCEPTANCE.md) |
+| v2.1.9 | [17 項功能與競態修復](FUNCTIONAL_FIX_REPORT.md)、[BR-02 原調查](CHROME_v2.1.9_BR02_XHR_FAILED_OPEN.md) | [安裝紀錄](CHROME_v2.1.9_ACCEPTANCE.md) |
+
+- [CHANGELOG](CHANGELOG.md)：各版功能差異與當時驗證狀態。
+- [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md)：固定報告換版時保存的歷史完整正文。
+- [v2.1.20 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.20)、[Release/v2.1.20](../Release/v2.1.20/)：該版產物與不可回寫的封裝快照；唯一公開附件為使用者腳本。
+- [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)：文件維護與檢查，不等同新程式測試。
+
+v2.1.6 驗收已批准通過、已結案；歷史覆蓋限制不轉為現行待辦。BR-01 原 87.785 秒自然網路起因與完整產品交叉回歸分開，不作救援修復的隱含新增門檻。
 
 ## 歷史計畫與瀏覽器紀錄
 
@@ -183,6 +109,7 @@
 | 測試執行器、測試資源範圍、FakeClock、型別設定 | TEST_TOOLING_REPORT、測試遷移對照；與產品發行及瀏覽器紀錄分開 |
 | 封裝及 GitHub 發布 | README、CHANGELOG、TEST_REPORT、PROJECT_CONTEXT、本索引；版本、狀態、連結、雜湊及附件 |
 | 使用者新增、取消或結案範圍 | TODO、PROJECT_CONTEXT 及相關歷史狀態標示 |
+| 瀏覽器環境、工具與驗收方法 | IAB_TESTING、AGENTS、DEVELOPMENT、TODO；校準前提、唯一環境及判定門檻 |
 
 每次維護依序檢查：
 
