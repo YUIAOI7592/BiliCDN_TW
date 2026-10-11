@@ -14,7 +14,7 @@
 
 [第 6 輪](IAB_v2.1.20_BR10_CONTROL_CENTER_KEYBOARD.md) 只繼續非 BR-01 TODO。新增原生 Tab／Enter／Space 操作自有封閉 Shadow DOM 的能力證據；實際控制中心設定入口因 BR-10 鍵盤衝突不通過。不可再把此特定失敗一概當成工具不支援，也不可將來源對照算成 P04／P05 安裝通過。觀察真正焦點及 keydown 是否被取消；來源頁不修改產品，網站頁不攔掉外部快捷鍵來製造成功。取得新缺陷報告後收束，不自動恢復 BR-01。
 
-BR-10 修復的來源 UI 以記憶體依賴在自有頁與指定影片驗證，實際網站的 Enter／Space 衝突已消除；不接正式 GM、不替換 singleton。新版安裝另測 Auto 1／2 的設定入口與 P04 延後回傳、P05 報告／複製。只有仍由工具持有時才還原包裝或剪貼簿；細節見 [修復報告](BR10_FIX_REPORT.md)。
+BR-10 修復的來源 UI 以記憶體依賴在自有頁與指定影片驗證，實際網站的 Enter／Space 衝突已消除；不接正式 GM、不替換 singleton。2026-10-11～12 的 v2.1.21 安裝驗證中，Auto 1／2 的設定入口、P04 延後回傳及 P05 報告通過；P05 複製未通過，工具讀到空內容，後續校準逾時，未確認產品根因。已通過項目不重測；先校準剪貼簿通道及安全復原能力，才重跑一次複製。只有仍由工具持有時才還原包裝或剪貼簿；細節見 [修復報告](BR10_FIX_REPORT.md)。
 
 <a name="scope"></a>
 
@@ -173,7 +173,9 @@ CASES 的必要欄位：`id, level, version, bodySha256, rate, preconditions, va
 
 修復時先建立正式失敗契約，按差異選取 N／S／I 案例。必要自動驗證仍為 typecheck、architecture、npm test、verify、git diff --check；Codex Security 依安全敏感性或使用者要求另跑，不在 verify 內。
 
-按 [AGENTS 發行規則](../AGENTS.md#release-rules) 完成已授權的功能修復交付；必要來源隔離同樣只在內建瀏覽器執行。公開產物核對與 I 層安裝驗收分別記錄。Tampermonkey 更新只用內建環境的可用介面；工具或政策不允許更新操作時，只請使用者完成確實必要的手動步驟，不改用外部瀏覽器、不繞過限制。
+按 [AGENTS 發行規則](../AGENTS.md#release-rules) 完成已授權的功能修復交付；必要來源隔離同樣只在內建瀏覽器執行。公開產物核對與 I 層安裝驗收分別記錄。
+
+Tampermonkey 更新先用內建瀏覽器開啟本儲存庫既有 [公開 latest 使用者腳本](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js)，再於新載入的指定影片核對完整本體與 singleton。v2.1.21 已以此流程成功取得新版；更新中繼頁本身不等於安裝成功。不能把「擴充功能介面受限」直接推論成「公開更新入口不能使用」。只有當次可用入口實際受阻或仍需使用者完成確認時，才請求必要手動步驟；不改用外部瀏覽器、不繞過工具限制。
 
 只有使用者明確要求恢復 BR-01，才重新安排其專項矩陣；先核對新差異及可沿用證據，不重測已通過項目。一次結束便保存總結與清理，不自動建立排程或下一輪。
 

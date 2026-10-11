@@ -172,3 +172,5 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 [package.mjs](../scripts/package.mjs) 覆寫這些具名檔案，不清空既有 Release 目錄。校驗值清單納入該目錄已存在的全部檔案，校驗值本身除外。封裝前檢查目標目錄；不得為了驗證已發布版本而執行此命令。暫存封裝驗證使用 `npm run verify`。
 
 依 [AGENTS 發行規則](../AGENTS.md#release-rules)，本專案功能修復完成並通過必要自動及安全驗證後，預設自主提交、遞增修補版本、封裝、推送 main／標籤及發布 GitHub Release，不再等待使用者重複要求；當次明確限定只調查、文件整理或保留本機修改時遵守該範圍。完成後核對公開 latest 更新的版本、大小與 SHA-256。不得加入修補、CI/CD 或 GitHub Actions。本機封裝不等於發布。GitHub Release 附件只有使用者腳本，更新 URL 保持指向本儲存庫最新 Release。發布前執行 `npm run typecheck`、`npm run architecture`、`npm test`、`npm run verify` 及必要安全驗證。內建瀏覽器／Tampermonkey 驗收另行記錄，未執行的瀏覽器檢查不得寫成通過。
+
+發布後先以內建瀏覽器的公開 latest 使用者腳本入口觸發既有安裝更新，再核對新文件實際執行身分；v2.1.21 已證明此路徑可用。不能只依歷史擴充功能介面限制就要求手動更新。只有當次入口確實受阻才交由使用者完成必要步驟；操作與證據要求見 [IAB 更新流程](IAB_TESTING.md#release)。
