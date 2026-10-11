@@ -2,6 +2,8 @@
 
 # 測試工具驗證紀錄
 
+各節依日期保存當時的測試工具與契約模型證據，不把舊版本數量當成現行執行結果。最新事件模型更新為 [BR-10 控制中心](#2026-10-11-br-10-控制中心事件契約)；現行命令見 [DEVELOPMENT](DEVELOPMENT.md#test-suites-and-isolation)，v2.1.21 的完整驗證及實際 IAB 安裝結果見 [TEST_REPORT](TEST_REPORT.md)。
+
 ## 2026-10-11 IAB 收集器
 
 基準 `f5f26e3`、產品版本 v2.1.20。第 4 輪的閉包失效證據保留；新增主機端 [IabEventCollector](../scripts/iab-event-collector.mjs) 與 [7 個正式契約](../tests-v2/regressions/iab-event-collector.ts)，由既有 tooling 套件匯入。工具以實例保存跨呼叫狀態、先登記整批暫停請求、分頁去重、失效後停止持有，並區分有原生終止證據與未解決的放行錯誤。
@@ -116,7 +118,6 @@ Chrome 修復來源隔離 **40／40 個有效案例通過**：真正可信 keydo
 本輪 Codex Security 差異掃描 3e3d133e-7f39-4bf8-a0ba-d22d188a639a 已封存、complete／0 可報告發現／無未處理候選；v2.1.15 最終 verify、封裝及公開更新核對完成。使用者更新後，實際完整 body／singleton 1 已核對，正常鍵盤、新寬限與約 12 秒延遲後進度有證據，與來源隔離分列。續測新增 [BR-08](CHROME_v2.1.15_BR08_PROGRESS_DRAG.md) 外層拖曳命中缺口，私有七正確契約 **3 fail／4 pass、exit 1** 與發布前 574 正式通過分列，私有完整型別檢查通過；沒有修改來源或正式登記。本輪文件整理未新增執行期測試通過宣稱。最終 107 受控 IDs 學習匹配皆 0、自有資源清理完成；完整 BR-01、真正 hidden／晚到 SDK 等仍未結案，見 [安裝矩陣](CHROME_v2.1.15_ACCEPTANCE.md)。
 
 發布後文件同步實際檢查：13 份現行文件／新 BR-08 報告，278 連結、33 顯式錨點，無失效路徑或錨點；git diff --check 通過。v2.1.14 完整 TEST_REPORT 正文仍逐字保存在歷史，原 BR-07／安裝文件未變；本輪未修改 runtime／tests／config／Release 或安全封存。只記錄文件檢查，不算新的正式測試或安全掃描。
-
 
 ## 2026-10-11 BR-10 控制中心事件契約
 

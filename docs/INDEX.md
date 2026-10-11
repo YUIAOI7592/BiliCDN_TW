@@ -47,6 +47,8 @@
 
 Markdown 格式依 [GFM 約定](DEVELOPMENT.md#markdown-format) 維護；格式整理檢查實際解析與連結，不改動歷史結果、程式碼、Release 快照或不可變封存。
 
+2026-10-12 已盤點 170 份公開 Markdown，核對 18 份現行文件／入口並補齊過期內容；全量格式、連結、來源事實及受保護資料結果見 [本次文件核對紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-12-全量文件現況核對)。這項文件檢查不產生新的功能驗收。
+
 ## 檔案配置
 
 根目錄保留 README、AGENTS、SECURITY、LICENSE 與必要設定；現行指南集中 docs。封裝固定讀取 CHANGELOG、TEST_REPORT，兩者連到儲存庫文件使用完整 GitHub URL。Release／baseline／封存不作 v2 建置或測試輸入。
@@ -77,7 +79,7 @@ Markdown 格式依 [GFM 約定](DEVELOPMENT.md#markdown-format) 維護；格式�
 
 - [CHANGELOG](CHANGELOG.md)：各版功能差異與當時驗證狀態。
 - [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md)：固定報告換版時保存的歷史完整正文。
-- [v2.1.20 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.20)、[Release/v2.1.20](../Release/v2.1.20/)：該版產物與不可回寫的封裝快照；唯一公開附件為使用者腳本。
+- [v2.1.21 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.21)、[Release/v2.1.21](../Release/v2.1.21/)：現行已發布產物與不可回寫的封裝快照；唯一公開附件為使用者腳本。較早版本沿上表與 Release 目錄追溯。
 - [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)：文件維護與檢查，不等同新程式測試。
 
 v2.1.6 驗收已批准通過、已結案；歷史覆蓋限制不轉為現行待辦。BR-01 原 87.785 秒自然網路起因與完整產品交叉回歸分開，不作救援修復的隱含新增門檻。

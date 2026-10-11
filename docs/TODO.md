@@ -68,6 +68,7 @@ P01～P05 維持獨立範圍，沿用已通過結果。第 6 輪的 BR-10 現已
 | BR-09 未初始化媒體目標 | v2.1.18，[修復](BR09_FIX_REPORT.md) |
 | BR-01 未初始化媒體鍵盤身分 | v2.1.19，[修復](BR01_NATIVE_KEYBOARD_FIX_REPORT.md) |
 | BR-01 新意圖原生位置保存 | v2.1.20，[修復](BR01_NATIVE_POSITION_FIX_REPORT.md) |
+| BR-10 控制中心鍵盤隔離 | v2.1.21，修復、發布及 Auto 1／2 倍入口四案通過；P04 與 P05 報告通過，複製另列上方剩餘項目。[修復與安裝](BR10_FIX_REPORT.md) |
 
 v2.1.6 的瀏覽器驗收已批准通過並結案，原覆蓋限制不轉為現行待辦。2026-09-25 起的新增 CDN 研究已撤銷，不授權修改 Catalog。更早的逐輪進度完整保留於 [改寫前快照](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md#docs-todo-md) 及 [歷史索引](INDEX.md#發行與驗證紀錄)。
 
