@@ -4,9 +4,9 @@
 
 ## 2026-10-11 IAB 第 4 輪
 
-以 `14ea6a5` 為基準，完成 [TODO 第 4 輪](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/IAB_v2.1.20_TODO_R4_2026-10-11.md) 的可執行新增子項：**實際安裝／原生 XHR timeout 2 案，以及內建瀏覽器來源隔離格式與 hook 資源 17 項通過，沒有新確認的產品缺陷。** 前 3 輪通過結果沿用，沒有再跑無新前提的 BR-01 故障、背景或 gate 窗口。
+以 `14ea6a5` 為基準，[TODO 第 4 輪](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/IAB_v2.1.20_TODO_R4_2026-10-11.md) **新增實際安裝／原生 XHR timeout 2 案，以及內建瀏覽器來源隔離格式與 hook 資源 17 項通過，沒有新確認的產品缺陷。** 前 3 輪有效結果沿用。B02 播放器焦點 2 倍的未觀察尾段嘗試兩次，均在新按鍵前被收集器中斷，不算產品通過或失敗；未再跑無新前提的背景、gate 或既知無效故障窗口。
 
-逾時採非阻塞啟動與連續游標，完整 DONE→timeout→loadend，無截斷；來源隔離的 12 個合成 API 均先攔截再回應，GM 不存在、記憶體寫入 0。請求／hook／timer／訂閱已清理，網站及成功來源頁已關閉、服務停止；最初工具錯誤頁被 URL 政策拒絕關閉，故 C01 及本輪完整通過條件未達成。9 個保存證據斷言、自有模型型別檢查、5 份文件 GFM／17 表格／145 連結及 diff 檢查通過；未改正式來源、重跑完整 npm／verify／安全掃描或發布新版。累計缺口見 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
+逾時採非阻塞啟動與連續游標，完整 DONE→timeout→loadend，無截斷；來源隔離的 12 個合成 API 均先攔截再回應，GM 不存在、記憶體寫入 0。獨立 B02 收集器的最小對照證實跨呼叫變數重設未更新舊閉包，下次須先隔離驗證工具。最終 7 個觀察包裝還原、timer／訂閱釋放、攔截空、5 個受控 request 樣本零匹配；實際分頁為零、服務停止，C01 通過。原工具錯誤頁與第一窗網路缺口保留歷史紀錄，不補算案例。保存證據斷言、自有模型型別檢查、5 份文件 GFM／連結與 diff 檢查另存；未改正式來源、重跑完整 npm／verify／安全掃描或發布新版。累計缺口見 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
 
 ## 2026-10-11 IAB 第 3 輪
 
