@@ -2,6 +2,14 @@
 
 # BiliCDN_TW v2.1.20 BR-01 新意圖位置保存驗證 — 2026-10-11
 
+## 2026-10-11 IAB 第 6 輪：非 BR-01 TODO 與 BR-10
+
+以 `f8f6f87` 為基準，只使用內建瀏覽器繼續 P 項，**已確認 BR-10 控制中心鍵盤衝突，尚未修復**。原生 Tab／Enter／Space 的自有封閉 Shadow DOM 能力校準通過；實際 v2.1.20 設定按鈕的可信 keydown 被取消，Enter 將焦點移至彈幕輸入框。未修改 UI 來源的隔離頁取得 2 個正常對照通過、2 個缺陷情境失敗，見 [BR-10／第 6 輪報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/IAB_v2.1.20_BR10_CONTROL_CENTER_KEYBOARD.md)。
+
+BR-01 沒有恢復、既有通過案例未重測。P01／P02 無新自然 gate 前提，沒有反覆載入；P04 延後命令與 P05 完整 UI 報告／複製在新缺陷出現後未執行，不能補算通過。實際完整本體及唯一 singleton 核對；8 個方法包裝、7 個 listener 還原，設定未改，pending／observer timer 為零；來源頁 listener／timer 清理、記憶體儲存鍵零，最終 IAB 分頁為零。沒有故障攔截或受控學習樣本。
+
+自有來源模型型別檢查與保存證據 7 組一致性檢查通過；這不代表 BR-10 契約通過。產品來源、正式套件、版本與 Release 不變，沒有新的完整 npm／verify 或安全掃描，也沒有升版／發布。
+
 ## 2026-10-11 使用者決定跳過 BR-01
 
 使用者要求停止繼續投入 BR-01；剩餘專項驗收已移出現行待辦，不再自主續測或作為其他工作／發布門檻。歷次通過、無效與未執行結果原樣保留，跳過不改記為通過；既有正式回歸不刪除。只有使用者明確要求才恢復 BR-01。P01～P05 保持獨立範圍，現況見 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。本次只改文件，沒有新增執行期、瀏覽器或安全驗證。
