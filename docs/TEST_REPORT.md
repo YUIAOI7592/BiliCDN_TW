@@ -50,6 +50,14 @@ v2.1.21 已於 `2026-10-11T15:33:58Z` [正式發布](https://github.com/YUIAOI75
 
 BR-01 依使用者決定保持跳過。其他已通過結果沿用，沒有新前提的 P01／P02 不重跑；目前範圍見 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
 
+## 2026-10-12 P05 IAB 真正貼上與讀回
+
+基準 `99b3308`、v2.1.21，開始時乾淨。使用者改採 IAB 讀回門檻後，完整保存原項目及格式，64 字元合成文字的真正複製／貼上與 API 逐字相符，快照復原及原內容真正貼上確認通過。重新取得完整 v2.1.21 本體、Tampermonkey 5.5.1 與唯一 RuntimeController／ControlCenter 身分；沒有重測既有通過項目。
+
+**實際 P05 不通過：** 真實 UI 的可信複製事件後，當次完整報告 18,150 字元，而 IAB API 及真正 Ctrl+V 均為原文字 61 字元，全文不符。另行批准的單次 GM 純文字校準正常返回並收到完成回呼，原生 Clipboard API、工具讀回及貼上仍未變。不能把完成通知當成成功，也沒有證據支持只補格式能修復；產品根因仍未定位。
+
+原剪貼簿完整保留、原內容只留記憶體，兩個自有分頁及 loopback 31995 已清理，Debugger／觀察器釋放。沒有產品、正式測試、設定、版本或 Release 修改；本次只新增瀏覽器證據及文件檢查，不重跑自動契約或安全掃描。BR-01 保持跳過，沒有新前提時不重複同樣窗口。全文比較、來源位置、工具限制及續查條件見 [本輪報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_IAB_RESULT_2026-10-12.md)。
+
 <a name="bilicdn_tw-v2120-release-verification--2026-10-11"></a>
 <a name="歷史驗證導覽"></a>
 

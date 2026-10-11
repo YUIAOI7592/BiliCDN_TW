@@ -11,6 +11,7 @@
 - 新增 10 個正式鍵盤契約；自動驗證、安全差異、來源與實際安裝分列於 [最新驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [BR-10 報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR10_FIX_REPORT.md)。BR-01 依使用者決定保持跳過。
 - 實際 IAB／Tampermonkey：Auto 1／2 倍 Enter／空白鍵四案、關閉／切頁後命令完成兩案及完整診斷報告通過。複製驗證未通過，剪貼簿工具校準逾時、產品根因未確認，整份 UI 安裝矩陣不標為全部完成。
 - 2026-10-12 僅補充 [P05 通道調查](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_CHANNEL_REPORT_2026-10-12.md)：IAB 原生複製／貼上相符，PowerShell 仍讀 Windows 原內容，共同通道未成立而停止；沒有重跑產品或新腳本發布。
+- 後續改用使用者批准的 IAB 真正貼上與讀回，實際複製全文不符、P05 不通過；單次 GM 明確格式校準也未生效，根因未定位。完整原內容保護及資源清理完成；只更新 [本輪紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_IAB_RESULT_2026-10-12.md)，不修改產品或升版。
 
 ## v2.1.20
 
