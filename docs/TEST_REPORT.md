@@ -2,6 +2,10 @@
 
 # BiliCDN_TW v2.1.20 BR-01 新意圖位置保存驗證 — 2026-10-11
 
+## 2026-10-11 使用者決定跳過 BR-01
+
+使用者要求停止繼續投入 BR-01；剩餘專項驗收已移出現行待辦，不再自主續測或作為其他工作／發布門檻。歷次通過、無效與未執行結果原樣保留，跳過不改記為通過；既有正式回歸不刪除。只有使用者明確要求才恢復 BR-01。P01～P05 保持獨立範圍，現況見 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。本次只改文件，沒有新增執行期、瀏覽器或安全驗證。
+
 ## 2026-10-11 IAB 收集器修復與第 5 輪
 
 以 `f5f26e3` 為基準，[第 5 輪](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md) **收集器修復、7 個新增正式契約及 IAB loopback 隔離通過；完整 tooling 30／30、typecheck 通過。** 新增 B02 第二次滑鼠 seek 1 倍的 30 秒尾段通過：新修訂後 16.459 秒備援一次、31.460 秒實際 reload 一次，保存最新目標。P03 兩個自然 API 均與原請求 cid 相符，epoch 維持 0，限定同片安裝子項通過。

@@ -2,6 +2,8 @@
 
 更新：2026-10-11。現行版本 **v2.1.20**，依 [release.json](../release.json)、[package.json](../package.json)、[package-lock.json](../package-lock.json) 與 [src-v2](../src-v2/entry.ts) 核對。
 
+**目前決定：依使用者要求跳過 BR-01。** 剩餘專項驗收已退出現行待辦，不再自主續測或阻擋其他工作／發布；既有修復、正式回歸及證據保留，不把跳過改記為通過。只有使用者明確要求才恢復。現行範圍以 [TODO](TODO.md) 為準，下方逐輪結果保留當時判定。
+
 **今後所有瀏覽器測試只用 Codex 內建瀏覽器＋Tampermonkey。** 唯一方案是 [IAB_TESTING](IAB_TESTING.md)；[TODO](TODO.md) 記錄目前狀態，[TEST_REPORT](TEST_REPORT.md) 記錄版本證據。最新 [收集器修復與第 5 輪](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md) 完成工具隔離驗證及 30 個 tooling 契約，新增 B02 滑鼠 1 倍 30 秒尾段、P03 同片自然 cid／epoch 通過，沒有新確認的產品缺陷。其他失效窗口按前提停止，最終資源及分頁清理完成；前 4 輪有效結果沿用，固定矩陣未完整通過。只改工具、測試與文件，沒有產品來源修改、升版或發布。
 
 [內建瀏覽器可用性紀錄](IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md) 已確認一般操作、完整腳本身分與合成傳輸能力；背景窗口已作廢並撤回能力失敗判定。它不等於 BR-01 完整通過。歷史 Chrome 報告維持原環境，不改名成 IAB 證據。
