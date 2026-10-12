@@ -7,6 +7,7 @@
 - 修正診斷複製：可信操作立即使用原生 Clipboard API；API 不可取得才交給 GM 純文字備援。原生失敗不重複寫入。
 - 顯示可讀狀態及固定失敗提示，保留完整報告；pending 寫入跨關閉／重開不重疊，晚到結果不污染新視圖或搶焦點。
 - 新增 20 個正式契約；安全差異、來源讀回／貼上、發布與安裝結果分列於 [P05 修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_FIX_REPORT.md) 及 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。不宣稱修復 GM 通道本身；BR-01 保持跳過。
+- 2026-10-12 已正式發布並核對唯一腳本附件與公開 latest。實際 v2.1.22 真實 UI 的 31,204 字元報告讀回／真正貼上全文相符，原剪貼簿完整復原與自有資源清理通過；只驗本輪複製，不重測既有通過項目。
 
 ## v2.1.21
 

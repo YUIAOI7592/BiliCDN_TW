@@ -68,7 +68,7 @@ Markdown 格式依 [GFM 約定](DEVELOPMENT.md#markdown-format) 維護；格式�
 | 版本／範圍 | 修復與調查 | 實際安裝／階段紀錄 |
 | --- | --- | --- |
 | v2.1.22 | [P05 原生優先](P05_COPY_FIX_REPORT.md)、[最新版完整驗證](TEST_REPORT.md) | 本輪來源／安裝分列 |
-| v2.1.21 | [BR-10 鍵盤隔離](BR10_FIX_REPORT.md)、[最新版完整驗證](TEST_REPORT.md) | 本輪來源／安裝分列 |
+| v2.1.21 | [BR-10 鍵盤隔離](BR10_FIX_REPORT.md)、[完整原驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2121-release-verification--2026-10-11) | 歷史來源／安裝分列 |
 | v2.1.20 | [新意圖原生位置保存](BR01_NATIVE_POSITION_FIX_REPORT.md)、[完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2120-release-verification--2026-10-11) | [BR-01 安裝子項、事件缺口與清理](CHROME_v2.1.20_BR01_ACCEPTANCE.md) |
 | v2.1.19 | [空媒體鍵盤所有權](BR01_NATIVE_KEYBOARD_FIX_REPORT.md) | [安裝續測二元判定與新位置缺陷](BR01_v2.1.19_INSTALLED_CONTINUATION.md) |
 | v2.1.18 | [BR-09 修復](BR09_FIX_REPORT.md) | [安裝紀錄](CHROME_v2.1.18_ACCEPTANCE.md) |
@@ -159,4 +159,4 @@ v2.1.6 驗收已批准通過、已結案；歷史覆蓋限制不轉為現行待�
 
 ## P05 v2.1.22 本輪交付
 
-已採用使用者決定的原生優先流程，新增 20 個契約；控制中心 37／37、全套 808／808，安全差異三個檔案 0 發現，原生通道及指定影片修復來源讀回／貼上通過。發布與實際安裝結果以 [P05 修復報告](P05_COPY_FIX_REPORT.md) 的分層判定為準。BR-01 保持跳過，P01／P02 沒有新前提時不重跑。
+**P05 修復、發布及實際安裝驗收通過。** 控制中心 37／37、全套 808／808、verify、安全差異及來源讀回／貼上通過，公開產物一致。更新後完整 v2.1.22 本體及唯一實例核對通過，真實 UI 的 31,204 字元報告讀回／真正貼上全文相符，全部原剪貼簿及自有資源清理通過。詳見 [P05 修復報告](P05_COPY_FIX_REPORT.md)。BR-01 保持跳過，P01／P02 沒有新前提時不重跑。
