@@ -120,6 +120,7 @@ export class ControlCenter {
   #viewVersion = 0
   #open = false
   #releaseKeyboard: (() => void) | null = null
+  #pendingCopy: object | null = null
   constructor(private readonly deps: ControlCenterDependencies) {}
 
   show(opener?: HTMLElement | null): void {
@@ -335,12 +336,48 @@ export class ControlCenter {
     const report = document.createElement('textarea'); report.className = 'report'; report.readOnly = true
     report.value = this.deps.diagnostics.buildReport(this.#readModel())
     body.append(report)
+    const status = document.createElement('p'); status.className = 'detail'
+    status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite')
+    body.append(status)
+    const version = this.#viewVersion
+    const copy = this.#button('複製報告', () => this.#copyReport(report, copy, status, version))
     foot.append(
       this.#button('記下剛剛的卡頓', () => { this.deps.diagnostics.mark(); this.#renderDiagnostics() }),
       this.#button('清除本分頁事故記錄', () => { this.deps.diagnostics.clear(); this.#renderDiagnostics() }),
-      this.#button('複製報告', () => { try { GM_setClipboard(report.value) } catch { void navigator.clipboard?.writeText(report.value) } }),
+      copy,
       this.#button('返回', () => this.#renderOverview()),
     )
+  }
+
+  async #copyReport(report: HTMLTextAreaElement, button: HTMLButtonElement, status: HTMLElement, version: number): Promise<void> {
+    const host = this.#host, shadow = this.#shadow
+    const ownsView = (): boolean => this.#ownsView(version) && this.#host === host && this.#shadow === shadow
+      && host?.isConnected === true && report.isConnected && button.isConnected && status.isConnected
+    if (!ownsView()) return
+    if (this.#pendingCopy) { status.textContent = '前次複製尚未結束，請稍後再試'; return }
+    const operation = {}; this.#pendingCopy = operation
+    button.disabled = true; status.textContent = '正在複製報告…'
+    try {
+      const text = report.value
+      let clipboard: Clipboard | undefined, write: Clipboard['writeText'] | undefined
+      try { clipboard = navigator.clipboard; write = clipboard?.writeText } catch { /* API unavailable: GM compatibility path. */ }
+      // Clipboard lookup may synchronously replace the view. Never write for an obsolete owner.
+      if (!ownsView()) return
+      if (typeof write === 'function') {
+        // Start during trusted click dispatch, with the native receiver and no preceding await.
+        await write.call(clipboard, text)
+        if (ownsView()) status.textContent = '已複製報告'
+      } else {
+        GM_setClipboard(text, 'text')
+        if (ownsView()) status.textContent = '已交由腳本管理器處理，請貼上確認'
+      }
+    } catch {
+      // A submitted write cannot be cancelled; do not issue a second write after a failure.
+      if (ownsView()) status.textContent = '複製失敗，請選取報告自行複製'
+    } finally {
+      if (this.#pendingCopy === operation) this.#pendingCopy = null
+      if (ownsView()) button.disabled = false
+    }
   }
 
   #readModel(): ControlCenterSnapshot {

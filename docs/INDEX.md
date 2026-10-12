@@ -1,12 +1,12 @@
 # 專案文件索引與維護規則
 
-更新：2026-10-12。現行版本 **v2.1.21**，依 [release.json](../release.json)、[package.json](../package.json)、[package-lock.json](../package-lock.json) 與 [src-v2](../src-v2/entry.ts) 核對。
+更新：2026-10-12。現行版本 **v2.1.22**，依 [release.json](../release.json)、[package.json](../package.json)、[package-lock.json](../package-lock.json) 與 [src-v2](../src-v2/entry.ts) 核對。
 
 **目前決定：依使用者要求跳過 BR-01。** 剩餘專項驗收已退出現行待辦，不再自主續測或阻擋其他工作／發布；既有修復、正式回歸及證據保留，不把跳過改記為通過。只有使用者明確要求才恢復。現行範圍以 [TODO](TODO.md) 為準，下方逐輪結果保留當時判定。
 
 **BR-10 修復、v2.1.21 發布及安裝入口驗證通過。** 控制中心正式套件 17／17、全套 788／788；獨立安全差異審查 0 發現。來源及公開 latest 核對通過。代理由內建瀏覽器公開網址觸發更新，實際新版 Auto 1／2 倍 Enter／Space 四案、P04 關閉／切頁兩案與 P05 完整報告通過。見 [修復報告](BR10_FIX_REPORT.md)。
 
-**2026-10-12 P05 實際複製不通過，產品根因未定位。** 使用者改採 IAB 真正貼上與讀回後，合成對照及完整快照復原通過；當次 18,150 字元報告與兩種讀回的原文字 61 字元不符。批准的單次 GM 純文字校準有完成通知但仍未變；原內容與自有資源保護完成，沒有推測性產品修改或新發布。見 [本輪結果](P05_COPY_IAB_RESULT_2026-10-12.md)，先前 [PowerShell 調查](P05_COPY_CHANNEL_REPORT_2026-10-12.md) 保留原判定。
+**歷史 v2.1.21 P05 實際複製不通過，GM 通道根因未定位。** 使用者改採 IAB 真正貼上與讀回後，合成對照及完整快照復原通過；當次 18,150 字元報告與兩種讀回的原文字 61 字元不符。批准的單次 GM 純文字校準有完成通知但仍未變；原內容與自有資源保護完成，沒有推測性產品修改或新發布。見 [本輪結果](P05_COPY_IAB_RESULT_2026-10-12.md)，先前 [PowerShell 調查](P05_COPY_CHANNEL_REPORT_2026-10-12.md) 保留原判定。
 
 **今後所有瀏覽器測試只用 Codex 內建瀏覽器＋Tampermonkey。** 唯一方案是 [IAB_TESTING](IAB_TESTING.md)；[TODO](TODO.md) 記錄目前狀態，[TEST_REPORT](TEST_REPORT.md) 記錄版本證據。先前 [收集器修復與第 5 輪](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md) 完成工具隔離驗證及 30 個 tooling 契約，新增 B02 滑鼠 1 倍 30 秒尾段、P03 同片自然 cid／epoch 通過，該輪沒有新確認的產品缺陷。其他失效窗口按前提停止，最終資源及分頁清理完成；前 4 輪有效結果沿用，固定矩陣未完整通過。只改工具、測試與文件，沒有產品來源修改、升版或發布。
 
@@ -67,6 +67,7 @@ Markdown 格式依 [GFM 約定](DEVELOPMENT.md#markdown-format) 維護；格式�
 
 | 版本／範圍 | 修復與調查 | 實際安裝／階段紀錄 |
 | --- | --- | --- |
+| v2.1.22 | [P05 原生優先](P05_COPY_FIX_REPORT.md)、[最新版完整驗證](TEST_REPORT.md) | 本輪來源／安裝分列 |
 | v2.1.21 | [BR-10 鍵盤隔離](BR10_FIX_REPORT.md)、[最新版完整驗證](TEST_REPORT.md) | 本輪來源／安裝分列 |
 | v2.1.20 | [新意圖原生位置保存](BR01_NATIVE_POSITION_FIX_REPORT.md)、[完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2120-release-verification--2026-10-11) | [BR-01 安裝子項、事件缺口與清理](CHROME_v2.1.20_BR01_ACCEPTANCE.md) |
 | v2.1.19 | [空媒體鍵盤所有權](BR01_NATIVE_KEYBOARD_FIX_REPORT.md) | [安裝續測二元判定與新位置缺陷](BR01_v2.1.19_INSTALLED_CONTINUATION.md) |
@@ -83,7 +84,7 @@ Markdown 格式依 [GFM 約定](DEVELOPMENT.md#markdown-format) 維護；格式�
 
 - [CHANGELOG](CHANGELOG.md)：各版功能差異與當時驗證狀態。
 - [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md)：固定報告換版時保存的歷史完整正文。
-- [v2.1.21 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.21)、[Release/v2.1.21](../Release/v2.1.21/)：現行已發布產物與不可回寫的封裝快照；唯一公開附件為使用者腳本。較早版本沿上表與 Release 目錄追溯。
+- [v2.1.21 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.21)、[Release/v2.1.21](../Release/v2.1.21/)：歷史已發布產物與不可回寫的封裝快照；唯一公開附件為使用者腳本。較早版本沿上表與 Release 目錄追溯。
 - [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)：文件維護與檢查，不等同新程式測試。
 
 v2.1.6 驗收已批准通過、已結案；歷史覆蓋限制不轉為現行待辦。BR-01 原 87.785 秒自然網路起因與完整產品交叉回歸分開，不作救援修復的隱含新增門檻。
@@ -155,3 +156,7 @@ v2.1.6 驗收已批准通過、已結案；歷史覆蓋限制不轉為現行待�
 <a name="2026-10-03-根目錄文件集中整理"></a>
 
 - [2026-10-03 根目錄文件集中整理](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-03-根目錄文件集中整理)
+
+## P05 v2.1.22 本輪交付
+
+已採用使用者決定的原生優先流程，新增 20 個契約；控制中心 37／37、全套 808／808，安全差異三個檔案 0 發現，原生通道及指定影片修復來源讀回／貼上通過。發布與實際安裝結果以 [P05 修復報告](P05_COPY_FIX_REPORT.md) 的分層判定為準。BR-01 保持跳過，P01／P02 沒有新前提時不重跑。

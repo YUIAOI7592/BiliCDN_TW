@@ -2,7 +2,7 @@
 
 # 信任邊界與資料處理
 
-本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準（目前 v2.1.21）。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [修復索引](docs/INDEX.md)，不把歷史掃描當成新差異的驗證。
+本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準（目前 v2.1.22）。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [修復索引](docs/INDEX.md)，不把歷史掃描當成新差異的驗證。
 
 瀏覽器驗證只使用 **Codex 內建瀏覽器＋Tampermonkey**，資料隔離、送出前攔截與清理依 [IAB_TESTING](docs/IAB_TESTING.md)。來源隔離、環境校準與實際安裝各自判定；本版 BR-10 差異審查與來源證據見 [修復報告](docs/BR10_FIX_REPORT.md)。
 
@@ -113,3 +113,9 @@ WebRTC 還原前會確認已安裝的讀取存取器／寫入存取器仍屬於�
 ## XHR 準備與取消原因
 
 XHR 每個等待請求內部最多兩次原生 open；每個同步還原邊界重查 owner／phase／原生 OPENED，最新政策與原生目標一致才歸因及送出。未被原生接受的 dispatch 例外清除 pending 歸因，不記錄 CDN 失敗樣本；已送出請求不重播。本地終止事件逐個檢查所有權，不能污染重用的請求。起播 gate 的 AbortSignal reason 只回傳 caller，不輸出、持久化或傳給共用 probe controller；falsy 原值也必須保留。
+
+## 剪貼簿寫入邊界
+
+診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 ControlCenter 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
+
+原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。v2.1.22 的本輪證據見 [P05 修復報告](docs/P05_COPY_FIX_REPORT.md)。

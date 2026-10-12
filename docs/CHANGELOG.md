@@ -2,6 +2,12 @@
 
 # BiliCDN_TW 變更紀錄
 
+## v2.1.22
+
+- 修正診斷複製：可信操作立即使用原生 Clipboard API；API 不可取得才交給 GM 純文字備援。原生失敗不重複寫入。
+- 顯示可讀狀態及固定失敗提示，保留完整報告；pending 寫入跨關閉／重開不重疊，晚到結果不污染新視圖或搶焦點。
+- 新增 20 個正式契約；安全差異、來源讀回／貼上、發布與安裝結果分列於 [P05 修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_FIX_REPORT.md) 及 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。不宣稱修復 GM 通道本身；BR-01 保持跳過。
+
 ## v2.1.21
 
 2026-10-11 23:33:58（Asia/Taipei）[正式發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.21)。公開更新產物及新版實際安裝身分已核對；後續文件紀錄不回寫 Release 快照。

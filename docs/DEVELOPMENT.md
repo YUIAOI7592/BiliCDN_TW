@@ -111,7 +111,7 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 | `progressive-routing` | Catalog 來源不透明識別碼、完整候選池、備援上限及設定競態 |
 | `progressive-transport` | MP4 Fetch／XHR 輸出、共用起播窗口及對照／停用模式 |
 | `playurl-summary` | 型別化接納結果、安全最近摘要、狀態語意、生命週期及匯出隱私 |
-| `control-center` | Catalog 單節點更新、遠端設定合併、非同步視圖與焦點所有權、BR-10 鍵盤隔離／預設操作／清理 |
+| `control-center` | Catalog 單節點更新、遠端設定合併、非同步視圖與焦點所有權、BR-10 鍵盤隔離／預設操作／清理、P05 原生優先／完整文字／pending 寫入及過期視圖 |
 
 使用 `npm test -- <selector>` 執行單一套件；執行器也接納 `suites/<selector>` 別名。`npm test -- architecture` 執行 AST 規則測試情境，`npm test -- imports` 執行匯入純度測試，`npm test -- tooling` 使用暫存測試情境驗證測試工具。完整 `npm test` 執行這三項與全部契約套件。
 
@@ -178,3 +178,9 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 依 [AGENTS 發行規則](../AGENTS.md#release-rules)，本專案功能修復完成並通過必要自動及安全驗證後，預設自主提交、遞增修補版本、封裝、推送 main／標籤及發布 GitHub Release，不再等待使用者重複要求；當次明確限定只調查、文件整理或保留本機修改時遵守該範圍。完成後核對公開 latest 更新的版本、大小與 SHA-256。不得加入修補、CI/CD 或 GitHub Actions。本機封裝不等於發布。GitHub Release 附件只有使用者腳本，更新 URL 保持指向本儲存庫最新 Release。發布前執行 `npm run typecheck`、`npm run architecture`、`npm test`、`npm run verify` 及必要安全驗證。內建瀏覽器／Tampermonkey 驗收另行記錄，未執行的瀏覽器檢查不得寫成通過。
 
 發布後先以內建瀏覽器的公開 latest 使用者腳本入口觸發既有安裝更新，再核對新文件實際執行身分；v2.1.21 已證明此路徑可用。不能只依歷史擴充功能介面限制就要求手動更新。只有當次入口確實受阻才交由使用者完成必要步驟；操作與證據要求見 [IAB 更新流程](IAB_TESTING.md#release)。
+
+## P05 原生複製契約
+
+診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 ControlCenter 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
+
+先保存全部 IAB 剪貼簿項目與格式，只留記憶體；校準可信原生 writeText、API 讀回與真正 Ctrl+V。復原前核對完整項目仍由本輪持有，使用者的新內容優先保留。正式 20 案先保存未修來源結果，再修復；來源、Node 與安裝分列，詳見 [P05 修復報告](P05_COPY_FIX_REPORT.md)。先前 GM 未生效紀錄保留，不重做無新前提的 GM 校準。

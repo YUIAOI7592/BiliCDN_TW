@@ -1,6 +1,6 @@
 # BiliCDN_TW v2 專案脈絡
 
-本文件保存現行產品契約與交付邊界；來源為 `src-v2/`，入口 `src-v2/entry.ts`，正式測試 `tests-v2/`。版本由 [release.json](../release.json) 決定，目前 **v2.1.21**。歷史修復過程見 [INDEX](INDEX.md)，已取得證據見 [TEST_REPORT](TEST_REPORT.md)，目前工作只看 [TODO](TODO.md)。
+本文件保存現行產品契約與交付邊界；來源為 `src-v2/`，入口 `src-v2/entry.ts`，正式測試 `tests-v2/`。版本由 [release.json](../release.json) 決定，目前 **v2.1.22**。歷史修復過程見 [INDEX](INDEX.md)，已取得證據見 [TEST_REPORT](TEST_REPORT.md)，目前工作只看 [TODO](TODO.md)。
 
 ## 現行產品
 
@@ -100,3 +100,9 @@ Fetch 只正規化輸入一次、單一讀取器，等待與串流取消保留 s
 所有瀏覽器測試只使用 **Codex 內建瀏覽器＋Tampermonkey**，依 [IAB_TESTING](IAB_TESTING.md) 固定案例、校準真背景、隔離受控學習、保存完整事件並清理。只用指定風景影片，Auto 1／2 倍分開；不得用外部瀏覽器作替代。正式 Node、自動驗證、安全差異、來源隔離及安裝版結果分列。
 
 必要自動與按風險安全驗證通過後，依 [AGENTS](../AGENTS.md#release-rules) 自動完成已授權修復發布，核對 main／標籤、唯一腳本附件及公開 latest 版本／大小／SHA-256。只做文件或調查時不升版、不宣稱新執行結果。本次文件方案不恢復已停止的 BR-01 自主目標，不將自然網路起因或其他產品矩陣偷偷加進結案門檻。
+
+## 診斷複製
+
+診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 ControlCenter 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
+
+原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。v2.1.22 的本輪證據見 [P05 修復報告](P05_COPY_FIX_REPORT.md)。

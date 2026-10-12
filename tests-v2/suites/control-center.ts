@@ -4,6 +4,7 @@ import { fixture } from '../support/runtime-fixture.ts'
 import { FakeStorage } from '../support/storage.ts'
 import { ControlCenter } from '../../src-v2/ui/control-center.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
+import { deferred } from '../support/deferred.ts'
 
 class QueuedSettingsStorage extends FakeStorage {
   held = true
@@ -32,11 +33,12 @@ class Element {
   dataset: Record<string, string> = {}; style: Record<string, string> = {}; textContent = ''
   className = ''; type = ''; value = ''; checked = false; disabled = false; readOnly = false
   id = ''; shadow: Element | null = null
+  attributes = new Map<string, string>()
   get isConnected(): boolean { return this.tag === 'document' || this.parent?.isConnected === true }
   constructor(readonly tag = 'div') {}
   append(...elements: Element[]) { for (const element of elements) { element.parent = this; this.children.push(element) } }
   replaceChildren(...elements: Element[]) { for (const child of this.children) child.parent = null; this.children = []; this.append(...elements) }
-  setAttribute(_name: string, _value: string) {}
+  setAttribute(name: string, value: string) { this.attributes.set(name, value) }
   attachShadow(_options: { mode: string }) { this.shadow = new Element('shadow'); this.shadow.parent = this; return this.shadow }
   addEventListener(type: string, callback: UiListener, capture = false) {
     const rows = this.listeners.get(type) ?? []
@@ -66,6 +68,156 @@ class Element {
   focus(_options?: unknown) { this.focusCount++ }
   flatten(): Element[] { return [this, ...this.children.flatMap(child => child.flatten()), ...(this.shadow?.flatten() ?? [])] }
 }
+
+// Clipboard tests model trusted dispatch and async ownership; IAB proves native writes/default actions.
+function copyUi(t: TestContext) {
+  const f = ui(t), gmCalls: { text: string; format: unknown }[] = []
+  f.scope.defineGlobal('navigator', { configurable: true, value: {} })
+  f.scope.defineGlobal('GM_setClipboard', { configurable: true, value: (text: string, format?: unknown) => {
+    gmCalls.push({ text, format })
+  } })
+  f.button('查看診斷報告').emit('click'); f.clock.advance(0)
+  const report = () => { const value = f.doc.flatten().find(e => e.tag === 'textarea'); assert.ok(value); return value }
+  const status = () => { const value = f.doc.flatten().find(e => e.attributes.get('role') === 'status'); assert.ok(value); return value }
+  const native = (clipboard: { writeText(text: string): Promise<void> }) => {
+    f.scope.defineGlobal('navigator', { configurable: true, value: { clipboard } })
+  }
+  return { ...f, gmCalls, report, status, native, copy: () => f.button('複製報告') }
+}
+
+async function flushCopy(): Promise<void> { for (let i = 0; i < 4; i++) await Promise.resolve() }
+
+test('P05 native write starts in trusted dispatch with exact full report and original receiver', async t => {
+  const f = copyUi(t), pending = deferred<void>(), rows: string[] = []
+  const report = f.report(), text = '中文\n\n  保留空白  \n' + '完整報告 '.repeat(8000)
+  report.value = text
+  let dispatching = true
+  const clipboard = { writeText(this: unknown, value: string) {
+    assert.equal(this, clipboard); assert.equal(dispatching, true); rows.push(value); return pending.promise
+  } }
+  f.native(clipboard)
+  const focusBefore = f.copy().focusCount
+  f.copy().emit('click'); dispatching = false
+  assert.deepEqual(rows, [text]); assert.deepEqual(f.gmCalls, [])
+  assert.equal(f.copy().disabled, true)
+  assert.equal(f.status().attributes.get('aria-live'), 'polite')
+  assert.equal(f.status().textContent, '正在複製報告…')
+  // Later edits must not replace the text already submitted by this operation.
+  report.value = '不同的報告'; pending.resolve(); await flushCopy()
+  assert.equal(f.report(), report); assert.equal(report.value, '不同的報告')
+  assert.equal(f.status().textContent, '已複製報告'); assert.equal(f.copy().disabled, false)
+  assert.equal(f.copy().focusCount, focusBefore); assert.deepEqual(rows, [text])
+})
+
+for (const unavailable of ['navigator', 'clipboard', 'method', 'clipboard-getter', 'method-getter'] as const) {
+  test(`P05 ${unavailable} unavailable uses one plain-text GM fallback without claiming copied`, async t => {
+    const f = copyUi(t), text = f.report().value
+    if (unavailable === 'navigator') f.scope.defineGlobal('navigator', { configurable: true, value: undefined })
+    if (unavailable === 'method') f.scope.defineGlobal('navigator', { configurable: true, value: { clipboard: {} } })
+    if (unavailable === 'clipboard-getter') f.scope.defineGlobal('navigator', { configurable: true, value: {
+      get clipboard(): never { throw Error('unavailable') },
+    } })
+    if (unavailable === 'method-getter') f.scope.defineGlobal('navigator', { configurable: true, value: { clipboard: {
+      get writeText(): never { throw Error('unavailable') },
+    } } })
+    f.copy().emit('click'); await flushCopy()
+    assert.deepEqual(f.gmCalls, [{ text, format: 'text' }])
+    assert.equal(f.status().textContent, '已交由腳本管理器處理，請貼上確認')
+    assert.equal(f.copy().disabled, false)
+  })
+}
+
+for (const failure of ['throw', 'reject'] as const) {
+  test(`P05 native ${failure} preserves report and does not retry through GM`, async t => {
+    const f = copyUi(t), report = f.report(), text = report.value, pending = deferred<void>()
+    f.native({ writeText: () => { if (failure === 'throw') throw Error('private error'); return pending.promise } })
+    f.copy().emit('click')
+    if (failure === 'reject') pending.reject(Error('private rejection'))
+    await flushCopy()
+    assert.equal(f.status().textContent, '複製失敗，請選取報告自行複製')
+    assert.deepEqual(f.gmCalls, []); assert.equal(f.copy().disabled, false)
+    assert.equal(f.report(), report); assert.equal(report.value, text)
+  })
+}
+
+for (const failure of ['missing', 'throw'] as const) {
+  test(`P05 GM ${failure} has a bounded failure message and retains the report`, async t => {
+    const f = copyUi(t), text = f.report().value
+    f.scope.defineGlobal('GM_setClipboard', { configurable: true, value: failure === 'missing' ? undefined : () => { throw Error('private GM error') } })
+    f.copy().emit('click'); await flushCopy()
+    assert.equal(f.status().textContent, '複製失敗，請選取報告自行複製')
+    assert.equal(f.report().value, text); assert.equal(f.copy().disabled, false)
+  })
+}
+
+test('P05 synthetic and detached old copy buttons cannot initiate a write', async t => {
+  const f = copyUi(t), rows: string[] = []
+  f.native({ writeText: async text => { rows.push(text) } })
+  const old = f.copy(); old.emit('click', '', false)
+  f.button('返回').emit('click'); old.emit('click')
+  await flushCopy(); assert.deepEqual(rows, []); assert.deepEqual(f.gmCalls, [])
+})
+
+test('P05 pending native write remains single flight across repeat click and close/reopen', async t => {
+  const f = copyUi(t), pending = deferred<void>(), rows: string[] = []
+  f.native({ writeText: text => { rows.push(text); return pending.promise } })
+  const old = f.copy(); old.emit('click'); old.emit('click')
+  assert.equal(rows.length, 1)
+  f.center.close(); f.center.show(); f.button('查看診斷報告').emit('click'); f.clock.advance(0)
+  f.copy().emit('click')
+  assert.equal(rows.length, 1); assert.equal(f.status().textContent, '前次複製尚未結束，請稍後再試')
+  const newStatus = f.status(), newButton = f.copy(), focus = newButton.focusCount
+  pending.resolve(); await flushCopy()
+  assert.equal(newStatus.textContent, '前次複製尚未結束，請稍後再試')
+  assert.equal(newButton.focusCount, focus)
+  newButton.emit('click'); await flushCopy()
+  assert.equal(rows.length, 2); assert.equal(f.status().textContent, '已複製報告')
+})
+
+for (const action of ['close', 'navigate', 'rebuild'] as const) {
+  for (const outcome of ['resolve', 'reject'] as const) {
+    test(`P05 ${action} invalidates UI ownership of late native ${outcome}`, async t => {
+      const f = copyUi(t), pending = deferred<void>()
+      f.native({ writeText: () => pending.promise })
+      f.copy().emit('click')
+      const oldStatus = f.status(), oldButton = f.copy()
+      if (action === 'close') f.center.close()
+      if (action === 'navigate') f.button('返回').emit('click')
+      if (action === 'rebuild') {
+        const host = f.doc.flatten().find(e => e.id === 'bilicdn-v2-control-center')!
+        host.parent = null; f.doc.children = f.doc.children.filter(e => e !== host)
+        f.center.show(); f.button('查看診斷報告').emit('click')
+      }
+      f.clock.advance(0)
+      const before = f.doc.flatten().map(e => [e, e.textContent, e.focusCount])
+      if (outcome === 'resolve') pending.resolve(); else pending.reject(Error('late private error'))
+      await flushCopy()
+      assert.deepEqual(f.doc.flatten().map(e => [e, e.textContent, e.focusCount]), before)
+      assert.equal(oldStatus.textContent, '正在複製報告…'); assert.equal(oldButton.disabled, true)
+      assert.deepEqual(f.gmCalls, [])
+    })
+  }
+}
+
+test('P05 synchronous clipboard lookup reentry cannot submit an obsolete view write', async t => {
+  const f = copyUi(t); let writes = 0
+  f.scope.defineGlobal('navigator', { configurable: true, value: { get clipboard() {
+    f.center.close(); f.center.show(); return { writeText: async () => { writes++ } }
+  } } })
+  f.copy().emit('click'); await flushCopy()
+  assert.equal(writes, 0); assert.deepEqual(f.gmCalls, [])
+  assert.equal(f.doc.flatten().find(e => e.tag === 'h2')?.textContent, 'BiliCDN v2 控制中心')
+})
+
+test('P05 synchronous native write reentry does not publish into a replacement view', async t => {
+  const f = copyUi(t); let writes = 0
+  f.native({ writeText: async () => { writes++; f.center.close(); f.center.show() } })
+  f.copy().emit('click'); f.clock.advance(0)
+  const before = f.doc.flatten().map(e => [e, e.textContent, e.focusCount])
+  await flushCopy()
+  assert.equal(writes, 1); assert.deepEqual(f.gmCalls, [])
+  assert.deepEqual(f.doc.flatten().map(e => [e, e.textContent, e.focusCount]), before)
+})
 
 for (const key of ['Enter', ' ']) {
   for (const interferes of [false, true]) {

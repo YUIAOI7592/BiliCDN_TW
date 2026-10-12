@@ -4,7 +4,7 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
 
-目前版本為 **v2.1.21**，以 [release.json](release.json) 為準。最新版修復、發布核對與實際安裝證據分列於 [驗證報告](docs/TEST_REPORT.md)，現行工作見 [TODO](docs/TODO.md)。已發布不等於整份功能矩陣通過。
+目前版本為 **v2.1.22**，以 [release.json](release.json) 為準。最新版修復、發布核對與實際安裝證據分列於 [驗證報告](docs/TEST_REPORT.md)，現行工作見 [TODO](docs/TODO.md)。已發布不等於整份功能矩陣通過。
 
 從 2026-10-11 起，來源隔離、安裝版與發布後瀏覽器回歸均只用內建瀏覽器，執行方式見 [IAB 測試方案](docs/IAB_TESTING.md)。原 Chrome 紀錄保留其版本及環境，不換名算成新的通過結果。
 
@@ -130,7 +130,7 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 ## 目前版本的驗證紀錄
 
-[TEST_REPORT](docs/TEST_REPORT.md) 保存 v2.1.21 的正式契約、安全差異、來源隔離、發布核對與安裝子項證據；[文件索引](docs/INDEX.md) 提供各版完整歷史。
+[TEST_REPORT](docs/TEST_REPORT.md) 保存 v2.1.22 的正式契約、安全差異、來源隔離、發布核對與安裝子項證據；[文件索引](docs/INDEX.md) 提供各版完整歷史。
 
 2026-10-11～12 已核對內建瀏覽器實際執行 v2.1.21。Auto 1／2 倍的控制中心 Enter／空白鍵入口、設定命令在關閉／切頁後完成，以及完整診斷報告顯示與唯讀檢查均通過。診斷複製驗證沒有通過：工具讀到空內容，後續剪貼簿通道校準逾時，尚未確認產品根因。詳細範圍與限制見 [BR-10 修復與安裝紀錄](docs/BR10_FIX_REPORT.md)。
 
@@ -170,3 +170,9 @@ npm run verify
 ## 授權
 
 MIT。原作者、原始來源與建置工具的授權資訊見 [LICENSE](LICENSE)、[來源基準](docs/UPSTREAM_MANIFEST.md) 與 [第三方聲明](docs/THIRD_PARTY_NOTICES.md)。
+
+### v2.1.22 診斷複製
+
+診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 ControlCenter 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
+
+本輪原生通道及修復來源全文讀回／真正貼上通過；發布與實際新版安裝結果分列於 [P05 修復報告](docs/P05_COPY_FIX_REPORT.md)。上方 v2.1.21 的失敗觀察保留歷史意義，不宣稱修復 GM 通道本身。

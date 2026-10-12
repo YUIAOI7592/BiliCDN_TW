@@ -1,6 +1,6 @@
 # Codex 內建瀏覽器測試方案
 
-日期：2026-10-11 初稿，2026-10-12 更新。適用目前 `src-v2/`；版本以 `release.json` 為準，目前為 v2.1.21。
+日期：2026-10-11 初稿，2026-10-12 更新。適用目前 `src-v2/`；版本以 `release.json` 為準，目前為 v2.1.22。
 
 **本專案之後的所有瀏覽器測試，只使用 Codex 內建瀏覽器＋Tampermonkey。** 包含來源隔離、安裝版、背景、傳輸與發布後回歸。不得改用外部 Chrome／Edge、獨立 Playwright／Puppeteer、無頭瀏覽器或其他瀏覽器作替代。Node 契約、型別、架構及建置檢查仍保留。
 
@@ -199,3 +199,7 @@ Tampermonkey 更新先用內建瀏覽器開啟本儲存庫既有 [公開 latest 
 - 實際已知能力與撤回的背景判定：[2026-10-11 可用性報告](IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md)。
 - 產品契約：[PROJECT_CONTEXT](PROJECT_CONTEXT.md)；原生／偽裝可見性與所有權：[ARCHITECTURE](ARCHITECTURE.md#visibility-boundary)、[SECURITY](../SECURITY.md#browser-behavior)。
 - 工作範圍與當前執行狀態只看 [TODO](TODO.md)；已取得的版本證據只看 [TEST_REPORT](TEST_REPORT.md) 與有日期的原始報告。
+
+## P05 原生優先驗證
+
+只重跑本輪 P05 複製。原生 writeText 須由真正可信按鈕操作立即啟動；保存當次完整報告後，以剪貼簿 API 與真正 Ctrl+V 雙重逐字比較，不 trim、不重序列化、不以完成提示代替讀回。完整項目快照僅保存在記憶體，所有權相符且寫入收束才復原；原內容不寫檔。來源記憶體 UI 與實際安裝的完整本體／唯一 singleton 分列。結果見 [P05 修復報告](P05_COPY_FIX_REPORT.md)；BR-01 保持跳過，已通過項目不重測。
