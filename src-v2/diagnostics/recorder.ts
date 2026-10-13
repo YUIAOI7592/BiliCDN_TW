@@ -301,9 +301,11 @@ export class DiagnosticRecorder {
       || observation.finalHost !== active.host || observation.responseUrlMatchesRequest !== true
       || active.responseIds.has(observation.request!.requestId)) return
     active.responseIds.add(observation.request!.requestId)
-    active.responseAt ??= event.at
-    active.stage = 'response-observed'
-    active.progressTicks = 0; active.lastProgressAt = null
+    if (active.responseAt === null) {
+      active.responseAt = event.at
+      active.stage = 'response-observed'
+      active.progressTicks = 0; active.lastProgressAt = null
+    }
   }
   #attemptSummary(row: RouteAttempt) {
     return { actionId: text(row.actionId), decisionId: text(row.decisionId), host: this.#host(row.host),

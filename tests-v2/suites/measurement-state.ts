@@ -10,6 +10,8 @@ import { FakeClock } from '../support/clock.ts'
 import { measurementRoutes } from '../support/controllers.ts'
 import { testScope } from '../support/scope.ts'
 import '../regressions/functional-races/startup-abort.ts'
+import '../regressions/functional-races/cr-measurement-errors.ts'
+import '../regressions/functional-races/cr-measurement-lifecycle.ts'
 
 // Each call creates fresh resources and replays only this fixture's prerequisite transitions.
 // Earlier expectations run in their own cases; no mutable state crosses a test boundary.

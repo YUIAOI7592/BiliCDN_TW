@@ -44,9 +44,12 @@ interface ProbeResult {
   readonly reason: string
 }
 
+interface MeasurementWork { readonly controller: AbortController; readonly marker: number }
+
 export class MeasurementController {
-  #running: { readonly controller: AbortController; readonly marker: number } | null = null
-  #planning = false
+  #running: MeasurementWork | null = null
+  #failedAt: number | null = null
+  #planning: object | null = null
   #manualRequested = false
   #preferNative = false
   #marker = 0
@@ -77,21 +80,26 @@ export class MeasurementController {
     this.#startupQualifiedHosts = []
     this.#marker++
     this.#manualRequested = false
+    this.#failedAt = null
     this.#snapshot = Object.freeze({ state: 'idle', reason: 'generation', lastAttemptAt: 0, host: null })
   }
   requestManual(): void { this.#manualRequested = true }
   dispose(): void { this.reset() }
   startupFallbackHosts(): readonly string[] { return this.#startupQualifiedHosts }
-  cancel(reason: string): void { this.#running?.controller.abort(reason); this.#running = null }
+  cancel(reason: string): void {
+    const running = this.#running
+    this.#planning = null; this.#running = null
+    running?.controller.abort(reason)
+  }
   willGateStartup(url: string): boolean {
-    return !this.#startupUsed && (!!this.#startupPending || !!this.routes.startupOptions(url)?.candidates.length)
+    return !!this.#startupPending || (!this.#startupUsed && !!this.routes.startupOptions(url)?.candidates.length)
   }
 
   /** The player request, never a page hint, authorizes this one bounded startup window. */
   async prepareStartup(url: string, signal: AbortSignal | null = null): Promise<void> {
     if (signal?.aborted) throw cancellationReason(signal)
-    if (this.#startupUsed) return
     if (!this.#startupPending) {
+      if (this.#startupUsed) return
       const cursor = Math.max(0, Number(this.meta.get().catalogCursor) || 0)
       const options = this.routes.startupOptions(url, cursor)
       if (!options?.candidates.length) {
@@ -99,15 +107,19 @@ export class MeasurementController {
         return
       }
       const controller = new AbortController(), marker = this.#marker
+      this.#startupUsed = true
       this.#startupController = controller
       this.#startupState = Object.freeze({ state: 'running', reason: 'player-media-request',
         candidates: options.candidates.length, selectedHost: null, delayed: true })
-      this.#startupPending = this.#runStartup(url, options, controller, marker).catch(() => {
+      let release!: () => void
+      this.#startupPending = new Promise<void>(resolve => { release = resolve })
+      void this.#runStartup(url, options, controller, marker).catch(() => {
         if (marker === this.#marker) this.#startupState = Object.freeze({ state: 'skipped', reason: 'preflight-error',
           candidates: options.candidates.length, selectedHost: null, delayed: true })
       }).finally(() => {
         if (this.#startupController === controller) this.#startupController = null
         if (marker === this.#marker) this.#startupPending = null
+        release()
       })
       void this.meta.withLock(() => {
         if (marker !== this.#marker) return
@@ -143,9 +155,11 @@ export class MeasurementController {
       const result = await this.#probeStartup(candidate, options.demand, controller.signal)
       if (marker === this.#marker) results.push(result)
     })).then(() => undefined)
-    await Promise.race([complete, deadline])
-    if (timer !== null) (timer as () => void)()
-    controller.abort('startup-complete')
+    try { await Promise.race([complete, deadline]) }
+    finally {
+      if (timer !== null) (timer as () => void)()
+      controller.abort('startup-complete')
+    }
     if (marker !== this.#marker) return
     for (const result of results) this.routes.noteStartupProbeResult(result.candidate, result.status)
     const valid = results.filter(result => result.valid && result.safeMbps !== null)
@@ -159,7 +173,6 @@ export class MeasurementController {
     if (!catalogOnly && winner && original && !winner.original && (original.safeMbps ?? 0) >= (ranked[0]?.safeMbps ?? 0) * 0.9) winner = original.candidate
     const decision = winner ? this.routes.commitStartupChoice(url, winner, valid.length ? 'startup-preflight' : 'startup-inconclusive') : null
     this.#startupQualifiedHosts = Object.freeze([...valid].sort((a, b) => (b.safeMbps ?? 0) - (a.safeMbps ?? 0)).map(result => result.candidate.host))
-    this.#startupUsed = true
     this.#startupState = Object.freeze({ state: decision ? 'complete' : 'skipped',
       reason: valid.length ? 'measured' : 'inconclusive', candidates: options.candidates.length,
       selectedHost: decision?.host ?? null, delayed: true,
@@ -193,18 +206,21 @@ export class MeasurementController {
         reason: this.#manualRequested ? 'manual-' + unsafe : unsafe })
       return
     }
+    if (this.#failedAt !== null && this.now() - this.#failedAt < COOLDOWN_MS) return
     void this.#tryStart(status)
   }
 
   async #tryStart(status: MeasurementStatus): Promise<void> {
     if (!status.representation || !status.demand || this.#running || this.#planning) return
-    this.#planning = true
+    const planning = {}
+    this.#planning = planning
     const planningMarker = this.#marker
+    let running: MeasurementWork | null = null
     try {
       let at = this.now()
       let first: AppliedRouteDecision | null = null, cursor = 0
       await this.meta.withLock(() => {
-        if (planningMarker !== this.#marker) return
+        if (planningMarker !== this.#marker || this.#planning !== planning) return
         const current = this.#lastStatus
         if (!current || this.#unsafeReason(current) || current.representation !== status.representation || !current.demand) return
         at = this.now()
@@ -213,11 +229,13 @@ export class MeasurementController {
         cursor = Math.max(0, Number(meta.catalogCursor) || 0)
         first = this.routes.challenge(current.representation!, current.demand, this.#preferNative, new Set(), cursor)
         if (!first?.url) return
-        if (planningMarker !== this.#marker || (this.routes.isCatalogOnly()
+        if (planningMarker !== this.#marker || this.#planning !== planning || (this.routes.isCatalogOnly()
           && first.decision.routeType !== 'catalog-generated')) return
         this.meta.update({ lastChallengeAt: at, catalogCursor: cursor + 1 })
       })
-      if (planningMarker !== this.#marker) return
+      if (planningMarker !== this.#marker || this.#planning !== planning) return
+      const current = this.#lastStatus
+      if (!current || this.#unsafeReason(current) || current.representation !== status.representation) return
       const planned = first as AppliedRouteDecision | null
       if (planned && this.routes.isCatalogOnly() && planned.decision.routeType !== 'catalog-generated') return
       if (!planned?.url) {
@@ -229,9 +247,19 @@ export class MeasurementController {
       this.#preferNative = !this.#preferNative
       this.#manualRequested = false
       const controller = new AbortController(), marker = this.#marker
-      this.#running = { controller, marker }
+      running = { controller, marker }
+      this.#running = running
       await this.#runRound(planned, status, controller, marker, cursor)
-    } finally { this.#planning = false }
+    } catch {
+      if (planningMarker === this.#marker && this.#planning === planning
+        && (!running || this.#running === running && !running.controller.signal.aborted)) {
+        this.#failedAt = this.now()
+        this.#snapshot = Object.freeze({ ...this.#snapshot, state: 'failed', reason: 'measurement-error', lastAttemptAt: this.#failedAt })
+      }
+    } finally {
+      if (running && this.#running === running) this.#running = null
+      if (this.#planning === planning) this.#planning = null
+    }
   }
 
   async #runRound(first: AppliedRouteDecision, status: MeasurementStatus, controller: AbortController,
@@ -253,13 +281,12 @@ export class MeasurementController {
       this.#snapshot = Object.freeze({ state: 'running', reason: 'candidate-' + (index + 1),
         lastAttemptAt: this.now(), host: applied.decision.host })
       await this.#runCandidate(applied, status.demand!, controller, marker)
-      if (index === 2 || controller.signal.aborted) break
+      if (index === 2 || controller.signal.aborted || marker !== this.#marker || this.#running?.controller !== controller) break
       next = this.routes.challenge(status.representation!, status.demand!,
         nativeCount === 0 && catalogCount >= 2, excluded, cursor + index + 1)
       if (nativeCount >= 1 && next?.decision.routeType === 'native-signed') next = null
     }
-    if (this.#running?.marker === marker) this.#running = null
-    if (controller.signal.aborted && marker === this.#marker) this.#snapshot = Object.freeze({ ...this.#snapshot,
+    if (controller.signal.aborted && marker === this.#marker && this.#running?.controller === controller) this.#snapshot = Object.freeze({ ...this.#snapshot,
       state: 'cancelled', reason: String(controller.signal.reason ?? 'cancelled').slice(0, 48) })
   }
 
@@ -273,12 +300,13 @@ export class MeasurementController {
     try { result = await this.probe.read({ url: applied.url ?? '', host: applied.decision.host, limit,
       signal: controller.signal, completionReason: 'sample-complete' }) }
     finally { stopTimeout(); round.signal.removeEventListener('abort', cancel) }
-    if (marker !== this.#marker || (controller.signal.aborted && controller.signal.reason !== 'timeout')) return
+    if (marker !== this.#marker || this.#running?.controller !== round || round.signal.aborted
+      || (controller.signal.aborted && controller.signal.reason !== 'timeout')) return
     const ok = result.directRange && result.bytes >= 64 * 1024
     const failure: FailureKind | null = applied.decision.routeType === 'native-signed' && [403,451,959].includes(result.status ?? 0)
       ? 'native-invalid' : result.reason === 'timeout' ? 'timeout' : result.reason === 'network' ? 'network' : null
     await this.routes.recordChallenge(applied, result.bytes, result.elapsedMs, result.ttfbMs, ok ? 'success' : 'failure', failure)
-    if (marker !== this.#marker) return
+    if (marker !== this.#marker || this.#running?.controller !== round || round.signal.aborted) return
     this.#snapshot = Object.freeze({ state: ok ? 'complete' : 'failed', reason: ok ? 'sample-recorded' : result.directRange ? 'short-response' : result.reason,
       lastAttemptAt: startedAt, host: applied.decision.host })
   }

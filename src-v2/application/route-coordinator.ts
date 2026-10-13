@@ -295,7 +295,14 @@ export class RouteCoordinator {
     const source = this.isCatalogOnly() ? this.#catalogSource(context, url) : url
     if (!source) return null
     let decision: RouteDecision
-    if (selected.original) decision = this.#pass(reason, selected.host, context.kind)
+    if (selected.original) {
+      const candidates = this.vault.candidates(context.representation, this.#unlockedNative.get(context.representation) ?? new Set())
+      const candidate = [candidates.root, ...candidates.native].find(route => route?.handle
+        && route.host === selected.host && this.vault.resolve(route.handle, context) === selected.url)
+      if (!candidate?.handle) return null
+      decision = { action: 'pass', target: { type: 'selected-original', candidate: { ...candidate, type: 'root-original' } },
+        id: this.#nextId(), reason, routeType: 'root-original', host: selected.host, ranking: [] }
+    }
     else if (selected.type === 'catalog-generated') {
       const catalogIndex = TRUSTED_CATALOG.indexOf(selected.host as typeof TRUSTED_CATALOG[number])
       if (catalogIndex < 0 || replaceUrlHost(source, selected.host) !== selected.url
@@ -883,13 +890,21 @@ export class RouteCoordinator {
 
   #materialize(original: string, decision: RouteDecision, context: RouteIdentity | null): string | null {
     if (decision.action === 'block') return null
-    if (decision.action === 'pass') return original
+    if (decision.action === 'pass') {
+      if (decision.target.type === 'request') return original
+      const candidate = decision.target.candidate
+      if (!context || candidate.route !== context || !candidate.handle || !this.#decisionAllowed(decision, context, context.kind)) return null
+      const exact = this.vault.resolve(candidate.handle, context)
+      if (!exact || parseMediaUrl(exact)?.host !== decision.host) return null
+      // A request already on the selected host keeps its own DASH query string.
+      return parseMediaUrl(original)?.host === decision.host ? original : exact
+    }
     if (decision.candidate.type === 'catalog-generated') return replaceUrlHost(original, decision.host)
     return context ? this.vault.resolve(decision.candidate.handle, context) : null
   }
 
   #pass(reason: string, host: string | null, kind: MediaKind): RouteDecision {
-    return { action: 'pass', id: this.#nextId(), reason: reason.slice(0, 64), routeType: 'root-original', host, ranking: Object.freeze([]) }
+    return { action: 'pass', target: { type: 'request' }, id: this.#nextId(), reason: reason.slice(0, 64), routeType: 'root-original', host, ranking: Object.freeze([]) }
   }
 
   #block(reason: 'catalog-disabled' | 'default-unavailable' | 'black' | 'dead' | 'circuit-open'
@@ -930,7 +945,13 @@ export class RouteCoordinator {
     const source = context && this.isCatalogOnly() ? this.#catalogSource(context) : null
     if (this.isCatalogOnly()) return decision.action === 'rewrite' && decision.candidate.type === 'catalog-generated'
       && isCatalogHost(decision.host) && (!context || !!source && !this.#incompatible(source, decision.host))
-    if (decision.action === 'pass') return !context || !this.vault.isInvalid(context.representation, decision.host)
+    if (decision.action === 'pass') {
+      if (context && this.vault.isInvalid(context.representation, decision.host)) return false
+      if (decision.target.type === 'request') return true
+      const candidate = decision.target.candidate
+      return !!context && candidate.route === context && !!candidate.handle
+        && parseMediaUrl(this.vault.resolve(candidate.handle, context) ?? '')?.host === decision.host
+    }
     const candidate = decision.candidate
     if (candidate.type === 'catalog-generated') return !context || !this.#incompatible(this.vault.rootUrl(context.representation) ?? '', decision.host)
     if (!context) return false

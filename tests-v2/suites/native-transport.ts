@@ -32,7 +32,7 @@ const now = 2_000_000_000_000
 const clock = { now: () => now }
 const runtimeSession = new SessionStore();
 runtimeSession.beginGeneration(false)
-const passDecision: AppliedRouteDecision = { decision: { action: 'pass', id: decisionId('runtime-pass'), reason: 'test', routeType: 'root-original',
+const passDecision: AppliedRouteDecision = { decision: { action: 'pass', target: { type: 'request' }, id: decisionId('runtime-pass'), reason: 'test', routeType: 'root-original',
   host: 'upos-sz-mirrorali.bilivideo.com', ranking: [] }, url: 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/runtime.m4s', context: null, streamKey: 'runtime', sourceHost: 'upos-sz-mirrorali.bilivideo.com' }
 const observations: TransportObservation[] = []
 const routeStub = {
@@ -1090,3 +1090,5 @@ for (const suffix of ['szbdyd.com', 'mountaintoys.cn', 'nexusedgeio.com', 'ahdoh
 test("unattributed third-party .m4s Fetch remains website-owned [15]", { timeout: 5000 }, async t => { await (await fixture(t, 14))() })
 test("disabled script preserves oversized website Fetch dispatch [16]", { timeout: 5000 }, async t => { await (await fixture(t, 15))() })
 import '../regressions/functional-races/xhr.ts'
+import '../regressions/functional-races/cr-xhr-headers.ts'
+import '../regressions/functional-races/cr-xhr-send-conversion.ts'

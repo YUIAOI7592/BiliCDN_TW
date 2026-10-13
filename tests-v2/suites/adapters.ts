@@ -35,7 +35,7 @@ const now = 2_000_000_000_000
 const clock = { now: () => now }
 const runtimeSession = new SessionStore();
 runtimeSession.beginGeneration(false)
-const passDecision: AppliedRouteDecision = { decision: { action: 'pass', id: decisionId('runtime-pass'), reason: 'test', routeType: 'root-original',
+const passDecision: AppliedRouteDecision = { decision: { action: 'pass', target: { type: 'request' }, id: decisionId('runtime-pass'), reason: 'test', routeType: 'root-original',
   host: 'upos-sz-mirrorali.bilivideo.com', ranking: [] }, url: 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/runtime.m4s', context: null, streamKey: 'runtime', sourceHost: 'upos-sz-mirrorali.bilivideo.com' }
 const observations: TransportObservation[] = []
 const routeStub = {

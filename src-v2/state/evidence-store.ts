@@ -102,8 +102,9 @@ export class EvidenceStore {
       const key = recordKey(host, kind), prior = latest.records[key] ?? emptyEvidence(host, kind)
       const updated = addEvidenceSample(prior, sample, now)
       const incoming: EvidencePayload = { schema: 2, records: { [key]: updated }, updatedAt: now }
-      this.#payload = mergePayload(latest, incoming, now)
-      this.storage.set(EVIDENCE_KEY, this.#payload)
+      const committed = mergePayload(latest, incoming, now)
+      this.storage.set(EVIDENCE_KEY, committed)
+      this.#payload = committed
       return this.#payload.records[key] ?? updated
     })
   }

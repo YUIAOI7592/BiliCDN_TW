@@ -45,6 +45,26 @@ export class XhrHookAdapter {
     const responseDescriptor = Object.getOwnPropertyDescriptor(proto, 'response')
     const responseTextDescriptor = Object.getOwnPropertyDescriptor(proto, 'responseText')
     const readyStateDescriptor = Object.getOwnPropertyDescriptor(proto, 'readyState')
+    // Platform brand checks also recognize objects from another Window. Do not use
+    // instanceof or toStringTag: plain objects must still take the USVString branch.
+    const bufferSize = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'byteLength')?.get
+    const blobSize = typeof Blob === 'undefined' ? undefined : Object.getOwnPropertyDescriptor(Blob.prototype, 'size')?.get
+    const nodeType = typeof Node === 'undefined' ? undefined : Object.getOwnPropertyDescriptor(Node.prototype, 'nodeType')?.get
+    const formHas = typeof FormData === 'undefined' ? undefined : FormData.prototype.has
+    const searchHas = typeof URLSearchParams === 'undefined' ? undefined : URLSearchParams.prototype.has
+    const branded = (method: Function | undefined, value: object, args: unknown[] = []): boolean => {
+      if (!method) return false
+      try { Reflect.apply(method, value, args); return true } catch { return false }
+    }
+    const bodyValue = (body: Document | XMLHttpRequestBodyInit | null | undefined): Document | XMLHttpRequestBodyInit | null => {
+      if (body == null) return null
+      if (typeof body === 'object' || typeof body === 'function') {
+        if (ArrayBuffer.isView(body) || branded(bufferSize, body) || branded(blobSize, body)
+          || branded(formHas, body, ['']) || branded(searchHas, body, [''])) return body
+        try { if (nodeType?.call(body) === 9) return body } catch { /* not a Document */ }
+      }
+      return `${body}`.toWellFormed()
+    }
     const self = this.context, xhrMeta = this.#xhrMeta
     const waiting = (xhr: XMLHttpRequest, meta: XhrMeta): boolean => xhrMeta.get(xhr) === meta && meta.phase === 'waiting'
     const finishLocal = (xhr: XMLHttpRequest, meta: XhrMeta, type: 'error' | 'abort'): void => {
@@ -119,6 +139,10 @@ export class XhrHookAdapter {
     }
 
     const send: typeof XMLHttpRequest.prototype.send = function(this: XMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null): void {
+      readyStateDescriptor?.get?.call(this)
+      // Conversion may throw, open another request or abort this one. Do it before
+      // selecting the metadata owner and before reserving the virtual send flag.
+      body = bodyValue(body)
       const meta = xhrMeta.get(this)
       if (!meta) { Reflect.apply(originalSend, this, [body ?? null]); return }
       if (meta.phase !== 'opened' || this.readyState !== 1) throw new DOMException('send invalid state', 'InvalidStateError')
@@ -283,10 +307,16 @@ export class XhrHookAdapter {
       Reflect.apply(originalAbort, this, [])
     }
     const setHeader: typeof XMLHttpRequest.prototype.setRequestHeader = function(this: XMLHttpRequest, name: string, value: string): void {
+      readyStateDescriptor?.get?.call(this)
+      if (arguments.length < 2) { Reflect.apply(originalSetHeader, this, Array.from(arguments)); return }
+      const key = `${name}`
+      if (/[^\x00-\xff]/.test(key)) throw new TypeError('XHR header name must be a ByteString')
+      const text = `${value}`
+      if (/[^\x00-\xff]/.test(text)) throw new TypeError('XHR header value must be a ByteString')
       const meta = xhrMeta.get(this)
       if (meta && (meta.phase === 'waiting' || meta.virtualReadyState !== null)) throw new DOMException('header invalid state', 'InvalidStateError')
-      Reflect.apply(originalSetHeader, this, [name, value])
-      xhrMeta.get(this)?.headers.push([name, value])
+      Reflect.apply(originalSetHeader, this, [key, text])
+      if (meta && xhrMeta.get(this) === meta) meta.headers.push([key, text])
     }
     let responseGetter: PropertyDescriptor['get'], responseTextGetter: PropertyDescriptor['get'], readyStateGetter: PropertyDescriptor['get']
     const rollback = (): void => {

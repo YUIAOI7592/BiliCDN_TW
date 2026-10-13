@@ -368,3 +368,4 @@ for (const invalid of ["wrong host","wrong decision","stale epoch","stale author
 }
 test("paused player cannot confirm fallback playback [5]", { timeout: 5000 }, async t => { await (await fixture(t, 4))() })
 test("oversized current evidence still honors the absolute report limit [6]", { timeout: 5000 }, async t => { await (await fixture(t, 5))() })
+import '../regressions/functional-races/cr-diagnostics.ts'

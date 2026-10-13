@@ -1,54 +1,32 @@
-<a name="bilicdn_tw-v2122-release-verification--2026-10-12"></a>
+<a name="bilicdn_tw-v2123-release-verification--2026-10-13"></a>
 
-# BiliCDN_TW v2.1.22 P05 驗證報告
+# BiliCDN_TW v2.1.23 修復驗證報告
 
-日期：2026-10-12（台北時間）。基準 v2.1.21／`f534838`，開始時乾淨。只修診斷複製；公開 API、應用層介面、GM 權限及 schema 2 不變。BR-01 跳過，已通過 UI 項目不重測。
+日期：2026-10-13。基準 v2.1.22／c4e7de4，保留五份原調查文件。修復 CR-01～05 與原生確認的 S-01／S-03，共七項；S-02 未確認且沒有修改。公開 API、GM 權限、設定、schema 2 及執行期依賴不變。
 
 | 層級 | 結果 |
 | --- | --- |
-| 未修來源契約 | 20 fail／17 pass，保留原結果 |
-| 修復後 control-center | 37／37；新增 20 案 |
-| 全套正式測試 | 19 套件、808／808，無 only／skip／todo／cancelled |
-| typecheck／architecture | 通過 |
-| 最終 verify | 通過，退出 0；確定性建置、語法、v2-only 與暫存封裝校驗通過 |
-| 獨立 Codex Security 差異 | 3／3 檔案、0 候選／0 發現，已封存 |
-| IAB 原生通道 | 可信 writeText、API 讀回、真正 Ctrl+V 與完整原內容復原通過 |
-| 指定影片修復來源 | 3,392 字元全文讀回／貼上相符，GM／播放器呼叫及正式持久寫入 0；自有 UI 清理通過 |
-| 公開更新產物 | v2.1.22 已發布；唯一附件及未帶憑證的 latest 版本／大小／SHA-256 一致 |
-| 實際新版 P05 | 通過；31,204 字元報告完整讀回與真正 Ctrl+V 一致，原剪貼簿與資源復原通過 |
+| 未修 CR 正式契約 | 12 案、6 fail／6 pass；原紀錄保留 |
+| 修復後全部正式測試 | 19 套件、841／841；新增 33 案；0 fail／skip／todo／cancelled |
+| 型別／架構 | 通過；44 個 runtime 模組 |
+| Codex Security 差異 | 23／23 檔、0 候選／0 發現；獨立封存 |
+| IAB XHR 原生來源 | 11 組／22 筆觀察相符，包含七種跨 realm body；自有資源已清理 |
+| 最終 verify | 通過，退出 0；841 契約、確定性建置、語法、v2-only 與暫存封裝／校驗通過 |
+| 封裝／公開產物 | 正式發布核對另補 |
+| v2.1.23 實際安裝 | 尚未核對完整執行本體，不計安裝通過 |
 
-工具：Node 26.8.1、npm 11.19.0、TypeScript 7.0.2、esbuild 0.28.2。修復以原生優先、GM 不可用備援與單一 pending 寫入處理；不宣稱定位或修復 Tampermonkey GM 通道。
+工具：Node 26.8.1、npm 11.19.0、TypeScript 7.0.2、esbuild 0.28.2。分批 progressive-routing 29、orchestration 38、measurement-state 40、diagnostics 16、native-transport 147 均通過。正式契約及正常對照見 [修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CR01_CR05_FIX_REPORT.md)。
 
-安全掃描 `70b8d2c4-2c21-4465-a8c8-47eee5ba09d1` 於 `2026-10-12T13:48:17.943313Z` 封存。審查可信入口、完整報告、原生 receiver、例外、同步重入、過期視圖及重複寫入。不可變範圍為 UI／型別／正式測試三檔；後續版本與文件交付不冒充掃描範圍。工具回報 usage 2,339,563 tokens（來源 codex_rollout、2 threads，包含同任務累計 context，非修復的增量成本）。
+安全掃描 54077ae0-1f99-479d-bbea-e66e08f57e31 於 2026-10-13T15:07:25.758289Z 完成，固定差異摘要 85faf012e78350492acb676cadf2e7faacb7b124f0eec3468f6563e4c5bf5252。工具回報 8,709,858 tokens（codex_rollout、3 threads，含累計 context，非修復增量成本）。後續版本／文件／封裝不冒充安全審查範圍。
 
-證據在 `.work/functional-fixes/p05-copy-native/2026-10-12-f534838/`；全文對照、重跑入口、發布與實際安裝見 [P05 修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_FIX_REPORT.md)。原剪貼簿與貼上內容只留記憶體，檔案只保存長度／雜湊／比較與清理狀態。
+S-02 原生定位因工具單次呼叫耗時 389.4255 秒而達整體時限；只有送出前攔截控制，沒有相對 URL／base 結論。raw SharedArrayBuffer 亦未列本輪原生 body 通過。BR-01 保持跳過；P01／P02 安裝窗口限制封存；其他已通過瀏覽器案例未重測。這些限制不改記通過。
 
-## 發布核對
+私有證據：.work/functional-fixes/cr01-cr05/2026-10-13-c4e7de4/。安全 canonical 與一般 verify 分開保存。
 
-v2.1.22 於 `2026-10-12T13:57:43Z` [正式發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.22)。發布時 main／peeled tag 均為 `d1056ba1d67d571bf6f43b80c5accf3ab695cac8`，tag ref `33365b1a5e8ab706042301c984e613001710b8d5`。唯一附件 338,653 bytes，SHA-256 `7a4411c594385a65489a2b294df543ebe479d49ec8e8c37a797118a79f980508`；`2026-10-12T13:58:14Z` 公開 latest 核對一致。既有忽略規則排除新 Release 目錄，封裝快照於後續 `5ae9d6b` 提交 main；標籤及附件未改寫。
+<a name="bilicdn_tw-v2122-release-verification--2026-10-12"></a>
 
-## 實際安裝
+## 歷史報告
 
-初始公開更新入口沒有載入新版，舊本體觀察保留在 INSTALLED_PRECONDITION.json；使用者更新後該阻塞解除。Tampermonkey 5.5.1／v2.1.22 完整本體 335,100 字元，完整 IIFE 332,291 字元、SHA-256 `7de1d31f1f7298275eee71a3b9c68b5612e70f515efce4aa1edf3160df7113de` 與發行同段一致，唯一 RuntimeController／ControlCenter 各 1，事件無截斷。
+<a name="歷史驗證導覽"></a>
 
-實際可見入口的指標操作開啟 UI，再以真正 Tab／Enter 啟動診斷及複製。**31,204 字元**當次報告，API 讀回與真正 Ctrl+V 逐字相符，SHA-256 `a2a456e87fa3d7886d5497274273b1099bcadf3d8a607180fae6231efc45e646`。只提交一次，pending 已收束，報告不變、焦點保持。全部原剪貼簿項目／格式／文字與真正貼上復原相符；沒有保存原內容或報告本文。
-
-原生 Escape 關閉 UI，自有觀察器／屬性、Debugger 及 object group 清理，paste sink 清空，自有分頁 0、loopback 31996 listener 0。INSTALLED_COPY.json、CLEANUP.json 與無報告本文的成功提示截圖保存證據。BR-01 仍跳過，其他已通過案例不重測；GM 根因不因原生成功而宣稱修復。
-
-## 2026-10-13 文件結案補記
-
-依使用者批准完成 [TODO 證據核對與結案](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO_CLOSURE_2026-10-13.md)。只讀既有紀錄、核對來源差異並更新文件，沒有新增自動測試、安全掃描或瀏覽器驗收。
-
-- P01 第 2～4 輪的 24＋10＋2 個案例沿用；真 installed pending gate 的 bounded prepare 與 P02 等待者交錯前提未成立，限制封存，不判通過或產品失敗。
-- P03 同片自然 API 安裝子項沿用；本版原 808／808 紀錄中的 43 個具名 BR-03 案例核對成功。IAB 第 4 輪格式／hook 17 案沿用，舊 Chrome 154 來源隔離 31／31 保留原版本／環境，不轉算 IAB；完整內容週期交錯的 IAB 來源證據缺口明列限制，不增加安裝門檻。
-- P04、P05、BR-10 已完成且不重測；BR-01 與原自然停滯原因保持跳過。沒有已批准的自主接續測試項目。
-
-本次文件結案不表示完整產品矩陣全部通過。版本維持 v2.1.22，只有文件提交與 main 推送；既有發行標籤、附件及 Release 快照保持原狀。
-
-<a name="bilicdn_tw-v2121-release-verification--2026-10-11"></a>
-
-## 歷史導覽
-
-- [v2.1.21 完整原報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2121-release-verification--2026-10-11)
-- [原 P05 失敗與 GM 校準](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_IAB_RESULT_2026-10-12.md)
-- [更早完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md)
+上一版 v2.1.22 全文（含 2026-10-13 結案與原調查補記）已原樣封存至 [歷史驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2122-release-verification--2026-10-12)。其他版本由 [文件索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/INDEX.md) 追溯；原 Release 快照及失敗紀錄不回寫。

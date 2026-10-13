@@ -113,6 +113,7 @@ export interface RouteRankingEntry {
 export type RouteDecision =
   | {
       readonly action: 'pass'
+      readonly target: { readonly type: 'request' } | { readonly type: 'selected-original'; readonly candidate: RootCandidate }
       readonly id: DecisionId
       readonly reason: string
       readonly routeType: 'root-original'

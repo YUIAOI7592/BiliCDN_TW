@@ -229,3 +229,15 @@ Catalog 保留全部 11 個內建主機，其中 4 個預設不可用。起播�
 診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 ControlCenter 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
 
 原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。v2.1.22 的本輪證據見 [P05 修復報告](P05_COPY_FIX_REPORT.md)。
+
+## CR-01～05 與 XHR 所有權補充
+
+內部原線決策區分原樣通行與 Vault 選中的原線；後者以当前身分與不透明 handle 解析精確 URL，重查政策／禁止規則。同一選定主機上的 DASH 請求保留當次查詢字串。漸進式來源在正規化、去重、容量限制後以集合比較；相同集合更新 primary／順序但保留 handles／aliases／authority，真正新增、移除、換簽名或可信提升仍撤銷。
+
+首個合法起播窗口開始時立即消耗每分頁預算，後來的 Fetch／XHR 先加入共用 pending，再檢查已用預算；epoch／generation／設定 reset 不重開預算，沒有合法候選不消耗。健康量測的 planning／running 以各輪所有權在 finally 清理；probe、儲存鎖或寫入拒絕以固定 measurement-error 收束，遵守 10 分鐘冷卻，不輸出例外內容、不新增立即重試。EvidenceStore 只在寫入成功後發布記憶體成功樣本；舊完成或拒絕不能清除新輪次。
+
+XHR header 依 ByteString 在入口轉換一次，原生接受後才存字串供內部 reopen；body 的字串分支在 phase 變更前轉為 USVString，原例外保留，更正後可送出。平台品牌檢查保留跨 realm Blob／Document／FormData／URLSearchParams／ArrayBuffer／view，轉換重入後重新取得 metadata；已送出請求不重播。原生未送出的 abort 不一律變成 UNSENT，正式替身依原生對照校準。
+
+診斷同一次嘗試只有首次有效回應初始化播放進度基準；後續同身分及同路線成功不撤回 playback-observed／首次 playbackAt，也不延長 30 秒觀察期限。混合主機、seek、生命週期及新嘗試仍按原契約中斷。
+
+具名回歸、來源隔離、已封存安全差異與剩餘限制見 [v2.1.23 修復報告](CR01_CR05_FIX_REPORT.md)。

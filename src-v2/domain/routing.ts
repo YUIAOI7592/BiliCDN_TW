@@ -85,12 +85,12 @@ export const chooseRoute = (input: RankRoutesInput, clock: Clock, id: DecisionId
   const healthyBoundary = input.boundary !== 'verified-failure' && input.boundary !== 'watchdog' && input.boundary !== 'user-setting'
   if (!fixed && current && healthyBoundary && input.boundary !== 'new-epoch') {
     const candidate = current.candidate
-    if (candidate.type === 'root-original') return { action: 'pass', id, reason: 'healthy-affinity', routeType: 'root-original', host: candidate.host, ranking }
+    if (candidate.type === 'root-original') return { action: 'pass', target: { type: 'selected-original', candidate }, id, reason: 'healthy-affinity', routeType: 'root-original', host: candidate.host, ranking }
     return { action: 'rewrite', id, reason: 'healthy-affinity', routeType: candidate.type, host: candidate.host, candidate, ranking }
   }
   const original = ranking.find(row => row.eligible && row.candidate.type === 'root-original')
-  if (!fixed && input.boundary === 'startup' && original) {
-    return { action: 'pass', id, reason: 'startup-original-pending-preflight', routeType: 'root-original', host: original.candidate.host, ranking }
+  if (!fixed && input.boundary === 'startup' && original?.candidate.type === 'root-original') {
+    return { action: 'pass', target: { type: 'selected-original', candidate: original.candidate }, id, reason: 'startup-original-pending-preflight', routeType: 'root-original', host: original.candidate.host, ranking }
   }
   const selected = fixed ?? ranking.find(row => row.eligible && row.candidate.type !== 'root-original' && (
     row.state === 'proven' && (row.demandRatio ?? 0) >= 1.35
@@ -103,7 +103,7 @@ export const chooseRoute = (input: RankRoutesInput, clock: Clock, id: DecisionId
     return { action: 'block', id, reason: first?.reasons[0] ?? 'invalid-url', routeType: first?.candidate.type ?? 'root-original', host: first?.candidate.host ?? null, ranking }
   }
   if (selected.candidate.type === 'root-original') {
-    return { action: 'pass', id, reason: 'root-fallback', routeType: 'root-original', host: selected.candidate.host, ranking }
+    return { action: 'pass', target: { type: 'selected-original', candidate: selected.candidate }, id, reason: 'root-fallback', routeType: 'root-original', host: selected.candidate.host, ranking }
   }
   return { action: 'rewrite', id, reason: fixed ? 'fixed' : selected.state === 'proven' ? 'proven' : selected.successCount ? 'recent-success' : 'catalog-default',
     routeType: selected.candidate.type, host: selected.candidate.host, candidate: selected.candidate as CatalogCandidate | Extract<RouteCandidate, {type: 'native-signed'}>, ranking }

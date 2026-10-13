@@ -184,3 +184,11 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 ControlCenter 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
 
 先保存全部 IAB 剪貼簿項目與格式，只留記憶體；校準可信原生 writeText、API 讀回與真正 Ctrl+V。復原前核對完整項目仍由本輪持有，使用者的新內容優先保留。正式 20 案先保存未修來源結果，再修復；來源、Node 與安裝分列，詳見 [P05 修復報告](P05_COPY_FIX_REPORT.md)。先前 GM 未生效紀錄保留，不重做無新前提的 GM 校準。
+
+## CR 修復回歸與原生校準
+
+CR-01～05 與 S-01／S-03 的 33 個新增具名案例由既有 progressive-routing、orchestration、measurement-state、diagnostics、native-transport 套件明確匯入；正式測試不匯入私有調查目錄。執行命令及 12 案先紅後綠對照見 [修復報告](CR01_CR05_FIX_REPORT.md)。
+
+量測拒絕契約以獨立 Node 子程序觀察未處理拒絕；只編譯本機測試 helper，使用 FakeClock、記憶體儲存及明確清理。XHR 替身按原生 unsent abort、ByteString／USVString 轉換及重入校準。Node 契約、IAB 真正 XHR 11 組對照與安裝版證據各自判定。
+
+只校準本輪新增差異；BR-01 保持跳過，P01／P02 的自然 pending gate 封存窗口不重開，工具達限後不循環重試。

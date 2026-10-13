@@ -87,8 +87,8 @@ export class SignedRouteVault {
     const admitted = [...new Set([...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP).map(raw => parseMediaUrl(raw))
       .filter(parsed => parsed && (parsed.kind === 'normal' || (parsed.kind === 'unknown' && parsed.url.protocol === 'https:' && !parsed.url.port)
         || (parsed.kind === 'pcdn' && catalogSource(parsed.url.href)))).map(parsed => parsed!.url.href))]
-    const refreshed = !!prior && input.source === 'trusted-api' && prior.source === 'trusted-api' && input.refreshTrustedSources === true
-      && (admitted.length !== prior.routes.length || admitted.some((url, index) => url !== prior.routes[index]?.url))
+    const refresh = !!prior && input.source === 'trusted-api' && prior.source === 'trusted-api' && input.refreshTrustedSources === true
+    const refreshed = refresh && (admitted.length !== prior.routes.length || admitted.some(url => !prior.routes.some(route => route.url === url)))
     const promoted = !!prior && input.source === 'trusted-api' && prior.source !== 'trusted-api'
     const replaced = promoted || refreshed
     const cap = input.kind === 'video' ? MAX_VIDEO_GROUPS : MAX_AUDIO_GROUPS
@@ -99,7 +99,9 @@ export class SignedRouteVault {
       // A provisional URL's failure cannot invalidate a newly authoritative exact URL.
       this.#invalid.delete(priorId)
     }
-    const routes: StoredRoute[] = replaced ? [] : [...(prior?.routes ?? [])]
+    const routes: StoredRoute[] = replaced ? [] : refresh
+      ? admitted.map((url, order) => Object.freeze({ ...prior.routes.find(route => route.url === url)!, order }))
+      : [...(prior?.routes ?? [])]
     for (const raw of [...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP)) {
       const parsed = parseMediaUrl(raw)
       const opaque = parsed?.kind === 'unknown' && parsed.url.protocol === 'https:' && !parsed.url.port

@@ -2,6 +2,13 @@
 
 # BiliCDN_TW 變更紀錄
 
+## v2.1.23
+
+- 修正原線備援實體化、漸進式來源換序誤撤銷、pending 起播重開分頁預算、量測儲存拒絕懸置，以及成功回應撤回診斷進度。
+- 原生確認後修正 XHR header 二次轉換與 body 轉換失敗後不能更正送出；保留跨 realm body、重入及既有政策／終止所有權。
+- 新增 33 個正式契約，全套 841／841；獨立安全差異 0 發現。11 組 IAB 原生來源對照通過。發布／安裝見 [修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CR01_CR05_FIX_REPORT.md) 及 [最新驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- S-02 相對 URL／base 疑點未確認，沒有推測性修改；BR-01 跳過、P01／P02 封存安裝窗口不重開。
+
 ## v2.1.22
 
 - 修正診斷複製：可信操作立即使用原生 Clipboard API；API 不可取得才交給 GM 純文字備援。原生失敗不重複寫入。

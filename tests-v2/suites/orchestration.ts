@@ -1,5 +1,6 @@
 import '../regressions/functional-races/runtime.ts'
 import '../regressions/functional-races/content.ts'
+import '../regressions/functional-races/cr-startup.ts'
 import { createRuntimeIds } from "../../src-v2/platform/runtime-ids.ts"
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -69,7 +70,7 @@ assert.strictEqual(calls.slice(1).join(','), 'monitor.reset,measurement.reset,re
 const fallback: DomainEvent = { type: 'recovery', at: clock.now(), action: { action: 'route-fallback',
     id: recoveryActionId('test-recovery'), kind: 'video', identity: { generation: generationId(1), epoch: epochId(0),
       representation: representationId('test-rep'), authorityRevision: 1, kind: 'video' },
-    decision: { action: 'pass', id: decisionId('fallback'), reason: 'test', routeType: 'root-original', host: TRUSTED_CATALOG[0], ranking: [] } } }
+    decision: { action: 'pass', target: { type: 'request' }, id: decisionId('fallback'), reason: 'test', routeType: 'root-original', host: TRUSTED_CATALOG[0], ranking: [] } } }
 calls.length = 0;
 routeListener(fallback)
 assert.strictEqual(calls.join(','), 'diagnostic.event,diagnostic.player,recovery.arm', 'fallback records observation and arms only application-owned recovery')
@@ -110,7 +111,7 @@ void ('monitor.reset,measurement.reset,recovery.reset,player.reset');
 const fallback: DomainEvent = { type: 'recovery', at: clock.now(), action: { action: 'route-fallback',
     id: recoveryActionId('test-recovery'), kind: 'video', identity: { generation: generationId(1), epoch: epochId(0),
       representation: representationId('test-rep'), authorityRevision: 1, kind: 'video' },
-    decision: { action: 'pass', id: decisionId('fallback'), reason: 'test', routeType: 'root-original', host: TRUSTED_CATALOG[0], ranking: [] } } }
+    decision: { action: 'pass', target: { type: 'request' }, id: decisionId('fallback'), reason: 'test', routeType: 'root-original', host: TRUSTED_CATALOG[0], ranking: [] } } }
 calls.length = 0;
 routeListener(fallback)
 void (calls.join(','));

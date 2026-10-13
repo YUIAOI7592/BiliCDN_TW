@@ -505,3 +505,4 @@ test("Catalog source handle resolves exact current-epoch PCDN source [7]", { tim
 test("measurement fixture has two independent progressive segments [8]", { timeout: 5000 }, async t => { await (await fixture(t, 7))() })
 test("startup gate remains bounded but open before its deadline [9]", { timeout: 5000 }, async t => { await (await fixture(t, 8))() })
 import '../regressions/functional-races/routing.ts'
+import '../regressions/functional-races/cr-routing.ts'
