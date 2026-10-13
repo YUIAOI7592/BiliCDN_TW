@@ -990,3 +990,4 @@ import { idleControls } from "../support/player.ts"
 import '../regressions/functional-races/br01-player.ts'
 import '../regressions/functional-races/br08-player.ts'
 import '../regressions/functional-races/br01-reload-controls.ts'
+import '../regressions/functional-races/br01-play-intent.ts'

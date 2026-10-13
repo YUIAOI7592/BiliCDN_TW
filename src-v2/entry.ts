@@ -73,7 +73,7 @@ export const start = (): void => {
   webRtc.install()
   lifecycle.start()
   panel.start()
-  try { GM_registerMenuCommand('⚙️ 開啟 BiliCDN v2 控制中心', () => center.show()) } catch { /* optional */ }
+  try { GM_registerMenuCommand('⚙️ 開啟 BiliCDN 控制中心', () => center.show()) } catch { /* optional */ }
 }
 
 start()

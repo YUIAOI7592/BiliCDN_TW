@@ -2,7 +2,7 @@
 
 # 信任邊界與資料處理
 
-本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準（目前 v2.1.23）。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [修復索引](docs/INDEX.md)，不把歷史掃描當成新差異的驗證。
+本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準（目前 v2.1.24）。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [修復索引](docs/INDEX.md)，不把歷史掃描當成新差異的驗證。
 
 瀏覽器驗證只使用 **Codex 內建瀏覽器＋Tampermonkey**，資料隔離、送出前攔截與清理依 [IAB_TESTING](docs/IAB_TESTING.md)。來源隔離、環境校準與實際安裝各自判定；v2.1.22 P05 差異審查與來源證據見 [修復報告](docs/P05_COPY_FIX_REPORT.md)，前版 BR-10 見 [歷史修復](docs/BR10_FIX_REPORT.md)。
 
@@ -129,3 +129,11 @@ XHR 每個等待請求內部最多兩次原生 open；每個同步還原邊界�
 XHR header 依 ByteString 在入口轉換一次，原生接受後才存字串供內部 reopen；body 的字串分支在 phase 變更前轉為 USVString，原例外保留，更正後可送出。平台品牌檢查保留跨 realm Blob／Document／FormData／URLSearchParams／ArrayBuffer／view，轉換重入後重新取得 metadata；已送出請求不重播。原生未送出的 abort 不一律變成 UNSENT，正式替身依原生對照校準。
 
 已完成的獨立安全差異審查為 23／23 檔、0 可報告發現，範圍與限制見 [CR 修復報告](docs/CR01_CR05_FIX_REPORT.md)。這不是原生所有 body 型別或整份安裝矩陣的通過宣告；S-02 與 raw SharedArrayBuffer 未取得原生結論。
+
+## v2.1.24 可信播放按鈕意圖
+
+長暫停後，網站核心可能忽略播放按鈕而不呼叫 SDK play。PlayerAdapter 同時觀察現有 SDK 方法及目前播放器區域的可信 .bpx-player-ctrl-play click；僅同一 paused 媒體、播放器、內容週期、真正可見且非 ended/error 才通知既有意圖。讀取前後核對控制／使用者修訂與清理狀態，事件與 DOM 不傳入應用層。
+
+RecoveryController 保留暫停至少 30 秒、拖曳／路線授權／政策／操作所有權／額度檢查；死核心 4 秒、其他無進度 30 秒與重載後 15 秒期限維持。正常進度不多做重載，沒有新操作不替暫停影片自行播放。每輪返回的取消函式清理 captured document listener，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
+
+本輪沒有足夠樣本支持新時間門檻，沒有加入傳輸活動介面或更改 Fetch 背壓。詳見 [政策重評](docs/BR01_POLICY_REASSESSMENT_2026-10-14.md)；來源模型、實際播放與有限退出分開判定。

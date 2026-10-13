@@ -1,6 +1,6 @@
 # BiliCDN_TW v2 專案脈絡
 
-本文件保存現行產品契約與交付邊界；來源為 `src-v2/`，入口 `src-v2/entry.ts`，正式測試 `tests-v2/`。版本由 [release.json](../release.json) 決定，目前 **v2.1.23**。歷史修復過程見 [INDEX](INDEX.md)，已取得證據見 [TEST_REPORT](TEST_REPORT.md)，目前工作只看 [TODO](TODO.md)。
+本文件保存現行產品契約與交付邊界；來源為 `src-v2/`，入口 `src-v2/entry.ts`，正式測試 `tests-v2/`。版本由 [release.json](../release.json) 決定，目前 **v2.1.24**。歷史修復過程見 [INDEX](INDEX.md)，已取得證據見 [TEST_REPORT](TEST_REPORT.md)，目前工作只看 [TODO](TODO.md)。
 
 ## 現行產品
 
@@ -118,3 +118,11 @@ Fetch 只正規化輸入一次、單一讀取器，等待與串流取消保留 s
 診斷同一次嘗試只有首次有效回應初始化播放進度基準；後續同身分及同路線成功不撤回 playback-observed／首次 playbackAt，也不延長 30 秒觀察期限。混合主機、seek、生命週期及新嘗試仍按原契約中斷。
 
 XHR 一次轉換及原生 body 相容性見 [修復報告](CR01_CR05_FIX_REPORT.md)。S-02 相對 URL／base 疑點未確認，沒有新產品政策或 schema 變動。
+
+## v2.1.24 可信播放按鈕意圖
+
+長暫停後，網站核心可能忽略播放按鈕而不呼叫 SDK play。PlayerAdapter 同時觀察現有 SDK 方法及目前播放器區域的可信 .bpx-player-ctrl-play click；僅同一 paused 媒體、播放器、內容週期、真正可見且非 ended/error 才通知既有意圖。讀取前後核對控制／使用者修訂與清理狀態，事件與 DOM 不傳入應用層。
+
+RecoveryController 保留暫停至少 30 秒、拖曳／路線授權／政策／操作所有權／額度檢查；死核心 4 秒、其他無進度 30 秒與重載後 15 秒期限維持。正常進度不多做重載，沒有新操作不替暫停影片自行播放。每輪返回的取消函式清理 captured document listener，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
+
+本輪沒有足夠樣本支持新時間門檻，沒有加入傳輸活動介面或更改 Fetch 背壓。詳見 [政策重評](BR01_POLICY_REASSESSMENT_2026-10-14.md)；來源模型、實際播放與有限退出分開判定。

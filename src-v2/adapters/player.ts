@@ -408,14 +408,45 @@ export class PlayerAdapter {
 
   observePlayIntent(listener: () => void): () => void {
     const target = this.player(), original = target?.play
-    if (!target || typeof original !== 'function') return () => undefined
-    const wrapped = function(this: unknown, ...args: unknown[]): unknown {
-      let active = false
-      try { active = unsafeWindow.navigator.userActivation?.isActive === true } catch { /* unsupported */ }
-      if (active) listener()
-      return Reflect.apply(original, this, args)
+    let stopped = false
+    const stops: (() => void)[] = []
+    if (target && typeof original === 'function') {
+      const wrapped = function(this: unknown, ...args: unknown[]): unknown {
+        let active = false
+        try { active = unsafeWindow.navigator.userActivation?.isActive === true } catch { /* unsupported */ }
+        if (!stopped && active) listener()
+        return Reflect.apply(original, this, args)
+      }
+      try { stops.push(observeMethod(target, 'play', original, wrapped)) } catch { /* UI observation remains available */ }
     }
-    try { return observeMethod(target, 'play', original, wrapped) } catch { return () => undefined }
+    // An uninitialized website core can ignore its own play button without
+    // calling the public SDK method. The trusted control still expresses play
+    // intent; the controller retains all pause, route, quota and deadline checks.
+    try {
+      const video = this.video(), lifecycle = this.playurl.lifecycleKey()
+      const region = video?.closest('.bpx-player-container, .bilibili-player') ?? video?.parentElement
+      const controlRevision = this.#controlRevision
+      if (video && target && region) {
+        const ownerDocument = document
+        const click = (event: Event): void => {
+          if (stopped || !event.isTrusted || !(event.target instanceof Element)) return
+          const userRevision = this.#userRevision
+          const button = event.target.closest('.bpx-player-ctrl-play')
+          if (!button || !region.contains(button) || !this.environment.isActuallyVisible()
+            || video !== this.video() || target !== this.player() || lifecycle !== this.playurl.lifecycleKey()
+            || !video.paused || video.ended || video.error) return
+          // DOM/SDK reads may reenter cleanup or replace the observed owner.
+          if (stopped || controlRevision !== this.#controlRevision || userRevision !== this.#userRevision
+            || video !== this.video() || target !== this.player() || lifecycle !== this.playurl.lifecycleKey()
+            || !this.environment.isActuallyVisible() || lifecycle !== this.playurl.lifecycleKey()
+            || stopped || controlRevision !== this.#controlRevision || userRevision !== this.#userRevision) return
+          listener()
+        }
+        ownerDocument.addEventListener('click', click, { capture: true })
+        stops.push(() => ownerDocument.removeEventListener('click', click, { capture: true }))
+      }
+    } catch { /* A missing DOM does not remove the existing SDK observer. */ }
+    return () => { if (!stopped) { stopped = true; for (const stop of stops.reverse()) stop() } }
   }
 
   video(): HTMLVideoElement | null {

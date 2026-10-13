@@ -160,3 +160,7 @@ v2.1.22 實際安裝的完整本體及唯一實例重新核對；可見指標入
 新增 33 個具名案例，既有套件明確匯入且不讀私有調查目錄。最終全套 841／841；原 CR 12 案的未修 6 fail／6 pass，以及 XHR 原生確認後的未修正式失敗另存。CR-04 獨立子程序只編譯本機 helper，觀察 storage 拒絕與未處理拒絕，清理完成。
 
 真正 IAB XHR 顯示未送出的 abort 保留 OPENED，正式 NativeXhr 替身已校正；不能把先前的一律 UNSENT 當原生契約。修復後七種跨 realm body、轉換內 open／abort、header replay 共 11 組對照相符。S-02 因有界定位達限未确认，不以 Node 模型冒充原生。詳細對照見 [修復報告](CR01_CR05_FIX_REPORT.md)。
+
+## 2026-10-14：播放意圖來源對照
+
+正式 adapters 新增 14 案。Node EventTarget 的 capture listener 清理需使用匹配 options；新 observer 使用捕獲的 document 與 { capture: true } 成對登記／移除，100 個 paused tick 仍只有一個 listener，reset 後為零。IAB 自有 iframe 的真正 click 對照與 FakeClock 進度模型分列，三次清理 timerCount=0。詳見 [BR01_POLICY_REASSESSMENT_2026-10-14.md](BR01_POLICY_REASSESSMENT_2026-10-14.md)。
