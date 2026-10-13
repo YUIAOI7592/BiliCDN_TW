@@ -85,4 +85,12 @@ S-02 保留未確認、無新增修復；共享記憶體 body 未校準。BR-01 
 
 ## 發布與安裝
 
-本機修復、正式契約、原生來源對照及安全審查已完成；v2.1.23 最終 verify 退出 0，包含 841 契約、確定性建置、語法、v2-only 與暫存封裝校驗。正式封裝、公開產物與安裝身分按實際結果補記。尚未核對完整新版本體前，不記錄 v2.1.23 安裝通過。
+**七項修復與 v2.1.23 發布完成。** 最終 verify 退出 0，包含 841 契約、確定性建置、語法、v2-only 與暫存封裝校驗。GFM／連結、歷史保留與差異檢查通過。
+
+於 `2026-10-13T15:14:37Z` [正式發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.23)。發布提交與當時遠端 main／peeled tag 均為 `f219caa93b93c7f468e71cf2efdabe8bb8e33673`；tag ref 為 `24e7f68520d6ea2343f9b34ab6eb9090121a894c`。唯一附件 `BiliCDN_TW.user.js`，343,834 bytes；SHA-256 `ae68637fd73599d6561ca396249246c64f070491030a5e106260d597ceb41f2a`。未帶憑證的公開 latest 於 `2026-10-13T15:15:58.554Z` 核對版本、大小及完整雜湊一致。封裝快照在同一發布提交，後續文件補記不回寫快照或標籤。
+
+**首次安裝核對尚未成立。** IAB 公開 latest 入口只到沒有確認按鈕的 Tampermonkey 中繼頁。指定影片的新文件完整執行本體仍為 v2.1.22：335,099 字元，包含與 v2.1.22 Release 完全相同的 332,291 字元 IIFE，該段 SHA-256 `7de1d31f1f7298275eee71a3b9c68b5612e70f515efce4aa1edf3160df7113de`。事件沒有截斷。沒有在舊版執行本輪驗收，Debugger 已停用、自有分頁 55／56 已關閉；沒有改設定或學習資料。
+
+使用者隨後完成更新，`2026-10-13T15:22:07.770Z` **v2.1.23 實際安裝身分核對通過**：完整執行本體 340,281 字元，包含與正式附件逐字相同的 337,472 字元 IIFE，該段 SHA-256 `9e97abd7dbab28eb633b46f1774a7b381c562d41109a8dcd994600145f05589f`。RuntimeController／ControlCenter 各 1；Fetch 與 XHR open／send／setRequestHeader／abort 的函式位置均屬於這份新版腳本。事件無截斷，沒有替換 singleton 或變更設定。
+
+此結果證明新版完整本體及 hooks 已載入；七項因果契約的證據仍分別是 Node 與上述 IAB 原生來源隔離，不擴大宣稱整份安裝矩陣通過。object group、Debugger 與自有分頁 57 已清理；沒有重測舊通過案例。`RELEASE_VERIFICATION.json`、`INSTALLED_PRECONDITION.json`、`INSTALLED_IDENTITY.json` 分別保存發布、首次舊版與更新後身分證據。
