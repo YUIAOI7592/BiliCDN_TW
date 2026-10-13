@@ -2,7 +2,7 @@
 
 # 測試工具驗證紀錄
 
-各節依日期保存當時的測試工具與契約模型證據，不把舊版本數量當成現行執行結果。最新修復契約及原生通道見 [P05 原生優先](#2026-10-12-p05-原生優先)；先前剪貼簿觀察為 [P05 IAB 讀回](#2026-10-12-p05-iab-讀回)；最新事件模型更新仍為 [BR-10 控制中心](#2026-10-11-br-10-控制中心事件契約)。現行命令見 [DEVELOPMENT](DEVELOPMENT.md#test-suites-and-isolation)，v2.1.22 的完整驗證及實際 IAB 安裝結果見 [TEST_REPORT](TEST_REPORT.md)。
+各節依日期保存當時的測試工具與契約模型證據，不把舊版本數量當成現行執行結果。最新播放意圖與位置調查見本頁 2026-10-14 紀錄；先前剪貼簿通道見 [P05 原生優先](#2026-10-12-p05-原生優先)，事件模型見 [BR-10 控制中心](#2026-10-11-br-10-控制中心事件契約)。現行命令見 [DEVELOPMENT](DEVELOPMENT.md#test-suites-and-isolation)，最新版完整驗證及 IAB 安裝結果見 [TEST_REPORT](TEST_REPORT.md)。
 
 ## 2026-10-12 P05 IAB 讀回
 
@@ -164,3 +164,9 @@ v2.1.22 實際安裝的完整本體及唯一實例重新核對；可見指標入
 ## 2026-10-14：播放意圖來源對照
 
 正式 adapters 新增 14 案。Node EventTarget 的 capture listener 清理需使用匹配 options；新 observer 使用捕獲的 document 與 { capture: true } 成對登記／移除，100 個 paused tick 仍只有一個 listener，reset 後為零。IAB 自有 iframe 的真正 click 對照與 FakeClock 進度模型分列，三次清理 timerCount=0。詳見 [BR01_POLICY_REASSESSMENT_2026-10-14.md](BR01_POLICY_REASSESSMENT_2026-10-14.md)。
+
+## 2026-10-14：安裝後收集限制與位置重現
+
+解除故障後繼續以 Fetch 攔截逐筆放行，會將工具讀取間隔變成額外請求延遲；第一個 2 倍窗口的恢復耗時／成敗因此作廢。單次修正改為解除時立即 Fetch.enable 空 patterns，後續 Fetch.requestPaused=0。但該窗最終 Network truncated=true，不能宣稱完整網路時序通過；獨立頁面採樣 dropped=false，只保存播放與位置的局部證據。
+
+安裝觀察引出的尋位位置缺陷，在私有隔離案例使用真正 PlayerAdapter／RecoveryController 重現：1 fail／2 pass，獨立 tsc 通過。Node 26 的 strip-only 不支援 parameter property，直接執行錯誤另存；有效入口先用專案 esbuild 編譯再 node:test，不把啟動失敗當功能重現。沒有改正式工具、测试登記或執行期。兩個正常對照分別保護未重設位置與真正 seek 到 0；詳見 [完整報告](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)。
