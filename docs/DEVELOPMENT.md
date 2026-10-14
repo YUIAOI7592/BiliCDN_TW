@@ -68,7 +68,7 @@ npm run package       # 重建 dist，寫入設定的 Release/v<version>/
 npm run verify        # 自動檢查及暫存封裝驗證
 ```
 
-從儲存庫根目錄執行命令。`typecheck` 與 verify 共用 [typecheck.mts](../scripts/typecheck.mts)，依序檢查正式來源、測試及維護工具。[tsconfig.json](../tsconfig.json) 保留嚴格 DOM 環境並設 `types: []`；[tsconfig.tests.json](../tsconfig.tests.json) 加入 Node 型別、DOM 及使用者腳本全域宣告。[tsconfig.tools.json](../tsconfig.tools.json) 使用 NodeNext、Node 型別、可移除型別語法與明確型別匯入，涵蓋全部 `.mts` 工具。工具由既有 Node 直接執行，不新增轉譯載入器；測試打包及匯入純度的暫存 `.mjs` 仍是生成產物。`architecture` 檢查正式模組；獨立的 `npm test -- architecture` 測試架構檢查器自身測試情境。判斷這些檢查能證明哪些不變量前，先閱讀 [架構檢查範圍](ARCHITECTURE.md#dependency-direction)。
+從儲存庫根目錄執行命令。`typecheck` 與 verify 共用 [typecheck.mts](../scripts/typecheck.mts)，依序檢查正式來源、測試及維護工具。[tsconfig.json](../tsconfig.json) 保留嚴格 DOM 環境並設 `types: []`；[tsconfig.tests.json](../tsconfig.tests.json) 加入 Node 型別、DOM 及使用者腳本全域宣告。[tsconfig.tools.json](../tsconfig.tools.json) 使用 NodeNext、Node 型別、可移除型別語法與明確型別匯入，涵蓋全部 `.mts` 工具。工具由既有 Node 直接執行，不新增轉譯載入器；Node 只移除型別、不讀取 tsconfig，另由 typecheck 檢查型別，依 [官方 TypeScript 文件](https://nodejs.org/api/typescript.html) 使用 `.mts` ESM、可移除語法及型別匯入；測試打包及匯入純度的暫存 `.mjs` 仍是生成產物。`architecture` 檢查正式模組；獨立的 `npm test -- architecture` 測試架構檢查器自身測試情境。判斷這些檢查能證明哪些不變量前，先閱讀 [架構檢查範圍](ARCHITECTURE.md#dependency-direction)。
 
 [verify.mts](../scripts/verify.mts) 檢查設定的 Node 版本、唯讀格式、typecheck、來源架構、全部測試、兩次建置的輸出／資訊清單一致性、JavaScript 語法、指定舊版／Worker 標記清單、必要儲存標記及封裝 SHA-256。封裝步驟會再建置一次。命令寫入 `dist/`，於新的 `dist/verify-package-*` 目錄封裝，確認解析後位置及前綴再刪除該目錄；不寫入 `Release/v<version>/`。
 

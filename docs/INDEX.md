@@ -1,8 +1,8 @@
 # 專案文件索引與維護規則
 
-更新：2026-10-14。現行版本 **v2.1.24**，依 [release.json](../release.json)、[package.json](../package.json)、[package-lock.json](../package-lock.json) 與 [src-v2](../src-v2/entry.ts) 核對。
+更新：2026-10-14。現行版本 **v2.1.25**，依 [release.json](../release.json)、[package.json](../package.json)、[package-lock.json](../package-lock.json) 與 [src-v2](../src-v2/entry.ts) 核對。
 
-目前工作與啟動狀態見 [TODO](TODO.md)，已取得證據見 [TEST_REPORT](TEST_REPORT.md)。正式 855／855 與新位置調查 1 fail／2 pass 分列；正常 Auto 1／2 倍播放入口通過，**BR-01 整體不通過、位置遺失尚未修復**。有限政策重評與安裝續驗已收束，本次文件整理不恢復測試。
+目前工作與啟動狀態見 [TODO](TODO.md)，已取得證據見 [TEST_REPORT](TEST_REPORT.md)。本輪模組化正式 889／889、安全差異與來源隔離通過，發布／實際安裝另記；v2.1.24 的位置調查 1 fail／2 pass 保留，**BR-01 整體不通過、位置遺失尚未修復**。本輪依使用者批准實作模組化與標準化；只做新差異及正常回歸，歷史故障矩陣不恢復。
 
 閱讀順序：
 
@@ -46,7 +46,8 @@
 
 | 版本／範圍 | 修復與調查 | 實際安裝／階段紀錄 |
 | --- | --- | --- |
-| v2.1.24 | [政策重評與播放意圖入口](BR01_POLICY_REASSESSMENT_2026-10-14.md)、[最新版完整驗證](TEST_REPORT.md) | [新位置缺陷](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)：正常入口通過、整體不通過 |
+| v2.1.25 | [模組化與標準化](MODULARIZATION_v2.1.25_REPORT.md)、[最新版完整驗證](TEST_REPORT.md) | 發布及實際安裝結果另記；BR-01 位置缺陷仍未修復 |
+| v2.1.24 | [政策重評與播放意圖入口](BR01_POLICY_REASSESSMENT_2026-10-14.md)、[完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2124-release-verification--2026-10-14) | [新位置缺陷](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)：正常入口通過、整體不通過 |
 | v2.1.23 | [CR-01～05／S-01／S-03 修復](CR01_CR05_FIX_REPORT.md)、[完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2123-release-verification--2026-10-13) | 新本體／singleton／hooks 身分通過；S-02 未確認 |
 | v2.1.22 | [P05 原生優先](P05_COPY_FIX_REPORT.md)、[完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2122-release-verification--2026-10-12) | 實際全文讀回／貼上通過，原 GM 限制保留 |
 | v2.1.21 | [BR-10 鍵盤隔離](BR10_FIX_REPORT.md)、[完整原驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2121-release-verification--2026-10-11) | 歷史來源／安裝分列 |
@@ -64,7 +65,8 @@
 | v2.1.9 | [17 項功能與競態修復](FUNCTIONAL_FIX_REPORT.md)、[BR-02 原調查](CHROME_v2.1.9_BR02_XHR_FAILED_OPEN.md) | [安裝紀錄](CHROME_v2.1.9_ACCEPTANCE.md) |
 
 - [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md)：固定入口換版時保存的完整正文。
-- [v2.1.24 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.24) 與 [Release/v2.1.24](../Release/v2.1.24/)：已發布產物及不可回寫快照，唯一公開附件為使用者腳本。
+- [v2.1.25 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.25) 與 [Release/v2.1.25](../Release/v2.1.25/)：本輪發行入口，公開附件只有使用者腳本；發布狀態見 TEST_REPORT。
+- [v2.1.24 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.24) 與 [Release/v2.1.24](../Release/v2.1.24/)：歷史產物及不可回寫快照。
 - [DOC_MAINTENANCE_HISTORY](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)：文件維護與檢查，不等同新程式測試。
 
 v2.1.6 驗收已批准通過並結案，原覆蓋限制不轉為現行待辦。BR-01 原自然網路起因與救援／位置保護分開，沒有新根因結論或隱含新增驗收門檻。

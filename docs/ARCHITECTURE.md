@@ -2,7 +2,7 @@
 
 # v2 架構
 
-本文件描述目前 `src-v2/` 的職責與契約，版本以 [release.json](../release.json) 為準（目前 v2.1.24）。版本別修復及驗證數字移由 [索引](INDEX.md) 與 [TEST_REPORT](TEST_REPORT.md) 保存；本文件不代表新一次驗證通過。
+本文件描述目前 `src-v2/` 的職責與契約，版本以 [release.json](../release.json) 為準（目前 v2.1.25）。版本別修復及驗證數字移由 [索引](INDEX.md) 與 [TEST_REPORT](TEST_REPORT.md) 保存；本文件不代表新一次驗證通過。
 
 瀏覽器測試只使用 **Codex 內建瀏覽器＋Tampermonkey**，依 [IAB_TESTING](IAB_TESTING.md) 分開來源隔離、實際安裝與環境校準。應用層注入的模型與原生事件不可混為安裝版證據。
 
@@ -255,3 +255,15 @@ Catalog 保留全部 11 個內建主機，其中 4 個預設不可用。起播�
 診斷同一次嘗試只有首次有效回應初始化播放進度基準；後續同身分及同路線成功不撤回 playback-observed／首次 playbackAt，也不延長 30 秒觀察期限。混合主機、seek、生命週期及新嘗試仍按原契約中斷。
 
 具名回歸、來源隔離、已封存安全差異與剩餘限制見 [v2.1.23 修復報告](CR01_CR05_FIX_REPORT.md)。
+
+## 模組責任邊界
+
+| 協調／所有者 | 獨立助手 | 保留權責 |
+| --- | --- | --- |
+| RouteCoordinator | routing/ 的候選、限制、URL 物化及播放器主備規劃 | 所有政策修訂、計畫、工作 ID、傳輸提交、親和與 Vault 登記 |
+| DiagnosticRecorder | 單一 event-sanitizer、route-attempt-tracker、report | 事件／流量／事故緩衝；報告助手只消費去敏後的 detached capture |
+| ControlCenter | labels／styles／elements／overview／settings／diagnostics views | 宿主／封閉 ShadowRoot、鍵盤／焦點、視圖版本與 pending 複製 |
+| PlayerAdapter | media／sdk／method 與單一 PlayerControlObserver | 既有外部及測試覆寫介面；所有控制修訂、監聽器及自有重載觀察集中於 observer |
+| XhrHookAdapter | xhr-values／xhr-request | 唯一 metadata WeakMap、原生派送、安裝與按所有權還原 |
+
+助手沒有第二份 Native 授權索引或可獨立變更親和的能力。嘗試追蹤保留六個 attempt、32 個 request IDs 與既有期限；responseIds 集合沒有另加明確數量上限，不能把所有內部集合描述成逐項有界。詳見 [模組化紀錄](MODULARIZATION_v2.1.25_REPORT.md)。

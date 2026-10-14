@@ -30,7 +30,7 @@
 
 ## 2026-10-11 IAB 收集器
 
-基準 `f5f26e3`、產品版本 v2.1.20。第 4 輪的閉包失效證據保留；新增主機端 [IabEventCollector](../scripts/iab-event-collector.mjs) 與 [7 個正式契約](../tests-v2/regressions/iab-event-collector.ts)，由既有 tooling 套件匯入。工具以實例保存跨呼叫狀態、先登記整批暫停請求、分頁去重、失效後停止持有，並區分有原生終止證據與未解決的放行錯誤。
+基準 `f5f26e3`、產品版本 v2.1.20。第 4 輪的閉包失效證據保留；新增主機端 [IabEventCollector](https://github.com/YUIAOI7592/BiliCDN_TW/blob/34885c7/scripts/iab-event-collector.mjs) 與 [7 個正式契約](../tests-v2/regressions/iab-event-collector.ts)，由既有 tooling 套件匯入。工具以實例保存跨呼叫狀態、先登記整批暫停請求、分頁去重、失效後停止持有，並區分有原生終止證據與未解決的放行錯誤。
 
 - `npm test -- tooling`：**30／30**；fail／skipped／todo／cancelled 均為 0。
 - `npm run typecheck`：通過；Windows／Node 26.8.1／npm 11.19.0。
@@ -177,7 +177,12 @@ v2.1.22 實際安裝的完整本體及唯一實例重新核對；可見指標入
 
 遷移前先補兩個 CLI／結構化報告契約，工具套件 32／32、完整 19 套件 857／857、型別、44 個執行期模組架構及 verify 通過，沒有 fail／skip／todo／cancelled。期限、子程序隔離、退出碼、報告版本與清理維持。使用者腳本保持 345,540 bytes，SHA-256 9a58836ab79b56ca8b4a4741a3236011df19aade872baea19d8e56066cef7e3d，與 v2.1.24 相同。本階段沒有新版發布或瀏覽器驗收。私有驗證輸出 .work/modularization/tools-verify.log。
 
-
 ## 2026-10-14：格式與靜態規則基準
 
 格式整理獨立提交，保留嵌入測試內容。Prettier 3.9.10、唯讀格式檢查、未使用宣告／參數與明確型別匯入納入維護；移除多餘綁定仍保留初始化副作用及順序。原生 Node 工具新增穩定格式與受保護樹不寫入兩個契約；工具 34／34、完整 19 套件 859／859、型別、44 個執行期模組架構及 verify 通過。格式 check 不寫入，生成 JS／Release／封存／證據不改寫。私有輸出 .work/modularization/standards-verify.log；本階段沒有新發布或瀏覽器結果。
+
+## 2026-10-14：v2.1.25 契約與模組化整合
+
+新增精確模組路徑權責及契約不得依賴實作的 19 個 AST 情境，先觀察原規則失敗再修正；架構套件 37／37。播放器、選路、診斷／UI 共新增 11 個行為契約，先由未拆分來源通過再實作拆分；完整正式 19 套件 889／889，98 模組、三份型別專案、format:check、verify 與 diff 檢查通過。
+
+IAB 自有記憶體來源的原生傳輸、UI 與播放器分列於 [模組化報告](MODULARIZATION_v2.1.25_REPORT.md)；超過自有期限與缺失合成管理器前提的窗口作廢，修正情境後唯一重跑才記通過。沒有把合成來源或 Node 新舊差分比較當成 Tampermonkey 安裝證據。BR-01 歷史矩陣未恢復。
