@@ -8,6 +8,19 @@ import type {
 import type { assessDemandRatio } from '../domain/routing.ts'
 import type { ReadonlySnapshot } from '../domain/diagnostic-model.ts'
 
+export type SanitizedValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly SanitizedValue[]
+  | { readonly [key: string]: SanitizedValue }
+export interface DiagnosticReportCurrent {
+  readonly current: SanitizedValue
+  reduced(): SanitizedValue
+  emergency(): SanitizedValue
+}
+
 export interface DiagnosticRequest extends Omit<
   RequestContext,
   'originalHost' | 'targetHost' | 'requestId' | 'decisionId' | 'representation'

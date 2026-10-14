@@ -1,62 +1,24 @@
-import type {
-  DomainEvent,
-  RouteDecision,
-  TransportObservation,
-  RequestContext,
-  RouteIdentity,
-} from '../domain/model.ts'
-import { assessDemandRatio } from '../domain/routing.ts'
-import { isCatalogHost } from '../domain/catalog.ts'
-import { isKnownNativeFamily } from '../domain/url-policy.ts'
+import type { DomainEvent, TransportObservation, RequestContext } from '../domain/model.ts'
 import type { PlaybackDiagnosticSample, ReadonlySnapshot } from '../domain/diagnostic-model.ts'
 export type { PlaybackDiagnosticSample } from '../domain/diagnostic-model.ts'
 export type { DiagnosticSnapshot } from './model.ts'
 import type {
-  DiagnosticRequest,
   DiagnosticTransport,
-  DiagnosticDecision,
   DiagnosticRanking,
-  DiagnosticEventData,
   SafeEvent,
   Flow,
   Incident,
-  AttemptStage,
   DiagnosticSnapshot,
 } from './model.ts'
 import type { DiagnosticRecorderPort } from './ports.ts'
-
-interface RouteAttempt {
-  actionId: string
-  decisionId: string
-  host: string
-  identity: RouteIdentity
-  at: number
-  stage: AttemptStage
-  baselinePositionSec: number | null
-  baselineEndSec: number | null
-  baselineCaptured: boolean
-  requestAt: number | null
-  responseAt: number | null
-  playbackAt: number | null
-  requests: number
-  successes: number
-  failures: number
-  aborts: number
-  zeroByteAborts: number
-  noResponseAborts: number
-  lastOutcomeAt: number | null
-  lastFailureKind: string | null
-  mixed: boolean
-  progressTicks: number
-  lastProgressAt: number | null
-  lastPositionSec: number | null
-  requestIds: Set<string>
-  responseIds: Set<string>
-}
-const bytes = (value: unknown): number => new TextEncoder().encode(JSON.stringify(value)).byteLength
-const text = (value: unknown, max = 96): string => String(value ?? '').slice(0, max)
-const field = (value: unknown, key: string): unknown =>
-  value && typeof value === 'object' ? Reflect.get(value, key) : undefined
+import { DiagnosticEventSanitizer, incidentTrigger } from './event-sanitizer.ts'
+import { RouteAttemptTracker } from './route-attempt-tracker.ts'
+import { serializeDiagnosticReport } from './report.ts'
+import {
+  diagnosticBytes as bytes,
+  diagnosticText as text,
+  finiteDiagnosticNumber as finite,
+} from './values.ts'
 
 export class DiagnosticRecorder implements DiagnosticRecorderPort {
   #events: SafeEvent[] = []
@@ -67,12 +29,12 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
   #lastAttribution = new Map<string, string>()
   #rankings: DiagnosticRanking[] = []
   #incident: Incident | null = null
-  #attempts: RouteAttempt[] = []
+  #attemptTracker: RouteAttemptTracker
   #recentPlayerTrace: { at: number; row: string }[] = []
   #lastPaused: boolean | null = null
   #lastPlayerFrames: number | null = null
   #serial = 0
-  #aliases = new Map<string, string>()
+  #sanitizer = new DiagnosticEventSanitizer()
   #manualMark: { at: number; reason: string; count: number } | null = null
   #counters = {
     evicted: 0,
@@ -89,18 +51,14 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
   constructor(
     private readonly now: () => number,
     private readonly verbose: () => boolean,
-  ) {}
+  ) {
+    this.#attemptTracker = new RouteAttemptTracker(now)
+  }
 
   tick(): void {
     if (this.#incident?.state === 'capturing' && this.now() >= this.#incident.captureUntil)
       this.#incident.state = 'frozen'
-    const active = this.#activeAttempt()
-    if (
-      active &&
-      this.now() - active.at >= 30_000 &&
-      !['playback-observed', 'mixed-evidence'].includes(active.stage)
-    )
-      active.stage = 'unconfirmed'
+    this.#attemptTracker.tick()
     const floor = this.now() - 60_000
     const events = this.#events.filter((event) => event.at >= floor)
     this.#counters.eventsExpired += this.#events.length - events.length
@@ -119,11 +77,8 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
 
   record(event: DomainEvent, routeObservationEnabled = true): void {
     this.tick()
-    if (routeObservationEnabled) this.#observeAttempt(event)
-    else {
-      const active = this.#activeAttempt()
-      if (active) active.stage = 'interrupted'
-    }
+    if (routeObservationEnabled) this.#counters.attemptEvicted += this.#attemptTracker.record(event)
+    else this.#attemptTracker.interrupt()
     if (event.type === 'request-started') {
       this.#pending.set(event.request.requestId, event.request)
       while (this.#pending.size > 32) {
@@ -150,14 +105,14 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
       this.#aggregate(o)
       if (o.outcome !== 'failure') {
         if (o.outcome === 'success' && !(event.type === 'transport-completed' && event.detached))
-          this.#lastSuccess.set(o.kind ?? 'unknown', this.#transport(o))
+          this.#lastSuccess.set(o.kind ?? 'unknown', this.#sanitizer.transport(o))
         return
       }
     }
     const safe = this.#event(event)
     this.#events.push(safe)
     this.#trim(this.#events, 24 * 1024, 'evicted')
-    const trigger = this.#trigger(event)
+    const trigger = incidentTrigger(event)
     if (this.#incident?.state === 'capturing') {
       this.#incident.events.push(safe)
       if (trigger)
@@ -183,73 +138,21 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
   clear(): void {
     this.#incident = null
     this.#manualMark = null
-    this.#attempts = []
+    this.#attemptTracker.clear()
     this.#recentPlayerTrace = []
     this.#lastPaused = null
     this.#lastPlayerFrames = null
   }
   recordPlayer(sample: PlaybackDiagnosticSample): void {
     this.tick()
-    const active = this.#activeAttempt()
-    if (active) {
-      if (
-        !sample.enabled ||
-        sample.originalComparison ||
-        sample.generation !== active.identity.generation ||
-        sample.epoch !== active.identity.epoch
-      ) {
-        active.stage = 'interrupted'
-      } else if (sample.seeking || sample.ended) {
-        active.stage = 'interrupted'
-      } else {
-        if (!active.baselineCaptured) {
-          active.baselineCaptured = true
-          active.baselinePositionSec = this.#finite(sample.currentTimeSec, 0, 86400)
-          const buffer = this.#finite(sample.playableBufferSec, 0, 86400)
-          active.baselineEndSec =
-            active.baselinePositionSec !== null && buffer !== null
-              ? active.baselinePositionSec + buffer
-              : null
-        }
-        const position = this.#finite(sample.currentTimeSec, 0, 86400)
-        const progressing =
-          !sample.paused &&
-          !sample.seeking &&
-          !sample.ended &&
-          position !== null &&
-          active.lastPositionSec !== null &&
-          position > active.lastPositionSec + 0.05
-        if (progressing && active.responseAt === null && active.stage !== 'mixed-evidence')
-          active.stage = 'progress-unconfirmed'
-        if (
-          active.responseAt !== null &&
-          !active.mixed &&
-          active.stage !== 'playback-observed' &&
-          active.stage !== 'unconfirmed'
-        ) {
-          const beyond =
-            progressing && active.baselineEndSec !== null && position > active.baselineEndSec + 0.1
-          const contiguous =
-            active.lastProgressAt !== null &&
-            sample.at > active.lastProgressAt &&
-            sample.at - active.lastProgressAt <= 2000
-          active.progressTicks = beyond ? (contiguous ? active.progressTicks + 1 : 1) : 0
-          active.lastProgressAt = beyond ? sample.at : null
-          if (active.progressTicks >= 2) {
-            active.stage = 'playback-observed'
-            active.playbackAt = sample.at
-          }
-        }
-        active.lastPositionSec = position
-      }
-    }
+    this.#attemptTracker.recordPlayer(sample)
     const flags =
       Number(sample.paused) |
       (Number(sample.seeking) << 1) |
       (Number(sample.ended) << 2) |
       (Number(sample.coreInitialized === false) << 3) |
       (Number(sample.coreInitialized === true) << 4)
-    const currentFrames = this.#finite(sample.frames, 0, 2 ** 32 - 1)
+    const currentFrames = finite(sample.frames, 0, 2 ** 32 - 1)
     const frameDelta =
       currentFrames !== null && this.#lastPlayerFrames !== null
         ? Math.max(0, currentFrames - this.#lastPlayerFrames)
@@ -257,9 +160,9 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
     this.#lastPlayerFrames = currentFrames
     const row = [
       Math.trunc(sample.at),
-      Math.round((this.#finite(sample.currentTimeSec, 0, 86400) ?? 0) * 10),
+      Math.round((finite(sample.currentTimeSec, 0, 86400) ?? 0) * 10),
       frameDelta,
-      Math.round((this.#finite(sample.playableBufferSec, 0, 86400) ?? 0) * 10),
+      Math.round((finite(sample.playableBufferSec, 0, 86400) ?? 0) * 10),
       Math.max(0, Math.min(4, Math.trunc(sample.readyState))),
       flags,
       text(sample.watchdog, 20),
@@ -308,299 +211,28 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
       manualMark: this.#manualMark ? { ...this.#manualMark } : null,
       flow: this.#flows(),
       lastSuccess: Object.fromEntries(this.#lastSuccess),
-      pending: [...this.#pending.values()].map((row) => this.#request(row)),
+      pending: [...this.#pending.values()].map((row) => this.#sanitizer.request(row)),
       events: structuredClone(this.#events),
       rankings: structuredClone(this.#rankings),
-      routeRecovery: { attempts: this.#attempts.map((row) => this.#attemptSummary(row)) },
+      routeRecovery: {
+        attempts: this.#attemptTracker.snapshot((host) => this.#sanitizer.host(host)),
+      },
       counters: { ...this.#counters },
     })
   }
 
   buildReport(readModel: object): string {
     const recorder = { ...this.#capture() }
-    const payload = {
-      title: 'BiliCDN_TW v2 診斷報告',
+    return serializeDiagnosticReport({
       generatedAt: new Date(this.now()).toISOString(),
       evidence: this.#incident
         ? this.#incident.state + '-incident'
         : this.#lastSuccess.size
           ? 'media-observation-only'
           : 'playback-observation-unattributed',
-      current: this.#sanitize(readModel),
       recorder,
-      export: {
-        truncated: false,
-        rankingDropped: 0,
-        traceDropped: 0,
-        contextDropped: 0,
-        flowDropped: 0,
-        incidentDropped: 0,
-        currentReduced: false,
-        emergencySummary: false,
-      },
-    }
-    let output = JSON.stringify(payload, null, 2)
-    if (new TextEncoder().encode(output).byteLength <= 96 * 1024) return output
-    payload.export.truncated = true
-    output = JSON.stringify(payload)
-    if (new TextEncoder().encode(output).byteLength <= 96 * 1024) return output
-    payload.export.rankingDropped = this.#rankings.length
-    recorder.rankings = []
-    output = JSON.stringify(payload)
-    const { events, flow: flows, incident } = recorder
-    while (
-      new TextEncoder().encode(output).byteLength > 96 * 1024 &&
-      (incident?.playerTrace.length ||
-        events.length > 1 ||
-        flows.length > 1 ||
-        (incident?.events.length ?? 0) > 1)
-    ) {
-      if (incident?.playerTrace.length) {
-        incident.playerTrace.shift()
-        payload.export.traceDropped++
-      } else if (events.length > 1) {
-        const i = events.findIndex((row) => !row.important)
-        events.splice(i >= 0 ? i : 0, 1)
-        payload.export.contextDropped++
-      } else if (flows.length > 1) {
-        flows.shift()
-        payload.export.flowDropped++
-      } else if (incident && incident.events.length > 1) {
-        const i = incident.events.findIndex((row) => !row.important)
-        incident.events.splice(i >= 0 ? i : 0, 1)
-        payload.export.incidentDropped++
-      }
-      output = JSON.stringify(payload)
-    }
-    if (new TextEncoder().encode(output).byteLength <= 96 * 1024) return output
-    const m = {
-      version: field(readModel, 'version'),
-      session: field(readModel, 'session'),
-      monitor: field(readModel, 'monitor'),
-      recovery: field(readModel, 'recovery'),
-      measurement: field(readModel, 'measurement'),
-      interception: field(readModel, 'interception'),
-    }
-    const r = field(readModel, 'routes')
-    payload.current = this.#sanitize({
-      version: m.version,
-      session: m.session,
-      monitor: m.monitor,
-      recovery: m.recovery,
-      measurement: m.measurement,
-      interception: m.interception,
-      routes: {
-        planCount: field(r, 'planCount'),
-        activePlan: field(r, 'activePlan'),
-        affinity: field(r, 'affinity'),
-        latest: field(r, 'latest'),
-        representation: field(r, 'representation'),
-        attribution: field(r, 'attribution'),
-      },
-      truncated: true,
+      current: this.#sanitizer.reportCurrent(readModel),
     })
-    payload.export.currentReduced = true
-    output = JSON.stringify(payload)
-    if (new TextEncoder().encode(output).byteLength <= 96 * 1024) return output
-    const latest = recorder.routeRecovery.attempts.at(-1)
-    const summary = {
-      title: payload.title,
-      generatedAt: payload.generatedAt,
-      evidence: payload.evidence,
-      current: this.#sanitize({
-        version: m.version,
-        monitor: { watchdog: field(m.monitor, 'watchdog') },
-        truncated: true,
-      }),
-      recorder: {
-        incident: incident && {
-          id: incident.id,
-          reason: incident.reason,
-          startedAt: incident.startedAt,
-          state: incident.state,
-        },
-        routeRecovery: {
-          attempts: latest
-            ? [
-                {
-                  actionId: latest.actionId,
-                  decisionId: latest.decisionId,
-                  host: latest.host,
-                  stage: latest.stage,
-                },
-              ]
-            : [],
-        },
-      },
-      export: { ...payload.export, emergencySummary: true },
-    }
-    return JSON.stringify(summary)
-  }
-
-  #activeAttempt(): RouteAttempt | null {
-    const row = this.#attempts.at(-1)
-    return row &&
-      !['mixed-evidence', 'unconfirmed', 'superseded', 'interrupted'].includes(row.stage) &&
-      !(row.stage === 'playback-observed' && this.now() - row.at >= 30_000)
-      ? row
-      : null
-  }
-  #finite(value: unknown, min: number, max: number): number | null {
-    return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max
-      ? value
-      : null
-  }
-  #matches(request: RequestContext | undefined, attempt: RouteAttempt): boolean {
-    return (
-      !!request &&
-      request.kind === 'video' &&
-      request.attributionStatus === 'matched' &&
-      request.generation === attempt.identity.generation &&
-      request.epoch === attempt.identity.epoch &&
-      request.representation === attempt.identity.representation &&
-      request.authorityRevision === attempt.identity.authorityRevision &&
-      request.decisionId === attempt.decisionId &&
-      request.targetHost === attempt.host &&
-      request.startedAt >= attempt.at
-    )
-  }
-  #observeAttempt(event: DomainEvent): void {
-    if (
-      event.type === 'recovery' &&
-      event.action.action === 'route-fallback' &&
-      event.action.kind === 'video'
-    ) {
-      const active = this.#activeAttempt()
-      if (active && active.stage !== 'playback-observed') active.stage = 'superseded'
-      this.#attempts.push({
-        actionId: event.action.id,
-        decisionId: event.action.decision.id,
-        host: event.action.decision.host ?? '',
-        identity: event.action.identity,
-        at: event.at,
-        stage: 'planned',
-        baselinePositionSec: null,
-        baselineEndSec: null,
-        baselineCaptured: false,
-        requestAt: null,
-        responseAt: null,
-        playbackAt: null,
-        requests: 0,
-        successes: 0,
-        failures: 0,
-        aborts: 0,
-        zeroByteAborts: 0,
-        noResponseAborts: 0,
-        lastOutcomeAt: null,
-        lastFailureKind: null,
-        mixed: false,
-        progressTicks: 0,
-        lastProgressAt: null,
-        lastPositionSec: null,
-        requestIds: new Set<string>(),
-        responseIds: new Set<string>(),
-      })
-      while (this.#attempts.length > 6) {
-        this.#attempts.shift()
-        this.#counters.attemptEvicted++
-      }
-      return
-    }
-    const active = this.#activeAttempt()
-    if (!active) return
-    if (event.type === 'lifecycle') {
-      if (event.generation !== active.identity.generation || event.epoch !== active.identity.epoch)
-        active.stage = 'interrupted'
-      return
-    }
-    if (event.type === 'request-started') {
-      if (!this.#matches(event.request, active)) return
-      if (active.requestIds.size >= 32)
-        active.requestIds.delete(active.requestIds.values().next().value as string)
-      active.requestIds.add(event.request.requestId)
-      active.requests++
-      active.requestAt ??= event.at
-      if (active.stage === 'planned') active.stage = 'sent'
-      return
-    }
-    if (event.type !== 'transport-completed' && event.type !== 'route-confirmed') return
-    const observation = event.observation
-    if (
-      observation.kind === 'video' &&
-      observation.outcome === 'success' &&
-      observation.bytes > 0 &&
-      observation.generation === active.identity.generation &&
-      observation.epoch === active.identity.epoch &&
-      observation.representation === active.identity.representation &&
-      observation.finalHost &&
-      observation.finalHost !== active.host &&
-      event.type === 'route-confirmed'
-    ) {
-      active.mixed = true
-      active.stage = 'mixed-evidence'
-      return
-    }
-    if (
-      !this.#matches(observation.request, active) ||
-      !active.requestIds.has(observation.request!.requestId)
-    )
-      return
-    if (event.type === 'transport-completed') {
-      if (event.detached) return
-      active.lastOutcomeAt = observation.completedAt
-      if (observation.outcome === 'abort') {
-        active.aborts++
-        if (observation.bytes === 0) active.zeroByteAborts++
-        if (observation.status === 0 && observation.finalHost === null) active.noResponseAborts++
-      } else if (observation.outcome === 'failure') {
-        active.failures++
-        active.lastFailureKind = observation.failureKind ?? 'unknown'
-      } else active.successes++
-      return
-    }
-    if (
-      observation.outcome !== 'success' ||
-      observation.status !== 206 ||
-      observation.bytes <= 0 ||
-      observation.finalHost !== active.host ||
-      observation.responseUrlMatchesRequest !== true ||
-      active.responseIds.has(observation.request!.requestId)
-    )
-      return
-    active.responseIds.add(observation.request!.requestId)
-    if (active.responseAt === null) {
-      active.responseAt = event.at
-      active.stage = 'response-observed'
-      active.progressTicks = 0
-      active.lastProgressAt = null
-    }
-  }
-  #attemptSummary(row: RouteAttempt) {
-    return {
-      actionId: text(row.actionId),
-      decisionId: text(row.decisionId),
-      host: this.#host(row.host),
-      generation: row.identity.generation,
-      epoch: row.identity.epoch,
-      representation: text(row.identity.representation),
-      authorityRevision: row.identity.authorityRevision,
-      at: row.at,
-      stage: row.stage,
-      baselinePositionSec: row.baselinePositionSec,
-      baselineEndSec: row.baselineEndSec,
-      requestAt: row.requestAt,
-      responseAt: row.responseAt,
-      playbackAt: row.playbackAt,
-      requests: row.requests,
-      successes: row.successes,
-      failures: row.failures,
-      aborts: row.aborts,
-      zeroByteAborts: row.zeroByteAborts,
-      noResponseAborts: row.noResponseAborts,
-      lastOutcomeAt: row.lastOutcomeAt,
-      lastFailureKind: row.lastFailureKind,
-      mixed: row.mixed,
-    }
   }
 
   #aggregate(o: TransportObservation): void {
@@ -608,8 +240,8 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
       Math.floor(o.completedAt / 5000),
       o.kind ?? 'unknown',
       o.routeType,
-      this.#host(o.targetHost),
-      this.#host(o.finalHost),
+      this.#sanitizer.host(o.targetHost),
+      this.#sanitizer.host(o.finalHost),
     ].join(':')
     const row = this.#flow.get(key) ?? {
       requests: 0,
@@ -648,179 +280,18 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
   #flows() {
     return [...this.#flow].map(([key, row]) => ({ key, ...row }))
   }
-  #request(row: RequestContext): DiagnosticRequest {
-    return {
-      requestId: text(row.requestId, 160),
-      generation: row.generation,
-      epoch: row.epoch,
-      routePolicyRevision: row.routePolicyRevision,
-      decisionId: text(row.decisionId, 160),
-      representation: row.representation === null ? null : text(row.representation, 160),
-      ...(row.authorityRevision !== undefined ? { authorityRevision: row.authorityRevision } : {}),
-      kind: row.kind,
-      attributionStatus: row.attributionStatus,
-      attributionSource: row.attributionSource,
-      decisionStage: row.decisionStage,
-      routeType: row.routeType,
-      originalHost: this.#host(row.originalHost),
-      targetHost: this.#host(row.targetHost),
-      sourceHost: this.#host(row.sourceHost),
-      playurlHostChanged: row.playurlHostChanged,
-      playurlOutput: row.playurlOutput
-        ? {
-            originalHost: this.#host(row.playurlOutput.originalHost) ?? '',
-            outputHost: this.#host(row.playurlOutput.outputHost) ?? '',
-            role: row.playurlOutput.role,
-            source: row.playurlOutput.source,
-            decisionId: row.playurlOutput.decisionId,
-            hostChanged: row.playurlOutput.hostChanged,
-          }
-        : null,
-      urlChanged: row.urlChanged,
-      hostChanged: row.hostChanged,
-      startedAt: row.startedAt,
-    }
-  }
-  #transport(o: TransportObservation): DiagnosticTransport {
-    return {
-      ...(o.request ? this.#request(o.request) : {}),
-      decisionId: o.decisionId,
-      generation: o.generation,
-      epoch: o.epoch,
-      kind: o.kind,
-      representation: o.representation,
-      routeType: o.routeType,
-      originalHost: this.#host(o.originalHost),
-      targetHost: this.#host(o.targetHost),
-      responseHost: this.#host(o.finalHost),
-      status: o.status,
-      bytes: o.bytes,
-      ttfbMs: o.ttfbMs,
-      elapsedMs: o.elapsedMs,
-      completedAt: o.completedAt,
-      outcome: o.outcome,
-      failureKind: o.failureKind ?? null,
-    }
-  }
-  #decision(d: RouteDecision): DiagnosticDecision {
-    const chosen = d.ranking.find(
-      (row) => row.candidate.host === d.host && row.candidate.type === d.routeType,
-    )
-    return {
-      decisionStage: 'plan',
-      id: d.id,
-      action: d.action,
-      reason: d.reason,
-      routeType: d.routeType,
-      host: this.#host(d.host),
-      demandRatio: chosen?.demandRatio ?? null,
-      capacityAssessment: assessDemandRatio(chosen?.demandRatio ?? null),
-    }
-  }
   #event(event: DomainEvent): SafeEvent {
-    let data: DiagnosticEventData,
-      important = false
-    switch (event.type) {
-      case 'route-decision':
-      case 'route-planned': {
-        data = this.#decision(event.decision)
-        if (this.verbose()) {
-          const ranking = {
-            ...data,
-            ranking: event.decision.ranking.slice(0, 12).map((row) => ({
-              host: this.#host(row.candidate.host),
-              state: row.state,
-              eligible: row.eligible,
-              reasons: row.reasons,
-              safeMbps: row.safeThroughputMbps,
-              demandRatio: row.demandRatio,
-              ttfbMs: row.medianTtfbMs,
-            })),
-          }
-          const signature = JSON.stringify(ranking.ranking)
-          if (!this.#rankings.some((row) => JSON.stringify(row.ranking) === signature))
-            this.#rankings.push(ranking)
-          while (this.#rankings.length > 4 || bytes(this.#rankings) > 12 * 1024) {
-            this.#rankings.shift()
-            this.#counters.rankingEvicted++
-          }
-        }
-        break
+    const { event: safe, ranking } = this.#sanitizer.event(event, this.verbose)
+    if (ranking) {
+      const signature = JSON.stringify(ranking.ranking)
+      if (!this.#rankings.some((row) => JSON.stringify(row.ranking) === signature))
+        this.#rankings.push(ranking)
+      while (this.#rankings.length > 4 || bytes(this.#rankings) > 12 * 1024) {
+        this.#rankings.shift()
+        this.#counters.rankingEvicted++
       }
-      case 'transport':
-      case 'transport-completed':
-        data = {
-          ...this.#transport(event.observation),
-          detached: event.type === 'transport-completed' && event.detached,
-        }
-        important = true
-        break
-      case 'route-confirmed':
-        data = this.#transport(event.observation)
-        important = true
-        break
-      case 'route-observed':
-        data = {
-          routeType: event.routeType,
-          host: this.#host(event.host),
-          decisionId: event.decisionId,
-        }
-        important = true
-        break
-      case 'request-started':
-        data = this.#request(event.request)
-        break
-      case 'attribution-changed':
-        data = { requestId: event.requestId, status: event.status, kind: event.kind }
-        break
-      case 'recovery':
-        data = {
-          action: event.action.action,
-          actionId: event.action.id,
-          ...(event.action.action === 'route-fallback'
-            ? {
-                kind: event.action.kind,
-                identity: event.action.identity,
-                decision: this.#decision(event.action.decision),
-              }
-            : event.action.action === 'player-reload'
-              ? {
-                  savedPositionSec: event.action.savedPositionSec,
-                  savedRate: event.action.savedRate,
-                }
-              : { reason: event.action.reason }),
-        }
-        important = true
-        break
-      case 'core':
-      case 'core-uninitialized':
-        data = {
-          ...event,
-          ...(event.type === 'core' && event.state === 'recovered'
-            ? { meaning: 'player-core-progress-only' }
-            : {}),
-        }
-        important = true
-        break
-      case 'lifecycle':
-        data = { generation: event.generation, epoch: event.epoch, reason: event.reason }
-        important = true
-        break
     }
-    return { at: event.at, type: event.type, data, important }
-  }
-  #trigger(event: DomainEvent): string | null {
-    if (event.type === 'core-uninitialized') return 'core:uninitialized'
-    if (
-      (event.type === 'transport' || event.type === 'transport-completed') &&
-      event.observation.outcome === 'failure' &&
-      !(event.type === 'transport-completed' && event.detached)
-    )
-      return 'transport:' + (event.observation.failureKind ?? 'failure')
-    if (event.type === 'recovery') return 'recovery:' + event.action.action
-    if (event.type === 'core' && ['reloading', 'failed'].includes(event.state))
-      return 'core:' + event.state
-    return null
+    return safe
   }
   #start(reason: string, at: number): void {
     if (this.#incident?.state === 'capturing') {
@@ -872,33 +343,9 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
       } else if (this.#incident && this.#incident.events.length > 1) {
         this.#incident.events.shift()
         this.#counters.incidentEvicted++
-      } else if (this.#attempts.length > 1) {
-        this.#attempts.shift()
+      } else if (this.#attemptTracker.dropOldest()) {
         this.#counters.attemptEvicted++
       } else break
     }
-  }
-  #host(host: string | null): string | null {
-    if (!host || isCatalogHost(host) || isKnownNativeFamily(host)) return host
-    if (this.#aliases.has(host)) return this.#aliases.get(host) ?? 'external'
-    if (this.#aliases.size >= 64) return 'external#overflow'
-    const alias = 'external#' + (this.#aliases.size + 1)
-    this.#aliases.set(host, alias)
-    return alias
-  }
-  #sanitize(value: unknown, key = '', depth = 0): unknown {
-    if (depth > 7) return '[bounded]'
-    if (typeof value === 'string')
-      return key.toLowerCase().includes('host') ? this.#host(value) : text(value, 160)
-    if (value === null || typeof value === 'number' || typeof value === 'boolean') return value
-    if (Array.isArray(value))
-      return value.slice(0, 48).map((item) => this.#sanitize(item, key, depth + 1))
-    if (!value || typeof value !== 'object') return null
-    return Object.fromEntries(
-      Object.entries(value)
-        .slice(0, 48)
-        .filter(([name]) => !['streamKey', 'url', 'path', 'query', 'token'].includes(name))
-        .map(([name, item]) => [name, this.#sanitize(item, name, depth + 1)]),
-    )
   }
 }

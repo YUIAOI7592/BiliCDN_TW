@@ -991,3 +991,178 @@ test(
   },
 )
 import '../regressions/functional-races/cr-diagnostics.ts'
+
+test('diagnostic report keeps stable host aliases and clears only incident-local state', (t) => {
+  testScope(t)
+  const now = 2_000_000_000_000
+  const recorder = new DiagnosticRecorder(
+    () => now,
+    () => false,
+  )
+  const observation = {
+    generation: generationId(1),
+    epoch: epochId(1),
+    decisionId: decisionId('alias-report'),
+    representation: null,
+    kind: 'video',
+    routeType: 'catalog-generated',
+    originalHost: TRUSTED_CATALOG[0],
+    targetHost: 'private.invalid',
+    finalHost: 'private.invalid',
+    status: 206,
+    bytes: 128,
+    ttfbMs: 20,
+    elapsedMs: 100,
+    completedAt: now,
+    outcome: 'success',
+    streamKey: 'private-stream',
+  } satisfies TransportObservation
+  recorder.record({ type: 'transport', at: now, observation })
+  recorder.mark('manual')
+  const before = recorder.snapshot()
+  const current = {
+    version: 'contract',
+    host: 'private.invalid',
+    anotherHost: 'second.invalid',
+    url: 'https://private.invalid/path?token=report-secret',
+    token: 'report-secret',
+    nested: {
+      path: '/private-path',
+      query: 'private-query',
+      streamKey: 'private-stream',
+      value: 'kept',
+    },
+  }
+  const text = recorder.buildReport(current)
+  const report = JSON.parse(text) as {
+    current: object
+    recorder: { lastSuccess: { video: { responseHost: string } } }
+  }
+  assert.deepEqual(report.current, {
+    version: 'contract',
+    host: 'external#1',
+    anotherHost: 'external#2',
+    nested: { value: 'kept' },
+  })
+  assert.equal(report.recorder.lastSuccess.video.responseHost, 'external#1')
+  assert.ok(!text.includes('report-secret') && !text.includes('private-stream'))
+  assert.equal(text, recorder.buildReport(current), 'export is byte-stable with fixed time')
+  assert.deepEqual(recorder.snapshot(), before, 'export does not consume retained observations')
+  recorder.clear()
+  const after = recorder.snapshot()
+  assert.equal(after.incident, null)
+  assert.equal(after.manualMark, null)
+  assert.deepEqual(after.flow, before.flow)
+  assert.deepEqual(after.lastSuccess, before.lastSuccess)
+  assert.deepEqual(after.counters, before.counters)
+  assert.match(recorder.buildReport({ nextHost: 'third.invalid' }), /external#3/)
+})
+
+test('diagnostic oversized export reduces context without consuming snapshot buffers', (t) => {
+  testScope(t)
+  const now = 2_000_000_000_000
+  const recorder = new DiagnosticRecorder(
+    () => now,
+    () => false,
+  )
+  recorder.mark()
+  const before = recorder.snapshot()
+  const oversized = Object.fromEntries(
+    Array.from({ length: 48 }, (_, group) => [
+      String(group),
+      Object.fromEntries(Array.from({ length: 48 }, (_, item) => [String(item), 'x'.repeat(160)])),
+    ]),
+  )
+  const model = { version: 'contract', monitor: { watchdog: 'healthy' }, oversized }
+  const first = recorder.buildReport(model)
+  const report = JSON.parse(first) as {
+    current: { version: string; monitor: { watchdog: string }; truncated: boolean }
+    export: { truncated: boolean; currentReduced: boolean }
+  }
+  assert.ok(new TextEncoder().encode(first).byteLength <= 96 * 1024)
+  assert.equal(report.current.version, 'contract')
+  assert.equal(report.current.monitor.watchdog, 'healthy')
+  assert.equal(report.current.truncated, true)
+  assert.equal(report.export.truncated, true)
+  assert.equal(report.export.currentReduced, true)
+  assert.equal(first, recorder.buildReport(model))
+  assert.deepEqual(recorder.snapshot(), before)
+})
+
+test('diagnostic attempts retain six records and mode interruption survives late observations', (t) => {
+  testScope(t)
+  const now = 2_000_000_000_000
+  const recorder = new DiagnosticRecorder(
+    () => now,
+    () => false,
+  )
+  const identity = {
+    generation: generationId(1),
+    epoch: epochId(1),
+    representation: representationId('bounded-attempts'),
+    kind: 'video' as const,
+    authorityRevision: 1,
+  }
+  for (let index = 0; index < 8; index++) {
+    const decision = {
+      action: 'rewrite',
+      id: decisionId(`attempt-${index}`),
+      reason: 'contract',
+      routeType: 'catalog-generated',
+      host: TRUSTED_CATALOG[0],
+      candidate: {
+        type: 'catalog-generated',
+        host: TRUSTED_CATALOG[0],
+        kind: 'video',
+        catalogIndex: 0,
+      },
+      ranking: [],
+    } satisfies RouteDecision
+    recorder.record({
+      type: 'recovery',
+      at: now,
+      action: {
+        action: 'route-fallback',
+        id: recoveryActionId(`action-${index}`),
+        kind: 'video',
+        identity,
+        decision,
+      },
+    })
+  }
+  const before = recorder.snapshot()
+  assert.equal(before.routeRecovery.attempts.length, 6)
+  assert.equal(before.routeRecovery.attempts[0]?.actionId, 'action-2')
+  assert.equal(before.counters.attemptEvicted, 2)
+  recorder.record(
+    {
+      type: 'lifecycle',
+      at: now,
+      generation: identity.generation,
+      epoch: identity.epoch,
+      reason: 'contract',
+    },
+    false,
+  )
+  assert.equal(recorder.snapshot().routeRecovery.attempts.at(-1)?.stage, 'interrupted')
+  recorder.recordPlayer({
+    at: now,
+    generation: identity.generation,
+    epoch: identity.epoch,
+    enabled: true,
+    originalComparison: false,
+    currentTimeSec: 100,
+    frames: 100,
+    playableBufferSec: 10,
+    paused: false,
+    seeking: false,
+    ended: false,
+    readyState: 4,
+    coreInitialized: true,
+    watchdog: 'healthy',
+  })
+  assert.equal(recorder.snapshot().routeRecovery.attempts.at(-1)?.stage, 'interrupted')
+  recorder.clear()
+  assert.deepEqual(recorder.snapshot().routeRecovery.attempts, [])
+  assert.equal(recorder.snapshot().counters.attemptEvicted, 2)
+})

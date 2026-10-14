@@ -5,6 +5,7 @@ import { FakeStorage } from '../support/storage.ts'
 import { ControlCenter } from '../../src-v2/ui/control-center.ts'
 import type { ControlCenterDependencies } from '../../src-v2/ui/control-center-ports.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
+import { DEFAULT_UNAVAILABLE_HOSTS } from '../../src-v2/domain/catalog.ts'
 import { deferred } from '../support/deferred.ts'
 
 class QueuedSettingsStorage extends FakeStorage {
@@ -176,6 +177,40 @@ function copyUi(t: TestContext) {
 async function flushCopy(): Promise<void> {
   for (let i = 0; i < 4; i++) await Promise.resolve()
 }
+
+test('control-center views preserve overview text, defaults, and complete diagnostic report', (t) => {
+  const f = ui(t)
+  const summary = f.doc.flatten().find((e) => e.className === 'summary')
+  assert.ok(summary)
+  assert.equal(
+    summary.textContent,
+    '腳本：已啟用｜CDN：自動挑選 CDN（僅內建 CDN）\n選定路線：尚未確認（實際請求見下方）\n播放：緩衝不足｜已緩衝約 0.0 秒可播放內容｜2 倍速\n播放器：正常｜測速：尚未測速\n請求攔截：運作中｜腳本看到 0 筆請求，其中 0 筆像是影音請求；交給瀏覽器 0 筆，看到回應 0 筆\n影片：還沒有可確認的請求\n音訊：還沒有可確認的請求\n目前畫質：等待可辨識的影片資料\n※ 上述請求與回應由腳本觀察；要確認瀏覽器實際送出的網址，仍須查看 Chrome「網路」面板。',
+  )
+  f.button('CDN 與播放設定').emit('click')
+  assert.equal(f.toggle('允許參考 B 站原生來源').checked, false)
+  assert.equal(f.toggle('測試：只用 B 站原本提供的 CDN').checked, false)
+  for (const host of TRUSTED_CATALOG)
+    assert.equal(f.toggle(host).checked, !DEFAULT_UNAVAILABLE_HOSTS.has(host))
+  assert.equal(f.doc.flatten().filter((e) => e.tag === 'select').length, 2)
+  assert.equal(
+    f.doc.flatten().find((e) => e.tag === 'select')?.children.length,
+    TRUSTED_CATALOG.length + 1,
+  )
+  f.button('返回').emit('click')
+  f.button('查看診斷報告').emit('click')
+  const report = f.doc.flatten().find((e) => e.tag === 'textarea')
+  assert.ok(report)
+  assert.equal(report.readOnly, true)
+  const parsed = JSON.parse(report.value) as {
+    title: string
+    current: { version: string }
+    export: { truncated: boolean }
+  }
+  assert.equal(parsed.title, 'BiliCDN_TW v2 診斷報告')
+  assert.equal(parsed.current.version, 'contract')
+  assert.equal(parsed.export.truncated, false)
+  assert.equal(f.storage.tasks.length, 0, 'view rendering does not issue settings writes')
+})
 
 test('P05 native write starts in trusted dispatch with exact full report and original receiver', async (t) => {
   const f = copyUi(t),
