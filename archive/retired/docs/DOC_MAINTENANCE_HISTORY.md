@@ -395,3 +395,7 @@ CHANGELOG 只補 v2.1.21 的發布／安裝狀態；TODO 補入 BR-10 完成對�
 | 差異範圍 | git diff --check 通過；495 個受保護追蹤檔案 SHA-256 未變，包含程式、測試、設定、Release、來源基準、原調查及安全封存 |
 
 檢查明細保存在 .work/documentation/2026-10-14-standardization/ 的 validation.json 與 facts.json。本次未執行 Node 產品契約、型別／架構／verify、安全掃描或瀏覽器案例，沒有升版、重新封裝或建立新 Release。
+
+## 2026-10-14：工具 TS 遷移的現行指南對照
+
+隨維護工具遷移更新 AGENTS、ARCHITECTURE 與 DEVELOPMENT 的工具入口、型別專案及生成產物說明；現行來源與測試採 TS，維護工具採 .mts。歷史正文、Release 快照及安全產物未改寫。git diff --check 通過；本階段實際工具與自動驗證另記 TEST_TOOLING_REPORT，不轉算瀏覽器結果。

@@ -1,16 +1,16 @@
 import { existsSync, readFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { resolve, sep } from 'node:path'
-import { build } from './build.mjs'
-import { runTests } from './test.mjs'
-import { typecheck } from './typecheck.mjs'
-import { packageRelease } from './package.mjs'
-import { command, readJson, sha256 } from './lib.mjs'
+import { build } from './build.mts'
+import { runTests } from './test.mts'
+import { typecheck } from './typecheck.mts'
+import { packageRelease } from './package.mts'
+import { command, readRelease, sha256 } from './lib.mts'
 
 export async function verify() {
-  const config = readJson('release.json')
+  const config = readRelease()
   if (process.versions.node !== config.nodeVersion) throw Error(`Expected Node ${config.nodeVersion}; found ${process.versions.node}`)
   typecheck()
-  command(process.execPath, ['scripts/architecture-check.mjs'])
+  command(process.execPath, ['scripts/architecture-check.mts'])
   await runTests()
   const first = await build({ write: false }), second = await build()
   if (first.output !== second.output || JSON.stringify(first.manifest) !== JSON.stringify(second.manifest)) throw Error('Build is not reproducible')
@@ -40,4 +40,4 @@ export async function verify() {
   console.log(`Verified v${config.version}: typecheck, architecture, functional tests, deterministic build, syntax, v2-only bundle and checksums.`)
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/verify.mjs')) await verify()
+if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/verify.mts')) await verify()

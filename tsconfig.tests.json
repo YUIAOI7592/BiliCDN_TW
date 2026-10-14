@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": { "types": ["node"], "allowJs": true },
+  "compilerOptions": { "types": ["node"] },
   "include": ["tests-v2/**/*.ts", "src-v2/globals.d.ts"]
 }

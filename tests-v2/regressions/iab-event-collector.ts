@@ -1,10 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { IabEventCollector } from '../../scripts/iab-event-collector.mjs'
+import { IabEventCollector } from '../../scripts/iab-event-collector.mts'
+import type { CollectorEvent } from '../../scripts/iab-event-collector.mts'
 import { testScope } from '../support/scope.ts'
 import { deferred } from '../support/deferred.ts'
 
-type Event = {sequence:number;method:string;params:Record<string,unknown>}
+type Event = CollectorEvent & {params:NonNullable<CollectorEvent['params']>}
 const paused=(sequence:number,id:string,url='https://owned.invalid/video'):Event=>({sequence,method:'Fetch.requestPaused',params:{requestId:id,request:{url}}})
 function fixture(t: Parameters<typeof testScope>[0], classify=(url:string)=>url.endsWith('/video')?'video':'audio', limit=12000) {
   const scope=testScope(t),calls:Array<{method:string;params:Record<string,unknown>}>=[]

@@ -13,7 +13,7 @@
 | 位置 | 用途 |
 | --- | --- |
 | `src-v2/`、`src-v2/entry.ts` | 唯一正式來源與組合入口 |
-| `tests-v2/`、`scripts/test-registry.mjs` | 正式具名契約與明確登記 |
+| `tests-v2/`、`scripts/test-registry.mts` | 正式具名契約與明確登記 |
 | `scripts/` | 型別、架構、測試、建置及封裝工具 |
 | `docs/` | 現行指南、版本別報告及索引 |
 | `Release/v<version>/` | 已封裝快照，發布後不回寫 |
@@ -66,9 +66,9 @@ npm run package       # 重建 dist，寫入設定的 Release/v<version>/
 npm run verify        # 自動檢查及暫存封裝驗證
 ```
 
-從儲存庫根目錄執行命令。`typecheck` 與 verify 共用 [typecheck.mjs](../scripts/typecheck.mjs)，依序檢查正式來源與測試。[tsconfig.json](../tsconfig.json) 保留嚴格 DOM 環境並設 `types: []`；[tsconfig.tests.json](../tsconfig.tests.json) 加入 Node 型別、DOM 及使用者腳本全域宣告，載入本機 `.mjs` 工具的型別／宣告。`architecture` 檢查正式模組；獨立的 `npm test -- architecture` 測試架構檢查器自身測試情境。判斷這些檢查能證明哪些不變量前，先閱讀 [架構檢查範圍](ARCHITECTURE.md#dependency-direction)。
+從儲存庫根目錄執行命令。`typecheck` 與 verify 共用 [typecheck.mts](../scripts/typecheck.mts)，依序檢查正式來源、測試及維護工具。[tsconfig.json](../tsconfig.json) 保留嚴格 DOM 環境並設 `types: []`；[tsconfig.tests.json](../tsconfig.tests.json) 加入 Node 型別、DOM 及使用者腳本全域宣告。[tsconfig.tools.json](../tsconfig.tools.json) 使用 NodeNext、Node 型別、可移除型別語法與明確型別匯入，涵蓋全部 `.mts` 工具。工具由既有 Node 直接執行，不新增轉譯載入器；測試打包及匯入純度的暫存 `.mjs` 仍是生成產物。`architecture` 檢查正式模組；獨立的 `npm test -- architecture` 測試架構檢查器自身測試情境。判斷這些檢查能證明哪些不變量前，先閱讀 [架構檢查範圍](ARCHITECTURE.md#dependency-direction)。
 
-[verify.mjs](../scripts/verify.mjs) 檢查設定的 Node 版本、typecheck、來源架構、全部測試、兩次建置的輸出／資訊清單一致性、JavaScript 語法、指定舊版／Worker 標記清單、必要儲存標記及封裝 SHA-256。封裝步驟會再建置一次。命令寫入 `dist/`，於新的 `dist/verify-package-*` 目錄封裝，確認解析後位置及前綴再刪除該目錄；不寫入 `Release/v<version>/`。
+[verify.mts](../scripts/verify.mts) 檢查設定的 Node 版本、typecheck、來源架構、全部測試、兩次建置的輸出／資訊清單一致性、JavaScript 語法、指定舊版／Worker 標記清單、必要儲存標記及封裝 SHA-256。封裝步驟會再建置一次。命令寫入 `dist/`，於新的 `dist/verify-package-*` 目錄封裝，確認解析後位置及前綴再刪除該目錄；不寫入 `Release/v<version>/`。
 
 verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安全敏感變更或使用者明確要求時，另行執行安全差異掃描；不要求每版掃描。上一版通過報告不能作為新本機變更的證據。
 
@@ -81,7 +81,7 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 3. 可改變選路、量測或恢復的動作透過控制器方法提供。
 4. 瀏覽器差異留在適配器，GM 儲存透過 `platform/storage.ts`；UI 管理自己的 DOM 及呈現生命週期。
 5. 發出型別化事件，不讓診斷讀取控制器內部。
-6. 在 `tests-v2/suites/` 對應獨立套件，或不依賴瀏覽器的 `tests-v2/domain-boundaries.ts` 新增具名 `node:test` 契約。新套件登記於 `scripts/test-registry.mjs`。
+6. 在 `tests-v2/suites/` 對應獨立套件，或不依賴瀏覽器的 `tests-v2/domain-boundaries.ts` 新增具名 `node:test` 契約。新套件登記於 `scripts/test-registry.mts`。
 
 修改執行期邏輯前，先以失敗的領域層、控制器或適配器契約重現行為。親和主機變更只由 `RouteCoordinator` 執行，主動探測只由 `MeasurementController` 啟動，核心重載只由 `RecoveryController` 執行。等待後及儲存鎖回呼函式內保留生命週期檢查；只使用計時器介面不能避免舊工作提交。診斷消費型別化事件及快照。
 
@@ -89,7 +89,7 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 ## 測試套件與隔離
 
-[test-registry.mjs](../scripts/test-registry.mjs) 明確登記下列 19 個套件。支援工具、暫存測試情境及封存資料不透過萬用字元模式（glob）執行：
+[test-registry.mts](../scripts/test-registry.mts) 明確登記下列 19 個套件。支援工具、暫存測試情境及封存資料不透過萬用字元模式（glob）執行：
 
 | 套件選擇器 | 涵蓋範圍 |
 | --- | --- |
@@ -115,9 +115,9 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 使用 `npm test -- <selector>` 執行單一套件；執行器也接納 `suites/<selector>` 別名。`npm test -- architecture` 執行 AST 規則測試情境，`npm test -- imports` 執行匯入純度測試，`npm test -- tooling` 使用暫存測試情境驗證測試工具。完整 `npm test` 執行這三項與全部契約套件。
 
-[scripts/test.mjs](../scripts/test.mjs) 逐套件打包為帶內嵌原始碼對照的 `.mjs`，使用 `--enable-source-maps` 與 `--test-isolation=none` 在獨立 Node 子程序執行，每次只傳入一份套件檔案，案例依序執行。每案例及清理掛鉤預設期限為 5 秒；外層每套件硬期限為 60 秒。逾時或 stdout／stderr 合計超過 32 MiB 時，終止所屬程序並等待退出，再處理其他套件。正常完成不強制退出，未清理的週期計時器因而會在硬期限被判失敗。
+[scripts/test.mts](../scripts/test.mts) 逐套件打包為帶內嵌原始碼對照的 `.mjs`，使用 `--enable-source-maps` 與 `--test-isolation=none` 在獨立 Node 子程序執行，每次只傳入一份套件檔案，案例依序執行。每案例及清理掛鉤預設期限為 5 秒；外層每套件硬期限為 60 秒。逾時或 stdout／stderr 合計超過 32 MiB 時，終止所屬程序並等待退出，再處理其他套件。正常完成不強制退出，未清理的週期計時器因而會在硬期限被判失敗。
 
-終端採原生 `spec` 報告產生器；[JSON 報告產生器](../scripts/test-reporter.mjs) 從 Node 事件產生有版本的案例數、耗時、狀態及失敗名稱／位置／訊息／堆疊資訊。程式判定不解析人類可讀文字；退出碼、摘要與案例狀態必須一致。打包、測試、清理、逾時、超量輸出及摘要缺失／損壞均為失敗；收集其他套件後由 `runTests()` 拋出彙總錯誤。退出碼：通過為 `0`，上述失敗為 `1`，非法參數或名稱零命中為 `2`。CLI 在建立暫存目錄前驗證套件／參數／正規表示式；--list 不與套件選取或 --name 合用。完整執行禁止空套件、僅執行標記（`only`）、略過（`skipped`）、待實作（`todo`）、取消（`cancelled`）；`--name` 允許未命中案例不執行，但總選取至少須實際執行一個案例。結果隨已驗證父目錄及前綴的暫存目錄清理。
+終端採原生 `spec` 報告產生器；[JSON 報告產生器](../scripts/test-reporter.mts) 從 Node 事件產生有版本的案例數、耗時、狀態及失敗名稱／位置／訊息／堆疊資訊。程式判定不解析人類可讀文字；退出碼、摘要與案例狀態必須一致。打包、測試、清理、逾時、超量輸出及摘要缺失／損壞均為失敗；收集其他套件後由 `runTests()` 拋出彙總錯誤。退出碼：通過為 `0`，上述失敗為 `1`，非法參數或名稱零命中為 `2`。CLI 在建立暫存目錄前驗證套件／參數／正規表示式；--list 不與套件選取或 --name 合用。完整執行禁止空套件、僅執行標記（`only`）、略過（`skipped`）、待實作（`todo`）、取消（`cancelled`）；`--name` 允許未命中案例不執行，但總選取至少須實際執行一個案例。結果隨已驗證父目錄及前綴的暫存目錄清理。
 
 匯入純度涵蓋所有非入口、非宣告模組；停用未使用程式碼移除（tree shaking）並忽略打包最佳化註記，保留原全域陷阱及 `Date.now`／`Math.random`。陷阱在不載入 `node:test` 的獨立 Node 子程序執行，內層期限為 3 秒，由外層具名案例監督。它只檢查頂層匯入，不檢查後續方法呼叫。
 
@@ -146,7 +146,7 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 ## 建置輸出
 
-[build.mjs](../scripts/build.mjs) 將 `src-v2/entry.ts` 打包成單一瀏覽器 IIFE，以 Chrome 120 為目標，不分割程式碼；前置 [使用者腳本中繼資料](../src-v2/metadata.txt) 並填入設定版本。輸出為 `dist/BiliCDN_TW.user.js`、外部原始碼對照及 `dist/build-manifest.json`。資訊清單記錄建置選項、輸入雜湊及使用者腳本雜湊。建置不會上傳產物。v2 來源不得加入執行期依賴、遠端程式載入、Worker 攔截或歷史 v1 匯入。
+[build.mts](../scripts/build.mts) 將 `src-v2/entry.ts` 打包成單一瀏覽器 IIFE，以 Chrome 120 為目標，不分割程式碼；前置 [使用者腳本中繼資料](../src-v2/metadata.txt) 並填入設定版本。輸出為 `dist/BiliCDN_TW.user.js`、外部原始碼對照及 `dist/build-manifest.json`。資訊清單記錄建置選項、輸入雜湊及使用者腳本雜湊。建置不會上傳產物。v2 來源不得加入執行期依賴、遠端程式載入、Worker 攔截或歷史 v1 匯入。
 
 <a name="real-chrome-validation"></a>
 <a name="真實-chrome-驗證"></a>
@@ -164,7 +164,7 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 本方案沒有現成一鍵瀏覽器執行器；每輪需保存工具操作與重跑入口。工具不支援的必要步驟列具體阻塞，不能改用外部瀏覽器或繞過限制。詳見 [判定與時間上限](IAB_TESTING.md#verdict)、[證據目錄](IAB_TESTING.md#evidence)。
 
-[iab-event-collector.mjs](../scripts/iab-event-collector.mjs) 是注入 IAB CDP capability 的主機端事件收集工具，不建立瀏覽器連線或計時器，也不包含產品控制器。每個窗口使用新實例；跨呼叫狀態留在實例，完整登記暫停 ID 後才分類。呼叫端負責 finally 清理、停止條件及樣本隔離。正式契約歸入 `npm test -- tooling`；自有 loopback 隔離與安裝版結果分列，見 [第 5 輪](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md)。
+[iab-event-collector.mts](../scripts/iab-event-collector.mts) 是注入 IAB CDP capability 的主機端事件收集工具，不建立瀏覽器連線或計時器，也不包含產品控制器。每個窗口使用新實例；跨呼叫狀態留在實例，完整登記暫停 ID 後才分類。呼叫端負責 finally 清理、停止條件及樣本隔離。正式契約歸入 `npm test -- tooling`；自有 loopback 隔離與安裝版結果分列，見 [第 5 輪](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md)。
 
 <a name="p05-原生複製契約"></a>
 
@@ -186,7 +186,7 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 - `BUILD_MANIFEST_v<version>.json`
 - `SHA256SUMS_v<version>.txt`
 
-[package.mjs](../scripts/package.mjs) 覆寫這些具名檔案，不清空既有 Release 目錄。校驗值清單納入該目錄已存在的全部檔案，校驗值本身除外。封裝前檢查目標目錄；不得為了驗證已發布版本而執行此命令。暫存封裝驗證使用 `npm run verify`。
+[package.mts](../scripts/package.mts) 覆寫這些具名檔案，不清空既有 Release 目錄。校驗值清單納入該目錄已存在的全部檔案，校驗值本身除外。封裝前檢查目標目錄；不得為了驗證已發布版本而執行此命令。暫存封裝驗證使用 `npm run verify`。
 
 依 [AGENTS 發行規則](../AGENTS.md#release-rules)，本專案功能修復完成並通過必要自動及安全驗證後，預設自主提交、遞增修補版本、封裝、推送 main／標籤及發布 GitHub Release，不再等待使用者重複要求；當次明確限定只調查、文件整理或保留本機修改時遵守該範圍。完成後核對公開 latest 更新的版本、大小與 SHA-256。不得加入修補、CI/CD 或 GitHub Actions。本機封裝不等於發布。GitHub Release 附件只有使用者腳本，更新 URL 保持指向本儲存庫最新 Release。發布前執行 `npm run typecheck`、`npm run architecture`、`npm test`、`npm run verify` 及必要安全驗證。內建瀏覽器／Tampermonkey 驗收另行記錄，未執行的瀏覽器檢查不得寫成通過。
 

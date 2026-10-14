@@ -3,11 +3,11 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { parseArgs, selection, UsageError } from '../scripts/test-registry.mjs'
-import { executeSuites, validateReport, finishOutcome } from '../scripts/test.mjs'
+import { parseArgs, selection, UsageError } from '../scripts/test-registry.mts'
+import { executeSuites, validateReport, finishOutcome } from '../scripts/test.mts'
 import { BrowserScheduler } from '../src-v2/adapters/scheduler.ts'
-import { supervise } from '../scripts/test-process.mjs'
-import { inspectImportPurity } from '../scripts/import-purity.mjs'
+import { supervise } from '../scripts/test-process.mts'
+import { inspectImportPurity } from '../scripts/import-purity.mts'
 import { testScope } from './support/scope.ts'
 import { FakeClock } from './support/clock.ts'
 import { deferred } from './support/deferred.ts'
@@ -20,6 +20,29 @@ test('registry aliases, listing and CLI validation do not allocate or execute', 
   assert.equal(parseArgs(['application','--name','startup']).name, 'startup')
   for (const args of [['missing'],['--unknown'],['--name'],['--name','['],['adapters','state'],['--list','adapters'],['--list','--name','x']])
     assert.throws(() => parseArgs(args), UsageError)
+})
+
+test('registry order and native CLI entry preserve listing and usage exit codes', { timeout: 5000 }, async () => {
+  const entry = 'scripts/test.mts'
+  const listed = await supervise(process.execPath, [entry, '--list'])
+  assert.equal(listed.code, 0)
+  assert.equal(listed.stdout, selection().map(row => `${row.name}\t${row.source}\n`).join(''))
+  assert.equal(listed.stderr, '')
+  const invalid = await supervise(process.execPath, [entry, '--name', '['])
+  assert.equal(invalid.code, 2)
+  assert.match(invalid.stderr, /Invalid case expression/)
+  assert.match(invalid.stderr, /Usage: npm test/)
+})
+
+test('structured summary validation preserves suite records and empty filtered execution', { timeout: 5000 }, () => {
+  const location = { file: 'fixture.ts', line: 1, column: 1, durationMs: 0 }
+  const report = { version: 1, nodeVersion: process.versions.node, success: true, durationMs: 0,
+    counts: { tests: 1, passed: 0, failed: 0, cancelled: 0, skipped: 1, todo: 0, suites: 1, topLevel: 1 },
+    cases: [ { ...location, name: 'group', kind: 'suite', status: 'passed' },
+      { ...location, name: 'unmatched', kind: 'test', status: 'skipped' } ], failures: [] }
+  assert.equal(validateReport(report, { code: 0 }, { filtered: true, name: 'selected' }), 0)
+  assert.throws(() => validateReport(report, { code: 0 }), /incomplete/)
+  assert.throws(() => validateReport({ ...report, failures: [{ ...location, name: 'fake', message: '', stack: '' }] }, { code: 0 }), /disagree/)
 })
 
 test('assertion failure retains TS stack; later cases and suites still run', { timeout: 5000 }, async t => {

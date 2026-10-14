@@ -3,8 +3,8 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
 import { tmpdir } from 'node:os'
-import { withProjectAst } from './typescript-ast.mjs'
-import { inspectModule, validateGraph } from './architecture-rules.mjs'
+import { withProjectAst } from './typescript-ast.mts'
+import { inspectModule, validateGraph } from './architecture-rules.mts'
 
 function architectureFixture() {
   const scratch = mkdtempSync(join(tmpdir(), 'bilicdn-architecture-'))
@@ -36,8 +36,11 @@ function architectureFixture() {
     }
     const config = join(scratch, 'tsconfig.json')
     writeFileSync(config, JSON.stringify({ compilerOptions: { noLib: true, noEmit: true, allowImportingTsExtensions: true }, include: ['**/*.ts'] }))
-    return withProjectAst(config, program => new Map(Object.keys(fixtures).map(name =>
-      [name, inspectModule(program.getSourceFile(join(scratch, name)), scratch)])))
+    return withProjectAst(config, program => new Map(Object.keys(fixtures).map(name => {
+      const source=program.getSourceFile(join(scratch,name))
+      if(!source)throw Error(`Missing fixture: ${name}`)
+      return [name, inspectModule(source, scratch)]
+    })))
   } finally {
     const target = resolve(scratch), parent = resolve(tmpdir())
     if (!target.startsWith(`${parent}${sep}`) || !target.split(sep).at(-1)?.startsWith('bilicdn-architecture-')) throw Error('Unsafe scratch cleanup')
@@ -49,13 +52,13 @@ const rejected = ['domain/type-import.ts','domain/re-export.ts','domain/import-t
   'application/location.ts','application/timer.ts','application/reload.ts','adapters/affinity.ts','ui/storage.ts','ui/reset.ts']
 test('pure domain module is allowed', { timeout: 5000 }, () => {
   const modules = architectureFixture()
-  assert.doesNotThrow(() => validateGraph([modules.get('domain/pure.ts')]))
+  assert.doesNotThrow(() => validateGraph([modules.get('domain/pure.ts')!]))
 })
 for (const name of rejected) test(`reject forbidden architecture: ${name}`, { timeout: 5000 }, () => {
   const modules = architectureFixture()
-  assert.throws(() => validateGraph([modules.get(name)]), undefined, `Architecture rule failed to reject ${name}`)
+  assert.throws(() => validateGraph([modules.get(name)!]), `Architecture rule failed to reject ${name}`)
 })
 test('reject re-export cycle', { timeout: 5000 }, () => {
   const modules = architectureFixture()
-  assert.throws(() => validateGraph([modules.get('domain/cycle-a.ts'), modules.get('domain/cycle-b.ts')]), /Import cycle/)
+  assert.throws(() => validateGraph([modules.get('domain/cycle-a.ts')!, modules.get('domain/cycle-b.ts')!]), /Import cycle/)
 })

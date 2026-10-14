@@ -1,10 +1,11 @@
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { build } from './build.mjs'
-import { filesUnder, readJson, sha256 } from './lib.mjs'
+import { build } from './build.mts'
+import { filesUnder, readRelease, sha256 } from './lib.mts'
 
-export async function packageRelease({ directory } = {}) {
-  const config = readJson('release.json'), version = config.version
+export interface PackageOptions { directory?: string }
+export async function packageRelease({ directory }: PackageOptions = {}) {
+  const config = readRelease(), version = config.version
   const dir = directory ?? `Release/v${version}`
   const result = await build()
   mkdirSync(dir, { recursive: true })
@@ -19,7 +20,7 @@ export async function packageRelease({ directory } = {}) {
   return { dir, script }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/package.mjs')) {
+if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/package.mts')) {
   const result = await packageRelease()
   console.log(`Packaged ${result.script}; no historical patches were generated.`)
 }

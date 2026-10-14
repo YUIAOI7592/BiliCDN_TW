@@ -12,7 +12,7 @@
 
 v2.1.9 的 [功能與競態修復](FUNCTIONAL_FIX_REPORT.md) 納入下列所有權規則；來源與正式回歸案例可逐項對照。
 
-[architecture-rules.mjs](../scripts/architecture-rules.mjs) 允許的匯入關係如下：
+[architecture-rules.mts](../scripts/architecture-rules.mts) 允許的匯入關係如下：
 
 | 匯入層 | 允許的目標層 |
 | --- | --- |

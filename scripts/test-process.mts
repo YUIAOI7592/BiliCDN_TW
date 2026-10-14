@@ -1,15 +1,20 @@
 import { spawn } from 'node:child_process'
 import { performance } from 'node:perf_hooks'
+export interface ProcessResult {
+  code:number|null; signal:NodeJS.Signals|null; reason:'timeout'|'output-limit'|null; error:string|null
+  stdout:string; stderr:string; durationMs:number
+}
+export interface ProcessOptions { timeoutMs?:number; maxBytes?:number; cwd?:string }
 
 // The deadline covers startup, test execution, reporter writes and leaked handles.
-export function supervise(executable, args, { timeoutMs = 60_000, maxBytes = 32 * 1024 * 1024, cwd = process.cwd() } = {}) {
+export function supervise(executable:string, args:readonly string[], { timeoutMs = 60_000, maxBytes = 32 * 1024 * 1024, cwd = process.cwd() }:ProcessOptions = {}):Promise<ProcessResult> {
   return new Promise(resolve => {
-    const started = performance.now(), stdout = [], stderr = []
-    let bytes = 0, reason = null, error = null
+    const started = performance.now(), stdout:Buffer[] = [], stderr:Buffer[] = []
+    let bytes = 0, reason:ProcessResult['reason'] = null, error:string|null = null
     const child = spawn(executable, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
-    const stop = why => { if (!reason) { reason = why; child.kill('SIGKILL') } }
+    const stop = (why:NonNullable<ProcessResult['reason']>) => { if (!reason) { reason = why; child.kill('SIGKILL') } }
     const timer = setTimeout(() => stop('timeout'), timeoutMs)
-    const collect = destination => chunk => {
+    const collect = (destination:Buffer[]) => (chunk:Buffer) => {
       const remaining = Math.max(0, maxBytes - bytes)
       if (remaining) destination.push(chunk.subarray(0, remaining))
       bytes += chunk.length

@@ -170,3 +170,9 @@ v2.1.22 實際安裝的完整本體及唯一實例重新核對；可見指標入
 解除故障後繼續以 Fetch 攔截逐筆放行，會將工具讀取間隔變成額外請求延遲；第一個 2 倍窗口的恢復耗時／成敗因此作廢。單次修正改為解除時立即 Fetch.enable 空 patterns，後續 Fetch.requestPaused=0。但該窗最終 Network truncated=true，不能宣稱完整網路時序通過；獨立頁面採樣 dropped=false，只保存播放與位置的局部證據。
 
 安裝觀察引出的尋位位置缺陷，在私有隔離案例使用真正 PlayerAdapter／RecoveryController 重現：1 fail／2 pass，獨立 tsc 通過。Node 26 的 strip-only 不支援 parameter property，直接執行錯誤另存；有效入口先用專案 esbuild 編譯再 node:test，不把啟動失敗當功能重現。沒有改正式工具、测试登記或執行期。兩個正常對照分別保護未重設位置與真正 seek 到 0；詳見 [完整報告](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)。
+
+## 2026-10-14：維護工具 TypeScript 遷移
+
+16 個維護工具改為原生 ESM .mts，由 Node 26.8.1 直接執行；工具專用型別專案使用 NodeNext、erasableSyntaxOnly 與 verbatimModuleSyntax。刪除測試執行器的舊手寫宣告，正式來源、測試與工具分別型別檢查；生成的測試／匯入純度 .mjs 仍保留。
+
+遷移前先補兩個 CLI／結構化報告契約，工具套件 32／32、完整 19 套件 857／857、型別、44 個執行期模組架構及 verify 通過，沒有 fail／skip／todo／cancelled。期限、子程序隔離、退出碼、報告版本與清理維持。使用者腳本保持 345,540 bytes，SHA-256 9a58836ab79b56ca8b4a4741a3236011df19aade872baea19d8e56066cef7e3d，與 v2.1.24 相同。本階段沒有新版發布或瀏覽器驗收。私有驗證輸出 .work/modularization/tools-verify.log。

@@ -2,6 +2,7 @@ import * as esbuild from 'esbuild'
 import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { readRelease } from './lib.mts'
 
 export const buildOptions = Object.freeze({
   bundle: true,
@@ -16,12 +17,13 @@ export const buildOptions = Object.freeze({
   legalComments: 'inline',
   sourcemap: 'external',
   write: false,
-})
+} satisfies esbuild.BuildOptions)
 
-const hash = value => createHash('sha256').update(value).digest('hex')
+const hash = (value: Parameters<ReturnType<typeof createHash>['update']>[0]) => createHash('sha256').update(value).digest('hex')
+export interface BuildOptions { write?: boolean }
 
-export async function build({ write = true } = {}) {
-  const release = JSON.parse(readFileSync('release.json', 'utf8'))
+export async function build({ write = true }: BuildOptions = {}) {
+  const release = readRelease()
   if (esbuild.version !== release.esbuildVersion) throw Error(`Expected esbuild ${release.esbuildVersion}; found ${esbuild.version}`)
   const result = await esbuild.build({ ...buildOptions,
     stdin: { contents: "import '././src-v2/entry.ts'", resolveDir: process.cwd(), sourcefile: 'v2-entry.ts' },
@@ -32,7 +34,7 @@ export async function build({ write = true } = {}) {
   if (!codeFile || !mapFile) throw Error('esbuild did not return JavaScript and source map outputs')
   const output = `${metadata.trimEnd()}\n\n${codeFile.text}`
   const inputs = Object.keys(result.metafile.inputs).filter(path => path.startsWith('src-v2/')).sort()
-  for (const path of ['scripts/build.mjs', 'package.json', 'package-lock.json', 'release.json', 'tsconfig.json']) if (!inputs.includes(path)) inputs.push(path)
+  for (const path of ['scripts/build.mts', 'scripts/lib.mts', 'package.json', 'package-lock.json', 'release.json', 'tsconfig.json']) if (!inputs.includes(path)) inputs.push(path)
   inputs.sort()
   const manifest = {
     version: release.version,
@@ -50,7 +52,7 @@ export async function build({ write = true } = {}) {
   return { output, manifest }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/build.mjs')) {
+if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/build.mts')) {
   const result = await build()
   console.log(`Built BiliCDN_TW v${result.manifest.version}: ${result.manifest.userscriptSha256}`)
 }

@@ -1,12 +1,14 @@
-export const suites = Object.freeze([
-  { name: 'architecture', source: 'scripts/architecture-tests.mjs' },
+export interface TestSuite { readonly name:string; readonly source:string }
+export interface CliOptions { filter:string; name:string|undefined; list:boolean }
+export const suites:readonly TestSuite[] = Object.freeze([
+  { name: 'architecture', source: 'scripts/architecture-tests.mts' },
   { name: 'imports', source: 'tests-v2/imports.ts' },
   ...['domain-boundaries', 'domain', 'state', 'application', 'diagnostics', 'adapters', 'native-routing',
     'native-transport', 'orchestration', 'adapter-boundaries', 'measurement-state', 'progressive-playurl',
     'progressive-routing', 'progressive-transport', 'playurl-summary', 'control-center'].map(name => ({ name,
     source: name === 'domain-boundaries' ? `tests-v2/${name}.ts` : `tests-v2/suites/${name}.ts` })),
   { name: 'tooling', source: 'tests-v2/tooling.ts' },
-].map(Object.freeze))
+].map(row=>Object.freeze(row)))
 
 export class UsageError extends Error { exitCode = 2 }
 export function selection(filter = '') {
@@ -15,12 +17,12 @@ export function selection(filter = '') {
   if (!selected.length) throw new UsageError(`Unknown test suite: ${filter}`)
   return selected
 }
-export function parseArgs(args) {
+export function parseArgs(args:readonly string[]):CliOptions {
   let filter = '', name = '', list = false, hasFilter = false, hasName = false
   for (let i = 0; i < args.length; i++) {
-    const value = args[i]
+    const value = args[i]!
     if (value === '--list' && !list) list = true
-    else if (value === '--name' && !hasName && args[i + 1] !== undefined) { name = args[++i]; hasName = true }
+    else if (value === '--name' && !hasName && args[i + 1] !== undefined) { name = args[++i]!; hasName = true }
     else if (!value.startsWith('-') && !hasFilter) { filter = value; hasFilter = true }
     else throw new UsageError(`Unknown or incomplete argument: ${value}`)
   }

@@ -2,12 +2,12 @@ import * as esbuild from 'esbuild'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 import { tmpdir } from 'node:os'
-import { filesUnder } from './lib.mjs'
-import { supervise } from './test-process.mjs'
+import { filesUnder } from './lib.mts'
+import { supervise } from './test-process.mts'
 export const purityTraps = ['window','document','unsafeWindow','location','history','navigator','performance','fetch',
   'XMLHttpRequest','Worker','setTimeout','setInterval','clearTimeout','clearInterval','queueMicrotask','GM_getValue',
   'GM_setValue','GM_deleteValue','GM_addValueChangeListener','GM_removeValueChangeListener','GM_registerMenuCommand']
-export async function inspectImportPurity(sources = filesUnder('src-v2').filter(path => path.endsWith('.ts') && !path.endsWith('entry.ts') && !path.endsWith('.d.ts'))) {
+export async function inspectImportPurity(sources:readonly string[] = filesUnder('src-v2').filter(path => path.endsWith('.ts') && !path.endsWith('entry.ts') && !path.endsWith('.d.ts'))) {
   const scratch = mkdtempSync(join(tmpdir(), 'bilicdn-purity-'))
   try {
     await esbuild.build({ stdin: { contents: sources.map(path => `import ${JSON.stringify(resolve(path))}`).join('\n'), resolveDir: process.cwd() },

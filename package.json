@@ -8,12 +8,12 @@
     "node": ">=26.8.1"
   },
   "scripts": {
-    "typecheck": "node scripts/typecheck.mjs",
-    "architecture": "node scripts/architecture-check.mjs",
-    "build": "node scripts/build.mjs",
-    "test": "node scripts/test.mjs",
-    "verify": "node scripts/verify.mjs",
-    "package": "node scripts/package.mjs"
+    "typecheck": "node scripts/typecheck.mts",
+    "architecture": "node scripts/architecture-check.mts",
+    "build": "node scripts/build.mts",
+    "test": "node scripts/test.mts",
+    "verify": "node scripts/verify.mts",
+    "package": "node scripts/package.mts"
   },
   "devDependencies": {
     "@types/node": "26.6.4",

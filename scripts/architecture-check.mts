@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
-import { filesUnder } from './lib.mjs'
-import { withProjectAst } from './typescript-ast.mjs'
-import { inspectModule, validateGraph } from './architecture-rules.mjs'
+import { filesUnder } from './lib.mts'
+import { withProjectAst } from './typescript-ast.mts'
+import { inspectModule, validateGraph } from './architecture-rules.mts'
 
 const root = resolve('src-v2')
 const files = filesUnder(root).filter(file => file.endsWith('.ts') && !file.endsWith('.d.ts'))

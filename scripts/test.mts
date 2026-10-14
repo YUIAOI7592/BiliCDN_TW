@@ -5,32 +5,58 @@ import { tmpdir } from 'node:os'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
-import { selection, parseArgs, UsageError } from './test-registry.mjs'
-import { supervise } from './test-process.mjs'
-import { validateTestDefinitions } from './test-contracts.mjs'
+import { selection, parseArgs, UsageError } from './test-registry.mts'
+import { supervise } from './test-process.mts'
+import { validateTestDefinitions } from './test-contracts.mts'
+import { isRecord, errorMessage } from './lib.mts'
+import type { ProcessResult } from './test-process.mts'
+import type { TestSuite } from './test-registry.mts'
+export type { ProcessResult } from './test-process.mts'
+export type CaseStatus = 'passed'|'failed'|'cancelled'|'skipped'|'todo'
+export interface ReportLocation { file:string|null; line:number|null; column:number|null }
+export interface CaseRecord extends ReportLocation { name:string; status:CaseStatus; kind:'test'|'suite'; durationMs:number }
+export interface FailureRecord extends ReportLocation { name:string; message:string; stack:string }
+export interface TestCounts { tests:number; passed:number; failed:number; cancelled:number; skipped:number; todo:number; suites:number; topLevel:number }
+export interface TestReport { version:number; nodeVersion:string; durationMs:number; success:boolean; counts:TestCounts; cases:CaseRecord[]; failures:FailureRecord[] }
+export interface SuiteResult { suite:string; phase:'build'|'execute'|'report'; success:boolean; process?:ProcessResult; report?:TestReport; executed?:number; error?:string }
+export interface Outcome { results:SuiteResult[]; cleanupError:string|undefined; durationMs:number }
+export interface RunnerOptions { name?:string|undefined; timeoutMs?:number; maxBytes?:number; executable?:string; emit?:boolean }
+export interface ValidationOptions { filtered?:boolean; name?:string|undefined }
 const require = createRequire(import.meta.url)
 
-export function validateReport(report, processResult, { filtered = false, name } = {}) {
-  if (report?.version !== 1 || report.nodeVersion !== process.versions.node || typeof report.success !== 'boolean'
-    || !Number.isFinite(report.durationMs) || report.durationMs < 0 || !Array.isArray(report.cases) || !Array.isArray(report.failures))
+const countKeys = ['tests', 'passed', 'failed', 'cancelled', 'skipped', 'todo', 'suites', 'topLevel'] as const
+const statusKeys = ['passed','failed','cancelled','skipped','todo'] as const
+function validCounts(value:unknown):value is TestCounts {
+  return isRecord(value)&&countKeys.every(key=>typeof value[key]==='number'&&Number.isSafeInteger(value[key])&&value[key]>=0)
+}
+function validLocation(row:Record<string,unknown>):boolean {
+  return (typeof row.file === 'string' || row.file === null)
+    && (row.line === null || (typeof row.line==='number'&&Number.isSafeInteger(row.line) && row.line > 0))
+    && (row.column === null || (typeof row.column==='number'&&Number.isSafeInteger(row.column) && row.column > 0))
+}
+function validCase(value:unknown):value is CaseRecord {
+  return isRecord(value)&&typeof value.name==='string'&&(value.kind==='test'||value.kind==='suite')
+    &&statusKeys.some(status=>value.status===status)&&validLocation(value)
+    &&typeof value.durationMs==='number'&&Number.isFinite(value.durationMs)&&value.durationMs>=0
+}
+function validFailure(value:unknown):value is FailureRecord {
+  return isRecord(value)&&typeof value.name==='string'&&validLocation(value)&&typeof value.message==='string'&&typeof value.stack==='string'
+}
+function assertReportShape(report:unknown):asserts report is TestReport {
+  if (!isRecord(report)||report.version !== 1 || report.nodeVersion !== process.versions.node || typeof report.success !== 'boolean'
+    || typeof report.durationMs!=='number'||!Number.isFinite(report.durationMs) || report.durationMs < 0 || !Array.isArray(report.cases) || !Array.isArray(report.failures))
     throw Error('Invalid structured test summary')
+  if(!validCounts(report.counts))throw Error('Invalid case counts')
+  if(!report.cases.every(validCase))throw Error('Invalid case records')
+  if(!report.failures.every(validFailure))throw Error('Invalid failure records')
+}
+export function validateReport(report:unknown, processResult:Pick<ProcessResult,'code'>, { filtered = false, name }:ValidationOptions = {}):number {
+  assertReportShape(report)
   const counts = report.counts
-  for (const key of ['tests', 'passed', 'failed', 'cancelled', 'skipped', 'todo', 'suites', 'topLevel']) {
-    if (!Number.isSafeInteger(counts?.[key]) || counts[key] < 0) throw Error('Invalid case counts')
-  }
-  const location = row => (typeof row.file === 'string' || row.file === null)
-    && (row.line === null || (Number.isSafeInteger(row.line) && row.line > 0))
-    && (row.column === null || (Number.isSafeInteger(row.column) && row.column > 0))
-  if (!report.cases.every(row => typeof row.name === 'string' && ['test','suite'].includes(row.kind)
-    && ['passed','failed','cancelled','skipped','todo'].includes(row.status) && location(row)
-    && Number.isFinite(row.durationMs) && row.durationMs >= 0))
-    throw Error('Invalid case records')
-  if (!report.failures.every(row => typeof row.name === 'string' && location(row)
-    && typeof row.message === 'string' && typeof row.stack === 'string')) throw Error('Invalid failure records')
   if (counts.tests !== counts.passed + counts.failed + counts.cancelled + counts.skipped + counts.todo)
     throw Error('Inconsistent case counts')
   const cases = report.cases.filter(row => row.kind !== 'suite')
-  for (const key of ['passed','failed','cancelled','skipped','todo']) {
+  for (const key of statusKeys) {
     if (cases.filter(row => row.status === key).length !== counts[key]) throw Error('Case records and summary disagree')
   }
   if (report.failures.length !== report.cases.filter(row => ['failed','cancelled'].includes(row.status)).length)
@@ -47,15 +73,15 @@ export function validateReport(report, processResult, { filtered = false, name }
 }
 
 // Exported for small synthetic-fixture tests; never recursively runs the registry.
-export async function executeSuites(selected, { name, timeoutMs = 60_000, maxBytes = 32 * 1024 * 1024,
-  executable = process.execPath, emit = true } = {}) {
+export async function executeSuites(selected:readonly TestSuite[], { name, timeoutMs = 60_000, maxBytes = 32 * 1024 * 1024,
+  executable = process.execPath, emit = true }:RunnerOptions = {}):Promise<Outcome> {
   const scratch = mkdtempSync(join(tmpdir(), 'bilicdn-v2-tests-'))
-  const results = [], started = performance.now()
-  let cleanupError
+  const results:SuiteResult[] = [], started = performance.now()
+  let cleanupError:string|undefined
   try {
     for (const [index, suite] of selected.entries()) {
       const outfile = join(scratch, `${index}.mjs`), summaryFile = join(scratch, `${index}.json`)
-      const result = { suite: suite.name, phase: 'build', success: false }
+      const result:SuiteResult = { suite: suite.name, phase: 'build', success: false }
       try {
         validateTestDefinitions(suite.source, scratch)
         await esbuild.build({ entryPoints: [suite.source], outfile, bundle: true, platform: 'node', format: 'esm',
@@ -67,7 +93,7 @@ export async function executeSuites(selected, { name, timeoutMs = 60_000, maxByt
         result.phase = 'execute'
         const args = ['--enable-source-maps', '--test', '--test-isolation=none', '--test-concurrency=1', '--test-timeout=5000',
           '--test-reporter=spec', '--test-reporter-destination=stdout',
-          `--test-reporter=${pathToFileURL(resolve('scripts/test-reporter.mjs')).href}`, `--test-reporter-destination=${summaryFile}`]
+          `--test-reporter=${pathToFileURL(resolve('scripts/test-reporter.mts')).href}`, `--test-reporter-destination=${summaryFile}`]
         if (name !== undefined) args.push(`--test-name-pattern=${name}`)
         args.push(outfile)
         result.process = await supervise(executable, args, { timeoutMs, maxBytes })
@@ -75,11 +101,13 @@ export async function executeSuites(selected, { name, timeoutMs = 60_000, maxByt
         if (result.process.error || result.process.reason || result.process.signal)
           throw Error(result.process.error ?? `Suite stopped: ${result.process.reason ?? result.process.signal}`)
         result.phase = 'report'
-        result.report = JSON.parse(readFileSync(summaryFile, 'utf8'))
+        const report:unknown = JSON.parse(readFileSync(summaryFile, 'utf8'))
+        assertReportShape(report)
+        result.report = report
         result.executed = validateReport(result.report, result.process, { filtered: name !== undefined, name })
         result.success = true
       } catch (error) {
-        result.error = error.message
+        result.error = errorMessage(error)
         if (emit) process.stderr.write(`[${suite.name}] ${result.phase}: ${result.error}\n`)
       }
       results.push(result)
@@ -90,26 +118,25 @@ export async function executeSuites(selected, { name, timeoutMs = 60_000, maxByt
       if (!absolute.startsWith(`${parent}${sep}`) || !absolute.split(sep).at(-1)?.startsWith('bilicdn-v2-tests-'))
         throw Error('Refusing unsafe cleanup')
       rmSync(absolute, { recursive: true })
-    } catch (error) { cleanupError = error.message }
+    } catch (error) { cleanupError = errorMessage(error) }
   }
   return { results, cleanupError, durationMs: performance.now() - started }
 }
 
-export function finishOutcome(outcome) {
+export function finishOutcome(outcome:Outcome):number {
   const failures = outcome.results.filter(result => !result.success)
   if (failures.length || outcome.cleanupError) {
     const causes = failures.map(result => Error(`${result.suite} (${result.phase}): ${result.error}`))
     if (outcome.cleanupError) causes.push(Error(`Scratch cleanup: ${outcome.cleanupError}`))
-    const error = new AggregateError(causes, 'Test suites failed')
-    error.outcome = outcome
+    const error = Object.assign(new AggregateError(causes, 'Test suites failed'), {outcome})
     throw error
   }
-  const executed = outcome.results.reduce((count, result) => count + result.executed, 0)
+  const executed = outcome.results.reduce((count, result) => count + (result.executed??0), 0)
   if (!executed) throw new UsageError('No cases matched --name')
   return executed
 }
 
-export async function runTests(filter = '', options = {}) {
+export async function runTests(filter = '', options:RunnerOptions = {}):Promise<Outcome> {
   const selected = selection(filter) // Validate before allocating a scratch directory.
   if (options.name !== undefined) { try { new RegExp(options.name) } catch { throw new UsageError('Invalid case expression') } }
   const outcome = await executeSuites(selected, options)
@@ -118,14 +145,14 @@ export async function runTests(filter = '', options = {}) {
   return outcome
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/test.mjs')) {
+if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/test.mts')) {
   try {
     const options = parseArgs(process.argv.slice(2))
     if (options.list) for (const row of selection()) console.log(`${row.name}\t${row.source}`)
     else await runTests(options.filter, options)
   } catch (error) {
-    console.error(error.message)
-    if (error instanceof AggregateError) for (const cause of error.errors) console.error(cause.message)
+    console.error(errorMessage(error))
+    if (error instanceof AggregateError) for (const cause of error.errors) console.error(errorMessage(cause))
     if (error instanceof UsageError) console.error('Usage: npm test -- [suite] [--name regex] | --list')
     process.exitCode = error instanceof UsageError ? 2 : 1
   }
