@@ -13,7 +13,7 @@ export class VisibilityAdapter {
   install(): void {
     if (this.#restores.length) return
     const hidden = Object.getOwnPropertyDescriptor(Document.prototype, 'hidden')
-    const state = Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState')
+    Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState')
     this.#nativeHidden = () => {
       try {
         return hidden?.get

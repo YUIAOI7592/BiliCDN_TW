@@ -23,7 +23,7 @@ import { measurementRoutes } from '../support/controllers.ts'
 async function fixture(
   t: TestContext,
   scenario: number,
-  parameter = 0,
+  _parameter = 0,
 ): Promise<() => Promise<void>> {
   const scope = testScope(t)
   const now = 2_000_000_000_000
@@ -471,7 +471,7 @@ async function fixture(
       const pcdnVault = new SignedRouteVault()
       pcdnVault.reset(pcdnState.generation, pcdnState.epoch)
       const pcdnRestrictions = scope.own(new RestrictionStore(pcdnStorage, () => now))
-      const pcdnRoutes = new RouteCoordinator(
+      new RouteCoordinator(
         { now: () => now },
         pcdnSession,
         pcdnSettings,
@@ -761,7 +761,7 @@ async function fixture(
       const timeoutClock = scope.own(new FakeClock())
       let hangingReads = 0,
         timeoutCommits = 0
-      const beforeTimeout = probeRoutes
+      probeRoutes
         .startupOptions(probeFirst)
         ?.candidates.map((candidate) => candidate.host)
         .join('|')
@@ -801,9 +801,9 @@ async function fixture(
           timeoutClock,
         ),
       )
-      let timeoutSettled = false
-      const timed = timedProbe.prepareStartup(probeFirst).then(() => {
-        timeoutSettled = true
+      false
+      timedProbe.prepareStartup(probeFirst).then(() => {
+        true
       })
       assert.strictEqual(hangingReads, 3, 'all three startup probes begin in parallel')
     }

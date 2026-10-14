@@ -176,3 +176,8 @@ v2.1.22 實際安裝的完整本體及唯一實例重新核對；可見指標入
 16 個維護工具改為原生 ESM .mts，由 Node 26.8.1 直接執行；工具專用型別專案使用 NodeNext、erasableSyntaxOnly 與 verbatimModuleSyntax。刪除測試執行器的舊手寫宣告，正式來源、測試與工具分別型別檢查；生成的測試／匯入純度 .mjs 仍保留。
 
 遷移前先補兩個 CLI／結構化報告契約，工具套件 32／32、完整 19 套件 857／857、型別、44 個執行期模組架構及 verify 通過，沒有 fail／skip／todo／cancelled。期限、子程序隔離、退出碼、報告版本與清理維持。使用者腳本保持 345,540 bytes，SHA-256 9a58836ab79b56ca8b4a4741a3236011df19aade872baea19d8e56066cef7e3d，與 v2.1.24 相同。本階段沒有新版發布或瀏覽器驗收。私有驗證輸出 .work/modularization/tools-verify.log。
+
+
+## 2026-10-14：格式與靜態規則基準
+
+格式整理獨立提交，保留嵌入測試內容。Prettier 3.9.10、唯讀格式檢查、未使用宣告／參數與明確型別匯入納入維護；移除多餘綁定仍保留初始化副作用及順序。原生 Node 工具新增穩定格式與受保護樹不寫入兩個契約；工具 34／34、完整 19 套件 859／859、型別、44 個執行期模組架構及 verify 通過。格式 check 不寫入，生成 JS／Release／封存／證據不改寫。私有輸出 .work/modularization/standards-verify.log；本階段沒有新發布或瀏覽器結果。

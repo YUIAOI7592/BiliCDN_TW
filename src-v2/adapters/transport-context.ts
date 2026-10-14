@@ -1,7 +1,6 @@
 import type {
   LastMediaRequest,
   TransportStats,
-  TransportSnapshot,
   PlayurlTransportSummary,
 } from '../domain/transport-model.ts'
 import type { PlayurlRejection, PlayurlTransformResult } from '../domain/playurl-model.ts'
@@ -282,8 +281,8 @@ export class TransportContext {
   observation(
     request: RequestContext,
     applied: AppliedRouteDecision,
-    originalUrl: string,
-    targetUrl: string,
+    _originalUrl: string,
+    _targetUrl: string,
     finalUrl: string,
     status: number,
     bytes: number,

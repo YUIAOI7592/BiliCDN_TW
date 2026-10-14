@@ -23,9 +23,9 @@ async function fixture(
   scenario: number,
   parameter = 0,
 ): Promise<() => Promise<void>> {
-  const scope = testScope(t)
+  testScope(t)
   const now = 2_000_000_000_000
-  const clock = { now: () => now }
+  ;({ now: () => now })
   const session = new SessionStore()
   const routeReadModel = { planCount: 41, recentPlans: [] }
   const recorder = new DiagnosticRecorder(

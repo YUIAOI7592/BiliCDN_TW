@@ -227,8 +227,10 @@ export async function executeSuites(
             {
               name: 'tool-packages',
               setup(build) {
-                build.onResolve({ filter: /^(esbuild|typescript)(\/|$)/ }, (args) => ({
-                  path: pathToFileURL(require.resolve(args.path)).href,
+                build.onResolve({ filter: /^(esbuild|typescript|prettier)(\/|$)/ }, (args) => ({
+                  path: args.path.startsWith('prettier')
+                    ? import.meta.resolve(args.path)
+                    : pathToFileURL(require.resolve(args.path)).href,
                   external: true,
                 }))
               },

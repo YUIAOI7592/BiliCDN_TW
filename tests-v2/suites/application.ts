@@ -142,7 +142,7 @@ async function fixture(
   )
   const opaqueAudioUrl =
     'https://upos-hz-mirrorakam.akamaized.net/opaque/audio-segment?signature=private'
-  const opaqueAudioRep = liveVault.register({
+  liveVault.register({
     generation: state.generation,
     epoch: state.epoch,
     kind: 'audio',
@@ -245,11 +245,7 @@ async function fixture(
       }
     }
   if (liveRep) {
-    const plan = coordinator.plan(
-      liveRep,
-      { kind: 'video', requiredMbps: 7.5, highDemand: false },
-      'startup',
-    )
+    coordinator.plan(liveRep, { kind: 'video', requiredMbps: 7.5, highDemand: false }, 'startup')
     const startupRoot = liveVault.rootUrl(liveRep) ?? ''
     const catalogChoice = coordinator
       .startupOptions(startupRoot)
@@ -274,7 +270,7 @@ async function fixture(
       completedAt: now,
       outcome: 'failure',
     })
-    const restored = coordinator.apply(applied.url ?? '')
+    coordinator.apply(applied.url ?? '')
     await restrictions.add({
       host: 'upos-sz-mirrorali.bilivideo.com',
       type: 'black',
@@ -282,7 +278,7 @@ async function fixture(
       reason: 'cold-start-test',
       expireAt: now + 60_000,
     })
-    const restrictedFallback = coordinator.apply(startupRoot)
+    coordinator.apply(startupRoot)
     await restrictions.remove('upos-sz-mirrorali.bilivideo.com', 'black')
   }
   for (let index = 0; index < 40; index++) {
@@ -729,7 +725,7 @@ async function fixture(
       urls: [exactCatalogBackup],
       source: 'trusted-api',
     })
-    const signedBackup = stallRoutes
+    stallRoutes
       .startupOptions(startupRoot)
       ?.candidates.find((candidate) => candidate.host === TRUSTED_CATALOG[0])
     const incompatibleCatalog = stallRoutes
@@ -746,15 +742,13 @@ async function fixture(
         ttfbMs: 10,
         failureKind: null,
       })
-      const laterChoice = stallRoutes.plan(
+      stallRoutes.plan(
         startupRep,
         { kind: 'video', requiredMbps: 8, highDemand: false },
         'new-epoch',
       )
     }
-    const unmatchedStartup = stallRoutes.apply(
-      'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/startup/unmatched.m4s?k=1',
-    )
+    stallRoutes.apply('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/startup/unmatched.m4s?k=1')
     const initial = stallRoutes.apply(startupRoot)
     const fallback = stallRoutes.recoverStartup(
       startupRep,
@@ -767,15 +761,11 @@ async function fixture(
       { kind: 'video', requiredMbps: 8, highDemand: false },
       false,
     )
-    const secondFairProbe = stallRoutes.challenge(
-      startupRep,
-      { kind: 'video', requiredMbps: 8, highDemand: false },
-      false,
-    )
+    stallRoutes.challenge(startupRep, { kind: 'video', requiredMbps: 8, highDemand: false }, false)
     if (firstFairProbe) {
       await stallRoutes.recordChallenge(firstFairProbe, 0, 100, 50, 'failure', null)
     }
-    const plannedFallback = stallRoutes.snapshot().fallback.video
+    stallRoutes.snapshot().fallback.video
     const nextFallback = stallRoutes.apply(startupRoot)
     const fallbackRequest = {
       routePolicyRevision: stallRoutes.policyRevision(),
@@ -831,7 +821,7 @@ async function fixture(
         reason: 'no-route',
         expireAt: stallNow + 60_000,
       })
-    const noAlternate = stallRoutes.recover(
+    stallRoutes.recover(
       startupRep,
       { kind: 'video', requiredMbps: 8, highDemand: false },
       'verified-failure',
@@ -948,7 +938,7 @@ async function fixture(
       outcome: 'failure',
       responseUrlMatchesRequest: true,
     })
-    const after403 = incompatibleRoutes.apply(incompatibleRoot)
+    incompatibleRoutes.apply(incompatibleRoot)
   }
   const deadStartup: VideoSnapshot = {
     ...playerSnapshot,
@@ -1434,12 +1424,11 @@ async function fixture(
       )
     }
 
-  let challengeRedirectSetting: RequestRedirect | undefined
   const redirectChallengeFetch = async (
     _input: RequestInfo | URL,
     init?: RequestInit,
   ): Promise<Response> => {
-    challengeRedirectSetting = init?.redirect
+    init?.redirect
     if (init?.redirect === 'error') throw new TypeError('redirect refused')
     return new Response(new Uint8Array(70 * 1024), { status: 206 })
   }
@@ -1768,14 +1757,14 @@ async function fixture(
       }
     }
   if (preflightOptions) {
-    let preflightFetches = 0,
-      committedHost: string | null = null,
-      startupSamples = 0
+    let preflightFetches = 0
+    null
+    let startupSamples = 0
     const preflightRoutes = {
       isCatalogOnly: () => false,
       startupOptions: () => preflightOptions,
       commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
-        committedHost = candidate?.host ?? null
+        candidate?.host ?? null
         return candidate ? { host: candidate.host } : null
       },
       recordStartupSuccess: async () => {
@@ -1805,18 +1794,18 @@ async function fixture(
     )
     const abortedStartup = new AbortController()
     abortedStartup.abort()
-    let abortRejected = false
+    false
     try {
       await preflight.prepareStartup(startupRoot, abortedStartup.signal)
     } catch {
-      abortRejected = true
+      true
     }
     await preflight.prepareStartup(startupRoot)
     await preflight.prepareStartup(startupRoot)
     const timeoutRoutes = {
       ...preflightRoutes,
       commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
-        committedHost = candidate?.host ?? null
+        candidate?.host ?? null
         return candidate ? { host: candidate.host } : null
       },
     }
@@ -1885,8 +1874,7 @@ async function fixture(
       ),
     )
     await cachedPreflight.prepareStartup(startupRoot)
-    let startupRedirectMode: RequestRedirect | undefined,
-      redirectStartupSamples = 0
+    let redirectStartupSamples = 0
     const redirectStartup = scope.own(
       new MeasurementController(
         measurementRoutes({
@@ -1898,7 +1886,7 @@ async function fixture(
         new MeasurementMetaStore(new FakeStorage(), () => now),
         new RangeProbeAdapter(
           (async (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-            startupRedirectMode = init?.redirect
+            init?.redirect
             if (init?.redirect === 'error') throw new TypeError('redirect refused')
             return new Response(new Uint8Array(70 * 1024), { status: 206 })
           }) as typeof fetch,
@@ -2093,13 +2081,13 @@ async function fixture(
       )
     }
 
-  let savedRateRestored = 0,
-    rateRecoveryNow = now
+  0
+  let rateRecoveryNow = now
   const customRatePlayer: PlayerPort = {
     ...recoveryPlayer,
     playbackRate: () => 1.5,
     setRate: (value) => {
-      savedRateRestored = value
+      value
     },
   }
   const customRateRecovery = scope.own(
@@ -2157,12 +2145,8 @@ async function fixture(
       reason: 'host-lock-test',
       expireAt: now + 60_000,
     })
-    const deadRootFallback = coordinator.apply(root)
-    const lockedPlan = coordinator.plan(
-      liveRep,
-      { kind: 'video', requiredMbps: 3, highDemand: false },
-      'startup',
-    )
+    coordinator.apply(root)
+    coordinator.plan(liveRep, { kind: 'video', requiredMbps: 3, highDemand: false }, 'startup')
   }
   let shortResumeNow = now
   const shortResume = scope.own(new RecoveryController(recoveryPlayer, () => shortResumeNow))

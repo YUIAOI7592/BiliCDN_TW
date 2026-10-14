@@ -25,9 +25,9 @@ import { testScope } from './support/scope.ts'
 async function fixture(
   t: TestContext,
   scenario: number,
-  parameter = 0,
+  _parameter = 0,
 ): Promise<() => Promise<void>> {
-  const scope = testScope(t)
+  testScope(t)
 
   if (scenario === 0)
     return async () => {
@@ -62,9 +62,9 @@ async function fixture(
         false,
         'relative URL without base is not admitted',
       )
-      const primary = TRUSTED_CATALOG[0]!,
-        next = TRUSTED_CATALOG[1]!,
-        unavailable = [...DEFAULT_UNAVAILABLE_HOSTS][0]!
+      const primary = TRUSTED_CATALOG[0]!
+      TRUSTED_CATALOG[1]!
+      const unavailable = [...DEFAULT_UNAVAILABLE_HOSTS][0]!
       const restrictions = catalogRestrictions({ [primary]: false, [unavailable]: true })
       assert.strictEqual(
         restrictions.disabledCatalogHosts.has(primary),

@@ -3,6 +3,7 @@ import { resolve, sep } from 'node:path'
 import { build } from './build.mts'
 import { runTests } from './test.mts'
 import { typecheck } from './typecheck.mts'
+import { formatProject } from './format.mts'
 import { packageRelease } from './package.mts'
 import { command, readRelease, sha256 } from './lib.mts'
 
@@ -10,6 +11,7 @@ export async function verify() {
   const config = readRelease()
   if (process.versions.node !== config.nodeVersion)
     throw Error(`Expected Node ${config.nodeVersion}; found ${process.versions.node}`)
+  await formatProject(true)
   typecheck()
   command(process.execPath, ['scripts/architecture-check.mts'])
   await runTests()

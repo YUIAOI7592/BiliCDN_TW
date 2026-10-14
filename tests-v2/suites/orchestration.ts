@@ -35,7 +35,7 @@ import { testScope } from '../support/scope.ts'
 async function fixture(
   t: TestContext,
   scenario: number,
-  parameter = 0,
+  _parameter = 0,
 ): Promise<() => Promise<void>> {
   const scope = testScope(t)
   const clock = scope.own(new FakeClock()),

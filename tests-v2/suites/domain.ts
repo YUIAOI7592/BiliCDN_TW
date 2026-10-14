@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
 import { addEvidenceSample, emptyEvidence, evidenceMetrics } from '../../src-v2/domain/evidence.ts'
 import { chooseRoute, rankRoutes } from '../../src-v2/domain/routing.ts'
-import { decisionId, requestId } from '../../src-v2/domain/model.ts'
+import { decisionId } from '../../src-v2/domain/model.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { parseMediaUrl, replaceUrlHost } from '../../src-v2/domain/url-policy.ts'
 import { testScope } from '../support/scope.ts'
@@ -14,9 +14,9 @@ import { testScope } from '../support/scope.ts'
 async function fixture(
   t: TestContext,
   scenario: number,
-  parameter = 0,
+  _parameter = 0,
 ): Promise<() => Promise<void>> {
-  const scope = testScope(t)
+  testScope(t)
   const now = 2_000_000_000_000
   const clock = { now: () => now }
   const evidence = addEvidenceSample(

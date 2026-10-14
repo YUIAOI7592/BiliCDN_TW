@@ -1,17 +1,81 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
+import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, rmSync } from 'node:fs'
+import { join, resolve, sep } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { tmpdir } from 'node:os'
 import { parseArgs, selection, UsageError } from '../scripts/test-registry.mts'
 import { executeSuites, validateReport, finishOutcome } from '../scripts/test.mts'
 import { BrowserScheduler } from '../src-v2/adapters/scheduler.ts'
 import { supervise } from '../scripts/test-process.mts'
 import { inspectImportPurity } from '../scripts/import-purity.mts'
+import { formattedSource } from '../scripts/format.mts'
 import { testScope } from './support/scope.ts'
 import { FakeClock } from './support/clock.ts'
 import { deferred } from './support/deferred.ts'
 import './regressions/iab-event-collector.ts'
+
+test('formatting reaches a stable source before the next check', { timeout: 5000 }, async () => {
+  const source =
+    'const values=Object.freeze(rows.slice(0,3).map(row=>Object.freeze({host:row.host,type:row.type,valid:row.valid,safeMbps:row.safeMbps,status:row.status,reason:row.reason})))'
+  const formatted = await formattedSource('fixture.ts', source)
+  assert.notEqual(formatted, source)
+  assert.equal(await formattedSource('fixture.ts', formatted), formatted)
+})
+
+test(
+  'format check is read-only and write mode excludes release archive evidence and generated JS',
+  { timeout: 5000 },
+  async (t) => {
+    const scope = testScope(t),
+      dir = mkdtempSync(join(tmpdir(), 'bilicdn-format-'))
+    const parent = resolve(tmpdir()),
+      target = resolve(dir)
+    assert.ok(
+      target.startsWith(parent + sep) && target.split(sep).at(-1)?.startsWith('bilicdn-format-'),
+    )
+    scope.defer(() => rmSync(target, { recursive: true }))
+    const protectedFiles = [
+      'Release/v9/sample.ts',
+      'archive/sample.mts',
+      'baseline/sample.ts',
+      '.work/sample.ts',
+      'scripts/generated.mjs',
+    ]
+    for (const file of [...protectedFiles, 'src-v2/fixture.ts']) {
+      const absolute = join(dir, file)
+      mkdirSync(resolve(absolute, '..'), { recursive: true })
+      writeFileSync(absolute, 'export const amount:number=1\n')
+    }
+    writeFileSync(join(dir, '.prettierrc.json'), readFileSync('.prettierrc.json', 'utf8'))
+    const entry = pathToFileURL(resolve('scripts/format.mts')).href
+    const run = (check: boolean) =>
+      supervise(
+        process.execPath,
+        [
+          '--input-type=module',
+          '-e',
+          `import {formatProject} from ${JSON.stringify(entry)};try{await formatProject(${check});}catch(error){console.error(error.message);process.exitCode=1;}`,
+        ],
+        { cwd: dir },
+      )
+    const checked = await run(true)
+    assert.equal(checked.code, 1)
+    assert.match(checked.stderr, /src-v2\/fixture\.ts/)
+    assert.equal(
+      readFileSync(join(dir, 'src-v2/fixture.ts'), 'utf8'),
+      'export const amount:number=1\n',
+    )
+    assert.equal((await run(false)).code, 0)
+    assert.equal(
+      readFileSync(join(dir, 'src-v2/fixture.ts'), 'utf8'),
+      'export const amount: number = 1\n',
+    )
+    assert.equal((await run(true)).code, 0)
+    for (const file of protectedFiles)
+      assert.equal(readFileSync(join(dir, file), 'utf8'), 'export const amount:number=1\n')
+  },
+)
 
 test(
   'registry aliases, listing and CLI validation do not allocate or execute',

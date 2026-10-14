@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
 import { playurlResult } from '../support/playurl.ts'
 import { PlayurlController } from '../../src-v2/application/playurl-controller.ts'
-import { decisionId, epochId, generationId, requestId } from '../../src-v2/domain/model.ts'
+import { decisionId, epochId, generationId } from '../../src-v2/domain/model.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { parseMediaUrl } from '../../src-v2/domain/url-policy.ts'
 import { SignedRouteVault } from '../../src-v2/state/signed-route-vault.ts'
@@ -283,7 +283,7 @@ async function fixture(
     }
 
   const mediaResponse = await fakeWindow.fetch(passDecision.url ?? '')
-  const firstIntercept = transport.snapshot().lastMediaRequest
+  transport.snapshot().lastMediaRequest
 
   const mediaReader = mediaResponse.body?.getReader()
 
@@ -291,7 +291,7 @@ async function fixture(
   await mediaReader?.cancel('caller-cancel')
 
   const beforeHttpDns = nativeFetchCalls
-  const blockedDns = await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
+  await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
 
   disabled = true
   await fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
@@ -461,7 +461,7 @@ async function fixture(
           url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]),
         }
       : { ...passDecision, url }
-  const beforeGate = nativeFetchCalls
+  nativeFetchCalls
   const gatedFetch = fakeWindow.fetch(gatedUrl)
 
   gateControl.release()
@@ -470,7 +470,7 @@ async function fixture(
   gateReady = false
   const mutableMediaUrl = new URL(gatedUrl)
   const mutableInit: RequestInit = { method: 'GET' }
-  const beforeLifecycleGate = nativeFetchCalls
+  nativeFetchCalls
   const lifecycleFetch = fakeWindow.fetch(mutableMediaUrl, mutableInit)
 
   mutableMediaUrl.hostname = 'upos-sz-mirrorcosov.bilivideo.com'
@@ -497,7 +497,7 @@ async function fixture(
         }
       : { ...passDecision, url }
   gateReady = false
-  const beforeStaleForbidden = nativeFetchCalls
+  nativeFetchCalls
   const staleForbiddenFetch = fakeWindow.fetch(staleForbiddenUrl)
   runtimeSession.beginGeneration(false)
   gateControl.release()
@@ -717,10 +717,10 @@ async function fixture(
   Object.defineProperty(converseRequest, 'href', { value: forbiddenNonGetUrl })
   await fakeWindow.fetch(converseRequest)
 
-  const beforeDnsRequest = nativeFetchCalls
+  nativeFetchCalls
   const spoofedDns = new Request('https://httpdns.bilivideo.com/resolve')
   Object.defineProperty(spoofedDns, 'href', { value: passDecision.url })
-  const spoofedDnsResponse = await fakeWindow.fetch(spoofedDns)
+  await fakeWindow.fetch(spoofedDns)
 
   routeStub.inspectOriginal = (url: string): AppliedRouteDecision => ({ ...passDecision, url })
   const overrideRequest = new Request(gatedUrl, { method: 'GET' })
@@ -838,7 +838,7 @@ async function fixture(
   })
   const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
   scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
-  const originalPartialOpen = UnpatchableXhr.prototype.open
+  UnpatchableXhr.prototype.open
   const partialTransport = scope.own(
     new TransportAdapter(
       runtimeSession,
@@ -853,11 +853,11 @@ async function fixture(
   partialTransport.install()
 
   scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
-  let recoveryNow = now,
-    reloads = 0,
-    seeks: number[] = [],
-    rates: number[] = [],
-    plays = 0
+  now
+  let reloads = 0
+  let seeks: number[] = []
+  let rates: number[] = []
+  let plays = 0
   let playerSnapshot: VideoSnapshot = {
     available: true,
     paused: false,
@@ -1195,7 +1195,7 @@ async function fixture(
         frozenCore?.id,
         'continuous dead core does not replace its own incident',
       )
-      const outputRep = outputVault.contextForUrl(outputItem.base_url)!.representation
+      outputVault.contextForUrl(outputItem.base_url)!.representation
       const playurlLineage = (
         outputRoutes.apply(outputItem.base_url) as AppliedRouteDecision & {
           playurlOutput?: {
@@ -1239,7 +1239,7 @@ async function fixture(
   }
 
   const outputRep = outputVault.contextForUrl(outputItem.base_url)!.representation
-  const playurlLineage = (
+  ;(
     outputRoutes.apply(outputItem.base_url) as AppliedRouteDecision & {
       playurlOutput?: {
         originalHost: string
@@ -1495,7 +1495,7 @@ async function fixture(
 
   await outputRestrictions.remove(ungroupedHost, 'black')
   const audioScopedUrl = `https://${ungroupedHost}/upgcxcode/test/audio/1.m4s?k=1`
-  const audioScopedRep = outputVault.register({
+  outputVault.register({
     generation: outputState.generation,
     epoch: outputState.epoch,
     kind: 'audio',
@@ -1815,7 +1815,7 @@ async function fixture(
   tracedXhr.open('GET', outputItem.base_url)
   tracedXhr.send()
   await Promise.resolve()
-  const tracedVideo = outputRoutes.snapshot().latest.video
+  outputRoutes.snapshot().latest.video
 
   const actualXhr = new FakeXhr()
   actualXhr.open('GET', forbiddenUrl)
@@ -1897,19 +1897,19 @@ async function fixture(
       assert.strictEqual(disabledXhr.nativeSends, 1, 'disabled adapter sends website request once')
     }
 
-  const fetchCountBeforeBlock = nativeFetchCalls
-  let fetchBlocked = false
+  nativeFetchCalls
+  false
   try {
     await fakeWindow.fetch(forbiddenUrl)
   } catch {
-    fetchBlocked = true
+    true
   }
 
-  let exceptionalFetchBlocked = false
+  false
   try {
     await fakeWindow.fetch(exceptionalForbidden)
   } catch {
-    exceptionalFetchBlocked = true
+    true
   }
 
   await outputSettings.update({ disabled: true })

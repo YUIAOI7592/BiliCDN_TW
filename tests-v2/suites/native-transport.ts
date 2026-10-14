@@ -52,7 +52,7 @@ async function fixture(
     sourceHost: 'upos-sz-mirrorali.bilivideo.com',
   }
   const observations: TransportObservation[] = []
-  const routeStub = {
+  ;({
     requestStarted(): void {},
     isCatalogOnly(): boolean {
       return false
@@ -72,26 +72,26 @@ async function fixture(
     async observe(observation: TransportObservation): Promise<void> {
       observations.push(observation)
     },
-  }
+  })
   let transformed = 0
-  const playurlStub = {
+  ;({
     transform() {
       transformed++
       return playurlResult(true)
     },
-  }
+  })
   let disabled = false,
     blockHttpDns = true
-  const settingsStub = { get: () => ({ disabled, blockHttpDns, considerNativeSources: true }) }
-  let nativeFetchCalls = 0,
-    cancelReason: unknown = null
+  ;({ get: () => ({ disabled, blockHttpDns, considerNativeSources: true }) })
+  let nativeFetchCalls = 0
+  null
   let playurlFetchBody = JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } })
   let playurlFetchOverride: Response | null = null
   const nativeFetchUrls: string[] = []
   const nativeFetchMethods: string[] = []
   const nativeFetchRedirects: RequestRedirect[] = []
   const nativeFetchHeaders: (string | null)[] = []
-  let streamedRequestBody = ''
+  ;('')
   const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
     nativeFetchCalls++
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
@@ -105,8 +105,7 @@ async function fixture(
         : (String(_init?.redirect ?? 'follow') as RequestRedirect),
     )
     nativeFetchHeaders.push(input instanceof Request ? input.headers.get('x-bilicdn-test') : null)
-    if (url.includes('/stream-body.m4s') && input instanceof Request)
-      streamedRequestBody = await input.text()
+    if (url.includes('/stream-body.m4s') && input instanceof Request) await input.text()
     if (url.includes('/player/wbi/playurl'))
       return playurlFetchOverride ?? new Response(playurlFetchBody, { status: 200 })
     let emitted = false
@@ -119,7 +118,7 @@ async function fixture(
           }
         },
         cancel(reason) {
-          cancelReason = reason
+          reason
         },
       }),
       { status: 206, headers: { 'content-type': 'video/mp4' } },
@@ -186,12 +185,12 @@ async function fixture(
     configurable: true,
     value: new URL('https://www.bilibili.com/video/BVtest/'),
   })
-  let skippedPreflightReason = ''
+  ;('')
   const measurementStub = {
     willGateStartup: (): boolean => false,
     prepareStartup: async (): Promise<void> => {},
     noteUnpreflighted(reason: string): void {
-      skippedPreflightReason = reason
+      reason
     },
   }
   const dispatchStorage = new FakeStorage(),
@@ -323,7 +322,7 @@ async function fixture(
       )
     }
 
-  const beforeToggleFetch = nativeFetchCalls
+  nativeFetchCalls
   const pendingToggleFetch = fakeWindow.fetch(dispatchRoot)
 
   await dispatchSettings.update({ considerNativeSources: false })
@@ -343,7 +342,7 @@ async function fixture(
   await dispatchGate.done
 
   gateDispatch = false
-  const beforeNonGetFetch = nativeFetchCalls
+  nativeFetchCalls
   await fakeWindow.fetch(dispatchRoot, { method: 'POST' }).then(
     () => {
       throw new Error('Catalog-only POST Fetch must reject locally')
@@ -605,12 +604,12 @@ async function fixture(
   emittedBackupTransport.install()
   await emittedBackupSettings.update({ considerNativeSources: false })
   emittedBackupRoutes.invalidateForUserSetting()
-  const beforeEmittedBackupFetch = nativeFetchCalls
-  let emittedBackupFetchBlocked = false
+  nativeFetchCalls
+  false
   try {
     await fakeWindow.fetch(emittedThirdPartyBackup)
   } catch {
-    emittedBackupFetchBlocked = true
+    true
   }
 
   const emittedBackupXhr = new FakeXhr()
@@ -618,7 +617,7 @@ async function fixture(
   emittedBackupXhr.send()
 
   const unrelatedThirdPartyUrl = 'https://media.other-example.org/unrelated/video.m4s?source=site'
-  const beforeUnrelatedFetch = nativeFetchCalls
+  nativeFetchCalls
   await fakeWindow.fetch(unrelatedThirdPartyUrl)
 
   const unrelatedThirdPartyXhr = new FakeXhr()
@@ -794,7 +793,7 @@ async function fixture(
 
   await emittedBackupSettings.update({ considerNativeSources: false })
   emittedBackupRoutes.invalidateForUserSetting()
-  const beforeCappedBackupFetch = nativeFetchCalls
+  nativeFetchCalls
   await fakeWindow.fetch(cappedThirdPartyBackup)
 
   const cappedBackupXhr = new FakeXhr()
@@ -967,9 +966,7 @@ async function fixture(
       assert.ok(affinityPageRep, 'separate video representation can establish observed affinity')
     }
 
-  const roleAfterLateHint = trustedPageRep
-    ? pageVault.outputRole(trustedPageRep, trustedPageOutput)
-    : null
+  trustedPageRep ? pageVault.outputRole(trustedPageRep, trustedPageOutput) : null
 
   const affinityPageRoot =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/affinity.m4s?signature=affinity'
@@ -1611,16 +1608,16 @@ async function fixture(
       return readWebsiteBody()
     },
   })
-  let delayedPlayurlSettled = false
+  false
   const delayedPlayurlFetch = fakeWindow.fetch(apiEndpoint).then((response) => {
-    delayedPlayurlSettled = true
+    true
     return response
   })
   await bodyReadStarted.promise
 
   await apiFailureSettings.update({ disabled: true })
   releaseDelayedPlayurl()
-  const disabledDuringResponse = await delayedPlayurlFetch
+  await delayedPlayurlFetch
 
   playurlFetchOverride = null
   await apiFailureSettings.update({ disabled: false })
@@ -1872,12 +1869,12 @@ async function fixture(
   }
   for (const suffix of ['szbdyd.com', 'mountaintoys.cn', 'nexusedgeio.com', 'ahdohpiechei.com']) {
     const knownPcdnUrl = `https://node.${suffix}/video.m4s?signature=pcdn-secret`
-    const beforePcdnFetch = nativeFetchCalls
-    let pcdnFetchBlocked = false
+    nativeFetchCalls
+    false
     try {
       await fakeWindow.fetch(knownPcdnUrl)
     } catch {
-      pcdnFetchBlocked = true
+      true
     }
     const pcdnXhr = new FakeXhr()
     pcdnXhr.open('GET', knownPcdnUrl)
@@ -1958,12 +1955,12 @@ async function fixture(
   const oversizedBilibiliMedia =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/video.m4s?signature=oversized-secret-' +
     'x'.repeat(17 * 1024)
-  const beforeOversizedFetch = nativeFetchCalls
-  let oversizedFetchBlocked = false
+  nativeFetchCalls
+  false
   try {
     await fakeWindow.fetch(oversizedBilibiliMedia)
   } catch {
-    oversizedFetchBlocked = true
+    true
   }
 
   const oversizedXhr = new FakeXhr()
@@ -1972,7 +1969,7 @@ async function fixture(
 
   await oversizedSettings.update({ considerNativeSources: true })
   oversizedRoutes.invalidateForUserSetting()
-  const beforeOversizedNativeOn = nativeFetchCalls
+  nativeFetchCalls
   await fakeWindow.fetch(oversizedBilibiliMedia)
 
   const nativeOnOversizedXhr = new FakeXhr()

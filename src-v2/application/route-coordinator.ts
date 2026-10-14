@@ -1270,7 +1270,7 @@ export class RouteCoordinator {
 
   challenge(
     representation: RepresentationId,
-    demand: PlaybackDemand,
+    _demand: PlaybackDemand,
     preferNative: boolean,
     excludedHosts: ReadonlySet<string> = new Set(),
     catalogCursor = 0,
@@ -1289,8 +1289,8 @@ export class RouteCoordinator {
       (rootKey !== null && this.#hostLockedStreams.has(rootKey))
     )
       return null
-    const settings = this.settings.get(),
-      restriction = this.restrictions.snapshot(context.kind)
+    this.settings.get()
+    this.restrictions.snapshot(context.kind)
     const catalog: CatalogCandidate[] = catalogCandidates(context.kind)
     const native = this.isCatalogOnly()
       ? []
@@ -1806,7 +1806,7 @@ export class RouteCoordinator {
     return context ? this.vault.resolve(decision.candidate.handle, context) : null
   }
 
-  #pass(reason: string, host: string | null, kind: MediaKind): RouteDecision {
+  #pass(reason: string, host: string | null, _kind: MediaKind): RouteDecision {
     return {
       action: 'pass',
       target: { type: 'request' },

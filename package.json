@@ -13,11 +13,14 @@
     "build": "node scripts/build.mts",
     "test": "node scripts/test.mts",
     "verify": "node scripts/verify.mts",
-    "package": "node scripts/package.mts"
+    "package": "node scripts/package.mts",
+    "format": "node scripts/format.mts",
+    "format:check": "node scripts/format.mts --check"
   },
   "devDependencies": {
     "@types/node": "26.6.4",
     "esbuild": "0.28.2",
+    "prettier": "3.9.10",
     "typescript": "7.0.2"
   }
 }

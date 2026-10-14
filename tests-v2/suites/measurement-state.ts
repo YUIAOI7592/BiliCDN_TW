@@ -21,7 +21,7 @@ import '../regressions/functional-races/cr-measurement-lifecycle.ts'
 async function fixture(
   t: TestContext,
   scenario: number,
-  parameter = 0,
+  _parameter = 0,
 ): Promise<() => Promise<void>> {
   const scope = testScope(t)
   class MeasurementStorage extends FakeStorage {

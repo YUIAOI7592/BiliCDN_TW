@@ -13,3 +13,5 @@ esbuild 0.28.2：Evan Wallace，MIT。只用於本機建置與測試打包；esb
 `@types/node` 26.6.4：DefinitelyTyped 貢獻者，MIT；`undici-types` 8.9.0：MIT。兩者只供 Node 測試及本機工具的開發型別檢查，精確解析版本由依賴鎖定檔鎖定，不進入使用者腳本。安裝後的 `node_modules/@types/node/LICENSE`、`node_modules/undici-types/LICENSE` 與其 `package.json` 是本機核對來源。
 
 Node.js 26.8.1 的內建 `node:test`、斷言及報告產生器 API 用於本機測試，不新增測試框架或執行期依賴；介面依據 [該版官方文件](https://nodejs.org/download/release/v26.8.1/docs/api/test.html)。
+
+Prettier 3.9.10：Prettier 貢獻者，MIT。只作本機來源、測試、工具與維護設定格式化及唯讀檢查，不進入使用者腳本；精確版本由 package.json 與依賴鎖定檔固定。授權來源為 node_modules/prettier/LICENSE，工具說明見 [官方文件](https://prettier.io/docs/)；不加入 ESLint 或執行期依賴。

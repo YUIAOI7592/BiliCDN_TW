@@ -21,7 +21,7 @@ import { testScope } from '../support/scope.ts'
 async function fixture(
   t: TestContext,
   scenario: number,
-  parameter = 0,
+  _parameter = 0,
 ): Promise<() => Promise<void>> {
   const scope = testScope(t)
   const now = 2_000_000_000_000
@@ -273,7 +273,7 @@ async function fixture(
       )
       const invalidHintVault = new SignedRouteVault()
       invalidHintVault.reset(generation, epoch)
-      const invalidHintHost = 'upos-hz-mirrorakam.akamaized.net'
+      ;('upos-hz-mirrorakam.akamaized.net')
       const invalidHintRep = invalidHintVault.register({
         generation,
         epoch,
@@ -431,10 +431,8 @@ async function fixture(
         'upos-hz-mirrorakam.akamaized.net',
         'provisional startup initially follows its signed root',
       )
-      const staleStartup = plannedRoutes.startupOptions(hintedUrl)?.candidates[0] ?? null
-      const staleChallenge = plannedRep
-        ? plannedRoutes.challenge(plannedRep, plannedDemand, false)
-        : null
+      plannedRoutes.startupOptions(hintedUrl)?.candidates[0] ?? null
+      plannedRep ? plannedRoutes.challenge(plannedRep, plannedDemand, false) : null
       const plannedAdapter = new PlayurlAdapter(
         new PlayurlController(authoritySession, plannedVault, plannedRoutes, authoritySettings),
       )
@@ -958,9 +956,9 @@ async function fixture(
         'all',
         'existing user-created blacklist displays its effective scope',
       )
-      const settings = scope.own(new SettingsStore(storage, () => now)),
-        evidenceStore = scope.own(new EvidenceStore(storage, () => now)),
-        session = new SessionStore()
+      const settings = scope.own(new SettingsStore(storage, () => now))
+      const evidenceStore = scope.own(new EvidenceStore(storage, () => now))
+      new SessionStore()
       await settings.update({ considerNativeSources: true })
       await evidenceStore.record(TRUSTED_CATALOG[0], 'video', {
         requestId: 'remote-clear',
@@ -1033,9 +1031,9 @@ async function fixture(
   void true
   void restoredUserRestriction.list()[0]?.kind
   void 'all'
-  const settings = scope.own(new SettingsStore(storage, () => now)),
-    evidenceStore = scope.own(new EvidenceStore(storage, () => now)),
-    session = new SessionStore()
+  const settings = scope.own(new SettingsStore(storage, () => now))
+  const evidenceStore = scope.own(new EvidenceStore(storage, () => now))
+  new SessionStore()
   await settings.update({ considerNativeSources: true })
   await evidenceStore.record(TRUSTED_CATALOG[0], 'video', {
     requestId: 'remote-clear',
@@ -1243,7 +1241,7 @@ async function fixture(
       )
       await delayedSettings.update({ considerNativeSources: true })
       delayedStorage.holdNextSettingsLock = true
-      const pendingNativeReset = delayedSettings.reset()
+      delayedSettings.reset()
       assert.strictEqual(
         delayedSettings.get().considerNativeSources,
         false,

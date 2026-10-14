@@ -196,8 +196,8 @@ async function fixture(
           replaces++
         },
       } satisfies Pick<History, 'pushState' | 'replaceState'>
-      const originalPush = historyFixture.pushState,
-        originalReplace = historyFixture.replaceState
+      historyFixture.pushState
+      historyFixture.replaceState
       Object.defineProperties(globalThis, {
         history: { configurable: true, value: historyFixture },
         location: { configurable: true, value: { pathname: '/video/test', search: '?p=2' } },
