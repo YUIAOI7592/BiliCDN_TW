@@ -22,7 +22,8 @@ export const DEFAULT_UNAVAILABLE_HOSTS: ReadonlySet<string> = new Set([
   'upos-hz-mirroraliov.bilivideo.com',
 ])
 
-export const isCatalogHost = (host: string): host is CatalogHost => TRUSTED_CATALOG_SET.has(host.toLowerCase())
+export const isCatalogHost = (host: string): host is CatalogHost =>
+  TRUSTED_CATALOG_SET.has(host.toLowerCase())
 
 export const catalogIndex = (host: string): number => {
   const index = TRUSTED_CATALOG.indexOf(host.toLowerCase() as CatalogHost)

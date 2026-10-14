@@ -43,37 +43,114 @@ export const start = (): void => {
   const content = new PlayurlController(session, vault, routes, settings)
   const playurl = new PlayurlAdapter(content)
   const visibility = new VisibilityAdapter()
-  const player = new PlayerAdapter(playurl, { scheduler, isActuallyVisible: () => visibility.isActuallyVisible(),
-    subscribeControlLoss: listener => visibility.subscribeControlLoss(listener) })
-  const recovery = new RecoveryController(player, now,
-    () => !settings.get().disabled && !routes.isOriginalComparison() && visibility.isActuallyVisible(), () => {
+  const player = new PlayerAdapter(playurl, {
+    scheduler,
+    isActuallyVisible: () => visibility.isActuallyVisible(),
+    subscribeControlLoss: (listener) => visibility.subscribeControlLoss(listener),
+  })
+  const recovery = new RecoveryController(
+    player,
+    now,
+    () =>
+      !settings.get().disabled && !routes.isOriginalComparison() && visibility.isActuallyVisible(),
+    () => {
       const request = routes.latestRequested('video')
-      return () => !!request && routes.recoveryEligible(request) && routes.latestRequested('video')?.representation === request.representation
-    })
+      return () =>
+        !!request &&
+        routes.recoveryEligible(request) &&
+        routes.latestRequested('video')?.representation === request.representation
+    },
+  )
   const nativeFetch = unsafeWindow.fetch.bind(unsafeWindow)
-  const measurement = new MeasurementController(routes, meta, new RangeProbeAdapter(nativeFetch, now), now, scheduler)
+  const measurement = new MeasurementController(
+    routes,
+    meta,
+    new RangeProbeAdapter(nativeFetch, now),
+    now,
+    scheduler,
+  )
   const transport = new TransportAdapter(session, settings, routes, playurl, measurement, now, ids)
   transport.install()
-  const monitor = new PlayerMonitor(player, session, settings, vault, routes, measurement, recovery,
-    () => visibility.isActuallyVisible(), now, scheduler)
+  const monitor = new PlayerMonitor(
+    player,
+    session,
+    settings,
+    vault,
+    routes,
+    measurement,
+    recovery,
+    () => visibility.isActuallyVisible(),
+    now,
+    scheduler,
+  )
   const diagnostics = new DiagnosticRecorder(now, () => settings.get().verbose)
-  const runtime = new RuntimeController(session, settings, routes, player, monitor, measurement, recovery, visibility, diagnostics, now, content)
+  const runtime = new RuntimeController(
+    session,
+    settings,
+    routes,
+    player,
+    monitor,
+    measurement,
+    recovery,
+    visibility,
+    diagnostics,
+    now,
+    content,
+  )
   let lifecycle: LifecycleController | null = null
-  const pagePlayinfo = new PagePlayinfoAdapter((payload, serial) => lifecycle?.acceptPageAssignment(payload, serial),
-    () => !settings.get().disabled && routes.isCatalogOnly())
-  lifecycle = new LifecycleController(session, settings, vault, routes, playurl, pagePlayinfo, runtime, now, new BrowserNavigation(), scheduler)
+  const pagePlayinfo = new PagePlayinfoAdapter(
+    (payload, serial) => lifecycle?.acceptPageAssignment(payload, serial),
+    () => !settings.get().disabled && routes.isCatalogOnly(),
+  )
+  lifecycle = new LifecycleController(
+    session,
+    settings,
+    vault,
+    routes,
+    playurl,
+    pagePlayinfo,
+    runtime,
+    now,
+    new BrowserNavigation(),
+    scheduler,
+  )
   const webRtc = new WebRtcAdapter(settings)
-  const commands = new ControlCommands(settings, restrictions, evidence, meta, routes, measurement, recovery, now)
-  const center = new ControlCenter({ settings, restrictions, evidence, session, routes, measurement, monitor, recovery, transport,
-    diagnostics, commands, now })
+  const commands = new ControlCommands(
+    settings,
+    restrictions,
+    evidence,
+    meta,
+    routes,
+    measurement,
+    recovery,
+    now,
+  )
+  const center = new ControlCenter({
+    settings,
+    restrictions,
+    evidence,
+    session,
+    routes,
+    measurement,
+    monitor,
+    recovery,
+    transport,
+    diagnostics,
+    commands,
+    now,
+  })
   const panel = new PlayerPanel(center, settings, session, monitor)
 
-  lifecycle.subscribe(event => runtime.record(event))
+  lifecycle.subscribe((event) => runtime.record(event))
   runtime.install()
   webRtc.install()
   lifecycle.start()
   panel.start()
-  try { GM_registerMenuCommand('⚙️ 開啟 BiliCDN 控制中心', () => center.show()) } catch { /* optional */ }
+  try {
+    GM_registerMenuCommand('⚙️ 開啟 BiliCDN 控制中心', () => center.show())
+  } catch {
+    /* optional */
+  }
 }
 
 start()

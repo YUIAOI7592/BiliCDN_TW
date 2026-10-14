@@ -6,7 +6,13 @@ import type { SessionStore } from '../state/session-store.ts'
 import type { SettingsStore } from '../state/settings-store.ts'
 import type { SignedRouteVault } from '../state/signed-route-vault.ts'
 
-interface PendingAssignment { readonly payload: unknown; readonly serial: number; readonly assignedAt: number; readonly pageKey: string; appliedGeneration: number }
+interface PendingAssignment {
+  readonly payload: unknown
+  readonly serial: number
+  readonly assignedAt: number
+  readonly pageKey: string
+  appliedGeneration: number
+}
 
 export class LifecycleController {
   #listeners = new Set<(event: DomainEvent) => void>()
@@ -28,7 +34,10 @@ export class LifecycleController {
     private readonly scheduler: SchedulerPort,
   ) {}
 
-  subscribe(listener: (event: DomainEvent) => void): () => void { this.#listeners.add(listener); return () => this.#listeners.delete(listener) }
+  subscribe(listener: (event: DomainEvent) => void): () => void {
+    this.#listeners.add(listener)
+    return () => this.#listeners.delete(listener)
+  }
 
   start(): void {
     if (this.#restores.length) return
@@ -37,23 +46,41 @@ export class LifecycleController {
     this.#beginGeneration('startup')
     this.pagePlayinfo.install()
     this.#restores.push(this.navigation.subscribe(() => this.#checkNavigation()))
-    this.#restores.push(this.settings.subscribe(state => {
-      if (state.disabled !== this.session.get().disabled) this.#beginGeneration(state.disabled ? 'disabled' : 'enabled')
-    }))
+    this.#restores.push(
+      this.settings.subscribe((state) => {
+        if (state.disabled !== this.session.get().disabled)
+          this.#beginGeneration(state.disabled ? 'disabled' : 'enabled')
+      }),
+    )
   }
 
   acceptPageAssignment(payload: unknown, serial: number): boolean {
     if (!this.#active) return false
-    this.#pending = { payload, serial, assignedAt: this.now(), pageKey: this.#pageKey, appliedGeneration: -1 }
+    this.#pending = {
+      payload,
+      serial,
+      assignedAt: this.now(),
+      pageKey: this.#pageKey,
+      appliedGeneration: -1,
+    }
     const accepted = this.#applyPending()
     this.scheduler.microtask(() => this.#applyPending())
     return accepted
   }
 
   dispose(): void {
-    this.#active = false; this.#pending = null
-    for (const restore of this.#restores.splice(0).reverse()) { try { restore() } catch { /* site owns API */ } }
-    this.pagePlayinfo.dispose(); this.monitor.stop(); this.#listeners.clear()
+    this.#active = false
+    this.#pending = null
+    for (const restore of this.#restores.splice(0).reverse()) {
+      try {
+        restore()
+      } catch {
+        /* site owns API */
+      }
+    }
+    this.pagePlayinfo.dispose()
+    this.monitor.stop()
+    this.#listeners.clear()
   }
 
   #checkNavigation(): void {
@@ -69,12 +96,20 @@ export class LifecycleController {
     this.vault.reset(state.generation, state.epoch)
     this.routes.resetEpoch()
     this.monitor.reset()
-    if (state.disabled) this.monitor.stop(); else this.monitor.start()
-    this.#emit({ type: 'lifecycle', at: this.now(), generation: state.generation, epoch: state.epoch, reason })
+    if (state.disabled) this.monitor.stop()
+    else this.monitor.start()
+    this.#emit({
+      type: 'lifecycle',
+      at: this.now(),
+      generation: state.generation,
+      epoch: state.epoch,
+      reason,
+    })
   }
 
   #applyPending(): boolean {
-    const pending = this.#pending, state = this.session.get()
+    const pending = this.#pending,
+      state = this.session.get()
     if (!this.#active || !pending || state.disabled) return false
     if (pending.appliedGeneration === Number(state.generation)) return true
     const age = this.now() - pending.assignedAt
@@ -84,5 +119,7 @@ export class LifecycleController {
     return accepted
   }
 
-  #emit(event: DomainEvent): void { for (const listener of this.#listeners) listener(event) }
+  #emit(event: DomainEvent): void {
+    for (const listener of this.#listeners) listener(event)
+  }
 }

@@ -113,7 +113,9 @@ export interface RouteRankingEntry {
 export type RouteDecision =
   | {
       readonly action: 'pass'
-      readonly target: { readonly type: 'request' } | { readonly type: 'selected-original'; readonly candidate: RootCandidate }
+      readonly target:
+        | { readonly type: 'request' }
+        | { readonly type: 'selected-original'; readonly candidate: RootCandidate }
       readonly id: DecisionId
       readonly reason: string
       readonly routeType: 'root-original'
@@ -194,28 +196,83 @@ export interface RouteAffinity {
 }
 
 export type RecoveryAction =
-  | { readonly action: 'route-fallback'; readonly id: RecoveryActionId; readonly kind: MediaKind; readonly identity: RouteIdentity; readonly decision: RouteDecision }
-  | { readonly action: 'player-reload'; readonly id: RecoveryActionId; readonly savedPositionSec: number; readonly savedRate: number }
+  | {
+      readonly action: 'route-fallback'
+      readonly id: RecoveryActionId
+      readonly kind: MediaKind
+      readonly identity: RouteIdentity
+      readonly decision: RouteDecision
+    }
+  | {
+      readonly action: 'player-reload'
+      readonly id: RecoveryActionId
+      readonly savedPositionSec: number
+      readonly savedRate: number
+    }
   | { readonly action: 'none'; readonly id: RecoveryActionId; readonly reason: string }
 
 export type DomainEvent =
-  | { readonly type: 'core-uninitialized'; readonly at: number; readonly paused: boolean; readonly intentPending: boolean; readonly consecutiveTicks: number }
+  | {
+      readonly type: 'core-uninitialized'
+      readonly at: number
+      readonly paused: boolean
+      readonly intentPending: boolean
+      readonly consecutiveTicks: number
+    }
   | { readonly type: 'route-planned'; readonly at: number; readonly decision: RouteDecision }
   | { readonly type: 'request-started'; readonly at: number; readonly request: RequestContext }
-  | { readonly type: 'transport-completed'; readonly at: number; readonly observation: TransportObservation; readonly detached: boolean }
-  | { readonly type: 'attribution-changed'; readonly at: number; readonly requestId: RequestId; readonly status: AttributionStatus; readonly kind: MediaKind | null }
-  | { readonly type: 'route-confirmed'; readonly at: number; readonly observation: TransportObservation }
+  | {
+      readonly type: 'transport-completed'
+      readonly at: number
+      readonly observation: TransportObservation
+      readonly detached: boolean
+    }
+  | {
+      readonly type: 'attribution-changed'
+      readonly at: number
+      readonly requestId: RequestId
+      readonly status: AttributionStatus
+      readonly kind: MediaKind | null
+    }
+  | {
+      readonly type: 'route-confirmed'
+      readonly at: number
+      readonly observation: TransportObservation
+    }
   | { readonly type: 'route-decision'; readonly at: number; readonly decision: RouteDecision }
   | { readonly type: 'transport'; readonly at: number; readonly observation: TransportObservation }
-  | { readonly type: 'route-observed'; readonly at: number; readonly routeType: RouteType; readonly host: string; readonly decisionId: DecisionId | null }
+  | {
+      readonly type: 'route-observed'
+      readonly at: number
+      readonly routeType: RouteType
+      readonly host: string
+      readonly decisionId: DecisionId | null
+    }
   | { readonly type: 'recovery'; readonly at: number; readonly action: RecoveryAction }
-  | { readonly type: 'core'; readonly at: number; readonly state: 'healthy' | 'waiting' | 'reloading' | 'recovered' | 'recovered-paused' | 'failed'; readonly actionId: RecoveryActionId | null; readonly reason?: string; readonly savedPositionSec?: number; readonly savedRate?: number; readonly source?: string; readonly readyState?: number; readonly coreInitialized?: boolean | null }
-  | { readonly type: 'lifecycle'; readonly at: number; readonly generation: GenerationId; readonly epoch: EpochId; readonly reason: string }
+  | {
+      readonly type: 'core'
+      readonly at: number
+      readonly state:
+        'healthy' | 'waiting' | 'reloading' | 'recovered' | 'recovered-paused' | 'failed'
+      readonly actionId: RecoveryActionId | null
+      readonly reason?: string
+      readonly savedPositionSec?: number
+      readonly savedRate?: number
+      readonly source?: string
+      readonly readyState?: number
+      readonly coreInitialized?: boolean | null
+    }
+  | {
+      readonly type: 'lifecycle'
+      readonly at: number
+      readonly generation: GenerationId
+      readonly epoch: EpochId
+      readonly reason: string
+    }
 
 export interface Clock {
   now(): number
 }
-
 
 export const generationId = (value: number): GenerationId => value as GenerationId
 export const epochId = (value: number): EpochId => value as EpochId

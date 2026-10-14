@@ -19,28 +19,57 @@ export const buildOptions = Object.freeze({
   write: false,
 } satisfies esbuild.BuildOptions)
 
-const hash = (value: Parameters<ReturnType<typeof createHash>['update']>[0]) => createHash('sha256').update(value).digest('hex')
-export interface BuildOptions { write?: boolean }
+const hash = (value: Parameters<ReturnType<typeof createHash>['update']>[0]) =>
+  createHash('sha256').update(value).digest('hex')
+export interface BuildOptions {
+  write?: boolean
+}
 
 export async function build({ write = true }: BuildOptions = {}) {
   const release = readRelease()
-  if (esbuild.version !== release.esbuildVersion) throw Error(`Expected esbuild ${release.esbuildVersion}; found ${esbuild.version}`)
-  const result = await esbuild.build({ ...buildOptions,
-    stdin: { contents: "import '././src-v2/entry.ts'", resolveDir: process.cwd(), sourcefile: 'v2-entry.ts' },
-    outfile: 'dist/BiliCDN_TW.user.js', metafile: true })
-  const metadata = readFileSync('src-v2/metadata.txt', 'utf8').replace(/(@version\s+)\S+/, `$1${release.version}`)
-  const codeFile = result.outputFiles.find(file => file.path.endsWith('.js'))
-  const mapFile = result.outputFiles.find(file => file.path.endsWith('.map'))
+  if (esbuild.version !== release.esbuildVersion)
+    throw Error(`Expected esbuild ${release.esbuildVersion}; found ${esbuild.version}`)
+  const result = await esbuild.build({
+    ...buildOptions,
+    stdin: {
+      contents: "import '././src-v2/entry.ts'",
+      resolveDir: process.cwd(),
+      sourcefile: 'v2-entry.ts',
+    },
+    outfile: 'dist/BiliCDN_TW.user.js',
+    metafile: true,
+  })
+  const metadata = readFileSync('src-v2/metadata.txt', 'utf8').replace(
+    /(@version\s+)\S+/,
+    `$1${release.version}`,
+  )
+  const codeFile = result.outputFiles.find((file) => file.path.endsWith('.js'))
+  const mapFile = result.outputFiles.find((file) => file.path.endsWith('.map'))
   if (!codeFile || !mapFile) throw Error('esbuild did not return JavaScript and source map outputs')
   const output = `${metadata.trimEnd()}\n\n${codeFile.text}`
-  const inputs = Object.keys(result.metafile.inputs).filter(path => path.startsWith('src-v2/')).sort()
-  for (const path of ['scripts/build.mts', 'scripts/lib.mts', 'package.json', 'package-lock.json', 'release.json', 'tsconfig.json']) if (!inputs.includes(path)) inputs.push(path)
+  const inputs = Object.keys(result.metafile.inputs)
+    .filter((path) => path.startsWith('src-v2/'))
+    .sort()
+  for (const path of [
+    'scripts/build.mts',
+    'scripts/lib.mts',
+    'package.json',
+    'package-lock.json',
+    'release.json',
+    'tsconfig.json',
+  ])
+    if (!inputs.includes(path)) inputs.push(path)
   inputs.sort()
   const manifest = {
     version: release.version,
-    tools: { node: process.versions.node, npm: release.npmVersion, typescript: release.typescriptVersion, esbuild: esbuild.version },
+    tools: {
+      node: process.versions.node,
+      npm: release.npmVersion,
+      typescript: release.typescriptVersion,
+      esbuild: esbuild.version,
+    },
     options: buildOptions,
-    sources: Object.fromEntries(inputs.map(path => [path, hash(readFileSync(path))])),
+    sources: Object.fromEntries(inputs.map((path) => [path, hash(readFileSync(path))])),
     userscriptSha256: hash(output),
   }
   if (write) {

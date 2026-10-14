@@ -1,8 +1,18 @@
 import { catalogIndex, TRUSTED_CATALOG } from '../domain/catalog.ts'
 import { isKnownNativeFamily, parseMediaUrl, replaceUrlHost } from '../domain/url-policy.ts'
 import {
-  representationId, signedRouteHandle, type EpochId, type GenerationId, type MediaKind, type NativeCandidate,
-  type RepresentationId, type RootCandidate, type RouteIdentity, type SignedRouteHandle, type AttributionStatus, type AttributionSource,
+  representationId,
+  signedRouteHandle,
+  type EpochId,
+  type GenerationId,
+  type MediaKind,
+  type NativeCandidate,
+  type RepresentationId,
+  type RootCandidate,
+  type RouteIdentity,
+  type SignedRouteHandle,
+  type AttributionStatus,
+  type AttributionSource,
   type DecisionId,
 } from '../domain/model.ts'
 
@@ -31,11 +41,32 @@ export interface RegisterRepresentationInput {
   readonly refreshTrustedSources?: boolean
 }
 
-interface StoredRoute { readonly handle: SignedRouteHandle; readonly host: string; readonly url: string; readonly order: number; readonly activelyExplorable: boolean; readonly selectable: boolean }
-interface Group { readonly identity: RouteIdentity; readonly height: number; readonly codec: string; readonly bandwidth: number; readonly source: RegisterRepresentationInput['source']; readonly routes: readonly StoredRoute[] }
-interface OutputRole { readonly representation: RepresentationId; readonly role: 'primary' | 'backup'; readonly hostChanged: boolean;
-  readonly originalHost: string; readonly outputHost: string; readonly source: 'trusted-api' | 'page-hint'; readonly decisionId: DecisionId;
-  readonly catalogGenerated: boolean }
+interface StoredRoute {
+  readonly handle: SignedRouteHandle
+  readonly host: string
+  readonly url: string
+  readonly order: number
+  readonly activelyExplorable: boolean
+  readonly selectable: boolean
+}
+interface Group {
+  readonly identity: RouteIdentity
+  readonly height: number
+  readonly codec: string
+  readonly bandwidth: number
+  readonly source: RegisterRepresentationInput['source']
+  readonly routes: readonly StoredRoute[]
+}
+interface OutputRole {
+  readonly representation: RepresentationId
+  readonly role: 'primary' | 'backup'
+  readonly hostChanged: boolean
+  readonly originalHost: string
+  readonly outputHost: string
+  readonly source: 'trusted-api' | 'page-hint'
+  readonly decisionId: DecisionId
+  readonly catalogGenerated: boolean
+}
 
 export class SignedRouteVault {
   #generation: GenerationId | null = null
@@ -45,7 +76,10 @@ export class SignedRouteVault {
   #byUrl = new Map<string, Set<RepresentationId>>()
   #aliases = new Map<string, Set<RepresentationId>>()
   #byPath = new Map<string, Set<RepresentationId>>()
-  #handles = new Map<SignedRouteHandle, { readonly representation: RepresentationId; readonly url: string }>()
+  #handles = new Map<
+    SignedRouteHandle,
+    { readonly representation: RepresentationId; readonly url: string }
+  >()
   #invalid = new Map<RepresentationId, Set<string>>()
   #outputs = new Map<string, OutputRole | null>()
   #urlChars = 0
@@ -57,25 +91,40 @@ export class SignedRouteVault {
     this.#generation = generation
     this.#outputs.clear()
     this.#epoch = epoch
-    this.#groups.clear(); this.#byKey.clear(); this.#byUrl.clear(); this.#aliases.clear(); this.#byPath.clear(); this.#handles.clear(); this.#invalid.clear(); this.#urlChars = 0; this.#serial = 0; this.#handleSerial = 0; this.#authoritySerial = 0
+    this.#groups.clear()
+    this.#byKey.clear()
+    this.#byUrl.clear()
+    this.#aliases.clear()
+    this.#byPath.clear()
+    this.#handles.clear()
+    this.#invalid.clear()
+    this.#urlChars = 0
+    this.#serial = 0
+    this.#handleSerial = 0
+    this.#authoritySerial = 0
   }
 
   register(input: RegisterRepresentationInput): RepresentationId | null {
     if (input.generation !== this.#generation || input.epoch !== this.#epoch) return null
     const key = `${input.kind}:${input.key}:${input.codec}:${input.height}`
-    const priorId = this.#byKey.get(key), prior = priorId ? this.#groups.get(priorId) : undefined
+    const priorId = this.#byKey.get(key),
+      prior = priorId ? this.#groups.get(priorId) : undefined
     if (prior?.source === 'trusted-api' && input.source !== 'trusted-api') return priorId ?? null
     const sharedExact = new Set<RepresentationId>()
     for (const raw of [...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP)) {
       const parsed = parseMediaUrl(raw)
-      if (!parsed || (parsed.kind !== 'normal' && parsed.kind !== 'unknown' && !catalogSource(raw))) continue
+      if (!parsed || (parsed.kind !== 'normal' && parsed.kind !== 'unknown' && !catalogSource(raw)))
+        continue
       for (const rep of this.#byUrl.get(parsed.url.href) ?? []) {
         if (this.#groups.get(rep)?.identity.kind === input.kind) sharedExact.add(rep)
       }
     }
     if (input.source !== 'trusted-api') {
-      const authoritative = [...sharedExact].filter(rep => this.#groups.get(rep)?.source === 'trusted-api')
-      if (authoritative.length) return authoritative.length === 1 ? authoritative[0] ?? null : null
+      const authoritative = [...sharedExact].filter(
+        (rep) => this.#groups.get(rep)?.source === 'trusted-api',
+      )
+      if (authoritative.length)
+        return authoritative.length === 1 ? (authoritative[0] ?? null) : null
     } else {
       // A trusted API URL takes exact-URL attribution away from provisional groups,
       // even when a page hint supplied a different representation key.
@@ -84,49 +133,115 @@ export class SignedRouteVault {
         this.#dropGroup(rep)
       }
     }
-    const admitted = [...new Set([...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP).map(raw => parseMediaUrl(raw))
-      .filter(parsed => parsed && (parsed.kind === 'normal' || (parsed.kind === 'unknown' && parsed.url.protocol === 'https:' && !parsed.url.port)
-        || (parsed.kind === 'pcdn' && catalogSource(parsed.url.href)))).map(parsed => parsed!.url.href))]
-    const refresh = !!prior && input.source === 'trusted-api' && prior.source === 'trusted-api' && input.refreshTrustedSources === true
-    const refreshed = refresh && (admitted.length !== prior.routes.length || admitted.some(url => !prior.routes.some(route => route.url === url)))
+    const admitted = [
+      ...new Set(
+        [...new Set(input.urls)]
+          .slice(0, MAX_URLS_PER_GROUP)
+          .map((raw) => parseMediaUrl(raw))
+          .filter(
+            (parsed) =>
+              parsed &&
+              (parsed.kind === 'normal' ||
+                (parsed.kind === 'unknown' &&
+                  parsed.url.protocol === 'https:' &&
+                  !parsed.url.port) ||
+                (parsed.kind === 'pcdn' && catalogSource(parsed.url.href))),
+          )
+          .map((parsed) => parsed!.url.href),
+      ),
+    ]
+    const refresh =
+      !!prior &&
+      input.source === 'trusted-api' &&
+      prior.source === 'trusted-api' &&
+      input.refreshTrustedSources === true
+    const refreshed =
+      refresh &&
+      (admitted.length !== prior.routes.length ||
+        admitted.some((url) => !prior.routes.some((route) => route.url === url)))
     const promoted = !!prior && input.source === 'trusted-api' && prior.source !== 'trusted-api'
     const replaced = promoted || refreshed
     const cap = input.kind === 'video' ? MAX_VIDEO_GROUPS : MAX_AUDIO_GROUPS
-    if (!prior && [...this.#groups.values()].filter(group => group.identity.kind === input.kind).length >= cap) return null
+    if (
+      !prior &&
+      [...this.#groups.values()].filter((group) => group.identity.kind === input.kind).length >= cap
+    )
+      return null
     const rep = priorId ?? representationId(`${input.kind}:group-${++this.#serial}`)
     if (replaced && priorId && prior) {
       this.#revokeGroupRoutes(priorId, prior)
       // A provisional URL's failure cannot invalidate a newly authoritative exact URL.
       this.#invalid.delete(priorId)
     }
-    const routes: StoredRoute[] = replaced ? [] : refresh
-      ? admitted.map((url, order) => Object.freeze({ ...prior.routes.find(route => route.url === url)!, order }))
-      : [...(prior?.routes ?? [])]
+    const routes: StoredRoute[] = replaced
+      ? []
+      : refresh
+        ? admitted.map((url, order) =>
+            Object.freeze({ ...prior.routes.find((route) => route.url === url)!, order }),
+          )
+        : [...(prior?.routes ?? [])]
     for (const raw of [...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP)) {
       const parsed = parseMediaUrl(raw)
-      const opaque = parsed?.kind === 'unknown' && parsed.url.protocol === 'https:' && !parsed.url.port
+      const opaque =
+        parsed?.kind === 'unknown' && parsed.url.protocol === 'https:' && !parsed.url.port
       const pcdnCatalogSource = parsed?.kind === 'pcdn' && catalogSource(raw)
-      if (!parsed || (parsed.kind !== 'normal' && !opaque && !pcdnCatalogSource) || this.#urlChars + raw.length > MAX_URL_CHARS) continue
-      if (routes.some(route => route.url === parsed.url.href)) continue
-      if (routes.length >= MAX_URLS_PER_GROUP) { this.registerAlias(rep, parsed.url.href); continue }
+      if (
+        !parsed ||
+        (parsed.kind !== 'normal' && !opaque && !pcdnCatalogSource) ||
+        this.#urlChars + raw.length > MAX_URL_CHARS
+      )
+        continue
+      if (routes.some((route) => route.url === parsed.url.href)) continue
+      if (routes.length >= MAX_URLS_PER_GROUP) {
+        this.registerAlias(rep, parsed.url.href)
+        continue
+      }
       const handle = signedRouteHandle(`route:${rep}:${++this.#handleSerial}`)
-      routes.push(Object.freeze({ handle, host: parsed.host, url: parsed.url.href, order: routes.length,
-        activelyExplorable: !opaque && !pcdnCatalogSource && isKnownNativeFamily(parsed.host),
-        selectable: !opaque && !pcdnCatalogSource }))
+      routes.push(
+        Object.freeze({
+          handle,
+          host: parsed.host,
+          url: parsed.url.href,
+          order: routes.length,
+          activelyExplorable: !opaque && !pcdnCatalogSource && isKnownNativeFamily(parsed.host),
+          selectable: !opaque && !pcdnCatalogSource,
+        }),
+      )
       this.#handles.set(handle, { representation: rep, url: parsed.url.href })
       this.#index(this.#byUrl, parsed.url.href, rep)
       if (!opaque && !pcdnCatalogSource) this.#index(this.#byPath, parsed.url.pathname, rep)
       this.#urlChars += parsed.url.href.length
     }
     if (!routes.length) {
-      if (replaced) { this.#groups.delete(rep); this.#byKey.delete(key); this.#invalid.delete(rep) }
+      if (replaced) {
+        this.#groups.delete(rep)
+        this.#byKey.delete(key)
+        this.#invalid.delete(rep)
+      }
       return null
     }
     this.#byKey.set(key, rep)
-    const identity: RouteIdentity = !replaced && prior ? prior.identity : Object.freeze({ generation: input.generation,
-      epoch: input.epoch, representation: rep, kind: input.kind, authorityRevision: ++this.#authoritySerial })
-    this.#groups.set(rep, Object.freeze({ identity, height: input.height, codec: input.codec.slice(0, 48), bandwidth: input.bandwidth,
-      source: prior?.source === 'trusted-api' ? prior.source : input.source, routes: Object.freeze(routes) }))
+    const identity: RouteIdentity =
+      !replaced && prior
+        ? prior.identity
+        : Object.freeze({
+            generation: input.generation,
+            epoch: input.epoch,
+            representation: rep,
+            kind: input.kind,
+            authorityRevision: ++this.#authoritySerial,
+          })
+    this.#groups.set(
+      rep,
+      Object.freeze({
+        identity,
+        height: input.height,
+        codec: input.codec.slice(0, 48),
+        bandwidth: input.bandwidth,
+        source: prior?.source === 'trusted-api' ? prior.source : input.source,
+        routes: Object.freeze(routes),
+      }),
+    )
     return rep
   }
 
@@ -135,8 +250,11 @@ export class SignedRouteVault {
   }
 
   isCurrentIdentity(identity: RouteIdentity): boolean {
-    return identity.generation === this.#generation && identity.epoch === this.#epoch
-      && this.#groups.get(identity.representation)?.identity === identity
+    return (
+      identity.generation === this.#generation &&
+      identity.epoch === this.#epoch &&
+      this.#groups.get(identity.representation)?.identity === identity
+    )
   }
 
   #revokeGroupRoutes(representation: RepresentationId, group: Group): void {
@@ -147,7 +265,10 @@ export class SignedRouteVault {
     const remove = (index: Map<string, Set<RepresentationId>>, counted: boolean): void => {
       for (const [key, rows] of index) {
         if (!rows.delete(representation)) continue
-        if (!rows.size) { index.delete(key); if (counted) this.#urlChars -= key.length }
+        if (!rows.size) {
+          index.delete(key)
+          if (counted) this.#urlChars -= key.length
+        }
       }
     }
     remove(this.#byUrl, false)
@@ -174,48 +295,98 @@ export class SignedRouteVault {
     return match.status === 'matched' ? match.context : null
   }
 
-  match(url: string): { context: RouteIdentity | null; status: AttributionStatus; source: AttributionSource } {
+  match(url: string): {
+    context: RouteIdentity | null
+    status: AttributionStatus
+    source: AttributionSource
+  } {
     const parsed = parseMediaUrl(url)
-    if (!parsed || (parsed.kind !== 'normal' && parsed.kind !== 'unknown' && parsed.kind !== 'pcdn')) return { context: null, status: 'waiting-data', source: 'none' }
-    for (const [index, source] of [[this.#byUrl, 'exact'], [this.#aliases, 'catalog-alias'], [this.#byPath, 'path-hint']] as const) {
+    if (
+      !parsed ||
+      (parsed.kind !== 'normal' && parsed.kind !== 'unknown' && parsed.kind !== 'pcdn')
+    )
+      return { context: null, status: 'waiting-data', source: 'none' }
+    for (const [index, source] of [
+      [this.#byUrl, 'exact'],
+      [this.#aliases, 'catalog-alias'],
+      [this.#byPath, 'path-hint'],
+    ] as const) {
       if ((parsed.kind === 'unknown' || parsed.kind === 'pcdn') && source !== 'exact') continue
       const reps = index.get(source === 'path-hint' ? parsed.url.pathname : parsed.url.href)
       if (!reps?.size) continue
       if (reps.size !== 1) return { context: null, status: 'ambiguous', source }
-      const rep = [...reps][0], context = rep ? this.#groups.get(rep)?.identity ?? null : null
-      return { context, status: source === 'path-hint' || parsed.kind === 'unknown' ? 'weak' : 'matched', source }
+      const rep = [...reps][0],
+        context = rep ? (this.#groups.get(rep)?.identity ?? null) : null
+      return {
+        context,
+        status: source === 'path-hint' || parsed.kind === 'unknown' ? 'weak' : 'matched',
+        source,
+      }
     }
     return { context: null, status: 'waiting-data', source: 'none' }
   }
 
   registerAlias(rep: RepresentationId, url: string): void {
     const parsed = parseMediaUrl(url)
-    if (!parsed || parsed.kind !== 'normal' || this.#aliases.size >= 1024 || this.#urlChars + url.length > MAX_URL_CHARS) return
+    if (
+      !parsed ||
+      parsed.kind !== 'normal' ||
+      this.#aliases.size >= 1024 ||
+      this.#urlChars + url.length > MAX_URL_CHARS
+    )
+      return
     if (!this.#aliases.has(parsed.url.href)) this.#urlChars += parsed.url.href.length
     this.#index(this.#aliases, parsed.url.href, rep)
     this.#index(this.#byPath, parsed.url.pathname, rep)
   }
 
-  registerOutput(rep: RepresentationId, original: string, primary: string, backups: readonly string[],
-    decisionId: DecisionId, source: 'trusted-api' | 'page-hint', catalogGenerated = false): void {
+  registerOutput(
+    rep: RepresentationId,
+    original: string,
+    primary: string,
+    backups: readonly string[],
+    decisionId: DecisionId,
+    source: 'trusted-api' | 'page-hint',
+    catalogGenerated = false,
+  ): void {
     const originalHost = parseMediaUrl(original)?.host ?? ''
     for (const [index, url] of [primary, ...backups].entries()) {
       const parsed = parseMediaUrl(url)
-      if (!parsed || this.#outputs.size >= 1152 || this.#urlChars + url.length > MAX_URL_CHARS) continue
+      if (!parsed || this.#outputs.size >= 1152 || this.#urlChars + url.length > MAX_URL_CHARS)
+        continue
       const prior = this.#outputs.get(parsed.url.href)
-      if (prior === null || (prior && prior.representation !== rep)) { this.#outputs.set(parsed.url.href, null); continue }
+      if (prior === null || (prior && prior.representation !== rep)) {
+        this.#outputs.set(parsed.url.href, null)
+        continue
+      }
       if (!this.#outputs.has(parsed.url.href)) this.#urlChars += url.length
-      this.#outputs.set(parsed.url.href, { representation: rep, role: index === 0 ? 'primary' : 'backup',
-        hostChanged: !!originalHost && originalHost !== parsed.host, originalHost, outputHost: parsed.host, source, decisionId,
-        catalogGenerated })
+      this.#outputs.set(parsed.url.href, {
+        representation: rep,
+        role: index === 0 ? 'primary' : 'backup',
+        hostChanged: !!originalHost && originalHost !== parsed.host,
+        originalHost,
+        outputHost: parsed.host,
+        source,
+        decisionId,
+        catalogGenerated,
+      })
     }
   }
 
   outputRole(rep: RepresentationId, url: string): Omit<OutputRole, 'representation'> | null {
-    const parsed = parseMediaUrl(url), row = parsed ? this.#outputs.get(parsed.url.href) : null
-    return row?.representation === rep ? { role: row.role, hostChanged: row.hostChanged,
-      originalHost: row.originalHost, outputHost: row.outputHost, source: row.source, decisionId: row.decisionId,
-      catalogGenerated: row.catalogGenerated } : null
+    const parsed = parseMediaUrl(url),
+      row = parsed ? this.#outputs.get(parsed.url.href) : null
+    return row?.representation === rep
+      ? {
+          role: row.role,
+          hostChanged: row.hostChanged,
+          originalHost: row.originalHost,
+          outputHost: row.outputHost,
+          source: row.source,
+          decisionId: row.decisionId,
+          catalogGenerated: row.catalogGenerated,
+        }
+      : null
   }
 
   wasPlayerOutput(url: string): boolean {
@@ -225,21 +396,46 @@ export class SignedRouteVault {
 
   #index(index: Map<string, Set<RepresentationId>>, key: string, rep: RepresentationId): void {
     const rows = index.get(key) ?? new Set<RepresentationId>()
-    rows.add(rep); index.set(key, rows)
+    rows.add(rep)
+    index.set(key, rows)
   }
 
-  candidates(representation: RepresentationId, unlockedHosts: ReadonlySet<string>): { readonly native: readonly NativeCandidate[]; readonly root: RootCandidate | null } {
+  candidates(
+    representation: RepresentationId,
+    unlockedHosts: ReadonlySet<string>,
+  ): { readonly native: readonly NativeCandidate[]; readonly root: RootCandidate | null } {
     const group = this.#groups.get(representation)
     if (!group) return { native: Object.freeze([]), root: null }
     const invalid = this.#invalid.get(representation) ?? new Set<string>()
-    const native = group.routes.filter(route => route.selectable && !invalid.has(route.host)
-      && (route.activelyExplorable || unlockedHosts.has(route.host))).map(route => Object.freeze({
-      type: 'native-signed' as const, host: route.host, kind: group.identity.kind, catalogIndex: catalogIndex(route.host),
-      route: group.identity, handle: route.handle, activelyExplorable: route.activelyExplorable,
-    }))
-    const first = group.routes.find(route => route.selectable && !invalid.has(route.host))
-    const root = first ? Object.freeze({ type: 'root-original' as const, host: first.host, kind: group.identity.kind,
-      catalogIndex: Number.MAX_SAFE_INTEGER, route: group.identity, handle: first.handle }) : null
+    const native = group.routes
+      .filter(
+        (route) =>
+          route.selectable &&
+          !invalid.has(route.host) &&
+          (route.activelyExplorable || unlockedHosts.has(route.host)),
+      )
+      .map((route) =>
+        Object.freeze({
+          type: 'native-signed' as const,
+          host: route.host,
+          kind: group.identity.kind,
+          catalogIndex: catalogIndex(route.host),
+          route: group.identity,
+          handle: route.handle,
+          activelyExplorable: route.activelyExplorable,
+        }),
+      )
+    const first = group.routes.find((route) => route.selectable && !invalid.has(route.host))
+    const root = first
+      ? Object.freeze({
+          type: 'root-original' as const,
+          host: first.host,
+          kind: group.identity.kind,
+          catalogIndex: Number.MAX_SAFE_INTEGER,
+          route: group.identity,
+          handle: first.handle,
+        })
+      : null
     return { native: Object.freeze(native), root }
   }
 
@@ -248,7 +444,9 @@ export class SignedRouteVault {
   }
 
   hosts(representation: RepresentationId): readonly string[] {
-    return Object.freeze((this.#groups.get(representation)?.routes ?? []).map(route => route.host))
+    return Object.freeze(
+      (this.#groups.get(representation)?.routes ?? []).map((route) => route.host),
+    )
   }
 
   invalidate(representation: RepresentationId, host: string): void {
@@ -257,7 +455,9 @@ export class SignedRouteVault {
     this.#invalid.set(representation, invalid)
   }
 
-  isInvalid(representation: RepresentationId, host: string): boolean { return this.#invalid.get(representation)?.has(host) ?? false }
+  isInvalid(representation: RepresentationId, host: string): boolean {
+    return this.#invalid.get(representation)?.has(host) ?? false
+  }
 
   rootUrl(representation: RepresentationId): string | null {
     return this.#groups.get(representation)?.routes[0]?.url ?? null
@@ -265,11 +465,11 @@ export class SignedRouteVault {
 
   catalogSourceHandle(representation: RepresentationId): SignedRouteHandle | null {
     const routes = this.#groups.get(representation)?.routes ?? []
-    return routes.find(route => catalogSource(route.url))?.handle ?? null
+    return routes.find((route) => catalogSource(route.url))?.handle ?? null
   }
 
   sourceURLs(representation: RepresentationId): readonly string[] {
-    return Object.freeze((this.#groups.get(representation)?.routes ?? []).map(route => route.url))
+    return Object.freeze((this.#groups.get(representation)?.routes ?? []).map((route) => route.url))
   }
 
   resolve(handle: SignedRouteHandle, identity: RouteIdentity): string | null {
@@ -278,8 +478,22 @@ export class SignedRouteVault {
     return stored?.representation === identity.representation ? stored.url : null
   }
 
-  groupSummary(representation: RepresentationId): { readonly kind: MediaKind; readonly height: number; readonly codec: string; readonly bandwidth: number; readonly routeCount: number } | null {
+  groupSummary(representation: RepresentationId): {
+    readonly kind: MediaKind
+    readonly height: number
+    readonly codec: string
+    readonly bandwidth: number
+    readonly routeCount: number
+  } | null {
     const group = this.#groups.get(representation)
-    return group ? Object.freeze({ kind: group.identity.kind, height: group.height, codec: group.codec, bandwidth: group.bandwidth, routeCount: group.routes.length }) : null
+    return group
+      ? Object.freeze({
+          kind: group.identity.kind,
+          height: group.height,
+          codec: group.codec,
+          bandwidth: group.bandwidth,
+          routeCount: group.routes.length,
+        })
+      : null
   }
 }

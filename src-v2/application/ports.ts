@@ -48,7 +48,12 @@ export interface PlayerPort {
 }
 
 export interface PlayurlPort {
-  transform(payload: unknown, source: 'trusted-api' | 'player-mpd' | 'page-hint', responseKey?: string, context?: PlayurlRequestContext): PlayurlTransformResult
+  transform(
+    payload: unknown,
+    source: 'trusted-api' | 'player-mpd' | 'page-hint',
+    responseKey?: string,
+    context?: PlayurlRequestContext,
+  ): PlayurlTransformResult
 }
 
 export interface SchedulerPort {
@@ -77,7 +82,9 @@ export interface RangeProbeResult {
   readonly directRange: boolean
   readonly reason: string
 }
-export interface RangeProbePort { read(input: RangeProbeInput): Promise<RangeProbeResult> }
+export interface RangeProbePort {
+  read(input: RangeProbeInput): Promise<RangeProbeResult>
+}
 
 export interface PagePlayinfoPort {
   install(): void

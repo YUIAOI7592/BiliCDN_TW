@@ -32,33 +32,74 @@ function architectureFixture() {
       'domain/cycle-b.ts': "export { a } from './cycle-a.ts'; export const b = 2",
     }
     for (const [name, source] of Object.entries(fixtures)) {
-      const path = join(scratch, name); mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, source)
+      const path = join(scratch, name)
+      mkdirSync(dirname(path), { recursive: true })
+      writeFileSync(path, source)
     }
     const config = join(scratch, 'tsconfig.json')
-    writeFileSync(config, JSON.stringify({ compilerOptions: { noLib: true, noEmit: true, allowImportingTsExtensions: true }, include: ['**/*.ts'] }))
-    return withProjectAst(config, program => new Map(Object.keys(fixtures).map(name => {
-      const source=program.getSourceFile(join(scratch,name))
-      if(!source)throw Error(`Missing fixture: ${name}`)
-      return [name, inspectModule(source, scratch)]
-    })))
+    writeFileSync(
+      config,
+      JSON.stringify({
+        compilerOptions: { noLib: true, noEmit: true, allowImportingTsExtensions: true },
+        include: ['**/*.ts'],
+      }),
+    )
+    return withProjectAst(
+      config,
+      (program) =>
+        new Map(
+          Object.keys(fixtures).map((name) => {
+            const source = program.getSourceFile(join(scratch, name))
+            if (!source) throw Error(`Missing fixture: ${name}`)
+            return [name, inspectModule(source, scratch)]
+          }),
+        ),
+    )
   } finally {
-    const target = resolve(scratch), parent = resolve(tmpdir())
-    if (!target.startsWith(`${parent}${sep}`) || !target.split(sep).at(-1)?.startsWith('bilicdn-architecture-')) throw Error('Unsafe scratch cleanup')
+    const target = resolve(scratch),
+      parent = resolve(tmpdir())
+    if (
+      !target.startsWith(`${parent}${sep}`) ||
+      !target.split(sep).at(-1)?.startsWith('bilicdn-architecture-')
+    )
+      throw Error('Unsafe scratch cleanup')
     rmSync(target, { recursive: true })
   }
 }
-const rejected = ['domain/type-import.ts','domain/re-export.ts','domain/import-type.ts','domain/dynamic.ts',
-  'domain/variable-import.ts','domain/location.ts','domain/qualified.ts','domain/clock.ts','domain/date.ts','domain/gm.ts',
-  'application/location.ts','application/timer.ts','application/reload.ts','adapters/affinity.ts','ui/storage.ts','ui/reset.ts']
+const rejected = [
+  'domain/type-import.ts',
+  'domain/re-export.ts',
+  'domain/import-type.ts',
+  'domain/dynamic.ts',
+  'domain/variable-import.ts',
+  'domain/location.ts',
+  'domain/qualified.ts',
+  'domain/clock.ts',
+  'domain/date.ts',
+  'domain/gm.ts',
+  'application/location.ts',
+  'application/timer.ts',
+  'application/reload.ts',
+  'adapters/affinity.ts',
+  'ui/storage.ts',
+  'ui/reset.ts',
+]
 test('pure domain module is allowed', { timeout: 5000 }, () => {
   const modules = architectureFixture()
   assert.doesNotThrow(() => validateGraph([modules.get('domain/pure.ts')!]))
 })
-for (const name of rejected) test(`reject forbidden architecture: ${name}`, { timeout: 5000 }, () => {
-  const modules = architectureFixture()
-  assert.throws(() => validateGraph([modules.get(name)!]), `Architecture rule failed to reject ${name}`)
-})
+for (const name of rejected)
+  test(`reject forbidden architecture: ${name}`, { timeout: 5000 }, () => {
+    const modules = architectureFixture()
+    assert.throws(
+      () => validateGraph([modules.get(name)!]),
+      `Architecture rule failed to reject ${name}`,
+    )
+  })
 test('reject re-export cycle', { timeout: 5000 }, () => {
   const modules = architectureFixture()
-  assert.throws(() => validateGraph([modules.get('domain/cycle-a.ts')!, modules.get('domain/cycle-b.ts')!]), /Import cycle/)
+  assert.throws(
+    () => validateGraph([modules.get('domain/cycle-a.ts')!, modules.get('domain/cycle-b.ts')!]),
+    /Import cycle/,
+  )
 })

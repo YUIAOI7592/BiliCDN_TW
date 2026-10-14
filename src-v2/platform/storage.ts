@@ -8,7 +8,11 @@ export interface StoragePort {
 
 export class TampermonkeyStorage implements StoragePort {
   get<T>(key: string, fallback: T): T {
-    try { return GM_getValue<T>(key, fallback) } catch { return fallback }
+    try {
+      return GM_getValue<T>(key, fallback)
+    } catch {
+      return fallback
+    }
   }
 
   set<T>(key: string, value: T): void {
@@ -16,19 +20,29 @@ export class TampermonkeyStorage implements StoragePort {
   }
 
   delete(key: string): void {
-    try { GM_deleteValue(key) } catch { /* fail-open */ }
+    try {
+      GM_deleteValue(key)
+    } catch {
+      /* fail-open */
+    }
   }
 
   listen<T>(key: string, listener: (value: T, remote: boolean) => void): () => void {
     if (typeof GM_addValueChangeListener !== 'function') return () => undefined
     let id: number
     try {
-      id = GM_addValueChangeListener<T>(key, (_name, _oldValue, value, remote) => listener(value, remote))
+      id = GM_addValueChangeListener<T>(key, (_name, _oldValue, value, remote) =>
+        listener(value, remote),
+      )
     } catch {
       return () => undefined
     }
     return () => {
-      try { GM_removeValueChangeListener(id) } catch { /* fail-open */ }
+      try {
+        GM_removeValueChangeListener(id)
+      } catch {
+        /* fail-open */
+      }
     }
   }
 

@@ -25,13 +25,18 @@ const directories = (urls: readonly string[]): readonly string[] => {
   for (const value of urls) {
     const parsed = parseMediaUrl(value)
     if (!parsed) continue
-    const path = parsed.url.pathname, parent = path.slice(0, path.lastIndexOf('/'))
+    const path = parsed.url.pathname,
+      parent = path.slice(0, path.lastIndexOf('/'))
     if (parent) result.add(parent)
   }
   return [...result].sort()
 }
 
-const merge = (current: readonly string[], previous: readonly string[], limit: number): readonly string[] => {
+const merge = (
+  current: readonly string[],
+  previous: readonly string[],
+  limit: number,
+): readonly string[] => {
   const result = new Set(current.slice(0, limit))
   for (const value of [...previous].sort()) {
     if (result.size >= limit) break
@@ -40,11 +45,18 @@ const merge = (current: readonly string[], previous: readonly string[], limit: n
   return Object.freeze([...result].sort())
 }
 
-export function observePlayurlContent(previous: PlayurlContentIdentity | null,
-  videoUrls: readonly string[], audioUrls: readonly string[], context?: PlayurlRequestContext): {
-    readonly identity: PlayurlContentIdentity | null; readonly changed: boolean
-  } {
-  const video = directories(videoUrls), audio = directories(audioUrls), contentId = context?.contentId ?? null
+export function observePlayurlContent(
+  previous: PlayurlContentIdentity | null,
+  videoUrls: readonly string[],
+  audioUrls: readonly string[],
+  context?: PlayurlRequestContext,
+): {
+  readonly identity: PlayurlContentIdentity | null
+  readonly changed: boolean
+} {
+  const video = directories(videoUrls),
+    audio = directories(audioUrls),
+    contentId = context?.contentId ?? null
   if (!contentId && !video.length && !audio.length) return { identity: previous, changed: false }
   let changed = false
   if (previous?.contentId && contentId) changed = previous.contentId !== contentId
@@ -52,9 +64,17 @@ export function observePlayurlContent(previous: PlayurlContentIdentity | null,
     // Shared audio must never conceal a different video inventory.
     const before = previous.video.length ? previous.video : previous.audio
     const next = video.length ? video : audio
-    changed = Boolean(previous.video.length) !== Boolean(video.length) || !next.some(value => before.includes(value))
+    changed =
+      Boolean(previous.video.length) !== Boolean(video.length) ||
+      !next.some((value) => before.includes(value))
   }
   const retained = changed ? null : previous
-  return { changed, identity: Object.freeze({ contentId: contentId ?? retained?.contentId ?? null,
-    video: merge(video, retained?.video ?? [], 128), audio: merge(audio, retained?.audio ?? [], 64) }) }
+  return {
+    changed,
+    identity: Object.freeze({
+      contentId: contentId ?? retained?.contentId ?? null,
+      video: merge(video, retained?.video ?? [], 128),
+      audio: merge(audio, retained?.audio ?? [], 64),
+    }),
+  }
 }

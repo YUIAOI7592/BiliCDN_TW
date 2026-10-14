@@ -9,5 +9,7 @@ export class BrowserScheduler implements SchedulerPort {
     const id = setInterval(task, delayMs)
     return () => clearInterval(id)
   }
-  microtask(task: () => void): void { queueMicrotask(task) }
+  microtask(task: () => void): void {
+    queueMicrotask(task)
+  }
 }

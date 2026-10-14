@@ -17,27 +17,52 @@ export interface ControlCommandPort {
   resetSettings(): Promise<void>
 }
 export class ControlCommands implements ControlCommandPort {
-  constructor(private readonly settings: Pick<SettingsStore, 'update' | 'reset' | 'setCatalogEnabled'>,
+  constructor(
+    private readonly settings: Pick<SettingsStore, 'update' | 'reset' | 'setCatalogEnabled'>,
     private readonly restrictions: Pick<RestrictionStore, 'add' | 'clear'>,
     private readonly evidence: Pick<EvidenceStore, 'clear'>,
     private readonly meta: Pick<MeasurementMetaStore, 'clear'>,
-    private readonly routes: Pick<RouteCoordinator, 'latestVideoHost' | 'invalidateForUserSetting' | 'setOriginalComparison'>,
+    private readonly routes: Pick<
+      RouteCoordinator,
+      'latestVideoHost' | 'invalidateForUserSetting' | 'setOriginalComparison'
+    >,
     private readonly measurement: Pick<MeasurementController, 'requestManual' | 'reset'>,
     private readonly recovery: Pick<RecoveryController, 'reset'>,
-    private readonly now: () => number) {}
-  updateSettings(change: SettingsChange): Promise<SettingsState> { return this.settings.update(change) }
-  setCatalogEnabled(host: string, enabled: boolean): Promise<SettingsState> { return this.settings.setCatalogEnabled(host, enabled) }
-  setOriginalComparison(enabled: boolean): void {
-    this.routes.setOriginalComparison(enabled); this.measurement.reset(); this.recovery.reset()
+    private readonly now: () => number,
+  ) {}
+  updateSettings(change: SettingsChange): Promise<SettingsState> {
+    return this.settings.update(change)
   }
-  requestMeasurement(): void { this.measurement.requestManual() }
+  setCatalogEnabled(host: string, enabled: boolean): Promise<SettingsState> {
+    return this.settings.setCatalogEnabled(host, enabled)
+  }
+  setOriginalComparison(enabled: boolean): void {
+    this.routes.setOriginalComparison(enabled)
+    this.measurement.reset()
+    this.recovery.reset()
+  }
+  requestMeasurement(): void {
+    this.measurement.requestManual()
+  }
   async blacklistLatestVideo(): Promise<void> {
     const host = this.routes.latestVideoHost()
-    if (host) await this.restrictions.add({ host, type: 'black', kind: 'all', reason: 'user', expireAt: this.now() + 24 * 60 * 60 * 1000 })
+    if (host)
+      await this.restrictions.add({
+        host,
+        type: 'black',
+        kind: 'all',
+        reason: 'user',
+        expireAt: this.now() + 24 * 60 * 60 * 1000,
+      })
     this.routes.invalidateForUserSetting()
   }
   async clearLearning(): Promise<void> {
-    await this.evidence.clear(); await this.restrictions.clear(); this.meta.clear()
+    await this.evidence.clear()
+    await this.restrictions.clear()
+    this.meta.clear()
   }
-  async resetSettings(): Promise<void> { await this.settings.reset(); this.routes.invalidateForUserSetting() }
+  async resetSettings(): Promise<void> {
+    await this.settings.reset()
+    this.routes.invalidateForUserSetting()
+  }
 }
