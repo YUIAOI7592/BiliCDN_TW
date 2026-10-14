@@ -1,6 +1,5 @@
-export interface RuntimeIdPort {
-  next(kind: 'request' | 'startup' | 'challenge'): string
-}
+import type { RuntimeIdPort } from './runtime-id-port.ts'
+export type { RuntimeIdPort } from './runtime-id-port.ts'
 
 /** Called by composition, never on import. No content or user identifier enters an ID. */
 export const createRuntimeIds = (

@@ -1,42 +1,47 @@
+import type { SettingsState } from '../state/settings-model.ts'
 import type { DomainEvent } from '../domain/model.ts'
 import type { PlaybackDiagnosticSample } from '../domain/diagnostic-model.ts'
-import type { SessionStore } from '../state/session-store.ts'
-import type { SettingsStore } from '../state/settings-store.ts'
-import type { PlayerPort, VideoSnapshot } from './ports.ts'
-import type { RouteCoordinator } from './route-coordinator.ts'
-import type { MeasurementController } from './measurement-controller.ts'
-import type { RecoveryController } from './recovery-controller.ts'
-import type { PlayerMonitor } from './player-monitor.ts'
-import type { PlayurlController } from './playurl-controller.ts'
 
-export interface RuntimeDiagnosticPort {
-  record(event: DomainEvent, routeObservationEnabled: boolean): void
-  recordPlayer(sample: PlaybackDiagnosticSample): void
-}
-export class RuntimeController {
+import type { VideoSnapshot } from './ports.ts'
+
+import type {
+  RuntimePort,
+  RuntimeDiagnosticPort,
+  RuntimeSessionPort,
+  RuntimeSettingsPort,
+  RuntimeRoutesPort,
+  RuntimePlayerPort,
+  RuntimeMonitorPort,
+  RuntimeMeasurementPort,
+  RuntimeRecoveryPort,
+  RuntimeContentPort,
+} from './runtime-ports.ts'
+export type {
+  RuntimeDiagnosticPort,
+  RuntimeSessionPort,
+  RuntimeSettingsPort,
+  RuntimeRoutesPort,
+  RuntimePlayerPort,
+  RuntimeMonitorPort,
+  RuntimeMeasurementPort,
+  RuntimeRecoveryPort,
+  RuntimeContentPort,
+} from './runtime-ports.ts'
+
+export class RuntimeController implements RuntimePort {
   #stops: (() => void)[] = []
   constructor(
-    private readonly session: Pick<SessionStore, 'get'>,
-    private readonly settings: Pick<SettingsStore, 'get' | 'subscribe'>,
-    private readonly routes: Pick<
-      RouteCoordinator,
-      | 'subscribe'
-      | 'isOriginalComparison'
-      | 'invalidateForUserSetting'
-      | 'latestRequested'
-      | 'recoveryEligible'
-    >,
-    private readonly player: Pick<PlayerPort, 'snapshot' | 'reset'>,
-    private readonly monitor: Pick<
-      PlayerMonitor,
-      'subscribe' | 'snapshot' | 'start' | 'stop' | 'reset'
-    >,
-    private readonly measurement: Pick<MeasurementController, 'reset'>,
-    private readonly recovery: Pick<RecoveryController, 'subscribe' | 'reset' | 'armRouteFailure'>,
+    private readonly session: RuntimeSessionPort,
+    private readonly settings: RuntimeSettingsPort,
+    private readonly routes: RuntimeRoutesPort,
+    private readonly player: RuntimePlayerPort,
+    private readonly monitor: RuntimeMonitorPort,
+    private readonly measurement: RuntimeMeasurementPort,
+    private readonly recovery: RuntimeRecoveryPort,
     private readonly visibility: { setEnabled(enabled: boolean): void },
     private readonly diagnostics: RuntimeDiagnosticPort,
     private readonly now: () => number,
-    private readonly content: Pick<PlayurlController, 'subscribeEpoch'>,
+    private readonly content: RuntimeContentPort,
   ) {}
   install(): void {
     if (this.#stops.length) return
@@ -54,7 +59,7 @@ export class RuntimeController {
       ),
     )
     this.visibility.setEnabled(!this.settings.get().disabled)
-    const signature = (state: ReturnType<SettingsStore['get']>): string =>
+    const signature = (state: SettingsState): string =>
       JSON.stringify([state.fixedHost, state.catalogOverrides, state.considerNativeSources])
     let routeSettings = signature(this.settings.get())
     this.#stops.push(

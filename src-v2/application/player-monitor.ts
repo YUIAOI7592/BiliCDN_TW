@@ -1,33 +1,6 @@
-import type { PlayerPort, VideoSnapshot, SchedulerPort, PlayerControlSnapshot } from './ports.ts'
-import type { RouteCoordinator } from './route-coordinator.ts'
-import type { MeasurementController } from './measurement-controller.ts'
-import type { RecoveryController } from './recovery-controller.ts'
-import type { SessionStore } from '../state/session-store.ts'
-import type { SignedRouteVault } from '../state/signed-route-vault.ts'
-import type { PlaybackDemand } from '../domain/model.ts'
-import type { RequestContext } from '../domain/model.ts'
+import type { VideoSnapshot, SchedulerPort, PlayerControlSnapshot } from './ports.ts'
 
-export interface MonitorRoutes extends Pick<
-  RouteCoordinator,
-  'observePlaybackRate' | 'isOriginalComparison' | 'firstMediaAt'
-> {
-  latestRequested(
-    kind: 'video' | 'audio',
-  ): Pick<
-    RequestContext,
-    | 'generation'
-    | 'epoch'
-    | 'representation'
-    | 'targetHost'
-    | 'routePolicyRevision'
-    | 'authorityRevision'
-  > | null
-  recoveryEligible: RouteCoordinator['recoveryEligible']
-  recover(...args: Parameters<RouteCoordinator['recover']>): unknown
-  recoverStartup(
-    ...args: Parameters<RouteCoordinator['recoverStartup']>
-  ): { readonly host: string | null } | null
-}
+import type { PlaybackDemand } from '../domain/model.ts'
 
 interface StallEpisode {
   readonly id: number
@@ -44,25 +17,28 @@ interface StallEpisode {
   readonly reloadCount: number
 }
 
-export interface MonitorSnapshot {
-  readonly video: VideoSnapshot
-  readonly stableProgressSec: number
-  readonly watchdog:
-    | 'no-video'
-    | 'paused'
-    | 'seek-grace'
-    | 'buffered-to-end'
-    | 'healthy'
-    | 'low-buffer'
-    | 'recovering'
-  readonly stallTicks: number
-  readonly startupRescue: {
-    readonly state: 'watching' | 'not-needed' | 'fallback-submitted' | 'no-alternative'
-    readonly ageSec: number
-  }
-}
+import type {
+  MonitorPort,
+  MonitorRoutes,
+  MonitorPlayerPort,
+  MonitorSessionPort,
+  MonitorVaultPort,
+  MonitorMeasurementPort,
+  MonitorRecoveryPort,
+} from './monitor-ports.ts'
+export type {
+  MonitorRoutes,
+  MonitorPlayerPort,
+  MonitorSessionPort,
+  MonitorVaultPort,
+  MonitorMeasurementPort,
+  MonitorRecoveryPort,
+} from './monitor-ports.ts'
 
-export class PlayerMonitor {
+import type { MonitorSnapshot } from './monitor-model.ts'
+export type { MonitorSnapshot } from './monitor-model.ts'
+
+export class PlayerMonitor implements MonitorPort {
   #timer: (() => void) | null = null
   #lastTime: number | null = null
   #stableProgressSec = 0
@@ -84,26 +60,13 @@ export class PlayerMonitor {
   #listeners = new Set<(snapshot: MonitorSnapshot) => void>()
 
   constructor(
-    private readonly player: Pick<PlayerPort, 'controls' | 'snapshot' | 'syncManifest'>,
-    private readonly session: Pick<SessionStore, 'get'>,
+    private readonly player: MonitorPlayerPort,
+    private readonly session: MonitorSessionPort,
     private readonly settings: { get(): { readonly disabled: boolean } },
-    private readonly vault: Pick<SignedRouteVault, 'groupSummary'>,
+    private readonly vault: MonitorVaultPort,
     private readonly routes: MonitorRoutes,
-    private readonly measurement: Pick<
-      MeasurementController,
-      'tick' | 'cancel' | 'startupFallbackHosts'
-    >,
-    private readonly recovery: Pick<
-      RecoveryController,
-      | 'tick'
-      | 'isRecovering'
-      | 'armStartupFailure'
-      | 'armStall'
-      | 'cancelStall'
-      | 'rejectStall'
-      | 'snapshot'
-      | 'ongoingStallReload'
-    >,
+    private readonly measurement: MonitorMeasurementPort,
+    private readonly recovery: MonitorRecoveryPort,
     private readonly isVisible: () => boolean,
     private readonly now: () => number,
     private readonly scheduler: SchedulerPort,

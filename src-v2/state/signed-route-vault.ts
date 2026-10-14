@@ -5,16 +5,26 @@ import {
   signedRouteHandle,
   type EpochId,
   type GenerationId,
-  type MediaKind,
-  type NativeCandidate,
   type RepresentationId,
-  type RootCandidate,
   type RouteIdentity,
   type SignedRouteHandle,
-  type AttributionStatus,
-  type AttributionSource,
   type DecisionId,
 } from '../domain/model.ts'
+import type {
+  OutputRole,
+  RegisterRepresentationInput,
+  VaultCandidates,
+  VaultGroupSnapshot,
+  VaultMatch,
+} from './vault-model.ts'
+import type { SignedRouteVaultPort } from './vault-ports.ts'
+export type {
+  OutputRole,
+  RegisterRepresentationInput,
+  VaultCandidates,
+  VaultGroupSnapshot,
+  VaultMatch,
+} from './vault-model.ts'
 
 const MAX_VIDEO_GROUPS = 128
 const MAX_AUDIO_GROUPS = 64
@@ -26,19 +36,6 @@ const catalogSource = (raw: string): boolean => {
   const generated = replaceUrlHost(parsed.url.href, TRUSTED_CATALOG[0])
   const target = generated ? parseMediaUrl(generated) : null
   return target?.kind === 'normal' && target.host === TRUSTED_CATALOG[0]
-}
-
-export interface RegisterRepresentationInput {
-  readonly generation: GenerationId
-  readonly epoch: EpochId
-  readonly kind: MediaKind
-  readonly key: string
-  readonly height: number
-  readonly codec: string
-  readonly bandwidth: number
-  readonly urls: readonly string[]
-  readonly source: 'trusted-api' | 'player-mpd' | 'page-hint' | 'transport'
-  readonly refreshTrustedSources?: boolean
 }
 
 interface StoredRoute {
@@ -57,18 +54,7 @@ interface Group {
   readonly source: RegisterRepresentationInput['source']
   readonly routes: readonly StoredRoute[]
 }
-interface OutputRole {
-  readonly representation: RepresentationId
-  readonly role: 'primary' | 'backup'
-  readonly hostChanged: boolean
-  readonly originalHost: string
-  readonly outputHost: string
-  readonly source: 'trusted-api' | 'page-hint'
-  readonly decisionId: DecisionId
-  readonly catalogGenerated: boolean
-}
-
-export class SignedRouteVault {
+export class SignedRouteVault implements SignedRouteVaultPort {
   #generation: GenerationId | null = null
   #epoch: EpochId | null = null
   #groups = new Map<RepresentationId, Group>()
@@ -295,11 +281,7 @@ export class SignedRouteVault {
     return match.status === 'matched' ? match.context : null
   }
 
-  match(url: string): {
-    context: RouteIdentity | null
-    status: AttributionStatus
-    source: AttributionSource
-  } {
+  match(url: string): VaultMatch {
     const parsed = parseMediaUrl(url)
     if (
       !parsed ||
@@ -403,7 +385,7 @@ export class SignedRouteVault {
   candidates(
     representation: RepresentationId,
     unlockedHosts: ReadonlySet<string>,
-  ): { readonly native: readonly NativeCandidate[]; readonly root: RootCandidate | null } {
+  ): VaultCandidates {
     const group = this.#groups.get(representation)
     if (!group) return { native: Object.freeze([]), root: null }
     const invalid = this.#invalid.get(representation) ?? new Set<string>()
@@ -478,13 +460,7 @@ export class SignedRouteVault {
     return stored?.representation === identity.representation ? stored.url : null
   }
 
-  groupSummary(representation: RepresentationId): {
-    readonly kind: MediaKind
-    readonly height: number
-    readonly codec: string
-    readonly bandwidth: number
-    readonly routeCount: number
-  } | null {
+  groupSummary(representation: RepresentationId): VaultGroupSnapshot | null {
     const group = this.#groups.get(representation)
     return group
       ? Object.freeze({

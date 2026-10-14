@@ -3,7 +3,7 @@ import { playurlRequestContext } from '../domain/playurl-content.ts'
 import type { PlayurlRequestContext } from '../domain/playurl-model.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
 import type { FailureKind, RequestContext, GenerationId, EpochId } from '../domain/model.ts'
-import type { AppliedRouteDecision } from '../application/route-coordinator.ts'
+import type { AppliedRouteDecision } from '../application/route-model.ts'
 import {
   type TransportContext,
   type HookInstallation,

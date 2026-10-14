@@ -1,3 +1,4 @@
+import type { SettingsState } from '../state/settings-model.ts'
 import type {
   PlaybackDemand,
   RepresentationId,
@@ -6,37 +7,31 @@ import type {
   GenerationId,
   EpochId,
 } from '../domain/model.ts'
-import type { RouteCoordinator } from './route-coordinator.ts'
-import type { SessionStore } from '../state/session-store.ts'
-import type { SignedRouteVault } from '../state/signed-route-vault.ts'
-import type { SettingsStore } from '../state/settings-store.ts'
+
 import { parseMediaUrl } from '../domain/url-policy.ts'
 import { observePlayurlContent, type PlayurlContentIdentity } from '../domain/playurl-content.ts'
 import type { PlayurlRequestContext } from '../domain/playurl-model.ts'
 
-export interface PlayurlItem {
-  readonly token: object
-  readonly key: string
-  readonly height: number
-  readonly codec: string
-  readonly bandwidth: number
-  readonly primary: string
-  readonly urls: readonly string[]
-  readonly progressive?: boolean
-}
-export interface PlayurlInput {
-  readonly token: object
-  readonly video: readonly PlayurlItem[]
-  readonly audio: readonly PlayurlItem[]
-}
-export interface PlayurlOutput {
-  readonly token: object
-  readonly primary: string
-  readonly backups: readonly string[]
-}
 type WriteOutput = (item: PlayurlItem, primary: string, backups: readonly string[]) => void
 
-export class PlayurlController {
+import type {
+  PlayurlControllerPort,
+  PlayurlSessionPort,
+  PlayurlVaultPort,
+  PlayurlRoutesPort,
+  PlayurlSettingsPort,
+} from './playurl-ports.ts'
+export type {
+  PlayurlSessionPort,
+  PlayurlVaultPort,
+  PlayurlRoutesPort,
+  PlayurlSettingsPort,
+} from './playurl-ports.ts'
+
+import type { PlayurlItem, PlayurlInput, PlayurlOutput } from './playurl-model.ts'
+export type { PlayurlItem, PlayurlInput, PlayurlOutput } from './playurl-model.ts'
+
+export class PlayurlController implements PlayurlControllerPort {
   #epochListeners = new Set<
     (state: { readonly generation: GenerationId; readonly epoch: EpochId }) => void
   >()
@@ -47,30 +42,10 @@ export class PlayurlController {
   #generation = -1
   #contentIdentity: PlayurlContentIdentity | null = null
   constructor(
-    private readonly session: Pick<SessionStore, 'beginEpoch' | 'get'>,
-    private readonly vault: Pick<
-      SignedRouteVault,
-      | 'groupSummary'
-      | 'identity'
-      | 'isCurrentIdentity'
-      | 'register'
-      | 'reset'
-      | 'rootUrl'
-      | 'source'
-      | 'sourceURLs'
-    >,
-    private readonly routes: Pick<
-      RouteCoordinator,
-      | 'apply'
-      | 'isBilibiliMedia'
-      | 'isCatalogOnly'
-      | 'opaqueOutput'
-      | 'plan'
-      | 'playbackRate'
-      | 'playerOutput'
-      | 'resetEpoch'
-    >,
-    private readonly settings: Pick<SettingsStore, 'get'>,
+    private readonly session: PlayurlSessionPort,
+    private readonly vault: PlayurlVaultPort,
+    private readonly routes: PlayurlRoutesPort,
+    private readonly settings: PlayurlSettingsPort,
   ) {}
 
   catalogOnly(): boolean {
@@ -85,7 +60,7 @@ export class PlayurlController {
   active(): boolean {
     return !this.session.get().disabled
   }
-  codecPreference(): ReturnType<SettingsStore['get']>['codec'] {
+  codecPreference(): SettingsState['codec'] {
     return this.settings.get().codec
   }
   lifecycleKey(): string {

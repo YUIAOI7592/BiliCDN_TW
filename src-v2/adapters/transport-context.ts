@@ -6,7 +6,6 @@ import type {
 import type { PlayurlRejection, PlayurlTransformResult } from '../domain/playurl-model.ts'
 export type { TransportSnapshot } from '../domain/transport-model.ts'
 import type { PlayurlPort } from '../application/ports.ts'
-import type { SettingsState } from '../state/settings-store.ts'
 import { isCatalogHost } from '../domain/catalog.ts'
 import {
   requestId,
@@ -16,33 +15,20 @@ import {
   type TransportObservation,
   type GenerationId,
 } from '../domain/model.ts'
-import type { RuntimeIdPort } from '../platform/runtime-ids.ts'
-import type { RouteCoordinator, AppliedRouteDecision } from '../application/route-coordinator.ts'
-import type { MeasurementController } from '../application/measurement-controller.ts'
-import type { SessionStore } from '../state/session-store.ts'
-
-export type TransportRoutes = Pick<
-  RouteCoordinator,
-  | 'policyRevision'
-  | 'isCatalogOnly'
-  | 'recognizesMedia'
-  | 'isBilibiliMedia'
-  | 'apply'
-  | 'inspectOriginal'
-  | 'requestStarted'
-  | 'observe'
->
-export interface TransportSettings {
-  get(): Pick<SettingsState, 'disabled' | 'blockHttpDns'>
-}
-export type StartupGate = Pick<
-  MeasurementController,
-  'willGateStartup' | 'prepareStartup' | 'noteUnpreflighted'
->
-export interface HookInstallation {
-  restore(): void
-  isInstalled(): boolean
-}
+import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
+import type { AppliedRouteDecision } from '../application/route-model.ts'
+import type {
+  TransportRoutes,
+  TransportSettings,
+  StartupGate,
+  TransportSessionPort,
+} from './transport-ports.ts'
+export type {
+  TransportRoutes,
+  TransportSettings,
+  StartupGate,
+  HookInstallation,
+} from './transport-ports.ts'
 export interface DispatchCheck {
   readonly generation: GenerationId
   readonly applied: AppliedRouteDecision | null
@@ -116,7 +102,7 @@ export class TransportContext {
   #lastBlocked: TransportStats['lastBlocked'] = null
   #lastPlayurl: PlayurlTransportSummary | null = null
   constructor(
-    readonly session: Pick<SessionStore, 'get' | 'isGeneration'>,
+    readonly session: TransportSessionPort,
     readonly settings: TransportSettings,
     readonly routes: TransportRoutes,
     readonly playurl: PlayurlPort,

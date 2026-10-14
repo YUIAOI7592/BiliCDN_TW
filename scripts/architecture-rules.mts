@@ -1,4 +1,4 @@
-import { basename, dirname, resolve, relative } from 'node:path'
+import { dirname, resolve, relative } from 'node:path'
 import { SyntaxKind as K, visit } from './typescript-ast.mts'
 import {
   isCallExpression,
@@ -62,9 +62,22 @@ const nameOf = (node: Node | undefined): string =>
     : node && 'escapedText' in node && typeof node.escapedText === 'string'
       ? node.escapedText
       : ''
+const modulePath = (root: string, file: string): string =>
+  relative(root, file).replaceAll('\\', '/')
+const isContractModule = (path: string): boolean =>
+  /(?:^|\/)[^/]+-(?:ports|model)\.ts$/.test(path) ||
+  [
+    'domain/model.ts',
+    'diagnostics/model.ts',
+    'application/ports.ts',
+    'diagnostics/ports.ts',
+    'platform/storage-port.ts',
+    'platform/runtime-id-port.ts',
+  ].includes(path)
 export function inspectModule(source: SourceFile, root: string): ModuleInspection {
   const file = resolve(source.fileName),
-    layer = relative(root, file).split(/[\\/]/)[0]!
+    path = modulePath(root, file),
+    layer = path.split('/')[0]!
   const dependencies: string[] = [],
     violations: string[] = [],
     entry = file === resolve(root, 'entry.ts')
@@ -79,10 +92,13 @@ export function inspectModule(source: SourceFile, root: string): ModuleInspectio
       return
     }
     const target = resolve(dirname(file), specifier),
-      toLayer = relative(root, target).split(/[\\/]/)[0]
+      targetPath = modulePath(root, target),
+      toLayer = targetPath.split('/')[0]
     dependencies.push(target)
     if (!entry && !layers[layer]?.includes(toLayer!))
       violations.push(`${file}: ${layer} -> ${toLayer}`)
+    if (isContractModule(path) && toLayer !== 'domain' && !isContractModule(targetPath))
+      violations.push(`${file}: contract modules must not import implementation ${targetPath}`)
     if (dynamic) violations.push(`${file}: dynamic runtime loading is not supported`)
   }
   visit(source, (node) => {
@@ -99,14 +115,24 @@ export function inspectModule(source: SourceFile, root: string): ModuleInspectio
       addImport(node.arguments[0], true)
     if (isCallExpression(node) && isPropertyAccessExpression(node.expression)) {
       const method = nameOf(node.expression.name)
-      if (method === 'setAffinity' && basename(file) !== 'route-coordinator.ts')
+      if (method === 'setAffinity' && path !== 'application/route-coordinator.ts')
         violations.push(`${file}: only RouteCoordinator may change affinity`)
       if (
         layer === 'application' &&
         method === 'reload' &&
-        basename(file) !== 'recovery-controller.ts'
+        path !== 'application/recovery-controller.ts'
       )
         violations.push(`${file}: only RecoveryController may reload the player`)
+      const receiver = node.expression.expression
+      const receiverName = isPropertyAccessExpression(receiver)
+        ? nameOf(receiver.name)
+        : nameOf(receiver)
+      if (
+        method === 'read' &&
+        receiverName === 'probe' &&
+        path !== 'application/measurement-controller.ts'
+      )
+        violations.push(`${file}: only MeasurementController may start active probes`)
       if (
         layer === 'ui' &&
         [

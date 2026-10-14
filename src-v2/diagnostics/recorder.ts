@@ -10,117 +10,21 @@ import { isCatalogHost } from '../domain/catalog.ts'
 import { isKnownNativeFamily } from '../domain/url-policy.ts'
 import type { PlaybackDiagnosticSample, ReadonlySnapshot } from '../domain/diagnostic-model.ts'
 export type { PlaybackDiagnosticSample } from '../domain/diagnostic-model.ts'
+export type { DiagnosticSnapshot } from './model.ts'
+import type {
+  DiagnosticRequest,
+  DiagnosticTransport,
+  DiagnosticDecision,
+  DiagnosticRanking,
+  DiagnosticEventData,
+  SafeEvent,
+  Flow,
+  Incident,
+  AttemptStage,
+  DiagnosticSnapshot,
+} from './model.ts'
+import type { DiagnosticRecorderPort } from './ports.ts'
 
-interface DiagnosticRequest extends Omit<
-  RequestContext,
-  'originalHost' | 'targetHost' | 'requestId' | 'decisionId' | 'representation'
-> {
-  readonly originalHost: string | null
-  readonly targetHost: string | null
-  readonly requestId: string
-  readonly decisionId: string
-  readonly representation: string | null
-}
-interface DiagnosticTransport extends Partial<Omit<DiagnosticRequest, 'decisionId'>> {
-  readonly decisionId: string | null
-  readonly generation: RequestContext['generation']
-  readonly epoch: RequestContext['epoch']
-  readonly kind: TransportObservation['kind']
-  readonly representation: string | null
-  readonly routeType: TransportObservation['routeType']
-  readonly originalHost: string | null
-  readonly targetHost: string | null
-  readonly responseHost: string | null
-  readonly status: number
-  readonly bytes: number
-  readonly ttfbMs: number | null
-  readonly elapsedMs: number
-  readonly completedAt: number
-  readonly outcome: TransportObservation['outcome']
-  readonly failureKind: TransportObservation['failureKind'] | null
-}
-interface DiagnosticDecision {
-  readonly decisionStage: 'plan'
-  readonly id: string
-  readonly action: RouteDecision['action']
-  readonly reason: string
-  readonly routeType: RouteDecision['routeType']
-  readonly host: string | null
-  readonly demandRatio: number | null
-  readonly capacityAssessment: ReturnType<typeof assessDemandRatio>
-}
-interface DiagnosticRanking extends DiagnosticDecision {
-  readonly ranking: readonly {
-    readonly host: string | null
-    readonly state: RouteDecision['ranking'][number]['state']
-    readonly eligible: boolean
-    readonly reasons: readonly string[]
-    readonly safeMbps: number | null
-    readonly demandRatio: number | null
-    readonly ttfbMs: number | null
-  }[]
-}
-type EventOf<Type extends DomainEvent['type']> = Extract<DomainEvent, { type: Type }>
-type DiagnosticEventData =
-  | DiagnosticDecision
-  | DiagnosticRequest
-  | (DiagnosticTransport & { detached?: boolean })
-  | { routeType: RequestContext['routeType']; host: string | null; decisionId: string | null }
-  | Pick<EventOf<'attribution-changed'>, 'requestId' | 'status' | 'kind'>
-  | {
-      action: EventOf<'recovery'>['action']['action']
-      actionId: string
-      kind?: RequestContext['kind']
-      identity?: RouteIdentity
-      decision?: DiagnosticDecision
-      savedPositionSec?: number
-      savedRate?: number
-      reason?: string
-    }
-  | (EventOf<'core' | 'core-uninitialized'> & { meaning?: string })
-  | Pick<EventOf<'lifecycle'>, 'generation' | 'epoch' | 'reason'>
-  | { paused: boolean }
-interface SafeEvent {
-  at: number
-  type: string
-  data: DiagnosticEventData
-  important: boolean
-}
-interface Flow {
-  requests: number
-  successes: number
-  failures: number
-  timeouts: number
-  aborts: number
-  zeroByteAborts: number
-  noResponseAborts: number
-  bytes: number
-  lastAt: number
-  maxElapsedMs: number
-  maxTtfbMs: number
-}
-interface Incident {
-  id: string
-  reason: string
-  startedAt: number
-  captureUntil: number
-  state: 'capturing' | 'frozen'
-  events: SafeEvent[]
-  flow: (Flow & { key: string })[]
-  playerTrace: string[]
-  playerTraceFormat: string
-  playerTraceFlags: string
-}
-type AttemptStage =
-  | 'planned'
-  | 'sent'
-  | 'progress-unconfirmed'
-  | 'response-observed'
-  | 'playback-observed'
-  | 'mixed-evidence'
-  | 'unconfirmed'
-  | 'superseded'
-  | 'interrupted'
 interface RouteAttempt {
   actionId: string
   decisionId: string
@@ -154,7 +58,7 @@ const text = (value: unknown, max = 96): string => String(value ?? '').slice(0, 
 const field = (value: unknown, key: string): unknown =>
   value && typeof value === 'object' ? Reflect.get(value, key) : undefined
 
-export class DiagnosticRecorder {
+export class DiagnosticRecorder implements DiagnosticRecorderPort {
   #events: SafeEvent[] = []
   #flow = new Map<string, Flow>()
   #pending = new Map<string, RequestContext>()
@@ -997,52 +901,4 @@ export class DiagnosticRecorder {
         .map(([name, item]) => [name, this.#sanitize(item, name, depth + 1)]),
     )
   }
-}
-
-/** Public queries retain the concrete, readonly snapshot shape. */
-export interface DiagnosticSnapshot {
-  readonly coverage: { readonly from: number; readonly to: number }
-  readonly incident: ReadonlySnapshot<Incident> | null
-  readonly manualMark: Readonly<{ at: number; reason: string; count: number }> | null
-  readonly flow: readonly Readonly<Flow & { key: string }>[]
-  readonly lastSuccess: Readonly<Record<string, DiagnosticTransport>>
-  readonly pending: readonly DiagnosticRequest[]
-  readonly events: readonly ReadonlySnapshot<SafeEvent>[]
-  readonly rankings: readonly DiagnosticRanking[]
-  readonly routeRecovery: {
-    readonly attempts: readonly ReadonlySnapshot<
-      Omit<
-        RouteAttempt,
-        | 'identity'
-        | 'baselineCaptured'
-        | 'progressTicks'
-        | 'lastProgressAt'
-        | 'lastPositionSec'
-        | 'requestIds'
-        | 'responseIds'
-        | 'host'
-      > & {
-        host: string | null
-        generation: number
-        epoch: number
-        representation: string
-        authorityRevision: number
-      }
-    >[]
-  }
-  readonly counters: Readonly<
-    Record<
-      | 'evicted'
-      | 'incidentReplaced'
-      | 'rankingEvicted'
-      | 'flowEvicted'
-      | 'incidentEvicted'
-      | 'pendingEvicted'
-      | 'eventsExpired'
-      | 'flowsExpired'
-      | 'traceEvicted'
-      | 'attemptEvicted',
-      number
-    >
-  >
 }

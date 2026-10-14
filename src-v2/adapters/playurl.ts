@@ -1,5 +1,6 @@
-import type { PlayurlController, PlayurlItem } from '../application/playurl-controller.ts'
-import type { CodecPreference } from '../state/settings-store.ts'
+import type { PlayurlItem } from '../application/playurl-model.ts'
+import type { PlayurlIngestionPort } from './playurl-ports.ts'
+import type { CodecPreference } from '../state/settings-model.ts'
 import type {
   PlayurlFormat,
   PlayurlRejection,
@@ -40,12 +41,7 @@ const rewriteItem = (item: UnknownRecord, primary: string, backups: readonly str
 }
 
 export class PlayurlAdapter {
-  constructor(
-    private readonly controller: Pick<
-      PlayurlController,
-      'lifecycleKey' | 'catalogOnly' | 'codecPreference' | 'ingest' | 'active'
-    >,
-  ) {}
+  constructor(private readonly controller: PlayurlIngestionPort) {}
   lifecycleKey(): string {
     return this.controller.lifecycleKey()
   }

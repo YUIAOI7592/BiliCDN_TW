@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { fixture } from '../support/runtime-fixture.ts'
 import { FakeStorage } from '../support/storage.ts'
 import { ControlCenter } from '../../src-v2/ui/control-center.ts'
+import type { ControlCenterDependencies } from '../../src-v2/ui/control-center-ports.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { deferred } from '../support/deferred.ts'
 
@@ -670,7 +671,7 @@ function ui(t: TestContext) {
     configurable: true,
     value: (task: () => void) => f.clock.microtask(task),
   })
-  const center = new ControlCenter(f.deps)
+  const center = new ControlCenter(f.deps satisfies ControlCenterDependencies)
   center.show()
   const button = (label: string) => {
     const found = doc.flatten().find((e) => e.tag === 'button' && e.textContent === label)

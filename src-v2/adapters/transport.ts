@@ -1,5 +1,5 @@
-import type { SessionStore } from '../state/session-store.ts'
-import type { RuntimeIdPort } from '../platform/runtime-ids.ts'
+import type { TransportSessionPort } from './transport-ports.ts'
+import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
 import type { PlayurlPort } from '../application/ports.ts'
 import {
   TransportContext,
@@ -20,7 +20,7 @@ export class TransportAdapter {
   #hookReason = 'not-attempted'
   readonly #context: TransportContext
   constructor(
-    session: Pick<SessionStore, 'get' | 'isGeneration'>,
+    session: TransportSessionPort,
     settings: TransportSettings,
     routes: TransportRoutes,
     playurl: PlayurlPort,

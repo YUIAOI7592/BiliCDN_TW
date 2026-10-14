@@ -1,33 +1,37 @@
-import type { SettingsState, SettingsStore } from '../state/settings-store.ts'
-import type { RestrictionStore } from '../state/restriction-store.ts'
-import type { EvidenceStore } from '../state/evidence-store.ts'
-import type { MeasurementMetaStore } from '../state/measurement-meta-store.ts'
-import type { RouteCoordinator } from './route-coordinator.ts'
-import type { MeasurementController } from './measurement-controller.ts'
-import type { RecoveryController } from './recovery-controller.ts'
+import type { SettingsState } from '../state/settings-model.ts'
 
-export type SettingsChange = Partial<Omit<SettingsState, 'schema' | 'updatedAt'>>
-export interface ControlCommandPort {
-  updateSettings(change: SettingsChange): Promise<SettingsState>
-  setCatalogEnabled(host: string, enabled: boolean): Promise<SettingsState>
-  setOriginalComparison(enabled: boolean): void
-  requestMeasurement(): void
-  blacklistLatestVideo(): Promise<void>
-  clearLearning(): Promise<void>
-  resetSettings(): Promise<void>
-}
+import type {
+  ControlCommandPort,
+  SettingsChange,
+  ControlSettingsPort,
+  ControlRestrictionsPort,
+  ControlEvidencePort,
+  ControlMetaPort,
+  ControlRoutesPort,
+  ControlMeasurementPort,
+  ControlRecoveryPort,
+} from './control-ports.ts'
+export type {
+  SettingsChange,
+  ControlCommandPort,
+  ControlSettingsPort,
+  ControlRestrictionsPort,
+  ControlEvidencePort,
+  ControlMetaPort,
+  ControlRoutesPort,
+  ControlMeasurementPort,
+  ControlRecoveryPort,
+} from './control-ports.ts'
+
 export class ControlCommands implements ControlCommandPort {
   constructor(
-    private readonly settings: Pick<SettingsStore, 'update' | 'reset' | 'setCatalogEnabled'>,
-    private readonly restrictions: Pick<RestrictionStore, 'add' | 'clear'>,
-    private readonly evidence: Pick<EvidenceStore, 'clear'>,
-    private readonly meta: Pick<MeasurementMetaStore, 'clear'>,
-    private readonly routes: Pick<
-      RouteCoordinator,
-      'latestVideoHost' | 'invalidateForUserSetting' | 'setOriginalComparison'
-    >,
-    private readonly measurement: Pick<MeasurementController, 'requestManual' | 'reset'>,
-    private readonly recovery: Pick<RecoveryController, 'reset'>,
+    private readonly settings: ControlSettingsPort,
+    private readonly restrictions: ControlRestrictionsPort,
+    private readonly evidence: ControlEvidencePort,
+    private readonly meta: ControlMetaPort,
+    private readonly routes: ControlRoutesPort,
+    private readonly measurement: ControlMeasurementPort,
+    private readonly recovery: ControlRecoveryPort,
     private readonly now: () => number,
   ) {}
   updateSettings(change: SettingsChange): Promise<SettingsState> {

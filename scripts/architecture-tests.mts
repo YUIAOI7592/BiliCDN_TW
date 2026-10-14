@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { withProjectAst } from './typescript-ast.mts'
 import { inspectModule, validateGraph } from './architecture-rules.mts'
 
-function architectureFixture() {
+function architectureFixture(additional: Readonly<Record<string, string>> = {}) {
   const scratch = mkdtempSync(join(tmpdir(), 'bilicdn-architecture-'))
   try {
     const fixtures = {
@@ -30,6 +30,7 @@ function architectureFixture() {
       'ui/reset.ts': 'export const run = (measurement: any) => measurement.reset()',
       'domain/cycle-a.ts': "export { b } from './cycle-b.ts'; export const a = 1",
       'domain/cycle-b.ts': "export { a } from './cycle-a.ts'; export const b = 2",
+      ...additional,
     }
     for (const [name, source] of Object.entries(fixtures)) {
       const path = join(scratch, name)
@@ -103,3 +104,112 @@ test('reject re-export cycle', { timeout: 5000 }, () => {
     /Import cycle/,
   )
 })
+
+for (const [file, source] of [
+  [
+    'application/routing/route-coordinator.ts',
+    'export const run = (session: {setAffinity(value: null): void}) => session.setAffinity(null)',
+  ],
+  [
+    'adapters/route-coordinator.ts',
+    'export const run = (session: {setAffinity(value: null): void}) => session.setAffinity(null)',
+  ],
+  [
+    'application/recovery/recovery-controller.ts',
+    'export const run = (player: {reload(): void}) => player.reload()',
+  ],
+  [
+    'application/measurement/measurement-controller.ts',
+    'export const run = (probe: {read(): void}) => probe.read()',
+  ],
+  [
+    'application/other-probe.ts',
+    'export class Reader { constructor(private probe: {read(): void}) {} run() { return this.probe.read() } }',
+  ],
+] as const)
+  test(`sole effect owner rejects a spoofed module path: ${file}`, { timeout: 5000 }, () => {
+    const modules = architectureFixture({ [file]: source })
+    assert.throws(
+      () => validateGraph([modules.get(file)!]),
+      /only (RouteCoordinator|RecoveryController|MeasurementController)/,
+    )
+  })
+
+for (const [file, source] of [
+  [
+    'application/route-coordinator.ts',
+    'export const run = (session: {setAffinity(value: null): void}) => session.setAffinity(null)',
+  ],
+  [
+    'application/recovery-controller.ts',
+    'export const run = (player: {reload(): void}) => player.reload()',
+  ],
+  [
+    'application/measurement-controller.ts',
+    'export const run = (probe: {read(): void}) => probe.read()',
+  ],
+  ['application/body-reader.ts', 'export const run = (reader: {read(): void}) => reader.read()'],
+] as const)
+  test(
+    `sole effect owner permits the exact path or ordinary reader: ${file}`,
+    { timeout: 5000 },
+    () => {
+      const modules = architectureFixture({ [file]: source })
+      assert.doesNotThrow(() => validateGraph([modules.get(file)!]))
+    },
+  )
+
+for (const [file, source] of [
+  ['state/settings-ports.ts', "import type { Store } from './store.ts'"],
+  ['state/settings-model.ts', "export type { Store } from './store.ts'"],
+  [
+    'application/route-model.ts',
+    "type Controller = import('./route-coordinator.ts').RouteCoordinator",
+  ],
+  ['application/ports.ts', "import type { Controller } from './runtime-controller.ts'"],
+  ['diagnostics/model.ts', "import type { Observer } from './observer.ts'"],
+  ['diagnostics/ports.ts', "export type { Observer } from './observer.ts'"],
+  ['platform/storage-port.ts', "import type { TampermonkeyStorage } from './storage.ts'"],
+  ['platform/runtime-id-port.ts', "import type { createRuntimeIds } from './runtime-ids.ts'"],
+  [
+    'ui/control-center-ports.ts',
+    "import { ControlCommands } from '../application/control-commands.ts'",
+  ],
+] as const)
+  test(
+    `contract module rejects implementation dependency including types: ${file}`,
+    { timeout: 5000 },
+    () => {
+      const modules = architectureFixture({ [file]: source })
+      assert.throws(
+        () => validateGraph([modules.get(file)!]),
+        /contract modules must not import implementation/,
+      )
+    },
+  )
+
+test(
+  'contract modules can compose model, capability and pure domain types',
+  { timeout: 5000 },
+  () => {
+    const modules = architectureFixture({
+      'domain/model.ts': 'export interface Value { readonly count: number }',
+      'state/record-model.ts':
+        "import type { Value } from '../domain/model.ts'; export interface Record { readonly value: Value }",
+      'state/record-ports.ts':
+        "import type { Record } from './record-model.ts'; export interface Reader { get(): Record }",
+      'application/reader-ports.ts':
+        "import type { Reader } from '../state/record-ports.ts'; export interface Consumer { reader: Reader }",
+    })
+    assert.doesNotThrow(() =>
+      validateGraph(
+        [
+          'domain/model.ts',
+          'state/record-model.ts',
+          'state/record-ports.ts',
+          'application/reader-ports.ts',
+        ].map((file) => modules.get(file)!),
+      ),
+    )
+  },
+)

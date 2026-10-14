@@ -1,8 +1,8 @@
 import type {
-  PlayurlPort,
+  LifecyclePlayurlPort,
   VideoSnapshot,
   PlayerControlSnapshot,
-  SchedulerPort,
+  TimeoutSchedulerPort,
 } from '../application/ports.ts'
 
 type UnknownRecord = Record<string, unknown>
@@ -60,7 +60,7 @@ const observeMethod = (
 }
 
 interface ControlEnvironment {
-  readonly scheduler: Pick<SchedulerPort, 'timeout'>
+  readonly scheduler: TimeoutSchedulerPort
   readonly isActuallyVisible: () => boolean
   readonly subscribeControlLoss: (listener: () => void) => () => void
 }
@@ -138,7 +138,7 @@ export class PlayerAdapter {
   #nativePosition: NativePosition | null = null
   #controlRevision = 0
   constructor(
-    private readonly playurl: PlayurlPort & { lifecycleKey(): string },
+    private readonly playurl: LifecyclePlayurlPort,
     private readonly environment: ControlEnvironment,
   ) {}
 

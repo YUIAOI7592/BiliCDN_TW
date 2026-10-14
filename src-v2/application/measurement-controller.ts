@@ -1,64 +1,12 @@
-import type {
-  AppliedRouteDecision,
-  RouteCoordinator,
-  StartupCandidate,
-  StartupOptions,
-} from './route-coordinator.ts'
-import type { FailureKind, PlaybackDemand, RepresentationId } from '../domain/model.ts'
-import type { MeasurementMetaStore } from '../state/measurement-meta-store.ts'
+import type { AppliedRouteDecision, StartupCandidate, StartupOptions } from './route-model.ts'
+import type { FailureKind, PlaybackDemand } from '../domain/model.ts'
+
 import type { RangeProbePort, SchedulerPort } from './ports.ts'
 
 const COOLDOWN_MS = 10 * 60_000
 const TIMEOUT_MS = 3000
 const cancellationReason = (signal: AbortSignal): unknown =>
   'reason' in signal ? signal.reason : new DOMException('Aborted', 'AbortError')
-export interface MeasurementStatus {
-  readonly generationActive: boolean
-  readonly representation: RepresentationId | null
-  readonly demand: PlaybackDemand | null
-  readonly stableProgressSec: number
-  readonly playableBufferSec: number
-  readonly visible: boolean
-  readonly seeking: boolean
-  readonly recovering: boolean
-  readonly disabled: boolean
-}
-
-export interface MeasurementRoutes extends Pick<
-  RouteCoordinator,
-  | 'startupOptions'
-  | 'noteStartupProbeResult'
-  | 'recordStartupSuccess'
-  | 'challenge'
-  | 'isCatalogOnly'
-  | 'recordChallenge'
-> {
-  commitStartupChoice(
-    ...args: Parameters<RouteCoordinator['commitStartupChoice']>
-  ): { readonly host: string | null } | null
-}
-
-export interface MeasurementSnapshot {
-  readonly state: 'idle' | 'waiting' | 'running' | 'complete' | 'failed' | 'cancelled'
-  readonly reason: string
-  readonly lastAttemptAt: number
-  readonly host: string | null
-  readonly startup?: {
-    readonly state: string
-    readonly reason: string
-    readonly candidates: number
-    readonly selectedHost: string | null
-    readonly delayed: boolean
-    readonly results?: readonly {
-      readonly host: string
-      readonly type: string
-      readonly valid: boolean
-      readonly safeMbps: number | null
-      readonly status: number | null
-      readonly reason: string
-    }[]
-  }
-}
 
 interface ProbeResult {
   readonly candidate: StartupCandidate
@@ -76,7 +24,17 @@ interface MeasurementWork {
   readonly marker: number
 }
 
-export class MeasurementController {
+import type {
+  MeasurementPort,
+  MeasurementRoutes,
+  MeasurementMetadataPort,
+} from './measurement-ports.ts'
+export type { MeasurementRoutes, MeasurementMetadataPort } from './measurement-ports.ts'
+
+import type { MeasurementStatus, MeasurementSnapshot } from './measurement-model.ts'
+export type { MeasurementStatus, MeasurementSnapshot } from './measurement-model.ts'
+
+export class MeasurementController implements MeasurementPort {
   #running: MeasurementWork | null = null
   #failedAt: number | null = null
   #planning: object | null = null
@@ -104,7 +62,7 @@ export class MeasurementController {
 
   constructor(
     private readonly routes: MeasurementRoutes,
-    private readonly meta: Pick<MeasurementMetaStore, 'get' | 'update' | 'withLock'>,
+    private readonly meta: MeasurementMetadataPort,
     private readonly probe: RangeProbePort,
     private readonly now: () => number,
     private readonly scheduler: SchedulerPort,

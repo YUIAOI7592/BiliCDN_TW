@@ -165,6 +165,128 @@ test('CONTROL player: disconnecting cached video changes snapshot and buffer acc
   assert.equal(adapter.snapshot().currentTime, 60)
 })
 
+test('CONTROL player: a connected zero-area cache is retained until a visible replacement exists', (t) => {
+  const scope = testScope(t)
+  const first = { isConnected: true, clientWidth: 1280, clientHeight: 720 }
+  const second = { isConnected: true, clientWidth: 0, clientHeight: 720 }
+  let videos = [first]
+  scope.defineGlobal('document', { configurable: true, value: { querySelectorAll: () => videos } })
+  const adapter = new PlayerAdapter(
+    { transform: () => playurlResult(true), lifecycleKey: () => '1:0' },
+    {
+      scheduler: { timeout: () => () => undefined },
+      isActuallyVisible: () => true,
+      subscribeControlLoss: () => () => undefined,
+    },
+  )
+  scope.defer(() => adapter.reset())
+  assert.equal(adapter.video(), first)
+  first.clientWidth = 0
+  videos = [second]
+  assert.equal(adapter.video(), first)
+  second.clientWidth = 640
+  assert.equal(adapter.video(), second)
+})
+
+test('CONTROL player: manifest observation clones bounded media without exposing SDK extra fields', (t) => {
+  const scope = testScope(t),
+    payloads: unknown[] = []
+  const makeEntry = (index: number) => ({
+    baseUrl: `https://cdn.example.net/synthetic-${index}.m4s`,
+    backupUrl: Array.from(
+      { length: 6 },
+      (_, backup) => `https://cdn.example.net/backup-${backup}.m4s`,
+    ),
+    id: index,
+    codecId: 13,
+    codec: 'synthetic-codec',
+    bitrate: 1000,
+    privateSdkField: { signedPayload: 'synthetic-private' },
+  })
+  const mpd = {
+    video: Array.from({ length: 130 }, (_, index) => makeEntry(index)),
+    audio: Array.from({ length: 66 }, (_, index) => makeEntry(index)),
+  }
+  const original = structuredClone(mpd)
+  scope.defineGlobal('unsafeWindow', {
+    configurable: true,
+    value: { player: { __core: () => ({ getMpd: () => mpd }) } },
+  })
+  const adapter = new PlayerAdapter(
+    {
+      transform: (payload) => {
+        payloads.push(payload)
+        return playurlResult(true)
+      },
+      lifecycleKey: () => '1:0',
+    },
+    {
+      scheduler: { timeout: () => () => undefined },
+      isActuallyVisible: () => true,
+      subscribeControlLoss: () => () => undefined,
+    },
+  )
+  scope.defer(() => adapter.reset())
+  assert.equal(adapter.syncManifest(), true)
+  const payload = payloads[0] as {
+    code: number
+    data: { dash: { video: Record<string, unknown>[]; audio: Record<string, unknown>[] } }
+  }
+  assert.equal(payload.code, 0)
+  assert.equal(payload.data.dash.video.length, 128)
+  assert.equal(payload.data.dash.audio.length, 64)
+  assert.deepEqual(payload.data.dash.video[0], {
+    base_url: 'https://cdn.example.net/synthetic-0.m4s',
+    backup_url: [0, 1, 2].map((index) => `https://cdn.example.net/backup-${index}.m4s`),
+    id: 0,
+    codecid: 13,
+    codecs: 'synthetic-codec',
+    width: undefined,
+    height: undefined,
+    bandwidth: 1000,
+  })
+  assert.notEqual(payload.data.dash.video[0], mpd.video[0])
+  assert.deepEqual(mpd, original)
+})
+
+test('CONTROL player: rejected manifests retry while accepted fingerprints follow lifecycle and reset', (t) => {
+  const scope = testScope(t)
+  let accepted = false,
+    lifecycle = '1:0',
+    calls = 0
+  const mpd = { video: [{ base_url: 'https://cdn.example.net/synthetic.m4s' }] }
+  scope.defineGlobal('unsafeWindow', {
+    configurable: true,
+    value: { player: { __core: () => ({ getMpd: () => mpd }) } },
+  })
+  const adapter = new PlayerAdapter(
+    {
+      transform: () => {
+        calls++
+        return playurlResult(accepted)
+      },
+      lifecycleKey: () => lifecycle,
+    },
+    {
+      scheduler: { timeout: () => () => undefined },
+      isActuallyVisible: () => true,
+      subscribeControlLoss: () => () => undefined,
+    },
+  )
+  scope.defer(() => adapter.reset())
+  assert.equal(adapter.syncManifest(), false)
+  accepted = true
+  assert.equal(adapter.syncManifest(), true)
+  assert.equal(adapter.syncManifest(), true)
+  assert.equal(calls, 2)
+  lifecycle = '1:1'
+  assert.equal(adapter.syncManifest(), true)
+  assert.equal(calls, 3)
+  adapter.reset()
+  assert.equal(adapter.syncManifest(), true)
+  assert.equal(calls, 4)
+})
+
 test('CONTROL range: native body read failure is rejected as evidence and lock released', async (t) => {
   const scope = testScope(t),
     body = new ReadableStream<Uint8Array>({

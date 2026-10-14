@@ -62,6 +62,14 @@ export interface SchedulerPort {
   microtask(task: () => void): void
 }
 
+export interface TimeoutSchedulerPort {
+  timeout(task: () => void, delayMs: number): () => void
+}
+
+export interface LifecyclePlayurlPort extends PlayurlPort {
+  lifecycleKey(): string
+}
+
 export interface NavigationPort {
   key(): string
   subscribe(listener: () => void): () => void

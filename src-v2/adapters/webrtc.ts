@@ -1,4 +1,6 @@
-import type { SettingsStore } from '../state/settings-store.ts'
+import type { SettingsReader, SettingsObserver } from '../state/settings-ports.ts'
+
+interface WebRtcSettingsPort extends SettingsReader, SettingsObserver {}
 
 const API_NAMES = [
   'RTCPeerConnection',
@@ -17,7 +19,7 @@ export class WebRtcAdapter {
     }
   >()
   #unsubscribe: (() => void) | null = null
-  constructor(private readonly settings: SettingsStore) {}
+  constructor(private readonly settings: WebRtcSettingsPort) {}
 
   install(): void {
     if (this.#unsubscribe) return

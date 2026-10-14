@@ -2,23 +2,15 @@ import {
   epochId,
   generationId,
   type DecisionId,
-  type EpochId,
   type GenerationId,
   type RepresentationId,
   type RouteAffinity,
 } from '../domain/model.ts'
+import type { SessionSnapshot } from './session-model.ts'
+import type { SessionPort } from './session-ports.ts'
+export type { SessionSnapshot } from './session-model.ts'
 
-export interface SessionSnapshot {
-  readonly generation: GenerationId
-  readonly epoch: EpochId
-  readonly representation: RepresentationId | null
-  readonly affinity: RouteAffinity | null
-  readonly disabled: boolean
-  readonly recovering: boolean
-  readonly lastDecisionId: DecisionId | null
-}
-
-export class SessionStore {
+export class SessionStore implements SessionPort {
   #state: SessionSnapshot = Object.freeze({
     generation: generationId(0),
     epoch: epochId(0),

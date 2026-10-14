@@ -1,18 +1,18 @@
 import type { MediaKind } from '../domain/model.ts'
-import type { StoragePort } from '../platform/storage.ts'
+import type { StoragePort } from '../platform/storage-port.ts'
+import type {
+  RestrictionRecord,
+  RestrictionSnapshot,
+  RestrictionType,
+} from './restriction-model.ts'
+import type { RestrictionPort } from './restriction-ports.ts'
+export type {
+  RestrictionRecord,
+  RestrictionSnapshot,
+  RestrictionType,
+} from './restriction-model.ts'
 
 export const RESTRICTIONS_KEY = 'bilicdn.v2.restrictions'
-export type RestrictionType = 'black' | 'dead'
-
-export interface RestrictionRecord {
-  readonly host: string
-  readonly type: RestrictionType
-  readonly kind: MediaKind | 'all'
-  readonly reason: string
-  readonly createdAt: number
-  readonly expireAt: number
-  readonly updatedAt: number
-}
 
 interface RestrictionPayload {
   readonly schema: 2
@@ -89,7 +89,7 @@ const mergePayload = (
   })
 }
 
-export class RestrictionStore {
+export class RestrictionStore implements RestrictionPort {
   #payload: RestrictionPayload
   #stopRemote: () => void
   constructor(
@@ -115,10 +115,7 @@ export class RestrictionStore {
     )
   }
 
-  snapshot(kind: MediaKind): {
-    readonly blackHosts: ReadonlySet<string>
-    readonly deadHosts: ReadonlySet<string>
-  } {
+  snapshot(kind: MediaKind): RestrictionSnapshot {
     const now = this.now(),
       black = new Set<string>(),
       dead = new Set<string>()

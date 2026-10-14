@@ -30,112 +30,50 @@ import {
   type RouteType,
   type TransportObservation,
   type RequestContext,
-  type AttributionStatus,
-  type AttributionSource,
-  type PlayurlOutputSummary,
-  type RecoveryActionId,
 } from '../domain/model.ts'
-import type { EvidenceStore } from '../state/evidence-store.ts'
-import type { RuntimeIdPort } from '../platform/runtime-ids.ts'
-import type { RestrictionStore } from '../state/restriction-store.ts'
-import type { SessionStore } from '../state/session-store.ts'
-import type { SettingsStore } from '../state/settings-store.ts'
-import type { SignedRouteVault } from '../state/signed-route-vault.ts'
 
-export interface AppliedRouteDecision {
-  readonly decision: RouteDecision
-  readonly url: string | null
-  readonly context: RouteIdentity | null
-  readonly streamKey: string | null
-  readonly sourceHost: string | null
-  readonly attributionStatus?: AttributionStatus
-  readonly attributionSource?: AttributionSource
-  readonly playurlHostChanged?: boolean
-  readonly playurlOutput?: PlayurlOutputSummary
-}
+import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
 
-export interface StartupCandidate {
-  readonly host: string
-  readonly type: RouteType
-  readonly url: string
-  readonly original: boolean
-  readonly cachedSafeMbps: number | null
-  readonly context: RouteIdentity
-}
+import type {
+  AppliedRouteDecision,
+  DecisionRecord,
+  FallbackProgress,
+  RoutePlanSummary,
+  RouteSnapshot,
+  RouteTransferSnapshot,
+  StartupCandidate,
+  StartupOptions,
+} from './route-model.ts'
+export type {
+  AppliedRouteDecision,
+  DecisionRecord,
+  FallbackProgress,
+  MediaRows,
+  RoutePlanSummary,
+  RouteRankingSummary,
+  RouteSnapshot,
+  RouteTransferSnapshot,
+  StartupCandidate,
+  StartupOptions,
+} from './route-model.ts'
 
-export interface StartupOptions {
-  readonly candidates: readonly StartupCandidate[]
-  readonly demand: PlaybackDemand
-  readonly originalHost: string
-}
+import type {
+  RouteCoordinatorPort,
+  RouteSessionPort,
+  RouteSettingsPort,
+  RouteRestrictionsPort,
+  RouteEvidencePort,
+  RouteVaultPort,
+} from './route-ports.ts'
+export type {
+  RouteSessionPort,
+  RouteSettingsPort,
+  RouteRestrictionsPort,
+  RouteEvidencePort,
+  RouteVaultPort,
+} from './route-ports.ts'
 
-interface DecisionRecord {
-  readonly decision: RouteDecision
-  readonly context: RouteIdentity | null
-  readonly kind: MediaKind
-  readonly representation: RepresentationId | null
-  readonly policyRevision: number
-}
-export interface FallbackProgress {
-  readonly actionId: RecoveryActionId
-  readonly representation: RepresentationId
-  readonly decisionId: DecisionId
-  readonly plannedHost: string
-  readonly routeType: RouteType
-  readonly stage: 'planned' | 'entered-hook' | 'response-observed' | 'request-failed'
-  readonly requestId: string | null
-  readonly responseHost: string | null
-  readonly outcome: TransportObservation['outcome'] | null
-  readonly status: number | null
-}
-
-export interface RouteTransferSnapshot extends Partial<RequestContext> {
-  readonly kind: MediaKind | null
-  readonly routeType: RouteType
-  readonly originalHost: string
-  readonly targetHost: string
-  readonly responseHost: string | null
-  readonly outcome: TransportObservation['outcome']
-  readonly status: number
-  readonly observedAt: number
-  readonly attributionStatus: AttributionStatus
-}
-type MediaRows<T> = Readonly<Partial<Record<MediaKind | 'unknown', T>>>
-export interface RoutePlanSummary {
-  readonly id: DecisionId
-  readonly action: RouteDecision['action']
-  readonly reason: string
-  readonly routeType: RouteType
-  readonly host: string | null
-}
-export interface RouteRankingSummary {
-  readonly host: string
-  readonly type: RouteType
-  readonly state: RouteDecision['ranking'][number]['state']
-  readonly eligible: boolean
-  readonly reasons: readonly string[]
-  readonly safeMbps: number | null
-  readonly ratio: number | null
-  readonly ttfbMs: number | null
-}
-export interface RouteSnapshot {
-  readonly originalComparison: boolean
-  readonly planCount: number
-  readonly activePlan:
-    (RoutePlanSummary & { readonly ranking: readonly RouteRankingSummary[] }) | null
-  readonly recentPlans: readonly (RoutePlanSummary & {
-    readonly representation: RepresentationId
-  })[]
-  readonly affinity: ReturnType<SessionStore['get']>['affinity']
-  readonly latest: MediaRows<RouteTransferSnapshot>
-  readonly lastSuccess: MediaRows<RouteTransferSnapshot>
-  readonly requested: MediaRows<RequestContext>
-  readonly attribution: 'confirmed' | 'awaiting-second-video-transfer' | 'awaiting-matched-video'
-  readonly representation: ReturnType<SignedRouteVault['groupSummary']>
-  readonly fallback: Readonly<Partial<Record<MediaKind, Readonly<FallbackProgress>>>>
-}
-
-export class RouteCoordinator {
+export class RouteCoordinator implements RouteCoordinatorPort {
   #policyRevision = 0
   #measurementIds = new WeakMap<object, string>()
   #serial = 0
@@ -163,31 +101,11 @@ export class RouteCoordinator {
 
   constructor(
     private readonly clock: Clock,
-    private readonly session: Pick<
-      SessionStore,
-      'get' | 'noteDecision' | 'setAffinity' | 'setRepresentation'
-    >,
-    private readonly settings: Pick<SettingsStore, 'get'>,
-    private readonly restrictions: Pick<RestrictionStore, 'snapshot'>,
-    private readonly evidence: Pick<EvidenceStore, 'get' | 'record'>,
-    private readonly vault: Pick<
-      SignedRouteVault,
-      | 'candidates'
-      | 'catalogSourceHandle'
-      | 'groupSummary'
-      | 'hosts'
-      | 'identity'
-      | 'invalidate'
-      | 'isCurrentIdentity'
-      | 'isInvalid'
-      | 'match'
-      | 'outputRole'
-      | 'registerAlias'
-      | 'registerOutput'
-      | 'resolve'
-      | 'rootUrl'
-      | 'wasPlayerOutput'
-    >,
+    private readonly session: RouteSessionPort,
+    private readonly settings: RouteSettingsPort,
+    private readonly restrictions: RouteRestrictionsPort,
+    private readonly evidence: RouteEvidencePort,
+    private readonly vault: RouteVaultPort,
     private readonly ids: RuntimeIdPort,
   ) {}
 
@@ -1840,7 +1758,7 @@ export class RouteCoordinator {
     }
   }
 
-  #restrictionSnapshot(kind: MediaKind | null): ReturnType<RestrictionStore['snapshot']> {
+  #restrictionSnapshot(kind: MediaKind | null): ReturnType<RouteRestrictionsPort['snapshot']> {
     if (kind) return this.restrictions.snapshot(kind)
     const video = this.restrictions.snapshot('video'),
       audio = this.restrictions.snapshot('audio')

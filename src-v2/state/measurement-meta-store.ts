@@ -1,11 +1,10 @@
-import type { StoragePort } from '../platform/storage.ts'
+import type { StoragePort } from '../platform/storage-port.ts'
+import type { MeasurementMeta } from './measurement-meta-model.ts'
+import type { MeasurementMetaPort } from './measurement-meta-ports.ts'
+export type { MeasurementMeta } from './measurement-meta-model.ts'
 
 export const MEASUREMENT_META_KEY = 'bilicdn.v2.meta'
-export interface MeasurementMeta {
-  readonly catalogCursor: number
-  readonly lastChallengeAt: number
-}
-export class MeasurementMetaStore {
+export class MeasurementMetaStore implements MeasurementMetaPort {
   constructor(
     private readonly storage: StoragePort,
     private readonly now: () => number,

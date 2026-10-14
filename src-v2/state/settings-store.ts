@@ -1,21 +1,10 @@
 import { isCatalogHost } from '../domain/catalog.ts'
-import type { StoragePort } from '../platform/storage.ts'
+import type { StoragePort } from '../platform/storage-port.ts'
+import type { CodecPreference, SettingsChange, SettingsState } from './settings-model.ts'
+import type { SettingsPort } from './settings-ports.ts'
+export type { CodecPreference, SettingsChange, SettingsState } from './settings-model.ts'
 
 export const SETTINGS_KEY = 'bilicdn.v2.settings'
-export type CodecPreference = 'av1' | 'hevc' | 'avc' | 'auto'
-
-export interface SettingsState {
-  readonly schema: 2
-  readonly disabled: boolean
-  readonly fixedHost: string | null
-  readonly considerNativeSources: boolean
-  readonly catalogOverrides: Readonly<Record<string, boolean>>
-  readonly codec: CodecPreference
-  readonly blockWebRtc: boolean
-  readonly blockHttpDns: boolean
-  readonly verbose: boolean
-  readonly updatedAt: number
-}
 
 export const defaultSettings = (now: number): SettingsState =>
   Object.freeze({
@@ -62,7 +51,7 @@ const parseSettings = (value: unknown, now: number): SettingsState => {
   })
 }
 
-export class SettingsStore {
+export class SettingsStore implements SettingsPort {
   #state: SettingsState
   #nativeOffPending = 0
   #listeners = new Set<(state: SettingsState) => void>()
@@ -93,9 +82,7 @@ export class SettingsStore {
     return () => this.#listeners.delete(listener)
   }
 
-  async update(
-    change: Partial<Omit<SettingsState, 'schema' | 'updatedAt'>>,
-  ): Promise<SettingsState> {
+  async update(change: SettingsChange): Promise<SettingsState> {
     const holdNativeOff = change.considerNativeSources === false
     if (holdNativeOff) {
       this.#nativeOffPending++

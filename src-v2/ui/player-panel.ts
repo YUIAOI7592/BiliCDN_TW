@@ -1,15 +1,17 @@
-import type { ControlCenter } from './control-center.ts'
-import type { PlayerMonitor } from '../application/player-monitor.ts'
-import type { SessionStore } from '../state/session-store.ts'
-import type { SettingsStore } from '../state/settings-store.ts'
+import type {
+  ShowControlCenterPort,
+  ControlMonitorReader,
+  ControlSessionReader,
+} from './control-center-ports.ts'
+import type { SettingsReader } from '../state/settings-ports.ts'
 
 export class PlayerPanel {
   #timer: number | null = null
   constructor(
-    private readonly center: ControlCenter,
-    private readonly settings: SettingsStore,
-    private readonly session: SessionStore,
-    private readonly monitor: PlayerMonitor,
+    private readonly center: ShowControlCenterPort,
+    private readonly settings: SettingsReader,
+    private readonly session: ControlSessionReader,
+    private readonly monitor: ControlMonitorReader,
   ) {}
 
   start(): void {

@@ -1,22 +1,9 @@
 import { recoveryActionId, type DomainEvent, type RecoveryActionId } from '../domain/model.ts'
-import type { PlayerPort, VideoSnapshot, PlayerControlSnapshot } from './ports.ts'
-
-export interface StallRecoveryIntent {
-  readonly id: number
-  readonly startedAt: number
-  readonly targetSec: number
-  readonly valid: () => boolean
-}
+import type { VideoSnapshot, PlayerControlSnapshot } from './ports.ts'
 
 interface ResumeToken {
   readonly id: RecoveryActionId
-  readonly source:
-    | 'trusted-player-play'
-    | 'paused-transition'
-    | 'route-failure'
-    | 'watchdog'
-    | 'startup-failure'
-    | 'stall'
+  readonly source: RecoverySource
   readonly startedAt: number
   readonly savedPositionSec: number
   readonly savedRate: number
@@ -34,27 +21,13 @@ interface ResumeToken {
   readonly initiallyPaused: boolean
 }
 
-export interface RecoverySnapshot {
-  readonly state:
-    | 'healthy'
-    | 'pause-armed'
-    | 'play-intent'
-    | 'waiting'
-    | 'reloading'
-    | 'recovered'
-    | 'recovered-paused'
-    | 'failed'
-    | 'breaker'
-  readonly source: ResumeToken['source'] | null
-  readonly pauseSec: number
-  readonly reloadCount: number
-  readonly breakerSec: number
-  readonly reason?: string
-  readonly savedPositionSec?: number
-  readonly savedRate?: number
-}
+import type { RecoveryPort, RecoveryPlayerPort } from './recovery-ports.ts'
+export type { RecoveryPlayerPort } from './recovery-ports.ts'
 
-export class RecoveryController {
+import type { StallRecoveryIntent, RecoverySnapshot, RecoverySource } from './recovery-model.ts'
+export type { StallRecoveryIntent, RecoverySnapshot } from './recovery-model.ts'
+
+export class RecoveryController implements RecoveryPort {
   #listeners = new Set<(event: DomainEvent) => void>()
   #pauseAt = 0
   #hadHealthy = false
@@ -84,19 +57,7 @@ export class RecoveryController {
   })
 
   constructor(
-    private readonly player: Pick<
-      PlayerPort,
-      | 'controls'
-      | 'currentTime'
-      | 'observePlayIntent'
-      | 'play'
-      | 'playbackRate'
-      | 'reload'
-      | 'ownedReload'
-      | 'seek'
-      | 'setRate'
-      | 'snapshot'
-    >,
+    private readonly player: RecoveryPlayerPort,
     private readonly now: () => number,
     private readonly isActive: () => boolean = () => true,
     private readonly captureEligibility: () => () => boolean = () => () => true,

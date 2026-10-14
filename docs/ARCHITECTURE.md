@@ -25,11 +25,11 @@ v2.1.9 的 [功能與競態修復](FUNCTIONAL_FIX_REPORT.md) 納入下列所有�
 | `ui` | `ui`、`diagnostics`、`application`、`state`、`domain`、`platform` |
 | `entry.ts` | 所有組合層 |
 
-此表列出可以匯入的層，並不要求全部匯入。目前狀態儲存元件從 `platform/storage.ts` 匯入 `StoragePort` 型別；該模組也實作 Tampermonkey 儲存。UI 匯入應用層／狀態層型別與領域輔助函式，消費快照，透過 `ControlCommandPort` 執行產品變更；UI 不匯入瀏覽器適配器。診斷匯入領域模型。[entry.ts](../src-v2/entry.ts) 建立、連接這些物件並啟動執行環境。
+此表列出可以匯入的層，並不要求全部匯入。狀態儲存元件從 `platform/storage-port.ts` 匯入 `StoragePort` 型別；`platform/storage.ts` 實作 Tampermonkey 儲存。執行識別碼介面也獨立於產生器。各層的 `*-model.ts` 保存共用模型，`*-ports.ts` 保存具名最小依賴介面；契約不得依賴具體 Store、控制器或適配器。UI 匯入應用層／狀態層型別與領域輔助函式，消費快照，透過 `ControlCommandPort` 執行產品變更；UI 不匯入瀏覽器適配器。診斷匯入領域模型。[entry.ts](../src-v2/entry.ts) 建立、連接這些物件並啟動執行環境。
 
-AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、`import type` 及 `import-equals` 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環。額外語法規則拒絕領域層／應用層中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、路線協調器以外的點號 `setAffinity()` 呼叫、恢復控制器以外應用層的點號 `reload()` 呼叫，以及命令接收器以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
+AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、`import type` 及 `import-equals` 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環與契約對實作的依賴。唯一寫入者依完整相對路徑辨識，不能以同名檔案繞過；只有 `application/measurement-controller.ts` 可以呼叫 `probe.read()`。額外語法規則拒絕領域層／應用層中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、路線協調器以外的點號 `setAffinity()` 呼叫、恢復控制器以外應用層的點號 `reload()` 呼叫，以及命令接收器以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
 
-獨立的匯入純度測試將全部非入口、非宣告模組打包在一起，停用未使用程式碼移除（tree shaking）並忽略打包最佳化註記，再於不載入 `node:test` 的獨立 Node 子程序匯入，期限為 3 秒。外層具名案例監督結果，框架不受全域陷阱干擾。測試攔截固定清單中的瀏覽器、網路、GM、計時器全域與 `Date.now`／`Math.random`，檢查匯入時行為；建構函式及方法仍須契約測試。18 項架構規則期待各自使用具名 `node:test` 案例；命令、期限與實際保障範圍見 [測試流程](DEVELOPMENT.md#test-suites-and-isolation)。
+獨立的匯入純度測試將全部非入口、非宣告模組打包在一起，停用未使用程式碼移除（tree shaking）並忽略打包最佳化註記，再於不載入 `node:test` 的獨立 Node 子程序匯入，期限為 3 秒。外層具名案例監督結果，框架不受全域陷阱干擾。測試攔截固定清單中的瀏覽器、網路、GM、計時器全域與 `Date.now`／`Math.random`，檢查匯入時行為；建構函式及方法仍須契約測試。架構規則期待各自使用具名 `node:test` 案例；命令、期限與實際保障範圍見 [測試流程](DEVELOPMENT.md#test-suites-and-isolation)。
 
 <a name="domain"></a>
 
@@ -96,7 +96,7 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 首個合法起播窗口開始時立即消耗每分頁預算，後來的 Fetch／XHR 先加入共用 pending，再檢查已用預算；epoch／generation／設定 reset 不重開預算，沒有合法候選不消耗。健康量測的 planning／running 以各輪所有權在 finally 清理；probe、儲存鎖或寫入拒絕以固定 measurement-error 收束，遵守 10 分鐘冷卻，不輸出例外內容、不新增立即重試。
 
-控制器接收型別化介面，常用 `Pick` 縮小介面。`NavigationPort`、`SchedulerPort` 及 `PlayerPort.observePlayIntent` 將 History 包裝函式、計時器 API 及啟動意圖檢查留在應用層政策之外。`PlayerPort` 不暴露原始播放器／核心物件。生命週期敏感的探測／傳輸提交依情況檢查當前世代、內容週期、路線身分或控制器標記；證據寫入取得儲存鎖後再次檢查有效性條件。恢復 Promise 使用生命週期序號／權杖，已釋放的生命週期觀察器忽略排隊中的頁面賦值。這些防護適用於生命週期工作；一般使用者設定寫入不綁定世代。
+控制器接收各用途的具名最小介面；這些介面可從純契約縮小能力，不能從具體類別推導。`NavigationPort`、`SchedulerPort` 及 `PlayerPort.observePlayIntent` 將 History 包裝函式、計時器 API 及啟動意圖檢查留在應用層政策之外。`PlayerPort` 不暴露原始播放器／核心物件。生命週期敏感的探測／傳輸提交依情況檢查當前世代、內容週期、路線身分或控制器標記；證據寫入取得儲存鎖後再次檢查有效性條件。恢復 Promise 使用生命週期序號／權杖，已釋放的生命週期觀察器忽略排隊中的頁面賦值。這些防護適用於生命週期工作；一般使用者設定寫入不綁定世代。
 
 `PlayurlRequestContext` 是內部唯讀 `{ contentId: string | null }`，由 `PlayurlPort.transform` 可選第四參數明確傳入。Fetch 在 await 前從既有平台 Request.url 保存 cid；XHR 在一次參數轉換後建立候選 metadata，failed open 回復舊 metadata，成功重入保留新請求 context。getter 不改讀當前頁面身分。只有現有 `isPlayurlApi` 接納的 URL 可供解析；唯一一個最多 20 位十進位字串，去除前導零，全零／重複／空白／負數／小數／超長均為缺失，避免 Number 精度損失。
 

@@ -1,10 +1,5 @@
 import { type DomainEvent } from '../domain/model.ts'
 import type { PagePlayinfoPort, PlayurlPort, NavigationPort, SchedulerPort } from './ports.ts'
-import type { PlayerMonitor } from './player-monitor.ts'
-import type { RouteCoordinator } from './route-coordinator.ts'
-import type { SessionStore } from '../state/session-store.ts'
-import type { SettingsStore } from '../state/settings-store.ts'
-import type { SignedRouteVault } from '../state/signed-route-vault.ts'
 
 interface PendingAssignment {
   readonly payload: unknown
@@ -14,7 +9,23 @@ interface PendingAssignment {
   appliedGeneration: number
 }
 
-export class LifecycleController {
+import type {
+  LifecyclePort,
+  LifecycleSessionPort,
+  LifecycleSettingsPort,
+  LifecycleVaultPort,
+  LifecycleRoutesPort,
+  LifecycleMonitorPort,
+} from './lifecycle-ports.ts'
+export type {
+  LifecycleSessionPort,
+  LifecycleSettingsPort,
+  LifecycleVaultPort,
+  LifecycleRoutesPort,
+  LifecycleMonitorPort,
+} from './lifecycle-ports.ts'
+
+export class LifecycleController implements LifecyclePort {
   #listeners = new Set<(event: DomainEvent) => void>()
   #restores: (() => void)[] = []
   #pending: PendingAssignment | null = null
@@ -22,13 +33,13 @@ export class LifecycleController {
   #active = false
 
   constructor(
-    private readonly session: Pick<SessionStore, 'beginGeneration' | 'get'>,
-    private readonly settings: Pick<SettingsStore, 'get' | 'subscribe'>,
-    private readonly vault: Pick<SignedRouteVault, 'reset'>,
-    private readonly routes: Pick<RouteCoordinator, 'resetEpoch'>,
+    private readonly session: LifecycleSessionPort,
+    private readonly settings: LifecycleSettingsPort,
+    private readonly vault: LifecycleVaultPort,
+    private readonly routes: LifecycleRoutesPort,
     private readonly playurl: PlayurlPort,
     private readonly pagePlayinfo: PagePlayinfoPort,
-    private readonly monitor: Pick<PlayerMonitor, 'start' | 'stop' | 'reset'>,
+    private readonly monitor: LifecycleMonitorPort,
     private readonly now: () => number,
     private readonly navigation: NavigationPort,
     private readonly scheduler: SchedulerPort,

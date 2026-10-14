@@ -6,7 +6,8 @@ import {
   pruneSamples,
 } from '../domain/evidence.ts'
 import type { EvidenceSample, MediaKind, RouteEvidence } from '../domain/model.ts'
-import type { StoragePort } from '../platform/storage.ts'
+import type { StoragePort } from '../platform/storage-port.ts'
+import type { EvidencePort } from './evidence-ports.ts'
 
 export const EVIDENCE_KEY = 'bilicdn.v2.routeEvidence'
 const MAX_VIDEO_HOSTS = 64
@@ -137,7 +138,7 @@ const mergePayload = (a: EvidencePayload, b: EvidencePayload, now: number): Evid
   })
 }
 
-export class EvidenceStore {
+export class EvidenceStore implements EvidencePort {
   #payload: EvidencePayload
   #stopRemote: () => void
   constructor(
