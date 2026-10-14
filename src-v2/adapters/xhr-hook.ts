@@ -1,8 +1,7 @@
 import { isPlayurlApi } from '../domain/catalog.ts'
 import { playurlRequestContext } from '../domain/playurl-content.ts'
-import type { PlayurlRequestContext } from '../domain/playurl-model.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
-import type { FailureKind, RequestContext, GenerationId, EpochId } from '../domain/model.ts'
+import type { FailureKind } from '../domain/model.ts'
 import type { AppliedRouteDecision } from '../application/route-model.ts'
 import {
   type TransportContext,
@@ -12,34 +11,9 @@ import {
   blockedPlayurlText,
   rejectedPlayurl,
 } from './transport-context.ts'
-interface XhrMeta {
-  method: string
-  originalUrl: string
-  managedBilibili: boolean
-  targetUrl: string
-  applied: AppliedRouteDecision | null
-  startedAt: number
-  responseAt: number
-  bytes: number
-  settled: boolean
-  playurl: boolean
-  requestContext: PlayurlRequestContext
-  transformedText: string | null
-  transformedJson: unknown
-  catalogOnlyAtTransform: boolean | null
-  request: RequestContext | null
-  generation: GenerationId
-  epoch: EpochId
-  responseKey: string
-  cleanup: () => void
-  async: boolean
-  headers: [string, string][]
-  username?: string | null
-  password?: string | null
-  phase: 'opened' | 'waiting' | 'sent' | 'terminal'
-  virtualReadyState: number | null
-  needsNativeOpen: boolean
-}
+import { convertXhrOpen, convertXhrHeader, createXhrBodyConverter } from './xhr-values.ts'
+import { createXhrRequestState, resetXhrTransform } from './xhr-request.ts'
+import type { XhrMeta } from './xhr-request.ts'
 
 export class XhrHookAdapter {
   #xhrMeta = new WeakMap<XMLHttpRequest, XhrMeta>()
@@ -54,74 +28,10 @@ export class XhrHookAdapter {
     const responseDescriptor = Object.getOwnPropertyDescriptor(proto, 'response')
     const responseTextDescriptor = Object.getOwnPropertyDescriptor(proto, 'responseText')
     const readyStateDescriptor = Object.getOwnPropertyDescriptor(proto, 'readyState')
-    // Platform brand checks also recognize objects from another Window. Do not use
-    // instanceof or toStringTag: plain objects must still take the USVString branch.
-    const bufferSize = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'byteLength')?.get
-    const blobSize =
-      typeof Blob === 'undefined'
-        ? undefined
-        : Object.getOwnPropertyDescriptor(Blob.prototype, 'size')?.get
-    const nodeType =
-      typeof Node === 'undefined'
-        ? undefined
-        : Object.getOwnPropertyDescriptor(Node.prototype, 'nodeType')?.get
-    const formHas = typeof FormData === 'undefined' ? undefined : FormData.prototype.has
-    const searchHas =
-      typeof URLSearchParams === 'undefined' ? undefined : URLSearchParams.prototype.has
-    const branded = (
-      method: Function | undefined,
-      value: object,
-      args: unknown[] = [],
-    ): boolean => {
-      if (!method) return false
-      try {
-        Reflect.apply(method, value, args)
-        return true
-      } catch {
-        return false
-      }
-    }
-    const bodyValue = (
-      body: Document | XMLHttpRequestBodyInit | null | undefined,
-    ): Document | XMLHttpRequestBodyInit | null => {
-      if (body == null) return null
-      if (typeof body === 'object' || typeof body === 'function') {
-        if (
-          ArrayBuffer.isView(body) ||
-          branded(bufferSize, body) ||
-          branded(blobSize, body) ||
-          branded(formHas, body, ['']) ||
-          branded(searchHas, body, [''])
-        )
-          return body
-        try {
-          if (nodeType?.call(body) === 9) return body
-        } catch {
-          /* not a Document */
-        }
-      }
-      return `${body}`.toWellFormed()
-    }
+    const bodyValue = createXhrBodyConverter()
     const self = this.context,
       xhrMeta = this.#xhrMeta
-    const waiting = (xhr: XMLHttpRequest, meta: XhrMeta): boolean =>
-      xhrMeta.get(xhr) === meta && meta.phase === 'waiting'
-    const finishLocal = (xhr: XMLHttpRequest, meta: XhrMeta, type: 'error' | 'abort'): void => {
-      if (!waiting(xhr, meta)) return
-      meta.phase = 'terminal'
-      meta.virtualReadyState = 4
-      meta.cleanup()
-      if (!meta.async) throw new DOMException('BiliCDN blocked request', 'NetworkError')
-      // Each callback can reopen or abort this object. The old request then loses event ownership.
-      const owns = (): boolean => xhrMeta.get(xhr) === meta && meta.virtualReadyState === 4
-      xhr.dispatchEvent(new Event('readystatechange'))
-      if (owns()) xhr.dispatchEvent(new ProgressEvent(type))
-      if (owns()) xhr.dispatchEvent(new ProgressEvent('loadend'))
-    }
-    const rejectLocal = (xhr: XMLHttpRequest, meta: XhrMeta): void => {
-      if (meta.async) queueMicrotask(() => finishLocal(xhr, meta, 'error'))
-      else finishLocal(xhr, meta, 'error')
-    }
+    const { waiting, finishLocal, rejectLocal } = createXhrRequestState((xhr) => xhrMeta.get(xhr))
 
     const open: typeof XMLHttpRequest.prototype.open = function (
       this: XMLHttpRequest,
@@ -140,15 +50,8 @@ export class XhrHookAdapter {
       }
       // Web IDL converts arguments before entering open's algorithm. Convert once, in
       // order, before saving an owner: a conversion can itself reopen this XHR.
-      const methodString = `${method}`
-      if (/[^\x00-\xff]/.test(methodString)) throw new TypeError('XHR method must be a ByteString')
-      const originalUrl = `${url}`.toWellFormed()
-      const asynchronous = arguments.length < 3 ? true : Boolean(async)
-      const user = username == null ? null : `${username}`.toWellFormed()
-      const pass = password == null ? null : `${password}`.toWellFormed()
-      const normalizedMethod = /^(DELETE|GET|HEAD|OPTIONS|POST|PUT)$/i.test(methodString)
-        ? methodString.toUpperCase()
-        : methodString
+      const { methodString, originalUrl, asynchronous, user, pass, normalizedMethod } =
+        convertXhrOpen(method, url, arguments.length, async, username, password)
       self.count('enteredXhr')
       const playurl = isPlayurlApi(originalUrl, location.href)
       const previous = xhrMeta.get(this)
@@ -527,10 +430,7 @@ export class XhrHookAdapter {
         Reflect.apply(originalSetHeader, this, Array.from(arguments))
         return
       }
-      const key = `${name}`
-      if (/[^\x00-\xff]/.test(key)) throw new TypeError('XHR header name must be a ByteString')
-      const text = `${value}`
-      if (/[^\x00-\xff]/.test(text)) throw new TypeError('XHR header value must be a ByteString')
+      const [key, text] = convertXhrHeader(name, value)
       const meta = xhrMeta.get(this)
       if (meta && (meta.phase === 'waiting' || meta.virtualReadyState !== null))
         throw new DOMException('header invalid state', 'InvalidStateError')
@@ -632,11 +532,7 @@ export class XhrHookAdapter {
               : raw
           }
           const strict = self.routes.isCatalogOnly()
-          if (meta.catalogOnlyAtTransform !== strict) {
-            meta.transformedText = null
-            meta.transformedJson = undefined
-            meta.catalogOnlyAtTransform = strict
-          }
+          resetXhrTransform(meta, strict)
           if (this.responseType === 'json') {
             if (meta.transformedJson === undefined) {
               try {
@@ -695,11 +591,7 @@ export class XhrHookAdapter {
             return self.routes.isCatalogOnly() ? blockedPlayurlText() : raw
           }
           const strict = self.routes.isCatalogOnly()
-          if (meta.catalogOnlyAtTransform !== strict) {
-            meta.transformedText = null
-            meta.transformedJson = undefined
-            meta.catalogOnlyAtTransform = strict
-          }
+          resetXhrTransform(meta, strict)
           if (meta.transformedText !== null) return meta.transformedText
           try {
             const payload: unknown = JSON.parse(raw),
