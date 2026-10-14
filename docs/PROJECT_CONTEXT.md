@@ -12,6 +12,8 @@
 
 控制中心以當前封閉 ShadowRoot 的冒泡邊界隔離可信 keydown／keypress／keyup，讓 Enter／Space 及表單維持原生預設操作；Escape 關閉。關閉與宿主重建會清理監聽器。不新增焦點循環，亦無法撤銷外層捕捉階段已做的取消。BR-10 的來源修復與實際安裝結果分列於 [修復報告](BR10_FIX_REPORT.md)。
 
+<a name="v2123-選路量測與傳輸修正"></a>
+
 ## 選路與量測
 
 | 模式 | 路線 | 主動工作 |
@@ -25,6 +27,8 @@
 
 每分頁首次合資格媒體請求共用一次起播 gate：最多 3 個並行候選、共用 3 秒期限，MP4／FLV 分段不各開預算。同步 XHR 及明確 timeout 的 XHR 不等待 gate。探測沒有贏家時，仍從完整合法候選池排名；不能因此放行未授權 Native。
 
+首個合法起播窗口開始時立即消耗每分頁預算，後來的 Fetch／XHR 先加入共用 pending，再檢查已用預算；epoch／generation／設定 reset 不重開預算，沒有合法候選不消耗。健康量測的 planning／running 以各輪所有權在 finally 清理；probe、儲存鎖或寫入拒絕以固定 measurement-error 收束，遵守 10 分鐘冷卻，不輸出例外內容、不新增立即重試。`EvidenceStore` 只在寫入成功後發布記憶體成功樣本；舊完成或拒絕不能清除新輪次。
+
 健康播放時須真正前景、穩定進度、足夠緩衝且不在 seeking／recovering；共用跨分頁冷卻，每 10 分鐘最多依序量測 3 個候選。取得鎖後重新檢查資格、表示及控制器標記，通過才消耗候選嘗試／游標／冷卻。健康探索只更新證據，不變更流暢播放的親和主機。主動探測拒絕轉址，只接受符合限制的直接同主機 HTTPS 206。
 
 合法固定主機優先於健康親和。每筆傳輸保存路線政策修訂，設定／對照失效後的舊結果可按原資格保留歷史證據，但不能改寫親和、當前表示、來源授權或觸發恢復；儲存等待前後均檢查。影片、音訊的證據及恢復隔離，audio 備援不能建立 video 核心意圖。
@@ -32,6 +36,18 @@
 <a name="recovery-contract"></a>
 
 ## Auto 救援與操作所有權
+
+<a name="v2124-可信播放按鈕意圖"></a>
+
+### 長暫停後的可信播放意圖
+
+長暫停後，網站核心可能忽略播放按鈕而不呼叫 SDK play。`PlayerAdapter` 同時觀察現有 SDK 方法及目前播放器區域的可信 `.bpx-player-ctrl-play` click；僅同一 paused 媒體、播放器、內容週期、真正可見且非 ended/error 才通知既有意圖。讀取前後核對控制／使用者修訂與清理狀態，事件與 DOM 不傳入應用層。
+
+`RecoveryController` 保留暫停至少 30 秒、拖曳／路線授權／政策／操作所有權／額度檢查；死核心 4 秒、其他無進度 30 秒與重載後 15 秒期限維持。正常進度不多做重載，沒有新操作不替暫停影片自行播放。每輪返回的取消函式清理自有 document 捕捉監聽器，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
+
+來源與政策重評見 [v2.1.24 報告](BR01_POLICY_REASSESSMENT_2026-10-14.md)。失效媒體重設後的使用者位置保護仍有 [已確認、未修復缺陷](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)，不能把有限救援或正常播放入口通過當成位置還原保證。
+
+### 一般停滯與操作所有權
 
 一般長 seek／活核心停滯使用 **15／30／15 秒**，由一秒監控 tick 推進：
 
@@ -75,7 +91,9 @@ cid 只從已辨識 playurl **所屬請求 URL** 取得：唯一、最多 20 位
 
 ### 來源更新與傳輸
 
-Vault 是唯一 Native 授權來源。可信提升撤銷較低信任 handle；無法辨識的精確路線只能作觀察／限制，不能主動探測或 Native 選路。可信 MP4／FLV 新集合刷新標準來源、撤銷舊 handles／aliases、旋轉授權；相同集合不無故輪替，無合法新來源拒絕輸出、不重用舊簽名。DASH 保留既有查詢行為。
+Vault 是唯一 Native 授權來源。可信提升撤銷較低信任 handle；無法辨識的精確路線只能作觀察／限制，不能主動探測或 Native 選路。可信 MP4／FLV 來源在正規化、去重及容量限制後以集合比較；相同集合更新 primary／順序但保留 handles／aliases／authority，真正新增、移除、換簽名或可信提升仍撤銷舊 handles／aliases 並旋轉授權。無合法新來源拒絕輸出，不重用舊簽名。DASH 保留既有查詢行為。
+
+內部原線決策區分原樣通行與 Vault 選中的原線；後者以當前身分與不透明 handle 解析精確 URL，重查政策／禁止規則。同一選定主機上的 DASH 請求保留當次查詢字串。
 
 Fetch 只正規化輸入一次、單一讀取器，等待與串流取消保留 signal.reason 原值及物件身分。XHR failed open 保留原請求 metadata；同步回呼重入不得污染新請求。waiting／native sent／terminal 分開，gate abort 阻止晚送；內部最多兩次 native open，每次還原後重查所有權、原生 OPENED 及最新政策。等待 continuation 失敗須單次終止；未延後 send 保留同步拋錯，已送出請求不重送。text／json、getter 例外、timeout、credentials、headers 與同步 setter 限制維持原生語意。
 
@@ -87,7 +105,7 @@ Fetch 只正規化輸入一次、單一讀取器，等待與串流取消保留 s
 
 ## 產品不變量
 
-- RouteCoordinator 唯一變更親和；MeasurementController 唯一啟動探測；RecoveryController 唯一重載核心；Runtime 負責協調。
+- `RouteCoordinator` 唯一變更親和；`MeasurementController` 唯一啟動探測；`RecoveryController` 唯一重載核心；Runtime 負責協調。
 - 等待、鎖取得及提交前依工作重查 generation、epoch、表示、路線政策、授權、操作／核心所有權。
 - 禁止規則涵蓋原始、Native、Catalog、固定及備援路線；停用不取消網站已開始請求。
 - schema 2 與四個 GM 鍵保持；request／startup／challenge ID 用執行環境隨機前綴、工作建立時分配、重報沿用，最多 64 字元。
@@ -99,30 +117,20 @@ Fetch 只正規化輸入一次、單一讀取器，等待與串流取消保留 s
 
 所有瀏覽器測試只使用 **Codex 內建瀏覽器＋Tampermonkey**，依 [IAB_TESTING](IAB_TESTING.md) 固定案例、校準真背景、隔離受控學習、保存完整事件並清理。只用指定風景影片，Auto 1／2 倍分開；不得用外部瀏覽器作替代。正式 Node、自動驗證、安全差異、來源隔離及安裝版結果分列。
 
-必要自動與按風險安全驗證通過後，依 [AGENTS](../AGENTS.md#release-rules) 自動完成已授權修復發布，核對 main／標籤、唯一腳本附件及公開 latest 版本／大小／SHA-256。只做文件或調查時不升版、不宣稱新執行結果。本次文件方案不恢復已停止的 BR-01 自主目標，不將自然網路起因或其他產品矩陣偷偷加進結案門檻。
+必要自動與按風險安全驗證通過後，依 [AGENTS](../AGENTS.md#release-rules) 自動完成已授權修復發布，核對 main／標籤、唯一腳本附件及公開 latest 版本／大小／SHA-256。只做文件或調查時不升版、不宣稱新執行結果。文件整理不恢復已停止的自主目標；現行啟動狀態與限制以 [TODO](TODO.md) 為準。
 
-2026-10-13 依使用者批准完成 [TODO 證據核對與文件結案](TODO_CLOSURE_2026-10-13.md)：BR-01 保持跳過；P01／P02 真 gate 缺少自然前提，限制封存；P03 其他矩陣仍按原方案由來源隔離／Node 分列，不增加安裝門檻。已通過結果沿用，沒有已批准的自主續測項目。限制封存不代表功能通過，恢復 gate 工作須使用者明確要求及新的自然前提。
+BR-01 歷史整份矩陣仍跳過；2026-10-14 的有限政策重評與入口修復已收束，新位置缺陷尚未修復。P01／P02 缺少自然 pending gate 前提，維持限制封存；其他結案與證據邊界見 [2026-10-13 結案紀錄](TODO_CLOSURE_2026-10-13.md)。限制封存不代表功能通過，重新安排須使用者明確要求及適用的新前提。
 
-## 診斷複製
+## 診斷
 
-診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 ControlCenter 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
-
-原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。v2.1.22 的本輪證據見 [P05 修復報告](P05_COPY_FIX_REPORT.md)。
-
-## v2.1.23 選路、量測與傳輸修正
-
-內部原線決策區分原樣通行與 Vault 選中的原線；後者以当前身分與不透明 handle 解析精確 URL，重查政策／禁止規則。同一選定主機上的 DASH 請求保留當次查詢字串。漸進式來源在正規化、去重、容量限制後以集合比較；相同集合更新 primary／順序但保留 handles／aliases／authority，真正新增、移除、換簽名或可信提升仍撤銷。
-
-首個合法起播窗口開始時立即消耗每分頁預算，後來的 Fetch／XHR 先加入共用 pending，再檢查已用預算；epoch／generation／設定 reset 不重開預算，沒有合法候選不消耗。健康量測的 planning／running 以各輪所有權在 finally 清理；probe、儲存鎖或寫入拒絕以固定 measurement-error 收束，遵守 10 分鐘冷卻，不輸出例外內容、不新增立即重試。EvidenceStore 只在寫入成功後發布記憶體成功樣本；舊完成或拒絕不能清除新輪次。
+### 播放進度
 
 診斷同一次嘗試只有首次有效回應初始化播放進度基準；後續同身分及同路線成功不撤回 playback-observed／首次 playbackAt，也不延長 30 秒觀察期限。混合主機、seek、生命週期及新嘗試仍按原契約中斷。
 
-XHR 一次轉換及原生 body 相容性見 [修復報告](CR01_CR05_FIX_REPORT.md)。S-02 相對 URL／base 疑點未確認，沒有新產品政策或 schema 變動。
+<a name="診斷複製"></a>
 
-## v2.1.24 可信播放按鈕意圖
+### 報告複製
 
-長暫停後，網站核心可能忽略播放按鈕而不呼叫 SDK play。PlayerAdapter 同時觀察現有 SDK 方法及目前播放器區域的可信 .bpx-player-ctrl-play click；僅同一 paused 媒體、播放器、內容週期、真正可見且非 ended/error 才通知既有意圖。讀取前後核對控制／使用者修訂與清理狀態，事件與 DOM 不傳入應用層。
+診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 `ControlCenter` 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
 
-RecoveryController 保留暫停至少 30 秒、拖曳／路線授權／政策／操作所有權／額度檢查；死核心 4 秒、其他無進度 30 秒與重載後 15 秒期限維持。正常進度不多做重載，沒有新操作不替暫停影片自行播放。每輪返回的取消函式清理 captured document listener，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
-
-本輪沒有足夠樣本支持新時間門檻，沒有加入傳輸活動介面或更改 Fetch 背壓。詳見 [政策重評](BR01_POLICY_REASSESSMENT_2026-10-14.md)；來源模型、實際播放與有限退出分開判定。
+原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。v2.1.22 的本輪證據見 [P05 修復報告](P05_COPY_FIX_REPORT.md)。

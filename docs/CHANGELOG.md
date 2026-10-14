@@ -8,18 +8,20 @@
 - 政策重評後保留 15／30／15 秒；少量樣本不支持另訂秒數，沒有新增傳輸探測或更改 Auto／ABR。
 - Tampermonkey 選單改為「⚙️ 開啟 BiliCDN 控制中心」。新增 14 案，全套 855／855，來源隔離及獨立安全差異 0 發現；[政策／修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_POLICY_REASSESSMENT_2026-10-14.md) 分列實際安裝及限制，不宣稱原自然停滯根因已定位。
 
+- 後續實際 v2.1.24 的 Auto 1／2 倍正常長暫停後播放入口通過，但 BR-01 整體不通過；失效後使用者尋位位置遺失尚未修復。新調查 1 fail／2 pass 與已發布正式 855／855 分列，見 [位置報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_v2.1.24_POSITION_LOSS_2026-10-14.md) 與 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+
 ## v2.1.23
 
 - 修正原線備援實體化、漸進式來源換序誤撤銷、pending 起播重開分頁預算、量測儲存拒絕懸置，以及成功回應撤回診斷進度。
 - 原生確認後修正 XHR header 二次轉換與 body 轉換失敗後不能更正送出；保留跨 realm body、重入及既有政策／終止所有權。
-- 新增 33 個正式契約，全套 841／841；獨立安全差異 0 發現。11 組 IAB 原生來源對照通過。發布／安裝見 [修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CR01_CR05_FIX_REPORT.md) 及 [最新驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 新增 33 個正式契約，全套 841／841；獨立安全差異 0 發現。11 組 IAB 原生來源對照通過。發布／安裝見 [修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CR01_CR05_FIX_REPORT.md) 及 [該版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2123-release-verification--2026-10-13)。
 - S-02 相對 URL／base 疑點未確認，沒有推測性修改；BR-01 跳過、P01／P02 封存安裝窗口不重開。
 
 ## v2.1.22
 
 - 修正診斷複製：可信操作立即使用原生 Clipboard API；API 不可取得才交給 GM 純文字備援。原生失敗不重複寫入。
 - 顯示可讀狀態及固定失敗提示，保留完整報告；pending 寫入跨關閉／重開不重疊，晚到結果不污染新視圖或搶焦點。
-- 新增 20 個正式契約；安全差異、來源讀回／貼上、發布與安裝結果分列於 [P05 修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_FIX_REPORT.md) 及 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。不宣稱修復 GM 通道本身；BR-01 保持跳過。
+- 新增 20 個正式契約；安全差異、來源讀回／貼上、發布與安裝結果分列於 [P05 修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_FIX_REPORT.md) 及 [該版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2122-release-verification--2026-10-12)。不宣稱修復 GM 通道本身；BR-01 保持跳過。
 - 2026-10-12 已正式發布並核對唯一腳本附件與公開 latest。實際 v2.1.22 真實 UI 的 31,204 字元報告讀回／真正貼上全文相符，原剪貼簿完整復原與自有資源清理通過；只驗本輪複製，不重測既有通過項目。
 
 ## v2.1.21
@@ -28,7 +30,7 @@
 
 - 修正控制中心設定按鈕的 Enter／空白鍵被背後頁面快捷鍵取消，保留按鈕與表單原生預設操作、Escape 關閉及可信事件檢查。
 - 在目前 ShadowRoot 的鍵盤冒泡邊界隔離；關閉／宿主重建清理監聽器，不新增焦點循環或全域攔截。
-- 新增 10 個正式鍵盤契約；自動驗證、安全差異、來源與實際安裝分列於 [最新驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 及 [BR-10 報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR10_FIX_REPORT.md)。BR-01 依使用者決定保持跳過。
+- 新增 10 個正式鍵盤契約；自動驗證、安全差異、來源與實際安裝分列於 [該版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2121-release-verification--2026-10-11) 及 [BR-10 報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR10_FIX_REPORT.md)。BR-01 依使用者決定保持跳過。
 - 實際 IAB／Tampermonkey：Auto 1／2 倍 Enter／空白鍵四案、關閉／切頁後命令完成兩案及完整診斷報告通過。複製驗證未通過，剪貼簿工具校準逾時、產品根因未確認，整份 UI 安裝矩陣不標為全部完成。
 - 2026-10-12 僅補充 [P05 通道調查](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_CHANNEL_REPORT_2026-10-12.md)：IAB 原生複製／貼上相符，PowerShell 仍讀 Windows 原內容，共同通道未成立而停止；沒有重跑產品或新腳本發布。
 - 後續改用使用者批准的 IAB 真正貼上與讀回，實際複製全文不符、P05 不通過；單次 GM 明確格式校準也未生效，根因未定位。完整原內容保護及資源清理完成；只更新 [本輪紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_IAB_RESULT_2026-10-12.md)，不修改產品或升版。
@@ -37,15 +39,15 @@
 
 - 修正原生HAVE_NOTHING已保存新尋位目標時，新建立的恢復意圖仍讀取SDK舊位置。有限原生currentTime包含0優先，正常初始化後的SDK語意與例外回退保留。
 - 新增16正式契約，保存前後控制所有權與現行恢復／路線政策不變；未新增API、設定、持久格式或Auto限制。
-- 自動驗證、安全差異、Chrome原生6案／自有控制模型6案及實際安裝判定分列於 [最新驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。完整BR-01不因子項修正自动通過。
+- 自動驗證、安全差異、Chrome原生6案／自有控制模型6案及實際安裝判定分列於 [該版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2120-release-verification--2026-10-11)。完整BR-01不因子項修正自动通過。
 
 ## v2.1.19
 
 - 修正 BR-01 自有重載後空媒體的可信鍵盤尋位漏取得新使用者身分；有限新目標即使沒有 seeking，也可在同一可信派送及穩定核心下取得完整新寬限。
 - 保存私有 keyboardRevision／core，提交及清理重查同步重入所有權；pendingSeek、腳本還原、Auto／ABR、15／30／15、schema 2 與路線授權保持。
-- 新增 14 正式案例，全套 755 項通過；Chrome 原生來源隔離 30／30 與獨立安全 2／2、0 發現完成。發布與完整安裝 BR-01 判定另見 [最新驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 新增 14 正式案例，全套 755 項通過；Chrome 原生來源隔離 30／30 與獨立安全 2／2、0 發現完成。發布與完整安裝 BR-01 判定另見 [該版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2119-release-verification--2026-10-11)。
 
-> v2.1.18 已正式發布，修復 BR-09；公開更新產物、實際完整新版身分及同片 Auto1／2 基本回歸通過。自動驗證、安全差異、Chrome 來源隔離與安裝窗口各自記錄於 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)；舊條目保留當時狀態。
+> v2.1.18 已正式發布，修復 BR-09；公開更新產物、實際完整新版身分及同片 Auto1／2 基本回歸通過。自動驗證、安全差異、Chrome 來源隔離與安裝窗口各自記錄於 [該版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2118-release-verification--2026-10-11)；舊條目保留當時狀態。
 
 ## v2.1.18
 
@@ -108,7 +110,7 @@
 
 ## v2.1.12
 
-2026-10-10 04:24:04（Asia/Taipei），從 `cdbb10b3e9ce8f56485dd427dd38d10e848ba005` [發布 v2.1.12](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.12)，04:24:40 公開 latest 核對版本、大小與 SHA-256。交付與驗證見 [修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR04_BR05_FIX_REPORT.md) 與 [現行驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+2026-10-10 04:24:04（Asia/Taipei），從 `cdbb10b3e9ce8f56485dd427dd38d10e848ba005` [發布 v2.1.12](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.12)，04:24:40 公開 latest 核對版本、大小與 SHA-256。交付與驗證見 [修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR04_BR05_FIX_REPORT.md) 與 [該版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2112-release-verification--2026-10-10)。
 
 - XHR 保存原生 readyState getter；內部準備最多兩次，每個同步邊界重查所有權與最新合法目標。gate continuation 例外確實終止，已送出請求不重播。
 - 原生 send 尚未接受的例外清除 pending 歸因，不建立 CDN 失敗樣本；直接 send 保留同步原例外。
@@ -118,7 +120,7 @@
 
 ## v2.1.11
 
-2026-10-10 01:52（Asia/Taipei），從提交 `d3d1bc3185d51b62891920135b4126441e059696` [發布 v2.1.11](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.11)，修復 BR-03；01:53 公開 latest 下載的版本、大小與 SHA-256 已核對。修復前後契約、安全與 Chrome 來源隔離見 [BR-03 報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR03_FIX_REPORT.md)，發布讀回見 [本版驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+2026-10-10 01:52（Asia/Taipei），從提交 `d3d1bc3185d51b62891920135b4126441e059696` [發布 v2.1.11](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.11)，修復 BR-03；01:53 公開 latest 下載的版本、大小與 SHA-256 已核對。修復前後契約、安全與 Chrome 來源隔離見 [BR-03 報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR03_FIX_REPORT.md)，發布讀回見 [該版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2111-release-verification--2026-10-10)。
 
 - 以所屬 playurl 請求的唯一、有效 cid 優先識別內容；相同 cid 的清單排列或完全不同畫質／編碼組仍保留 epoch，不同 cid 即使共用路徑也同步撤銷舊工作。
 - 缺少 cid 時，以順序無關的完整父目錄集合備援；影片／音訊分開、容量為 128／64，保留重疊歷史並確定性淘汰。無 cid 也無共同路徑時保守重設。

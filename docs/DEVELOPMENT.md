@@ -125,13 +125,22 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 共用 [測試資源範圍](../tests-v2/support/scope.ts) 使用 `testScope(t)`，立即以 `t.after()` 登記清理。`own()`、`defer()` 支援同步／非同步釋放，依反向登記順序執行；一項失敗仍完成其餘清理與全域還原，彙總錯誤。`dispose()` 可重複呼叫。全域替換必須經 `defineGlobal()`，保存第一次修改前的完整屬性描述子。測試資源範圍不包裝全域計時器；計時器、攔截、訂閱及取消函式由所屬資源或測試明確登記清理。模擬介面使用 `satisfies`，不得以 `as never` 繞過型別。
 
-[FakeClock](../tests-v2/support/clock.ts) 保留固定起始時間，拒絕無效延遲、零或負數的週期計時器間隔及重入推進，提供待執行數量。相同時間計時器依登記順序執行，獨立微任務佇列於下一個計時器前處理；每次推進最多 10,000 次回呼函式。釋放／取消後不再執行。以 [deferred](../tests-v2/support/deferred.ts) 或測試情境的完成訊號等待非同步工作，保留拒絕及取消路徑。BrowserScheduler 契約可使用少量真實事件迴圈，依完成訊號判定。
+[FakeClock](../tests-v2/support/clock.ts) 保留固定起始時間，拒絕無效延遲、零或負數的週期計時器間隔及重入推進，提供待執行數量。相同時間計時器依登記順序執行，獨立微任務佇列於下一個計時器前處理；每次推進最多 10,000 次回呼函式。釋放／取消後不再執行。以 [deferred](../tests-v2/support/deferred.ts) 或測試情境的完成訊號等待非同步工作，保留拒絕及取消路徑。`BrowserScheduler` 契約可使用少量真實事件迴圈，依完成訊號判定。
 
 不得在正式打包產物加入公開測試橋接介面；測試從 TypeScript 來源獨立打包。
 
 各領域回歸由既有套件明確匯入；調查目錄只保存原證據，不能成為正式測試輸入。原生 XHR 替身須區分送出前後 abort、同步 setter／open 例外及重入所有權；鍵盤替身分開事件種類與網站提交階段，指標 closest 只查祖先。可信事件模型不能替代實際瀏覽器輸入。控制中心替身須模型化事件路徑、capture／bubble、取消旗標與 listener 移除；模型的預設啟動不等於瀏覽器原生啟動。Enter／Space 必須另於自有隔離頁及指定影片的實際快捷鍵環境，以可信按鍵驗證；來源 UI 使用記憶體依賴且不替換安裝 singleton。
 
 修改內容識別須涵蓋 cid 請求所有權、低信任來源、父目錄集合與容量；修改恢復須涵蓋精確期限、最新目標、拖曳、生命週期、政策與晚到 Promise。案例以正確契約斷言，不只斷言錯誤行為存在。修復前失敗與修復後通過紀錄分開保存。
+
+<a name="cr-修復回歸與原生校準"></a>
+<a name="v2124-可信播放按鈕意圖"></a>
+
+### 原生校準與回歸
+
+XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString 一次轉換、轉換失敗後更正送出、跨 realm body 與同步重入。量測拒絕案例用獨立 Node 子程序觀察未處理拒絕，僅編譯本機 helper，明確管理 `FakeClock`、記憶體儲存及清理。既有案例與來源對照見 [CR 修復報告](CR01_CR05_FIX_REPORT.md)。
+
+可信播放意圖的契約須涵蓋同播放器／媒體／內容、paused／ended／error、真正可見性、可信事件與清理後回呼；既有路線授權、拖曳、額度、4 秒／30 秒與重載後 15 秒期限仍適用。來源隔離、正常實際播放與有限失敗退出分列，不能以來源模型代替安裝版。現行新缺陷與停止狀態見 [TODO](TODO.md)。
 
 <a name="build-output"></a>
 
@@ -155,11 +164,15 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 本方案沒有現成一鍵瀏覽器執行器；每輪需保存工具操作與重跑入口。工具不支援的必要步驟列具體阻塞，不能改用外部瀏覽器或繞過限制。詳見 [判定與時間上限](IAB_TESTING.md#verdict)、[證據目錄](IAB_TESTING.md#evidence)。
 
-剪貼簿驗證必須先證明真正複製／貼上與預定讀回共用通道，並能完整復原原資料。2026-10-12 的 IAB 原生複製及 API 讀回相符，PowerShell 卻讀到未變的 Windows 原內容；隔離層內另有原生存取被拒證據。這些是測試通道限制，不是產品複製失敗。校準未成立時不操作實際 P05、不做推測性來源修改；詳見 [剪貼簿規則](IAB_TESTING.md#剪貼簿校準與保護) 與 [通道調查](P05_COPY_CHANNEL_REPORT_2026-10-12.md)。
-
-使用者後續已改採 IAB 真正貼上與 API 讀回門檻；完整快照復原及合成對照通過，實際 P05 全文不符、判不通過。批准的單次 GM 純文字校準也未生效，產品根因未定位，不以補格式、完成回呼或盲目備援冒充修復。原內容只留記憶體，恢復前核對完整項目所有權；沒有新寫入端觀察能力時停止重跑。見 [本輪實際結果](P05_COPY_IAB_RESULT_2026-10-12.md)。
-
 [iab-event-collector.mjs](../scripts/iab-event-collector.mjs) 是注入 IAB CDP capability 的主機端事件收集工具，不建立瀏覽器連線或計時器，也不包含產品控制器。每個窗口使用新實例；跨呼叫狀態留在實例，完整登記暫停 ID 後才分類。呼叫端負責 finally 清理、停止條件及樣本隔離。正式契約歸入 `npm test -- tooling`；自有 loopback 隔離與安裝版結果分列，見 [第 5 輪](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md)。
+
+<a name="p05-原生複製契約"></a>
+
+### 剪貼簿驗證
+
+先保存 IAB 剪貼簿的全部項目與格式，只留記憶體；以自有頁合成文字校準可信原生寫入、預定 API 讀回及真正 Ctrl+V。共同通道與完整復原能力成立後，才驗證實際產品當次完整報告；不 trim、不重序列化、不以完成回呼或提示代替全文比較。來源記憶體 UI、實際安裝身分與正常／失敗案例分列。
+
+寫入收束後，復原前核對完整項目仍由本輪持有；使用者的新內容優先保留。IAB 與 Windows PowerShell 不得假設共用同一剪貼簿。v2.1.21 的通道限制及失敗保留在 [通道調查](P05_COPY_CHANNEL_REPORT_2026-10-12.md) 與 [原結果](P05_COPY_IAB_RESULT_2026-10-12.md)；v2.1.22 的原生優先修復及實際全文通過見 [P05 報告](P05_COPY_FIX_REPORT.md)。已通過子項不重測，沒有新前提不重複 GM 校準窗口。
 
 <a name="packaging-and-release"></a>
 
@@ -178,25 +191,3 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 依 [AGENTS 發行規則](../AGENTS.md#release-rules)，本專案功能修復完成並通過必要自動及安全驗證後，預設自主提交、遞增修補版本、封裝、推送 main／標籤及發布 GitHub Release，不再等待使用者重複要求；當次明確限定只調查、文件整理或保留本機修改時遵守該範圍。完成後核對公開 latest 更新的版本、大小與 SHA-256。不得加入修補、CI/CD 或 GitHub Actions。本機封裝不等於發布。GitHub Release 附件只有使用者腳本，更新 URL 保持指向本儲存庫最新 Release。發布前執行 `npm run typecheck`、`npm run architecture`、`npm test`、`npm run verify` 及必要安全驗證。內建瀏覽器／Tampermonkey 驗收另行記錄，未執行的瀏覽器檢查不得寫成通過。
 
 發布後先以內建瀏覽器的公開 latest 使用者腳本入口觸發既有安裝更新，再核對新文件實際執行身分；v2.1.21 已證明此路徑可用。不能只依歷史擴充功能介面限制就要求手動更新。只有當次入口確實受阻才交由使用者完成必要步驟；操作與證據要求見 [IAB 更新流程](IAB_TESTING.md#release)。
-
-## P05 原生複製契約
-
-診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 ControlCenter 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
-
-先保存全部 IAB 剪貼簿項目與格式，只留記憶體；校準可信原生 writeText、API 讀回與真正 Ctrl+V。復原前核對完整項目仍由本輪持有，使用者的新內容優先保留。正式 20 案先保存未修來源結果，再修復；來源、Node 與安裝分列，詳見 [P05 修復報告](P05_COPY_FIX_REPORT.md)。先前 GM 未生效紀錄保留，不重做無新前提的 GM 校準。
-
-## CR 修復回歸與原生校準
-
-CR-01～05 與 S-01／S-03 的 33 個新增具名案例由既有 progressive-routing、orchestration、measurement-state、diagnostics、native-transport 套件明確匯入；正式測試不匯入私有調查目錄。執行命令及 12 案先紅後綠對照見 [修復報告](CR01_CR05_FIX_REPORT.md)。
-
-量測拒絕契約以獨立 Node 子程序觀察未處理拒絕；只編譯本機測試 helper，使用 FakeClock、記憶體儲存及明確清理。XHR 替身按原生 unsent abort、ByteString／USVString 轉換及重入校準。Node 契約、IAB 真正 XHR 11 組對照與安裝版證據各自判定。
-
-只校準本輪新增差異；BR-01 保持跳過，P01／P02 的自然 pending gate 封存窗口不重開，工具達限後不循環重試。
-
-## v2.1.24 可信播放按鈕意圖
-
-長暫停後，網站核心可能忽略播放按鈕而不呼叫 SDK play。PlayerAdapter 同時觀察現有 SDK 方法及目前播放器區域的可信 .bpx-player-ctrl-play click；僅同一 paused 媒體、播放器、內容週期、真正可見且非 ended/error 才通知既有意圖。讀取前後核對控制／使用者修訂與清理狀態，事件與 DOM 不傳入應用層。
-
-RecoveryController 保留暫停至少 30 秒、拖曳／路線授權／政策／操作所有權／額度檢查；死核心 4 秒、其他無進度 30 秒與重載後 15 秒期限維持。正常進度不多做重載，沒有新操作不替暫停影片自行播放。每輪返回的取消函式清理 captured document listener，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
-
-本輪沒有足夠樣本支持新時間門檻，沒有加入傳輸活動介面或更改 Fetch 背壓。詳見 [政策重評](BR01_POLICY_REASSESSMENT_2026-10-14.md)；來源模型、實際播放與有限退出分開判定。

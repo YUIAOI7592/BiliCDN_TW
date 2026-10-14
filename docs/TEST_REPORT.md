@@ -14,7 +14,7 @@
 | Codex Security 差異 | 完成，4／4 來源／測試檔與 README 名稱核對；0 候選／0 發現 |
 | IAB 來源隔離 | 原版可信 click 未建立意圖；修復版建立意圖、單次重載、有限退出、正常進度零重載；自有 iframe 清理通過 |
 | 公開更新產物 | main／標籤、唯一附件、公開 latest 版本／大小／SHA-256 全部相符 |
-| 實際 v2.1.24 安裝 | 完整本體及唯一實例相符；Auto 1／2 倍正常播放入口通過；最新尋位位置保護不通過，故障傳輸窗口限制分列 |
+| 實際 v2.1.24 安裝 | 完整本體及唯一實例相符；Auto 1／2 倍正常播放入口通過；最新尋位位置保護不通過、尚未修復，故障傳輸窗口限制分列 |
 | 安裝後新調查契約 | 位置遺失 1 fail／2 pass、獨立型別通過；不計入已發布正式 855 案 |
 
 工具：Node 26.8.1、npm 11.19.0、TypeScript 7.0.2、esbuild 0.28.2。修復／政策／案例對照見 [本輪報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_POLICY_REASSESSMENT_2026-10-14.md)。
@@ -34,4 +34,4 @@
 
 v2.1.24 於 2026-10-13T16:34:31Z [正式發布](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.24)。發布時 main／peeled tag 同為 73d339e1e923ed1fc5d6606871f08a22a78d9947；唯一附件 345,540 bytes，SHA-256 9a58836ab79b56ca8b4a4741a3236011df19aade872baea19d8e56066cef7e3d。公開 latest 未帶憑證下載逐字一致。後續文件不回寫 Release 快照。
 
-**v2.1.24 已載入並核對完整本體與唯一實例。Auto 1／2 倍正常長暫停後播放通過；BR-01 整體不通過。** 新版可信播放入口已生效，但另確認失效媒體重設後遺失使用者尋位目標；獨立契約 1 fail／2 pass。故障窗口的傳輸收集限制與局部媒體證據分列，不擴大通過範圍。詳見 [位置遺失報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)。本輪停止重跑，未作後續執行期修改。
+**v2.1.24 已載入並核對完整本體與唯一實例。Auto 1／2 倍正常長暫停後播放通過；BR-01 整體不通過。** 新版可信播放入口已生效，但另確認失效媒體重設後遺失使用者尋位目標，尚未修復；獨立契約 1 fail／2 pass。故障窗口的傳輸收集限制與局部媒體證據分列，不擴大通過範圍。詳見 [位置遺失報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)。本輪停止重跑，未作後續執行期修改。
