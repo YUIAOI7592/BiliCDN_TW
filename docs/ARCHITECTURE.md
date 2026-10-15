@@ -2,7 +2,7 @@
 
 # v2 架構
 
-本文件描述目前 `src-v2/` 的職責與契約，版本以 [release.json](../release.json) 為準（目前 v2.1.25）。版本別修復及驗證數字移由 [索引](INDEX.md) 與 [TEST_REPORT](TEST_REPORT.md) 保存；本文件不代表新一次驗證通過。
+本文件描述目前 `src-v2/` 的職責與契約，版本以 [release.json](../release.json) 為準（目前 v2.1.26）。版本別修復及驗證數字移由 [索引](INDEX.md) 與 [TEST_REPORT](TEST_REPORT.md) 保存；本文件不代表新一次驗證通過。
 
 瀏覽器測試只使用 **Codex 內建瀏覽器＋Tampermonkey**，依 [IAB_TESTING](IAB_TESTING.md) 分開來源隔離、實際安裝與環境校準。應用層注入的模型與原生事件不可混為安裝版證據。
 

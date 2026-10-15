@@ -1,6 +1,6 @@
 # BiliCDN_TW v2 專案脈絡
 
-本文件保存現行產品契約與交付邊界；來源為 `src-v2/`，入口 `src-v2/entry.ts`，正式測試 `tests-v2/`。版本由 [release.json](../release.json) 決定，目前 **v2.1.25**。歷史修復過程見 [INDEX](INDEX.md)，已取得證據見 [TEST_REPORT](TEST_REPORT.md)，目前工作只看 [TODO](TODO.md)。
+本文件保存現行產品契約與交付邊界；來源為 `src-v2/`，入口 `src-v2/entry.ts`，正式測試 `tests-v2/`。版本由 [release.json](../release.json) 決定，目前 **v2.1.26**。歷史修復過程見 [INDEX](INDEX.md)，已取得證據見 [TEST_REPORT](TEST_REPORT.md)，目前工作只看 [TODO](TODO.md)。
 
 ## 現行產品
 

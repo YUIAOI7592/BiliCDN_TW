@@ -214,3 +214,11 @@ Auto 1／2 倍各一個有效正常窗口，可信 pause／resume／Right 短 se
 新增 9 個播放器／Monitor／Recovery 行為契約，先由未修改實作通過；補足影格 getter 同步 reset 的讀序後，再以 esbuild onLoad 在記憶體載入固定 fdb59ae 三個舊模組通過 9／9，沒有反覆覆寫 tracked runtime。另新增 3 個純領域比較契約。重構後 application 295／295、domain 10／10、adapters 116／116、adapter-boundaries 19／19；格式、三專案型別、99 模組架構、完整 verify 930／930 與 diff 檢查通過。所有原期限、操作修訂、單一控制觀察者及各自進度政策保留。
 
 第一版新增測試曾因 assert.deepEqual 對空陣列的 TypeScript 窄化而型別失敗，改比較陣列副本後通過；不計產品失敗或新增功能。IAB 傳輸／選路來源已取得 23／23 通過、清理與正式 GM 零寫入，最終來源重建雜湊及播放器／UI 另行記錄。BR-01 正式回歸照常執行，私有位置調查及歷史矩陣不恢復。
+
+## 2026-10-16：v2.1.26 安全與來源整合
+
+固定 a716369..8242e8f 的新 Codex Security scan 701c41d6-b599-407e-91bd-5df887f01f2d 已完成，28／28 正式項目及 5 份文件交叉審查、0 候選／0 發現。前置 3／3、獨立架構、38 個引用檔範圍檢查及 canonical 封存完成。首份語意草稿因附帶 workbench 自管的 coverage mode／路徑／inventory 欄位而在寫入前拒絕，僅移除這些欄位後接受；沒有替換掃描、略過案例或殘留 deferred。可選架構 JSON 副本曾在呼叫 MCP 前因模板插值失敗，沒有寫入；主代理已將收到的完整架構事實核對並保存至正式 canonical model，不用失敗副本冒充證據。
+
+同一 IAB 合成來源傳輸／選路 23／23、播放器可信 SDK／Right 與包裝還原、控制中心 Enter／空白鍵及 3,383 字元唯讀報告通過。合成儲存只在記憶體，正式 GM／剪貼簿寫入 0；自有請求、攔截、timer、訂閱皆 0，自有分頁及 loopback 服務已清理。最終傳輸來源重建雜湊一致；其他來源 SHA-256 與各層界線見 [完整 TEST_REPORT](TEST_REPORT.md)。本段不構成新版 Tampermonkey 安裝通過。
+
+統一升版 v2.1.26 後，另行執行 format:check、typecheck、architecture、npm test 930／930 及 verify，全數通過；沒有依賴或工具版本更動。文件及上一版完整正文保存另由 GFM／路徑／錨點與 diff 檢查驗證，正式封裝及公開校驗接續記錄。

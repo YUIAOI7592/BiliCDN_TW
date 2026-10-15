@@ -2,6 +2,14 @@
 
 # BiliCDN_TW 變更紀錄
 
+## v2.1.26
+
+- 四階段收斂契約、XHR、選路與播放器／恢復；統一 SettingsChange，設定視圖只取得必要讀取及三個設定命令，合併單一用途小模型並保留型別轉匯出。
+- XHR response／responseText 共用轉換與快取，JSON 保留原物件身分；原生 getter、metadata、open／send／abort、派送與清理權責保留。
+- 選路抽出純請求／結果分類及證據組裝，協調器保有計畫、ID、事件、Vault／親和與等待後資格檢查；播放器綁定及 Monitor／Recovery tick 改為明確步驟，共用純進度事實而保留不同政策。
+- 新增 41 案，完整 930／930、99 模組及分階段 verify 通過；固定安全差異 28 項及 5 份文件交叉審查，0 發現；IAB 來源傳輸／選路 23 案與播放器／UI／清理通過。Node／npm／TypeScript／esbuild／Prettier、依賴及產品 schema 不變。
+- [完整收斂報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CONVERGENCE_v2.1.26_REPORT.md) 與 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 分列自動、安全、來源、發布及實際安裝。BR-01 位置遺失仍未修復，歷史矩陣不重開。
+
 ## v2.1.25
 
 - 將 16 個維護工具轉為 Node 原生 ESM TypeScript，保留 CLI、結構化報告、期限、隔離、清理及封裝語意；Node／TypeScript／esbuild 版本不變。

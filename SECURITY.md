@@ -2,7 +2,7 @@
 
 # 信任邊界與資料處理
 
-本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準（目前 v2.1.24）。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [修復索引](docs/INDEX.md)，不把歷史掃描當成新差異的驗證。
+本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準（目前 v2.1.26）。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [修復索引](docs/INDEX.md)，不把歷史掃描當成新差異的驗證。
 
 瀏覽器驗證只使用 **Codex 內建瀏覽器＋Tampermonkey**，資料隔離、送出前攔截與清理依 [IAB_TESTING](docs/IAB_TESTING.md)。來源隔離、環境校準與實際安裝各自判定；v2.1.22 P05 差異審查與來源證據見 [修復報告](docs/P05_COPY_FIX_REPORT.md)，前版 BR-10 見 [歷史修復](docs/BR10_FIX_REPORT.md)。
 
