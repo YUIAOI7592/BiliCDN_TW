@@ -183,6 +183,8 @@ XHR header 依 ByteString 在入口轉換一次，原生接受後才存字串供
 
 Chrome 同步選項驗證失敗可能把原生 XHR 清成 UNSENT；只有尚未送出的 waiting 請求可標記 needsNativeOpen，在 gate 釋放時重新準備，再檢查所有權與最新政策；已送出的請求絕不因此重播。以上例外安全性納入 v2.1.10，證據見 [BR-02 修復報告](BR02_FIX_REPORT.md)。
 
+XHR 的 response／responseText 共用同一組文字轉換及快取助手，JSON 分支也由該助手處理；助手只取得當次 metadata 與最小轉換能力。原生 getter、readyState／responseType／世代檢查與模式切換快取重置仍在 hook，status 延遲至原有診斷通知位置讀取。重入只保留當次 metadata，沒有新增 in-flight 去重或第二索引。
+
 `ControlCenter` 在開啟、關閉及換頁時更新視圖版本；命令完成與排隊焦點只在仍擁有當前開啟視圖時作用。設定命令完成不代表 UI 必須仍開啟。
 
 `ControlCenter` 私有管理 ShadowRoot 的 keydown／keypress／keyup 冒泡監聽器；只隔離目前開啟、已連接宿主及當前 ShadowRoot 的可信事件。一般按鍵只停止傳播，保留原生預設行為；Escape keydown 另取消預設並關閉。show 不重複註冊，close／宿主重建移除舊監聽器。外層捕捉處理仍先執行，不宣稱全面隔離任何網站鍵盤邏輯。

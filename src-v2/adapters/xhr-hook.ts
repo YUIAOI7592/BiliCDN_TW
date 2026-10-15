@@ -14,6 +14,7 @@ import {
 import { convertXhrOpen, convertXhrHeader, createXhrBodyConverter } from './xhr-values.ts'
 import { createXhrRequestState, resetXhrTransform } from './xhr-request.ts'
 import type { XhrMeta } from './xhr-request.ts'
+import { transformXhrJson, transformXhrText } from './xhr-response.ts'
 
 export class XhrHookAdapter {
   #xhrMeta = new WeakMap<XMLHttpRequest, XhrMeta>()
@@ -534,45 +535,13 @@ export class XhrHookAdapter {
           const strict = self.routes.isCatalogOnly()
           resetXhrTransform(meta, strict)
           if (this.responseType === 'json') {
-            if (meta.transformedJson === undefined) {
-              try {
-                const result = self.playurl.transform(
-                  raw,
-                  'trusted-api',
-                  meta.responseKey,
-                  meta.requestContext,
-                )
-                self.notePlayurl('xhr', this.status, result)
-                meta.transformedJson = strict && !result.accepted ? blockedPlayurl() : raw
-              } catch {
-                self.notePlayurl('xhr', this.status, rejectedPlayurl('malformed-payload'))
-                meta.transformedJson = strict ? blockedPlayurl() : raw
-              }
-            }
-            return meta.transformedJson
+            return transformXhrJson(self, meta, raw, strict, () => this.status)
           }
           if (
             (this.responseType === '' || this.responseType === 'text') &&
             typeof raw === 'string'
           ) {
-            if (meta.transformedText === null) {
-              try {
-                const payload: unknown = JSON.parse(raw),
-                  result = self.playurl.transform(
-                    payload,
-                    'trusted-api',
-                    meta.responseKey,
-                    meta.requestContext,
-                  )
-                self.notePlayurl('xhr', this.status, result)
-                meta.transformedText =
-                  strict && !result.accepted ? blockedPlayurlText() : JSON.stringify(payload)
-              } catch {
-                self.notePlayurl('xhr', this.status, rejectedPlayurl('malformed-payload'))
-                meta.transformedText = strict ? blockedPlayurlText() : raw
-              }
-            }
-            return meta.transformedText
+            return transformXhrText(self, meta, raw, strict, () => this.status)
           }
           self.notePlayurl('xhr', this.status, rejectedPlayurl('unsupported-format'))
           return strict ? blockedPlayurl() : raw
@@ -592,23 +561,7 @@ export class XhrHookAdapter {
           }
           const strict = self.routes.isCatalogOnly()
           resetXhrTransform(meta, strict)
-          if (meta.transformedText !== null) return meta.transformedText
-          try {
-            const payload: unknown = JSON.parse(raw),
-              result = self.playurl.transform(
-                payload,
-                'trusted-api',
-                meta.responseKey,
-                meta.requestContext,
-              )
-            self.notePlayurl('xhr', this.status, result)
-            meta.transformedText =
-              strict && !result.accepted ? blockedPlayurlText() : JSON.stringify(payload)
-          } catch {
-            self.notePlayurl('xhr', this.status, rejectedPlayurl('malformed-payload'))
-            meta.transformedText = strict ? blockedPlayurlText() : raw
-          }
-          return meta.transformedText
+          return transformXhrText(self, meta, raw, strict, () => this.status)
         }
         Object.defineProperty(proto, 'responseText', {
           ...responseTextDescriptor,

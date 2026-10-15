@@ -2170,3 +2170,4 @@ test(
 import '../regressions/functional-races/xhr.ts'
 import '../regressions/functional-races/cr-xhr-headers.ts'
 import '../regressions/functional-races/cr-xhr-send-conversion.ts'
+import '../regressions/functional-races/xhr-response-convergence.ts'

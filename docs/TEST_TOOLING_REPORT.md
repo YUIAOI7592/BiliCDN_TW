@@ -200,3 +200,7 @@ Auto 1／2 倍各一個有效正常窗口，可信 pause／resume／Right 短 se
 基準 a716369／v2.1.25，基準 verify 889／889、98 模組通過。第一階段僅收斂型別與視圖依賴，合併三個小檔案；typecheck、控制中心 38／38、量測狀態 40／40、漸進 playurl 30／30、整合 verify 889／889 與 95 模組架構通過。完整腳本仍為 368,486 bytes、SHA-256 2cdf191565668fb1c63bd815fedec1fd227b7e476885a6102c83c530e8657aa6，與階段前逐位元組相同；沒有將鏡像測試當作新增案例。
 
 維持工具版本、CLI、格式與儲存 schema，未改寫 Release 或歷史證據。執行器不接受多個 suite 參數，該次使用錯誤立即退出，改為三次明確單套件命令後通過；失敗入口不計產品測試。來源／安全／新版本安裝尚未開始，分列於 [收斂報告](CONVERGENCE_v2.1.26_REPORT.md)。
+
+## 2026-10-16：v2.1.26 第二階段 XHR 轉換
+
+新增 20 個具名 getter／快取／模式／例外／重入情境，先由舊 hook 通過 native-transport 167／167。共用助手抽取後同套件仍 167／167，progressive-transport 4／4、playurl-summary 8／8、型別、96 模組架構、格式及完整 verify 909／909 通過；沒有 fail／skip／todo／cancelled。未改 send／open 的派送或 metadata 所有權，不用新 in-flight sentinel 改變既有同步重入語意。詳見收斂報告；本階段尚無新版發布或安裝通過宣稱。
