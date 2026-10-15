@@ -1,3 +1,7 @@
+import type { ControlCommandPort } from '../application/control-ports.ts'
+import type { SettingsReader } from '../state/settings-ports.ts'
+import type { ControlRestrictionReader } from './control-center-ports.ts'
+
 export interface ControlViewFrame {
   readonly body: HTMLDivElement
   readonly foot: HTMLElement
@@ -22,4 +26,19 @@ export interface DiagnosticViewActions {
   refresh(): void
   report(): string
   captureCopy(): ReportCopyAction
+}
+export interface SettingsViewRouteReader {
+  isOriginalComparison(): boolean
+}
+
+export interface SettingsViewCommands extends Pick<
+  ControlCommandPort,
+  'updateSettings' | 'setCatalogEnabled' | 'setOriginalComparison'
+> {}
+
+export interface SettingsViewDependencies {
+  readonly settings: SettingsReader
+  readonly restrictions: ControlRestrictionReader
+  readonly routes: SettingsViewRouteReader
+  readonly commands: SettingsViewCommands
 }

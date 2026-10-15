@@ -1,6 +1,9 @@
 import { evidenceMetrics } from '../domain/evidence.ts'
-import type { ControlCenterDependencies, ShowControlCenterPort } from './control-center-ports.ts'
-import type { ControlCenterSnapshot } from './control-center-model.ts'
+import type {
+  ControlCenterDependencies,
+  ControlCenterSnapshot,
+  ShowControlCenterPort,
+} from './control-center-ports.ts'
 import type { ControlViewActions } from './view-ports.ts'
 import { createControlCenterStyle } from './styles.ts'
 import { createButton } from './elements.ts'
@@ -8,7 +11,7 @@ import { renderOverview } from './overview-view.ts'
 import { renderSettings } from './settings-view.ts'
 import { renderDiagnostics } from './diagnostics-view.ts'
 export type { ControlCenterDependencies } from './control-center-ports.ts'
-export type { ControlCenterSnapshot } from './control-center-model.ts'
+export type { ControlCenterSnapshot } from './control-center-ports.ts'
 
 export class ControlCenter implements ShowControlCenterPort {
   #host: HTMLDivElement | null = null

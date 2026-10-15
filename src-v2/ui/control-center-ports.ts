@@ -9,6 +9,23 @@ import type { DiagnosticViewPort } from '../diagnostics/ports.ts'
 import type { SessionSnapshot } from '../state/session-model.ts'
 import type { RestrictionRecord } from '../state/restriction-model.ts'
 import type { SettingsReader } from '../state/settings-ports.ts'
+import type { SettingsState } from '../state/settings-model.ts'
+import type { evidenceMetrics } from '../domain/evidence.ts'
+
+export interface ControlCenterSnapshot {
+  readonly version: string
+  readonly settings: SettingsState
+  readonly session: SessionSnapshot
+  readonly monitor: MonitorSnapshot
+  readonly recovery: RecoverySnapshot
+  readonly measurement: MeasurementSnapshot
+  readonly interception: TransportSnapshot
+  readonly routes: RouteSnapshot
+  readonly restrictions: readonly RestrictionRecord[]
+  readonly evidence: readonly Readonly<
+    ReturnType<typeof evidenceMetrics> & { host: string; kind: 'video' | 'audio' }
+  >[]
+}
 
 export interface ShowControlCenterPort {
   show(opener?: HTMLElement | null): void

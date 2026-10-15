@@ -1,5 +1,5 @@
 import type { PlayurlItem } from '../application/playurl-model.ts'
-import type { PlayurlIngestionPort } from './playurl-ports.ts'
+import type { PlayurlControllerPort } from '../application/playurl-ports.ts'
 import type { CodecPreference } from '../state/settings-model.ts'
 import type {
   PlayurlFormat,
@@ -8,6 +8,11 @@ import type {
   PlayurlRequestContext,
 } from '../domain/playurl-model.ts'
 import { parseMediaUrl } from '../domain/url-policy.ts'
+
+export interface PlayurlIngestionPort extends Pick<
+  PlayurlControllerPort,
+  'lifecycleKey' | 'catalogOnly' | 'codecPreference' | 'ingest' | 'active'
+> {}
 
 type UnknownRecord = Record<string, unknown>
 const isRecord = (value: unknown): value is UnknownRecord =>

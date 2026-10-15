@@ -1,12 +1,15 @@
 import { DEFAULT_UNAVAILABLE_HOSTS, TRUSTED_CATALOG } from '../domain/catalog.ts'
 import type { CodecPreference } from '../state/settings-model.ts'
-import type { ControlCenterDependencies } from './control-center-ports.ts'
-import type { ControlViewFrame, ControlViewActions } from './view-ports.ts'
+import type {
+  ControlViewFrame,
+  ControlViewActions,
+  SettingsViewDependencies,
+} from './view-ports.ts'
 import { createButton, createRow, createToggle } from './elements.ts'
 import { restrictionLabel } from './labels.ts'
 
 export function renderSettings(
-  deps: ControlCenterDependencies,
+  deps: SettingsViewDependencies,
   frame: ControlViewFrame,
   actions: ControlViewActions,
 ): void {

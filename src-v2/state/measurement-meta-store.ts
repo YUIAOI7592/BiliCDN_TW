@@ -1,7 +1,6 @@
 import type { StoragePort } from '../platform/storage-port.ts'
-import type { MeasurementMeta } from './measurement-meta-model.ts'
-import type { MeasurementMetaPort } from './measurement-meta-ports.ts'
-export type { MeasurementMeta } from './measurement-meta-model.ts'
+import type { MeasurementMeta, MeasurementMetaPort } from './measurement-meta-ports.ts'
+export type { MeasurementMeta } from './measurement-meta-ports.ts'
 
 export const MEASUREMENT_META_KEY = 'bilicdn.v2.meta'
 export class MeasurementMetaStore implements MeasurementMetaPort {

@@ -25,7 +25,7 @@ v2.1.9 的 [功能與競態修復](FUNCTIONAL_FIX_REPORT.md) 納入下列所有�
 | `ui` | `ui`、`diagnostics`、`application`、`state`、`domain`、`platform` |
 | `entry.ts` | 所有組合層 |
 
-此表列出可以匯入的層，並不要求全部匯入。狀態儲存元件從 `platform/storage-port.ts` 匯入 `StoragePort` 型別；`platform/storage.ts` 實作 Tampermonkey 儲存。執行識別碼介面也獨立於產生器。各層的 `*-model.ts` 保存共用模型，`*-ports.ts` 保存具名最小依賴介面；契約不得依賴具體 Store、控制器或適配器。UI 匯入應用層／狀態層型別與領域輔助函式，消費快照，透過 `ControlCommandPort` 執行產品變更；UI 不匯入瀏覽器適配器。診斷匯入領域模型。[entry.ts](../src-v2/entry.ts) 建立、連接這些物件並啟動執行環境。
+此表列出可以匯入的層，並不要求全部匯入。狀態儲存元件從 `platform/storage-port.ts` 匯入 `StoragePort` 型別；`platform/storage.ts` 實作 Tampermonkey 儲存。執行識別碼介面也獨立於產生器。各層的 `*-model.ts` 保存共用模型，`*-ports.ts` 保存具名最小依賴介面；單一用途的小模型可與同用途契約共置，單一消費者的介面可留在消費檔。契約不得依賴具體 Store、控制器或適配器。`SettingsChange` 唯一定義於狀態模型；設定視圖僅接收設定、限制清單、原線對照查詢與三個設定命令。UI 匯入應用層／狀態層型別與領域輔助函式，消費快照，透過 `ControlCommandPort` 執行產品變更；UI 不匯入瀏覽器適配器。診斷匯入領域模型。[entry.ts](../src-v2/entry.ts) 建立、連接這些物件並啟動執行環境。
 
 AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、`import type` 及 `import-equals` 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環與契約對實作的依賴。唯一寫入者依完整相對路徑辨識，不能以同名檔案繞過；只有 `application/measurement-controller.ts` 可以呼叫 `probe.read()`。額外語法規則拒絕領域層／應用層中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、路線協調器以外的點號 `setAffinity()` 呼叫、恢復控制器以外應用層的點號 `reload()` 呼叫，以及命令接收器以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
 

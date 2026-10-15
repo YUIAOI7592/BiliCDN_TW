@@ -1,4 +1,7 @@
-import type { MeasurementMeta } from './measurement-meta-model.ts'
+export interface MeasurementMeta {
+  readonly catalogCursor: number
+  readonly lastChallengeAt: number
+}
 
 export interface MeasurementMetaPort {
   get(): MeasurementMeta
