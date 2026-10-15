@@ -1,5 +1,6 @@
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 import '../regressions/functional-races/routing-modularization.ts'
+import '../regressions/functional-races/routing-convergence.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'

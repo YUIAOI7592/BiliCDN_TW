@@ -204,3 +204,7 @@ Auto 1／2 倍各一個有效正常窗口，可信 pause／resume／Right 短 se
 ## 2026-10-16：v2.1.26 第二階段 XHR 轉換
 
 新增 20 個具名 getter／快取／模式／例外／重入情境，先由舊 hook 通過 native-transport 167／167。共用助手抽取後同套件仍 167／167，progressive-transport 4／4、playurl-summary 8／8、型別、96 模組架構、格式及完整 verify 909／909 通過；沒有 fail／skip／todo／cancelled。未改 send／open 的派送或 metadata 所有權，不用新 in-flight sentinel 改變既有同步重入語意。詳見收斂報告；本階段尚無新版發布或安裝通過宣稱。
+
+## 2026-10-16：v2.1.26 第三階段選路整理
+
+新增 9 個決策 ID／模式／禁止／同步重入／證據及提交順序契約，先由舊實作通過 progressive-routing 42／42。重構後同套件 42／42、native-routing 13／13、application 286／286、native-transport 167／167，格式、三專案型別、98 模組架構及完整 verify 918／918 通過。傳輸分類助手不取得協調器或授權索引；等待後的政策／控制驗證保持在協調器。內建瀏覽器自有 Fetch／XHR 精確送出前攔截校準各一次通過，尚不算來源或安裝版產品驗收。
