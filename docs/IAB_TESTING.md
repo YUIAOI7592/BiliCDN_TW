@@ -1,12 +1,12 @@
 # Codex 內建瀏覽器測試方案
 
-日期：2026-10-11 初稿，2026-10-14 更新。適用目前 `src-v2/`；版本以 [release.json](../release.json) 為準，目前為 **v2.1.25**。
+日期：2026-10-11 初稿，2026-10-15 更新。適用目前 `src-v2/`；版本以 [release.json](../release.json) 為準，目前為 **v2.1.25**。
 
 **所有瀏覽器測試只使用 Codex 內建瀏覽器＋Tampermonkey。** 包含來源隔離、安裝版、背景、傳輸與發布後回歸；不得改用外部 Chrome／Edge、獨立 Playwright／Puppeteer 或 headless 瀏覽器。Node 契約、型別、架構及建置檢查仍保留。
 
 本文件保存操作與判定規則，**不構成測試啟動授權**。目前工作只看 [TODO](TODO.md)；BR-01 歷史整份矩陣仍跳過，P01／P02 維持限制封存。2026-10-14 的有限政策重評及安裝續驗已收束，不因工具校準、文件整理或發布自動開下一輪。
 
-v2.1.24 的完整本體與正常播放入口結果屬歷史；v2.1.25 模組化之來源、發布與正常安裝回歸分列於 TEST_REPORT。**BR-01 整體不通過，失效後尋位位置遺失尚未修復**。已發布的正式 855／855 與新調查 1 fail／2 pass 分列於 [歷史 TEST_REPORT](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2124-release-verification--2026-10-14)；傳輸窗口限制與局部媒體證據見 [位置報告](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)。一次修正方法後的重試已用，不再自動開同條件窗口。
+v2.1.24 的完整本體與正常播放入口結果屬歷史；v2.1.25 模組化之來源、發布與正常安裝回歸範圍已通過，分列於 [TEST_REPORT](TEST_REPORT.md)，本輪結案。**BR-01 整體不通過，失效後尋位位置遺失尚未修復**。已發布的正式 855／855 與新調查 1 fail／2 pass 分列於 [歷史 TEST_REPORT](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2124-release-verification--2026-10-14)；傳輸窗口限制與局部媒體證據見 [位置報告](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)。一次修正方法後的重試已用，不再自動開同條件窗口。
 
 版本別工具能力、IAB 第 1～6 輪及 P05 通道結果由 [歷史導覽](INDEX.md#歷史計畫與瀏覽器紀錄) 追溯。既有通過沿用；舊 Chrome 證據保留原環境，不轉算新的 IAB 通過。
 

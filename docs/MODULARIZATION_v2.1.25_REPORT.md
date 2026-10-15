@@ -1,6 +1,6 @@
 # v2.1.25 模組化與 TypeScript 標準化紀錄
 
-日期：2026-10-14（Asia/Taipei）。基準 v2.1.24／85196df；正式來源仍為 `src-v2/`。本輪保持產品模式、儲存 schema、期限、取消與所有權語意，依使用者計畫分階段提交，最後統一發布 v2.1.25。
+日期：2026-10-14 實作，2026-10-15 完成發布後安裝紀錄（Asia/Taipei）。基準 v2.1.24／85196df；正式來源仍為 `src-v2/`。本輪保持產品模式、儲存 schema、期限、取消與所有權語意，依使用者計畫分階段提交，最後統一發布 v2.1.25。
 
 **BR-01 位置遺失未修復，歷史矩陣與 P01／P02 限制封存不重開。** 本輪的正常播放驗收不取代故障位置保護結果；原始證據見 [位置報告](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)。
 
@@ -49,4 +49,23 @@ Node 26.8.1、npm 11.19.0、TypeScript 7.0.2、esbuild 0.28.2 保持；僅新增
 
 Codex Security 固定範圍 `85196df1c176cef0e373dba8450a3dd5efc4e376..e5a9c403bac83859bd5540f78716522c1f52d1c6`，scan `f1e3f151-b556-4e63-a9d7-25d68992a0ff`；前置能力就緒、獨立架構模型保存，193／193 個來源／測試項目完成審查，0 候選／0 發現；2026-10-14T14:59:24Z 完成封存。結果記入最新版 [TEST_REPORT](TEST_REPORT.md)。
 
-發布及 v2.1.25 實際安裝尚未執行；預定公開 latest 更新入口、完整本體／singleton／hooks、指定 BV1tFZZBQE57 Auto 1／2 倍正常播放與控制中心操作。本段不宣稱安裝通過。歷史故障矩陣維持封存。
+### 公開發布
+
+[v2.1.25 正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.25) 於 2026-10-14T15:10:20Z 發布。發布提交 6916e0523a9aa4906d761598943333fecebac57a；遠端 main 與 annotated tag 的 peeled commit 核對相同，標籤物件為 6c783f8f34964de3546b2ea13f0bd5eb7787cb82。後續 main 的安裝紀錄提交不移動版本標籤，也不回寫已發布快照。
+
+唯一附件 BiliCDN_TW.user.js，368,486 bytes，SHA-256 `2cdf191565668fb1c63bd815fedec1fd227b7e476885a6102c83c530e8657aa6`。2026-10-15 再次取得公開 latest，版本、大小及 SHA-256 與本機封裝／GitHub 附件一致。
+
+### 實際安裝 I：本輪範圍通過
+
+先嘗試既有公開 latest 入口，但停在 Tampermonkey 安裝中繼頁，工具未取得可操作的管理器確認頁；指定影片仍執行舊本體，該次不作新版功能判定。使用者於 2026-10-15 確認已更新後，在同一內建瀏覽器新載入指定 BV1tFZZBQE57 才開始有效窗口。前次 Debugger 暫停與跨日工具空窗不計入播放或故障期限。
+
+| 項目 | 有效判定與證據 |
+| --- | --- |
+| 完整執行身分 | PASS：Tampermonkey 5.5.1、GM_info 腳本 2.1.25；完整可執行 IIFE 366,528 UTF-8 bytes，SHA-256 `a85809d70a3bc8a711de6df57f2120c44ff0c6b8fdf51c160ed0a08f5d8b340d`，與封裝中相同 IIFE 一致。雜湊排除管理器外包裝及 metadata，與整份附件雜湊分列 |
+| 唯一實例／hooks | PASS：RuntimeController／ControlCenter 各 1；Fetch／XHR 均 installed，原因 fetch-and-xhr-verified；頁面面板 1 |
+| Auto 1 倍 | PASS：9.866 秒內媒體時間 +9.860 秒、影格 +592；可信暫停／恢復及 Right 短 seek 後 readyState 4、seeking false 且繼續進度 |
+| Auto 2 倍 | PASS：15.105 秒內媒體時間 +30.208 秒、影格 +1,811；可信暫停／恢復及 Right 短 seek 後 readyState 4、seeking false 且繼續進度 |
+| 控制中心 | PASS：經實際播放器入口開啟概覽、設定與診斷；設定 Enter、診斷 Space 前後 userRevision／seekRevision 不變、保持播放。32,213 字元唯讀 JSON 報告為 v2.1.25，無原始 URL；未操作複製、清除或設定寫入 |
+| 清理 | PASS：關閉控制中心、移除斷點並停用 Debugger、釋放 object group、關閉自有影片分頁、停止 loopback 服務；自有攔截／包裝／頁面 timer／訂閱均 0，設定寫入與剪貼簿寫入 0，倍速復原原本 2 倍 |
+
+兩個倍速窗口及最終狀態的核心 reloadRevision／reloadCount 均 0。完整樣本及畫面保存在上述私有證據目錄的 INSTALLED.json／installed-v25-diagnostics.jpg。只判定本輪模組化差異與正常回歸範圍通過；BR-01 位置遺失未修復，歷史故障、背景、gate 與剪貼簿矩陣維持封存。

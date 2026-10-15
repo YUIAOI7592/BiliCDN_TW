@@ -2,7 +2,7 @@
 
 # BiliCDN_TW v2.1.25 模組化與標準化驗證
 
-日期：2026-10-14（Asia/Taipei）。基準 v2.1.24／85196df，正式來源 src-v2。分階段提交工具遷移、格式、靜態規則、依賴契約與三組執行期拆分，保持既有產品行為。完整責任與來源案例見 [實作報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/MODULARIZATION_v2.1.25_REPORT.md)。
+日期：2026-10-14 實作／發布，2026-10-15 安裝紀錄（Asia/Taipei）。基準 v2.1.24／85196df，正式來源 src-v2。分階段提交工具遷移、格式、靜態規則、依賴契約與三組執行期拆分，保持既有產品行為。完整責任與來源案例見 [實作報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/MODULARIZATION_v2.1.25_REPORT.md)。
 
 **BR-01 位置遺失未修復，歷史整份矩陣與 P01／P02 封存不重開。** 正常播放與模組化驗證不代替故障位置保護；原 [位置缺陷](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_v2.1.24_POSITION_LOSS_2026-10-14.md) 保留。
 
@@ -14,12 +14,22 @@
 | Codex Security | 固定差異 193／193，0 候選／0 發現、完整覆蓋與封存完成；與 verify 分開 |
 | IAB 原生校準 E | 自有 Fetch／XHR 精確攔截、合成回應與解除通過；沙箱內服務不可達後改由主機 loopback 服務 |
 | IAB 來源隔離 S | 17／17 傳輸／選路／所有權案例通過；來源 UI、播放器讀取／包裝與資源清理通過；無正式 GM 寫入 |
-| 公開更新產物 | 尚未發布，待 main／標籤、唯一附件、公開 latest 版本／大小／SHA-256 核對 |
-| 實際安裝 I | 尚未執行 v2.1.25 安裝；完整本體／唯一實例／hooks、指定影片 Auto 1／2 倍正常播放與 UI 操作另記 |
+| 公開更新產物 | 已發布 v2.1.25：main／標籤、唯一附件與公開 latest 的版本／大小／SHA-256 核對一致；安裝紀錄另提交 main，標籤與快照不回寫 |
+| 實際安裝 I | 本輪正常回歸範圍 PASS：Tampermonkey 5.5.1／完整 v2.1.25 執行本體、Runtime／ControlCenter 各 1、Fetch／XHR hooks；指定影片 Auto 1／2 倍播放／暫停／恢復／短 seek 及控制中心操作通過 |
 
 工具保持 Node 26.8.1、npm 11.19.0、TypeScript 7.0.2、esbuild 0.28.2；只新增開發用 Prettier 3.9.10。16 個維護工具使用原生 ESM .mts，生成的 JS 情境／產物仍保留。格式變更獨立提交；本輪不要求重構後 JS 文字與舊版一致，確定性在同一新版來源驗證。
 
-本輪 v2.1.25 已另行執行 format:check、typecheck、architecture、npm test 與 verify，全部通過。封裝使用者腳本 368,486 bytes，SHA-256 `2cdf191565668fb1c63bd815fedec1fd227b7e476885a6102c83c530e8657aa6`；原更新網址維持。此數字為本機封裝，公開更新核對另記。
+本輪 v2.1.25 已另行執行 format:check、typecheck、architecture、npm test 與 verify，全部通過。封裝使用者腳本 368,486 bytes，SHA-256 `2cdf191565668fb1c63bd815fedec1fd227b7e476885a6102c83c530e8657aa6`；原更新網址維持。2026-10-14T15:10:20Z 發布的唯一附件與 2026-10-15 再取的公開 latest，版本／大小／雜湊皆相同；版本標籤 peeled commit 為 6916e0523a9aa4906d761598943333fecebac57a。
+
+## 發布後實際安裝
+
+公開更新入口先停在 Tampermonkey 中繼頁，工具不能操作管理器確認頁，影片仍為舊本體；該次不作新版功能判定。使用者確認更新後，2026-10-15 重新載入指定 BV1tFZZBQE57 才取得有效 v2.1.25 窗口。管理器外包裝與 metadata 以外的完整可執行 IIFE 為 366,528 bytes、SHA-256 `a85809d70a3bc8a711de6df57f2120c44ff0c6b8fdf51c160ed0a08f5d8b340d`，與封裝同段一致；整份公開附件雜湊另列於上文。
+
+Auto 1 倍：9.866 秒內媒體時間 +9.860 秒、影格 +592；Auto 2 倍：15.105 秒內時間 +30.208 秒、影格 +1,811。兩窗各完成可信暫停／恢復及 Right 短 seek，之後 readyState 4、seeking false 且持續播放，核心 reloadRevision／reloadCount 均 0。概覽／設定／診斷操作通過；Enter／Space 未改變 userRevision／seekRevision，32,213 字元報告 readonly、版本正確且無原始 URL。未重跑歷史故障、背景、gate 或剪貼簿矩陣。
+
+控制中心關閉，斷點／Debugger／object group、自有分頁及 loopback 服務已清理；自有攔截／包裝／頁面 timer／訂閱均 0，沒有設定或剪貼簿寫入，倍速恢復原本 2 倍。原始安全摘要與畫面位於 .work/iab-testing/2026-10-14-v2.1.25-modularization/；細項與判定邊界見實作報告。本輪範圍通過，BR-01 整體仍不通過。
+
+發布後文件檢查：15 份現行文件、32 個 GFM 表格、356 個本機／儲存庫連結，Markdown／表格／連結錯誤 0；上一版完整報告仍原樣保存在歷史，git diff --check 通過。只提交 main 的後續文件，不重新封裝或改寫版本標籤／Release／安全封存。
 
 ## 安全範圍與計量
 

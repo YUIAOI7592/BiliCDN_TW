@@ -8,6 +8,7 @@
 - 新增 Prettier 3.9.10、format／format:check，verify 納入唯讀格式檢查；啟用未使用宣告／參數與明確型別匯入，ESLint 暫緩。
 - 分離儲存介面、共用模型與具名最小契約，架構檢查以精確路徑保障唯一寫入權責；拆分選路、診斷／控制中心及播放器／XHR，保留行為與所有權。
 - 新增 34 案，完整 889／889、98 模組架構及 verify 通過；獨立安全差異 193 項、0 發現，IAB 來源隔離通過。[完整實作](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/MODULARIZATION_v2.1.25_REPORT.md) 與 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 分列發布及實際安裝，BR-01 位置遺失仍未修復，歷史矩陣不重開。
+- 發布後公開 latest 版本／大小／SHA-256 相符；2026-10-15 使用者更新後，完整執行本體／唯一實例／hooks、指定影片 Auto 1／2 倍正常回歸與控制中心操作通過。本項為 main 後續紀錄，已發布快照不回寫。
 
 ## v2.1.24
 
