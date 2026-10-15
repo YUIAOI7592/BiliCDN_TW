@@ -222,3 +222,13 @@ Auto 1／2 倍各一個有效正常窗口，可信 pause／resume／Right 短 se
 同一 IAB 合成來源傳輸／選路 23／23、播放器可信 SDK／Right 與包裝還原、控制中心 Enter／空白鍵及 3,383 字元唯讀報告通過。合成儲存只在記憶體，正式 GM／剪貼簿寫入 0；自有請求、攔截、timer、訂閱皆 0，自有分頁及 loopback 服務已清理。最終傳輸來源重建雜湊一致；其他來源 SHA-256 與各層界線見 [完整 TEST_REPORT](TEST_REPORT.md)。本段不構成新版 Tampermonkey 安裝通過。
 
 統一升版 v2.1.26 後，另行執行 format:check、typecheck、architecture、npm test 930／930 及 verify，全數通過；沒有依賴或工具版本更動。文件及上一版完整正文保存另由 GFM／路徑／錨點與 diff 檢查驗證，正式封裝及公開校驗接續記錄。
+
+## 2026-10-16：v2.1.26 發布後正常安裝結案
+
+正式發布提交 bf536c5，唯一附件與公開 latest 皆為 v2.1.26、372,448 bytes、SHA-256 107d345c557e18769e0d2e8876e3d046107c051e795228c69f72c97bcfbdaea0；發布時遠端 main／peeled tag 一致。公開更新入口本次實際停在管理器中繼頁、舊完整本體仍為 v2.1.25，工具不能完成確認，沒有先宣稱新版通過。使用者確認更新後，原工具分頁已失效，另在同一 IAB 新文件核對 Tampermonkey 5.5.1／v2.1.26，完整 IIFE 370,490 bytes／43597d8e9302a044e5b32a70e8db84811f7e8cf48a7a991e2e055cbfadae01df，與封裝相同；Runtime／ControlCenter 各 1、Fetch／XHR hooks installed。
+
+Auto 1／2 倍各一個有效窗口通過（28.8784 秒：時間 +28.882920、影格 +1,731；35.7705 秒：時間 +71.543344、影格 +4,288），包含可信暫停／恢復及短 seek，結束 readyState 4／seeking false、重載 0。概覽／Enter 設定與返回／空白鍵診斷通過，userRevision 14／seekRevision 6 在鍵盤前後不變；32,665 字元報告 readonly／版本正確／無原始 URL，沒有設定指令或剪貼簿寫入。
+
+控制中心、Debugger／斷點／object group 及自有分頁清理，自有請求／攔截／包裝／timer／訂閱為 0，原本 2 倍與 Auto 保留。只驗本輪有限正常範圍，BR-01／歷史矩陣不恢復。本次後續只更新 main 文件，不改來源／測試／設定／已發布 Release／標籤／安全封存，不為文件變更重跑產品測試。
+
+發布後文件驗證：16 份文件、33 個 GFM 表格、369 個本機／儲存庫連結，格式／表格／連結錯誤 0；固定 a716369 的 v2.1.25 完整正文仍在歷史，Release／來源／測試未變，git diff --check 通過。

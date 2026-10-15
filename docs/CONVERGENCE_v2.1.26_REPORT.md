@@ -1,6 +1,6 @@
 # v2.1.26 四階段模組收斂紀錄
 
-開始：2026-10-16（Asia/Taipei）。基準 a716369／v2.1.25，開始時工作目錄乾淨。本文追蹤已批准的四階段工作；正式版本仍由 release.json 決定，尚未宣稱 v2.1.26 發布或安裝通過。
+開始及結案：2026-10-16（Asia/Taipei）。基準 a716369／v2.1.25，開始時工作目錄乾淨。四階段分別驗證與提交，統一發布 v2.1.26，公開校驗及本輪有限安裝範圍通過；正式版本仍以 release.json 為準。
 
 BR-01 已知位置遺失與歷史矩陣維持原判定，P01／P02 不重開；既有正式回歸仍隨完整測試執行。未修改既有 Release 或安全封存。
 
@@ -38,6 +38,16 @@ IAB 自有 Fetch／XHR 精確攔截校準通過。合成傳輸／選路 23／23 
 
 合成儲存只在記憶體，正式 GM 寫入 0；自有請求／攔截／timer／訂閱皆 0、描述子還原，自有分頁與 loopback 31996 服務關閉。最終 runtime 重建的傳輸來源 SHA-256 與已驗正文一致；三份來源雜湊及私有證據入口見完整報告。沒有無效窗口重跑或歷史矩陣恢復。
 
-四階段完成後統一改 release.json／package.json／lock 為 v2.1.26，工具及依賴版本不變；目前建置 372,448 bytes、SHA-256 107d345c557e18769e0d2e8876e3d046107c051e795228c69f72c97bcfbdaea0。升版後最終自動檢查、封裝、公開發布／latest 與實際安裝結果依序另記，不先宣稱通過。
+四階段完成後統一改 release.json／package.json／lock 為 v2.1.26，工具及依賴版本不變；正式封裝 372,448 bytes、SHA-256 107d345c557e18769e0d2e8876e3d046107c051e795228c69f72c97bcfbdaea0。升版後最終自動、公開產物與實際安裝結果分列於以下結案紀錄。
 
-升版後另行完成 format:check、typecheck、architecture、npm test 930／930、verify 與確定性／語法／v2-only／暫存封裝校驗，全部通過。正式封裝接續執行；發布後安裝證據另記，既有 Release 與安全封存保持不變。
+升版後另行完成 format:check、typecheck、architecture、npm test 930／930、verify 與確定性／語法／v2-only／暫存封裝校驗，全部通過。正式封裝與公開校驗亦通過；發布後安裝證據另列，既有 Release 與安全封存保持不變。
+
+## 發布與有限安裝結案
+
+v2.1.26 於 2026-10-15T17:34:04Z 正式發布，發布提交 bf536c5e1c2f9bdcf1954857686c6770ccdfd6f8；遠端 main／peeled tag、唯一附件與公開 latest 的版本／372,448 bytes／SHA-256 一致。v2.1.25 完整報告已原樣追加保存，既有 Release／標籤／安全產物不回寫。
+
+公開入口先停在 Tampermonkey 中繼頁，完整本體仍為 v2.1.25，未作新版判定；工具確認頁受限後才請使用者更新。使用者確認後，同一 IAB 新指定影片文件核對 Tampermonkey 5.5.1／v2.1.26，完整 IIFE 與封裝一致（370,490 bytes／43597d8e9302a044e5b32a70e8db84811f7e8cf48a7a991e2e055cbfadae01df）、Runtime／ControlCenter 各 1、hooks installed。
+
+Auto 1 倍 28.8784 秒內時間 +28.882920／影格 +1,731；Auto 2 倍 35.7705 秒內時間 +71.543344／影格 +4,288。兩窗可信 pause／resume／約 5 秒 Right seek 後持續進度，reloadRevision／reloadCount 0。控制中心概覽／設定／診斷、Enter／空白鍵邊界通過，32,665 字元 readonly 報告無原始 URL；鍵盤前後 userRevision／seekRevision 不變。
+
+控制中心、Debugger／斷點／object group 及所有自有分頁清理，無自有請求／攔截／包裝／timer／訂閱，沒有設定或剪貼簿寫入，原本 2 倍與 Auto 保留。本輪有限範圍 PASS 並結案；BR-01 仍未修復，歷史矩陣不動，沒有自主續測項目。完整證據層級與工具計量見 TEST_REPORT，發布後只補 main 文件。

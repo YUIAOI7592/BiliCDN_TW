@@ -14,12 +14,12 @@
 | Codex Security | 新固定差異 28／28 正式項目（含 3 個刪除契約）及 5 份文件完成交叉審查；0 候選／0 發現，完整覆蓋與封存完成 |
 | IAB 原生校準 E | 自有 Fetch／XHR 各一次精確送出前合成回應，2 個事件、無截斷、held／patterns 歸零 |
 | IAB 來源隔離 S | 傳輸／選路／所有權 23／23；播放器可信輸入／SDK／清理、控制中心設定／診斷／鍵盤邊界通過；正式 GM 寫入 0 |
-| 公開更新產物 | 尚未發布；完成封裝後推送 main／標籤、唯一附件並核對公開 latest 版本／大小／SHA-256 |
-| 實際安裝 I | 新版尚未執行；發布後先嘗試公開更新入口，再核對完整本體／唯一實例／hooks 及指定影片 Auto 1／2 倍正常操作 |
+| 公開更新產物 | v2.1.26 已發布；main／peeled tag、唯一腳本附件與公開 latest 的版本／372,448 bytes／SHA-256 一致；後續安裝文件另提交 main，標籤／快照不回寫 |
+| 實際安裝 I | 本輪範圍 PASS：Tampermonkey 5.5.1／完整 v2.1.26 本體、Runtime／ControlCenter 各 1、Fetch／XHR hooks；指定影片 Auto 1／2 倍、pause／resume／短 seek、控制中心及鍵盤邊界通過 |
 
 工具維持 Node 26.8.1、npm 11.19.0、TypeScript 7.0.2、esbuild 0.28.2、Prettier 3.9.10，未新增依賴、CI/CD 或執行期載入。三個小契約合併後加入各有用途的 XHR／選路／純進度助手，最終 99 模組；不以模組數或行數驗收，沒有第二個狀態所有者。
 
-v2.1.26 建置為 372,448 bytes，SHA-256 `107d345c557e18769e0d2e8876e3d046107c051e795228c69f72c97bcfbdaea0`，正式封裝與公開核對另記。第一階段同版腳本與基準逐位元組相同：368,486 bytes、SHA-256 `2cdf191565668fb1c63bd815fedec1fd227b7e476885a6102c83c530e8657aa6`。後續重構保持行為，不要求新舊 JS 文字相同。
+v2.1.26 封裝為 372,448 bytes，SHA-256 `107d345c557e18769e0d2e8876e3d046107c051e795228c69f72c97bcfbdaea0`，唯一公開附件與未帶憑證取得的公開 latest 全文相同。第一階段同版腳本與基準逐位元組相同：368,486 bytes、SHA-256 `2cdf191565668fb1c63bd815fedec1fd227b7e476885a6102c83c530e8657aa6`。後續重構保持行為，不要求新舊 JS 文字相同。
 
 ## 行為契約與整合
 
@@ -48,6 +48,20 @@ scan `701c41d6-b599-407e-91bd-5df887f01f2d` 於 2026-10-15T17:26:13Z 完成；�
 最終來源 SHA-256：transport `547d06e006a848ebecc08ff4403172e5a038cab362bc6c1187585f5e1ae7b1fd`；UI `acc4daca63c15b685873a35ef17620ff1de0ac657bf31846ea367a9c2a8b1d6c`；player `2273d0a4018354868036d24b52b0cbf79273739f7f7216680fd53b2ded98c927`。傳輸在最終 runtime 重建全文相同，沒有用舊版或無效窗口補算。
 
 自有請求、held／patterns、timer、storage listener 皆 0；Fetch／XHR 與 SDK 還原、UI 監聽器移除，自有分頁全關閉、loopback 31996 停止且 listener 0。私有證據 .work/v2126/iab/；S 層不代替 Tampermonkey 安裝驗收。
+
+## 正式發布與實際安裝
+
+2026-10-15T17:34:04Z [正式發布 v2.1.26](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.26)，發布時遠端 main／peeled tag 同為 bf536c5e1c2f9bdcf1954857686c6770ccdfd6f8。唯一 BiliCDN_TW.user.js 附件的 GitHub digest、公開 latest 與本機封裝版本／大小／SHA-256 一致，四個封裝輸入的校驗亦通過。後續僅補發布後文件至 main，不回寫已發布快照或標籤。
+
+先嘗試公開 latest 更新入口，實際停在 Tampermonkey 中繼頁，工具不能操作管理器確認頁；該影片的完整執行 IIFE 仍與 v2.1.25 相同（366,528 bytes／a85809d70a3bc8a711de6df57f2120c44ff0c6b8fdf51c160ed0a08f5d8b340d），所以沒有作新版功能判定。使用者確認更新後，原工具分頁失效、分頁清單為空；在同一 IAB 新建指定影片文件，取得 Tampermonkey 5.5.1／script 2.1.26。完整可執行 IIFE 為 370,490 bytes、SHA-256 `43597d8e9302a044e5b32a70e8db84811f7e8cf48a7a991e2e055cbfadae01df`，與封裝同段一致；RuntimeController／ControlCenter 各 1，Fetch／XHR hooks installed。管理器包裝與 metadata 不混入 IIFE 雜湊，整份公開附件另核對。
+
+Auto 1 倍窗口：28.8784 秒內媒體時間 +28.882920 秒、影格 +1,731；Auto 2 倍：35.7705 秒內時間 +71.543344 秒、影格 +4,288。兩窗分別完成可信暫停／恢復、Right 約 5 秒短 seek；seek 收束後才開始採樣，結束 readyState 4、seeking false、正常播放，coreId 保持、reloadRevision／reloadCount 均 0，畫質始終 Auto，沒有強制品質或網站故障注入。
+
+控制中心概覽、Enter 設定／返回與空白鍵診斷通過；鍵盤前後 userRevision 14、seekRevision 6 皆不變。32,665 字元診斷報告 readonly、版本正確且無原始 URL，未寫入剪貼簿或設定。Escape 關閉後，Debugger／斷點解除、object group 釋放、所有自有分頁關閉；自有請求／攔截／包裝／timer／訂閱 0，原本 2 倍速及 Auto 保留。已安裝產品 hooks 不作工具包裝清理。
+
+本輪有限安裝範圍 PASS 並結案，BR-01 整體仍不通過。私有 INSTALLED.json、CLEANUP_INSTALLED.json 及 installed-v26-diagnostics.png 與來源證據分開保存；沒有恢復歷史矩陣或留下自主續測項目。文件 GFM／連結／完整歷史保存及 git diff --check 另檢查，不將後續文件更新計為新的執行期測試。
+
+發布後文件檢查通過：16 份現行文件、33 個 GFM 表格、369 個本機／儲存庫連結，格式／表格／連結錯誤 0；v2.1.25 完整正文保存、原 Release 未變及 git diff --check 通過。後續只有文件 main 提交，不重新封裝。
 
 <a name="bilicdn_tw-v2125-release-verification--2026-10-14"></a>
 <a name="bilicdn_tw-v2124-release-verification--2026-10-14"></a>
