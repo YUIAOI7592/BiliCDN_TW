@@ -266,6 +266,7 @@ Catalog 保留全部 11 個內建主機，其中 4 個預設不可用。起播�
 | DiagnosticRecorder | 單一 event-sanitizer、route-attempt-tracker、report | 事件／流量／事故緩衝；報告助手只消費去敏後的 detached capture |
 | ControlCenter | labels／styles／elements／overview／settings／diagnostics views | 宿主／封閉 ShadowRoot、鍵盤／焦點、視圖版本與 pending 複製 |
 | PlayerAdapter | media／sdk／method 與單一 PlayerControlObserver | 既有外部及測試覆寫介面；所有控制修訂、監聽器及自有重載觀察集中於 observer |
+| PlayerMonitor／RecoveryController | domain/playback-progress 的純控制身分、時間及影格比較 | Monitor 保有停滯段；Recovery 保有 token、額度、breaker、reload／restore；兩者各自保留資格、基準、計數與終止檢查順序 |
 | XhrHookAdapter | xhr-values／xhr-request／xhr-response | 唯一 metadata WeakMap、原生 getter／guards、派送、安裝與按所有權還原；回應助手只轉換及快取當筆狀態 |
 
 助手沒有第二份 Native 授權索引或可獨立變更親和的能力。嘗試追蹤保留六個 attempt、32 個 request IDs 與既有期限；responseIds 集合沒有另加明確數量上限，不能把所有內部集合描述成逐項有界。詳見 [模組化紀錄](MODULARIZATION_v2.1.25_REPORT.md)。

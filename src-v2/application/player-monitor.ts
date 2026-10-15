@@ -1,6 +1,11 @@
 import type { VideoSnapshot, SchedulerPort, PlayerControlSnapshot } from './ports.ts'
 
 import type { PlaybackDemand } from '../domain/model.ts'
+import {
+  comparePlaybackControls,
+  playbackTimeAdvanced,
+  playbackFramesAdvanced,
+} from '../domain/playback-progress.ts'
 
 interface StallEpisode {
   readonly id: number
@@ -131,12 +136,66 @@ export class PlayerMonitor implements MonitorPort {
     this.routes.observePlaybackRate(video.available ? video.playbackRate : 0)
     if (!this.#manifestReady || this.#manifestTick++ % 5 === 0)
       this.#manifestReady = this.player.syncManifest()
-    const controlChanged =
-      this.#controls !== null &&
-      (controls.seekRevision !== this.#controls.seekRevision ||
-        controls.userRevision !== this.#controls.userRevision ||
-        controls.mediaId !== this.#controls.mediaId ||
-        controls.coreId !== this.#controls.coreId)
+    const { advanced, progress } = this.#sampleProgress(video, controls)
+    const { active, ownedReload } = this.#advanceStall(
+      video,
+      controls,
+      now,
+      disabled,
+      originalMode,
+      visible,
+      progress,
+    )
+    const firstMediaAt = this.routes.firstMediaAt()
+    const watchdog = this.#observeWatchdog(video, controls, now, progress, advanced, ownedReload)
+    if (
+      !this.#stall &&
+      !this.#failedStall &&
+      !this.recovery.isRecovering() &&
+      !controls.dragging &&
+      !disabled &&
+      !originalMode &&
+      visible &&
+      watchdog === 'recovering' &&
+      (this.#startupObservedProgress || !firstMediaAt) &&
+      now - this.#lastRecoveryAt >= 30_000
+    ) {
+      const state = this.session.get(),
+        rep = state.representation
+      if (rep) {
+        this.routes.recover(rep, this.#demand(video), 'watchdog', state.affinity?.host ?? null)
+        this.#lastRecoveryAt = now
+      }
+    }
+    const startupAge = this.#observeStartup(
+      video,
+      controls,
+      now,
+      disabled,
+      originalMode,
+      visible,
+      firstMediaAt,
+    )
+    const demand = this.#demand(video)
+    this.measurement.tick({
+      generationActive: true,
+      representation: this.session.get().representation,
+      demand,
+      stableProgressSec: this.#stableProgressSec,
+      playableBufferSec: video.playableBufferSec,
+      visible,
+      seeking: video.seeking || now < this.#seekGraceUntil,
+      recovering: this.recovery.isRecovering(),
+      disabled: disabled || originalMode,
+    })
+    this.#publishSnapshot(video, controls, active, watchdog, startupAge)
+  }
+
+  #sampleProgress(
+    video: VideoSnapshot,
+    controls: PlayerControlSnapshot,
+  ): { readonly advanced: boolean; readonly progress: boolean } {
+    const controlChanged = comparePlaybackControls(controls, this.#controls) === 'changed'
     const advanced =
       video.available &&
       !video.seeking &&
@@ -146,9 +205,11 @@ export class PlayerMonitor implements MonitorPort {
       !video.mediaError &&
       !controlChanged &&
       this.#lastTime !== null &&
-      video.currentTime - this.#lastTime > 0.05
+      playbackTimeAdvanced(video.currentTime, this.#lastTime)
     const newFrames =
-      video.frames !== null && this.#lastFrames !== null && video.frames > this.#lastFrames
+      video.frames !== null &&
+      this.#lastFrames !== null &&
+      playbackFramesAdvanced(video.frames, this.#lastFrames)
     const progress = advanced && (video.frames === null || newFrames)
     if (progress || (!video.seeking && video.playableBufferSec >= 1)) {
       this.#startupObservedProgress = true
@@ -156,6 +217,18 @@ export class PlayerMonitor implements MonitorPort {
     }
     if (progress) this.#stableProgressSec++
     else this.#stableProgressSec = 0
+    return { advanced, progress }
+  }
+
+  #advanceStall(
+    video: VideoSnapshot,
+    controls: PlayerControlSnapshot,
+    now: number,
+    disabled: boolean,
+    originalMode: boolean,
+    visible: boolean,
+    progress: boolean,
+  ): { readonly active: boolean; readonly ownedReload: boolean } {
     // An existing action owns its terminal deadline. Settle it before a paused
     // SDK transition can make the monitor cancel the same action generically.
     const recoveryTicked =
@@ -193,7 +266,17 @@ export class PlayerMonitor implements MonitorPort {
       this.#observeStall(video, controls, now)
     if (!disabled && !originalMode && !recoveryTicked) this.recovery.tick(video)
     if (this.#stall?.armed && !this.recovery.isRecovering()) this.#stall.finished = true
-    const firstMediaAt = this.routes.firstMediaAt()
+    return { active, ownedReload }
+  }
+
+  #observeWatchdog(
+    video: VideoSnapshot,
+    controls: PlayerControlSnapshot,
+    now: number,
+    progress: boolean,
+    advanced: boolean,
+    ownedReload: boolean,
+  ): MonitorSnapshot['watchdog'] {
     let watchdog: MonitorSnapshot['watchdog'] = 'healthy'
     if (!video.available) {
       watchdog = 'no-video'
@@ -226,25 +309,18 @@ export class PlayerMonitor implements MonitorPort {
       this.#stallTicks++
       watchdog = this.#stallTicks >= 6 ? 'recovering' : 'low-buffer'
     }
-    if (
-      !this.#stall &&
-      !this.#failedStall &&
-      !this.recovery.isRecovering() &&
-      !controls.dragging &&
-      !disabled &&
-      !originalMode &&
-      visible &&
-      watchdog === 'recovering' &&
-      (this.#startupObservedProgress || !firstMediaAt) &&
-      now - this.#lastRecoveryAt >= 30_000
-    ) {
-      const state = this.session.get(),
-        rep = state.representation
-      if (rep) {
-        this.routes.recover(rep, this.#demand(video), 'watchdog', state.affinity?.host ?? null)
-        this.#lastRecoveryAt = now
-      }
-    }
+    return watchdog
+  }
+
+  #observeStartup(
+    video: VideoSnapshot,
+    controls: PlayerControlSnapshot,
+    now: number,
+    disabled: boolean,
+    originalMode: boolean,
+    visible: boolean,
+    firstMediaAt: number,
+  ): number {
     const startupAge = firstMediaAt ? Math.max(0, now - firstMediaAt) : 0
     if (
       !controls.dragging &&
@@ -282,18 +358,16 @@ export class PlayerMonitor implements MonitorPort {
         if (fallback) this.recovery.armStartupFailure(video)
       }
     }
-    const demand = this.#demand(video)
-    this.measurement.tick({
-      generationActive: true,
-      representation: this.session.get().representation,
-      demand,
-      stableProgressSec: this.#stableProgressSec,
-      playableBufferSec: video.playableBufferSec,
-      visible,
-      seeking: video.seeking || now < this.#seekGraceUntil,
-      recovering: this.recovery.isRecovering(),
-      disabled: disabled || originalMode,
-    })
+    return startupAge
+  }
+
+  #publishSnapshot(
+    video: VideoSnapshot,
+    controls: PlayerControlSnapshot,
+    active: boolean,
+    watchdog: MonitorSnapshot['watchdog'],
+    startupAge: number,
+  ): void {
     this.#lastTime = video.available ? video.currentTime : null
     this.#lastFrames = video.frames
     this.#lastSeeking = video.seeking

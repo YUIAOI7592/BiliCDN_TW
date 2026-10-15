@@ -1,5 +1,10 @@
 import { recoveryActionId, type DomainEvent, type RecoveryActionId } from '../domain/model.ts'
 import type { VideoSnapshot, PlayerControlSnapshot } from './ports.ts'
+import {
+  comparePlaybackControls,
+  playbackTimeAdvanced,
+  playbackFramesAdvanced,
+} from '../domain/playback-progress.ts'
 
 interface ResumeToken {
   readonly id: RecoveryActionId
@@ -172,14 +177,24 @@ export class RecoveryController implements RecoveryPort {
     const now = this.now()
     const previous = this.#lastSnapshot,
       controls = this.player.controls()
-    const sameControls =
-      this.#lastControls !== null &&
-      controls.seekRevision === this.#lastControls.seekRevision &&
-      controls.userRevision === this.#lastControls.userRevision &&
-      controls.mediaId === this.#lastControls.mediaId &&
-      controls.coreId === this.#lastControls.coreId
+    const { progress, newFrames } = this.#recordProgress(snapshot, previous, controls)
+    if (this.#endInvalidToken(snapshot, controls, now)) return
+    const healthy = this.#observeCoreHealth(snapshot, newFrames, now)
+    if (healthy) this.#acceptHealthy(snapshot, controls)
+    this.#observePause(snapshot, healthy, now)
+    this.#advanceToken(snapshot, progress, now)
+  }
+
+  #recordProgress(
+    snapshot: VideoSnapshot,
+    previous: VideoSnapshot | null,
+    controls: PlayerControlSnapshot,
+  ): { readonly progress: boolean; readonly newFrames: boolean } {
+    const sameControls = comparePlaybackControls(controls, this.#lastControls) === 'same'
     const newFrames =
-      snapshot.frames !== null && this.#lastFrames !== null && snapshot.frames > this.#lastFrames
+      snapshot.frames !== null &&
+      this.#lastFrames !== null &&
+      playbackFramesAdvanced(snapshot.frames, this.#lastFrames)
     const progress =
       !!previous &&
       sameControls &&
@@ -188,12 +203,16 @@ export class RecoveryController implements RecoveryPort {
       !snapshot.paused &&
       !snapshot.ended &&
       !snapshot.mediaError &&
-      snapshot.currentTime - previous.currentTime > 0.05 &&
+      playbackTimeAdvanced(snapshot.currentTime, previous.currentTime) &&
       (snapshot.frames === null || newFrames)
     this.#progressTicks = progress ? this.#progressTicks + 1 : 0
     this.#lastFrames = snapshot.frames
     this.#lastSnapshot = snapshot
     this.#lastControls = controls
+    return { progress, newFrames }
+  }
+
+  #endInvalidToken(snapshot: VideoSnapshot, controls: PlayerControlSnapshot, now: number): boolean {
     if (
       this.#token &&
       (snapshot.mediaError || (snapshot.seeking && !this.#token.stall) || snapshot.ended)
@@ -202,7 +221,7 @@ export class RecoveryController implements RecoveryPort {
         'failed',
         snapshot.mediaError ? 'media-error' : snapshot.seeking ? 'seek-interrupted' : 'ended',
       )
-      return
+      return true
     }
     if (
       this.#token?.reloadingAt &&
@@ -211,12 +230,16 @@ export class RecoveryController implements RecoveryPort {
     ) {
       this.#breakerUntil = now + 90_000
       this.#finish('failed', 'reload-timeout')
-      return
+      return true
     }
     if (this.#token && (!this.isActive() || !this.#owns(this.#token, controls))) {
       this.#finish('failed', 'ownership-ended')
-      return
+      return true
     }
+    return false
+  }
+
+  #observeCoreHealth(snapshot: VideoSnapshot, newFrames: boolean, now: number): boolean {
     const healthy =
       snapshot.available &&
       !snapshot.mediaError &&
@@ -247,28 +270,33 @@ export class RecoveryController implements RecoveryPort {
         consecutiveTicks: this.#deadTicks,
       })
     }
-    if (healthy) {
-      this.#hadHealthy = true
-      this.#lastHealthyTime = snapshot.currentTime
-      this.#lastHealthyRate = snapshot.playbackRate > 0 ? snapshot.playbackRate : 2
-      if (
-        !this.#token &&
-        this.#progressTicks >= 2 &&
-        ['failed', 'breaker'].includes(this.#state.state)
-      )
-        this.#finish('recovered', 'playback-progress-observed')
-      if (this.#token) {
-        const ownedReload = this.#ownedReload(this.#token, controls)
-        const restoreReady =
-          !ownedReload ||
-          (controls.coreId !== 0 &&
-            controls.coreReloadRevision === this.#token.reloadRevision &&
-            snapshot.coreInitialized !== false)
-        if (this.#token.reloadingAt && !this.#token.restored && restoreReady)
-          this.#restore(this.#token, snapshot)
-        else if (this.#progressTicks >= 2) this.#finish('recovered')
-      }
+    return healthy
+  }
+
+  #acceptHealthy(snapshot: VideoSnapshot, controls: PlayerControlSnapshot): void {
+    this.#hadHealthy = true
+    this.#lastHealthyTime = snapshot.currentTime
+    this.#lastHealthyRate = snapshot.playbackRate > 0 ? snapshot.playbackRate : 2
+    if (
+      !this.#token &&
+      this.#progressTicks >= 2 &&
+      ['failed', 'breaker'].includes(this.#state.state)
+    )
+      this.#finish('recovered', 'playback-progress-observed')
+    if (this.#token) {
+      const ownedReload = this.#ownedReload(this.#token, controls)
+      const restoreReady =
+        !ownedReload ||
+        (controls.coreId !== 0 &&
+          controls.coreReloadRevision === this.#token.reloadRevision &&
+          snapshot.coreInitialized !== false)
+      if (this.#token.reloadingAt && !this.#token.restored && restoreReady)
+        this.#restore(this.#token, snapshot)
+      else if (this.#progressTicks >= 2) this.#finish('recovered')
     }
+  }
+
+  #observePause(snapshot: VideoSnapshot, healthy: boolean, now: number): void {
     if (
       snapshot.paused &&
       !snapshot.seeking &&
@@ -305,6 +333,9 @@ export class RecoveryController implements RecoveryPort {
           breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - now) / 1000)),
         })
     }
+  }
+
+  #advanceToken(snapshot: VideoSnapshot, progress: boolean, now: number): void {
     const token = this.#token
     if (!token) return
     if (snapshot.mediaError || (snapshot.seeking && !token.stall) || snapshot.ended) {

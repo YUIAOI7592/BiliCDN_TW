@@ -509,3 +509,4 @@ test('cold start rewrites to catalog default [2]', { timeout: 5000 }, async (t) 
     await fixture(t, 1)
   )()
 })
+import '../domain-progress-convergence.ts'
