@@ -8,6 +8,7 @@ import type { PlayerControlEnvironment } from './player-controls.ts'
 import { PlayerMediaReader, readVideoSnapshot, clonePlayerManifest } from './player-media.ts'
 import { isRecord, safeCall, safeNumber } from './player-sdk.ts'
 import type { UnknownRecord } from './player-sdk.ts'
+import type { ResumePositionCapture } from '../application/recovery-ports.ts'
 
 export class PlayerAdapter {
   readonly #media = new PlayerMediaReader()
@@ -38,6 +39,12 @@ export class PlayerAdapter {
 
   controls(): PlayerControlSnapshot {
     return this.#controls.controls()
+  }
+  captureResumePosition(): ResumePositionCapture {
+    return this.#controls.captureResumePosition(() => this.currentTime())
+  }
+  validateResumePosition(capture: ResumePositionCapture, initializationRevision?: number): boolean {
+    return this.#controls.validateResumePosition(capture, initializationRevision)
   }
   ownedReload(revision: number): boolean {
     return this.#controls.ownedReload(revision)

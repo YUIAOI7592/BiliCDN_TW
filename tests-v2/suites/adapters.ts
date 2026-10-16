@@ -1,3 +1,4 @@
+import { currentResumePlayer } from '../support/player.ts'
 import { installProgressEvent } from '../support/progress-event.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 import { deferred } from '../support/deferred.ts'
@@ -1146,12 +1147,12 @@ async function fixture(
   )
   const coreObserver = scope.own(
     new RecoveryController(
-      {
+      currentResumePlayer({
         ...recoveryPlayer,
         reload: () => {
           coreReloads++
         },
-      },
+      }),
       () => coreClock,
     ),
   )
@@ -1637,7 +1638,9 @@ async function fixture(
         () => coreClock,
         () => false,
       )
-      const gapRecovery = scope.own(new RecoveryController(recoveryPlayer, () => coreClock))
+      const gapRecovery = scope.own(
+        new RecoveryController(currentResumePlayer(recoveryPlayer), () => coreClock),
+      )
       gapRecovery.subscribe((event) => gapRecorder.record(event))
       gapRecovery.tick(healthyCustomRate)
       for (let i = 0; i < 5; i++) {
@@ -1710,7 +1713,9 @@ async function fixture(
     () => coreClock,
     () => false,
   )
-  const gapRecovery = scope.own(new RecoveryController(recoveryPlayer, () => coreClock))
+  const gapRecovery = scope.own(
+    new RecoveryController(currentResumePlayer(recoveryPlayer), () => coreClock),
+  )
   gapRecovery.subscribe((event) => gapRecorder.record(event))
   gapRecovery.tick(healthyCustomRate)
   for (let i = 0; i < 5; i++) {
@@ -1955,7 +1960,7 @@ async function fixture(
   )
   const intentRecovery = scope.own(
     new RecoveryController(
-      {
+      currentResumePlayer({
         ...recoveryPlayer,
         observePlayIntent: (listener) => intentAdapter.observePlayIntent(listener),
         snapshot: () => intentVideo,
@@ -1963,7 +1968,7 @@ async function fixture(
           intentReloads++
         },
         playbackRate: () => 1.5,
-      },
+      }),
       () => intentClock,
     ),
   )
@@ -2263,6 +2268,7 @@ test('eligible Native backup uses its own full signed URL [17]', { timeout: 5000
 })
 import { idleControls } from '../support/player.ts'
 import '../regressions/functional-races/br01-player.ts'
+import '../regressions/functional-races/rescue-goals.ts'
 import '../regressions/functional-races/br08-player.ts'
 import '../regressions/functional-races/br01-reload-controls.ts'
 import '../regressions/functional-races/br01-play-intent.ts'

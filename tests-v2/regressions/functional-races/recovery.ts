@@ -1,3 +1,4 @@
+import { currentResumePlayer } from '../../support/player.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
@@ -78,7 +79,7 @@ function recoveryFixture(t: TestContext) {
     reset: () => undefined,
     syncManifest: () => true,
   } satisfies PlayerPort
-  const recovery = scope.own(new RecoveryController(player, clock.now))
+  const recovery = scope.own(new RecoveryController(currentResumePlayer(player), clock.now))
   scope.defer(() => recovery.reset())
   const set = (patch: Partial<VideoSnapshot>) => {
     video = { ...video, ...patch }
@@ -517,7 +518,7 @@ function stalledStartup(t: TestContext, initialPosition: number, progressing = f
     reset: () => undefined,
     syncManifest: () => true,
   } satisfies PlayerPort
-  const recovery = scope.own(new RecoveryController(player, clock.now))
+  const recovery = scope.own(new RecoveryController(currentResumePlayer(player), clock.now))
   scope.defer(() => recovery.reset())
   const start = clock.now(),
     state = f.session.get()

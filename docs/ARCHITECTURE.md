@@ -138,6 +138,10 @@ BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean`
 
 `RecoveryController` 保留暫停至少 30 秒、拖曳／路線授權／政策／操作所有權／額度檢查；死核心 4 秒、其他無進度 30 秒與重載後 15 秒期限維持。正常進度不多做重載，沒有新操作不替暫停影片自行播放。每輪返回的取消函式清理自有 document 捕捉監聽器，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
 
+可信未完成目標由單一 PlayerControlObserver 保存，與原生觀察 targetSec 分離；RecoveryPlayerPort 的必要捕獲／驗證方法只交付有限位置與不透明證明，token 保留捕獲結果而不建立第二份目標權威。來源包括同派送鍵盤及目前 pointer 手勢；真正 0、新目標取代、播放交接、目標完成、未知變動與失效由 Observer 管理。Adapter 注入時鐘供進度合理性判斷，領域層仍只比較傳入事實。
+
+有效目標證明只允許本次 reload 修訂下第一個受認可替換核心的首個有界 SDK 初始化 seek；首個穩定播放基準關閉該窗口。等待 seeking 結束後才還原目標、倍速及播放。第二 seek／核心、外部 reload、新操作、未知原生位置或原 15 秒到期都不得延長授權。沒有證明的舊路徑保持原取消規則。此例外的自動證據與實際安裝結果分列於救援修復紀錄。
+
 來源與政策重評見 [v2.1.24 報告](BR01_POLICY_REASSESSMENT_2026-10-14.md)。有限原生位置不能保證辨識失效重設與使用者尋位；目前已確認的 [位置遺失缺陷](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md) 尚未修復。
 
 <a name="progressive-playurl-processing-v218"></a>

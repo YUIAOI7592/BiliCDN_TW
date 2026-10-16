@@ -1,3 +1,4 @@
+import { currentResumePlayer } from '../support/player.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 import { FakeClock } from '../support/clock.ts'
 import { deferred, countdown } from '../support/deferred.ts'
@@ -358,7 +359,9 @@ async function fixture(
         },
         reset: () => undefined,
       }
-      const recovery = scope.own(new RecoveryController(recoveryPlayer, () => recoveryNow))
+      const recovery = scope.own(
+        new RecoveryController(currentResumePlayer(recoveryPlayer), () => recoveryNow),
+      )
       recovery.tick(playerSnapshot)
       recovery.armRouteFailure('route-failure', playerSnapshot)
       playerSnapshot = {
@@ -442,7 +445,9 @@ async function fixture(
     },
     reset: () => undefined,
   }
-  const recovery = scope.own(new RecoveryController(recoveryPlayer, () => recoveryNow))
+  const recovery = scope.own(
+    new RecoveryController(currentResumePlayer(recoveryPlayer), () => recoveryNow),
+  )
   recovery.tick(playerSnapshot)
   recovery.armRouteFailure('route-failure', playerSnapshot)
   playerSnapshot = {
@@ -1010,7 +1015,7 @@ async function fixture(
       )
       const startupRecovery = scope.own(
         new RecoveryController(
-          {
+          currentResumePlayer({
             ...recoveryPlayer,
             snapshot: () => deadStartup,
             reload: () => {
@@ -1018,7 +1023,7 @@ async function fixture(
             },
             currentTime: () => 0,
             playbackRate: () => 1,
-          } satisfies PlayerPort,
+          } satisfies PlayerPort),
           () => stallNow,
         ),
       )
@@ -1159,7 +1164,7 @@ async function fixture(
 
   const startupRecovery = scope.own(
     new RecoveryController(
-      {
+      currentResumePlayer({
         ...recoveryPlayer,
         snapshot: () => deadStartup,
         reload: () => {
@@ -1167,7 +1172,7 @@ async function fixture(
         },
         currentTime: () => 0,
         playbackRate: () => 1,
-      } satisfies PlayerPort,
+      } satisfies PlayerPort),
       () => stallNow,
     ),
   )
@@ -2059,7 +2064,7 @@ async function fixture(
         },
       }
       const customRateRecovery = scope.own(
-        new RecoveryController(customRatePlayer, () => rateRecoveryNow),
+        new RecoveryController(currentResumePlayer(customRatePlayer), () => rateRecoveryNow),
       )
       const healthyCustomRate = { ...playerSnapshot, playbackRate: 1.5, effectiveRate: 1.5 }
       customRateRecovery.tick(healthyCustomRate)
@@ -2091,7 +2096,7 @@ async function fixture(
     },
   }
   const customRateRecovery = scope.own(
-    new RecoveryController(customRatePlayer, () => rateRecoveryNow),
+    new RecoveryController(currentResumePlayer(customRatePlayer), () => rateRecoveryNow),
   )
   const healthyCustomRate = { ...playerSnapshot, playbackRate: 1.5, effectiveRate: 1.5 }
   customRateRecovery.tick(healthyCustomRate)
@@ -2149,7 +2154,9 @@ async function fixture(
     coordinator.plan(liveRep, { kind: 'video', requiredMbps: 3, highDemand: false }, 'startup')
   }
   let shortResumeNow = now
-  const shortResume = scope.own(new RecoveryController(recoveryPlayer, () => shortResumeNow))
+  const shortResume = scope.own(
+    new RecoveryController(currentResumePlayer(recoveryPlayer), () => shortResumeNow),
+  )
   shortResume.tick({ ...playerSnapshot, paused: false })
   shortResumeNow += 1000
   shortResume.tick({ ...playerSnapshot, paused: true })
@@ -2294,4 +2301,6 @@ import '../regressions/functional-races/br08.ts'
 import '../regressions/functional-races/br01-followthrough.ts'
 import '../regressions/functional-races/br09.ts'
 import '../regressions/functional-races/player-convergence.ts'
+import '../regressions/functional-races/rescue-position.ts'
+import '../regressions/functional-races/rescue-recovery.ts'
 import { idleControls } from '../support/player.ts'

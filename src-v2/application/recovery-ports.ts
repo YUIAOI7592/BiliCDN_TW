@@ -2,6 +2,11 @@ import type { DomainEvent } from '../domain/model.ts'
 import type { PlayerPort, VideoSnapshot, PlayerControlSnapshot } from './ports.ts'
 import type { StallRecoveryIntent, RecoverySnapshot } from './recovery-model.ts'
 
+export interface ResumePositionCapture {
+  readonly positionSec: number
+  readonly proof: object | null
+}
+
 export interface RecoveryPlayerPort extends Pick<
   PlayerPort,
   | 'controls'
@@ -14,7 +19,10 @@ export interface RecoveryPlayerPort extends Pick<
   | 'seek'
   | 'setRate'
   | 'snapshot'
-> {}
+> {
+  captureResumePosition(): ResumePositionCapture
+  validateResumePosition(capture: ResumePositionCapture, initializationRevision?: number): boolean
+}
 export interface RecoveryPort {
   subscribe(listener: (event: DomainEvent) => void): () => void
   snapshot(): RecoverySnapshot

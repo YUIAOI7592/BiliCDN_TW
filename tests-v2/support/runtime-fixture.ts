@@ -1,3 +1,4 @@
+import { currentResumePlayer } from './player.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 import { type TestContext } from 'node:test'
 import { FakeClock } from './clock.ts'
@@ -113,7 +114,7 @@ export function fixture(
       calls.resets++
     },
   }
-  const recovery = scope.own(new RecoveryController(player, clock.now))
+  const recovery = scope.own(new RecoveryController(currentResumePlayer(player), clock.now))
   const measurement = probe
     ? scope.own(new MeasurementController(routes, meta, probe, clock.now, clock))
     : {

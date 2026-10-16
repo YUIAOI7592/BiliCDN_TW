@@ -1,3 +1,4 @@
+import { currentResumePlayer } from '../../support/player.ts'
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { PlayerControlObserver } from '../../../src-v2/adapters/player-controls.ts'
@@ -78,7 +79,9 @@ function playbackFixture(t: TestContext) {
     },
     reset() {},
   } satisfies PlayerPort
-  const recovery = scope.own(new RecoveryController(player, clock.now, () => active))
+  const recovery = scope.own(
+    new RecoveryController(currentResumePlayer(player), clock.now, () => active),
+  )
   const monitor = scope.own(
     new PlayerMonitor(
       player,

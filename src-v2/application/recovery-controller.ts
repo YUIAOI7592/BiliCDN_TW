@@ -7,6 +7,7 @@ import {
 } from '../domain/playback-progress.ts'
 
 interface ResumeToken {
+  readonly positionCapture: ResumePositionCapture
   readonly id: RecoveryActionId
   readonly source: RecoverySource
   readonly startedAt: number
@@ -26,7 +27,7 @@ interface ResumeToken {
   readonly initiallyPaused: boolean
 }
 
-import type { RecoveryPort, RecoveryPlayerPort } from './recovery-ports.ts'
+import type { RecoveryPort, RecoveryPlayerPort, ResumePositionCapture } from './recovery-ports.ts'
 export type { RecoveryPlayerPort } from './recovery-ports.ts'
 
 import type { StallRecoveryIntent, RecoverySnapshot, RecoverySource } from './recovery-model.ts'
@@ -215,7 +216,11 @@ export class RecoveryController implements RecoveryPort {
   #endInvalidToken(snapshot: VideoSnapshot, controls: PlayerControlSnapshot, now: number): boolean {
     if (
       this.#token &&
-      (snapshot.mediaError || (snapshot.seeking && !this.#token.stall) || snapshot.ended)
+      (snapshot.mediaError ||
+        (snapshot.seeking &&
+          !this.#token.stall &&
+          !this.#initializationOwned(this.#token, controls)) ||
+        snapshot.ended)
     ) {
       this.#finish(
         'failed',
@@ -286,10 +291,11 @@ export class RecoveryController implements RecoveryPort {
     if (this.#token) {
       const ownedReload = this.#ownedReload(this.#token, controls)
       const restoreReady =
-        !ownedReload ||
-        (controls.coreId !== 0 &&
-          controls.coreReloadRevision === this.#token.reloadRevision &&
-          snapshot.coreInitialized !== false)
+        (!this.#token.positionCapture.proof || !snapshot.seeking) &&
+        (!ownedReload ||
+          (controls.coreId !== 0 &&
+            controls.coreReloadRevision === this.#token.reloadRevision &&
+            snapshot.coreInitialized !== false))
       if (this.#token.reloadingAt && !this.#token.restored && restoreReady)
         this.#restore(this.#token, snapshot)
       else if (this.#progressTicks >= 2) this.#finish('recovered')
@@ -338,7 +344,13 @@ export class RecoveryController implements RecoveryPort {
   #advanceToken(snapshot: VideoSnapshot, progress: boolean, now: number): void {
     const token = this.#token
     if (!token) return
-    if (snapshot.mediaError || (snapshot.seeking && !token.stall) || snapshot.ended) {
+    if (
+      snapshot.mediaError ||
+      (snapshot.seeking &&
+        !token.stall &&
+        !this.#initializationOwned(token, this.player.controls())) ||
+      snapshot.ended
+    ) {
       this.#finish(
         'failed',
         snapshot.mediaError ? 'media-error' : snapshot.seeking ? 'seek-interrupted' : 'ended',
@@ -422,12 +434,16 @@ export class RecoveryController implements RecoveryPort {
       return
     // Adapter reads can synchronously run site code. Collect each saved value once,
     // then validate the preparation owner before committing a recovery action.
-    const position = stall?.targetSec ?? this.player.currentTime(),
+    const positionCapture = this.player.captureResumePosition(),
+      position = positionCapture.proof
+        ? positionCapture.positionSec
+        : (stall?.targetSec ?? positionCapture.positionSec),
       rate = this.player.playbackRate()
     const snapshot = this.player.snapshot(),
-      controls = this.player.controls(),
       now = this.now()
-    const eligible = this.isActive() && valid()
+    const positionValid = this.player.validateResumePosition(positionCapture),
+      controls = this.player.controls(),
+      eligible = positionValid && this.isActive() && valid()
     if (
       !eligible ||
       this.#lifecycleSerial !== lifecycle ||
@@ -444,6 +460,7 @@ export class RecoveryController implements RecoveryPort {
     )
       return
     this.#token = {
+      positionCapture,
       id: recoveryActionId(`core-${++this.#serial}`),
       source,
       startedAt: now,
@@ -605,6 +622,7 @@ export class RecoveryController implements RecoveryPort {
       controls = this.player.controls()
     const ownedReload = this.#ownedReload(token, controls)
     const stillEligible = this.isActive() && token.valid(),
+      positionValid = this.player.validateResumePosition(token.positionCapture),
       current = this.player.controls()
     // Every adapter read may invoke SDK code. Reject control changes during the
     // reads rather than committing ownership from a pre-getter snapshot.
@@ -612,6 +630,7 @@ export class RecoveryController implements RecoveryPort {
       this.#token !== token ||
       !eligible ||
       !stillEligible ||
+      !positionValid ||
       controls.userRevision !== current.userRevision ||
       controls.seekRevision !== current.seekRevision ||
       controls.mediaId !== current.mediaId ||
@@ -621,10 +640,14 @@ export class RecoveryController implements RecoveryPort {
     )
       return false
     if (ownedReload) {
-      // A non-user SDK initialization seek invalidates the saved target, not the
-      // bounded reload action. Null core is a gap; only its marked replacement
-      // can become the restoration owner.
-      if (controls.seekRevision !== token.controls.seekRevision) token.restorePosition = false
+      // Without a current goal proof, SDK initialization invalidates the saved
+      // target. A proved first initialization may wait within this same action.
+      // Null core is a gap; only its marked replacement can own restoration.
+      if (
+        controls.seekRevision !== token.controls.seekRevision &&
+        !this.#initializationOwned(token, controls)
+      )
+        token.restorePosition = false
       token.controls = {
         ...controls,
         coreId: controls.coreId === 0 ? token.controls.coreId : controls.coreId,
@@ -659,6 +682,15 @@ export class RecoveryController implements RecoveryPort {
         controls.coreReloadRevision === revision) &&
       this.player.ownedReload?.(revision) === true &&
       this.#token === token
+    )
+  }
+
+  #initializationOwned(token: ResumeToken, controls: PlayerControlSnapshot): boolean {
+    return (
+      token.positionCapture.proof !== null &&
+      token.reloadRevision !== null &&
+      this.#ownedReload(token, controls) &&
+      this.player.validateResumePosition(token.positionCapture, token.reloadRevision)
     )
   }
 

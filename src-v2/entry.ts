@@ -45,6 +45,7 @@ export const start = (): void => {
   const visibility = new VisibilityAdapter()
   const player = new PlayerAdapter(playurl, {
     scheduler,
+    now,
     isActuallyVisible: () => visibility.isActuallyVisible(),
     subscribeControlLoss: (listener) => visibility.subscribeControlLoss(listener),
   })
