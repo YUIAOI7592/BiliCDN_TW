@@ -2,7 +2,7 @@
 
 本目錄保存已退出現行建置／測試流程的歷史資料。現行配置見[封存索引](retired/README.md)，目前文件與開發入口見 [docs/INDEX.md](../docs/INDEX.md)。2026-10-03 的位置整理及後續檢查見 [文件維護歷史](retired/docs/DOC_MAINTENANCE_HISTORY.md)。
 
-索引核對：2026-10-12，現行產品 v2.1.21。下方有日期的搬移數量與版本描述保留當時範圍。
+索引核對：2026-10-17，現行產品 v2.1.27。下方有日期的搬移數量與版本描述保留當時範圍。
 
 ## 分區
 
@@ -12,7 +12,7 @@
 
 ## 歷史報告入口
 
-- [TEST_REPORT_HISTORY](retired/docs/TEST_REPORT_HISTORY.md)：持續追加上一版完整報告，目前保存至 v2.1.20；首次搬入的 v2.0.2～v2.1.7 十二個主要紀錄區塊及其英文正文保留。
+- [TEST_REPORT_HISTORY](retired/docs/TEST_REPORT_HISTORY.md)：持續追加上一版完整報告，目前保存至 v2.1.26，含發布後 BR-01 調查補記；最新 v2.1.27 正文見 [TEST_REPORT](../docs/TEST_REPORT.md)。首次搬入的 v2.0.2～v2.1.7 十二個主要紀錄區塊及其英文正文保留。
 - [DOC_MAINTENANCE_HISTORY](retired/docs/DOC_MAINTENANCE_HISTORY.md)：從 `docs/INDEX.md` 搬入三段 2026-10-03 紀錄，後續文件檢查另按日期新增。
 - [改寫前指南快照](retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)：2026-10-11 九份指南的完整原文，只作追溯，不取代現行指南。
 

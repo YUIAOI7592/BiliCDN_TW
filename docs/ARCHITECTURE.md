@@ -205,6 +205,8 @@ XHR 的 response／responseText 共用同一組文字轉換及快取助手，JSO
 
 `PlayerAdapter` 的私有 NativePosition 只保存一筆媒體、播放器、生命週期、有限位置及 readyState 基準。HAVE_NOTHING 的未知目標變更更新既有 targetSec／seekRevision，撤銷過期位置還原；未取得可信派送證據時不增加 userRevision。getter 返回後重查觀察版本、原基準、操作修訂、pendingSeek 及當前所有者；reset／替換清除基準，自有 reload 初始零另有來源標記。
 
+v2.1.27 的 `RecoveryPlayerPort.captureResumePosition()` 優先捕獲 Observer 仍有效且未完成的可信目標與不透明證明；沒有該目標才捕獲原有位置讀取結果。Recovery 的 stall 路徑在沒有證明時沿用該段 `targetSec`，其他路徑沿用捕獲位置及有限值回退。內部 `PlayerControlSnapshot` 新增可選 `pendingSeekGoal` 供 Monitor 選擇長 seek 政策；不是持久欄位或第二個目標所有者。
+
 `currentTime()` 在目前 video.readyState===0 時一次讀取原生位置，有限值（包含 0）優先於 SDK 快取；其他情況保留 SDK／snapshot 回退。例外回退只涵蓋該次原生 readyState／currentTime 讀取，不保證 video 選取或所有 snapshot getter 例外安全。Recovery 在保存前後及副作用前繼續核對 mediaId、coreId、seekRevision、userRevision、lifecycleSerial、路線與資格；保存值不授予新權限。
 
 <a name="visibility-boundary"></a>
@@ -213,7 +215,7 @@ XHR 的 response／responseText 共用同一組文字轉換及快取助手，JSO
 
 [VisibilityAdapter](../src-v2/adapters/visibility.ts) 安裝時保存 Document.prototype 的 hidden getter，再於 document 實例覆寫 hidden=false、visibilityState=visible。網站因此看到前景；`isActuallyVisible()` 透過保存的 getter 查詢內部資格。Runtime／監控／量測使用此資格，不從被覆寫的頁面值推斷前景。
 
-真正 hidden 與可信 blur 的 guard 在阻擋事件前通知控制失效，供 `PlayerAdapter` 清理手勢及所有權。背景播放本身可持續；背景停止的是不合資格的主動量測／救援與舊還原提交。
+真正 hidden 與可信且 `event.target === window` 的 blur guard 在阻擋事件前通知控制失效，供 `PlayerAdapter` 清理手勢及所有權。子元素 blur 經 window 捕捉不取得視窗失焦資格；既有事件遮蔽保留。背景播放本身可持續；背景停止的是不合資格的主動量測／救援與舊還原提交。
 
 保存 getter 缺失時會退回 visibilityState；讀取拋錯時按現有 fail-open 行為視為未隱藏，dispose 後查詢也回傳可見。因此可見性查詢本身不是原生 getter 來源或背景能力的保證，測試仍須先校準。
 

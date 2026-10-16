@@ -8,7 +8,7 @@
 
 ## 收集器修復
 
-[第 4 輪](IAB_v2.1.20_TODO_R4_2026-10-11.md) 已保存舊閉包讀取過期值的最小對照。此次新增 [IabEventCollector](../scripts/iab-event-collector.mjs)，由呼叫端注入工具提供的 CDP capability；模組不連線瀏覽器、不啟動服務或計時器。
+[第 4 輪](IAB_v2.1.20_TODO_R4_2026-10-11.md) 已保存舊閉包讀取過期值的最小對照。此次新增 [IabEventCollector](../scripts/iab-event-collector.mts)，由呼叫端注入工具提供的 CDP capability；模組不連線瀏覽器、不啟動服務或計時器。
 
 - 游標、持有請求、分類、錯誤及持有開關均由單一實例保存，方法讀寫 `this`；不再重新指定外層變數期待舊閉包同步。
 - 先登記整批暫停請求，再進行分類或放行。單一游標持續讀完分頁，依 sequence 去重；音訊及不匹配請求直接放行。
