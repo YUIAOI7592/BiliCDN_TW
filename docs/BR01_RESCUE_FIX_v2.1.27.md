@@ -24,6 +24,23 @@ Observer 唯一保存可信未完成目標，Adapter 提供內部捕獲／驗證
 
 IAB 自有來源初驗另取得真實 FAIL：子元素 blur 在 window 捕捉階段被誤當視窗失焦，提前撤銷目標。補單元後，同時狹化 Observer 與 VisibilityAdapter 的通知到 event.target === window；既有前景偽裝與 stopImmediatePropagation 語意保留。真正視窗失焦／hidden 仍撤銷；暫停時未知位置變動亦不得冒充進度。原始 SOURCE-FIRST-FAIL／SOURCE-DIAGNOSTIC 與診斷產物保留，不當成通過。
 
-第三階段完整 verify **1134／1134**；正式基準 930 加新產品單元 110、產品整合 58、判定器 36。來源初驗修正後八案通過，最終固定本體核對、安全與發布結果續記。自動、來源與實際安裝分開，不將歷史 FAIL 改寫為修復後 PASS。
+第三階段完整 verify **1134／1134**；正式基準 930 加新產品單元 110、產品整合 58、判定器 36。最終 97d598b 來源八案通過，並以 node:test 重播 8／8、退出 0；初驗 FAIL 與中間成功資料分別保留。自動、來源與實際安裝分開，不將歷史 FAIL 改寫為修復後 PASS。
 
 本機執行紀錄：`.work/br01-fix/2026-10-17-v2.1.27-ccf947a/`。第一輪及第二輪調查仍見 [根因報告](BR01_RCA_R2_2026-10-16.md)。
+
+## 最終來源與安全驗證
+
+最終執行期提交 97d598ba415d65698c062cc5db04efa74af55082；來源本體 SHA-256 55df86a4e9bc96db42736ec466a662f2a486687d803b8f0221e3dd32a8fa7741。I-P01 原生歸零、I-P02 不歸零、I-P03 真正零及 I-R03 初始化還原，各 1／2 倍共八案：前三者保存正確目標，後者確認 seek→rate→play、兩個合格樣本 recovered 與其後 15 個一秒區段。實際可信鍵盤／按鈕由 IAB 派送，媒體／SDK／時間為自有替身；GM 不存在，不混算安裝版故障證據。
+
+每案先取消訂閱、dispose Recovery／reset Adapter，再驗 timer 0 與 SDK 方法還原，最後才釋放 FakeClock。頁面工具監聽器解除／隨自有分頁關閉釋放；沒有安裝 transport held／patterns／breakpoints 或學習樣本。分頁 0，loopback 31999 停止且主機端連線拒絕。SOURCE-RESULT／MANIFEST／CLEANUP、來源 JS／map 與 screenshot 保存在本機證據目錄。
+
+Codex Security scan 6cd20a95-d167-4f23-8f59-2856849ee830 固定 ccf947a..97d598b，前置 3／3、27／27 正式來源項目由主代理及兩個唯讀審查分工完成；0 候選／0 發現、coverage complete、無 deferred。2026-10-16T22:28:58.781986Z 封存；模型與 canonical manifest／findings／coverage／report／SARIF 由工具保存，不回寫前版安全封存。同頁 SDK 因果標記不描述成認證。發布與安裝後續結果見 [TEST_REPORT](TEST_REPORT.md)。
+
+## 證據入口與移入正式套件
+
+- 單元：adapters 登記 rescue-goals（46）及 visibility（2）；application 登記 rescue-recovery（52）、rescue-timing 的 Monitor 單元（10）。
+- 整合：application 登記 rescue-position（20）、rescue-timing（12）、rescue-runtime（26）；真實產品單元共同執行一律列整合。
+- 純驗收工具：rescue-sustained（36）；負例包含尾段停滯／影格／倍速／身分／動作變更、缺尾段、時間空隙與錯誤位置。判定器通過不代替產品案例通過。
+- FORMAL-CASES.json 保存 1134 個具名案例 ID、套件、來源 SHA-256、狀態與退出碼；FORMAL-OUTCOME.json 保存完整逐案結果。SOURCE-REPLAY.json 為八個真實來源結果重播，與正式數量分列。
+
+舊 r1／r2 原始 FAIL、批准等待更正與自然起因未定位保留；本輪不再調查自然起因、不開安裝故障窗口，不宣稱歷史整份矩陣已通過。

@@ -2,7 +2,7 @@
 
 # v2 架構
 
-本文件描述目前 `src-v2/` 的職責與契約，版本以 [release.json](../release.json) 為準（目前 v2.1.26）。版本別修復及驗證數字移由 [索引](INDEX.md) 與 [TEST_REPORT](TEST_REPORT.md) 保存；本文件不代表新一次驗證通過。
+本文件描述目前 `src-v2/` 的職責與契約，版本以 [release.json](../release.json) 為準（目前 v2.1.27）。版本別修復及驗證數字移由 [索引](INDEX.md) 與 [TEST_REPORT](TEST_REPORT.md) 保存；本文件不代表新一次驗證通過。
 
 瀏覽器測試只使用 **Codex 內建瀏覽器＋Tampermonkey**，依 [IAB_TESTING](IAB_TESTING.md) 分開來源隔離、實際安裝與環境校準。應用層注入的模型與原生事件不可混為安裝版證據。
 
@@ -142,7 +142,7 @@ BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean`
 
 有效目標證明只允許本次 reload 修訂下第一個受認可替換核心的首個有界 SDK 初始化 seek；首個穩定播放基準關閉該窗口。等待 seeking 結束後才還原目標、倍速及播放。第二 seek／核心、外部 reload、新操作、未知原生位置或原 15 秒到期都不得延長授權。沒有證明的舊路徑保持原取消規則。此例外的自動證據與實際安裝結果分列於救援修復紀錄。
 
-來源與政策重評見 [v2.1.24 報告](BR01_POLICY_REASSESSMENT_2026-10-14.md)。有限原生位置不能保證辨識失效重設與使用者尋位；目前已確認的 [位置遺失缺陷](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md) 尚未修復。
+來源與政策重評見 [v2.1.24 報告](BR01_POLICY_REASSESSMENT_2026-10-14.md)。有限原生位置不能保證辨識失效重設與使用者尋位；歷史 [位置遺失缺陷](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md) 的修復與分層驗證見 [v2.1.27 紀錄](BR01_RESCUE_FIX_v2.1.27.md)，不回寫歷史判定。
 
 <a name="progressive-playurl-processing-v218"></a>
 

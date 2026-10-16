@@ -2,7 +2,7 @@
 
 # 信任邊界與資料處理
 
-本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準（目前 v2.1.26）。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [修復索引](docs/INDEX.md)，不把歷史掃描當成新差異的驗證。
+本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準（目前 v2.1.27）。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [修復索引](docs/INDEX.md)，不把歷史掃描當成新差異的驗證。
 
 瀏覽器驗證只使用 **Codex 內建瀏覽器＋Tampermonkey**，資料隔離、送出前攔截與清理依 [IAB_TESTING](docs/IAB_TESTING.md)。來源隔離、環境校準與實際安裝各自判定；v2.1.22 P05 差異審查與來源證據見 [修復報告](docs/P05_COPY_FIX_REPORT.md)，前版 BR-10 見 [歷史修復](docs/BR10_FIX_REPORT.md)。
 
@@ -78,7 +78,7 @@ Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒有跨�
 
 `RecoveryController` 保留暫停至少 30 秒、拖曳／路線授權／政策／操作所有權／額度檢查；死核心 4 秒、其他無進度 30 秒與重載後 15 秒期限維持。正常進度不多做重載，沒有新操作不替暫停影片自行播放。每輪返回的取消函式清理自有 document 捕捉監聽器，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
 
-此觀察不授予新的 Native 路線或傳輸權限。政策與來源證據見 [v2.1.24 報告](docs/BR01_POLICY_REASSESSMENT_2026-10-14.md)；[失效後位置遺失](docs/BR01_v2.1.24_POSITION_LOSS_2026-10-14.md) 尚未修復，屬目前產品限制。
+此觀察不授予新的 Native 路線或傳輸權限。政策與來源證據見 [v2.1.24 報告](docs/BR01_POLICY_REASSESSMENT_2026-10-14.md)；位置保存與有條件還原修復見 [v2.1.27 紀錄](docs/BR01_RESCUE_FIX_v2.1.27.md)。歷史 FAIL 不回寫，安裝版故障救援未在本輪實測。
 
 ### 鍵盤、拖曳與自有重載
 
@@ -86,7 +86,7 @@ BODY／頁面焦點的 Space、k／K 及既有倍速鍵以私有 keydown 候選�
 
 自有 SDK reload 的 pause／空核心例外僅屬本次合法 stall token 與 reload 修訂，透過 `PlayerPort.ownedReload(revision)` 回傳有界布林證明；DOM／核心／事件留在適配器私有記憶體。最多接納本次第一個替換核心，原核心在空隙後回來、第二次替換、新可信操作、hidden／control-loss 或生命週期失效都撤銷。空核心上的舊 reload 標記不具資格；首個非零替換須標記相符、初始化狀態不是 false 並通過健康觀察，每個 seek／setRate／play 前仍核對最新 video 請求、Vault、政策／限制與 token。
 
-SDK 初始化的未知 seek 撤銷舊位置還原，不猜成可信操作，不覆寫 SDK 最新目標；其餘合法播放意圖仍受重載後 15 秒無進度期限與所有權檢查。只有實際時間／影格進度才能停止無進度計時，兩個連續有效採樣才 recovered；保留尺寸、readyState 或初始化 seek 跳躍不能清除失敗／breaker。已還原且首次進度被接納後，以同一穩定所有者維持最多 15 秒的確認資格，不延長 pause／空核心租期、不授予還原副作用或新核心接納；未形成持續進度仍失敗。終止後 SDK resume 不重開救援，真正進度或新的使用者／媒體所有權才可清除失敗停滯抑制。觀察租期到期、同步重入與晚到 Promise 不能復活或回寫舊動作，也不能否定已接納的合法進度。此內部證明不授予 Native 權限，不新增持久或診斷識別資料；未經可觀察方法的外部核心替換仍有既有辨識限制，不能把頁面標記描述成認證。
+沒有有效可信目標證明時，SDK 初始化的未知 seek 撤銷舊位置還原，不猜成可信操作，不覆寫 SDK 最新目標；其餘合法播放意圖仍受重載後 15 秒無進度期限與所有權檢查。只有實際時間／影格進度才能停止無進度計時，兩個連續有效採樣才 recovered；保留尺寸、readyState 或初始化 seek 跳躍不能清除失敗／breaker。已還原且首次進度被接納後，以同一穩定所有者維持最多 15 秒的確認資格，不延長 pause／空核心租期、不授予還原副作用或新核心接納；未形成持續進度仍失敗。終止後 SDK resume 不重開救援，真正進度或新的使用者／媒體所有權才可清除失敗停滯抑制。觀察租期到期、同步重入與晚到 Promise 不能復活或回寫舊動作，也不能否定已接納的合法進度。此內部證明不授予 Native 權限，不新增持久或診斷識別資料；未經可觀察方法的外部核心替換仍有既有辨識限制，不能把頁面標記描述成認證。
 
 BR-01 的控制觀察僅提供取消／動作所有權，不授予 Native 權限。可信 pointer／非 seek key 需 isTrusted 與播放器區域；非 seek key 僅觀察 keydown。BR-07 的 seek 鍵可來自頁面焦點，但排除 editable／控制中心／組字／Ctrl／Meta／Alt，須真正可見、該可信 keydown 或 keyup 尚在派送、同播放器／媒體／生命週期，且實際有限位置改變，並 seeking 或 readyState 0／捕捉核心未變／非 internalReload，才取得一次使用者修訂。同派送的 wrapper／媒體／controls／冒泡觀察去重；keydown、repeat、keyup 若各自形成新 seek，各自取得一次身分，沒有位置變化則不計數。eventPhase NONE、腳本還原及晚到工作不能取得新寬限；鍵盤不建立按住狀態或延遲窗口。零延遲 timer 僅釋放私有事件參照，清理綁定實際事件種類且舊回呼確認候選身分。pendingSeek 保守抑制腳本還原，不因可信輸入全面清空；來源無法可靠辨識時不猜測使用者歸因。媒體及 page seek／reload 另有觀察修訂。core reload／還原仍核對最新 video 請求、Vault／政策／禁止／固定路線、操作及核心身分。自有 reload 的替換標記來自頁面觀察，無法認證所有未經可觀察方法的外部替換。監聽器由 adapter reset 清理，seek／reload wrapper 還原確認目前所有權；不把 DOM／事件／核心物件交給應用層或診斷。
 
@@ -94,7 +94,7 @@ BR-08 指標拖曳使用目前播放器區域內的可信 pointerdown 及已知�
 
 真正 hidden、可信失焦及生命週期／媒體／播放器失效撤銷手勢。`VisibilityAdapter` 的既有 guard 在阻擋事件前發布內部 control-loss 通知；入口注入，控制觀察取消訂閱，失敗 listener 不破壞 guard，controls() 保留真正可見性防漏。通知不把 DOM／事件交給應用層，不改網站可見性覆寫、不新增 pointer capture 或拖曳 timeout。
 
-監控停滯、watchdog 及冷起播都排除 dragging，拖曳清除舊停滯及連續計數，不消耗起播救援嘗試。Recovery 收集位置／倍速前後核對 controls，提交 token 前重新檢查最新有效資格、生命週期、媒體／核心／操作、已存在 token、breaker 與總額；既有每個副作用及晚到 Promise 所有權檢查保留。一般停滯釋放後取得新 15／30 秒；冷起播保留原 firstMediaAt，可能立即救援，不重開預算。公開 API、應用層快照及 schema 2 不變，也不新增持久或診斷識別資料。
+監控停滯、watchdog 及冷起播都排除 dragging，拖曳清除舊停滯及連續計數，不消耗起播救援嘗試。Recovery 收集位置／倍速前後核對 controls，提交 token 前重新檢查最新有效資格、生命週期、媒體／核心／操作、已存在 token、breaker 與總額；既有每個副作用及晚到 Promise 所有權檢查保留。一般停滯釋放後依是否尋位取得 6／12 或 15／30 秒；冷起播保留原 firstMediaAt，可能立即救援，不重開預算。公開 API、應用層快照及 schema 2 不變，也不新增持久或診斷識別資料。
 
 腳本不取代或檢視 `Worker`，不建立 Worker 二進位資料物件（Blob）或訊息通道，也不載入遠端程式。
 
@@ -104,7 +104,7 @@ WebRTC 還原前會確認已安裝的讀取存取器／寫入存取器仍屬於�
 
 ## 原生位置觀察邊界
 
-未初始化媒體的有限原生位置（包含 0）優先於 SDK 快取，僅作新意圖保存值；未知目標變更只撤銷過期還原，不授予可信 userRevision、Vault 身分或恢復資格。新可信鍵盤目標另需同一 keydown／keyup 派送、捕捉核心不變、非 internalReload 與既有來源抑制。getter／SDK 返回後重查媒體、播放器、生命週期與操作修訂。
+沒有有效未完成目標證明時，未初始化媒體的有限原生位置（包含 0）優先於 SDK 快取，僅作新意圖保存值；未知目標變更只撤銷過期還原，不授予可信 userRevision、Vault 身分或恢復資格。新可信鍵盤目標另需同一 keydown／keyup 派送、捕捉核心不變、非 internalReload 與既有來源抑制。getter／SDK 返回後重查媒體、播放器、生命週期與操作修訂。
 
 原生 readyState／currentTime 的例外回退不涵蓋全部頁面 getter。自有 reload 初始零、pendingSeek／internalSeek、正常播放增量及未知位置往返各有邊界；完全沒有被採樣的變化無法推定。新增觀察不產生網路、持久欄位或診斷識別。
 

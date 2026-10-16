@@ -1,6 +1,6 @@
 # Codex 內建瀏覽器測試方案
 
-日期：2026-10-11 初稿，2026-10-16 更新。適用目前 `src-v2/`；版本以 [release.json](../release.json) 為準，目前為 **v2.1.26**。
+日期：2026-10-11 初稿，2026-10-17 更新。適用目前 `src-v2/`；版本以 [release.json](../release.json) 為準，目前為 **v2.1.27**。
 
 **所有瀏覽器測試只使用 Codex 內建瀏覽器＋Tampermonkey。** 包含來源隔離、安裝版、背景、傳輸與發布後回歸；不得改用外部 Chrome／Edge、獨立 Playwright／Puppeteer 或 headless 瀏覽器。Node 契約、型別、架構及建置檢查仍保留。
 
@@ -8,7 +8,9 @@
 
 2026-10-16 使用者另行批准 v2.1.26 四階段收斂的有限來源及正常安裝回歸：來源只驗本輪 XHR getter／快取、選路提交順序、播放器控制與清理；安裝只驗指定影片 Auto 1／2 倍、暫停／恢復／短 seek、控制中心及鍵盤邊界。E／S 與發布後有限 I 範圍已通過、清理及結案；詳見 [收斂報告](CONVERGENCE_v2.1.26_REPORT.md)，不能恢復歷史矩陣。
 
-v2.1.24 的完整本體與正常播放入口結果屬歷史；v2.1.25 模組化之來源、發布與正常安裝回歸範圍已通過，分列於 [TEST_REPORT](TEST_REPORT.md)，本輪結案。**BR-01 整體不通過，失效後尋位位置遺失尚未修復**。已發布的正式 855／855 與新調查 1 fail／2 pass 分列於 [歷史 TEST_REPORT](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2124-release-verification--2026-10-14)；傳輸窗口限制與局部媒體證據見 [位置報告](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)。一次修正方法後的重試已用，不再自動開同條件窗口。
+v2.1.24 的完整本體與正常播放入口結果屬歷史；v2.1.25 模組化之來源、發布與正常安裝回歸範圍已通過，分列於 [TEST_REPORT](TEST_REPORT.md)，本輪結案。**該版 BR-01 整體不通過，位置遺失為當時未修復缺陷**。已發布的正式 855／855 與新調查 1 fail／2 pass 分列於 [歷史 TEST_REPORT](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2124-release-verification--2026-10-14)；傳輸窗口限制與局部媒體證據見 [位置報告](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)。一次修正方法後的重試已用，不再自動開同條件窗口。
+
+2026-10-17 使用者批准 v2.1.27 有限救援修復：自有來源以隔離媒體／SDK、無正式 GM 驗可信目標與還原；發布後指定影片僅 Auto 1／2 倍正常播放、暫停／恢復、短 seek、倍速及控制中心回歸。不開自然觀察或安裝故障窗口，歷史矩陣保持停止。來源八案已通過，實際安裝結果見 [救援修復紀錄](BR01_RESCUE_FIX_v2.1.27.md)。
 
 版本別工具能力、IAB 第 1～6 輪及 P05 通道結果由 [歷史導覽](INDEX.md#歷史計畫與瀏覽器紀錄) 追溯。既有通過沿用；舊 Chrome 證據保留原環境，不轉算新的 IAB 通過。
 
