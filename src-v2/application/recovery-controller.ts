@@ -621,17 +621,8 @@ export class RecoveryController implements RecoveryPort {
         this.#suppress = false
       }
     }
-    if (this.#token !== token || !this.#owns(token, this.player.controls())) return
-    this.#progressTicks = 0
-    this.#state = Object.freeze({
-      state: 'waiting',
-      source: token.source,
-      pauseSec: 0,
-      reloadCount: this.#reloadCount,
-      breakerSec: 0,
-      savedPositionSec: token.savedPositionSec,
-      savedRate: token.savedRate,
-    })
+    // A returned promise still needs a rejection handler when play synchronously
+    // caused a newer operation. Ownership gates mutations, not promise cleanup.
     if (playResult !== null && (typeof playResult === 'object' || typeof playResult === 'function'))
       void Promise.resolve(playResult).catch(() => {
         if (
@@ -642,6 +633,28 @@ export class RecoveryController implements RecoveryPort {
           return
         this.#finish('recovered-paused', 'play-rejected')
       })
+    if (this.#token !== token || !this.#owns(token, this.player.controls())) return
+    try {
+      const baseline = this.player.snapshot(),
+        controls = this.player.controls()
+      if (!this.#owns(token, controls)) return
+      this.#lastSnapshot = baseline
+      this.#lastFrames = baseline.frames
+      this.#lastControls = controls
+    } catch {
+      if (this.#token === token) this.#finish('failed', 'restore-threw')
+      return
+    }
+    this.#progressTicks = 0
+    this.#state = Object.freeze({
+      state: 'waiting',
+      source: token.source,
+      pauseSec: 0,
+      reloadCount: this.#reloadCount,
+      breakerSec: 0,
+      savedPositionSec: token.savedPositionSec,
+      savedRate: token.savedRate,
+    })
   }
 
   #owns(token: ResumeToken, _observed: PlayerControlSnapshot): boolean {

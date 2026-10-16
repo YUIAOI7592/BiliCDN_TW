@@ -66,7 +66,7 @@
 
 可信 seek keydown／keyup 各自在同一派送內確認實際有限新目標才取得一次 userRevision，包含位置 0；BODY／頁面焦點有效，editable、控制中心、IME、Ctrl／Meta／Alt、合成事件、忽略命令及派送後工作無效。pendingSeek／internalSeek 保留腳本來源抑制。HAVE_NOTHING 的可信新目標另須捕捉核心不變、非 internalReload；未知目標只更新 seekRevision、撤銷舊還原，不猜成使用者命令。
 
-可信進度按下立即建立由 pointerId、播放器、媒體及內容擁有的手勢，不要求當下 seeking 或位置改變。有效 dragging 同時排除停滯、watchdog、冷起播救援及新 Recovery token；同指標可信釋放／cancel／lost capture 或失焦／hidden／生命週期失效才清理。一般停滯在釋放後第一個合資格 tick 從最新目標建立新期限；尚無播放進度的冷起播仍按原 firstMediaAt，可能立即救援，不新增全域釋放寬限。
+可信進度按下立即建立由 pointerId、播放器、媒體及內容擁有的手勢，不要求當下 seeking 或位置改變。有效 dragging 同時排除停滯、watchdog、冷起播救援及新 Recovery token；同指標可信釋放／cancel／lost capture 或真正 window 失焦／hidden／生命週期失效才清理。子元素 blur 經 window 捕捉不等於視窗失焦，不清可信目標或手勢。一般停滯在釋放後第一個合資格 tick 從最新目標建立新期限；尚無播放進度的冷起播仍按原 firstMediaAt，可能立即救援，不新增全域釋放寬限。
 
 <a name="br01-owned-sdk-reload"></a>
 

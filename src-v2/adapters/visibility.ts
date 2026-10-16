@@ -33,7 +33,7 @@ export class VisibilityAdapter {
     document.addEventListener('visibilitychange', guard, true)
     document.addEventListener('webkitvisibilitychange', guard, true)
     const blurGuard = (event: Event): void => {
-      if (event.isTrusted) this.#notifyControlLoss()
+      if (event.isTrusted && event.target === window) this.#notifyControlLoss()
       event.stopImmediatePropagation()
     }
     window.addEventListener('blur', blurGuard, true)

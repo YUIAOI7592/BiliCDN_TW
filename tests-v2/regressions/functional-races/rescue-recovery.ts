@@ -141,6 +141,45 @@ function fixture(t: TestContext, rate: number, target = 978) {
 }
 
 for (const rate of [1, 2]) {
+  test(`U-P02 restored seek jump is not a playback progress sample rate=${rate}`, (t) => {
+    const f = fixture(t, rate)
+    f.begin()
+    f.dead()
+    f.advance(4000)
+    f.healthy()
+    f.set({ currentTime: 0 })
+    f.tick()
+    f.set({ currentTime: 978, frames: 130 })
+    f.advance(1000)
+    f.set({ currentTime: 978 + rate, frames: 160 })
+    f.advance(1000)
+    assert.notEqual(f.recovery.snapshot().state, 'recovered')
+    f.set({ currentTime: 978 + rate * 2, frames: 190 })
+    f.advance(1000)
+    assert.equal(f.recovery.snapshot().state, 'recovered')
+  })
+  test(`U-A02 play rejection after synchronous new operation is handled rate=${rate}`, async (t) => {
+    const f = fixture(t, rate),
+      pending = deferred<unknown>()
+    f.returns.play = () => {
+      f.user()
+      return pending.promise
+    }
+    f.begin()
+    f.dead()
+    f.advance(4000)
+    f.healthy()
+    f.tick()
+    f.tick()
+    const before = f.recovery.snapshot(),
+      count = f.effects.length
+    pending.reject(Error('controlled stale play rejection'))
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    assert.deepEqual(f.recovery.snapshot(), before)
+    assert.equal(f.effects.length, count)
+  })
   for (const target of [0, 2811.002824])
     test(`U-R01 captured position ${target} and rate read once rate=${rate}`, (t) => {
       const f = fixture(t, rate, target)

@@ -319,7 +319,7 @@ export class PlayerControlObserver {
       playbackTimeAdvanced(position, before.position) &&
       (frames === null || (before.frames !== null && playbackFramesAdvanced(frames, before.frames)))
     if (this.#goal !== goal || !this.#goalCurrent(goal)) return
-    if (delta < 0 || delta > maxAdvance) {
+    if (delta < 0 || delta > maxAdvance || (video.paused && delta !== 0 && !this.#internalSeek)) {
       this.#goal = null
       return
     }
@@ -496,7 +496,7 @@ export class PlayerControlObserver {
       this.#goal = null
     }
     this.#listen(window, 'blur', (event) => {
-      if (event.isTrusted) controlLoss()
+      if (event.isTrusted && event.target === window) controlLoss()
     })
     this.#controlStops.push(this.environment.subscribeControlLoss(controlLoss))
   }
@@ -1066,6 +1066,10 @@ export class PlayerControlObserver {
   seek(value: number): void {
     this.#clearKeyboardSeek()
     this.#clearKeyboardPlayback()
+    if (this.#goal?.position === value) {
+      this.#goal.baseline = null
+      this.#goal.progress = 0
+    }
     this.#internalSeek++
     this.#pendingSeek = value
     try {

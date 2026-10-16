@@ -1,6 +1,7 @@
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { PlayerControlObserver } from '../../../src-v2/adapters/player-controls.ts'
+import { VisibilityAdapter } from '../../../src-v2/adapters/visibility.ts'
 import { rescueDomFixture } from '../../support/rescue-dom.ts'
 
 function fixture(t: TestContext, rate: number) {
@@ -22,7 +23,57 @@ function fixture(t: TestContext, rate: number) {
   return { ...f, observer, capture, resetMedia }
 }
 
+for (const target of ['descendant', 'window'] as const)
+  test(`U-V01 visibility guard ${target} blur notifies only actual window loss`, (t) => {
+    const f = rescueDomFixture(t)
+    class Document {
+      get hidden() {
+        return false
+      }
+      get visibilityState() {
+        return 'visible'
+      }
+    }
+    f.scope.defineGlobal('Document', { configurable: true, value: Document })
+    const visibility = new VisibilityAdapter()
+    let notifications = 0
+    const stop = visibility.subscribeControlLoss(() => {
+      notifications++
+    })
+    visibility.install()
+    f.scope.defer(() => {
+      stop()
+      visibility.dispose()
+      f.check()
+    })
+    const event = new f.Input('blur', f.button)
+    if (target === 'window') Object.defineProperty(event, 'target', { get: () => f.window })
+    f.window.dispatchEvent(event)
+    assert.equal(notifications, target === 'window' ? 1 : 0)
+  })
+
 for (const rate of [1, 2]) {
+  test(`U-G08 unknown native movement while paused revokes pending goal rate=${rate}`, (t) => {
+    const f = fixture(t, rate)
+    f.video().paused = true
+    f.key(978)
+    f.video().seeking = false
+    f.video().dispatchEvent(new Event('seeked'))
+    const capture = f.capture()
+    f.clock.advance(1000)
+    f.video().currentTime = 978.5
+    assert.equal(f.observer.validateResumePosition(capture), false)
+  })
+  for (const target of ['descendant', 'window'] as const)
+    test(`U-G07 trusted ${target} blur has the correct loss boundary rate=${rate}`, (t) => {
+      const f = fixture(t, rate)
+      f.key(978)
+      const before = f.capture(),
+        event = new f.Input('blur', f.button)
+      if (target === 'window') Object.defineProperty(event, 'target', { get: () => f.window })
+      f.window.dispatchEvent(event)
+      assert.equal(f.observer.validateResumePosition(before), target === 'descendant')
+    })
   for (const target of [0, 2811.002824])
     test(`U-G01 finite trusted target ${target} survives loss reset rate=${rate}`, (t) => {
       const f = fixture(t, rate)
