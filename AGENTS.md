@@ -90,7 +90,7 @@
 - 隨對應原始碼變更更新現行指南。依程式／設定核對預設值、介面／權責、儲存行為、UI 名稱、測試命令及發布狀態。
 - 事實來源為 `release.json`、`package.json`、`package-lock.json`、`src-v2/` 及 `scripts/`；有日期的測試／瀏覽器紀錄只作對應版本的證據。
 - 歷史紀錄標示版本／日期並連至現行指南。保留原始觀察、限制及計畫撤銷狀態；不得將舊待完成文字或已批准驗收的限制轉為現行待辦。
-- 維持 `docs/INDEX.md`、`docs/TODO.md` 與 `docs/TEST_REPORT.md` 最新版內容一致。修正現行文件時，不得回寫 `Release/v*/` 快照或已封存且不可變更的安全產物。
+- `docs/INDEX.md` 是閱讀入口，`docs/TODO.md` 唯一維護工作狀態，`docs/TEST_REPORT.md` 唯一保存最新版完整驗收結果；其他入口使用連結保持一致，不複製狀態摘要。修正現行文件時，不得回寫 `Release/v*/` 快照或已封存且不可變更的安全產物。
 - `docs/TEST_REPORT.md` 保存最新版完整報告與歷史導覽；換版時將上一版完整正文加入 `archive/retired/docs/TEST_REPORT_HISTORY.md`，保留日期、版本、原錨點導引及原始限制。文件整理結果另按日期記入 `archive/retired/docs/DOC_MAINTENANCE_HISTORY.md`。
 - 保留 `docs/CHANGELOG.md`、`docs/TEST_REPORT.md` 兩個封裝輸入路徑；它們指向其他儲存庫文件的連結使用完整儲存庫 URL，確保複製到 Release 後仍可閱讀。
-- 僅修改文件時，檢查連結、引用路徑／名稱、事實一致性及 `git diff --check`。未實際執行時，不得宣稱新的執行期測試或瀏覽器驗收。
+- 僅修改文件時，執行 `npm run docs:check`，另核對事實與使用者範圍及 `git diff --check`；新增文件登記 `docs/doc-manifest.json` 並加入 `docs/HISTORY.md` 或現行入口。未實際執行時，不得宣稱新的執行期測試或瀏覽器驗收。

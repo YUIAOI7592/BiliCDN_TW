@@ -4,7 +4,7 @@
 
 本指南適用目前 `src-v2/`（版本以 [release.json](../release.json) 為準），瀏覽器測試**只使用 Codex 內建瀏覽器＋Tampermonkey**。具體操作、固定矩陣、背景校準與停止條件統一見 [IAB_TESTING](IAB_TESTING.md)，不維護另一份外部 Chrome 流程。
 
-先讀 [產品契約](PROJECT_CONTEXT.md)、[安全邊界](../SECURITY.md)、[架構](ARCHITECTURE.md) 及 [AGENTS](../AGENTS.md)。目前工作狀態見 [TODO](TODO.md)，歷次測試數字與修復進度見 [TEST_REPORT](TEST_REPORT.md) 和 [INDEX](INDEX.md)，不以歷史紅燈或舊工作清單作現行待辦。
+先讀 [產品契約](PROJECT_CONTEXT.md)、[安全邊界](../SECURITY.md)、[架構](ARCHITECTURE.md) 及 [AGENTS](../AGENTS.md)。目前工作狀態見 [TODO](TODO.md)，最新結果見 [TEST_REPORT](TEST_REPORT.md)，歷次證據由 [HISTORY](HISTORY.md) 追溯，不以歷史紅燈或舊工作清單作現行待辦。
 
 <a name="repository-layout-and-archive-maintenance"></a>
 
@@ -37,7 +37,7 @@
 - 粗體使用 `**文字**`。結尾有標點、後面緊接中文字時，檢查解析結果；必要時在結束標記後加空格，例如 `**結果：** 通過`。不能只數星號判定已正確渲染。
 - 使用有描述文字的 Markdown 連結，保留目標及錨點；CHANGELOG／TEST_REPORT 的儲存庫文件連結使用完整 GitHub URL。不要為統一格式改寫原生 URL、移除相容錨點或把有效 Alerts 標記跳脫為字面文字。
 - 整理範圍包含根目錄指南、`docs/`、測試文件及封存索引；已發布 `Release/`、來源基準、不可變安全產物與封存正文維持原樣，文件維護歷史只追加本次紀錄。
-- 換版後同步核對封存索引的現行版本與歷史保存上限；版本報告的來源連結及章節錨點須指向當版證據。歷史矩陣保留原門檻並標明版本，不能當作新版本的追加驗收；使用者縮減或結案的範圍同步到 README、PROJECT_CONTEXT、IAB_TESTING、TODO、INDEX 及 TEST_REPORT。
+- 版本與歷史導覽由文件清單維護；歷史門檻標明版本。使用者工作範圍只在 TODO 維護，驗收結果只在 TEST_REPORT／原始證據維護；其他入口使用連結，不複製摘要。
 - 格式驗證須涵蓋 GFM 解析、表格欄位、程式碼與連結保存、相對路徑／錨點及 `git diff --check`。Node 契約與瀏覽器功能測試不因單純排版而重跑，也不把文件檢查寫成產品驗收。
 
 <a name="prerequisites"></a>
@@ -168,25 +168,15 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 ## 內建瀏覽器驗證
 
-唯一執行方案為 [IAB_TESTING](IAB_TESTING.md)。N 為 Node、S 為內建瀏覽器來源隔離、I 為實際 Tampermonkey 安裝、E 為環境校準；任何一層都不能冒充另一層通過。舊 real-chrome-validation 錨點只保留連結相容，不授權使用外部 Chrome。
+唯一執行方法與證據層級見 [IAB_TESTING](IAB_TESTING.md)；目前工作只看 [TODO](TODO.md)。本節不維護第二份校準、故障、清理或停止流程，也不構成開啟新窗口的授權。舊 real-chrome-validation 錨點只保留相容，不授權外部 Chrome。
 
-執行前凍結版本、來源／本體雜湊與案例 ID，取得完整 singleton／hooks 身分，再校準可信輸入、精確攔截及原生背景。每窗明確記錄有效性與 PASS／FAIL；前提不成立就作廢並列原因，沒有新條件不重跑。
-
-網站只用指定風景影片、Auto 1／2 倍分開，保持其他腳本與瀏覽器設定。真正背景用新增分頁及實際切換校準；網站 document 被偽裝為前景是預期值，不可拿它判斷 Runtime 背景資格。隱藏面板不是背景驗證方式。
-
-故障前先建立精確 video／audio 攔截、單一連續 Fetch／Network 游標與工作 ID 學習抑制，清理保留至晚到結果收束。SDK 受控 Promise、來源模型、真正安裝及自然觀察分列。不能修改網站媒體 getter、重建控制器或重設預算湊通過。
-
-本方案沒有現成一鍵瀏覽器執行器；每輪需保存工具操作與重跑入口。工具不支援的必要步驟列具體阻塞，不能改用外部瀏覽器或繞過限制。詳見 [判定與時間上限](IAB_TESTING.md#verdict)、[證據目錄](IAB_TESTING.md#evidence)。
-
-[iab-event-collector.mts](../scripts/iab-event-collector.mts) 是注入 IAB CDP capability 的主機端事件收集工具，不建立瀏覽器連線或計時器，也不包含產品控制器。每個窗口使用新實例；跨呼叫狀態留在實例，完整登記暫停 ID 後才分類。呼叫端負責 finally 清理、停止條件及樣本隔離。正式契約歸入 `npm test -- tooling`；自有 loopback 隔離與安裝版結果分列，見 [第 5 輪](IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md)。
+[iab-event-collector.mts](../scripts/iab-event-collector.mts) 是注入 IAB capability 的主機端收集器，不自行連線、建立服務或計時器；契約歸 tooling。使用者負責單一游標、有界完整 await、樣本隔離及 finally 清理，詳細規則以 IAB_TESTING 為準。
 
 <a name="p05-原生複製契約"></a>
 
 ### 剪貼簿驗證
 
-先保存 IAB 剪貼簿的全部項目與格式，只留記憶體；以自有頁合成文字校準可信原生寫入、預定 API 讀回及真正 Ctrl+V。共同通道與完整復原能力成立後，才驗證實際產品當次完整報告；不 trim、不重序列化、不以完成回呼或提示代替全文比較。來源記憶體 UI、實際安裝身分與正常／失敗案例分列。
-
-寫入收束後，復原前核對完整項目仍由本輪持有；使用者的新內容優先保留。IAB 與 Windows PowerShell 不得假設共用同一剪貼簿。v2.1.21 的通道限制及失敗保留在 [通道調查](P05_COPY_CHANNEL_REPORT_2026-10-12.md) 與 [原結果](P05_COPY_IAB_RESULT_2026-10-12.md)；v2.1.22 的原生優先修復及實際全文通過見 [P05 報告](P05_COPY_FIX_REPORT.md)。已通過子項不重測，沒有新前提不重複 GM 校準窗口。
+原生與 GM 寫入邊界見 [SECURITY](../SECURITY.md#剪貼簿寫入邊界)，完整快照、可信寫入、讀回／真正貼上與復原流程見 [IAB_TESTING](IAB_TESTING.md#p05-原生優先驗證)。通道不成立不能判產品失敗，歷史結果由 [HISTORY](HISTORY.md) 追溯。
 
 <a name="packaging-and-release"></a>
 
@@ -205,3 +195,21 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 依 [AGENTS 發行規則](../AGENTS.md#release-rules)，本專案功能修復完成並通過必要自動及安全驗證後，預設自主提交、遞增修補版本、封裝、推送 main／標籤及發布 GitHub Release，不再等待使用者重複要求；當次明確限定只調查、文件整理或保留本機修改時遵守該範圍。完成後核對公開 latest 更新的版本、大小與 SHA-256。不得加入修補、CI/CD 或 GitHub Actions。本機封裝不等於發布。GitHub Release 附件只有使用者腳本，更新 URL 保持指向本儲存庫最新 Release。發布前執行 `npm run typecheck`、`npm run architecture`、`npm test`、`npm run verify` 及必要安全驗證。內建瀏覽器／Tampermonkey 驗收另行記錄，未執行的瀏覽器檢查不得寫成通過。
 
 發布後先以內建瀏覽器的公開 latest 使用者腳本入口觸發既有安裝更新，再核對新文件實際執行身分；v2.1.21 已證明此路徑可用。不能只依歷史擴充功能介面限制就要求手動更新。只有當次入口確實受阻才交由使用者完成必要步驟；操作與證據要求見 [IAB 更新流程](IAB_TESTING.md#release)。
+
+<a name="documentation-maintenance"></a>
+
+## 文件維護與結案
+
+1. 行為變更只更新對應權威指南與契約；責任表見 [INDEX](INDEX.md)。工作狀態只維護 [TODO](TODO.md)，實測結果只維護 [TEST_REPORT](TEST_REPORT.md) 或原始紀錄。
+2. 普通修復不再分開建立 FIX／ACCEPTANCE／CONTINUATION 多份報告。必要獨立調查或設計才放入 `docs/records/v<version>/`，同議題按日期追加；既有版本檔案不搬移。
+3. 新增公開 Markdown 時更新 [清單](doc-manifest.json) 的分類、topics、versions、date 與導覽。versions 可含調查基準和交付版本；缺少可確認日期填 null，不推測執行時間。主題權威由 owners 唯一定義，清單不保存 PASS 數或工作狀態。
+4. 清單 schemaVersion 為 1；documents.kind 分別標記指南、導覽、狀態、驗證、變更、日誌、版本紀錄、不可變快照與相容頁。protections 的 exact 禁止正文改寫；prefix 只允許追加。文字雜湊按 LF 正規化，二進位按原始位元組；不得改基準雜湊來消除失敗。
+5. 修改標題保留 requiredAnchors；[HISTORY](HISTORY.md) 提供版本、議題、日期及封存入口。既有完整歷史報告／維護日誌只追加，Release、baseline 與安全封存不回寫。
+6. 失效連結例外只適用原檔雜湊相符的不可變文件，逐筆指定 source、line、url、sha256、reason；修復後刪除例外。不得對現行文件、未知新錯誤或整個目錄設定豁免。
+7. 每次執行 `npm run docs:check`、人工事實核對與 `git diff --check`。檢查器不能判定全部文字含義；仍須依程式核對預設值、模式、UI 名稱、安全與狀態所有權，確認使用者縮減／結案決策未被恢復。
+8. 新增工具時另執行型別、tooling 與 verify；單純文件修改不新增產品或瀏覽器通過宣稱。工具結果追加 TEST_TOOLING_REPORT，文件核對追加維護歷史。
+9. 換版時將上一版完整 TEST_REPORT 原樣加入既有歷史，再更新固定入口；CHANGELOG 保留舊條目。兩個封裝輸入的儲存庫連結使用完整 URL，封裝只在暫存目錄驗證。
+
+docs:check 以 Git 已追蹤及未忽略的新 Markdown 為公開範圍；無 Git 的來源副本按明確公共目錄及清單的 Release 目錄掃描，不遍歷私有 .work 或本機舊工具。它檢查 GFM、連結、唯一權威、兩次點擊、相容錨點、現行版本／npm 命令與正文保護。外部 URL 不連網；Release 快照的已知斷鏈另外列出，不稱為全部連結零錯誤。
+
+只執行使用者批准範圍；文件整理不新增排程／CI/CD，不開安全掃描或瀏覽器窗口。

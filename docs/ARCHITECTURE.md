@@ -2,7 +2,7 @@
 
 # v2 架構
 
-本文件描述目前 `src-v2/` 的職責與契約，版本以 [release.json](../release.json) 為準（目前 v2.1.27）。版本別修復及驗證數字移由 [索引](INDEX.md) 與 [TEST_REPORT](TEST_REPORT.md) 保存；本文件不代表新一次驗證通過。
+本文件描述目前 `src-v2/` 的職責與契約，版本以 [release.json](../release.json) 為準。版本別修復及驗證數字移由 [索引](INDEX.md) 與 [TEST_REPORT](TEST_REPORT.md) 保存；本文件不代表新一次驗證通過。
 
 瀏覽器測試只使用 **Codex 內建瀏覽器＋Tampermonkey**，依 [IAB_TESTING](IAB_TESTING.md) 分開來源隔離、實際安裝與環境校準。應用層注入的模型與原生事件不可混為安裝版證據。
 
@@ -10,7 +10,7 @@
 
 ## 依賴方向
 
-v2.1.9 的 [功能與競態修復](FUNCTIONAL_FIX_REPORT.md) 納入下列所有權規則；來源與正式回歸案例可逐項對照。
+本節定義目前的依賴方向與檢查邊界；歷史修復與版本證據由 [HISTORY](HISTORY.md) 追溯。
 
 [architecture-rules.mts](../scripts/architecture-rules.mts) 允許的匯入關係如下：
 
@@ -118,11 +118,11 @@ BR-08 進度命中使用 target.closest 的 `.bpx-player-progress-wrap, .bpx-pla
 
 `VisibilityAdapter.subscribeControlLoss(listener): () => void` 是適配器內部通知。既有可信 blur／真正 hidden guard 在 stopImmediatePropagation 前通知 `PlayerAdapter`，單一 listener 的例外不破壞原 guard。入口明確注入，取消函式由播放器控制觀察管理，reset／重新綁定清理；controls() 仍以真正可見性查詢防漏。BR-08 不變更公開 API、`PlayerControlSnapshot`、應用層介面與 schema 2，不傳遞 DOM／事件或播放器物件到應用層。
 
-`PlayerMonitor` 擁有單一停滯段。一般非尋位停滯在 6 秒提交合法 video 備援，12 秒最多一次 core reload；長 seek／可信目標未完成保持 15／30 秒，兩者重載後 15 秒沒有進度都釋放 token。一般段一旦 seeking 或 pendingSeekGoal 為真便升級、保留起點，同段不降級。Runtime 備援通知與同段 token 合併，先到的合資格 route-failure／watchdog token 可由同段接管，但不繞過 seeking 的取消規則或既有死核心 4 秒路徑。Auto 表示／網站 seek 更新撤銷舊動作、重新綁定最新請求，不重開時限／額度。新的使用者操作與真 hidden／pause／失效結束舊段。首次有效進度結束計時，Recovery 等兩個連續有效採樣才 recovered。
+`PlayerMonitor` 擁有單一停滯段、起點、政策升級與動作額度；Recovery 擁有 token、重載與還原。Runtime 只轉交合資格 video 備援；同段通知不能重開計時或額度。一般／長 seek 的資格與時點統一見 [產品契約](PROJECT_CONTEXT.md#recovery-contract)。
 
 BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean` 查詢自有 reload 所有權，不把 DOM 或核心物件交給應用層。`PlayerAdapter` 私有紀錄本次 reload 修訂、原媒體／播放器／核心、生命週期、使用者修訂與第一個替換核心，最多有界保存 15 秒；每次查詢重查身分及真正可見性。暫時空核心可等待，但舊核心在空隙後回來、第二次替換、新操作、hidden／control-loss 或 reset 撤銷所有權。還原 wrapper 與 timer 清理各自核對物件／方法所有權，不能清掉較新工作。
 
-`RecoveryController.ongoingStallReload` 提供 Monitor 唯讀資格查詢；只有同停滯 token 與合法自有 reload 才可跨過 SDK 暫時 paused／空核心，Monitor 不在此期間重建停滯或取消同一救援。首個非零替換核心須標記等於本次修訂、初始化狀態不是 false，並通過健康觀察，才可還原；不能把空核心上的舊標記當成資格。SDK 自行 seek 只更新目前目標與觀察身分，禁止舊位置還原；有效的倍速／播放意圖仍受本次 token、最新路線授權與期限限制。新的可信操作、可觀察的外部 reload 或第二次核心替換撤銷該例外；首個替換的因果觀察不能認證所有未經可觀察方法的外部替換，普通 pause 政策保持。
+`RecoveryController.ongoingStallReload` 提供 Monitor 唯讀資格查詢；只有同停滯 token 與合法自有 reload 才可跨過 SDK 暫時 paused／空核心，Monitor 不在此期間重建停滯或取消同一救援。首個非零替換核心須標記等於本次修訂、初始化狀態不是 false，並通過健康觀察，才可還原；不能把空核心上的舊標記當成資格。沒有有效目標證明時，SDK 自行 seek 只更新目前目標與觀察身分，禁止舊位置還原；有效的倍速／播放意圖仍受本次 token、最新路線授權與期限限制。新的可信操作、可觀察的外部 reload 或第二次核心替換撤銷該例外；首個替換的因果觀察不能認證所有未經可觀察方法的外部替換，普通 pause 政策保持。
 
 重載後無進度達 15 秒先完成一次失敗終止並釋放 token，不能因 adapter 自有觀察到期只留下模糊 ownership-ended。真正時間／影格進度仍須操作、媒體／核心與 seek 修訂一致；首次有效進度停止無進度重載計時，兩次連續有效採樣才 recovered，SDK 位置跳躍及保留尺寸不算進度。已還原且有首次進度時，`ongoingStallReload` 另以相同穩定所有者維持最多 15 秒的確認資格，不延長 adapter 的 pause／空核心租期，也不授予新的 seek／rate／play 或核心接納；未形成持續進度仍失敗。終止後保存失敗停滯的 userRevision／mediaId，SDK 自行 resume 不重開救援；真正進度或新的使用者／媒體所有權才可清除此抑制。跨租期確認、同步重入、晚到完成及清理由正式契約覆蓋；具體版本的執行結果及安裝證據見 TEST_REPORT。
 
@@ -136,13 +136,11 @@ BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean`
 
 長暫停後，網站核心可能忽略播放按鈕而不呼叫 SDK play。`PlayerAdapter` 同時觀察現有 SDK 方法及目前播放器區域的可信 `.bpx-player-ctrl-play` click；僅同一 paused 媒體、播放器、內容週期、真正可見且非 ended/error 才通知既有意圖。讀取前後核對控制／使用者修訂與清理狀態，事件與 DOM 不傳入應用層。
 
-`RecoveryController` 保留暫停至少 30 秒、拖曳／路線授權／政策／操作所有權／額度檢查；死核心 4 秒、其他無進度 30 秒與重載後 15 秒期限維持。正常進度不多做重載，沒有新操作不替暫停影片自行播放。每輪返回的取消函式清理自有 document 捕捉監聽器，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
+可信播放的資格與期限見 [產品契約](PROJECT_CONTEXT.md#recovery-contract)。每輪返回的取消函式清理自有 document 捕捉監聽器，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
 
 可信未完成目標由單一 PlayerControlObserver 保存，與原生觀察 targetSec 分離；RecoveryPlayerPort 的必要捕獲／驗證方法只交付有限位置與不透明證明，token 保留捕獲結果而不建立第二份目標權威。來源包括同派送鍵盤及目前 pointer 手勢；真正 0、新目標取代、播放交接、目標完成、未知變動與失效由 Observer 管理。Adapter 注入時鐘供進度合理性判斷，領域層仍只比較傳入事實。
 
 有效目標證明只允許本次 reload 修訂下第一個受認可替換核心的首個有界 SDK 初始化 seek；首個穩定播放基準關閉該窗口。等待 seeking 結束後才還原目標、倍速及播放。第二 seek／核心、外部 reload、新操作、未知原生位置或原 15 秒到期都不得延長授權。沒有證明的舊路徑保持原取消規則。此例外的自動證據與實際安裝結果分列於救援修復紀錄。
-
-來源與政策重評見 [v2.1.24 報告](BR01_POLICY_REASSESSMENT_2026-10-14.md)。有限原生位置不能保證辨識失效重設與使用者尋位；歷史 [位置遺失缺陷](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md) 的修復與分層驗證見 [v2.1.27 紀錄](BR01_RESCUE_FIX_v2.1.27.md)，不回寫歷史判定。
 
 <a name="progressive-playurl-processing-v218"></a>
 
@@ -185,7 +183,7 @@ XHR 每次 open 建立獨立 metadata，區分 opened／waiting／sent／termina
 
 XHR header 依 ByteString 在入口轉換一次，原生接受後才存字串供內部 reopen；body 的字串分支在 phase 變更前轉為 USVString，原例外保留，更正後可送出。平台品牌檢查保留跨 realm Blob／Document／FormData／URLSearchParams／ArrayBuffer／view，轉換重入後重新取得 metadata；已送出請求不重播。原生未送出的 abort 不一律變成 UNSENT，正式替身依原生對照校準。
 
-Chrome 同步選項驗證失敗可能把原生 XHR 清成 UNSENT；只有尚未送出的 waiting 請求可標記 needsNativeOpen，在 gate 釋放時重新準備，再檢查所有權與最新政策；已送出的請求絕不因此重播。以上例外安全性納入 v2.1.10，證據見 [BR-02 修復報告](BR02_FIX_REPORT.md)。
+Chrome 同步選項驗證失敗可能把原生 XHR 清成 UNSENT；只有尚未送出的 waiting 請求可標記 needsNativeOpen，在 gate 釋放時重新準備，再檢查所有權與最新政策；已送出的請求絕不因此重播。版本別例外對照由 [HISTORY](HISTORY.md) 追溯。
 
 XHR 的 response／responseText 共用同一組文字轉換及快取助手，JSON 分支也由該助手處理；助手只取得當次 metadata 與最小轉換能力。原生 getter、readyState／responseType／世代檢查與模式切換快取重置仍在 hook，status 延遲至原有診斷通知位置讀取。重入只保留當次 metadata，沒有新增 in-flight 去重或第二索引。
 
@@ -205,7 +203,7 @@ XHR 的 response／responseText 共用同一組文字轉換及快取助手，JSO
 
 `PlayerAdapter` 的私有 NativePosition 只保存一筆媒體、播放器、生命週期、有限位置及 readyState 基準。HAVE_NOTHING 的未知目標變更更新既有 targetSec／seekRevision，撤銷過期位置還原；未取得可信派送證據時不增加 userRevision。getter 返回後重查觀察版本、原基準、操作修訂、pendingSeek 及當前所有者；reset／替換清除基準，自有 reload 初始零另有來源標記。
 
-v2.1.27 的 `RecoveryPlayerPort.captureResumePosition()` 優先捕獲 Observer 仍有效且未完成的可信目標與不透明證明；沒有該目標才捕獲原有位置讀取結果。Recovery 的 stall 路徑在沒有證明時沿用該段 `targetSec`，其他路徑沿用捕獲位置及有限值回退。內部 `PlayerControlSnapshot` 新增可選 `pendingSeekGoal` 供 Monitor 選擇長 seek 政策；不是持久欄位或第二個目標所有者。
+`RecoveryPlayerPort.captureResumePosition()` 優先捕獲 Observer 仍有效且未完成的可信目標與不透明證明；沒有該目標才捕獲原有位置讀取結果。Recovery 的 stall 路徑在沒有證明時沿用該段 `targetSec`，其他路徑沿用捕獲位置及有限值回退。內部 `PlayerControlSnapshot` 新增可選 `pendingSeekGoal` 供 Monitor 選擇長 seek 政策；不是持久欄位或第二個目標所有者。
 
 `currentTime()` 在目前 video.readyState===0 時一次讀取原生位置，有限值（包含 0）優先於 SDK 快取；其他情況保留 SDK／snapshot 回退。例外回退只涵蓋該次原生 readyState／currentTime 讀取，不保證 video 選取或所有 snapshot getter 例外安全。Recovery 在保存前後及副作用前繼續核對 mediaId、coreId、seekRevision、userRevision、lifecycleSerial、路線與資格；保存值不授予新權限。
 
