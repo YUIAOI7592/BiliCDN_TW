@@ -9,6 +9,7 @@ export interface StallRecoveryIntent {
   readonly id: number
   readonly startedAt: number
   readonly targetSec: number
+  readonly reloadAfterMs?: number
   readonly valid: () => boolean
 }
 export interface RecoverySnapshot {

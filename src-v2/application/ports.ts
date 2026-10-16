@@ -28,6 +28,7 @@ export interface PlayerControlSnapshot {
   readonly userRevision: number
   readonly dragging: boolean
   readonly targetSec: number | null
+  readonly pendingSeekGoal?: boolean
   readonly reloadRevision: number
   readonly coreReloadRevision: number
 }

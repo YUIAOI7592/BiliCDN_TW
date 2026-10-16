@@ -149,6 +149,7 @@ export class PlayerControlObserver {
       userRevision: this.#userRevision,
       dragging: this.#drag !== null,
       targetSec: this.#targetSec,
+      pendingSeekGoal: !!this.#goal && !this.#goal.completed,
       reloadRevision: this.#reloadRevision,
       coreReloadRevision: this.#coreReloadRevision,
     })

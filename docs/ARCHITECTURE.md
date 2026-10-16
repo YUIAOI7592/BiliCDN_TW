@@ -118,7 +118,7 @@ BR-08 進度命中使用 target.closest 的 `.bpx-player-progress-wrap, .bpx-pla
 
 `VisibilityAdapter.subscribeControlLoss(listener): () => void` 是適配器內部通知。既有可信 blur／真正 hidden guard 在 stopImmediatePropagation 前通知 `PlayerAdapter`，單一 listener 的例外不破壞原 guard。入口明確注入，取消函式由播放器控制觀察管理，reset／重新綁定清理；controls() 仍以真正可見性查詢防漏。BR-08 不變更公開 API、`PlayerControlSnapshot`、應用層介面與 schema 2，不傳遞 DOM／事件或播放器物件到應用層。
 
-`PlayerMonitor` 擁有單一停滯段。15 秒合法 video 備援與 Runtime 通知合併同一 token；30 秒最多一次 core reload；重載後 15 秒沒有進度釋放 token。Auto 表示／網站 seek 更新撤銷舊動作、重新綁定最新請求，但不重開同段時限／額度。新的使用者操作與真 hidden／pause／失效結束舊段。首次有效進度結束計時，`RecoveryController` 等兩個連續有效採樣才 recovered。
+`PlayerMonitor` 擁有單一停滯段。一般非尋位停滯在 6 秒提交合法 video 備援，12 秒最多一次 core reload；長 seek／可信目標未完成保持 15／30 秒，兩者重載後 15 秒沒有進度都釋放 token。一般段一旦 seeking 或 pendingSeekGoal 為真便升級、保留起點，同段不降級。Runtime 備援通知與同段 token 合併，先到的合資格 route-failure／watchdog token 可由同段接管，但不繞過 seeking 的取消規則或既有死核心 4 秒路徑。Auto 表示／網站 seek 更新撤銷舊動作、重新綁定最新請求，不重開時限／額度。新的使用者操作與真 hidden／pause／失效結束舊段。首次有效進度結束計時，Recovery 等兩個連續有效採樣才 recovered。
 
 BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean` 查詢自有 reload 所有權，不把 DOM 或核心物件交給應用層。`PlayerAdapter` 私有紀錄本次 reload 修訂、原媒體／播放器／核心、生命週期、使用者修訂與第一個替換核心，最多有界保存 15 秒；每次查詢重查身分及真正可見性。暫時空核心可等待，但舊核心在空隙後回來、第二次替換、新操作、hidden／control-loss 或 reset 撤銷所有權。還原 wrapper 與 timer 清理各自核對物件／方法所有權，不能清掉較新工作。
 
@@ -126,7 +126,7 @@ BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean`
 
 重載後無進度達 15 秒先完成一次失敗終止並釋放 token，不能因 adapter 自有觀察到期只留下模糊 ownership-ended。真正時間／影格進度仍須操作、媒體／核心與 seek 修訂一致；首次有效進度停止無進度重載計時，兩次連續有效採樣才 recovered，SDK 位置跳躍及保留尺寸不算進度。已還原且有首次進度時，`ongoingStallReload` 另以相同穩定所有者維持最多 15 秒的確認資格，不延長 adapter 的 pause／空核心租期，也不授予新的 seek／rate／play 或核心接納；未形成持續進度仍失敗。終止後保存失敗停滯的 userRevision／mediaId，SDK 自行 resume 不重開救援；真正進度或新的使用者／媒體所有權才可清除此抑制。跨租期確認、同步重入、晚到完成及清理由正式契約覆蓋；具體版本的執行結果及安裝證據見 TEST_REPORT。
 
-停滯、舊 watchdog、冷起播三個監控救援入口皆排除 dragging，拖曳期間清除舊停滯及 watchdog 連續計數，不消耗一次性起播救援嘗試。一般停滯在釋放後第一個合資格 tick 從最新位置建立新 15／30 秒基準；冷起播仍按原 firstMediaAt 重評，可能立即救援，不新增全域釋放寬限或重開起播預算。
+停滯、舊 watchdog、冷起播三個監控救援入口皆排除 dragging，拖曳期間清除舊停滯及 watchdog 連續計數，不消耗一次性起播救援嘗試。釋放後第一個合資格 tick 從最新位置建立新基準：仍在 seeking 或有未完成可信目標使用 15／30 秒，其餘 6／12 秒。冷起播仍按原 firstMediaAt 重評，可能立即救援，不新增全域釋放寬限或重開起播預算。
 
 `RouteCoordinator.recoveryEligible` 為唯讀查詢：核對請求 generation／epoch／政策／授權修訂、Vault video 身分、身分綁定計畫、固定主機及現行限制。`RecoveryController` 建立 token 前讀取控制基準，位置／倍速各讀取一次，收集後重新取 controls 與最新資格，再核對生命週期、媒體／核心／seek／使用者修訂、現有 token、breaker 及總額；拖曳不得建立恢復意圖。reload 及 seek／rate／play 每個副作用前仍重查捕獲資格與所有權；重載替換只接納標記相符的自有替換。已初始化核心的普通等待亦有 30 秒上限，既有死核心／冷起播 4 秒及長暫停觸發維持。
 

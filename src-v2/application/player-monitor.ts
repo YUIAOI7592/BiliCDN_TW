@@ -13,6 +13,7 @@ interface StallEpisode {
   readonly userRevision: number
   readonly mediaId: number
   targetSec: number
+  longSeek: boolean
   seekRevision: number
   request: ReturnType<MonitorRoutes['latestRequested']>
   fallbackAttempted: boolean
@@ -262,7 +263,10 @@ export class PlayerMonitor implements MonitorPort {
       !controls.dragging
     if (!active) this.#endStall()
     else if (progress) this.#endStall(true)
-    else if (!ownedReload && (this.#startupObservedProgress || video.seeking))
+    else if (
+      !ownedReload &&
+      (this.#startupObservedProgress || video.seeking || controls.pendingSeekGoal)
+    )
       this.#observeStall(video, controls, now)
     if (!disabled && !originalMode && !recoveryTicked) this.recovery.tick(video)
     if (this.#stall?.armed && !this.recovery.isRecovering()) this.#stall.finished = true
@@ -277,6 +281,7 @@ export class PlayerMonitor implements MonitorPort {
     advanced: boolean,
     ownedReload: boolean,
   ): MonitorSnapshot['watchdog'] {
+    const fallbackAfter = this.#stall?.longSeek === false ? 6000 : 15_000
     let watchdog: MonitorSnapshot['watchdog'] = 'healthy'
     if (!video.available) {
       watchdog = 'no-video'
@@ -293,10 +298,10 @@ export class PlayerMonitor implements MonitorPort {
     } else if (video.paused || video.ended) {
       watchdog = 'paused'
       this.#stallTicks = 0
-    } else if (video.seeking && (!this.#stall || now - this.#stall.startedAt < 15_000)) {
+    } else if (video.seeking && (!this.#stall || now - this.#stall.startedAt < fallbackAfter)) {
       watchdog = 'seek-grace'
       this.#stallTicks = 0
-    } else if (this.#stall && now - this.#stall.startedAt >= 15_000) {
+    } else if (this.#stall && now - this.#stall.startedAt >= fallbackAfter) {
       watchdog = 'recovering'
       this.#stallTicks = Math.floor((now - this.#stall.startedAt) / 1000)
     } else if (video.bufferedToEnd) {
@@ -412,15 +417,36 @@ export class PlayerMonitor implements MonitorPort {
         mediaId: controls.mediaId,
         seekRevision: controls.seekRevision,
         targetSec: video.currentTime,
+        longSeek: video.seeking || controls.pendingSeekGoal === true,
         request: requested,
-        fallbackAttempted: false,
+        fallbackAttempted:
+          this.recovery.isRecovering() &&
+          ['route-failure', 'watchdog'].includes(this.recovery.snapshot().source ?? ''),
         armed: false,
         finished: false,
         progressEnded: false,
         reloadCount: this.recovery.snapshot().reloadCount,
       }
     const stall = this.#stall
+    const routeIntent =
+      this.recovery.isRecovering() &&
+      ['route-failure', 'watchdog'].includes(this.recovery.snapshot().source ?? '')
+    if (routeIntent) stall.fallbackAttempted = true
+    const deadCore =
+      video.readyState === 0 &&
+      video.width === 0 &&
+      video.height === 0 &&
+      video.coreInitialized === false &&
+      video.manifestHasVideo
+    const joinRouteIntent = routeIntent && !video.seeking && !deadCore
     if (this.recovery.snapshot().reloadCount > stall.reloadCount) stall.finished = true
+    if (!stall.longSeek && (video.seeking || controls.pendingSeekGoal)) {
+      stall.longSeek = true
+      if (stall.armed) {
+        this.recovery.cancelStall(stall.id)
+        stall.armed = false
+      }
+    }
     const rebound =
       stall.seekRevision !== controls.seekRevision ||
       stall.request?.representation !== requested?.representation ||
@@ -435,7 +461,13 @@ export class PlayerMonitor implements MonitorPort {
       stall.targetSec = video.currentTime
     }
     if (video.seeking) stall.targetSec = video.currentTime
-    if (now - stall.startedAt < 15_000 || stall.finished || stall.armed) return
+    const fallbackAfter = stall.longSeek ? 15_000 : 6000
+    if (
+      (now - stall.startedAt < fallbackAfter && !joinRouteIntent) ||
+      stall.finished ||
+      stall.armed
+    )
+      return
     if (
       !requested?.representation ||
       requested.generation !== state.generation ||
@@ -480,6 +512,7 @@ export class PlayerMonitor implements MonitorPort {
       id: stall.id,
       startedAt: stall.startedAt,
       targetSec: stall.targetSec,
+      reloadAfterMs: stall.longSeek ? 30_000 : 12_000,
       valid,
     })
     if (!stall.fallbackAttempted) {

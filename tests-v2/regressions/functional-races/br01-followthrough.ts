@@ -709,14 +709,14 @@ test('BR-01 late SDK ownership: resume after terminal reload failure does not cr
   assert.equal(f.recovery.isRecovering(), false)
 })
 
-test('BR-01 late SDK ownership control: a fresh user operation may start a new bounded stall after failure', (t) => {
+test('BR-01 late SDK ownership control: a fresh user operation starts a new six-second ordinary stall after failure', (t) => {
   const f = fixture(t)
   f.ticks(30)
   f.ticks(15)
   f.userPause()
   f.lateSdkResume()
   f.monitor.tick()
-  f.ticks(14)
+  f.ticks(5)
   assert.equal(f.effects.fallbacks, 1)
   f.ticks(1)
   assert.equal(f.effects.fallbacks, 2)

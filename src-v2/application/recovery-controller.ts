@@ -21,8 +21,8 @@ interface ResumeToken {
   reloadRevision: number | null
   restorePosition: boolean
   controls: PlayerControlSnapshot
-  readonly valid: () => boolean
-  readonly stall: StallRecoveryIntent | null
+  valid: () => boolean
+  stall: StallRecoveryIntent | null
   firstProgressAt: number | null
   readonly initiallyPaused: boolean
 }
@@ -143,6 +143,34 @@ export class RecoveryController implements RecoveryPort {
 
   armStall(snapshot: VideoSnapshot, intent: StallRecoveryIntent): void {
     if (this.#token?.stall?.id === intent.id) return
+    const token = this.#token
+    if (
+      token &&
+      !token.stall &&
+      ['route-failure', 'watchdog'].includes(token.source) &&
+      snapshot.readyState === 0 &&
+      snapshot.width === 0 &&
+      snapshot.height === 0 &&
+      snapshot.coreInitialized === false &&
+      snapshot.manifestHasVideo &&
+      this.#owns(token, this.player.controls())
+    )
+      return
+    if (
+      token &&
+      !token.stall &&
+      !snapshot.seeking &&
+      ['route-failure', 'watchdog'].includes(token.source) &&
+      intent.valid() &&
+      this.#owns(token, this.player.controls()) &&
+      this.#token === token
+    ) {
+      const previousValid = token.valid
+      token.stall = intent
+      token.valid = () => previousValid() && intent.valid()
+      return
+    }
+    if (this.#token !== token) return
     if (this.#token) this.#finish('failed', 'superseded-by-stall')
     if (!intent.valid() || snapshot.paused || snapshot.ended || snapshot.mediaError) return
     this.#begin('stall', true, intent.valid, intent)
@@ -386,7 +414,7 @@ export class RecoveryController implements RecoveryPort {
     if (
       !token.reloadingAt &&
       (token.stall
-        ? now - token.stall.startedAt >= 30_000
+        ? now - token.stall.startedAt >= (token.stall.reloadAfterMs ?? 30_000)
         : ((dead || startupStalled) && now - token.startedAt >= 4000) ||
           now - token.startedAt >= 30_000)
     )
