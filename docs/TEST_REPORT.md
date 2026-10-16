@@ -12,8 +12,9 @@
 | Codex Security | 固定 ccf947a..97d598b，27／27 正式項目、0 候選／0 發現、coverage complete，無延期；已封存 |
 | IAB 來源 S | 最終97d598b，I-P01／02／03／I-R03 × 1／2 倍，共8／8；真實可信鍵盤／按鈕，自有媒體／SDK／FakeClock，無正式 GM |
 | 來源證據重播 | 私有嚴格型別、node:test 8／8，退出0，與正式1134分開；首輪 blur FAIL 及中間產物保留 |
-| 公開交付 | 本地 v2.1.27 382934 bytes，SHA-256 1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795；推送／標籤／唯一附件及公開 latest 核對待發布後記錄 |
-| 實際安裝 I | 尚未執行 v2.1.27；發布後僅指定影片 Auto1／2 倍正常操作、短 seek、倍速及控制中心；不把來源救援算成安裝故障救援通過 |
+| 公開交付 | v2.1.27 已發布；main／peeled tag 523a093、唯一腳本附件與公開 latest 全文一致，382934 bytes，SHA-256 1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795；後續安裝文件另提交 main |
+| 實際安裝 I | Tampermonkey 5.5.1、完整 v2.1.27 本體、Runtime／ControlCenter 各1、Fetch／XHR hooks；指定影片 Auto1／2 倍正常操作及各15秒播放通過；控制中心視圖／關閉通過，入口與返回限制分列 |
+| 安裝證據重播 | 私有 node:test 6／6、退出0，含正常播放、有效 UI 序列、清理及「限制不可轉算通過」紀錄核對；不把6項說成6個產品功能通過 |
 
 工具保持 Node26.8.1／npm11.19.0／TypeScript7.0.2／esbuild0.28.2／Prettier3.9.10，無新增依賴、設定、持久欄位、CI/CD 或執行期載入。99個執行期模組，狀態與副作用所有者不變。
 
@@ -48,3 +49,17 @@ scan 6cd20a95-d167-4f23-8f59-2856849ee830，固定 ccf947a0d70086247691cb7cb8da1
 必要自動、安全及來源通過後統一封裝，GitHub只發布BiliCDN_TW.user.js。發布後先嘗試公開latest入口，再核對Tampermonkey、完整本體、singleton及hooks；當次入口實際受阻才請必要手動更新。v2.1.26完整正文及調查補記已原樣追加至 [歷史報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2126-release-verification--2026-10-16)，既有Release／安全封存不回寫。
 
 本輪沒有自然故障起因調查或安裝故障注入；正常安裝回歸通過也不代表這些項目通過。後續發布／安裝實測只追加main現行報告，不回寫已發布快照。
+
+## 發布後實際安裝與限制
+
+2026-10-16T22:36:22Z 正式發布 [v2.1.27](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.27)。公開 Release 僅 BiliCDN_TW.user.js；GitHub 附件 digest、無憑證公開 latest 全文與本地封裝一致。標籤 peeled commit 523a093744dd81beaee07a739173b3fd6b0342ea；main 後續只增加安裝／文件紀錄，標籤及封裝不回寫。第一個發行 Git 操作因自動批准審查未在期限內完成而未執行，工具允許的一次重試成功；該等待間隔不稱為 Git 執行耗時。
+
+公開更新入口當次停在 Tampermonkey 中繼頁，完整本體仍等於 v2.1.26；使用者確認更新後才取得有效新文件。完整可執行 IIFE（不含 metadata／管理器外包裝）380977 bytes，SHA-256 c97b1e15c57f43f2db7ccd2434d3dc8490badae6040eae465b71155865d16188，與封裝同段一致。管理器5.5.1、版本2.1.27、Runtime／ControlCenter 各1、Fetch／XHR installed 均通過；hooks 是腳本觀察，不當作 Chrome Network 目的地確認。
+
+Auto1倍：15.0104秒內影片時間+15.011336秒、影格+899；Auto2倍：15.0096秒內時間+30.018192秒、影格+1800。兩窗分別完成暫停／恢復、Right短seek，16個樣本均保持同一媒體、Auto及指定倍速，非seeking／paused／error／ended，逐段時間與影格前進，reloadCount為0。瀏覽器時間僅作正常播放觀察，精確救援毫秒期限仍由FakeClock契約判定。
+
+控制中心入口被網站設定覆蓋層擋住，原生Enter／空白鍵未開啟；工具也不能點擊closed Shadow DOM。自動批准審查拒絕直接呼叫show，使用者明確批准「僅開啟既有控制中心」後才執行，未重建控制器或修改設定。概覽、原生Tab／Enter進入設定及診斷、Escape關閉通過；有效設定導覽序列的userRevision14／seekRevision6保持不變，設定內容雜湊前後相同。診斷21865字元、readonly、版本2.1.27、無原始URL。跨呼叫後返回鍵盤序列焦點未確立，未算通過；入口點擊、返回及剪貼簿寫入不宣稱通過，也沒有重開其歷史矩陣。
+
+第一筆UI觀察誤用不存在的ControlCenter.deps.player，CDP返回例外，該筆作廢；改由Runtime.player讀取並嚴格檢查exceptionDetails／Error／實際value後，以單一有界序列重驗，才採用上列修訂／設定結果。原始限制與工具錯誤保存在INSTALLED-NORMAL.json，不以undefined相等當作通過。
+
+控制中心關閉、恢復原2倍與播放後關閉自有分頁；Debugger／斷點解除、5個遠端物件參照釋放。自有held／patterns／請求／timer／listener／subscription／wrapper及分頁皆0，來源服務已停止；未安裝故障攔截或受控學習。INSTALLED-IDENTITY／NORMAL、PUBLIC-RELEASE／VERIFICATION、BROWSER-REPLAY及DELIVERY-AUDIT.json與截圖保存於本輪私有目錄。來源重播8／8與安裝重播6／6各自判定，均不改正式1134數量。

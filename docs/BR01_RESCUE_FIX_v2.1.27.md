@@ -44,3 +44,11 @@ Codex Security scan 6cd20a95-d167-4f23-8f59-2856849ee830 固定 ccf947a..97d598b
 - FORMAL-CASES.json 保存 1134 個具名案例 ID、套件、來源 SHA-256、狀態與退出碼；FORMAL-OUTCOME.json 保存完整逐案結果。SOURCE-REPLAY.json 為八個真實來源結果重播，與正式數量分列。
 
 舊 r1／r2 原始 FAIL、批准等待更正與自然起因未定位保留；本輪不再調查自然起因、不開安裝故障窗口，不宣稱歷史整份矩陣已通過。
+
+## 正式交付及有限安裝回歸
+
+v2.1.27於2026-10-16T22:36:22Z正式發布，main／peeled標籤523a093、唯一腳本及公開latest全文一致：382934 bytes，SHA-256 1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795。公開入口當次受阻、舊本體仍為v2.1.26，使用者完成必要更新後才採用新窗口；完整IIFE380977 bytes／c97b1e15c57f43f2db7ccd2434d3dc8490badae6040eae465b71155865d16188、Tampermonkey5.5.1、Runtime／ControlCenter各1、Fetch／XHR hooks通過。
+
+指定影片Auto1／2倍各暫停／恢復、短seek與15秒正常播放通過，reloadCount均0；持續播放觀察分別取得時間+15.011336／+30.018192秒、影格+899／+1800。控制中心入口受網站覆蓋／鍵盤行為阻擋，直接show先被自動批准審查拒絕，使用者明確授權後才開啟既有介面。原生Tab／Enter可進設定／唯讀診斷，Escape關閉；有效序列設定及使用者／seek修訂未變。入口點擊與返回導覽未算通過，closed Shadow DOM點擊能力、首筆無效UI觀察及修正後結果完整分列於TEST_REPORT。
+
+來源8／8與安裝證據重播6／6均經私有嚴格型別與node:test執行；其中限制紀錄核對不算產品功能通過。恢復原2倍／播放、關閉控制中心及自有分頁，清理斷點／Debugger／5個遠端參照，自有攔截／timer／listener／subscription／wrapper為0。本輪依範圍收束，無自主續測；安裝版故障救援仍未實測，自然起因與歷史矩陣不動。

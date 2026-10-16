@@ -2,7 +2,7 @@
 
 更新：2026-10-17。現行版本 **v2.1.27**，依 [release.json](../release.json)、[package.json](../package.json)、[package-lock.json](../package-lock.json) 與 [src-v2](../src-v2/entry.ts) 核對。
 
-目前工作與啟動狀態見 [TODO](TODO.md)，最新 [BR-01 救援修復](BR01_RESCUE_FIX_v2.1.27.md) 完成可信目標保護與一般停滯加速；正式 1134 案、安全差異與自有來源八案通過。公開發布及正常安裝以 [TEST_REPORT](TEST_REPORT.md) 的當前結果為準，不宣稱本輪未執行的安裝故障救援通過。
+目前工作與啟動狀態見 [TODO](TODO.md)，最新 [BR-01 救援修復](BR01_RESCUE_FIX_v2.1.27.md) 已發布：正式 1134 案、安全差異、自有來源八案與公開校驗通過。安裝版新本體／唯一實例／hooks、Auto1／2倍正常操作及15秒播放通過；控制中心視圖／關閉通過，入口及返回限制見 [TEST_REPORT](TEST_REPORT.md)。清理完成、沒有自主續測項目，不宣稱本輪未執行的安裝故障救援通過。
 
 v2.1.26 完整驗證正文與發布後調查補記已追加原樣保存於歷史；第一輪批准等待更正、第二輪 FAIL 與隔離限制、既有 Release 及安全封存不回寫。自然起因暫緩，歷史矩陣不重開。
 
@@ -48,7 +48,7 @@ v2.1.26 完整驗證正文與發布後調查補記已追加原樣保存於歷史
 
 | 版本／範圍 | 修復與調查 | 實際安裝／階段紀錄 |
 | --- | --- | --- |
-| v2.1.27 | [位置與救援修復](BR01_RESCUE_FIX_v2.1.27.md)、[最新版完整驗證](TEST_REPORT.md) | 三階段正式驗證、安全與來源通過；發布及正常安裝分列，安裝故障救援未實測 |
+| v2.1.27 | [位置與救援修復](BR01_RESCUE_FIX_v2.1.27.md)、[最新版完整驗證](TEST_REPORT.md) | 已發布；正式／安全／來源／公開校驗及正常安裝通過，控制中心入口／返回限制分列；安裝故障救援未實測 |
 | v2.1.26／ccf947a BR-01 第二輪 | [完整自然窗口、逐案判定與修復規格](BR01_RCA_R2_2026-10-16.md) | 369 案、7 真實失敗；來源 4 pass／2 fail；自然起因未定位，受控 2 倍未完整通過，首次 1 倍隔離缺口保留；工具資源已清理 |
 | v2.1.26／ccf947a BR-01 第一輪 | [第一輪與批准時間更正](BR01_RCA_2026-10-16.md) | 原 298 案及觀察保留；撤回 18 小時執行超時判定，不以新輪補填舊結果 |
 | v2.1.26 | [四階段收斂](CONVERGENCE_v2.1.26_REPORT.md)、[完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2126-release-verification--2026-10-16) | 已發布；自動／安全／來源／公開校驗、完整本體／唯一實例及 Auto 1／2 倍正常安裝／控制中心通過，BR-01 與歷史矩陣不動 |
@@ -71,7 +71,7 @@ v2.1.26 完整驗證正文與發布後調查補記已追加原樣保存於歷史
 | v2.1.9 | [17 項功能與競態修復](FUNCTIONAL_FIX_REPORT.md)、[BR-02 原調查](CHROME_v2.1.9_BR02_XHR_FAILED_OPEN.md) | [安裝紀錄](CHROME_v2.1.9_ACCEPTANCE.md) |
 
 - [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md)：固定入口換版時保存的完整正文。
-- [v2.1.27 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.27) 與 Release/v2.1.27：本輪封裝；當前公開／安裝狀態見 TEST_REPORT。
+- [v2.1.27 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.27) 與 [Release/v2.1.27](../Release/v2.1.27/)：目前正式版本，公開附件只有使用者腳本；安裝後文件另提交main，快照不回寫。
 - [v2.1.26 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.26) 與 [Release/v2.1.26](../Release/v2.1.26/)：前版不可變快照，公開附件只有使用者腳本；發布後安裝文件不回寫快照。
 - [v2.1.25 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.25) 與 [Release/v2.1.25](../Release/v2.1.25/)：上一版不可變快照，公開附件只有使用者腳本；最新版發布狀態見 TEST_REPORT。
 - [v2.1.24 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.24) 與 [Release/v2.1.24](../Release/v2.1.24/)：歷史產物及不可回寫快照。

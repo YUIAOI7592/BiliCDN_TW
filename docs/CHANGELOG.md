@@ -9,6 +9,7 @@
 - 一般停滯改 6／12／15 秒，長 seek／未完成目標保留 15／30／15；同段升級保留起點、通知合併不重開額度，既有死核心 4 秒、長暫停 30 秒、生命週期兩次／90 秒冷卻維持。
 - 補還原後進度基準、同步失效的 play Promise 拒絕處理及子元素 blur 邊界；新增 204 案，正式 1134／1134，安全差異 27 項 0 發現，IAB 自有來源 8／8。工具版本、設定、schema、依賴與執行期載入不變。
 - [修復與驗收](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_RESCUE_FIX_v2.1.27.md)、[完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 分列發布及實際安裝；自然起因暫緩、歷史 FAIL 與矩陣不回寫，本輪未實測安裝故障救援。
+- 已正式發布並核對main／標籤、唯一附件及公開latest全文。使用者完成更新後，完整新本體／singleton／hooks、Auto1／2倍正常操作及15秒播放通過；控制中心依明確授權開啟後視圖／關閉通過，入口／返回限制保留。後續僅現行文件提交main，標籤／封裝不回寫。
 
 ## v2.1.26
 
