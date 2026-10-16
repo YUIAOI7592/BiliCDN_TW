@@ -2,9 +2,9 @@
 
 更新：2026-10-16。現行版本 **v2.1.26**，依 [release.json](../release.json)、[package.json](../package.json)、[package-lock.json](../package-lock.json) 與 [src-v2](../src-v2/entry.ts) 核對。
 
-目前工作與啟動狀態見 [TODO](TODO.md)，已取得證據見 [TEST_REPORT](TEST_REPORT.md)。四階段收斂正式 930／930、新固定安全差異、IAB 合成來源、公開發布校驗及新版 Auto 1／2 倍正常安裝／控制中心範圍通過並結案。v2.1.24 的位置調查 1 fail／2 pass 保留，**BR-01 整體不通過、位置遺失尚未修復**。歷史故障矩陣不恢復。
+目前工作與啟動狀態見 [TODO](TODO.md)，已取得證據見 [TEST_REPORT](TEST_REPORT.md)。四階段收斂與新版有限正常安裝維持原判定。最新 [BR-01 第二輪調查](BR01_RCA_R2_2026-10-16.md) 交付 369 個私有案例（362 pass／7 fail、退出 1）、來源六案、Auto 1／2 倍各 20 分鐘自然窗口與修復規格。自然起因仍未定位，受控限制分列；第一輪把批准等待算成執行超時的判斷已撤回。**BR-01 整體不通過、位置遺失尚未修復**；歷史矩陣原判定保留。
 
-2026-10-16 使用者批准的 [v2.1.26 四階段收斂](CONVERGENCE_v2.1.26_REPORT.md) 已完成，沒有自主續測項目。v2.1.25 完整報告已原樣保存於歷史；既有 Release 與安全封存不回寫。
+2026-10-16 使用者批准的 [v2.1.26 四階段收斂](CONVERGENCE_v2.1.26_REPORT.md) 已完成。後續 BR-01 本輪僅調查，未修改產品、正式 registry 或發布，清理完成，沒有自主續測項目。v2.1.25 完整報告已原樣保存於歷史；既有 Release 與安全封存不回寫。
 
 閱讀順序：
 
@@ -48,6 +48,8 @@
 
 | 版本／範圍 | 修復與調查 | 實際安裝／階段紀錄 |
 | --- | --- | --- |
+| v2.1.26／ccf947a BR-01 第二輪 | [完整自然窗口、逐案判定與修復規格](BR01_RCA_R2_2026-10-16.md) | 369 案、7 真實失敗；來源 4 pass／2 fail；自然起因未定位，受控 2 倍未完整通過，首次 1 倍隔離缺口保留；工具資源已清理 |
+| v2.1.26／ccf947a BR-01 第一輪 | [第一輪與批准時間更正](BR01_RCA_2026-10-16.md) | 原 298 案及觀察保留；撤回 18 小時執行超時判定，不以新輪補填舊結果 |
 | v2.1.26 | [四階段收斂](CONVERGENCE_v2.1.26_REPORT.md)、[最新版完整驗證](TEST_REPORT.md) | 已發布；自動／安全／來源／公開校驗、完整本體／唯一實例及 Auto 1／2 倍正常安裝／控制中心通過，BR-01 與歷史矩陣不動 |
 | v2.1.25 | [模組化與標準化](MODULARIZATION_v2.1.25_REPORT.md)、[完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2125-release-verification--2026-10-14) | 已發布；完整執行本體／唯一實例、Auto 1／2 倍正常回歸及控制中心通過；BR-01 位置缺陷仍未修復 |
 | v2.1.24 | [政策重評與播放意圖入口](BR01_POLICY_REASSESSMENT_2026-10-14.md)、[完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2124-release-verification--2026-10-14) | [新位置缺陷](BR01_v2.1.24_POSITION_LOSS_2026-10-14.md)：正常入口通過、整體不通過 |

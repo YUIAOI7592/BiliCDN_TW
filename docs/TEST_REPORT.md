@@ -1,5 +1,7 @@
 # BiliCDN_TW v2.1.26 四階段模組收斂驗證
 
+**2026-10-16 發布後 BR-01 調查補記（ccf947a，產品未變）：** 第一輪含批准等待的 65127.7786 秒不得判執行超時，原判斷已撤回。第二輪私有 369 案為 362 pass／7 fail、退出 1；產品單元 195／195、整合 26／4、工具／判定器 127／127、證據重播 14／3。來源六案 4 pass／2 fail，Auto 1／2 倍各完成 20 分鐘自然窗口，起因仍未定位；受控 1 倍僅傳輸／清理通過，2 倍未完整通過，首次 1 倍隔離缺口保留。工具資源已清理，BR-01 未修復。詳見 [第二輪根因與修復規格](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_RCA_R2_2026-10-16.md)、[第一輪更正](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_RCA_2026-10-16.md)。正式 930 案基準沿用同一來源，調查不併入正式案例；下方原發布正文及 Release 快照不回寫。
+
 <a name="bilicdn_tw-v2126-release-verification--2026-10-16"></a>
 
 日期：2026-10-16（Asia/Taipei）。乾淨基準 a716369／v2.1.25，唯一正式來源 src-v2。四階段提交 93074b7（契約／視圖）、91507a2（XHR）、fdb59ae（選路）、8242e8f（播放器／恢復）後才統一升版。保持對外介面、設定、儲存 schema、事件順序、期限及狀態所有權。[完整實作](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CONVERGENCE_v2.1.26_REPORT.md)。
