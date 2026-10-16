@@ -15,3 +15,5 @@ esbuild 0.28.2：Evan Wallace，MIT。只用於本機建置與測試打包；esb
 Node.js 26.8.1 的內建 `node:test`、斷言及報告產生器 API 用於本機測試，不新增測試框架或執行期依賴；介面依據 [該版官方文件](https://nodejs.org/download/release/v26.8.1/docs/api/test.html)。
 
 Prettier 3.9.10：Prettier 貢獻者，MIT。只作本機來源、測試、工具與維護設定格式化及唯讀檢查，不進入使用者腳本；精確版本由 package.json 與依賴鎖定檔固定。授權來源為 node_modules/prettier/LICENSE，工具說明見 [官方文件](https://prettier.io/docs/)；不加入 ESLint 或執行期依賴。
+
+文件檢查開發依賴：unified 11.0.5、remark-parse 11.0.0、remark-gfm 4.0.1（MIT），markdownlint 0.41.1（MIT），github-slugger 2.0.0（ISC）。只供本機唯讀 GFM、格式、連結與錨點檢查；不進入使用者腳本，不在執行檢查時連網。直接及間接解析版本、授權與完整性由 package-lock.json 及安裝後各套件的 package.json／license 檔核對。

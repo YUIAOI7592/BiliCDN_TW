@@ -4,6 +4,7 @@ import { build } from './build.mts'
 import { runTests } from './test.mts'
 import { typecheck } from './typecheck.mts'
 import { formatProject } from './format.mts'
+import { checkDocumentation } from './docs-check.mts'
 import { packageRelease } from './package.mts'
 import { command, readRelease, sha256 } from './lib.mts'
 
@@ -12,6 +13,16 @@ export async function verify() {
   if (process.versions.node !== config.nodeVersion)
     throw Error(`Expected Node ${config.nodeVersion}; found ${process.versions.node}`)
   await formatProject(true)
+  const documentation = await checkDocumentation()
+  if (!documentation.success)
+    throw Error(
+      documentation.findings
+        .map((item) => `${item.file}:${item.line} [${item.rule}] ${item.message}`)
+        .join('\n'),
+    )
+  console.log(
+    `Documentation passed; ${documentation.legacyLinks.length} immutable broken links retained, ${documentation.externalLinksNotFetched} external links not fetched.`,
+  )
   typecheck()
   command(process.execPath, ['scripts/architecture-check.mts'])
   await runTests()

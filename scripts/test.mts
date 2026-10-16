@@ -227,12 +227,18 @@ export async function executeSuites(
             {
               name: 'tool-packages',
               setup(build) {
-                build.onResolve({ filter: /^(esbuild|typescript|prettier)(\/|$)/ }, (args) => ({
-                  path: args.path.startsWith('prettier')
-                    ? import.meta.resolve(args.path)
-                    : pathToFileURL(require.resolve(args.path)).href,
-                  external: true,
-                }))
+                build.onResolve(
+                  {
+                    filter:
+                      /^(esbuild|typescript|prettier|unified|remark-parse|remark-gfm|github-slugger|markdownlint)(\/|$)/,
+                  },
+                  (args) => ({
+                    path: /^(esbuild|typescript)(\/|$)/.test(args.path)
+                      ? pathToFileURL(require.resolve(args.path)).href
+                      : import.meta.resolve(args.path),
+                    external: true,
+                  }),
+                )
               },
             },
           ],

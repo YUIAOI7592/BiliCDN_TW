@@ -14,6 +14,7 @@ import { testScope } from './support/scope.ts'
 import { FakeClock } from './support/clock.ts'
 import { deferred } from './support/deferred.ts'
 import './regressions/iab-event-collector.ts'
+import './regressions/documentation.ts'
 
 test('formatting reaches a stable source before the next check', { timeout: 5000 }, async () => {
   const source =

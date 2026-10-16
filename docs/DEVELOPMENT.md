@@ -59,6 +59,7 @@
 npm run typecheck     # 嚴格 TypeScript 檢查，不輸出檔案
 npm run architecture  # 原始碼 AST 依賴圖及列出的所有權語法規則
 npm run format:check  # 唯讀檢查正式來源、測試、工具與維護設定格式
+npm run docs:check    # 離線唯讀檢查文件、權威清單、連結及保護基準
 npm run format        # 格式化上述維護範圍；代理修改仍按 AGENTS 使用 apply_patch
 npm test              # 全部獨立契約套件，以及架構／匯入純度測試
 npm test -- adapters  # 單一隔離套件
@@ -76,6 +77,8 @@ npm run verify        # 自動檢查及暫存封裝驗證
 [verify.mts](../scripts/verify.mts) 檢查設定的 Node 版本、唯讀格式、typecheck、來源架構、全部測試、兩次建置的輸出／資訊清單一致性、JavaScript 語法、指定舊版／Worker 標記清單、必要儲存標記及封裝 SHA-256。封裝步驟會再建置一次。命令寫入 `dist/`，於新的 `dist/verify-package-*` 目錄封裝，確認解析後位置及前綴再刪除該目錄；不寫入 `Release/v<version>/`。
 
 verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安全敏感變更或使用者明確要求時，另行執行安全差異掃描；不要求每版掃描。上一版通過報告不能作為新本機變更的證據。
+
+`docs:check` 已納入 `verify`，以鎖定的 GFM 解析／格式及標題錨點套件執行，不讀取私有 .work 工具。預設輸出檔案、行號、規則及原因；`npm run docs:check -- --json` 輸出 schemaVersion 1 結果，包含 findings、legacyLinks 及未連線的外部連結數。退出碼 0／1／2 分別代表通過、檢查失敗、非法參數。不可變歷史斷鏈分開列出，不宣稱全部連結零錯誤。
 
 ### 原始碼格式與靜態規則
 

@@ -15,12 +15,18 @@
     "verify": "node scripts/verify.mts",
     "package": "node scripts/package.mts",
     "format": "node scripts/format.mts",
-    "format:check": "node scripts/format.mts --check"
+    "format:check": "node scripts/format.mts --check",
+    "docs:check": "node scripts/docs-check.mts"
   },
   "devDependencies": {
     "@types/node": "26.6.4",
     "esbuild": "0.28.2",
     "prettier": "3.9.10",
+    "unified": "11.0.5",
+    "remark-parse": "11.0.0",
+    "remark-gfm": "4.0.1",
+    "markdownlint": "0.41.1",
+    "github-slugger": "2.0.0",
     "typescript": "7.0.2"
   }
 }
