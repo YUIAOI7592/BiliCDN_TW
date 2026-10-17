@@ -54,6 +54,7 @@ export interface DocumentationManifest {
   versionFields: { path: string; pattern: string }[]
   protections: Protection[]
   immutableLinkExceptions: LinkException[]
+  privateEvidenceReferences: LinkException[]
 }
 export interface DocumentationFinding {
   file: string
@@ -70,6 +71,7 @@ export interface DocumentationResult {
   protectedFiles: number
   findings: DocumentationFinding[]
   legacyLinks: LinkException[]
+  privateEvidenceNotChecked: LinkException[]
 }
 const kinds = [
   'guide',
@@ -171,6 +173,13 @@ export function parseDocumentationManifest(value: unknown): DocumentationManifes
       sha256: sha(row.sha256),
       reason: string(row.reason),
     })),
+    privateEvidenceReferences: rows(raw.privateEvidenceReferences ?? []).map((row) => ({
+      source: localPath(row.source),
+      line: integer(row.line),
+      url: string(row.url),
+      sha256: sha(row.sha256),
+      reason: string(row.reason),
+    })),
   }
 }
 function descendants(node: MarkdownNode): MarkdownNode[] {
@@ -243,6 +252,7 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
     protectedFiles: 0,
     findings: [],
     legacyLinks: [],
+    privateEvidenceNotChecked: [],
   }
   const add = (file: string, rule: string, message: string, line = 1) =>
     result.findings.push({ file, line, rule, message })
@@ -340,6 +350,7 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
     if (['immutable', 'record', 'journal'].includes(entry.kind) && !protectedPaths.has(entry.path))
       add(entry.path, 'preservation', 'Historical document has no preservation baseline')
   const exceptionMatches = new Set<number>()
+  const evidenceMatches = new Set<number>()
   for (const [file, tree] of trees) {
     const references = descendants(tree).filter((node) =>
       ['link', 'image', 'definition'].includes(node.type),
@@ -376,7 +387,24 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
           ),
           target = pathname ? resolve(base, pathname) : resolve(root, file),
           rel = relative(resolve(root), target)
-        if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel))
+        if (rel.replaceAll('\\', '/').startsWith('.work/')) {
+          const index = manifest.privateEvidenceReferences.findIndex(
+            (item) =>
+              item.source === file &&
+              item.line === line &&
+              item.url === original &&
+              item.sha256 === digest(read(file)) &&
+              entries.get(file)?.kind === 'record' &&
+              protectedPaths.has(file),
+          )
+          if (index >= 0) {
+            evidenceMatches.add(index)
+            result.privateEvidenceNotChecked.push(manifest.privateEvidenceReferences[index]!)
+            result.links--
+            continue
+          }
+          error = 'Private evidence link must be declared on a frozen record'
+        } else if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel))
           error = 'Link leaves repository'
         else if (!existsSync(target)) error = 'Link target missing'
         else {
@@ -408,6 +436,15 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
   manifest.immutableLinkExceptions.forEach((item, index) => {
     if (!exceptionMatches.has(index))
       add(item.source, 'legacy-exception', `Unused or invalid exception: ${item.url}`, item.line)
+  })
+  manifest.privateEvidenceReferences.forEach((item, index) => {
+    if (!evidenceMatches.has(index))
+      add(
+        item.source,
+        'private-evidence',
+        `Unused or invalid private evidence reference: ${item.url}`,
+        item.line,
+      )
   })
   const contents = Object.fromEntries(files.map((file) => [file, read(file)]))
   const formatting = await lint({
@@ -503,7 +540,7 @@ export async function documentationCli(args: readonly string[], root = process.c
       : report.findings
           .map((item) => `${item.file}:${item.line} [${item.rule}] ${item.message}\n`)
           .join('') +
-        `Documentation ${report.success ? 'passed' : 'failed'}: ${report.files} Markdown files, ${report.links} local/repository links, ${report.legacyLinks.length} immutable legacy broken links; ${report.externalLinksNotFetched} external links not fetched.\n`
+        `Documentation ${report.success ? 'passed' : 'failed'}: ${report.files} Markdown files, ${report.links} local/repository links, ${report.legacyLinks.length} immutable legacy broken links; ${report.privateEvidenceNotChecked.length} private evidence references not checked, ${report.externalLinksNotFetched} external links not fetched.\n`
   return { exitCode: report.success ? 0 : 1, output }
 }
 if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/docs-check.mts')) {

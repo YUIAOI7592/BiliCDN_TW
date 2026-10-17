@@ -45,6 +45,7 @@ function fixture(t: TestContext) {
     versionFields: [],
     protections: [],
     immutableLinkExceptions: [],
+    privateEvidenceReferences: [],
   }
   write('docs/INDEX.md', '# 文件入口\n\n[指南](guide.md)\n')
   write('docs/guide.md', '# 指南\n\n產品契約。\n')
@@ -246,4 +247,65 @@ test('documentation CLI preserves pass, failure, usage and JSON contracts', asyn
   assert.equal((JSON.parse(json.output) as { schemaVersion: number }).schemaVersion, 1)
   f.write('docs/guide.md', '# 指南\n\n[broken](missing.md)\n')
   assert.equal((await documentationCli([], f.root)).exitCode, 1)
+})
+
+test('documentation keeps exact historical private evidence independent of local availability', async (t) => {
+  const f = fixture(t),
+    file = 'docs/history.md'
+  f.write(file, '# History\n\n[private](../.work/proof.json)\n')
+  f.write('docs/INDEX.md', '# 文件入口\n\n[指南](guide.md)\n\n[原紀錄](history.md)\n')
+  f.manifest.documents.push({
+    path: file,
+    kind: 'record',
+    topics: ['history'],
+    versions: [],
+    date: null,
+    requiredAnchors: [],
+  })
+  f.protect(file)
+  f.manifest.privateEvidenceReferences.push({
+    source: file,
+    line: 3,
+    url: '../.work/proof.json',
+    sha256: f.manifest.protections[0]!.sha256,
+    reason: 'Private evidence is not part of checkout',
+  })
+  const clean = await f.check()
+  assert.equal(clean.success, true)
+  assert.equal(clean.privateEvidenceNotChecked.length, 1)
+  f.write('.work/proof.json', '{"private":"must not read"}')
+  assert.deepEqual(await f.check(), clean)
+})
+
+test('documentation rejects undeclared private links even when the local file exists', async (t) => {
+  const f = fixture(t)
+  f.write('docs/guide.md', '# 指南\n\n[private](../.work/proof.json)\n')
+  f.write('.work/proof.json', '{}')
+  assert.ok((await f.check()).findings.some((x) => x.rule === 'link'))
+})
+
+test('documentation cannot exempt private evidence with a different source hash', async (t) => {
+  const f = fixture(t),
+    file = 'docs/history.md'
+  f.write(file, '# History\n\n[private](../.work/proof.json)\n')
+  f.write('docs/INDEX.md', '# 文件入口\n\n[指南](guide.md)\n\n[原紀錄](history.md)\n')
+  f.manifest.documents.push({
+    path: file,
+    kind: 'record',
+    topics: ['history'],
+    versions: [],
+    date: null,
+    requiredAnchors: [],
+  })
+  f.protect(file)
+  f.manifest.privateEvidenceReferences.push({
+    source: file,
+    line: 3,
+    url: '../.work/proof.json',
+    sha256: '0'.repeat(64),
+    reason: 'Wrong source must fail',
+  })
+  const report = await f.check()
+  assert.ok(report.findings.some((x) => x.rule === 'private-evidence'))
+  assert.ok(report.findings.some((x) => x.rule === 'link'))
 })

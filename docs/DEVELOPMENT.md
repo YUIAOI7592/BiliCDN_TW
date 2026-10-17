@@ -205,11 +205,11 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 3. 新增公開 Markdown 時更新 [清單](doc-manifest.json) 的分類、topics、versions、date 與導覽。versions 可含調查基準和交付版本；缺少可確認日期填 null，不推測執行時間。主題權威由 owners 唯一定義，清單不保存 PASS 數或工作狀態。
 4. 清單 schemaVersion 為 1；documents.kind 分別標記指南、導覽、狀態、驗證、變更、日誌、版本紀錄、不可變快照與相容頁。protections 的 exact 禁止正文改寫；prefix 只允許追加。文字雜湊按 LF 正規化，二進位按原始位元組；不得改基準雜湊來消除失敗。
 5. 修改標題保留 requiredAnchors；[HISTORY](HISTORY.md) 提供版本、議題、日期及封存入口。既有完整歷史報告／維護日誌只追加，Release、baseline 與安全封存不回寫。
-6. 失效連結例外只適用原檔雜湊相符的不可變文件，逐筆指定 source、line、url、sha256、reason；修復後刪除例外。不得對現行文件、未知新錯誤或整個目錄設定豁免。
+6. 失效連結例外只適用原檔雜湊相符的不可變文件，逐筆指定 source、line、url、sha256、reason；修復後刪除例外。歷史報告中的本機私有證據另以 privateEvidenceReferences 記錄相同精確欄位，只適用受保護原報告，無論本機是否有檔都列為未核對，不讀取私有內容。不得對現行文件、未知新錯誤或整個目錄設定豁免。
 7. 每次執行 `npm run docs:check`、人工事實核對與 `git diff --check`。檢查器不能判定全部文字含義；仍須依程式核對預設值、模式、UI 名稱、安全與狀態所有權，確認使用者縮減／結案決策未被恢復。
 8. 新增工具時另執行型別、tooling 與 verify；單純文件修改不新增產品或瀏覽器通過宣稱。工具結果追加 TEST_TOOLING_REPORT，文件核對追加維護歷史。
 9. 換版時將上一版完整 TEST_REPORT 原樣加入既有歷史，再更新固定入口；CHANGELOG 保留舊條目。兩個封裝輸入的儲存庫連結使用完整 URL，封裝只在暫存目錄驗證。
 
-docs:check 以 Git 已追蹤及未忽略的新 Markdown 為公開範圍；無 Git 的來源副本按明確公共目錄及清單的 Release 目錄掃描，不遍歷私有 .work 或本機舊工具。它檢查 GFM、連結、唯一權威、兩次點擊、相容錨點、現行版本／npm 命令與正文保護。外部 URL 不連網；Release 快照的已知斷鏈另外列出，不稱為全部連結零錯誤。
+docs:check 以 Git 已追蹤及未忽略的新 Markdown 為公開範圍；無 Git 的來源副本按明確公共目錄及清單的 Release 目錄掃描，不遍歷私有 .work 或本機舊工具。它檢查 GFM、連結、唯一權威、兩次點擊、相容錨點、現行版本／npm 命令與正文保護。外部 URL 不連網；Release 快照的已知斷鏈與歷史私有證據未核對數分開列出，不稱為全部連結零錯誤。未登記的私有證據連結即使本機有檔也會失敗。
 
 只執行使用者批准範圍；文件整理不新增排程／CI/CD，不開安全掃描或瀏覽器窗口。

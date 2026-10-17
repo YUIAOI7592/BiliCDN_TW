@@ -5433,6 +5433,134 @@
       "sha256": "ea6501506e6064f39ec547c6eb323d3ff1cf3f7b24d09275c4bc7e43b4c5f26d"
     }
   ],
+  "privateEvidenceReferences": [
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 24,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 24,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/BASELINE_EVIDENCE.json",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 24,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/COVERAGE.md",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 24,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/LEDGER.md",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 24,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/CHECKPOINT.md",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 51,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/a-content/REPORT.md",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 51,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/c-player-measurement/CROSS_REVIEW_A01.md",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 67,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/a-content/REPORT.md",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 67,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/root/CROSS_REVIEW_A02.md",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 83,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/c-player-measurement/startup-budget.log",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 83,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/a-content/C01-COUNTERREVIEW.md",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 97,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/c-player-measurement/measurement-errors.log",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 97,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/b-transport-state/CROSS_REVIEW_C02.md",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 113,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/root/diagnostic-progress.ts",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 113,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/root/RESULT.tap",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 113,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/c-player-measurement/CROSS_REVIEW_R01.md",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 127,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/b-transport-state/REPORT.md",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    },
+    {
+      "source": "docs/CODE_REVIEW_2026-10-13.md",
+      "line": 179,
+      "url": "../.work/code-review/2026-10-13-c4e7de4/BROWSER_LIMITATION.json",
+      "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
+      "reason": "歷史調查的本機私有證據，不隨公開 checkout 提供；未核對可達性或內容。"
+    }
+  ],
   "immutableLinkExceptions": [
     {
       "source": "Release/v2.1.7/TEST_REPORT_v2.1.7.md",

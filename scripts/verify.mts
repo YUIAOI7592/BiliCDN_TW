@@ -21,7 +21,7 @@ export async function verify() {
         .join('\n'),
     )
   console.log(
-    `Documentation passed; ${documentation.legacyLinks.length} immutable broken links retained, ${documentation.externalLinksNotFetched} external links not fetched.`,
+    `Documentation passed; ${documentation.legacyLinks.length} immutable broken links retained, ${documentation.privateEvidenceNotChecked.length} private evidence references not checked, ${documentation.externalLinksNotFetched} external links not fetched.`,
   )
   typecheck()
   command(process.execPath, ['scripts/architecture-check.mts'])
