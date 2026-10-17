@@ -4,7 +4,7 @@
 
 本指南適用目前 `src-v2/`（版本以 [release.json](../release.json) 為準），瀏覽器測試**只使用 Codex 內建瀏覽器＋Tampermonkey**。具體操作、固定矩陣、背景校準與停止條件統一見 [IAB_TESTING](IAB_TESTING.md)，不維護另一份外部 Chrome 流程。
 
-先讀 [產品契約](PROJECT_CONTEXT.md)、[安全邊界](../SECURITY.md)、[架構](ARCHITECTURE.md) 及 [AGENTS](../AGENTS.md)。目前工作狀態見 [TODO](TODO.md)，最新結果見 [TEST_REPORT](TEST_REPORT.md)，歷次證據由 [HISTORY](HISTORY.md) 追溯，不以歷史紅燈或舊工作清單作現行待辦。
+依 [INDEX 閱讀路徑](INDEX.md#閱讀路徑) 確認本次工作所需指南；修改時查本頁的 [文件更新對照表](#documentation-update-map)。
 
 <a name="repository-layout-and-archive-maintenance"></a>
 
@@ -20,7 +20,7 @@
 | `baseline/`、`archive/retired/` | 來源原件、歷史文件與退出流程的工具；不作 v2 建置／測試輸入 |
 | `.work/iab-testing/` | 新內建瀏覽器輪次的私有證據，實際開跑才建立 |
 
-修改原始碼使用 apply_patch，保留無關變更。現行指南使用繁體中文；歷史正文與已封存安全產物保持原狀。修改標題時保留被引用錨點。文件單獨變更只跑連結、引用、事實一致性與 git diff --check，不把它寫成新的產品測試或安全掃描。
+修改原始碼使用 apply_patch，保留無關變更。現行指南使用繁體中文；歷史正文與已封存安全產物保持原狀。修改標題時保留被引用錨點；文件變更的檢查與結案規則見 [文件維護與結案](#documentation-maintenance)。
 
 內部收斂先以未修改實作通過具名行為契約，再機械式整理；新純比較助手只回傳事實，資格／基準／計數留在原呼叫端。保持原生 getter、參數、短路讀值、事件／註冊／清理與等待後驗證順序，不能因抽函式而提前快照狀態。單一用途小模型可與同用途契約共置；不以檔案數或行數當拆分目標，狀態與副作用的唯一所有者不變。
 
@@ -200,15 +200,48 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 ## 文件維護與結案
 
-1. 行為變更只更新對應權威指南與契約；責任表見 [INDEX](INDEX.md)。工作狀態只維護 [TODO](TODO.md)，實測結果只維護 [TEST_REPORT](TEST_REPORT.md) 或原始紀錄。
-2. 普通修復不再分開建立 FIX／ACCEPTANCE／CONTINUATION 多份報告。必要獨立調查或設計才放入 `docs/records/v<version>/`，同議題按日期追加；既有版本檔案不搬移。
-3. 新增公開 Markdown 時更新 [清單](doc-manifest.json) 的分類、topics、versions、date 與導覽。versions 可含調查基準和交付版本；缺少可確認日期填 null，不推測執行時間。主題權威由 owners 唯一定義，清單不保存 PASS 數或工作狀態。
-4. 清單 schemaVersion 為 1；documents.kind 分別標記指南、導覽、狀態、驗證、變更、日誌、版本紀錄、不可變快照與相容頁。protections 的 exact 禁止正文改寫；prefix 只允許追加。文字雜湊按 LF 正規化，二進位按原始位元組；不得改基準雜湊來消除失敗。
-5. 修改標題保留 requiredAnchors；[HISTORY](HISTORY.md) 提供版本、議題、日期及封存入口。既有完整歷史報告／維護日誌只追加，Release、baseline 與安全封存不回寫。
-6. 失效連結例外只適用原檔雜湊相符的不可變文件，逐筆指定 source、line、url、sha256、reason；修復後刪除例外。歷史報告中的本機私有證據另以 privateEvidenceReferences 記錄相同精確欄位，只適用受保護原報告，無論本機是否有檔都列為未核對，不讀取私有內容。不得對現行文件、未知新錯誤或整個目錄設定豁免。
-7. 每次執行 `npm run docs:check`、人工事實核對與 `git diff --check`。檢查器不能判定全部文字含義；仍須依程式核對預設值、模式、UI 名稱、安全與狀態所有權，確認使用者縮減／結案決策未被恢復。
-8. 新增工具時另執行型別、tooling 與 verify；單純文件修改不新增產品或瀏覽器通過宣稱。工具結果追加 TEST_TOOLING_REPORT，文件核對追加維護歷史。
-9. 換版時將上一版完整 TEST_REPORT 原樣加入既有歷史，再更新固定入口；CHANGELOG 保留舊條目。兩個封裝輸入的儲存庫連結使用完整 URL，封裝只在暫存目錄驗證。
+閱讀順序與各文件的唯一責任由 [INDEX](INDEX.md) 維護；本節依變更種類說明更新動作。只更新受影響的權威內容，其他入口以連結承接，不逐份複製狀態或驗收摘要。
+
+<a name="documentation-update-map"></a>
+
+### 文件更新對照表
+
+| 修改內容 | 必要更新與條件 |
+| --- | --- |
+| 產品行為、模式、救援時機或資格 | 更新 [PROJECT_CONTEXT](PROJECT_CONTEXT.md) 與對應契約測試；涉及使用者操作、預設值或可見功能時，再更新 [README](../README.md) |
+| 分層、內部介面、資料流、狀態或副作用所有權 | 更新 [ARCHITECTURE](ARCHITECTURE.md)；強制流程、不變量或授權界線改變時，再更新 [AGENTS](../AGENTS.md) |
+| 信任邊界、敏感資料、儲存或網路安全要求 | 更新 [SECURITY](../SECURITY.md)；同時改變模組責任時，再更新 ARCHITECTURE |
+| 新增或修改測試 | 更新測試來源；新增套件時登記 [test-registry.mts](../scripts/test-registry.mts)。命令、隔離、期限或清理規則改變時更新本指南；原測試行為或遷移對照改變時才更新 [MIGRATION](../tests-v2/MIGRATION.md) |
+| 測試工具、建置工具或開發依賴 | 更新本指南，將實際驗證按日期追加至 [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md)；作者、依賴授權或工具用途改變時更新 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)，上游或來源基準改變時更新 [UPSTREAM_MANIFEST](UPSTREAM_MANIFEST.md) |
+| 瀏覽器驗收方法 | 更新 [IAB_TESTING](IAB_TESTING.md)；實際結果與限制依證據層級記入 TEST_REPORT 或對應原始紀錄 |
+| 工作範圍、停止、跳過或結案決定 | 工作狀態集中更新 [TODO](TODO.md)，其他入口維持連結；既有報告保留原觀察及限制 |
+| 新增文件、改標題或導覽 | 更新 [doc-manifest.json](doc-manifest.json) 的登記或相容錨點，補上 INDEX、HISTORY 或對應指南的入口；依 [文件登記與保護](#文件登記與保護) 保留正文與舊連結 |
+| 發布新版 | 依 [發布文件更新順序](#release-documentation) 更新版本、變更、完整結果與工作狀態，並核對上列受影響指南 |
+
+實測結果只維護 [TEST_REPORT](TEST_REPORT.md) 或對應原始紀錄；新增測試及本輪驗證不得改寫舊版發布時的案例數。普通修復不再分開建立 FIX／ACCEPTANCE／CONTINUATION 多份報告。必要獨立調查或設計才放入 `docs/records/v<version>/`，同議題按日期追加；既有版本檔案不搬移。
+
+<a name="release-documentation"></a>
+
+### 發布文件更新順序
+
+1. 換版前將上一版完整 [TEST_REPORT](TEST_REPORT.md) 正文原樣追加至 [TEST_REPORT_HISTORY](../archive/retired/docs/TEST_REPORT_HISTORY.md)，保留日期、版本、原錨點導引及原始限制，再更新最新版固定入口。
+2. 同步 [release.json](../release.json)、[package.json](../package.json) 及對應 [package-lock.json](../package-lock.json) 的版本設定；一般指南引用版本來源，避免逐份硬寫目前版本。
+3. 更新 [CHANGELOG](CHANGELOG.md) 的本版行為差異及證據入口，保留舊條目；TEST_REPORT 保存新版完整證據，分列自動、安全、來源隔離及實際安裝結果。未執行、失敗、無效及依指示跳過的項目照實保留。
+4. 更新 TODO 的交付／停止／結案狀態，依文件更新對照表核對受影響指南，不將完整發布摘要或測試數字複製到其他入口。
+5. 保留 `docs/CHANGELOG.md`、`docs/TEST_REPORT.md` 兩個封裝輸入路徑；它們連至其他儲存庫文件時使用完整 URL，確保複製到 Release 後仍可閱讀。封裝及發布命令見 [封裝與發行](#packaging-and-release)；檢查已發布版本時只使用暫存封裝，不回寫快照。
+
+### 文件登記與保護
+
+1. 新增公開 Markdown 時更新清單的分類、topics、versions、date 與導覽。versions 可含調查基準和交付版本；缺少可確認日期填 null，不推測執行時間。主題權威由 owners 唯一定義，清單不保存 PASS 數或工作狀態。
+2. 清單 schemaVersion 為 1；documents.kind 分別標記指南、導覽、狀態、驗證、變更、日誌、版本紀錄、不可變快照與相容頁。protections 的 exact 禁止正文改寫；prefix 只允許追加。文字雜湊按 LF 正規化，二進位按原始位元組；不得改基準雜湊來消除失敗。
+3. 修改標題保留 requiredAnchors；[HISTORY](HISTORY.md) 提供版本、議題、日期及封存入口。既有完整歷史報告／維護日誌只追加，Release、baseline 與安全封存不回寫。
+4. 失效連結例外只適用原檔雜湊相符的不可變文件，逐筆指定 source、line、url、sha256、reason；修復後刪除例外。歷史報告中的本機私有證據另以 privateEvidenceReferences 記錄相同精確欄位，只適用受保護原報告，無論本機是否有檔都列為未核對，不讀取私有內容。不得對現行文件、未知新錯誤或整個目錄設定豁免。
+
+### 文件檢查與結案
+
+每次執行 `npm run docs:check`、人工事實核對與 `git diff --check`。檢查器不能判定全部文字含義；仍須依程式核對預設值、模式、UI 名稱、安全與狀態所有權，確認使用者縮減／結案決策未被恢復。
+
+新增工具時另執行型別、tooling 與 verify；單純文件修改不新增產品或瀏覽器通過宣稱。工具結果追加 TEST_TOOLING_REPORT，文件核對追加 [維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)。
 
 docs:check 以 Git 已追蹤及未忽略的新 Markdown 為公開範圍；無 Git 的來源副本按明確公共目錄及清單的 Release 目錄掃描，不遍歷私有 .work 或本機舊工具。它檢查 GFM、連結、唯一權威、兩次點擊、相容錨點、現行版本／npm 命令與正文保護。外部 URL 不連網；Release 快照的已知斷鏈與歷史私有證據未核對數分開列出，不稱為全部連結零錯誤。未登記的私有證據連結即使本機有檔也會失敗。
 

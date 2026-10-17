@@ -1,13 +1,20 @@
 # 專案文件入口
 
-本頁只負責導覽。產品版本以 [release.json](../release.json) 為準；工作狀態只看 [TODO](TODO.md)，驗收結果只看 [TEST_REPORT](TEST_REPORT.md)。
+本頁只負責導覽。產品版本以 [release.json](../release.json) 為準；工作狀態只看 [TODO](TODO.md)，驗收結果只看 [TEST_REPORT](TEST_REPORT.md)，歷史追溯由 [HISTORY](HISTORY.md) 進入。
 
 ## 閱讀路徑
 
-- 使用者：[安裝與操作](../README.md)。
-- 開發者：[必要流程](../AGENTS.md) → [產品契約](PROJECT_CONTEXT.md) → [安全](../SECURITY.md) → [架構](ARCHITECTURE.md) → [開發流程](DEVELOPMENT.md)。
-- 測試：[工作範圍](TODO.md) → [瀏覽器方法](IAB_TESTING.md) → [實測結果](TEST_REPORT.md)。
-- 追溯：[HISTORY](HISTORY.md)，按版本、議題或日期找原始紀錄。
+先依目的選擇下列路徑；開始維護前先讀 TODO，確認本次工作範圍及停止／結案決策。
+
+| 目的 | 閱讀順序 |
+| --- | --- |
+| 安裝、操作與排查 | [README](../README.md) |
+| 開始修改程式 | [TODO](TODO.md) → [AGENTS](../AGENTS.md) → [PROJECT_CONTEXT](PROJECT_CONTEXT.md) → [SECURITY](../SECURITY.md) → [ARCHITECTURE](ARCHITECTURE.md) → [DEVELOPMENT](DEVELOPMENT.md) |
+| 撰寫或執行測試 | [TODO](TODO.md) → [DEVELOPMENT 測試套件與隔離](DEVELOPMENT.md#test-suites-and-isolation)；涉及瀏覽器時再讀 [IAB_TESTING](IAB_TESTING.md)；結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
+| 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#release-rules) → [DEVELOPMENT 封裝與發行](DEVELOPMENT.md#packaging-and-release)，並依 [發布文件更新順序](DEVELOPMENT.md#release-documentation) 準備文件 |
+| 查舊版或舊議題 | [HISTORY](HISTORY.md) → 依版本、議題或日期進入原始報告 |
+
+修改時需要更新哪些文件，直接查 [文件更新對照表](DEVELOPMENT.md#documentation-update-map)。
 
 ## 現行指南
 
@@ -33,7 +40,7 @@
 
 ## 檔案配置
 
-既有版本紀錄維持原路徑。新的一般修復只更新當版 TEST_REPORT，不再分開建立多份 FIX／ACCEPTANCE／CONTINUATION；必要的獨立調查或設計才放入按版本分類的紀錄目錄。維護方式見 [DEVELOPMENT](DEVELOPMENT.md#documentation-maintenance)。
+既有版本紀錄維持原路徑；新增紀錄、發布文件與正文保護的維護方式統一見 [DEVELOPMENT](DEVELOPMENT.md#documentation-maintenance)。
 
 [文件清單](doc-manifest.json) 保存分類、權威、相容錨點與保護基準，不保存產品結果。`npm run docs:check` 只讀檢查；舊 Release 的不可變斷鏈及外部連結限制另外列出。
 
