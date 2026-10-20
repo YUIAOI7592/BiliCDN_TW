@@ -2,7 +2,7 @@
 
 **2026-10-17 結案範圍補記：使用者明確指示跳過控制中心入口點擊。該項不作本輪驗收或結案阻塞，不安排續測；下列原始觀察仍保留，未轉算通過。** 本補記僅更新現行文件，不修改測試、產品或已發布快照。
 
-main 的後續文件與開發工具驗證另見 [工具日誌](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_TOOLING_REPORT.md#2026-10-17-文件檢查正式化)；下列 1134 案仍描述 v2.1.27 發布時結果，不改成維護工作樹的新增工具案例數。
+main 的後續文件與開發工具驗證另見 [工具日誌](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_TOOLING_REPORT.md#2026-10-20-工作區歸檔與獨立重跑)；下列 1134 案仍描述 v2.1.27 發布時結果，不改成維護工作樹的新增工具案例數。
 
 2026-10-17 結案後已另做完整文件核對，結果見 [維護紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#docs-closeout-v2127-20261017)。下列執行期與瀏覽器數字仍是原始實測結果，沒有因文件整理重跑或增加案例。
 
