@@ -6,19 +6,76 @@
 
 ## 儲存庫配置與封存維護
 
-| 位置 | 用途 |
+本節唯一維護目錄結構與檔案分類；INDEX 和封存索引只提供導覽連結。版本取自 [release.json](../release.json)，實際搬移項目與驗證結果由 [搬移清單](../archive/relocation-manifest.json)、[工具日誌](TEST_TOOLING_REPORT.md) 及 [維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) 追溯，不在此複製檔案數或工作狀態。
+
+### 目錄結構
+
+以下列出主要目錄及關鍵檔案，以儲存庫根目錄為起點；`v<version>` 表示 `release.json` 的版本。主機專用目錄不隨公開 checkout 提供。
+
+```text
+./
+├─ src-v2/                         正式產品來源，入口 entry.ts
+├─ tests-v2/                       正式套件、回歸案例與測試輔助
+├─ scripts/                        現行型別、架構、測試、建置與維護工具
+├─ docs/                           現行指南、導覽、工作狀態與報告
+│  ├─ INDEX.md                     閱讀入口
+│  ├─ DEVELOPMENT.md               開發、目錄與維護流程
+│  ├─ HISTORY.md                   歷史追溯入口
+│  ├─ TODO.md                      工作狀態
+│  ├─ TEST_REPORT.md               最新版完整驗收結果
+│  └─ doc-manifest.json            文件分類、權威與保護登記
+├─ Release/v<version>/             僅現行版本的五項原始封裝檔
+├─ dist/                          本機正式建置輸出，Git 忽略
+│  ├─ BiliCDN_TW.user.js
+│  ├─ BiliCDN_TW.user.js.map
+│  └─ build-manifest.json
+├─ baseline/                       不可變上游原件及校驗清單
+├─ node_modules/                   現行本機開發依賴，Git 忽略
+├─ .git/                           Git 管理資料
+├─ .codex/                         本機工具目錄，可為空；Git 忽略
+├─ README.md / AGENTS.md / SECURITY.md / LICENSE
+├─ package.json / package-lock.json / release.json
+├─ tsconfig*.json / 格式與 Git 設定
+└─ archive/
+   ├─ README.md                    封存導覽
+   ├─ relocation-manifest.json     公開搬移、雜湊與 URL 修改清單
+   ├─ retired/
+   │  ├─ README.md                 退出流程資料導覽
+   │  ├─ docs/                     公開歷史閱讀版、彙編與指南快照
+   │  │  └─ evidence/              指定公開歷史圖片
+   │  ├─ releases/Release/         過往版本原始封裝及校驗清單
+   │  ├─ originals/                搬移前原始文件與完整日誌 TAR
+   │  └─ local/                    本機私有封存，Git 忽略
+   │     ├─ 2026-10-20-cleanup/     當日清理封存，保留原相對路徑
+   │     │  ├─ .work/              調查、證據、快取與一次性工作
+   │     │  ├─ dist/               舊建置與檢查資料
+   │     │  ├─ Release/            原散落的舊版產物
+   │     │  ├─ .codex/local/       舊發行筆記
+   │     │  ├─ operations/         搬移腳本、驗證紀錄與乾淨副本
+   │     │  └─ private-manifest.json
+   │     ├─ development/ / review/ / scripts/ / security/ / src/ / work/
+   │     │                         更早輪次的私有封存
+   │     ├─ relocation-manifest.json
+   │     └─ root-document-relocation.json
+   └─ pre-upstream-v1.3.4-20260904/ 既有上游更新前私有封存，Git 忽略
+```
+
+### 檔案分類
+
+| 分類 | 維護規則 |
 | --- | --- |
-| `src-v2/`、`src-v2/entry.ts` | 唯一正式來源與組合入口 |
-| `tests-v2/`、`scripts/test-registry.mts` | 正式具名契約與明確登記 |
-| `scripts/` | 型別、架構、測試、建置、封裝及文件／封存檢查工具 |
-| `docs/` | 現行指南、導覽、工作狀態、最新版報告與工具日誌 |
-| `Release/v<version>/` | 僅現行版本的五項封裝檔，發布後不回寫 |
-| `archive/retired/docs/` | 過往版本紀錄閱讀版、歷史彙編與指南快照 |
-| `archive/retired/releases/Release/` | 過往發行原件，保留原始位元組及目錄結構 |
-| `archive/retired/originals/` | 搬移前原始正文與完整日誌基準的 TAR 快照 |
-| `archive/retired/local/` | Git 忽略的私有證據、退出流程工具及原始工作資料 |
-| `baseline/` | 不可變來源歸屬原件；不作 v2 建置／測試輸入 |
-| `.work/iab-testing/` | 新內建瀏覽器輪次的私有證據，實際開跑才建立 |
+| 現行公開檔案 | 正式來源、測試、可重用工具、指南與設定隨變更維護；現行 Release 發布後不回寫。`baseline/` 仍作來源歸屬基準，保持不變，不作 v2 建置／測試輸入 |
+| 公開封存 | 歷史閱讀版、原始封裝、指定圖片與 TAR 可隨公開 checkout 取得；閱讀版只允許可由原件重建的已登記 URL 編輯，原始封裝、校驗清單、安全產物與證據保持原始位元組 |
+| 本機現行資料 | 開發依賴、正式建置輸出及工作中的工具資料由 Git 忽略；有現行用途的依賴與生成產物不當成舊檔搬走 |
+| 本機私有封存 | 已結案工作、舊工具、原始證據、私有清單與獨立 Git 快照保持忽略；不公開 payload，不作現行 v2 建置／測試輸入 |
+
+正式工具不能僅因用途曾與舊議題有關就判為一次性工具。例如 IAB 收集器有現行指南與正式契約；PowerShell／Shell 驗證入口仍呼叫正式 `verify`。可重用工具留在 `scripts/`，已結案的任務專用腳本及舊依賴副本移入私有封存。歷史封存僅供比較與選擇性移植，不取代上游基準，也不得整包覆蓋現行來源。
+
+### 工作資料與結案
+
+只有已批准任務實際開始時才建立 `.work/` 等暫存位置；例如新 IAB 輪次使用 `.work/iab-testing/`，不能因目錄範例而恢復已停止工作。結案時將一次性工具、原始證據、操作紀錄及乾淨驗證副本收入按日期分類的私有封存；2026-10-20 清理的操作資料集中於上述日期目錄的 `operations/`。後續輪次使用自己的日期目錄與清單，不改寫舊輪次證據。
+
+確認是否仍有舊檔，須同時核對實體檔案遍歷、Git 追蹤清單與忽略清單，不能只看 `git status`。現行 `dist/` 只保留上列三項正式輸出，過往 Release 應已移出現行 `Release/`；核對命令與保護規則見本指南的 [命令](#命令) 及 [文件登記與保護](#文件登記與保護)。原始位置、存取失敗、首次可讀雜湊與逐位元組比較須按實際證據分開記錄，不能補算未執行的核對。
 
 修改原始碼使用 apply_patch，保留無關變更。現行指南使用繁體中文；歷史正文與已封存安全產物保持原狀。修改標題時保留被引用錨點；文件變更的檢查與結案規則見 [文件維護與結案](#文件維護與結案)。
 

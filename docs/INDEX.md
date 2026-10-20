@@ -40,9 +40,7 @@
 
 ## 檔案配置
 
-現行指南與最新版報告在 `docs/`；過往版本紀錄的閱讀版在 [歷史文件封存](../archive/retired/docs)，過往發行原件在 [Release 封存](../archive/retired/releases/Release)。原始正文、搬移對照與固定提交入口集中於 [HISTORY 的封存與快照](HISTORY.md#封存與快照)。新增紀錄、發布文件與正文保護的維護方式統一見 [DEVELOPMENT](DEVELOPMENT.md#文件維護與結案)。
-
-[文件清單](doc-manifest.json) 保存分類、權威、相容錨點與保護基準，不保存產品結果。[搬移清單](../archive/relocation-manifest.json) 提供原件與新位置對照；文件及封存的唯讀檢查方式見 DEVELOPMENT。歷史原網址失效、既有快照斷鏈、私有證據及外部連結限制分開記錄。
+[目錄結構、檔案分類與工作資料結案](DEVELOPMENT.md#儲存庫配置與封存維護) 統一由 DEVELOPMENT 維護；原始正文與固定提交入口見 [HISTORY 的封存與快照](HISTORY.md#封存與快照)。
 
 ## 舊連結導引
 
