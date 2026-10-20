@@ -398,6 +398,65 @@ test('archive private mode validates ignored raw files and rejects tracked paylo
   execFileSync('git', ['add', '-f', '--', archivedPath], { cwd: f.root })
   assert.equal(hasRule(f.check(true), 'private'), true)
 })
+
+for (const originalPath of [
+  'dist/BiliCDN_TW.user.js',
+  'dist/BiliCDN_TW.user.js.map',
+  'dist/build-manifest.json',
+])
+  test(`archive permits newly rebuilt output ${originalPath} beside its preserved old artifact`, (t) => {
+    const f = fixture(t),
+      archivedPath = `${privateRoot}/${originalPath}`,
+      body = 'old artifact\r\n'
+    execFileSync('git', ['init', '-q'], { cwd: f.root })
+    f.write('.gitignore', '/archive/retired/local/\n/dist/\n')
+    f.write(archivedPath, body)
+    f.write(originalPath, 'newly built output\n')
+    f.write(
+      f.manifest.localManifest,
+      JSON.stringify({
+        schemaVersion: 1,
+        baseline: f.manifest.baseline,
+        root: privateRoot,
+        entries: [{ originalPath, archivedPath, ...proof(body) }],
+      }),
+    )
+    const result = f.check(true)
+    assert.equal(result.success, true)
+    assert.equal(result.localFiles, 1)
+  })
+test('archive still rejects a retained old dist task path after allowing normal rebuilds', (t) => {
+  const f = fixture(t),
+    originalPath = 'dist/old-task/report.json',
+    archivedPath = `${privateRoot}/${originalPath}`,
+    body = 'old task\n'
+  execFileSync('git', ['init', '-q'], { cwd: f.root })
+  f.write('.gitignore', '/archive/retired/local/\n/dist/\n')
+  f.write(archivedPath, body)
+  f.write(originalPath, body)
+  f.write(
+    f.manifest.localManifest,
+    JSON.stringify({
+      schemaVersion: 1,
+      baseline: f.manifest.baseline,
+      root: privateRoot,
+      entries: [{ originalPath, archivedPath, ...proof(body) }],
+    }),
+  )
+  const result = f.check(true)
+  assert.ok(
+    result.findings.some(
+      (item) => item.rule === 'private' && item.message.includes('original path'),
+    ),
+  )
+  assert.ok(result.findings.some((item) => item.rule === 'layout' && item.file === 'dist'))
+})
+for (const file of ['dist/BiliCDN_TW.user.js.backup', 'dist/unknown.json'])
+  test(`archive default layout rejects an extra dist artifact ${file}`, (t) => {
+    const f = fixture(t)
+    f.write(file, 'extra')
+    assert.ok(f.check().findings.some((item) => item.rule === 'layout' && item.file === 'dist'))
+  })
 test('archive private mode rejects destinations outside the designated local root', (t) => {
   const f = fixture(t)
   f.write(
@@ -471,8 +530,31 @@ test('archive TAR reader accepts Git global PAX and per-file Unicode path metada
   ])
   assert.equal(readTarArchive(bytes).get('docs/中文 long.md')?.toString(), '# 中文\n')
 })
-test('archive TAR reader consumes a real git archive without extraction', () => {
-  const bytes = execFileSync('git', ['archive', '--format=tar', 'HEAD', 'docs/INDEX.md'])
+test('archive TAR reader consumes a self-contained real git archive without extraction', (t) => {
+  const f = fixture(t)
+  f.write('docs/INDEX.md', '# 閱讀路徑\n\n獨立 Git fixture。\n')
+  execFileSync('git', ['init', '-q'], { cwd: f.root })
+  execFileSync('git', ['add', '-f', '--', 'docs/INDEX.md'], { cwd: f.root })
+  execFileSync(
+    'git',
+    [
+      '-c',
+      'user.name=Archive Fixture',
+      '-c',
+      'user.email=fixture@example.invalid',
+      '-c',
+      'commit.gpgsign=false',
+      '-c',
+      `core.hooksPath=${join(f.root, 'unused-hooks')}`,
+      'commit',
+      '-qm',
+      'Fixture archive source',
+    ],
+    { cwd: f.root },
+  )
+  const bytes = execFileSync('git', ['archive', '--format=tar', 'HEAD', 'docs/INDEX.md'], {
+    cwd: f.root,
+  })
   assert.ok(readTarArchive(bytes).get('docs/INDEX.md')?.includes(Buffer.from('閱讀路徑')))
 })
 test('archive TAR reader rejects unsafe paths, duplicate files and truncated data', () => {

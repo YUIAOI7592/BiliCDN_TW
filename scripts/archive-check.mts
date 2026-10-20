@@ -69,6 +69,11 @@ export interface ArchiveResult {
 }
 const manifestPath = 'archive/relocation-manifest.json'
 const localRoot = 'archive/retired/local/2026-10-20-cleanup'
+const rebuildableOutputs = new Set([
+  'dist/BiliCDN_TW.user.js',
+  'dist/BiliCDN_TW.user.js.map',
+  'dist/build-manifest.json',
+])
 const normalize = (value: string) => value.replaceAll('\r\n', '\n')
 const digest = (value: Uint8Array | string) => createHash('sha256').update(value).digest('hex')
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error))
@@ -543,7 +548,10 @@ function checkLocal(root: string, manifest: ArchiveManifest, result: ArchiveResu
     throw Error('Private archive manifest must be ignored and untracked')
   for (const entry of entries) {
     try {
-      if (existsSync(safeFile(root, entry.originalPath)))
+      if (
+        existsSync(safeFile(root, entry.originalPath)) &&
+        !rebuildableOutputs.has(entry.originalPath)
+      )
         throw Error('Private original path still exists')
       verifyProof(read(root, entry.archivedPath), entry)
       if (tracked.has(pathKey(entry.archivedPath)))
@@ -708,6 +716,13 @@ export function checkArchive(
         string(document.path).startsWith('docs/')
       )
         throw Error(`Historical document remains under docs/: ${string(document.path)}`)
+  })
+  attempt('dist', 'layout', () => {
+    const directory = safeFile(root, 'dist')
+    if (!existsSync(directory)) return
+    for (const entry of readdirSync(directory, { withFileTypes: true }))
+      if (!entry.isFile() || !rebuildableOutputs.has(`dist/${entry.name}`))
+        throw Error(`Only the three normal rebuildable outputs may remain in dist/: ${entry.name}`)
   })
   if (options.local)
     attempt(manifest.localManifest, 'private', () => checkLocal(root, manifest, result))
