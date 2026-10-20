@@ -24,7 +24,7 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 已安裝時，可開啟同一「安裝／更新腳本」連結觸發更新。v2.1.21 已在內建瀏覽器以此方式取得新版；驗證時會重新載入指定影片並核對實際執行本體，不只依管理器標示或更新中繼頁判定。
 
-GitHub Release 只提供 `BiliCDN_TW.user.js`。建置資訊、校驗碼與驗證紀錄保存在儲存庫的 [Release 目錄](Release/)。
+GitHub Release 只提供 `BiliCDN_TW.user.js`。建置資訊、校驗碼與驗證紀錄保存在儲存庫的 [Release 目錄](Release)。
 
 ## 功能概覽
 
@@ -94,7 +94,7 @@ GitHub Release 只提供 `BiliCDN_TW.user.js`。建置資訊、校驗碼與驗�
 
 腳本在合資格起播時進行有界預測試，健康播放時才安排測速；測速結果不會在流暢播放中直接更換目前 CDN。
 
-停滯時可按一般／長 seek 政策切換合法備援並有限重載；有效可信目標與倍速可依所有權還原，真正位置 0 有效。新操作與資格失效會撤銷舊動作，不永久沿用最後非零位置。具體時點、額度、例外與取消條件統一見 [產品契約](docs/PROJECT_CONTEXT.md#recovery-contract)。
+停滯時可按一般／長 seek 政策切換合法備援並有限重載；有效可信目標與倍速可依所有權還原，真正位置 0 有效。新操作與資格失效會撤銷舊動作，不永久沿用最後非零位置。具體時點、額度、例外與取消條件統一見 [產品契約](docs/PROJECT_CONTEXT.md#auto-救援與操作所有權)。
 
 CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點、測速或自動恢復都不能保證每次播放成功。
 
@@ -109,13 +109,11 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 **「腳本看到請求」不等於瀏覽器 Network 已確認實際目的地。** 腳本主要處理播放網址與可攔截的 Fetch／XHR；瀏覽器其他入口及 XHR 轉址存在控制限制。本專案以內建瀏覽器允許的 Network／Fetch 觀察核對實際目的地，並另外記錄事件缺口。不要把含簽名影音網址、權杖或 Cookie 的原始網路匯出檔直接貼到問題回報。
 
-<a name="v2122-診斷複製"></a>
-
 ### 診斷報告複製
 
 按「複製報告」會立即嘗試原生 Clipboard API，寫入當次完整報告；API 不可取得時才交由 Tampermonkey 的 GM 純文字備援處理。原生寫入失敗會顯示固定失敗提示；GM 返回只表示交由管理器處理，不宣告複製成功。完成提示也不能代替實際貼上核對。
 
-同一控制中心尚未完成的寫入不會因關閉／重開而重複啟動；晚到結果只更新原視圖，不搶焦點。腳本不讀取剪貼簿。修復與實際全文讀回證據見 [P05 報告](docs/P05_COPY_FIX_REPORT.md)。
+同一控制中心尚未完成的寫入不會因關閉／重開而重複啟動；晚到結果只更新原視圖，不搶焦點。腳本不讀取剪貼簿。修復與實際全文讀回證據見 [P05 報告](archive/retired/docs/P05_COPY_FIX_REPORT.md)。
 
 ## 本機資料與隱私
 
@@ -144,7 +142,7 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 現行指南、變更紀錄與驗證報告集中於 `docs/`；根目錄保留 README、AGENTS、安全政策、授權及必要建置設定。已退出流程的計畫、研究、驗收與舊工具集中於 [archive/retired](archive/retired/README.md)，來源原件與校驗碼集中於 `baseline/`。封存保留原始證據與位置對照，已發布的 `Release/` 產物維持原位。
 
-開發環境、命令與工具版本統一見 [DEVELOPMENT](docs/DEVELOPMENT.md#prerequisites)，精確設定由 release.json 與 package-lock.json 決定。
+開發環境、命令與工具版本統一見 [DEVELOPMENT](docs/DEVELOPMENT.md#環境需求)，精確設定由 release.json 與 package-lock.json 決定。
 
 ```powershell
 npm ci

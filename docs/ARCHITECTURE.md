@@ -1,12 +1,8 @@
-<a name="v2-architecture"></a>
-
 # v2 架構
 
 本文件描述目前 `src-v2/` 的職責與契約，版本以 [release.json](../release.json) 為準。版本別修復及驗證數字移由 [索引](INDEX.md) 與 [TEST_REPORT](TEST_REPORT.md) 保存；本文件不代表新一次驗證通過。
 
 瀏覽器測試只使用 **Codex 內建瀏覽器＋Tampermonkey**，依 [IAB_TESTING](IAB_TESTING.md) 分開來源隔離、實際安裝與環境校準。應用層注入的模型與原生事件不可混為安裝版證據。
-
-<a name="dependency-direction"></a>
 
 ## 依賴方向
 
@@ -29,9 +25,7 @@
 
 AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、`import type` 及 `import-equals` 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環與契約對實作的依賴。唯一寫入者依完整相對路徑辨識，不能以同名檔案繞過；只有 `application/measurement-controller.ts` 可以呼叫 `probe.read()`。額外語法規則拒絕領域層／應用層中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、路線協調器以外的點號 `setAffinity()` 呼叫、恢復控制器以外應用層的點號 `reload()` 呼叫，以及命令接收器以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
 
-獨立的匯入純度測試將全部非入口、非宣告模組打包在一起，停用未使用程式碼移除（tree shaking）並忽略打包最佳化註記，再於不載入 `node:test` 的獨立 Node 子程序匯入，期限為 3 秒。外層具名案例監督結果，框架不受全域陷阱干擾。測試攔截固定清單中的瀏覽器、網路、GM、計時器全域與 `Date.now`／`Math.random`，檢查匯入時行為；建構函式及方法仍須契約測試。架構規則期待各自使用具名 `node:test` 案例；命令、期限與實際保障範圍見 [測試流程](DEVELOPMENT.md#test-suites-and-isolation)。
-
-<a name="domain"></a>
+獨立的匯入純度測試將全部非入口、非宣告模組打包在一起，停用未使用程式碼移除（tree shaking）並忽略打包最佳化註記，再於不載入 `node:test` 的獨立 Node 子程序匯入，期限為 3 秒。外層具名案例監督結果，框架不受全域陷阱干擾。測試攔截固定清單中的瀏覽器、網路、GM、計時器全域與 `Date.now`／`Math.random`，檢查匯入時行為；建構函式及方法仍須契約測試。架構規則期待各自使用具名 `node:test` 案例；命令、期限與實際保障範圍見 [測試流程](DEVELOPMENT.md#測試套件與隔離)。
 
 ## 領域層
 
@@ -47,10 +41,6 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 - 唯讀 playurl 結果模型，明確記錄接納結果、辨識格式、數量、數字上游 `code` 及固定拒絕原因聯集。
 
 領域層以參數接收時間與相對 URL 基底，不執行 I/O。輸出政策函式回傳主機或不透明索引的決策，不提交親和主機（目前路線綁定）或啟動探測。URL 政策輔助函式可以檢查 URL 字串，但不保存它們。
-
-<a name="state"></a>
-
-<a name="cr-0105-與-xhr-所有權補充"></a>
 
 ## 狀態層
 
@@ -81,8 +71,6 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 [TampermonkeyStorage](../src-v2/platform/storage.ts) 在可用時以 `bilicdn.v2.` 名稱前綴使用 `navigator.locks`，否則直接執行回呼函式。跨分頁序列化取決於 Web Locks 是否可用。簽名路線與工作階段狀態僅保存在記憶體。
 
-<a name="application-controllers"></a>
-
 ## 應用控制器
 
 - `RouteCoordinator` 產生路線決策、套用親和主機、規劃考慮群組的備援，提交證據或路線失效前驗證探測／傳輸結果。
@@ -102,7 +90,7 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 `PlayurlController` 私有保存 cid 及已觀察的完整父目錄集合。兩側有效 cid 相同便沿用，不同便換片；任一側缺少時，從各 primary 經 `parseMediaUrl` 取父目錄，忽略主機／查詢／排列。有影片只比影片，兩側純音訊才比音訊，音訊交集不能掩蓋影片變更。交集沿用並合併歷史，支援完整清單與互斥子集往返；非空無交集或型態改變則重設。首次 cid 對齊既有目錄後綁定，無法對齊先重設。無 cid 且沒有有效目錄不變更基準。影片 128／音訊 64 上限，優先本次集合、舊集合按固定字串排序填入，不因淘汰本身增加 epoch。
 
-只有 trusted-api 更新內容基準，保留重複回應／同物件防篡改及 generation 防護；低信任提示不觸發換片或擴充歷史，generation 改變清空全部基準。cid／目錄不持久化、不進診斷，也不提供 Native 授權。沒有有效 cid 或共同路徑的同片無法可靠辨識，仍保守重設；此修復不新增 API 逆序回應政策。來源與回歸詳見 [BR-03 修復報告](BR03_FIX_REPORT.md)。
+只有 trusted-api 更新內容基準，保留重複回應／同物件防篡改及 generation 防護；低信任提示不觸發換片或擴充歷史，generation 改變清空全部基準。cid／目錄不持久化、不進診斷，也不提供 Native 授權。沒有有效 cid 或共同路徑的同片無法可靠辨識，仍保守重設；此修復不新增 API 逆序回應政策。來源與回歸詳見 [BR-03 修復報告](../archive/retired/docs/BR03_FIX_REPORT.md)。
 
 真正內容改變時，`PlayurlController` 在 Session／Vault／Routes 重設後、登記新表示前，同步通知 generation／epoch。Runtime 訂閱後重設監控、量測、恢復及播放器快取，釋放時取消訂閱。同片排列及 cid 可對齊的畫質／編碼切換不通知，每分頁一次的起播預算不重開。
 
@@ -118,7 +106,7 @@ BR-08 進度命中使用 target.closest 的 `.bpx-player-progress-wrap, .bpx-pla
 
 `VisibilityAdapter.subscribeControlLoss(listener): () => void` 是適配器內部通知。既有可信 blur／真正 hidden guard 在 stopImmediatePropagation 前通知 `PlayerAdapter`，單一 listener 的例外不破壞原 guard。入口明確注入，取消函式由播放器控制觀察管理，reset／重新綁定清理；controls() 仍以真正可見性查詢防漏。BR-08 不變更公開 API、`PlayerControlSnapshot`、應用層介面與 schema 2，不傳遞 DOM／事件或播放器物件到應用層。
 
-`PlayerMonitor` 擁有單一停滯段、起點、政策升級與動作額度；Recovery 擁有 token、重載與還原。Runtime 只轉交合資格 video 備援；同段通知不能重開計時或額度。一般／長 seek 的資格與時點統一見 [產品契約](PROJECT_CONTEXT.md#recovery-contract)。
+`PlayerMonitor` 擁有單一停滯段、起點、政策升級與動作額度；Recovery 擁有 token、重載與還原。Runtime 只轉交合資格 video 備援；同段通知不能重開計時或額度。一般／長 seek 的資格與時點統一見 [產品契約](PROJECT_CONTEXT.md#auto-救援與操作所有權)。
 
 BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean` 查詢自有 reload 所有權，不把 DOM 或核心物件交給應用層。`PlayerAdapter` 私有紀錄本次 reload 修訂、原媒體／播放器／核心、生命週期、使用者修訂與第一個替換核心，最多有界保存 15 秒；每次查詢重查身分及真正可見性。暫時空核心可等待，但舊核心在空隙後回來、第二次替換、新操作、hidden／control-loss 或 reset 撤銷所有權。還原 wrapper 與 timer 清理各自核對物件／方法所有權，不能清掉較新工作。
 
@@ -130,21 +118,15 @@ BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean`
 
 `RouteCoordinator.recoveryEligible` 為唯讀查詢：核對請求 generation／epoch／政策／授權修訂、Vault video 身分、身分綁定計畫、固定主機及現行限制。`RecoveryController` 建立 token 前讀取控制基準，位置／倍速各讀取一次，收集後重新取 controls 與最新資格，再核對生命週期、媒體／核心／seek／使用者修訂、現有 token、breaker 及總額；拖曳不得建立恢復意圖。reload 及 seek／rate／play 每個副作用前仍重查捕獲資格與所有權；重載替換只接納標記相符的自有替換。已初始化核心的普通等待亦有 30 秒上限，既有死核心／冷起播 4 秒及長暫停觸發維持。
 
-<a name="v2124-可信播放按鈕意圖"></a>
-
 ### 長暫停後的可信播放意圖
 
 長暫停後，網站核心可能忽略播放按鈕而不呼叫 SDK play。`PlayerAdapter` 同時觀察現有 SDK 方法及目前播放器區域的可信 `.bpx-player-ctrl-play` click；僅同一 paused 媒體、播放器、內容週期、真正可見且非 ended/error 才通知既有意圖。讀取前後核對控制／使用者修訂與清理狀態，事件與 DOM 不傳入應用層。
 
-可信播放的資格與期限見 [產品契約](PROJECT_CONTEXT.md#recovery-contract)。每輪返回的取消函式清理自有 document 捕捉監聽器，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
+可信播放的資格與期限見 [產品契約](PROJECT_CONTEXT.md#auto-救援與操作所有權)。每輪返回的取消函式清理自有 document 捕捉監聽器，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
 
 可信未完成目標由單一 PlayerControlObserver 保存，與原生觀察 targetSec 分離；RecoveryPlayerPort 的必要捕獲／驗證方法只交付有限位置與不透明證明，token 保留捕獲結果而不建立第二份目標權威。來源包括同派送鍵盤及目前 pointer 手勢；真正 0、新目標取代、播放交接、目標完成、未知變動與失效由 Observer 管理。Adapter 注入時鐘供進度合理性判斷，領域層仍只比較傳入事實。
 
 有效目標證明只允許本次 reload 修訂下第一個受認可替換核心的首個有界 SDK 初始化 seek；首個穩定播放基準關閉該窗口。等待 seeking 結束後才還原目標、倍速及播放。第二 seek／核心、外部 reload、新操作、未知原生位置或原 15 秒到期都不得延長授權。沒有證明的舊路徑保持原取消規則。此例外的自動證據與實際安裝結果分列於救援修復紀錄。
-
-<a name="progressive-playurl-processing-v218"></a>
-
-<a name="漸進式-playurl-處理v218"></a>
 
 ## 漸進式 playurl 處理
 
@@ -155,8 +137,6 @@ BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean`
 所有已辨識的漸進式或混合格式輸出，先完成規劃才寫回 URL。必要分段若沒有合法主線，拒絕整個回應，不部分取代 URL 或丟棄失敗分段。此原子性限於資料內容寫回，不回滾 Vault／控制器登記。既有僅含 DASH 清空欄位處理另行維持。[PlayurlTransformResult](../src-v2/domain/playurl-model.ts) 表達結果；每個消費端都檢查 `accepted`，不能只判斷結果物件是否為真值。
 
 僅使用 Catalog 模式下，Fetch 拒絕的 playurl 變成安全 HTTP 503 回應。XHR `text`（文字）／`json`（JSON）讀取存取器提供安全失敗內容，保留原生 HTTP 狀態；嚴格模式不支援的 XHR 回應類型在送出前拒絕。允許 Native、原線對照及整體停用原樣放行的政策維持各自語意。Fetch／XHR 等待後仍重查設定與生命週期有效性。
-
-<a name="adapters"></a>
 
 ## 適配器
 
@@ -195,9 +175,7 @@ XHR 的 response／responseText 共用同一組文字轉換及快取助手，JSO
 
 診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 `ControlCenter` 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
 
-原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。v2.1.22 的本輪證據見 [P05 修復報告](P05_COPY_FIX_REPORT.md)。
-
-<a name="native-position-ownership"></a>
+原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。v2.1.22 的本輪證據見 [P05 修復報告](../archive/retired/docs/P05_COPY_FIX_REPORT.md)。
 
 ## 原生位置與保存值
 
@@ -207,8 +185,6 @@ XHR 的 response／responseText 共用同一組文字轉換及快取助手，JSO
 
 `currentTime()` 在目前 video.readyState===0 時一次讀取原生位置，有限值（包含 0）優先於 SDK 快取；其他情況保留 SDK／snapshot 回退。例外回退只涵蓋該次原生 readyState／currentTime 讀取，不保證 video 選取或所有 snapshot getter 例外安全。Recovery 在保存前後及副作用前繼續核對 mediaId、coreId、seekRevision、userRevision、lifecycleSerial、路線與資格；保存值不授予新權限。
 
-<a name="visibility-boundary"></a>
-
 ## 網站前景偽裝與內部可見性
 
 [VisibilityAdapter](../src-v2/adapters/visibility.ts) 安裝時保存 Document.prototype 的 hidden getter，再於 document 實例覆寫 hidden=false、visibilityState=visible。網站因此看到前景；`isActuallyVisible()` 透過保存的 getter 查詢內部資格。Runtime／監控／量測使用此資格，不從被覆寫的頁面值推斷前景。
@@ -217,9 +193,7 @@ XHR 的 response／responseText 共用同一組文字轉換及快取助手，JSO
 
 保存 getter 缺失時會退回 visibilityState；讀取拋錯時按現有 fail-open 行為視為未隱藏，dispose 後查詢也回傳可見。因此可見性查詢本身不是原生 getter 來源或背景能力的保證，測試仍須先校準。
 
-測試需要校準保存的 getter 來源與真正分頁切換。prototype 讀值與 Runtime 若共用 getter，並非兩份獨立原生證明；面板隱藏或工具選取 ID 也不是原生 hidden 的證據。步驟與無效窗口判定見 [IAB_TESTING 的 E04](IAB_TESTING.md#visibility)。可見性清理的描述子所有權限制見 [SECURITY](../SECURITY.md#browser-behavior)。
-
-<a name="route-lifecycle"></a>
+測試需要校準保存的 getter 來源與真正分頁切換。prototype 讀值與 Runtime 若共用 getter，並非兩份獨立原生證明；面板隱藏或工具選取 ID 也不是原生 hidden 的證據。步驟與無效窗口判定見 [IAB_TESTING 的 E04](IAB_TESTING.md#3-前景偽裝與真正背景的校準)。可見性清理的描述子所有權限制見 [SECURITY](../SECURITY.md#瀏覽器行為)。
 
 ## 路線生命週期
 
@@ -248,8 +222,6 @@ Catalog 保留全部 11 個內建主機，其中 4 個預設不可用。起播�
 
 模式依序套用整體停用、分頁原線對照；正常選路再套用固定／自動選路及原生來源開關。固定主機、Catalog 覆寫設定或原生來源設定變更會失效計畫並重設量測／恢復。等待中的起播結果不得覆蓋新固定主機；最終送出使用當前設定與授權。
 
-<a name="diagnostics"></a>
-
 ## 診斷
 
 記錄器消費型別化 `DomainEvent`，彙總成功流量並保存有界失敗事故。UI 讀取模型為快照，讀取不能改變選路或啟動網路工作。攔截入口、媒體辨識、原生呼叫及回應階段與瀏覽器網路面板（Network）確認分開。僅使用 Catalog 規則涵蓋腳本改寫的 playurl 輸出及可攔截媒體送出；其他瀏覽器入口的流量須另行觀察。
@@ -260,7 +232,7 @@ Catalog 保留全部 11 個內建主機，其中 4 個預設不可用。起播�
 
 診斷同一次嘗試只有首次有效回應初始化播放進度基準；後續同身分及同路線成功不撤回 playback-observed／首次 playbackAt，也不延長 30 秒觀察期限。混合主機、seek、生命週期及新嘗試仍按原契約中斷。
 
-具名回歸、來源隔離、已封存安全差異與剩餘限制見 [v2.1.23 修復報告](CR01_CR05_FIX_REPORT.md)。
+具名回歸、來源隔離、已封存安全差異與剩餘限制見 [v2.1.23 修復報告](../archive/retired/docs/CR01_CR05_FIX_REPORT.md)。
 
 ## 模組責任邊界
 
@@ -273,4 +245,4 @@ Catalog 保留全部 11 個內建主機，其中 4 個預設不可用。起播�
 | PlayerMonitor／RecoveryController | domain/playback-progress 的純控制身分、時間及影格比較 | Monitor 保有停滯段；Recovery 保有 token、額度、breaker、reload／restore；兩者各自保留資格、基準、計數與終止檢查順序 |
 | XhrHookAdapter | xhr-values／xhr-request／xhr-response | 唯一 metadata WeakMap、原生 getter／guards、派送、安裝與按所有權還原；回應助手只轉換及快取當筆狀態 |
 
-助手沒有第二份 Native 授權索引或可獨立變更親和的能力。嘗試追蹤保留六個 attempt、32 個 request IDs 與既有期限；responseIds 集合沒有另加明確數量上限，不能把所有內部集合描述成逐項有界。詳見 [模組化紀錄](MODULARIZATION_v2.1.25_REPORT.md)。
+助手沒有第二份 Native 授權索引或可獨立變更親和的能力。嘗試追蹤保留六個 attempt、32 個 request IDs 與既有期限；responseIds 集合沒有另加明確數量上限，不能把所有內部集合描述成逐項有界。詳見 [模組化紀錄](../archive/retired/docs/MODULARIZATION_v2.1.25_REPORT.md)。

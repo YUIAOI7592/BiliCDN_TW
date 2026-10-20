@@ -10,11 +10,11 @@
 | --- | --- |
 | 安裝、操作與排查 | [README](../README.md) |
 | 開始修改程式 | [TODO](TODO.md) → [AGENTS](../AGENTS.md) → [PROJECT_CONTEXT](PROJECT_CONTEXT.md) → [SECURITY](../SECURITY.md) → [ARCHITECTURE](ARCHITECTURE.md) → [DEVELOPMENT](DEVELOPMENT.md) |
-| 撰寫或執行測試 | [TODO](TODO.md) → [DEVELOPMENT 測試套件與隔離](DEVELOPMENT.md#test-suites-and-isolation)；涉及瀏覽器時再讀 [IAB_TESTING](IAB_TESTING.md)；結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
-| 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#release-rules) → [DEVELOPMENT 封裝與發行](DEVELOPMENT.md#packaging-and-release)，並依 [發布文件更新順序](DEVELOPMENT.md#release-documentation) 準備文件 |
+| 撰寫或執行測試 | [TODO](TODO.md) → [DEVELOPMENT 測試套件與隔離](DEVELOPMENT.md#測試套件與隔離)；涉及瀏覽器時再讀 [IAB_TESTING](IAB_TESTING.md)；結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
+| 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#發行規則) → [DEVELOPMENT 封裝與發行](DEVELOPMENT.md#封裝與發行)，並依 [發布文件更新順序](DEVELOPMENT.md#發布文件更新順序) 準備文件 |
 | 查舊版或舊議題 | [HISTORY](HISTORY.md) → 依版本、議題或日期進入原始報告 |
 
-修改時需要更新哪些文件，直接查 [文件更新對照表](DEVELOPMENT.md#documentation-update-map)。
+修改時需要更新哪些文件，直接查 [文件更新對照表](DEVELOPMENT.md#文件更新對照表)。
 
 ## 現行指南
 
@@ -40,36 +40,12 @@
 
 ## 檔案配置
 
-既有版本紀錄維持原路徑；新增紀錄、發布文件與正文保護的維護方式統一見 [DEVELOPMENT](DEVELOPMENT.md#documentation-maintenance)。
+現行指南與最新版報告在 `docs/`；過往版本紀錄的閱讀版在 [歷史文件封存](../archive/retired/docs)，過往發行原件在 [Release 封存](../archive/retired/releases/Release)。原始正文、搬移對照與固定提交入口集中於 [HISTORY 的封存與快照](HISTORY.md#封存與快照)。新增紀錄、發布文件與正文保護的維護方式統一見 [DEVELOPMENT](DEVELOPMENT.md#文件維護與結案)。
 
-[文件清單](doc-manifest.json) 保存分類、權威、相容錨點與保護基準，不保存產品結果。`npm run docs:check` 只讀檢查；舊 Release 的不可變斷鏈及外部連結限制另外列出。
+[文件清單](doc-manifest.json) 保存分類、權威、相容錨點與保護基準，不保存產品結果。[搬移清單](../archive/relocation-manifest.json) 提供原件與新位置對照；文件及封存的唯讀檢查方式見 DEVELOPMENT。歷史原網址失效、既有快照斷鏈、私有證據及外部連結限制分開記錄。
 
 ## 舊連結導引
 
-<a name="br01-followthrough-status"></a>
-
-<a name="p05-v2122-本輪交付"></a>
-
-<a name="2026-10-03-文件維護紀錄"></a>
-
-<a name="2026-10-03-第一次封存整理紀錄"></a>
-
-<a name="2026-10-03-根目錄文件集中整理"></a>
-
-<a name="專案文件索引與維護規則"></a>
-
-<a name="發行與驗證紀錄"></a>
-
-<a name="歷史計畫與瀏覽器紀錄"></a>
-
-<a name="iab調查與結案紀錄"></a>
-
-<a name="已撤銷的-cdn-新增研究"></a>
-
-<a name="不回寫的歷史資料"></a>
-
 <a name="維護對照"></a>
 
-<a name="文件整理歷史導覽"></a>
-
-以上舊章節入口保留相容；歷史正文與版本／議題／日期導覽見 [HISTORY](HISTORY.md)。目前工作狀態只看 [TODO](TODO.md)。
+此入口供既有維護日誌追溯；歷史正文與版本／議題／日期導覽見 [HISTORY](HISTORY.md)。目前工作狀態只看 [TODO](TODO.md)。

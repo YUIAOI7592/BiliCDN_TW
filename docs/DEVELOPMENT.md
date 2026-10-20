@@ -1,12 +1,8 @@
-<a name="development"></a>
-
 # 開發、測試與發行流程
 
 本指南適用目前 `src-v2/`（版本以 [release.json](../release.json) 為準），瀏覽器測試**只使用 Codex 內建瀏覽器＋Tampermonkey**。具體操作、固定矩陣、背景校準與停止條件統一見 [IAB_TESTING](IAB_TESTING.md)，不維護另一份外部 Chrome 流程。
 
-依 [INDEX 閱讀路徑](INDEX.md#閱讀路徑) 確認本次工作所需指南；修改時查本頁的 [文件更新對照表](#documentation-update-map)。
-
-<a name="repository-layout-and-archive-maintenance"></a>
+依 [INDEX 閱讀路徑](INDEX.md#閱讀路徑) 確認本次工作所需指南；修改時查本頁的 [文件更新對照表](#文件更新對照表)。
 
 ## 儲存庫配置與封存維護
 
@@ -14,33 +10,33 @@
 | --- | --- |
 | `src-v2/`、`src-v2/entry.ts` | 唯一正式來源與組合入口 |
 | `tests-v2/`、`scripts/test-registry.mts` | 正式具名契約與明確登記 |
-| `scripts/` | 型別、架構、測試、建置及封裝工具 |
-| `docs/` | 現行指南、版本別報告及索引 |
-| `Release/v<version>/` | 已封裝快照，發布後不回寫 |
-| `baseline/`、`archive/retired/` | 來源原件、歷史文件與退出流程的工具；不作 v2 建置／測試輸入 |
+| `scripts/` | 型別、架構、測試、建置、封裝及文件／封存檢查工具 |
+| `docs/` | 現行指南、導覽、工作狀態、最新版報告與工具日誌 |
+| `Release/v<version>/` | 僅現行版本的五項封裝檔，發布後不回寫 |
+| `archive/retired/docs/` | 過往版本紀錄閱讀版、歷史彙編與指南快照 |
+| `archive/retired/releases/Release/` | 過往發行原件，保留原始位元組及目錄結構 |
+| `archive/retired/originals/` | 搬移前原始正文與完整日誌基準的 TAR 快照 |
+| `archive/retired/local/` | Git 忽略的私有證據、退出流程工具及原始工作資料 |
+| `baseline/` | 不可變來源歸屬原件；不作 v2 建置／測試輸入 |
 | `.work/iab-testing/` | 新內建瀏覽器輪次的私有證據，實際開跑才建立 |
 
-修改原始碼使用 apply_patch，保留無關變更。現行指南使用繁體中文；歷史正文與已封存安全產物保持原狀。修改標題時保留被引用錨點；文件變更的檢查與結案規則見 [文件維護與結案](#documentation-maintenance)。
+修改原始碼使用 apply_patch，保留無關變更。現行指南使用繁體中文；歷史正文與已封存安全產物保持原狀。修改標題時保留被引用錨點；文件變更的檢查與結案規則見 [文件維護與結案](#文件維護與結案)。
 
 內部收斂先以未修改實作通過具名行為契約，再機械式整理；新純比較助手只回傳事實，資格／基準／計數留在原呼叫端。保持原生 getter、參數、短路讀值、事件／註冊／清理與等待後驗證順序，不能因抽函式而提前快照狀態。單一用途小模型可與同用途契約共置；不以檔案數或行數當拆分目標，狀態與副作用的唯一所有者不變。
-
-<a name="markdown-format"></a>
 
 ## Markdown 格式（GFM）
 
 以 [GFM 規格](https://github.github.com/gfm/) 為語法依據，表格及提示另對照 GitHub 官方的 [表格說明](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-tables) 與 [Alerts 語法](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#alerts)。下列是專案的排版約定，不把所有格式檢查器偏好稱為 GFM 強制規定。
 
-- 一份現行文件保留一個 `#` 主標題，依序使用 `##`、`###`；保留既有自訂錨點。歷史完整報告彙編可保留原始多篇標題，不為排版改寫證據。
+- 一份現行文件保留一個 `#` 主標題，依序使用 `##`、`###`，一般章節使用標題自動錨點。只有仍被受保護歷史正文引用的入口才保留相容 HTML 錨點；修改標題時核對引用及 requiredAnchors。歷史完整報告彙編可保留原始多篇標題，不為排版改寫證據。
 - 標題、段落、清單、表格、引用及程式碼區塊之間保留一個空行。清單使用 `-` 或有序編號，巢狀項目依父項內容縮排；任務清單維持 `- [ ]`／`- [x]` 的實際狀態。
 - 表格使用完整表頭與 `---` 分隔列；保留原有對齊方向，每列欄數一致。儲存格中的字面管線符號須跳脫為 `\|`，包含行內程式碼中的管線。中文長表格不靠大量補空白對齊。
 - 指令、檔名、路徑與程式識別字使用行內程式碼；多行程式碼使用有語言標籤的圍欄。格式整理不修改程式碼內容、SHA-256、URL、版本、數量或原始測試輸出。
 - 粗體使用 `**文字**`。結尾有標點、後面緊接中文字時，檢查解析結果；必要時在結束標記後加空格，例如 `**結果：** 通過`。不能只數星號判定已正確渲染。
-- 使用有描述文字的 Markdown 連結，保留目標及錨點；CHANGELOG／TEST_REPORT 的儲存庫文件連結使用完整 GitHub URL。不要為統一格式改寫原生 URL、移除相容錨點或把有效 Alerts 標記跳脫為字面文字。
-- 整理範圍包含根目錄指南、`docs/`、測試文件及封存索引；已發布 `Release/`、來源基準、不可變安全產物與封存正文維持原樣，文件維護歷史只追加本次紀錄。
+- 使用有描述文字的 Markdown 連結，保留目標語意；CHANGELOG／TEST_REPORT 的儲存庫文件連結使用完整 GitHub URL。不要為統一格式改寫原生 URL、刪除必要歷史入口或把有效 Alerts 標記跳脫為字面文字。閱讀版搬移只允許經登記及驗證的 URL 編輯，原始正文另存快照。
+- 整理範圍包含根目錄指南、`docs/`、測試文件及封存索引；現行與封存的發行原件、來源基準及不可變安全產物不改寫。既有封存正文保留，完整報告與維護／工具日誌只追加。
 - 版本與歷史導覽由文件清單維護；歷史門檻標明版本。使用者工作範圍只在 TODO 維護，驗收結果只在 TEST_REPORT／原始證據維護；其他入口使用連結，不複製摘要。
 - 格式驗證須涵蓋 GFM 解析、表格欄位、程式碼與連結保存、相對路徑／錨點及 `git diff --check`。Node 契約與瀏覽器功能測試不因單純排版而重跑，也不把文件檢查寫成產品驗收。
-
-<a name="prerequisites"></a>
 
 ## 環境需求
 
@@ -51,8 +47,6 @@
 
 準備 Node／npm 後，在儲存庫根目錄執行 `npm ci`，安裝 [package-lock.json](../package-lock.json) 鎖定的開發依賴。[release.json](../release.json) 記錄發行工具版本。`verify` 檢查實際執行的精確 Node 版本，`build` 檢查精確 esbuild 版本。建置資訊清單的 npm／TypeScript 版本取自設定，不獨立驗證執行中的 npm／編譯器版本。[package.json](../package.json) 沒有執行期依賴。
 
-<a name="commands"></a>
-
 ## 命令
 
 ```powershell
@@ -60,6 +54,9 @@ npm run typecheck     # 嚴格 TypeScript 檢查，不輸出檔案
 npm run architecture  # 原始碼 AST 依賴圖及列出的所有權語法規則
 npm run format:check  # 唯讀檢查正式來源、測試、工具與維護設定格式
 npm run docs:check    # 離線唯讀檢查文件、權威清單、連結及保護基準
+npm run archive:check # 唯讀核對公開搬移、原件、閱讀版及完整日誌基準
+npm run archive:check -- --local # 加驗本機私有搬移；需要原始私有清單及 Git
+npm run archive:check -- --json  # schemaVersion 1 機器結果；可與 --local 合用
 npm run format        # 格式化上述維護範圍；代理修改仍按 AGENTS 使用 apply_patch
 npm test              # 全部獨立契約套件，以及架構／匯入純度測試
 npm test -- adapters  # 單一隔離套件
@@ -72,21 +69,21 @@ npm run package       # 重建 dist，寫入設定的 Release/v<version>/
 npm run verify        # 自動檢查及暫存封裝驗證
 ```
 
-從儲存庫根目錄執行命令。`typecheck` 與 verify 共用 [typecheck.mts](../scripts/typecheck.mts)，依序檢查正式來源、測試及維護工具。[tsconfig.json](../tsconfig.json) 保留嚴格 DOM 環境並設 `types: []`；[tsconfig.tests.json](../tsconfig.tests.json) 加入 Node 型別、DOM 及使用者腳本全域宣告。[tsconfig.tools.json](../tsconfig.tools.json) 使用 NodeNext、Node 型別、可移除型別語法與明確型別匯入，涵蓋全部 `.mts` 工具。工具由既有 Node 直接執行，不新增轉譯載入器；Node 只移除型別、不讀取 tsconfig，另由 typecheck 檢查型別，依 [官方 TypeScript 文件](https://nodejs.org/api/typescript.html) 使用 `.mts` ESM、可移除語法及型別匯入；測試打包及匯入純度的暫存 `.mjs` 仍是生成產物。`architecture` 檢查正式模組；獨立的 `npm test -- architecture` 測試架構檢查器自身測試情境。判斷這些檢查能證明哪些不變量前，先閱讀 [架構檢查範圍](ARCHITECTURE.md#dependency-direction)。
+從儲存庫根目錄執行命令。`typecheck` 與 verify 共用 [typecheck.mts](../scripts/typecheck.mts)，依序檢查正式來源、測試及維護工具。[tsconfig.json](../tsconfig.json) 保留嚴格 DOM 環境並設 `types: []`；[tsconfig.tests.json](../tsconfig.tests.json) 加入 Node 型別、DOM 及使用者腳本全域宣告。[tsconfig.tools.json](../tsconfig.tools.json) 使用 NodeNext、Node 型別、可移除型別語法與明確型別匯入，涵蓋全部 `.mts` 工具。工具由既有 Node 直接執行，不新增轉譯載入器；Node 只移除型別、不讀取 tsconfig，另由 typecheck 檢查型別，依 [官方 TypeScript 文件](https://nodejs.org/api/typescript.html) 使用 `.mts` ESM、可移除語法及型別匯入；測試打包及匯入純度的暫存 `.mjs` 仍是生成產物。`architecture` 檢查正式模組；獨立的 `npm test -- architecture` 測試架構檢查器自身測試情境。判斷這些檢查能證明哪些不變量前，先閱讀 [架構檢查範圍](ARCHITECTURE.md#依賴方向)。
 
-[verify.mts](../scripts/verify.mts) 檢查設定的 Node 版本、唯讀格式、typecheck、來源架構、全部測試、兩次建置的輸出／資訊清單一致性、JavaScript 語法、指定舊版／Worker 標記清單、必要儲存標記及封裝 SHA-256。封裝步驟會再建置一次。命令寫入 `dist/`，於新的 `dist/verify-package-*` 目錄封裝，確認解析後位置及前綴再刪除該目錄；不寫入 `Release/v<version>/`。
+[verify.mts](../scripts/verify.mts) 檢查設定的 Node 版本、唯讀格式、公開封存、文件、typecheck、來源架構、全部測試、兩次建置的輸出／資訊清單一致性、JavaScript 語法、指定舊版／Worker 標記清單、必要儲存標記及封裝 SHA-256。封裝步驟會再建置一次。命令寫入 `dist/`，於新的 `dist/verify-package-*` 目錄封裝，確認解析後位置及前綴再刪除該目錄；不寫入 `Release/v<version>/`。
 
 verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安全敏感變更或使用者明確要求時，另行執行安全差異掃描；不要求每版掃描。上一版通過報告不能作為新本機變更的證據。
 
-`docs:check` 已納入 `verify`，以鎖定的 GFM 解析／格式及標題錨點套件執行，不讀取私有 .work 工具。預設輸出檔案、行號、規則及原因；`npm run docs:check -- --json` 輸出 schemaVersion 1 結果，包含 findings、legacyLinks 及未連線的外部連結數。退出碼 0／1／2 分別代表通過、檢查失敗、非法參數。不可變歷史斷鏈分開列出，不宣稱全部連結零錯誤。
+`docs:check` 已納入 `verify`，以鎖定的 GFM 解析／格式及標題錨點套件執行，不讀取私有證據。預設輸出檔案、行號、規則及原因；`npm run docs:check -- --json` 輸出 schemaVersion 2 結果，包含 findings、legacyLinks、archivedReferences、私有證據未核對及外部連結未連線資料。archivedReferences 表示受保護原文中的原網址因搬移失效，另有登記封存目標；它不算有效現行連結。既有快照斷鏈另列 legacyLinks，不能宣稱歷史網址全部有效。
+
+`archive:check` 的公開模式同樣納入 `verify`，依 [搬移清單](../archive/relocation-manifest.json) 核對 TAR 原件、發行與圖片原始位元組、閱讀版 URL 編輯及三份既有日誌完整正文。另驗舊路徑退出、Release 僅現行版及校驗清單；無 Git 的乾淨來源副本也可執行。`--local` 額外核對被忽略的本機搬移清單與私有檔案原始雜湊，公開 checkout 不含這些資料，預設不執行。兩個檢查命令的退出碼均為 0／1／2，分別代表通過、檢查失敗及非法參數；檢查不會搬移或改寫檔案。
 
 ### 原始碼格式與靜態規則
 
 Prettier 3.9.10 只作開發工具。固定格式為兩空格、單引號、無分號、100 字元行寬、LF 與尾端逗號；關閉嵌入語言格式化，保留測試字串及模板內容。格式工具使用明確維護清單，只遍歷正式來源、測試與工具，另含根目錄維護 JSON 設定；Release、封存、基準、私有證據、生成 JS 與依賴鎖定檔不寫入。輸出最多四次格式計算取得穩定內容，無法穩定時失敗；check 模式不寫入。
 
 三個型別專案沿用 strict，並檢查未使用宣告／參數及明確型別匯入。移除多餘綁定仍保留初始化的副作用；既有位置參數使用明確未用名稱而不變更呼叫介面。本輪不加入 ESLint／typescript-eslint，TypeScript 7 保持既有精確版本，架構規則仍使用本機 AST。
-
-<a name="adding-behavior"></a>
 
 ## 新增行為
 
@@ -147,24 +144,15 @@ Prettier 3.9.10 只作開發工具。固定格式為兩空格、單引號、無�
 
 修改內容識別須涵蓋 cid 請求所有權、低信任來源、父目錄集合與容量；修改恢復須涵蓋精確期限、最新目標、拖曳、生命週期、政策與晚到 Promise。案例以正確契約斷言，不只斷言錯誤行為存在。修復前失敗與修復後通過紀錄分開保存。
 
-<a name="cr-修復回歸與原生校準"></a>
-<a name="v2124-可信播放按鈕意圖"></a>
-
 ### 原生校準與回歸
 
-XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString 一次轉換、轉換失敗後更正送出、跨 realm body 與同步重入。量測拒絕案例用獨立 Node 子程序觀察未處理拒絕，僅編譯本機 helper，明確管理 `FakeClock`、記憶體儲存及清理。既有案例與來源對照見 [CR 修復報告](CR01_CR05_FIX_REPORT.md)。
+XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString 一次轉換、轉換失敗後更正送出、跨 realm body 與同步重入。量測拒絕案例用獨立 Node 子程序觀察未處理拒絕，僅編譯本機 helper，明確管理 `FakeClock`、記憶體儲存及清理。既有案例與來源對照見 [CR 修復報告](../archive/retired/docs/CR01_CR05_FIX_REPORT.md)。
 
 可信播放意圖的契約須涵蓋同播放器／媒體／內容、paused／ended／error、真正可見性、可信事件與清理後回呼；既有路線授權、拖曳、額度、死核心 4 秒、其他意圖 30 秒與重載後 15 秒仍適用。一般停滯另驗 6／12 秒、長 seek／未完成可信目標 15／30 秒及同段升級不重開起點／額度。目標捕獲與初始化例外須驗真正零、未知來源撤銷、每個副作用前重入及晚到完成；recovered 後再檢查 15 個一秒區段，該驗收不延後產品兩樣本成功判定。來源隔離、正常實際播放與有限失敗退出分列，不能以來源模型代替安裝版。現行工作與停止狀態見 [TODO](TODO.md)。
-
-<a name="build-output"></a>
 
 ## 建置輸出
 
 [build.mts](../scripts/build.mts) 將 `src-v2/entry.ts` 打包成單一瀏覽器 IIFE，以 Chrome 120 為目標，不分割程式碼；前置 [使用者腳本中繼資料](../src-v2/metadata.txt) 並填入設定版本。輸出為 `dist/BiliCDN_TW.user.js`、外部原始碼對照及 `dist/build-manifest.json`。資訊清單記錄建置選項、輸入雜湊及使用者腳本雜湊。建置不會上傳產物。v2 來源不得加入執行期依賴、遠端程式載入、Worker 攔截或歷史 v1 匯入。
-
-<a name="real-chrome-validation"></a>
-<a name="真實-chrome-驗證"></a>
-<a name="iab-validation"></a>
 
 ## 內建瀏覽器驗證
 
@@ -172,13 +160,9 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 [iab-event-collector.mts](../scripts/iab-event-collector.mts) 是注入 IAB capability 的主機端收集器，不自行連線、建立服務或計時器；契約歸 tooling。使用者負責單一游標、有界完整 await、樣本隔離及 finally 清理，詳細規則以 IAB_TESTING 為準。
 
-<a name="p05-原生複製契約"></a>
-
 ### 剪貼簿驗證
 
-原生與 GM 寫入邊界見 [SECURITY](../SECURITY.md#剪貼簿寫入邊界)，完整快照、可信寫入、讀回／真正貼上與復原流程見 [IAB_TESTING](IAB_TESTING.md#p05-原生優先驗證)。通道不成立不能判產品失敗，歷史結果由 [HISTORY](HISTORY.md) 追溯。
-
-<a name="packaging-and-release"></a>
+原生與 GM 寫入邊界見 [SECURITY](../SECURITY.md#剪貼簿寫入邊界)，完整快照、可信寫入、讀回／真正貼上與復原流程見 [IAB_TESTING](IAB_TESTING.md#剪貼簿校準與保護)。通道不成立不能判產品失敗，歷史結果由 [HISTORY](HISTORY.md) 追溯。
 
 ## 封裝與發行
 
@@ -192,11 +176,9 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 [package.mts](../scripts/package.mts) 覆寫這些具名檔案，不清空既有 Release 目錄。校驗值清單納入該目錄已存在的全部檔案，校驗值本身除外。封裝前檢查目標目錄；不得為了驗證已發布版本而執行此命令。暫存封裝驗證使用 `npm run verify`。
 
-依 [AGENTS 發行規則](../AGENTS.md#release-rules)，本專案功能修復完成並通過必要自動及安全驗證後，預設自主提交、遞增修補版本、封裝、推送 main／標籤及發布 GitHub Release，不再等待使用者重複要求；當次明確限定只調查、文件整理或保留本機修改時遵守該範圍。完成後核對公開 latest 更新的版本、大小與 SHA-256。不得加入修補、CI/CD 或 GitHub Actions。本機封裝不等於發布。GitHub Release 附件只有使用者腳本，更新 URL 保持指向本儲存庫最新 Release。發布前執行 `npm run typecheck`、`npm run architecture`、`npm test`、`npm run verify` 及必要安全驗證。內建瀏覽器／Tampermonkey 驗收另行記錄，未執行的瀏覽器檢查不得寫成通過。
+依 [AGENTS 發行規則](../AGENTS.md#發行規則)，本專案功能修復完成並通過必要自動及安全驗證後，預設自主提交、遞增修補版本、封裝、推送 main／標籤及發布 GitHub Release，不再等待使用者重複要求；當次明確限定只調查、文件整理或保留本機修改時遵守該範圍。完成後核對公開 latest 更新的版本、大小與 SHA-256。不得加入修補、CI/CD 或 GitHub Actions。本機封裝不等於發布。GitHub Release 附件只有使用者腳本，更新 URL 保持指向本儲存庫最新 Release。發布前執行 `npm run typecheck`、`npm run architecture`、`npm test`、`npm run verify` 及必要安全驗證。內建瀏覽器／Tampermonkey 驗收另行記錄，未執行的瀏覽器檢查不得寫成通過。
 
-發布後先以內建瀏覽器的公開 latest 使用者腳本入口觸發既有安裝更新，再核對新文件實際執行身分；v2.1.21 已證明此路徑可用。不能只依歷史擴充功能介面限制就要求手動更新。只有當次入口確實受阻才交由使用者完成必要步驟；操作與證據要求見 [IAB 更新流程](IAB_TESTING.md#release)。
-
-<a name="documentation-maintenance"></a>
+發布後先以內建瀏覽器的公開 latest 使用者腳本入口觸發既有安裝更新，再核對新文件實際執行身分；v2.1.21 已證明此路徑可用。不能只依歷史擴充功能介面限制就要求手動更新。只有當次入口確實受阻才交由使用者完成必要步驟；操作與證據要求見 [IAB 更新流程](IAB_TESTING.md#8-修復發布與後續執行)。
 
 ## 文件維護與結案
 
@@ -216,9 +198,9 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 | 瀏覽器驗收方法 | 更新 [IAB_TESTING](IAB_TESTING.md)；實際結果與限制依證據層級記入 TEST_REPORT 或對應原始紀錄 |
 | 工作範圍、停止、跳過或結案決定 | 工作狀態集中更新 [TODO](TODO.md)，其他入口維持連結；既有報告保留原觀察及限制 |
 | 新增文件、改標題或導覽 | 更新 [doc-manifest.json](doc-manifest.json) 的登記或相容錨點，補上 INDEX、HISTORY 或對應指南的入口；依 [文件登記與保護](#文件登記與保護) 保留正文與舊連結 |
-| 發布新版 | 依 [發布文件更新順序](#release-documentation) 更新版本、變更、完整結果與工作狀態，並核對上列受影響指南 |
+| 發布新版 | 依 [發布文件更新順序](#發布文件更新順序) 更新版本、變更、完整結果與工作狀態，並核對上列受影響指南 |
 
-實測結果只維護 [TEST_REPORT](TEST_REPORT.md) 或對應原始紀錄；新增測試及本輪驗證不得改寫舊版發布時的案例數。普通修復不再分開建立 FIX／ACCEPTANCE／CONTINUATION 多份報告。必要獨立調查或設計才放入 `docs/records/v<version>/`，同議題按日期追加；既有版本檔案不搬移。
+實測結果只維護 [TEST_REPORT](TEST_REPORT.md) 或對應原始紀錄；新增測試及本輪驗證不得改寫舊版發布時的案例數。普通修復不再分開建立 FIX／ACCEPTANCE／CONTINUATION 多份報告。必要獨立調查或設計紀錄保存於 `archive/retired/docs/`，檔名標示版本或日期並登記 HISTORY；同議題按日期追加，原判定及限制保留。`docs/` 維持現行文件用途。
 
 <a name="release-documentation"></a>
 
@@ -228,21 +210,24 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 2. 同步 [release.json](../release.json)、[package.json](../package.json) 及對應 [package-lock.json](../package-lock.json) 的版本設定；一般指南引用版本來源，避免逐份硬寫目前版本。
 3. 更新 [CHANGELOG](CHANGELOG.md) 的本版行為差異及證據入口，保留舊條目；TEST_REPORT 保存新版完整證據，分列自動、安全、來源隔離及實際安裝結果。未執行、失敗、無效及依指示跳過的項目照實保留。
 4. 更新 TODO 的交付／停止／結案狀態，依文件更新對照表核對受影響指南，不將完整發布摘要或測試數字複製到其他入口。
-5. 保留 `docs/CHANGELOG.md`、`docs/TEST_REPORT.md` 兩個封裝輸入路徑；它們連至其他儲存庫文件時使用完整 URL，確保複製到 Release 後仍可閱讀。封裝及發布命令見 [封裝與發行](#packaging-and-release)；檢查已發布版本時只使用暫存封裝，不回寫快照。
+5. 封裝新版前，將前版 Release 按原始位元組歸檔至 `archive/retired/releases/Release/`，核對原件及校驗清單，再更新搬移清單與適用保護資料；`Release/` 只保留現行版本五項產物。搬移不重寫已發布快照或版本標籤。
+6. 保留 `docs/CHANGELOG.md`、`docs/TEST_REPORT.md` 兩個封裝輸入路徑；它們連至其他儲存庫文件時使用完整 URL，確保複製到 Release 後仍可閱讀。封裝及發布命令見 [封裝與發行](#封裝與發行)；檢查已發布版本時只使用暫存封裝，不回寫快照。
 
 ### 文件登記與保護
 
 1. 新增公開 Markdown 時更新清單的分類、topics、versions、date 與導覽。versions 可含調查基準和交付版本；缺少可確認日期填 null，不推測執行時間。主題權威由 owners 唯一定義，清單不保存 PASS 數或工作狀態。
 2. 清單 schemaVersion 為 1；documents.kind 分別標記指南、導覽、狀態、驗證、變更、日誌、版本紀錄、不可變快照與相容頁。protections 的 exact 禁止正文改寫；prefix 只允許追加。文字雜湊按 LF 正規化，二進位按原始位元組；不得改基準雜湊來消除失敗。
-3. 修改標題保留 requiredAnchors；[HISTORY](HISTORY.md) 提供版本、議題、日期及封存入口。既有完整歷史報告／維護日誌只追加，Release、baseline 與安全封存不回寫。
+3. 修改標題先核對引用與 requiredAnchors；[HISTORY](HISTORY.md) 提供版本、議題、日期及封存入口。`TEST_REPORT_HISTORY`、`DOC_MAINTENANCE_HISTORY` 與 `TEST_TOOLING_REPORT` 三份日誌的全部既有正文只追加；搬移清單的完整基準補足原 prefix 保護之後的既有尾段。發行原件、baseline 與安全封存不回寫。
 4. 失效連結例外只適用原檔雜湊相符的不可變文件，逐筆指定 source、line、url、sha256、reason；修復後刪除例外。歷史報告中的本機私有證據另以 privateEvidenceReferences 記錄相同精確欄位，只適用受保護原報告，無論本機是否有檔都列為未核對，不讀取私有內容。不得對現行文件、未知新錯誤或整個目錄設定豁免。
+5. `archiveManifest` 連至公開搬移清單；歷史引用限制須精確符合 source、line、url、原檔 LF 雜湊及登記的 originalTarget／archivedTarget。現行指南及搬移閱讀版本身的連結必須有效，不能借歷史限制隱藏新錯誤。閱讀版只准修改原件中已解析的連結 URL，文字、程式碼、標題與結果均與 TAR 原文核對。
+6. 搬移清單的 unchangedFiles 是本輪未改產品的證明。後續已授權產品變更先保存舊清單快照，再明確更新適用範圍；不得回寫歷史原件 entries、原始雜湊或既有 URL 編輯證據來消除失敗。
 
 ### 文件檢查與結案
 
-每次執行 `npm run docs:check`、人工事實核對與 `git diff --check`。檢查器不能判定全部文字含義；仍須依程式核對預設值、模式、UI 名稱、安全與狀態所有權，確認使用者縮減／結案決策未被恢復。
+每次執行 `npm run docs:check`、`npm run archive:check`、人工事實核對與 `git diff --check`；有本機私有搬移時另執行 `npm run archive:check -- --local`。檢查器不能判定全部文字含義；仍須依程式核對預設值、模式、UI 名稱、安全與狀態所有權，確認使用者縮減／結案決策未被恢復。
 
 新增工具時另執行型別、tooling 與 verify；單純文件修改不新增產品或瀏覽器通過宣稱。工具結果追加 TEST_TOOLING_REPORT，文件核對追加 [維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)。
 
-docs:check 以 Git 已追蹤及未忽略的新 Markdown 為公開範圍；無 Git 的來源副本按明確公共目錄及清單的 Release 目錄掃描，不遍歷私有 .work 或本機舊工具。它檢查 GFM、連結、唯一權威、兩次點擊、相容錨點、現行版本／npm 命令與正文保護。外部 URL 不連網；Release 快照的已知斷鏈與歷史私有證據未核對數分開列出，不稱為全部連結零錯誤。未登記的私有證據連結即使本機有檔也會失敗。
+docs:check 以 Git 已追蹤及未忽略的新 Markdown 為公開範圍；無 Git 的來源副本按明確公共目錄及清單的現行／封存 Release 目錄掃描，不遍歷私有 .work 或本機舊工具。它檢查 GFM、連結、唯一權威、兩次點擊、相容錨點、現行版本／npm 命令與正文保護。外部 URL 不連網；既有快照斷鏈、搬移後不可用原網址及歷史私有證據未核對數分開列出。未登記的私有證據連結即使本機有檔也會失敗。
 
 只執行使用者批准範圍；文件整理不新增排程／CI/CD，不開安全掃描或瀏覽器窗口。

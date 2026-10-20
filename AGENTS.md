@@ -1,8 +1,4 @@
-<a name="codex-development-guide--bilicdn_tw-v2"></a>
-
 # Codex 開發指南 — BiliCDN_TW v2
-
-<a name="current-target"></a>
 
 ## 現行目標
 
@@ -13,8 +9,6 @@
 - 歷史 v1 Release 與標籤僅供參考；v2 建置及測試不得匯入。
 - 現行文件與歷史紀錄的狀態見 `docs/INDEX.md`。有版本的計畫、驗收紀錄及發行快照只描述當時版本；目前工作見 `docs/TODO.md`。
 - 已退出流程的文件位於 `archive/retired/docs/`；舊本機工具與私有證據位於 `archive/retired/local/`。封存不作 v2 建置／測試輸入，配置見 `archive/retired/README.md`。
-
-<a name="required-workflow"></a>
 
 ## 必要流程
 
@@ -36,8 +30,6 @@
 
 契約使用具名 `node:test` 案例，各案例以測試情境建立函式重建可變狀態。使用 `testScope(t)` 登記清理，全域替換經 `defineGlobal()`；計時器、攔截、訂閱及取消函式由所屬資源明確管理。禁止僅執行標記（`only`）、略過（`skipped`）、待實作（`todo`）或取消（`cancelled`）留在完整執行。新套件加入 `scripts/test-registry.mts`，命令、期限及原契約對照見 `docs/DEVELOPMENT.md` 與 `tests-v2/MIGRATION.md`。工具驗證另按日期記錄於 `docs/TEST_TOOLING_REPORT.md`，不回寫已發布報告。
 
-<a name="architectural-rules"></a>
-
 ## 架構規則
 
 - `domain` 必須保持純粹，不得讀取 GM、DOM、Fetch、XHR、環境時鐘或計時器。時間及相對 URL 的基底必須明確傳入；可以使用注入的 `Clock`。
@@ -50,8 +42,6 @@
 - 對生命週期敏感的非同步工作，提交狀態前必須檢查適用的世代、內容週期、身分或控制器標記。
 - `SignedRouteVault` 擁有簽名路線索引、不透明識別碼及原生簽名路線（Native）選路授權。政策輔助函式使用不透明識別碼與有界中繼資料；適配器與執行路徑也會處理記憶體中的 URL、資料內容及資訊清單指紋。不得建立另一份可獨立授權的 Native URL 索引，也不得持久化或輸出這些原始值。
 - 診斷只能唯讀消費型別化事件。
-
-<a name="required-invariants"></a>
 
 ## 必要不變量
 
@@ -74,7 +64,7 @@
 - 使用者已授權本專案的預設修復交付流程：功能修復完成且通過必要自動驗證及按風險要求的安全驗證後，直接提交、遞增修補版本、封裝、推送 GitHub main／版本標籤並發布正式 GitHub Release，讓 Tampermonkey 的既有更新網址取得新版；不需使用者每次重複要求推送或再次確認。僅推送原始碼不算完成腳本更新交付。
 - 若當次使用者明確要求只調查、起草計畫、保留本機修改或暫緩發布，遵守該次範圍；不得把未完成修復或失敗驗證當成可發布結果。若工具或權限實際阻塞，完成可做的準備並具體回報阻塞原因。
 - 發布後核對遠端 main、版本標籤、唯一腳本附件，以及公開 latest 更新下載的版本、大小與 SHA-256；Codex 內建瀏覽器的 Tampermonkey 安裝版驗收另行記錄，未實測不得宣稱通過。
-- 安裝版更新先嘗試內建瀏覽器的既有公開 latest 使用者腳本入口，再核對新文件的完整執行身分。v2.1.21 已證明此路徑可用；不得只因擴充功能介面受限就要求使用者手動更新。當次入口實際受阻時才請使用者完成必要步驟，遵守工具限制；流程見 [IAB 更新](docs/IAB_TESTING.md#release)。
+- 安裝版更新先嘗試內建瀏覽器的既有公開 latest 使用者腳本入口，再核對新文件的完整執行身分。v2.1.21 已證明此路徑可用；不得只因擴充功能介面受限就要求使用者手動更新。當次入口實際受阻時才請使用者完成必要步驟，遵守工具限制；流程見 [IAB 更新](docs/IAB_TESTING.md#8-修復發布與後續執行)。
 - 不得加入 CI/CD、GitHub Actions、執行期依賴或遠端程式載入。
 - v2 不產生歷史修補產物。
 - GitHub Release 只包含 `BiliCDN_TW.user.js`。
@@ -82,15 +72,14 @@
 - Codex Security 按風險使用：安全敏感變更或使用者明確要求時執行，不自動要求每版掃描。`npm run verify` 不包含安全掃描。
 - 已知實際執行模型與推理設定時，提交訊息須記錄該資訊；不得複製過時署名。
 
-<a name="documentation-maintenance"></a>
-
 ## 文件維護
 
-- Markdown 依 GitHub Flavored Markdown（GFM）及 [專案格式約定](docs/DEVELOPMENT.md#markdown-format) 維護；檢查實際解析的標題、清單、表格、粗體、程式碼與連結。格式整理保留原文含義、錨點及歷史證據，不改寫 Release／不可變封存。
+- Markdown 依 GitHub Flavored Markdown（GFM）及 [專案格式約定](docs/DEVELOPMENT.md#markdown-格式gfm) 維護；檢查實際解析的標題、清單、表格、粗體、程式碼與連結。格式整理保留原文含義、錨點及歷史證據，不改寫 Release／不可變封存。
 - 隨對應原始碼變更更新現行指南。依程式／設定核對預設值、介面／權責、儲存行為、UI 名稱、測試命令及發布狀態。
 - 事實來源為 `release.json`、`package.json`、`package-lock.json`、`src-v2/` 及 `scripts/`；有日期的測試／瀏覽器紀錄只作對應版本的證據。
-- 歷史紀錄標示版本／日期並連至現行指南。保留原始觀察、限制及計畫撤銷狀態；不得將舊待完成文字或已批准驗收的限制轉為現行待辦。
+- 歷史紀錄標示版本／日期並連至現行指南。保留原始觀察、限制及計畫撤銷狀態；不得將舊待完成文字或已批准驗收的限制轉為現行待辦。歸檔閱讀版只允許經搬移清單登記、可由原始快照重建的連結 URL 調整；Release、安全產物及原始證據保持原始位元組。
 - `docs/INDEX.md` 是閱讀入口，`docs/TODO.md` 唯一維護工作狀態，`docs/TEST_REPORT.md` 唯一保存最新版完整驗收結果；其他入口使用連結保持一致，不複製狀態摘要。修正現行文件時，不得回寫 `Release/v*/` 快照或已封存且不可變更的安全產物。
 - `docs/TEST_REPORT.md` 保存最新版完整報告與歷史導覽；換版時將上一版完整正文加入 `archive/retired/docs/TEST_REPORT_HISTORY.md`，保留日期、版本、原錨點導引及原始限制。文件整理結果另按日期記入 `archive/retired/docs/DOC_MAINTENANCE_HISTORY.md`。
 - 保留 `docs/CHANGELOG.md`、`docs/TEST_REPORT.md` 兩個封裝輸入路徑；它們指向其他儲存庫文件的連結使用完整儲存庫 URL，確保複製到 Release 後仍可閱讀。
 - 僅修改文件時，執行 `npm run docs:check`，另核對事實與使用者範圍及 `git diff --check`；新增文件登記 `docs/doc-manifest.json` 並加入 `docs/HISTORY.md` 或現行入口。未實際執行時，不得宣稱新的執行期測試或瀏覽器驗收。
+- 變更封存配置、搬移清單或保護資料時，另執行 `npm run archive:check`；本機搬移另加 `-- --local`，不可把內容無法讀取列為通過。三份既有日誌的完整正文只能追加，詳細規則見開發指南。

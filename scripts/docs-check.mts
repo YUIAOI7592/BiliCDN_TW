@@ -7,6 +7,8 @@ import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
 import GithubSlugger from 'github-slugger'
 import { lint } from 'markdownlint/promise'
+import { readArchiveManifest } from './archive-check.mts'
+import type { ArchiveManifest, HistoricalArchiveReference } from './archive-check.mts'
 
 interface MarkdownNode {
   type: string
@@ -48,6 +50,7 @@ interface LinkException {
 export interface DocumentationManifest {
   schemaVersion: 1
   baseline: string
+  archiveManifest?: string
   documents: DocumentEntry[]
   owners: { topic: string; path: string }[]
   navigation: { entry: string; maxDepth: number }
@@ -63,7 +66,7 @@ export interface DocumentationFinding {
   message: string
 }
 export interface DocumentationResult {
-  schemaVersion: 1
+  schemaVersion: 2
   success: boolean
   files: number
   links: number
@@ -71,6 +74,7 @@ export interface DocumentationResult {
   protectedFiles: number
   findings: DocumentationFinding[]
   legacyLinks: LinkException[]
+  archivedReferences: HistoricalArchiveReference[]
   privateEvidenceNotChecked: LinkException[]
 }
 const kinds = [
@@ -133,6 +137,9 @@ export function parseDocumentationManifest(value: unknown): DocumentationManifes
   return {
     schemaVersion: 1,
     baseline: string(raw.baseline),
+    ...(raw.archiveManifest === undefined
+      ? {}
+      : { archiveManifest: localPath(raw.archiveManifest) }),
     owners: rows(raw.owners).map((row) => ({
       topic: string(row.topic),
       path: localPath(row.path),
@@ -244,7 +251,7 @@ function markdownFiles(root: string, manifest: DocumentationManifest): string[] 
 }
 export async function checkDocumentation(root = process.cwd()): Promise<DocumentationResult> {
   const result: DocumentationResult = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     success: false,
     files: 0,
     links: 0,
@@ -252,12 +259,14 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
     protectedFiles: 0,
     findings: [],
     legacyLinks: [],
+    archivedReferences: [],
     privateEvidenceNotChecked: [],
   }
   const add = (file: string, rule: string, message: string, line = 1) =>
     result.findings.push({ file, line, rule, message })
   const read = (file: string) => normalize(readFileSync(resolve(root, file), 'utf8'))
   let manifest: DocumentationManifest
+  let archive: ArchiveManifest | undefined
   try {
     manifest = parseDocumentationManifest(JSON.parse(read('docs/doc-manifest.json')) as unknown)
   } catch (error) {
@@ -267,6 +276,18 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
       error instanceof Error ? error.message : 'Invalid manifest',
     )
     return result
+  }
+  if (manifest.archiveManifest) {
+    try {
+      archive = readArchiveManifest(root, manifest.archiveManifest)
+    } catch (error) {
+      add(
+        manifest.archiveManifest,
+        'archive-manifest',
+        error instanceof Error ? error.message : 'Invalid archive manifest',
+      )
+      return result
+    }
   }
   const files = markdownFiles(root, manifest),
     entries = new Map<string, DocumentEntry>(),
@@ -351,6 +372,44 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
       add(entry.path, 'preservation', 'Historical document has no preservation baseline')
   const exceptionMatches = new Set<number>()
   const evidenceMatches = new Set<number>()
+  const archivedMatches = new Set<number>()
+  const archivedReferences = archive?.historicalReferences ?? []
+  const relocations = new Map([
+    ...(archive?.entries.map((item) => [item.originalPath, item.archivedPath] as const) ?? []),
+    ...(archive?.removedPaths.map((item) => [item.path, item.replacementPath] as const) ?? []),
+  ])
+  const readingCopies = new Set(
+    archive?.entries.filter((item) => item.kind === 'record').map((item) => item.archivedPath) ??
+      [],
+  )
+  const originalSources = new Map(
+    archive?.entries.map((item) => [item.archivedPath, item.originalPath]) ?? [],
+  )
+  const archiveSourceMatches = (
+    file: string,
+    node: MarkdownNode,
+    expectedHash: string,
+  ): boolean => {
+    const source = read(file)
+    if (entries.get(file)?.kind !== 'journal') return digest(source) === expectedHash
+    const baseline = archive?.appendOnly.find((item) => item.path === file)
+    if (!baseline) {
+      // Exact frozen journals remain valid without an append-only baseline.
+      // A shorter historical prefix cannot authorize references in a later tail.
+      return (
+        manifest.protections.some((item) => item.path === file && item.mode === 'exact') &&
+        digest(source) === expectedHash
+      )
+    }
+    const end = node.position?.end?.offset
+    if (end === undefined || Buffer.byteLength(source.slice(0, end)) > baseline.bytes) return false
+    const current = Buffer.from(source)
+    return (
+      current.length >= baseline.bytes &&
+      baseline.sha256 === expectedHash &&
+      digest(current.subarray(0, baseline.bytes)) === expectedHash
+    )
+  }
   for (const [file, tree] of trees) {
     const references = descendants(tree).filter((node) =>
       ['link', 'image', 'definition'].includes(node.type),
@@ -367,7 +426,10 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
         line = node.position?.start.line ?? 1
       let url = original,
         base = dirname(resolve(root, file)),
-        error = ''
+        error = '',
+        originalTarget = '',
+        historicalTarget = '',
+        originalFragment = ''
       const github = url.match(
         /^https:\/\/github\.com\/YUIAOI7592\/BiliCDN_TW\/(?:blob|tree)\/main\/(.*)$/,
       )
@@ -387,22 +449,38 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
           ),
           target = pathname ? resolve(base, pathname) : resolve(root, file),
           rel = relative(resolve(root), target)
-        if (rel.replaceAll('\\', '/').startsWith('.work/')) {
-          const index = manifest.privateEvidenceReferences.findIndex(
-            (item) =>
-              item.source === file &&
-              item.line === line &&
-              item.url === original &&
-              item.sha256 === digest(read(file)) &&
-              entries.get(file)?.kind === 'record' &&
-              protectedPaths.has(file),
+        originalTarget = rel.replaceAll('\\', '/')
+        const originalSource = originalSources.get(file)
+        historicalTarget =
+          originalSource && !github
+            ? relative(
+                resolve(root),
+                pathname
+                  ? resolve(dirname(resolve(root, originalSource)), pathname)
+                  : resolve(root, originalSource),
+              ).replaceAll('\\', '/')
+            : originalTarget
+        originalFragment = fragment
+        const privateReference = manifest.privateEvidenceReferences.findIndex(
+          (item) =>
+            item.source === file &&
+            item.line === line &&
+            item.url === original &&
+            item.sha256 === digest(read(file)) &&
+            entries.get(file)?.kind === 'record' &&
+            protectedPaths.has(file),
+        )
+        const privateTarget =
+          originalTarget.startsWith('.work/') || originalTarget.startsWith('archive/retired/local/')
+        if (privateReference >= 0 && privateTarget) {
+          evidenceMatches.add(privateReference)
+          result.privateEvidenceNotChecked.push(
+            manifest.privateEvidenceReferences[privateReference]!,
           )
-          if (index >= 0) {
-            evidenceMatches.add(index)
-            result.privateEvidenceNotChecked.push(manifest.privateEvidenceReferences[index]!)
-            result.links--
-            continue
-          }
+          result.links--
+          continue
+        }
+        if (privateTarget) {
           error = 'Private evidence link must be declared on a frozen record'
         } else if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel))
           error = 'Link leaves repository'
@@ -418,6 +496,30 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
         error = 'Invalid encoded link'
       }
       if (!error) continue
+      const archivedIndex = archivedReferences.findIndex(
+        (item) =>
+          error === 'Link target missing' &&
+          item.source === file &&
+          item.line === line &&
+          item.url === original &&
+          archiveSourceMatches(file, node, item.sha256) &&
+          item.originalTarget === historicalTarget &&
+          relocations.get(item.originalTarget) === item.archivedTarget &&
+          existsSync(resolve(root, item.archivedTarget)) &&
+          statSync(resolve(root, item.archivedTarget)).isFile() &&
+          (!originalFragment ||
+            !item.archivedTarget.endsWith('.md') ||
+            anchors.get(item.archivedTarget)?.has(originalFragment)) &&
+          ['immutable', 'record', 'journal'].includes(entries.get(file)?.kind ?? '') &&
+          !readingCopies.has(file) &&
+          protectedPaths.has(file),
+      )
+      if (archivedIndex >= 0) {
+        archivedMatches.add(archivedIndex)
+        result.archivedReferences.push(archivedReferences[archivedIndex]!)
+        result.links--
+        continue
+      }
       const index = manifest.immutableLinkExceptions.findIndex(
         (item) =>
           item.source === file &&
@@ -443,6 +545,15 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
         item.source,
         'private-evidence',
         `Unused or invalid private evidence reference: ${item.url}`,
+        item.line,
+      )
+  })
+  archivedReferences.forEach((item, index) => {
+    if (!archivedMatches.has(index))
+      add(
+        item.source,
+        'archive-reference',
+        `Unused or invalid archived reference: ${item.url}`,
         item.line,
       )
   })
@@ -540,7 +651,7 @@ export async function documentationCli(args: readonly string[], root = process.c
       : report.findings
           .map((item) => `${item.file}:${item.line} [${item.rule}] ${item.message}\n`)
           .join('') +
-        `Documentation ${report.success ? 'passed' : 'failed'}: ${report.files} Markdown files, ${report.links} local/repository links, ${report.legacyLinks.length} immutable legacy broken links; ${report.privateEvidenceNotChecked.length} private evidence references not checked, ${report.externalLinksNotFetched} external links not fetched.\n`
+        `Documentation ${report.success ? 'passed' : 'failed'}: ${report.files} Markdown files, ${report.links} local/repository links, ${report.legacyLinks.length} immutable legacy broken links; ${report.archivedReferences.length} historical archive references unavailable at original URLs; ${report.privateEvidenceNotChecked.length} private evidence references not checked, ${report.externalLinksNotFetched} external links not fetched.\n`
   return { exitCode: report.success ? 0 : 1, output }
 }
 if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/docs-check.mts')) {

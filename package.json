@@ -16,7 +16,8 @@
     "package": "node scripts/package.mts",
     "format": "node scripts/format.mts",
     "format:check": "node scripts/format.mts --check",
-    "docs:check": "node scripts/docs-check.mts"
+    "docs:check": "node scripts/docs-check.mts",
+    "archive:check": "node scripts/archive-check.mts"
   },
   "devDependencies": {
     "@types/node": "26.6.4",

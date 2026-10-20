@@ -12,8 +12,6 @@
 
 控制中心以當前封閉 ShadowRoot 的冒泡邊界隔離可信 keydown／keypress／keyup，讓 Enter／Space 及表單維持原生預設操作；Escape 關閉。關閉與宿主重建會清理監聽器。不新增焦點循環，亦無法撤銷外層捕捉階段已做的取消。
 
-<a name="v2123-選路量測與傳輸修正"></a>
-
 ## 選路與量測
 
 | 模式 | 路線 | 主動工作 |
@@ -33,17 +31,13 @@
 
 合法固定主機優先於健康親和。每筆傳輸保存路線政策修訂，設定／對照失效後的舊結果可按原資格保留歷史證據，但不能改寫親和、當前表示、來源授權或觸發恢復；儲存等待前後均檢查。影片、音訊的證據及恢復隔離，audio 備援不能建立 video 核心意圖。
 
-<a name="recovery-contract"></a>
-
 ## Auto 救援與操作所有權
-
-<a name="v2124-可信播放按鈕意圖"></a>
 
 ### 長暫停後的可信播放意圖
 
 長暫停後，網站核心可能忽略播放按鈕而不呼叫 SDK play。`PlayerAdapter` 同時觀察現有 SDK 方法及目前播放器區域的可信 `.bpx-player-ctrl-play` click；僅同一 paused 媒體、播放器、內容週期、真正可見且非 ended/error 才通知既有意圖。讀取前後核對控制／使用者修訂與清理狀態，事件與 DOM 不傳入應用層。
 
-`RecoveryController` 保留暫停至少 30 秒、拖曳／路線授權／政策／操作所有權／額度檢查；死核心 4 秒、其他無進度 30 秒與重載後 15 秒期限維持。正常進度不多做重載，沒有新操作不替暫停影片自行播放。訂閱、包裝及釋放權責見 [架構](ARCHITECTURE.md#application-controllers)。
+`RecoveryController` 保留暫停至少 30 秒、拖曳／路線授權／政策／操作所有權／額度檢查；死核心 4 秒、其他無進度 30 秒與重載後 15 秒期限維持。正常進度不多做重載，沒有新操作不替暫停影片自行播放。訂閱、包裝及釋放權責見 [架構](ARCHITECTURE.md#應用控制器)。
 
 ### 一般停滯與操作所有權
 
@@ -66,8 +60,6 @@
 
 可信進度按下立即建立由 pointerId、播放器、媒體及內容擁有的手勢，不要求當下 seeking 或位置改變。有效 dragging 同時排除停滯、watchdog、冷起播救援及新 Recovery token；同指標可信釋放／cancel／lost capture 或真正 window 失焦／hidden／生命週期失效才清理。子元素 blur 經 window 捕捉不等於視窗失焦，不清可信目標或手勢。一般停滯在釋放後第一個合資格 tick 從最新目標建立新期限；尚無播放進度的冷起播仍按原 firstMediaAt，可能立即救援，不新增全域釋放寬限。
 
-<a name="br01-owned-sdk-reload"></a>
-
 ### BR-01 自有 SDK 重載後續恢復契約
 
 合法 stall token 的自有 reload 可在有界 15 秒所有權內跨過 SDK 暫時 pause／空核心，最多接納第一個相符替換核心；舊核心回來、第二次替換、新使用者操作、真正 hidden 或失效撤銷。這是頁面因果觀察，不保證認證所有未經可觀察方法的外部替換。
@@ -88,9 +80,6 @@ cid 只從已辨識 playurl **所屬請求 URL** 取得：唯一、最多 20 位
 
 只有 trusted-api 更新內容基準；page-hint／player-MPD 不擴充、不改 cid、不觸發換片。generation 改變清空基準；真正換片依 **Session→Vault→Routes 重設→同步通知 Runtime→登記新表示** 撤銷舊監控、量測、恢復與播放器快取，不重開每分頁起播預算。沒有有效 cid 又無共同路徑時採保守重設，不新增同世代 API 逆序政策。
 
-<a name="未發布修復契約"></a>
-<a name="v219-修復契約"></a>
-
 ### 來源更新與傳輸
 
 Vault 是唯一 Native 授權來源。可信提升撤銷較低信任 handle；無法辨識的精確路線只能作觀察／限制，不能主動探測或 Native 選路。可信 MP4／FLV 來源在正規化、去重及容量限制後以集合比較；相同集合更新 primary／順序但保留 handles／aliases／authority，真正新增、移除、換簽名或可信提升仍撤銷舊 handles／aliases 並旋轉授權。無合法新來源拒絕輸出，不重用舊簽名。DASH 保留既有查詢行為。
@@ -98,8 +87,6 @@ Vault 是唯一 Native 授權來源。可信提升撤銷較低信任 handle；�
 內部原線決策區分原樣通行與 Vault 選中的原線；後者以當前身分與不透明 handle 解析精確 URL，重查政策／禁止規則。同一選定主機上的 DASH 請求保留當次查詢字串。
 
 Fetch 只正規化輸入一次、單一讀取器，等待與串流取消保留 signal.reason 原值及物件身分。XHR failed open 保留原請求 metadata；同步回呼重入不得污染新請求。waiting／native sent／terminal 分開，gate abort 阻止晚送；內部最多兩次 native open，每次還原後重查所有權、原生 OPENED 及最新政策。等待 continuation 失敗須單次終止；未延後 send 保留同步拋錯，已送出請求不重送。text／json、getter 例外、timeout、credentials、headers 與同步 setter 限制維持原生語意。
-
-<a name="v218-mp4flv-契約"></a>
 
 ### MP4／FLV 與混合格式
 
@@ -113,7 +100,7 @@ Fetch 只正規化輸入一次、單一讀取器，等待與串流取消保留 s
 - schema 2 與四個 GM 鍵保持；request／startup／challenge ID 用執行環境隨機前綴、工作建立時分配、重報沿用，最多 64 字元。
 - settings／restrictions／evidence 依解析器、鎖及遠端監聽更新；meta 按需讀取、由量測控制器鎖住計畫更新，保留既有較寬轉換語意。沒有 Web Locks 時不保證跨分頁序列化。
 - 簽名 URL、路徑、cid、查詢、權杖、Cookie、IP、播放器／核心物件不持久化或輸出；診斷只消費型別化事件，讀取無選路／網路副作用。
-- 網站前景偽裝與真正可見性分離；背景可播放，不代表允許背景救援。詳見 [可見性架構](ARCHITECTURE.md#visibility-boundary)。
+- 網站前景偽裝與真正可見性分離；背景可播放，不代表允許背景救援。詳見 [可見性架構](ARCHITECTURE.md#網站前景偽裝與內部可見性)。
 
 ## 交付規則
 
@@ -124,8 +111,6 @@ Fetch 只正規化輸入一次、單一讀取器，等待與串流取消保留 s
 ### 播放進度
 
 診斷同一次嘗試只有首次有效回應初始化播放進度基準；後續同身分及同路線成功不撤回 playback-observed／首次 playbackAt，也不延長 30 秒觀察期限。混合主機、seek、生命週期及新嘗試仍按原契約中斷。
-
-<a name="診斷複製"></a>
 
 ### 報告複製
 

@@ -6,10 +6,6 @@
 
 版本結果及工具能力由 [HISTORY](HISTORY.md) 追溯；來源、環境校準與實際安裝分開判定，歷史證據不能補算新窗口，也不能構成續測授權。
 
-<a name="scope"></a>
-
-<a name="v2123-本輪來源邊界"></a>
-
 ## 1. 範圍與證據層級
 
 網站只使用 [指定風景影片](https://www.bilibili.com/video/BV1tFZZBQE57/)，Auto 畫質，1 倍與 2 倍速分開。保持其他已安裝腳本與瀏覽器設定；不以強制畫質、停用其他腳本、改網站 timeout、媒體 getter、控制器或重設預算來製造成功。
@@ -25,8 +21,6 @@
 
 每份結果都寫明層級、版本、來源雜湊與情境。相同瀏覽器不會讓 S 自動變成 I。已發布版本的舊 Chrome 紀錄保留原證據身份，不改名冒充內建瀏覽器結果。
 
-<a name="preflight"></a>
-
 ## 2. 開始前只做一次的環境確認
 
 1. 記錄 HEAD、工作目錄狀態、release.json、工具版本、目標腳本附件與執行本體 SHA-256。版本標頭不能代替完整本體核對。
@@ -39,9 +33,7 @@
 
 故障窗口前先用最小操作驗證本機服務、JavaScript／CDP、可信輸入、事件讀取與解除，及早觸發可預見的工具批准。已有工作授權直接沿用；工具強制批准仍須遵守。CDP 回傳必須檢查 exceptionDetails／Error subtype、實際方法與隔離審計；例外物件也可能有 objectId，不能據此判成功。非同步評估完整 await 後才採用結果。
 
-目前已取得的一般能力證據見 [2026-10-11 可用性紀錄](IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md)。其中背景窗口已作廢，不能當成本方案的 E04 通過。
-
-<a name="visibility"></a>
+目前已取得的一般能力證據見 [2026-10-11 可用性紀錄](../archive/retired/docs/IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md)。其中背景窗口已作廢，不能當成本方案的 E04 通過。
 
 ## 3. 前景偽裝與真正背景的校準
 
@@ -66,22 +58,18 @@ BiliCDN 的 [VisibilityAdapter](../src-v2/adapters/visibility.ts) 在 document *
 
 一次方法未形成前提，只能歸因為該窗口無效。只有新增可證明的實際切換方法或觀察器修正，才允許同輪再做一次；不得重複同一無效操作。
 
-<a name="matrix"></a>
-
 ## 4. 固定驗收矩陣
 
 另行批准新一輪時，先凍結案例 ID、版本、來源差異、證據層級與沿用項目；不能在執行中無限加項。每個案例明列前提、事件順序、返回／狀態／副作用斷言、時間精度與清理。
 
 | 類型 | 制定與判定依據 |
 | --- | --- |
-| 產品時點、資格及額度 | 依 [現行產品契約](PROJECT_CONTEXT.md#recovery-contract)；Node 驗精確毫秒，瀏覽器列出採樣與 tick 誤差 |
+| 產品時點、資格及額度 | 依 [現行產品契約](PROJECT_CONTEXT.md#auto-救援與操作所有權)；Node 驗精確毫秒，瀏覽器列出採樣與 tick 誤差 |
 | 原生／來源行為 | 同一隔離來源的正常與失敗對照，不接正式 GM 儲存 |
 | 實際安裝 | 完整本體與 singleton 身分成立後，僅執行當輪批准子項 |
 | 清理 | 同窗口保存資源所有權、晚到工作及受控學習匹配結果 |
 
 v2.1.20 的 E／S／B／P／C 完整矩陣及當時門檻保存在 [重整前原文](../archive/retired/docs/DOCS_BEFORE_REORGANIZATION_2026-10-17.md#docs-iab_testing-md)，原執行結果由 [HISTORY](HISTORY.md) 追溯。舊門檻不適用新版一般停滯，不重開原矩陣；自然起因也不是救援修復的隱含新增門檻。
-
-<a name="controlled-faults"></a>
 
 ## 5. 故障注入、資料與清理
 
@@ -112,15 +100,11 @@ P05 複製先用自有頁的唯一合成文字，以真正複製、真正貼上�
 
 實際 UI 不符即記本次不通過，但必須另分來源缺陷與管理器／通道未定位。GM 返回或完成回呼不是讀回證據；不得因逾時再寫一次或無條件使用第二條寫入路徑。直接 API 合成探針不是原生 UI 驗收，須有明確授權且只作定位；沒有新前提不重跑。
 
-<a name="p05-原生優先驗證"></a>
-
 ### 解除延遲與剪貼簿寫入
 
 解除受控延遲時立即清空原生攔截模式，確認之後沒有新的 `Fetch.requestPaused`，再觀察恢復。不得保留攔截並仰賴不連續輪詢逐筆放行。Network 截斷的完整時序窗口作廢；獨立媒體採樣只保留其直接證明的結果，不補算傳輸矩陣通過。
 
-P05 原生優先寫入須由真正可信按鈕操作立即啟動；當次完整報告以 API 讀回與真正 Ctrl+V 雙重逐字比較，不 trim、不重序列化、不以完成提示代替讀回。完整項目快照只留記憶體，寫入收束且所有權相符才復原；原內容不寫檔。來源記憶體 UI 與實際安裝的完整本體／唯一 singleton 分列。已通過結果及先前 GM 通道限制見 [P05 修復報告](P05_COPY_FIX_REPORT.md)。
-
-<a name="verdict"></a>
+P05 原生優先寫入須由真正可信按鈕操作立即啟動；當次完整報告以 API 讀回與真正 Ctrl+V 雙重逐字比較，不 trim、不重序列化、不以完成提示代替讀回。完整項目快照只留記憶體，寫入收束且所有權相符才復原；原內容不寫檔。來源記憶體 UI 與實際安裝的完整本體／唯一 singleton 分列。已通過結果及先前 GM 通道限制見 [P05 修復報告](../archive/retired/docs/P05_COPY_FIX_REPORT.md)。
 
 ## 6. 結果、期限與停止規則
 
@@ -144,8 +128,6 @@ P05 原生優先寫入須由真正可信按鈕操作立即啟動；當次完整�
 - 若只剩工具或自然前提問題，交付終局的本輪結果與具體再開條件，不持續循環「再試一次」。
 - 只有本輪所有必測 ID／子項具有 VALID＋PASS 且 C01 通過，才可宣稱該範圍驗收完成。縮小範圍需明示；不能偷偷刪掉失敗／作廢行以結案。
 
-<a name="evidence"></a>
-
 ## 7. 證據目錄與重跑入口
 
 新一輪建立 `.work/iab-testing/<日期>-<版本>-<短提交>-<輪次>/`，保留原始歷史工作目錄。這是命名方案，目錄與執行器須在實際開跑時建立；本文件不宣稱已有一鍵 IAB 測試命令。
@@ -165,13 +147,11 @@ CASES 的必要欄位：`id, level, version, bodySha256, rate, preconditions, va
 
 同一內容改寫後重新連線時，先讀 CHECKPOINT 並重新核對安裝本體，不能復用舊 singleton handle。持續觀察的缺口要明記；不能把兩個分開窗口拼成一個完整時限。
 
-<a name="release"></a>
-
 ## 8. 修復、發布與後續執行
 
 修復時先建立正式失敗契約，按差異選取 N／S／I 案例。必要自動驗證仍為 typecheck、architecture、npm test、verify、git diff --check；Codex Security 依安全敏感性或使用者要求另跑，不在 verify 內。
 
-按 [AGENTS 發行規則](../AGENTS.md#release-rules) 完成已授權的功能修復交付；必要來源隔離同樣只在內建瀏覽器執行。公開產物核對與 I 層安裝驗收分別記錄。
+按 [AGENTS 發行規則](../AGENTS.md#發行規則) 完成已授權的功能修復交付；必要來源隔離同樣只在內建瀏覽器執行。公開產物核對與 I 層安裝驗收分別記錄。
 
 Tampermonkey 更新先用內建瀏覽器開啟本儲存庫既有 [公開 latest 使用者腳本](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js)，再於新載入的指定影片核對完整本體與 singleton。更新中繼頁本身不等於安裝成功。不能把「擴充功能介面受限」直接推論成「公開更新入口不能使用」。只有當次可用入口實際受阻或仍需使用者完成確認時，才請求必要手動步驟；不改用外部瀏覽器、不繞過工具限制。
 
@@ -180,6 +160,6 @@ Tampermonkey 更新先用內建瀏覽器開啟本儲存庫既有 [公開 latest 
 ## 9. 依據與文件責任
 
 - OpenAI 官方 [Browser 文件](https://learn.chatgpt.com/docs/browser?surface=app) 描述內建瀏覽器操作、分頁布局與受控 CDP；它沒有替本專案證明 Tampermonkey、實際背景或完整故障矩陣通過。
-- 實際已知能力與撤回的背景判定：[2026-10-11 可用性報告](IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md)。
-- 產品契約：[PROJECT_CONTEXT](PROJECT_CONTEXT.md)；原生／偽裝可見性與所有權：[ARCHITECTURE](ARCHITECTURE.md#visibility-boundary)、[SECURITY](../SECURITY.md#browser-behavior)。
+- 實際已知能力與撤回的背景判定：[2026-10-11 可用性報告](../archive/retired/docs/IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md)。
+- 產品契約：[PROJECT_CONTEXT](PROJECT_CONTEXT.md)；原生／偽裝可見性與所有權：[ARCHITECTURE](ARCHITECTURE.md#網站前景偽裝與內部可見性)、[SECURITY](../SECURITY.md#瀏覽器行為)。
 - 工作範圍與當前執行狀態只看 [TODO](TODO.md)；已取得的版本證據只看 [TEST_REPORT](TEST_REPORT.md) 與有日期的原始報告。

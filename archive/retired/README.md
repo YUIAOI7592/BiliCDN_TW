@@ -6,8 +6,11 @@
 
 | 位置 | 保存內容 | Git 可見範圍 |
 | --- | --- | --- |
-| `docs/` | 歷史計畫、研究、驗收、版本驗證、文件整理紀錄及指南快照 | 經檢查的 Markdown 文件 |
-| `docs/evidence/` | 已結案 v2.1.6 驗收的最終設定截圖 | 原本已追蹤的指定圖片 |
+| `docs/` | 歷史計畫、研究、驗收、版本報告閱讀版、完整日誌及指南快照 | 經檢查的 Markdown 文件 |
+| `docs/evidence/` | 已結案驗收的指定證據圖片 | 原本已追蹤的指定圖片 |
+| `releases/Release/` | 過往正式發行原件，原始位元組及版本目錄結構不變 | 公開封存 |
+| `originals/` | 搬移前原始正文及完整日誌基準 TAR | 公開原件快照 |
+| `local/2026-10-20-cleanup/` | 本輪退出流程的私有工作資料、證據及獨立搬移清單 | 忽略，本機保存 |
 | `local/development/` | v1.5.5 開發稿 | 忽略，本機保存 |
 | `local/scripts/` | v1.5.x package／security 準備工具 | 忽略，本機保存 |
 | `local/review/` | v1.5.1 審查與重現資料 | 忽略，本機保存 |
@@ -17,9 +20,13 @@
 
 `local/relocation-manifest.json` 是 2026-10-03 第一次搬移的本機清單，記錄每個檔案的舊／新路徑、bytes 與原始 SHA-256，以及保留位置的檔案校驗值；不納入公開儲存庫。
 
-完整歷史驗證及發布後補記見歷史導覽；最新版完整正文在 [TEST_REPORT](../../docs/TEST_REPORT.md)。後續加入的 [九份原指南快照](docs/IAB_GUIDES_BEFORE_2026-10-11.md) 使公開歷史 Markdown 從原 13 份增為 14 份，不改動既有封存正文。
+[公開搬移清單](../relocation-manifest.json) 記錄本輪公開位置、原件／閱讀版雜湊及 URL 編輯；私有清單另存 `local/2026-10-20-cleanup/private-manifest.json`，不公開檔案內容。`Release/` 根目錄僅保留現行版，舊版從 [發行封存](releases/Release) 查閱；原始文件可由 [TAR](originals/PRE_CLEANUP_2026-10-20_0f4cb8d.tar) 及 [固定提交](https://github.com/YUIAOI7592/BiliCDN_TW/tree/0f4cb8d669a144cf6876575a979fd98e4b586300) 追溯。
+
+完整歷史驗證及發布後補記見歷史導覽；最新版完整正文在 [TEST_REPORT](../../docs/TEST_REPORT.md)。2026-10-11 加入的 [九份原指南快照](docs/IAB_GUIDES_BEFORE_2026-10-11.md) 當時使公開歷史 Markdown 從原 13 份增為 14 份；這是當時範圍，後續新增不回寫原數量。
 
 ## 舊位置對照
+
+下列對照及原位說明保存 2026-10-03 首次封存整理的範圍；目前位置依上方配置與公開搬移清單查閱。
 
 | 原位置 | 新位置 |
 | --- | --- |
@@ -40,10 +47,11 @@
 
 - 這些檔案退出目前的 npm 建置與測試流程。舊 helper 含當時目錄與版本假設，不能作為現行發布命令。
 - sealed scan、checkpoint、source snapshot 與內嵌 `.git` 內容保持原 bytes。舊紀錄內的原始路徑保留為當時證據，以本索引與本機搬移清單查找新位置。
-- 歷史 Markdown 僅調整相對連結；研究數值、瀏覽器觀察、取消決定與覆蓋限制保留。
+- 搬移閱讀版僅調整已登記的連結 URL，並與 TAR 原始正文核對；研究數值、瀏覽器觀察、取消決定與覆蓋限制保留。既有封存正文不因一般格式整理回寫。
 - **v2.1.6 Chrome／Tampermonkey 驗收仍已通過、已結案**；移動文件不產生新的驗收待辦。新增 CDN 計畫仍已撤銷。
 - 公開文件／指定圖片與本機原始資料分區保存；新增公開材料前須確認沒有 signed URL、憑證、IP 或播放器物件。
-- 原始碼位於 `src-v2/`、契約測試位於 `tests-v2/`；根目錄文件為 README、AGENTS、SECURITY，其他現行指南與報告集中於 `docs/`。封存檔案不作 v2 建置輸入。
+- 原始碼位於 `src-v2/`、契約測試位於 `tests-v2/`；根目錄文件為 README、AGENTS、SECURITY，其他現行指南與最新版報告集中於 `docs/`，過往版本紀錄在本封存區。封存檔案不作 v2 建置輸入。
+- TEST_REPORT_HISTORY、DOC_MAINTENANCE_HISTORY 及 TEST_TOOLING_REPORT 的全部既有正文只追加。必要歷史入口保留；已失效原網址、既有快照斷鏈、私有證據及未連線外部網址分別列限制，不能合稱連結全部有效。
 
 ## 第一次封存整理的搬移驗證
 

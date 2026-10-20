@@ -5,6 +5,7 @@ import { runTests } from './test.mts'
 import { typecheck } from './typecheck.mts'
 import { formatProject } from './format.mts'
 import { checkDocumentation } from './docs-check.mts'
+import { checkArchive } from './archive-check.mts'
 import { packageRelease } from './package.mts'
 import { command, readRelease, sha256 } from './lib.mts'
 
@@ -13,6 +14,14 @@ export async function verify() {
   if (process.versions.node !== config.nodeVersion)
     throw Error(`Expected Node ${config.nodeVersion}; found ${process.versions.node}`)
   await formatProject(true)
+  const archived = checkArchive()
+  if (!archived.success)
+    throw Error(
+      archived.findings
+        .map((item) => `${item.file}:${item.line} [${item.rule}] ${item.message}`)
+        .join('\n'),
+    )
+  console.log(`Archive passed: ${archived.entries} entries, ${archived.records} reading copies.`)
   const documentation = await checkDocumentation()
   if (!documentation.success)
     throw Error(
@@ -21,7 +30,7 @@ export async function verify() {
         .join('\n'),
     )
   console.log(
-    `Documentation passed; ${documentation.legacyLinks.length} immutable broken links retained, ${documentation.privateEvidenceNotChecked.length} private evidence references not checked, ${documentation.externalLinksNotFetched} external links not fetched.`,
+    `Documentation passed; ${documentation.legacyLinks.length} immutable broken links retained, ${documentation.archivedReferences.length} historical URLs unavailable after archival, ${documentation.privateEvidenceNotChecked.length} private evidence references not checked, ${documentation.externalLinksNotFetched} external links not fetched.`,
   )
   typecheck()
   command(process.execPath, ['scripts/architecture-check.mts'])

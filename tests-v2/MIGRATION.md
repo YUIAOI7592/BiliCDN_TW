@@ -1,6 +1,6 @@
 # Node 內建測試遷移對照
 
-本文保存 2026-10-07／v2.1.8 的原遷移對照。現行套件及命令見 [開發流程](../docs/DEVELOPMENT.md#test-suites-and-isolation)，後續新增契約見 [測試工具紀錄](../docs/TEST_TOOLING_REPORT.md)，最新版完整結果見 [TEST_REPORT](../docs/TEST_REPORT.md)。下方舊斷言數與行號不代表目前案例數。
+本文保存 2026-10-07／v2.1.8 的原遷移對照。現行套件及命令見 [開發流程](../docs/DEVELOPMENT.md#測試套件與隔離)，後續新增契約見 [測試工具紀錄](../docs/TEST_TOOLING_REPORT.md)，最新版完整結果見 [TEST_REPORT](../docs/TEST_REPORT.md)。下方舊斷言數與行號不代表目前案例數。
 
 基準為本次修改前的 v2.1.8 工作樹（修改前保存；正式來源未變）。遷移前以保存的套件及支援工具重跑，15 個套件共 891 項功能斷言；另有 18 項架構規則期待。Node 案例數表示具名情境，不等於舊斷言數。
 
@@ -173,4 +173,4 @@
 | `state.ts` | 265–317 | 啟用 Native 的頁面提示初始保留原始 URL。 | `Native-on page hint initially preserves its original URL [15]` |
 | `state.ts` | 317–347 | 即使 responseKey 已看過，同一物件的可信資料被修改後仍重新清理。 | `mutated same-object trusted payload is re-sanitized despite an already-seen responseKey [16]` |
 
-工具的新增契約與實際驗證結果見 [測試工具驗證紀錄](../docs/TEST_TOOLING_REPORT.md)；命令與清理規則見 [開發流程](../docs/DEVELOPMENT.md#test-suites-and-isolation)。
+工具的新增契約與實際驗證結果見 [測試工具驗證紀錄](../docs/TEST_TOOLING_REPORT.md)；命令與清理規則見 [開發流程](../docs/DEVELOPMENT.md#測試套件與隔離)。

@@ -1,12 +1,8 @@
-<a name="trust-boundaries-and-data-handling"></a>
-
 # 信任邊界與資料處理
 
 本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [歷史索引](docs/HISTORY.md)，不把歷史掃描當成新差異的驗證。
 
 瀏覽器驗證只使用 **Codex 內建瀏覽器＋Tampermonkey**，資料隔離、送出前攔截與清理依 [IAB_TESTING](docs/IAB_TESTING.md)。來源隔離、環境校準與實際安裝各自判定；版本別證據由 [HISTORY](docs/HISTORY.md) 追溯。
-
-<a name="untrusted-inputs"></a>
 
 ## 不可信輸入
 
@@ -28,8 +24,6 @@ Vault 可以保存可改寫的 PCDN URL，僅在換主機後成為正常內建�
 
 內部原線決策區分原樣通行與 Vault 選中的原線；後者以當前身分與不透明 handle 解析精確 URL，重查政策／禁止規則。同一選定主機上的 DASH 請求保留當次查詢字串。漸進式來源在正規化、去重、容量限制後以集合比較；相同集合更新 primary／順序但保留 handles／aliases／authority，真正新增、移除、換簽名或可信提升仍撤銷。
 
-<a name="persistent-data"></a>
-
 ## 持久資料
 
 產品使用四個持久鍵：`bilicdn.v2.settings`、`bilicdn.v2.restrictions`、`bilicdn.v2.routeEvidence` 及 `bilicdn.v2.meta`。
@@ -41,10 +35,6 @@ Vault 可以保存可改寫的 PCDN URL，僅在換主機後成為正常內建�
 Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒有跨分頁序列化。Tampermonkey 監聽器 API 不可用時也有替代路徑。同步能力取決於平台 API 是否可用。
 
 產品自有持久資料為設定、限制、主機證據及量測游標／時間中繼資料。不得新增持久化的簽名 URL、路徑、查詢字串、權杖、播放器物件、媒體表示狀態或事故時間線。中繼資料的原始欄位合併不提供通用儲存清理能力。
-
-<a name="network-authority"></a>
-
-<a name="v2123-差異邊界"></a>
 
 ## 網路權限
 
@@ -66,11 +56,7 @@ Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒有跨�
 
 首個合法起播窗口開始時立即消耗每分頁預算，後來的 Fetch／XHR 先加入共用 pending，再檢查已用預算；epoch／generation／設定 reset 不重開預算，沒有合法候選不消耗。健康量測的 planning／running 以各輪所有權在 finally 清理；probe、儲存鎖或寫入拒絕以固定 measurement-error 收束，遵守 10 分鐘冷卻，不輸出例外內容、不新增立即重試。`EvidenceStore` 只在寫入成功後發布記憶體成功樣本；舊完成或拒絕不能清除新輪次。
 
-<a name="browser-behavior"></a>
-
 ## 瀏覽器行為
-
-<a name="v2124-可信播放按鈕意圖"></a>
 
 ### 可信播放意圖
 
@@ -78,7 +64,7 @@ Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒有跨�
 
 `RecoveryController` 保留暫停至少 30 秒、拖曳／路線授權／政策／操作所有權／額度檢查；死核心 4 秒、其他無進度 30 秒與重載後 15 秒期限維持。正常進度不多做重載，沒有新操作不替暫停影片自行播放。每輪返回的取消函式清理自有 document 捕捉監聽器，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
 
-此觀察不授予新的 Native 路線或傳輸權限。政策與來源證據見 [v2.1.24 報告](docs/BR01_POLICY_REASSESSMENT_2026-10-14.md)；位置保存與有條件還原修復見 [v2.1.27 紀錄](docs/BR01_RESCUE_FIX_v2.1.27.md)。歷史 FAIL 不回寫，安裝版故障救援未在本輪實測。
+此觀察不授予新的 Native 路線或傳輸權限。政策與來源證據見 [v2.1.24 報告](archive/retired/docs/BR01_POLICY_REASSESSMENT_2026-10-14.md)；位置保存與有條件還原修復見 [v2.1.27 紀錄](archive/retired/docs/BR01_RESCUE_FIX_v2.1.27.md)。歷史 FAIL 不回寫，安裝版故障救援未在本輪實測。
 
 ### 鍵盤、拖曳與自有重載
 
@@ -100,15 +86,11 @@ BR-08 指標拖曳使用目前播放器區域內的可信 pointerdown 及已知�
 
 WebRTC 還原前會確認已安裝的讀取存取器／寫入存取器仍屬於本腳本。可見性清理會移除監聽器，嘗試還原保存的 `document` 屬性描述子或移除自有屬性；目前可見性實作還原前沒有檢查屬性描述子所有權。描述攔截時必須依各自的還原行為說明。
 
-<a name="native-position-boundary"></a>
-
 ## 原生位置觀察邊界
 
 沒有有效未完成目標證明時，未初始化媒體的有限原生位置（包含 0）優先於 SDK 快取，僅作新意圖保存值；未知目標變更只撤銷過期還原，不授予可信 userRevision、Vault 身分或恢復資格。新可信鍵盤目標另需同一 keydown／keyup 派送、捕捉核心不變、非 internalReload 與既有來源抑制。getter／SDK 返回後重查媒體、播放器、生命週期與操作修訂。
 
 原生 readyState／currentTime 的例外回退不涵蓋全部頁面 getter。自有 reload 初始零、pendingSeek／internalSeek、正常播放增量及未知位置往返各有邊界；完全沒有被採樣的變化無法推定。新增觀察不產生網路、持久欄位或診斷識別。
-
-<a name="test-instrumentation"></a>
 
 ## 測試工具與資料邊界
 
@@ -118,8 +100,6 @@ WebRTC 還原前會確認已安裝的讀取存取器／寫入存取器仍屬於�
 - 只控制工具持有的回應或實際 SDK 方法的自有回傳邊界。保存 receiver、參數、例外與完整描述子，還原時確認所有權，不能覆寫其他腳本的新包裝。
 - 不修改網站媒體 getter、重建 singleton 或重設預算來製造通過。背景測試區分 document 實例偽裝、已校準原生 getter 與 Runtime 資格；不以合成事件、面板隱藏或單一工具 ID 代替真正背景。
 - 每窗保存事件完整性與清理結果。原始播放器／核心／DOM 物件不輸出；報告只保留有界狀態、次數、時間與不透明測試 ID。
-
-<a name="reporting"></a>
 
 ## 回報
 
@@ -135,10 +115,10 @@ XHR 每個等待請求內部最多兩次原生 open；每個同步還原邊界�
 
 XHR header 依 ByteString 在入口轉換一次，原生接受後才存字串供內部 reopen；body 的字串分支在 phase 變更前轉為 USVString，原例外保留，更正後可送出。平台品牌檢查保留跨 realm Blob／Document／FormData／URLSearchParams／ArrayBuffer／view，轉換重入後重新取得 metadata；已送出請求不重播。原生未送出的 abort 不一律變成 UNSENT，正式替身依原生對照校準。
 
-版本別安全審查與原生 XHR 對照見 [CR 修復報告](docs/CR01_CR05_FIX_REPORT.md) 及 [TEST_REPORT](docs/TEST_REPORT.md)。S-02 相對 URL／base 與 raw SharedArrayBuffer 尚未取得原生結論，不能宣稱所有 body 型別或整份安裝矩陣通過。
+版本別安全審查與原生 XHR 對照見 [CR 修復報告](archive/retired/docs/CR01_CR05_FIX_REPORT.md) 及 [TEST_REPORT](docs/TEST_REPORT.md)。S-02 相對 URL／base 與 raw SharedArrayBuffer 尚未取得原生結論，不能宣稱所有 body 型別或整份安裝矩陣通過。
 
 ## 剪貼簿寫入邊界
 
 診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 `ControlCenter` 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
 
-原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。v2.1.22 的本輪證據見 [P05 修復報告](docs/P05_COPY_FIX_REPORT.md)。
+原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。v2.1.22 的本輪證據見 [P05 修復報告](archive/retired/docs/P05_COPY_FIX_REPORT.md)。
