@@ -3,3 +3,6 @@ tests/fixtures/*.user.js -text
 baseline/*.user.js -text
 Release/**/*.user.js -text
 Release/**/*.diff -text
+archive/retired/releases/**/*.user.js -text
+archive/retired/releases/**/*.diff -text
+archive/retired/originals/*.tar -text

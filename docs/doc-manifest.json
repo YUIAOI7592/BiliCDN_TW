@@ -2731,6 +2731,13 @@
   ],
   "protections": [
     {
+      "path": "archive/retired/originals/PRE_CLEANUP_2026-10-20_0f4cb8d.tar",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 1873920,
+      "sha256": "f72ae96bba7589eccfd6ca1b5edd6840823eef731ee9b44fbd7774d9b1026a32"
+    },
+    {
       "path": "Release/v1.6.0/BUILD_MANIFEST_v1.6.0.json",
       "mode": "exact",
       "encoding": "lf",
