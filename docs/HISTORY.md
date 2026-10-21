@@ -183,6 +183,7 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
+| 2026-10-22 | [全專案檔案盤點與整理](../archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md) |
 | 未單列日期／彙編 | [文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)、[v2.0.2：禁止出口、播放器備援與死核心事故修復計畫](../archive/retired/docs/PLAN_v2.0.2.md)、[歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[測試工具驗證紀錄](TEST_TOOLING_REPORT.md) |
 | 2026-10-17 | [文件重整前快照 — 2026-10-17](../archive/retired/docs/DOCS_BEFORE_REORGANIZATION_2026-10-17.md)、[BR-01 位置保存、救援時機與 v2.1.27 驗證](../archive/retired/docs/BR01_RESCUE_FIX_v2.1.27.md) |
 | 2026-10-16 | [BR-01：單元契約、根因調查與後續修復規格](../archive/retired/docs/BR01_RCA_2026-10-16.md)、[BR-01 第二輪調查：批准更正、完整自然窗口與位置保存契約](../archive/retired/docs/BR01_RCA_R2_2026-10-16.md)、[v2.1.26 四階段模組收斂紀錄](../archive/retired/docs/CONVERGENCE_v2.1.26_REPORT.md) |

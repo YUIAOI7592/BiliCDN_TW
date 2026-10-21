@@ -516,3 +516,7 @@ INDEX／HISTORY 與現行指南已更新實體路徑，閱讀入口及維護流�
 原封存索引中的歷史說明與驗證數字仍可由固定提交的 [archive/README](https://github.com/YUIAOI7592/BiliCDN_TW/blob/3d47e5920a4422b72b12be462e852cebafb20b9b/archive/README.md) 及 [archive/retired/README](https://github.com/YUIAOI7592/BiliCDN_TW/blob/3d47e5920a4422b72b12be462e852cebafb20b9b/archive/retired/README.md) 查閱；本紀錄只追加，不修改原日誌、發行快照、搬移清單或原始證據。新指南不複製當時檔案數及校驗結果，避免下次換版重複同步。
 
 離線 docs:check、archive:check、人工分類／導覽／授權範圍核對及 git diff --check 通過；原不可變斷鏈、歷史搬移網址、私有證據與外部網址未連線的限制分開保留。本次只維護文件與保護登記，產品來源、測試、維護工具、版本與現行發行產物不變；不新增產品或瀏覽器驗收結果，只提交並推送 main，不升版、不發布。
+
+## 2026-10-22 全專案最佳化：盤點與保護基準
+
+以 67d33d2／v2.1.27 完成追蹤、忽略與實體盤點，逐檔判定及分階段方案見 [本輪紀錄](PROJECT_FILE_OPTIMIZATION_2026-10-22.md)。基準完整 verify 19 套件／1248 案通過；現行腳本與已發布本體一致。七個既知私有目錄的讀取限制與既有本機驗證邊界分開保留，不冒稱新的私有全量雜湊通過。此階段只建立盤點、計畫與工作入口，後續指南及工具依階段驗證；不升版、不發布、不恢復停止的瀏覽器工作。
