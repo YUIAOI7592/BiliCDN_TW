@@ -62,6 +62,18 @@
 
 ### 檔案分類
 
+根目錄只保留需直接識別或由工具依固定路徑讀取的檔案，不另存工作筆記：
+
+| 根目錄檔案 | 用途與維護位置 |
+| --- | --- |
+| README.md、AGENTS.md、SECURITY.md、LICENSE | 使用者入口、代理強制流程、安全政策與授權；各自維護唯一責任，詳細指南由 INDEX 導覽 |
+| package.json、package-lock.json、release.json | npm 入口及精確開發依賴、可重現安裝、產品與發行工具版本；不能只改其中一份版本宣告 |
+| tsconfig.json、tsconfig.tests.json、tsconfig.tools.json | 共用嚴格設定及產品 DOM／測試 Node＋DOM／維護工具 NodeNext 環境；環境差異需要各自入口 |
+| .prettierrc.json、.prettierignore | 格式選項及編輯器／一般 Prettier 的排除；正式 npm format 範圍由 scripts/format.mts 的固定白名單決定，不遍歷封存或產物 |
+| .gitignore、.gitattributes | 隔離私有資料與生成產物、保持換行及原件位元組；忽略規則也是防止舊工具或私有證據再次進入 Git 的保護 |
+
+以上設定留在工具慣用位置；新增設定前先查是否已有相同權責，任務專用腳本與紀錄依下節結案歸檔。歷史逐檔盤點由 [HISTORY](HISTORY.md) 追溯，不作第二份持續更新的配置清單。
+
 | 分類 | 維護規則 |
 | --- | --- |
 | 現行公開檔案 | 正式來源、測試、可重用工具、指南與設定隨變更維護；現行 Release 發布後不回寫。`baseline/` 仍作來源歸屬基準，保持不變，不作 v2 建置／測試輸入 |

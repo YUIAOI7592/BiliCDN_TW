@@ -2641,8 +2641,8 @@
       "path": "archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md",
       "mode": "prefix",
       "encoding": "lf",
-      "bytes": 5147,
-      "sha256": "b58f349771bf8e7c7a5cd0775e27900e8da673d3d3cc269d584690ae20a75cb5"
+      "bytes": 6073,
+      "sha256": "b0a5ba9ab58b3b7dc36825542784dd0a994398b44e3bf0280e90f01c4a5bddda"
     },
     {
       "path": "archive/retired/docs/evidence/PROJECT_FILE_INVENTORY_2026-10-22.json",
@@ -4909,8 +4909,8 @@
       "path": "archive/retired/docs/DOC_MAINTENANCE_HISTORY.md",
       "mode": "prefix",
       "encoding": "lf",
-      "bytes": 75348,
-      "sha256": "c9267603f4d695d38290a0e0598fea6a77a428fa189b08e31380f79bbda00b1a"
+      "bytes": 75956,
+      "sha256": "5693d62510c2ddc03ad280ba7f7ba9843750645373f66eeb9c2436b42de2d34b"
     },
     {
       "path": "archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md",

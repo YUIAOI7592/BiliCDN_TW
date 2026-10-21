@@ -11,9 +11,9 @@
 - 選路前由 `domain/url-policy.ts` 解析並接納 URL。
 - `SignedRouteVault` 擁有簽名路線索引、不透明識別碼及當前原生簽名路線（Native）選路授權。適配器及執行路徑也會在記憶體中處理 URL 與資料內容；`PlayerAdapter` 在取代／重設前保存序列化的資訊清單指紋，XHR 保存每筆請求的 URL 狀態。這些資料不得進入持久學習資料或診斷輸出，也不得成為另一份 Native 授權索引。
 - 可信 playurl API 的媒體表示會取代較低信任的頁面及播放器提示所授予的 Native 資格；已撤銷的不透明識別碼不得啟動主動探測或建立新的健康證據。
-- BR-03 的 cid 僅來自所屬、已辨識的 API 請求，保存在 Fetch 閉包／XHR metadata 及控制器私有狀態。只作內容關聯，不是回應驗證或 Native 授權。父目錄備援上限為影片 128／音訊 64；低信任提示不更新基準。cid 與目錄不得輸出到診斷或持久資料。請求重用、failed open、同步重入均維持 context 所有權。
+- cid 僅來自所屬、已辨識的 API 請求，保存在 Fetch 閉包／XHR metadata 及控制器私有狀態。只作內容關聯，不是回應驗證或 Native 授權。父目錄備援上限為影片 128／音訊 64；低信任提示不更新基準。cid 與目錄不得輸出到診斷或持久資料。請求重用、failed open、同步重入均維持 context 所有權。
 - 未知外部主機必須先有自然發生、可歸因的成功傳輸才可取得證據；不得預先主動探測。
-- 控制中心在封閉 Shadow DOM 內執行，操作必須來自可信使用者事件。BR-10 僅在當前 UI 自有冒泡邊界停止可信鍵盤傳播，不合成 click、不替代命令，保留原 click／change 信任檢查。關閉／重建清理監聽器並核對宿主身分；不修改全域事件原型或外層監聽器。外層 capture 先執行屬已知限制，須另以實際網站驗證。
+- 控制中心在封閉 Shadow DOM 內執行，操作必須來自可信使用者事件。控制中心僅在當前 UI 自有冒泡邊界停止可信鍵盤傳播，不合成 click、不替代命令，保留原 click／change 信任檢查。關閉／重建清理監聽器並核對宿主身分；不修改全域事件原型或外層監聽器。外層 capture 先執行屬已知限制，須另以實際網站驗證。
 - 可信未完成尋位目標只由控制觀察者保存；不透明捕獲證明不授予路線權限。真正零有效，未知位置／新操作／內容與媒體失效撤銷；播放交接須有可信來源。本次自有重載的第一個初始化尋位例外沿用原 15 秒界限及最新操作／路線授權，不接納第二尋位或替換核心。window 捕捉到子元素 blur 不取得視窗失焦資格；真正 window blur／hidden 仍通知控制失效，既有事件遮蔽保留。
 
 已辨識的 MP4／FLV `durl` 分段及 DASH 別名仍是不可信資料內容。漸進式／混合格式輸出先完成規劃才寫回 URL；必要分段若沒有合法主線，不得丟棄該段或輸出部分改寫的成功結果。這是資料內容寫回的原子性，不保證回滾 Vault／控制器登記。型別化 playurl 結果的 `accepted` 必須由每個消費端檢查。嚴格模式下，Fetch 拒絕的 playurl 使用 HTTP 503；XHR 提供安全失敗內容，保留原生 HTTP 狀態。
@@ -64,19 +64,19 @@ Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒有跨�
 
 `RecoveryController` 保留暫停至少 30 秒、拖曳／路線授權／政策／操作所有權／額度檢查；死核心 4 秒、其他無進度 30 秒與重載後 15 秒期限維持。正常進度不多做重載，沒有新操作不替暫停影片自行播放。每輪返回的取消函式清理自有 document 捕捉監聽器，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
 
-此觀察不授予新的 Native 路線或傳輸權限。政策與來源證據見 [v2.1.24 報告](archive/retired/docs/BR01_POLICY_REASSESSMENT_2026-10-14.md)；位置保存與有條件還原修復見 [v2.1.27 紀錄](archive/retired/docs/BR01_RESCUE_FIX_v2.1.27.md)。歷史 FAIL 不回寫，安裝版故障救援未在本輪實測。
+此觀察不授予新的 Native 路線或傳輸權限。各版政策與修復證據由 [HISTORY](docs/HISTORY.md) 追溯；安裝版故障救援的未執行限制以 [TEST_REPORT](docs/TEST_REPORT.md) 原紀錄為準，歷史 FAIL 不回寫。
 
 ### 鍵盤、拖曳與自有重載
 
-BODY／頁面焦點的 Space、k／K 及既有倍速鍵以私有 keydown 候選關聯實際控制變化；須 isTrusted、真正可見、同播放器／媒體／核心／生命週期，且事件仍在派送。只有 paused 或有限 playbackRate 在該派送內確實改變，才取得一次 userRevision。editable／封閉控制中心／IME／Ctrl／Meta／Alt、合成或忽略命令及派送後工作不能取得身分。播放器區域的既有 keydown 操作觀察及下述 BR-07 seek 鍵規則保留；腳本的還原方法清除自己的候選，不能冒充使用者操作。零延遲 timeout 僅釋放參照，清理確認候選及監聽器所有權。
+BODY／頁面焦點的 Space、k／K 及既有倍速鍵以私有 keydown 候選關聯實際控制變化；須 isTrusted、真正可見、同播放器／媒體／核心／生命週期，且事件仍在派送。只有 paused 或有限 playbackRate 在該派送內確實改變，才取得一次 userRevision。editable／封閉控制中心／IME／Ctrl／Meta／Alt、合成或忽略命令及派送後工作不能取得身分。播放器區域的既有 keydown 操作觀察及下述可信 seek 鍵規則保留；腳本的還原方法清除自己的候選，不能冒充使用者操作。零延遲 timeout 僅釋放參照，清理確認候選及監聽器所有權。
 
 自有 SDK reload 的 pause／空核心例外僅屬本次合法 stall token 與 reload 修訂，透過 `PlayerPort.ownedReload(revision)` 回傳有界布林證明；DOM／核心／事件留在適配器私有記憶體。最多接納本次第一個替換核心，原核心在空隙後回來、第二次替換、新可信操作、hidden／control-loss 或生命週期失效都撤銷。空核心上的舊 reload 標記不具資格；首個非零替換須標記相符、初始化狀態不是 false 並通過健康觀察，每個 seek／setRate／play 前仍核對最新 video 請求、Vault、政策／限制與 token。
 
 沒有有效可信目標證明時，SDK 初始化的未知 seek 撤銷舊位置還原，不猜成可信操作，不覆寫 SDK 最新目標；其餘合法播放意圖仍受重載後 15 秒無進度期限與所有權檢查。只有實際時間／影格進度才能停止無進度計時，兩個連續有效採樣才 recovered；保留尺寸、readyState 或初始化 seek 跳躍不能清除失敗／breaker。已還原且首次進度被接納後，以同一穩定所有者維持最多 15 秒的確認資格，不延長 pause／空核心租期、不授予還原副作用或新核心接納；未形成持續進度仍失敗。終止後 SDK resume 不重開救援，真正進度或新的使用者／媒體所有權才可清除失敗停滯抑制。觀察租期到期、同步重入與晚到 Promise 不能復活或回寫舊動作，也不能否定已接納的合法進度。此內部證明不授予 Native 權限，不新增持久或診斷識別資料；未經可觀察方法的外部核心替換仍有既有辨識限制，不能把頁面標記描述成認證。
 
-BR-01 的控制觀察僅提供取消／動作所有權，不授予 Native 權限。可信 pointer／非 seek key 需 isTrusted 與播放器區域；非 seek key 僅觀察 keydown。BR-07 的 seek 鍵可來自頁面焦點，但排除 editable／控制中心／組字／Ctrl／Meta／Alt，須真正可見、該可信 keydown 或 keyup 尚在派送、同播放器／媒體／生命週期，且實際有限位置改變，並 seeking 或 readyState 0／捕捉核心未變／非 internalReload，才取得一次使用者修訂。同派送的 wrapper／媒體／controls／冒泡觀察去重；keydown、repeat、keyup 若各自形成新 seek，各自取得一次身分，沒有位置變化則不計數。eventPhase NONE、腳本還原及晚到工作不能取得新寬限；鍵盤不建立按住狀態或延遲窗口。零延遲 timer 僅釋放私有事件參照，清理綁定實際事件種類且舊回呼確認候選身分。pendingSeek 保守抑制腳本還原，不因可信輸入全面清空；來源無法可靠辨識時不猜測使用者歸因。媒體及 page seek／reload 另有觀察修訂。core reload／還原仍核對最新 video 請求、Vault／政策／禁止／固定路線、操作及核心身分。自有 reload 的替換標記來自頁面觀察，無法認證所有未經可觀察方法的外部替換。監聽器由 adapter reset 清理，seek／reload wrapper 還原確認目前所有權；不把 DOM／事件／核心物件交給應用層或診斷。
+控制觀察僅提供取消／動作所有權，不授予 Native 權限。可信 pointer／非 seek key 需 isTrusted 與播放器區域；非 seek key 僅觀察 keydown。可信 seek 鍵可來自頁面焦點，但排除 editable／控制中心／組字／Ctrl／Meta／Alt，須真正可見、該可信 keydown 或 keyup 尚在派送、同播放器／媒體／生命週期，且實際有限位置改變，並 seeking 或 readyState 0／捕捉核心未變／非 internalReload，才取得一次使用者修訂。同派送的 wrapper／媒體／controls／冒泡觀察去重；keydown、repeat、keyup 若各自形成新 seek，各自取得一次身分，沒有位置變化則不計數。eventPhase NONE、腳本還原及晚到工作不能取得新寬限；鍵盤不建立按住狀態或延遲窗口。零延遲 timer 僅釋放私有事件參照，清理綁定實際事件種類且舊回呼確認候選身分。pendingSeek 保守抑制腳本還原，不因可信輸入全面清空；來源無法可靠辨識時不猜測使用者歸因。媒體及 page seek／reload 另有觀察修訂。core reload／還原仍核對最新 video 請求、Vault／政策／禁止／固定路線、操作及核心身分。自有 reload 的替換標記來自頁面觀察，無法認證所有未經可觀察方法的外部替換。監聽器由 adapter reset 清理，seek／reload wrapper 還原確認目前所有權；不把 DOM／事件／核心物件交給應用層或診斷。
 
-BR-08 指標拖曳使用目前播放器區域內的可信 pointerdown 及已知進度祖先，包含功能性 `.bpx-player-progress-wrap`；命中祖先不能跨出播放器區域。尚未 seeking 或改位置的預覽也取得保護，但不因此授予新的選路／探測權限。單一私有手勢保存 pointerId、媒體、播放器及生命週期；新合法進度按下取代舊手勢，同指標可信 pointerup／pointercancel／lostpointercapture 才可釋放。合成事件、別的指標及非進度按下不撤銷當前手勢，同步重入後核對觀察版本與物件身分。
+指標拖曳使用目前播放器區域內的可信 pointerdown 及已知進度祖先，包含功能性 `.bpx-player-progress-wrap`；命中祖先不能跨出播放器區域。尚未 seeking 或改位置的預覽也取得保護，但不因此授予新的選路／探測權限。單一私有手勢保存 pointerId、媒體、播放器及生命週期；新合法進度按下取代舊手勢，同指標可信 pointerup／pointercancel／lostpointercapture 才可釋放。合成事件、別的指標及非進度按下不撤銷當前手勢，同步重入後核對觀察版本與物件身分。
 
 真正 hidden、可信失焦及生命週期／媒體／播放器失效撤銷手勢。`VisibilityAdapter` 的既有 guard 在阻擋事件前發布內部 control-loss 通知；入口注入，控制觀察取消訂閱，失敗 listener 不破壞 guard，controls() 保留真正可見性防漏。通知不把 DOM／事件交給應用層，不改網站可見性覆寫、不新增 pointer capture 或拖曳 timeout。
 
@@ -121,4 +121,4 @@ XHR header 依 ByteString 在入口轉換一次，原生接受後才存字串供
 
 診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 `ControlCenter` 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
 
-原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。v2.1.22 的本輪證據見 [P05 修復報告](archive/retired/docs/P05_COPY_FIX_REPORT.md)。
+原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。對應歷史證據見 [P05 修復報告](archive/retired/docs/P05_COPY_FIX_REPORT.md)。

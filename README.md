@@ -6,7 +6,7 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 版本以 [release.json](release.json) 為準。安裝與操作見下文，完整驗證見 [TEST_REPORT](docs/TEST_REPORT.md)，目前工作見 [TODO](docs/TODO.md)。
 
-從 2026-10-11 起，來源隔離、安裝版與發布後瀏覽器回歸均只用內建瀏覽器，執行方式見 [IAB 測試方案](docs/IAB_TESTING.md)。原 Chrome 紀錄保留其版本及環境，不換名算成新的通過結果。
+瀏覽器驗證方式見 [IAB 測試方案](docs/IAB_TESTING.md)，各版實際結果與環境限制由 [HISTORY](docs/HISTORY.md) 追溯。
 
 > [!IMPORTANT]
 > **原作者與原始腳本：** [jiyunshi－Bilibili CDN 台灣優化](https://greasyfork.org/zh-TW/scripts/579776-bilibili-cdn-%E5%8F%B0%E7%81%A3%E5%84%AA%E5%8C%96)。本儲存庫源自原作者 MIT 授權腳本的個人修改專案；v2 是以 TypeScript 重新設計與重構的版本，並非原作者的官方版本。
@@ -22,7 +22,7 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 腳本的自動更新網址固定指向本儲存庫的最新 Release。從 v2 更新會沿用既有 v2 設定與學習資料；v1 設定不會遷移，使用 v1 的使用者請停用舊腳本後安裝 v2。
 
-已安裝時，可開啟同一「安裝／更新腳本」連結觸發更新。v2.1.21 已在內建瀏覽器以此方式取得新版；驗證時會重新載入指定影片並核對實際執行本體，不只依管理器標示或更新中繼頁判定。
+已安裝時，可開啟同一「安裝／更新腳本」連結觸發更新，再重新載入影片。更新入口或管理器標示不能單獨證明新版已執行；驗證步驟見 [IAB 更新流程](docs/IAB_TESTING.md#8-修復發布與後續執行)。
 
 GitHub Release 只提供 `BiliCDN_TW.user.js`。建置資訊、校驗碼與驗證紀錄保存在儲存庫的 [Release 目錄](Release)。
 
@@ -51,7 +51,7 @@ GitHub Release 只提供 `BiliCDN_TW.user.js`。建置資訊、校驗碼與驗�
 
 首頁顯示腳本模式、選定 CDN、影片／音訊請求與回應來源、可播放緩衝、測速及恢復狀態。「CDN 與播放設定」提供選路與功能開關；「查看診斷報告」提供事故記錄。
 
-控制中心內聚焦按鈕後可用 Enter／空白鍵操作，Escape 關閉；表單與 Tab／Shift+Tab 保留瀏覽器原生行為。v2.1.21 修復了背後頁面快捷鍵取消設定入口的問題。
+控制中心內聚焦按鈕後可用 Enter／空白鍵操作，Escape 關閉；表單與 Tab／Shift+Tab 保留瀏覽器原生行為。
 
 ### 四種使用模式
 
@@ -140,7 +140,7 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 正式來源為 `src-v2/`，入口是 `src-v2/entry.ts`，契約測試位於 `tests-v2/`。應用協調、瀏覽器操作、路由政策與傳輸協定分開，並以抽象語法樹（AST）架構規則、型別化介面與獨立測試套件保護職責邊界。
 
-現行指南、變更紀錄與驗證報告集中於 `docs/`；根目錄保留 README、AGENTS、安全政策、授權及必要建置設定。已退出流程的計畫、研究、驗收與舊工具集中於 [archive/retired](archive/retired/README.md)，來源原件與校驗碼集中於 `baseline/`。封存保留原始證據與位置對照，已發布的 `Release/` 產物維持原位。
+檔案配置與保存規則統一見 [DEVELOPMENT](docs/DEVELOPMENT.md#儲存庫配置與封存維護)。`Release/` 只保留現行版本；過往原始產物與歷史文件由 [封存入口](archive/retired/README.md) 追溯。
 
 開發環境、命令與工具版本統一見 [DEVELOPMENT](docs/DEVELOPMENT.md#環境需求)，精確設定由 release.json 與 package-lock.json 決定。
 

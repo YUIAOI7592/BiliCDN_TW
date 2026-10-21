@@ -56,7 +56,7 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 - 可信 MP4／FLV 更新替換同段的有界來源集合；變更時 Vault 撤銷舊 handles、aliases、輸出索引並旋轉授權身分。相同正規化集合不輪替，DASH 保留既有查詢字串處理。
 - `MeasurementMetaStore` 管理既有游標／冷卻儲存存取，向呼叫端提供 `measurement` 鎖。
 
-內部原線決策區分原樣通行與 Vault 選中的原線；後者以當前身分與不透明 handle 解析精確 URL，重查政策／禁止規則。同一選定主機上的 DASH 請求保留當次查詢字串。漸進式來源在正規化、去重、容量限制後以集合比較；相同集合更新 primary／順序但保留 handles／aliases／authority，真正新增、移除、換簽名或可信提升仍撤銷。
+`RouteCoordinator` 產生原線決策，`SignedRouteVault` 解析當前授權的精確來源；兩者不共享第二份授權索引。原線決策、DASH 查詢與漸進式集合更新的相容行為見 [產品契約](PROJECT_CONTEXT.md#來源更新與傳輸)，信任條件見 [安全政策](../SECURITY.md#不可信輸入)。
 
 `EvidenceStore` 只在寫入成功後發布記憶體成功樣本；舊完成或拒絕不能清除新輪次。
 
@@ -120,7 +120,7 @@ BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean`
 
 ### 長暫停後的可信播放意圖
 
-長暫停後，網站核心可能忽略播放按鈕而不呼叫 SDK play。`PlayerAdapter` 同時觀察現有 SDK 方法及目前播放器區域的可信 `.bpx-player-ctrl-play` click；僅同一 paused 媒體、播放器、內容週期、真正可見且非 ended/error 才通知既有意圖。讀取前後核對控制／使用者修訂與清理狀態，事件與 DOM 不傳入應用層。
+`PlayerAdapter` 將 SDK 方法與目前播放器區域的可信播放按鈕觀察交給單一 `PlayerControlObserver`；透過最小埠通知 Recovery，不傳遞 DOM／事件。可信來源、同媒體／播放器／內容、可見性、paused／ended／error 及讀取前後修訂檢查統一見 [安全政策](../SECURITY.md#可信播放意圖)。
 
 可信播放的資格與期限見 [產品契約](PROJECT_CONTEXT.md#auto-救援與操作所有權)。每輪返回的取消函式清理自有 document 捕捉監聽器，SDK 方法只還原自有包裝；Runtime reset 先解除 Recovery 訂閱。
 
@@ -161,7 +161,7 @@ Tampermonkey 儲存及值變更監聽器由 `platform/storage.ts` 實作。適�
 
 XHR 每次 open 建立獨立 metadata，區分 opened／waiting／sent／terminal。參數依序轉換一次後，先暫存新所有權供同步事件使用，原生 open 成功才永久清理舊請求；拋錯只在候選仍為當前所有者時回復，不能覆蓋巢狀成功 open。尚未原生送出的取消與本地拒絕由該 metadata 擁有；每個事件回呼後重查所有權，舊 headers／progress 監聽也先檢查身分。reopen／abort 不讓舊 loadend 或 gate 繼續影響新請求。虛擬終止使用 DONE、空回應及終止事件；waiting 的自有中止完成後回到 UNSENT，尚未原生送出的其他 abort 依原生狀態處理，不一律改成 UNSENT。原生已送出的事件由瀏覽器處理。readyState／response／responseText 與方法攔截共同追蹤安裝所有權，只還原仍由本攔截持有的描述子。同步重開只保留合法選項，非同步重開保留 timeout、responseType、credentials 與 headers。
 
-XHR header 依 ByteString 在入口轉換一次，原生接受後才存字串供內部 reopen；body 的字串分支在 phase 變更前轉為 USVString，原例外保留，更正後可送出。平台品牌檢查保留跨 realm Blob／Document／FormData／URLSearchParams／ArrayBuffer／view，轉換重入後重新取得 metadata；已送出請求不重播。原生未送出的 abort 不一律變成 UNSENT，正式替身依原生對照校準。
+值轉換助手處理一次性的 ByteString／USVString 與跨 realm body 品牌；hook 保有 metadata、原生派送及轉換重入後的所有權重查。轉換時機、例外身分、已送出請求不重播及原生 abort 狀態要求見 [XHR 安全與相容邊界](../SECURITY.md#xhr-準備與取消原因)。
 
 Chrome 同步選項驗證失敗可能把原生 XHR 清成 UNSENT；只有尚未送出的 waiting 請求可標記 needsNativeOpen，在 gate 釋放時重新準備，再檢查所有權與最新政策；已送出的請求絕不因此重播。版本別例外對照由 [HISTORY](HISTORY.md) 追溯。
 
@@ -173,9 +173,9 @@ XHR 的 response／responseText 共用同一組文字轉換及快取助手，JSO
 
 ### 控制中心複製所有權
 
-診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 `ControlCenter` 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
+`ControlCenter` 擁有跨關閉／重開的單一 pending 寫入；clipboard 適配器負責原生 receiver 與 GM 純文字派送。完成回呼只更新原宿主／ShadowRoot／視圖，不重新序列化或搶焦點。可信 click、原生優先／不可取得才備援、失敗及提示要求見 [安全政策](../SECURITY.md#剪貼簿寫入邊界)。
 
-原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。v2.1.22 的本輪證據見 [P05 修復報告](../archive/retired/docs/P05_COPY_FIX_REPORT.md)。
+原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。對應歷史證據由 [HISTORY](HISTORY.md) 追溯。
 
 ## 原生位置與保存值
 
