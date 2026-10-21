@@ -6,6 +6,7 @@ import { typecheck } from './typecheck.mts'
 import { formatProject } from './format.mts'
 import { checkDocumentation } from './docs-check.mts'
 import { checkArchive } from './archive-check.mts'
+import { checkProjectConfiguration } from './project-config.mts'
 import { packageRelease } from './package.mts'
 import { command, readRelease, sha256 } from './lib.mts'
 
@@ -13,6 +14,11 @@ export async function verify() {
   const config = readRelease()
   if (process.versions.node !== config.nodeVersion)
     throw Error(`Expected Node ${config.nodeVersion}; found ${process.versions.node}`)
+  const project = checkProjectConfiguration()
+  if (!project.success) throw Error(project.findings.join('\n'))
+  console.log(
+    `Project configuration passed: ${project.checkedDependencies} pinned development tools.`,
+  )
   await formatProject(true)
   const archived = checkArchive()
   if (!archived.success)

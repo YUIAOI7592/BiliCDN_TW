@@ -42,7 +42,7 @@
    ├─ retired/
    │  ├─ README.md                 退出流程資料導覽
    │  ├─ docs/                     公開歷史閱讀版、彙編與指南快照
-   │  │  └─ evidence/              指定公開歷史圖片
+   │  │  └─ evidence/              指定公開圖片與固定盤點證據
    │  ├─ releases/Release/         過往版本原始封裝及校驗清單
    │  ├─ originals/                搬移前原始文件與完整日誌 TAR
    │  └─ local/                    本機私有封存，Git 忽略
@@ -114,7 +114,7 @@
 - TypeScript 7.0.2、esbuild 0.28.2 及 `@types/node@26.6.4`（鎖定的開發依賴）
 - 瀏覽器驗證只使用 Codex 內建瀏覽器及其中的 Tampermonkey，實際版本於每輪記錄
 
-準備 Node／npm 後，在儲存庫根目錄執行 `npm ci`，安裝 [package-lock.json](../package-lock.json) 鎖定的開發依賴。[release.json](../release.json) 記錄發行工具版本。`verify` 檢查實際執行的精確 Node 版本，`build` 檢查精確 esbuild 版本。建置資訊清單的 npm／TypeScript 版本取自設定，不獨立驗證執行中的 npm／編譯器版本。[package.json](../package.json) 沒有執行期依賴。
+準備 Node／npm 後，在儲存庫根目錄執行 `npm ci`，安裝 [package-lock.json](../package-lock.json) 鎖定的開發依賴。[release.json](../release.json) 記錄發行工具版本。`verify` 先檢查實際執行的精確 Node 版本，以及產品版本、直接開發依賴宣告、lock 根目錄／解析版本與已安裝套件版本的一致性；TypeScript／esbuild 另須與 release 設定一致。檢查器 [project-config.mts](../scripts/project-config.mts) 唯讀、不執行套件、不連網；它核對套件版本，不能證明整個 node_modules 內容未被修改。`build` 仍檢查載入的精確 esbuild 版本。建置清單的 npm 版本取自設定，不獨立驗證執行中的 npm；直接以 Node 執行 verify 也不假裝測得 npm 版本。[package.json](../package.json) 沒有執行期依賴。
 
 ## 命令
 

@@ -302,3 +302,11 @@ Auto 1／2 倍各一個有效窗口通過（28.8784 秒：時間 +28.882920、�
 本輪操作、搬移清單、原件備份、首次失敗、FINAL-VERIFY、CLEAN-INSTALL-FINAL、CLEAN-VERIFY-FINAL、FORMAL-LOCAL-20261020T145130301Z.json 及 PowerShell 腳本，全部保存在 Git 忽略的 archive/retired/local/2026-10-20-cleanup/operations/；沒有公開私有 payload。最後腳本 382934 bytes、SHA-256 1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795，與已發布 v2.1.27 逐位元組一致。本輪不改產品、依賴、版本、標籤或發布附件，不執行安全掃描、BR-01 或瀏覽器驗收。
 
 補充證據界線：原先受限的 8 個物件在同磁碟目錄搬移前後保持相同物件身分與中繼資料；其中後續可讀的 90 個檔案才首次取得內容雜湊。這 90 檔沒有搬移前 SHA，不能補稱已做搬移前後逐位元組比較；首次可讀 SHA、原物件證明、使用者成功紀錄及正式本機檢查分別保存。其餘 10,261 檔有搬移前後大小／SHA 對照。
+
+## 2026-10-22 全專案最佳化與設定一致性
+
+基準 67d33d2／v2.1.27。新 project-config 檢查器由 verify 使用，新增 18 個具名 tooling 契約；未實作 guard 時為 17 fail／1 pass，實作後 18 pass。成功與失敗情境皆核對檔案樹及內容完全不變。完整 tooling 初跑因沙箱禁止暫存 Git 情境的 .git/config 寫入而失敗，沒有改寫成產品 FAIL；取得必要工具權限後 166 案通過。完整 verify 19 套件／1266 案通過，包含格式、型別、99 模組架構、文件／公開封存、確定性建置、語法及暫存封裝。
+
+工具核對產品、直接開發依賴宣告、lock 與已安裝套件版本，以及 TypeScript／esbuild 設定；不驗 npm 執行版本，不證明依賴檔案內容完整性，不取代 npm ci 或產品契約。未新增依賴、命令入口、CI/CD、執行期介面或載入。詳見 [當日完整紀錄](../archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md)。
+
+PROJECT-CONFIG-RED、PROJECT-CONFIG-GREEN、TOOLING、TOOLING-UNRESTRICTED、STAGE3-VERIFY 及基準／盤點資料均在 Git 忽略的 archive/retired/local/2026-10-22-project-optimization/operations/。階段腳本 382934 bytes、SHA-256 1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795，與現行 Release 逐位元組一致；v2.1.27 發布時的 1134 案報告不回寫。乾淨來源與最終交付結果待完成後追加；本輪不執行漏洞掃描或瀏覽器驗收，不升版、不發布。

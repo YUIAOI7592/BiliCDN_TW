@@ -2641,8 +2641,8 @@
       "path": "archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md",
       "mode": "prefix",
       "encoding": "lf",
-      "bytes": 6073,
-      "sha256": "b0a5ba9ab58b3b7dc36825542784dd0a994398b44e3bf0280e90f01c4a5bddda"
+      "bytes": 7649,
+      "sha256": "d35575fe8dff7678952c3461f47b9f7c71d234c789d537c8d894932e6b305fdf"
     },
     {
       "path": "archive/retired/docs/evidence/PROJECT_FILE_INVENTORY_2026-10-22.json",
@@ -5350,8 +5350,8 @@
       "path": "docs/TEST_TOOLING_REPORT.md",
       "mode": "prefix",
       "encoding": "lf",
-      "bytes": 45040,
-      "sha256": "fd10c1a0ff1adb3b987efd53977fc85ee7aa812430835308570a9a145c4bd2e4"
+      "bytes": 46545,
+      "sha256": "cb39a02553818f83bdb9d5d60466d5b7858e05abea475ff776070dbdca5dc0ef"
     },
     {
       "path": "archive/retired/docs/TODO_CLOSURE_2026-10-13.md",
