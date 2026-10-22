@@ -133,6 +133,8 @@ npm test -- suites/adapters  # 相容的套件別名
 npm test -- --list    # 列出登記清單及來源，不打包／執行
 npm test -- application --name "startup"  # 正規表示式篩選案例
 npm test -- tooling   # 測試工具本身的契約
+npm run compare:upstream -- --calibrate # 獨立離線比較環境校準，不加入正式 v2 登記
+npm run compare:upstream -- --json # 完整兩版比較，schemaVersion 1；不連網、不改產品
 npm run build         # 確定性的單一 IIFE 使用者腳本
 npm run package       # 重建 dist，寫入設定的 Release/v<version>/
 npm run verify        # 自動檢查及暫存封裝驗證
@@ -147,6 +149,14 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 `docs:check` 已納入 `verify`，以鎖定的 GFM 解析／格式及標題錨點套件執行，不讀取私有證據。預設輸出檔案、行號、規則及原因；`npm run docs:check -- --json` 輸出 schemaVersion 2 結果，包含 findings、legacyLinks、archivedReferences、私有證據未核對及外部連結未連線資料。archivedReferences 表示受保護原文中的原網址因搬移失效，另有登記封存目標；它不算有效現行連結。既有快照斷鏈另列 legacyLinks，不能宣稱歷史網址全部有效。
 
 `archive:check` 的公開模式同樣納入 `verify`，依 [搬移清單](../archive/relocation-manifest.json) 核對 TAR 原件、發行與圖片原始位元組、閱讀版 URL 編輯及三份既有日誌完整正文。另驗舊路徑退出、Release 僅現行版及校驗清單；無 Git 的乾淨來源副本也可執行。`--local` 額外核對被忽略的本機搬移清單與私有檔案原始雜湊，公開 checkout 不含這些資料，預設不執行。兩個檢查命令的退出碼均為 0／1／2，分別代表通過、檢查失敗及非法參數；檢查不會搬移或改寫檔案。
+
+### 原版與 v2 的獨立離線比較
+
+[upstream-compare.mts](../scripts/upstream-compare.mts) 固定讀取並校驗既有 v1.3.4 原件與已發布 v2.1.27 完整腳本，每版／情境使用新 Node 子程序及模擬頁面。先執行 `npm run compare:upstream -- --calibrate`，再執行不帶選項的完整摘要或 `--json` 機器結果；未知或重複選項退出 2，失敗／無效退出 1，全部有效且適用斷言通過退出 0。
+
+比較使用現有 FakeClock、記憶體 GM、固定單一 AVC、共同合法來源及前景模型；1／2 倍分開，60 秒健康前置後執行固定情境。進度是模型輸入，可信事件也是 Node 模型，不代表瀏覽器可信輸入或真實播放效果。原版缺少核心重載／還原能力的專屬斷言標為不適用，共同斷言仍執行。原件不能成為正式 v2 建置／測試輸入；`verify` 只執行不載入原件的中立工具契約，不執行兩版比較。
+
+每個比較案例與清理各 5 秒、子程序外層 60 秒、輸出上限 32 MiB。頁面生命週期計時器／監聽器與未完成請求分開盤點，再由模擬頁面釋放；不以強殺程序或強清時鐘算通過，不取代產品元件 dispose 契約。比較工具不寫檔；若保存結果，使用按日期登記的公開調查報告及精確允許的合成 JSON，執行紀錄直接保存於被忽略的本機封存，不留 `.work` 或額外 `dist` 產物。結果入口由 [HISTORY](HISTORY.md) 維護。
 
 ### 原始碼格式與靜態規則
 

@@ -314,3 +314,11 @@ PROJECT-CONFIG-RED、PROJECT-CONFIG-GREEN、TOOLING、TOOLING-UNRESTRICTED、STA
 最終追加：工具提交 7413ea8 的公開 Git TAR 副本從無 node_modules、.work、.git 與私有 payload 的狀態執行 npm ci --ignore-scripts --no-audit --no-fund（102 套件），完整 verify 1266／1266 通過，建置本體與主工作區／正式 Release 三者一致。最終實體核對：618 個追蹤檔，根目錄 14 檔，src-v2 101、tests-v2 75、scripts 22、docs 13；Release 五檔、dist 三檔，現行區域沒有其他非追蹤檔、舊 .work 或 .codex/local。原私有封存的既知權限及首次雜湊界線維持，不冒稱新做本機全量校驗。
 
 純文件結案的 docs:check、archive:check 及 git diff --check 通過。維護內容只按階段提交／推送 main；產品及不可變證據不動，公開、私有受限、外部未連線、漏洞掃描未執行與瀏覽器未執行仍分開記錄。完整範圍對照見當日報告，不再建立另一份維護清單。
+
+## 2026-10-22 原版與 v2 離線比較工具：第一階段
+
+基準 f4ede73／v2.1.27。新增獨立 compare:upstream 入口、完整腳本的子程序／模擬頁面隔離及 28 個中立 tooling 契約；正式登記仍為 19 套件，不載入原版。兩版 1／2 倍的四次健康啟動校準通過；結果只證明離線模型啟動、傳輸及事件邊界，不是瀏覽器可信輸入或實際播放驗收。
+
+首次完整 verify 因沙箱拒絕既有封存測試的暫存 .git/config 寫入，6 案失敗；原紀錄保留，不列產品缺陷。一般使用者環境重跑通過；加強持續播放資格檢查後再次完整 verify：19 套件／1294 案通過，tooling 194 案，包含新增 28 案。格式、型別、99 模組架構、文件／公開封存、確定性建置、語法及暫存封裝通過。GitHub 認證在沙箱外唯讀核對有效，沙箱內的失效訊息不作最終認證結論。
+
+STAGE1-VERIFY、STAGE1-VERIFY-UNRESTRICTED、STAGE1-VERIFY-FINAL 與校準結果保存在 Git 忽略的 archive/retired/local/2026-10-22-upstream-comparison/operations/。完整比較、公開報告及乾淨來源驗證另在第二階段記錄；既有 v2.1.27 發布時的 1134 案與歷史證據不回寫。本輪不改產品、原件、依賴、版本或 Release，不啟動瀏覽器、自然調查或安全掃描。
