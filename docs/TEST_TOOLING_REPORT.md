@@ -310,3 +310,7 @@ Auto 1／2 倍各一個有效窗口通過（28.8784 秒：時間 +28.882920、�
 工具核對產品、直接開發依賴宣告、lock 與已安裝套件版本，以及 TypeScript／esbuild 設定；不驗 npm 執行版本，不證明依賴檔案內容完整性，不取代 npm ci 或產品契約。未新增依賴、命令入口、CI/CD、執行期介面或載入。詳見 [當日完整紀錄](../archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md)。
 
 PROJECT-CONFIG-RED、PROJECT-CONFIG-GREEN、TOOLING、TOOLING-UNRESTRICTED、STAGE3-VERIFY 及基準／盤點資料均在 Git 忽略的 archive/retired/local/2026-10-22-project-optimization/operations/。階段腳本 382934 bytes、SHA-256 1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795，與現行 Release 逐位元組一致；v2.1.27 發布時的 1134 案報告不回寫。乾淨來源與最終交付結果待完成後追加；本輪不執行漏洞掃描或瀏覽器驗收，不升版、不發布。
+
+最終追加：工具提交 7413ea8 的公開 Git TAR 副本從無 node_modules、.work、.git 與私有 payload 的狀態執行 npm ci --ignore-scripts --no-audit --no-fund（102 套件），完整 verify 1266／1266 通過，建置本體與主工作區／正式 Release 三者一致。最終實體核對：618 個追蹤檔，根目錄 14 檔，src-v2 101、tests-v2 75、scripts 22、docs 13；Release 五檔、dist 三檔，現行區域沒有其他非追蹤檔、舊 .work 或 .codex/local。原私有封存的既知權限及首次雜湊界線維持，不冒稱新做本機全量校驗。
+
+純文件結案的 docs:check、archive:check 及 git diff --check 通過。維護內容只按階段提交／推送 main；產品及不可變證據不動，公開、私有受限、外部未連線、漏洞掃描未執行與瀏覽器未執行仍分開記錄。完整範圍對照見當日報告，不再建立另一份維護清單。
