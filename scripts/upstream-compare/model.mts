@@ -25,6 +25,7 @@ export interface Observation {
   readonly media?: 'video' | 'audio' | 'other'
   readonly value?: number | string | boolean
   readonly host?: string
+  readonly logicalRequest?: number
 }
 export interface Assertion {
   readonly id: string
@@ -254,8 +255,13 @@ export function validCaseResult(value: unknown, id: string): value is CaseResult
         (row.host === undefined ||
           (typeof row.host === 'string' &&
             /^(?:[a-z0-9-]+\.bilivideo\.com|api\.bilibili\.com)$/.test(row.host))) &&
+        (row.logicalRequest === undefined ||
+          (Number.isSafeInteger(row.logicalRequest) && Number(row.logicalRequest) > 0)) &&
         !Object.keys(row).some(
-          (key) => !['seq', 'at', 'origin', 'kind', 'media', 'value', 'host'].includes(key),
+          (key) =>
+            !['seq', 'at', 'origin', 'kind', 'media', 'value', 'host', 'logicalRequest'].includes(
+              key,
+            ),
         )
       )
     }) &&
@@ -294,6 +300,7 @@ export function newOperationProtected(
 }
 export function comparisonMetrics(events: readonly Observation[], start: number) {
   const after = events.filter((e) => e.at >= start)
+  const onset = after.find((e) => e.kind === 'fault-start')?.at ?? start
   let previous = events
     .filter(
       (e) => e.at < start && e.kind === 'dispatch' && e.media === 'video' && e.value === 'website',
@@ -306,7 +313,21 @@ export function comparisonMetrics(events: readonly Observation[], start: number)
       previous = e.host
     }
   const reloads = after.filter((e) => e.kind === 'reload' && e.origin === 'product')
+  const seen = new Set<number>()
+  let retryDispatches = 0
+  for (const e of after)
+    if (e.kind === 'dispatch' && e.value === 'website' && e.logicalRequest !== undefined) {
+      if (seen.has(e.logicalRequest)) retryDispatches++
+      seen.add(e.logicalRequest)
+    }
   return {
+    faultOffsetMs: onset - start,
+    firstReloadFromFaultMs: reloads[0] ? reloads[0].at - onset : null,
+    firstVideoHostChangeFromFaultMs:
+      switches.find((at) => at >= onset - start) !== undefined
+        ? switches.find((at) => at >= onset - start)! - (onset - start)
+        : null,
+    retryDispatches,
     firstVideoHostChangeMs: switches[0] ?? null,
     videoHostChanges: switches.length,
     firstReloadMs: reloads[0] ? reloads[0].at - start : null,
@@ -325,4 +346,12 @@ export function outcomeCode(results: readonly Pick<CaseResult, 'validity' | 'ver
   return results.length > 0 && results.every((e) => e.validity === 'valid' && e.verdict === 'pass')
     ? 0
     : 1
+}
+export function audioPassesDuringHold(events: readonly Observation[], start: number): boolean {
+  const audio = events.filter(
+    (e) => e.kind === 'complete' && e.media === 'audio' && e.value === 'website',
+  )
+  return Array.from({ length: 45 }, (_, i) => start + i * 1000).every((at) =>
+    audio.some((e) => e.at >= at && e.at < at + 1000),
+  )
 }

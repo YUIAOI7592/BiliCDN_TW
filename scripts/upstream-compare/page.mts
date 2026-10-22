@@ -259,8 +259,10 @@ export class ComparisonPage {
     active: boolean
     callback: (list: { getEntries: () => unknown[] }) => void
   }>()
+  #mutations = new Set<object>()
   heldUntil = 0
   latencyMs = 20
+  videoBytes = 65536
   reloadMode = false
   core: unknown
   readonly rate: Rate
@@ -480,6 +482,12 @@ export class ComparisonPage {
     this.#nativeOpen = Xhr.prototype.open
     const menu = new Map<string, unknown>()
     const dateOrigin = this.clock.start
+    let randomState = 0x1badb002
+    const modelMath = Object.create(null, Object.getOwnPropertyDescriptors(Math)) as Math
+    modelMath.random = () => {
+      randomState = (Math.imul(randomState, 1664525) + 1013904223) >>> 0
+      return randomState / 0x100000000
+    }
     class VirtualDate extends Date {
       constructor(value?: string | number) {
         super(value ?? page.clock.now())
@@ -517,6 +525,7 @@ export class ComparisonPage {
         ].map((key) => [key, () => undefined]),
       ),
       Date: VirtualDate,
+      Math: modelMath,
       performance: {
         now: () => page.clock.now() - dateOrigin,
         getEntriesByType: () => [],
@@ -589,8 +598,12 @@ export class ComparisonPage {
       Node: PageNode,
       PerformanceObserver: Observer,
       MutationObserver: class {
-        observe() {}
-        disconnect() {}
+        observe() {
+          page.#mutations.add(this)
+        }
+        disconnect() {
+          page.#mutations.delete(this)
+        }
       },
       GM_info: { script: { version: 'offline' }, scriptHandler: 'model' },
       GM_getValue: (key: string, fallback: unknown) =>
@@ -622,6 +635,7 @@ export class ComparisonPage {
     media?: Observation['media'],
     host?: string,
     origin = this.#origin,
+    logicalRequest?: number,
   ): void {
     if (this.#closed) {
       this.invalid.push('callback-after-page-close')
@@ -639,6 +653,7 @@ export class ComparisonPage {
       ...(value === undefined ? {} : { value }),
       ...(media ? { media } : {}),
       ...(host ? { host } : {}),
+      ...(logicalRequest === undefined ? {} : { logicalRequest }),
     })
   }
   input(run: () => void): void {
@@ -706,7 +721,10 @@ export class ComparisonPage {
         ? 'audio'
         : 'other'
     const role = request.headers.get('x-comparison-role') === 'website' ? 'website' : 'probe'
-    this.record('dispatch', role, media, url.hostname, 'platform')
+    const requestLabel = request.headers.get('x-comparison-request')
+    const logicalRequest =
+      requestLabel && /^[1-9][0-9]*$/.test(requestLabel) ? Number(requestLabel) : undefined
+    this.record('dispatch', role, media, url.hostname, 'platform', logicalRequest)
     if (
       !this.hosts.includes(url.hostname) &&
       url.hostname !== 'api.bilibili.com' &&
@@ -747,15 +765,14 @@ export class ComparisonPage {
           const api = url.hostname === 'api.bilibili.com'
           const body = api
             ? JSON.stringify({ code: 0, data: { dash: this.manifest() } })
-            : new Uint8Array(65536)
+            : new Uint8Array(media === 'video' && role === 'website' ? this.videoBytes : 65536)
+          const responseBytes = typeof body === 'string' ? Buffer.byteLength(body) : body.byteLength
           const response = new Response(body, {
             status: api ? 200 : 206,
             headers: {
               'content-type': api ? 'application/json' : 'application/octet-stream',
-              'content-length': String(
-                typeof body === 'string' ? Buffer.byteLength(body) : body.byteLength,
-              ),
-              'content-range': 'bytes 0-65535/1048576',
+              'content-length': String(responseBytes),
+              'content-range': `bytes 0-${responseBytes - 1}/1048576`,
               'accept-ranges': 'bytes',
             },
           })
@@ -763,9 +780,9 @@ export class ComparisonPage {
           this.record('complete', role, media, url.hostname, 'platform')
           const entry = {
             name: request.url,
-            transferSize: 65536,
-            encodedBodySize: 65536,
-            decodedBodySize: 65536,
+            transferSize: responseBytes,
+            encodedBodySize: responseBytes,
+            decodedBodySize: responseBytes,
             duration: delay,
             responseStart: this.clock.relative() - delay + 1,
             responseEnd: this.clock.relative() + 1,
@@ -797,7 +814,7 @@ export class ComparisonPage {
         0,
       ),
       requests: this.requests.size,
-      subscriptions: this.subscriptions.size + this.#observers.size,
+      subscriptions: this.subscriptions.size + this.#observers.size + this.#mutations.size,
     }
   }
   async close(): Promise<Cleanup> {
@@ -811,6 +828,7 @@ export class ComparisonPage {
     for (const node of this.nodes) node.bindings.clear()
     this.subscriptions.clear()
     this.#observers.clear()
+    this.#mutations.clear()
     this.clock.close()
     const after = this.counts()
     this.#closed = true

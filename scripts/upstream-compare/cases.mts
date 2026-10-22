@@ -7,6 +7,7 @@ import {
   restorationFacts,
   newOperationProtected,
   comparisonMetrics,
+  audioPassesDuringHold,
 } from './model.mts'
 import type { Assertion, CaseResult, Rate, Scenario, Version } from './model.mts'
 
@@ -30,9 +31,12 @@ export async function runCase(
   let caseStart = 0,
     lastInput = 0,
     expectedGoal: number | null = null
+  let requestSerial = 0
   const startRequest = (media: 'video' | 'audio'): void => {
     const fetch = page.window.fetch as typeof globalThis.fetch
-    const promise = fetch(page.mediaUrl(media), { headers: { 'x-comparison-role': 'website' } })
+    const promise = fetch(page.mediaUrl(media), {
+      headers: { 'x-comparison-role': 'website', 'x-comparison-request': String(++requestSerial) },
+    })
       .then((response) => response.arrayBuffer())
       .catch(() => {
         page.record('website-request-rejected', media, media, undefined, 'platform')
@@ -167,7 +171,8 @@ export async function runCase(
         })
         await page.clock.advance(1000)
         page.reloadMode = true
-        page.input(() => page.button.dispatchEvent(new PageEvent('click', { trusted: true })))
+        page.input(() => page.record('trusted-click-model', 'play'))
+        page.button.dispatchEvent(new PageEvent('click', { trusted: true }))
         // Website's explicit play can return without making a dead core advance.
         page.siteCall('play', () => {
           void page.player.play()
@@ -175,11 +180,20 @@ export async function runCase(
       }
       if (scenario === 'long-seek') seek(600.25)
       const faultStart = page.clock.relative()
+      page.input(() => page.record('fault-start', scenario))
       if (scenario === 'video-held') page.heldUntil = faultStart + 45000
       for (let second = 0; second < 180; second++) {
         const elapsed = page.clock.relative() - faultStart
         if (scenario === 'network-jitter') page.latencyMs = elapsed < 2000 ? 2000 - elapsed : 20
-        if (scenario === 'buffer-drain') page.video.buffer = Math.max(0, 40 * rate - second * rate)
+        if (scenario === 'buffer-drain') {
+          page.video.buffer = (second < 45 ? Math.max(5, 40 - second) : 40) * rate
+          page.latencyMs = second < 45 ? Math.min(800, 20 + second * 20) : 20
+          page.videoBytes = second < 45 ? Math.max(1024, 65536 - second * 2048) : 65536
+          page.input(() => {
+            page.record('profile-buffer', page.video.buffer, 'video')
+            page.record('profile-bytes', page.videoBytes, 'video')
+          })
+        }
         if (second === 10) {
           if (scenario === 'new-seek') seek(900.5)
           if (scenario === 'new-pause') {
@@ -238,7 +252,9 @@ export async function runCase(
       add(
         'audio-isolation',
         'audio fixture completes during the scenario independently of video',
-        audio.length > 0,
+        scenario === 'video-held'
+          ? audioPassesDuringHold(page.observations, faultStart)
+          : audio.length > 0,
         audio,
         true,
         `${audio.length} audio completions`,

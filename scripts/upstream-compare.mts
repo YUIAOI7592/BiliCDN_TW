@@ -61,6 +61,22 @@ export async function compareUpstream(calibrationOnly = false) {
     productBaseline: 'f4ede7327c475c7013edda14cc0aacd7ff3ccee7',
     nodeVersion: process.versions.node,
     mode: calibrationOnly ? 'calibration' : 'comparison',
+    model: {
+      codec: 'avc',
+      visibility: 'foreground-model',
+      preludeMs: 60000,
+      scenarioMs: 180000,
+      mediaDurationSec: 3600,
+      initialPositionSec: 120,
+      fixtureBodyBytes: 65536,
+      websiteRequestsPerMediaPerSecond: 1,
+      websiteAutomaticRetries: false,
+      randomSeed: 0x1badb002,
+      candidatePolicy: 'version-defaults',
+      progress: 'scheduled input, independent of SDK effects',
+      dom: 'static player; settings anchor absent',
+    },
+    limits: { caseMs: 5000, cleanupMs: 5000, suiteMs: 60000, maxBytes: 32 * 1024 * 1024 },
     inputs,
     hosts: commonHosts(),
     toolHashes: Object.fromEntries(
@@ -90,9 +106,12 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/upstream-co
       const report = await compareUpstream(options.calibration)
       if (options.json) console.log(JSON.stringify(report))
       else {
+        console.log(
+          'case\tvalidity\tverdict\twire-switch-ms\treload-ms/count\tprobe/retry\tfailures',
+        )
         for (const result of report.results)
           console.log(
-            `${result.id}\t${result.validity}\t${result.verdict}\t${result.assertions
+            `${result.id}\t${result.validity}\t${result.verdict}\t${result.metrics.firstVideoHostChangeFromFaultMs ?? '-'}\t${result.metrics.firstReloadFromFaultMs ?? '-'}/${result.metrics.reloads}\t${result.metrics.probeDispatches}/${result.metrics.retryDispatches}\t${result.assertions
               .filter((e) => e.verdict === 'fail')
               .map((e) => e.id)
               .join(',')}${result.reasons.join(',')}`,

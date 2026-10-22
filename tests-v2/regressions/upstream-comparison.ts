@@ -12,10 +12,50 @@ import {
   comparisonMetrics,
   parseComparisonArgs,
   validCaseResult,
+  audioPassesDuringHold,
 } from '../../scripts/upstream-compare/model.mts'
 import type { Observation } from '../../scripts/upstream-compare/model.mts'
 import { ComparisonPage, PageEvent, PageNode } from '../../scripts/upstream-compare/page.mts'
 import { testScope } from '../support/scope.ts'
+
+test(
+  'comparison audio isolation rejects a missing held-second even when later audio succeeds',
+  { timeout: 5000 },
+  () => {
+    const events: Observation[] = Array.from({ length: 45 }, (_, i) => ({
+      seq: i + 1,
+      at: i * 1000 + 20,
+      origin: 'platform',
+      kind: 'complete',
+      media: 'audio',
+      value: 'website',
+    }))
+    assert.equal(audioPassesDuringHold(events, 0), true)
+    assert.equal(
+      audioPassesDuringHold(
+        events.filter((e) => e.at !== 20020),
+        0,
+      ),
+      false,
+    )
+    assert.equal(
+      audioPassesDuringHold(
+        [
+          {
+            seq: 1,
+            at: 46000,
+            origin: 'platform',
+            kind: 'complete',
+            media: 'audio',
+            value: 'website',
+          },
+        ],
+        0,
+      ),
+      false,
+    )
+  },
+)
 
 test(
   'comparison clock drains promise jobs before the next same-time timer',
@@ -102,6 +142,9 @@ test(
       await second.close()
     })
     first.load('GM_setValue("synthetic", 7); setInterval(() => {}, 1000)', 'fixture')
+    first.load('GM_setValue("random", Math.random())', 'fixture')
+    second.load('GM_setValue("random", Math.random())', 'fixture')
+    assert.equal(first.memory.get('random'), second.memory.get('random'))
     assert.equal(first.memory.get('synthetic'), 7)
     assert.equal(second.memory.has('synthetic'), false)
     assert.equal(first.counts().timers, 1)
@@ -136,6 +179,40 @@ test(
     assert.equal(cleanup.unclassified, 1)
     assert.equal(cleanup.before.requests, 1)
     assert.equal(cleanup.after.requests, 0)
+  },
+)
+test(
+  'comparison page accounts for dormant DOM observer ownership until page teardown',
+  { timeout: 5000 },
+  async () => {
+    const page = new ComparisonPage(1, ['fixture.invalid'])
+    page.load('new MutationObserver(() => {}).observe(document, {childList: true})', 'fixture')
+    assert.equal(page.counts().subscriptions, 1)
+    const cleanup = await page.close()
+    assert.equal(cleanup.before.subscriptions, 1)
+    assert.equal(cleanup.after.subscriptions, 0)
+  },
+)
+test(
+  'comparison throughput evidence uses actual fixture bytes rather than a constant sample',
+  { timeout: 5000 },
+  async (t) => {
+    const page = new ComparisonPage(1, ['upos-sz-mirrorali.bilivideo.com'])
+    testScope(t).defer(async () => {
+      await page.close()
+    })
+    page.load(
+      'new PerformanceObserver(list => GM_setValue("bytes", list.getEntries()[0].transferSize)).observe({entryTypes:["resource"]})',
+      'fixture',
+    )
+    page.videoBytes = 1024
+    const response = page.fetch(page.mediaUrl('video'), {
+      headers: { 'x-comparison-role': 'website' },
+    })
+    await page.clock.advance(20)
+    const body = await (await response).arrayBuffer()
+    assert.equal(body.byteLength, 1024)
+    assert.equal(page.memory.get('bytes'), 1024)
   },
 )
 test(
@@ -354,13 +431,26 @@ test(
         media: 'video',
         host: 'b',
         value: 'website',
+        logicalRequest: 8,
       },
     ]
+    events.push({ ...events[4]!, seq: 6, at: 14 })
     const metrics = comparisonMetrics(events, 10)
     assert.equal(metrics.firstVideoHostChangeMs, 3)
     assert.equal(metrics.videoHostChanges, 1)
     assert.equal(metrics.probeDispatches, 1)
-    assert.equal(metrics.wireDispatches, 3)
+    assert.equal(metrics.wireDispatches, 4)
+    assert.equal(metrics.retryDispatches, 1)
+    const timed = comparisonMetrics(
+      [
+        ...events,
+        { seq: 7, at: 20, origin: 'input', kind: 'fault-start' },
+        { seq: 8, at: 25, origin: 'product', kind: 'reload' },
+      ],
+      10,
+    )
+    assert.equal(timed.faultOffsetMs, 10)
+    assert.equal(timed.firstReloadFromFaultMs, 5)
   },
 )
 test(

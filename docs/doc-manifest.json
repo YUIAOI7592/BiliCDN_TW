@@ -75,6 +75,24 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md",
+      "kind": "record",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v1.3.4",
+        "v2.1.27"
+      ],
+      "date": "2026-10-23",
+      "requiredAnchors": [
+        "範圍與證據",
+        "逐案結果與比較",
+        "下一項改善建議",
+        "驗證與交付紀錄"
+      ]
+    },
+    {
       "path": "archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md",
       "kind": "record",
       "topics": [
@@ -2637,6 +2655,20 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 11065,
+      "sha256": "730c2cd3998af49609fb038c29e8ef7dcd8c7a8286943d7f7784a1ece1ce1280"
+    },
+    {
+      "path": "archive/retired/docs/evidence/UPSTREAM_RESCUE_COMPARISON_2026-10-23.json",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 13440067,
+      "sha256": "e0c537319fab8530876d6e6367fa9e1f816eb603de6488d879e29f93604d8b9c"
+    },
     {
       "path": "archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md",
       "mode": "prefix",

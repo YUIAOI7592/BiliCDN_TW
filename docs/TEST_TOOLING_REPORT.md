@@ -322,3 +322,11 @@ PROJECT-CONFIG-RED、PROJECT-CONFIG-GREEN、TOOLING、TOOLING-UNRESTRICTED、STA
 首次完整 verify 因沙箱拒絕既有封存測試的暫存 .git/config 寫入，6 案失敗；原紀錄保留，不列產品缺陷。一般使用者環境重跑通過；加強持續播放資格檢查後再次完整 verify：19 套件／1294 案通過，tooling 194 案，包含新增 28 案。格式、型別、99 模組架構、文件／公開封存、確定性建置、語法及暫存封裝通過。GitHub 認證在沙箱外唯讀核對有效，沙箱內的失效訊息不作最終認證結論。
 
 STAGE1-VERIFY、STAGE1-VERIFY-UNRESTRICTED、STAGE1-VERIFY-FINAL 與校準結果保存在 Git 忽略的 archive/retired/local/2026-10-22-upstream-comparison/operations/。完整比較、公開報告及乾淨來源驗證另在第二階段記錄；既有 v2.1.27 發布時的 1134 案與歷史證據不回寫。本輪不改產品、原件、依賴、版本或 Release，不啟動瀏覽器、自然調查或安全掃描。
+
+## 2026-10-23 原版與 v2 離線比較：第二階段與結案
+
+完整比較及乾淨來源重跑各 44 次有效／適用斷言通過，110 項適用斷言、42 項不適用，退出 0。加上 DOM observer 帳冊、實際吞吐 bytes 與逐秒 audio 通行負對照後，中立工具契約共 31 案，tooling 197 案；主工作區與最終乾淨來源完整 verify 均為 19 套件／1297 案通過。案例、比較數值、清理及限制集中 [公開比較報告](../archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md)，本日誌只保存工具驗證。
+
+最終副本由 627 個公開輸入建立，沒有既有 node_modules、.git、.work 或私有封存；npm ci --ignore-scripts --no-audit --no-fund 安裝 102 個鎖定套件。執行後 627 個輸入保持原始雜湊，完整比較 JSON 與公開證據逐位元組一致；乾淨建置與已發布本體同為 382934 bytes／1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795。非法 CLI 選項實際退出 2；未加入新的正式套件或把原版載入正式 v2 測試。
+
+FINAL-VERIFY、FINAL-CLEAN-*、首次沙箱失敗及各次前提修正輸出均在原日期私有操作目錄，兩份系統暫存副本已按絕對路徑及專用前綴驗證後刪除。現行 dist 只保留三個正式產物；沒有新增 .work 或 .codex/local。最終指南、HISTORY、TODO 及文件清單另以文件／公開封存與差異檢查核對；既有日誌只追加，不改寫 v2.1.27 發布結果，不升版、不發布、不恢復任何已停止瀏覽器工作。
