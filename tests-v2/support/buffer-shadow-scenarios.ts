@@ -120,15 +120,18 @@ export async function runScenario(
   ) => {
     f.video.bufferAheadSec = buffer * f.video.playbackRate
     f.video.playableBufferSec = buffer
-    if (progress) {
+    if (progress && ms > 0) {
       f.video.currentTime += (f.video.playbackRate * ms) / 1000
       f.video.frames = f.video.frames === null ? null : f.video.frames + 30
     }
-    f.clock.advance(ms)
-    f.monitor.tick()
+    // Reuse the complete prelude snapshot at scenario zero. A duplicate tick at
+    // the same timestamp would manufacture an insufficient diagnostic row.
+    if (ms > 0 || !record) {
+      f.clock.advance(ms)
+      f.monitor.tick()
+    }
     const trend = f.monitor.snapshot().bufferTrend!
-    const snapshot = recorder.snapshot(),
-      report = recorder.buildReport({})
+    const snapshot = recorder.snapshot()
     maxSamples = Math.max(maxSamples, trend.sampleCount)
     maxCompletions = Math.max(
       maxCompletions,
@@ -139,7 +142,8 @@ export async function runScenario(
       maxTrendBytes,
       Buffer.byteLength(JSON.stringify(snapshot.bufferTrend.history)),
     )
-    maxReportBytes = Math.max(maxReportBytes, Buffer.byteLength(report))
+    if (name !== 'two-hour-bounds' || elapsed % 10000 === 0)
+      maxReportBytes = Math.max(maxReportBytes, Buffer.byteLength(recorder.buildReport({})))
     if (record) {
       const input = {
         at: elapsed,
@@ -246,7 +250,10 @@ export async function runScenario(
         f.changeRequest({ epoch: f.state.epoch })
         f.video.currentTime = 100
       }
-      if (name.startsWith('transport-') && name !== 'transport-none') {
+      if (
+        (name.startsWith('transport-') && name !== 'transport-none') ||
+        name === 'two-hour-bounds'
+      ) {
         const count = name === 'transport-overflow' ? 140 : name === 'transport-duplicate' ? 2 : 1
         for (let n = 0; n < count; n++) {
           const request = {

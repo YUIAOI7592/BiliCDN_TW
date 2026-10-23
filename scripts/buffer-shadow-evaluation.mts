@@ -5,21 +5,70 @@ import { build } from 'esbuild'
 import { supervise } from './test-process.mts'
 import { filesUnder, isRecord, errorMessage } from './lib.mts'
 import { sha256 } from './upstream-compare/model.mts'
-import { parseEvaluationArgs, scenarioNames } from './buffer-shadow/model.mts'
+import { parseEvaluationArgs, scenarioNames, scoreWindow } from './buffer-shadow/model.mts'
+import type { EvidenceRow } from './buffer-shadow/model.mts'
 import { costInputs, loadCostInput } from './buffer-shadow/inputs.mts'
 
 export function validEvaluationResult(
   value: unknown,
   cost: boolean,
 ): value is Record<string, unknown> {
+  if (
+    !isRecord(value) ||
+    value.validity !== 'valid' ||
+    !['pass', 'fail'].includes(String(value.verdict)) ||
+    !isRecord(value.cleanup)
+  )
+    return false
+  const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n)
+  const ticks = value.tickMs
+  if (cost)
+    return (
+      isRecord(ticks) &&
+      Array.isArray(ticks.samples) &&
+      ticks.samples.length === 600 &&
+      ticks.samples.every((n) => finite(n) && n >= 0) &&
+      ['min', 'median', 'p95', 'max'].every((k) => finite(ticks[k])) &&
+      isRecord(value.heapBytes) &&
+      isRecord(value.cpuMicroseconds) &&
+      Object.values(value.heapBytes).every(finite) &&
+      Object.values(value.cpuMicroseconds).every(finite) &&
+      finite(value.startupMs) &&
+      value.measurementMs === 600000 &&
+      isRecord(value.cleanup.after) &&
+      Object.values(value.cleanup.after).every((n) => n === 0) &&
+      value.cleanup.unclassified === 0 &&
+      value.cleanup.callbacksAfterClose === 0
+    )
+  if (
+    !Array.isArray(value.rows) ||
+    !Array.isArray(value.inputs) ||
+    value.rows.length !== value.inputs.length ||
+    !value.rows.length ||
+    !Array.isArray(value.assertions) ||
+    !value.assertions.length ||
+    !isRecord(value.score) ||
+    !Array.isArray(value.prelude) ||
+    value.prelude.length !== 61 ||
+    value.warmupMs !== 60000
+  )
+    return false
+  try {
+    const rows = value.rows as EvidenceRow[]
+    if (!value.rows.every(isRecord)) return false
+    const computed = scoreWindow(rows, {
+      scoreUntil: rows.at(-1)!.at,
+      stallAt: value.stallAt as number | null,
+    })
+    if (JSON.stringify(computed) !== JSON.stringify(value.score)) return false
+  } catch {
+    return false
+  }
+  const verdict = value.assertions.every((a) => isRecord(a) && a.verdict === 'pass')
+    ? 'pass'
+    : 'fail'
   return (
-    isRecord(value) &&
-    value.validity === 'valid' &&
-    ['pass', 'fail'].includes(String(value.verdict)) &&
-    isRecord(value.cleanup) &&
-    (cost
-      ? isRecord(value.tickMs)
-      : Array.isArray(value.rows) && Array.isArray(value.assertions) && isRecord(value.score))
+    value.verdict === verdict && value.cleanup.timers === 0 && value.cleanup.subscriptions === 0
   )
 }
 export async function evaluateBufferShadow(cost = false) {

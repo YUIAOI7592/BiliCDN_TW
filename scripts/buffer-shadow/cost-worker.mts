@@ -5,11 +5,12 @@ import { ComparisonPage, PageEvent } from '../upstream-compare/page.mts'
 import { commonHosts } from '../upstream-compare/inputs.mts'
 import { loadCostInput } from './inputs.mts'
 import { testScope } from '../../tests-v2/support/scope.ts'
+import type { CostResult } from './model.mts'
 
 const [version, speed] = process.argv.slice(2)
 if (!version || !['1', '2'].includes(speed ?? '')) throw Error('Invalid cost invocation')
 const rate = Number(speed) as 1 | 2
-let result: unknown
+let result: CostResult | undefined
 await test(`full-script healthy cost ${version}@${rate}x`, { timeout: 5000 }, async (t) => {
   const source = loadCostInput(version),
     page = new ComparisonPage(rate, commonHosts())
@@ -77,10 +78,10 @@ await test(`full-script healthy cost ${version}@${rate}x`, { timeout: 5000 }, as
     verdict: 'pass',
     startupMs,
     tickMs: {
-      min: ordered[0],
+      min: ordered[0]!,
       median: quantile(0.5),
       p95: quantile(0.95),
-      max: ordered.at(-1),
+      max: ordered.at(-1)!,
       samples: times,
     },
     cpuMicroseconds: cpu,

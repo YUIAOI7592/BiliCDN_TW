@@ -62,6 +62,36 @@ export interface WindowScore {
   readonly missingMs: number
   readonly candidateFraction: number | null
 }
+export interface CostResult {
+  readonly version: string
+  readonly rate: 1 | 2
+  readonly validity: 'valid'
+  readonly verdict: 'pass' | 'fail'
+  readonly startupMs: number
+  readonly tickMs: {
+    readonly min: number
+    readonly median: number
+    readonly p95: number
+    readonly max: number
+    readonly samples: readonly number[]
+  }
+  readonly cpuMicroseconds: { readonly user: number; readonly system: number }
+  readonly heapBytes: {
+    readonly start: number
+    readonly end: number
+    readonly peak: number
+    readonly delta: number
+  }
+  readonly calibration: readonly string[]
+  readonly measurementMs: number
+  readonly effects: readonly unknown[]
+  readonly cleanup: {
+    readonly before: Readonly<Record<string, number>>
+    readonly after: Readonly<Record<string, number>>
+    readonly unclassified: number
+    readonly callbacksAfterClose: number
+  }
+}
 export function parseEvaluationArgs(args: readonly string[]) {
   if (new Set(args).size !== args.length || args.some((a) => a !== '--json' && a !== '--cost'))
     throw Error('Usage: npm run evaluate:buffer-shadow -- [--json] [--cost]')
@@ -118,8 +148,16 @@ export function scoreWindow(
       !Number.isFinite(row.at) ||
       row.at <= previousAt ||
       !Number.isSafeInteger(row.seq) ||
+      row.seq < 1 ||
       row.seq <= previousSeq ||
-      !row.owner ||
+      typeof row.owner !== 'string' ||
+      !/^owner-[0-9]+$/.test(row.owner) ||
+      typeof row.qualified !== 'boolean' ||
+      !['insufficient', 'ineligible', 'stable', 'filling', 'draining'].includes(row.state) ||
+      typeof row.reason !== 'string' ||
+      !/^[a-z0-9-]{1,64}$/.test(row.reason) ||
+      (row.candidate === null) !== ['insufficient', 'ineligible'].includes(row.state) ||
+      (row.candidate === true && row.state !== 'draining') ||
       !Number.isFinite(row.rate) ||
       row.rate <= 0 ||
       (row.candidate !== null && typeof row.candidate !== 'boolean') ||
@@ -154,7 +192,8 @@ export function scoreWindow(
     if (row.at > annotation.scoreUntil) break
     const gap = previous && row.at - previous.at > 1500
     const ownerChanged = previous && row.owner !== previous.owner
-    if (open && (gap || ownerChanged || row.candidate === null)) close(previous!.at, true)
+    if (open && (gap || ownerChanged || row.candidate === null))
+      close(gap || ownerChanged ? previous!.at : row.at, true)
     if (row.candidate === false) close(row.at, false)
     if (row.candidate === true) {
       open ??= { start: row.at, index: i, end: row.at, evidence: [] }
