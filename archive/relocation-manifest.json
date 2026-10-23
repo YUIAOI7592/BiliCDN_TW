@@ -5233,6 +5233,56 @@
       "sha256": "add1250f22a24610e04a1be7c4ffaa0f616dc09f337e9bb59f3880e92ac33256",
       "archivedBytes": 7930,
       "archivedSha256": "add1250f22a24610e04a1be7c4ffaa0f616dc09f337e9bb59f3880e92ac33256"
+    },
+    {
+      "originalPath": "Release/v2.1.27/BUILD_MANIFEST_v2.1.27.json",
+      "archivedPath": "archive/retired/releases/Release/v2.1.27/BUILD_MANIFEST_v2.1.27.json",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 8015,
+      "sha256": "f56b97a370f6238bcb623ce9cfe542f757c528deb6926030145d12b1b8b61d1f",
+      "archivedBytes": 8015,
+      "archivedSha256": "f56b97a370f6238bcb623ce9cfe542f757c528deb6926030145d12b1b8b61d1f"
+    },
+    {
+      "originalPath": "Release/v2.1.27/BiliCDN_TW.user.js",
+      "archivedPath": "archive/retired/releases/Release/v2.1.27/BiliCDN_TW.user.js",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 382934,
+      "sha256": "1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795",
+      "archivedBytes": 382934,
+      "archivedSha256": "1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795"
+    },
+    {
+      "originalPath": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "archivedPath": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 45865,
+      "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
+      "archivedBytes": 45865,
+      "archivedSha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a"
+    },
+    {
+      "originalPath": "Release/v2.1.27/SHA256SUMS_v2.1.27.txt",
+      "archivedPath": "archive/retired/releases/Release/v2.1.27/SHA256SUMS_v2.1.27.txt",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 419,
+      "sha256": "80b0c5520076746e2068a3ec6a69ec4ea9cc28ad0e743a0bb973e7bdfe1115dc",
+      "archivedBytes": 419,
+      "archivedSha256": "80b0c5520076746e2068a3ec6a69ec4ea9cc28ad0e743a0bb973e7bdfe1115dc"
+    },
+    {
+      "originalPath": "Release/v2.1.27/TEST_REPORT_v2.1.27.md",
+      "archivedPath": "archive/retired/releases/Release/v2.1.27/TEST_REPORT_v2.1.27.md",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 6926,
+      "sha256": "c4eecefaf24e183844a8024a65c8a6a4fc268f5fd99e82f0b8c585cdaedde2fd",
+      "archivedBytes": 6926,
+      "archivedSha256": "c4eecefaf24e183844a8024a65c8a6a4fc268f5fd99e82f0b8c585cdaedde2fd"
     }
   ],
   "removedPaths": [
@@ -5272,36 +5322,6 @@
       "sha256": "19fcaf3cadef3b47fc53bcad4e681a54ac89d7447d35f348fe23257a6645d5ea"
     },
     {
-      "path": "Release/v2.1.27/BUILD_MANIFEST_v2.1.27.json",
-      "encoding": "raw",
-      "bytes": 8015,
-      "sha256": "f56b97a370f6238bcb623ce9cfe542f757c528deb6926030145d12b1b8b61d1f"
-    },
-    {
-      "path": "Release/v2.1.27/BiliCDN_TW.user.js",
-      "encoding": "raw",
-      "bytes": 382934,
-      "sha256": "1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795"
-    },
-    {
-      "path": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
-      "encoding": "raw",
-      "bytes": 45865,
-      "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a"
-    },
-    {
-      "path": "Release/v2.1.27/SHA256SUMS_v2.1.27.txt",
-      "encoding": "raw",
-      "bytes": 419,
-      "sha256": "80b0c5520076746e2068a3ec6a69ec4ea9cc28ad0e743a0bb973e7bdfe1115dc"
-    },
-    {
-      "path": "Release/v2.1.27/TEST_REPORT_v2.1.27.md",
-      "encoding": "raw",
-      "bytes": 6926,
-      "sha256": "c4eecefaf24e183844a8024a65c8a6a4fc268f5fd99e82f0b8c585cdaedde2fd"
-    },
-    {
       "path": "baseline/BiliCDN_TW_1.3.4.original.user.js",
       "encoding": "raw",
       "bytes": 305346,
@@ -5312,12 +5332,6 @@
       "encoding": "raw",
       "bytes": 110,
       "sha256": "e94643e81a9699d60bf084475fcc5a85f8f2dc2185b05042db402c5acccdb490"
-    },
-    {
-      "path": "release.json",
-      "encoding": "raw",
-      "bytes": 182,
-      "sha256": "676d2d699583398f6ab48426a73f4e311cf3e162b2bec2e1056a5af19c468656"
     },
     {
       "path": "src-v2/adapters/fetch-hook.ts",
@@ -5864,6 +5878,36 @@
       "encoding": "raw",
       "bytes": 1293,
       "sha256": "fbe9d3a7c78cce8aa4c6ad3e2bf0f25b3de6f328b55c17f7dfd2d6e3e35c3c7d"
+    },
+    {
+      "path": "Release/v2.1.28/BiliCDN_TW.user.js",
+      "encoding": "raw",
+      "bytes": 403700,
+      "sha256": "8b3ec29aa2b26cb0b9708a91aed65e2d6411e09875e2ac87c70436f0eeec418d"
+    },
+    {
+      "path": "Release/v2.1.28/BUILD_MANIFEST_v2.1.28.json",
+      "encoding": "raw",
+      "bytes": 8230,
+      "sha256": "d50eb9854e6e22b6e56009586b498b099d62d84cfe835472d93575400fea8e94"
+    },
+    {
+      "path": "Release/v2.1.28/CHANGELOG_v2.1.28.md",
+      "encoding": "raw",
+      "bytes": 49195,
+      "sha256": "b621fe9f6e14d30ce35ccef7098d21821be44790809ffb0ac5a64f5b55f97ba5"
+    },
+    {
+      "path": "Release/v2.1.28/SHA256SUMS_v2.1.28.txt",
+      "encoding": "raw",
+      "bytes": 419,
+      "sha256": "a517c591578cbfd00d7db582059e7ff61680167ed5ed3e09679938ffb39d3256"
+    },
+    {
+      "path": "Release/v2.1.28/TEST_REPORT_v2.1.28.md",
+      "encoding": "raw",
+      "bytes": 5460,
+      "sha256": "ae9101edde43751c6f869db68045e030eb0851dc9180450e9ab1d0ed8e8c7510"
     }
   ],
   "localManifest": "archive/retired/local/2026-10-20-cleanup/private-manifest.json",
@@ -8551,7 +8595,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 11,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_RESCUE_FIX_v2.1.27.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8560,7 +8604,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 19,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CONVERGENCE_v2.1.26_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8569,7 +8613,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 27,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/MODULARIZATION_v2.1.25_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8578,7 +8622,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 34,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_POLICY_REASSESSMENT_2026-10-14.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8587,7 +8631,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 36,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_v2.1.24_POSITION_LOSS_2026-10-14.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8596,7 +8640,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 42,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CR01_CR05_FIX_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8605,7 +8649,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 49,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_FIX_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8614,7 +8658,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 58,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR10_FIX_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8623,7 +8667,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 60,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_CHANNEL_REPORT_2026-10-12.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8632,7 +8676,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 61,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/P05_COPY_IAB_RESULT_2026-10-12.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8641,7 +8685,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 88,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_FOLLOWTHROUGH_FIX_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8650,7 +8694,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 93,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.17_ACCEPTANCE.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8659,7 +8703,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 99,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR08_FIX_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8668,7 +8712,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 99,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.16_ACCEPTANCE.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8677,7 +8721,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 99,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8686,7 +8730,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 110,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR07_FIX_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8695,7 +8739,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 110,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.14_BR07_KEYUP_SEEK.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8704,7 +8748,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 115,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.15_ACCEPTANCE.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8713,7 +8757,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 116,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8722,7 +8766,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 120,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR06_FIX_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8731,7 +8775,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 120,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.14_BR07_KEYUP_SEEK.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8740,7 +8784,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 129,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.13_ACCEPTANCE.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8749,7 +8793,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 129,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_FIX_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8758,7 +8802,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 138,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR04_BR05_FIX_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8767,7 +8811,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 143,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.12_ACCEPTANCE.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8776,7 +8820,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 148,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR03_FIX_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8785,7 +8829,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 160,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR02_FIX_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8794,7 +8838,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
       "line": 172,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/FUNCTIONAL_FIX_REPORT.md",
       "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a",
@@ -8803,7 +8847,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/TEST_REPORT_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/TEST_REPORT_v2.1.27.md",
       "line": 5,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_RESCUE_FIX_v2.1.27.md",
       "sha256": "c4eecefaf24e183844a8024a65c8a6a4fc268f5fd99e82f0b8c585cdaedde2fd",
@@ -8812,7 +8856,7 @@
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
     },
     {
-      "source": "Release/v2.1.27/TEST_REPORT_v2.1.27.md",
+      "source": "archive/retired/releases/Release/v2.1.27/TEST_REPORT_v2.1.27.md",
       "line": 44,
       "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/BR01_RCA_R2_2026-10-16.md",
       "sha256": "c4eecefaf24e183844a8024a65c8a6a4fc268f5fd99e82f0b8c585cdaedde2fd",
@@ -9728,6 +9772,15 @@
       "originalTarget": "docs/CONVERGENCE_v2.1.26_REPORT.md",
       "archivedTarget": "archive/retired/docs/CONVERGENCE_v2.1.26_REPORT.md",
       "reason": "Immutable historical URL retained; original path relocated in 2026-10-20 cleanup."
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md",
+      "line": 12,
+      "url": "../../../Release/v2.1.27/BiliCDN_TW.user.js",
+      "sha256": "730c2cd3998af49609fb038c29e8ef7dcd8c7a8286943d7f7784a1ece1ce1280",
+      "originalTarget": "Release/v2.1.27/BiliCDN_TW.user.js",
+      "archivedTarget": "archive/retired/releases/Release/v2.1.27/BiliCDN_TW.user.js",
+      "reason": "Immutable comparison report retains original URL; v2.1.27 Release archived unchanged during v2.1.28 publication."
     }
   ]
 }

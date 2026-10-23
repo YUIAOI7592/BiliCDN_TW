@@ -11,7 +11,7 @@ export const inputs = [
   },
   {
     version: '2.1.27',
-    path: 'Release/v2.1.27/BiliCDN_TW.user.js',
+    path: 'archive/retired/releases/Release/v2.1.27/BiliCDN_TW.user.js',
     bytes: 382934,
     sha256: '1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795',
   },

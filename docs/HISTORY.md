@@ -6,13 +6,14 @@
 
 ## 版本
 
-- [唯讀緩衝趨勢與影子判定離線驗收（2026-10-23，未發布來源）](../archive/retired/docs/BUFFER_TREND_2026-10-23.md)
+- [唯讀緩衝趨勢與影子判定離線驗收（2026-10-23，發布前來源）](../archive/retired/docs/BUFFER_TREND_2026-10-23.md)
 - [原版 v1.3.4 與 v2.1.27 離線救援比較（2026-10-23）](../archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md)
 
 | 適用版本 | 原始紀錄 |
 | --- | --- |
 | 未單列／跨版 | [新增 B 站 CDN 節點的驗證方案（2026-09-25）](../archive/retired/docs/CDN_CANDIDATE_TEST_PLAN_2026-09-25.md)、[B 站 CDN 全量初篩與比較測試報告](../archive/retired/docs/CDN_NODE_FULL_SCREENING_2026-09-25.md)、[B 站 CDN 優化公開專案調查（2026-09-25）](../archive/retired/docs/CDN_OPEN_SOURCE_SURVEY_2026-09-25.md)、[內建瀏覽器 Range 與實際播放對照（2026-09-25）](../archive/retired/docs/CDN_RANGE_PLAYBACK_EXPERIMENT_2026-09-25.md)、[B 站 CDN 節點測試結果（2026-09-25）](../archive/retired/docs/CDN_TEST_RESULTS_2026-09-25.md)、[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)、[歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[測試工具驗證紀錄](TEST_TOOLING_REPORT.md) |
-| v2.1.27 | [最新版完整驗證](TEST_REPORT.md)、[文件重整前快照 — 2026-10-17](../archive/retired/docs/DOCS_BEFORE_REORGANIZATION_2026-10-17.md)、[BR-01 位置保存、救援時機與 v2.1.27 驗證](../archive/retired/docs/BR01_RESCUE_FIX_v2.1.27.md) |
+| v2.1.28 | [最新版完整驗證](TEST_REPORT.md)、[發布前功能證據](../archive/retired/docs/BUFFER_TREND_2026-10-23.md) |
+| v2.1.27 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2127-完整報告2026-10-17)、[文件重整前快照 — 2026-10-17](../archive/retired/docs/DOCS_BEFORE_REORGANIZATION_2026-10-17.md)、[BR-01 位置保存、救援時機與 v2.1.27 驗證](../archive/retired/docs/BR01_RESCUE_FIX_v2.1.27.md) |
 | v2.1.26 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2126-release-verification--2026-10-16)、[BR-01：單元契約、根因調查與後續修復規格](../archive/retired/docs/BR01_RCA_2026-10-16.md)、[BR-01 第二輪調查：批准更正、完整自然窗口與位置保存契約](../archive/retired/docs/BR01_RCA_R2_2026-10-16.md)、[v2.1.26 四階段模組收斂紀錄](../archive/retired/docs/CONVERGENCE_v2.1.26_REPORT.md) |
 | v2.1.25 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2125-release-verification--2026-10-14)、[v2.1.25 模組化與 TypeScript 標準化紀錄](../archive/retired/docs/MODULARIZATION_v2.1.25_REPORT.md) |
 | v2.1.24 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2124-release-verification--2026-10-14)、[BR-01 救援政策重評與播放意圖修復](../archive/retired/docs/BR01_POLICY_REASSESSMENT_2026-10-14.md)、[BR-01：失效媒體重設後遺失使用者尋位位置](../archive/retired/docs/BR01_v2.1.24_POSITION_LOSS_2026-10-14.md) |

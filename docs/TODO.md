@@ -1,12 +1,12 @@
 # v2 工作狀態與後續方向
 
-更新：2026-10-23。現行版本 **v2.1.27**，以 [release.json](../release.json) 為準；產品驗收結果見 [TEST_REPORT](TEST_REPORT.md)。
+更新：2026-10-23。現行版本 **v2.1.28**，以 [release.json](../release.json) 為準；產品驗收結果見 [TEST_REPORT](TEST_REPORT.md)。
 
 ## 現在的執行狀態
 
-已完成批准的唯讀緩衝趨勢與影子判定實作及離線驗證，基準為 8e410b7／v2.1.27；結果與限制集中於 [本輪報告](../archive/retired/docs/BUFFER_TREND_2026-10-23.md)。交付採本機分階段提交，不推送、不升版、不發布。救援期限、所有權與額度維持；沒有自主續跑的下一階段，不開瀏覽器、自然起因或歷史矩陣，也未獲授權啟用預測救援。
+已完成批准的唯讀緩衝趨勢與影子判定實作及離線驗證，基準為 8e410b7／v2.1.27；結果與限制集中於 [本輪報告](../archive/retired/docs/BUFFER_TREND_2026-10-23.md)。使用者已另行指示發布 v2.1.28，正在執行升版、最終驗證與正式交付；原本本機限定範圍至此結束。救援期限、所有權與額度維持，沒有啟用預測救援；發布後只作正常安裝核對，不開自然起因、安裝故障注入或歷史矩陣。
 
-原版與 v2 的獨立離線比較結果保留於 [比較報告](../archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md)，該命令載入已發布腳本，不能用來驗證本輪未發布來源。命令只維護於 [DEVELOPMENT](DEVELOPMENT.md#原版與-v2-的獨立離線比較)。
+原版與 v2 的獨立離線比較結果保留於 [比較報告](../archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md)，該命令載入已發布腳本，不能用來驗證本輪新功能來源。命令只維護於 [DEVELOPMENT](DEVELOPMENT.md#原版與-v2-的獨立離線比較)。
 
 使用者授權的全專案檔案最佳化與整理已完成，基準為 67d33d2／v2.1.27；逐檔判定、分階段變更及完成核對見 [當日紀錄](../archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md)。核准的 SECURITY 文字已套用，完整與乾淨來源驗證通過；先前實體歸檔與目錄權威整合維持完成。產品行為、本體及版本不變，只交付 main 提交；不發布、不開漏洞掃描或瀏覽器窗口，沒有自主續跑中的產品調查。
 
@@ -30,7 +30,7 @@
 - P01 bounded prepare／P02 真 gate 仍須使用者明確恢復要求及指定影片自然 pending gate 新前提；不改網站 timeout、重設預算或反覆刷新製造條件。
 - 舊失敗、無效窗口及批准等待更正保留；原始輪次見 [HISTORY](HISTORY.md)，完整限制見 [結案紀錄](../archive/retired/docs/TODO_CLOSURE_2026-10-13.md)。
 - v2.1.6 的已批准結案維持；新增 CDN 研究已撤銷。沒有本輪授權的偏好記憶、提高探測頻率及其他平台擴展不實作。
-- 唯一瀏覽器環境仍為 [IAB＋Tampermonkey](IAB_TESTING.md)；此維護任務不啟動任何瀏覽器驗收。
+- 唯一瀏覽器環境仍為 [IAB＋Tampermonkey](IAB_TESTING.md)；本次發布只核對執行身分及正常回歸，不恢復舊故障窗口。
 
 ## 維護與追溯
 

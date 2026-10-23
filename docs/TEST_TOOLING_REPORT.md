@@ -339,3 +339,9 @@ FINAL-VERIFY、FINAL-CLEAN-*、首次沙箱失敗及各次前提修正輸出均�
 首次完整 verify 的六個既有 tooling 失敗是沙箱拒絕暫存 .git/config 寫入；正常權限重跑通過。未更改契約、期限、輸出上限或清理規則。公開歸檔檢查通過，既有日誌完整前綴與原件保持；本輪沒有本機私有搬移，因此未重跑 --local。
 
 乾淨副本由 637 個公開輸入建立，無既有 node_modules、.git、.work 或私有封存；npm ci --ignore-scripts --no-audit --no-fund 安裝 102 個鎖定套件，完整 verify 1456 案、退出 0。輸入雜湊未變，工作來源建置逐位元組一致，副本已按絕對路徑與專用前綴核對後清除。最後紀錄追加另在主工作區檢查；沒有留下專案內一次性工具或新工作目錄，不推送、不升版、不發布。
+
+## 2026-10-23 v2.1.28 發布驗證
+
+使用者另行指示發布，結束此前本機限定範圍。升版後 typecheck、architecture、完整 verify 1456 案通過；101 執行期模組，tooling 197 案，固定比較工具仍讀取封存的原始 v2.1.27。原 Release 五檔 bytes／SHA 保持，完整舊報告只追加；發布前搬移清單另存 raw 快照。安全差異範圍、結果及安裝限制集中於 [TEST_REPORT](TEST_REPORT.md)，不以 Node 合成結果補算瀏覽器。
+
+本次發布的乾淨來源副本含 644 個公開輸入，無既有 node_modules、.git、.work 或私有封存。npm ci --ignore-scripts --no-audit --no-fund 與完整 verify 均退出 0，正式 1456 案，輸入雜湊零變更；建置與封裝同為 403700 bytes／8b3ec29aa2b26cb0b9708a91aed65e2d6411e09875e2ac87c70436f0eeec418d。絕對路徑及專用前綴核對後移除副本，工作區沒有新增一次性工具。封裝報告為公開發布前快照；發布及實際安裝補記只更新現行 TEST_REPORT，不回寫快照。

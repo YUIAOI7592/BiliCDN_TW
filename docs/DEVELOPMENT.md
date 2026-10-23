@@ -237,7 +237,7 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 資料不足與不適用的 candidate 為 null；有效非候選為 false，候選為 true。樣本最多 32 筆，傳輸去重最多 128 筆。報告歷史含最新結果，受 32 筆及 8 KiB 雙重上限限制，實際可少於 32 筆。Recorder 128 KiB／匯出 96 KiB 上限維持，先移除趨勢歷史並記錄 bufferTrendEvicted／bufferTrendDropped；非法資料記 bufferTrendRejected。清除診斷只清報告，不重設觀察器、期限或額度。
 
-重跑使用既有命令：npm test -- domain、npm test -- application、npm test -- diagnostics、npm test -- orchestration，再執行 npm run verify。具名案例與逐秒合成軌跡見 [本輪離線驗收](../archive/retired/docs/BUFFER_TREND_2026-10-23.md)。compare:upstream 仍載入已發布本體，不能驗證未發布來源。合成進度與候選不能換算為網站救援成功率或誤介入率；發布狀態只看 [TODO](TODO.md)。
+重跑使用既有命令：npm test -- domain、npm test -- application、npm test -- diagnostics、npm test -- orchestration，再執行 npm run verify。具名案例與逐秒合成軌跡見 [本輪離線驗收](../archive/retired/docs/BUFFER_TREND_2026-10-23.md)。compare:upstream 固定載入原版及封存的已發布 v2.1.27 本體，不驗證本功能新來源。合成進度與候選不能換算為網站救援成功率或誤介入率；發布狀態只看 [TODO](TODO.md)。
 
 ## 建置輸出
 
