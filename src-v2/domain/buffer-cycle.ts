@@ -76,6 +76,8 @@ export function observeBufferCycle(input: BufferCycleInput): {
   if (state.lastLossAt !== null && sample.at - state.lastLossAt > 8000) {
     state.netLossSec = 0
     state.lastLossAt = null
+    // A new loss in this same sample must not inherit the expired cycle's credit.
+    state.cycleCreditMs = null
   }
   if (state.lastRefillAt !== null && sample.at - state.lastRefillAt > 8000)
     state.rangeTroughSec = null

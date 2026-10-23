@@ -1167,3 +1167,4 @@ test('diagnostic attempts retain six records and mode interruption survives late
   assert.deepEqual(recorder.snapshot().routeRecovery.attempts, [])
   assert.equal(recorder.snapshot().counters.attemptEvicted, 2)
 })
+import '../regressions/buffer-cycle-renewal.ts'
