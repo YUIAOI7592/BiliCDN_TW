@@ -1,0 +1,709 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-24",
+  "baseline": "ac4447451c22125931feb56535b1854ec86712e1",
+  "runtimeCommit": "5fa25f82d675eef14bc177279d978ceb1b3030d1",
+  "red": {
+    "exitCode": 1,
+    "hashes": [
+      {
+        "path": "src-v2/state/measurement-meta-store.ts",
+        "sha256": "e41d1f06b6cd4e050741986298d39b73fafcaff5e4b62c44a320df70e01f9308"
+      },
+      {
+        "path": "src-v2/application/measurement-controller.ts",
+        "sha256": "875330d3cc74a46358c69ddf141efe5eb953fe31dcc5127f902c2594936c2456"
+      },
+      {
+        "path": "tests-v2/regressions/functional-races/measurement-metadata.ts",
+        "sha256": "48e8ac530d2172f5a5ad51b377e2602f7703befb738673ae088fad1dcc81eca7"
+      }
+    ],
+    "results": [
+      {
+        "success": false,
+        "exitCode": 1,
+        "counts": {
+          "tests": 31,
+          "failed": 22,
+          "passed": 9,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "topLevel": 31,
+          "suites": 0
+        },
+        "cases": [
+          {
+            "name": "META U schema missing defaults without writing",
+            "status": "passed"
+          },
+          {
+            "name": "META U schema array defaults without writing",
+            "status": "failed"
+          },
+          {
+            "name": "META U schema wrong-schema defaults without writing",
+            "status": "failed"
+          },
+          {
+            "name": "META U schema missing-schema defaults without writing",
+            "status": "failed"
+          },
+          {
+            "name": "META U schema inherited defaults without writing",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid cursor string defaults independently",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid cursor negative defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor fraction defaults independently",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid cursor NaN defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor Infinity defaults independently",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid cursor unsafe-integer defaults independently",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid cursor coercible-object defaults independently",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid cooldown string defaults independently",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid cooldown negative defaults independently",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid cooldown NaN defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown Infinity defaults independently",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid cooldown future defaults independently",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid cooldown unsafe defaults independently",
+            "status": "failed"
+          },
+          {
+            "name": "META U valid cursor 0 and fractional timestamp retain exact values",
+            "status": "passed"
+          },
+          {
+            "name": "META U valid cursor 9007199254740991 and fractional timestamp retain exact values",
+            "status": "passed"
+          },
+          {
+            "name": "META U read and update never invoke getters or repersist unknown payload",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid partial fields and accessor patch preserve validated current fields",
+            "status": "failed"
+          },
+          {
+            "name": "META U returned values are isolated and reads observe the latest storage",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid clock NaN cannot persist a nonfinite or negative time",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid clock Infinity cannot persist a nonfinite or negative time",
+            "status": "failed"
+          },
+          {
+            "name": "META U invalid clock -1 cannot persist a nonfinite or negative time",
+            "status": "failed"
+          },
+          {
+            "name": "META I concurrent startup lock waiters preserve both increments and latest cooldown",
+            "status": "failed"
+          },
+          {
+            "name": "META I startup reset while-waiting prevents stale metadata commit",
+            "status": "passed"
+          },
+          {
+            "name": "META I startup reset during-fresh-read prevents stale metadata commit",
+            "status": "failed"
+          },
+          {
+            "name": "META I startup cursor wraps safely at MAX_SAFE_INTEGER",
+            "status": "failed"
+          },
+          {
+            "name": "META I healthy planning retains exact ten-minute cooldown after startup cursor update",
+            "status": "passed"
+          }
+        ],
+        "failures": [
+          {
+            "name": "META U schema array defaults without writing",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   catalogCursor: 4,\n-   catalogCursor: 0,\n    lastChallengeAt: 0\n  }\n"
+          },
+          {
+            "name": "META U schema wrong-schema defaults without writing",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   catalogCursor: 4,\n+   lastChallengeAt: 10\n-   catalogCursor: 0,\n-   lastChallengeAt: 0\n  }\n"
+          },
+          {
+            "name": "META U schema missing-schema defaults without writing",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   catalogCursor: 4,\n+   lastChallengeAt: 10\n-   catalogCursor: 0,\n-   lastChallengeAt: 0\n  }\n"
+          },
+          {
+            "name": "META U schema inherited defaults without writing",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   catalogCursor: 4,\n+   lastChallengeAt: 10\n-   catalogCursor: 0,\n-   lastChallengeAt: 0\n  }\n"
+          },
+          {
+            "name": "META U invalid cursor string defaults independently",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   catalogCursor: 3,\n-   catalogCursor: 0,\n    lastChallengeAt: 123\n  }\n"
+          },
+          {
+            "name": "META U invalid cursor fraction defaults independently",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   catalogCursor: 1.5,\n-   catalogCursor: 0,\n    lastChallengeAt: 123\n  }\n"
+          },
+          {
+            "name": "META U invalid cursor Infinity defaults independently",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   catalogCursor: Infinity,\n-   catalogCursor: 0,\n    lastChallengeAt: 123\n  }\n"
+          },
+          {
+            "name": "META U invalid cursor unsafe-integer defaults independently",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   catalogCursor: 9007199254740992,\n-   catalogCursor: 0,\n    lastChallengeAt: 123\n  }\n"
+          },
+          {
+            "name": "META U invalid cursor coercible-object defaults independently",
+            "message": "must not coerce"
+          },
+          {
+            "name": "META U invalid cooldown string defaults independently",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    catalogCursor: 7,\n+   lastChallengeAt: 123\n-   lastChallengeAt: 0\n  }\n"
+          },
+          {
+            "name": "META U invalid cooldown negative defaults independently",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    catalogCursor: 7,\n+   lastChallengeAt: -1\n-   lastChallengeAt: 0\n  }\n"
+          },
+          {
+            "name": "META U invalid cooldown Infinity defaults independently",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    catalogCursor: 7,\n+   lastChallengeAt: Infinity\n-   lastChallengeAt: 0\n  }\n"
+          },
+          {
+            "name": "META U invalid cooldown future defaults independently",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    catalogCursor: 7,\n+   lastChallengeAt: 2000000000001\n-   lastChallengeAt: 0\n  }\n"
+          },
+          {
+            "name": "META U invalid cooldown unsafe defaults independently",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    catalogCursor: 7,\n+   lastChallengeAt: 9007199254740992\n-   lastChallengeAt: 0\n  }\n"
+          },
+          {
+            "name": "META U read and update never invoke getters or repersist unknown payload",
+            "message": "getter"
+          },
+          {
+            "name": "META U invalid partial fields and accessor patch preserve validated current fields",
+            "message": "patch getter"
+          },
+          {
+            "name": "META U invalid clock NaN cannot persist a nonfinite or negative time",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   lastChallengeAt: 100,\n-   catalogCursor: 0,\n-   lastChallengeAt: 0,\n    schema: 2,\n+   updatedAt: NaN\n-   updatedAt: 0\n  }\n"
+          },
+          {
+            "name": "META U invalid clock Infinity cannot persist a nonfinite or negative time",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   lastChallengeAt: 100,\n-   catalogCursor: 0,\n-   lastChallengeAt: 0,\n    schema: 2,\n+   updatedAt: Infinity\n-   updatedAt: 0\n  }\n"
+          },
+          {
+            "name": "META U invalid clock -1 cannot persist a nonfinite or negative time",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   lastChallengeAt: 100,\n-   catalogCursor: 0,\n-   lastChallengeAt: 0,\n    schema: 2,\n+   updatedAt: -1\n-   updatedAt: 0\n  }\n"
+          },
+          {
+            "name": "META I concurrent startup lock waiters preserve both increments and latest cooldown",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   catalogCursor: 5,\n-   catalogCursor: 11,\n    lastChallengeAt: 2000000000000\n  }\n"
+          },
+          {
+            "name": "META I startup reset during-fresh-read prevents stale metadata commit",
+            "message": "Expected values to be strictly equal:\n\n5 !== 4\n"
+          },
+          {
+            "name": "META I startup cursor wraps safely at MAX_SAFE_INTEGER",
+            "message": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 9007199254740992\n- 0\n"
+          }
+        ]
+      }
+    ]
+  },
+  "rolloverRed": {
+    "exitCode": 1,
+    "hashes": [
+      {
+        "path": "src-v2/state/measurement-meta-store.ts",
+        "sha256": "c29051e6d0c34e471b8e037283a3cae8d6aa594f46b663dd725bf93923f3110e"
+      },
+      {
+        "path": "src-v2/application/measurement-controller.ts",
+        "sha256": "2c6b8f504cbf1a5ecd007288649c2f572dbd98dc6ae7d3b15fdb75bf887f33ff"
+      },
+      {
+        "path": "tests-v2/regressions/functional-races/measurement-metadata.ts",
+        "sha256": "3de78ff8726aa793e39149ce02724460ec358e17b895a9496d7a623609869982"
+      }
+    ],
+    "results": [
+      {
+        "success": false,
+        "exitCode": 1,
+        "counts": {
+          "tests": 35,
+          "failed": 1,
+          "passed": 34,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "topLevel": 35,
+          "suites": 0
+        },
+        "cases": [
+          {
+            "name": "META U schema missing defaults without writing",
+            "status": "passed"
+          },
+          {
+            "name": "META U schema array defaults without writing",
+            "status": "passed"
+          },
+          {
+            "name": "META U schema wrong-schema defaults without writing",
+            "status": "passed"
+          },
+          {
+            "name": "META U schema missing-schema defaults without writing",
+            "status": "passed"
+          },
+          {
+            "name": "META U schema inherited defaults without writing",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor string defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor negative defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor fraction defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor NaN defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor Infinity defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor unsafe-integer defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor coercible-object defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown string defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown negative defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown NaN defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown Infinity defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown future defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown unsafe defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U valid cursor 0 and fractional timestamp retain exact values",
+            "status": "passed"
+          },
+          {
+            "name": "META U valid cursor 9007199254740991 and fractional timestamp retain exact values",
+            "status": "passed"
+          },
+          {
+            "name": "META U read and update never invoke getters or repersist unknown payload",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid partial fields and accessor patch preserve validated current fields",
+            "status": "passed"
+          },
+          {
+            "name": "META U returned values are isolated and reads observe the latest storage",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid clock NaN cannot persist a nonfinite or negative time",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid clock Infinity cannot persist a nonfinite or negative time",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid clock -1 cannot persist a nonfinite or negative time",
+            "status": "passed"
+          },
+          {
+            "name": "META U storage get failure retains its exception and does not fabricate persistence",
+            "status": "passed"
+          },
+          {
+            "name": "META U storage set failure retains its exception and does not fabricate persistence",
+            "status": "passed"
+          },
+          {
+            "name": "META U storage lock failure retains its exception and does not fabricate persistence",
+            "status": "passed"
+          },
+          {
+            "name": "META U healthy round advances each candidate cursor safely through rollover",
+            "status": "failed"
+          },
+          {
+            "name": "META I concurrent startup lock waiters preserve both increments and latest cooldown",
+            "status": "passed"
+          },
+          {
+            "name": "META I startup reset while-waiting prevents stale metadata commit",
+            "status": "passed"
+          },
+          {
+            "name": "META I startup reset during-fresh-read prevents stale metadata commit",
+            "status": "passed"
+          },
+          {
+            "name": "META I startup cursor wraps safely at MAX_SAFE_INTEGER",
+            "status": "passed"
+          },
+          {
+            "name": "META I healthy planning retains exact ten-minute cooldown after startup cursor update",
+            "status": "passed"
+          }
+        ],
+        "failures": [
+          {
+            "name": "META U healthy round advances each candidate cursor safely through rollover",
+            "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  [\n    9007199254740991,\n+   9007199254740992,\n+   9007199254740992\n-   0,\n-   1\n  ]\n"
+          }
+        ]
+      }
+    ]
+  },
+  "green": {
+    "exitCode": 0,
+    "hashes": [
+      {
+        "path": "src-v2/state/measurement-meta-store.ts",
+        "sha256": "488e35ae01be9278fcc731dc94af925575fc2e374ab35a3bc44bb423d2d07202"
+      },
+      {
+        "path": "src-v2/application/measurement-controller.ts",
+        "sha256": "6f556c233ed837dcad65efed2bfc716f458e40516d7e7011617f958f0378d5b1"
+      },
+      {
+        "path": "tests-v2/regressions/functional-races/measurement-metadata.ts",
+        "sha256": "d801e20893312fc9b3aa03a665322f05b33ddfd5badc9291faa42f9ab1a9f1a4"
+      }
+    ],
+    "results": [
+      {
+        "success": true,
+        "exitCode": 0,
+        "counts": {
+          "tests": 35,
+          "failed": 0,
+          "passed": 35,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "topLevel": 35,
+          "suites": 0
+        },
+        "cases": [
+          {
+            "name": "META U schema missing defaults without writing",
+            "status": "passed"
+          },
+          {
+            "name": "META U schema array defaults without writing",
+            "status": "passed"
+          },
+          {
+            "name": "META U schema wrong-schema defaults without writing",
+            "status": "passed"
+          },
+          {
+            "name": "META U schema missing-schema defaults without writing",
+            "status": "passed"
+          },
+          {
+            "name": "META U schema inherited defaults without writing",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor string defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor negative defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor fraction defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor NaN defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor Infinity defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor unsafe-integer defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cursor coercible-object defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown string defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown negative defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown NaN defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown Infinity defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown future defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid cooldown unsafe defaults independently",
+            "status": "passed"
+          },
+          {
+            "name": "META U valid cursor 0 and fractional timestamp retain exact values",
+            "status": "passed"
+          },
+          {
+            "name": "META U valid cursor 9007199254740991 and fractional timestamp retain exact values",
+            "status": "passed"
+          },
+          {
+            "name": "META U read and update never invoke getters or repersist unknown payload",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid partial fields and accessor patch preserve validated current fields",
+            "status": "passed"
+          },
+          {
+            "name": "META U returned values are isolated and reads observe the latest storage",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid clock NaN cannot persist a nonfinite or negative time",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid clock Infinity cannot persist a nonfinite or negative time",
+            "status": "passed"
+          },
+          {
+            "name": "META U invalid clock -1 cannot persist a nonfinite or negative time",
+            "status": "passed"
+          },
+          {
+            "name": "META U storage get failure retains its exception and does not fabricate persistence",
+            "status": "passed"
+          },
+          {
+            "name": "META U storage set failure retains its exception and does not fabricate persistence",
+            "status": "passed"
+          },
+          {
+            "name": "META U storage lock failure retains its exception and does not fabricate persistence",
+            "status": "passed"
+          },
+          {
+            "name": "META U healthy round advances each candidate cursor safely through rollover",
+            "status": "passed"
+          },
+          {
+            "name": "META I concurrent startup lock waiters preserve both increments and latest cooldown",
+            "status": "passed"
+          },
+          {
+            "name": "META I startup reset while-waiting prevents stale metadata commit",
+            "status": "passed"
+          },
+          {
+            "name": "META I startup reset during-fresh-read prevents stale metadata commit",
+            "status": "passed"
+          },
+          {
+            "name": "META I startup cursor wraps safely at MAX_SAFE_INTEGER",
+            "status": "passed"
+          },
+          {
+            "name": "META I healthy planning retains exact ten-minute cooldown after startup cursor update",
+            "status": "passed"
+          }
+        ],
+        "failures": []
+      }
+    ]
+  },
+  "levels": {
+    "unit": 30,
+    "integration": 5
+  },
+  "sourceIsolation": {
+    "initialCalibration": {
+      "validity": "invalid",
+      "reason": "sandbox loopback connection timed out; no product assertions ran",
+      "errorTabClosedByUser": true,
+      "errorTabAbsentOnRecheck": true
+    },
+    "corrected": {
+      "result": {
+        "type": "object",
+        "value": {
+          "cleanup": {
+            "activeLocks": 0,
+            "storageEntries": 0,
+            "timers": 0
+          },
+          "formalGmAccess": false,
+          "level": "source-isolation",
+          "results": [
+            {
+              "name": "native Web Locks available",
+              "pass": true
+            },
+            {
+              "name": "invalid cursor read is zero with valid cooldown",
+              "pass": true
+            },
+            {
+              "name": "read does not migrate storage",
+              "pass": true
+            },
+            {
+              "name": "only four known fields persisted",
+              "pass": true
+            },
+            {
+              "name": "unknown getter never executed",
+              "pass": true
+            },
+            {
+              "name": "startup completes before held metadata lock",
+              "pass": true
+            },
+            {
+              "name": "both native lock callbacks preserve latest cursor and cooldown",
+              "pass": true
+            },
+            {
+              "name": "owned resources released",
+              "pass": true
+            }
+          ],
+          "schemaVersion": 1,
+          "success": true
+        }
+      }
+    },
+    "toolCallTiming": {
+      "totalSeconds": 4014.3937,
+      "executionSeconds": null,
+      "approvalWaitSeconds": null,
+      "unclassifiedSeconds": 4014.3937
+    },
+    "limitation": "Call total includes unknown approval/tool waits; not treated as test execution time."
+  },
+  "verification": {
+    "fullCases": 1904,
+    "exitCode": 0,
+    "clean": {
+      "cleaned": true,
+      "changed": [],
+      "verify": 0,
+      "ci": 0,
+      "inputCount": 700
+    }
+  },
+  "security": {
+    "scanId": "b0be17ea-8c04-4dc4-b6c4-e8cf890c80a7",
+    "status": "complete",
+    "reportableFindings": 0,
+    "usage": {
+      "totalTokens": 5780067,
+      "coverage": "partial",
+      "limitation": "includes cached/shared history; not isolated scan consumption"
+    }
+  },
+  "limitations": [
+    "Single-page native Web Locks with two controllers and memory storage is not real cross-tab GM acceptance.",
+    "Missing Web Locks retains direct execution without serialization.",
+    "No arbitrary Proxy trap or compromised GM isolation.",
+    "Invalid/future cooldown defaults to zero; no monotonic cross-tab clock.",
+    "No real-world rescue success rate or early rescue enabled."
+  ]
+}
