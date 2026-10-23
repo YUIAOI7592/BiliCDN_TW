@@ -13,8 +13,8 @@
 | v2.1.29 乾淨來源 N | 669 公開輸入；npm ci、verify 1773 案及效用 100 案全部退出 0，輸入雜湊零變更；效用 JSON 與主工作區逐位元組一致 |
 | 本輪安全差異 | 依風險不另開 Codex Security，理由見下節；舊掃描不作本次證據 |
 | 來源瀏覽器 S | 本輪未執行 |
-| 實際安裝 I | 本版未執行，與公開產物核對分開記錄 |
-| 公開交付 | 尚未發布；推送、標籤、附件及公開 latest 均須實際核對 |
+| 實際安裝 I | 使用者更新後，完整本體、管理器、唯一實例／hooks 及 Auto 1／2 倍正常操作與十五秒播放通過；故障救援未執行 |
+| 公開交付 | main、v2.1.29 標籤、唯一腳本附件及公開 latest 完整位元組核對一致；實際資料見下列交付證據 |
 
 ## 行為契約與非干預
 
@@ -36,7 +36,13 @@ v2.1.28 五項原件按原 bytes／SHA-256 歸檔，原成本比較只更新封�
 
 確定性建置為 407926 bytes，SHA-256 為 e0c178987111d99ae69762287fe3769cc1af722a1ee6e586d125ce0ba8b2e9b4；版本為 v2.1.29。正式五檔封裝完成，四筆 checksum 與原始保護均核對；封裝後的完整 verify 再次通過。Release 只上傳 BiliCDN_TW.user.js；封裝後的快照不回寫，公開交付等後續結果只更新本現行報告。
 
+[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.29) 已發布。發布提交為 f962bd0ce5678cb413cc861db0ea15fe22270c36，公開 main 與標籤當時均指向該提交；後續 main 文件提交不移動標籤。唯一附件名稱、大小、GitHub digest 及不使用登入憑證的公開 latest HTTP 200 全文均與本機原件一致。[交付與安裝逐項 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_DELIVERY_2026-10-23.json) 保存核對時間、雜湊、乾淨來源與原始正常取樣，與舊效用證據分開。
+
 ## 發布與安裝限制
+
+本輪公開更新入口實際停在 Tampermonkey 中繼頁，新載入影片當時完整本體仍等同 v2.1.28；使用者完成必要手動更新後重新核對。Tampermonkey 5.5.1／腳本 2.1.29、完整可執行本體 405968 bytes／8b5778ed48ba542c43ef972ba3fdc1b6e109937502e22879ee38e388bc97f627（移除 metadata 與管理器外層包裝），與已發布本體一致。Runtime／ControlCenter 各一，Fetch／XHR 均為 installed、fetch-and-xhr-verified。
+
+指定影片 BV1tFZZBQE57 維持 Auto，當次實際 3840×2160；1／2 倍分別以完整 await 的十五秒取樣驗證十五個一秒區段，每段時間增加大於 0.05 秒且影格增加，無 paused／seeking／error／ended。兩倍速的真實按鈕暫停／恢復、鍵盤短 seek 與倍速操作均有媒體狀態對照。沒有強制畫質或以標題宣稱 8K 通過；原 2 倍設定恢復，取樣計時器、斷點、除錯參照及自有分頁已清理。這是正常回歸，不能代替候選效用窗口或安裝版故障救援。
 
 自然起因、故障注入、背景／gate／剪貼簿及歷史矩陣不重開；既有六組五十秒樣片仍為工具阻塞／未執行，不轉算通過。正常安裝另記，控制中心入口沿用跳過決定。
 

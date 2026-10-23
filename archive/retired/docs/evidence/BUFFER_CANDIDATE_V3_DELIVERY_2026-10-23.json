@@ -1,0 +1,536 @@
+{
+  "schemaVersion": 1,
+  "version": "2.1.29",
+  "checkedAt": "2026-10-23T13:29:51.660Z",
+  "releaseCommit": "f962bd0ce5678cb413cc861db0ea15fe22270c36",
+  "release": {
+    "url": "https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.29",
+    "tag": "v2.1.29",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "BiliCDN_TW.user.js",
+        "bytes": 407926,
+        "sha256": "e0c178987111d99ae69762287fe3769cc1af722a1ee6e586d125ce0ba8b2e9b4"
+      }
+    ]
+  },
+  "publicLatest": {
+    "url": "https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js",
+    "status": 200,
+    "version": "2.1.29",
+    "bytes": 407926,
+    "sha256": "e0c178987111d99ae69762287fe3769cc1af722a1ee6e586d125ce0ba8b2e9b4",
+    "byteIdentical": true
+  },
+  "automatic": {
+    "formalCases": 1773,
+    "functionalCases": 100,
+    "verify": 0,
+    "clean": {
+      "files": 669,
+      "inputChanges": 0,
+      "functional": {
+        "exitCode": 0,
+        "cases": 100,
+        "valid": 100,
+        "pass": 100,
+        "identical": true,
+        "bytes": 17735471,
+        "sha256": "bc27f1fb0f60ed0e9bd1dc5db7cade07bda8758b96f6da545a0c2f4faa5be16e"
+      }
+    }
+  },
+  "security": {
+    "newScan": false,
+    "basis": "Read-only numerical confirmation and diagnostic whitelist; no authority/network/storage permission changes"
+  },
+  "sourceBrowser": {
+    "executed": false
+  },
+  "installedBrowser": {
+    "schemaVersion": 1,
+    "version": "2.1.29",
+    "manager": "Tampermonkey",
+    "managerVersion": "5.5.1",
+    "body": {
+      "chars": 401564,
+      "bytes": 405968,
+      "sha256": "8b5778ed48ba542c43ef972ba3fdc1b6e109937502e22879ee38e388bc97f627",
+      "publishedMatch": true
+    },
+    "runtimeCount": 1,
+    "controlCenterCount": 1,
+    "hooks": {
+      "state": "installed",
+      "reason": "fetch-and-xhr-verified",
+      "fetch": true,
+      "xhr": true
+    },
+    "video": "BV1tFZZBQE57",
+    "quality": "Auto",
+    "observedResolution": {
+      "width": 3840,
+      "height": 2160
+    },
+    "samples": {
+      "rate1": [
+        {
+          "at": 195746.59999999404,
+          "ended": false,
+          "error": false,
+          "frames": 17721,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2853.827833
+        },
+        {
+          "at": 196748.19999998808,
+          "ended": false,
+          "error": false,
+          "frames": 17782,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2854.8272
+        },
+        {
+          "at": 197748.40000000596,
+          "ended": false,
+          "error": false,
+          "frames": 17842,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2855.827291
+        },
+        {
+          "at": 198749.59999999404,
+          "ended": false,
+          "error": false,
+          "frames": 17902,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2856.828556
+        },
+        {
+          "at": 199750.09999999404,
+          "ended": false,
+          "error": false,
+          "frames": 17962,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2857.828997
+        },
+        {
+          "at": 200754.30000001192,
+          "ended": false,
+          "error": false,
+          "frames": 18022,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2858.833273
+        },
+        {
+          "at": 201756.5,
+          "ended": false,
+          "error": false,
+          "frames": 18082,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2859.835428
+        },
+        {
+          "at": 202756.59999999404,
+          "ended": false,
+          "error": false,
+          "frames": 18141,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2860.835434
+        },
+        {
+          "at": 203756.69999998808,
+          "ended": false,
+          "error": false,
+          "frames": 18201,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2861.835486
+        },
+        {
+          "at": 204756.69999998808,
+          "ended": false,
+          "error": false,
+          "frames": 18261,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2862.836292
+        },
+        {
+          "at": 205764.90000000596,
+          "ended": false,
+          "error": false,
+          "frames": 18322,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2863.843769
+        },
+        {
+          "at": 206764.90000000596,
+          "ended": false,
+          "error": false,
+          "frames": 18382,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2864.843774
+        },
+        {
+          "at": 207773.30000001192,
+          "ended": false,
+          "error": false,
+          "frames": 18442,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2865.847176
+        },
+        {
+          "at": 208773.5,
+          "ended": false,
+          "error": false,
+          "frames": 18502,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2866.847207
+        },
+        {
+          "at": 209780.19999998808,
+          "ended": false,
+          "error": false,
+          "frames": 18562,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2867.854012
+        },
+        {
+          "at": 210781.80000001192,
+          "ended": false,
+          "error": false,
+          "frames": 18623,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "seeking": false,
+          "time": 2868.856768
+        }
+      ],
+      "rate2": [
+        {
+          "at": 107697.5,
+          "ended": false,
+          "error": false,
+          "frames": 7480,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2680.293329
+        },
+        {
+          "at": 108705.19999998808,
+          "ended": false,
+          "error": false,
+          "frames": 7601,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2682.301088
+        },
+        {
+          "at": 109710.69999998808,
+          "ended": false,
+          "error": false,
+          "frames": 7720,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2684.3082
+        },
+        {
+          "at": 110713.80000001192,
+          "ended": false,
+          "error": false,
+          "frames": 7842,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2686.315727
+        },
+        {
+          "at": 111722,
+          "ended": false,
+          "error": false,
+          "frames": 7962,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2688.334974
+        },
+        {
+          "at": 112730.30000001192,
+          "ended": false,
+          "error": false,
+          "frames": 8082,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2690.346159
+        },
+        {
+          "at": 113738.40000000596,
+          "ended": false,
+          "error": false,
+          "frames": 8204,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2692.371669
+        },
+        {
+          "at": 114738.69999998808,
+          "ended": false,
+          "error": false,
+          "frames": 8324,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2694.367081
+        },
+        {
+          "at": 115747,
+          "ended": false,
+          "error": false,
+          "frames": 8444,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2696.387613
+        },
+        {
+          "at": 116747.19999998808,
+          "ended": false,
+          "error": false,
+          "frames": 8565,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2698.395851
+        },
+        {
+          "at": 117755.40000000596,
+          "ended": false,
+          "error": false,
+          "frames": 8686,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2700.412079
+        },
+        {
+          "at": 118756.5,
+          "ended": false,
+          "error": false,
+          "frames": 8806,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2702.408383
+        },
+        {
+          "at": 119758.19999998808,
+          "ended": false,
+          "error": false,
+          "frames": 8925,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2704.417741
+        },
+        {
+          "at": 120763.80000001192,
+          "ended": false,
+          "error": false,
+          "frames": 9046,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2706.428857
+        },
+        {
+          "at": 121772.09999999404,
+          "ended": false,
+          "error": false,
+          "frames": 9167,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2708.435369
+        },
+        {
+          "at": 122772.09999999404,
+          "ended": false,
+          "error": false,
+          "frames": 9287,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "seeking": false,
+          "time": 2710.428713
+        }
+      ]
+    },
+    "operations": {
+      "rate1": {
+        "pause": {
+          "paused": true,
+          "time": 2839.628346,
+          "rate": 1
+        },
+        "resume": {
+          "paused": false,
+          "time": 2839.885942,
+          "rate": 1
+        },
+        "shortSeek": {
+          "paused": false,
+          "time": 2844.906959,
+          "rate": 1,
+          "seeking": true
+        }
+      },
+      "rate2": {
+        "pause": {
+          "paused": true,
+          "time": 2763.322965,
+          "rate": 2
+        },
+        "resume": {
+          "paused": false,
+          "time": 2763.831715,
+          "rate": 2
+        },
+        "shortSeek": {
+          "paused": false,
+          "time": 2768.871874,
+          "rate": 2,
+          "seeking": true
+        }
+      }
+    },
+    "finalMedia": {
+      "time": 2907.559238,
+      "rate": 2,
+      "paused": false,
+      "seeking": false,
+      "error": false,
+      "width": 3840,
+      "height": 2160
+    },
+    "controlCenterEntry": "skipped per existing user decision",
+    "shadowUtilityWindow": "not executed",
+    "faultRescue": "not executed",
+    "assertions": [
+      {
+        "rate": 1,
+        "durationMs": 15035.200000017881,
+        "intervals": 15,
+        "allProgress": true,
+        "allEligible": true,
+        "pass": true
+      },
+      {
+        "rate": 2,
+        "durationMs": 15074.59999999404,
+        "intervals": 15,
+        "allProgress": true,
+        "allEligible": true,
+        "pass": true
+      }
+    ],
+    "cleanup": {
+      "boundedSamplingCompleted": true,
+      "samplingTimersCleared": true,
+      "debuggerDisabled": true,
+      "breakpointsRemoved": true,
+      "objectGroupReleased": true,
+      "agentVideoTabClosed": true,
+      "updateTabAlreadyClosed": true,
+      "ownedInterceptionPatterns": 0,
+      "ownedHeldRequests": 0,
+      "productWrappersAddedByTest": 0,
+      "originalRateRestored": 2
+    },
+    "executed": true,
+    "userConfirmedUpdate": true,
+    "verdict": "pass",
+    "scope": "identity and normal playback only"
+  },
+  "remoteRefsAtPublication": [
+    [
+      "f962bd0ce5678cb413cc861db0ea15fe22270c36",
+      "refs/heads/main"
+    ],
+    [
+      "6785cc8b8ec2559253453d91281f71fe18e0e27f",
+      "refs/tags/v2.1.29"
+    ],
+    [
+      "f962bd0ce5678cb413cc861db0ea15fe22270c36",
+      "refs/tags/v2.1.29^{}"
+    ]
+  ],
+  "finalDocumentation": "A later documentation-only main commit records this evidence; release tag and five packaged files remain immutable."
+}

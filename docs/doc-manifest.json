@@ -2748,6 +2748,13 @@
   ],
   "protections": [
     {
+      "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_DELIVERY_2026-10-23.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 12983,
+      "sha256": "fba5f2b6c12ff8a7e447f707ef6ceca3a1839ab497517709684d350b45ee7630"
+    },
+    {
       "path": "Release/v2.1.29/BUILD_MANIFEST_v2.1.29.json",
       "mode": "exact",
       "encoding": "raw",
