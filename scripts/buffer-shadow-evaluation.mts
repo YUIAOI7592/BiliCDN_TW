@@ -1,0 +1,191 @@
+import { readFileSync, mkdtempSync, rmSync } from 'node:fs'
+import { join, resolve, sep } from 'node:path'
+import { tmpdir } from 'node:os'
+import { build } from 'esbuild'
+import { supervise } from './test-process.mts'
+import { filesUnder, isRecord, errorMessage } from './lib.mts'
+import { sha256 } from './upstream-compare/model.mts'
+import { parseEvaluationArgs, scenarioNames } from './buffer-shadow/model.mts'
+import { costInputs, loadCostInput } from './buffer-shadow/inputs.mts'
+
+export function validEvaluationResult(
+  value: unknown,
+  cost: boolean,
+): value is Record<string, unknown> {
+  return (
+    isRecord(value) &&
+    value.validity === 'valid' &&
+    ['pass', 'fail'].includes(String(value.verdict)) &&
+    isRecord(value.cleanup) &&
+    (cost
+      ? isRecord(value.tickMs)
+      : Array.isArray(value.rows) && Array.isArray(value.assertions) && isRecord(value.score))
+  )
+}
+export async function evaluateBufferShadow(cost = false) {
+  let suiteStarted = performance.now(),
+    activeSuite = ''
+  const results: Record<string, unknown>[] = []
+  for (const input of costInputs) loadCostInput(input.version)
+  const dir = mkdtempSync(join(tmpdir(), 'bilicdn-shadow-'))
+  try {
+    const worker = cost ? 'scripts/buffer-shadow/cost-worker.mts' : join(dir, 'worker.mjs')
+    if (!cost)
+      await build({
+        entryPoints: ['tests-v2/support/buffer-shadow-worker.ts'],
+        outfile: worker,
+        bundle: true,
+        platform: 'node',
+        format: 'esm',
+        sourcemap: 'inline',
+        logLevel: 'silent',
+      })
+    const jobs: { args: string[]; warmup: boolean; id: string; pair: number | null }[] = []
+    if (cost)
+      for (const rate of [1, 2])
+        for (let pair = -2; pair < 10; pair++)
+          for (const input of pair % 2 === 0 ? costInputs : costInputs.slice().reverse())
+            jobs.push({
+              args: [input.version, String(rate)],
+              warmup: pair < 0,
+              id: `${input.version}@${rate}x/pair-${pair}`,
+              pair,
+            })
+    else
+      for (const name of scenarioNames)
+        for (const rate of [1, 2])
+          jobs.push({
+            args: [name, String(rate)],
+            warmup: false,
+            id: `${name}@${rate}x`,
+            pair: null,
+          })
+    for (const job of jobs) {
+      // Rate-specific cost suites each contain the predeclared 2 warmup + 10 measured pairs.
+      // Each suite retains the same 60s bound; no individual measurement gets more time.
+      const suite = cost ? `cost-${job.args[1]}x` : 'functional'
+      if (suite !== activeSuite) {
+        activeSuite = suite
+        suiteStarted = performance.now()
+      }
+      const remaining = 60000 - (performance.now() - suiteStarted)
+      if (remaining <= 0) {
+        results.push({
+          id: job.id,
+          suite,
+          warmup: job.warmup,
+          pair: job.pair,
+          validity: 'invalid',
+          verdict: 'undetermined',
+          reason: 'suite-timeout',
+          exitCode: null,
+        })
+        continue
+      }
+      const child = await supervise(process.execPath, [worker, ...job.args], {
+        timeoutMs: Math.max(1, Math.min(10000, remaining)),
+      })
+      const line = child.stdout.split('\n').find((l) => l.startsWith('SHADOW_RESULT '))
+      let value: unknown = null
+      try {
+        value = line ? JSON.parse(line.slice('SHADOW_RESULT '.length)) : null
+      } catch {
+        /* Preserves invalid protocol. */
+      }
+      if (!validEvaluationResult(value, cost) || child.reason || child.error)
+        results.push({
+          id: job.id,
+          suite,
+          pair: job.pair,
+          warmup: job.warmup,
+          validity: 'invalid',
+          verdict: 'undetermined',
+          reason: child.reason ?? child.error ?? 'worker-protocol',
+          exitCode: child.code,
+        })
+      else
+        results.push({
+          ...value,
+          id: job.id,
+          suite,
+          pair: job.pair,
+          warmup: job.warmup,
+          exitCode: child.code,
+        })
+    }
+    const sourceHashes = Object.fromEntries(
+      ['src-v2', 'scripts/buffer-shadow', 'scripts/upstream-compare']
+        .flatMap((d) => filesUnder(d))
+        .concat([
+          'scripts/buffer-shadow-evaluation.mts',
+          'tests-v2/support/buffer-shadow-scenarios.ts',
+          'tests-v2/support/buffer-shadow-worker.ts',
+          'tests-v2/support/buffer-monitor.ts',
+          'tests-v2/support/clock.ts',
+        ])
+        .sort()
+        .map((p) => [p, sha256(readFileSync(p))]),
+    )
+    return {
+      schemaVersion: 1,
+      baseline: '39c21b5f272eda2f8090f079770ad129e1545dd0',
+      mode: cost ? 'cost' : 'functional',
+      node: process.version,
+      limits: { caseMs: 5000, cleanupMs: 5000, suiteMs: 60000, maxBytes: 33554432 },
+      assumptions: [
+        'offline synthetic progress',
+        'foreground model',
+        '60s healthy prelude',
+        'fixed buffer-window-v1 thresholds',
+        'no product edits',
+      ],
+      inputs: costInputs,
+      sourceHashes,
+      results,
+      exitCode: results.every(
+        (r) => r.validity === 'valid' && r.verdict === 'pass' && r.exitCode === 0,
+      )
+        ? 0
+        : 1,
+    }
+  } finally {
+    const target = resolve(dir),
+      parent = resolve(tmpdir())
+    if (
+      !target.startsWith(parent + sep) ||
+      !target.split(sep).at(-1)?.startsWith('bilicdn-shadow-')
+    )
+      throw Error('Unsafe evaluation temporary directory')
+    rmSync(target, { recursive: true })
+  }
+}
+if (
+  process.argv[1] &&
+  resolve(process.argv[1]) === resolve('scripts/buffer-shadow-evaluation.mts')
+) {
+  let options: ReturnType<typeof parseEvaluationArgs> | undefined
+  try {
+    options = parseEvaluationArgs(process.argv.slice(2))
+  } catch (error) {
+    console.error(errorMessage(error))
+    process.exitCode = 2
+  }
+  if (options)
+    try {
+      const report = await evaluateBufferShadow(options.cost)
+      if (options.json) console.log(JSON.stringify(report))
+      else {
+        for (const row of report.results)
+          console.log(
+            `${row.id}\t${row.validity}\t${row.verdict}\t${JSON.stringify(row.score ?? row.tickMs ?? row.reason)}`,
+          )
+        console.log(
+          `Executions ${report.results.length}; exit ${report.exitCode}; model results only.`,
+        )
+      }
+      process.exitCode = report.exitCode
+    } catch (error) {
+      console.error(errorMessage(error))
+      process.exitCode = 1
+    }
+}

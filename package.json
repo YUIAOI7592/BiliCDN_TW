@@ -18,7 +18,8 @@
     "format:check": "node scripts/format.mts --check",
     "docs:check": "node scripts/docs-check.mts",
     "archive:check": "node scripts/archive-check.mts",
-    "compare:upstream": "node scripts/upstream-compare.mts"
+    "compare:upstream": "node scripts/upstream-compare.mts",
+    "evaluate:buffer-shadow": "node scripts/buffer-shadow-evaluation.mts"
   },
   "devDependencies": {
     "@types/node": "26.6.4",

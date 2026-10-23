@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict'
-import type { TestContext } from 'node:test'
 import { PlayerMonitor } from '../../src-v2/application/player-monitor.ts'
 import type {
   MonitorPlayerPort,
@@ -19,7 +18,7 @@ import { idleControls } from './player.ts'
 import { testScope } from './scope.ts'
 import { monitorRoutes, monitorMeasurement, monitorRecovery } from './controllers.ts'
 
-export function bufferMonitor(t: TestContext, rate: number) {
+export function bufferMonitor(t: Parameters<typeof testScope>[0], rate: number) {
   const scope = testScope(t),
     clock = new FakeClock(),
     controls = { ...idleControls() }
