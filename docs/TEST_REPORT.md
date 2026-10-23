@@ -38,9 +38,17 @@ IAB 自有頁面載入真實 Store 與 MeasurementController，以記憶體儲�
 
 v2.1.31 完整報告原文追加保存，五項 Release 依原 bytes／SHA-256 搬入公開封存。[升版前清單](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_5fa25f8.json) 保留原保護資料。[v2.1.32 正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.32) 已發布，發布提交 30ffffd226c55f1a12207b14d5743d34beb4aa26。當時遠端 main 與標籤解參照一致；唯一附件及無登入憑證的公開 latest HTTP 200 全文均為 417076 bytes／SHA-256 156d4b0f80fc30c8e88a220bc39727c49b95408585e6c39bf7c9d193f8737e0d，與本機逐位元組一致。後續文件提交不移動標籤、不回寫五項 Release 快照。
 
-公開更新入口本次停在 Tampermonkey 中繼頁，工具清單沒有可操作的管理器確認頁；新載入指定影片的完整本體仍為 413812 bytes／SHA-256 36e48b746b596638260c5821a87482e6ddde1331c0975b9d55920b228e725258，精確等同已發布 v2.1.31。v2.1.32 安裝身分與 Auto 1／2 倍正常回歸記為工具阻塞／未執行，產品判定為 null，不以舊版或來源隔離補算。
+公開更新入口首次停在 Tampermonkey 中繼頁，工具清單沒有可操作的管理器確認頁；新載入指定影片的完整本體仍為 413812 bytes／SHA-256 36e48b746b596638260c5821a87482e6ddde1331c0975b9d55920b228e725258，精確等同已發布 v2.1.31。當時 v2.1.32 安裝身分與 Auto 1／2 倍正常回歸記為工具阻塞／未執行，產品判定為 null；原紀錄保持，不以後續結果回寫。
 
-本次未重複請求工作授權或使用者操作；發布交付已完成，安裝核對保留上述實際阻塞。自有更新與影片分頁已關閉，Debugger 已解除，未建立故障攔截或額外播放收集器。[交付 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/MEASUREMENT_METADATA_DELIVERY_2026-10-24.json) 保存公開校驗、完整本體及清理證據。
+首次嘗試未重複請求工作授權或使用者操作；發布交付完成後保留上述實際阻塞。自有更新與影片分頁已關閉，Debugger 已解除，未建立故障攔截或額外播放收集器。[交付 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/MEASUREMENT_METADATA_DELIVERY_2026-10-24.json) 保存公開校驗、完整本體及清理證據。
+
+使用者確認完成更新後，於 2026-10-24 的新文件核對 Tampermonkey 5.5.1／v2.1.32，完整本體 415118 bytes／SHA-256 d0286eb6ef089cb5d89432cc0fef65fa59f35cfb948e880f452f52b9a5cb548e 與發布檔一致；重載後再次全文比對相同。Runtime／ControlCenter 各一，Fetch／XHR installed、fetch-and-xhr-verified。短暫 Debugger 只取得身分，斷點與暫停在操作及播放窗口前解除。
+
+指定影片 BV1tFZZBQE57 保持 Auto，當次實際 3840×2160。1／2 倍各完成真實按鈕暫停／恢復與分頁原生 Right 約五秒短 seek，再各以單次完整 await 取得十六筆樣本、十五個一秒區段。每區段時間增加大於 0.05 秒且影格增加，倍速精確、同媒體與內容，沒有 paused／seeking／ended／error 或新可信輸入；同步媒體事件收集為零。1 倍經過 15018.8 ms、影片前進 15.017997 秒；2 倍經過 15011.9 ms、前進 30.021783 秒。兩窗首次即有效通過，recovery 保持 healthy，reloadCount 為零。
+
+倍速選單前兩次定位把顯示文字當成 listitem 的無障礙名稱，未找到項目；依已觀察文字修正後成功。這是操作定位失敗，尚未開始播放窗口，不是產品失敗，也未用重跑挑選窗口。原二倍速已恢復，自有計時器、監聽器、斷點、遠端物件參照及分頁均清理。
+
+[安裝版逐案 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/MEASUREMENT_METADATA_INSTALLED_2026-10-24.json) 保存逐秒、操作前後、有效性及清理結果。另以五個具名 node:test 重播身分、兩倍速操作／進度、清理與五檔不變條件，全部通過；這五個證據檢查不加入正式 1904 案。本輪正常安裝回歸已完成，原中繼頁阻塞、來源隔離及實際安裝分開記錄。
 
 ## 發布與安裝限制
 
@@ -48,7 +56,7 @@ v2.1.31 完整報告原文追加保存，五項 Release 依原 bytes／SHA-256 �
 
 時鐘非法時以零處理；時鐘倒退使原冷卻落在未來時，該欄失效歸零。沒有新增跨分頁單調時鐘；探測仍須通過原資格與額度。白名單是明確 metadata 更新的持久邊界，不是全儲存清理或安全沙箱。
 
-安裝版只另行核對管理器、完整本體、唯一實例、hooks 與指定影片 Auto 1／2 倍正常播放、暫停／恢復、短 seek 及十五秒進度。控制中心入口維持依指示跳過；自然起因、故障注入、背景／gate／剪貼簿、六組五十秒樣片與歷史矩陣不重開。不宣稱真實卡頓率或救援成功率改善，不啟用提前備援。
+本輪完成的安裝版只涵蓋管理器、完整本體、唯一實例、hooks 與指定影片 Auto 1／2 倍正常播放、暫停／恢復、短 seek 及十五秒進度。控制中心入口維持依指示跳過；自然起因、故障注入、背景／gate／剪貼簿、六組五十秒樣片與歷史矩陣不重開。不宣稱真實卡頓率或救援成功率改善，不啟用提前備援。
 
 ## 歷史驗證導覽
 

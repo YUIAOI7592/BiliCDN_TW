@@ -6198,6 +6198,12 @@
       "encoding": "raw",
       "bytes": 2361,
       "sha256": "fa4f46b25623fa973787b994602303be78be2424f7f17b6d04a3bee65811b5ae"
+    },
+    {
+      "path": "archive/retired/docs/evidence/MEASUREMENT_METADATA_INSTALLED_2026-10-24.json",
+      "encoding": "raw",
+      "bytes": 24374,
+      "sha256": "1f3e98bd763c386360367f9368216b6e4379f847a995c4500993b6782868a1f9"
     }
   ],
   "localManifest": "archive/retired/local/2026-10-20-cleanup/private-manifest.json",
