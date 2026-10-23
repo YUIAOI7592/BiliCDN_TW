@@ -1,0 +1,577 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-24",
+  "baseline": "f58206939dde5507717ef24bf8efe84370acbd89",
+  "runtimeCommit": "c65c5069d901bfa42045b05e886ec423c0f6e191",
+  "source": {
+    "path": "src-v2/adapters/visibility.ts",
+    "beforeGitSha256": "0a05b968380730a54e94dc1b427e5f7aef72f19fb10483f3e14ca01a72c7b49e",
+    "beforeWorkingBytesSha256": "0a05b968380730a54e94dc1b427e5f7aef72f19fb10483f3e14ca01a72c7b49e",
+    "afterSha256": "f783b2929cf085b4281dd946fcac4f18c9ba6b21860e850db2ac2dfed7b5abf4"
+  },
+  "tests": {
+    "path": "tests-v2/regressions/functional-races/visibility-ownership.ts",
+    "redCommitSha256": "13389b931fd30658cd14f3e3236f1dcfafd7620f92f38f4d7590901fe8890042",
+    "finalSha256": "2150d6c3bb34782ae9101b51048c8f281a9c7ae2313c542b18252e93f29d4145",
+    "note": "Final tests add explicit resource cleanup assertions; ownership expectations unchanged."
+  },
+  "red": [
+    {
+      "success": false,
+      "exitCode": 1,
+      "counts": {
+        "tests": 35,
+        "failed": 17,
+        "passed": 18,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "topLevel": 35,
+        "suites": 0
+      },
+      "cases": [
+        {
+          "name": "VIS-OWN normal hidden restores complete inherited descriptor",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN normal hidden restores complete accessor descriptor",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN normal hidden restores complete data descriptor",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer hidden getter survives disable and repeated dispose",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN newer hidden setter survives disable and repeated dispose",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN newer hidden data survives disable and repeated dispose",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN newer hidden deleted survives disable and repeated dispose",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN newer hidden enumerable survives disable and repeated dispose",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN newer hidden configurable survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN hidden restoration never invokes original or newer getter",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN hidden install-read failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN hidden install-write failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN hidden restore-read failure preserves other cleanup and is not retried",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN hidden restore-write failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN hidden restore-delete failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN nonconfigurable hidden permits independent installation and cleanup",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN normal visibilityState restores complete inherited descriptor",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN normal visibilityState restores complete accessor descriptor",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN normal visibilityState restores complete data descriptor",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState getter survives disable and repeated dispose",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState setter survives disable and repeated dispose",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState data survives disable and repeated dispose",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState deleted survives disable and repeated dispose",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState enumerable survives disable and repeated dispose",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState configurable survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN visibilityState restoration never invokes original or newer getter",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN visibilityState install-read failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN visibilityState install-write failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN visibilityState restore-read failure preserves other cleanup and is not retried",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN visibilityState restore-write failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN visibilityState restore-delete failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN nonconfigurable visibilityState permits independent installation and cleanup",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN reinstall captures current owner and install is idempotent",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN integration Runtime settings preserve newer owner without extra actions rate=1",
+          "status": "failed"
+        },
+        {
+          "name": "VIS-OWN integration Runtime settings preserve newer owner without extra actions rate=2",
+          "status": "failed"
+        }
+      ],
+      "failures": [
+        {
+          "name": "VIS-OWN newer hidden getter survives disable and repeated dispose",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    configurable: true,\n+   enumerable: false,\n+   value: 'before',\n+   writable: false\n-   enumerable: true,\n-   get: [Function: get],\n-   set: undefined\n  }\n"
+        },
+        {
+          "name": "VIS-OWN newer hidden setter survives disable and repeated dispose",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    configurable: true,\n+   enumerable: false,\n+   value: 'before',\n+   writable: false\n-   enumerable: true,\n-   get: [Function: get],\n-   set: [Function: set]\n  }\n"
+        },
+        {
+          "name": "VIS-OWN newer hidden data survives disable and repeated dispose",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    configurable: true,\n+   enumerable: false,\n+   value: 'before',\n+   writable: false\n-   enumerable: true,\n-   value: 'newer',\n-   writable: true\n  }\n"
+        },
+        {
+          "name": "VIS-OWN newer hidden deleted survives disable and repeated dispose",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ {\n+   configurable: true,\n+   enumerable: false,\n+   value: 'before',\n+   writable: false\n+ }\n- undefined\n"
+        },
+        {
+          "name": "VIS-OWN newer hidden enumerable survives disable and repeated dispose",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    configurable: true,\n    enumerable: false,\n+   value: 'before',\n+   writable: false\n-   get: [Function: get],\n-   set: undefined\n  }\n"
+        },
+        {
+          "name": "VIS-OWN hidden restoration never invokes original or newer getter",
+          "message": "Expected \"actual\" to be reference-equal to \"expected\":\n+ actual - expected\n\n+ [Function: getter]\n- [Function: newer]\n             ^\n"
+        },
+        {
+          "name": "VIS-OWN hidden restore-read failure preserves other cleanup and is not retried",
+          "message": "Expected values to be strictly equal:\n\n0 !== 1\n"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState getter survives disable and repeated dispose",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    configurable: true,\n+   enumerable: false,\n+   value: 'before',\n+   writable: false\n-   enumerable: true,\n-   get: [Function: get],\n-   set: undefined\n  }\n"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState setter survives disable and repeated dispose",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    configurable: true,\n+   enumerable: false,\n+   value: 'before',\n+   writable: false\n-   enumerable: true,\n-   get: [Function: get],\n-   set: [Function: set]\n  }\n"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState data survives disable and repeated dispose",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    configurable: true,\n+   enumerable: false,\n+   value: 'before',\n+   writable: false\n-   enumerable: true,\n-   value: 'newer',\n-   writable: true\n  }\n"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState deleted survives disable and repeated dispose",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ {\n+   configurable: true,\n+   enumerable: false,\n+   value: 'before',\n+   writable: false\n+ }\n- undefined\n"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState enumerable survives disable and repeated dispose",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n    configurable: true,\n    enumerable: false,\n+   value: 'before',\n+   writable: false\n-   get: [Function: get],\n-   set: undefined\n  }\n"
+        },
+        {
+          "name": "VIS-OWN visibilityState restoration never invokes original or newer getter",
+          "message": "Expected \"actual\" to be reference-equal to \"expected\":\n+ actual - expected\n\n+ [Function: getter]\n- [Function: newer]\n             ^\n"
+        },
+        {
+          "name": "VIS-OWN visibilityState restore-read failure preserves other cleanup and is not retried",
+          "message": "Expected values to be strictly equal:\n\n0 !== 1\n"
+        },
+        {
+          "name": "VIS-OWN reinstall captures current owner and install is idempotent",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ undefined\n- {\n-   configurable: true,\n-   enumerable: false,\n-   value: 'new-owner',\n-   writable: true\n- }\n"
+        },
+        {
+          "name": "VIS-OWN integration Runtime settings preserve newer owner without extra actions rate=1",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ undefined\n- {\n-   configurable: true,\n-   enumerable: false,\n-   get: [Function: get],\n-   set: undefined\n- }\n"
+        },
+        {
+          "name": "VIS-OWN integration Runtime settings preserve newer owner without extra actions rate=2",
+          "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ undefined\n- {\n-   configurable: true,\n-   enumerable: false,\n-   get: [Function: get],\n-   set: undefined\n- }\n"
+        }
+      ]
+    }
+  ],
+  "green": [
+    {
+      "success": true,
+      "exitCode": 0,
+      "counts": {
+        "tests": 35,
+        "failed": 0,
+        "passed": 35,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "topLevel": 35,
+        "suites": 0
+      },
+      "cases": [
+        {
+          "name": "VIS-OWN normal hidden restores complete inherited descriptor",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN normal hidden restores complete accessor descriptor",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN normal hidden restores complete data descriptor",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer hidden getter survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer hidden setter survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer hidden data survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer hidden deleted survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer hidden enumerable survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer hidden configurable survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN hidden restoration never invokes original or newer getter",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN hidden install-read failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN hidden install-write failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN hidden restore-read failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN hidden restore-write failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN hidden restore-delete failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN nonconfigurable hidden permits independent installation and cleanup",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN normal visibilityState restores complete inherited descriptor",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN normal visibilityState restores complete accessor descriptor",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN normal visibilityState restores complete data descriptor",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState getter survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState setter survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState data survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState deleted survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState enumerable survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN newer visibilityState configurable survives disable and repeated dispose",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN visibilityState restoration never invokes original or newer getter",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN visibilityState install-read failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN visibilityState install-write failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN visibilityState restore-read failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN visibilityState restore-write failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN visibilityState restore-delete failure preserves other cleanup and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN nonconfigurable visibilityState permits independent installation and cleanup",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN reinstall captures current owner and install is idempotent",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN integration Runtime settings preserve newer owner without extra actions rate=1",
+          "status": "passed"
+        },
+        {
+          "name": "VIS-OWN integration Runtime settings preserve newer owner without extra actions rate=2",
+          "status": "passed"
+        }
+      ],
+      "failures": []
+    }
+  ],
+  "sourceIsolation": {
+    "validity": "valid",
+    "verdict": "pass",
+    "cases": [
+      {
+        "getterCalls": 0,
+        "key": "hidden",
+        "mode": "normal-inherited",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "hidden",
+        "mode": "normal-accessor",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "hidden",
+        "mode": "normal-data",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "hidden",
+        "mode": "getter",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "hidden",
+        "mode": "setter",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "hidden",
+        "mode": "data",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "hidden",
+        "mode": "deleted",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "hidden",
+        "mode": "enumerable",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "hidden",
+        "mode": "configurable",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "hidden",
+        "mode": "reinstall",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "visibilityState",
+        "mode": "normal-inherited",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "visibilityState",
+        "mode": "normal-accessor",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "visibilityState",
+        "mode": "normal-data",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "visibilityState",
+        "mode": "getter",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "visibilityState",
+        "mode": "setter",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "visibilityState",
+        "mode": "data",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "visibilityState",
+        "mode": "deleted",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "visibilityState",
+        "mode": "enumerable",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "visibilityState",
+        "mode": "configurable",
+        "pass": true
+      },
+      {
+        "getterCalls": 0,
+        "key": "visibilityState",
+        "mode": "reinstall",
+        "pass": true
+      }
+    ],
+    "formalGmUsed": false,
+    "remainingFrames": 0
+  },
+  "setupHistory": [
+    {
+      "stage": "initial-green",
+      "result": "33 pass / 2 fail",
+      "reason": "Fixture expected no reset; existing Lifecycle performs one initial and three settings-transition resets. Independent no-op visibility control confirms existing policy."
+    },
+    {
+      "stage": "strict-types",
+      "result": "failed",
+      "reason": "exactOptionalPropertyTypes rejects an explicit undefined setter; installed descriptor now conditionally retains an existing setter."
+    },
+    {
+      "stage": "sandbox-verify",
+      "result": "invalid",
+      "reason": "Temporary Git config writes denied; host rerun passed."
+    },
+    {
+      "stage": "first-source-isolation",
+      "result": "invalid",
+      "reason": "Strict eval module binding unavailable; no product assertion executed; iframe removed before corrected run. Call execution vs approval wait unmeasured."
+    },
+    {
+      "stage": "first-clean",
+      "result": "failed",
+      "reason": "Formatting of added cleanup assertions; corrected via apply_patch and new clean copy passed."
+    }
+  ],
+  "verification": {
+    "source": {
+      "cases": 1869,
+      "exitCode": 0
+    },
+    "clean": {
+      "inputs": 690,
+      "ciExitCode": 0,
+      "verifyExitCode": 0,
+      "changedInputs": []
+    }
+  },
+  "limitations": [
+    "Source isolation is not installed Tampermonkey acceptance.",
+    "Identical descriptor reinstallation source is not distinguishable.",
+    "No background historical matrix, fault injection, natural-cause investigation or early rescue."
+  ]
+}

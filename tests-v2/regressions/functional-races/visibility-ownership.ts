@@ -251,5 +251,23 @@ for (const rate of [1, 2]) {
     assert.deepEqual(storage.writes, Array(3).fill('bilicdn.v2.settings'))
     assert.deepEqual(storage.writes, controlStorage.writes)
     assert.equal(r.recovery.snapshot().reloadCount, 0)
+    for (const instance of [r, control]) {
+      instance.lifecycle.dispose()
+      instance.runtime.dispose()
+      instance.deps.monitor.dispose()
+      instance.recovery.dispose()
+      instance.settings.dispose()
+      instance.deps.restrictions.dispose()
+      instance.deps.evidence.dispose()
+      assert.equal(instance.clock.pendingCount, 0, 'owned work is released before FakeClock')
+    }
+    for (const item of [storage, controlStorage])
+      assert.equal(
+        [...item.listeners.values()].reduce((n, rows) => n + rows.size, 0),
+        0,
+      )
+    f.adapter.dispose()
+    assert.equal(f.document.count(), 0)
+    assert.equal(f.window.count(), 0)
   })
 }

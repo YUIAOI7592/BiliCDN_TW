@@ -1,5 +1,11 @@
 # BiliCDN_TW 變更紀錄
 
+## v2.1.31
+
+- 修復停用／釋放 VisibilityAdapter 時覆蓋較新 document.hidden／visibilityState 描述子的問題；只還原仍屬本次安裝的 accessor，保留較新設定、刪除與旗標變動。
+- 描述子比對不執行 getter；正常完整還原、部分失敗清理、重複啟用及 control-loss 訂閱保持。一般 6／12／15 秒、長 seek 15／30／15 秒及既有救援與候選規則不變。
+- 先紅後綠契約、來源隔離、安全及交付限制集中於 [完整驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+
 ## v2.1.30
 
 - 唯讀緩衝候選加入周期欠量與已回補範圍：改善反覆微量回補造成的慢速耗盡漏報，抑制完整回補後重複出現的候選。診斷升為 schemaVersion 4／buffer-window-v4，附四個有界數值證據。
