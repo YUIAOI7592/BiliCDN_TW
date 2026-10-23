@@ -27,6 +27,12 @@ export type BufferTrendReason =
   | 'filling'
   | 'draining-low'
   | 'draining-high'
+  | 'candidate-confirming'
+  | 'partial-refill'
+  | 'not-decreasing'
+  | 'above-prior-low'
+  | 'candidate-repaid'
+  | 'candidate-expired'
 export interface BufferTrendSample {
   readonly at: number
   readonly bufferAheadSec: number
@@ -50,9 +56,7 @@ export interface BufferTransportSummary {
   readonly crossWindow: number
   readonly dropped: number
 }
-export interface BufferTrendReading {
-  readonly schemaVersion: 1
-  readonly algorithm: 'buffer-window-v1'
+export interface BufferTrendFacts {
   readonly at: number | null
   readonly from: number | null
   readonly spanMs: number
@@ -68,6 +72,31 @@ export interface BufferTrendReading {
   readonly deltaSec: number | null
   readonly slopeSecPerSec: number | null
 }
+export interface BufferWindowReading extends BufferTrendFacts {
+  readonly schemaVersion: 1
+  readonly algorithm: 'buffer-window-v1'
+}
+export interface BufferTrendReading extends BufferTrendFacts {
+  readonly schemaVersion: 3
+  readonly algorithm: 'buffer-window-v3'
+}
+export interface BufferCandidateConfirmation {
+  readonly anchorSec: number
+  readonly lowSec: number
+  readonly creditMs: number
+  readonly at: number
+  readonly lastLowAt: number
+}
+export interface BufferConfirmationInput {
+  readonly reading: BufferTrendFacts
+  readonly sample: BufferTrendSample
+  readonly previous: BufferTrendSample | undefined
+  readonly confirmation: BufferCandidateConfirmation | null
+}
+export interface BufferConfirmationResult {
+  readonly reading: BufferTrendReading
+  readonly confirmation: BufferCandidateConfirmation | null
+}
 export interface BufferTrendSnapshot extends BufferTrendReading {
   readonly transport: BufferTransportSummary
 }
@@ -77,8 +106,8 @@ export function emptyBufferTrend(
   ineligible = false,
 ): BufferTrendReading {
   return Object.freeze({
-    schemaVersion: 1,
-    algorithm: 'buffer-window-v1',
+    schemaVersion: 3,
+    algorithm: 'buffer-window-v3',
     at: Number.isFinite(at) && at >= 0 ? at : null,
     from: null,
     spanMs: 0,
@@ -112,8 +141,13 @@ export function validBufferSample(s: BufferTrendSample): boolean {
 export function assessBufferTrend(
   samples: readonly BufferTrendSample[],
   now: number,
-): BufferTrendReading {
-  const empty = (reason: BufferTrendReason) => emptyBufferTrend(now, reason)
+): BufferWindowReading {
+  const empty = (reason: BufferTrendReason): BufferWindowReading =>
+    Object.freeze({
+      ...emptyBufferTrend(now, reason),
+      schemaVersion: 1,
+      algorithm: 'buffer-window-v1',
+    })
   if (samples.length > BUFFER_SAMPLE_LIMIT) return empty('sample-overflow')
   if (!Number.isFinite(now) || now < 0 || samples.some((s) => !validBufferSample(s)))
     return empty('invalid-sample')
@@ -172,6 +206,101 @@ export function assessBufferTrend(
     slopeSecPerSec: deltaSec / (BUFFER_WINDOW_MS / 1000),
   })
 }
+/** Pure transition; only PlayerMonitor retains the returned bounded evidence. */
+export function confirmBufferTrend(input: BufferConfirmationInput): BufferConfirmationResult {
+  const { reading: raw, sample, previous } = input
+  const current: BufferTrendReading = Object.freeze({
+    ...raw,
+    schemaVersion: 3,
+    algorithm: 'buffer-window-v3',
+  })
+  const finish = (
+    reading: BufferTrendReading,
+    confirmation: BufferCandidateConfirmation | null,
+  ): BufferConfirmationResult => Object.freeze({ reading, confirmation })
+  const reject = (reason: BufferTrendReason) => finish(emptyBufferTrend(sample.at, reason), null)
+  if (!validBufferSample(sample)) return reject('invalid-sample')
+  if (previous && (!validBufferSample(previous) || previous.rate !== sample.rate))
+    return reject('context-changed')
+  let state = input.confirmation
+  if (
+    state &&
+    (!previous ||
+      state.at !== previous.at ||
+      ![state.anchorSec, state.lowSec, state.creditMs, state.at, state.lastLowAt].every(
+        Number.isFinite,
+      ) ||
+      state.lowSec < 0 ||
+      state.anchorSec < state.lowSec ||
+      state.creditMs < 0 ||
+      state.creditMs > 2000 ||
+      state.lastLowAt < 0 ||
+      state.lastLowAt > state.at)
+  )
+    state = null
+  if (previous && sample.at === previous.at)
+    return finish(emptyBufferTrend(sample.at, 'warming-up'), state)
+  if (previous && sample.at < previous.at) return reject('time-reversed')
+  if (previous && sample.at - previous.at > 1500) return reject('sample-gap')
+  if (raw.candidate === null) return finish(current, null)
+  if (raw.at !== sample.at || raw.endBufferSec !== sample.bufferAheadSec / sample.rate)
+    return reject('invalid-sample')
+  if (!raw.candidate) return finish(current, null)
+  const buffer = sample.bufferAheadSec / sample.rate
+  const before = previous ? previous.bufferAheadSec / previous.rate : null
+  const expired = state !== null && sample.at - state.lastLowAt > BUFFER_WINDOW_MS
+  if (expired) state = null
+  const result = (
+    reason: BufferTrendReason,
+    candidate: boolean,
+    next: BufferCandidateConfirmation | null,
+  ) => finish(Object.freeze({ ...current, candidate, reason }), next)
+  if (!state) {
+    const next =
+      before !== null && buffer < before
+        ? Object.freeze({
+            anchorSec: before,
+            lowSec: buffer,
+            creditMs: 0,
+            at: sample.at,
+            lastLowAt: sample.at,
+          })
+        : null
+    return result(
+      expired
+        ? 'candidate-expired'
+        : before !== null && buffer > before
+          ? 'partial-refill'
+          : before === buffer
+            ? 'not-decreasing'
+            : 'candidate-confirming',
+      false,
+      next,
+    )
+  }
+  if (buffer >= state.anchorSec) return result('candidate-repaid', false, null)
+  if (buffer < state.lowSec) {
+    const creditMs = Math.min(2000, state.creditMs + sample.at - previous!.at)
+    const next = Object.freeze({
+      ...state,
+      lowSec: buffer,
+      creditMs,
+      at: sample.at,
+      lastLowAt: sample.at,
+    })
+    return result(
+      creditMs >= 2000 ? 'draining-low' : 'candidate-confirming',
+      creditMs >= 2000,
+      next,
+    )
+  }
+  return result(
+    buffer > before! ? 'partial-refill' : buffer === before ? 'not-decreasing' : 'above-prior-low',
+    false,
+    Object.freeze({ ...state, at: sample.at }),
+  )
+}
+
 export function summarizeBufferTransport(
   rows: readonly BufferCompletion[],
   now: number,

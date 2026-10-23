@@ -25,6 +25,12 @@ const reasons = [
   'filling',
   'draining-low',
   'draining-high',
+  'candidate-confirming',
+  'partial-refill',
+  'not-decreasing',
+  'above-prior-low',
+  'candidate-repaid',
+  'candidate-expired',
 ] as const satisfies readonly BufferTrendReason[]
 function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -51,8 +57,8 @@ export function sanitizeBufferTrend(value: unknown): BufferTrendSnapshot | null 
 function read(value: unknown): BufferTrendSnapshot | null {
   if (
     !object(value) ||
-    value.schemaVersion !== 1 ||
-    value.algorithm !== 'buffer-window-v1' ||
+    value.schemaVersion !== 3 ||
+    value.algorithm !== 'buffer-window-v3' ||
     !member(value.state, ['insufficient', 'ineligible', 'stable', 'filling', 'draining']) ||
     !member(value.reason, reasons) ||
     !member(value.progressQuality, ['none', 'frames', 'time-only']) ||
@@ -102,6 +108,24 @@ function read(value: unknown): BufferTrendSnapshot | null {
         slopeSecPerSec === null
   )
     return null
+  const confirmationReason = [
+    'candidate-confirming',
+    'partial-refill',
+    'not-decreasing',
+    'above-prior-low',
+    'candidate-repaid',
+    'candidate-expired',
+  ].includes(value.reason)
+  if (
+    (value.candidate === true || value.reason === 'draining-low' || confirmationReason) &&
+    (value.state !== 'draining' ||
+      value.candidate !== (value.reason === 'draining-low') ||
+      deltaSec === null ||
+      deltaSec > -2 ||
+      endBufferSec === null ||
+      endBufferSec > 10)
+  )
+    return null
   const t = value.transport,
     successes = number(t.successes, 0, 128),
     failures = number(t.failures, 0, 128),
@@ -131,8 +155,8 @@ function read(value: unknown): BufferTrendSnapshot | null {
   )
     return null
   return Object.freeze({
-    schemaVersion: 1,
-    algorithm: 'buffer-window-v1',
+    schemaVersion: 3,
+    algorithm: 'buffer-window-v3',
     at,
     from,
     spanMs,

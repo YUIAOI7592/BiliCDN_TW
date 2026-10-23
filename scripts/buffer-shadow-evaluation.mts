@@ -5,7 +5,12 @@ import { build } from 'esbuild'
 import { supervise } from './test-process.mts'
 import { filesUnder, isRecord, errorMessage } from './lib.mts'
 import { sha256 } from './upstream-compare/model.mts'
-import { parseEvaluationArgs, scenarioNames, scoreWindow } from './buffer-shadow/model.mts'
+import {
+  parseEvaluationArgs,
+  scenarioNames,
+  scoreWindow,
+  readingVersion,
+} from './buffer-shadow/model.mts'
 import type { EvidenceRow } from './buffer-shadow/model.mts'
 import { costInputs, loadCostInput } from './buffer-shadow/inputs.mts'
 
@@ -56,6 +61,15 @@ export function validEvaluationResult(
   try {
     const rows = value.rows as EvidenceRow[]
     if (!value.rows.every(isRecord)) return false
+    const version = readingVersion(value.rows[0]?.trend)
+    if (
+      !version ||
+      !value.rows.every((r) => readingVersion(r.trend) === version) ||
+      !value.prelude.every((r) => isRecord(r) && readingVersion(r.trend) === version)
+    )
+      return false
+    if (value.algorithm !== undefined && value.algorithm !== `buffer-window-v${version}`)
+      return false
     const computed = scoreWindow(rows, {
       scoreUntil: rows.at(-1)!.at,
       stallAt: value.stallAt as number | null,
@@ -177,7 +191,9 @@ export async function evaluateBufferShadow(cost = false) {
     )
     return {
       schemaVersion: 1,
-      baseline: '39c21b5f272eda2f8090f079770ad129e1545dd0',
+      baseline: cost
+        ? '39c21b5f272eda2f8090f079770ad129e1545dd0'
+        : 'cfc15924c40f688518e78be417909b69558ce4d5',
       mode: cost ? 'cost' : 'functional',
       node: process.version,
       limits: { caseMs: 5000, cleanupMs: 5000, suiteMs: 60000, maxBytes: 33554432 },
@@ -185,8 +201,10 @@ export async function evaluateBufferShadow(cost = false) {
         'offline synthetic progress',
         'foreground model',
         '60s healthy prelude',
-        'fixed buffer-window-v1 thresholds',
-        'no product edits',
+        cost
+          ? 'published-version defaults'
+          : 'buffer-window-v3: fixed 8s/2s/10s base; cumulative 2s new-low intervals',
+        cost ? 'unmodified release scripts' : 'unreleased read-only diagnostic; no rescue changes',
       ],
       inputs: costInputs,
       sourceHashes,

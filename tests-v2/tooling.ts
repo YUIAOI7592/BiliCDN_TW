@@ -19,6 +19,7 @@ import './regressions/archive.ts'
 import './regressions/project-config.ts'
 import './regressions/upstream-comparison.ts'
 import './regressions/buffer-shadow-evaluation.ts'
+import './regressions/buffer-confirmation-v3.ts'
 
 test('formatting reaches a stable source before the next check', { timeout: 5000 }, async () => {
   const source =

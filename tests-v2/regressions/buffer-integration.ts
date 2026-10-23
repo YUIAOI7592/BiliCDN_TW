@@ -77,7 +77,8 @@ for (const rate of [1, 2]) {
       })
       f.clock.advance(1000)
     }
-    assert.equal(f.diagnostics.snapshot().bufferTrend.latest!.candidate, true)
+    assert.equal(f.diagnostics.snapshot().bufferTrend.latest!.candidate, false)
+    assert.equal(f.diagnostics.snapshot().bufferTrend.latest!.reason, 'candidate-confirming')
     assert.equal(f.diagnostics.snapshot().bufferTrend.latest!.transport.completedBytes, 100000)
     assert.equal(storage.writes, before.writes)
     assert.deepEqual(f.calls, before.calls)
@@ -135,6 +136,7 @@ for (const rate of [1, 2]) {
         assert.equal(subscriptions, 0)
       })
       f.monitor.tick()
+      for (let i = 0; i < 60; i++) f.step(12)
       const start = f.clock.now(),
         rows = []
       for (let i = 1; i <= 20; i++) {
@@ -161,9 +163,9 @@ for (const rate of [1, 2]) {
         assert.deepEqual(f.effects, [])
       }
       const candidates = rows.filter((row) => row.candidate).map((row) => row.elapsedMs)
-      if (scenario === 'drain-no-completions') assert.equal(candidates[0], 8000)
+      if (scenario === 'drain-no-completions') assert.equal(candidates[0], 6000)
       else if (scenario === 'drain-refill') {
-        assert.equal(candidates[0], 8000)
+        assert.equal(candidates[0], 6000)
         assert.equal(rows[15]!.state, 'filling')
       } else assert.deepEqual(candidates, [])
       const before = { ...f.reads }

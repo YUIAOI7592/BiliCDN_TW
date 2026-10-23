@@ -9,6 +9,10 @@ import type { testScope } from './scope.ts'
 import { sha256 } from '../../scripts/upstream-compare/model.mts'
 import { scoreWindow } from '../../scripts/buffer-shadow/model.mts'
 import type { EvidenceRow, ScenarioName } from '../../scripts/buffer-shadow/model.mts'
+import {
+  candidateProfile,
+  candidateTargets,
+} from '../../scripts/buffer-shadow/candidate-inputs.mts'
 
 export interface ScenarioInput {
   readonly at: number
@@ -21,6 +25,7 @@ export interface ScenarioResult {
   readonly id: string
   readonly level: 'integration'
   readonly rate: 1 | 2
+  readonly algorithm: 'buffer-window-v3'
   readonly scenarioHash: string
   readonly validity: 'valid'
   readonly verdict: 'pass' | 'fail'
@@ -105,6 +110,7 @@ export async function runScenario(
         : name === 'slow-exhaustion'
           ? 20
           : 12
+  const profile = candidateProfile(name)
   let ownerRevision = 1,
     maxSamples = 0,
     maxCompletions = 0,
@@ -187,9 +193,12 @@ export async function runScenario(
     }
     const start = f.clock.now()
     sample(initial, true, 0, true, 0)
-    const duration = name === 'two-hour-bounds' ? 7200 : name === 'slow-exhaustion' ? 60 : 45
+    const duration =
+      profile?.samples.length ??
+      (name === 'two-hour-bounds' ? 7200 : name === 'slow-exhaustion' ? 60 : 45)
     const stallAt =
-      name === 'slow-exhaustion'
+      profile?.stallAt ??
+      (name === 'slow-exhaustion'
         ? 40000
         : name === 'fast-exhaustion'
           ? 6000
@@ -197,10 +206,15 @@ export async function runScenario(
             ? 1000
             : name === 'pre-window-stall'
               ? 2000
-              : null
+              : null)
     for (let second = 1; second <= duration; second++) {
       let buffer = initial,
         progress = true
+      const profileSample = profile?.samples[second - 1]
+      if (profileSample) {
+        buffer = profileSample.buffer
+        progress = profileSample.progress
+      }
       if (name === 'jitter-2s') buffer = second <= 2 ? 12 - second : 12
       if (name === 'short-stall-5s') progress = second > 5
       if (name === 'burst-refill') buffer = 12 - (second % 4)
@@ -297,9 +311,11 @@ export async function runScenario(
       sample(
         buffer,
         progress,
-        name === 'sample-gap' && second === 2 ? 2000 : 1000,
+        profileSample?.ms ?? (name === 'sample-gap' && second === 2 ? 2000 : 1000),
         true,
-        f.clock.now() - start + (name === 'sample-gap' && second === 2 ? 2000 : 1000),
+        f.clock.now() -
+          start +
+          (profileSample?.ms ?? (name === 'sample-gap' && second === 2 ? 2000 : 1000)),
       )
     }
     const score = scoreWindow(rows, { scoreUntil: rows.at(-1)!.at, stallAt })
@@ -316,18 +332,47 @@ export async function runScenario(
       ].includes(name)
     )
       check('no-candidate-control', null, first)
-    if (name === 'jitter-2s') check('warm-window-jitter-candidate', 2000, first)
-    if (name === 'burst-refill' || name === 'low-sawtooth')
-      check('normal-burst-candidate-retained', 2000, first)
+    const target = candidateTargets[name]
+    if (target) {
+      check('first-candidate', target.firstMs, first)
+      if (target.leadMs !== undefined) check('lead', target.leadMs, score.firstLeadMs)
+      if (target.episodes)
+        check(
+          'candidate-episodes',
+          target.episodes,
+          score.episodes.map((e) => [e.start, e.end]),
+        )
+      if (target.maxEpisodes !== undefined)
+        check('episode-cap', true, score.episodes.length <= target.maxEpisodes)
+      if (target.maxCandidateMs !== undefined)
+        check('candidate-time-cap', true, score.candidateMs <= target.maxCandidateMs)
+    }
+    if (name.startsWith('repayment-') && profile) {
+      if (!profile.fullRepayment)
+        check(
+          'exhaustion-lead-at-least-3s',
+          true,
+          score.firstLeadMs !== null && score.firstLeadMs >= 3000,
+        )
+      else if (profile.cycleMs !== 5000) check('full-repayment-suppressed', 0, score.candidateMs)
+      else
+        for (let at = 0; at < 120000; at += 5000) {
+          const overlap = score.episodes.reduce(
+            (sum, e) => sum + Math.max(0, Math.min(e.end, at + 5000) - Math.max(e.start, at)),
+            0,
+          )
+          check(`full-repayment-cycle-${at}`, true, overlap <= 1000)
+        }
+    }
     if (name === 'drain-refill' || name.startsWith('transport-') || name === 'missing-frames')
-      check('drain-candidate', 4000, first)
+      check('drain-candidate', 6000, first)
     if (name === 'slow-exhaustion') {
-      check('first-candidate', 20000, first)
-      check('lead', 20000, score.firstLeadMs)
+      check('first-candidate', 22000, first)
+      check('lead', 18000, score.firstLeadMs)
     }
     if (name === 'fast-exhaustion') {
-      check('first-candidate', 1000, first)
-      check('lead', 5000, score.firstLeadMs)
+      check('first-candidate', 3000, first)
+      check('lead', 3000, score.firstLeadMs)
     }
     if (name === 'illegal-buffer' || name === 'sample-gap')
       check(
@@ -354,6 +399,7 @@ export async function runScenario(
       id: `${name}@${rate}x`,
       level: 'integration',
       rate,
+      algorithm: 'buffer-window-v3',
       scenarioHash: sha256(JSON.stringify({ name, rate, warmupMs: 60000, inputs })),
       validity: 'valid',
       verdict: assertions.every((a) => a.verdict === 'pass') ? 'pass' : 'fail',

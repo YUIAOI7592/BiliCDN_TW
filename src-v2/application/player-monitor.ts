@@ -3,6 +3,7 @@ import type { VideoSnapshot, SchedulerPort, PlayerControlSnapshot } from './port
 import type { PlaybackDemand } from '../domain/model.ts'
 import {
   assessBufferTrend,
+  confirmBufferTrend,
   emptyBufferTrend,
   validBufferSample,
   summarizeBufferTransport,
@@ -14,6 +15,8 @@ import type {
   BufferTrendSample,
   BufferTrendSnapshot,
   BufferTrendReason,
+  BufferCandidateConfirmation,
+  BufferTrendFacts,
 } from '../domain/buffer-trend.ts'
 import type { ObservedVideoCompletion } from './monitor-ports.ts'
 import {
@@ -60,6 +63,7 @@ import type { MonitorSnapshot } from './monitor-model.ts'
 export type { MonitorSnapshot } from './monitor-model.ts'
 
 export class PlayerMonitor implements MonitorPort {
+  #bufferConfirmation: BufferCandidateConfirmation | null = null
   #bufferSamples: BufferTrendSample[] = []
   #bufferCompletions: ObservedVideoCompletion[] = []
   #bufferDrops: { at: number; count: number }[] = []
@@ -331,6 +335,7 @@ export class PlayerMonitor implements MonitorPort {
     ])
   }
   #clearBuffer(): void {
+    this.#bufferConfirmation = null
     this.#bufferSamples = []
     this.#bufferCompletions = []
     this.#bufferDrops = []
@@ -441,7 +446,7 @@ export class PlayerMonitor implements MonitorPort {
         reason = 'sample-overflow'
       }
     }
-    let reading = reason
+    let reading: BufferTrendFacts = reason
       ? emptyBufferTrend(now, reason)
       : assessBufferTrend(this.#bufferSamples, now)
     if (reading.reason === 'no-progress') {
@@ -451,8 +456,16 @@ export class PlayerMonitor implements MonitorPort {
       reading = emptyBufferTrend(now, 'no-progress', true)
     }
     this.#pruneBufferTransport(now)
+    const confirmed = confirmBufferTrend({
+      reading,
+      sample,
+      previous,
+      confirmation: this.#bufferConfirmation,
+    })
+    if (revision !== this.#bufferRevision) return undefined
+    this.#bufferConfirmation = confirmed.confirmation
     return Object.freeze({
-      ...reading,
+      ...confirmed.reading,
       transport: summarizeBufferTransport(
         this.#bufferCompletions,
         now,

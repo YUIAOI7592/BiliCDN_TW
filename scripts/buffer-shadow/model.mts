@@ -1,4 +1,6 @@
 /** Evaluation facts, never an alternative implementation of the product's buffer algorithm. */
+import { candidateScenarioNames } from './candidate-inputs.mts'
+
 export const scenarioNames = [
   'high-stable',
   'low-stable',
@@ -27,8 +29,18 @@ export const scenarioNames = [
   'transport-duplicate',
   'transport-overflow',
   'two-hour-bounds',
+  ...candidateScenarioNames,
 ] as const
 export type ScenarioName = (typeof scenarioNames)[number]
+/** Preserve each algorithm's original candidate meaning when reading old evidence. */
+export function readingVersion(value: unknown): 1 | 2 | 3 | null {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null
+  const row = value as Record<string, unknown>
+  if (row.schemaVersion === 1 && row.algorithm === 'buffer-window-v1') return 1
+  if (row.schemaVersion === 2 && row.algorithm === 'buffer-window-v2') return 2
+  if (row.schemaVersion === 3 && row.algorithm === 'buffer-window-v3') return 3
+  return null
+}
 export interface EvidenceRow {
   readonly seq: number
   readonly at: number

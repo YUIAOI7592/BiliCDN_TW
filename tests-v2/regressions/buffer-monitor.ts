@@ -147,7 +147,8 @@ for (const rate of [1, 2]) {
       })
     }
     for (let i = 1; i <= 8; i++) f.step(12 - i / 2)
-    assert.equal(samples.at(-1)!.bufferTrend!.candidate, true)
+    assert.equal(samples.at(-1)!.bufferTrend!.candidate, false)
+    assert.equal(samples.at(-1)!.bufferTrend!.reason, 'candidate-confirming')
     assert.equal(samples.at(-1)!.bufferTrend!.transport.completedBytes, 100)
     assert.equal(samples.at(-1)!.bufferTrend!.transport.successes, 1)
     assert.deepEqual(f.effects, [])
@@ -265,7 +266,7 @@ for (const rate of [1, 2]) {
   test(`U-N01 declining buffer has a candidate without any completed transport rate=${rate}`, (t) => {
     const f = bufferMonitor(t, rate)
     f.monitor.tick()
-    for (let i = 1; i <= 8; i++) f.step(12 - i / 2)
+    for (let i = 1; i <= 10; i++) f.step(12 - i / 2)
     assert.equal(f.monitor.snapshot().bufferTrend?.candidate, true)
     assert.equal(f.monitor.snapshot().bufferTrend?.transport.coverage, 'none-observed')
     assert.deepEqual(f.effects, [])

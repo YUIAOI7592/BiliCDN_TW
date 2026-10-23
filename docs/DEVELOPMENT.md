@@ -243,7 +243,9 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 影子規則及資格集中於 [PROJECT_CONTEXT](PROJECT_CONTEXT.md#唯讀緩衝趨勢)，所有權集中於 [ARCHITECTURE](ARCHITECTURE.md#依賴方向)。本功能只讀取 Monitor 已取得的媒體／控制快照及 Runtime 轉交的既有完成事件，不新增網路讀取器或計時器。
 
-報告唯一輸出為 recorder.bufferTrend，含 schemaVersion 1、algorithm buffer-window-v1、latest 與 history。讀取模型中的同名副本不重複輸出。每筆包含窗口時間、內插、進度品質、倍速、起訖緩衝、變化量、斜率、狀態、候選及固定原因碼；transport 只列已觀察完成的數量、bytes、跨窗口與覆蓋品質，不提供即時頻寬。
+目前來源的報告唯一輸出為 recorder.bufferTrend，含 schemaVersion 3、algorithm buffer-window-v3、latest 與 history；已發布 v2.1.28 原件仍為 v1。讀取模型中的同名副本不重複輸出。每筆包含窗口時間、內插、進度品質、倍速、起訖緩衝、變化量、斜率、狀態、候選及固定原因碼；確認中、部分回補、持平、尚未創低、完整補回與逾期分開表示，內部確認狀態不輸出。transport 只列已觀察完成的數量、bytes、跨窗口與覆蓋品質，不提供即時頻寬。
+
+離線讀取器只接受匹配的 v1／v2／v3 版本與演算法標記，同一案例不得混合版本或重新解釋舊 candidate。即時 Recorder 只接納 v3 白名單投影；候選成立須為 draining-low，新確認原因必須是有效下降窗口中的 false。重跑 v3 使用 npm test -- domain --name buffer-v3、npm test -- application --name buffer-v3、npm test -- diagnostics --name buffer-v3、npm test -- tooling --name buffer-v3 及 npm run evaluate:buffer-shadow -- --json。情境與原件保持可追溯，效用與限制集中於 [本輪報告](../archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md)。
 
 資料不足與不適用的 candidate 為 null；有效非候選為 false，候選為 true。樣本最多 32 筆，傳輸去重最多 128 筆。報告歷史含最新結果，受 32 筆及 8 KiB 雙重上限限制，實際可少於 32 筆。Recorder 128 KiB／匯出 96 KiB 上限維持，先移除趨勢歷史並記錄 bufferTrendEvicted／bufferTrendDropped；非法資料記 bufferTrendRejected。清除診斷只清報告，不重設觀察器、期限或額度。
 

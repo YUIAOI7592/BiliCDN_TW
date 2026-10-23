@@ -9,8 +9,8 @@ import type { DiagnosticReportCapture } from '../../src-v2/diagnostics/report.ts
 
 function trend(at: number): BufferTrendSnapshot {
   return {
-    schemaVersion: 1,
-    algorithm: 'buffer-window-v1',
+    schemaVersion: 3,
+    algorithm: 'buffer-window-v3',
     at,
     from: at - 8000,
     spanMs: 8000,
@@ -55,6 +55,45 @@ function sample(at: number, bufferTrend = trend(at)): PlaybackDiagnosticSample {
     bufferTrend,
   }
 }
+
+for (const reason of [
+  'candidate-confirming',
+  'partial-refill',
+  'not-decreasing',
+  'above-prior-low',
+  'candidate-repaid',
+  'candidate-expired',
+] as const)
+  test(`buffer-v3 diagnostic ${reason} requires false and keeps private evidence out`, () => {
+    const recorder = new DiagnosticRecorder(
+      () => 10001,
+      () => false,
+    )
+    const input = { ...trend(10000), reason, candidate: false }
+    Object.assign(input, { confirmation: { anchorSec: 12, secret: 'private-marker' } })
+    recorder.recordPlayer(sample(10000, input))
+    assert.equal(recorder.snapshot().bufferTrend.latest!.reason, reason)
+    assert.equal(recorder.buildReport({}).includes('private-marker'), false)
+    assert.equal(recorder.buildReport({}).includes('anchorSec'), false)
+    Object.assign(input, { candidate: true })
+    recorder.recordPlayer(sample(10001, { ...input, at: 10001, from: 2001 }))
+    assert.equal(recorder.snapshot().counters.bufferTrendRejected, 1)
+  })
+
+for (const version of [1, 2])
+  test(`buffer-v3 recorder rejects legacy version ${version} from live producers`, () => {
+    const recorder = new DiagnosticRecorder(
+      () => 10000,
+      () => false,
+    )
+    const input = Object.assign(trend(10000), {
+      schemaVersion: version,
+      algorithm: `buffer-window-v${version}`,
+    })
+    recorder.recordPlayer(sample(10000, input))
+    assert.equal(recorder.snapshot().bufferTrend.latest, null)
+    assert.equal(recorder.snapshot().counters.bufferTrendRejected, 1)
+  })
 test('U-D01 reports a detached whitelisted shadow candidate without an incident', (t) => {
   testScope(t)
   const recorder = new DiagnosticRecorder(
@@ -69,7 +108,7 @@ test('U-D01 reports a detached whitelisted shadow candidate without an incident'
   assert.equal(report.includes('private'), false)
   const data = JSON.parse(report)
   assert.equal(data.recorder.bufferTrend.latest.candidate, true)
-  assert.equal(data.recorder.bufferTrend.schemaVersion, 1)
+  assert.equal(data.recorder.bufferTrend.schemaVersion, 3)
   assert.equal(data.recorder.incident, null)
   Object.assign(input, { candidate: false })
   assert.equal(recorder.snapshot().bufferTrend!.latest!.candidate, true)
@@ -181,8 +220,8 @@ test('U-D06 export sheds trend history first and remains within 96 KiB', (t) => 
       bufferTrendRejected: 0,
     },
     bufferTrend: {
-      schemaVersion: 1,
-      algorithm: 'buffer-window-v1',
+      schemaVersion: 3,
+      algorithm: 'buffer-window-v3',
       history,
       latest: history.at(-1)!,
     },
