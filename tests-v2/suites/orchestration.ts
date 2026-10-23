@@ -1,4 +1,5 @@
 import '../regressions/functional-races/runtime.ts'
+import '../regressions/buffer-integration.ts'
 import '../regressions/functional-races/content.ts'
 import '../regressions/functional-races/cr-startup.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'

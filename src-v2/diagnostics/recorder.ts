@@ -14,6 +14,8 @@ import type { DiagnosticRecorderPort } from './ports.ts'
 import { DiagnosticEventSanitizer, incidentTrigger } from './event-sanitizer.ts'
 import { RouteAttemptTracker } from './route-attempt-tracker.ts'
 import { serializeDiagnosticReport } from './report.ts'
+import { sanitizeBufferTrend } from './buffer-trend.ts'
+import type { BufferTrendSnapshot } from '../domain/buffer-trend.ts'
 import {
   diagnosticBytes as bytes,
   diagnosticText as text,
@@ -21,6 +23,8 @@ import {
 } from './values.ts'
 
 export class DiagnosticRecorder implements DiagnosticRecorderPort {
+  #bufferTrends: BufferTrendSnapshot[] = []
+  #bufferRevision = 0
   #events: SafeEvent[] = []
   #flow = new Map<string, Flow>()
   #pending = new Map<string, RequestContext>()
@@ -47,6 +51,8 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
     flowsExpired: 0,
     traceEvicted: 0,
     attemptEvicted: 0,
+    bufferTrendEvicted: 0,
+    bufferTrendRejected: 0,
   }
   constructor(
     private readonly now: () => number,
@@ -136,6 +142,8 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
     this.#bound()
   }
   clear(): void {
+    this.#bufferRevision++
+    this.#bufferTrends = []
     this.#incident = null
     this.#manualMark = null
     this.#attemptTracker.clear()
@@ -196,13 +204,43 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
       }
     }
     this.#lastPaused = sample.paused
+    if (sample.bufferTrend !== undefined) {
+      const revision = this.#bufferRevision
+      const row = sanitizeBufferTrend(sample.bufferTrend)
+      if (revision !== this.#bufferRevision) {
+        // A synchronous clear owns the new diagnostic history.
+      } else if (!row || row.at === null || row.at > sample.at) this.#counters.bufferTrendRejected++
+      else if (this.#bufferTrends.at(-1)?.at !== row.at) {
+        if (
+          this.#bufferTrends.at(-1)?.at !== undefined &&
+          row.at < this.#bufferTrends.at(-1)!.at!
+        ) {
+          this.#bufferTrends = []
+        }
+        this.#bufferTrends.push(row)
+        while (this.#bufferTrends.length > 32 || bytes(this.#bufferCapture()) > 8 * 1024) {
+          this.#bufferTrends.shift()
+          this.#counters.bufferTrendEvicted++
+        }
+      }
+    }
     this.#bound()
+  }
+  #bufferCapture() {
+    const history = structuredClone(this.#bufferTrends)
+    return {
+      schemaVersion: 1 as const,
+      algorithm: 'buffer-window-v1' as const,
+      latest: history.at(-1) ?? null,
+      history,
+    }
   }
   snapshot(): ReadonlySnapshot<DiagnosticSnapshot> {
     return this.#capture()
   }
   #capture() {
     return Object.freeze({
+      bufferTrend: this.#bufferCapture(),
       coverage: {
         from: this.#events[0]?.at ?? this.now(),
         to: this.#events.at(-1)?.at ?? this.now(),
@@ -325,7 +363,10 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
   }
   #bound(): void {
     while (bytes(this.snapshot()) > 128 * 1024) {
-      if (this.#rankings.length) {
+      if (this.#bufferTrends.length) {
+        this.#bufferTrends.shift()
+        this.#counters.bufferTrendEvicted++
+      } else if (this.#rankings.length) {
         this.#rankings.shift()
         this.#counters.rankingEvicted++
       } else if (this.#incident?.playerTrace.length) {

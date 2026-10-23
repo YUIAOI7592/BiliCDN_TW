@@ -6,12 +6,19 @@ import type {
   Incident,
   SafeEvent,
 } from './model.ts'
+import type { BufferTrendSnapshot } from '../domain/buffer-trend.ts'
 
 /** A detached capture whose arrays may be reduced while preparing an export. */
 export type DiagnosticReportCapture = Omit<
   DiagnosticSnapshot,
-  'incident' | 'flow' | 'events' | 'rankings'
+  'incident' | 'flow' | 'events' | 'rankings' | 'bufferTrend'
 > & {
+  bufferTrend: {
+    schemaVersion: 1
+    algorithm: 'buffer-window-v1'
+    latest: BufferTrendSnapshot | null
+    history: BufferTrendSnapshot[]
+  }
   incident: Incident | null
   flow: (Flow & { key: string })[]
   events: SafeEvent[]
@@ -39,6 +46,7 @@ export function serializeDiagnosticReport(input: DiagnosticReportInput): string 
       contextDropped: 0,
       flowDropped: 0,
       incidentDropped: 0,
+      bufferTrendDropped: 0,
       currentReduced: false,
       emergencySummary: false,
     },
@@ -47,6 +55,16 @@ export function serializeDiagnosticReport(input: DiagnosticReportInput): string 
   if (new TextEncoder().encode(output).byteLength <= 96 * 1024) return output
   payload.export.truncated = true
   output = JSON.stringify(payload)
+  if (new TextEncoder().encode(output).byteLength <= 96 * 1024) return output
+  while (
+    new TextEncoder().encode(output).byteLength > 96 * 1024 &&
+    recorder.bufferTrend.history.length
+  ) {
+    recorder.bufferTrend.history.shift()
+    recorder.bufferTrend.latest = recorder.bufferTrend.history.at(-1) ?? null
+    payload.export.bufferTrendDropped++
+    output = JSON.stringify(payload)
+  }
   if (new TextEncoder().encode(output).byteLength <= 96 * 1024) return output
   payload.export.rankingDropped = recorder.rankings.length
   recorder.rankings = []

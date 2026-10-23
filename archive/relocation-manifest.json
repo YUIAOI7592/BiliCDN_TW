@@ -5584,34 +5584,10 @@
       "sha256": "60c20ae8242c117cb3f8c45c85f7fc99f03cae98a515dff43b1d94d09f243036"
     },
     {
-      "path": "src-v2/diagnostics/event-sanitizer.ts",
-      "encoding": "raw",
-      "bytes": 9255,
-      "sha256": "f9b774c5ad43b7cf1b2dc0580b2b94fdcb1b0cce31ff454d8882abf2a0a829f5"
-    },
-    {
-      "path": "src-v2/diagnostics/model.ts",
-      "encoding": "raw",
-      "bytes": 5803,
-      "sha256": "068cd6d8338381dd481ee070e08d1aa026f226c92ff059bb4082bef8ce444e7a"
-    },
-    {
       "path": "src-v2/diagnostics/ports.ts",
       "encoding": "raw",
       "bytes": 750,
       "sha256": "38ec2a67decd153d00ec878c018e9885653d57fad3a1e9d27d49fc9ca2ea9fa8"
-    },
-    {
-      "path": "src-v2/diagnostics/recorder.ts",
-      "encoding": "raw",
-      "bytes": 12617,
-      "sha256": "dea786cd22449d523ebef89ec31a6766ab67d4d0c21ba1750c178fa899b0ae32"
-    },
-    {
-      "path": "src-v2/diagnostics/report.ts",
-      "encoding": "raw",
-      "bytes": 3522,
-      "sha256": "6b0e6b4735343089dfbd7fa9875ec12fe7b548e5be9ad0a392be8183691596bc"
     },
     {
       "path": "src-v2/diagnostics/route-attempt-tracker.ts",

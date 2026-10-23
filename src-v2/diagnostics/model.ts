@@ -7,6 +7,7 @@ import type {
 } from '../domain/model.ts'
 import type { assessDemandRatio } from '../domain/routing.ts'
 import type { ReadonlySnapshot } from '../domain/diagnostic-model.ts'
+import type { BufferTrendSnapshot } from '../domain/buffer-trend.ts'
 
 export type SanitizedValue =
   | string
@@ -159,6 +160,12 @@ export interface RouteAttemptSummary {
 
 /** Public queries retain the concrete, readonly snapshot shape. */
 export interface DiagnosticSnapshot {
+  readonly bufferTrend: {
+    readonly schemaVersion: 1
+    readonly algorithm: 'buffer-window-v1'
+    readonly latest: BufferTrendSnapshot | null
+    readonly history: readonly BufferTrendSnapshot[]
+  }
   readonly coverage: { readonly from: number; readonly to: number }
   readonly incident: ReadonlySnapshot<Incident> | null
   readonly manualMark: Readonly<{ at: number; reason: string; count: number }> | null
@@ -181,7 +188,9 @@ export interface DiagnosticSnapshot {
       | 'eventsExpired'
       | 'flowsExpired'
       | 'traceEvicted'
-      | 'attemptEvicted',
+      | 'attemptEvicted'
+      | 'bufferTrendEvicted'
+      | 'bufferTrendRejected',
       number
     >
   >

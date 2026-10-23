@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { bufferMonitor } from '../support/buffer-monitor.ts'
-import { requestId, representationId, epochId } from '../../src-v2/domain/model.ts'
+import { requestId, representationId, epochId, generationId } from '../../src-v2/domain/model.ts'
 import type { DomainEvent } from '../../src-v2/domain/model.ts'
 import type { PlaybackDiagnosticSample } from '../../src-v2/domain/diagnostic-model.ts'
 import { RuntimeController } from '../../src-v2/application/runtime-controller.ts'
@@ -19,6 +19,68 @@ for (const rate of [1, 2])
   })
 
 for (const rate of [1, 2]) {
+  test(`U-O06 content changes during a read cannot label old samples as current rate=${rate}`, (t) => {
+    const f = bufferMonitor(t, rate)
+    f.monitor.tick()
+    for (let i = 1; i <= 8; i++) f.step(12 - i / 2)
+    f.onQualification(() => {
+      f.onQualification()
+      f.state.epoch = epochId(2)
+    })
+    f.step(7)
+    assert.equal(f.monitor.snapshot().bufferTrend?.reason, 'context-changed')
+    assert.equal(f.monitor.snapshot().bufferTrend?.candidate, null)
+  })
+  test(`U-W06 Monitor bounds dense samples and duplicate ticks rate=${rate}`, (t) => {
+    const f = bufferMonitor(t, rate)
+    f.monitor.tick()
+    for (let i = 1; i <= 32; i++) f.step(12, 100)
+    assert.equal(f.monitor.snapshot().bufferTrend?.reason, 'sample-overflow')
+    f.monitor.tick()
+    assert.equal(f.monitor.snapshot().bufferTrend?.candidate, null)
+    f.step(12, 1501)
+    assert.equal(f.monitor.snapshot().bufferTrend?.reason, 'sample-gap')
+    assert.equal(f.monitor.snapshot().bufferTrend?.candidate, null)
+  })
+  for (const blocked of ['unavailable', 'dragging'] as const)
+    test(`U-P07 ${blocked} blocks diagnostics rate=${rate}`, (t) => {
+      const f = bufferMonitor(t, rate)
+      if (blocked === 'unavailable') f.video.available = false
+      else f.controls.dragging = true
+      f.monitor.tick()
+      assert.equal(f.monitor.snapshot().bufferTrend?.reason, blocked)
+      assert.equal(f.monitor.snapshot().bufferTrend?.candidate, null)
+    })
+  test(`U-O05 reset while accepting a completion discards the old row rate=${rate}`, (t) => {
+    const f = bufferMonitor(t, rate)
+    f.monitor.tick()
+    f.onQualification(() => {
+      f.onQualification()
+      f.monitor.reset()
+    })
+    f.monitor.observeTransport({
+      request: f.request(),
+      startedAt: f.clock.now(),
+      completedAt: f.clock.now(),
+      bytes: 100,
+      status: 206,
+      outcome: 'success',
+    })
+    f.step(11)
+    assert.equal(f.monitor.snapshot().bufferTrend?.transport.completedBytes, 0)
+    assert.equal(f.monitor.snapshot().bufferTrend?.candidate, null)
+  })
+  test(`U-O04 diagnostic metadata exception cannot interrupt a healthy tick rate=${rate}`, (t) => {
+    const f = bufferMonitor(t, rate)
+    f.monitor.tick()
+    f.onQualification(() => {
+      throw new Error('private diagnostic metadata error')
+    })
+    assert.doesNotThrow(() => f.step(11.5))
+    assert.equal(f.monitor.snapshot().bufferTrend?.reason, 'invalid-sample')
+    assert.equal(f.monitor.snapshot().stableProgressSec, 1)
+    assert.deepEqual(f.effects, [])
+  })
   test(`I-N01 Runtime forwards only attributed current video completions rate=${rate}`, (t) => {
     const f = bufferMonitor(t, rate),
       samples: PlaybackDiagnosticSample[] = []
@@ -175,12 +237,23 @@ for (const rate of [1, 2]) {
     assert.notEqual(f.monitor.snapshot().bufferTrend?.candidate, true)
     assert.deepEqual(f.effects, [])
   })
-  for (const context of ['epoch', 'representation', 'policy', 'rate'] as const)
+  for (const context of [
+    'generation',
+    'epoch',
+    'representation',
+    'policy',
+    'authority',
+    'host',
+    'rate',
+  ] as const)
     test(`U-O03 ${context} cannot reuse a prior window rate=${rate}`, (t) => {
       const f = bufferMonitor(t, rate)
       f.monitor.tick()
       for (let i = 1; i <= 8; i++) f.step(12 - i / 2)
       if (context === 'epoch') f.state.epoch = epochId(2)
+      if (context === 'generation') f.state.generation = generationId(2)
+      if (context === 'authority') f.changeRequest({ authorityRevision: 2 })
+      if (context === 'host') f.changeRequest({ targetHost: 'upos-sz-mirrorali.bilivideo.com' })
       if (context === 'representation')
         f.changeRequest({ representation: representationId('other') })
       if (context === 'policy') f.changeRequest({ routePolicyRevision: 1 })

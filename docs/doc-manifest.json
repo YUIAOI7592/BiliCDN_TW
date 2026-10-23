@@ -75,6 +75,14 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/BUFFER_TREND_2026-10-23.md",
+      "kind": "record",
+      "topics": ["history"],
+      "versions": ["v2.1.27"],
+      "date": "2026-10-23",
+      "requiredAnchors": ["範圍與來源", "契約與先紅後綠", "固定窗口結果", "驗證與保護", "驗收限制"]
+    },
+    {
       "path": "archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md",
       "kind": "record",
       "topics": [
@@ -2655,6 +2663,27 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/evidence/BUFFER_TREND_DELIVERY_2026-10-23.json",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 727,
+      "sha256": "8e721e01abe83f4305ec1453a8e57549073354eb2886f3dff2751efad48994b1"
+    },
+    {
+      "path": "archive/retired/docs/BUFFER_TREND_2026-10-23.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 6379,
+      "sha256": "56a8e683c0d611bb8d25fd5ad31a6f62f0ac668b70155c58049228f19fb8a73c"
+    },
+    {
+      "path": "archive/retired/docs/evidence/BUFFER_TREND_2026-10-23.json",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 668810,
+      "sha256": "b5c612eb019ee4058497450a585fd0df9895da61cf02b02e363d786312ad8872"
+    },
     {
       "path": "archive/retired/originals/PRE_BUFFER_TREND_2026-10-23_8e410b7.json",
       "mode": "exact",

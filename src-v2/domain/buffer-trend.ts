@@ -182,6 +182,7 @@ export function summarizeBufferTransport(
     aborts = 0,
     completedBytes = 0,
     crossWindow = 0
+  let unavailable = dropped
   for (const row of rows) {
     if (row.completedAt < now - BUFFER_WINDOW_MS || row.completedAt > now) continue
     if (row.outcome === 'success') {
@@ -194,12 +195,13 @@ export function summarizeBufferTransport(
         Number.isSafeInteger(completedBytes + row.bytes)
       )
         completedBytes += row.bytes
+      else unavailable = Math.min(Number.MAX_SAFE_INTEGER, unavailable + 1)
     } else if (row.outcome === 'failure') failures++
     else aborts++
     if (row.startedAt < now - BUFFER_WINDOW_MS) crossWindow++
   }
   return Object.freeze({
-    coverage: dropped
+    coverage: unavailable
       ? 'partial'
       : successes + failures + aborts
         ? 'observed-completions'
@@ -209,6 +211,6 @@ export function summarizeBufferTransport(
     aborts,
     completedBytes,
     crossWindow,
-    dropped,
+    dropped: unavailable,
   })
 }

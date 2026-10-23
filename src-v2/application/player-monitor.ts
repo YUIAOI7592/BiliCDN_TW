@@ -216,19 +216,36 @@ export class PlayerMonitor implements MonitorPort {
       recovering: this.recovery.isRecovering(),
       disabled: disabled || originalMode,
     })
-    const bufferTrend = this.#observeBuffer(
-      video,
-      controls,
-      now,
-      disabled,
-      originalMode,
-      visible,
-      bufferRevision,
-    )
+    let bufferTrend: BufferTrendSnapshot | undefined
+    try {
+      bufferTrend = this.#observeBuffer(
+        video,
+        controls,
+        now,
+        disabled,
+        originalMode,
+        visible,
+        bufferRevision,
+      )
+    } catch {
+      this.#clearBuffer()
+      bufferTrend = Object.freeze({
+        ...emptyBufferTrend(now, 'invalid-sample'),
+        transport: summarizeBufferTransport([], now, 0),
+      })
+    }
     this.#publishSnapshot(video, controls, active, watchdog, startupAge, bufferTrend)
   }
 
   observeTransport(observation: ObservedVideoCompletion): void {
+    try {
+      this.#recordBufferTransport(observation)
+    } catch {
+      this.#clearBuffer()
+    }
+  }
+
+  #recordBufferTransport(observation: ObservedVideoCompletion): void {
     if (this.#bufferStopped || this.#bufferContext === null) return
     const revision = this.#bufferRevision,
       now = this.now(),
@@ -290,9 +307,17 @@ export class PlayerMonitor implements MonitorPort {
     })
   }
 
-  #routeKey(): string {
+  #routeKey(): string | null {
     const state = this.session.get(),
       request = this.routes.latestRequested('video')
+    const eligible = request ? this.routes.recoveryEligible(request) : false
+    const current = this.session.get()
+    if (
+      current.generation !== state.generation ||
+      current.epoch !== state.epoch ||
+      current.representation !== state.representation
+    )
+      return null
     return JSON.stringify([
       state.generation,
       state.epoch,
@@ -302,7 +327,7 @@ export class PlayerMonitor implements MonitorPort {
       request?.authorityRevision,
       request?.targetHost,
       state.affinity?.host,
-      request ? this.routes.recoveryEligible(request) : false,
+      eligible,
     ])
   }
   #clearBuffer(): void {
@@ -341,31 +366,21 @@ export class PlayerMonitor implements MonitorPort {
     revision: number,
   ): BufferTrendSnapshot | undefined {
     if (revision !== this.#bufferRevision) return undefined
-    const blocked: BufferTrendReason | null = this.#bufferStopped
-      ? 'stopped'
-      : !video.available
-        ? 'unavailable'
-        : disabled
-          ? 'disabled'
-          : original
-            ? 'original-comparison'
-            : !visible
-              ? 'hidden'
-              : video.paused
-                ? 'paused'
-                : video.seeking
-                  ? 'seeking'
-                  : controls.dragging
-                    ? 'dragging'
-                    : video.mediaError
-                      ? 'error'
-                      : video.ended
-                        ? 'ended'
-                        : video.bufferedToEnd
-                          ? 'buffered-to-end'
-                          : this.recovery.isRecovering()
-                            ? 'recovering'
-                            : null
+    const blockers: readonly (readonly [boolean, BufferTrendReason])[] = [
+      [this.#bufferStopped, 'stopped'],
+      [!video.available, 'unavailable'],
+      [disabled, 'disabled'],
+      [original, 'original-comparison'],
+      [!visible, 'hidden'],
+      [video.paused, 'paused'],
+      [video.seeking, 'seeking'],
+      [controls.dragging, 'dragging'],
+      [video.mediaError, 'error'],
+      [video.ended, 'ended'],
+      [video.bufferedToEnd, 'buffered-to-end'],
+    ]
+    let blocked = blockers.find(([condition]) => condition)?.[1] ?? null
+    if (!blocked && this.recovery.isRecovering()) blocked = 'recovering'
     if (revision !== this.#bufferRevision) return undefined
     if (blocked) {
       this.#clearBuffer()
@@ -376,6 +391,13 @@ export class PlayerMonitor implements MonitorPort {
     }
     const route = this.#routeKey()
     if (revision !== this.#bufferRevision) return undefined
+    if (route === null) {
+      this.#clearBuffer()
+      return Object.freeze({
+        ...emptyBufferTrend(now, 'context-changed'),
+        transport: summarizeBufferTransport([], now, 0),
+      })
+    }
     const context = JSON.stringify([
       route,
       controls.mediaId,

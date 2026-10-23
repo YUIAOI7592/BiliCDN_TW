@@ -1,5 +1,10 @@
 # BiliCDN_TW 變更紀錄
 
+## 2026-10-23 唯讀緩衝趨勢與影子判定（未發行）
+
+- 沿用既有 Monitor 取樣，以有界窗口產生影子候選，將完成傳輸列為旁證並加入既有診斷報告；不新增 UI、設定或持久資料。
+- 救援時序、所有權、路線與播放動作維持。驗證及限制集中於 [本輪報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/BUFFER_TREND_2026-10-23.md)；實際工作與交付範圍見 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
+
 ## 2026-10-20 工作區歸檔與文件清理（未發行）
 
 - 過往 Release、歷史報告、圖片及已結案本機工作實際移入封存；現行與歷史閱讀入口見 [HISTORY](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md)。本輪取代先前歷史原位的選擇，接受已搬移舊 main 網址失效。

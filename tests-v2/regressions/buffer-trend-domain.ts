@@ -37,7 +37,7 @@ for (const rate of [1, 2]) {
       {
         ...samples(rate)[8]!,
         at: 8500,
-        currentTime: 109 * rate,
+        currentTime: 100 + 8.5 * rate,
         frames: 270,
         bufferAheadSec: 7.75 * rate,
       },
@@ -108,6 +108,17 @@ test('U-W05 duplicate time, reversed time and oversized input stay insufficient'
     'sample-overflow',
   )
 })
+for (const delta of [0, 0.049999, 0.05, 0.050001])
+  test(`U-P05 exact first progress difference ${delta} seconds`, () => {
+    const input = samples(1)
+    input[0] = { ...input[0]!, currentTime: 0 }
+    input[1] = { ...input[1]!, currentTime: delta }
+    assert.equal(assessBufferTrend(input, 8000).candidate, delta > 0.05 ? true : null)
+  })
+for (const rate of [0, NaN, Infinity, -1])
+  test(`U-P06 invalid raw rate ${String(rate)} never uses an effective-rate fallback`, () => {
+    assert.equal(assessBufferTrend(samples(rate), 8000).reason, 'invalid-sample')
+  })
 test('U-T01 observed completions are not an instantaneous bandwidth estimate', () => {
   const rows = [
     { startedAt: -1000, completedAt: 1000, outcome: 'success' as const, bytes: 100, status: 206 },
@@ -121,4 +132,17 @@ test('U-T01 observed completions are not an instantaneous bandwidth estimate', (
   assert.equal(summarizeBufferTransport([], 8000, 0).coverage, 'none-observed')
   assert.equal(summarizeBufferTransport(rows, 8000, 1).coverage, 'partial')
   assert.equal('throughputMbps' in result, false)
+})
+test('U-T04 completion byte overflow is partial rather than a false complete total', () => {
+  const row = {
+    startedAt: 0,
+    completedAt: 8000,
+    status: 206,
+    outcome: 'success' as const,
+    bytes: Number.MAX_SAFE_INTEGER,
+  }
+  const result = summarizeBufferTransport([row, row], 8000, 0)
+  assert.equal(result.completedBytes, Number.MAX_SAFE_INTEGER)
+  assert.equal(result.coverage, 'partial')
+  assert.equal(result.dropped, 1)
 })

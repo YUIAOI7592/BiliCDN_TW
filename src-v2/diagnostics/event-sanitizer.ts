@@ -198,7 +198,9 @@ export class DiagnosticEventSanitizer {
     return Object.fromEntries(
       Object.entries(value)
         .slice(0, 48)
-        .filter(([name]) => !['streamKey', 'url', 'path', 'query', 'token'].includes(name))
+        .filter(
+          ([name]) => !['streamKey', 'url', 'path', 'query', 'token', 'bufferTrend'].includes(name),
+        )
         .map(([name, item]) => [name, this.sanitize(item, name, depth + 1)]),
     )
   }

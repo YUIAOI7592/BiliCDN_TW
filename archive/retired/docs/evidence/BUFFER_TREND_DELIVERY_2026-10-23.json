@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "kind": "clean-source-validation",
+  "npmExitCode": 0,
+  "verifyExitCode": 0,
+  "success": true,
+  "sourceFiles": 637,
+  "missingPreexisting": [
+    ".git",
+    "node_modules",
+    ".work",
+    "archive/retired/local"
+  ],
+  "inputChanges": [],
+  "cleanup": true,
+  "verifySummary": [
+    "Contract cases: 1456; total 13441.4 ms",
+    "Verified v2.1.27: typecheck, architecture, functional tests, deterministic build, syntax, v2-only bundle and checksums."
+  ],
+  "build": {
+    "bytes": 403700,
+    "sha256": "c076440c9af726d1d87dfcc1ffddbe988d7e5633d7fabcf7de71986d5eb442be",
+    "equalsWorkingBuild": true
+  },
+  "sourceDigest": "aac2698251764f46c51eee5dca7940829099393174ef90f77f16dafdaa559d0a"
+}
