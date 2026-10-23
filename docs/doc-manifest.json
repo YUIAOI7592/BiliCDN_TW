@@ -75,6 +75,24 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md",
+      "kind": "record",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.1.28"
+      ],
+      "date": "2026-10-23",
+      "requiredAnchors": [
+        "範圍與判定",
+        "固定情境結果",
+        "停止條件",
+        "驗證與重播",
+        "限制與後續"
+      ]
+    },
+    {
       "path": "archive/retired/docs/BUFFER_TREND_2026-10-23.md",
       "kind": "record",
       "topics": [
@@ -2698,6 +2716,27 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 8246,
+      "sha256": "3e46cb903136fedcbfbed4d5ef3ed534a96cfacc984e930051bfbcff461323e5"
+    },
+    {
+      "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 14713941,
+      "sha256": "35548237535fd13279b00c6ddaed37ed87fe6752da52a6bc9ec9bb3b6551f8e3"
+    },
+    {
+      "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V2_PROTOTYPE_2026-10-23.patch",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 38979,
+      "sha256": "033a9cb2e5b64a1a5fe95f29c7a89d1f59cc85a8c103c5f222718c0d96a41935"
+    },
     {
       "path": "archive/retired/originals/PRE_RELEASE_2026-10-23_34672b0.json",
       "mode": "exact",

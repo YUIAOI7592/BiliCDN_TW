@@ -6,6 +6,8 @@
 
 ## 版本
 
+- [緩衝候選持續確認原型評估（2026-10-23，未採用）](../archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md)
+
 - [唯讀緩衝趨勢與影子判定離線驗收（2026-10-23，發布前來源）](../archive/retired/docs/BUFFER_TREND_2026-10-23.md)
 - [原版 v1.3.4 與 v2.1.27 離線救援比較（2026-10-23）](../archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md)
 

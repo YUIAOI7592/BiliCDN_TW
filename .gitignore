@@ -23,6 +23,8 @@ coverage/
 !/archive/retired/docs/evidence/UPSTREAM_RESCUE_COMPARISON_2026-10-23.json
 !/archive/retired/docs/evidence/BUFFER_TREND_2026-10-23.json
 !/archive/retired/docs/evidence/BUFFER_TREND_DELIVERY_2026-10-23.json
+!/archive/retired/docs/evidence/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.json
+!/archive/retired/docs/evidence/BUFFER_CANDIDATE_V2_PROTOTYPE_2026-10-23.patch
 !/archive/retired/originals/
 !/archive/retired/originals/**
 !/archive/retired/releases/

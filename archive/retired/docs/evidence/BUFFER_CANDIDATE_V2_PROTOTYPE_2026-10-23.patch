@@ -1,0 +1,946 @@
+diff --git a/scripts/buffer-shadow-evaluation.mts b/scripts/buffer-shadow-evaluation.mts
+index e834d9d..ec5bf20 100644
+--- a/scripts/buffer-shadow-evaluation.mts
++++ b/scripts/buffer-shadow-evaluation.mts
+@@ -5,7 +5,12 @@ import { build } from 'esbuild'
+ import { supervise } from './test-process.mts'
+ import { filesUnder, isRecord, errorMessage } from './lib.mts'
+ import { sha256 } from './upstream-compare/model.mts'
+-import { parseEvaluationArgs, scenarioNames, scoreWindow } from './buffer-shadow/model.mts'
++import {
++  parseEvaluationArgs,
++  scenarioNames,
++  scoreWindow,
++  readingVersion,
++} from './buffer-shadow/model.mts'
+ import type { EvidenceRow } from './buffer-shadow/model.mts'
+ import { costInputs, loadCostInput } from './buffer-shadow/inputs.mts'
+ 
+@@ -56,6 +61,15 @@ export function validEvaluationResult(
+   try {
+     const rows = value.rows as EvidenceRow[]
+     if (!value.rows.every(isRecord)) return false
++    const version = readingVersion(value.rows[0]?.trend)
++    if (
++      !version ||
++      !value.rows.every((r) => readingVersion(r.trend) === version) ||
++      !value.prelude.every((r) => isRecord(r) && readingVersion(r.trend) === version)
++    )
++      return false
++    if (value.algorithm !== undefined && value.algorithm !== `buffer-window-v${version}`)
++      return false
+     const computed = scoreWindow(rows, {
+       scoreUntil: rows.at(-1)!.at,
+       stallAt: value.stallAt as number | null,
+@@ -185,8 +199,10 @@ export async function evaluateBufferShadow(cost = false) {
+         'offline synthetic progress',
+         'foreground model',
+         '60s healthy prelude',
+-        'fixed buffer-window-v1 thresholds',
+-        'no product edits',
++        cost
++          ? 'published-version defaults'
++          : 'buffer-window-v2: fixed 8s/2s/10s base plus 2s confirmation',
++        cost ? 'unmodified release scripts' : 'unreleased diagnostic prototype; no rescue changes',
+       ],
+       inputs: costInputs,
+       sourceHashes,
+diff --git a/scripts/buffer-shadow/model.mts b/scripts/buffer-shadow/model.mts
+index 4f7e6b1..b808a8f 100644
+--- a/scripts/buffer-shadow/model.mts
++++ b/scripts/buffer-shadow/model.mts
+@@ -27,8 +27,22 @@ export const scenarioNames = [
+   'transport-duplicate',
+   'transport-overflow',
+   'two-hour-bounds',
++  'refill-3s',
++  'refill-5s',
++  'short-plateau',
++  'tiny-refill',
++  'irregular-confirmation',
++  'micro-refill-exhaustion',
+ ] as const
+ export type ScenarioName = (typeof scenarioNames)[number]
++/** Version tags are validated without translating historical candidate meanings. */
++export function readingVersion(value: unknown): 1 | 2 | null {
++  if (value === null || typeof value !== 'object') return null
++  const row = value as Record<string, unknown>
++  if (row.schemaVersion === 1 && row.algorithm === 'buffer-window-v1') return 1
++  if (row.schemaVersion === 2 && row.algorithm === 'buffer-window-v2') return 2
++  return null
++}
+ export interface EvidenceRow {
+   readonly seq: number
+   readonly at: number
+diff --git a/src-v2/application/player-monitor.ts b/src-v2/application/player-monitor.ts
+index 2e43982..28ceb65 100644
+--- a/src-v2/application/player-monitor.ts
++++ b/src-v2/application/player-monitor.ts
+@@ -3,6 +3,7 @@ import type { VideoSnapshot, SchedulerPort, PlayerControlSnapshot } from './port
+ import type { PlaybackDemand } from '../domain/model.ts'
+ import {
+   assessBufferTrend,
++  confirmBufferTrend,
+   emptyBufferTrend,
+   validBufferSample,
+   summarizeBufferTransport,
+@@ -14,6 +15,7 @@ import type {
+   BufferTrendSample,
+   BufferTrendSnapshot,
+   BufferTrendReason,
++  BufferCandidateConfirmation,
+ } from '../domain/buffer-trend.ts'
+ import type { ObservedVideoCompletion } from './monitor-ports.ts'
+ import {
+@@ -60,6 +62,7 @@ import type { MonitorSnapshot } from './monitor-model.ts'
+ export type { MonitorSnapshot } from './monitor-model.ts'
+ 
+ export class PlayerMonitor implements MonitorPort {
++  #bufferConfirmation: BufferCandidateConfirmation | null = null
+   #bufferSamples: BufferTrendSample[] = []
+   #bufferCompletions: ObservedVideoCompletion[] = []
+   #bufferDrops: { at: number; count: number }[] = []
+@@ -331,6 +334,7 @@ export class PlayerMonitor implements MonitorPort {
+     ])
+   }
+   #clearBuffer(): void {
++    this.#bufferConfirmation = null
+     this.#bufferSamples = []
+     this.#bufferCompletions = []
+     this.#bufferDrops = []
+@@ -451,8 +455,10 @@ export class PlayerMonitor implements MonitorPort {
+       reading = emptyBufferTrend(now, 'no-progress', true)
+     }
+     this.#pruneBufferTransport(now)
++    const confirmed = confirmBufferTrend(reading, this.#bufferConfirmation)
++    this.#bufferConfirmation = confirmed.confirmation
+     return Object.freeze({
+-      ...reading,
++      ...confirmed.reading,
+       transport: summarizeBufferTransport(
+         this.#bufferCompletions,
+         now,
+diff --git a/src-v2/diagnostics/buffer-trend.ts b/src-v2/diagnostics/buffer-trend.ts
+index 7a549c7..10722be 100644
+--- a/src-v2/diagnostics/buffer-trend.ts
++++ b/src-v2/diagnostics/buffer-trend.ts
+@@ -25,6 +25,9 @@ const reasons = [
+   'filling',
+   'draining-low',
+   'draining-high',
++  'candidate-confirming',
++  'recent-refill',
++  'not-decreasing',
+ ] as const satisfies readonly BufferTrendReason[]
+ function object(value: unknown): value is Record<string, unknown> {
+   return value !== null && typeof value === 'object' && !Array.isArray(value)
+@@ -51,8 +54,8 @@ export function sanitizeBufferTrend(value: unknown): BufferTrendSnapshot | null
+ function read(value: unknown): BufferTrendSnapshot | null {
+   if (
+     !object(value) ||
+-    value.schemaVersion !== 1 ||
+-    value.algorithm !== 'buffer-window-v1' ||
++    value.schemaVersion !== 2 ||
++    value.algorithm !== 'buffer-window-v2' ||
+     !member(value.state, ['insufficient', 'ineligible', 'stable', 'filling', 'draining']) ||
+     !member(value.reason, reasons) ||
+     !member(value.progressQuality, ['none', 'frames', 'time-only']) ||
+@@ -102,6 +105,12 @@ function read(value: unknown): BufferTrendSnapshot | null {
+         slopeSecPerSec === null
+   )
+     return null
++  if (
++    (value.candidate === true && value.reason !== 'draining-low') ||
++    (['candidate-confirming', 'recent-refill', 'not-decreasing'].includes(value.reason) &&
++      (value.candidate !== false || value.state !== 'draining'))
++  )
++    return null
+   const t = value.transport,
+     successes = number(t.successes, 0, 128),
+     failures = number(t.failures, 0, 128),
+@@ -131,8 +140,8 @@ function read(value: unknown): BufferTrendSnapshot | null {
+   )
+     return null
+   return Object.freeze({
+-    schemaVersion: 1,
+-    algorithm: 'buffer-window-v1',
++    schemaVersion: 2,
++    algorithm: 'buffer-window-v2',
+     at,
+     from,
+     spanMs,
+diff --git a/src-v2/diagnostics/model.ts b/src-v2/diagnostics/model.ts
+index 09ca87c..c318142 100644
+--- a/src-v2/diagnostics/model.ts
++++ b/src-v2/diagnostics/model.ts
+@@ -161,8 +161,8 @@ export interface RouteAttemptSummary {
+ /** Public queries retain the concrete, readonly snapshot shape. */
+ export interface DiagnosticSnapshot {
+   readonly bufferTrend: {
+-    readonly schemaVersion: 1
+-    readonly algorithm: 'buffer-window-v1'
++    readonly schemaVersion: 2
++    readonly algorithm: 'buffer-window-v2'
+     readonly latest: BufferTrendSnapshot | null
+     readonly history: readonly BufferTrendSnapshot[]
+   }
+diff --git a/src-v2/diagnostics/recorder.ts b/src-v2/diagnostics/recorder.ts
+index fdd620c..b33744a 100644
+--- a/src-v2/diagnostics/recorder.ts
++++ b/src-v2/diagnostics/recorder.ts
+@@ -229,8 +229,8 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
+   #bufferCapture() {
+     const history = structuredClone(this.#bufferTrends)
+     return {
+-      schemaVersion: 1 as const,
+-      algorithm: 'buffer-window-v1' as const,
++      schemaVersion: 2 as const,
++      algorithm: 'buffer-window-v2' as const,
+       latest: history.at(-1) ?? null,
+       history,
+     }
+diff --git a/src-v2/diagnostics/report.ts b/src-v2/diagnostics/report.ts
+index cfb26ab..d662505 100644
+--- a/src-v2/diagnostics/report.ts
++++ b/src-v2/diagnostics/report.ts
+@@ -14,8 +14,8 @@ export type DiagnosticReportCapture = Omit<
+   'incident' | 'flow' | 'events' | 'rankings' | 'bufferTrend'
+ > & {
+   bufferTrend: {
+-    schemaVersion: 1
+-    algorithm: 'buffer-window-v1'
++    schemaVersion: 2
++    algorithm: 'buffer-window-v2'
+     latest: BufferTrendSnapshot | null
+     history: BufferTrendSnapshot[]
+   }
+diff --git a/src-v2/domain/buffer-trend.ts b/src-v2/domain/buffer-trend.ts
+index 9d9c63f..21411c7 100644
+--- a/src-v2/domain/buffer-trend.ts
++++ b/src-v2/domain/buffer-trend.ts
+@@ -27,6 +27,9 @@ export type BufferTrendReason =
+   | 'filling'
+   | 'draining-low'
+   | 'draining-high'
++  | 'candidate-confirming'
++  | 'recent-refill'
++  | 'not-decreasing'
+ export interface BufferTrendSample {
+   readonly at: number
+   readonly bufferAheadSec: number
+@@ -50,9 +53,7 @@ export interface BufferTransportSummary {
+   readonly crossWindow: number
+   readonly dropped: number
+ }
+-export interface BufferTrendReading {
+-  readonly schemaVersion: 1
+-  readonly algorithm: 'buffer-window-v1'
++export interface BufferTrendFacts {
+   readonly at: number | null
+   readonly from: number | null
+   readonly spanMs: number
+@@ -68,6 +69,20 @@ export interface BufferTrendReading {
+   readonly deltaSec: number | null
+   readonly slopeSecPerSec: number | null
+ }
++/** The unchanged eight-second calculation, retained for versioned offline comparisons. */
++export interface BufferWindowReading extends BufferTrendFacts {
++  readonly schemaVersion: 1
++  readonly algorithm: 'buffer-window-v1'
++}
++export interface BufferTrendReading extends BufferTrendFacts {
++  readonly schemaVersion: 2
++  readonly algorithm: 'buffer-window-v2'
++}
++export interface BufferCandidateConfirmation {
++  readonly at: number
++  readonly bufferSec: number
++  readonly since: number | null
++}
+ export interface BufferTrendSnapshot extends BufferTrendReading {
+   readonly transport: BufferTransportSummary
+ }
+@@ -77,8 +92,8 @@ export function emptyBufferTrend(
+   ineligible = false,
+ ): BufferTrendReading {
+   return Object.freeze({
+-    schemaVersion: 1,
+-    algorithm: 'buffer-window-v1',
++    schemaVersion: 2,
++    algorithm: 'buffer-window-v2',
+     at: Number.isFinite(at) && at >= 0 ? at : null,
+     from: null,
+     spanMs: 0,
+@@ -112,8 +127,13 @@ export function validBufferSample(s: BufferTrendSample): boolean {
+ export function assessBufferTrend(
+   samples: readonly BufferTrendSample[],
+   now: number,
+-): BufferTrendReading {
+-  const empty = (reason: BufferTrendReason) => emptyBufferTrend(now, reason)
++): BufferWindowReading {
++  const empty = (reason: BufferTrendReason): BufferWindowReading =>
++    Object.freeze({
++      ...emptyBufferTrend(now, reason),
++      schemaVersion: 1,
++      algorithm: 'buffer-window-v1',
++    })
+   if (samples.length > BUFFER_SAMPLE_LIMIT) return empty('sample-overflow')
+   if (!Number.isFinite(now) || now < 0 || samples.some((s) => !validBufferSample(s)))
+     return empty('invalid-sample')
+@@ -172,6 +192,74 @@ export function assessBufferTrend(
+     slopeSecPerSec: deltaSec / (BUFFER_WINDOW_MS / 1000),
+   })
+ }
++/** All confirmation state is returned to its sole owner, PlayerMonitor. No clocks or effects. */
++export function confirmBufferTrend(
++  raw: BufferTrendFacts,
++  previous: BufferCandidateConfirmation | null,
++): {
++  readonly reading: BufferTrendReading
++  readonly confirmation: BufferCandidateConfirmation | null
++} {
++  const current: BufferTrendReading = Object.freeze({
++    ...raw,
++    schemaVersion: 2,
++    algorithm: 'buffer-window-v2',
++  })
++  const finish = (reading: BufferTrendReading, confirmation: BufferCandidateConfirmation | null) =>
++    Object.freeze({ reading, confirmation })
++  const validPrevious =
++    previous &&
++    Number.isFinite(previous.at) &&
++    previous.at >= 0 &&
++    Number.isFinite(previous.bufferSec) &&
++    previous.bufferSec >= 0 &&
++    (previous.since === null ||
++      (Number.isFinite(previous.since) && previous.since >= 0 && previous.since <= previous.at))
++      ? previous
++      : null
++  if (validPrevious && raw.at === validPrevious.at)
++    return finish(emptyBufferTrend(raw.at!, 'warming-up'), validPrevious)
++  if (raw.candidate === null) return finish(current, null)
++  if (
++    raw.at === null ||
++    !Number.isFinite(raw.at) ||
++    raw.at < 0 ||
++    raw.endBufferSec === null ||
++    !Number.isFinite(raw.endBufferSec) ||
++    raw.endBufferSec < 0 ||
++    raw.rate === null ||
++    !Number.isFinite(raw.rate) ||
++    raw.rate <= 0
++  )
++    return finish(emptyBufferTrend(raw.at ?? NaN, 'invalid-sample'), null)
++  if (validPrevious && (raw.at < validPrevious.at || raw.at - validPrevious.at > 1500))
++    return finish(
++      emptyBufferTrend(raw.at, raw.at < validPrevious.at ? 'time-reversed' : 'sample-gap'),
++      null,
++    )
++  const next = (since: number | null) =>
++    Object.freeze({ at: raw.at!, bufferSec: raw.endBufferSec!, since })
++  if (!raw.candidate) return finish(current, next(null))
++  if (validPrevious && raw.endBufferSec >= validPrevious.bufferSec)
++    return finish(
++      Object.freeze({
++        ...current,
++        candidate: false,
++        reason: raw.endBufferSec > validPrevious.bufferSec ? 'recent-refill' : 'not-decreasing',
++      }),
++      next(null),
++    )
++  const since = validPrevious?.since ?? raw.at,
++    confirmed = raw.at - since >= 2000
++  return finish(
++    Object.freeze({
++      ...current,
++      candidate: confirmed,
++      reason: confirmed ? 'draining-low' : 'candidate-confirming',
++    }),
++    next(since),
++  )
++}
+ export function summarizeBufferTransport(
+   rows: readonly BufferCompletion[],
+   now: number,
+diff --git a/tests-v2/regressions/buffer-confirmation-domain.ts b/tests-v2/regressions/buffer-confirmation-domain.ts
+new file mode 100644
+index 0000000..904ac6c
+--- /dev/null
++++ b/tests-v2/regressions/buffer-confirmation-domain.ts
+@@ -0,0 +1,135 @@
++import { test } from 'node:test'
++import assert from 'node:assert/strict'
++import { confirmBufferTrend } from '../../src-v2/domain/buffer-trend.ts'
++import type {
++  BufferWindowReading,
++  BufferCandidateConfirmation,
++} from '../../src-v2/domain/buffer-trend.ts'
++
++const raw = (rate: number, at: number, buffer: number): BufferWindowReading => ({
++  schemaVersion: 1,
++  algorithm: 'buffer-window-v1',
++  at,
++  from: at - 8000,
++  spanMs: 8000,
++  sampleCount: 9,
++  interpolated: false,
++  progressQuality: 'frames',
++  state: 'draining',
++  reason: 'draining-low',
++  candidate: true,
++  rate,
++  startBufferSec: buffer + 4,
++  endBufferSec: buffer,
++  deltaSec: -4,
++  slopeSecPerSec: -0.5,
++})
++
++for (const rate of [1, 2]) {
++  test(`U-C buffer-v2 confirms only at 1999/2000ms rate=${rate}`, () => {
++    let state = confirmBufferTrend(raw(rate, 10000, 8), null).confirmation
++    state = confirmBufferTrend(raw(rate, 11000, 7.5), state).confirmation
++    const pending = confirmBufferTrend(raw(rate, 11999, 7), state)
++    assert.equal(pending.reading.candidate, false)
++    assert.equal(pending.reading.reason, 'candidate-confirming')
++    const confirmed = confirmBufferTrend(raw(rate, 12000, 6.9), pending.confirmation)
++    assert.equal(confirmed.reading.candidate, true)
++    assert.equal(confirmed.reading.schemaVersion, 2)
++    assert.equal(confirmed.reading.algorithm, 'buffer-window-v2')
++  })
++  test(`U-C buffer-v2 three irregular samples cannot replace elapsed time rate=${rate}`, () => {
++    let state = confirmBufferTrend(raw(rate, 10000, 8), null).confirmation
++    state = confirmBufferTrend(raw(rate, 10999, 7.5), state).confirmation
++    const third = confirmBufferTrend(raw(rate, 11998, 7), state)
++    assert.equal(third.reading.candidate, false)
++    assert.equal(
++      confirmBufferTrend(raw(rate, 12000, 6), third.confirmation).reading.candidate,
++      true,
++    )
++  })
++  for (const confirmed of [false, true])
++    for (const kind of ['refill', 'flat'] as const)
++      test(`U-R buffer-v2 ${kind} revokes confirmed=${confirmed} rate=${rate}`, () => {
++        let state: BufferCandidateConfirmation | null = null
++        for (let i = 0; i < (confirmed ? 3 : 2); i++)
++          state = confirmBufferTrend(raw(rate, 10000 + i * 1000, 8 - i), state).confirmation
++        const at = state!.at + 1000,
++          before = state!.bufferSec
++        const cancelled = confirmBufferTrend(
++          raw(rate, at, kind === 'refill' ? before + 0.000000001 : before),
++          state,
++        )
++        assert.equal(cancelled.reading.candidate, false)
++        assert.equal(
++          cancelled.reading.reason,
++          kind === 'refill' ? 'recent-refill' : 'not-decreasing',
++        )
++        assert.equal(cancelled.confirmation!.since, null)
++        let next = cancelled.confirmation
++        for (let i = 1; i <= 3; i++) {
++          const value = confirmBufferTrend(raw(rate, at + i * 1000, before - i), next)
++          assert.equal(value.reading.candidate, i === 3)
++          next = value.confirmation
++        }
++      })
++  for (const gap of [1500, 1501])
++    test(`U-W buffer-v2 confirmation gap=${gap} rate=${rate}`, () => {
++      const first = confirmBufferTrend(raw(rate, 10000, 8), null)
++      const next = confirmBufferTrend(raw(rate, 10000 + gap, 7), first.confirmation)
++      assert.equal(next.reading.candidate, gap === 1500 ? false : null)
++      if (gap === 1501) {
++        assert.equal(next.confirmation, null)
++        assert.equal(next.reading.reason, 'sample-gap')
++      }
++    })
++  test(`U-W buffer-v2 duplicate time does not change confirmation rate=${rate}`, () => {
++    const first = confirmBufferTrend(raw(rate, 10000, 8), null)
++    const second = confirmBufferTrend(raw(rate, 11000, 7), first.confirmation)
++    const repeated = confirmBufferTrend(raw(rate, 11000, 1), second.confirmation)
++    assert.equal(repeated.reading.candidate, null)
++    assert.equal(repeated.confirmation, second.confirmation)
++    assert.equal(
++      confirmBufferTrend(raw(rate, 12000, 6), repeated.confirmation).reading.candidate,
++      true,
++    )
++  })
++  test(`U-W buffer-v2 time reversal and raw invalidation clear confirmation rate=${rate}`, () => {
++    const first = confirmBufferTrend(raw(rate, 10000, 8), null)
++    assert.equal(
++      confirmBufferTrend(raw(rate, 9999, 7), first.confirmation).reading.reason,
++      'time-reversed',
++    )
++    const empty = confirmBufferTrend(
++      { ...raw(rate, 11000, 7), candidate: null, state: 'insufficient', reason: 'sample-gap' },
++      first.confirmation,
++    )
++    assert.equal(empty.reading.candidate, null)
++    assert.equal(empty.confirmation, null)
++  })
++  for (const field of ['at', 'endBufferSec', 'rate'] as const)
++    for (const invalid of [NaN, Infinity])
++      test(`U-W buffer-v2 rejects ${field}=${String(invalid)} rate=${rate}`, () => {
++        const value = confirmBufferTrend({ ...raw(rate, 10000, 8), [field]: invalid }, null)
++        assert.equal(value.reading.candidate, null)
++        assert.equal(value.confirmation, null)
++      })
++  test(`U-C buffer-v2 raw false restarts rather than resumes confirmation rate=${rate}`, () => {
++    const first = confirmBufferTrend(raw(rate, 10000, 8), null)
++    const clear = confirmBufferTrend(
++      { ...raw(rate, 11000, 7), candidate: false, reason: 'draining-high' },
++      first.confirmation,
++    )
++    const next = confirmBufferTrend(raw(rate, 12000, 6), clear.confirmation)
++    assert.equal(next.reading.candidate, false)
++    assert.equal(next.confirmation!.since, 12000)
++  })
++  test(`U-C buffer-v2 input and returned state are immutable rate=${rate}`, () => {
++    const input = Object.freeze(raw(rate, 10000, 8)),
++      before = structuredClone(input)
++    const result = confirmBufferTrend(input, null)
++    assert.deepEqual(input, before)
++    assert.equal(Object.isFrozen(result.reading), true)
++    assert.equal(Object.isFrozen(result.confirmation), true)
++    assert.equal('rawCandidate' in result.reading, false)
++  })
++}
+diff --git a/tests-v2/regressions/buffer-confirmation.ts b/tests-v2/regressions/buffer-confirmation.ts
+new file mode 100644
+index 0000000..0decf63
+--- /dev/null
++++ b/tests-v2/regressions/buffer-confirmation.ts
+@@ -0,0 +1,111 @@
++import { test } from 'node:test'
++import assert from 'node:assert/strict'
++import { runScenario } from '../support/buffer-shadow-scenarios.ts'
++import { bufferMonitor } from '../support/buffer-monitor.ts'
++import { epochId, generationId, representationId } from '../../src-v2/domain/model.ts'
++
++for (const rate of [1, 2] as const) {
++  for (const name of ['jitter-2s', 'burst-refill', 'low-sawtooth'] as const)
++    test(
++      `buffer-v2 integration ${name} suppresses short candidates rate=${rate}`,
++      { timeout: 5000 },
++      async (t) => {
++        const result = await runScenario(name, rate, t)
++        assert.equal(result.score.episodes.length, 0)
++        assert.equal(result.score.candidateMs, 0)
++        assert.equal(result.cleanup.timers, 0)
++        assert.equal(result.cleanup.subscriptions, 0)
++      },
++    )
++  test(
++    `buffer-v2 integration refill revokes at first increasing sample rate=${rate}`,
++    { timeout: 5000 },
++    async (t) => {
++      const result = await runScenario('drain-refill', rate, t)
++      assert.deepEqual(
++        result.score.episodes.map((e) => [e.start, e.end]),
++        [[6000, 9000]],
++      )
++      assert.equal(result.score.candidateMs, 3000)
++      assert.equal(result.score.episodes[0]!.followup, 'continued')
++    },
++  )
++  for (const [name, first, lead] of [
++    ['slow-exhaustion', 22000, 18000],
++    ['fast-exhaustion', 3000, 3000],
++  ] as const)
++    test(
++      `buffer-v2 integration ${name} preserves useful lead rate=${rate}`,
++      { timeout: 5000 },
++      async (t) => {
++        const result = await runScenario(name, rate, t)
++        assert.equal(result.score.episodes[0]!.start, first)
++        assert.equal(result.score.firstLeadMs, lead)
++      },
++    )
++}
++
++for (const rate of [1, 2])
++  for (const confirmed of [false, true])
++    for (const field of [
++      'mediaId',
++      'coreId',
++      'seekRevision',
++      'userRevision',
++      'reloadRevision',
++      'coreReloadRevision',
++      'epoch',
++      'generation',
++      'representation',
++      'policy',
++      'authority',
++      'host',
++      'rate',
++      'reset',
++      'stop',
++      'dispose',
++    ] as const)
++      test(`buffer-v2 Monitor ${field} clears confirmed=${confirmed} rate=${rate}`, (t) => {
++        const f = bufferMonitor(t, rate)
++        f.monitor.tick()
++        for (let i = 0; i < 60; i++) f.step(12)
++        f.step(11)
++        f.step(10)
++        if (confirmed) {
++          f.step(9)
++          f.step(8)
++        }
++        assert.equal(f.monitor.snapshot().bufferTrend!.candidate, confirmed)
++        if (field === 'epoch') f.state.epoch = epochId(2)
++        else if (field === 'generation') f.state.generation = generationId(2)
++        else if (field === 'representation')
++          f.changeRequest({ representation: representationId('new') })
++        else if (field === 'policy') f.changeRequest({ routePolicyRevision: 2 })
++        else if (field === 'authority') f.changeRequest({ authorityRevision: 2 })
++        else if (field === 'host')
++          f.changeRequest({ targetHost: 'upos-sz-mirrorali.bilivideo.com' })
++        else if (field === 'rate') f.video.playbackRate = rate === 1 ? 2 : 1
++        else if (field === 'reset' || field === 'stop' || field === 'dispose') f.monitor[field]()
++        else f.controls[field]++
++        f.step(7)
++        assert.equal(f.monitor.snapshot().bufferTrend!.candidate, null)
++        assert.deepEqual(f.effects, [])
++        assert.equal(f.clock.pendingCount, 0)
++      })
++
++for (const rate of [1, 2])
++  test(`buffer-v2 publishing callback reset cannot revive confirmation rate=${rate}`, (t) => {
++    const f = bufferMonitor(t, rate)
++    f.monitor.tick()
++    for (let i = 0; i < 60; i++) f.step(12)
++    f.scope.defer(
++      f.monitor.subscribe((s) => {
++        if (s.bufferTrend?.candidate) f.monitor.reset()
++      }),
++    )
++    for (const b of [11, 10, 9, 8]) f.step(b)
++    assert.equal(f.monitor.snapshot().bufferTrend!.candidate, null)
++    f.step(7)
++    assert.equal(f.monitor.snapshot().bufferTrend!.candidate, null)
++    assert.deepEqual(f.effects, [])
++  })
+diff --git a/tests-v2/regressions/buffer-diagnostics.ts b/tests-v2/regressions/buffer-diagnostics.ts
+index bd5180d..93b4d04 100644
+--- a/tests-v2/regressions/buffer-diagnostics.ts
++++ b/tests-v2/regressions/buffer-diagnostics.ts
+@@ -9,8 +9,8 @@ import type { DiagnosticReportCapture } from '../../src-v2/diagnostics/report.ts
+ 
+ function trend(at: number): BufferTrendSnapshot {
+   return {
+-    schemaVersion: 1,
+-    algorithm: 'buffer-window-v1',
++    schemaVersion: 2,
++    algorithm: 'buffer-window-v2',
+     at,
+     from: at - 8000,
+     spanMs: 8000,
+@@ -69,7 +69,7 @@ test('U-D01 reports a detached whitelisted shadow candidate without an incident'
+   assert.equal(report.includes('private'), false)
+   const data = JSON.parse(report)
+   assert.equal(data.recorder.bufferTrend.latest.candidate, true)
+-  assert.equal(data.recorder.bufferTrend.schemaVersion, 1)
++  assert.equal(data.recorder.bufferTrend.schemaVersion, 2)
+   assert.equal(data.recorder.incident, null)
+   Object.assign(input, { candidate: false })
+   assert.equal(recorder.snapshot().bufferTrend!.latest!.candidate, true)
+@@ -77,7 +77,30 @@ test('U-D01 reports a detached whitelisted shadow candidate without an incident'
+   Object.assign(copy.latest!, { candidate: false })
+   assert.equal(recorder.snapshot().bufferTrend!.latest!.candidate, true)
+ })
+-for (const invalid of ['NaN', 'reason', 'future', 'candidate', 'count', 'overflow'] as const)
++for (const reason of ['candidate-confirming', 'recent-refill', 'not-decreasing'] as const)
++  test(`U-D buffer-v2 ${reason} cannot be exported as confirmed`, (t) => {
++    testScope(t)
++    const recorder = new DiagnosticRecorder(
++      () => 10000,
++      () => false,
++    )
++    recorder.recordPlayer(sample(10000, { ...trend(10000), candidate: false, reason }))
++    assert.equal(recorder.snapshot().bufferTrend.latest!.candidate, false)
++    recorder.clear()
++    recorder.recordPlayer(sample(10000, { ...trend(10000), candidate: true, reason }))
++    assert.equal(recorder.snapshot().bufferTrend.latest, null)
++    assert.equal(recorder.snapshot().counters.bufferTrendRejected, 1)
++  })
++for (const invalid of [
++  'NaN',
++  'reason',
++  'future',
++  'candidate',
++  'count',
++  'overflow',
++  'legacy',
++  'mismatched-version',
++] as const)
+   test(`U-D02 rejects ${invalid} trend data`, (t) => {
+     testScope(t)
+     const recorder = new DiagnosticRecorder(
+@@ -97,7 +120,11 @@ for (const invalid of ['NaN', 'reason', 'future', 'candidate', 'count', 'overflo
+               ? { candidate: 'true' }
+               : invalid === 'count'
+                 ? { sampleCount: 1000 }
+-                : { endBufferSec: Infinity },
++                : invalid === 'legacy'
++                  ? { schemaVersion: 1, algorithm: 'buffer-window-v1' }
++                  : invalid === 'mismatched-version'
++                    ? { schemaVersion: 2, algorithm: 'buffer-window-v1' }
++                    : { endBufferSec: Infinity },
+     )
+     recorder.recordPlayer(sample(10000, input))
+     assert.equal(recorder.snapshot().bufferTrend!.latest, null)
+@@ -181,8 +208,8 @@ test('U-D06 export sheds trend history first and remains within 96 KiB', (t) =>
+       bufferTrendRejected: 0,
+     },
+     bufferTrend: {
+-      schemaVersion: 1,
+-      algorithm: 'buffer-window-v1',
++      schemaVersion: 2,
++      algorithm: 'buffer-window-v2',
+       history,
+       latest: history.at(-1)!,
+     },
+diff --git a/tests-v2/regressions/buffer-integration.ts b/tests-v2/regressions/buffer-integration.ts
+index e881c6f..3afbfbf 100644
+--- a/tests-v2/regressions/buffer-integration.ts
++++ b/tests-v2/regressions/buffer-integration.ts
+@@ -77,7 +77,8 @@ for (const rate of [1, 2]) {
+       })
+       f.clock.advance(1000)
+     }
+-    assert.equal(f.diagnostics.snapshot().bufferTrend.latest!.candidate, true)
++    assert.equal(f.diagnostics.snapshot().bufferTrend.latest!.candidate, false)
++    assert.equal(f.diagnostics.snapshot().bufferTrend.latest!.reason, 'candidate-confirming')
+     assert.equal(f.diagnostics.snapshot().bufferTrend.latest!.transport.completedBytes, 100000)
+     assert.equal(storage.writes, before.writes)
+     assert.deepEqual(f.calls, before.calls)
+@@ -135,6 +136,7 @@ for (const rate of [1, 2]) {
+         assert.equal(subscriptions, 0)
+       })
+       f.monitor.tick()
++      for (let i = 0; i < 60; i++) f.step(12)
+       const start = f.clock.now(),
+         rows = []
+       for (let i = 1; i <= 20; i++) {
+@@ -161,9 +163,9 @@ for (const rate of [1, 2]) {
+         assert.deepEqual(f.effects, [])
+       }
+       const candidates = rows.filter((row) => row.candidate).map((row) => row.elapsedMs)
+-      if (scenario === 'drain-no-completions') assert.equal(candidates[0], 8000)
++      if (scenario === 'drain-no-completions') assert.equal(candidates[0], 6000)
+       else if (scenario === 'drain-refill') {
+-        assert.equal(candidates[0], 8000)
++        assert.equal(candidates[0], 6000)
+         assert.equal(rows[15]!.state, 'filling')
+       } else assert.deepEqual(candidates, [])
+       const before = { ...f.reads }
+diff --git a/tests-v2/regressions/buffer-monitor.ts b/tests-v2/regressions/buffer-monitor.ts
+index 009bcef..11e7aa3 100644
+--- a/tests-v2/regressions/buffer-monitor.ts
++++ b/tests-v2/regressions/buffer-monitor.ts
+@@ -147,7 +147,8 @@ for (const rate of [1, 2]) {
+       })
+     }
+     for (let i = 1; i <= 8; i++) f.step(12 - i / 2)
+-    assert.equal(samples.at(-1)!.bufferTrend!.candidate, true)
++    assert.equal(samples.at(-1)!.bufferTrend!.candidate, false)
++    assert.equal(samples.at(-1)!.bufferTrend!.reason, 'candidate-confirming')
+     assert.equal(samples.at(-1)!.bufferTrend!.transport.completedBytes, 100)
+     assert.equal(samples.at(-1)!.bufferTrend!.transport.successes, 1)
+     assert.deepEqual(f.effects, [])
+@@ -265,7 +266,7 @@ for (const rate of [1, 2]) {
+   test(`U-N01 declining buffer has a candidate without any completed transport rate=${rate}`, (t) => {
+     const f = bufferMonitor(t, rate)
+     f.monitor.tick()
+-    for (let i = 1; i <= 8; i++) f.step(12 - i / 2)
++    for (let i = 1; i <= 10; i++) f.step(12 - i / 2)
+     assert.equal(f.monitor.snapshot().bufferTrend?.candidate, true)
+     assert.equal(f.monitor.snapshot().bufferTrend?.transport.coverage, 'none-observed')
+     assert.deepEqual(f.effects, [])
+diff --git a/tests-v2/regressions/buffer-shadow-evaluation.ts b/tests-v2/regressions/buffer-shadow-evaluation.ts
+index 60a707e..a7bc0a6 100644
+--- a/tests-v2/regressions/buffer-shadow-evaluation.ts
++++ b/tests-v2/regressions/buffer-shadow-evaluation.ts
+@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
+ import { scoreWindow, parseEvaluationArgs } from '../../scripts/buffer-shadow/model.mts'
+ import type { EvidenceRow } from '../../scripts/buffer-shadow/model.mts'
+ import { scenarioNames } from '../../scripts/buffer-shadow/model.mts'
++import { readingVersion } from '../../scripts/buffer-shadow/model.mts'
+ import { runScenario } from '../support/buffer-shadow-scenarios.ts'
+ import { validEvaluationResult } from '../../scripts/buffer-shadow-evaluation.mts'
+ import { runInNewContext } from 'node:vm'
+@@ -148,6 +149,17 @@ test('shadow evaluator rejects malformed worker reports', () => {
+   for (const value of [null, {}, { validity: 'valid', verdict: 'pass' }])
+     assert.equal(validEvaluationResult(value, false), false)
+ })
++test('buffer-v2 offline replay separates historical versions without rewriting candidates', () => {
++  assert.equal(readingVersion({ schemaVersion: 1, algorithm: 'buffer-window-v1' }), 1)
++  assert.equal(readingVersion({ schemaVersion: 2, algorithm: 'buffer-window-v2' }), 2)
++  for (const value of [
++    null,
++    {},
++    { schemaVersion: 1, algorithm: 'buffer-window-v2' },
++    { schemaVersion: 2, algorithm: 'buffer-window-v1' },
++  ])
++    assert.equal(readingVersion(value), null)
++})
+ 
+ for (const fail of [false, true])
+   test(
+@@ -288,6 +300,10 @@ for (const rate of [1, 2] as const)
+       )
+       tick(11)
+       tick(10)
++      assert.equal(f.diagnostics.snapshot().bufferTrend.latest!.candidate, false)
++      assert.equal(f.diagnostics.snapshot().bufferTrend.latest!.reason, 'candidate-confirming')
++      tick(9)
++      tick(8)
+       assert.equal(f.diagnostics.snapshot().bufferTrend.latest!.candidate, true)
+       for (let i = 0; i < 20; i++) tick(12)
+       assert.equal(f.routes.latestRequested('video')!.decisionId, before.decision)
+diff --git a/tests-v2/suites/domain.ts b/tests-v2/suites/domain.ts
+index 31e4b10..102cad1 100644
+--- a/tests-v2/suites/domain.ts
++++ b/tests-v2/suites/domain.ts
+@@ -1,5 +1,6 @@
+ import { test } from 'node:test'
+ import '../regressions/buffer-trend-domain.ts'
++import '../regressions/buffer-confirmation-domain.ts'
+ import '../regressions/functional-races/content-domain.ts'
+ import assert from 'node:assert/strict'
+ import type { TestContext } from 'node:test'
+diff --git a/tests-v2/support/buffer-shadow-scenarios.ts b/tests-v2/support/buffer-shadow-scenarios.ts
+index 4f15eff..25a8f66 100644
+--- a/tests-v2/support/buffer-shadow-scenarios.ts
++++ b/tests-v2/support/buffer-shadow-scenarios.ts
+@@ -21,6 +21,7 @@ export interface ScenarioResult {
+   readonly id: string
+   readonly level: 'integration'
+   readonly rate: 1 | 2
++  readonly algorithm: 'buffer-window-v2'
+   readonly scenarioHash: string
+   readonly validity: 'valid'
+   readonly verdict: 'pass' | 'fail'
+@@ -189,18 +190,29 @@ export async function runScenario(
+     sample(initial, true, 0, true, 0)
+     const duration = name === 'two-hour-bounds' ? 7200 : name === 'slow-exhaustion' ? 60 : 45
+     const stallAt =
+-      name === 'slow-exhaustion'
+-        ? 40000
+-        : name === 'fast-exhaustion'
+-          ? 6000
+-          : name === 'sudden-loss'
+-            ? 1000
+-            : name === 'pre-window-stall'
+-              ? 2000
+-              : null
++      name === 'micro-refill-exhaustion'
++        ? 9000
++        : name === 'slow-exhaustion'
++          ? 40000
++          : name === 'fast-exhaustion'
++            ? 6000
++            : name === 'sudden-loss'
++              ? 1000
++              : name === 'pre-window-stall'
++                ? 2000
++                : null
+     for (let second = 1; second <= duration; second++) {
+       let buffer = initial,
+         progress = true
++      if (name === 'refill-3s' || name === 'refill-5s')
++        buffer = 12 - (second % (name === 'refill-3s' ? 3 : 5))
++      if (name === 'micro-refill-exhaustion') {
++        buffer = [10, 8, 8.1, 6.1, 4.1, 4.2, 2.2, 0.2][second - 1] ?? 0
++        progress = second < 9
++      }
++      if (name === 'short-plateau' || name === 'tiny-refill')
++        buffer = [11, 10, 9, 8, name === 'tiny-refill' ? 8.000000001 : 8, 7, 6, 5][second - 1] ?? 5
++      if (name === 'irregular-confirmation') buffer = [10, 9, 8, 7][second - 1] ?? 12
+       if (name === 'jitter-2s') buffer = second <= 2 ? 12 - second : 12
+       if (name === 'short-stall-5s') progress = second > 5
+       if (name === 'burst-refill') buffer = 12 - (second % 4)
+@@ -294,13 +306,15 @@ export async function runScenario(
+           })
+         }
+       }
+-      sample(
+-        buffer,
+-        progress,
+-        name === 'sample-gap' && second === 2 ? 2000 : 1000,
+-        true,
+-        f.clock.now() - start + (name === 'sample-gap' && second === 2 ? 2000 : 1000),
+-      )
++      const ms =
++        name === 'sample-gap' && second === 2
++          ? 2000
++          : name === 'irregular-confirmation' && second === 2
++            ? 1100
++            : name === 'irregular-confirmation' && second === 4
++              ? 900
++              : 1000
++      sample(buffer, progress, ms, true, f.clock.now() - start + ms)
+     }
+     const score = scoreWindow(rows, { scoreUntil: rows.at(-1)!.at, stallAt })
+     const first = score.episodes[0]?.start ?? null
+@@ -316,19 +330,33 @@ export async function runScenario(
+       ].includes(name)
+     )
+       check('no-candidate-control', null, first)
+-    if (name === 'jitter-2s') check('warm-window-jitter-candidate', 2000, first)
++    if (name === 'jitter-2s') check('warm-window-jitter-suppressed', null, first)
+     if (name === 'burst-refill' || name === 'low-sawtooth')
+-      check('normal-burst-candidate-retained', 2000, first)
++      check('normal-burst-candidate-suppressed', null, first)
+     if (name === 'drain-refill' || name.startsWith('transport-') || name === 'missing-frames')
+-      check('drain-candidate', 4000, first)
++      check('drain-candidate', 6000, first)
+     if (name === 'slow-exhaustion') {
+-      check('first-candidate', 20000, first)
+-      check('lead', 20000, score.firstLeadMs)
++      check('first-candidate', 22000, first)
++      check('lead', 18000, score.firstLeadMs)
+     }
+     if (name === 'fast-exhaustion') {
+-      check('first-candidate', 1000, first)
+-      check('lead', 5000, score.firstLeadMs)
++      check('first-candidate', 3000, first)
++      check('lead', 3000, score.firstLeadMs)
+     }
++    if (name === 'refill-3s') check('short-refill-suppressed', null, first)
++    if (name === 'refill-5s') check('longer-refill-remains-observable', 4000, first)
++    if (name === 'short-plateau' || name === 'tiny-refill')
++      check(
++        'pause-and-reconfirm',
++        [
++          [4000, 5000],
++          [8000, 9000],
++        ],
++        score.episodes.map((e) => [e.start, e.end]),
++      )
++    if (name === 'irregular-confirmation') check('elapsed-not-sample-votes', 3100, first)
++    if (name === 'micro-refill-exhaustion')
++      check('exhaustion-keeps-pre-stall-warning', true, first !== null && first < 9000)
+     if (name === 'illegal-buffer' || name === 'sample-gap')
+       check(
+         'invalid-window-retained',
+@@ -354,6 +382,7 @@ export async function runScenario(
+       id: `${name}@${rate}x`,
+       level: 'integration',
+       rate,
++      algorithm: 'buffer-window-v2',
+       scenarioHash: sha256(JSON.stringify({ name, rate, warmupMs: 60000, inputs })),
+       validity: 'valid',
+       verdict: assertions.every((a) => a.verdict === 'pass') ? 'pass' : 'fail',
+diff --git a/tests-v2/tooling.ts b/tests-v2/tooling.ts
+index 57323be..ce2819c 100644
+--- a/tests-v2/tooling.ts
++++ b/tests-v2/tooling.ts
+@@ -19,6 +19,7 @@ import './regressions/archive.ts'
+ import './regressions/project-config.ts'
+ import './regressions/upstream-comparison.ts'
+ import './regressions/buffer-shadow-evaluation.ts'
++import './regressions/buffer-confirmation.ts'
+ 
+ test('formatting reaches a stable source before the next check', { timeout: 5000 }, async () => {
+   const source =
