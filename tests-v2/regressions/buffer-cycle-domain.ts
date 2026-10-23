@@ -47,6 +47,105 @@ function fixture(rate: number) {
   }
 }
 for (const rate of [1, 2]) {
+  for (const age of [7999, 8000, 8001])
+    test(`buffer-v4 U-W cycle evidence age ${age}ms rate=${rate}`, () => {
+      const previous: BufferTrendSample = {
+        at: 19000,
+        rate,
+        bufferAheadSec: 9 * rate,
+        currentTime: 100,
+        frames: 100,
+      }
+      const sample = {
+        ...previous,
+        at: 20000,
+        bufferAheadSec: 8 * rate,
+        currentTime: 100 + rate,
+        frames: 130,
+      }
+      const reading: BufferTrendFacts = {
+        at: 20000,
+        from: 12000,
+        spanMs: 8000,
+        sampleCount: 9,
+        interpolated: false,
+        progressQuality: 'frames',
+        state: 'stable',
+        reason: 'stable',
+        candidate: false,
+        rate,
+        startBufferSec: 9,
+        endBufferSec: 8,
+        deltaSec: -1,
+        slopeSecPerSec: -0.125,
+      }
+      const state = {
+        at: 19000,
+        peakSec: 12,
+        troughSec: 9,
+        phase: 'falling' as const,
+        netLossSec: 2,
+        lastLossAt: 20000 - age,
+        lastRefillAt: 18000,
+        rangeTroughSec: null,
+        cycleCreditMs: 1000,
+        confirmation: null,
+      }
+      const input = { reading, sample, previous, state }
+      const before = structuredClone(input)
+      const result = subject(input)
+      assert.deepEqual(input, before)
+      assert.equal(result.reading.candidate, age <= 8000)
+      assert.equal(result.state!.netLossSec, age <= 8000 ? 2 : 0)
+    })
+  for (const gap of [1500, 1501])
+    test(`buffer-v4 U-W cycle evidence sampling gap ${gap}ms rate=${rate}`, () => {
+      const previous: BufferTrendSample = {
+        at: 19000,
+        rate,
+        bufferAheadSec: 9 * rate,
+        currentTime: 100,
+        frames: 100,
+      }
+      const sample = {
+        ...previous,
+        at: 19000 + gap,
+        bufferAheadSec: 8 * rate,
+        currentTime: 100 + rate,
+        frames: 130,
+      }
+      const reading: BufferTrendFacts = {
+        at: sample.at,
+        from: sample.at - 8000,
+        spanMs: 8000,
+        sampleCount: 9,
+        interpolated: false,
+        progressQuality: 'frames',
+        state: 'stable',
+        reason: 'stable',
+        candidate: false,
+        rate,
+        startBufferSec: 9,
+        endBufferSec: 8,
+        deltaSec: -1,
+        slopeSecPerSec: -0.125,
+      }
+      const state = {
+        at: 19000,
+        peakSec: 12,
+        troughSec: 9,
+        phase: 'falling' as const,
+        netLossSec: 2,
+        lastLossAt: 19000,
+        lastRefillAt: 18000,
+        rangeTroughSec: null,
+        cycleCreditMs: 1000,
+        confirmation: null,
+      }
+      const result = subject({ reading, sample, previous, state })
+      assert.equal(result.state === null, gap === 1501)
+      assert.equal(result.reading.candidate, gap === 1500 ? true : null)
+    })
   test(`buffer-v4 U-R tiny unpaid cycles cannot restart a normal range candidate rate=${rate}`, () => {
     const f = fixture(rate)
     const candidates: number[] = []

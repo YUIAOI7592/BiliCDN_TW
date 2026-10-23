@@ -2764,6 +2764,13 @@
   ],
   "protections": [
     {
+      "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_2026-10-24.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 18611432,
+      "sha256": "26ca6345bc3d390b5fc469aa7451c8879b420fff830c1c1526259a27d58245c2"
+    },
+    {
       "path": "archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md",
       "mode": "prefix",
       "encoding": "lf",
