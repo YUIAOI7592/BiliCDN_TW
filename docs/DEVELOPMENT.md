@@ -249,6 +249,8 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 離線讀取器只接受匹配的 v1／v2／v3 版本與演算法標記，同一案例不得混合版本或重新解釋舊 candidate。即時 Recorder 只接納 v3 白名單投影；候選成立須為 draining-low，新確認原因必須是有效下降窗口中的 false。重跑 v3 使用 npm test -- domain --name buffer-v3、npm test -- application --name buffer-v3、npm test -- diagnostics --name buffer-v3、npm test -- tooling --name buffer-v3 及 npm run evaluate:buffer-shadow -- --json。情境與原件保持可追溯，效用與限制集中於 [本輪報告](../archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md)。
 
+Recorder 的內部容量檢查可直接序列化已去敏的自有資料，不先深複製整個快照；公開 snapshot 與 buildReport 始終使用 detached capture。這只減少診斷熱路徑工作，不改候選、淘汰順序、截斷計數、32 筆／8 KiB、128 KiB 或 96 KiB 上限。來源效能與發布版分開比較，不以 heap 或單次計時設跨機器通過門檻。
+
 資料不足與不適用的 candidate 為 null；有效非候選為 false，候選為 true。樣本最多 32 筆，傳輸去重最多 128 筆。報告歷史含最新結果，受 32 筆及 8 KiB 雙重上限限制，實際可少於 32 筆。Recorder 128 KiB／匯出 96 KiB 上限維持，先移除趨勢歷史並記錄 bufferTrendEvicted／bufferTrendDropped；非法資料記 bufferTrendRejected。清除診斷只清報告，不重設觀察器、期限或額度。
 
 重跑使用既有命令：npm test -- domain、npm test -- application、npm test -- diagnostics、npm test -- orchestration，再執行 npm run verify。具名案例與逐秒合成軌跡見 [本輪離線驗收](../archive/retired/docs/BUFFER_TREND_2026-10-23.md)。compare:upstream 固定載入原版及封存的已發布 v2.1.27 本體，不驗證本功能新來源。合成進度與候選不能換算為網站救援成功率或誤介入率；發布狀態只看 [TODO](TODO.md)。

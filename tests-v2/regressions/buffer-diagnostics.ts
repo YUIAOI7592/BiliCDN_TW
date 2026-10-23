@@ -251,3 +251,64 @@ test('U-D07 recorder is the only report authority for buffer trends', (t) => {
   assert.equal(JSON.parse(report).current.monitor.bufferTrend, undefined)
   assert.equal(JSON.parse(report).recorder.bufferTrend.latest.candidate, true)
 })
+
+for (const rate of [1, 2] as const)
+  test(`U-D08 bounded recorder retains exact order and detached aliases rate=${rate}`, (t) => {
+    testScope(t)
+    let now = 10000
+    const recorder = new DiagnosticRecorder(
+      () => now,
+      () => false,
+    )
+    for (let i = 0; i < 100; i++) {
+      now += 1000
+      const input = { ...trend(now), rate }
+      recorder.recordPlayer(sample(now, input))
+      const before = recorder.snapshot()
+      const history = before.bufferTrend.history
+      assert.ok(Buffer.byteLength(JSON.stringify(before.bufferTrend)) <= 8192)
+      assert.ok(Buffer.byteLength(JSON.stringify(before)) <= 128 * 1024)
+      assert.equal(before.counters.bufferTrendEvicted, i + 1 - history.length)
+      assert.equal(before.bufferTrend.latest, history.at(-1))
+      assert.deepEqual(
+        history.map((r) => r.at),
+        Array.from({ length: history.length }, (_, n) => now - (history.length - n - 1) * 1000),
+      )
+      const report = recorder.buildReport({ title: '中文與😀多位元組' })
+      assert.ok(Buffer.byteLength(report) <= 96 * 1024)
+      assert.deepEqual(recorder.snapshot(), before)
+      Object.assign(history.at(-1)!.transport, { dropped: 12 })
+      assert.equal(recorder.snapshot().bufferTrend.latest!.transport.dropped, 0)
+    }
+    recorder.clear()
+    assert.equal(recorder.snapshot().bufferTrend.latest, null)
+    now += 1000
+    recorder.recordPlayer(sample(now, { ...trend(now), rate }))
+    assert.equal(recorder.snapshot().bufferTrend.history.length, 1)
+  })
+
+test('U-D09 UTF-8 export and snapshots keep the same truncation and diagnostic state', (t) => {
+  testScope(t)
+  let now = 10000
+  const recorder = new DiagnosticRecorder(
+    () => now,
+    () => false,
+  )
+  recorder.mark('中文與😀診斷')
+  for (let i = 0; i < 60; i++) {
+    now += 1000
+    recorder.recordPlayer({ ...sample(now), watchdog: '中文😀'.repeat(10) })
+  }
+  const before = recorder.snapshot()
+  const a = recorder.buildReport({ note: '中文😀'.repeat(15000) })
+  const b = recorder.buildReport({ note: '中文😀'.repeat(15000) })
+  assert.equal(a, b)
+  assert.ok(Buffer.byteLength(a) <= 96 * 1024)
+  assert.deepEqual(recorder.snapshot(), before)
+  const output = JSON.parse(a)
+  assert.ok(output.export.bufferTrendDropped >= 0)
+  assert.equal(
+    output.recorder.bufferTrend.latest?.at ?? null,
+    output.recorder.bufferTrend.history.at(-1)?.at ?? null,
+  )
+})

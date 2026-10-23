@@ -22,8 +22,22 @@ await test(`full-script healthy cost ${version}@${rate}x`, { timeout: 5000 }, as
     checkSource(data, Number(sourceBytes), sourceHash)
     source = data.toString('utf8')
   } else source = loadCostInput(version)
-  const page = new ComparisonPage(rate, commonHosts())
   const scope = testScope(t)
+  const clone = structuredClone
+  let diagnosticCloneCalls = 0
+  let diagnosticCloneRows = 0
+  scope.defineGlobal('structuredClone', {
+    configurable: true,
+    writable: true,
+    value: <T,>(value: T, options?: Parameters<typeof structuredClone>[1]): T => {
+      if (Array.isArray(value) && value[0]?.algorithm?.startsWith('buffer-window-v')) {
+        diagnosticCloneCalls++
+        diagnosticCloneRows += value.length
+      }
+      return clone(value, options)
+    },
+  })
+  const page = new ComparisonPage(rate, commonHosts())
   scope.defer(async () => {
     await page.close()
   })
@@ -60,6 +74,8 @@ await test(`full-script healthy cost ${version}@${rate}x`, { timeout: 5000 }, as
     cpuStart = process.cpuUsage(),
     times: number[] = []
   let heapPeak = heapStart
+  diagnosticCloneCalls = 0
+  diagnosticCloneRows = 0
   for (let i = 0; i < 600; i++) {
     const begin = performance.now()
     await tick()
@@ -94,6 +110,7 @@ await test(`full-script healthy cost ${version}@${rate}x`, { timeout: 5000 }, as
       samples: times,
     },
     cpuMicroseconds: cpu,
+    diagnosticClones: { calls: diagnosticCloneCalls, rows: diagnosticCloneRows },
     heapBytes: { start: heapStart, end: heapEnd, peak: heapPeak, delta: heapEnd - heapStart },
     calibration: [
       'full-script',

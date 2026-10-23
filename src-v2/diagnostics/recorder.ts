@@ -218,7 +218,7 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
           this.#bufferTrends = []
         }
         this.#bufferTrends.push(row)
-        while (this.#bufferTrends.length > 32 || bytes(this.#bufferCapture()) > 8 * 1024) {
+        while (this.#bufferTrends.length > 32 || bytes(this.#bufferCapture(false)) > 8 * 1024) {
           this.#bufferTrends.shift()
           this.#counters.bufferTrendEvicted++
         }
@@ -226,8 +226,8 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
     }
     this.#bound()
   }
-  #bufferCapture() {
-    const history = structuredClone(this.#bufferTrends)
+  #bufferCapture(detached = true) {
+    const history = detached ? structuredClone(this.#bufferTrends) : this.#bufferTrends
     return {
       schemaVersion: 3 as const,
       algorithm: 'buffer-window-v3' as const,
@@ -238,20 +238,20 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
   snapshot(): ReadonlySnapshot<DiagnosticSnapshot> {
     return this.#capture()
   }
-  #capture() {
+  #capture(detached = true) {
     return Object.freeze({
-      bufferTrend: this.#bufferCapture(),
+      bufferTrend: this.#bufferCapture(detached),
       coverage: {
         from: this.#events[0]?.at ?? this.now(),
         to: this.#events.at(-1)?.at ?? this.now(),
       },
-      incident: this.#incident ? structuredClone(this.#incident) : null,
+      incident: this.#incident && detached ? structuredClone(this.#incident) : this.#incident,
       manualMark: this.#manualMark ? { ...this.#manualMark } : null,
       flow: this.#flows(),
       lastSuccess: Object.fromEntries(this.#lastSuccess),
       pending: [...this.#pending.values()].map((row) => this.#sanitizer.request(row)),
-      events: structuredClone(this.#events),
-      rankings: structuredClone(this.#rankings),
+      events: detached ? structuredClone(this.#events) : this.#events,
+      rankings: detached ? structuredClone(this.#rankings) : this.#rankings,
       routeRecovery: {
         attempts: this.#attemptTracker.snapshot((host) => this.#sanitizer.host(host)),
       },
@@ -362,7 +362,8 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
     }
   }
   #bound(): void {
-    while (bytes(this.snapshot()) > 128 * 1024) {
+    // Internal serialization sees only owned, sanitized records. Public captures remain detached.
+    while (bytes(this.#capture(false)) > 128 * 1024) {
       if (this.#bufferTrends.length) {
         this.#bufferTrends.shift()
         this.#counters.bufferTrendEvicted++

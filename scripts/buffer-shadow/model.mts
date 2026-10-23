@@ -88,6 +88,7 @@ export interface CostResult {
     readonly samples: readonly number[]
   }
   readonly cpuMicroseconds: { readonly user: number; readonly system: number }
+  readonly diagnosticClones?: { readonly calls: number; readonly rows: number }
   readonly heapBytes: {
     readonly start: number
     readonly end: number
