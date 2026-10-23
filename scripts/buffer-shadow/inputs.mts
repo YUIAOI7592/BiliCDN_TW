@@ -24,7 +24,7 @@ export const v3CostInputs: readonly CostInput[] = [
   costInputs[1],
   {
     version: '2.1.29',
-    path: 'Release/v2.1.29/BiliCDN_TW.user.js',
+    path: 'archive/retired/releases/Release/v2.1.29/BiliCDN_TW.user.js',
     bytes: 407926,
     sha256: 'e0c178987111d99ae69762287fe3769cc1af722a1ee6e586d125ce0ba8b2e9b4',
   },

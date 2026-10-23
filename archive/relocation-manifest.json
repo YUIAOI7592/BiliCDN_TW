@@ -5333,6 +5333,56 @@
       "sha256": "c4eecefaf24e183844a8024a65c8a6a4fc268f5fd99e82f0b8c585cdaedde2fd",
       "archivedBytes": 6926,
       "archivedSha256": "c4eecefaf24e183844a8024a65c8a6a4fc268f5fd99e82f0b8c585cdaedde2fd"
+    },
+    {
+      "originalPath": "Release/v2.1.29/BUILD_MANIFEST_v2.1.29.json",
+      "archivedPath": "archive/retired/releases/Release/v2.1.29/BUILD_MANIFEST_v2.1.29.json",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 8230,
+      "sha256": "3bd5788c0f30b5b10dee9105890afb8ed9debf2ffa4affb18d36fb72072ba760",
+      "archivedBytes": 8230,
+      "archivedSha256": "3bd5788c0f30b5b10dee9105890afb8ed9debf2ffa4affb18d36fb72072ba760"
+    },
+    {
+      "originalPath": "Release/v2.1.29/BiliCDN_TW.user.js",
+      "archivedPath": "archive/retired/releases/Release/v2.1.29/BiliCDN_TW.user.js",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 407926,
+      "sha256": "e0c178987111d99ae69762287fe3769cc1af722a1ee6e586d125ce0ba8b2e9b4",
+      "archivedBytes": 407926,
+      "archivedSha256": "e0c178987111d99ae69762287fe3769cc1af722a1ee6e586d125ce0ba8b2e9b4"
+    },
+    {
+      "originalPath": "Release/v2.1.29/CHANGELOG_v2.1.29.md",
+      "archivedPath": "archive/retired/releases/Release/v2.1.29/CHANGELOG_v2.1.29.md",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 49854,
+      "sha256": "6bc8730412497b0b690b66ad4f613c042f2e7f1a25dd139cc22d9ce59077224a",
+      "archivedBytes": 49854,
+      "archivedSha256": "6bc8730412497b0b690b66ad4f613c042f2e7f1a25dd139cc22d9ce59077224a"
+    },
+    {
+      "originalPath": "Release/v2.1.29/SHA256SUMS_v2.1.29.txt",
+      "archivedPath": "archive/retired/releases/Release/v2.1.29/SHA256SUMS_v2.1.29.txt",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 419,
+      "sha256": "60a0a99d0fc47a8001891411045f8a21739460128cde56e47339205497e5c757",
+      "archivedBytes": 419,
+      "archivedSha256": "60a0a99d0fc47a8001891411045f8a21739460128cde56e47339205497e5c757"
+    },
+    {
+      "originalPath": "Release/v2.1.29/TEST_REPORT_v2.1.29.md",
+      "archivedPath": "archive/retired/releases/Release/v2.1.29/TEST_REPORT_v2.1.29.md",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 4854,
+      "sha256": "47208f3bfd65bd2adf86a9040fbcd058728869d547c6ecc7946d83f1374d57c1",
+      "archivedBytes": 4854,
+      "archivedSha256": "47208f3bfd65bd2adf86a9040fbcd058728869d547c6ecc7946d83f1374d57c1"
     }
   ],
   "removedPaths": [
@@ -5365,36 +5415,6 @@
     }
   ],
   "unchangedFiles": [
-    {
-      "path": "Release/v2.1.29/BUILD_MANIFEST_v2.1.29.json",
-      "encoding": "raw",
-      "bytes": 8230,
-      "sha256": "3bd5788c0f30b5b10dee9105890afb8ed9debf2ffa4affb18d36fb72072ba760"
-    },
-    {
-      "path": "Release/v2.1.29/BiliCDN_TW.user.js",
-      "encoding": "raw",
-      "bytes": 407926,
-      "sha256": "e0c178987111d99ae69762287fe3769cc1af722a1ee6e586d125ce0ba8b2e9b4"
-    },
-    {
-      "path": "Release/v2.1.29/CHANGELOG_v2.1.29.md",
-      "encoding": "raw",
-      "bytes": 49854,
-      "sha256": "6bc8730412497b0b690b66ad4f613c042f2e7f1a25dd139cc22d9ce59077224a"
-    },
-    {
-      "path": "Release/v2.1.29/SHA256SUMS_v2.1.29.txt",
-      "encoding": "raw",
-      "bytes": 419,
-      "sha256": "60a0a99d0fc47a8001891411045f8a21739460128cde56e47339205497e5c757"
-    },
-    {
-      "path": "Release/v2.1.29/TEST_REPORT_v2.1.29.md",
-      "encoding": "raw",
-      "bytes": 4854,
-      "sha256": "47208f3bfd65bd2adf86a9040fbcd058728869d547c6ecc7946d83f1374d57c1"
-    },
     {
       "path": "LICENSE",
       "encoding": "raw",
@@ -5958,6 +5978,36 @@
       "encoding": "raw",
       "bytes": 1293,
       "sha256": "fbe9d3a7c78cce8aa4c6ad3e2bf0f25b3de6f328b55c17f7dfd2d6e3e35c3c7d"
+    },
+    {
+      "path": "Release/v2.1.30/BiliCDN_TW.user.js",
+      "encoding": "raw",
+      "bytes": 415345,
+      "sha256": "124830e7d08e71ef34a2ba048c6624f578060276a09b01e0b9905c0f4175f03d"
+    },
+    {
+      "path": "Release/v2.1.30/BUILD_MANIFEST_v2.1.30.json",
+      "encoding": "raw",
+      "bytes": 8335,
+      "sha256": "b6d1bc5ee413f62421b8d617f9d29d0177a301ba9af7dab7158b8b321468f7c0"
+    },
+    {
+      "path": "Release/v2.1.30/CHANGELOG_v2.1.30.md",
+      "encoding": "raw",
+      "bytes": 50620,
+      "sha256": "c7ac64a9734e5021e0a31e278e01df56ad7a2b0dc960834ac673b9c5dd703605"
+    },
+    {
+      "path": "Release/v2.1.30/SHA256SUMS_v2.1.30.txt",
+      "encoding": "raw",
+      "bytes": 419,
+      "sha256": "1ceaa78a4bc0ab380e6d8c7437ceed6e4b5f448bdfd8971e76470305e7e8a570"
+    },
+    {
+      "path": "Release/v2.1.30/TEST_REPORT_v2.1.30.md",
+      "encoding": "raw",
+      "bytes": 4480,
+      "sha256": "7a4b175f11b3aa1b231b4935c643d38f349d6cb747bd668c5dddd1b0ac8d3a3e"
     }
   ],
   "localManifest": "archive/retired/local/2026-10-20-cleanup/private-manifest.json",
