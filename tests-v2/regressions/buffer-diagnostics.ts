@@ -9,8 +9,9 @@ import type { DiagnosticReportCapture } from '../../src-v2/diagnostics/report.ts
 
 function trend(at: number): BufferTrendSnapshot {
   return {
-    schemaVersion: 3,
-    algorithm: 'buffer-window-v3',
+    schemaVersion: 4,
+    algorithm: 'buffer-window-v4',
+    cycle: null,
     at,
     from: at - 8000,
     spanMs: 8000,
@@ -80,7 +81,7 @@ for (const reason of [
     assert.equal(recorder.snapshot().counters.bufferTrendRejected, 1)
   })
 
-for (const version of [1, 2])
+for (const version of [1, 2, 3])
   test(`buffer-v3 recorder rejects legacy version ${version} from live producers`, () => {
     const recorder = new DiagnosticRecorder(
       () => 10000,
@@ -108,7 +109,7 @@ test('U-D01 reports a detached whitelisted shadow candidate without an incident'
   assert.equal(report.includes('private'), false)
   const data = JSON.parse(report)
   assert.equal(data.recorder.bufferTrend.latest.candidate, true)
-  assert.equal(data.recorder.bufferTrend.schemaVersion, 3)
+  assert.equal(data.recorder.bufferTrend.schemaVersion, 4)
   assert.equal(data.recorder.incident, null)
   Object.assign(input, { candidate: false })
   assert.equal(recorder.snapshot().bufferTrend!.latest!.candidate, true)
@@ -220,8 +221,8 @@ test('U-D06 export sheds trend history first and remains within 96 KiB', (t) => 
       bufferTrendRejected: 0,
     },
     bufferTrend: {
-      schemaVersion: 3,
-      algorithm: 'buffer-window-v3',
+      schemaVersion: 4,
+      algorithm: 'buffer-window-v4',
       history,
       latest: history.at(-1)!,
     },
@@ -312,3 +313,82 @@ test('U-D09 UTF-8 export and snapshots keep the same truncation and diagnostic s
     output.recorder.bufferTrend.history.at(-1)?.at ?? null,
   )
 })
+
+for (const rate of [1, 2])
+  test(`buffer-v4 U-D cycle-only evidence is detached, bounded and whitelisted rate=${rate}`, () => {
+    const recorder = new DiagnosticRecorder(
+      () => 10000,
+      () => false,
+    )
+    const input = {
+      ...trend(10000),
+      rate,
+      state: 'stable' as const,
+      reason: 'cycle-draining-low' as const,
+      startBufferSec: 9,
+      endBufferSec: 8,
+      deltaSec: -1,
+      slopeSecPerSec: -0.125,
+      cycle: { netLossSec: 2, creditMs: 2000, lastLossAgeMs: 1000, rangeTroughSec: null },
+    }
+    Object.assign(input.cycle, { token: 'private-cycle-token', url: 'https://sensitive.invalid/' })
+    recorder.recordPlayer(sample(10000, input))
+    const copy = recorder.snapshot().bufferTrend.latest!
+    assert.equal(copy.candidate, true)
+    assert.deepEqual(copy.cycle, {
+      netLossSec: 2,
+      creditMs: 2000,
+      lastLossAgeMs: 1000,
+      rangeTroughSec: null,
+    })
+    assert.equal(recorder.buildReport({}).includes('private-cycle-token'), false)
+    assert.equal(recorder.buildReport({}).includes('sensitive.invalid'), false)
+    Object.assign(copy.cycle!, { creditMs: 0 })
+    assert.equal(recorder.snapshot().bufferTrend.latest!.cycle!.creditMs, 2000)
+  })
+
+for (const fault of [
+  'debt',
+  'credit',
+  'missing-age',
+  'expired-age',
+  'high-buffer',
+  'wrong-verdict',
+  'throwing-field',
+] as const)
+  test(`buffer-v4 U-D rejects invalid cycle proof ${fault}`, () => {
+    const recorder = new DiagnosticRecorder(
+      () => 10000,
+      () => false,
+    )
+    const input = {
+      ...trend(10000),
+      state: 'stable' as const,
+      reason: 'cycle-draining-low' as const,
+      startBufferSec: 9,
+      endBufferSec: 8,
+      deltaSec: -1,
+      slopeSecPerSec: -0.125,
+      cycle: {
+        netLossSec: 2,
+        creditMs: 2000,
+        lastLossAgeMs: 1000 as number | null,
+        rangeTroughSec: null,
+      },
+    }
+    if (fault === 'debt') input.cycle.netLossSec = 1.999999
+    if (fault === 'credit') input.cycle.creditMs = 1999
+    if (fault === 'missing-age') input.cycle.lastLossAgeMs = null
+    if (fault === 'expired-age') input.cycle.lastLossAgeMs = 8001
+    if (fault === 'high-buffer') input.endBufferSec = 10.000001
+    if (fault === 'wrong-verdict') input.candidate = false
+    if (fault === 'throwing-field')
+      Object.defineProperty(input.cycle, 'creditMs', {
+        get() {
+          throw Error('private getter')
+        },
+      })
+    recorder.recordPlayer(sample(10000, input))
+    assert.equal(recorder.snapshot().bufferTrend.latest, null)
+    assert.equal(recorder.snapshot().counters.bufferTrendRejected, 1)
+  })

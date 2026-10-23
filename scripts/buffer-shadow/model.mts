@@ -33,15 +33,17 @@ export const scenarioNames = [
 ] as const
 export type ScenarioName = (typeof scenarioNames)[number]
 /** Preserve each algorithm's original candidate meaning when reading old evidence. */
-export function readingVersion(value: unknown): 1 | 2 | 3 | null {
+export function readingVersion(value: unknown): 1 | 2 | 3 | 4 | null {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return null
   const row = value as Record<string, unknown>
   if (row.schemaVersion === 1 && row.algorithm === 'buffer-window-v1') return 1
   if (row.schemaVersion === 2 && row.algorithm === 'buffer-window-v2') return 2
   if (row.schemaVersion === 3 && row.algorithm === 'buffer-window-v3') return 3
+  if (row.schemaVersion === 4 && row.algorithm === 'buffer-window-v4') return 4
   return null
 }
 export interface EvidenceRow {
+  readonly trend?: unknown
   readonly seq: number
   readonly at: number
   readonly owner: string
@@ -110,16 +112,26 @@ export function parseEvaluationArgs(args: readonly string[]): {
   cost: boolean
   comparison?: 'v3' | 'source'
   holdout?: true
+  cycleHoldout?: true
 } {
   if (
     new Set(args).size !== args.length ||
     args.some(
-      (a) => !['--json', '--cost', '--cost-v3', '--cost-source', '--holdout'].includes(a),
+      (a) =>
+        ![
+          '--json',
+          '--cost',
+          '--cost-v3',
+          '--cost-source',
+          '--holdout',
+          '--cycle-holdout',
+        ].includes(a),
     ) ||
-    args.filter((a) => a.startsWith('--cost') || a === '--holdout').length > 1
+    args.filter((a) => a.startsWith('--cost') || a === '--holdout' || a === '--cycle-holdout')
+      .length > 1
   )
     throw Error(
-      'Usage: npm run evaluate:buffer-shadow -- [--json] [--cost|--cost-v3|--cost-source|--holdout]',
+      'Usage: npm run evaluate:buffer-shadow -- [--json] [--cost|--cost-v3|--cost-source|--holdout|--cycle-holdout]',
     )
   const comparison = args.includes('--cost-v3')
     ? 'v3'
@@ -131,6 +143,7 @@ export function parseEvaluationArgs(args: readonly string[]): {
     cost: args.some((a) => a.startsWith('--cost')),
     ...(comparison ? { comparison } : {}),
     ...(args.includes('--holdout') ? { holdout: true as const } : {}),
+    ...(args.includes('--cycle-holdout') ? { cycleHoldout: true as const } : {}),
   }
 }
 
@@ -195,6 +208,18 @@ export function scoreWindow(
   let previousAt = -1,
     previousSeq = -1
   for (const row of rows) {
+    const trend = row.trend as
+      { cycle?: { netLossSec?: unknown; lastLossAgeMs?: unknown; creditMs?: unknown } } | undefined
+    const cycle = trend?.cycle
+    const cycleCandidate =
+      readingVersion(row.trend) === 4 &&
+      row.reason === 'cycle-draining-low' &&
+      cycle?.netLossSec === 2 &&
+      cycle.creditMs === 2000 &&
+      typeof cycle?.lastLossAgeMs === 'number' &&
+      Number.isFinite(cycle.lastLossAgeMs) &&
+      cycle.lastLossAgeMs >= 0 &&
+      cycle.lastLossAgeMs <= 8000
     if (
       !Number.isFinite(row.at) ||
       row.at <= previousAt ||
@@ -208,7 +233,9 @@ export function scoreWindow(
       typeof row.reason !== 'string' ||
       !/^[a-z0-9-]{1,64}$/.test(row.reason) ||
       (row.candidate === null) !== ['insufficient', 'ineligible'].includes(row.state) ||
-      (row.candidate === true && row.state !== 'draining') ||
+      (row.candidate === true &&
+        row.state !== 'draining' &&
+        !(['stable', 'filling'].includes(row.state) && cycleCandidate)) ||
       !Number.isFinite(row.rate) ||
       row.rate <= 0 ||
       (row.candidate !== null && typeof row.candidate !== 'boolean') ||

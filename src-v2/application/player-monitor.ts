@@ -3,8 +3,6 @@ import type { VideoSnapshot, SchedulerPort, PlayerControlSnapshot } from './port
 import type { PlaybackDemand } from '../domain/model.ts'
 import {
   assessBufferTrend,
-  confirmBufferTrend,
-  emptyBufferTrend,
   validBufferSample,
   summarizeBufferTransport,
   BUFFER_WINDOW_MS,
@@ -15,9 +13,10 @@ import type {
   BufferTrendSample,
   BufferTrendSnapshot,
   BufferTrendReason,
-  BufferCandidateConfirmation,
+  BufferCycleState,
   BufferTrendFacts,
 } from '../domain/buffer-trend.ts'
+import { observeBufferCycle, emptyBufferCycle as emptyBufferTrend } from '../domain/buffer-cycle.ts'
 import type { ObservedVideoCompletion } from './monitor-ports.ts'
 import {
   comparePlaybackControls,
@@ -63,7 +62,7 @@ import type { MonitorSnapshot } from './monitor-model.ts'
 export type { MonitorSnapshot } from './monitor-model.ts'
 
 export class PlayerMonitor implements MonitorPort {
-  #bufferConfirmation: BufferCandidateConfirmation | null = null
+  #bufferConfirmation: BufferCycleState | null = null
   #bufferSamples: BufferTrendSample[] = []
   #bufferCompletions: ObservedVideoCompletion[] = []
   #bufferDrops: { at: number; count: number }[] = []
@@ -456,14 +455,14 @@ export class PlayerMonitor implements MonitorPort {
       reading = emptyBufferTrend(now, 'no-progress', true)
     }
     this.#pruneBufferTransport(now)
-    const confirmed = confirmBufferTrend({
+    const confirmed = observeBufferCycle({
       reading,
       sample,
       previous,
-      confirmation: this.#bufferConfirmation,
+      state: this.#bufferConfirmation,
     })
     if (revision !== this.#bufferRevision) return undefined
-    this.#bufferConfirmation = confirmed.confirmation
+    this.#bufferConfirmation = confirmed.state
     return Object.freeze({
       ...confirmed.reading,
       transport: summarizeBufferTransport(

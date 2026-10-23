@@ -15,6 +15,7 @@ import {
 } from '../../scripts/buffer-shadow/candidate-inputs.mts'
 import type { CandidateProfile } from '../../scripts/buffer-shadow/candidate-inputs.mts'
 import type { ObservationTarget } from '../../scripts/buffer-shadow/observation-inputs.mts'
+import type { CycleTarget } from '../../scripts/buffer-shadow/cycle-inputs.mts'
 
 export interface ScenarioInput {
   readonly at: number
@@ -27,7 +28,7 @@ export interface ScenarioResult {
   readonly id: string
   readonly level: 'integration'
   readonly rate: 1 | 2
-  readonly algorithm: 'buffer-window-v3'
+  readonly algorithm: 'buffer-window-v4'
   readonly scenarioHash: string
   readonly validity: 'valid'
   readonly verdict: 'pass' | 'fail'
@@ -63,7 +64,10 @@ export async function runScenario(
   name: ScenarioName | 'observation-holdout',
   rate: 1 | 2,
   t: Parameters<typeof testScope>[0] = { after() {} },
-  observation?: { readonly profile: CandidateProfile; readonly target: ObservationTarget },
+  observation?: {
+    readonly profile: CandidateProfile
+    readonly target: ObservationTarget & CycleTarget
+  },
 ): Promise<ScenarioResult> {
   const f = bufferMonitor(t, rate),
     recorder = new DiagnosticRecorder(f.clock.now, () => false)
@@ -333,6 +337,14 @@ export async function runScenario(
         )
       if (target.maximumCandidateMs !== undefined)
         check('holdout-normal-candidate-cap', true, score.candidateMs <= target.maximumCandidateMs)
+      if (target.maximumLastLeadMs !== undefined) {
+        const last = rows.filter((r) => r.candidate === true).at(-1)?.at
+        check(
+          'holdout-last-candidate-gap',
+          true,
+          last !== undefined && stallAt !== null && stallAt - last <= target.maximumLastLeadMs,
+        )
+      }
       if (target.requiresInsufficient)
         check(
           'holdout-gap-not-healthy',
@@ -428,7 +440,7 @@ export async function runScenario(
       id: `${name}@${rate}x`,
       level: 'integration',
       rate,
-      algorithm: 'buffer-window-v3',
+      algorithm: 'buffer-window-v4',
       scenarioHash: sha256(JSON.stringify({ name, rate, warmupMs: 60000, inputs })),
       validity: 'valid',
       verdict: assertions.every((a) => a.verdict === 'pass') ? 'pass' : 'fail',

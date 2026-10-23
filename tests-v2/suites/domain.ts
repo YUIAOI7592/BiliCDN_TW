@@ -512,3 +512,4 @@ test('cold start rewrites to catalog default [2]', { timeout: 5000 }, async (t) 
 })
 import '../domain-progress-convergence.ts'
 import '../regressions/buffer-confirmation-domain-v3.ts'
+import '../regressions/buffer-cycle-domain.ts'

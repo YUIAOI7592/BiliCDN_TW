@@ -229,8 +229,8 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
   #bufferCapture(detached = true) {
     const history = detached ? structuredClone(this.#bufferTrends) : this.#bufferTrends
     return {
-      schemaVersion: 3 as const,
-      algorithm: 'buffer-window-v3' as const,
+      schemaVersion: 4 as const,
+      algorithm: 'buffer-window-v4' as const,
       latest: history.at(-1) ?? null,
       history,
     }

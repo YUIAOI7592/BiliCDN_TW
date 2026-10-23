@@ -13,6 +13,30 @@ import { runScenario } from '../support/buffer-shadow-scenarios.ts'
 import { FakeClock } from '../support/clock.ts'
 import { testScope } from '../support/scope.ts'
 import {
+  cycleNames,
+  cycleInput,
+  cycleReserveNames,
+} from '../../scripts/buffer-shadow/cycle-inputs.mts'
+
+test('buffer-v4 tooling freezes cycle and independent reserve inputs and CLI selection', () => {
+  assert.equal(new Set(cycleNames).size, cycleNames.length)
+  assert.equal(cycleReserveNames.length, 6)
+  for (const name of cycleNames) {
+    const input = cycleInput(name)
+    assert.deepEqual(input, cycleInput(name))
+    assert.ok(Object.isFrozen(input.target))
+    assert.ok(Object.isFrozen(input.profile.samples))
+    if (input.target.minimumLeadMs !== undefined) assert.notEqual(input.profile.stallAt, null)
+  }
+  assert.deepEqual(parseEvaluationArgs(['--cycle-holdout', '--json']), {
+    cost: false,
+    json: true,
+    cycleHoldout: true,
+  })
+  for (const mode of ['--holdout', '--cost', '--cost-v3', '--cost-source'])
+    assert.throws(() => parseEvaluationArgs(['--cycle-holdout', mode]))
+})
+import {
   observationNames,
   observationInput,
 } from '../../scripts/buffer-shadow/observation-inputs.mts'
@@ -105,8 +129,9 @@ for (const mode of ['stale', 'future', 'owner-change', 'sensitive-extra'] as con
       getVideoPlaybackQuality: () => ({ totalVideoFrames: 30 }),
     }
     const trend = {
-      schemaVersion: 3,
-      algorithm: 'buffer-window-v3',
+      schemaVersion: 4,
+      algorithm: 'buffer-window-v4',
+      cycle: null,
       at: 0,
       from: -8000,
       spanMs: 8000,

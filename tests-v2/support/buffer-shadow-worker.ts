@@ -6,19 +6,25 @@ import {
   observationNames,
   observationInput,
 } from '../../scripts/buffer-shadow/observation-inputs.mts'
+import { cycleNames, cycleInput } from '../../scripts/buffer-shadow/cycle-inputs.mts'
 
-const [name, rate] = process.argv.slice(2)
+const [name, rate, mode] = process.argv.slice(2)
 const scenario = scenarioNames.find((n) => n === name)
 const observation = observationNames.find((n) => n === name)
-if ((!scenario && !observation) || (rate !== '1' && rate !== '2'))
+const cycle = mode === 'cycle' ? cycleNames.find((n) => n === name) : undefined
+if (
+  (!scenario && !observation && !cycle) ||
+  (mode !== undefined && mode !== 'cycle') ||
+  (rate !== '1' && rate !== '2')
+)
   throw Error('Invalid evaluation worker invocation')
 let result: Awaited<ReturnType<typeof runScenario>> | undefined
 await test(`buffer-shadow integration ${name} rate=${rate}`, { timeout: 5000 }, async (t) => {
   result = await runScenario(
-    scenario ?? 'observation-holdout',
+    cycle ? 'observation-holdout' : (scenario ?? 'observation-holdout'),
     Number(rate) as 1 | 2,
     t,
-    observation ? observationInput(observation) : undefined,
+    cycle ? cycleInput(cycle) : observation ? observationInput(observation) : undefined,
   )
   for (const a of result.assertions)
     assert.equal(

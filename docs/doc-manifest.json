@@ -75,6 +75,14 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md",
+      "kind": "record",
+      "topics": ["buffer-candidate-v4"],
+      "versions": ["v2.1.29"],
+      "date": "2026-10-24",
+      "requiredAnchors": []
+    },
+    {
       "path": "archive/retired/docs/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.md",
       "kind": "record",
       "topics": ["buffer-observation-optimization"],
@@ -2755,6 +2763,20 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 3749,
+      "sha256": "a1aece9b2982df01d018a5bd68b900d094c51caf709b98f8c539b0a09fcfaa33"
+    },
+    {
+      "path": "archive/retired/originals/PRE_BUFFER_CYCLE_2026-10-23_60de147.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 458572,
+      "sha256": "96aa2cbc9951c623f25145122f093c93a3ec19e6f45a1ae3db5f1e9bf6fdbddd"
+    },
     {
       "path": "archive/retired/docs/evidence/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.json",
       "mode": "exact",

@@ -6,6 +6,8 @@
 
 ## 版本
 
+- [緩衝候選 v4 周期欠量與回補範圍（2026-10-24）](../archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md)
+
 - [緩衝候選 v3 評估可信度與診斷成本優化（2026-10-23）](../archive/retired/docs/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.md)
 
 - [緩衝候選 v3 累計下降確認（2026-10-23）](../archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md)

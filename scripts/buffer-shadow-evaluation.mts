@@ -18,6 +18,45 @@ import type { EvidenceRow } from './buffer-shadow/model.mts'
 import { costInputs, v3CostInputs, loadCostInput } from './buffer-shadow/inputs.mts'
 import type { CostInput } from './buffer-shadow/inputs.mts'
 import { observationNames, observationInput } from './buffer-shadow/observation-inputs.mts'
+import { cycleNames, cycleInput } from './buffer-shadow/cycle-inputs.mts'
+
+/** Protocol validation only; never reconstruct a product candidate. */
+function consistentV4(value: Record<string, unknown>): boolean {
+  const c = value.cycle
+  if (
+    c !== null &&
+    (!isRecord(c) ||
+      typeof c.netLossSec !== 'number' ||
+      !Number.isFinite(c.netLossSec) ||
+      c.netLossSec < 0 ||
+      c.netLossSec > 2 ||
+      !['creditMs', 'lastLossAgeMs', 'rangeTroughSec'].every(
+        (k) => c[k] === null || (typeof c[k] === 'number' && Number.isFinite(c[k]) && c[k] >= 0),
+      ) ||
+      (typeof c.creditMs === 'number' && c.creditMs > 2000) ||
+      (typeof c.lastLossAgeMs === 'number' && c.lastLossAgeMs > 8000))
+  )
+    return false
+  const low = typeof value.endBufferSec === 'number' && value.endBufferSec <= 10
+  if (value.reason === 'cycle-draining-low')
+    return (
+      value.candidate === true &&
+      low &&
+      isRecord(c) &&
+      c.netLossSec === 2 &&
+      c.creditMs === 2000 &&
+      typeof c.lastLossAgeMs === 'number'
+    )
+  if (value.candidate === true)
+    return (
+      value.reason === 'draining-low' &&
+      value.state === 'draining' &&
+      low &&
+      typeof value.deltaSec === 'number' &&
+      value.deltaSec <= -2
+    )
+  return true
+}
 
 export function validEvaluationResult(
   value: unknown,
@@ -82,6 +121,7 @@ export function validEvaluationResult(
           row.candidate === row.trend.candidate &&
           row.state === row.trend.state &&
           row.reason === row.trend.reason &&
+          (version !== 4 || consistentV4(row.trend)) &&
           readingVersion(row.trend) === version,
       )
     )
@@ -115,6 +155,7 @@ export async function evaluateBufferShadow(
   cost = false,
   comparison: 'legacy' | 'v3' | 'source' = 'legacy',
   holdout = false,
+  cycleHoldout = false,
 ) {
   let suiteStarted = performance.now(),
     activeSuite = ''
@@ -165,10 +206,10 @@ export async function evaluateBufferShadow(
               pair,
             })
     else
-      for (const name of holdout ? observationNames : scenarioNames)
+      for (const name of cycleHoldout ? cycleNames : holdout ? observationNames : scenarioNames)
         for (const rate of [1, 2])
           jobs.push({
-            args: [name, String(rate)],
+            args: [name, String(rate), ...(cycleHoldout ? ['cycle'] : [])],
             warmup: false,
             id: `${name}@${rate}x`,
             pair: null,
@@ -259,9 +300,11 @@ export async function evaluateBufferShadow(
         ? comparison === 'legacy'
           ? 'cost'
           : `cost-${comparison}`
-        : holdout
-          ? 'holdout'
-          : 'functional',
+        : cycleHoldout
+          ? 'cycle-holdout'
+          : holdout
+            ? 'holdout'
+            : 'functional',
       ...(holdout
         ? {
             frozenInputs: observationNames.map((name) => ({
@@ -272,6 +315,15 @@ export async function evaluateBufferShadow(
           }
         : {}),
       node: process.version,
+      ...(cycleHoldout
+        ? {
+            frozenInputs: cycleNames.map((name) => ({
+              name,
+              ...cycleInput(name),
+              sha256: sha256(JSON.stringify(cycleInput(name))),
+            })),
+          }
+        : {}),
       limits: { caseMs: 5000, cleanupMs: 5000, suiteMs: 60000, maxBytes: 33554432 },
       assumptions: [
         'offline synthetic progress',
@@ -279,12 +331,12 @@ export async function evaluateBufferShadow(
         '60s healthy prelude',
         cost
           ? 'published-version defaults'
-          : 'buffer-window-v3: fixed 8s/2s/10s base; cumulative 2s new-low intervals',
+          : 'buffer-window-v4: short window plus bounded cycle debt; two-second confirmation',
         cost
           ? comparison === 'source'
             ? 'published v2.1.29 versus hashed working source'
             : 'unmodified release scripts'
-          : 'current v3 source; no rescue changes',
+          : 'current v4 source; no rescue changes',
       ],
       inputs,
       sourceHashes,
@@ -319,7 +371,12 @@ if (
   }
   if (options)
     try {
-      const report = await evaluateBufferShadow(options.cost, options.comparison, options.holdout)
+      const report = await evaluateBufferShadow(
+        options.cost,
+        options.comparison,
+        options.holdout,
+        options.cycleHoldout,
+      )
       if (options.json) console.log(JSON.stringify(report))
       else {
         for (const row of report.results)

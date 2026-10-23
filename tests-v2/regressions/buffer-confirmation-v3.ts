@@ -6,7 +6,7 @@ import { readingVersion } from '../../scripts/buffer-shadow/model.mts'
 import { validEvaluationResult } from '../../scripts/buffer-shadow-evaluation.mts'
 
 test('buffer-v3 tooling preserves version meanings and rejects mixed worker evidence', async (t) => {
-  for (const version of [1, 2, 3]) {
+  for (const version of [1, 2, 3, 4]) {
     const reading = {
       schemaVersion: version,
       algorithm: `buffer-window-v${version}`,
@@ -22,7 +22,7 @@ test('buffer-v3 tooling preserves version meanings and rejects mixed worker evid
   const mixed = structuredClone(result)
   Object.assign(mixed.rows[1]!.trend, { schemaVersion: 1, algorithm: 'buffer-window-v1' })
   assert.equal(validEvaluationResult(mixed, false), false)
-  Object.assign(mixed.rows[1]!.trend, { schemaVersion: 3, algorithm: 'buffer-window-v3' })
+  Object.assign(mixed.rows[1]!.trend, { schemaVersion: 4, algorithm: 'buffer-window-v4' })
   Object.assign(mixed.prelude[0]!.trend, { schemaVersion: 2, algorithm: 'buffer-window-v2' })
   assert.equal(validEvaluationResult(mixed, false), false)
 })

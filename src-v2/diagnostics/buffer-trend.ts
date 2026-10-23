@@ -31,6 +31,10 @@ const reasons = [
   'above-prior-low',
   'candidate-repaid',
   'candidate-expired',
+  'cycle-draining-low',
+  'cycle-loss-confirming',
+  'refill-cycle-balanced',
+  'cycle-range-pending',
 ] as const satisfies readonly BufferTrendReason[]
 function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -57,8 +61,8 @@ export function sanitizeBufferTrend(value: unknown): BufferTrendSnapshot | null 
 function read(value: unknown): BufferTrendSnapshot | null {
   if (
     !object(value) ||
-    value.schemaVersion !== 3 ||
-    value.algorithm !== 'buffer-window-v3' ||
+    value.schemaVersion !== 4 ||
+    value.algorithm !== 'buffer-window-v4' ||
     !member(value.state, ['insufficient', 'ineligible', 'stable', 'filling', 'draining']) ||
     !member(value.reason, reasons) ||
     !member(value.progressQuality, ['none', 'frames', 'time-only']) ||
@@ -108,6 +112,55 @@ function read(value: unknown): BufferTrendSnapshot | null {
         slopeSecPerSec === null
   )
     return null
+  let cycle: BufferTrendSnapshot['cycle'] = null
+  if (value.cycle !== null) {
+    if (!object(value.cycle)) return null
+    const c = value.cycle,
+      creditMs = nullable(c.creditMs),
+      netLossSec = number(c.netLossSec, 0, 2),
+      lastLossAgeMs = nullable(c.lastLossAgeMs),
+      rangeTroughSec = nullable(c.rangeTroughSec)
+    if (
+      creditMs === undefined ||
+      (creditMs !== null && creditMs > 2000) ||
+      netLossSec === undefined ||
+      lastLossAgeMs === undefined ||
+      (lastLossAgeMs !== null && lastLossAgeMs > 8000) ||
+      rangeTroughSec === undefined ||
+      (netLossSec > 0 && lastLossAgeMs === null) ||
+      insufficient
+    )
+      return null
+    cycle = Object.freeze({ creditMs, netLossSec, lastLossAgeMs, rangeTroughSec })
+  }
+  const shortLow =
+    value.state === 'draining' &&
+    deltaSec !== null &&
+    deltaSec <= -2 &&
+    endBufferSec !== null &&
+    endBufferSec <= 10
+  const cycleLow =
+    cycle !== null &&
+    cycle.netLossSec === 2 &&
+    cycle.lastLossAgeMs !== null &&
+    endBufferSec !== null &&
+    endBufferSec <= 10
+  if (
+    value.reason === 'cycle-draining-low' &&
+    (!cycleLow || cycle?.creditMs !== 2000 || value.candidate !== true)
+  )
+    return null
+  if (value.reason === 'cycle-loss-confirming' && (!cycleLow || value.candidate !== false))
+    return null
+  if (
+    (value.reason === 'refill-cycle-balanced' || value.reason === 'cycle-range-pending') &&
+    (!shortLow ||
+      cycle?.rangeTroughSec === null ||
+      cycle === null ||
+      endBufferSec! < cycle.rangeTroughSec! ||
+      value.candidate !== false)
+  )
+    return null
   const confirmationReason = [
     'candidate-confirming',
     'partial-refill',
@@ -117,13 +170,11 @@ function read(value: unknown): BufferTrendSnapshot | null {
     'candidate-expired',
   ].includes(value.reason)
   if (
-    (value.candidate === true || value.reason === 'draining-low' || confirmationReason) &&
-    (value.state !== 'draining' ||
-      value.candidate !== (value.reason === 'draining-low') ||
-      deltaSec === null ||
-      deltaSec > -2 ||
-      endBufferSec === null ||
-      endBufferSec > 10)
+    (value.candidate === true &&
+      value.reason !== 'cycle-draining-low' &&
+      (value.reason !== 'draining-low' || !shortLow)) ||
+    (value.reason === 'draining-low' && (value.candidate !== true || !shortLow)) ||
+    (confirmationReason && (value.candidate !== false || (!shortLow && !cycleLow)))
   )
     return null
   const t = value.transport,
@@ -155,8 +206,9 @@ function read(value: unknown): BufferTrendSnapshot | null {
   )
     return null
   return Object.freeze({
-    schemaVersion: 3,
-    algorithm: 'buffer-window-v3',
+    schemaVersion: 4,
+    algorithm: 'buffer-window-v4',
+    cycle,
     at,
     from,
     spanMs,

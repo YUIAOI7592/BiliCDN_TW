@@ -33,6 +33,10 @@ export type BufferTrendReason =
   | 'above-prior-low'
   | 'candidate-repaid'
   | 'candidate-expired'
+  | 'cycle-draining-low'
+  | 'cycle-loss-confirming'
+  | 'refill-cycle-balanced'
+  | 'cycle-range-pending'
 export interface BufferTrendSample {
   readonly at: number
   readonly bufferAheadSec: number
@@ -97,7 +101,38 @@ export interface BufferConfirmationResult {
   readonly reading: BufferTrendReading
   readonly confirmation: BufferCandidateConfirmation | null
 }
-export interface BufferTrendSnapshot extends BufferTrendReading {
+export type BufferCycleReason = BufferTrendReason
+export interface BufferCycleEvidence {
+  readonly creditMs: number | null
+  readonly netLossSec: number
+  readonly lastLossAgeMs: number | null
+  readonly rangeTroughSec: number | null
+}
+export interface BufferCycleReading extends Omit<BufferTrendFacts, 'reason'> {
+  readonly schemaVersion: 4
+  readonly algorithm: 'buffer-window-v4'
+  readonly reason: BufferCycleReason
+  readonly cycle: BufferCycleEvidence | null
+}
+export interface BufferCycleState {
+  readonly cycleCreditMs: number | null
+  readonly at: number
+  readonly peakSec: number
+  readonly troughSec: number
+  readonly phase: 'falling' | 'rising'
+  readonly netLossSec: number
+  readonly lastLossAt: number | null
+  readonly lastRefillAt: number | null
+  readonly rangeTroughSec: number | null
+  readonly confirmation: BufferCandidateConfirmation | null
+}
+export interface BufferCycleInput {
+  readonly reading: BufferTrendFacts
+  readonly sample: BufferTrendSample
+  readonly previous: BufferTrendSample | undefined
+  readonly state: BufferCycleState | null
+}
+export interface BufferTrendSnapshot extends BufferCycleReading {
   readonly transport: BufferTransportSummary
 }
 export function emptyBufferTrend(
