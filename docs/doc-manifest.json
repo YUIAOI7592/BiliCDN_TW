@@ -2725,11 +2725,18 @@
   ],
   "protections": [
     {
+      "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_2026-10-23.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 17980904,
+      "sha256": "df99e630ba64e20a79ad1e35208fbcf2af4c38587a054b50abf997e481b4cd1f"
+    },
+    {
       "path": "archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md",
       "mode": "prefix",
       "encoding": "lf",
-      "bytes": 1898,
-      "sha256": "bfe3728098a0960b73c0b9a9b57fb8fe9f6b4ec71bd08fa68772ec560b9f6f61"
+      "bytes": 8022,
+      "sha256": "2047ac3dbc4ade11d66ca4decf67d654f0a5162c49e26d3805b69e87d62f0c4b"
     },
     {
       "path": "archive/retired/originals/PRE_BUFFER_CANDIDATE_V3_2026-10-23_cfc1592.json",

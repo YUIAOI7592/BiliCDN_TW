@@ -9,3 +9,4 @@ archive/retired/releases/Release/v2.1.21/TEST_REPORT_v2.1.21.md whitespace=blank
 archive/retired/originals/*.tar -text
 archive/retired/originals/*.json -text
 archive/retired/docs/evidence/BUFFER_CANDIDATE_V2_PROTOTYPE_2026-10-23.patch -text -diff
+archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_2026-10-23.json -text -diff
