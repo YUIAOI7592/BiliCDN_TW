@@ -6,6 +6,8 @@
 
 ## 依賴方向
 
+唯讀緩衝趨勢的八秒樣本與完成傳輸旁證由 PlayerMonitor 唯一保存，純領域函式只計算數值及影子候選。Runtime 轉交既有 transport-completed 的最小投影及 Monitor 快照，不保存第二份窗口；診斷只消費結果。樣本在媒體、控制、內容、倍速或路線觀察身分改變時失效，沒有額外計時器、請求或授權索引；影子結果不得送入選路、量測、恢復或播放命令。
+
 本節定義目前的依賴方向與檢查邊界；歷史修復與版本證據由 [HISTORY](HISTORY.md) 追溯。
 
 [architecture-rules.mts](../scripts/architecture-rules.mts) 允許的匯入關係如下：

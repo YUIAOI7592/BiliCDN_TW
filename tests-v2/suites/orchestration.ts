@@ -80,6 +80,7 @@ async function fixture(
     },
   } satisfies ConstructorParameters<typeof RuntimeController>[2]
   const monitor = {
+    observeTransport() {},
     subscribe: () => () => {
       calls.push('monitor.unsubscribe')
     },

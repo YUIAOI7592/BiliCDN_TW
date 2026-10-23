@@ -2656,6 +2656,13 @@
   ],
   "protections": [
     {
+      "path": "archive/retired/originals/PRE_BUFFER_TREND_2026-10-23_8e410b7.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 454979,
+      "sha256": "d767b94aa1158bedab5862ff27b38e33e6c8c8ac5b76ba81180250211c179418"
+    },
+    {
       "path": "archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md",
       "mode": "prefix",
       "encoding": "lf",

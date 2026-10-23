@@ -5482,24 +5482,6 @@
       "sha256": "4d7de78d9803e5cf05c42b3f515baa4a8f6dbe8eed977e9a89b88e5292a23d42"
     },
     {
-      "path": "src-v2/application/monitor-model.ts",
-      "encoding": "raw",
-      "bytes": 483,
-      "sha256": "e586d9b6567739aa54b2ed8d8a29d09ee0ff819451d04b52776ac92ed1730f00"
-    },
-    {
-      "path": "src-v2/application/monitor-ports.ts",
-      "encoding": "raw",
-      "bytes": 1915,
-      "sha256": "7256dd38a2576179a6c63bc52a17ec594a73a1d83c90da6526847d53df888af3"
-    },
-    {
-      "path": "src-v2/application/player-monitor.ts",
-      "encoding": "raw",
-      "bytes": 17820,
-      "sha256": "620ea4d5bf04d36fe157ce2e0ae68cffe7ee3192e7c77d97b127a2f7e9336512"
-    },
-    {
       "path": "src-v2/application/playurl-controller.ts",
       "encoding": "raw",
       "bytes": 10475,
@@ -5602,18 +5584,6 @@
       "sha256": "60c20ae8242c117cb3f8c45c85f7fc99f03cae98a515dff43b1d94d09f243036"
     },
     {
-      "path": "src-v2/application/runtime-controller.ts",
-      "encoding": "raw",
-      "bytes": 4409,
-      "sha256": "53cd892007349b099e1b13b953e6c39416470e9bccb68f3477437b49cc9b275f"
-    },
-    {
-      "path": "src-v2/application/runtime-ports.ts",
-      "encoding": "raw",
-      "bytes": 1776,
-      "sha256": "f579c8796a128974aa609032d9dd9e82ea4403fd2b49effd6529d149b370d168"
-    },
-    {
       "path": "src-v2/diagnostics/event-sanitizer.ts",
       "encoding": "raw",
       "bytes": 9255,
@@ -5660,12 +5630,6 @@
       "encoding": "raw",
       "bytes": 1436,
       "sha256": "375628a8b2ad20b0830b29b211bc96693c7914ad5b43a3a9ae1f48f0b6f871bf"
-    },
-    {
-      "path": "src-v2/domain/diagnostic-model.ts",
-      "encoding": "raw",
-      "bytes": 798,
-      "sha256": "b5e457b567823e5028d24831883002255e20603b6a4648e0fcc8618a391ab8d0"
     },
     {
       "path": "src-v2/domain/evidence.ts",

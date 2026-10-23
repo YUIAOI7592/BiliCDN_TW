@@ -2,6 +2,21 @@ import type { VideoSnapshot, SchedulerPort, PlayerControlSnapshot } from './port
 
 import type { PlaybackDemand } from '../domain/model.ts'
 import {
+  assessBufferTrend,
+  emptyBufferTrend,
+  validBufferSample,
+  summarizeBufferTransport,
+  BUFFER_WINDOW_MS,
+  BUFFER_SAMPLE_LIMIT,
+  BUFFER_COMPLETION_LIMIT,
+} from '../domain/buffer-trend.ts'
+import type {
+  BufferTrendSample,
+  BufferTrendSnapshot,
+  BufferTrendReason,
+} from '../domain/buffer-trend.ts'
+import type { ObservedVideoCompletion } from './monitor-ports.ts'
+import {
   comparePlaybackControls,
   playbackTimeAdvanced,
   playbackFramesAdvanced,
@@ -45,6 +60,13 @@ import type { MonitorSnapshot } from './monitor-model.ts'
 export type { MonitorSnapshot } from './monitor-model.ts'
 
 export class PlayerMonitor implements MonitorPort {
+  #bufferSamples: BufferTrendSample[] = []
+  #bufferCompletions: ObservedVideoCompletion[] = []
+  #bufferDrops: { at: number; count: number }[] = []
+  #bufferContext: string | null = null
+  #bufferRoute: string | null = null
+  #bufferRevision = 0
+  #bufferStopped = false
   #timer: (() => void) | null = null
   #lastTime: number | null = null
   #stableProgressSec = 0
@@ -88,6 +110,7 @@ export class PlayerMonitor implements MonitorPort {
 
   start(): void {
     if (this.#timer === null) {
+      this.#bufferStopped = false
       this.#timer = this.scheduler.interval(() => this.tick(), 1000)
       this.tick()
     }
@@ -97,8 +120,11 @@ export class PlayerMonitor implements MonitorPort {
     this.#timer = null
     this.#endStall()
     this.measurement.cancel('monitor-stop')
+    this.#bufferStopped = true
+    this.#resetBuffer('stopped')
   }
   reset(): void {
+    this.#resetBuffer('reset')
     this.#lastTime = null
     this.#stableProgressSec = 0
     this.#stallTicks = 0
@@ -128,6 +154,7 @@ export class PlayerMonitor implements MonitorPort {
   }
 
   tick(): void {
+    const bufferRevision = ++this.#bufferRevision
     const video = this.player.snapshot(),
       controls = this.player.controls(),
       now = this.now(),
@@ -189,7 +216,230 @@ export class PlayerMonitor implements MonitorPort {
       recovering: this.recovery.isRecovering(),
       disabled: disabled || originalMode,
     })
-    this.#publishSnapshot(video, controls, active, watchdog, startupAge)
+    const bufferTrend = this.#observeBuffer(
+      video,
+      controls,
+      now,
+      disabled,
+      originalMode,
+      visible,
+      bufferRevision,
+    )
+    this.#publishSnapshot(video, controls, active, watchdog, startupAge, bufferTrend)
+  }
+
+  observeTransport(observation: ObservedVideoCompletion): void {
+    if (this.#bufferStopped || this.#bufferContext === null) return
+    const revision = this.#bufferRevision,
+      now = this.now(),
+      r = observation.request
+    const state = this.session.get(),
+      latest = this.routes.latestRequested('video')
+    if (
+      !latest ||
+      r.generation !== state.generation ||
+      r.epoch !== state.epoch ||
+      r.representation !== latest.representation ||
+      r.generation !== latest.generation ||
+      r.epoch !== latest.epoch ||
+      r.routePolicyRevision !== latest.routePolicyRevision ||
+      r.authorityRevision !== latest.authorityRevision ||
+      r.targetHost !== latest.targetHost ||
+      this.#routeKey() !== this.#bufferRoute ||
+      !this.routes.recoveryEligible(r) ||
+      revision !== this.#bufferRevision ||
+      !Number.isFinite(observation.completedAt) ||
+      observation.completedAt > now ||
+      observation.completedAt < now - BUFFER_WINDOW_MS ||
+      !Number.isFinite(observation.startedAt) ||
+      observation.startedAt < 0 ||
+      observation.startedAt > observation.completedAt ||
+      !Number.isSafeInteger(observation.bytes) ||
+      observation.bytes < 0 ||
+      !Number.isInteger(observation.status) ||
+      observation.status < 0 ||
+      observation.status > 599 ||
+      !['success', 'failure', 'abort'].includes(observation.outcome) ||
+      r.requestId.length > 128
+    )
+      return
+    this.#pruneBufferTransport(now)
+    if (this.#bufferCompletions.some((row) => row.request.requestId === r.requestId)) return
+    if (this.#bufferCompletions.length >= BUFFER_COMPLETION_LIMIT) {
+      const bucket = Math.floor(now / 1000) * 1000
+      const last = this.#bufferDrops.at(-1)
+      if (last?.at === bucket) last.count = Math.min(Number.MAX_SAFE_INTEGER, last.count + 1)
+      else this.#bufferDrops.push({ at: bucket, count: 1 })
+      return
+    }
+    this.#bufferCompletions.push({
+      startedAt: observation.startedAt,
+      completedAt: observation.completedAt,
+      bytes: observation.bytes,
+      status: observation.status,
+      outcome: observation.outcome,
+      request: {
+        requestId: r.requestId,
+        generation: r.generation,
+        epoch: r.epoch,
+        representation: r.representation,
+        routePolicyRevision: r.routePolicyRevision,
+        ...(r.authorityRevision !== undefined ? { authorityRevision: r.authorityRevision } : {}),
+        targetHost: r.targetHost,
+      },
+    })
+  }
+
+  #routeKey(): string {
+    const state = this.session.get(),
+      request = this.routes.latestRequested('video')
+    return JSON.stringify([
+      state.generation,
+      state.epoch,
+      state.representation,
+      request?.representation,
+      request?.routePolicyRevision,
+      request?.authorityRevision,
+      request?.targetHost,
+      state.affinity?.host,
+      request ? this.routes.recoveryEligible(request) : false,
+    ])
+  }
+  #clearBuffer(): void {
+    this.#bufferSamples = []
+    this.#bufferCompletions = []
+    this.#bufferDrops = []
+    this.#bufferContext = null
+    this.#bufferRoute = null
+  }
+  #resetBuffer(reason: BufferTrendReason): void {
+    this.#bufferRevision++
+    this.#clearBuffer()
+    this.#snapshot = Object.freeze({
+      ...this.#snapshot,
+      bufferTrend: Object.freeze({
+        ...emptyBufferTrend(this.now(), reason),
+        transport: summarizeBufferTransport([], this.now(), 0),
+      }),
+    })
+  }
+  #pruneBufferTransport(now: number): void {
+    this.#bufferCompletions = this.#bufferCompletions.filter(
+      (r) => r.completedAt >= now - BUFFER_WINDOW_MS,
+    )
+    this.#bufferDrops = this.#bufferDrops
+      .filter((r) => r.at + 1000 > now - BUFFER_WINDOW_MS)
+      .slice(-9)
+  }
+  #observeBuffer(
+    video: VideoSnapshot,
+    controls: PlayerControlSnapshot,
+    now: number,
+    disabled: boolean,
+    original: boolean,
+    visible: boolean,
+    revision: number,
+  ): BufferTrendSnapshot | undefined {
+    if (revision !== this.#bufferRevision) return undefined
+    const blocked: BufferTrendReason | null = this.#bufferStopped
+      ? 'stopped'
+      : !video.available
+        ? 'unavailable'
+        : disabled
+          ? 'disabled'
+          : original
+            ? 'original-comparison'
+            : !visible
+              ? 'hidden'
+              : video.paused
+                ? 'paused'
+                : video.seeking
+                  ? 'seeking'
+                  : controls.dragging
+                    ? 'dragging'
+                    : video.mediaError
+                      ? 'error'
+                      : video.ended
+                        ? 'ended'
+                        : video.bufferedToEnd
+                          ? 'buffered-to-end'
+                          : this.recovery.isRecovering()
+                            ? 'recovering'
+                            : null
+    if (revision !== this.#bufferRevision) return undefined
+    if (blocked) {
+      this.#clearBuffer()
+      return Object.freeze({
+        ...emptyBufferTrend(now, blocked, true),
+        transport: summarizeBufferTransport([], now, 0),
+      })
+    }
+    const route = this.#routeKey()
+    if (revision !== this.#bufferRevision) return undefined
+    const context = JSON.stringify([
+      route,
+      controls.mediaId,
+      controls.coreId,
+      controls.seekRevision,
+      controls.userRevision,
+      controls.reloadRevision,
+      controls.coreReloadRevision,
+      video.playbackRate,
+    ])
+    const changed = this.#bufferContext !== null && this.#bufferContext !== context
+    if (changed) this.#clearBuffer()
+    this.#bufferContext = context
+    this.#bufferRoute = route
+    const sample: BufferTrendSample = {
+      at: now,
+      bufferAheadSec: video.bufferAheadSec,
+      rate: video.playbackRate,
+      currentTime: video.currentTime,
+      frames: video.frames,
+    }
+    const previous = this.#bufferSamples.at(-1)
+    let reason: BufferTrendReason | null = changed ? 'context-changed' : null
+    if (!validBufferSample(sample)) {
+      this.#clearBuffer()
+      reason = 'invalid-sample'
+    } else if (previous && now === previous.at) {
+      reason = 'warming-up'
+    } else {
+      if (previous && (now < previous.at || now - previous.at > 1500)) {
+        this.#bufferSamples = []
+        this.#bufferCompletions = []
+        this.#bufferDrops = []
+        reason = now < previous.at ? 'time-reversed' : 'sample-gap'
+      }
+      this.#bufferSamples.push(sample)
+      while (this.#bufferSamples.length > 1 && this.#bufferSamples[1]!.at <= now - BUFFER_WINDOW_MS)
+        this.#bufferSamples.shift()
+      if (this.#bufferSamples.length > BUFFER_SAMPLE_LIMIT) {
+        this.#bufferSamples = [sample]
+        reason = 'sample-overflow'
+      }
+    }
+    let reading = reason
+      ? emptyBufferTrend(now, reason)
+      : assessBufferTrend(this.#bufferSamples, now)
+    if (reading.reason === 'no-progress') {
+      this.#bufferSamples = [sample]
+      this.#bufferCompletions = []
+      this.#bufferDrops = []
+      reading = emptyBufferTrend(now, 'no-progress', true)
+    }
+    this.#pruneBufferTransport(now)
+    return Object.freeze({
+      ...reading,
+      transport: summarizeBufferTransport(
+        this.#bufferCompletions,
+        now,
+        this.#bufferDrops.reduce(
+          (sum, row) => Math.min(Number.MAX_SAFE_INTEGER, sum + row.count),
+          0,
+        ),
+      ),
+    })
   }
 
   #sampleProgress(
@@ -372,6 +622,7 @@ export class PlayerMonitor implements MonitorPort {
     active: boolean,
     watchdog: MonitorSnapshot['watchdog'],
     startupAge: number,
+    bufferTrend: BufferTrendSnapshot | undefined,
   ): void {
     this.#lastTime = video.available ? video.currentTime : null
     this.#lastFrames = video.frames
@@ -382,6 +633,7 @@ export class PlayerMonitor implements MonitorPort {
       this.#lastFrames = null
     }
     this.#snapshot = Object.freeze({
+      ...(bufferTrend ? { bufferTrend } : {}),
       video,
       stableProgressSec: this.#stableProgressSec,
       watchdog,

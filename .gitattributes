@@ -7,3 +7,4 @@ archive/retired/releases/** -text
 archive/retired/releases/Release/v2.1.14/TEST_REPORT_v2.1.14.md whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 archive/retired/releases/Release/v2.1.21/TEST_REPORT_v2.1.21.md whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 archive/retired/originals/*.tar -text
+archive/retired/originals/*.json -text

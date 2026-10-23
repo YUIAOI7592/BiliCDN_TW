@@ -1,6 +1,8 @@
 import type { VideoSnapshot } from './ports.ts'
+import type { BufferTrendSnapshot } from '../domain/buffer-trend.ts'
 
 export interface MonitorSnapshot {
+  readonly bufferTrend?: BufferTrendSnapshot
   readonly video: VideoSnapshot
   readonly stableProgressSec: number
   readonly watchdog:

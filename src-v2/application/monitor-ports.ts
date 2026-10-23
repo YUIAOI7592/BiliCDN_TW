@@ -6,6 +6,20 @@ import type { SessionPort } from '../state/session-ports.ts'
 import type { SignedRouteVaultPort } from '../state/vault-ports.ts'
 import type { RequestContext } from '../domain/model.ts'
 import type { MonitorSnapshot } from './monitor-model.ts'
+import type { BufferCompletion } from '../domain/buffer-trend.ts'
+
+export interface ObservedVideoCompletion extends BufferCompletion {
+  readonly request: Pick<
+    RequestContext,
+    | 'requestId'
+    | 'generation'
+    | 'epoch'
+    | 'representation'
+    | 'routePolicyRevision'
+    | 'authorityRevision'
+    | 'targetHost'
+  >
+}
 
 export interface MonitorRoutes extends Pick<
   RouteCoordinatorPort,
@@ -50,6 +64,7 @@ export interface MonitorRecoveryPort extends Pick<
   | 'ongoingStallReload'
 > {}
 export interface MonitorPort {
+  observeTransport(observation: ObservedVideoCompletion): void
   start(): void
   stop(): void
   reset(): void

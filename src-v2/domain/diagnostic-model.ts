@@ -1,5 +1,8 @@
+import type { BufferTrendSnapshot } from './buffer-trend.ts'
+
 /** Bounded observations shared by application producers and diagnostic consumers. */
 export interface PlaybackDiagnosticSample {
+  readonly bufferTrend?: BufferTrendSnapshot
   readonly at: number
   readonly generation: number
   readonly epoch: number

@@ -119,6 +119,7 @@ export function assessBufferTrend(
     return empty('invalid-sample')
   const last = samples.at(-1)
   if (!last || last.at !== now) return empty('warming-up')
+  if (samples.some((s) => s.rate !== last.rate)) return empty('context-changed')
   let quality: BufferTrendReading['progressQuality'] = 'frames'
   for (let i = 1; i < samples.length; i++) {
     const before = samples[i - 1]!,

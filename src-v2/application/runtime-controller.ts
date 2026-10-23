@@ -55,7 +55,10 @@ export class RuntimeController implements RuntimePort {
       this.routes.subscribe((event) => this.record(event)),
       this.recovery.subscribe((event) => this.record(event)),
       this.monitor.subscribe((snapshot) =>
-        this.diagnostics.recordPlayer(this.#sample(snapshot.video, snapshot.watchdog, this.now())),
+        this.diagnostics.recordPlayer({
+          ...this.#sample(snapshot.video, snapshot.watchdog, this.now()),
+          ...(snapshot.bufferTrend ? { bufferTrend: snapshot.bufferTrend } : {}),
+        }),
       ),
     )
     this.visibility.setEnabled(!this.settings.get().disabled)
@@ -80,6 +83,40 @@ export class RuntimeController implements RuntimePort {
       event,
       !this.settings.get().disabled && !this.routes.isOriginalComparison(),
     )
+    if (event.type === 'transport-completed' && !event.detached) {
+      const o = event.observation,
+        request = o.request
+      if (
+        request &&
+        request.kind === 'video' &&
+        o.kind === 'video' &&
+        request.attributionStatus === 'matched' &&
+        request.representation === o.representation &&
+        request.generation === o.generation &&
+        request.epoch === o.epoch &&
+        request.targetHost === o.targetHost &&
+        (o.outcome !== 'success' ||
+          (o.finalHost === o.targetHost && o.responseUrlMatchesRequest !== false))
+      )
+        this.monitor.observeTransport({
+          request: {
+            requestId: request.requestId,
+            generation: request.generation,
+            epoch: request.epoch,
+            representation: request.representation,
+            routePolicyRevision: request.routePolicyRevision,
+            ...(request.authorityRevision !== undefined
+              ? { authorityRevision: request.authorityRevision }
+              : {}),
+            targetHost: request.targetHost,
+          },
+          startedAt: request.startedAt,
+          completedAt: o.completedAt,
+          bytes: o.bytes,
+          status: o.status,
+          outcome: o.outcome,
+        })
+    }
     if (
       event.type === 'recovery' &&
       event.action.action === 'route-fallback' &&

@@ -419,6 +419,7 @@ async function fixture(
       reset: () => undefined,
     },
     {
+      observeTransport() {},
       subscribe: () => () => undefined,
       snapshot: () => {
         throw new Error('monitor snapshot should not be called')

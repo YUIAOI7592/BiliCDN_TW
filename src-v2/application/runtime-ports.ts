@@ -26,7 +26,7 @@ export interface RuntimeRoutesPort extends Pick<
 export interface RuntimePlayerPort extends Pick<PlayerPort, 'snapshot' | 'reset'> {}
 export interface RuntimeMonitorPort extends Pick<
   MonitorPort,
-  'subscribe' | 'snapshot' | 'start' | 'stop' | 'reset'
+  'subscribe' | 'snapshot' | 'start' | 'stop' | 'reset' | 'observeTransport'
 > {}
 export interface RuntimeMeasurementPort extends Pick<MeasurementPort, 'reset'> {}
 export interface RuntimeRecoveryPort extends Pick<
