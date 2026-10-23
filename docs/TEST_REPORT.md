@@ -39,13 +39,30 @@ v2.1.32 完整報告原文追加保存，五項 Release 按原 bytes／SHA-256 �
 
 [v2.1.33 正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.33) 已發布，發布提交 bbc4b27789a01eaf1f7d34a8d2fa4362c58cff30。當時遠端 main 與標籤解參照相同；唯一腳本附件與無登入憑證的公開 latest HTTP 200 全文均為 417110 bytes／SHA-256 892fb339625d4d2a241ce4387050c8d08201e224c6211844c5be5f0eaad5a761，與本機逐位元組一致。後續文件提交不移動標籤、不修改 Release 快照。
 
-本次公開更新入口停在 Tampermonkey 中繼頁，工具沒有可操作的管理器確認頁。新載入指定影片的完整本體為 415118 bytes／SHA-256 d0286eb6ef089cb5d89432cc0fef65fa59f35cfb948e880f452f52b9a5cb548e，精確等同 v2.1.32；新版本應為 415152 bytes／SHA-256 febc3f34f91e834cf4ac05d162b754e259ddc4508a14a4362b6e83bc19de69e2。因此 v2.1.33 管理器／singleton／hooks 及 Auto 1／2 倍正常回歸均未執行、產品判定 null，不以舊版本播放補算。
+首次公開更新入口停在 Tampermonkey 中繼頁，工具沒有可操作的管理器確認頁。新載入指定影片的完整本體為 415118 bytes／SHA-256 d0286eb6ef089cb5d89432cc0fef65fa59f35cfb948e880f452f52b9a5cb548e，精確等同 v2.1.32；新版本應為 415152 bytes／SHA-256 febc3f34f91e834cf4ac05d162b754e259ddc4508a14a4362b6e83bc19de69e2。當時 v2.1.33 管理器／singleton／hooks 及 Auto 1／2 倍正常回歸均未執行、產品判定 null；原紀錄保持，不以後續結果回寫。
 
-未重複要求發布或工作批准；後續安裝核對需要同一 IAB 的管理器實際完成更新。自有影片、更新分頁及 Debugger 已清理，沒有留下故障攔截或背景收集器。公開發布、來源驗證與文件交付已結案，安裝限制另列於 [交付 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_DELIVERY_2026-10-24.json)。
+首次嘗試未重複要求發布或工作批准；當時後續安裝核對需要同一 IAB 的管理器實際完成更新。自有影片、更新分頁及 Debugger 已清理，沒有留下故障攔截或背景收集器。公開發布、來源驗證與文件交付已結案，安裝限制另列於 [交付 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_DELIVERY_2026-10-24.json)。
 
 首次回補前的共同輸入仍可能產生候選；小幅回補、真正緩慢耗盡及真實網站節奏的取捨沒有被本次修復全面解決。診斷 creditMs 不能單獨解讀為候選已成立，仍須看 candidate、原因碼及資料品質。
 
 控制中心入口依指示跳過；自然起因、安裝故障注入、背景／gate／剪貼簿、六組五十秒樣片及歷史矩陣不重開。不宣稱降低真實卡頓率，不啟用預測救援。
+
+## 更新後的安裝版正常回歸
+
+使用者確認完成更新後，於 2026-10-24 的新文件核對 Tampermonkey 5.5.1／v2.1.33；完整執行本體為 415152 bytes／SHA-256 febc3f34f91e834cf4ac05d162b754e259ddc4508a14a4362b6e83bc19de69e2，與已發布腳本一致，重載後再次全文比對相同。Runtime／ControlCenter 各一，Fetch／XHR installed、fetch-and-xhr-verified。Debugger 只用於身分檢查，斷點及暫停在操作與播放窗口開始前解除。
+
+指定影片 BV1tFZZBQE57 保持 Auto，當次實際 3840×2160。1／2 倍各完成真實按鈕暫停／恢復、原生 Right 約五秒短 seek，再以單次完整 await 取得十六筆樣本、十五個一秒區段。每區段時間增加大於 0.05 秒且影格增加，倍速精確、同媒體與內容，沒有 paused／seeking／ended／error 或新可信輸入；同步媒體事件收集為零。
+
+| 窗口 | 實際經過 ms | 影片前進秒數 | 影格增加 | 合格區段 |
+| --- | ---: | ---: | ---: | ---: |
+| 1 倍 | 15010.0 | 15.009813 | 900 | 15／15 |
+| 2 倍 | 15007.9 | 30.015718 | 1799 | 15／15 |
+
+兩個窗口首次即有效通過，Recovery 保持 healthy、reloadCount 為零。原二倍速已恢復；自有 timer、listener、subscription、斷點、遠端物件參照及分頁均歸零，未留下跨呼叫背景 Promise。
+
+[安裝版逐案 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_INSTALLED_2026-10-24.json) 保存操作前後、逐秒資料、有效性與清理結果。五個具名 node:test 重播身分、各倍速操作／進度、清理與五項 Release 原件不變條件，全部通過；這五個證據檢查不加入正式 1938 案。原中繼頁阻塞、來源隔離與更新後正常安裝分開記錄；後續僅提交文件，不改版本、標籤、附件或已發布快照。
+
+本輪只證明正常安裝操作與這兩段連續播放；未測安裝版故障救援或真實候選效用，不將十五秒窗口補算為先前未執行的六組五十秒樣片。
 
 ## 歷史驗證導覽
 

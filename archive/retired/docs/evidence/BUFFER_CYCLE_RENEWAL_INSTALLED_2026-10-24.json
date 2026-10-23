@@ -1,0 +1,881 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-24",
+  "video": "BV1tFZZBQE57",
+  "quality": "Auto",
+  "identity": {
+    "bodyBytes": 415152,
+    "bodySha256": "febc3f34f91e834cf4ac05d162b754e259ddc4508a14a4362b6e83bc19de69e2",
+    "scriptEventsTruncated": false,
+    "hooks": {
+      "blocked": 0,
+      "enteredFetch": 0,
+      "enteredXhr": 0,
+      "fetchInstalled": true,
+      "hookReason": "fetch-and-xhr-verified",
+      "hookState": "installed",
+      "lastBlocked": null,
+      "lastMediaRequest": null,
+      "lastPlayurl": null,
+      "mediaRecognized": 0,
+      "nativeCalled": 0,
+      "note": "Native call is a script observation, not Chrome Network confirmation.",
+      "responseObserved": 0,
+      "xhrInstalled": true
+    },
+    "initialRecovery": {
+      "breakerSec": 0,
+      "pauseSec": 0,
+      "reloadCount": 0,
+      "source": null,
+      "state": "healthy"
+    },
+    "manager": "Tampermonkey",
+    "managerVersion": "5.5.1",
+    "settings": {
+      "disabled": false
+    },
+    "version": "2.1.33",
+    "runtimeCount": 1,
+    "controlCenterCount": 1,
+    "reloadedBodyMatches": true
+  },
+  "originalState": {
+    "at": 47348.69999998808,
+    "ended": false,
+    "error": false,
+    "frames": 333,
+    "height": 2160,
+    "paused": false,
+    "rate": 2,
+    "seeking": false,
+    "time": 981.951566,
+    "width": 3840
+  },
+  "operations": [
+    {
+      "rate": 1,
+      "start": {
+        "at": 202208.09999996424,
+        "ended": false,
+        "error": false,
+        "frames": 18882,
+        "height": 2160,
+        "paused": false,
+        "rate": 1,
+        "seeking": false,
+        "time": 1291.47671,
+        "width": 3840
+      },
+      "paused": {
+        "at": 202489.39999997616,
+        "ended": false,
+        "error": false,
+        "frames": 18884,
+        "height": 2160,
+        "paused": true,
+        "rate": 1,
+        "seeking": false,
+        "time": 1291.514879,
+        "width": 3840
+      },
+      "resumed": {
+        "at": 209117.89999997616,
+        "ended": false,
+        "error": false,
+        "frames": 18899,
+        "height": 2160,
+        "paused": false,
+        "rate": 1,
+        "seeking": false,
+        "time": 1291.764112,
+        "width": 3840
+      },
+      "beforeSeek": {
+        "at": 209125.79999995232,
+        "ended": false,
+        "error": false,
+        "frames": 18899,
+        "height": 2160,
+        "paused": false,
+        "rate": 1,
+        "seeking": false,
+        "time": 1291.771928,
+        "width": 3840
+      },
+      "afterShortSeek": {
+        "at": 209148.09999996424,
+        "ended": false,
+        "error": false,
+        "frames": 18908,
+        "height": 2160,
+        "paused": false,
+        "rate": 1,
+        "seeking": true,
+        "time": 1296.783271,
+        "width": 3840
+      }
+    },
+    {
+      "rate": 2,
+      "start": {
+        "at": 254795.69999998808,
+        "ended": false,
+        "error": false,
+        "frames": 21731,
+        "height": 2160,
+        "paused": false,
+        "rate": 2,
+        "seeking": false,
+        "time": 1342.424986,
+        "width": 3840
+      },
+      "paused": {
+        "at": 255075.09999996424,
+        "ended": false,
+        "error": false,
+        "frames": 21735,
+        "height": 2160,
+        "paused": true,
+        "rate": 2,
+        "seeking": false,
+        "time": 1342.48898,
+        "width": 3840
+      },
+      "resumed": {
+        "at": 260176.69999998808,
+        "ended": false,
+        "error": false,
+        "frames": 21765,
+        "height": 2160,
+        "paused": false,
+        "rate": 2,
+        "seeking": false,
+        "time": 1343.006278,
+        "width": 3840
+      },
+      "beforeSeek": {
+        "at": 260184.59999996424,
+        "ended": false,
+        "error": false,
+        "frames": 21766,
+        "height": 2160,
+        "paused": false,
+        "rate": 2,
+        "seeking": false,
+        "time": 1343.022012,
+        "width": 3840
+      },
+      "afterShortSeek": {
+        "at": 260204,
+        "ended": false,
+        "error": false,
+        "frames": 21784,
+        "height": 2160,
+        "paused": false,
+        "rate": 2,
+        "seeking": true,
+        "time": 1348.040688,
+        "width": 3840
+      }
+    }
+  ],
+  "windows": [
+    {
+      "cleanup": {
+        "listeners": 0,
+        "timers": 0
+      },
+      "elapsed": 15010,
+      "events": [],
+      "input": [],
+      "rate": 1,
+      "rows": [
+        {
+          "at": 223250.69999998808,
+          "ended": false,
+          "error": false,
+          "frames": 19830,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1310.711836,
+          "width": 3840
+        },
+        {
+          "at": 224251.39999997616,
+          "ended": false,
+          "error": false,
+          "frames": 19890,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1311.712571,
+          "width": 3840
+        },
+        {
+          "at": 225253.29999995232,
+          "ended": false,
+          "error": false,
+          "frames": 19950,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1312.71457,
+          "width": 3840
+        },
+        {
+          "at": 226253.59999996424,
+          "ended": false,
+          "error": false,
+          "frames": 20010,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1313.714175,
+          "width": 3840
+        },
+        {
+          "at": 227254.59999996424,
+          "ended": false,
+          "error": false,
+          "frames": 20070,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1314.715351,
+          "width": 3840
+        },
+        {
+          "at": 228255.59999996424,
+          "ended": false,
+          "error": false,
+          "frames": 20130,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1315.716358,
+          "width": 3840
+        },
+        {
+          "at": 229255.89999997616,
+          "ended": false,
+          "error": false,
+          "frames": 20190,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1316.716624,
+          "width": 3840
+        },
+        {
+          "at": 230256.29999995232,
+          "ended": false,
+          "error": false,
+          "frames": 20250,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1317.717,
+          "width": 3840
+        },
+        {
+          "at": 231256.79999995232,
+          "ended": false,
+          "error": false,
+          "frames": 20310,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1318.717564,
+          "width": 3840
+        },
+        {
+          "at": 232256.89999997616,
+          "ended": false,
+          "error": false,
+          "frames": 20370,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1319.717664,
+          "width": 3840
+        },
+        {
+          "at": 233257.5,
+          "ended": false,
+          "error": false,
+          "frames": 20430,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1320.718284,
+          "width": 3840
+        },
+        {
+          "at": 234257.89999997616,
+          "ended": false,
+          "error": false,
+          "frames": 20490,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1321.718644,
+          "width": 3840
+        },
+        {
+          "at": 235259,
+          "ended": false,
+          "error": false,
+          "frames": 20549,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1322.719957,
+          "width": 3840
+        },
+        {
+          "at": 236260.09999996424,
+          "ended": false,
+          "error": false,
+          "frames": 20609,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1323.720583,
+          "width": 3840
+        },
+        {
+          "at": 237260.39999997616,
+          "ended": false,
+          "error": false,
+          "frames": 20670,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1324.720592,
+          "width": 3840
+        },
+        {
+          "at": 238260.59999996424,
+          "ended": false,
+          "error": false,
+          "frames": 20730,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1325.721649,
+          "width": 3840
+        }
+      ]
+    },
+    {
+      "cleanup": {
+        "listeners": 0,
+        "timers": 0
+      },
+      "elapsed": 15007.899999976158,
+      "events": [],
+      "input": [],
+      "rate": 2,
+      "rows": [
+        {
+          "at": 267145.7999999523,
+          "ended": false,
+          "error": false,
+          "frames": 22731,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1361.352081,
+          "width": 3840
+        },
+        {
+          "at": 268145.89999997616,
+          "ended": false,
+          "error": false,
+          "frames": 22851,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1363.344001,
+          "width": 3840
+        },
+        {
+          "at": 269146,
+          "ended": false,
+          "error": false,
+          "frames": 22971,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1365.352351,
+          "width": 3840
+        },
+        {
+          "at": 270147,
+          "ended": false,
+          "error": false,
+          "frames": 23090,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1367.349498,
+          "width": 3840
+        },
+        {
+          "at": 271147.09999996424,
+          "ended": false,
+          "error": false,
+          "frames": 23211,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1369.345025,
+          "width": 3840
+        },
+        {
+          "at": 272147.6999999881,
+          "ended": false,
+          "error": false,
+          "frames": 23331,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1371.347198,
+          "width": 3840
+        },
+        {
+          "at": 273148,
+          "ended": false,
+          "error": false,
+          "frames": 23450,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1373.347168,
+          "width": 3840
+        },
+        {
+          "at": 274149,
+          "ended": false,
+          "error": false,
+          "frames": 23570,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1375.359039,
+          "width": 3840
+        },
+        {
+          "at": 275150.09999996424,
+          "ended": false,
+          "error": false,
+          "frames": 23690,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1377.360189,
+          "width": 3840
+        },
+        {
+          "at": 276150.5,
+          "ended": false,
+          "error": false,
+          "frames": 23810,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1379.361223,
+          "width": 3840
+        },
+        {
+          "at": 277150.5,
+          "ended": false,
+          "error": false,
+          "frames": 23930,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1381.356089,
+          "width": 3840
+        },
+        {
+          "at": 278150.7999999523,
+          "ended": false,
+          "error": false,
+          "frames": 24050,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1383.362403,
+          "width": 3840
+        },
+        {
+          "at": 279151.1999999881,
+          "ended": false,
+          "error": false,
+          "frames": 24170,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1385.356072,
+          "width": 3840
+        },
+        {
+          "at": 280152.59999996424,
+          "ended": false,
+          "error": false,
+          "frames": 24290,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1387.366695,
+          "width": 3840
+        },
+        {
+          "at": 281152.6999999881,
+          "ended": false,
+          "error": false,
+          "frames": 24410,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1389.363795,
+          "width": 3840
+        },
+        {
+          "at": 282153.5,
+          "ended": false,
+          "error": false,
+          "frames": 24530,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "sameContent": true,
+          "sameMedia": true,
+          "seeking": false,
+          "time": 1391.367799,
+          "width": 3840
+        }
+      ]
+    }
+  ],
+  "finalRecovery": {
+    "breakerSec": 0,
+    "reloadCount": 0,
+    "state": "healthy"
+  },
+  "restoredState": {
+    "at": 292097,
+    "ended": false,
+    "error": false,
+    "frames": 25722,
+    "height": 2160,
+    "paused": false,
+    "rate": 2,
+    "seeking": false,
+    "time": 1411.253793,
+    "width": 3840
+  },
+  "cleanup": {
+    "timers": 0,
+    "listeners": 0,
+    "subscriptions": 0,
+    "breakpoints": 0,
+    "remoteObjectGroups": 0,
+    "ownedTabs": 0
+  },
+  "limitations": [
+    "Normal installed playback only; no fault injection or real buffering-recovery success claim.",
+    "Control center entry skipped by user instruction.",
+    "Historical six 50-second sample windows remain unexecuted and are not replaced by these normal playback windows."
+  ],
+  "level": "installed",
+  "baselineCommit": "8a0571065b31532712695b260ff605a291373470",
+  "releaseCommit": "bbc4b27789a01eaf1f7d34a8d2fa4362c58cff30",
+  "cases": [
+    {
+      "level": "installed",
+      "version": "2.1.33",
+      "bodySha256": "febc3f34f91e834cf4ac05d162b754e259ddc4508a14a4362b6e83bc19de69e2",
+      "validity": "valid",
+      "verdict": "pass",
+      "cleanup": {
+        "timers": 0,
+        "listeners": 0,
+        "subscriptions": 0,
+        "breakpoints": 0,
+        "remoteObjectGroups": 0,
+        "ownedTabs": 0
+      },
+      "id": "I-BUFFER-33-IDENTITY",
+      "rate": null,
+      "preconditions": "fresh document after user confirmed update; debugger only during identity check",
+      "expected": "Tampermonkey 5.5.1, published full body, Runtime and ControlCenter each 1, verified Fetch and XHR hooks",
+      "actual": {
+        "bodyBytes": 415152,
+        "bodySha256": "febc3f34f91e834cf4ac05d162b754e259ddc4508a14a4362b6e83bc19de69e2",
+        "scriptEventsTruncated": false,
+        "hooks": {
+          "blocked": 0,
+          "enteredFetch": 0,
+          "enteredXhr": 0,
+          "fetchInstalled": true,
+          "hookReason": "fetch-and-xhr-verified",
+          "hookState": "installed",
+          "lastBlocked": null,
+          "lastMediaRequest": null,
+          "lastPlayurl": null,
+          "mediaRecognized": 0,
+          "nativeCalled": 0,
+          "note": "Native call is a script observation, not Chrome Network confirmation.",
+          "responseObserved": 0,
+          "xhrInstalled": true
+        },
+        "initialRecovery": {
+          "breakerSec": 0,
+          "pauseSec": 0,
+          "reloadCount": 0,
+          "source": null,
+          "state": "healthy"
+        },
+        "manager": "Tampermonkey",
+        "managerVersion": "5.5.1",
+        "settings": {
+          "disabled": false
+        },
+        "version": "2.1.33",
+        "runtimeCount": 1,
+        "controlCenterCount": 1,
+        "reloadedBodyMatches": true
+      },
+      "evidence": "identity",
+      "reason": "full body and instance checks match"
+    },
+    {
+      "level": "installed",
+      "version": "2.1.33",
+      "bodySha256": "febc3f34f91e834cf4ac05d162b754e259ddc4508a14a4362b6e83bc19de69e2",
+      "validity": "valid",
+      "verdict": "pass",
+      "cleanup": {
+        "timers": 0,
+        "listeners": 0,
+        "subscriptions": 0,
+        "breakpoints": 0,
+        "remoteObjectGroups": 0,
+        "ownedTabs": 0
+      },
+      "id": "I-BUFFER-33-AUTO-1X",
+      "rate": 1,
+      "preconditions": "Auto; unchanged media/content; non-paused/non-seeking/non-ended/error-free; no new trusted input during window",
+      "expected": "pause/resume and five-second short seek; 15 intervals each time delta >0.05 and increasing frames; exact rate; no reload",
+      "actual": {
+        "elapsedMs": 15010,
+        "samples": 16,
+        "timeDelta": 15.009813000000122,
+        "framesDelta": 900,
+        "reloadCount": 0
+      },
+      "evidence": "windows[rate=1], operations[rate=1]",
+      "reason": "all operation and interval assertions pass"
+    },
+    {
+      "level": "installed",
+      "version": "2.1.33",
+      "bodySha256": "febc3f34f91e834cf4ac05d162b754e259ddc4508a14a4362b6e83bc19de69e2",
+      "validity": "valid",
+      "verdict": "pass",
+      "cleanup": {
+        "timers": 0,
+        "listeners": 0,
+        "subscriptions": 0,
+        "breakpoints": 0,
+        "remoteObjectGroups": 0,
+        "ownedTabs": 0
+      },
+      "id": "I-BUFFER-33-AUTO-2X",
+      "rate": 2,
+      "preconditions": "Auto; unchanged media/content; non-paused/non-seeking/non-ended/error-free; no new trusted input during window",
+      "expected": "pause/resume and five-second short seek; 15 intervals each time delta >0.05 and increasing frames; exact rate; no reload",
+      "actual": {
+        "elapsedMs": 15007.899999976158,
+        "samples": 16,
+        "timeDelta": 30.015718000000106,
+        "framesDelta": 1799,
+        "reloadCount": 0
+      },
+      "evidence": "windows[rate=2], operations[rate=2]",
+      "reason": "all operation and interval assertions pass"
+    },
+    {
+      "level": "installed",
+      "version": "2.1.33",
+      "bodySha256": "febc3f34f91e834cf4ac05d162b754e259ddc4508a14a4362b6e83bc19de69e2",
+      "validity": "valid",
+      "verdict": "pass",
+      "cleanup": {
+        "timers": 0,
+        "listeners": 0,
+        "subscriptions": 0,
+        "breakpoints": 0,
+        "remoteObjectGroups": 0,
+        "ownedTabs": 0
+      },
+      "id": "I-BUFFER-33-CLEANUP",
+      "rate": null,
+      "preconditions": "all bounded collection steps returned; tab cleanup completed",
+      "expected": "owned resources 0; original rate retained",
+      "actual": {
+        "cleanup": {
+          "timers": 0,
+          "listeners": 0,
+          "subscriptions": 0,
+          "breakpoints": 0,
+          "remoteObjectGroups": 0,
+          "ownedTabs": 0
+        },
+        "rate": 2
+      },
+      "evidence": "cleanup and restoredState",
+      "reason": "finally cleanup and tab inventory verified"
+    }
+  ],
+  "replay": {
+    "exitCode": 0,
+    "sourceSha256": "6b97ec4e096eab096f17c8d9da4e1ae1fb387e071228179941e88f31bb750e79",
+    "results": [
+      {
+        "success": true,
+        "exitCode": 0,
+        "counts": {
+          "tests": 5,
+          "failed": 0,
+          "passed": 5,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "topLevel": 5,
+          "suites": 0
+        },
+        "cases": [
+          {
+            "name": "I-BUFFER-33 identity matches published body, manager, unique instances and hooks",
+            "status": "passed"
+          },
+          {
+            "name": "I-BUFFER-33 Auto 1x pause resume short seek and 15 continuous intervals",
+            "status": "passed"
+          },
+          {
+            "name": "I-BUFFER-33 Auto 2x pause resume short seek and 15 continuous intervals",
+            "status": "passed"
+          },
+          {
+            "name": "I-BUFFER-33 cleanup and original playback rate retained",
+            "status": "passed"
+          },
+          {
+            "name": "I-BUFFER-33 released five files remain immutable",
+            "status": "passed"
+          }
+        ]
+      }
+    ],
+    "formalSuiteCountUnchanged": 1938
+  }
+}

@@ -6302,6 +6302,12 @@
       "encoding": "raw",
       "bytes": 2286,
       "sha256": "ceba57b2379c942bd9452ff0e5f190ad8b6c8f240ba45c0645c150e02e7b5ce0"
+    },
+    {
+      "path": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_INSTALLED_2026-10-24.json",
+      "encoding": "raw",
+      "bytes": 22885,
+      "sha256": "d474b1533e618363001374d6e0d3105f731ee7668a1ccb83dc274136eea9830a"
     }
   ],
   "localManifest": "archive/retired/local/2026-10-20-cleanup/private-manifest.json",
