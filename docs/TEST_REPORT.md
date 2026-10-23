@@ -1,65 +1,50 @@
-# BiliCDN_TW v2.1.32 量測中繼資料驗證
+# BiliCDN_TW v2.1.33 緩衝候選到期驗證
 
-日期：2026-10-24（Asia/Taipei）。基準 ac44474／v2.1.31，執行期修復 5fa25f8。只改善量測中繼資料的驗證與既有鎖內提交，不新增設定、持久欄位、依賴或計時器。
+日期：2026-10-24（Asia/Taipei）。基準 4e06eac／v2.1.32，執行期修復 d6197de。只修正唯讀周期確認額度的到期處理；不調整門檻、不啟用提前備援。
 
 ## 驗證結果
 
-新增三十五個具名契約：三十個單元、五個真實 Store／MeasurementController 整合案例。原產品首次三十一案為九通過／二十二失敗，退出 1；額外健康游標上限案例在修正前使三十五案為三十四通過／一失敗，退出 1；最終三十五案全部通過，退出 0。正常對照、原始失敗、各階段來源雜湊及逐案名稱保存在 [公開 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json)。
+新增三十四個具名契約：三十個純領域單元、四個真實 Monitor／Runtime／Recorder 整合案例，1／2 倍各自登記。未修改產品為十八通過／十六失敗，退出 1；最小修復後同一批斷言三十四案全通過，退出 0。[逐案 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_2026-10-24.json) 保存來源雜湊、紅綠結果、固定輸入、完整前後觀察與來源隔離。
 
-功能來源完整 verify 1904／1904，較 v2.1.31 增加三十五案；型別、102 模組架構、格式、文件／封存、確定性建置及封裝通過，沒有略過、取消或待實作。七百項輸入的乾淨來源副本 npm ci 與完整 verify 均退出 0，輸入雜湊不變，副本已清理。升版後完整 verify 再次 1904 案通過；含封裝的全新副本有 707 項輸入，npm ci／verify 均退出 0，輸入不變，副本已清理。最後補登交付結果只再執行文件／封存與差異核對，不宣稱新增執行期案例。
+首次綠色嘗試中，四案把報告 creditMs 誤當成專屬周期額度而失敗；該欄原本是短期及周期確認的最大值。修正測試語意後，在舊產品重新取得十八通過／十六失敗，再以相同斷言轉綠；沒有降低候選或確認時間的要求，原失敗仍保存。
 
-原工具程序的暫存 Git 權限失敗及測試型別／格式調整均保留在本機日誌，完成修正後重跑；不以失敗執行宣稱通過。新案例屬既有正式 measurement-state 套件，沒有獨立產品測試橋接。
+功能來源完整 verify 1938／1938、tooling 398 案、型別、102 模組架構、格式、文件／封存、確定性建置及封裝全部通過。全新七百一十項輸入副本 npm ci／verify 退出 0，輸入雜湊不變，副本已清理。第一次乾淨副本因受限 Git 暫存失敗而漏入新測試，型別檢查失敗；修正環境後另開新副本重跑，原紀錄保留。升版最終驗證另於交付補登。
 
 ## 行為契約與非干預
 
-MeasurementMetaStore 只讀 schema 2 的自有資料描述子，拒絕陣列、繼承欄位、accessor 與數值強制轉換。catalogCursor 限非負安全整數；lastChallengeAt 限有限、非負且不晚於明確注入的目前時間，合法小數與真正零保留。非法欄位各自歸零，不連帶丟棄另一合法值。
+根因是最近欠量超過八秒時，程式只清除欠量與時間戳；若同筆樣本結束回補並建立新欠量，後段便沿用先前 cycleCreditMs。現在到期分支同時撤銷該額度，新證據首次成立從零開始，1999 ms 不確認、2000 ms 才可確認。7999／8000 ms 尚有效，8001 ms 才到期；獨立且仍有效的短期證據保持原判定。
 
-get 重新讀取最新儲存，不寫入或遷移；update 以最新合法值合併，非法部分更新保留合法目前值，只寫 schema、catalogCursor、lastChallengeAt、updatedAt。未知歷史欄位只在明確更新時不再保存，不事後清空其他使用者資料。回傳副本互不影響；儲存 get／set／delete 例外保持原傳播語意。
+| 固定情境（各 1／2 倍） | 舊實作 | 修正後 |
+| --- | --- | --- |
+| 舊證據到期、單次下降後立即回補 | 第 17 秒多出一秒候選；合計兩段、兩秒 | 該段消失；只保留先前合法的一段、一秒 |
+| 舊證據到期、新欠量持續下降 | 第 17 秒直接沿用舊確認；合計四秒 | 第 19 秒完成新的兩秒確認；合計兩秒 |
 
-起播選擇仍使用同步快照，不因等鎖延長起播期限。既有 withLock 回呼取得鎖後先核對標記、重讀目前游標，再核對標記及遞增；兩個等待者與外部更新不再被舊游標覆蓋。起播與健康量測游標達安全整數上限時歸零。健康計畫繼續在既有鎖內重新檢查資格、保存冷卻與安排工作。
+原有一百次功能情境及七十二次周期開發／保留情境在修復前後全部有效、通過，完整結果物件逐項相同，包含候選段、十五秒後續、首次／最後提前量、輸入、操作、副作用、容量與清理。兩小時情境仍在原容量限制內。這是指定離線模型的非干預及效用證據，不是網站誤報率或救援成功率。
 
-只有 MeasurementController 啟動主動探測；路線、授權、親和、恢復、控制觀察與診斷所有權不變。完整既有契約維持一般 6／12／15 秒、長 seek 15／30／15 秒、死核心四秒、長暫停三十秒、九十秒冷卻、生命週期兩次重載、位置／倍速、新操作、晚到 Promise、兩樣本 recovered、十五秒持續播放及終止後一百二十 tick；候選 v4 不變。
+PlayerMonitor 仍是唯一候選狀態所有者；純函式只回傳下一狀態，Runtime 轉交、Recorder 投影。沒有新增欄位、計時器、依賴、持久資料或網路工作。schemaVersion 4／buffer-window-v4 保持，屬既有到期契約修復；歷史 v4 結果仍以當時來源為準。
+
+一般 6／12／15 秒、長 seek 15／30／15 秒、死核心四秒、長暫停三十秒、九十秒冷卻及生命週期兩次重載維持。完整套件包含位置／倍速還原、新操作、晚到 Promise、兩樣本 recovered、十五秒持續播放及終止後一百二十 tick；既有路線、探測、親和、寫入與控制所有權不變。
 
 ## 本輪安全差異
 
-新的 Codex Security 掃描 b0be17ea-8c04-4dc4-b6c4-e8cf890c80a7 已完成封存，固定 ac4447451c22125931feb56535b1854ec86712e1 至 5fa25f82d675eef14bc177279d978ceb1b3030d1。六項來源清單與四份變更指南完成檢查，獨立架構審查交叉核對；零可報告發現、無待判定候選。這是指定差異審查，不是全案無漏洞保證。後續版本／文件／封裝記帳由自動核對承接，不宣稱掃描涵蓋所有後續提交。
-
-工具回報總 token 5,780,067，coverage 為 partial，包含快取及共用歷史，另有缺失 thread；不作本次獨立掃描成本。
+本輪風險評估：執行期差異只有純領域到期分支撤銷既有數值狀態，沒有新增輸入、權限、資料輸出、網路、持久化或控制路徑。依既有按風險規則，不另執行 Codex Security 掃描；不把上一版掃描當成本輪安全通過。型別、架構、資料邊界及非干預由本輪自動契約覆蓋。
 
 ## 來源隔離
 
-IAB 自有頁面載入真實 Store 與 MeasurementController，以記憶體儲存、模擬 probe 和原生 Web Locks 驗證八項：原生鎖可用、非法游標獨立預設、唯讀不遷移、四欄白名單、未知 getter 零執行、起播不等待被持有的 metadata 鎖、兩個排隊回呼保存最新游標及冷卻，以及清理。全部通過；自有 timer、活動鎖及儲存項目歸零。
-
-單頁兩個控制器不是實際跨分頁 GM 驗收。未接正式 GM 或執行真實 CDN 探測；來源分頁及服務已關閉。第一次本機服務在受限程序中無法由 IAB 連線，沒有產品斷言；改用主機服務後完成。原錯誤分頁由使用者關閉，工具已核對不存在。
-
-修正後工具呼叫送出至返回為 4014.3937 秒總間隔；實際執行、批准等待及其他等待沒有分離量測，均保留未知，不能據此判為執行超時。
-
-## 發布與安裝狀態
-
-v2.1.31 完整報告原文追加保存，五項 Release 依原 bytes／SHA-256 搬入公開封存。[升版前清單](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_5fa25f8.json) 保留原保護資料。[v2.1.32 正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.32) 已發布，發布提交 30ffffd226c55f1a12207b14d5743d34beb4aa26。當時遠端 main 與標籤解參照一致；唯一附件及無登入憑證的公開 latest HTTP 200 全文均為 417076 bytes／SHA-256 156d4b0f80fc30c8e88a220bc39727c49b95408585e6c39bf7c9d193f8737e0d，與本機逐位元組一致。後續文件提交不移動標籤、不回寫五項 Release 快照。
-
-公開更新入口首次停在 Tampermonkey 中繼頁，工具清單沒有可操作的管理器確認頁；新載入指定影片的完整本體仍為 413812 bytes／SHA-256 36e48b746b596638260c5821a87482e6ddde1331c0975b9d55920b228e725258，精確等同已發布 v2.1.31。當時 v2.1.32 安裝身分與 Auto 1／2 倍正常回歸記為工具阻塞／未執行，產品判定為 null；原紀錄保持，不以後續結果回寫。
-
-首次嘗試未重複請求工作授權或使用者操作；發布交付完成後保留上述實際阻塞。自有更新與影片分頁已關閉，Debugger 已解除，未建立故障攔截或額外播放收集器。[交付 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/MEASUREMENT_METADATA_DELIVERY_2026-10-24.json) 保存公開校驗、完整本體及清理證據。
-
-使用者確認完成更新後，於 2026-10-24 的新文件核對 Tampermonkey 5.5.1／v2.1.32，完整本體 415118 bytes／SHA-256 d0286eb6ef089cb5d89432cc0fef65fa59f35cfb948e880f452f52b9a5cb548e 與發布檔一致；重載後再次全文比對相同。Runtime／ControlCenter 各一，Fetch／XHR installed、fetch-and-xhr-verified。短暫 Debugger 只取得身分，斷點與暫停在操作及播放窗口前解除。
-
-指定影片 BV1tFZZBQE57 保持 Auto，當次實際 3840×2160。1／2 倍各完成真實按鈕暫停／恢復與分頁原生 Right 約五秒短 seek，再各以單次完整 await 取得十六筆樣本、十五個一秒區段。每區段時間增加大於 0.05 秒且影格增加，倍速精確、同媒體與內容，沒有 paused／seeking／ended／error 或新可信輸入；同步媒體事件收集為零。1 倍經過 15018.8 ms、影片前進 15.017997 秒；2 倍經過 15011.9 ms、前進 30.021783 秒。兩窗首次即有效通過，recovery 保持 healthy，reloadCount 為零。
-
-倍速選單前兩次定位把顯示文字當成 listitem 的無障礙名稱，未找到項目；依已觀察文字修正後成功。這是操作定位失敗，尚未開始播放窗口，不是產品失敗，也未用重跑挑選窗口。原二倍速已恢復，自有計時器、監聽器、斷點、遠端物件參照及分頁均清理。
-
-[安裝版逐案 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/MEASUREMENT_METADATA_INSTALLED_2026-10-24.json) 保存逐秒、操作前後、有效性及清理結果。另以五個具名 node:test 重播身分、兩倍速操作／進度、清理與五檔不變條件，全部通過；這五個證據檢查不加入正式 1904 案。本輪正常安裝回歸已完成，原中繼頁阻塞、來源隔離及實際安裝分開記錄。
+Codex IAB 自有 loopback 頁面載入實際 assessBufferTrend／observeBufferCycle 來源，以六十秒健康前置及固定合成時間執行四個 1／2 倍對照，全部通過；同時核對輸入未被修改。沒有接正式 GM、建立產品控制器、修改影片 getter 或注入故障。純函式沒有自有 timer／listener／subscription；分頁與服務已清理。這只證明瀏覽器中相同來源的計算，不是安裝版故障救援。
 
 ## 發布與安裝限制
 
-普通欄位讀取不執行 getter 或強制轉換，但 Object.getOwnPropertyDescriptor 仍可能觸發 Proxy trap；沒有承諾任意 Proxy／受損 GM 平台隔離。缺少 Web Locks 時沿用直接執行退化，不宣稱跨分頁互斥。get／update／clear 本身不另外加鎖。
+v2.1.32 完整報告原文追加保存，五項 Release 按原 bytes／SHA-256 歸檔；[升版前清單](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_d6197de.json) 保留保護基準。本次執行期檔案不在 unchangedFiles 中，沒有解除或重算舊來源保護。
 
-時鐘非法時以零處理；時鐘倒退使原冷卻落在未來時，該欄失效歸零。沒有新增跨分頁單調時鐘；探測仍須通過原資格與額度。白名單是明確 metadata 更新的持久邊界，不是全儲存清理或安全沙箱。
+v2.1.33 正在完成最終封裝與公開交付；安裝版尚未執行，發布後先嘗試既有公開更新入口，再核對完整本體。正常安裝回歸與來源隔離分開記錄，不用舊版播放補算。
 
-本輪完成的安裝版只涵蓋管理器、完整本體、唯一實例、hooks 與指定影片 Auto 1／2 倍正常播放、暫停／恢復、短 seek 及十五秒進度。控制中心入口維持依指示跳過；自然起因、故障注入、背景／gate／剪貼簿、六組五十秒樣片與歷史矩陣不重開。不宣稱真實卡頓率或救援成功率改善，不啟用提前備援。
+首次回補前的共同輸入仍可能產生候選；小幅回補、真正緩慢耗盡及真實網站節奏的取捨沒有被本次修復全面解決。診斷 creditMs 不能單獨解讀為候選已成立，仍須看 candidate、原因碼及資料品質。
+
+控制中心入口依指示跳過；自然起因、安裝故障注入、背景／gate／剪貼簿、六組五十秒樣片及歷史矩陣不重開。不宣稱降低真實卡頓率，不啟用預測救援。
 
 ## 歷史驗證導覽
 
 <a name="bilicdn_tw-v218-release-verification--2026-10-04"></a>
 
-v2.1.8 相容入口導向 [當版報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v218-release-verification--2026-10-04)。上一版見 [v2.1.31 完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2131-完整報告2026-10-24)，其餘由 [HISTORY](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md) 追溯。舊結果保持。
+v2.1.8 相容入口導向 [當版報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v218-release-verification--2026-10-04)。上一版見 [v2.1.32 完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2132-完整報告2026-10-24)，其餘由 [HISTORY](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md) 追溯。舊結果保持。

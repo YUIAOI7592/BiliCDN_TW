@@ -36,6 +36,7 @@ coverage/
 !/archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json
 !/archive/retired/docs/evidence/MEASUREMENT_METADATA_DELIVERY_2026-10-24.json
 !/archive/retired/docs/evidence/MEASUREMENT_METADATA_INSTALLED_2026-10-24.json
+!/archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_2026-10-24.json
 !/archive/retired/originals/
 !/archive/retired/originals/**
 !/archive/retired/releases/

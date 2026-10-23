@@ -20,7 +20,8 @@
 | 適用版本 | 原始紀錄 |
 | --- | --- |
 | 未單列／跨版 | [新增 B 站 CDN 節點的驗證方案（2026-09-25）](../archive/retired/docs/CDN_CANDIDATE_TEST_PLAN_2026-09-25.md)、[B 站 CDN 全量初篩與比較測試報告](../archive/retired/docs/CDN_NODE_FULL_SCREENING_2026-09-25.md)、[B 站 CDN 優化公開專案調查（2026-09-25）](../archive/retired/docs/CDN_OPEN_SOURCE_SURVEY_2026-09-25.md)、[內建瀏覽器 Range 與實際播放對照（2026-09-25）](../archive/retired/docs/CDN_RANGE_PLAYBACK_EXPERIMENT_2026-09-25.md)、[B 站 CDN 節點測試結果（2026-09-25）](../archive/retired/docs/CDN_TEST_RESULTS_2026-09-25.md)、[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)、[歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[測試工具驗證紀錄](TEST_TOOLING_REPORT.md) |
-| v2.1.32 | [最新版完整驗證](TEST_REPORT.md) |
+| v2.1.33 | [最新版完整驗證](TEST_REPORT.md) |
+| v2.1.32 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2132-完整報告2026-10-24) |
 | v2.1.31 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2131-完整報告2026-10-24) |
 | v2.1.30 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2130-完整報告2026-10-24)、[周期候選功能證據](../archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md) |
 | v2.1.29 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2129-完整報告2026-10-24)、[候選 v3 功能證據](../archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md) |
