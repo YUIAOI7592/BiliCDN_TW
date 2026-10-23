@@ -168,6 +168,8 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 新增 --cost-v3 --json 比較已發布 v2.1.28／v2.1.29；--cost-source --json 比較已發布 v2.1.29／當前確定性建置，臨時腳本有 bytes／SHA-256，不能冒充發布版。三種成本選項互斥，原 --cost 語意保持。功能輸出另列候選中斷區間與最後候選提前量，不合併原候選段或改寫十五秒後續。worker 候選／趨勢／斷言必須一致；收集器對過期、未來與所有者變動資料不作有效歸因。
 
+`npm run evaluate:buffer-shadow -- --holdout --json` 獨立執行固定於 observation-inputs.mts 的外部輸入及效用門檻，各倍速使用新子程序；不混入原有功能清單。此選項與所有成本模式互斥。輸出包含凍結輸入與雜湊、完整逐案結果、候選連續性及清理。有效性與效用斷言分開；有效案例未達事前門檻仍須退出 1，不能因正式 verify 通過而轉算成功。既有缺口、真實退出碼與數據只看 [評估報告](../archive/retired/docs/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.md#獨立保留情境)。
+
 候選 v2 的兩秒確認原型未通過保留耗盡情境，未接入現行來源。可重播差異、具名契約、正確非零退出碼與來源基準集中於 [原型評估](../archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md#驗證與重播)；僅在獨立副本套用。現行 evaluate:buffer-shadow 驗證現行 v3 來源，不能改寫未採用 v2 的結果；成本命令固定載入已發布腳本，版本及證據不可混算。
 
 ### 原始碼格式與靜態規則

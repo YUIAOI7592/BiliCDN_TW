@@ -17,6 +17,7 @@ import {
 import type { EvidenceRow } from './buffer-shadow/model.mts'
 import { costInputs, v3CostInputs, loadCostInput } from './buffer-shadow/inputs.mts'
 import type { CostInput } from './buffer-shadow/inputs.mts'
+import { observationNames, observationInput } from './buffer-shadow/observation-inputs.mts'
 
 export function validEvaluationResult(
   value: unknown,
@@ -113,6 +114,7 @@ export function validEvaluationResult(
 export async function evaluateBufferShadow(
   cost = false,
   comparison: 'legacy' | 'v3' | 'source' = 'legacy',
+  holdout = false,
 ) {
   let suiteStarted = performance.now(),
     activeSuite = ''
@@ -163,7 +165,7 @@ export async function evaluateBufferShadow(
               pair,
             })
     else
-      for (const name of scenarioNames)
+      for (const name of holdout ? observationNames : scenarioNames)
         for (const rate of [1, 2])
           jobs.push({
             args: [name, String(rate)],
@@ -253,7 +255,22 @@ export async function evaluateBufferShadow(
           : cost
             ? '39c21b5f272eda2f8090f079770ad129e1545dd0'
             : 'cfc15924c40f688518e78be417909b69558ce4d5',
-      mode: cost ? (comparison === 'legacy' ? 'cost' : `cost-${comparison}`) : 'functional',
+      mode: cost
+        ? comparison === 'legacy'
+          ? 'cost'
+          : `cost-${comparison}`
+        : holdout
+          ? 'holdout'
+          : 'functional',
+      ...(holdout
+        ? {
+            frozenInputs: observationNames.map((name) => ({
+              name,
+              ...observationInput(name),
+              sha256: sha256(JSON.stringify(observationInput(name))),
+            })),
+          }
+        : {}),
       node: process.version,
       limits: { caseMs: 5000, cleanupMs: 5000, suiteMs: 60000, maxBytes: 33554432 },
       assumptions: [
@@ -302,7 +319,7 @@ if (
   }
   if (options)
     try {
-      const report = await evaluateBufferShadow(options.cost, options.comparison)
+      const report = await evaluateBufferShadow(options.cost, options.comparison, options.holdout)
       if (options.json) console.log(JSON.stringify(report))
       else {
         for (const row of report.results)

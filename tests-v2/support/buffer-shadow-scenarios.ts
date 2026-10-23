@@ -13,6 +13,8 @@ import {
   candidateProfile,
   candidateTargets,
 } from '../../scripts/buffer-shadow/candidate-inputs.mts'
+import type { CandidateProfile } from '../../scripts/buffer-shadow/candidate-inputs.mts'
+import type { ObservationTarget } from '../../scripts/buffer-shadow/observation-inputs.mts'
 
 export interface ScenarioInput {
   readonly at: number
@@ -58,9 +60,10 @@ export interface ScenarioResult {
 }
 
 export async function runScenario(
-  name: ScenarioName,
+  name: ScenarioName | 'observation-holdout',
   rate: 1 | 2,
   t: Parameters<typeof testScope>[0] = { after() {} },
+  observation?: { readonly profile: CandidateProfile; readonly target: ObservationTarget },
 ): Promise<ScenarioResult> {
   const f = bufferMonitor(t, rate),
     recorder = new DiagnosticRecorder(f.clock.now, () => false)
@@ -110,7 +113,7 @@ export async function runScenario(
         : name === 'slow-exhaustion'
           ? 20
           : 12
-  const profile = candidateProfile(name)
+  const profile = observation?.profile ?? candidateProfile(name)
   let ownerRevision = 1,
     maxSamples = 0,
     maxCompletions = 0,
@@ -320,6 +323,32 @@ export async function runScenario(
     }
     const score = scoreWindow(rows, { scoreUntil: rows.at(-1)!.at, stallAt })
     const first = score.episodes[0]?.start ?? null
+    if (observation) {
+      const target = observation.target
+      if (target.minimumLeadMs !== undefined)
+        check(
+          'holdout-exhaustion-lead',
+          true,
+          score.firstLeadMs !== null && score.firstLeadMs >= target.minimumLeadMs,
+        )
+      if (target.maximumCandidateMs !== undefined)
+        check('holdout-normal-candidate-cap', true, score.candidateMs <= target.maximumCandidateMs)
+      if (target.requiresInsufficient)
+        check(
+          'holdout-gap-not-healthy',
+          true,
+          rows.some((r) => r.candidate === null),
+        )
+      if (target.maximumCycleCandidateMs !== undefined && profile?.cycleMs)
+        for (let at = 0; at < rows.at(-1)!.at; at += profile.cycleMs) {
+          const overlap = score.episodes.reduce(
+            (sum, e) =>
+              sum + Math.max(0, Math.min(e.end, at + profile.cycleMs!) - Math.max(e.start, at)),
+            0,
+          )
+          check(`holdout-normal-cycle-${at}`, true, overlap <= target.maximumCycleCandidateMs)
+        }
+    }
     if (
       [
         'high-stable',

@@ -109,14 +109,17 @@ export function parseEvaluationArgs(args: readonly string[]): {
   json: boolean
   cost: boolean
   comparison?: 'v3' | 'source'
+  holdout?: true
 } {
   if (
     new Set(args).size !== args.length ||
-    args.some((a) => !['--json', '--cost', '--cost-v3', '--cost-source'].includes(a)) ||
-    args.filter((a) => a.startsWith('--cost')).length > 1
+    args.some(
+      (a) => !['--json', '--cost', '--cost-v3', '--cost-source', '--holdout'].includes(a),
+    ) ||
+    args.filter((a) => a.startsWith('--cost') || a === '--holdout').length > 1
   )
     throw Error(
-      'Usage: npm run evaluate:buffer-shadow -- [--json] [--cost|--cost-v3|--cost-source]',
+      'Usage: npm run evaluate:buffer-shadow -- [--json] [--cost|--cost-v3|--cost-source|--holdout]',
     )
   const comparison = args.includes('--cost-v3')
     ? 'v3'
@@ -127,6 +130,7 @@ export function parseEvaluationArgs(args: readonly string[]): {
     json: args.includes('--json'),
     cost: args.some((a) => a.startsWith('--cost')),
     ...(comparison ? { comparison } : {}),
+    ...(args.includes('--holdout') ? { holdout: true as const } : {}),
   }
 }
 

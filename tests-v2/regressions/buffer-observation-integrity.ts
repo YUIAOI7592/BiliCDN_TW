@@ -12,6 +12,64 @@ import type { EvidenceRow } from '../../scripts/buffer-shadow/model.mts'
 import { runScenario } from '../support/buffer-shadow-scenarios.ts'
 import { FakeClock } from '../support/clock.ts'
 import { testScope } from '../support/scope.ts'
+import {
+  observationNames,
+  observationInput,
+} from '../../scripts/buffer-shadow/observation-inputs.mts'
+
+test('U-E07 independent holdout inputs are immutable and declare utility gates before execution', () => {
+  for (const name of observationNames) {
+    const input = observationInput(name)
+    assert.ok(Object.isFrozen(input.profile.samples))
+    assert.equal(input.profile.samples.length, 120)
+    assert.deepEqual(input, observationInput(name))
+    assert.ok(Object.keys(input.target).length)
+    assert.throws(() => Object.assign(input.target, { minimumLeadMs: 0 }), TypeError)
+  }
+  assert.deepEqual(parseEvaluationArgs(['--holdout', '--json']), {
+    cost: false,
+    json: true,
+    holdout: true,
+  })
+  for (const flag of ['--cost', '--cost-v3', '--cost-source'])
+    assert.throws(() => parseEvaluationArgs(['--holdout', flag]))
+})
+
+for (const rate of [1, 2] as const)
+  test(`I-E08 product outputs with the same prefix cannot depend on future refill rate=${rate}`, async (t) => {
+    const normal = await runScenario(
+      'observation-holdout',
+      rate,
+      t,
+      observationInput('prefix-normal'),
+    )
+    const exhaustion = await runScenario(
+      'observation-holdout',
+      rate,
+      t,
+      observationInput('prefix-exhaustion'),
+    )
+    assert.equal(validEvaluationResult(normal, false), true)
+    assert.equal(validEvaluationResult(exhaustion, false), true)
+    assert.deepEqual(normal.inputs.slice(0, 9), exhaustion.inputs.slice(0, 9))
+    assert.deepEqual(normal.rows.slice(0, 9), exhaustion.rows.slice(0, 9))
+    assert.equal(normal.cleanup.timers, 0)
+    assert.equal(exhaustion.cleanup.subscriptions, 0)
+    const red = structuredClone(normal) as unknown as {
+      verdict: string
+      assertions: { id: string; actual: unknown; expected: unknown; verdict: string }[]
+    }
+    red.assertions.push({
+      id: 'deliberate negative evaluator control',
+      expected: true,
+      actual: false,
+      verdict: 'fail',
+    })
+    red.verdict = 'fail'
+    assert.equal(validEvaluationResult(red, false), true)
+    red.verdict = 'pass'
+    assert.equal(validEvaluationResult(red, false), false)
+  })
 
 for (const rate of [1, 2] as const)
   for (const fault of ['candidate', 'state', 'reason', 'assertion'] as const)

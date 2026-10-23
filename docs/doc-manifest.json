@@ -2756,6 +2756,13 @@
   ],
   "protections": [
     {
+      "path": "archive/retired/docs/evidence/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 4090414,
+      "sha256": "ac24fef58f3dfc5769b8353372d4893abe6f921e67af8d09d47e67c720bf9def"
+    },
+    {
       "path": "archive/retired/originals/PRE_BUFFER_OBSERVATION_2026-10-23_2588f12.json",
       "mode": "exact",
       "encoding": "raw",
