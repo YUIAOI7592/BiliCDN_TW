@@ -11,8 +11,8 @@
 | Codex Security | 固定 8e410b7..34672b0，25／25 正式項目，連同其餘 14 個變更檔案審查；0 候選／0 發現，coverage complete，無延期 |
 | 乾淨來源 N | 644 個公開輸入，npm ci 及完整 verify 退出 0；1456 案、輸入雜湊零變更，403700 bytes 本體逐位元組一致；專用暫存副本已清除 |
 | 來源瀏覽器 S | 本輪未執行，Node 模型不代替可信瀏覽器或網站驗收 |
-| 實際安裝 I | 發布後另行核對；目前未執行，不以 v2.1.27 的結果補算 |
-| 公開交付 | v2.1.28 發布準備中，發布後核對遠端 main／標籤、唯一附件及 public latest |
+| 實際安裝 I | Tampermonkey 5.5.1、完整 v2.1.28 本體、唯一實例與 hooks 通過；指定影片 Auto 1／2 倍正常操作及各十五秒播放通過，詳見下節 |
+| 公開交付 | 已正式發布；main／peeled tag 4ea26c11b9225c42303b49e280ce5c1a8e873b74、唯一腳本附件與 public latest 全文相符；後續僅驗收文件提交 main |
 
 工具版本、依賴、設定與持久 schema 均不變。本功能只輸出診斷，沒有啟用預測救援；一般 6／12／15 秒、長 seek 15／30／15 秒與原有所有權、額度保持。
 
@@ -35,6 +35,18 @@ canonical findings SHA-256 dc80d86ff553bd12f57ec2167a29cc7ff2d6829999ab36061d79e
 ## 封裝原件
 
 v2.1.28 完整腳本為 403700 bytes，SHA-256 8b3ec29aa2b26cb0b9708a91aed65e2d6411e09875e2ac87c70436f0eeec418d。版本設定以 release.json 為準；舊 v2.1.27 五項原件已按原 bytes／SHA 移至封存，其完整現行報告追加保存。修改保護適用範圍前保存 [原清單快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-23_34672b0.json)，沒有改寫原始雜湊。
+
+## 發布後實際安裝
+
+公開 latest 回應 200、版本 2.1.28、403700 bytes，SHA-256 與封裝一致；GitHub 只有 BiliCDN_TW.user.js 附件，API digest 相符，非 draft／prerelease。公開入口當次停在 Tampermonkey 中繼頁，完整舊本體仍等於 v2.1.27；使用者完成更新後才核對新版文件。
+
+完整執行 IIFE（不含 metadata／管理器外包裝）401743 bytes，SHA-256 0d8b9e9c629c9432a605fa2994fd876d5f36ad31435863e93931471aab4ea3d1，與封裝同段一致；管理器 5.5.1、版本 2.1.28、Runtime／ControlCenter 各一個，Fetch／XHR installed。hooks 屬腳本觀察，不當作 Network 目的地確認。
+
+Auto 1 倍有效窗口：15012.7 ms 內位置增加 14.971896 秒、影格增加 901；Auto 2 倍：15008.2 ms 內增加 30.017074 秒、影格增加 1800。各 16 筆樣本、十五個區段均保持同媒體、Auto、指定倍速、非 paused／seeking／ended／error，時間增加 >0.05 秒且影格增加，reloadCount 為 0。兩倍速均完成原生暫停／恢復；各次 Right 短 seek 的 userRevision 與 seekRevision 恰增一次，目標前進約五秒。
+
+真實診斷輸出 28315 bytes，bufferTrend schemaVersion 1／algorithm buffer-window-v1、14 筆／7736 bytes，沒有原始 URL。此為唯讀報告檢查，沒有開啟控制中心或寫剪貼簿。私有安裝證據重播 node:test 五項全部通過、退出 0，與正式 1456 案分開；只證明已收集資料符合指定判定。
+
+初始參照／結果綁定錯誤未取得有效採樣；切換倍速時浮動小窗的不可見控制項不算產品失敗。首次 2 倍系列起點仍 seeking，保留但不計持續播放；確認 seek 結束後才開始獨立完整窗口，沒有拼接。觀察均在單次呼叫完整 await，沒有跨呼叫背景 Promise。最後恢復原 2 倍播放、解除斷點／Debugger、釋放遠端物件群並關閉自有分頁；自有攔截、請求、timer、listener、subscription、wrapper 及分頁均零。本輪未安裝故障注入。
 
 ## 發布與安裝限制
 

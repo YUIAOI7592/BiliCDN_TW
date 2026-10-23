@@ -345,3 +345,7 @@ FINAL-VERIFY、FINAL-CLEAN-*、首次沙箱失敗及各次前提修正輸出均�
 使用者另行指示發布，結束此前本機限定範圍。升版後 typecheck、architecture、完整 verify 1456 案通過；101 執行期模組，tooling 197 案，固定比較工具仍讀取封存的原始 v2.1.27。原 Release 五檔 bytes／SHA 保持，完整舊報告只追加；發布前搬移清單另存 raw 快照。安全差異範圍、結果及安裝限制集中於 [TEST_REPORT](TEST_REPORT.md)，不以 Node 合成結果補算瀏覽器。
 
 本次發布的乾淨來源副本含 644 個公開輸入，無既有 node_modules、.git、.work 或私有封存。npm ci --ignore-scripts --no-audit --no-fund 與完整 verify 均退出 0，正式 1456 案，輸入雜湊零變更；建置與封裝同為 403700 bytes／8b3ec29aa2b26cb0b9708a91aed65e2d6411e09875e2ac87c70436f0eeec418d。絕對路徑及專用前綴核對後移除副本，工作區沒有新增一次性工具。封裝報告為公開發布前快照；發布及實際安裝補記只更新現行 TEST_REPORT，不回寫快照。
+
+發布後 public latest、遠端 main／peeled tag、唯一附件及 API digest 全部與封裝一致。使用者完成管理器更新後，IAB 取得完整新版 IIFE／單一實例／hooks，Auto 1／2 倍各 16 個樣本的十五秒播放、原生暫停／恢復與可信短 seek 通過；診斷 JSON 有界且無 URL。私有實際證據重播 node:test 五項通過、退出 0，獨立於正式 1456 案。初始工具綁定、浮動小窗與 seeking 起點的無效前提另記，不以 undefined 或片段相接判通過；單次 await 的收集器已結束，斷點／遠端參照／自有分頁已清理。控制中心入口、故障注入、背景／gate／剪貼簿及歷史矩陣維持未執行或依使用者跳過。
+
+固定比較原件搬移後實際重跑 44 次版本案例，44／44 有效且通過、退出 0，仍為原版 v1.3.4 與已發布 v2.1.27，沒有把新版本拿來替換比較基準。此路徑回歸與新功能正式測試、安裝觀察分開記錄。
