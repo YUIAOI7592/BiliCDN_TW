@@ -6,7 +6,7 @@
 
 新增三十五個具名契約：三十個單元、五個真實 Store／MeasurementController 整合案例。原產品首次三十一案為九通過／二十二失敗，退出 1；額外健康游標上限案例在修正前使三十五案為三十四通過／一失敗，退出 1；最終三十五案全部通過，退出 0。正常對照、原始失敗、各階段來源雜湊及逐案名稱保存在 [公開 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json)。
 
-功能來源完整 verify 1904／1904，較 v2.1.31 增加三十五案；型別、102 模組架構、格式、文件／封存、確定性建置及封裝通過，沒有略過、取消或待實作。七百項輸入的乾淨來源副本 npm ci 與完整 verify 均退出 0，輸入雜湊不變，副本已清理。升版後的最終完整與乾淨來源核對在交付時另記。
+功能來源完整 verify 1904／1904，較 v2.1.31 增加三十五案；型別、102 模組架構、格式、文件／封存、確定性建置及封裝通過，沒有略過、取消或待實作。七百項輸入的乾淨來源副本 npm ci 與完整 verify 均退出 0，輸入雜湊不變，副本已清理。升版後完整 verify 再次 1904 案通過；含封裝的全新副本有 707 項輸入，npm ci／verify 均退出 0，輸入不變，副本已清理。最後補登交付結果只再執行文件／封存與差異核對，不宣稱新增執行期案例。
 
 原工具程序的暫存 Git 權限失敗及測試型別／格式調整均保留在本機日誌，完成修正後重跑；不以失敗執行宣稱通過。新案例屬既有正式 measurement-state 套件，沒有獨立產品測試橋接。
 
@@ -36,7 +36,11 @@ IAB 自有頁面載入真實 Store 與 MeasurementController，以記憶體儲�
 
 ## 發布與安裝狀態
 
-v2.1.31 完整報告原文追加保存，五項 Release 依原 bytes／SHA-256 搬入公開封存。[升版前清單](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_5fa25f8.json) 保留原保護資料。v2.1.32 正在完成最終封裝與公開發布核對；安裝版尚未驗收，不以來源隔離替代。
+v2.1.31 完整報告原文追加保存，五項 Release 依原 bytes／SHA-256 搬入公開封存。[升版前清單](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_5fa25f8.json) 保留原保護資料。[v2.1.32 正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.32) 已發布，發布提交 30ffffd226c55f1a12207b14d5743d34beb4aa26。當時遠端 main 與標籤解參照一致；唯一附件及無登入憑證的公開 latest HTTP 200 全文均為 417076 bytes／SHA-256 156d4b0f80fc30c8e88a220bc39727c49b95408585e6c39bf7c9d193f8737e0d，與本機逐位元組一致。後續文件提交不移動標籤、不回寫五項 Release 快照。
+
+公開更新入口本次停在 Tampermonkey 中繼頁，工具清單沒有可操作的管理器確認頁；新載入指定影片的完整本體仍為 413812 bytes／SHA-256 36e48b746b596638260c5821a87482e6ddde1331c0975b9d55920b228e725258，精確等同已發布 v2.1.31。v2.1.32 安裝身分與 Auto 1／2 倍正常回歸記為工具阻塞／未執行，產品判定為 null，不以舊版或來源隔離補算。
+
+本次未重複請求工作授權或使用者操作；發布交付已完成，安裝核對保留上述實際阻塞。自有更新與影片分頁已關閉，Debugger 已解除，未建立故障攔截或額外播放收集器。[交付 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/MEASUREMENT_METADATA_DELIVERY_2026-10-24.json) 保存公開校驗、完整本體及清理證據。
 
 ## 發布與安裝限制
 

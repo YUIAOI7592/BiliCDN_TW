@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "version": "2.1.32",
+  "releaseCommit": "30ffffd226c55f1a12207b14d5743d34beb4aa26",
+  "remote": [
+    "30ffffd226c55f1a12207b14d5743d34beb4aa26\trefs/heads/main",
+    "53c41b464f48cf286cee8f1c4f71aa8d274befdc\trefs/tags/v2.1.32",
+    "30ffffd226c55f1a12207b14d5743d34beb4aa26\trefs/tags/v2.1.32^{}"
+  ],
+  "release": {
+    "tag": "v2.1.32",
+    "url": "https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.32",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "BiliCDN_TW.user.js",
+        "bytes": 417076,
+        "digest": "sha256:156d4b0f80fc30c8e88a220bc39727c49b95408585e6c39bf7c9d193f8737e0d"
+      }
+    ]
+  },
+  "publicDownload": {
+    "requested": "https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js",
+    "status": 200,
+    "bytes": 417076,
+    "sha256": "156d4b0f80fc30c8e88a220bc39727c49b95408585e6c39bf7c9d193f8737e0d",
+    "matchesLocal": true,
+    "version": "2.1.32"
+  },
+  "body": {
+    "bytes": 415118,
+    "sha256": "d0286eb6ef089cb5d89432cc0fef65fa59f35cfb948e880f452f52b9a5cb548e"
+  },
+  "verification": {
+    "fullCases": 1904,
+    "toolingCases": 398,
+    "exitCode": 0,
+    "clean": {
+      "inputCount": 707,
+      "ci": 0,
+      "verify": 0,
+      "changedInputs": [],
+      "cleaned": true
+    }
+  },
+  "installed": {
+    "schemaVersion": 1,
+    "expectedVersion": "2.1.32",
+    "actualBody": {
+      "bytes": 413812,
+      "sha256": "36e48b746b596638260c5821a87482e6ddde1331c0975b9d55920b228e725258"
+    },
+    "entry": "Tampermonkey intermediate page",
+    "managerConfirmationAccessible": false,
+    "installedAcceptance": "not-executed",
+    "reason": "Fresh document still runs the complete published v2.1.31 body.",
+    "validity": "not-executed",
+    "verdict": null,
+    "actualPublishedVersion": "2.1.31",
+    "noNewPermissionRequested": true
+  },
+  "cleanup": {
+    "sourceServerStopped": true,
+    "ownedTabs": 0,
+    "ownedBreakpoints": 0,
+    "ownedCollectors": 0,
+    "cleanSourceCopiesRemoved": true
+  },
+  "limitations": [
+    "Public delivery is complete; installed v2.1.32 normal regression was not executed because the manager confirmation surface is unavailable.",
+    "Source isolation is not installed evidence.",
+    "No natural-cause investigation, fault injection, historical matrix or early rescue."
+  ]
+}
