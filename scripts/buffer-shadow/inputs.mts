@@ -9,7 +9,7 @@ export const costInputs = [
   },
   {
     version: '2.1.28',
-    path: 'Release/v2.1.28/BiliCDN_TW.user.js',
+    path: 'archive/retired/releases/Release/v2.1.28/BiliCDN_TW.user.js',
     bytes: 403700,
     sha256: '8b3ec29aa2b26cb0b9708a91aed65e2d6411e09875e2ac87c70436f0eeec418d',
   },

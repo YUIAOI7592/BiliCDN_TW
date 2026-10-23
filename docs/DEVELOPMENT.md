@@ -166,7 +166,7 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 兩命令退出碼為 0／1／2（契約成立且有效／斷言失敗或無效／非法參數）。只讀已發布原件及產品來源，不連外、不碰正式 GM、不新增依賴；中間打包使用系統暫存目錄並清理。功能與成本分檔保存；成本應獨立執行，避免與完整測試同時量測。啟動、tick、程序 CPU／heap 是本機模型數值，不設機器相關門檻，也不代表瀏覽器純功能開銷。來源與安裝版證據分列，樣片步驟見 [IAB 指南](IAB_TESTING.md#展示樣片選擇與唯讀窗口)，結果由 [HISTORY](HISTORY.md) 追溯。
 
-候選 v2 的兩秒確認原型未通過保留耗盡情境，未接入現行來源。可重播差異、具名契約、正確非零退出碼與來源基準集中於 [原型評估](../archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md#驗證與重播)；僅在獨立副本套用。現行 evaluate:buffer-shadow 驗證本機 v3 來源，不能改寫未採用 v2 的結果；成本命令固定載入已發布腳本，版本及證據不可混算。
+候選 v2 的兩秒確認原型未通過保留耗盡情境，未接入現行來源。可重播差異、具名契約、正確非零退出碼與來源基準集中於 [原型評估](../archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md#驗證與重播)；僅在獨立副本套用。現行 evaluate:buffer-shadow 驗證現行 v3 來源，不能改寫未採用 v2 的結果；成本命令固定載入已發布腳本，版本及證據不可混算。
 
 ### 原始碼格式與靜態規則
 
@@ -243,7 +243,7 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 影子規則及資格集中於 [PROJECT_CONTEXT](PROJECT_CONTEXT.md#唯讀緩衝趨勢)，所有權集中於 [ARCHITECTURE](ARCHITECTURE.md#依賴方向)。本功能只讀取 Monitor 已取得的媒體／控制快照及 Runtime 轉交的既有完成事件，不新增網路讀取器或計時器。
 
-目前來源的報告唯一輸出為 recorder.bufferTrend，含 schemaVersion 3、algorithm buffer-window-v3、latest 與 history；已發布 v2.1.28 原件仍為 v1。讀取模型中的同名副本不重複輸出。每筆包含窗口時間、內插、進度品質、倍速、起訖緩衝、變化量、斜率、狀態、候選及固定原因碼；確認中、部分回補、持平、尚未創低、完整補回與逾期分開表示，內部確認狀態不輸出。transport 只列已觀察完成的數量、bytes、跨窗口與覆蓋品質，不提供即時頻寬。
+目前來源的報告唯一輸出為 recorder.bufferTrend，含 schemaVersion 3、algorithm buffer-window-v3、latest 與 history；v2.1.29 使用 v3，封存 v2.1.28 原件仍為 v1。讀取模型中的同名副本不重複輸出。每筆包含窗口時間、內插、進度品質、倍速、起訖緩衝、變化量、斜率、狀態、候選及固定原因碼；確認中、部分回補、持平、尚未創低、完整補回與逾期分開表示，內部確認狀態不輸出。transport 只列已觀察完成的數量、bytes、跨窗口與覆蓋品質，不提供即時頻寬。
 
 離線讀取器只接受匹配的 v1／v2／v3 版本與演算法標記，同一案例不得混合版本或重新解釋舊 candidate。即時 Recorder 只接納 v3 白名單投影；候選成立須為 draining-low，新確認原因必須是有效下降窗口中的 false。重跑 v3 使用 npm test -- domain --name buffer-v3、npm test -- application --name buffer-v3、npm test -- diagnostics --name buffer-v3、npm test -- tooling --name buffer-v3 及 npm run evaluate:buffer-shadow -- --json。情境與原件保持可追溯，效用與限制集中於 [本輪報告](../archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md)。
 
