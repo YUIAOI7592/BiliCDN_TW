@@ -15,6 +15,7 @@ import { testScope } from '../support/scope.ts'
 import '../regressions/functional-races/startup-abort.ts'
 import '../regressions/functional-races/cr-measurement-errors.ts'
 import '../regressions/functional-races/cr-measurement-lifecycle.ts'
+import '../regressions/functional-races/measurement-metadata.ts'
 
 // Each call creates fresh resources and replays only this fixture's prerequisite transitions.
 // Earlier expectations run in their own cases; no mutable state crosses a test boundary.
@@ -64,10 +65,10 @@ async function fixture(
         123,
         'cursor update preserves existing cross-tab cooldown',
       )
-      assert.strictEqual(
-        storage.get(MEASUREMENT_META_KEY, { futureField: '' }).futureField,
-        'preserve',
-        'metadata updates retain unowned compatible fields',
+      assert.equal(
+        Object.hasOwn(storage.get(MEASUREMENT_META_KEY, {}), 'futureField'),
+        false,
+        'metadata updates only retain explicitly validated owned fields',
       )
       await meta.withLock(() => meta.update({ lastChallengeAt: clock.now() }))
       assert.strictEqual(

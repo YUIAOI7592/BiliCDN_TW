@@ -69,7 +69,9 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 | `EvidenceStore` | `bilicdn.v2.routeEvidence` | 解析有界影片／音訊證據，監聽遠端變更，記錄／清除時加鎖。 |
 | `MeasurementMetaStore` | `bilicdn.v2.meta` | 每次 `get()` 重新讀取儲存；沒有值變更監聽器或快取狀態。 |
 
-[量測中繼資料](../src-v2/state/measurement-meta-store.ts) 保留既有相容語意：接收物件，將游標／時間戳轉為數字並以零作替代，將游標下限設為零。它不強制有限數字上界，也不驗證儲存的資料結構。`update()` 合併既有欄位、寫入資料結構 2 及 `updatedAt`，不自行取得鎖；`clear()` 也直接刪除。`MeasurementController` 以 `withLock()` 包住游標／冷卻更新，並在回呼函式內檢查生命週期標記。
+[量測中繼資料](../src-v2/state/measurement-meta-store.ts) 只接納非陣列物件的 schema 2 自有資料欄位，不呼叫 accessor 或數值轉換。游標須為非負安全整數；冷卻時間須為非負有限數值，且不晚於本次注入時鐘。無效欄位各自回到零，不接受其他 schema。讀取沒有寫入副作用；`update()` 以最新合法值合併有效部分更新，只保存 schema、catalogCursor、lastChallengeAt、updatedAt，未知欄位不再延續。非法更新欄位保留當前合法值，真正零可明確寫入；非法時鐘按零處理，時鐘倒退造成的未來時間視為無效，沒有新增跨分頁單調時鐘協調。
+
+`MeasurementController` 仍唯一擁有計畫及探測。起播選擇維持原同步快照與三秒共用期限；延後取得 `measurement` 鎖後重新讀游標，再檢查生命週期標記才遞增，不以等待前的值覆蓋其他分頁。游標到最大安全整數時回到零，同輪候選也使用相同安全遞增。健康量測的選擇、嘗試與十分鐘冷卻仍在鎖內規劃。`get()`、`update()` 不自行取鎖，`clear()` 保留直接刪除；沒有新增快取、訂閱、計時器或持久欄位。平台沒有 Web Locks 時仍不能保證跨分頁序列化。
 
 [TampermonkeyStorage](../src-v2/platform/storage.ts) 在可用時以 `bilicdn.v2.` 名稱前綴使用 `navigator.locks`，否則直接執行回呼函式。跨分頁序列化取決於 Web Locks 是否可用。簽名路線與工作階段狀態僅保存在記憶體。
 
@@ -230,7 +232,7 @@ Catalog 保留全部 11 個內建主機，其中 4 個預設不可用。起播�
 
 記錄器消費型別化 `DomainEvent`，彙總成功流量並保存有界失敗事故。UI 讀取模型為快照，讀取不能改變選路或啟動網路工作。攔截入口、媒體辨識、原生呼叫及回應階段與瀏覽器網路面板（Network）確認分開。僅使用 Catalog 規則涵蓋腳本改寫的 playurl 輸出及可攔截媒體送出；其他瀏覽器入口的流量須另行觀察。
 
-`RouteSnapshot`、`TransportSnapshot`、`DiagnosticSnapshot` 及 `ControlCenterSnapshot` 提供具體唯讀欄位。診斷請求序列化使用明確的有界欄位清單，匯出時清理傳入的讀取模型。外部資料內容由對應適配器／儲存元件解析器驗證，中繼資料則保留上述相容行為。產品設定／選路命令使用 `ControlCommandPort`；UI 也直接呼叫僅作診斷的標記、清除及報告操作。UI 不直接讀寫儲存鍵。
+`RouteSnapshot`、`TransportSnapshot`、`DiagnosticSnapshot` 及 `ControlCenterSnapshot` 提供具體唯讀欄位。診斷請求序列化使用明確的有界欄位清單，匯出時清理傳入的讀取模型。外部資料內容由對應適配器／儲存元件解析器驗證，中繼資料依上述已知欄位規則重建。產品設定／選路命令使用 `ControlCommandPort`；UI 也直接呼叫僅作診斷的標記、清除及報告操作。UI 不直接讀寫儲存鍵。
 
 `TransportSnapshot.lastPlayurl` 保存一筆不可變的最近結果：Fetch／XHR、觀察時間、原生 HTTP 狀態、接納結果、辨識出的 DASH／MP4／FLV 格式、影片／音訊／分段數量、數字上游 `code` 及拒絕原因。`TransportContext` 複製固定欄位清單，去重後最多三種格式，數量限制為 0–65,535，丟棄非有限值或非安全整數的上游 `code`。不複製原始資料內容、URL、路徑、權杖或例外文字。控制中心及既有診斷匯出消費此摘要；接納結果不證明實際網路目的地或播放成功。
 

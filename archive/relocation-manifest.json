@@ -5466,6 +5466,12 @@
   ],
   "unchangedFiles": [
     {
+      "path": "archive/retired/originals/PRE_MEASUREMENT_2026-10-24_ac44474.json",
+      "encoding": "raw",
+      "bytes": 464825,
+      "sha256": "00654d2ffebc932c5591d29bae4393849d71b8b51425222c523f1858c01c245f"
+    },
+    {
       "path": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_DELIVERY_2026-10-24.json",
       "encoding": "raw",
       "bytes": 27400,
@@ -5638,12 +5644,6 @@
       "encoding": "raw",
       "bytes": 1012,
       "sha256": "dfe419d5ae70d1a6c175f25dda280a5b32d89b6e38655a76708be9510f2f2c83"
-    },
-    {
-      "path": "src-v2/application/measurement-controller.ts",
-      "encoding": "raw",
-      "bytes": 18355,
-      "sha256": "875330d3cc74a46358c69ddf141efe5eb953fe31dcc5127f902c2594936c2456"
     },
     {
       "path": "src-v2/application/measurement-model.ts",
@@ -5902,12 +5902,6 @@
       "encoding": "raw",
       "bytes": 291,
       "sha256": "6b5b29ef3600940bd7282a7c40766fb5c42ad477757a289dd3c12477fe3c1c64"
-    },
-    {
-      "path": "src-v2/state/measurement-meta-store.ts",
-      "encoding": "raw",
-      "bytes": 1214,
-      "sha256": "e41d1f06b6cd4e050741986298d39b73fafcaff5e4b62c44a320df70e01f9308"
     },
     {
       "path": "src-v2/state/restriction-model.ts",

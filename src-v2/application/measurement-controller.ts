@@ -5,6 +5,8 @@ import type { RangeProbePort, SchedulerPort } from './ports.ts'
 
 const COOLDOWN_MS = 10 * 60_000
 const TIMEOUT_MS = 3000
+const nextCursor = (cursor: number): number =>
+  Number.isSafeInteger(cursor) && cursor >= 0 && cursor < Number.MAX_SAFE_INTEGER ? cursor + 1 : 0
 const cancellationReason = (signal: AbortSignal): unknown =>
   'reason' in signal ? signal.reason : new DOMException('Aborted', 'AbortError')
 
@@ -154,7 +156,9 @@ export class MeasurementController implements MeasurementPort {
       void this.meta
         .withLock(() => {
           if (marker !== this.#marker) return
-          this.meta.update({ catalogCursor: cursor + 1 })
+          const currentCursor = this.meta.get().catalogCursor
+          if (marker !== this.#marker) return
+          this.meta.update({ catalogCursor: nextCursor(currentCursor) })
         })
         .catch(() => undefined)
     }
@@ -368,7 +372,7 @@ export class MeasurementController implements MeasurementPort {
           (this.routes.isCatalogOnly() && first.decision.routeType !== 'catalog-generated')
         )
           return
-        this.meta.update({ lastChallengeAt: at, catalogCursor: cursor + 1 })
+        this.meta.update({ lastChallengeAt: at, catalogCursor: nextCursor(cursor) })
       })
       if (planningMarker !== this.#marker || this.#planning !== planning) return
       const current = this.#lastStatus
@@ -457,12 +461,13 @@ export class MeasurementController implements MeasurementPort {
         this.#running?.controller !== controller
       )
         break
+      cursor = nextCursor(cursor)
       next = this.routes.challenge(
         status.representation!,
         status.demand!,
         nativeCount === 0 && catalogCount >= 2,
         excluded,
-        cursor + index + 1,
+        cursor,
       )
       if (nativeCount >= 1 && next?.decision.routeType === 'native-signed') next = null
     }

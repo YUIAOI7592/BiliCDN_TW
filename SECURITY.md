@@ -30,11 +30,11 @@ Vault 可以保存可改寫的 PCDN URL，僅在換主機後成為正常內建�
 
 `SettingsStore`、`RestrictionStore` 及 `EvidenceStore` 依解析器實作的限制重建已知欄位；Tampermonkey API 可用時訂閱值變更。設定寫入與限制／證據修改使用各自儲存鎖。集合及樣本上限不能推論為每個原始外層欄位都有有限上界。
 
-`MeasurementMetaStore` 按需重新讀取物件，轉換游標／冷卻欄位，更新時保留既有原始欄位；沒有值變更監聽器，也沒有完整資料結構或有限上界驗證。量測控制器在規劃寫入時使用它的 `measurement` 鎖；`get`、`update`、`clear` 不自行取得鎖。見 [measurement-meta-store.ts](src-v2/state/measurement-meta-store.ts)。
+`MeasurementMetaStore` 按需讀取 schema 2 的自有資料欄位，拒絕陣列、accessor、數字字串及非有限值；游標限制為非負安全整數，冷卻時間限制為非負且不晚於本次合法時鐘。讀取不改寫儲存，明確更新只重建 schema、catalogCursor、lastChallengeAt、updatedAt，不延續未知 payload。無效欄位與時鐘按架構規則回退，不提供任意 Proxy 或平台 API 的完整例外隔離。量測控制器持有 `measurement` 鎖，起播在鎖內重讀游標及重新驗證標記；`get`、`update`、`clear` 不自行取得鎖。見 [measurement-meta-store.ts](src-v2/state/measurement-meta-store.ts) 與 [儲存架構](docs/ARCHITECTURE.md#狀態層)。
 
 Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒有跨分頁序列化。Tampermonkey 監聽器 API 不可用時也有替代路徑。同步能力取決於平台 API 是否可用。
 
-產品自有持久資料為設定、限制、主機證據及量測游標／時間中繼資料。不得新增持久化的簽名 URL、路徑、查詢字串、權杖、播放器物件、媒體表示狀態或事故時間線。中繼資料的原始欄位合併不提供通用儲存清理能力。
+產品自有持久資料為設定、限制、主機證據及量測游標／時間中繼資料。不得新增持久化的簽名 URL、路徑、查詢字串、權杖、播放器物件、媒體表示狀態或事故時間線。中繼資料白名單只約束該鍵的後續明確更新；不是其他鍵或既存使用者資料的通用清理。
 
 ## 網路權限
 

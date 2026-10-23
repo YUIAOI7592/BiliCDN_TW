@@ -98,7 +98,7 @@ Fetch 只正規化輸入一次、單一讀取器，等待與串流取消保留 s
 - 等待、鎖取得及提交前依工作重查 generation、epoch、表示、路線政策、授權、操作／核心所有權。
 - 禁止規則涵蓋原始、Native、Catalog、固定及備援路線；停用不取消網站已開始請求。
 - schema 2 與四個 GM 鍵保持；request／startup／challenge ID 用執行環境隨機前綴、工作建立時分配、重報沿用，最多 64 字元。
-- settings／restrictions／evidence 依解析器、鎖及遠端監聽更新；meta 按需讀取、由量測控制器鎖住計畫更新，保留既有較寬轉換語意。沒有 Web Locks 時不保證跨分頁序列化。
+- settings／restrictions／evidence 依解析器、鎖及遠端監聽更新；meta 按需驗證 schema 2 的自有數值欄位，明確更新時只寫回既有四欄。起播取得量測鎖後重新讀取游標，健康量測仍在鎖內規劃；沒有 Web Locks 時不保證跨分頁序列化。數值、時鐘與所有權界線見 [儲存架構](ARCHITECTURE.md#狀態層)。
 - 簽名 URL、路徑、cid、查詢、權杖、Cookie、IP、播放器／核心物件不持久化或輸出；診斷只消費型別化事件，讀取無選路／網路副作用。
 - 網站前景偽裝與真正可見性分離；背景可播放，不代表允許背景救援。詳見 [可見性架構](ARCHITECTURE.md#網站前景偽裝與內部可見性)。
 
