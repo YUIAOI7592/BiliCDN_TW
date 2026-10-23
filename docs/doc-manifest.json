@@ -75,6 +75,14 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.md",
+      "kind": "record",
+      "topics": ["buffer-observation-optimization"],
+      "versions": ["v2.1.29"],
+      "date": "2026-10-23",
+      "requiredAnchors": []
+    },
+    {
       "path": "Release/v2.1.29/CHANGELOG_v2.1.29.md",
       "kind": "immutable",
       "topics": [
@@ -2747,6 +2755,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 2228,
+      "sha256": "0481338cfc52d93cd583ddb344dcb5ce326b0f96226cc41badbcd73b4654b9be"
+    },
     {
       "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_DELIVERY_2026-10-23.json",
       "mode": "exact",

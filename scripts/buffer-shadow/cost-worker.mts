@@ -1,19 +1,28 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { performance } from 'node:perf_hooks'
+import { readFileSync } from 'node:fs'
+import { checkSource } from '../upstream-compare/model.mts'
 import { ComparisonPage, PageEvent } from '../upstream-compare/page.mts'
 import { commonHosts } from '../upstream-compare/inputs.mts'
 import { loadCostInput } from './inputs.mts'
 import { testScope } from '../../tests-v2/support/scope.ts'
 import type { CostResult } from './model.mts'
 
-const [version, speed] = process.argv.slice(2)
+const [version, speed, sourcePath, sourceBytes, sourceHash] = process.argv.slice(2)
 if (!version || !['1', '2'].includes(speed ?? '')) throw Error('Invalid cost invocation')
 const rate = Number(speed) as 1 | 2
 let result: CostResult | undefined
 await test(`full-script healthy cost ${version}@${rate}x`, { timeout: 5000 }, async (t) => {
-  const source = loadCostInput(version),
-    page = new ComparisonPage(rate, commonHosts())
+  let source: string
+  if (version === 'working-source') {
+    if (!sourcePath || !sourceHash || !Number.isSafeInteger(Number(sourceBytes)))
+      throw Error('Missing source proof')
+    const data = readFileSync(sourcePath)
+    checkSource(data, Number(sourceBytes), sourceHash)
+    source = data.toString('utf8')
+  } else source = loadCostInput(version)
+  const page = new ComparisonPage(rate, commonHosts())
   const scope = testScope(t)
   scope.defer(async () => {
     await page.close()

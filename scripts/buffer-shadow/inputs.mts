@@ -14,8 +14,23 @@ export const costInputs = [
     sha256: '8b3ec29aa2b26cb0b9708a91aed65e2d6411e09875e2ac87c70436f0eeec418d',
   },
 ] as const
+export interface CostInput {
+  readonly version: string
+  readonly path: string
+  readonly bytes: number
+  readonly sha256: string
+}
+export const v3CostInputs: readonly CostInput[] = [
+  costInputs[1],
+  {
+    version: '2.1.29',
+    path: 'Release/v2.1.29/BiliCDN_TW.user.js',
+    bytes: 407926,
+    sha256: 'e0c178987111d99ae69762287fe3769cc1af722a1ee6e586d125ce0ba8b2e9b4',
+  },
+]
 export function loadCostInput(version: string): string {
-  const input = costInputs.find((i) => i.version === version)
+  const input = [...costInputs, ...v3CostInputs].find((i) => i.version === version)
   if (!input) throw Error('Unknown cost input')
   const data = readFileSync(input.path)
   checkSource(data, input.bytes, input.sha256)

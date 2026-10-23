@@ -104,10 +104,44 @@ export interface CostResult {
     readonly callbacksAfterClose: number
   }
 }
-export function parseEvaluationArgs(args: readonly string[]) {
-  if (new Set(args).size !== args.length || args.some((a) => a !== '--json' && a !== '--cost'))
-    throw Error('Usage: npm run evaluate:buffer-shadow -- [--json] [--cost]')
-  return { json: args.includes('--json'), cost: args.includes('--cost') }
+export function parseEvaluationArgs(args: readonly string[]): {
+  json: boolean
+  cost: boolean
+  comparison?: 'v3' | 'source'
+} {
+  if (
+    new Set(args).size !== args.length ||
+    args.some((a) => !['--json', '--cost', '--cost-v3', '--cost-source'].includes(a)) ||
+    args.filter((a) => a.startsWith('--cost')).length > 1
+  )
+    throw Error(
+      'Usage: npm run evaluate:buffer-shadow -- [--json] [--cost|--cost-v3|--cost-source]',
+    )
+  const comparison = args.includes('--cost-v3')
+    ? 'v3'
+    : args.includes('--cost-source')
+      ? 'source'
+      : undefined
+  return {
+    json: args.includes('--json'),
+    cost: args.some((a) => a.startsWith('--cost')),
+    ...(comparison ? { comparison } : {}),
+  }
+}
+
+/** Additional timing facts; no merging of candidate pulses or reinterpretation of old scores. */
+export function candidateContinuity(rows: readonly EvidenceRow[], annotation: WindowAnnotation) {
+  const score = scoreWindow(rows, annotation)
+  const candidates = rows.filter((r) => r.at <= annotation.scoreUntil && r.candidate === true)
+  return Object.freeze({
+    firstLeadMs: score.firstLeadMs,
+    lastCandidateLeadMs:
+      candidates.length && annotation.stallAt !== null
+        ? annotation.stallAt - candidates.at(-1)!.at
+        : null,
+    candidateGapsMs: score.episodes.slice(1).map((e, i) => e.start - score.episodes[i]!.end),
+    externallyAnnotatedStallAt: annotation.stallAt,
+  })
 }
 
 /** A complete followup must belong to one owner. No interpolation of missing evidence. */

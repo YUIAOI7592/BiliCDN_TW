@@ -1,7 +1,9 @@
-import { readFileSync, mkdtempSync, rmSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 import { tmpdir } from 'node:os'
 import { build } from 'esbuild'
+import { isDeepStrictEqual } from 'node:util'
+import { build as buildProduct } from './build.mts'
 import { supervise } from './test-process.mts'
 import { filesUnder, isRecord, errorMessage } from './lib.mts'
 import { sha256 } from './upstream-compare/model.mts'
@@ -10,9 +12,11 @@ import {
   scenarioNames,
   scoreWindow,
   readingVersion,
+  candidateContinuity,
 } from './buffer-shadow/model.mts'
 import type { EvidenceRow } from './buffer-shadow/model.mts'
-import { costInputs, loadCostInput } from './buffer-shadow/inputs.mts'
+import { costInputs, v3CostInputs, loadCostInput } from './buffer-shadow/inputs.mts'
+import type { CostInput } from './buffer-shadow/inputs.mts'
 
 export function validEvaluationResult(
   value: unknown,
@@ -70,6 +74,17 @@ export function validEvaluationResult(
       return false
     if (value.algorithm !== undefined && value.algorithm !== `buffer-window-v${version}`)
       return false
+    if (
+      !value.rows.every(
+        (row) =>
+          isRecord(row.trend) &&
+          row.candidate === row.trend.candidate &&
+          row.state === row.trend.state &&
+          row.reason === row.trend.reason &&
+          readingVersion(row.trend) === version,
+      )
+    )
+      return false
     const computed = scoreWindow(rows, {
       scoreUntil: rows.at(-1)!.at,
       stallAt: value.stallAt as number | null,
@@ -78,6 +93,16 @@ export function validEvaluationResult(
   } catch {
     return false
   }
+  if (
+    !value.assertions.every(
+      (a) =>
+        isRecord(a) &&
+        'expected' in a &&
+        'actual' in a &&
+        a.verdict === (isDeepStrictEqual(a.expected, a.actual) ? 'pass' : 'fail'),
+    )
+  )
+    return false
   const verdict = value.assertions.every((a) => isRecord(a) && a.verdict === 'pass')
     ? 'pass'
     : 'fail'
@@ -85,13 +110,30 @@ export function validEvaluationResult(
     value.verdict === verdict && value.cleanup.timers === 0 && value.cleanup.subscriptions === 0
   )
 }
-export async function evaluateBufferShadow(cost = false) {
+export async function evaluateBufferShadow(
+  cost = false,
+  comparison: 'legacy' | 'v3' | 'source' = 'legacy',
+) {
   let suiteStarted = performance.now(),
     activeSuite = ''
   const results: Record<string, unknown>[] = []
   for (const input of costInputs) loadCostInput(input.version)
   const dir = mkdtempSync(join(tmpdir(), 'bilicdn-shadow-'))
   try {
+    let inputs: readonly CostInput[] = comparison === 'legacy' ? costInputs : v3CostInputs
+    if (comparison === 'source') {
+      const source = Buffer.from((await buildProduct({ write: false })).output)
+      const input = {
+        version: 'working-source',
+        path: join(dir, 'working.user.js'),
+        bytes: source.length,
+        sha256: sha256(source),
+      }
+      writeFileSync(input.path, source)
+      inputs = [v3CostInputs[1]!, input]
+    }
+    for (const input of inputs.filter((i) => i.version !== 'working-source'))
+      loadCostInput(input.version)
     const worker = cost ? 'scripts/buffer-shadow/cost-worker.mts' : join(dir, 'worker.mjs')
     if (!cost)
       await build({
@@ -107,9 +149,15 @@ export async function evaluateBufferShadow(cost = false) {
     if (cost)
       for (const rate of [1, 2])
         for (let pair = -2; pair < 10; pair++)
-          for (const input of pair % 2 === 0 ? costInputs : costInputs.slice().reverse())
+          for (const input of pair % 2 === 0 ? inputs : inputs.slice().reverse())
             jobs.push({
-              args: [input.version, String(rate)],
+              args: [
+                input.version,
+                String(rate),
+                ...(input.version === 'working-source'
+                  ? [input.path, String(input.bytes), input.sha256]
+                  : []),
+              ],
               warmup: pair < 0,
               id: `${input.version}@${rate}x/pair-${pair}`,
               pair,
@@ -169,6 +217,14 @@ export async function evaluateBufferShadow(cost = false) {
       else
         results.push({
           ...value,
+          ...(!cost && Array.isArray(value.rows)
+            ? {
+                continuity: candidateContinuity(value.rows as EvidenceRow[], {
+                  scoreUntil: (value.rows as EvidenceRow[]).at(-1)!.at,
+                  stallAt: value.stallAt as number | null,
+                }),
+              }
+            : {}),
           id: job.id,
           suite,
           pair: job.pair,
@@ -191,10 +247,13 @@ export async function evaluateBufferShadow(cost = false) {
     )
     return {
       schemaVersion: 1,
-      baseline: cost
-        ? '39c21b5f272eda2f8090f079770ad129e1545dd0'
-        : 'cfc15924c40f688518e78be417909b69558ce4d5',
-      mode: cost ? 'cost' : 'functional',
+      baseline:
+        cost && comparison !== 'legacy'
+          ? '67b45c4eaca15a0fcca230c6011943a98e99072c'
+          : cost
+            ? '39c21b5f272eda2f8090f079770ad129e1545dd0'
+            : 'cfc15924c40f688518e78be417909b69558ce4d5',
+      mode: cost ? (comparison === 'legacy' ? 'cost' : `cost-${comparison}`) : 'functional',
       node: process.version,
       limits: { caseMs: 5000, cleanupMs: 5000, suiteMs: 60000, maxBytes: 33554432 },
       assumptions: [
@@ -204,9 +263,13 @@ export async function evaluateBufferShadow(cost = false) {
         cost
           ? 'published-version defaults'
           : 'buffer-window-v3: fixed 8s/2s/10s base; cumulative 2s new-low intervals',
-        cost ? 'unmodified release scripts' : 'unreleased read-only diagnostic; no rescue changes',
+        cost
+          ? comparison === 'source'
+            ? 'published v2.1.29 versus hashed working source'
+            : 'unmodified release scripts'
+          : 'current v3 source; no rescue changes',
       ],
-      inputs: costInputs,
+      inputs,
       sourceHashes,
       results,
       exitCode: results.every(
@@ -239,7 +302,7 @@ if (
   }
   if (options)
     try {
-      const report = await evaluateBufferShadow(options.cost)
+      const report = await evaluateBufferShadow(options.cost, options.comparison)
       if (options.json) console.log(JSON.stringify(report))
       else {
         for (const row of report.results)
