@@ -30,11 +30,19 @@ IAB 自有 loopback 頁面載入實際 VisibilityAdapter 模組，在全新原�
 
 ## 交付與安裝狀態
 
-v2.1.30 五項 Release 原件已按原 bytes／SHA-256 搬入公開封存；[升版前清單](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_c65c506.json) 保存保護資料。v2.1.31 本機腳本 415770 bytes，必要自動、安全、來源隔離及乾淨來源驗證已完成，正在核對公開發布。安裝版尚未驗收，不以來源隔離替代；發布後追加結果只更新現行報告，不回寫 Release 快照。
+v2.1.30 五項 Release 原件已按原 bytes／SHA-256 搬入公開封存；[升版前清單](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_c65c506.json) 保存保護資料。[v2.1.31 正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.31) 已發布，發布提交 a4d5603abc98af8d76b90ae2007301a8b5abc854。當時遠端 main 與標籤解參照一致，唯一附件及無登入憑證的公開 latest HTTP 200 全文均為 415770 bytes／SHA-256 5461c534325ad2063007eb220576b2d4b5d9472cce9d3a00a773e23521dd2507，與本機逐位元組一致。後續文件提交不移動標籤，不回寫五項 Release 快照。
+
+公開更新入口當次停在 Tampermonkey 中繼頁，影片本體仍精確等同 v2.1.30。使用者完成必要更新後，重新核對 Tampermonkey 5.5.1／v2.1.31、完整本體 413812 bytes／SHA-256 36e48b746b596638260c5821a87482e6ddde1331c0975b9d55920b228e725258，與已發布本體一致；Runtime／ControlCenter 各一，Fetch／XHR installed、fetch-and-xhr-verified。斷點只用於身分核對，已解除後才觀察播放。
+
+指定影片保持 Auto，當次實際 3840×2160。1／2 倍真實按鈕暫停／恢復及分頁原生 Right 短 seek 均有狀態對照。有效窗口各以單次完整 await 取得十六筆樣本、十五個一秒區段；每段時間增加大於 0.05 秒且影格增加，倍速精確，沒有 paused／seeking／ended／error，reloadCount 為零。一倍經過 15049.1 ms、影片前進 15.0552 秒；二倍有效重跑經過 15125.6 ms、前進 30.247595 秒。
+
+二倍首窗第十一個區段末出現 seeking，連續非尋位前提中斷且原收集器未記錄事件來源，判 INVALID／產品 verdict=null，不能作正常播放通過或新修復缺陷的證據。補上同窗 seeking／seeked 等媒體事件收集後只重跑一次，有效重跑沒有事件；原窗口完整保留，不拼接或覆寫。收尾斷言曾遇跨 realm 空陣列原型差異，改用事件數精確等於零驗證，產品期待不變。原有二倍設定恢復，自有 timer／listener、斷點、遠端物件參照及分頁均清理；三份乾淨來源暫存目錄已移除。
+
+[交付與安裝 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_DELIVERY_2026-10-24.json) 保存版本、雜湊、逐秒資料、逐案有效性與清理結果。正常安裝回歸與來源隔離分開，不替代故障救援驗收。
 
 ## 發布與安裝限制
 
-所有權依可觀察描述子判斷，無法辨識完全相同描述子的重新安裝來源；未增加原生 getter 身分認證，既有取值失敗的保守行為保持。必要自動、安全與公開下載驗證完成後才發布；實際安裝另記。
+所有權依可觀察描述子判斷，無法辨識完全相同描述子的重新安裝來源；未增加原生 getter 身分認證，既有取值失敗的保守行為保持。必要自動、安全、公開下載與安裝正常回歸均已分層記錄；一次無效安裝窗口保留，不等同已定位網站尋位起因。
 
 本輪安裝回歸只涵蓋指定 BV1tFZZBQE57 的 Auto 1／2 倍正常播放、暫停／恢復、短 seek 及十五秒進度。控制中心入口沿用跳過決定。自然起因、故障注入、背景／gate／剪貼簿、六組五十秒樣片及歷史矩陣不重開。沒有量測真實網站誤報率、卡頓率或救援成功率；不啟用提前備援。外部文件連結不自動連網，私有證據及不可變歷史連結限制分列。
 
