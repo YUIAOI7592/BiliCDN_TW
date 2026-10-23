@@ -2801,6 +2801,13 @@
   ],
   "protections": [
     {
+      "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_DELIVERY_2026-10-24.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 17982,
+      "sha256": "47a7256bf7d6f51f2655b87e869da004ab75a2c2a0ae9027c4a863c501ecf1c2"
+    },
+    {
       "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_2026-10-24.json",
       "mode": "exact",
       "encoding": "raw",

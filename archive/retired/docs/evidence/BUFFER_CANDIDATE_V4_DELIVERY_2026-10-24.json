@@ -1,0 +1,660 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-24",
+  "releaseCommit": "f4468f0a29bf97e5e359ae22020962f81a6ab3c4",
+  "publicDelivery": {
+    "schemaVersion": 1,
+    "checkedAt": "2026-10-23T16:39:30.355Z",
+    "release": {
+      "tag": "v2.1.30",
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.30",
+      "draft": false,
+      "prerelease": false,
+      "assets": [
+        {
+          "name": "BiliCDN_TW.user.js",
+          "bytes": 415345,
+          "digest": "sha256:124830e7d08e71ef34a2ba048c6624f578060276a09b01e0b9905c0f4175f03d"
+        }
+      ]
+    },
+    "remoteRefs": [
+      "f4468f0a29bf97e5e359ae22020962f81a6ab3c4\trefs/heads/main",
+      "0acb96db9121bd5e4f5bfbdc4d558484583acdd0\trefs/tags/v2.1.30",
+      "f4468f0a29bf97e5e359ae22020962f81a6ab3c4\trefs/tags/v2.1.30^{}"
+    ],
+    "publicLatest": {
+      "httpStatus": 200,
+      "bytes": 415345,
+      "version": "2.1.30",
+      "sha256": "124830e7d08e71ef34a2ba048c6624f578060276a09b01e0b9905c0f4175f03d",
+      "matchesLocal": true
+    },
+    "local": {
+      "bytes": 415345,
+      "sha256": "124830e7d08e71ef34a2ba048c6624f578060276a09b01e0b9905c0f4175f03d"
+    }
+  },
+  "cleanFunctional": {
+    "schemaVersion": 1,
+    "files": 687,
+    "inputMismatches": [],
+    "npmCiExitCode": 0,
+    "verifyExitCode": 0,
+    "cases": 1834,
+    "executionResults": [
+      {
+        "mode": "functional",
+        "cases": 100,
+        "valid": 100,
+        "passed": 100,
+        "exitCode": 0,
+        "resultsIdentical": true,
+        "sha256": "8f0e719d560aa759ad21edebade8aee5d593f8306c9ed4d9e512303182b8adb8"
+      },
+      {
+        "mode": "cycle-holdout",
+        "cases": 72,
+        "valid": 72,
+        "passed": 72,
+        "exitCode": 0,
+        "resultsIdentical": true,
+        "sha256": "6a64b9600d0e528dd630580f749058c5ab91d62bd400f4d652d09eddb4402c49"
+      }
+    ],
+    "preparationFailures": [
+      "Initial source-only copy lacked Release directory; two navigation links rejected.",
+      "First packaged copy lacked new checksum registration; archive check rejected."
+    ],
+    "scope": "Fresh npm ci without .work, .git, prior node_modules or private archives. Candidate registration added before successful rerun; existing test expectations and old proofs unchanged."
+  },
+  "cleanPackaged": {
+    "schemaVersion": 1,
+    "files": 687,
+    "inputMismatches": [],
+    "verifyCases": 1834,
+    "npmCiExitCode": 0,
+    "verifyExitCode": 0,
+    "scope": "Final packaged release and current documents; functional and cycle reruns are separately recorded in CLEAN-SUMMARY.json."
+  },
+  "artifacts": [
+    {
+      "path": "Release/v2.1.30/BUILD_MANIFEST_v2.1.30.json",
+      "bytes": 8335,
+      "sha256": "b6d1bc5ee413f62421b8d617f9d29d0177a301ba9af7dab7158b8b321468f7c0"
+    },
+    {
+      "path": "Release/v2.1.30/BiliCDN_TW.user.js",
+      "bytes": 415345,
+      "sha256": "124830e7d08e71ef34a2ba048c6624f578060276a09b01e0b9905c0f4175f03d"
+    },
+    {
+      "path": "Release/v2.1.30/CHANGELOG_v2.1.30.md",
+      "bytes": 50620,
+      "sha256": "c7ac64a9734e5021e0a31e278e01df56ad7a2b0dc960834ac673b9c5dd703605"
+    },
+    {
+      "path": "Release/v2.1.30/SHA256SUMS_v2.1.30.txt",
+      "bytes": 419,
+      "sha256": "1ceaa78a4bc0ab380e6d8c7437ceed6e4b5f448bdfd8971e76470305e7e8a570"
+    },
+    {
+      "path": "Release/v2.1.30/TEST_REPORT_v2.1.30.md",
+      "bytes": 4480,
+      "sha256": "7a4b175f11b3aa1b231b4935c643d38f349d6cb747bd668c5dddd1b0ac8d3a3e"
+    }
+  ],
+  "installed": {
+    "schemaVersion": 1,
+    "checkedAt": "2026-10-23T16:50:33.301Z",
+    "identity": {
+      "diagnosticVersion": 4,
+      "disabled": false,
+      "handler": "Tampermonkey",
+      "hooks": {
+        "fetch": true,
+        "reason": "fetch-and-xhr-verified",
+        "state": "installed",
+        "xhr": true
+      },
+      "managerVersion": "5.5.1",
+      "scriptVersion": "2.1.30",
+      "counts": {
+        "runtime": 1,
+        "controlCenter": 1
+      }
+    },
+    "body": {
+      "bytes": 413387,
+      "sha256": "fb14da950bcfff4e0a2951d494b7f474b0e24827518c595e18430f493e396ace",
+      "algorithmV4": true
+    },
+    "quality": {
+      "mode": "Auto",
+      "width": 3840,
+      "height": 2160,
+      "advertised8KNotClaimed": true
+    },
+    "actions": [
+      {
+        "rate": 1,
+        "before": {
+          "at": 202912.30000001192,
+          "ended": false,
+          "error": null,
+          "frames": 14878,
+          "paused": false,
+          "rate": 1,
+          "seeking": false,
+          "time": 3428.327121
+        },
+        "pause": {
+          "at": 203226.60000002384,
+          "ended": false,
+          "error": null,
+          "frames": 14882,
+          "paused": true,
+          "rate": 1,
+          "seeking": false,
+          "time": 3428.397166
+        },
+        "resume": {
+          "at": 203522,
+          "ended": false,
+          "error": null,
+          "frames": 14896,
+          "paused": false,
+          "rate": 1,
+          "seeking": false,
+          "time": 3428.647244
+        },
+        "firstKeyboardMethod": "locator.press deadline; not used as acceptance evidence",
+        "shortSeek": {
+          "before": {
+            "at": 243125.19999998808,
+            "ended": false,
+            "error": null,
+            "frames": 17271,
+            "paused": false,
+            "rate": 1,
+            "seeking": false,
+            "time": 3468.25025
+          },
+          "after": {
+            "at": 243146.10000002384,
+            "ended": false,
+            "error": null,
+            "frames": 17276,
+            "paused": false,
+            "rate": 1,
+            "seeking": true,
+            "time": 3473.260971
+          },
+          "input": "bound tab native key"
+        }
+      },
+      {
+        "rate": 2,
+        "before": {
+          "at": 294941.3000000119,
+          "ended": false,
+          "error": null,
+          "frames": 20454,
+          "paused": false,
+          "rate": 2,
+          "seeking": false,
+          "time": 3524.960112
+        },
+        "pause": {
+          "at": 295237.5,
+          "ended": false,
+          "error": null,
+          "frames": 20466,
+          "paused": true,
+          "rate": 2,
+          "seeking": false,
+          "time": 3525.182844
+        },
+        "resume": {
+          "at": 295534,
+          "ended": false,
+          "error": null,
+          "frames": 20495,
+          "paused": false,
+          "rate": 2,
+          "seeking": false,
+          "time": 3525.666702
+        },
+        "shortSeek": {
+          "before": {
+            "at": 295542,
+            "ended": false,
+            "error": null,
+            "frames": 20497,
+            "paused": false,
+            "rate": 2,
+            "seeking": false,
+            "time": 3525.681286
+          },
+          "after": {
+            "at": 295556.8000000119,
+            "ended": false,
+            "error": null,
+            "frames": 20508,
+            "paused": false,
+            "rate": 2,
+            "seeking": true,
+            "time": 3530.693778
+          },
+          "input": "bound tab native key"
+        }
+      }
+    ],
+    "windows": [
+      {
+        "rate": 1,
+        "ownedTimers": 0,
+        "rows": [
+          {
+            "at": 265215.39999997616,
+            "ended": false,
+            "error": null,
+            "frames": 18662,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3495.079358
+          },
+          {
+            "at": 266215.6999999881,
+            "ended": false,
+            "error": null,
+            "frames": 18722,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3496.080045
+          },
+          {
+            "at": 267216.8000000119,
+            "ended": false,
+            "error": null,
+            "frames": 18782,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3497.080475
+          },
+          {
+            "at": 268217.8000000119,
+            "ended": false,
+            "error": null,
+            "frames": 18841,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3498.080995
+          },
+          {
+            "at": 269218.6999999881,
+            "ended": false,
+            "error": null,
+            "frames": 18901,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3499.082991
+          },
+          {
+            "at": 270219.60000002384,
+            "ended": false,
+            "error": null,
+            "frames": 18961,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3500.083015
+          },
+          {
+            "at": 271220,
+            "ended": false,
+            "error": null,
+            "frames": 19021,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3501.084028
+          },
+          {
+            "at": 272220.39999997616,
+            "ended": false,
+            "error": null,
+            "frames": 19081,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3502.084068
+          },
+          {
+            "at": 273220.8000000119,
+            "ended": false,
+            "error": null,
+            "frames": 19141,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3503.084055
+          },
+          {
+            "at": 274222,
+            "ended": false,
+            "error": null,
+            "frames": 19201,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3504.086588
+          },
+          {
+            "at": 275223,
+            "ended": false,
+            "error": null,
+            "frames": 19261,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3505.086079
+          },
+          {
+            "at": 276224,
+            "ended": false,
+            "error": null,
+            "frames": 19322,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3506.088134
+          },
+          {
+            "at": 277224.60000002384,
+            "ended": false,
+            "error": null,
+            "frames": 19382,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3507.088063
+          },
+          {
+            "at": 278225.1999999881,
+            "ended": false,
+            "error": null,
+            "frames": 19442,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3508.089434
+          },
+          {
+            "at": 279225.3000000119,
+            "ended": false,
+            "error": null,
+            "frames": 19502,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3509.089174
+          },
+          {
+            "at": 280225.5,
+            "ended": false,
+            "error": null,
+            "frames": 19562,
+            "paused": false,
+            "rate": 1,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3510.08883
+          }
+        ]
+      },
+      {
+        "rate": 2,
+        "ownedTimers": 0,
+        "rows": [
+          {
+            "at": 303952.5,
+            "ended": false,
+            "error": null,
+            "frames": 21669,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3546.489967
+          },
+          {
+            "at": 304952.6999999881,
+            "ended": false,
+            "error": null,
+            "frames": 21789,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3548.486187
+          },
+          {
+            "at": 305953,
+            "ended": false,
+            "error": null,
+            "frames": 21909,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3550.490387
+          },
+          {
+            "at": 306954.6999999881,
+            "ended": false,
+            "error": null,
+            "frames": 22029,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3552.492749
+          },
+          {
+            "at": 307955.60000002384,
+            "ended": false,
+            "error": null,
+            "frames": 22148,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3554.496427
+          },
+          {
+            "at": 308956.8000000119,
+            "ended": false,
+            "error": null,
+            "frames": 22268,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3556.491519
+          },
+          {
+            "at": 309957.6999999881,
+            "ended": false,
+            "error": null,
+            "frames": 22390,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3558.494482
+          },
+          {
+            "at": 310957.89999997616,
+            "ended": false,
+            "error": null,
+            "frames": 22510,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3560.500188
+          },
+          {
+            "at": 311958,
+            "ended": false,
+            "error": null,
+            "frames": 22632,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3562.500725
+          },
+          {
+            "at": 312972.89999997616,
+            "ended": false,
+            "error": null,
+            "frames": 22750,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3564.530327
+          },
+          {
+            "at": 313974.1999999881,
+            "ended": false,
+            "error": null,
+            "frames": 22869,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3566.527926
+          },
+          {
+            "at": 314974.5,
+            "ended": false,
+            "error": null,
+            "frames": 22992,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3568.528552
+          },
+          {
+            "at": 315976.10000002384,
+            "ended": false,
+            "error": null,
+            "frames": 23112,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3570.535561
+          },
+          {
+            "at": 316976.89999997616,
+            "ended": false,
+            "error": null,
+            "frames": 23231,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3572.536018
+          },
+          {
+            "at": 317977,
+            "ended": false,
+            "error": null,
+            "frames": 23351,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3574.530779
+          },
+          {
+            "at": 318977.1999999881,
+            "ended": false,
+            "error": null,
+            "frames": 23471,
+            "paused": false,
+            "rate": 2,
+            "sameMedia": true,
+            "seeking": false,
+            "time": 3576.535365
+          }
+        ]
+      }
+    ],
+    "recovery": {
+      "reloadCount": 0,
+      "state": "healthy"
+    },
+    "diagnostic": {
+      "algorithm": "buffer-window-v4",
+      "historyLength": 12,
+      "latestVersion": 4,
+      "schemaVersion": 4
+    },
+    "limitations": [
+      "Normal installed regression only; no fault injection or shadow-utility long window.",
+      "locator.press on video timed out; raw CDP Input dispatch unsupported. Bound tab native key succeeded with observed five-second seek.",
+      "Control-center entry skipped by user decision."
+    ],
+    "cleanup": {
+      "ownedTimers": 0,
+      "breakpoints": 0,
+      "debuggerDisabled": true,
+      "rateRestored": 2,
+      "ownTabs": 0
+    }
+  },
+  "updateEntry": {
+    "result": "Tampermonkey intermediate page; before user update full body matched v2.1.29",
+    "oldBody": {
+      "bytes": 405968,
+      "sha256": "8b5778ed48ba542c43ef972ba3fdc1b6e109937502e22879ee38e388bc97f627"
+    },
+    "manualUpdateConfirmedByUser": true
+  },
+  "security": {
+    "scanId": "d3b2242c-b346-4c59-9940-a04843cf492e",
+    "head": "ff22213ce7d048d889ed4296b80993351fcbe49f",
+    "findings": 0
+  },
+  "scopeLimits": [
+    "Installed normal regression does not replace fault rescue or long shadow-utility windows.",
+    "Clean 687-input source verified before this delivery evidence file and final documentation-only additions.",
+    "Release snapshots retain packaging-time statements and are not rewritten after publication."
+  ]
+}
