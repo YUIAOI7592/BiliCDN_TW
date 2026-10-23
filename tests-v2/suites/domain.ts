@@ -1,4 +1,5 @@
 import { test } from 'node:test'
+import '../regressions/buffer-trend-domain.ts'
 import '../regressions/functional-races/content-domain.ts'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
