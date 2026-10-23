@@ -74,22 +74,35 @@ export class VisibilityAdapter {
   }
 
   #spoof(key: 'hidden' | 'visibilityState', value: boolean | string): void {
+    const target = document
     let existing: PropertyDescriptor | undefined
     try {
-      existing = Object.getOwnPropertyDescriptor(document, key)
+      existing = Object.getOwnPropertyDescriptor(target, key)
     } catch {
       return
     }
     try {
-      Object.defineProperty(document, key, {
+      const installed: PropertyDescriptor = {
         configurable: true,
         enumerable: true,
         get: () => value,
-      })
+        ...(existing?.set ? { set: existing.set } : {}),
+      }
+      Object.defineProperty(target, key, installed)
       this.#restores.push(() => {
         try {
-          if (existing) Object.defineProperty(document, key, existing)
-          else delete (document as unknown as Record<string, unknown>)[key]
+          const current = Object.getOwnPropertyDescriptor(target, key)
+          if (
+            !current ||
+            'value' in current ||
+            current.get !== installed.get ||
+            current.set !== installed.set ||
+            current.enumerable !== installed.enumerable ||
+            current.configurable !== installed.configurable
+          )
+            return
+          if (existing) Object.defineProperty(target, key, existing)
+          else delete (target as unknown as Record<string, unknown>)[key]
         } catch {
           /* browser-owned */
         }

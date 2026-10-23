@@ -142,6 +142,8 @@ BR-01 後續恢復透過內部可選 `PlayerPort.ownedReload(revision): boolean`
 
 ## 適配器
 
+可見性覆寫的原始描述子、安裝目標與本次 accessor 只由 VisibilityAdapter 保存；dispose 先比較目前 getter／setter 身分及 enumerable／configurable，仍相符才還原原件或刪除自有屬性。較新描述子與刪除狀態不覆寫，失敗項目不重試；不執行屬性 getter。監聽器維持原反向釋放順序，control-loss 訂閱不隨停用清空，重新啟用取得新的還原基準。完全相同描述子的重新安裝來源不可辨識。
+
 XHR waiting 請求的內部原生 open 準備最多兩次，包含政策目標變更的 reopen。每次 open、responseType、timeout、credentials 及每個 header 還原後，均以安裝時保存的原生 readyState getter 加上 metadata 身分／phase 判斷能否繼續；準備後重新計算最新合法目標，完全穩定才建立歸因及 send。gate continuation 的未交付原生例外只終止仍擁有當前請求的 waiter，依序送出一次 readystatechange／error／loadend，保留 DONE 與空回應。直接 send 的原生例外仍同步拋出；未接受的 native send 清除 pending 歸因而不記錄 CDN 失敗樣本，已送出請求不重播。
 
 起播等待的三個取消邊界使用 signal.reason 原值，包括物件身分與 falsy 值；只有缺少 reason 能力才建立 AbortError。拒絕只屬於該等待者，共用 probe controller 與每分頁預算維持原語意，各完成路徑以 finally 移除 listener。

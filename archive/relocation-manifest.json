@@ -5416,6 +5416,12 @@
   ],
   "unchangedFiles": [
     {
+      "path": "archive/retired/originals/PRE_VISIBILITY_2026-10-24_f582069.json",
+      "encoding": "raw",
+      "bytes": 460779,
+      "sha256": "7a661b4c0fda98046f02619fdbb875f5ba37011810d27d641b1d0b1f862f61e3"
+    },
+    {
       "path": "LICENSE",
       "encoding": "raw",
       "bytes": 1178,
@@ -5516,12 +5522,6 @@
       "encoding": "raw",
       "bytes": 2869,
       "sha256": "b7d15a15751f5aaf49b58ce2b3dc71294871f58a6ac92099f0a20d15be161a90"
-    },
-    {
-      "path": "src-v2/adapters/visibility.ts",
-      "encoding": "raw",
-      "bytes": 3001,
-      "sha256": "0a05b968380730a54e94dc1b427e5f7aef72f19fb10483f3e14ca01a72c7b49e"
     },
     {
       "path": "src-v2/adapters/webrtc.ts",

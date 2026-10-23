@@ -398,3 +398,4 @@ test('navigation observes history and popstate [4]', { timeout: 5000 }, async (t
   )()
 })
 import '../regressions/functional-races/adapter-controls.ts'
+import '../regressions/functional-races/visibility-ownership.ts'
