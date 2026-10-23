@@ -6,6 +6,8 @@
 
 ## 版本
 
+- [緩衝候選 v3 累計下降確認（2026-10-23）](../archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md)
+
 - [緩衝候選持續確認原型評估（2026-10-23，未採用）](../archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md)
 
 - [唯讀緩衝趨勢與影子判定離線驗收（2026-10-23，發布前來源）](../archive/retired/docs/BUFFER_TREND_2026-10-23.md)

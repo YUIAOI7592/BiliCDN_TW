@@ -75,6 +75,14 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md",
+      "kind": "record",
+      "topics": ["history"],
+      "versions": ["v2.1.28"],
+      "date": "2026-10-23",
+      "requiredAnchors": []
+    },
+    {
       "path": "archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md",
       "kind": "record",
       "topics": [
@@ -2716,6 +2724,27 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 1898,
+      "sha256": "bfe3728098a0960b73c0b9a9b57fb8fe9f6b4ec71bd08fa68772ec560b9f6f61"
+    },
+    {
+      "path": "archive/retired/originals/PRE_BUFFER_CANDIDATE_V3_2026-10-23_cfc1592.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 456365,
+      "sha256": "e5248c575ba2b97e59f2d9ac71664611968f00073eeb19976b51ff7b27839d42"
+    },
+    {
+      "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_BASELINE_2026-10-23.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 234912,
+      "sha256": "26b9e7d9cddbc646068554f8c276ca43ed54371ffe7554dee4d3190c72a9cab1"
+    },
     {
       "path": "archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md",
       "mode": "exact",
