@@ -6,6 +6,8 @@
 
 ## 版本
 
+- [緩衝風險覆蓋與可介入性離線評估（2026-10-25）](../archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md)
+
 - [實際緩衝效用第二輪：完整十二窗與採用決策（2026-10-25）](../archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md)
 
 - [緩衝候選 v4 周期欠量與回補範圍（2026-10-24）](../archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md)

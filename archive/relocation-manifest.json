@@ -5666,6 +5666,12 @@
   ],
   "unchangedFiles": [
     {
+      "path": "archive/retired/docs/evidence/BUFFER_RISK_EVALUATION_2026-10-25.json",
+      "encoding": "raw",
+      "bytes": 7412052,
+      "sha256": "1cc9c19326a04b0ea69278058ee181e451ca7e806f3f5aafbd243ed6915f5800"
+    },
+    {
       "path": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
       "encoding": "raw",
       "bytes": 3488160,

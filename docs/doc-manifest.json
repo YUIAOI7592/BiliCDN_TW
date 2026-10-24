@@ -75,6 +75,14 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md",
+      "kind": "record",
+      "topics": ["buffer-risk-evaluation"],
+      "versions": ["v2.1.35"],
+      "date": "2026-10-25",
+      "requiredAnchors": []
+    },
+    {
       "path": "archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md",
       "kind": "record",
       "topics": ["buffer-live-evaluation-r2"],
@@ -2936,6 +2944,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 10813,
+      "sha256": "9f09359a9017f8d122cc5d60d8b9453a7c935927d70eda5bcec3517e9e8c185c"
+    },
     {
       "path": "archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md",
       "mode": "exact",
