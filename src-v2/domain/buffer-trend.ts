@@ -37,6 +37,9 @@ export type BufferTrendReason =
   | 'cycle-loss-confirming'
   | 'refill-cycle-balanced'
   | 'cycle-range-pending'
+  | 'low-buffer-confirming'
+  | 'low-buffer-steady'
+  | 'low-buffer-cycle'
 export interface BufferTrendSample {
   readonly at: number
   readonly bufferAheadSec: number
@@ -109,12 +112,24 @@ export interface BufferCycleEvidence {
   readonly rangeTroughSec: number | null
 }
 export interface BufferCycleReading extends Omit<BufferTrendFacts, 'reason'> {
-  readonly schemaVersion: 4
-  readonly algorithm: 'buffer-window-v4'
+  readonly schemaVersion: 5
+  readonly algorithm: 'buffer-window-v5'
   readonly reason: BufferCycleReason
   readonly cycle: BufferCycleEvidence | null
+  readonly lowBuffer: BufferLowEvidence | null
+}
+export type BufferLowBasis = 'steady-decline' | 'partial-cycle'
+export interface BufferLowEvidence {
+  readonly basis: BufferLowBasis
+  readonly creditMs: number
+  readonly declineCoverageMs: number
+}
+export interface BufferLowConfirmation {
+  readonly basis: BufferLowBasis
+  readonly confirmation: BufferCandidateConfirmation
 }
 export interface BufferCycleState {
+  readonly lowConfirmation?: BufferLowConfirmation | null
   readonly cycleCreditMs: number | null
   readonly at: number
   readonly peakSec: number
@@ -127,6 +142,7 @@ export interface BufferCycleState {
   readonly confirmation: BufferCandidateConfirmation | null
 }
 export interface BufferCycleInput {
+  readonly samples?: readonly BufferTrendSample[]
   readonly reading: BufferTrendFacts
   readonly sample: BufferTrendSample
   readonly previous: BufferTrendSample | undefined

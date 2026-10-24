@@ -8,10 +8,9 @@ export const installedCollector = String.raw`async function(durationMs, expected
     return JSON.stringify([s.generation,s.epoch,c.mediaId,c.coreId,c.userRevision,c.seekRevision,c.reloadRevision,c.coreReloadRevision,r?.representation,r?.targetHost,r?.routePolicyRevision,r?.authorityRevision]);
   };
   const project = t => {
-    if (!t || t.schemaVersion!==4 || t.algorithm!=='buffer-window-v4' || !Number.isFinite(t.at) ||
+    if (!t || t.schemaVersion!==5 || t.algorithm!=='buffer-window-v5' || !Number.isFinite(t.at) ||
       !['insufficient','ineligible','stable','filling','draining'].includes(t.state) ||
       (t.candidate!==null && typeof t.candidate!=='boolean') ||
-      (t.candidate===true && !((t.state==='draining' && t.reason==='draining-low') || (t.reason==='cycle-draining-low' && t.cycle?.netLossSec===2 && t.cycle?.creditMs===2000 && typeof t.cycle?.lastLossAgeMs==='number' && t.cycle.lastLossAgeMs>=0 && t.cycle.lastLossAgeMs<=8000 && t.endBufferSec<=10))) ||
       !/^[a-z0-9-]{1,64}$/.test(t.reason) || !t.transport) return null;
     const out={};
     for (const k of ['at','from','spanMs','sampleCount','rate','startBufferSec','endBufferSec','deltaSec','slopeSecPerSec']) {
@@ -20,7 +19,13 @@ export const installedCollector = String.raw`async function(durationMs, expected
     if (typeof t.interpolated!=='boolean' || !['none','frames','time-only'].includes(t.progressQuality)) return null;
     let cycle=null;
     if(t.cycle!==null){const c=t.cycle;if(!c||!Number.isFinite(c.netLossSec)||c.netLossSec<0||c.netLossSec>2||!['creditMs','lastLossAgeMs','rangeTroughSec'].every(k=>c[k]===null||(Number.isFinite(c[k])&&c[k]>=0))||(c.creditMs!==null&&c.creditMs>2000)||(c.lastLossAgeMs!==null&&c.lastLossAgeMs>8000))return null;cycle={creditMs:c.creditMs,netLossSec:c.netLossSec,lastLossAgeMs:c.lastLossAgeMs,rangeTroughSec:c.rangeTroughSec};}
-    Object.assign(out,{schemaVersion:4,algorithm:'buffer-window-v4',cycle,interpolated:t.interpolated,progressQuality:t.progressQuality,state:t.state,reason:t.reason,candidate:t.candidate});
+    let lowBuffer=null;
+    if(t.lowBuffer!==null){const l=t.lowBuffer;if(!l||!['steady-decline','partial-cycle'].includes(l.basis)||!Number.isFinite(l.creditMs)||l.creditMs<0||l.creditMs>2000||!Number.isFinite(l.declineCoverageMs)||l.declineCoverageMs<0||l.declineCoverageMs>8000||t.endBufferSec===null||t.endBufferSec>4||['insufficient','ineligible'].includes(t.state)||(l.basis==='steady-decline'?l.declineCoverageMs!==8000:!cycle||cycle.netLossSec<=0||cycle.lastLossAgeMs===null))return null;lowBuffer={basis:l.basis,creditMs:l.creditMs,declineCoverageMs:l.declineCoverageMs};}
+    const lowReason=t.reason==='low-buffer-steady'||t.reason==='low-buffer-cycle';
+    if(lowReason&&(!lowBuffer||lowBuffer.creditMs!==2000||t.candidate!==true||lowBuffer.basis!==(t.reason==='low-buffer-steady'?'steady-decline':'partial-cycle')))return null;
+    if(t.reason==='low-buffer-confirming'&&(!lowBuffer||t.candidate!==false))return null;
+    if(t.candidate===true&&!((t.state==='draining'&&t.reason==='draining-low'&&t.deltaSec<=-2&&t.endBufferSec<=10)||(t.reason==='cycle-draining-low'&&cycle?.netLossSec===2&&cycle?.creditMs===2000&&typeof cycle.lastLossAgeMs==='number'&&t.endBufferSec<=10)||lowReason))return null;
+    Object.assign(out,{lowBuffer,schemaVersion:5,algorithm:'buffer-window-v5',cycle,interpolated:t.interpolated,progressQuality:t.progressQuality,state:t.state,reason:t.reason,candidate:t.candidate});
     const transport={};
     for (const k of ['successes','failures','aborts','completedBytes','crossWindow','dropped']) {
       const v=t.transport[k];if (!Number.isSafeInteger(v)||v<0) return null;transport[k]=v;

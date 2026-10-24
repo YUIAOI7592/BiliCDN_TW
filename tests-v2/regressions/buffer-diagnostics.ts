@@ -9,9 +9,10 @@ import type { DiagnosticReportCapture } from '../../src-v2/diagnostics/report.ts
 
 function trend(at: number): BufferTrendSnapshot {
   return {
-    schemaVersion: 4,
-    algorithm: 'buffer-window-v4',
+    schemaVersion: 5,
+    algorithm: 'buffer-window-v5',
     cycle: null,
+    lowBuffer: null,
     at,
     from: at - 8000,
     spanMs: 8000,
@@ -81,7 +82,7 @@ for (const reason of [
     assert.equal(recorder.snapshot().counters.bufferTrendRejected, 1)
   })
 
-for (const version of [1, 2, 3])
+for (const version of [1, 2, 3, 4])
   test(`buffer-v3 recorder rejects legacy version ${version} from live producers`, () => {
     const recorder = new DiagnosticRecorder(
       () => 10000,
@@ -109,7 +110,7 @@ test('U-D01 reports a detached whitelisted shadow candidate without an incident'
   assert.equal(report.includes('private'), false)
   const data = JSON.parse(report)
   assert.equal(data.recorder.bufferTrend.latest.candidate, true)
-  assert.equal(data.recorder.bufferTrend.schemaVersion, 4)
+  assert.equal(data.recorder.bufferTrend.schemaVersion, 5)
   assert.equal(data.recorder.incident, null)
   Object.assign(input, { candidate: false })
   assert.equal(recorder.snapshot().bufferTrend!.latest!.candidate, true)
@@ -221,8 +222,8 @@ test('U-D06 export sheds trend history first and remains within 96 KiB', (t) => 
       bufferTrendRejected: 0,
     },
     bufferTrend: {
-      schemaVersion: 4,
-      algorithm: 'buffer-window-v4',
+      schemaVersion: 5,
+      algorithm: 'buffer-window-v5',
       history,
       latest: history.at(-1)!,
     },

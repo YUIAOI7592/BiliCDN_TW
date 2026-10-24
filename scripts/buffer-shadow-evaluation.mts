@@ -18,6 +18,7 @@ import type { EvidenceRow } from './buffer-shadow/model.mts'
 import { costInputs, v3CostInputs, loadCostInput } from './buffer-shadow/inputs.mts'
 import type { CostInput } from './buffer-shadow/inputs.mts'
 import { observationNames, observationInput } from './buffer-shadow/observation-inputs.mts'
+import { frozenCases } from './buffer-shadow/low-inputs.mts'
 import { cycleNames, cycleInput } from './buffer-shadow/cycle-inputs.mts'
 
 /** Protocol validation only; never reconstruct a product candidate. */
@@ -56,6 +57,48 @@ function consistentV4(value: Record<string, unknown>): boolean {
       value.deltaSec <= -2
     )
   return true
+}
+
+function consistentV5(value: Record<string, unknown>): boolean {
+  const low = value.lowBuffer,
+    cycle = value.cycle
+  if (low !== null) {
+    if (
+      !isRecord(low) ||
+      !['steady-decline', 'partial-cycle'].includes(String(low.basis)) ||
+      typeof low.creditMs !== 'number' ||
+      !Number.isFinite(low.creditMs) ||
+      low.creditMs < 0 ||
+      low.creditMs > 2000 ||
+      typeof low.declineCoverageMs !== 'number' ||
+      !Number.isFinite(low.declineCoverageMs) ||
+      low.declineCoverageMs < 0 ||
+      low.declineCoverageMs > 8000 ||
+      typeof value.endBufferSec !== 'number' ||
+      !Number.isFinite(value.endBufferSec) ||
+      value.endBufferSec < 0 ||
+      value.endBufferSec > 4 ||
+      ['insufficient', 'ineligible'].includes(String(value.state)) ||
+      (low.basis === 'steady-decline'
+        ? low.declineCoverageMs !== 8000
+        : !isRecord(cycle) ||
+          typeof cycle.netLossSec !== 'number' ||
+          cycle.netLossSec <= 0 ||
+          typeof cycle.lastLossAgeMs !== 'number')
+    )
+      return false
+  }
+  if (value.reason === 'low-buffer-steady' || value.reason === 'low-buffer-cycle')
+    return (
+      isRecord(low) &&
+      low.creditMs === 2000 &&
+      value.candidate === true &&
+      low.basis === (value.reason === 'low-buffer-steady' ? 'steady-decline' : 'partial-cycle') &&
+      consistentV4({ ...value, candidate: false })
+    )
+  if (value.reason === 'low-buffer-confirming')
+    return isRecord(low) && value.candidate === false && consistentV4(value)
+  return consistentV4(value)
 }
 
 export function validEvaluationResult(
@@ -122,6 +165,7 @@ export function validEvaluationResult(
           row.state === row.trend.state &&
           row.reason === row.trend.reason &&
           (version !== 4 || consistentV4(row.trend)) &&
+          (version !== 5 || consistentV5(row.trend)) &&
           readingVersion(row.trend) === version,
       )
     )
@@ -156,6 +200,7 @@ export async function evaluateBufferShadow(
   comparison: 'legacy' | 'v3' | 'source' = 'legacy',
   holdout = false,
   cycleHoldout = false,
+  lowBuffer = false,
 ) {
   let suiteStarted = performance.now(),
     activeSuite = ''
@@ -206,10 +251,16 @@ export async function evaluateBufferShadow(
               pair,
             })
     else
-      for (const name of cycleHoldout ? cycleNames : holdout ? observationNames : scenarioNames)
+      for (const name of lowBuffer
+        ? frozenCases.map((c) => c.id)
+        : cycleHoldout
+          ? cycleNames
+          : holdout
+            ? observationNames
+            : scenarioNames)
         for (const rate of [1, 2])
           jobs.push({
-            args: [name, String(rate), ...(cycleHoldout ? ['cycle'] : [])],
+            args: [name, String(rate), ...(lowBuffer ? ['low'] : cycleHoldout ? ['cycle'] : [])],
             warmup: false,
             id: `${name}@${rate}x`,
             pair: null,
@@ -300,11 +351,13 @@ export async function evaluateBufferShadow(
         ? comparison === 'legacy'
           ? 'cost'
           : `cost-${comparison}`
-        : cycleHoldout
-          ? 'cycle-holdout'
-          : holdout
-            ? 'holdout'
-            : 'functional',
+        : lowBuffer
+          ? 'low-buffer'
+          : cycleHoldout
+            ? 'cycle-holdout'
+            : holdout
+              ? 'holdout'
+              : 'functional',
       ...(holdout
         ? {
             frozenInputs: observationNames.map((name) => ({
@@ -315,6 +368,9 @@ export async function evaluateBufferShadow(
           }
         : {}),
       node: process.version,
+      ...(lowBuffer
+        ? { frozenInputs: frozenCases.map((c) => ({ ...c, sha256: sha256(JSON.stringify(c)) })) }
+        : {}),
       ...(cycleHoldout
         ? {
             frozenInputs: cycleNames.map((name) => ({
@@ -331,12 +387,12 @@ export async function evaluateBufferShadow(
         '60s healthy prelude',
         cost
           ? 'published-version defaults'
-          : 'buffer-window-v4: short window plus bounded cycle debt; two-second confirmation',
+          : 'buffer-window-v5: low-buffer fallback with independent confirmation',
         cost
           ? comparison === 'source'
             ? 'published v2.1.29 versus hashed working source'
             : 'unmodified release scripts'
-          : 'current v4 source; no rescue changes',
+          : 'current v5 source; no rescue changes',
       ],
       inputs,
       sourceHashes,
@@ -376,6 +432,7 @@ if (
         options.comparison,
         options.holdout,
         options.cycleHoldout,
+        options.lowBuffer,
       )
       if (options.json) console.log(JSON.stringify(report))
       else {

@@ -6,7 +6,7 @@ import { readingVersion } from '../../scripts/buffer-shadow/model.mts'
 import { validEvaluationResult } from '../../scripts/buffer-shadow-evaluation.mts'
 
 test('buffer-v3 tooling preserves version meanings and rejects mixed worker evidence', async (t) => {
-  for (const version of [1, 2, 3, 4]) {
+  for (const version of [1, 2, 3, 4, 5]) {
     const reading = {
       schemaVersion: version,
       algorithm: `buffer-window-v${version}`,

@@ -456,6 +456,7 @@ export class PlayerMonitor implements MonitorPort {
     }
     this.#pruneBufferTransport(now)
     const confirmed = observeBufferCycle({
+      samples: this.#bufferSamples,
       reading,
       sample,
       previous,

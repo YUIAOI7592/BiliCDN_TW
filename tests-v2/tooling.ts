@@ -21,6 +21,7 @@ import './regressions/upstream-comparison.ts'
 import './regressions/buffer-shadow-evaluation.ts'
 import './regressions/buffer-observation-integrity.ts'
 import './regressions/buffer-confirmation-v3.ts'
+import './regressions/buffer-low-tooling.ts'
 
 test('formatting reaches a stable source before the next check', { timeout: 5000 }, async () => {
   const source =

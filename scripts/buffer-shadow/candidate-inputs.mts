@@ -30,6 +30,7 @@ export interface CandidateProfileSample {
   readonly ms: number
 }
 export interface CandidateProfile {
+  readonly initialBuffer?: number
   readonly samples: readonly CandidateProfileSample[]
   readonly stallAt: number | null
   readonly cycleMs: number | null

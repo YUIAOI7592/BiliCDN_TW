@@ -1,5 +1,6 @@
 import { test } from 'node:test'
 import '../regressions/buffer-diagnostics.ts'
+import '../regressions/buffer-low-diagnostics.ts'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
 import { assessDemandRatio } from '../../src-v2/domain/routing.ts'

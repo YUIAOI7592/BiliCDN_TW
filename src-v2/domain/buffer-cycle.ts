@@ -5,6 +5,10 @@ import type {
   BufferCycleInput,
   BufferCycleState,
   BufferCycleReason,
+  BufferTrendSample,
+  BufferLowBasis,
+  BufferLowEvidence,
+  BufferLowConfirmation,
 } from './buffer-trend.ts'
 export function emptyBufferCycle(
   at: number,
@@ -13,9 +17,10 @@ export function emptyBufferCycle(
 ): BufferCycleReading {
   return Object.freeze({
     ...emptyBufferTrend(at, reason, ineligible),
-    schemaVersion: 4,
-    algorithm: 'buffer-window-v4',
+    schemaVersion: 5,
+    algorithm: 'buffer-window-v5',
     cycle: null,
+    lowBuffer: null,
   })
 }
 /** Pure, constant-size evidence. PlayerMonitor owns the returned state and all identity resets. */
@@ -35,7 +40,10 @@ export function observeBufferCycle(input: BufferCycleInput): {
   if (previous && sample.at < previous.at) return reject('time-reversed')
   if (previous && sample.at - previous.at > 1500) return reject('sample-gap')
   if (raw.candidate === null)
-    return result({ ...raw, schemaVersion: 4, algorithm: 'buffer-window-v4', cycle: null }, null)
+    return result(
+      { ...raw, schemaVersion: 5, algorithm: 'buffer-window-v5', cycle: null, lowBuffer: null },
+      null,
+    )
   const buffer = sample.bufferAheadSec / sample.rate
   if (raw.at !== sample.at || raw.endBufferSec !== buffer) return reject('invalid-sample')
   const before = previous ? previous.bufferAheadSec / previous.rate : buffer
@@ -72,8 +80,10 @@ export function observeBufferCycle(input: BufferCycleInput): {
         rangeTroughSec: null,
         cycleCreditMs: null,
         confirmation: null,
+        lowConfirmation: null as BufferLowConfirmation | null,
       }
-  if (state.lastLossAt !== null && sample.at - state.lastLossAt > 8000) {
+  const debtExpired = state.lastLossAt !== null && sample.at - state.lastLossAt > 8000
+  if (debtExpired) {
     state.netLossSec = 0
     state.lastLossAt = null
     // A new loss in this same sample must not inherit the expired cycle's credit.
@@ -143,13 +153,53 @@ export function observeBufferCycle(input: BufferCycleInput): {
               (confirmed.reading.reason === 'candidate-confirming' || buffer < before)
             ? 'cycle-loss-confirming'
             : confirmed.reading.reason
+  const coverage = declineCoverage(input.samples ?? [], sample.at)
+  const partial =
+    state.netLossSec > 0 && state.lastLossAt !== null && sample.at - state.lastLossAt <= 8000
+  const basis: BufferLowBasis | null =
+    buffer <= 4 && !(balanced && state.netLossSec === 0)
+      ? partial
+        ? 'partial-cycle'
+        : coverage === 8000
+          ? 'steady-decline'
+          : null
+      : null
+  const oldLow =
+    !debtExpired && basis === state.lowConfirmation?.basis
+      ? state.lowConfirmation.confirmation
+      : null
+  const low = confirmBufferTrend({
+    reading: { ...raw, candidate: basis !== null },
+    sample,
+    previous,
+    confirmation: oldLow,
+  })
+  state.lowConfirmation =
+    basis !== null && low.confirmation !== null
+      ? Object.freeze({ basis, confirmation: low.confirmation })
+      : null
+  const lowEvidence: BufferLowEvidence | null =
+    basis === null
+      ? null
+      : Object.freeze({
+          basis,
+          creditMs: low.confirmation?.creditMs ?? 0,
+          declineCoverageMs: coverage,
+        })
+  const originalCandidate = confirmed.reading.candidate || cycleCandidate
+  const lowReason: BufferCycleReason = low.reading.candidate
+    ? basis === 'partial-cycle'
+      ? 'low-buffer-cycle'
+      : 'low-buffer-steady'
+    : 'low-buffer-confirming'
   return result(
     {
       ...confirmed.reading,
-      candidate: confirmed.reading.candidate || cycleCandidate,
-      schemaVersion: 4,
-      algorithm: 'buffer-window-v4',
-      reason,
+      candidate: originalCandidate || low.reading.candidate,
+      schemaVersion: 5,
+      algorithm: 'buffer-window-v5',
+      reason: originalCandidate || basis === null ? reason : lowReason,
+      lowBuffer: lowEvidence,
       cycle: Object.freeze({
         creditMs: cycleLow
           ? Math.max(state.cycleCreditMs ?? 0, confirmed.confirmation?.creditMs ?? 0)
@@ -161,4 +211,28 @@ export function observeBufferCycle(input: BufferCycleInput): {
     },
     Object.freeze(state),
   )
+}
+
+/** Only the supplied current observation window is inspected; no additional sample state. */
+function declineCoverage(samples: readonly BufferTrendSample[], now: number): number {
+  if (samples.length < 2 || samples.length > 32 || samples.at(-1)?.at !== now) return 0
+  let covered = 0
+  for (let i = samples.length - 1; i > 0; i--) {
+    const a = samples[i - 1]!,
+      b = samples[i]!
+    if (
+      !validBufferSample(a) ||
+      !validBufferSample(b) ||
+      a.rate !== b.rate ||
+      b.at <= a.at ||
+      b.at - a.at > 1500 ||
+      !(b.currentTime - a.currentTime > 0.05) ||
+      (a.frames !== null && b.frames !== null && b.frames <= a.frames) ||
+      !(b.bufferAheadSec / b.rate < a.bufferAheadSec / a.rate)
+    )
+      break
+    covered = Math.min(8000, now - a.at)
+    if (covered === 8000) break
+  }
+  return covered
 }

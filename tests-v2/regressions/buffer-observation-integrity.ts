@@ -110,7 +110,15 @@ for (const rate of [1, 2] as const)
       assert.equal(validEvaluationResult(result, false), false)
     })
 
-for (const mode of ['stale', 'future', 'owner-change', 'sensitive-extra'] as const)
+for (const mode of [
+  'stale',
+  'future',
+  'owner-change',
+  'sensitive-extra',
+  'low-steady',
+  'low-cycle',
+  'low-invalid',
+] as const)
   test(`U-E03 collector isolates ${mode} without stale attribution or leaked fields`, async (t) => {
     const clock = testScope(t).own(new FakeClock())
     clock.advance(10000)
@@ -129,9 +137,10 @@ for (const mode of ['stale', 'future', 'owner-change', 'sensitive-extra'] as con
       getVideoPlaybackQuality: () => ({ totalVideoFrames: 30 }),
     }
     const trend = {
-      schemaVersion: 4,
-      algorithm: 'buffer-window-v4',
+      schemaVersion: 5,
+      algorithm: 'buffer-window-v5',
       cycle: null,
+      lowBuffer: null,
       at: 0,
       from: -8000,
       spanMs: 8000,
@@ -157,6 +166,23 @@ for (const mode of ['stale', 'future', 'owner-change', 'sensitive-extra'] as con
       },
       secretUrl: 'https://sensitive.invalid/token',
     }
+    if (mode.startsWith('low-'))
+      Object.assign(trend, {
+        state: 'stable',
+        reason: mode === 'low-cycle' ? 'low-buffer-cycle' : 'low-buffer-steady',
+        endBufferSec: 3.2,
+        deltaSec: -0.8,
+        lowBuffer: {
+          basis: mode === 'low-cycle' ? 'partial-cycle' : 'steady-decline',
+          creditMs: mode === 'low-invalid' ? 1999 : 2000,
+          declineCoverageMs: mode === 'low-cycle' ? 1000 : 8000,
+          secretUrl: 'https://sensitive.invalid',
+        },
+        cycle:
+          mode === 'low-cycle'
+            ? { netLossSec: 0.5, creditMs: null, lastLossAgeMs: 1000, rangeTroughSec: null }
+            : null,
+      })
     const collect = runInNewContext('(' + installedCollector + ')', {
       performance: { now: clock.now },
       Date: { now: clock.now },
@@ -206,7 +232,10 @@ for (const mode of ['stale', 'future', 'owner-change', 'sensitive-extra'] as con
       for (let j = 0; j < 10; j++) await Promise.resolve()
     }
     const result = await task
-    if (mode === 'sensitive-extra')
+    if (mode === 'low-cycle' || mode === 'low-steady') {
+      assert.ok(result.rows.every((r) => r.candidate === true))
+      assert.equal(JSON.stringify(result).includes('sensitive.invalid'), false)
+    } else if (mode === 'sensitive-extra')
       assert.equal(JSON.stringify(result).includes('sensitive.invalid'), false)
     else
       assert.equal(

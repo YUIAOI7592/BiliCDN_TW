@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { isDeepStrictEqual } from 'node:util'
 import { RuntimeController } from '../../src-v2/application/runtime-controller.ts'
 import { DiagnosticRecorder } from '../../src-v2/diagnostics/recorder.ts'
 import { defaultSettings } from '../../src-v2/state/settings-store.ts'
@@ -28,7 +29,7 @@ export interface ScenarioResult {
   readonly id: string
   readonly level: 'integration'
   readonly rate: 1 | 2
-  readonly algorithm: 'buffer-window-v4'
+  readonly algorithm: 'buffer-window-v5'
   readonly scenarioHash: string
   readonly validity: 'valid'
   readonly verdict: 'pass' | 'fail'
@@ -109,16 +110,18 @@ export async function runScenario(
       verdict: JSON.stringify(expected) === JSON.stringify(actual) ? 'pass' : 'fail',
     })
   }
+  const profile = observation?.profile ?? candidateProfile(name)
   const initial =
-    name === 'high-stable'
+    profile?.initialBuffer ??
+    (name === 'high-stable'
       ? 30
       : name === 'low-stable' || name === 'low-sawtooth'
         ? 8
         : name === 'slow-exhaustion'
           ? 20
-          : 12
-  const profile = observation?.profile ?? candidateProfile(name)
+          : 12)
   let ownerRevision = 1,
+    projectionMatches = true,
     maxSamples = 0,
     maxCompletions = 0,
     maxTrendRecords = 0,
@@ -145,6 +148,9 @@ export async function runScenario(
     }
     const trend = f.monitor.snapshot().bufferTrend!
     const snapshot = recorder.snapshot()
+    // A reset-only read does not publish a new sample; compare only completed ticks.
+    if (ms > 0 || !record)
+      projectionMatches &&= isDeepStrictEqual(snapshot.bufferTrend.latest, trend)
     maxSamples = Math.max(maxSamples, trend.sampleCount)
     maxCompletions = Math.max(
       maxCompletions,
@@ -424,6 +430,7 @@ export async function runScenario(
     if (['rate-change', 'representation-change', 'content-change', 'new-operation'].includes(name))
       check('identity-reset', null, rows[2]!.candidate)
     check('sample-cap', true, maxSamples <= 32)
+    check('recorder-projection', true, projectionMatches)
     check('completion-cap', true, maxCompletions <= 128)
     check('trend-record-cap', true, maxTrendRecords <= 32)
     check('trend-byte-cap', true, maxTrendBytes <= 8192)
@@ -440,7 +447,7 @@ export async function runScenario(
       id: `${name}@${rate}x`,
       level: 'integration',
       rate,
-      algorithm: 'buffer-window-v4',
+      algorithm: 'buffer-window-v5',
       scenarioHash: sha256(JSON.stringify({ name, rate, warmupMs: 60000, inputs })),
       validity: 'valid',
       verdict: assertions.every((a) => a.verdict === 'pass') ? 'pass' : 'fail',

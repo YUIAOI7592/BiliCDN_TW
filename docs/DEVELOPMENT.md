@@ -170,7 +170,7 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 `npm run evaluate:buffer-shadow -- --holdout --json` 獨立執行固定於 observation-inputs.mts 的外部輸入及效用門檻，各倍速使用新子程序；不混入原有功能清單。此選項與所有成本模式互斥。輸出包含凍結輸入與雜湊、完整逐案結果、候選連續性及清理。有效性與效用斷言分開；有效案例未達事前門檻仍須退出 1，不能因正式 verify 通過而轉算成功。既有缺口、真實退出碼與數據只看 [評估報告](../archive/retired/docs/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.md#獨立保留情境)。
 
-候選 v2 的兩秒確認原型未通過保留耗盡情境，未接入現行來源。可重播差異、具名契約、正確非零退出碼與來源基準集中於 [原型評估](../archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md#驗證與重播)；僅在獨立副本套用。現行 evaluate:buffer-shadow 驗證現行 v3 來源，不能改寫未採用 v2 的結果；成本命令固定載入已發布腳本，版本及證據不可混算。
+候選 v2 的兩秒確認原型未通過保留耗盡情境，未接入現行來源。可重播差異、具名契約、正確非零退出碼與來源基準集中於 [原型評估](../archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md#驗證與重播)；僅在獨立副本套用。現行 evaluate:buffer-shadow 驗證目前來源，不能改寫未採用 v2 的結果；成本命令固定載入已發布腳本，版本及證據不可混算。
 
 ### 原始碼格式與靜態規則
 
@@ -247,9 +247,13 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 影子規則及資格集中於 [PROJECT_CONTEXT](PROJECT_CONTEXT.md#唯讀緩衝趨勢)，所有權集中於 [ARCHITECTURE](ARCHITECTURE.md#依賴方向)。本功能只讀取 Monitor 已取得的媒體／控制快照及 Runtime 轉交的既有完成事件，不新增網路讀取器或計時器。
 
-目前來源的報告唯一輸出為 recorder.bufferTrend，含 schemaVersion 4、algorithm buffer-window-v4、latest 與 history；已發布 v2.1.29 原件仍為 v3。讀取模型中的同名副本不重複輸出。每筆包含窗口時間、內插、進度品質、倍速、起訖緩衝、變化量、斜率、狀態、候選及固定原因碼；cycle 只輸出 netLossSec、creditMs、lastLossAgeMs、rangeTroughSec 四個有界數值或 null，不輸出內部峰值、物件或識別碼。cycle-draining-low 表示周期證據，即使八秒 state 為 stable／filling 仍可成立；cycle-loss-confirming、cycle-range-pending 與 refill-cycle-balanced 分開說明確認及範圍抑制。transport 只列已觀察完成的數量、bytes、跨窗口與覆蓋品質，不提供即時頻寬。
+目前來源的報告唯一輸出為 recorder.bufferTrend，含 schemaVersion 5、algorithm buffer-window-v5、latest 與 history；已發布 v2.1.29 原件仍為 v3。讀取模型中的同名副本不重複輸出。每筆包含窗口時間、內插、進度品質、倍速、起訖緩衝、變化量、斜率、狀態、候選及固定原因碼；cycle 只輸出 netLossSec、creditMs、lastLossAgeMs、rangeTroughSec 四個有界數值或 null，不輸出內部峰值、物件或識別碼。cycle-draining-low 表示周期證據，即使八秒 state 為 stable／filling 仍可成立；cycle-loss-confirming、cycle-range-pending 與 refill-cycle-balanced 分開說明確認及範圍抑制。transport 只列已觀察完成的數量、bytes、跨窗口與覆蓋品質，不提供即時頻寬。
 
-離線讀取器接受匹配的 v1／v2／v3／v4 標記，同一案例不得混合版本或重新解釋舊 candidate。即時 Recorder 只接納 v4 白名單投影；true 必須具備短期 draining-low 或完整 cycle-draining-low 證據，舊即時版本及失效證據拒絕。重跑新規則使用 npm test -- domain --name buffer-v4、npm test -- diagnostics --name buffer-v4 及 npm run evaluate:buffer-shadow -- --cycle-holdout --json；原一百次情境仍用不帶模式選項的功能命令。新模式與所有成本／holdout 模式互斥，含事前凍結的開發及獨立保留輸入，依倍速分案；首次提前量與最後候選空窗分開驗收。現行效用與限制只看 [本輪報告](../archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md)，歷史 v3 期待及發布原件不回寫。
+離線讀取器接受匹配的 v1／v2／v3／v4／v5 標記，同一案例不得混合版本或重新解釋舊 candidate。即時 Recorder 只接納 v5 白名單投影；true 必須具備短期 draining-low、完整 cycle-draining-low 或有效低緩衝確認證據，舊即時版本及失效證據拒絕。重跑新規則使用 npm test -- domain --name buffer-v4、npm test -- diagnostics --name buffer-v4 及 npm run evaluate:buffer-shadow -- --cycle-holdout --json；原一百次情境仍用不帶模式選項的功能命令。新模式與所有成本／holdout 模式互斥，含事前凍結的開發及獨立保留輸入，依倍速分案；首次提前量與最後候選空窗分開驗收。v4 原始效用保存在 [當時報告](../archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md)，現行效用與限制只看 [TEST_REPORT](TEST_REPORT.md)，歷史 v3 期待及發布原件不回寫。
+
+v5 的 lowBuffer 只輸出 basis（steady-decline／partial-cycle）、creditMs（0～2000）及 declineCoverageMs（0～8000），沒有內部確認基準或識別碼。low-buffer-confirming 為 false，low-buffer-steady／low-buffer-cycle 必須為 true 且確認滿兩秒；慢下降要求完整八秒覆蓋，周期要求有效正欠量，兩者均要求目前校正緩衝不超過四秒。Recorder、離線驗證器及瀏覽器投影均核對版本與證據一致性，不能用新規則重算歷史 candidate。
+
+使用 npm run evaluate:buffer-shadow -- --low-buffer --json 重跑凍結於 low-inputs.mts 的主要配對與獨立保留組；它與其他情境／成本模式互斥，沿用逐案子程序、五秒案例與清理、六十秒套件及 32 MiB 輸出上限。初始緩衝明確輸入並用於全部六十秒健康前置。正式契約用 npm test -- domain --name buffer-v5、application／diagnostics／orchestration／tooling 同名篩選；完整比較另跑既有功能與 --cycle-holdout，分列首次／最後提前量、候選空窗、段數、時間、十五秒後續及清理。
 
 Recorder 的內部容量檢查可直接序列化已去敏的自有資料，不先深複製整個快照；公開 snapshot 與 buildReport 始終使用 detached capture。這只減少診斷熱路徑工作，不改候選、淘汰順序、截斷計數、32 筆／8 KiB、128 KiB 或 96 KiB 上限。來源效能與發布版分開比較，不以 heap 或單次計時設跨機器通過門檻。
 
