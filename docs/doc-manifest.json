@@ -2649,7 +2649,7 @@
         "verification"
       ],
       "versions": [
-        "v2.1.33"
+        "v2.1.34"
       ],
       "date": "2026-10-24",
       "requiredAnchors": [
@@ -2847,7 +2847,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.1.33/CHANGELOG_v2.1.33.md",
+      "path": "archive/retired/releases/Release/v2.1.33/CHANGELOG_v2.1.33.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -2859,13 +2859,37 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.1.33/TEST_REPORT_v2.1.33.md",
+      "path": "archive/retired/releases/Release/v2.1.33/TEST_REPORT_v2.1.33.md",
       "kind": "immutable",
       "topics": [
         "history"
       ],
       "versions": [
         "v2.1.33"
+      ],
+      "date": "2026-10-24",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.1.34/CHANGELOG_v2.1.34.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.1.34"
+      ],
+      "date": "2026-10-24",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.1.34/TEST_REPORT_v2.1.34.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.1.34"
       ],
       "date": "2026-10-24",
       "requiredAnchors": []
@@ -5939,38 +5963,73 @@
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.33/BUILD_MANIFEST_v2.1.33.json",
+      "path": "archive/retired/releases/Release/v2.1.33/BUILD_MANIFEST_v2.1.33.json",
       "encoding": "raw",
       "bytes": 8335,
       "sha256": "4b287d608f0969c4b3263c84367290f04b4a8343b73a7b6fe08572c52e97f43b",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.33/BiliCDN_TW.user.js",
+      "path": "archive/retired/releases/Release/v2.1.33/BiliCDN_TW.user.js",
       "encoding": "raw",
       "bytes": 417110,
       "sha256": "892fb339625d4d2a241ce4387050c8d08201e224c6211844c5be5f0eaad5a761",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.33/CHANGELOG_v2.1.33.md",
+      "path": "archive/retired/releases/Release/v2.1.33/CHANGELOG_v2.1.33.md",
       "encoding": "raw",
       "bytes": 52393,
       "sha256": "8590c99ea44670b98d4acd4a129427b665185897576b2cb4107c5472c1915d0c",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.33/SHA256SUMS_v2.1.33.txt",
+      "path": "archive/retired/releases/Release/v2.1.33/SHA256SUMS_v2.1.33.txt",
       "encoding": "raw",
       "bytes": 419,
       "sha256": "83d59ded36db8461c5db2b237a662a85a54592f69188e43a4152fdaeabea2a5c",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.33/TEST_REPORT_v2.1.33.md",
+      "path": "archive/retired/releases/Release/v2.1.33/TEST_REPORT_v2.1.33.md",
       "encoding": "raw",
       "bytes": 5804,
       "sha256": "090f01fd914ba665c539fabb4cb97052bee5fa1e36895151811951db7946d76e",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.1.34/BUILD_MANIFEST_v2.1.34.json",
+      "encoding": "raw",
+      "bytes": 8335,
+      "sha256": "dad815bfc39c99ee69cc0ed9c114911832fee7c6939e4cab9efb77db344df1e6",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.1.34/BiliCDN_TW.user.js",
+      "encoding": "raw",
+      "bytes": 420404,
+      "sha256": "504f63ffa61cce2d974ef4722344919d63ecadb5e542e362aad87948c3608392",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.1.34/CHANGELOG_v2.1.34.md",
+      "encoding": "raw",
+      "bytes": 53015,
+      "sha256": "2ed2456d9b1ce7277cd88e8fc341a00678ec2d79bd57a23c6b8bc113f4e4fb01",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.1.34/SHA256SUMS_v2.1.34.txt",
+      "encoding": "raw",
+      "bytes": 419,
+      "sha256": "5e8c774f8c0d08c4e1fc41df6a0dbf5c5b4aef51cd14155f9a256165e1ae24e7",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.1.34/TEST_REPORT_v2.1.34.md",
+      "encoding": "raw",
+      "bytes": 8059,
+      "sha256": "b541edff2ab44d4c83f50eabf3582aec78eda44de3cdfadad89215e89313f5b9",
       "mode": "exact"
     }
   ],
