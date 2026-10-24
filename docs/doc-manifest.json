@@ -75,6 +75,14 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md",
+      "kind": "record",
+      "topics": ["buffer-live-evaluation-r2"],
+      "versions": ["v2.1.35"],
+      "date": "2026-10-25",
+      "requiredAnchors": []
+    },
+    {
       "path": "archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md",
       "kind": "record",
       "topics": ["buffer-live-evaluation"],
@@ -2928,6 +2936,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 10142,
+      "sha256": "ea69fa80d1a0a15b5ff20de2f8ad01639fce0c846f165cb96e457c5f1177a341"
+    },
     {
       "path": "archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md",
       "mode": "exact",

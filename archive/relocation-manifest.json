@@ -5666,6 +5666,12 @@
   ],
   "unchangedFiles": [
     {
+      "path": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "encoding": "raw",
+      "bytes": 3488160,
+      "sha256": "9e5c726c603c1b1eb8780622e702b13b243668c3bc96588145230732dc92d2f6"
+    },
+    {
       "path": "archive/retired/originals/relocation-manifest-before-buffer-live-2026-10-25.json",
       "encoding": "raw",
       "bytes": 480512,
