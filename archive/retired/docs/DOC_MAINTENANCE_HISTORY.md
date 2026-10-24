@@ -635,3 +635,9 @@ TEST_REPORT 追加升版／乾淨驗證、公開下載 bytes／SHA-256、當次�
 ## 2026-10-24：v2.1.34 更新確認後完成結案
 
 TEST_REPORT 追加真實 v2.1.34 身分、Auto 1／2 倍正常回歸、五案證據重播及清理；TODO 改為已結案。首次入口受阻的交付 JSON、Release 快照與歷史 FAIL 不改寫；新安裝 JSON 精確登記保護。未執行故障與長樣片限制保留，完整結果不複製到其他指南。
+
+## 2026-10-24：有界尾段補顯與 v2.1.35
+
+PROJECT_CONTEXT 維護一次性尾段及撤銷條件，ARCHITECTURE 維護 Monitor 單一確認狀態與 Runtime／Recorder 邊界，DEVELOPMENT 維護 v6 證據及 continuity 命令。TEST_REPORT 集中紅綠、效用、非干預、安全與分層限制，TODO 維護交付狀態，HISTORY 只更新入口；未複製流程到其他指南。
+
+v2.1.34 最新完整正文原文追加，五個 Release 原件逐檔按原始位元組搬入封存。舊歸檔清單另存原始快照，新增逐案 JSON 精確保護；既有日誌只追加，不回寫歷史 FAIL、舊 Release 或工具管理的安全原件。來源沒有適用 unchangedFiles 項目，未改原始雜湊掩蓋來源變更。
