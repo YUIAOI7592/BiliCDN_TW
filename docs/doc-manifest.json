@@ -75,6 +75,14 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md",
+      "kind": "record",
+      "topics": ["buffer-adoption-decision"],
+      "versions": ["v2.1.35"],
+      "date": "2026-10-25",
+      "requiredAnchors": []
+    },
+    {
       "path": "archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md",
       "kind": "record",
       "topics": ["buffer-risk-evaluation"],
@@ -2944,6 +2952,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 9624,
+      "sha256": "153a2e1e71a8a209d30baf10b5dd6bf029345bb5e380f6bfbbcdb6c9c224e3a1"
+    },
     {
       "path": "archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md",
       "mode": "exact",

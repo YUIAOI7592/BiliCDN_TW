@@ -5666,6 +5666,12 @@
   ],
   "unchangedFiles": [
     {
+      "path": "archive/retired/docs/evidence/BUFFER_ADOPTION_DECISION_2026-10-25.json",
+      "encoding": "raw",
+      "bytes": 1175641,
+      "sha256": "7a65930ad9006d490883b8cc5002dbf5239e1b2de1decb9f7a2dcc919b9fd2a8"
+    },
+    {
       "path": "archive/retired/docs/evidence/BUFFER_RISK_EVALUATION_2026-10-25.json",
       "encoding": "raw",
       "bytes": 7412052,
