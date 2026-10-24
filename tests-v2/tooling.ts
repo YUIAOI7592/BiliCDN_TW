@@ -25,6 +25,7 @@ import './regressions/buffer-low-tooling.ts'
 import './regressions/buffer-continuity-tooling.ts'
 import './regressions/buffer-live-evaluation.ts'
 import './regressions/buffer-risk-evaluation.ts'
+import './regressions/buffer-adoption-decision.ts'
 
 test('formatting reaches a stable source before the next check', { timeout: 5000 }, async () => {
   const source =

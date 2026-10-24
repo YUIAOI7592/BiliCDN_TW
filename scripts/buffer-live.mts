@@ -7,13 +7,15 @@ import { evaluateLiveWindows } from './buffer-shadow/live-report.mts'
 import type { LiveWindow } from './buffer-shadow/live-report.mts'
 import { riskCoverageReport } from './buffer-shadow/risk-report.mts'
 import { evaluateSupply } from './buffer-risk-evaluation.mts'
+import { evaluateDecision } from './buffer-adoption-decision.mts'
 
 export function parseLiveArgs(args: readonly string[]) {
   let input: string | undefined,
     serve = false,
     json = false,
     risk = false,
-    supply = false
+    supply = false,
+    decision = false
   for (let i = 0; i < args.length; i++) {
     const a = args[i]
     if (a === '--input' && input === undefined && args[i + 1] && !args[i + 1]!.startsWith('--'))
@@ -22,15 +24,16 @@ export function parseLiveArgs(args: readonly string[]) {
     else if (a === '--json' && !json) json = true
     else if (a === '--risk' && !risk) risk = true
     else if (a === '--supply' && !supply) supply = true
+    else if (a === '--decision' && !decision) decision = true
     else
       throw Error(
-        'Usage: npm run evaluate:buffer-live -- (--input <evidence.json> [--risk] [--json] | --supply [--json] | --serve)',
+        'Usage: npm run evaluate:buffer-live -- (--input <evidence.json> [--risk] [--json] | --supply [--json] | --decision [--json] | --serve)',
       )
   }
   if (
-    (serve ? 1 : 0) + (input !== undefined ? 1 : 0) + (supply ? 1 : 0) !== 1 ||
+    (serve ? 1 : 0) + (input !== undefined ? 1 : 0) + (supply ? 1 : 0) + (decision ? 1 : 0) !== 1 ||
     (serve && json) ||
-    (risk && (serve || supply || input === undefined))
+    (risk && (serve || supply || decision || input === undefined))
   )
     throw Error('Choose input or serve')
   return {
@@ -39,6 +42,7 @@ export function parseLiveArgs(args: readonly string[]) {
     json,
     ...(risk ? { risk: true } : {}),
     ...(supply ? { supply: true } : {}),
+    ...(decision ? { decision: true } : {}),
   }
 }
 export function analyzeLiveRisk(value: unknown) {
@@ -153,7 +157,15 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/buffer-live
   if (options)
     try {
       if (options.serve) await serveCalibration()
-      else if (options.supply) {
+      else if (options.decision) {
+        const report = await evaluateDecision()
+        console.log(
+          options.json
+            ? JSON.stringify(report)
+            : `${report.decision.recommendation}; paired rates ${report.results.length}; exit ${report.exitCode}; product action unauthorized.`,
+        )
+        process.exitCode = report.exitCode
+      } else if (options.supply) {
         const report = await evaluateSupply()
         console.log(
           options.json
