@@ -54,6 +54,35 @@ v2.1.33 完整報告原文追加，五項 Release 原始位元組歸檔；保留
 
 控制中心入口依指示跳過。自然起因、安裝版故障注入、六組五十秒樣片、背景／gate／剪貼簿及歷史矩陣均不恢復；來源隔離、正常安裝與公開發布分開記錄。
 
+## 公開交付與當次安裝核對
+
+[v2.1.34 正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.34) 已發布，發布提交 26171960a3eb151518caf8024f197b16c6be2529。當時遠端 main 與版本標籤解參照一致；唯一 BiliCDN_TW.user.js 附件及公開 latest HTTP 200 全文均為 420404 bytes／SHA-256 504f63ffa61cce2d974ef4722344919d63ecadb5e542e362aad87948c3608392，與本機逐位元組相同。
+
+升版完整 verify 再次 2175 案通過；735 項輸入的全新來源副本 npm ci／verify／低緩衝命令全部退出 0，輸入雜湊不變。功能階段 728 項副本與本次副本均已移除，自有證據與日誌留在本機封存。第一次升版檢查發現報告缺少歷史引用的章節錨點，恢復原 Markdown 標題後重新封裝未發布快照、完整與乾淨驗證皆通過。正式發布後不回寫 Release。
+
+文件檢查通過；仍保留七個不可變舊失效連結、430 個歸檔後歷史網址限制、十八個私有證據引用及 343 個未連網外部連結，不能稱為全部網址均可達。封存檢查通過 399 個搬移項目、五十六份閱讀版、286 筆校驗記錄。npm ci 提示三個既有開發依賴低風險 advisory；本輪沒有升級依賴或執行強制 audit 修正，不將差異安全審查視為完整依賴稽核。
+
+當次公開更新入口停在 Tampermonkey 中繼頁，工具未取得可操作的管理器確認頁。新載入指定影片的完整執行本體為 415152 bytes／SHA-256 febc3f34f91e834cf4ac05d162b754e259ddc4508a14a4362b6e83bc19de69e2，精確等同 v2.1.33；新版預期本體為 418446 bytes／SHA-256 74ba2f9c35de15ed939a8359227979acee4b15f2eb0abf1f8a38b222b704dd59。因此新版管理器／唯一實例／hooks、Auto 1／2 倍正常操作及十五秒播放均未執行，判定 null，不能用舊版播放或來源隔離補算。
+
+已提出必要的管理器手動更新；沒有重複詢問發布或既有工作授權。自有影片／更新分頁及 Debugger 已關閉，沒有斷點、故障攔截或背景收集器。發布與文件交付完成，安裝正常回歸待實際更新後另記；[交付 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_LOW_V5_DELIVERY_2026-10-24.json) 保存遠端、公開下載、安全識別、清理與未執行結果。
+
+## 使用者更新後的實際安裝正常回歸
+
+2026-10-24 使用者確認更新後，另開指定影片 BV1tFZZBQE57，核對 Tampermonkey 5.5.1／腳本 v2.1.34；完整執行本體 418446 bytes／SHA-256 74ba2f9c35de15ed939a8359227979acee4b15f2eb0abf1f8a38b222b704dd59 與發布原件的完整 IIFE 相同。Runtime／ControlCenter 各一個，Fetch／XHR hooks 均為 installed／fetch-and-xhr-verified；診斷實際為 schemaVersion 5／buffer-window-v5。初次更新入口受阻與舊版本體紀錄保持原判定，不以本次結果覆寫。
+
+| 實際安裝項目 | 結果 |
+| --- | --- |
+| Auto 1 倍 | 暫停／恢復／約五秒短 seek 通過；十五秒窗口實際 15014.2 ms，十六個樣本、十五個區段均時間增加 >0.05 秒且影格增加 |
+| Auto 2 倍 | 暫停／恢復／約五秒短 seek 通過；十五秒窗口實際 15054.4 ms，十六個樣本、十五個區段均時間及影格增加 |
+| 身分及品質 | 兩窗同一媒體／內容、實際倍速固定、3840 × 2160；沒有 seeking／paused／ended／error 或新輸入中斷 |
+| 救援與清理 | 兩窗沒有額外救援事件或 reload，結束為 healthy／reloadCount 0；自有 timer／listener／subscription／斷點／遠端參照組／分頁全數歸零 |
+
+原始倍速為二倍，結束保持二倍；觀察使用既有快照及唯讀數值，未修改產品欄位、getter、GM 資料或建立控制器。每窗在單次有界呼叫內完整 await，finally 釋放資源。身分校準時曾見較早 route-failure 意圖已 recovered、reloadCount 0；發生於本次有效窗口之前，保留原讀值，不據此推斷自然起因或故障救援效果。
+
+另以五個具名 node:test 重播真實證據，五項通過、零失敗／略過／取消；獨立於正式 2175 案。發布的五個原件再次逐檔校驗不變。[安裝證據 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_LOW_V5_INSTALLED_2026-10-24.json) 保存完整樣本、操作、完整本體身分與重播結果；畫面與收集原件留在本機私有封存。文件及封存檢查、git diff --check 通過後提交結案，發布標籤與附件不改。
+
+本次只證明正常安裝回歸；不宣稱真實低緩衝漏報率、誤報率或故障救援成功率改善。控制中心入口仍依指示跳過，六組五十秒樣片、自然起因、安裝故障注入及歷史矩陣保持未執行／停止。交付及自有資源清理結案，沒有自主續跑中的瀏覽器窗口。
+
 ## 歷史驗證導覽
 
 <a name="bilicdn_tw-v218-release-verification--2026-10-04"></a>

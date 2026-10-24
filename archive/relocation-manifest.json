@@ -6406,6 +6406,18 @@
       "encoding": "raw",
       "bytes": 8059,
       "sha256": "b541edff2ab44d4c83f50eabf3582aec78eda44de3cdfadad89215e89313f5b9"
+    },
+    {
+      "path": "archive/retired/docs/evidence/BUFFER_LOW_V5_DELIVERY_2026-10-24.json",
+      "encoding": "raw",
+      "bytes": 256384,
+      "sha256": "56458772cec1b5b5be880211f763dd27e85efdce28d4e33d3995517f7dc5dd5a"
+    },
+    {
+      "path": "archive/retired/docs/evidence/BUFFER_LOW_V5_INSTALLED_2026-10-24.json",
+      "encoding": "raw",
+      "bytes": 21669,
+      "sha256": "e7ad1697b4a60cc123fc741dc84564f1767ff6f4257b9b212db9f47d77b3d0c8"
     }
   ],
   "localManifest": "archive/retired/local/2026-10-20-cleanup/private-manifest.json",
