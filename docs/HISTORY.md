@@ -195,6 +195,8 @@
 
 ### 測試工具
 
+- [v2.1.35 實際緩衝效用評估與採用決策 — 2026-10-25](../archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md)
+
 - [v2.1.20 IAB 收集器修復與 TODO 第 5 輪 — 2026-10-11](../archive/retired/docs/IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md)
 - [測試工具驗證紀錄](TEST_TOOLING_REPORT.md)
 
@@ -202,6 +204,7 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
+| 2026-10-25 | [實際緩衝效用評估與採用決策](../archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md) |
 | 2026-10-22 | [全專案檔案盤點與整理](../archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md) |
 | 未單列日期／彙編 | [文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)、[v2.0.2：禁止出口、播放器備援與死核心事故修復計畫](../archive/retired/docs/PLAN_v2.0.2.md)、[歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[測試工具驗證紀錄](TEST_TOOLING_REPORT.md) |
 | 2026-10-17 | [文件重整前快照 — 2026-10-17](../archive/retired/docs/DOCS_BEFORE_REORGANIZATION_2026-10-17.md)、[BR-01 位置保存、救援時機與 v2.1.27 驗證](../archive/retired/docs/BR01_RESCUE_FIX_v2.1.27.md) |

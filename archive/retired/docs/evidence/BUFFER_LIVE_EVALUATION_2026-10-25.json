@@ -1,0 +1,4881 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "baseline": "d0c2c8c3dcc61e6db76531d560dfbc2a12d7fd98",
+  "toolCommit": "7921aae",
+  "source": {
+    "version": "2.1.35",
+    "bytes": 422022,
+    "sha256": "7458f27610a0b2a9f13e07c1e087502198809dacb2a411f5112acf9aaf3b9cc3"
+  },
+  "toolSourceHashes": {
+    "scripts/buffer-live.mts": "285f8a2710193b68d64befe0dce346c464d2a0512dd8c9a2316768a65bf37136",
+    "scripts/buffer-shadow/live-browser.mts": "ed3273e4d07f8de936a0f98f336d5aa353b6a132669457ccb32c34bf4e28b7da",
+    "scripts/buffer-shadow/live-model.mts": "9f3ce0f6326182c047a64163f92c910854961c5025b26170858407c57969f1e9",
+    "scripts/buffer-shadow/live-report.mts": "da15d95bd72c8e170355c39393cf6719d31b21c0846a2ee017ff76ac55bc848b",
+    "scripts/buffer-shadow/live-session.mts": "c494953a0fd393be9b31a25913b28333b5b2acf5852b13dd6a70c8a1b4b4842e",
+    "tests-v2/regressions/buffer-live-evaluation.ts": "433086b300ab0f47e65ddc3a58a4376eaa236488f1ec95f71eb502ab130663ff"
+  },
+  "browserCalibrationBundleHashes": null,
+  "browserCalibrationHashLimitation": "The per-run served bundle was not saved; current tool hashes are not retroactive browser-source proof.",
+  "unitContracts": [
+    {
+      "id": "LIVE-001",
+      "level": "tool-unit",
+      "name": "live session keeps a single cursor across paged and repeated drains with detached copies",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 5.104,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-002",
+      "level": "tool-unit",
+      "name": "live session records the complete 365s stream through short lease renewals",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 5.6089,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-003",
+      "level": "tool-unit",
+      "name": "live session lease expiry invalidates the window and releases before restart",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.1733,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-004",
+      "level": "tool-unit",
+      "name": "live session samples overflow invalidates instead of silently truncating",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.166,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-005",
+      "level": "tool-unit",
+      "name": "live session events overflow invalidates instead of silently truncating",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.2065,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-006",
+      "level": "tool-unit",
+      "name": "live session bytes overflow invalidates instead of silently truncating",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.1287,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-007",
+      "level": "tool-unit",
+      "name": "live session invalid cleanup prevents old callbacks from reviving capture",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.2094,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-008",
+      "level": "tool-unit",
+      "name": "live session exit cleanup prevents old callbacks from reviving capture",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.1095,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-009",
+      "level": "tool-unit",
+      "name": "live session cancel cleanup prevents old callbacks from reviving capture",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0912,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-010",
+      "level": "tool-unit",
+      "name": "live session exception cleanup prevents old callbacks from reviving capture",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.1637,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-011",
+      "level": "tool-unit",
+      "name": "live session whitelist removes unknown sensitive payload and rejects arbitrary strings",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.1882,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-012",
+      "level": "tool-unit",
+      "name": "live session rejects future samples and does not renew on an invalid cursor",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.2853,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-013",
+      "level": "tool-unit",
+      "name": "live remote drain uses the current explicit capability and rejects exception envelopes",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.3108,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-014",
+      "level": "tool-unit",
+      "name": "live scorer requires the full 15000ms followup and keeps earlier interruption distinct",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.3648,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-015",
+      "level": "tool-unit",
+      "name": "live scorer requires the full 60000ms followup and keeps earlier interruption distinct",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.1576,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-016",
+      "level": "tool-unit",
+      "name": "live scorer detects one two-second interruption without counting duplicate candidates twice",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.1901,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-017",
+      "level": "tool-unit",
+      "name": "live scorer does not pair an interruption across a missing interval",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.1416,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-018",
+      "level": "tool-unit",
+      "name": "live scorer records entry into the actionable buffer range during an existing candidate",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.1181,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-019",
+      "level": "tool-unit",
+      "name": "live scorer censors gap without joining ownership or calling it healthy",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.2954,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-020",
+      "level": "tool-unit",
+      "name": "live scorer censors null without joining ownership or calling it healthy",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.2052,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-021",
+      "level": "tool-unit",
+      "name": "live scorer censors owner without joining ownership or calling it healthy",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.2132,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-022",
+      "level": "tool-unit",
+      "name": "adoption permits only the exact frozen evidence thresholds",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.2261,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-023",
+      "level": "tool-unit",
+      "name": "adoption marks missing evidence insufficient {\"windows\":11}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0476,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-024",
+      "level": "tool-unit",
+      "name": "adoption marks missing evidence insufficient {\"combinations\":5}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0224,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-025",
+      "level": "tool-unit",
+      "name": "adoption marks missing evidence insufficient {\"observedMs\":3599999}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0339,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-026",
+      "level": "tool-unit",
+      "name": "adoption marks missing evidence insufficient {\"opportunities\":9}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0191,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-027",
+      "level": "tool-unit",
+      "name": "adoption marks missing evidence insufficient {\"interruptions\":9}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0311,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-028",
+      "level": "tool-unit",
+      "name": "adoption marks missing evidence insufficient {\"interruptionsByRate\":[2,8]}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0332,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-029",
+      "level": "tool-unit",
+      "name": "adoption marks missing evidence insufficient {\"normalMs\":1799999}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0303,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-030",
+      "level": "tool-unit",
+      "name": "adoption rejects sufficient but unhelpful evidence {\"eligibleMs\":3239999}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0314,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-031",
+      "level": "tool-unit",
+      "name": "adoption rejects sufficient but unhelpful evidence {\"matched\":7}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0162,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-032",
+      "level": "tool-unit",
+      "name": "adoption rejects sufficient but unhelpful evidence {\"warned\":6}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0141,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-033",
+      "level": "tool-unit",
+      "name": "adoption rejects sufficient but unhelpful evidence {\"timely\":6}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0134,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-034",
+      "level": "tool-unit",
+      "name": "adoption rejects sufficient but unhelpful evidence {\"actionable\":4}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0135,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-035",
+      "level": "tool-unit",
+      "name": "adoption rejects sufficient but unhelpful evidence {\"actionableRates\":1}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0173,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-036",
+      "level": "tool-unit",
+      "name": "adoption rejects sufficient but unhelpful evidence {\"unnecessary\":2}",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0134,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-037",
+      "level": "tool-unit",
+      "name": "live CLI accepts only input or calibration and preserves provenance",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.1893,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-038",
+      "level": "tool-unit",
+      "name": "live report keeps absent windows insufficient and fails execution status honestly",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.371,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-039",
+      "level": "tool-unit",
+      "name": "live report validates the real healthy prelude and irregular full followup without external writes",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 12.7438,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-040",
+      "level": "tool-unit",
+      "name": "live replay rejects incorrect fixed source version",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0897,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-041",
+      "level": "tool-unit",
+      "name": "live replay rejects incorrect fixed source hash",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0296,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-042",
+      "level": "tool-unit",
+      "name": "live replay rejects incorrect fixed source bytes",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 0.0218,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-043",
+      "level": "integration",
+      "name": "live real Monitor Runtime Routes Recorder remain unchanged during capture rate=1",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 27.5681,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    },
+    {
+      "id": "LIVE-044",
+      "level": "integration",
+      "name": "live real Monitor Runtime Routes Recorder remain unchanged during capture rate=2",
+      "expected": "all named assertions hold",
+      "actual": "passed",
+      "exitCode": 0,
+      "durationMs": 16.4183,
+      "source": "tests-v2/regressions/buffer-live-evaluation.ts"
+    }
+  ],
+  "toolRedContracts": {
+    "sourceSha256": "14f8cd8ae35583b8d1769294c06595cfb02a9572c68431f8458045f65855780a",
+    "exitCode": 1,
+    "cases": [
+      {
+        "name": "live scorer does not pair an interruption across a missing interval",
+        "expectedPairs": 0,
+        "actualPairs": 1
+      },
+      {
+        "name": "live scorer records entry into the actionable buffer range during an existing candidate",
+        "expectedAt": 10000,
+        "actualAt": null
+      }
+    ]
+  },
+  "calibration": [
+    {
+      "id": "E-CAL01",
+      "validity": "invalid",
+      "reason": "host-work-between-drains-exceeded-lease",
+      "expectedMs": 365000,
+      "executionMs": 148868.19999999925,
+      "samples": 148,
+      "events": 29,
+      "entries": [
+        {
+          "sequence": 1,
+          "kind": "sample",
+          "value": {
+            "at": 1000.6999999992549,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 101,
+            "frames": 30,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 2,
+          "kind": "sample",
+          "value": {
+            "at": 2012,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 102,
+            "frames": 60,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 3,
+          "kind": "sample",
+          "value": {
+            "at": 3010.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 103,
+            "frames": 90,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 4,
+          "kind": "sample",
+          "value": {
+            "at": 4002.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 104,
+            "frames": 120,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 5,
+          "kind": "sample",
+          "value": {
+            "at": 5015.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 105,
+            "frames": 150,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 6,
+          "kind": "event",
+          "value": {
+            "at": 5015.89999999851,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 1
+          }
+        },
+        {
+          "sequence": 7,
+          "kind": "sample",
+          "value": {
+            "at": 6011.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 106,
+            "frames": 180,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 8,
+          "kind": "sample",
+          "value": {
+            "at": 7002.099999997765,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 107,
+            "frames": 210,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 9,
+          "kind": "sample",
+          "value": {
+            "at": 8015.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 108,
+            "frames": 240,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 10,
+          "kind": "sample",
+          "value": {
+            "at": 9011.79999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 109,
+            "frames": 270,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 11,
+          "kind": "sample",
+          "value": {
+            "at": 10008.199999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 110,
+            "frames": 300,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 12,
+          "kind": "event",
+          "value": {
+            "at": 10008.199999999255,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 2
+          }
+        },
+        {
+          "sequence": 13,
+          "kind": "sample",
+          "value": {
+            "at": 11004,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 111,
+            "frames": 330,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 14,
+          "kind": "sample",
+          "value": {
+            "at": 12012.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 112,
+            "frames": 360,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 15,
+          "kind": "sample",
+          "value": {
+            "at": 13004.79999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 113,
+            "frames": 390,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 16,
+          "kind": "sample",
+          "value": {
+            "at": 14015.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 114,
+            "frames": 420,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 17,
+          "kind": "sample",
+          "value": {
+            "at": 15015.599999997765,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 115,
+            "frames": 450,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 18,
+          "kind": "event",
+          "value": {
+            "at": 15015.599999997765,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 3
+          }
+        },
+        {
+          "sequence": 19,
+          "kind": "sample",
+          "value": {
+            "at": 16009,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 116,
+            "frames": 480,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 20,
+          "kind": "sample",
+          "value": {
+            "at": 17003.099999997765,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 117,
+            "frames": 510,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 21,
+          "kind": "sample",
+          "value": {
+            "at": 18013.099999997765,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 118,
+            "frames": 540,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 22,
+          "kind": "sample",
+          "value": {
+            "at": 19012.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 119,
+            "frames": 570,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 23,
+          "kind": "sample",
+          "value": {
+            "at": 20007.099999997765,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 120,
+            "frames": 600,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 24,
+          "kind": "event",
+          "value": {
+            "at": 20007.199999999255,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 4
+          }
+        },
+        {
+          "sequence": 25,
+          "kind": "sample",
+          "value": {
+            "at": 21000.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 121,
+            "frames": 630,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 26,
+          "kind": "sample",
+          "value": {
+            "at": 22009.89999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 122,
+            "frames": 660,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 27,
+          "kind": "sample",
+          "value": {
+            "at": 23003.099999997765,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 123,
+            "frames": 690,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 28,
+          "kind": "sample",
+          "value": {
+            "at": 24015.79999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 124,
+            "frames": 720,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 29,
+          "kind": "sample",
+          "value": {
+            "at": 25010.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 125,
+            "frames": 750,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 30,
+          "kind": "event",
+          "value": {
+            "at": 25010.699999999255,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 5
+          }
+        },
+        {
+          "sequence": 31,
+          "kind": "sample",
+          "value": {
+            "at": 26008,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 126,
+            "frames": 780,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 32,
+          "kind": "sample",
+          "value": {
+            "at": 27003,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 127,
+            "frames": 810,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 33,
+          "kind": "sample",
+          "value": {
+            "at": 28013.099999997765,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 128,
+            "frames": 840,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 34,
+          "kind": "sample",
+          "value": {
+            "at": 29009.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 129,
+            "frames": 870,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 35,
+          "kind": "sample",
+          "value": {
+            "at": 30016.199999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 130,
+            "frames": 900,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 36,
+          "kind": "event",
+          "value": {
+            "at": 30016.199999999255,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 6
+          }
+        },
+        {
+          "sequence": 37,
+          "kind": "sample",
+          "value": {
+            "at": 31011.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 131,
+            "frames": 930,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 38,
+          "kind": "sample",
+          "value": {
+            "at": 32010.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 132,
+            "frames": 960,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 39,
+          "kind": "sample",
+          "value": {
+            "at": 33008.199999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 133,
+            "frames": 990,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 40,
+          "kind": "sample",
+          "value": {
+            "at": 34002.79999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 134,
+            "frames": 1020,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 41,
+          "kind": "sample",
+          "value": {
+            "at": 35012.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 135,
+            "frames": 1050,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 42,
+          "kind": "event",
+          "value": {
+            "at": 35012.39999999851,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 7
+          }
+        },
+        {
+          "sequence": 43,
+          "kind": "sample",
+          "value": {
+            "at": 36007.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 136,
+            "frames": 1080,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 44,
+          "kind": "sample",
+          "value": {
+            "at": 37015.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 137,
+            "frames": 1110,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 45,
+          "kind": "sample",
+          "value": {
+            "at": 38009.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 138,
+            "frames": 1140,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 46,
+          "kind": "sample",
+          "value": {
+            "at": 39002.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 139,
+            "frames": 1170,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 47,
+          "kind": "sample",
+          "value": {
+            "at": 40011.79999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 140,
+            "frames": 1200,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 48,
+          "kind": "event",
+          "value": {
+            "at": 40011.79999999702,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 8
+          }
+        },
+        {
+          "sequence": 49,
+          "kind": "sample",
+          "value": {
+            "at": 41011.199999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 141,
+            "frames": 1230,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 50,
+          "kind": "sample",
+          "value": {
+            "at": 42005.099999997765,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 142,
+            "frames": 1260,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 51,
+          "kind": "sample",
+          "value": {
+            "at": 43004,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 143,
+            "frames": 1290,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 52,
+          "kind": "sample",
+          "value": {
+            "at": 44015.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 144,
+            "frames": 1320,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 53,
+          "kind": "sample",
+          "value": {
+            "at": 45013.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 145,
+            "frames": 1350,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 54,
+          "kind": "event",
+          "value": {
+            "at": 45013.29999999702,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 9
+          }
+        },
+        {
+          "sequence": 55,
+          "kind": "sample",
+          "value": {
+            "at": 46009.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 146,
+            "frames": 1380,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 56,
+          "kind": "sample",
+          "value": {
+            "at": 47003,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 147,
+            "frames": 1410,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 57,
+          "kind": "sample",
+          "value": {
+            "at": 48000.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 148,
+            "frames": 1440,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 58,
+          "kind": "sample",
+          "value": {
+            "at": 49015.199999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 149,
+            "frames": 1470,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 59,
+          "kind": "sample",
+          "value": {
+            "at": 50008.199999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 150,
+            "frames": 1500,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 60,
+          "kind": "event",
+          "value": {
+            "at": 50008.199999999255,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 10
+          }
+        },
+        {
+          "sequence": 61,
+          "kind": "sample",
+          "value": {
+            "at": 51002.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 151,
+            "frames": 1530,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 62,
+          "kind": "sample",
+          "value": {
+            "at": 52009.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 152,
+            "frames": 1560,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 63,
+          "kind": "sample",
+          "value": {
+            "at": 53003.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 153,
+            "frames": 1590,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 64,
+          "kind": "sample",
+          "value": {
+            "at": 54015.199999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 154,
+            "frames": 1620,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 65,
+          "kind": "sample",
+          "value": {
+            "at": 55014.099999997765,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 155,
+            "frames": 1650,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 66,
+          "kind": "event",
+          "value": {
+            "at": 55014.099999997765,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 11
+          }
+        },
+        {
+          "sequence": 67,
+          "kind": "sample",
+          "value": {
+            "at": 56012.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 156,
+            "frames": 1680,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 68,
+          "kind": "sample",
+          "value": {
+            "at": 57006.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 157,
+            "frames": 1710,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 69,
+          "kind": "sample",
+          "value": {
+            "at": 58003.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 158,
+            "frames": 1740,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 70,
+          "kind": "sample",
+          "value": {
+            "at": 59015.199999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 159,
+            "frames": 1770,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 71,
+          "kind": "sample",
+          "value": {
+            "at": 60011.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 160,
+            "frames": 1800,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 72,
+          "kind": "event",
+          "value": {
+            "at": 60011.29999999702,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 12
+          }
+        },
+        {
+          "sequence": 73,
+          "kind": "sample",
+          "value": {
+            "at": 61004.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 161,
+            "frames": 1830,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 74,
+          "kind": "sample",
+          "value": {
+            "at": 62015.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 162,
+            "frames": 1860,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 75,
+          "kind": "sample",
+          "value": {
+            "at": 63010.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 163,
+            "frames": 1890,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 76,
+          "kind": "sample",
+          "value": {
+            "at": 64007,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 164,
+            "frames": 1920,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 77,
+          "kind": "sample",
+          "value": {
+            "at": 65012.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 165,
+            "frames": 1950,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 78,
+          "kind": "event",
+          "value": {
+            "at": 65012.79999999702,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 13
+          }
+        },
+        {
+          "sequence": 79,
+          "kind": "sample",
+          "value": {
+            "at": 66009.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 166,
+            "frames": 1980,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 80,
+          "kind": "sample",
+          "value": {
+            "at": 67002.69999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 167,
+            "frames": 2010,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 81,
+          "kind": "sample",
+          "value": {
+            "at": 68013.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 168,
+            "frames": 2040,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 82,
+          "kind": "sample",
+          "value": {
+            "at": 69002.89999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 169,
+            "frames": 2070,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 83,
+          "kind": "sample",
+          "value": {
+            "at": 70014.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 170,
+            "frames": 2100,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 84,
+          "kind": "event",
+          "value": {
+            "at": 70014.39999999851,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 14
+          }
+        },
+        {
+          "sequence": 85,
+          "kind": "sample",
+          "value": {
+            "at": 71001.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 171,
+            "frames": 2130,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 86,
+          "kind": "sample",
+          "value": {
+            "at": 72007.09999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 172,
+            "frames": 2160,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 87,
+          "kind": "sample",
+          "value": {
+            "at": 73003.19999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 173,
+            "frames": 2190,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 88,
+          "kind": "sample",
+          "value": {
+            "at": 74012.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 174,
+            "frames": 2220,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 89,
+          "kind": "sample",
+          "value": {
+            "at": 75008,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 175,
+            "frames": 2250,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 90,
+          "kind": "event",
+          "value": {
+            "at": 75008,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 15
+          }
+        },
+        {
+          "sequence": 91,
+          "kind": "sample",
+          "value": {
+            "at": 76004.79999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 176,
+            "frames": 2280,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 92,
+          "kind": "sample",
+          "value": {
+            "at": 77002.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 177,
+            "frames": 2310,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 93,
+          "kind": "sample",
+          "value": {
+            "at": 78013.19999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 178,
+            "frames": 2340,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 94,
+          "kind": "sample",
+          "value": {
+            "at": 79005.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 179,
+            "frames": 2370,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 95,
+          "kind": "sample",
+          "value": {
+            "at": 80000.89999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 180,
+            "frames": 2400,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 96,
+          "kind": "event",
+          "value": {
+            "at": 80001,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 16
+          }
+        },
+        {
+          "sequence": 97,
+          "kind": "sample",
+          "value": {
+            "at": 81012.19999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 181,
+            "frames": 2430,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 98,
+          "kind": "sample",
+          "value": {
+            "at": 82008.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 182,
+            "frames": 2460,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 99,
+          "kind": "sample",
+          "value": {
+            "at": 83003.19999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 183,
+            "frames": 2490,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 100,
+          "kind": "sample",
+          "value": {
+            "at": 84014.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 184,
+            "frames": 2520,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 101,
+          "kind": "sample",
+          "value": {
+            "at": 85010.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 185,
+            "frames": 2550,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 102,
+          "kind": "event",
+          "value": {
+            "at": 85010.5,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 17
+          }
+        },
+        {
+          "sequence": 103,
+          "kind": "sample",
+          "value": {
+            "at": 86002.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 186,
+            "frames": 2580,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 104,
+          "kind": "sample",
+          "value": {
+            "at": 87012.59999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 187,
+            "frames": 2610,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 105,
+          "kind": "sample",
+          "value": {
+            "at": 88010,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 188,
+            "frames": 2640,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 106,
+          "kind": "sample",
+          "value": {
+            "at": 89007.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 189,
+            "frames": 2670,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 107,
+          "kind": "sample",
+          "value": {
+            "at": 90002.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 190,
+            "frames": 2700,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 108,
+          "kind": "event",
+          "value": {
+            "at": 90002.5,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 18
+          }
+        },
+        {
+          "sequence": 109,
+          "kind": "sample",
+          "value": {
+            "at": 91010.79999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 191,
+            "frames": 2730,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 110,
+          "kind": "sample",
+          "value": {
+            "at": 92004.89999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 192,
+            "frames": 2760,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 111,
+          "kind": "sample",
+          "value": {
+            "at": 93002.69999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 193,
+            "frames": 2790,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 112,
+          "kind": "sample",
+          "value": {
+            "at": 94014,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 194,
+            "frames": 2820,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 113,
+          "kind": "sample",
+          "value": {
+            "at": 95011.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 195,
+            "frames": 2850,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 114,
+          "kind": "event",
+          "value": {
+            "at": 95011.29999999702,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 19
+          }
+        },
+        {
+          "sequence": 115,
+          "kind": "sample",
+          "value": {
+            "at": 96005.69999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 196,
+            "frames": 2880,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 116,
+          "kind": "sample",
+          "value": {
+            "at": 97001.09999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 197,
+            "frames": 2910,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 117,
+          "kind": "sample",
+          "value": {
+            "at": 98010.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 198,
+            "frames": 2940,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 118,
+          "kind": "sample",
+          "value": {
+            "at": 99005.09999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 199,
+            "frames": 2970,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 119,
+          "kind": "sample",
+          "value": {
+            "at": 100014.19999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 200,
+            "frames": 3000,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 120,
+          "kind": "event",
+          "value": {
+            "at": 100014.29999999702,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 20
+          }
+        },
+        {
+          "sequence": 121,
+          "kind": "sample",
+          "value": {
+            "at": 101014.09999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 201,
+            "frames": 3030,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 122,
+          "kind": "sample",
+          "value": {
+            "at": 102007.09999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 202,
+            "frames": 3060,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 123,
+          "kind": "sample",
+          "value": {
+            "at": 103002.59999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 203,
+            "frames": 3090,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 124,
+          "kind": "sample",
+          "value": {
+            "at": 104015.19999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 204,
+            "frames": 3120,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 125,
+          "kind": "sample",
+          "value": {
+            "at": 105007.89999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 205,
+            "frames": 3150,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 126,
+          "kind": "event",
+          "value": {
+            "at": 105007.89999999851,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 21
+          }
+        },
+        {
+          "sequence": 127,
+          "kind": "sample",
+          "value": {
+            "at": 106003.09999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 206,
+            "frames": 3180,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 128,
+          "kind": "sample",
+          "value": {
+            "at": 107013.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 207,
+            "frames": 3210,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 129,
+          "kind": "sample",
+          "value": {
+            "at": 108011.79999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 208,
+            "frames": 3240,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 130,
+          "kind": "sample",
+          "value": {
+            "at": 109007.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 209,
+            "frames": 3270,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 131,
+          "kind": "sample",
+          "value": {
+            "at": 110002.79999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 210,
+            "frames": 3300,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 132,
+          "kind": "event",
+          "value": {
+            "at": 110002.89999999851,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 22
+          }
+        },
+        {
+          "sequence": 133,
+          "kind": "sample",
+          "value": {
+            "at": 111012.89999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 211,
+            "frames": 3330,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 134,
+          "kind": "sample",
+          "value": {
+            "at": 112006.09999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 212,
+            "frames": 3360,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 135,
+          "kind": "sample",
+          "value": {
+            "at": 113002.79999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 213,
+            "frames": 3390,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 136,
+          "kind": "sample",
+          "value": {
+            "at": 114013.59999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 214,
+            "frames": 3420,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 137,
+          "kind": "sample",
+          "value": {
+            "at": 115012,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 215,
+            "frames": 3450,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 138,
+          "kind": "event",
+          "value": {
+            "at": 115012.09999999776,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 23
+          }
+        },
+        {
+          "sequence": 139,
+          "kind": "sample",
+          "value": {
+            "at": 116003.19999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 216,
+            "frames": 3480,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 140,
+          "kind": "sample",
+          "value": {
+            "at": 117015.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 217,
+            "frames": 3510,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 141,
+          "kind": "sample",
+          "value": {
+            "at": 118012.19999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 218,
+            "frames": 3540,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 142,
+          "kind": "sample",
+          "value": {
+            "at": 119008.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 219,
+            "frames": 3570,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 143,
+          "kind": "sample",
+          "value": {
+            "at": 120003.69999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 220,
+            "frames": 3600,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 144,
+          "kind": "event",
+          "value": {
+            "at": 120003.69999999925,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 24
+          }
+        },
+        {
+          "sequence": 145,
+          "kind": "sample",
+          "value": {
+            "at": 121002.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 221,
+            "frames": 3630,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 146,
+          "kind": "sample",
+          "value": {
+            "at": 122013.69999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 222,
+            "frames": 3660,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 147,
+          "kind": "sample",
+          "value": {
+            "at": 123006.39999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 223,
+            "frames": 3690,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 148,
+          "kind": "sample",
+          "value": {
+            "at": 124000.79999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 224,
+            "frames": 3720,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 149,
+          "kind": "sample",
+          "value": {
+            "at": 125008.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 225,
+            "frames": 3750,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 150,
+          "kind": "event",
+          "value": {
+            "at": 125008.39999999851,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 25
+          }
+        },
+        {
+          "sequence": 151,
+          "kind": "sample",
+          "value": {
+            "at": 126005.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 226,
+            "frames": 3780,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 152,
+          "kind": "sample",
+          "value": {
+            "at": 127002.69999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 227,
+            "frames": 3810,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 153,
+          "kind": "sample",
+          "value": {
+            "at": 128013.59999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 228,
+            "frames": 3840,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 154,
+          "kind": "sample",
+          "value": {
+            "at": 129004.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 229,
+            "frames": 3870,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 155,
+          "kind": "sample",
+          "value": {
+            "at": 130011.59999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 230,
+            "frames": 3900,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 156,
+          "kind": "event",
+          "value": {
+            "at": 130011.59999999776,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 26
+          }
+        },
+        {
+          "sequence": 157,
+          "kind": "sample",
+          "value": {
+            "at": 131012,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 231,
+            "frames": 3930,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 158,
+          "kind": "sample",
+          "value": {
+            "at": 132007.19999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 232,
+            "frames": 3960,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 159,
+          "kind": "sample",
+          "value": {
+            "at": 133007.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 233,
+            "frames": 3990,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 160,
+          "kind": "sample",
+          "value": {
+            "at": 134004.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 234,
+            "frames": 4020,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 161,
+          "kind": "sample",
+          "value": {
+            "at": 135001.3999999985,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 235,
+            "frames": 4050,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 162,
+          "kind": "event",
+          "value": {
+            "at": 135001.5,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 27
+          }
+        },
+        {
+          "sequence": 163,
+          "kind": "sample",
+          "value": {
+            "at": 136015.3999999985,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 236,
+            "frames": 4080,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 164,
+          "kind": "sample",
+          "value": {
+            "at": 137009.8999999985,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 237,
+            "frames": 4110,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 165,
+          "kind": "sample",
+          "value": {
+            "at": 138001.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 238,
+            "frames": 4140,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 166,
+          "kind": "sample",
+          "value": {
+            "at": 139012.69999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 239,
+            "frames": 4170,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 167,
+          "kind": "sample",
+          "value": {
+            "at": 140009.3999999985,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 240,
+            "frames": 4200,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 168,
+          "kind": "event",
+          "value": {
+            "at": 140009.5,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 28
+          }
+        },
+        {
+          "sequence": 169,
+          "kind": "sample",
+          "value": {
+            "at": 141008.79999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 241,
+            "frames": 4230,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 170,
+          "kind": "sample",
+          "value": {
+            "at": 142003.69999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 242,
+            "frames": 4260,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 171,
+          "kind": "sample",
+          "value": {
+            "at": 143013.19999999925,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 243,
+            "frames": 4290,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 172,
+          "kind": "sample",
+          "value": {
+            "at": 144012.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 244,
+            "frames": 4320,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 173,
+          "kind": "sample",
+          "value": {
+            "at": 145007.09999999776,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 245,
+            "frames": 4350,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 174,
+          "kind": "event",
+          "value": {
+            "at": 145007.19999999925,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 29
+          }
+        },
+        {
+          "sequence": 175,
+          "kind": "sample",
+          "value": {
+            "at": 146002,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 246,
+            "frames": 4380,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 176,
+          "kind": "sample",
+          "value": {
+            "at": 147012.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 247,
+            "frames": 4410,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 177,
+          "kind": "sample",
+          "value": {
+            "at": 148010.29999999702,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 248,
+            "frames": 4440,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        }
+      ],
+      "cleanup": {
+        "session": {
+          "schemaVersion": 1,
+          "active": false,
+          "reason": "lease-expired",
+          "stoppedAt": 148868.19999999925,
+          "samples": 148,
+          "events": 29,
+          "bytes": 42408,
+          "cleanupFailed": false,
+          "resources": {
+            "timers": 0,
+            "subscriptions": 0,
+            "listeners": 0
+          }
+        },
+        "fixture": {
+          "producer": 0,
+          "monitorListeners": 0,
+          "routeListeners": 0,
+          "elapsedMs": 564899.4000000022
+        }
+      }
+    },
+    {
+      "id": "E-CAL02",
+      "validity": "invalid",
+      "reason": "old-client-closure-used-closed-tab-and-lease-expired",
+      "expectedMs": 367000,
+      "executionMs": 30005.199999999255,
+      "samples": 29,
+      "events": 5,
+      "entries": [
+        {
+          "sequence": 1,
+          "kind": "sample",
+          "value": {
+            "at": 1002.8999999985099,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 101,
+            "frames": 30,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 2,
+          "kind": "sample",
+          "value": {
+            "at": 2015.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 102,
+            "frames": 60,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 3,
+          "kind": "sample",
+          "value": {
+            "at": 3013.60000000149,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 103,
+            "frames": 90,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 4,
+          "kind": "sample",
+          "value": {
+            "at": 4011.800000000745,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 104,
+            "frames": 120,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 5,
+          "kind": "sample",
+          "value": {
+            "at": 5006.89999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 105,
+            "frames": 150,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 6,
+          "kind": "event",
+          "value": {
+            "at": 5007.10000000149,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 1
+          }
+        },
+        {
+          "sequence": 7,
+          "kind": "sample",
+          "value": {
+            "at": 6014.10000000149,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 106,
+            "frames": 180,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 8,
+          "kind": "sample",
+          "value": {
+            "at": 7009.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 107,
+            "frames": 210,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 9,
+          "kind": "sample",
+          "value": {
+            "at": 8006.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 108,
+            "frames": 240,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 10,
+          "kind": "sample",
+          "value": {
+            "at": 9002,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 109,
+            "frames": 270,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 11,
+          "kind": "sample",
+          "value": {
+            "at": 10008.5,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 110,
+            "frames": 300,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 12,
+          "kind": "event",
+          "value": {
+            "at": 10008.5,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 2
+          }
+        },
+        {
+          "sequence": 13,
+          "kind": "sample",
+          "value": {
+            "at": 11007.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 111,
+            "frames": 330,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 14,
+          "kind": "sample",
+          "value": {
+            "at": 12001.60000000149,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 112,
+            "frames": 360,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 15,
+          "kind": "sample",
+          "value": {
+            "at": 13012.89999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 113,
+            "frames": 390,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 16,
+          "kind": "sample",
+          "value": {
+            "at": 14005.89999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 114,
+            "frames": 420,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 17,
+          "kind": "sample",
+          "value": {
+            "at": 15004.800000000745,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 115,
+            "frames": 450,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 18,
+          "kind": "event",
+          "value": {
+            "at": 15004.800000000745,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 3
+          }
+        },
+        {
+          "sequence": 19,
+          "kind": "sample",
+          "value": {
+            "at": 16015.800000000745,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 116,
+            "frames": 480,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 20,
+          "kind": "sample",
+          "value": {
+            "at": 17009.800000000745,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 117,
+            "frames": 510,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 21,
+          "kind": "sample",
+          "value": {
+            "at": 18003.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 118,
+            "frames": 540,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 22,
+          "kind": "sample",
+          "value": {
+            "at": 19013.60000000149,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 119,
+            "frames": 570,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 23,
+          "kind": "sample",
+          "value": {
+            "at": 20005.10000000149,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 120,
+            "frames": 600,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 24,
+          "kind": "event",
+          "value": {
+            "at": 20005.10000000149,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 4
+          }
+        },
+        {
+          "sequence": 25,
+          "kind": "sample",
+          "value": {
+            "at": 21013.800000000745,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 121,
+            "frames": 630,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 26,
+          "kind": "sample",
+          "value": {
+            "at": 22010.300000000745,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 122,
+            "frames": 660,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 27,
+          "kind": "sample",
+          "value": {
+            "at": 23008.89999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 123,
+            "frames": 690,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 28,
+          "kind": "sample",
+          "value": {
+            "at": 24001.300000000745,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 124,
+            "frames": 720,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 29,
+          "kind": "sample",
+          "value": {
+            "at": 25012.800000000745,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 125,
+            "frames": 750,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 30,
+          "kind": "event",
+          "value": {
+            "at": 25012.800000000745,
+            "owner": 1,
+            "type": "request-started",
+            "kind": "video",
+            "request": 5
+          }
+        },
+        {
+          "sequence": 31,
+          "kind": "sample",
+          "value": {
+            "at": 26011.10000000149,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 126,
+            "frames": 780,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 32,
+          "kind": "sample",
+          "value": {
+            "at": 27004.699999999255,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 127,
+            "frames": 810,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 33,
+          "kind": "sample",
+          "value": {
+            "at": 28015.89999999851,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 128,
+            "frames": 840,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        },
+        {
+          "sequence": 34,
+          "kind": "sample",
+          "value": {
+            "at": 29008.10000000149,
+            "owner": 1,
+            "content": 1,
+            "rate": 1,
+            "candidate": false,
+            "reason": "stable",
+            "bufferSec": 12,
+            "currentTime": 129,
+            "frames": 870,
+            "qualified": true,
+            "rescue": false,
+            "automatic": true,
+            "alternative": null,
+            "cachedAlternatives": null,
+            "quality": "valid"
+          }
+        }
+      ],
+      "cleanup": {
+        "session": {
+          "schemaVersion": 1,
+          "active": false,
+          "reason": "lease-expired",
+          "stoppedAt": 30005.199999999255,
+          "samples": 29,
+          "events": 5,
+          "bytes": 8970,
+          "cleanupFailed": false,
+          "resources": {
+            "timers": 0,
+            "subscriptions": 0,
+            "listeners": 0
+          }
+        },
+        "fixture": {
+          "producer": 0,
+          "monitorListeners": 0,
+          "routeListeners": 0,
+          "elapsedMs": 102357.40000000224
+        }
+      }
+    }
+  ],
+  "privateOriginals": [
+    {
+      "file": "calibration-first.json",
+      "bytes": 73099,
+      "sha256": "85d009818d7318986b9d5ea166e748d68a4c1d78c7384e6f72ab25735a34428a",
+      "private": true
+    },
+    {
+      "file": "calibration-second.json",
+      "bytes": 17258,
+      "sha256": "925191b90ed7ba4fcaaa347c70a33030416f86cd467d9d636c404d94225f42ed",
+      "private": true
+    },
+    {
+      "file": "baseline-verify.log",
+      "bytes": 348473,
+      "sha256": "9f3e7dddbb6b94e3a64029ec23fd931e42319b2b9396b29f7cc3706bab67fd97",
+      "private": true
+    },
+    {
+      "file": "stage1-verify.log",
+      "bytes": 352343,
+      "sha256": "2d475f00f17e933e3b14729ca6de135b2353f78180e20c74e1b0ade1c304ed77",
+      "private": true
+    }
+  ],
+  "timing": {
+    "firstCdpCallTotalMs": 364556.6,
+    "firstCdpExecutionMs": null,
+    "firstCdpApprovalWaitMs": null,
+    "firstCdpUnclassifiedMs": 364556.6,
+    "calibrationObservedExecutionMs": 178873.3999999985,
+    "fullBrowserWorkBudgetMeasured": false,
+    "executionTimeoutInferredFromTotalGap": false
+  },
+  "executionMatrix": [
+    {
+      "id": "baseline-1x-1",
+      "slot": "baseline",
+      "clip": "BV1tFZZBQE57",
+      "rate": 1,
+      "repeat": 1,
+      "validity": "not-executed",
+      "reason": "calibration-blocked"
+    },
+    {
+      "id": "baseline-1x-2",
+      "slot": "baseline",
+      "clip": "BV1tFZZBQE57",
+      "rate": 1,
+      "repeat": 2,
+      "validity": "not-executed",
+      "reason": "calibration-blocked"
+    },
+    {
+      "id": "baseline-2x-1",
+      "slot": "baseline",
+      "clip": "BV1tFZZBQE57",
+      "rate": 2,
+      "repeat": 1,
+      "validity": "not-executed",
+      "reason": "calibration-blocked"
+    },
+    {
+      "id": "baseline-2x-2",
+      "slot": "baseline",
+      "clip": "BV1tFZZBQE57",
+      "rate": 2,
+      "repeat": 2,
+      "validity": "not-executed",
+      "reason": "calibration-blocked"
+    },
+    {
+      "id": "display-a-1x-1",
+      "slot": "display-a",
+      "clip": null,
+      "rate": 1,
+      "repeat": 1,
+      "validity": "not-executed",
+      "reason": "calibration-blocked"
+    },
+    {
+      "id": "display-a-1x-2",
+      "slot": "display-a",
+      "clip": null,
+      "rate": 1,
+      "repeat": 2,
+      "validity": "not-executed",
+      "reason": "calibration-blocked"
+    },
+    {
+      "id": "display-a-2x-1",
+      "slot": "display-a",
+      "clip": null,
+      "rate": 2,
+      "repeat": 1,
+      "validity": "not-executed",
+      "reason": "calibration-blocked"
+    },
+    {
+      "id": "display-a-2x-2",
+      "slot": "display-a",
+      "clip": null,
+      "rate": 2,
+      "repeat": 2,
+      "validity": "not-executed",
+      "reason": "calibration-blocked"
+    },
+    {
+      "id": "display-b-1x-1",
+      "slot": "display-b",
+      "clip": null,
+      "rate": 1,
+      "repeat": 1,
+      "validity": "not-executed",
+      "reason": "calibration-blocked"
+    },
+    {
+      "id": "display-b-1x-2",
+      "slot": "display-b",
+      "clip": null,
+      "rate": 1,
+      "repeat": 2,
+      "validity": "not-executed",
+      "reason": "calibration-blocked"
+    },
+    {
+      "id": "display-b-2x-1",
+      "slot": "display-b",
+      "clip": null,
+      "rate": 2,
+      "repeat": 1,
+      "validity": "not-executed",
+      "reason": "calibration-blocked"
+    },
+    {
+      "id": "display-b-2x-2",
+      "slot": "display-b",
+      "clip": null,
+      "rate": 2,
+      "repeat": 2,
+      "validity": "not-executed",
+      "reason": "calibration-blocked"
+    }
+  ],
+  "windows": [],
+  "browserCleanup": {
+    "tabs": 0,
+    "breakpoints": 0,
+    "interceptions": 0,
+    "ownedRequests": 0,
+    "servicesStopped": true
+  },
+  "stages": {
+    "tools": "completed-with-node-evidence",
+    "liveObservation": "not-completed",
+    "decision": "insufficient",
+    "prototype": "not-started",
+    "release": "not-authorized-by-gates"
+  },
+  "limitations": [
+    "No installed-script identity or site window was executed in this round.",
+    "Two calibration windows are invalid; none is product success or failure.",
+    "No fresh alternate authorization is inferred from cached ranking.",
+    "No real candidate precision, recall or intervention benefit can be calculated.",
+    "The 120-minute work ledger was not fully measured; unknown elapsed time is not execution timeout.",
+    "After one corrected retry, browser work stopped; no shorter-window substitution."
+  ],
+  "replay": {
+    "schemaVersion": 1,
+    "scores": [],
+    "adoption": {
+      "schemaVersion": 1,
+      "decision": "insufficient",
+      "checks": [
+        {
+          "id": "coverage",
+          "enough": false,
+          "pass": true
+        },
+        {
+          "id": "events",
+          "enough": false,
+          "pass": true
+        },
+        {
+          "id": "association",
+          "enough": false,
+          "pass": false
+        },
+        {
+          "id": "coverage-warning",
+          "enough": false,
+          "pass": false
+        },
+        {
+          "id": "timing",
+          "enough": false,
+          "pass": false
+        },
+        {
+          "id": "dispatch",
+          "enough": true,
+          "pass": false
+        },
+        {
+          "id": "normal-cost",
+          "enough": false,
+          "pass": true
+        }
+      ],
+      "facts": {
+        "windows": 0,
+        "combinations": 0,
+        "observedMs": 0,
+        "eligibleMs": 0,
+        "opportunities": 0,
+        "interruptions": 0,
+        "clipsWithInterruptions": 0,
+        "interruptionsByRate": [
+          0,
+          0
+        ],
+        "matched": 0,
+        "warned": 0,
+        "timely": 0,
+        "actionable": 0,
+        "actionableRates": 0,
+        "normalMs": 0,
+        "unnecessary": 0,
+        "unknown": 0,
+        "integrity": true
+      },
+      "productActionAuthorized": false
+    },
+    "exitCode": 1,
+    "limitations": [
+      "Observational association is not causal route benefit.",
+      "No private route state or fresh authorization is inferred from cached ranking."
+    ]
+  }
+}
