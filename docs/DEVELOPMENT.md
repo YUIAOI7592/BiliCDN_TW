@@ -158,6 +158,16 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 每個比較案例與清理各 5 秒、子程序外層 60 秒、輸出上限 32 MiB。頁面生命週期計時器／監聽器與未完成請求分開盤點，再由模擬頁面釋放；不以強殺程序或強清時鐘算通過，不取代產品元件 dispose 契約。比較工具不寫檔；若保存結果，使用按日期登記的公開調查報告及精確允許的合成 JSON，執行紀錄直接保存於被忽略的本機封存，不留 `.work` 或額外 `dist` 產物。結果入口由 [HISTORY](HISTORY.md) 維護。
 
+### 實際緩衝效用與採用判定工具
+
+使用 `npm run evaluate:buffer-live -- --input "evidence.json" --json` 唯讀重播本輪 schemaVersion 1 證據。工具固定核對 d0c2c8c／v2.1.35、422022 bytes 與原件 SHA-256；不讀正式 GM、不連網、不重新計算產品 candidate。摘要與 JSON 分別提供窗口結果、十五／六十秒後續、配對、提前量及採用門檻。十二個窗口完整有效時退出 0，缺少窗口、無效或輸入錯誤退出 1，非法參數退出 2。退出 0 仍可能因事件不足得到 insufficient；不表示授權產品操作。
+
+`npm run evaluate:buffer-live -- --serve` 只啟動自有 loopback 校準頁與臨時工具 bundle，輸出實際 origin，以 Ctrl+C 停止。頁面不建立產品控制器或 GM 儲存，合成進度只能校準工具。實際安裝資料須依 [IAB 唯讀窗口](IAB_TESTING.md#展示樣片選擇與唯讀窗口) 取得，不能把校準列當成產品實測。工具不建立 `.work` 或額外 `dist` 產物。
+
+收集會話使用既有 Monitor／Routes 訂閱，只有工具自有的期限／租約計時器。host 逐批完整 await 並排空同一游標；每次讀取明確傳入目前有效的 CDP capability 與 remote object reference，不把已換頁的參照封在舊閉包。`drainRemoteSession` 拒絕 CDP 例外、跳號及截斷，再重建白名單副本；呼叫端仍須先核對分頁與完整執行身分。
+
+公開輸出只留數值、布林、固定原因及會話內序號。cachedAlternatives 只是既有排名的觀察數量，alternative=null 表示沒有觀察到可驗證的新鮮替代資格；不能用排名代替提交時授權。工具與判定器的 Node 契約列入 tooling；目前瀏覽器能力是否通過、工作是否啟動，分別見原報告及 TODO。
+
 ### 緩衝影子效用與成本評估
 
 `npm run evaluate:buffer-shadow` 執行真實 Monitor／Runtime／Recorder 的離線整合情境；加 `-- --json` 輸出 schemaVersion 1 的完整輸入、輸出、來源／情境雜湊、逐項斷言及清理。每案先暖機六十秒。判定器只分析觀察，不重寫產品緩衝演算法；正常對照出現候選是評估結果，不被改成零或直接視為產品錯誤。具名判定器及整合契約加入 tooling 套件。

@@ -23,6 +23,7 @@ import './regressions/buffer-observation-integrity.ts'
 import './regressions/buffer-confirmation-v3.ts'
 import './regressions/buffer-low-tooling.ts'
 import './regressions/buffer-continuity-tooling.ts'
+import './regressions/buffer-live-evaluation.ts'
 
 test('formatting reaches a stable source before the next check', { timeout: 5000 }, async () => {
   const source =
