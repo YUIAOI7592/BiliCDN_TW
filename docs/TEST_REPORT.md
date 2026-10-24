@@ -62,6 +62,16 @@ candidate 仍只供診斷，不啟用提前備援。正常共同前綴不可預�
 
 控制中心入口依指示跳過。自然起因、安裝版故障注入、六組五十秒樣片、背景／gate／剪貼簿及歷史矩陣均不恢復。
 
+### 公開交付與安裝結案
+
+發布提交 48f82c4，遠端 main 與 v2.1.35 標籤於發布時一致；唯一附件及公開 latest 均為 422,022 bytes、SHA-256 7458f27610a0b2a9f13e07c1e087502198809dacb2a411f5112acf9aaf3b9cc3，完整下載逐位元組相同。[交付與安裝 JSON](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_DELIVERY_2026-10-24.json) 保存來源隔離、乾淨驗證、初次更新阻塞及使用者確認後的正常回歸。
+
+第一次公開入口停在 Tampermonkey 中繼頁，工具沒有管理器確認頁；新影片本體仍精確等同 v2.1.34，當次新版回歸未執行。使用者回覆已更新後，另開新文件核對完整 v2.1.35 執行本體 420,064 bytes、SHA-256 582353e62546a90a7bf6632dde7fb290b17eacbeb9f13967579aadb252a2da1a，重載後再核對相同；Tampermonkey 5.5.1、Runtime／ControlCenter 各一，Fetch／XHR hooks 正常，診斷為 schema 6／buffer-window-v6。
+
+指定影片 Auto 實際 3840×2160，1／2 倍各一次暫停／恢復及可信鍵盤方向鍵短 seek 五秒，再完整 await 十五秒。兩窗各十六筆樣本、十五個連續區段，時間增加 >0.05 秒、影格增加，媒體／內容／控制身分與倍速一致；沒有等待、停滯、錯誤、新輸入或重載，Recovery 最終 healthy、reloadCount=0。原二倍速保持，自有 timer／listener／subscription、斷點、偵錯器參照與分頁歸零。五個具名 node:test 重播身分、各倍速操作／進度、清理及五個發布原件全部通過；這是證據重播，正式數仍為 2595。
+
+本輪安裝正常回歸結案；未在安裝版製造耗盡或故障，不用上述正常播放補算尾段候選實際故障救援。發布快照維持封裝時原件，之後只提交文件及新證據，不改標籤或附件。
+
 ## 歷史驗證導覽
 
 <a name="bilicdn_tw-v218-release-verification--2026-10-04"></a>

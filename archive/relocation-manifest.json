@@ -6480,6 +6480,12 @@
       "encoding": "raw",
       "bytes": 8923,
       "sha256": "d24953b4c2f648d5cd040cfba63c672ace09409c0001c57df75d39dda44f71c0"
+    },
+    {
+      "path": "archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_DELIVERY_2026-10-24.json",
+      "encoding": "raw",
+      "bytes": 436026,
+      "sha256": "0e846fdcdac45d1078d53cce086dc903672718aba581dcf68fde9336eef30819"
     }
   ],
   "localManifest": "archive/retired/local/2026-10-20-cleanup/private-manifest.json",

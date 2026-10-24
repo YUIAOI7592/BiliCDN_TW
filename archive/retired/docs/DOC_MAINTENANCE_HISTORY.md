@@ -641,3 +641,7 @@ TEST_REPORT 追加真實 v2.1.34 身分、Auto 1／2 倍正常回歸、五案證
 PROJECT_CONTEXT 維護一次性尾段及撤銷條件，ARCHITECTURE 維護 Monitor 單一確認狀態與 Runtime／Recorder 邊界，DEVELOPMENT 維護 v6 證據及 continuity 命令。TEST_REPORT 集中紅綠、效用、非干預、安全與分層限制，TODO 維護交付狀態，HISTORY 只更新入口；未複製流程到其他指南。
 
 v2.1.34 最新完整正文原文追加，五個 Release 原件逐檔按原始位元組搬入封存。舊歸檔清單另存原始快照，新增逐案 JSON 精確保護；既有日誌只追加，不回寫歷史 FAIL、舊 Release 或工具管理的安全原件。來源沒有適用 unchangedFiles 項目，未改原始雜湊掩蓋來源變更。
+
+## 2026-10-24：v2.1.35 發布及安裝文件結案
+
+TEST_REPORT 追加最終乾淨來源、公開下載校驗、初次更新阻塞、使用者確認更新後的完整身分與 Auto 兩倍速正常回歸；TODO 標為交付與清理結案。新交付 JSON 精確保護，工具紀錄追加五案證據重播，不增加正式案例數。發布快照與歷史正文不回寫；現行政策、所有權與命令已由各權威指南承接，INDEX／HISTORY 不重複結果。既有未執行限制保留，不恢復已停止工作。
