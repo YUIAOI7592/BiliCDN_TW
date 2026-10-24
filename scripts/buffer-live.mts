@@ -1,4 +1,5 @@
 import { createServer } from 'node:http'
+import { createHash } from 'node:crypto'
 import { readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { build } from 'esbuild'
@@ -65,7 +66,7 @@ routes:{subscribe(fn){routeListeners.push(fn);return()=>{routeListeners=routeLis
 player:{controls(){return {mediaId:1,coreId:1,userRevision:0,seekRevision:0,reloadRevision:0,coreReloadRevision:0}}},
 session:{get(){return {generation:1,epoch:1}}},settings:{get(){return {disabled:false,fixedHost:null}}},recovery:{isRecovering(){return false}},visibility:{isActuallyVisible(){return true}}};
 const env={now:()=>performance.now(),wall:()=>Date.now(),timeout(fn,ms){const id=setTimeout(fn,ms);return()=>clearTimeout(id)},onExit(fn){addEventListener('pagehide',fn);return()=>removeEventListener('pagehide',fn)}};
-window.calibration={start(){if(current)throw Error('fresh calibration required');current=BufferLiveTools.startBrowserObservation(runtime,env,1);producer=setInterval(()=>{
+window.calibration={start(){if(current)throw Error('fresh calibration required');current=BufferLiveTools.startBrowserObservation(runtime,env,1,60000);producer=setInterval(()=>{
 const at=Date.now(),n=++serial,v={available:true,paused:false,seeking:false,ended:false,mediaError:false,bufferedToEnd:false,currentTime:100+n,frames:n*30,playbackRate:1};
 listeners.slice().forEach(fn=>fn({video:v,bufferTrend:{schemaVersion:6,algorithm:'buffer-window-v6',at,reason:'stable',candidate:false,endBufferSec:12}}));
 if(n%5===0)routeListeners.slice().forEach(fn=>fn({type:'request-started',at,request:{requestId:'owned-'+n,kind:'video'}}));
@@ -94,7 +95,21 @@ export async function serveCalibration() {
   })
   const address = server.address()
   if (!address || typeof address === 'string') throw Error('Calibration address unavailable')
-  console.log(JSON.stringify({ origin: `http://127.0.0.1:${address.port}`, gm: false }))
+  console.log(
+    JSON.stringify({
+      origin: `http://127.0.0.1:${address.port}`,
+      gm: false,
+      assets: Object.fromEntries(
+        Object.entries(assets).map(([key, value]) => [
+          key,
+          {
+            bytes: Buffer.byteLength(value),
+            sha256: createHash('sha256').update(value).digest('hex'),
+          },
+        ]),
+      ),
+    }),
+  )
   const stop = () => server.close()
   process.once('SIGINT', stop)
   process.once('SIGTERM', stop)

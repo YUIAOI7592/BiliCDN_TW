@@ -1,6 +1,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createLiveSession, drainRemoteSession } from '../../scripts/buffer-shadow/live-session.mts'
+import {
+  createObservationPump,
+  pumpObservationStep,
+} from '../../scripts/buffer-shadow/live-pump.mts'
 import { assessAdoption, scoreLiveWindow } from '../../scripts/buffer-shadow/live-model.mts'
 import type {
   LiveSample,
@@ -10,6 +14,7 @@ import type {
 import { FakeClock } from '../support/clock.ts'
 import { testScope } from '../support/scope.ts'
 import { startBrowserObservation } from '../../scripts/buffer-shadow/live-browser.mts'
+import type { ObservationSnapshot } from '../../scripts/buffer-shadow/live-browser.mts'
 import { evaluateLiveWindows } from '../../scripts/buffer-shadow/live-report.mts'
 import { parseLiveArgs, replayLiveEvidence } from '../../scripts/buffer-live.mts'
 import { fixture as runtimeFixture, media } from '../support/runtime-fixture.ts'
@@ -121,6 +126,28 @@ test('live session lease expiry invalidates the window and releases before resta
   assert.equal(f.session.status().resources.subscriptions, 0)
 })
 
+test('live remote drain retains lease and fixed deadline evidence for bounded host renewal', async (t) => {
+  const f = fixture(t, { durationMs: 427000 })
+  f.advance(10000)
+  f.push(sample(10000))
+  const batch = await drainRemoteSession(
+    {
+      async send() {
+        return { result: { type: 'object', value: f.session.drain(0) } }
+      },
+    },
+    'current-observation',
+    0,
+  )
+  const status = (batch as unknown as { status: Record<string, unknown> }).status
+  assert.ok(status, 'host must receive validated lease evidence, not only entries')
+  assert.equal(status.elapsedMs, 10000)
+  assert.equal(status.deadlineMs, 427000)
+  assert.equal(status.leaseRemainingMs, 30000)
+  f.session.stop()
+  assert.equal(f.clock.pendingCount, 0)
+})
+
 for (const mode of ['samples', 'events', 'bytes'] as const)
   test(`live session ${mode} overflow invalidates instead of silently truncating`, (t) => {
     const f = fixture(
@@ -196,6 +223,17 @@ test('live remote drain uses the current explicit capability and rejects excepti
         result: {
           type: 'object',
           value: {
+            active: true,
+            reason: 'running',
+            cleanupFailed: false,
+            elapsedMs: 0,
+            deadlineMs: 427000,
+            leaseRemainingMs: 30000,
+            stoppedAt: null,
+            samples: 1,
+            events: 0,
+            bytes: 200,
+            resources: { timers: 1, listeners: 1, subscriptions: 2 },
             cursor: 1,
             hasMore: false,
             truncated: false,
@@ -234,6 +272,17 @@ test('live remote drain uses the current explicit capability and rejects excepti
                 hasMore: false,
                 truncated: false,
                 entries: [{ sequence: 2, kind: 'sample', value: sample(0) }],
+                active: true,
+                reason: 'running',
+                cleanupFailed: false,
+                elapsedMs: 0,
+                deadlineMs: 427000,
+                leaseRemainingMs: 30000,
+                stoppedAt: null,
+                samples: 1,
+                events: 0,
+                bytes: 200,
+                resources: { timers: 1, listeners: 1, subscriptions: 2 },
               },
             },
           }
@@ -244,6 +293,163 @@ test('live remote drain uses the current explicit capability and rejects excepti
     ),
     /sequence/,
   )
+})
+
+test('live pump renews a full 427s session and retains the original deadline', async (t) => {
+  const f = fixture(t, { durationMs: 427000 })
+  const state = createObservationPump('current', 'session')
+  const current = {
+    tabId: 'current',
+    cdp: {
+      async send(_m: string, p: Record<string, unknown>) {
+        assert.equal(p.objectId, 'session')
+        const after = (p.arguments as { value: number }[])[0]!.value
+        return { result: { type: 'object', value: f.session.drain(after) } }
+      },
+    },
+  }
+  while (!state.stopped)
+    await pumpObservationStep(state, current, async (ms) => {
+      for (let i = 0; i < ms; i += 1000) {
+        f.push(sample(f.at()))
+        f.advance(1000)
+      }
+    })
+  assert.equal(state.entries.length, 427)
+  assert.equal(state.status?.reason, 'complete')
+  assert.equal(state.status?.stoppedAt, 427000)
+  assert.equal(state.status?.deadlineMs, 427000)
+  assert.equal(state.status?.resources.timers, 0)
+  assert.equal(f.clock.pendingCount, 0)
+  assert.ok(state.calls >= 100)
+})
+
+test('live pump rejects a stale tab before dispatch and accepts only the explicit current capability', async () => {
+  let calls = 0
+  const state = createObservationPump('current', 'session')
+  await assert.rejects(
+    pumpObservationStep(
+      state,
+      {
+        tabId: 'old',
+        cdp: {
+          async send() {
+            calls++
+            throw Error('old')
+          },
+        },
+      },
+      async () => {},
+    ),
+    /tab mismatch/,
+  )
+  assert.equal(calls, 0)
+  assert.equal(state.cursor, 0)
+})
+
+test('live pump reports a delayed renewal as expired and never silently restarts', async (t) => {
+  const f = fixture(t),
+    state = createObservationPump('current', 'session')
+  const current = {
+    tabId: 'current',
+    cdp: {
+      async send() {
+        return { result: { type: 'object', value: f.session.drain(state.cursor) } }
+      },
+    },
+  }
+  await pumpObservationStep(state, current, async () => {
+    f.advance(30000)
+  })
+  assert.equal(state.status?.reason, 'lease-expired')
+  assert.equal(state.stopped, true)
+  const calls = state.calls
+  await pumpObservationStep(state, current, async () => assert.fail('no restart'))
+  assert.equal(state.calls, calls)
+  assert.equal(f.clock.pendingCount, 0)
+})
+
+test('live browser binding uses one clock origin when construction consumes fractional milliseconds', (t) => {
+  const scope = testScope(t),
+    clock = scope.own(new FakeClock())
+  let reads = 0,
+    now = 0.25,
+    subscriptions = 0
+  let observe: (value: ObservationSnapshot) => void = () => {}
+  const session = startBrowserObservation(
+    {
+      monitor: {
+        subscribe(fn) {
+          observe = fn
+          subscriptions++
+          return () => {
+            subscriptions--
+          }
+        },
+      },
+      routes: {
+        subscribe() {
+          subscriptions++
+          return () => {
+            subscriptions--
+          }
+        },
+        latestRequested: () => null,
+        isOriginalComparison: () => false,
+      },
+      player: {
+        controls: () => ({
+          mediaId: 1,
+          coreId: 1,
+          userRevision: 0,
+          seekRevision: 0,
+          reloadRevision: 0,
+          coreReloadRevision: 0,
+        }),
+      },
+      session: { get: () => ({ generation: 1, epoch: 1 }) },
+      settings: { get: () => ({ disabled: false, fixedHost: null }) },
+      recovery: { isRecovering: () => false },
+      visibility: { isActuallyVisible: () => true },
+    },
+    {
+      now: () => (reads++ === 0 ? 0 : now),
+      wall: () => now,
+      timeout: clock.timeout.bind(clock),
+      onExit: () => () => {},
+    },
+    1,
+    60000,
+  )
+  scope.defer(session.stop)
+  for (now = 1000; now <= 2000; now += 1000)
+    observe({
+      video: {
+        available: true,
+        paused: false,
+        seeking: false,
+        ended: false,
+        mediaError: false,
+        bufferedToEnd: false,
+        currentTime: now / 1000,
+        frames: now / 10,
+        playbackRate: 1,
+      },
+      bufferTrend: {
+        schemaVersion: 6,
+        algorithm: 'buffer-window-v6',
+        at: now,
+        reason: 'stable',
+        candidate: false,
+        endBufferSec: 12,
+      },
+    })
+  assert.equal(session.status().active, true)
+  assert.equal(session.status().samples, 2)
+  assert.equal(session.status().deadlineMs, 430000)
+  session.stop()
+  assert.equal(subscriptions, 0)
+  assert.equal(clock.pendingCount, 0)
 })
 
 for (const horizon of [15000, 60000])

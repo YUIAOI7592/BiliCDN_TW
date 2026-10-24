@@ -279,7 +279,7 @@ export function startBrowserObservation(
         return cleanup
       },
     },
-    { durationMs: 367000 + warmupMs },
+    { durationMs: 370000 + warmupMs, startedAtMs: started },
   )
   reject = session.fail
   if (earlyFailure) session.fail()

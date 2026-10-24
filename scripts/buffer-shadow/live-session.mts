@@ -8,6 +8,7 @@ export interface LiveSessionPorts {
   resources(): { readonly subscriptions: number; readonly listeners: number }
 }
 export interface LiveSessionOptions {
+  readonly startedAtMs?: number
   readonly durationMs?: number
   readonly leaseMs?: number
   readonly maxSamples?: number
@@ -29,14 +30,14 @@ export function createLiveSession(port: LiveSessionPorts, options: LiveSessionOp
     ![duration, lease, maxSamples, maxEvents, maxBytes].every(
       (v) => Number.isSafeInteger(v) && v > 0,
     ) ||
-    duration > 427000 ||
+    duration > 430000 ||
     lease > 30000 ||
     maxSamples > 512 ||
     maxEvents > 4096 ||
     maxBytes > 4 * 1024 * 1024
   )
     throw Error('Invalid live session options')
-  const start = port.now(),
+  const start = options.startedAtMs ?? port.now(),
     entries: LiveEntry[] = []
   if (!Number.isFinite(start)) throw Error('Invalid observation clock')
   let active = true,
@@ -141,6 +142,9 @@ export function createLiveSession(port: LiveSessionPorts, options: LiveSessionOp
     samples,
     events,
     bytes,
+    elapsedMs: Math.max(0, port.now() - start),
+    deadlineMs: duration,
+    leaseRemainingMs: active ? Math.max(0, leaseUntil - port.now()) : 0,
     cleanupFailed,
     resources: { timers: cancelTimer ? 1 : 0, ...port.resources() },
   })
@@ -184,14 +188,15 @@ export function createLiveSession(port: LiveSessionPorts, options: LiveSessionOp
 }
 
 /** The current capability is an explicit argument on every call, never a captured old tab. */
+export interface ObservationCdp {
+  send(
+    method: string,
+    params: Record<string, unknown>,
+    options: { timeoutMs: number },
+  ): Promise<unknown>
+}
 export async function drainRemoteSession(
-  currentCdp: {
-    send(
-      method: string,
-      params: Record<string, unknown>,
-      options: { timeoutMs: number },
-    ): Promise<unknown>
-  },
+  currentCdp: ObservationCdp,
   objectId: string,
   after: number,
 ) {
@@ -212,6 +217,61 @@ export async function drainRemoteSession(
   const result = (response as { result?: { type?: string; value?: unknown } }).result
   if (!result || result.type === 'error' || !result.value || typeof result.value !== 'object')
     throw Error('Invalid remote observation')
+  const raw = result.value as Record<string, unknown>
+  const resources = raw.resources as Record<string, unknown> | undefined
+  const reasons = [
+    'running',
+    'complete',
+    'cancelled',
+    'clock-rollback',
+    'lease-expired',
+    'overflow',
+    'invalid-sample',
+    'invalid-event',
+    'source-error',
+    'page-exit',
+  ]
+  if (
+    typeof raw.active !== 'boolean' ||
+    typeof raw.cleanupFailed !== 'boolean' ||
+    typeof raw.reason !== 'string' ||
+    !reasons.includes(raw.reason) ||
+    (raw.active ? raw.reason !== 'running' : raw.reason === 'running') ||
+    !['elapsedMs', 'deadlineMs', 'leaseRemainingMs', 'samples', 'events', 'bytes'].every(
+      (key) => typeof raw[key] === 'number' && Number.isFinite(raw[key]) && raw[key] >= 0,
+    ) ||
+    Number(raw.deadlineMs) > 430000 ||
+    Number(raw.leaseRemainingMs) > 30000 ||
+    Number(raw.samples) > 512 ||
+    Number(raw.events) > 4096 ||
+    Number(raw.bytes) > 4 * 1024 * 1024 ||
+    (raw.stoppedAt !== null &&
+      (typeof raw.stoppedAt !== 'number' ||
+        !Number.isFinite(raw.stoppedAt) ||
+        raw.stoppedAt < 0)) ||
+    !resources ||
+    !['timers', 'listeners', 'subscriptions'].every(
+      (key) => Number.isSafeInteger(resources[key]) && Number(resources[key]) >= 0,
+    )
+  )
+    throw Error('Invalid remote observation status')
+  const status = {
+    active: raw.active,
+    reason: raw.reason,
+    cleanupFailed: raw.cleanupFailed,
+    elapsedMs: Number(raw.elapsedMs),
+    deadlineMs: Number(raw.deadlineMs),
+    leaseRemainingMs: Number(raw.leaseRemainingMs),
+    stoppedAt: raw.stoppedAt as number | null,
+    samples: Number(raw.samples),
+    events: Number(raw.events),
+    bytes: Number(raw.bytes),
+    resources: {
+      timers: Number(resources.timers),
+      listeners: Number(resources.listeners),
+      subscriptions: Number(resources.subscriptions),
+    },
+  }
   const batch = result.value as {
     cursor?: unknown
     hasMore?: unknown
@@ -242,6 +302,7 @@ export async function drainRemoteSession(
   }
   if (batch.cursor !== expected - 1) throw Error('Invalid remote observation cursor')
   return {
+    status,
     cursor: Number(batch.cursor),
     hasMore: batch.hasMore,
     truncated: false as const,

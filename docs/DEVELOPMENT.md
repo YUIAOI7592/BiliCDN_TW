@@ -162,9 +162,9 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 使用 `npm run evaluate:buffer-live -- --input "evidence.json" --json` 唯讀重播本輪 schemaVersion 1 證據。工具固定核對 d0c2c8c／v2.1.35、422022 bytes 與原件 SHA-256；不讀正式 GM、不連網、不重新計算產品 candidate。摘要與 JSON 分別提供窗口結果、十五／六十秒後續、配對、提前量及採用門檻。十二個窗口完整有效時退出 0，缺少窗口、無效或輸入錯誤退出 1，非法參數退出 2。退出 0 仍可能因事件不足得到 insufficient；不表示授權產品操作。
 
-`npm run evaluate:buffer-live -- --serve` 只啟動自有 loopback 校準頁與臨時工具 bundle，輸出實際 origin，以 Ctrl+C 停止。頁面不建立產品控制器或 GM 儲存，合成進度只能校準工具。實際安裝資料須依 [IAB 唯讀窗口](IAB_TESTING.md#展示樣片選擇與唯讀窗口) 取得，不能把校準列當成產品實測。工具不建立 `.work` 或額外 `dist` 產物。
+`npm run evaluate:buffer-live -- --serve` 只啟動自有 loopback 校準頁與臨時工具 bundle，輸出實際 origin 與每項 HTML／bundle 的 bytes、SHA-256，以 Ctrl+C 停止。頁面不建立產品控制器或 GM 儲存，合成進度只能校準工具。實際安裝資料須依 [IAB 唯讀窗口](IAB_TESTING.md#展示樣片選擇與唯讀窗口) 取得，不能把校準列當成產品實測。工具不建立 `.work` 或額外 `dist` 產物。
 
-收集會話使用既有 Monitor／Routes 訂閱，只有工具自有的期限／租約計時器。host 逐批完整 await 並排空同一游標；每次讀取明確傳入目前有效的 CDP capability 與 remote object reference，不把已換頁的參照封在舊閉包。`drainRemoteSession` 拒絕 CDP 例外、跳號及截斷，再重建白名單副本；呼叫端仍須先核對分頁與完整執行身分。
+收集會話使用既有 Monitor／Routes 訂閱，只有工具自有的期限／租約計時器。binding 與 session 共用同一高精度起點；含六十秒前置時固定截止為 430000 ms，對齊餘裕不能縮短三百秒計分或六十五秒後續。`live-pump.mts` 的 host 狀態只保存資料，每次明確傳入當前分頁及 CDP capability，先排空、完整 await 八秒、再排空同一游標；不同分頁先拒絕，失效後不能靜默重啟。`drainRemoteSession` 拒絕 CDP 例外、跳號及截斷，重建白名單副本，並驗證固定截止、經過時間、租約餘額及清理狀態。排空期間不穿插其他工作，不能把已換頁參照封在舊閉包；呼叫端先核對完整執行身分。
 
 公開輸出只留數值、布林、固定原因及會話內序號。cachedAlternatives 只是既有排名的觀察數量，alternative=null 表示沒有觀察到可驗證的新鮮替代資格；不能用排名代替提交時授權。工具與判定器的 Node 契約列入 tooling；目前瀏覽器能力是否通過、工作是否啟動，分別見原報告及 TODO。
 
