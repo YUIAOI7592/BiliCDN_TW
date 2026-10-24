@@ -168,6 +168,16 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 公開輸出只留數值、布林、固定原因及會話內序號。cachedAlternatives 只是既有排名的觀察數量，alternative=null 表示沒有觀察到可驗證的新鮮替代資格；不能用排名代替提交時授權。工具與判定器的 Node 契約列入 tooling；目前瀏覽器能力是否通過、工作是否啟動，分別見原報告及 TODO。
 
+#### 風險覆蓋與可介入性離線評估
+
+在原命令加 `--risk`，例如 `npm run evaluate:buffer-live -- --input "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json" --risk --json`，即可重用既有證據，輸出原採用決策及另列的風險覆蓋。工具不重算歷史 candidate、不重跑網站；以左端有效樣本代表相鄰區間並裁切計分範圍，不外插。大於 1,500 ms 空隙、換身分、資料不足、不適用與緩衝分帶分列；零低緩衝暴露不能解釋成預警能力通過。
+
+`npm run evaluate:buffer-live -- --supply --json` 執行固定十種供給情境的 1／2 倍共二十次整合案例。每次使用新子程序、FakeClock、記憶體儲存及真實 Monitor／Runtime／Recorder／Routes／Recovery；六十秒健康前置後觀察一百二十秒。只有合法完成且可依序追加的媒體區段才能補充緩衝，SDK reload／play 不會自動產生播放進度。輸出包含固定輸入、來源與情境雜湊、逐秒觀察、供給帳冊、斷言、退出碼及清理；工具 bundle 使用系統暫存目錄並釋放，不寫 `.work` 或額外 `dist`。
+
+案例及清理各五秒、整組六十秒、子程序輸出 32 MiB；超時或缺少必要資料判無效。`--risk`、`--supply`、`--serve` 互斥，supply 不接受 input。非法參數退出 2；有效且全部適用契約通過退出 0；真實效用失敗或無效退出 1。正式 tooling 驗證工具正確性，獨立 supply 命令另外檢驗效用；因此完整 verify 通過仍可能伴隨 supply 的真實紅色結果，不能改寫期待使其轉綠。
+
+可介入性只評估明確提供的唯讀條件；缺少派送前時機、新鮮成功、當前禁止或授權資格均標 unknown，不能從 cached ranking 補算。即使合成輸入得到 known-pass，`productActionAuthorized` 仍為 false，不構成選路授權。實際資料、合成資料與正常成本分開報告，合成結果不能補足實際採用門檻；效用失敗時停止於評估，不調整候選或救援。結果入口見 [HISTORY](HISTORY.md)。
+
 ### 緩衝影子效用與成本評估
 
 `npm run evaluate:buffer-shadow` 執行真實 Monitor／Runtime／Recorder 的離線整合情境；加 `-- --json` 輸出 schemaVersion 1 的完整輸入、輸出、來源／情境雜湊、逐項斷言及清理。每案先暖機六十秒。判定器只分析觀察，不重寫產品緩衝演算法；正常對照出現候選是評估結果，不被改成零或直接視為產品錯誤。具名判定器及整合契約加入 tooling 套件。

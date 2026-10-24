@@ -5,25 +5,52 @@ import { resolve } from 'node:path'
 import { build } from 'esbuild'
 import { evaluateLiveWindows } from './buffer-shadow/live-report.mts'
 import type { LiveWindow } from './buffer-shadow/live-report.mts'
+import { riskCoverageReport } from './buffer-shadow/risk-report.mts'
+import { evaluateSupply } from './buffer-risk-evaluation.mts'
 
 export function parseLiveArgs(args: readonly string[]) {
   let input: string | undefined,
     serve = false,
-    json = false
+    json = false,
+    risk = false,
+    supply = false
   for (let i = 0; i < args.length; i++) {
     const a = args[i]
     if (a === '--input' && input === undefined && args[i + 1] && !args[i + 1]!.startsWith('--'))
       input = args[++i]
     else if (a === '--serve' && !serve) serve = true
     else if (a === '--json' && !json) json = true
+    else if (a === '--risk' && !risk) risk = true
+    else if (a === '--supply' && !supply) supply = true
     else
       throw Error(
-        'Usage: npm run evaluate:buffer-live -- (--input <evidence.json> [--json] | --serve)',
+        'Usage: npm run evaluate:buffer-live -- (--input <evidence.json> [--risk] [--json] | --supply [--json] | --serve)',
       )
   }
-  if ((serve ? 1 : 0) + (input !== undefined ? 1 : 0) !== 1 || (serve && json))
+  if (
+    (serve ? 1 : 0) + (input !== undefined ? 1 : 0) + (supply ? 1 : 0) !== 1 ||
+    (serve && json) ||
+    (risk && (serve || supply || input === undefined))
+  )
     throw Error('Choose input or serve')
-  return { input, serve, json }
+  return {
+    input,
+    serve,
+    json,
+    ...(risk ? { risk: true } : {}),
+    ...(supply ? { supply: true } : {}),
+  }
+}
+export function analyzeLiveRisk(value: unknown) {
+  const original = replayLiveEvidence(value)
+  return {
+    schemaVersion: 1,
+    mode: 'risk',
+    original,
+    coverage: riskCoverageReport((value as { windows: LiveWindow[] }).windows),
+    productActionAuthorized: false,
+    exitCode: original.exitCode,
+  }
 }
 export function replayLiveEvidence(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value))
@@ -126,14 +153,24 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/buffer-live
   if (options)
     try {
       if (options.serve) await serveCalibration()
-      else {
-        if (statSync(options.input!).size > 64 * 1024 * 1024)
-          throw Error('Live evidence exceeds 64 MiB')
-        const result = replayLiveEvidence(JSON.parse(readFileSync(options.input!, 'utf8')))
+      else if (options.supply) {
+        const report = await evaluateSupply()
         console.log(
           options.json
-            ? JSON.stringify(result)
-            : `${result.adoption.decision}; valid windows ${result.adoption.facts.windows}/12; exit ${result.exitCode}`,
+            ? JSON.stringify(report)
+            : `Supply executions ${report.results.length}; exit ${report.exitCode}; synthetic only.`,
+        )
+        process.exitCode = report.exitCode
+      } else {
+        if (statSync(options.input!).size > 64 * 1024 * 1024)
+          throw Error('Live evidence exceeds 64 MiB')
+        const value: unknown = JSON.parse(readFileSync(options.input!, 'utf8'))
+        const result = replayLiveEvidence(value)
+        const risk = options.risk ? analyzeLiveRisk(value) : null
+        console.log(
+          options.json
+            ? JSON.stringify(risk ?? result)
+            : `${result.adoption.decision}; valid windows ${result.adoption.facts.windows}/12; exit ${result.exitCode}${risk ? '; risk ' + risk.coverage.utilityCoverage : ''}`,
         )
         process.exitCode = result.exitCode
       }
