@@ -1063,9 +1063,40 @@ export class PlayerControlObserver {
     }
   }
 
-  seek(value: number): void {
+  #nativeWriteGuard(canCommit: () => boolean): () => boolean {
+    const revision = this.#controlRevision,
+      user = this.#userRevision,
+      seek = this.#seekRevision,
+      reload = this.#reloadRevision,
+      video = this.sources.video(),
+      player = this.sources.player(),
+      lifecycle = this.sources.lifecycleKey(),
+      core = safeCall(player, '__core')
+    const revisionsMatch = () =>
+      revision === this.#controlRevision &&
+      user === this.#userRevision &&
+      seek === this.#seekRevision &&
+      reload === this.#reloadRevision
+    return () => {
+      try {
+        if (!canCommit() || !revisionsMatch()) return false
+        const same =
+          video === this.sources.video() &&
+          player === this.sources.player() &&
+          lifecycle === this.sources.lifecycleKey() &&
+          core === safeCall(player, '__core') &&
+          this.environment.isActuallyVisible()
+        return same && canCommit() && revisionsMatch()
+      } catch {
+        return false
+      }
+    }
+  }
+
+  seek(value: number, canCommit: () => boolean = () => true): void {
     this.#clearKeyboardSeek()
     this.#clearKeyboardPlayback()
+    const nativeCurrent = this.#nativeWriteGuard(canCommit)
     if (this.#goal?.position === value) {
       this.#goal.baseline = null
       this.#goal.progress = 0
@@ -1076,22 +1107,25 @@ export class PlayerControlObserver {
       const player = this.sources.player(),
         method = player?.seek
       if (player && typeof method === 'function') {
+        if (!nativeCurrent()) return
         Reflect.apply(method, player, [value])
         return
       }
       const video = this.sources.video()
-      if (video) video.currentTime = value
+      if (video && nativeCurrent()) video.currentTime = value
     } finally {
       this.#internalSeek--
     }
   }
 
-  setRate(value: number): void {
+  setRate(value: number, canCommit: () => boolean = () => true): void {
     this.#clearKeyboardPlayback()
+    const nativeCurrent = this.#nativeWriteGuard(canCommit)
     const player = this.sources.player(),
       method = player?.setPlaybackRate
     if (player && typeof method === 'function') {
       try {
+        if (!nativeCurrent()) return
         Reflect.apply(method, player, [value])
         return
       } catch {
@@ -1099,7 +1133,7 @@ export class PlayerControlObserver {
       }
     }
     const video = this.sources.video()
-    if (video) video.playbackRate = value
+    if (video && nativeCurrent()) video.playbackRate = value
   }
 
   play(): unknown {

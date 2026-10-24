@@ -5666,6 +5666,12 @@
   ],
   "unchangedFiles": [
     {
+      "path": "archive/retired/originals/PRE_RESTORE_2026-10-25_20ba3b2.json",
+      "encoding": "raw",
+      "bytes": 481682,
+      "sha256": "cab57a14e50c2e6a623438b2d4e9931eb2fd99d62b239858f87046d4fa3e9921"
+    },
+    {
       "path": "archive/retired/docs/evidence/BUFFER_ADOPTION_DECISION_2026-10-25.json",
       "encoding": "raw",
       "bytes": 1175641,
@@ -5762,12 +5768,6 @@
       "sha256": "9de1d6998e99847b6bdc3deec64ada08721797538a404126d837620b7873d3a8"
     },
     {
-      "path": "src-v2/adapters/player-controls.ts",
-      "encoding": "raw",
-      "bytes": 37818,
-      "sha256": "1256319f9317b33980e14e8b3a47af44f2f7ad93bd8b984f35e2c3c15463d6ed"
-    },
-    {
       "path": "src-v2/adapters/player-media.ts",
       "encoding": "raw",
       "bytes": 4822,
@@ -5784,12 +5784,6 @@
       "encoding": "raw",
       "bytes": 565,
       "sha256": "d7fe4b1ce5b0c375525f57d8bd46b67a724b309b490ba3f657b3f8654bd1b6fb"
-    },
-    {
-      "path": "src-v2/adapters/player.ts",
-      "encoding": "raw",
-      "bytes": 3672,
-      "sha256": "c1102ced01ec7dc226eb7e22d371775e7a653c7d4503550eb3faa74deb938951"
     },
     {
       "path": "src-v2/adapters/playurl.ts",
@@ -5910,18 +5904,6 @@
       "encoding": "raw",
       "bytes": 1549,
       "sha256": "3d0936ad68c3fa7918618019af65500b35fcbbfb037c9a73ca4122f4e3134abf"
-    },
-    {
-      "path": "src-v2/application/ports.ts",
-      "encoding": "raw",
-      "bytes": 2692,
-      "sha256": "85d63101d5d61a8ef3f2fb95c26c7f53390446e0433d0aacb2171c983aa82e78"
-    },
-    {
-      "path": "src-v2/application/recovery-controller.ts",
-      "encoding": "raw",
-      "bytes": 26356,
-      "sha256": "d4c783589ca4debb4111a07433d0864150939f2e82d8e5cbe958e88f04be79b0"
     },
     {
       "path": "src-v2/application/recovery-model.ts",

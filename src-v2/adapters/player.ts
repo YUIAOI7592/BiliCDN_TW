@@ -100,11 +100,11 @@ export class PlayerAdapter {
     return rate !== null && rate > 0 ? rate : this.snapshot().playbackRate
   }
 
-  seek(value: number): void {
-    this.#controls.seek(value)
+  seek(value: number, canCommit?: () => boolean): void {
+    this.#controls.seek(value, canCommit)
   }
-  setRate(value: number): void {
-    this.#controls.setRate(value)
+  setRate(value: number, canCommit?: () => boolean): void {
+    this.#controls.setRate(value, canCommit)
   }
   play(): unknown {
     return this.#controls.play()

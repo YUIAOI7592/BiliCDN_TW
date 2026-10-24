@@ -42,8 +42,8 @@ export interface PlayerPort {
   reload(): unknown
   currentTime(): number
   playbackRate(): number
-  seek(value: number): void
-  setRate(value: number): void
+  seek(value: number, canCommit?: () => boolean): void
+  setRate(value: number, canCommit?: () => boolean): void
   play(): unknown
   reset(): void
 }

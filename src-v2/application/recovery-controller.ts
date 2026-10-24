@@ -593,13 +593,17 @@ export class RecoveryController implements RecoveryPort {
     const position = snapshot.duration
       ? Math.min(token.savedPositionSec, Math.max(0, snapshot.duration - 0.1))
       : token.savedPositionSec
+    const canCommit = () =>
+      this.#owns(token, this.player.controls()) &&
+      this.isActive() &&
+      this.now() - token.reloadingAt < 15000
     try {
-      if (token.restorePosition) this.player.seek(position)
+      if (token.restorePosition) this.player.seek(position, canCommit)
       if (!this.#owns(token, this.player.controls()) || !this.isActive()) {
         if (this.#token === token) this.#finish('failed', 'ownership-ended')
         return
       }
-      this.player.setRate(token.savedRate)
+      this.player.setRate(token.savedRate, canCommit)
     } catch {
       if (this.#token === token) this.#finish('failed', 'restore-threw')
       return
