@@ -33,7 +33,7 @@ export const scenarioNames = [
 ] as const
 export type ScenarioName = (typeof scenarioNames)[number]
 /** Preserve each algorithm's original candidate meaning when reading old evidence. */
-export function readingVersion(value: unknown): 1 | 2 | 3 | 4 | 5 | null {
+export function readingVersion(value: unknown): 1 | 2 | 3 | 4 | 5 | 6 | null {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return null
   const row = value as Record<string, unknown>
   if (row.schemaVersion === 1 && row.algorithm === 'buffer-window-v1') return 1
@@ -41,6 +41,7 @@ export function readingVersion(value: unknown): 1 | 2 | 3 | 4 | 5 | null {
   if (row.schemaVersion === 3 && row.algorithm === 'buffer-window-v3') return 3
   if (row.schemaVersion === 4 && row.algorithm === 'buffer-window-v4') return 4
   if (row.schemaVersion === 5 && row.algorithm === 'buffer-window-v5') return 5
+  if (row.schemaVersion === 6 && row.algorithm === 'buffer-window-v6') return 6
   return null
 }
 export interface EvidenceRow {
@@ -115,6 +116,7 @@ export function parseEvaluationArgs(args: readonly string[]): {
   holdout?: true
   cycleHoldout?: true
   lowBuffer?: true
+  continuity?: true
 } {
   if (
     new Set(args).size !== args.length ||
@@ -128,6 +130,7 @@ export function parseEvaluationArgs(args: readonly string[]): {
           '--holdout',
           '--cycle-holdout',
           '--low-buffer',
+          '--continuity',
         ].includes(a),
     ) ||
     args.filter(
@@ -135,11 +138,12 @@ export function parseEvaluationArgs(args: readonly string[]): {
         a.startsWith('--cost') ||
         a === '--holdout' ||
         a === '--cycle-holdout' ||
-        a === '--low-buffer',
+        a === '--low-buffer' ||
+        a === '--continuity',
     ).length > 1
   )
     throw Error(
-      'Usage: npm run evaluate:buffer-shadow -- [--json] [--cost|--cost-v3|--cost-source|--holdout|--cycle-holdout|--low-buffer]',
+      'Usage: npm run evaluate:buffer-shadow -- [--json] [--cost|--cost-v3|--cost-source|--holdout|--cycle-holdout|--low-buffer|--continuity]',
     )
   const comparison = args.includes('--cost-v3')
     ? 'v3'
@@ -151,6 +155,7 @@ export function parseEvaluationArgs(args: readonly string[]): {
     cost: args.some((a) => a.startsWith('--cost')),
     ...(comparison ? { comparison } : {}),
     ...(args.includes('--low-buffer') ? { lowBuffer: true as const } : {}),
+    ...(args.includes('--continuity') ? { continuity: true as const } : {}),
     ...(args.includes('--holdout') ? { holdout: true as const } : {}),
     ...(args.includes('--cycle-holdout') ? { cycleHoldout: true as const } : {}),
   }
@@ -220,14 +225,19 @@ export function scoreWindow(
     const trend = row.trend as
       | {
           cycle?: { netLossSec?: unknown; lastLossAgeMs?: unknown; creditMs?: unknown }
-          lowBuffer?: { basis?: unknown; creditMs?: unknown; declineCoverageMs?: unknown }
+          lowBuffer?: {
+            basis?: unknown
+            creditMs?: unknown
+            declineCoverageMs?: unknown
+            tailUsed?: unknown
+          }
           endBufferSec?: unknown
         }
       | undefined
     const cycle = trend?.cycle
     const low = trend?.lowBuffer
     const lowCandidate =
-      readingVersion(row.trend) === 5 &&
+      (readingVersion(row.trend) === 5 || readingVersion(row.trend) === 6) &&
       low?.creditMs === 2000 &&
       typeof trend?.endBufferSec === 'number' &&
       Number.isFinite(trend.endBufferSec) &&
@@ -236,7 +246,14 @@ export function scoreWindow(
       ((row.reason === 'low-buffer-steady' &&
         low.basis === 'steady-decline' &&
         low.declineCoverageMs === 8000) ||
-        (row.reason === 'low-buffer-cycle' &&
+        ((row.reason === 'low-buffer-cycle' ||
+          (readingVersion(row.trend) === 6 &&
+            row.reason === 'low-buffer-tail' &&
+            low.tailUsed === true &&
+            typeof low.declineCoverageMs === 'number' &&
+            low.declineCoverageMs >= 2000 &&
+            trend.endBufferSec > 0 &&
+            trend.endBufferSec <= 1)) &&
           low.basis === 'partial-cycle' &&
           typeof cycle?.netLossSec === 'number' &&
           cycle.netLossSec > 0 &&
@@ -245,7 +262,7 @@ export function scoreWindow(
           cycle.lastLossAgeMs >= 0 &&
           cycle.lastLossAgeMs <= 8000))
     const cycleCandidate =
-      (readingVersion(row.trend) === 4 || readingVersion(row.trend) === 5) &&
+      [4, 5, 6].includes(readingVersion(row.trend) ?? 0) &&
       row.reason === 'cycle-draining-low' &&
       cycle?.netLossSec === 2 &&
       cycle.creditMs === 2000 &&

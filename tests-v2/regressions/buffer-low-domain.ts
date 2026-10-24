@@ -50,6 +50,7 @@ function confirmed(rate: number, age = 1000): BufferCycleInput {
       cycleCreditMs: null,
       confirmation: null,
       lowConfirmation: {
+        tailUsed: false,
         basis: 'steady-decline',
         confirmation: {
           anchorSec: 4,
@@ -187,6 +188,7 @@ for (const rate of [1, 2]) {
           netLossSec: 0.5,
           lastLossAt: 19000,
           lowConfirmation: {
+            tailUsed: false,
             basis: 'partial-cycle' as const,
             confirmation: {
               anchorSec: 4,

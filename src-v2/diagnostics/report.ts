@@ -14,8 +14,8 @@ export type DiagnosticReportCapture = Omit<
   'incident' | 'flow' | 'events' | 'rankings' | 'bufferTrend'
 > & {
   bufferTrend: {
-    schemaVersion: 5
-    algorithm: 'buffer-window-v5'
+    schemaVersion: 6
+    algorithm: 'buffer-window-v6'
     latest: BufferTrendSnapshot | null
     history: BufferTrendSnapshot[]
   }

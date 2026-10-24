@@ -118,6 +118,9 @@ for (const mode of [
   'low-steady',
   'low-cycle',
   'low-invalid',
+  'tail-valid',
+  'tail-used',
+  'tail-invalid',
 ] as const)
   test(`U-E03 collector isolates ${mode} without stale attribution or leaked fields`, async (t) => {
     const clock = testScope(t).own(new FakeClock())
@@ -137,8 +140,8 @@ for (const mode of [
       getVideoPlaybackQuality: () => ({ totalVideoFrames: 30 }),
     }
     const trend = {
-      schemaVersion: 5,
-      algorithm: 'buffer-window-v5',
+      schemaVersion: 6,
+      algorithm: 'buffer-window-v6',
       cycle: null,
       lowBuffer: null,
       at: 0,
@@ -173,6 +176,7 @@ for (const mode of [
         endBufferSec: 3.2,
         deltaSec: -0.8,
         lowBuffer: {
+          tailUsed: false,
           basis: mode === 'low-cycle' ? 'partial-cycle' : 'steady-decline',
           creditMs: mode === 'low-invalid' ? 1999 : 2000,
           declineCoverageMs: mode === 'low-cycle' ? 1000 : 8000,
@@ -182,6 +186,22 @@ for (const mode of [
           mode === 'low-cycle'
             ? { netLossSec: 0.5, creditMs: null, lastLossAgeMs: 1000, rangeTroughSec: null }
             : null,
+      })
+    if (mode.startsWith('tail-'))
+      Object.assign(trend, {
+        state: 'stable',
+        candidate: mode !== 'tail-used',
+        reason: mode === 'tail-used' ? 'low-buffer-tail-used' : 'low-buffer-tail',
+        endBufferSec: 0.5,
+        deltaSec: -0.5,
+        lowBuffer: {
+          basis: 'partial-cycle',
+          creditMs: 2000,
+          declineCoverageMs: 2000,
+          tailUsed: mode !== 'tail-invalid',
+          secretUrl: 'https://sensitive.invalid',
+        },
+        cycle: { netLossSec: 0.5, creditMs: null, lastLossAgeMs: 1000, rangeTroughSec: 0.1 },
       })
     const collect = runInNewContext('(' + installedCollector + ')', {
       performance: { now: clock.now },
@@ -232,7 +252,10 @@ for (const mode of [
       for (let j = 0; j < 10; j++) await Promise.resolve()
     }
     const result = await task
-    if (mode === 'low-cycle' || mode === 'low-steady') {
+    if (mode === 'tail-valid' || mode === 'tail-used') {
+      assert.ok(result.rows.every((r) => r.candidate === (mode === 'tail-valid')))
+      assert.equal(JSON.stringify(result).includes('sensitive.invalid'), false)
+    } else if (mode === 'low-cycle' || mode === 'low-steady') {
       assert.ok(result.rows.every((r) => r.candidate === true))
       assert.equal(JSON.stringify(result).includes('sensitive.invalid'), false)
     } else if (mode === 'sensitive-extra')

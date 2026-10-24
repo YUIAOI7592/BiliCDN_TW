@@ -161,8 +161,8 @@ export interface RouteAttemptSummary {
 /** Public queries retain the concrete, readonly snapshot shape. */
 export interface DiagnosticSnapshot {
   readonly bufferTrend: {
-    readonly schemaVersion: 5
-    readonly algorithm: 'buffer-window-v5'
+    readonly schemaVersion: 6
+    readonly algorithm: 'buffer-window-v6'
     readonly latest: BufferTrendSnapshot | null
     readonly history: readonly BufferTrendSnapshot[]
   }

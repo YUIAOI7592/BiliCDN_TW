@@ -17,8 +17,8 @@ export function emptyBufferCycle(
 ): BufferCycleReading {
   return Object.freeze({
     ...emptyBufferTrend(at, reason, ineligible),
-    schemaVersion: 5,
-    algorithm: 'buffer-window-v5',
+    schemaVersion: 6,
+    algorithm: 'buffer-window-v6',
     cycle: null,
     lowBuffer: null,
   })
@@ -34,6 +34,14 @@ export function observeBufferCycle(input: BufferCycleInput): {
   if (!validBufferSample(sample)) return reject('invalid-sample')
   if (previous && (!validBufferSample(previous) || previous.rate !== sample.rate))
     return reject('context-changed')
+  const priorLow = input.state?.lowConfirmation
+  if (
+    priorLow &&
+    (typeof priorLow.tailUsed !== 'boolean' ||
+      (priorLow.tailUsed &&
+        (priorLow.basis !== 'partial-cycle' || priorLow.confirmation.creditMs !== 2000)))
+  )
+    return reject('invalid-sample')
   const result = (reading: BufferCycleReading, state: BufferCycleState | null) =>
     Object.freeze({ reading: Object.freeze(reading), state })
   if (previous && sample.at === previous.at) return result(emptyBufferCycle(sample.at), input.state)
@@ -41,7 +49,7 @@ export function observeBufferCycle(input: BufferCycleInput): {
   if (previous && sample.at - previous.at > 1500) return reject('sample-gap')
   if (raw.candidate === null)
     return result(
-      { ...raw, schemaVersion: 5, algorithm: 'buffer-window-v5', cycle: null, lowBuffer: null },
+      { ...raw, schemaVersion: 6, algorithm: 'buffer-window-v6', cycle: null, lowBuffer: null },
       null,
     )
   const buffer = sample.bufferAheadSec / sample.rate
@@ -174,9 +182,31 @@ export function observeBufferCycle(input: BufferCycleInput): {
     previous,
     confirmation: oldLow,
   })
+  // A completed proof survives partial refills; only a genuinely new proof replenishes this bit.
+  const continuousLow =
+    oldLow !== null &&
+    low.confirmation !== null &&
+    previous !== undefined &&
+    oldLow.at === previous.at &&
+    oldLow.creditMs === 2000 &&
+    low.confirmation.creditMs === 2000 &&
+    oldLow.anchorSec === low.confirmation.anchorSec &&
+    sample.at - oldLow.lastLowAt <= 8000
+  const originalCandidate = confirmed.reading.candidate || cycleCandidate
+  const baseCandidate = originalCandidate || low.reading.candidate
+  const tailEligible =
+    baseCandidate === false &&
+    continuousLow &&
+    basis === 'partial-cycle' &&
+    buffer > 0 &&
+    buffer <= 1 &&
+    coverage >= 2000
+  const alreadyUsed = continuousLow && priorLow?.tailUsed === true
+  const tailCandidate = tailEligible && !alreadyUsed
+  const tailUsed = alreadyUsed || tailCandidate
   state.lowConfirmation =
     basis !== null && low.confirmation !== null
-      ? Object.freeze({ basis, confirmation: low.confirmation })
+      ? Object.freeze({ basis, confirmation: low.confirmation, tailUsed })
       : null
   const lowEvidence: BufferLowEvidence | null =
     basis === null
@@ -185,8 +215,8 @@ export function observeBufferCycle(input: BufferCycleInput): {
           basis,
           creditMs: low.confirmation?.creditMs ?? 0,
           declineCoverageMs: coverage,
+          tailUsed,
         })
-  const originalCandidate = confirmed.reading.candidate || cycleCandidate
   const lowReason: BufferCycleReason = low.reading.candidate
     ? basis === 'partial-cycle'
       ? 'low-buffer-cycle'
@@ -195,10 +225,16 @@ export function observeBufferCycle(input: BufferCycleInput): {
   return result(
     {
       ...confirmed.reading,
-      candidate: originalCandidate || low.reading.candidate,
-      schemaVersion: 5,
-      algorithm: 'buffer-window-v5',
-      reason: originalCandidate || basis === null ? reason : lowReason,
+      candidate: baseCandidate || tailCandidate,
+      schemaVersion: 6,
+      algorithm: 'buffer-window-v6',
+      reason: tailCandidate
+        ? 'low-buffer-tail'
+        : tailEligible && alreadyUsed
+          ? 'low-buffer-tail-used'
+          : originalCandidate || basis === null
+            ? reason
+            : lowReason,
       lowBuffer: lowEvidence,
       cycle: Object.freeze({
         creditMs: cycleLow

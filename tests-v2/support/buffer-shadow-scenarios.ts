@@ -29,7 +29,7 @@ export interface ScenarioResult {
   readonly id: string
   readonly level: 'integration'
   readonly rate: 1 | 2
-  readonly algorithm: 'buffer-window-v5'
+  readonly algorithm: 'buffer-window-v6'
   readonly scenarioHash: string
   readonly validity: 'valid'
   readonly verdict: 'pass' | 'fail'
@@ -447,7 +447,7 @@ export async function runScenario(
       id: `${name}@${rate}x`,
       level: 'integration',
       rate,
-      algorithm: 'buffer-window-v5',
+      algorithm: 'buffer-window-v6',
       scenarioHash: sha256(JSON.stringify({ name, rate, warmupMs: 60000, inputs })),
       validity: 'valid',
       verdict: assertions.every((a) => a.verdict === 'pass') ? 'pass' : 'fail',

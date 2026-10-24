@@ -1,0 +1,1593 @@
+{
+  "schemaVersion": 1,
+  "baseline": "f5057046f02bbf7fa7eddd77a7753d5f67d15ed0",
+  "inputHash": "586fef8f888dd53b7fa1def6745617356bf7c772e88f1505a66bcc02f3d9fa09",
+  "cases": {
+    "tail-primary-4-4-0.75": {
+      "candidateTimes": [
+        7000
+      ],
+      "candidateMs": 1000,
+      "episodes": 1,
+      "firstLeadMs": 4000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 3000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-primary-4-4-0.75-normal": {
+      "candidateTimes": [
+        7000
+      ],
+      "candidateMs": 1000,
+      "episodes": 1,
+      "firstLeadMs": null,
+      "maximumGapMs": 232000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-primary-4.5-4-0.85": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000
+      ],
+      "candidateMs": 3000,
+      "episodes": 3,
+      "firstLeadMs": 12000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 3000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-primary-4.5-4-0.85-normal": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000
+      ],
+      "candidateMs": 3000,
+      "episodes": 3,
+      "firstLeadMs": null,
+      "maximumGapMs": 224000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-primary-4.5-4-0.95": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000,
+        23000,
+        27000,
+        31000,
+        35000,
+        39000
+      ],
+      "candidateMs": 9000,
+      "episodes": 9,
+      "firstLeadMs": 36000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 3000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-primary-4.5-4-0.95-normal": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000,
+        23000,
+        27000,
+        31000,
+        35000,
+        39000
+      ],
+      "candidateMs": 9000,
+      "episodes": 9,
+      "firstLeadMs": null,
+      "maximumGapMs": 200000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-primary-5-4-0.85": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000
+      ],
+      "candidateMs": 4000,
+      "episodes": 4,
+      "firstLeadMs": 16000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 3000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-primary-5-4-0.85-normal": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000
+      ],
+      "candidateMs": 4000,
+      "episodes": 4,
+      "firstLeadMs": null,
+      "maximumGapMs": 220000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-primary-5-4-0.95": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000,
+        23000,
+        27000,
+        31000,
+        35000,
+        39000,
+        43000,
+        47000,
+        51000,
+        55000
+      ],
+      "candidateMs": 13000,
+      "episodes": 13,
+      "firstLeadMs": 52000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 3000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-primary-5-4-0.95-normal": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000,
+        23000,
+        27000,
+        31000,
+        35000,
+        39000,
+        43000,
+        47000,
+        51000,
+        55000
+      ],
+      "candidateMs": 13000,
+      "episodes": 13,
+      "firstLeadMs": null,
+      "maximumGapMs": 184000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.25-3-0.65": {
+      "candidateTimes": [
+        8000,
+        11000,
+        13000
+      ],
+      "candidateMs": 3000,
+      "episodes": 3,
+      "firstLeadMs": 6000,
+      "maximumGapMs": 2000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.25-3-0.65-normal": {
+      "candidateTimes": [
+        8000,
+        11000,
+        13000
+      ],
+      "candidateMs": 3000,
+      "episodes": 3,
+      "firstLeadMs": null,
+      "maximumGapMs": 226000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.25-3-0.9": {
+      "candidateTimes": [
+        8000,
+        11000,
+        14000,
+        17000,
+        20000,
+        23000,
+        26000,
+        29000,
+        32000,
+        34000,
+        35000,
+        37000
+      ],
+      "candidateMs": 12000,
+      "episodes": 11,
+      "firstLeadMs": 30000,
+      "maximumGapMs": 2000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.25-3-0.9-normal": {
+      "candidateTimes": [
+        8000,
+        11000,
+        14000,
+        17000,
+        20000,
+        23000,
+        26000,
+        29000,
+        32000,
+        34000,
+        35000,
+        37000
+      ],
+      "candidateMs": 12000,
+      "episodes": 11,
+      "firstLeadMs": null,
+      "maximumGapMs": 202000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.25-3-0.975": {
+      "candidateTimes": [
+        20000,
+        23000,
+        26000,
+        29000,
+        32000,
+        35000,
+        38000,
+        41000,
+        44000,
+        47000,
+        50000,
+        53000,
+        56000,
+        59000,
+        62000,
+        65000,
+        68000,
+        71000,
+        74000,
+        77000,
+        80000,
+        83000,
+        86000,
+        89000,
+        92000,
+        95000,
+        98000,
+        101000,
+        104000,
+        107000,
+        110000,
+        113000,
+        116000,
+        119000,
+        122000,
+        125000,
+        127000,
+        128000,
+        130000,
+        131000,
+        133000,
+        134000,
+        136000,
+        137000,
+        139000
+      ],
+      "candidateMs": 45000,
+      "episodes": 41,
+      "firstLeadMs": 120000,
+      "maximumGapMs": 2000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.25-3-0.975-normal": {
+      "candidateTimes": [
+        20000,
+        23000,
+        26000,
+        29000,
+        32000,
+        35000,
+        38000,
+        41000,
+        44000,
+        47000,
+        50000,
+        53000,
+        56000,
+        59000,
+        62000,
+        65000,
+        68000,
+        71000,
+        74000,
+        77000,
+        80000,
+        83000,
+        86000,
+        89000,
+        92000,
+        95000,
+        98000,
+        101000,
+        104000,
+        107000,
+        110000,
+        113000,
+        116000,
+        119000,
+        122000,
+        125000,
+        127000,
+        128000,
+        130000,
+        131000,
+        133000,
+        134000,
+        136000,
+        137000,
+        139000
+      ],
+      "candidateMs": 45000,
+      "episodes": 41,
+      "firstLeadMs": null,
+      "maximumGapMs": 100000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.25-4-0.65": {
+      "candidateTimes": [
+        7000,
+        10000
+      ],
+      "candidateMs": 2000,
+      "episodes": 2,
+      "firstLeadMs": 4000,
+      "maximumGapMs": 2000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.25-4-0.65-normal": {
+      "candidateTimes": [
+        7000,
+        10000
+      ],
+      "candidateMs": 2000,
+      "episodes": 2,
+      "firstLeadMs": null,
+      "maximumGapMs": 229000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.25-4-0.9": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000
+      ],
+      "candidateMs": 4000,
+      "episodes": 4,
+      "firstLeadMs": 16000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 3000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.25-4-0.9-normal": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000
+      ],
+      "candidateMs": 4000,
+      "episodes": 4,
+      "firstLeadMs": null,
+      "maximumGapMs": 220000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.25-4-0.975": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000,
+        23000,
+        27000,
+        31000,
+        35000,
+        39000,
+        43000,
+        47000,
+        51000,
+        55000,
+        59000,
+        63000,
+        67000
+      ],
+      "candidateMs": 16000,
+      "episodes": 16,
+      "firstLeadMs": 64000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 3000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.25-4-0.975-normal": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000,
+        23000,
+        27000,
+        31000,
+        35000,
+        39000,
+        43000,
+        47000,
+        51000,
+        55000,
+        59000,
+        63000,
+        67000
+      ],
+      "candidateMs": 16000,
+      "episodes": 16,
+      "firstLeadMs": null,
+      "maximumGapMs": 172000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.25-5-0.65": {
+      "candidateTimes": [
+        4000
+      ],
+      "candidateMs": 1000,
+      "episodes": 1,
+      "firstLeadMs": 4000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 3000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.25-5-0.65-normal": {
+      "candidateTimes": [
+        4000
+      ],
+      "candidateMs": 1000,
+      "episodes": 1,
+      "firstLeadMs": null,
+      "maximumGapMs": 235000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.25-5-0.9": {
+      "candidateTimes": [
+        4000,
+        8000
+      ],
+      "candidateMs": 2000,
+      "episodes": 2,
+      "firstLeadMs": 5000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.25-5-0.9-normal": {
+      "candidateTimes": [
+        4000,
+        8000
+      ],
+      "candidateMs": 2000,
+      "episodes": 2,
+      "firstLeadMs": null,
+      "maximumGapMs": 231000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.25-5-0.975": {
+      "candidateTimes": [
+        4000,
+        8000,
+        9000,
+        13000,
+        14000
+      ],
+      "candidateMs": 5000,
+      "episodes": 3,
+      "firstLeadMs": 15000,
+      "maximumGapMs": 4000,
+      "terminalFalseMs": 4000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.25-5-0.975-normal": {
+      "candidateTimes": [
+        4000,
+        8000,
+        9000,
+        13000,
+        14000
+      ],
+      "candidateMs": 5000,
+      "episodes": 3,
+      "firstLeadMs": null,
+      "maximumGapMs": 225000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.75-3-0.65": {
+      "candidateTimes": [
+        8000,
+        11000,
+        13000
+      ],
+      "candidateMs": 3000,
+      "episodes": 3,
+      "firstLeadMs": 6000,
+      "maximumGapMs": 2000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.75-3-0.65-normal": {
+      "candidateTimes": [
+        8000,
+        11000,
+        13000
+      ],
+      "candidateMs": 3000,
+      "episodes": 3,
+      "firstLeadMs": null,
+      "maximumGapMs": 226000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.75-3-0.9": {
+      "candidateTimes": [
+        14000,
+        17000,
+        20000,
+        23000,
+        26000,
+        29000,
+        32000,
+        34000,
+        35000,
+        37000,
+        38000,
+        40000,
+        41000,
+        43000
+      ],
+      "candidateMs": 14000,
+      "episodes": 11,
+      "firstLeadMs": 30000,
+      "maximumGapMs": 2000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.75-3-0.9-normal": {
+      "candidateTimes": [
+        14000,
+        17000,
+        20000,
+        23000,
+        26000,
+        29000,
+        32000,
+        34000,
+        35000,
+        37000,
+        38000,
+        40000,
+        41000,
+        43000
+      ],
+      "candidateMs": 14000,
+      "episodes": 11,
+      "firstLeadMs": null,
+      "maximumGapMs": 196000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.75-3-0.975": {
+      "candidateTimes": [
+        50000,
+        53000,
+        56000,
+        59000,
+        62000,
+        65000,
+        68000,
+        71000,
+        74000,
+        77000,
+        80000,
+        83000,
+        86000,
+        89000,
+        92000,
+        95000,
+        98000,
+        101000,
+        104000,
+        107000,
+        110000,
+        113000,
+        116000,
+        119000,
+        122000,
+        125000,
+        127000,
+        128000,
+        130000,
+        131000,
+        133000,
+        134000,
+        136000,
+        137000,
+        139000,
+        140000,
+        142000,
+        143000,
+        145000,
+        146000,
+        148000,
+        149000,
+        151000,
+        152000,
+        154000,
+        155000,
+        157000,
+        158000,
+        160000,
+        161000,
+        163000,
+        164000,
+        166000,
+        167000,
+        169000
+      ],
+      "candidateMs": 55000,
+      "episodes": 41,
+      "firstLeadMs": 120000,
+      "maximumGapMs": 2000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.75-3-0.975-normal": {
+      "candidateTimes": [
+        50000,
+        53000,
+        56000,
+        59000,
+        62000,
+        65000,
+        68000,
+        71000,
+        74000,
+        77000,
+        80000,
+        83000,
+        86000,
+        89000,
+        92000,
+        95000,
+        98000,
+        101000,
+        104000,
+        107000,
+        110000,
+        113000,
+        116000,
+        119000,
+        122000,
+        125000,
+        127000,
+        128000,
+        130000,
+        131000,
+        133000,
+        134000,
+        136000,
+        137000,
+        139000,
+        140000,
+        142000,
+        143000,
+        145000,
+        146000,
+        148000,
+        149000,
+        151000,
+        152000,
+        154000,
+        155000,
+        157000,
+        158000,
+        160000,
+        161000,
+        163000,
+        164000,
+        166000,
+        167000,
+        169000
+      ],
+      "candidateMs": 55000,
+      "episodes": 41,
+      "firstLeadMs": null,
+      "maximumGapMs": 70000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.75-4-0.65": {
+      "candidateTimes": [
+        7000,
+        10000
+      ],
+      "candidateMs": 2000,
+      "episodes": 2,
+      "firstLeadMs": 4000,
+      "maximumGapMs": 2000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.75-4-0.65-normal": {
+      "candidateTimes": [
+        7000,
+        10000
+      ],
+      "candidateMs": 2000,
+      "episodes": 2,
+      "firstLeadMs": null,
+      "maximumGapMs": 229000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.75-4-0.9": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000,
+        23000
+      ],
+      "candidateMs": 5000,
+      "episodes": 5,
+      "firstLeadMs": 20000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 3000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.75-4-0.9-normal": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000,
+        23000
+      ],
+      "candidateMs": 5000,
+      "episodes": 5,
+      "firstLeadMs": null,
+      "maximumGapMs": 216000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.75-4-0.975": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000,
+        23000,
+        27000,
+        31000,
+        35000,
+        39000,
+        43000,
+        47000,
+        51000,
+        55000,
+        59000,
+        63000,
+        67000,
+        71000,
+        75000,
+        79000,
+        83000,
+        87000,
+        91000,
+        95000
+      ],
+      "candidateMs": 23000,
+      "episodes": 23,
+      "firstLeadMs": 92000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 3000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.75-4-0.975-normal": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000,
+        23000,
+        27000,
+        31000,
+        35000,
+        39000,
+        43000,
+        47000,
+        51000,
+        55000,
+        59000,
+        63000,
+        67000,
+        71000,
+        75000,
+        79000,
+        83000,
+        87000,
+        91000,
+        95000
+      ],
+      "candidateMs": 23000,
+      "episodes": 23,
+      "firstLeadMs": null,
+      "maximumGapMs": 144000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.75-5-0.65": {
+      "candidateTimes": [
+        4000,
+        8000
+      ],
+      "candidateMs": 2000,
+      "episodes": 2,
+      "firstLeadMs": 5000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.75-5-0.65-normal": {
+      "candidateTimes": [
+        4000,
+        8000
+      ],
+      "candidateMs": 2000,
+      "episodes": 2,
+      "firstLeadMs": null,
+      "maximumGapMs": 231000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.75-5-0.9": {
+      "candidateTimes": [
+        4000,
+        8000,
+        9000
+      ],
+      "candidateMs": 3000,
+      "episodes": 2,
+      "firstLeadMs": 10000,
+      "maximumGapMs": 4000,
+      "terminalFalseMs": 4000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.75-5-0.9-normal": {
+      "candidateTimes": [
+        4000,
+        8000,
+        9000
+      ],
+      "candidateMs": 3000,
+      "episodes": 2,
+      "firstLeadMs": null,
+      "maximumGapMs": 230000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-4.75-5-0.975": {
+      "candidateTimes": [
+        4000,
+        8000,
+        9000,
+        13000,
+        14000,
+        18000,
+        19000,
+        23000,
+        24000,
+        28000,
+        29000,
+        33000,
+        34000,
+        38000,
+        39000
+      ],
+      "candidateMs": 15000,
+      "episodes": 8,
+      "firstLeadMs": 40000,
+      "maximumGapMs": 4000,
+      "terminalFalseMs": 4000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-4.75-5-0.975-normal": {
+      "candidateTimes": [
+        4000,
+        8000,
+        9000,
+        13000,
+        14000,
+        18000,
+        19000,
+        23000,
+        24000,
+        28000,
+        29000,
+        33000,
+        34000,
+        38000,
+        39000
+      ],
+      "candidateMs": 15000,
+      "episodes": 8,
+      "firstLeadMs": null,
+      "maximumGapMs": 200000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-5.25-3-0.65": {
+      "candidateTimes": [
+        8000,
+        11000,
+        13000,
+        14000,
+        16000
+      ],
+      "candidateMs": 5000,
+      "episodes": 4,
+      "firstLeadMs": 9000,
+      "maximumGapMs": 2000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-5.25-3-0.65-normal": {
+      "candidateTimes": [
+        8000,
+        11000,
+        13000,
+        14000,
+        16000
+      ],
+      "candidateMs": 5000,
+      "episodes": 4,
+      "firstLeadMs": null,
+      "maximumGapMs": 223000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-5.25-3-0.9": {
+      "candidateTimes": [
+        23000,
+        26000,
+        29000,
+        32000,
+        34000,
+        35000,
+        37000,
+        38000,
+        40000,
+        41000,
+        43000,
+        44000,
+        46000,
+        47000,
+        49000,
+        50000,
+        52000
+      ],
+      "candidateMs": 17000,
+      "episodes": 11,
+      "firstLeadMs": 30000,
+      "maximumGapMs": 2000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-5.25-3-0.9-normal": {
+      "candidateTimes": [
+        23000,
+        26000,
+        29000,
+        32000,
+        34000,
+        35000,
+        37000,
+        38000,
+        40000,
+        41000,
+        43000,
+        44000,
+        46000,
+        47000,
+        49000,
+        50000,
+        52000
+      ],
+      "candidateMs": 17000,
+      "episodes": 11,
+      "firstLeadMs": null,
+      "maximumGapMs": 187000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-5.25-3-0.975": {
+      "candidateTimes": [
+        80000,
+        83000,
+        86000,
+        89000,
+        92000,
+        95000,
+        98000,
+        101000,
+        104000,
+        107000,
+        110000,
+        113000,
+        116000,
+        119000,
+        122000,
+        125000,
+        127000,
+        128000,
+        130000,
+        131000,
+        133000,
+        134000,
+        136000,
+        137000,
+        139000,
+        140000,
+        142000,
+        143000,
+        145000,
+        146000,
+        148000,
+        149000,
+        151000,
+        152000,
+        154000,
+        155000,
+        157000,
+        158000,
+        160000,
+        161000,
+        163000,
+        164000,
+        166000,
+        167000,
+        169000,
+        170000,
+        172000,
+        173000,
+        175000,
+        176000,
+        178000,
+        179000,
+        181000,
+        182000,
+        184000,
+        185000,
+        187000,
+        188000,
+        190000,
+        191000,
+        193000,
+        194000,
+        196000,
+        197000,
+        199000
+      ],
+      "candidateMs": 65000,
+      "episodes": 41,
+      "firstLeadMs": 120000,
+      "maximumGapMs": 2000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-5.25-3-0.975-normal": {
+      "candidateTimes": [
+        80000,
+        83000,
+        86000,
+        89000,
+        92000,
+        95000,
+        98000,
+        101000,
+        104000,
+        107000,
+        110000,
+        113000,
+        116000,
+        119000,
+        122000,
+        125000,
+        127000,
+        128000,
+        130000,
+        131000,
+        133000,
+        134000,
+        136000,
+        137000,
+        139000,
+        140000,
+        142000,
+        143000,
+        145000,
+        146000,
+        148000,
+        149000,
+        151000,
+        152000,
+        154000,
+        155000,
+        157000,
+        158000,
+        160000,
+        161000,
+        163000,
+        164000,
+        166000,
+        167000,
+        169000,
+        170000,
+        172000,
+        173000,
+        175000,
+        176000,
+        178000,
+        179000,
+        181000,
+        182000,
+        184000,
+        185000,
+        187000,
+        188000,
+        190000,
+        191000,
+        193000,
+        194000,
+        196000,
+        197000,
+        199000
+      ],
+      "candidateMs": 65000,
+      "episodes": 41,
+      "firstLeadMs": null,
+      "maximumGapMs": 40000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-5.25-4-0.65": {
+      "candidateTimes": [
+        7000,
+        10000,
+        11000,
+        13000,
+        14000
+      ],
+      "candidateMs": 5000,
+      "episodes": 3,
+      "firstLeadMs": 8000,
+      "maximumGapMs": 2000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-5.25-4-0.65-normal": {
+      "candidateTimes": [
+        7000,
+        10000,
+        11000,
+        13000,
+        14000
+      ],
+      "candidateMs": 5000,
+      "episodes": 3,
+      "firstLeadMs": null,
+      "maximumGapMs": 225000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-5.25-4-0.9": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000,
+        23000,
+        27000,
+        31000,
+        33000,
+        34000
+      ],
+      "candidateMs": 9000,
+      "episodes": 8,
+      "firstLeadMs": 28000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-5.25-4-0.9-normal": {
+      "candidateTimes": [
+        7000,
+        11000,
+        15000,
+        19000,
+        23000,
+        27000,
+        31000,
+        33000,
+        34000
+      ],
+      "candidateMs": 9000,
+      "episodes": 8,
+      "firstLeadMs": null,
+      "maximumGapMs": 205000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-5.25-4-0.975": {
+      "candidateTimes": [
+        19000,
+        23000,
+        27000,
+        31000,
+        35000,
+        39000,
+        43000,
+        47000,
+        51000,
+        55000,
+        59000,
+        63000,
+        67000,
+        71000,
+        75000,
+        79000,
+        83000,
+        87000,
+        91000,
+        95000,
+        99000,
+        103000,
+        107000,
+        111000,
+        113000,
+        114000,
+        115000,
+        117000,
+        118000,
+        119000,
+        121000,
+        122000
+      ],
+      "candidateMs": 32000,
+      "episodes": 27,
+      "firstLeadMs": 104000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-5.25-4-0.975-normal": {
+      "candidateTimes": [
+        19000,
+        23000,
+        27000,
+        31000,
+        35000,
+        39000,
+        43000,
+        47000,
+        51000,
+        55000,
+        59000,
+        63000,
+        67000,
+        71000,
+        75000,
+        79000,
+        83000,
+        87000,
+        91000,
+        95000,
+        99000,
+        103000,
+        107000,
+        111000,
+        113000,
+        114000,
+        115000,
+        117000,
+        118000,
+        119000,
+        121000,
+        122000
+      ],
+      "candidateMs": 32000,
+      "episodes": 27,
+      "firstLeadMs": null,
+      "maximumGapMs": 117000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-5.25-5-0.65": {
+      "candidateTimes": [
+        4000,
+        8000
+      ],
+      "candidateMs": 2000,
+      "episodes": 2,
+      "firstLeadMs": 5000,
+      "maximumGapMs": 3000,
+      "terminalFalseMs": 0,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-5.25-5-0.65-normal": {
+      "candidateTimes": [
+        4000,
+        8000
+      ],
+      "candidateMs": 2000,
+      "episodes": 2,
+      "firstLeadMs": null,
+      "maximumGapMs": 231000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-5.25-5-0.9": {
+      "candidateTimes": [
+        4000,
+        8000,
+        9000,
+        13000,
+        14000,
+        18000,
+        19000
+      ],
+      "candidateMs": 7000,
+      "episodes": 4,
+      "firstLeadMs": 20000,
+      "maximumGapMs": 4000,
+      "terminalFalseMs": 4000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-5.25-5-0.9-normal": {
+      "candidateTimes": [
+        4000,
+        8000,
+        9000,
+        13000,
+        14000,
+        18000,
+        19000
+      ],
+      "candidateMs": 7000,
+      "episodes": 4,
+      "firstLeadMs": null,
+      "maximumGapMs": 220000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-matrix-5.25-5-0.975": {
+      "candidateTimes": [
+        4000,
+        9000,
+        14000,
+        18000,
+        19000,
+        23000,
+        24000,
+        28000,
+        29000,
+        33000,
+        34000,
+        38000,
+        39000,
+        43000,
+        44000,
+        48000,
+        49000,
+        53000,
+        54000,
+        58000,
+        59000,
+        63000,
+        64000
+      ],
+      "candidateMs": 23000,
+      "episodes": 13,
+      "firstLeadMs": 65000,
+      "maximumGapMs": 4000,
+      "terminalFalseMs": 4000,
+      "effects": [
+        "arm",
+        "fallback"
+      ]
+    },
+    "tail-matrix-5.25-5-0.975-normal": {
+      "candidateTimes": [
+        4000,
+        9000,
+        14000,
+        18000,
+        19000,
+        23000,
+        24000,
+        28000,
+        29000,
+        33000,
+        34000,
+        38000,
+        39000,
+        43000,
+        44000,
+        48000,
+        49000,
+        53000,
+        54000,
+        58000,
+        59000,
+        63000,
+        64000
+      ],
+      "candidateMs": 23000,
+      "episodes": 13,
+      "firstLeadMs": null,
+      "maximumGapMs": 175000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-normal-microdecline": {
+      "candidateTimes": [
+        13000,
+        14000,
+        15000
+      ],
+      "candidateMs": 3000,
+      "episodes": 1,
+      "firstLeadMs": null,
+      "maximumGapMs": 104000,
+      "terminalFalseMs": null,
+      "effects": []
+    },
+    "tail-normal-plateau": {
+      "candidateTimes": [
+        6000,
+        7000,
+        8000,
+        9000,
+        10000,
+        11000,
+        12000,
+        13000,
+        14000,
+        15000,
+        16000,
+        17000,
+        18000
+      ],
+      "candidateMs": 13000,
+      "episodes": 1,
+      "firstLeadMs": null,
+      "maximumGapMs": 101000,
+      "terminalFalseMs": null,
+      "effects": []
+    }
+  }
+}

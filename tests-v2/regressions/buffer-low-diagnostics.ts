@@ -4,8 +4,8 @@ import { sanitizeBufferTrend } from '../../src-v2/diagnostics/buffer-trend.ts'
 import type { BufferTrendSnapshot } from '../../src-v2/domain/buffer-trend.ts'
 function fixture(basis: 'steady-decline' | 'partial-cycle'): BufferTrendSnapshot {
   return {
-    schemaVersion: 5,
-    algorithm: 'buffer-window-v5',
+    schemaVersion: 6,
+    algorithm: 'buffer-window-v6',
     at: 20000,
     from: 12000,
     spanMs: 8000,
@@ -27,6 +27,7 @@ function fixture(basis: 'steady-decline' | 'partial-cycle'): BufferTrendSnapshot
       rangeTroughSec: null,
     },
     lowBuffer: {
+      tailUsed: false,
       basis,
       creditMs: 2000,
       declineCoverageMs: basis === 'steady-decline' ? 8000 : 1000,

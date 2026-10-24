@@ -20,6 +20,8 @@ import type { CostInput } from './buffer-shadow/inputs.mts'
 import { observationNames, observationInput } from './buffer-shadow/observation-inputs.mts'
 import { frozenCases } from './buffer-shadow/low-inputs.mts'
 import { cycleNames, cycleInput } from './buffer-shadow/cycle-inputs.mts'
+import { continuityCases } from './buffer-shadow/continuity-inputs.mts'
+import { measureContinuity } from './buffer-shadow/continuity.mts'
 
 /** Protocol validation only; never reconstruct a product candidate. */
 function consistentV4(value: Record<string, unknown>): boolean {
@@ -60,6 +62,7 @@ function consistentV4(value: Record<string, unknown>): boolean {
 }
 
 function consistentV5(value: Record<string, unknown>): boolean {
+  if (value.reason === 'low-buffer-tail' || value.reason === 'low-buffer-tail-used') return false
   const low = value.lowBuffer,
     cycle = value.cycle
   if (low !== null) {
@@ -99,6 +102,37 @@ function consistentV5(value: Record<string, unknown>): boolean {
   if (value.reason === 'low-buffer-confirming')
     return isRecord(low) && value.candidate === false && consistentV4(value)
   return consistentV4(value)
+}
+
+function consistentV6(value: Record<string, unknown>): boolean {
+  const low = value.lowBuffer
+  if (
+    low !== null &&
+    (!isRecord(low) ||
+      typeof low.tailUsed !== 'boolean' ||
+      (low.tailUsed && (low.basis !== 'partial-cycle' || low.creditMs !== 2000)))
+  )
+    return false
+  const tail = value.reason === 'low-buffer-tail' || value.reason === 'low-buffer-tail-used'
+  if (
+    tail &&
+    (!isRecord(low) ||
+      low.basis !== 'partial-cycle' ||
+      low.tailUsed !== true ||
+      low.creditMs !== 2000 ||
+      typeof low.declineCoverageMs !== 'number' ||
+      low.declineCoverageMs < 2000 ||
+      typeof value.endBufferSec !== 'number' ||
+      value.endBufferSec <= 0 ||
+      value.endBufferSec > 1 ||
+      value.candidate !== (value.reason === 'low-buffer-tail'))
+  )
+    return false
+  return consistentV5(
+    tail
+      ? { ...value, reason: value.candidate ? 'low-buffer-cycle' : 'low-buffer-confirming' }
+      : value,
+  )
 }
 
 export function validEvaluationResult(
@@ -166,6 +200,7 @@ export function validEvaluationResult(
           row.reason === row.trend.reason &&
           (version !== 4 || consistentV4(row.trend)) &&
           (version !== 5 || consistentV5(row.trend)) &&
+          (version !== 6 || consistentV6(row.trend)) &&
           readingVersion(row.trend) === version,
       )
     )
@@ -201,6 +236,7 @@ export async function evaluateBufferShadow(
   holdout = false,
   cycleHoldout = false,
   lowBuffer = false,
+  continuity = false,
 ) {
   let suiteStarted = performance.now(),
     activeSuite = ''
@@ -251,16 +287,28 @@ export async function evaluateBufferShadow(
               pair,
             })
     else
-      for (const name of lowBuffer
-        ? frozenCases.map((c) => c.id)
-        : cycleHoldout
-          ? cycleNames
-          : holdout
-            ? observationNames
-            : scenarioNames)
+      for (const name of continuity
+        ? continuityCases.map((c) => c.id)
+        : lowBuffer
+          ? frozenCases.map((c) => c.id)
+          : cycleHoldout
+            ? cycleNames
+            : holdout
+              ? observationNames
+              : scenarioNames)
         for (const rate of [1, 2])
           jobs.push({
-            args: [name, String(rate), ...(lowBuffer ? ['low'] : cycleHoldout ? ['cycle'] : [])],
+            args: [
+              name,
+              String(rate),
+              ...(continuity
+                ? ['continuity']
+                : lowBuffer
+                  ? ['low']
+                  : cycleHoldout
+                    ? ['cycle']
+                    : []),
+            ],
             warmup: false,
             id: `${name}@${rate}x`,
             pair: null,
@@ -313,10 +361,13 @@ export async function evaluateBufferShadow(
           ...value,
           ...(!cost && Array.isArray(value.rows)
             ? {
-                continuity: candidateContinuity(value.rows as EvidenceRow[], {
-                  scoreUntil: (value.rows as EvidenceRow[]).at(-1)!.at,
-                  stallAt: value.stallAt as number | null,
-                }),
+                continuity: (continuity ? measureContinuity : candidateContinuity)(
+                  value.rows as EvidenceRow[],
+                  {
+                    scoreUntil: (value.rows as EvidenceRow[]).at(-1)!.at,
+                    stallAt: value.stallAt as number | null,
+                  },
+                ),
               }
             : {}),
           id: job.id,
@@ -334,6 +385,8 @@ export async function evaluateBufferShadow(
           'tests-v2/support/buffer-shadow-scenarios.ts',
           'tests-v2/support/buffer-shadow-worker.ts',
           'tests-v2/support/buffer-monitor.ts',
+          'tests-v2/support/buffer-continuity-scenarios.ts',
+          'tests-v2/fixtures/buffer-continuity-v5.json',
           'tests-v2/support/clock.ts',
         ])
         .sort()
@@ -351,13 +404,15 @@ export async function evaluateBufferShadow(
         ? comparison === 'legacy'
           ? 'cost'
           : `cost-${comparison}`
-        : lowBuffer
-          ? 'low-buffer'
-          : cycleHoldout
-            ? 'cycle-holdout'
-            : holdout
-              ? 'holdout'
-              : 'functional',
+        : continuity
+          ? 'continuity'
+          : lowBuffer
+            ? 'low-buffer'
+            : cycleHoldout
+              ? 'cycle-holdout'
+              : holdout
+                ? 'holdout'
+                : 'functional',
       ...(holdout
         ? {
             frozenInputs: observationNames.map((name) => ({
@@ -368,6 +423,12 @@ export async function evaluateBufferShadow(
           }
         : {}),
       node: process.version,
+      ...(continuity
+        ? {
+            comparisonBaseline: 'f5057046f02bbf7fa7eddd77a7753d5f67d15ed0',
+            frozenInputs: continuityCases.map((c) => ({ ...c, sha256: sha256(JSON.stringify(c)) })),
+          }
+        : {}),
       ...(lowBuffer
         ? { frozenInputs: frozenCases.map((c) => ({ ...c, sha256: sha256(JSON.stringify(c)) })) }
         : {}),
@@ -387,12 +448,12 @@ export async function evaluateBufferShadow(
         '60s healthy prelude',
         cost
           ? 'published-version defaults'
-          : 'buffer-window-v5: low-buffer fallback with independent confirmation',
+          : 'buffer-window-v6: one bounded tail observation per confirmed proof',
         cost
           ? comparison === 'source'
             ? 'published v2.1.29 versus hashed working source'
             : 'unmodified release scripts'
-          : 'current v5 source; no rescue changes',
+          : 'current v6 source; no rescue changes',
       ],
       inputs,
       sourceHashes,
@@ -433,6 +494,7 @@ if (
         options.holdout,
         options.cycleHoldout,
         options.lowBuffer,
+        options.continuity,
       )
       if (options.json) console.log(JSON.stringify(report))
       else {

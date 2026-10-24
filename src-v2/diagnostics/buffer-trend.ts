@@ -38,6 +38,8 @@ const reasons = [
   'low-buffer-confirming',
   'low-buffer-steady',
   'low-buffer-cycle',
+  'low-buffer-tail',
+  'low-buffer-tail-used',
 ] as const satisfies readonly BufferTrendReason[]
 function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -64,8 +66,8 @@ export function sanitizeBufferTrend(value: unknown): BufferTrendSnapshot | null 
 function read(value: unknown): BufferTrendSnapshot | null {
   if (
     !object(value) ||
-    value.schemaVersion !== 5 ||
-    value.algorithm !== 'buffer-window-v5' ||
+    value.schemaVersion !== 6 ||
+    value.algorithm !== 'buffer-window-v6' ||
     !member(value.state, ['insufficient', 'ineligible', 'stable', 'filling', 'draining']) ||
     !member(value.reason, reasons) ||
     !member(value.progressQuality, ['none', 'frames', 'time-only']) ||
@@ -146,6 +148,8 @@ function read(value: unknown): BufferTrendSnapshot | null {
       !member(l.basis, ['steady-decline', 'partial-cycle']) ||
       creditMs === undefined ||
       declineCoverageMs === undefined ||
+      typeof l.tailUsed !== 'boolean' ||
+      (l.tailUsed && (l.basis !== 'partial-cycle' || creditMs !== 2000)) ||
       insufficient ||
       endBufferSec === null ||
       endBufferSec > 4 ||
@@ -154,9 +158,22 @@ function read(value: unknown): BufferTrendSnapshot | null {
         : !cycle || cycle.netLossSec <= 0 || cycle.lastLossAgeMs === null)
     )
       return null
-    lowBuffer = Object.freeze({ basis: l.basis, creditMs, declineCoverageMs })
+    lowBuffer = Object.freeze({ basis: l.basis, creditMs, declineCoverageMs, tailUsed: l.tailUsed })
   }
   const lowReason = value.reason === 'low-buffer-steady' || value.reason === 'low-buffer-cycle'
+  const tailReason = value.reason === 'low-buffer-tail' || value.reason === 'low-buffer-tail-used'
+  if (
+    tailReason &&
+    (value.candidate !== (value.reason === 'low-buffer-tail') ||
+      lowBuffer?.basis !== 'partial-cycle' ||
+      lowBuffer.creditMs !== 2000 ||
+      !lowBuffer.tailUsed ||
+      lowBuffer.declineCoverageMs < 2000 ||
+      endBufferSec === null ||
+      endBufferSec <= 0 ||
+      endBufferSec > 1)
+  )
+    return null
   if (
     lowReason &&
     (value.candidate !== true ||
@@ -206,6 +223,7 @@ function read(value: unknown): BufferTrendSnapshot | null {
   if (
     (value.candidate === true &&
       !lowReason &&
+      !tailReason &&
       value.reason !== 'cycle-draining-low' &&
       (value.reason !== 'draining-low' || !shortLow)) ||
     (value.reason === 'draining-low' && (value.candidate !== true || !shortLow)) ||
@@ -241,8 +259,8 @@ function read(value: unknown): BufferTrendSnapshot | null {
   )
     return null
   return Object.freeze({
-    schemaVersion: 5,
-    algorithm: 'buffer-window-v5',
+    schemaVersion: 6,
+    algorithm: 'buffer-window-v6',
     cycle,
     lowBuffer,
     at,

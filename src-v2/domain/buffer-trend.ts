@@ -40,6 +40,8 @@ export type BufferTrendReason =
   | 'low-buffer-confirming'
   | 'low-buffer-steady'
   | 'low-buffer-cycle'
+  | 'low-buffer-tail'
+  | 'low-buffer-tail-used'
 export interface BufferTrendSample {
   readonly at: number
   readonly bufferAheadSec: number
@@ -112,19 +114,21 @@ export interface BufferCycleEvidence {
   readonly rangeTroughSec: number | null
 }
 export interface BufferCycleReading extends Omit<BufferTrendFacts, 'reason'> {
-  readonly schemaVersion: 5
-  readonly algorithm: 'buffer-window-v5'
+  readonly schemaVersion: 6
+  readonly algorithm: 'buffer-window-v6'
   readonly reason: BufferCycleReason
   readonly cycle: BufferCycleEvidence | null
   readonly lowBuffer: BufferLowEvidence | null
 }
 export type BufferLowBasis = 'steady-decline' | 'partial-cycle'
 export interface BufferLowEvidence {
+  readonly tailUsed: boolean
   readonly basis: BufferLowBasis
   readonly creditMs: number
   readonly declineCoverageMs: number
 }
 export interface BufferLowConfirmation {
+  readonly tailUsed: boolean
   readonly basis: BufferLowBasis
   readonly confirmation: BufferCandidateConfirmation
 }
