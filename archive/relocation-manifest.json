@@ -6584,6 +6584,12 @@
       "encoding": "raw",
       "bytes": 41743,
       "sha256": "437ddc1380a4a71e6324c9ebad135e6f994421ff61ffcb1c4eb20a7a654e63d1"
+    },
+    {
+      "path": "archive/retired/docs/evidence/PRIVATE_ARCHIVE_ACCESS_2026-10-25.json",
+      "encoding": "raw",
+      "bytes": 29013,
+      "sha256": "722c492ba63b327c5ef386dabdc7638682301894839064ff00a1c42df15ac54c"
     }
   ],
   "localManifest": "archive/retired/local/2026-10-20-cleanup/private-manifest.json",

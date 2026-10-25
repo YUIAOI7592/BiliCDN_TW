@@ -6,6 +6,8 @@
 
 ## 版本
 
+- [舊私有封存 EPERM 調查與本機驗證（2026-10-25）](TEST_TOOLING_REPORT.md#2026-10-25舊私有封存-eperm-調查與本機驗證)
+
 - [救援還原閉環與原生寫入所有權（2026-10-25，v2.1.36）](../archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md)
 
 - [緩衝候選後續門檻與採用決策（2026-10-25）](../archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md)

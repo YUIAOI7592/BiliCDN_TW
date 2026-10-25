@@ -1,0 +1,683 @@
+{
+  "schemaVersion": 1,
+  "baseline": "91b039f4a016bfb13d5fd53e79a52393b9eaa883",
+  "date": "2026-10-25",
+  "productVersion": "2.1.36",
+  "scope": "Existing private md-bold-audit vendor archive: ninety historical failures and fourteen ancestor directories.",
+  "originalErrorLog": {
+    "bytes": 27062,
+    "sha256": "6ac6ed707bb7df8a18debf52c01fe69e9f4734e99c8de8efedb2411a8b2388a5",
+    "preserved": true,
+    "availability": "private-local-archive"
+  },
+  "historicalPrivateManifest": {
+    "bytes": 4231817,
+    "sha256": "d046c4abbb412356ba573808097d3f2b631c5f9210ecdc979f33f4ac919ff5e6",
+    "byteUnchanged": true,
+    "entries": 10351,
+    "unverified": 0
+  },
+  "initial": {
+    "readableFiles": 0,
+    "readableFileDescriptors": 0,
+    "fileCount": 90,
+    "ordinaryElevation": "0",
+    "restrictedSids": [],
+    "nativeRepresentative": [
+      {
+        "Access": 0,
+        "NtStatus": "0xC0000022"
+      },
+      {
+        "Access": 128,
+        "NtStatus": "0x00000000",
+        "StandardRead": true,
+        "DeletePending": false,
+        "Bytes": 181248,
+        "Error": 0
+      },
+      {
+        "Access": 131072,
+        "NtStatus": "0xC0000022"
+      },
+      {
+        "Access": 1,
+        "NtStatus": "0xC0000022"
+      }
+    ],
+    "descriptorAtFailure": null
+  },
+  "inspection": {
+    "administrator": true,
+    "filesMatchedHistoricalHashes": 90,
+    "objectsRead": 104,
+    "inheritedDaclObjects": 104,
+    "denyRuleCount": 0,
+    "mandatoryLabelAceCount": 0
+  },
+  "current": {
+    "administrator": false,
+    "filesReadable": 90,
+    "descriptorsCompared": 104,
+    "compareTo": "First readable elevated descriptor snapshot; initial failed-state descriptors were unavailable.",
+    "aclChangesSinceReadableSnapshot": 0,
+    "ownerChangesSinceReadableSnapshot": 0,
+    "modificationTimeChangesSinceReadableSnapshot": 0,
+    "fileContentChangesFromHistoricalManifest": 0,
+    "nativeRepresentative": {
+      "Access": 1,
+      "NtStatus": "0x00000000",
+      "StandardRead": true,
+      "DeletePending": false,
+      "Bytes": 181248,
+      "Error": 0
+    }
+  },
+  "cause": {
+    "confirmed": "Old child-object permission inheritance/propagation state did not match the current workspace. The user confirmed manually applying root permissions to child folders during the investigation, after which ordinary access and full archive validation succeeded.",
+    "unresolved": "Failed-state descriptors were unreadable and no matching 4670 audit event was obtained. Exact prior ACE differences, the original creator of that permission state and per-object propagation times cannot be reconstructed.",
+    "notInferred": [
+      "Elevated success alone is not proof of a bad DACL.",
+      "TokenHasRestrictions with zero restricted SIDs is not proof of a restricted-SID sandbox.",
+      "No mandatory label or deny ACE was present when first readable; this does not reconstruct the unreadable initial descriptor.",
+      "Read-only elevated inspection is not claimed as the repair; the human-confirmed propagation is recorded separately."
+    ]
+  },
+  "actions": {
+    "normalWindowsUacUsedForReadOnlyInspection": true,
+    "aclWrites": 0,
+    "ownershipWrites": 0,
+    "securityPolicyWrites": 0,
+    "archivedContentWrites": 0,
+    "filesReplaced": 0,
+    "packagesReinstalled": 0,
+    "reinstallationOrExecutionOfArchivedBinaries": false,
+    "broadPermissionReset": false,
+    "actor": "Codex diagnostic process only; user permission propagation is recorded in userRepair."
+  },
+  "formalLocalValidation": {
+    "command": "npm run archive:check -- --local --json",
+    "exitCode": 0,
+    "result": {
+      "schemaVersion": 1,
+      "success": true,
+      "entries": 409,
+      "records": 56,
+      "unchangedFiles": 145,
+      "appendOnly": 3,
+      "localFiles": 10351,
+      "localChecked": true,
+      "checksumFiles": 69,
+      "checksums": 323,
+      "findings": []
+    },
+    "raw": {
+      "bytes": 332,
+      "sha256": "1fa6e2bc2b8962f921b83ee21c322266b0cfe65710c6a3dfce056d99c6af902b"
+    }
+  },
+  "files": [
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/_cffi_backend.cp314-win_amd64.pyd",
+      "bytes": 181248,
+      "sha256": "9e99b2184c60f21a88cafc374386ded3559e8694ed7cf111f2869e066d303334",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/bin/cffi-gen-src.exe",
+      "bytes": 108364,
+      "sha256": "83f3c4b25a8641fcd3021b2950c2e160df7a45428da4d68cc7e1c0e3ad4c5c6b",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__init__.py",
+      "bytes": 511,
+      "sha256": "c47b2db28c5f197e242d4dd4af95b7ebb0da65763fc76972cafd06f93e942cda",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/__init__.cpython-314.pyc",
+      "bytes": 548,
+      "sha256": "72ec72a0471eebbf78c638177b19971952611b46d608b00158e5e48c83325768",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/_cffi_gen_src.cpython-314.pyc",
+      "bytes": 8464,
+      "sha256": "602d868a456867987454a3009dab7e0fb2f1fcba412c4ee3c9be088598ae0d4c",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/_imp_emulation.cpython-314.pyc",
+      "bytes": 3975,
+      "sha256": "bc908e34a80b5a8693c4f75807a8fe6ba85a5780fca7b14a20f76c2823cb324f",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/_shimmed_dist_utils.cpython-314.pyc",
+      "bytes": 2107,
+      "sha256": "975614c91a9355c52d46b97b8ce2e23f0627802c70438230d3dae51eefb204f9",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/api.cpython-314.pyc",
+      "bytes": 50797,
+      "sha256": "9e814cc7d583ec4977aa016b8fc8f16087ba83d4cd21dddf4139b02c12a2658c",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/backend_ctypes.cpython-314.pyc",
+      "bytes": 65673,
+      "sha256": "a86e7ce4795193c075ee494568c3ff97b98c33e40f378096525688ba898d7b3c",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/cffi_opcode.cpython-314.pyc",
+      "bytes": 6821,
+      "sha256": "aad3591f3ee73ce16e601e08ed023101e9da64fab9f0f286ac1d6137a398d6a5",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/commontypes.cpython-314.pyc",
+      "bytes": 3189,
+      "sha256": "dc689db1eb48b19068cfc46ac8c7ab6903ce4d9a161ee6d6cb65cbb4f2ed285c",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/cparser.cpython-314.pyc",
+      "bytes": 49516,
+      "sha256": "83a00969e73f6544cc697a2b1f67d028d0aa5e0e1a4a6207baef751de2d7b207",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/error.cpython-314.pyc",
+      "bytes": 2086,
+      "sha256": "09e8a61b2a4354f513476c6920f774b0ed3dc1ab8ceeac3dd631dcf651f186d0",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/ffiplatform.cpython-314.pyc",
+      "bytes": 5995,
+      "sha256": "9d4ca758d41756925d47ffb99611fa4b140f816b5880f44ad6620775a4119d08",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/gen_src.cpython-314.pyc",
+      "bytes": 359,
+      "sha256": "f304175771f33f6d17cbe5d3ff7ae996e9afe08ded0b9768437769679da1a3c7",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/lock.cpython-314.pyc",
+      "bytes": 544,
+      "sha256": "03b5e4b002bf81e289a98915c6078f5ecd35af7b527868cc47fc55da61dccb03",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/model.cpython-314.pyc",
+      "bytes": 32021,
+      "sha256": "3119d5b7764f07d0ba412845f7fec62c230c243c6f8ddca8374663bb2cac43f9",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/pkgconfig.cpython-314.pyc",
+      "bytes": 6593,
+      "sha256": "d2cda0b59e86adf8c13bd14ccfb50e9b1461b318797ccbc87e837f83f39e8de1",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/recompiler.cpython-314.pyc",
+      "bytes": 84728,
+      "sha256": "2d9b9f2e57e457f8eda95b870f9d142b7d529a807aaccd3d40a318cd13145eb7",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/setuptools_ext.cpython-314.pyc",
+      "bytes": 12059,
+      "sha256": "2402318e9c47634faff1a28ed17914b88e9091d55ea16bda39e6e7fc11274c7d",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/vengine_cpy.cpython-314.pyc",
+      "bytes": 51705,
+      "sha256": "8e763c0435c97b8f32af5d54ca392fbd3f2f3325116e61c9c1a2ab3587fa9955",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/vengine_gen.cpython-314.pyc",
+      "bytes": 35450,
+      "sha256": "5631351e4663b9a4f07872cea1eb9ee323a07a3655e58a1b394a45d1ba594f28",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/__pycache__/verifier.cpython-314.pyc",
+      "bytes": 17207,
+      "sha256": "0cebc9e6e80c6bcef5e772beb5a41e12ecd547d5ed7abc283f9edc5d62b9d051",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/_cffi_errors.h",
+      "bytes": 3583,
+      "sha256": "5b383ed01bb5fcad8610ad29494e5be90d86000b9d71a17cec7346f0ba05996c",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/_cffi_gen_src.py",
+      "bytes": 7044,
+      "sha256": "c94479de91526ec6b7b2c17bfd53aa5d368a78be402531ccfddc99f48198f6cc",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/_cffi_include.h",
+      "bytes": 15234,
+      "sha256": "cd8e8a168a3f6e96b4d8f6a042cd61cde5bd3b9eac9e2a25a32c6abd1280a2df",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/_embedding.h",
+      "bytes": 17554,
+      "sha256": "3e101d00c70a0a5013559fa505c65e0c4735d85e85a9575a1ed689d8f920e84f",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/_imp_emulation.py",
+      "bytes": 2960,
+      "sha256": "4714441bccc06c8d913c6070c3dd2eff97e2f2c59d6a1a5d8a93a83f3929ec2d",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/_shimmed_dist_utils.py",
+      "bytes": 2230,
+      "sha256": "0638f6c26f3265bbc5bd6131e4011f9aa6aa6726458587e8c8b2d01e45d9b9aa",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/api.py",
+      "bytes": 42013,
+      "sha256": "7165f5665b1c98ec9392fb61881a5458b712441b6a9699fe9a806ee1eb019b32",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/backend_ctypes.py",
+      "bytes": 42283,
+      "sha256": "4fb092735e0fe6fca5a22e61ca8c7af2a841597d3bf68c075da1836d8fd4edba",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/cffi_opcode.py",
+      "bytes": 5723,
+      "sha256": "e7ed5c53aa691c6cecb2d17f7a88250fff2d08393bebf6619338f77d6e1289cd",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/commontypes.py",
+      "bytes": 2805,
+      "sha256": "ecdeb33ed08596fc57316847574f29b148dd6082b65e0b0ddf2a39760b9afefe",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/cparser.py",
+      "bytes": 44754,
+      "sha256": "598fa8c785064ae552613b609b4d8598681b99cb9a6812b79a816591d1529ac5",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/error.py",
+      "bytes": 877,
+      "sha256": "bfac53892e14d24bc3732e21fc10d1a39bf7f5942e8fe20c4582efe444dd759b",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/ffiplatform.py",
+      "bytes": 3584,
+      "sha256": "6afc458dd8a460626812d9893bb7b0566c06fd511597a119fd668d859602aafe",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/gen_src.py",
+      "bytes": 132,
+      "sha256": "4d4fd9543c282e71cf95a97cfe63e6a71ab2589ed4ef9da34dcdd4b13984d502",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/lock.py",
+      "bytes": 747,
+      "sha256": "97d4d37703083298ba8c39091a742013d72f4c847b0809ed209afc1061edde96",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/model.py",
+      "bytes": 21752,
+      "sha256": "700f9b10089b70751bb5ba9f80cab408b42314f02357425247333229588d805e",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/parse_c_type.h",
+      "bytes": 5976,
+      "sha256": "39dc107f033d92dababe5081e377b11509b10c1b63d8c04d74af0b625d79b63c",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/pkgconfig.py",
+      "bytes": 4365,
+      "sha256": "bb2b75d7b4d079e6b77636a03355b9828f11a67c921938280b337c407c997657",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/recompiler.py",
+      "bytes": 65140,
+      "sha256": "4c9545d3b985cd819357ab33a76ccfac977674928737e781fd2ba22621a5f4ac",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/setuptools_ext.py",
+      "bytes": 9566,
+      "sha256": "a59ae74ea54290632abbc37123191d6c8b65eb981e84c3f52e8ada51d4fbfb85",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/vengine_cpy.py",
+      "bytes": 43030,
+      "sha256": "ad1a2e610e819650085cd8d91933d45b9e2b07de76aa2de0726d7a4965d628b7",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/vengine_gen.py",
+      "bytes": 26931,
+      "sha256": "67f2aa685eabe789f98b886341385975bfb50c14c48a69d4e32e04fcac520838",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi/verifier.py",
+      "bytes": 11154,
+      "sha256": "c48cd5f220cc859d7eaa15f74515f80d6a36934ed6a5c271761840157023ae66",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi-2.1.1.dist-info/entry_points.txt",
+      "bytes": 132,
+      "sha256": "a6b6108011f8e27050fe5269bba88c8051b414697880d3b0b6fbe3a03a0b001c",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi-2.1.1.dist-info/INSTALLER",
+      "bytes": 4,
+      "sha256": "ceebae7b8927a3227e5303cf5e0f1f7b34bb542ad7250ac03fbcde36ec2f1508",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi-2.1.1.dist-info/licenses/LICENSE",
+      "bytes": 1123,
+      "sha256": "5ba24ddc57067f9249add644c3afc41a5d6dc37e23433ef759d95df370b0af63",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi-2.1.1.dist-info/METADATA",
+      "bytes": 2594,
+      "sha256": "67b6a7595df7ede2195016a05d285faa7d362a8f57c238984edb8bb674b5770d",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi-2.1.1.dist-info/RECORD",
+      "bytes": 3507,
+      "sha256": "090701ca6109142b0b32251999e74eb896646675bc752c504980df6022e6574b",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi-2.1.1.dist-info/top_level.txt",
+      "bytes": 19,
+      "sha256": "ac4ed6477ad97cd2b1588f7e8e7ea1b0708097b303901f859ae41bc568c57a14",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cffi-2.1.1.dist-info/WHEEL",
+      "bytes": 101,
+      "sha256": "a48533112e6f0981ca051e807f15f10c5caa8d9f5c90285ebac78f7ead45612a",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm/__init__.py",
+      "bytes": 288,
+      "sha256": "fc06b1d17ec7123395ad4003789c9b066031dd58c8bfaba9a9350cd436ba41c0",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm/__pycache__/__init__.cpython-314.pyc",
+      "bytes": 377,
+      "sha256": "2b74bb9805d4a40e83d2d5e2eb4aaaabfcf1e1ace995675fe865872a74fc9ef9",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm/__pycache__/build_cmark.cpython-314.pyc",
+      "bytes": 4165,
+      "sha256": "ec985660563424f6e26923d6a4dcd25f107519917eccc5d3515db4de5c81bb61",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm/__pycache__/cmark.cpython-314.pyc",
+      "bytes": 8540,
+      "sha256": "c3c1ebe2ffc1dfe40dbf6642bbe20c2d91be6f7f37f4d80c0ed92d450dd0ca1b",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm/_cmark.pyd",
+      "bytes": 280064,
+      "sha256": "8f478d8cda48029f19aec5d7220dd46a6ee18092d5248f306bc5a0aaa106daad",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm/build_cmark.py",
+      "bytes": 2772,
+      "sha256": "1062a85e5dc8970fddb87b76441e0a5e5ca1e3f17d28d6a175cfd51eac883672",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm/cmark.cffi.h",
+      "bytes": 2511,
+      "sha256": "6dee397f66f743d2e9787a4900b6871fbeb25e801f0c3f3cff795272b7673b40",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm/cmark.py",
+      "bytes": 6444,
+      "sha256": "92abbfc59a662cf96234e24600baeda172d863eb48e21db6c523e874296787e5",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm/cmark_module.h",
+      "bytes": 280,
+      "sha256": "bad36cfb4c872f4be7ecb1a38aa5a68d9113e8a6cac0887c1739c42145d33cff",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm-2025.10.22.dist-info/INSTALLER",
+      "bytes": 4,
+      "sha256": "ceebae7b8927a3227e5303cf5e0f1f7b34bb542ad7250ac03fbcde36ec2f1508",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm-2025.10.22.dist-info/licenses/LICENSE.txt",
+      "bytes": 1114,
+      "sha256": "83878778fec8dc88e2a361403309d40af46beb48e7fb5a70bb5d1f83461047ec",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm-2025.10.22.dist-info/METADATA",
+      "bytes": 7625,
+      "sha256": "d4609315984d7292d859df7b683669c00512cce5514509f6b79a5424114f90f4",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm-2025.10.22.dist-info/RECORD",
+      "bytes": 1240,
+      "sha256": "441124f6a56944d1d36d10befd5accfec85362e0b4012e2273a76145b858e130",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm-2025.10.22.dist-info/REQUESTED",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm-2025.10.22.dist-info/top_level.txt",
+      "bytes": 9,
+      "sha256": "7ea68de12aaf9dcf21d0c6f94720ec79e10d79f9dfa53b5f9eb2ffe221c57517",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/cmarkgfm-2025.10.22.dist-info/WHEEL",
+      "bytes": 101,
+      "sha256": "ee4e96732e7cf222587b995fe4ad3de4d2e0faea014e713e4fc78727dd86e3fe",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/__init__.py",
+      "bytes": 2829,
+      "sha256": "a6156247202e52682a13890d99a0aaa66e56544048bf351215aa41bf85d7df1a",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/__pycache__/__init__.cpython-314.pyc",
+      "bytes": 2900,
+      "sha256": "773e8a532a87ab0872e7bd45aab3f1fa54ce2c5a43c33eb8d390e67d84c4d038",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/__pycache__/_ast_gen.cpython-314.pyc",
+      "bytes": 14467,
+      "sha256": "b50a625b44ee62f5ca955ea5b6d942f516ab29c8e312935028dc4b9089b530e6",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/__pycache__/ast_transforms.cpython-314.pyc",
+      "bytes": 6771,
+      "sha256": "b3821f085a2f5b04c472f875249a26df7c2d03984d95c434a3dc0eb015d4bb8b",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/__pycache__/c_ast.cpython-314.pyc",
+      "bytes": 54648,
+      "sha256": "4d505d4f0cadaf8390dcabaf93056d4b9c9bdd231b613ab1c571ed2e70ac7424",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/__pycache__/c_generator.cpython-314.pyc",
+      "bytes": 46332,
+      "sha256": "08aaf96fb9212f9880a7542887552d7fdf89bd6415a5aed780dc66e2c0058ce2",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/__pycache__/c_lexer.cpython-314.pyc",
+      "bytes": 27253,
+      "sha256": "7f06a0ea9b5f1a932e58f56413067b4bd25773cccc3d66c5f46c29f6cab65ac6",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/__pycache__/c_parser.cpython-314.pyc",
+      "bytes": 119315,
+      "sha256": "19c134d9a2b6fee3ebdb97d1ce0c83f2e1d88dbc5195db31b1aae6d5d754850c",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/_ast_gen.py",
+      "bytes": 11292,
+      "sha256": "1311f9626e2993b7503c422442bf512629b97deced7414304813efa6f13ee413",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/_c_ast.cfg",
+      "bytes": 4255,
+      "sha256": "95de5ecc4f72cc82452150147f0edecc94a5322e275ca342cdf9aa8cec904cda",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/ast_transforms.py",
+      "bytes": 5899,
+      "sha256": "5f032c6ab73968375d35680888a9b8fa33963116226fdeb2350528d3fbb6f160",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/c_ast.py",
+      "bytes": 32954,
+      "sha256": "bb091c6561df5c3408c3a583bc22f5ee258cffed11f94443a843263e35cb3807",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/c_generator.py",
+      "bytes": 20661,
+      "sha256": "4552893e0bafd82be8bc71d27d092a8a672452bf70194f4fa1fc421a3db9d500",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/c_lexer.py",
+      "bytes": 25155,
+      "sha256": "075568a9b6213d690e2495827a6e0e638ce3d08c6b3e4b4165915ed98f3b9148",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser/c_parser.py",
+      "bytes": 89798,
+      "sha256": "dc504a18b8e3942deff1a7f00ff727311ebb226a18232ef76b858a411ea15fb8",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser-3.0.dist-info/INSTALLER",
+      "bytes": 4,
+      "sha256": "ceebae7b8927a3227e5303cf5e0f1f7b34bb542ad7250ac03fbcde36ec2f1508",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser-3.0.dist-info/licenses/LICENSE",
+      "bytes": 1543,
+      "sha256": "0c846399369ea76ddd7b5c44fe6d16497415fcf015f5cbb508c24bf98b81c5b1",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser-3.0.dist-info/METADATA",
+      "bytes": 8229,
+      "sha256": "f547a60b0ab54cc2f242213d1f87960ad80df7dd5dfeb98d17a444d48bfb6b93",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser-3.0.dist-info/RECORD",
+      "bytes": 1484,
+      "sha256": "05cc572b90575a00791e1425f397e7a0e80b7f4f0c948dbcac2bf38e47872de2",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser-3.0.dist-info/top_level.txt",
+      "bytes": 10,
+      "sha256": "73e94f712ef82fff0aa07ec813a3d0179a1fca2ad140d57856191b48520f7963",
+      "historicalMatch": true
+    },
+    {
+      "path": "archive/retired/local/2026-10-20-cleanup/dist/md-bold-audit/vendor/pycparser-3.0.dist-info/WHEEL",
+      "bytes": 92,
+      "sha256": "a842dba36b35633977f599ab0226d70368e33cb5187e756150d4e5c85d6bab46",
+      "historicalMatch": true
+    }
+  ],
+  "toolingCorrections": [
+    "Initial read-only helper selected an older private manifest; corrected using the public manifest localManifest field before reading target files.",
+    "Windows PowerShell 5 JSON reads required explicit UTF-8; failed read-only attempt retained.",
+    "PowerShell 7 JSON date parsing required UTC tick comparison; original false timestamp flags retained and corrected without changing files."
+  ],
+  "preserved": {
+    "originalFailureNotRewritten": true,
+    "privateManifestUnchanged": true,
+    "productSourceUnchanged": true,
+    "publishedPackageUnchanged": true
+  },
+  "sources": [
+    "https://learn.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-getnamedsecurityinfow",
+    "https://learn.microsoft.com/en-us/windows/win32/fileio/file-security-and-access-rights",
+    "https://learn.microsoft.com/en-us/windows/win32/secauthz/mandatory-integrity-control"
+  ],
+  "userRepair": {
+    "source": "Direct human reply in this conversation",
+    "action": "Apply the BiliCDN_TW_Codex_Handoff root permissions to its child folders.",
+    "acknowledgedOriginal": "讓 BiliCDN_TW_Codex_Handoff 的權限套用到其子資料夾。",
+    "confirmed": true
+  }
+}

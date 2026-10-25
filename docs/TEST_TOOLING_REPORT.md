@@ -594,3 +594,22 @@ SDK 方法取得及呼叫前、原生備援寫入前重新驗證本次所有者�
 本次正常 CDP／JavaScript／事件校準通過，十二個原生媒體來源案例及十三個具名證據重播通過。只修正自有 SDK 在 load 後建立錯速前提，產品來源保持 c0bd053；收集器改由同一物件持有游標及目前案例。原正常一倍保留，二倍原始資料由未截斷頁內緩衝完整回收，沒有重跑通過窗口。逐案清理、工具雜湊、舊錯誤及限制見 [本輪報告](../archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md)。
 
 本版完整 2842 案與 verify 通過。使用者完成安裝更新後，另以五個具名案例重播完整本體、Auto 1／2 倍操作與十五秒進度、清理及五項封裝原件，全部通過；正式案例數不因此增加。完整資料見 [本版完整報告](TEST_REPORT.md#公開交付與安裝結案)。
+
+
+## 2026-10-25：舊私有封存 EPERM 調查與本機驗證
+
+基準 91b039f／v2.1.36，本輪僅調查 2026-10-20-cleanup 的 md-bold-audit/vendor 舊私有封存存取問題。原始九十個 EPERM 日誌完整保留：27062 bytes、SHA-256 6ac6ed707bb7df8a18debf52c01fe69e9f4734e99c8de8efedb2411a8b2388a5。私有清單原件及本次副本 SHA-256 均為 d046c4abbb412356ba573808097d3f2b631c5f9210ecdc979f33f4ac919ff5e6，10351 筆、零 unverified，沒有以更新原雜湊消除失敗。逐檔去識別證據見 [JSON](../archive/retired/docs/evidence/PRIVATE_ARCHIVE_ACCESS_2026-10-25.json)；原始 ACL／擁有者 SID、完整診斷與失敗嘗試只留本機私有封存。
+
+原普通權限程序對九十檔的內容與 ACL 均讀取失敗；原生 NtOpenFile 對代表檔案的資料與 READ_CONTROL 返回 STATUS_ACCESS_DENIED，屬 Windows 存取拒絕。代表檔案及目錄的 DeletePending 為 false；不是依名稱推測損壞或刪除。程序為未提升、實際 restricted SID 清單為空，不能僅因 TokenHasRestrictions 為 1 就斷言是限制 SID 沙箱。
+
+經正常 Windows UAC 執行限定的唯讀檢查，九十檔的 bytes／SHA-256 全部符合歷史清單，另保存十四個必要父目錄，共 104 個物件的首份可讀 owner／group／DACL／完整性標籤快照；未要求 audit SACL。首次可讀時繼承啟用、沒有 Deny ACE 或 mandatory-label ACE，包含目前使用者的完整控制權。GetNamedSecurityInfo 是讀取介面，設定權限另屬 SetNamedSecurityInfo；依 [Microsoft 檔案安全文件](https://learn.microsoft.com/en-us/windows/win32/fileio/file-security-and-access-rights) 及 [查詢介面](https://learn.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-getnamedsecurityinfow)，Codex 沒有呼叫後者，也未執行 Set-Acl、takeown、icacls 授權／reset、換擁有者、降低完整性、修改安全政策、重裝或執行封存二進位。
+
+使用者隨後明確確認，調查期間曾手動「讓 BiliCDN_TW_Codex_Handoff 的權限套用到其子資料夾」。這是實際解除動作；符合上層原可讀、舊子項目拒絕、套用後子項目繼承權限且普通程序恢復可讀的因果順序，歸為舊子項目權限繼承／傳播狀態未與目前工作區一致。不得把狀態改變歸功於 Codex 唯讀診斷，也不需要再重設或擴張權限。
+
+隨後未提升的 PowerShell 7、Windows PowerShell 5 與原生資料開啟均可讀；九十檔雜湊、104 個物件的 ACL／擁有者／修改時間相對首份可讀快照一致。這個比較基準不是原失敗時的安全描述子，當時無法讀取；也沒有取得該時段匹配的 4670 權限變更事件。因此不能還原當時具體缺少／過期的 ACE、權限最早如何形成或每一筆手動套用的時間，也不能斷言某個 Windows 快取或安全軟體缺陷。明確的修復來源是使用者回覆，實際有效性另由未提升的原命令與逐檔比對證明。
+
+正式 npm run archive:check -- --local --json 在未提升程序退出 0：409 個公開搬移檔、56 份閱讀版、145 個不變檔、三份只追加日誌；私有 10351 檔、69 份 checksum／323 筆，findings 空。原 v2.1.36 結案時的非零結果保持，此為後續另行授權的新結果。公開文件與封存檢查及差異核對另行完成；不重跑產品或瀏覽器驗收，不升版、不重寫發布快照。
+
+診斷工具的三項更正原件均保留：起初選到舊私有清單而被範圍守門停止；Windows PowerShell 5 須明列 UTF-8 讀取 JSON；PowerShell 7 自動解析日期後，修改時間改以 UTC ticks 比較。這些只讀工具問題沒有修改舊封存，不能算產品缺陷或新的產品案例。
+
+結案 docs:check 退出 0：227 個 Markdown、2156 個本機／儲存庫連結；七個不可變舊失效、430 個歷史原址限制、十八個私有引用未核對及 365 個外部未連網引用分列。公開 archive:check 退出 0：409 搬移檔、三份只追加日誌、146 個不變檔、63 份 checksum／294 筆；新增公開證據只加入本輪精確保護，不改舊基準。git diff --check 通過；三份日誌的完整 91b039f 原文前綴、原 EPERM 日誌、私有清單及五項發布原件另行核對保持。
