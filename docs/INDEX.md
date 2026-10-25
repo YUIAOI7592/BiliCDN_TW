@@ -13,6 +13,7 @@
 | 撰寫或執行測試 | [TODO](TODO.md) → [DEVELOPMENT 測試套件與隔離](DEVELOPMENT.md#測試套件與隔離)；涉及瀏覽器時再讀 [IAB_TESTING](IAB_TESTING.md)；結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
 | 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#發行規則) → [DEVELOPMENT 封裝與發行](DEVELOPMENT.md#封裝與發行)，並依 [發布文件更新順序](DEVELOPMENT.md#發布文件更新順序) 準備文件 |
 | 查舊版或舊議題 | [HISTORY](HISTORY.md) → 依版本、議題或日期進入原始報告 |
+| 核對文件是否落後 | [TODO](TODO.md) → [TEST_REPORT](TEST_REPORT.md) → [HISTORY](HISTORY.md)，再依 [文件維護規則](DEVELOPMENT.md#文件維護與結案) 更新權威文件與清單 |
 
 修改時需要更新哪些文件，直接查 [文件更新對照表](DEVELOPMENT.md#文件更新對照表)。
 
@@ -37,6 +38,8 @@
 ## 證據與歷史
 
 [歷史索引](HISTORY.md) 涵蓋原始版本報告、議題、日期、[工具驗證](TEST_TOOLING_REPORT.md)、[完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md) 與封存。歷史原文中的「目前」「待完成」只描述當時版本，不構成新工作授權。
+
+多階段報告中的未發布／阻塞段落與後續完成段落屬不同檢查點；查現況先回到 TODO 與 TEST_REPORT。歷史證據不因文件整理改寫，全文快照、後續追加與本輪逐檔核對由 [文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-25文件狀態全面核對) 追溯。
 
 ## 檔案配置
 

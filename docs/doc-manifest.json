@@ -301,10 +301,8 @@
       "topics": [
         "user"
       ],
-      "versions": [
-        "v2.1.27"
-      ],
-      "date": "2026-10-11",
+      "versions": [],
+      "date": null,
       "requiredAnchors": [
         "bilicdn_tw",
         "安裝與更新",
@@ -1625,10 +1623,7 @@
       "topics": [
         "security"
       ],
-      "versions": [
-        "v2.1.27",
-        "v2.1.22"
-      ],
+      "versions": [],
       "date": null,
       "requiredAnchors": [
         "信任邊界與資料處理",
@@ -1651,14 +1646,8 @@
       "topics": [
         "history"
       ],
-      "versions": [
-        "v2.1.27",
-        "v1.3.4",
-        "v2.1.26",
-        "v2.0.2",
-        "v2.1.7"
-      ],
-      "date": "2026-10-03",
+      "versions": [],
+      "date": null,
       "requiredAnchors": [
         "封存說明"
       ]
@@ -1669,16 +1658,8 @@
       "topics": [
         "history"
       ],
-      "versions": [
-        "v2.1.27",
-        "v2.1.7",
-        "v2.1.8",
-        "v2.1.6",
-        "v1.5.5",
-        "v1.5.1",
-        "v2.1.26"
-      ],
-      "date": "2026-10-17",
+      "versions": [],
+      "date": null,
       "requiredAnchors": [
         "已退出現行流程的檔案"
       ]
@@ -1798,7 +1779,7 @@
         "documentation-history"
       ],
       "versions": [],
-      "date": null,
+      "date": "2026-10-11",
       "requiredAnchors": []
     },
     {
@@ -1843,9 +1824,7 @@
       "topics": [
         "release-verification"
       ],
-      "versions": [
-        "v2.1.27"
-      ],
+      "versions": [],
       "date": null,
       "requiredAnchors": []
     },
@@ -1855,10 +1834,7 @@
       "topics": [
         "architecture"
       ],
-      "versions": [
-        "v2.1.27",
-        "v2.1.9"
-      ],
+      "versions": [],
       "date": null,
       "requiredAnchors": [
         "v2-架構",
@@ -2125,11 +2101,8 @@
       "topics": [
         "changes"
       ],
-      "versions": [
-        "v2.1.29",
-        "v2.1.36"
-      ],
-      "date": "2026-10-25",
+      "versions": [],
+      "date": null,
       "requiredAnchors": [
         "bilicdn_tw-變更紀錄",
         "v2127",
@@ -2515,13 +2488,8 @@
       "topics": [
         "browser"
       ],
-      "versions": [
-        "v2.1.27",
-        "v2.1.26",
-        "v2.1.24",
-        "v2.1.25"
-      ],
-      "date": "2026-10-11",
+      "versions": [],
+      "date": null,
       "requiredAnchors": [
         "codex-內建瀏覽器測試方案",
         "1-範圍與證據層級",
@@ -2616,11 +2584,8 @@
       "topics": [
         "history"
       ],
-      "versions": [
-        "v2.1.27",
-        "v2.1.26"
-      ],
-      "date": "2026-10-17",
+      "versions": [],
+      "date": null,
       "requiredAnchors": [
         "現行指南",
         "檔案配置",
@@ -2682,9 +2647,7 @@
       "topics": [
         "product"
       ],
-      "versions": [
-        "v2.1.27"
-      ],
+      "versions": [],
       "date": null,
       "requiredAnchors": [
         "bilicdn_tw-v2-專案脈絡",

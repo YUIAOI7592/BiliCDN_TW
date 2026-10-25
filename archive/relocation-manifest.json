@@ -6590,6 +6590,12 @@
       "encoding": "raw",
       "bytes": 29013,
       "sha256": "722c492ba63b327c5ef386dabdc7638682301894839064ff00a1c42df15ac54c"
+    },
+    {
+      "path": "archive/retired/docs/evidence/DOCUMENTATION_STATUS_2026-10-25.json",
+      "encoding": "raw",
+      "bytes": 176272,
+      "sha256": "c7e22643eb29d4fc94c40eb6610a982e4cd183409898df38f41dbef0ed8489a7"
     }
   ],
   "localManifest": "archive/retired/local/2026-10-20-cleanup/private-manifest.json",

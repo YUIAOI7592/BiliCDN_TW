@@ -1,0 +1,4811 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "baseline": "51ee733664570d880f5fcf324f5cc555067e233e",
+  "version": "2.1.36",
+  "scope": {
+    "publicMarkdown": 227,
+    "currentGuidesNavigationAndMigration": 17,
+    "appendOnlyJournals": 3,
+    "historicalRecords": 81,
+    "immutableSnapshots": 126
+  },
+  "findings": [
+    "Current TODO mixed historical and superseded scope into active status.",
+    "Current verification report retained packaging/EPERM checkpoint wording without a prominent latest-result boundary.",
+    "Restore report tail still stopped at pre-publication; immutable first checkpoints must remain.",
+    "SECURITY needed existing restoration correction/progress authority documented.",
+    "IAB needed per-conversation calibration semantics made explicit.",
+    "HISTORY date/tool paths missed recent records.",
+    "Ongoing metadata carried stale single-version associations; fixed historical baseline metadata is preserved."
+  ],
+  "sourceFacts": [
+    {
+      "topic": "version-and-build-tools",
+      "sources": [
+        "release.json",
+        "package.json",
+        "package-lock.json",
+        "scripts/build.mts",
+        "src-v2/metadata.txt"
+      ],
+      "result": "Release/package/lock are 2.1.36; metadata template version is replaced by the build. Node 26.8.1, npm 11.19.0, TypeScript 7.0.2, esbuild 0.28.2."
+    },
+    {
+      "topic": "settings-defaults",
+      "sources": [
+        "src-v2/state/settings-store.ts",
+        "src-v2/ui/settings-view.ts"
+      ],
+      "result": "Enabled, automatic Catalog, native sources off, AV1, WebRTC and HTTPDNS blocking on, verbose off, schema 2."
+    },
+    {
+      "topic": "catalog",
+      "sources": [
+        "src-v2/domain/catalog.ts"
+      ],
+      "result": "Eleven built-in hosts, four default unavailable."
+    },
+    {
+      "topic": "ui-actions",
+      "sources": [
+        "src-v2/ui/overview-view.ts",
+        "src-v2/ui/settings-view.ts",
+        "src-v2/ui/diagnostics-view.ts",
+        "src-v2/ui/player-panel.ts"
+      ],
+      "result": "README controls, mode names, reset/clear behavior and entry labels match current sources."
+    },
+    {
+      "topic": "storage-and-ownership",
+      "sources": [
+        "src-v2/state/settings-store.ts",
+        "src-v2/state/restriction-store.ts",
+        "src-v2/state/evidence-store.ts",
+        "src-v2/state/measurement-meta-store.ts",
+        "src-v2/entry.ts"
+      ],
+      "result": "Four GM keys; current composition and sole-writer boundaries match guides."
+    },
+    {
+      "topic": "restore-contract",
+      "sources": [
+        "src-v2/application/recovery-controller.ts",
+        "src-v2/application/recovery-ports.ts",
+        "src-v2/adapters/player-controls.ts"
+      ],
+      "result": "Ordered native position/rate/progress checks, one correction per field after at least 1000 ms, ownership checks and read-only progress evidence are documented; no new policy introduced."
+    },
+    {
+      "topic": "diagnostics",
+      "sources": [
+        "src-v2/diagnostics/model.ts",
+        "src-v2/diagnostics/recorder.ts",
+        "src-v2/domain/buffer-trend.ts"
+      ],
+      "result": "Schema 6 / buffer-window-v6 remains diagnostic and does not authorize predictive rescue."
+    },
+    {
+      "topic": "test-and-verification-commands",
+      "sources": [
+        "scripts/test-registry.mts",
+        "scripts/test.mts",
+        "scripts/verify.mts",
+        "scripts/docs-check.mts",
+        "scripts/archive-check.mts"
+      ],
+      "result": "Nineteen suites and documented CLI/exit codes; verify does not include Codex Security or browser acceptance."
+    },
+    {
+      "topic": "release-and-installation",
+      "sources": [
+        "archive/retired/docs/evidence/RESTORE_SOURCE_2026-10-25.json",
+        "archive/retired/docs/evidence/RESTORE_DELIVERY_2026-10-25.json",
+        "Release/v2.1.36/SHA256SUMS_v2.1.36.txt"
+      ],
+      "result": "Published source acceptance, normal installed regression, fixed tag and one script asset match existing sealed evidence; no re-execution."
+    },
+    {
+      "topic": "private-archive-status",
+      "sources": [
+        "archive/retired/docs/evidence/PRIVATE_ARCHIVE_ACCESS_2026-10-25.json",
+        "docs/TEST_TOOLING_REPORT.md"
+      ],
+      "result": "Human-confirmed permission propagation followed by successful ordinary local verification; initial failure and limits remain historical."
+    },
+    {
+      "topic": "adoption-and-stop-decisions",
+      "sources": [
+        "archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md",
+        "docs/TODO.md",
+        "docs/IAB_TESTING.md"
+      ],
+      "result": "No predictive adoption; old windows and matrices remain stopped. New installed fault validation is a suggestion, not an active task."
+    }
+  ],
+  "fixedReferences": [
+    {
+      "ref": "51ee733664570d880f5fcf324f5cc555067e233e",
+      "path": "docs/TODO.md",
+      "bytes": 14245,
+      "sha256": "25831f31b79ff568233106954f6b8b0ee5b8e92788f0ade79245d3ac376071c7"
+    },
+    {
+      "ref": "51ee733664570d880f5fcf324f5cc555067e233e",
+      "path": "docs/TEST_REPORT.md",
+      "bytes": 8804,
+      "sha256": "9c9843c3693ef16764c8a13c2cc77a216b20b21f584fa1069057470da6d28158"
+    },
+    {
+      "ref": "v2.1.36",
+      "path": "Release/v2.1.36/TEST_REPORT_v2.1.36.md",
+      "bytes": 5573,
+      "sha256": "67ef7358026aae1f616496d0b9b526e6c0ca6ac86ca3dbb976d8dfba906d5391"
+    }
+  ],
+  "registryChanges": [
+    {
+      "path": "README.md",
+      "before": {
+        "versions": [
+          "v2.1.27"
+        ],
+        "date": "2026-10-11"
+      },
+      "after": {
+        "versions": [],
+        "date": null
+      },
+      "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+    },
+    {
+      "path": "SECURITY.md",
+      "before": {
+        "versions": [
+          "v2.1.27",
+          "v2.1.22"
+        ],
+        "date": null
+      },
+      "after": {
+        "versions": [],
+        "date": null
+      },
+      "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+    },
+    {
+      "path": "archive/README.md",
+      "before": {
+        "versions": [
+          "v2.1.27",
+          "v1.3.4",
+          "v2.1.26",
+          "v2.0.2",
+          "v2.1.7"
+        ],
+        "date": "2026-10-03"
+      },
+      "after": {
+        "versions": [],
+        "date": null
+      },
+      "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+    },
+    {
+      "path": "archive/retired/README.md",
+      "before": {
+        "versions": [
+          "v2.1.27",
+          "v2.1.7",
+          "v2.1.8",
+          "v2.1.6",
+          "v1.5.5",
+          "v1.5.1",
+          "v2.1.26"
+        ],
+        "date": "2026-10-17"
+      },
+      "after": {
+        "versions": [],
+        "date": null
+      },
+      "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+    },
+    {
+      "path": "archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md",
+      "before": {
+        "date": null
+      },
+      "after": {
+        "date": "2026-10-11"
+      },
+      "reason": "Date is explicit in both filename and title; original snapshot body stays exact."
+    },
+    {
+      "path": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "before": {
+        "versions": [
+          "v2.1.27"
+        ],
+        "date": null
+      },
+      "after": {
+        "versions": [],
+        "date": null
+      },
+      "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "before": {
+        "versions": [
+          "v2.1.27",
+          "v2.1.9"
+        ],
+        "date": null
+      },
+      "after": {
+        "versions": [],
+        "date": null
+      },
+      "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+    },
+    {
+      "path": "docs/CHANGELOG.md",
+      "before": {
+        "versions": [
+          "v2.1.29",
+          "v2.1.36"
+        ],
+        "date": "2026-10-25"
+      },
+      "after": {
+        "versions": [],
+        "date": null
+      },
+      "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+    },
+    {
+      "path": "docs/IAB_TESTING.md",
+      "before": {
+        "versions": [
+          "v2.1.27",
+          "v2.1.26",
+          "v2.1.24",
+          "v2.1.25"
+        ],
+        "date": "2026-10-11"
+      },
+      "after": {
+        "versions": [],
+        "date": null
+      },
+      "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+    },
+    {
+      "path": "docs/INDEX.md",
+      "before": {
+        "versions": [
+          "v2.1.27",
+          "v2.1.26"
+        ],
+        "date": "2026-10-17"
+      },
+      "after": {
+        "versions": [],
+        "date": null
+      },
+      "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+    },
+    {
+      "path": "docs/PROJECT_CONTEXT.md",
+      "before": {
+        "versions": [
+          "v2.1.27"
+        ],
+        "date": null
+      },
+      "after": {
+        "versions": [],
+        "date": null
+      },
+      "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+    }
+  ],
+  "documents": [
+    {
+      "path": "archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "append-follow-up",
+      "before": {
+        "encoding": "lf",
+        "bytes": 20033,
+        "sha256": "f47ac7da23b056374630b31b6c2efa6ad113242a736692d33d9096da656cb5a4"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 20901,
+        "sha256": "58bdd56a02b06b3ba1c527338f69b72cc1564038f2c67db1ad2063090b65d40c"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": true,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9624,
+        "sha256": "153a2e1e71a8a209d30baf10b5dd6bf029345bb5e380f6bfbbcdb6c9c224e3a1"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9624,
+        "sha256": "153a2e1e71a8a209d30baf10b5dd6bf029345bb5e380f6bfbbcdb6c9c224e3a1"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 10813,
+        "sha256": "9f09359a9017f8d122cc5d60d8b9453a7c935927d70eda5bcec3517e9e8c185c"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 10813,
+        "sha256": "9f09359a9017f8d122cc5d60d8b9453a7c935927d70eda5bcec3517e9e8c185c"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 10142,
+        "sha256": "ea69fa80d1a0a15b5ff20de2f8ad01639fce0c846f165cb96e457c5f1177a341"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 10142,
+        "sha256": "ea69fa80d1a0a15b5ff20de2f8ad01639fce0c846f165cb96e457c5f1177a341"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 7779,
+        "sha256": "2af93c965589a57ca24eb9800a7a9178227f88bdedbb6ff027e68a7e91010456"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 7779,
+        "sha256": "2af93c965589a57ca24eb9800a7a9178227f88bdedbb6ff027e68a7e91010456"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9894,
+        "sha256": "39369f770228efadf99a75a66b313379015ea972fe73c2f78df2d901a7760e35"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9894,
+        "sha256": "39369f770228efadf99a75a66b313379015ea972fe73c2f78df2d901a7760e35"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 10382,
+        "sha256": "53b7587e9216d1a820570f48085f08efe826e65b713ba1a84cc0ac58ec8082e3"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 10382,
+        "sha256": "53b7587e9216d1a820570f48085f08efe826e65b713ba1a84cc0ac58ec8082e3"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.29/CHANGELOG_v2.1.29.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 49854,
+        "sha256": "6bc8730412497b0b690b66ad4f613c042f2e7f1a25dd139cc22d9ce59077224a"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 49854,
+        "sha256": "6bc8730412497b0b690b66ad4f613c042f2e7f1a25dd139cc22d9ce59077224a"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.29/TEST_REPORT_v2.1.29.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 4854,
+        "sha256": "47208f3bfd65bd2adf86a9040fbcd058728869d547c6ecc7946d83f1374d57c1"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 4854,
+        "sha256": "47208f3bfd65bd2adf86a9040fbcd058728869d547c6ecc7946d83f1374d57c1"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8022,
+        "sha256": "2047ac3dbc4ade11d66ca4decf67d654f0a5162c49e26d3805b69e87d62f0c4b"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8022,
+        "sha256": "2047ac3dbc4ade11d66ca4decf67d654f0a5162c49e26d3805b69e87d62f0c4b"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8246,
+        "sha256": "3e46cb903136fedcbfbed4d5ef3ed534a96cfacc984e930051bfbcff461323e5"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8246,
+        "sha256": "3e46cb903136fedcbfbed4d5ef3ed534a96cfacc984e930051bfbcff461323e5"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BUFFER_TREND_2026-10-23.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8431,
+        "sha256": "73f3a27e2731a689e1ef901abbaec15d123a11ad83e99896b87a54b1bf35a5eb"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8431,
+        "sha256": "73f3a27e2731a689e1ef901abbaec15d123a11ad83e99896b87a54b1bf35a5eb"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 11065,
+        "sha256": "730c2cd3998af49609fb038c29e8ef7dcd8c7a8286943d7f7784a1ece1ce1280"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 11065,
+        "sha256": "730c2cd3998af49609fb038c29e8ef7dcd8c7a8286943d7f7784a1ece1ce1280"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 11180,
+        "sha256": "d5b31dd3e35b231643aca583fecdbd80d955a769127be0c1c7dc70bb55fed603"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 11180,
+        "sha256": "d5b31dd3e35b231643aca583fecdbd80d955a769127be0c1c7dc70bb55fed603"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "docs/HISTORY.md",
+      "kind": "navigation",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "update-current-text",
+      "before": {
+        "encoding": "lf",
+        "bytes": 36449,
+        "sha256": "dbac30fc4d79fdcc5c26f9ecab38ec68e5bb0aff1ae004ddc8be7e06c76dc2fc"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 39290,
+        "sha256": "be4e2e73028b3ccc89766f579679911928db473ab056510ae2713a969b74ec14"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "guide",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 10387,
+        "sha256": "de274b8cfea3995e8c352f687bfc8d76f2ee246fb26f6e9fa4e7205a563e83b5"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 10387,
+        "sha256": "de274b8cfea3995e8c352f687bfc8d76f2ee246fb26f6e9fa4e7205a563e83b5"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "README.md",
+      "kind": "guide",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 12931,
+        "sha256": "46848538effa78e4c26b3259c0f7f52297db694cebc5b4441f12413fba254185"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 12931,
+        "sha256": "46848538effa78e4c26b3259c0f7f52297db694cebc5b4441f12413fba254185"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": {
+        "path": "README.md",
+        "before": {
+          "versions": [
+            "v2.1.27"
+          ],
+          "date": "2026-10-11"
+        },
+        "after": {
+          "versions": [],
+          "date": null
+        },
+        "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+      }
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.6.0/CHANGELOG_v1.6.0.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1249,
+        "sha256": "75fd76ebd759b497c24fd9522934d4fcb57cccd817ebabf4e40f1878e24c79d2"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1249,
+        "sha256": "75fd76ebd759b497c24fd9522934d4fcb57cccd817ebabf4e40f1878e24c79d2"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 3500,
+        "sha256": "6fd8da9c4b3fa55ea6c9a70a38ded6c29cdcda74401345d23a5c3d75d3741e52"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 3500,
+        "sha256": "6fd8da9c4b3fa55ea6c9a70a38ded6c29cdcda74401345d23a5c3d75d3741e52"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.6.1/CHANGELOG_v1.6.1.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 546,
+        "sha256": "a59adf153f0382c1a4a4ca5f7b89eb0bbd25f508dc5b3c62a56cd8b79284aeba"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 546,
+        "sha256": "a59adf153f0382c1a4a4ca5f7b89eb0bbd25f508dc5b3c62a56cd8b79284aeba"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.6.1/TEST_REPORT_v1.6.1.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1133,
+        "sha256": "73ba7d644342741a63c68c77e3e4887751e8c5cb2b8e8205208290ec04f13134"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1133,
+        "sha256": "73ba7d644342741a63c68c77e3e4887751e8c5cb2b8e8205208290ec04f13134"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.6.2/CHANGELOG_v1.6.2.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 850,
+        "sha256": "96df922a316f5f2002630bbb421cc6c363f4b010029f26a4e88aee6a6b7ef33a"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 850,
+        "sha256": "96df922a316f5f2002630bbb421cc6c363f4b010029f26a4e88aee6a6b7ef33a"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.6.2/TEST_REPORT_v1.6.2.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1944,
+        "sha256": "116ec8452a1f478ce903fa82094715490380cdea7b3cc65a571359597d3897b2"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1944,
+        "sha256": "116ec8452a1f478ce903fa82094715490380cdea7b3cc65a571359597d3897b2"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.6.3/CHANGELOG_v1.6.3.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1482,
+        "sha256": "f7fa6c976d473c586fbc05f96fd8b65aa254fcbff27a40379efb5724e4f7301e"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1482,
+        "sha256": "f7fa6c976d473c586fbc05f96fd8b65aa254fcbff27a40379efb5724e4f7301e"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.6.3/TEST_REPORT_v1.6.3.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2689,
+        "sha256": "c3a635fa05eb657bb28027dcec39abfac87740517b804809f9b0a5e66f95a03c"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2689,
+        "sha256": "c3a635fa05eb657bb28027dcec39abfac87740517b804809f9b0a5e66f95a03c"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.7.0/CHANGELOG_v1.7.0.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1194,
+        "sha256": "dae71f8553070a25d727a5c0de36e8b5bae7ca0bae830820a504600d484d054f"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1194,
+        "sha256": "dae71f8553070a25d727a5c0de36e8b5bae7ca0bae830820a504600d484d054f"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.7.0/TEST_REPORT_v1.7.0.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2804,
+        "sha256": "e1eec96ff267405b599ea8df18c2d559c47f961da9c9615e3af48b4c3882da7a"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2804,
+        "sha256": "e1eec96ff267405b599ea8df18c2d559c47f961da9c9615e3af48b4c3882da7a"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.0/CHANGELOG_v1.8.0.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1816,
+        "sha256": "ec635f924983fb6b1f507c5c32e2cbd302e213c4cfc85d63cb1ceb1e3a028faf"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1816,
+        "sha256": "ec635f924983fb6b1f507c5c32e2cbd302e213c4cfc85d63cb1ceb1e3a028faf"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.0/TEST_REPORT_v1.8.0.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 3549,
+        "sha256": "39b4e83abb6fc1aa6835556b9618caa754fa1a64a1af257ea472f61f1c8ed9bc"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 3549,
+        "sha256": "39b4e83abb6fc1aa6835556b9618caa754fa1a64a1af257ea472f61f1c8ed9bc"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.1/CHANGELOG_v1.8.1.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1899,
+        "sha256": "528804e8ad71704fafbf33e6afda3171b435be60c08afa3365202f5d3755a29e"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1899,
+        "sha256": "528804e8ad71704fafbf33e6afda3171b435be60c08afa3365202f5d3755a29e"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.1/TEST_REPORT_v1.8.1.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 3237,
+        "sha256": "bbe455cc14678069c4f267a8653d6454a0bd2e332dc4dafdcc17cf4c937a3d02"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 3237,
+        "sha256": "bbe455cc14678069c4f267a8653d6454a0bd2e332dc4dafdcc17cf4c937a3d02"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.2/CHANGELOG_v1.8.2.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1683,
+        "sha256": "4e71d711317998b6897011982608d5eee3627af0684b36a74843906fce414e30"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1683,
+        "sha256": "4e71d711317998b6897011982608d5eee3627af0684b36a74843906fce414e30"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.2/TEST_REPORT_v1.8.2.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 6154,
+        "sha256": "139c945a024092227676a4373d8299b41bc4dedfe8e389d9940987e354a14b32"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 6154,
+        "sha256": "139c945a024092227676a4373d8299b41bc4dedfe8e389d9940987e354a14b32"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.3/CHANGELOG_v1.8.3.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1405,
+        "sha256": "e20f4993314cfc55cb0712b8332a3af5ef85550ca449612705c299087919ab5d"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1405,
+        "sha256": "e20f4993314cfc55cb0712b8332a3af5ef85550ca449612705c299087919ab5d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.3/TEST_REPORT_v1.8.3.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2878,
+        "sha256": "0d5f691685bc1c91e90a45323afeba004c58ef044bde96ee443cb2065f533100"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2878,
+        "sha256": "0d5f691685bc1c91e90a45323afeba004c58ef044bde96ee443cb2065f533100"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.4/CHANGELOG_v1.8.4.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1200,
+        "sha256": "cdb2245adc9ca1c441bb7b2bead137c9e78f95e7c3d849c5cb6840dad20224fd"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1200,
+        "sha256": "cdb2245adc9ca1c441bb7b2bead137c9e78f95e7c3d849c5cb6840dad20224fd"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.4/TEST_REPORT_v1.8.4.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2840,
+        "sha256": "c79590f83a35a0e73e3fe0eb831b07428537ec470b88c2f17e7db03406bb5f94"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2840,
+        "sha256": "c79590f83a35a0e73e3fe0eb831b07428537ec470b88c2f17e7db03406bb5f94"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.5/CHANGELOG_v1.8.5.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 906,
+        "sha256": "443bee518a31befabef8df1d5cba210c3cd439073d957f566d28a7f837832974"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 906,
+        "sha256": "443bee518a31befabef8df1d5cba210c3cd439073d957f566d28a7f837832974"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.5/TEST_REPORT_v1.8.5.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 3186,
+        "sha256": "836777b60ebd52a332a5f683958c575fda7884f78e4fe83c360b13ab762d3273"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 3186,
+        "sha256": "836777b60ebd52a332a5f683958c575fda7884f78e4fe83c360b13ab762d3273"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.6/CHANGELOG_v1.8.6.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1234,
+        "sha256": "13cf8d40d87940fedff0f504a9a31118a51ad0f257099bd9198f71fc29be22c5"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1234,
+        "sha256": "13cf8d40d87940fedff0f504a9a31118a51ad0f257099bd9198f71fc29be22c5"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.6/TEST_REPORT_v1.8.6.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2197,
+        "sha256": "7a34060ae1d34d4ce24dde881350962033e54db0564ef4d955d2eb57680ffa19"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2197,
+        "sha256": "7a34060ae1d34d4ce24dde881350962033e54db0564ef4d955d2eb57680ffa19"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.7/CHANGELOG_v1.8.7.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 848,
+        "sha256": "85f6a29779eacf27230184c8700634b79f52720af84d06ad61c64949ffe9621e"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 848,
+        "sha256": "85f6a29779eacf27230184c8700634b79f52720af84d06ad61c64949ffe9621e"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.7/TEST_REPORT_v1.8.7.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2074,
+        "sha256": "6dab28d850526f0a1c3489801e79062357a95d6e600990900607bef19fc2fdcd"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2074,
+        "sha256": "6dab28d850526f0a1c3489801e79062357a95d6e600990900607bef19fc2fdcd"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.8/CHANGELOG_v1.8.8.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 942,
+        "sha256": "b86c058b6eb9b28a31af7d130011ffdda1d35d293ca2ed41a87bf7c1683a853a"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 942,
+        "sha256": "b86c058b6eb9b28a31af7d130011ffdda1d35d293ca2ed41a87bf7c1683a853a"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.8/TEST_REPORT_v1.8.8.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1835,
+        "sha256": "9ec1463997dbe400c1a348f5e6fffd284d40c8e7b466a160901853f2bd221efa"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1835,
+        "sha256": "9ec1463997dbe400c1a348f5e6fffd284d40c8e7b466a160901853f2bd221efa"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.9/CHANGELOG_v1.8.9.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 843,
+        "sha256": "691ac7516655ddc7e355c1f99f11fc3def8d4cc8c7468a2bbdf0eb338c535f47"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 843,
+        "sha256": "691ac7516655ddc7e355c1f99f11fc3def8d4cc8c7468a2bbdf0eb338c535f47"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.8.9/TEST_REPORT_v1.8.9.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1703,
+        "sha256": "612fe27c678e7ed1f0ba2a2e1fcd234134ce8976a4f00447cf6d57c32cb8963b"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1703,
+        "sha256": "612fe27c678e7ed1f0ba2a2e1fcd234134ce8976a4f00447cf6d57c32cb8963b"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.9.0/CHANGELOG_v1.9.0.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1150,
+        "sha256": "0963b9a700e4f9277c094aad3fdf99f441d36ab01dea5ccebd677d4b08187846"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1150,
+        "sha256": "0963b9a700e4f9277c094aad3fdf99f441d36ab01dea5ccebd677d4b08187846"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.9.0/TEST_REPORT_v1.9.0.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2602,
+        "sha256": "29cab3a938d966a0421da4a39be0e12a66b1e183a044c948e6e838160c6209b4"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2602,
+        "sha256": "29cab3a938d966a0421da4a39be0e12a66b1e183a044c948e6e838160c6209b4"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.9.2/CHANGELOG_v1.9.2.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1251,
+        "sha256": "eb723c5e5e5b10538313eed5a521e36540d86d5d9bbb89acba58052729fecbc2"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1251,
+        "sha256": "eb723c5e5e5b10538313eed5a521e36540d86d5d9bbb89acba58052729fecbc2"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.9.2/TEST_REPORT_v1.9.2.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2097,
+        "sha256": "d7d2d9948f1d6f49f40e9fde0718d0db85a65e62d63895e93781ce4ca92f0d9c"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2097,
+        "sha256": "d7d2d9948f1d6f49f40e9fde0718d0db85a65e62d63895e93781ce4ca92f0d9c"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.9.3/CHANGELOG_v1.9.3.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 954,
+        "sha256": "a88bba3386f20f3a0aff6e0b8cbc3cd3699af1f757a0d03c9735a8b35e6f5ea3"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 954,
+        "sha256": "a88bba3386f20f3a0aff6e0b8cbc3cd3699af1f757a0d03c9735a8b35e6f5ea3"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.9.3/TEST_REPORT_v1.9.3.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1563,
+        "sha256": "f604d5b3dbf381091af48335a23ad03256b3866b5d4b9a596d934d82893e8d3b"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1563,
+        "sha256": "f604d5b3dbf381091af48335a23ad03256b3866b5d4b9a596d934d82893e8d3b"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.9.4/CHANGELOG_v1.9.4.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1153,
+        "sha256": "68e88b642d830fd26713af6209f398ab3e9ec9523fd237b87f9114f84f43298e"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1153,
+        "sha256": "68e88b642d830fd26713af6209f398ab3e9ec9523fd237b87f9114f84f43298e"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.9.4/TEST_REPORT_v1.9.4.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2239,
+        "sha256": "b7d90dccea0d871b7a388cd2003abc5059c71651e592907591fa563251d9710d"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2239,
+        "sha256": "b7d90dccea0d871b7a388cd2003abc5059c71651e592907591fa563251d9710d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.9.5/CHANGELOG_v1.9.5.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1394,
+        "sha256": "1fadc0a1d8fe5280bfcebc0237c77614cd0c9173b76e67b2e00e082a92bfe7e5"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1394,
+        "sha256": "1fadc0a1d8fe5280bfcebc0237c77614cd0c9173b76e67b2e00e082a92bfe7e5"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.9.5/TEST_REPORT_v1.9.5.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2137,
+        "sha256": "defe468ee926ecde8a75573156dcb059d8274dac26607aee99a490d608c2533d"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2137,
+        "sha256": "defe468ee926ecde8a75573156dcb059d8274dac26607aee99a490d608c2533d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.9.6/CHANGELOG_v1.9.6.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1620,
+        "sha256": "40c6748550fb233759f33e3123b7c883776a79b619db578523b1a26d83bb61e2"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1620,
+        "sha256": "40c6748550fb233759f33e3123b7c883776a79b619db578523b1a26d83bb61e2"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v1.9.6/TEST_REPORT_v1.9.6.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2410,
+        "sha256": "b8cd0465f6de464da90526c819b422ffe7199159c86f074be8208ae2566e71c2"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2410,
+        "sha256": "b8cd0465f6de464da90526c819b422ffe7199159c86f074be8208ae2566e71c2"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.0.0/CHANGELOG_v2.0.0.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 1219,
+        "sha256": "ae3b97906088238ff0212382b8b572eed01a5b9b95cb2d61a97e879c92f7a114"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 1219,
+        "sha256": "ae3b97906088238ff0212382b8b572eed01a5b9b95cb2d61a97e879c92f7a114"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.0.0/TEST_REPORT_v2.0.0.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 6503,
+        "sha256": "c16feb0c584c41580cdc996cefd0b67802976b9cdfcb56c5114dbf818a282747"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 6503,
+        "sha256": "c16feb0c584c41580cdc996cefd0b67802976b9cdfcb56c5114dbf818a282747"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.0.1/CHANGELOG_v2.0.1.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2316,
+        "sha256": "6460f2f78a9145b5b8b87b26973ddc1b66d3e8b69a5008bb7097741dc97277f3"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2316,
+        "sha256": "6460f2f78a9145b5b8b87b26973ddc1b66d3e8b69a5008bb7097741dc97277f3"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.0.1/TEST_REPORT_v2.0.1.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2665,
+        "sha256": "04d497cb7ee99caaee0d03174e282f5bce815f4778576e5fe11c674ce648c091"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2665,
+        "sha256": "04d497cb7ee99caaee0d03174e282f5bce815f4778576e5fe11c674ce648c091"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.0.2/CHANGELOG_v2.0.2.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 3682,
+        "sha256": "417bb5040d6efe9a9c3e4c0ad91e8a94f436436541cafaf3c4a05aa3708269f6"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 3682,
+        "sha256": "417bb5040d6efe9a9c3e4c0ad91e8a94f436436541cafaf3c4a05aa3708269f6"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.0.2/TEST_REPORT_v2.0.2.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 3933,
+        "sha256": "424672dd3f80e0557d0d7494eefb3edd9250927ea7bb7e2024010f093eb91888"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 3933,
+        "sha256": "424672dd3f80e0557d0d7494eefb3edd9250927ea7bb7e2024010f093eb91888"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.0.3/CHANGELOG_v2.0.3.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 4279,
+        "sha256": "707f5d6f166d1dfc8d0a69a28bde283210d066b7a800235b02f955aa9739432d"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 4279,
+        "sha256": "707f5d6f166d1dfc8d0a69a28bde283210d066b7a800235b02f955aa9739432d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.0.3/TEST_REPORT_v2.0.3.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 5686,
+        "sha256": "06d040fe7e63953a95a5e70b2cb1f19e6e80e7cb90b6ebfde616e240865b462a"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 5686,
+        "sha256": "06d040fe7e63953a95a5e70b2cb1f19e6e80e7cb90b6ebfde616e240865b462a"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.0.4/CHANGELOG_v2.0.4.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 5474,
+        "sha256": "38638d3739a36c5c22ceaaf582808729905422535787e3e6da3bc24f94df89cb"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 5474,
+        "sha256": "38638d3739a36c5c22ceaaf582808729905422535787e3e6da3bc24f94df89cb"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.0.4/TEST_REPORT_v2.0.4.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 7513,
+        "sha256": "6d7be25417e95f3953ad6c30ea88cf9d75f75802a4f4d1c5cdc27921efcebab6"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 7513,
+        "sha256": "6d7be25417e95f3953ad6c30ea88cf9d75f75802a4f4d1c5cdc27921efcebab6"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.0/CHANGELOG_v2.1.0.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 6985,
+        "sha256": "eae567e701a338a7c0341bc4d8cf2aa1bd0c72bbb7edb078bbd4f4caa6e94677"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 6985,
+        "sha256": "eae567e701a338a7c0341bc4d8cf2aa1bd0c72bbb7edb078bbd4f4caa6e94677"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.0/TEST_REPORT_v2.1.0.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 9670,
+        "sha256": "ca2645622098d79ed5f15c981ab5a3c51113d9fc646d8f5055a2a3f3671ac143"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 9670,
+        "sha256": "ca2645622098d79ed5f15c981ab5a3c51113d9fc646d8f5055a2a3f3671ac143"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.1/CHANGELOG_v2.1.1.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 8186,
+        "sha256": "dcdea1adffe0cd8cacffb77ae366cbd9b37d3782c21a026a5067b23ea69a1da9"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 8186,
+        "sha256": "dcdea1adffe0cd8cacffb77ae366cbd9b37d3782c21a026a5067b23ea69a1da9"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.1/TEST_REPORT_v2.1.1.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 12681,
+        "sha256": "2607b254ab282010af40538585af021e4609d0175365967f4f6bfe3afe1ca9bd"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 12681,
+        "sha256": "2607b254ab282010af40538585af021e4609d0175365967f4f6bfe3afe1ca9bd"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.10/CHANGELOG_v2.1.10.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 18692,
+        "sha256": "5bc6d624608f3e83bfc3358fa51e8ecbabb608a2b6d8f22910bd72581661f195"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 18692,
+        "sha256": "5bc6d624608f3e83bfc3358fa51e8ecbabb608a2b6d8f22910bd72581661f195"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.10/TEST_REPORT_v2.1.10.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 8928,
+        "sha256": "b055f4617f56e4fa3a2f288fe3c12bb3f90b3934a3fa6b4865f43998efb12b3a"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 8928,
+        "sha256": "b055f4617f56e4fa3a2f288fe3c12bb3f90b3934a3fa6b4865f43998efb12b3a"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.11/CHANGELOG_v2.1.11.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 20673,
+        "sha256": "b82098211ddace1d4f72bd0b6c9a3f59357793c2aba689a7558a2870f700c4ba"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 20673,
+        "sha256": "b82098211ddace1d4f72bd0b6c9a3f59357793c2aba689a7558a2870f700c4ba"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.11/TEST_REPORT_v2.1.11.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 9808,
+        "sha256": "72c576234c93ab6223185f57d0e668cb96676499d80fc7195fe7a5e75b2b5c40"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 9808,
+        "sha256": "72c576234c93ab6223185f57d0e668cb96676499d80fc7195fe7a5e75b2b5c40"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.12/CHANGELOG_v2.1.12.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 21952,
+        "sha256": "dbc8e6c9e710d0c974c5072c955bd7d2b8ecfec67585101cc7c35f3ebfd703e5"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 21952,
+        "sha256": "dbc8e6c9e710d0c974c5072c955bd7d2b8ecfec67585101cc7c35f3ebfd703e5"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.12/TEST_REPORT_v2.1.12.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 3720,
+        "sha256": "edbd3fda4a25f4e62145b9031d4f5610d0d6f89b3e8b7dd42fd27bb6f26a0131"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 3720,
+        "sha256": "edbd3fda4a25f4e62145b9031d4f5610d0d6f89b3e8b7dd42fd27bb6f26a0131"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.13/CHANGELOG_v2.1.13.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 23470,
+        "sha256": "8e7e928a6a9d1dd311d2f47e6def037b79b256534a9b34e5ffca36cc32cef645"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 23470,
+        "sha256": "8e7e928a6a9d1dd311d2f47e6def037b79b256534a9b34e5ffca36cc32cef645"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.13/TEST_REPORT_v2.1.13.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 3694,
+        "sha256": "f36e94b04ff5a4aa7f9619c47efcd23f43fbe8c99b29aa96b8d0143cc06f4cf6"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 3694,
+        "sha256": "f36e94b04ff5a4aa7f9619c47efcd23f43fbe8c99b29aa96b8d0143cc06f4cf6"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.14/CHANGELOG_v2.1.14.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 24724,
+        "sha256": "1ecb0e74567afcd5958e835d5140343678944de71ead9dc8fee4b0bdc878e0e8"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 24724,
+        "sha256": "1ecb0e74567afcd5958e835d5140343678944de71ead9dc8fee4b0bdc878e0e8"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.14/TEST_REPORT_v2.1.14.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 4281,
+        "sha256": "ada0d11b6907984e617a83a9f7f1ebdae985a35d370065cc81a1a6821fb25a00"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 4281,
+        "sha256": "ada0d11b6907984e617a83a9f7f1ebdae985a35d370065cc81a1a6821fb25a00"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.15/CHANGELOG_v2.1.15.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 26561,
+        "sha256": "672968006a2a9a3ed26198a142a427ee3e5c61acd5e1e7f748fdb6a703b1baed"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 26561,
+        "sha256": "672968006a2a9a3ed26198a142a427ee3e5c61acd5e1e7f748fdb6a703b1baed"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.15/TEST_REPORT_v2.1.15.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 6420,
+        "sha256": "1a1b215eb2f1031a6a4b52bd7ec8f5a264a38f362337c1a5fbdb1c92921b2732"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 6420,
+        "sha256": "1a1b215eb2f1031a6a4b52bd7ec8f5a264a38f362337c1a5fbdb1c92921b2732"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.16/CHANGELOG_v2.1.16.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 30009,
+        "sha256": "5ec244e44f1aedf265fa0cfc86a6a41cbdd3e5167cad8f68b27bd94cc9f84060"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 30009,
+        "sha256": "5ec244e44f1aedf265fa0cfc86a6a41cbdd3e5167cad8f68b27bd94cc9f84060"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.16/TEST_REPORT_v2.1.16.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 7727,
+        "sha256": "394a2c7b5eba2b6be453acfdaf843e11f6d593d0e96b01fbb6cfa69e03e9c4e7"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 7727,
+        "sha256": "394a2c7b5eba2b6be453acfdaf843e11f6d593d0e96b01fbb6cfa69e03e9c4e7"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.17/CHANGELOG_v2.1.17.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 33548,
+        "sha256": "caab0618f9f24f096a8fc2d7b5ccae568f3a99378c5ddb7ad094e006e7ba5d8e"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 33548,
+        "sha256": "caab0618f9f24f096a8fc2d7b5ccae568f3a99378c5ddb7ad094e006e7ba5d8e"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.17/TEST_REPORT_v2.1.17.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 8857,
+        "sha256": "143accb6547930f81c96b000bad1a074a15cd8b8ea7e2d2b1e2e5b990dd28175"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 8857,
+        "sha256": "143accb6547930f81c96b000bad1a074a15cd8b8ea7e2d2b1e2e5b990dd28175"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.18/CHANGELOG_v2.1.18.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 35364,
+        "sha256": "af655ce705a32e2c9545898254b9663aaa3c80cca5a3541809730e8a3580e741"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 35364,
+        "sha256": "af655ce705a32e2c9545898254b9663aaa3c80cca5a3541809730e8a3580e741"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.18/TEST_REPORT_v2.1.18.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 4730,
+        "sha256": "fa22c61dab00fefef14fe4c397b4bf94bc8c969817b84902c95121504894f208"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 4730,
+        "sha256": "fa22c61dab00fefef14fe4c397b4bf94bc8c969817b84902c95121504894f208"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.19/CHANGELOG_v2.1.19.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 36090,
+        "sha256": "ed24ef0caecc38ee561851aa2745fb0e8bc90d164005c4d1ffc4320ee97c5608"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 36090,
+        "sha256": "ed24ef0caecc38ee561851aa2745fb0e8bc90d164005c4d1ffc4320ee97c5608"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.19/TEST_REPORT_v2.1.19.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2878,
+        "sha256": "df99bc3fba29fc263719c1c6768e06e41c04db8bac573a6cc1cdf1798eca10a5"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2878,
+        "sha256": "df99bc3fba29fc263719c1c6768e06e41c04db8bac573a6cc1cdf1798eca10a5"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.2/CHANGELOG_v2.1.2.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 9437,
+        "sha256": "a73043f234f1db2be811d9b27eed58d4a576ed5dc03357c72bca84c72f6ac093"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 9437,
+        "sha256": "a73043f234f1db2be811d9b27eed58d4a576ed5dc03357c72bca84c72f6ac093"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.2/TEST_REPORT_v2.1.2.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 15509,
+        "sha256": "3d52586eec3036580e858765bbb74f031653b51e6065d490e2b70aaca1583055"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 15509,
+        "sha256": "3d52586eec3036580e858765bbb74f031653b51e6065d490e2b70aaca1583055"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.20/CHANGELOG_v2.1.20.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 36683,
+        "sha256": "8f0cfe4cecdce5dae9d3ff8a234c90cc43aea9980323c7e2192641a8dcc7a989"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 36683,
+        "sha256": "8f0cfe4cecdce5dae9d3ff8a234c90cc43aea9980323c7e2192641a8dcc7a989"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.20/TEST_REPORT_v2.1.20.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 3457,
+        "sha256": "4d9b1094f9a85d673f74f543214ac9df0adb2510d46ad2cafa7470eeb2a31ce7"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 3457,
+        "sha256": "4d9b1094f9a85d673f74f543214ac9df0adb2510d46ad2cafa7470eeb2a31ce7"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.21/CHANGELOG_v2.1.21.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 37315,
+        "sha256": "e03c9ee4e16f2357139c420dd6436a49df3e815c4c63d8a3df55f7ef61a25e61"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 37315,
+        "sha256": "e03c9ee4e16f2357139c420dd6436a49df3e815c4c63d8a3df55f7ef61a25e61"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.21/TEST_REPORT_v2.1.21.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 3186,
+        "sha256": "2624951a537d034bbcaf37930448b925f7d8161439534970ae1a9c509f950ab9"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 3186,
+        "sha256": "2624951a537d034bbcaf37930448b925f7d8161439534970ae1a9c509f950ab9"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.22/CHANGELOG_v2.1.22.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 39104,
+        "sha256": "bcd862db9771d27cbbcab47779941c89cedab7466687a2bb096ab1ac6c91b1d2"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 39104,
+        "sha256": "bcd862db9771d27cbbcab47779941c89cedab7466687a2bb096ab1ac6c91b1d2"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.22/TEST_REPORT_v2.1.22.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2628,
+        "sha256": "f9bf6f99bf3897f63c37a8aac73a6fadb2f8a1928bbbde2cdc265900b54c938f"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2628,
+        "sha256": "f9bf6f99bf3897f63c37a8aac73a6fadb2f8a1928bbbde2cdc265900b54c938f"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.23/CHANGELOG_v2.1.23.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 40155,
+        "sha256": "fd93bdcbcece43c24e7ac824881ee362540042820908ce067104979c152e62ee"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 40155,
+        "sha256": "fd93bdcbcece43c24e7ac824881ee362540042820908ce067104979c152e62ee"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.23/TEST_REPORT_v2.1.23.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2709,
+        "sha256": "2d748fa4c0153943626fc4527651717ea68dec8853995722379f89497fada4e1"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2709,
+        "sha256": "2d748fa4c0153943626fc4527651717ea68dec8853995722379f89497fada4e1"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.24/CHANGELOG_v2.1.24.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 40848,
+        "sha256": "65ab0a0b1e82a5230f276883a554403798447e5cd01df5162e63ae82e262396e"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 40848,
+        "sha256": "65ab0a0b1e82a5230f276883a554403798447e5cd01df5162e63ae82e262396e"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.24/TEST_REPORT_v2.1.24.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 2422,
+        "sha256": "bc9f1f450187ec0f50126ef0d9a7b2bf39ff53d737c2e6c0c980e95272cdb0f0"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 2422,
+        "sha256": "bc9f1f450187ec0f50126ef0d9a7b2bf39ff53d737c2e6c0c980e95272cdb0f0"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.25/CHANGELOG_v2.1.25.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 42834,
+        "sha256": "0f91fc1b5e07ed1932f35845be036bab3a9afc52188601260c00adaf047bb47e"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 42834,
+        "sha256": "0f91fc1b5e07ed1932f35845be036bab3a9afc52188601260c00adaf047bb47e"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.25/TEST_REPORT_v2.1.25.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 4537,
+        "sha256": "de9de85354c543c12739bb3cde88046499ec060d22341a93cca91b7051f37115"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 4537,
+        "sha256": "de9de85354c543c12739bb3cde88046499ec060d22341a93cca91b7051f37115"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.26/CHANGELOG_v2.1.26.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 44323,
+        "sha256": "5173e9e8e5e936ecd9b0d21c84a881c5c6015a625ef4f316c0c543c027a30114"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 44323,
+        "sha256": "5173e9e8e5e936ecd9b0d21c84a881c5c6015a625ef4f316c0c543c027a30114"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.26/TEST_REPORT_v2.1.26.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 7701,
+        "sha256": "fd6fe83ae5a41169761fba46807c4b2989decc1c72cd0b5a540a273cad78bcc2"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 7701,
+        "sha256": "fd6fe83ae5a41169761fba46807c4b2989decc1c72cd0b5a540a273cad78bcc2"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 45865,
+        "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 45865,
+        "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.27/TEST_REPORT_v2.1.27.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 6926,
+        "sha256": "c4eecefaf24e183844a8024a65c8a6a4fc268f5fd99e82f0b8c585cdaedde2fd"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 6926,
+        "sha256": "c4eecefaf24e183844a8024a65c8a6a4fc268f5fd99e82f0b8c585cdaedde2fd"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.3/CHANGELOG_v2.1.3.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 10177,
+        "sha256": "556bff7b5676bbf2d2d3af9f652f740db61bdcdbc8a8ace9bb7817256154dc22"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 10177,
+        "sha256": "556bff7b5676bbf2d2d3af9f652f740db61bdcdbc8a8ace9bb7817256154dc22"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.3/TEST_REPORT_v2.1.3.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 16747,
+        "sha256": "2debccf75e89c5091acd167c03e1aa6dd8296565b45e434bf970020a6e707591"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 16747,
+        "sha256": "2debccf75e89c5091acd167c03e1aa6dd8296565b45e434bf970020a6e707591"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.4/CHANGELOG_v2.1.4.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 11080,
+        "sha256": "9905fe73d6a5a0d0e658f27b523d684071ca48c67567987d953a1e69f3db667b"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 11080,
+        "sha256": "9905fe73d6a5a0d0e658f27b523d684071ca48c67567987d953a1e69f3db667b"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.4/TEST_REPORT_v2.1.4.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 20468,
+        "sha256": "0c92674e0f4be1b50c608a039187904e8312db6b1b7213af02ec13b9083cb43d"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 20468,
+        "sha256": "0c92674e0f4be1b50c608a039187904e8312db6b1b7213af02ec13b9083cb43d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.5/CHANGELOG_v2.1.5.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 12111,
+        "sha256": "ed37e665d05cdd7fbc852804a3b49420afca40ef40846f9931cad0f0ca854cd5"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 12111,
+        "sha256": "ed37e665d05cdd7fbc852804a3b49420afca40ef40846f9931cad0f0ca854cd5"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.5/TEST_REPORT_v2.1.5.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 22917,
+        "sha256": "1448cf85036eb0b99ec0cfa6555ab2c42f85297a91715658f99538e3058a60eb"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 22917,
+        "sha256": "1448cf85036eb0b99ec0cfa6555ab2c42f85297a91715658f99538e3058a60eb"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.6/CHANGELOG_v2.1.6.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 13012,
+        "sha256": "e4bbfcbd538d32c3cb199e3adf963ef8ca748c164972cad50ac461ccf712fb82"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 13012,
+        "sha256": "e4bbfcbd538d32c3cb199e3adf963ef8ca748c164972cad50ac461ccf712fb82"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.6/TEST_REPORT_v2.1.6.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 26921,
+        "sha256": "7b0bb208874bb3f84f1e3aa591edce087f9bffcdf8b3db36995f3084b14aeb13"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 26921,
+        "sha256": "7b0bb208874bb3f84f1e3aa591edce087f9bffcdf8b3db36995f3084b14aeb13"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.7/CHANGELOG_v2.1.7.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 14150,
+        "sha256": "b940b772d598d9941d208dc17dfe28a0a61a15a10836697f6a5b6eb96fe9fbb8"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 14150,
+        "sha256": "b940b772d598d9941d208dc17dfe28a0a61a15a10836697f6a5b6eb96fe9fbb8"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.7/TEST_REPORT_v2.1.7.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 35961,
+        "sha256": "1a657c4fba7ce294833a638c6e350d687ae99134d5b54a4b7105a1b671418f3c"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 35961,
+        "sha256": "1a657c4fba7ce294833a638c6e350d687ae99134d5b54a4b7105a1b671418f3c"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.8/CHANGELOG_v2.1.8.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 16973,
+        "sha256": "3de7fe137323aa039078c4b44acab505d74431ab3c413cabfd0f3821e6e1997f"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 16973,
+        "sha256": "3de7fe137323aa039078c4b44acab505d74431ab3c413cabfd0f3821e6e1997f"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.8/TEST_REPORT_v2.1.8.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 44356,
+        "sha256": "c01a716e1f38c8355be67eef4582f5144904491aa683a6812d77992a44725557"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 44356,
+        "sha256": "c01a716e1f38c8355be67eef4582f5144904491aa683a6812d77992a44725557"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.9/CHANGELOG_v2.1.9.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 17043,
+        "sha256": "e860339d8e9e94bea2f3bae9e8098df6694b2c989d2e90be9f3d0d255f28d5bf"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 17043,
+        "sha256": "e860339d8e9e94bea2f3bae9e8098df6694b2c989d2e90be9f3d0d255f28d5bf"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.9/TEST_REPORT_v2.1.9.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 8576,
+        "sha256": "205fb3f0ab07f2c38eec33fa9f8b674ac24e47906916ac7fcd400b0c9200b1f3"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 8576,
+        "sha256": "205fb3f0ab07f2c38eec33fa9f8b674ac24e47906916ac7fcd400b0c9200b1f3"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "SECURITY.md",
+      "kind": "guide",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "update-current-text",
+      "before": {
+        "encoding": "lf",
+        "bytes": 21064,
+        "sha256": "22578c2bc305316e4bc78e520fe169b1587a9a0c748822076694181f1fd7e779"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 22112,
+        "sha256": "f24d744c4eb86613f0d8c1ce653eca71774a902114ac49dff983e5c16035bd24"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": {
+        "path": "SECURITY.md",
+        "before": {
+          "versions": [
+            "v2.1.27",
+            "v2.1.22"
+          ],
+          "date": null
+        },
+        "after": {
+          "versions": [],
+          "date": null
+        },
+        "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+      }
+    },
+    {
+      "path": "archive/README.md",
+      "kind": "navigation",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 344,
+        "sha256": "7f8c98957c18fcf4e7b03f1564778d4b1d9722185246b1620beff1e580630559"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 344,
+        "sha256": "7f8c98957c18fcf4e7b03f1564778d4b1d9722185246b1620beff1e580630559"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": {
+        "path": "archive/README.md",
+        "before": {
+          "versions": [
+            "v2.1.27",
+            "v1.3.4",
+            "v2.1.26",
+            "v2.0.2",
+            "v2.1.7"
+          ],
+          "date": "2026-10-03"
+        },
+        "after": {
+          "versions": [],
+          "date": null
+        },
+        "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+      }
+    },
+    {
+      "path": "archive/retired/README.md",
+      "kind": "navigation",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 403,
+        "sha256": "7321ddd100c551ec3db88875e8c67a1dcb10b6561cec85e690c887f70b3370e2"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 403,
+        "sha256": "7321ddd100c551ec3db88875e8c67a1dcb10b6561cec85e690c887f70b3370e2"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": {
+        "path": "archive/retired/README.md",
+        "before": {
+          "versions": [
+            "v2.1.27",
+            "v2.1.7",
+            "v2.1.8",
+            "v2.1.6",
+            "v1.5.5",
+            "v1.5.1",
+            "v2.1.26"
+          ],
+          "date": "2026-10-17"
+        },
+        "after": {
+          "versions": [],
+          "date": null
+        },
+        "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+      }
+    },
+    {
+      "path": "archive/retired/docs/CDN_CANDIDATE_TEST_PLAN_2026-09-25.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8768,
+        "sha256": "aa337d4c05c74a583e1ecb52e87a018c9842c08534c4ceefb83f143bcb7a489d"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8768,
+        "sha256": "aa337d4c05c74a583e1ecb52e87a018c9842c08534c4ceefb83f143bcb7a489d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CDN_NODE_FULL_SCREENING_2026-09-25.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 31690,
+        "sha256": "72b40de3c63bcd6bb4e5a4c9a65f5b7ade10b6db603bdf3879e0a5b0ffc350c6"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 31690,
+        "sha256": "72b40de3c63bcd6bb4e5a4c9a65f5b7ade10b6db603bdf3879e0a5b0ffc350c6"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CDN_OPEN_SOURCE_SURVEY_2026-09-25.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 16220,
+        "sha256": "3578f53270c0cadadca4435f357f13ab673232a6a58126373897e477d4df3e9a"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 16220,
+        "sha256": "3578f53270c0cadadca4435f357f13ab673232a6a58126373897e477d4df3e9a"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CDN_RANGE_PLAYBACK_EXPERIMENT_2026-09-25.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8773,
+        "sha256": "f3ce9c4481d19ccddd57c379e25c57a0c97f3150393be1ca21535b05297824bd"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8773,
+        "sha256": "f3ce9c4481d19ccddd57c379e25c57a0c97f3150393be1ca21535b05297824bd"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CDN_TEST_RESULTS_2026-09-25.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9113,
+        "sha256": "1e24020d66b4680c789d34fb7e24d0f663bdbc7bdb4da049a73de2e8f2689ba7"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9113,
+        "sha256": "1e24020d66b4680c789d34fb7e24d0f663bdbc7bdb4da049a73de2e8f2689ba7"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.0.3_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 6107,
+        "sha256": "f213d24e1c26243a1190943f4d90175a39ebafe4d12437efc0730eb40160df16"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 6107,
+        "sha256": "f213d24e1c26243a1190943f4d90175a39ebafe4d12437efc0730eb40160df16"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.2_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 3498,
+        "sha256": "bd0f00d553bc0da666f5dc1c8ae0b74299707f6a47b779969042cdcfee68a8a2"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 3498,
+        "sha256": "bd0f00d553bc0da666f5dc1c8ae0b74299707f6a47b779969042cdcfee68a8a2"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 15140,
+        "sha256": "9f2f15bff65af1477285084db914ca060d6f4e0b70b0e6b1ffe653a81cd85777"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 15140,
+        "sha256": "9f2f15bff65af1477285084db914ca060d6f4e0b70b0e6b1ffe653a81cd85777"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/DOCS_BEFORE_REORGANIZATION_2026-10-17.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 63438,
+        "sha256": "c9f85ab881681991d2a0beb5e2765a5ad4c7fd760aafd20ae56f55f5dd9481f9"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 63438,
+        "sha256": "c9f85ab881681991d2a0beb5e2765a5ad4c7fd760aafd20ae56f55f5dd9481f9"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/DOC_MAINTENANCE_HISTORY.md",
+      "kind": "journal",
+      "reviewedScope": "Current tail, historical boundaries, navigation and full existing prefix; previous runtime claims not rerun.",
+      "disposition": "append-follow-up",
+      "before": {
+        "encoding": "lf",
+        "bytes": 100289,
+        "sha256": "1af85fe570a116e694519289ed40a5729f21a9143c82854e1f960470fceb5526"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 103232,
+        "sha256": "468b9ade832fad78584338feac545925c76ebe361fdc966e30ac924b4639ee6c"
+      },
+      "localRawLineEndingVariation": true,
+      "originalFullPrefixPreserved": true,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 205030,
+        "sha256": "8396635e37e97ed93064630dec23426ebf6bd5bb60a9fd5771b4d640d0cdd9a3"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 205030,
+        "sha256": "8396635e37e97ed93064630dec23426ebf6bd5bb60a9fd5771b4d640d0cdd9a3"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": {
+        "path": "archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md",
+        "before": {
+          "date": null
+        },
+        "after": {
+          "date": "2026-10-11"
+        },
+        "reason": "Date is explicit in both filename and title; original snapshot body stays exact."
+      }
+    },
+    {
+      "path": "archive/retired/docs/PLAN_v2.0.2.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8077,
+        "sha256": "fa7f7d01f4efbc56232ab5364a1cfe50f139362b570faf3590bf11b0164c745c"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8077,
+        "sha256": "fa7f7d01f4efbc56232ab5364a1cfe50f139362b570faf3590bf11b0164c745c"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/POST_RELEASE_v2.0.2.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 3178,
+        "sha256": "e299623bf48a120ea33f0738adebfe46b316abfa7e19cc39476f5168475a33eb"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 3178,
+        "sha256": "e299623bf48a120ea33f0738adebfe46b316abfa7e19cc39476f5168475a33eb"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/SECURITY_REVIEW_v1.6.0.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 2089,
+        "sha256": "8a5eab6d33678133b206f5cdade83b4d06dcadc368f80729c883a8eb99ab846b"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 2089,
+        "sha256": "8a5eab6d33678133b206f5cdade83b4d06dcadc368f80729c883a8eb99ab846b"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "kind": "journal",
+      "reviewedScope": "Current tail, historical boundaries, navigation and full existing prefix; previous runtime claims not rerun.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 286414,
+        "sha256": "7fa1d12db0fcd45f42ec685b931d62876c509a57a779bf3e94ea831b30f536d0"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 286414,
+        "sha256": "7fa1d12db0fcd45f42ec685b931d62876c509a57a779bf3e94ea831b30f536d0"
+      },
+      "localRawLineEndingVariation": true,
+      "originalFullPrefixPreserved": true,
+      "metadataChange": {
+        "path": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+        "before": {
+          "versions": [
+            "v2.1.27"
+          ],
+          "date": null
+        },
+        "after": {
+          "versions": [],
+          "date": null
+        },
+        "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+      }
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "kind": "guide",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 45134,
+        "sha256": "a7118d9b9dfcb3c4ac39e1896577a7fff55b8e22070e7544a74b4f7a773cfad9"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 45134,
+        "sha256": "a7118d9b9dfcb3c4ac39e1896577a7fff55b8e22070e7544a74b4f7a773cfad9"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": {
+        "path": "docs/ARCHITECTURE.md",
+        "before": {
+          "versions": [
+            "v2.1.27",
+            "v2.1.9"
+          ],
+          "date": null
+        },
+        "after": {
+          "versions": [],
+          "date": null
+        },
+        "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+      }
+    },
+    {
+      "path": "archive/retired/docs/BR01_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9189,
+        "sha256": "83bdcdcbf9d07a7c9766b8d3fecaa70ae86e7ff75fe791ed2a163a7d48f96814"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9189,
+        "sha256": "83bdcdcbf9d07a7c9766b8d3fecaa70ae86e7ff75fe791ed2a163a7d48f96814"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR01_FOLLOWTHROUGH_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 11625,
+        "sha256": "85999fe35853aa133db8a0d9edb7c9b163e70547ed3f0c22dcc3c3e435491e2e"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 11625,
+        "sha256": "85999fe35853aa133db8a0d9edb7c9b163e70547ed3f0c22dcc3c3e435491e2e"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR01_NATIVE_KEYBOARD_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 4412,
+        "sha256": "3678bf3a643ff1fe32dd2ec008edcec71f7f73357cfff6f094d97fe9e7591694"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 4412,
+        "sha256": "3678bf3a643ff1fe32dd2ec008edcec71f7f73357cfff6f094d97fe9e7591694"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR01_NATIVE_POSITION_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 6631,
+        "sha256": "cc8289821ab141c23e8ab43ea1d151268d17b7a4ddf1c8b1a6db640d4f4f5cce"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 6631,
+        "sha256": "cc8289821ab141c23e8ab43ea1d151268d17b7a4ddf1c8b1a6db640d4f4f5cce"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR01_POLICY_REASSESSMENT_2026-10-14.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 10180,
+        "sha256": "51b69d16b9dc49b95778aaa8de6888266bc9c5c4f8f8c14f5662cbd1798ed49e"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 10180,
+        "sha256": "51b69d16b9dc49b95778aaa8de6888266bc9c5c4f8f8c14f5662cbd1798ed49e"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR01_RCA_2026-10-16.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 18309,
+        "sha256": "00f27207a22064f0477624df28dcd8b11b0a52bfdafbd4b6f50d77872569fbdd"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 18309,
+        "sha256": "00f27207a22064f0477624df28dcd8b11b0a52bfdafbd4b6f50d77872569fbdd"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR01_RCA_R2_2026-10-16.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 15679,
+        "sha256": "47ab1e26186e9be3bd6cd0cc80b3e80a8ef0ce009a24682ffdfdd9a457113d26"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 15679,
+        "sha256": "47ab1e26186e9be3bd6cd0cc80b3e80a8ef0ce009a24682ffdfdd9a457113d26"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR01_RESCUE_FIX_v2.1.27.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8489,
+        "sha256": "1bfafdec1b8716611e4e23462f5ed128d2bc54e3bc0ad4a1aa30c36576bf0f15"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8489,
+        "sha256": "1bfafdec1b8716611e4e23462f5ed128d2bc54e3bc0ad4a1aa30c36576bf0f15"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR01_v2.1.17_FINAL_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 11875,
+        "sha256": "fb7336ab1c8190bc24aeb17656256dadeb0da657422f9782ebbff5f7ee24ba22"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 11875,
+        "sha256": "fb7336ab1c8190bc24aeb17656256dadeb0da657422f9782ebbff5f7ee24ba22"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR01_v2.1.19_INSTALLED_CONTINUATION.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 4283,
+        "sha256": "efd0ac0bc1460a0900453610db661b3cc94eb0c7c38f552ed40cd301de87e48d"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 4283,
+        "sha256": "efd0ac0bc1460a0900453610db661b3cc94eb0c7c38f552ed40cd301de87e48d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR01_v2.1.24_POSITION_LOSS_2026-10-14.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 7724,
+        "sha256": "9bf84d958d1cb79767177ccff1a3306b0375d2e95df4386690e3585702a7033d"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 7724,
+        "sha256": "9bf84d958d1cb79767177ccff1a3306b0375d2e95df4386690e3585702a7033d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR02_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8806,
+        "sha256": "7c521ee58ae30f56cba3451bc7099569f7ce8a3e10a47fcf82d46d62cd7047e1"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8806,
+        "sha256": "7c521ee58ae30f56cba3451bc7099569f7ce8a3e10a47fcf82d46d62cd7047e1"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR03_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 12793,
+        "sha256": "ee8e9da416190b64b0644a57ba87f4b76ea6dbb645d52547af9ea2c43538cf96"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 12793,
+        "sha256": "ee8e9da416190b64b0644a57ba87f4b76ea6dbb645d52547af9ea2c43538cf96"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR04_BR05_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8977,
+        "sha256": "168662a0150d0029cc708dd05dbab91269b0843b5dcd03e65fa939d02b8c3b84"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8977,
+        "sha256": "168662a0150d0029cc708dd05dbab91269b0843b5dcd03e65fa939d02b8c3b84"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR06_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 6722,
+        "sha256": "214c7fdd848c2e0744e2878a3f0b71010d5d6b6abe0c1eabf769dce7347d471c"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 6722,
+        "sha256": "214c7fdd848c2e0744e2878a3f0b71010d5d6b6abe0c1eabf769dce7347d471c"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR07_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9533,
+        "sha256": "bda190facecc0034589460f10fa3459b448d0aa0fc6a5bd08a3f8d1c229aba6f"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9533,
+        "sha256": "bda190facecc0034589460f10fa3459b448d0aa0fc6a5bd08a3f8d1c229aba6f"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR08_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 11733,
+        "sha256": "db1ca501e17fd8bf3e16f3b832d67078c886d8e74cae73c7dc540be9a86e7d2b"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 11733,
+        "sha256": "db1ca501e17fd8bf3e16f3b832d67078c886d8e74cae73c7dc540be9a86e7d2b"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR09_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 6410,
+        "sha256": "49ddd57c88cbed642c8fd83bdcb0c2e4b79241c21ea055873386e503bf11ddd5"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 6410,
+        "sha256": "49ddd57c88cbed642c8fd83bdcb0c2e4b79241c21ea055873386e503bf11ddd5"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/BR10_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 11278,
+        "sha256": "b964324df832c3d5b82485653495de4837604abe88fec35eda96a463919f6b58"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 11278,
+        "sha256": "b964324df832c3d5b82485653495de4837604abe88fec35eda96a463919f6b58"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "docs/CHANGELOG.md",
+      "kind": "changelog",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 54347,
+        "sha256": "7164802e585ebd25db040f1c1b3ad2915488e48d0178cf5a24e52ce873077213"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 54347,
+        "sha256": "7164802e585ebd25db040f1c1b3ad2915488e48d0178cf5a24e52ce873077213"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": {
+        "path": "docs/CHANGELOG.md",
+        "before": {
+          "versions": [
+            "v2.1.29",
+            "v2.1.36"
+          ],
+          "date": "2026-10-25"
+        },
+        "after": {
+          "versions": [],
+          "date": null
+        },
+        "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+      }
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.10_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 6684,
+        "sha256": "eab98e7a21caf0df72e05f190807f29cc170bf1a5a9af6a171f6d105272c400d"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 6684,
+        "sha256": "eab98e7a21caf0df72e05f190807f29cc170bf1a5a9af6a171f6d105272c400d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.10_BR03_CONTENT_EPOCH.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8112,
+        "sha256": "094fb242a93145de5e2710dd708469f7430db6e2572670c987119785e34f5699"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8112,
+        "sha256": "094fb242a93145de5e2710dd708469f7430db6e2572670c987119785e34f5699"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.11_BR04_XHR_REENTRANT_PREPARE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8141,
+        "sha256": "7703acf2553d6573d058225cc9642ae8f4505942698375c537a36898c1eb387a"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8141,
+        "sha256": "7703acf2553d6573d058225cc9642ae8f4505942698375c537a36898c1eb387a"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.11_BR05_FETCH_ABORT_REASON.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 5591,
+        "sha256": "e30775df5c305b5fd49be9151ec5f412c10ee82bc576a4e2e1be898ac08c0088"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 5591,
+        "sha256": "e30775df5c305b5fd49be9151ec5f412c10ee82bc576a4e2e1be898ac08c0088"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.11_PROGRESS.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 7372,
+        "sha256": "01826e7cb05f73e1fec19c5e524ad2bd27dc67f8a0a2fd4219a9ecc450e7a19f"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 7372,
+        "sha256": "01826e7cb05f73e1fec19c5e524ad2bd27dc67f8a0a2fd4219a9ecc450e7a19f"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.11_REMAINING_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 13544,
+        "sha256": "25a34ab372b631bc0087fe26b71bfeeae07bfce77155197131e22550e0ad7c87"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 13544,
+        "sha256": "25a34ab372b631bc0087fe26b71bfeeae07bfce77155197131e22550e0ad7c87"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.12_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 7441,
+        "sha256": "21c959a6d409d682363ac35eefc07ae26001d7320577c9bec9d4544313343fd2"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 7441,
+        "sha256": "21c959a6d409d682363ac35eefc07ae26001d7320577c9bec9d4544313343fd2"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.12_BR01_AUTO_INVESTIGATION.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 18952,
+        "sha256": "6759ee7247bdeb3b4025f00caf06d98007b430901beb1fbeafa51dc7be5b599f"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 18952,
+        "sha256": "6759ee7247bdeb3b4025f00caf06d98007b430901beb1fbeafa51dc7be5b599f"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.13_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 10089,
+        "sha256": "68d74b653b8ccdbb764cbe133e66989549552b78cae77bfdeb4c0d590684f217"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 10089,
+        "sha256": "68d74b653b8ccdbb764cbe133e66989549552b78cae77bfdeb4c0d590684f217"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9980,
+        "sha256": "d5d4091ea94cfb3ca634ed0a33cf9ef783f5e0b4c8bdbe81906cf862d37d5bee"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9980,
+        "sha256": "d5d4091ea94cfb3ca634ed0a33cf9ef783f5e0b4c8bdbe81906cf862d37d5bee"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.14_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 4273,
+        "sha256": "a3b7bc3097f75778a56546633dfcfbe36b19adfffd14a53666ef67e221713f74"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 4273,
+        "sha256": "a3b7bc3097f75778a56546633dfcfbe36b19adfffd14a53666ef67e221713f74"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.14_BR07_KEYUP_SEEK.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9264,
+        "sha256": "2ce37f69c68653619f58f9064bbc2d54117b171b03e5cef645c6c1a3c1ada6d2"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9264,
+        "sha256": "2ce37f69c68653619f58f9064bbc2d54117b171b03e5cef645c6c1a3c1ada6d2"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.15_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9493,
+        "sha256": "0f04b3cf5917272abe844cc4fcfde0d20cccc791a792a90bd7fdffd0686ab349"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9493,
+        "sha256": "0f04b3cf5917272abe844cc4fcfde0d20cccc791a792a90bd7fdffd0686ab349"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.15_BR08_PROGRESS_DRAG.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 14971,
+        "sha256": "346d0e5c8068b0248205bf4284fc51450d7909f435b577313a7cc9c103f084f8"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 14971,
+        "sha256": "346d0e5c8068b0248205bf4284fc51450d7909f435b577313a7cc9c103f084f8"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.16_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 15813,
+        "sha256": "ca3cf0d9974d3b19face92ec657128a71d5753cd3baa27565bc32a23794d3c8f"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 15813,
+        "sha256": "ca3cf0d9974d3b19face92ec657128a71d5753cd3baa27565bc32a23794d3c8f"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.17_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 15217,
+        "sha256": "9fd402b67f18d1eda99401cf81d925b7cb656a8651ee995935ba22dca746e875"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 15217,
+        "sha256": "9fd402b67f18d1eda99401cf81d925b7cb656a8651ee995935ba22dca746e875"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.17_BR09_UNINITIALIZED_SEEK.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 10189,
+        "sha256": "0f2524b055ff44afdd0953a8779badbaa65af1379843ed6f404ae819feb32bb8"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 10189,
+        "sha256": "0f2524b055ff44afdd0953a8779badbaa65af1379843ed6f404ae819feb32bb8"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.18_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 3941,
+        "sha256": "da1b9819d68dbdd78e4e5b32c31e627b05d8a79ac734cc14c297b720f048fa50"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 3941,
+        "sha256": "da1b9819d68dbdd78e4e5b32c31e627b05d8a79ac734cc14c297b720f048fa50"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.20_BR01_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 6397,
+        "sha256": "1a61897799d3f37d12ab67afacad29b9d61ef00be0ecc386a2600bbc6f23ac32"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 6397,
+        "sha256": "1a61897799d3f37d12ab67afacad29b9d61ef00be0ecc386a2600bbc6f23ac32"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.9_ACCEPTANCE.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9966,
+        "sha256": "0814cdcebd707d643eaa44794a2e07176283190c01dee7d4c7fdd4bed1d5a93d"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9966,
+        "sha256": "0814cdcebd707d643eaa44794a2e07176283190c01dee7d4c7fdd4bed1d5a93d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CHROME_v2.1.9_BR02_XHR_FAILED_OPEN.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 11913,
+        "sha256": "9e508d645724e81d125fef0c9bf4c92692cf4007dbb11b7efdb3c35ce8aaa7b3"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 11913,
+        "sha256": "9e508d645724e81d125fef0c9bf4c92692cf4007dbb11b7efdb3c35ce8aaa7b3"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CODE_REVIEW_2026-10-13.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 20861,
+        "sha256": "827e66068d520e0b149d30837203ef0090935d7c992d72657ccbe68b435f6a81"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 20861,
+        "sha256": "827e66068d520e0b149d30837203ef0090935d7c992d72657ccbe68b435f6a81"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CONVERGENCE_v2.1.26_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 7858,
+        "sha256": "fd23877460c57b4ead8dc209d8197d0149edadbf5235d0f86f7cc9074fe9c319"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 7858,
+        "sha256": "fd23877460c57b4ead8dc209d8197d0149edadbf5235d0f86f7cc9074fe9c319"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/CR01_CR05_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 10445,
+        "sha256": "d4e1b3567d003c7c4108ac6eba5268fe6990bf7ef106a65364f5053f29058325"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 10445,
+        "sha256": "d4e1b3567d003c7c4108ac6eba5268fe6990bf7ef106a65364f5053f29058325"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "docs/DEVELOPMENT.md",
+      "kind": "guide",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "update-current-text",
+      "before": {
+        "encoding": "lf",
+        "bytes": 53600,
+        "sha256": "0f197011b04efcab56733359a40f0fd9f5f047e97c2f44430c83949c7fdc6cbe"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 54738,
+        "sha256": "065c89b75033e8044468c7d2f09275405bde2a7d29bbb64cdcd3e10f961d013f"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/FUNCTIONAL_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9364,
+        "sha256": "31aa717a60547f52cee3a546aa6f51879976b0d1a0c0d097cbdcb898d2122fb8"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9364,
+        "sha256": "31aa717a60547f52cee3a546aa6f51879976b0d1a0c0d097cbdcb898d2122fb8"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 7808,
+        "sha256": "cf11bc1a67f50a9b6287263f71dce0d3045f5944f457581a72b6bb98b8b31406"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 7808,
+        "sha256": "cf11bc1a67f50a9b6287263f71dce0d3045f5944f457581a72b6bb98b8b31406"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "docs/IAB_TESTING.md",
+      "kind": "guide",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "update-current-text",
+      "before": {
+        "encoding": "lf",
+        "bytes": 23744,
+        "sha256": "6d99778a289447761b3f63326dcbbe336e59b17cdd9aad8d73c5d03fae4d5bdf"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 24287,
+        "sha256": "06fce6678b3fadb528960d870946705154b3ba2767e45b77a6bed77eb7eb243f"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": {
+        "path": "docs/IAB_TESTING.md",
+        "before": {
+          "versions": [
+            "v2.1.27",
+            "v2.1.26",
+            "v2.1.24",
+            "v2.1.25"
+          ],
+          "date": "2026-10-11"
+        },
+        "after": {
+          "versions": [],
+          "date": null
+        },
+        "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+      }
+    },
+    {
+      "path": "archive/retired/docs/IAB_v2.1.20_BR01_R1_2026-10-11.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 11527,
+        "sha256": "b77886a6d35d9d9bc6d93c1423b7c3a2468047d73698193d299245e0ccf2113d"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 11527,
+        "sha256": "b77886a6d35d9d9bc6d93c1423b7c3a2468047d73698193d299245e0ccf2113d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/IAB_v2.1.20_BR01_R2_2026-10-11.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 12434,
+        "sha256": "d5951984564d451cfe3531d7e410f84e0b02575dbc37c2769ada1b0f05abe29d"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 12434,
+        "sha256": "d5951984564d451cfe3531d7e410f84e0b02575dbc37c2769ada1b0f05abe29d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/IAB_v2.1.20_BR10_CONTROL_CENTER_KEYBOARD.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 11884,
+        "sha256": "773b03de5e3992b5e3757e95303583cba7cbd40329f20d1c33da8b128b7d1e3d"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 11884,
+        "sha256": "773b03de5e3992b5e3757e95303583cba7cbd40329f20d1c33da8b128b7d1e3d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9979,
+        "sha256": "67356175609afe1cf4312f303d568228dc6c456ec033c54a49f7dbf8638bda3d"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9979,
+        "sha256": "67356175609afe1cf4312f303d568228dc6c456ec033c54a49f7dbf8638bda3d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/IAB_v2.1.20_TODO_R3_2026-10-11.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8307,
+        "sha256": "5134abbdbd98c0326469c54d67eebe56cb17a5f1e0b736fdfdee9bbaf29395a8"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8307,
+        "sha256": "5134abbdbd98c0326469c54d67eebe56cb17a5f1e0b736fdfdee9bbaf29395a8"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/IAB_v2.1.20_TODO_R4_2026-10-11.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9127,
+        "sha256": "9f7f41492ac8ecc248d6f52aebaf262f3dab3e3b3e900f5c13f130635b128b1d"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9127,
+        "sha256": "9f7f41492ac8ecc248d6f52aebaf262f3dab3e3b3e900f5c13f130635b128b1d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "docs/INDEX.md",
+      "kind": "navigation",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "update-current-text",
+      "before": {
+        "encoding": "lf",
+        "bytes": 3284,
+        "sha256": "047b44a00c75fcef9f7bc5ac6653fe5be0ff94d9e5deefd3279e275d1f8404c1"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 3826,
+        "sha256": "d9cc49fb451bdeda4770b0fb902423f02523d1295a83cb7930c9356902086fc8"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": {
+        "path": "docs/INDEX.md",
+        "before": {
+          "versions": [
+            "v2.1.27",
+            "v2.1.26"
+          ],
+          "date": "2026-10-17"
+        },
+        "after": {
+          "versions": [],
+          "date": null
+        },
+        "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+      }
+    },
+    {
+      "path": "archive/retired/docs/MODULARIZATION_v2.1.25_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8599,
+        "sha256": "5349d3bc06e55a1f86de327f7f422147e5ad47729de1f9cf3a8bcdc8bbcae278"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8599,
+        "sha256": "5349d3bc06e55a1f86de327f7f422147e5ad47729de1f9cf3a8bcdc8bbcae278"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/P05_COPY_CHANNEL_REPORT_2026-10-12.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 6880,
+        "sha256": "c650f4ae5fc980e237011b6b85f60e93ca87c654af9f4fec7ea8940a621b2e9c"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 6880,
+        "sha256": "c650f4ae5fc980e237011b6b85f60e93ca87c654af9f4fec7ea8940a621b2e9c"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/P05_COPY_FIX_REPORT.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 7549,
+        "sha256": "2548b72c3614443f07fae108e3a76f62b0e685d30e0ee25295ea7323777d3402"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 7549,
+        "sha256": "2548b72c3614443f07fae108e3a76f62b0e685d30e0ee25295ea7323777d3402"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/P05_COPY_IAB_RESULT_2026-10-12.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8570,
+        "sha256": "a2ec8a0557ef4cd6b4c55515c840ef5f0b479dec36ab9242370b27f91b579da6"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 8570,
+        "sha256": "a2ec8a0557ef4cd6b4c55515c840ef5f0b479dec36ab9242370b27f91b579da6"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "docs/PROJECT_CONTEXT.md",
+      "kind": "guide",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 21700,
+        "sha256": "7dc2c20871792d6fa534c648a834d77b3d03c2271cd30c7df794fb9c3eaa28fa"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 21700,
+        "sha256": "7dc2c20871792d6fa534c648a834d77b3d03c2271cd30c7df794fb9c3eaa28fa"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": {
+        "path": "docs/PROJECT_CONTEXT.md",
+        "before": {
+          "versions": [
+            "v2.1.27"
+          ],
+          "date": null
+        },
+        "after": {
+          "versions": [],
+          "date": null
+        },
+        "reason": "Ongoing guide, navigation or cross-version collection; release.json remains the version authority."
+      }
+    },
+    {
+      "path": "docs/TEST_REPORT.md",
+      "kind": "verification",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "update-current-text",
+      "before": {
+        "encoding": "lf",
+        "bytes": 8804,
+        "sha256": "9c9843c3693ef16764c8a13c2cc77a216b20b21f584fa1069057470da6d28158"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9442,
+        "sha256": "0608b0749add99a5355df19c6292a635545400eb46594a198a188c11d542718f"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "docs/TEST_TOOLING_REPORT.md",
+      "kind": "journal",
+      "reviewedScope": "Current tail, historical boundaries, navigation and full existing prefix; previous runtime claims not rerun.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 100447,
+        "sha256": "b385eb18f6dc9dfcb5e73bc657a9162119d1b014260b31ce9b1bec6c3fa245ae"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 100447,
+        "sha256": "b385eb18f6dc9dfcb5e73bc657a9162119d1b014260b31ce9b1bec6c3fa245ae"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": true,
+      "metadataChange": null
+    },
+    {
+      "path": "docs/THIRD_PARTY_NOTICES.md",
+      "kind": "guide",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 2612,
+        "sha256": "1b84cbb121a945e3049bbbb32c346ab0af545df20fe666ab4d99fb21c063e414"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 2612,
+        "sha256": "1b84cbb121a945e3049bbbb32c346ab0af545df20fe666ab4d99fb21c063e414"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "docs/TODO.md",
+      "kind": "status",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "update-current-text",
+      "before": {
+        "encoding": "lf",
+        "bytes": 14245,
+        "sha256": "25831f31b79ff568233106954f6b8b0ee5b8e92788f0ade79245d3ac376071c7"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 3792,
+        "sha256": "9370c7c51fb0420fb7034ec9dbb5326a58717b589ff2cb1eba9e939c19ab0828"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/docs/TODO_CLOSURE_2026-10-13.md",
+      "kind": "record",
+      "reviewedScope": "Historical date/version, navigation and protected content; follow-up appended only where permitted.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 9981,
+        "sha256": "410829bcdc422a6dc27a6286ba83725e2db0617bac50eb58247646f0b9f33e83"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 9981,
+        "sha256": "410829bcdc422a6dc27a6286ba83725e2db0617bac50eb58247646f0b9f33e83"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "docs/UPSTREAM_MANIFEST.md",
+      "kind": "guide",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 1960,
+        "sha256": "f9896ac9351bbbc0d301d47fd9985472eb65a781c5b1204a8f6043d17ed6ac40"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 1960,
+        "sha256": "f9896ac9351bbbc0d301d47fd9985472eb65a781c5b1204a8f6043d17ed6ac40"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "tests-v2/MIGRATION.md",
+      "kind": "guide",
+      "reviewedScope": "Current text and source/evidence authority, or explicitly dated migration/source baseline.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "lf",
+        "bytes": 24384,
+        "sha256": "e3c8d3ab16ff900ce550eec4f59b24b5840b66e47d9bdcf9f07b9b706ad4be54"
+      },
+      "after": {
+        "encoding": "lf",
+        "bytes": 24384,
+        "sha256": "e3c8d3ab16ff900ce550eec4f59b24b5840b66e47d9bdcf9f07b9b706ad4be54"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.28/CHANGELOG_v2.1.28.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 49195,
+        "sha256": "b621fe9f6e14d30ce35ccef7098d21821be44790809ffb0ac5a64f5b55f97ba5"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 49195,
+        "sha256": "b621fe9f6e14d30ce35ccef7098d21821be44790809ffb0ac5a64f5b55f97ba5"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.28/TEST_REPORT_v2.1.28.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 5460,
+        "sha256": "ae9101edde43751c6f869db68045e030eb0851dc9180450e9ab1d0ed8e8c7510"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 5460,
+        "sha256": "ae9101edde43751c6f869db68045e030eb0851dc9180450e9ab1d0ed8e8c7510"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.30/CHANGELOG_v2.1.30.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 50620,
+        "sha256": "c7ac64a9734e5021e0a31e278e01df56ad7a2b0dc960834ac673b9c5dd703605"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 50620,
+        "sha256": "c7ac64a9734e5021e0a31e278e01df56ad7a2b0dc960834ac673b9c5dd703605"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.30/TEST_REPORT_v2.1.30.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 4480,
+        "sha256": "7a4b175f11b3aa1b231b4935c643d38f349d6cb747bd668c5dddd1b0ac8d3a3e"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 4480,
+        "sha256": "7a4b175f11b3aa1b231b4935c643d38f349d6cb747bd668c5dddd1b0ac8d3a3e"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.31/CHANGELOG_v2.1.31.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 51211,
+        "sha256": "b2a47cef02ea4aec32811e64132c0e29c39f49dbd18ee38ed1644655fe07f4e8"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 51211,
+        "sha256": "b2a47cef02ea4aec32811e64132c0e29c39f49dbd18ee38ed1644655fe07f4e8"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.31/TEST_REPORT_v2.1.31.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 5913,
+        "sha256": "bbb88afc4691c81e3e95f9398227e8289e70e97646f61294e1cd91bf018c5dbb"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 5913,
+        "sha256": "bbb88afc4691c81e3e95f9398227e8289e70e97646f61294e1cd91bf018c5dbb"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.32/CHANGELOG_v2.1.32.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 51912,
+        "sha256": "2d820d1e8372ea942f6e5f43d5bd6fcae062bbd0e152b15d8d48224874d28fd1"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 51912,
+        "sha256": "2d820d1e8372ea942f6e5f43d5bd6fcae062bbd0e152b15d8d48224874d28fd1"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.32/TEST_REPORT_v2.1.32.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 6434,
+        "sha256": "b0dac94df944daeae416f27efb8db75afb95864ee6677ff38995d37c2c7ed9f3"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 6434,
+        "sha256": "b0dac94df944daeae416f27efb8db75afb95864ee6677ff38995d37c2c7ed9f3"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.33/CHANGELOG_v2.1.33.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 52393,
+        "sha256": "8590c99ea44670b98d4acd4a129427b665185897576b2cb4107c5472c1915d0c"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 52393,
+        "sha256": "8590c99ea44670b98d4acd4a129427b665185897576b2cb4107c5472c1915d0c"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.33/TEST_REPORT_v2.1.33.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 5804,
+        "sha256": "090f01fd914ba665c539fabb4cb97052bee5fa1e36895151811951db7946d76e"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 5804,
+        "sha256": "090f01fd914ba665c539fabb4cb97052bee5fa1e36895151811951db7946d76e"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.34/CHANGELOG_v2.1.34.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 53015,
+        "sha256": "2ed2456d9b1ce7277cd88e8fc341a00678ec2d79bd57a23c6b8bc113f4e4fb01"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 53015,
+        "sha256": "2ed2456d9b1ce7277cd88e8fc341a00678ec2d79bd57a23c6b8bc113f4e4fb01"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.34/TEST_REPORT_v2.1.34.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 8059,
+        "sha256": "b541edff2ab44d4c83f50eabf3582aec78eda44de3cdfadad89215e89313f5b9"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 8059,
+        "sha256": "b541edff2ab44d4c83f50eabf3582aec78eda44de3cdfadad89215e89313f5b9"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.35/CHANGELOG_v2.1.35.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 53757,
+        "sha256": "c2300ac459112e7418be83207adb4068652c296142cf605096d023d7c852304d"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 53757,
+        "sha256": "c2300ac459112e7418be83207adb4068652c296142cf605096d023d7c852304d"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "archive/retired/releases/Release/v2.1.35/TEST_REPORT_v2.1.35.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 8923,
+        "sha256": "d24953b4c2f648d5cd040cfba63c672ace09409c0001c57df75d39dda44f71c0"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 8923,
+        "sha256": "d24953b4c2f648d5cd040cfba63c672ace09409c0001c57df75d39dda44f71c0"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "Release/v2.1.36/CHANGELOG_v2.1.36.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 54347,
+        "sha256": "7164802e585ebd25db040f1c1b3ad2915488e48d0178cf5a24e52ce873077213"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 54347,
+        "sha256": "7164802e585ebd25db040f1c1b3ad2915488e48d0178cf5a24e52ce873077213"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    },
+    {
+      "path": "Release/v2.1.36/TEST_REPORT_v2.1.36.md",
+      "kind": "immutable",
+      "reviewedScope": "Preserved historical scope, links and exact source bytes; no old runtime claims revalidated.",
+      "disposition": "retain-reviewed",
+      "before": {
+        "encoding": "raw",
+        "bytes": 5573,
+        "sha256": "67ef7358026aae1f616496d0b9b526e6c0ca6ac86ca3dbb976d8dfba906d5391"
+      },
+      "after": {
+        "encoding": "raw",
+        "bytes": 5573,
+        "sha256": "67ef7358026aae1f616496d0b9b526e6c0ca6ac86ca3dbb976d8dfba906d5391"
+      },
+      "localRawLineEndingVariation": false,
+      "originalFullPrefixPreserved": null,
+      "metadataChange": null
+    }
+  ],
+  "localArchiveValidation": {
+    "schemaVersion": 1,
+    "success": true,
+    "entries": 409,
+    "records": 56,
+    "unchangedFiles": 147,
+    "appendOnly": 3,
+    "localFiles": 10351,
+    "localChecked": true,
+    "checksumFiles": 69,
+    "checksums": 323,
+    "findings": []
+  },
+  "protectionPolicy": {
+    "existingExactHashesNotChanged": true,
+    "completeExistingJournalPrefixesPreserved": true,
+    "runtimeTestReleaseAndDependencyFilesUnchanged": true,
+    "noNewRuntimeSecurityOrBrowserExecutionClaimed": true
+  },
+  "limitations": [
+    "Historical records and immutable snapshots retain their original claims and limits; they were not re-executed.",
+    "External web links were not fetched; local Git objects were checked for new fixed references.",
+    "Markdown proofs use declared LF normalization unless protected as raw; local line-ending differences are marked.",
+    "This evidence records file/status review, not product or browser acceptance."
+  ]
+}
