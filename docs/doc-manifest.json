@@ -75,6 +75,18 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/INSTALLED_RESTORE_IR36_2026-10-25.md",
+      "kind": "record",
+      "topics": [
+        "installed-restore-ir36"
+      ],
+      "versions": [
+        "v2.1.36"
+      ],
+      "date": "2026-10-25",
+      "requiredAnchors": []
+    },
+    {
       "path": "archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md",
       "kind": "record",
       "topics": [
@@ -2981,6 +2993,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/INSTALLED_RESTORE_IR36_2026-10-25.md",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 12149,
+      "sha256": "dbfe4c7cf0a12933594f20d174fe88bb784a5b66d755dcb7f59f0c4b257bde4c"
+    },
     {
       "path": "archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md",
       "mode": "exact",

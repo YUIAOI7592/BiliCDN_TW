@@ -5716,6 +5716,18 @@
   ],
   "unchangedFiles": [
     {
+      "path": "archive/retired/docs/evidence/INSTALLED_RESTORE_IR36_2026-10-25.json",
+      "encoding": "raw",
+      "bytes": 1583576,
+      "sha256": "288de56872cafeaa084e432c3c766f4fe09aab09e234b25683c3f633099e37e1"
+    },
+    {
+      "path": "archive/retired/originals/PRE_INSTALLED_RESTORE_IR36_2026-10-25_9f8f435.json",
+      "encoding": "raw",
+      "bytes": 485887,
+      "sha256": "b2d4365d2267f094f5ed8b3426913aeef060fec28b7b6176909edf1fe26d3bc7"
+    },
+    {
       "path": "archive/retired/docs/evidence/DIAGNOSTICS_COST_CANDIDATE_2026-10-25.patch",
       "encoding": "raw",
       "bytes": 4452,

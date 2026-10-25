@@ -34,4 +34,5 @@ archive/retired/docs/evidence/BUFFER_ADOPTION_DECISION_2026-10-25.json -text -di
 archive/retired/originals/PRE_RESTORE_2026-10-25_20ba3b2.json -text -diff
 archive/retired/docs/evidence/RESTORE_VERIFICATION_2026-10-25.json -text -diff
 archive/retired/docs/evidence/DIAGNOSTICS_COST_2026-10-25.json -text -diff
+archive/retired/docs/evidence/INSTALLED_RESTORE_IR36_2026-10-25.json -text -diff
 archive/retired/docs/evidence/DIAGNOSTICS_COST_CANDIDATE_2026-10-25.patch -text -diff

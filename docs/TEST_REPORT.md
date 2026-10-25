@@ -52,6 +52,12 @@ v2.1.35 完整正文已原文追加保存，五項原始封裝逐位元組歸檔
 
 本次文件狀態核對只檢查指南與既有證據的一致性，沒有重跑本節產品或瀏覽器案例。結果見 [文件維護紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-25文件狀態全面核對)。
 
+## IR36 安裝版救援獨立結果
+
+2026-10-25 另依使用者授權，以 9f8f435／v2.1.36、IAB＋Tampermonkey、指定影片 P1／Auto 執行八案固定範圍。結果為三案 INVALID、五案未執行，沒有 VALID＋PASS／FAIL，未施加有效網站故障或確認產品缺陷。loopback 校準與保留文件的完整本體／singleton／hooks 核對不能替代網站可信尋位；兩種進度區定位都超時後停止共用方法。完整前提、逐案時序、期限偏差與去敏 JSON 見 [本輪報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/INSTALLED_RESTORE_IR36_2026-10-25.md)。
+
+S2 從主機啟動至收束 503.344 秒，超過五分鐘且事件截斷，維持無效；S1 第二次收集器參照遺失，缺受控 ID 尾端持久化稽核，C01 也為 INVALID。最終分頁／攔截／持有請求／自有服務退出、原倍速 2 與 IAB 隱藏狀態還原，但不據此補判完整清理通過。正常播放／Replay 改變的網站續播位置未聲稱還原。21 個輔助工具／證據重播通過，獨立於正式產品測試與原有來源、正常安裝回歸；本輪沒有執行期修改、升版或 Release，全部既有來源隔離及正常回歸證據與限制仍按原範圍保留。
+
 ## 歷史驗證導覽
 
 <a name="bilicdn_tw-v218-release-verification--2026-10-04"></a>
