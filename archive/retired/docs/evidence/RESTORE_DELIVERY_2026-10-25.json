@@ -1,0 +1,1489 @@
+{
+  "schemaVersion": 1,
+  "version": "2.1.36",
+  "releaseCommit": "110574fbc8bd73c55f8d2f0ea088de8a0ff22624",
+  "runtimeSource": "c0bd0536dabf93ca57d04db8553be6129c135231",
+  "checkedAt": "2026-10-25T07:04:41.845Z",
+  "releaseUrl": "https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.36",
+  "remoteMainAtPublication": "110574fbc8bd73c55f8d2f0ea088de8a0ff22624",
+  "tagCommit": "110574fbc8bd73c55f8d2f0ea088de8a0ff22624",
+  "assetCount": 1,
+  "asset": {
+    "name": "BiliCDN_TW.user.js",
+    "bytes": 439664,
+    "sha256": "3960ac923f1cbd61d197e1b713c2c0e620debfcb40df1111cfc5af7d8dab3ae7"
+  },
+  "downloads": [
+    {
+      "kind": "version",
+      "status": 200,
+      "version": "2.1.36",
+      "bytes": 439664,
+      "sha256": "3960ac923f1cbd61d197e1b713c2c0e620debfcb40df1111cfc5af7d8dab3ae7",
+      "byteEqual": true
+    },
+    {
+      "kind": "latest",
+      "status": 200,
+      "version": "2.1.36",
+      "bytes": 439664,
+      "sha256": "3960ac923f1cbd61d197e1b713c2c0e620debfcb40df1111cfc5af7d8dab3ae7",
+      "byteEqual": true
+    }
+  ],
+  "installation": {
+    "identity": {
+      "manager": "Tampermonkey",
+      "managerVersion": "5.5.1",
+      "version": "2.1.36",
+      "bodyBytes": 437706,
+      "bodySha256": "07dae8cec5ba86429093863f2a34bc5a2e3ddc9e00e7618127cf8b4ad9b6a4d3",
+      "fullBodyMatch": true,
+      "scriptEventsTruncated": false,
+      "instances": {
+        "RuntimeController": 1,
+        "ControlCenter": 1,
+        "TransportAdapter": 1,
+        "RecoveryController": 1,
+        "PlayerAdapter": 1,
+        "SettingsStore": 1,
+        "VisibilityAdapter": 1
+      },
+      "hooks": {
+        "fetchInstalled": true,
+        "hookReason": "fetch-and-xhr-verified",
+        "hookState": "installed",
+        "xhrInstalled": true
+      },
+      "initialRecovery": {
+        "breakerSec": 0,
+        "pauseSec": 0,
+        "reloadCount": 0,
+        "source": null,
+        "state": "healthy"
+      },
+      "reloadBodyMatches": true,
+      "settings": {
+        "disabled": false
+      }
+    },
+    "operations": [
+      {
+        "rate": 1,
+        "start": {
+          "at": 118111.20000000298,
+          "controls": {
+            "coreId": 2,
+            "coreReloadRevision": 0,
+            "dragging": false,
+            "mediaId": 1,
+            "pendingSeekGoal": false,
+            "reloadRevision": 0,
+            "seekRevision": 2,
+            "targetSec": 2968,
+            "userRevision": 3
+          },
+          "ended": false,
+          "error": false,
+          "frames": 9711,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "recovery": {
+            "breakerSec": 0,
+            "pauseSec": 0,
+            "reloadCount": 0,
+            "source": null,
+            "state": "healthy"
+          },
+          "runtimeVisible": true,
+          "seeking": false,
+          "time": 3128.96226,
+          "width": 3840
+        },
+        "paused": {
+          "at": 118421.79999999702,
+          "controls": {
+            "coreId": 2,
+            "coreReloadRevision": 0,
+            "dragging": false,
+            "mediaId": 1,
+            "pendingSeekGoal": false,
+            "reloadRevision": 0,
+            "seekRevision": 2,
+            "targetSec": 2968,
+            "userRevision": 4
+          },
+          "ended": false,
+          "error": false,
+          "frames": 9716,
+          "height": 2160,
+          "paused": true,
+          "rate": 1,
+          "ready": 4,
+          "recovery": {
+            "breakerSec": 0,
+            "pauseSec": 0,
+            "reloadCount": 0,
+            "source": null,
+            "state": "healthy"
+          },
+          "runtimeVisible": true,
+          "seeking": false,
+          "time": 3129.041324,
+          "width": 3840
+        },
+        "resumed": {
+          "at": 118716.90000000596,
+          "controls": {
+            "coreId": 2,
+            "coreReloadRevision": 0,
+            "dragging": false,
+            "mediaId": 1,
+            "pendingSeekGoal": false,
+            "reloadRevision": 0,
+            "seekRevision": 2,
+            "targetSec": 2968,
+            "userRevision": 5
+          },
+          "ended": false,
+          "error": false,
+          "frames": 9730,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "recovery": {
+            "breakerSec": 0,
+            "pauseSec": 0,
+            "reloadCount": 0,
+            "source": null,
+            "state": "pause-armed"
+          },
+          "runtimeVisible": true,
+          "seeking": false,
+          "time": 3129.280008,
+          "width": 3840
+        },
+        "afterSeek": {
+          "at": 118736.60000000894,
+          "controls": {
+            "coreId": 2,
+            "coreReloadRevision": 0,
+            "dragging": false,
+            "mediaId": 1,
+            "pendingSeekGoal": true,
+            "reloadRevision": 0,
+            "seekRevision": 3,
+            "targetSec": 3134.29043,
+            "userRevision": 6
+          },
+          "ended": false,
+          "error": false,
+          "frames": 9746,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "ready": 1,
+          "recovery": {
+            "breakerSec": 0,
+            "pauseSec": 0,
+            "reloadCount": 0,
+            "source": null,
+            "state": "pause-armed"
+          },
+          "runtimeVisible": true,
+          "seeking": true,
+          "time": 3134.29043,
+          "width": 3840
+        },
+        "seekResolved": {
+          "at": 126764.5,
+          "controls": {
+            "coreId": 2,
+            "coreReloadRevision": 0,
+            "dragging": false,
+            "mediaId": 1,
+            "pendingSeekGoal": false,
+            "reloadRevision": 0,
+            "seekRevision": 4,
+            "targetSec": 3134.29043,
+            "userRevision": 6
+          },
+          "ended": false,
+          "error": false,
+          "frames": 10429,
+          "height": 2160,
+          "paused": false,
+          "rate": 1,
+          "ready": 4,
+          "recovery": {
+            "breakerSec": 0,
+            "pauseSec": 0,
+            "reloadCount": 0,
+            "source": null,
+            "state": "healthy"
+          },
+          "runtimeVisible": true,
+          "seeking": false,
+          "time": 3141.700782,
+          "width": 3840
+        }
+      },
+      {
+        "rate": 2,
+        "start": {
+          "at": 162442.60000000894,
+          "controls": {
+            "coreId": 2,
+            "coreReloadRevision": 0,
+            "dragging": false,
+            "mediaId": 1,
+            "pendingSeekGoal": false,
+            "reloadRevision": 0,
+            "seekRevision": 4,
+            "targetSec": 3134.29043,
+            "userRevision": 8
+          },
+          "ended": false,
+          "error": false,
+          "frames": 12579,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "recovery": {
+            "breakerSec": 0,
+            "pauseSec": 0,
+            "reloadCount": 0,
+            "source": null,
+            "state": "healthy"
+          },
+          "runtimeVisible": true,
+          "seeking": false,
+          "time": 3177.543751,
+          "width": 3840
+        },
+        "paused": {
+          "at": 162737.10000000894,
+          "controls": {
+            "coreId": 2,
+            "coreReloadRevision": 0,
+            "dragging": false,
+            "mediaId": 1,
+            "pendingSeekGoal": false,
+            "reloadRevision": 0,
+            "seekRevision": 4,
+            "targetSec": 3134.29043,
+            "userRevision": 9
+          },
+          "ended": false,
+          "error": false,
+          "frames": 12588,
+          "height": 2160,
+          "paused": true,
+          "rate": 2,
+          "ready": 4,
+          "recovery": {
+            "breakerSec": 0,
+            "pauseSec": 0,
+            "reloadCount": 0,
+            "source": null,
+            "state": "healthy"
+          },
+          "runtimeVisible": true,
+          "seeking": false,
+          "time": 3177.661283,
+          "width": 3840
+        },
+        "resumed": {
+          "at": 163032.90000000596,
+          "controls": {
+            "coreId": 2,
+            "coreReloadRevision": 0,
+            "dragging": false,
+            "mediaId": 1,
+            "pendingSeekGoal": false,
+            "reloadRevision": 0,
+            "seekRevision": 4,
+            "targetSec": 3134.29043,
+            "userRevision": 10
+          },
+          "ended": false,
+          "error": false,
+          "frames": 12616,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "recovery": {
+            "breakerSec": 0,
+            "pauseSec": 0,
+            "reloadCount": 0,
+            "source": null,
+            "state": "healthy"
+          },
+          "runtimeVisible": true,
+          "seeking": false,
+          "time": 3178.146711,
+          "width": 3840
+        },
+        "afterSeek": {
+          "at": 163047.5,
+          "controls": {
+            "coreId": 2,
+            "coreReloadRevision": 0,
+            "dragging": false,
+            "mediaId": 1,
+            "pendingSeekGoal": true,
+            "reloadRevision": 0,
+            "seekRevision": 5,
+            "targetSec": 3183.159501,
+            "userRevision": 11
+          },
+          "ended": false,
+          "error": false,
+          "frames": 12631,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "ready": 1,
+          "recovery": {
+            "breakerSec": 0,
+            "pauseSec": 0,
+            "reloadCount": 0,
+            "source": null,
+            "state": "healthy"
+          },
+          "runtimeVisible": true,
+          "seeking": true,
+          "time": 3183.159501,
+          "width": 3840
+        },
+        "seekResolved": {
+          "at": 169641.29999999702,
+          "controls": {
+            "coreId": 2,
+            "coreReloadRevision": 0,
+            "dragging": false,
+            "mediaId": 1,
+            "pendingSeekGoal": false,
+            "reloadRevision": 0,
+            "seekRevision": 6,
+            "targetSec": 3183.159501,
+            "userRevision": 11
+          },
+          "ended": false,
+          "error": false,
+          "frames": 13539,
+          "height": 2160,
+          "paused": false,
+          "rate": 2,
+          "ready": 4,
+          "recovery": {
+            "breakerSec": 0,
+            "pauseSec": 0,
+            "reloadCount": 0,
+            "source": null,
+            "state": "healthy"
+          },
+          "runtimeVisible": true,
+          "seeking": false,
+          "time": 3195.456939,
+          "width": 3840
+        }
+      }
+    ],
+    "windows": [
+      {
+        "rate": 1,
+        "cleanup": {
+          "listeners": 0,
+          "subscriptions": 0,
+          "timers": 0
+        },
+        "events": [],
+        "rows": [
+          {
+            "at": 126772.10000000894,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 10429,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3141.708331
+          },
+          {
+            "at": 127772.60000000894,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 10489,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3142.709456
+          },
+          {
+            "at": 128773.20000000298,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 10550,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3143.710455
+          },
+          {
+            "at": 129773.79999999702,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 10610,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3144.710439
+          },
+          {
+            "at": 130774.10000000894,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 10668,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3145.710461
+          },
+          {
+            "at": 131775.20000000298,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 10730,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3146.712495
+          },
+          {
+            "at": 132776.10000000894,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 10790,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3147.712487
+          },
+          {
+            "at": 133776.5,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 10849,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3148.713481
+          },
+          {
+            "at": 134777.79999999702,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 10909,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3149.714722
+          },
+          {
+            "at": 135778.79999999702,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 10969,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3150.716041
+          },
+          {
+            "at": 136779.90000000596,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 11029,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3151.716752
+          },
+          {
+            "at": 137780.5,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 11089,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3152.717049
+          },
+          {
+            "at": 138781.40000000596,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 11149,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3153.718091
+          },
+          {
+            "at": 139783,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 11209,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3154.719621
+          },
+          {
+            "at": 140783.90000000596,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 11270,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3155.721085
+          },
+          {
+            "at": 141784.90000000596,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 4,
+              "targetSec": 3134.29043,
+              "userRevision": 6
+            },
+            "ended": false,
+            "error": false,
+            "frames": 11329,
+            "paused": false,
+            "rate": 1,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3156.721961
+          }
+        ]
+      },
+      {
+        "rate": 2,
+        "cleanup": {
+          "listeners": 0,
+          "subscriptions": 0,
+          "timers": 0
+        },
+        "events": [],
+        "rows": [
+          {
+            "at": 169649.10000000894,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 13539,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3195.472343
+          },
+          {
+            "at": 170649.79999999702,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 13660,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3197.478618
+          },
+          {
+            "at": 171653,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 13779,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3199.48567
+          },
+          {
+            "at": 172653.90000000596,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 13901,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3201.485822
+          },
+          {
+            "at": 173654.10000000894,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 14018,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3203.480117
+          },
+          {
+            "at": 174654.79999999702,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 14139,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3205.478742
+          },
+          {
+            "at": 175655.29999999702,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 14259,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3207.481325
+          },
+          {
+            "at": 176656.60000000894,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 14380,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3209.492188
+          },
+          {
+            "at": 177657.79999999702,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 14499,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3211.494704
+          },
+          {
+            "at": 178658,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 14619,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3213.496016
+          },
+          {
+            "at": 179659,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 14739,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3215.492908
+          },
+          {
+            "at": 180659.29999999705,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 14859,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3217.486728
+          },
+          {
+            "at": 181660.5,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 14980,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3219.498572
+          },
+          {
+            "at": 182660.90000000596,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 15099,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3221.501578
+          },
+          {
+            "at": 183661.5,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 15218,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3223.501512
+          },
+          {
+            "at": 184663.90000000596,
+            "controls": {
+              "coreId": 2,
+              "coreReloadRevision": 0,
+              "dragging": false,
+              "mediaId": 1,
+              "pendingSeekGoal": false,
+              "reloadRevision": 0,
+              "seekRevision": 6,
+              "targetSec": 3183.159501,
+              "userRevision": 11
+            },
+            "ended": false,
+            "error": false,
+            "frames": 15339,
+            "paused": false,
+            "rate": 2,
+            "ready": 4,
+            "recovery": {
+              "breakerSec": 0,
+              "pauseSec": 0,
+              "reloadCount": 0,
+              "source": null,
+              "state": "healthy"
+            },
+            "runtimeVisible": true,
+            "seeking": false,
+            "time": 3225.504668
+          }
+        ]
+      }
+    ],
+    "originalState": {
+      "at": 54139.10000000894,
+      "ended": false,
+      "error": false,
+      "frames": 2055,
+      "height": 2160,
+      "paused": false,
+      "rate": 2,
+      "seeking": false,
+      "time": 3001.203971,
+      "width": 3840
+    },
+    "finalState": {
+      "at": 217119.70000000295,
+      "controls": {
+        "coreId": 2,
+        "coreReloadRevision": 0,
+        "dragging": false,
+        "mediaId": 1,
+        "pendingSeekGoal": false,
+        "reloadRevision": 0,
+        "seekRevision": 6,
+        "targetSec": 3183.159501,
+        "userRevision": 11
+      },
+      "ended": false,
+      "error": false,
+      "frames": 19232,
+      "height": 2160,
+      "paused": false,
+      "rate": 2,
+      "ready": 4,
+      "recovery": {
+        "breakerSec": 0,
+        "pauseSec": 0,
+        "reloadCount": 0,
+        "source": null,
+        "state": "healthy"
+      },
+      "runtimeVisible": true,
+      "seeking": false,
+      "time": 3290.412178,
+      "width": 3840
+    },
+    "cleanup": {
+      "timers": 0,
+      "listeners": 0,
+      "subscriptions": 0,
+      "breakpoints": 0,
+      "debuggerDisabled": true,
+      "objectGroupReleased": true,
+      "ownTabClosed": true
+    },
+    "status": "VALID-PASS",
+    "quality": "Auto",
+    "initialUpdateAttempt": {
+      "publicEntry": "Tampermonkey intermediate page; no confirmation tab exposed",
+      "identity": {
+        "scriptLength": 418469,
+        "sha256": "e767797e4fac108ee37d2e11c8df859eaf556e7bf4c79561a06f30b3c34a5520",
+        "hasProduct": true,
+        "headerVersion": "2.1.35",
+        "includesV36": false,
+        "actualBytes": 422949,
+        "exactV35Body": true,
+        "expectedV35BodySha256": "582353e62546a90a7bf6632dde7fb290b17eacbeb9f13967579aadb252a2da1a",
+        "expectedV35BodyBytes": 420064
+      },
+      "regression": "not-executed",
+      "reason": "loaded body remains v2.1.35"
+    },
+    "replay": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "skipped": 0,
+      "todo": 0,
+      "cancelled": 0
+    }
+  },
+  "packageFiles": [
+    {
+      "path": "Release/v2.1.36/BiliCDN_TW.user.js",
+      "bytes": 439664,
+      "sha256": "3960ac923f1cbd61d197e1b713c2c0e620debfcb40df1111cfc5af7d8dab3ae7"
+    },
+    {
+      "path": "Release/v2.1.36/BUILD_MANIFEST_v2.1.36.json",
+      "bytes": 8335,
+      "sha256": "3ab2f635bdd7f2a40778fa04474a703e4c8b2268fe8773c75060b3992fb0742c"
+    },
+    {
+      "path": "Release/v2.1.36/CHANGELOG_v2.1.36.md",
+      "bytes": 54347,
+      "sha256": "7164802e585ebd25db040f1c1b3ad2915488e48d0178cf5a24e52ce873077213"
+    },
+    {
+      "path": "Release/v2.1.36/SHA256SUMS_v2.1.36.txt",
+      "bytes": 419,
+      "sha256": "07775f451237edd1b266a8693a8313b139cbd5f2cb9ab035a7d98b56d000a3ae"
+    },
+    {
+      "path": "Release/v2.1.36/TEST_REPORT_v2.1.36.md",
+      "bytes": 5573,
+      "sha256": "67ef7358026aae1f616496d0b9b526e6c0ca6ac86ca3dbb976d8dfba906d5391"
+    }
+  ]
+}

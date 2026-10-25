@@ -696,3 +696,7 @@ docs:check、archive:check 與差異檢查通過；本次修改的日誌及報�
 接續 6b8d4c3，保留還原報告原文與原 JSON、已通過契約／安全／乾淨來源；追加新對話來源結果。v2.1.35 完整 TEST_REPORT 原文追加至歷史，五項 Release 原件歸檔並更新清單及保護路徑；版本設定同步至 v2.1.36，現行 TEST_REPORT／CHANGELOG／TODO／HISTORY 依各自權責維護。實際檢查與發布結果於完成後追加，不把來源結果算成安裝版。
 
 本輪發布前 typecheck、architecture、npm test 與 verify 均退出 0，各完整執行 2842 案，沒有 skip／todo／取消。初次檢查發現尚未 stage 搬移、未登記新版 checksum 與相容錨點缺漏，已修正並保留原日誌；後續正式 docs／archive 與差異檢查結果據實記錄。
+
+v2.1.36 交付與安裝結案追加：公開 main／標籤／唯一腳本附件及 latest 位元組核對完成。初次更新中繼頁原結果保留，使用者更新後的完整身分及 Auto 1／2 倍正常回歸另列通過；五項發布原件不回寫。來源十三個與安裝五個證據重播獨立於正式 2842 案。
+
+結案公開 docs／archive 檢查及差異檢查通過，三份既有日誌與還原報告的完整原文前綴保持。本輪工具資料歸檔後的 --local 擴充檢查退出 1，舊 2026-10-20-cleanup/dist/md-bold-audit/vendor 有九十個 EPERM，報告列 10261 個本機檔案；不算完整私有封存通過，不改舊權限、原清單或歷史判定。此限制另列於最新版 TEST_REPORT。

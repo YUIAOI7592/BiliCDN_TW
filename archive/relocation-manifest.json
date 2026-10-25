@@ -6578,6 +6578,12 @@
       "encoding": "raw",
       "bytes": 591268,
       "sha256": "9bd1fcc334435b7a3f1bfd147da88338b3f5d48c7a98df07ca997a3ae025beb0"
+    },
+    {
+      "path": "archive/retired/docs/evidence/RESTORE_DELIVERY_2026-10-25.json",
+      "encoding": "raw",
+      "bytes": 41743,
+      "sha256": "437ddc1380a4a71e6324c9ebad135e6f994421ff61ffcb1c4eb20a7a654e63d1"
     }
   ],
   "localManifest": "archive/retired/local/2026-10-20-cleanup/private-manifest.json",
