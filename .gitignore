@@ -47,6 +47,8 @@ coverage/
 !/archive/retired/docs/evidence/BUFFER_RISK_EVALUATION_2026-10-25.json
 !/archive/retired/docs/evidence/BUFFER_ADOPTION_DECISION_2026-10-25.json
 !/archive/retired/docs/evidence/RESTORE_VERIFICATION_2026-10-25.json
+!/archive/retired/docs/evidence/RESTORE_SOURCE_2026-10-25.json
+!/archive/retired/docs/evidence/RESTORE_DELIVERY_2026-10-25.json
 !/archive/retired/originals/
 !/archive/retired/originals/**
 !/archive/retired/releases/

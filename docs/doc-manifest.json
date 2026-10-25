@@ -77,40 +77,61 @@
     {
       "path": "archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md",
       "kind": "record",
-      "topics": ["rescue-restore-verification"],
-      "versions": ["v2.1.35"],
+      "topics": [
+        "rescue-restore-verification"
+      ],
+      "versions": [
+        "v2.1.35",
+        "v2.1.36"
+      ],
       "date": "2026-10-25",
       "requiredAnchors": []
     },
     {
       "path": "archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md",
       "kind": "record",
-      "topics": ["buffer-adoption-decision"],
-      "versions": ["v2.1.35"],
+      "topics": [
+        "buffer-adoption-decision"
+      ],
+      "versions": [
+        "v2.1.35"
+      ],
       "date": "2026-10-25",
       "requiredAnchors": []
     },
     {
       "path": "archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md",
       "kind": "record",
-      "topics": ["buffer-risk-evaluation"],
-      "versions": ["v2.1.35"],
+      "topics": [
+        "buffer-risk-evaluation"
+      ],
+      "versions": [
+        "v2.1.35"
+      ],
       "date": "2026-10-25",
       "requiredAnchors": []
     },
     {
       "path": "archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md",
       "kind": "record",
-      "topics": ["buffer-live-evaluation-r2"],
-      "versions": ["v2.1.35"],
+      "topics": [
+        "buffer-live-evaluation-r2"
+      ],
+      "versions": [
+        "v2.1.35"
+      ],
       "date": "2026-10-25",
       "requiredAnchors": []
     },
     {
       "path": "archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md",
       "kind": "record",
-      "topics": ["buffer-live-evaluation"],
-      "versions": ["v2.1.35"],
+      "topics": [
+        "buffer-live-evaluation"
+      ],
+      "versions": [
+        "v2.1.35"
+      ],
       "date": "2026-10-25",
       "requiredAnchors": []
     },
@@ -2105,9 +2126,10 @@
         "changes"
       ],
       "versions": [
-        "v2.1.29"
+        "v2.1.29",
+        "v2.1.36"
       ],
-      "date": "2026-10-23",
+      "date": "2026-10-25",
       "requiredAnchors": [
         "bilicdn_tw-變更紀錄",
         "v2127",
@@ -2689,9 +2711,9 @@
         "verification"
       ],
       "versions": [
-        "v2.1.35"
+        "v2.1.36"
       ],
-      "date": "2026-10-24",
+      "date": "2026-10-25",
       "requiredAnchors": [
         "驗證結果",
         "行為契約與非干預",
@@ -2733,9 +2755,9 @@
         "work"
       ],
       "versions": [
-        "v2.1.29"
+        "v2.1.36"
       ],
-      "date": "2026-10-23",
+      "date": "2026-10-25",
       "requiredAnchors": [
         "v2-工作狀態與後續方向",
         "現在的執行狀態",
@@ -2935,7 +2957,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.1.35/CHANGELOG_v2.1.35.md",
+      "path": "archive/retired/releases/Release/v2.1.35/CHANGELOG_v2.1.35.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -2947,7 +2969,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.1.35/TEST_REPORT_v2.1.35.md",
+      "path": "archive/retired/releases/Release/v2.1.35/TEST_REPORT_v2.1.35.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -2956,6 +2978,30 @@
         "v2.1.35"
       ],
       "date": "2026-10-24",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.1.36/CHANGELOG_v2.1.36.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.1.36"
+      ],
+      "date": "2026-10-25",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.1.36/TEST_REPORT_v2.1.36.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.1.36"
+      ],
+      "date": "2026-10-25",
       "requiredAnchors": []
     }
   ],
@@ -6132,38 +6178,73 @@
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.35/BiliCDN_TW.user.js",
+      "path": "archive/retired/releases/Release/v2.1.35/BiliCDN_TW.user.js",
       "encoding": "raw",
       "bytes": 422022,
       "sha256": "7458f27610a0b2a9f13e07c1e087502198809dacb2a411f5112acf9aaf3b9cc3",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.35/BUILD_MANIFEST_v2.1.35.json",
+      "path": "archive/retired/releases/Release/v2.1.35/BUILD_MANIFEST_v2.1.35.json",
       "encoding": "raw",
       "bytes": 8335,
       "sha256": "b7bc81466dca729e02f15c2f7208ec53d57bcbed4e590beb926b2cd1890840c0",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.35/CHANGELOG_v2.1.35.md",
+      "path": "archive/retired/releases/Release/v2.1.35/CHANGELOG_v2.1.35.md",
       "encoding": "raw",
       "bytes": 53757,
       "sha256": "c2300ac459112e7418be83207adb4068652c296142cf605096d023d7c852304d",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.35/SHA256SUMS_v2.1.35.txt",
+      "path": "archive/retired/releases/Release/v2.1.35/SHA256SUMS_v2.1.35.txt",
       "encoding": "raw",
       "bytes": 419,
       "sha256": "1c450698c50c783f07ae6d62f2d3330b0c77fdac033ae2723b46a036aea964f7",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.35/TEST_REPORT_v2.1.35.md",
+      "path": "archive/retired/releases/Release/v2.1.35/TEST_REPORT_v2.1.35.md",
       "encoding": "raw",
       "bytes": 8923,
       "sha256": "d24953b4c2f648d5cd040cfba63c672ace09409c0001c57df75d39dda44f71c0",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.1.36/BiliCDN_TW.user.js",
+      "encoding": "raw",
+      "bytes": 439664,
+      "sha256": "3960ac923f1cbd61d197e1b713c2c0e620debfcb40df1111cfc5af7d8dab3ae7",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.1.36/BUILD_MANIFEST_v2.1.36.json",
+      "encoding": "raw",
+      "bytes": 8335,
+      "sha256": "3ab2f635bdd7f2a40778fa04474a703e4c8b2268fe8773c75060b3992fb0742c",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.1.36/CHANGELOG_v2.1.36.md",
+      "encoding": "raw",
+      "bytes": 54347,
+      "sha256": "7164802e585ebd25db040f1c1b3ad2915488e48d0178cf5a24e52ce873077213",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.1.36/SHA256SUMS_v2.1.36.txt",
+      "encoding": "raw",
+      "bytes": 419,
+      "sha256": "07775f451237edd1b266a8693a8313b139cbd5f2cb9ab035a7d98b56d000a3ae",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.1.36/TEST_REPORT_v2.1.36.md",
+      "encoding": "raw",
+      "bytes": 5573,
+      "sha256": "67ef7358026aae1f616496d0b9b526e6c0ca6ac86ca3dbb976d8dfba906d5391",
       "mode": "exact"
     }
   ],
