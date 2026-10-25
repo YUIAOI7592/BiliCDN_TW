@@ -613,3 +613,10 @@ SDK 方法取得及呼叫前、原生備援寫入前重新驗證本次所有者�
 診斷工具的三項更正原件均保留：起初選到舊私有清單而被範圍守門停止；Windows PowerShell 5 須明列 UTF-8 讀取 JSON；PowerShell 7 自動解析日期後，修改時間改以 UTC ticks 比較。這些只讀工具問題沒有修改舊封存，不能算產品缺陷或新的產品案例。
 
 結案 docs:check 退出 0：227 個 Markdown、2156 個本機／儲存庫連結；七個不可變舊失效、430 個歷史原址限制、十八個私有引用未核對及 365 個外部未連網引用分列。公開 archive:check 退出 0：409 搬移檔、三份只追加日誌、146 個不變檔、63 份 checksum／294 筆；新增公開證據只加入本輪精確保護，不改舊基準。git diff --check 通過；三份日誌的完整 91b039f 原文前綴、原 EPERM 日誌、私有清單及五項發布原件另行核對保持。
+
+
+## 2026-10-25：診斷成本基準與採用判定工具
+
+以 v2.1.36／2f6b67e 為固定基準，交付 evaluate:diagnostics 成本／profile 工具、具名工具契約及固定 Recorder 壓力情境。唯一確認輪仍未達 CPU 八成配對門檻，候選已撤回，產品／版本／Release 不變；工具期限缺口、原無效紀錄、更正及最終校準分列。完整方法與逐案資料見 [本輪報告](../archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md)。
+
+本輪新增工具契約 13 案與固定壓力契約 6 案；最終 diagnostics 147 案、tooling 577 案，完整 npm test 與 verify 各 2861 案通過，無失敗、略過、待實作或取消。typecheck、102 模組 architecture、格式、文件、公開封存、可重現建置、語法與暫存封裝校驗通過。src-v2、release.json、package-lock.json、Release 及已發布 TEST_REPORT 對 2f6b67e 無差異；候選 patch 的 git apply --check 通過。新歷史報告初次缺少 preservation 登記的失敗已保留於本機日誌，補上新文件的 exact 基準後通過，沒有修改舊保護雜湊。未執行新的本機私有搬移驗證或瀏覽器驗收；外部連結、歷史不可用原址及私有引用仍維持既有檢查邊界。

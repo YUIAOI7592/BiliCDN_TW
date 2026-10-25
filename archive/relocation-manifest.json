@@ -5716,6 +5716,24 @@
   ],
   "unchangedFiles": [
     {
+      "path": "archive/retired/docs/evidence/DIAGNOSTICS_COST_CANDIDATE_2026-10-25.patch",
+      "encoding": "raw",
+      "bytes": 4452,
+      "sha256": "f8fbf53b5a3d684997a73ba5aead1e00abe70ab75b6daacd46e92b9c53d28576"
+    },
+    {
+      "path": "archive/retired/docs/evidence/DIAGNOSTICS_COST_2026-10-25.json",
+      "encoding": "raw",
+      "bytes": 6240627,
+      "sha256": "0743114167cfd68f3d4cd1f5ce55cf6c7a2ac84e62728871366e0d3bba753acf"
+    },
+    {
+      "path": "archive/retired/originals/PRE_DIAGNOSTICS_COST_2026-10-25_2f6b67e.json",
+      "encoding": "raw",
+      "bytes": 485197,
+      "sha256": "9c1b2725c13a4823368792e599a94d02d0456bf6d70fdd9bdec43e1d2972355a"
+    },
+    {
       "path": "archive/retired/docs/evidence/RESTORE_VERIFICATION_2026-10-25.json",
       "encoding": "raw",
       "bytes": 84695,

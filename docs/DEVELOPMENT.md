@@ -135,6 +135,8 @@ npm test -- application --name "startup"  # 正規表示式篩選案例
 npm test -- tooling   # 測試工具本身的契約
 npm run compare:upstream -- --calibrate # 獨立離線比較環境校準，不加入正式 v2 登記
 npm run compare:upstream -- --json # 完整兩版比較，schemaVersion 1；不連網、不改產品
+npm run evaluate:diagnostics -- --json # 固定 v2.1.36 與工作來源的獨立診斷成本量測
+npm run evaluate:diagnostics -- --profile --json # 獨立 CPU profile 與工作量計數，不作計時採用判定
 npm run build         # 確定性的單一 IIFE 使用者腳本
 npm run package       # 重建 dist，寫入設定的 Release/v<version>/
 npm run verify        # 自動檢查及暫存封裝驗證
@@ -203,6 +205,18 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 Prettier 3.9.10 只作開發工具。固定格式為兩空格、單引號、無分號、100 字元行寬、LF 與尾端逗號；關閉嵌入語言格式化，保留測試字串及模板內容。格式工具使用明確維護清單，只遍歷正式來源、測試與工具，另含根目錄維護 JSON 設定；Release、封存、基準、私有證據、生成 JS 與依賴鎖定檔不寫入。輸出最多四次格式計算取得穩定內容，無法穩定時失敗；check 模式不寫入。
 
 三個型別專案沿用 strict，並檢查未使用宣告／參數及明確型別匯入。移除多餘綁定仍保留初始化的副作用；既有位置參數使用明確未用名稱而不變更呼叫介面。本輪不加入 ESLint／typescript-eslint，TypeScript 7 保持既有精確版本，架構規則仍使用本機 AST。
+
+## 診斷成本基準
+
+`evaluate:diagnostics` 的 schemaVersion 2 固定核對 v2.1.36 完整腳本 bytes／SHA-256，並從固定 Git 提交獨立打包基準 Recorder；工作來源使用確定性建置。發布原件可位於現行或封存 Release，均不覆寫。工具保存產品、輸入與工具雜湊，結束再次核對工具未變更；需要該固定 Git 提交及本機原件，不連網取得替代輸入。
+
+預設成本模式與 `--profile` 模式互斥；`--json` 只改輸出格式。正常完整腳本各倍速兩組暖機、十組交替計分，每次六十秒虛擬健康前置及六百個一秒 tick，逐 tick 完成 video／audio 請求。事故、容量及超大匯出使用獨立 Recorder 情境，不併入正常成本。成本與 profile 不並行，也不與其他測試同時量測；CPU、tick、heap 包含離線模型及宿主工作，不表示瀏覽器純功能成本。
+
+profile 在隔離子程序使用 Node CPU profiler，並以可還原的 JSON／TextEncoder／structuredClone 包裝計數；預設成本模式不裝包裝。結果分開保存，不能用 profile 計時決定採用。`times`、startupMs、caseDurationMs 以毫秒、CPU 以微秒、heap 與工作量大小以 UTF-8 bytes 表示；預熱後的計數和六百筆計分樣本分列。每個案例包含清理實際不得超過五秒，每倍速／工作負載套件六十秒，監督程序保留 32 MiB 輸出限制；無效案例退出 1，非法參數失敗。退出 0 僅表示量測有效且行為摘要一致，不等於產品優化獲准。
+
+`summary.timingAccepted` 要求兩倍速各十組至少八組 CPU 總量下降，且 tick 中位數／p95 的跨組中位數不增加；另須確認熱點工作量下降、逐步快照／報告及產品效果一致，才具備採用資格。方向不一致最多一輪相同規格確認，仍不足即撤回候選。回退後的工具校準不能算成第三輪候選採用。具名工具契約在 tooling，固定壓力情境在 diagnostics；結果由 [HISTORY](HISTORY.md) 追溯，不回寫已發布報告。
+
+分位數沿用既有成本工具的排序後索引 floor((n−1)×p)；十組彙總使用下中位數。CPU 改善組數使用每個配對的 user＋system 原值，嚴格小於才算改善，不以 heap、單次最快值或跨輪合併代替。
 
 ## 新增行為
 

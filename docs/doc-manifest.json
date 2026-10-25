@@ -75,6 +75,18 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md",
+      "kind": "record",
+      "topics": [
+        "diagnostics-cost"
+      ],
+      "versions": [
+        "v2.1.36"
+      ],
+      "date": "2026-10-25",
+      "requiredAnchors": []
+    },
+    {
       "path": "archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md",
       "kind": "record",
       "topics": [
@@ -2969,6 +2981,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 5614,
+      "sha256": "2887c038c992d44b06d4c8029631eb89d48fe62a51c81d28115f6a561ac2f03b"
+    },
     {
       "path": "archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md",
       "mode": "prefix",

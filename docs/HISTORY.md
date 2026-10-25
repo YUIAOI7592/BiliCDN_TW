@@ -6,6 +6,8 @@
 
 ## 版本
 
+- [診斷成本基準與候選不採用（2026-10-25，v2.1.36）](../archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md)
+
 - [舊私有封存 EPERM 調查與本機驗證（2026-10-25）](TEST_TOOLING_REPORT.md#2026-10-25舊私有封存-eperm-調查與本機驗證)
 
 - [救援還原閉環與原生寫入所有權（2026-10-25，v2.1.36 後續結案）](../archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md#2026-10-25-後續交付結案導引)
@@ -164,6 +166,8 @@
 
 ### 其他歷史
 
+- [診斷成本基準、序列化熱點與採用門檻](../archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md)
+
 - [v2.0.2：禁止出口、播放器備援與死核心事故修復計畫](../archive/retired/docs/PLAN_v2.0.2.md)
 - [v2.0.2 post-release findings — 2026-09-21](../archive/retired/docs/POST_RELEASE_v2.0.2.md)
 - [BiliCDN_TW 功能與競態修復對照](../archive/retired/docs/FUNCTIONAL_FIX_REPORT.md)
@@ -222,7 +226,7 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
-| 2026-10-25 | [實際緩衝效用第一輪](../archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md)、[第二輪十二窗](../archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md)、[風險覆蓋](../archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md)、[採用決策](../archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md)、[救援還原](../archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md#2026-10-25-後續交付結案導引)、[v2.1.36 完整報告](TEST_REPORT.md)、[私有封存存取](TEST_TOOLING_REPORT.md#2026-10-25舊私有封存-eperm-調查與本機驗證)、[文件狀態核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-25文件狀態全面核對) |
+| 2026-10-25 | [診斷成本基準](../archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md)、[實際緩衝效用第一輪](../archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md)、[第二輪十二窗](../archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md)、[風險覆蓋](../archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md)、[採用決策](../archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md)、[救援還原](../archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md#2026-10-25-後續交付結案導引)、[v2.1.36 完整報告](TEST_REPORT.md)、[私有封存存取](TEST_TOOLING_REPORT.md#2026-10-25舊私有封存-eperm-調查與本機驗證)、[文件狀態核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-25文件狀態全面核對) |
 | 2026-10-24 | [候選 v4 周期改善](../archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md)、[v2.1.30](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2130-完整報告2026-10-24)、[v2.1.31](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2131-完整報告2026-10-24)、[v2.1.32](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2132-完整報告2026-10-24)、[v2.1.33](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2133-完整報告2026-10-24)、[v2.1.34](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2134-完整報告2026-10-24)、[v2.1.35](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2135-完整報告2026-10-24) |
 | 2026-10-23 | [唯讀緩衝趨勢](../archive/retired/docs/BUFFER_TREND_2026-10-23.md)、[持續確認原型](../archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md)、[候選 v3](../archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md)、[觀察可信度與成本](../archive/retired/docs/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.md)、[原版與 v2 比較](../archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md)、[v2.1.28](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2128-完整報告2026-10-23)、[v2.1.29（正文日期）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2129-完整報告2026-10-24) |
 | 2026-10-22 | [全專案檔案盤點與整理](../archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md) |

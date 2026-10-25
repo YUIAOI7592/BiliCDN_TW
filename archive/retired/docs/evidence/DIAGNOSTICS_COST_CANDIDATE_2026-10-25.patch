@@ -1,0 +1,109 @@
+diff --git a/src-v2/diagnostics/recorder.ts b/src-v2/diagnostics/recorder.ts
+index f5afd2f..55cbc86 100644
+--- a/src-v2/diagnostics/recorder.ts
++++ b/src-v2/diagnostics/recorder.ts
+@@ -24,6 +24,8 @@ import {
+ 
+ export class DiagnosticRecorder implements DiagnosticRecorderPort {
+   #bufferTrends: BufferTrendSnapshot[] = []
++  #bufferSizes = new WeakMap<BufferTrendSnapshot, number>()
++  #bufferEnvelopeBytes: number | null = null
+   #bufferRevision = 0
+   #events: SafeEvent[] = []
+   #flow = new Map<string, Flow>()
+@@ -144,6 +146,7 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
+   clear(): void {
+     this.#bufferRevision++
+     this.#bufferTrends = []
++    this.#bufferSizes = new WeakMap()
+     this.#incident = null
+     this.#manualMark = null
+     this.#attemptTracker.clear()
+@@ -218,7 +221,7 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
+           this.#bufferTrends = []
+         }
+         this.#bufferTrends.push(row)
+-        while (this.#bufferTrends.length > 32 || bytes(this.#bufferCapture(false)) > 8 * 1024) {
++        while (this.#bufferTrends.length > 32 || this.#bufferBytes() > 8 * 1024) {
+           this.#bufferTrends.shift()
+           this.#counters.bufferTrendEvicted++
+         }
+@@ -235,6 +238,24 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
+       history,
+     }
+   }
++  #bufferBytes(): number {
++    // Only sanitizer-owned rows are cached; public captures clone them before exposure.
++    // JSON array commas and the repeated latest value count exactly as in #bufferCapture.
++    this.#bufferEnvelopeBytes ??=
++      bytes({ ...this.#bufferCapture(false), latest: null, history: [] }) - 4
++    let historyBytes = Math.max(0, this.#bufferTrends.length - 1)
++    let latestBytes = 4
++    for (const row of this.#bufferTrends) {
++      let size = this.#bufferSizes.get(row)
++      if (size === undefined) {
++        size = bytes(row)
++        this.#bufferSizes.set(row, size)
++      }
++      historyBytes += size
++      latestBytes = size
++    }
++    return this.#bufferEnvelopeBytes + latestBytes + historyBytes
++  }
+   snapshot(): ReadonlySnapshot<DiagnosticSnapshot> {
+     return this.#capture()
+   }
+@@ -363,7 +384,10 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
+   }
+   #bound(): void {
+     // Internal serialization sees only owned, sanitized records. Public captures remain detached.
+-    while (bytes(this.#capture(false)) > 128 * 1024) {
++    while (
++      bytes({ ...this.#capture(false), bufferTrend: null }) - 4 + this.#bufferBytes() >
++      128 * 1024
++    ) {
+       if (this.#bufferTrends.length) {
+         this.#bufferTrends.shift()
+         this.#counters.bufferTrendEvicted++
+diff --git a/tests-v2/regressions/buffer-diagnostics.ts b/tests-v2/regressions/buffer-diagnostics.ts
+index f6512ea..f7f082c 100644
+--- a/tests-v2/regressions/buffer-diagnostics.ts
++++ b/tests-v2/regressions/buffer-diagnostics.ts
+@@ -393,3 +393,37 @@ for (const fault of [
+     assert.equal(recorder.snapshot().bufferTrend.latest, null)
+     assert.equal(recorder.snapshot().counters.bufferTrendRejected, 1)
+   })
++for (const rate of [1, 2] as const)
++  test(`diagnostics-cost buffer rows are UTF-8 measured once while capacity stays exact rate=${rate}`, (t) => {
++    const scope = testScope(t)
++    const Encoder = TextEncoder
++    let calls = 0,
++      now = 10000
++    scope.defineGlobal('TextEncoder', {
++      configurable: true,
++      writable: true,
++      value: class extends Encoder {
++        override encode(input?: string) {
++          if (input?.includes('buffer-window-v6')) calls++
++          return super.encode(input)
++        }
++      },
++    })
++    const recorder = new DiagnosticRecorder(
++      () => now,
++      () => false,
++    )
++    for (let i = 0; i < 40; i++) {
++      now += 1000
++      recorder.recordPlayer(sample(now, { ...trend(now), rate }))
++    }
++    assert.ok(calls <= 41, `repeated buffer UTF-8 work: ${calls}`)
++    const before = recorder.snapshot()
++    assert.ok(Buffer.byteLength(JSON.stringify(before.bufferTrend)) <= 8192)
++    assert.ok(Buffer.byteLength(JSON.stringify(before)) <= 128 * 1024)
++    assert.equal(before.counters.bufferTrendEvicted, 40 - before.bufferTrend.history.length)
++    recorder.clear()
++    now += 1000
++    recorder.recordPlayer(sample(now, { ...trend(now), rate }))
++    assert.equal(recorder.snapshot().bufferTrend.history.length, 1)
++  })

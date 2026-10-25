@@ -20,7 +20,8 @@
     "archive:check": "node scripts/archive-check.mts",
     "compare:upstream": "node scripts/upstream-compare.mts",
     "evaluate:buffer-shadow": "node scripts/buffer-shadow-evaluation.mts",
-    "evaluate:buffer-live": "node scripts/buffer-live.mts"
+    "evaluate:buffer-live": "node scripts/buffer-live.mts",
+    "evaluate:diagnostics": "node scripts/diagnostics-cost.mts"
   },
   "devDependencies": {
     "@types/node": "26.6.4",

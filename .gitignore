@@ -51,6 +51,8 @@ coverage/
 !/archive/retired/docs/evidence/RESTORE_DELIVERY_2026-10-25.json
 !/archive/retired/docs/evidence/PRIVATE_ARCHIVE_ACCESS_2026-10-25.json
 !/archive/retired/docs/evidence/DOCUMENTATION_STATUS_2026-10-25.json
+!/archive/retired/docs/evidence/DIAGNOSTICS_COST_2026-10-25.json
+!/archive/retired/docs/evidence/DIAGNOSTICS_COST_CANDIDATE_2026-10-25.patch
 !/archive/retired/originals/
 !/archive/retired/originals/**
 !/archive/retired/releases/

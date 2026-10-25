@@ -1170,3 +1170,4 @@ test('diagnostic attempts retain six records and mode interruption survives late
   assert.equal(recorder.snapshot().counters.attemptEvicted, 2)
 })
 import '../regressions/buffer-cycle-renewal.ts'
+import '../regressions/diagnostics-workloads.ts'
