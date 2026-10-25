@@ -42,6 +42,14 @@ interface RestorePlan {
   result: NonNullable<RecoverySnapshot['restoration']>['result']
 }
 
+interface RestoreProgressObservation {
+  readonly attempt: RestoreAttempt
+  readonly controls: PlayerControlSnapshot
+  readonly positionSec: number
+  readonly at: number
+  readonly rate: number
+}
+
 import type {
   RecoveryPort,
   RecoveryPlayerPort,
@@ -75,6 +83,7 @@ export class RecoveryController implements RecoveryPort {
   #deadTicks = 0
   #deadReported = false
   #progressTicks = 0
+  #failedRestore: RestoreProgressObservation | null = null
   #state: RecoverySnapshot = Object.freeze({
     state: 'healthy',
     source: null,
@@ -106,7 +115,7 @@ export class RecoveryController implements RecoveryPort {
       ? Object.freeze({
           phase: token?.restored ? 'progress' : plan.phase,
           channel: plan.channel,
-          result: token?.restored ? 'verified' : plan.result,
+          result: plan.result,
         })
       : undefined
   }
@@ -141,6 +150,7 @@ export class RecoveryController implements RecoveryPort {
     this.#deadTicks = 0
     this.#deadReported = false
     this.#progressTicks = 0
+    this.#failedRestore = null
     this.#unhook()
     this.#pauseAt = 0
     this.#hadHealthy = false
@@ -241,18 +251,62 @@ export class RecoveryController implements RecoveryPort {
     const now = this.now()
     const previous = this.#lastSnapshot,
       controls = this.player.controls()
-    const { progress, newFrames } = this.#recordProgress(snapshot, previous, controls)
-    if (this.#endInvalidToken(snapshot, controls, now)) return
-    const healthy = this.#observeCoreHealth(snapshot, newFrames, now)
-    if (healthy) this.#acceptHealthy(snapshot, controls)
-    this.#observePause(snapshot, healthy, now)
-    this.#advanceToken(snapshot, progress, now)
+    if (
+      this.#failedRestore &&
+      comparePlaybackControls(controls, this.#failedRestore.controls) !== 'same'
+    )
+      this.#failedRestore = null
+    const token = this.#token,
+      plan = token?.restore
+    const observation: RestoreProgressObservation | null =
+      token?.restored && plan?.attempt && token.restoreBaseline
+        ? {
+            attempt: plan.attempt,
+            controls: token.controls,
+            positionSec: token.restoreBaseline.positionSec,
+            at: token.restoreBaseline.at,
+            rate: token.savedRate,
+          }
+        : this.#failedRestore
+    const native = observation ? this.player.readRestore(observation.attempt, 'progress') : null
+    let known =
+      !observation ||
+      (!!native?.owned &&
+        native.positionSec !== null &&
+        native.rate !== null &&
+        native.paused !== null &&
+        native.seeking !== null)
+    const observed =
+      native && known
+        ? {
+            ...snapshot,
+            currentTime: native.positionSec!,
+            playbackRate: native.rate!,
+            paused: native.paused!,
+            seeking: native.seeking!,
+          }
+        : snapshot
+    if (observation && !token && known && !this.#matchesRestoreProgress(observation, observed))
+      known = false
+    if (token?.restored && plan)
+      plan.result = !known
+        ? 'unknown'
+        : this.#matchesRestoreProgress(observation!, observed)
+          ? 'verified'
+          : 'mismatch'
+    const { progress, newFrames } = this.#recordProgress(observed, previous, controls, known)
+    if (this.#endInvalidToken(observed, controls, now)) return
+    const healthy = this.#observeCoreHealth(observed, newFrames, now)
+    if (healthy && known) this.#acceptHealthy(observed, controls)
+    this.#observePause(observed, healthy, now)
+    this.#advanceToken(observed, progress, now, known)
   }
 
   #recordProgress(
     snapshot: VideoSnapshot,
     previous: VideoSnapshot | null,
     controls: PlayerControlSnapshot,
+    known = true,
   ): { readonly progress: boolean; readonly newFrames: boolean } {
     const sameControls = comparePlaybackControls(controls, this.#lastControls) === 'same'
     const newFrames =
@@ -260,6 +314,7 @@ export class RecoveryController implements RecoveryPort {
       this.#lastFrames !== null &&
       playbackFramesAdvanced(snapshot.frames, this.#lastFrames)
     const progress =
+      known &&
       !!previous &&
       sameControls &&
       !previous.seeking &&
@@ -270,8 +325,8 @@ export class RecoveryController implements RecoveryPort {
       playbackTimeAdvanced(snapshot.currentTime, previous.currentTime) &&
       (snapshot.frames === null || newFrames)
     this.#progressTicks = progress ? this.#progressTicks + 1 : 0
-    this.#lastFrames = snapshot.frames
-    this.#lastSnapshot = snapshot
+    this.#lastFrames = known ? snapshot.frames : null
+    this.#lastSnapshot = known ? snapshot : null
     this.#lastControls = controls
     return { progress, newFrames }
   }
@@ -409,7 +464,12 @@ export class RecoveryController implements RecoveryPort {
     }
   }
 
-  #advanceToken(snapshot: VideoSnapshot, progress: boolean, now: number): void {
+  #advanceToken(
+    snapshot: VideoSnapshot,
+    progress: boolean,
+    now: number,
+    restoreKnown = true,
+  ): void {
     const token = this.#token
     if (!token) return
     if (
@@ -429,8 +489,11 @@ export class RecoveryController implements RecoveryPort {
       this.#finish('failed', 'paused')
       return
     }
+    // This tick's supplied snapshot predates any seek/rate/play performed above.
+    // It cannot verify or reject the native result of that just-finished restore.
+    if (token.restored && now <= token.restoredAt) return
     if (token.reloadingAt && !token.restored) progress = false
-    if (token.restored && !this.#restoredProgressValid(token, snapshot)) {
+    if (token.restored && restoreKnown && !this.#restoredProgressValid(token, snapshot)) {
       this.#finish('failed', 'restore-mismatch')
       return
     }
@@ -532,6 +595,7 @@ export class RecoveryController implements RecoveryPort {
       controls.userRevision !== before.userRevision
     )
       return
+    this.#failedRestore = null
     this.#token = {
       positionCapture,
       id: recoveryActionId(`core-${++this.#serial}`),
@@ -724,7 +788,20 @@ export class RecoveryController implements RecoveryPort {
           }
           const used = plan.phase === 'position' ? plan.positionNativeUsed : plan.rateNativeUsed
           const known =
-            plan.phase === 'position' ? reading.positionSec !== null : reading.rate !== null
+            plan.phase === 'position'
+              ? reading.positionSec !== null &&
+                reading.paused !== null &&
+                (reading.paused || reading.rate !== null) &&
+                Math.abs(
+                  reading.positionSec -
+                    (reading.landing
+                      ? reading.landing.positionSec +
+                        (reading.paused
+                          ? 0
+                          : (reading.rate! * Math.max(0, this.now() - reading.landing.at)) / 1000)
+                      : plan.targetSec),
+                ) > 1
+              : reading.rate !== null && reading.rate !== token.savedRate
           if (
             !used &&
             known &&
@@ -765,12 +842,23 @@ export class RecoveryController implements RecoveryPort {
 
   #resumeVerified(token: ResumeToken, rateAttempt: RestoreAttempt): void {
     if (!this.#restoreReady(token)) return
+    const beforePlay = this.player.readRestore(rateAttempt)
+    if (
+      !beforePlay.owned ||
+      beforePlay.positionSec === null ||
+      beforePlay.rate !== token.savedRate ||
+      beforePlay.paused === null ||
+      beforePlay.seeking !== false ||
+      !this.#restoreReady(token)
+    )
+      return
+    const playAt = this.now()
     const lifecycle = this.#lifecycleSerial
     let playResult: unknown
     if (token.wasPlaying) {
       this.#suppress = true
       try {
-        playResult = this.player.play()
+        playResult = this.player.play(() => this.#restoreReady(token))
       } catch {
         if (this.#token === token) this.#finish('recovered-paused', 'play-threw')
         return
@@ -792,10 +880,13 @@ export class RecoveryController implements RecoveryPort {
     const reading = this.player.readRestore(rateAttempt)
     if (
       !reading.owned ||
-      reading.rate !== token.savedRate ||
-      reading.positionSec === null ||
-      (token.restore?.positionAttempt &&
-        !this.#positionMatches(this.player.readRestore(token.restore.positionAttempt)))
+      (reading.rate !== null && reading.rate !== token.savedRate) ||
+      (reading.positionSec !== null &&
+        Math.abs(
+          reading.positionSec -
+            beforePlay.positionSec -
+            (reading.paused ? 0 : (token.savedRate * Math.max(0, this.now() - playAt)) / 1000),
+        ) > 1)
     ) {
       if (this.#token === token) this.#finish('failed', 'restore-mismatch')
       return
@@ -805,10 +896,12 @@ export class RecoveryController implements RecoveryPort {
     if (!this.#restoreReady(token)) return
     token.restored = true
     token.restoredAt = this.now()
-    token.restoreBaseline = { positionSec: reading.positionSec, at: token.restoredAt }
+    token.restoreBaseline = { positionSec: beforePlay.positionSec, at: playAt }
+    token.restore!.result =
+      reading.positionSec === null || reading.rate === null ? 'unknown' : 'verified'
     this.#lastSnapshot = {
       ...baseline,
-      currentTime: reading.positionSec,
+      currentTime: reading.positionSec ?? beforePlay.positionSec,
       playbackRate: token.savedRate,
     }
     this.#lastFrames = baseline.frames
@@ -827,13 +920,25 @@ export class RecoveryController implements RecoveryPort {
 
   #restoredProgressValid(token: ResumeToken, snapshot: VideoSnapshot): boolean {
     if (!token.restored || !token.restoreBaseline) return true
-    const baseline = token.restoreBaseline,
-      elapsed = Math.max(0, this.now() - baseline.at) / 1000
+    return this.#matchesRestoreProgress(
+      {
+        attempt: token.restore!.attempt!,
+        controls: token.controls,
+        positionSec: token.restoreBaseline.positionSec,
+        at: token.restoreBaseline.at,
+        rate: token.savedRate,
+      },
+      snapshot,
+    )
+  }
+
+  #matchesRestoreProgress(baseline: RestoreProgressObservation, snapshot: VideoSnapshot): boolean {
+    const elapsed = Math.max(0, this.now() - baseline.at) / 1000
     return (
-      snapshot.playbackRate === token.savedRate &&
+      snapshot.playbackRate === baseline.rate &&
       Number.isFinite(snapshot.currentTime) &&
       snapshot.currentTime >= baseline.positionSec - 1 &&
-      snapshot.currentTime <= baseline.positionSec + token.savedRate * elapsed + 1
+      snapshot.currentTime <= baseline.positionSec + baseline.rate * elapsed + 1
     )
   }
 
@@ -951,6 +1056,16 @@ export class RecoveryController implements RecoveryPort {
       observedRestoration && reason === 'restore-mismatch'
         ? Object.freeze({ ...observedRestoration, result: 'mismatch' as const })
         : observedRestoration
+    this.#failedRestore =
+      state === 'failed' && token?.restore?.attempt
+        ? Object.freeze({
+            attempt: token.restore.attempt,
+            controls: Object.freeze({ ...token.controls }),
+            positionSec: token.restoreBaseline?.positionSec ?? token.restore.targetSec,
+            at: token.restoreBaseline?.at ?? token.restore.issuedAt,
+            rate: token.savedRate,
+          })
+        : null
     this.#token = null
     this.#pauseAt = 0
     this.#unhook()

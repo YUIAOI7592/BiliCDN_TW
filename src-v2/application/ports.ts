@@ -44,7 +44,7 @@ export interface PlayerPort {
   playbackRate(): number
   seek(value: number, canCommit?: () => boolean): void
   setRate(value: number, canCommit?: () => boolean): void
-  play(): unknown
+  play(canCommit?: () => boolean): unknown
   reset(): void
 }
 

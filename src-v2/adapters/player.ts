@@ -14,6 +14,7 @@ import type {
   RestoreGuard,
   RestoreAttempt,
   RestoreReadback,
+  RestoreReadMode,
 } from '../application/recovery-ports.ts'
 
 export class PlayerAdapter {
@@ -58,8 +59,8 @@ export class PlayerAdapter {
   performRestore(command: RestoreCommand, guard: RestoreGuard): RestoreAttempt {
     return this.#controls.performRestore(command, guard)
   }
-  readRestore(attempt: RestoreAttempt): RestoreReadback {
-    return this.#controls.readRestore(attempt)
+  readRestore(attempt: RestoreAttempt, mode?: RestoreReadMode): RestoreReadback {
+    return this.#controls.readRestore(attempt, mode)
   }
   correctRestore(attempt: RestoreAttempt): void {
     this.#controls.correctRestore(attempt)
@@ -121,8 +122,8 @@ export class PlayerAdapter {
   setRate(value: number, canCommit?: () => boolean): void {
     this.#controls.setRate(value, canCommit)
   }
-  play(): unknown {
-    return this.#controls.play()
+  play(canCommit?: () => boolean): unknown {
+    return this.#controls.play(canCommit)
   }
   reset(): void {
     this.#controls.reset()

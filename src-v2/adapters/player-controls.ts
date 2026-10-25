@@ -8,6 +8,7 @@ import type {
   RestoreGuard,
   RestoreAttempt,
   RestoreReadback,
+  RestoreReadMode,
 } from '../application/recovery-ports.ts'
 import { playbackTimeAdvanced, playbackFramesAdvanced } from '../domain/playback-progress.ts'
 
@@ -1295,7 +1296,7 @@ export class PlayerControlObserver {
     }
   }
 
-  readRestore(attempt: RestoreAttempt): RestoreReadback {
+  readRestore(attempt: RestoreAttempt, mode: RestoreReadMode = 'command'): RestoreReadback {
     const unknown = (): RestoreReadback => ({
       owned: false,
       channel: 'none',
@@ -1308,7 +1309,16 @@ export class PlayerControlObserver {
       landing: null,
     })
     const record = this.#restoreRecord(attempt)
-    if (!record || !this.#restoreCurrent(record)) return unknown()
+    if (!record) return unknown()
+    // Progress-only observation never extends the reload/command write lease.
+    // The controller separately enforces its stable-owner confirmation policy.
+    const current = () =>
+      mode === 'progress'
+        ? this.#restoreRecord(attempt) === record &&
+          record.localCurrent() &&
+          this.#restoreRecord(attempt) === record
+        : this.#restoreCurrent(record)
+    if (!current()) return unknown()
     try {
       this.#noteRestoreLanding()
       const video = this.sources.video()
@@ -1318,7 +1328,7 @@ export class PlayerControlObserver {
         paused = video.paused,
         seeking = video.seeking,
         ready = video.readyState
-      if (!this.#restoreCurrent(record)) return unknown()
+      if (!current()) return unknown()
       return Object.freeze({
         owned: true,
         channel: record.channel,
@@ -1336,7 +1346,7 @@ export class PlayerControlObserver {
     } catch {
       return {
         ...unknown(),
-        owned: this.#restoreCurrent(record),
+        owned: current(),
         channel: record.channel,
         status: record.status,
       }
@@ -1376,11 +1386,14 @@ export class PlayerControlObserver {
     }
   }
 
-  play(): unknown {
+  play(canCommit: () => boolean = () => true): unknown {
     this.#clearKeyboardPlayback()
-    const player = this.sources.player()
-    if (!player || typeof player.play !== 'function') throw new Error('player.play unavailable')
-    return Reflect.apply(player.play, player, [])
+    const current = this.#nativeWriteGuard(canCommit)
+    const player = this.sources.player(),
+      method = player?.play
+    if (!player || typeof method !== 'function') throw new Error('player.play unavailable')
+    if (!current()) return undefined
+    return Reflect.apply(method, player, [])
   }
 
   reset(): void {

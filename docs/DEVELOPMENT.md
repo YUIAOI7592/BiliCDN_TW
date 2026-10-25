@@ -273,6 +273,8 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 救援還原的來源契約可執行 `npm test -- adapters --name SR1`、`npm test -- adapters --name SR2` 與 `npm test -- application --name SR2`。SR1 保護 SDK 例外後的原生寫入所有權；SR2 的 Observer／Recovery 單元與真實元件整合分開登記，核對落地、一次補正、期限、新操作及十五秒播放。這些契約不代替 IAB 真實媒體或安裝版驗收。診斷目前讀模型的 `recovery.restoration` 僅包含 position／rate／progress 階段、sdk／native／none 通道，以及 pending／unknown／verified／mismatch 結果；不輸出不透明證明或播放器物件。
 
+成功契約除 state 外還須核對原 action 的 source／保存目標及 reason，避免將失敗後的普通 playback-progress-observed 誤算成原還原成功。真實 Monitor／Runtime／Routes 閉環使用 `SR2-I-F01`；補正等待時段不算播放時間，SDK 快取前進而原生時間不前進、未知倍速、play getter 新操作及十五秒尾段復發各有拒絕對照。
+
 ## 唯讀緩衝趨勢診斷
 
 影子規則及資格集中於 [PROJECT_CONTEXT](PROJECT_CONTEXT.md#唯讀緩衝趨勢)，所有權集中於 [ARCHITECTURE](ARCHITECTURE.md#依賴方向)。本功能只讀取 Monitor 已取得的媒體／控制快照及 Runtime 轉交的既有完成事件，不新增網路讀取器或計時器。

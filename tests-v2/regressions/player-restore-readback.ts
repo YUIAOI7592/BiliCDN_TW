@@ -113,4 +113,18 @@ for (const rate of [1, 2]) {
     await Promise.resolve()
     assert.equal(f.video().currentTime, 300)
   })
+  test(`SR2-U06 progress-only observation cannot renew a native write lease rate=${rate}`, (t) => {
+    const f = fixture(t)
+    f.site.setPlaybackRate = () => undefined
+    f.video().playbackRate = rate === 1 ? 2 : 1
+    const attempt = f.observer.performRestore(
+      { kind: 'rate', value: rate, at: f.clock.now() },
+      f.guard,
+    )
+    f.clock.advance(15_000)
+    assert.equal(f.observer.readRestore(attempt).owned, false)
+    assert.equal(f.observer.readRestore(attempt, 'progress').rate, rate === 1 ? 2 : 1)
+    f.observer.correctRestore(attempt)
+    assert.equal(f.video().playbackRate, rate === 1 ? 2 : 1)
+  })
 }

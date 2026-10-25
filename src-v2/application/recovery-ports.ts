@@ -21,6 +21,7 @@ export interface RestoreAttempt {
   readonly kind: RestoreCommand['kind']
   readonly proof: object
 }
+export type RestoreReadMode = 'command' | 'progress'
 export interface RestoreReadback {
   readonly owned: boolean
   readonly channel: 'sdk' | 'native' | 'none'
@@ -49,7 +50,7 @@ export interface RecoveryPlayerPort extends Pick<
   captureResumePosition(): ResumePositionCapture
   validateResumePosition(capture: ResumePositionCapture, initializationRevision?: number): boolean
   performRestore(command: RestoreCommand, guard: RestoreGuard): RestoreAttempt
-  readRestore(attempt: RestoreAttempt): RestoreReadback
+  readRestore(attempt: RestoreAttempt, mode?: RestoreReadMode): RestoreReadback
   correctRestore(attempt: RestoreAttempt): void
 }
 export interface RecoveryPort {

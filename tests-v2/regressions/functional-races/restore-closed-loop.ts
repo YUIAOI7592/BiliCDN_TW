@@ -102,8 +102,11 @@ for (const rate of [1, 2]) {
     test(`SR2-I01 native verified restoration corrects ${fault} within six ticks and sustains fifteen seconds rate=${rate}`, (t) => {
       const f = fixture(t, rate, fault)
       f.tick()
+      if (fault === 'none') assert.equal(f.recovery.snapshot().state, 'waiting')
       for (let i = 0; i < 6; i++) f.progress()
       assert.equal(f.recovery.snapshot().state, 'recovered')
+      assert.equal(f.recovery.snapshot().reason, 'recovered')
+      assert.equal(f.recovery.snapshot().savedPositionSec, f.target)
       assert.equal(f.video().playbackRate, rate)
       assert.notEqual(f.playAt(), null)
       const expected = f.target + (rate * (f.clock.now() - f.playAt()!)) / 1000
@@ -176,6 +179,130 @@ for (const rate of [1, 2]) {
     assert.equal(f.recovery.snapshot().reason, 'restore-mismatch')
     assert.equal(f.recovery.snapshot().restoration?.result, 'mismatch')
     assert.equal(f.effects.filter((e) => e.method === 'reload').length, 1)
+  })
+  test(`SR2-I10 a new operation in the SDK play getter blocks the stale call rate=${rate}`, (t) => {
+    const f = fixture(t, rate, 'none')
+    let called = 0
+    Object.defineProperty(f.site, 'play', {
+      configurable: true,
+      get() {
+        f.pointer()
+        return () => {
+          called++
+          f.video().paused = false
+        }
+      },
+    })
+    f.tick()
+    assert.equal(called, 0)
+    assert.equal(f.video().paused, true)
+    assert.equal(f.recovery.isRecovering(), false)
+  })
+  test(`SR2-I11 cached SDK rate cannot conceal a wrong native playback rate=${rate}`, (t) => {
+    const f = fixture(t, rate, 'none')
+    f.tick()
+    f.site.getPlaybackRate = () => rate
+    f.video().playbackRate = rate === 1 ? 2 : 1
+    for (let i = 0; i < 3; i++) f.progress()
+    assert.notEqual(f.recovery.snapshot().state, 'recovered')
+    assert.equal(f.recovery.snapshot().reason, 'restore-mismatch')
+  })
+  test(`SR2-I12 unknown native rate after play cannot be replaced by the SDK cache rate=${rate}`, (t) => {
+    const f = fixture(t, rate, 'none')
+    f.tick()
+    f.site.getPlaybackRate = () => rate
+    Object.defineProperty(f.video(), 'playbackRate', { configurable: true, get: () => NaN })
+    for (let i = 0; i < 3; i++) {
+      f.video().currentTime += rate
+      f.video().frames += 30
+      f.advance(1000)
+    }
+    assert.notEqual(f.recovery.snapshot().state, 'recovered')
+    assert.equal(
+      f.recovery.isRecovering(),
+      true,
+      'unknown facts keep the original bounded wait: ' + JSON.stringify(f.recovery.snapshot()),
+    )
+  })
+  test(`SR2-I13 advancing SDK cache cannot supply missing native time progress rate=${rate}`, (t) => {
+    const f = fixture(t, rate, 'none')
+    f.tick()
+    let cached = f.target
+    f.site.getCurrentTime = () => cached
+    for (let i = 0; i < 3; i++) {
+      cached += rate
+      f.video().frames += 30
+      f.advance(1000)
+    }
+    assert.notEqual(f.recovery.snapshot().state, 'recovered')
+    assert.equal(f.recovery.isRecovering(), true, JSON.stringify(f.recovery.snapshot()))
+    assert.equal(f.video().currentTime, f.target)
+  })
+  test(`SR2-I14 failed native correction is not erased by wrong-position playback rate=${rate}`, (t) => {
+    const f = fixture(t, rate, 'seek'),
+      video = f.video()
+    const position = Object.getOwnPropertyDescriptor(video, 'currentTime')!
+    let corrections = 0
+    Object.defineProperty(video, 'currentTime', {
+      ...position,
+      set() {
+        corrections++
+      },
+    })
+    f.tick()
+    f.advance(1000)
+    f.advance(14_000)
+    assert.equal(f.recovery.snapshot().reason, 'reload-timeout')
+    video.paused = false
+    video.playbackRate = rate
+    for (let i = 0; i < 120; i++) {
+      position.set!.call(video, video.currentTime + 0.1)
+      video.frames += 30
+      f.advance(1000)
+      assert.notEqual(f.recovery.snapshot().state, 'recovered')
+    }
+    assert.equal(
+      corrections,
+      1,
+      'the ineffective correction cannot obtain another attempt after termination',
+    )
+    assert.equal(f.effects.filter((e) => e.method === 'reload').length, 1)
+    assert.equal(f.effects.filter((e) => e.method === 'play').length, 0)
+  })
+  test(`SR2-I15 a recurrence in the fifteen-second tail is rejected despite recovered state rate=${rate}`, (t) => {
+    const f = fixture(t, rate, 'both')
+    f.tick()
+    for (let i = 0; i < 6; i++) f.progress()
+    assert.equal(f.recovery.snapshot().state, 'recovered')
+    const samples = [f.sample()],
+      calls = f.effects.length
+    for (let i = 0; i < 15; i++) {
+      if (i === 7) f.advance(1000)
+      else f.progress()
+      samples.push(f.sample())
+    }
+    assert.equal(sustainedPlayback(samples, rate), false)
+    assert.equal(f.effects.length, calls)
+  })
+  test(`SR2-I16 pending SDK rate cannot force native correction before settlement rate=${rate}`, async (t) => {
+    const f = fixture(t, rate, 'rate'),
+      pending = deferred<void>()
+    f.site.setPlaybackRate = () => {
+      f.calls.rate++
+      return pending.promise
+    }
+    f.tick()
+    f.advance(1000)
+    assert.equal(f.writes.filter((row) => row.kind === 'rate').length, 0)
+    assert.equal(f.effects.filter((e) => e.method === 'play').length, 0)
+    pending.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    f.advance(1)
+    assert.equal(f.writes.filter((row) => row.kind === 'rate').length, 1)
+    for (let i = 0; i < 3; i++) f.progress()
+    assert.equal(f.recovery.snapshot().state, 'recovered')
+    assert.equal(f.calls.rate, 1)
   })
   for (const kind of ['position', 'rate'] as const) {
     test(`SR2-I05 ineffective native ${kind} correction is used once and expires rate=${rate}`, (t) => {

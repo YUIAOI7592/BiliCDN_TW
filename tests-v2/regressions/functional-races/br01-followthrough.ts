@@ -19,6 +19,7 @@ import { FakeStorage } from '../../support/storage.ts'
 import { testScope } from '../../support/scope.ts'
 import { monitorMeasurement } from '../../support/controllers.ts'
 import { deferred } from '../../support/deferred.ts'
+import { sustainedPlayback, type RescueProgressSample } from '../../support/rescue-acceptance.ts'
 
 // An SDK boundary model, informed by real Chrome's own reload -> paused/null
 // core -> replacement. Production Adapter/sampler/Monitor/Recovery/Runtime/
@@ -376,6 +377,7 @@ function fixture(t: TestContext) {
     monitor,
     recovery,
     routes,
+    storage,
     effects,
     video,
     ticks,
@@ -855,3 +857,76 @@ for (const invalidation of ['user', 'policy', 'core', 'hidden'] as const) {
     assert.equal(f.effects.reloads, 1)
   })
 }
+
+for (const rate of [1, 2])
+  test(`SR2-I-F01 real Monitor Runtime Routes close ignored SDK restoration within six ticks rate=${rate}`, (t) => {
+    const f = fixture(t)
+    f.video.playbackRate = rate
+    let writes = 0
+    const originalSet = f.storage.set.bind(f.storage)
+    f.storage.set = (...args) => {
+      writes++
+      return originalSet(...args)
+    }
+    f.onSeek(() => {
+      f.video.currentTime = 0
+      f.video.seeking = false
+    })
+    f.onRate(() => {
+      f.video.playbackRate = rate === 1 ? 2 : 1
+    })
+    f.ticks(30)
+    assert.equal(f.effects.reloads, 1)
+    const fallbacks = f.effects.fallbacks,
+      recoverCalls = f.effects.recoverCalls
+    f.ready()
+    const progress = () => {
+      if (!f.video.paused && !f.video.seeking) {
+        f.video.currentTime += f.video.playbackRate
+        f.video.frames += 30
+      }
+      f.ticks(1)
+    }
+    for (let i = 0; i < 6; i++) {
+      progress()
+      t.diagnostic(
+        JSON.stringify({
+          tick: i + 1,
+          rate,
+          position: f.video.currentTime,
+          nativeRate: f.video.playbackRate,
+          recovery: f.recovery.snapshot(),
+          effects: f.effects,
+        }),
+      )
+    }
+    assert.equal(f.recovery.snapshot().state, 'recovered')
+    assert.equal(f.recovery.snapshot().savedPositionSec, 978)
+    assert.equal(f.video.playbackRate, rate)
+    assert.deepEqual(f.effects.seeks, [978])
+    assert.deepEqual(f.effects.rates, [rate])
+    assert.equal(f.effects.plays, 1)
+    const sample = (): RescueProgressSample => ({
+      at: f.clock.now(),
+      position: f.video.currentTime,
+      frames: f.video.frames,
+      rate: f.video.playbackRate,
+      owner: 'same',
+      paused: f.video.paused,
+      seeking: f.video.seeking,
+      ended: f.video.ended,
+      error: !!f.video.error,
+      reloadCount: f.effects.reloads,
+    })
+    const samples = [sample()]
+    for (let i = 0; i < 15; i++) {
+      progress()
+      samples.push(sample())
+    }
+    assert.equal(sustainedPlayback(samples, rate), true)
+    assert.equal(f.effects.reloads, 1)
+    assert.equal(f.effects.plays, 1)
+    assert.equal(f.effects.fallbacks, fallbacks)
+    assert.equal(f.effects.recoverCalls, recoverCalls)
+    assert.equal(writes, 0)
+  })
