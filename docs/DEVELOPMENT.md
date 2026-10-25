@@ -160,6 +160,18 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 每個比較案例與清理各 5 秒、子程序外層 60 秒、輸出上限 32 MiB。頁面生命週期計時器／監聽器與未完成請求分開盤點，再由模擬頁面釋放；不以強殺程序或強清時鐘算通過，不取代產品元件 dispose 契約。比較工具不寫檔；若保存結果，使用按日期登記的公開調查報告及精確允許的合成 JSON，執行紀錄直接保存於被忽略的本機封存，不留 `.work` 或額外 `dist` 產物。結果入口由 [HISTORY](HISTORY.md) 維護。
 
+### 安裝版還原觀察工具
+
+[iab-installed-restore.mts](../scripts/iab-installed-restore.mts) 只在明確安裝後包裝目前文件的既有實例，不啟動產品控制器；[iab-installed-verdict.mts](../scripts/iab-installed-verdict.mts) 提供純可信尋位前提判定。匯入兩者都不建立網路、計時器或全域操作。瀏覽器仍須先依 [IAB_TESTING](IAB_TESTING.md) 校準與核對完整安裝身分，工具單元測試不授權網站窗口。
+
+呼叫端以正確 executionContext 的 window registry 及唯一 key 保存 case slot，先登記再安裝；不把遠端 objectId 當唯一收集器參照。Native seeking、有限捕獲目標及可信操作修訂可成立時，opaque proof=null 本身不應排除；不得修改原生 getter、位置或倍速補造前提。SDK wrapper 只對同一合法意圖／階段／參數施加受控效果，其他呼叫保留 receiver、返回、例外及 accessor setter；只還原仍由工具擁有的描述子。
+
+透明保留共用 RuntimeIdPort.next 的 ID 行為，建立時登記本內容週期的 request／startup／challenge；受控 EvidenceStore.record 使用拒絕寫入條件，其他工作原樣轉交。原始 ID、精確媒體 URL 與頁面物件只留記憶體，公開資料使用有界白名單投影及會話序號。記錄原始工具、輸入與完整執行腳本的 bytes／SHA-256；格式化後產物不能宣稱與實際載入 bundle 逐位元組相同。
+
+觀察器最多四分鐘，呼叫端另保留六十秒清理；arm 九十秒、pending 八秒及固定硬截止不因 heartbeat 延長。媒體最多 1024 筆、工具事件 4096 筆、4 MiB；第一次終點保留，缺樣／截斷／超量都無效。使用 [IabEventCollector](../scripts/iab-event-collector.mts) 時明確注入 ownsPaused，僅管理可證明自有的攔截；releaseHolding 先清空 patterns，再排空同一游標及釋放自有請求，游標可延續到還原尾端。每次完整 await；持有請求時持續服務事件，不留跨工具呼叫的未完成 Promise。
+
+清理盤點受控請求、route／probe／record Promise、SDK pending、Recovery token、Measurement 工作及記憶／持久證據。尾端全部收束後才移除寫入抑制；超過清理期限時保留 ID／寫入 guard 到自有文件卸載，恢復其他自有方法、解除計時器，結果記為 INVALID。資源退出與樣本隔離證明分開，不能清空學習或以舊快照回寫掩蓋缺口。具名工具契約列入 tooling；按日期結果由 [HISTORY](HISTORY.md) 追溯，是否續跑只看 TODO。
+
 ### 實際緩衝效用與採用判定工具
 
 使用 `npm run evaluate:buffer-live -- --input "evidence.json" --json` 唯讀重播本輪 schemaVersion 1 證據。工具固定核對 d0c2c8c／v2.1.35、422022 bytes 與原件 SHA-256；不讀正式 GM、不連網、不重新計算產品 candidate。摘要與 JSON 分別提供窗口結果、十五／六十秒後續、配對、提前量及採用門檻。十二個窗口完整有效時退出 0，缺少窗口、無效或輸入錯誤退出 1，非法參數退出 2。退出 0 仍可能因事件不足得到 insufficient；不表示授權產品操作。

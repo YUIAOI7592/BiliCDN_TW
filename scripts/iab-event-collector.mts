@@ -32,8 +32,11 @@ export interface CdpCapability {
 export interface CollectorOptions {
   clock?: () => number
   limit?: number
+  ownsPaused?: (params: CollectorEventParams) => boolean
 }
 export interface CollectorRow {
+  resourceType?: string
+  owned?: boolean
   sequence: number
   event: string
   at: number
@@ -47,6 +50,7 @@ export interface CollectorError {
   at: number
 }
 export interface CollectorSnapshot {
+  unownedPaused: number
   cursor: number | null
   rows: CollectorRow[]
   held: number
@@ -68,6 +72,8 @@ interface HeldRequest {
   networkId: string | null
 }
 export class IabEventCollector {
+  ownsPaused: (params: CollectorEventParams) => boolean
+  unownedPaused: number
   cdp: CdpCapability
   classify: (url: string) => string | undefined
   clock: () => number
@@ -90,12 +96,14 @@ export class IabEventCollector {
   constructor(
     cdp: CdpCapability,
     classify: (url: string) => string | undefined,
-    { clock = Date.now, limit = 12000 }: CollectorOptions = {},
+    { clock = Date.now, limit = 12000, ownsPaused = () => true }: CollectorOptions = {},
   ) {
     this.cdp = cdp
     this.classify = classify
     this.clock = clock
     this.limit = limit
+    this.ownsPaused = ownsPaused
+    this.unownedPaused = 0
     this.methods = [
       'Fetch.requestPaused',
       'Network.requestWillBeSent',
@@ -137,7 +145,7 @@ export class IabEventCollector {
     this.cursor = initial.cursor
     this.seen = initial.cursor
     this.active = true
-    await this.cdp.send('Fetch.enable', { patterns })
+    if (patterns.length) await this.cdp.send('Fetch.enable', { patterns })
     this.patterns = patterns.length
   }
   setHolding(value: boolean) {
@@ -152,10 +160,14 @@ export class IabEventCollector {
     const networkId = held.networkId
     if (
       networkId &&
-      this.rows.some((row) => row.id === networkId && row.event === 'Network.loadingFailed')
+      this.rows.some(
+        (row) =>
+          row.id === networkId &&
+          ['Network.loadingFailed', 'Network.loadingFinished'].includes(row.event),
+      )
     ) {
       this.held.delete(id)
-      return // Native cancellation already terminated this exact request.
+      return // Native terminal evidence already ended this exact request.
     }
     try {
       await this.cdp.send('Fetch.continueRequest', { requestId: id })
@@ -195,11 +207,16 @@ export class IabEventCollector {
           .sort((a, b) => a.sequence - b.sequence)
         // Capture every paused ID before any classifier or CDP continuation can fail.
         for (const e of events)
-          if (e.method === 'Fetch.requestPaused' && typeof e.params?.requestId === 'string')
+          if (e.method === 'Fetch.requestPaused' && typeof e.params?.requestId === 'string') {
+            if (!this.ownsPaused(e.params)) {
+              this.unownedPaused++
+              continue
+            }
             this.held.set(e.params.requestId, {
               kind: 'unknown',
               networkId: e.params.networkId ?? null,
             })
+          }
         this.cursor = Math.max(this.cursor ?? 0, batch.cursor)
         this.seen = Math.max(this.seen, batch.cursor, ...events.map((e) => e.sequence))
         for (const e of events) {
@@ -228,6 +245,14 @@ export class IabEventCollector {
             if (e.method === 'Network.requestWillBeSent') this.kinds.set(id, kind)
           }
           this.record({
+            ...(typeof p.resourceType === 'string'
+              ? { resourceType: p.resourceType }
+              : typeof p.type === 'string'
+                ? { resourceType: p.type }
+                : {}),
+            ...(e.method === 'Fetch.requestPaused'
+              ? { owned: id !== undefined && this.held.has(id) }
+              : {}),
             sequence: e.sequence,
             event: e.method,
             at: this.clock(),
@@ -256,17 +281,24 @@ export class IabEventCollector {
     }
     return this.snapshot()
   }
-  async cleanup() {
+  async releaseHolding() {
     if (this.busy) throw new Error('Wait for current pump before cleanup')
     this.holding = false
-    for (const id of [...this.held.keys()]) await this.release(id)
     await this.cdp.send('Fetch.enable', { patterns: [] })
     this.patterns = 0
+    if (this.active) await this.pump(0)
+    for (const id of [...this.held.keys()]) await this.release(id)
+    if (this.active) await this.pump(0)
+    return { ...this.snapshot(), complete: this.held.size === 0 }
+  }
+  async cleanup() {
+    await this.releaseHolding()
     this.active = false
     return { ...this.snapshot(), complete: this.held.size === 0 }
   }
   snapshot(): CollectorSnapshot {
     return {
+      unownedPaused: this.unownedPaused,
       cursor: this.cursor,
       rows: this.rows.map((r) => ({ ...r })),
       held: this.held.size,

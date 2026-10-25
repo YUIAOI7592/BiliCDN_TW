@@ -5,6 +5,69 @@ import type { CollectorEvent } from '../../scripts/iab-event-collector.mts'
 import { testScope } from '../support/scope.ts'
 import { deferred } from '../support/deferred.ts'
 
+test('IAB collector leaves pauses outside its installed interception scope untouched', async (t) => {
+  const f = fixture(t)
+  f.collector.ownsPaused = (p) => p.request?.url === 'https://owned.invalid/video'
+  await f.collector.start([])
+  f.add([paused(1, 'foreign', 'data:text/plain,synthetic')])
+  await f.collector.pump()
+  const s = await f.collector.cleanup()
+  assert.equal(s.held, 0)
+  assert.equal(s.unownedPaused, 1)
+  assert.equal(f.calls.filter((c) => c.method === 'Fetch.continueRequest').length, 0)
+})
+
+test('IAB releaseHolding retains the same active cursor through the recovery tail', async (t) => {
+  const f = fixture(t)
+  await f.collector.start([])
+  f.collector.setHolding(true)
+  f.add([paused(1, 'video')])
+  await f.collector.pump()
+  const released = await f.collector.releaseHolding()
+  assert.equal(released.active, true)
+  assert.equal(released.held, 0)
+  f.add([{ sequence: 2, method: 'Network.loadingFinished', params: { requestId: 'tail' } }])
+  await f.collector.pump()
+  assert.equal(f.collector.snapshot().cursor, 2)
+  assert.equal(f.collector.snapshot().rows.length, 2)
+})
+
+test('IAB cleanup clears interception before draining newly paused requests', async (t) => {
+  const f = fixture(t)
+  await f.collector.start([{ resourceType: 'XHR', requestStage: 'Request' }])
+  f.collector.setHolding(true)
+  f.add([paused(1, 'during-cleanup')])
+  const result = await f.collector.cleanup()
+  const clear = f.calls.findIndex(
+    (c) => c.method === 'Fetch.enable' && (c.params.patterns as unknown[])?.length === 0,
+  )
+  const release = f.calls.findIndex((c) => c.method === 'Fetch.continueRequest')
+  assert.ok(clear >= 0 && release > clear)
+  assert.equal(result.held, 0)
+  assert.equal(result.patterns, 0)
+  assert.equal(result.complete, true)
+})
+test('IAB cleanup accepts exact native loadingFinished ownership proof after interception clear', async (t) => {
+  const f = fixture(t)
+  await f.collector.start([])
+  f.collector.setHolding(true)
+  f.add([
+    {
+      ...paused(1, 'fetch'),
+      params: {
+        requestId: 'fetch',
+        networkId: 'native',
+        request: { url: 'https://owned.invalid/video' },
+      },
+    },
+  ])
+  await f.collector.pump()
+  f.add([{ sequence: 2, method: 'Network.loadingFinished', params: { requestId: 'native' } }])
+  const result = await f.collector.cleanup()
+  assert.equal(result.held, 0)
+  assert.equal(f.calls.filter((c) => c.method === 'Fetch.continueRequest').length, 0)
+})
+
 type Event = CollectorEvent & { params: NonNullable<CollectorEvent['params']> }
 const paused = (sequence: number, id: string, url = 'https://owned.invalid/video'): Event => ({
   sequence,

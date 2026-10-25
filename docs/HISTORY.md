@@ -6,6 +6,8 @@
 
 ## 版本
 
+- [IR36 工具修正與第二輪安裝版驗證（2026-10-25，v2.1.36）](../archive/retired/docs/INSTALLED_RESTORE_IR36_R2_2026-10-25.md)
+
 - [IR36 小範圍安裝版救援驗證（2026-10-25，v2.1.36）](../archive/retired/docs/INSTALLED_RESTORE_IR36_2026-10-25.md)
 
 - [診斷成本基準與候選不採用（2026-10-25，v2.1.36）](../archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md)
@@ -178,6 +180,8 @@
 
 ### 版本安裝紀錄
 
+- [v2.1.36 IR36 第二輪逐案結果與尾端稽核](../archive/retired/docs/INSTALLED_RESTORE_IR36_R2_2026-10-25.md)
+
 - [v2.1.36 IR36 八案固定範圍與工具限制](../archive/retired/docs/INSTALLED_RESTORE_IR36_2026-10-25.md)
 
 - [v2.0.3 Chrome acceptance — targeted pass completed](../archive/retired/docs/CHROME_v2.0.3_ACCEPTANCE.md)
@@ -227,6 +231,8 @@
 - [測試工具驗證紀錄](TEST_TOOLING_REPORT.md)
 
 ## 日期
+
+- [2026-10-25：IR36 工具修正與第二輪安裝版驗證](../archive/retired/docs/INSTALLED_RESTORE_IR36_R2_2026-10-25.md)
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
