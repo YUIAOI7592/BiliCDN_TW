@@ -5666,6 +5666,12 @@
   ],
   "unchangedFiles": [
     {
+      "path": "archive/retired/docs/evidence/RESTORE_VERIFICATION_2026-10-25.json",
+      "encoding": "raw",
+      "bytes": 84695,
+      "sha256": "e1b313b36634c942ea64836e6b7ca3deb8e6fe7b6ea329ef9138423a5dab0c43"
+    },
+    {
       "path": "archive/retired/originals/PRE_RESTORE_2026-10-25_20ba3b2.json",
       "encoding": "raw",
       "bytes": 481682,

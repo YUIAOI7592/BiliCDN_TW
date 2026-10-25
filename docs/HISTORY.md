@@ -6,6 +6,8 @@
 
 ## 版本
 
+- [救援還原閉環與原生寫入所有權（2026-10-25，未發布來源）](../archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md)
+
 - [緩衝候選後續門檻與採用決策（2026-10-25）](../archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md)
 
 - [緩衝風險覆蓋與可介入性離線評估（2026-10-25）](../archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md)

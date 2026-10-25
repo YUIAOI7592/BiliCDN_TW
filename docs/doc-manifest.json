@@ -75,6 +75,14 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md",
+      "kind": "record",
+      "topics": ["rescue-restore-verification"],
+      "versions": ["v2.1.35"],
+      "date": "2026-10-25",
+      "requiredAnchors": []
+    },
+    {
       "path": "archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md",
       "kind": "record",
       "topics": ["buffer-adoption-decision"],
@@ -2952,6 +2960,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 12840,
+      "sha256": "caf7fe4ba4187cadc8478955a0b6223045f6c47078cab735ac58260d11ad1ef2"
+    },
     {
       "path": "archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md",
       "mode": "exact",

@@ -1,0 +1,2632 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "unreleased-restore-verification-checkpoint",
+  "date": "2026-10-25",
+  "baseline": "20ba3b2eca2bfea198b8d8021c1b496e17e44835",
+  "runtimeRevision": "c0bd0536dabf93ca57d04db8553be6129c135231",
+  "version": "2.1.35",
+  "intendedReleaseVersion": "2.1.36",
+  "releaseGatePassed": false,
+  "releaseBlocker": "necessary-source-isolation-not-passed",
+  "commits": [
+    "770e2f771a539072aa4f1046634af4befe47c142",
+    "0c39818d2be480ee5db920f935d5818eedf366d6",
+    "c0bd0536dabf93ca57d04db8553be6129c135231"
+  ],
+  "sourceSha256": {
+    "src-v2/adapters/player-controls.ts": "bbc58cd6d51b11f45b5b029ab7168462f91723441c04c9abf4936918d6c4f25a",
+    "src-v2/adapters/player.ts": "e04e0177c4fc7b87e6369741f34746aea153807f4e663a5733b115a9537eaabc",
+    "src-v2/application/ports.ts": "ad0156f9c69ce31d26d0389e34892bbebee10ac02bcbd2876b2fd6dfa2aba320",
+    "src-v2/application/recovery-controller.ts": "462a20bc0f2f4ccd918e12766ff9965400b17a6852766394ebc0ea03f7e9c455",
+    "src-v2/application/recovery-model.ts": "cc50e23e0d8e6f81b09bec7fe54bb53bd02db06b0c643d9e28ba6ea3941ae0d6",
+    "src-v2/application/recovery-ports.ts": "b3181cdabf7ecc690789d50337a84ac34dc5d383b6518d6ac57bd99dfeed0ce1",
+    "tests-v2/regressions/player-restore-ownership.ts": "576b10f80e0f97ad50967aed98ce39596096628f6721db9245edefb73f73e001",
+    "tests-v2/regressions/player-restore-readback.ts": "1cd9b6e4380cb3545fd1b4c21faa2aeb6b1ae42ac411406ef62468f0c7916751",
+    "tests-v2/regressions/recovery-restore-controller.ts": "fea90742a3dbc0f04bad879da7f5d2f0dee5d6d2d26cce32fd70e0b14c3e7a33",
+    "tests-v2/regressions/functional-races/restore-ownership.ts": "201b187315dc0d0b99954f5f3086bcfb3fde5981779f5a2fa1b936beedcc57ed",
+    "tests-v2/regressions/functional-races/restore-closed-loop.ts": "c30eece30807066dee5f06e3fa0e9f8c95ffc2af62b198dbe5acd03fbc411913",
+    "tests-v2/regressions/functional-races/br01-followthrough.ts": "d1c0b08ad6fdcde45339a9c44049122a53724c6b63ef358076249b59639c3926"
+  },
+  "redStages": [
+    {
+      "id": "SR1-adapters",
+      "sourceRevision": "20ba3b2",
+      "sourceSha256": {
+        "src-v2/adapters/player-controls.ts": "1256319f9317b33980e14e8b3a47af44f2f7ad93bd8b984f35e2c3c15463d6ed",
+        "src-v2/adapters/player.ts": "c1102ced01ec7dc226eb7e22d371775e7a653c7d4503550eb3faa74deb938951",
+        "src-v2/application/ports.ts": "85d63101d5d61a8ef3f2fb95c26c7f53390446e0433d0aacb2171c983aa82e78",
+        "src-v2/application/recovery-controller.ts": "d4c783589ca4debb4111a07433d0864150939f2e82d8e5cbe958e88f04be79b0"
+      },
+      "exitCode": 1,
+      "passed": 2,
+      "failed": 19,
+      "cases": [
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer pointer rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer seek rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer pause rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer core rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer video rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer lifecycle rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer hidden rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer reset rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer policy rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U02 unchanged owner retains the existing native rate fallback rate=1",
+          "status": "passed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer pointer rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer seek rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer pause rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer core rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer video rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer lifecycle rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer hidden rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer reset rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U01 throwing SDK rate cannot overwrite newer policy rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U02 unchanged owner retains the existing native rate fallback rate=2",
+          "status": "passed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-U03 missing SDK seek getter cannot change owner then write old native position",
+          "status": "failed",
+          "expected": "pass"
+        }
+      ],
+      "log": {
+        "name": "red-adapters.log",
+        "bytes": 19704,
+        "sha256": "72abea3987aebce19d99af591ac2a844e6d2864988a99702bad9ad60bab0cb68",
+        "availability": "private-local-archive"
+      }
+    },
+    {
+      "id": "SR1-application",
+      "sourceRevision": "20ba3b2",
+      "sourceSha256": {
+        "src-v2/adapters/player-controls.ts": "1256319f9317b33980e14e8b3a47af44f2f7ad93bd8b984f35e2c3c15463d6ed",
+        "src-v2/adapters/player.ts": "c1102ced01ec7dc226eb7e22d371775e7a653c7d4503550eb3faa74deb938951",
+        "src-v2/application/ports.ts": "85d63101d5d61a8ef3f2fb95c26c7f53390446e0433d0aacb2171c983aa82e78",
+        "src-v2/application/recovery-controller.ts": "d4c783589ca4debb4111a07433d0864150939f2e82d8e5cbe958e88f04be79b0"
+      },
+      "exitCode": 1,
+      "passed": 0,
+      "failed": 10,
+      "cases": [
+        {
+          "name": "SR1-I01 SDK rate rejection preserves newer seek and stops play rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-I01 SDK rate rejection preserves newer pause and stops play rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-I01 SDK rate rejection preserves newer rate and stops play rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-I01 SDK rate rejection preserves newer hidden and stops play rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-I01 SDK rate rejection preserves newer policy and stops play rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-I01 SDK rate rejection preserves newer seek and stops play rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-I01 SDK rate rejection preserves newer pause and stops play rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-I01 SDK rate rejection preserves newer rate and stops play rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-I01 SDK rate rejection preserves newer hidden and stops play rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR1-I01 SDK rate rejection preserves newer policy and stops play rate=2",
+          "status": "failed",
+          "expected": "pass"
+        }
+      ],
+      "log": {
+        "name": "red-application.log",
+        "bytes": 10834,
+        "sha256": "9867a420307c65bc40c3b8d4a869a7775c55db86e120f7edc8bd0185ff4eb9b9",
+        "availability": "private-local-archive"
+      }
+    },
+    {
+      "id": "SR2-initial",
+      "sourceRevision": "770e2f7",
+      "sourceSha256": {
+        "src-v2/adapters/player-controls.ts": "3f3be1e87fa34ba20c579ebd505990fb7977870d3210f67c4c744d13fe9cf68f",
+        "src-v2/adapters/player.ts": "cacc48bae7961765c1bf49e3a2d67eed65d3a41d731a4fac271981d81f745eef",
+        "src-v2/application/recovery-controller.ts": "bc204048e6decd158ee27d2fc4c38ee7dbf1da2f1bf9e9991b06f419e4aac3ae",
+        "src-v2/application/recovery-ports.ts": "54f4a9e6041366d06a0be9ca6bba7e6711a6967c8781077c9fc83f452f859c8e"
+      },
+      "exitCode": 1,
+      "passed": 4,
+      "failed": 8,
+      "cases": [
+        {
+          "name": "SR2-I01 native verified restoration corrects seek within six ticks and sustains fifteen seconds rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I01 native verified restoration corrects rate within six ticks and sustains fifteen seconds rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I01 native verified restoration corrects both within six ticks and sustains fifteen seconds rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I01 native verified restoration corrects none within six ticks and sustains fifteen seconds rate=1",
+          "status": "passed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I02 ignored seek at an already correct zero needs no native correction rate=1",
+          "status": "passed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I03 asynchronous seek does not permit early rate or play rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I01 native verified restoration corrects seek within six ticks and sustains fifteen seconds rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I01 native verified restoration corrects rate within six ticks and sustains fifteen seconds rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I01 native verified restoration corrects both within six ticks and sustains fifteen seconds rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I01 native verified restoration corrects none within six ticks and sustains fifteen seconds rate=2",
+          "status": "passed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I02 ignored seek at an already correct zero needs no native correction rate=2",
+          "status": "passed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I03 asynchronous seek does not permit early rate or play rate=2",
+          "status": "failed",
+          "expected": "pass"
+        }
+      ],
+      "log": {
+        "name": "red-closed-loop.log",
+        "bytes": 9589,
+        "sha256": "c30d2f8e3f355f2d5d3f943fd9db332c5142b1a78cacad2b272f66c1ab88c279",
+        "availability": "private-local-archive"
+      }
+    },
+    {
+      "id": "SR2-final-boundaries",
+      "sourceRevision": "0c39818",
+      "sourceSha256": {
+        "src-v2/adapters/player-controls.ts": "4eaef3f6424f1b5af8a439b954440d526b50caa5847f575b57d8f70851edcd6b",
+        "src-v2/adapters/player.ts": "0c70ba87037fc611e4454269b9e3a4f40ccaa46ca5cf67336b87ded8588d4fd3",
+        "src-v2/application/ports.ts": "9297b870eb2182228573128c9396eb1f706a4d6b37583d1a92231577401bdf3e",
+        "src-v2/application/recovery-controller.ts": "7582a73e03d4dd3ef05b198a39305ea0428e24ac803013166daec0b626c1017b",
+        "src-v2/application/recovery-ports.ts": "c16357d057dadc93630bddc8160be051b16d3010e6de25e6ffa9afa60b48e80f"
+      },
+      "exitCode": 1,
+      "passed": 0,
+      "failed": 8,
+      "cases": [
+        {
+          "name": "SR2-I10 a new operation in the SDK play getter blocks the stale call rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I11 cached SDK rate cannot conceal a wrong native playback rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I12 unknown native rate after play cannot be replaced by the SDK cache rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I13 advancing SDK cache cannot supply missing native time progress rate=1",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I10 a new operation in the SDK play getter blocks the stale call rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I11 cached SDK rate cannot conceal a wrong native playback rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I12 unknown native rate after play cannot be replaced by the SDK cache rate=2",
+          "status": "failed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I13 advancing SDK cache cannot supply missing native time progress rate=2",
+          "status": "failed",
+          "expected": "pass"
+        }
+      ],
+      "log": {
+        "name": "red-final-boundaries.log",
+        "bytes": 8634,
+        "sha256": "52ecc62e3b9465db529f5249d24cf7e35c8fc5efa6bc2e9b8abcc84742d2d994",
+        "availability": "private-local-archive"
+      }
+    },
+    {
+      "id": "SR2-play-anchor",
+      "sourceRevision": "0c39818-with-before-play-anchor.patch",
+      "sourceSha256": null,
+      "exitCode": 1,
+      "passed": 1,
+      "failed": 1,
+      "cases": [
+        {
+          "name": "SR2-I-F01 real Monitor Runtime Routes close ignored SDK restoration within six ticks rate=1",
+          "status": "passed",
+          "expected": "pass"
+        },
+        {
+          "name": "SR2-I-F01 real Monitor Runtime Routes close ignored SDK restoration within six ticks rate=2",
+          "status": "failed",
+          "expected": "pass"
+        }
+      ],
+      "log": {
+        "name": "green-full-chain-debug.log",
+        "bytes": 5566,
+        "sha256": "8ac6bdca2c4488c297ad086e6ff30720606da4306d7760c0fda9da77bde65a2b",
+        "availability": "private-local-archive"
+      }
+    }
+  ],
+  "redPlayAnchorPatch": {
+    "name": "before-play-anchor.patch",
+    "bytes": 24355,
+    "sha256": "c33ce1181c1ad4cb1ac508c7c28643fb1e7b60df7b2cbaf650a48306bf84b54b",
+    "availability": "private-local-archive"
+  },
+  "contracts": {
+    "exitCode": 0,
+    "total": 117,
+    "unit": 61,
+    "integration": 56,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "cases": [
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer pointer rate=1",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 2.8481,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer seek rate=1",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.5926,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer pause rate=1",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2747,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer core rate=1",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2072,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer video rate=1",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2232,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer lifecycle rate=1",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2097,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer hidden rate=1",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.4093,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer reset rate=1",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2128,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer policy rate=1",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1887,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U02 unchanged owner retains the existing native rate fallback rate=1",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 47,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2667,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U04 SDK method getter reentry prevents calling the stale method rate=1",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 61,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2397,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer pointer rate=2",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 1.826,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer seek rate=2",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2692,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer pause rate=2",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2645,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer core rate=2",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1461,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer video rate=2",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1247,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer lifecycle rate=2",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1121,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer hidden rate=2",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1059,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer reset rate=2",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.121,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U01 throwing SDK rate cannot overwrite newer policy rate=2",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 18,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1122,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U02 unchanged owner retains the existing native rate fallback rate=2",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 47,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1099,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U04 SDK method getter reentry prevents calling the stale method rate=2",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 61,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1316,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-U03 missing SDK seek getter cannot change owner then write old native position",
+        "file": "tests-v2/regressions/player-restore-ownership.ts",
+        "line": 87,
+        "column": 1,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2683,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U01 native readback confirms the actual SDK landing and detached proof rate=1",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 25,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.8905,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U02 throwing SDK rate uses the same single native channel rate=1",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 43,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2785,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U03 unavailable native position throw remains unknown rate=1",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 62,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2156,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U03 unavailable native position NaN remains unknown rate=1",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 62,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1454,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U03 unavailable native position Infinity remains unknown rate=1",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 62,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1444,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U04 native correction cannot retain an obsolete pointer owner rate=1",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 80,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2122,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U04 native correction cannot retain an obsolete core owner rate=1",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 80,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1378,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U04 native correction cannot retain an obsolete content owner rate=1",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 80,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1259,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U04 native correction cannot retain an obsolete hidden owner rate=1",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 80,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1197,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U04 native correction cannot retain an obsolete reset owner rate=1",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 80,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1664,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U05 pending SDK seek cannot absorb a different unknown seek rate=1",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 97,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.298,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U06 progress-only observation cannot renew a native write lease rate=1",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 116,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2968,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U01 native readback confirms the actual SDK landing and detached proof rate=2",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 25,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2059,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U02 throwing SDK rate uses the same single native channel rate=2",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 43,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1923,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U03 unavailable native position throw remains unknown rate=2",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 62,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1674,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U03 unavailable native position NaN remains unknown rate=2",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 62,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1521,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U03 unavailable native position Infinity remains unknown rate=2",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 62,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1614,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U04 native correction cannot retain an obsolete pointer owner rate=2",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 80,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1517,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U04 native correction cannot retain an obsolete core owner rate=2",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 80,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1363,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U04 native correction cannot retain an obsolete content owner rate=2",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 80,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1461,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U04 native correction cannot retain an obsolete hidden owner rate=2",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 80,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1487,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U04 native correction cannot retain an obsolete reset owner rate=2",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 80,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1232,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U05 pending SDK seek cannot absorb a different unknown seek rate=2",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 97,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1848,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U06 progress-only observation cannot renew a native write lease rate=2",
+        "file": "tests-v2/regressions/player-restore-readback.ts",
+        "line": 116,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1629,
+        "suite": "adapters",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I-F01 real Monitor Runtime Routes close ignored SDK restoration within six ticks rate=1",
+        "file": "tests-v2/regressions/functional-races/br01-followthrough.ts",
+        "line": 862,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 22.6154,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I-F01 real Monitor Runtime Routes close ignored SDK restoration within six ticks rate=2",
+        "file": "tests-v2/regressions/functional-races/br01-followthrough.ts",
+        "line": 862,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 4.3101,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-I01 SDK rate rejection preserves newer seek and stops play rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-ownership.ts",
+        "line": 7,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 1.4737,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-I01 SDK rate rejection preserves newer pause and stops play rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-ownership.ts",
+        "line": 7,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.5826,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-I01 SDK rate rejection preserves newer rate and stops play rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-ownership.ts",
+        "line": 7,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.4614,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-I01 SDK rate rejection preserves newer hidden and stops play rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-ownership.ts",
+        "line": 7,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3917,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-I01 SDK rate rejection preserves newer policy and stops play rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-ownership.ts",
+        "line": 7,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3437,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-I01 SDK rate rejection preserves newer seek and stops play rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-ownership.ts",
+        "line": 7,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3777,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-I01 SDK rate rejection preserves newer pause and stops play rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-ownership.ts",
+        "line": 7,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3703,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-I01 SDK rate rejection preserves newer rate and stops play rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-ownership.ts",
+        "line": 7,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.4127,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-I01 SDK rate rejection preserves newer hidden and stops play rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-ownership.ts",
+        "line": 7,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3131,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR1-I01 SDK rate rejection preserves newer policy and stops play rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-ownership.ts",
+        "line": 7,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3271,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I01 native verified restoration corrects seek within six ticks and sustains fifteen seconds rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 102,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.8459,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I01 native verified restoration corrects rate within six ticks and sustains fifteen seconds rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 102,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.7682,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I01 native verified restoration corrects both within six ticks and sustains fifteen seconds rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 102,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.5056,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I01 native verified restoration corrects none within six ticks and sustains fifteen seconds rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 102,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.4087,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I02 ignored seek at an already correct zero needs no native correction rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 131,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.4128,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I03 asynchronous seek does not permit early rate or play rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 139,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.5972,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I04 ignored seek correction observes the 999/1000 ms boundary rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 162,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.4505,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I09 wrong speed after play cannot turn frame progress into recovered rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 173,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3751,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I10 a new operation in the SDK play getter blocks the stale call rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 183,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.6148,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I11 cached SDK rate cannot conceal a wrong native playback rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 201,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3956,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I12 unknown native rate after play cannot be replaced by the SDK cache rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 210,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3909,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I13 advancing SDK cache cannot supply missing native time progress rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 227,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3559,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I14 failed native correction is not erased by wrong-position playback rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 241,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.7887,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I15 a recurrence in the fifteen-second tail is rejected despite recovered state rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 272,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.6016,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I16 pending SDK rate cannot force native correction before settlement rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 287,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.516,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I05 ineffective native position correction is used once and expires rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 308,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 1.0441,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I06 new operation inside native position correction blocks later effects rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 333,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.4143,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I05 ineffective native rate correction is used once and expires rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 308,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.9202,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I06 new operation inside native rate correction blocks later effects rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 333,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.4345,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I07 pending SDK seek cannot force a native write or survive reset rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 352,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.4512,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I08 unknown native NaN cannot acknowledge restoration rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 372,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3506,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I08 unknown native Infinity cannot acknowledge restoration rate=1",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 372,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2543,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I01 native verified restoration corrects seek within six ticks and sustains fifteen seconds rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 102,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3843,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I01 native verified restoration corrects rate within six ticks and sustains fifteen seconds rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 102,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3686,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I01 native verified restoration corrects both within six ticks and sustains fifteen seconds rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 102,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.6622,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I01 native verified restoration corrects none within six ticks and sustains fifteen seconds rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 102,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.4625,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I02 ignored seek at an already correct zero needs no native correction rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 131,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.408,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I03 asynchronous seek does not permit early rate or play rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 139,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.29,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I04 ignored seek correction observes the 999/1000 ms boundary rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 162,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.4055,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I09 wrong speed after play cannot turn frame progress into recovered rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 173,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2538,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I10 a new operation in the SDK play getter blocks the stale call rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 183,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2861,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I11 cached SDK rate cannot conceal a wrong native playback rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 201,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2455,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I12 unknown native rate after play cannot be replaced by the SDK cache rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 210,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.225,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I13 advancing SDK cache cannot supply missing native time progress rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 227,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.223,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I14 failed native correction is not erased by wrong-position playback rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 241,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.7952,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I15 a recurrence in the fifteen-second tail is rejected despite recovered state rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 272,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3511,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I16 pending SDK rate cannot force native correction before settlement rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 287,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2722,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I05 ineffective native position correction is used once and expires rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 308,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.6345,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I06 new operation inside native position correction blocks later effects rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 333,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2903,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I05 ineffective native rate correction is used once and expires rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 308,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.8338,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I06 new operation inside native rate correction blocks later effects rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 333,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.44,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I07 pending SDK seek cannot force a native write or survive reset rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 352,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.4892,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I08 unknown native NaN cannot acknowledge restoration rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 372,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2068,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-I08 unknown native Infinity cannot acknowledge restoration rate=2",
+        "file": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+        "line": 372,
+        "column": 5,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1941,
+        "suite": "application",
+        "layer": "integration",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R01 Recovery waits 999/1000 ms then confirms native position before rate and play rate=1",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 161,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 1.2167,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R02 pending command never authorizes forced correction rate=1",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 177,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1904,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R03 an ineffective correction cannot become recovered from wrong-position frames rate=1",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 191,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.3176,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R04 native fallback already consumed cannot obtain a second correction rate=1",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 209,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1238,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R05 readback reentry cannot commit rate or play after qualification loss rate=1",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 217,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1214,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R06 a true zero is acknowledged without native correction rate=1",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 225,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1004,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R07 the existing end-of-media clipping remains exact rate=1",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 230,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1508,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R01 Recovery waits 999/1000 ms then confirms native position before rate and play rate=2",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 161,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1813,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R02 pending command never authorizes forced correction rate=2",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 177,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.1299,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R03 an ineffective correction cannot become recovered from wrong-position frames rate=2",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 191,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.2469,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R04 native fallback already consumed cannot obtain a second correction rate=2",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 209,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.0953,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R05 readback reentry cannot commit rate or play after qualification loss rate=2",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 217,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.0605,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R06 a true zero is acknowledged without native correction rate=2",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 225,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.0774,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      },
+      {
+        "name": "SR2-U-R07 the existing end-of-media clipping remains exact rate=2",
+        "file": "tests-v2/regressions/recovery-restore-controller.ts",
+        "line": 230,
+        "column": 3,
+        "kind": "test",
+        "status": "passed",
+        "durationMs": 0.0681,
+        "suite": "application",
+        "layer": "unit",
+        "expected": "pass",
+        "processExitCode": 0
+      }
+    ],
+    "cleanupError": null
+  },
+  "fullChainTrace": {
+    "source": {
+      "name": "phase2-final-verify-2.log",
+      "bytes": 374854,
+      "sha256": "c4b9d265f70e466b69022c6ebea75775abc23b450e8a931d6b33f60f3c942df5",
+      "availability": "private-local-archive"
+    },
+    "rows": [
+      {
+        "tick": 1,
+        "rate": 1,
+        "position": 0,
+        "nativeRate": 1,
+        "recovery": {
+          "state": "reloading",
+          "source": "stall",
+          "pauseSec": 0,
+          "reloadCount": 1,
+          "breakerSec": 0,
+          "restoration": {
+            "phase": "position",
+            "channel": "sdk",
+            "result": "mismatch"
+          }
+        },
+        "effects": {
+          "reloads": 1,
+          "seeks": [
+            978
+          ],
+          "rates": [],
+          "plays": 0,
+          "fallbacks": 1,
+          "recoverCalls": 1
+        }
+      },
+      {
+        "tick": 2,
+        "rate": 1,
+        "position": 978,
+        "nativeRate": 2,
+        "recovery": {
+          "state": "reloading",
+          "source": "stall",
+          "pauseSec": 0,
+          "reloadCount": 1,
+          "breakerSec": 0,
+          "restoration": {
+            "phase": "rate",
+            "channel": "sdk",
+            "result": "mismatch"
+          }
+        },
+        "effects": {
+          "reloads": 1,
+          "seeks": [
+            978
+          ],
+          "rates": [
+            1
+          ],
+          "plays": 0,
+          "fallbacks": 1,
+          "recoverCalls": 1
+        }
+      },
+      {
+        "tick": 3,
+        "rate": 1,
+        "position": 978,
+        "nativeRate": 1,
+        "recovery": {
+          "state": "waiting",
+          "source": "stall",
+          "pauseSec": 0,
+          "reloadCount": 1,
+          "breakerSec": 0,
+          "savedPositionSec": 978,
+          "savedRate": 1,
+          "restoration": {
+            "phase": "progress",
+            "channel": "native",
+            "result": "verified"
+          }
+        },
+        "effects": {
+          "reloads": 1,
+          "seeks": [
+            978
+          ],
+          "rates": [
+            1
+          ],
+          "plays": 1,
+          "fallbacks": 1,
+          "recoverCalls": 1
+        }
+      },
+      {
+        "tick": 4,
+        "rate": 1,
+        "position": 979,
+        "nativeRate": 1,
+        "recovery": {
+          "state": "waiting",
+          "source": "stall",
+          "pauseSec": 0,
+          "reloadCount": 1,
+          "breakerSec": 0,
+          "savedPositionSec": 978,
+          "savedRate": 1,
+          "restoration": {
+            "phase": "progress",
+            "channel": "native",
+            "result": "verified"
+          }
+        },
+        "effects": {
+          "reloads": 1,
+          "seeks": [
+            978
+          ],
+          "rates": [
+            1
+          ],
+          "plays": 1,
+          "fallbacks": 1,
+          "recoverCalls": 1
+        }
+      },
+      {
+        "tick": 5,
+        "rate": 1,
+        "position": 980,
+        "nativeRate": 1,
+        "recovery": {
+          "state": "recovered",
+          "reason": "recovered",
+          "savedPositionSec": 978,
+          "savedRate": 1,
+          "restoration": {
+            "phase": "progress",
+            "channel": "native",
+            "result": "verified"
+          },
+          "source": "stall",
+          "pauseSec": 0,
+          "reloadCount": 1,
+          "breakerSec": 85
+        },
+        "effects": {
+          "reloads": 1,
+          "seeks": [
+            978
+          ],
+          "rates": [
+            1
+          ],
+          "plays": 1,
+          "fallbacks": 1,
+          "recoverCalls": 1
+        }
+      },
+      {
+        "tick": 6,
+        "rate": 1,
+        "position": 981,
+        "nativeRate": 1,
+        "recovery": {
+          "state": "recovered",
+          "reason": "recovered",
+          "savedPositionSec": 978,
+          "savedRate": 1,
+          "restoration": {
+            "phase": "progress",
+            "channel": "native",
+            "result": "verified"
+          },
+          "source": "stall",
+          "pauseSec": 0,
+          "reloadCount": 1,
+          "breakerSec": 85
+        },
+        "effects": {
+          "reloads": 1,
+          "seeks": [
+            978
+          ],
+          "rates": [
+            1
+          ],
+          "plays": 1,
+          "fallbacks": 1,
+          "recoverCalls": 1
+        }
+      },
+      {
+        "tick": 1,
+        "rate": 2,
+        "position": 0,
+        "nativeRate": 2,
+        "recovery": {
+          "state": "reloading",
+          "source": "stall",
+          "pauseSec": 0,
+          "reloadCount": 1,
+          "breakerSec": 0,
+          "restoration": {
+            "phase": "position",
+            "channel": "sdk",
+            "result": "mismatch"
+          }
+        },
+        "effects": {
+          "reloads": 1,
+          "seeks": [
+            978
+          ],
+          "rates": [],
+          "plays": 0,
+          "fallbacks": 1,
+          "recoverCalls": 1
+        }
+      },
+      {
+        "tick": 2,
+        "rate": 2,
+        "position": 978,
+        "nativeRate": 1,
+        "recovery": {
+          "state": "reloading",
+          "source": "stall",
+          "pauseSec": 0,
+          "reloadCount": 1,
+          "breakerSec": 0,
+          "restoration": {
+            "phase": "rate",
+            "channel": "sdk",
+            "result": "mismatch"
+          }
+        },
+        "effects": {
+          "reloads": 1,
+          "seeks": [
+            978
+          ],
+          "rates": [
+            2
+          ],
+          "plays": 0,
+          "fallbacks": 1,
+          "recoverCalls": 1
+        }
+      },
+      {
+        "tick": 3,
+        "rate": 2,
+        "position": 978,
+        "nativeRate": 2,
+        "recovery": {
+          "state": "waiting",
+          "source": "stall",
+          "pauseSec": 0,
+          "reloadCount": 1,
+          "breakerSec": 0,
+          "savedPositionSec": 978,
+          "savedRate": 2,
+          "restoration": {
+            "phase": "progress",
+            "channel": "native",
+            "result": "verified"
+          }
+        },
+        "effects": {
+          "reloads": 1,
+          "seeks": [
+            978
+          ],
+          "rates": [
+            2
+          ],
+          "plays": 1,
+          "fallbacks": 1,
+          "recoverCalls": 1
+        }
+      },
+      {
+        "tick": 4,
+        "rate": 2,
+        "position": 980,
+        "nativeRate": 2,
+        "recovery": {
+          "state": "waiting",
+          "source": "stall",
+          "pauseSec": 0,
+          "reloadCount": 1,
+          "breakerSec": 0,
+          "savedPositionSec": 978,
+          "savedRate": 2,
+          "restoration": {
+            "phase": "progress",
+            "channel": "native",
+            "result": "verified"
+          }
+        },
+        "effects": {
+          "reloads": 1,
+          "seeks": [
+            978
+          ],
+          "rates": [
+            2
+          ],
+          "plays": 1,
+          "fallbacks": 1,
+          "recoverCalls": 1
+        }
+      },
+      {
+        "tick": 5,
+        "rate": 2,
+        "position": 982,
+        "nativeRate": 2,
+        "recovery": {
+          "state": "recovered",
+          "reason": "recovered",
+          "savedPositionSec": 978,
+          "savedRate": 2,
+          "restoration": {
+            "phase": "progress",
+            "channel": "native",
+            "result": "verified"
+          },
+          "source": "stall",
+          "pauseSec": 0,
+          "reloadCount": 1,
+          "breakerSec": 85
+        },
+        "effects": {
+          "reloads": 1,
+          "seeks": [
+            978
+          ],
+          "rates": [
+            2
+          ],
+          "plays": 1,
+          "fallbacks": 1,
+          "recoverCalls": 1
+        }
+      },
+      {
+        "tick": 6,
+        "rate": 2,
+        "position": 984,
+        "nativeRate": 2,
+        "recovery": {
+          "state": "recovered",
+          "reason": "recovered",
+          "savedPositionSec": 978,
+          "savedRate": 2,
+          "restoration": {
+            "phase": "progress",
+            "channel": "native",
+            "result": "verified"
+          },
+          "source": "stall",
+          "pauseSec": 0,
+          "reloadCount": 1,
+          "breakerSec": 85
+        },
+        "effects": {
+          "reloads": 1,
+          "seeks": [
+            978
+          ],
+          "rates": [
+            2
+          ],
+          "plays": 1,
+          "fallbacks": 1,
+          "recoverCalls": 1
+        }
+      }
+    ],
+    "interpretation": "Simulated native values and real Monitor/Runtime/Routes/Adapter/Recovery; not browser playback evidence."
+  },
+  "verification": {
+    "publishedVersionCaseCount": 2595,
+    "taskBaselineCaseCount": 2725,
+    "phaseOne": {
+      "count": 2758,
+      "exitCode": 0,
+      "log": {
+        "name": "phase1-verify-host.log",
+        "bytes": 362778,
+        "sha256": "b9bf2d267126c060516edebfcf1c15b0ef7fbc74686f39e6584aabea017d49b8",
+        "availability": "private-local-archive"
+      }
+    },
+    "initialClosedLoop": {
+      "count": 2824,
+      "exitCode": 0,
+      "log": {
+        "name": "phase2-verify-3.log",
+        "bytes": 368992,
+        "sha256": "9ea98a21d61d3319bf4666b37196f61695efbe1b6178d78f7179b3c96af78c89",
+        "availability": "private-local-archive"
+      },
+      "supersededByFinalBoundaryContracts": true
+    },
+    "final": {
+      "count": 2842,
+      "tooling": 564,
+      "exitCode": 0,
+      "log": {
+        "name": "phase2-final-verify-2.log",
+        "bytes": 374854,
+        "sha256": "c4b9d265f70e466b69022c6ebea75775abc23b450e8a931d6b33f60f3c942df5",
+        "availability": "private-local-archive"
+      }
+    },
+    "cleanSource": {
+      "schemaVersion": 1,
+      "sourceRevision": "c0bd0536dabf93ca57d04db8553be6129c135231",
+      "npmCiExitCode": 0,
+      "verifyExitCode": 0,
+      "cases": 2842,
+      "noInitialDependencies": true,
+      "noWork": true,
+      "noPrivateArchive": true,
+      "trackedInputsUnchanged": true,
+      "buildSha256": "7e7a7a3338a31fd678349b74c985f44f28887a6d837da10c300fab75e8efc387",
+      "buildBytes": 439664,
+      "npmCiLog": {
+        "name": "final-clean-npm-ci.log",
+        "bytes": 578,
+        "sha256": "c1cd38c488a647626f713220b209f9963d4e249ede10f535b8baf115222874d7",
+        "availability": "private-local-archive"
+      },
+      "verifyLog": {
+        "name": "final-clean-verify.log",
+        "bytes": 374853,
+        "sha256": "cfb876bf99bfe012d947a6f1545db245ee7b3a80a160715f4f6f14a98ffe8229",
+        "availability": "private-local-archive"
+      }
+    },
+    "initialRestrictedEnvironment": {
+      "log": {
+        "name": "phase1-verify.log",
+        "bytes": 527259,
+        "sha256": "9ac09be69dbf9f283ee50635931f182ee8b46153351b4c6b866a7b0bce0200c2",
+        "availability": "private-local-archive"
+      },
+      "outcome": "Six archive tooling Git initialization cases were blocked; preserved separately; same host suite later passed."
+    }
+  },
+  "security": [
+    {
+      "scanId": "ef073335-ccd2-4e06-ba3b-04b18e60accc",
+      "base": "20ba3b2",
+      "head": "0c39818d2be480ee5db920f935d5818eedf366d6",
+      "status": "complete",
+      "coverage": "complete",
+      "surfaces": 28,
+      "findings": 0,
+      "applicability": "initial-checkpoint-only"
+    },
+    {
+      "scanId": "1f186e41-b2b2-43b7-ac8d-bed33e5976cb",
+      "base": "20ba3b2",
+      "head": "c0bd0536dabf93ca57d04db8553be6129c135231",
+      "status": "complete",
+      "coverage": "complete",
+      "surfaces": 28,
+      "findings": 0,
+      "applicability": "final-runtime",
+      "browserGateSatisfied": false
+    }
+  ],
+  "sourceIsolation": {
+    "initialWindow": {
+      "schemaVersion": 1,
+      "rawFile": "source-partial.json",
+      "rawSha256": "b50950988339ff2a156462eb52950e01a0634b9024dbd444bc1d105a37e3a993",
+      "samples": 48,
+      "validity": "invalid",
+      "verdict": "未判定",
+      "reason": "CDP-cleanup-request-rejected; no-owned-cleanup-acknowledgment",
+      "correction": "The prior label assumed the final read had not run. Cached rows prove it ran; no cleanup response exists. Preserve the original record without rewriting it.",
+      "firstAt": 25075350.299999997,
+      "lastAt": 25122354.299999997,
+      "observedDurationMs": 47004,
+      "cleanupReply": null,
+      "tabNoLongerPresent": true,
+      "loopbackListenerAbsent": true,
+      "approvalTimeout": {
+        "totalIntervalMs": 25035651.3,
+        "executionMs": null,
+        "approvalWaitMs": null,
+        "unclassifiedMs": null,
+        "classification": "approval-review-timeout; intervals cannot be separated"
+      },
+      "initialBundleSha256": null,
+      "additionalLimitation": "The first source bundle was not frozen or hashed before the invalid window; do not substitute the later c0bd053 bundle as its original identity.",
+      "rawEvidence": {
+        "name": "source-partial.json",
+        "bytes": 27969,
+        "sha256": "b50950988339ff2a156462eb52950e01a0634b9024dbd444bc1d105a37e3a993",
+        "availability": "private-local-archive"
+      }
+    },
+    "finalCalibration": {
+      "schemaVersion": 1,
+      "sourceRevision": "c0bd0536dabf93ca57d04db8553be6129c135231",
+      "sourceInputs": "source-inputs-c0bd053-v2.json",
+      "userPermissionRenewed": true,
+      "windowStarted": false,
+      "casesExecuted": 0,
+      "validity": "not-executed",
+      "verdict": "未判定",
+      "blockedOperation": "CDP Page.getResourceTree / source calibration",
+      "reason": "saved user permission or managed policy denies raw CDP for the isolated origin",
+      "noRetryOrWorkaround": true,
+      "cleanup": {
+        "tabClosed": true,
+        "tabInventoryEmpty": true,
+        "serviceStopped": true
+      },
+      "releaseGatePassed": false
+    },
+    "frozenInputs": {
+      "schemaVersion": 1,
+      "sourceRevision": "c0bd0536dabf93ca57d04db8553be6129c135231",
+      "purpose": "Add sanitized ownership and ordered command evidence before the first final-source window; no product change.",
+      "files": {
+        "fixture.mp4": {
+          "bytes": 1135896,
+          "sha256": "4db249fd57f5ba02da4179ad69e4a055920e1ab355e16c768d28252453261377"
+        },
+        "source-isolation-c0bd053-v2.js": {
+          "bytes": 90740,
+          "sha256": "7df49fbbdec6ec10080515e482c9d4d7394e944a505e55e8fc86f97cfa2e6d9a"
+        },
+        "source-harness.ts": {
+          "bytes": 9205,
+          "sha256": "8fadfec3a78b85985810cf5469c6666aa43a1fe6152fe8d05dc9edb7fcd34144"
+        },
+        "source-server.mts": {
+          "bytes": 2255,
+          "sha256": "153e4ee9d2eaffcc74c242a3919b0268596bb1940a796e1555b9d751a807bdfe"
+        }
+      },
+      "executed": false
+    },
+    "preparedCases": [
+      {
+        "id": "S-none-1",
+        "fault": "none",
+        "rate": 1,
+        "validity": "not-executed",
+        "verdict": "未判定",
+        "reason": "source-calibration-blocked-before-start"
+      },
+      {
+        "id": "S-none-2",
+        "fault": "none",
+        "rate": 2,
+        "validity": "not-executed",
+        "verdict": "未判定",
+        "reason": "source-calibration-blocked-before-start"
+      },
+      {
+        "id": "S-seek-1",
+        "fault": "seek",
+        "rate": 1,
+        "validity": "not-executed",
+        "verdict": "未判定",
+        "reason": "source-calibration-blocked-before-start"
+      },
+      {
+        "id": "S-seek-2",
+        "fault": "seek",
+        "rate": 2,
+        "validity": "not-executed",
+        "verdict": "未判定",
+        "reason": "source-calibration-blocked-before-start"
+      },
+      {
+        "id": "S-rate-1",
+        "fault": "rate",
+        "rate": 1,
+        "validity": "not-executed",
+        "verdict": "未判定",
+        "reason": "source-calibration-blocked-before-start"
+      },
+      {
+        "id": "S-rate-2",
+        "fault": "rate",
+        "rate": 2,
+        "validity": "not-executed",
+        "verdict": "未判定",
+        "reason": "source-calibration-blocked-before-start"
+      },
+      {
+        "id": "S-both-1",
+        "fault": "both",
+        "rate": 1,
+        "validity": "not-executed",
+        "verdict": "未判定",
+        "reason": "source-calibration-blocked-before-start"
+      },
+      {
+        "id": "S-both-2",
+        "fault": "both",
+        "rate": 2,
+        "validity": "not-executed",
+        "verdict": "未判定",
+        "reason": "source-calibration-blocked-before-start"
+      },
+      {
+        "id": "S-delay-1",
+        "fault": "delay",
+        "rate": 1,
+        "validity": "not-executed",
+        "verdict": "未判定",
+        "reason": "source-calibration-blocked-before-start"
+      },
+      {
+        "id": "S-delay-2",
+        "fault": "delay",
+        "rate": 2,
+        "validity": "not-executed",
+        "verdict": "未判定",
+        "reason": "source-calibration-blocked-before-start"
+      },
+      {
+        "id": "S-operation-1",
+        "fault": "operation",
+        "rate": 1,
+        "validity": "not-executed",
+        "verdict": "未判定",
+        "reason": "source-calibration-blocked-before-start"
+      },
+      {
+        "id": "S-operation-2",
+        "fault": "operation",
+        "rate": 2,
+        "validity": "not-executed",
+        "verdict": "未判定",
+        "reason": "source-calibration-blocked-before-start"
+      }
+    ],
+    "cleanup": {
+      "ownTabClosed": true,
+      "ownServiceStopped": true,
+      "finalCaseStarted": false
+    }
+  },
+  "preserved": [
+    {
+      "path": "Release/v2.1.35/BiliCDN_TW.user.js",
+      "bytes": 422022,
+      "sha256": "7458f27610a0b2a9f13e07c1e087502198809dacb2a411f5112acf9aaf3b9cc3"
+    },
+    {
+      "path": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "bytes": 3488160,
+      "sha256": "9e5c726c603c1b1eb8780622e702b13b243668c3bc96588145230732dc92d2f6"
+    },
+    {
+      "path": "archive/retired/docs/evidence/BUFFER_RISK_EVALUATION_2026-10-25.json",
+      "bytes": 7412052,
+      "sha256": "1cc9c19326a04b0ea69278058ee181e451ca7e806f3f5aafbd243ed6915f5800"
+    },
+    {
+      "path": "archive/retired/docs/evidence/BUFFER_ADOPTION_DECISION_2026-10-25.json",
+      "bytes": 1175641,
+      "sha256": "7a65930ad9006d490883b8cc5002dbf5239e1b2de1decb9f7a2dcc919b9fd2a8"
+    },
+    {
+      "path": "archive/retired/originals/PRE_RESTORE_2026-10-25_20ba3b2.json",
+      "bytes": 481682,
+      "sha256": "cab57a14e50c2e6a623438b2d4e9931eb2fd99d62b239858f87046d4fa3e9921"
+    }
+  ],
+  "limitations": [
+    "Initial invalid source window has no owned-cleanup acknowledgement and no pre-recorded bundle hash.",
+    "Approval timeout total interval does not measure execution time or consume the browser budget by itself.",
+    "Explicit renewed authorization did not remove the saved CDP permission or managed-policy denial.",
+    "Final source cases, website fault rescue, and installation regression were not executed.",
+    "No version increment, public push, tag, release, or published artifact replacement at this checkpoint.",
+    "Node models and static security coverage do not establish real website recovery success."
+  ]
+}
