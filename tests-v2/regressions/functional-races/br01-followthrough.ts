@@ -347,6 +347,11 @@ function fixture(t: TestContext) {
     site.seek(position)
     effects.seeks.length = 0
   }
+  const settleSeek = () => {
+    video.seeking = false
+    video.dispatchEvent(new Event('seeked'))
+    monitor.tick()
+  }
   const requestNewRepresentation = () => {
     const nextManifest = structuredClone(manifest)
     nextManifest.video[0]!.id = 64
@@ -398,6 +403,7 @@ function fixture(t: TestContext) {
       playResult = value
     },
     sdkSeek,
+    settleSeek,
     requestNewRepresentation,
     policyChanged: () => routes.invalidateForUserSetting(),
     visible: (value: boolean) => {
@@ -445,6 +451,7 @@ test('BR-01 followthrough: the marked own core must restore current target, spee
   f.ticks(1)
   f.ready()
   f.ticks(1)
+  f.settleSeek()
   const controls = f.player.controls()
   assert.equal(controls.coreReloadRevision, controls.reloadRevision)
   assert.deepEqual(f.effects.seeks, [978])
@@ -509,6 +516,7 @@ test('BR-01 followthrough: an SDK initialization seek discards stale position re
   f.sdkSeek(977)
   const revision = f.player.controls().userRevision
   f.ticks(1)
+  f.settleSeek()
   assert.equal(f.player.controls().userRevision, revision)
   assert.deepEqual(
     f.effects.seeks,
@@ -527,6 +535,7 @@ test('BR-01 followthrough: a current legal Auto representation after owned reloa
   f.requestNewRepresentation()
   f.ready()
   f.ticks(1)
+  f.settleSeek()
   assert.deepEqual(f.effects.seeks, [978])
   assert.deepEqual(f.effects.rates, [2])
   assert.equal(f.effects.plays, 1)
@@ -668,6 +677,7 @@ test('BR-01 followthrough control: a new user operation inside rate restore prev
   f.ready()
   f.onRate(() => f.userPause())
   f.ticks(1)
+  f.settleSeek()
   assert.deepEqual(f.effects.seeks, [978])
   assert.deepEqual(f.effects.rates, [2])
   assert.equal(f.effects.plays, 0)
@@ -681,6 +691,7 @@ test('BR-01 followthrough control: late play rejection after a user pause cannot
   f.ticks(30)
   f.ready()
   f.ticks(1)
+  f.settleSeek()
   assert.equal(f.effects.plays, 1)
   f.userPause()
   f.ticks(1)

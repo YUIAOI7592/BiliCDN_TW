@@ -7,6 +7,7 @@ import { FakeClock } from '../../support/clock.ts'
 import { testScope } from '../../support/scope.ts'
 import { idleControls } from '../../support/player.ts'
 import { deferred } from '../../support/deferred.ts'
+import { synchronousRestoreMethods } from '../../support/player.ts'
 
 function fixture(t: TestContext, rate: number, target = 978) {
   const scope = testScope(t),
@@ -42,7 +43,7 @@ function fixture(t: TestContext, rate: number, target = 978) {
     Record<'capture' | 'rate' | 'snapshot' | 'reload' | 'seek' | 'setRate' | 'play', () => void>
   > = {}
   const returns = { reload: (): unknown => undefined, play: (): unknown => undefined }
-  const player = {
+  const rawPlayer = {
     controls: () => controls,
     snapshot: () => {
       on.snapshot?.()
@@ -91,7 +92,8 @@ function fixture(t: TestContext, rate: number, target = 978) {
       on.play?.()
       return returns.play()
     },
-  } satisfies RecoveryPlayerPort
+  } satisfies Omit<RecoveryPlayerPort, 'performRestore' | 'readRestore' | 'correctRestore'>
+  const player = Object.assign(rawPlayer, synchronousRestoreMethods(rawPlayer))
   const recovery = new RecoveryController(player, clock.now, () => active)
   scope.defer(() => {
     recovery.dispose()

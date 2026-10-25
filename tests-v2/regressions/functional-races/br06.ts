@@ -22,6 +22,7 @@ function fixture(t: TestContext) {
   let snapshotPatch: Partial<VideoSnapshot> = {}
   class DomElement extends EventTarget {
     currentTime = 120
+    paused = false
     seeking = false
     readyState = 4
     playbackRate = 1
@@ -989,6 +990,9 @@ test('BR-06 a late play rejection cannot revive restoration after a new actual k
   f.video.seeking = false
   f.patch({ readyState: 4 })
   f.monitor.tick()
+  f.video.seeking = false
+  f.video.dispatchEvent(new Event('seeked'))
+  f.monitor.tick()
   assert.equal(f.recovery.snapshot().state, 'waiting')
   f.key(true)
   f.monitor.tick()
@@ -1523,6 +1527,9 @@ for (const outcome of ['fulfilled', 'rejected'] as const) {
     f.replaceCore()
     f.video.seeking = false
     f.patch({ readyState: 4 })
+    f.monitor.tick()
+    f.video.seeking = false
+    f.video.dispatchEvent(new Event('seeked'))
     f.monitor.tick()
     assert.equal(f.recovery.snapshot().state, 'waiting')
     f.keyup(true)

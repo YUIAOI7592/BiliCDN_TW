@@ -269,6 +269,10 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 可信播放意圖的契約須涵蓋同播放器／媒體／內容、paused／ended／error、真正可見性、可信事件與清理後回呼；既有路線授權、拖曳、額度、死核心 4 秒、其他意圖 30 秒與重載後 15 秒仍適用。一般停滯另驗 6／12 秒、長 seek／未完成可信目標 15／30 秒及同段升級不重開起點／額度。目標捕獲與初始化例外須驗真正零、未知來源撤銷、每個副作用前重入及晚到完成；recovered 後再檢查 15 個一秒區段，該驗收不延後產品兩樣本成功判定。來源隔離、正常實際播放與有限失敗退出分列，不能以來源模型代替安裝版。現行工作與停止狀態見 [TODO](TODO.md)。
 
+## 救援還原驗證
+
+救援還原的來源契約可執行 `npm test -- adapters --name SR1`、`npm test -- adapters --name SR2` 與 `npm test -- application --name SR2`。SR1 保護 SDK 例外後的原生寫入所有權；SR2 的 Observer／Recovery 單元與真實元件整合分開登記，核對落地、一次補正、期限、新操作及十五秒播放。這些契約不代替 IAB 真實媒體或安裝版驗收。診斷目前讀模型的 `recovery.restoration` 僅包含 position／rate／progress 階段、sdk／native／none 通道，以及 pending／unknown／verified／mismatch 結果；不輸出不透明證明或播放器物件。
+
 ## 唯讀緩衝趨勢診斷
 
 影子規則及資格集中於 [PROJECT_CONTEXT](PROJECT_CONTEXT.md#唯讀緩衝趨勢)，所有權集中於 [ARCHITECTURE](ARCHITECTURE.md#依賴方向)。本功能只讀取 Monitor 已取得的媒體／控制快照及 Runtime 轉交的既有完成事件，不新增網路讀取器或計時器。

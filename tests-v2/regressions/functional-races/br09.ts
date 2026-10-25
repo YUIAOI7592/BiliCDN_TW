@@ -599,6 +599,9 @@ for (const rate of [1, 2] as const) {
       f.ready()
       f.clock.advance(1000)
       f.recovery.tick(f.player.snapshot())
+      f.video.seeking = false
+      f.video.dispatchEvent(new Event('seeked'))
+      f.recovery.tick(f.player.snapshot())
       assert.deepEqual(f.effects.seeks, [target])
       assert.equal(f.recovery.snapshot().savedPositionSec, target)
       assert.equal(f.video.currentTime, target)

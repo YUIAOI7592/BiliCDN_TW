@@ -81,6 +81,10 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 播放器方法的原生備援由 PlayerControlObserver 檢查本次媒體／播放器／核心、內容週期及操作修訂；RecoveryController 另注入當前 token、政策與期限資格。方法 getter、SDK 呼叫或例外處理內發生重入後，不得由舊備援繼續寫入。守門不保存另一份恢復 token，也不建立計時器。
 
+`RecoveryController` 唯一保存 position／rate 還原階段、原截止時間及兩項原生補正額度。內部 `RecoveryPlayerPort.performRestore/readRestore/correctRestore` 只交換具名命令、不透明嘗試證明與有限原生事實；`PlayerControlObserver` 各保留一筆位置／倍速命令，核對自有 reload、實際媒體／核心、控制修訂與可見性，不建立另一個恢復決策者。原生 seeked 或同步回讀只確認同命令、同所有者的落地；pending seek 只容許原位置或本次目標，其他未知 seek 仍撤銷。Promise 晚到只更新仍有效命令的結果，不取得副作用權限。
+
+還原先驗證位置、再驗證倍速，才呼叫 SDK play；同步正常 SDK 可在同一 tick 前進，實際 seeking 則等待原生完成。補正與既有原生備援共用一次額度；補正 setter 拋錯仍消耗機會，沿原期限等待。`RecoverySnapshot.restoration` 只投影固定 phase／channel／result，現有診斷匯出直接消費，不保存第二份恢復狀態或 DOM／核心物件。行為門檻統一見 [自有重載產品契約](PROJECT_CONTEXT.md#br-01-自有-sdk-重載後續恢復契約)。
+
 - `RouteCoordinator` 產生路線決策、套用親和主機、規劃考慮群組的備援，提交證據或路線失效前驗證探測／傳輸結果。
 - 僅 `MeasurementController` 啟動主動探測。它管理每分頁一次、由播放器請求觸發的有界起播預測試：最多三個並行候選，共用三秒期限；後續安全輪次依序量測最多三個挑戰候選。MP4／FLV 分段共用起播窗口。路線協調器在提交前驗證起播選擇；健康探索只記錄證據，不變更親和主機。
 - 主動起播及健康探測拒絕轉址，只計入已接納主機的直接 206 Range 回應。

@@ -7,6 +7,32 @@ export interface ResumePositionCapture {
   readonly proof: object | null
 }
 
+export interface RestoreCommand {
+  readonly kind: 'position' | 'rate'
+  readonly value: number
+  readonly at: number
+}
+export interface RestoreGuard {
+  readonly reloadRevision: number
+  readonly valid: () => boolean
+  readonly now: () => number
+}
+export interface RestoreAttempt {
+  readonly kind: RestoreCommand['kind']
+  readonly proof: object
+}
+export interface RestoreReadback {
+  readonly owned: boolean
+  readonly channel: 'sdk' | 'native' | 'none'
+  readonly status: 'pending' | 'settled' | 'rejected'
+  readonly positionSec: number | null
+  readonly rate: number | null
+  readonly paused: boolean | null
+  readonly seeking: boolean | null
+  readonly readyState: number | null
+  readonly landing: { readonly positionSec: number; readonly at: number } | null
+}
+
 export interface RecoveryPlayerPort extends Pick<
   PlayerPort,
   | 'controls'
@@ -22,6 +48,9 @@ export interface RecoveryPlayerPort extends Pick<
 > {
   captureResumePosition(): ResumePositionCapture
   validateResumePosition(capture: ResumePositionCapture, initializationRevision?: number): boolean
+  performRestore(command: RestoreCommand, guard: RestoreGuard): RestoreAttempt
+  readRestore(attempt: RestoreAttempt): RestoreReadback
+  correctRestore(attempt: RestoreAttempt): void
 }
 export interface RecoveryPort {
   subscribe(listener: (event: DomainEvent) => void): () => void

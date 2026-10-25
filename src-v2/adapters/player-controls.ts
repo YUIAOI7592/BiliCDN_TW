@@ -2,7 +2,13 @@ import type { PlayerControlSnapshot, TimeoutSchedulerPort } from '../application
 import { safeCall } from './player-sdk.ts'
 import type { UnknownRecord } from './player-sdk.ts'
 import { observeMethod } from './player-method.ts'
-import type { ResumePositionCapture } from '../application/recovery-ports.ts'
+import type {
+  ResumePositionCapture,
+  RestoreCommand,
+  RestoreGuard,
+  RestoreAttempt,
+  RestoreReadback,
+} from '../application/recovery-ports.ts'
 import { playbackTimeAdvanced, playbackFramesAdvanced } from '../domain/playback-progress.ts'
 
 export interface PlayerControlEnvironment {
@@ -79,6 +85,18 @@ interface ControlSources {
   lifecycleKey(): string
 }
 
+interface RestoreRecord {
+  readonly command: RestoreCommand
+  readonly guard: RestoreGuard
+  readonly attempt: RestoreAttempt
+  readonly localCurrent: () => boolean
+  channel: RestoreReadback['channel']
+  status: RestoreReadback['status']
+  landing: RestoreReadback['landing']
+  readonly originPosition: number | null
+  inCall: boolean
+}
+
 // One owner coordinates input revisions, observation and bounded reload proof.
 export class PlayerControlObserver {
   #objects = new WeakMap<object, number>()
@@ -105,6 +123,8 @@ export class PlayerControlObserver {
   #nativePosition: NativePosition | null = null
   #controlRevision = 0
   #goal: PendingGoal | null = null
+  #positionRestore: RestoreRecord | null = null
+  #rateRestore: RestoreRecord | null = null
   constructor(
     private readonly sources: ControlSources,
     private readonly environment: PlayerControlEnvironment,
@@ -127,7 +147,12 @@ export class PlayerControlObserver {
       video.currentTime !== this.#targetSec
     ) {
       this.#targetSec = video.currentTime
-      if (!this.#internalSeek && this.#pendingSeek !== video.currentTime) this.#seekRevision++
+      if (
+        !this.#internalSeek &&
+        this.#pendingSeek !== video.currentTime &&
+        !this.#pendingRestoreSeek(video.currentTime)
+      )
+        this.#seekRevision++
     }
     const identity = (object: unknown): number => {
       if (!object || (typeof object !== 'object' && typeof object !== 'function')) return 0
@@ -546,13 +571,19 @@ export class PlayerControlObserver {
   #bindMediaControls(video: HTMLVideoElement): void {
     this.#listen(video, 'seeking', () => {
       const position = Number.isFinite(video.currentTime) ? video.currentTime : null
-      if (!this.#internalSeek && position !== this.#pendingSeek) this.#seekRevision++
+      if (
+        !this.#internalSeek &&
+        position !== this.#pendingSeek &&
+        !this.#pendingRestoreSeek(position)
+      )
+        this.#seekRevision++
       this.#targetSec = position
       this.#confirmKeyboardSeek()
       this.#pointerGoal(video)
       const goal = this.#goal
       if (
         !this.#internalSeek &&
+        !this.#pendingRestoreSeek(position) &&
         goal &&
         position !== goal.position &&
         position !== goal.initialization?.position
@@ -562,6 +593,7 @@ export class PlayerControlObserver {
     this.#listen(video, 'seeked', () => {
       this.#pendingSeek = null
       this.#sampleGoal(video, video.currentTime)
+      this.#noteRestoreLanding()
     })
   }
 
@@ -885,6 +917,8 @@ export class PlayerControlObserver {
   }
 
   #clearControls(): void {
+    this.#positionRestore = null
+    this.#rateRestore = null
     this.#goal = null
     this.#controlRevision++
     this.#nativePosition = null
@@ -1094,6 +1128,13 @@ export class PlayerControlObserver {
   }
 
   seek(value: number, canCommit: () => boolean = () => true): void {
+    this.#seekCommand(value, canCommit)
+  }
+
+  #seekCommand(
+    value: number,
+    canCommit: () => boolean,
+  ): { channel: RestoreReadback['channel']; result: unknown } {
     this.#clearKeyboardSeek()
     this.#clearKeyboardPlayback()
     const nativeCurrent = this.#nativeWriteGuard(canCommit)
@@ -1107,33 +1148,232 @@ export class PlayerControlObserver {
       const player = this.sources.player(),
         method = player?.seek
       if (player && typeof method === 'function') {
-        if (!nativeCurrent()) return
-        Reflect.apply(method, player, [value])
-        return
+        if (!nativeCurrent()) return { channel: 'none', result: undefined }
+        return { channel: 'sdk', result: Reflect.apply(method, player, [value]) }
       }
       const video = this.sources.video()
-      if (video && nativeCurrent()) video.currentTime = value
+      if (video && nativeCurrent()) {
+        video.currentTime = value
+        return { channel: 'native', result: undefined }
+      }
+      return { channel: 'none', result: undefined }
     } finally {
       this.#internalSeek--
     }
   }
 
   setRate(value: number, canCommit: () => boolean = () => true): void {
+    this.#rateCommand(value, canCommit)
+  }
+
+  #rateCommand(
+    value: number,
+    canCommit: () => boolean,
+  ): { channel: RestoreReadback['channel']; result: unknown } {
     this.#clearKeyboardPlayback()
     const nativeCurrent = this.#nativeWriteGuard(canCommit)
     const player = this.sources.player(),
       method = player?.setPlaybackRate
     if (player && typeof method === 'function') {
       try {
-        if (!nativeCurrent()) return
-        Reflect.apply(method, player, [value])
-        return
+        if (!nativeCurrent()) return { channel: 'none', result: undefined }
+        return { channel: 'sdk', result: Reflect.apply(method, player, [value]) }
       } catch {
         /* fallback */
       }
     }
     const video = this.sources.video()
-    if (video && nativeCurrent()) video.playbackRate = value
+    if (video && nativeCurrent()) {
+      video.playbackRate = value
+      return { channel: 'native', result: undefined }
+    }
+    return { channel: 'none', result: undefined }
+  }
+
+  #restoreRecord(attempt: RestoreAttempt): RestoreRecord | null {
+    const record = attempt.kind === 'position' ? this.#positionRestore : this.#rateRestore
+    return record?.attempt.proof === attempt.proof ? record : null
+  }
+
+  #restoreCurrent(record: RestoreRecord, policy = true): boolean {
+    return (
+      this.#restoreRecord(record.attempt) === record &&
+      (!policy || record.guard.valid()) &&
+      this.ownedReload(record.guard.reloadRevision) &&
+      record.localCurrent() &&
+      this.#restoreRecord(record.attempt) === record
+    )
+  }
+
+  #settleRestore(attempt: RestoreAttempt, rejected: boolean): void {
+    const record = this.#restoreRecord(attempt)
+    if (record && this.#restoreCurrent(record, false))
+      record.status = rejected ? 'rejected' : 'settled'
+  }
+
+  #pendingRestoreSeek(position: number | null): boolean {
+    const record = this.#positionRestore
+    return (
+      !!record &&
+      (record.inCall || record.status === 'pending') &&
+      (position === record.originPosition || position === record.command.value) &&
+      this.#restoreCurrent(record, false)
+    )
+  }
+
+  #watchRestoreResult(attempt: RestoreAttempt, result: unknown): void {
+    const record = this.#restoreRecord(attempt)
+    if (!record) return
+    if (result !== null && (typeof result === 'object' || typeof result === 'function')) {
+      record.status = 'pending'
+      void Promise.resolve(result).then(
+        () => this.#settleRestore(attempt, false),
+        () => this.#settleRestore(attempt, true),
+      )
+    }
+  }
+
+  performRestore(command: RestoreCommand, guard: RestoreGuard): RestoreAttempt {
+    if (
+      !Number.isFinite(command.value) ||
+      command.value < 0 ||
+      (command.kind === 'rate' && command.value === 0) ||
+      !Number.isFinite(command.at)
+    )
+      throw Error('invalid restore command')
+    const attempt = Object.freeze({ kind: command.kind, proof: Object.freeze({}) })
+    const origin = this.sources.video()?.currentTime
+    const record: RestoreRecord = {
+      command: Object.freeze({ ...command }),
+      guard,
+      attempt,
+      localCurrent: this.#nativeWriteGuard(() => true),
+      channel: 'none',
+      status: 'settled',
+      landing: null,
+      originPosition: typeof origin === 'number' && Number.isFinite(origin) ? origin : null,
+      inCall: true,
+    }
+    if (command.kind === 'position') this.#positionRestore = record
+    else this.#rateRestore = record
+    const current = () => this.#restoreCurrent(record)
+    let applied: { channel: RestoreReadback['channel']; result: unknown }
+    try {
+      applied =
+        command.kind === 'position'
+          ? this.#seekCommand(command.value, current)
+          : this.#rateCommand(command.value, current)
+    } finally {
+      record.inCall = false
+    }
+    if (this.#restoreRecord(attempt) === record) {
+      record.channel = applied.channel
+      this.#watchRestoreResult(attempt, applied.result)
+    }
+    return attempt
+  }
+
+  #noteRestoreLanding(): void {
+    const record = this.#positionRestore
+    if (!record || record.landing || !this.#restoreCurrent(record, false)) return
+    try {
+      const video = this.sources.video(),
+        at = record.guard.now()
+      if (!video) return
+      const positionSec = video.currentTime
+      if (
+        video.seeking ||
+        video.readyState < 1 ||
+        !Number.isFinite(positionSec) ||
+        !Number.isFinite(at) ||
+        Math.abs(positionSec - record.command.value) > 1
+      )
+        return
+      if (this.#restoreCurrent(record, false)) record.landing = Object.freeze({ positionSec, at })
+    } catch {
+      /* unavailable native facts cannot acknowledge a command */
+    }
+  }
+
+  readRestore(attempt: RestoreAttempt): RestoreReadback {
+    const unknown = (): RestoreReadback => ({
+      owned: false,
+      channel: 'none',
+      status: 'settled',
+      positionSec: null,
+      rate: null,
+      paused: null,
+      seeking: null,
+      readyState: null,
+      landing: null,
+    })
+    const record = this.#restoreRecord(attempt)
+    if (!record || !this.#restoreCurrent(record)) return unknown()
+    try {
+      this.#noteRestoreLanding()
+      const video = this.sources.video()
+      if (!video) return unknown()
+      const position = video.currentTime,
+        rate = video.playbackRate,
+        paused = video.paused,
+        seeking = video.seeking,
+        ready = video.readyState
+      if (!this.#restoreCurrent(record)) return unknown()
+      return Object.freeze({
+        owned: true,
+        channel: record.channel,
+        status: record.status,
+        positionSec:
+          typeof position === 'number' && Number.isFinite(position) && position >= 0
+            ? position
+            : null,
+        rate: typeof rate === 'number' && Number.isFinite(rate) && rate > 0 ? rate : null,
+        paused: typeof paused === 'boolean' ? paused : null,
+        seeking: typeof seeking === 'boolean' ? seeking : null,
+        readyState: Number.isInteger(ready) && ready >= 0 && ready <= 4 ? ready : null,
+        landing: record.landing ? Object.freeze({ ...record.landing }) : null,
+      })
+    } catch {
+      return {
+        ...unknown(),
+        owned: this.#restoreCurrent(record),
+        channel: record.channel,
+        status: record.status,
+      }
+    }
+  }
+
+  correctRestore(attempt: RestoreAttempt): void {
+    const record = this.#restoreRecord(attempt)
+    if (
+      !record ||
+      record.channel === 'native' ||
+      record.status === 'pending' ||
+      !this.#restoreCurrent(record)
+    )
+      return
+    const video = this.sources.video()
+    if (!video || video.seeking || video.readyState < 1 || !this.#restoreCurrent(record)) return
+    record.channel = 'native'
+    record.status = 'settled'
+    if (record.command.kind === 'position') {
+      record.landing = null
+      this.#pendingSeek = record.command.value
+      this.#internalSeek++
+      try {
+        if (this.#restoreCurrent(record)) video.currentTime = record.command.value
+      } catch {
+        /* consumed correction remains unverified until the original deadline */
+      } finally {
+        this.#internalSeek--
+      }
+    } else {
+      try {
+        if (this.#restoreCurrent(record)) video.playbackRate = record.command.value
+      } catch {
+        /* consumed correction remains unverified until the original deadline */
+      }
+    }
   }
 
   play(): unknown {

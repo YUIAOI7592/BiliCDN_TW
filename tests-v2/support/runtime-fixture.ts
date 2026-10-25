@@ -104,9 +104,11 @@ export function fixture(
     },
     seek: (value) => {
       calls.seeks.push(value)
+      video = { ...video, currentTime: value, seeking: false }
     },
     setRate: (value) => {
       calls.rates.push(value)
+      video = { ...video, playbackRate: value, effectiveRate: value }
     },
     play: () => {
       calls.plays++

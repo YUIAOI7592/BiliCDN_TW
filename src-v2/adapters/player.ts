@@ -8,7 +8,13 @@ import type { PlayerControlEnvironment } from './player-controls.ts'
 import { PlayerMediaReader, readVideoSnapshot, clonePlayerManifest } from './player-media.ts'
 import { isRecord, safeCall, safeNumber } from './player-sdk.ts'
 import type { UnknownRecord } from './player-sdk.ts'
-import type { ResumePositionCapture } from '../application/recovery-ports.ts'
+import type {
+  ResumePositionCapture,
+  RestoreCommand,
+  RestoreGuard,
+  RestoreAttempt,
+  RestoreReadback,
+} from '../application/recovery-ports.ts'
 
 export class PlayerAdapter {
   readonly #media = new PlayerMediaReader()
@@ -48,6 +54,15 @@ export class PlayerAdapter {
   }
   ownedReload(revision: number): boolean {
     return this.#controls.ownedReload(revision)
+  }
+  performRestore(command: RestoreCommand, guard: RestoreGuard): RestoreAttempt {
+    return this.#controls.performRestore(command, guard)
+  }
+  readRestore(attempt: RestoreAttempt): RestoreReadback {
+    return this.#controls.readRestore(attempt)
+  }
+  correctRestore(attempt: RestoreAttempt): void {
+    this.#controls.correctRestore(attempt)
   }
   observePlayIntent(listener: () => void): () => void {
     return this.#controls.observePlayIntent(listener)

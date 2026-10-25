@@ -13,6 +13,11 @@ export interface StallRecoveryIntent {
   readonly valid: () => boolean
 }
 export interface RecoverySnapshot {
+  readonly restoration?: {
+    readonly phase: 'position' | 'rate' | 'progress'
+    readonly channel: 'sdk' | 'native' | 'none'
+    readonly result: 'pending' | 'unknown' | 'verified' | 'mismatch'
+  }
   readonly state:
     | 'healthy'
     | 'pause-armed'

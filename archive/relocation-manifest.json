@@ -5906,18 +5906,6 @@
       "sha256": "3d0936ad68c3fa7918618019af65500b35fcbbfb037c9a73ca4122f4e3134abf"
     },
     {
-      "path": "src-v2/application/recovery-model.ts",
-      "encoding": "raw",
-      "bytes": 779,
-      "sha256": "8b2e3527dffe0e2da3a21613f8368d14f3143743bdaf971a76069ecd937d5f98"
-    },
-    {
-      "path": "src-v2/application/recovery-ports.ts",
-      "encoding": "raw",
-      "bytes": 1355,
-      "sha256": "54f4a9e6041366d06a0be9ca6bba7e6711a6967c8781077c9fc83f452f859c8e"
-    },
-    {
       "path": "src-v2/application/route-coordinator.ts",
       "encoding": "raw",
       "bytes": 61936,
