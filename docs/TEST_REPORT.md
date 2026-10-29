@@ -49,6 +49,12 @@
 
 v2.1.37 標籤與附件原始位元組保留，只追加 Release 說明的測試定位更正。GitHub Release 不設 prerelease 以維持既有 latest 更新鏈；該狀態不代表正式驗收。實機後才決定正式版本。
 
+2026-10-30 公開核對已完成：[v2.1.38 測試 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.38) 的 main 發布提交及標籤目標均為 `7bbb02ba90af06724af790cd5f578b84e56a18a5`。Release ID 428229134，唯一附件 BiliCDN_TW.user.js（asset ID 689454412），507,104 bytes；GitHub 回報 digest 與無認證公開 latest 下載均為 `6464ef5f6fd21ea849e045cf1b7efe93f6d2aa72626f50642b16770893991e73`，與本機封裝逐位元組相同。腳本版本為 2.1.38，名稱、namespace 及 latest 更新網址保持；78 個建置輸入雜湊、五項封裝與 Git 暫存版本均一致。封裝正文保留發布前快照，本段為發布後現行報告補記。
+
+[v2.1.37 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.37) 已更正標題並追加日期說明，舊說明全文前綴及附件中繼資料均保持。標籤目標仍為 624029dbaad2dc4418b43cd18da7d66b89bc83ca；公開附件仍為 451,802 bytes、SHA-256 `1293587c8bd0c5133289a981feccc3ffa6c28297da06e4d6d9570d3895222ac4`。原 B 分支仍為 2a5851761d5a066cd3b54cb447b9da546a23187e。原件、三份日誌前綴及完整舊報告保存核對通過。
+
+封裝後文件與公開封存通過：237 個 Markdown、419 搬移檔、三份只追加日誌、129 個適用不變檔、65 份 checksum／302 筆；歷史／私有／外部連結限制維持分列。本次交付已結案，未執行安裝或實機專項，沒有啟動後續自主窗口。
+
 ## 歷史驗證導覽
 
 <a name="bilicdn_tw-v218-release-verification--2026-10-04"></a>
