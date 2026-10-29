@@ -42,7 +42,9 @@ v2.1.36 最新完整報告原文追加至歷史彙編，五項 Release 原件按
 
 ### 公開交付與安裝結案
 
-公開交付尚未執行；IAB／Tampermonkey 依使用者要求暫緩，沒有本版完整執行本體、singleton、hooks 或正常播放回歸證據。公開附件核對與安裝驗收分別記錄，不能以正式 Release 推論安裝通過。
+2026-10-30 已完成 [正式 GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.37)。版本標籤解參照與發布時遠端 main 均為 624029dbaad2dc4418b43cd18da7d66b89bc83ca；唯一附件為 BiliCDN_TW.user.js，451,802 bytes。GitHub API digest 與直接下載的公開 latest 本體均為上述 SHA-256，版本標頭為 2.1.37；全部 74 個建置輸入亦與資訊清單一致。B 分支已推送至 2a5851761d5a066cd3b54cb447b9da546a23187e，沒有作為正式腳本附件發布。
+
+後續 main 的本次交付紀錄提交僅修改文件，不移動版本標籤、不重寫 Release 快照或腳本附件。IAB／Tampermonkey 依使用者要求暫緩，沒有本版完整執行本體、singleton、hooks 或正常播放回歸證據。公開附件核對與安裝驗收分別記錄，不能以正式 Release 推論安裝通過；沒有安排自主補測。
 
 ## 歷史驗證導覽
 

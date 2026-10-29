@@ -62,3 +62,11 @@ A1 須自然 OGV 換集；A2 須自然 gate 對照；HK 每台須兩片兩倍速
 獨立安全掃描 bab220b7-b1a7-409a-b11d-0de94e0955c1 已完成全部 26 檔差異審查，無可報告發現。安全、契約及效用為三種不同結果；B 效用未達標，繼續保留原型與重現證據，不因使用者延後實機或本次正式 Release 而取得採用資格。
 
 B 文件與可重現封存補充提交為 2a5851761d5a066cd3b54cb447b9da546a23187e。來源、測試與工具 301 個檔案與 3cadfd8 相同；完整 verify 2977 案通過，效用獨立命令仍退出 1。固定 JSON 與報告保存在 [B 分支](https://github.com/YUIAOI7592/BiliCDN_TW/tree/codex/upstream-141-early-retry)，正式 Release 不包含 B 控制能力。
+
+## 2026-10-30 公開交付
+
+使用者調整為實機延後、整體完成後再 Release；A 與 B 的來源、自動／安全、文件及原型重現資料全部收束後，發布 [v2.1.37 正式版](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.37)。發布時 main 與版本標籤解參照皆為 624029dbaad2dc4418b43cd18da7d66b89bc83ca，B 分支為 2a58517。
+
+GitHub API 確認非 draft／非 prerelease，latest 為 v2.1.37，只有一個 BiliCDN_TW.user.js 附件。公開 latest 另外實際下載核對為 451,802 bytes、版本 2.1.37、SHA-256 1293587c8bd0c5133289a981feccc3ffa6c28297da06e4d6d9570d3895222ac4，與本機封裝及 API digest 相同；74 個建置輸入逐檔雜湊一致。
+
+僅採用 A 正式子集；HK 不納入，B 不採用。實機及安裝回歸保持未執行／使用者延後，不以正式發布補算通過、不安排自主補測。後續交付紀錄只修改現行文件，不重寫任何已發布 Release 原件、標籤或附件。
