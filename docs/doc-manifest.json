@@ -75,6 +75,18 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md",
+      "kind": "record",
+      "topics": [
+        "upstream-adoption"
+      ],
+      "versions": [
+        "v2.1.37"
+      ],
+      "date": "2026-10-30",
+      "requiredAnchors": []
+    },
+    {
       "path": "archive/retired/docs/UPSTREAM_V1_4_1_ADOPTION_2026-10-30.md",
       "kind": "record",
       "topics": [
@@ -3033,6 +3045,27 @@
     }
   ],
   "protections": [
+    {
+      "path": "baseline/UP141_B_pre_prototype_relocation_2026-10-30_613632f.json",
+      "encoding": "raw",
+      "bytes": 485913,
+      "sha256": "057ce517961e0c18e7702a2f32eeeba7b3812307e079d63e373af4f15ae88475",
+      "mode": "exact"
+    },
+    {
+      "path": "archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json",
+      "encoding": "raw",
+      "bytes": 6785,
+      "sha256": "31a06ccd301f9a9add79158adac0058665eb6fd34953d2a398a8f598bd8cbc35",
+      "mode": "exact"
+    },
+    {
+      "path": "archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md",
+      "encoding": "lf",
+      "bytes": 4156,
+      "sha256": "c3b0871e6ca841132ef8a7be53a42c44c665f059ae2d0778e20f8fcb0b4a8dbe",
+      "mode": "exact"
+    },
     {
       "path": "archive/retired/originals/PRE_UP141_RELEASE_2026-10-30_08ed843.json",
       "encoding": "raw",

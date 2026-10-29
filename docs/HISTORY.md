@@ -6,6 +6,8 @@
 
 ## 版本
 
+- [UP141 慢請求提前重試隔離原型（2026-10-30，v2.1.37 分支）](../archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md)
+
 - [UP141 上游優點吸收候選與驗證（2026-10-30）](../archive/retired/docs/UPSTREAM_V1_4_1_ADOPTION_2026-10-30.md)
 
 - [原作者 v1.4.1 與 v2.1.36 保存及來源比較（2026-10-29）](../archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md)
@@ -79,6 +81,8 @@
 ## 議題
 
 ### 上游更新與來源比較
+
+- [慢請求提前重試：固定原型、契約、效用與採用界線（2026-10-30）](../archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md)
 
 - [原作者 v1.4.1：API 涵蓋、量測、起播、備援及恢復差異（2026-10-29）](../archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md)
 
@@ -241,6 +245,8 @@
 
 ## 日期
 
+- [2026-10-30：UP141 慢請求提前重試隔離原型](../archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md)
+
 - [2026-10-29：原作者 v1.4.1 保存與來源比較](../archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md)
 
 - [2026-10-25：IR36 工具修正與第二輪安裝版驗證](../archive/retired/docs/INSTALLED_RESTORE_IR36_R2_2026-10-25.md)
@@ -271,7 +277,7 @@
 
 - [封存總覽](../archive/README.md)、[退出流程資料](../archive/retired/README.md)。
 - [完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[工具驗證日誌](TEST_TOOLING_REPORT.md)。
-- [現行 Release](../Release) 僅保存版本設定對應的五項封裝檔；[過往 Release 原件](../archive/retired/releases/Release) 保持原始位元組、檔名及目錄結構。[來源基準](../baseline) 與歷史安全封存不回寫。
+- [正式公開發行](https://github.com/YUIAOI7592/BiliCDN_TW/releases) 的五項封裝檔由正式分支保存，此隔離 B 分支不建立發行目錄；[過往 Release 原件](../archive/retired/releases/Release) 保持原始位元組、檔名及目錄結構。[來源基準](../baseline) 與歷史安全封存不回寫。
 - [整理前固定提交](https://github.com/YUIAOI7592/BiliCDN_TW/tree/0f4cb8d669a144cf6876575a979fd98e4b586300) 保留原始儲存庫路徑；[原始文件 TAR](../archive/retired/originals/PRE_CLEANUP_2026-10-20_0f4cb8d.tar) 保存本輪搬移前正文及完整日誌基準。
 - [搬移清單](../archive/relocation-manifest.json) 登記舊／新路徑、雜湊、閱讀版 URL 編輯及精確歷史引用限制。舊 `main` 網址不因 Git 搬移自動取得新入口；這些限制與有效現行連結分開報告，不宣稱原歷史網址仍全部有效。
 - 舊矩陣、TODO 及舊索引的完整原文見 [重整前快照](../archive/retired/docs/DOCS_BEFORE_REORGANIZATION_2026-10-17.md)。

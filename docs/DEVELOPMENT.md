@@ -93,6 +93,25 @@
 
 內部收斂先以未修改實作通過具名行為契約，再機械式整理；新純比較助手只回傳事實，資格／基準／計數留在原呼叫端。保持原生 getter、參數、短路讀值、事件／註冊／清理與等待後驗證順序，不能因抽函式而提前快照狀態。單一用途小模型可與同用途契約共置；不以檔案數或行數當拆分目標，狀態與副作用的唯一所有者不變。
 
+## 慢請求提前重試原型重現（分支限定）
+
+`codex/upstream-141-early-retry` 是以正式 A 來源為基底的隔離原型，預設關閉，沒有正式安裝／更新附件。完整來源、效用輸入、判斷與限制見 [固定紀錄](../archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md)；目前執行狀態只在 [TODO](TODO.md) 維護。保留 A 正式版本報告原文，B 分支補充由 [TEST_REPORT](TEST_REPORT.md#隔離-b-分支原型驗證2026-10-30) 維護，不能拿正式 A 的版本標頭或已通過結果代表原型。
+
+依本指南的精確工具版本準備開發依賴後，從本分支根目錄執行：
+
+```text
+npm test -- application --name UP141-RETRY
+npm test -- control-center --name UP141-RETRY
+node scripts/early-retry-evaluation.mts --json
+npm run verify
+```
+
+第一、二個命令檢查來源契約與可信 UI；第三個獨立命令以固定輸入、相同政策來源及保留的未來供片事實檢查效用，非法參數退出 2、有效通過退出 0、效用失敗退出 1。它以現有 esbuild 在記憶體載入政策，不修改來源、不新增依賴或送出網路。有效 FAIL 的正常突發回補案例不得改成預期失敗或降低門檻來取得綠燈；`verify` 的契約通過不代表獨立效用通過。公開 JSON 保存原始輸出及政策／輸入 SHA-256，不作正式測試或產品建置輸入。
+
+原生 accessor／事件使用獨立測試情境模型；模型的可信事件不是真實瀏覽器證據。IAB／Tampermonkey 依當輪使用者指示延後，沒有自行續跑資格。這些分支說明及原型不納入正式 A Release；需要續作時先核對完整程式身分、固定輸入與 TODO 邊界。
+
+重現封存配置時，對照受保護的 [B 修改前 A 搬移清單 raw 快照](../baseline/UP141_B_pre_prototype_relocation_2026-10-30_613632f.json)，只解除合法來源差異對應的 unchangedFiles，其他欄位、舊原件及日誌前綴保持。原型沒有本機私有搬移，公開 archive:check 通過不表示已核對私有 evidence。
+
 ## Markdown 格式（GFM）
 
 以 [GFM 規格](https://github.github.com/gfm/) 為語法依據，表格及提示另對照 GitHub 官方的 [表格說明](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-tables) 與 [Alerts 語法](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#alerts)。下列是專案的排版約定，不把所有格式檢查器偏好稱為 GFM 強制規定。

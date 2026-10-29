@@ -1,5 +1,8 @@
 # BiliCDN_TW
 
+> [!IMPORTANT]
+> **隔離原型分支說明：** `codex/upstream-141-early-retry` 在 A 子集之外加入慢請求提前重試原型，預設關閉。此分支與正式 A 都使用 v2.1.37 版本欄，完整腳本不同；請用完整本體雜湊核對，不能用版本號混認。正式安裝／更新入口不提供本原型。採用與實機狀態見 [TODO](docs/TODO.md)，證據見 [原型紀錄](archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md)。
+
 BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，提供 CDN 選路、有限度的故障恢復與本機診斷。本專案的瀏覽器測試環境固定為 **Codex 內建瀏覽器＋Tampermonkey**。
 
 正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
@@ -24,7 +27,7 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 已安裝時，可開啟同一「安裝／更新腳本」連結觸發更新，再重新載入影片。更新入口或管理器標示不能單獨證明新版已執行；驗證步驟見 [IAB 更新流程](docs/IAB_TESTING.md#8-修復發布與後續執行)。
 
-GitHub Release 只提供 `BiliCDN_TW.user.js`。建置資訊、校驗碼與驗證紀錄保存在儲存庫的 [Release 目錄](Release)。
+GitHub Release 只提供 `BiliCDN_TW.user.js`。[正式公開發行](https://github.com/YUIAOI7592/BiliCDN_TW/releases) 使用正式 A 的完整本體；建置資訊、校驗碼與驗證紀錄由正式分支保存。此隔離原型分支不建立 B 的 Release 目錄。
 
 ## 功能概覽
 
@@ -75,6 +78,7 @@ GitHub Release 只提供 `BiliCDN_TW.user.js`。建置資訊、校驗碼與驗�
 | 腳本 | 啟用 |
 | 選路 | 自動挑選內建 CDN |
 | 允許參考 B 站原生來源 | 關閉 |
+| 慢請求提前重試（僅隔離原型分支） | 關閉 |
 | 偏好的影片格式 | AV1 |
 | 阻止網頁使用 WebRTC | 開啟 |
 | 阻止網頁使用 HTTPDNS | 開啟 |

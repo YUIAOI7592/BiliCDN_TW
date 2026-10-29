@@ -6,6 +6,18 @@
 
 ## 依賴方向
 
+### 隔離 B 原型的傳輸控制
+
+以下能力僅存在於 `codex/upstream-141-early-retry` 分支。`EarlyRetryController` 由入口組合，使用 PlayerMonitor 既有一秒 tick，Runtime／ControlCommands 負責設定、內容及對照失效。純 `evaluateEarlyRetry` 只計算事實與門檻，不讀環境、不啟動探測或計時器。正式 A 的來源／完整腳本不包含這個分支擴充。
+
+`InFlightVideoPort` 只提供不可變請求摘要及窄化 arm／state／cancel。XhrHook／`XhrEarlyRetry` 唯一保管原始 XHR、URL、Range 與 timeout lease，最多十六個在途參照、每筆八個近兩秒樣本；高頻事件不把較晚 bytes 塞回較早時間。可信進度及直接、完整相符的 206 Range 才提供原型證據，合成 progress／timeout／load 不取得控制資格。原生 timeout setter 先完成原生品牌檢查與單次轉換，再登記成功的網站寫入；轉換重入 open 後拋錯不洩漏舊期限，同值網站寫入亦移交所有權。完整 getter／setter／flags 所有權仍相符才還原描述子；缺失、不可配置或擷取例外只關閉選用能力，普通 Fetch／XHR hooks 保留。
+
+RouteCoordinator 保有唯一選路權。其一次性許可只留不透明識別、當前請求／授權／政策及候選，兩秒到期；適配器以私有精確 Range 配對並保留唯一 metadata owner。準備與改寫不提交親和，原生 send 接受且身分仍有效後才提交；後續記帳例外不能把已送出的請求改判未送出或向網站重播。
+
+替代證據由有界三十二筆記憶體 ledger 保存。只接納目前內容／表示／授權／政策的可信完整 XHR Range bytes，要求 EvidenceStore 已實際保存相同工作 ID；未驗證被動 bytes、未知身分或舊持久樣本不能取得資格。工具專用 `EarlyRetryEvidenceControlPort` 可在既有 GM 學習抑制之外，以最多三十二個工作 ID 建立可重疊的抑制租用，清除既有該 ID 並禁止新 ledger 寫入；不接受 DOM／訊息／診斷上的頁面旗標，不輸出或持久化這些 ID。自有控制 timeout 使用獨立終止原因，不記 CDN timeout 失敗、不直接觸發核心恢復。
+
+控制器快照及最多十六筆歷史唯讀供控制中心顯示／匯出；容量仍受現有報告限制。完整契約與重現方法見 [分支原型重現](DEVELOPMENT.md#慢請求提前重試原型重現分支限定)。
+
 唯讀緩衝趨勢的八秒樣本、完成傳輸旁證與候選狀態由 PlayerMonitor 唯一保存。v6 的常數大小狀態包含短期確認、周期峰值／低點、回補階段、最多兩秒欠量與確認時間及時間戳；另有獨立且有界的 lowConfirmation，包含證據種類、累計創低確認及一次性 tailUsed 布林。前次樣本與連續下降覆蓋都沿用既有窗口，不另存樣本。buffer-cycle.ts 只回傳判定與下一狀態，短期事實及 v3 相容確認仍由 buffer-trend.ts 提供，不保存環境狀態。低緩衝及尾段分支只在原候選未成立時提供輸出，原候選原因優先；證據到期或切換不得借用確認額度或補顯機會，狀態不一致撤銷證據。Runtime 轉交既有 transport-completed 的最小投影及 Monitor 快照，不保存第二份窗口；診斷只重建結果的數值／布林／列舉投影。樣本與確認在媒體、控制、內容、倍速或路線觀察身分改變時失效，沒有額外計時器、請求或授權索引；影子結果不得送入選路、量測、恢復或播放命令。Recorder 清除只影響報告，不重設確認或救援。
 
 周期欠量、時間戳及所屬 cycleCreditMs 在到期分支一起失效，先撤銷再處理同樣本的新周期；不借用舊確認額度。短期 confirmation 有獨立的創低期限，仍留在同一 Monitor 狀態內，依自身資格判定。

@@ -5940,18 +5940,6 @@
       "sha256": "e3ffcfe1ae9c448db862a5e0610ec01ca89a511d3d8e224933fe862e9421f319"
     },
     {
-      "path": "src-v2/adapters/transport-ports.ts",
-      "encoding": "raw",
-      "bytes": 902,
-      "sha256": "cf0a8454901b59b91463e6c716c4357931247c34ba7722f3426ea4fc9d17c642"
-    },
-    {
-      "path": "src-v2/adapters/transport.ts",
-      "encoding": "raw",
-      "bytes": 2869,
-      "sha256": "b7d15a15751f5aaf49b58ce2b3dc71294871f58a6ac92099f0a20d15be161a90"
-    },
-    {
       "path": "src-v2/adapters/webrtc.ts",
       "encoding": "raw",
       "bytes": 2252,
@@ -5962,12 +5950,6 @@
       "encoding": "raw",
       "bytes": 3375,
       "sha256": "279e619587cd96b3ef93df642de10f14af6ca62826cfb088c397d567ce76096e"
-    },
-    {
-      "path": "src-v2/application/control-commands.ts",
-      "encoding": "raw",
-      "bytes": 2114,
-      "sha256": "9c94407a1a87a7b895aa8c2a7af7446e70a1f3c7c9f21422a4aee1986ba81ca7"
     },
     {
       "path": "src-v2/application/control-ports.ts",
@@ -6004,12 +5986,6 @@
       "encoding": "raw",
       "bytes": 1549,
       "sha256": "3d0936ad68c3fa7918618019af65500b35fcbbfb037c9a73ca4122f4e3134abf"
-    },
-    {
-      "path": "src-v2/application/route-coordinator.ts",
-      "encoding": "raw",
-      "bytes": 61936,
-      "sha256": "c33b6ac0f86c18c678caf664bdfb40c59eb0ae91824e7e58155a43841cd226bc"
     },
     {
       "path": "src-v2/application/route-model.ts",
@@ -6082,12 +6058,6 @@
       "encoding": "raw",
       "bytes": 4253,
       "sha256": "09536c6b455bfb322e75e6b1dc464ddba3e52e35c22609a10e3435d5dcc7fdfc"
-    },
-    {
-      "path": "src-v2/domain/model.ts",
-      "encoding": "raw",
-      "bytes": 9213,
-      "sha256": "712c49e9cfe81e14d3f8f5b3cbf4db2c8b7663d9e5384d82c547266978a7e9c8"
     },
     {
       "path": "src-v2/domain/playback-progress.ts",
@@ -6210,40 +6180,16 @@
       "sha256": "2be3180f9721837b76aacc2709bf0287b18f3c85c7bb5b9257ae8cb4cd80e13d"
     },
     {
-      "path": "src-v2/state/settings-model.ts",
-      "encoding": "raw",
-      "bytes": 528,
-      "sha256": "e414646c1d72658d657e9e0ed309a0c971807f1a817753487aaadfdb7a70f6f8"
-    },
-    {
       "path": "src-v2/state/settings-ports.ts",
       "encoding": "raw",
       "bytes": 552,
       "sha256": "70d0bede48f2ebaa6913e8fcf8c676a5d144054a59a59732989b2f173a9218d4"
     },
     {
-      "path": "src-v2/state/settings-store.ts",
-      "encoding": "raw",
-      "bytes": 5341,
-      "sha256": "772e364d2f7b7286334449129be6b21a83e6fc3aef992bc0be1b610460e32ddb"
-    },
-    {
       "path": "src-v2/state/vault-model.ts",
       "encoding": "raw",
       "bytes": 1382,
       "sha256": "a44f122c0a7ab1c1f03d6bf1f41b9cdcc35fd7040b82b9b0f80ed9899d28f911"
-    },
-    {
-      "path": "src-v2/ui/control-center-ports.ts",
-      "encoding": "raw",
-      "bytes": 2710,
-      "sha256": "5f987bda6d994cbb5f22ab56f10396c5931d88e0224da4114aeefb7e23a9a104"
-    },
-    {
-      "path": "src-v2/ui/control-center.ts",
-      "encoding": "raw",
-      "bytes": 8265,
-      "sha256": "ab7fbbf2159060338444af103dd5c9f43d209338766956b2a483aad542282958"
     },
     {
       "path": "src-v2/ui/diagnostics-view.ts",
@@ -6268,12 +6214,6 @@
       "encoding": "raw",
       "bytes": 2856,
       "sha256": "de1192a0d696b2f0869d5d55401278832e9e2a4ff9d609ab11bbc0cedab7d2e6"
-    },
-    {
-      "path": "src-v2/ui/settings-view.ts",
-      "encoding": "raw",
-      "bytes": 5062,
-      "sha256": "a727f472747531f8e1526454cad2a0edb32ffb0d374fb11437da03391fc30fb2"
     },
     {
       "path": "src-v2/ui/styles.ts",
