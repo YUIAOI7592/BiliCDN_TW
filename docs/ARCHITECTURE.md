@@ -90,6 +90,8 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 - `RouteCoordinator` 產生路線決策、套用親和主機、規劃考慮群組的備援，提交證據或路線失效前驗證探測／傳輸結果。
 - 僅 `MeasurementController` 啟動主動探測。它管理每分頁一次、由播放器請求觸發的有界起播預測試：最多三個並行候選，共用三秒期限；後續安全輪次依序量測最多三個挑戰候選。MP4／FLV 分段共用起播窗口。路線協調器在提交前驗證起播選擇；健康探索只記錄證據，不變更親和主機。
 - 主動起播及健康探測拒絕轉址，只計入已接納主機的直接 206 Range 回應。
+- Catalog-only 起播由 MeasurementController 的單一完成旗標收束首個合格候選、三秒期限與取消；窗口封存後拒絕晚到結果學習。Native 比較不提早結束，reset 不補回每分頁預算。
+- RangeProbeInput 可明確傳入 startByte；RangeProbeAdapter 核對非零 Content-Range，純 probe-range 政策只使用注入亂數及有效大小選擇有界範圍。MeasurementController 每輪固定相同資源的 Catalog 區間；不新增探測或週期計時器。
 - `RecoveryController` 管理播放器核心重載及恢復播放狀態。`RouteCoordinator` 管理路線備援；`PlayerMonitor` 偵測 Watchdog／冷啟動條件，`RuntimeController` 只將 video 備援事件轉交影片核心恢復，audio 不能建立影片恢復意圖。
 - `LifecycleController` 在啟動、SPA 導覽鍵變更及啟用／停用變更時開始世代。頁面賦值只作有界待處理輸入，不自動切換世代。
 - `PlayerMonitor` 每秒取樣播放器，推進恢復監控週期並提供型別化觀察。
@@ -101,6 +103,8 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 控制器接收各用途的具名最小介面；這些介面可從純契約縮小能力，不能從具體類別推導。`NavigationPort`、`SchedulerPort` 及 `PlayerPort.observePlayIntent` 將 History 包裝函式、計時器 API 及啟動意圖檢查留在應用層政策之外。`PlayerPort` 不暴露原始播放器／核心物件。生命週期敏感的探測／傳輸提交依情況檢查當前世代、內容週期、路線身分或控制器標記；證據寫入取得儲存鎖後再次檢查有效性條件。恢復 Promise 使用生命週期序號／權杖，已釋放的生命週期觀察器忽略排隊中的頁面賦值。這些防護適用於生命週期工作；一般使用者設定寫入不綁定世代。
 
 `PlayurlRequestContext` 是內部唯讀 `{ contentId: string | null }`，由 `PlayurlPort.transform` 可選第四參數明確傳入。Fetch 在 await 前從既有平台 Request.url 保存 cid；XHR 在一次參數轉換後建立候選 metadata，failed open 回復舊 metadata，成功重入保留新請求 context。getter 不改讀當前頁面身分。只有現有 `isPlayurlApi` 接納的 URL 可供解析；唯一一個最多 20 位十進位字串，去除前導零，全零／重複／空白／負數／小數／超長均為缺失，避免 Number 精度損失。
+
+Fetch／XHR 共用 OGV 端點分類；playview 進既有解析及內容關聯，pre/check/drm 只向 Transport 的有界摘要提供端點列舉，不提供回應內容或來源權限。輸出備援以不透明索引及主機家族排序，保持精確 URL 的產生／授權在原權責內。Vault 的 rangeSize／recordRangeSize 只讀寫既有 handle 記錄的總大小，必須有當前 RouteIdentity；不存在另一份可授權的 URL 索引。
 
 `PlayurlController` 私有保存 cid 及已觀察的完整父目錄集合。兩側有效 cid 相同便沿用，不同便換片；任一側缺少時，從各 primary 經 `parseMediaUrl` 取父目錄，忽略主機／查詢／排列。有影片只比影片，兩側純音訊才比音訊，音訊交集不能掩蓋影片變更。交集沿用並合併歷史，支援完整清單與互斥子集往返；非空無交集或型態改變則重設。首次 cid 對齊既有目錄後綁定，無法對齊先重設。無 cid 且沒有有效目錄不變更基準。影片 128／音訊 64 上限，優先本次集合、舊集合按固定字串排序填入，不因淘汰本身增加 epoch。
 

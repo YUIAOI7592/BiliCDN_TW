@@ -82,7 +82,8 @@
       ],
       "versions": [
         "v1.4.1",
-        "v2.1.36"
+        "v2.1.36",
+        "v2.1.37"
       ],
       "date": "2026-10-30",
       "requiredAnchors": []
@@ -2737,9 +2738,9 @@
         "verification"
       ],
       "versions": [
-        "v2.1.36"
+        "v2.1.37"
       ],
-      "date": "2026-10-25",
+      "date": "2026-10-30",
       "requiredAnchors": [
         "驗證結果",
         "行為契約與非干預",
@@ -3007,7 +3008,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.1.36/CHANGELOG_v2.1.36.md",
+      "path": "archive/retired/releases/Release/v2.1.36/CHANGELOG_v2.1.36.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -3019,7 +3020,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.1.36/TEST_REPORT_v2.1.36.md",
+      "path": "archive/retired/releases/Release/v2.1.36/TEST_REPORT_v2.1.36.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -3032,6 +3033,20 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/originals/PRE_UP141_RELEASE_2026-10-30_08ed843.json",
+      "encoding": "raw",
+      "bytes": 483581,
+      "sha256": "aed10806365e7e4e8b04551a6d87ada944ebbaafc67a8d8be619a130f98f555e",
+      "mode": "exact"
+    },
+    {
+      "path": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 299229,
+      "sha256": "01fd9a2bbcf53340279dad82bacf7bd8cd24f86a4e8d6cdd3426b15f1f85d397"
+    },
     {
       "path": "archive/retired/docs/UPSTREAM_V1_4_1_ADOPTION_2026-10-30.md",
       "mode": "prefix",
@@ -6302,35 +6317,35 @@
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.36/BiliCDN_TW.user.js",
+      "path": "archive/retired/releases/Release/v2.1.36/BiliCDN_TW.user.js",
       "encoding": "raw",
       "bytes": 439664,
       "sha256": "3960ac923f1cbd61d197e1b713c2c0e620debfcb40df1111cfc5af7d8dab3ae7",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.36/BUILD_MANIFEST_v2.1.36.json",
+      "path": "archive/retired/releases/Release/v2.1.36/BUILD_MANIFEST_v2.1.36.json",
       "encoding": "raw",
       "bytes": 8335,
       "sha256": "3ab2f635bdd7f2a40778fa04474a703e4c8b2268fe8773c75060b3992fb0742c",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.36/CHANGELOG_v2.1.36.md",
+      "path": "archive/retired/releases/Release/v2.1.36/CHANGELOG_v2.1.36.md",
       "encoding": "raw",
       "bytes": 54347,
       "sha256": "7164802e585ebd25db040f1c1b3ad2915488e48d0178cf5a24e52ce873077213",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.36/SHA256SUMS_v2.1.36.txt",
+      "path": "archive/retired/releases/Release/v2.1.36/SHA256SUMS_v2.1.36.txt",
       "encoding": "raw",
       "bytes": 419,
       "sha256": "07775f451237edd1b266a8693a8313b139cbd5f2cb9ab035a7d98b56d000a3ae",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.36/TEST_REPORT_v2.1.36.md",
+      "path": "archive/retired/releases/Release/v2.1.36/TEST_REPORT_v2.1.36.md",
       "encoding": "raw",
       "bytes": 5573,
       "sha256": "67ef7358026aae1f616496d0b9b526e6c0ca6ac86ca3dbb976d8dfba906d5391",

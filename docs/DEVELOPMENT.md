@@ -148,6 +148,8 @@ npm run verify        # 自動檢查及暫存封裝驗證
 
 verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安全敏感變更或使用者明確要求時，另行執行安全差異掃描；不要求每版掃描。上一版通過報告不能作為新本機變更的證據。
 
+UP141 契約依能力分開：`npm test -- playurl-summary --name UP141-API`、`npm test -- measurement-state --name UP141`、`npm test -- application --name UP141-ROUTE` 及 `npm test -- control-center --name UP141-DIAG`。它們核對 API 信任邊界、起播封存／取消、中段範圍、備援證據及摘要；離線起播慢尾端對照不代替網站起播效益。香港候選未取得門檻前不得納入正式 Catalog；提前重試在獨立原型完成完整門檻前不合入正式執行期。使用者本輪暫緩 IAB／Tampermonkey，實際未執行項目列於最新版 TEST_REPORT，不沿用其他版本結果補算通過。
+
 `docs:check` 已納入 `verify`，以鎖定的 GFM 解析／格式及標題錨點套件執行，不讀取私有證據。預設輸出檔案、行號、規則及原因；`npm run docs:check -- --json` 輸出 schemaVersion 2 結果，包含 findings、legacyLinks、archivedReferences、私有證據未核對及外部連結未連線資料。archivedReferences 表示受保護原文中的原網址因搬移失效，另有登記封存目標；它不算有效現行連結。既有快照斷鏈另列 legacyLinks，不能宣稱歷史網址全部有效。
 
 `archive:check` 的公開模式同樣納入 `verify`，依 [搬移清單](../archive/relocation-manifest.json) 核對 TAR 原件、發行與圖片原始位元組、閱讀版 URL 編輯及三份既有日誌完整正文。另驗舊路徑退出、Release 僅現行版及校驗清單；無 Git 的乾淨來源副本也可執行。`--local` 額外核對被忽略的本機搬移清單與私有檔案原始雜湊，公開 checkout 不含這些資料，預設不執行。兩個檢查命令的退出碼均為 0／1／2，分別代表通過、檢查失敗及非法參數；檢查不會搬移或改寫檔案。

@@ -12,9 +12,6 @@ export const TRUSTED_CATALOG = Object.freeze([
   'upos-sz-mirrorhwov.bilivideo.com',
   'upos-sz-mirrorhw.bilivideo.com',
   'upos-hz-mirroraliov.bilivideo.com',
-  'cn-hk-eq-01-03.bilivideo.com',
-  'cn-hk-eq-01-05.bilivideo.com',
-  'cn-hk-eq-01-01.bilivideo.com',
 ] as const)
 
 export type CatalogHost = (typeof TRUSTED_CATALOG)[number]
@@ -25,9 +22,6 @@ export const DEFAULT_UNAVAILABLE_HOSTS: ReadonlySet<string> = new Set([
   'upos-sz-mirrorhwov.bilivideo.com',
   'upos-sz-mirrorhw.bilivideo.com',
   'upos-hz-mirroraliov.bilivideo.com',
-  'cn-hk-eq-01-03.bilivideo.com',
-  'cn-hk-eq-01-05.bilivideo.com',
-  'cn-hk-eq-01-01.bilivideo.com',
 ])
 
 export const isCatalogHost = (host: string): host is CatalogHost =>

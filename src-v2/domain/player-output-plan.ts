@@ -8,7 +8,7 @@ export interface OutputCandidate {
   readonly meetsHeadroom?: boolean
 }
 
-export type CatalogFamily = 'ali' | 'cos' | 'hw' | 'bos' | 'tx' | 'hk-eq-01'
+export type CatalogFamily = 'ali' | 'cos' | 'hw' | 'bos' | 'tx'
 
 // Naming/provider families are a conservative preference, not proof of separate data centers.
 const CATALOG_FAMILIES: Readonly<Record<string, CatalogFamily>> = Object.freeze({
@@ -23,9 +23,6 @@ const CATALOG_FAMILIES: Readonly<Record<string, CatalogFamily>> = Object.freeze(
   'upos-sz-mirrorhw.bilivideo.com': 'hw',
   'upos-sz-mirrorbos.bilivideo.com': 'bos',
   'upos-tf-all-tx.bilivideo.com': 'tx',
-  'cn-hk-eq-01-03.bilivideo.com': 'hk-eq-01',
-  'cn-hk-eq-01-05.bilivideo.com': 'hk-eq-01',
-  'cn-hk-eq-01-01.bilivideo.com': 'hk-eq-01',
 })
 
 export function catalogHostFamily(host: string): CatalogFamily | null {
