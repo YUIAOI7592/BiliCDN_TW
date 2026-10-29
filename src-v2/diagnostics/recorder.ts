@@ -117,10 +117,12 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
     }
     const safe = this.#event(event)
     this.#events.push(safe)
+    this.#trimRetryHistory(this.#events)
     this.#trim(this.#events, 24 * 1024, 'evicted')
     const trigger = incidentTrigger(event)
     if (this.#incident?.state === 'capturing') {
       this.#incident.events.push(safe)
+      this.#trimRetryHistory(this.#incident.events)
       if (trigger)
         this.#incident.captureUntil = Math.min(
           this.#incident.startedAt + 90_000,
@@ -259,6 +261,14 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
     })
   }
 
+  #trimRetryHistory(events: SafeEvent[]): void {
+    let retained = 0
+    for (let i = events.length - 1; i >= 0; i--)
+      if (events[i]!.type === 'early-retry' && ++retained > 16) {
+        events.splice(i, 1)
+        this.#counters.evicted++
+      }
+  }
   buildReport(readModel: object): string {
     const recorder = { ...this.#capture() }
     return serializeDiagnosticReport({

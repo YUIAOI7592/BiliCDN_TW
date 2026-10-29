@@ -58,6 +58,9 @@ function startup(t: TestContext, catalogOnly = true, cached = false) {
       },
       f.clock.now,
       f.clock,
+      undefined,
+      () => 0,
+      f.settings,
     ),
   )
   const measured = (bytes = 256 * 1024, elapsedMs = 500): RangeProbeResult => ({
@@ -112,6 +115,37 @@ test('UP141-START Native mode waits for comparison and preserves the common dead
   f.pending[1]!.resolve(f.measured())
   await nextTurn()
   assert.equal(f.recorded.length, 1)
+})
+
+test('UP141-TEST startup toggle off waits full comparison without adding probes', async (t) => {
+  const f = startup(t)
+  await f.f.settings.update({ startupEarlyReleaseEnabled: false })
+  let released = false
+  const wait = f.controller.prepareStartup(f.url).then(() => {
+    released = true
+  })
+  f.f.clock.advance(500)
+  f.pending[0]!.resolve(f.measured())
+  await nextTurn()
+  assert.equal(released, false)
+  f.f.clock.advance(2500)
+  await wait
+  assert.equal(f.controller.snapshot().startup?.elapsedMs, 3000)
+  assert.equal(f.pending.length, 2)
+  f.pending[1]!.resolve(f.measured())
+})
+
+test('UP141-TEST startup policy change releases owned gate but never renews startup budget', async (t) => {
+  const f = startup(t)
+  const wait = f.controller.prepareStartup(f.url)
+  await f.f.settings.update({ startupEarlyReleaseEnabled: false })
+  await wait
+  for (const p of f.pending) p.resolve(f.measured())
+  await nextTurn()
+  assert.equal(f.recorded.length, 0)
+  await f.f.settings.update({ startupEarlyReleaseEnabled: true })
+  await f.controller.prepareStartup(f.url)
+  assert.equal(f.pending.length, 2)
 })
 
 test('UP141-START cached candidate must complete all 16KiB before early release', async (t) => {

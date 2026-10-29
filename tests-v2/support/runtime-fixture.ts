@@ -126,6 +126,7 @@ export function fixture(
         tick: () => undefined,
         startupFallbackHosts: () => [],
         requestManual: () => undefined,
+        requestCatalogValidation: () => undefined,
         snapshot: () => ({
           state: 'idle' as const,
           reason: 'fixture',

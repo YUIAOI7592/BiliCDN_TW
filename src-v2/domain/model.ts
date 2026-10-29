@@ -141,6 +141,8 @@ export type RouteDecision =
     }
 
 export interface TransportObservation {
+  readonly retryVerifiedBytes?: number
+  readonly terminationReason?: 'early-retry-timeout'
   readonly request?: RequestContext
   readonly generation: GenerationId
   readonly epoch: EpochId
@@ -212,6 +214,14 @@ export type RecoveryAction =
   | { readonly action: 'none'; readonly id: RecoveryActionId; readonly reason: string }
 
 export type DomainEvent =
+  | {
+      readonly type: 'early-retry'
+      readonly at: number
+      readonly state: import('./early-retry-diagnostic.ts').EarlyRetryState
+      readonly reason: string
+      readonly host: string | null
+      readonly attempts: number
+    }
   | {
       readonly type: 'core-uninitialized'
       readonly at: number

@@ -28,6 +28,10 @@ export function renderOverview(
     : '尚未確認'
   const summary = document.createElement('p')
   summary.className = 'summary'
+  const stage = document.createElement('p')
+  stage.className = 'detail'
+  stage.textContent = '測試版／實機待驗證：UP141 功能已包含，正式採用與預設留待實機結果決定。'
+  body.append(stage)
   const sourceMode = settings.considerNativeSources ? '可參考 B 站原生來源' : '僅內建 CDN'
   const mode = settings.disabled
     ? '腳本已停用，網站自行選擇 CDN'
@@ -51,7 +55,12 @@ export function renderOverview(
   }
   if (measurement.range)
     summary.textContent += `\n健康探測：${measurement.range.mode === 'middle' ? '中段' : '首段'}｜${measurement.range.sizeKnown ? '大小已驗證' : '大小未知'}（不代表未快取）`
+  if (measurement.validation)
+    summary.textContent += `\n香港候選測試：${plain(measurement.validation.state, { queued: '等待資格或冷卻', running: '測試中', complete: '本輪結束', cancelled: '已撤銷' })}｜目標 ${measurement.validation.hosts.join('、')}｜已取得 ${measurement.validation.results.length} 筆結果（詳細結果見診斷）`
   const hook = deps.transport.snapshot()
+  const retry = deps.earlyRetry?.snapshot()
+  if (retry)
+    summary.textContent += `\n慢請求提前重試：${settings.earlyRetryEnabled ? '實驗開啟' : '關閉'}｜${plain(retry.state, { idle: '尚未開始', waiting: '觀察中', armed: '已要求原生逾時', timedout: '已觀察原生逾時', claimed: '網站重試已配對', dispatched: '網站已重試', complete: '重試成功', cancelled: '已撤銷', suspended: '本分頁已停止提前重試' })}｜本分頁已嘗試 ${retry.attempts} 次`
   if (hook.lastApiEndpoint)
     summary.textContent += `\n播放入口：${plain(hook.lastApiEndpoint.kind, { playurl: '一般播放資料', 'ogv-playview': 'OGV 正片', 'ogv-precheck': 'OGV 片頭檢查（原文傳遞）' })}`
   summary.textContent += `\n請求攔截：${plain(hook.hookState, { installed: '運作中', degraded: '部分失效', failed: '無法啟用', 'not-installed': '未啟用' })}｜腳本看到 ${Number(hook.enteredFetch) + Number(hook.enteredXhr)} 筆請求，其中 ${hook.mediaRecognized} 筆像是影音請求；交給瀏覽器 ${hook.nativeCalled} 筆，看到回應 ${hook.responseObserved} 筆`

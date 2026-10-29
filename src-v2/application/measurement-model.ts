@@ -12,6 +12,18 @@ export interface MeasurementStatus {
   readonly disabled: boolean
 }
 export interface MeasurementSnapshot {
+  readonly validation?: {
+    readonly state: 'queued' | 'running' | 'complete' | 'cancelled'
+    readonly reason: string
+    readonly hosts: readonly string[]
+    readonly results: readonly {
+      readonly host: string
+      readonly valid: boolean
+      readonly safeMbps: number | null
+      readonly bytes: number
+      readonly status: number | null
+    }[]
+  }
   readonly state: 'idle' | 'waiting' | 'running' | 'complete' | 'failed' | 'cancelled'
   readonly reason: string
   readonly lastAttemptAt: number

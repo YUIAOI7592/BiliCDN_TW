@@ -9,6 +9,7 @@ export const measurementRoutes = (overrides: Partial<MeasurementRoutes> = {}): M
     commitStartupChoice: () => null,
     recordStartupSuccess: async () => undefined,
     challenge: () => null,
+    catalogValidationContext: () => null,
     recordChallenge: async () => undefined,
     ...overrides,
   }) satisfies MeasurementRoutes

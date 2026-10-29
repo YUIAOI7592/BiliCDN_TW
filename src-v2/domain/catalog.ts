@@ -1,5 +1,13 @@
 import type { PlayurlEndpointKind } from './playurl-model.ts'
 
+export const HK_TEST_CANDIDATES = Object.freeze([
+  'cn-hk-eq-01-03.bilivideo.com',
+  'cn-hk-eq-01-05.bilivideo.com',
+  'cn-hk-eq-01-01.bilivideo.com',
+] as const)
+export const isHkTestCandidate = (host: string): boolean =>
+  (HK_TEST_CANDIDATES as readonly string[]).includes(host)
+
 export const TRUSTED_CATALOG = Object.freeze([
   'upos-sz-mirroraliov.bilivideo.com',
   'upos-sz-mirrorcosov.bilivideo.com',
@@ -12,12 +20,14 @@ export const TRUSTED_CATALOG = Object.freeze([
   'upos-sz-mirrorhwov.bilivideo.com',
   'upos-sz-mirrorhw.bilivideo.com',
   'upos-hz-mirroraliov.bilivideo.com',
+  ...HK_TEST_CANDIDATES,
 ] as const)
 
 export type CatalogHost = (typeof TRUSTED_CATALOG)[number]
 export const TRUSTED_CATALOG_SET: ReadonlySet<string> = new Set(TRUSTED_CATALOG)
 
 export const DEFAULT_UNAVAILABLE_HOSTS: ReadonlySet<string> = new Set([
+  ...HK_TEST_CANDIDATES,
   'upos-sz-mirrorcosov.bilivideo.com',
   'upos-sz-mirrorhwov.bilivideo.com',
   'upos-sz-mirrorhw.bilivideo.com',

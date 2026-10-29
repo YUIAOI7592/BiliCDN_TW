@@ -11,11 +11,18 @@ import {
 } from './transport-context.ts'
 import { FetchHookAdapter } from './fetch-hook.ts'
 import { XhrHookAdapter } from './xhr-hook.ts'
+import type { EarlyRetryRoutingPort } from '../application/early-retry-routing-ports.ts'
+import type {
+  EarlyRetryPermit,
+  InFlightVideoSample,
+  EarlyRetryActionState,
+} from '../application/early-retry-model.ts'
 export type { TransportSnapshot } from './transport-context.ts'
 
 export class TransportAdapter {
   #fetch: HookInstallation | null = null
   #xhr: HookInstallation | null = null
+  #xhrAdapter: XhrHookAdapter | null = null
   #hookState: 'not-installed' | 'installed' | 'failed' = 'not-installed'
   #hookReason = 'not-attempted'
   readonly #context: TransportContext
@@ -27,6 +34,7 @@ export class TransportAdapter {
     measurement: StartupGate,
     now: () => number,
     ids: RuntimeIdPort,
+    private readonly retryRoutes?: EarlyRetryRoutingPort,
   ) {
     this.#context = new TransportContext(session, settings, routes, playurl, measurement, now, ids)
   }
@@ -43,7 +51,8 @@ export class TransportAdapter {
       return
     }
     try {
-      this.#xhr = new XhrHookAdapter(this.#context).install()
+      this.#xhrAdapter = new XhrHookAdapter(this.#context, this.retryRoutes)
+      this.#xhr = this.#xhrAdapter.install()
     } catch {
       /* host-owned API */
     }
@@ -86,6 +95,21 @@ export class TransportAdapter {
       note: 'Native call is a script observation, not Chrome Network confirmation.',
     })
   }
+  samples(now: number): readonly InFlightVideoSample[] {
+    return this.#xhrAdapter?.samples(now) ?? []
+  }
+  arm(requestId: string, permit: EarlyRetryPermit): boolean {
+    return this.#xhrAdapter?.arm(requestId, permit) ?? false
+  }
+  state(permit: EarlyRetryPermit): EarlyRetryActionState | null {
+    return this.#xhrAdapter?.state(permit) ?? null
+  }
+  observations(permit: EarlyRetryPermit) {
+    return this.#xhrAdapter?.observations(permit) ?? []
+  }
+  cancel(permit?: EarlyRetryPermit): void {
+    this.#xhrAdapter?.cancel(permit)
+  }
   dispose(): void {
     for (const hook of [this.#xhr, this.#fetch]) {
       try {
@@ -95,6 +119,7 @@ export class TransportAdapter {
       }
     }
     this.#xhr = null
+    this.#xhrAdapter = null
     this.#fetch = null
     this.#hookState = 'not-installed'
     this.#hookReason = 'disposed'

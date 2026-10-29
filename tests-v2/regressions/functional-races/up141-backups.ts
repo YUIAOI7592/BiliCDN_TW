@@ -135,8 +135,8 @@ test('UP141-ROUTE unknown family gets no inferred diversity bonus', (t) => {
 test('UP141-ROUTE family labels require exact built-in hosts and make no location claim', (t) => {
   testScope(t)
   assert.equal(catalogHostFamily(ali.toUpperCase()), 'ali')
-  assert.equal(catalogHostFamily('cn-hk-eq-01-03.bilivideo.com'), null)
-  assert.equal(catalogHostFamily('cn-hk-eq-01-05.bilivideo.com'), null)
+  assert.equal(catalogHostFamily('cn-hk-eq-01-03.bilivideo.com'), 'hk-eq-01')
+  assert.equal(catalogHostFamily('cn-hk-eq-01-05.bilivideo.com'), 'hk-eq-01')
   assert.equal(catalogHostFamily(`${ali}.evil.invalid`), null)
   assert.equal(catalogHostFamily('cn-hk-eq-01-99.bilivideo.com'), null)
   assert.equal(catalogHostFamily('__proto__'), null)
@@ -178,7 +178,7 @@ test('UP141-ROUTE original comparison retains exact input order and five backups
   )
 })
 
-test('UP141-ROUTE unqualified HK candidates are not admitted to the formal eleven-host Catalog', (t) => {
+test('UP141-ROUTE test release includes all HK candidates disabled by default', (t) => {
   testScope(t)
   const hk = [
     'cn-hk-eq-01-03.bilivideo.com',
@@ -186,16 +186,16 @@ test('UP141-ROUTE unqualified HK candidates are not admitted to the formal eleve
     'cn-hk-eq-01-01.bilivideo.com',
   ]
   for (const host of hk) {
-    assert.equal(isCatalogHost(host), false)
-    assert.equal(DEFAULT_UNAVAILABLE_HOSTS.has(host), false)
+    assert.equal(isCatalogHost(host), true)
+    assert.equal(DEFAULT_UNAVAILABLE_HOSTS.has(host), true)
     assert.equal(
       catalogCandidates('video').some((candidate) => candidate.host === host),
-      false,
+      true,
     )
-    assert.equal(catalogHostFamily(host), null)
+    assert.equal(catalogHostFamily(host), 'hk-eq-01')
   }
-  assert.equal(TRUSTED_CATALOG.length, 11)
-  assert.equal(DEFAULT_UNAVAILABLE_HOSTS.size, 4)
+  assert.equal(TRUSTED_CATALOG.length, 14)
+  assert.equal(DEFAULT_UNAVAILABLE_HOSTS.size, 7)
   for (const host of [
     'upos-sz-mirrorcosov.bilivideo.com',
     'upos-sz-mirrorhwov.bilivideo.com',

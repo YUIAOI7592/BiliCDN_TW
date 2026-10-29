@@ -8,10 +8,13 @@ export interface OutputCandidate {
   readonly meetsHeadroom?: boolean
 }
 
-export type CatalogFamily = 'ali' | 'cos' | 'hw' | 'bos' | 'tx'
+export type CatalogFamily = 'ali' | 'cos' | 'hw' | 'bos' | 'tx' | 'hk-eq-01'
 
 // Naming/provider families are a conservative preference, not proof of separate data centers.
 const CATALOG_FAMILIES: Readonly<Record<string, CatalogFamily>> = Object.freeze({
+  'cn-hk-eq-01-03.bilivideo.com': 'hk-eq-01',
+  'cn-hk-eq-01-05.bilivideo.com': 'hk-eq-01',
+  'cn-hk-eq-01-01.bilivideo.com': 'hk-eq-01',
   'upos-sz-mirroraliov.bilivideo.com': 'ali',
   'upos-sz-mirrorali.bilivideo.com': 'ali',
   'upos-sz-mirroralib.bilivideo.com': 'ali',
@@ -64,6 +67,7 @@ export function backupOutputPlan(
   primaryHost: string | null,
   candidates: readonly OutputCandidate[],
   locked: boolean,
+  diversityEnabled = true,
 ): readonly number[] {
   if (locked) return []
   const used = new Set(primaryHost ? [primaryHost] : []),
@@ -78,7 +82,9 @@ export function backupOutputPlan(
     }
   }
   return [
-    ...measuredBackupOrder(primaryHost, distinct).map((candidate) => candidate.index),
+    ...(diversityEnabled ? measuredBackupOrder(primaryHost, distinct) : distinct).map(
+      (candidate) => candidate.index,
+    ),
     ...same,
   ].slice(0, 5)
 }
@@ -87,11 +93,12 @@ export function catalogOutputPlan(
   preferred: readonly string[],
   unavailable: ReadonlySet<string>,
   measuredSufficient: ReadonlySet<string> = new Set(),
+  diversityEnabled = true,
 ): readonly string[] {
   const candidates = [...new Set([...preferred, ...TRUSTED_CATALOG])]
     .filter((host) => isCatalogHost(host) && host !== primaryHost && !unavailable.has(host))
     .map((host) => ({ host, meetsHeadroom: measuredSufficient.has(host) }))
-  return measuredBackupOrder(primaryHost, candidates)
+  return (diversityEnabled ? measuredBackupOrder(primaryHost, candidates) : candidates)
     .map((candidate) => candidate.host)
     .slice(0, 5)
 }

@@ -5,6 +5,7 @@ import type {
   RouteDecision,
 } from '../domain/model.ts'
 import { assessDemandRatio } from '../domain/routing.ts'
+import { earlyRetryReason, EARLY_RETRY_STATES } from '../domain/early-retry-diagnostic.ts'
 import { isCatalogHost } from '../domain/catalog.ts'
 import { isKnownNativeFamily } from '../domain/url-policy.ts'
 import type {
@@ -98,6 +99,17 @@ export class DiagnosticEventSanitizer {
     let data: DiagnosticEventData,
       important = false
     switch (event.type) {
+      case 'early-retry':
+        data = {
+          state: EARLY_RETRY_STATES.includes(event.state) ? event.state : 'waiting',
+          reason: earlyRetryReason(event.reason),
+          host: this.host(event.host),
+          attempts: Number.isSafeInteger(event.attempts)
+            ? Math.max(0, Math.min(1_000_000_000, event.attempts))
+            : 0,
+        }
+        important = event.state !== 'waiting' && event.state !== 'idle'
+        break
       case 'route-decision':
       case 'route-planned': {
         data = this.decision(event.decision)

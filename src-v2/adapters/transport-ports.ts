@@ -16,7 +16,8 @@ export interface TransportRoutes extends Pick<
 > {}
 export interface TransportSessionPort extends Pick<SessionPort, 'get' | 'isGeneration'> {}
 export interface TransportSettings {
-  get(): Pick<SettingsState, 'disabled' | 'blockHttpDns'>
+  get(): Pick<SettingsState, 'disabled' | 'blockHttpDns'> &
+    Partial<Pick<SettingsState, 'earlyRetryEnabled'>>
 }
 export interface StartupGate extends Pick<
   MeasurementPort,

@@ -73,6 +73,7 @@ export interface DiagnosticRanking extends DiagnosticDecision {
 }
 export type EventOf<Type extends DomainEvent['type']> = Extract<DomainEvent, { type: Type }>
 export type DiagnosticEventData =
+  | Pick<EventOf<'early-retry'>, 'state' | 'reason' | 'host' | 'attempts'>
   | DiagnosticDecision
   | DiagnosticRequest
   | (DiagnosticTransport & { detached?: boolean })

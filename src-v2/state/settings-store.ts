@@ -12,6 +12,10 @@ export const defaultSettings = (now: number): SettingsState =>
     disabled: false,
     fixedHost: null,
     considerNativeSources: false,
+    earlyRetryEnabled: false,
+    startupEarlyReleaseEnabled: true,
+    healthMiddleRangeEnabled: true,
+    backupFamilyDiversityEnabled: true,
     catalogOverrides: Object.freeze({}),
     codec: 'av1',
     blockWebRtc: true,
@@ -40,6 +44,10 @@ const parseSettings = (value: unknown, now: number): SettingsState => {
     disabled: raw.disabled === true,
     fixedHost,
     considerNativeSources: raw.considerNativeSources === true,
+    earlyRetryEnabled: raw.earlyRetryEnabled === true,
+    startupEarlyReleaseEnabled: raw.startupEarlyReleaseEnabled !== false,
+    healthMiddleRangeEnabled: raw.healthMiddleRangeEnabled !== false,
+    backupFamilyDiversityEnabled: raw.backupFamilyDiversityEnabled !== false,
     catalogOverrides: Object.freeze(overrides),
     codec,
     blockWebRtc: raw.blockWebRtc !== false,
@@ -52,8 +60,12 @@ const parseSettings = (value: unknown, now: number): SettingsState => {
 }
 
 export class SettingsStore implements SettingsPort {
+  #startupOffPending = 0
+  #middleOffPending = 0
+  #diversityOffPending = 0
   #state: SettingsState
   #nativeOffPending = 0
+  #earlyRetryOffPending = 0
   #listeners = new Set<(state: SettingsState) => void>()
   #stopRemote: () => void
 
@@ -72,8 +84,25 @@ export class SettingsStore implements SettingsPort {
   }
 
   get(): SettingsState {
-    return this.#nativeOffPending && this.#state.considerNativeSources
-      ? Object.freeze({ ...this.#state, considerNativeSources: false })
+    return this.#nativeOffPending ||
+      this.#earlyRetryOffPending ||
+      this.#startupOffPending ||
+      this.#middleOffPending ||
+      this.#diversityOffPending
+      ? Object.freeze({
+          ...this.#state,
+          considerNativeSources: this.#nativeOffPending ? false : this.#state.considerNativeSources,
+          earlyRetryEnabled: this.#earlyRetryOffPending ? false : this.#state.earlyRetryEnabled,
+          startupEarlyReleaseEnabled: this.#startupOffPending
+            ? false
+            : this.#state.startupEarlyReleaseEnabled,
+          healthMiddleRangeEnabled: this.#middleOffPending
+            ? false
+            : this.#state.healthMiddleRangeEnabled,
+          backupFamilyDiversityEnabled: this.#diversityOffPending
+            ? false
+            : this.#state.backupFamilyDiversityEnabled,
+        })
       : this.#state
   }
 
@@ -83,7 +112,19 @@ export class SettingsStore implements SettingsPort {
   }
 
   async update(change: SettingsChange): Promise<SettingsState> {
+    const startupOff = change.startupEarlyReleaseEnabled === false
+    const middleOff = change.healthMiddleRangeEnabled === false
+    const diversityOff = change.backupFamilyDiversityEnabled === false
+    if (startupOff) this.#startupOffPending++
+    if (middleOff) this.#middleOffPending++
+    if (diversityOff) this.#diversityOffPending++
+    if (startupOff || middleOff || diversityOff) this.#emit()
     const holdNativeOff = change.considerNativeSources === false
+    const holdEarlyRetryOff = change.earlyRetryEnabled === false
+    if (holdEarlyRetryOff) {
+      this.#earlyRetryOffPending++
+      this.#emit()
+    }
     if (holdNativeOff) {
       this.#nativeOffPending++
       this.#emit()
@@ -102,6 +143,14 @@ export class SettingsStore implements SettingsPort {
         return next
       })
     } finally {
+      if (startupOff) this.#startupOffPending--
+      if (middleOff) this.#middleOffPending--
+      if (diversityOff) this.#diversityOffPending--
+      if (startupOff || middleOff || diversityOff) this.#emit()
+      if (holdEarlyRetryOff) {
+        this.#earlyRetryOffPending--
+        this.#emit()
+      }
       if (holdNativeOff) {
         this.#nativeOffPending--
         this.#emit()
@@ -131,6 +180,7 @@ export class SettingsStore implements SettingsPort {
 
   async reset(): Promise<SettingsState> {
     this.#nativeOffPending++
+    this.#earlyRetryOffPending++
     this.#emit()
     try {
       const next = await this.storage.withLock('settings', () => {
@@ -148,6 +198,7 @@ export class SettingsStore implements SettingsPort {
       return next
     } finally {
       this.#nativeOffPending--
+      this.#earlyRetryOffPending--
       this.#emit()
     }
   }

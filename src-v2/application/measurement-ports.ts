@@ -16,6 +16,7 @@ export interface MeasurementRoutes extends Pick<
   | 'challenge'
   | 'isCatalogOnly'
   | 'recordChallenge'
+  | 'catalogValidationContext'
 > {
   commitStartupChoice(
     ...args: Parameters<RouteCoordinatorPort['commitStartupChoice']>
@@ -29,6 +30,7 @@ export interface MeasurementPort {
   snapshot(): MeasurementSnapshot
   reset(): void
   requestManual(): void
+  requestCatalogValidation(hosts: readonly string[]): void
   dispose(): void
   startupFallbackHosts(): readonly string[]
   cancel(reason: string): void

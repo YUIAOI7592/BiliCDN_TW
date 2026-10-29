@@ -11,8 +11,11 @@ import type { RestrictionRecord } from '../state/restriction-model.ts'
 import type { SettingsReader } from '../state/settings-ports.ts'
 import type { SettingsState } from '../state/settings-model.ts'
 import type { evidenceMetrics } from '../domain/evidence.ts'
+import type { EarlyRetrySnapshot } from '../application/early-retry-model.ts'
 
 export interface ControlCenterSnapshot {
+  readonly releaseStage: 'test'
+  readonly earlyRetry?: EarlyRetrySnapshot
   readonly version: string
   readonly settings: SettingsState
   readonly session: SessionSnapshot
@@ -66,6 +69,7 @@ export interface ControlTransportReader {
 }
 
 export interface ControlCenterDependencies {
+  readonly earlyRetry?: { snapshot(): EarlyRetrySnapshot }
   readonly settings: SettingsReader
   readonly restrictions: ControlRestrictionReader
   readonly evidence: ControlEvidenceReader

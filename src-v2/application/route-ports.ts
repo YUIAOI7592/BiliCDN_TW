@@ -20,6 +20,8 @@ import type {
   RouteSnapshot,
   StartupCandidate,
   StartupOptions,
+  CatalogValidationContext,
+  CatalogValidationTarget,
 } from './route-model.ts'
 
 export interface RouteSessionPort extends Pick<
@@ -131,7 +133,9 @@ export interface RouteCoordinatorPort {
     preferNative: boolean,
     excludedHosts?: ReadonlySet<string>,
     catalogCursor?: number,
+    validation?: CatalogValidationTarget,
   ): AppliedRouteDecision | null
+  catalogValidationContext(representation: RepresentationId): CatalogValidationContext | null
   recordChallenge(
     applied: AppliedRouteDecision,
     bytes: number,

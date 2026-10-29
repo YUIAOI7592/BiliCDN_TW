@@ -873,6 +873,57 @@ test('R02 a pending single-host edit merges the latest remote settings under loc
   assert.deepEqual(f.settings.get().catalogOverrides, { [remoteHost]: false, [host]: false })
   await assert.rejects(f.commands.setCatalogEnabled('external.invalid', true), TypeError)
 })
+test('UP141-RETRY prototype switch rejects synthetic changes and suppresses off before lock completion', async (t) => {
+  const f = ui(t)
+  f.button('CDN 與播放設定').emit('click')
+  const input = f.toggle('慢請求提前重試')
+  assert.equal(input.checked, false)
+  input.checked = true
+  input.emit('change', '', false)
+  assert.equal(f.storage.tasks.length, 0)
+  assert.equal(f.settings.get().earlyRetryEnabled, false)
+  input.checked = true
+  input.emit('change')
+  assert.equal(f.storage.tasks.length, 1)
+  await f.storage.drain()
+  await flushCopy()
+  assert.equal(f.settings.get().earlyRetryEnabled, true)
+  const enabled = f.toggle('慢請求提前重試')
+  assert.equal(enabled.checked, true)
+  enabled.checked = false
+  enabled.emit('change')
+  assert.equal(f.settings.get().earlyRetryEnabled, false)
+  await f.storage.drain()
+  await flushCopy()
+  assert.equal(f.settings.get().earlyRetryEnabled, false)
+})
+
+test('UP141-TEST control center exposes all test switches and HK without accepting synthetic changes', async (t) => {
+  const f = ui(t)
+  assert.ok(f.doc.flatten().some((row) => row.textContent.includes('測試版／實機待驗證')))
+  f.button('CDN 與播放設定').emit('click')
+  for (const label of ['起播合格即放行', '健康中段探測', '備援家族分散']) {
+    const input = f.toggle(label)
+    assert.equal(input.checked, true)
+    input.checked = false
+    input.emit('change', '', false)
+    assert.equal(f.storage.tasks.length, 0)
+    input.checked = false
+    input.emit('change')
+    await f.storage.drain()
+    await flushCopy()
+    assert.equal(f.toggle(label).checked, false)
+  }
+  for (const host of [
+    'cn-hk-eq-01-03.bilivideo.com',
+    'cn-hk-eq-01-05.bilivideo.com',
+    'cn-hk-eq-01-01.bilivideo.com',
+  ])
+    assert.equal(f.toggle(host).checked, false)
+  assert.equal(f.toggle('慢請求提前重試').checked, false)
+  assert.equal(f.button('安排香港候選測試').disabled, true)
+})
+
 function ui(t: TestContext) {
   const storage = new QueuedSettingsStorage(),
     f = fixture(t, storage),

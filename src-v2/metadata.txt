@@ -2,7 +2,7 @@
 // @name         Bilibili CDN 台灣優化
 // @namespace    BiliCDN_TW
 // @version      2.1.12
-// @description  為台灣網路自動選擇穩定的 Bilibili CDN，支援 2x、自動畫質、背景播放與故障恢復
+// @description  UP141 測試版／實機待驗證：包含香港候選、量測對照及預設關閉的提前重試，正式採用待實機結果決定
 // @author       jiyunshi <chocosensei214@gmail.com>
 // @license      MIT
 // @homepageURL  https://github.com/YUIAOI7592/BiliCDN_TW

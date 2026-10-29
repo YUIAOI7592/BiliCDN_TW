@@ -34,6 +34,12 @@ import { FakeStorage } from '../support/storage.ts'
 import { FakeClock } from '../support/clock.ts'
 import { testScope } from '../support/scope.ts'
 
+test('UP141-DIAG runtime owns one retry subscription and releases it on dispose', async (t) => {
+  await (
+    await fixture(t, 99)
+  )()
+})
+
 // Each call creates fresh resources and replays only this fixture's prerequisite transitions.
 // Earlier expectations run in their own cases; no mutable state crosses a test boundary.
 async function fixture(
@@ -47,6 +53,35 @@ async function fixture(
   const settings = scope.own(new SettingsStore(storage, clock.now)),
     session = new SessionStore()
   const calls: string[] = []
+  let retryListener:
+    | ((
+        snapshot: import('../../src-v2/application/early-retry-model.ts').EarlyRetrySnapshot,
+      ) => void)
+    | null = null
+  const retrySnapshot = {
+    state: 'waiting' as const,
+    reason: 'no-alternative',
+    host: null,
+    attempts: 0,
+    history: [{ at: 1000, state: 'waiting' as const, reason: 'no-alternative', host: null }],
+  }
+  const retryPort =
+    scenario === 99
+      ? {
+          tick() {},
+          reset() {},
+          cancel() {},
+          dispose() {},
+          snapshot: () => retrySnapshot,
+          subscribe(listener: NonNullable<typeof retryListener>) {
+            assert.equal(retryListener, null)
+            retryListener = listener
+            return () => {
+              retryListener = null
+            }
+          },
+        }
+      : undefined
   const video: VideoSnapshot = {
     available: true,
     paused: false,
@@ -146,11 +181,20 @@ async function fixture(
       },
       clock.now,
       { subscribeEpoch: () => () => undefined },
+      retryPort,
     ),
   )
   runtime.install()
   runtime.install()
   calls.length = 0
+  if (scenario === 99)
+    return async () => {
+      assert.ok(retryListener)
+      retryListener(retrySnapshot)
+      assert.deepEqual(calls, ['diagnostic.event'])
+      runtime.dispose()
+      assert.equal(retryListener, null)
+    }
   await settings.update({ considerNativeSources: true })
   if (scenario === 0)
     return async () => {
@@ -270,6 +314,7 @@ async function fixture(
           requestManual: () => {
             calls.push('manual')
           },
+          requestCatalogValidation: () => undefined,
         },
         {
           reset: () => {
@@ -384,6 +429,7 @@ async function fixture(
       requestManual: () => {
         calls.push('manual')
       },
+      requestCatalogValidation: () => undefined,
     },
     {
       reset: () => {

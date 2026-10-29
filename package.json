@@ -1,6 +1,6 @@
 {
   "name": "bilicdn-tw",
-  "version": "2.1.37",
+  "version": "2.1.38",
   "private": true,
   "description": "Locally built, modular BiliCDN Taiwan userscript",
   "license": "MIT",
@@ -21,7 +21,8 @@
     "compare:upstream": "node scripts/upstream-compare.mts",
     "evaluate:buffer-shadow": "node scripts/buffer-shadow-evaluation.mts",
     "evaluate:buffer-live": "node scripts/buffer-live.mts",
-    "evaluate:diagnostics": "node scripts/diagnostics-cost.mts"
+    "evaluate:diagnostics": "node scripts/diagnostics-cost.mts",
+    "evaluate:early-retry": "node scripts/early-retry-evaluation.mts"
   },
   "devDependencies": {
     "@types/node": "26.6.4",

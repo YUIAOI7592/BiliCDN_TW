@@ -1,4 +1,5 @@
 import type { SettingsState } from '../state/settings-model.ts'
+import type { EarlyRetryPort } from './early-retry-ports.ts'
 
 import type {
   ControlCommandPort,
@@ -33,6 +34,7 @@ export class ControlCommands implements ControlCommandPort {
     private readonly measurement: ControlMeasurementPort,
     private readonly recovery: ControlRecoveryPort,
     private readonly now: () => number,
+    private readonly earlyRetry?: EarlyRetryPort,
   ) {}
   updateSettings(change: SettingsChange): Promise<SettingsState> {
     return this.settings.update(change)
@@ -41,12 +43,16 @@ export class ControlCommands implements ControlCommandPort {
     return this.settings.setCatalogEnabled(host, enabled)
   }
   setOriginalComparison(enabled: boolean): void {
+    this.earlyRetry?.cancel('comparison-setting')
     this.routes.setOriginalComparison(enabled)
     this.measurement.reset()
     this.recovery.reset()
   }
   requestMeasurement(): void {
     this.measurement.requestManual()
+  }
+  requestCatalogValidation(hosts: readonly string[]): void {
+    this.measurement.requestCatalogValidation(hosts)
   }
   async blacklistLatestVideo(): Promise<void> {
     const host = this.routes.latestVideoHost()

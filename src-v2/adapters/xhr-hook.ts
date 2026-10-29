@@ -15,10 +15,36 @@ import { convertXhrOpen, convertXhrHeader, createXhrBodyConverter } from './xhr-
 import { createXhrRequestState, resetXhrTransform } from './xhr-request.ts'
 import type { XhrMeta } from './xhr-request.ts'
 import { transformXhrJson, transformXhrText } from './xhr-response.ts'
+import { XhrEarlyRetry } from './xhr-early-retry.ts'
+import type { EarlyRetryRoutingPort } from '../application/early-retry-routing-ports.ts'
+import type {
+  EarlyRetryPermit,
+  InFlightVideoSample,
+  EarlyRetryActionState,
+} from '../application/early-retry-model.ts'
 
 export class XhrHookAdapter {
   #xhrMeta = new WeakMap<XMLHttpRequest, XhrMeta>()
-  constructor(private readonly context: TransportContext) {}
+  #retry: XhrEarlyRetry | null = null
+  constructor(
+    private readonly context: TransportContext,
+    private readonly retryRoutes?: EarlyRetryRoutingPort,
+  ) {}
+  samples(now: number): readonly InFlightVideoSample[] {
+    return this.#retry?.samples(now) ?? []
+  }
+  arm(requestId: string, permit: EarlyRetryPermit): boolean {
+    return this.#retry?.arm(requestId, permit) ?? false
+  }
+  state(permit: EarlyRetryPermit): EarlyRetryActionState | null {
+    return this.#retry?.state(permit) ?? null
+  }
+  observations(permit: EarlyRetryPermit) {
+    return this.#retry?.observations(permit) ?? []
+  }
+  cancel(permit?: EarlyRetryPermit): void {
+    this.#retry?.cancel(permit)
+  }
   install(): HookInstallation | null {
     const proto = unsafeWindow.XMLHttpRequest?.prototype
     if (!proto) return null
@@ -32,6 +58,12 @@ export class XhrHookAdapter {
     const bodyValue = createXhrBodyConverter()
     const self = this.context,
       xhrMeta = this.#xhrMeta
+    const retry = (this.#retry = new XhrEarlyRetry(
+      proto,
+      self,
+      (xhr) => xhrMeta.get(xhr),
+      this.retryRoutes,
+    ))
     const { waiting, finishLocal, rejectLocal } = createXhrRequestState((xhr) => xhrMeta.get(xhr))
 
     const open: typeof XMLHttpRequest.prototype.open = function (
@@ -45,6 +77,7 @@ export class XhrHookAdapter {
       // Check the receiver before user-controlled argument conversions. Native open still
       // owns method/URL/options validation and its original exception.
       readyStateDescriptor?.get?.call(this)
+      retry.beforeOpen(this)
       if (arguments.length < 2) {
         Reflect.apply(originalOpen, this, Array.from(arguments))
         return
@@ -229,6 +262,7 @@ export class XhrHookAdapter {
                 !stale && meta.method === 'GET'
                   ? self.routes.apply(meta.originalUrl)
                   : self.routes.inspectOriginal(meta.originalUrl)
+              applied = retry.select(this, meta) ?? applied
               if (applied.url) targetUrl = applied.url
             }
             if (self.settings.get().blockHttpDns && isHttpDnsUrl(meta.originalUrl, location.href)) {
@@ -282,9 +316,22 @@ export class XhrHookAdapter {
           if (xhrMeta.get(this) !== meta) return
           noteHeaders()
           meta.bytes = Math.max(meta.bytes, Number(event.loaded) || 0)
+          retry.progress(this, meta, event)
         }
-        const settle = (outcome: 'success' | 'abort' | 'failure', failure?: FailureKind): void => {
+        const settle = (
+          outcome: 'success' | 'abort' | 'failure',
+          failure?: FailureKind,
+          nativeTimeout = false,
+          event?: Event,
+        ): void => {
           if (meta.settled || xhrMeta.get(this) !== meta) return
+          if (event && !event.isTrusted && retry.tracks(meta)) return
+          const verifiedBytes = outcome === 'success' ? retry.verifiedBytes(this, meta) : null
+          const controlledTimeout = retry.terminal(this, meta, nativeTimeout ? 'timeout' : outcome)
+          if (controlledTimeout) {
+            outcome = 'abort'
+            failure = undefined
+          }
           meta.settled = true
           meta.cleanup()
           if (meta.responseAt > 0 || this.status > 0) {
@@ -299,8 +346,8 @@ export class XhrHookAdapter {
               return ''
             }
           })()
-          void self.routes.observe(
-            self.observation(
+          void self.routes.observe({
+            ...self.observation(
               meta.request,
               meta.applied,
               meta.originalUrl,
@@ -314,32 +361,37 @@ export class XhrHookAdapter {
               failure,
               sameUrl(finalUrl, meta.targetUrl),
             ),
-          )
+            ...(controlledTimeout ? { terminationReason: 'early-retry-timeout' as const } : {}),
+            ...(verifiedBytes !== null ? { retryVerifiedBytes: verifiedBytes } : {}),
+          })
         }
-        const load = (): void => {
+        const load = (event: Event): void => {
           const invalid =
             meta.applied?.decision.routeType === 'native-signed' &&
             [403, 451, 959].includes(this.status)
           settle(
             this.status >= 200 && this.status < 400 ? 'success' : 'failure',
             invalid ? 'native-invalid' : this.status >= 500 ? 'http-5xx' : undefined,
+            false,
+            event,
           )
         }
-        const error = (): void => settle('failure', 'network'),
-          timeout = (): void => settle('failure', 'timeout'),
-          abort = (): void => settle('abort')
+        const error = (event: Event): void => settle('failure', 'network', false, event),
+          timeout = (event: Event): void => settle('failure', 'timeout', true, event),
+          abort = (event: Event): void => settle('abort', undefined, false, event)
         this.addEventListener('readystatechange', noteHeaders)
         this.addEventListener('progress', progress)
         this.addEventListener('load', load)
         this.addEventListener('error', error)
-        this.addEventListener('timeout', timeout)
+        this.addEventListener('timeout', timeout, true)
         this.addEventListener('abort', abort)
         meta.cleanup = () => {
+          retry.cleanup(this, meta)
           this.removeEventListener('readystatechange', noteHeaders)
           this.removeEventListener('progress', progress)
           this.removeEventListener('load', load)
           this.removeEventListener('error', error)
-          this.removeEventListener('timeout', timeout)
+          this.removeEventListener('timeout', timeout, true)
           this.removeEventListener('abort', abort)
         }
         self.count('nativeCalled')
@@ -373,6 +425,13 @@ export class XhrHookAdapter {
           throw error
         }
         nativeAccepted = true
+        try {
+          retry.accepted(this, meta)
+          retry.register(this, meta)
+        } catch {
+          // A successful native send is final even when optional bookkeeping fails.
+          retry.cancel()
+        }
       }
       if (
         meta.async &&
@@ -446,6 +505,7 @@ export class XhrHookAdapter {
       responseTextGetter: PropertyDescriptor['get'],
       readyStateGetter: PropertyDescriptor['get']
     const rollback = (): void => {
+      retry.restore()
       try {
         if (proto.open === open) proto.open = originalOpen
       } catch {

@@ -3,6 +3,7 @@ import type { DomainEvent } from '../domain/model.ts'
 import type { PlaybackDiagnosticSample } from '../domain/diagnostic-model.ts'
 
 import type { VideoSnapshot } from './ports.ts'
+import type { EarlyRetryPort } from './early-retry-ports.ts'
 
 import type {
   RuntimePort,
@@ -42,9 +43,17 @@ export class RuntimeController implements RuntimePort {
     private readonly diagnostics: RuntimeDiagnosticPort,
     private readonly now: () => number,
     private readonly content: RuntimeContentPort,
+    private readonly earlyRetry?: EarlyRetryPort,
   ) {}
   install(): void {
     if (this.#stops.length) return
+    if (this.earlyRetry)
+      this.#stops.push(
+        this.earlyRetry.subscribe((snapshot) => {
+          const event = snapshot.history.at(-1)
+          if (event) this.record({ type: 'early-retry', ...event, attempts: snapshot.attempts })
+        }),
+      )
     this.#stops.push(
       this.content.subscribeEpoch((state) => {
         this.reset()
@@ -67,9 +76,11 @@ export class RuntimeController implements RuntimePort {
     let routeSettings = signature(this.settings.get())
     this.#stops.push(
       this.settings.subscribe((state) => {
+        if (!state.earlyRetryEnabled || state.disabled) this.earlyRetry?.cancel('settings')
         this.visibility.setEnabled(!state.disabled)
         const next = signature(state)
         if (next !== routeSettings) {
+          this.earlyRetry?.cancel('route-policy')
           routeSettings = next
           this.routes.invalidateForUserSetting()
           this.measurement.reset()
@@ -151,6 +162,7 @@ export class RuntimeController implements RuntimePort {
     this.player.reset()
   }
   dispose(): void {
+    this.earlyRetry?.dispose()
     for (const stop of this.#stops.splice(0).reverse()) stop()
   }
   #sample(video: VideoSnapshot, watchdog: string, at: number): PlaybackDiagnosticSample {

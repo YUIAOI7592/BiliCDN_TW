@@ -13,6 +13,7 @@ export interface ControlCommandPort {
   setCatalogEnabled(host: string, enabled: boolean): Promise<SettingsState>
   setOriginalComparison(enabled: boolean): void
   requestMeasurement(): void
+  requestCatalogValidation(hosts: readonly string[]): void
   blacklistLatestVideo(): Promise<void>
   clearLearning(): Promise<void>
   resetSettings(): Promise<void>
@@ -28,5 +29,8 @@ export interface ControlRoutesPort extends Pick<
   RouteCoordinatorPort,
   'latestVideoHost' | 'invalidateForUserSetting' | 'setOriginalComparison'
 > {}
-export interface ControlMeasurementPort extends Pick<MeasurementPort, 'requestManual' | 'reset'> {}
+export interface ControlMeasurementPort extends Pick<
+  MeasurementPort,
+  'requestManual' | 'reset' | 'requestCatalogValidation'
+> {}
 export interface ControlRecoveryPort extends Pick<RecoveryPort, 'reset'> {}

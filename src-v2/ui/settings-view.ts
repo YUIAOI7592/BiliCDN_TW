@@ -1,4 +1,9 @@
-import { DEFAULT_UNAVAILABLE_HOSTS, TRUSTED_CATALOG } from '../domain/catalog.ts'
+import {
+  DEFAULT_UNAVAILABLE_HOSTS,
+  TRUSTED_CATALOG,
+  HK_TEST_CANDIDATES,
+  isHkTestCandidate,
+} from '../domain/catalog.ts'
 import type { CodecPreference } from '../state/settings-model.ts'
 import type {
   ControlViewFrame,
@@ -17,6 +22,26 @@ export function renderSettings(
   const settings = deps.settings.get(),
     rows = document.createElement('div')
   rows.className = 'grid'
+  const testTitle = document.createElement('h3')
+  testTitle.textContent = 'UP141 測試功能'
+  rows.append(testTitle)
+  for (const [key, label] of [
+    ['startupEarlyReleaseEnabled', '起播合格即放行'],
+    ['healthMiddleRangeEnabled', '健康中段探測'],
+    ['backupFamilyDiversityEnabled', '備援家族分散'],
+  ] as const)
+    rows.append(
+      createToggle(
+        label,
+        settings[key],
+        (value) => {
+          const pending = deps.commands.updateSettings({ [key]: value })
+          if (!value) actions.settings()
+          return actions.refreshAfter(pending, () => actions.settings())
+        },
+        '測試版預設開啟。切換後請在新的有效播放情境開始對照；不重設測速或恢復預算。',
+      ),
+    )
   const mode = document.createElement('select')
   mode.append(
     new Option('由腳本自動挑選 CDN', ''),
@@ -46,6 +71,18 @@ export function renderSettings(
         return actions.refreshAfter(pending, () => actions.settings())
       },
       '預設關閉。關閉時，腳本辨識到的影音只依內建 CDN 清單選路、測速及提供播放器備援；無法安全改寫或沒有合法內建 CDN 時會擋下請求。開啟後，B 站當次提供的原始與備用網址可參與選路。下方的原生對照測試模式獨立運作；已送出的請求不會取消。',
+    ),
+  )
+  rows.append(
+    createToggle(
+      '慢請求提前重試',
+      settings.earlyRetryEnabled,
+      (value) => {
+        const pending = deps.commands.updateSettings({ earlyRetryEnabled: value })
+        if (!value) actions.settings()
+        return actions.refreshAfter(pending, () => actions.settings())
+      },
+      '實驗功能，預設關閉。播放緩衝不足且已有近期足夠快的合法替代 CDN 時，提早結束慢請求，讓網站自行重試；只適用於自動選路的影片請求。',
     ),
   )
   rows.append(
@@ -103,6 +140,29 @@ export function renderSettings(
       '開啟後會多記錄選路與測速資訊；關閉時仍會保留重要故障。記錄只存在目前分頁，重新整理後清空。',
     ),
   )
+  const validationNote = document.createElement('p')
+  validationNote.className = 'detail'
+  validationNote.textContent =
+    '香港測試：先勾選候選並使用自動 CDN、關閉原生來源；安排後仍須等待前景、播放資格及共用十分鐘冷卻。固定主機用於另一個供片窗口，不會執行健康探測。'
+  const validate = createButton('安排香港候選測試', () => {
+    try {
+      const selected = HK_TEST_CANDIDATES.filter(
+        (host) => deps.settings.get().catalogOverrides[host] === true,
+      )
+      deps.commands.requestCatalogValidation(selected)
+      actions.overview()
+    } catch {
+      validationNote.textContent =
+        '未能安排：請確認已勾選香港候選、目前有影片表示，並處於自動 CDN、原生來源關閉且非對照模式。'
+    }
+  })
+  validate.disabled =
+    settings.disabled ||
+    !!settings.fixedHost ||
+    settings.considerNativeSources ||
+    deps.routes.isOriginalComparison() ||
+    !HK_TEST_CANDIDATES.some((host) => settings.catalogOverrides[host] === true)
+  rows.append(validate, validationNote)
   for (const host of TRUSTED_CATALOG) {
     const defaultEnabled = !DEFAULT_UNAVAILABLE_HOSTS.has(host)
     const enabled = settings.catalogOverrides[host] ?? defaultEnabled
@@ -113,13 +173,16 @@ export function renderSettings(
         (row) =>
           `${restrictionLabel(row.type)}（${row.kind === 'all' ? '影片＋音訊' : row.kind === 'video' ? '影片' : '音訊'}）`,
       )
-    const detail = `${defaultEnabled ? '預設可用的內建 CDN' : '預設標為不可用；勾選後才允許'}${penalties.length ? `｜目前仍被禁止：${penalties.join('、')}；勾選不會解除禁止` : ''}`
+    const detail = `${isHkTestCandidate(host) ? '測試候選，尚未實測；預設關閉，勾選只代表允許選路' : defaultEnabled ? '預設可用的內建 CDN' : '預設標為不可用；勾選後才允許'}${penalties.length ? `｜目前仍被禁止：${penalties.join('、')}；勾選不會解除禁止` : ''}`
     rows.append(
       createToggle(
         host,
         enabled,
-        async (value) => {
-          await deps.commands.setCatalogEnabled(host, value)
+        (value) => {
+          const pending = deps.commands.setCatalogEnabled(host, value)
+          return isHkTestCandidate(host)
+            ? actions.refreshAfter(pending, () => actions.settings())
+            : pending
         },
         detail,
       ),

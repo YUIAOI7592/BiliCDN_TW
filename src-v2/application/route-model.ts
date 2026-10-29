@@ -28,6 +28,14 @@ export interface AppliedRouteDecision {
   readonly playurlOutput?: PlayurlOutputSummary
 }
 
+export interface CatalogValidationContext {
+  readonly identity: RouteIdentity
+  readonly policyRevision: number
+}
+export interface CatalogValidationTarget extends CatalogValidationContext {
+  readonly host: string
+}
+
 export interface StartupCandidate {
   readonly host: string
   readonly type: RouteType
