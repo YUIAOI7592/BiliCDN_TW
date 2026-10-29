@@ -52,6 +52,9 @@ export function renderOverview(
   if (measurement.range)
     summary.textContent += `\n健康探測：${measurement.range.mode === 'middle' ? '中段' : '首段'}｜${measurement.range.sizeKnown ? '大小已驗證' : '大小未知'}（不代表未快取）`
   const hook = deps.transport.snapshot()
+  const retry = deps.earlyRetry?.snapshot()
+  if (retry)
+    summary.textContent += `\n慢請求提前重試：${settings.earlyRetryEnabled ? '實驗開啟' : '關閉'}｜${plain(retry.state, { idle: '尚未開始', waiting: '觀察中', armed: '已要求原生逾時', dispatched: '網站已重試', complete: '重試成功', cancelled: '已撤銷', suspended: '本分頁已停止提前重試' })}｜本分頁已嘗試 ${retry.attempts} 次`
   if (hook.lastApiEndpoint)
     summary.textContent += `\n播放入口：${plain(hook.lastApiEndpoint.kind, { playurl: '一般播放資料', 'ogv-playview': 'OGV 正片', 'ogv-precheck': 'OGV 片頭檢查（原文傳遞）' })}`
   summary.textContent += `\n請求攔截：${plain(hook.hookState, { installed: '運作中', degraded: '部分失效', failed: '無法啟用', 'not-installed': '未啟用' })}｜腳本看到 ${Number(hook.enteredFetch) + Number(hook.enteredXhr)} 筆請求，其中 ${hook.mediaRecognized} 筆像是影音請求；交給瀏覽器 ${hook.nativeCalled} 筆，看到回應 ${hook.responseObserved} 筆`

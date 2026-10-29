@@ -50,6 +50,18 @@ export function renderSettings(
   )
   rows.append(
     createToggle(
+      '慢請求提前重試',
+      settings.earlyRetryEnabled,
+      (value) => {
+        const pending = deps.commands.updateSettings({ earlyRetryEnabled: value })
+        if (!value) actions.settings()
+        return actions.refreshAfter(pending, () => actions.settings())
+      },
+      '實驗功能，預設關閉。播放緩衝不足且已有近期足夠快的合法替代 CDN 時，提早結束慢請求，讓網站自行重試；只適用於自動選路的影片請求。',
+    ),
+  )
+  rows.append(
+    createToggle(
       '測試：只用 B 站原本提供的 CDN',
       deps.routes.isOriginalComparison(),
       (enabled) => {

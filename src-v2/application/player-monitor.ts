@@ -1,4 +1,5 @@
 import type { VideoSnapshot, SchedulerPort, PlayerControlSnapshot } from './ports.ts'
+import type { EarlyRetryPort } from './early-retry-ports.ts'
 
 import type { PlaybackDemand } from '../domain/model.ts'
 import {
@@ -93,7 +94,14 @@ export class PlayerMonitor implements MonitorPort {
   constructor(
     private readonly player: MonitorPlayerPort,
     private readonly session: MonitorSessionPort,
-    private readonly settings: { get(): { readonly disabled: boolean } },
+    private readonly settings: {
+      get(): {
+        readonly disabled: boolean
+        readonly earlyRetryEnabled?: boolean
+        readonly fixedHost?: string | null
+        readonly considerNativeSources?: boolean
+      }
+    },
     private readonly vault: MonitorVaultPort,
     private readonly routes: MonitorRoutes,
     private readonly measurement: MonitorMeasurementPort,
@@ -101,6 +109,7 @@ export class PlayerMonitor implements MonitorPort {
     private readonly isVisible: () => boolean,
     private readonly now: () => number,
     private readonly scheduler: SchedulerPort,
+    private readonly earlyRetry?: EarlyRetryPort,
   ) {
     this.#snapshot = Object.freeze({
       video: player.snapshot(),
@@ -119,6 +128,7 @@ export class PlayerMonitor implements MonitorPort {
     }
   }
   stop(): void {
+    this.earlyRetry?.cancel('monitor-stop')
     this.#timer?.()
     this.#timer = null
     this.#endStall()
@@ -127,6 +137,7 @@ export class PlayerMonitor implements MonitorPort {
     this.#resetBuffer('stopped')
   }
   reset(): void {
+    this.earlyRetry?.reset()
     this.#resetBuffer('reset')
     this.#lastTime = null
     this.#stableProgressSec = 0
@@ -218,6 +229,20 @@ export class PlayerMonitor implements MonitorPort {
       seeking: video.seeking || now < this.#seekGraceUntil,
       recovering: this.recovery.isRecovering(),
       disabled: disabled || originalMode,
+    })
+    const retrySettings = this.settings.get()
+    this.earlyRetry?.tick({
+      enabled: retrySettings.earlyRetryEnabled === true,
+      disabled,
+      originalComparison: originalMode,
+      catalogOnly: !retrySettings.considerNativeSources && !originalMode,
+      fixedHost: !!retrySettings.fixedHost,
+      visible,
+      recovering: this.recovery.isRecovering() || !!this.#stall,
+      stableProgressSec: this.#stableProgressSec,
+      video,
+      controls,
+      demand,
     })
     let bufferTrend: BufferTrendSnapshot | undefined
     try {

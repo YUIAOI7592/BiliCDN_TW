@@ -1,6 +1,7 @@
 import { RangeProbeAdapter } from './adapters/range-probe.ts'
 import { PlayurlController } from './application/playurl-controller.ts'
 import { RuntimeController } from './application/runtime-controller.ts'
+import { EarlyRetryController } from './application/early-retry-controller.ts'
 import { ControlCommands } from './application/control-commands.ts'
 import { MeasurementMetaStore } from './state/measurement-meta-store.ts'
 import { TampermonkeyStorage } from './platform/storage.ts'
@@ -72,8 +73,26 @@ export const start = (): void => {
     vault,
     Math.random,
   )
-  const transport = new TransportAdapter(session, settings, routes, playurl, measurement, now, ids)
+  const transport = new TransportAdapter(
+    session,
+    settings,
+    routes,
+    playurl,
+    measurement,
+    now,
+    ids,
+    routes,
+  )
   transport.install()
+  const earlyRetry = new EarlyRetryController(
+    {
+      alternative: (request, demand) => routes.earlyRetryAlternative(request, demand),
+      prepare: (request, host, demand) => routes.prepareEarlyRetry(request, host, demand),
+      revoke: (permit) => routes.revokeEarlyRetry(permit),
+    },
+    transport,
+    now,
+  )
   const monitor = new PlayerMonitor(
     player,
     session,
@@ -85,6 +104,7 @@ export const start = (): void => {
     () => visibility.isActuallyVisible(),
     now,
     scheduler,
+    earlyRetry,
   )
   const diagnostics = new DiagnosticRecorder(now, () => settings.get().verbose)
   const runtime = new RuntimeController(
@@ -99,6 +119,7 @@ export const start = (): void => {
     diagnostics,
     now,
     content,
+    earlyRetry,
   )
   let lifecycle: LifecycleController | null = null
   const pagePlayinfo = new PagePlayinfoAdapter(
@@ -127,6 +148,7 @@ export const start = (): void => {
     measurement,
     recovery,
     now,
+    earlyRetry,
   )
   const center = new ControlCenter({
     settings,
@@ -140,6 +162,7 @@ export const start = (): void => {
     transport,
     diagnostics,
     commands,
+    earlyRetry,
     now,
   })
   const panel = new PlayerPanel(center, settings, session, monitor)

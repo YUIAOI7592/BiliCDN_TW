@@ -141,6 +141,8 @@ export type RouteDecision =
     }
 
 export interface TransportObservation {
+  readonly retryVerifiedBytes?: number
+  readonly terminationReason?: 'early-retry-timeout'
   readonly request?: RequestContext
   readonly generation: GenerationId
   readonly epoch: EpochId

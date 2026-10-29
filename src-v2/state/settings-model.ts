@@ -5,6 +5,7 @@ export interface SettingsState {
   readonly disabled: boolean
   readonly fixedHost: string | null
   readonly considerNativeSources: boolean
+  readonly earlyRetryEnabled: boolean
   readonly catalogOverrides: Readonly<Record<string, boolean>>
   readonly codec: CodecPreference
   readonly blockWebRtc: boolean

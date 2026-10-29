@@ -215,6 +215,7 @@ export class ControlCenter implements ShowControlCenterPort {
       settings: this.deps.settings.get(),
       session: this.deps.session.get(),
       monitor: this.deps.monitor.snapshot(),
+      ...(this.deps.earlyRetry ? { earlyRetry: this.deps.earlyRetry.snapshot() } : {}),
       recovery: this.deps.recovery.snapshot(),
       measurement: this.deps.measurement.snapshot(),
       interception: this.deps.transport.snapshot(),

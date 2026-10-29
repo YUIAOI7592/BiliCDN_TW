@@ -1,4 +1,5 @@
 import { catalogRestrictions, catalogCandidates } from '../domain/route-policy.ts'
+import type { EarlyRetryAlternative, EarlyRetryPermit } from './early-retry-model.ts'
 import { TRUSTED_CATALOG, isCatalogHost } from '../domain/catalog.ts'
 import { chooseRoute } from '../domain/routing.ts'
 import {
@@ -118,6 +119,21 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #pendingMedia = new Set<string>()
   #fallbacks = new Map<MediaKind, FallbackProgress>()
   #originalComparison = false
+  #retrySuccesses: {
+    request: RequestContext
+    at: number
+    bytes: number
+    mbps: number
+    ttfbMs: number
+  }[] = []
+  #retryPermit: {
+    permit: EarlyRetryPermit
+    request: RequestContext
+    host: string
+    demand: PlaybackDemand
+    applied: AppliedRouteDecision | null
+  } | null = null
+  #retrySuppressed = new Map<string, number>()
 
   constructor(
     private readonly clock: Clock,
@@ -135,6 +151,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   resetEpoch(): void {
+    this.#retrySuccesses = []
+    this.#retryPermit = null
     this.#policyRevision++
     this.#plans.clear()
     this.#planIdentities.clear()
@@ -156,6 +174,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#fallbacks.clear()
   }
   invalidateForUserSetting(): void {
+    this.#retryPermit = null
     this.#policyRevision++
     this.#plans.clear()
     this.#planIdentities.clear()
@@ -209,6 +228,203 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       status: request.attributionStatus,
       kind: request.kind,
     })
+  }
+
+  earlyRetryRequestCurrent(request: RequestContext): boolean {
+    const settings = this.settings.get(),
+      state = this.session.get()
+    return (
+      settings.earlyRetryEnabled &&
+      !settings.disabled &&
+      !state.disabled &&
+      !settings.fixedHost &&
+      this.isCatalogOnly() &&
+      !this.#originalComparison &&
+      request.kind === 'video' &&
+      request.routeType === 'catalog-generated' &&
+      request.attributionStatus === 'matched' &&
+      request.generation === state.generation &&
+      request.epoch === state.epoch &&
+      request.routePolicyRevision === this.#policyRevision &&
+      !!request.representation &&
+      state.representation === request.representation &&
+      request.authorityRevision === this.vault.identity(request.representation)?.authorityRevision
+    )
+  }
+
+  earlyRetryAlternative(
+    request: RequestContext,
+    demand: PlaybackDemand,
+  ): EarlyRetryAlternative | null {
+    if (
+      !this.earlyRetryRequestCurrent(request) ||
+      demand.kind !== 'video' ||
+      !Number.isFinite(demand.requiredMbps) ||
+      demand.requiredMbps <= 0
+    )
+      return null
+    const now = this.clock.now()
+    this.#retrySuccesses = this.#retrySuccesses.filter(
+      (row) => now - row.at <= 60_000 && now >= row.at,
+    )
+    const identity = this.vault.identity(request.representation!)
+    if (!identity) return null
+    const source = this.#catalogSource(identity)
+    if (!source) return null
+    const alternatives: EarlyRetryAlternative[] = []
+    for (const host of TRUSTED_CATALOG) {
+      if (
+        host === request.targetHost ||
+        this.#hardRestriction(host, 'video') ||
+        this.#incompatible(source, host) ||
+        this.vault.isInvalid(identity.representation, host)
+      )
+        continue
+      const successes = this.#retrySuccesses.filter(
+        (row) =>
+          !this.#retrySuppressed.has(row.request.requestId) &&
+          row.request.targetHost === host &&
+          row.request.generation === request.generation &&
+          row.request.epoch === request.epoch &&
+          row.request.representation === request.representation &&
+          row.request.authorityRevision === request.authorityRevision &&
+          row.request.routePolicyRevision === request.routePolicyRevision,
+      )
+      const unique = [...new Map(successes.map((row) => [row.request.requestId, row])).values()]
+      if (unique.length < 2) continue
+      const safeMbps = Math.min(...unique.map((row) => row.mbps))
+      if (safeMbps < demand.requiredMbps * 1.35) continue
+      alternatives.push(
+        Object.freeze({
+          host,
+          safeMbps,
+          ttfbMs: Math.max(...unique.map((row) => row.ttfbMs)),
+          successCount: unique.length,
+          oldestAt: Math.min(...unique.map((row) => row.at)),
+        }),
+      )
+    }
+    return alternatives.sort((a, b) => b.safeMbps - a.safeMbps)[0] ?? null
+  }
+
+  prepareEarlyRetry(
+    request: RequestContext,
+    host: string,
+    demand: PlaybackDemand,
+  ): EarlyRetryPermit | null {
+    if (this.#retryPermit && this.#retryPermit.permit.expiresAt > this.clock.now()) return null
+    const alternative = this.earlyRetryAlternative(request, demand)
+    if (!alternative || alternative.host !== host) return null
+    const permit = Object.freeze({
+      id: this.ids.next('request'),
+      expiresAt: this.clock.now() + 2000,
+    })
+    this.#retryPermit = { permit, request, host, demand, applied: null }
+    return permit
+  }
+
+  suppressEarlyRetryEvidence(requestIds: readonly string[]): () => void {
+    const ids = [...new Set(requestIds)]
+    if (
+      ids.length > 32 ||
+      ids.some((id) => typeof id !== 'string' || id.length < 1 || id.length > 64) ||
+      new Set([...this.#retrySuppressed.keys(), ...ids]).size > 32
+    )
+      throw new RangeError('Invalid early retry suppression scope')
+    for (const id of ids) this.#retrySuppressed.set(id, (this.#retrySuppressed.get(id) ?? 0) + 1)
+    this.#retrySuccesses = this.#retrySuccesses.filter(
+      (row) => !this.#retrySuppressed.has(row.request.requestId),
+    )
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      for (const id of ids) {
+        const count = this.#retrySuppressed.get(id) ?? 0
+        if (count > 1) this.#retrySuppressed.set(id, count - 1)
+        else this.#retrySuppressed.delete(id)
+      }
+    }
+  }
+
+  revokeEarlyRetry(permit: EarlyRetryPermit): void {
+    if (this.#retryPermit?.permit === permit) this.#retryPermit = null
+  }
+
+  applyEarlyRetry(url: string, permit: EarlyRetryPermit): AppliedRouteDecision | null {
+    const pending = this.#retryPermit
+    if (
+      !pending ||
+      pending.permit !== permit ||
+      this.clock.now() >= permit.expiresAt ||
+      !this.earlyRetryRequestCurrent(pending.request)
+    )
+      return null
+    const matched = this.vault.match(url)
+    if (
+      !matched.context ||
+      !['exact', 'catalog-alias'].includes(matched.source) ||
+      matched.context.representation !== pending.request.representation ||
+      matched.context.authorityRevision !== pending.request.authorityRevision
+    )
+      return null
+    const alternative = this.earlyRetryAlternative(pending.request, pending.demand)
+    if (!alternative || alternative.host !== pending.host) return null
+    const candidate: CatalogCandidate = {
+      type: 'catalog-generated',
+      host: pending.host,
+      kind: 'video',
+      catalogIndex: TRUSTED_CATALOG.indexOf(pending.host as (typeof TRUSTED_CATALOG)[number]),
+    }
+    const decision: RouteDecision = pending.applied?.decision ?? {
+      action: 'rewrite',
+      id: this.#nextId(),
+      reason: 'early-retry',
+      routeType: 'catalog-generated',
+      host: pending.host,
+      candidate,
+      ranking: Object.freeze([]),
+    }
+    const output = this.#materialize(url, decision, matched.context)
+    if (!output) return null
+    this.#remember(decision, matched.context, 'video')
+    pending.applied = {
+      decision,
+      url: output,
+      context: matched.context,
+      streamKey: mediaIdentity(url),
+      sourceHost: parseMediaUrl(url)?.host ?? null,
+    }
+    return pending.applied
+  }
+
+  acceptEarlyRetry(permit: EarlyRetryPermit, request: RequestContext): boolean {
+    const pending = this.#retryPermit
+    if (
+      !pending ||
+      pending.permit !== permit ||
+      !pending.applied ||
+      this.clock.now() >= permit.expiresAt ||
+      !this.earlyRetryRequestCurrent(pending.request) ||
+      !this.earlyRetryRequestCurrent(request) ||
+      request.targetHost !== pending.host ||
+      request.decisionId !== pending.applied.decision.id ||
+      this.latestRequested('video')?.requestId !== request.requestId
+    )
+      return false
+    const decision = pending.applied.decision
+    if (!this.#decisionAllowed(decision, pending.applied.context, 'video')) return false
+    this.#retryPermit = null
+    this.#savePlan(request.representation!, decision)
+    this.session.setAffinity({
+      type: 'catalog-generated',
+      host: pending.host,
+      confirmedAt: this.clock.now(),
+      decisionId: decision.id,
+      representation: request.representation,
+    })
+    this.#emit({ type: 'route-decision', at: this.clock.now(), decision })
+    return true
   }
 
   observePlaybackRate(rate: number): void {
@@ -1323,6 +1539,50 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     )
     if (!controlsCurrent() || !catalogObserved()) return
     if (result.type === 'success') {
+      const request = observation.request
+      if (
+        request &&
+        !this.#retrySuppressed.has(request.requestId) &&
+        Number.isSafeInteger(observation.retryVerifiedBytes) &&
+        (observation.retryVerifiedBytes ?? 0) >= 64 * 1024 &&
+        request.generation === observation.generation &&
+        request.epoch === observation.epoch &&
+        request.representation === observation.representation &&
+        request.kind === observation.kind &&
+        request.targetHost === observation.targetHost &&
+        observation.kind === 'video' &&
+        observation.routeType === 'catalog-generated' &&
+        observation.status === 206 &&
+        observation.responseUrlMatchesRequest === true &&
+        observation.finalHost === observation.targetHost &&
+        observation.bytes >= 64 * 1024 &&
+        observation.elapsedMs > 0 &&
+        observation.ttfbMs !== null &&
+        Number.isFinite(observation.ttfbMs) &&
+        observation.ttfbMs >= 0 &&
+        this.evidence
+          .get(observation.targetHost, 'video')
+          ?.samples.some(
+            (sample) =>
+              sample.requestId === request.requestId &&
+              sample.at === observation.completedAt &&
+              sample.outcome === 'success' &&
+              sample.source === 'transport',
+          )
+      ) {
+        this.#retrySuccesses = this.#retrySuccesses.filter(
+          (row) =>
+            row.request.requestId !== request.requestId && this.clock.now() - row.at <= 60_000,
+        )
+        this.#retrySuccesses.push({
+          request,
+          at: observation.completedAt,
+          bytes: observation.retryVerifiedBytes!,
+          mbps: (observation.retryVerifiedBytes! * 8) / observation.elapsedMs / 1000,
+          ttfbMs: observation.ttfbMs,
+        })
+        this.#retrySuccesses = this.#retrySuccesses.slice(-32)
+      }
       this.#confirmObservedTransport(observation, representation)
       return
     }

@@ -873,6 +873,31 @@ test('R02 a pending single-host edit merges the latest remote settings under loc
   assert.deepEqual(f.settings.get().catalogOverrides, { [remoteHost]: false, [host]: false })
   await assert.rejects(f.commands.setCatalogEnabled('external.invalid', true), TypeError)
 })
+test('UP141-RETRY prototype switch rejects synthetic changes and suppresses off before lock completion', async (t) => {
+  const f = ui(t)
+  f.button('CDN 與播放設定').emit('click')
+  const input = f.toggle('慢請求提前重試')
+  assert.equal(input.checked, false)
+  input.checked = true
+  input.emit('change', '', false)
+  assert.equal(f.storage.tasks.length, 0)
+  assert.equal(f.settings.get().earlyRetryEnabled, false)
+  input.checked = true
+  input.emit('change')
+  assert.equal(f.storage.tasks.length, 1)
+  await f.storage.drain()
+  await flushCopy()
+  assert.equal(f.settings.get().earlyRetryEnabled, true)
+  const enabled = f.toggle('慢請求提前重試')
+  assert.equal(enabled.checked, true)
+  enabled.checked = false
+  enabled.emit('change')
+  assert.equal(f.settings.get().earlyRetryEnabled, false)
+  await f.storage.drain()
+  await flushCopy()
+  assert.equal(f.settings.get().earlyRetryEnabled, false)
+})
+
 function ui(t: TestContext) {
   const storage = new QueuedSettingsStorage(),
     f = fixture(t, storage),
