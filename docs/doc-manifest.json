@@ -75,6 +75,33 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/UPSTREAM_V1_4_1_ADOPTION_2026-10-30.md",
+      "kind": "record",
+      "topics": [
+        "upstream-adoption"
+      ],
+      "versions": [
+        "v1.4.1",
+        "v2.1.36"
+      ],
+      "date": "2026-10-30",
+      "requiredAnchors": []
+    },
+    {
+      "path": "archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md",
+      "kind": "record",
+      "topics": [
+        "upstream-comparison"
+      ],
+      "versions": [
+        "v1.3.4",
+        "v1.4.1",
+        "v2.1.36"
+      ],
+      "date": "2026-10-29",
+      "requiredAnchors": []
+    },
+    {
       "path": "archive/retired/docs/INSTALLED_RESTORE_IR36_R2_2026-10-25.md",
       "kind": "record",
       "topics": [
@@ -3005,6 +3032,48 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/UPSTREAM_V1_4_1_ADOPTION_2026-10-30.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 3879,
+      "sha256": "c1f165a0a23ee29b5ee783b4452981ceae3046f89dbef90f51883e63a4d87ad5"
+    },
+    {
+      "path": "baseline/UP141_pre_adoption_relocation_2026-10-29.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 486831,
+      "sha256": "e6cb070230b5ef58142161feeaeb7ce024e3d696138a5092c5ee722d28c1f5f6"
+    },
+    {
+      "path": "archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 11453,
+      "sha256": "c33a3afdddd1cdf4ab23e9f3a257addd2c54fa8201d9ffd533b11a00dd356e02"
+    },
+    {
+      "path": "baseline/BiliCDN_TW_1.4.1.original.user.js",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 356597,
+      "sha256": "ad57b6fcbe60c126e15214631e63128adaf2b680aa7ebaa2cccdd91e720e4c51"
+    },
+    {
+      "path": "baseline/BiliCDN_TW_1.4.1.provenance.json",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 3561,
+      "sha256": "ac2d8337f70843500709c3e3069653b45b52dd9e68d1f58022b7b7680c5dd6f1"
+    },
+    {
+      "path": "baseline/BiliCDN_TW_1.4.1.SHA256SUMS.txt",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 109,
+      "sha256": "72c7a8d43beda1605c4d93f27c58083025add3391981fc298aa390d5766fc109"
+    },
     {
       "path": "archive/retired/docs/INSTALLED_RESTORE_IR36_R2_2026-10-25.md",
       "mode": "exact",

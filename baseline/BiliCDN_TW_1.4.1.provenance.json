@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-10-29T15:02:46.867Z",
+  "upstream": {
+    "version": "1.4.1",
+    "author": "jiyunshi",
+    "license": "MIT",
+    "commit": "b32f949d216dc92cd1efa0b0d023f650b126fcb8",
+    "commitTimeUtc": "2026-10-25T16:44:30Z",
+    "sourceUrl": "https://raw.githubusercontent.com/jiyunshi/Bilibili-CDN-TW/b32f949d216dc92cd1efa0b0d023f650b126fcb8/bilibili-cdn-tw.user.js",
+    "downloadUrl": "https://update.greasyfork.org/scripts/579776/Bilibili%20CDN%20%E5%8F%B0%E7%81%A3%E5%84%AA%E5%8C%96.user.js",
+    "path": "baseline/BiliCDN_TW_1.4.1.original.user.js",
+    "bytes": 356597,
+    "sha256": "ad57b6fcbe60c126e15214631e63128adaf2b680aa7ebaa2cccdd91e720e4c51",
+    "gitBlob": "1a3a15b31ef5892b9d088093176d78f1d5ad0a8c",
+    "greasyFork": {
+      "bytes": 356597,
+      "sha256": "ad57b6fcbe60c126e15214631e63128adaf2b680aa7ebaa2cccdd91e720e4c51",
+      "byteIdentical": true,
+      "lastModified": "Sun, 25 Oct 2026 17:15:50 GMT"
+    }
+  },
+  "comparison": {
+    "localCommit": "21322e2d38e6f7e2c1f066abc22591d61afb1eb1",
+    "version": "2.1.36",
+    "release": {
+      "path": "Release/v2.1.36/BiliCDN_TW.user.js",
+      "sha256": "3960ac923f1cbd61d197e1b713c2c0e620debfcb40df1111cfc5af7d8dab3ae7"
+    },
+    "runtimeSourceFilesChecked": 67,
+    "runtimeSourceMismatches": [],
+    "previousUpstream": {
+      "path": "baseline/BiliCDN_TW_1.3.4.original.user.js",
+      "sha256": "acaa3d61c169a0a39ef403d7442e1decc1b20540ea9ada3e8cf5e459bb88f579"
+    },
+    "classifierMethod": "Execute only hash-pinned, manually inspected upstream classifier source slice with fixed URL/location; import current pure catalog module; no page hooks, media requests or timers.",
+    "classifierCases": [
+      {
+        "id": "ordinary-absolute",
+        "url": "https://api.bilibili.com/x/player/wbi/playurl",
+        "upstream": true,
+        "v2": true
+      },
+      {
+        "id": "ordinary-protocol-relative",
+        "url": "//api.bilibili.com/x/player/wbi/playurl",
+        "upstream": true,
+        "v2": true
+      },
+      {
+        "id": "ogv-playview-absolute",
+        "url": "https://api.bilibili.com/ogv/player/playview",
+        "upstream": true,
+        "v2": false
+      },
+      {
+        "id": "ogv-playview-protocol-relative",
+        "url": "//api.bilibili.com/ogv/player/playview",
+        "upstream": true,
+        "v2": false
+      },
+      {
+        "id": "ogv-precheck-absolute",
+        "url": "https://api.bilibili.com/ogv/player/pre/check/drm",
+        "upstream": true,
+        "v2": false
+      },
+      {
+        "id": "ogv-precheck-protocol-relative",
+        "url": "//api.bilibili.com/ogv/player/pre/check/drm",
+        "upstream": true,
+        "v2": false
+      },
+      {
+        "id": "unrelated-api",
+        "url": "https://api.bilibili.com/x/web-interface/view",
+        "upstream": false,
+        "v2": false
+      },
+      {
+        "id": "unrelated-host",
+        "url": "https://example.invalid/x/player/wbi/playurl",
+        "upstream": false,
+        "v2": false
+      }
+    ],
+    "upstreamHongKongCatalogHosts": [
+      {
+        "host": "cn-hk-eq-01-03.bilivideo.com",
+        "includedInV2Catalog": false
+      },
+      {
+        "host": "cn-hk-eq-01-05.bilivideo.com",
+        "includedInV2Catalog": false
+      },
+      {
+        "host": "cn-hk-eq-01-01.bilivideo.com",
+        "includedInV2Catalog": false
+      }
+    ],
+    "validationScope": "Source comparison and eight offline classifier assertions only. No playback benchmark, security audit or installed-browser acceptance."
+  }
+}

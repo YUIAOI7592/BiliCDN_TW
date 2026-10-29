@@ -1,5 +1,6 @@
 * text=auto eol=lf
 baseline/*.user.js -text
+baseline/UP141_pre_adoption_relocation_2026-10-29.json -text -diff
 Release/**/*.user.js -text
 Release/**/*.diff -text
 archive/retired/releases/** -text

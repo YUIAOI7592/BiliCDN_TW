@@ -6,6 +6,10 @@
 
 ## 版本
 
+- [UP141 上游優點吸收候選與驗證（2026-10-30）](../archive/retired/docs/UPSTREAM_V1_4_1_ADOPTION_2026-10-30.md)
+
+- [原作者 v1.4.1 與 v2.1.36 保存及來源比較（2026-10-29）](../archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md)
+
 - [IR36 工具修正與第二輪安裝版驗證（2026-10-25，v2.1.36）](../archive/retired/docs/INSTALLED_RESTORE_IR36_R2_2026-10-25.md)
 
 - [IR36 小範圍安裝版救援驗證（2026-10-25，v2.1.36）](../archive/retired/docs/INSTALLED_RESTORE_IR36_2026-10-25.md)
@@ -72,6 +76,10 @@
 | v1.6.0 | [當版發行快照](../archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md)、[v1.6.0 公開安全摘要](../archive/retired/docs/SECURITY_REVIEW_v1.6.0.md) |
 
 ## 議題
+
+### 上游更新與來源比較
+
+- [原作者 v1.4.1：API 涵蓋、量測、起播、備援及恢復差異（2026-10-29）](../archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md)
 
 ### BR-01
 
@@ -231,6 +239,8 @@
 - [測試工具驗證紀錄](TEST_TOOLING_REPORT.md)
 
 ## 日期
+
+- [2026-10-29：原作者 v1.4.1 保存與來源比較](../archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md)
 
 - [2026-10-25：IR36 工具修正與第二輪安裝版驗證](../archive/retired/docs/INSTALLED_RESTORE_IR36_R2_2026-10-25.md)
 
