@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 1,
+  "evidence": "offline-model-with-held-out-future-delivery",
+  "policySourceSha256": "04e6ace222b3d6f945cd35c84ad1cc67f21293274bee95571ca697c8e9a1fd37",
+  "inputSha256": "9130e0dd4af45496cbbd23dab07737060449b3b94629dfb33d0c986ffd740763",
+  "inputs": [
+    {
+      "id": "sustained-slow-1x",
+      "kind": "slow",
+      "facts": {
+        "now": 10000,
+        "startedAt": 8000,
+        "currentHost": "upos-sz-mirrorali.bilivideo.com",
+        "loadedBytes": 100000,
+        "totalBytes": 1000000,
+        "recentBytesPerSec": 50000,
+        "playableBufferSec": 4,
+        "requiredMbps": 4,
+        "alternative": {
+          "host": "upos-sz-mirrorbos.bilivideo.com",
+          "safeMbps": 40,
+          "ttfbMs": 100,
+          "successCount": 2,
+          "oldestAt": 5000
+        }
+      },
+      "actualContinueMs": 18000,
+      "actualRetryMs": 300
+    },
+    {
+      "id": "sustained-slow-2x",
+      "kind": "slow",
+      "facts": {
+        "now": 10000,
+        "startedAt": 8000,
+        "currentHost": "upos-sz-mirrorali.bilivideo.com",
+        "loadedBytes": 100000,
+        "totalBytes": 1000000,
+        "recentBytesPerSec": 50000,
+        "playableBufferSec": 2,
+        "requiredMbps": 8,
+        "alternative": {
+          "host": "upos-sz-mirrorbos.bilivideo.com",
+          "safeMbps": 40,
+          "ttfbMs": 100,
+          "successCount": 2,
+          "oldestAt": 5000
+        }
+      },
+      "actualContinueMs": 18000,
+      "actualRetryMs": 300
+    },
+    {
+      "id": "healthy-buffer",
+      "kind": "normal",
+      "facts": {
+        "now": 10000,
+        "startedAt": 8000,
+        "currentHost": "upos-sz-mirrorali.bilivideo.com",
+        "loadedBytes": 100000,
+        "totalBytes": 1000000,
+        "recentBytesPerSec": 50000,
+        "playableBufferSec": 12,
+        "requiredMbps": 4,
+        "alternative": {
+          "host": "upos-sz-mirrorbos.bilivideo.com",
+          "safeMbps": 40,
+          "ttfbMs": 100,
+          "successCount": 2,
+          "oldestAt": 5000
+        }
+      },
+      "actualContinueMs": 250,
+      "actualRetryMs": 300
+    },
+    {
+      "id": "nearly-complete",
+      "kind": "normal",
+      "facts": {
+        "now": 10000,
+        "startedAt": 8000,
+        "currentHost": "upos-sz-mirrorali.bilivideo.com",
+        "loadedBytes": 800000,
+        "totalBytes": 1000000,
+        "recentBytesPerSec": 50000,
+        "playableBufferSec": 4,
+        "requiredMbps": 4,
+        "alternative": {
+          "host": "upos-sz-mirrorbos.bilivideo.com",
+          "safeMbps": 40,
+          "ttfbMs": 100,
+          "successCount": 2,
+          "oldestAt": 5000
+        }
+      },
+      "actualContinueMs": 150,
+      "actualRetryMs": 300
+    },
+    {
+      "id": "burst-recovery-1x",
+      "kind": "normal",
+      "facts": {
+        "now": 10000,
+        "startedAt": 8000,
+        "currentHost": "upos-sz-mirrorali.bilivideo.com",
+        "loadedBytes": 100000,
+        "totalBytes": 1000000,
+        "recentBytesPerSec": 50000,
+        "playableBufferSec": 4,
+        "requiredMbps": 4,
+        "alternative": {
+          "host": "upos-sz-mirrorbos.bilivideo.com",
+          "safeMbps": 40,
+          "ttfbMs": 100,
+          "successCount": 2,
+          "oldestAt": 5000
+        }
+      },
+      "actualContinueMs": 200,
+      "actualRetryMs": 300
+    },
+    {
+      "id": "burst-recovery-2x",
+      "kind": "normal",
+      "facts": {
+        "now": 10000,
+        "startedAt": 8000,
+        "currentHost": "upos-sz-mirrorali.bilivideo.com",
+        "loadedBytes": 100000,
+        "totalBytes": 1000000,
+        "recentBytesPerSec": 50000,
+        "playableBufferSec": 2,
+        "requiredMbps": 8,
+        "alternative": {
+          "host": "upos-sz-mirrorbos.bilivideo.com",
+          "safeMbps": 40,
+          "ttfbMs": 100,
+          "successCount": 2,
+          "oldestAt": 5000
+        }
+      },
+      "actualContinueMs": 200,
+      "actualRetryMs": 300
+    }
+  ],
+  "results": [
+    {
+      "id": "sustained-slow-1x",
+      "kind": "slow",
+      "decision": {
+        "eligible": true,
+        "reason": "eligible",
+        "remainingSec": 18,
+        "alternativeSec": 0.30000000000000004
+      },
+      "baselineStallMs": 14000,
+      "candidateStallMs": 0,
+      "savedStallMs": 14000,
+      "unnecessaryIntervention": false,
+      "extraDownloadedBytes": 100000
+    },
+    {
+      "id": "sustained-slow-2x",
+      "kind": "slow",
+      "decision": {
+        "eligible": true,
+        "reason": "eligible",
+        "remainingSec": 18,
+        "alternativeSec": 0.30000000000000004
+      },
+      "baselineStallMs": 16000,
+      "candidateStallMs": 0,
+      "savedStallMs": 16000,
+      "unnecessaryIntervention": false,
+      "extraDownloadedBytes": 100000
+    },
+    {
+      "id": "healthy-buffer",
+      "kind": "normal",
+      "decision": {
+        "eligible": false,
+        "reason": "buffer-window",
+        "remainingSec": null,
+        "alternativeSec": null
+      },
+      "baselineStallMs": 0,
+      "candidateStallMs": 0,
+      "savedStallMs": 0,
+      "unnecessaryIntervention": false,
+      "extraDownloadedBytes": 0
+    },
+    {
+      "id": "nearly-complete",
+      "kind": "normal",
+      "decision": {
+        "eligible": false,
+        "reason": "mostly-complete",
+        "remainingSec": null,
+        "alternativeSec": null
+      },
+      "baselineStallMs": 0,
+      "candidateStallMs": 0,
+      "savedStallMs": 0,
+      "unnecessaryIntervention": false,
+      "extraDownloadedBytes": 0
+    },
+    {
+      "id": "burst-recovery-1x",
+      "kind": "normal",
+      "decision": {
+        "eligible": true,
+        "reason": "eligible",
+        "remainingSec": 18,
+        "alternativeSec": 0.30000000000000004
+      },
+      "baselineStallMs": 0,
+      "candidateStallMs": 0,
+      "savedStallMs": 0,
+      "unnecessaryIntervention": true,
+      "extraDownloadedBytes": 100000
+    },
+    {
+      "id": "burst-recovery-2x",
+      "kind": "normal",
+      "decision": {
+        "eligible": true,
+        "reason": "eligible",
+        "remainingSec": 18,
+        "alternativeSec": 0.30000000000000004
+      },
+      "baselineStallMs": 0,
+      "candidateStallMs": 0,
+      "savedStallMs": 0,
+      "unnecessaryIntervention": true,
+      "extraDownloadedBytes": 100000
+    }
+  ],
+  "assertions": {
+    "slowCasesImproveAtLeast500Ms": true,
+    "normalCasesHaveNoUnnecessaryIntervention": false,
+    "noStallRegression": true
+  },
+  "valid": true,
+  "passed": false,
+  "adoption": "requires-independent-native-and-installed-evidence"
+}

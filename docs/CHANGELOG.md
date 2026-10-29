@@ -1,5 +1,13 @@
 # BiliCDN_TW 變更紀錄
 
+## v2.1.38
+
+- UP141 完整測試版／實機待驗證：保留全部 A，加入三台預設關閉 HK 及預設關閉提前重試原型；不提前判定正式採用。
+- 起播提前放行、中段探測及備援家族分散新增獨立預設開啟開關，明確 false 保留，關閉立即抑制新動作。
+- 可信「安排香港候選測試」只接受已啟用 HK，沿用 Vault／禁止／前景資格與十分鐘跨分頁預算；固定模式須返回自動，不改親和。
+- 提前重試保留原生 timeout 所有權、網站自行重試、兩秒許可及全部資格／額度；補齊有界去敏階段事件匯出，bufferTrend v6 保持。
+- 獨立效用仍為 FAIL／退出 1，實機及安裝按指示延後；[完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 與 [操作表](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md) 分列。v2.1.37 原條目保留，後續測試定位更正見 Release 追加說明。
+
 ## v2.1.37
 
 - 吸收原作者 v1.4.1 的 OGV 正片 playview 入口；片頭 pre/check/drm 僅記端點分類並原文通行，不改正片內容週期或來源授權。

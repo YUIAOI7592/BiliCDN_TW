@@ -6,6 +6,8 @@
 
 ## 版本
 
+- [UP141 完整測試版操作與取證準備（2026-10-30，v2.1.38）](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md)
+
 - [UP141 上游優點吸收候選與驗證（2026-10-30）](../archive/retired/docs/UPSTREAM_V1_4_1_ADOPTION_2026-10-30.md)
 
 - [原作者 v1.4.1 與 v2.1.36 保存及來源比較（2026-10-29）](../archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md)
@@ -40,7 +42,8 @@
 | 適用版本 | 原始紀錄 |
 | --- | --- |
 | 未單列／跨版 | [新增 B 站 CDN 節點的驗證方案（2026-09-25）](../archive/retired/docs/CDN_CANDIDATE_TEST_PLAN_2026-09-25.md)、[B 站 CDN 全量初篩與比較測試報告](../archive/retired/docs/CDN_NODE_FULL_SCREENING_2026-09-25.md)、[B 站 CDN 優化公開專案調查（2026-09-25）](../archive/retired/docs/CDN_OPEN_SOURCE_SURVEY_2026-09-25.md)、[內建瀏覽器 Range 與實際播放對照（2026-09-25）](../archive/retired/docs/CDN_RANGE_PLAYBACK_EXPERIMENT_2026-09-25.md)、[B 站 CDN 節點測試結果（2026-09-25）](../archive/retired/docs/CDN_TEST_RESULTS_2026-09-25.md)、[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)、[歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[測試工具驗證紀錄](TEST_TOOLING_REPORT.md) |
-| v2.1.37 | [最新版完整驗證](TEST_REPORT.md) |
+| v2.1.38 | [最新版完整驗證](TEST_REPORT.md) |
+| v2.1.37 | [當版完整報告原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2137-完整報告2026-10-30) |
 | v2.1.36 | [當版完整報告原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2136-完整報告2026-10-30) |
 | v2.1.35 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2135-完整報告2026-10-24) |
 | v2.1.34 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2134-完整報告2026-10-24) |
