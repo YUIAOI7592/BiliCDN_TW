@@ -1,4 +1,4 @@
-import { isPlayurlApi } from '../domain/catalog.ts'
+import { classifyPlayurlApi } from '../domain/catalog.ts'
 import { playurlRequestContext } from '../domain/playurl-content.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
 import type { FailureKind, RequestContext } from '../domain/model.ts'
@@ -44,7 +44,10 @@ export class FetchHookAdapter {
           },
         )
       }
-      if (isPlayurlApi(originalUrl, location.href)) {
+      const endpoint = classifyPlayurlApi(originalUrl, location.href)
+      if (endpoint) self.noteApiEndpoint('fetch', endpoint)
+      if (endpoint === 'ogv-precheck') return await native(sourceRequest, false)
+      if (endpoint) {
         const generation = self.session.get().generation,
           responseKey = self.nextResponseKey('api-fetch')
         const requestContext = playurlRequestContext(originalUrl)
@@ -72,11 +75,12 @@ export class FetchHookAdapter {
                 ? 'malformed-payload'
                 : 'inactive',
             ),
+            endpoint,
           )
           return catalogOnly() ? blocked() : response
         }
         if (self.settings.get().disabled) {
-          self.notePlayurl('fetch', response.status, rejectedPlayurl('inactive'))
+          self.notePlayurl('fetch', response.status, rejectedPlayurl('inactive'), endpoint)
           return copyResponseSurface(
             new Response(text, {
               status: response.status,
@@ -92,11 +96,11 @@ export class FetchHookAdapter {
             self.session.isGeneration(generation) && !self.settings.get().disabled
               ? self.playurl.transform(payload, 'trusted-api', responseKey, requestContext)
               : rejectedPlayurl('inactive')
-          self.notePlayurl('fetch', response.status, result)
+          self.notePlayurl('fetch', response.status, result, endpoint)
           if (catalogOnly() && !result.accepted) return blocked()
           text = JSON.stringify(payload)
         } catch {
-          self.notePlayurl('fetch', response.status, rejectedPlayurl('malformed-payload'))
+          self.notePlayurl('fetch', response.status, rejectedPlayurl('malformed-payload'), endpoint)
           if (catalogOnly()) return blocked()
         }
         return copyResponseSurface(

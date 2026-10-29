@@ -2,8 +2,13 @@ import type {
   LastMediaRequest,
   TransportStats,
   PlayurlTransportSummary,
+  ApiEndpointSummary,
 } from '../domain/transport-model.ts'
-import type { PlayurlRejection, PlayurlTransformResult } from '../domain/playurl-model.ts'
+import type {
+  PlayurlEndpointKind,
+  PlayurlRejection,
+  PlayurlTransformResult,
+} from '../domain/playurl-model.ts'
 export type { TransportSnapshot } from '../domain/transport-model.ts'
 import type { PlayurlPort } from '../application/ports.ts'
 import { isCatalogHost } from '../domain/catalog.ts'
@@ -101,6 +106,7 @@ export class TransportContext {
   #lastMedia: LastMediaRequest | null = null
   #lastBlocked: TransportStats['lastBlocked'] = null
   #lastPlayurl: PlayurlTransportSummary | null = null
+  #lastApiEndpoint: ApiEndpointSummary | null = null
   constructor(
     readonly session: TransportSessionPort,
     readonly settings: TransportSettings,
@@ -138,7 +144,16 @@ export class TransportContext {
   nextResponseKey(prefix: string): string {
     return `${prefix}-${++this.#requestSerial}`
   }
-  notePlayurl(transport: 'fetch' | 'xhr', status: number, result: PlayurlTransformResult): void {
+  noteApiEndpoint(transport: 'fetch' | 'xhr', kind: PlayurlEndpointKind): void {
+    if (!['playurl', 'ogv-playview', 'ogv-precheck'].includes(kind)) return
+    this.#lastApiEndpoint = Object.freeze({ kind, transport, observedAt: this.now() })
+  }
+  notePlayurl(
+    transport: 'fetch' | 'xhr',
+    status: number,
+    result: PlayurlTransformResult,
+    endpointKind: PlayurlEndpointKind = 'playurl',
+  ): void {
     const count = (value: number): number =>
       Number.isFinite(value) ? Math.max(0, Math.min(65_535, Math.trunc(value))) : 0
     const reasons: readonly PlayurlRejection[] = [
@@ -151,6 +166,9 @@ export class TransportContext {
     ]
     // Project the fixed diagnostic fields; payloads, errors and URL-bearing result extras never enter this state.
     this.#lastPlayurl = Object.freeze({
+      endpointKind: ['playurl', 'ogv-playview', 'ogv-precheck'].includes(endpointKind)
+        ? endpointKind
+        : 'playurl',
       transport,
       status: Number.isInteger(status) && status >= 0 && status <= 599 ? status : 0,
       observedAt: this.now(),
@@ -173,6 +191,7 @@ export class TransportContext {
       lastMediaRequest: this.#lastMedia ? Object.freeze({ ...this.#lastMedia }) : null,
       lastBlocked: this.#lastBlocked,
       lastPlayurl: this.#lastPlayurl,
+      lastApiEndpoint: this.#lastApiEndpoint,
     })
   }
   request(

@@ -8,6 +8,22 @@ import { mediaIdentity, parseMediaUrl, replaceUrlHost } from '../../domain/url-p
 import type { RepresentationId, RouteDecision, RouteIdentity } from '../../domain/model.ts'
 import type { RoutingPolicyReader } from './routing-ports.ts'
 
+function measuredSufficientHosts(decision: RouteDecision): ReadonlySet<string> {
+  return new Set(
+    decision.ranking
+      .filter(
+        (row) =>
+          row.eligible &&
+          row.successCount > 0 &&
+          Number.isFinite(row.safeThroughputMbps) &&
+          (row.safeThroughputMbps ?? 0) > 0 &&
+          Number.isFinite(row.demandRatio) &&
+          (row.demandRatio ?? 0) >= 1.35,
+      )
+      .map((row) => row.candidate.host),
+  )
+}
+
 export interface PlayerOutputUrls {
   readonly primary: string
   readonly backups: readonly string[]
@@ -93,7 +109,12 @@ export function catalogPlayerOutput(
       (host) => incompatible(sourceUrl, host) || !allowed(replaceUrlHost(sourceUrl, host) ?? ''),
     ),
   )
-  const backups = catalogOutputPlan(decision.host, preferred, unavailable).flatMap((host) => {
+  const backups = catalogOutputPlan(
+    decision.host,
+    preferred,
+    unavailable,
+    measuredSufficientHosts(decision),
+  ).flatMap((host) => {
     const url = replaceUrlHost(sourceUrl, host)
     return url ? [url] : []
   })
@@ -131,11 +152,11 @@ export function normalPlayerOutput(
           })
   const primaryHost = parseMediaUrl(primary)?.host
   const urls = [...new Set([...originals, ...generated])].filter((url) => url !== primary)
-  const candidates = urls.map((url, index) => ({
-    index,
-    host: parseMediaUrl(url)?.host ?? '',
-    allowed: allowed(url),
-  }))
+  const sufficient = measuredSufficientHosts(decision)
+  const candidates = urls.map((url, index) => {
+    const host = parseMediaUrl(url)?.host ?? ''
+    return { index, host, allowed: allowed(url), meetsHeadroom: sufficient.has(host) }
+  })
   const backups = backupOutputPlan(primaryHost ?? null, candidates, !!lockedOriginal).map(
     (index) => urls[index]!,
   )

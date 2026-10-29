@@ -43,4 +43,10 @@ export interface SignedRouteVaultPort {
   sourceURLs(representation: RepresentationId): readonly string[]
   resolve(handle: SignedRouteHandle, identity: RouteIdentity): string | null
   groupSummary(representation: RepresentationId): VaultGroupSnapshot | null
+  rangeSize(identity: RouteIdentity, handle: SignedRouteHandle): number | null
+  recordRangeSize(
+    identity: RouteIdentity,
+    handle: SignedRouteHandle,
+    totalBytes: number | null,
+  ): void
 }

@@ -1,5 +1,12 @@
 import type { AppliedRouteDecision, StartupCandidate, StartupOptions } from './route-model.ts'
-import type { FailureKind, PlaybackDemand } from '../domain/model.ts'
+import type {
+  FailureKind,
+  PlaybackDemand,
+  RouteIdentity,
+  SignedRouteHandle,
+} from '../domain/model.ts'
+import { probeStartByte } from '../domain/probe-range.ts'
+import { mediaIdentity } from '../domain/url-policy.ts'
 
 import type { RangeProbePort, SchedulerPort } from './ports.ts'
 
@@ -26,10 +33,18 @@ interface MeasurementWork {
   readonly marker: number
 }
 
+interface RoundRange {
+  readonly identity: RouteIdentity
+  readonly handle: SignedRouteHandle
+  readonly startByte: number
+  readonly sizeKnown: boolean
+}
+
 import type {
   MeasurementPort,
   MeasurementRoutes,
   MeasurementMetadataPort,
+  MeasurementRangeMetadataPort,
 } from './measurement-ports.ts'
 export type { MeasurementRoutes, MeasurementMetadataPort } from './measurement-ports.ts'
 
@@ -68,6 +83,8 @@ export class MeasurementController implements MeasurementPort {
     private readonly probe: RangeProbePort,
     private readonly now: () => number,
     private readonly scheduler: SchedulerPort,
+    private readonly rangeMetadata?: MeasurementRangeMetadataPort,
+    private readonly random: () => number = () => 0,
   ) {}
 
   snapshot(): MeasurementSnapshot {
@@ -201,23 +218,58 @@ export class MeasurementController implements MeasurementPort {
     marker: number,
   ): Promise<void> {
     const results: ProbeResult[] = []
+    const startedAt = this.now(),
+      catalogOnlyAtStart = this.routes.isCatalogOnly()
     let timer: (() => void) | null = null
-    const deadline = new Promise<void>((resolve) => {
-      timer = this.scheduler.timeout(() => {
-        controller.abort('startup-deadline')
-        resolve()
-      }, TIMEOUT_MS)
+    let sealed = false,
+      releaseReason = 'complete',
+      remaining = options.candidates.length
+    let resolveWindow!: () => void, rejectWindow!: (error: unknown) => void
+    const completion = new Promise<void>((resolve, reject) => {
+      resolveWindow = resolve
+      rejectWindow = reject
     })
-    const complete = Promise.all(
-      options.candidates.map(async (candidate) => {
-        const result = await this.#probeStartup(candidate, options.demand, controller.signal)
-        if (marker === this.#marker) results.push(result)
-      }),
-    ).then(() => undefined)
+    const finish = (reason: string): void => {
+      if (sealed) return
+      sealed = true
+      releaseReason = reason
+      resolveWindow()
+    }
+    const aborted = (): void => finish('cancelled')
+    controller.signal.addEventListener('abort', aborted, { once: true })
+    timer = this.scheduler.timeout(() => {
+      finish('deadline')
+      controller.abort('startup-deadline')
+    }, TIMEOUT_MS)
+    for (const candidate of options.candidates) {
+      if (sealed || controller.signal.aborted) break
+      void this.#probeStartup(candidate, options.demand, controller.signal).then(
+        (result) => {
+          if (sealed || marker !== this.#marker) return
+          results.push(result)
+          if (
+            catalogOnlyAtStart &&
+            this.routes.isCatalogOnly() &&
+            candidate.type === 'catalog-generated' &&
+            result.valid &&
+            (result.safeMbps ?? 0) / options.demand.requiredMbps >= 1.35
+          )
+            finish('qualified-early')
+          else if (--remaining === 0) finish('complete')
+        },
+        (error: unknown) => {
+          if (sealed) return
+          sealed = true
+          rejectWindow(error)
+        },
+      )
+    }
     try {
-      await Promise.race([complete, deadline])
+      await completion
     } finally {
+      sealed = true
       if (timer !== null) (timer as () => void)()
+      controller.signal.removeEventListener('abort', aborted)
       controller.abort('startup-complete')
     }
     if (marker !== this.#marker) return
@@ -260,10 +312,16 @@ export class MeasurementController implements MeasurementPort {
     )
     this.#startupState = Object.freeze({
       state: decision ? 'complete' : 'skipped',
-      reason: valid.length ? 'measured' : 'inconclusive',
+      reason:
+        releaseReason === 'qualified-early'
+          ? releaseReason
+          : valid.length
+            ? 'measured'
+            : 'inconclusive',
       candidates: options.candidates.length,
       selectedHost: decision?.host ?? null,
       delayed: true,
+      elapsedMs: Math.max(0, this.now() - startedAt),
       results: Object.freeze(
         results.slice(0, 3).map((result) =>
           Object.freeze({
@@ -301,7 +359,7 @@ export class MeasurementController implements MeasurementPort {
     })
     const valid =
       result.directRange &&
-      (candidate.cachedSafeMbps !== null ? result.bytes > 0 : result.bytes >= 64 * 1024)
+      (candidate.cachedSafeMbps !== null ? result.bytes >= 16 * 1024 : result.bytes >= 64 * 1024)
     return {
       candidate,
       ...result,
@@ -432,6 +490,26 @@ export class MeasurementController implements MeasurementPort {
     marker: number,
     cursor: number,
   ): Promise<void> {
+    const context = first.context
+    const handle =
+      context && this.routes.isCatalogOnly()
+        ? (this.rangeMetadata?.catalogSourceHandle(context.representation) ?? null)
+        : null
+    const totalBytes =
+      context && handle ? (this.rangeMetadata?.rangeSize(context, handle) ?? null) : null
+    const range: RoundRange | null =
+      context && handle
+        ? {
+            identity: context,
+            handle,
+            sizeKnown: totalBytes !== null,
+            startByte: probeStartByte(
+              totalBytes,
+              status.demand!.highDemand ? 768 * 1024 : 384 * 1024,
+              totalBytes === null ? 0 : this.random(),
+            ),
+          }
+        : null
     const excluded = new Set<string>()
     let catalogCount = 0,
       nativeCount = 0
@@ -444,6 +522,14 @@ export class MeasurementController implements MeasurementPort {
         break
       }
       const applied: AppliedRouteDecision = next
+      if (
+        range &&
+        (!this.rangeMetadata?.resolve(range.handle, range.identity) ||
+          this.rangeMetadata.catalogSourceHandle(range.identity.representation) !== range.handle)
+      ) {
+        controller.abort('source-changed')
+        break
+      }
       if (applied.decision.host) excluded.add(applied.decision.host)
       if (applied.decision.routeType === 'native-signed') nativeCount++
       else catalogCount++
@@ -452,8 +538,12 @@ export class MeasurementController implements MeasurementPort {
         reason: 'candidate-' + (index + 1),
         lastAttemptAt: this.now(),
         host: applied.decision.host,
+        range: {
+          mode: range?.startByte ? ('middle' as const) : ('head' as const),
+          sizeKnown: range?.sizeKnown ?? false,
+        },
       })
-      await this.#runCandidate(applied, status.demand!, controller, marker)
+      await this.#runCandidate(applied, status.demand!, controller, marker, range)
       if (
         index === 2 ||
         controller.signal.aborted ||
@@ -488,6 +578,7 @@ export class MeasurementController implements MeasurementPort {
     demand: PlaybackDemand,
     round: AbortController,
     marker: number,
+    range: RoundRange | null,
   ): Promise<void> {
     const startedAt = this.now(),
       limit = demand.highDemand ? 768 * 1024 : 384 * 1024
@@ -496,11 +587,19 @@ export class MeasurementController implements MeasurementPort {
     round.signal.addEventListener('abort', cancel, { once: true })
     const stopTimeout = this.scheduler.timeout(() => controller.abort('timeout'), TIMEOUT_MS)
     let result
+    const source = range ? this.rangeMetadata?.resolve(range.handle, range.identity) : null
+    const usesRange =
+      !!source &&
+      !!applied.url &&
+      applied.decision.routeType === 'catalog-generated' &&
+      mediaIdentity(source) === mediaIdentity(applied.url!)
+    const startByte = usesRange ? range!.startByte : 0
     try {
       result = await this.probe.read({
         url: applied.url ?? '',
         host: applied.decision.host,
         limit,
+        startByte,
         signal: controller.signal,
         completionReason: 'sample-complete',
       })
@@ -515,6 +614,17 @@ export class MeasurementController implements MeasurementPort {
       (controller.signal.aborted && controller.signal.reason !== 'timeout')
     )
       return
+    if (
+      usesRange &&
+      range &&
+      this.rangeMetadata?.resolve(range.handle, range.identity) &&
+      this.rangeMetadata.catalogSourceHandle(range.identity.representation) === range.handle
+    ) {
+      if (result.status === 416)
+        this.rangeMetadata.recordRangeSize(range.identity, range.handle, null)
+      else if (result.directRange && result.range)
+        this.rangeMetadata.recordRangeSize(range.identity, range.handle, result.range.totalBytes)
+    }
     const ok = result.directRange && result.bytes >= 64 * 1024
     const failure: FailureKind | null =
       applied.decision.routeType === 'native-signed' && [403, 451, 959].includes(result.status ?? 0)
@@ -539,6 +649,10 @@ export class MeasurementController implements MeasurementPort {
       reason: ok ? 'sample-recorded' : result.directRange ? 'short-response' : result.reason,
       lastAttemptAt: startedAt,
       host: applied.decision.host,
+      range: {
+        mode: startByte > 0 ? ('middle' as const) : ('head' as const),
+        sizeKnown: !!result.range || (usesRange && range!.sizeKnown),
+      },
     })
   }
 

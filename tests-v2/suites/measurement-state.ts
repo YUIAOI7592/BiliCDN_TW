@@ -16,6 +16,8 @@ import '../regressions/functional-races/startup-abort.ts'
 import '../regressions/functional-races/cr-measurement-errors.ts'
 import '../regressions/functional-races/cr-measurement-lifecycle.ts'
 import '../regressions/functional-races/measurement-metadata.ts'
+import '../regressions/functional-races/up141-probe.ts'
+import '../regressions/functional-races/up141-start.ts'
 
 // Each call creates fresh resources and replays only this fixture's prerequisite transitions.
 // Earlier expectations run in their own cases; no mutable state crosses a test boundary.

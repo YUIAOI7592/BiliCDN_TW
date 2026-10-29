@@ -1,4 +1,4 @@
-import type { PlayurlRequestContext } from '../domain/playurl-model.ts'
+import type { PlayurlEndpointKind, PlayurlRequestContext } from '../domain/playurl-model.ts'
 import type { RequestContext, GenerationId, EpochId } from '../domain/model.ts'
 import type { AppliedRouteDecision } from '../application/route-model.ts'
 
@@ -13,6 +13,7 @@ export interface XhrMeta {
   bytes: number
   settled: boolean
   playurl: boolean
+  apiEndpoint: PlayurlEndpointKind | null
   requestContext: PlayurlRequestContext
   transformedText: string | null
   transformedJson: unknown

@@ -1,4 +1,5 @@
 import type { PlayurlTransformResult, PlayurlRequestContext } from '../domain/playurl-model.ts'
+import type { ProbeRange } from '../domain/probe-model.ts'
 
 export interface VideoSnapshot {
   readonly available: boolean
@@ -80,10 +81,12 @@ export interface RangeProbeInput {
   readonly url: string
   readonly host: string | null
   readonly limit: number
+  readonly startByte?: number
   readonly signal: AbortSignal
   readonly completionReason: string
 }
 export interface RangeProbeResult {
+  readonly range?: ProbeRange | null
   readonly bytes: number
   readonly elapsedMs: number
   readonly ttfbMs: number | null

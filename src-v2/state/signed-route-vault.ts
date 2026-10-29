@@ -64,7 +64,7 @@ export class SignedRouteVault implements SignedRouteVaultPort {
   #byPath = new Map<string, Set<RepresentationId>>()
   #handles = new Map<
     SignedRouteHandle,
-    { readonly representation: RepresentationId; readonly url: string }
+    { readonly representation: RepresentationId; readonly url: string; totalBytes?: number }
   >()
   #invalid = new Map<RepresentationId, Set<string>>()
   #outputs = new Map<string, OutputRole | null>()
@@ -458,6 +458,23 @@ export class SignedRouteVault implements SignedRouteVaultPort {
     if (!this.isCurrentIdentity(identity)) return null
     const stored = this.#handles.get(handle)
     return stored?.representation === identity.representation ? stored.url : null
+  }
+
+  rangeSize(identity: RouteIdentity, handle: SignedRouteHandle): number | null {
+    if (!this.resolve(handle, identity)) return null
+    return this.#handles.get(handle)?.totalBytes ?? null
+  }
+
+  recordRangeSize(
+    identity: RouteIdentity,
+    handle: SignedRouteHandle,
+    totalBytes: number | null,
+  ): void {
+    if (!this.resolve(handle, identity)) return
+    const stored = this.#handles.get(handle)
+    if (!stored) return
+    if (totalBytes === null) delete stored.totalBytes
+    else if (Number.isSafeInteger(totalBytes) && totalBytes > 0) stored.totalBytes = totalBytes
   }
 
   groupSummary(representation: RepresentationId): VaultGroupSnapshot | null {

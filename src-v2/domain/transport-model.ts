@@ -1,6 +1,13 @@
-import type { PlayurlTransformResult } from './playurl-model.ts'
+import type { PlayurlEndpointKind, PlayurlTransformResult } from './playurl-model.ts'
+
+export interface ApiEndpointSummary {
+  readonly kind: PlayurlEndpointKind
+  readonly transport: 'fetch' | 'xhr'
+  readonly observedAt: number
+}
 
 export interface PlayurlTransportSummary extends PlayurlTransformResult {
+  readonly endpointKind: PlayurlEndpointKind
   readonly transport: 'fetch' | 'xhr'
   readonly status: number
   readonly observedAt: number
@@ -29,6 +36,7 @@ export interface TransportStats {
   readonly lastMediaRequest: Readonly<LastMediaRequest> | null
   readonly lastBlocked: Readonly<{ method: string; host: string; reason: string }> | null
   readonly lastPlayurl: PlayurlTransportSummary | null
+  readonly lastApiEndpoint?: ApiEndpointSummary | null
 }
 export interface TransportSnapshot extends TransportStats {
   readonly hookState: 'not-installed' | 'installed' | 'failed' | 'degraded'

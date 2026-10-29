@@ -69,6 +69,8 @@ export const start = (): void => {
     new RangeProbeAdapter(nativeFetch, now),
     now,
     scheduler,
+    vault,
+    Math.random,
   )
   const transport = new TransportAdapter(session, settings, routes, playurl, measurement, now, ids)
   transport.install()

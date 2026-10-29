@@ -1,15 +1,25 @@
 import type { PlayurlPort } from '../application/ports.ts'
-import type { PlayurlRequestContext, PlayurlTransformResult } from '../domain/playurl-model.ts'
+import type {
+  PlayurlEndpointKind,
+  PlayurlRequestContext,
+  PlayurlTransformResult,
+} from '../domain/playurl-model.ts'
 import { blockedPlayurl, blockedPlayurlText, rejectedPlayurl } from './transport-context.ts'
 
 interface XhrResponseContext {
   readonly playurl: PlayurlPort
-  notePlayurl(transport: 'xhr', status: number, result: PlayurlTransformResult): void
+  notePlayurl(
+    transport: 'xhr',
+    status: number,
+    result: PlayurlTransformResult,
+    endpoint?: PlayurlEndpointKind,
+  ): void
 }
 
 interface XhrResponseState {
   readonly responseKey: string
   readonly requestContext: PlayurlRequestContext
+  readonly apiEndpoint?: PlayurlEndpointKind | null
   transformedText: string | null
   transformedJson: unknown
 }
@@ -32,11 +42,16 @@ export function transformXhrText(
           state.responseKey,
           state.requestContext,
         )
-      context.notePlayurl('xhr', status(), result)
+      context.notePlayurl('xhr', status(), result, state.apiEndpoint ?? 'playurl')
       state.transformedText =
         strict && !result.accepted ? blockedPlayurlText() : JSON.stringify(payload)
     } catch {
-      context.notePlayurl('xhr', status(), rejectedPlayurl('malformed-payload'))
+      context.notePlayurl(
+        'xhr',
+        status(),
+        rejectedPlayurl('malformed-payload'),
+        state.apiEndpoint ?? 'playurl',
+      )
       state.transformedText = strict ? blockedPlayurlText() : raw
     }
   }
@@ -58,10 +73,15 @@ export function transformXhrJson(
         state.responseKey,
         state.requestContext,
       )
-      context.notePlayurl('xhr', status(), result)
+      context.notePlayurl('xhr', status(), result, state.apiEndpoint ?? 'playurl')
       state.transformedJson = strict && !result.accepted ? blockedPlayurl() : raw
     } catch {
-      context.notePlayurl('xhr', status(), rejectedPlayurl('malformed-payload'))
+      context.notePlayurl(
+        'xhr',
+        status(),
+        rejectedPlayurl('malformed-payload'),
+        state.apiEndpoint ?? 'playurl',
+      )
       state.transformedJson = strict ? blockedPlayurl() : raw
     }
   }

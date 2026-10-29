@@ -1,4 +1,6 @@
 import type { RangeProbeInput, RangeProbePort, RangeProbeResult } from '../application/ports.ts'
+import { parseProbeRange } from '../domain/probe-range.ts'
+import type { ProbeRange } from '../domain/probe-model.ts'
 
 export class RangeProbeAdapter implements RangeProbePort {
   constructor(
@@ -9,12 +11,14 @@ export class RangeProbeAdapter implements RangeProbePort {
     const startedAt = this.now()
     let bytes = 0,
       responseAt: number | null = null
+    let range: ProbeRange | null = null
     const result = (
       status: number | null,
       directRange: boolean,
       reason: string,
     ): RangeProbeResult => ({
       status,
+      range,
       directRange,
       reason,
       bytes,
@@ -22,11 +26,20 @@ export class RangeProbeAdapter implements RangeProbePort {
       ttfbMs: responseAt === null ? null : responseAt - startedAt,
     })
     try {
+      const startByte = input.startByte ?? 0
+      if (
+        !Number.isSafeInteger(startByte) ||
+        startByte < 0 ||
+        !Number.isSafeInteger(input.limit) ||
+        input.limit <= 0 ||
+        !Number.isSafeInteger(startByte + input.limit - 1)
+      )
+        return result(null, false, 'invalid-range')
       if (input.signal.aborted)
         return result(null, false, input.signal.reason === 'timeout' ? 'timeout' : 'cancelled')
       const response = await this.nativeFetch(input.url, {
         method: 'GET',
-        headers: { Range: `bytes=0-${input.limit - 1}` },
+        headers: { Range: `bytes=${startByte}-${startByte + input.limit - 1}` },
         credentials: 'omit',
         cache: 'no-store',
         redirect: 'error',
@@ -52,6 +65,12 @@ export class RangeProbeAdapter implements RangeProbePort {
       if (response.status !== 206 || !response.body) {
         await response.body?.cancel('range-required')
         return result(response.status, false, `http-${response.status}`)
+      }
+      const header = response.headers.get('Content-Range')
+      if (header !== null) range = parseProbeRange(header, startByte, input.limit)
+      if ((header !== null && !range) || (startByte > 0 && !range)) {
+        await response.body.cancel('range-mismatch')
+        return result(response.status, false, 'range-mismatch')
       }
       const reader = response.body.getReader()
       try {

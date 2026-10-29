@@ -1,6 +1,12 @@
 import type { RouteCoordinatorPort } from './route-ports.ts'
 import type { MeasurementMetaPort } from '../state/measurement-meta-ports.ts'
 import type { MeasurementStatus, MeasurementSnapshot } from './measurement-model.ts'
+import type { SignedRouteVaultPort } from '../state/vault-ports.ts'
+
+export interface MeasurementRangeMetadataPort extends Pick<
+  SignedRouteVaultPort,
+  'catalogSourceHandle' | 'resolve' | 'rangeSize' | 'recordRangeSize'
+> {}
 
 export interface MeasurementRoutes extends Pick<
   RouteCoordinatorPort,

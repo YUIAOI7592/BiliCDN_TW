@@ -1,4 +1,5 @@
 import { installProgressEvent } from '../support/progress-event.ts'
+import '../regressions/up141-api.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'

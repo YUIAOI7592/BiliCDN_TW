@@ -16,12 +16,14 @@ export interface MeasurementSnapshot {
   readonly reason: string
   readonly lastAttemptAt: number
   readonly host: string | null
+  readonly range?: { readonly mode: 'head' | 'middle'; readonly sizeKnown: boolean }
   readonly startup?: {
     readonly state: string
     readonly reason: string
     readonly candidates: number
     readonly selectedHost: string | null
     readonly delayed: boolean
+    readonly elapsedMs?: number
     readonly results?: readonly {
       readonly host: string
       readonly type: string

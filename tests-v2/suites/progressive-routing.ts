@@ -7,7 +7,7 @@ import type { TestContext } from 'node:test'
 import { RuntimeController } from '../../src-v2/application/runtime-controller.ts'
 import { RouteCoordinator } from '../../src-v2/application/route-coordinator.ts'
 import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
-import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
+import { TRUSTED_CATALOG, DEFAULT_UNAVAILABLE_HOSTS } from '../../src-v2/domain/catalog.ts'
 import { parseMediaUrl } from '../../src-v2/domain/url-policy.ts'
 import { SignedRouteVault } from '../../src-v2/state/signed-route-vault.ts'
 import { SessionStore } from '../../src-v2/state/session-store.ts'
@@ -114,8 +114,8 @@ async function fixture(
         )
         assert.strictEqual(
           planned.ranking.filter((row) => row.eligible).length,
-          TRUSTED_CATALOG.length - 4,
-          'the four default-unavailable hosts remain excluded until enabled',
+          TRUSTED_CATALOG.length - DEFAULT_UNAVAILABLE_HOSTS.size,
+          'default-unavailable hosts remain excluded until enabled',
         )
         const playerUrls = routes.playerOutput(rep1, opaque, planned, [opaque, segment1])
         assert.ok(

@@ -41,9 +41,19 @@ export function renderOverview(
   summary.textContent = `腳本：${settings.disabled ? '已停用' : '已啟用'}｜CDN：${mode}\n選定路線：${affinity}（實際請求見下方）\n播放：${playbackLabel(monitor.watchdog)}｜已緩衝約 ${monitor.video.playableBufferSec.toFixed(1)} 秒可播放內容｜${monitor.video.effectiveRate} 倍速\n播放器：${recoveryLabel(recovery.state)}｜測速：${measurementLabel(measurement.state, measurement.reason)}`
   if (recovery.state === 'failed' || recovery.state === 'recovered-paused')
     summary.textContent += `｜${recoveryReasonLabel(recovery.reason)}`
-  if (measurement.startup)
-    summary.textContent += `\n起播前測試：${startupLabel(measurement.startup.state, measurement.startup.reason)}`
+  if (measurement.startup) {
+    const startup = measurement.startup
+    summary.textContent += `\n起播前測試：${startup.state === 'complete' && startup.reason === 'qualified-early' ? '已測試並選好起播路線' : startupLabel(startup.state, startup.reason)}`
+    if (startup.elapsedMs != null && Number.isFinite(startup.elapsedMs))
+      summary.textContent += `｜等待 ${Math.max(0, Math.round(startup.elapsedMs))} ms`
+    if (startup.state === 'complete')
+      summary.textContent += `｜結束：${plain(startup.reason, { measured: '已取得有效量測', 'qualified-early': '已找到足夠快的候選，提早放行', inconclusive: '證據不足' })}`
+  }
+  if (measurement.range)
+    summary.textContent += `\n健康探測：${measurement.range.mode === 'middle' ? '中段' : '首段'}｜${measurement.range.sizeKnown ? '大小已驗證' : '大小未知'}（不代表未快取）`
   const hook = deps.transport.snapshot()
+  if (hook.lastApiEndpoint)
+    summary.textContent += `\n播放入口：${plain(hook.lastApiEndpoint.kind, { playurl: '一般播放資料', 'ogv-playview': 'OGV 正片', 'ogv-precheck': 'OGV 片頭檢查（原文傳遞）' })}`
   summary.textContent += `\n請求攔截：${plain(hook.hookState, { installed: '運作中', degraded: '部分失效', failed: '無法啟用', 'not-installed': '未啟用' })}｜腳本看到 ${Number(hook.enteredFetch) + Number(hook.enteredXhr)} 筆請求，其中 ${hook.mediaRecognized} 筆像是影音請求；交給瀏覽器 ${hook.nativeCalled} 筆，看到回應 ${hook.responseObserved} 筆`
   if (
     !settings.disabled &&
@@ -109,6 +119,24 @@ export function renderOverview(
       'meets-headroom': '達到安全餘量',
       unknown: '速度樣本不足',
     })}${selected?.ratio == null || !Number.isFinite(selected.ratio) ? '' : `（保守速度約為需求的 ${selected.ratio.toFixed(2)} 倍）`}`
+  const safeMbps = selected?.safeMbps,
+    ratio = selected?.ratio,
+    requiredMbps = safeMbps != null && ratio != null && ratio > 0 ? safeMbps / ratio : null
+  if (
+    safeMbps != null &&
+    Number.isFinite(safeMbps) &&
+    safeMbps > 0 &&
+    ratio != null &&
+    Number.isFinite(ratio) &&
+    ratio > 0 &&
+    requiredMbps != null &&
+    Number.isFinite(requiredMbps) &&
+    requiredMbps > 0
+  )
+    summary.textContent += `\n保守吞吐 ${safeMbps.toFixed(2)} Mbps｜需求 ${requiredMbps.toFixed(2)} Mbps｜餘裕 ${ratio.toFixed(2)} 倍`
+  const restricted = activePlan?.ranking.filter((row) => !row.eligible).slice(0, 5) ?? []
+  if (restricted.length)
+    summary.textContent += `\n候選限制：${restricted.map((row) => `${row.host}（${row.reasons.map(restrictionLabel).join('、')}）`).join('；')}`
   for (const [kind, label] of [
     ['video', '影片'],
     ['audio', '音訊'],

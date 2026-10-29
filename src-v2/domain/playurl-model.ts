@@ -1,4 +1,5 @@
 export type PlayurlFormat = 'dash' | 'mp4' | 'flv'
+export type PlayurlEndpointKind = 'playurl' | 'ogv-playview' | 'ogv-precheck'
 /** Request-owned content correlation only; never a route authorization. */
 export interface PlayurlRequestContext {
   readonly contentId: string | null

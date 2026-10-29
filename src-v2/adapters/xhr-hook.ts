@@ -1,4 +1,4 @@
-import { isPlayurlApi } from '../domain/catalog.ts'
+import { classifyPlayurlApi } from '../domain/catalog.ts'
 import { playurlRequestContext } from '../domain/playurl-content.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
 import type { FailureKind } from '../domain/model.ts'
@@ -54,7 +54,8 @@ export class XhrHookAdapter {
       const { methodString, originalUrl, asynchronous, user, pass, normalizedMethod } =
         convertXhrOpen(method, url, arguments.length, async, username, password)
       self.count('enteredXhr')
-      const playurl = isPlayurlApi(originalUrl, location.href)
+      const apiEndpoint = classifyPlayurlApi(originalUrl, location.href)
+      const playurl = apiEndpoint !== null && apiEndpoint !== 'ogv-precheck'
       const previous = xhrMeta.get(this)
       let applied: AppliedRouteDecision | null = null,
         targetUrl = originalUrl
@@ -77,6 +78,7 @@ export class XhrHookAdapter {
         bytes: 0,
         settled: false,
         playurl,
+        apiEndpoint,
         requestContext: playurlRequestContext(originalUrl, location.href),
         transformedText: null,
         transformedJson: undefined,
@@ -111,6 +113,8 @@ export class XhrHookAdapter {
         }
         throw error
       }
+      if (xhrMeta.get(this) === next && apiEndpoint && !self.settings.get().disabled)
+        self.noteApiEndpoint('xhr', apiEndpoint)
       if (previous) {
         previous.phase = 'terminal'
         previous.cleanup()
@@ -525,7 +529,12 @@ export class XhrHookAdapter {
                 : null
               : raw
           if (!self.session.isGeneration(meta.generation)) {
-            self.notePlayurl('xhr', this.status, rejectedPlayurl('inactive'))
+            self.notePlayurl(
+              'xhr',
+              this.status,
+              rejectedPlayurl('inactive'),
+              meta.apiEndpoint ?? 'playurl',
+            )
             return self.routes.isCatalogOnly()
               ? this.responseType === '' || this.responseType === 'text'
                 ? blockedPlayurlText()
@@ -543,7 +552,12 @@ export class XhrHookAdapter {
           ) {
             return transformXhrText(self, meta, raw, strict, () => this.status)
           }
-          self.notePlayurl('xhr', this.status, rejectedPlayurl('unsupported-format'))
+          self.notePlayurl(
+            'xhr',
+            this.status,
+            rejectedPlayurl('unsupported-format'),
+            meta.apiEndpoint ?? 'playurl',
+          )
           return strict ? blockedPlayurl() : raw
         }
         Object.defineProperty(proto, 'response', { ...responseDescriptor, get: responseGetter })
@@ -556,7 +570,12 @@ export class XhrHookAdapter {
           if (!meta?.playurl || self.settings.get().disabled) return raw
           if (this.readyState !== 4) return self.routes.isCatalogOnly() ? '' : raw
           if (!self.session.isGeneration(meta.generation)) {
-            self.notePlayurl('xhr', this.status, rejectedPlayurl('inactive'))
+            self.notePlayurl(
+              'xhr',
+              this.status,
+              rejectedPlayurl('inactive'),
+              meta.apiEndpoint ?? 'playurl',
+            )
             return self.routes.isCatalogOnly() ? blockedPlayurlText() : raw
           }
           const strict = self.routes.isCatalogOnly()
