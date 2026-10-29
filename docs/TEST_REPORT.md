@@ -20,9 +20,15 @@ OGV pre/check/drm 原文通行，不改 Vault／epoch；API 入口、Fetch 單�
 
 慢請求提前重試仍屬獨立原型；本版沒有其控制器、設定開關、timeout 控制或額外補送請求。未通過原生相容性、受控效用及自然故障完整門檻前，不納入正式版。
 
+B 原型來源固定為 3cadfd8633fabbaa4dbe20226e2d1b87714edc8c，位於 [獨立分支](https://github.com/YUIAOI7592/BiliCDN_TW/tree/codex/upstream-141-early-retry)。原型完整測試 2977 案通過，但獨立 held-out 效用為 VALID／FAIL、退出 1：持續慢速可改善，正常突發恢復在 1／2 倍各產生不必要的 100,000 bytes 重下。原型與 [固定效用證據](https://github.com/YUIAOI7592/BiliCDN_TW/blob/codex/upstream-141-early-retry/archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json) 保留供重現，沒有調整期待或啟用正式控制。
+
 ## 本輪安全差異
 
 Codex Security 掃描 e7524c92-b87d-4130-bef1-e780815fd314 已完成，固定 A 候選範圍三十個審查項全數覆蓋，無可報告發現；canonical 報告由 Codex Security 工作台管理。該掃描沒有覆蓋未合入正式版的 B 原型，也不冒充最終 HK 排除後的相同來源雜湊。另已逐行核對 be8dc3e 到正式子集的執行期差異：只移除 Catalog 與家族表中的三台 HK，沒有其他執行期改動或擴張權限；對應拒絕契約及完整 verify 通過。安全審查獨立於 npm run verify，不表示已完成安裝攻擊驗證。
+
+B 另以 bab220b7-b1a7-409a-b11d-0de94e0955c1 審查固定 613632f..3cadfd8 的全部 26 項差異，無可報告發現。其來源安全結論不改變效用 FAIL、原型預設關閉或未採用狀態，也不補算延後的原生／安裝驗收。
+
+B 的文件／封存重現補充另存 2a5851761d5a066cd3b54cb447b9da546a23187e，與安全掃描的 src-v2／tests-v2／scripts 共 301 個檔案完全相同；其完整 verify 亦 2977 案通過。效用退出 1 的獨立命令沒有納入 verify 改寫期待，仍保持失敗與不採用。
 
 ## 來源隔離與安裝結果
 
@@ -32,7 +38,7 @@ Codex Security 掃描 e7524c92-b87d-4130-bef1-e780815fd314 已完成，固定 A 
 
 ## 發布與安裝限制
 
-v2.1.36 最新完整報告原文追加至歷史彙編，五項 Release 原件按原始位元組封存；已發布標籤與附件不回寫。v2.1.37 待全部實作及最終檢查完成後統一封裝／發布，目前未執行 npm run package，沒有新版附件、大小或 SHA-256 可宣稱。後續公開交付須核對 main、標籤、唯一腳本附件及 latest 的版本、大小與 SHA-256。
+v2.1.36 最新完整報告原文追加至歷史彙編，五項 Release 原件按原始位元組封存；已發布標籤與附件不回寫。v2.1.37 本機封裝使用已通過決定性驗證的完整腳本：451,802 bytes，SHA-256 1293587c8bd0c5133289a981feccc3ffa6c28297da06e4d6d9570d3895222ac4。這是本機產物身分，公開交付另須核對 main、標籤、唯一附件及 latest；不以本機封裝冒充遠端發布。
 
 ### 公開交付與安裝結案
 
