@@ -421,7 +421,13 @@ export class MeasurementController implements MeasurementPort {
     for (const result of valid)
       if (result.candidate.cachedSafeMbps === null) {
         void this.routes
-          .recordStartupSuccess(result.candidate, result.bytes, result.elapsedMs, result.ttfbMs)
+          .recordStartupSuccess(
+            result.candidate,
+            result.bytes,
+            result.elapsedMs,
+            result.ttfbMs,
+            () => !this.#disposed && marker === this.#marker,
+          )
           .catch(() => undefined)
       }
   }
@@ -789,6 +795,12 @@ export class MeasurementController implements MeasurementPort {
       result.ttfbMs,
       ok ? 'success' : 'failure',
       failure,
+      () =>
+        !this.#disposed &&
+        marker === this.#marker &&
+        this.#running?.controller === round &&
+        !round.signal.aborted &&
+        this.#validationCurrent(),
     )
     if (marker !== this.#marker || this.#running?.controller !== round || round.signal.aborted)
       return

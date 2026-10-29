@@ -705,11 +705,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     bytes: number,
     elapsedMs: number,
     ttfbMs: number | null,
+    workCurrent: () => boolean = () => true,
   ): Promise<void> {
     if (bytes < 64 * 1024 || elapsedMs <= 0) return
     if (this.isCatalogOnly() && candidate.type !== 'catalog-generated') return
     const context = candidate.context
     const valid = (): boolean =>
+      workCurrent() &&
       context.generation === this.session.get().generation &&
       context.epoch === this.session.get().epoch &&
       !this.session.get().disabled &&
@@ -1453,11 +1455,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     ttfbMs: number | null,
     outcome: 'success' | 'failure',
     failureKind: FailureKind | null,
+    workCurrent: () => boolean = () => true,
   ): Promise<void> {
     const context = applied.context
     if (!context || applied.decision.action !== 'rewrite') return
     if (this.isCatalogOnly() && applied.decision.routeType !== 'catalog-generated') return
     const valid = (): boolean =>
+      workCurrent() &&
       context.generation === this.session.get().generation &&
       context.epoch === this.session.get().epoch &&
       !this.session.get().disabled &&

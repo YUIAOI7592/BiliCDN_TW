@@ -15,6 +15,53 @@ import { catalogOutputPlan, backupOutputPlan } from '../../src-v2/domain/player-
 import type { RangeProbeInput, RangeProbeResult } from '../../src-v2/application/ports.ts'
 import { DiagnosticRecorder } from '../../src-v2/diagnostics/recorder.ts'
 import { deferred } from '../support/deferred.ts'
+import { earlyRetryReason } from '../../src-v2/domain/early-retry-diagnostic.ts'
+
+class HeldEvidenceStorage extends FakeStorage {
+  held = true
+  releases: (() => void)[] = []
+  release(): void {
+    this.held = false
+    for (const resolve of this.releases.splice(0)) resolve()
+  }
+  override async withLock<T>(name: string, task: () => T | Promise<T>): Promise<T> {
+    if (name === 'routeEvidence' && this.held)
+      await new Promise<void>((resolve) => this.releases.push(resolve))
+    return await super.withLock(name, task)
+  }
+}
+
+for (const kind of ['health', 'startup'] as const)
+  test(
+    'UP141-TEST ' + kind + ' rejects evidence queued behind storage after policy cancellation',
+    async (t) => {
+      const storage = new HeldEvidenceStorage()
+      testScope(t).defer(() => storage.release())
+      const v = await validation(t, storage)
+      if (kind === 'health') {
+        v.controller.requestCatalogValidation(hk)
+        v.f.clock.advance(600001)
+        v.controller.tick(v.status)
+      } else await v.controller.prepareStartup(media('up141-test', 'video.m4s'))
+      await nextTurn()
+      assert.ok(storage.releases.length > 0)
+      const before = v.f.evidence.list()
+      await v.f.settings.update(
+        kind === 'health'
+          ? { healthMiddleRangeEnabled: false }
+          : { startupEarlyReleaseEnabled: false },
+      )
+      storage.release()
+      await nextTurn()
+      assert.deepEqual(v.f.evidence.list(), before)
+    },
+  )
+
+test('UP141-DIAG comparison cancellation retains its fixed reason', (t) => {
+  testScope(t)
+  assert.equal(earlyRetryReason('comparison-setting'), 'comparison-setting')
+  assert.equal(earlyRetryReason('monitor-stop'), 'monitor-stop')
+})
 
 const hk = [
   'cn-hk-eq-01-03.bilivideo.com',

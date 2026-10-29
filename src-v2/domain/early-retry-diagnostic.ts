@@ -55,6 +55,8 @@ const reasons: readonly string[] = Object.freeze([
   'settings',
   'route-policy',
   'original-comparison',
+  'comparison-setting',
+  'monitor-stop',
 ])
 export const earlyRetryReason = (value: string): string =>
   reasons.includes(value) ? value : 'unknown'

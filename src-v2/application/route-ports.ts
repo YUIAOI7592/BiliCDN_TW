@@ -84,6 +84,7 @@ export interface RouteCoordinatorPort {
     bytes: number,
     elapsedMs: number,
     ttfbMs: number | null,
+    workCurrent?: () => boolean,
   ): Promise<void>
   latestVideoHost(): string | null
   unlockNative(representation: RepresentationId, host: string): void
@@ -143,6 +144,7 @@ export interface RouteCoordinatorPort {
     ttfbMs: number | null,
     outcome: 'success' | 'failure',
     failureKind: FailureKind | null,
+    workCurrent?: () => boolean,
   ): Promise<void>
   observe(observation: TransportObservation): Promise<void>
   snapshot(): RouteSnapshot
