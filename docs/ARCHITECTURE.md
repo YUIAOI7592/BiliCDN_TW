@@ -276,3 +276,7 @@ Catalog 保留全部 14 個內建主機，其中 7 個預設不可用。起播�
 | XhrHookAdapter | xhr-values／xhr-request／xhr-response | 唯一 metadata WeakMap、原生 getter／guards、派送、安裝與按所有權還原；回應助手只轉換及快取當筆狀態 |
 
 助手沒有第二份 Native 授權索引或可獨立變更親和的能力。嘗試追蹤保留六個 attempt、32 個 request IDs 與既有期限；responseIds 集合沒有另加明確數量上限，不能把所有內部集合描述成逐項有界。詳見 [模組化紀錄](../archive/retired/docs/MODULARIZATION_v2.1.25_REPORT.md)。
+
+## 隔離 B 原型的傳輸控制
+
+此相容入口描述 2026-10-30 固定原型，原文見 [2a58517 架構快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2a5851761d5a066cd3b54cb447b9da546a23187e/docs/ARCHITECTURE.md#隔離-b-原型的傳輸控制)。當前實作見本文件 UP141 提前重試章節，原型限制不作現行工作狀態。

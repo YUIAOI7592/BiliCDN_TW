@@ -664,3 +664,9 @@ Codex Security a767078d-f3df-4a33-ad53-f437c730c5a9 固定 957da3f→7849e06 六
 - 約 22:33 工具更新移除 `mcp__cua_repl`。停止新窗口，二十二個剩餘窗口未執行，原始截止不重設；沒有以其他瀏覽器或控制介面替代。最終瀏覽器資源退出無法核對，保留清理限制。
 
 私有去敏 JSON、畫面、固定順序及重算摘要位於 `.work/iab-testing/2026-10-30-v2.1.38-0b4d441-up141/`。沒有執行新的產品自動測試或安全掃描；本次文件檢查另行記錄，不改既有發布測試數與不可變封存。
+
+## 2026-10-30：UP141 B 原型契約與獨立效用
+
+工具與產品原型固定於 3cadfd8，以 Node 26.8.1／npm 11.19.0 執行。完整 npm test 2977 案通過，其中 UP141-RETRY 應用 37 案及可信 UI 一案；沒有略過、待實作或取消。獨立 early-retry-evaluation 命令使用相同政策、固定輸入及保留的未來供片事實；實際退出 1，valid=true、passed=false。正常突發回補兩案各多下載 100000 bytes，沒有把有效 FAIL 改為正式套件的預期失敗。
+
+原始 JSON 位於 [公開保護原件](../archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json)，方法見 [分支重現](DEVELOPMENT.md#慢請求提前重試原型重現分支限定)，完整結果見 [TEST_REPORT](TEST_REPORT.md#隔離-b-分支原型驗證2026-10-30)。原生事件替身只證明模型契約；IAB／Tampermonkey 及自然對照均延後，不宣稱安裝通過。

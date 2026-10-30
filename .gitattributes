@@ -1,6 +1,8 @@
 * text=auto eol=lf
 baseline/*.user.js -text
 baseline/UP141_pre_adoption_relocation_2026-10-29.json -text -diff
+baseline/UP141_B_pre_prototype_relocation_2026-10-30_613632f.json -text -diff
+archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json -text -diff
 Release/**/*.user.js -text
 Release/**/*.diff -text
 archive/retired/releases/** -text

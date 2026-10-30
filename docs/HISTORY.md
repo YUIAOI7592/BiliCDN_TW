@@ -298,3 +298,9 @@
 | [Release/v2.1.8/TEST_REPORT_v2.1.8.md](../archive/retired/releases/Release/v2.1.8/TEST_REPORT_v2.1.8.md)：3 | `INDEX.md` |
 | [Release/v2.1.8/TEST_REPORT_v2.1.8.md](../archive/retired/releases/Release/v2.1.8/TEST_REPORT_v2.1.8.md)：31 | `INDEX.md` |
 | [Release/v2.1.8/TEST_REPORT_v2.1.8.md](../archive/retired/releases/Release/v2.1.8/TEST_REPORT_v2.1.8.md)：130 | `../archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md` |
+
+## 2026-10-31 分支整併導覽
+
+- [全分支整併與原件身分](../archive/retired/docs/BRANCH_INTEGRATION_2026-10-31.md)
+- [2026-10-30 B 隔離原型](../archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md)
+- [B 分支完整驗證補充](../archive/retired/docs/TEST_REPORT_HISTORY.md#隔離-b-分支原型驗證2026-10-30)

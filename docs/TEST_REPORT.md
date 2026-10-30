@@ -128,3 +128,7 @@ v2.1.37 標籤與附件原始位元組保留，只追加 Release 說明的測試
 <a name="bilicdn_tw-v218-release-verification--2026-10-04"></a>
 
 舊相容入口見 [v2.1.8](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v218-release-verification--2026-10-04)。上一版全文見 [v2.1.37](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2137-完整報告2026-10-30)，其餘由 [HISTORY](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md) 追溯。
+
+## 隔離 B 分支原型驗證（2026-10-30）
+
+此舊分支補充已原樣保存於 [歷史完整紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#隔離-b-分支原型驗證2026-10-30)。原型提交、效用 FAIL 與安全證據維持原判定；目前版本結果見本報告前文。
