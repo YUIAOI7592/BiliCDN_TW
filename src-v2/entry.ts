@@ -41,7 +41,7 @@ export const start = (): void => {
   const ids = createRuntimeIds()
   const routes = new RouteCoordinator(clock, session, settings, restrictions, evidence, vault, ids)
   const meta = new MeasurementMetaStore(storage, now)
-  const content = new PlayurlController(session, vault, routes, settings)
+  const content = new PlayurlController(session, vault, routes)
   const playurl = new PlayurlAdapter(content)
   const visibility = new VisibilityAdapter()
   const player = new PlayerAdapter(playurl, {
@@ -148,7 +148,6 @@ export const start = (): void => {
     routes,
     measurement,
     recovery,
-    now,
     earlyRetry,
   )
   const center = new ControlCenter({

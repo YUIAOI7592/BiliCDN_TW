@@ -1,7 +1,6 @@
 import { catalogRestrictions, catalogCandidates } from '../domain/route-policy.ts'
 import type { EarlyRetryAlternative, EarlyRetryPermit } from './early-retry-model.ts'
-import { TRUSTED_CATALOG, isCatalogHost, isHkTestCandidate } from '../domain/catalog.ts'
-import type { CatalogValidationContext, CatalogValidationTarget } from './route-model.ts'
+import { TRUSTED_CATALOG, isCatalogHost } from '../domain/catalog.ts'
 import { chooseRoute } from '../domain/routing.ts'
 import {
   isKnownPcdnHost,
@@ -1342,43 +1341,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       : { primary: '', backups: [] }
   }
 
-  catalogValidationContext(representation: RepresentationId): CatalogValidationContext | null {
-    const settings = this.settings.get()
-    const identity = this.vault.identity(representation)
-    const state = this.session.get()
-    if (
-      settings.disabled ||
-      settings.fixedHost ||
-      !this.isCatalogOnly() ||
-      !identity ||
-      identity.kind !== 'video' ||
-      identity.generation !== state.generation ||
-      identity.epoch !== state.epoch ||
-      !this.vault.isCurrentIdentity(identity) ||
-      !this.#catalogSource(identity)
-    )
-      return null
-    return Object.freeze({ identity, policyRevision: this.#policyRevision })
-  }
-
   challenge(
     representation: RepresentationId,
     _demand: PlaybackDemand,
     preferNative: boolean,
     excludedHosts: ReadonlySet<string> = new Set(),
     catalogCursor = 0,
-    validation?: CatalogValidationTarget,
   ): AppliedRouteDecision | null {
-    if (validation) {
-      const current = this.catalogValidationContext(representation)
-      if (
-        !isHkTestCandidate(validation.host) ||
-        !current ||
-        current.identity !== validation.identity ||
-        current.policyRevision !== validation.policyRevision
-      )
-        return null
-    }
     const context = this.vault.identity(representation)
     const root =
       context && this.isCatalogOnly()
@@ -1400,19 +1369,15 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       : this.vault
           .candidates(representation, this.#unlockedNative.get(representation) ?? new Set())
           .native.filter((candidate) => candidate.activelyExplorable)
-    const candidates = validation
-      ? catalogCandidates(context.kind).filter((row) => row.host === validation.host)
-      : challengerCandidates(context.kind, native, preferNative, catalogCursor)
+    const candidates = challengerCandidates(context.kind, native, preferNative, catalogCursor)
     const now = this.clock.now(),
       currentHost = this.session.get().affinity?.host
     const selected = candidates.find((candidate) => {
-      if ((!validation && candidate.host === currentHost) || excludedHosts.has(candidate.host))
-        return false
+      if (candidate.host === currentHost || excludedHosts.has(candidate.host)) return false
       if (this.#hardRestriction(candidate.host, candidate.kind)) return false
       if (candidate.type === 'catalog-generated' && this.#incompatible(root, candidate.host))
         return false
       const attemptKey = `${context.representation}:${candidate.host}`
-      if (validation) return true
       if (now - (this.#challengeAttempts.get(attemptKey) ?? 0) < 6 * 60 * 60_000) return false
       const evidence = this.evidence.get(candidate.host, candidate.kind)
       return !evidence || !evidence.updatedAt || now - evidence.updatedAt >= 6 * 60 * 60 * 1000

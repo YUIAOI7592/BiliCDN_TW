@@ -41,7 +41,7 @@ async function fixture(
     vault,
     createRuntimeIds(),
   )
-  const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes, settings))
+  const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes))
   const original =
     'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/progressive-transport/one.mp4?fixture=primary'
   const fixture = () => ({

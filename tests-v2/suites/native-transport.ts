@@ -211,7 +211,7 @@ async function fixture(
     createRuntimeIds(),
   )
   const dispatchPlayurl = new PlayurlAdapter(
-    new PlayurlController(dispatchSession, dispatchVault, dispatchRoutes, dispatchSettings),
+    new PlayurlController(dispatchSession, dispatchVault, dispatchRoutes),
   )
   const dispatchRoot =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/dispatch/video.m4s?signature=private'
@@ -492,12 +492,7 @@ async function fixture(
     createRuntimeIds(),
   )
   const emittedBackupPlayurl = new PlayurlAdapter(
-    new PlayurlController(
-      emittedBackupSession,
-      emittedBackupVault,
-      emittedBackupRoutes,
-      emittedBackupSettings,
-    ),
+    new PlayurlController(emittedBackupSession, emittedBackupVault, emittedBackupRoutes),
   )
   const emittedBackupRoot =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/emitted-backup/root.m4s?signature=root'
@@ -704,7 +699,7 @@ async function fixture(
         createRuntimeIds(),
       )
       const pagePlayurl = new PlayurlAdapter(
-        new PlayurlController(pageSession, pageVault, pageRoutes, pageSettings),
+        new PlayurlController(pageSession, pageVault, pageRoutes),
       )
       const assignedAtSetter: string[] = []
       const assignedPayloadAtSetter: string[] = []
@@ -816,9 +811,7 @@ async function fixture(
     pageVault,
     createRuntimeIds(),
   )
-  const pagePlayurl = new PlayurlAdapter(
-    new PlayurlController(pageSession, pageVault, pageRoutes, pageSettings),
-  )
+  const pagePlayurl = new PlayurlAdapter(new PlayurlController(pageSession, pageVault, pageRoutes))
   const assignedAtSetter: string[] = []
   const assignedPayloadAtSetter: string[] = []
   let pageOwnedPlayinfo: unknown = undefined
@@ -1213,7 +1206,7 @@ async function fixture(
     createRuntimeIds(),
   )
   const apiFailurePlayurl = new PlayurlAdapter(
-    new PlayurlController(apiFailureSession, apiFailureVault, apiFailureRoutes, apiFailureSettings),
+    new PlayurlController(apiFailureSession, apiFailureVault, apiFailureRoutes),
   )
   const apiFailureTransport = scope.own(
     new TransportAdapter(
@@ -1819,7 +1812,7 @@ async function fixture(
     createRuntimeIds(),
   )
   const oversizedPlayurl = new PlayurlAdapter(
-    new PlayurlController(oversizedSession, oversizedVault, oversizedRoutes, oversizedSettings),
+    new PlayurlController(oversizedSession, oversizedVault, oversizedRoutes),
   )
   const oversizedTransport = scope.own(
     new TransportAdapter(

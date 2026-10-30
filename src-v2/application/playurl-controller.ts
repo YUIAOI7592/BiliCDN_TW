@@ -1,4 +1,3 @@
-import type { SettingsState } from '../state/settings-model.ts'
 import type {
   PlaybackDemand,
   RepresentationId,
@@ -19,14 +18,8 @@ import type {
   PlayurlSessionPort,
   PlayurlVaultPort,
   PlayurlRoutesPort,
-  PlayurlSettingsPort,
 } from './playurl-ports.ts'
-export type {
-  PlayurlSessionPort,
-  PlayurlVaultPort,
-  PlayurlRoutesPort,
-  PlayurlSettingsPort,
-} from './playurl-ports.ts'
+export type { PlayurlSessionPort, PlayurlVaultPort, PlayurlRoutesPort } from './playurl-ports.ts'
 
 import type { PlayurlItem, PlayurlInput, PlayurlOutput } from './playurl-model.ts'
 export type { PlayurlItem, PlayurlInput, PlayurlOutput } from './playurl-model.ts'
@@ -45,7 +38,6 @@ export class PlayurlController implements PlayurlControllerPort {
     private readonly session: PlayurlSessionPort,
     private readonly vault: PlayurlVaultPort,
     private readonly routes: PlayurlRoutesPort,
-    private readonly settings: PlayurlSettingsPort,
   ) {}
 
   catalogOnly(): boolean {
@@ -59,9 +51,6 @@ export class PlayurlController implements PlayurlControllerPort {
   }
   active(): boolean {
     return !this.session.get().disabled
-  }
-  codecPreference(): SettingsState['codec'] {
-    return this.settings.get().codec
   }
   lifecycleKey(): string {
     const s = this.session.get()

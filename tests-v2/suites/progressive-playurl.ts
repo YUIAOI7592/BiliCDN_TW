@@ -64,7 +64,7 @@ const fixture = (scope: TestScope) => {
     vault,
     createRuntimeIds(),
   )
-  const adapter = new PlayurlAdapter(new PlayurlController(session, vault, routes, settings))
+  const adapter = new PlayurlAdapter(new PlayurlController(session, vault, routes))
   return { adapter, storage, session, vault, settings, restrictions, evidence, routes }
 }
 

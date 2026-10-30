@@ -39,7 +39,6 @@ for (const kind of ['health', 'startup'] as const)
       testScope(t).defer(() => storage.release())
       const v = await validation(t, storage)
       if (kind === 'health') {
-        v.controller.requestCatalogValidation(hk)
         v.f.clock.advance(600001)
         v.controller.tick(v.status)
       } else await v.controller.prepareStartup(media('up141-test', 'video.m4s'))
@@ -184,23 +183,20 @@ async function validation(t: TestContext, storage = new FakeStorage()) {
   }
 }
 
-test('UP141-TEST targeted HK shares cooldown, caps one round and can remeasure fresh evidence', async (t) => {
+test('UP141-TEST automatic exploration shares cooldown, caps rounds and skips fresh evidence', async (t) => {
   const v = await validation(t)
   const before = v.f.session.get().affinity
-  v.controller.requestCatalogValidation(hk)
-  v.controller.requestCatalogValidation(hk)
+
   v.controller.tick(v.status)
   await nextTurn()
   assert.equal(v.calls.length, 0)
   v.f.clock.advance(600001)
   v.controller.tick(v.status)
   await nextTurn()
-  assert.deepEqual(
-    v.calls.map((row) => row.host),
-    hk,
-  )
+  assert.equal(v.calls.length, 3)
+  const firstHosts = v.calls.map((row) => row.host)
   assert.deepEqual(v.f.session.get().affinity, before)
-  v.controller.requestCatalogValidation(hk)
+
   v.controller.tick(v.status)
   await nextTurn()
   assert.equal(v.calls.length, 3)
@@ -208,57 +204,36 @@ test('UP141-TEST targeted HK shares cooldown, caps one round and can remeasure f
   v.controller.tick(v.status)
   await nextTurn()
   assert.equal(v.calls.length, 6)
+  assert.ok(v.calls.slice(3).every((row) => !firstHosts.includes(row.host)))
 })
 
-test('UP141-TEST validation rejects arbitrary, disabled and forbidden targets', async (t) => {
-  const v = await validation(t)
-  for (const hosts of [[], ['evil.invalid'], ['https://' + hk[0]], [...hk, hk[0]!]])
-    assert.throws(() => v.controller.requestCatalogValidation(hosts))
-  await v.f.settings.setCatalogEnabled(hk[0]!, false)
-  assert.throws(() => v.controller.requestCatalogValidation([hk[0]!]))
-  await v.f.restrictions.add({
-    host: hk[1]!,
-    kind: 'all',
-    type: 'black',
-    reason: 'user',
-    expireAt: v.f.clock.now() + 1000000,
-  })
-  v.controller.requestCatalogValidation([hk[1]!])
-  v.f.clock.advance(600001)
-  v.controller.tick(v.status)
-  await nextTurn()
-  assert.equal(v.calls.length, 0)
-})
-
-for (const change of [
-  'fixed',
-  'disabled',
-  'native',
-  'representation',
-  'authority',
-  'reset',
-] as const)
-  test('UP141-TEST queued validation cancels on ' + change, async (t) => {
+for (const condition of ['hidden', 'seeking', 'recovering', 'disabled', 'representation'] as const)
+  test('CC39-MEASURE automatic exploration rejects unsafe state: ' + condition, async (t) => {
     const v = await validation(t)
-    v.controller.requestCatalogValidation(hk)
-    if (change === 'fixed') await v.f.settings.update({ fixedHost: hk[0]! })
-    if (change === 'disabled') await v.f.settings.update({ disabled: true })
-    if (change === 'native') await v.f.settings.update({ considerNativeSources: true })
-    if (change === 'representation') v.controller.tick({ ...v.status, representation: null })
-    if (change === 'authority') v.f.vault.reset(v.context.generation, v.context.epoch)
-    if (change === 'reset') v.controller.reset()
-    assert.notEqual(v.controller.snapshot().validation?.state, 'running')
+    const before = v.f.storage.get<Record<string, unknown>>(
+      MEASUREMENT_META_KEY,
+      {},
+    ).lastChallengeAt
     v.f.clock.advance(600001)
-    v.controller.tick({ ...v.status, visible: false })
+    const status = { ...v.status }
+    if (condition === 'hidden') status.visible = false
+    if (condition === 'seeking') status.seeking = true
+    if (condition === 'recovering') status.recovering = true
+    if (condition === 'disabled') status.disabled = true
+    if (condition === 'representation') status.representation = null
+    v.controller.tick(status)
     await nextTurn()
     assert.equal(v.calls.length, 0)
-    assert.equal(v.controller.snapshot().validation?.state, 'cancelled')
+    assert.equal(
+      v.f.storage.get<Record<string, unknown>>(MEASUREMENT_META_KEY, {}).lastChallengeAt,
+      before,
+    )
   })
 
 test('UP141-TEST changing measurement flags cancels owned work and refuses late learning', async (t) => {
   const v = await validation(t)
   v.setHold()
-  v.controller.requestCatalogValidation(hk)
+
   v.f.clock.advance(600001)
   v.controller.tick(v.status)
   await nextTurn()
@@ -272,33 +247,33 @@ test('UP141-TEST changing measurement flags cancels owned work and refuses late 
   assert.equal(v.calls.length, 1)
 })
 
-test('UP141-TEST failed targeted probe closes its one-shot request without reopening budget', async (t) => {
+test('UP141-TEST failed automatic probe respects its consumed cooldown', async (t) => {
   const v = await validation(t)
   v.setHold()
-  v.controller.requestCatalogValidation(hk)
+
   v.f.clock.advance(600001)
   v.controller.tick(v.status)
   await nextTurn()
   v.pending[0]!.reject(new Error('probe adapter rejected'))
   await nextTurn()
-  assert.equal(v.controller.snapshot().validation?.state, 'cancelled')
-  assert.equal(v.controller.snapshot().validation?.reason, 'measurement-error')
+  assert.equal(v.controller.snapshot().state, 'failed')
+  assert.equal(v.controller.snapshot().reason, 'measurement-error')
   v.controller.tick(v.status)
   await nextTurn()
   assert.equal(v.calls.length, 1)
 })
 
-test('UP141-TEST source revoked during targeted round closes pending validation', async (t) => {
+test('UP141-TEST source revoked during automatic round refuses late learning', async (t) => {
   const v = await validation(t)
   v.setHold()
-  v.controller.requestCatalogValidation(hk)
+
   v.f.clock.advance(600001)
   v.controller.tick(v.status)
   await nextTurn()
   v.f.vault.reset(v.context.generation, v.context.epoch)
   v.pending[0]!.resolve(v.result())
   await nextTurn()
-  assert.equal(v.controller.snapshot().validation?.state, 'cancelled')
+  assert.equal(v.f.evidence.list().length, 0)
   assert.equal(v.calls.length, 1)
 })
 
@@ -307,7 +282,7 @@ test('UP141-TEST middle toggle off requests head while retaining validated sourc
   const handle = v.f.vault.catalogSourceHandle(v.context.representation)!
   v.f.vault.recordRangeSize(v.context, handle, 8 * 1024 * 1024)
   await v.f.settings.update({ healthMiddleRangeEnabled: false })
-  v.controller.requestCatalogValidation(hk)
+
   v.f.clock.advance(600001)
   v.controller.tick(v.status)
   await nextTurn()

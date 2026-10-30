@@ -7,9 +7,7 @@ import type {
 } from '../domain/model.ts'
 import { probeStartByte } from '../domain/probe-range.ts'
 import { mediaIdentity } from '../domain/url-policy.ts'
-import { isHkTestCandidate } from '../domain/catalog.ts'
 import type { SettingsPort } from '../state/settings-ports.ts'
-import type { CatalogValidationContext } from './route-model.ts'
 
 import type { RangeProbePort, SchedulerPort } from './ports.ts'
 
@@ -55,14 +53,11 @@ import type { MeasurementStatus, MeasurementSnapshot } from './measurement-model
 export type { MeasurementStatus, MeasurementSnapshot } from './measurement-model.ts'
 
 export class MeasurementController implements MeasurementPort {
-  #validation: (CatalogValidationContext & { readonly hosts: readonly string[] }) | null = null
-  #validationState: MeasurementSnapshot['validation']
   #stopSettings: (() => void) | null = null
   #disposed = false
   #running: MeasurementWork | null = null
   #failedAt: number | null = null
   #planning: object | null = null
-  #manualRequested = false
   #preferNative = false
   #marker = 0
   #lastStatus: MeasurementStatus | null = null
@@ -122,7 +117,6 @@ export class MeasurementController implements MeasurementPort {
     return Object.freeze({
       ...this.#snapshot,
       startup: this.#startupState,
-      ...(this.#validationState ? { validation: this.#validationState } : {}),
     })
   }
   reset(): void {
@@ -132,7 +126,6 @@ export class MeasurementController implements MeasurementPort {
     this.#startupPending = null
     this.#startupQualifiedHosts = []
     this.#marker++
-    this.#manualRequested = false
     this.#failedAt = null
     this.#snapshot = Object.freeze({
       state: 'idle',
@@ -140,44 +133,6 @@ export class MeasurementController implements MeasurementPort {
       lastAttemptAt: 0,
       host: null,
     })
-  }
-  requestManual(): void {
-    this.#manualRequested = true
-  }
-  requestCatalogValidation(hosts: readonly string[]): void {
-    const settings = this.settings?.get()
-    const representation = this.#lastStatus?.representation
-    if (
-      this.#disposed ||
-      !settings ||
-      !representation ||
-      hosts.length < 1 ||
-      hosts.length > 3 ||
-      new Set(hosts).size !== hosts.length ||
-      hosts.some((host) => !isHkTestCandidate(host) || settings.catalogOverrides[host] !== true)
-    )
-      throw new TypeError('Select enabled HK test candidates in a current video')
-    const context = this.routes.catalogValidationContext(representation)
-    if (!context) throw new TypeError('Catalog validation requires automatic Catalog video mode')
-    if (this.#running || this.#planning || this.#validation) return
-    this.#validation = Object.freeze({ ...context, hosts: Object.freeze([...hosts]) })
-    this.#validationState = Object.freeze({
-      state: 'queued',
-      reason: 'awaiting-eligible-round',
-      hosts: this.#validation.hosts,
-      results: Object.freeze([]),
-    })
-  }
-  #validationCurrent(): boolean {
-    const pending = this.#validation
-    if (!pending) return true
-    if (this.#lastStatus?.representation !== pending.identity.representation) return false
-    const current = this.routes.catalogValidationContext(pending.identity.representation)
-    return (
-      !!current &&
-      current.identity === pending.identity &&
-      current.policyRevision === pending.policyRevision
-    )
   }
   dispose(): void {
     this.#disposed = true
@@ -189,15 +144,6 @@ export class MeasurementController implements MeasurementPort {
     return this.#startupQualifiedHosts
   }
   cancel(reason: string): void {
-    if (this.#validation) {
-      this.#validation = null
-      if (this.#validationState)
-        this.#validationState = Object.freeze({
-          ...this.#validationState,
-          state: 'cancelled',
-          reason,
-        })
-    }
     const running = this.#running
     this.#planning = null
     this.#running = null
@@ -463,7 +409,6 @@ export class MeasurementController implements MeasurementPort {
   tick(status: MeasurementStatus): void {
     if (this.#disposed) return
     this.#lastStatus = status
-    if (!this.#validationCurrent()) this.cancel('validation-context-changed')
     const unsafe = this.#unsafeReason(status)
     if (this.#running && unsafe) {
       this.cancel(unsafe)
@@ -475,7 +420,7 @@ export class MeasurementController implements MeasurementPort {
       this.#snapshot = Object.freeze({
         ...this.#snapshot,
         state: 'waiting',
-        reason: this.#manualRequested ? 'manual-' + unsafe : unsafe,
+        reason: unsafe,
       })
       return
     }
@@ -486,7 +431,6 @@ export class MeasurementController implements MeasurementPort {
   async #tryStart(status: MeasurementStatus): Promise<void> {
     if (!status.representation || !status.demand || this.#running || this.#planning) return
     const planning = {}
-    const validation = this.#validation
     this.#planning = planning
     const planningMarker = this.#marker
     let running: MeasurementWork | null = null
@@ -508,27 +452,13 @@ export class MeasurementController implements MeasurementPort {
         const meta = this.meta.get()
         if (at - (Number(meta.lastChallengeAt) || 0) < COOLDOWN_MS) return
         cursor = Math.max(0, Number(meta.catalogCursor) || 0)
-        if (validation) {
-          if (this.#validation !== validation || !this.#validationCurrent()) return
-          for (const host of validation.hosts) {
-            first = this.routes.challenge(
-              current.representation!,
-              current.demand,
-              false,
-              new Set(),
-              cursor,
-              { ...validation, host },
-            )
-            if (first?.url) break
-          }
-        } else
-          first = this.routes.challenge(
-            current.representation!,
-            current.demand,
-            this.#preferNative,
-            new Set(),
-            cursor,
-          )
+        first = this.routes.challenge(
+          current.representation!,
+          current.demand,
+          this.#preferNative,
+          new Set(),
+          cursor,
+        )
         if (!first?.url) return
         if (
           planningMarker !== this.#marker ||
@@ -560,37 +490,14 @@ export class MeasurementController implements MeasurementPort {
           state: 'waiting',
           reason: cooldown ? 'cross-tab-cooldown' : 'no-stale-candidate',
         })
-        if (validation && !cooldown) this.cancel('no-legal-validation-target')
         return
       }
       this.#preferNative = !this.#preferNative
-      this.#manualRequested = false
       const controller = new AbortController(),
         marker = this.#marker
       running = { controller, marker }
       this.#running = running
-      if (validation && this.#validationState)
-        this.#validationState = Object.freeze({
-          ...this.#validationState,
-          state: 'running',
-          reason: 'probing',
-        })
-      await this.#runRound(planned, status, controller, marker, cursor, validation)
-      if (validation && this.#validation === validation && controller.signal.aborted)
-        this.cancel('validation-round-cancelled')
-      if (
-        validation &&
-        this.#validation === validation &&
-        !controller.signal.aborted &&
-        this.#validationState
-      ) {
-        this.#validationState = Object.freeze({
-          ...this.#validationState,
-          state: 'complete',
-          reason: 'round-complete',
-        })
-        this.#validation = null
-      }
+      await this.#runRound(planned, status, controller, marker, cursor)
     } catch {
       if (
         planningMarker === this.#marker &&
@@ -598,7 +505,6 @@ export class MeasurementController implements MeasurementPort {
         (!running || (this.#running === running && !running.controller.signal.aborted))
       ) {
         this.#failedAt = this.now()
-        if (validation && this.#validation === validation) this.cancel('measurement-error')
         this.#snapshot = Object.freeze({
           ...this.#snapshot,
           state: 'failed',
@@ -618,7 +524,6 @@ export class MeasurementController implements MeasurementPort {
     controller: AbortController,
     marker: number,
     cursor: number,
-    validation: (CatalogValidationContext & { readonly hosts: readonly string[] }) | null,
   ): Promise<void> {
     const context = first.context
     const handle =
@@ -647,12 +552,7 @@ export class MeasurementController implements MeasurementPort {
     for (let index = 0; index < 3 && next?.url && !controller.signal.aborted; index++) {
       const current = this.#lastStatus ?? status
       const unsafe = this.#unsafeReason(current)
-      if (
-        unsafe ||
-        marker !== this.#marker ||
-        current.representation !== status.representation ||
-        (validation && (this.#validation !== validation || !this.#validationCurrent()))
-      ) {
+      if (unsafe || marker !== this.#marker || current.representation !== status.representation) {
         controller.abort(unsafe ?? 'representation-changed')
         break
       }
@@ -687,28 +587,13 @@ export class MeasurementController implements MeasurementPort {
       )
         break
       cursor = nextCursor(cursor)
-      if (validation) {
-        next = null
-        for (const host of validation.hosts) {
-          if (excluded.has(host)) continue
-          next = this.routes.challenge(
-            status.representation!,
-            status.demand!,
-            false,
-            excluded,
-            cursor,
-            { ...validation, host },
-          )
-          if (next?.url) break
-        }
-      } else
-        next = this.routes.challenge(
-          status.representation!,
-          status.demand!,
-          nativeCount === 0 && catalogCount >= 2,
-          excluded,
-          cursor,
-        )
+      next = this.routes.challenge(
+        status.representation!,
+        status.demand!,
+        nativeCount === 0 && catalogCount >= 2,
+        excluded,
+        cursor,
+      )
       if (nativeCount >= 1 && next?.decision.routeType === 'native-signed') next = null
     }
     if (
@@ -764,10 +649,6 @@ export class MeasurementController implements MeasurementPort {
       (controller.signal.aborted && controller.signal.reason !== 'timeout')
     )
       return
-    if (!this.#validationCurrent()) {
-      this.cancel('validation-context-changed')
-      return
-    }
     if (
       usesRange &&
       range &&
@@ -799,31 +680,10 @@ export class MeasurementController implements MeasurementPort {
         !this.#disposed &&
         marker === this.#marker &&
         this.#running?.controller === round &&
-        !round.signal.aborted &&
-        this.#validationCurrent(),
+        !round.signal.aborted,
     )
     if (marker !== this.#marker || this.#running?.controller !== round || round.signal.aborted)
       return
-    if (this.#validationState?.state === 'running') {
-      this.#validationState = Object.freeze({
-        ...this.#validationState,
-        results: Object.freeze(
-          [
-            ...this.#validationState.results,
-            Object.freeze({
-              host: applied.decision.host ?? '',
-              valid: ok,
-              safeMbps:
-                ok && result.elapsedMs > 0
-                  ? ((result.bytes * 8) / result.elapsedMs / 1000) * 0.7
-                  : null,
-              bytes: result.bytes,
-              status: result.status,
-            }),
-          ].slice(0, 3),
-        ),
-      })
-    }
     this.#snapshot = Object.freeze({
       state: ok ? 'complete' : 'failed',
       reason: ok ? 'sample-recorded' : result.directRange ? 'short-response' : result.reason,

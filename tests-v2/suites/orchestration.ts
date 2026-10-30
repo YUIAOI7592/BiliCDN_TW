@@ -215,7 +215,7 @@ async function fixture(
         'remote settings use the same coordination path',
       )
       calls.length = 0
-      await settings.update({ codec: 'hevc' })
+      await settings.update({ blockHttpDns: false })
       assert.strictEqual(
         calls.join(','),
         'visibility',
@@ -277,10 +277,6 @@ async function fixture(
       const commands = new ControlCommands(
         settings,
         {
-          add: (input) => {
-            calls.push('blacklist:' + input.kind)
-            return restrictions.add(input)
-          },
           clear: async () => {
             calls.push('restrictions.clear')
             await restrictions.clear()
@@ -299,7 +295,6 @@ async function fixture(
           },
         },
         {
-          latestVideoHost: () => TRUSTED_CATALOG[0],
           invalidateForUserSetting: () => {
             calls.push('routes.invalidate')
           },
@@ -311,17 +306,12 @@ async function fixture(
           reset: () => {
             calls.push('measurement.reset')
           },
-          requestManual: () => {
-            calls.push('manual')
-          },
-          requestCatalogValidation: () => undefined,
         },
         {
           reset: () => {
             calls.push('recovery.reset')
           },
         },
-        clock.now,
       )
       commands.setOriginalComparison(true)
       assert.strictEqual(
@@ -341,7 +331,7 @@ async function fixture(
   void calls.join(',')
   void 'visibility,routes.invalidate,measurement.reset,recovery.reset'
   calls.length = 0
-  await settings.update({ codec: 'hevc' })
+  await settings.update({ blockHttpDns: false })
   void calls.join(',')
   void 'visibility'
   runtime.reset()
@@ -392,10 +382,6 @@ async function fixture(
   const commands = new ControlCommands(
     settings,
     {
-      add: (input) => {
-        calls.push('blacklist:' + input.kind)
-        return restrictions.add(input)
-      },
       clear: async () => {
         calls.push('restrictions.clear')
         await restrictions.clear()
@@ -414,7 +400,6 @@ async function fixture(
       },
     },
     {
-      latestVideoHost: () => TRUSTED_CATALOG[0],
       invalidateForUserSetting: () => {
         calls.push('routes.invalidate')
       },
@@ -426,29 +411,30 @@ async function fixture(
       reset: () => {
         calls.push('measurement.reset')
       },
-      requestManual: () => {
-        calls.push('manual')
-      },
-      requestCatalogValidation: () => undefined,
     },
     {
       reset: () => {
         calls.push('recovery.reset')
       },
     },
-    clock.now,
   )
   commands.setOriginalComparison(true)
   void calls.join(',')
   void 'comparison,measurement.reset,recovery.reset'
   calls.length = 0
-  await commands.blacklistLatestVideo()
+  await restrictions.add({
+    host: TRUSTED_CATALOG[0],
+    kind: 'all',
+    type: 'black',
+    reason: 'user',
+    expireAt: clock.now() + 60000,
+  })
   if (scenario === 1)
     return async () => {
       assert.strictEqual(
         calls.join(','),
-        'blacklist:all,routes.invalidate',
-        'blacklist command persists before route invalidation',
+        '',
+        'existing restriction data does not recreate the removed manual command',
       )
       assert.strictEqual(
         restrictions.has(TRUSTED_CATALOG[0], 'audio', 'black'),

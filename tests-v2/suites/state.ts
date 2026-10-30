@@ -434,7 +434,7 @@ async function fixture(
       plannedRoutes.startupOptions(hintedUrl)?.candidates[0] ?? null
       plannedRep ? plannedRoutes.challenge(plannedRep, plannedDemand, false) : null
       const plannedAdapter = new PlayurlAdapter(
-        new PlayurlController(authoritySession, plannedVault, plannedRoutes, authoritySettings),
+        new PlayurlController(authoritySession, plannedVault, plannedRoutes),
       )
       const trustedPayload = {
         data: {
@@ -511,7 +511,7 @@ async function fixture(
     ? plannedRoutes.challenge(plannedRep, plannedDemand, false)
     : null
   const plannedAdapter = new PlayurlAdapter(
-    new PlayurlController(authoritySession, plannedVault, plannedRoutes, authoritySettings),
+    new PlayurlController(authoritySession, plannedVault, plannedRoutes),
   )
   const trustedPayload = {
     data: {
@@ -983,7 +983,11 @@ async function fixture(
       legacyOnly.set('cdnHealth', { poisoned: true })
       legacyOnly.set('workerStats_v1', { created: 99 })
       const freshSettings = scope.own(new SettingsStore(legacyOnly, () => now))
-      assert.strictEqual(freshSettings.get().codec, 'av1', 'v2 settings ignore every v1 key')
+      assert.strictEqual(
+        freshSettings.get().earlyRetryEnabled,
+        true,
+        'v2 settings ignore every v1 key',
+      )
       assert.strictEqual(
         [...legacyOnly.values.keys()].includes('bilicdn.v2.settings'),
         false,
@@ -1052,7 +1056,7 @@ async function fixture(
   legacyOnly.set('cdnHealth', { poisoned: true })
   legacyOnly.set('workerStats_v1', { created: 99 })
   const freshSettings = scope.own(new SettingsStore(legacyOnly, () => now))
-  void freshSettings.get().codec
+  void freshSettings.get().earlyRetryEnabled
   void 'av1'
   void [...legacyOnly.values.keys()].includes('bilicdn.v2.settings')
   void false
@@ -1074,9 +1078,9 @@ async function fixture(
         'existing schema 2 settings without Native toggle default off',
       )
       assert.strictEqual(
-        nativeSettings.get().codec,
-        'hevc',
-        'missing Native toggle preserves existing schema 2 preferences',
+        'codec' in nativeSettings.get(),
+        false,
+        'obsolete codec preference is ignored without changing Native permission',
       )
       await nativeSettings.update({ considerNativeSources: true })
       assert.strictEqual(
@@ -1124,7 +1128,7 @@ async function fixture(
     }
   void nativeSettings.get().considerNativeSources
   void false
-  void nativeSettings.get().codec
+  void ('codec' in nativeSettings.get())
   void 'hevc'
   await nativeSettings.update({ considerNativeSources: true })
   void nativeSettings.get().considerNativeSources
@@ -1336,7 +1340,7 @@ async function fixture(
     createRuntimeIds(),
   )
   const reusePlayurl = new PlayurlAdapter(
-    new PlayurlController(reuseSession, reuseVault, reuseRoutes, reuseSettings),
+    new PlayurlController(reuseSession, reuseVault, reuseRoutes),
   )
   const reusedPageRoot =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/reuse/page.m4s?signature=page'
@@ -1546,12 +1550,7 @@ async function fixture(
         createRuntimeIds(),
       )
       const epochReuseAdapter = new PlayurlAdapter(
-        new PlayurlController(
-          epochReuseSession,
-          epochReuseVault,
-          epochReuseRoutes,
-          epochReuseSettings,
-        ),
+        new PlayurlController(epochReuseSession, epochReuseVault, epochReuseRoutes),
       )
       const oldEpochRoot =
         'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/epoch-reuse/old/video.m4s?signature=old-epoch'
@@ -1631,7 +1630,7 @@ async function fixture(
     createRuntimeIds(),
   )
   const epochReuseAdapter = new PlayurlAdapter(
-    new PlayurlController(epochReuseSession, epochReuseVault, epochReuseRoutes, epochReuseSettings),
+    new PlayurlController(epochReuseSession, epochReuseVault, epochReuseRoutes),
   )
   const oldEpochRoot =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/epoch-reuse/old/video.m4s?signature=old-epoch'

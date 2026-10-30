@@ -863,13 +863,13 @@ test('R02 a pending single-host edit merges the latest remote settings under loc
   const pending = f.commands.setCatalogEnabled(host, false)
   f.storage.remote('bilicdn.v2.settings', {
     ...f.settings.get(),
-    codec: 'hevc',
+    blockHttpDns: false,
     catalogOverrides: { [remoteHost]: false },
     updatedAt: f.clock.now() + 1,
   })
   await f.storage.drain()
   await pending
-  assert.equal(f.settings.get().codec, 'hevc')
+  assert.equal(f.settings.get().blockHttpDns, false)
   assert.deepEqual(f.settings.get().catalogOverrides, { [remoteHost]: false, [host]: false })
   await assert.rejects(f.commands.setCatalogEnabled('external.invalid', true), TypeError)
 })

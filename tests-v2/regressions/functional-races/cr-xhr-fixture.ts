@@ -110,7 +110,7 @@ export async function fixture(
   vault.reset(state.generation, state.epoch)
   const ids = createRuntimeIds((bytes) => bytes.fill(12))
   const routes = new RouteCoordinator(clock, session, settings, restrictions, evidence, vault, ids)
-  const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes, settings))
+  const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes))
   const fakeWindow = {
     XMLHttpRequest: NativeXhr,
     fetch: (async (_input: RequestInfo | URL) =>

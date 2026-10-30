@@ -213,7 +213,7 @@ function fixture(t: TestContext) {
     effects.recoverCalls++
     return originalRecover(...args)
   }
-  const content = new PlayurlController(session, vault, routes, settings),
+  const content = new PlayurlController(session, vault, routes),
     playurl = new PlayurlAdapter(content)
   class Player extends PlayerAdapter {
     protected override player() {

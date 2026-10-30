@@ -55,8 +55,6 @@ export function renderOverview(
   }
   if (measurement.range)
     summary.textContent += `\n健康探測：${measurement.range.mode === 'middle' ? '中段' : '首段'}｜${measurement.range.sizeKnown ? '大小已驗證' : '大小未知'}（不代表未快取）`
-  if (measurement.validation)
-    summary.textContent += `\n香港候選測試：${plain(measurement.validation.state, { queued: '等待資格或冷卻', running: '測試中', complete: '本輪結束', cancelled: '已撤銷' })}｜目標 ${measurement.validation.hosts.join('、')}｜已取得 ${measurement.validation.results.length} 筆結果（詳細結果見診斷）`
   const hook = deps.transport.snapshot()
   const retry = deps.earlyRetry?.snapshot()
   if (retry)
@@ -188,15 +186,6 @@ export function renderOverview(
   body.append(summary)
   const actionGrid = document.createElement('div')
   actionGrid.className = 'grid'
-  const measurementButton = createButton('安排測速（不會立即換 CDN）', () => {
-    deps.commands.requestMeasurement()
-    actions.overview()
-  })
-  const blacklistButton = createButton(
-    '封鎖最近成功回應的影片 CDN 24 小時（影片＋音訊）',
-    () => actions.refreshAfter(deps.commands.blacklistLatestVideo(), () => actions.overview()),
-    'danger',
-  )
   actionGrid.append(
     createButton(
       settings.disabled ? '啟用腳本' : '停用腳本',
@@ -208,8 +197,6 @@ export function renderOverview(
     ),
     createButton('CDN 與播放設定', () => actions.settings()),
     createButton('查看診斷報告', () => actions.diagnostics()),
-    measurementButton,
-    blacklistButton,
     createButton(
       '清除測速紀錄、黑名單與故障標記',
       () => actions.refreshAfter(deps.commands.clearLearning(), () => actions.overview()),
@@ -221,14 +208,6 @@ export function renderOverview(
       'danger',
     ),
   )
-  if (!deps.routes.latestVideoHost()) {
-    blacklistButton.disabled = true
-    blacklistButton.textContent = '最近 60 秒沒有成功的影片請求，暫時無法指定要封鎖的 CDN'
-  }
-  if (deps.routes.isOriginalComparison()) {
-    measurementButton.disabled = true
-    measurementButton.textContent = '對照測試期間不測速'
-  }
   body.append(actionGrid)
   foot.append(createButton('關閉', () => actions.close()))
 }

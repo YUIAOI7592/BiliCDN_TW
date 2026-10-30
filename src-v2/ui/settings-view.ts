@@ -1,10 +1,4 @@
-import {
-  DEFAULT_UNAVAILABLE_HOSTS,
-  TRUSTED_CATALOG,
-  HK_TEST_CANDIDATES,
-  isHkTestCandidate,
-} from '../domain/catalog.ts'
-import type { CodecPreference } from '../state/settings-model.ts'
+import { DEFAULT_UNAVAILABLE_HOSTS, TRUSTED_CATALOG, isHkTestCandidate } from '../domain/catalog.ts'
 import type {
   ControlViewFrame,
   ControlViewActions,
@@ -96,26 +90,6 @@ export function renderSettings(
       '只影響這個分頁。新影片只用 B 站提供的原始或備用網址；被禁止的 CDN 仍不會使用。測試期間不測速，也不自動換 CDN。請先開新測試分頁、啟用後再點進影片；已經交給播放器的網址不會倒回重選。重新整理頁面即可退出。',
     ),
   )
-  const codec = document.createElement('select')
-  for (const value of ['av1', 'hevc', 'avc', 'auto'] as CodecPreference[])
-    codec.append(
-      new Option(
-        { av1: 'AV1', hevc: 'H.265／HEVC', avc: 'H.264／AVC', auto: '由 B 站決定' }[value],
-        value,
-      ),
-    )
-  codec.value = settings.codec
-  codec.addEventListener('change', (event) => {
-    if (event.isTrusted)
-      void deps.commands.updateSettings({ codec: codec.value as CodecPreference })
-  })
-  rows.append(
-    createRow(
-      '偏好的影片格式',
-      codec,
-      '下次取得新的影片播放網址時生效；這不會強制改變你現在的播放倍速。',
-    ),
-  )
   rows.append(
     createToggle(
       '阻止網頁使用 WebRTC',
@@ -140,29 +114,6 @@ export function renderSettings(
       '開啟後會多記錄選路與測速資訊；關閉時仍會保留重要故障。記錄只存在目前分頁，重新整理後清空。',
     ),
   )
-  const validationNote = document.createElement('p')
-  validationNote.className = 'detail'
-  validationNote.textContent =
-    '香港測試：先勾選候選並使用自動 CDN、關閉原生來源；安排後仍須等待前景、播放資格及共用十分鐘冷卻。固定主機用於另一個供片窗口，不會執行健康探測。'
-  const validate = createButton('安排香港候選測試', () => {
-    try {
-      const selected = HK_TEST_CANDIDATES.filter(
-        (host) => deps.settings.get().catalogOverrides[host] === true,
-      )
-      deps.commands.requestCatalogValidation(selected)
-      actions.overview()
-    } catch {
-      validationNote.textContent =
-        '未能安排：請確認已勾選香港候選、目前有影片表示，並處於自動 CDN、原生來源關閉且非對照模式。'
-    }
-  })
-  validate.disabled =
-    settings.disabled ||
-    !!settings.fixedHost ||
-    settings.considerNativeSources ||
-    deps.routes.isOriginalComparison() ||
-    !HK_TEST_CANDIDATES.some((host) => settings.catalogOverrides[host] === true)
-  rows.append(validate, validationNote)
   for (const host of TRUSTED_CATALOG) {
     const defaultEnabled = !DEFAULT_UNAVAILABLE_HOSTS.has(host)
     const enabled = settings.catalogOverrides[host] ?? defaultEnabled
@@ -173,7 +124,7 @@ export function renderSettings(
         (row) =>
           `${restrictionLabel(row.type)}（${row.kind === 'all' ? '影片＋音訊' : row.kind === 'video' ? '影片' : '音訊'}）`,
       )
-    const detail = `${isHkTestCandidate(host) ? '測試候選，尚未實測；預設關閉，勾選只代表允許選路' : defaultEnabled ? '預設可用的內建 CDN' : '預設標為不可用；勾選後才允許'}${penalties.length ? `｜目前仍被禁止：${penalties.join('、')}；勾選不會解除禁止` : ''}`
+    const detail = `${isHkTestCandidate(host) ? '香港節點；勾選只代表允許選路' : defaultEnabled ? '預設可用的內建 CDN' : '預設標為不可用；勾選後才允許'}${penalties.length ? `｜目前仍被禁止：${penalties.join('、')}；勾選不會解除禁止` : ''}`
     rows.append(
       createToggle(
         host,

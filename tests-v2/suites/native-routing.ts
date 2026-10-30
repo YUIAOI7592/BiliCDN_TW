@@ -64,7 +64,7 @@ async function fixture(
     createRuntimeIds(),
   )
   const transitionAdapter = new PlayurlAdapter(
-    new PlayurlController(transitionSession, transitionVault, transitionRoutes, transitionSettings),
+    new PlayurlController(transitionSession, transitionVault, transitionRoutes),
   )
   const transitionItems = [1080, 720].map((height, index) => ({
     id: 80 - index * 16,
@@ -192,7 +192,7 @@ async function fixture(
         createRuntimeIds(),
       )
       const catalogAdapter = new PlayurlAdapter(
-        new PlayurlController(catalogSession, catalogVault, catalogRoutes, catalogSettings),
+        new PlayurlController(catalogSession, catalogVault, catalogRoutes),
       )
       const catalogVideoRoot =
         'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-only/video.m4s?signature=video-root'
@@ -297,7 +297,7 @@ async function fixture(
     createRuntimeIds(),
   )
   const catalogAdapter = new PlayurlAdapter(
-    new PlayurlController(catalogSession, catalogVault, catalogRoutes, catalogSettings),
+    new PlayurlController(catalogSession, catalogVault, catalogRoutes),
   )
   const catalogVideoRoot =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-only/video.m4s?signature=video-root'
@@ -1204,7 +1204,7 @@ async function fixture(
         createRuntimeIds(),
       )
       const aliasAdapter = new PlayurlAdapter(
-        new PlayurlController(aliasSession, aliasVault, aliasRoutes, aliasSettings),
+        new PlayurlController(aliasSession, aliasVault, aliasRoutes),
       )
       const aliasRoot =
         'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/aliases/primary.m4s?signature=primary'
@@ -1264,7 +1264,7 @@ async function fixture(
         createRuntimeIds(),
       )
       const nestedAdapter = new PlayurlAdapter(
-        new PlayurlController(nestedSession, nestedVault, nestedRoutes, nestedSettings),
+        new PlayurlController(nestedSession, nestedVault, nestedRoutes),
       )
       const nestedVideoRoot =
         'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/video.m4s?signature=video'
@@ -1342,7 +1342,7 @@ async function fixture(
     createRuntimeIds(),
   )
   const aliasAdapter = new PlayurlAdapter(
-    new PlayurlController(aliasSession, aliasVault, aliasRoutes, aliasSettings),
+    new PlayurlController(aliasSession, aliasVault, aliasRoutes),
   )
   const aliasRoot =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/aliases/primary.m4s?signature=primary'
@@ -1389,7 +1389,7 @@ async function fixture(
     createRuntimeIds(),
   )
   const nestedAdapter = new PlayurlAdapter(
-    new PlayurlController(nestedSession, nestedVault, nestedRoutes, nestedSettings),
+    new PlayurlController(nestedSession, nestedVault, nestedRoutes),
   )
   const nestedVideoRoot =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/video.m4s?signature=video'

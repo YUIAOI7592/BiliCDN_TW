@@ -29,7 +29,7 @@ export const fixture = (scope: ReturnType<typeof testScope>, storage = new FakeS
     vault,
     createRuntimeIds(),
   )
-  const controller = new PlayurlController(session, vault, routes, settings)
+  const controller = new PlayurlController(session, vault, routes)
   const adapter = new PlayurlAdapter(controller)
   return {
     clock,

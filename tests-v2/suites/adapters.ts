@@ -939,7 +939,7 @@ async function fixture(
     createRuntimeIds(),
   )
   const outputAdapter = new PlayurlAdapter(
-    new PlayurlController(outputSession, outputVault, outputRoutes, outputSettings),
+    new PlayurlController(outputSession, outputVault, outputRoutes),
   )
   const forbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/test/output/1.m4s?k=1'
   const outputItem = {

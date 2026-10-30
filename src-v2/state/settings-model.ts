@@ -1,5 +1,3 @@
-export type CodecPreference = 'av1' | 'hevc' | 'avc' | 'auto'
-
 export interface SettingsState {
   readonly schema: 2
   readonly disabled: boolean
@@ -10,7 +8,6 @@ export interface SettingsState {
   readonly healthMiddleRangeEnabled: boolean
   readonly backupFamilyDiversityEnabled: boolean
   readonly catalogOverrides: Readonly<Record<string, boolean>>
-  readonly codec: CodecPreference
   readonly blockWebRtc: boolean
   readonly blockHttpDns: boolean
   readonly verbose: boolean

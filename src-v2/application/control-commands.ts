@@ -33,7 +33,6 @@ export class ControlCommands implements ControlCommandPort {
     private readonly routes: ControlRoutesPort,
     private readonly measurement: ControlMeasurementPort,
     private readonly recovery: ControlRecoveryPort,
-    private readonly now: () => number,
     private readonly earlyRetry?: EarlyRetryPort,
   ) {}
   updateSettings(change: SettingsChange): Promise<SettingsState> {
@@ -47,24 +46,6 @@ export class ControlCommands implements ControlCommandPort {
     this.routes.setOriginalComparison(enabled)
     this.measurement.reset()
     this.recovery.reset()
-  }
-  requestMeasurement(): void {
-    this.measurement.requestManual()
-  }
-  requestCatalogValidation(hosts: readonly string[]): void {
-    this.measurement.requestCatalogValidation(hosts)
-  }
-  async blacklistLatestVideo(): Promise<void> {
-    const host = this.routes.latestVideoHost()
-    if (host)
-      await this.restrictions.add({
-        host,
-        type: 'black',
-        kind: 'all',
-        reason: 'user',
-        expireAt: this.now() + 24 * 60 * 60 * 1000,
-      })
-    this.routes.invalidateForUserSetting()
   }
   async clearLearning(): Promise<void> {
     await this.evidence.clear()

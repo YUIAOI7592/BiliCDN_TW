@@ -33,7 +33,7 @@ export interface SettingsViewRouteReader {
 
 export interface SettingsViewCommands extends Pick<
   ControlCommandPort,
-  'updateSettings' | 'setCatalogEnabled' | 'setOriginalComparison' | 'requestCatalogValidation'
+  'updateSettings' | 'setCatalogEnabled' | 'setOriginalComparison'
 > {}
 
 export interface SettingsViewDependencies {

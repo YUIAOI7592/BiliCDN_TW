@@ -1,8 +1,8 @@
 import { isCatalogHost } from '../domain/catalog.ts'
 import type { StoragePort } from '../platform/storage-port.ts'
-import type { CodecPreference, SettingsChange, SettingsState } from './settings-model.ts'
+import type { SettingsChange, SettingsState } from './settings-model.ts'
 import type { SettingsPort } from './settings-ports.ts'
-export type { CodecPreference, SettingsChange, SettingsState } from './settings-model.ts'
+export type { SettingsChange, SettingsState } from './settings-model.ts'
 
 export const SETTINGS_KEY = 'bilicdn.v2.settings'
 
@@ -17,7 +17,6 @@ export const defaultSettings = (now: number): SettingsState =>
     healthMiddleRangeEnabled: true,
     backupFamilyDiversityEnabled: true,
     catalogOverrides: Object.freeze({}),
-    codec: 'av1',
     blockWebRtc: true,
     blockHttpDns: true,
     verbose: false,
@@ -34,9 +33,6 @@ const parseSettings = (value: unknown, now: number): SettingsState => {
       if (isCatalogHost(host) && typeof enabled === 'boolean') overrides[host] = enabled
     }
   }
-  const codec: CodecPreference = ['av1', 'hevc', 'avc', 'auto'].includes(String(raw.codec))
-    ? (raw.codec as CodecPreference)
-    : 'av1'
   const fixedHost =
     typeof raw.fixedHost === 'string' && isCatalogHost(raw.fixedHost) ? raw.fixedHost : null
   return Object.freeze({
@@ -49,7 +45,6 @@ const parseSettings = (value: unknown, now: number): SettingsState => {
     healthMiddleRangeEnabled: raw.healthMiddleRangeEnabled !== false,
     backupFamilyDiversityEnabled: raw.backupFamilyDiversityEnabled !== false,
     catalogOverrides: Object.freeze(overrides),
-    codec,
     blockWebRtc: raw.blockWebRtc !== false,
     blockHttpDns: raw.blockHttpDns !== false,
     verbose: raw.verbose === true,
