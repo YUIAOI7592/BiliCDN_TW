@@ -30,22 +30,3 @@ export function createRow(label: string, control: HTMLElement, detail = ''): HTM
   row.append(text, control)
   return row
 }
-
-export function createToggle(
-  label: string,
-  checked: boolean,
-  update: (value: boolean) => void | Promise<unknown>,
-  detail = '',
-): HTMLDivElement {
-  const input = document.createElement('input')
-  input.type = 'checkbox'
-  input.checked = checked
-  input.addEventListener('change', (event) => {
-    if (!event.isTrusted) {
-      input.checked = checked
-      return
-    }
-    void update(input.checked)
-  })
-  return createRow(label, input, detail)
-}

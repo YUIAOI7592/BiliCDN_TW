@@ -4,11 +4,12 @@ import type {
   ControlCenterSnapshot,
   ShowControlCenterPort,
 } from './control-center-ports.ts'
-import type { ControlViewActions } from './view-ports.ts'
+import type { ControlViewActions, ControlViewBinding, ControlPage } from './view-ports.ts'
 import { createControlCenterStyle } from './styles.ts'
 import { createButton } from './elements.ts'
 import { renderOverview } from './overview-view.ts'
 import { renderSettings } from './settings-view.ts'
+import { renderCdn } from './cdn-view.ts'
 import { renderDiagnostics } from './diagnostics-view.ts'
 export type { ControlCenterDependencies } from './control-center-ports.ts'
 export type { ControlCenterSnapshot } from './control-center-ports.ts'
@@ -21,6 +22,12 @@ export class ControlCenter implements ShowControlCenterPort {
   #open = false
   #releaseKeyboard: (() => void) | null = null
   #pendingCopy: object | null = null
+  #binding: ControlViewBinding | null = null
+  #subscriptions: (() => void)[] = []
+  #frame: { body: HTMLDivElement; foot: HTMLElement } | null = null
+  #tabs: Partial<Record<ControlPage, HTMLButtonElement>> = {}
+  #power: HTMLButtonElement | null = null
+  #notice: HTMLElement | null = null
   constructor(private readonly deps: ControlCenterDependencies) {}
 
   show(opener?: HTMLElement | null): void {
@@ -29,13 +36,23 @@ export class ControlCenter implements ShowControlCenterPort {
       opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null)
     this.#ensure()
     this.#observeKeyboard()
-    this.#renderOverview()
+    this.#releaseView()
+    this.#shell()
+    this.#navigate('overview')
+    for (const source of [this.deps.settings, this.deps.monitor, this.deps.routes]) {
+      if (source.subscribe) this.#subscriptions.push(source.subscribe(() => this.#refresh()))
+    }
   }
 
   close(): void {
     this.#open = false
     this.#viewVersion++
     this.#clearKeyboard()
+    this.#releaseView()
+    this.#frame = null
+    this.#tabs = {}
+    this.#power = null
+    this.#notice = null
     if (this.#shadow) this.#shadow.replaceChildren(createControlCenterStyle())
     const target = this.#opener?.isConnected
       ? this.#opener
@@ -93,62 +110,118 @@ export class ControlCenter implements ShowControlCenterPort {
     }
   }
 
-  #shell(title: string): { body: HTMLDivElement; foot: HTMLElement } {
-    const version = ++this.#viewVersion
+  #releaseView(): void {
+    for (const release of this.#subscriptions.splice(0)) release()
+    this.#binding?.dispose?.()
+    this.#binding = null
+  }
+
+  #shell(): void {
     const backdrop = document.createElement('div')
     backdrop.className = 'backdrop'
     const dialog = document.createElement('section')
     dialog.className = 'dialog'
     dialog.setAttribute('role', 'dialog')
     dialog.setAttribute('aria-modal', 'true')
+    dialog.setAttribute('aria-label', 'BiliCDN 控制中心')
     const head = document.createElement('header')
     head.className = 'head'
+    const brand = document.createElement('div')
+    brand.className = 'brand'
     const heading = document.createElement('h2')
-    heading.textContent = title
-    const close = createButton('關閉', () => this.close())
+    heading.textContent = 'BiliCDN 控制中心'
+    const version = document.createElement('p')
+    version.className = 'detail'
+    version.textContent = 'v' + (GM_info?.script?.version ?? '未知') + ' · 播放與路線狀態'
+    brand.append(heading, version)
+    const power = createButton('', () => {
+      if (!this.#open || this.#power !== power) return
+      return this.#refreshAfter(
+        this.deps.commands.updateSettings({ disabled: !this.deps.settings.get().disabled }),
+      )
+    })
+    power.className = 'btn power'
+    this.#power = power
+    const close = createButton('關閉', () => {
+      if (this.#open && this.#power === power) this.close()
+    })
     close.dataset.action = 'close'
-    head.append(heading, close)
+    head.append(brand, power, close)
+    const nav = document.createElement('nav')
+    nav.className = 'tabs'
+    nav.setAttribute('aria-label', '控制中心頁面')
+    this.#tabs = {}
+    for (const [page, label] of [
+      ['overview', '總覽'],
+      ['cdn', 'CDN'],
+      ['settings', '播放設定'],
+      ['diagnostics', '診斷'],
+    ] as const) {
+      const tab = createButton(label, () => {
+        if (this.#open && this.#tabs[page] === tab) this.#navigate(page)
+      })
+      tab.className = 'tab'
+      this.#tabs[page] = tab
+      nav.append(tab)
+    }
     const body = document.createElement('div')
     body.className = 'body'
     const foot = document.createElement('footer')
     foot.className = 'foot'
-    dialog.append(head, body, foot)
+    const notice = document.createElement('p')
+    notice.className = 'notice'
+    notice.setAttribute('aria-live', 'polite')
+    this.#notice = notice
+    dialog.append(head, nav, body, foot, notice)
     backdrop.append(dialog)
+    this.#frame = { body, foot }
     this.#shadow?.replaceChildren(createControlCenterStyle(), backdrop)
     queueMicrotask(() => {
-      if (this.#ownsView(version)) close.focus()
+      if (this.#open && this.#power === power && close.isConnected) close.focus()
     })
-    return { body, foot }
   }
 
-  #viewActions(): ControlViewActions {
-    return {
-      overview: () => this.#renderOverview(),
-      settings: () => this.#renderSettings(),
-      diagnostics: () => this.#renderDiagnostics(),
-      close: () => this.close(),
-      refreshAfter: (command, render) => this.#refreshAfter(command, render),
-    }
-  }
-  #renderOverview(): void {
-    const frame = this.#shell('BiliCDN v2 控制中心')
-    renderOverview(this.deps, frame, this.#viewActions())
-  }
-  #renderSettings(): void {
-    const frame = this.#shell('CDN 與播放設定')
-    renderSettings(this.deps, frame, this.#viewActions())
-  }
-  #renderDiagnostics(): void {
-    const frame = this.#shell('診斷報告')
-    renderDiagnostics(this.deps.diagnostics, frame, {
-      overview: () => this.#renderOverview(),
-      refresh: () => this.#renderDiagnostics(),
-      report: () => this.deps.diagnostics.buildReport(this.#readModel()),
-      captureCopy: () => {
-        const version = this.#viewVersion
-        return (report, button, status) => this.#copyReport(report, button, status, version)
+  #navigate(page: ControlPage): void {
+    if (!this.#frame) return
+    const version = ++this.#viewVersion
+    this.#binding?.dispose?.()
+    this.#binding = null
+    this.#frame.body.replaceChildren()
+    this.#frame.foot.replaceChildren()
+    for (const [name, tab] of Object.entries(this.#tabs))
+      tab.setAttribute('aria-current', name === page ? 'page' : 'false')
+    if (this.#notice) this.#notice.textContent = ''
+    const actions: ControlViewActions = {
+      model: () => this.#readModel(),
+      ownsView: () => this.#ownsView(version),
+      refresh: () => {
+        if (this.#ownsView(version)) this.#refresh()
       },
-    })
+      refreshAfter: (command) => this.#refreshAfter(command),
+    }
+    this.#binding =
+      page === 'overview'
+        ? renderOverview(this.#frame, actions, this.deps.now)
+        : page === 'cdn'
+          ? renderCdn(this.deps, this.#frame, actions)
+          : page === 'settings'
+            ? renderSettings(this.deps, this.#frame, actions)
+            : renderDiagnostics(this.deps, this.#frame, {
+                ...actions,
+                report: () => this.deps.diagnostics.buildReport(this.#readModel(true)),
+                copy: (report, button, status) => this.#copyReport(report, button, status, version),
+              })
+    this.#refresh()
+  }
+
+  #refresh(): void {
+    if (!this.#open || !this.#host?.isConnected) return
+    if (this.#power) {
+      const enabled = !this.deps.settings.get().disabled
+      this.#power.textContent = enabled ? '停用腳本' : '啟用腳本'
+      this.#power.setAttribute('aria-pressed', String(enabled))
+    }
+    this.#binding?.refresh(this.#readModel())
   }
 
   async #copyReport(
@@ -204,15 +277,17 @@ export class ControlCenter implements ShowControlCenterPort {
     }
   }
 
-  #readModel(): ControlCenterSnapshot {
+  #readModel(includeEvidence = false): ControlCenterSnapshot {
     const now = this.deps.now(),
-      evidence = this.deps.evidence
-        .list()
-        .slice(0, 96)
-        .map((row) => ({ host: row.host, kind: row.kind, ...evidenceMetrics(row, now) }))
+      evidence = includeEvidence
+        ? this.deps.evidence
+            .list()
+            .slice(0, 96)
+            .map((row) => ({ host: row.host, kind: row.kind, ...evidenceMetrics(row, now) }))
+        : []
     return Object.freeze({
       version: GM_info?.script?.version ?? '2.1.1',
-      releaseStage: 'test',
+      releaseStage: 'stable',
       settings: this.deps.settings.get(),
       session: this.deps.session.get(),
       monitor: this.deps.monitor.snapshot(),
@@ -230,9 +305,16 @@ export class ControlCenter implements ShowControlCenterPort {
     return this.#open && this.#viewVersion === version
   }
 
-  async #refreshAfter(command: Promise<unknown>, render: () => void): Promise<void> {
+  async #refreshAfter(command: Promise<unknown>): Promise<void> {
     const version = this.#viewVersion
-    await command
-    if (this.#ownsView(version)) render()
+    try {
+      await command
+      if (this.#ownsView(version)) this.#refresh()
+    } catch {
+      if (this.#ownsView(version)) {
+        this.#refresh()
+        if (this.#notice) this.#notice.textContent = '設定未能保存，請稍後再試。'
+      }
+    }
   }
 }

@@ -133,6 +133,13 @@ class Element {
     return event
   }
   focusCount = 0
+  click() {
+    this.emit('click', '', false)
+  }
+  remove() {
+    if (this.parent) this.parent.children = this.parent.children.filter((child) => child !== this)
+    this.parent = null
+  }
   focus(_options?: unknown) {
     this.focusCount++
   }
@@ -156,9 +163,10 @@ function copyUi(t: TestContext) {
       gmCalls.push({ text, format })
     },
   })
-  f.button('查看診斷報告').emit('click')
+  f.button('診斷').emit('click')
   f.clock.advance(0)
   const report = () => {
+    if (!f.doc.flatten().some((e) => e.tag === 'textarea')) f.button('查看完整報告').emit('click')
     const value = f.doc.flatten().find((e) => e.tag === 'textarea')
     assert.ok(value)
     return value
@@ -171,6 +179,7 @@ function copyUi(t: TestContext) {
   const native = (clipboard: { writeText(text: string): Promise<void> }) => {
     f.scope.defineGlobal('navigator', { configurable: true, value: { clipboard } })
   }
+  report()
   return { ...f, gmCalls, report, status, native, copy: () => f.button('複製報告') }
 }
 
@@ -216,7 +225,7 @@ test('UP141-DIAG overview reports conservative throughput, demand and rejected a
     },
   })
   f.center.show()
-  const text = f.doc.flatten().find((e) => e.className === 'summary')!.textContent
+  const text = readSummary(f)!.textContent
   assert.match(text, /保守吞吐 12\.00 Mbps｜需求 8\.00 Mbps｜餘裕 1\.50 倍/)
   assert.match(text, /候選限制：.*黑名單/)
   f.clock.advance(0)
@@ -238,7 +247,7 @@ test('UP141-DIAG qualified early release displays measured waiting and an unambi
     },
   })
   f.center.show()
-  const text = f.doc.flatten().find((e) => e.className === 'summary')!.textContent
+  const text = readSummary(f)!.textContent
   assert.match(
     text,
     /起播前測試：已測試並選好起播路線｜等待 376 ms｜結束：已找到足夠快的候選，提早放行/,
@@ -266,7 +275,7 @@ for (const [reason, elapsedMs, expected] of [
       },
     })
     f.center.show()
-    const text = f.doc.flatten().find((e) => e.className === 'summary')!.textContent
+    const text = readSummary(f)!.textContent
     assert.ok(text.includes(expected))
     assert.doesNotMatch(text, /Infinity|NaN/)
     if (!Number.isFinite(elapsedMs)) assert.doesNotMatch(text, /等待 \d+ ms/)
@@ -292,7 +301,7 @@ for (const [mode, sizeKnown, expected] of [
       ),
     })
     f.center.show()
-    const text = f.doc.flatten().find((e) => e.className === 'summary')!.textContent
+    const text = readSummary(f)!.textContent
     assert.ok(text.includes(expected))
     assert.doesNotMatch(text, /example\.invalid|private-path|summary-secret|123456789|1048576/)
   })
@@ -317,7 +326,7 @@ for (const [kind, expected] of [
       ),
     })
     f.center.show()
-    const text = f.doc.flatten().find((e) => e.className === 'summary')!.textContent
+    const text = readSummary(f)!.textContent
     assert.ok(text.includes(`播放入口：${expected}`))
     assert.doesNotMatch(text, /https:|playview\?|987654|summary-secret|cookie-secret|player-secret/)
   })
@@ -355,7 +364,7 @@ for (const [label, safeMbps, ratio] of [
       },
     })
     f.center.show()
-    const text = f.doc.flatten().find((e) => e.className === 'summary')!.textContent
+    const text = readSummary(f)!.textContent
     assert.doesNotMatch(text, /保守吞吐|需求 (?:Infinity|NaN)|餘裕 (?:Infinity|NaN)/)
     if (ratio === null || !Number.isFinite(ratio)) assert.match(text, /速度樣本不足/)
   })
@@ -373,46 +382,93 @@ test('UP141-DIAG summaries are read on opening and add no periodic rendering or 
   const tasks = f.clock.pendingCount
   f.center.show()
   f.clock.advance(0)
-  assert.equal(reads, 1)
+  const initialReads = reads
+  assert.ok(initialReads > 0)
   assert.equal(f.clock.pendingCount, tasks)
   f.clock.advance(2000)
-  assert.equal(reads, 1, 'monitor ticks must not serialize or render this summary')
+  assert.equal(
+    reads,
+    initialReads + 2,
+    'the existing one-second monitor tick refreshes the compact read model',
+  )
   assert.equal(f.clock.pendingCount, tasks)
   assert.equal(f.storage.tasks.length, 0)
 })
 
-test('control-center views preserve overview text, defaults, and complete diagnostic report', (t) => {
+test('CC39-UI report export only follows trusted action and releases the owned URL on navigation', (t) => {
+  const f = copyUi(t)
+  const created: Blob[] = [],
+    revoked: string[] = []
+  f.scope.defineGlobal('URL', {
+    configurable: true,
+    value: {
+      createObjectURL: (blob: Blob) => {
+        created.push(blob)
+        return 'blob:owned-report'
+      },
+      revokeObjectURL: (url: string) => {
+        revoked.push(url)
+      },
+    },
+  })
+  const button = f.button('匯出報告')
+  button.emit('click', '', false)
+  assert.equal(created.length, 0)
+  button.emit('click')
+  assert.equal(created.length, 1)
+  assert.equal(created[0]!.type, 'application/json;charset=utf-8')
+  assert.deepEqual(revoked, [])
+  f.button('總覽').emit('click')
+  assert.deepEqual(revoked, ['blob:owned-report'])
+  button.emit('click')
+  assert.equal(created.length, 1)
+  f.center.close()
+  assert.equal(revoked.length, 1)
+})
+
+test('CC39-UI remote settings update the same focused inputs without rebuilding reports', (t) => {
   const f = ui(t)
-  const summary = f.doc.flatten().find((e) => e.className === 'summary')
-  assert.ok(summary)
+  f.button('播放設定').emit('click')
+  const input = f.toggle('阻止網頁使用 HTTPDNS')
+  f.storage.remote('bilicdn.v2.settings', {
+    ...f.settings.get(),
+    blockHttpDns: false,
+    updatedAt: f.clock.now() + 1,
+  })
+  assert.equal(f.toggle('阻止網頁使用 HTTPDNS'), input)
+  assert.equal(input.checked, false)
   assert.equal(
-    summary.textContent,
-    '腳本：已啟用｜CDN：自動挑選 CDN（僅內建 CDN）\n選定路線：尚未確認（實際請求見下方）\n播放：緩衝不足｜已緩衝約 0.0 秒可播放內容｜2 倍速\n播放器：正常｜測速：尚未測速\n請求攔截：運作中｜腳本看到 0 筆請求，其中 0 筆像是影音請求；交給瀏覽器 0 筆，看到回應 0 筆\n影片：還沒有可確認的請求\n音訊：還沒有可確認的請求\n目前畫質：等待可辨識的影片資料\n※ 上述請求與回應由腳本觀察；要確認瀏覽器實際送出的網址，仍須查看 Chrome「網路」面板。',
+    f.doc.flatten().some((e) => e.tag === 'textarea'),
+    false,
   )
-  f.button('CDN 與播放設定').emit('click')
+})
+
+test('control-center pages preserve defaults and build complete diagnostic report on request', (t) => {
+  const f = ui(t)
+  assert.match(readSummary(f).textContent, /選定路線：尚未確認/)
+  f.button('CDN').emit('click')
   assert.equal(f.toggle('允許參考 B 站原生來源').checked, false)
-  assert.equal(f.toggle('測試：只用 B 站原本提供的 CDN').checked, false)
   for (const host of TRUSTED_CATALOG)
     assert.equal(f.toggle(host).checked, !DEFAULT_UNAVAILABLE_HOSTS.has(host))
-  assert.equal(f.doc.flatten().filter((e) => e.tag === 'select').length, 2)
+  assert.equal(f.doc.flatten().filter((e) => e.tag === 'select').length, 1)
   assert.equal(
     f.doc.flatten().find((e) => e.tag === 'select')?.children.length,
     TRUSTED_CATALOG.length + 1,
   )
-  f.button('返回').emit('click')
-  f.button('查看診斷報告').emit('click')
-  const report = f.doc.flatten().find((e) => e.tag === 'textarea')
-  assert.ok(report)
+  f.button('診斷').emit('click')
+  assert.equal(f.toggle('只用 B 站原本提供的 CDN').checked, false)
+  assert.equal(
+    f.doc.flatten().some((e) => e.tag === 'textarea'),
+    false,
+  )
+  f.button('查看完整報告').emit('click')
+  const report = f.doc.flatten().find((e) => e.tag === 'textarea')!
   assert.equal(report.readOnly, true)
-  const parsed = JSON.parse(report.value) as {
-    title: string
-    current: { version: string }
-    export: { truncated: boolean }
-  }
-  assert.equal(parsed.title, 'BiliCDN_TW v2 診斷報告')
+  const parsed = JSON.parse(report.value)
   assert.equal(parsed.current.version, 'contract')
+  assert.equal(parsed.current.releaseStage, 'stable')
   assert.equal(parsed.export.truncated, false)
-  assert.equal(f.storage.tasks.length, 0, 'view rendering does not issue settings writes')
+  assert.equal(f.storage.tasks.length, 0)
 })
 
 test('P05 native write starts in trusted dispatch with exact full report and original receiver', async (t) => {
@@ -548,7 +604,7 @@ test('P05 synthetic and detached old copy buttons cannot initiate a write', asyn
   })
   const old = f.copy()
   old.emit('click', '', false)
-  f.button('返回').emit('click')
+  f.button('總覽').emit('click')
   old.emit('click')
   await flushCopy()
   assert.deepEqual(rows, [])
@@ -571,7 +627,7 @@ test('P05 pending native write remains single flight across repeat click and clo
   assert.equal(rows.length, 1)
   f.center.close()
   f.center.show()
-  f.button('查看診斷報告').emit('click')
+  f.button('診斷').emit('click')
   f.clock.advance(0)
   f.copy().emit('click')
   assert.equal(rows.length, 1)
@@ -599,13 +655,13 @@ for (const action of ['close', 'navigate', 'rebuild'] as const) {
       const oldStatus = f.status(),
         oldButton = f.copy()
       if (action === 'close') f.center.close()
-      if (action === 'navigate') f.button('返回').emit('click')
+      if (action === 'navigate') f.button('總覽').emit('click')
       if (action === 'rebuild') {
         const host = f.doc.flatten().find((e) => e.id === 'bilicdn-v2-control-center')!
         host.parent = null
         f.doc.children = f.doc.children.filter((e) => e !== host)
         f.center.show()
-        f.button('查看診斷報告').emit('click')
+        f.button('診斷').emit('click')
       }
       f.clock.advance(0)
       const before = f.doc.flatten().map((e) => [e, e.textContent, e.focusCount])
@@ -644,7 +700,7 @@ test('P05 synchronous clipboard lookup reentry cannot submit an obsolete view wr
   await flushCopy()
   assert.equal(writes, 0)
   assert.deepEqual(f.gmCalls, [])
-  assert.equal(f.doc.flatten().find((e) => e.tag === 'h2')?.textContent, 'BiliCDN v2 控制中心')
+  assert.equal(f.doc.flatten().find((e) => e.tag === 'h2')?.textContent, 'BiliCDN 控制中心')
 })
 
 test('P05 synchronous native write reentry does not publish into a replacement view', async (t) => {
@@ -673,7 +729,7 @@ for (const key of ['Enter', ' ']) {
   for (const interferes of [false, true]) {
     test(`BR-10 ${key === ' ' ? 'Space' : key} activation contract ${interferes ? 'isolates page bubble shortcuts' : 'preserves no-shortcut control'}`, (t) => {
       const f = ui(t),
-        button = f.button('CDN 與播放設定'),
+        button = f.button('播放設定'),
         external = new Element('input')
       f.doc.append(external)
       let pageCalls = 0
@@ -689,7 +745,7 @@ for (const key of ['Enter', ' ']) {
       // Model the contract that the native default action remains eligible. IAB proves actual activation.
       if (!down.defaultPrevented && !press.defaultPrevented && !up.defaultPrevented)
         button.emit('click')
-      assert.equal(f.doc.flatten().find((e) => e.tag === 'h2')?.textContent, 'CDN 與播放設定')
+      assert.equal(f.doc.flatten().find((e) => e.tag === 'h2')?.textContent, 'BiliCDN 控制中心')
       assert.equal(pageCalls, 0)
       assert.equal(external.focusCount, 0)
     })
@@ -699,7 +755,7 @@ for (const key of ['Enter', ' ']) {
 test('R03 completing an older command cannot replace the settings view or take focus', async (t) => {
   const f = ui(t)
   f.button('停用腳本').emit('click')
-  f.button('CDN 與播放設定').emit('click')
+  f.button('播放設定').emit('click')
   const heading = f.doc.flatten().find((e) => e.tag === 'h2')
   await f.storage.drain()
   for (let i = 0; i < 8; i++) await Promise.resolve()
@@ -708,14 +764,14 @@ test('R03 completing an older command cannot replace the settings view or take f
     f.doc.flatten().find((e) => e.tag === 'h2'),
     heading,
   )
-  assert.equal(heading?.textContent, 'CDN 與播放設定')
+  assert.equal(heading?.textContent, 'BiliCDN 控制中心')
   const close = f.button('關閉')
   assert.equal(close.focusCount, 1)
 })
 
 test('BR-10 all keyboard phases preserve control defaults and stop only outer bubbling', (t) => {
   const f = ui(t)
-  f.button('CDN 與播放設定').emit('click')
+  f.button('播放設定').emit('click')
   const controls = f.doc.flatten().filter((e) => ['button', 'input', 'select'].includes(e.tag))
   let captures = 0,
     bubbles = 0,
@@ -743,8 +799,9 @@ test('BR-10 all keyboard phases preserve control defaults and stop only outer bu
   assert.equal(captures, controls.length * 5)
   assert.equal(targets, captures)
   assert.equal(bubbles, 0)
-  f.button('返回').emit('click')
-  f.button('查看診斷報告').emit('click')
+  f.button('總覽').emit('click')
+  f.button('診斷').emit('click')
+  f.button('查看完整報告').emit('click')
   const report = f.doc.flatten().find((e) => e.tag === 'textarea')
   assert.ok(report)
   assert.equal(report.emit('keydown', 'c').defaultPrevented, false)
@@ -753,10 +810,10 @@ test('BR-10 all keyboard phases preserve control defaults and stop only outer bu
 
 test('BR-10 outer capture cancellation remains observable rather than being claimed repaired', (t) => {
   const f = ui(t),
-    button = f.button('CDN 與播放設定')
+    button = f.button('播放設定')
   f.doc.addEventListener('keydown', (event) => event.preventDefault(), true)
   assert.equal(button.emit('keydown', 'Enter').defaultPrevented, true)
-  assert.equal(f.doc.flatten().find((e) => e.tag === 'h2')?.textContent, 'BiliCDN v2 控制中心')
+  assert.equal(f.doc.flatten().find((e) => e.tag === 'h2')?.textContent, 'BiliCDN 控制中心')
 })
 
 test('BR-10 synthetic keyboard click and change cannot close or execute settings commands', (t) => {
@@ -766,7 +823,7 @@ test('BR-10 synthetic keyboard click and change cannot close or execute settings
   assert.equal(stop.emit('keydown', 'Escape', false).defaultPrevented, false)
   stop.emit('click', '', false)
   assert.equal(f.storage.tasks.length, 0)
-  f.button('CDN 與播放設定').emit('click')
+  f.button('播放設定').emit('click')
   const input = f.toggle('阻止網頁使用 HTTPDNS')
   input.checked = false
   input.emit('change', '', false)
@@ -807,7 +864,7 @@ test('BR-10 reopen installs one boundary and Escape removes all three listeners'
 
 test('BR-10 outside keys and stale nodes cannot affect the current center', (t) => {
   const f = ui(t),
-    oldButton = f.button('CDN 與播放設定')
+    oldButton = f.button('播放設定')
   const oldHost = f.doc.flatten().find((e) => e.id === 'bilicdn-v2-control-center')!,
     oldShadow = oldHost.shadow!
   const retained = [...(oldShadow.listeners.get('keydown') ?? [])]
@@ -835,7 +892,7 @@ test('BR-10 outside keys and stale nodes cannot affect the current center', (t) 
 
 test('BR-10 target-side synchronous close and reopen leaves only the new event boundary', (t) => {
   const f = ui(t),
-    button = f.button('CDN 與播放設定')
+    button = f.button('播放設定')
   button.addEventListener('keydown', () => {
     f.center.close()
     f.center.show()
@@ -873,56 +930,107 @@ test('R02 a pending single-host edit merges the latest remote settings under loc
   assert.deepEqual(f.settings.get().catalogOverrides, { [remoteHost]: false, [host]: false })
   await assert.rejects(f.commands.setCatalogEnabled('external.invalid', true), TypeError)
 })
-test('UP141-RETRY prototype switch rejects synthetic changes and suppresses off before lock completion', async (t) => {
+test('UP141-RETRY retained switch rejects synthetic changes and suppresses off before lock completion', async (t) => {
   const f = ui(t)
-  f.button('CDN 與播放設定').emit('click')
+  f.button('播放設定').emit('click')
   const input = f.toggle('慢請求提前重試')
-  assert.equal(input.checked, false)
-  input.checked = true
+  assert.equal(input.checked, true)
+  input.checked = false
   input.emit('change', '', false)
+  assert.equal(input.checked, true)
   assert.equal(f.storage.tasks.length, 0)
-  assert.equal(f.settings.get().earlyRetryEnabled, false)
-  input.checked = true
+  input.checked = false
   input.emit('change')
-  assert.equal(f.storage.tasks.length, 1)
-  await f.storage.drain()
-  await flushCopy()
-  assert.equal(f.settings.get().earlyRetryEnabled, true)
-  const enabled = f.toggle('慢請求提前重試')
-  assert.equal(enabled.checked, true)
-  enabled.checked = false
-  enabled.emit('change')
   assert.equal(f.settings.get().earlyRetryEnabled, false)
   await f.storage.drain()
   await flushCopy()
-  assert.equal(f.settings.get().earlyRetryEnabled, false)
+  assert.equal(f.toggle('慢請求提前重試'), input)
 })
 
-test('UP141-TEST control center exposes all test switches and HK without accepting synthetic changes', async (t) => {
+test('CC39-UI removed controls cannot be reached from any page', (t) => {
   const f = ui(t)
-  assert.ok(f.doc.flatten().some((row) => row.textContent.includes('測試版／實機待驗證')))
-  f.button('CDN 與播放設定').emit('click')
-  for (const label of ['起播合格即放行', '健康中段探測', '備援家族分散']) {
+  for (const tab of ['總覽', 'CDN', '播放設定', '診斷']) {
+    f.button(tab).emit('click')
+    const text = f.doc
+      .flatten()
+      .map((e) => e.textContent)
+      .join(' ')
+    assert.doesNotMatch(
+      text,
+      /偏好的影片格式|記錄更多診斷細節|安排測速|安排香港候選|封鎖最近|UP141 測試功能/,
+    )
+  }
+})
+
+test('CC39-UI four tabs separate CDN from six real settings and defer complete report work', async (t) => {
+  const f = ui(t)
+  let reports = 0
+  const original = f.deps.diagnostics.buildReport.bind(f.deps.diagnostics)
+  f.deps.diagnostics.buildReport = (model) => {
+    reports++
+    return original(model)
+  }
+  assert.ok(f.doc.flatten().some((e) => e.textContent === 'BiliCDN 控制中心'))
+  for (const label of ['總覽', 'CDN', '播放設定', '診斷']) assert.ok(f.button(label))
+  f.button('播放設定').emit('click')
+  assert.equal(f.doc.flatten().filter((e) => e.type === 'checkbox').length, 6)
+  for (const [key, label] of [
+    ['startupEarlyReleaseEnabled', '起播提前放行'],
+    ['healthMiddleRangeEnabled', '健康中段探測'],
+    ['backupFamilyDiversityEnabled', '備援家族分散'],
+    ['earlyRetryEnabled', '慢請求提前重試'],
+    ['blockWebRtc', '阻止網頁使用 WebRTC'],
+    ['blockHttpDns', '阻止網頁使用 HTTPDNS'],
+  ] as const) {
     const input = f.toggle(label)
     assert.equal(input.checked, true)
-    input.checked = false
-    input.emit('change', '', false)
-    assert.equal(f.storage.tasks.length, 0)
     input.checked = false
     input.emit('change')
     await f.storage.drain()
     await flushCopy()
-    assert.equal(f.toggle(label).checked, false)
+    assert.equal(f.settings.get()[key], false)
+    assert.equal(f.toggle(label), input, 'settings updates preserve the focused control')
   }
-  for (const host of [
-    'cn-hk-eq-01-03.bilivideo.com',
-    'cn-hk-eq-01-05.bilivideo.com',
-    'cn-hk-eq-01-01.bilivideo.com',
-  ])
-    assert.equal(f.toggle(host).checked, false)
-  assert.equal(f.toggle('慢請求提前重試').checked, false)
-  assert.equal(f.button('安排香港候選測試').disabled, true)
+  f.button('CDN').emit('click')
+  assert.equal(f.toggle('cn-hk-eq-01-03.bilivideo.com').checked, true)
+  assert.equal(f.toggle('允許參考 B 站原生來源').checked, false)
+  f.button('診斷').emit('click')
+  assert.equal(reports, 0)
+  f.button('查看完整報告').emit('click')
+  assert.equal(reports, 1)
+  f.button('總覽').emit('click')
+  assert.equal(reports, 1)
 })
+
+test('CC39-UI opened view consumes existing notifications and releases all subscriptions', (t) => {
+  const f = ui(t)
+  f.center.close()
+  const listeners = new Set<() => void>()
+  const source: ControlCenterDependencies['monitor'] = f.deps.monitor
+  source.subscribe = (listener) => {
+    listeners.add(listener)
+    return () => {
+      listeners.delete(listener)
+    }
+  }
+  f.center.show()
+  f.clock.advance(0)
+  const before = source.snapshot()
+  source.snapshot = () => ({ ...before, video: { ...before.video, playableBufferSec: 42.5 } })
+  const tasks = f.clock.pendingCount
+  for (const listener of listeners) listener()
+  assert.ok(f.doc.flatten().some((e) => e.textContent === '42.5'))
+  assert.equal(f.clock.pendingCount, tasks)
+  assert.equal(listeners.size, 1)
+  f.center.close()
+  assert.equal(listeners.size, 0)
+})
+
+function readSummary(f: ReturnType<typeof ui>): Element {
+  if (!f.doc.flatten().some((e) => e.className === 'summary'))
+    f.button('查看詳細狀態').emit('click')
+  return f.doc.flatten().find((e) => e.className === 'summary')!
+}
 
 function ui(t: TestContext) {
   const storage = new QueuedSettingsStorage(),
@@ -986,7 +1094,7 @@ function ui(t: TestContext) {
 for (const queued of [false, true]) {
   test(`${queued ? 'R02' : 'CONTROL R02'} separate Catalog checkbox edits survive ${queued ? 'queued' : 'sequential'} settings locks`, async (t) => {
     const f = ui(t)
-    f.button('CDN 與播放設定').emit('click')
+    f.button('CDN').emit('click')
     const hostA = TRUSTED_CATALOG[0],
       hostB = TRUSTED_CATALOG[2]
     assert.ok(hostA && hostB)

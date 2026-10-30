@@ -14,7 +14,7 @@ import type { evidenceMetrics } from '../domain/evidence.ts'
 import type { EarlyRetrySnapshot } from '../application/early-retry-model.ts'
 
 export interface ControlCenterSnapshot {
-  readonly releaseStage: 'test'
+  readonly releaseStage: 'test' | 'stable'
   readonly earlyRetry?: EarlyRetrySnapshot
   readonly version: string
   readonly settings: SettingsState
@@ -47,12 +47,13 @@ export interface ControlEvidenceReader {
 }
 
 export interface ControlRouteReader {
+  subscribe?(listener: () => void): () => void
   snapshot(): RouteSnapshot
   isOriginalComparison(): boolean
-  latestVideoHost(): string | null
 }
 
 export interface ControlMonitorReader {
+  subscribe?(listener: () => void): () => void
   snapshot(): MonitorSnapshot
 }
 
@@ -70,7 +71,7 @@ export interface ControlTransportReader {
 
 export interface ControlCenterDependencies {
   readonly earlyRetry?: { snapshot(): EarlyRetrySnapshot }
-  readonly settings: SettingsReader
+  readonly settings: SettingsReader & { subscribe?(listener: () => void): () => void }
   readonly restrictions: ControlRestrictionReader
   readonly evidence: ControlEvidenceReader
   readonly session: ControlSessionReader
