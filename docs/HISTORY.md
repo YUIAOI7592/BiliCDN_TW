@@ -6,6 +6,8 @@
 
 ## 版本
 
+- [UP141 安裝版實測與工具阻塞（2026-10-30，v2.1.38）](TEST_REPORT.md#2026-10-30up141-安裝版實測)
+
 - [UP141 完整測試版操作與取證準備（2026-10-30，v2.1.38）](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md)
 
 - [UP141 上游優點吸收候選與驗證（2026-10-30）](../archive/retired/docs/UPSTREAM_V1_4_1_ADOPTION_2026-10-30.md)
