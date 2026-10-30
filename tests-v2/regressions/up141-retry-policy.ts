@@ -362,12 +362,12 @@ test('UP141-RETRY cancelled controller exposes bounded detached read-only histor
   assert.ok(f.controller.snapshot().history.every(Object.isFrozen))
 })
 
-test('UP141-RETRY prototype settings remain off and preserve explicit values in schema 2', async (t) => {
+test('UP141-RETRY settings default on and preserve explicit values in schema 2', async (t) => {
   const scope = testScope(t)
   const storage = new FakeStorage()
   storage.set(SETTINGS_KEY, { ...defaultSettings(100), earlyRetryEnabled: undefined })
   const settings = scope.own(new SettingsStore(storage, () => 100))
-  assert.equal(settings.get().earlyRetryEnabled, false)
+  assert.equal(settings.get().earlyRetryEnabled, true)
   assert.equal(settings.get().schema, 2)
   await settings.update({ earlyRetryEnabled: true })
   assert.equal(settings.get().earlyRetryEnabled, true)

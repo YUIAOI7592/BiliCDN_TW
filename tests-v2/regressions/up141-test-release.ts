@@ -74,12 +74,12 @@ const flags = [
   'backupFamilyDiversityEnabled',
 ] as const
 
-test('UP141-TEST settings migrate A on and retry off, preserve false, and suppress off while locked', async (t) => {
+test('UP141-TEST settings migrate automatic features on, preserve false, and suppress off while locked', async (t) => {
   const scope = testScope(t),
     storage = new DelayedSettingsStorage()
   const settings = scope.own(new SettingsStore(storage, () => 1000))
   for (const key of flags) assert.equal(settings.get()[key], true)
-  assert.equal(settings.get().earlyRetryEnabled, false)
+  assert.equal(settings.get().earlyRetryEnabled, true)
   storage.holdNextSettingsLock = true
   const pending = settings.update(Object.fromEntries(flags.map((key) => [key, false])))
   for (const key of flags) assert.equal(settings.get()[key], false)

@@ -27,7 +27,6 @@ export type CatalogHost = (typeof TRUSTED_CATALOG)[number]
 export const TRUSTED_CATALOG_SET: ReadonlySet<string> = new Set(TRUSTED_CATALOG)
 
 export const DEFAULT_UNAVAILABLE_HOSTS: ReadonlySet<string> = new Set([
-  ...HK_TEST_CANDIDATES,
   'upos-sz-mirrorcosov.bilivideo.com',
   'upos-sz-mirrorhwov.bilivideo.com',
   'upos-sz-mirrorhw.bilivideo.com',

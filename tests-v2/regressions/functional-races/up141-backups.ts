@@ -178,7 +178,7 @@ test('UP141-ROUTE original comparison retains exact input order and five backups
   )
 })
 
-test('UP141-ROUTE test release includes all HK candidates disabled by default', (t) => {
+test('UP141-ROUTE integration enables all HK candidates and preserves the four old defaults', (t) => {
   testScope(t)
   const hk = [
     'cn-hk-eq-01-03.bilivideo.com',
@@ -187,7 +187,7 @@ test('UP141-ROUTE test release includes all HK candidates disabled by default', 
   ]
   for (const host of hk) {
     assert.equal(isCatalogHost(host), true)
-    assert.equal(DEFAULT_UNAVAILABLE_HOSTS.has(host), true)
+    assert.equal(DEFAULT_UNAVAILABLE_HOSTS.has(host), false)
     assert.equal(
       catalogCandidates('video').some((candidate) => candidate.host === host),
       true,
@@ -195,7 +195,7 @@ test('UP141-ROUTE test release includes all HK candidates disabled by default', 
     assert.equal(catalogHostFamily(host), 'hk-eq-01')
   }
   assert.equal(TRUSTED_CATALOG.length, 14)
-  assert.equal(DEFAULT_UNAVAILABLE_HOSTS.size, 7)
+  assert.equal(DEFAULT_UNAVAILABLE_HOSTS.size, 4)
   for (const host of [
     'upos-sz-mirrorcosov.bilivideo.com',
     'upos-sz-mirrorhwov.bilivideo.com',
