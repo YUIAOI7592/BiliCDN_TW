@@ -9,7 +9,7 @@
 | 目的 | 閱讀順序 |
 | --- | --- |
 | 安裝、操作與排查 | [README](../README.md) |
-| UP141 測試操作 | [完整測試版操作表](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md)；啟動狀態見 TODO，結果見 TEST_REPORT |
+| UP141 歷史測試操作 | [完整測試版操作表](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md)；啟動狀態見 TODO，結果見 TEST_REPORT |
 | 開始修改程式 | [TODO](TODO.md) → [AGENTS](../AGENTS.md) → [PROJECT_CONTEXT](PROJECT_CONTEXT.md) → [SECURITY](../SECURITY.md) → [ARCHITECTURE](ARCHITECTURE.md) → [DEVELOPMENT](DEVELOPMENT.md) |
 | 撰寫或執行測試 | [TODO](TODO.md) → [DEVELOPMENT 測試套件與隔離](DEVELOPMENT.md#測試套件與隔離)；涉及瀏覽器時再讀 [IAB_TESTING](IAB_TESTING.md)；結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
 | 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#發行規則) → [DEVELOPMENT 封裝與發行](DEVELOPMENT.md#封裝與發行)，並依 [發布文件更新順序](DEVELOPMENT.md#發布文件更新順序) 準備文件 |

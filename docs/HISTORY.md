@@ -304,3 +304,10 @@
 - [全分支整併與原件身分](../archive/retired/docs/BRANCH_INTEGRATION_2026-10-31.md)
 - [2026-10-30 B 隔離原型](../archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md)
 - [B 分支完整驗證補充](../archive/retired/docs/TEST_REPORT_HISTORY.md#隔離-b-分支原型驗證2026-10-30)
+
+## 2026-10-31 控制中心與業務邏輯整合
+
+- [v2.1.39 完整驗證](TEST_REPORT.md)
+- [v2.1.38 改版前完整正文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2138-完整正文保存2026-10-31)
+- [本輪提前重試效用原始資料](../archive/retired/docs/evidence/CC39_EARLY_RETRY_EFFICACY_2026-10-31.json)
+- [第二階段前封存配置原件](../baseline/CC39_pre_integration_relocation_2026-10-31.json)

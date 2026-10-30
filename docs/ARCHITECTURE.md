@@ -10,9 +10,9 @@ XhrHook／私有 XhrEarlyRetry 實作 InFlightVideoPort，保管原始 XHR、單
 
 資格維持 1,500 ms、完成度低於 80%、0 < 已按倍速折算的緩衝 < 6 秒、至少一秒近期速度低於需求。替代主機須有六十秒內兩個不同工作 ID、各至少 64 KiB 的成功 video 證據且達 1.35 倍需求；當前內容與授權仍有效，不為資格追加探測。估計原請求超過緩衝的 0.8 倍、完整重試可在其內完成並至少節省一秒才動作。每請求一次、同主機八秒一次、分頁三十秒最多三次、同低緩衝段一次；恢復十秒緩衝及連續十個健康 tick 才離開該段。
 
-Runtime 擁有提前重試事件訂閱及卸載；控制器發布 fixed state／reason，適配器只提供原生 timeout 與認領觀察，不能向診斷交出控制能力。Recorder 與事故快照最多保留十六筆新事件，沿用 128 KiB／匯出 96 KiB 淘汰；bufferTrend v6 不變。控制中心讀模型帶 releaseStage=test、有效設定及候選狀態。關閉不取消網站已送請求，交接失敗只停本文件的實驗控制，原恢復契約保持。
+Runtime 擁有提前重試事件訂閱及卸載；控制器發布 fixed state／reason，適配器只提供原生 timeout 與認領觀察，不能向診斷交出控制能力。Recorder 與事故快照最多保留十六筆新事件，沿用 128 KiB／匯出 96 KiB 淘汰；bufferTrend v6 不變。控制中心讀模型帶 releaseStage=stable、有效設定及候選狀態。關閉不取消網站已送請求，交接失敗只停本文件的實驗控制，原恢復契約保持。
 
-MeasurementController 的 requestCatalogValidation(hosts) 為 HK 定向窄入口，RouteCoordinator／Vault 重新核對模式、RouteIdentity、政策修訂及合法來源；不建立第二份 URL 授權索引。定向要求與自動探索共用量測鎖及額度，只有自動探索的六小時新鮮度／目前主機排除不套用於定向驗證。三個 A 設定仍屬 schema 2；測速設定的關閉先抑制動作，政策更新取消自有探測及晚到提交，備援分散設定由輸出規劃即時讀取，不主動換親和。
+MeasurementController 只保留起播及一般自動健康探索；requestManual、requestCatalogValidation、定向 context／target 與 challenge 特殊參數已刪除。最近 Monitor 狀態仍供鎖內重驗，保留工作標記、取消、來源／表示／政策檢查與晚到防護。健康探索仍使用六小時新鮮度及排除目前主機。六項設定均屬 schema 2，測速設定關閉先抑制動作，備援分散由輸出規劃讀取，不主動換親和。
 
 ## 依賴方向
 
@@ -35,7 +35,7 @@ MeasurementController 的 requestCatalogValidation(hosts) 為 HK 定向窄入口
 | `ui` | `ui`、`diagnostics`、`application`、`state`、`domain`、`platform` |
 | `entry.ts` | 所有組合層 |
 
-此表列出可以匯入的層，並不要求全部匯入。狀態儲存元件從 `platform/storage-port.ts` 匯入 `StoragePort` 型別；`platform/storage.ts` 實作 Tampermonkey 儲存。執行識別碼介面也獨立於產生器。各層的 `*-model.ts` 保存共用模型，`*-ports.ts` 保存具名最小依賴介面；單一用途的小模型可與同用途契約共置，單一消費者的介面可留在消費檔。契約不得依賴具體 Store、控制器或適配器。`SettingsChange` 唯一定義於狀態模型；設定視圖僅接收設定、限制清單、原線對照查詢與三個設定命令。UI 匯入應用層／狀態層型別與領域輔助函式，消費快照，透過 `ControlCommandPort` 執行產品變更；UI 不匯入瀏覽器適配器。診斷匯入領域模型。[entry.ts](../src-v2/entry.ts) 建立、連接這些物件並啟動執行環境。
+此表列出可以匯入的層，並不要求全部匯入。狀態儲存元件從 `platform/storage-port.ts` 匯入 `StoragePort` 型別；`platform/storage.ts` 實作 Tampermonkey 儲存。執行識別碼介面也獨立於產生器。各層的 `*-model.ts` 保存共用模型，`*-ports.ts` 保存具名最小依賴介面；單一用途的小模型可與同用途契約共置，單一消費者的介面可留在消費檔。契約不得依賴具體 Store、控制器或適配器。`SettingsChange` 唯一定義於狀態模型；四個視圖使用具名唯讀快照，經 ControlCommandPort 修改設定或執行保留命令。UI 匯入應用層／狀態層型別與領域輔助函式，消費快照，透過 `ControlCommandPort` 執行產品變更；UI 不匯入瀏覽器適配器。診斷匯入領域模型。[entry.ts](../src-v2/entry.ts) 建立、連接這些物件並啟動執行環境。
 
 AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、`import type` 及 `import-equals` 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環與契約對實作的依賴。唯一寫入者依完整相對路徑辨識，不能以同名檔案繞過；只有 `application/measurement-controller.ts` 可以呼叫 `probe.read()`。額外語法規則拒絕領域層／應用層中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、路線協調器以外的點號 `setAffinity()` 呼叫、恢復控制器以外應用層的點號 `reload()` 呼叫，以及命令接收器以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
 
@@ -246,7 +246,7 @@ Catalog HTTP 403 只失效當前串流／主機配對，影響後續排名、備
 
 健康量測不得變更親和主機。
 
-Catalog 保留全部 14 個內建主機，其中 7 個預設不可用。起播三個探測的限制不縮小一般排名、備援或後續健康探索的候選池。僅使用 Catalog 輸出選擇合法主線及最多五個與主線及彼此不同主機的合法備援。當前黑名單（`black`）／失效（`dead`）、使用者覆寫設定、預設可用性、主機鎖定及串流／主機不相容限制仍有效。
+Catalog 保留全部 14 個內建主機，其中原四個預設不可用。起播三個探測的限制不縮小一般排名、備援或後續健康探索的候選池。僅使用 Catalog 輸出選擇合法主線及最多五個與主線及彼此不同主機的合法備援。當前黑名單（`black`）／失效（`dead`）、使用者覆寫設定、預設可用性、主機鎖定及串流／主機不相容限制仍有效。
 
 僅使用 Catalog 起播沒有有效探測結果時，不提交測速贏家。最終送出對完整剩餘合法 Catalog 池作一般排名；探測 403 仍排除當前串流／主機配對。保留期限限制，不讓失敗探測路線取得特別優先權。
 
@@ -280,3 +280,9 @@ Catalog 保留全部 14 個內建主機，其中 7 個預設不可用。起播�
 ## 隔離 B 原型的傳輸控制
 
 此相容入口描述 2026-10-30 固定原型，原文見 [2a58517 架構快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2a5851761d5a066cd3b54cb447b9da546a23187e/docs/ARCHITECTURE.md#隔離-b-原型的傳輸控制)。當前實作見本文件 UP141 提前重試章節，原型限制不作現行工作狀態。
+
+## 控制中心與診斷資料流
+
+ControlCenter 保管 closed Shadow DOM、固定頁籤、視圖版本及訂閱，接用 SettingsStore／PlayerMonitor／RouteCoordinator 的既有通知，不增加輪詢。播放 tick 只刷新緊湊卡片及現有輸入，不替換焦點；完整詳細狀態與匯出報告按需建立。診斷頁持有當次報告、複製所有權與單一 Blob URL，切頁／關閉清理；晚到複製不更新新視圖。
+
+SettingsState 不含 codec／verbose。PlayurlAdapter 改寫 URL 後保留網站原始表示順序；codec 僅辨識表示。DiagnosticEventSanitizer 不收取 verbose，Recorder 不建立、去重或淘汰額外排名歷史，舊 rankings 欄位永遠空陣列、相關淘汰計數為零。選路需要的即時 ranking 與簡短決策摘要、基本流量、事故及提前重試事件保留；128 KiB／96 KiB／十六筆新事件與 bufferTrend v6 不變。

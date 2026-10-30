@@ -150,7 +150,7 @@ npm run verify        # 自動檢查及暫存封裝驗證
 
 verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安全敏感變更或使用者明確要求時，另行執行安全差異掃描；不要求每版掃描。上一版通過報告不能作為新本機變更的證據。
 
-UP141 契約依能力分開：`npm test -- playurl-summary --name UP141-API`、`npm test -- measurement-state --name UP141`、`npm test -- application --name UP141`、`npm test -- control-center --name UP141`、`npm test -- orchestration --name UP141-DIAG`。測試版完整包含 A、三台預設關閉香港候選與預設關閉提前重試，驗證入口、取消、範圍、排序、設定及診斷生命週期；實機前不判定正式採用。操作表見 [UP141 測試版準備](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md)，本次不啟動 IAB／Tampermonkey 窗口。
+UP141／CC39 契約依能力分開：npm test -- application --name CC39、npm test -- control-center --name CC39，另保留 UP141-API／START／PROBE／ROUTE／RETRY／DIAG 回歸。新版六個設定與 HK 預設開啟、明確 false 保留；codec／verbose／手動及定向能力完整移除。先紅色契約再執行期修改，離線效用與必要安全掃描獨立於 verify。舊操作表僅適用 v2.1.38，不是新版入口或續跑授權。
 
 `npm run evaluate:early-retry -- --json` 獨立執行六個固定模型情境，保存 policy／input SHA-256、逐案預測、held-out 未來供片、停頓及不必要重下載。退出碼 0 為門檻全通過、1 為效用 FAIL、2 為非法參數；不能把效用 FAIL 改為預期失敗或混入 verify 的全綠。測試工具無執行期依賴、不連網，不為取得介入放寬產品資格。它不能證明原生瀏覽器或實機效益。
 
@@ -347,7 +347,7 @@ metadata.txt 中既有的 `@version` 是建置模板值；實際輸出由 releas
 
 ## 封裝與發行
 
-UP141 本次授權例外：v2.1.37 與 v2.1.38 均為「測試版／實機待驗證」，完整測試能力進附件，正式採用方案留待實機。為維持既有 latest 更新鏈，發布一般 GitHub Release 並明示測試用途，不設 prerelease；GitHub 狀態不是驗收結論。此次止於公開附件核對，安裝更新及專項等使用者準備好再開始，不重開原實機預算。
+v2.1.37／v2.1.38 保留歷史測試定位。2026-10-31 使用者明確批准兩階段整合，v2.1.39 為正式整合版，六項功能與 HK 預設開啟，既有 false 保留。正式交付不把離線效用 FAIL 或不足實機改判通過；原兩輪實機預算及停止範圍不重開，三項永久禁令優先。
 
 明確執行 `npm run package` 會建置，依 `release.json` 版本在 `Release/v<version>/` 寫入五項設定產物：
 
