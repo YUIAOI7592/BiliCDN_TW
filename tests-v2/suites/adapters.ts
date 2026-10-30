@@ -1141,10 +1141,7 @@ async function fixture(
 
   let coreClock = now,
     coreReloads = 0
-  const coreRecorder = new DiagnosticRecorder(
-    () => coreClock,
-    () => false,
-  )
+  const coreRecorder = new DiagnosticRecorder(() => coreClock)
   const coreObserver = scope.own(
     new RecoveryController(
       currentResumePlayer({
@@ -1634,10 +1631,7 @@ async function fixture(
         0,
         'blocked playurl does not leak original backup',
       )
-      const gapRecorder = new DiagnosticRecorder(
-        () => coreClock,
-        () => false,
-      )
+      const gapRecorder = new DiagnosticRecorder(() => coreClock)
       const gapRecovery = scope.own(
         new RecoveryController(currentResumePlayer(recoveryPlayer), () => coreClock),
       )
@@ -1709,10 +1703,7 @@ async function fixture(
   const noOutput = { ...outputItem, base_url: forbiddenUrl, backup_url: [forbiddenUrl] }
   outputAdapter.transform({ data: { dash: { video: [noOutput], audio: [] } } })
 
-  const gapRecorder = new DiagnosticRecorder(
-    () => coreClock,
-    () => false,
-  )
+  const gapRecorder = new DiagnosticRecorder(() => coreClock)
   const gapRecovery = scope.own(
     new RecoveryController(currentResumePlayer(recoveryPlayer), () => coreClock),
   )

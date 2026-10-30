@@ -67,10 +67,7 @@ for (const reason of [
   'candidate-expired',
 ] as const)
   test(`buffer-v3 diagnostic ${reason} requires false and keeps private evidence out`, () => {
-    const recorder = new DiagnosticRecorder(
-      () => 10001,
-      () => false,
-    )
+    const recorder = new DiagnosticRecorder(() => 10001)
     const input = { ...trend(10000), reason, candidate: false }
     Object.assign(input, { confirmation: { anchorSec: 12, secret: 'private-marker' } })
     recorder.recordPlayer(sample(10000, input))
@@ -84,10 +81,7 @@ for (const reason of [
 
 for (const version of [1, 2, 3, 4, 5])
   test(`buffer-v3 recorder rejects legacy version ${version} from live producers`, () => {
-    const recorder = new DiagnosticRecorder(
-      () => 10000,
-      () => false,
-    )
+    const recorder = new DiagnosticRecorder(() => 10000)
     const input = Object.assign(trend(10000), {
       schemaVersion: version,
       algorithm: `buffer-window-v${version}`,
@@ -98,10 +92,7 @@ for (const version of [1, 2, 3, 4, 5])
   })
 test('U-D01 reports a detached whitelisted shadow candidate without an incident', (t) => {
   testScope(t)
-  const recorder = new DiagnosticRecorder(
-    () => 10000,
-    () => false,
-  )
+  const recorder = new DiagnosticRecorder(() => 10000)
   const input = trend(10000)
   Object.assign(input, { url: 'https://secret.example/?token=private', media: { secret: true } })
   Object.assign(input.transport, { requestId: 'private-request-id' })
@@ -121,10 +112,7 @@ test('U-D01 reports a detached whitelisted shadow candidate without an incident'
 for (const invalid of ['NaN', 'reason', 'future', 'candidate', 'count', 'overflow'] as const)
   test(`U-D02 rejects ${invalid} trend data`, (t) => {
     testScope(t)
-    const recorder = new DiagnosticRecorder(
-        () => 10000,
-        () => false,
-      ),
+    const recorder = new DiagnosticRecorder(() => 10000),
       input = trend(10000)
     Object.assign(
       input,
@@ -147,10 +135,7 @@ for (const invalid of ['NaN', 'reason', 'future', 'candidate', 'count', 'overflo
 test('U-D03 history includes latest within 32 rows and 8 KiB; clear leaves no trend', (t) => {
   testScope(t)
   let now = 10000
-  const recorder = new DiagnosticRecorder(
-    () => now,
-    () => false,
-  )
+  const recorder = new DiagnosticRecorder(() => now)
   for (let i = 0; i < 100; i++) {
     now += 1000
     recorder.recordPlayer(sample(now))
@@ -167,10 +152,7 @@ test('U-D03 history includes latest within 32 rows and 8 KiB; clear leaves no tr
 })
 test('U-D04 clear reentry while projecting a trend cannot resurrect old rows', (t) => {
   testScope(t)
-  const recorder = new DiagnosticRecorder(
-    () => 10000,
-    () => false,
-  )
+  const recorder = new DiagnosticRecorder(() => 10000)
   const input = trend(10000)
   Object.defineProperty(input, 'candidate', {
     get: () => {
@@ -183,10 +165,7 @@ test('U-D04 clear reentry while projecting a trend cannot resurrect old rows', (
 })
 test('U-D05 duplicate and extra event samples do not create a trend tick', (t) => {
   testScope(t)
-  const recorder = new DiagnosticRecorder(
-    () => 10000,
-    () => false,
-  )
+  const recorder = new DiagnosticRecorder(() => 10000)
   recorder.recordPlayer(sample(10000))
   recorder.recordPlayer(sample(10000))
   const { bufferTrend: _trend, ...extra } = sample(10000)
@@ -242,10 +221,7 @@ test('U-D06 export sheds trend history first and remains within 96 KiB', (t) => 
 })
 test('U-D07 recorder is the only report authority for buffer trends', (t) => {
   testScope(t)
-  const recorder = new DiagnosticRecorder(
-    () => 10000,
-    () => false,
-  )
+  const recorder = new DiagnosticRecorder(() => 10000)
   const input = Object.assign(trend(10000), { secretUrl: 'https://secret.example/private' })
   recorder.recordPlayer(sample(10000))
   const report = recorder.buildReport({ monitor: { bufferTrend: input } })
@@ -258,10 +234,7 @@ for (const rate of [1, 2] as const)
   test(`U-D08 bounded recorder retains exact order and detached aliases rate=${rate}`, (t) => {
     testScope(t)
     let now = 10000
-    const recorder = new DiagnosticRecorder(
-      () => now,
-      () => false,
-    )
+    const recorder = new DiagnosticRecorder(() => now)
     for (let i = 0; i < 100; i++) {
       now += 1000
       const input = { ...trend(now), rate }
@@ -292,10 +265,7 @@ for (const rate of [1, 2] as const)
 test('U-D09 UTF-8 export and snapshots keep the same truncation and diagnostic state', (t) => {
   testScope(t)
   let now = 10000
-  const recorder = new DiagnosticRecorder(
-    () => now,
-    () => false,
-  )
+  const recorder = new DiagnosticRecorder(() => now)
   recorder.mark('中文與😀診斷')
   for (let i = 0; i < 60; i++) {
     now += 1000
@@ -317,10 +287,7 @@ test('U-D09 UTF-8 export and snapshots keep the same truncation and diagnostic s
 
 for (const rate of [1, 2])
   test(`buffer-v4 U-D cycle-only evidence is detached, bounded and whitelisted rate=${rate}`, () => {
-    const recorder = new DiagnosticRecorder(
-      () => 10000,
-      () => false,
-    )
+    const recorder = new DiagnosticRecorder(() => 10000)
     const input = {
       ...trend(10000),
       rate,
@@ -358,10 +325,7 @@ for (const fault of [
   'throwing-field',
 ] as const)
   test(`buffer-v4 U-D rejects invalid cycle proof ${fault}`, () => {
-    const recorder = new DiagnosticRecorder(
-      () => 10000,
-      () => false,
-    )
+    const recorder = new DiagnosticRecorder(() => 10000)
     const input = {
       ...trend(10000),
       state: 'stable' as const,

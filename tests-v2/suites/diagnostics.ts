@@ -31,10 +31,7 @@ async function fixture(
   ;({ now: () => now })
   const session = new SessionStore()
   const routeReadModel = { planCount: 41, recentPlans: [] }
-  const recorder = new DiagnosticRecorder(
-    () => now,
-    () => false,
-  )
+  const recorder = new DiagnosticRecorder(() => now)
   const healthyObservation: TransportObservation = {
     generation: generationId(1),
     epoch: epochId(1),
@@ -201,10 +198,7 @@ async function fixture(
   void 'healthy'
   void oversizedReport.recorder.incident?.reason.startsWith('transport:')
   void (((oversizedReport.recorder as { flow?: unknown[] }).flow?.length ?? 0) > 0)
-  const trace = new DiagnosticRecorder(
-    () => traceNow,
-    () => false,
-  )
+  const trace = new DiagnosticRecorder(() => traceNow)
   let traceNow = now
   const traceRep = representationId('trace-rep'),
     traceHostA = TRUSTED_CATALOG[0],
@@ -591,10 +585,7 @@ async function fixture(
     for (const invalid of invalidTransfers) {
       if (iteration++ === parameter)
         return async () => {
-          const fixture = new DiagnosticRecorder(
-            () => traceNow,
-            () => false,
-          )
+          const fixture = new DiagnosticRecorder(() => traceNow)
           fixture.record({
             type: 'recovery',
             at: traceNow,
@@ -636,10 +627,7 @@ async function fixture(
     throw Error('Unknown fixture parameter')
   }
   for (const invalid of invalidTransfers) {
-    const fixture = new DiagnosticRecorder(
-      () => traceNow,
-      () => false,
-    )
+    const fixture = new DiagnosticRecorder(() => traceNow)
     fixture.record({
       type: 'recovery',
       at: traceNow,
@@ -674,10 +662,7 @@ async function fixture(
     const stage = fixture.snapshot().routeRecovery.attempts.at(-1)?.stage
     void (stage !== 'response-observed' && stage !== 'playback-observed')
   }
-  const pausedTrace = new DiagnosticRecorder(
-    () => traceNow,
-    () => false,
-  )
+  const pausedTrace = new DiagnosticRecorder(() => traceNow)
   pausedTrace.record({
     type: 'recovery',
     at: traceNow,
@@ -714,10 +699,7 @@ async function fixture(
         'interrupted',
         'seek invalidates the old buffer boundary',
       )
-      const mixedTrace = new DiagnosticRecorder(
-        () => traceNow,
-        () => false,
-      )
+      const mixedTrace = new DiagnosticRecorder(() => traceNow)
       mixedTrace.record({
         type: 'recovery',
         at: traceNow,
@@ -746,10 +728,7 @@ async function fixture(
         'mixed-evidence',
         'another successful video host makes playback attribution ambiguous',
       )
-      const disabledTrace = new DiagnosticRecorder(
-        () => traceNow,
-        () => false,
-      )
+      const disabledTrace = new DiagnosticRecorder(() => traceNow)
       disabledTrace.record({
         type: 'recovery',
         at: traceNow,
@@ -770,10 +749,7 @@ async function fixture(
         'interrupted',
         'comparison or disabled mode stops route attribution immediately',
       )
-      const staleTrace = new DiagnosticRecorder(
-        () => traceNow,
-        () => false,
-      )
+      const staleTrace = new DiagnosticRecorder(() => traceNow)
       staleTrace.record({
         type: 'recovery',
         at: traceNow,
@@ -823,10 +799,7 @@ async function fixture(
   pausedTrace.recordPlayer({ ...traceSample(52, 0, 13), seeking: true })
   void pausedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage
   void 'interrupted'
-  const mixedTrace = new DiagnosticRecorder(
-    () => traceNow,
-    () => false,
-  )
+  const mixedTrace = new DiagnosticRecorder(() => traceNow)
   mixedTrace.record({
     type: 'recovery',
     at: traceNow,
@@ -852,10 +825,7 @@ async function fixture(
   })
   void mixedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage
   void 'mixed-evidence'
-  const disabledTrace = new DiagnosticRecorder(
-    () => traceNow,
-    () => false,
-  )
+  const disabledTrace = new DiagnosticRecorder(() => traceNow)
   disabledTrace.record({
     type: 'recovery',
     at: traceNow,
@@ -870,10 +840,7 @@ async function fixture(
   disabledTrace.record({ type: 'route-confirmed', at: traceNow, observation: secondSuccess }, false)
   void disabledTrace.snapshot().routeRecovery.attempts.at(-1)?.stage
   void 'interrupted'
-  const staleTrace = new DiagnosticRecorder(
-    () => traceNow,
-    () => false,
-  )
+  const staleTrace = new DiagnosticRecorder(() => traceNow)
   staleTrace.record({
     type: 'recovery',
     at: traceNow,
@@ -998,10 +965,7 @@ import '../regressions/functional-races/cr-diagnostics.ts'
 test('diagnostic report keeps stable host aliases and clears only incident-local state', (t) => {
   testScope(t)
   const now = 2_000_000_000_000
-  const recorder = new DiagnosticRecorder(
-    () => now,
-    () => false,
-  )
+  const recorder = new DiagnosticRecorder(() => now)
   const observation = {
     generation: generationId(1),
     epoch: epochId(1),
@@ -1064,10 +1028,7 @@ test('diagnostic report keeps stable host aliases and clears only incident-local
 test('diagnostic oversized export reduces context without consuming snapshot buffers', (t) => {
   testScope(t)
   const now = 2_000_000_000_000
-  const recorder = new DiagnosticRecorder(
-    () => now,
-    () => false,
-  )
+  const recorder = new DiagnosticRecorder(() => now)
   recorder.mark()
   const before = recorder.snapshot()
   const oversized = Object.fromEntries(
@@ -1095,10 +1056,7 @@ test('diagnostic oversized export reduces context without consuming snapshot buf
 test('diagnostic attempts retain six records and mode interruption survives late observations', (t) => {
   testScope(t)
   const now = 2_000_000_000_000
-  const recorder = new DiagnosticRecorder(
-    () => now,
-    () => false,
-  )
+  const recorder = new DiagnosticRecorder(() => now)
   const identity = {
     generation: generationId(1),
     epoch: epochId(1),

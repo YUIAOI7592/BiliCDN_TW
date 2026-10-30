@@ -12,7 +12,6 @@ import type {
   DiagnosticRequest,
   DiagnosticTransport,
   DiagnosticDecision,
-  DiagnosticRanking,
   DiagnosticEventData,
   SafeEvent,
   SanitizedValue,
@@ -91,11 +90,7 @@ export class DiagnosticEventSanitizer {
       capacityAssessment: assessDemandRatio(chosen?.demandRatio ?? null),
     }
   }
-  event(
-    event: DomainEvent,
-    verbose: () => boolean,
-  ): { event: SafeEvent; ranking: DiagnosticRanking | null } {
-    let ranking: DiagnosticRanking | null = null
+  event(event: DomainEvent): SafeEvent {
     let data: DiagnosticEventData,
       important = false
     switch (event.type) {
@@ -113,20 +108,6 @@ export class DiagnosticEventSanitizer {
       case 'route-decision':
       case 'route-planned': {
         data = this.decision(event.decision)
-        if (verbose()) {
-          ranking = {
-            ...data,
-            ranking: event.decision.ranking.slice(0, 12).map((row) => ({
-              host: this.host(row.candidate.host),
-              state: row.state,
-              eligible: row.eligible,
-              reasons: row.reasons,
-              safeMbps: row.safeThroughputMbps,
-              demandRatio: row.demandRatio,
-              ttfbMs: row.medianTtfbMs,
-            })),
-          }
-        }
         break
       }
       case 'transport':
@@ -189,7 +170,7 @@ export class DiagnosticEventSanitizer {
         important = true
         break
     }
-    return { event: { at: event.at, type: event.type, data, important }, ranking }
+    return { at: event.at, type: event.type, data, important }
   }
   host(host: string | null): string | null {
     if (!host || isCatalogHost(host) || isKnownNativeFamily(host)) return host

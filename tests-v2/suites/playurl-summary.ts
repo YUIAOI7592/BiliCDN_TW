@@ -509,10 +509,7 @@ async function fixture(
         !JSON.stringify(transport.snapshot()).includes('summary-secret'),
         'summary copies only safe fields from result',
       )
-      const recorder = new DiagnosticRecorder(
-        () => now,
-        () => false,
-      )
+      const recorder = new DiagnosticRecorder(() => now)
       const report = recorder.buildReport({ interception: transport.snapshot() })
       assert.ok(
         !report.includes('summary-secret') &&
@@ -539,10 +536,7 @@ async function fixture(
   void safe?.observedAt
   void now
   void !JSON.stringify(transport.snapshot()).includes('summary-secret')
-  const recorder = new DiagnosticRecorder(
-    () => now,
-    () => false,
-  )
+  const recorder = new DiagnosticRecorder(() => now)
   const report = recorder.buildReport({ interception: transport.snapshot() })
   void (
     !report.includes('summary-secret') &&

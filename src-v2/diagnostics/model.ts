@@ -60,17 +60,6 @@ export interface DiagnosticDecision {
   readonly demandRatio: number | null
   readonly capacityAssessment: ReturnType<typeof assessDemandRatio>
 }
-export interface DiagnosticRanking extends DiagnosticDecision {
-  readonly ranking: readonly {
-    readonly host: string | null
-    readonly state: RouteDecision['ranking'][number]['state']
-    readonly eligible: boolean
-    readonly reasons: readonly string[]
-    readonly safeMbps: number | null
-    readonly demandRatio: number | null
-    readonly ttfbMs: number | null
-  }[]
-}
 export type EventOf<Type extends DomainEvent['type']> = Extract<DomainEvent, { type: Type }>
 export type DiagnosticEventData =
   | Pick<EventOf<'early-retry'>, 'state' | 'reason' | 'host' | 'attempts'>
@@ -174,7 +163,7 @@ export interface DiagnosticSnapshot {
   readonly lastSuccess: Readonly<Record<string, DiagnosticTransport>>
   readonly pending: readonly DiagnosticRequest[]
   readonly events: readonly ReadonlySnapshot<SafeEvent>[]
-  readonly rankings: readonly DiagnosticRanking[]
+  readonly rankings: readonly never[]
   readonly routeRecovery: {
     readonly attempts: readonly RouteAttemptSummary[]
   }

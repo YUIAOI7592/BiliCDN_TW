@@ -71,7 +71,7 @@ export async function runScenario(
   },
 ): Promise<ScenarioResult> {
   const f = bufferMonitor(t, rate),
-    recorder = new DiagnosticRecorder(f.clock.now, () => false)
+    recorder = new DiagnosticRecorder(f.clock.now)
   let subscriptions = 0
   const subscribe = () => {
     subscriptions++

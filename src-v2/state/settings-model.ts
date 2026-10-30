@@ -10,7 +10,6 @@ export interface SettingsState {
   readonly catalogOverrides: Readonly<Record<string, boolean>>
   readonly blockWebRtc: boolean
   readonly blockHttpDns: boolean
-  readonly verbose: boolean
   readonly updatedAt: number
 }
 

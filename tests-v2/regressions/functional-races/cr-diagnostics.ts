@@ -19,7 +19,7 @@ for (const additional of [false, true])
     const scope = testScope(t),
       clock = scope.own(new FakeClock()),
       start = clock.now()
-    const recorder = new DiagnosticRecorder(clock.now, () => false)
+    const recorder = new DiagnosticRecorder(clock.now)
     const host = 'upos-sz-mirrorali.bilivideo.com'
     const identity = {
       generation: generationId(1),

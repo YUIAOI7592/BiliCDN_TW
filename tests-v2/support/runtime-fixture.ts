@@ -146,7 +146,7 @@ export function fixture(
       clock,
     ),
   )
-  const diagnostics = new DiagnosticRecorder(clock.now, () => false)
+  const diagnostics = new DiagnosticRecorder(clock.now)
   const runtime = scope.own(
     new RuntimeController(
       session,

@@ -1,7 +1,6 @@
 import type {
   DiagnosticSnapshot,
   DiagnosticReportCurrent,
-  DiagnosticRanking,
   Flow,
   Incident,
   SafeEvent,
@@ -22,7 +21,7 @@ export type DiagnosticReportCapture = Omit<
   incident: Incident | null
   flow: (Flow & { key: string })[]
   events: SafeEvent[]
-  rankings: DiagnosticRanking[]
+  rankings: never[]
 }
 export interface DiagnosticReportInput {
   readonly generatedAt: string
@@ -66,9 +65,6 @@ export function serializeDiagnosticReport(input: DiagnosticReportInput): string 
     output = JSON.stringify(payload)
   }
   if (new TextEncoder().encode(output).byteLength <= 96 * 1024) return output
-  payload.export.rankingDropped = recorder.rankings.length
-  recorder.rankings = []
-  output = JSON.stringify(payload)
   const { events, flow: flows, incident } = recorder
   while (
     new TextEncoder().encode(output).byteLength > 96 * 1024 &&

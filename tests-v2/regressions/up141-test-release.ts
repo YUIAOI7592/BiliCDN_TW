@@ -294,10 +294,7 @@ test('UP141-TEST middle toggle off requests head while retaining validated sourc
 test('UP141-TEST early retry events export bounded sanitized history without changing bufferTrend', (t) => {
   testScope(t)
   let now = 1000
-  const recorder = new DiagnosticRecorder(
-    () => now++,
-    () => false,
-  )
+  const recorder = new DiagnosticRecorder(() => now++)
   const before = recorder.snapshot().bufferTrend
   for (let i = 0; i < 40; i++)
     recorder.record({

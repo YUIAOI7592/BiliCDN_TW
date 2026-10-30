@@ -19,7 +19,6 @@ export const defaultSettings = (now: number): SettingsState =>
     catalogOverrides: Object.freeze({}),
     blockWebRtc: true,
     blockHttpDns: true,
-    verbose: false,
     updatedAt: now,
   })
 
@@ -47,7 +46,6 @@ const parseSettings = (value: unknown, now: number): SettingsState => {
     catalogOverrides: Object.freeze(overrides),
     blockWebRtc: raw.blockWebRtc !== false,
     blockHttpDns: raw.blockHttpDns !== false,
-    verbose: raw.verbose === true,
     updatedAt: Number.isFinite(raw.updatedAt)
       ? Math.min(now + 5 * 60_000, Math.max(0, Number(raw.updatedAt)))
       : now,

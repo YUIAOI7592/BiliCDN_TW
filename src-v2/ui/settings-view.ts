@@ -106,14 +106,6 @@ export function renderSettings(
       '避免網頁透過 HTTPDNS 另行尋找 CDN；不熟悉這項功能時，可維持預設值。',
     ),
   )
-  rows.append(
-    createToggle(
-      '記錄更多診斷細節',
-      settings.verbose,
-      (value) => deps.commands.updateSettings({ verbose: value }),
-      '開啟後會多記錄選路與測速資訊；關閉時仍會保留重要故障。記錄只存在目前分頁，重新整理後清空。',
-    ),
-  )
   for (const host of TRUSTED_CATALOG) {
     const defaultEnabled = !DEFAULT_UNAVAILABLE_HOSTS.has(host)
     const enabled = settings.catalogOverrides[host] ?? defaultEnabled

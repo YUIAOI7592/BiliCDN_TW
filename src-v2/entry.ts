@@ -107,7 +107,7 @@ export const start = (): void => {
     scheduler,
     earlyRetry,
   )
-  const diagnostics = new DiagnosticRecorder(now, () => settings.get().verbose)
+  const diagnostics = new DiagnosticRecorder(now)
   const runtime = new RuntimeController(
     session,
     settings,

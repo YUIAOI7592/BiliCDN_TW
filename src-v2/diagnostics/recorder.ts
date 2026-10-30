@@ -2,14 +2,7 @@ import type { DomainEvent, TransportObservation, RequestContext } from '../domai
 import type { PlaybackDiagnosticSample, ReadonlySnapshot } from '../domain/diagnostic-model.ts'
 export type { PlaybackDiagnosticSample } from '../domain/diagnostic-model.ts'
 export type { DiagnosticSnapshot } from './model.ts'
-import type {
-  DiagnosticTransport,
-  DiagnosticRanking,
-  SafeEvent,
-  Flow,
-  Incident,
-  DiagnosticSnapshot,
-} from './model.ts'
+import type { DiagnosticTransport, SafeEvent, Flow, Incident, DiagnosticSnapshot } from './model.ts'
 import type { DiagnosticRecorderPort } from './ports.ts'
 import { DiagnosticEventSanitizer, incidentTrigger } from './event-sanitizer.ts'
 import { RouteAttemptTracker } from './route-attempt-tracker.ts'
@@ -31,7 +24,6 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
   #lastSuccess = new Map<string, DiagnosticTransport>()
   #lastConfirmed = new Map<string, string>()
   #lastAttribution = new Map<string, string>()
-  #rankings: DiagnosticRanking[] = []
   #incident: Incident | null = null
   #attemptTracker: RouteAttemptTracker
   #recentPlayerTrace: { at: number; row: string }[] = []
@@ -54,10 +46,7 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
     bufferTrendEvicted: 0,
     bufferTrendRejected: 0,
   }
-  constructor(
-    private readonly now: () => number,
-    private readonly verbose: () => boolean,
-  ) {
+  constructor(private readonly now: () => number) {
     this.#attemptTracker = new RouteAttemptTracker(now)
   }
 
@@ -253,7 +242,7 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
       lastSuccess: Object.fromEntries(this.#lastSuccess),
       pending: [...this.#pending.values()].map((row) => this.#sanitizer.request(row)),
       events: detached ? structuredClone(this.#events) : this.#events,
-      rankings: detached ? structuredClone(this.#rankings) : this.#rankings,
+      rankings: [],
       routeRecovery: {
         attempts: this.#attemptTracker.snapshot((host) => this.#sanitizer.host(host)),
       },
@@ -329,17 +318,7 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
     return [...this.#flow].map(([key, row]) => ({ key, ...row }))
   }
   #event(event: DomainEvent): SafeEvent {
-    const { event: safe, ranking } = this.#sanitizer.event(event, this.verbose)
-    if (ranking) {
-      const signature = JSON.stringify(ranking.ranking)
-      if (!this.#rankings.some((row) => JSON.stringify(row.ranking) === signature))
-        this.#rankings.push(ranking)
-      while (this.#rankings.length > 4 || bytes(this.#rankings) > 12 * 1024) {
-        this.#rankings.shift()
-        this.#counters.rankingEvicted++
-      }
-    }
-    return safe
+    return this.#sanitizer.event(event)
   }
   #start(reason: string, at: number): void {
     if (this.#incident?.state === 'capturing') {
@@ -377,9 +356,6 @@ export class DiagnosticRecorder implements DiagnosticRecorderPort {
       if (this.#bufferTrends.length) {
         this.#bufferTrends.shift()
         this.#counters.bufferTrendEvicted++
-      } else if (this.#rankings.length) {
-        this.#rankings.shift()
-        this.#counters.rankingEvicted++
       } else if (this.#incident?.playerTrace.length) {
         this.#incident.playerTrace.shift()
         this.#counters.traceEvicted++
