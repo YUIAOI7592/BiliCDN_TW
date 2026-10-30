@@ -42,6 +42,10 @@ Codex Security 差異掃描已完成並封存：scan 4e827d91-2cf2-4af9-9da9-8b3
 
 本封裝快照完成時公開發布尚待執行；唯一腳本為 BiliCDN_TW.user.js，版本 2.1.39，507387 bytes，SHA-256 583c906d9f5123cd6c220fe78c815242a74d661bee3b0358b24bd69e379fd5e3。發布後 main／標籤／唯一附件及公開 latest 核對記於 [現行完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#公開交付與安裝結案)，不回寫已發布封裝。發布和實際安裝驗收分開。
 
+2026-10-31 01:43:45（Asia/Taipei）已公開 [v2.1.39 正式整合版](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.1.39)。整合分支來源提交 0fa13f6 以一般 merge 納入 main，發布提交為 9f8a88034d2ae625b17d3cc90817442a46b81093；五個 codex 工作分支端點均已核對為祖先，分支與工作樹未刪除。遠端 main 與標籤解參照都指向該發布提交；附註標籤物件為 e29853c3ead4c644b87c872a48fd6d2cbd537bb1。main 後續只追加本核對與結案紀錄，標籤及封裝原件不再改寫。
+
+GitHub 公開 latest API 回報 draft=false、prerelease=false，只有一個 BiliCDN_TW.user.js 附件。另直接下載既有公開 latest/download 入口，核對版本 2.1.39、507387 bytes 與上述完整 SHA-256，均與本機及 GitHub digest 一致。未透過瀏覽器安裝，不宣稱已更新 Tampermonkey；來源隔離、視覺與實機結果仍為未驗證。
+
 ## 歷史驗證導覽
 
 <a name="發布與安裝限制"></a>
