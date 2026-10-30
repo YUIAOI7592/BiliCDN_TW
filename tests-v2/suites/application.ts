@@ -1,4 +1,5 @@
 import { currentResumePlayer } from '../support/player.ts'
+import '../regressions/cc39-integration.ts'
 import '../regressions/buffer-monitor.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 import { FakeClock } from '../support/clock.ts'

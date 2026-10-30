@@ -114,7 +114,7 @@ function fixture(t: TestContext, rate: number) {
     },
   } satisfies MonitorRoutes & RuntimeRoutesPort
   const measurement = { ...monitorMeasurement(), reset() {} }
-  const diagnostics = new DiagnosticRecorder(f.clock.now, () => false)
+  const diagnostics = new DiagnosticRecorder(f.clock.now)
   const monitor = new PlayerMonitor(
     f.player,
     session,

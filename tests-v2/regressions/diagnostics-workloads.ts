@@ -9,10 +9,7 @@ for (const rate of [1, 2] as const)
     test(`diagnostics-cost frozen workload covers ${workload} and clear rate=${rate}`, (t) => {
       testScope(t)
       let now = 2000000000000
-      const recorder = new DiagnosticRecorder(
-        () => now,
-        () => true,
-      )
+      const recorder = new DiagnosticRecorder(() => now)
       let evicted = 0,
         incidentEvicted = 0,
         truncated = 0

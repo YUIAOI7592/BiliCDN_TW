@@ -1,0 +1,46 @@
+import type { ControlCenterSnapshot } from './control-center-ports.ts'
+import type { ControlViewActions } from './view-ports.ts'
+import { createRow } from './elements.ts'
+
+/** Refresh the same input, including remote updates, without replacing focus or handlers. */
+export function settingToggle(
+  label: string,
+  value: (model: ControlCenterSnapshot) => boolean,
+  update: (enabled: boolean) => Promise<unknown> | void,
+  actions: ControlViewActions,
+  detail = '',
+) {
+  const input = document.createElement('input')
+  input.type = 'checkbox'
+  input.setAttribute('aria-label', label)
+  let expected = value(actions.model()),
+    pending = false
+  input.checked = expected
+  input.addEventListener('change', (event) => {
+    if (!event.isTrusted || !actions.ownsView() || pending) {
+      input.checked = expected
+      return
+    }
+    const requested = input.checked
+    pending = true
+    expected = requested
+    // Start synchronously: SettingsStore applies restrictive changes before waiting for its lock.
+    const result = update(requested)
+    void actions.refreshAfter(Promise.resolve(result)).finally(() => {
+      pending = false
+      if (actions.ownsView()) {
+        expected = value(actions.model())
+        input.checked = expected
+      }
+    })
+  })
+  return {
+    row: createRow(label, input, detail),
+    refresh(model: ControlCenterSnapshot): void {
+      if (!pending) {
+        expected = value(model)
+        input.checked = expected
+      }
+    },
+  }
+}

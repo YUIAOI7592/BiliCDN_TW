@@ -89,10 +89,7 @@ for (const used of [false, true]) {
 test('buffer-v6 U-D Recorder caps and clears projections without producer mutation', (t) => {
   testScope(t)
   let now = 20000
-  const recorder = new DiagnosticRecorder(
-      () => now,
-      () => false,
-    ),
+  const recorder = new DiagnosticRecorder(() => now),
     source = trend()
   for (let i = 0; i < 200; i++) {
     now += 1000

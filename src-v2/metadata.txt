@@ -2,7 +2,7 @@
 // @name         Bilibili CDN 台灣優化
 // @namespace    BiliCDN_TW
 // @version      2.1.12
-// @description  UP141 測試版／實機待驗證：包含香港候選、量測對照及預設關閉的提前重試，正式採用待實機結果決定
+// @description  台灣 CDN 與播放整合：自動選路、香港節點、起播與健康量測、慢請求重試及四頁控制中心
 // @author       jiyunshi <chocosensei214@gmail.com>
 // @license      MIT
 // @homepageURL  https://github.com/YUIAOI7592/BiliCDN_TW

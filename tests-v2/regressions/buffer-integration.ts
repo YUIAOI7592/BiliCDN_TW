@@ -109,7 +109,7 @@ for (const rate of [1, 2]) {
   ] as const)
     test(`I-N02 ${scenario} real Monitor Runtime Recorder rate=${rate}`, (t) => {
       const f = bufferMonitor(t, rate),
-        recorder = new DiagnosticRecorder(f.clock.now, () => false)
+        recorder = new DiagnosticRecorder(f.clock.now)
       let subscriptions = 0
       const subscribe = () => {
         subscriptions++

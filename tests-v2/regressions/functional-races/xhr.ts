@@ -222,7 +222,7 @@ async function fixture(
     vault,
     createRuntimeIds(),
   )
-  const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes, settings))
+  const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes))
   const accepted = playurl.transform(payload(), 'trusted-api', 'initial')
   assert.equal(accepted.accepted, true)
   const wait = deferred<void>(),

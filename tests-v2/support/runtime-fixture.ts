@@ -86,7 +86,7 @@ export function fixture(
     vault,
     createRuntimeIds(),
   )
-  const content = new PlayurlController(session, vault, routes, settings)
+  const content = new PlayurlController(session, vault, routes)
   const playurl = new PlayurlAdapter(content)
   let video = blankVideo(),
     navigationKey = '/video/initial'
@@ -125,8 +125,6 @@ export function fixture(
         cancel: () => undefined,
         tick: () => undefined,
         startupFallbackHosts: () => [],
-        requestManual: () => undefined,
-        requestCatalogValidation: () => undefined,
         snapshot: () => ({
           state: 'idle' as const,
           reason: 'fixture',
@@ -148,7 +146,7 @@ export function fixture(
       clock,
     ),
   )
-  const diagnostics = new DiagnosticRecorder(clock.now, () => false)
+  const diagnostics = new DiagnosticRecorder(clock.now)
   const runtime = scope.own(
     new RuntimeController(
       session,
@@ -197,7 +195,6 @@ export function fixture(
     routes,
     measurement,
     recovery,
-    clock.now,
   )
   const transport = {
     snapshot: (): TransportSnapshot => ({

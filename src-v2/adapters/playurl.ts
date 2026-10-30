@@ -1,6 +1,5 @@
 import type { PlayurlItem } from '../application/playurl-model.ts'
 import type { PlayurlControllerPort } from '../application/playurl-ports.ts'
-import type { CodecPreference } from '../state/settings-model.ts'
 import type {
   PlayurlFormat,
   PlayurlRejection,
@@ -11,7 +10,7 @@ import { parseMediaUrl } from '../domain/url-policy.ts'
 
 export interface PlayurlIngestionPort extends Pick<
   PlayurlControllerPort,
-  'lifecycleKey' | 'catalogOnly' | 'codecPreference' | 'ingest' | 'active'
+  'lifecycleKey' | 'catalogOnly' | 'ingest' | 'active'
 > {}
 
 type UnknownRecord = Record<string, unknown>
@@ -67,8 +66,7 @@ export class PlayurlAdapter {
         : null
     const formats: PlayurlFormat[] = [],
       video: PlayurlItem[] = [],
-      audio: PlayurlItem[] = [],
-      sorts: UnknownRecord[][] = []
+      audio: PlayurlItem[] = []
     let segmentCount = 0,
       failure: PlayurlRejection | null = null
     const result = (reason: PlayurlRejection | null): PlayurlTransformResult =>
@@ -136,7 +134,7 @@ export class PlayurlAdapter {
               ? ''
               : `${branch}.dash`
           addFormat('dash')
-          sorts.push(videos)
+
           video.push(...videos.map((item, index) => normalize(item, index, dashBranch)))
           audio.push(...audios.map((item, index) => normalize(item, index, dashBranch)))
           // Every recognized audio alias is planned before any payload field is changed.
@@ -229,31 +227,6 @@ export class PlayurlAdapter {
     // Atomic writeback keeps all required segments and aliases intact on rejection.
     for (const output of outputs)
       if (isRecord(output.token)) rewriteItem(output.token, output.primary, output.backups)
-    for (const items of sorts) this.#sortCodecGroups(items, this.controller.codecPreference())
     return result(null)
-  }
-
-  #sortCodecGroups(items: UnknownRecord[], preference: CodecPreference): void {
-    if (preference === 'auto' || items.length < 2) return
-    const rank = (codec: string): number => {
-      const order: Record<Exclude<CodecPreference, 'auto'>, readonly string[]> = {
-        av1: ['av1', 'hevc', 'avc', 'other'],
-        hevc: ['hevc', 'av1', 'avc', 'other'],
-        avc: ['avc', 'hevc', 'av1', 'other'],
-      }
-      const index = order[preference].indexOf(codec)
-      return index < 0 ? 99 : index
-    }
-    const positions = new Map<string, number>()
-    items.forEach((item, index) => {
-      const key = String(item.id ?? item.quality ?? index)
-      if (!positions.has(key)) positions.set(key, positions.size)
-    })
-    items.sort((a, b) => {
-      const aKey = String(a.id ?? a.quality ?? ''),
-        bKey = String(b.id ?? b.quality ?? '')
-      const group = (positions.get(aKey) ?? 0) - (positions.get(bKey) ?? 0)
-      return group || rank(codecName(a)) - rank(codecName(b))
-    })
   }
 }

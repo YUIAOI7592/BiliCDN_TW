@@ -670,3 +670,9 @@ Codex Security a767078d-f3df-4a33-ad53-f437c730c5a9 固定 957da3f→7849e06 六
 工具與產品原型固定於 3cadfd8，以 Node 26.8.1／npm 11.19.0 執行。完整 npm test 2977 案通過，其中 UP141-RETRY 應用 37 案及可信 UI 一案；沒有略過、待實作或取消。獨立 early-retry-evaluation 命令使用相同政策、固定輸入及保留的未來供片事實；實際退出 1，valid=true、passed=false。正常突發回補兩案各多下載 100000 bytes，沒有把有效 FAIL 改為正式套件的預期失敗。
 
 原始 JSON 位於 [公開保護原件](../archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json)，方法見 [分支重現](DEVELOPMENT.md#慢請求提前重試原型重現分支限定)，完整結果見 [TEST_REPORT](TEST_REPORT.md#隔離-b-分支原型驗證2026-10-30)。原生事件替身只證明模型契約；IAB／Tampermonkey 及自然對照均延後，不宣稱安裝通過。
+
+## 2026-10-31：CC39 整合驗證與工具界線
+
+指定 Node 26.8.1／npm 11.19.0，完整測試及 verify 3010 案通過；工具契約需在正常授權環境建立暫存 Git，受限模式的 .git/config 寫入失敗不改期待處理。型別、114 模組架構、格式、確定性建置及封裝校驗均通過。獨立提前重試效用原命令仍退出 1／VALID FAIL，原始 JSON 精確保存，未納入預期失敗。
+
+本回合沒有 IAB 程式化控制工具；Windows Computer Use API 明列輸入操作自動啟用目標視窗，違反永久不搶焦點限制，且未能先保證媒體靜音。因此未啟動瀏覽器操作或安裝驗收，不請求例外、不開本機服務、不換瀏覽器。自動驗證不等於安裝或視覺驗收；產品完整結果見 [TEST_REPORT](TEST_REPORT.md)。

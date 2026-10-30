@@ -804,3 +804,7 @@ v2.1.38 五項新封裝登記 exact／raw 保護；封裝後 docs:check 通過 2
 ## 2026-10-31：全分支與歷史證據整併
 
 已保留 main 的現行執行期、測試、工具鏈、版本與 Release 原件，補入 B 固定原件與分支補充，追加兩份舊分支日誌段落；既有 main 日誌正文及保護基準不回寫。相容入口連至固定提交及歷史完整報告，新增原件使用原分支精確保護。完整來源身分與本輪結果見 [整併紀錄](BRANCH_INTEGRATION_2026-10-31.md)。
+
+## 2026-10-31：控制中心整合文件與封存基準
+
+現行 README、產品契約、架構、安全與開發指南依實際業務邏輯更新；v2.1.38 完整 TEST_REPORT 只追加到歷史全文。保留 509f56a 的 relocation manifest 原始位元組於 baseline/CC39_pre_integration_relocation_2026-10-31.json，SHA-256 01efd24d581b7abc855ca89361f420783a4addb4ded57a67f0936aae88904a20；本次將合法修改的現行執行期檔案移出 unchangedFiles，所有歷史搬移原件及日誌基準保持。
