@@ -8,6 +8,18 @@ import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { DEFAULT_UNAVAILABLE_HOSTS } from '../../src-v2/domain/catalog.ts'
 import { deferred } from '../support/deferred.ts'
 
+test('V220 CDN construction and refresh each capture one shared read model', (t) => {
+  const f = ui(t)
+  const original = f.routes.snapshot.bind(f.routes)
+  let reads = 0
+  f.routes.snapshot = () => { reads++; return original() }
+  f.button('CDN').emit('click')
+  assert.equal(reads, 1)
+  reads = 0
+  f.storage.remote('bilicdn.v2.settings', { ...f.settings.get(), updatedAt: f.clock.now() + 1 })
+  assert.equal(reads, 1)
+})
+
 class QueuedSettingsStorage extends FakeStorage {
   held = true
   tasks: (() => Promise<void>)[] = []
