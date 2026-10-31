@@ -2741,6 +2741,108 @@ test('paused dead core without intent never reloads [8]', { timeout: 5000 }, asy
     )
   }
 }
+test(
+  'V221 audio restrictions remain enforced without diagnostic reports',
+  { timeout: 5000 },
+  async (t) => {
+    const base = await createNativeControlUrlContext11(t)
+    await base.outputRestrictions.remove('upos-sz-mirrorali.bilivideo.com', 'black')
+    await base.outputSettings.update({ considerNativeSources: false })
+    const host = TRUSTED_CATALOG[0]
+    const ungroupedUrl = `https://${host}/upgcxcode/test/ungrouped/1.m4s?k=1`
+    await base.outputRestrictions.add({
+      host,
+      type: 'black',
+      kind: 'audio',
+      reason: 'ungrouped-audio',
+      expireAt: base.now + 60_000,
+    })
+    assert.notStrictEqual(
+      base.outputRoutes.apply(ungroupedUrl).decision.host,
+      host,
+      'ungrouped media cannot use a host with an audio-only blacklist',
+    )
+    await base.outputRestrictions.remove(host, 'black')
+    const audioUrl = `https://${host}/upgcxcode/test/audio/1.m4s?k=1`
+    assert.ok(
+      base.outputVault.register({
+        generation: base.outputState.generation,
+        epoch: base.outputState.epoch,
+        kind: 'audio',
+        key: 'scope-audio',
+        height: 0,
+        codec: 'other',
+        bandwidth: 128_000,
+        urls: [audioUrl],
+        source: 'trusted-api',
+      }),
+    )
+    await base.outputRestrictions.add({
+      host,
+      type: 'black',
+      kind: 'all',
+      reason: 'user',
+      expireAt: base.now + 60_000,
+    })
+    assert.notStrictEqual(base.outputRoutes.apply(audioUrl).decision.host, host)
+    assert.strictEqual(
+      base.outputRoutes.apply(`${audioUrl}&os=mcdn`).url,
+      null,
+      'user-wide blacklist locally blocks an exceptional audio route',
+    )
+  },
+)
+test(
+  'V221 XHR retains single dispatch and before-send restriction checks',
+  { timeout: 5000 },
+  async (t) => {
+    const base =
+      await createInitialDeadLookingStartupWithoutPreviousHealthIsNotAnIncidentContext13(t)
+    await base.outputSettings.update({ catalogOverrides: {}, fixedHost: null })
+    base.outputRoutes.invalidateForUserSetting()
+    const adapter = base.scope.own(
+      new TransportAdapter(
+        base.outputSession,
+        base.outputSettings,
+        base.outputRoutes,
+        base.outputAdapter,
+        base.measurementStub,
+        () => base.now,
+        createRuntimeIds(),
+      ),
+    )
+    adapter.install()
+    const tracedXhr = new base.FakeXhr()
+    tracedXhr.open('GET', base.outputItem.base_url)
+    tracedXhr.send()
+    await Promise.resolve()
+    const latest = base.outputRoutes.snapshot().latest.video
+    assert.strictEqual(tracedXhr.nativeSends, 1)
+    assert.strictEqual(latest?.targetHost, new URL(tracedXhr.url).host)
+    assert.strictEqual(latest?.playurlOutput?.originalHost, 'upos-sz-mirrorcosov.bilivideo.com')
+    const actualXhr = new base.FakeXhr()
+    actualXhr.open('GET', base.forbiddenUrl)
+    assert.ok(!actualXhr.url.includes('mirrorcosov'), 'open receives a rewritten legal host')
+    const beforeSendHost = new URL(actualXhr.url).host
+    await base.outputRestrictions.add({
+      host: beforeSendHost,
+      type: 'black',
+      kind: 'all',
+      reason: 'before-send',
+      expireAt: base.now + 60_000,
+    })
+    actualXhr.send()
+    assert.strictEqual(actualXhr.nativeSends, 1)
+    assert.notStrictEqual(new URL(actualXhr.url).host, beforeSendHost)
+    await base.outputSettings.update({
+      catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, false])),
+    })
+    const blockedXhr = new base.FakeXhr()
+    blockedXhr.open('GET', base.forbiddenUrl)
+    blockedXhr.send()
+    assert.strictEqual(blockedXhr.nativeSends, 0, 'no alternative never sends a forbidden request')
+  },
+)
 test('weak query match is not a backup capability [13]', { timeout: 5000 }, async (t) => {
   await checkWeakQueryMatchIsNotABackupCapability13(t)
 })

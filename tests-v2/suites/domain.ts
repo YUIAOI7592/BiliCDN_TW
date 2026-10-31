@@ -4,10 +4,17 @@ import '../regressions/functional-races/content-domain.ts'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
 import { addEvidenceSample, emptyEvidence, evidenceMetrics } from '../../src-v2/domain/evidence.ts'
-import { chooseRoute, rankRoutes } from '../../src-v2/domain/routing.ts'
+import { assessDemandRatio, chooseRoute, rankRoutes } from '../../src-v2/domain/routing.ts'
 import { decisionId } from '../../src-v2/domain/model.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { parseMediaUrl, replaceUrlHost } from '../../src-v2/domain/url-policy.ts'
+
+test('V221 overview demand headroom retains threshold semantics', () => {
+  assert.strictEqual(assessDemandRatio(0.55), 'below-required')
+  assert.strictEqual(assessDemandRatio(1.2), 'below-headroom')
+  assert.strictEqual(assessDemandRatio(1.35), 'meets-headroom')
+  assert.strictEqual(assessDemandRatio(null), 'unknown')
+})
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
 async function createDomainScenario(_t: TestContext) {

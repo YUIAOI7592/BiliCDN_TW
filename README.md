@@ -2,7 +2,7 @@
 
 BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，提供 CDN 選路、有限度的故障恢復。本專案的瀏覽器測試環境固定為 **Codex 內建瀏覽器＋Tampermonkey**。
 
-正常模式預設從腳本的 **內建節點清單（Catalog）** 選路。若希望 B 站當次提供的原始與備用網址也參與選路，可在控制中心開啟「允許參考 B 站原生來源」。
+正常模式預設從腳本的 **內建節點清單（Catalog）** 與 B 站當次提供的合法原始／備用網址選路。「允許參考 B 站原生來源」預設啟用；關閉後只使用 Catalog。
 
 版本以 [release.json](release.json) 為準。安裝與操作見下文，完整驗證見 [TEST_REPORT](docs/TEST_REPORT.md)，目前工作見 [TODO](docs/TODO.md)。
 
@@ -15,7 +15,7 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 
 ## 安裝與更新
 
-**目前為正式整合版。** 四頁控制中心、六個自動功能開關與香港節點已整合。v2.1.37／v2.1.38 保留原測試定位；提前重試的獨立效用仍為 FAIL，本版預設依使用者決策啟用，不代表效用驗收通過。
+**目前為正式整合版。** 三頁控制中心、六個自動功能開關與香港節點已整合。v2.1.37／v2.1.38 保留原測試定位；提前重試的獨立效用仍為 FAIL，本版預設依使用者決策啟用，不代表效用驗收通過。
 
 1. 在 Codex 內建瀏覽器的 Tampermonkey 環境進行本專案驗證；安裝方法依管理器提供的介面操作。
 2. 開啟 **[安裝／更新腳本](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js)**，並在 Tampermonkey 確認安裝。也可從 [最新 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest) 取得同一檔案。

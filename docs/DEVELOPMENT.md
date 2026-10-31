@@ -331,7 +331,7 @@ metadata.txt 中既有的 `@version` 是建置模板值；實際輸出由 releas
 2. 清單 schemaVersion 為 1；documents.kind 分別標記指南、導覽、狀態、驗證、變更、日誌、版本紀錄、不可變快照與相容頁。protections 的 exact 禁止正文改寫；prefix 只允許追加。文字雜湊按 LF 正規化，二進位按原始位元組；不得改基準雜湊來消除失敗。
 3. 修改標題先核對引用與 requiredAnchors；[HISTORY](HISTORY.md) 提供版本、議題、日期及封存入口。`TEST_REPORT_HISTORY`、`DOC_MAINTENANCE_HISTORY` 與 `TEST_TOOLING_REPORT` 三份日誌的全部既有正文只追加；搬移清單的完整基準補足原 prefix 保護之後的既有尾段。發行原件、baseline 與安全封存不回寫。
 4. 失效連結例外只適用原檔雜湊相符的不可變文件，逐筆指定 source、line、url、sha256、reason；修復後刪除例外。歷史報告中的本機私有證據另以 privateEvidenceReferences 記錄相同精確欄位，只適用受保護原報告，無論本機是否有檔都列為未核對，不讀取私有內容。不得對現行文件、未知新錯誤或整個目錄設定豁免。
-5. `archiveManifest` 連至公開搬移清單；歷史引用限制須精確符合 source、line、url、原檔 LF 雜湊及登記的 originalTarget／archivedTarget。現行指南及搬移閱讀版本身的連結必須有效，不能借歷史限制隱藏新錯誤。工具重新分組的現行路徑由文件清單 sourceRelocations 登記；僅受保護原文可按精確歷史引用使用對照，原路徑必須消失且新檔存在，不能豁免現行指南或新的破損連結。閱讀版只准修改原件中已解析的連結 URL，文字、程式碼、標題與結果均與 TAR 原文核對。
+5. `archiveManifest` 連至公開搬移清單；歷史引用限制須精確符合 source、line、url、原檔 LF 雜湊及登記的 originalTarget／archivedTarget。現行指南及搬移閱讀版本身的連結必須有效，不能借歷史限制隱藏新錯誤。工具重新分組的現行路徑由文件清單 sourceRelocations 登記；原路徑必須消失且新檔存在。退役原碼改由 retiredSources 登記完整提交與原始 blob SHA-256，檢查本機檔案已消失且 Git 原件相符；只供精確受保護的歷史引用使用，不豁免現行指南或新斷鏈。閱讀版只准修改原件中已解析的連結 URL，文字、程式碼、標題與結果均與 TAR 原文核對。
 6. 搬移清單的 unchangedFiles 是本輪未改產品的證明。後續已授權產品變更先保存舊清單快照，再明確更新適用範圍；不得回寫歷史原件 entries、原始雜湊或既有 URL 編輯證據來消除失敗。
 
 持續維護而未限定版本的指南、導覽與跨版彙編，清單的 versions 使用空陣列、date 使用 null，現行產品版本仍由 release.json 決定；不要保留已失去範圍意義的舊版標籤。固定來源／工具版本、明確日期的遷移對照與版本驗收文件保留其實際關聯。文件狀態改變時，同輪核對清單的分類與範圍，日期不是執行時間或驗收成功的替代證據。
