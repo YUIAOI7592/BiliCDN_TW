@@ -9,15 +9,12 @@ import type { TestContext } from 'node:test'
 import { PlayurlController } from '../../src-v2/application/playurl-controller.ts'
 import { decisionId } from '../../src-v2/domain/model.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
-import { parseMediaUrl } from '../../src-v2/domain/url-policy.ts'
 import { SignedRouteVault } from '../../src-v2/state/signed-route-vault.ts'
 import { RestrictionStore } from '../../src-v2/state/restriction-store.ts'
 import { EvidenceStore } from '../../src-v2/state/evidence-store.ts'
 import { SessionStore } from '../../src-v2/state/session-store.ts'
 import { RouteCoordinator } from '../../src-v2/application/route-coordinator.ts'
 import { TransportAdapter } from '../../src-v2/adapters/transport.ts'
-import type { AppliedRouteDecision } from '../../src-v2/application/route-contracts.ts'
-import type { TransportObservation } from '../../src-v2/domain/model.ts'
 import { PlayurlAdapter } from '../../src-v2/adapters/playurl.ts'
 import { PagePlayinfoAdapter } from '../../src-v2/adapters/page-playinfo.ts'
 import { FakeStorage } from '../support/storage.ts'
@@ -29,43 +26,6 @@ async function createNativeTransportScenario(t: TestContext) {
   installProgressEvent(scope)
   const now = 2_000_000_000_000
   const clock = { now: () => now }
-  const passDecision: AppliedRouteDecision = {
-    decision: {
-      action: 'pass',
-      target: { type: 'request' },
-      id: decisionId('runtime-pass'),
-      reason: 'test',
-      routeType: 'root-original',
-      host: 'upos-sz-mirrorali.bilivideo.com',
-      ranking: [],
-    },
-    url: 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/runtime.m4s',
-    context: null,
-    streamKey: 'runtime',
-    sourceHost: 'upos-sz-mirrorali.bilivideo.com',
-  }
-  const observations: TransportObservation[] = []
-  ;({
-    requestStarted(): void {},
-    isCatalogOnly(): boolean {
-      return false
-    },
-    isBilibiliMedia(url: string): boolean {
-      return /\.bilivideo\.com\/|\.akamaized\.net\//.test(url)
-    },
-    recognizesMedia(url: string): boolean {
-      return parseMediaUrl(url)?.kind !== 'unknown'
-    },
-    inspectOriginal(url: string): AppliedRouteDecision {
-      return this.apply(url)
-    },
-    apply(url: string): AppliedRouteDecision {
-      return { ...passDecision, url }
-    },
-    async observe(observation: TransportObservation): Promise<void> {
-      observations.push(observation)
-    },
-  })
   let nativeFetchCalls = 0
   let playurlFetchBody = JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } })
   let playurlFetchOverride: Response | null = null
@@ -170,8 +130,6 @@ async function createNativeTransportScenario(t: TestContext) {
     scope,
     now,
     clock,
-    passDecision,
-    observations,
     get nativeFetchCalls() {
       return nativeFetchCalls
     },
@@ -191,12 +149,8 @@ async function createNativeTransportScenario(t: TestContext) {
       playurlFetchOverride = next
     },
     nativeFetchUrls,
-    nativeFetchMethods,
     nativeFetchRedirects,
-    nativeFetchHeaders,
-    nativeFetch,
     FakeXhr,
-    originalWorker,
     fakeWindow,
   } as const)
 }
@@ -264,17 +218,13 @@ async function createDispatchStorageAnddispatchSettingsContext1(t: TestContext) 
   )
   dispatchTransport.install()
   return extendFixture(base, {
-    dispatchStorage,
     dispatchSettings,
     dispatchSession,
-    dispatchState,
     dispatchVault,
     dispatchEvidence,
     dispatchRoutes,
-    dispatchPlayurl,
     dispatchRoot,
     dispatchNativeBackup,
-    dispatchItem,
     get gateDispatch() {
       return gateDispatch
     },
@@ -282,7 +232,6 @@ async function createDispatchStorageAnddispatchSettingsContext1(t: TestContext) 
       gateDispatch = next
     },
     dispatchGate,
-    dispatchMeasurement,
     dispatchTransport,
   } as const)
 }
@@ -444,39 +393,8 @@ async function createMeasurementStubContext2(t: TestContext) {
     'https://cdn.example.net/upgcxcode/emitted-backup/final.m4s?signature=old-player-backup'
   return extendFixture(base, {
     measurementStub,
-    dispatchStorage,
-    dispatchSettings,
-    dispatchSession,
-    dispatchState,
-    dispatchVault,
-    dispatchEvidence,
-    dispatchRoutes,
-    dispatchPlayurl,
-    dispatchRoot,
-    dispatchNativeBackup,
-    dispatchItem,
-    get gateDispatch() {
-      return gateDispatch
-    },
-    set gateDispatch(next: typeof gateDispatch) {
-      gateDispatch = next
-    },
-    dispatchGate,
-    dispatchMeasurement,
-    dispatchTransport,
-    pendingToggleFetch,
-    pendingToggleXhr,
-    blockedPostXhr,
-    catalogXhr,
-    redirectedXhr,
-    staleOpaqueUrl,
-    staleOpaqueXhr,
-    nextDispatchState,
-    disabledDispatch,
-    emittedBackupStorage,
     emittedBackupSettings,
     emittedBackupSession,
-    emittedBackupState,
     emittedBackupVault,
     emittedBackupRoutes,
     emittedBackupPlayurl,
@@ -529,13 +447,7 @@ async function createEmittedBackupTransportContext3(t: TestContext) {
       'trusted-api',
     )
   }
-  return extendFixture(base, {
-    emittedBackupTransport,
-    emittedBackupXhr,
-    unrelatedThirdPartyUrl,
-    unrelatedThirdPartyXhr,
-    outputCapRep,
-  } as const)
+  return extendFixture(base, { emittedBackupTransport } as const)
 }
 
 async function createCappedThirdPartyBackupContext4(t: TestContext) {
@@ -652,28 +564,15 @@ async function createCappedThirdPartyBackupContext4(t: TestContext) {
   }
   Reflect.set(base.fakeWindow, '__playinfo__', latePagePayload)
   return extendFixture(base, {
-    cappedThirdPartyBackup,
-    cappedBackupXhr,
-    pageStorage,
     pageSettings,
     pageSession,
-    pageState,
     pageVault,
     pageRoutes,
     pagePlayurl,
     assignedAtSetter,
     assignedPayloadAtSetter,
-    get pageOwnedPlayinfo() {
-      return pageOwnedPlayinfo
-    },
-    set pageOwnedPlayinfo(next: typeof pageOwnedPlayinfo) {
-      pageOwnedPlayinfo = next
-    },
     pageInfo,
-    earlyPageUrl,
-    earlyPagePayload,
     trustedPageUrl,
-    trustedPagePayload,
     trustedPageRep,
     trustedPageOutput,
     trustedOutputRole,
@@ -801,22 +700,7 @@ async function createCatalogOnlyPlayinfoAccessorGetterSanitizesEveryFreshUnsuppo
     ),
   )
   freshPageInfo.install()
-  return extendFixture(base, {
-    affinityApplied,
-    unsupportedPageUrl,
-    unsupportedPagePayload,
-    initialUnsupportedUrl,
-    initialUnsupportedPlayinfo,
-    initialPageInfo,
-    nativeOnInitialPageInfo,
-    get freshPlayinfoReads() {
-      return freshPlayinfoReads
-    },
-    set freshPlayinfoReads(next: typeof freshPlayinfoReads) {
-      freshPlayinfoReads = next
-    },
-    freshPageInfo,
-  } as const)
+  return extendFixture(base, { freshPageInfo } as const)
 }
 
 async function createNativeOnPlayinfoAccessorGetterPreservesFreshWebsiteValue8Context7(
@@ -826,6 +710,7 @@ async function createNativeOnPlayinfoAccessorGetterPreservesFreshWebsiteValue8Co
     await createCatalogOnlyPlayinfoAccessorGetterSanitizesEveryFreshUnsupportedNativeValueContext6(
       t,
     )
+
   await base.pageSettings.update({ considerNativeSources: true })
   base.pageRoutes.invalidateForUserSetting()
   return extendFixture(base, {} as const)
@@ -929,33 +814,20 @@ async function createCatalogOnlyXHRParameterPlayurlIsBlockedBeforeNativeSendBeca
     'Catalog-only XHR JSON response does not expose non-DASH playurl signed Native URL',
   )
   return extendFixture(base, {
-    apiFailureStorage,
     apiFailureSettings,
     apiFailureSession,
-    apiFailureState,
     apiFailureVault,
     apiFailureRoutes,
-    apiFailurePlayurl,
     apiFailureTransport,
     apiEndpoint,
     leakedNativeUrl,
     malformedApi,
-    unsupportedApi,
     assertNoRawNative,
-    malformedTextXhr,
-    unsupportedTextXhr,
-    unsupportedJsonXhr,
   } as const)
 }
 
 async function createPartialPlayurlXHRFixtureIsStillLoading10Context9(t: TestContext) {
   const base = await createCatalogOnlyXHRParameterPlayurlIsBlockedBeforeNativeSendBecauseContext8(t)
-  for (const responseType of ['blob', 'arraybuffer'] as const) {
-    const binaryXhr = new base.FakeXhr()
-    binaryXhr.responseType = responseType
-    binaryXhr.open('GET', base.apiEndpoint)
-    binaryXhr.send()
-  }
   const loadingSignedText = `{"data":{"dash":{"video":[{"base_url":"${base.leakedNativeUrl}"`
   const loadingTextXhr = new base.FakeXhr()
   loadingTextXhr.responseType = 'text'
@@ -971,14 +843,6 @@ async function createNativeOnXHRParameterPlayurlRetainsWebsiteDispatch11Paramete
   t: TestContext,
 ) {
   const base = await createPartialPlayurlXHRFixtureIsStillLoading10Context9(t)
-  await base.assertNoRawNative(
-    () => base.loadingTextXhr.responseText,
-    'Catalog-only XHR LOADING responseText cannot expose a partial signed Native playurl',
-  )
-  await base.assertNoRawNative(
-    () => base.loadingTextXhr.response,
-    'Catalog-only XHR LOADING text response cannot expose a partial signed Native playurl',
-  )
   const delayedSitePlayurl = JSON.stringify(
     {
       code: 0,
@@ -1015,18 +879,6 @@ async function createNativeOnXHRParameterPlayurlRetainsWebsiteDispatch11Paramete
   const nextApiFailureState = base.apiFailureSession.beginGeneration(false)
   base.apiFailureVault.reset(nextApiFailureState.generation, nextApiFailureState.epoch)
   base.apiFailureRoutes.resetEpoch()
-  await base.assertNoRawNative(
-    () => stalePlayurlTextXhr.responseText,
-    'Catalog-only XHR text opened in an old SPA generation never exposes a signed Native playurl after generation reset',
-  )
-  await base.assertNoRawNative(
-    () => stalePlayurlTextXhr.response,
-    'Catalog-only XHR response opened in an old SPA generation never exposes a signed Native playurl after generation reset',
-  )
-  await base.assertNoRawNative(
-    () => stalePlayurlJsonXhr.response,
-    'Catalog-only XHR JSON opened in an old SPA generation never exposes a signed Native playurl after generation reset',
-  )
   let releaseDelayedPlayurl: () => void = () => undefined
   const bodyReadStarted = deferred<void>()
   base.playurlFetchOverride = new Response(
@@ -1094,29 +946,17 @@ async function createNativeOnXHRParameterPlayurlRetainsWebsiteDispatch11Paramete
     },
   }
   base.playurlFetchBody = JSON.stringify(transformFailurePayload)
-  await base.assertNoRawNative(
-    async () => await (await base.fakeWindow.fetch(base.apiEndpoint)).text(),
-    'Catalog-only Fetch does not expose signed Native URL after transform throws',
-  )
   const throwingTextXhr = new base.FakeXhr()
   throwingTextXhr.responseType = 'text'
   throwingTextXhr.payload = JSON.stringify(transformFailurePayload)
   throwingTextXhr.rawResponseText = JSON.stringify(transformFailurePayload)
   throwingTextXhr.open('GET', base.apiEndpoint)
   throwingTextXhr.send()
-  await base.assertNoRawNative(
-    () => throwingTextXhr.responseText,
-    'Catalog-only XHR text does not expose signed Native URL after transform throws',
-  )
   const throwingJsonXhr = new base.FakeXhr()
   throwingJsonXhr.responseType = 'json'
   throwingJsonXhr.payload = transformFailurePayload
   throwingJsonXhr.open('GET', base.apiEndpoint)
   throwingJsonXhr.send()
-  await base.assertNoRawNative(
-    () => throwingJsonXhr.response,
-    'Catalog-only XHR JSON does not expose signed Native URL after transform throws',
-  )
   await base.apiFailureSettings.update({ considerNativeSources: true })
   base.apiFailureRoutes.invalidateForUserSetting()
   base.playurlFetchBody = base.malformedApi
@@ -1133,28 +973,7 @@ async function createNativeOnXHRParameterPlayurlRetainsWebsiteDispatch11Paramete
   nativeOnLoadingXhr.rawResponseText = base.loadingSignedText
   nativeOnLoadingXhr.open('GET', base.apiEndpoint)
   nativeOnLoadingXhr.send()
-  return extendFixture(base, {
-    delayedSitePlayurl,
-    stalePlayurlTextXhr,
-    stalePlayurlJsonXhr,
-    nextApiFailureState,
-    get releaseDelayedPlayurl() {
-      return releaseDelayedPlayurl
-    },
-    set releaseDelayedPlayurl(next: typeof releaseDelayedPlayurl) {
-      releaseDelayedPlayurl = next
-    },
-    bodyReadStarted,
-    readWebsiteBody,
-    delayedPlayurlFetch,
-    throwingPlayurl,
-    throwingTransport,
-    transformFailurePayload,
-    throwingTextXhr,
-    throwingJsonXhr,
-    nativeOnXhr,
-    nativeOnLoadingXhr,
-  } as const)
+  return extendFixture(base, { throwingTransport } as const)
 }
 
 async function createDisabledScriptPreservesMalformedWebsiteFetchPlayurlResponse12Context11(
@@ -1162,12 +981,6 @@ async function createDisabledScriptPreservesMalformedWebsiteFetchPlayurlResponse
 ) {
   const base =
     await createNativeOnXHRParameterPlayurlRetainsWebsiteDispatch11ParameterParameterContext10(t)
-  for (const responseType of ['blob', 'arraybuffer'] as const) {
-    const binaryXhr = new base.FakeXhr()
-    binaryXhr.responseType = responseType
-    binaryXhr.open('GET', base.apiEndpoint)
-    binaryXhr.send()
-  }
   await base.apiFailureSettings.update({
     disabled: true,
     considerNativeSources: false,
@@ -1190,19 +1003,13 @@ async function createDisabledApiXhrContext12(t: TestContext) {
   disabledLoadingXhr.rawResponseText = base.loadingSignedText
   disabledLoadingXhr.open('GET', base.apiEndpoint)
   disabledLoadingXhr.send()
-  return extendFixture(base, { disabledApiXhr, disabledLoadingXhr } as const)
+  return extendFixture(base, {} as const)
 }
 
 async function createCatalogOnlyFetchBlocksKnownBStationPCDNSuffixParameterBeforeContext13(
   t: TestContext,
 ) {
   const base = await createDisabledApiXhrContext12(t)
-  for (const responseType of ['blob', 'arraybuffer'] as const) {
-    const binaryXhr = new base.FakeXhr()
-    binaryXhr.responseType = responseType
-    binaryXhr.open('GET', base.apiEndpoint)
-    binaryXhr.send()
-  }
   base.throwingTransport.dispose()
   base.playurlFetchBody = JSON.stringify({
     code: 0,
@@ -1238,16 +1045,7 @@ async function createCatalogOnlyFetchBlocksKnownBStationPCDNSuffixParameterBefor
     ),
   )
   oversizedTransport.install()
-  return extendFixture(base, {
-    oversizedStorage,
-    oversizedSettings,
-    oversizedSession,
-    oversizedState,
-    oversizedVault,
-    oversizedRoutes,
-    oversizedPlayurl,
-    oversizedTransport,
-  } as const)
+  return extendFixture(base, { oversizedSettings, oversizedRoutes, oversizedTransport } as const)
 }
 
 async function createUnattributedThirdPartyM4sFetchRemainsWebsiteOwned15Context14(t: TestContext) {

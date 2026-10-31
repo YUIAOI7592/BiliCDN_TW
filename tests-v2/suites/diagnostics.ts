@@ -63,56 +63,6 @@ async function createDiagnosticsScenario(_t: TestContext) {
 
 async function createOldBufferedPlaybackDoesNotVerifyAFallback2Context1(t: TestContext) {
   const base = await createDiagnosticsScenario(t)
-  void (base.recorderSnapshot.flow.length <= 96)
-  const failureEvent: DomainEvent = {
-    type: 'transport',
-    at: base.now + 2000,
-    observation: {
-      ...base.healthyObservation,
-      completedAt: base.now + 2000,
-      outcome: 'failure',
-      failureKind: 'network',
-      status: 0,
-    },
-  }
-  base.recorder.record(failureEvent)
-  void base.recorder.snapshot().incident
-  const report = JSON.parse(
-    base.recorder.buildReport({
-      version: '2.0.0',
-      session: base.session.get(),
-      routes: base.routeReadModel,
-      monitor: { watchdog: 'healthy', video: { currentTime: 90, bufferAheadSec: 70 } },
-    }),
-  ) as {
-    current: {
-      routes?: { planCount: number }
-      monitor?: { watchdog: string }
-      truncated?: boolean
-    }
-    recorder: { truncated?: boolean }
-  }
-  void (report.current.truncated !== true)
-  const oversizedReport = JSON.parse(
-    base.recorder.buildReport({
-      version: '2.0.0',
-      session: base.session.get(),
-      routes: {
-        ...base.routeReadModel,
-        plans: Array.from({ length: 128 }, () => 'p'.repeat(1000)),
-        ranking: Array.from({ length: 128 }, () => 'r'.repeat(1000)),
-      },
-      monitor: { watchdog: 'healthy', video: { currentTime: 90, bufferAheadSec: 70 } },
-    }),
-  ) as {
-    current: {
-      routes?: { planCount: number }
-      monitor?: { watchdog: string }
-      truncated?: boolean
-    }
-    recorder: { incident?: { reason: string } | null; truncated?: boolean }
-  }
-  void oversizedReport.recorder.incident?.reason.startsWith('transport:')
   const trace = new DiagnosticRecorder(() => traceNow)
   let traceNow = base.now
   const traceRep = representationId('trace-rep'),
@@ -167,9 +117,6 @@ async function createOldBufferedPlaybackDoesNotVerifyAFallback2Context1(t: TestC
   traceNow += 1000
   trace.recordPlayer(traceSample(101, 3, 125))
   return extendFixture(base, {
-    failureEvent,
-    report,
-    oversizedReport,
     trace,
     get traceNow() {
       return traceNow
@@ -189,7 +136,6 @@ async function createOldBufferedPlaybackDoesNotVerifyAFallback2Context1(t: TestC
 
 async function createNewFallbackSupersedesUnconfirmedOldAttempt3Context2(t: TestContext) {
   const base = await createOldBufferedPlaybackDoesNotVerifyAFallback2Context1(t)
-  void base.attemptRows().at(-1)?.stage
   const traceRequest = (id: string, decision: string, host: string) => ({
     requestId: requestId(id),
     generation: base.traceIdentity.generation,
@@ -235,9 +181,6 @@ async function createNewFallbackSupersedesUnconfirmedOldAttempt3Context2(t: Test
       },
     })
   }
-  void base.attemptRows().at(-1)?.zeroByteAborts
-  void base.attemptRows().at(-1)?.noResponseAborts
-  void base.attemptRows().at(-1)?.stage
   const timeoutRequest = traceRequest('timeout-after-aborts', 'first-decision', base.traceHostA)
   base.trace.record({ type: 'request-started', at: base.traceNow, request: timeoutRequest })
   base.trace.record({
@@ -260,8 +203,6 @@ async function createNewFallbackSupersedesUnconfirmedOldAttempt3Context2(t: Test
       completedAt: base.traceNow,
     },
   })
-  void (base.attemptRows().at(-1) as
-    { aborts: number; failures: number; lastFailureKind: string } | undefined)
   const timedOutFlow = base.trace.snapshot().flow
   void timedOutFlow.reduce((sum, row) => sum + row.aborts, 0)
   void timedOutFlow.reduce((sum, row) => sum + row.failures, 0)
@@ -278,14 +219,13 @@ async function createNewFallbackSupersedesUnconfirmedOldAttempt3Context2(t: Test
     },
   })
   base.trace.recordPlayer(base.traceSample(101, 0.5, 125))
-  return extendFixture(base, { traceRequest, timeoutRequest, timedOutFlow } as const)
+  return extendFixture(base, { traceRequest } as const)
 }
 
 async function createParameterCannotConfirmFallbackTransfer4ParameterParameterContext3(
   t: TestContext,
 ) {
   const base = await createNewFallbackSupersedesUnconfirmedOldAttempt3Context2(t)
-  void base.attemptRows()[0]?.stage
   const secondRequest = base.traceRequest('second-request', 'second-decision', base.traceHostB)
   base.trace.record({ type: 'request-started', at: base.traceNow, request: secondRequest })
   const secondSuccess = {
@@ -305,13 +245,10 @@ async function createParameterCannotConfirmFallbackTransfer4ParameterParameterCo
     at: base.traceNow,
     observation: { ...secondSuccess, bytes: 10_000 },
   })
-  void base.attemptRows().at(-1)?.stage
   base.traceNow += 1000
   base.trace.recordPlayer(base.traceSample(101.7, 1, 132))
-  void base.attemptRows().at(-1)?.stage
   base.traceNow += 1000
   base.trace.recordPlayer(base.traceSample(102.2, 1, 156))
-  void base.attemptRows().at(-1)?.stage
   const invalidTransfers = [
     { name: 'wrong host', request: { targetHost: base.traceHostA } },
     { name: 'wrong decision', request: { decisionId: decisionId('unrelated') } },
@@ -323,47 +260,11 @@ async function createParameterCannotConfirmFallbackTransfer4ParameterParameterCo
     { name: 'redirected response', observation: { finalHost: base.traceHostA } },
     { name: 'same-host redirect', observation: { responseUrlMatchesRequest: false } },
   ]
-  return extendFixture(base, { secondRequest, secondSuccess, invalidTransfers } as const)
+  return extendFixture(base, { secondSuccess, invalidTransfers } as const)
 }
 
 async function createPausedPlayerCannotConfirmFallbackPlayback5Context4(t: TestContext) {
   const base = await createParameterCannotConfirmFallbackTransfer4ParameterParameterContext3(t)
-  for (const invalid of base.invalidTransfers) {
-    const fixture = new DiagnosticRecorder(() => base.traceNow)
-    fixture.record({
-      type: 'recovery',
-      at: base.traceNow,
-      action: {
-        action: 'route-fallback',
-        id: recoveryActionId('invalid'),
-        kind: 'video',
-        identity: base.traceIdentity,
-        decision: base.traceDecision('second-decision', base.traceHostB),
-      },
-    })
-    fixture.recordPlayer(base.traceSample(10, 0, 1))
-    const request = {
-      ...base.traceRequest('invalid-request', 'second-decision', base.traceHostB),
-      ...invalid.request,
-    }
-    fixture.record({ type: 'request-started', at: base.traceNow, request })
-    fixture.record({
-      type: 'route-confirmed',
-      at: base.traceNow,
-      observation: {
-        ...base.secondSuccess,
-        request,
-        decisionId: request.decisionId,
-        epoch: request.epoch,
-        kind: request.kind,
-        targetHost: request.targetHost,
-        finalHost: request.targetHost,
-        ...invalid.observation,
-      },
-    })
-    const stage = fixture.snapshot().routeRecovery.attempts.at(-1)?.stage
-    void (stage !== 'response-observed' && stage !== 'playback-observed')
-  }
   const pausedTrace = new DiagnosticRecorder(() => base.traceNow)
   pausedTrace.record({
     type: 'recovery',
@@ -388,7 +289,7 @@ async function createPausedPlayerCannotConfirmFallbackPlayback5Context4(t: TestC
   pausedTrace.recordPlayer(base.traceSample(51, 0, 12, true))
   base.traceNow += 1000
   pausedTrace.recordPlayer(base.traceSample(52, 0, 13, true))
-  return extendFixture(base, { pausedTrace, pausedRequest } as const)
+  return extendFixture(base, { pausedTrace } as const)
 }
 
 async function checkPausedPlayerCannotConfirmFallbackPlayback5(t: TestContext): Promise<void> {

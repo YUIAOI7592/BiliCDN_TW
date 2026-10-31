@@ -7,12 +7,8 @@ import { BrowserNavigation } from '../../src-v2/adapters/navigation.ts'
 import { testScope } from '../support/scope.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
-async function createAdapterBoundariesScenario(_t: TestContext) {
-  return extendFixture({}, {} as const)
-}
 
-async function createHostAndurlContext1(t: TestContext) {
-  const base = await createAdapterBoundariesScenario(t)
+async function createHostAndurlContext1(_t: TestContext) {
   const host = 'upos-sz-mirrorcos.bilivideo.com',
     url = `https://${host}/test.m4s`
   const input = {
@@ -49,7 +45,7 @@ async function createHostAndurlContext1(t: TestContext) {
     () => 10,
   )
   const measured = await direct.read(input)
-  return extendFixture(base, {
+  return extendFixture({}, {
     host,
     url,
     input,
@@ -72,13 +68,11 @@ async function createHostAndurlContext1(t: TestContext) {
       body = next
     },
     response,
-    direct,
     measured,
   } as const)
 }
 
 async function createScopeContext2(t: TestContext) {
-  const base = await createAdapterBoundariesScenario(t)
   const scope = testScope(t)
   const host = 'upos-sz-mirrorcos.bilivideo.com',
     url = `https://${host}/test.m4s`
@@ -89,7 +83,7 @@ async function createScopeContext2(t: TestContext) {
     signal: new AbortController().signal,
     completionReason: 'enough',
   }
-  let requestInit: RequestInit | undefined
+
   let body: ReadableStream<Uint8Array> | null = null
   const response = (status: number, responseUrl: string, redirected = false): Response => {
     body = new ReadableStream<Uint8Array>({
@@ -108,35 +102,12 @@ async function createScopeContext2(t: TestContext) {
     return result
   }
   const direct = new RangeProbeAdapter(
-    async (_url, init) => {
-      requestInit = init
+    async (_url, _init) => {
       return response(206, url)
     },
     () => 10,
   )
-  const measured = await direct.read(input)
-  void (measured.directRange && measured.bytes === 16)
-  void (
-    requestInit?.redirect === 'error' &&
-    requestInit.credentials === 'omit' &&
-    requestInit.cache === 'no-store'
-  )
-  void new Headers(requestInit?.headers).get('range')
-  void (body !== null && !Reflect.get(body, 'locked'))
-  for (const [status, target, redirected] of [
-    [200, url, false],
-    [206, 'https://other.example/test', false],
-    [206, '', false],
-    [206, url, true],
-    [206, `http://${host}/test`, false],
-    [206, `https://${host}:444/test`, false],
-  ] as const) {
-    const probe = new RangeProbeAdapter(
-      async () => response(status, target, redirected),
-      () => 10,
-    )
-    void !(await probe.read(input)).directRange
-  }
+  void (await direct.read(input))
   const aborted = new AbortController()
   aborted.abort('generation')
   let fetchCalls = 0
@@ -147,27 +118,10 @@ async function createScopeContext2(t: TestContext) {
     },
     () => 10,
   ).read({ ...input, signal: aborted.signal })
-  return extendFixture(base, {
+  return extendFixture({}, {
     scope,
-    host,
     url,
     input,
-    get requestInit() {
-      return requestInit
-    },
-    set requestInit(next: typeof requestInit) {
-      requestInit = next
-    },
-    get body() {
-      return body
-    },
-    set body(next: typeof body) {
-      body = next
-    },
-    response,
-    direct,
-    measured,
-    aborted,
     get fetchCalls() {
       return fetchCalls
     },

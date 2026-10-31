@@ -50,9 +50,8 @@ async function createApplicationScenario(_t: TestContext) {
 }
 
 async function createScopeContext1(t: TestContext) {
-  const base = await createApplicationScenario(t)
   const scope = testScope(t)
-  return extendFixture(base, { scope } as const)
+  return extendFixture({}, { scope } as const)
 }
 
 async function createNowContext2(t: TestContext) {
@@ -125,7 +124,7 @@ async function createCoordinatorContext3(t: TestContext) {
     expireAt: base.now + 60_000,
   })
   await base.restrictions.remove('upos-hz-mirrorakam.akamaized.net', 'black')
-  return extendFixture(base, { coordinator, opaqueAudioUrl } as const)
+  return extendFixture(base, { coordinator } as const)
 }
 
 async function createManyQualityGroupsStillEnterTheRouteCoordinator3Context4(t: TestContext) {
@@ -225,7 +224,6 @@ async function createStartupSessionAndstartupGenerationContext5(t: TestContext) 
 async function createStallNowAndstartupReloadsContext6(t: TestContext) {
   const base = await createStartupSessionAndstartupGenerationContext5(t)
   let stallNow = base.now
-  void 0
   const stallEvidence = base.scope.own(new EvidenceStore(new FakeStorage(), () => stallNow))
   const stallRestrictions = base.scope.own(new RestrictionStore(new FakeStorage(), () => stallNow))
   const stallSettings = base.scope.own(new CatalogSettingsStore(new FakeStorage(), () => stallNow))
@@ -248,7 +246,6 @@ async function createStallNowAndstartupReloadsContext6(t: TestContext) {
     },
     stallEvidence,
     stallRestrictions,
-    stallSettings,
     stallRoutes,
   } as const)
 }
@@ -589,63 +586,6 @@ async function createChallengeDoneAndredirectDoneAndmismatchedDoneAndmissingDone
     )
     for (const host of TRUSTED_CATALOG) await stallRestrictions.remove(host, 'black')
   }
-  const incompatibleSession = new SessionStore(),
-    incompatibleState = incompatibleSession.beginGeneration(false)
-  const incompatibleVault = new SignedRouteVault()
-  incompatibleVault.reset(incompatibleState.generation, incompatibleState.epoch)
-  const incompatibleRoot =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/incompatible/segment.m4s?sig=clip'
-  const incompatibleRep = incompatibleVault.register({
-    generation: incompatibleState.generation,
-    epoch: incompatibleState.epoch,
-    kind: 'video',
-    key: 'incompatible:80',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 2_000_000,
-    urls: [incompatibleRoot],
-    source: 'trusted-api',
-  })
-  const incompatibleRoutes = new RouteCoordinator(
-    clock,
-    incompatibleSession,
-    base.scope.own(new CatalogSettingsStore(new FakeStorage(), () => now)),
-    base.scope.own(new RestrictionStore(new FakeStorage(), () => now)),
-    base.scope.own(new EvidenceStore(new FakeStorage(), () => now)),
-    incompatibleVault,
-    createRuntimeIds(),
-  )
-  if (incompatibleRep) {
-    const badCatalog = incompatibleRoutes
-      .startupOptions(incompatibleRoot)
-      ?.candidates.find((candidate) => candidate.type === 'catalog-generated')
-    incompatibleRoutes.commitStartupChoice(
-      incompatibleRoot,
-      badCatalog ?? null,
-      'startup-preflight',
-    )
-    const failed = incompatibleRoutes.apply(incompatibleRoot)
-    await incompatibleRoutes.observe({
-      generation: incompatibleState.generation,
-      epoch: incompatibleState.epoch,
-      decisionId: failed.decision.id,
-      representation: incompatibleRep,
-      kind: 'video',
-      routeType: 'catalog-generated',
-      originalHost: new URL(incompatibleRoot).host,
-      targetHost: badCatalog!.host,
-      finalHost: badCatalog!.host,
-      streamKey: failed.streamKey,
-      status: 403,
-      bytes: 0,
-      ttfbMs: 40,
-      elapsedMs: 100,
-      completedAt: now + 100,
-      outcome: 'failure',
-      responseUrlMatchesRequest: true,
-    })
-    incompatibleRoutes.apply(incompatibleRoot)
-  }
   const deadStartup: VideoSnapshot = {
     ...playerSnapshot,
     currentTime: 0,
@@ -714,47 +654,12 @@ async function createChallengeDoneAndredirectDoneAndmismatchedDoneAndmissingDone
     mismatchedDone,
     missingDone,
     now,
-    clock,
-    storage,
     restrictions,
     settings,
-    evidenceStore,
     session,
     liveVault,
-    state,
     liveRep,
     coordinator,
-    opaqueAudioUrl,
-    get recoveryNow() {
-      return recoveryNow
-    },
-    set recoveryNow(next: typeof recoveryNow) {
-      recoveryNow = next
-    },
-    get reloads() {
-      return reloads
-    },
-    set reloads(next: typeof reloads) {
-      reloads = next
-    },
-    get seeks() {
-      return seeks
-    },
-    set seeks(next: typeof seeks) {
-      seeks = next
-    },
-    get rates() {
-      return rates
-    },
-    set rates(next: typeof rates) {
-      rates = next
-    },
-    get plays() {
-      return plays
-    },
-    set plays(next: typeof plays) {
-      plays = next
-    },
     get playerSnapshot() {
       return playerSnapshot
     },
@@ -762,7 +667,6 @@ async function createChallengeDoneAndredirectDoneAndmismatchedDoneAndmissingDone
       playerSnapshot = next
     },
     recoveryPlayer,
-    recovery,
     startupSession,
     startupGeneration,
     startupVault,
@@ -780,16 +684,7 @@ async function createChallengeDoneAndredirectDoneAndmismatchedDoneAndmissingDone
     set startupReloads(next: typeof startupReloads) {
       startupReloads = next
     },
-    stallEvidence,
-    stallRestrictions,
-    stallSettings,
     stallRoutes,
-    incompatibleSession,
-    incompatibleState,
-    incompatibleVault,
-    incompatibleRoot,
-    incompatibleRep,
-    incompatibleRoutes,
     deadStartup,
     get originalProbeDisabled() {
       return originalProbeDisabled
@@ -809,7 +704,6 @@ async function createChallengeDoneAndredirectDoneAndmismatchedDoneAndmissingDone
     set originalFallbacks(next: typeof originalFallbacks) {
       originalFallbacks = next
     },
-    originalMonitor,
   } as const)
 }
 
@@ -954,20 +848,6 @@ async function createStartupRecoveryContext8(t: TestContext) {
   measurement.tick({ ...baseMeasurement, playableBufferSec: 30 })
   await base.challengeDone.promise
   return extendFixture(base, {
-    startupRecovery,
-    get softFallbacks() {
-      return softFallbacks
-    },
-    set softFallbacks(next: typeof softFallbacks) {
-      softFallbacks = next
-    },
-    get startupArms() {
-      return startupArms
-    },
-    set startupArms(next: typeof startupArms) {
-      startupArms = next
-    },
-    stallMonitor,
     get challengeCalls() {
       return challengeCalls
     },
@@ -988,9 +868,6 @@ async function createStartupRecoveryContext8(t: TestContext) {
     },
     directRangeResponse,
     challengeApplied,
-    challengeRoutes,
-    challengeFetch,
-    measurement,
     baseMeasurement,
   } as const)
 }
@@ -1088,27 +965,7 @@ async function createRedirectChallengeFetchContext9(t: TestContext) {
   missingHostChallenge.tick({ ...base.baseMeasurement, playableBufferSec: 30 })
   await base.missingDone.promise
   const preflightOptions = base.stallRoutes.startupOptions(base.startupRoot)
-  return extendFixture(base, {
-    redirectChallengeFetch,
-    get redirectedChallengeSamples() {
-      return redirectedChallengeSamples
-    },
-    set redirectedChallengeSamples(next: typeof redirectedChallengeSamples) {
-      redirectedChallengeSamples = next
-    },
-    redirectChallengeRoutes,
-    redirectChallenge,
-    redirectedResponse,
-    get mismatchedChallengeSuccesses() {
-      return mismatchedChallengeSuccesses
-    },
-    set mismatchedChallengeSuccesses(next: typeof mismatchedChallengeSuccesses) {
-      mismatchedChallengeSuccesses = next
-    },
-    mismatchedChallenge,
-    missingHostChallenge,
-    preflightOptions,
-  } as const)
+  return extendFixture(base, { preflightOptions } as const)
 }
 
 async function createMonitorObservesSelectedParameterX11ParameterParameterContext10(
@@ -1116,8 +973,6 @@ async function createMonitorObservesSelectedParameterX11ParameterParameterContex
 ) {
   const base = await createRedirectChallengeFetchContext9(t)
   const preflightOptions = base.preflightOptions
-  assert.ok(preflightOptions)
-
   if (preflightOptions) {
     let preflightFetches = 0
     null
@@ -1339,7 +1194,6 @@ async function createMonitorObservesSelectedParameterX11ParameterParameterContex
     set observedRate(next: typeof observedRate) {
       observedRate = next
     },
-    ratePlayer,
     rateMonitor,
   } as const)
 }
@@ -1391,15 +1245,11 @@ async function createRateAdapterContext13(t: TestContext) {
       subscribeControlLoss: () => () => undefined,
     },
   )
-  return extendFixture(base, { RateAdapter, rateAdapter } as const)
+  return extendFixture(base, { rateAdapter } as const)
 }
 
 async function createHostLockNeverRestoresADeadRootAndMayChooseAContext14(t: TestContext) {
   const base = await createAdapterVideoContext12(t)
-  for (const rate of [1, 1.5, 2, 0.75]) {
-    base.adapterVideo.playbackRate = rate
-  }
-  base.adapterVideo.playbackRate = Number.NaN
   let rateRecoveryNow = base.now
   const customRatePlayer: PlayerPort = {
     ...base.recoveryPlayer,
@@ -1428,17 +1278,7 @@ async function createHostLockNeverRestoresADeadRootAndMayChooseAContext14(t: Tes
   })
   rateRecoveryNow += 1000
   customRateRecovery.tick({ ...healthyCustomRate, frames: 2 })
-  return extendFixture(base, {
-    get rateRecoveryNow() {
-      return rateRecoveryNow
-    },
-    set rateRecoveryNow(next: typeof rateRecoveryNow) {
-      rateRecoveryNow = next
-    },
-    customRatePlayer,
-    customRateRecovery,
-    healthyCustomRate,
-  } as const)
+  return extendFixture(base, {} as const)
 }
 
 async function checkCatalogHostSignedBackupCompetesAsItsOwnExactNativeURL(

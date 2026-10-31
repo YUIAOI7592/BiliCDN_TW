@@ -124,7 +124,6 @@ async function createPlayurlSummaryScenario(t: TestContext) {
   transport.install()
   const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
   return extendFixture({}, {
-    scope,
     session,
     get strict() {
       return strict
@@ -137,12 +136,6 @@ async function createPlayurlSummaryScenario(t: TestContext) {
     },
     set disabled(next: typeof disabled) {
       disabled = next
-    },
-    get status() {
-      return status
-    },
-    set status(next: typeof status) {
-      status = next
     },
     get body() {
       return body
@@ -182,12 +175,6 @@ async function createPlayurlSummaryScenario(t: TestContext) {
     set result(next: typeof result) {
       result = next
     },
-    playurl,
-    routes,
-    settings,
-    measurement,
-    FakeXhr,
-    nativeFetch,
     windowFixture,
     transport,
     endpoint,
@@ -199,9 +186,7 @@ async function createARejectedResultObjectCannotTruthilyPassStrictFetch2Context1
   void base.transport.snapshot().lastPlayurl
   void (await base.windowFixture.fetch(base.endpoint)).status
   const first = base.transport.snapshot().lastPlayurl
-  void (first?.accepted && first.transport === 'fetch')
   void first?.formats.join(',')
-  void (Object.isFrozen(first) && Object.isFrozen(first?.formats))
   base.result = {
     accepted: false,
     formats: ['mp4'],
@@ -212,17 +197,12 @@ async function createARejectedResultObjectCannotTruthilyPassStrictFetch2Context1
     reason: 'upstream-error',
   }
   const rejected = await base.windowFixture.fetch(base.endpoint)
-  return extendFixture(base, { first, rejected } as const)
+  return extendFixture(base, { rejected } as const)
 }
 
 async function createRejectedBodyContext2(t: TestContext) {
   const base = await createARejectedResultObjectCannotTruthilyPassStrictFetch2Context1(t)
-  const rejectedBody: unknown = await base.rejected.json()
-  void (
-    typeof rejectedBody === 'object' &&
-    rejectedBody !== null &&
-    Reflect.get(rejectedBody, 'code') === -1
-  )
+  void (await base.rejected.json())
   void base.transport.snapshot().lastPlayurl?.upstreamCode
   void base.transport.snapshot().lastPlayurl?.reason
   void base.transport.snapshot().lastPlayurl?.status
@@ -234,7 +214,7 @@ async function createRejectedBodyContext2(t: TestContext) {
     xhr.send()
     return xhr
   }
-  return extendFixture(base, { rejectedBody, makeXhr } as const)
+  return extendFixture(base, { makeXhr } as const)
 }
 
 async function createXHRResponseTextAcceptsATypedAcceptedResult4Context3(t: TestContext) {
@@ -263,7 +243,6 @@ async function createXHRResponseTextAcceptsATypedAcceptedResult4Context3(t: Test
 async function createNativeEnabledXHRPreservesRejectedUpstreamPayload5Context4(t: TestContext) {
   const base = await createXHRResponseTextAcceptsATypedAcceptedResult4Context3(t)
   void base.transport.snapshot().lastPlayurl?.segmentCount
-  void base.makeXhr('json')
   void base.transport.snapshot().lastPlayurl?.accepted
   base.body = '{malformed:' + base.secret
   void (await base.windowFixture.fetch(base.endpoint)).status
@@ -281,12 +260,11 @@ async function createNativeEnabledXHRPreservesRejectedUpstreamPayload5Context4(t
   base.body = JSON.stringify({ code: 0, data: { url: base.secret } })
   void (await (await base.windowFixture.fetch(base.endpoint)).text())
   const nativeXhr = base.makeXhr('json', { code: 0, data: { url: base.secret } })
-  return extendFixture(base, { malformedXhr, nativeXhr } as const)
+  return extendFixture(base, { nativeXhr } as const)
 }
 
 async function createNonFiniteDiagnosticCountsAreNormalized6Context5(t: TestContext) {
   const base = await createNativeEnabledXHRPreservesRejectedUpstreamPayload5Context4(t)
-  void JSON.stringify(base.nativeXhr.response).includes('summary-secret')
   void (base.transport.snapshot().lastPlayurl?.accepted === false)
   base.strict = true
   const stale = base.makeXhr('text', { data: { url: base.secret } })
@@ -306,11 +284,9 @@ async function createNonFiniteDiagnosticCountsAreNormalized6Context5(t: TestCont
     { status: 201 },
   )
   base.result = base.accepted
-  const pending = base.windowFixture.fetch(base.endpoint)
-  void base.calls
+  void base.windowFixture.fetch(base.endpoint)
   base.session.beginGeneration(false)
   releaseBody()
-  void (await pending).status
   void base.transport.snapshot().lastPlayurl?.reason
   void base.transport.snapshot().lastPlayurl?.status
   base.responseOverride = null
@@ -323,16 +299,7 @@ async function createNonFiniteDiagnosticCountsAreNormalized6Context5(t: TestCont
     formats: ['dash', 'dash', 'mp4', 'flv', 'mp4'],
   }
   await base.windowFixture.fetch(base.endpoint)
-  return extendFixture(base, {
-    stale,
-    get releaseBody() {
-      return releaseBody
-    },
-    set releaseBody(next: typeof releaseBody) {
-      releaseBody = next
-    },
-    pending,
-  } as const)
+  return extendFixture(base, {} as const)
 }
 
 async function checkNonFiniteDiagnosticCountsAreNormalized6(t: TestContext): Promise<void> {

@@ -128,15 +128,7 @@ async function createProgressiveTransportScenario(t: TestContext) {
   transport.install()
   const response = await fakeWindow.fetch(api)
   return extendFixture({}, {
-    scope,
-    now,
-    storage,
     settings,
-    session,
-    vault,
-    state,
-    routes,
-    playurl,
     original,
     fixture,
     get apiBody() {
@@ -147,11 +139,8 @@ async function createProgressiveTransportScenario(t: TestContext) {
     },
     api,
     sent,
-    nativeFetch,
     FakeXhr,
     fakeWindow,
-    measurement,
-    transport,
     response,
   } as const)
 }
@@ -159,7 +148,6 @@ async function createProgressiveTransportScenario(t: TestContext) {
 async function createPayloadContext1(t: TestContext) {
   const base = await createProgressiveTransportScenario(t)
   const payload = (await base.response.json()) as ReturnType<typeof base.fixture>
-  void isCatalogHost(new URL(payload.data.durl[0]!.url).hostname)
   return extendFixture(base, { payload } as const)
 }
 

@@ -39,7 +39,7 @@ async function createMeasurementStateScenario(t: TestContext) {
   const storage = new MeasurementStorage(),
     clock = scope.own(new FakeClock())
   const meta = new MeasurementMetaStore(storage, clock.now)
-  return extendFixture({}, { scope, MeasurementStorage, storage, clock, meta } as const)
+  return extendFixture({}, { scope, storage, clock, meta } as const)
 }
 
 async function checkMeasurementMetadataDefaultsToFirstCatalogCursor1(

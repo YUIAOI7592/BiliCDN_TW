@@ -194,8 +194,6 @@ async function createOrchestrationScenario(t: TestContext, observeRetry = false)
       retryListener = next
     },
     retrySnapshot,
-    retryPort,
-    video,
     get routeListener() {
       return routeListener
     },
@@ -208,7 +206,6 @@ async function createOrchestrationScenario(t: TestContext, observeRetry = false)
     set comparison(next: typeof comparison) {
       comparison = next
     },
-    routeControl,
     monitor,
     runtime,
   } as const)
@@ -245,41 +242,14 @@ async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(
   void base.calls.join(',')
   base.runtime.reset()
   void base.calls.slice(1).join(',')
-  const fallback: DomainEvent = {
-    type: 'recovery',
-    at: base.clock.now(),
-    action: {
-      action: 'route-fallback',
-      id: recoveryActionId('test-recovery'),
-      kind: 'video',
-      identity: {
-        generation: generationId(1),
-        epoch: epochId(0),
-        representation: representationId('test-rep'),
-        authorityRevision: 1,
-        kind: 'video',
-      },
-      decision: {
-        action: 'pass',
-        target: { type: 'request' },
-        id: decisionId('fallback'),
-        reason: 'test',
-        routeType: 'root-original',
-        host: TRUSTED_CATALOG[0],
-        ranking: [],
-      },
-    },
-  }
+
   base.calls.length = 0
-  base.routeListener(fallback)
   void base.calls.join(',')
   base.comparison = true
   base.calls.length = 0
-  base.routeListener(fallback)
   void base.calls.join(',')
   base.runtime.dispose()
   base.calls.length = 0
-  base.routeListener(fallback)
   const restrictions = base.scope.own(new RestrictionStore(base.storage, base.clock.now)),
     evidence = base.scope.own(new EvidenceStore(base.storage, base.clock.now))
   const meta = new MeasurementMetaStore(base.storage, base.clock.now)
@@ -332,7 +302,7 @@ async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(
     reason: 'user',
     expireAt: base.clock.now() + 60000,
   })
-  return extendFixture(base, { fallback, restrictions, evidence, meta, commands } as const)
+  return extendFixture(base, { restrictions, evidence, meta, commands } as const)
 }
 
 async function checkBlacklistCommandPersistsBeforeRouteInvalidation2(

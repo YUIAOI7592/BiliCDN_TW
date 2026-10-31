@@ -27,7 +27,6 @@ async function createProgressiveRoutingScenario(_t: TestContext) {
 }
 
 async function createScopeContext1(t: TestContext) {
-  const base = await createProgressiveRoutingScenario(t)
   const scope = testScope(t)
   const now = 2_000_000_000_000
   const storage = new FakeStorage()
@@ -76,13 +75,10 @@ async function createScopeContext1(t: TestContext) {
     urls: [segment2],
     source: 'trusted-api',
   })
-  return extendFixture(base, {
+  return extendFixture({}, {
     scope,
     now,
-    storage,
     settings,
-    restrictions,
-    evidence,
     session,
     state,
     vault,
@@ -311,7 +307,6 @@ async function createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t: T
     set recoveryResets(next: typeof recoveryResets) {
       recoveryResets = next
     },
-    runtime,
   } as const)
 }
 
@@ -319,7 +314,6 @@ async function createCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7Cont
   t: TestContext,
 ) {
   const base = await createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t)
-  await base.settings.update({ catalogOverrides: { [TRUSTED_CATALOG[0]]: false } })
   const pcdnStorage = new FakeStorage(),
     pcdnSettings = base.scope.own(new CatalogSettingsStore(pcdnStorage, () => base.now))
   const pcdnSession = new SessionStore(),
@@ -338,7 +332,6 @@ async function createCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7Cont
   )
   const pcdnSource =
     'https://upos-pc.mcdn.bilivideo.com/upgcxcode/progressive/pcdn-source.mp4?token=pcdn'
-  void parseMediaUrl(pcdnSource)?.kind
   const pcdnRep = pcdnVault.register({
     generation: pcdnState.generation,
     epoch: pcdnState.epoch,
@@ -351,10 +344,7 @@ async function createCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7Cont
     source: 'trusted-api',
   })
   return extendFixture(base, {
-    pcdnStorage,
     pcdnSettings,
-    pcdnSession,
-    pcdnState,
     pcdnVault,
     pcdnRestrictions,
     pcdnRoutes,
@@ -367,49 +357,6 @@ async function createMeasurementFixtureHasTwoIndependentProgressiveSegments8Cont
   t: TestContext,
 ) {
   const base = await createCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7Context6(t)
-  if (base.pcdnRep) {
-    const identity = base.pcdnVault.identity(base.pcdnRep)!
-    void base.pcdnVault.resolve(base.pcdnVault.catalogSourceHandle(base.pcdnRep)!, identity)
-    void base.pcdnSource
-    void base.pcdnVault.candidates(base.pcdnRep, new Set()).native.length
-    void 0
-    void base.pcdnVault.candidates(base.pcdnRep, new Set()).root
-    void null
-    const plan = base.pcdnRoutes.plan(base.pcdnRep, base.demand, 'startup')
-    const output = base.pcdnRoutes.playerOutput(base.pcdnRep, base.pcdnSource, plan, [
-      base.pcdnSource,
-    ])
-    void (
-      output.primary &&
-      parseMediaUrl(output.primary)?.kind === 'normal' &&
-      TRUSTED_CATALOG.includes(new URL(output.primary).hostname as (typeof TRUSTED_CATALOG)[number])
-    )
-    void output.backups.every((url) => parseMediaUrl(url)?.kind === 'normal')
-    const dispatched = base.pcdnRoutes.apply(base.pcdnSource)
-    void (
-      dispatched.url &&
-      parseMediaUrl(dispatched.url)?.kind === 'normal' &&
-      dispatched.decision.routeType === 'catalog-generated'
-    )
-    await base.pcdnRestrictions.add({
-      host: new URL(base.pcdnSource).hostname,
-      type: 'black',
-      kind: 'all',
-      reason: 'source-only',
-      expireAt: base.now + 60_000,
-    })
-    base.pcdnRoutes.invalidateForUserSetting()
-    void base.pcdnRoutes.playerOutput(
-      base.pcdnRep,
-      base.pcdnSource,
-      base.pcdnRoutes.plan(base.pcdnRep, base.demand, 'startup'),
-      [base.pcdnSource],
-    ).primary
-    await base.pcdnSettings.update({ considerNativeSources: true })
-    base.pcdnRoutes.invalidateForUserSetting()
-    void base.pcdnVault.candidates(base.pcdnRep, new Set()).native.length
-    void 0
-  }
   const probeClock = base.scope.own(new FakeClock()),
     probeStorage = new FakeStorage()
   const probeSettings = base.scope.own(new CatalogSettingsStore(probeStorage, probeClock.now))
@@ -454,11 +401,6 @@ async function createMeasurementFixtureHasTwoIndependentProgressiveSegments8Cont
   })
   return extendFixture(base, {
     probeClock,
-    probeStorage,
-    probeSettings,
-    probeSession,
-    probeState,
-    probeVault,
     probeRoutes,
     probeFirst,
     probeSecond,

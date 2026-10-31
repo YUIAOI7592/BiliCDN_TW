@@ -260,12 +260,6 @@ async function createRuntimeSessionContext1(t: TestContext) {
     set disabled(next: typeof disabled) {
       disabled = next
     },
-    get blockHttpDns() {
-      return blockHttpDns
-    },
-    set blockHttpDns(next: typeof blockHttpDns) {
-      blockHttpDns = next
-    },
     settingsStub,
     get nativeFetchCalls() {
       return nativeFetchCalls
@@ -279,21 +273,8 @@ async function createRuntimeSessionContext1(t: TestContext) {
     set cancelReason(next: typeof cancelReason) {
       cancelReason = next
     },
-    get playurlFetchBody() {
-      return playurlFetchBody
-    },
-    set playurlFetchBody(next: typeof playurlFetchBody) {
-      playurlFetchBody = next
-    },
-    get playurlFetchOverride() {
-      return playurlFetchOverride
-    },
-    set playurlFetchOverride(next: typeof playurlFetchOverride) {
-      playurlFetchOverride = next
-    },
     nativeFetchUrls,
     nativeFetchMethods,
-    nativeFetchRedirects,
     nativeFetchHeaders,
     get streamedRequestBody() {
       return streamedRequestBody
@@ -323,7 +304,7 @@ async function createMediaResponseContext2(t: TestContext) {
   const mediaReader = mediaResponse.body?.getReader()
   await mediaReader?.read()
   await mediaReader?.cancel('caller-cancel')
-  return extendFixture(base, { mediaResponse, mediaReader } as const)
+  return extendFixture(base, {} as const)
 }
 
 async function createRewrittenRequestPreservesRequestHeaders3Context3(t: TestContext) {
@@ -423,15 +404,6 @@ async function createRewrittenRequestPreservesRequestHeaders3Context3(t: TestCon
     set gateReady(next: typeof gateReady) {
       gateReady = next
     },
-    gatedFetch,
-    mutableMediaUrl,
-    mutableInit,
-    lifecycleFetch,
-    originalInspect,
-    staleForbiddenUrl,
-    staleForbiddenFetch,
-    requestInput,
-    headerRequest,
   } as const)
 }
 
@@ -439,13 +411,11 @@ async function createBlacklistedNonGETFetchNeverReachesNativeFetch4Context4(t: T
   const base = await createRewrittenRequestPreservesRequestHeaders3Context3(t)
   await base.fakeWindow.fetch(new URL(base.gatedUrl))
   base.measurementStub.willGateStartup = () => true
-  base.gateReady = false
   const gatedXhr = new base.FakeXhr()
   gatedXhr.open('GET', base.gatedUrl)
   gatedXhr.send()
   base.gateControl.release()
   await base.gateControl.done
-  base.gateReady = false
   const abortedXhr = new base.FakeXhr()
   abortedXhr.open('GET', base.gatedUrl)
   abortedXhr.send()
@@ -472,12 +442,7 @@ async function createBlacklistedNonGETFetchNeverReachesNativeFetch4Context4(t: T
           }
         : base.passDecision.decision,
   })
-  return extendFixture(base, {
-    gatedXhr,
-    abortedXhr,
-    finiteTimeoutXhr,
-    forbiddenNonGetUrl,
-  } as const)
+  return extendFixture(base, { forbiddenNonGetUrl } as const)
 }
 
 async function createClockContext5(t: TestContext) {
@@ -536,14 +501,12 @@ async function createClockContext5(t: TestContext) {
     blockHttpDns = true
   const settingsStub = { get: () => ({ disabled, blockHttpDns, considerNativeSources: true }) }
   let nativeFetchCalls = 0
-  void null
   let playurlFetchBody = JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } })
   let playurlFetchOverride: Response | null = null
   const nativeFetchUrls: string[] = []
   const nativeFetchMethods: string[] = []
   const nativeFetchRedirects: RequestRedirect[] = []
   const nativeFetchHeaders: (string | null)[] = []
-  void ''
   const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
     nativeFetchCalls++
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
@@ -666,7 +629,6 @@ async function createClockContext5(t: TestContext) {
     configurable: true,
     value: new URL('https://www.bilibili.com/video/BVtest/'),
   })
-  void ''
   const measurementStub = {
     willGateStartup: (): boolean => false,
     prepareStartup: async (): Promise<void> => {},
@@ -937,116 +899,15 @@ async function createClockContext5(t: TestContext) {
   }
   return extendFixture(base, {
     clock,
-    runtimeSession,
-    passDecision,
-    observations,
-    routeStub,
-    get transformed() {
-      return transformed
-    },
-    set transformed(next: typeof transformed) {
-      transformed = next
-    },
-    playurlStub,
-    get disabled() {
-      return disabled
-    },
-    set disabled(next: typeof disabled) {
-      disabled = next
-    },
-    get blockHttpDns() {
-      return blockHttpDns
-    },
-    set blockHttpDns(next: typeof blockHttpDns) {
-      blockHttpDns = next
-    },
-    settingsStub,
     get nativeFetchCalls() {
       return nativeFetchCalls
     },
     set nativeFetchCalls(next: typeof nativeFetchCalls) {
       nativeFetchCalls = next
     },
-    get playurlFetchBody() {
-      return playurlFetchBody
-    },
-    set playurlFetchBody(next: typeof playurlFetchBody) {
-      playurlFetchBody = next
-    },
-    get playurlFetchOverride() {
-      return playurlFetchOverride
-    },
-    set playurlFetchOverride(next: typeof playurlFetchOverride) {
-      playurlFetchOverride = next
-    },
-    nativeFetchUrls,
-    nativeFetchMethods,
-    nativeFetchRedirects,
-    nativeFetchHeaders,
-    nativeFetch,
     FakeXhr,
-    originalWorker,
     fakeWindow,
     measurementStub,
-    transport,
-    mediaResponse,
-    mediaReader,
-    gatedUrl,
-    gateControl,
-    get gateReady() {
-      return gateReady
-    },
-    set gateReady(next: typeof gateReady) {
-      gateReady = next
-    },
-    gatedFetch,
-    mutableMediaUrl,
-    mutableInit,
-    lifecycleFetch,
-    originalInspect,
-    staleForbiddenUrl,
-    staleForbiddenFetch,
-    requestInput,
-    headerRequest,
-    gatedXhr,
-    abortedXhr,
-    finiteTimeoutXhr,
-    forbiddenNonGetUrl,
-    forbiddenXhr,
-    forbiddenRequest,
-    spoofedRequest,
-    converseRequest,
-    spoofedDns,
-    overrideRequest,
-    streamBody,
-    xhr,
-    UnpatchableXhr,
-    partialWindow,
-    partialTransport,
-    get reloads() {
-      return reloads
-    },
-    set reloads(next: typeof reloads) {
-      reloads = next
-    },
-    get seeks() {
-      return seeks
-    },
-    set seeks(next: typeof seeks) {
-      seeks = next
-    },
-    get rates() {
-      return rates
-    },
-    set rates(next: typeof rates) {
-      rates = next
-    },
-    get plays() {
-      return plays
-    },
-    set plays(next: typeof plays) {
-      plays = next
-    },
     get playerSnapshot() {
       return playerSnapshot
     },
@@ -1059,24 +920,6 @@ async function createClockContext5(t: TestContext) {
 
 async function createHealthyObservationContext6(t: TestContext) {
   const base = await createClockContext5(t)
-  void {
-    generation: generationId(1),
-    epoch: epochId(1),
-    decisionId: decisionId('aggregate'),
-    representation: null,
-    kind: 'video',
-    routeType: 'catalog-generated',
-    originalHost: 'a.example',
-    targetHost: 'b.example',
-    finalHost: 'b.example',
-    status: 206,
-    bytes: 100_000,
-    ttfbMs: 20,
-    elapsedMs: 100,
-    completedAt: base.now,
-    outcome: 'success',
-    streamKey: 'aggregate',
-  }
   const outputStorage = new FakeStorage(),
     outputSession = new SessionStore()
   const outputState = outputSession.beginGeneration(false),
@@ -1109,13 +952,10 @@ async function createHealthyObservationContext6(t: TestContext) {
   }
   outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
   return extendFixture(base, {
-    outputStorage,
-    outputSession,
     outputState,
     outputVault,
     outputSettings,
     outputRestrictions,
-    outputEvidence,
     outputRoutes,
     outputAdapter,
     forbiddenUrl,
@@ -1146,14 +986,7 @@ async function createExceptionalForbiddenContext7(t: TestContext) {
   }
   base.outputAdapter.transform({ data: { dash: { video: [opaqueItem], audio: [] } } }, 'page-hint')
   const opaqueLineage = base.outputRoutes.apply(opaquePrimary)
-  return extendFixture(base, {
-    exceptionalForbidden,
-    exceptionalItem,
-    opaquePrimary,
-    opaqueBackup,
-    opaqueItem,
-    opaqueLineage,
-  } as const)
+  return extendFixture(base, { opaquePrimary, opaqueBackup, opaqueItem, opaqueLineage } as const)
 }
 
 async function createPausedDeadCoreAutomaticallyCapturesAnIncident8Context8(t: TestContext) {
@@ -1225,8 +1058,6 @@ async function createPausedDeadCoreAutomaticallyCapturesAnIncident8Context8(t: T
     coreObserver.tick(deadPaused)
   }
   return extendFixture(base, {
-    opaqueRestricted,
-    mixedItem,
     alternateOutput,
     get coreClock() {
       return coreClock
@@ -1250,14 +1081,6 @@ async function createParameterInvalidatesCachedFallbackOnNextRequest9ParameterPa
   t: TestContext,
 ) {
   const base = await createPausedDeadCoreAutomaticallyCapturesAnIncident8Context8(t)
-  base.coreClock += 31_000
-  base.coreRecorder.tick()
-  void base.coreRecorder.snapshot().incident
-  base.coreRecorder.mark()
-  for (let tick = 0; tick < 100; tick++) {
-    base.coreClock += 1000
-    base.coreObserver.tick(base.deadPaused)
-  }
   void base.outputVault.contextForUrl(base.outputItem.base_url)!.representation
   void (
     base.outputRoutes.apply(base.outputItem.base_url) as AppliedRouteDecision & {
@@ -1337,14 +1160,7 @@ async function createNativeControlUrlContext11(t: TestContext) {
   )
   const promotedRep = base.outputVault.contextForUrl(nativeControlBackup)!.representation
   const promotedPlan = base.outputRoutes.snapshot().recentPlans
-  return extendFixture(base, {
-    nativeControlUrl,
-    nativeControlBackup,
-    controlItem,
-    blockedControlItem,
-    promotedRep,
-    promotedPlan,
-  } as const)
+  return extendFixture(base, { nativeControlBackup, promotedRep, promotedPlan } as const)
 }
 
 async function createHealthyCustomRateContext12(t: TestContext) {
@@ -1597,9 +1413,7 @@ async function createHealthyCustomRateContext12(t: TestContext) {
   return extendFixture(base, {
     healthyCustomRate,
     healthyObservation,
-    outputStorage,
     outputSession,
-    outputState,
     outputVault,
     outputSettings,
     outputRestrictions,
@@ -1609,13 +1423,6 @@ async function createHealthyCustomRateContext12(t: TestContext) {
     forbiddenUrl,
     outputItem,
     exceptionalForbidden,
-    exceptionalItem,
-    opaquePrimary,
-    opaqueBackup,
-    opaqueItem,
-    opaqueRestricted,
-    mixedItem,
-    alternateOutput,
     fallbackApplied,
     get coreClock() {
       return coreClock
@@ -1623,24 +1430,10 @@ async function createHealthyCustomRateContext12(t: TestContext) {
     set coreClock(next: typeof coreClock) {
       coreClock = next
     },
-    get coreReloads() {
-      return coreReloads
-    },
-    set coreReloads(next: typeof coreReloads) {
-      coreReloads = next
-    },
     coreRecorder,
-    coreObserver,
     deadPaused,
     frozenCore,
     outputRep,
-    alternateHost,
-    nativeControlUrl,
-    nativeControlBackup,
-    controlItem,
-    blockedControlItem,
-    ungroupedHost,
-    audioScopedUrl,
     unknownQuery,
   } as const)
 }
@@ -1718,7 +1511,7 @@ async function createInitialDeadLookingStartupWithoutPreviousHealthIsNotAnIncide
     base.coreClock += 1000
     gapRecovery.tick(base.deadPaused)
   }
-  return extendFixture(base, { beforeGeneration, noOutput, gapRecorder, gapRecovery } as const)
+  return extendFixture(base, { gapRecorder } as const)
 }
 
 async function createXHRDoesNotSendDefaultUnavailablePCDNMarkedMedia15Context14(t: TestContext) {
@@ -1762,14 +1555,7 @@ async function createXHRDoesNotSendDefaultUnavailablePCDNMarkedMedia15Context14(
   const exceptionalXhr = new base.FakeXhr()
   exceptionalXhr.open('GET', base.exceptionalForbidden)
   exceptionalXhr.send()
-  return extendFixture(base, {
-    realAdapter,
-    tracedXhr,
-    actualXhr,
-    initiallySentHost,
-    blockedXhr,
-    exceptionalXhr,
-  } as const)
+  return extendFixture(base, { realAdapter, exceptionalXhr } as const)
 }
 
 async function createPlayObserverInstalledOnFirstPausedTickNotThirtySecondsLaterContext15(
@@ -1802,8 +1588,6 @@ async function createPlayObserverInstalledOnFirstPausedTickNotThirtySecondsLater
   let intentVideo = { ...base.healthyCustomRate }
   const intentTarget = { play: () => 'original-result' }
   return extendFixture(base, {
-    enabledAfterOpen,
-    disabledXhr,
     get intentClock() {
       return intentClock
     },

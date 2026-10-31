@@ -93,18 +93,13 @@ async function createNativeRoutingScenario(t: TestContext) {
     now,
     clock,
     healthyObservation,
-    transitionStorage,
     transitionSession,
     transitionState,
-    transitionVault,
     transitionSettings,
     transitionRestrictions,
     transitionRoutes,
     transitionAdapter,
-    transitionItems,
-    firstTransition,
     nextTransition,
-    transitionNative,
     transitionApplied,
   } as const)
 }
@@ -113,60 +108,6 @@ async function createCatalogOnlyFixtureRetainsBothOriginalURLsPrivatelyForAttrib
   t: TestContext,
 ) {
   const base = await createNativeRoutingScenario(t)
-  void base.transitionSession.get().affinity?.host
-  const nextTransitionApplied = base.transitionRoutes.apply(base.nextTransition.base_url)
-  void base.nextTransition.backup_url.find((url) => url.includes('.akamaized.net'))
-  void base.transitionSession.get().affinity?.representation
-  const missingNativeItem = {
-    id: 32,
-    codecid: 13,
-    height: 480,
-    bandwidth: 500_000,
-    base_url: 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/transition/480/1.m4s?k=1',
-    backup_url: [] as string[],
-  }
-  base.transitionAdapter.transform({ data: { dash: { video: [missingNativeItem], audio: [] } } })
-  const missingNativeApplied = base.transitionRoutes.apply(missingNativeItem.base_url)
-  void (missingNativeApplied.url && !missingNativeApplied.url.includes('.akamaized.net'))
-  const observedTransitionHost = new URL(nextTransitionApplied.url!).host
-  await base.transitionSettings.update({ fixedHost: TRUSTED_CATALOG[3] })
-  base.transitionRoutes.invalidateForUserSetting()
-  void base.transitionRoutes.apply(base.nextTransition.base_url).decision.host
-  void (observedTransitionHost !== TRUSTED_CATALOG[3])
-  await base.transitionSettings.update({ fixedHost: null })
-  base.transitionRoutes.invalidateForUserSetting()
-  for (let index = 0; index < 2; index++)
-    await base.transitionRoutes.observe({
-      ...base.healthyObservation,
-      generation: base.transitionState.generation,
-      epoch: base.transitionState.epoch,
-      decisionId: base.transitionApplied.decision.id,
-      representation: base.transitionApplied.context!.representation,
-      routeType: 'native-signed',
-      targetHost: observedTransitionHost,
-      finalHost: observedTransitionHost,
-      completedAt: base.now + 10 + index,
-    })
-  const restrictedTransition = {
-    id: 16,
-    codecid: 13,
-    height: 360,
-    bandwidth: 300_000,
-    base_url: 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/transition/360/1.m4s?k=1',
-    backup_url: ['https://upos-hz-mirrorakam.akamaized.net/upgcxcode/transition/360/1.m4s?k=2'],
-  }
-  base.transitionAdapter.transform({ data: { dash: { video: [restrictedTransition], audio: [] } } })
-  await base.transitionRestrictions.add({
-    host: observedTransitionHost,
-    type: 'black',
-    kind: 'all',
-    reason: 'regression',
-    expireAt: base.now + 60_000,
-  })
-  void (
-    base.transitionRoutes.apply(restrictedTransition.base_url).decision.host !==
-    observedTransitionHost
-  )
   const catalogStorage = new FakeStorage(),
     catalogSettings = base.scope.own(new CatalogSettingsStore(catalogStorage, () => base.now))
   const catalogSession = new SessionStore(),
@@ -213,17 +154,8 @@ async function createCatalogOnlyFixtureRetainsBothOriginalURLsPrivatelyForAttrib
   const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
   const catalogAudioRep = catalogVault.contextForUrl(catalogAudioRoot)?.representation
   return extendFixture(base, {
-    nextTransitionApplied,
-    missingNativeItem,
-    missingNativeApplied,
-    observedTransitionHost,
-    restrictedTransition,
-    catalogStorage,
     catalogSettings,
     catalogSession,
-    catalogState,
-    catalogVault,
-    catalogRestrictions,
     catalogEvidence,
     catalogRoutes,
     catalogAdapter,
@@ -374,41 +306,6 @@ async function createEnablingNativeSourcesPreservesColdStartOriginalRoute7Contex
 
 async function createCatalogDecisionMayYieldTheExactSameURLAsTheOriginalContext7(t: TestContext) {
   const base = await createEnablingNativeSourcesPreservesColdStartOriginalRoute7Context6(t)
-  if (base.catalogVideoRep) {
-    const legacyPlan = base.catalogRoutes.plan(base.catalogVideoRep, base.catalogDemand, 'startup')
-    void legacyPlan.routeType
-    void 'root-original'
-    const nativeStartup = base.catalogRoutes
-      .startupOptions(base.catalogVideoRoot)
-      ?.candidates.find((candidate) => candidate.original)
-    void nativeStartup
-    const enabledOutput = base.catalogRoutes.playerOutput(
-      base.catalogVideoRep,
-      base.catalogVideoRoot,
-      legacyPlan,
-      [base.catalogVideoRoot, base.catalogVideoBackup],
-    )
-    void enabledOutput.primary
-    void base.catalogVideoRoot
-    void enabledOutput.backups.includes(base.catalogVideoBackup)
-    await base.catalogSettings.update({ considerNativeSources: false })
-    base.catalogRoutes.invalidateForUserSetting()
-    void base.catalogRoutes.commitStartupChoice(
-      base.catalogVideoRoot,
-      nativeStartup ?? null,
-      'late-preflight',
-    )
-    void null
-    if (nativeStartup) {
-      await base.catalogRoutes.recordStartupSuccess(nativeStartup, 70 * 1024, 100, 10)
-      void base.catalogEvidence.get(nativeStartup.host, 'video')
-      void null
-    }
-    void base.catalogRoutes.apply(base.catalogVideoBackup).decision.routeType
-    void 'catalog-generated'
-    void base.catalogSession.get().affinity
-    void null
-  }
   const overlapStorage = new FakeStorage(),
     overlapSession = new SessionStore()
   const overlapState = overlapSession.beginGeneration(false),
@@ -435,50 +332,11 @@ async function createCatalogDecisionMayYieldTheExactSameURLAsTheOriginalContext7
     overlapVault,
     createRuntimeIds(),
   )
-  return extendFixture(base, {
-    overlapStorage,
-    overlapSession,
-    overlapState,
-    overlapVault,
-    overlapRoot,
-    overlapRep,
-    overlapRoutes,
-  } as const)
+  return extendFixture(base, { overlapState, overlapRoot, overlapRep, overlapRoutes } as const)
 }
 
 async function createKnownBackup403FixtureHasACurrentEpochRepresentation9Context8(t: TestContext) {
   const base = await createCatalogDecisionMayYieldTheExactSameURLAsTheOriginalContext7(t)
-  if (base.overlapRep) {
-    const sameUrlCatalog = base.overlapRoutes.apply(base.overlapRoot)
-    void sameUrlCatalog.url
-    void base.overlapRoot
-    void sameUrlCatalog.decision.routeType
-    void 'catalog-generated'
-    await base.overlapRoutes.observe({
-      generation: base.overlapState.generation,
-      epoch: base.overlapState.epoch,
-      decisionId: sameUrlCatalog.decision.id,
-      representation: base.overlapRep,
-      kind: 'video',
-      routeType: 'catalog-generated',
-      originalHost: new URL(base.overlapRoot).host,
-      targetHost: sameUrlCatalog.decision.host ?? '',
-      finalHost: sameUrlCatalog.decision.host,
-      responseUrlMatchesRequest: true,
-      streamKey: sameUrlCatalog.streamKey,
-      status: 403,
-      bytes: 0,
-      ttfbMs: 20,
-      elapsedMs: 100,
-      completedAt: base.now + 1,
-      outcome: 'failure',
-    })
-    const afterOverlap403 = base.overlapRoutes.apply(base.overlapRoot)
-    void (
-      afterOverlap403.decision.routeType === 'catalog-generated' &&
-      afterOverlap403.decision.host !== sameUrlCatalog.decision.host
-    )
-  }
   const backup403Storage = new FakeStorage(),
     backup403Session = new SessionStore()
   const backup403State = backup403Session.beginGeneration(false),
@@ -504,7 +362,6 @@ async function createKnownBackup403FixtureHasACurrentEpochRepresentation9Context
     backup403Session,
     backup403State,
     backup403Vault,
-    backup403Root,
     backup403Url,
     backup403Rep,
   } as const)
@@ -512,81 +369,6 @@ async function createKnownBackup403FixtureHasACurrentEpochRepresentation9Context
 
 async function createBackup403RoutesContext9(t: TestContext) {
   const base = await createKnownBackup403FixtureHasACurrentEpochRepresentation9Context8(t)
-  const backup403Routes = new RouteCoordinator(
-    base.clock,
-    base.backup403Session,
-    base.scope.own(new CatalogSettingsStore(base.backup403Storage, () => base.now)),
-    base.scope.own(new RestrictionStore(base.backup403Storage, () => base.now)),
-    base.scope.own(new EvidenceStore(base.backup403Storage, () => base.now)),
-    base.backup403Vault,
-    createRuntimeIds(),
-  )
-  const backup403First = backup403Routes.apply(base.backup403Url)
-  await backup403Routes.observe({
-    generation: base.backup403State.generation,
-    epoch: base.backup403State.epoch,
-    decisionId: backup403First.decision.id,
-    representation: base.backup403Rep,
-    kind: 'video',
-    routeType: 'catalog-generated',
-    originalHost: new URL(base.backup403Url).host,
-    targetHost: backup403First.decision.host ?? '',
-    finalHost: backup403First.decision.host,
-    responseUrlMatchesRequest: true,
-    streamKey: backup403First.streamKey,
-    status: 403,
-    bytes: 0,
-    ttfbMs: 20,
-    elapsedMs: 100,
-    completedAt: base.now + 2,
-    outcome: 'failure',
-  })
-  const backup403Next = backup403Routes.apply(base.backup403Url)
-  void (
-    backup403Next.decision.routeType === 'catalog-generated' &&
-    backup403Next.decision.host !== backup403First.decision.host
-  )
-  const unmatched403Storage = new FakeStorage(),
-    unmatched403Session = new SessionStore()
-  unmatched403Session.beginGeneration(false)
-  const unmatched403Vault = new SignedRouteVault()
-  unmatched403Vault.reset(unmatched403Session.get().generation, unmatched403Session.get().epoch)
-  const unmatched403Routes = new RouteCoordinator(
-    base.clock,
-    unmatched403Session,
-    base.scope.own(new CatalogSettingsStore(unmatched403Storage, () => base.now)),
-    base.scope.own(new RestrictionStore(unmatched403Storage, () => base.now)),
-    base.scope.own(new EvidenceStore(unmatched403Storage, () => base.now)),
-    unmatched403Vault,
-    createRuntimeIds(),
-  )
-  const unmatched403Url =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/unmatched-403/video.m4s?signature=unmatched'
-  const unmatched403First = unmatched403Routes.apply(unmatched403Url)
-  await unmatched403Routes.observe({
-    generation: unmatched403Session.get().generation,
-    epoch: unmatched403Session.get().epoch,
-    decisionId: unmatched403First.decision.id,
-    representation: null,
-    kind: 'video',
-    routeType: 'catalog-generated',
-    originalHost: new URL(unmatched403Url).host,
-    targetHost: unmatched403First.decision.host ?? '',
-    finalHost: unmatched403First.decision.host,
-    responseUrlMatchesRequest: true,
-    streamKey: unmatched403First.streamKey,
-    status: 403,
-    bytes: 0,
-    ttfbMs: 20,
-    elapsedMs: 100,
-    completedAt: base.now + 3,
-    outcome: 'failure',
-  })
-  const unmatched403Next = unmatched403Routes.apply(unmatched403Url)
-  void (
-    unmatched403Next.decision.routeType === 'catalog-generated' &&
-    unmatched403Next.decision.host !== unmatched403First.decision.host
-  )
   const redirectedStorage = new FakeStorage(),
     redirectedSession = new SessionStore()
   const redirectedState = redirectedSession.beginGeneration(false),
@@ -664,83 +446,11 @@ async function createBackup403RoutesContext9(t: TestContext) {
   void redirectedEvidence.get(new URL(redirectedRoot).host, 'video')
   void redirectedSession.get().affinity
   const redirectedNext = redirectedRoutes.apply(redirectedRoot)
-  return extendFixture(base, {
-    backup403Routes,
-    backup403First,
-    backup403Next,
-    unmatched403Storage,
-    unmatched403Session,
-    unmatched403Vault,
-    unmatched403Routes,
-    unmatched403Url,
-    unmatched403First,
-    unmatched403Next,
-    redirectedStorage,
-    redirectedSession,
-    redirectedState,
-    redirectedVault,
-    redirectedRoot,
-    redirectedRep,
-    redirectedEvidence,
-    redirectedRoutes,
-    redirectedFirst,
-    redirectedRequest,
-    redirectedNext,
-  } as const)
+  return extendFixture(base, { redirectedFirst, redirectedNext } as const)
 }
 
 async function createCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11Context10(t: TestContext) {
   const base = await createBackup403RoutesContext9(t)
-  void (
-    base.redirectedNext.decision.routeType === 'catalog-generated' &&
-    base.redirectedNext.decision.host !== base.redirectedFirst.decision.host
-  )
-  const aliasStorage = new FakeStorage(),
-    aliasSession = new SessionStore()
-  const aliasState = aliasSession.beginGeneration(false),
-    aliasVault = new SignedRouteVault()
-  aliasVault.reset(aliasState.generation, aliasState.epoch)
-  const aliasSettings = base.scope.own(new CatalogSettingsStore(aliasStorage, () => base.now))
-  const aliasRoutes = new RouteCoordinator(
-    base.clock,
-    aliasSession,
-    aliasSettings,
-    base.scope.own(new RestrictionStore(aliasStorage, () => base.now)),
-    base.scope.own(new EvidenceStore(aliasStorage, () => base.now)),
-    aliasVault,
-    createRuntimeIds(),
-  )
-  const aliasAdapter = new PlayurlAdapter(
-    new PlayurlController(aliasSession, aliasVault, aliasRoutes),
-  )
-  const aliasRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/aliases/primary.m4s?signature=primary'
-  const aliasBackup =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/aliases/backup.m4s?signature=backup'
-  const aliasItem = {
-    id: 90,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 1_000_000,
-    baseUrl: aliasRoot,
-    base_url: aliasRoot,
-    backupUrl: [aliasBackup],
-    backup_url: [aliasBackup],
-  }
-  void aliasAdapter.transform({
-    data: { dash: { video: [aliasItem], audio: [] } },
-  }).accepted
-  void JSON.stringify(aliasItem.backupUrl)
-  void JSON.stringify(aliasItem.backup_url)
-  void [
-    aliasItem.baseUrl,
-    aliasItem.base_url,
-    ...aliasItem.backupUrl,
-    ...aliasItem.backup_url,
-  ].every(
-    (url) =>
-      !!url && TRUSTED_CATALOG.includes(new URL(url).host as (typeof TRUSTED_CATALOG)[number]),
-  )
   const nestedStorage = new FakeStorage(),
     nestedSettings = base.scope.own(new CatalogSettingsStore(nestedStorage, () => base.now))
   await nestedSettings.update({ considerNativeSources: true })
@@ -810,33 +520,7 @@ async function createCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11Context
   await nestedSettings.update({ considerNativeSources: false })
   nestedRoutes.invalidateForUserSetting()
   const strictNested = nestedPayload()
-  return extendFixture(base, {
-    aliasStorage,
-    aliasSession,
-    aliasState,
-    aliasVault,
-    aliasSettings,
-    aliasRoutes,
-    aliasAdapter,
-    aliasRoot,
-    aliasBackup,
-    aliasItem,
-    nestedStorage,
-    nestedSettings,
-    nestedSession,
-    nestedState,
-    nestedVault,
-    nestedRoutes,
-    nestedAdapter,
-    nestedVideoRoot,
-    dolbyRoot,
-    dolbyBackup,
-    flacRoot,
-    flacBackup,
-    nestedPayload,
-    nativeOnNested,
-    strictNested,
-  } as const)
+  return extendFixture(base, { nestedAdapter, strictNested } as const)
 }
 
 async function checkCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11(
