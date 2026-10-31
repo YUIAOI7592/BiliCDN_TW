@@ -809,3 +809,11 @@ Native 可信 UI 切換與還原、完整模型／畫面讀回通過。1 倍按�
 後續最終驗證：新增三個退役原碼追溯工具案例，並補回音訊禁止、XHR 送出前重查／單次派送及需求餘裕三個功能案例後，固定 Node 26.8.1 完整 verify 通過 1,598 案，failed／cancelled／skipped／todo 均為 0。型別、91 模組架構、匯入、確定性建置、語法及封裝校驗通過。Codex Security 掃描 4409e3da-7ffc-4ce3-baa0-74dc4a4aa090 已封存，175 個變更路徑核對完成，零可回報發現；沒有啟動瀏覽器或本機網站服務。
 
 公開交付讀回：main 與 v2.2.1 標籤的發行提交為 1e4e70cccf13e0dea1346c1fbd89d44dad063ce1，正式 latest Release 只有一個腳本附件。main／標籤／latest 三路公開下載均為 2.2.1、419,507 bytes，SHA-256 e89b94bb92eecb818ce038f09c1de2b9fb5db8b2ffa35adb2357141384db149d，等於本機原件。這是公開產物校驗，沒有操作瀏覽器或宣稱管理器安裝實測。
+
+## 2026-11-01：v2.2.1 R1 基本安裝驗收
+
+使用者更新後明確要求設立目標並開始驗收；單一自有 IAB／Tampermonkey 分頁，以 BV1tFZZBQE57/p1、Auto1／2倍各一次60秒完成七項核心及清理，結果見 [完整報告](TEST_REPORT.md#v221-r1-安裝驗收2026-11-01)。原設定的 Native／提前重試均false，可信UI切換後核對記憶體、畫面及管理器保存，再逐欄還原；沒有清除學習。完整本體雜湊、唯一Runtime／ControlCenter與installed hooks已核對。
+
+DOM／AX未列出封閉ShadowRoot，改用同一IAB受控CDP讀既有節點與座標，再送可信輸入，沒有直接呼叫產品命令冒充UI。最初28秒的awaitPromise被工具約20秒截止；改用12秒有界等待。原同一觀察器持續每秒讀取真實媒體並在60秒自行清理，兩窗最大間隔1002.9／1003.3ms、全muted且無失效樣本；沒有追加或拼接窗口。Debugger初始事件截斷另記，不要求完整Network作本輪門檻。
+
+04:28:06前完成1倍、paused/muted true、設定／儲存還原、觀察物件移除、Debugger解除／停用與objectGroup釋放，唯一自有分頁關閉後IAB清單為空。沒有本機網站服務、前景要求、音訊取消、故障注入、產品包裝或額度重設。自然量測／恢復與其他未執行項目不算通過；來源、版本、Release和安全產物未修改。
