@@ -218,6 +218,8 @@ Runtime 擁有提前重試的生命週期重設及卸載；控制器僅保留當
 
 首次採樣、seek 跳躍、保留尺寸或緩衝增加不是播放進度。合格採樣須非 seeking／paused／ended／mediaError，影片時間前進超過 0.05 秒；有影格計數時也須新增影格。第一個有效進度停止無進度計時，兩個連續有效採樣才 recovered。
 
+此處影格計數來自原生 `getVideoPlaybackQuality().totalVideoFrames`，供停滯、可信目標及恢復的進度確認使用。
+
 新使用者操作撤銷舊還原；新 seek 用最新目標重新建立停滯段。網站／Auto 的目標或表示變化會撤銷過期動作並重新綁定當前 video，但保留原停滯起點與已用額度。暫停、真正 hidden、ended、mediaError、停用及生命週期失效依契約結束舊段，不能累計背景時間。
 
 可信 seek keydown／keyup 各自在同一派送內確認實際有限新目標才取得一次 userRevision，包含位置 0；BODY／頁面焦點有效，editable、控制中心、IME、Ctrl／Meta／Alt、合成事件、忽略命令及派送後工作無效。pendingSeek／internalSeek 保留腳本來源抑制。HAVE_NOTHING 的可信新目標另須捕捉核心不變、非 internalReload；未知目標只更新 seekRevision、撤銷舊還原，不猜成使用者命令。
