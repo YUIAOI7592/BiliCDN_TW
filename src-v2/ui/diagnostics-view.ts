@@ -1,3 +1,4 @@
+import type { ControlCenterSnapshot } from './control-contracts.ts'
 import type { ControlCenterDependencies } from './control-contracts.ts'
 import type {
   ControlViewFrame,
@@ -9,9 +10,10 @@ import { settingToggle } from './setting-controls.ts'
 import { measurementLabel, recoveryLabel } from './labels.ts'
 
 export function renderDiagnostics(
-  deps: ControlCenterDependencies,
+  deps: Pick<ControlCenterDependencies, 'commands' | 'diagnostics'>,
   frame: ControlViewFrame,
   actions: DiagnosticViewActions,
+  initialModel: ControlCenterSnapshot,
 ): ControlViewBinding {
   const summary = document.createElement('p')
   summary.className = 'diagnostic-summary'
@@ -92,6 +94,7 @@ export function renderDiagnostics(
     (m) => m.routes.originalComparison,
     (enabled) => deps.commands.setOriginalComparison(enabled),
     actions,
+    initialModel,
     '僅目前分頁的原線對照；重新整理後關閉。新請求使用原生授權來源，禁止規則仍有效。',
   )
   const resetReport = (): void => {
@@ -132,6 +135,6 @@ export function renderDiagnostics(
       ' · 健康探測：' +
       measurementLabel(model.measurement.state, model.measurement.reason)
   }
-  refresh(actions.model())
+  refresh(initialModel)
   return { refresh, dispose: release }
 }

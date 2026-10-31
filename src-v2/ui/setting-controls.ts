@@ -8,12 +8,13 @@ export function settingToggle(
   value: (model: ControlCenterSnapshot) => boolean,
   update: (enabled: boolean) => Promise<unknown> | void,
   actions: ControlViewActions,
+  model: ControlCenterSnapshot,
   detail = '',
 ) {
   const input = document.createElement('input')
   input.type = 'checkbox'
   input.setAttribute('aria-label', label)
-  let expected = value(actions.model()),
+  let expected = value(model),
     pending = false
   input.checked = expected
   input.addEventListener('change', (event) => {
@@ -26,12 +27,8 @@ export function settingToggle(
     expected = requested
     // Start synchronously: SettingsStore applies restrictive changes before waiting for its lock.
     const result = update(requested)
-    void actions.refreshAfter(Promise.resolve(result)).finally(() => {
+    void actions.refreshAfter(Promise.resolve(result), () => {
       pending = false
-      if (actions.ownsView()) {
-        expected = value(actions.model())
-        input.checked = expected
-      }
     })
   })
   return {

@@ -1,3 +1,5 @@
+import { writeClipboard } from './adapters/clipboard.ts'
+import { createControlReadModel } from './ui/control-read-model.ts'
 import { RangeProbeAdapter } from './adapters/range-probe.ts'
 import { PlayurlController } from './application/playurl-controller.ts'
 import { RuntimeController } from './application/runtime-controller.ts'
@@ -150,20 +152,29 @@ export const start = (): void => {
     recovery,
     earlyRetry,
   )
+  const version = GM_info?.script?.version ?? '未知'
   const center = new ControlCenter({
-    settings,
-    restrictions,
-    evidence,
-    session,
-    routes,
-    measurement,
-    monitor,
-    recovery,
-    transport,
-    diagnostics,
+    version,
+    clipboard: writeClipboard,
     commands,
-    earlyRetry,
+    diagnostics,
     now,
+    model: createControlReadModel(
+      {
+        settings,
+        restrictions,
+        evidence,
+        session,
+        routes,
+        measurement,
+        monitor,
+        recovery,
+        transport,
+        earlyRetry,
+        now,
+      },
+      version,
+    ),
   })
   const panel = new PlayerPanel(center, settings, session, monitor)
 

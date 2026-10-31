@@ -1,4 +1,3 @@
-import { evidenceMetrics } from '../domain/evidence.ts'
 import type {
   ControlCenterDependencies,
   ControlCenterSnapshot,
@@ -36,9 +35,7 @@ export class ControlCenter implements ShowControlCenterPort {
     this.#releaseView()
     this.#shell()
     this.#navigate('overview')
-    for (const source of [this.deps.settings, this.deps.monitor, this.deps.routes]) {
-      if (source.subscribe) this.#subscriptions.push(source.subscribe(() => this.#refresh()))
-    }
+    this.#subscriptions.push(this.deps.model.subscribe(() => this.#refresh()))
   }
 
   close(): void {
@@ -129,12 +126,14 @@ export class ControlCenter implements ShowControlCenterPort {
     heading.textContent = 'BiliCDN 控制中心'
     const version = document.createElement('p')
     version.className = 'detail'
-    version.textContent = 'v' + (GM_info?.script?.version ?? '未知') + ' · 播放與路線狀態'
+    version.textContent = 'v' + this.deps.version + ' · 播放與路線狀態'
     brand.append(heading, version)
     const power = createButton('', () => {
       if (!this.#open || this.#power !== power) return
       return this.#refreshAfter(
-        this.deps.commands.updateSettings({ disabled: !this.deps.settings.get().disabled }),
+        this.deps.commands.updateSettings({
+          disabled: !this.deps.model.snapshot().settings.disabled,
+        }),
       )
     })
     power.className = 'btn power'
@@ -189,36 +188,43 @@ export class ControlCenter implements ShowControlCenterPort {
       tab.setAttribute('aria-current', name === page ? 'page' : 'false')
     if (this.#notice) this.#notice.textContent = ''
     const actions: ControlViewActions = {
-      model: () => this.#readModel(),
       ownsView: () => this.#ownsView(version),
       refresh: () => {
         if (this.#ownsView(version)) this.#refresh()
       },
-      refreshAfter: (command) => this.#refreshAfter(command),
+      refreshAfter: (command, settled) => this.#refreshAfter(command, version, settled),
     }
+    const model = this.deps.model.snapshot()
     this.#binding =
       page === 'overview'
-        ? renderOverview(this.#frame, actions, this.deps.now)
+        ? renderOverview(this.#frame, actions, this.deps.now, model)
         : page === 'cdn'
-          ? renderCdn(this.deps, this.#frame, actions)
+          ? renderCdn(this.deps.commands, this.#frame, actions, model)
           : page === 'settings'
-            ? renderSettings(this.deps, this.#frame, actions)
-            : renderDiagnostics(this.deps, this.#frame, {
-                ...actions,
-                report: () => this.deps.diagnostics.buildReport(this.#readModel(true)),
-                copy: (report, button, status) => this.#copyReport(report, button, status, version),
-              })
-    this.#refresh()
+            ? renderSettings(this.deps.commands, this.#frame, actions, model)
+            : renderDiagnostics(
+                this.deps,
+                this.#frame,
+                {
+                  ...actions,
+                  report: () => this.deps.diagnostics.buildReport(this.deps.model.snapshot(true)),
+                  copy: (report, button, status) =>
+                    this.#copyReport(report, button, status, version),
+                },
+                model,
+              )
+    this.#refresh(model)
   }
 
-  #refresh(): void {
+  #refresh(model?: ControlCenterSnapshot): void {
     if (!this.#open || !this.#host?.isConnected) return
+    model ??= this.deps.model.snapshot()
     if (this.#power) {
-      const enabled = !this.deps.settings.get().disabled
+      const enabled = !model.settings.disabled
       this.#power.textContent = enabled ? '停用腳本' : '啟用腳本'
       this.#power.setAttribute('aria-pressed', String(enabled))
     }
-    this.#binding?.refresh(this.#readModel())
+    this.#binding?.refresh(model)
   }
 
   async #copyReport(
@@ -248,23 +254,9 @@ export class ControlCenter implements ShowControlCenterPort {
     status.textContent = '正在複製報告…'
     try {
       const text = report.value
-      let clipboard: Clipboard | undefined, write: Clipboard['writeText'] | undefined
-      try {
-        clipboard = navigator.clipboard
-        write = clipboard?.writeText
-      } catch {
-        /* API unavailable: GM compatibility path. */
-      }
-      // Clipboard lookup may synchronously replace the view. Never write for an obsolete owner.
-      if (!ownsView()) return
-      if (typeof write === 'function') {
-        // Start during trusted click dispatch, with the native receiver and no preceding await.
-        await write.call(clipboard, text)
-        if (ownsView()) status.textContent = '已複製報告'
-      } else {
-        GM_setClipboard(text, 'text')
-        if (ownsView()) status.textContent = '已交由腳本管理器處理，請貼上確認'
-      }
+      const result = await this.deps.clipboard(text, ownsView)
+      if (ownsView() && result)
+        status.textContent = result === 'native' ? '已複製報告' : '已交由腳本管理器處理，請貼上確認'
     } catch {
       // A submitted write cannot be cancelled; do not issue a second write after a failure.
       if (ownsView()) status.textContent = '複製失敗，請選取報告自行複製'
@@ -274,40 +266,21 @@ export class ControlCenter implements ShowControlCenterPort {
     }
   }
 
-  #readModel(includeEvidence = false): ControlCenterSnapshot {
-    const now = this.deps.now(),
-      evidence = includeEvidence
-        ? this.deps.evidence
-            .list()
-            .slice(0, 96)
-            .map((row) => ({ host: row.host, kind: row.kind, ...evidenceMetrics(row, now) }))
-        : []
-    return Object.freeze({
-      version: GM_info?.script?.version ?? '2.1.1',
-      releaseStage: 'stable',
-      settings: this.deps.settings.get(),
-      session: this.deps.session.get(),
-      monitor: this.deps.monitor.snapshot(),
-      ...(this.deps.earlyRetry ? { earlyRetry: this.deps.earlyRetry.snapshot() } : {}),
-      recovery: this.deps.recovery.snapshot(),
-      measurement: this.deps.measurement.snapshot(),
-      interception: this.deps.transport.snapshot(),
-      routes: this.deps.routes.snapshot(),
-      restrictions: this.deps.restrictions.list(),
-      evidence,
-    })
-  }
-
   #ownsView(version: number): boolean {
     return this.#open && this.#viewVersion === version
   }
 
-  async #refreshAfter(command: Promise<unknown>): Promise<void> {
-    const version = this.#viewVersion
+  async #refreshAfter(
+    command: Promise<unknown>,
+    version = this.#viewVersion,
+    settled?: () => void,
+  ): Promise<void> {
     try {
       await command
+      settled?.()
       if (this.#ownsView(version)) this.#refresh()
     } catch {
+      settled?.()
       if (this.#ownsView(version)) {
         this.#refresh()
         if (this.#notice) this.#notice.textContent = '設定未能保存，請稍後再試。'

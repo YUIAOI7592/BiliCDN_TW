@@ -1,4 +1,5 @@
-import type { ControlCenterDependencies } from './control-contracts.ts'
+import type { ControlCenterSnapshot } from './control-contracts.ts'
+import type { ControlCommandPort } from '../application/control-ports.ts'
 import type {
   ControlViewFrame,
   ControlViewActions,
@@ -8,9 +9,10 @@ import { createButton } from './elements.ts'
 import { settingToggle } from './setting-controls.ts'
 
 export function renderSettings(
-  deps: ControlCenterDependencies,
+  commands: ControlCommandPort,
   frame: ControlViewFrame,
   actions: ControlViewActions,
+  initialModel: ControlCenterSnapshot,
 ): ControlViewBinding {
   const rows = document.createElement('div')
   rows.className = 'grid'
@@ -31,8 +33,9 @@ export function renderSettings(
     settingToggle(
       label,
       (m) => m.settings[key],
-      (value) => deps.commands.updateSettings({ [key]: value }),
+      (value) => commands.updateSettings({ [key]: value }),
       actions,
+      initialModel,
       detail,
     ),
   )
@@ -68,15 +71,13 @@ export function renderSettings(
     title,
     createButton(
       '清除測速紀錄、黑名單與故障標記',
-      () => ask('清除已學習的速度與限制資料？', () => deps.commands.clearLearning()),
+      () => ask('清除已學習的速度與限制資料？', () => commands.clearLearning()),
       'danger',
     ),
     createButton(
       '還原預設設定（不清除測速紀錄）',
       () =>
-        ask('還原所有設定？六個自動功能與香港節點將使用新版預設。', () =>
-          deps.commands.resetSettings(),
-        ),
+        ask('還原所有設定？六個自動功能與香港節點將使用新版預設。', () => commands.resetSettings()),
       'danger',
     ),
     confirm,

@@ -27,6 +27,7 @@ export function renderOverview(
   frame: ControlViewFrame,
   actions: ControlViewActions,
   now: () => number,
+  initialModel: ControlCenterSnapshot,
 ): ControlViewBinding {
   const status = text('h3', 'playback'),
     format = text('span', 'badge')
@@ -54,16 +55,18 @@ export function renderOverview(
   activity.append(text('h3', '', '最近狀態'), startup, measurement, retry)
   const details = text('div', 'status-details'),
     summary = text('p', 'summary')
+  let currentModel = initialModel
   let expanded = false
   const expand = createButton('查看詳細狀態', () => {
     if (!actions.ownsView()) return
     expanded = !expanded
     expand.textContent = expanded ? '收起詳細狀態' : '查看詳細狀態'
     details.replaceChildren(...(expanded ? [summary] : []))
-    if (expanded) summary.textContent = describeStatus(actions.model(), now())
+    if (expanded) summary.textContent = describeStatus(currentModel, now())
   })
   frame.body.append(hero, metrics, routes, selected, activity, expand, details)
   const refresh = (model: ControlCenterSnapshot): void => {
+    currentModel = model
     const video = model.monitor.video,
       plan = model.routes.activePlan
     const row = plan?.ranking.find(
@@ -168,6 +171,6 @@ export function renderOverview(
           : '尚未取得狀態')
     // The long summary is captured only on request, never rebuilt by the playback tick.
   }
-  refresh(actions.model())
+  refresh(initialModel)
   return { refresh }
 }

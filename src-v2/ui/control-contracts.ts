@@ -67,7 +67,7 @@ export interface ControlTransportReader {
   snapshot(): TransportSnapshot
 }
 
-export interface ControlCenterDependencies {
+export interface ControlModelSources {
   readonly earlyRetry?: { snapshot(): EarlyRetrySnapshot }
   readonly settings: SettingsReader & { subscribe?(listener: () => void): () => void }
   readonly restrictions: ControlRestrictionReader
@@ -77,12 +77,25 @@ export interface ControlCenterDependencies {
   readonly measurement: ControlMeasurementReader
   readonly monitor: ControlMonitorReader
   readonly recovery: ControlRecoveryReader
-  readonly diagnostics: DiagnosticViewPort
   readonly transport: ControlTransportReader
-  readonly commands: ControlCommandPort
   readonly now: () => number
 }
 
+export interface ControlReadModelPort {
+  snapshot(includeEvidence?: boolean): ControlCenterSnapshot
+  subscribe(listener: () => void): () => void
+}
+export interface ControlCenterDependencies {
+  readonly model: ControlReadModelPort
+  readonly version: string
+  readonly clipboard: (
+    text: string,
+    ownsView: () => boolean,
+  ) => Promise<'native' | 'manager' | null>
+  readonly diagnostics: DiagnosticViewPort
+  readonly commands: ControlCommandPort
+  readonly now: () => number
+}
 export type ControlPage = 'overview' | 'cdn' | 'settings' | 'diagnostics'
 export interface ControlViewFrame {
   readonly body: HTMLDivElement
@@ -94,10 +107,9 @@ export interface ControlViewBinding {
 }
 /** The modal owns subscriptions and asynchronous command lifetimes. */
 export interface ControlViewActions {
-  model(): ControlCenterSnapshot
   ownsView(): boolean
   refresh(): void
-  refreshAfter(command: Promise<unknown>): Promise<void>
+  refreshAfter(command: Promise<unknown>, settled?: () => void): Promise<void>
 }
 export type ReportCopyAction = (
   report: HTMLTextAreaElement,
