@@ -42,9 +42,32 @@ Codex Security 安全差異掃描 `e098a1e8-c94e-4dbc-a3db-d8ce98dfcfba` 已完�
 
 ## 瀏覽器與既有證據限制
 
-本版沒有執行 IAB 來源隔離、Tampermonkey 實際安裝或播放驗收，不能以 Node 契約代算。遵守單一自有分頁、禁止本機網站服務、不要求前景及全程靜音限制；本次不啟動舊窗口或新增實測輪次。
+發布時未執行 IAB 來源隔離、Tampermonkey 實際安裝或播放驗收；2026-11-01 使用者另行授權後的校準結果見下節，不能以 Node 契約或工具能力代算產品通過。舊窗口不因新授權的一次有界驗收而恢復。
 
 v2.1.40 的香港影片供片與自然恢復證據不足、N05 取消來源及網站清空根因未確認、提前重試原效用 FAIL 等結論完整保留於 [上一版完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)。這次結構與預設變更不解決或抹除那些缺口，後續執行界線只看 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
+
+## v2.2.0 安裝驗收 R1（2026-11-01）
+
+使用者表示內建瀏覽器已更新到 v2.2.0，明確要求設立目標並開始驗收。基準 HEAD 為 d84821b7a8652f37e96cbd14e2da6269f4d7b2ab，本機發行腳本雜湊與上列公開交付一致；安裝本體尚未取得，不能把使用者回報當成工具核實。
+
+本輪先凍結 I220-01 身分、I220-02 設定／控制中心、I220-03／04 Auto 1／2 倍各 60 秒及 I220-05 清理，限同時一個自有 IAB 分頁。保守 T0=02:32:45、校準上限 02:40:45、清理保留起點 02:57:45、硬截止 03:02:45（Asia/Taipei）。未保存單調起點，因此不提出精確執行耗時；本輪沒有產品計時窗口。
+
+| 案例 | 層級 | 結果 | 實際證據與限制 |
+| --- | --- | --- | --- |
+| E220-READ | E | PASS | 無媒體文字頁上的 Runtime.evaluate 回傳 ready=complete、mediaCount=0 |
+| E220-MUTE | E | PASS | 無來源合成 video 的真正 muted=true、paused=true；未替換 getter，不能代算新影片文件的靜音 |
+| E220-NAV | E | INVALID | 預先注入 API 不支援；設置執行前斷點後的首次影片導覽沒有暫停事件，回報分頁不再屬於當前工作階段；已關閉，未取得新文件媒體或聲音輸出證據 |
+| E220-PAUSED-EVAL | E | INVALID | 後續無媒體頁可取得 instrumentation 暫停，但 Debugger.evaluateOnCallFrame 及替代校準的 Debugger.setSkipAllPauses 逾時；無法建立可靠的新文件起播前靜音操作 |
+| I220-01 | I | 未執行 | 未取得 GM_info、完整安裝本體、唯一 Runtime／ControlCenter 或 hooks；靜音導覽前提未成立 |
+| I220-02 | I | 未執行 | 未讀寫正式設定或操作控制中心，Native 保留與刷新只維持既有 Node 證據 |
+| I220-03／I220-04 | I | 未執行 | 固定影片 Auto 1／2 倍窗口均未開始，沒有 video／audio Network 計分資料 |
+| I220-05 | I | PASS | 僅對實際建立的校準資源：靜音守護停止、合成媒體／標記移除、Debugger 解除、唯一分頁關閉，最終清單空 |
+
+初次游標為 69，未收到預期事件；新校準頁的同一游標 38→39→40 分別收到 scriptParsed 與晚到 paused，truncated=false、hasMore=false。替代校準最後游標 49；這些是 debugger 能力證據，不是產品 Network 連續性。Page.addScriptToEvaluateOnNewDocument 與 raw Page.navigate 明確回報不支援；後者按工具指示改用 tab.goto，沒有更換瀏覽器或繞過安全拒絕。暫停的解除成功，正常執行時的真正靜音成功，仍不足以證明新頁起播前可可靠完成。
+
+02:39:25 前完成清理讀回：guardStopped=true、media=[]、Debugger.disable 成功，IAB 分頁清單空。沒有修改正式設定、倍速、播放器 getter、帳戶／瀏覽器設定，沒有故障攔截或受控學習樣本；沒有要求前景、啟動本機服務、另開外部瀏覽器或追加產品窗口。第一次失效導覽缺少媒體讀回，不能宣稱已完成無聲播放驗證。
+
+**本輪核心安裝驗收未完成，沒有確認產品缺陷。** 只完成環境校準中可獨立證明的項目與清理；再次開始需有新文件播放前真正靜音及讀回的可用工具能力，並按 [TODO 範圍](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md#v220-安裝版驗收範圍) 取得新一輪授權。原始有界摘要保存在本機 `.work/iab-testing/2026-11-01-v2.2.0-d84821b-r1/` 的 BASELINE、CASES、TIMELINE、CLEANUP、CHECKPOINT、RERUN 與 REPORT；不包含簽名網址、憑證或播放器物件。
 
 ## 歷史驗證導覽
 
