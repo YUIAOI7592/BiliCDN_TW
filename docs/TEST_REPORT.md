@@ -52,6 +52,8 @@ v2.1.40 的香港影片供片與自然恢復證據不足、N05 取消來源及�
 
 本輪先凍結 I220-01 身分、I220-02 設定／控制中心、I220-03／04 Auto 1／2 倍各 60 秒及 I220-05 清理，限同時一個自有 IAB 分頁。保守 T0=02:32:45、校準上限 02:40:45、清理保留起點 02:57:45、硬截止 03:02:45（Asia/Taipei）。未保存單調起點，因此不提出精確執行耗時；本輪沒有產品計時窗口。
 
+以下是使用者澄清前、截至 02:39:25 的首次校準檢查點；其後未開始產品案例的續行結果另列於下節，不將工具窗口與產品窗口混合計分。
+
 | 案例 | 層級 | 結果 | 實際證據與限制 |
 | --- | --- | --- | --- |
 | E220-READ | E | PASS | 無媒體文字頁上的 Runtime.evaluate 回傳 ready=complete、mediaCount=0 |
@@ -74,6 +76,23 @@ v2.1.40 的香港影片供片與自然恢復證據不足、N05 取消來源及�
 2026-11-01 使用者再次指出，只要求靜音，沒有要求起播前已靜音。[2026-10-31 19:05 原紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31依使用者更正靜音方法續行與下載工具超時) 已明確記載「起播後立即靜音」，並成功用真正 HTMLMediaElement.muted 屬性操作及讀回。助手卻沿用較舊的「導覽前先確認」摘要，再自行增加預注入／執行前暫停門檻，錯把所選方法受限推論為安裝驗收必然受阻。
 
 撤回這個額外門檻及據此要求新工具能力／重複批准的結論；正確做法是導覽／起播後立即靜音並讀回，後續維持靜音，最初未確認區間不算計分窗口。工具逾時、清理與未執行結果保留，不因此改判 PASS；本次更正沒有執行新的瀏覽器窗口，也不重開原 [範圍與期限](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md#v220-安裝版驗收範圍)。
+
+### 澄清後在原期限內續行
+
+使用者將目標恢復 active 後，於同一原期限內續行先前未開始的產品案例。只建立一個自有 IAB 分頁；導覽後立即使用真正 muted 屬性及讀回，首次讀值 muted=true、paused=true、readyState=0；其後媒體正常播放時仍 muted=true。自有 MutationObserver／volumechange 僅維持真正靜音，沒有 getter 替換、前景要求、本機服務或音訊下載抑制。這條方法成功，證明先前「必須有起播前注入／暫停能力」的停止理由不成立。
+
+| 案例 | 結果 | 預期／實際與證據範圍 |
+| --- | --- | --- |
+| I220-01 安裝身分 | PASS | Tampermonkey 5.5.1、腳本 2.2.0；實際載入完整本體 507,211 bytes、SHA-256 與公開附件一致；RuntimeController／ControlCenter／TransportAdapter 各一個，Fetch／XHR hooks=true、state=installed |
+| I220-02 設定與 CDN 畫面 | PASS | 既有 Native=false 保留，畫面正確顯示預設啟用說明；可信滑鼠操作 false→true→false，命令完成後模型與 checkbox 一致且未停留 disabled。原設定逐欄還原，僅 updatedAt 因真實寫入改變 |
+| I220-03 Auto 1 倍媒體觀察 | PASS（僅媒體） | 計分區間 02:56:19.135–02:57:19.135，前後各 10 秒；60 筆每秒樣本全部 muted=true、rate=1、正常播放且同一媒體，無 paused／ended／seeking／error。Auto 實際 3840×2160，首末採樣進度 59.000165 秒、影格 10497→14034，最大採樣間隔約 1002.3 ms |
+| I220-03 完整傳輸窗口 | INVALID | 同一 Network 游標共讀 163 事件、最大讀取間隔 12,307 ms，最後回報 truncated=true；雖觀察到 video 17 筆及 audio 16 筆 206，不能宣稱完整請求／完成時序。分類以當次 playurl 音訊／影片路徑在記憶體比對，原值不輸出或持久化 |
+| I220-04 Auto 2 倍 | 未執行 | 剩餘時間不足在 02:57:45 清理起點前完成另一個含前後置的 80 秒窗口；沒有縮短、重開計時或追加輪次 |
+| I220-05 清理 | PASS | 02:58:01.248 完成：設定除 updatedAt 外還原，rate=1／paused=true／muted=true，觀察器與窗口已停止、中心已關閉、Debugger／Network 已解除、遠端物件群組已釋放，IAB 自有分頁為 0 |
+
+完整本體核對後只以正常 PlayerMonitor.tick 斷點短暫取得 GM_info 與既有實例，立即解除並 resume；身分暫停時間不計入播放窗口。原入口點擊／返回導覽仍沿用跳過決定，開啟中心使用既有 show，不冒充入口 UI 驗收。單次完整快照及未要求報告時不計算詳細證據仍依正式 Node 契約；本輪未另包裝產品方法計數。
+
+本輪最終 **核心驗收未完成**，原因是 I220-03 的 Network 截斷及 I220-04 時間不足；沒有確認新的產品缺陷，也不把影片穩定進度補算完整傳輸通過。證據為本輪私有目錄的 CONTINUED_EVIDENCE.json、screenshots/native-restored.png 及 screenshots/playback-cleanup.png；先前校準原件與更正記錄保留。
 
 ## 歷史驗證導覽
 
