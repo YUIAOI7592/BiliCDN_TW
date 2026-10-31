@@ -32,7 +32,13 @@ Codex Security 安全差異掃描 `e098a1e8-c94e-4dbc-a3db-d8ce98dfcfba` 已完�
 
 ## 公開交付
 
-版本設定為 2.2.0，自動與安全交付前檢查通過。此封裝快照保留發布前檢查點；main／標籤、唯一附件及公開 latest 下載的發布後核對追加於[現行完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#公開交付)，不回寫 Release 原件。本機原始碼提交不等於使用者腳本發布。
+2026-11-01 02:23（Asia/Taipei）已發布正式 [v2.2.0 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.0)，不是 draft 或 prerelease，且為公開 latest。發布提交為 `49345bad6cdb9e49e7cf1420288e926d0ace11be`；遠端 main 與標籤解參照均核對至該提交，後續 main 僅追加本次交付紀錄。
+
+| 核對來源 | 腳本版本 | 大小 | SHA-256 |
+| --- | --- | --- | --- |
+| 本機封裝、遠端 main 原始檔、v2.2.0 標籤原始檔及公開 latest 實際下載 | 2.2.0 | 507,211 bytes | `abca87caeb995fb924f5869c8fd60accdfe250994b448607e22803a38a610a1f` |
+
+四份腳本逐一下載／讀取後核對一致；Release 唯一附件為 `BiliCDN_TW.user.js`，GitHub 回傳的附件 digest 亦相同。[既有 latest 更新入口](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js) 保持不變。Release 中的報告保留發布前檢查點，五份封裝原件已登記雜湊保護，不回寫。這些公開交付結果不代表 Tampermonkey 已安裝新版。
 
 ## 瀏覽器與既有證據限制
 
