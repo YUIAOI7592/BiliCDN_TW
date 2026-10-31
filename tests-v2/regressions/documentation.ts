@@ -5,6 +5,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'nod
 import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { createHash } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
 import {
   checkDocumentation,
   documentationCli,
@@ -74,6 +75,45 @@ function fixture(t: TestContext) {
     })
   }
   return { root, write, manifest, save, check, protect }
+}
+
+for (const condition of ['valid', 'changed-hash', 'retained-file'] as const) {
+  test(`retired source registration requires an exact absent Git blob: ${condition}`, async (t) => {
+    const f = fixture(t)
+    const path = 'src-v2/retired.ts',
+      body = 'export const retired = true\n'
+    f.write(path, body)
+    const git = (...args: string[]) =>
+      execFileSync('git', args, { cwd: f.root, encoding: 'utf8' }).trim()
+    git('init', '--quiet')
+    git('add', path)
+    git(
+      '-c',
+      'user.name=Fixture',
+      '-c',
+      'user.email=fixture@example.test',
+      'commit',
+      '--quiet',
+      '-m',
+      'baseline',
+    )
+    f.manifest.retiredSources = [
+      {
+        path,
+        revision: git('rev-parse', 'HEAD'),
+        sha256:
+          condition === 'changed-hash'
+            ? '0'.repeat(64)
+            : createHash('sha256').update(body).digest('hex'),
+      },
+    ]
+    if (condition !== 'retained-file') rmSync(join(f.root, path))
+    const result = await f.check()
+    assert.equal(
+      result.findings.some((item) => item.rule === 'source-retirement'),
+      condition !== 'valid',
+    )
+  })
 }
 function archiveFixture(t: TestContext, url = '%E8%88%8A%20%E5%A0%B1%E5%91%8A.md#中文章節') {
   const f = fixture(t),

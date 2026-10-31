@@ -1,5 +1,4 @@
 import { type VideoSnapshot, type PlayerPort } from './ports.ts'
-import { type BufferTrendSnapshot, type BufferCompletion } from '../domain/buffer-trend.ts'
 import { type RouteCoordinatorPort } from './route-contracts.ts'
 import { type MeasurementPort } from './measurement-contracts.ts'
 import { type RecoveryPort } from './recovery-contracts.ts'
@@ -7,7 +6,6 @@ import { type SessionPort } from '../state/session-contracts.ts'
 import { type SignedRouteVaultPort } from '../state/vault-contracts.ts'
 import { type RequestContext } from '../domain/model.ts'
 export interface MonitorSnapshot {
-  readonly bufferTrend?: BufferTrendSnapshot
   readonly video: VideoSnapshot
   readonly stableProgressSec: number
   readonly watchdog:
@@ -25,22 +23,9 @@ export interface MonitorSnapshot {
   }
 }
 
-export interface ObservedVideoCompletion extends BufferCompletion {
-  readonly request: Pick<
-    RequestContext,
-    | 'requestId'
-    | 'generation'
-    | 'epoch'
-    | 'representation'
-    | 'routePolicyRevision'
-    | 'authorityRevision'
-    | 'targetHost'
-  >
-}
-
 export interface MonitorRoutes extends Pick<
   RouteCoordinatorPort,
-  'observePlaybackRate' | 'isOriginalComparison' | 'firstMediaAt'
+  'observePlaybackRate' | 'firstMediaAt'
 > {
   latestRequested(
     kind: 'video' | 'audio',
@@ -81,7 +66,6 @@ export interface MonitorRecoveryPort extends Pick<
   | 'ongoingStallReload'
 > {}
 export interface MonitorPort {
-  observeTransport(observation: ObservedVideoCompletion): void
   start(): void
   stop(): void
   reset(): void

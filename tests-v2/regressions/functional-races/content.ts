@@ -320,7 +320,7 @@ for (const changed of [false, true])
     assert.equal(f.calls.plays, changed ? 0 : 1)
   })
 
-test('BR-03 cid and directories never enter persistent settings or diagnostic events', (t) => {
+test('BR-03 cid and directories never enter persistent settings or content notifications', (t) => {
   const storage = new FakeStorage(),
     f = runtimeFixture(t, storage),
     notices: unknown[] = []
@@ -330,7 +330,6 @@ test('BR-03 cid and directories never enter persistent settings or diagnostic ev
   const output = JSON.stringify({
     stored: [...storage.values],
     notices,
-    diagnostics: f.diagnostics.snapshot(),
   })
   assert.ok(!output.includes('private-directory-marker'))
   assert.ok(!output.includes('9876543210987654321'))

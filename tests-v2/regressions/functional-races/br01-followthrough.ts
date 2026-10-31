@@ -238,12 +238,7 @@ function fixture(t: TestContext) {
       routes.latestRequested('video')?.representation === request.representation
   }
   const recovery = scope.own(
-    new RecoveryController(
-      player,
-      clock.now,
-      () => visible && !settings.get().disabled && !routes.isOriginalComparison(),
-      eligible,
-    ),
+    new RecoveryController(player, clock.now, () => visible && !settings.get().disabled, eligible),
   )
   const measurement = { ...monitorMeasurement(), reset() {} }
   const monitor = scope.own(
@@ -262,7 +257,6 @@ function fixture(t: TestContext) {
   )
   const runtime = scope.own(
     new RuntimeController(
-      session,
       settings,
       routes,
       player,
@@ -270,8 +264,6 @@ function fixture(t: TestContext) {
       measurement,
       recovery,
       { setEnabled() {} },
-      { record() {}, recordPlayer() {} },
-      clock.now,
       content,
     ),
   )

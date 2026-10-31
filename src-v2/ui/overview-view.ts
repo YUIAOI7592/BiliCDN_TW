@@ -125,11 +125,7 @@ export function renderOverview(
       '選定路線：' +
       (model.session.affinity?.host ?? plan?.host ?? '尚未確認') +
       ' · ' +
-      (model.routes.originalComparison
-        ? '本分頁原線對照'
-        : model.settings.fixedHost
-          ? '固定 CDN'
-          : '自動 CDN')
+      (model.settings.fixedHost ? '固定 CDN' : '自動 CDN')
     const start = model.measurement.startup
     startup.textContent =
       '起播：' +

@@ -1,4 +1,3 @@
-import { writeClipboard } from './adapters/clipboard.ts'
 import { createControlReadModel } from './ui/control-read-model.ts'
 import { RangeProbeAdapter } from './adapters/range-probe.ts'
 import { PlayurlController } from './application/playurl-controller.ts'
@@ -24,7 +23,6 @@ import { PagePlayinfoAdapter } from './adapters/page-playinfo.ts'
 import { TransportAdapter } from './adapters/transport.ts'
 import { VisibilityAdapter } from './adapters/visibility.ts'
 import { WebRtcAdapter } from './adapters/webrtc.ts'
-import { DiagnosticRecorder } from './diagnostics/recorder.ts'
 import { ControlCenter } from './ui/control-center.ts'
 import { PlayerPanel } from './ui/player-panel.ts'
 import { BrowserScheduler } from './adapters/scheduler.ts'
@@ -55,8 +53,7 @@ export const start = (): void => {
   const recovery = new RecoveryController(
     player,
     now,
-    () =>
-      !settings.get().disabled && !routes.isOriginalComparison() && visibility.isActuallyVisible(),
+    () => !settings.get().disabled && visibility.isActuallyVisible(),
     () => {
       const request = routes.latestRequested('video')
       return () =>
@@ -109,9 +106,7 @@ export const start = (): void => {
     scheduler,
     earlyRetry,
   )
-  const diagnostics = new DiagnosticRecorder(now)
   const runtime = new RuntimeController(
-    session,
     settings,
     routes,
     player,
@@ -119,8 +114,6 @@ export const start = (): void => {
     measurement,
     recovery,
     visibility,
-    diagnostics,
-    now,
     content,
     earlyRetry,
   )
@@ -142,28 +135,16 @@ export const start = (): void => {
     scheduler,
   )
   const webRtc = new WebRtcAdapter(settings)
-  const commands = new ControlCommands(
-    settings,
-    restrictions,
-    evidence,
-    meta,
-    routes,
-    measurement,
-    recovery,
-    earlyRetry,
-  )
+  const commands = new ControlCommands(settings, restrictions, evidence, meta, routes)
   const version = GM_info?.script?.version ?? '未知'
   const center = new ControlCenter({
     version,
-    clipboard: writeClipboard,
     commands,
-    diagnostics,
     now,
     model: createControlReadModel(
       {
         settings,
         restrictions,
-        evidence,
         session,
         routes,
         measurement,
@@ -178,7 +159,6 @@ export const start = (): void => {
   })
   const panel = new PlayerPanel(center, settings, session, monitor)
 
-  lifecycle.subscribe((event) => runtime.record(event))
   runtime.install()
   webRtc.install()
   lifecycle.start()

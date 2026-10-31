@@ -14,9 +14,7 @@ import {
 } from '../../src-v2/state/measurement-meta-store.ts'
 import { catalogOutputPlan, backupOutputPlan } from '../../src-v2/domain/player-output-plan.ts'
 import type { RangeProbeInput, RangeProbeResult } from '../../src-v2/application/ports.ts'
-import { DiagnosticRecorder } from '../../src-v2/diagnostics/recorder.ts'
 import { deferred } from '../support/deferred.ts'
-import { earlyRetryReason } from '../../src-v2/domain/early-retry-diagnostic.ts'
 
 class HeldEvidenceStorage extends FakeStorage {
   held = true
@@ -56,12 +54,6 @@ for (const kind of ['health', 'startup'] as const)
       assert.deepEqual(v.f.evidence.list(), before)
     },
   )
-
-test('UP141-DIAG comparison cancellation retains its fixed reason', (t) => {
-  testScope(t)
-  assert.equal(earlyRetryReason('comparison-setting'), 'comparison-setting')
-  assert.equal(earlyRetryReason('monitor-stop'), 'monitor-stop')
-})
 
 const hk = [
   'cn-hk-eq-01-03.bilivideo.com',
@@ -290,31 +282,4 @@ test('UP141-TEST middle toggle off requests head while retaining validated sourc
   assert.equal(v.calls.length, 3)
   assert.ok(v.calls.every((row) => row.startByte === 0))
   assert.equal(v.f.vault.rangeSize(v.context, handle), 8 * 1024 * 1024)
-})
-
-test('UP141-TEST early retry events export bounded sanitized history without changing bufferTrend', (t) => {
-  testScope(t)
-  let now = 1000
-  const recorder = new DiagnosticRecorder(() => now++)
-  const before = recorder.snapshot().bufferTrend
-  for (let i = 0; i < 40; i++)
-    recorder.record({
-      type: 'early-retry',
-      at: now,
-      state: 'waiting',
-      reason: i === 39 ? 'https://secret.invalid/path?token=secret' : 'no-alternative',
-      host: hk[0]!,
-      attempts: i,
-    })
-  const exported = JSON.parse(
-    recorder.buildReport({ releaseStage: 'test', settings: { earlyRetryEnabled: false } }),
-  )
-  const events = exported.recorder.events.filter(
-    (row: { type: string }) => row.type === 'early-retry',
-  )
-  assert.equal(events.length, 16)
-  assert.equal(events.at(-1).data.reason, 'unknown')
-  assert.equal(JSON.stringify(exported).includes('secret'), false)
-  assert.deepEqual(recorder.snapshot().bufferTrend, before)
-  assert.ok(new TextEncoder().encode(JSON.stringify(exported)).byteLength <= 96 * 1024)
 })

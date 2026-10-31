@@ -96,7 +96,6 @@ export interface RouteRankingSummary {
   readonly ttfbMs: number | null
 }
 export interface RouteSnapshot {
-  readonly originalComparison: boolean
   readonly planCount: number
   readonly activePlan:
     (RoutePlanSummary & { readonly ranking: readonly RouteRankingSummary[] }) | null
@@ -140,10 +139,8 @@ export interface RouteCoordinatorPort {
   subscribe(listener: (event: DomainEvent) => void): () => void
   resetEpoch(): void
   invalidateForUserSetting(): void
-  isOriginalComparison(): boolean
   policyRevision(): number
   isCatalogOnly(): boolean
-  setOriginalComparison(enabled: boolean): void
   requestStarted(request: RequestContext): void
   observePlaybackRate(rate: number): void
   playbackRate(): number

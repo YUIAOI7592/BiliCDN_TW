@@ -29,8 +29,7 @@ const layers: Record<string, readonly string[]> = {
   state: ['state', 'domain', 'platform'],
   application: ['application', 'state', 'domain', 'platform'],
   adapters: ['adapters', 'application', 'state', 'domain', 'platform'],
-  diagnostics: ['diagnostics', 'domain'],
-  ui: ['ui', 'diagnostics', 'application', 'state', 'domain', 'platform'],
+  ui: ['ui', 'application', 'state', 'domain', 'platform'],
 }
 const browserGlobals = new Set([
   'globalThis',
@@ -68,10 +67,7 @@ const isContractModule = (path: string): boolean =>
   /(?:^|\/)[^/]+-(?:ports|model|contracts)\.ts$/.test(path) ||
   [
     'domain/model.ts',
-    'diagnostics/contracts.ts',
-    'diagnostics/model.ts',
     'application/ports.ts',
-    'diagnostics/ports.ts',
     'platform/storage-port.ts',
     'platform/runtime-id-port.ts',
   ].includes(path)
@@ -141,7 +137,6 @@ export function inspectModule(source: SourceFile, root: string): ModuleInspectio
           'delete',
           'reset',
           'invalidateForUserSetting',
-          'setOriginalComparison',
           'blacklist',
           'requestManual',
         ].includes(method) &&

@@ -241,21 +241,9 @@ async function createTabLocalOriginalComparisonRetainsTheExactOpaqueOriginal5Con
 
 async function createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t: TestContext) {
   const base = await createTabLocalOriginalComparisonRetainsTheExactOpaqueOriginal5Context4(t)
-  if (base.rep1) {
-    base.routes.setOriginalComparison(true)
-    const comparisonPlan = base.routes.plan(base.rep1, base.demand, 'startup')
-    const comparisonOutput = base.routes.playerOutput(base.rep1, base.opaque, comparisonPlan, [
-      base.opaque,
-      base.segment1,
-    ])
-    void comparisonOutput.primary
-    void base.opaque
-    base.routes.setOriginalComparison(false)
-  }
   let measurementResets = 0,
     recoveryResets = 0
   const runtime = new RuntimeController(
-    base.session,
     base.settings,
     base.routes,
     {
@@ -265,11 +253,6 @@ async function createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t: T
       reset: () => undefined,
     },
     {
-      observeTransport() {},
-      subscribe: () => () => undefined,
-      snapshot: () => {
-        throw new Error('monitor snapshot should not be called')
-      },
       start: () => undefined,
       stop: () => undefined,
       reset: () => undefined,
@@ -280,15 +263,12 @@ async function createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t: T
       },
     },
     {
-      subscribe: () => () => undefined,
       reset: () => {
         recoveryResets++
       },
       armRouteFailure: () => undefined,
     },
     { setEnabled: () => undefined },
-    { record: () => undefined, recordPlayer: () => undefined },
-    () => base.now,
     { subscribeEpoch: () => () => undefined },
   )
   runtime.install()
@@ -855,27 +835,6 @@ async function checkFixedCatalogChangeCancelsAPendingStartupProbe6(t: TestContex
   assert.ok(pcdnRep, 'exact PCDN source is retained privately for safe Catalog generation')
 }
 
-async function checkTabLocalOriginalComparisonRetainsTheExactOpaqueOriginal5(
-  t: TestContext,
-): Promise<void> {
-  const base = await createTabLocalOriginalComparisonRetainsTheExactOpaqueOriginal5Context4(t)
-
-  if (base.rep1) {
-    base.routes.setOriginalComparison(true)
-    const comparisonPlan = base.routes.plan(base.rep1, base.demand, 'startup')
-    const comparisonOutput = base.routes.playerOutput(base.rep1, base.opaque, comparisonPlan, [
-      base.opaque,
-      base.segment1,
-    ])
-    assert.strictEqual(
-      comparisonOutput.primary,
-      base.opaque,
-      'tab-local original comparison retains the exact opaque original',
-    )
-    base.routes.setOriginalComparison(false)
-  }
-}
-
 async function checkResourcePrimaryIsReplacedUsingItsExactLegalBackupSource4(
   t: TestContext,
 ): Promise<void> {
@@ -1142,13 +1101,6 @@ test(
   { timeout: 5000 },
   async (t) => {
     await checkResourcePrimaryIsReplacedUsingItsExactLegalBackupSource4(t)
-  },
-)
-test(
-  'tab-local original comparison retains the exact opaque original [5]',
-  { timeout: 5000 },
-  async (t) => {
-    await checkTabLocalOriginalComparisonRetainsTheExactOpaqueOriginal5(t)
   },
 )
 test('fixed Catalog change cancels a pending startup probe [6]', { timeout: 5000 }, async (t) => {

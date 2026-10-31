@@ -231,11 +231,10 @@ test('UP141-API no legal Catalog route rejects OGV without passing original medi
   assert.equal((await response.text()).includes('upgcxcode'), false)
 })
 
-for (const mode of ['disabled', 'comparison', 'native-off'] as const) {
+for (const mode of ['disabled', 'native-off'] as const) {
   test(`UP141-API ${mode} retains the existing OGV transport policy`, async (t) => {
     const f = fixture(t)
     if (mode === 'disabled') await f.settings.update({ disabled: true })
-    if (mode === 'comparison') f.routes.setOriginalComparison(true)
     const response = await f.fetch(endpoint + '?cid=100')
     assert.equal(response.status, 200)
     if (mode === 'disabled') {

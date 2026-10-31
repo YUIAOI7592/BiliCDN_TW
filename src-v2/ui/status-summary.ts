@@ -23,11 +23,9 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
   const sourceMode = settings.considerNativeSources ? '可參考 B 站原生來源' : '僅內建 CDN'
   const mode = settings.disabled
     ? '腳本已停用，網站自行選擇 CDN'
-    : model.routes.originalComparison
-      ? '本分頁只用 B 站提供的網址（對照測試）'
-      : settings.fixedHost
-        ? `優先固定 ${settings.fixedHost}（${sourceMode}）`
-        : `自動挑選 CDN（${sourceMode}）`
+    : settings.fixedHost
+      ? `優先固定 ${settings.fixedHost}（${sourceMode}）`
+      : `自動挑選 CDN（${sourceMode}）`
   const recovery = model.recovery,
     measurement = model.measurement
   summary = `腳本：${settings.disabled ? '已停用' : '已啟用'}｜CDN：${mode}\n選定路線：${affinity}（實際請求見下方）\n播放：${playbackLabel(monitor.watchdog)}｜已緩衝約 ${monitor.video.playableBufferSec.toFixed(1)} 秒可播放內容｜${monitor.video.effectiveRate} 倍速\n播放器：${recoveryLabel(recovery.state)}｜測速：${measurementLabel(measurement.state, measurement.reason)}`
@@ -50,12 +48,7 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
   if (hook.lastApiEndpoint)
     summary += `\n播放入口：${plain(hook.lastApiEndpoint.kind, { playurl: '一般播放資料', 'ogv-playview': 'OGV 正片', 'ogv-precheck': 'OGV 片頭檢查（原文傳遞）' })}`
   summary += `\n請求攔截：${plain(hook.hookState, { installed: '運作中', degraded: '部分失效', failed: '無法啟用', 'not-installed': '未啟用' })}｜腳本看到 ${Number(hook.enteredFetch) + Number(hook.enteredXhr)} 筆請求，其中 ${hook.mediaRecognized} 筆像是影音請求；交給瀏覽器 ${hook.nativeCalled} 筆，看到回應 ${hook.responseObserved} 筆`
-  if (
-    !settings.disabled &&
-    !settings.considerNativeSources &&
-    !model.routes.originalComparison &&
-    hook.hookState !== 'installed'
-  ) {
+  if (!settings.disabled && !settings.considerNativeSources && hook.hookState !== 'installed') {
     summary += '\n請求攔截未完整，無法確認影音只依內建 CDN 選路；請以 Chrome「網路」面板核對。'
   }
   const lastHook = hook.lastMediaRequest

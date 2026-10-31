@@ -9,7 +9,6 @@ import { createButton } from './elements.ts'
 import { renderOverview } from './overview-view.ts'
 import { renderSettings } from './settings-view.ts'
 import { renderCdn } from './cdn-view.ts'
-import { renderDiagnostics } from './diagnostics-view.ts'
 export class ControlCenter implements ShowControlCenterPort {
   #host: HTMLDivElement | null = null
   #shadow: ShadowRoot | null = null
@@ -17,7 +16,6 @@ export class ControlCenter implements ShowControlCenterPort {
   #viewVersion = 0
   #open = false
   #releaseKeyboard: (() => void) | null = null
-  #pendingCopy: object | null = null
   #binding: ControlViewBinding | null = null
   #subscriptions: (() => void)[] = []
   #frame: { body: HTMLDivElement; foot: HTMLElement } | null = null
@@ -151,7 +149,6 @@ export class ControlCenter implements ShowControlCenterPort {
       ['overview', '總覽'],
       ['cdn', 'CDN'],
       ['settings', '播放設定'],
-      ['diagnostics', '診斷'],
     ] as const) {
       const tab = createButton(label, () => {
         if (this.#open && this.#tabs[page] === tab) this.#navigate(page)
@@ -200,19 +197,7 @@ export class ControlCenter implements ShowControlCenterPort {
         ? renderOverview(this.#frame, actions, this.deps.now, model)
         : page === 'cdn'
           ? renderCdn(this.deps.commands, this.#frame, actions, model)
-          : page === 'settings'
-            ? renderSettings(this.deps.commands, this.#frame, actions, model)
-            : renderDiagnostics(
-                this.deps,
-                this.#frame,
-                {
-                  ...actions,
-                  report: () => this.deps.diagnostics.buildReport(this.deps.model.snapshot(true)),
-                  copy: (report, button, status) =>
-                    this.#copyReport(report, button, status, version),
-                },
-                model,
-              )
+          : renderSettings(this.deps.commands, this.#frame, actions, model)
     this.#refresh(model)
   }
 
@@ -225,45 +210,6 @@ export class ControlCenter implements ShowControlCenterPort {
       this.#power.setAttribute('aria-pressed', String(enabled))
     }
     this.#binding?.refresh(model)
-  }
-
-  async #copyReport(
-    report: HTMLTextAreaElement,
-    button: HTMLButtonElement,
-    status: HTMLElement,
-    version: number,
-  ): Promise<void> {
-    const host = this.#host,
-      shadow = this.#shadow
-    const ownsView = (): boolean =>
-      this.#ownsView(version) &&
-      this.#host === host &&
-      this.#shadow === shadow &&
-      host?.isConnected === true &&
-      report.isConnected &&
-      button.isConnected &&
-      status.isConnected
-    if (!ownsView()) return
-    if (this.#pendingCopy) {
-      status.textContent = '前次複製尚未結束，請稍後再試'
-      return
-    }
-    const operation = {}
-    this.#pendingCopy = operation
-    button.disabled = true
-    status.textContent = '正在複製報告…'
-    try {
-      const text = report.value
-      const result = await this.deps.clipboard(text, ownsView)
-      if (ownsView() && result)
-        status.textContent = result === 'native' ? '已複製報告' : '已交由腳本管理器處理，請貼上確認'
-    } catch {
-      // A submitted write cannot be cancelled; do not issue a second write after a failure.
-      if (ownsView()) status.textContent = '複製失敗，請選取報告自行複製'
-    } finally {
-      if (this.#pendingCopy === operation) this.#pendingCopy = null
-      if (ownsView()) button.disabled = false
-    }
   }
 
   #ownsView(version: number): boolean {

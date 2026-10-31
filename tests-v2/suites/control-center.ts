@@ -1,4 +1,3 @@
-import { writeClipboard } from '../../src-v2/adapters/clipboard.ts'
 import { createControlReadModel } from '../../src-v2/ui/control-read-model.ts'
 import test, { type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
@@ -8,7 +7,34 @@ import { ControlCenter } from '../../src-v2/ui/control-center.ts'
 import type { ControlModelSources } from '../../src-v2/ui/control-contracts.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { DEFAULT_UNAVAILABLE_HOSTS } from '../../src-v2/domain/catalog.ts'
-import { deferred } from '../support/deferred.ts'
+
+test('V221 control center exposes only overview, CDN and settings without diagnostic actions', (t) => {
+  const f = ui(t)
+  assert.deepEqual(
+    f.doc
+      .flatten()
+      .filter((e) => e.className === 'tab')
+      .map((e) => e.textContent),
+    ['總覽', 'CDN', '播放設定'],
+  )
+  for (const page of ['總覽', 'CDN', '播放設定']) {
+    f.button(page).emit('click')
+    assert.equal(
+      f.doc
+        .flatten()
+        .some((e) => /診斷|複製報告|匯出報告|記下剛剛的卡頓|只用 B 站原本/.test(e.textContent)),
+      false,
+    )
+    assert.equal(
+      f.doc.flatten().some((e) => e.tag === 'textarea'),
+      false,
+    )
+  }
+  f.button('總覽').emit('click')
+  for (const label of ['可播放緩衝', '安全吞吐', '需求餘裕', '影片回應', '音訊回應'])
+    assert.ok(f.doc.flatten().some((e) => e.textContent === label))
+  assert.match(readSummary(f).textContent, /保守|緩衝/)
+})
 
 test('V220 CDN construction and refresh each capture one shared read model', (t) => {
   const f = ui(t)
@@ -169,38 +195,7 @@ class Element {
   }
 }
 
-// Clipboard tests model trusted dispatch and async ownership; IAB proves native writes/default actions.
-function copyUi(t: TestContext) {
-  const f = ui(t),
-    gmCalls: { text: string; format: unknown }[] = []
-  f.scope.defineGlobal('navigator', { configurable: true, value: {} })
-  f.scope.defineGlobal('GM_setClipboard', {
-    configurable: true,
-    value: (text: string, format?: unknown) => {
-      gmCalls.push({ text, format })
-    },
-  })
-  f.button('診斷').emit('click')
-  f.clock.advance(0)
-  const report = () => {
-    if (!f.doc.flatten().some((e) => e.tag === 'textarea')) f.button('查看完整報告').emit('click')
-    const value = f.doc.flatten().find((e) => e.tag === 'textarea')
-    assert.ok(value)
-    return value
-  }
-  const status = () => {
-    const value = f.doc.flatten().find((e) => e.attributes.get('role') === 'status')
-    assert.ok(value)
-    return value
-  }
-  const native = (clipboard: { writeText(text: string): Promise<void> }) => {
-    f.scope.defineGlobal('navigator', { configurable: true, value: { clipboard } })
-  }
-  report()
-  return { ...f, gmCalls, report, status, native, copy: () => f.button('複製報告') }
-}
-
-async function flushCopy(): Promise<void> {
+async function flushCommands(): Promise<void> {
   for (let i = 0; i < 4; i++) await Promise.resolve()
 }
 
@@ -412,37 +407,6 @@ test('UP141-DIAG summaries are read on opening and add no periodic rendering or 
   assert.equal(f.storage.tasks.length, 0)
 })
 
-test('CC39-UI report export only follows trusted action and releases the owned URL on navigation', (t) => {
-  const f = copyUi(t)
-  const created: Blob[] = [],
-    revoked: string[] = []
-  f.scope.defineGlobal('URL', {
-    configurable: true,
-    value: {
-      createObjectURL: (blob: Blob) => {
-        created.push(blob)
-        return 'blob:owned-report'
-      },
-      revokeObjectURL: (url: string) => {
-        revoked.push(url)
-      },
-    },
-  })
-  const button = f.button('匯出報告')
-  button.emit('click', '', false)
-  assert.equal(created.length, 0)
-  button.emit('click')
-  assert.equal(created.length, 1)
-  assert.equal(created[0]!.type, 'application/json;charset=utf-8')
-  assert.deepEqual(revoked, [])
-  f.button('總覽').emit('click')
-  assert.deepEqual(revoked, ['blob:owned-report'])
-  button.emit('click')
-  assert.equal(created.length, 1)
-  f.center.close()
-  assert.equal(revoked.length, 1)
-})
-
 test('CC39-UI remote settings update the same focused inputs without rebuilding reports', (t) => {
   const f = ui(t)
   f.button('播放設定').emit('click')
@@ -460,7 +424,7 @@ test('CC39-UI remote settings update the same focused inputs without rebuilding 
   )
 })
 
-test('control-center pages preserve defaults and build complete diagnostic report on request', (t) => {
+test('control-center pages preserve settings and CDN defaults', (t) => {
   const f = ui(t)
   assert.match(readSummary(f).textContent, /選定路線：尚未確認/)
   f.button('CDN').emit('click')
@@ -472,274 +436,7 @@ test('control-center pages preserve defaults and build complete diagnostic repor
     f.doc.flatten().find((e) => e.tag === 'select')?.children.length,
     TRUSTED_CATALOG.length + 1,
   )
-  f.button('診斷').emit('click')
-  assert.equal(f.toggle('只用 B 站原本提供的 CDN').checked, false)
-  assert.equal(
-    f.doc.flatten().some((e) => e.tag === 'textarea'),
-    false,
-  )
-  f.button('查看完整報告').emit('click')
-  const report = f.doc.flatten().find((e) => e.tag === 'textarea')!
-  assert.equal(report.readOnly, true)
-  const parsed = JSON.parse(report.value)
-  assert.equal(parsed.current.version, 'contract')
-  assert.equal(parsed.current.releaseStage, 'stable')
-  assert.equal(parsed.export.truncated, false)
   assert.equal(f.storage.tasks.length, 0)
-})
-
-test('P05 native write starts in trusted dispatch with exact full report and original receiver', async (t) => {
-  const f = copyUi(t),
-    pending = deferred<void>(),
-    rows: string[] = []
-  const report = f.report(),
-    text = '中文\n\n  保留空白  \n' + '完整報告 '.repeat(8000)
-  report.value = text
-  let dispatching = true
-  const clipboard = {
-    writeText(this: unknown, value: string) {
-      assert.equal(this, clipboard)
-      assert.equal(dispatching, true)
-      rows.push(value)
-      return pending.promise
-    },
-  }
-  f.native(clipboard)
-  const focusBefore = f.copy().focusCount
-  f.copy().emit('click')
-  dispatching = false
-  assert.deepEqual(rows, [text])
-  assert.deepEqual(f.gmCalls, [])
-  assert.equal(f.copy().disabled, true)
-  assert.equal(f.status().attributes.get('aria-live'), 'polite')
-  assert.equal(f.status().textContent, '正在複製報告…')
-  // Later edits must not replace the text already submitted by this operation.
-  report.value = '不同的報告'
-  pending.resolve()
-  await flushCopy()
-  assert.equal(f.report(), report)
-  assert.equal(report.value, '不同的報告')
-  assert.equal(f.status().textContent, '已複製報告')
-  assert.equal(f.copy().disabled, false)
-  assert.equal(f.copy().focusCount, focusBefore)
-  assert.deepEqual(rows, [text])
-})
-
-for (const unavailable of [
-  'navigator',
-  'clipboard',
-  'method',
-  'clipboard-getter',
-  'method-getter',
-] as const) {
-  test(`P05 ${unavailable} unavailable uses one plain-text GM fallback without claiming copied`, async (t) => {
-    const f = copyUi(t),
-      text = f.report().value
-    if (unavailable === 'navigator')
-      f.scope.defineGlobal('navigator', { configurable: true, value: undefined })
-    if (unavailable === 'method')
-      f.scope.defineGlobal('navigator', { configurable: true, value: { clipboard: {} } })
-    if (unavailable === 'clipboard-getter')
-      f.scope.defineGlobal('navigator', {
-        configurable: true,
-        value: {
-          get clipboard(): never {
-            throw Error('unavailable')
-          },
-        },
-      })
-    if (unavailable === 'method-getter')
-      f.scope.defineGlobal('navigator', {
-        configurable: true,
-        value: {
-          clipboard: {
-            get writeText(): never {
-              throw Error('unavailable')
-            },
-          },
-        },
-      })
-    f.copy().emit('click')
-    await flushCopy()
-    assert.deepEqual(f.gmCalls, [{ text, format: 'text' }])
-    assert.equal(f.status().textContent, '已交由腳本管理器處理，請貼上確認')
-    assert.equal(f.copy().disabled, false)
-  })
-}
-
-for (const failure of ['throw', 'reject'] as const) {
-  test(`P05 native ${failure} preserves report and does not retry through GM`, async (t) => {
-    const f = copyUi(t),
-      report = f.report(),
-      text = report.value,
-      pending = deferred<void>()
-    f.native({
-      writeText: () => {
-        if (failure === 'throw') throw Error('private error')
-        return pending.promise
-      },
-    })
-    f.copy().emit('click')
-    if (failure === 'reject') pending.reject(Error('private rejection'))
-    await flushCopy()
-    assert.equal(f.status().textContent, '複製失敗，請選取報告自行複製')
-    assert.deepEqual(f.gmCalls, [])
-    assert.equal(f.copy().disabled, false)
-    assert.equal(f.report(), report)
-    assert.equal(report.value, text)
-  })
-}
-
-for (const failure of ['missing', 'throw'] as const) {
-  test(`P05 GM ${failure} has a bounded failure message and retains the report`, async (t) => {
-    const f = copyUi(t),
-      text = f.report().value
-    f.scope.defineGlobal('GM_setClipboard', {
-      configurable: true,
-      value:
-        failure === 'missing'
-          ? undefined
-          : () => {
-              throw Error('private GM error')
-            },
-    })
-    f.copy().emit('click')
-    await flushCopy()
-    assert.equal(f.status().textContent, '複製失敗，請選取報告自行複製')
-    assert.equal(f.report().value, text)
-    assert.equal(f.copy().disabled, false)
-  })
-}
-
-test('P05 synthetic and detached old copy buttons cannot initiate a write', async (t) => {
-  const f = copyUi(t),
-    rows: string[] = []
-  f.native({
-    writeText: async (text) => {
-      rows.push(text)
-    },
-  })
-  const old = f.copy()
-  old.emit('click', '', false)
-  f.button('總覽').emit('click')
-  old.emit('click')
-  await flushCopy()
-  assert.deepEqual(rows, [])
-  assert.deepEqual(f.gmCalls, [])
-})
-
-test('P05 pending native write remains single flight across repeat click and close/reopen', async (t) => {
-  const f = copyUi(t),
-    pending = deferred<void>(),
-    rows: string[] = []
-  f.native({
-    writeText: (text) => {
-      rows.push(text)
-      return pending.promise
-    },
-  })
-  const old = f.copy()
-  old.emit('click')
-  old.emit('click')
-  assert.equal(rows.length, 1)
-  f.center.close()
-  f.center.show()
-  f.button('診斷').emit('click')
-  f.clock.advance(0)
-  f.copy().emit('click')
-  assert.equal(rows.length, 1)
-  assert.equal(f.status().textContent, '前次複製尚未結束，請稍後再試')
-  const newStatus = f.status(),
-    newButton = f.copy(),
-    focus = newButton.focusCount
-  pending.resolve()
-  await flushCopy()
-  assert.equal(newStatus.textContent, '前次複製尚未結束，請稍後再試')
-  assert.equal(newButton.focusCount, focus)
-  newButton.emit('click')
-  await flushCopy()
-  assert.equal(rows.length, 2)
-  assert.equal(f.status().textContent, '已複製報告')
-})
-
-for (const action of ['close', 'navigate', 'rebuild'] as const) {
-  for (const outcome of ['resolve', 'reject'] as const) {
-    test(`P05 ${action} invalidates UI ownership of late native ${outcome}`, async (t) => {
-      const f = copyUi(t),
-        pending = deferred<void>()
-      f.native({ writeText: () => pending.promise })
-      f.copy().emit('click')
-      const oldStatus = f.status(),
-        oldButton = f.copy()
-      if (action === 'close') f.center.close()
-      if (action === 'navigate') f.button('總覽').emit('click')
-      if (action === 'rebuild') {
-        const host = f.doc.flatten().find((e) => e.id === 'bilicdn-v2-control-center')!
-        host.parent = null
-        f.doc.children = f.doc.children.filter((e) => e !== host)
-        f.center.show()
-        f.button('診斷').emit('click')
-      }
-      f.clock.advance(0)
-      const before = f.doc.flatten().map((e) => [e, e.textContent, e.focusCount])
-      if (outcome === 'resolve') pending.resolve()
-      else pending.reject(Error('late private error'))
-      await flushCopy()
-      assert.deepEqual(
-        f.doc.flatten().map((e) => [e, e.textContent, e.focusCount]),
-        before,
-      )
-      assert.equal(oldStatus.textContent, '正在複製報告…')
-      assert.equal(oldButton.disabled, true)
-      assert.deepEqual(f.gmCalls, [])
-    })
-  }
-}
-
-test('P05 synchronous clipboard lookup reentry cannot submit an obsolete view write', async (t) => {
-  const f = copyUi(t)
-  let writes = 0
-  f.scope.defineGlobal('navigator', {
-    configurable: true,
-    value: {
-      get clipboard() {
-        f.center.close()
-        f.center.show()
-        return {
-          writeText: async () => {
-            writes++
-          },
-        }
-      },
-    },
-  })
-  f.copy().emit('click')
-  await flushCopy()
-  assert.equal(writes, 0)
-  assert.deepEqual(f.gmCalls, [])
-  assert.equal(f.doc.flatten().find((e) => e.tag === 'h2')?.textContent, 'BiliCDN 控制中心')
-})
-
-test('P05 synchronous native write reentry does not publish into a replacement view', async (t) => {
-  const f = copyUi(t)
-  let writes = 0
-  f.native({
-    writeText: async () => {
-      writes++
-      f.center.close()
-      f.center.show()
-    },
-  })
-  f.copy().emit('click')
-  f.clock.advance(0)
-  const before = f.doc.flatten().map((e) => [e, e.textContent, e.focusCount])
-  await flushCopy()
-  assert.equal(writes, 1)
-  assert.deepEqual(f.gmCalls, [])
-  assert.deepEqual(
-    f.doc.flatten().map((e) => [e, e.textContent, e.focusCount]),
-    before,
-  )
 })
 
 for (const key of ['Enter', ' ']) {
@@ -817,12 +514,6 @@ test('BR-10 all keyboard phases preserve control defaults and stop only outer bu
   assert.equal(targets, captures)
   assert.equal(bubbles, 0)
   f.button('總覽').emit('click')
-  f.button('診斷').emit('click')
-  f.button('查看完整報告').emit('click')
-  const report = f.doc.flatten().find((e) => e.tag === 'textarea')
-  assert.ok(report)
-  assert.equal(report.emit('keydown', 'c').defaultPrevented, false)
-  assert.equal(bubbles, 0)
 })
 
 test('BR-10 outer capture cancellation remains observable rather than being claimed repaired', (t) => {
@@ -960,13 +651,13 @@ test('UP141-RETRY retained switch rejects synthetic changes and suppresses off b
   input.emit('change')
   assert.equal(f.settings.get().earlyRetryEnabled, false)
   await f.storage.drain()
-  await flushCopy()
+  await flushCommands()
   assert.equal(f.toggle('慢請求提前重試'), input)
 })
 
 test('CC39-UI removed controls cannot be reached from any page', (t) => {
   const f = ui(t)
-  for (const tab of ['總覽', 'CDN', '播放設定', '診斷']) {
+  for (const tab of ['總覽', 'CDN', '播放設定']) {
     f.button(tab).emit('click')
     const text = f.doc
       .flatten()
@@ -979,16 +670,10 @@ test('CC39-UI removed controls cannot be reached from any page', (t) => {
   }
 })
 
-test('CC39-UI four tabs separate CDN from six real settings and defer complete report work', async (t) => {
+test('CC39-UI three tabs separate CDN from six real settings', async (t) => {
   const f = ui(t)
-  let reports = 0
-  const original = f.deps.diagnostics.buildReport.bind(f.deps.diagnostics)
-  f.deps.diagnostics.buildReport = (model) => {
-    reports++
-    return original(model)
-  }
   assert.ok(f.doc.flatten().some((e) => e.textContent === 'BiliCDN 控制中心'))
-  for (const label of ['總覽', 'CDN', '播放設定', '診斷']) assert.ok(f.button(label))
+  for (const label of ['總覽', 'CDN', '播放設定']) assert.ok(f.button(label))
   f.button('播放設定').emit('click')
   assert.equal(f.doc.flatten().filter((e) => e.type === 'checkbox').length, 6)
   for (const [key, label] of [
@@ -1004,19 +689,13 @@ test('CC39-UI four tabs separate CDN from six real settings and defer complete r
     input.checked = false
     input.emit('change')
     await f.storage.drain()
-    await flushCopy()
+    await flushCommands()
     assert.equal(f.settings.get()[key], false)
     assert.equal(f.toggle(label), input, 'settings updates preserve the focused control')
   }
   f.button('CDN').emit('click')
   assert.equal(f.toggle('cn-hk-eq-01-03.bilivideo.com').checked, true)
   assert.equal(f.toggle('允許參考 B 站原生來源').checked, true)
-  f.button('診斷').emit('click')
-  assert.equal(reports, 0)
-  f.button('查看完整報告').emit('click')
-  assert.equal(reports, 1)
-  f.button('總覽').emit('click')
-  assert.equal(reports, 1)
 })
 
 test('CC39-UI opened view consumes existing notifications and releases all subscriptions', (t) => {
@@ -1089,8 +768,6 @@ function ui(t: TestContext) {
   const center = new ControlCenter({
     model: createControlReadModel(f.deps, 'contract'),
     version: 'contract',
-    clipboard: writeClipboard,
-    diagnostics: f.deps.diagnostics,
     commands: f.deps.commands,
     now: f.deps.now,
   })

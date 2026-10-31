@@ -52,6 +52,7 @@ export interface DocumentationManifest {
   baseline: string
   archiveManifest?: string
   sourceRelocations?: { originalPath: string; currentPath: string }[]
+  retiredSources?: { path: string; revision: string; sha256: string }[]
   documents: DocumentEntry[]
   owners: { topic: string; path: string }[]
   navigation: { entry: string; maxDepth: number }
@@ -145,6 +146,11 @@ export function parseDocumentationManifest(value: unknown): DocumentationManifes
       originalPath: localPath(row.originalPath),
       currentPath: localPath(row.currentPath),
     })),
+    retiredSources: rows(raw.retiredSources ?? []).map((row) => {
+      const revision = string(row.revision)
+      if (!/^[a-f0-9]{40}$/.test(revision)) throw Error('Expected full retirement revision')
+      return { path: localPath(row.path), revision, sha256: sha(row.sha256) }
+    }),
     owners: rows(raw.owners).map((row) => ({
       topic: string(row.topic),
       path: localPath(row.path),
@@ -379,6 +385,25 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
   const evidenceMatches = new Set<number>()
   const archivedMatches = new Set<number>()
   const archivedReferences = archive?.historicalReferences ?? []
+  const retiredSources = new Set<string>()
+  for (const item of manifest.retiredSources ?? []) {
+    try {
+      if (existsSync(resolve(root, item.path))) throw Error('Retired source still exists')
+      const original = execFileSync('git', ['show', `${item.revision}:${item.path}`], {
+        cwd: root,
+        maxBuffer: 8 * 1024 * 1024,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+      if (digest(original) !== item.sha256) throw Error('Retired source hash differs')
+      retiredSources.add(item.path)
+    } catch {
+      add(
+        item.path,
+        'source-retirement',
+        'Retirement must identify an absent file and its exact Git blob',
+      )
+    }
+  }
   const relocations = new Map([
     ...(archive?.entries.map((item) => [item.originalPath, item.archivedPath] as const) ?? []),
     ...(archive?.removedPaths.map((item) => [item.path, item.replacementPath] as const) ?? []),
@@ -388,8 +413,7 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
     if (
       relocations.has(item.originalPath) ||
       existsSync(resolve(root, item.originalPath)) ||
-      !existsSync(target) ||
-      !statSync(target).isFile()
+      (!retiredSources.has(item.currentPath) && (!existsSync(target) || !statSync(target).isFile()))
     ) {
       add(
         item.originalPath,
@@ -400,6 +424,7 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
     }
     relocations.set(item.originalPath, item.currentPath)
   }
+  for (const path of retiredSources) if (!relocations.has(path)) relocations.set(path, path)
   const readingCopies = new Set(
     archive?.entries.filter((item) => item.kind === 'record').map((item) => item.archivedPath) ??
       [],
@@ -527,8 +552,9 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
           archiveSourceMatches(file, node, item.sha256) &&
           item.originalTarget === historicalTarget &&
           relocations.get(item.originalTarget) === item.archivedTarget &&
-          existsSync(resolve(root, item.archivedTarget)) &&
-          statSync(resolve(root, item.archivedTarget)).isFile() &&
+          (retiredSources.has(item.archivedTarget) ||
+            (existsSync(resolve(root, item.archivedTarget)) &&
+              statSync(resolve(root, item.archivedTarget)).isFile())) &&
           (!originalFragment ||
             !item.archivedTarget.endsWith('.md') ||
             anchors.get(item.archivedTarget)?.has(originalFragment)) &&

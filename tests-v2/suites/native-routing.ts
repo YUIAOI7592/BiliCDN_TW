@@ -296,9 +296,7 @@ async function createNoLegalCatalogCandidateEmitsNoPlayerPrimary6Context5(t: Tes
 
 async function createEnablingNativeSourcesPreservesColdStartOriginalRoute7Context6(t: TestContext) {
   const base = await createNoLegalCatalogCandidateEmitsNoPlayerPrimary6Context5(t)
-  base.catalogRoutes.setOriginalComparison(true)
   void base.catalogRoutes.apply(base.catalogVideoRoot).url
-  base.catalogRoutes.setOriginalComparison(false)
   await base.catalogSettings.update({ considerNativeSources: true, catalogOverrides: {} })
   base.catalogRoutes.invalidateForUserSetting()
   return extendFixture(base, {} as const)
@@ -1117,12 +1115,6 @@ async function checkNoLegalCatalogCandidateEmitsNoPlayerPrimary6(t: TestContext)
     base.noCatalogOutput.backup_url.length,
     0,
     'no legal Catalog candidate emits no player backups',
-  )
-  base.catalogRoutes.setOriginalComparison(true)
-  assert.strictEqual(
-    base.catalogRoutes.apply(base.catalogVideoRoot).url,
-    base.catalogVideoRoot,
-    'per-tab original comparison overrides saved Catalog-only mode',
   )
 }
 

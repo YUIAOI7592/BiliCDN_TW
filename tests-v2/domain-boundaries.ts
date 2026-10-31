@@ -13,11 +13,7 @@ import {
   catalogCandidates,
   hardRestriction,
 } from '../src-v2/domain/route-policy.ts'
-import {
-  originalOutputPlan,
-  backupOutputPlan,
-  catalogOutputPlan,
-} from '../src-v2/domain/player-output-plan.ts'
+import { backupOutputPlan, catalogOutputPlan } from '../src-v2/domain/player-output-plan.ts'
 import { testScope } from './support/scope.ts'
 
 // Each call creates fresh resources and replays only this fixture's prerequisite transitions.
@@ -153,16 +149,6 @@ async function fixture(
         { index: 3, host: next, allowed: true },
       ]
       assert.strictEqual(
-        originalOutputPlan(candidates).primary,
-        1,
-        'comparison output promotes the first permitted exact index',
-      )
-      assert.strictEqual(
-        originalOutputPlan([]).primary,
-        null,
-        'no eligible comparison route yields no primary',
-      )
-      assert.strictEqual(
         backupOutputPlan(primary, candidates, false).join(','),
         '1,2,3',
         'backup policy prioritizes distinct hosts before same-host entries',
@@ -195,9 +181,7 @@ async function fixture(
     { index: 2, host: primary, allowed: true },
     { index: 3, host: next, allowed: true },
   ]
-  void originalOutputPlan(candidates).primary
   void 1
-  void originalOutputPlan([]).primary
   void null
   void backupOutputPlan(primary, candidates, false).join(',')
   void '1,2,3'

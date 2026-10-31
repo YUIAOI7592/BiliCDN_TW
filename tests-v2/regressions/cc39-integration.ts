@@ -9,7 +9,6 @@ import { DEFAULT_UNAVAILABLE_HOSTS } from '../../src-v2/domain/catalog.ts'
 import { ControlCommands } from '../../src-v2/application/control-commands.ts'
 import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
 import { RouteCoordinator } from '../../src-v2/application/route-coordinator.ts'
-import { DiagnosticRecorder } from '../../src-v2/diagnostics/recorder.ts'
 const flags = [
   'startupEarlyReleaseEnabled',
   'healthMiddleRangeEnabled',
@@ -125,21 +124,4 @@ test('CC39-CONTROL removed manual capabilities are absent from executable ports'
   for (const name of ['requestManual', 'requestCatalogValidation'])
     assert.equal(name in MeasurementController.prototype, false, name)
   assert.equal('catalogValidationContext' in RouteCoordinator.prototype, false)
-})
-
-test('CC39-DIAG legacy verbose arguments cannot collect candidate ranking history', (t) => {
-  const f = fixture(testScope(t)),
-    url = media('cc39', 'video.m4s')
-  f.adapter.transform(dash(url))
-  const recorder = Reflect.construct(DiagnosticRecorder, [
-    f.clock.now,
-    () => true,
-  ]) as DiagnosticRecorder
-  recorder.record({
-    type: 'route-decision',
-    at: f.clock.now(),
-    decision: f.routes.apply(url).decision,
-  })
-  assert.deepEqual(recorder.snapshot().rankings, [])
-  assert.equal(recorder.snapshot().counters.rankingEvicted, 0)
 })

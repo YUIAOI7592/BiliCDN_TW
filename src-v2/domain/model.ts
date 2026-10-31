@@ -205,38 +205,11 @@ export type RecoveryAction =
       readonly identity: RouteIdentity
       readonly decision: RouteDecision
     }
-  | {
-      readonly action: 'player-reload'
-      readonly id: RecoveryActionId
-      readonly savedPositionSec: number
-      readonly savedRate: number
-    }
   | { readonly action: 'none'; readonly id: RecoveryActionId; readonly reason: string }
 
 export type DomainEvent =
-  | {
-      readonly type: 'early-retry'
-      readonly at: number
-      readonly state: import('./early-retry-diagnostic.ts').EarlyRetryState
-      readonly reason: string
-      readonly host: string | null
-      readonly attempts: number
-    }
-  | {
-      readonly type: 'core-uninitialized'
-      readonly at: number
-      readonly paused: boolean
-      readonly intentPending: boolean
-      readonly consecutiveTicks: number
-    }
   | { readonly type: 'route-planned'; readonly at: number; readonly decision: RouteDecision }
   | { readonly type: 'request-started'; readonly at: number; readonly request: RequestContext }
-  | {
-      readonly type: 'transport-completed'
-      readonly at: number
-      readonly observation: TransportObservation
-      readonly detached: boolean
-    }
   | {
       readonly type: 'attribution-changed'
       readonly at: number
@@ -259,26 +232,6 @@ export type DomainEvent =
       readonly decisionId: DecisionId | null
     }
   | { readonly type: 'recovery'; readonly at: number; readonly action: RecoveryAction }
-  | {
-      readonly type: 'core'
-      readonly at: number
-      readonly state:
-        'healthy' | 'waiting' | 'reloading' | 'recovered' | 'recovered-paused' | 'failed'
-      readonly actionId: RecoveryActionId | null
-      readonly reason?: string
-      readonly savedPositionSec?: number
-      readonly savedRate?: number
-      readonly source?: string
-      readonly readyState?: number
-      readonly coreInitialized?: boolean | null
-    }
-  | {
-      readonly type: 'lifecycle'
-      readonly at: number
-      readonly generation: GenerationId
-      readonly epoch: EpochId
-      readonly reason: string
-    }
 
 export interface Clock {
   now(): number

@@ -106,7 +106,7 @@ probe 完成 → RouteCoordinator.recordChallenge → EvidenceStore.record 的 s
 
 案例在第 28、29 秒取得進度並成為 `playback-observed`；29.5 秒第二筆成功到達，狀態退回 `response-observed`；30 秒变成 `unconfirmed`，但 `playbackAt` 仍保留第 29 秒。UI 因而顯示「30 秒內未取得足夠證據」，與已取得證據矛盾。這是診斷錯誤，不直接改路線或重載播放器。
 
-[recorder.ts](../../../src-v2/diagnostics/recorder.ts) 第 305～306 行無條件降級並清除 progressTicks，第 75 行到期轉 unconfirmed；第 84 行 attempt 觀察發生在第 93 行 route-confirmed 去重之前，所以去重無效。[route-coordinator.ts](../../../src-v2/application/route-coordinator.ts) 第 763～791 行讓每筆合法成功分段都能到達此入口。
+[recorder.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/src-v2/diagnostics/recorder.ts) 第 305～306 行無條件降級並清除 progressTicks，第 75 行到期轉 unconfirmed；第 84 行 attempt 觀察發生在第 93 行 route-confirmed 去重之前，所以去重無效。[route-coordinator.ts](../../../src-v2/application/route-coordinator.ts) 第 763～791 行讓每筆合法成功分段都能到達此入口。
 
 - 正確契約：後續同路線成功不應撤銷未失效的已確認進度；實際 unconfirmed。
 - 正常對照：同樣第 28／29 秒進度但沒有額外回應，30 秒仍 playback-observed。

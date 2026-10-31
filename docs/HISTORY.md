@@ -46,7 +46,7 @@
 | 適用版本 | 原始紀錄 |
 | --- | --- |
 | 未單列／跨版 | [新增 B 站 CDN 節點的驗證方案（2026-09-25）](../archive/retired/docs/CDN_CANDIDATE_TEST_PLAN_2026-09-25.md)、[B 站 CDN 全量初篩與比較測試報告](../archive/retired/docs/CDN_NODE_FULL_SCREENING_2026-09-25.md)、[B 站 CDN 優化公開專案調查（2026-09-25）](../archive/retired/docs/CDN_OPEN_SOURCE_SURVEY_2026-09-25.md)、[內建瀏覽器 Range 與實際播放對照（2026-09-25）](../archive/retired/docs/CDN_RANGE_PLAYBACK_EXPERIMENT_2026-09-25.md)、[B 站 CDN 節點測試結果（2026-09-25）](../archive/retired/docs/CDN_TEST_RESULTS_2026-09-25.md)、[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)、[歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[測試工具驗證紀錄](TEST_TOOLING_REPORT.md) |
-| v2.2.0 | [最新版完整驗證](TEST_REPORT.md)、[發行快照](../Release/v2.2.0/TEST_REPORT_v2.2.0.md)、[發行變更](../Release/v2.2.0/CHANGELOG_v2.2.0.md) |
+| v2.2.0 | [最新版完整驗證](TEST_REPORT.md)、[發行快照](../archive/retired/releases/Release/v2.2.0/TEST_REPORT_v2.2.0.md)、[發行變更](../archive/retired/releases/Release/v2.2.0/CHANGELOG_v2.2.0.md) |
 | v2.1.40 | [當版完整報告原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01) |
 | v2.1.39 | [當版完整報告原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2139-完整報告保存2026-10-31) |
 | v2.1.38 | [當版完整報告原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2138-完整正文保存2026-10-31) |
@@ -328,3 +328,7 @@
 - [移除 Evolved 後的修前取證](TEST_REPORT.md#來源隔離與實際安裝)
 - [公開交付、完整安裝身分與修後窗口](TEST_REPORT.md#公開交付與安裝結案)
 - [本日根因調查工具紀錄](TEST_TOOLING_REPORT.md#2026-10-31移除-evolved-後的根因取證與-cc40)
+
+## v2.2.1 診斷撤除
+
+現行完整結果見 [TEST_REPORT](TEST_REPORT.md)；v2.2.0 原驗收與判定更正見 [完整歷史正文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)。退役程式可由 [6df9eda 固定提交](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/) 追溯。

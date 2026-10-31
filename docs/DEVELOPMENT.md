@@ -22,7 +22,6 @@
 │  ├─ checks/                      型別、架構、格式、文件、封存及配置檢查
 │  ├─ testing/                     套件登記、監督、報告與匯入純度
 │  ├─ evaluation/                  離線評估與唯一詳細操作 README
-│  ├─ iab/                         事件收集及安裝版判定工具
 │  └─ lib/                         共用檔案與 TypeScript AST 支援
 ├─ docs/                           現行指南、導覽、工作狀態與報告
 │  ├─ INDEX.md                     閱讀入口
@@ -142,8 +141,6 @@ npm test -- application --name "startup"  # 正規表示式篩選案例
 npm test -- tooling   # 測試工具本身的契約
 npm run compare:upstream -- --calibrate # 獨立離線比較環境校準，不加入正式 v2 登記
 npm run compare:upstream -- --json # 完整兩版比較，schemaVersion 1；不連網、不改產品
-npm run evaluate:diagnostics -- --json # 固定 v2.1.36 與工作來源的獨立診斷成本量測
-npm run evaluate:diagnostics -- --profile --json # 獨立 CPU profile 與工作量計數，不作計時採用判定
 npm run build         # 確定性的單一 IIFE 使用者腳本
 npm run package       # 重建 dist，寫入設定的 Release/v<version>/
 npm run verify        # 自動檢查及暫存封裝驗證
@@ -169,27 +166,15 @@ UP141／CC39 契約依能力分開：npm test -- application --name CC39、npm t
 
 ### 安裝版還原觀察工具
 
-[iab-installed-restore.mts](../scripts/iab/iab-installed-restore.mts) 只在明確安裝後包裝目前文件的既有實例，不啟動產品控制器；[iab-installed-verdict.mts](../scripts/iab/iab-installed-verdict.mts) 提供純可信尋位前提判定。匯入兩者都不建立網路、計時器或全域操作。瀏覽器仍須先依 [IAB_TESTING](IAB_TESTING.md) 校準與核對完整安裝身分，工具單元測試不授權網站窗口。
-
-呼叫端以正確 executionContext 的 window registry 及唯一 key 保存 case slot，先登記再安裝；不把遠端 objectId 當唯一收集器參照。Native seeking、有限捕獲目標及可信操作修訂可成立時，opaque proof=null 本身不應排除；不得修改原生 getter、位置或倍速補造前提。SDK wrapper 只對同一合法意圖／階段／參數施加受控效果，其他呼叫保留 receiver、返回、例外及 accessor setter；只還原仍由工具擁有的描述子。
-
-透明保留共用 RuntimeIdPort.next 的 ID 行為，建立時登記本內容週期的 request／startup／challenge；受控 EvidenceStore.record 使用拒絕寫入條件，其他工作原樣轉交。原始 ID、精確媒體 URL 與頁面物件只留記憶體，公開資料使用有界白名單投影及會話序號。記錄原始工具、輸入與完整執行腳本的 bytes／SHA-256；格式化後產物不能宣稱與實際載入 bundle 逐位元組相同。
-
-觀察器最多四分鐘，呼叫端另保留六十秒清理；arm 九十秒、pending 八秒及固定硬截止不因 heartbeat 延長。媒體最多 1024 筆、工具事件 4096 筆、4 MiB；第一次終點保留，缺樣／截斷／超量都無效。使用 [IabEventCollector](../scripts/iab/iab-event-collector.mts) 時明確注入 ownsPaused，僅管理可證明自有的攔截；releaseHolding 先清空 patterns，再排空同一游標及釋放自有請求，游標可延續到還原尾端。每次完整 await；持有請求時持續服務事件，不留跨工具呼叫的未完成 Promise。
-
-清理盤點受控請求、route／probe／record Promise、SDK pending、Recovery token、Measurement 工作及記憶／持久證據。尾端全部收束後才移除寫入抑制；超過清理期限時保留 ID／寫入 guard 到自有文件卸載，恢復其他自有方法、解除計時器，結果記為 INVALID。資源退出與樣本隔離證明分開，不能清空學習或以舊快照回寫掩蓋缺口。具名工具契約列入 tooling；按日期結果由 [HISTORY](HISTORY.md) 追溯，是否續跑只看 TODO。
+此功能與專用工具已於 v2.2.1 撤除；[撤除前固定原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md) 僅供歷史追溯，不是現行操作或驗收要求。
 
 ### 實際緩衝效用與採用判定工具
 
-詳細操作、輸入、期限與判定見 [離線評估指南](../scripts/evaluation/README.md#實際緩衝效用與採用判定工具)。
-
-#### 風險覆蓋與可介入性離線評估
-
-見 [風險與可介入性](../scripts/evaluation/README.md#風險覆蓋與可介入性離線評估)，原始證據及停止決策不變。
+此功能與專用工具已於 v2.2.1 撤除；[撤除前固定原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md) 僅供歷史追溯，不是現行操作或驗收要求。
 
 ### 緩衝影子效用與成本評估
 
-詳細操作、輸入、期限與判定見 [離線評估指南](../scripts/evaluation/README.md#緩衝影子效用與成本評估)。
+此功能與專用工具已於 v2.2.1 撤除；[撤除前固定原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md) 僅供歷史追溯，不是現行操作或驗收要求。
 
 ### 原始碼格式與靜態規則
 
@@ -199,7 +184,7 @@ Prettier 3.9.10 只作開發工具。固定格式為兩空格、單引號、無�
 
 ## 診斷成本基準
 
-詳細操作、輸入、期限與判定見 [離線評估指南](../scripts/evaluation/README.md#診斷成本基準)。
+此功能與專用工具已於 v2.2.1 撤除；[撤除前固定原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md) 僅供歷史追溯，不是現行操作或驗收要求。
 
 ## 新增行為
 
@@ -207,16 +192,16 @@ Prettier 3.9.10 只作開發工具。固定格式為兩空格、單引號、無�
 2. 持久或工作階段資料放在型別化狀態儲存元件。
 3. 可改變選路、量測或恢復的動作透過控制器方法提供。
 4. 瀏覽器差異留在適配器，GM 儲存透過 `platform/storage.ts`；UI 管理自己的 DOM 及呈現生命週期。
-5. 發出型別化事件，不讓診斷讀取控制器內部。
+5. 功能協作使用型別化事件；UI 只讀當前狀態快照。
 6. 在 `tests-v2/suites/` 對應獨立套件，或不依賴瀏覽器的 `tests-v2/domain-boundaries.ts` 新增具名 `node:test` 契約。新套件登記於 `scripts/testing/test-registry.mts`。
 
-修改執行期邏輯前，先以失敗的領域層、控制器或適配器契約重現行為。親和主機變更只由 `RouteCoordinator` 執行，主動探測只由 `MeasurementController` 啟動，核心重載只由 `RecoveryController` 執行。等待後及儲存鎖回呼函式內保留生命週期檢查；只使用計時器介面不能避免舊工作提交。診斷消費型別化事件及快照。
+修改執行期邏輯前，先以失敗的領域層、控制器或適配器契約重現行為。親和主機變更只由 `RouteCoordinator` 執行，主動探測只由 `MeasurementController` 啟動，核心重載只由 `RecoveryController` 執行。等待後及儲存鎖回呼函式內保留生命週期檢查；只使用計時器介面不能避免舊工作提交。
 
 <a name="test-suites-and-isolation"></a>
 
 ## 測試套件與隔離
 
-[test-registry.mts](../scripts/testing/test-registry.mts) 明確登記下列 19 個套件。支援工具、暫存測試情境及封存資料不透過萬用字元模式（glob）執行：
+[test-registry.mts](../scripts/testing/test-registry.mts) 明確登記下列 18 個套件。支援工具、暫存測試情境及封存資料不透過萬用字元模式（glob）執行：
 
 | 套件選擇器 | 涵蓋範圍 |
 | --- | --- |
@@ -227,7 +212,6 @@ Prettier 3.9.10 只作開發工具。固定格式為兩空格、單引號、無�
 | `domain` | 領域行為 |
 | `state` | 設定、限制、證據及簽名路線狀態 |
 | `application` | 選路、量測及恢復契約 |
-| `diagnostics` | 型別化觀察、快照及報告隱私 |
 | `adapters` | 瀏覽器適配器行為 |
 | `native-routing` | Catalog／Native 選路及來源授權 |
 | `native-transport` | Catalog／Native 傳輸及請求處理 |
@@ -236,9 +220,9 @@ Prettier 3.9.10 只作開發工具。固定格式為兩空格、單引號、無�
 | `measurement-state` | 量測中繼資料及舊鎖回呼函式 |
 | `progressive-playurl` | MP4／FLV 容器、分段身分、原子輸出及 DASH 行為維持 |
 | `progressive-routing` | Catalog 來源不透明識別碼、完整候選池、備援上限及設定競態 |
-| `progressive-transport` | MP4 Fetch／XHR 輸出、共用起播窗口及對照／停用模式 |
-| `playurl-summary` | 型別化接納結果、安全最近摘要、狀態語意、生命週期及匯出隱私 |
-| `control-center` | Catalog 單節點更新、遠端設定合併、非同步視圖與焦點所有權、BR-10 鍵盤隔離／預設操作／清理、P05 原生優先／完整文字／pending 寫入及過期視圖 |
+| `progressive-transport` | MP4 Fetch／XHR 輸出、共用起播窗口及停用模式 |
+| `playurl-summary` | 型別化接納結果、安全最近摘要、狀態語意、生命週期及摘要隱私 |
+| `control-center` | Catalog 單節點更新、遠端設定合併、非同步視圖與焦點所有權、BR-10 鍵盤隔離／預設操作／清理及過期視圖 |
 
 使用 `npm test -- <selector>` 執行單一套件；執行器也接納 `suites/<selector>` 別名。`npm test -- architecture` 執行 AST 規則測試情境，`npm test -- imports` 執行匯入純度測試，`npm test -- tooling` 使用暫存測試情境驗證測試工具。完整 `npm test` 執行這三項與全部契約套件。
 
@@ -268,13 +252,13 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 ## 救援還原驗證
 
-救援還原的來源契約可執行 `npm test -- adapters --name SR1`、`npm test -- adapters --name SR2` 與 `npm test -- application --name SR2`。SR1 保護 SDK 例外後的原生寫入所有權；SR2 的 Observer／Recovery 單元與真實元件整合分開登記，核對落地、一次補正、期限、新操作及十五秒播放。這些契約不代替 IAB 真實媒體或安裝版驗收。診斷目前讀模型的 `recovery.restoration` 僅包含 position／rate／progress 階段、sdk／native／none 通道，以及 pending／unknown／verified／mismatch 結果；不輸出不透明證明或播放器物件。
+救援還原的來源契約可執行 `npm test -- adapters --name SR1`、`npm test -- adapters --name SR2` 與 `npm test -- application --name SR2`。SR1 保護 SDK 例外後的原生寫入所有權；SR2 的 Observer／Recovery 單元與真實元件整合分開登記，核對落地、一次補正、期限、新操作及十五秒播放。這些契約不代替 IAB 真實媒體或安裝版驗收。總覽讀模型的 `recovery.restoration` 僅包含 position／rate／progress 階段、sdk／native／none 通道，以及 pending／unknown／verified／mismatch 結果；不輸出不透明證明或播放器物件。
 
 成功契約除 state 外還須核對原 action 的 source／保存目標及 reason，避免將失敗後的普通 playback-progress-observed 誤算成原還原成功。真實 Monitor／Runtime／Routes 閉環使用 `SR2-I-F01`；補正等待時段不算播放時間，SDK 快取前進而原生時間不前進、未知倍速、play getter 新操作及十五秒尾段復發各有拒絕對照。
 
 ## 唯讀緩衝趨勢診斷
 
-詳細操作、輸入、期限與判定見 [離線評估指南](../scripts/evaluation/README.md#唯讀緩衝趨勢診斷)。
+此功能與專用工具已於 v2.2.1 撤除；[撤除前固定原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md) 僅供歷史追溯，不是現行操作或驗收要求。
 
 ## 建置輸出
 
@@ -286,11 +270,9 @@ metadata.txt 中既有的 `@version` 是建置模板值；實際輸出由 releas
 
 唯一執行方法與證據層級見 [IAB_TESTING](IAB_TESTING.md)；目前工作只看 [TODO](TODO.md)。本節不維護第二份校準、故障、清理或停止流程，也不構成開啟新窗口的授權。舊 real-chrome-validation 錨點只保留相容，不授權外部 Chrome。
 
-[iab-event-collector.mts](../scripts/iab/iab-event-collector.mts) 是注入 IAB capability 的主機端收集器，不自行連線、建立服務或計時器；契約歸 tooling。使用者負責單一游標、有界完整 await、樣本隔離及 finally 清理，詳細規則以 IAB_TESTING 為準。
-
 ### 剪貼簿驗證
 
-原生與 GM 寫入邊界見 [SECURITY](../SECURITY.md#剪貼簿寫入邊界)，完整快照、可信寫入、讀回／真正貼上與復原流程見 [IAB_TESTING](IAB_TESTING.md#剪貼簿校準與保護)。通道不成立不能判產品失敗，歷史結果由 [HISTORY](HISTORY.md) 追溯。
+剪貼簿功能及相關驗收已於 v2.2.1 撤除；原始方法與結果只供歷史追溯。
 
 ## 封裝與發行
 
@@ -373,3 +355,7 @@ docs:check 以 Git 已追蹤及未忽略的新 Markdown 為公開範圍；無 Gi
 ## 慢請求提前重試原型重現（分支限定）
 
 此相容入口保留 2026-10-30 隔離原型的重現導覽。使用固定提交的 [原始重現程序](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2a5851761d5a066cd3b54cb447b9da546a23187e/docs/DEVELOPMENT.md#慢請求提前重試原型重現分支限定)，並遵守目前永久禁令；本入口不恢復實機窗口。原型完整結果見 [歷史報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#隔離-b-分支原型驗證2026-10-30)。
+
+<a name="風險覆蓋與可介入性離線評估"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md#風險覆蓋與可介入性離線評估)；現行內容以本頁正文為準。

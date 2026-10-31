@@ -11,7 +11,6 @@ import type { TransportRoutes } from '../../src-v2/adapters/transport-ports.ts'
 import type { TransportSettings } from '../../src-v2/adapters/transport-ports.ts'
 import type { PlayurlPort } from '../../src-v2/application/ports.ts'
 import type { PlayurlTransformResult } from '../../src-v2/domain/playurl-model.ts'
-import { DiagnosticRecorder } from '../../src-v2/diagnostics/recorder.ts'
 import { SessionStore } from '../../src-v2/state/session-store.ts'
 import { testScope } from '../support/scope.ts'
 
@@ -345,17 +344,11 @@ async function checkNonFiniteDiagnosticCountsAreNormalized6(t: TestContext): Pro
     !JSON.stringify(base.transport.snapshot()).includes('summary-secret'),
     'summary copies only safe fields from result',
   )
-  const recorder = new DiagnosticRecorder(() => base.now)
-  const report = recorder.buildReport({ interception: base.transport.snapshot() })
-  assert.ok(
-    !report.includes('summary-secret') &&
-      !report.includes('example.invalid') &&
-      !report.includes('video.m4s'),
-    'diagnostic export contains no response body, signed path or token',
-  )
 }
 
-async function checkDiagnosticReportRetainsTheRecentPlayurlSummary7(t: TestContext): Promise<void> {
+async function checkDisabledTransportPreservesTheRecentPlayurlSummary7(
+  t: TestContext,
+): Promise<void> {
   const base = await createNonFiniteDiagnosticCountsAreNormalized6Context5(t)
 
   void base.transport.snapshot().lastPlayurl?.videoCount
@@ -373,25 +366,6 @@ async function checkDiagnosticReportRetainsTheRecentPlayurlSummary7(t: TestConte
   await base.windowFixture.fetch(base.endpoint)
   void base.transport.snapshot().lastPlayurl
   void !JSON.stringify(base.transport.snapshot()).includes('summary-secret')
-  const recorder = new DiagnosticRecorder(() => base.now)
-  const report = recorder.buildReport({ interception: base.transport.snapshot() })
-  void (
-    !report.includes('summary-secret') &&
-    !report.includes('example.invalid') &&
-    !report.includes('video.m4s')
-  )
-  const parsed: unknown = JSON.parse(report)
-  const current: unknown =
-    parsed && typeof parsed === 'object' ? Reflect.get(parsed, 'current') : null
-  const interception: unknown =
-    current && typeof current === 'object' ? Reflect.get(current, 'interception') : null
-
-  assert.ok(
-    !!interception &&
-      typeof interception === 'object' &&
-      Reflect.get(interception, 'lastPlayurl') !== null,
-    'diagnostic report retains the recent playurl summary',
-  )
   base.disabled = true
   const previous = base.transport.snapshot().lastPlayurl
   await base.windowFixture.fetch(base.endpoint)
@@ -652,6 +626,10 @@ test('Native-enabled XHR preserves rejected upstream payload [5]', { timeout: 50
 test('non-finite diagnostic counts are normalized [6]', { timeout: 5000 }, async (t) => {
   await checkNonFiniteDiagnosticCountsAreNormalized6(t)
 })
-test('diagnostic report retains the recent playurl summary [7]', { timeout: 5000 }, async (t) => {
-  await checkDiagnosticReportRetainsTheRecentPlayurlSummary7(t)
-})
+test(
+  'disabled transport preserves the recent playurl summary [7]',
+  { timeout: 5000 },
+  async (t) => {
+    await checkDisabledTransportPreservesTheRecentPlayurlSummary7(t)
+  },
+)

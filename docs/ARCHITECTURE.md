@@ -4,7 +4,7 @@
 
 ## 模式與預設
 
-面向台灣網路環境的 Bilibili Tampermonkey 腳本，提供合法 CDN 選路、有界主動量測、有限核心恢復及本機診斷。支援 DASH 與已辨識的 MP4／FLV 分段資料。產品不控制網站 Worker，不加入執行期第三方依賴或遠端程式載入。
+面向台灣網路環境的 Bilibili Tampermonkey 腳本，提供合法 CDN 選路、有界主動量測、有限核心恢復。支援 DASH 與已辨識的 MP4／FLV 分段資料。產品不控制網站 Worker，不加入執行期第三方依賴或遠端程式載入。
 
 **Auto 畫質是主要使用場景。** 畫質及 ABR 由網站決定，正常表示／解析度下降不是缺陷。使用者倍速保持，量測依倍速估算需求。影片格式由 B 站決定；腳本不排序 DASH／OGV 表示，仍保留 codec 辨識、Vault 歸因及畫質顯示。
 
@@ -14,10 +14,9 @@
 | --- | --- | --- |
 | 正常／Native 關閉 | 合法 Catalog 主線與最多 5 個不同主機的備援 | 按資格量測、備援及恢復 |
 | 正常／Native 開啟 | Catalog 及當前內容的合法精確 Native 來源 | 同樣受限制與授權檢查 |
-| 分頁原線對照 | 當片合法原始／備用簽名路線 | 不主動探測、換主機或重建核心 |
 | 整體停用 | 網站原請求 | 停止腳本改寫與主動工作，不取消已送出請求 |
 
-停用優先於對照與正常模式。原生來源開關是持久設定；原線對照只屬本分頁，完整重載不保留，也不能倒回已交給播放器的 URL。
+整體停用停止腳本改寫與主動工作。原生來源開關是持久設定；v2.2.1 已撤除分頁原線對照。
 
 「允許參考 B 站原生來源」預設啟用：新安裝、缺值、非法欄位及還原預設均使用 true，既有布林 true／false 保留。schema 2 與四個儲存鍵不變，讀取不強制升級寫入。布林預設只由 SettingsStore 的 BOOLEAN_DEFAULTS 定義；其他預設及使用者操作見 [README](../README.md#預設設定)。
 
@@ -38,11 +37,10 @@
 | `state` | `state`、`domain`、`platform` |
 | `application` | `application`、`state`、`domain`、`platform` |
 | `adapters` | `adapters`、`application`、`state`、`domain`、`platform` |
-| `diagnostics` | `diagnostics`、`domain` |
-| `ui` | `ui`、`diagnostics`、`application`、`state`、`domain`、`platform` |
+| `ui` | `ui`、`application`、`state`、`domain`、`platform` |
 | `entry.ts` | 所有組合層 |
 
-此表列出可以匯入的層，並不要求全部匯入。狀態儲存元件從 `platform/storage-port.ts` 匯入 `StoragePort` 型別；`platform/storage.ts` 實作 Tampermonkey 儲存。執行識別碼介面也獨立於產生器。同功能模型與具名介面共置於 `*-contracts.ts`；量測、監控、playurl、恢復、選路、提前重試、設定、Session、Restriction、Vault、診斷及控制中心已合併。提前重試控制與傳輸許可仍是不同窄介面。消費端直接匯入契約，實作不轉匯出型別；設定讀取共用 `SettingsReader`／`SettingsObserver`，不傳入完整 Store。契約不得依賴具體 Store、控制器或適配器。`SettingsChange` 唯一定義於狀態模型；四個視圖使用具名唯讀快照，經 ControlCommandPort 修改設定或執行保留命令。UI 匯入應用層／狀態層型別與領域輔助函式，消費快照，透過 `ControlCommandPort` 執行產品變更；UI 不匯入瀏覽器適配器。診斷匯入領域模型。[entry.ts](../src-v2/entry.ts) 建立、連接這些物件並啟動執行環境。
+此表列出可以匯入的層，並不要求全部匯入。狀態儲存元件從 `platform/storage-port.ts` 匯入 `StoragePort` 型別；`platform/storage.ts` 實作 Tampermonkey 儲存。執行識別碼介面也獨立於產生器。同功能模型與具名介面共置於 `*-contracts.ts`；量測、監控、playurl、恢復、選路、提前重試、設定、Session、Restriction、Vault 及控制中心已合併。提前重試控制與傳輸許可仍是不同窄介面。消費端直接匯入契約，實作不轉匯出型別；設定讀取共用 `SettingsReader`／`SettingsObserver`，不傳入完整 Store。契約不得依賴具體 Store、控制器或適配器。`SettingsChange` 唯一定義於狀態模型；三個視圖使用具名唯讀快照，經 ControlCommandPort 修改設定或執行保留命令。UI 匯入應用層／狀態層型別與領域輔助函式，消費快照，透過 `ControlCommandPort` 執行產品變更；UI 不匯入瀏覽器適配器。[entry.ts](../src-v2/entry.ts) 建立、連接這些物件並啟動執行環境。
 
 AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、`import type` 及 `import-equals` 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環與契約對實作的依賴。唯一寫入者依完整相對路徑辨識，不能以同名檔案繞過；只有 `application/measurement-controller.ts` 可以呼叫 `probe.read()`。額外語法規則拒絕領域層／應用層中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、路線協調器以外的點號 `setAffinity()` 呼叫、恢復控制器以外應用層的點號 `reload()` 呼叫，以及命令接收器以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
 
@@ -68,13 +66,12 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 | 協調／所有者 | 獨立助手 | 保留權責 |
 | --- | --- | --- |
 | RouteCoordinator | routing/ 的請求分類、資格、傳輸結果、證據組裝、候選、限制、URL 物化及播放器主備規劃 | 所有政策修訂、計畫、工作 ID、事件、等待後重新驗證、傳輸提交、親和與 Vault 登記 |
-| DiagnosticRecorder | 單一 event-sanitizer、route-attempt-tracker、report | 事件／流量／事故緩衝；報告助手只消費去敏後的 detached capture |
-| ControlCenter | ControlReadModelPort／labels／styles／elements／overview／settings／diagnostics views | 宿主／封閉 ShadowRoot、鍵盤／焦點、視圖版本與 pending 複製 |
+| ControlCenter | ControlReadModelPort／labels／styles／elements／overview／settings views | 宿主／封閉 ShadowRoot、鍵盤／焦點、視圖版本與非同步命令 |
 | PlayerAdapter | media／sdk／method 與單一 PlayerControlObserver | 既有外部及測試覆寫介面；所有控制修訂、監聽器及自有重載觀察集中於 observer |
 | PlayerMonitor／RecoveryController | domain/playback-progress 的純控制身分、時間及影格比較 | Monitor 保有停滯段；Recovery 保有 token、額度、breaker、reload／restore；兩者各自保留資格、基準、計數與終止檢查順序 |
 | XhrHookAdapter | xhr-values／xhr-request／xhr-response | 唯一 metadata WeakMap、原生 getter／guards、派送、安裝與按所有權還原；回應助手只轉換及快取當筆狀態 |
 
-助手沒有第二份 Native 授權索引或可獨立變更親和的能力。嘗試追蹤保留六個 attempt、32 個 request IDs 與既有期限；responseIds 集合沒有另加明確數量上限，不能把所有內部集合描述成逐項有界。詳見 [模組化紀錄](../archive/retired/docs/MODULARIZATION_v2.1.25_REPORT.md)。
+助手沒有第二份 Native 授權索引或可獨立變更親和的能力。詳見 [模組化紀錄](../archive/retired/docs/MODULARIZATION_v2.1.25_REPORT.md)。
 
 ### 應用控制器
 
@@ -83,7 +80,7 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 | RouteCoordinator | 路線政策、計畫與許可；親和變更、備援及傳輸提交 |
 | MeasurementController | 起播與健康主動探測；鎖內規劃及取消 |
 | RecoveryController | token、階段、補正額度、breaker 與核心 reload |
-| PlayerMonitor | 既有一秒 tick、停滯段、進度及唯一緩衝趨勢窗口 |
+| PlayerMonitor | 既有一秒 tick、停滯段、進度與當前監控狀態 |
 | PlayurlController | 表示登記、內容關聯與同步 epoch 通知 |
 | RuntimeController | 訂閱、設定失效與 video 備援轉交；audio 不建立 video 恢復意圖 |
 | LifecycleController | 啟動、SPA 導覽及啟停世代；頁面賦值只是有界輸入 |
@@ -111,7 +108,7 @@ Vault 是唯一 Native 授權來源。可信提升撤銷較低信任 handle；�
 
 內部原線決策區分原樣通行與 Vault 選中的原線；後者以當前身分與不透明 handle 解析精確 URL，重查政策／禁止規則。同一選定主機上的 DASH 請求保留當次查詢字串。
 
-同一次同步決策共用解析 URL、分類及 AppliedRouteDecision 共同欄位；助手不持有授權。Catalog-only、Native、原線對照與不可改寫來源仍分支處理，RouteCoordinator 保有計畫、許可與提交。
+同一次同步決策共用解析 URL、分類及 AppliedRouteDecision 共同欄位；助手不持有授權。Catalog-only、Native與不可改寫來源仍分支處理，RouteCoordinator 保有計畫、許可與提交。
 
 ### 漸進式 playurl 處理
 
@@ -121,7 +118,7 @@ Vault 是唯一 Native 授權來源。可信提升撤銷較低信任 handle；�
 
 所有已辨識的漸進式或混合格式輸出，先完成規劃才寫回 URL。必要分段若沒有合法主線，拒絕整個回應，不部分取代 URL 或丟棄失敗分段。此原子性限於資料內容寫回，不回滾 Vault／控制器登記。既有僅含 DASH 清空欄位處理另行維持。[PlayurlTransformResult](../src-v2/domain/playurl-model.ts) 表達結果；每個消費端都檢查 `accepted`，不能只判斷結果物件是否為真值。
 
-僅使用 Catalog 模式下，Fetch 拒絕的 playurl 變成安全 HTTP 503 回應。XHR `text`（文字）／`json`（JSON）讀取存取器提供安全失敗內容，保留原生 HTTP 狀態；嚴格模式不支援的 XHR 回應類型在送出前拒絕。允許 Native、原線對照及整體停用原樣放行的政策維持各自語意。Fetch／XHR 等待後仍重查設定與生命週期有效性。
+僅使用 Catalog 模式下，Fetch 拒絕的 playurl 變成安全 HTTP 503 回應。XHR `text`（文字）／`json`（JSON）讀取存取器提供安全失敗內容，保留原生 HTTP 狀態；嚴格模式不支援的 XHR 回應類型在送出前拒絕。允許 Native及整體停用原樣放行的政策維持各自語意。Fetch／XHR 等待後仍重查設定與生命週期有效性。
 
 ### 路線生命週期
 
@@ -131,13 +128,11 @@ Vault 是唯一 Native 授權來源。可信提升撤銷較低信任 handle；�
 4. 完成後依原身分提交證據；政策已過期的結果不能改親和、當前表示、授權或觸發恢復。
 5. 失敗可提交合法同媒體備援；audio 與 video 健康／恢復隔離，結果依實際觀察主機確認，不能只憑計畫。
 
-合法固定主機優先於健康親和。每筆傳輸保存路線政策修訂，設定／對照失效後的舊結果可按原資格保留歷史證據，但不能改寫親和、當前表示、來源授權或觸發恢復；儲存等待前後均檢查。影片、音訊的證據及恢復隔離，audio 備援不能建立 video 核心意圖。
+合法固定主機優先於健康親和。每筆傳輸保存路線政策修訂，設定失效後的舊結果可按原資格保留歷史證據，但不能改寫親和、當前表示、來源授權或觸發恢復；儲存等待前後均檢查。影片、音訊的證據及恢復隔離，audio 備援不能建立 video 核心意圖。
 
 固定主機失敗或受限後，選路器選出的當前合法備援可以取得恢復資格，不再要求其主機等於固定偏好。資格仍依世代、內容週期、表示授權、政策修訂、當前計畫身分及禁止規則核對；不改寫固定設定，也不增加重載額度。
 
 Catalog HTTP 403 只失效當前串流／主機配對，影響後續排名、備援及主動挑戰。恢復依媒體種類記錄從計畫、攔截入口到回應或失敗的有界動作；來自無關決策的同主機請求不能確認該動作。
-
-原線對照僅存在目前分頁的路線協調器，獨立於持久原生來源開關。它只使用影片提供的合法精確簽名 URL；主線被禁止時可提升合法原始備援，並停用主動探測及自動恢復。切換時清除計畫／親和主機，重設量測／核心恢復。完整重載後不保留，也不回溯還原已交給播放器的 URL。
 
 ### 適配器
 
@@ -166,7 +161,7 @@ XHR 每次 open 建立獨立 metadata，區分 opened／waiting／sent／termina
 
 Chrome 同步選項驗證失敗可能把原生 XHR 清成 UNSENT；只有尚未送出的 waiting 請求可標記 needsNativeOpen，在 gate 釋放時重新準備，再檢查所有權與最新政策；已送出的請求絕不因此重播。版本別例外對照由 [HISTORY](HISTORY.md) 追溯。
 
-XHR 的 response／responseText 共用同一組文字轉換及快取助手，JSON 分支也由該助手處理；助手只取得當次 metadata 與最小轉換能力。原生 getter、readyState／responseType／世代檢查與模式切換快取重置仍在 hook，status 延遲至原有診斷通知位置讀取。重入只保留當次 metadata，沒有新增 in-flight 去重或第二索引。
+XHR 的 response／responseText 共用同一組文字轉換及快取助手，JSON 分支也由該助手處理；助手只取得當次 metadata 與最小轉換能力。原生 getter、readyState／responseType／世代檢查與模式切換快取重置仍在 hook，status 延遲至原有摘要通知位置讀取。重入只保留當次 metadata，沒有新增 in-flight 去重或第二索引。
 
 Fetch 輸入與原生送出共用同一正規化 Request，保持單一讀取器。Fetch／XHR 只共用相同失敗分類與完成資料組裝；各自保有原生回應、重入、取消及重用規則，不建立通用傳輸框架。
 
@@ -178,13 +173,13 @@ Fetch 輸入與原生送出共用同一正規化 Request，保持單一讀取器
 
 每分頁首次合資格媒體請求共用一次起播 gate：最多 3 個並行候選、共用 3 秒期限，MP4／FLV 分段不各開預算。同步 XHR 及明確 timeout 的 XHR 不等待 gate。探測沒有贏家時，仍從完整合法候選池排名；不能因此放行未授權 Native。
 
-Catalog-only 起播的首個合格 Catalog 結果可提早收束窗口：直接同主機 HTTPS 206、安全吞吐至少為需求 1.35 倍；近期快取證據仍須完整下載 16 KiB。其餘探測以明確取消原因清理，已封存窗口的晚到結果不新增學習或再次提交。允許 Native 時保留完整比較；沒有合格者沿用三秒期限及原退路。診斷保存窗口實際等待時間及 qualified-early／measured／inconclusive 原因。
+Catalog-only 起播的首個合格 Catalog 結果可提早收束窗口：直接同主機 HTTPS 206、安全吞吐至少為需求 1.35 倍；近期快取證據仍須完整下載 16 KiB。其餘探測以明確取消原因清理，已封存窗口的晚到結果不新增學習或再次提交。允許 Native 時保留完整比較；沒有合格者沿用三秒期限及原退路。量測快照保存窗口實際等待時間及 qualified-early／measured／inconclusive 原因。
 
 健康播放時須真正前景、穩定進度、足夠緩衝且不在 seeking／recovering；共用跨分頁冷卻，每 10 分鐘最多依序量測 3 個候選。取得鎖後重新檢查資格、表示及控制器標記，通過才消耗候選嘗試／游標／冷卻。健康探索只更新證據，不變更流暢播放的親和主機。主動探測拒絕轉址，只接受符合限制的直接同主機 HTTPS 206。
 
 Catalog-only 健康輪次有目前來源 handle 的可靠總大小時，使用同輪共用、跳過首 1 MiB、64 KiB 對齊且完整不越界的中段範圍。大小只由有效 Content-Range 建立，保存在 Vault 既有 handle 的記憶體資料；來源／授權撤銷即失效。未知大小、小資源、起播及 Native 探測從零開始，不追加 HEAD 或大小探針。非零偏移須核對回應範圍；416 撤銷大小，不立即補探或建立播放斷路。中段不保證未快取。
 
-Catalog 含 14 個主機、原四台預設不可用；三台 HK 預設可用並保留 hk-eq-01 家族，既有 catalogOverrides 仍優先。備援最多五個，先採成功證據且達 1.35 倍需求，再在其中分散已知家族；未知或不足的異家族不超越合格同家族。家族不保證物理機房獨立。固定、Native 與原線對照授權語意保持。
+Catalog 含 14 個主機、原四台預設不可用；三台 HK 預設可用並保留 hk-eq-01 家族，既有 catalogOverrides 仍優先。備援最多五個，先採成功證據且達 1.35 倍需求，再在其中分散已知家族；未知或不足的異家族不超越合格同家族。家族不保證物理機房獨立。固定與 Native 授權語意保持。
 
 schema 2 保留六個自動功能開關，缺值全部為 true；明確 false 保留。起播、中段、備援分散與提前重試的關閉沿用儲存等待期間的立即抑制；WebRTC／HTTPDNS 沿用設定提交後的生效路徑。關閉起播提前放行仍等全部候選或三秒期限；關閉中段改用首段；關閉分散恢復原排序。測速政策切換取消受影響探測，不重開起播／冷卻或恢復預算。codec／verbose 已移除，舊欄位忽略並在正常保存時淘汰。
 
@@ -202,7 +197,7 @@ XhrHook／私有 XhrEarlyRetry 實作 InFlightVideoPort，保管原始 XHR、單
 
 資格維持 1,500 ms、完成度低於 80%、0 < 已按倍速折算的緩衝 < 6 秒、至少一秒近期速度低於需求。替代主機須有六十秒內兩個不同工作 ID、各至少 64 KiB 的成功 video 證據且達 1.35 倍需求；當前內容與授權仍有效，不為資格追加探測。估計原請求超過緩衝的 0.8 倍、完整重試可在其內完成並至少節省一秒才動作。每請求一次、同主機八秒一次、分頁三十秒最多三次、同低緩衝段一次；恢復十秒緩衝及連續十個健康 tick 才離開該段。
 
-Runtime 擁有提前重試事件訂閱及卸載；控制器發布 fixed state／reason，適配器只提供原生 timeout 與認領觀察，不能向診斷交出控制能力。Recorder 與事故快照最多保留十六筆新事件，沿用 128 KiB／匯出 96 KiB 淘汰；bufferTrend v6 不變。控制中心讀模型帶 releaseStage=stable、有效設定及候選狀態。關閉不取消網站已送請求，交接失敗只停目前頁面的提前重試控制，原恢復契約保持。正式整合不改寫歷史效用結果；版本別證據見 [TEST_REPORT](TEST_REPORT.md) 與 [HISTORY](HISTORY.md)。
+Runtime 擁有提前重試的生命週期重設及卸載；控制器僅保留當前 state／reason／host 與次數，適配器提供原生 timeout 與認領觀察。控制中心按當次快照顯示，不保留事件歷程。關閉不取消已送出的網站請求，交接失敗只停目前頁面的提前重試控制，恢復契約保持。歷史效用結果由 [HISTORY](HISTORY.md) 追溯。
 
 ### Auto 救援與操作所有權
 
@@ -225,7 +220,7 @@ Runtime 擁有提前重試事件訂閱及卸載；控制器發布 fixed state／
 
 首次採樣、seek 跳躍、保留尺寸或緩衝增加不是播放進度。合格採樣須非 seeking／paused／ended／mediaError，影片時間前進超過 0.05 秒；有影格計數時也須新增影格。第一個有效進度停止無進度計時，兩個連續有效採樣才 recovered。
 
-新使用者操作撤銷舊還原；新 seek 用最新目標重新建立停滯段。網站／Auto 的目標或表示變化會撤銷過期動作並重新綁定當前 video，但保留原停滯起點與已用額度。暫停、真正 hidden、ended、mediaError、停用、對照及生命週期失效依契約結束舊段，不能累計背景時間。
+新使用者操作撤銷舊還原；新 seek 用最新目標重新建立停滯段。網站／Auto 的目標或表示變化會撤銷過期動作並重新綁定當前 video，但保留原停滯起點與已用額度。暫停、真正 hidden、ended、mediaError、停用及生命週期失效依契約結束舊段，不能累計背景時間。
 
 可信 seek keydown／keyup 各自在同一派送內確認實際有限新目標才取得一次 userRevision，包含位置 0；BODY／頁面焦點有效，editable、控制中心、IME、Ctrl／Meta／Alt、合成事件、忽略命令及派送後工作無效。pendingSeek／internalSeek 保留腳本來源抑制。HAVE_NOTHING 的可信新目標另須捕捉核心不變、非 internalReload；未知目標只更新 seekRevision、撤銷舊還原，不猜成使用者命令。
 
@@ -312,7 +307,7 @@ Runtime 使用 sameRouteSettings，Measurement 使用 sameMeasurementSettings �
 
 真正內容改變時，`PlayurlController` 在 Session／Vault／Routes 重設後、登記新表示前，同步通知 generation／epoch。Runtime 訂閱後重設監控、量測、恢復及播放器快取，釋放時取消訂閱。同片排列及 cid 可對齊的畫質／編碼切換不通知，每分頁一次的起播預算不重開。
 
-`RouteCoordinator` 擁有單調路線政策修訂號；設定／對照模式失效及內容重設會遞增。`TransportContext` 在建立請求時保存修訂號。傳輸證據寫入維持原生命週期／授權檢查，完成後若政策過期便停止控制副作用；儲存鎖等待後再次檢查，合法固定主機優先於健康親和。
+`RouteCoordinator` 擁有單調路線政策修訂號；設定失效及內容重設會遞增。`TransportContext` 在建立請求時保存修訂號。傳輸證據寫入維持原生命週期／授權檢查，完成後若政策過期便停止控制副作用；儲存鎖等待後再次檢查，合法固定主機優先於健康親和。
 
 `platform/runtime-ids.ts` 的 factory 由入口呼叫，以 Web Crypto 產生執行環境前綴並注入傳輸及選路控制器。request／startup／challenge ID 在工作建立時分配，同工作重報不換 ID；字串沿用 schema 2 原欄位，上限 64 字元，不帶 URL 或使用者資料。模組匯入不取得亂數。
 
@@ -330,68 +325,30 @@ Vault 的輸出對照及來源大小只附著於既有 handle 與 RouteIdentity�
 
 可見性覆寫的原始描述子、安裝目標與本次 accessor 只由 VisibilityAdapter 保存；dispose 先比較目前 getter／setter 身分及 enumerable／configurable，仍相符才還原原件或刪除自有屬性。較新描述子與刪除狀態不覆寫，失敗項目不重試；不執行屬性 getter。監聽器維持原反向釋放順序，control-loss 訂閱不隨停用清空，重新啟用取得新的還原基準。完全相同描述子的重新安裝來源不可辨識。
 
-## 診斷與 UI
+<a name="診斷與-ui"></a>
 
-診斷唯讀消費型別化事件；視圖只消費當次快照與需要的命令，不取得 Store 或平台派送能力。
+## 控制中心與狀態
 
-### 診斷
+<a name="診斷"></a>
+<a name="唯讀緩衝趨勢"></a>
+<a name="播放進度"></a>
+<a name="控制中心與診斷資料流"></a>
+<a name="控制中心複製所有權"></a>
 
-記錄器消費型別化 `DomainEvent`，彙總成功流量並保存有界失敗事故。UI 讀取模型為快照，讀取不能改變選路或啟動網路工作。攔截入口、媒體辨識、原生呼叫及回應階段與瀏覽器網路面板（Network）確認分開。僅使用 Catalog 規則涵蓋腳本改寫的 playurl 輸出及可攔截媒體送出；其他瀏覽器入口的流量須另行觀察。
+上述舊錨點保留相容導引。診斷、事故／請求歷程、緩衝趨勢、報告及剪貼簿功能均已撤除；[撤除前架構](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/ARCHITECTURE.md#診斷與-ui) 僅描述歷史版本。
 
-`RouteSnapshot`、`TransportSnapshot`、`DiagnosticSnapshot` 及 `ControlCenterSnapshot` 提供具體唯讀欄位。診斷請求序列化使用明確的有界欄位清單，匯出時清理傳入的讀取模型。外部資料內容由對應適配器／儲存元件解析器驗證，中繼資料依上述已知欄位規則重建。產品設定／選路命令使用 `ControlCommandPort`；UI 也直接呼叫僅作診斷的標記、清除及報告操作。UI 不直接讀寫儲存鍵。
+### 控制中心資料流
 
-`TransportSnapshot.lastPlayurl` 保存一筆不可變的最近結果：Fetch／XHR、觀察時間、原生 HTTP 狀態、接納結果、辨識出的 DASH／MP4／FLV 格式、影片／音訊／分段數量、數字上游 `code` 及拒絕原因。`TransportContext` 複製固定欄位清單，去重後最多三種格式，數量限制為 0–65,535，丟棄非有限值或非安全整數的上游 `code`。不複製原始資料內容、URL、路徑、權杖或例外文字。控制中心及既有診斷匯出消費此摘要；接納結果不證明實際網路目的地或播放成功。
+ControlCenter 只提供總覽、CDN、播放設定三頁，經 ControlReadModelPort 訂閱並取得當次快照。每次建構／刷新共用單份模型，CDN 開關不各自取快照；snapshot() 沒有詳細證據參數。
 
-### 唯讀緩衝趨勢
+總覽保留目前緩衝、保守吞吐、需求餘裕、影音回應、量測／恢復／提前重試狀態與詳細狀態。資料僅為功能本身的當前狀態、最後一筆摘要與既有計數，不建立另一套歷程。選路學習的 EvidenceStore 仍供選路與量測使用，不列舉為報告。
 
-以下描述目前來源的 v6 規則；歷史 v2.1.34 的 v5、v2.1.29 的 v3 與更早原件保持，對應版本的發布與驗收由 [HISTORY](HISTORY.md#版本) 追溯。既有 v4 原始結果保存在 [周期候選紀錄](../archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md)，最新版驗收以 [TEST_REPORT](TEST_REPORT.md) 為準。
+`TransportSnapshot.lastPlayurl` 保存一筆不可變的最近結果：Fetch／XHR、觀察時間、原生 HTTP 狀態、接納結果、辨識出的 DASH／MP4／FLV 格式、影片／音訊／分段數量、數字上游 `code` 及拒絕原因。`TransportContext` 複製固定欄位清單，去重後最多三種格式，數量限制為 0–65,535，丟棄非有限值或非安全整數的上游 `code`。不複製原始資料內容、URL、路徑、權杖或例外文字。控制中心消費此摘要；接納結果不證明實際網路目的地或播放成功。
 
-Monitor 使用既有一秒取樣，觀察最近完整八秒的緩衝影片秒數／當次有效倍速。八秒減少至少兩個實際可播放秒數為下降，增加至少兩秒為回補，其餘為平穩。持續合格前進、下降且目前可播放緩衝不超過十秒是候選的基礎資格；首次成立並下降時，以前一有效樣本為確認基準，累計時間從零開始。後續每次跌破本次歷史低點才累計該有效樣本區間，累計滿兩秒且當次創低才為候選。這是唯讀診斷假設，不觸發選路、探測、重載、還原、incident 或額度消耗；原救援時序維持。
+非同步命令完成後重讀新快照；晚到回呼不更新失效視圖。ControlCenter 保管宿主、封閉 ShadowRoot、視圖版本與訂閱；一秒 tick 刷新既有欄位，不新增輪詢。入口只注入版本，UI 不派送 GM／剪貼簿 API。可信鍵盤事件在 ShadowRoot 冒泡邊界隔離，保留表單原生操作；Escape 關閉，關閉時清理監聽器。
 
-短期確認在緩衝增加、持平或回落但尚未跌破先前低點時，不累計時間；尚未補回確認基準則保留有界證據，完整補回才清除。短期基礎資格消失、資料失效或超過八秒沒有再創低也清除該確認；逾期當次合法下降只能重新從零開始。同時間重讀不替換樣本、不累計或延長期限。以下周期證據另外處理緩慢欠量，兩者只產生同一個唯讀 candidate。
-
-v4 另在每次回補結束、再次下降時比較周期峰值，累計欠量最多兩秒；最近一次欠量超過八秒即失效。欠量達兩秒、目前緩衝不超過十秒時，累計其後合法下降區間兩秒，回補／持平不計時，無須每次突破更早周期的最低點。回補或持平立即撤銷顯示；短期 state 仍描述八秒事實，周期原因及 cycle 數值另外說明候選依據。
-
-周期欠量到期時，其確認額度同步撤銷；即使同一筆樣本重新形成合法欠量，也須從零累計其後兩秒下降。尚未到期的獨立短期確認仍按自身規則判定，不因周期到期一起清除。診斷 creditMs 是兩種確認的最大值，不能單獨代替候選及原因碼判定。
-
-完整補回或累計欠量尚不足兩秒時，保留前周期低點作為已觀察範圍；仍在範圍內的短期下降不重複確認，跌破範圍、欠量達標或八秒證據失效後再評估。不加入浮點容忍門檻，首次回補前仍可能有候選，不能宣稱消除所有多餘訊號。周期與短期確認同屬 Monitor 的單一有界狀態，不新增平行候選或控制資格。
-
-v5 保留上述候選與原因的優先序，另在校正緩衝不超過四秒時接納低緩衝證據：完整八秒每個有效區間均嚴格下降，或已完成回補且再次下降形成仍有效的正欠量；兩者同時成立採周期證據。完整補回且仍在已回補範圍內繼續抑制，尚有欠量的範圍不遮蔽低緩衝周期證據。
-
-低緩衝確認首次為零，之後創新低才累計實際區間，滿兩秒才顯示候選。回補、持平或未創低立即撤銷顯示；部分回補保留證據，補回基準清除。緩衝超過四秒、證據種類改變、欠量失效、超過八秒未創低或資格失效都清除低緩衝確認；到期與新證據同筆時先撤銷再從零開始，不借用短期／周期確認額度。只有單一 candidate，沒有新增任何救援觸發。
-
-v6 保留 v5 的候選與原因優先序；只有原結果為 false、校正緩衝大於零且不超過一秒、前次與本次持有同一份已完成兩秒確認的有效 partial-cycle 證據，且最近至少兩秒持續合格下降時，才允許該份證據補顯一次。tailUsed 隨原低緩衝證據保存；部分回補、持平、新低點及原候選再次成立都不補發機會。下一有效樣本回到原規則，僅在原證據真正撤銷／重建後重新確認。資料不足不得提升為候選，同時間重讀不消耗或延長補顯。
-
-第一個有效持平或回補樣本仍立即撤銷；下降期間的候選總時間與撤銷延遲分開。補顯只改善指定模型最後一次訊號的可見性，不保證全程連續，也不預知下一秒回補。一秒取樣的固定正常配對最多新增一秒；不規則取樣按實際有效區間記錄，不新增牆鐘撤銷計時器。
-
-不足八秒、超過 1.5 秒取樣空隙、非法倍速或數值屬資料不足，不能當成健康。暫停、尋位、拖曳、隱藏、停用、對照、錯誤、結束、片尾完整緩衝或正在救援時不產生候選；控制、媒體、內容、倍速或路線觀察身分改變須重建窗口。缺影格時可用時間判斷，但會標明品質。
-
-傳輸只作旁證，成功、失敗與中止分開統計。沒有完成請求表示未觀察到完成，不能推論零頻寬；跨窗口的完整請求 bytes 不代表逐秒吞吐。結果只進入既有診斷 JSON，不新增 UI 或設定，欄位與重跑方式見 [DEVELOPMENT](DEVELOPMENT.md#唯讀緩衝趨勢診斷)。
-
-唯讀緩衝趨勢的八秒樣本、完成傳輸旁證與候選狀態由 PlayerMonitor 唯一保存。v6 的常數大小狀態包含短期確認、周期峰值／低點、回補階段、最多兩秒欠量與確認時間及時間戳；另有獨立且有界的 lowConfirmation，包含證據種類、累計創低確認及一次性 tailUsed 布林。前次樣本與連續下降覆蓋都沿用既有窗口，不另存樣本。buffer-cycle.ts 只回傳判定與下一狀態，短期事實及 v3 相容確認仍由 buffer-trend.ts 提供，不保存環境狀態。低緩衝及尾段分支只在原候選未成立時提供輸出，原候選原因優先；證據到期或切換不得借用確認額度或補顯機會，狀態不一致撤銷證據。Runtime 轉交既有 transport-completed 的最小投影及 Monitor 快照，不保存第二份窗口；診斷只重建結果的數值／布林／列舉投影。樣本與確認在媒體、控制、內容、倍速或路線觀察身分改變時失效，沒有額外計時器、請求或授權索引；影子結果不得送入選路、量測、恢復或播放命令。Recorder 清除只影響報告，不重設確認或救援。
-
-周期欠量、時間戳及所屬 cycleCreditMs 在到期分支一起失效，先撤銷再處理同樣本的新周期；不借用舊確認額度。短期 confirmation 有獨立的創低期限，仍留在同一 Monitor 狀態內，依自身資格判定。
-
-### 播放進度
-
-診斷同一次嘗試只有首次有效回應初始化播放進度基準；後續同身分及同路線成功不撤回 playback-observed／首次 playbackAt，也不延長 30 秒觀察期限。混合主機、seek、生命週期及新嘗試仍按原契約中斷。
-
-### 控制中心與診斷資料流
-
-ControlCenter 經 ControlReadModelPort 訂閱及取得畫面快照。createControlReadModel 組裝設定、路線、播放與基本診斷；每次建構／刷新只取得一份完整模型，CDN 的所有開關共用同一份資料。詳細 evidence 只在明確報告要求時建立。
-
-非同步命令結束先清 pending，再讀新快照；不得沿用提交前模型。ControlCenter 保存宿主、封閉 ShadowRoot、視圖版本及訂閱，晚到回呼不能更新失效視圖。播放器 tick 更新既有緊湊欄位，不替換焦點、不加輪詢。入口注入版本與剪貼簿服務，UI 不派送 GM／平台 API。
-
-控制中心以當前封閉 ShadowRoot 的冒泡邊界隔離可信 keydown／keypress／keyup，讓 Enter／Space 及表單維持原生預設操作；Escape 關閉。關閉與宿主重建會清理監聽器。不新增焦點循環，亦無法撤銷外層捕捉階段已做的取消。
-
-SettingsState 不含 codec／verbose。PlayurlAdapter 改寫 URL 後保留網站原始表示順序；codec 僅辨識表示。DiagnosticEventSanitizer 不收取 verbose，Recorder 不建立、去重或淘汰額外排名歷史，舊 rankings 欄位永遠空陣列、相關淘汰計數為零。選路需要的即時 ranking 與簡短決策摘要、基本流量、事故及提前重試事件保留；128 KiB／96 KiB／十六筆新事件與 bufferTrend v6 不變。
-
-### 控制中心複製所有權
-
-`ControlCenter` 擁有跨關閉／重開的單一 pending 寫入；clipboard 適配器負責原生 receiver 與 GM 純文字派送。完成回呼只更新原宿主／ShadowRoot／視圖，不重新序列化或搶焦點。可信 click、原生優先／不可取得才備援、失敗及提示要求見 [安全政策](../SECURITY.md#剪貼簿寫入邊界)。
-
-原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。對應歷史證據由 [HISTORY](HISTORY.md) 追溯。
+功能事件僅服務路線狀態更新及影片備援轉交恢復；音訊備援不觸發影片恢復。Runtime 不再訂閱診斷採樣、恢復歷程或提前重試歷程。
 
 ### 隔離 B 原型的傳輸控制
 
-此相容入口描述 2026-10-30 固定原型，原文見 [2a58517 架構快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2a5851761d5a066cd3b54cb447b9da546a23187e/docs/ARCHITECTURE.md#隔離-b-原型的傳輸控制)。當前實作見本文件 UP141 提前重試章節，原型限制不作現行工作狀態。
+此舊入口的原型原文見 [固定快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/ARCHITECTURE.md#隔離-b-原型的傳輸控制)，不構成現行工作授權。

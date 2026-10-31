@@ -1,10 +1,6 @@
 import { extendFixture } from '../support/fixture-context.ts'
 import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import '../regressions/functional-races/runtime.ts'
-import '../regressions/buffer-integration.ts'
-import '../regressions/buffer-low-integration.ts'
-import '../regressions/buffer-continuity-integration.ts'
-import '../regressions/buffer-low-nonintervention.ts'
 import '../regressions/functional-races/content.ts'
 import '../regressions/functional-races/cr-startup.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
@@ -35,46 +31,14 @@ import { FakeStorage } from '../support/storage.ts'
 import { FakeClock } from '../support/clock.ts'
 import { testScope } from '../support/scope.ts'
 
-test('UP141-DIAG runtime owns one retry subscription and releases it on dispose', async (t) => {
-  await checkUP141DIAGRuntimeOwnsOneRetrySubscriptionAndReleasesItOn(t, true)
-})
-
 // Named scenarios create only their prerequisite state; resources belong to this test.
-async function createOrchestrationScenario(t: TestContext, observeRetry = false) {
+async function createOrchestrationScenario(t: TestContext, _observeRetry = false) {
   const scope = testScope(t)
   const clock = scope.own(new FakeClock()),
     storage = new FakeStorage()
   const settings = scope.own(new CatalogSettingsStore(storage, clock.now)),
     session = new SessionStore()
   const calls: string[] = []
-  let retryListener:
-    | ((
-        snapshot: import('../../src-v2/application/early-retry-contracts.ts').EarlyRetrySnapshot,
-      ) => void)
-    | null = null
-  const retrySnapshot = {
-    state: 'waiting' as const,
-    reason: 'no-alternative',
-    host: null,
-    attempts: 0,
-    history: [{ at: 1000, state: 'waiting' as const, reason: 'no-alternative', host: null }],
-  }
-  const retryPort = observeRetry
-    ? {
-        tick() {},
-        reset() {},
-        cancel() {},
-        dispose() {},
-        snapshot: () => retrySnapshot,
-        subscribe(listener: NonNullable<typeof retryListener>) {
-          assert.equal(retryListener, null)
-          retryListener = listener
-          return () => {
-            retryListener = null
-          }
-        },
-      }
-    : undefined
   const video: VideoSnapshot = {
     available: true,
     paused: false,
@@ -106,23 +70,11 @@ async function createOrchestrationScenario(t: TestContext, observeRetry = false)
         routeListener = () => undefined
       }
     },
-    isOriginalComparison: () => comparison,
     invalidateForUserSetting: () => {
       calls.push('routes.invalidate')
     },
-  } satisfies ConstructorParameters<typeof RuntimeController>[2]
+  } satisfies ConstructorParameters<typeof RuntimeController>[1]
   const monitor = {
-    observeTransport() {},
-    subscribe: () => () => {
-      calls.push('monitor.unsubscribe')
-    },
-    snapshot: () => ({
-      video,
-      stableProgressSec: 20,
-      watchdog: 'healthy' as const,
-      stallTicks: 0,
-      startupRescue: { state: 'not-needed' as const, ageSec: 0 },
-    }),
     start: () => {
       calls.push('monitor.start')
     },
@@ -132,10 +84,9 @@ async function createOrchestrationScenario(t: TestContext, observeRetry = false)
     reset: () => {
       calls.push('monitor.reset')
     },
-  } satisfies ConstructorParameters<typeof RuntimeController>[4]
+  } satisfies ConstructorParameters<typeof RuntimeController>[3]
   const runtime = scope.own(
     new RuntimeController(
-      session,
       settings,
       routeControl,
       {
@@ -154,7 +105,6 @@ async function createOrchestrationScenario(t: TestContext, observeRetry = false)
         reset: () => {
           calls.push('recovery.reset')
         },
-        subscribe: () => () => undefined,
         armRouteFailure: () => {
           calls.push('recovery.arm')
         },
@@ -164,17 +114,7 @@ async function createOrchestrationScenario(t: TestContext, observeRetry = false)
           calls.push('visibility')
         },
       },
-      {
-        record: () => {
-          calls.push('diagnostic.event')
-        },
-        recordPlayer: () => {
-          calls.push('diagnostic.player')
-        },
-      },
-      clock.now,
       { subscribeEpoch: () => () => undefined },
-      retryPort,
     ),
   )
   runtime.install()
@@ -187,13 +127,6 @@ async function createOrchestrationScenario(t: TestContext, observeRetry = false)
     settings,
     session,
     calls,
-    get retryListener() {
-      return retryListener
-    },
-    set retryListener(next: typeof retryListener) {
-      retryListener = next
-    },
-    retrySnapshot,
     get routeListener() {
       return routeListener
     },
@@ -277,22 +210,8 @@ async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(
       invalidateForUserSetting: () => {
         base.calls.push('routes.invalidate')
       },
-      setOriginalComparison: () => {
-        base.calls.push('comparison')
-      },
-    },
-    {
-      reset: () => {
-        base.calls.push('measurement.reset')
-      },
-    },
-    {
-      reset: () => {
-        base.calls.push('recovery.reset')
-      },
     },
   )
-  commands.setOriginalComparison(true)
   void base.calls.join(',')
   base.calls.length = 0
   await restrictions.add({
@@ -540,82 +459,13 @@ async function checkNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecovery
   base.routeListener(fallback)
   assert.strictEqual(
     base.calls.join(','),
-    'diagnostic.event,diagnostic.player,recovery.arm',
-    'fallback records observation and arms only application-owned recovery',
-  )
-  base.comparison = true
-  base.calls.length = 0
-  base.routeListener(fallback)
-  assert.strictEqual(
-    base.calls.join(','),
-    'diagnostic.event',
-    'comparison prevents fallback recovery effects',
+    'recovery.arm',
+    'fallback arms only application-owned recovery',
   )
   base.runtime.dispose()
   base.calls.length = 0
   base.routeListener(fallback)
   assert.strictEqual(base.calls.length, 0, 'runtime disposal removes routing subscription')
-  const restrictions = base.scope.own(new RestrictionStore(base.storage, base.clock.now)),
-    evidence = base.scope.own(new EvidenceStore(base.storage, base.clock.now))
-  const meta = new MeasurementMetaStore(base.storage, base.clock.now)
-  const commands = new ControlCommands(
-    base.settings,
-    {
-      clear: async () => {
-        base.calls.push('restrictions.clear')
-        await restrictions.clear()
-      },
-    },
-    {
-      clear: async () => {
-        base.calls.push('evidence.clear')
-        await evidence.clear()
-      },
-    },
-    {
-      clear: () => {
-        base.calls.push('meta.clear')
-        meta.clear()
-      },
-    },
-    {
-      invalidateForUserSetting: () => {
-        base.calls.push('routes.invalidate')
-      },
-      setOriginalComparison: () => {
-        base.calls.push('comparison')
-      },
-    },
-    {
-      reset: () => {
-        base.calls.push('measurement.reset')
-      },
-    },
-    {
-      reset: () => {
-        base.calls.push('recovery.reset')
-      },
-    },
-  )
-  commands.setOriginalComparison(true)
-  assert.strictEqual(
-    base.calls.join(','),
-    'comparison,measurement.reset,recovery.reset',
-    'comparison command coordinates all affected controllers',
-  )
-}
-
-async function checkUP141DIAGRuntimeOwnsOneRetrySubscriptionAndReleasesItOn(
-  t: TestContext,
-  observeRetry = false,
-): Promise<void> {
-  const base = await createOrchestrationScenario(t, observeRetry)
-
-  assert.ok(base.retryListener)
-  base.retryListener(base.retrySnapshot)
-  assert.deepEqual(base.calls, ['diagnostic.event'])
-  base.runtime.dispose()
-  assert.equal(base.retryListener, null)
 }
 
 test(

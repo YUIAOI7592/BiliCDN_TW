@@ -18,7 +18,6 @@ import { EvidenceStore } from '../../src-v2/state/evidence-store.ts'
 import { SessionStore } from '../../src-v2/state/session-store.ts'
 import { RouteCoordinator } from '../../src-v2/application/route-coordinator.ts'
 import { TransportAdapter } from '../../src-v2/adapters/transport.ts'
-import { DiagnosticRecorder } from '../../src-v2/diagnostics/recorder.ts'
 import type { AppliedRouteDecision } from '../../src-v2/application/route-contracts.ts'
 import type { TransportObservation } from '../../src-v2/domain/model.ts'
 import { RecoveryController } from '../../src-v2/application/recovery-controller.ts'
@@ -989,7 +988,7 @@ async function createExceptionalForbiddenContext7(t: TestContext) {
   return extendFixture(base, { opaquePrimary, opaqueBackup, opaqueItem, opaqueLineage } as const)
 }
 
-async function createPausedDeadCoreAutomaticallyCapturesAnIncident8Context8(t: TestContext) {
+async function createPausedDeadCoreWithoutIntentNeverReloads8Context8(t: TestContext) {
   const base = await createExceptionalForbiddenContext7(t)
   await base.outputRestrictions.add({
     host: 'upos-hz-mirrorakam.akamaized.net',
@@ -1024,7 +1023,6 @@ async function createPausedDeadCoreAutomaticallyCapturesAnIncident8Context8(t: T
   void base.outputRoutes.apply(alternateOutput ?? '')
   let coreClock = base.now,
     coreReloads = 0
-  const coreRecorder = new DiagnosticRecorder(() => coreClock)
   const coreObserver = base.scope.own(
     new RecoveryController(
       currentResumePlayer({
@@ -1036,7 +1034,6 @@ async function createPausedDeadCoreAutomaticallyCapturesAnIncident8Context8(t: T
       () => coreClock,
     ),
   )
-  coreObserver.subscribe((event) => coreRecorder.record(event))
   coreObserver.tick({
     ...base.playerSnapshot,
     paused: false,
@@ -1071,7 +1068,6 @@ async function createPausedDeadCoreAutomaticallyCapturesAnIncident8Context8(t: T
     set coreReloads(next: typeof coreReloads) {
       coreReloads = next
     },
-    coreRecorder,
     coreObserver,
     deadPaused,
   } as const)
@@ -1080,7 +1076,7 @@ async function createPausedDeadCoreAutomaticallyCapturesAnIncident8Context8(t: T
 async function createParameterInvalidatesCachedFallbackOnNextRequest9ParameterParameterContext9(
   t: TestContext,
 ) {
-  const base = await createPausedDeadCoreAutomaticallyCapturesAnIncident8Context8(t)
+  const base = await createPausedDeadCoreWithoutIntentNeverReloads8Context8(t)
   void base.outputVault.contextForUrl(base.outputItem.base_url)!.representation
   void (
     base.outputRoutes.apply(base.outputItem.base_url) as AppliedRouteDecision & {
@@ -1122,7 +1118,7 @@ async function createPerTabOriginalComparisonDoesNotOverwriteSavedRoutingSetting
   }
   await base.outputSettings.update({ fixedHost: null })
   base.outputRoutes.invalidateForUserSetting()
-  base.outputRoutes.setOriginalComparison(true)
+  await base.outputSettings.update({ considerNativeSources: true })
   return extendFixture(base, {} as const)
 }
 
@@ -1266,7 +1262,6 @@ async function createHealthyCustomRateContext12(t: TestContext) {
   const fallbackApplied = outputRoutes.apply(alternateOutput ?? '')
   let coreClock = base.now,
     coreReloads = 0
-  const coreRecorder = new DiagnosticRecorder(() => coreClock)
   const coreObserver = base.scope.own(
     new RecoveryController(
       currentResumePlayer({
@@ -1278,7 +1273,6 @@ async function createHealthyCustomRateContext12(t: TestContext) {
       () => coreClock,
     ),
   )
-  coreObserver.subscribe((event) => coreRecorder.record(event))
   coreObserver.tick({
     ...base.playerSnapshot,
     paused: false,
@@ -1300,9 +1294,6 @@ async function createHealthyCustomRateContext12(t: TestContext) {
     coreObserver.tick(deadPaused)
   }
   coreClock += 31_000
-  coreRecorder.tick()
-  const frozenCore = coreRecorder.snapshot().incident
-  coreRecorder.mark()
   for (let tick = 0; tick < 100; tick++) {
     coreClock += 1000
     coreObserver.tick(deadPaused)
@@ -1336,7 +1327,7 @@ async function createHealthyCustomRateContext12(t: TestContext) {
   }
   await outputSettings.update({ fixedHost: null })
   outputRoutes.invalidateForUserSetting()
-  outputRoutes.setOriginalComparison(true)
+  await outputSettings.update({ considerNativeSources: true })
   const nativeControlUrl =
     'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/control/clip.m4s?signature=private'
   const nativeControlBackup =
@@ -1369,7 +1360,7 @@ async function createHealthyCustomRateContext12(t: TestContext) {
   void outputVault.contextForUrl(nativeControlBackup)!.representation
   void outputRoutes.snapshot().recentPlans
   await outputRestrictions.remove('upos-sz-mirrorali.bilivideo.com', 'black')
-  outputRoutes.setOriginalComparison(false)
+  await outputSettings.update({ considerNativeSources: false })
   const ungroupedHost = TRUSTED_CATALOG[0]
   await outputRestrictions.add({
     host: ungroupedHost,
@@ -1430,9 +1421,7 @@ async function createHealthyCustomRateContext12(t: TestContext) {
     set coreClock(next: typeof coreClock) {
       coreClock = next
     },
-    coreRecorder,
     deadPaused,
-    frozenCore,
     outputRep,
     unknownQuery,
   } as const)
@@ -1496,11 +1485,9 @@ async function createInitialDeadLookingStartupWithoutPreviousHealthIsNotAnIncide
     backup_url: [base.forbiddenUrl],
   }
   base.outputAdapter.transform({ data: { dash: { video: [noOutput], audio: [] } } })
-  const gapRecorder = new DiagnosticRecorder(() => base.coreClock)
   const gapRecovery = base.scope.own(
     new RecoveryController(currentResumePlayer(base.recoveryPlayer), () => base.coreClock),
   )
-  gapRecovery.subscribe((event) => gapRecorder.record(event))
   gapRecovery.tick(base.healthyCustomRate)
   for (let i = 0; i < 5; i++) {
     base.coreClock += 10_000
@@ -1511,7 +1498,7 @@ async function createInitialDeadLookingStartupWithoutPreviousHealthIsNotAnIncide
     base.coreClock += 1000
     gapRecovery.tick(base.deadPaused)
   }
-  return extendFixture(base, { gapRecorder } as const)
+  return extendFixture(base, {} as const)
 }
 
 async function createXHRDoesNotSendDefaultUnavailablePCDNMarkedMedia15Context14(t: TestContext) {
@@ -2052,75 +2039,6 @@ async function checkFetchAndXHRHookAssignmentsAreVerified1(t: TestContext): Prom
   )
 }
 
-async function checkTheReportedPlanNamesTheBackupActuallyOfferedToThePlayer(
-  t: TestContext,
-): Promise<void> {
-  const base = await createNativeControlUrlContext11(t)
-
-  assert.ok(
-    base.promotedPlan.some(
-      (row) =>
-        row.host === new URL(base.nativeControlBackup).host &&
-        row.action === 'pass' &&
-        row.reason === 'original-backup',
-    ),
-    'the reported plan names the backup actually offered to the player, not the blocked primary',
-  )
-  assert.strictEqual(
-    base.outputVault.outputRole(base.promotedRep, base.nativeControlBackup)?.decisionId,
-    base.promotedPlan.find(
-      (row) =>
-        row.host === new URL(base.nativeControlBackup).host && row.reason === 'original-backup',
-    )?.id,
-    'promoted backup lineage points to its accurate route decision',
-  )
-  await base.outputRestrictions.remove('upos-sz-mirrorali.bilivideo.com', 'black')
-  base.outputRoutes.setOriginalComparison(false)
-  const ungroupedHost = TRUSTED_CATALOG[0]
-  const ungroupedUrl = `https://${ungroupedHost}/upgcxcode/test/ungrouped/1.m4s?k=1`
-  await base.outputRestrictions.add({
-    host: ungroupedHost,
-    type: 'black',
-    kind: 'audio',
-    reason: 'ungrouped-audio',
-    expireAt: base.now + 60_000,
-  })
-  assert.ok(
-    base.outputRoutes.apply(ungroupedUrl).decision.host !== ungroupedHost,
-    'ungrouped media cannot use a host with an audio-only blacklist',
-  )
-  await base.outputRestrictions.remove(ungroupedHost, 'black')
-  const audioScopedUrl = `https://${ungroupedHost}/upgcxcode/test/audio/1.m4s?k=1`
-  const audioScopedRep = base.outputVault.register({
-    generation: base.outputState.generation,
-    epoch: base.outputState.epoch,
-    kind: 'audio',
-    key: 'scope-audio',
-    height: 0,
-    codec: 'other',
-    bandwidth: 128_000,
-    urls: [audioScopedUrl],
-    source: 'trusted-api',
-  })
-  assert.ok(audioScopedRep, 'matched audio representation exists for blacklist coverage')
-  await base.outputRestrictions.add({
-    host: ungroupedHost,
-    type: 'black',
-    kind: 'all',
-    reason: 'user',
-    expireAt: base.now + 60_000,
-  })
-  assert.ok(
-    base.outputRoutes.apply(audioScopedUrl).decision.host !== ungroupedHost,
-    'user-wide blacklist excludes matched audio route',
-  )
-  assert.strictEqual(
-    base.outputRoutes.apply(`${audioScopedUrl}&os=mcdn`).url,
-    null,
-    'user-wide blacklist locally blocks an exceptional audio route',
-  )
-}
-
 async function checkParameterBlocksPCDNMarkedCatalogHost12ParameterParameter(
   t: TestContext,
   parameter = 0,
@@ -2128,7 +2046,7 @@ async function checkParameterBlocksPCDNMarkedCatalogHost12ParameterParameter(
   const base = await createNativeControlUrlContext11(t)
 
   await base.outputRestrictions.remove('upos-sz-mirrorali.bilivideo.com', 'black')
-  base.outputRoutes.setOriginalComparison(false)
+  await base.outputSettings.update({ considerNativeSources: false })
   const ungroupedHost = TRUSTED_CATALOG[0]
   const ungroupedUrl = `https://${ungroupedHost}/upgcxcode/test/ungrouped/1.m4s?k=1`
   await base.outputRestrictions.add({
@@ -2183,87 +2101,6 @@ async function checkParameterBlocksPCDNMarkedCatalogHost12ParameterParameter(
   throw Error('Unknown fixture parameter')
 }
 
-async function checkPerTabOriginalComparisonDoesNotOverwriteSavedRoutingSettings10(
-  t: TestContext,
-): Promise<void> {
-  const base =
-    await createPerTabOriginalComparisonDoesNotOverwriteSavedRoutingSettings10Context10(t)
-
-  assert.strictEqual(
-    base.outputSettings.get().fixedHost,
-    null,
-    'per-tab original comparison does not overwrite saved routing settings',
-  )
-  const nativeControlUrl =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/control/clip.m4s?signature=private'
-  const nativeControlBackup =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/control/clip.m4s?signature=other'
-  const controlItem = {
-    id: 240,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 1_000_000,
-    base_url: nativeControlUrl,
-    backup_url: [nativeControlBackup],
-  }
-  base.outputAdapter.transform({ data: { dash: { video: [controlItem], audio: [] } } }, 'page-hint')
-  assert.strictEqual(
-    controlItem.base_url,
-    nativeControlUrl,
-    'original comparison mode does not rewrite a legal playurl primary',
-  )
-  assert.strictEqual(
-    controlItem.backup_url[0],
-    nativeControlBackup,
-    'original comparison mode preserves the exact legal signed backup',
-  )
-  assert.strictEqual(
-    base.outputRoutes.apply(nativeControlUrl).url,
-    nativeControlUrl,
-    'original comparison mode passes the exact segment URL',
-  )
-  assert.strictEqual(
-    base.outputRoutes.startupOptions(nativeControlUrl),
-    null,
-    'original comparison mode does not launch cold preflight',
-  )
-  assert.strictEqual(
-    base.outputRoutes.challenge(
-      base.outputVault.contextForUrl(nativeControlUrl)!.representation,
-      { kind: 'video', requiredMbps: 3, highDemand: false },
-      false,
-    ),
-    null,
-    'original comparison mode starts no healthy probe',
-  )
-  await base.outputRestrictions.add({
-    host: 'upos-sz-mirrorali.bilivideo.com',
-    type: 'black',
-    kind: 'all',
-    reason: 'original-mode',
-    expireAt: base.now + 60_000,
-  })
-  assert.strictEqual(
-    base.outputRoutes.apply(nativeControlUrl).url,
-    null,
-    'original comparison mode does not bypass a prohibited original host',
-  )
-  const blockedControlItem = {
-    ...controlItem,
-    base_url: nativeControlUrl,
-    backup_url: [nativeControlBackup],
-  }
-  base.outputAdapter.transform(
-    { data: { dash: { video: [blockedControlItem], audio: [] } } },
-    'page-hint',
-  )
-  assert.strictEqual(
-    blockedControlItem.base_url,
-    nativeControlBackup,
-    'original comparison promotes an exact legal signed backup when primary is forbidden',
-  )
-}
-
 async function checkParameterInvalidatesCachedFallbackOnNextRequest9ParameterParameter(
   t: TestContext,
   parameter = 0,
@@ -2311,32 +2148,14 @@ async function checkParameterInvalidatesCachedFallbackOnNextRequest9ParameterPar
   throw Error('Unknown fixture parameter')
 }
 
-async function checkPausedDeadCoreAutomaticallyCapturesAnIncident8(t: TestContext): Promise<void> {
-  const base = await createPausedDeadCoreAutomaticallyCapturesAnIncident8Context8(t)
-
-  assert.ok(
-    base.coreRecorder.snapshot().incident,
-    'paused dead core automatically captures an incident',
-  )
+async function checkPausedDeadCoreWithoutIntentNeverReloads8(t: TestContext): Promise<void> {
+  const base = await createPausedDeadCoreWithoutIntentNeverReloads8Context8(t)
   assert.strictEqual(base.coreReloads, 0, 'dead paused core without play intent never reloads')
   base.coreClock += 31_000
-  base.coreRecorder.tick()
-  const frozenCore = base.coreRecorder.snapshot().incident
-  base.coreRecorder.mark()
-  assert.strictEqual(
-    base.coreRecorder.snapshot().incident?.id,
-    frozenCore?.id,
-    'late manual mark preserves frozen automatic incident',
-  )
   for (let tick = 0; tick < 100; tick++) {
     base.coreClock += 1000
     base.coreObserver.tick(base.deadPaused)
   }
-  assert.strictEqual(
-    base.coreRecorder.snapshot().incident?.id,
-    frozenCore?.id,
-    'continuous dead core does not replace its own incident',
-  )
   base.outputVault.contextForUrl(base.outputItem.base_url)!.representation
   const playurlLineage = (
     base.outputRoutes.apply(base.outputItem.base_url) as AppliedRouteDecision & {
@@ -2593,29 +2412,6 @@ async function checkPlayObserverInstalledOnFirstPausedTickNotThirtySecondsLater(
     originalIntentPlay,
     'generation reset restores owned play method',
   )
-  for (let i = 0; i < 1000; i++)
-    base.coreRecorder.record({
-      type: 'transport',
-      at: base.coreClock,
-      observation: { ...base.healthyObservation, completedAt: base.coreClock },
-    })
-  assert.strictEqual(
-    base.coreRecorder.snapshot().incident?.id,
-    base.frozenCore?.id,
-    'one thousand successes retain frozen core incident',
-  )
-  assert.ok(
-    new TextEncoder().encode(JSON.stringify(base.coreRecorder.snapshot())).length <= 128 * 1024,
-    'recorder remains within 128 KiB',
-  )
-  assert.ok(
-    new TextEncoder().encode(base.coreRecorder.buildReport({})).length <= 96 * 1024,
-    'report remains within 96 KiB',
-  )
-  assert.ok(
-    !base.coreRecorder.buildReport({}).includes('token=secret'),
-    'incident report contains no test signed query',
-  )
 }
 
 async function checkEligibleNativeBackupUsesItsOwnFullSignedURL17(t: TestContext): Promise<void> {
@@ -2672,13 +2468,8 @@ async function checkEligibleNativeBackupUsesItsOwnFullSignedURL17(t: TestContext
   base.intentClock += 1000
   intentRecovery.tick(base.intentVideo)
   intentRecovery.reset()
-  for (let i = 0; i < 1000; i++)
-    base.coreRecorder.record({
-      type: 'transport',
-      at: base.coreClock,
-      observation: { ...base.healthyObservation, completedAt: base.coreClock },
-    })
   await base.outputSettings.update({
+    considerNativeSources: true,
     disabled: false,
     catalogOverrides: {},
     fixedHost: null,
@@ -2800,80 +2591,6 @@ async function checkXHRDoesNotSendDefaultUnavailablePCDNMarkedMedia15(
   assert.strictEqual(disabledXhr.nativeSends, 1, 'disabled adapter sends website request once')
 }
 
-async function checkInitialDeadLookingStartupWithoutPreviousHealthIsNotAnIncident(
-  t: TestContext,
-): Promise<void> {
-  const base = await createInitialDeadLookingStartupWithoutPreviousHealthIsNotAnIncidentContext13(t)
-
-  assert.strictEqual(
-    base.gapRecorder.snapshot().incident,
-    null,
-    'initial dead-looking startup without previous health is not an incident',
-  )
-  await base.outputSettings.update({ catalogOverrides: {}, fixedHost: null })
-  base.outputRoutes.invalidateForUserSetting()
-  const realAdapter = base.scope.own(
-    new TransportAdapter(
-      base.outputSession,
-      base.outputSettings,
-      base.outputRoutes,
-      base.outputAdapter,
-      base.measurementStub,
-      () => base.now,
-      createRuntimeIds(),
-    ),
-  )
-  realAdapter.install()
-  const tracedXhr = new base.FakeXhr()
-  tracedXhr.open('GET', base.outputItem.base_url)
-  tracedXhr.send()
-  await Promise.resolve()
-  const tracedVideo = base.outputRoutes.snapshot().latest.video
-  assert.strictEqual(
-    tracedXhr.nativeSends,
-    1,
-    'playurl output is sent through the native XHR method exactly once',
-  )
-  assert.strictEqual(
-    tracedVideo?.targetHost,
-    new URL(tracedXhr.url).host,
-    'route report target matches the URL received by native XHR',
-  )
-  assert.strictEqual(
-    tracedVideo?.playurlOutput?.originalHost,
-    'upos-sz-mirrorcosov.bilivideo.com',
-    'the completed native request retains the original playurl host lineage',
-  )
-  const actualXhr = new base.FakeXhr()
-  actualXhr.open('GET', base.forbiddenUrl)
-  assert.ok(!actualXhr.url.includes('mirrorcosov'), 'native XHR open receives rewritten legal host')
-  const initiallySentHost = new URL(actualXhr.url).host
-  await base.outputRestrictions.add({
-    host: initiallySentHost,
-    type: 'black',
-    kind: 'all',
-    reason: 'before-send',
-    expireAt: base.now + 60_000,
-  })
-  actualXhr.send()
-  assert.strictEqual(actualXhr.nativeSends, 1, 'XHR sends one replacement request')
-  assert.ok(
-    new URL(actualXhr.url).host !== initiallySentHost,
-    'restriction added after open is rechecked before native send',
-  )
-  await base.outputSettings.update({
-    catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, false])),
-  })
-  const blockedXhr = new base.FakeXhr()
-  blockedXhr.open('GET', base.forbiddenUrl)
-  blockedXhr.send()
-  assert.strictEqual(
-    blockedXhr.nativeSends,
-    0,
-    'no-alternative XHR never sends forbidden native request',
-  )
-}
-
 async function checkWeakQueryMatchIsNotABackupCapability13(t: TestContext): Promise<void> {
   const base = await createHealthyCustomRateContext12(t)
 
@@ -2959,21 +2676,14 @@ async function checkWeakQueryMatchIsNotABackupCapability13(t: TestContext): Prom
   base.outputAdapter.transform({ data: { dash: { video: [noOutput], audio: [] } } })
   assert.strictEqual(noOutput.base_url, '', 'blocked playurl does not leak original primary')
   assert.strictEqual(noOutput.backup_url.length, 0, 'blocked playurl does not leak original backup')
-  const gapRecorder = new DiagnosticRecorder(() => base.coreClock)
   const gapRecovery = base.scope.own(
     new RecoveryController(currentResumePlayer(base.recoveryPlayer), () => base.coreClock),
   )
-  gapRecovery.subscribe((event) => gapRecorder.record(event))
   gapRecovery.tick(base.healthyCustomRate)
   for (let i = 0; i < 5; i++) {
     base.coreClock += 10_000
     gapRecovery.tick(base.deadPaused)
   }
-  assert.strictEqual(
-    gapRecorder.snapshot().incident,
-    null,
-    'background timer gaps do not count as continuous dead-core ticks',
-  )
 }
 
 test('Fetch and XHR hook assignments are verified [1]', { timeout: 5000 }, async (t) => {
@@ -3001,8 +2711,8 @@ test(
 test('opaque signed output remains observation-only [7]', { timeout: 5000 }, async (t) => {
   await checkOpaqueSignedOutputRemainsObservationOnly7(t)
 })
-test('paused dead core automatically captures an incident [8]', { timeout: 5000 }, async (t) => {
-  await checkPausedDeadCoreAutomaticallyCapturesAnIncident8(t)
+test('paused dead core without intent never reloads [8]', { timeout: 5000 }, async (t) => {
+  await checkPausedDeadCoreWithoutIntentNeverReloads8(t)
 })
 {
   let parameter = 0
@@ -3018,20 +2728,6 @@ test('paused dead core automatically captures an incident [8]', { timeout: 5000 
     )
   }
 }
-test(
-  'per-tab original comparison does not overwrite saved routing settings [10]',
-  { timeout: 5000 },
-  async (t) => {
-    await checkPerTabOriginalComparisonDoesNotOverwriteSavedRoutingSettings10(t)
-  },
-)
-test(
-  'the reported plan names the backup actually offered to the player, not the blocked primary [11]',
-  { timeout: 5000 },
-  async (t) => {
-    await checkTheReportedPlanNamesTheBackupActuallyOfferedToThePlayer(t)
-  },
-)
 {
   let parameter = 0
   for (const type of ['black', 'dead'] as const) {
@@ -3048,13 +2744,6 @@ test(
 test('weak query match is not a backup capability [13]', { timeout: 5000 }, async (t) => {
   await checkWeakQueryMatchIsNotABackupCapability13(t)
 })
-test(
-  'initial dead-looking startup without previous health is not an incident [14]',
-  { timeout: 5000 },
-  async (t) => {
-    await checkInitialDeadLookingStartupWithoutPreviousHealthIsNotAnIncident(t)
-  },
-)
 test(
   'XHR does not send default-unavailable PCDN-marked media [15]',
   { timeout: 5000 },

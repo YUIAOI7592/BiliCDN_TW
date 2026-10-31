@@ -8,6 +8,56 @@
   },
   "entries": [
     {
+      "originalPath": "Release/v2.2.0/TEST_REPORT_v2.2.0.md",
+      "archivedPath": "archive/retired/releases/Release/v2.2.0/TEST_REPORT_v2.2.0.md",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 8804,
+      "sha256": "5ff6510f893bb657ee833a6d2838fd703e3ba01857c70eee52279104fc2c6da2",
+      "archivedBytes": 8804,
+      "archivedSha256": "5ff6510f893bb657ee833a6d2838fd703e3ba01857c70eee52279104fc2c6da2"
+    },
+    {
+      "originalPath": "Release/v2.2.0/SHA256SUMS_v2.2.0.txt",
+      "archivedPath": "archive/retired/releases/Release/v2.2.0/SHA256SUMS_v2.2.0.txt",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 412,
+      "sha256": "fd1981053df017aa0217593233bf9950121d259a0d6281b203512dde20c1bc28",
+      "archivedBytes": 412,
+      "archivedSha256": "fd1981053df017aa0217593233bf9950121d259a0d6281b203512dde20c1bc28"
+    },
+    {
+      "originalPath": "Release/v2.2.0/CHANGELOG_v2.2.0.md",
+      "archivedPath": "archive/retired/releases/Release/v2.2.0/CHANGELOG_v2.2.0.md",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 58583,
+      "sha256": "a428707ac271a0fc633e81f9a562d27e608d59c45385c2f3149ca293f7dd7db3",
+      "archivedBytes": 58583,
+      "archivedSha256": "a428707ac271a0fc633e81f9a562d27e608d59c45385c2f3149ca293f7dd7db3"
+    },
+    {
+      "originalPath": "Release/v2.2.0/BUILD_MANIFEST_v2.2.0.json",
+      "archivedPath": "archive/retired/releases/Release/v2.2.0/BUILD_MANIFEST_v2.2.0.json",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 9514,
+      "sha256": "e0537d606f9facd45cd6f56f4a59aad70ed561c11e104e2b5f51f11e50ea86a6",
+      "archivedBytes": 9514,
+      "archivedSha256": "e0537d606f9facd45cd6f56f4a59aad70ed561c11e104e2b5f51f11e50ea86a6"
+    },
+    {
+      "originalPath": "Release/v2.2.0/BiliCDN_TW.user.js",
+      "archivedPath": "archive/retired/releases/Release/v2.2.0/BiliCDN_TW.user.js",
+      "kind": "release",
+      "encoding": "raw",
+      "bytes": 507211,
+      "sha256": "abca87caeb995fb924f5869c8fd60accdfe250994b448607e22803a38a610a1f",
+      "archivedBytes": 507211,
+      "archivedSha256": "abca87caeb995fb924f5869c8fd60accdfe250994b448607e22803a38a610a1f"
+    },
+    {
       "originalPath": "Release/v2.1.40/TEST_REPORT_v2.1.40.md",
       "archivedPath": "archive/retired/releases/Release/v2.1.40/TEST_REPORT_v2.1.40.md",
       "kind": "release",
@@ -1622,8 +1672,8 @@
       "encoding": "lf",
       "bytes": 20242,
       "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
-      "archivedBytes": 20861,
-      "archivedSha256": "827e66068d520e0b149d30837203ef0090935d7c992d72657ccbe68b435f6a81",
+      "archivedBytes": 20939,
+      "archivedSha256": "021185e2d9952f124e57366d6fcd7607b215faf783b3762fe67fc6308ceff473",
       "urlEdits": [
         {
           "start": 1102,
@@ -1791,7 +1841,7 @@
           "start": 6723,
           "end": 6756,
           "from": "../src-v2/diagnostics/recorder.ts",
-          "to": "../../../src-v2/diagnostics/recorder.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/src-v2/diagnostics/recorder.ts"
         },
         {
           "start": 6892,
@@ -1874,8 +1924,8 @@
       "encoding": "lf",
       "bytes": 10337,
       "sha256": "eb1248f0e7e26b400bcf7b392f8701998ba3a9c9abe07093bef70875dbb81809",
-      "archivedBytes": 10445,
-      "archivedSha256": "d4e1b3567d003c7c4108ac6eba5268fe6990bf7ef106a65364f5053f29058325",
+      "archivedBytes": 10601,
+      "archivedSha256": "518fbb6969a019697dd2a777cffb105bf7df1df15ef3534c9753cdb111940438",
       "urlEdits": [
         {
           "start": 400,
@@ -1953,13 +2003,13 @@
           "start": 1581,
           "end": 1614,
           "from": "../src-v2/diagnostics/recorder.ts",
-          "to": "../../../src-v2/diagnostics/recorder.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/src-v2/diagnostics/recorder.ts"
         },
         {
           "start": 1633,
           "end": 1691,
           "from": "../tests-v2/regressions/functional-races/cr-diagnostics.ts",
-          "to": "../../../tests-v2/regressions/functional-races/cr-diagnostics.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/tests-v2/regressions/functional-races/cr-diagnostics.ts"
         },
         {
           "start": 1788,
@@ -2228,8 +2278,8 @@
       "encoding": "lf",
       "bytes": 9933,
       "sha256": "3f6f909daec6a81f46b4633166798220b3deca561427d614494ae3e782e8d7a4",
-      "archivedBytes": 9983,
-      "archivedSha256": "a28e36cea35ddc21e7f9e0b9a4d3789d9d69dde9ce16a0c2e16b21b2b1fc9f10",
+      "archivedBytes": 10139,
+      "archivedSha256": "1b5d2420fba1db6d0dee2dc3e9c0ddfd745f73a862fc7ce835df572d78c7ab65",
       "urlEdits": [
         {
           "start": 158,
@@ -2247,13 +2297,13 @@
           "start": 557,
           "end": 591,
           "from": "../scripts/iab-event-collector.mts",
-          "to": "../../../scripts/iab/iab-event-collector.mts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/scripts/iab/iab-event-collector.mts"
         },
         {
           "start": 1006,
           "end": 1052,
           "from": "../tests-v2/regressions/iab-event-collector.ts",
-          "to": "../../../tests-v2/regressions/iab-event-collector.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/tests-v2/regressions/iab-event-collector.ts"
         },
         {
           "start": 1068,
@@ -6146,12 +6196,6 @@
       "sha256": "c7312a72c606cee9d4fad52a5d16e4cf2a502a9dccc1dbfa885959360347440b"
     },
     {
-      "path": "src-v2/diagnostics/values.ts",
-      "encoding": "raw",
-      "bytes": 572,
-      "sha256": "e1895f250d6e4d3d24139fb5154cd87980b9a9b3241b21000edb108968205a9f"
-    },
-    {
       "path": "src-v2/domain/evidence.ts",
       "encoding": "raw",
       "bytes": 4253,
@@ -6188,12 +6232,6 @@
       "sha256": "22de63bea2e0a0255c85711b8aecb05629628d1eac81c55a6e438bdf384b360f"
     },
     {
-      "path": "src-v2/globals.d.ts",
-      "encoding": "raw",
-      "bytes": 740,
-      "sha256": "165eee8b69a409d750cfc03da4e6a911186afe008d2d3b80659545dc1fcb0cb1"
-    },
-    {
       "path": "src-v2/platform/runtime-id-port.ts",
       "encoding": "raw",
       "bytes": 93,
@@ -6222,12 +6260,6 @@
       "encoding": "raw",
       "bytes": 291,
       "sha256": "6b5b29ef3600940bd7282a7c40766fb5c42ad477757a289dd3c12477fe3c1c64"
-    },
-    {
-      "path": "src-v2/ui/labels.ts",
-      "encoding": "raw",
-      "bytes": 5049,
-      "sha256": "bcfc6ec4afd07c772603fdc1c847e45bc0fd0d1897a2f448a8171606b51981d4"
     },
     {
       "path": "archive/retired/releases/Release/v2.1.30/BiliCDN_TW.user.js",
@@ -6606,36 +6638,6 @@
       "encoding": "raw",
       "bytes": 491109,
       "sha256": "3ef3607f1f7c4f1d0477e53cf3a3c6008c474cda256f9bbcaed0bd29649b5dc3"
-    },
-    {
-      "path": "Release/v2.2.0/BiliCDN_TW.user.js",
-      "encoding": "raw",
-      "bytes": 507211,
-      "sha256": "abca87caeb995fb924f5869c8fd60accdfe250994b448607e22803a38a610a1f"
-    },
-    {
-      "path": "Release/v2.2.0/BUILD_MANIFEST_v2.2.0.json",
-      "encoding": "raw",
-      "bytes": 9514,
-      "sha256": "e0537d606f9facd45cd6f56f4a59aad70ed561c11e104e2b5f51f11e50ea86a6"
-    },
-    {
-      "path": "Release/v2.2.0/CHANGELOG_v2.2.0.md",
-      "encoding": "raw",
-      "bytes": 58583,
-      "sha256": "a428707ac271a0fc633e81f9a562d27e608d59c45385c2f3149ca293f7dd7db3"
-    },
-    {
-      "path": "Release/v2.2.0/SHA256SUMS_v2.2.0.txt",
-      "encoding": "raw",
-      "bytes": 412,
-      "sha256": "fd1981053df017aa0217593233bf9950121d259a0d6281b203512dde20c1bc28"
-    },
-    {
-      "path": "Release/v2.2.0/TEST_REPORT_v2.2.0.md",
-      "encoding": "raw",
-      "bytes": 8804,
-      "sha256": "5ff6510f893bb657ee833a6d2838fd703e3ba01857c70eee52279104fc2c6da2"
     }
   ],
   "localManifest": "archive/retired/local/2026-10-20-cleanup/private-manifest.json",
@@ -10518,6 +10520,33 @@
       "originalTarget": "scripts/docs-check.mts",
       "archivedTarget": "scripts/checks/docs-check.mts",
       "reason": "Protected append-only history retains its original tool URL; v2.2.0 groups the current checker under checks."
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md",
+      "line": 79,
+      "url": "../../../src-v2/diagnostics/recorder.ts",
+      "sha256": "c33a3afdddd1cdf4ab23e9f3a257addd2c54fa8201d9ffd533b11a00dd356e02",
+      "originalTarget": "src-v2/diagnostics/recorder.ts",
+      "archivedTarget": "src-v2/diagnostics/recorder.ts",
+      "reason": "v2.2.1 retired diagnostic source; exact baseline blob verified in Git."
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md",
+      "line": 79,
+      "url": "../../../src-v2/diagnostics/report.ts",
+      "sha256": "c33a3afdddd1cdf4ab23e9f3a257addd2c54fa8201d9ffd533b11a00dd356e02",
+      "originalTarget": "src-v2/diagnostics/report.ts",
+      "archivedTarget": "src-v2/diagnostics/report.ts",
+      "reason": "v2.2.1 retired diagnostic source; exact baseline blob verified in Git."
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 67,
+      "url": "../tests-v2/regressions/iab-event-collector.ts",
+      "sha256": "84b2e3e9d7c7822888ec21a57714600b97f5d6f7dbca29b9f3330764796f7d1c",
+      "originalTarget": "tests-v2/regressions/iab-event-collector.ts",
+      "archivedTarget": "tests-v2/regressions/iab-event-collector.ts",
+      "reason": "v2.2.1 retired diagnostic tool; exact baseline source is verified in Git by docs/doc-manifest.json."
     }
   ]
 }

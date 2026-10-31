@@ -168,7 +168,7 @@ export class TransportContext {
       'no-legal-route',
       'inactive',
     ]
-    // Project the fixed diagnostic fields; payloads, errors and URL-bearing result extras never enter this state.
+    // Project the fixed summary fields; payloads, errors and URL-bearing result extras never enter this state.
     this.#lastPlayurl = Object.freeze({
       endpointKind: ['playurl', 'ogv-playview', 'ogv-precheck'].includes(endpointKind)
         ? endpointKind

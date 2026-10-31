@@ -2,7 +2,6 @@ import { extendFixture } from '../support/fixture-context.ts'
 import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { currentResumePlayer } from '../support/player.ts'
 import '../regressions/cc39-integration.ts'
-import '../regressions/buffer-monitor.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 import { FakeClock } from '../support/clock.ts'
 import { deferred, countdown } from '../support/deferred.ts'
@@ -609,7 +608,7 @@ async function createChallengeDoneAndredirectDoneAndmismatchedDoneAndmissingDone
         syncManifest: () => true,
       } satisfies PlayerPort,
       startupSession,
-      { get: () => ({ disabled: false }) },
+      { get: () => ({ disabled: true }) },
       startupVault,
       monitorRoutes({
         observePlaybackRate: () => undefined,
@@ -629,7 +628,6 @@ async function createChallengeDoneAndredirectDoneAndmismatchedDoneAndmissingDone
           originalFallbacks++
           return null
         },
-        isOriginalComparison: () => true,
       }),
       monitorMeasurement({
         tick: (input: { disabled: boolean }) => {
@@ -754,7 +752,6 @@ async function createStartupRecoveryContext8(t: TestContext) {
           return { host: TRUSTED_CATALOG[0] }
         },
         observePlaybackRate: () => undefined,
-        isOriginalComparison: () => false,
       }),
       monitorMeasurement({ tick: () => undefined }),
       monitorRecovery({
@@ -1166,7 +1163,6 @@ async function createMonitorObservesSelectedParameterX11ParameterParameterContex
           observedRate = rate
         },
         firstMediaAt: () => 0,
-        isOriginalComparison: () => false,
       }),
       monitorMeasurement({ tick: () => undefined }),
       monitorRecovery({ tick: () => undefined, isRecovering: () => false }),
@@ -2468,7 +2464,7 @@ async function checkOriginalComparisonModeNeitherProbesNorInitiatesScriptRouteCo
 
   assert.ok(
     base.originalProbeDisabled && base.originalRecoveryTicks === 0 && base.originalFallbacks === 0,
-    'original comparison mode neither probes nor initiates script route/core recovery',
+    'disabled mode mode neither probes nor initiates script route/core recovery',
   )
   const startupRecovery = base.scope.own(
     new RecoveryController(
@@ -2521,7 +2517,6 @@ async function checkOriginalComparisonModeNeitherProbesNorInitiatesScriptRouteCo
           return { host: TRUSTED_CATALOG[0] }
         },
         observePlaybackRate: () => undefined,
-        isOriginalComparison: () => false,
       }),
       monitorMeasurement({ tick: () => undefined }),
       monitorRecovery({
@@ -2675,7 +2670,7 @@ test('a Catalog URL can be checked for this stream [7]', { timeout: 5000 }, asyn
   await checkACatalogURLCanBeCheckedForThisStream7(t)
 })
 test(
-  'original comparison mode neither probes nor initiates script route/core recovery [8]',
+  'disabled mode mode neither probes nor initiates script route/core recovery [8]',
   { timeout: 5000 },
   async (t) => {
     await checkOriginalComparisonModeNeitherProbesNorInitiatesScriptRouteCoreRecovery(t)
@@ -2748,8 +2743,5 @@ import '../regressions/recovery-restore-controller.ts'
 import '../regressions/functional-races/rescue-timing.ts'
 import '../regressions/functional-races/rescue-runtime.ts'
 import '../regressions/functional-races/rescue-sustained.ts'
-import '../regressions/buffer-confirmation-monitor-v3.ts'
-import '../regressions/buffer-low-monitor.ts'
-import '../regressions/buffer-continuity-monitor.ts'
 import { idleControls } from '../support/player.ts'
 import '../regressions/up141-test-release.ts'

@@ -2,7 +2,6 @@ import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { PlayerMonitor } from '../../../src-v2/application/player-monitor.ts'
 import { RuntimeController } from '../../../src-v2/application/runtime-controller.ts'
-import { DiagnosticRecorder } from '../../../src-v2/diagnostics/recorder.ts'
 import type { RuntimeRoutesPort } from '../../../src-v2/application/runtime-ports.ts'
 import type { MonitorRoutes } from '../../../src-v2/application/monitor-contracts.ts'
 import { defaultSettings } from '../../../src-v2/state/settings-store.ts'
@@ -96,6 +95,7 @@ function fixture(t: TestContext, rate: number) {
         },
       },
     }
+    trace.push(event)
     for (const listener of listeners) listener(event)
   }
   const routes = {
@@ -114,7 +114,6 @@ function fixture(t: TestContext, rate: number) {
     },
   } satisfies MonitorRoutes & RuntimeRoutesPort
   const measurement = { ...monitorMeasurement(), reset() {} }
-  const diagnostics = new DiagnosticRecorder(f.clock.now)
   const monitor = new PlayerMonitor(
     f.player,
     session,
@@ -128,7 +127,6 @@ function fixture(t: TestContext, rate: number) {
     f.clock,
   )
   const runtime = new RuntimeController(
-    session,
     settings,
     routes,
     f.player,
@@ -136,14 +134,6 @@ function fixture(t: TestContext, rate: number) {
     measurement,
     f.recovery,
     { setEnabled() {} },
-    {
-      record: (event) => {
-        trace.push(event)
-        diagnostics.record(event)
-      },
-      recordPlayer: (sample) => diagnostics.recordPlayer(sample),
-    },
-    f.clock.now,
     {
       subscribeEpoch: () => {
         subscriptions++
@@ -187,7 +177,6 @@ function fixture(t: TestContext, rate: number) {
     monitor,
     runtime,
     trace,
-    diagnostics,
     fallback,
     sample,
     policy: (value: boolean) => {
@@ -257,8 +246,6 @@ for (const rate of [1, 2]) {
       assert.equal(f.effects.filter((e) => e.method === 'play').length, 1)
       const controls = f.player.controls()
       assert.equal(controls.pendingSeekGoal, false)
-      assert.ok(f.diagnostics.snapshot().bufferTrend.history.length > 0)
-      assert.equal(f.diagnostics.snapshot().bufferTrend.latest?.candidate === true, false)
     })
   for (const kind of ['audio', 'video'] as const)
     test(`I-R04 Runtime ${kind} fallback eligibility is isolated rate=${rate}`, (t) => {

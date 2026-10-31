@@ -1,6 +1,5 @@
 import { extendFixture } from '../support/fixture-context.ts'
 import { test } from 'node:test'
-import '../regressions/buffer-trend-domain.ts'
 import '../regressions/functional-races/content-domain.ts'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
@@ -381,7 +380,3 @@ test('cold start rewrites to catalog default [2]', { timeout: 5000 }, async (t) 
   await checkColdStartRewritesToCatalogDefault2(t)
 })
 import '../domain-progress-convergence.ts'
-import '../regressions/buffer-confirmation-domain-v3.ts'
-import '../regressions/buffer-cycle-domain.ts'
-import '../regressions/buffer-low-domain.ts'
-import '../regressions/buffer-continuity-domain.ts'

@@ -44,7 +44,6 @@ function status(): EarlyRetryStatus {
   return {
     enabled: true,
     disabled: false,
-    originalComparison: false,
     catalogOnly: true,
     fixedHost: false,
     visible: true,
@@ -227,7 +226,6 @@ test('UP141-RETRY controller respects all playback and mode exclusions', (t) => 
   const variants: EarlyRetryStatus[] = [
     { ...base, enabled: false },
     { ...base, disabled: true },
-    { ...base, originalComparison: true },
     { ...base, catalogOnly: false },
     { ...base, fixedHost: true },
     { ...base, visible: false },
@@ -349,18 +347,17 @@ test('UP141-RETRY failed website retry and lost pending state both suspend', (t)
   }
 })
 
-test('UP141-RETRY cancelled controller exposes bounded detached read-only history', (t) => {
+test('UP141-RETRY cancelled controller exposes a detached current status without history', (t) => {
   const f = fixture(t)
   const old = f.controller.snapshot()
   for (let i = 0; i < 30; i++) {
     f.advance(1000)
     f.controller.cancel(i % 2 === 0 ? 'hidden' : 'user-operation')
   }
-  assert.equal(old.history.length, 0)
-  assert.equal(f.controller.snapshot().history.length, 16)
+  assert.equal(old.state, 'idle')
+  assert.equal(f.controller.snapshot().state, 'cancelled')
+  assert.equal('history' in f.controller.snapshot(), false)
   assert.ok(Object.isFrozen(f.controller.snapshot()))
-  assert.ok(Object.isFrozen(f.controller.snapshot().history))
-  assert.ok(f.controller.snapshot().history.every(Object.isFrozen))
 })
 
 test('UP141-RETRY settings default on and preserve explicit values in schema 2', async (t) => {

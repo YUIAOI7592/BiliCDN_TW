@@ -624,63 +624,40 @@ test(
     }
   },
 )
-for (const comparison of [false, true]) {
-  test(
-    'Native or original-comparison mode accepts progressive data [15]' + ' / ' + String(comparison),
-    { timeout: 5000 },
-    async (t) => {
-      const scope = testScope(t)
-      {
-        const context = fixture(scope)
-        await context.settings.update({ considerNativeSources: !comparison })
-        context.routes.setOriginalComparison(comparison)
-        const primary = media('native-limit.mp4', 'fixture-native-0.bilivideo.com')
-        const excluded = media('native-limit.mp4', 'fixture-native-4.bilivideo.com')
-        const originals = Array.from({ length: 5 }, (_, index) =>
-          media('native-limit.mp4', `fixture-native-${index}.bilivideo.com`),
-        )
-        const item = { ...segment('native-limit', 1), url: primary, backup_url: originals.slice(1) }
-        const payload = { code: 0, data: { format: 'mp4', durl: [item] } }
-        const result = context.adapter.transform(payload)
-        assert.strictEqual(
-          result.accepted,
-          true,
-          'Native or original-comparison mode accepts progressive data',
-        )
-        const identity = context.vault.match(primary).context
-        assert.ok(identity, 'the original progressive source has an identity')
-        if (!identity) throw new Error('Missing progressive Native identity')
-        assert.strictEqual(
-          context.vault.groupSummary(identity.representation)?.routeCount,
-          4,
-          'Native selection authority has at most four exact sources',
-        )
-        const candidates = context.vault.candidates(identity.representation, new Set())
-        const resolved = candidates.native.map((candidate) =>
-          context.vault.resolve(candidate.handle, identity),
-        )
-        assert.ok(
-          resolved.every((url) => url !== null && originals.slice(0, 4).includes(url)),
-          'every Native candidate resolves to an authorized original source',
-        )
-        assert.ok(
-          !resolved.includes(excluded),
-          'fifth source receives no Native selection authority',
-        )
-        if (comparison) {
-          assert.ok(
-            [item.url, ...item.backup_url].every((url) => originals.slice(0, 4).includes(url)),
-            'original comparison emits only exact authorized original sources',
-          )
-          assert.strictEqual(
-            item.url,
-            primary,
-            'original comparison retains the exact primary source',
-          )
-        }
-      }
-    },
-  )
+{
+  test('Native mode accepts progressive data [15]', { timeout: 5000 }, async (t) => {
+    const scope = testScope(t)
+    {
+      const context = fixture(scope)
+      await context.settings.update({ considerNativeSources: true })
+      const primary = media('native-limit.mp4', 'fixture-native-0.bilivideo.com')
+      const excluded = media('native-limit.mp4', 'fixture-native-4.bilivideo.com')
+      const originals = Array.from({ length: 5 }, (_, index) =>
+        media('native-limit.mp4', `fixture-native-${index}.bilivideo.com`),
+      )
+      const item = { ...segment('native-limit', 1), url: primary, backup_url: originals.slice(1) }
+      const payload = { code: 0, data: { format: 'mp4', durl: [item] } }
+      const result = context.adapter.transform(payload)
+      assert.strictEqual(result.accepted, true, 'Native mode accepts progressive data')
+      const identity = context.vault.match(primary).context
+      assert.ok(identity, 'the original progressive source has an identity')
+      if (!identity) throw new Error('Missing progressive Native identity')
+      assert.strictEqual(
+        context.vault.groupSummary(identity.representation)?.routeCount,
+        4,
+        'Native selection authority has at most four exact sources',
+      )
+      const candidates = context.vault.candidates(identity.representation, new Set())
+      const resolved = candidates.native.map((candidate) =>
+        context.vault.resolve(candidate.handle, identity),
+      )
+      assert.ok(
+        resolved.every((url) => url !== null && originals.slice(0, 4).includes(url)),
+        'every Native candidate resolves to an authorized original source',
+      )
+      assert.ok(!resolved.includes(excluded), 'fifth source receives no Native selection authority')
+    }
+  })
 }
 test('initial progressive response is accepted [16]', { timeout: 5000 }, async (t) => {
   const scope = testScope(t)

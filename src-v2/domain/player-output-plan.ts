@@ -56,13 +56,6 @@ function measuredBackupOrder<T extends { readonly host: string; readonly meetsHe
   }
   return [...selected, ...candidates.filter((candidate) => candidate.meetsHeadroom !== true)]
 }
-export function originalOutputPlan(candidates: readonly OutputCandidate[]) {
-  const allowed = candidates.filter((candidate) => candidate.allowed)
-  return {
-    primary: allowed[0]?.index ?? null,
-    backups: allowed.slice(1, 6).map((candidate) => candidate.index),
-  }
-}
 export function backupOutputPlan(
   primaryHost: string | null,
   candidates: readonly OutputCandidate[],

@@ -43,7 +43,6 @@ import {
 import {
   outputAllowed,
   opaquePlayerOutput,
-  comparisonOutput,
   catalogPlayerOutput,
   normalPlayerOutput,
 } from './routing/player-output.ts'
@@ -98,7 +97,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #firstMediaAt = 0
   #pendingMedia = new Set<string>()
   #fallbacks = new Map<MediaKind, FallbackProgress>()
-  #originalComparison = false
   #retrySuccesses: {
     request: RequestContext
     at: number
@@ -162,20 +160,11 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#fallbacks.clear()
     this.session.setAffinity(null)
   }
-  isOriginalComparison(): boolean {
-    return this.#originalComparison
-  }
   policyRevision(): number {
     return this.#policyRevision
   }
   isCatalogOnly(): boolean {
-    return !this.#originalComparison && !this.settings.get().considerNativeSources
-  }
-  setOriginalComparison(enabled: boolean): void {
-    if (this.#originalComparison === enabled) return
-    this.#originalComparison = enabled
-    this.#fallbacks.clear()
-    this.invalidateForUserSetting()
+    return !this.settings.get().considerNativeSources
   }
 
   requestStarted(request: RequestContext): void {
@@ -219,7 +208,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       !state.disabled &&
       !settings.fixedHost &&
       this.isCatalogOnly() &&
-      !this.#originalComparison &&
       request.kind === 'video' &&
       request.routeType === 'catalog-generated' &&
       request.attributionStatus === 'matched' &&
@@ -433,7 +421,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       settings = this.settings.get()
     if (
       settings.disabled ||
-      this.#originalComparison ||
       request.routePolicyRevision !== this.#policyRevision ||
       request.generation !== state.generation ||
       request.epoch !== state.epoch ||
@@ -539,7 +526,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       (!this.isCatalogOnly() && parsedSource.kind !== 'normal') ||
       !context ||
       this.settings.get().fixedHost ||
-      this.#originalComparison ||
       this.session.get().disabled
     )
       return null
@@ -588,7 +574,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     selected: StartupCandidate | null,
     reason: string,
   ): RouteDecision | null {
-    if (!selected || this.session.get().disabled || this.#originalComparison) return null
+    if (!selected || this.session.get().disabled) return null
     if (this.isCatalogOnly() && selected.type !== 'catalog-generated') return null
     const fixedHost = this.settings.get().fixedHost
     if (fixedHost && (selected.type !== 'catalog-generated' || selected.host !== fixedHost))
@@ -740,18 +726,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   ): RouteDecision {
     const context = this.vault.identity(representation)
     if (!context) return this.#pass('missing-representation', null, demand.kind)
-    if (this.#originalComparison) {
-      const host = parseMediaUrl(this.vault.rootUrl(representation) ?? '')?.host ?? null
-      const restriction = host ? this.#hardRestriction(host, context.kind) : null
-      const original =
-        restriction && host
-          ? this.#block(restriction, host)
-          : this.#pass('original-observe-only', host, context.kind)
-      this.#savePlan(representation, original)
-      this.#remember(original, context, context.kind)
-      this.#emit({ type: 'route-planned', at: this.clock.now(), decision: original })
-      return original
-    }
     const previous = this.#currentPlan(representation)
     if (
       previous &&
@@ -794,7 +768,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     failedHost: string,
     preferredHosts: readonly string[],
   ): RouteDecision | null {
-    if (this.#originalComparison) return null
     const context = this.vault.identity(representation)
     const root =
       context && this.isCatalogOnly()
@@ -842,7 +815,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         streamKey: null,
         sourceHost: null,
       }
-    if (this.#originalComparison) return this.#applyOriginalComparison(url, parsed, kindHint)
     if (this.isCatalogOnly() && (trustedPlayurl || this.isBilibiliMedia(url))) {
       return this.#applyCatalogOnly(url, parsed, kindHint, demand)
     }
@@ -852,32 +824,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (source.type === 'unreplaceable')
       return this.#applyUnreplaceable(url, parsed, kindHint, streamKey, source.reason)
     return this.#applyNormal(url, parsed, kindHint, streamKey, demand)
-  }
-
-  #applyOriginalComparison(
-    url: string,
-    parsed: NonNullable<ReturnType<typeof parseMediaUrl>>,
-    kindHint: MediaKind | null,
-  ): AppliedRouteDecision {
-    const inspected = this.#inspectOriginal(url, parsed)
-    const decision =
-      inspected.decision.action === 'pass'
-        ? this.#pass(
-            'original-observe-only',
-            parsed.host,
-            inspected.context?.kind ?? kindHint ?? 'video',
-          )
-        : inspected.decision
-    const outputRole = inspected.context
-      ? this.vault.outputRole(inspected.context.representation, url)
-      : null
-    this.#remember(decision, inspected.context, inspected.context?.kind ?? kindHint ?? 'video')
-    return {
-      ...inspected,
-      decision,
-      playurlHostChanged: outputRole?.hostChanged ?? false,
-      ...(outputRole ? { playurlOutput: outputRole } : {}),
-    }
   }
 
   #applyOpaque(
@@ -1223,35 +1169,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     const policy = this.#policyReader()
     const allowed = (url: string): boolean => outputAllowed(policy, representation, context, url)
     const stream = mediaIdentity(original)
-    if (this.#originalComparison) {
-      const { primary, backups, permitted } = comparisonOutput(originals, allowed)
-      if (primary) {
-        const selectedHost = parseMediaUrl(primary)!.host
-        const outputDecision =
-          primary === original && decision.action === 'pass' && decision.host === selectedHost
-            ? decision
-            : this.#pass('original-backup', selectedHost, context.kind)
-        if (outputDecision !== decision) {
-          this.#savePlan(representation, outputDecision)
-          this.#remember(outputDecision, context, context.kind)
-          this.#emit({ type: 'route-planned', at: this.clock.now(), decision: outputDecision })
-        }
-        this.vault.registerOutput(
-          representation,
-          original,
-          primary,
-          backups,
-          outputDecision.id,
-          source,
-        )
-        for (const url of permitted.slice(0, 6)) this.vault.registerAlias(representation, url)
-      }
-      // A player may keep these URLs after comparison mode ends. Do not emit an
-      // external URL that the strict request hook could no longer recognize.
-      return this.isBilibiliMedia(primary)
-        ? { primary, backups: backups.filter((url) => this.isBilibiliMedia(url)) }
-        : { primary: '', backups: [] }
-    }
     if (this.isCatalogOnly()) {
       const sourceUrl = this.#catalogSource(context, original)
       const output = catalogPlayerOutput(
@@ -1318,7 +1235,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       !context ||
       !root ||
       this.settings.get().fixedHost ||
-      this.#originalComparison ||
       (rootKey !== null && this.#hostLockedStreams.has(rootKey))
     )
       return null
@@ -1447,12 +1363,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       observation.streamKey
     )
       this.#markIncompatibleKey(observation.streamKey, observation.targetHost)
-    this.#emit({
-      type: 'transport-completed',
-      at: this.clock.now(),
-      observation,
-      detached: !valid() || !catalogObserved(),
-    })
     if (!valid() || !catalogObserved()) return
     if (controlsCurrent() && observation.kind && observation.request) {
       const fallback = this.#fallbacks.get(observation.kind)
@@ -1621,7 +1531,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         host: decision.host,
       })
     return Object.freeze({
-      originalComparison: this.#originalComparison,
       planCount: this.#plans.size,
       activePlan: active
         ? Object.freeze({

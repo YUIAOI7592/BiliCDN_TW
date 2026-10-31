@@ -1,9 +1,5 @@
 import { TRUSTED_CATALOG, isCatalogHost } from '../../domain/catalog.ts'
-import {
-  originalOutputPlan,
-  backupOutputPlan,
-  catalogOutputPlan,
-} from '../../domain/player-output-plan.ts'
+import { backupOutputPlan, catalogOutputPlan } from '../../domain/player-output-plan.ts'
 import { mediaIdentity, parseMediaUrl, replaceUrlHost } from '../../domain/url-policy.ts'
 import type { RepresentationId, RouteDecision, RouteIdentity } from '../../domain/model.ts'
 import type { RoutingPolicyReader } from './routing-ports.ts'
@@ -65,25 +61,6 @@ export function opaquePlayerOutput(
     )
   })
   return { primary: permitted[0] ?? '', backups: permitted.slice(1, 6) }
-}
-
-export function comparisonOutput(
-  originals: readonly string[],
-  allowed: OutputEligibility,
-): PlayerOutputUrls & { readonly permitted: readonly string[] } {
-  const unique = [...new Set(originals)]
-  const candidates = unique.map((url, index) => ({
-    index,
-    host: parseMediaUrl(url)?.host ?? '',
-    allowed: allowed(url),
-  }))
-  const plan = originalOutputPlan(candidates)
-  const permitted = candidates
-    .filter((candidate) => candidate.allowed)
-    .map((candidate) => unique[candidate.index]!)
-  const primary = plan.primary === null ? '' : unique[plan.primary]!,
-    backups = plan.backups.map((index) => unique[index]!)
-  return { primary, backups, permitted }
 }
 
 export function catalogPlayerOutput(

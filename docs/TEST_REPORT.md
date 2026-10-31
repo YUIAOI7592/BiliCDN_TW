@@ -1,178 +1,97 @@
-# BiliCDN_TW v2.2.0 結構精簡與行為契約驗證
+# BiliCDN_TW v2.2.1 診斷撤除與保留功能驗證
 
-日期：2026-11-01（Asia/Taipei）。基準為 v2.1.40／1edfeaa6ad7a6b9dabc7d81da3b4414c3a31ba78。使用者批准完整重構、Native 新預設及正式 v2.2.0 交付；本次不恢復已停止瀏覽器案例。
+日期：2026-11-01（Asia/Taipei）。基準為 6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb／v2.2.0。
 
-## 變更與結構證據
+## 變更
 
-| 項目 | 基準 | v2.2.0 |
-| --- | --- | --- |
-| 模型／介面契約檔 | 40 | 27；同功能共置，消費端直接匯入契約 |
-| scripts 頂層檔案 | 31 | 6；其餘分為 checks／testing／evaluation／iab／lib |
-| 數字情境分派套件 | 13 | 0；具名建立函式與每案獨立狀態 |
-| CDN 初次頁面完整模型讀取 | 18 | 1；刷新亦共用當次模型，命令完成重讀 |
-| 產品規則正文 | PROJECT_CONTEXT＋ARCHITECTURE | ARCHITECTURE 六部分；舊產品錨點只導引 |
+完整撤除診斷錄製、事故／請求／提前重試歷程、緩衝趨勢、報告產生／複製／匯出、診斷頁、剪貼簿授權與分頁原線對照。診斷專用評估與 IAB 收集／插樁／判定工具退出正式來源，固定提交可追溯原碼。
 
-契約檔盤點包含 model、port／ports 及 contracts；ControlReadModel 的執行實作不列為純契約。SettingsStore 單一布林預設表使新安裝、缺值、非法欄位及還原預設啟用 Native；既有 true／false 保留，schema 2、四鍵及讀取不寫入維持。Catalog-only 回歸顯式關閉 Native。
-
-設定抑制／保存、逐欄失效比較、同步路線解析／組裝、恢復階段與 SDK 派送簡化；原單一所有者、等待後授權、取消、同步重入、晚到工作、恢復期限與額度保持。詳細契約見 [ARCHITECTURE](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/ARCHITECTURE.md)，專項評估操作見 [評估指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/scripts/evaluation/README.md)。
+控制中心保留總覽、CDN、播放設定三頁；總覽數值、詳細狀態與單次刷新快照保留。正常選路、Native 開關、學習、量測、提前重試、停滯／備援恢復及整體停用保留。設定 schema 2、四鍵、Native 預設 true 及既有布林值不變，不遷移或清除使用者資料。
 
 ## 自動驗證
 
-固定 Node 26.8.1／npm 11.19.0 的完整 `npm run verify` 通過，3,050 個契約案例全部成功，failure／cancelled／skipped／todo 均為 0。其中工具套件 603 案、架構規則 41 案；另已通過獨立型別檢查、104 個正式模組的分層及無循環核對、匯入純度、確定性建置、語法、v2-only bundle 與校驗碼。
+固定 Node 26.8.1 完整測試已通過 1,595 案，failed／cancelled／skipped／todo 均為 0。相較 v2.2.0 的 3,050 案，減少來自撤銷診斷、緩衝評估、IAB 工具、剪貼簿與原線對照專用案例；混合案例保留功能斷言，直接驗證狀態及副作用，新增退役原碼追溯的三個工具契約。三頁與移除操作的新契約先於來源修改執行並確認失敗，修改後通過。
 
-新預設、設定鎖等待／失敗／遠端更新、逐欄失效及單次 UI 快照均有具名案例。相同明確設定的選路、額度、事件順序、過期授權、同步重入、取消及晚到工作沿用原契約。13 份套件的 116 個測試宣告及其參數展開保持，唯一名稱變更是 Native 缺值案例由 default off 改為 default on；共用情境刪除與當案無關的前置設定與輸出，仍以 testScope 管理資源。
+型別、91 個正式模組的架構／循環檢查、完整測試及 verify 已通過；verify 包含格式、文件、封存、匯入純度、確定性建置、語法、移除標記與封裝校驗。安全差異掃描與公開發行進行中；尚未宣稱發布或安裝通過。
 
-文件及封存檢查通過；保留七個不可變舊斷鏈、431 個歷史原網址限制與十八個未核對私有引用，外部 URL 未連網驗證。沒有本機私有搬移，不執行 `--local`；這些既有範圍限制不列為新通過項目。
+## 安裝與歷史判定
 
-## 安全差異
+本次未啟動瀏覽器、安裝或播放窗口。一般播放與設定驗收依直接產品行為判定，不要求診斷工具或完整 Network 成功；特定問題缺少時序只限制該問題結論。
 
-Codex Security 安全差異掃描 `e098a1e8-c94e-4dbc-a3db-d8ce98dfcfba` 已完成，範圍為 `1edfeaa6ad7a6b9dabc7d81da3b4414c3a31ba78..25a446c4ad05aef5344b9999e06e6cc5d3669fd0`；214 個變更清單項目核對完成，零可回報發現、零未結候選。選路、傳輸及恢復十五份關鍵檔案另有完整獨立審查。來源、授權、重入、取消、晚到工作、去敏及本機工具邊界依保留的威脅模型核對；這不是瀏覽器實測或「沒有任何漏洞」的保證。
+v2.2.0 全文與追加更正見 [歷史完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)。原 INVALID 與操作錯誤不改 PASS，已通過的播放及設定不被工具失敗概括否定。既有未解問題、效用 FAIL 及停止決策由 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md) 維護。
 
-掃描完成後正式 `src-v2/` 與掃描 head 相同；另修正三處評估工具搬移後的字串路徑，沒有改變授權或傳輸邏輯。八個上游雜湊輸入讀取及收集器離線建置通過，沒有執行收集器或啟動服務；最後完整 verify 再次通過。工作台保存封存結果與報告；其 rollout 用量為總計 16,289,220 tokens（含 15,619,328 cached input，輸出 59,747），此為工具彙整的六個執行緒用量，不另推算單次掃描淨用量。
+<a name="歷史驗證導覽"></a>
 
-## 公開交付
-
-2026-11-01 02:23（Asia/Taipei）已發布正式 [v2.2.0 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.0)，不是 draft 或 prerelease，且為公開 latest。發布提交為 `49345bad6cdb9e49e7cf1420288e926d0ace11be`；遠端 main 與標籤解參照均核對至該提交，後續 main 僅追加本次交付紀錄。
-
-| 核對來源 | 腳本版本 | 大小 | SHA-256 |
-| --- | --- | --- | --- |
-| 本機封裝、遠端 main 原始檔、v2.2.0 標籤原始檔及公開 latest 實際下載 | 2.2.0 | 507,211 bytes | `abca87caeb995fb924f5869c8fd60accdfe250994b448607e22803a38a610a1f` |
-
-四份腳本逐一下載／讀取後核對一致；Release 唯一附件為 `BiliCDN_TW.user.js`，GitHub 回傳的附件 digest 亦相同。[既有 latest 更新入口](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js) 保持不變。Release 中的報告保留發布前檢查點，五份封裝原件已登記雜湊保護，不回寫。這些公開交付結果不代表 Tampermonkey 已安裝新版。
-
-## 瀏覽器與既有證據限制
-
-發布時未執行 IAB 來源隔離、Tampermonkey 實際安裝或播放驗收；2026-11-01 使用者另行授權後的校準結果見下節，不能以 Node 契約或工具能力代算產品通過。舊窗口不因新授權的一次有界驗收而恢復。
-
-v2.1.40 的香港影片供片與自然恢復證據不足、N05 取消來源及網站清空根因未確認、提前重試原效用 FAIL 等結論完整保留於 [上一版完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)。這次結構與預設變更不解決或抹除那些缺口，後續執行界線只看 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
-
-## v2.2.0 安裝驗收 R1（2026-11-01）
-
-使用者表示內建瀏覽器已更新到 v2.2.0，明確要求設立目標並開始驗收。基準 HEAD 為 d84821b7a8652f37e96cbd14e2da6269f4d7b2ab，本機發行腳本雜湊與上列公開交付一致；安裝本體尚未取得，不能把使用者回報當成工具核實。
-
-本輪先凍結 I220-01 身分、I220-02 設定／控制中心、I220-03／04 Auto 1／2 倍各 60 秒及 I220-05 清理，限同時一個自有 IAB 分頁。保守 T0=02:32:45、校準上限 02:40:45、清理保留起點 02:57:45、硬截止 03:02:45（Asia/Taipei）。未保存單調起點，因此不提出精確執行耗時；本輪沒有產品計時窗口。
-
-以下是使用者澄清前、截至 02:39:25 的首次校準檢查點；其後未開始產品案例的續行結果另列於下節，不將工具窗口與產品窗口混合計分。
-
-| 案例 | 層級 | 結果 | 實際證據與限制 |
-| --- | --- | --- | --- |
-| E220-READ | E | PASS | 無媒體文字頁上的 Runtime.evaluate 回傳 ready=complete、mediaCount=0 |
-| E220-MUTE | E | PASS | 無來源合成 video 的真正 muted=true、paused=true；未替換 getter，不能代算新影片文件的靜音 |
-| E220-NAV | E | INVALID | 預先注入 API 不支援；設置執行前斷點後的首次影片導覽沒有暫停事件，回報分頁不再屬於當前工作階段；已關閉，未取得新文件媒體或聲音輸出證據 |
-| E220-PAUSED-EVAL | E | INVALID | 後續無媒體頁可取得 instrumentation 暫停，但 Debugger.evaluateOnCallFrame 及替代校準的 Debugger.setSkipAllPauses 逾時；這是助手所選方法的限制，不是使用者要求的必要靜音門檻 |
-| I220-01 | I | 未執行 | 助手誤設起播前靜音門檻而未進行；未取得 GM_info、完整安裝本體、唯一 Runtime／ControlCenter 或 hooks |
-| I220-02 | I | 未執行 | 未讀寫正式設定或操作控制中心，Native 保留與刷新只維持既有 Node 證據 |
-| I220-03／I220-04 | I | 未執行 | 固定影片 Auto 1／2 倍窗口均未開始，沒有 video／audio Network 計分資料 |
-| I220-05 | I | PASS | 僅對實際建立的校準資源：靜音守護停止、合成媒體／標記移除、Debugger 解除、唯一分頁關閉，最終清單空 |
-
-初次游標為 69，未收到預期事件；新校準頁的同一游標 38→39→40 分別收到 scriptParsed 與晚到 paused，truncated=false、hasMore=false。替代校準最後游標 49；這些是 debugger 能力證據，不是產品 Network 連續性。Page.addScriptToEvaluateOnNewDocument 與 raw Page.navigate 明確回報不支援；後者按工具指示改用 tab.goto，沒有更換瀏覽器或繞過安全拒絕。暫停的解除成功，正常執行時的真正靜音成功。助手當時將「新頁起播前可可靠完成」當作必要條件，這個額外條件已由下列使用者澄清更正。
-
-02:39:25 前完成清理讀回：guardStopped=true、media=[]、Debugger.disable 成功，IAB 分頁清單空。沒有修改正式設定、倍速、播放器 getter、帳戶／瀏覽器設定，沒有故障攔截或受控學習樣本；沒有要求前景、啟動本機服務、另開外部瀏覽器或追加產品窗口。第一次失效導覽缺少媒體讀回，不能宣稱已完成無聲播放驗證。
-
-**本輪核心安裝驗收未完成，沒有確認產品缺陷。** 只完成環境校準中可獨立證明的項目與清理。原始有界摘要保存在本機 `.work/iab-testing/2026-11-01-v2.2.0-d84821b-r1/` 的 BASELINE、CASES、TIMELINE、CLEANUP、CHECKPOINT、RERUN 與 REPORT；不包含簽名網址、憑證或播放器物件。
-
-### 靜音要求更正
-
-2026-11-01 使用者再次指出，只要求靜音，沒有要求起播前已靜音。[2026-10-31 19:05 原紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31依使用者更正靜音方法續行與下載工具超時) 已明確記載「起播後立即靜音」，並成功用真正 HTMLMediaElement.muted 屬性操作及讀回。助手卻沿用較舊的「導覽前先確認」摘要，再自行增加預注入／執行前暫停門檻，錯把所選方法受限推論為安裝驗收必然受阻。
-
-撤回這個額外門檻及據此要求新工具能力／重複批准的結論；正確做法是導覽／起播後立即靜音並讀回，後續維持靜音，最初未確認區間不算計分窗口。工具逾時、清理與未執行結果保留，不因此改判 PASS；本次更正沒有執行新的瀏覽器窗口，也不重開原 [範圍與期限](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md#v220-安裝版驗收範圍)。
-
-### 澄清後在原期限內續行
-
-使用者將目標恢復 active 後，於同一原期限內續行先前未開始的產品案例。只建立一個自有 IAB 分頁；導覽後立即使用真正 muted 屬性及讀回，首次讀值 muted=true、paused=true、readyState=0；其後媒體正常播放時仍 muted=true。自有 MutationObserver／volumechange 僅維持真正靜音，沒有 getter 替換、前景要求、本機服務或音訊下載抑制。這條方法成功，證明先前「必須有起播前注入／暫停能力」的停止理由不成立。
-
-| 案例 | 結果 | 預期／實際與證據範圍 |
-| --- | --- | --- |
-| I220-01 安裝身分 | PASS | Tampermonkey 5.5.1、腳本 2.2.0；實際載入完整本體 507,211 bytes、SHA-256 與公開附件一致；RuntimeController／ControlCenter／TransportAdapter 各一個，Fetch／XHR hooks=true、state=installed |
-| I220-02 設定與 CDN 畫面 | PASS | 既有 Native=false 保留，畫面正確顯示預設啟用說明；可信滑鼠操作 false→true→false，命令完成後模型與 checkbox 一致且未停留 disabled。原設定逐欄還原，僅 updatedAt 因真實寫入改變 |
-| I220-03 Auto 1 倍媒體觀察 | PASS（僅媒體） | 計分區間 02:56:19.135–02:57:19.135，前後各 10 秒；60 筆每秒樣本全部 muted=true、rate=1、正常播放且同一媒體，無 paused／ended／seeking／error。Auto 實際 3840×2160，首末採樣進度 59.000165 秒、影格 10497→14034，最大採樣間隔約 1002.3 ms |
-| I220-03 完整傳輸窗口 | INVALID | 同一 Network 游標共讀 163 事件、最大讀取間隔 12,307 ms，最後回報 truncated=true；雖觀察到 video 17 筆及 audio 16 筆 206，不能宣稱完整請求／完成時序。分類以當次 playurl 音訊／影片路徑在記憶體比對，原值不輸出或持久化 |
-| I220-04 Auto 2 倍 | 未執行 | 剩餘時間不足在 02:57:45 清理起點前完成另一個含前後置的 80 秒窗口；沒有縮短、重開計時或追加輪次 |
-| I220-05 清理 | PASS | 02:58:01.248 完成：設定除 updatedAt 外還原，rate=1／paused=true／muted=true，觀察器與窗口已停止、中心已關閉、Debugger／Network 已解除、遠端物件群組已釋放，IAB 自有分頁為 0 |
-
-完整本體核對後只以正常 PlayerMonitor.tick 斷點短暫取得 GM_info 與既有實例，立即解除並 resume；身分暫停時間不計入播放窗口。原入口點擊／返回導覽仍沿用跳過決定，開啟中心使用既有 show，不冒充入口 UI 驗收。單次完整快照及未要求報告時不計算詳細證據仍依正式 Node 契約；本輪未另包裝產品方法計數。
-
-本輪最終 **核心驗收未完成**，原因是 I220-03 的 Network 截斷及 I220-04 時間不足；沒有確認新的產品缺陷，也不把影片穩定進度補算完整傳輸通過。證據為本輪私有目錄的 CONTINUED_EVIDENCE.json、screenshots/native-restored.png 及 screenshots/playback-cleanup.png；先前校準原件與更正記錄保留。
-
-### Auto 2 倍補充與本次驗收結案
-
-使用者其後明確選擇「新增 15 分鐘完成 2 倍案例」，限定未開始的 Auto 2 倍、新文件必要身分核對及清理；已通過功能不重測，1 倍 INVALID 不重跑。補充輪 T0=2026-11-01 03:09:32.195（Asia/Taipei）、主機單調起點 2201008.1549 ms；清理保留起點 03:19:32.195、硬截止 03:24:32.195。實際清理於 03:15:25.983 前完成，單調經過約 353,787.8 ms，未占用截止後時間。
-
-| 項目 | 結果 | 實際證據 |
-| --- | --- | --- |
-| 新文件身分 | PASS | Tampermonkey 5.5.1／腳本 2.2.0；完整本體 507,211 bytes、SHA-256 與公開附件一致，RuntimeController／ControlCenter／TransportAdapter 各一個，Fetch／XHR hooks installed |
-| I220-04 Auto 2 倍媒體觀察 | PASS（僅媒體） | 真正播放器選單切至 2.0x，原生 rate=2、muted=true；Auto 實際 3840×2160。計分區間 03:12:41.533–03:13:41.533，前後各 10 秒，總觀察 80,001.7 ms／81 筆，計分 60 筆全部靜音、2 倍、正常播放且同一媒體，無 paused／ended／seeking／error |
-| 2 倍進度 | PASS（僅媒體） | 首末採樣進度 117.995722 秒、影格 11323→18394；最大採樣間隔約 1001.7 ms，最小逐筆媒體進度 1.988972 秒 |
-| I220-04 完整傳輸窗口 | INVALID | 全事件批次合計 5,138 筆，其中保留 123 筆去敏媒體 Network 摘要；首批與後續批次 truncated=true，最大讀取空隙 53,687 ms，超過凍結的 15 秒上限。沒有本機容量丟棄，仍不能宣稱完整傳輸通過 |
-| 有限傳輸觀察 | 僅保留觀察，不補算完整性 | 保存的事件中 video 20 筆／audio 21 筆均為 206，主機分別為 mirrorali／mirrorcos；首批包含較早緩存事件，不把這些數量當成完整 60 秒窗口的精確總數 |
-| 設定、倍速及清理 | PASS | 全部腳本設定（含 updatedAt）與本次開始一致；確認最後寫入仍為 2 倍才用真實選單還原 1 倍。讀回 rate=1／paused=true／muted=true、觀察器及窗口停止；Network／Debugger／物件群組解除，IAB 自有分頁為 0 |
-
-Network 缺口是本次收集執行不符合凍結條件，不能推定產品缺陷：游標先建立後未在啟動觀察前重新排空，首批已截斷；其後模型／工具呼叫間又留下約 54 秒空隙。將讀取改成全事件、只保留去敏 Network 摘要，或解除身分 Debugger，都不能補回已遺失事件。批次陣列保存每次實際時間、游標、count／hasMore／truncated；統計從此陣列重算，避免跨工具呼叫的原始值變數與函式閉包讀值不一致。清理後的證據組裝變數名稱錯誤已修正，沒有重複瀏覽器動作或改寫採樣。
-
-原始去敏證據保存於 `.work/iab-testing/2026-11-01-v2.2.0-5fbffbc-rate2/EVIDENCE.json` 及兩張 screenshots；不保存簽名網址、路徑、查詢、憑證或播放器物件。1 倍原 INVALID、舊故障／背景／跨分頁限制維持，不追加窗口。
-
-**本次授權的有界驗收執行及紀錄已完成，整體核心驗收仍未通過。** 已證明 v2.2.0 安裝身分、設定／控制中心，以及 Auto 1／2 倍的正常靜音媒體播放；兩個完整傳輸窗口均為 INVALID，不能宣稱全項或完整網路驗收通過。沒有確認需修改產品的新缺陷，不升版、不改寫 Release。
-
-## 歷史驗證導覽
-
-[v2.1.40 完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01) 保留全部原始觀察與停止決策；其他版本見 [HISTORY](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md)。
-
-<a name="bilicdn_tw-v2140-固定-cdn-備援恢復修復驗證"></a>
-
-[BiliCDN_TW v2.1.40 固定 CDN 備援恢復修復驗證：v2.1.40 原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)。
-
-<a name="修復與根因"></a>
-
-[修復與根因：v2.1.40 原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)。
-
-<a name="來源隔離與實際安裝"></a>
-
-[來源隔離與實際安裝：v2.1.40 原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)。
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#歷史驗證導覽)；現行內容以本頁正文為準。
 
 <a name="公開交付與安裝結案"></a>
 
-[公開交付與安裝結案：v2.1.40 原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)。
-
-<a name="修後唯一-hk04-定向窗口"></a>
-
-[修後唯一 HK04 定向窗口：v2.1.40 原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)。
-
-<a name="發布與安裝限制"></a>
-
-舊發布／安裝限制依版本保留，請由 [版本索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md#版本) 查原文；現行版公開交付見上文。
-
-<a name="bilicdn_tw-v218-release-verification--2026-10-04"></a>
-
-[v2.1.8 完整發行驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v218-發行驗證--2026-10-04)。
-
-<a name="2026-10-31更新後安裝核對"></a>
-
-[v2.1.39 更新後安裝核對原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31更新後安裝核對)。
-
-<a name="2026-10-31六十分鐘驗證計畫執行結果"></a>
-
-[v2.1.39 六十分鐘驗證原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31六十分鐘驗證計畫執行結果)。
-
-<a name="2026-10-31iab-可用但持續靜音前提受阻"></a>
-
-[v2.1.39 靜音前提檢查點原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31iab-可用但持續靜音前提受阻)。
-
-<a name="2026-10-31依使用者更正靜音方法續行與下載工具超時"></a>
-
-[v2.1.39 更正後靜音操作與工具超時原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31依使用者更正靜音方法續行與下載工具超時)。
-
-<a name="2026-10-31補測與單分頁重測"></a>
-
-[v2.1.39 單分頁重測原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31補測與單分頁重測)。
-
-<a name="2026-10-31一次授權的單分頁缺口補測"></a>
-
-[v2.1.39 一次授權補測原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31一次授權的單分頁缺口補測)。
-
-<a name="2026-10-30up141-安裝版實測"></a>
-
-[v2.1.38 UP141 安裝版實測原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-30up141-安裝版實測)。
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#公開交付與安裝結案)；現行內容以本頁正文為準。
 
 <a name="隔離-b-分支原型驗證2026-10-30"></a>
 
-[隔離 B 分支原型原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#隔離-b-分支原型驗證2026-10-30)。以上相容錨點只提供歷史導引，不表示本版測試結果。
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#隔離-b-分支原型驗證2026-10-30)；現行內容以本頁正文為準。
+
+<a name="bilicdn_tw-v218-release-verification--2026-10-04"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#bilicdn_tw-v218-release-verification--2026-10-04)；現行內容以本頁正文為準。
+
+<a name="修復與根因"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#修復與根因)；現行內容以本頁正文為準。
+
+<a name="來源隔離與實際安裝"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#來源隔離與實際安裝)；現行內容以本頁正文為準。
+
+<a name="安全差異"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#安全差異)；現行內容以本頁正文為準。
+
+<a name="發布與安裝限制"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#發布與安裝限制)；現行內容以本頁正文為準。
+
+<a name="2026-10-30up141-安裝版實測"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#2026-10-30up141-安裝版實測)；現行內容以本頁正文為準。
+
+<a name="2026-10-31更新後安裝核對"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#2026-10-31更新後安裝核對)；現行內容以本頁正文為準。
+
+<a name="2026-10-31六十分鐘驗證計畫執行結果"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#2026-10-31六十分鐘驗證計畫執行結果)；現行內容以本頁正文為準。
+
+<a name="2026-10-31iab-可用但持續靜音前提受阻"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#2026-10-31iab-可用但持續靜音前提受阻)；現行內容以本頁正文為準。
+
+<a name="2026-10-31依使用者更正靜音方法續行與下載工具超時"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#2026-10-31依使用者更正靜音方法續行與下載工具超時)；現行內容以本頁正文為準。
+
+<a name="2026-10-31補測與單分頁重測"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#2026-10-31補測與單分頁重測)；現行內容以本頁正文為準。
+
+<a name="2026-10-31一次授權的單分頁缺口補測"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#2026-10-31一次授權的單分頁缺口補測)；現行內容以本頁正文為準。
+
+<a name="v220-安裝驗收-r12026-11-01"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#v220-安裝驗收-r12026-11-01)；現行內容以本頁正文為準。
+
+<a name="澄清後在原期限內續行"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#澄清後在原期限內續行)；現行內容以本頁正文為準。
+
+<a name="auto-2-倍補充與本次驗收結案"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#auto-2-倍補充與本次驗收結案)；現行內容以本頁正文為準。
+
+<a name="公開交付"></a>
+
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#公開交付)；現行內容以本頁正文為準。

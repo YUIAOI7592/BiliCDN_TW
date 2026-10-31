@@ -46,7 +46,7 @@ export class PlayerPanel {
     this.#renderStatus(status)
     const button = document.createElement('button')
     button.type = 'button'
-    button.textContent = '⚙️ 開啟 BiliCDN 設定與診斷'
+    button.textContent = '⚙️ 開啟 BiliCDN 控制中心'
     button.style.cssText =
       'display:block;width:100%;padding:6px 8px;border:1px solid #38bdf8;border-radius:6px;background:#12344a;color:#e0f2fe;cursor:pointer'
     button.addEventListener('click', (event) => {

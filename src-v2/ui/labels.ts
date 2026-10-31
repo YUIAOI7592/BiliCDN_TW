@@ -53,7 +53,7 @@ export const recoveryReasonLabel = (reason: unknown): string =>
       'seek-interrupted': '跳轉影片時已停止恢復',
       'lifecycle-ended': '影片已切換，舊的恢復流程已結束',
     },
-    '原因請見診斷報告',
+    '恢復條件已失效',
   )
 
 export const measurementLabel = (state: unknown, reason: unknown): string => {

@@ -1,4 +1,3 @@
-import { type DomainEvent } from '../domain/model.ts'
 import { type PlayerPort, type VideoSnapshot, type PlayerControlSnapshot } from './ports.ts'
 export type RecoverySource =
   | 'trusted-player-play'
@@ -91,7 +90,6 @@ export interface RecoveryPlayerPort extends Pick<
   correctRestore(attempt: RestoreAttempt): void
 }
 export interface RecoveryPort {
-  subscribe(listener: (event: DomainEvent) => void): () => void
   snapshot(): RecoverySnapshot
   isRecovering(): boolean
   ongoingStallReload(id: number, snapshot: VideoSnapshot, controls: PlayerControlSnapshot): boolean

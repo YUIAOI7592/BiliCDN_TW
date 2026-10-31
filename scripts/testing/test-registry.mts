@@ -16,7 +16,6 @@ export const suites: readonly TestSuite[] = Object.freeze(
       'domain',
       'state',
       'application',
-      'diagnostics',
       'adapters',
       'native-routing',
       'native-transport',

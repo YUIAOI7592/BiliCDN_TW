@@ -346,20 +346,13 @@ test('BR-01 play intent: one click plus SDK forwarding cannot consume two reload
 
 test('BR-01 play intent: current native zero is preserved for a new explicit command', (t) => {
   const f = fixture(t)
-  let saved: number | null = null
-  f.scope.defer(
-    f.recovery.subscribe((event) => {
-      if (event.type === 'recovery' && event.action.action === 'player-reload')
-        saved = event.action.savedPositionSec
-    }),
-  )
   f.pause()
   f.video.currentTime = 0
   f.advance(30_000)
   f.click()
   f.advance(4000)
   assert.equal(f.effects.reloads, 1)
-  assert.equal(saved, 0)
+  assert.equal(f.recovery.snapshot().savedPositionSec, 0)
 })
 
 test('BR-01 play intent: synchronous cleanup during visibility read revokes the click', (t) => {

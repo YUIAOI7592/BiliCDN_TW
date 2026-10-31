@@ -20,7 +20,6 @@ import { PlayerMonitor } from '../../src-v2/application/player-monitor.ts'
 import { RuntimeController } from '../../src-v2/application/runtime-controller.ts'
 import { LifecycleController } from '../../src-v2/application/lifecycle-controller.ts'
 import { ControlCommands } from '../../src-v2/application/control-commands.ts'
-import { DiagnosticRecorder } from '../../src-v2/diagnostics/recorder.ts'
 import type { PlayerPort, VideoSnapshot, RangeProbePort } from '../../src-v2/application/ports.ts'
 import type { TransportSnapshot } from '../../src-v2/domain/transport-model.ts'
 
@@ -146,10 +145,8 @@ export function fixture(
       clock,
     ),
   )
-  const diagnostics = new DiagnosticRecorder(clock.now)
   const runtime = scope.own(
     new RuntimeController(
-      session,
       settings,
       routes,
       player,
@@ -157,8 +154,6 @@ export function fixture(
       measurement,
       recovery,
       visibility,
-      diagnostics,
-      clock.now,
       content,
     ),
   )
@@ -184,18 +179,9 @@ export function fixture(
       clock,
     ),
   )
-  scope.defer(lifecycle.subscribe((event) => runtime.record(event)))
   runtime.install()
   lifecycle.start()
-  const commands = new ControlCommands(
-    settings,
-    restrictions,
-    evidence,
-    meta,
-    routes,
-    measurement,
-    recovery,
-  )
+  const commands = new ControlCommands(settings, restrictions, evidence, meta, routes)
   const transport = {
     snapshot: (): TransportSnapshot => ({
       enteredFetch: 0,
@@ -223,7 +209,6 @@ export function fixture(
     measurement,
     monitor,
     recovery,
-    diagnostics,
     commands,
     transport,
     now: clock.now,
@@ -266,7 +251,6 @@ export function fixture(
     lifecycle,
     calls,
     commands,
-    diagnostics,
     deps,
     request,
     setVideo: (next: VideoSnapshot) => {

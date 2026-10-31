@@ -1,5 +1,5 @@
 import { evaluateEarlyRetry } from '../domain/early-retry.ts'
-import { earlyRetryReason } from '../domain/early-retry-diagnostic.ts'
+import { earlyRetryReason } from './early-retry-contracts.ts'
 import type { RequestContext } from '../domain/model.ts'
 import type { PlayerControlSnapshot } from './ports.ts'
 import type {
@@ -33,13 +33,11 @@ export class EarlyRetryController implements EarlyRetryPort {
   #breaker = false
   #disposed = false
   #revision = 0
-  #listeners = new Set<(snapshot: EarlyRetrySnapshot) => void>()
   #snapshot: EarlyRetrySnapshot = Object.freeze({
     state: 'idle',
     reason: 'not-started',
     host: null,
     attempts: 0,
-    history: Object.freeze([]),
   })
 
   constructor(
@@ -72,7 +70,6 @@ export class EarlyRetryController implements EarlyRetryPort {
             event.state,
             event.state === 'timedout' ? 'native-timeout-observed' : 'website-retry-claimed',
             pending.request.targetHost,
-            event.at,
           )
           if (revision !== this.#revision || this.#pending !== pending) return
         }
@@ -180,7 +177,7 @@ export class EarlyRetryController implements EarlyRetryPort {
   #unsafe(status: EarlyRetryStatus): string | null {
     if (!status.enabled) return 'disabled-setting'
     if (status.disabled) return 'disabled'
-    if (status.originalComparison || !status.catalogOnly || status.fixedHost) return 'route-mode'
+    if (!status.catalogOnly || status.fixedHost) return 'route-mode'
     if (!status.visible) return 'hidden'
     if (status.recovering) return 'recovering'
     const video = status.video
@@ -271,22 +268,11 @@ export class EarlyRetryController implements EarlyRetryPort {
   dispose(): void {
     this.cancel('disposed')
     this.#disposed = true
-    this.#listeners.clear()
   }
   snapshot(): EarlyRetrySnapshot {
     return this.#snapshot
   }
-  subscribe(listener: (snapshot: EarlyRetrySnapshot) => void): () => void {
-    if (this.#disposed) return () => undefined
-    this.#listeners.add(listener)
-    return () => this.#listeners.delete(listener)
-  }
-  #publish(
-    state: EarlyRetrySnapshot['state'],
-    reason: string,
-    host: string | null,
-    at = this.now(),
-  ): void {
+  #publish(state: EarlyRetrySnapshot['state'], reason: string, host: string | null): void {
     reason = earlyRetryReason(reason)
     if (
       this.#snapshot.state === state &&
@@ -295,14 +281,11 @@ export class EarlyRetryController implements EarlyRetryPort {
       this.#snapshot.attempts === this.#attemptCount
     )
       return
-    const event = Object.freeze({ at, state, reason, host })
     this.#snapshot = Object.freeze({
       state,
       reason,
       host,
       attempts: this.#attemptCount,
-      history: Object.freeze([...this.#snapshot.history, event].slice(-16)),
     })
-    for (const listener of this.#listeners) listener(this.#snapshot)
   }
 }

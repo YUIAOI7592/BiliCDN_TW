@@ -7,20 +7,13 @@ import {
   isCatalogHost,
 } from '../../../src-v2/domain/catalog.ts'
 import { catalogCandidates } from '../../../src-v2/domain/route-policy.ts'
-import {
-  backupOutputPlan,
-  originalOutputPlan,
-  catalogHostFamily,
-} from '../../../src-v2/domain/player-output-plan.ts'
+import { backupOutputPlan, catalogHostFamily } from '../../../src-v2/domain/player-output-plan.ts'
 import {
   decisionId,
   type RouteDecision,
   type RouteRankingEntry,
 } from '../../../src-v2/domain/model.ts'
-import {
-  catalogPlayerOutput,
-  comparisonOutput,
-} from '../../../src-v2/application/routing/player-output.ts'
+import { catalogPlayerOutput } from '../../../src-v2/application/routing/player-output.ts'
 
 const ali = 'upos-sz-mirroraliov.bilivideo.com'
 const ali2 = 'upos-sz-mirrorali.bilivideo.com'
@@ -152,30 +145,6 @@ test('UP141-ROUTE invalid or success-free evidence cannot gain measured backup p
   ])
   assert.equal(new URL(result.backups[0]!).hostname, ali2)
   assert.equal(new URL(result.backups[1]!).hostname, cos)
-})
-
-test('UP141-ROUTE original comparison retains exact input order and five backups', (t) => {
-  testScope(t)
-  const urls = [ali, ali2, alib, bos, tx, cos].map(
-    (host, index) => `https://${host}/upgcxcode/a.m4s?key=${index}`,
-  )
-  assert.deepEqual(
-    comparisonOutput(urls, () => true),
-    {
-      primary: urls[0],
-      backups: urls.slice(1),
-      permitted: urls,
-    },
-  )
-  assert.deepEqual(
-    originalOutputPlan(
-      urls.map((url, index) => ({ index, host: new URL(url).hostname, allowed: true })),
-    ),
-    {
-      primary: 0,
-      backups: [1, 2, 3, 4, 5],
-    },
-  )
 })
 
 test('UP141-ROUTE integration enables all HK candidates and preserves the four old defaults', (t) => {

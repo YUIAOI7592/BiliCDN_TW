@@ -29,7 +29,6 @@ export type EarlyRetryActionState =
 export interface EarlyRetryStatus {
   readonly enabled: boolean
   readonly disabled: boolean
-  readonly originalComparison: boolean
   readonly catalogOnly: boolean
   readonly fixedHost: boolean
   readonly visible: boolean
@@ -41,16 +40,10 @@ export interface EarlyRetryStatus {
 }
 
 export interface EarlyRetrySnapshot {
-  readonly state: import('../domain/early-retry-diagnostic.ts').EarlyRetryState
+  readonly state: EarlyRetryState
   readonly reason: string
   readonly host: string | null
   readonly attempts: number
-  readonly history: readonly {
-    readonly at: number
-    readonly state: EarlyRetrySnapshot['state']
-    readonly reason: string
-    readonly host: string | null
-  }[]
 }
 
 export interface EarlyRetryObservation {
@@ -78,7 +71,6 @@ export interface EarlyRetryPort {
   cancel(reason?: string): void
   dispose(): void
   snapshot(): EarlyRetrySnapshot
-  subscribe(listener: (snapshot: EarlyRetrySnapshot) => void): () => void
 }
 
 /** Only the XHR adapter may apply a permit after its private exact Range comparison. */
@@ -89,7 +81,68 @@ export interface EarlyRetryRoutingPort {
   earlyRetryRequestCurrent(request: RequestContext): boolean
 }
 
-/** A tool-owned, in-memory scope; never exposed through diagnostics, DOM or page messages. */
+/** A tool-owned, in-memory scope; never exposed through UI, DOM or page messages. */
 export interface EarlyRetryEvidenceControlPort {
   suppressEarlyRetryEvidence(requestIds: readonly string[]): () => void
 }
+
+export const EARLY_RETRY_STATES = Object.freeze([
+  'idle',
+  'waiting',
+  'armed',
+  'timedout',
+  'claimed',
+  'dispatched',
+  'complete',
+  'cancelled',
+  'suspended',
+] as const)
+export type EarlyRetryState = (typeof EARLY_RETRY_STATES)[number]
+const reasons: readonly string[] = Object.freeze([
+  'not-started',
+  'stable-progress',
+  'episode-used',
+  'document-quota',
+  'no-qualified-request',
+  'no-alternative',
+  'invalid-input',
+  'request-young',
+  'mostly-complete',
+  'buffer-window',
+  'unknown-rate',
+  'adequate-current',
+  'alternative-evidence',
+  'alternative-capacity',
+  'alternative-late',
+  'current-finishes-in-time',
+  'insufficient-benefit',
+  'eligible',
+  'native-timeout-armed',
+  'native-timeout-observed',
+  'website-retry-claimed',
+  'website-retry-dispatched',
+  'website-retry-succeeded',
+  'website-retry-failed',
+  'retry-completion-timeout',
+  'handoff-lost',
+  'handoff-expired',
+  'native-timeout-unavailable',
+  'port-failure',
+  'owner-changed',
+  'disabled-setting',
+  'disabled',
+  'route-mode',
+  'hidden',
+  'recovering',
+  'playback-state',
+  'user-operation',
+  'unknown-demand',
+  'cancelled',
+  'lifecycle-reset',
+  'disposed',
+  'settings',
+  'route-policy',
+  'monitor-stop',
+])
+export const earlyRetryReason = (value: string): string =>
+  reasons.includes(value) ? value : 'unknown'

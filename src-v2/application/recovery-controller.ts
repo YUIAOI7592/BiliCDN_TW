@@ -1,4 +1,3 @@
-import { recoveryActionId, type DomainEvent, type RecoveryActionId } from '../domain/model.ts'
 import type { VideoSnapshot, PlayerControlSnapshot } from './ports.ts'
 import {
   comparePlaybackControls,
@@ -8,7 +7,6 @@ import {
 
 interface ResumeToken {
   readonly positionCapture: ResumePositionCapture
-  readonly id: RecoveryActionId
   readonly source: RecoverySource
   readonly startedAt: number
   readonly savedPositionSec: number
@@ -66,14 +64,12 @@ import type {
 } from './recovery-contracts.ts'
 import type { StallRecoveryIntent, RecoverySnapshot, RecoverySource } from './recovery-contracts.ts'
 export class RecoveryController implements RecoveryPort {
-  #listeners = new Set<(event: DomainEvent) => void>()
   #pauseAt = 0
   #hadHealthy = false
   #lastHealthyTime = 0
   #lastHealthyRate = 1
   #startupReloaded = false
   #token: ResumeToken | null = null
-  #serial = 0
   #reloadCount = 0
   #breakerUntil = 0
   #stopIntent: (() => void) | null = null
@@ -82,9 +78,6 @@ export class RecoveryController implements RecoveryPort {
   #lastFrames: number | null = null
   #lastSnapshot: VideoSnapshot | null = null
   #lastControls: PlayerControlSnapshot | null = null
-  #lastTickAt = 0
-  #deadTicks = 0
-  #deadReported = false
   #progressTicks = 0
   #failedRestore: RestoreProgressObservation | null = null
   #state: RecoverySnapshot = Object.freeze({
@@ -101,10 +94,6 @@ export class RecoveryController implements RecoveryPort {
     private readonly isActive: () => boolean = () => true,
     private readonly captureEligibility: () => () => boolean = () => () => true,
   ) {}
-  subscribe(listener: (event: DomainEvent) => void): () => void {
-    this.#listeners.add(listener)
-    return () => this.#listeners.delete(listener)
-  }
   snapshot(): RecoverySnapshot {
     const restoration = this.#restoration()
     if (restoration) return Object.freeze({ ...this.#state, restoration })
@@ -149,9 +138,6 @@ export class RecoveryController implements RecoveryPort {
     this.#lastFrames = null
     this.#lastSnapshot = null
     this.#lastControls = null
-    this.#lastTickAt = 0
-    this.#deadTicks = 0
-    this.#deadReported = false
     this.#progressTicks = 0
     this.#failedRestore = null
     this.#unhook()
@@ -299,7 +285,7 @@ export class RecoveryController implements RecoveryPort {
           : 'mismatch'
     const { progress, newFrames } = this.#recordProgress(observed, previous, controls, known)
     if (this.#endInvalidToken(observed, controls, now)) return
-    const healthy = this.#observeCoreHealth(observed, newFrames, now)
+    const healthy = this.#observeCoreHealth(observed, newFrames)
     if (healthy && known) this.#acceptHealthy(observed, controls)
     this.#observePause(observed, healthy, now)
     this.#advanceToken(observed, progress, now, known)
@@ -365,37 +351,11 @@ export class RecoveryController implements RecoveryPort {
     return false
   }
 
-  #observeCoreHealth(snapshot: VideoSnapshot, newFrames: boolean, now: number): boolean {
+  #observeCoreHealth(snapshot: VideoSnapshot, newFrames: boolean): boolean {
     const healthy =
       snapshot.available &&
       !snapshot.mediaError &&
       (snapshot.readyState >= 2 || snapshot.width > 0 || snapshot.height > 0 || newFrames)
-    const deadObservation =
-      this.#hadHealthy &&
-      snapshot.available &&
-      !snapshot.seeking &&
-      !snapshot.ended &&
-      !snapshot.mediaError &&
-      snapshot.readyState === 0 &&
-      snapshot.width === 0 &&
-      snapshot.height === 0 &&
-      snapshot.manifestHasVideo &&
-      snapshot.coreInitialized === false &&
-      !newFrames
-    const gap = now - this.#lastTickAt
-    this.#lastTickAt = now
-    this.#deadTicks = deadObservation ? (gap > 0 && gap <= 2000 ? this.#deadTicks + 1 : 1) : 0
-    if (healthy) this.#deadReported = false
-    if (this.#deadTicks >= 4 && !this.#deadReported) {
-      this.#deadReported = true
-      this.#emit({
-        type: 'core-uninitialized',
-        at: now,
-        paused: snapshot.paused,
-        intentPending: !!this.#token,
-        consecutiveTicks: this.#deadTicks,
-      })
-    }
     return healthy
   }
 
@@ -538,7 +498,6 @@ export class RecoveryController implements RecoveryPort {
 
   dispose(): void {
     this.reset()
-    this.#listeners.clear()
   }
 
   #hook(): void {
@@ -601,7 +560,6 @@ export class RecoveryController implements RecoveryPort {
     this.#failedRestore = null
     this.#token = {
       positionCapture,
-      id: recoveryActionId(`core-${++this.#serial}`),
       source,
       startedAt: now,
       savedPositionSec: Math.max(0, Number.isFinite(position) ? position : this.#lastHealthyTime),
@@ -641,27 +599,6 @@ export class RecoveryController implements RecoveryPort {
     this.#reloadCount++
     if (token.source === 'startup-failure') this.#startupReloaded = true
     this.#breakerUntil = this.now() + 90_000
-    this.#emit({
-      type: 'recovery',
-      at: this.now(),
-      action: {
-        action: 'player-reload',
-        id: token.id,
-        savedPositionSec: token.savedPositionSec,
-        savedRate: token.savedRate,
-      },
-    })
-    this.#emit({
-      type: 'core',
-      at: this.now(),
-      state: 'reloading',
-      actionId: token.id,
-      source: token.source,
-      savedPositionSec: token.savedPositionSec,
-      savedRate: token.savedRate,
-      readyState: this.#lastSnapshot?.readyState ?? 0,
-      coreInitialized: this.#lastSnapshot?.coreInitialized ?? null,
-    })
     const lifecycle = this.#lifecycleSerial
     if (!this.#owns(token, this.player.controls())) return
     try {
@@ -689,6 +626,8 @@ export class RecoveryController implements RecoveryPort {
     if (this.#token === token && this.#owns(token, this.player.controls()))
       this.#state = Object.freeze({
         state: 'reloading',
+        savedPositionSec: token.savedPositionSec,
+        savedRate: token.savedRate,
         source: token.source,
         pauseSec: 0,
         reloadCount: this.#reloadCount,
@@ -1078,21 +1017,5 @@ export class RecoveryController implements RecoveryPort {
       reloadCount: this.#reloadCount,
       breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - this.now()) / 1000)),
     })
-    if (token && ['failed', 'recovered', 'recovered-paused'].includes(state))
-      this.#emit({
-        type: 'core',
-        at: this.now(),
-        state: state as 'failed' | 'recovered' | 'recovered-paused',
-        actionId: token.id,
-        reason,
-        source: token.source,
-        savedPositionSec: token.savedPositionSec,
-        savedRate: token.savedRate,
-        readyState: this.#lastSnapshot?.readyState ?? 0,
-        coreInitialized: this.#lastSnapshot?.coreInitialized ?? null,
-      })
-  }
-  #emit(event: DomainEvent): void {
-    for (const listener of this.#listeners) listener(event)
   }
 }

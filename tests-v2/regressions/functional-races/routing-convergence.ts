@@ -127,15 +127,7 @@ test('CC40 fixed failure retains recovery authority for its current legal Catalo
   assert.equal(f.settings.get().fixedHost, f.fixed, 'failover does not rewrite user preference')
 })
 
-for (const change of [
-  'black',
-  'dead',
-  'disabled',
-  'comparison',
-  'policy',
-  'generation',
-  'authority',
-] as const) {
+for (const change of ['black', 'dead', 'disabled', 'policy', 'generation', 'authority'] as const) {
   test(`CC40 fixed fallback loses recovery authority after ${change}`, async (t) => {
     const f = await fixedFailure(t),
       request = completion(f, f.next, 2).request!
@@ -149,7 +141,6 @@ for (const change of [
         expireAt: f.clock.now() + 60_000,
       })
     else if (change === 'disabled') await f.settings.update({ disabled: true })
-    else if (change === 'comparison') f.routes.setOriginalComparison(true)
     else if (change === 'policy') {
       await f.settings.update({ fixedHost: TRUSTED_CATALOG[4] })
       f.routes.invalidateForUserSetting()
@@ -285,19 +276,6 @@ test('routing convergence keeps source branch decision IDs and decision-record o
   assert.equal(f.routes.decisionRecord(blocked.decision.id), null)
 })
 
-test('routing convergence original comparison keeps inspection and output decision allocation order', (t) => {
-  const f = fixture(testScope(t))
-  f.routes.setOriginalComparison(true)
-  const original = media('convergence-comparison', 'video.m4s')
-  const first = f.routes.apply(original)
-  const second = f.routes.apply(original)
-  assert.deepEqual([first.decision.id, second.decision.id], ['decision-2', 'decision-4'])
-  assert.equal(first.decision.reason, 'original-observe-only')
-  assert.equal(first.url, original)
-  assert.equal(f.routes.decisionRecord(first.decision.id)?.decision, first.decision)
-  assert.equal(f.routes.snapshot().planCount, 0)
-})
-
 test('routing convergence route-planned reentry preserves nested IDs and outer plan commit order', async (t) => {
   const scope = testScope(t),
     f = fixture(scope)
@@ -336,7 +314,7 @@ class RecordingEvidenceStorage extends FakeStorage {
   }
 }
 
-test('routing convergence emits completion before evidence and confirms only after persistence', async (t) => {
+test('routing convergence confirms only after evidence persistence', async (t) => {
   const scope = testScope(t),
     storage = new RecordingEvidenceStorage(),
     f = fixture(scope, storage)
@@ -345,35 +323,30 @@ test('routing convergence emits completion before evidence and confirms only aft
   const host = applied.decision.host!
   scope.defer(
     f.routes.subscribe((event) => {
-      if (event.type === 'transport-completed')
-        storage.order.push(`completed:${f.evidence.get(host, 'video')?.samples.length ?? 0}`)
       if (event.type === 'route-confirmed')
         storage.order.push(`confirmed:${f.session.get().affinity?.host === host}`)
     }),
   )
   await f.routes.observe(completion(f, applied, 1))
   await f.routes.observe(completion(f, applied, 2))
-  assert.deepEqual(storage.order, [
-    'completed:0',
-    'persist',
-    'confirmed:false',
-    'completed:1',
-    'persist',
-    'confirmed:true',
-  ])
+  assert.deepEqual(storage.order, ['persist', 'confirmed:false', 'persist', 'confirmed:true'])
   assert.equal(f.evidence.get(host, 'video')?.samples[0]?.throughputMbps, 10.48576)
   assert.equal(f.session.get().affinity?.decisionId, applied.decision.id)
 })
 
-test('routing convergence completion-event policy reentry records history without confirming control', async (t) => {
+test('routing convergence evidence persistence reentry records learning without confirming control', async (t) => {
   const scope = testScope(t),
     f = fixture(scope)
   const { original } = register(f)
   const applied = f.routes.apply(original)
   let confirmed = 0
+  const record = f.evidence.record.bind(f.evidence)
+  f.evidence.record = (...args) => {
+    f.routes.invalidateForUserSetting()
+    return record(...args)
+  }
   scope.defer(
     f.routes.subscribe((event) => {
-      if (event.type === 'transport-completed') f.routes.invalidateForUserSetting()
       if (event.type === 'route-confirmed') confirmed++
     }),
   )

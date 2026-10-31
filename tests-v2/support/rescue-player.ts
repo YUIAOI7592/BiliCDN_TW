@@ -1,7 +1,6 @@
 import type { TestContext } from 'node:test'
 import { PlayerAdapter } from '../../src-v2/adapters/player.ts'
 import { RecoveryController } from '../../src-v2/application/recovery-controller.ts'
-import type { DomainEvent } from '../../src-v2/domain/model.ts'
 import { playurlResult } from './playurl.ts'
 import { rescueDomFixture as domFixture } from './rescue-dom.ts'
 export function rescuePlayerFixture(t: TestContext, rate: number) {
@@ -19,11 +18,8 @@ export function rescuePlayerFixture(t: TestContext, rate: number) {
     { transform: () => playurlResult(false), lifecycleKey: f.sources.lifecycleKey },
     f.environment,
   )
-  const recovery = new RecoveryController(player, f.clock.now, f.environment.isActuallyVisible),
-    events: DomainEvent[] = []
-  const stop = recovery.subscribe((e) => events.push(e))
+  const recovery = new RecoveryController(player, f.clock.now, f.environment.isActuallyVisible)
   f.scope.defer(() => {
-    stop()
     recovery.dispose()
     player.reset()
     f.check()
@@ -53,12 +49,10 @@ export function rescuePlayerFixture(t: TestContext, rate: number) {
     f.originalCore.state.initialized = false
     tick()
   }
-  const saved = () =>
-    events.flatMap((e) =>
-      e.type === 'recovery' && e.action.action === 'player-reload'
-        ? [e.action.savedPositionSec]
-        : [],
-    )
+  const saved = () => {
+    const position = recovery.snapshot().savedPositionSec
+    return position === undefined ? [] : [position]
+  }
   const trace = (id: string) =>
     console.log(
       JSON.stringify({
@@ -73,5 +67,5 @@ export function rescuePlayerFixture(t: TestContext, rate: number) {
         })),
       }),
     )
-  return { ...f, player, recovery, events, tick, advance, healthy, pause, dead, saved, trace }
+  return { ...f, player, recovery, tick, advance, healthy, pause, dead, saved, trace }
 }

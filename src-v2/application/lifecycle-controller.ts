@@ -1,5 +1,4 @@
 import type { SettingsReader, SettingsObserver } from '../state/settings-contracts.ts'
-import { type DomainEvent } from '../domain/model.ts'
 import type { PagePlayinfoPort, PlayurlPort, NavigationPort, SchedulerPort } from './ports.ts'
 
 interface PendingAssignment {
@@ -18,7 +17,6 @@ import type {
   LifecycleMonitorPort,
 } from './lifecycle-ports.ts'
 export class LifecycleController implements LifecyclePort {
-  #listeners = new Set<(event: DomainEvent) => void>()
   #restores: (() => void)[] = []
   #pending: PendingAssignment | null = null
   #pageKey = ''
@@ -37,22 +35,16 @@ export class LifecycleController implements LifecyclePort {
     private readonly scheduler: SchedulerPort,
   ) {}
 
-  subscribe(listener: (event: DomainEvent) => void): () => void {
-    this.#listeners.add(listener)
-    return () => this.#listeners.delete(listener)
-  }
-
   start(): void {
     if (this.#restores.length) return
     this.#active = true
     this.#pageKey = this.navigation.key()
-    this.#beginGeneration('startup')
+    this.#beginGeneration()
     this.pagePlayinfo.install()
     this.#restores.push(this.navigation.subscribe(() => this.#checkNavigation()))
     this.#restores.push(
       this.settings.subscribe((state) => {
-        if (state.disabled !== this.session.get().disabled)
-          this.#beginGeneration(state.disabled ? 'disabled' : 'enabled')
+        if (state.disabled !== this.session.get().disabled) this.#beginGeneration()
       }),
     )
   }
@@ -83,31 +75,23 @@ export class LifecycleController implements LifecyclePort {
     }
     this.pagePlayinfo.dispose()
     this.monitor.stop()
-    this.#listeners.clear()
   }
 
   #checkNavigation(): void {
     const key = this.navigation.key()
     if (key === this.#pageKey) return
     this.#pageKey = key
-    this.#beginGeneration('spa')
+    this.#beginGeneration()
     this.#applyPending()
   }
 
-  #beginGeneration(reason: string): void {
+  #beginGeneration(): void {
     const state = this.session.beginGeneration(this.settings.get().disabled)
     this.vault.reset(state.generation, state.epoch)
     this.routes.resetEpoch()
     this.monitor.reset()
     if (state.disabled) this.monitor.stop()
     else this.monitor.start()
-    this.#emit({
-      type: 'lifecycle',
-      at: this.now(),
-      generation: state.generation,
-      epoch: state.epoch,
-      reason,
-    })
   }
 
   #applyPending(): boolean {
@@ -120,9 +104,5 @@ export class LifecycleController implements LifecyclePort {
     const accepted = this.playurl.transform(pending.payload, 'page-hint').accepted
     if (accepted) pending.appliedGeneration = Number(state.generation)
     return accepted
-  }
-
-  #emit(event: DomainEvent): void {
-    for (const listener of this.#listeners) listener(event)
   }
 }

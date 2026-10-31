@@ -8,7 +8,7 @@
 
 ## 收集器修復
 
-[第 4 輪](IAB_v2.1.20_TODO_R4_2026-10-11.md) 已保存舊閉包讀取過期值的最小對照。此次新增 [IabEventCollector](../../../scripts/iab/iab-event-collector.mts)，由呼叫端注入工具提供的 CDP capability；模組不連線瀏覽器、不啟動服務或計時器。
+[第 4 輪](IAB_v2.1.20_TODO_R4_2026-10-11.md) 已保存舊閉包讀取過期值的最小對照。此次新增 [IabEventCollector](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/scripts/iab/iab-event-collector.mts)，由呼叫端注入工具提供的 CDP capability；模組不連線瀏覽器、不啟動服務或計時器。
 
 - 游標、持有請求、分類、錯誤及持有開關均由單一實例保存，方法讀寫 `this`；不再重新指定外層變數期待舊閉包同步。
 - 先登記整批暫停請求，再進行分類或放行。單一游標持續讀完分頁，依 sequence 去重；音訊及不匹配請求直接放行。
@@ -16,7 +16,7 @@
 - 相同 networkId 已有原生終止事件時，解除該暫停請求的所有權；不因網站已取消而再次強行送出。無法確認的錯誤仍保留。
 - 摘要只保留事件種類、時間、請求 ID、分類及有界狀態，不輸出網址、路徑、headers 或原始例外文字。最終仍由呼叫端清空 patterns、核對 held 並釋放自有分頁。
 
-正式案例在 [iab-event-collector.ts](../../../tests-v2/regressions/iab-event-collector.ts)，由既有 [tooling](../../../tests-v2/tooling.ts) 入口匯入，沒有新增套件或執行期 API。
+正式案例在 [iab-event-collector.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/tests-v2/regressions/iab-event-collector.ts)，由既有 [tooling](../../../tests-v2/tooling.ts) 入口匯入，沒有新增套件或執行期 API。
 
 | 正式契約 | 驗證內容 |
 | --- | --- |

@@ -13,20 +13,10 @@ import { formattedSource } from '../scripts/checks/format.mts'
 import { testScope } from './support/scope.ts'
 import { FakeClock } from './support/clock.ts'
 import { deferred } from './support/deferred.ts'
-import './regressions/iab-event-collector.ts'
-import './regressions/installed-restore-tools.ts'
 import './regressions/documentation.ts'
 import './regressions/archive.ts'
 import './regressions/project-config.ts'
 import './regressions/upstream-comparison.ts'
-import './regressions/buffer-shadow-evaluation.ts'
-import './regressions/buffer-observation-integrity.ts'
-import './regressions/buffer-confirmation-v3.ts'
-import './regressions/buffer-low-tooling.ts'
-import './regressions/buffer-continuity-tooling.ts'
-import './regressions/buffer-live-evaluation.ts'
-import './regressions/buffer-risk-evaluation.ts'
-import './regressions/buffer-adoption-decision.ts'
 
 test('formatting reaches a stable source before the next check', { timeout: 5000 }, async () => {
   const source =
@@ -96,7 +86,7 @@ test(
   () => {
     assert.deepEqual(selection('adapters'), selection('suites/adapters'))
     assert.equal(parseArgs(['--list']).list, true)
-    assert.equal(selection().length, 19)
+    assert.equal(selection().length, 18)
     assert.equal(parseArgs(['application', '--name', 'startup']).name, 'startup')
     for (const args of [
       ['missing'],
@@ -604,4 +594,3 @@ test(
     await assert.rejects(inspectImportPurity([effect]), /Import side effect: Date.now/)
   },
 )
-import './regressions/diagnostics-cost.ts'

@@ -8,6 +8,5 @@ declare function GM_addValueChangeListener<T>(
 ): number
 declare function GM_removeValueChangeListener(id: number): void
 declare function GM_registerMenuCommand(label: string, callback: () => void): unknown
-declare function GM_setClipboard(value: string, format?: 'text'): void
 declare const unsafeWindow: Window &
   typeof globalThis & { player?: unknown; __playinfo__?: unknown }

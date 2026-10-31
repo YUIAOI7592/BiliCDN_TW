@@ -163,7 +163,7 @@ for (const [file, source] of [
   ['state/settings-ports.ts', "import type { Store } from './store.ts'"],
   ['state/settings-contracts.ts', "import type { Store } from './store.ts'"],
   ['application/route-contracts.ts', "import type { Controller } from './route-coordinator.ts'"],
-  ['diagnostics/contracts.ts', "import type { Observer } from './observer.ts'"],
+  ['application/recovery-contracts.ts', "import type { Observer } from './observer.ts'"],
   [
     'ui/control-contracts.ts',
     "import { ControlCommands } from '../application/control-commands.ts'",
@@ -174,8 +174,8 @@ for (const [file, source] of [
     "type Controller = import('./route-coordinator.ts').RouteCoordinator",
   ],
   ['application/ports.ts', "import type { Controller } from './runtime-controller.ts'"],
-  ['diagnostics/model.ts', "import type { Observer } from './observer.ts'"],
-  ['diagnostics/ports.ts', "export type { Observer } from './observer.ts'"],
+  ['application/measurement-contracts.ts', "import type { Observer } from './observer.ts'"],
+  ['application/early-retry-contracts.ts', "export type { Observer } from './observer.ts'"],
   ['platform/storage-port.ts', "import type { TampermonkeyStorage } from './storage.ts'"],
   ['platform/runtime-id-port.ts', "import type { createRuntimeIds } from './runtime-ids.ts'"],
   [

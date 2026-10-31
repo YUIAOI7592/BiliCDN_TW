@@ -15,7 +15,6 @@ export const measurementRoutes = (overrides: Partial<MeasurementRoutes> = {}): M
 export const monitorRoutes = (overrides: Partial<MonitorRoutes> = {}): MonitorRoutes =>
   ({
     observePlaybackRate: () => undefined,
-    isOriginalComparison: () => false,
     firstMediaAt: () => 0,
     latestRequested: () => null,
     recover: () => undefined,

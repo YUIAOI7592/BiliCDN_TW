@@ -1,4 +1,3 @@
-import { evidenceMetrics } from '../domain/evidence.ts'
 import type { ControlModelSources, ControlReadModelPort } from './control-contracts.ts'
 
 export function createControlReadModel(
@@ -6,8 +5,7 @@ export function createControlReadModel(
   version: string,
 ): ControlReadModelPort {
   return {
-    snapshot(includeEvidence = false) {
-      const now = sources.now()
+    snapshot() {
       return Object.freeze({
         version,
         releaseStage: 'stable' as const,
@@ -20,12 +18,6 @@ export function createControlReadModel(
         routes: sources.routes.snapshot(),
         restrictions: sources.restrictions.list(),
         ...(sources.earlyRetry ? { earlyRetry: sources.earlyRetry.snapshot() } : {}),
-        evidence: includeEvidence
-          ? sources.evidence
-              .list()
-              .slice(0, 96)
-              .map((row) => ({ host: row.host, kind: row.kind, ...evidenceMetrics(row, now) }))
-          : [],
       })
     },
     subscribe(listener) {

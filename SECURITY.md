@@ -8,16 +8,16 @@
 
 Catalog 項目不取得額外授權。自動探索只由 MeasurementController 啟動；鎖內重讀播放狀態、當前表示、來源與政策。禁止規則與精確來源授權優先，失效或晚到結果不得續用舊授權。候選數、預算及資格數值統一見 [量測契約](docs/ARCHITECTURE.md#起播與健康量測)。
 
-提前重試只觀察最多十六筆精確歸因、直接 206、單一明確 Range 的非同步 video GET XHR；每筆最多八個近期進度樣本。只有原生可信 progress 提供 bytes，原始 URL／Range／XHR 留在適配器私有狀態。控制器沿用既有 tick，不自行送出媒體請求；原生 timeout setter 的品牌檢查、單次轉換、網站寫入修訂及重用恢復由 XhrHook 保管。兩秒一次性許可須由網站相符重試認領並被原生 send 接受後，RouteCoordinator 才提交親和。腳本要求的 timeout 不算 CDN 失敗、不生成成功樣本或核心恢復；交接失敗後本文件生命週期停用原型。診斷只消費固定狀態／原因與有界數值，Runtime 擁有訂閱清理。
+提前重試只觀察最多十六筆精確歸因、直接 206、單一明確 Range 的非同步 video GET XHR；每筆最多八個近期進度樣本。只有原生可信 progress 提供 bytes，原始 URL／Range／XHR 留在適配器私有狀態。控制器沿用既有 tick，不自行送出媒體請求；原生 timeout setter 的品牌檢查、單次轉換、網站寫入修訂及重用恢復由 XhrHook 保管。兩秒一次性許可須由網站相符重試認領並被原生 send 接受後，RouteCoordinator 才提交親和。腳本要求的 timeout 不算 CDN 失敗、不生成成功樣本或核心恢復；交接失敗後本文件生命週期停用原型。總覽只讀目前狀態、原因與計數，不保存歷程。
 
 設定解析保留既有明確布林值；缺值與非法欄位使用 [模式與預設](docs/ARCHITECTURE.md#模式與預設)，不強制寫回。關閉操作等待鎖時的抑制、提交生效及失效範圍見 [設定失效表](docs/ARCHITECTURE.md#設定失效)。政策變動不得放行舊探測提交、取消網站已送請求或重開預算。
 
 頁面 JavaScript、`__playinfo__`、播放器資訊清單、playurl 資料內容、媒體 URL、回應標頭、主控台輸出及合成 DOM 事件都不可信。
 
 - 選路前由 `domain/url-policy.ts` 解析並接納 URL。
-- `SignedRouteVault` 擁有簽名路線索引、不透明識別碼及當前原生簽名路線（Native）選路授權。適配器及執行路徑也會在記憶體中處理 URL 與資料內容；`PlayerAdapter` 在取代／重設前保存序列化的資訊清單指紋，XHR 保存每筆請求的 URL 狀態。這些資料不得進入持久學習資料或診斷輸出，也不得成為另一份 Native 授權索引。
+- `SignedRouteVault` 擁有簽名路線索引、不透明識別碼及當前原生簽名路線（Native）選路授權。適配器及執行路徑也會在記憶體中處理 URL 與資料內容；`PlayerAdapter` 在取代／重設前保存序列化的資訊清單指紋，XHR 保存每筆請求的 URL 狀態。這些資料不得進入持久學習資料或 UI 輸出，也不得成為另一份 Native 授權索引。
 - 可信 playurl API 的媒體表示會取代較低信任的頁面及播放器提示所授予的 Native 資格；已撤銷的不透明識別碼不得啟動主動探測或建立新的健康證據。
-- cid 僅來自所屬、已辨識的 API 請求，保存在 Fetch 閉包／XHR metadata 及控制器私有狀態。只作內容關聯，不是回應驗證或 Native 授權。父目錄備援上限為影片 128／音訊 64；低信任提示不更新基準。cid 與目錄不得輸出到診斷或持久資料。請求重用、failed open、同步重入均維持 context 所有權。
+- cid 僅來自所屬、已辨識的 API 請求，保存在 Fetch 閉包／XHR metadata 及控制器私有狀態。只作內容關聯，不是回應驗證或 Native 授權。父目錄備援上限為影片 128／音訊 64；低信任提示不更新基準。cid 與目錄不得輸出到 UI 或持久資料。請求重用、failed open、同步重入均維持 context 所有權。
 - 未知外部主機必須先有自然發生、可歸因的成功傳輸才可取得證據；不得預先主動探測。
 - 控制中心在封閉 Shadow DOM 內執行，操作必須來自可信使用者事件。四頁共用可信導覽，舊視圖操作檢查所有權；訂閱只在開啟時存在，關閉釋放。報告採固定去敏投影，匯出只建立本機 Blob，離開頁面或關閉即撤銷 URL。控制中心僅在當前 UI 自有冒泡邊界停止可信鍵盤傳播，不合成 click、不替代命令，保留原 click／change 信任檢查。關閉／重建清理監聽器並核對宿主身分；不修改全域事件原型或外層監聽器。外層 capture 先執行屬已知限制，須另以實際網站驗證。
 - 可信未完成尋位目標只由控制觀察者保存；不透明捕獲證明不授予路線權限。真正零有效，未知位置／新操作／內容與媒體失效撤銷；播放交接須有可信來源。本次自有重載的第一個初始化尋位例外沿用原恢復期限及最新操作／路線授權，不接納第二尋位或替換核心。window 捕捉到子元素 blur 不取得視窗失焦資格；真正 window blur／hidden 仍通知控制失效，既有事件遮蔽保留。
@@ -48,12 +48,11 @@ Web Locks 可用時使用鎖，否則儲存介面直接執行工作，沒有跨�
 - 僅 `MeasurementController` 可以啟動主動探測。
 - 僅 `RouteCoordinator` 可以變更親和主機（目前路線綁定）或提交備援。
 - 僅 `RecoveryController` 可以重載播放器核心。
-- 診斷消費型別化事件，不得施加懲罰或控制播放。
 - 啟用時，Fetch 檢查的 Request 與原生 API 送出的 Request 是同一個平台正規化物件。主動探測拒絕轉址，只接納受檢主機的直接 Range 回應。
-- 正常選路預設允許參考原生來源，仍只接納合法且符合當前身分的精確路線；關閉時只使用生成的合法 Catalog 路線；分頁原線對照獨立運作。整體停用會原樣放行網站請求，停止腳本主動量測／恢復。
-- 固定主機是選路偏好，不另授權恢復。當前合法備援計畫的恢復資格由 RouteCoordinator 持有的計畫、Vault 身分、世代／內容週期、政策／授權修訂與禁止規則核對，不要求備援主機等於固定字串；停用、原線對照或授權失效仍撤銷資格。
+- 正常選路預設允許參考原生來源，仍只接納合法且符合當前身分的精確路線；關閉時只使用生成的合法 Catalog 路線。整體停用會原樣放行網站請求，停止腳本主動量測／恢復。
+- 固定主機是選路偏好，不另授權恢復。當前合法備援計畫的恢復資格由 RouteCoordinator 持有的計畫、Vault 身分、世代／內容週期、政策／授權修訂與禁止規則核對，不要求備援主機等於固定字串；停用或授權失效仍撤銷資格。
 - `trusted-api` 來源標籤依辨識出的 playurl 請求端點決定，不是密碼學來源保證，也不證明最終回應來源。仍須保留授權提升及已撤銷不透明識別碼的檢查。
-- 僅使用 Catalog 媒體 Fetch 使用 `redirect: 'error'`。XHR 無法事先阻止轉址；觀察到非 Catalog 最終主機時，不確認為 Catalog 路線。未經已安裝 Fetch／XHR 攔截的請求及已送出的網站請求不在攔截範圍內；本專案的實際目的地確認使用內建瀏覽器 Network 證據，另記錄事件完整性。
+- 僅使用 Catalog 媒體 Fetch 使用 `redirect: 'error'`。XHR 無法事先阻止轉址；觀察到非 Catalog 最終主機時，不確認為 Catalog 路線。未經已安裝 Fetch／XHR 攔截的請求及已送出的網站請求不在攔截範圍內；特定目的地問題可使用內建瀏覽器 Network 證據，完整性只限制該問題結論，不作一般播放門檻。
 
 起播及備援的數量／期限見 [量測契約](docs/ARCHITECTURE.md#起播與健康量測)。未探測候選在排名、備用輸出及後續探索前仍須通過相同限制與安全 URL 生成檢查；探測結果不提供額外授權。
 
@@ -81,15 +80,15 @@ BODY／頁面焦點的 Space、k／K 及既有倍速鍵以私有 keydown 候選�
 
 自有 SDK reload 的 pause／空核心例外僅屬本次合法 stall token 與 reload 修訂，透過 `PlayerPort.ownedReload(revision)` 回傳有界布林證明；DOM／核心／事件留在適配器私有記憶體。最多接納本次第一個替換核心，原核心在空隙後回來、第二次替換、新可信操作、hidden／control-loss 或生命週期失效都撤銷。空核心上的舊 reload 標記不具資格；首個非零替換須標記相符、初始化狀態不是 false 並通過健康觀察，每個 seek／setRate／play 前仍核對最新 video 請求、Vault、政策／限制與 token。
 
-沒有有效可信目標證明時，SDK 初始化的未知 seek 撤銷舊位置還原，不猜成可信操作，不覆寫 SDK 最新目標；其餘合法播放意圖仍受架構定義的重載後無進度期限與所有權檢查。只有實際時間／影格進度才能停止無進度計時，兩個連續有效採樣才 recovered；保留尺寸、readyState 或初始化 seek 跳躍不能清除失敗／breaker。已還原且首次進度被接納後，以同一穩定所有者維持架構定義的有界確認資格，不延長 pause／空核心租期、不授予還原副作用或新核心接納；未形成持續進度仍失敗。終止後 SDK resume 不重開救援，真正進度或新的使用者／媒體所有權才可清除失敗停滯抑制。觀察租期到期、同步重入與晚到 Promise 不能復活或回寫舊動作，也不能否定已接納的合法進度。此內部證明不授予 Native 權限，不新增持久或診斷識別資料；未經可觀察方法的外部核心替換仍有既有辨識限制，不能把頁面標記描述成認證。
+沒有有效可信目標證明時，SDK 初始化的未知 seek 撤銷舊位置還原，不猜成可信操作，不覆寫 SDK 最新目標；其餘合法播放意圖仍受架構定義的重載後無進度期限與所有權檢查。只有實際時間／影格進度才能停止無進度計時，兩個連續有效採樣才 recovered；保留尺寸、readyState 或初始化 seek 跳躍不能清除失敗／breaker。已還原且首次進度被接納後，以同一穩定所有者維持架構定義的有界確認資格，不延長 pause／空核心租期、不授予還原副作用或新核心接納；未形成持續進度仍失敗。終止後 SDK resume 不重開救援，真正進度或新的使用者／媒體所有權才可清除失敗停滯抑制。觀察租期到期、同步重入與晚到 Promise 不能復活或回寫舊動作，也不能否定已接納的合法進度。此內部證明不授予 Native 權限，不新增持久或 UI識別資料；未經可觀察方法的外部核心替換仍有既有辨識限制，不能把頁面標記描述成認證。
 
-控制觀察僅提供取消／動作所有權，不授予 Native 權限。可信 pointer／非 seek key 需 isTrusted 與播放器區域；非 seek key 僅觀察 keydown。可信 seek 鍵可來自頁面焦點，但排除 editable／控制中心／組字／Ctrl／Meta／Alt，須真正可見、該可信 keydown 或 keyup 尚在派送、同播放器／媒體／生命週期，且實際有限位置改變，並 seeking 或 readyState 0／捕捉核心未變／非 internalReload，才取得一次使用者修訂。同派送的 wrapper／媒體／controls／冒泡觀察去重；keydown、repeat、keyup 若各自形成新 seek，各自取得一次身分，沒有位置變化則不計數。eventPhase NONE、腳本還原及晚到工作不能取得新寬限；鍵盤不建立按住狀態或延遲窗口。零延遲 timer 僅釋放私有事件參照，清理綁定實際事件種類且舊回呼確認候選身分。pendingSeek 保守抑制腳本還原，不因可信輸入全面清空；來源無法可靠辨識時不猜測使用者歸因。媒體及 page seek／reload 另有觀察修訂。core reload／還原仍核對最新 video 請求、Vault／政策／禁止／固定路線、操作及核心身分。自有 reload 的替換標記來自頁面觀察，無法認證所有未經可觀察方法的外部替換。監聽器由 adapter reset 清理，seek／reload wrapper 還原確認目前所有權；不把 DOM／事件／核心物件交給應用層或診斷。
+控制觀察僅提供取消／動作所有權，不授予 Native 權限。可信 pointer／非 seek key 需 isTrusted 與播放器區域；非 seek key 僅觀察 keydown。可信 seek 鍵可來自頁面焦點，但排除 editable／控制中心／組字／Ctrl／Meta／Alt，須真正可見、該可信 keydown 或 keyup 尚在派送、同播放器／媒體／生命週期，且實際有限位置改變，並 seeking 或 readyState 0／捕捉核心未變／非 internalReload，才取得一次使用者修訂。同派送的 wrapper／媒體／controls／冒泡觀察去重；keydown、repeat、keyup 若各自形成新 seek，各自取得一次身分，沒有位置變化則不計數。eventPhase NONE、腳本還原及晚到工作不能取得新寬限；鍵盤不建立按住狀態或延遲窗口。零延遲 timer 僅釋放私有事件參照，清理綁定實際事件種類且舊回呼確認候選身分。pendingSeek 保守抑制腳本還原，不因可信輸入全面清空；來源無法可靠辨識時不猜測使用者歸因。媒體及 page seek／reload 另有觀察修訂。core reload／還原仍核對最新 video 請求、Vault／政策／禁止／固定路線、操作及核心身分。自有 reload 的替換標記來自頁面觀察，無法認證所有未經可觀察方法的外部替換。監聽器由 adapter reset 清理，seek／reload wrapper 還原確認目前所有權；不把 DOM／事件／核心物件交給應用層或 UI。
 
 指標拖曳使用目前播放器區域內的可信 pointerdown 及已知進度祖先，包含功能性 `.bpx-player-progress-wrap`；命中祖先不能跨出播放器區域。尚未 seeking 或改位置的預覽也取得保護，但不因此授予新的選路／探測權限。單一私有手勢保存 pointerId、媒體、播放器及生命週期；新合法進度按下取代舊手勢，同指標可信 pointerup／pointercancel／lostpointercapture 才可釋放。合成事件、別的指標及非進度按下不撤銷當前手勢，同步重入後核對觀察版本與物件身分。
 
 真正 hidden、可信失焦及生命週期／媒體／播放器失效撤銷手勢。`VisibilityAdapter` 的既有 guard 在阻擋事件前發布內部 control-loss 通知；入口注入，控制觀察取消訂閱，失敗 listener 不破壞 guard，controls() 保留真正可見性防漏。通知不把 DOM／事件交給應用層，不改網站可見性覆寫、不新增 pointer capture 或拖曳 timeout。
 
-監控停滯、watchdog 及冷起播都排除 dragging，拖曳清除舊停滯及連續計數，不消耗起播救援嘗試。Recovery 收集位置／倍速前後核對 controls，提交 token 前重新檢查最新有效資格、生命週期、媒體／核心／操作、已存在 token、breaker 與總額；既有每個副作用及晚到 Promise 所有權檢查保留。拖曳釋放與冷起播政策見 [恢復契約](docs/ARCHITECTURE.md#一般停滯與操作所有權)；不得重開預算。外部操作介面與持久 schema 2 不變；內部 PlayerControlSnapshot 新增可選 pendingSeekGoal，只供 Monitor 判斷政策，不新增持久或診斷識別資料。
+監控停滯、watchdog 及冷起播都排除 dragging，拖曳清除舊停滯及連續計數，不消耗起播救援嘗試。Recovery 收集位置／倍速前後核對 controls，提交 token 前重新檢查最新有效資格、生命週期、媒體／核心／操作、已存在 token、breaker 與總額；既有每個副作用及晚到 Promise 所有權檢查保留。拖曳釋放與冷起播政策見 [恢復契約](docs/ARCHITECTURE.md#一般停滯與操作所有權)；不得重開預算。外部操作介面與持久 schema 2 不變；內部 PlayerControlSnapshot 新增可選 pendingSeekGoal，只供 Monitor 判斷政策，不新增持久或 UI識別資料。
 
 腳本不取代或檢視 `Worker`，不建立 Worker 二進位資料物件（Blob）或訊息通道，也不載入遠端程式。
 
@@ -99,13 +98,13 @@ WebRTC 還原前會確認已安裝的讀取存取器／寫入存取器仍屬於�
 
 自有重載的原生位置與倍速確認，受當前控制修訂、媒體／播放器／核心、內容週期、路線資格及原期限約束。SDK 返回或 Promise 完成不授予成功或額外寫入權限；原生未知值不觸發推測補正。補正與既有原生備援共用額度，寫入前消耗，失敗或重入不重試。完整順序與數值條件只在 [自有重載契約](docs/ARCHITECTURE.md#br-01-自有-sdk-重載後續恢復契約) 維護。
 
-只讀 progress 觀察與有界失敗證據不能延長寫入資格、再次接納核心、啟動 play 或新增 reload。play 方法 getter 返回後重查當前所有權；新操作、控制失效或逾期後的晚到工作不能回復舊授權。Observer 擁有命令與原生事實，Recovery 擁有階段與額度；診斷不得取得任一寫入權限，亦不建立可持久化的還原 token。
+只讀 progress 觀察與有界失敗證據不能延長寫入資格、再次接納核心、啟動 play 或新增 reload。play 方法 getter 返回後重查當前所有權；新操作、控制失效或逾期後的晚到工作不能回復舊授權。Observer 擁有命令與原生事實，Recovery 擁有階段與額度；UI 不得取得任一寫入權限，亦不建立可持久化的還原 token。
 
 ## 原生位置觀察邊界
 
 沒有有效未完成目標證明時，未初始化媒體的有限原生位置（包含 0）優先於 SDK 快取，僅作新意圖保存值；未知目標變更只撤銷過期還原，不授予可信 userRevision、Vault 身分或恢復資格。新可信鍵盤目標另需同一 keydown／keyup 派送、捕捉核心不變、非 internalReload 與既有來源抑制。getter／SDK 返回後重查媒體、播放器、生命週期與操作修訂。
 
-原生 readyState／currentTime 的例外回退不涵蓋全部頁面 getter。自有 reload 初始零、pendingSeek／internalSeek、正常播放增量及未知位置往返各有邊界；完全沒有被採樣的變化無法推定。新增觀察不產生網路、持久欄位或診斷識別。
+原生 readyState／currentTime 的例外回退不涵蓋全部頁面 getter。自有 reload 初始零、pendingSeek／internalSeek、正常播放增量及未知位置往返各有邊界；完全沒有被採樣的變化無法推定。新增觀察不產生網路、持久欄位或 UI識別。
 
 ## 測試工具與資料邊界
 
@@ -118,7 +117,7 @@ WebRTC 還原前會確認已安裝的讀取存取器／寫入存取器仍屬於�
 
 ## 回報
 
-診斷輸出有上限並經遮蔽，可以包含正規化的 Catalog 或已知 Native 主機；未知第三方主機使用分頁代稱。不得包含媒體 URL、路徑、查詢字串、權杖、影片 ID、Cookie、IP 或播放器／核心物件。
+產品不提供診斷錄製或報告。總覽摘要不得包含媒體 URL、路徑、查詢字串、權杖、影片 ID、Cookie、IP 或播放器／核心物件。
 
 最近 playurl 摘要只複製傳輸類型、時間、原生 HTTP 狀態、接納結果、最多三種已知格式、有上限的影片／音訊／分段數量、數字上游 `code` 及列舉拒絕原因。只保存一筆不可變紀錄，不保存資料內容、額外結果欄位或例外文字。此摘要不證明實際網路目的地或播放成功，也不新增持久鍵。
 
@@ -134,6 +133,6 @@ XHR header 依 ByteString 在入口轉換一次，原生接受後才存字串供
 
 ## 剪貼簿寫入邊界
 
-診斷複製在可信 click 內立即呼叫原生 Clipboard API，保留 receiver 與當次完整文字；API 不可取得時才呼叫一次 GM 純文字備援。原生拋錯／拒絕不自動改走 GM。單一 `ControlCenter` 的 pending 寫入跨關閉／重開仍有效，提示與按鈕只更新原宿主／ShadowRoot／視圖；不重新產生報告、不搶焦點、不新增剪貼簿讀取。GM 返回只提示交由管理器處理，不宣告複製成功。
+此功能與專用工具已於 v2.2.1 撤除；[撤除前固定原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/SECURITY.md#剪貼簿寫入邊界) 僅供歷史追溯，不是現行操作或驗收要求。
 
-原生 Promise 完成不取代完整讀回驗收；例外只顯示固定失敗提示，不輸出內容或錯誤細節。對應歷史證據見 [P05 修復報告](archive/retired/docs/P05_COPY_FIX_REPORT.md)。
+目前來源不包含剪貼簿適配器、呼叫或 GM_setClipboard 授權。

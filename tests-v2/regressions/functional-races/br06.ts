@@ -132,10 +132,9 @@ function fixture(t: TestContext) {
     KeyboardEvent: InputEvent,
   }))
     scope.defineGlobal(name, { configurable: true, value })
-  const effects: { fallbacks: number; reloads: number; reloadPositions: number[] } = {
+  const effects: { fallbacks: number; reloads: number } = {
     fallbacks: 0,
     reloads: 0,
-    reloadPositions: [],
   }
   const timeoutCallbacks: (() => void)[] = []
   let frames = 100
@@ -226,12 +225,6 @@ function fixture(t: TestContext) {
   )
   scope.defer(() => player.reset())
   const recovery = scope.own(new RecoveryController(player, clock.now, () => visible))
-  scope.defer(
-    recovery.subscribe((event) => {
-      if (event.type === 'recovery' && event.action.action === 'player-reload')
-        effects.reloadPositions.push(event.action.savedPositionSec)
-    }),
-  )
   const monitor = scope.own(
     new PlayerMonitor(
       player,
@@ -1474,7 +1467,7 @@ test('BR-07 keyup after old fallback starts a new stage allowance and saves the 
   f.clock.advance(15000)
   f.monitor.tick()
   assert.equal(f.effects.reloads, 1)
-  assert.deepEqual(f.effects.reloadPositions, [905])
+  assert.equal(f.recovery.snapshot().savedPositionSec, 905)
 })
 
 test('BR-07 later website seeking updates the target without extending the keyup deadline', (t) => {
@@ -1490,7 +1483,7 @@ test('BR-07 later website seeking updates the target without extending the keyup
   f.clock.advance(15000)
   f.monitor.tick()
   assert.equal(f.effects.reloads, 1)
-  assert.deepEqual(f.effects.reloadPositions, [900])
+  assert.equal(f.recovery.snapshot().savedPositionSec, 900)
 })
 
 for (const outcome of ['fulfilled', 'rejected'] as const) {

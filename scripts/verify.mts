@@ -56,6 +56,10 @@ export async function verify() {
     'bilicdn:worker',
     'src/settings.txt',
     'workerStats_v1',
+    'DiagnosticRecorder',
+    'GM_setClipboard',
+    'setOriginalComparison',
+    'buffer-window-v6',
   ]) {
     if (output.includes(forbidden))
       throw Error(`Production bundle contains forbidden legacy marker: ${forbidden}`)
