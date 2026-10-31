@@ -153,7 +153,7 @@ export async function evaluateFrozenEarlyRetry() {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2)
   if (args.length > 1 || args.some((arg) => arg !== '--json')) {
-    process.stderr.write('Usage: node scripts/early-retry-evaluation.mts [--json]\n')
+    process.stderr.write('Usage: node scripts/evaluation/early-retry-evaluation.mts [--json]\n')
     process.exitCode = 2
   } else {
     const result = await evaluateFrozenEarlyRetry()

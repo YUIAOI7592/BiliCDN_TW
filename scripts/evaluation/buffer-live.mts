@@ -76,7 +76,8 @@ export function replayLiveEvidence(value: unknown) {
 export async function calibrationAssets() {
   const built = await build({
     stdin: {
-      contents: "export {startBrowserObservation} from './scripts/buffer-shadow/live-browser.mts'",
+      contents:
+        "export {startBrowserObservation} from './scripts/evaluation/buffer-shadow/live-browser.mts'",
       resolveDir: process.cwd(),
       loader: 'ts',
     },

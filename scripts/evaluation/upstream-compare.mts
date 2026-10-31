@@ -83,7 +83,7 @@ export async function compareUpstream(calibrationOnly = false) {
       [
         'scripts/evaluation/upstream-compare.mts',
         ...['model', 'page', 'inputs', 'cases', 'worker'].map(
-          (name) => `scripts/upstream-compare/${name}.mts`,
+          (name) => `scripts/evaluation/upstream-compare/${name}.mts`,
         ),
         'tests-v2/support/clock.ts',
         'tests-v2/support/scope.ts',
