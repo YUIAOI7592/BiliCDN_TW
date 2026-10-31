@@ -1,3 +1,4 @@
+import { CatalogSettingsStore } from './catalog-settings.ts'
 import { currentResumePlayer } from './player.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 import { type TestContext } from 'node:test'
@@ -5,7 +6,6 @@ import { FakeClock } from './clock.ts'
 import { FakeStorage } from './storage.ts'
 import { testScope } from './scope.ts'
 import { SessionStore } from '../../src-v2/state/session-store.ts'
-import { SettingsStore } from '../../src-v2/state/settings-store.ts'
 import { RestrictionStore } from '../../src-v2/state/restriction-store.ts'
 import { EvidenceStore } from '../../src-v2/state/evidence-store.ts'
 import { MeasurementMetaStore } from '../../src-v2/state/measurement-meta-store.ts'
@@ -71,7 +71,7 @@ export function fixture(
 ) {
   const scope = testScope(t),
     clock = scope.own(new FakeClock())
-  const settings = scope.own(new SettingsStore(storage, clock.now))
+  const settings = scope.own(new CatalogSettingsStore(storage, clock.now))
   const restrictions = scope.own(new RestrictionStore(storage, clock.now))
   const evidence = scope.own(new EvidenceStore(storage, clock.now))
   const meta = new MeasurementMetaStore(storage, clock.now)

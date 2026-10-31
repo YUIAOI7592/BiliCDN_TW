@@ -1,3 +1,4 @@
+import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { BrowserNavigation } from '../../../src-v2/adapters/navigation.ts'
@@ -7,7 +8,6 @@ import { VisibilityAdapter } from '../../../src-v2/adapters/visibility.ts'
 import { WebRtcAdapter } from '../../../src-v2/adapters/webrtc.ts'
 import { RangeProbeAdapter } from '../../../src-v2/adapters/range-probe.ts'
 import { BrowserScheduler } from '../../../src-v2/adapters/scheduler.ts'
-import { SettingsStore } from '../../../src-v2/state/settings-store.ts'
 import { FakeStorage } from '../../support/storage.ts'
 import { testScope } from '../../support/scope.ts'
 import { deferred } from '../../support/deferred.ts'
@@ -84,7 +84,7 @@ test('CONTROL page hint: strict rejection cannot enter page setter; newer proper
 
 test('CONTROL WebRTC: disable restores original APIs and newer owner is preserved', async (t) => {
   const scope = testScope(t),
-    store = scope.own(new SettingsStore(new FakeStorage(), () => 100))
+    store = scope.own(new CatalogSettingsStore(new FakeStorage(), () => 100))
   const original = function RTCPeerConnection() {},
     page = { RTCPeerConnection: original }
   scope.defineGlobal('unsafeWindow', { configurable: true, value: page })

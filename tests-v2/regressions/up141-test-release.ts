@@ -1,10 +1,11 @@
+import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { setImmediate as nextTurn } from 'node:timers/promises'
 import { testScope } from '../support/scope.ts'
 import { fixture, media, dash } from './functional-races/routing-fixture.ts'
 import { DelayedSettingsStorage, FakeStorage } from '../support/storage.ts'
-import { SettingsStore, SETTINGS_KEY } from '../../src-v2/state/settings-store.ts'
+import { SETTINGS_KEY } from '../../src-v2/state/settings-store.ts'
 import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
 import type { MeasurementStatus } from '../../src-v2/application/measurement-contracts.ts'
 import {
@@ -76,7 +77,7 @@ const flags = [
 test('UP141-TEST settings migrate automatic features on, preserve false, and suppress off while locked', async (t) => {
   const scope = testScope(t),
     storage = new DelayedSettingsStorage()
-  const settings = scope.own(new SettingsStore(storage, () => 1000))
+  const settings = scope.own(new CatalogSettingsStore(storage, () => 1000))
   for (const key of flags) assert.equal(settings.get()[key], true)
   assert.equal(settings.get().earlyRetryEnabled, true)
   storage.holdNextSettingsLock = true
@@ -90,7 +91,7 @@ test('UP141-TEST settings migrate automatic features on, preserve false, and sup
   for (const key of flags) assert.equal(settings.get()[key], false)
   storage.releaseSettingsLock()
   await pending
-  const restored = scope.own(new SettingsStore(storage, () => 1002))
+  const restored = scope.own(new CatalogSettingsStore(storage, () => 1002))
   for (const key of flags) assert.equal(restored.get()[key], false)
 })
 

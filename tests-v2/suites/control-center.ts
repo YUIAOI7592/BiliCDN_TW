@@ -1,9 +1,11 @@
+import { writeClipboard } from '../../src-v2/adapters/clipboard.ts'
+import { createControlReadModel } from '../../src-v2/ui/control-read-model.ts'
 import test, { type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { fixture } from '../support/runtime-fixture.ts'
 import { FakeStorage } from '../support/storage.ts'
 import { ControlCenter } from '../../src-v2/ui/control-center.ts'
-import type { ControlCenterDependencies } from '../../src-v2/ui/control-contracts.ts'
+import type { ControlModelSources } from '../../src-v2/ui/control-contracts.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { DEFAULT_UNAVAILABLE_HOSTS } from '../../src-v2/domain/catalog.ts'
 import { deferred } from '../support/deferred.ts'
@@ -462,7 +464,7 @@ test('control-center pages preserve defaults and build complete diagnostic repor
   const f = ui(t)
   assert.match(readSummary(f).textContent, /選定路線：尚未確認/)
   f.button('CDN').emit('click')
-  assert.equal(f.toggle('允許參考 B 站原生來源').checked, false)
+  assert.equal(f.toggle('允許參考 B 站原生來源').checked, true)
   for (const host of TRUSTED_CATALOG)
     assert.equal(f.toggle(host).checked, !DEFAULT_UNAVAILABLE_HOSTS.has(host))
   assert.equal(f.doc.flatten().filter((e) => e.tag === 'select').length, 1)
@@ -1008,7 +1010,7 @@ test('CC39-UI four tabs separate CDN from six real settings and defer complete r
   }
   f.button('CDN').emit('click')
   assert.equal(f.toggle('cn-hk-eq-01-03.bilivideo.com').checked, true)
-  assert.equal(f.toggle('允許參考 B 站原生來源').checked, false)
+  assert.equal(f.toggle('允許參考 B 站原生來源').checked, true)
   f.button('診斷').emit('click')
   assert.equal(reports, 0)
   f.button('查看完整報告').emit('click')
@@ -1021,7 +1023,7 @@ test('CC39-UI opened view consumes existing notifications and releases all subsc
   const f = ui(t)
   f.center.close()
   const listeners = new Set<() => void>()
-  const source: ControlCenterDependencies['monitor'] = f.deps.monitor
+  const source: ControlModelSources['monitor'] = f.deps.monitor
   source.subscribe = (listener) => {
     listeners.add(listener)
     return () => {
@@ -1048,8 +1050,9 @@ function readSummary(f: ReturnType<typeof ui>): Element {
 }
 
 function ui(t: TestContext) {
-  const storage = new QueuedSettingsStorage(),
-    f = fixture(t, storage),
+  const storage = new QueuedSettingsStorage()
+  storage.values.set('bilicdn.v2.settings', { schema: 2, considerNativeSources: true })
+  const f = fixture(t, storage),
     doc = new Element('document')
   f.scope.defineGlobal('GM_info', {
     configurable: true,
@@ -1083,7 +1086,14 @@ function ui(t: TestContext) {
     configurable: true,
     value: (task: () => void) => f.clock.microtask(task),
   })
-  const center = new ControlCenter(f.deps satisfies ControlCenterDependencies)
+  const center = new ControlCenter({
+    model: createControlReadModel(f.deps, 'contract'),
+    version: 'contract',
+    clipboard: writeClipboard,
+    diagnostics: f.deps.diagnostics,
+    commands: f.deps.commands,
+    now: f.deps.now,
+  })
   center.show()
   const button = (label: string) => {
     const found = doc.flatten().find((e) => e.tag === 'button' && e.textContent === label)

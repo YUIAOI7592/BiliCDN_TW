@@ -1,3 +1,4 @@
+import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
 import { PlayurlAdapter } from '../../../src-v2/adapters/playurl.ts'
 import { PlayurlController } from '../../../src-v2/application/playurl-controller.ts'
@@ -5,7 +6,6 @@ import { RouteCoordinator } from '../../../src-v2/application/route-coordinator.
 import { EvidenceStore } from '../../../src-v2/state/evidence-store.ts'
 import { RestrictionStore } from '../../../src-v2/state/restriction-store.ts'
 import { SessionStore } from '../../../src-v2/state/session-store.ts'
-import { SettingsStore } from '../../../src-v2/state/settings-store.ts'
 import { SignedRouteVault } from '../../../src-v2/state/signed-route-vault.ts'
 import { testScope } from '../../support/scope.ts'
 import { FakeStorage } from '../../support/storage.ts'
@@ -17,7 +17,7 @@ export const fixture = (scope: ReturnType<typeof testScope>, storage = new FakeS
     vault = new SignedRouteVault()
   const state = session.beginGeneration(false)
   vault.reset(state.generation, state.epoch)
-  const settings = scope.own(new SettingsStore(storage, clock.now))
+  const settings = scope.own(new CatalogSettingsStore(storage, clock.now))
   const restrictions = scope.own(new RestrictionStore(storage, clock.now))
   const evidence = scope.own(new EvidenceStore(storage, clock.now))
   const routes = new RouteCoordinator(

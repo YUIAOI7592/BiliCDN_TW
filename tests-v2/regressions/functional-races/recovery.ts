@@ -1,3 +1,4 @@
+import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { currentResumePlayer } from '../../support/player.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
 import { test, type TestContext } from 'node:test'
@@ -10,7 +11,6 @@ import { MeasurementController } from '../../../src-v2/application/measurement-c
 import type { MeasurementStatus } from '../../../src-v2/application/measurement-contracts.ts'
 import { MeasurementMetaStore } from '../../../src-v2/state/measurement-meta-store.ts'
 import { SessionStore } from '../../../src-v2/state/session-store.ts'
-import { SettingsStore } from '../../../src-v2/state/settings-store.ts'
 import { RestrictionStore } from '../../../src-v2/state/restriction-store.ts'
 import { SignedRouteVault } from '../../../src-v2/state/signed-route-vault.ts'
 import { EvidenceStore } from '../../../src-v2/state/evidence-store.ts'
@@ -165,7 +165,7 @@ test('C-01 repro: ended on the first healthy reload snapshot must not seek or re
 })
 
 function routeFixture(scope: ReturnType<typeof testScope>, clock: FakeClock, storage: FakeStorage) {
-  const settings = scope.own(new SettingsStore(storage, clock.now))
+  const settings = scope.own(new CatalogSettingsStore(storage, clock.now))
   const restrictions = scope.own(new RestrictionStore(storage, clock.now))
   const evidence = scope.own(new EvidenceStore(storage, clock.now))
   const session = new SessionStore(),

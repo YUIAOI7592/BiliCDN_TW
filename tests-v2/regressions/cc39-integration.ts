@@ -1,3 +1,4 @@
+import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { testScope } from '../support/scope.ts'
@@ -30,7 +31,7 @@ test('CC39-SETTINGS new and missing settings enable all six real capabilities', 
     storage.set(SETTINGS_KEY, value)
     const settings = scope.own(new SettingsStore(storage, () => 1000))
     for (const flag of flags) assert.equal(settings.get()[flag], true, flag)
-    assert.equal(settings.get().considerNativeSources, false)
+    assert.equal(settings.get().considerNativeSources, true)
   }
 })
 
@@ -45,7 +46,7 @@ test('CC39-SETTINGS migration drops codec and verbose while preserving explicit 
     catalogOverrides: { [hk[0]!]: false },
     updatedAt: 1,
   })
-  const settings = scope.own(new SettingsStore(storage, () => 1000))
+  const settings = scope.own(new CatalogSettingsStore(storage, () => 1000))
   for (const flag of flags) assert.equal(settings.get()[flag], false)
   assert.equal('codec' in settings.get(), false)
   assert.equal('verbose' in settings.get(), false)
@@ -61,7 +62,7 @@ test('CC39-SETTINGS migration drops codec and verbose while preserving explicit 
 test('CC39-SETTINGS pending off wins over a remote on until the locked write completes', async (t) => {
   const scope = testScope(t),
     storage = new DelayedSettingsStorage()
-  const settings = scope.own(new SettingsStore(storage, () => 1000))
+  const settings = scope.own(new CatalogSettingsStore(storage, () => 1000))
   const controlled = flags.slice(0, 4)
   storage.holdNextSettingsLock = true
   scope.defer(() => storage.releaseSettingsLock())

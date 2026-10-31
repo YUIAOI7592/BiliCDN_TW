@@ -1,3 +1,4 @@
+import { extendFixture } from '../support/fixture-context.ts'
 import { test } from 'node:test'
 import '../regressions/buffer-diagnostics.ts'
 import '../regressions/buffer-low-diagnostics.ts'
@@ -19,16 +20,9 @@ import { DiagnosticRecorder } from '../../src-v2/diagnostics/recorder.ts'
 import type { DomainEvent, RouteDecision, TransportObservation } from '../../src-v2/domain/model.ts'
 import { testScope } from '../support/scope.ts'
 
-// Each call creates fresh resources and replays only this fixture's prerequisite transitions.
-// Earlier expectations run in their own cases; no mutable state crosses a test boundary.
-async function fixture(
-  t: TestContext,
-  scenario: number,
-  parameter = 0,
-): Promise<() => Promise<void>> {
-  testScope(t)
+// Named scenarios create only their prerequisite state; resources belong to this test.
+async function createDiagnosticsScenario(_t: TestContext) {
   const now = 2_000_000_000_000
-  ;({ now: () => now })
   const session = new SessionStore()
   const routeReadModel = { planCount: 41, recentPlans: [] }
   const recorder = new DiagnosticRecorder(() => now)
@@ -57,149 +51,70 @@ async function fixture(
       observation: { ...healthyObservation, completedAt: now + index },
     })
   const recorderSnapshot = recorder.snapshot()
-  if (scenario === 0)
-    return async () => {
-      assert.ok(recorderSnapshot.flow.length <= 96, '1000 successes remain bounded aggregates')
-      assert.strictEqual(
-        recorderSnapshot.events.length,
-        0,
-        'healthy requests do not create verbose events when disabled',
-      )
-      const failureEvent: DomainEvent = {
-        type: 'transport',
-        at: now + 2000,
-        observation: {
-          ...healthyObservation,
-          completedAt: now + 2000,
-          outcome: 'failure',
-          failureKind: 'network',
-          status: 0,
-        },
-      }
-      recorder.record(failureEvent)
-      assert.ok(recorder.snapshot().incident, 'verified failure freezes an incident timeline')
-      const report = JSON.parse(
-        recorder.buildReport({
-          version: '2.0.0',
-          session: session.get(),
-          routes: routeReadModel,
-          monitor: { watchdog: 'healthy', video: { currentTime: 90, bufferAheadSec: 70 } },
-        }),
-      ) as {
-        current: {
-          routes?: { planCount: number }
-          monitor?: { watchdog: string }
-          truncated?: boolean
-        }
-        recorder: { truncated?: boolean }
-      }
-      assert.strictEqual(
-        report.current.routes?.planCount,
-        routeReadModel.planCount,
-        'incident report retains route state with many groups',
-      )
-      assert.strictEqual(
-        report.current.monitor?.watchdog,
-        'healthy',
-        'incident report retains player state with many groups',
-      )
-      assert.ok(
-        report.current.truncated !== true,
-        'capacity fallback never discards the complete current state',
-      )
-      const oversizedReport = JSON.parse(
-        recorder.buildReport({
-          version: '2.0.0',
-          session: session.get(),
-          routes: {
-            ...routeReadModel,
-            plans: Array.from({ length: 128 }, () => 'p'.repeat(1000)),
-            ranking: Array.from({ length: 128 }, () => 'r'.repeat(1000)),
-          },
-          monitor: { watchdog: 'healthy', video: { currentTime: 90, bufferAheadSec: 70 } },
-        }),
-      ) as {
-        current: {
-          routes?: { planCount: number }
-          monitor?: { watchdog: string }
-          truncated?: boolean
-        }
-        recorder: { incident?: { reason: string } | null; truncated?: boolean }
-      }
-      assert.strictEqual(
-        oversizedReport.current.routes?.planCount,
-        routeReadModel.planCount,
-        'oversized route read model retains bounded current summary',
-      )
-      assert.strictEqual(
-        oversizedReport.current.monitor?.watchdog,
-        'healthy',
-        'oversized report keeps current playback state',
-      )
-      assert.ok(
-        oversizedReport.recorder.incident?.reason.startsWith('transport:'),
-        'oversized report keeps incident cause',
-      )
-      assert.ok(
-        ((oversizedReport.recorder as { flow?: unknown[] }).flow?.length ?? 0) > 0,
-        'oversized report preserves successful transport summaries',
-      )
-    }
-  void (recorderSnapshot.flow.length <= 96)
-  void recorderSnapshot.events.length
-  void 0
+  return extendFixture({}, {
+    now,
+    session,
+    routeReadModel,
+    recorder,
+    healthyObservation,
+    recorderSnapshot,
+  } as const)
+}
+
+async function createOldBufferedPlaybackDoesNotVerifyAFallback2Context1(t: TestContext) {
+  const base = await createDiagnosticsScenario(t)
+  void (base.recorderSnapshot.flow.length <= 96)
   const failureEvent: DomainEvent = {
     type: 'transport',
-    at: now + 2000,
+    at: base.now + 2000,
     observation: {
-      ...healthyObservation,
-      completedAt: now + 2000,
+      ...base.healthyObservation,
+      completedAt: base.now + 2000,
       outcome: 'failure',
       failureKind: 'network',
       status: 0,
     },
   }
-  recorder.record(failureEvent)
-  void recorder.snapshot().incident
+  base.recorder.record(failureEvent)
+  void base.recorder.snapshot().incident
   const report = JSON.parse(
-    recorder.buildReport({
+    base.recorder.buildReport({
       version: '2.0.0',
-      session: session.get(),
-      routes: routeReadModel,
+      session: base.session.get(),
+      routes: base.routeReadModel,
       monitor: { watchdog: 'healthy', video: { currentTime: 90, bufferAheadSec: 70 } },
     }),
   ) as {
-    current: { routes?: { planCount: number }; monitor?: { watchdog: string }; truncated?: boolean }
+    current: {
+      routes?: { planCount: number }
+      monitor?: { watchdog: string }
+      truncated?: boolean
+    }
     recorder: { truncated?: boolean }
   }
-  void report.current.routes?.planCount
-  void routeReadModel.planCount
-  void report.current.monitor?.watchdog
-  void 'healthy'
   void (report.current.truncated !== true)
   const oversizedReport = JSON.parse(
-    recorder.buildReport({
+    base.recorder.buildReport({
       version: '2.0.0',
-      session: session.get(),
+      session: base.session.get(),
       routes: {
-        ...routeReadModel,
+        ...base.routeReadModel,
         plans: Array.from({ length: 128 }, () => 'p'.repeat(1000)),
         ranking: Array.from({ length: 128 }, () => 'r'.repeat(1000)),
       },
       monitor: { watchdog: 'healthy', video: { currentTime: 90, bufferAheadSec: 70 } },
     }),
   ) as {
-    current: { routes?: { planCount: number }; monitor?: { watchdog: string }; truncated?: boolean }
+    current: {
+      routes?: { planCount: number }
+      monitor?: { watchdog: string }
+      truncated?: boolean
+    }
     recorder: { incident?: { reason: string } | null; truncated?: boolean }
   }
-  void oversizedReport.current.routes?.planCount
-  void routeReadModel.planCount
-  void oversizedReport.current.monitor?.watchdog
-  void 'healthy'
   void oversizedReport.recorder.incident?.reason.startsWith('transport:')
-  void (((oversizedReport.recorder as { flow?: unknown[] }).flow?.length ?? 0) > 0)
   const trace = new DiagnosticRecorder(() => traceNow)
-  let traceNow = now
+  let traceNow = base.now
   const traceRep = representationId('trace-rep'),
     traceHostA = TRUSTED_CATALOG[0],
     traceHostB = TRUSTED_CATALOG[1]
@@ -251,129 +166,36 @@ async function fixture(
   trace.recordPlayer(traceSample(100, 4, 100))
   traceNow += 1000
   trace.recordPlayer(traceSample(101, 3, 125))
-  if (scenario === 1)
-    return async () => {
-      assert.strictEqual(
-        attemptRows().at(-1)?.stage,
-        'progress-unconfirmed',
-        'old buffered playback does not verify a fallback',
-      )
-      const traceRequest = (id: string, decision: string, host: string) => ({
-        requestId: requestId(id),
-        generation: traceIdentity.generation,
-        epoch: traceIdentity.epoch,
-        decisionId: decisionId(decision),
-        representation: traceRep,
-        authorityRevision: 4,
-        routePolicyRevision: 0,
-        kind: 'video' as const,
-        attributionStatus: 'matched' as const,
-        attributionSource: 'exact' as const,
-        decisionStage: 'request' as const,
-        routeType: 'catalog-generated' as const,
-        originalHost: traceHostA,
-        targetHost: host,
-        sourceHost: traceHostA,
-        playurlHostChanged: false,
-        playurlOutput: null,
-        urlChanged: false,
-        hostChanged: true,
-        startedAt: traceNow,
-      })
-      for (let index = 0; index < 11; index++) {
-        const request = traceRequest(`abort-${index}`, 'first-decision', traceHostA)
-        trace.record({ type: 'request-started', at: traceNow, request })
-        trace.record({
-          type: 'transport-completed',
-          at: traceNow,
-          detached: false,
-          observation: {
-            ...healthyObservation,
-            request,
-            generation: traceIdentity.generation,
-            epoch: traceIdentity.epoch,
-            representation: traceRep,
-            decisionId: request.decisionId,
-            targetHost: traceHostA,
-            finalHost: null,
-            status: 0,
-            bytes: 0,
-            outcome: 'abort',
-            completedAt: traceNow,
-          },
-        })
-      }
-      assert.strictEqual(
-        attemptRows().at(-1)?.zeroByteAborts,
-        11,
-        'abort wave is counted per fallback decision',
-      )
-      assert.strictEqual(
-        attemptRows().at(-1)?.noResponseAborts,
-        11,
-        'pre-response abort wave is distinguished from timeout',
-      )
-      assert.strictEqual(
-        attemptRows().at(-1)?.stage,
-        'progress-unconfirmed',
-        'aborts do not confirm or fail a route',
-      )
-      const timeoutRequest = traceRequest('timeout-after-aborts', 'first-decision', traceHostA)
-      trace.record({ type: 'request-started', at: traceNow, request: timeoutRequest })
-      trace.record({
-        type: 'transport-completed',
-        at: traceNow,
-        detached: false,
-        observation: {
-          ...healthyObservation,
-          request: timeoutRequest,
-          generation: traceIdentity.generation,
-          epoch: traceIdentity.epoch,
-          representation: traceRep,
-          decisionId: timeoutRequest.decisionId,
-          targetHost: traceHostA,
-          finalHost: null,
-          status: 0,
-          bytes: 0,
-          outcome: 'failure',
-          failureKind: 'timeout',
-          completedAt: traceNow,
-        },
-      })
-      const timedOutAttempt = attemptRows().at(-1) as
-        { aborts: number; failures: number; lastFailureKind: string } | undefined
-      assert.strictEqual(timedOutAttempt?.aborts, 11, 'timeout does not increase the abort count')
-      assert.strictEqual(timedOutAttempt?.failures, 1, 'timeout is a separate fallback failure')
-      assert.strictEqual(
-        timedOutAttempt?.lastFailureKind,
-        'timeout',
-        'fallback preserves the timeout category',
-      )
-      const timedOutFlow = trace.snapshot().flow
-      assert.strictEqual(
-        timedOutFlow.reduce((sum, row) => sum + row.aborts, 0),
-        11,
-        'flow summary counts only abort terminal events as aborts',
-      )
-      assert.strictEqual(
-        timedOutFlow.reduce((sum, row) => sum + row.failures, 0),
-        1,
-        'flow summary retains the failed request',
-      )
-      assert.strictEqual(
-        timedOutFlow.reduce((sum, row) => sum + row.timeouts, 0),
-        1,
-        'flow summary distinguishes timeout from abort',
-      )
-    }
-  void attemptRows().at(-1)?.stage
-  void 'progress-unconfirmed'
+  return extendFixture(base, {
+    failureEvent,
+    report,
+    oversizedReport,
+    trace,
+    get traceNow() {
+      return traceNow
+    },
+    set traceNow(next: typeof traceNow) {
+      traceNow = next
+    },
+    traceRep,
+    traceHostA,
+    traceHostB,
+    traceIdentity,
+    traceDecision,
+    traceSample,
+    attemptRows,
+  } as const)
+}
+
+async function createNewFallbackSupersedesUnconfirmedOldAttempt3Context2(t: TestContext) {
+  const base = await createOldBufferedPlaybackDoesNotVerifyAFallback2Context1(t)
+  void base.attemptRows().at(-1)?.stage
   const traceRequest = (id: string, decision: string, host: string) => ({
     requestId: requestId(id),
-    generation: traceIdentity.generation,
-    epoch: traceIdentity.epoch,
+    generation: base.traceIdentity.generation,
+    epoch: base.traceIdentity.epoch,
     decisionId: decisionId(decision),
-    representation: traceRep,
+    representation: base.traceRep,
     authorityRevision: 4,
     routePolicyRevision: 0,
     kind: 'video' as const,
@@ -381,275 +203,155 @@ async function fixture(
     attributionSource: 'exact' as const,
     decisionStage: 'request' as const,
     routeType: 'catalog-generated' as const,
-    originalHost: traceHostA,
+    originalHost: base.traceHostA,
     targetHost: host,
-    sourceHost: traceHostA,
+    sourceHost: base.traceHostA,
     playurlHostChanged: false,
     playurlOutput: null,
     urlChanged: false,
     hostChanged: true,
-    startedAt: traceNow,
+    startedAt: base.traceNow,
   })
   for (let index = 0; index < 11; index++) {
-    const request = traceRequest(`abort-${index}`, 'first-decision', traceHostA)
-    trace.record({ type: 'request-started', at: traceNow, request })
-    trace.record({
+    const request = traceRequest(`abort-${index}`, 'first-decision', base.traceHostA)
+    base.trace.record({ type: 'request-started', at: base.traceNow, request })
+    base.trace.record({
       type: 'transport-completed',
-      at: traceNow,
+      at: base.traceNow,
       detached: false,
       observation: {
-        ...healthyObservation,
+        ...base.healthyObservation,
         request,
-        generation: traceIdentity.generation,
-        epoch: traceIdentity.epoch,
-        representation: traceRep,
+        generation: base.traceIdentity.generation,
+        epoch: base.traceIdentity.epoch,
+        representation: base.traceRep,
         decisionId: request.decisionId,
-        targetHost: traceHostA,
+        targetHost: base.traceHostA,
         finalHost: null,
         status: 0,
         bytes: 0,
         outcome: 'abort',
-        completedAt: traceNow,
+        completedAt: base.traceNow,
       },
     })
   }
-  void attemptRows().at(-1)?.zeroByteAborts
-  void 11
-  void attemptRows().at(-1)?.noResponseAborts
-  void 11
-  void attemptRows().at(-1)?.stage
-  void 'progress-unconfirmed'
-  const timeoutRequest = traceRequest('timeout-after-aborts', 'first-decision', traceHostA)
-  trace.record({ type: 'request-started', at: traceNow, request: timeoutRequest })
-  trace.record({
+  void base.attemptRows().at(-1)?.zeroByteAborts
+  void base.attemptRows().at(-1)?.noResponseAborts
+  void base.attemptRows().at(-1)?.stage
+  const timeoutRequest = traceRequest('timeout-after-aborts', 'first-decision', base.traceHostA)
+  base.trace.record({ type: 'request-started', at: base.traceNow, request: timeoutRequest })
+  base.trace.record({
     type: 'transport-completed',
-    at: traceNow,
+    at: base.traceNow,
     detached: false,
     observation: {
-      ...healthyObservation,
+      ...base.healthyObservation,
       request: timeoutRequest,
-      generation: traceIdentity.generation,
-      epoch: traceIdentity.epoch,
-      representation: traceRep,
+      generation: base.traceIdentity.generation,
+      epoch: base.traceIdentity.epoch,
+      representation: base.traceRep,
       decisionId: timeoutRequest.decisionId,
-      targetHost: traceHostA,
+      targetHost: base.traceHostA,
       finalHost: null,
       status: 0,
       bytes: 0,
       outcome: 'failure',
       failureKind: 'timeout',
-      completedAt: traceNow,
+      completedAt: base.traceNow,
     },
   })
-  const timedOutAttempt = attemptRows().at(-1) as
-    { aborts: number; failures: number; lastFailureKind: string } | undefined
-  void timedOutAttempt?.aborts
-  void 11
-  void timedOutAttempt?.failures
-  void 1
-  void timedOutAttempt?.lastFailureKind
-  void 'timeout'
-  const timedOutFlow = trace.snapshot().flow
+  void (base.attemptRows().at(-1) as
+    { aborts: number; failures: number; lastFailureKind: string } | undefined)
+  const timedOutFlow = base.trace.snapshot().flow
   void timedOutFlow.reduce((sum, row) => sum + row.aborts, 0)
-  void 11
   void timedOutFlow.reduce((sum, row) => sum + row.failures, 0)
-  void 1
   void timedOutFlow.reduce((sum, row) => sum + row.timeouts, 0)
-  void 1
-  trace.record({
+  base.trace.record({
     type: 'recovery',
-    at: traceNow,
+    at: base.traceNow,
     action: {
       action: 'route-fallback',
       id: recoveryActionId('second'),
       kind: 'video',
-      identity: traceIdentity,
-      decision: traceDecision('second-decision', traceHostB),
+      identity: base.traceIdentity,
+      decision: base.traceDecision('second-decision', base.traceHostB),
     },
   })
-  trace.recordPlayer(traceSample(101, 0.5, 125))
-  if (scenario === 2)
-    return async () => {
-      assert.strictEqual(
-        attemptRows()[0]?.stage,
-        'superseded',
-        'new fallback supersedes unconfirmed old attempt',
-      )
-      const secondRequest = traceRequest('second-request', 'second-decision', traceHostB)
-      trace.record({ type: 'request-started', at: traceNow, request: secondRequest })
-      const secondSuccess = {
-        ...healthyObservation,
-        request: secondRequest,
-        generation: traceIdentity.generation,
-        epoch: traceIdentity.epoch,
-        representation: traceRep,
-        decisionId: secondRequest.decisionId,
-        targetHost: traceHostB,
-        finalHost: traceHostB,
-        responseUrlMatchesRequest: true,
-        completedAt: traceNow,
-      }
-      trace.record({
-        type: 'route-confirmed',
-        at: traceNow,
-        observation: { ...secondSuccess, bytes: 10_000 },
-      })
-      assert.strictEqual(
-        attemptRows().at(-1)?.stage,
-        'response-observed',
-        'direct nonempty 206 advances to network evidence',
-      )
-      traceNow += 1000
-      trace.recordPlayer(traceSample(101.7, 1, 132))
-      assert.strictEqual(
-        attemptRows().at(-1)?.stage,
-        'response-observed',
-        'one player tick is insufficient',
-      )
-      traceNow += 1000
-      trace.recordPlayer(traceSample(102.2, 1, 156))
-      assert.strictEqual(
-        attemptRows().at(-1)?.stage,
-        'playback-observed',
-        'two ticks beyond original buffer record playback evidence',
-      )
-      assert.strictEqual(
-        assessDemandRatio(0.55),
-        'below-required',
-        'sub-demand route is labeled without changing selection',
-      )
-      assert.strictEqual(assessDemandRatio(1.2), 'below-headroom', 'partial headroom is labeled')
-      assert.strictEqual(
-        assessDemandRatio(1.35),
-        'meets-headroom',
-        'sufficient headroom is labeled',
-      )
-      assert.strictEqual(
-        assessDemandRatio(null),
-        'unknown',
-        'missing throughput is labeled unknown',
-      )
-    }
-  void attemptRows()[0]?.stage
-  void 'superseded'
-  const secondRequest = traceRequest('second-request', 'second-decision', traceHostB)
-  trace.record({ type: 'request-started', at: traceNow, request: secondRequest })
+  base.trace.recordPlayer(base.traceSample(101, 0.5, 125))
+  return extendFixture(base, { traceRequest, timeoutRequest, timedOutFlow } as const)
+}
+
+async function createParameterCannotConfirmFallbackTransfer4ParameterParameterContext3(
+  t: TestContext,
+) {
+  const base = await createNewFallbackSupersedesUnconfirmedOldAttempt3Context2(t)
+  void base.attemptRows()[0]?.stage
+  const secondRequest = base.traceRequest('second-request', 'second-decision', base.traceHostB)
+  base.trace.record({ type: 'request-started', at: base.traceNow, request: secondRequest })
   const secondSuccess = {
-    ...healthyObservation,
+    ...base.healthyObservation,
     request: secondRequest,
-    generation: traceIdentity.generation,
-    epoch: traceIdentity.epoch,
-    representation: traceRep,
+    generation: base.traceIdentity.generation,
+    epoch: base.traceIdentity.epoch,
+    representation: base.traceRep,
     decisionId: secondRequest.decisionId,
-    targetHost: traceHostB,
-    finalHost: traceHostB,
+    targetHost: base.traceHostB,
+    finalHost: base.traceHostB,
     responseUrlMatchesRequest: true,
-    completedAt: traceNow,
+    completedAt: base.traceNow,
   }
-  trace.record({
+  base.trace.record({
     type: 'route-confirmed',
-    at: traceNow,
+    at: base.traceNow,
     observation: { ...secondSuccess, bytes: 10_000 },
   })
-  void attemptRows().at(-1)?.stage
-  void 'response-observed'
-  traceNow += 1000
-  trace.recordPlayer(traceSample(101.7, 1, 132))
-  void attemptRows().at(-1)?.stage
-  void 'response-observed'
-  traceNow += 1000
-  trace.recordPlayer(traceSample(102.2, 1, 156))
-  void attemptRows().at(-1)?.stage
-  void 'playback-observed'
-  void assessDemandRatio(0.55)
-  void 'below-required'
-  void assessDemandRatio(1.2)
-  void 'below-headroom'
-  void assessDemandRatio(1.35)
-  void 'meets-headroom'
-  void assessDemandRatio(null)
-  void 'unknown'
+  void base.attemptRows().at(-1)?.stage
+  base.traceNow += 1000
+  base.trace.recordPlayer(base.traceSample(101.7, 1, 132))
+  void base.attemptRows().at(-1)?.stage
+  base.traceNow += 1000
+  base.trace.recordPlayer(base.traceSample(102.2, 1, 156))
+  void base.attemptRows().at(-1)?.stage
   const invalidTransfers = [
-    { name: 'wrong host', request: { targetHost: traceHostA } },
+    { name: 'wrong host', request: { targetHost: base.traceHostA } },
     { name: 'wrong decision', request: { decisionId: decisionId('unrelated') } },
     { name: 'stale epoch', request: { epoch: epochId(2) } },
     { name: 'stale authority', request: { authorityRevision: 3 } },
     { name: 'audio transfer', request: { kind: 'audio' as const } },
     { name: 'HTTP 200', observation: { status: 200 } },
     { name: 'empty 206', observation: { bytes: 0 } },
-    { name: 'redirected response', observation: { finalHost: traceHostA } },
+    { name: 'redirected response', observation: { finalHost: base.traceHostA } },
     { name: 'same-host redirect', observation: { responseUrlMatchesRequest: false } },
   ]
-  if (scenario === 3) {
-    let iteration = 0
-    for (const invalid of invalidTransfers) {
-      if (iteration++ === parameter)
-        return async () => {
-          const fixture = new DiagnosticRecorder(() => traceNow)
-          fixture.record({
-            type: 'recovery',
-            at: traceNow,
-            action: {
-              action: 'route-fallback',
-              id: recoveryActionId('invalid'),
-              kind: 'video',
-              identity: traceIdentity,
-              decision: traceDecision('second-decision', traceHostB),
-            },
-          })
-          fixture.recordPlayer(traceSample(10, 0, 1))
-          const request = {
-            ...traceRequest('invalid-request', 'second-decision', traceHostB),
-            ...invalid.request,
-          }
-          fixture.record({ type: 'request-started', at: traceNow, request })
-          fixture.record({
-            type: 'route-confirmed',
-            at: traceNow,
-            observation: {
-              ...secondSuccess,
-              request,
-              decisionId: request.decisionId,
-              epoch: request.epoch,
-              kind: request.kind,
-              targetHost: request.targetHost,
-              finalHost: request.targetHost,
-              ...invalid.observation,
-            },
-          })
-          const stage = fixture.snapshot().routeRecovery.attempts.at(-1)?.stage
-          assert.ok(
-            stage !== 'response-observed' && stage !== 'playback-observed',
-            `${invalid.name} cannot confirm fallback transfer`,
-          )
-        }
-    }
-    throw Error('Unknown fixture parameter')
-  }
-  for (const invalid of invalidTransfers) {
-    const fixture = new DiagnosticRecorder(() => traceNow)
+  return extendFixture(base, { secondRequest, secondSuccess, invalidTransfers } as const)
+}
+
+async function createPausedPlayerCannotConfirmFallbackPlayback5Context4(t: TestContext) {
+  const base = await createParameterCannotConfirmFallbackTransfer4ParameterParameterContext3(t)
+  for (const invalid of base.invalidTransfers) {
+    const fixture = new DiagnosticRecorder(() => base.traceNow)
     fixture.record({
       type: 'recovery',
-      at: traceNow,
+      at: base.traceNow,
       action: {
         action: 'route-fallback',
         id: recoveryActionId('invalid'),
         kind: 'video',
-        identity: traceIdentity,
-        decision: traceDecision('second-decision', traceHostB),
+        identity: base.traceIdentity,
+        decision: base.traceDecision('second-decision', base.traceHostB),
       },
     })
-    fixture.recordPlayer(traceSample(10, 0, 1))
+    fixture.recordPlayer(base.traceSample(10, 0, 1))
     const request = {
-      ...traceRequest('invalid-request', 'second-decision', traceHostB),
+      ...base.traceRequest('invalid-request', 'second-decision', base.traceHostB),
       ...invalid.request,
     }
-    fixture.record({ type: 'request-started', at: traceNow, request })
+    fixture.record({ type: 'request-started', at: base.traceNow, request })
     fixture.record({
       type: 'route-confirmed',
-      at: traceNow,
+      at: base.traceNow,
       observation: {
-        ...secondSuccess,
+        ...base.secondSuccess,
         request,
         decisionId: request.decisionId,
         epoch: request.epoch,
@@ -662,218 +364,230 @@ async function fixture(
     const stage = fixture.snapshot().routeRecovery.attempts.at(-1)?.stage
     void (stage !== 'response-observed' && stage !== 'playback-observed')
   }
-  const pausedTrace = new DiagnosticRecorder(() => traceNow)
+  const pausedTrace = new DiagnosticRecorder(() => base.traceNow)
   pausedTrace.record({
     type: 'recovery',
-    at: traceNow,
+    at: base.traceNow,
     action: {
       action: 'route-fallback',
       id: recoveryActionId('paused'),
       kind: 'video',
-      identity: traceIdentity,
-      decision: traceDecision('second-decision', traceHostB),
+      identity: base.traceIdentity,
+      decision: base.traceDecision('second-decision', base.traceHostB),
     },
   })
-  pausedTrace.recordPlayer(traceSample(50, 0.5, 10))
-  const pausedRequest = traceRequest('paused-request', 'second-decision', traceHostB)
-  pausedTrace.record({ type: 'request-started', at: traceNow, request: pausedRequest })
+  pausedTrace.recordPlayer(base.traceSample(50, 0.5, 10))
+  const pausedRequest = base.traceRequest('paused-request', 'second-decision', base.traceHostB)
+  pausedTrace.record({ type: 'request-started', at: base.traceNow, request: pausedRequest })
   pausedTrace.record({
     type: 'route-confirmed',
-    at: traceNow,
-    observation: { ...secondSuccess, request: pausedRequest },
+    at: base.traceNow,
+    observation: { ...base.secondSuccess, request: pausedRequest },
   })
-  traceNow += 1000
-  pausedTrace.recordPlayer(traceSample(51, 0, 12, true))
-  traceNow += 1000
-  pausedTrace.recordPlayer(traceSample(52, 0, 13, true))
-  if (scenario === 4)
-    return async () => {
-      assert.strictEqual(
-        pausedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage,
-        'response-observed',
-        'paused player cannot confirm fallback playback',
-      )
-      pausedTrace.recordPlayer({ ...traceSample(52, 0, 13), seeking: true })
-      assert.strictEqual(
-        pausedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage,
-        'interrupted',
-        'seek invalidates the old buffer boundary',
-      )
-      const mixedTrace = new DiagnosticRecorder(() => traceNow)
-      mixedTrace.record({
-        type: 'recovery',
-        at: traceNow,
-        action: {
-          action: 'route-fallback',
-          id: recoveryActionId('mixed'),
-          kind: 'video',
-          identity: traceIdentity,
-          decision: traceDecision('second-decision', traceHostB),
-        },
-      })
-      mixedTrace.recordPlayer(traceSample(60, 0.2, 20))
-      mixedTrace.record({
-        type: 'route-confirmed',
-        at: traceNow,
-        observation: {
-          ...secondSuccess,
-          request: traceRequest('competing', 'other-decision', traceHostA),
-          decisionId: decisionId('other-decision'),
-          targetHost: traceHostA,
-          finalHost: traceHostA,
-        },
-      })
-      assert.strictEqual(
-        mixedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage,
-        'mixed-evidence',
-        'another successful video host makes playback attribution ambiguous',
-      )
-      const disabledTrace = new DiagnosticRecorder(() => traceNow)
-      disabledTrace.record({
-        type: 'recovery',
-        at: traceNow,
-        action: {
-          action: 'route-fallback',
-          id: recoveryActionId('disabled'),
-          kind: 'video',
-          identity: traceIdentity,
-          decision: traceDecision('second-decision', traceHostB),
-        },
-      })
-      disabledTrace.record(
-        { type: 'route-confirmed', at: traceNow, observation: secondSuccess },
-        false,
-      )
-      assert.strictEqual(
-        disabledTrace.snapshot().routeRecovery.attempts.at(-1)?.stage,
-        'interrupted',
-        'comparison or disabled mode stops route attribution immediately',
-      )
-      const staleTrace = new DiagnosticRecorder(() => traceNow)
-      staleTrace.record({
-        type: 'recovery',
-        at: traceNow,
-        action: {
-          action: 'route-fallback',
-          id: recoveryActionId('stale'),
-          kind: 'video',
-          identity: traceIdentity,
-          decision: traceDecision('second-decision', traceHostB),
-        },
-      })
-      staleTrace.record({
-        type: 'lifecycle',
-        at: traceNow,
-        generation: generationId(3),
-        epoch: epochId(4),
-        reason: 'spa',
-      })
-      assert.strictEqual(
-        staleTrace.snapshot().routeRecovery.attempts.at(-1)?.stage,
-        'interrupted',
-        'new generation closes stale fallback attribution',
-      )
-      trace.record({
-        type: 'core',
-        at: traceNow,
-        state: 'recovered',
-        actionId: recoveryActionId('core'),
-        source: 'route-failure',
-      })
-      const traceReport = trace.buildReport({ url: 'https://example.invalid/video?token=secret' })
-      assert.ok(
-        new TextEncoder().encode(traceReport).length <= 96 * 1024,
-        'fallback trace preserves report limit',
-      )
-      assert.ok(
-        !traceReport.includes('token=secret'),
-        'fallback trace report excludes sensitive test query',
-      )
-      assert.ok(
-        traceReport.includes('player-core-progress-only'),
-        'core progress is explicitly scoped below route confirmation',
-      )
-    }
-  void pausedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage
-  void 'response-observed'
-  pausedTrace.recordPlayer({ ...traceSample(52, 0, 13), seeking: true })
-  void pausedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage
-  void 'interrupted'
-  const mixedTrace = new DiagnosticRecorder(() => traceNow)
+  base.traceNow += 1000
+  pausedTrace.recordPlayer(base.traceSample(51, 0, 12, true))
+  base.traceNow += 1000
+  pausedTrace.recordPlayer(base.traceSample(52, 0, 13, true))
+  return extendFixture(base, { pausedTrace, pausedRequest } as const)
+}
+
+async function checkPausedPlayerCannotConfirmFallbackPlayback5(t: TestContext): Promise<void> {
+  const base = await createPausedPlayerCannotConfirmFallbackPlayback5Context4(t)
+
+  assert.strictEqual(
+    base.pausedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage,
+    'response-observed',
+    'paused player cannot confirm fallback playback',
+  )
+  base.pausedTrace.recordPlayer({ ...base.traceSample(52, 0, 13), seeking: true })
+  assert.strictEqual(
+    base.pausedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage,
+    'interrupted',
+    'seek invalidates the old buffer boundary',
+  )
+  const mixedTrace = new DiagnosticRecorder(() => base.traceNow)
   mixedTrace.record({
     type: 'recovery',
-    at: traceNow,
+    at: base.traceNow,
     action: {
       action: 'route-fallback',
       id: recoveryActionId('mixed'),
       kind: 'video',
-      identity: traceIdentity,
-      decision: traceDecision('second-decision', traceHostB),
+      identity: base.traceIdentity,
+      decision: base.traceDecision('second-decision', base.traceHostB),
     },
   })
-  mixedTrace.recordPlayer(traceSample(60, 0.2, 20))
+  mixedTrace.recordPlayer(base.traceSample(60, 0.2, 20))
   mixedTrace.record({
     type: 'route-confirmed',
-    at: traceNow,
+    at: base.traceNow,
     observation: {
-      ...secondSuccess,
-      request: traceRequest('competing', 'other-decision', traceHostA),
+      ...base.secondSuccess,
+      request: base.traceRequest('competing', 'other-decision', base.traceHostA),
       decisionId: decisionId('other-decision'),
-      targetHost: traceHostA,
-      finalHost: traceHostA,
+      targetHost: base.traceHostA,
+      finalHost: base.traceHostA,
     },
   })
-  void mixedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage
-  void 'mixed-evidence'
-  const disabledTrace = new DiagnosticRecorder(() => traceNow)
+  assert.strictEqual(
+    mixedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage,
+    'mixed-evidence',
+    'another successful video host makes playback attribution ambiguous',
+  )
+  const disabledTrace = new DiagnosticRecorder(() => base.traceNow)
   disabledTrace.record({
     type: 'recovery',
-    at: traceNow,
+    at: base.traceNow,
     action: {
       action: 'route-fallback',
       id: recoveryActionId('disabled'),
       kind: 'video',
-      identity: traceIdentity,
-      decision: traceDecision('second-decision', traceHostB),
+      identity: base.traceIdentity,
+      decision: base.traceDecision('second-decision', base.traceHostB),
     },
   })
-  disabledTrace.record({ type: 'route-confirmed', at: traceNow, observation: secondSuccess }, false)
-  void disabledTrace.snapshot().routeRecovery.attempts.at(-1)?.stage
-  void 'interrupted'
-  const staleTrace = new DiagnosticRecorder(() => traceNow)
+  disabledTrace.record(
+    { type: 'route-confirmed', at: base.traceNow, observation: base.secondSuccess },
+    false,
+  )
+  assert.strictEqual(
+    disabledTrace.snapshot().routeRecovery.attempts.at(-1)?.stage,
+    'interrupted',
+    'comparison or disabled mode stops route attribution immediately',
+  )
+  const staleTrace = new DiagnosticRecorder(() => base.traceNow)
   staleTrace.record({
     type: 'recovery',
-    at: traceNow,
+    at: base.traceNow,
     action: {
       action: 'route-fallback',
       id: recoveryActionId('stale'),
       kind: 'video',
-      identity: traceIdentity,
-      decision: traceDecision('second-decision', traceHostB),
+      identity: base.traceIdentity,
+      decision: base.traceDecision('second-decision', base.traceHostB),
     },
   })
   staleTrace.record({
     type: 'lifecycle',
-    at: traceNow,
+    at: base.traceNow,
+    generation: generationId(3),
+    epoch: epochId(4),
+    reason: 'spa',
+  })
+  assert.strictEqual(
+    staleTrace.snapshot().routeRecovery.attempts.at(-1)?.stage,
+    'interrupted',
+    'new generation closes stale fallback attribution',
+  )
+  base.trace.record({
+    type: 'core',
+    at: base.traceNow,
+    state: 'recovered',
+    actionId: recoveryActionId('core'),
+    source: 'route-failure',
+  })
+  const traceReport = base.trace.buildReport({
+    url: 'https://example.invalid/video?token=secret',
+  })
+  assert.ok(
+    new TextEncoder().encode(traceReport).length <= 96 * 1024,
+    'fallback trace preserves report limit',
+  )
+  assert.ok(
+    !traceReport.includes('token=secret'),
+    'fallback trace report excludes sensitive test query',
+  )
+  assert.ok(
+    traceReport.includes('player-core-progress-only'),
+    'core progress is explicitly scoped below route confirmation',
+  )
+}
+
+async function checkOversizedCurrentEvidenceStillHonorsTheAbsoluteReportLimit6(
+  t: TestContext,
+): Promise<void> {
+  const base = await createPausedPlayerCannotConfirmFallbackPlayback5Context4(t)
+
+  void base.pausedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage
+  base.pausedTrace.recordPlayer({ ...base.traceSample(52, 0, 13), seeking: true })
+  void base.pausedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage
+  const mixedTrace = new DiagnosticRecorder(() => base.traceNow)
+  mixedTrace.record({
+    type: 'recovery',
+    at: base.traceNow,
+    action: {
+      action: 'route-fallback',
+      id: recoveryActionId('mixed'),
+      kind: 'video',
+      identity: base.traceIdentity,
+      decision: base.traceDecision('second-decision', base.traceHostB),
+    },
+  })
+  mixedTrace.recordPlayer(base.traceSample(60, 0.2, 20))
+  mixedTrace.record({
+    type: 'route-confirmed',
+    at: base.traceNow,
+    observation: {
+      ...base.secondSuccess,
+      request: base.traceRequest('competing', 'other-decision', base.traceHostA),
+      decisionId: decisionId('other-decision'),
+      targetHost: base.traceHostA,
+      finalHost: base.traceHostA,
+    },
+  })
+  void mixedTrace.snapshot().routeRecovery.attempts.at(-1)?.stage
+  const disabledTrace = new DiagnosticRecorder(() => base.traceNow)
+  disabledTrace.record({
+    type: 'recovery',
+    at: base.traceNow,
+    action: {
+      action: 'route-fallback',
+      id: recoveryActionId('disabled'),
+      kind: 'video',
+      identity: base.traceIdentity,
+      decision: base.traceDecision('second-decision', base.traceHostB),
+    },
+  })
+  disabledTrace.record(
+    { type: 'route-confirmed', at: base.traceNow, observation: base.secondSuccess },
+    false,
+  )
+  void disabledTrace.snapshot().routeRecovery.attempts.at(-1)?.stage
+  const staleTrace = new DiagnosticRecorder(() => base.traceNow)
+  staleTrace.record({
+    type: 'recovery',
+    at: base.traceNow,
+    action: {
+      action: 'route-fallback',
+      id: recoveryActionId('stale'),
+      kind: 'video',
+      identity: base.traceIdentity,
+      decision: base.traceDecision('second-decision', base.traceHostB),
+    },
+  })
+  staleTrace.record({
+    type: 'lifecycle',
+    at: base.traceNow,
     generation: generationId(3),
     epoch: epochId(4),
     reason: 'spa',
   })
   void staleTrace.snapshot().routeRecovery.attempts.at(-1)?.stage
-  void 'interrupted'
-  trace.record({
+  base.trace.record({
     type: 'core',
-    at: traceNow,
+    at: base.traceNow,
     state: 'recovered',
     actionId: recoveryActionId('core'),
     source: 'route-failure',
   })
-  const traceReport = trace.buildReport({ url: 'https://example.invalid/video?token=secret' })
+  const traceReport = base.trace.buildReport({
+    url: 'https://example.invalid/video?token=secret',
+  })
   void (new TextEncoder().encode(traceReport).length <= 96 * 1024)
   void !traceReport.includes('token=secret')
   void traceReport.includes('player-core-progress-only')
   const saturatedReport = JSON.parse(
-    trace.buildReport({
+    base.trace.buildReport({
       version: '2.1.4',
       monitor: { watchdog: 'healthy' },
       evidence: Array.from({ length: 48 }, () => Array.from({ length: 48 }, () => 'x'.repeat(160))),
@@ -882,43 +596,346 @@ async function fixture(
     current: { monitor?: { watchdog?: string } }
     recorder: { routeRecovery?: { attempts?: unknown[] } }
   }
-  if (scenario === 5)
-    return async () => {
+
+  assert.ok(
+    new TextEncoder().encode(JSON.stringify(saturatedReport)).length <= 96 * 1024,
+    'oversized current evidence still honors the absolute report limit',
+  )
+  assert.strictEqual(
+    saturatedReport.current.monitor?.watchdog,
+    'healthy',
+    'size fallback retains current playback watchdog',
+  )
+  assert.ok(
+    (saturatedReport.recorder.routeRecovery?.attempts?.length ?? 0) >= 1,
+    'size fallback retains latest fallback assessment',
+  )
+}
+
+async function checkParameterCannotConfirmFallbackTransfer4ParameterParameter(
+  t: TestContext,
+  parameter = 0,
+): Promise<void> {
+  const base = await createParameterCannotConfirmFallbackTransfer4ParameterParameterContext3(t)
+
+  let iteration = 0
+  for (const invalid of base.invalidTransfers) {
+    if (iteration++ === parameter) {
+      const fixture = new DiagnosticRecorder(() => base.traceNow)
+      fixture.record({
+        type: 'recovery',
+        at: base.traceNow,
+        action: {
+          action: 'route-fallback',
+          id: recoveryActionId('invalid'),
+          kind: 'video',
+          identity: base.traceIdentity,
+          decision: base.traceDecision('second-decision', base.traceHostB),
+        },
+      })
+      fixture.recordPlayer(base.traceSample(10, 0, 1))
+      const request = {
+        ...base.traceRequest('invalid-request', 'second-decision', base.traceHostB),
+        ...invalid.request,
+      }
+      fixture.record({ type: 'request-started', at: base.traceNow, request })
+      fixture.record({
+        type: 'route-confirmed',
+        at: base.traceNow,
+        observation: {
+          ...base.secondSuccess,
+          request,
+          decisionId: request.decisionId,
+          epoch: request.epoch,
+          kind: request.kind,
+          targetHost: request.targetHost,
+          finalHost: request.targetHost,
+          ...invalid.observation,
+        },
+      })
+      const stage = fixture.snapshot().routeRecovery.attempts.at(-1)?.stage
       assert.ok(
-        new TextEncoder().encode(JSON.stringify(saturatedReport)).length <= 96 * 1024,
-        'oversized current evidence still honors the absolute report limit',
+        stage !== 'response-observed' && stage !== 'playback-observed',
+        `${invalid.name} cannot confirm fallback transfer`,
       )
-      assert.strictEqual(
-        saturatedReport.current.monitor?.watchdog,
-        'healthy',
-        'size fallback retains current playback watchdog',
-      )
-      assert.ok(
-        (saturatedReport.recorder.routeRecovery?.attempts?.length ?? 0) >= 1,
-        'size fallback retains latest fallback assessment',
-      )
+
+      return
     }
-  void (new TextEncoder().encode(JSON.stringify(saturatedReport)).length <= 96 * 1024)
-  void saturatedReport.current.monitor?.watchdog
-  void 'healthy'
-  void ((saturatedReport.recorder.routeRecovery?.attempts?.length ?? 0) >= 1)
-  throw Error('Unknown fixture scenario')
+  }
+  throw Error('Unknown fixture parameter')
+}
+
+async function checkNewFallbackSupersedesUnconfirmedOldAttempt3(t: TestContext): Promise<void> {
+  const base = await createNewFallbackSupersedesUnconfirmedOldAttempt3Context2(t)
+
+  assert.strictEqual(
+    base.attemptRows()[0]?.stage,
+    'superseded',
+    'new fallback supersedes unconfirmed old attempt',
+  )
+  const secondRequest = base.traceRequest('second-request', 'second-decision', base.traceHostB)
+  base.trace.record({ type: 'request-started', at: base.traceNow, request: secondRequest })
+  const secondSuccess = {
+    ...base.healthyObservation,
+    request: secondRequest,
+    generation: base.traceIdentity.generation,
+    epoch: base.traceIdentity.epoch,
+    representation: base.traceRep,
+    decisionId: secondRequest.decisionId,
+    targetHost: base.traceHostB,
+    finalHost: base.traceHostB,
+    responseUrlMatchesRequest: true,
+    completedAt: base.traceNow,
+  }
+  base.trace.record({
+    type: 'route-confirmed',
+    at: base.traceNow,
+    observation: { ...secondSuccess, bytes: 10_000 },
+  })
+  assert.strictEqual(
+    base.attemptRows().at(-1)?.stage,
+    'response-observed',
+    'direct nonempty 206 advances to network evidence',
+  )
+  base.traceNow += 1000
+  base.trace.recordPlayer(base.traceSample(101.7, 1, 132))
+  assert.strictEqual(
+    base.attemptRows().at(-1)?.stage,
+    'response-observed',
+    'one player tick is insufficient',
+  )
+  base.traceNow += 1000
+  base.trace.recordPlayer(base.traceSample(102.2, 1, 156))
+  assert.strictEqual(
+    base.attemptRows().at(-1)?.stage,
+    'playback-observed',
+    'two ticks beyond original buffer record playback evidence',
+  )
+  assert.strictEqual(
+    assessDemandRatio(0.55),
+    'below-required',
+    'sub-demand route is labeled without changing selection',
+  )
+  assert.strictEqual(assessDemandRatio(1.2), 'below-headroom', 'partial headroom is labeled')
+  assert.strictEqual(assessDemandRatio(1.35), 'meets-headroom', 'sufficient headroom is labeled')
+  assert.strictEqual(assessDemandRatio(null), 'unknown', 'missing throughput is labeled unknown')
+}
+
+async function checkOldBufferedPlaybackDoesNotVerifyAFallback2(t: TestContext): Promise<void> {
+  const base = await createOldBufferedPlaybackDoesNotVerifyAFallback2Context1(t)
+
+  assert.strictEqual(
+    base.attemptRows().at(-1)?.stage,
+    'progress-unconfirmed',
+    'old buffered playback does not verify a fallback',
+  )
+  const traceRequest = (id: string, decision: string, host: string) => ({
+    requestId: requestId(id),
+    generation: base.traceIdentity.generation,
+    epoch: base.traceIdentity.epoch,
+    decisionId: decisionId(decision),
+    representation: base.traceRep,
+    authorityRevision: 4,
+    routePolicyRevision: 0,
+    kind: 'video' as const,
+    attributionStatus: 'matched' as const,
+    attributionSource: 'exact' as const,
+    decisionStage: 'request' as const,
+    routeType: 'catalog-generated' as const,
+    originalHost: base.traceHostA,
+    targetHost: host,
+    sourceHost: base.traceHostA,
+    playurlHostChanged: false,
+    playurlOutput: null,
+    urlChanged: false,
+    hostChanged: true,
+    startedAt: base.traceNow,
+  })
+  for (let index = 0; index < 11; index++) {
+    const request = traceRequest(`abort-${index}`, 'first-decision', base.traceHostA)
+    base.trace.record({ type: 'request-started', at: base.traceNow, request })
+    base.trace.record({
+      type: 'transport-completed',
+      at: base.traceNow,
+      detached: false,
+      observation: {
+        ...base.healthyObservation,
+        request,
+        generation: base.traceIdentity.generation,
+        epoch: base.traceIdentity.epoch,
+        representation: base.traceRep,
+        decisionId: request.decisionId,
+        targetHost: base.traceHostA,
+        finalHost: null,
+        status: 0,
+        bytes: 0,
+        outcome: 'abort',
+        completedAt: base.traceNow,
+      },
+    })
+  }
+  assert.strictEqual(
+    base.attemptRows().at(-1)?.zeroByteAborts,
+    11,
+    'abort wave is counted per fallback decision',
+  )
+  assert.strictEqual(
+    base.attemptRows().at(-1)?.noResponseAborts,
+    11,
+    'pre-response abort wave is distinguished from timeout',
+  )
+  assert.strictEqual(
+    base.attemptRows().at(-1)?.stage,
+    'progress-unconfirmed',
+    'aborts do not confirm or fail a route',
+  )
+  const timeoutRequest = traceRequest('timeout-after-aborts', 'first-decision', base.traceHostA)
+  base.trace.record({ type: 'request-started', at: base.traceNow, request: timeoutRequest })
+  base.trace.record({
+    type: 'transport-completed',
+    at: base.traceNow,
+    detached: false,
+    observation: {
+      ...base.healthyObservation,
+      request: timeoutRequest,
+      generation: base.traceIdentity.generation,
+      epoch: base.traceIdentity.epoch,
+      representation: base.traceRep,
+      decisionId: timeoutRequest.decisionId,
+      targetHost: base.traceHostA,
+      finalHost: null,
+      status: 0,
+      bytes: 0,
+      outcome: 'failure',
+      failureKind: 'timeout',
+      completedAt: base.traceNow,
+    },
+  })
+  const timedOutAttempt = base.attemptRows().at(-1) as
+    { aborts: number; failures: number; lastFailureKind: string } | undefined
+  assert.strictEqual(timedOutAttempt?.aborts, 11, 'timeout does not increase the abort count')
+  assert.strictEqual(timedOutAttempt?.failures, 1, 'timeout is a separate fallback failure')
+  assert.strictEqual(
+    timedOutAttempt?.lastFailureKind,
+    'timeout',
+    'fallback preserves the timeout category',
+  )
+  const timedOutFlow = base.trace.snapshot().flow
+  assert.strictEqual(
+    timedOutFlow.reduce((sum, row) => sum + row.aborts, 0),
+    11,
+    'flow summary counts only abort terminal events as aborts',
+  )
+  assert.strictEqual(
+    timedOutFlow.reduce((sum, row) => sum + row.failures, 0),
+    1,
+    'flow summary retains the failed request',
+  )
+  assert.strictEqual(
+    timedOutFlow.reduce((sum, row) => sum + row.timeouts, 0),
+    1,
+    'flow summary distinguishes timeout from abort',
+  )
+}
+
+async function check1000SuccessesRemainBoundedAggregates1(t: TestContext): Promise<void> {
+  const base = await createDiagnosticsScenario(t)
+
+  assert.ok(base.recorderSnapshot.flow.length <= 96, '1000 successes remain bounded aggregates')
+  assert.strictEqual(
+    base.recorderSnapshot.events.length,
+    0,
+    'healthy requests do not create verbose events when disabled',
+  )
+  const failureEvent: DomainEvent = {
+    type: 'transport',
+    at: base.now + 2000,
+    observation: {
+      ...base.healthyObservation,
+      completedAt: base.now + 2000,
+      outcome: 'failure',
+      failureKind: 'network',
+      status: 0,
+    },
+  }
+  base.recorder.record(failureEvent)
+  assert.ok(base.recorder.snapshot().incident, 'verified failure freezes an incident timeline')
+  const report = JSON.parse(
+    base.recorder.buildReport({
+      version: '2.0.0',
+      session: base.session.get(),
+      routes: base.routeReadModel,
+      monitor: { watchdog: 'healthy', video: { currentTime: 90, bufferAheadSec: 70 } },
+    }),
+  ) as {
+    current: {
+      routes?: { planCount: number }
+      monitor?: { watchdog: string }
+      truncated?: boolean
+    }
+    recorder: { truncated?: boolean }
+  }
+  assert.strictEqual(
+    report.current.routes?.planCount,
+    base.routeReadModel.planCount,
+    'incident report retains route state with many groups',
+  )
+  assert.strictEqual(
+    report.current.monitor?.watchdog,
+    'healthy',
+    'incident report retains player state with many groups',
+  )
+  assert.ok(
+    report.current.truncated !== true,
+    'capacity fallback never discards the complete current state',
+  )
+  const oversizedReport = JSON.parse(
+    base.recorder.buildReport({
+      version: '2.0.0',
+      session: base.session.get(),
+      routes: {
+        ...base.routeReadModel,
+        plans: Array.from({ length: 128 }, () => 'p'.repeat(1000)),
+        ranking: Array.from({ length: 128 }, () => 'r'.repeat(1000)),
+      },
+      monitor: { watchdog: 'healthy', video: { currentTime: 90, bufferAheadSec: 70 } },
+    }),
+  ) as {
+    current: {
+      routes?: { planCount: number }
+      monitor?: { watchdog: string }
+      truncated?: boolean
+    }
+    recorder: { incident?: { reason: string } | null; truncated?: boolean }
+  }
+  assert.strictEqual(
+    oversizedReport.current.routes?.planCount,
+    base.routeReadModel.planCount,
+    'oversized route read model retains bounded current summary',
+  )
+  assert.strictEqual(
+    oversizedReport.current.monitor?.watchdog,
+    'healthy',
+    'oversized report keeps current playback state',
+  )
+  assert.ok(
+    oversizedReport.recorder.incident?.reason.startsWith('transport:'),
+    'oversized report keeps incident cause',
+  )
+  assert.ok(
+    ((oversizedReport.recorder as { flow?: unknown[] }).flow?.length ?? 0) > 0,
+    'oversized report preserves successful transport summaries',
+  )
 }
 
 test('1000 successes remain bounded aggregates [1]', { timeout: 5000 }, async (t) => {
-  await (
-    await fixture(t, 0)
-  )()
+  await check1000SuccessesRemainBoundedAggregates1(t)
 })
 test('old buffered playback does not verify a fallback [2]', { timeout: 5000 }, async (t) => {
-  await (
-    await fixture(t, 1)
-  )()
+  await checkOldBufferedPlaybackDoesNotVerifyAFallback2(t)
 })
 test('new fallback supersedes unconfirmed old attempt [3]', { timeout: 5000 }, async (t) => {
-  await (
-    await fixture(t, 2)
-  )()
+  await checkNewFallbackSupersedesUnconfirmedOldAttempt3(t)
 })
 {
   let parameter = 0
@@ -939,25 +956,19 @@ test('new fallback supersedes unconfirmed old attempt [3]', { timeout: 5000 }, a
         ` / ${String(invalid)} / ${selected}`,
       { timeout: 5000 },
       async (t) => {
-        await (
-          await fixture(t, 3, selected)
-        )()
+        await checkParameterCannotConfirmFallbackTransfer4ParameterParameter(t, selected)
       },
     )
   }
 }
 test('paused player cannot confirm fallback playback [5]', { timeout: 5000 }, async (t) => {
-  await (
-    await fixture(t, 4)
-  )()
+  await checkPausedPlayerCannotConfirmFallbackPlayback5(t)
 })
 test(
   'oversized current evidence still honors the absolute report limit [6]',
   { timeout: 5000 },
   async (t) => {
-    await (
-      await fixture(t, 5)
-    )()
+    await checkOversizedCurrentEvidenceStillHonorsTheAbsoluteReportLimit6(t)
   },
 )
 import '../regressions/functional-races/cr-diagnostics.ts'

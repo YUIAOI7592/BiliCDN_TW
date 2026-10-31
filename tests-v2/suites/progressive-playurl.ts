@@ -1,3 +1,4 @@
+import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -8,7 +9,6 @@ import { isCatalogHost, TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { EvidenceStore } from '../../src-v2/state/evidence-store.ts'
 import { RestrictionStore } from '../../src-v2/state/restriction-store.ts'
 import { SessionStore } from '../../src-v2/state/session-store.ts'
-import { SettingsStore } from '../../src-v2/state/settings-store.ts'
 import { SignedRouteVault } from '../../src-v2/state/signed-route-vault.ts'
 import { testScope } from '../support/scope.ts'
 import { FakeStorage } from '../support/storage.ts'
@@ -52,7 +52,7 @@ const fixture = (scope: TestScope) => {
     vault = new SignedRouteVault()
   const state = session.beginGeneration(false)
   vault.reset(state.generation, state.epoch)
-  const settings = scope.own(new SettingsStore(storage, () => now))
+  const settings = scope.own(new CatalogSettingsStore(storage, () => now))
   const restrictions = scope.own(new RestrictionStore(storage, () => now))
   const evidence = scope.own(new EvidenceStore(storage, () => now))
   const routes = new RouteCoordinator(

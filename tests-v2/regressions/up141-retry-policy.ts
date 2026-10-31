@@ -1,3 +1,4 @@
+import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { evaluateEarlyRetry } from '../../src-v2/domain/early-retry.ts'
@@ -15,7 +16,7 @@ import {
   decisionId,
   requestId,
 } from '../../src-v2/domain/model.ts'
-import { SettingsStore, SETTINGS_KEY, defaultSettings } from '../../src-v2/state/settings-store.ts'
+import { SETTINGS_KEY, defaultSettings } from '../../src-v2/state/settings-store.ts'
 import { FakeStorage, DelayedSettingsStorage } from '../support/storage.ts'
 import { testScope } from '../support/scope.ts'
 
@@ -366,7 +367,7 @@ test('UP141-RETRY settings default on and preserve explicit values in schema 2',
   const scope = testScope(t)
   const storage = new FakeStorage()
   storage.set(SETTINGS_KEY, { ...defaultSettings(100), earlyRetryEnabled: undefined })
-  const settings = scope.own(new SettingsStore(storage, () => 100))
+  const settings = scope.own(new CatalogSettingsStore(storage, () => 100))
   assert.equal(settings.get().earlyRetryEnabled, true)
   assert.equal(settings.get().schema, 2)
   await settings.update({ earlyRetryEnabled: true })
@@ -378,7 +379,7 @@ test('UP141-RETRY settings default on and preserve explicit values in schema 2',
 test('UP141-RETRY turning off suppresses immediately while settings lock is pending', async (t) => {
   const scope = testScope(t)
   const storage = new DelayedSettingsStorage()
-  const settings = scope.own(new SettingsStore(storage, () => 100))
+  const settings = scope.own(new CatalogSettingsStore(storage, () => 100))
   await settings.update({ earlyRetryEnabled: true })
   storage.holdNextSettingsLock = true
   const pending = settings.update({ earlyRetryEnabled: false })

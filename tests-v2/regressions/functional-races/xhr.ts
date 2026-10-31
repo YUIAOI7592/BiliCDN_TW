@@ -1,3 +1,4 @@
+import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { installProgressEvent } from '../../support/progress-event.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
 import { test, type TestContext } from 'node:test'
@@ -7,7 +8,6 @@ import { PlayurlAdapter } from '../../../src-v2/adapters/playurl.ts'
 import { PlayurlController } from '../../../src-v2/application/playurl-controller.ts'
 import { RouteCoordinator } from '../../../src-v2/application/route-coordinator.ts'
 import { SessionStore } from '../../../src-v2/state/session-store.ts'
-import { SettingsStore } from '../../../src-v2/state/settings-store.ts'
 import { RestrictionStore } from '../../../src-v2/state/restriction-store.ts'
 import { EvidenceStore } from '../../../src-v2/state/evidence-store.ts'
 import { SignedRouteVault } from '../../../src-v2/state/signed-route-vault.ts'
@@ -204,7 +204,7 @@ async function fixture(
     }
   }
   const storage = new FakeStorage(),
-    settings = scope.own(new SettingsStore(storage, now))
+    settings = scope.own(new CatalogSettingsStore(storage, now))
   await settings.update({ considerNativeSources: native })
   const session = new SessionStore(),
     state = session.beginGeneration(false),

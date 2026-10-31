@@ -1,3 +1,4 @@
+import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { TransportAdapter } from '../../../src-v2/adapters/transport.ts'
@@ -5,7 +6,6 @@ import { PlayurlAdapter } from '../../../src-v2/adapters/playurl.ts'
 import { PlayurlController } from '../../../src-v2/application/playurl-controller.ts'
 import { RouteCoordinator } from '../../../src-v2/application/route-coordinator.ts'
 import { SessionStore } from '../../../src-v2/state/session-store.ts'
-import { SettingsStore } from '../../../src-v2/state/settings-store.ts'
 import { RestrictionStore } from '../../../src-v2/state/restriction-store.ts'
 import { EvidenceStore } from '../../../src-v2/state/evidence-store.ts'
 import { SignedRouteVault } from '../../../src-v2/state/signed-route-vault.ts'
@@ -101,7 +101,7 @@ export async function fixture(
     }
   }
   const storage = new FakeStorage(),
-    settings = scope.own(new SettingsStore(storage, clock.now))
+    settings = scope.own(new CatalogSettingsStore(storage, clock.now))
   const restrictions = scope.own(new RestrictionStore(storage, clock.now)),
     evidence = scope.own(new EvidenceStore(storage, clock.now))
   const session = new SessionStore(),

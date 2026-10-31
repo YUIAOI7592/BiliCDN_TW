@@ -1,3 +1,4 @@
+import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { PlayerAdapter } from '../../../src-v2/adapters/player.ts'
@@ -10,7 +11,6 @@ import { PlayurlAdapter } from '../../../src-v2/adapters/playurl.ts'
 import { TransportContext } from '../../../src-v2/adapters/transport-context.ts'
 import { SessionStore } from '../../../src-v2/state/session-store.ts'
 import { SignedRouteVault } from '../../../src-v2/state/signed-route-vault.ts'
-import { SettingsStore } from '../../../src-v2/state/settings-store.ts'
 import { RestrictionStore } from '../../../src-v2/state/restriction-store.ts'
 import { EvidenceStore } from '../../../src-v2/state/evidence-store.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
@@ -199,7 +199,7 @@ function fixture(t: TestContext) {
     configurable: true,
     value: { player: site, navigator: { userActivation: { isActive: false } } },
   })
-  const settings = scope.own(new SettingsStore(storage, clock.now)),
+  const settings = scope.own(new CatalogSettingsStore(storage, clock.now)),
     restrictions = scope.own(new RestrictionStore(storage, clock.now)),
     evidence = scope.own(new EvidenceStore(storage, clock.now))
   const session = new SessionStore(),
