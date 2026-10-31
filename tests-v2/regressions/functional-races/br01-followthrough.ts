@@ -593,7 +593,7 @@ test('BR-01 progress ownership: a completed seek between ticks is a baseline, no
   assert.equal(f.recovery.snapshot().state, 'recovered')
 })
 
-test('BR-01 progress ownership control: two unchanged-owner advancing samples clear a failed diagnostic', (t) => {
+test('BR-01 progress ownership control: two unchanged-owner advancing samples clear a failed recovery status', (t) => {
   const f = fixture(t)
   f.recovery.reset()
   f.video.seeking = false

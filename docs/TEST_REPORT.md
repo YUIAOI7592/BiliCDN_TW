@@ -24,7 +24,7 @@ Codex Security 差異掃描 `4409e3da-7ffc-4ce3-baa0-74dc4a4aa090` 已完成並�
 
 v2.2.1 腳本為 419,507 bytes，比 v2.2.0 的 507,211 bytes 減少 17.3%。SHA-256：`e89b94bb92eecb818ce038f09c1de2b9fb5db8b2ffa35adb2357141384db149d`。
 
-此封裝時點已通過自動及安全驗證；公開推送與 latest 下載讀回將追加於現行報告，封裝快照不回寫。GitHub Release 只附唯一使用者腳本。
+封裝快照保存當時自動與安全驗證；公開交付讀回及後續安裝驗收由本頁接續記錄，已發布快照不回寫。GitHub Release 只附唯一使用者腳本。
 
 ### 公開交付讀回（2026-11-01）
 
@@ -96,9 +96,11 @@ v2.2.0 全文與追加更正見 [歷史完整正文](https://github.com/YUIAOI75
 
 <a name="發布與安裝限制"></a>
 
+此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#發布與安裝限制)；現行內容以本頁正文為準。
+
 <a name="修後唯一-hk04-定向窗口"></a>
 
-此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/TEST_REPORT.md#發布與安裝限制)；現行內容以本頁正文為準。
+此舊入口只指向 [v2.1.40 的 HK04 原始窗口](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)，不是本版 R1 或目前待補案例。
 
 <a name="2026-10-30up141-安裝版實測"></a>
 

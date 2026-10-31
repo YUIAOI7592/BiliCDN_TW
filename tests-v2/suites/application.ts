@@ -1702,7 +1702,7 @@ async function checkManyQualityGroupsStillEnterTheRouteCoordinator3(t: TestConte
   )
   assert.ok(
     base.routeReadModel.recentPlans.length <= 4,
-    'diagnostic route snapshot bounds inactive plans',
+    'current route snapshot bounds inactive plans',
   )
   assert.ok(
     ![...base.storage.values.keys()].some((key) => !key.startsWith('bilicdn.v2.')),
@@ -2043,9 +2043,7 @@ async function checkHostLockNeverRestoresADeadRootAndMayChooseA(t: TestContext):
   }
 }
 
-async function checkNormalShortResumeClearsPauseArmedDiagnosticState16(
-  t: TestContext,
-): Promise<void> {
+async function checkNormalShortResumeReturnsHealthyState16(t: TestContext): Promise<void> {
   const base = await createHostLockNeverRestoresADeadRootAndMayChooseAContext14(t)
 
   if (base.liveRep) {
@@ -2078,7 +2076,7 @@ async function checkNormalShortResumeClearsPauseArmedDiagnosticState16(
   assert.strictEqual(
     shortResume.snapshot().state,
     'healthy',
-    'normal short resume clears pause-armed diagnostic state',
+    'normal short resume returns to healthy recovery state',
   )
 }
 
@@ -2457,14 +2455,14 @@ async function checkSafePlaybackConsidersUpToThreeFairChallengers9(t: TestContex
   )
 }
 
-async function checkOriginalComparisonModeNeitherProbesNorInitiatesScriptRouteCoreRecovery(
+async function checkDisabledModeNeitherProbesNorInitiatesScriptRouteCoreRecovery(
   t: TestContext,
 ): Promise<void> {
   const base = await createChallengeDoneAndredirectDoneAndmismatchedDoneAndmissingDoneContext7(t)
 
   assert.ok(
     base.originalProbeDisabled && base.originalRecoveryTicks === 0 && base.originalFallbacks === 0,
-    'disabled mode mode neither probes nor initiates script route/core recovery',
+    'disabled mode neither probes nor initiates script route/core recovery',
   )
   const startupRecovery = base.scope.own(
     new RecoveryController(
@@ -2670,10 +2668,10 @@ test('a Catalog URL can be checked for this stream [7]', { timeout: 5000 }, asyn
   await checkACatalogURLCanBeCheckedForThisStream7(t)
 })
 test(
-  'disabled mode mode neither probes nor initiates script route/core recovery [8]',
+  'disabled mode neither probes nor initiates script route/core recovery [8]',
   { timeout: 5000 },
   async (t) => {
-    await checkOriginalComparisonModeNeitherProbesNorInitiatesScriptRouteCoreRecovery(t)
+    await checkDisabledModeNeitherProbesNorInitiatesScriptRouteCoreRecovery(t)
   },
 )
 test('safe playback considers up to three fair challengers [9]', { timeout: 5000 }, async (t) => {
@@ -2721,13 +2719,9 @@ test(
     await checkHostLockNeverRestoresADeadRootAndMayChooseA(t)
   },
 )
-test(
-  'normal short resume clears pause-armed diagnostic state [16]',
-  { timeout: 5000 },
-  async (t) => {
-    await checkNormalShortResumeClearsPauseArmedDiagnosticState16(t)
-  },
-)
+test('normal short resume returns to healthy recovery state [16]', { timeout: 5000 }, async (t) => {
+  await checkNormalShortResumeReturnsHealthyState16(t)
+})
 import '../regressions/functional-races/recovery.ts'
 import '../regressions/functional-races/br01.ts'
 import '../regressions/functional-races/br06.ts'

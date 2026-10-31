@@ -4,6 +4,8 @@
 
 過往版本紀錄的閱讀版集中於 `archive/retired/docs/`，搬移時只調整已登記的連結 URL；原始正文另有固定提交及 TAR 快照可追溯。當時的 FAIL、無效窗口、未執行及限制不改寫。舊 Chrome 紀錄保留原環境；已撤銷 CDN 研究及停止的 BR-01 矩陣不構成新授權。
 
+同版也可能有發布前、自動驗證、公開交付與後續安裝等多個時點。Release 內快照只描述封裝當時；最新版的後續結果集中 TEST_REPORT，舊版則查當版完整歷史正文。新預設與當輪保留的使用者設定可不同；功能測試、工具有效性及效用結果也不互相覆蓋。核對方法見 [狀態與矛盾核對](DEVELOPMENT.md#狀態與矛盾核對)。
+
 ## 版本
 
 - [v2.1.40 完整正文（2026-10-31；2026-11-01 保存）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)
@@ -203,6 +205,9 @@
 
 ### 版本安裝紀錄
 
+- [v2.2.1 R1：使用者更新後的基本安裝／操作與 Auto 1／2 倍播放](TEST_REPORT.md#v221-r1-安裝驗收2026-11-01)
+- [v2.2.0：原驗收全文與追加判定更正](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)
+
 - [v2.1.36 IR36 第二輪逐案結果與尾端稽核](../archive/retired/docs/INSTALLED_RESTORE_IR36_R2_2026-10-25.md)
 
 - [v2.1.36 IR36 八案固定範圍與工具限制](../archive/retired/docs/INSTALLED_RESTORE_IR36_2026-10-25.md)
@@ -223,6 +228,8 @@
 - [v2.1.9 Chrome／Tampermonkey 功能驗收 — 2026-10-09](../archive/retired/docs/CHROME_v2.1.9_ACCEPTANCE.md)
 
 ### P05 診斷複製
+
+此功能與專用驗收已於 v2.2.1 撤除；以下紀錄只描述原版本，沒有待補的現行複製／貼上案例。
 
 - [P05 複製報告：PowerShell 與 IAB 通道調查](../archive/retired/docs/P05_COPY_CHANNEL_REPORT_2026-10-12.md)
 - [P05 原生優先修復與驗收](../archive/retired/docs/P05_COPY_FIX_REPORT.md)
@@ -261,6 +268,7 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
+| 2026-11-01 | [v2.2.1 正式交付與 R1 安裝驗收](TEST_REPORT.md)、[v2.2.0 完整正文與判定更正](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)、[本日狀態全面核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-01v221-後現行狀態與矛盾全面核對) |
 | 2026-10-31 | [控制中心整合與移除前驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2139-完整報告保存2026-10-31)、[固定 CDN 備援恢復與移除後取證](#2026-10-31-固定-cdn-備援恢復與移除後取證)、[文件狀態對齊](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-31現行文件與歷史狀態全面對齊) |
 | 2026-10-30 | [UP141 安裝版實測](../archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-30up141-安裝版實測)、[完整測試版操作表](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md)、[隔離 B 原型](../archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md) |
 | 2026-10-25 | [IR36 安裝版驗證](../archive/retired/docs/INSTALLED_RESTORE_IR36_2026-10-25.md)、[診斷成本基準](../archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md)、[實際緩衝效用第一輪](../archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md)、[第二輪十二窗](../archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md)、[風險覆蓋](../archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md)、[採用決策](../archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md)、[救援還原](../archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md#2026-10-25-後續交付結案導引)、[v2.1.36 完整報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2136-完整報告2026-10-30)、[私有封存存取](TEST_TOOLING_REPORT.md#2026-10-25舊私有封存-eperm-調查與本機驗證)、[文件狀態核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-25文件狀態全面核對) |
@@ -325,11 +333,11 @@
 
 ## 2026-10-31 固定 CDN 備援恢復與移除後取證
 
-- [v2.1.40 根因證據與修復](TEST_REPORT.md#修復與根因)
-- [移除 Evolved 後的修前取證](TEST_REPORT.md#來源隔離與實際安裝)
-- [公開交付、完整安裝身分與修後窗口](TEST_REPORT.md#公開交付與安裝結案)
+- [v2.1.40 根因證據、修前取證、公開交付與修後窗口原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)
 - [本日根因調查工具紀錄](TEST_TOOLING_REPORT.md#2026-10-31移除-evolved-後的根因取證與-cc40)
 
 ## v2.2.1 診斷撤除
 
 現行完整結果見 [TEST_REPORT](TEST_REPORT.md)；v2.2.0 原驗收與判定更正見 [完整歷史正文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)。退役程式可由 [6df9eda 固定提交](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/) 追溯。
+
+本版後續安裝紀錄見 [R1 基本驗收](TEST_REPORT.md#v221-r1-安裝驗收2026-11-01)，封裝時的未實測敘述仍只屬原發布時點。

@@ -216,9 +216,7 @@ async function createResourcePrimaryIsReplacedUsingItsExactLegalBackupSource4Con
   return extendFixture(base, {} as const)
 }
 
-async function createTabLocalOriginalComparisonRetainsTheExactOpaqueOriginal5Context4(
-  t: TestContext,
-) {
+async function createCatalogResourceOutputContext4(t: TestContext) {
   const base = await createResourcePrimaryIsReplacedUsingItsExactLegalBackupSource4Context3(t)
   if (base.resourceRep) {
     const resourcePlan = base.routes.plan(base.resourceRep, base.demand, 'startup')
@@ -240,7 +238,7 @@ async function createTabLocalOriginalComparisonRetainsTheExactOpaqueOriginal5Con
 }
 
 async function createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t: TestContext) {
-  const base = await createTabLocalOriginalComparisonRetainsTheExactOpaqueOriginal5Context4(t)
+  const base = await createCatalogResourceOutputContext4(t)
   let measurementResets = 0,
     recoveryResets = 0
   const runtime = new RuntimeController(

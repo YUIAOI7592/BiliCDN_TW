@@ -1295,7 +1295,7 @@ async function checkUnattributedThirdPartyM4sFetchRemainsWebsiteOwned15(
   )
   assert.ok(
     !JSON.stringify(base.oversizedTransport.snapshot()).includes('oversized-secret'),
-    'oversized media block diagnostics never include the signed URL or query',
+    'oversized media block status never includes the signed URL or query',
   )
   await base.oversizedSettings.update({ considerNativeSources: true })
   base.oversizedRoutes.invalidateForUserSetting()

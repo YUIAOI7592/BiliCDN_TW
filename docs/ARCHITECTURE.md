@@ -108,7 +108,7 @@ Vault 是唯一 Native 授權來源。可信提升撤銷較低信任 handle；�
 
 內部原線決策區分原樣通行與 Vault 選中的原線；後者以當前身分與不透明 handle 解析精確 URL，重查政策／禁止規則。同一選定主機上的 DASH 請求保留當次查詢字串。
 
-同一次同步決策共用解析 URL、分類及 AppliedRouteDecision 共同欄位；助手不持有授權。Catalog-only、Native與不可改寫來源仍分支處理，RouteCoordinator 保有計畫、許可與提交。
+同一次同步決策共用解析 URL、分類及 AppliedRouteDecision 共同欄位；助手不持有授權。Catalog-only、Native 與不可改寫來源仍分支處理，RouteCoordinator 保有計畫、許可與提交。
 
 ### 漸進式 playurl 處理
 
@@ -118,7 +118,7 @@ Vault 是唯一 Native 授權來源。可信提升撤銷較低信任 handle；�
 
 所有已辨識的漸進式或混合格式輸出，先完成規劃才寫回 URL。必要分段若沒有合法主線，拒絕整個回應，不部分取代 URL 或丟棄失敗分段。此原子性限於資料內容寫回，不回滾 Vault／控制器登記。既有僅含 DASH 清空欄位處理另行維持。[PlayurlTransformResult](../src-v2/domain/playurl-model.ts) 表達結果；每個消費端都檢查 `accepted`，不能只判斷結果物件是否為真值。
 
-僅使用 Catalog 模式下，Fetch 拒絕的 playurl 變成安全 HTTP 503 回應。XHR `text`（文字）／`json`（JSON）讀取存取器提供安全失敗內容，保留原生 HTTP 狀態；嚴格模式不支援的 XHR 回應類型在送出前拒絕。允許 Native及整體停用原樣放行的政策維持各自語意。Fetch／XHR 等待後仍重查設定與生命週期有效性。
+僅使用 Catalog 模式下，Fetch 拒絕的 playurl 變成安全 HTTP 503 回應。XHR `text`（文字）／`json`（JSON）讀取存取器提供安全失敗內容，保留原生 HTTP 狀態；嚴格模式不支援的 XHR 回應類型在送出前拒絕。允許 Native 及整體停用原樣放行的政策維持各自語意。Fetch／XHR 等待後仍重查設定與生命週期有效性。
 
 ### 路線生命週期
 
@@ -186,8 +186,6 @@ schema 2 保留六個自動功能開關，缺值全部為 true；明確 false �
 手動測速、手動封鎖及香港定向驗證入口與其執行路徑已移除。現行量測只有起播及一般自動健康探索；勾選或固定節點不安排額外驗證。
 
 首個合法起播窗口開始時立即消耗每分頁預算，後來的 Fetch／XHR 先加入共用 pending，再檢查已用預算；epoch／generation／設定 reset 不重開預算，沒有合法候選不消耗。健康量測的 planning／running 以各輪所有權在 finally 清理；probe、儲存鎖或寫入拒絕以固定 measurement-error 收束，遵守 10 分鐘冷卻，不輸出例外內容、不新增立即重試。
-
-手動測速、手動封鎖及香港定向驗證入口與其執行路徑已移除。現行量測只有起播及一般自動健康探索；勾選或固定節點不安排額外驗證。
 
 <a name="up141-提前重試原型"></a>
 

@@ -14,13 +14,13 @@
 - 「允許參考 B 站原生來源」新安裝、缺值、非法欄位及還原預設改為啟用，既有布林值保留；schema 2 與四鍵不變，不強制寫入升級。
 - 簡化設定抑制與保存、逐欄失效、路線組裝與恢復階段；CDN 建構／刷新共用單次快照，詳細報告按需建立，版本與剪貼簿由入口注入。
 - 產品契約合併到架構六部分，舊產品入口保留錨點導引；專項離線評估操作集中於工具 README。
-- [完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 分開記錄自動、安全及瀏覽器證據，歷史 FAIL／限制及已停止窗口保持。
+- [完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01) 分開記錄自動、安全及瀏覽器證據，歷史 FAIL／限制及已停止窗口保持。
 
 ## v2.1.40
 
 - 修復固定 CDN 失敗後，選路器已選出合法備援，但恢復資格仍要求主機等於固定偏好而拒絕救援的問題。
 - 恢復仍要求當前影片身分、世代、政策、Vault 授權及禁止規則；固定偏好、設定 schema、恢復期限與重載額度保持。
-- 新增 12 個恢復授權與執行閉環契約；移除 Bilibili-Evolved 後的定向取證及未解根因見 [完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)，原提前重試效用 FAIL 不改判。
+- 新增 12 個恢復授權與執行閉環契約；移除 Bilibili-Evolved 後的定向取證及未解根因見 [完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)，原提前重試效用 FAIL 不改判。
 
 ## v2.1.39
 
@@ -28,7 +28,7 @@
 - 六個自動功能新安裝／缺值預設開啟，慢請求提前重試沿用完整資格、額度與原生 timeout 所有權；既有明確 false 保留。
 - 三台香港主機改為一般預設可用 Catalog，保留覆寫、授權、禁止及原四台不可用；沒有特殊優先權。
 - 從設定、介面與執行路徑移除格式偏好、額外候選排名詳記、手動測速／最近影片 CDN 封鎖／香港定向驗證；播放表示順序由 B 站決定。
-- 原 B 分支及歷史證據已一般合併；離線提前重試效用仍 FAIL，不改門檻、不冒充實機通過。詳見 [完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 原 B 分支及歷史證據已一般合併；離線提前重試效用仍 FAIL，不改門檻、不冒充實機通過。詳見 [完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2139-完整報告保存2026-10-31)。
 
 ## v2.1.38
 
@@ -36,61 +36,61 @@
 - 起播提前放行、中段探測及備援家族分散新增獨立預設開啟開關，明確 false 保留，關閉立即抑制新動作。
 - 可信「安排香港候選測試」只接受已啟用 HK，沿用 Vault／禁止／前景資格與十分鐘跨分頁預算；固定模式須返回自動，不改親和。
 - 提前重試保留原生 timeout 所有權、網站自行重試、兩秒許可及全部資格／額度；補齊有界去敏階段事件匯出，bufferTrend v6 保持。
-- 獨立效用仍為 FAIL／退出 1，實機及安裝按指示延後；[完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 與 [操作表](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md) 分列。v2.1.37 原條目保留，後續測試定位更正見 Release 追加說明。
+- 獨立效用仍為 FAIL／退出 1，實機及安裝按指示延後；[完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2138-完整正文保存2026-10-31) 與 [操作表](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md) 分列。v2.1.37 原條目保留，後續測試定位更正見 Release 追加說明。
 
 ## v2.1.37
 
 - 吸收原作者 v1.4.1 的 OGV 正片 playview 入口；片頭 pre/check/drm 僅記端點分類並原文通行，不改正片內容週期或來源授權。
 - Catalog-only 起播在首個候選達安全吞吐門檻時提早釋放共用等待，封存後不接納晚到學習；健康探測在可靠大小及當前來源授權下使用同輪共用的對齊中段。
 - 備援先按成功證據及需求餘裕，再優先分散已知主機家族；控制中心補足路線餘裕、起播等待及探測摘要。正式清單維持 11 台／4 台預設不可用，未採用三台未驗證香港候選。
-- 提前重試保留獨立原型；本版沒有該開關或傳輸控制。IAB／Tampermonkey 依使用者要求暫緩，不宣稱實機改善或安裝通過；自動與安全範圍見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 提前重試保留獨立原型；本版沒有該開關或傳輸控制。IAB／Tampermonkey 依使用者要求暫緩，不宣稱實機改善或安裝通過；自動與安全範圍見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2137-完整報告2026-10-30)。
 
 ## v2.1.36
 
 - 修復 SDK getter／呼叫中出現新操作後，舊原生備援與 play 仍可能穿透的所有權問題。
 - 自有重載依序確認原生位置、倍速與真正播放進度，SDK 返回或快取不再冒充還原完成；滿一秒且仍合法時，位置與倍速各允許一次原生補正，失敗不重試。
-- 保持既有救援期限、冷卻、額度與候選 v6。新增 117 案、完整 2842 案及 IAB 十二個來源案例；紅綠、安全、來源與安裝邊界見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 保持既有救援期限、冷卻、額度與候選 v6。新增 117 案、完整 2842 案及 IAB 十二個來源案例；紅綠、安全、來源與安裝邊界見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2136-完整報告2026-10-30)。
 
 ## v2.1.35
 
 - 緩衝候選 v6 在有效部分周期證據已確認、校正緩衝不超過一秒且持續下降時，允許同份證據補顯一次尾段訊號。部分回補、持平及再次創低不補發機會，第一個有效回補／持平樣本仍撤銷。
 - 診斷升為 schemaVersion 6／buffer-window-v6，白名單新增 tailUsed；離線讀取器保持 v1～v6 分版，新增互斥的 continuity 評估模式，分開量測總時間、撤銷延遲及末端空窗。
-- 既有正常對照候選成本不增加，救援期限、額度與狀態所有權不變，不啟用提前備援。固定配對、紅綠契約、安全及驗收限制見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 既有正常對照候選成本不增加，救援期限、額度與狀態所有權不變，不啟用提前備援。固定配對、紅綠契約、安全及驗收限制見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2135-完整報告2026-10-24)。
 
 ## v2.1.34
 
 - 緩衝候選 v5 加入校正緩衝不超過四秒的獨立確認，補足持續慢下降及未補足周期的漏報。正常配對回補即撤銷，既有正常對照的候選段數與總時間不增加。
 - 診斷改為 schemaVersion 5／buffer-window-v5，新增白名單 lowBuffer 證據；離線讀取器分別解析 v1～v5，歷史結果不改。
-- 一般 6／12／15 秒、長 seek 15／30／15 秒及全部狀態所有權保持，不啟用提前備援。紅綠契約、效用比較、安全及驗收限制見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 一般 6／12／15 秒、長 seek 15／30／15 秒及全部狀態所有權保持，不啟用提前備援。紅綠契約、效用比較、安全及驗收限制見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2134-完整報告2026-10-24)。
 
 ## v2.1.33
 
 - 緩衝周期欠量到期時，同時撤銷其確認額度；同筆樣本形成新欠量時重新累計兩秒，避免短暫下降沿用過期證據立即成為候選。仍有效的獨立短期確認保留。
-- 救援期限、狀態所有權及 buffer-window-v4 格式不變，不啟用提前備援。紅綠契約、既有一百七十二次情境逐項比較與驗收限制見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 救援期限、狀態所有權及 buffer-window-v4 格式不變，不啟用提前備援。紅綠契約、既有一百七十二次情境逐項比較與驗收限制見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2133-完整報告2026-10-24)。
 
 ## v2.1.32
 
 - 量測中繼資料僅接受 schema 2 的自有資料欄位；游標限定非負安全整數，冷卻時間限定有限、非負且不在未來。讀取不遷移，明確更新只保存四個既有欄位，避免重新寫入未知資料。
 - 起播取得既有量測鎖後重新讀取最新游標並檢查世代，避免等待中的舊快照覆蓋其他更新；起播及健康量測游標在安全整數上限歸零。
-- 四個持久鍵、既有鎖退化行為、探測資格、一般 6／12／15 秒及長 seek 15／30／15 秒救援、候選 v4 保持。完整契約、安全與分層限制見 [驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 四個持久鍵、既有鎖退化行為、探測資格、一般 6／12／15 秒及長 seek 15／30／15 秒救援、候選 v4 保持。完整契約、安全與分層限制見 [驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2132-完整報告2026-10-24)。
 
 ## v2.1.31
 
 - 修復停用／釋放 VisibilityAdapter 時覆蓋較新 document.hidden／visibilityState 描述子的問題；只還原仍屬本次安裝的 accessor，保留較新設定、刪除與旗標變動。
 - 描述子比對不執行 getter；正常完整還原、部分失敗清理、重複啟用及 control-loss 訂閱保持。一般 6／12／15 秒、長 seek 15／30／15 秒及既有救援與候選規則不變。
-- 先紅後綠契約、來源隔離、安全及交付限制集中於 [完整驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 先紅後綠契約、來源隔離、安全及交付限制集中於 [完整驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2131-完整報告2026-10-24)。
 
 ## v2.1.30
 
 - 唯讀緩衝候選加入周期欠量與已回補範圍：改善反覆微量回補造成的慢速耗盡漏報，抑制完整回補後重複出現的候選。診斷升為 schemaVersion 4／buffer-window-v4，附四個有界數值證據。
 - 診斷容量檢查避免重複建立完整副本；公開快照與匯出仍為獨立副本，原容量、去敏及清除語意保持。離線工具補強輸入證明、分版本成本與獨立保留情境。
-- 救援一般 6／12／15、長 seek 15／30／15 秒、所有權、額度與冷卻維持，不啟用提前備援。模型仍可能有多餘候選，不宣稱真實網站誤報率改善；完整證據與限制見 [驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 救援一般 6／12／15、長 seek 15／30／15 秒、所有權、額度與冷卻維持，不啟用提前備援。模型仍可能有多餘候選，不宣稱真實網站誤報率改善；完整證據與限制見 [驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2130-完整報告2026-10-24)。
 
 ## v2.1.29
 
 - 緩衝候選改為累計創低區間確認；回補立即撤銷顯示，部分回補保留有界證據，完整補回或失效清除。診斷使用 schemaVersion 3／buffer-window-v3。
 - 暖機後抖動、突發回補與鋸齒固定對照零候選，微量回補耗盡保留提前量；短持平及極小回補仍可能產生多餘候選，未量測真實網站誤報率。
-- 一般 6／12／15 秒、長 seek 15／30／15 秒、所有權與容量保持，不啟用提前備援。完整功能證據及限制見 [驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)；舊版本原件及歷史 FAIL 不改寫。
+- 一般 6／12／15 秒、長 seek 15／30／15 秒、所有權與容量保持，不啟用提前備援。完整功能證據及限制見 [驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2129-完整報告2026-10-24)；舊版本原件及歷史 FAIL 不改寫。
 
 ## v2.1.28
 
@@ -117,7 +117,7 @@
 - 有證明的自有重載可跨首個有界 SDK 初始化 seek，結束 seeking 後依序還原位置／倍速／播放；沿用 15 秒期限及逐副作用最新資格，不接受第二 seek／核心或延長租期。
 - 一般停滯改 6／12／15 秒，長 seek／未完成目標保留 15／30／15；同段升級保留起點、通知合併不重開額度，既有死核心 4 秒、長暫停 30 秒、生命週期兩次／90 秒冷卻維持。
 - 補還原後進度基準、同步失效的 play Promise 拒絕處理及子元素 blur 邊界；新增 204 案，正式 1134／1134，安全差異 27 項 0 發現，IAB 自有來源 8／8。工具版本、設定、schema、依賴與執行期載入不變。
-- [修復與驗收](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/BR01_RESCUE_FIX_v2.1.27.md)、[完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 分列發布及實際安裝；自然起因暫緩、歷史 FAIL 與矩陣不回寫，本輪未實測安裝故障救援。
+- [修復與驗收](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/BR01_RESCUE_FIX_v2.1.27.md)、[完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2127-完整報告2026-10-17) 分列發布及實際安裝；自然起因暫緩、歷史 FAIL 與矩陣不回寫，本輪未實測安裝故障救援。
 - 已正式發布並核對main／標籤、唯一附件及公開latest全文。使用者完成更新後，完整新本體／singleton／hooks、Auto1／2倍正常操作及15秒播放通過；控制中心依明確授權開啟後視圖／關閉通過，入口／返回限制保留。後續僅現行文件提交main，標籤／封裝不回寫。
 
 ## v2.1.26
@@ -126,7 +126,7 @@
 - XHR response／responseText 共用轉換與快取，JSON 保留原物件身分；原生 getter、metadata、open／send／abort、派送與清理權責保留。
 - 選路抽出純請求／結果分類及證據組裝，協調器保有計畫、ID、事件、Vault／親和與等待後資格檢查；播放器綁定及 Monitor／Recovery tick 改為明確步驟，共用純進度事實而保留不同政策。
 - 新增 41 案，完整 930／930、99 模組及分階段 verify 通過；固定安全差異 28 項及 5 份文件交叉審查，0 發現；IAB 來源傳輸／選路 23 案與播放器／UI／清理通過。Node／npm／TypeScript／esbuild／Prettier、依賴及產品 schema 不變。
-- [完整收斂報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/CONVERGENCE_v2.1.26_REPORT.md) 與 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 分列自動、安全、來源、發布及實際安裝。BR-01 位置遺失仍未修復，歷史矩陣不重開。
+- [完整收斂報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/CONVERGENCE_v2.1.26_REPORT.md) 與 [當版完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2126-release-verification--2026-10-16) 分列自動、安全、來源、發布及實際安裝。BR-01 位置遺失仍未修復，歷史矩陣不重開。
 - 已正式發布並核對唯一腳本／公開 latest。公開入口中繼頁受阻後，使用者完成更新；完整 v2.1.26 本體／唯一實例／hooks、指定影片 Auto 1／2 倍正常操作及控制中心通過、清理完成。本項為發布後 main 紀錄，快照不回寫。
 
 ## v2.1.25
@@ -134,7 +134,7 @@
 - 將 16 個維護工具轉為 Node 原生 ESM TypeScript，保留 CLI、結構化報告、期限、隔離、清理及封裝語意；Node／TypeScript／esbuild 版本不變。
 - 新增 Prettier 3.9.10、format／format:check，verify 納入唯讀格式檢查；啟用未使用宣告／參數與明確型別匯入，ESLint 暫緩。
 - 分離儲存介面、共用模型與具名最小契約，架構檢查以精確路徑保障唯一寫入權責；拆分選路、診斷／控制中心及播放器／XHR，保留行為與所有權。
-- 新增 34 案，完整 889／889、98 模組架構及 verify 通過；獨立安全差異 193 項、0 發現，IAB 來源隔離通過。[完整實作](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/MODULARIZATION_v2.1.25_REPORT.md) 與 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md) 分列發布及實際安裝，BR-01 位置遺失仍未修復，歷史矩陣不重開。
+- 新增 34 案，完整 889／889、98 模組架構及 verify 通過；獨立安全差異 193 項、0 發現，IAB 來源隔離通過。[完整實作](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/MODULARIZATION_v2.1.25_REPORT.md) 與 [當版完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2125-release-verification--2026-10-14) 分列發布及實際安裝，BR-01 位置遺失仍未修復，歷史矩陣不重開。
 - 發布後公開 latest 版本／大小／SHA-256 相符；2026-10-15 使用者更新後，完整執行本體／唯一實例／hooks、指定影片 Auto 1／2 倍正常回歸與控制中心操作通過。本項為 main 後續紀錄，已發布快照不回寫。
 
 ## v2.1.24
@@ -143,7 +143,7 @@
 - 政策重評後保留 15／30／15 秒；少量樣本不支持另訂秒數，沒有新增傳輸探測或更改 Auto／ABR。
 - Tampermonkey 選單改為「⚙️ 開啟 BiliCDN 控制中心」。新增 14 案，全套 855／855，來源隔離及獨立安全差異 0 發現；[政策／修復報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/BR01_POLICY_REASSESSMENT_2026-10-14.md) 分列實際安裝及限制，不宣稱原自然停滯根因已定位。
 
-- 後續實際 v2.1.24 的 Auto 1／2 倍正常長暫停後播放入口通過，但 BR-01 整體不通過；失效後使用者尋位位置遺失尚未修復。新調查 1 fail／2 pass 與已發布正式 855／855 分列，見 [位置報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/BR01_v2.1.24_POSITION_LOSS_2026-10-14.md) 與 [最新版驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 後續實際 v2.1.24 的 Auto 1／2 倍正常長暫停後播放入口通過，但 BR-01 整體不通過；失效後使用者尋位位置遺失尚未修復。新調查 1 fail／2 pass 與已發布正式 855／855 分列，見 [位置報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/BR01_v2.1.24_POSITION_LOSS_2026-10-14.md) 與 [當版完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2124-release-verification--2026-10-14)。
 
 ## v2.1.23
 

@@ -262,7 +262,7 @@ async function createNativeEnabledXHRPreservesRejectedUpstreamPayload5Context4(t
   return extendFixture(base, { nativeXhr } as const)
 }
 
-async function createNonFiniteDiagnosticCountsAreNormalized6Context5(t: TestContext) {
+async function createNonFinitePlayurlSummaryCountsContext5(t: TestContext) {
   const base = await createNativeEnabledXHRPreservesRejectedUpstreamPayload5Context4(t)
   void (base.transport.snapshot().lastPlayurl?.accepted === false)
   base.strict = true
@@ -301,23 +301,23 @@ async function createNonFiniteDiagnosticCountsAreNormalized6Context5(t: TestCont
   return extendFixture(base, {} as const)
 }
 
-async function checkNonFiniteDiagnosticCountsAreNormalized6(t: TestContext): Promise<void> {
-  const base = await createNonFiniteDiagnosticCountsAreNormalized6Context5(t)
+async function checkNonFinitePlayurlSummaryCountsAreNormalized6(t: TestContext): Promise<void> {
+  const base = await createNonFinitePlayurlSummaryCountsContext5(t)
 
   assert.strictEqual(
     base.transport.snapshot().lastPlayurl?.videoCount,
     0,
-    'non-finite diagnostic counts are normalized',
+    'non-finite playurl summary counts are normalized',
   )
   assert.strictEqual(
     base.transport.snapshot().lastPlayurl?.audioCount,
     0,
-    'negative diagnostic counts are normalized',
+    'negative playurl summary counts are normalized',
   )
   assert.strictEqual(
     base.transport.snapshot().lastPlayurl?.segmentCount,
     65_535,
-    'diagnostic counts have a finite upper bound',
+    'playurl summary counts have a finite upper bound',
   )
   assert.strictEqual(
     base.transport.snapshot().lastPlayurl?.upstreamCode,
@@ -327,7 +327,7 @@ async function checkNonFiniteDiagnosticCountsAreNormalized6(t: TestContext): Pro
   assert.strictEqual(
     base.transport.snapshot().lastPlayurl?.formats.join(','),
     'dash,mp4,flv',
-    'diagnostic formats have a bounded unique set',
+    'playurl summary formats have a bounded unique set',
   )
   const augmented = {
     ...base.accepted,
@@ -349,7 +349,7 @@ async function checkNonFiniteDiagnosticCountsAreNormalized6(t: TestContext): Pro
 async function checkDisabledTransportPreservesTheRecentPlayurlSummary7(
   t: TestContext,
 ): Promise<void> {
-  const base = await createNonFiniteDiagnosticCountsAreNormalized6Context5(t)
+  const base = await createNonFinitePlayurlSummaryCountsContext5(t)
 
   void base.transport.snapshot().lastPlayurl?.videoCount
   void base.transport.snapshot().lastPlayurl?.audioCount
@@ -623,8 +623,8 @@ test('XHR response text accepts a typed accepted result [4]', { timeout: 5000 },
 test('Native-enabled XHR preserves rejected upstream payload [5]', { timeout: 5000 }, async (t) => {
   await checkNativeEnabledXHRPreservesRejectedUpstreamPayload5(t)
 })
-test('non-finite diagnostic counts are normalized [6]', { timeout: 5000 }, async (t) => {
-  await checkNonFiniteDiagnosticCountsAreNormalized6(t)
+test('non-finite playurl summary counts are normalized [6]', { timeout: 5000 }, async (t) => {
+  await checkNonFinitePlayurlSummaryCountsAreNormalized6(t)
 })
 test(
   'disabled transport preserves the recent playurl summary [7]',

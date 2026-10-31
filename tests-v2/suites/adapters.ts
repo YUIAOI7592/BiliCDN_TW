@@ -1093,9 +1093,7 @@ async function createParameterInvalidatesCachedFallbackOnNextRequest9ParameterPa
   return extendFixture(base, { alternateHost } as const)
 }
 
-async function createPerTabOriginalComparisonDoesNotOverwriteSavedRoutingSettings10Context10(
-  t: TestContext,
-) {
+async function createRestrictedFixedRouteContext10(t: TestContext) {
   const base =
     await createParameterInvalidatesCachedFallbackOnNextRequest9ParameterParameterContext9(t)
   for (const type of ['black', 'dead'] as const) {
@@ -1123,8 +1121,7 @@ async function createPerTabOriginalComparisonDoesNotOverwriteSavedRoutingSetting
 }
 
 async function createNativeControlUrlContext11(t: TestContext) {
-  const base =
-    await createPerTabOriginalComparisonDoesNotOverwriteSavedRoutingSettings10Context10(t)
+  const base = await createRestrictedFixedRouteContext10(t)
   const nativeControlUrl =
     'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/control/clip.m4s?signature=private'
   const nativeControlBackup =
@@ -1630,7 +1627,7 @@ async function checkBlacklistedNonGETFetchNeverReachesNativeFetch4(t: TestContex
   assert.strictEqual(
     base.transport.snapshot().lastBlocked?.reason,
     'black',
-    'local block diagnostics retain the reason without a URL',
+    'local block status retains the reason without a URL',
   )
   const forbiddenRequest = new Request(base.forbiddenNonGetUrl, { method: 'POST' })
   await base.fakeWindow.fetch(forbiddenRequest).then(
@@ -2012,7 +2009,7 @@ async function checkFetchAndXHRHookAssignmentsAreVerified1(t: TestContext): Prom
       firstIntercept.mediaRecognized &&
       firstIntercept.nativeCalled &&
       firstIntercept.responseObserved,
-    'diagnostic stages distinguish hook entry, media recognition, native invocation and response',
+    'interception stages distinguish hook entry, media recognition, native invocation and response',
   )
   const mediaReader = mediaResponse.body?.getReader()
   assert.ok(mediaReader, 'fetch wrapper returns a readable body')

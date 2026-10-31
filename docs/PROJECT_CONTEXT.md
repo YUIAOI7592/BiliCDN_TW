@@ -48,16 +48,16 @@
 
 ## 診斷
 
-見 [產品與架構指南](ARCHITECTURE.md#診斷與-ui)。
+此舊功能已撤除；現行畫面資料流見 [控制中心與狀態](ARCHITECTURE.md#控制中心與狀態)，舊診斷規則只由該節歷史入口追溯。
 
 ## 唯讀緩衝趨勢
 
-見 [產品與架構指南](ARCHITECTURE.md#唯讀緩衝趨勢)。
+此舊功能與專用評估已撤除；見 [撤除說明與歷史入口](../scripts/evaluation/README.md#已撤除的專用評估)。
 
 ## 播放進度
 
-見 [產品與架構指南](ARCHITECTURE.md#播放進度)。
+現行播放進度與恢復判定見 [一般停滯與操作所有權](ARCHITECTURE.md#一般停滯與操作所有權)；舊診斷嘗試追蹤的同名章節已撤除。
 
 ## 報告複製
 
-見 [產品與架構指南](ARCHITECTURE.md#控制中心複製所有權)。
+報告及剪貼簿功能已撤除；[撤除前複製規則](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/ARCHITECTURE.md#控制中心複製所有權) 僅供歷史追溯。
