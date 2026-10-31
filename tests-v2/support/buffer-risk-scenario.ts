@@ -5,10 +5,13 @@ import { fixture, media } from './runtime-fixture.ts'
 import { FakeStorage } from './storage.ts'
 import type { TestContext } from 'node:test'
 import type { DomainEvent, RequestContext } from '../../src-v2/domain/model.ts'
-import { createSupply, advanceSupply } from '../../scripts/buffer-shadow/supply-model.mts'
-import type { RiskScenario } from '../../scripts/buffer-shadow/risk-inputs.mts'
-import { startBrowserObservation } from '../../scripts/buffer-shadow/live-browser.mts'
-import type { LiveSample, LiveEvent } from '../../scripts/buffer-shadow/live-model.mts'
+import {
+  createSupply,
+  advanceSupply,
+} from '../../scripts/evaluation/buffer-shadow/supply-model.mts'
+import type { RiskScenario } from '../../scripts/evaluation/buffer-shadow/risk-inputs.mts'
+import { startBrowserObservation } from '../../scripts/evaluation/buffer-shadow/live-browser.mts'
+import type { LiveSample, LiveEvent } from '../../scripts/evaluation/buffer-shadow/live-model.mts'
 
 class ObservedStorage extends FakeStorage {
   readonly writes: unknown[] = []

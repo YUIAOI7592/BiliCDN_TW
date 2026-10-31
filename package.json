@@ -8,21 +8,21 @@
     "node": ">=26.8.1"
   },
   "scripts": {
-    "typecheck": "node scripts/typecheck.mts",
-    "architecture": "node scripts/architecture-check.mts",
+    "typecheck": "node scripts/checks/typecheck.mts",
+    "architecture": "node scripts/checks/architecture-check.mts",
     "build": "node scripts/build.mts",
     "test": "node scripts/test.mts",
     "verify": "node scripts/verify.mts",
     "package": "node scripts/package.mts",
-    "format": "node scripts/format.mts",
-    "format:check": "node scripts/format.mts --check",
-    "docs:check": "node scripts/docs-check.mts",
-    "archive:check": "node scripts/archive-check.mts",
-    "compare:upstream": "node scripts/upstream-compare.mts",
-    "evaluate:buffer-shadow": "node scripts/buffer-shadow-evaluation.mts",
-    "evaluate:buffer-live": "node scripts/buffer-live.mts",
-    "evaluate:diagnostics": "node scripts/diagnostics-cost.mts",
-    "evaluate:early-retry": "node scripts/early-retry-evaluation.mts"
+    "format": "node scripts/checks/format.mts",
+    "format:check": "node scripts/checks/format.mts --check",
+    "docs:check": "node scripts/checks/docs-check.mts",
+    "archive:check": "node scripts/checks/archive-check.mts",
+    "compare:upstream": "node scripts/evaluation/upstream-compare.mts",
+    "evaluate:buffer-shadow": "node scripts/evaluation/buffer-shadow-evaluation.mts",
+    "evaluate:buffer-live": "node scripts/evaluation/buffer-live.mts",
+    "evaluate:diagnostics": "node scripts/evaluation/diagnostics-cost.mts",
+    "evaluate:early-retry": "node scripts/evaluation/early-retry-evaluation.mts"
   },
   "devDependencies": {
     "@types/node": "26.6.4",

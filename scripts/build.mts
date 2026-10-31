@@ -2,7 +2,7 @@ import * as esbuild from 'esbuild'
 import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { readRelease } from './lib.mts'
+import { readRelease } from './lib/lib.mts'
 
 export const buildOptions = Object.freeze({
   bundle: true,
@@ -52,7 +52,7 @@ export async function build({ write = true }: BuildOptions = {}) {
     .sort()
   for (const path of [
     'scripts/build.mts',
-    'scripts/lib.mts',
+    'scripts/lib/lib.mts',
     'package.json',
     'package-lock.json',
     'release.json',

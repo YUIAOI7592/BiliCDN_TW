@@ -9,7 +9,6 @@ import type {
   PlayurlRejection,
   PlayurlTransformResult,
 } from '../domain/playurl-model.ts'
-export type { TransportSnapshot } from '../domain/transport-model.ts'
 import type { PlayurlPort } from '../application/ports.ts'
 import { isCatalogHost } from '../domain/catalog.ts'
 import {
@@ -21,18 +20,12 @@ import {
   type GenerationId,
 } from '../domain/model.ts'
 import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
-import type { AppliedRouteDecision } from '../application/route-model.ts'
+import type { AppliedRouteDecision } from '../application/route-contracts.ts'
 import type {
   TransportRoutes,
   TransportSettings,
   StartupGate,
   TransportSessionPort,
-} from './transport-ports.ts'
-export type {
-  TransportRoutes,
-  TransportSettings,
-  StartupGate,
-  HookInstallation,
 } from './transport-ports.ts'
 export interface DispatchCheck {
   readonly generation: GenerationId

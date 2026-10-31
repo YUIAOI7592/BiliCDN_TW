@@ -1,9 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { candidateScenarioNames } from '../../scripts/buffer-shadow/candidate-inputs.mts'
+import { candidateScenarioNames } from '../../scripts/evaluation/buffer-shadow/candidate-inputs.mts'
 import { runScenario } from '../support/buffer-shadow-scenarios.ts'
-import { readingVersion } from '../../scripts/buffer-shadow/model.mts'
-import { validEvaluationResult } from '../../scripts/buffer-shadow-evaluation.mts'
+import { readingVersion } from '../../scripts/evaluation/buffer-shadow/model.mts'
+import { validEvaluationResult } from '../../scripts/evaluation/buffer-shadow-evaluation.mts'
 
 test('buffer-v3 tooling preserves version meanings and rejects mixed worker evidence', async (t) => {
   for (const version of [1, 2, 3, 4, 5, 6]) {

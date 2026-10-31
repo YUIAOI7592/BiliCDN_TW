@@ -9,8 +9,8 @@ import type {
   RouteIdentity,
   RouteType,
 } from '../../domain/model.ts'
-import type { VaultCandidates } from '../../state/vault-model.ts'
-import type { StartupCandidate } from '../route-model.ts'
+import type { VaultCandidates } from '../../state/vault-contracts.ts'
+import type { StartupCandidate } from '../route-contracts.ts'
 import type {
   RoutingEvidenceReader,
   RoutingPolicyReader,

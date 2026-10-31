@@ -1,6 +1,6 @@
 import type { PlayurlEndpointKind, PlayurlRequestContext } from '../domain/playurl-model.ts'
 import type { RequestContext, GenerationId, EpochId } from '../domain/model.ts'
-import type { AppliedRouteDecision } from '../application/route-model.ts'
+import type { AppliedRouteDecision } from '../application/route-contracts.ts'
 
 export interface XhrMeta {
   method: string

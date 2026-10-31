@@ -9,7 +9,7 @@ import type {
   RestoreAttempt,
   RestoreReadback,
   RestoreReadMode,
-} from '../application/recovery-ports.ts'
+} from '../application/recovery-contracts.ts'
 import { playbackTimeAdvanced, playbackFramesAdvanced } from '../domain/playback-progress.ts'
 
 export interface PlayerControlEnvironment {

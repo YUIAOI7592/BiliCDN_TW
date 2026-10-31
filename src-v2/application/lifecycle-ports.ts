@@ -1,9 +1,9 @@
 import type { DomainEvent } from '../domain/model.ts'
-import type { MonitorPort } from './monitor-ports.ts'
-import type { RouteCoordinatorPort } from './route-ports.ts'
-import type { SessionPort } from '../state/session-ports.ts'
-import type { SettingsPort } from '../state/settings-ports.ts'
-import type { SignedRouteVaultPort } from '../state/vault-ports.ts'
+import type { MonitorPort } from './monitor-contracts.ts'
+import type { RouteCoordinatorPort } from './route-contracts.ts'
+import type { SessionPort } from '../state/session-contracts.ts'
+import type { SettingsPort } from '../state/settings-contracts.ts'
+import type { SignedRouteVaultPort } from '../state/vault-contracts.ts'
 
 export interface LifecycleSessionPort extends Pick<SessionPort, 'beginGeneration' | 'get'> {}
 export interface LifecycleSettingsPort extends Pick<SettingsPort, 'get' | 'subscribe'> {}

@@ -55,7 +55,7 @@ async function fixture(
   const calls: string[] = []
   let retryListener:
     | ((
-        snapshot: import('../../src-v2/application/early-retry-model.ts').EarlyRetrySnapshot,
+        snapshot: import('../../src-v2/application/early-retry-contracts.ts').EarlyRetrySnapshot,
       ) => void)
     | null = null
   const retrySnapshot = {

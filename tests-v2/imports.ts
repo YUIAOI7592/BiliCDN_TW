@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { inspectImportPurity } from '../scripts/import-purity.mts'
+import { inspectImportPurity } from '../scripts/testing/import-purity.mts'
 test(
   'all non-entry modules import without ambient reads or side effects',
   { timeout: 5000 },

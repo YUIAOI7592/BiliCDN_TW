@@ -4,7 +4,7 @@ import { PlayerMonitor } from '../../../src-v2/application/player-monitor.ts'
 import { RuntimeController } from '../../../src-v2/application/runtime-controller.ts'
 import { DiagnosticRecorder } from '../../../src-v2/diagnostics/recorder.ts'
 import type { RuntimeRoutesPort } from '../../../src-v2/application/runtime-ports.ts'
-import type { MonitorRoutes } from '../../../src-v2/application/monitor-ports.ts'
+import type { MonitorRoutes } from '../../../src-v2/application/monitor-contracts.ts'
 import { defaultSettings } from '../../../src-v2/state/settings-store.ts'
 import {
   decisionId,

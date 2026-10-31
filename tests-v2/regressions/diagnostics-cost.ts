@@ -7,10 +7,10 @@ import {
   hash,
   validResult,
   summarize,
-} from '../../scripts/diagnostics-cost/model.mts'
-import type { Measurement } from '../../scripts/diagnostics-cost/model.mts'
+} from '../../scripts/evaluation/diagnostics-cost/model.mts'
+import type { Measurement } from '../../scripts/evaluation/diagnostics-cost/model.mts'
 import { testScope } from '../support/scope.ts'
-import { supervise } from '../../scripts/test-process.mts'
+import { supervise } from '../../scripts/testing/test-process.mts'
 
 test('diagnostics-cost CLI separates profile and timing and rejects unknown or duplicate options', () => {
   assert.deepEqual(parseArgs(['--profile', '--json']), { profile: true, json: true })

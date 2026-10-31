@@ -2,13 +2,13 @@ import { existsSync, readFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { resolve, sep } from 'node:path'
 import { build } from './build.mts'
 import { runTests } from './test.mts'
-import { typecheck } from './typecheck.mts'
-import { formatProject } from './format.mts'
-import { checkDocumentation } from './docs-check.mts'
-import { checkArchive } from './archive-check.mts'
-import { checkProjectConfiguration } from './project-config.mts'
+import { typecheck } from './checks/typecheck.mts'
+import { formatProject } from './checks/format.mts'
+import { checkDocumentation } from './checks/docs-check.mts'
+import { checkArchive } from './checks/archive-check.mts'
+import { checkProjectConfiguration } from './checks/project-config.mts'
 import { packageRelease } from './package.mts'
-import { command, readRelease, sha256 } from './lib.mts'
+import { command, readRelease, sha256 } from './lib/lib.mts'
 
 export async function verify() {
   const config = readRelease()
@@ -39,7 +39,7 @@ export async function verify() {
     `Documentation passed; ${documentation.legacyLinks.length} immutable broken links retained, ${documentation.archivedReferences.length} historical URLs unavailable after archival, ${documentation.privateEvidenceNotChecked.length} private evidence references not checked, ${documentation.externalLinksNotFetched} external links not fetched.`,
   )
   typecheck()
-  command(process.execPath, ['scripts/architecture-check.mts'])
+  command(process.execPath, ['scripts/checks/architecture-check.mts'])
   await runTests()
   const first = await build({ write: false }),
     second = await build()

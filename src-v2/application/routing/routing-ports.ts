@@ -11,7 +11,7 @@ import type {
   RouteRestrictionsPort,
   RouteSettingsPort,
   RouteVaultPort,
-} from '../route-ports.ts'
+} from '../route-contracts.ts'
 
 export interface RoutingVaultReader extends Pick<
   RouteVaultPort,

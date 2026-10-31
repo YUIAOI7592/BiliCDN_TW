@@ -3,7 +3,7 @@ import { hardRestriction } from '../../domain/route-policy.ts'
 import { parseMediaUrl } from '../../domain/url-policy.ts'
 import type { HardRestriction } from '../../domain/route-policy.ts'
 import type { MediaKind, RouteDecision, RouteIdentity } from '../../domain/model.ts'
-import type { RestrictionSnapshot } from '../../state/restriction-model.ts'
+import type { RestrictionSnapshot } from '../../state/restriction-contracts.ts'
 import type {
   RoutingEnvironmentReader,
   RoutingPolicyReader,

@@ -1,7 +1,7 @@
-import type { RouteCoordinatorPort } from '../application/route-ports.ts'
-import type { MeasurementPort } from '../application/measurement-ports.ts'
-import type { SessionPort } from '../state/session-ports.ts'
-import type { SettingsState } from '../state/settings-model.ts'
+import type { RouteCoordinatorPort } from '../application/route-contracts.ts'
+import type { MeasurementPort } from '../application/measurement-contracts.ts'
+import type { SessionPort } from '../state/session-contracts.ts'
+import type { SettingsState } from '../state/settings-contracts.ts'
 
 export interface TransportRoutes extends Pick<
   RouteCoordinatorPort,

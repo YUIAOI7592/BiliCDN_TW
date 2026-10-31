@@ -1,5 +1,5 @@
-import type { PlayurlItem } from '../application/playurl-model.ts'
-import type { PlayurlControllerPort } from '../application/playurl-ports.ts'
+import type { PlayurlItem } from '../application/playurl-contracts.ts'
+import type { PlayurlControllerPort } from '../application/playurl-contracts.ts'
 import type {
   PlayurlFormat,
   PlayurlRejection,

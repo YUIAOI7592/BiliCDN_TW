@@ -6,7 +6,7 @@ import type {
   RestoreAttempt,
   RestoreCommand,
   RestoreReadback,
-} from '../../src-v2/application/recovery-ports.ts'
+} from '../../src-v2/application/recovery-contracts.ts'
 import type { VideoSnapshot } from '../../src-v2/application/ports.ts'
 import { FakeClock } from '../support/clock.ts'
 import { testScope } from '../support/scope.ts'

@@ -7,16 +7,16 @@ import { epochId, representationId, requestId } from '../../src-v2/domain/model.
 import type { BufferTrendSnapshot } from '../../src-v2/domain/buffer-trend.ts'
 import { bufferMonitor } from './buffer-monitor.ts'
 import type { testScope } from './scope.ts'
-import { sha256 } from '../../scripts/upstream-compare/model.mts'
-import { scoreWindow } from '../../scripts/buffer-shadow/model.mts'
-import type { EvidenceRow, ScenarioName } from '../../scripts/buffer-shadow/model.mts'
+import { sha256 } from '../../scripts/evaluation/upstream-compare/model.mts'
+import { scoreWindow } from '../../scripts/evaluation/buffer-shadow/model.mts'
+import type { EvidenceRow, ScenarioName } from '../../scripts/evaluation/buffer-shadow/model.mts'
 import {
   candidateProfile,
   candidateTargets,
-} from '../../scripts/buffer-shadow/candidate-inputs.mts'
-import type { CandidateProfile } from '../../scripts/buffer-shadow/candidate-inputs.mts'
-import type { ObservationTarget } from '../../scripts/buffer-shadow/observation-inputs.mts'
-import type { CycleTarget } from '../../scripts/buffer-shadow/cycle-inputs.mts'
+} from '../../scripts/evaluation/buffer-shadow/candidate-inputs.mts'
+import type { CandidateProfile } from '../../scripts/evaluation/buffer-shadow/candidate-inputs.mts'
+import type { ObservationTarget } from '../../scripts/evaluation/buffer-shadow/observation-inputs.mts'
+import type { CycleTarget } from '../../scripts/evaluation/buffer-shadow/cycle-inputs.mts'
 
 export interface ScenarioInput {
   readonly at: number

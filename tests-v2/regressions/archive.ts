@@ -11,8 +11,8 @@ import {
   checkArchive,
   readArchiveManifest,
   readTarArchive,
-} from '../../scripts/archive-check.mts'
-import type { ArchiveManifest, ArchiveEntry } from '../../scripts/archive-check.mts'
+} from '../../scripts/checks/archive-check.mts'
+import type { ArchiveManifest, ArchiveEntry } from '../../scripts/checks/archive-check.mts'
 import { testScope } from '../support/scope.ts'
 
 const sha = (bytes: string | Uint8Array) => createHash('sha256').update(bytes).digest('hex')

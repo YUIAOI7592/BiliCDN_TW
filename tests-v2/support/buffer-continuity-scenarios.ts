@@ -1,6 +1,9 @@
 import { runScenario } from './buffer-shadow-scenarios.ts'
-import { measureContinuity, revocationAt } from '../../scripts/buffer-shadow/continuity.mts'
-import type { ContinuityCase } from '../../scripts/buffer-shadow/continuity-inputs.mts'
+import {
+  measureContinuity,
+  revocationAt,
+} from '../../scripts/evaluation/buffer-shadow/continuity.mts'
+import type { ContinuityCase } from '../../scripts/evaluation/buffer-shadow/continuity-inputs.mts'
 import type { testScope } from './scope.ts'
 import baseline from '../fixtures/buffer-continuity-v5.json'
 

@@ -1,24 +1,20 @@
 import type { TransportSessionPort } from './transport-ports.ts'
 import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
 import type { PlayurlPort } from '../application/ports.ts'
-import {
-  TransportContext,
-  type TransportRoutes,
-  type TransportSettings,
-  type StartupGate,
-  type HookInstallation,
-  type TransportSnapshot,
-} from './transport-context.ts'
+import { TransportContext } from './transport-context.ts'
+import type { TransportRoutes } from './transport-ports.ts'
+import type { TransportSettings } from './transport-ports.ts'
+import type { StartupGate } from './transport-ports.ts'
+import type { HookInstallation } from './transport-ports.ts'
+import type { TransportSnapshot } from '../domain/transport-model.ts'
 import { FetchHookAdapter } from './fetch-hook.ts'
 import { XhrHookAdapter } from './xhr-hook.ts'
-import type { EarlyRetryRoutingPort } from '../application/early-retry-routing-ports.ts'
+import type { EarlyRetryRoutingPort } from '../application/early-retry-contracts.ts'
 import type {
   EarlyRetryPermit,
   InFlightVideoSample,
   EarlyRetryActionState,
-} from '../application/early-retry-model.ts'
-export type { TransportSnapshot } from './transport-context.ts'
-
+} from '../application/early-retry-contracts.ts'
 export class TransportAdapter {
   #fetch: HookInstallation | null = null
   #xhr: HookInstallation | null = null

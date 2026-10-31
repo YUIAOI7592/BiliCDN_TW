@@ -1,6 +1,6 @@
 import { runScenario } from './buffer-shadow-scenarios.ts'
 import type { ScenarioResult } from './buffer-shadow-scenarios.ts'
-import type { Case } from '../../scripts/buffer-shadow/low-inputs.mts'
+import type { Case } from '../../scripts/evaluation/buffer-shadow/low-inputs.mts'
 import type { testScope } from './scope.ts'
 
 export async function runLowScenario(

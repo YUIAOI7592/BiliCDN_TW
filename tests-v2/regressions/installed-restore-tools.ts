@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { testScope } from '../support/scope.ts'
-import { trustedSeekReady } from '../../scripts/iab-installed-verdict.mts'
+import { trustedSeekReady } from '../../scripts/iab/iab-installed-verdict.mts'
 
 test('IR36 R2 trusted native seeking does not require an opaque PendingGoal proof', (t) => {
   testScope(t)
@@ -41,7 +41,7 @@ import {
   isolateWrites,
   installInstalledCase,
   progressPoint,
-} from '../../scripts/iab-installed-restore.mts'
+} from '../../scripts/iab/iab-installed-restore.mts'
 
 function fixture(t: Parameters<typeof testScope>[0]) {
   const recoveryListeners = new Set<(event: any) => void>()

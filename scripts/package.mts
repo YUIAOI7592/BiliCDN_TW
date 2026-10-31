@@ -1,7 +1,7 @@
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { build } from './build.mts'
-import { filesUnder, readRelease, sha256 } from './lib.mts'
+import { filesUnder, readRelease, sha256 } from './lib/lib.mts'
 
 export interface PackageOptions {
   directory?: string

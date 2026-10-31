@@ -1,9 +1,8 @@
-import type { SettingsState } from '../state/settings-model.ts'
-import type { EarlyRetryPort } from './early-retry-ports.ts'
+import type { SettingsState } from '../state/settings-contracts.ts'
+import type { EarlyRetryPort } from './early-retry-contracts.ts'
 
 import type {
   ControlCommandPort,
-  SettingsChange,
   ControlSettingsPort,
   ControlRestrictionsPort,
   ControlEvidencePort,
@@ -12,18 +11,7 @@ import type {
   ControlMeasurementPort,
   ControlRecoveryPort,
 } from './control-ports.ts'
-export type {
-  SettingsChange,
-  ControlCommandPort,
-  ControlSettingsPort,
-  ControlRestrictionsPort,
-  ControlEvidencePort,
-  ControlMetaPort,
-  ControlRoutesPort,
-  ControlMeasurementPort,
-  ControlRecoveryPort,
-} from './control-ports.ts'
-
+import type { SettingsChange } from '../state/settings-contracts.ts'
 export class ControlCommands implements ControlCommandPort {
   constructor(
     private readonly settings: ControlSettingsPort,

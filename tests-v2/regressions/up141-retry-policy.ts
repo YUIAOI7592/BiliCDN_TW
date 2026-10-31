@@ -7,7 +7,7 @@ import type {
   EarlyRetryAlternative,
   EarlyRetryStatus,
   InFlightVideoSample,
-} from '../../src-v2/application/early-retry-model.ts'
+} from '../../src-v2/application/early-retry-contracts.ts'
 import {
   generationId,
   epochId,

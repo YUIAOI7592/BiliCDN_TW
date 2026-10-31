@@ -1,14 +1,14 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { runInNewContext } from 'node:vm'
-import { installedCollector } from '../../scripts/buffer-shadow/browser-collector.mts'
-import { validEvaluationResult } from '../../scripts/buffer-shadow-evaluation.mts'
+import { installedCollector } from '../../scripts/evaluation/buffer-shadow/browser-collector.mts'
+import { validEvaluationResult } from '../../scripts/evaluation/buffer-shadow-evaluation.mts'
 import {
   scoreWindow,
   candidateContinuity,
   parseEvaluationArgs,
-} from '../../scripts/buffer-shadow/model.mts'
-import type { EvidenceRow } from '../../scripts/buffer-shadow/model.mts'
+} from '../../scripts/evaluation/buffer-shadow/model.mts'
+import type { EvidenceRow } from '../../scripts/evaluation/buffer-shadow/model.mts'
 import { runScenario } from '../support/buffer-shadow-scenarios.ts'
 import { FakeClock } from '../support/clock.ts'
 import { testScope } from '../support/scope.ts'
@@ -16,7 +16,7 @@ import {
   cycleNames,
   cycleInput,
   cycleReserveNames,
-} from '../../scripts/buffer-shadow/cycle-inputs.mts'
+} from '../../scripts/evaluation/buffer-shadow/cycle-inputs.mts'
 
 test('buffer-v4 tooling freezes cycle and independent reserve inputs and CLI selection', () => {
   assert.equal(new Set(cycleNames).size, cycleNames.length)
@@ -39,7 +39,7 @@ test('buffer-v4 tooling freezes cycle and independent reserve inputs and CLI sel
 import {
   observationNames,
   observationInput,
-} from '../../scripts/buffer-shadow/observation-inputs.mts'
+} from '../../scripts/evaluation/buffer-shadow/observation-inputs.mts'
 
 test('U-E07 independent holdout inputs are immutable and declare utility gates before execution', () => {
   for (const name of observationNames) {

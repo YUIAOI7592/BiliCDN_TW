@@ -1,9 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { frozenCases } from '../../scripts/buffer-shadow/low-inputs.mts'
-import { parseEvaluationArgs } from '../../scripts/buffer-shadow/model.mts'
-import { validEvaluationResult } from '../../scripts/buffer-shadow-evaluation.mts'
+import { frozenCases } from '../../scripts/evaluation/buffer-shadow/low-inputs.mts'
+import { parseEvaluationArgs } from '../../scripts/evaluation/buffer-shadow/model.mts'
+import { validEvaluationResult } from '../../scripts/evaluation/buffer-shadow-evaluation.mts'
 import { runLowScenario } from '../support/buffer-low-scenarios.ts'
 test('buffer-v5 tooling input freeze and exclusive CLI mode', () => {
   assert.equal(

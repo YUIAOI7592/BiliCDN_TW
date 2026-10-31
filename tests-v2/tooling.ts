@@ -4,12 +4,12 @@ import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, rmSync } from 'nod
 import { join, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { tmpdir } from 'node:os'
-import { parseArgs, selection, UsageError } from '../scripts/test-registry.mts'
+import { parseArgs, selection, UsageError } from '../scripts/testing/test-registry.mts'
 import { executeSuites, validateReport, finishOutcome } from '../scripts/test.mts'
 import { BrowserScheduler } from '../src-v2/adapters/scheduler.ts'
-import { supervise } from '../scripts/test-process.mts'
-import { inspectImportPurity } from '../scripts/import-purity.mts'
-import { formattedSource } from '../scripts/format.mts'
+import { supervise } from '../scripts/testing/test-process.mts'
+import { inspectImportPurity } from '../scripts/testing/import-purity.mts'
+import { formattedSource } from '../scripts/checks/format.mts'
 import { testScope } from './support/scope.ts'
 import { FakeClock } from './support/clock.ts'
 import { deferred } from './support/deferred.ts'
@@ -61,7 +61,7 @@ test(
       writeFileSync(absolute, 'export const amount:number=1\n')
     }
     writeFileSync(join(dir, '.prettierrc.json'), readFileSync('.prettierrc.json', 'utf8'))
-    const entry = pathToFileURL(resolve('scripts/format.mts')).href
+    const entry = pathToFileURL(resolve('scripts/checks/format.mts')).href
     const run = (check: boolean) =>
       supervise(
         process.execPath,

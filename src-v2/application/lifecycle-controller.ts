@@ -17,14 +17,6 @@ import type {
   LifecycleRoutesPort,
   LifecycleMonitorPort,
 } from './lifecycle-ports.ts'
-export type {
-  LifecycleSessionPort,
-  LifecycleSettingsPort,
-  LifecycleVaultPort,
-  LifecycleRoutesPort,
-  LifecycleMonitorPort,
-} from './lifecycle-ports.ts'
-
 export class LifecycleController implements LifecyclePort {
   #listeners = new Set<(event: DomainEvent) => void>()
   #restores: (() => void)[] = []

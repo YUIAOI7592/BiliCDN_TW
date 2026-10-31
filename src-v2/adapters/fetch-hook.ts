@@ -4,11 +4,11 @@ import { isHttpDnsUrl } from '../domain/url-policy.ts'
 import type { FailureKind, RequestContext } from '../domain/model.ts'
 import {
   type TransportContext,
-  type HookInstallation,
   copyResponseSurface,
   blockedPlayurlText,
   rejectedPlayurl,
 } from './transport-context.ts'
+import type { HookInstallation } from './transport-ports.ts'
 export class FetchHookAdapter {
   constructor(private readonly context: TransportContext) {}
   install(): HookInstallation | null {

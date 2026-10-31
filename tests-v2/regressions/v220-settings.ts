@@ -37,7 +37,9 @@ test('V220 failed reset retains the existing Native preference and releases supp
   const storage = new FakeStorage()
   storage.set(SETTINGS_KEY, { schema: 2, considerNativeSources: true })
   const settings = testScope(t).own(new SettingsStore(storage, () => 1000))
-  storage.set = () => { throw new Error('controlled write failure') }
+  storage.set = () => {
+    throw new Error('controlled write failure')
+  }
   await assert.rejects(settings.reset(), /controlled write failure/)
   assert.equal(settings.get().considerNativeSources, true)
 })

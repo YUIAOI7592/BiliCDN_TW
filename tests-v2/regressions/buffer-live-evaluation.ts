@@ -1,22 +1,28 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { createLiveSession, drainRemoteSession } from '../../scripts/buffer-shadow/live-session.mts'
+import {
+  createLiveSession,
+  drainRemoteSession,
+} from '../../scripts/evaluation/buffer-shadow/live-session.mts'
 import {
   createObservationPump,
   pumpObservationStep,
-} from '../../scripts/buffer-shadow/live-pump.mts'
-import { assessAdoption, scoreLiveWindow } from '../../scripts/buffer-shadow/live-model.mts'
+} from '../../scripts/evaluation/buffer-shadow/live-pump.mts'
+import {
+  assessAdoption,
+  scoreLiveWindow,
+} from '../../scripts/evaluation/buffer-shadow/live-model.mts'
 import type {
   LiveSample,
   LiveEvent,
   AdoptionFacts,
-} from '../../scripts/buffer-shadow/live-model.mts'
+} from '../../scripts/evaluation/buffer-shadow/live-model.mts'
 import { FakeClock } from '../support/clock.ts'
 import { testScope } from '../support/scope.ts'
-import { startBrowserObservation } from '../../scripts/buffer-shadow/live-browser.mts'
-import type { ObservationSnapshot } from '../../scripts/buffer-shadow/live-browser.mts'
-import { evaluateLiveWindows } from '../../scripts/buffer-shadow/live-report.mts'
-import { parseLiveArgs, replayLiveEvidence } from '../../scripts/buffer-live.mts'
+import { startBrowserObservation } from '../../scripts/evaluation/buffer-shadow/live-browser.mts'
+import type { ObservationSnapshot } from '../../scripts/evaluation/buffer-shadow/live-browser.mts'
+import { evaluateLiveWindows } from '../../scripts/evaluation/buffer-shadow/live-report.mts'
+import { parseLiveArgs, replayLiveEvidence } from '../../scripts/evaluation/buffer-live.mts'
 import { fixture as runtimeFixture, media } from '../support/runtime-fixture.ts'
 import { FakeStorage } from '../support/storage.ts'
 class ObservedStorage extends FakeStorage {

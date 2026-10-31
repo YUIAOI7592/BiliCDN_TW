@@ -5,9 +5,13 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'nod
 import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { createHash } from 'node:crypto'
-import { checkDocumentation, documentationCli, markdownAnchors } from '../../scripts/docs-check.mts'
-import type { DocumentationManifest } from '../../scripts/docs-check.mts'
-import type { ArchiveManifest } from '../../scripts/archive-check.mts'
+import {
+  checkDocumentation,
+  documentationCli,
+  markdownAnchors,
+} from '../../scripts/checks/docs-check.mts'
+import type { DocumentationManifest } from '../../scripts/checks/docs-check.mts'
+import type { ArchiveManifest } from '../../scripts/checks/archive-check.mts'
 import { testScope } from '../support/scope.ts'
 
 function fixture(t: TestContext) {

@@ -6,7 +6,6 @@ import type { DomainEvent } from '../../src-v2/domain/model.ts'
 import type { PlaybackDiagnosticSample } from '../../src-v2/domain/diagnostic-model.ts'
 import { RuntimeController } from '../../src-v2/application/runtime-controller.ts'
 import { defaultSettings } from '../../src-v2/state/settings-store.ts'
-
 for (const rate of [1, 2])
   test(`U-N00 baseline buffer decline preserves calls and media reads rate=${rate}`, (t) => {
     const f = bufferMonitor(t, rate)

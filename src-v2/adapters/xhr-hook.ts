@@ -2,26 +2,26 @@ import { classifyPlayurlApi } from '../domain/catalog.ts'
 import { playurlRequestContext } from '../domain/playurl-content.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
 import type { FailureKind } from '../domain/model.ts'
-import type { AppliedRouteDecision } from '../application/route-model.ts'
+import type { AppliedRouteDecision } from '../application/route-contracts.ts'
 import {
   type TransportContext,
-  type HookInstallation,
   sameUrl,
   blockedPlayurl,
   blockedPlayurlText,
   rejectedPlayurl,
 } from './transport-context.ts'
+import type { HookInstallation } from './transport-ports.ts'
 import { convertXhrOpen, convertXhrHeader, createXhrBodyConverter } from './xhr-values.ts'
 import { createXhrRequestState, resetXhrTransform } from './xhr-request.ts'
 import type { XhrMeta } from './xhr-request.ts'
 import { transformXhrJson, transformXhrText } from './xhr-response.ts'
 import { XhrEarlyRetry } from './xhr-early-retry.ts'
-import type { EarlyRetryRoutingPort } from '../application/early-retry-routing-ports.ts'
+import type { EarlyRetryRoutingPort } from '../application/early-retry-contracts.ts'
 import type {
   EarlyRetryPermit,
   InFlightVideoSample,
   EarlyRetryActionState,
-} from '../application/early-retry-model.ts'
+} from '../application/early-retry-contracts.ts'
 
 export class XhrHookAdapter {
   #xhrMeta = new WeakMap<XMLHttpRequest, XhrMeta>()

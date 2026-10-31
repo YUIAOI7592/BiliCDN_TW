@@ -1,5 +1,9 @@
-import type { ControlCenterDependencies } from './control-center-ports.ts'
-import type { ControlViewFrame, ControlViewActions, ControlViewBinding } from './view-ports.ts'
+import type { ControlCenterDependencies } from './control-contracts.ts'
+import type {
+  ControlViewFrame,
+  ControlViewActions,
+  ControlViewBinding,
+} from './control-contracts.ts'
 import { createButton } from './elements.ts'
 import { settingToggle } from './setting-controls.ts'
 

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { bufferMonitor } from '../support/buffer-monitor.ts'
-import { continuityCases } from '../../scripts/buffer-shadow/continuity-inputs.mts'
+import { continuityCases } from '../../scripts/evaluation/buffer-shadow/continuity-inputs.mts'
 import { epochId, generationId, representationId } from '../../src-v2/domain/model.ts'
 
 const profile = continuityCases.find((c) => c.id === 'tail-normal-microdecline')!.profile

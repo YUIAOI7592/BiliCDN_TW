@@ -15,8 +15,7 @@ import { testScope } from '../../support/scope.ts'
 import { deferred } from '../../support/deferred.ts'
 import { FakeStorage } from '../../support/storage.ts'
 import { startupAbortFixture } from '../../support/startup-abort.ts'
-import type { StartupGate } from '../../../src-v2/adapters/transport-context.ts'
-
+import type { StartupGate } from '../../../src-v2/adapters/transport-ports.ts'
 const originalUrl =
   'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/11/22/1000/1000-1-30080.m4s?test=synthetic'
 const apiUrl = 'https://api.bilibili.com/x/player/wbi/playurl?cid=1000'

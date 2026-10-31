@@ -6,10 +6,8 @@ import { RecoveryController } from '../../../src-v2/application/recovery-control
 import { PlayerMonitor } from '../../../src-v2/application/player-monitor.ts'
 import { RouteCoordinator } from '../../../src-v2/application/route-coordinator.ts'
 import { TransportContext } from '../../../src-v2/adapters/transport-context.ts'
-import {
-  MeasurementController,
-  type MeasurementStatus,
-} from '../../../src-v2/application/measurement-controller.ts'
+import { MeasurementController } from '../../../src-v2/application/measurement-controller.ts'
+import type { MeasurementStatus } from '../../../src-v2/application/measurement-contracts.ts'
 import { MeasurementMetaStore } from '../../../src-v2/state/measurement-meta-store.ts'
 import { SessionStore } from '../../../src-v2/state/session-store.ts'
 import { SettingsStore } from '../../../src-v2/state/settings-store.ts'

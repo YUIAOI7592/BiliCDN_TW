@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve, sep } from 'node:path'
-import { checkProjectConfiguration } from '../../scripts/project-config.mts'
+import { checkProjectConfiguration } from '../../scripts/checks/project-config.mts'
 import { testScope } from '../support/scope.ts'
 
 function fixture(t: Parameters<typeof testScope>[0]) {

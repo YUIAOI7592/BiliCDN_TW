@@ -1,6 +1,4 @@
 import type { StoragePort } from './storage-port.ts'
-export type { StoragePort } from './storage-port.ts'
-
 export class TampermonkeyStorage implements StoragePort {
   get<T>(key: string, fallback: T): T {
     try {

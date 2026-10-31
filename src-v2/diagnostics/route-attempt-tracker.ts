@@ -1,6 +1,6 @@
 import type { DomainEvent, RequestContext, RouteIdentity } from '../domain/model.ts'
 import type { PlaybackDiagnosticSample } from '../domain/diagnostic-model.ts'
-import type { AttemptStage, RouteAttemptSummary } from './model.ts'
+import type { AttemptStage, RouteAttemptSummary } from './contracts.ts'
 import { diagnosticText as text, finiteDiagnosticNumber as finite } from './values.ts'
 
 interface RouteAttempt {

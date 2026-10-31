@@ -1,5 +1,5 @@
 import { assessDemandRatio } from '../domain/routing.ts'
-import type { ControlCenterSnapshot } from './control-center-ports.ts'
+import type { ControlCenterSnapshot } from './control-contracts.ts'
 import {
   plain,
   routeLabel,

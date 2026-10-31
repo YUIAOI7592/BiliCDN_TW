@@ -9,7 +9,6 @@ import {
 } from '../../src-v2/domain/model.ts'
 import { TransportAdapter } from '../../src-v2/adapters/transport.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
-
 const first = 'upos-sz-mirroraliov.bilivideo.com'
 const alternative = 'upos-sz-mirrorbos.bilivideo.com'
 

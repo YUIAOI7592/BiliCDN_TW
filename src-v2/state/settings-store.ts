@@ -1,9 +1,7 @@
 import { isCatalogHost } from '../domain/catalog.ts'
 import type { StoragePort } from '../platform/storage-port.ts'
-import type { SettingsChange, SettingsState } from './settings-model.ts'
-import type { SettingsPort } from './settings-ports.ts'
-export type { SettingsChange, SettingsState } from './settings-model.ts'
-
+import type { SettingsChange, SettingsState } from './settings-contracts.ts'
+import type { SettingsPort } from './settings-contracts.ts'
 export const SETTINGS_KEY = 'bilicdn.v2.settings'
 
 export const defaultSettings = (now: number): SettingsState =>

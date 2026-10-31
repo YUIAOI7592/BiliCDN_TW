@@ -3,17 +3,14 @@ import type {
   ControlCenterDependencies,
   ControlCenterSnapshot,
   ShowControlCenterPort,
-} from './control-center-ports.ts'
-import type { ControlViewActions, ControlViewBinding, ControlPage } from './view-ports.ts'
+} from './control-contracts.ts'
+import type { ControlViewActions, ControlViewBinding, ControlPage } from './control-contracts.ts'
 import { createControlCenterStyle } from './styles.ts'
 import { createButton } from './elements.ts'
 import { renderOverview } from './overview-view.ts'
 import { renderSettings } from './settings-view.ts'
 import { renderCdn } from './cdn-view.ts'
 import { renderDiagnostics } from './diagnostics-view.ts'
-export type { ControlCenterDependencies } from './control-center-ports.ts'
-export type { ControlCenterSnapshot } from './control-center-ports.ts'
-
 export class ControlCenter implements ShowControlCenterPort {
   #host: HTMLDivElement | null = null
   #shadow: ShadowRoot | null = null

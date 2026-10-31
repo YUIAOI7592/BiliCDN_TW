@@ -4,7 +4,7 @@ import type {
   Flow,
   Incident,
   SafeEvent,
-} from './model.ts'
+} from './contracts.ts'
 import type { BufferTrendSnapshot } from '../domain/buffer-trend.ts'
 
 /** A detached capture whose arrays may be reduced while preparing an export. */

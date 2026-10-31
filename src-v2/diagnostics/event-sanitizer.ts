@@ -16,7 +16,7 @@ import type {
   SafeEvent,
   SanitizedValue,
   DiagnosticReportCurrent,
-} from './model.ts'
+} from './contracts.ts'
 import { diagnosticText as text, diagnosticField as field } from './values.ts'
 
 export class DiagnosticEventSanitizer {

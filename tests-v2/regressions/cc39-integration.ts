@@ -9,7 +9,6 @@ import { ControlCommands } from '../../src-v2/application/control-commands.ts'
 import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
 import { RouteCoordinator } from '../../src-v2/application/route-coordinator.ts'
 import { DiagnosticRecorder } from '../../src-v2/diagnostics/recorder.ts'
-
 const flags = [
   'startupEarlyReleaseEnabled',
   'healthMiddleRangeEnabled',

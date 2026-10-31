@@ -1,6 +1,6 @@
 import { isCatalogHost } from '../../domain/catalog.ts'
 import type { EvidenceSample, MediaKind, TransportObservation } from '../../domain/model.ts'
-import type { RouteTransferSnapshot } from '../route-model.ts'
+import type { RouteTransferSnapshot } from '../route-contracts.ts'
 
 export function catalogObservationAllowed(
   catalogOnly: boolean,

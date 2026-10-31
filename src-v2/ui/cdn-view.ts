@@ -1,6 +1,10 @@
 import { DEFAULT_UNAVAILABLE_HOSTS, TRUSTED_CATALOG } from '../domain/catalog.ts'
-import type { ControlCenterDependencies } from './control-center-ports.ts'
-import type { ControlViewFrame, ControlViewActions, ControlViewBinding } from './view-ports.ts'
+import type { ControlCenterDependencies } from './control-contracts.ts'
+import type {
+  ControlViewFrame,
+  ControlViewActions,
+  ControlViewBinding,
+} from './control-contracts.ts'
 import { createRow } from './elements.ts'
 import { settingToggle } from './setting-controls.ts'
 import { restrictionLabel } from './labels.ts'

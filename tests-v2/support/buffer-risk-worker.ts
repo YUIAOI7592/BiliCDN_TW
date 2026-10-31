@@ -1,10 +1,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { runRiskScenario } from './buffer-risk-scenario.ts'
-import { riskNames, riskScenario } from '../../scripts/buffer-shadow/risk-inputs.mts'
-import { measureRiskCoverage } from '../../scripts/buffer-shadow/risk-coverage.mts'
-import { scoreLiveWindow } from '../../scripts/buffer-shadow/live-model.mts'
-import { assessOpportunity } from '../../scripts/buffer-shadow/actionability.mts'
+import { riskNames, riskScenario } from '../../scripts/evaluation/buffer-shadow/risk-inputs.mts'
+import { measureRiskCoverage } from '../../scripts/evaluation/buffer-shadow/risk-coverage.mts'
+import { scoreLiveWindow } from '../../scripts/evaluation/buffer-shadow/live-model.mts'
+import { assessOpportunity } from '../../scripts/evaluation/buffer-shadow/actionability.mts'
 
 const [name, rate] = process.argv.slice(2)
 const scenario = riskNames.find((n) => n === name)

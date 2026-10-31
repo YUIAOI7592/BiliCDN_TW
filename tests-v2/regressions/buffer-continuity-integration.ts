@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { continuityCases } from '../../scripts/buffer-shadow/continuity-inputs.mts'
+import { continuityCases } from '../../scripts/evaluation/buffer-shadow/continuity-inputs.mts'
 import { runContinuityScenario } from '../support/buffer-continuity-scenarios.ts'
 import { runScenario } from '../support/buffer-shadow-scenarios.ts'
 

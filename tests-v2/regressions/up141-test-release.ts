@@ -6,7 +6,7 @@ import { fixture, media, dash } from './functional-races/routing-fixture.ts'
 import { DelayedSettingsStorage, FakeStorage } from '../support/storage.ts'
 import { SettingsStore, SETTINGS_KEY } from '../../src-v2/state/settings-store.ts'
 import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
-import type { MeasurementStatus } from '../../src-v2/application/measurement-model.ts'
+import type { MeasurementStatus } from '../../src-v2/application/measurement-contracts.ts'
 import {
   MeasurementMetaStore,
   MEASUREMENT_META_KEY,

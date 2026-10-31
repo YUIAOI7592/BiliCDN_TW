@@ -5,7 +5,7 @@ import type {
   RestoreCommand,
   RestoreGuard,
   RestoreReadback,
-} from '../../src-v2/application/recovery-ports.ts'
+} from '../../src-v2/application/recovery-contracts.ts'
 
 // Existing controller unit fixtures model a synchronous SDK. Readback uses their
 // actual supplied snapshot; these methods cannot manufacture media progress.

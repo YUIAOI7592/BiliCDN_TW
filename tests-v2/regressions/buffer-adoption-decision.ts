@@ -1,15 +1,18 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { assessPrefixFeasibility } from '../../scripts/buffer-shadow/prefix-feasibility.mts'
-import { assessReadiness } from '../../scripts/buffer-shadow/adoption-readiness.mts'
-import type { LiveSample, AdoptionFacts } from '../../scripts/buffer-shadow/live-model.mts'
+import { assessPrefixFeasibility } from '../../scripts/evaluation/buffer-shadow/prefix-feasibility.mts'
+import { assessReadiness } from '../../scripts/evaluation/buffer-shadow/adoption-readiness.mts'
+import type {
+  LiveSample,
+  AdoptionFacts,
+} from '../../scripts/evaluation/buffer-shadow/live-model.mts'
 import { runAdoptionPair } from '../support/buffer-adoption-pair.ts'
-import { parseLiveArgs } from '../../scripts/buffer-live.mts'
-import { projectDecisionPair } from '../../scripts/buffer-adoption-decision.mts'
-import { auditRouteObservability } from '../../scripts/buffer-shadow/actionability.mts'
+import { parseLiveArgs } from '../../scripts/evaluation/buffer-live.mts'
+import { projectDecisionPair } from '../../scripts/evaluation/buffer-adoption-decision.mts'
+import { auditRouteObservability } from '../../scripts/evaluation/buffer-shadow/actionability.mts'
 import { fixture, media } from '../support/runtime-fixture.ts'
 import { FakeStorage } from '../support/storage.ts'
-import { frozenCases } from '../../scripts/buffer-shadow/low-inputs.mts'
+import { frozenCases } from '../../scripts/evaluation/buffer-shadow/low-inputs.mts'
 
 function pairRows() {
   const make = (buffers: readonly number[]) =>

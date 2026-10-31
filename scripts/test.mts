@@ -5,13 +5,13 @@ import { tmpdir } from 'node:os'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
-import { selection, parseArgs, UsageError } from './test-registry.mts'
-import { supervise } from './test-process.mts'
-import { validateTestDefinitions } from './test-contracts.mts'
-import { isRecord, errorMessage } from './lib.mts'
-import type { ProcessResult } from './test-process.mts'
-import type { TestSuite } from './test-registry.mts'
-export type { ProcessResult } from './test-process.mts'
+import { selection, parseArgs, UsageError } from './testing/test-registry.mts'
+import { supervise } from './testing/test-process.mts'
+import { validateTestDefinitions } from './testing/test-contracts.mts'
+import { isRecord, errorMessage } from './lib/lib.mts'
+import type { ProcessResult } from './testing/test-process.mts'
+import type { TestSuite } from './testing/test-registry.mts'
+export type { ProcessResult } from './testing/test-process.mts'
 export type CaseStatus = 'passed' | 'failed' | 'cancelled' | 'skipped' | 'todo'
 export interface ReportLocation {
   file: string | null
@@ -252,7 +252,7 @@ export async function executeSuites(
           '--test-timeout=5000',
           '--test-reporter=spec',
           '--test-reporter-destination=stdout',
-          `--test-reporter=${pathToFileURL(resolve('scripts/test-reporter.mts')).href}`,
+          `--test-reporter=${pathToFileURL(resolve('scripts/testing/test-reporter.mts')).href}`,
           `--test-reporter-destination=${summaryFile}`,
         ]
         if (name !== undefined) args.push(`--test-name-pattern=${name}`)

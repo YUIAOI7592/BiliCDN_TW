@@ -16,16 +16,8 @@ import type {
   VaultCandidates,
   VaultGroupSnapshot,
   VaultMatch,
-} from './vault-model.ts'
-import type { SignedRouteVaultPort } from './vault-ports.ts'
-export type {
-  OutputRole,
-  RegisterRepresentationInput,
-  VaultCandidates,
-  VaultGroupSnapshot,
-  VaultMatch,
-} from './vault-model.ts'
-
+} from './vault-contracts.ts'
+import type { SignedRouteVaultPort } from './vault-contracts.ts'
 const MAX_VIDEO_GROUPS = 128
 const MAX_AUDIO_GROUPS = 64
 const MAX_URLS_PER_GROUP = 4

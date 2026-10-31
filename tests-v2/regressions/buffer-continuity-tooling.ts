@@ -1,11 +1,14 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { measureContinuity, revocationAt } from '../../scripts/buffer-shadow/continuity.mts'
-import { continuityCases } from '../../scripts/buffer-shadow/continuity-inputs.mts'
-import type { EvidenceRow } from '../../scripts/buffer-shadow/model.mts'
-import { parseEvaluationArgs } from '../../scripts/buffer-shadow/model.mts'
-import { validEvaluationResult } from '../../scripts/buffer-shadow-evaluation.mts'
+import {
+  measureContinuity,
+  revocationAt,
+} from '../../scripts/evaluation/buffer-shadow/continuity.mts'
+import { continuityCases } from '../../scripts/evaluation/buffer-shadow/continuity-inputs.mts'
+import type { EvidenceRow } from '../../scripts/evaluation/buffer-shadow/model.mts'
+import { parseEvaluationArgs } from '../../scripts/evaluation/buffer-shadow/model.mts'
+import { validEvaluationResult } from '../../scripts/evaluation/buffer-shadow-evaluation.mts'
 import { runContinuityScenario } from '../support/buffer-continuity-scenarios.ts'
 function rows(values: readonly (boolean | null)[]): EvidenceRow[] {
   return values.map((candidate, i) => ({

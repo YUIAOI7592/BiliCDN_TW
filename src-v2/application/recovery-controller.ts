@@ -56,12 +56,8 @@ import type {
   ResumePositionCapture,
   RestoreAttempt,
   RestoreReadback,
-} from './recovery-ports.ts'
-export type { RecoveryPlayerPort } from './recovery-ports.ts'
-
-import type { StallRecoveryIntent, RecoverySnapshot, RecoverySource } from './recovery-model.ts'
-export type { StallRecoveryIntent, RecoverySnapshot } from './recovery-model.ts'
-
+} from './recovery-contracts.ts'
+import type { StallRecoveryIntent, RecoverySnapshot, RecoverySource } from './recovery-contracts.ts'
 export class RecoveryController implements RecoveryPort {
   #listeners = new Set<(event: DomainEvent) => void>()
   #pauseAt = 0

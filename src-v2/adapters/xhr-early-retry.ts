@@ -3,15 +3,14 @@ import type {
   EarlyRetryPermit,
   InFlightVideoSample,
   EarlyRetryObservation,
-} from '../application/early-retry-model.ts'
-import type { InFlightVideoPort } from '../application/early-retry-ports.ts'
-import type { EarlyRetryRoutingPort } from '../application/early-retry-routing-ports.ts'
-import type { AppliedRouteDecision } from '../application/route-model.ts'
+} from '../application/early-retry-contracts.ts'
+import type { InFlightVideoPort } from '../application/early-retry-contracts.ts'
+import type { EarlyRetryRoutingPort } from '../application/early-retry-contracts.ts'
+import type { AppliedRouteDecision } from '../application/route-contracts.ts'
 import { parseProbeRange } from '../domain/probe-range.ts'
 import type { XhrMeta } from './xhr-request.ts'
 import type { TransportContext } from './transport-context.ts'
 import { sameUrl } from './transport-context.ts'
-
 interface Flight {
   readonly xhr: XMLHttpRequest
   readonly meta: XhrMeta

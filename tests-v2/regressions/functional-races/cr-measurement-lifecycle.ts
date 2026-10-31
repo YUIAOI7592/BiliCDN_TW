@@ -1,10 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { setImmediate as nextTurn } from 'node:timers/promises'
-import {
-  MeasurementController,
-  type MeasurementStatus,
-} from '../../../src-v2/application/measurement-controller.ts'
+import { MeasurementController } from '../../../src-v2/application/measurement-controller.ts'
+import type { MeasurementStatus } from '../../../src-v2/application/measurement-contracts.ts'
 import { MeasurementMetaStore } from '../../../src-v2/state/measurement-meta-store.ts'
 import { EVIDENCE_KEY } from '../../../src-v2/state/evidence-store.ts'
 import type { RangeProbeResult } from '../../../src-v2/application/ports.ts'

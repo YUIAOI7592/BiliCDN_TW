@@ -1,9 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { frozenCases } from '../../scripts/buffer-shadow/low-inputs.mts'
+import { frozenCases } from '../../scripts/evaluation/buffer-shadow/low-inputs.mts'
 import { runLowScenario } from '../support/buffer-low-scenarios.ts'
 import { runScenario } from '../support/buffer-shadow-scenarios.ts'
-import { validEvaluationResult } from '../../scripts/buffer-shadow-evaluation.mts'
+import { validEvaluationResult } from '../../scripts/evaluation/buffer-shadow-evaluation.mts'
 
 for (const c of frozenCases)
   for (const rate of [1, 2] as const)

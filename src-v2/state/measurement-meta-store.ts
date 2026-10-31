@@ -1,7 +1,5 @@
 import type { StoragePort } from '../platform/storage-port.ts'
 import type { MeasurementMeta, MeasurementMetaPort } from './measurement-meta-ports.ts'
-export type { MeasurementMeta } from './measurement-meta-ports.ts'
-
 export const MEASUREMENT_META_KEY = 'bilicdn.v2.meta'
 
 // Read only own data fields: stored values are data, never coercion or accessor hooks.

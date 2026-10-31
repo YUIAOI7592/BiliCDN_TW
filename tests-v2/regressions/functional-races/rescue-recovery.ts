@@ -1,7 +1,7 @@
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { RecoveryController } from '../../../src-v2/application/recovery-controller.ts'
-import type { RecoveryPlayerPort } from '../../../src-v2/application/recovery-ports.ts'
+import type { RecoveryPlayerPort } from '../../../src-v2/application/recovery-contracts.ts'
 import type { VideoSnapshot } from '../../../src-v2/application/ports.ts'
 import { FakeClock } from '../../support/clock.ts'
 import { testScope } from '../../support/scope.ts'

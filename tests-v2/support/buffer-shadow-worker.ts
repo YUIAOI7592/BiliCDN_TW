@@ -1,16 +1,16 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { scenarioNames } from '../../scripts/buffer-shadow/model.mts'
+import { scenarioNames } from '../../scripts/evaluation/buffer-shadow/model.mts'
 import { runScenario } from './buffer-shadow-scenarios.ts'
 import {
   observationNames,
   observationInput,
-} from '../../scripts/buffer-shadow/observation-inputs.mts'
-import { cycleNames, cycleInput } from '../../scripts/buffer-shadow/cycle-inputs.mts'
+} from '../../scripts/evaluation/buffer-shadow/observation-inputs.mts'
+import { cycleNames, cycleInput } from '../../scripts/evaluation/buffer-shadow/cycle-inputs.mts'
 
-import { frozenCases } from '../../scripts/buffer-shadow/low-inputs.mts'
+import { frozenCases } from '../../scripts/evaluation/buffer-shadow/low-inputs.mts'
 import { runLowScenario } from './buffer-low-scenarios.ts'
-import { continuityCases } from '../../scripts/buffer-shadow/continuity-inputs.mts'
+import { continuityCases } from '../../scripts/evaluation/buffer-shadow/continuity-inputs.mts'
 import { runContinuityScenario } from './buffer-continuity-scenarios.ts'
 const [name, rate, mode] = process.argv.slice(2)
 const scenario = scenarioNames.find((n) => n === name)

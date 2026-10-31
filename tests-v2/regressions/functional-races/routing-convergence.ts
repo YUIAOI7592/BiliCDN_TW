@@ -6,7 +6,7 @@ import {
   type MediaKind,
   type TransportObservation,
 } from '../../../src-v2/domain/model.ts'
-import type { AppliedRouteDecision } from '../../../src-v2/application/route-model.ts'
+import type { AppliedRouteDecision } from '../../../src-v2/application/route-contracts.ts'
 import { EVIDENCE_KEY } from '../../../src-v2/state/evidence-store.ts'
 import { testScope } from '../../support/scope.ts'
 import { FakeStorage } from '../../support/storage.ts'

@@ -5,11 +5,9 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
 import { TransportAdapter } from '../../src-v2/adapters/transport.ts'
-import type {
-  StartupGate,
-  TransportRoutes,
-  TransportSettings,
-} from '../../src-v2/adapters/transport-context.ts'
+import type { StartupGate } from '../../src-v2/adapters/transport-ports.ts'
+import type { TransportRoutes } from '../../src-v2/adapters/transport-ports.ts'
+import type { TransportSettings } from '../../src-v2/adapters/transport-ports.ts'
 import type { PlayurlPort } from '../../src-v2/application/ports.ts'
 import type { PlayurlTransformResult } from '../../src-v2/domain/playurl-model.ts'
 import { DiagnosticRecorder } from '../../src-v2/diagnostics/recorder.ts'

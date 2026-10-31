@@ -6,10 +6,8 @@ import {
   type RepresentationId,
   type RouteAffinity,
 } from '../domain/model.ts'
-import type { SessionSnapshot } from './session-model.ts'
-import type { SessionPort } from './session-ports.ts'
-export type { SessionSnapshot } from './session-model.ts'
-
+import type { SessionSnapshot } from './session-contracts.ts'
+import type { SessionPort } from './session-contracts.ts'
 export class SessionStore implements SessionPort {
   #state: SessionSnapshot = Object.freeze({
     generation: generationId(0),

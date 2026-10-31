@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { fixture } from '../support/runtime-fixture.ts'
 import { FakeStorage } from '../support/storage.ts'
 import { ControlCenter } from '../../src-v2/ui/control-center.ts'
-import type { ControlCenterDependencies } from '../../src-v2/ui/control-center-ports.ts'
+import type { ControlCenterDependencies } from '../../src-v2/ui/control-contracts.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { DEFAULT_UNAVAILABLE_HOSTS } from '../../src-v2/domain/catalog.ts'
 import { deferred } from '../support/deferred.ts'
@@ -12,7 +12,10 @@ test('V220 CDN construction and refresh each capture one shared read model', (t)
   const f = ui(t)
   const original = f.routes.snapshot.bind(f.routes)
   let reads = 0
-  f.routes.snapshot = () => { reads++; return original() }
+  f.routes.snapshot = () => {
+    reads++
+    return original()
+  }
   f.button('CDN').emit('click')
   assert.equal(reads, 1)
   reads = 0

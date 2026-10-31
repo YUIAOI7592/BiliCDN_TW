@@ -4,14 +4,8 @@ import type {
   RestrictionRecord,
   RestrictionSnapshot,
   RestrictionType,
-} from './restriction-model.ts'
-import type { RestrictionPort } from './restriction-ports.ts'
-export type {
-  RestrictionRecord,
-  RestrictionSnapshot,
-  RestrictionType,
-} from './restriction-model.ts'
-
+} from './restriction-contracts.ts'
+import type { RestrictionPort } from './restriction-contracts.ts'
 export const RESTRICTIONS_KEY = 'bilicdn.v2.restrictions'
 
 interface RestrictionPayload {

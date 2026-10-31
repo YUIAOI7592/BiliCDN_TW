@@ -1,6 +1,6 @@
-import type { DiagnosticRecorderPort } from '../../src-v2/diagnostics/ports.ts'
+import type { DiagnosticRecorderPort } from '../../src-v2/diagnostics/contracts.ts'
 import type { BufferTrendSnapshot } from '../../src-v2/domain/buffer-trend.ts'
-import type { Workload } from '../../scripts/diagnostics-cost/model.mts'
+import type { Workload } from '../../scripts/evaluation/diagnostics-cost/model.mts'
 export function exercise(
   recorder: DiagnosticRecorderPort,
   workload: Workload,

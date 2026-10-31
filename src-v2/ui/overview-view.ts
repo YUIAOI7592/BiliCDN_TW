@@ -1,5 +1,9 @@
-import type { ControlCenterSnapshot } from './control-center-ports.ts'
-import type { ControlViewFrame, ControlViewActions, ControlViewBinding } from './view-ports.ts'
+import type { ControlCenterSnapshot } from './control-contracts.ts'
+import type {
+  ControlViewFrame,
+  ControlViewActions,
+  ControlViewBinding,
+} from './control-contracts.ts'
 import { createButton } from './elements.ts'
 import { describeStatus } from './status-summary.ts'
 import { playbackLabel, measurementLabel, startupLabel, plain, attributionLabel } from './labels.ts'

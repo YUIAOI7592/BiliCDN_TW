@@ -2,7 +2,7 @@ import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { PlayerMonitor } from '../../../src-v2/application/player-monitor.ts'
 import { RecoveryController } from '../../../src-v2/application/recovery-controller.ts'
-import type { StallRecoveryIntent } from '../../../src-v2/application/recovery-model.ts'
+import type { StallRecoveryIntent } from '../../../src-v2/application/recovery-contracts.ts'
 import type {
   PlayerPort,
   VideoSnapshot,

@@ -1,4 +1,4 @@
-import type { SettingsReader, SettingsObserver } from '../state/settings-ports.ts'
+import type { SettingsReader, SettingsObserver } from '../state/settings-contracts.ts'
 
 interface WebRtcSettingsPort extends SettingsReader, SettingsObserver {}
 

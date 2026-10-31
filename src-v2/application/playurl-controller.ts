@@ -18,12 +18,8 @@ import type {
   PlayurlSessionPort,
   PlayurlVaultPort,
   PlayurlRoutesPort,
-} from './playurl-ports.ts'
-export type { PlayurlSessionPort, PlayurlVaultPort, PlayurlRoutesPort } from './playurl-ports.ts'
-
-import type { PlayurlItem, PlayurlInput, PlayurlOutput } from './playurl-model.ts'
-export type { PlayurlItem, PlayurlInput, PlayurlOutput } from './playurl-model.ts'
-
+} from './playurl-contracts.ts'
+import type { PlayurlItem, PlayurlInput, PlayurlOutput } from './playurl-contracts.ts'
 export class PlayurlController implements PlayurlControllerPort {
   #epochListeners = new Set<
     (state: { readonly generation: GenerationId; readonly epoch: EpochId }) => void

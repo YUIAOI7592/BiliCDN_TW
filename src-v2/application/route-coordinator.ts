@@ -1,5 +1,5 @@
 import { catalogRestrictions, catalogCandidates } from '../domain/route-policy.ts'
-import type { EarlyRetryAlternative, EarlyRetryPermit } from './early-retry-model.ts'
+import type { EarlyRetryAlternative, EarlyRetryPermit } from './early-retry-contracts.ts'
 import { TRUSTED_CATALOG, isCatalogHost } from '../domain/catalog.ts'
 import { chooseRoute } from '../domain/routing.ts'
 import {
@@ -64,20 +64,7 @@ import type {
   RouteTransferSnapshot,
   StartupCandidate,
   StartupOptions,
-} from './route-model.ts'
-export type {
-  AppliedRouteDecision,
-  DecisionRecord,
-  FallbackProgress,
-  MediaRows,
-  RoutePlanSummary,
-  RouteRankingSummary,
-  RouteSnapshot,
-  RouteTransferSnapshot,
-  StartupCandidate,
-  StartupOptions,
-} from './route-model.ts'
-
+} from './route-contracts.ts'
 import type {
   RouteCoordinatorPort,
   RouteSessionPort,
@@ -85,15 +72,7 @@ import type {
   RouteRestrictionsPort,
   RouteEvidencePort,
   RouteVaultPort,
-} from './route-ports.ts'
-export type {
-  RouteSessionPort,
-  RouteSettingsPort,
-  RouteRestrictionsPort,
-  RouteEvidencePort,
-  RouteVaultPort,
-} from './route-ports.ts'
-
+} from './route-contracts.ts'
 export class RouteCoordinator implements RouteCoordinatorPort {
   #policyRevision = 0
   #measurementIds = new WeakMap<object, string>()

@@ -1,9 +1,13 @@
 import type { DomainEvent, TransportObservation, RequestContext } from '../domain/model.ts'
 import type { PlaybackDiagnosticSample, ReadonlySnapshot } from '../domain/diagnostic-model.ts'
-export type { PlaybackDiagnosticSample } from '../domain/diagnostic-model.ts'
-export type { DiagnosticSnapshot } from './model.ts'
-import type { DiagnosticTransport, SafeEvent, Flow, Incident, DiagnosticSnapshot } from './model.ts'
-import type { DiagnosticRecorderPort } from './ports.ts'
+import type {
+  DiagnosticTransport,
+  SafeEvent,
+  Flow,
+  Incident,
+  DiagnosticSnapshot,
+} from './contracts.ts'
+import type { DiagnosticRecorderPort } from './contracts.ts'
 import { DiagnosticEventSanitizer, incidentTrigger } from './event-sanitizer.ts'
 import { RouteAttemptTracker } from './route-attempt-tracker.ts'
 import { serializeDiagnosticReport } from './report.ts'

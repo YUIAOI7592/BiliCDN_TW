@@ -1,5 +1,5 @@
 import type { TestContext } from 'node:test'
-import { adoptionPair } from '../../scripts/buffer-shadow/adoption-inputs.mts'
+import { adoptionPair } from '../../scripts/evaluation/buffer-shadow/adoption-inputs.mts'
 import { runRiskScenario } from './buffer-risk-scenario.ts'
 
 export async function runAdoptionPair(rate: 1 | 2, t: TestContext, observed = true) {

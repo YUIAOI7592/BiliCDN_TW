@@ -5,7 +5,6 @@ import type {
   PlayurlTransformResult,
 } from '../domain/playurl-model.ts'
 import { blockedPlayurl, blockedPlayurlText, rejectedPlayurl } from './transport-context.ts'
-
 interface XhrResponseContext {
   readonly playurl: PlayurlPort
   notePlayurl(

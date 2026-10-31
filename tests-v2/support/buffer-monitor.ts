@@ -3,7 +3,7 @@ import { PlayerMonitor } from '../../src-v2/application/player-monitor.ts'
 import type {
   MonitorPlayerPort,
   MonitorSessionPort,
-} from '../../src-v2/application/monitor-ports.ts'
+} from '../../src-v2/application/monitor-contracts.ts'
 import type { VideoSnapshot } from '../../src-v2/application/ports.ts'
 import {
   decisionId,

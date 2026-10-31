@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fixture as fullRuntime, media } from '../support/runtime-fixture.ts'
 import { FakeStorage } from '../support/storage.ts'
-import { continuityCases } from '../../scripts/buffer-shadow/continuity-inputs.mts'
+import { continuityCases } from '../../scripts/evaluation/buffer-shadow/continuity-inputs.mts'
 
 for (const rate of [1, 2])
   for (const mode of ['steady', 'tail'] as const) {

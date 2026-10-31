@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { IabEventCollector } from '../../scripts/iab-event-collector.mts'
-import type { CollectorEvent } from '../../scripts/iab-event-collector.mts'
+import { IabEventCollector } from '../../scripts/iab/iab-event-collector.mts'
+import type { CollectorEvent } from '../../scripts/iab/iab-event-collector.mts'
 import { testScope } from '../support/scope.ts'
 import { deferred } from '../support/deferred.ts'
 

@@ -15,7 +15,7 @@ import type {
   RestoreAttempt,
   RestoreReadback,
   RestoreReadMode,
-} from '../application/recovery-ports.ts'
+} from '../application/recovery-contracts.ts'
 
 export class PlayerAdapter {
   readonly #media = new PlayerMediaReader()

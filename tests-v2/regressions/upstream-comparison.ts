@@ -13,9 +13,13 @@ import {
   parseComparisonArgs,
   validCaseResult,
   audioPassesDuringHold,
-} from '../../scripts/upstream-compare/model.mts'
-import type { Observation } from '../../scripts/upstream-compare/model.mts'
-import { ComparisonPage, PageEvent, PageNode } from '../../scripts/upstream-compare/page.mts'
+} from '../../scripts/evaluation/upstream-compare/model.mts'
+import type { Observation } from '../../scripts/evaluation/upstream-compare/model.mts'
+import {
+  ComparisonPage,
+  PageEvent,
+  PageNode,
+} from '../../scripts/evaluation/upstream-compare/page.mts'
 import { testScope } from '../support/scope.ts'
 
 test(

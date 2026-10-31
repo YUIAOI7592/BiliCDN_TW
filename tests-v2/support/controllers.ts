@@ -1,6 +1,6 @@
-import type { MeasurementRoutes } from '../../src-v2/application/measurement-controller.ts'
-import type { MonitorRoutes, PlayerMonitor } from '../../src-v2/application/player-monitor.ts'
-
+import type { MeasurementRoutes } from '../../src-v2/application/measurement-contracts.ts'
+import type { PlayerMonitor } from '../../src-v2/application/player-monitor.ts'
+import type { MonitorRoutes } from '../../src-v2/application/monitor-contracts.ts'
 export const measurementRoutes = (overrides: Partial<MeasurementRoutes> = {}): MeasurementRoutes =>
   ({
     isCatalogOnly: () => false,

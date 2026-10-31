@@ -1,17 +1,24 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { measureRiskCoverage } from '../../scripts/buffer-shadow/risk-coverage.mts'
-import { createSupply, advanceSupply } from '../../scripts/buffer-shadow/supply-model.mts'
-import type { LiveSample } from '../../scripts/buffer-shadow/live-model.mts'
+import { measureRiskCoverage } from '../../scripts/evaluation/buffer-shadow/risk-coverage.mts'
+import {
+  createSupply,
+  advanceSupply,
+} from '../../scripts/evaluation/buffer-shadow/supply-model.mts'
+import type { LiveSample } from '../../scripts/evaluation/buffer-shadow/live-model.mts'
 import { runRiskScenario } from '../support/buffer-risk-scenario.ts'
-import { riskScenario } from '../../scripts/buffer-shadow/risk-inputs.mts'
+import { riskScenario } from '../../scripts/evaluation/buffer-shadow/risk-inputs.mts'
 import {
   assessOpportunity,
   auditRouteObservability,
-} from '../../scripts/buffer-shadow/actionability.mts'
-import type { OpportunityProbe } from '../../scripts/buffer-shadow/actionability.mts'
-import { analyzeLiveRisk, parseLiveArgs, replayLiveEvidence } from '../../scripts/buffer-live.mts'
-import { validSupplyResult } from '../../scripts/buffer-risk-evaluation.mts'
+} from '../../scripts/evaluation/buffer-shadow/actionability.mts'
+import type { OpportunityProbe } from '../../scripts/evaluation/buffer-shadow/actionability.mts'
+import {
+  analyzeLiveRisk,
+  parseLiveArgs,
+  replayLiveEvidence,
+} from '../../scripts/evaluation/buffer-live.mts'
+import { validSupplyResult } from '../../scripts/evaluation/buffer-risk-evaluation.mts'
 import { createHash } from 'node:crypto'
 
 const row = (

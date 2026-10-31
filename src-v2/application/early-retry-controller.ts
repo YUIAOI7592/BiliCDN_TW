@@ -2,8 +2,16 @@ import { evaluateEarlyRetry } from '../domain/early-retry.ts'
 import { earlyRetryReason } from '../domain/early-retry-diagnostic.ts'
 import type { RequestContext } from '../domain/model.ts'
 import type { PlayerControlSnapshot } from './ports.ts'
-import type { EarlyRetryPermit, EarlyRetrySnapshot, EarlyRetryStatus } from './early-retry-model.ts'
-import type { EarlyRetryPort, InFlightVideoPort, RouteEarlyRetryPort } from './early-retry-ports.ts'
+import type {
+  EarlyRetryPermit,
+  EarlyRetrySnapshot,
+  EarlyRetryStatus,
+} from './early-retry-contracts.ts'
+import type {
+  EarlyRetryPort,
+  InFlightVideoPort,
+  RouteEarlyRetryPort,
+} from './early-retry-contracts.ts'
 
 interface Pending {
   observed: number
