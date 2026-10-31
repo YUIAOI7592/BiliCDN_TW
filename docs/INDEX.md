@@ -10,7 +10,7 @@
 | --- | --- |
 | 安裝、操作與排查 | [README](../README.md) |
 | UP141 歷史測試操作 | [v2.1.38 操作表](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md) → [對應完整報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2138-完整正文保存2026-10-31)；不構成新輪次授權 |
-| 開始修改程式 | [TODO](TODO.md) → [AGENTS](../AGENTS.md) → [PROJECT_CONTEXT](PROJECT_CONTEXT.md) → [SECURITY](../SECURITY.md) → [ARCHITECTURE](ARCHITECTURE.md) → [DEVELOPMENT](DEVELOPMENT.md) |
+| 開始修改程式 | [TODO](TODO.md) → [AGENTS](../AGENTS.md) → [ARCHITECTURE](ARCHITECTURE.md) → [SECURITY](../SECURITY.md) → [DEVELOPMENT](DEVELOPMENT.md) |
 | 撰寫或執行測試 | [TODO](TODO.md) → [DEVELOPMENT 測試套件與隔離](DEVELOPMENT.md#測試套件與隔離)；涉及瀏覽器時再讀 [IAB_TESTING](IAB_TESTING.md)；結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
 | 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#發行規則) → [DEVELOPMENT 封裝與發行](DEVELOPMENT.md#封裝與發行)，並依 [發布文件更新順序](DEVELOPMENT.md#發布文件更新順序) 準備文件 |
 | 查舊版或舊議題 | [HISTORY](HISTORY.md) → 依版本、議題或日期進入原始報告 |
@@ -24,10 +24,11 @@
 | --- | --- |
 | [README](../README.md) | 安裝、操作、預設設定、排查與使用者可見功能 |
 | [AGENTS](../AGENTS.md) | 強制流程、不變量與授權界線 |
-| [PROJECT_CONTEXT](PROJECT_CONTEXT.md) | 現行產品行為、模式、救援政策與資格 |
-| [ARCHITECTURE](ARCHITECTURE.md) | 分層、內部介面、資料流、狀態及副作用所有權 |
+| [PROJECT_CONTEXT](PROJECT_CONTEXT.md) | 舊產品錨點相容導引，正文由 ARCHITECTURE 維護 |
+| [ARCHITECTURE](ARCHITECTURE.md) | 產品模式、預設、流程、分層、契約及所有權 |
 | [SECURITY](../SECURITY.md) | 信任邊界、安全要求與平台限制 |
 | [DEVELOPMENT](DEVELOPMENT.md) | 環境、命令、測試、建置、發布與文件維護 |
+| [離線評估](../scripts/evaluation/README.md) | 固定基準、專項操作、期限與退出碼 |
 | [IAB_TESTING](IAB_TESTING.md) | 單分頁、靜音、校準、隔離、期限、判定及清理規則 |
 | [TODO](TODO.md) | 當前工作、批准範圍及停止／結案狀態 |
 | [TEST_REPORT](TEST_REPORT.md) | 最新版完整證據、結果與限制 |

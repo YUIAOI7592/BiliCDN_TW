@@ -51,6 +51,7 @@ export interface DocumentationManifest {
   schemaVersion: 1
   baseline: string
   archiveManifest?: string
+  sourceRelocations?: { originalPath: string; currentPath: string }[]
   documents: DocumentEntry[]
   owners: { topic: string; path: string }[]
   navigation: { entry: string; maxDepth: number }
@@ -140,6 +141,10 @@ export function parseDocumentationManifest(value: unknown): DocumentationManifes
     ...(raw.archiveManifest === undefined
       ? {}
       : { archiveManifest: localPath(raw.archiveManifest) }),
+    sourceRelocations: rows(raw.sourceRelocations ?? []).map((row) => ({
+      originalPath: localPath(row.originalPath),
+      currentPath: localPath(row.currentPath),
+    })),
     owners: rows(raw.owners).map((row) => ({
       topic: string(row.topic),
       path: localPath(row.path),
@@ -378,6 +383,23 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
     ...(archive?.entries.map((item) => [item.originalPath, item.archivedPath] as const) ?? []),
     ...(archive?.removedPaths.map((item) => [item.path, item.replacementPath] as const) ?? []),
   ])
+  for (const item of manifest.sourceRelocations ?? []) {
+    const target = resolve(root, item.currentPath)
+    if (
+      relocations.has(item.originalPath) ||
+      existsSync(resolve(root, item.originalPath)) ||
+      !existsSync(target) ||
+      !statSync(target).isFile()
+    ) {
+      add(
+        item.originalPath,
+        'source-relocation',
+        'Move must have one absent source and an existing file target',
+      )
+      continue
+    }
+    relocations.set(item.originalPath, item.currentPath)
+  }
   const readingCopies = new Set(
     archive?.entries.filter((item) => item.kind === 'record').map((item) => item.archivedPath) ??
       [],

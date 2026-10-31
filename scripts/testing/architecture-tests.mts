@@ -164,7 +164,10 @@ for (const [file, source] of [
   ['state/settings-contracts.ts', "import type { Store } from './store.ts'"],
   ['application/route-contracts.ts', "import type { Controller } from './route-coordinator.ts'"],
   ['diagnostics/contracts.ts', "import type { Observer } from './observer.ts'"],
-  ['ui/control-contracts.ts', "import { ControlCommands } from '../application/control-commands.ts'"],
+  [
+    'ui/control-contracts.ts',
+    "import { ControlCommands } from '../application/control-commands.ts'",
+  ],
   ['state/settings-model.ts', "export type { Store } from './store.ts'"],
   [
     'application/route-model.ts',

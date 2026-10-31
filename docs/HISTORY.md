@@ -6,6 +6,8 @@
 
 ## 版本
 
+- [v2.1.40 完整正文（2026-10-31；2026-11-01 保存）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)
+
 - [UP141 安裝版實測與工具阻塞（2026-10-30，v2.1.38）](../archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-30up141-安裝版實測)
 
 - [UP141 完整測試版操作與取證準備（2026-10-30，v2.1.38）](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md)

@@ -16,7 +16,7 @@
     },
     {
       "topic": "product",
-      "path": "docs/PROJECT_CONTEXT.md"
+      "path": "docs/ARCHITECTURE.md"
     },
     {
       "topic": "architecture",
@@ -53,6 +53,10 @@
     {
       "topic": "migration",
       "path": "tests-v2/MIGRATION.md"
+    },
+    {
+      "topic": "offline-evaluation",
+      "path": "scripts/evaluation/README.md"
     }
   ],
   "navigation": {
@@ -1909,6 +1913,7 @@
       "path": "docs/ARCHITECTURE.md",
       "kind": "guide",
       "topics": [
+        "product",
         "architecture"
       ],
       "versions": [],
@@ -1927,7 +1932,17 @@
         "網站前景偽裝與內部可見性",
         "路線生命週期",
         "診斷",
-        "模組責任邊界"
+        "模組責任邊界",
+        "模式與預設",
+        "模組與所有權",
+        "選路與傳輸",
+        "量測與恢復",
+        "狀態與生命週期",
+        "診斷與-ui",
+        "設定失效",
+        "auto-救援與操作所有權",
+        "br-01-自有-sdk-重載後續恢復契約",
+        "唯讀緩衝趨勢"
       ]
     },
     {
@@ -2720,9 +2735,9 @@
     },
     {
       "path": "docs/PROJECT_CONTEXT.md",
-      "kind": "guide",
+      "kind": "navigation",
       "topics": [
-        "product"
+        "compatibility"
       ],
       "versions": [],
       "date": null,
@@ -2741,7 +2756,8 @@
         "交付規則",
         "診斷",
         "播放進度",
-        "報告複製"
+        "報告複製",
+        "唯讀緩衝趨勢"
       ]
     },
     {
@@ -2751,9 +2767,9 @@
         "verification"
       ],
       "versions": [
-        "v2.1.40"
+        "v2.2.0"
       ],
-      "date": "2026-10-31",
+      "date": "2026-11-01",
       "requiredAnchors": [
         "自動驗證",
         "安全差異",
@@ -3139,7 +3155,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.1.40/CHANGELOG_v2.1.40.md",
+      "path": "archive/retired/releases/Release/v2.1.40/CHANGELOG_v2.1.40.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -3151,7 +3167,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.1.40/TEST_REPORT_v2.1.40.md",
+      "path": "archive/retired/releases/Release/v2.1.40/TEST_REPORT_v2.1.40.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -3161,6 +3177,22 @@
       ],
       "date": "2026-10-31",
       "requiredAnchors": []
+    },
+    {
+      "path": "scripts/evaluation/README.md",
+      "kind": "guide",
+      "topics": [
+        "offline-evaluation"
+      ],
+      "versions": [],
+      "date": null,
+      "requiredAnchors": [
+        "原版與-v2-的獨立離線比較",
+        "實際緩衝效用與採用判定工具",
+        "緩衝影子效用與成本評估",
+        "診斷成本基準",
+        "唯讀緩衝趨勢診斷"
+      ]
     }
   ],
   "protections": [
@@ -6129,8 +6161,8 @@
       "path": "archive/retired/docs/IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 9979,
-      "sha256": "67356175609afe1cf4312f303d568228dc6c456ec033c54a49f7dbf8638bda3d"
+      "bytes": 9983,
+      "sha256": "a28e36cea35ddc21e7f9e0b9a4d3789d9d69dde9ce16a0c2e16b21b2b1fc9f10"
     },
     {
       "path": "archive/retired/docs/IAB_v2.1.20_TODO_R3_2026-10-11.md",
@@ -6651,35 +6683,35 @@
       "mode": "exact"
     },
     {
-      "path": "Release/v2.1.40/BiliCDN_TW.user.js",
+      "path": "archive/retired/releases/Release/v2.1.40/BiliCDN_TW.user.js",
       "mode": "exact",
       "encoding": "raw",
       "bytes": 507322,
       "sha256": "0877ef16869c6270c613ae24ae71b50c358d99e765f70b3303fc412f574d8f58"
     },
     {
-      "path": "Release/v2.1.40/BUILD_MANIFEST_v2.1.40.json",
+      "path": "archive/retired/releases/Release/v2.1.40/BUILD_MANIFEST_v2.1.40.json",
       "mode": "exact",
       "encoding": "raw",
       "bytes": 9193,
       "sha256": "a24aaca5ad47b8d6614854ccb557c63dfe0b4d0e549252bbdc4fd55ed1b4fe8c"
     },
     {
-      "path": "Release/v2.1.40/CHANGELOG_v2.1.40.md",
+      "path": "archive/retired/releases/Release/v2.1.40/CHANGELOG_v2.1.40.md",
       "mode": "exact",
       "encoding": "raw",
       "bytes": 57675,
       "sha256": "12acdc2e3c94538a01383ec4f05f3b4b74d024028eaafb72408f7db4c37e8865"
     },
     {
-      "path": "Release/v2.1.40/SHA256SUMS_v2.1.40.txt",
+      "path": "archive/retired/releases/Release/v2.1.40/SHA256SUMS_v2.1.40.txt",
       "mode": "exact",
       "encoding": "raw",
       "bytes": 419,
       "sha256": "963ffb1613623d3792da1d4b12736436b68a8dbc84971da204e1e816892d5432"
     },
     {
-      "path": "Release/v2.1.40/TEST_REPORT_v2.1.40.md",
+      "path": "archive/retired/releases/Release/v2.1.40/TEST_REPORT_v2.1.40.md",
       "mode": "exact",
       "encoding": "raw",
       "bytes": 6875,
@@ -6865,5 +6897,11 @@
       "reason": "已發布快照內的相對路徑錯誤；不回寫不可變快照。"
     }
   ],
-  "archiveManifest": "archive/relocation-manifest.json"
+  "archiveManifest": "archive/relocation-manifest.json",
+  "sourceRelocations": [
+    {
+      "originalPath": "scripts/docs-check.mts",
+      "currentPath": "scripts/checks/docs-check.mts"
+    }
+  ]
 }

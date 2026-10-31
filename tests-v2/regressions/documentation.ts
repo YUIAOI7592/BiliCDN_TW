@@ -142,6 +142,53 @@ function archiveFixture(t: TestContext, url = '%E8%88%8A%20%E5%A0%B1%E5%91%8A.md
   saveArchive()
   return { ...f, check, archive, source, originalTarget, archivedTarget }
 }
+
+function relocatedToolFixture(t: TestContext) {
+  const f = archiveFixture(t, '../scripts/old.mts')
+  f.archive.entries = []
+  const reference = f.archive.historicalReferences[0]!
+  reference.originalTarget = 'scripts/old.mts'
+  reference.archivedTarget = 'scripts/checks/current.mts'
+  f.manifest.sourceRelocations = [
+    { originalPath: reference.originalTarget, currentPath: reference.archivedTarget },
+  ]
+  f.write(reference.archivedTarget, 'export const current = true\n')
+  return f
+}
+
+test('documentation follows registered tool moves only for protected historical links', async (t) => {
+  const f = relocatedToolFixture(t)
+  const report = await f.check()
+  assert.equal(report.success, true, JSON.stringify(report.findings))
+  assert.equal(report.archivedReferences.length, 1)
+  f.manifest.documents.find((item) => item.path === f.source)!.kind = 'guide'
+  assert.equal((await f.check()).archivedReferences.length, 0)
+})
+
+test('documentation rejects a relocated tool target that is missing', async (t) => {
+  const f = relocatedToolFixture(t)
+  rmSync(join(f.root, 'scripts/checks/current.mts'))
+  const report = await f.check()
+  assert.equal(report.success, false)
+  assert.equal(report.archivedReferences.length, 0)
+})
+
+test('documentation rejects duplicate or retained original tool paths', async (t) => {
+  const f = relocatedToolFixture(t)
+  f.manifest.sourceRelocations!.push(f.manifest.sourceRelocations![0]!)
+  assert.ok((await f.check()).findings.some((item) => item.rule === 'source-relocation'))
+  f.manifest.sourceRelocations!.pop()
+  f.write('scripts/old.mts', 'export {}\n')
+  assert.ok((await f.check()).findings.some((item) => item.rule === 'source-relocation'))
+})
+
+test('documentation rejects unprotected tool history and escaping relocation paths', async (t) => {
+  const f = relocatedToolFixture(t)
+  f.manifest.protections = []
+  assert.equal((await f.check()).archivedReferences.length, 0)
+  f.manifest.sourceRelocations![0]!.currentPath = '../outside.mts'
+  assert.equal((await f.check()).success, false)
+})
 test('documentation accepts Chinese headings, emphasis and duplicate heading suffixes', () => {
   const anchors = markdownAnchors('# 中文標題\n\n## **操作** `seek`\n\n## **操作** `seek`\n')
   assert.deepEqual([...anchors], ['中文標題', '操作-seek', '操作-seek-1'])

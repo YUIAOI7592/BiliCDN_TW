@@ -79,7 +79,7 @@ BiliCDN 的 [VisibilityAdapter](../src-v2/adapters/visibility.ts) 在 document *
 
 | 類型 | 制定與判定依據 |
 | --- | --- |
-| 產品時點、資格及額度 | 依 [現行產品契約](PROJECT_CONTEXT.md#auto-救援與操作所有權)；Node 驗精確毫秒，瀏覽器列出採樣與 tick 誤差 |
+| 產品時點、資格及額度 | 依 [現行產品契約](ARCHITECTURE.md#auto-救援與操作所有權)；Node 驗精確毫秒，瀏覽器列出採樣與 tick 誤差 |
 | 原生／來源行為 | 同一隔離來源的正常與失敗對照，不接正式 GM 儲存 |
 | 實際安裝 | 完整本體與 singleton 身分成立後，僅執行當輪批准子項 |
 | 清理 | 同窗口保存資源所有權、晚到工作及受控學習匹配結果 |
@@ -100,7 +100,7 @@ v2.1.20 的 E／S／B／P／C 完整矩陣及當時門檻保存在 [重整前原
 - 游標建立與首次排空在同一有界呼叫完成；每批完整 await 至 hasMore=false，不留下跨呼叫的背景 Promise。持有、finally 解除及解除後突發排空先在自有來源驗證；模型返回空隙超過後端容量會使窗口截斷，不能靠媒體樣本補成完整傳輸證據。
 - 精確攔截須對應當前媒體／核心的實際新 video 請求；舊 latestRequested 清單不能單獨證明會命中。沒有實際匹配／持有就沒有施加故障，不能把健康播放算成受控恢復通過。
 - 有期限的觀察器由所屬資源自動截止，第一次停止時保存實際終點並清理 timer／listener／subscription；晚到 stop 不延長窗口。觀察終點、工具返回及操作收尾分開記錄，停止後的資料不能補進有效窗口。
-- 使用 [IabEventCollector](../scripts/iab-event-collector.mts) 時，每窗建立新實例，注入文件化的 CDP capability 及明確 ownsPaused。releaseHolding 先清空 patterns，再排空同一游標，保留還原／尾端事件服務；放行錯誤保留請求所有權，只有相同 networkId 的原生 loadingFinished／loadingFailed 才能另行確認結束。cleanup 完成不會消除已記錄的窗口錯誤。
+- 使用 [IabEventCollector](../scripts/iab/iab-event-collector.mts) 時，每窗建立新實例，注入文件化的 CDP capability 及明確 ownsPaused。releaseHolding 先清空 patterns，再排空同一游標，保留還原／尾端事件服務；放行錯誤保留請求所有權，只有相同 networkId 的原生 loadingFinished／loadingFailed 才能另行確認結束。cleanup 完成不會消除已記錄的窗口錯誤。
 - 指標先移入並重新量測可見進度列；按下後立即核對 dragging，未成立即釋放，不能先等完整長按時間。讀取到網站前提失效時，在同一工具呼叫內解除攔截並收尾，避免模型往返期間繼續持有。
 - 原生 seeking 下合法捕獲的有限目標可以沒有 opaque proof；以原生事實、可信操作及修訂判讀，不能額外要求產品原契約未要求的 proof，也不能修改媒體值補造合法命令。SDK reload 以真正 player-reload 事件／操作修訂辨識，公開 snapshot 可能稍後才更新；普通 recovered 不能當作重載成功。
 - 保存方法完整描述子，只還原仍由工具持有的包裝；原為繼承方法則移除自有遮蔽，不覆寫其他腳本新包裝。
@@ -178,5 +178,5 @@ Tampermonkey 更新先用內建瀏覽器開啟本儲存庫既有 [公開 latest 
 
 - OpenAI 官方 [Browser 文件](https://learn.chatgpt.com/docs/browser?surface=app) 描述內建瀏覽器操作、分頁布局與受控 CDP；它沒有替本專案證明 Tampermonkey、實際背景或完整故障矩陣通過。
 - 實際已知能力與撤回的背景判定：[2026-10-11 可用性報告](../archive/retired/docs/IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md)。
-- 產品契約：[PROJECT_CONTEXT](PROJECT_CONTEXT.md)；原生／偽裝可見性與所有權：[ARCHITECTURE](ARCHITECTURE.md#網站前景偽裝與內部可見性)、[SECURITY](../SECURITY.md#瀏覽器行為)。
+- 產品契約：[ARCHITECTURE](ARCHITECTURE.md)；原生／偽裝可見性與所有權：[ARCHITECTURE](ARCHITECTURE.md#網站前景偽裝與內部可見性)、[SECURITY](../SECURITY.md#瀏覽器行為)。
 - 工作範圍與當前執行狀態只看 [TODO](TODO.md)；已取得的版本證據只看 [TEST_REPORT](TEST_REPORT.md) 與有日期的原始報告。

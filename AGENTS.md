@@ -24,7 +24,7 @@
 
 ## 必要流程
 
-1. 閱讀 `docs/PROJECT_CONTEXT.md`、`SECURITY.md`、`docs/ARCHITECTURE.md` 及 `docs/DEVELOPMENT.md`。
+1. 閱讀 `docs/ARCHITECTURE.md`、`SECURITY.md` 及 `docs/DEVELOPMENT.md`；`docs/PROJECT_CONTEXT.md` 僅保留舊入口導引。
 2. 修改執行期邏輯前，先以領域層、控制器或適配器契約測試重現行為。
 3. 維持分層方向：領域層 → 狀態層 → 應用層 → 適配器層／UI 組合。下層不得匯入上層。
 4. 原始碼修改使用 `apply_patch`，保留使用者的無關變更。
@@ -60,7 +60,7 @@
 ## 必要不變量
 
 - 內建節點清單（Catalog）目標僅來自可信內建項目；Native 目標必須是當前內容週期的精確 URL。
-- 正常選路預設只使用 Catalog；持久原生來源開關、分頁原線對照及整體停用必須維持各自語意。
+- 正常選路預設允許參考合法 Native；關閉原生來源開關時只使用 Catalog。持久原生來源開關、分頁原線對照及整體停用必須維持各自語意。
 - 禁止規則適用於原始、Native、Catalog、固定及備援路線。
 - 影片與音訊的健康／恢復互相隔離。
 - 健康探索不得變更目前主機。
