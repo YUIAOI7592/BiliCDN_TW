@@ -2857,7 +2857,8 @@
         "migration"
       ],
       "versions": [
-        "v2.1.8"
+        "v2.1.8",
+        "v2.2.0"
       ],
       "date": "2026-10-07",
       "requiredAnchors": [
@@ -3193,6 +3194,30 @@
         "診斷成本基準",
         "唯讀緩衝趨勢診斷"
       ]
+    },
+    {
+      "path": "Release/v2.2.0/CHANGELOG_v2.2.0.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.0"
+      ],
+      "date": "2026-11-01",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.0/TEST_REPORT_v2.2.0.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.0"
+      ],
+      "date": "2026-11-01",
+      "requiredAnchors": []
     }
   ],
   "protections": [
@@ -6716,6 +6741,41 @@
       "encoding": "raw",
       "bytes": 6875,
       "sha256": "312d59a22640adbcb782fa1a4bc91b889bfc8649018f6febcb0bd684c23b1e3f"
+    },
+    {
+      "path": "Release/v2.2.0/BiliCDN_TW.user.js",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 507211,
+      "sha256": "abca87caeb995fb924f5869c8fd60accdfe250994b448607e22803a38a610a1f"
+    },
+    {
+      "path": "Release/v2.2.0/BUILD_MANIFEST_v2.2.0.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 9514,
+      "sha256": "e0537d606f9facd45cd6f56f4a59aad70ed561c11e104e2b5f51f11e50ea86a6"
+    },
+    {
+      "path": "Release/v2.2.0/CHANGELOG_v2.2.0.md",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 58583,
+      "sha256": "a428707ac271a0fc633e81f9a562d27e608d59c45385c2f3149ca293f7dd7db3"
+    },
+    {
+      "path": "Release/v2.2.0/SHA256SUMS_v2.2.0.txt",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 412,
+      "sha256": "fd1981053df017aa0217593233bf9950121d259a0d6281b203512dde20c1bc28"
+    },
+    {
+      "path": "Release/v2.2.0/TEST_REPORT_v2.2.0.md",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 8804,
+      "sha256": "5ff6510f893bb657ee833a6d2838fd703e3ba01857c70eee52279104fc2c6da2"
     }
   ],
   "privateEvidenceReferences": [
