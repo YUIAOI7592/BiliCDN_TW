@@ -26,6 +26,14 @@ v2.2.1 腳本為 419,507 bytes，比 v2.2.0 的 507,211 bytes 減少 17.3%。SHA
 
 此封裝時點已通過自動及安全驗證；公開推送與 latest 下載讀回將追加於現行報告，封裝快照不回寫。GitHub Release 只附唯一使用者腳本。
 
+### 公開交付讀回（2026-11-01）
+
+正式 [v2.2.1 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.1) 已發布並設為 latest，非草稿、非預發布。發行提交及標籤解參照均為 `1e4e70cccf13e0dea1346c1fbd89d44dad063ce1`；推送時遠端 main 同步至該提交，後續 main 僅追加交付紀錄。
+
+公開 main 腳本、v2.2.1 標籤腳本與 latest 下載均獨立讀回：版本 2.2.1、419,507 bytes、SHA-256 `e89b94bb92eecb818ce038f09c1de2b9fb5db8b2ffa35adb2357141384db149d`，逐位元組等於本機封裝。Release API 確認附件只有 `BiliCDN_TW.user.js`，大小與 digest 同值。五份儲存庫封裝檔、建置輸入雜湊及 Git blob 均已核對；發布後不回寫封裝快照。
+
+本次交付完成；未操作 IAB、未更新管理器安裝版，也未恢復已停止的播放或故障窗口。
+
 ## 安裝與歷史判定
 
 本次未啟動瀏覽器、安裝或播放窗口。一般播放與設定驗收依直接產品行為判定，不要求診斷工具或完整 Network 成功；特定問題缺少時序只限制該問題結論。
