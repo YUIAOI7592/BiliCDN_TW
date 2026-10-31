@@ -94,6 +94,25 @@ v2.1.40 的香港影片供片與自然恢復證據不足、N05 取消來源及�
 
 本輪最終 **核心驗收未完成**，原因是 I220-03 的 Network 截斷及 I220-04 時間不足；沒有確認新的產品缺陷，也不把影片穩定進度補算完整傳輸通過。證據為本輪私有目錄的 CONTINUED_EVIDENCE.json、screenshots/native-restored.png 及 screenshots/playback-cleanup.png；先前校準原件與更正記錄保留。
 
+### Auto 2 倍補充與本次驗收結案
+
+使用者其後明確選擇「新增 15 分鐘完成 2 倍案例」，限定未開始的 Auto 2 倍、新文件必要身分核對及清理；已通過功能不重測，1 倍 INVALID 不重跑。補充輪 T0=2026-11-01 03:09:32.195（Asia/Taipei）、主機單調起點 2201008.1549 ms；清理保留起點 03:19:32.195、硬截止 03:24:32.195。實際清理於 03:15:25.983 前完成，單調經過約 353,787.8 ms，未占用截止後時間。
+
+| 項目 | 結果 | 實際證據 |
+| --- | --- | --- |
+| 新文件身分 | PASS | Tampermonkey 5.5.1／腳本 2.2.0；完整本體 507,211 bytes、SHA-256 與公開附件一致，RuntimeController／ControlCenter／TransportAdapter 各一個，Fetch／XHR hooks installed |
+| I220-04 Auto 2 倍媒體觀察 | PASS（僅媒體） | 真正播放器選單切至 2.0x，原生 rate=2、muted=true；Auto 實際 3840×2160。計分區間 03:12:41.533–03:13:41.533，前後各 10 秒，總觀察 80,001.7 ms／81 筆，計分 60 筆全部靜音、2 倍、正常播放且同一媒體，無 paused／ended／seeking／error |
+| 2 倍進度 | PASS（僅媒體） | 首末採樣進度 117.995722 秒、影格 11323→18394；最大採樣間隔約 1001.7 ms，最小逐筆媒體進度 1.988972 秒 |
+| I220-04 完整傳輸窗口 | INVALID | 全事件批次合計 5,138 筆，其中保留 123 筆去敏媒體 Network 摘要；首批與後續批次 truncated=true，最大讀取空隙 53,687 ms，超過凍結的 15 秒上限。沒有本機容量丟棄，仍不能宣稱完整傳輸通過 |
+| 有限傳輸觀察 | 僅保留觀察，不補算完整性 | 保存的事件中 video 20 筆／audio 21 筆均為 206，主機分別為 mirrorali／mirrorcos；首批包含較早緩存事件，不把這些數量當成完整 60 秒窗口的精確總數 |
+| 設定、倍速及清理 | PASS | 全部腳本設定（含 updatedAt）與本次開始一致；確認最後寫入仍為 2 倍才用真實選單還原 1 倍。讀回 rate=1／paused=true／muted=true、觀察器及窗口停止；Network／Debugger／物件群組解除，IAB 自有分頁為 0 |
+
+Network 缺口是本次收集執行不符合凍結條件，不能推定產品缺陷：游標先建立後未在啟動觀察前重新排空，首批已截斷；其後模型／工具呼叫間又留下約 54 秒空隙。將讀取改成全事件、只保留去敏 Network 摘要，或解除身分 Debugger，都不能補回已遺失事件。批次陣列保存每次實際時間、游標、count／hasMore／truncated；統計從此陣列重算，避免跨工具呼叫的原始值變數與函式閉包讀值不一致。清理後的證據組裝變數名稱錯誤已修正，沒有重複瀏覽器動作或改寫採樣。
+
+原始去敏證據保存於 `.work/iab-testing/2026-11-01-v2.2.0-5fbffbc-rate2/EVIDENCE.json` 及兩張 screenshots；不保存簽名網址、路徑、查詢、憑證或播放器物件。1 倍原 INVALID、舊故障／背景／跨分頁限制維持，不追加窗口。
+
+**本次授權的有界驗收執行及紀錄已完成，整體核心驗收仍未通過。** 已證明 v2.2.0 安裝身分、設定／控制中心，以及 Auto 1／2 倍的正常靜音媒體播放；兩個完整傳輸窗口均為 INVALID，不能宣稱全項或完整網路驗收通過。沒有確認需修改產品的新缺陷，不升版、不改寫 Release。
+
 ## 歷史驗證導覽
 
 [v2.1.40 完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01) 保留全部原始觀察與停止決策；其他版本見 [HISTORY](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md)。
