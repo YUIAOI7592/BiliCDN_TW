@@ -9,7 +9,7 @@
 | 目的 | 閱讀順序 |
 | --- | --- |
 | 安裝、操作與排查 | [README](../README.md) |
-| UP141 歷史測試操作 | [完整測試版操作表](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md)；啟動狀態見 TODO，結果見 TEST_REPORT |
+| UP141 歷史測試操作 | [v2.1.38 操作表](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md) → [對應完整報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2138-完整正文保存2026-10-31)；不構成新輪次授權 |
 | 開始修改程式 | [TODO](TODO.md) → [AGENTS](../AGENTS.md) → [PROJECT_CONTEXT](PROJECT_CONTEXT.md) → [SECURITY](../SECURITY.md) → [ARCHITECTURE](ARCHITECTURE.md) → [DEVELOPMENT](DEVELOPMENT.md) |
 | 撰寫或執行測試 | [TODO](TODO.md) → [DEVELOPMENT 測試套件與隔離](DEVELOPMENT.md#測試套件與隔離)；涉及瀏覽器時再讀 [IAB_TESTING](IAB_TESTING.md)；結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
 | 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#發行規則) → [DEVELOPMENT 封裝與發行](DEVELOPMENT.md#封裝與發行)，並依 [發布文件更新順序](DEVELOPMENT.md#發布文件更新順序) 準備文件 |
@@ -28,7 +28,7 @@
 | [ARCHITECTURE](ARCHITECTURE.md) | 分層、內部介面、資料流、狀態及副作用所有權 |
 | [SECURITY](../SECURITY.md) | 信任邊界、安全要求與平台限制 |
 | [DEVELOPMENT](DEVELOPMENT.md) | 環境、命令、測試、建置、發布與文件維護 |
-| [IAB_TESTING](IAB_TESTING.md) | 校準、隔離、批准等待、判定、清理及停止規則 |
+| [IAB_TESTING](IAB_TESTING.md) | 單分頁、靜音、校準、隔離、期限、判定及清理規則 |
 | [TODO](TODO.md) | 當前工作、批准範圍及停止／結案狀態 |
 | [TEST_REPORT](TEST_REPORT.md) | 最新版完整證據、結果與限制 |
 | [CHANGELOG](CHANGELOG.md) | 各版行為差異與證據入口 |
@@ -40,7 +40,7 @@
 
 [歷史索引](HISTORY.md) 涵蓋原始版本報告、議題、日期、[工具驗證](TEST_TOOLING_REPORT.md)、[完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md) 與封存。歷史原文中的「目前」「待完成」只描述當時版本，不構成新工作授權。
 
-多階段報告中的未發布／阻塞段落與後續完成段落屬不同檢查點；查現況先回到 TODO 與 TEST_REPORT。歷史證據不因文件整理改寫，全文快照、後續追加與本輪逐檔核對由 [文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-25文件狀態全面核對) 追溯。
+多階段報告中的未發布／阻塞段落與後續完成段落屬不同檢查點；查現況先回到 TODO 與 TEST_REPORT。歷史證據不因文件整理改寫，全文快照、後續追加與各次逐檔核對由 [文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) 追溯。
 
 ## 檔案配置
 

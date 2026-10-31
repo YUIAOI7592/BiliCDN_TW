@@ -4,13 +4,15 @@
 
 瀏覽器測試只使用 **Codex 內建瀏覽器＋Tampermonkey**，依 [IAB_TESTING](IAB_TESTING.md) 分開來源隔離、實際安裝與環境校準。應用層注入的模型與原生事件不可混為安裝版證據。
 
-## UP141 提前重試原型
+<a name="up141-提前重試原型"></a>
+
+## 慢請求提前重試
 
 XhrHook／私有 XhrEarlyRetry 實作 InFlightVideoPort，保管原始 XHR、單一 Range 與 timeout 寫入修訂；輸出最多十六筆不可變在途摘要，每筆最多八個近期樣本。純 evaluateEarlyRetry 只計算輸入事實。EarlyRetryController 使用 PlayerMonitor 更新播放／恢復狀態後的既有一秒 tick，持有每請求、八秒主機、三十秒分頁及低緩衝段額度，不新增週期計時器。RouteCoordinator 窄介面準備／認領／撤銷兩秒一次性許可，網站相符重試通過原生 send 後才提交親和。
 
 資格維持 1,500 ms、完成度低於 80%、0 < 已按倍速折算的緩衝 < 6 秒、至少一秒近期速度低於需求。替代主機須有六十秒內兩個不同工作 ID、各至少 64 KiB 的成功 video 證據且達 1.35 倍需求；當前內容與授權仍有效，不為資格追加探測。估計原請求超過緩衝的 0.8 倍、完整重試可在其內完成並至少節省一秒才動作。每請求一次、同主機八秒一次、分頁三十秒最多三次、同低緩衝段一次；恢復十秒緩衝及連續十個健康 tick 才離開該段。
 
-Runtime 擁有提前重試事件訂閱及卸載；控制器發布 fixed state／reason，適配器只提供原生 timeout 與認領觀察，不能向診斷交出控制能力。Recorder 與事故快照最多保留十六筆新事件，沿用 128 KiB／匯出 96 KiB 淘汰；bufferTrend v6 不變。控制中心讀模型帶 releaseStage=stable、有效設定及候選狀態。關閉不取消網站已送請求，交接失敗只停本文件的實驗控制，原恢復契約保持。
+Runtime 擁有提前重試事件訂閱及卸載；控制器發布 fixed state／reason，適配器只提供原生 timeout 與認領觀察，不能向診斷交出控制能力。Recorder 與事故快照最多保留十六筆新事件，沿用 128 KiB／匯出 96 KiB 淘汰；bufferTrend v6 不變。控制中心讀模型帶 releaseStage=stable、有效設定及候選狀態。關閉不取消網站已送請求，交接失敗只停目前頁面的提前重試控制，原恢復契約保持。正式整合不改寫歷史效用結果；版本別證據見 [TEST_REPORT](TEST_REPORT.md) 與 [HISTORY](HISTORY.md)。
 
 MeasurementController 只保留起播及一般自動健康探索；requestManual、requestCatalogValidation、定向 context／target 與 challenge 特殊參數已刪除。最近 Monitor 狀態仍供鎖內重驗，保留工作標記、取消、來源／表示／政策檢查與晚到防護。健康探索仍使用六小時新鮮度及排除目前主機。六項設定均屬 schema 2，測速設定關閉先抑制動作，備援分散由輸出規劃讀取，不主動換親和。
 
@@ -237,6 +239,8 @@ XHR 的 response／responseText 共用同一組文字轉換及快取助手，JSO
 6. 完成後產生型別化觀察並更新證據。已確認失敗可開啟媒體種類斷路器，請求考慮群組的備援。
 7. 冷啟動無進度時可提交一次不同主機的合法備援，並啟動既有的一次性核心恢復。原生來源開關關閉時，備援也必須是 Catalog。
 8. 以決策後觀察到的主機確認路線結果，不能只憑計畫。
+
+固定偏好在合法候選間優先；固定主機失敗後，當前合法備援仍可取得恢復資格。RouteCoordinator 核對持有計畫與當前 Vault 身分、世代、內容週期、政策／授權修訂及禁止規則；恢復權限不再由「備援主機是否等於固定字串」決定。重載副作用仍由 RecoveryController 的 token／操作所有權與既有額度限制。
 
 Catalog HTTP 403 只失效當前串流／主機配對，影響後續排名、備援及主動挑戰。恢復依媒體種類記錄從計畫、攔截入口到回應或失敗的有界動作；來自無關決策的同主機請求不能確認該動作。
 

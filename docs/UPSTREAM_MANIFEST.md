@@ -14,7 +14,7 @@ SHA-256 清單為 [baseline/SHA256SUMS.txt](../baseline/SHA256SUMS.txt)，內容
 
 [原作者 v1.4.1 原件](../baseline/BiliCDN_TW_1.4.1.original.user.js) 固定於提交 `b32f949d216dc92cd1efa0b0d023f650b126fcb8`，保存日期 2026-10-29。完整來源、下載核對與比較身分見 [provenance](../baseline/BiliCDN_TW_1.4.1.provenance.json)，原始位元組校驗見 [獨立 SHA-256 清單](../baseline/BiliCDN_TW_1.4.1.SHA256SUMS.txt)。它是後續調查原件，不替換 v1.3.4 來源歸屬基準，也不匯入正式建置／測試。
 
-版本化比較由 [HISTORY](HISTORY.md) 導覽，本次結果見 [v1.4.1 與 v2.1.36 來源比較](../archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md)。
+版本化比較由 [HISTORY](HISTORY.md) 導覽，2026-10-29 結果見 [v1.4.1 與 v2.1.36 來源比較](../archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md)。
 
 ### v2 建置界線
 

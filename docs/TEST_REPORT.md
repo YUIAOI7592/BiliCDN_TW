@@ -58,7 +58,7 @@ v2.1.40 已正式發布：[GitHub Release](https://github.com/YUIAOI7592/BiliCDN
 
 本次確認並修復的是合法備援恢復資格；N05 舊卡頓取消來源、香港最初 timeout 的網路根因及舊網站清空原因仍未確認。兩次有界實測均已結束，沒有追加第三輪。文件／封存與差異檢查在最後追加後執行，後續僅提交這些驗證記錄。
 
-最後離線 docs:check、archive:check、git diff --check 通過：243 Markdown／2597 本機與儲存庫連結、429 搬移檔、三份只追加日誌、128 不變檔、67 checksum／310 筆；七個不可變舊斷鏈、430 歷史原址限制、十八個私有引用及 422 外部未連線引用保持原限制。
+本次安裝結案時的離線 docs:check、archive:check、git diff --check 通過：243 Markdown／2597 本機與儲存庫連結、429 搬移檔、三份只追加日誌、128 不變檔、67 checksum／310 筆；七個不可變舊斷鏈、430 歷史原址限制、十八個私有引用及 422 外部未連線引用保持原限制。後續純文件整理的核對另按日期追加至維護與工具日誌，不算新的產品驗收。
 
 **本次尚未完成全部根因調查或整體核心驗收。** 已確認的恢復資格缺陷與其他未解傳輸／網站問題分別判定；香港缺樣及原提前重試效用 FAIL 保留。
 
@@ -68,22 +68,40 @@ v2.1.39 完整正文已追加至 [歷史原文](https://github.com/YUIAOI7592/Bi
 
 <a name="發布與安裝限制"></a>
 
+舊發布／安裝限制依版本保留，請由 [版本索引](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md#版本) 查原文；本版公開交付見上文。
+
 <a name="bilicdn_tw-v218-release-verification--2026-10-04"></a>
+
+[v2.1.8 完整發行驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v218-發行驗證--2026-10-04)。
 
 <a name="2026-10-31更新後安裝核對"></a>
 
+[v2.1.39 更新後安裝核對原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31更新後安裝核對)。
+
 <a name="2026-10-31六十分鐘驗證計畫執行結果"></a>
+
+[v2.1.39 六十分鐘驗證原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31六十分鐘驗證計畫執行結果)。
 
 <a name="2026-10-31iab-可用但持續靜音前提受阻"></a>
 
+[v2.1.39 靜音前提檢查點原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31iab-可用但持續靜音前提受阻)。
+
 <a name="2026-10-31依使用者更正靜音方法續行與下載工具超時"></a>
+
+[v2.1.39 更正後靜音操作與工具超時原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31依使用者更正靜音方法續行與下載工具超時)。
 
 <a name="2026-10-31補測與單分頁重測"></a>
 
+[v2.1.39 單分頁重測原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31補測與單分頁重測)。
+
 <a name="2026-10-31一次授權的單分頁缺口補測"></a>
+
+[v2.1.39 一次授權補測原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31一次授權的單分頁缺口補測)。
 
 <a name="2026-10-30up141-安裝版實測"></a>
 
+[v2.1.38 UP141 安裝版實測原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-30up141-安裝版實測)。
+
 <a name="隔離-b-分支原型驗證2026-10-30"></a>
 
-以上舊錨點均導向 v2.1.39 歷史原文，不表示本版測試結果。
+[隔離 B 分支原型原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#隔離-b-分支原型驗證2026-10-30)。以上相容錨點只提供歷史導引，不表示本版測試結果。

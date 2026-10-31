@@ -6,7 +6,7 @@
 
 ## 版本
 
-- [UP141 安裝版實測與工具阻塞（2026-10-30，v2.1.38）](TEST_REPORT.md#2026-10-30up141-安裝版實測)
+- [UP141 安裝版實測與工具阻塞（2026-10-30，v2.1.38）](../archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-30up141-安裝版實測)
 
 - [UP141 完整測試版操作與取證準備（2026-10-30，v2.1.38）](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md)
 
@@ -178,8 +178,11 @@
 
 ### 文件維護與指南快照
 
+- [現行文件與歷史狀態全面對齊 — 2026-10-31](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-31現行文件與歷史狀態全面對齊)
+- [本次整理前 TODO 全文 — 固定提交 fede700](https://github.com/YUIAOI7592/BiliCDN_TW/blob/fede7003e7c5056b9ca1a713dbee7266370e45e0/docs/TODO.md)
+- [舊 IAB 矩陣、時限及雙分頁方法 — 固定提交 fede700](https://github.com/YUIAOI7592/BiliCDN_TW/blob/fede7003e7c5056b9ca1a713dbee7266370e45e0/docs/IAB_TESTING.md)
 - [文件狀態全面核對 — 2026-10-25](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-25文件狀態全面核對)
-- [本次狀態整理前 TODO 全文 — 固定提交 51ee733](https://github.com/YUIAOI7592/BiliCDN_TW/blob/51ee733664570d880f5fcf324f5cc555067e233e/docs/TODO.md)
+- [2026-10-25 狀態整理前 TODO 全文 — 固定提交 51ee733](https://github.com/YUIAOI7592/BiliCDN_TW/blob/51ee733664570d880f5fcf324f5cc555067e233e/docs/TODO.md)
 - [文件重整前快照 — 2026-10-17](../archive/retired/docs/DOCS_BEFORE_REORGANIZATION_2026-10-17.md)
 - [文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)
 - [內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)
@@ -254,7 +257,9 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
-| 2026-10-25 | [IR36 安裝版驗證](../archive/retired/docs/INSTALLED_RESTORE_IR36_2026-10-25.md)、[診斷成本基準](../archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md)、[實際緩衝效用第一輪](../archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md)、[第二輪十二窗](../archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md)、[風險覆蓋](../archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md)、[採用決策](../archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md)、[救援還原](../archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md#2026-10-25-後續交付結案導引)、[v2.1.36 完整報告](TEST_REPORT.md)、[私有封存存取](TEST_TOOLING_REPORT.md#2026-10-25舊私有封存-eperm-調查與本機驗證)、[文件狀態核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-25文件狀態全面核對) |
+| 2026-10-31 | [控制中心整合與移除前驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2139-完整報告保存2026-10-31)、[固定 CDN 備援恢復與移除後取證](#2026-10-31-固定-cdn-備援恢復與移除後取證)、[文件狀態對齊](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-31現行文件與歷史狀態全面對齊) |
+| 2026-10-30 | [UP141 安裝版實測](../archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-30up141-安裝版實測)、[完整測試版操作表](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md)、[隔離 B 原型](../archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md) |
+| 2026-10-25 | [IR36 安裝版驗證](../archive/retired/docs/INSTALLED_RESTORE_IR36_2026-10-25.md)、[診斷成本基準](../archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md)、[實際緩衝效用第一輪](../archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md)、[第二輪十二窗](../archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md)、[風險覆蓋](../archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md)、[採用決策](../archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md)、[救援還原](../archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md#2026-10-25-後續交付結案導引)、[v2.1.36 完整報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2136-完整報告2026-10-30)、[私有封存存取](TEST_TOOLING_REPORT.md#2026-10-25舊私有封存-eperm-調查與本機驗證)、[文件狀態核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-25文件狀態全面核對) |
 | 2026-10-24 | [候選 v4 周期改善](../archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md)、[v2.1.30](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2130-完整報告2026-10-24)、[v2.1.31](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2131-完整報告2026-10-24)、[v2.1.32](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2132-完整報告2026-10-24)、[v2.1.33](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2133-完整報告2026-10-24)、[v2.1.34](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2134-完整報告2026-10-24)、[v2.1.35](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2135-完整報告2026-10-24) |
 | 2026-10-23 | [唯讀緩衝趨勢](../archive/retired/docs/BUFFER_TREND_2026-10-23.md)、[持續確認原型](../archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md)、[候選 v3](../archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md)、[觀察可信度與成本](../archive/retired/docs/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.md)、[原版與 v2 比較](../archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md)、[v2.1.28](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2128-完整報告2026-10-23)、[v2.1.29（正文日期）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2129-完整報告2026-10-24) |
 | 2026-10-22 | [全專案檔案盤點與整理](../archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md) |
@@ -309,7 +314,14 @@
 
 ## 2026-10-31 控制中心與業務邏輯整合
 
-- [v2.1.39 完整驗證](TEST_REPORT.md)
+- [v2.1.39 完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2139-完整報告保存2026-10-31)
 - [v2.1.38 改版前完整正文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2138-完整正文保存2026-10-31)
-- [本輪提前重試效用原始資料](../archive/retired/docs/evidence/CC39_EARLY_RETRY_EFFICACY_2026-10-31.json)
+- [v2.1.39 提前重試效用原始資料](../archive/retired/docs/evidence/CC39_EARLY_RETRY_EFFICACY_2026-10-31.json)
 - [第二階段前封存配置原件](../baseline/CC39_pre_integration_relocation_2026-10-31.json)
+
+## 2026-10-31 固定 CDN 備援恢復與移除後取證
+
+- [v2.1.40 根因證據與修復](TEST_REPORT.md#修復與根因)
+- [移除 Evolved 後的修前取證](TEST_REPORT.md#來源隔離與實際安裝)
+- [公開交付、完整安裝身分與修後窗口](TEST_REPORT.md#公開交付與安裝結案)
+- [本日根因調查工具紀錄](TEST_TOOLING_REPORT.md#2026-10-31移除-evolved-後的根因取證與-cc40)
