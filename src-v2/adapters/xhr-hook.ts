@@ -1,3 +1,4 @@
+import { responseFailure } from './transport-context.ts'
 import { classifyPlayurlApi } from '../domain/catalog.ts'
 import { playurlRequestContext } from '../domain/playurl-content.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
@@ -366,12 +367,9 @@ export class XhrHookAdapter {
           })
         }
         const load = (event: Event): void => {
-          const invalid =
-            meta.applied?.decision.routeType === 'native-signed' &&
-            [403, 451, 959].includes(this.status)
           settle(
             this.status >= 200 && this.status < 400 ? 'success' : 'failure',
-            invalid ? 'native-invalid' : this.status >= 500 ? 'http-5xx' : undefined,
+            responseFailure(meta.applied?.decision.routeType, this.status),
             false,
             event,
           )

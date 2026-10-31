@@ -1,3 +1,4 @@
+import type { SettingsReader } from '../../state/settings-contracts.ts'
 import type {
   Clock,
   MediaKind,
@@ -9,7 +10,6 @@ import type { HardRestriction } from '../../domain/route-policy.ts'
 import type {
   RouteEvidencePort,
   RouteRestrictionsPort,
-  RouteSettingsPort,
   RouteVaultPort,
 } from '../route-contracts.ts'
 
@@ -25,7 +25,6 @@ export interface RoutingVaultReader extends Pick<
 > {}
 export interface RoutingEvidenceReader extends Pick<RouteEvidencePort, 'get'> {}
 export interface RoutingRestrictionsReader extends RouteRestrictionsPort {}
-export interface RoutingSettingsReader extends RouteSettingsPort {}
 export interface RoutingPolicyReader {
   readonly vault: RoutingVaultReader
   isCatalogOnly(): boolean
@@ -38,7 +37,7 @@ export interface RoutingEnvironmentReader {
   readonly clock: Clock
   readonly evidence: RoutingEvidenceReader
   readonly restrictions: RoutingRestrictionsReader
-  readonly settings: RoutingSettingsReader
+  readonly settings: SettingsReader
 }
 export type DecisionEligibility = (
   decision: RouteDecision,

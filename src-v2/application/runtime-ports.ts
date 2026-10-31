@@ -1,7 +1,6 @@
 import type { DomainEvent } from '../domain/model.ts'
 import type { PlaybackDiagnosticSample } from '../domain/diagnostic-model.ts'
 import type { SessionPort } from '../state/session-contracts.ts'
-import type { SettingsPort } from '../state/settings-contracts.ts'
 import type { PlayerPort } from './ports.ts'
 import type { RouteCoordinatorPort } from './route-contracts.ts'
 import type { MeasurementPort } from './measurement-contracts.ts'
@@ -14,7 +13,6 @@ export interface RuntimeDiagnosticPort {
   recordPlayer(sample: PlaybackDiagnosticSample): void
 }
 export interface RuntimeSessionPort extends Pick<SessionPort, 'get'> {}
-export interface RuntimeSettingsPort extends Pick<SettingsPort, 'get' | 'subscribe'> {}
 export interface RuntimeRoutesPort extends Pick<
   RouteCoordinatorPort,
   | 'subscribe'

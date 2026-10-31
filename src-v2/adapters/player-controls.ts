@@ -442,14 +442,19 @@ export class PlayerControlObserver {
     this.#controlStops.push(() => target.removeEventListener(type, listener, true))
   }
 
+  #listenTrusted(target: EventTarget, type: string, listener: EventListener): void {
+    this.#listen(target, type, (event) => {
+      if (event.isTrusted) listener(event)
+    })
+  }
+
   #bindPointerControls(
     video: HTMLVideoElement,
     player: UnknownRecord | null,
     region: Element | null,
     inRegion: (event: Event) => boolean,
   ): void {
-    this.#listen(document, 'pointerdown', (event) => {
-      if (!event.isTrusted) return
+    this.#listenTrusted(document, 'pointerdown', (event) => {
       const revision = ++this.#pointerRevision
       if (
         !this.environment.isActuallyVisible() ||
@@ -521,8 +526,8 @@ export class PlayerControlObserver {
       this.#clearOwnedReload()
       this.#goal = null
     }
-    this.#listen(window, 'blur', (event) => {
-      if (event.isTrusted && event.target === window) controlLoss()
+    this.#listenTrusted(window, 'blur', (event) => {
+      if (event.target === window) controlLoss()
     })
     this.#controlStops.push(this.environment.subscribeControlLoss(controlLoss))
   }
@@ -1148,10 +1153,8 @@ export class PlayerControlObserver {
     try {
       const player = this.sources.player(),
         method = player?.seek
-      if (player && typeof method === 'function') {
-        if (!nativeCurrent()) return { channel: 'none', result: undefined }
-        return { channel: 'sdk', result: Reflect.apply(method, player, [value]) }
-      }
+      const dispatched = this.#sdkCommand(player, method, value, nativeCurrent)
+      if (dispatched) return dispatched
       const video = this.sources.video()
       if (video && nativeCurrent()) {
         video.currentTime = value
@@ -1175,13 +1178,11 @@ export class PlayerControlObserver {
     const nativeCurrent = this.#nativeWriteGuard(canCommit)
     const player = this.sources.player(),
       method = player?.setPlaybackRate
-    if (player && typeof method === 'function') {
-      try {
-        if (!nativeCurrent()) return { channel: 'none', result: undefined }
-        return { channel: 'sdk', result: Reflect.apply(method, player, [value]) }
-      } catch {
-        /* fallback */
-      }
+    try {
+      const dispatched = this.#sdkCommand(player, method, value, nativeCurrent)
+      if (dispatched) return dispatched
+    } catch {
+      /* Rate failures retain their native fallback; seek failures propagate. */
     }
     const video = this.sources.video()
     if (video && nativeCurrent()) {
@@ -1189,6 +1190,17 @@ export class PlayerControlObserver {
       return { channel: 'native', result: undefined }
     }
     return { channel: 'none', result: undefined }
+  }
+
+  #sdkCommand(
+    player: UnknownRecord | null,
+    method: unknown,
+    value: number,
+    current: () => boolean,
+  ): { channel: RestoreReadback['channel']; result: unknown } | null {
+    if (!player || typeof method !== 'function') return null
+    if (!current()) return { channel: 'none', result: undefined }
+    return { channel: 'sdk', result: Reflect.apply(method, player, [value]) }
   }
 
   #restoreRecord(attempt: RestoreAttempt): RestoreRecord | null {

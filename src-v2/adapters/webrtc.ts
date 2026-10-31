@@ -1,7 +1,5 @@
 import type { SettingsReader, SettingsObserver } from '../state/settings-contracts.ts'
 
-interface WebRtcSettingsPort extends SettingsReader, SettingsObserver {}
-
 const API_NAMES = [
   'RTCPeerConnection',
   'mozRTCPeerConnection',
@@ -19,7 +17,7 @@ export class WebRtcAdapter {
     }
   >()
   #unsubscribe: (() => void) | null = null
-  constructor(private readonly settings: WebRtcSettingsPort) {}
+  constructor(private readonly settings: SettingsReader & SettingsObserver) {}
 
   install(): void {
     if (this.#unsubscribe) return

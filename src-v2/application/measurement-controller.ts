@@ -1,3 +1,4 @@
+import { sameMeasurementSettings } from '../state/settings-policy.ts'
 import type { AppliedRouteDecision, StartupCandidate, StartupOptions } from './route-contracts.ts'
 import type {
   FailureKind,
@@ -7,7 +8,7 @@ import type {
 } from '../domain/model.ts'
 import { probeStartByte } from '../domain/probe-range.ts'
 import { mediaIdentity } from '../domain/url-policy.ts'
-import type { SettingsPort } from '../state/settings-contracts.ts'
+import type { SettingsReader, SettingsObserver } from '../state/settings-contracts.ts'
 
 import type { RangeProbePort, SchedulerPort } from './ports.ts'
 
@@ -83,24 +84,13 @@ export class MeasurementController implements MeasurementPort {
     private readonly scheduler: SchedulerPort,
     private readonly rangeMetadata?: MeasurementRangeMetadataPort,
     private readonly random: () => number = () => 0,
-    private readonly settings?: Pick<SettingsPort, 'get' | 'subscribe'>,
+    private readonly settings?: SettingsReader & SettingsObserver,
   ) {
     if (settings) {
-      const signature = () => {
-        const s = settings.get()
-        return JSON.stringify([
-          s.disabled,
-          s.fixedHost,
-          s.considerNativeSources,
-          s.catalogOverrides,
-          s.startupEarlyReleaseEnabled,
-          s.healthMiddleRangeEnabled,
-        ])
-      }
-      let previous = signature()
+      let previous = settings.get()
       this.#stopSettings = settings.subscribe(() => {
-        const next = signature()
-        if (previous === next) return
+        const next = settings.get()
+        if (sameMeasurementSettings(previous, next)) return
         previous = next
         this.#marker++
         this.cancel('test-policy-changed')

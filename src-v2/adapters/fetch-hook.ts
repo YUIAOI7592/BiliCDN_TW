@@ -1,3 +1,4 @@
+import { responseFailure } from './transport-context.ts'
 import { classifyPlayurlApi } from '../domain/catalog.ts'
 import { playurlRequestContext } from '../domain/playurl-content.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
@@ -179,9 +180,6 @@ export class FetchHookAdapter {
       }
       const responseAt = self.now()
       if (!response.body) {
-        const invalid =
-          applied.decision.routeType === 'native-signed' &&
-          [403, 451, 959].includes(response.status)
         void self.observeFetch(
           request,
           applied,
@@ -192,7 +190,7 @@ export class FetchHookAdapter {
           responseAt,
           0,
           response.ok ? 'success' : 'failure',
-          invalid ? 'native-invalid' : response.status >= 500 ? 'http-5xx' : undefined,
+          responseFailure(applied.decision.routeType, response.status),
         )
         return response
       }
@@ -220,12 +218,9 @@ export class FetchHookAdapter {
           try {
             const result = await reader.read()
             if (result.done) {
-              const invalid =
-                applied.decision.routeType === 'native-signed' &&
-                [403, 451, 959].includes(response.status)
               settle(
                 response.ok ? 'success' : 'failure',
-                invalid ? 'native-invalid' : response.status >= 500 ? 'http-5xx' : undefined,
+                responseFailure(applied.decision.routeType, response.status),
               )
               controller.close()
               return

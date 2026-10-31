@@ -56,6 +56,17 @@ export const catalogTarget = (applied: AppliedRouteDecision | null): boolean =>
   applied.decision.routeType === 'catalog-generated' &&
   isCatalogHost(applied.decision.host) &&
   hostOf(applied.url) === applied.decision.host
+export function responseFailure(
+  routeType: RouteType | undefined,
+  status: number,
+): FailureKind | undefined {
+  return routeType === 'native-signed' && [403, 451, 959].includes(status)
+    ? 'native-invalid'
+    : status >= 500
+      ? 'http-5xx'
+      : undefined
+}
+
 export const blockedPlayurl = (): { code: number; message: string } => ({
   code: -1,
   message: 'BiliCDN Catalog route unavailable',

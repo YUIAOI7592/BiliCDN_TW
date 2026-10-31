@@ -17,7 +17,6 @@ interface ResumeToken {
   readonly baselinePositionSec: number
   readonly baselineFrames: number | null
   reloadingAt: number
-  restored: boolean
   reloadRevision: number | null
   restorePosition: boolean
   controls: PlayerControlSnapshot
@@ -26,20 +25,28 @@ interface ResumeToken {
   firstProgressAt: number | null
   readonly initiallyPaused: boolean
   restore: RestorePlan | null
-  restoredAt: number
-  restoreBaseline: { readonly positionSec: number; readonly at: number } | null
 }
 
 interface RestorePlan {
   readonly targetSec: number
-  phase: 'position' | 'rate'
+  phase: 'position' | 'rate' | 'progress'
+  progress: {
+    readonly positionSec: number
+    readonly at: number
+    readonly restoredAt: number
+  } | null
   attempt: RestoreAttempt | null
   positionAttempt: RestoreAttempt | null
   issuedAt: number
-  positionNativeUsed: boolean
-  rateNativeUsed: boolean
+  nativeUsed: Record<'position' | 'rate', boolean>
   channel: RestoreReadback['channel']
   result: NonNullable<RecoverySnapshot['restoration']>['result']
+}
+
+function restored(
+  token: ResumeToken | null | undefined,
+): token is ResumeToken & { restore: RestorePlan } {
+  return token?.restore?.phase === 'progress'
 }
 
 interface RestoreProgressObservation {
@@ -109,7 +116,7 @@ export class RecoveryController implements RecoveryPort {
       plan = token?.restore
     return plan
       ? Object.freeze({
-          phase: token?.restored ? 'progress' : plan.phase,
+          phase: plan.phase,
           channel: plan.channel,
           result: plan.result,
         })
@@ -255,12 +262,12 @@ export class RecoveryController implements RecoveryPort {
     const token = this.#token,
       plan = token?.restore
     const observation: RestoreProgressObservation | null =
-      token?.restored && plan?.attempt && token.restoreBaseline
+      restored(token) && plan?.attempt && token.restore?.progress
         ? {
             attempt: plan.attempt,
             controls: token.controls,
-            positionSec: token.restoreBaseline.positionSec,
-            at: token.restoreBaseline.at,
+            positionSec: token.restore?.progress.positionSec,
+            at: token.restore?.progress.at,
             rate: token.savedRate,
           }
         : this.#failedRestore
@@ -284,7 +291,7 @@ export class RecoveryController implements RecoveryPort {
         : snapshot
     if (observation && !token && known && !this.#matchesRestoreProgress(observation, observed))
       known = false
-    if (token?.restored && plan)
+    if (restored(token) && plan)
       plan.result = !known
         ? 'unknown'
         : this.#matchesRestoreProgress(observation!, observed)
@@ -410,11 +417,11 @@ export class RecoveryController implements RecoveryPort {
           (controls.coreId !== 0 &&
             controls.coreReloadRevision === this.#token.reloadRevision &&
             snapshot.coreInitialized !== false))
-      if (this.#token.reloadingAt && !this.#token.restored && restoreReady)
+      if (this.#token.reloadingAt && !restored(this.#token) && restoreReady)
         this.#restore(this.#token, snapshot)
       else if (
         this.#progressTicks >= 2 &&
-        (!this.#token.reloadingAt || this.#token.restored) &&
+        (!this.#token.reloadingAt || restored(this.#token)) &&
         this.#restoredProgressValid(this.#token, snapshot)
       )
         this.#finish('recovered')
@@ -487,13 +494,13 @@ export class RecoveryController implements RecoveryPort {
     }
     // This tick's supplied snapshot predates any seek/rate/play performed above.
     // It cannot verify or reject the native result of that just-finished restore.
-    if (token.restored && now <= token.restoredAt) return
-    if (token.reloadingAt && !token.restored) progress = false
-    if (token.restored && restoreKnown && !this.#restoredProgressValid(token, snapshot)) {
+    if (restored(token) && now <= token.restore!.progress!.restoredAt) return
+    if (token.reloadingAt && !restored(token)) progress = false
+    if (restored(token) && restoreKnown && !this.#restoredProgressValid(token, snapshot)) {
       this.#finish('failed', 'restore-mismatch')
       return
     }
-    if (progress && (!token.restored || now > token.restoredAt)) {
+    if (progress && (!restored(token) || now > token.restore!.progress!.restoredAt)) {
       token.firstProgressAt ??= now
       return
     }
@@ -603,7 +610,6 @@ export class RecoveryController implements RecoveryPort {
       baselinePositionSec: snapshot.currentTime,
       baselineFrames: snapshot.frames,
       reloadingAt: 0,
-      restored: false,
       controls,
       valid,
       stall,
@@ -612,8 +618,6 @@ export class RecoveryController implements RecoveryPort {
       reloadRevision: null,
       restorePosition: true,
       restore: null,
-      restoredAt: 0,
-      restoreBaseline: null,
     }
     this.#state = Object.freeze({
       state: 'play-intent',
@@ -730,12 +734,13 @@ export class RecoveryController implements RecoveryPort {
       attempt: null,
       positionAttempt: null,
       issuedAt: 0,
-      positionNativeUsed: false,
-      rateNativeUsed: false,
+      progress: null,
+      nativeUsed: { position: false, rate: false },
       channel: 'none',
       result: 'unknown',
     }
     const plan = token.restore
+    if (plan.phase === 'progress') return
     const valid = () =>
       this.#token === token &&
       this.isActive() &&
@@ -779,10 +784,9 @@ export class RecoveryController implements RecoveryPort {
             return
           }
           if (reading.channel === 'native') {
-            if (plan.phase === 'position') plan.positionNativeUsed = true
-            else plan.rateNativeUsed = true
+            plan.nativeUsed[plan.phase] = true
           }
-          const used = plan.phase === 'position' ? plan.positionNativeUsed : plan.rateNativeUsed
+          const used = plan.nativeUsed[plan.phase]
           const known =
             plan.phase === 'position'
               ? reading.positionSec !== null &&
@@ -807,8 +811,7 @@ export class RecoveryController implements RecoveryPort {
             reading.readyState >= 1 &&
             this.now() - plan.issuedAt >= 1000
           ) {
-            if (plan.phase === 'position') plan.positionNativeUsed = true
-            else plan.rateNativeUsed = true
+            plan.nativeUsed[plan.phase] = true
             if (!this.#restoreReady(token)) return
             this.player.correctRestore(plan.attempt)
             if (!this.#restoreReady(token)) return
@@ -890,9 +893,9 @@ export class RecoveryController implements RecoveryPort {
     const baseline = this.player.snapshot(),
       controls = this.player.controls()
     if (!this.#restoreReady(token)) return
-    token.restored = true
-    token.restoredAt = this.now()
-    token.restoreBaseline = { positionSec: beforePlay.positionSec, at: playAt }
+    token.restore!.phase = 'progress'
+    const restoredAt = this.now()
+    token.restore!.progress = { positionSec: beforePlay.positionSec, at: playAt, restoredAt }
     token.restore!.result =
       reading.positionSec === null || reading.rate === null ? 'unknown' : 'verified'
     this.#lastSnapshot = {
@@ -915,13 +918,13 @@ export class RecoveryController implements RecoveryPort {
   }
 
   #restoredProgressValid(token: ResumeToken, snapshot: VideoSnapshot): boolean {
-    if (!token.restored || !token.restoreBaseline) return true
+    if (!restored(token) || !token.restore?.progress) return true
     return this.#matchesRestoreProgress(
       {
         attempt: token.restore!.attempt!,
         controls: token.controls,
-        positionSec: token.restoreBaseline.positionSec,
-        at: token.restoreBaseline.at,
+        positionSec: token.restore?.progress.positionSec,
+        at: token.restore?.progress.at,
         rate: token.savedRate,
       },
       snapshot,
@@ -1026,7 +1029,7 @@ export class RecoveryController implements RecoveryPort {
     // it grants no seek/rate/play side effects or new core adoption.
     return (
       this.#token === token &&
-      token.restored &&
+      restored(token) &&
       token.firstProgressAt !== null &&
       token.reloadRevision !== null &&
       this.now() - token.firstProgressAt <= 15_000 &&
@@ -1057,8 +1060,8 @@ export class RecoveryController implements RecoveryPort {
         ? Object.freeze({
             attempt: token.restore.attempt,
             controls: Object.freeze({ ...token.controls }),
-            positionSec: token.restoreBaseline?.positionSec ?? token.restore.targetSec,
-            at: token.restoreBaseline?.at ?? token.restore.issuedAt,
+            positionSec: token.restore?.progress?.positionSec ?? token.restore.targetSec,
+            at: token.restore?.progress?.at ?? token.restore.issuedAt,
             rate: token.savedRate,
           })
         : null

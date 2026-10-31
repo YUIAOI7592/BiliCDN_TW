@@ -19,7 +19,6 @@ import { type SessionSnapshot, type SessionPort } from '../state/session-contrac
 import { type VaultGroupSnapshot, type SignedRouteVaultPort } from '../state/vault-contracts.ts'
 import { type EvidencePort } from '../state/evidence-ports.ts'
 import { type RestrictionPort } from '../state/restriction-contracts.ts'
-import { type SettingsPort } from '../state/settings-contracts.ts'
 export interface AppliedRouteDecision {
   readonly decision: RouteDecision
   readonly url: string | null
@@ -117,7 +116,6 @@ export interface RouteSessionPort extends Pick<
   SessionPort,
   'get' | 'noteDecision' | 'setAffinity' | 'setRepresentation'
 > {}
-export interface RouteSettingsPort extends Pick<SettingsPort, 'get'> {}
 export interface RouteRestrictionsPort extends Pick<RestrictionPort, 'snapshot'> {}
 export interface RouteEvidencePort extends Pick<EvidencePort, 'get' | 'record'> {}
 export interface RouteVaultPort extends Pick<

@@ -1,3 +1,4 @@
+import type { SettingsReader, SettingsObserver } from '../state/settings-contracts.ts'
 import { type DomainEvent } from '../domain/model.ts'
 import type { PagePlayinfoPort, PlayurlPort, NavigationPort, SchedulerPort } from './ports.ts'
 
@@ -12,7 +13,6 @@ interface PendingAssignment {
 import type {
   LifecyclePort,
   LifecycleSessionPort,
-  LifecycleSettingsPort,
   LifecycleVaultPort,
   LifecycleRoutesPort,
   LifecycleMonitorPort,
@@ -26,7 +26,7 @@ export class LifecycleController implements LifecyclePort {
 
   constructor(
     private readonly session: LifecycleSessionPort,
-    private readonly settings: LifecycleSettingsPort,
+    private readonly settings: SettingsReader & SettingsObserver,
     private readonly vault: LifecycleVaultPort,
     private readonly routes: LifecycleRoutesPort,
     private readonly playurl: PlayurlPort,

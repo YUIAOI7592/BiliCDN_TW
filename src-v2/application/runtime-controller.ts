@@ -1,4 +1,5 @@
-import type { SettingsState } from '../state/settings-contracts.ts'
+import type { SettingsReader, SettingsObserver } from '../state/settings-contracts.ts'
+import { sameRouteSettings } from '../state/settings-policy.ts'
 import type { DomainEvent } from '../domain/model.ts'
 import type { PlaybackDiagnosticSample } from '../domain/diagnostic-model.ts'
 
@@ -9,7 +10,6 @@ import type {
   RuntimePort,
   RuntimeDiagnosticPort,
   RuntimeSessionPort,
-  RuntimeSettingsPort,
   RuntimeRoutesPort,
   RuntimePlayerPort,
   RuntimeMonitorPort,
@@ -21,7 +21,7 @@ export class RuntimeController implements RuntimePort {
   #stops: (() => void)[] = []
   constructor(
     private readonly session: RuntimeSessionPort,
-    private readonly settings: RuntimeSettingsPort,
+    private readonly settings: SettingsReader & SettingsObserver,
     private readonly routes: RuntimeRoutesPort,
     private readonly player: RuntimePlayerPort,
     private readonly monitor: RuntimeMonitorPort,
@@ -59,15 +59,13 @@ export class RuntimeController implements RuntimePort {
       ),
     )
     this.visibility.setEnabled(!this.settings.get().disabled)
-    const signature = (state: SettingsState): string =>
-      JSON.stringify([state.fixedHost, state.catalogOverrides, state.considerNativeSources])
-    let routeSettings = signature(this.settings.get())
+    let routeSettings = this.settings.get()
     this.#stops.push(
       this.settings.subscribe((state) => {
         if (!state.earlyRetryEnabled || state.disabled) this.earlyRetry?.cancel('settings')
         this.visibility.setEnabled(!state.disabled)
-        const next = signature(state)
-        if (next !== routeSettings) {
+        const next = state
+        if (!sameRouteSettings(next, routeSettings)) {
           this.earlyRetry?.cancel('route-policy')
           routeSettings = next
           this.routes.invalidateForUserSetting()

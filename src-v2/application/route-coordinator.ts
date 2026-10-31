@@ -1,3 +1,5 @@
+import type { SettingsReader } from '../state/settings-contracts.ts'
+import { appliedRoute } from './routing/request-routing.ts'
 import { catalogRestrictions, catalogCandidates } from '../domain/route-policy.ts'
 import type { EarlyRetryAlternative, EarlyRetryPermit } from './early-retry-contracts.ts'
 import { TRUSTED_CATALOG, isCatalogHost } from '../domain/catalog.ts'
@@ -68,7 +70,6 @@ import type {
 import type {
   RouteCoordinatorPort,
   RouteSessionPort,
-  RouteSettingsPort,
   RouteRestrictionsPort,
   RouteEvidencePort,
   RouteVaultPort,
@@ -117,7 +118,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   constructor(
     private readonly clock: Clock,
     private readonly session: RouteSessionPort,
-    private readonly settings: RouteSettingsPort,
+    private readonly settings: SettingsReader,
     private readonly restrictions: RouteRestrictionsPort,
     private readonly evidence: RouteEvidencePort,
     private readonly vault: RouteVaultPort,
@@ -477,8 +478,11 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   inspectOriginal(url: string): AppliedRouteDecision {
-    const parsed = parseMediaUrl(url),
-      match = this.vault.match(url)
+    return this.#inspectOriginal(url, parseMediaUrl(url))
+  }
+
+  #inspectOriginal(url: string, parsed: ReturnType<typeof parseMediaUrl>): AppliedRouteDecision {
+    const match = this.vault.match(url)
     const context = match.context
     if (!parsed && this.isCatalogOnly() && this.isBilibiliMedia(url)) {
       return {
@@ -855,7 +859,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     parsed: NonNullable<ReturnType<typeof parseMediaUrl>>,
     kindHint: MediaKind | null,
   ): AppliedRouteDecision {
-    const inspected = this.inspectOriginal(url)
+    const inspected = this.#inspectOriginal(url, parsed)
     const decision =
       inspected.decision.action === 'pass'
         ? this.#pass(
@@ -893,17 +897,15 @@ export class RouteCoordinator implements RouteCoordinatorPort {
           context?.kind ?? kindHint ?? 'video',
         )
     const outputRole = context ? this.vault.outputRole(context.representation, url) : null
-    return {
+    return appliedRoute(
       decision,
-      url: restriction ? null : url,
+      restriction ? null : url,
       context,
       streamKey,
-      sourceHost: parsed.host,
-      attributionStatus: match.status,
-      attributionSource: match.source,
-      playurlHostChanged: outputRole?.hostChanged ?? false,
-      ...(outputRole ? { playurlOutput: outputRole } : {}),
-    }
+      parsed.host,
+      match,
+      outputRole,
+    )
   }
 
   #applyUnreplaceable(
@@ -1020,7 +1022,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         : this.#pass('catalog-host-not-replaceable', parsed.host, kind ?? 'video')
       applied = restriction ? null : url
     }
-    const finalHost = applied ? parseMediaUrl(applied)?.host : null
+    const finalHost = applied === url ? parsed.host : applied ? parseMediaUrl(applied)?.host : null
     const finalRestriction = finalHost ? this.#hardRestriction(finalHost, kind) : null
     if (finalHost && finalRestriction) {
       decision = this.#block(finalRestriction, finalHost)
@@ -1031,17 +1033,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       ? (parseMediaUrl(this.vault.rootUrl(context.representation) ?? url)?.host ?? parsed.host)
       : parsed.host
     if (applied && context) this.vault.registerAlias(context.representation, applied)
-    return {
-      decision,
-      url: applied,
-      context,
-      streamKey,
-      sourceHost,
-      attributionStatus: match.status,
-      attributionSource: match.source,
-      playurlHostChanged: outputRole?.hostChanged ?? false,
-      ...(outputRole ? { playurlOutput: outputRole } : {}),
-    }
+    return appliedRoute(decision, applied, context, streamKey, sourceHost, match, outputRole)
   }
 
   #applyHostLocked(
@@ -1095,17 +1087,16 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     const outputRole = context ? this.vault.outputRole(context.representation, url) : null
     const blocked = (
       reason: 'catalog-unreplaceable' | 'catalog-unavailable',
-    ): AppliedRouteDecision => ({
-      decision: this.#block(reason, parsed.host),
-      url: null,
-      context,
-      streamKey,
-      sourceHost,
-      attributionStatus: match.status,
-      attributionSource: match.source,
-      playurlHostChanged: outputRole?.hostChanged ?? false,
-      ...(outputRole ? { playurlOutput: outputRole } : {}),
-    })
+    ): AppliedRouteDecision =>
+      appliedRoute(
+        this.#block(reason, parsed.host),
+        null,
+        context,
+        streamKey,
+        sourceHost,
+        match,
+        outputRole,
+      )
     const exactPcdn = parsed.kind === 'pcdn' && match.source === 'exact' && !!context
     if (
       !catalogRequestEligible({
@@ -1172,27 +1163,18 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       return blocked('catalog-unavailable')
     }
     const target = replaceUrlHost(url, decision.host)
+    const parsedTarget = target ? parseMediaUrl(target) : null
     if (
       !target ||
-      parseMediaUrl(target)?.kind !== 'normal' ||
-      parseMediaUrl(target)?.host !== decision.host ||
+      parsedTarget?.kind !== 'normal' ||
+      parsedTarget?.host !== decision.host ||
       this.#hardRestriction(decision.host, kind) ||
       this.#incompatible(url, decision.host)
     )
       return blocked('catalog-unavailable')
     this.#saveAppliedPlan(decision, context, streamKey, kind ?? 'video')
     if (context) this.vault.registerAlias(context.representation, target)
-    return {
-      decision,
-      url: target,
-      context,
-      streamKey,
-      sourceHost,
-      attributionStatus: match.status,
-      attributionSource: match.source,
-      playurlHostChanged: outputRole?.hostChanged ?? false,
-      ...(outputRole ? { playurlOutput: outputRole } : {}),
-    }
+    return appliedRoute(decision, target, context, streamKey, sourceHost, match, outputRole)
   }
 
   decisionRecord(id: DecisionId | null): DecisionRecord | null {

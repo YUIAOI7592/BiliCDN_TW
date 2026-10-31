@@ -4,19 +4,40 @@ import type { SettingsChange, SettingsState } from './settings-contracts.ts'
 import type { SettingsPort } from './settings-contracts.ts'
 export const SETTINGS_KEY = 'bilicdn.v2.settings'
 
+const BOOLEAN_DEFAULTS = Object.freeze({
+  disabled: false,
+  considerNativeSources: true,
+  earlyRetryEnabled: true,
+  startupEarlyReleaseEnabled: true,
+  healthMiddleRangeEnabled: true,
+  backupFamilyDiversityEnabled: true,
+  blockWebRtc: true,
+  blockHttpDns: true,
+})
+type BooleanSetting = keyof typeof BOOLEAN_DEFAULTS
+const booleanSettings = (raw: Record<string, unknown>) =>
+  Object.fromEntries(
+    Object.entries(BOOLEAN_DEFAULTS).map(([key, fallback]) => {
+      const value = raw[key]
+      return [key, typeof value === 'boolean' ? value : fallback]
+    }),
+  ) as Record<BooleanSetting, boolean>
+
+const SUPPRESSED_SETTINGS = [
+  'startupEarlyReleaseEnabled',
+  'healthMiddleRangeEnabled',
+  'backupFamilyDiversityEnabled',
+  'earlyRetryEnabled',
+  'considerNativeSources',
+] as const
+type SuppressedSetting = (typeof SUPPRESSED_SETTINGS)[number]
+
 export const defaultSettings = (now: number): SettingsState =>
   Object.freeze({
     schema: 2,
-    disabled: false,
+    ...BOOLEAN_DEFAULTS,
     fixedHost: null,
-    considerNativeSources: false,
-    earlyRetryEnabled: true,
-    startupEarlyReleaseEnabled: true,
-    healthMiddleRangeEnabled: true,
-    backupFamilyDiversityEnabled: true,
     catalogOverrides: Object.freeze({}),
-    blockWebRtc: true,
-    blockHttpDns: true,
     updatedAt: now,
   })
 
@@ -34,16 +55,9 @@ const parseSettings = (value: unknown, now: number): SettingsState => {
     typeof raw.fixedHost === 'string' && isCatalogHost(raw.fixedHost) ? raw.fixedHost : null
   return Object.freeze({
     schema: 2,
-    disabled: raw.disabled === true,
+    ...booleanSettings(raw),
     fixedHost,
-    considerNativeSources: raw.considerNativeSources === true,
-    earlyRetryEnabled: raw.earlyRetryEnabled !== false,
-    startupEarlyReleaseEnabled: raw.startupEarlyReleaseEnabled !== false,
-    healthMiddleRangeEnabled: raw.healthMiddleRangeEnabled !== false,
-    backupFamilyDiversityEnabled: raw.backupFamilyDiversityEnabled !== false,
     catalogOverrides: Object.freeze(overrides),
-    blockWebRtc: raw.blockWebRtc !== false,
-    blockHttpDns: raw.blockHttpDns !== false,
     updatedAt: Number.isFinite(raw.updatedAt)
       ? Math.min(now + 5 * 60_000, Math.max(0, Number(raw.updatedAt)))
       : now,
@@ -51,12 +65,14 @@ const parseSettings = (value: unknown, now: number): SettingsState => {
 }
 
 export class SettingsStore implements SettingsPort {
-  #startupOffPending = 0
-  #middleOffPending = 0
-  #diversityOffPending = 0
+  #pendingOff: Record<SuppressedSetting, number> = {
+    startupEarlyReleaseEnabled: 0,
+    healthMiddleRangeEnabled: 0,
+    backupFamilyDiversityEnabled: 0,
+    earlyRetryEnabled: 0,
+    considerNativeSources: 0,
+  }
   #state: SettingsState
-  #nativeOffPending = 0
-  #earlyRetryOffPending = 0
   #listeners = new Set<(state: SettingsState) => void>()
   #stopRemote: () => void
 
@@ -69,32 +85,41 @@ export class SettingsStore implements SettingsPort {
       if (!remote) return
       const next = parseSettings(value, this.now())
       if (next.updatedAt < this.#state.updatedAt) return
-      this.#state = next
-      this.#emit()
+      this.#publish(next)
     })
   }
 
   get(): SettingsState {
-    return this.#nativeOffPending ||
-      this.#earlyRetryOffPending ||
-      this.#startupOffPending ||
-      this.#middleOffPending ||
-      this.#diversityOffPending
-      ? Object.freeze({
-          ...this.#state,
-          considerNativeSources: this.#nativeOffPending ? false : this.#state.considerNativeSources,
-          earlyRetryEnabled: this.#earlyRetryOffPending ? false : this.#state.earlyRetryEnabled,
-          startupEarlyReleaseEnabled: this.#startupOffPending
-            ? false
-            : this.#state.startupEarlyReleaseEnabled,
-          healthMiddleRangeEnabled: this.#middleOffPending
-            ? false
-            : this.#state.healthMiddleRangeEnabled,
-          backupFamilyDiversityEnabled: this.#diversityOffPending
-            ? false
-            : this.#state.backupFamilyDiversityEnabled,
-        })
-      : this.#state
+    if (!SUPPRESSED_SETTINGS.some((key) => this.#pendingOff[key] > 0)) return this.#state
+    const suppressed = SUPPRESSED_SETTINGS.filter((key) => this.#pendingOff[key] > 0)
+    return Object.freeze({
+      ...this.#state,
+      ...Object.fromEntries(suppressed.map((key) => [key, false])),
+    })
+  }
+
+  #holdOff(keys: readonly SuppressedSetting[]): () => void {
+    for (const key of keys) this.#pendingOff[key]++
+    if (keys.length) this.#emit()
+    return () => {
+      for (const key of keys) this.#pendingOff[key]--
+      if (keys.length) this.#emit()
+    }
+  }
+
+  #save(value: SettingsState, current: SettingsState, now: number): SettingsState {
+    const next = parseSettings(
+      { ...value, schema: 2, updatedAt: Math.max(now, current.updatedAt + 1) },
+      now,
+    )
+    this.storage.set(SETTINGS_KEY, next)
+    return next
+  }
+
+  #publish(next: SettingsState): SettingsState {
+    this.#state = next
+    this.#emit()
+    return next
   }
 
   subscribe(listener: (state: SettingsState) => void): () => void {
@@ -103,49 +128,26 @@ export class SettingsStore implements SettingsPort {
   }
 
   async update(change: SettingsChange): Promise<SettingsState> {
-    const startupOff = change.startupEarlyReleaseEnabled === false
-    const middleOff = change.healthMiddleRangeEnabled === false
-    const diversityOff = change.backupFamilyDiversityEnabled === false
-    if (startupOff) this.#startupOffPending++
-    if (middleOff) this.#middleOffPending++
-    if (diversityOff) this.#diversityOffPending++
-    if (startupOff || middleOff || diversityOff) this.#emit()
-    const holdNativeOff = change.considerNativeSources === false
-    const holdEarlyRetryOff = change.earlyRetryEnabled === false
-    if (holdEarlyRetryOff) {
-      this.#earlyRetryOffPending++
-      this.#emit()
-    }
-    if (holdNativeOff) {
-      this.#nativeOffPending++
-      this.#emit()
-    }
+    // Preserve the three historical notification groups and their order.
+    const releaseAutomation = this.#holdOff(
+      SUPPRESSED_SETTINGS.slice(0, 3).filter((key) => change[key] === false),
+    )
+    const releaseEarlyRetry = this.#holdOff(
+      change.earlyRetryEnabled === false ? ['earlyRetryEnabled'] : [],
+    )
+    const releaseNative = this.#holdOff(
+      change.considerNativeSources === false ? ['considerNativeSources'] : [],
+    )
     try {
       return await this.storage.withLock('settings', () => {
         const current = parseSettings(this.storage.get<unknown>(SETTINGS_KEY, null), this.now())
         const now = this.now()
-        const next = parseSettings(
-          { ...current, ...change, schema: 2, updatedAt: Math.max(now, current.updatedAt + 1) },
-          now,
-        )
-        this.storage.set(SETTINGS_KEY, next)
-        this.#state = next
-        this.#emit()
-        return next
+        return this.#publish(this.#save({ ...current, ...change }, current, now))
       })
     } finally {
-      if (startupOff) this.#startupOffPending--
-      if (middleOff) this.#middleOffPending--
-      if (diversityOff) this.#diversityOffPending--
-      if (startupOff || middleOff || diversityOff) this.#emit()
-      if (holdEarlyRetryOff) {
-        this.#earlyRetryOffPending--
-        this.#emit()
-      }
-      if (holdNativeOff) {
-        this.#nativeOffPending--
-        this.#emit()
-      }
+      releaseAutomation()
+      releaseEarlyRetry()
+      releaseNative()
     }
   }
 
@@ -154,43 +156,28 @@ export class SettingsStore implements SettingsPort {
     return await this.storage.withLock('settings', () => {
       const now = this.now(),
         current = parseSettings(this.storage.get<unknown>(SETTINGS_KEY, null), now)
-      const next = parseSettings(
-        {
-          ...current,
-          catalogOverrides: { ...current.catalogOverrides, [host]: enabled },
-          updatedAt: Math.max(now, current.updatedAt + 1),
-        },
-        now,
+      return this.#publish(
+        this.#save(
+          { ...current, catalogOverrides: { ...current.catalogOverrides, [host]: enabled } },
+          current,
+          now,
+        ),
       )
-      this.storage.set(SETTINGS_KEY, next)
-      this.#state = next
-      this.#emit()
-      return next
     })
   }
 
   async reset(): Promise<SettingsState> {
-    this.#nativeOffPending++
-    this.#earlyRetryOffPending++
-    this.#emit()
+    const release = this.#holdOff(['considerNativeSources', 'earlyRetryEnabled'])
     try {
       const next = await this.storage.withLock('settings', () => {
         const now = this.now(),
           current = parseSettings(this.storage.get<unknown>(SETTINGS_KEY, null), now)
-        const state = parseSettings(
-          { ...defaultSettings(now), updatedAt: Math.max(now, current.updatedAt + 1) },
-          now,
-        )
-        this.storage.set(SETTINGS_KEY, state)
-        return state
+        return this.#save(defaultSettings(now), current, now)
       })
-      this.#state = next
-      this.#emit()
-      return next
+      // Reset publishes after lock completion, unlike the update commands.
+      return this.#publish(next)
     } finally {
-      this.#nativeOffPending--
-      this.#earlyRetryOffPending--
-      this.#emit()
+      release()
     }
   }
 
