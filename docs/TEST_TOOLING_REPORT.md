@@ -676,3 +676,11 @@ Codex Security a767078d-f3df-4a33-ad53-f437c730c5a9 固定 957da3f→7849e06 六
 指定 Node 26.8.1／npm 11.19.0，完整測試及 verify 3010 案通過；工具契約需在正常授權環境建立暫存 Git，受限模式的 .git/config 寫入失敗不改期待處理。型別、114 模組架構、格式、確定性建置及封裝校驗均通過。獨立提前重試效用原命令仍退出 1／VALID FAIL，原始 JSON 精確保存，未納入預期失敗。
 
 本回合沒有 IAB 程式化控制工具；Windows Computer Use API 明列輸入操作自動啟用目標視窗，違反永久不搶焦點限制，且未能先保證媒體靜音。因此未啟動瀏覽器操作或安裝驗收，不請求例外、不開本機服務、不換瀏覽器。自動驗證不等於安裝或視覺驗收；產品完整結果見 [TEST_REPORT](TEST_REPORT.md)。
+
+## 2026-10-31：更新後 IAB 驗證能力重查
+
+18:12（Asia/Taipei），使用者已回報更新。重新列舉當回合工具：有 open_in_codex（僅開啟面板，說明明列仍需 browser 工具讀取／互動）、node_repl 及 Windows Computer Use，沒有 IAB browser/tab 列舉、JavaScript 評估或 CDP API。未將前回合工具結論直接代用本次。
+
+依 Computer Use 初始化 @oai/sky，僅執行一次 list_windows()，正常返回兩個視窗，分別為外部 Chrome 與 Codex 宿主；未記錄網頁標題或其他私人內容，未呼叫 get_window_state、activate_window 或任何輸入。該 API 不能取得 IAB 分頁或完整腳本；其輸入操作會啟用目標視窗，也不是不搶焦點的瀏覽器控制替代。Browser Use 能力搜尋回傳外部／雲端相關項目，均不能讀取本機 IAB 已安裝 Tampermonkey，未建議安裝或使用。
+
+本機發行原件與 GitHub 公開 latest API 再次比對版本、唯一附件、大小及 digest，結果一致。工具可用性前提未成立，安裝身分案例 INVALID，後續 UI／設定／播放均未執行，不判產品缺陷或通過。只有文件記錄，未升版、重封裝、發布或改產品；文件檢查另行執行。完整案例結果見 [本次核對](TEST_REPORT.md#2026-10-31更新後安裝核對)。
