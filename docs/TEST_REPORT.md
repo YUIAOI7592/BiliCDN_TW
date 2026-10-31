@@ -57,17 +57,23 @@ v2.1.40 的香港影片供片與自然恢復證據不足、N05 取消來源及�
 | E220-READ | E | PASS | 無媒體文字頁上的 Runtime.evaluate 回傳 ready=complete、mediaCount=0 |
 | E220-MUTE | E | PASS | 無來源合成 video 的真正 muted=true、paused=true；未替換 getter，不能代算新影片文件的靜音 |
 | E220-NAV | E | INVALID | 預先注入 API 不支援；設置執行前斷點後的首次影片導覽沒有暫停事件，回報分頁不再屬於當前工作階段；已關閉，未取得新文件媒體或聲音輸出證據 |
-| E220-PAUSED-EVAL | E | INVALID | 後續無媒體頁可取得 instrumentation 暫停，但 Debugger.evaluateOnCallFrame 及替代校準的 Debugger.setSkipAllPauses 逾時；無法建立可靠的新文件起播前靜音操作 |
-| I220-01 | I | 未執行 | 未取得 GM_info、完整安裝本體、唯一 Runtime／ControlCenter 或 hooks；靜音導覽前提未成立 |
+| E220-PAUSED-EVAL | E | INVALID | 後續無媒體頁可取得 instrumentation 暫停，但 Debugger.evaluateOnCallFrame 及替代校準的 Debugger.setSkipAllPauses 逾時；這是助手所選方法的限制，不是使用者要求的必要靜音門檻 |
+| I220-01 | I | 未執行 | 助手誤設起播前靜音門檻而未進行；未取得 GM_info、完整安裝本體、唯一 Runtime／ControlCenter 或 hooks |
 | I220-02 | I | 未執行 | 未讀寫正式設定或操作控制中心，Native 保留與刷新只維持既有 Node 證據 |
 | I220-03／I220-04 | I | 未執行 | 固定影片 Auto 1／2 倍窗口均未開始，沒有 video／audio Network 計分資料 |
 | I220-05 | I | PASS | 僅對實際建立的校準資源：靜音守護停止、合成媒體／標記移除、Debugger 解除、唯一分頁關閉，最終清單空 |
 
-初次游標為 69，未收到預期事件；新校準頁的同一游標 38→39→40 分別收到 scriptParsed 與晚到 paused，truncated=false、hasMore=false。替代校準最後游標 49；這些是 debugger 能力證據，不是產品 Network 連續性。Page.addScriptToEvaluateOnNewDocument 與 raw Page.navigate 明確回報不支援；後者按工具指示改用 tab.goto，沒有更換瀏覽器或繞過安全拒絕。暫停的解除成功，正常執行時的真正靜音成功，仍不足以證明新頁起播前可可靠完成。
+初次游標為 69，未收到預期事件；新校準頁的同一游標 38→39→40 分別收到 scriptParsed 與晚到 paused，truncated=false、hasMore=false。替代校準最後游標 49；這些是 debugger 能力證據，不是產品 Network 連續性。Page.addScriptToEvaluateOnNewDocument 與 raw Page.navigate 明確回報不支援；後者按工具指示改用 tab.goto，沒有更換瀏覽器或繞過安全拒絕。暫停的解除成功，正常執行時的真正靜音成功。助手當時將「新頁起播前可可靠完成」當作必要條件，這個額外條件已由下列使用者澄清更正。
 
 02:39:25 前完成清理讀回：guardStopped=true、media=[]、Debugger.disable 成功，IAB 分頁清單空。沒有修改正式設定、倍速、播放器 getter、帳戶／瀏覽器設定，沒有故障攔截或受控學習樣本；沒有要求前景、啟動本機服務、另開外部瀏覽器或追加產品窗口。第一次失效導覽缺少媒體讀回，不能宣稱已完成無聲播放驗證。
 
-**本輪核心安裝驗收未完成，沒有確認產品缺陷。** 只完成環境校準中可獨立證明的項目與清理；再次開始需有新文件播放前真正靜音及讀回的可用工具能力，並按 [TODO 範圍](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md#v220-安裝版驗收範圍) 取得新一輪授權。原始有界摘要保存在本機 `.work/iab-testing/2026-11-01-v2.2.0-d84821b-r1/` 的 BASELINE、CASES、TIMELINE、CLEANUP、CHECKPOINT、RERUN 與 REPORT；不包含簽名網址、憑證或播放器物件。
+**本輪核心安裝驗收未完成，沒有確認產品缺陷。** 只完成環境校準中可獨立證明的項目與清理。原始有界摘要保存在本機 `.work/iab-testing/2026-11-01-v2.2.0-d84821b-r1/` 的 BASELINE、CASES、TIMELINE、CLEANUP、CHECKPOINT、RERUN 與 REPORT；不包含簽名網址、憑證或播放器物件。
+
+### 靜音要求更正
+
+2026-11-01 使用者再次指出，只要求靜音，沒有要求起播前已靜音。[2026-10-31 19:05 原紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31依使用者更正靜音方法續行與下載工具超時) 已明確記載「起播後立即靜音」，並成功用真正 HTMLMediaElement.muted 屬性操作及讀回。助手卻沿用較舊的「導覽前先確認」摘要，再自行增加預注入／執行前暫停門檻，錯把所選方法受限推論為安裝驗收必然受阻。
+
+撤回這個額外門檻及據此要求新工具能力／重複批准的結論；正確做法是導覽／起播後立即靜音並讀回，後續維持靜音，最初未確認區間不算計分窗口。工具逾時、清理與未執行結果保留，不因此改判 PASS；本次更正沒有執行新的瀏覽器窗口，也不重開原 [範圍與期限](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md#v220-安裝版驗收範圍)。
 
 ## 歷史驗證導覽
 
