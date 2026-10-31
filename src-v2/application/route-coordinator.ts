@@ -469,7 +469,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       this.vault.isCurrentIdentity(identity) &&
       !!decision &&
       this.#planIdentities.get(request.representation) === identity &&
-      (!settings.fixedHost || decision.host === settings.fixedHost) &&
       this.#decisionAllowed(decision, identity, 'video')
     )
   }

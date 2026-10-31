@@ -1,5 +1,11 @@
 # BiliCDN_TW 變更紀錄
 
+## v2.1.40
+
+- 修復固定 CDN 失敗後，選路器已選出合法備援，但恢復資格仍要求主機等於固定偏好而拒絕救援的問題。
+- 恢復仍要求當前影片身分、世代、政策、Vault 授權及禁止規則；固定偏好、設定 schema、恢復期限與重載額度保持。
+- 新增 12 個恢復授權與執行閉環契約；移除 Bilibili-Evolved 後的定向取證及未解根因見 [完整驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)，原提前重試效用 FAIL 不改判。
+
 ## v2.1.39
 
 - 四頁「BiliCDN 控制中心」：總覽卡片、獨立 CDN、六個播放設定開關、按需診斷與 JSON 匯出；訂閱及下載資源隨視圖清理。

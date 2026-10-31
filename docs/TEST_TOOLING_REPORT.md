@@ -690,3 +690,61 @@ Codex Security a767078d-f3df-4a33-ad53-f437c730c5a9 固定 957da3f→7849e06 六
 18:39（Asia/Taipei），使用者批准更新後驗證計畫，明定工具缺失即停止，不能反覆重查附件或改用其他瀏覽器。當回合重新檢查可呼叫工具清單：無 IAB browser/tab、互動、JavaScript 評估或 CDP API；node_repl 為通用 JavaScript 執行環境，本身不是已連接的 IAB；open_in_codex 說明為僅開啟 UI，另需 browser 工具讀取及互動。故未呼叫面板開啟、視窗列舉、Computer Use、外部／雲端瀏覽器、公開下載或插件搜尋。
 
 最小檢查即停止，未建立瀏覽器資源、攔截或播放窗口；不以公開附件或來源契約代替安裝證據。本次只有三份現行紀錄更新，文件檢查及差異檢查另行執行，不升版、封裝或發布。完整未執行清單見 [六十分鐘計畫結果](TEST_REPORT.md#2026-10-31六十分鐘驗證計畫執行結果)。
+
+## 2026-10-31：IAB 恢復與持續靜音前提
+
+18:58:38.510（Asia/Taipei），使用者明確要求執行更新後核心驗收計畫。基準 main 27941936c79f86f60739f0e71e707ff7c9c35b55，工作目錄乾淨。本次 mcp__cua_repl 可呼叫；getState 實際回報 type=iab、空分頁清單。getBrowser 選取該 IAB 後，createBrowserTab 使用 about:blank／visible=false，成功建立並讀取空白頁；沒有操作 Windows 視窗或外部瀏覽器。這與 18:12／18:39 的工具缺失不同，舊結果只描述各自回合。
+
+一次最小檢查包含瀏覽器及分頁 capabilities.list 與 CDP documentation。瀏覽器列 visibility／viewport；分頁列 pageAssets／webmcp／cdp。CDP 文件明定新分頁須先到預定 HTTP／HTTPS 頁面，命令按當前 origin 限定；本次沒有送出命令，沒有實測可信輸入、執行本體取得或 Network 游標。能力被列出不代表命令權限或產品驗收通過。
+
+當次文件化介面沒有可在導覽前設定並確認、跨導覽／播放器替換持續生效的靜音控制。因使用者要求導覽前確保全程無聲，未進入任何可能自動播放的網站；不以 visible=false、空白頁沒有媒體或導覽後補靜音當作前提成立，不改媒體 getter、不抑制音訊下載、不使用原生 Windows 輸入搶焦點。未出現工具自動審查拒絕；阻塞來自未能建立所要求的持續靜音證據，不尋求使用者解除禁令。
+
+唯一空白分頁已透過 close 關閉，tabs.list 讀回空陣列。18:59:42.081 已觀察到清理完成，從單調計時起點算的含往返上界為 63.572 秒；沒有網站觀察器、攔截、訂閱、計時器、斷點、Blob、剪貼簿或產品設定變更。去敏順序與逐項結果另存本輪私有 EVIDENCE.json，公開完整結果見 [本次核心驗收](TEST_REPORT.md#2026-10-31iab-可用但持續靜音前提受阻)。未重查附件、未安裝／更新、未重開原兩輪或追加重試；不改產品、不升版、不封裝、不發布。
+
+19:02 文件及封存檢查完成：主機 Node 26.13.0／npm 11.20.0 下 docs:check、archive:check 及 git diff --check 均通過，僅證明文件與保護資料。前兩者的檢查入口為讀取／解析與 Git 唯讀查詢，沒有啟動 HTTP／HTTPS 服務；未執行完整產品 verify、舊效用或安全掃描。去敏 EVIDENCE.json 可解析，共 36 個案例：環境讀取與自有清理兩項 PASS、靜音前提一項證據不足、其餘三十三項未執行。
+
+## 2026-10-31：使用者更正後的原生靜音與下載超時
+
+19:05 起依使用者明確指定的起播後立即靜音方式，在原六十分鐘內續行。普通 locator／座標包裝無法操作隱藏控制列或 closed ShadowRoot；當次已支援的 CDP Runtime 與 Input.dispatchMouseEvent 可用，真實 muted setter、可信 change 及實際 SettingsState 已讀回，未使用合成 change、媒體 getter 覆寫或直接寫入產品設定。控制中心開啟使用既有 show，入口按鈕不列已測。身分斷點立即解除；第一次主機端區塊變數沒有跨呼叫保留，修正為頂層參照後重新短暫捕獲，沒有重建產品實例。外部函式直接讀私有欄位的 SyntaxError 已改用 Runtime.getProperties 唯讀觀察，例外不算成功。
+
+下載合併呼叫內 waitForEvent 與 download.path 均設五秒期限，整個 mcp__cua_repl 呼叫卻於 2376.3149 秒後才返回。內部標記、下載及清除子操作沒有分別時戳，不能推測等待來源，亦不能將全部時間排除預算。19:53:40.545 已越過原 19:48:38.510 測試截止，立即停止新增案例；診斷時限窗口 INVALID，固定播放窗口均未開始。後續新方案必須有工具外層可強制終止及可觀察期限，不能沿用五秒參數就宣稱有界；本輪不另建重試。
+
+最後已核對所有原設定欄位（正常 updatedAt 除外）、ControlCenter 訂閱 3→0、自有可信事件觀察器／靜音 MutationObserver／volumechange 監聽器移除、除錯物件組及 Debugger 釋放、唯一測試分頁關閉且 IAB tabs.list 為空。先前擷取的 dispose closure scope 未讀到 exportUrl=null，不據此判產品洩漏；完整文件已卸載，產品 Blob 撤銷子項仍證據不足。完整本體、接線、匯出片段與超時證據見 [更正後實測](TEST_REPORT.md#2026-10-31依使用者更正靜音方法續行與下載工具超時)，原工具缺失／靜音受阻檢查點均保留。
+
+## 2026-10-31：補測、單分頁重測與事件游標限制
+
+20:51 補測只用 IAB＋Tampermonkey。當次 CDP 不支援 Page.addScriptToEvaluateOnNewDocument 與 Input.dispatchKeyEvent，分別停止該方法、改用已公開支援的真實 muted setter／自有靜音監聽，以及 Tab.pressKey；可信 Input.dispatchMouseEvent 可操作 closed ShadowRoot。重新導覽後的舊遠端參照失效，改以新文件完整本體核對後綁定當份文件；短暫身分斷點均立即移除並 resume。這些工具修正不算產品通過或缺陷。
+
+單次有日期範圍的歷史番劇入口查詢實際耗時 **819.807 秒**，沒有重查或改換作品；取得第二集 ep743313、第三集 ep743314。此等待計入當輪，不以個別 API 成功掩蓋外層超時。診斷匯出未再呼叫 download 等待；改用自有、依所有權復原的 URL.createObjectURL／revokeObjectURL 觀察，取得 JSON Blob 建立→撤銷、outstanding=0，兩個描述子均復原。
+
+21:23 使用者要求一次僅一個分頁並重新測試，立即停止雙分頁測試、還原設定、關閉第二分頁；先前播放片段 INVALID。新輪 T0 為 21:24:10.332，所有樣片與 OGV 導覽共用分頁 3，各窗口起訖 tabs=1。沒有使用第二分頁同步、外部瀏覽器、本機網站服務或 Windows 前景輸入；全程保留音訊下載，沒有媒體 getter 替換。
+
+十四個 60 秒窗口由頁內自有計時器截止、250 ms 取樣，另記媒體與型別化路線事件。N01–N04 頁內取樣完整，但 Network 緩衝在模型／工具往返間隙截斷，列 INVALID。把兩段較短工具呼叫拼成持續排空仍不可靠；N05 起改為同一次工具呼叫持續每 1.5 秒讀取 Network 游標，後十窗完整且無截斷。每窗約 61 秒工具等待是固定六十秒觀察本身，不是下載或歷史查詢等待；所有自有監聽器／訂閱／計時器到期釋放。沒有事後拼接或重跑 N01–N04。
+
+OGV 一次下一集取得正片 API 接納、generation 1→2 與第三集播放，但 Network 游標截斷，最後觀察比整個播放階段二十分鐘上限晚 1.789 秒；保留正向片段，案例 INVALID。不能把工具往返從時限扣掉。21:45:17.422 轉清理，21:45:54.806 確認設定深層比對一致（排除正常 updatedAt）、rate=1／paused=true／muted=true、自有資源移除、ControlCenter 訂閱 0、除錯資源釋放及唯一分頁關閉。初次 JSON 字串比較因鍵順序不同回報 false，改以深層欄位相等核對為 true；未因此額外寫回設定。
+
+本機去敏目錄 single-tab 的 EVIDENCE／14 案 JSON／ANALYSIS／VERDICTS 保留原始觀察、游標完整性、逐案雜湊與清理；完整結果見 [單分頁重測](TEST_REPORT.md#2026-10-31補測與單分頁重測)。沒有重跑產品自動測試、故障注入或原效用矩陣，沒有修改或發布產品。
+
+## 2026-10-31：一次授權的單分頁補測與連續事件收取
+
+使用者明確批准最多三十分鐘、最後保留十分鐘清理的單次補測。T0=22:00:13.184（Asia/Taipei），清理界線 22:20:13.184、硬截止 22:30:13.184；只建立一個 IAB 分頁 5。沒有重查下載、歷史入口或不支援的 CDP 命令，也沒有重測先前 PASS 或有效 FAIL。
+
+N01–N04 各由同一次持續工具呼叫每 1.5 秒排空 Network，頁內計時器完整運作六十秒、250 ms 取樣；四窗均 242 筆、最長間隔 258.4 ms，Network 無截斷，起訖分頁數均為 1。工具等待屬固定窗口本身，未拼接前後資料。舊四窗 INVALID 不覆蓋，本輪另存新案例與雜湊。
+
+自有去敏收集器依實際事件結構讀取 observation.request.requestId，補記 failureKind／responseUrlMatchesRequest／terminationReason；Network 以 requestId 配對主機與重新導向次數，不保存原始 URL。這只改善測試證據收集，不修改產品。舊收集器的完成事件 requestId 為空，且 loadingFailed 缺可靠主機配對，故舊一般 DNS 錯誤不能歸因到某次影片失敗；不回填或重造舊原件。
+
+OGV 使用已知第二集入口，同一分頁只按一次「下一个」。身分綁定曾因主機端未宣告變數而中斷賦值，當時導航與靜音已完成；重新綁定同一文件並釋放短暫斷點，沒有重新導覽或追加換集。之後點擊至觀察收回持續排空 Network，沒有截斷；準備至主觀察 57.738 秒，後續進度讀回亦在兩分鐘內。正片 API 接納、generation 1→2 與第三集播放均取得，舊 OGV INVALID 不改寫。
+
+22:13:37.718 轉清理，22:13:38.037 已核對設定除 updatedAt 外與本輪基準一致，rate=2／paused=true／muted=true、控制中心訂閱 0、自有計時器／媒體監聽／靜音觀察器移除、Debugger 與遠端物件組釋放、唯一分頁關閉且清單空。沒有改寫整份設定或清除健康／限制。清理畫面包含「utils.playerReady 失敗」提示，單張截圖不能確定時間與來源，另列待調查，不冒充產品錯誤或忽略它。
+
+總覽無容量、有效數值與較早回應、四頁移除控件及暫停／恢復／短 seek 證據存於 single-tab-supplement。完整結果見 [本次補測](TEST_REPORT.md#2026-10-31一次授權的單分頁缺口補測)；核心仍有既有有效失敗及香港缺樣，原提前重試效用 FAIL 不變。只執行離線文件、封存與差異檢查，不執行產品 verify、發布或新的故障矩陣。
+
+## 2026-10-31：移除 Evolved 後的根因取證與 CC40
+
+使用者另行批准修前、修後各最多一次三十分鐘單分頁取證。修前 T0=23:03:28.220，清理界線 23:23:28.220、硬截止 23:33:28.220；23:12:52.519 已完成清理。新文件中 Debugger 完整 parsed-script 清單僅辨識到 BiliCDN userscript，未見 Evolved；完整 v2.1.39 本體、singleton、管理器與 hooks 重新核對。只使用 IAB 分頁 6，立即靜音、保留音訊下載，沒有媒體 getter 替換、本機服務或前景輸入。
+
+N05 新窗口完整且未再現，未啟動停用對照。預定香港 01-03 的選單實際落在 mirrorcos，該窗 INVALID 且不重跑；後兩台先讀回 fixedHost 再計時，均取得影片 timeout，但沒有卡頓或核心清空。四窗均 242 筆且 Network 無截斷。完整因果尚不足：原生逾時回呼斷點沒有再次命中；另一個送出前斷點讀到網站核心 load／executeRequest 經 BiliCDN hook 的影片 XHR timeout=10000，不能回填成每次香港請求的精確參數。斷點歸因均在計分窗外，立即解除並 resume。Native Range／取消發起堆疊未完整保存，列工具覆蓋缺口，不推測 DNS 根因。
+
+全部原設定逐欄還原，rate=1／paused=true／muted=true、中心訂閱 0，自有窗口／靜音觀察器、斷點及遠端物件組釋放，唯一分頁關閉、清單空。playerReady console 查詢為 0 筆，只表示本輪未觀察，不證明舊錯誤完整歸因。舊兩輪 29 個檔案的雜湊另存，原件不回寫。
+
+固定合法備援恢復的正式契約先紅後綠；新增 12 案。初次 full test 只有 tooling 因沙箱暫存 Git config 寫入失敗；正常授權環境同一 tooling 599 案通過。GitHub 在沙箱顯示 token invalid，正常授權環境的同一既有 keyring 登入成功，沒有重新登入或改憑證。Codex Security diff 8085f3df-8db2-422b-9c95-3bd30c6d58f9 完成，零發現；後續版本／封裝與修後安裝另記於現行報告。
