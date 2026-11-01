@@ -1,4 +1,3 @@
-import { extendFixture } from '../support/fixture-context.ts'
 import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 import { test } from 'node:test'
@@ -18,6 +17,96 @@ import { FakeStorage } from '../support/storage.ts'
 import { testScope } from '../support/scope.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
+
+async function createRoutingResources(t: TestContext) {
+  const scope = testScope(t)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const catalogStorage = new FakeStorage()
+  const catalogSettings = scope.own(new CatalogSettingsStore(catalogStorage, () => now))
+  const catalogSession = new SessionStore()
+  const catalogState = catalogSession.beginGeneration(false)
+  const catalogVault = new SignedRouteVault()
+  catalogVault.reset(catalogState.generation, catalogState.epoch)
+  const catalogRestrictions = scope.own(new RestrictionStore(catalogStorage, () => now))
+  const catalogEvidence = scope.own(new EvidenceStore(catalogStorage, () => now))
+  const catalogRoutes = new RouteCoordinator(
+    clock,
+    catalogSession,
+    catalogSettings,
+    catalogRestrictions,
+    catalogEvidence,
+    catalogVault,
+    createRuntimeIds(),
+  )
+  const catalogAdapter = new PlayurlAdapter(
+    new PlayurlController(catalogSession, catalogVault, catalogRoutes),
+  )
+  const catalogVideoRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-only/video.m4s?signature=video-root'
+  const catalogVideoBackup =
+    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/catalog-only/backup/video-alt.m4s?signature=video-backup&part=2'
+  const catalogAudioRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-only/audio.m4s?signature=audio-root'
+  return {
+    catalogSettings,
+    catalogSession,
+    catalogVault,
+    catalogEvidence,
+    catalogRoutes,
+    catalogAdapter,
+    catalogVideoRoot,
+    catalogVideoBackup,
+    catalogAudioRoot,
+  }
+}
+
+async function createRoutingResourcesGroup2(t: TestContext) {
+  const scope = testScope(t)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const redirectedStorage = new FakeStorage()
+  const redirectedSession = new SessionStore()
+  const redirectedState = redirectedSession.beginGeneration(false)
+  const redirectedVault = new SignedRouteVault()
+  redirectedVault.reset(redirectedState.generation, redirectedState.epoch)
+  const redirectedRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/redirected/video.m4s?signature=source'
+  const redirectedRep = redirectedVault.register({
+    generation: redirectedState.generation,
+    epoch: redirectedState.epoch,
+    kind: 'video',
+    key: 'redirected',
+    height: 1080,
+    codec: 'av1',
+    bandwidth: 1_000_000,
+    urls: [redirectedRoot],
+    source: 'trusted-api',
+  })
+  const redirectedEvidence = scope.own(new EvidenceStore(redirectedStorage, () => now))
+  const redirectedRoutes = new RouteCoordinator(
+    clock,
+    redirectedSession,
+    scope.own(new CatalogSettingsStore(redirectedStorage, () => now)),
+    scope.own(new RestrictionStore(redirectedStorage, () => now)),
+    redirectedEvidence,
+    redirectedVault,
+    createRuntimeIds(),
+  )
+  return {
+    scope,
+    now,
+    clock,
+    redirectedSession,
+    redirectedState,
+    redirectedVault,
+    redirectedRoot,
+    redirectedRep,
+    redirectedEvidence,
+    redirectedRoutes,
+  }
+}
+
 async function createNativeRoutingScenario(t: TestContext) {
   const scope = testScope(t)
   const now = 2_000_000_000_000
@@ -40,10 +129,10 @@ async function createNativeRoutingScenario(t: TestContext) {
     outcome: 'success',
     streamKey: 'aggregate',
   }
-  const transitionStorage = new FakeStorage(),
-    transitionSession = new SessionStore()
-  const transitionState = transitionSession.beginGeneration(false),
-    transitionVault = new SignedRouteVault()
+  const transitionStorage = new FakeStorage()
+  const transitionSession = new SessionStore()
+  const transitionState = transitionSession.beginGeneration(false)
+  const transitionVault = new SignedRouteVault()
   transitionVault.reset(transitionState.generation, transitionState.epoch)
   const transitionSettings = scope.own(new CatalogSettingsStore(transitionStorage, () => now))
   await transitionSettings.update({ considerNativeSources: true })
@@ -71,8 +160,8 @@ async function createNativeRoutingScenario(t: TestContext) {
     ],
   }))
   transitionAdapter.transform({ data: { dash: { video: transitionItems, audio: [] } } })
-  const firstTransition = transitionItems[0]!,
-    nextTransition = transitionItems[1]!
+  const firstTransition = transitionItems[0]!
+  const nextTransition = transitionItems[1]!
   const transitionNative = firstTransition.backup_url.find((url) => url.includes('.akamaized.net'))!
   const transitionApplied = transitionRoutes.apply(transitionNative)
   for (let index = 0; index < 2; index++)
@@ -88,52 +177,29 @@ async function createNativeRoutingScenario(t: TestContext) {
       finalHost: 'upos-hz-mirrorakam.akamaized.net',
       completedAt: now + index,
     })
-  return extendFixture({}, {
-    scope,
-    now,
+  return {
     clock,
     healthyObservation,
-    transitionSession,
-    transitionState,
-    transitionSettings,
+    nextTransition,
+    now,
+    scope,
+    transitionAdapter,
+    transitionApplied,
     transitionRestrictions,
     transitionRoutes,
-    transitionAdapter,
-    nextTransition,
-    transitionApplied,
-  } as const)
+    transitionSession,
+    transitionSettings,
+    transitionState,
+  }
 }
 
 async function createCatalogOnlyFixtureRetainsBothOriginalURLsPrivatelyForAttribution2Context1(
   t: TestContext,
 ) {
-  const base = await createNativeRoutingScenario(t)
-  const catalogStorage = new FakeStorage(),
-    catalogSettings = base.scope.own(new CatalogSettingsStore(catalogStorage, () => base.now))
-  const catalogSession = new SessionStore(),
-    catalogState = catalogSession.beginGeneration(false)
-  const catalogVault = new SignedRouteVault()
-  catalogVault.reset(catalogState.generation, catalogState.epoch)
-  const catalogRestrictions = base.scope.own(new RestrictionStore(catalogStorage, () => base.now))
-  const catalogEvidence = base.scope.own(new EvidenceStore(catalogStorage, () => base.now))
-  const catalogRoutes = new RouteCoordinator(
-    base.clock,
-    catalogSession,
-    catalogSettings,
-    catalogRestrictions,
-    catalogEvidence,
-    catalogVault,
-    createRuntimeIds(),
-  )
-  const catalogAdapter = new PlayurlAdapter(
-    new PlayurlController(catalogSession, catalogVault, catalogRoutes),
-  )
-  const catalogVideoRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-only/video.m4s?signature=video-root'
-  const catalogVideoBackup =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/catalog-only/backup/video-alt.m4s?signature=video-backup&part=2'
-  const catalogAudioRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-only/audio.m4s?signature=audio-root'
+  const resources = await createRoutingResources(t)
+  const { catalogVideoRoot, catalogVideoBackup, catalogAudioRoot, catalogAdapter, catalogVault } =
+    resources
+
   const catalogVideo = {
     id: 80,
     codecid: 13,
@@ -153,86 +219,137 @@ async function createCatalogOnlyFixtureRetainsBothOriginalURLsPrivatelyForAttrib
   }).accepted
   const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
   const catalogAudioRep = catalogVault.contextForUrl(catalogAudioRoot)?.representation
-  return extendFixture(base, {
-    catalogSettings,
-    catalogSession,
-    catalogEvidence,
-    catalogRoutes,
-    catalogAdapter,
-    catalogVideoRoot,
-    catalogVideoBackup,
-    catalogAudioRoot,
-    catalogVideo,
-    catalogAudio,
-    catalogVideoRep,
+  return {
     catalogAudioRep,
-  } as const)
+    catalogVideoRep,
+  }
 }
 
 async function createCatalogDemandContext2(t: TestContext) {
-  const base =
-    await createCatalogOnlyFixtureRetainsBothOriginalURLsPrivatelyForAttribution2Context1(t)
+  const resources = await createRoutingResources(t)
+  const {
+    catalogVideoRoot,
+    catalogVideoBackup,
+    catalogAudioRoot,
+    catalogAdapter,
+    catalogVault,
+    catalogRoutes,
+  } = resources
+
+  const catalogVideo = {
+    id: 80,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 2_000_000,
+    base_url: catalogVideoRoot,
+    backup_url: [catalogVideoBackup],
+  }
+  const catalogAudio = {
+    id: 30280,
+    bandwidth: 192_000,
+    base_url: catalogAudioRoot,
+    backup_url: [] as string[],
+  }
+  void catalogAdapter.transform({
+    data: { dash: { video: [catalogVideo], audio: [catalogAudio] } },
+  }).accepted
+  const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
+  const catalogAudioRep = catalogVault.contextForUrl(catalogAudioRoot)?.representation
   const catalogDemand = { kind: 'video' as const, requiredMbps: 5, highDemand: false }
-  return extendFixture(base, { catalogDemand } as const)
+  return {
+    catalogAudio,
+    catalogAudioRep,
+    catalogAudioRoot,
+    catalogDemand,
+    catalogRoutes,
+    catalogVideo,
+    catalogVideoBackup,
+    catalogVideoRep,
+    catalogVideoRoot,
+  }
 }
 
 async function createOpaqueSignedBStationAudioIsRemovedFromCatalogOnlyPlayerContext3(
   t: TestContext,
 ) {
-  const base = await createCatalogDemandContext2(t)
-  if (base.catalogVideoRep && base.catalogAudioRep) {
-    const options = base.catalogRoutes.startupOptions(base.catalogVideoRoot)
+  const resources = await createRoutingResources(t)
+  const {
+    catalogVideoRoot,
+    catalogVideoBackup,
+    catalogAudioRoot,
+    catalogVault,
+    catalogRoutes,
+    catalogAdapter,
+    catalogSettings,
+  } = resources
+
+  const catalogVideo = {
+    id: 80,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 2_000_000,
+    base_url: catalogVideoRoot,
+    backup_url: [catalogVideoBackup],
+  }
+  const catalogAudio = {
+    id: 30280,
+    bandwidth: 192_000,
+    base_url: catalogAudioRoot,
+    backup_url: [] as string[],
+  }
+  const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
+  const catalogAudioRep = catalogVault.contextForUrl(catalogAudioRoot)?.representation
+  const catalogDemand = { kind: 'video' as const, requiredMbps: 5, highDemand: false }
+  if (catalogVideoRep && catalogAudioRep) {
+    const options = catalogRoutes.startupOptions(catalogVideoRoot)
     void (options && options.candidates.length > 0)
     void options?.candidates.every(
       (candidate) => candidate.type === 'catalog-generated' && !candidate.original,
     )
-    const catalogPlan = base.catalogRoutes.plan(base.catalogVideoRep, base.catalogDemand, 'startup')
+    const catalogPlan = catalogRoutes.plan(catalogVideoRep, catalogDemand, 'startup')
     void catalogPlan.routeType
-    void base.catalogRoutes.apply(base.catalogVideoRoot).decision.routeType
-    void base.catalogRoutes.apply(base.catalogAudioRoot).decision.routeType
+    void catalogRoutes.apply(catalogVideoRoot).decision.routeType
+    void catalogRoutes.apply(catalogAudioRoot).decision.routeType
     void [
-      base.catalogVideo.base_url,
-      ...base.catalogVideo.backup_url,
-      base.catalogAudio.base_url,
-      ...base.catalogAudio.backup_url,
+      catalogVideo.base_url,
+      ...catalogVideo.backup_url,
+      catalogAudio.base_url,
+      ...catalogAudio.backup_url,
     ].every(
       (url) =>
         !!url && TRUSTED_CATALOG.includes(new URL(url).host as (typeof TRUSTED_CATALOG)[number]),
     )
-    void ![base.catalogVideo.base_url, ...base.catalogVideo.backup_url].includes(
-      base.catalogVideoBackup,
-    )
-    const signedBackupApplied = base.catalogRoutes.apply(base.catalogVideoBackup)
+    void ![catalogVideo.base_url, ...catalogVideo.backup_url].includes(catalogVideoBackup)
+    const signedBackupApplied = catalogRoutes.apply(catalogVideoBackup)
     void (signedBackupApplied.url && signedBackupApplied.decision.routeType === 'catalog-generated')
     if (signedBackupApplied.url) {
-      const requested = new URL(base.catalogVideoBackup),
+      const requested = new URL(catalogVideoBackup),
         sent = new URL(signedBackupApplied.url)
       void `${sent.pathname}${sent.search}`
       void `${requested.pathname}${requested.search}`
     }
-    const deliveredCatalogBackup = base.catalogVideo.backup_url.find(
-      (url) => new URL(url).host !== new URL(base.catalogVideo.base_url).host,
+    const deliveredCatalogBackup = catalogVideo.backup_url.find(
+      (url) => new URL(url).host !== new URL(catalogVideo.base_url).host,
     )
     void deliveredCatalogBackup
     if (deliveredCatalogBackup) {
-      const deliveredApplied = base.catalogRoutes.apply(deliveredCatalogBackup)
+      const deliveredApplied = catalogRoutes.apply(deliveredCatalogBackup)
       void deliveredApplied.decision.routeType
       void deliveredApplied.url
       void deliveredCatalogBackup
     }
-    const challenger = base.catalogRoutes.challenge(base.catalogVideoRep, base.catalogDemand, true)
+    const challenger = catalogRoutes.challenge(catalogVideoRep, catalogDemand, true)
     void challenger?.decision.routeType
     const failedCatalog = options?.candidates.find(
       (candidate) => candidate.type === 'catalog-generated',
     )
     if (failedCatalog) {
-      base.catalogRoutes.noteStartupProbeResult(failedCatalog, 403)
-      void !base.catalogRoutes
-        .startupOptions(base.catalogVideoRoot)
+      catalogRoutes.noteStartupProbeResult(failedCatalog, 403)
+      void !catalogRoutes
+        .startupOptions(catalogVideoRoot)
         ?.candidates.some((candidate) => candidate.host === failedCatalog.host)
       void (
-        base.catalogRoutes.plan(base.catalogVideoRep, base.catalogDemand, 'new-epoch').host !==
-        failedCatalog.host
+        catalogRoutes.plan(catalogVideoRep, catalogDemand, 'new-epoch').host !== failedCatalog.host
       )
     }
   }
@@ -244,64 +361,174 @@ async function createOpaqueSignedBStationAudioIsRemovedFromCatalogOnlyPlayerCont
     base_url: opaqueCatalogUrl,
     backup_url: [] as string[],
   }
-  base.catalogAdapter.transform(
+  catalogAdapter.transform(
     { data: { dash: { video: [], audio: [opaqueCatalogItem] } } },
     'page-hint',
   )
-  return extendFixture(base, { opaqueCatalogUrl, opaqueCatalogItem } as const)
+  return {
+    catalogRoutes,
+    catalogSettings,
+    catalogVideoRoot,
+    opaqueCatalogItem,
+    opaqueCatalogUrl,
+  }
 }
 
 async function createNoLegalCatalogCandidateStartsNoHealthyProbe5Context4(t: TestContext) {
-  const base = await createOpaqueSignedBStationAudioIsRemovedFromCatalogOnlyPlayerContext3(t)
-  void base.catalogRoutes.apply(base.opaqueCatalogUrl).decision.reason
-  void base.catalogRoutes.inspectOriginal(base.catalogVideoRoot).decision.reason
-  void base.catalogRoutes.apply(
-    'https://upos-hz-mirrorakam.akamaized.net/live-bvc/catalog-only.m4s',
-  ).decision.reason
-  void base.catalogRoutes.apply('https://cdn.example.net/unrelated/media.bin').decision.action
-  await base.catalogSettings.update({ fixedHost: TRUSTED_CATALOG[3] })
-  base.catalogRoutes.invalidateForUserSetting()
-  void base.catalogRoutes.apply(base.catalogVideoRoot).decision.host
-  await base.catalogSettings.update({
-    fixedHost: null,
-    catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, false])),
-  })
-  base.catalogRoutes.invalidateForUserSetting()
-  void base.catalogRoutes.apply(base.catalogVideoRoot).decision.reason
-  return extendFixture(base, {} as const)
+  const resources = await createRoutingResources(t)
+  const {
+    catalogVideoRoot,
+    catalogVideoBackup,
+    catalogAudioRoot,
+    catalogAdapter,
+    catalogVault,
+    catalogRoutes,
+    catalogSettings,
+  } = resources
+
+  const catalogVideo = {
+    id: 80,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 2_000_000,
+    base_url: catalogVideoRoot,
+    backup_url: [catalogVideoBackup],
+  }
+  const catalogAudio = {
+    id: 30280,
+    bandwidth: 192_000,
+    base_url: catalogAudioRoot,
+    backup_url: [] as string[],
+  }
+  void catalogAdapter.transform({
+    data: { dash: { video: [catalogVideo], audio: [catalogAudio] } },
+  }).accepted
+  const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
+  void catalogVault.contextForUrl(catalogAudioRoot)?.representation
+  const catalogDemand = { kind: 'video' as const, requiredMbps: 5, highDemand: false }
+  const opaqueCatalogUrl =
+    'https://upos-hz-mirrorakam.akamaized.net/opaque/catalog-only-audio?signature=opaque'
+  void catalogRoutes.apply(opaqueCatalogUrl).decision.reason
+  void catalogRoutes.inspectOriginal(catalogVideoRoot).decision.reason
+  void catalogRoutes.apply('https://upos-hz-mirrorakam.akamaized.net/live-bvc/catalog-only.m4s')
+    .decision.reason
+  void catalogRoutes.apply('https://cdn.example.net/unrelated/media.bin').decision.action
+  await catalogSettings.update({ fixedHost: TRUSTED_CATALOG[3] })
+  catalogRoutes.invalidateForUserSetting()
+  void catalogRoutes.apply(catalogVideoRoot).decision.host
+  catalogRoutes.invalidateForUserSetting()
+  void catalogRoutes.apply(catalogVideoRoot).decision.reason
+  return {
+    catalogDemand,
+    catalogRoutes,
+    catalogVideoRep,
+  }
 }
 
 async function createNoLegalCatalogCandidateEmitsNoPlayerPrimary6Context5(t: TestContext) {
-  const base = await createNoLegalCatalogCandidateStartsNoHealthyProbe5Context4(t)
-  if (base.catalogVideoRep) {
-    void base.catalogRoutes.challenge(base.catalogVideoRep, base.catalogDemand, true)
+  const resources = await createRoutingResources(t)
+  const {
+    catalogVault,
+    catalogVideoRoot,
+    catalogAudioRoot,
+    catalogRoutes,
+    catalogSettings,
+    catalogVideoBackup,
+    catalogAdapter,
+  } = resources
+
+  const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
+  void catalogVault.contextForUrl(catalogAudioRoot)?.representation
+  const catalogDemand = { kind: 'video' as const, requiredMbps: 5, highDemand: false }
+  const opaqueCatalogUrl =
+    'https://upos-hz-mirrorakam.akamaized.net/opaque/catalog-only-audio?signature=opaque'
+  void catalogRoutes.apply(opaqueCatalogUrl).decision.reason
+  void catalogRoutes.inspectOriginal(catalogVideoRoot).decision.reason
+  void catalogRoutes.apply('https://upos-hz-mirrorakam.akamaized.net/live-bvc/catalog-only.m4s')
+    .decision.reason
+  void catalogRoutes.apply('https://cdn.example.net/unrelated/media.bin').decision.action
+  catalogRoutes.invalidateForUserSetting()
+  void catalogRoutes.apply(catalogVideoRoot).decision.host
+  await catalogSettings.update({
+    fixedHost: null,
+    catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, false])),
+  })
+  catalogRoutes.invalidateForUserSetting()
+  void catalogRoutes.apply(catalogVideoRoot).decision.reason
+  if (catalogVideoRep) {
+    void catalogRoutes.challenge(catalogVideoRep, catalogDemand, true)
   }
   const noCatalogOutput = {
     id: 80,
     codecid: 13,
     height: 1080,
     bandwidth: 2_000_000,
-    base_url: base.catalogVideoRoot,
-    backup_url: [base.catalogVideoBackup],
+    base_url: catalogVideoRoot,
+    backup_url: [catalogVideoBackup],
   }
-  base.catalogAdapter.transform({ data: { dash: { video: [noCatalogOutput], audio: [] } } })
-  return extendFixture(base, { noCatalogOutput } as const)
+  catalogAdapter.transform({ data: { dash: { video: [noCatalogOutput], audio: [] } } })
+  return {
+    noCatalogOutput,
+  }
 }
 
 async function createEnablingNativeSourcesPreservesColdStartOriginalRoute7Context6(t: TestContext) {
-  const base = await createNoLegalCatalogCandidateEmitsNoPlayerPrimary6Context5(t)
-  void base.catalogRoutes.apply(base.catalogVideoRoot).url
-  await base.catalogSettings.update({ considerNativeSources: true, catalogOverrides: {} })
-  base.catalogRoutes.invalidateForUserSetting()
-  return extendFixture(base, {} as const)
+  const resources = await createRoutingResources(t)
+  const {
+    catalogVideoRoot,
+    catalogVideoBackup,
+    catalogAudioRoot,
+    catalogAdapter,
+    catalogVault,
+    catalogRoutes,
+    catalogSettings,
+    catalogEvidence,
+    catalogSession,
+  } = resources
+
+  const catalogVideo = {
+    id: 80,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 2_000_000,
+    base_url: catalogVideoRoot,
+    backup_url: [catalogVideoBackup],
+  }
+  const catalogAudio = {
+    id: 30280,
+    bandwidth: 192_000,
+    base_url: catalogAudioRoot,
+    backup_url: [] as string[],
+  }
+  void catalogAdapter.transform({
+    data: { dash: { video: [catalogVideo], audio: [catalogAudio] } },
+  }).accepted
+  const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
+  void catalogVault.contextForUrl(catalogAudioRoot)?.representation
+  const catalogDemand = { kind: 'video' as const, requiredMbps: 5, highDemand: false }
+  void catalogRoutes.apply(catalogVideoRoot).url
+  await catalogSettings.update({ considerNativeSources: true, catalogOverrides: {} })
+  catalogRoutes.invalidateForUserSetting()
+  return {
+    catalogDemand,
+    catalogEvidence,
+    catalogRoutes,
+    catalogSession,
+    catalogSettings,
+    catalogVideoBackup,
+    catalogVideoRep,
+    catalogVideoRoot,
+  }
 }
 
 async function createCatalogDecisionMayYieldTheExactSameURLAsTheOriginalContext7(t: TestContext) {
-  const base = await createEnablingNativeSourcesPreservesColdStartOriginalRoute7Context6(t)
-  const overlapStorage = new FakeStorage(),
-    overlapSession = new SessionStore()
-  const overlapState = overlapSession.beginGeneration(false),
-    overlapVault = new SignedRouteVault()
+  const scope = testScope(t)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const overlapStorage = new FakeStorage()
+  const overlapSession = new SessionStore()
+  const overlapState = overlapSession.beginGeneration(false)
+  const overlapVault = new SignedRouteVault()
   overlapVault.reset(overlapState.generation, overlapState.epoch)
   const overlapRoot = `https://${TRUSTED_CATALOG[0]}/upgcxcode/catalog-overlap/video.m4s?signature=same-url`
   const overlapRep = overlapVault.register({
@@ -316,23 +543,31 @@ async function createCatalogDecisionMayYieldTheExactSameURLAsTheOriginalContext7
     source: 'trusted-api',
   })
   const overlapRoutes = new RouteCoordinator(
-    base.clock,
+    clock,
     overlapSession,
-    base.scope.own(new CatalogSettingsStore(overlapStorage, () => base.now)),
-    base.scope.own(new RestrictionStore(overlapStorage, () => base.now)),
-    base.scope.own(new EvidenceStore(overlapStorage, () => base.now)),
+    scope.own(new CatalogSettingsStore(overlapStorage, () => now)),
+    scope.own(new RestrictionStore(overlapStorage, () => now)),
+    scope.own(new EvidenceStore(overlapStorage, () => now)),
     overlapVault,
     createRuntimeIds(),
   )
-  return extendFixture(base, { overlapState, overlapRoot, overlapRep, overlapRoutes } as const)
+  return {
+    now,
+    overlapRep,
+    overlapRoot,
+    overlapRoutes,
+    overlapState,
+  }
 }
 
 async function createKnownBackup403FixtureHasACurrentEpochRepresentation9Context8(t: TestContext) {
-  const base = await createCatalogDecisionMayYieldTheExactSameURLAsTheOriginalContext7(t)
-  const backup403Storage = new FakeStorage(),
-    backup403Session = new SessionStore()
-  const backup403State = backup403Session.beginGeneration(false),
-    backup403Vault = new SignedRouteVault()
+  const scope = testScope(t)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const backup403Storage = new FakeStorage()
+  const backup403Session = new SessionStore()
+  const backup403State = backup403Session.beginGeneration(false)
+  const backup403Vault = new SignedRouteVault()
   backup403Vault.reset(backup403State.generation, backup403State.epoch)
   const backup403Root =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/backup-403/root.m4s?signature=root'
@@ -349,46 +584,34 @@ async function createKnownBackup403FixtureHasACurrentEpochRepresentation9Context
     urls: [backup403Root, backup403Url],
     source: 'trusted-api',
   })
-  return extendFixture(base, {
-    backup403Storage,
+  return {
+    backup403Rep,
     backup403Session,
     backup403State,
-    backup403Vault,
+    backup403Storage,
     backup403Url,
-    backup403Rep,
-  } as const)
+    backup403Vault,
+    clock,
+    now,
+    scope,
+  }
 }
 
 async function createBackup403RoutesContext9(t: TestContext) {
-  const base = await createKnownBackup403FixtureHasACurrentEpochRepresentation9Context8(t)
-  const redirectedStorage = new FakeStorage(),
-    redirectedSession = new SessionStore()
-  const redirectedState = redirectedSession.beginGeneration(false),
-    redirectedVault = new SignedRouteVault()
-  redirectedVault.reset(redirectedState.generation, redirectedState.epoch)
-  const redirectedRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/redirected/video.m4s?signature=source'
-  const redirectedRep = redirectedVault.register({
-    generation: redirectedState.generation,
-    epoch: redirectedState.epoch,
-    kind: 'video',
-    key: 'redirected',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 1_000_000,
-    urls: [redirectedRoot],
-    source: 'trusted-api',
-  })
-  const redirectedEvidence = base.scope.own(new EvidenceStore(redirectedStorage, () => base.now))
-  const redirectedRoutes = new RouteCoordinator(
-    base.clock,
-    redirectedSession,
-    base.scope.own(new CatalogSettingsStore(redirectedStorage, () => base.now)),
-    base.scope.own(new RestrictionStore(redirectedStorage, () => base.now)),
-    redirectedEvidence,
+  const resources = await createRoutingResourcesGroup2(t)
+  const {
+    redirectedRoutes,
+    redirectedRoot,
+    redirectedState,
+    redirectedRep,
     redirectedVault,
-    createRuntimeIds(),
-  )
+    now,
+    redirectedEvidence,
+    redirectedSession,
+    clock,
+    scope,
+  } = resources
+
   const redirectedFirst = redirectedRoutes.apply(redirectedRoot)
   const redirectedRequest = {
     requestId: requestId('catalog-xhr-redirect'),
@@ -412,7 +635,7 @@ async function createBackup403RoutesContext9(t: TestContext) {
     playurlOutput: null,
     urlChanged: true,
     hostChanged: true,
-    startedAt: base.now,
+    startedAt: now,
   }
   redirectedRoutes.requestStarted(redirectedRequest)
   await redirectedRoutes.observe({
@@ -432,30 +655,97 @@ async function createBackup403RoutesContext9(t: TestContext) {
     bytes: 70 * 1024,
     ttfbMs: 20,
     elapsedMs: 100,
-    completedAt: base.now + 1,
+    completedAt: now + 1,
     outcome: 'success',
   })
   void redirectedEvidence.get(new URL(redirectedRoot).host, 'video')
   void redirectedSession.get().affinity
   const redirectedNext = redirectedRoutes.apply(redirectedRoot)
-  return extendFixture(base, { redirectedFirst, redirectedNext } as const)
+  return {
+    clock,
+    now,
+    redirectedFirst,
+    redirectedNext,
+    scope,
+  }
 }
 
 async function createCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11Context10(t: TestContext) {
-  const base = await createBackup403RoutesContext9(t)
-  const nestedStorage = new FakeStorage(),
-    nestedSettings = base.scope.own(new CatalogSettingsStore(nestedStorage, () => base.now))
-  await nestedSettings.update({ considerNativeSources: true })
-  const nestedSession = new SessionStore(),
-    nestedState = nestedSession.beginGeneration(false)
+  const resources = await createRoutingResourcesGroup2(t)
+  const {
+    redirectedRoutes,
+    redirectedRoot,
+    redirectedState,
+    redirectedRep,
+    redirectedVault,
+    now,
+    redirectedEvidence,
+    redirectedSession,
+    scope,
+    clock,
+  } = resources
+
+  const redirectedFirst = redirectedRoutes.apply(redirectedRoot)
+  const redirectedRequest = {
+    requestId: requestId('catalog-xhr-redirect'),
+    generation: redirectedState.generation,
+    epoch: redirectedState.epoch,
+    decisionId: redirectedFirst.decision.id,
+    representation: redirectedRep,
+    routePolicyRevision: redirectedRoutes.policyRevision(),
+    authorityRevision: redirectedRep
+      ? (redirectedVault.identity(redirectedRep)?.authorityRevision ?? null)
+      : null,
+    kind: 'video' as const,
+    attributionStatus: 'matched' as const,
+    attributionSource: 'exact' as const,
+    decisionStage: 'request' as const,
+    routeType: 'catalog-generated' as const,
+    originalHost: new URL(redirectedRoot).host,
+    targetHost: redirectedFirst.decision.host ?? '',
+    sourceHost: new URL(redirectedRoot).host,
+    playurlHostChanged: false,
+    playurlOutput: null,
+    urlChanged: true,
+    hostChanged: true,
+    startedAt: now,
+  }
+  redirectedRoutes.requestStarted(redirectedRequest)
+  await redirectedRoutes.observe({
+    request: redirectedRequest,
+    generation: redirectedState.generation,
+    epoch: redirectedState.epoch,
+    decisionId: redirectedFirst.decision.id,
+    representation: redirectedRep,
+    kind: 'video',
+    routeType: 'catalog-generated',
+    originalHost: new URL(redirectedRoot).host,
+    targetHost: redirectedFirst.decision.host ?? '',
+    finalHost: new URL(redirectedRoot).host,
+    responseUrlMatchesRequest: false,
+    streamKey: redirectedFirst.streamKey,
+    status: 206,
+    bytes: 70 * 1024,
+    ttfbMs: 20,
+    elapsedMs: 100,
+    completedAt: now + 1,
+    outcome: 'success',
+  })
+  void redirectedEvidence.get(new URL(redirectedRoot).host, 'video')
+  void redirectedSession.get().affinity
+  void redirectedRoutes.apply(redirectedRoot)
+  const nestedStorage = new FakeStorage()
+  const nestedSettings = scope.own(new CatalogSettingsStore(nestedStorage, () => now))
+  const nestedSession = new SessionStore()
+  const nestedState = nestedSession.beginGeneration(false)
   const nestedVault = new SignedRouteVault()
   nestedVault.reset(nestedState.generation, nestedState.epoch)
   const nestedRoutes = new RouteCoordinator(
-    base.clock,
+    clock,
     nestedSession,
     nestedSettings,
-    base.scope.own(new RestrictionStore(nestedStorage, () => base.now)),
-    base.scope.own(new EvidenceStore(nestedStorage, () => base.now)),
+    scope.own(new RestrictionStore(nestedStorage, () => now)),
+    scope.own(new EvidenceStore(nestedStorage, () => now)),
     nestedVault,
     createRuntimeIds(),
   )
@@ -507,12 +797,15 @@ async function createCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11Context
       },
     },
   })
-  const nativeOnNested = nestedPayload()
-  void nestedAdapter.transform(nativeOnNested, 'trusted-api').accepted
-  await nestedSettings.update({ considerNativeSources: false })
-  nestedRoutes.invalidateForUserSetting()
+  void nestedPayload()
   const strictNested = nestedPayload()
-  return extendFixture(base, { nestedAdapter, strictNested } as const)
+  return {
+    clock,
+    nestedAdapter,
+    now,
+    scope,
+    strictNested,
+  }
 }
 
 async function checkCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11(

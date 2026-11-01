@@ -1,4 +1,3 @@
-import { extendFixture } from '../support/fixture-context.ts'
 import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 import '../regressions/functional-races/routing-modularization.ts'
@@ -22,11 +21,18 @@ import { FakeClock } from '../support/clock.ts'
 import { measurementRoutes } from '../support/controllers.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
-async function createProgressiveRoutingScenario(_t: TestContext) {
-  return extendFixture({}, {} as const)
+
+function createPlaybackResourcesBlock1() {
+  const opaque =
+    'https://upos-hz-mirrorakam.akamaized.net/opaque/progressive/segment-1?token=opaque'
+  const segment1 =
+    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/segment-1.mp4?token=backup&part=1'
+  const segment2 =
+    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/segment-2.flv?token=backup&part=2'
+  return { opaque, segment1, segment2 }
 }
 
-async function createScopeContext1(t: TestContext) {
+async function createRoutingResources(t: TestContext) {
   const scope = testScope(t)
   const now = 2_000_000_000_000
   const storage = new FakeStorage()
@@ -46,13 +52,16 @@ async function createScopeContext1(t: TestContext) {
     vault,
     createRuntimeIds(),
   )
+  return { scope, now, settings, state, vault, routes }
+}
+
+async function createScopeContext1(t: TestContext) {
+  const resources = await createRoutingResources(t)
+  const { vault, state, routes, settings } = resources
+
   const demand = { kind: 'video' as const, requiredMbps: 4, highDemand: false }
-  const opaque =
-    'https://upos-hz-mirrorakam.akamaized.net/opaque/progressive/segment-1?token=opaque'
-  const segment1 =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/segment-1.mp4?token=backup&part=1'
-  const segment2 =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/segment-2.flv?token=backup&part=2'
+  const block1 = createPlaybackResourcesBlock1()
+  const { opaque, segment1, segment2 } = block1
   const rep1 = vault.register({
     generation: state.generation,
     epoch: state.epoch,
@@ -75,122 +84,57 @@ async function createScopeContext1(t: TestContext) {
     urls: [segment2],
     source: 'trusted-api',
   })
-  return extendFixture({}, {
-    scope,
-    now,
-    settings,
-    session,
-    state,
-    vault,
-    routes,
+  return {
     demand,
     opaque,
-    segment1,
-    segment2,
     rep1,
     rep2,
-  } as const)
+    routes,
+    segment1,
+    segment2,
+    settings,
+    vault,
+  }
 }
 
-async function createAResourcePrimaryWithALegalSameSegmentBackupRegisters3Context2(t: TestContext) {
-  const base = await createScopeContext1(t)
-  if (base.rep1 && base.rep2) {
-    const handle = base.vault.catalogSourceHandle(base.rep1)
-    void (handle && base.vault.resolve(handle, base.vault.identity(base.rep1)!))
-    void base.segment1
-    void base.vault.rootUrl(base.rep1)
-    void base.opaque
-    void base.vault.sourceURLs(base.rep1).join('|')
-    void [base.opaque, base.segment1].join('|')
-
-    const planned = base.routes.plan(base.rep1, base.demand, 'startup')
-    void planned.routeType
-    void planned.ranking.length
-    void TRUSTED_CATALOG.length
-    void planned.ranking.filter((row) => row.eligible).length
-    void (TRUSTED_CATALOG.length - 4)
-    const playerUrls = base.routes.playerOutput(base.rep1, base.opaque, planned, [
-      base.opaque,
-      base.segment1,
-    ])
-    void (
-      playerUrls.primary && new URL(playerUrls.primary).pathname === new URL(base.segment1).pathname
-    )
-    void playerUrls.backups.length
-    void new Set([playerUrls.primary, ...playerUrls.backups].map((url) => new URL(url).hostname))
-      .size
-    const applied = base.routes.apply(base.segment1)
-    void applied.decision.routeType
-    void applied.url
-    if (applied.url) {
-      void (new URL(applied.url).pathname + new URL(applied.url).search)
-      void (new URL(base.segment1).pathname + new URL(base.segment1).search)
-    }
-
-    const startup = base.routes.startupOptions(base.opaque)
-    void (startup?.candidates.length === 3)
-    void startup?.candidates.every(
-      (candidate) =>
-        candidate.type === 'catalog-generated' &&
-        new URL(candidate.url).pathname === new URL(base.segment1).pathname,
-    )
-    const challenge = base.routes.challenge(base.rep1, base.demand, false)
-    void (challenge?.url && new URL(challenge.url).pathname === new URL(base.segment1).pathname)
-
-    const first = startup?.candidates[0]
-    if (first) {
-      base.routes.noteStartupProbeResult(first, 403)
-      void !base.routes
-        .startupOptions(base.opaque)
-        ?.candidates.some((candidate) => candidate.host === first.host)
-      void base.routes
-        .startupOptions(base.segment2)
-        ?.candidates.some((candidate) => candidate.host === first.host)
-    }
-    for (const candidate of startup?.candidates.slice(1) ?? [])
-      base.routes.noteStartupProbeResult(candidate, 403)
-    const afterThree = base.routes.apply(base.segment1)
-    void (
-      afterThree.url &&
-      !startup?.candidates.some((candidate) => candidate.host === afterThree.decision.host)
-    )
-    const afterThreeOutput = base.routes.playerOutput(base.rep1, base.opaque, afterThree.decision, [
-      base.opaque,
-      base.segment1,
-    ])
-    void (
-      afterThreeOutput.primary &&
-      !startup?.candidates.some(
-        (candidate) => candidate.host === new URL(afterThreeOutput.primary).hostname,
-      )
-    )
-    void afterThreeOutput.backups.every(
-      (url) => !startup?.candidates.some((candidate) => candidate.host === new URL(url).hostname),
-    )
-    const rescue = base.routes.recoverStartup(
-      base.rep1,
-      base.demand,
-      startup!.candidates[0]!.host,
-      [],
-    )
-    void (rescue?.host && !startup?.candidates.some((candidate) => candidate.host === rescue.host))
-
-    const lateChoice = base.routes.startupOptions(base.segment2)?.candidates[0] ?? null
-    void lateChoice
-    const fixedHost = TRUSTED_CATALOG[5]
-    await base.settings.update({ fixedHost })
-    base.routes.invalidateForUserSetting()
-    void base.routes.commitStartupChoice(base.segment2, lateChoice, 'late-preflight')
-    void base.routes.apply(base.segment2).decision.host
-    void fixedHost
-  }
+async function createAResourcePrimaryWithALegalSameSegmentBackupRegisters3Context2(
+  _t: TestContext,
+) {
+  const session = new SessionStore()
+  const state = session.beginGeneration(false)
+  const vault = new SignedRouteVault()
+  vault.reset(state.generation, state.epoch)
+  const block1 = createPlaybackResourcesBlock1()
+  const { opaque, segment1, segment2 } = block1
+  void vault.register({
+    generation: state.generation,
+    epoch: state.epoch,
+    kind: 'video',
+    key: 'durl:q80:0',
+    height: 0,
+    codec: 'mp4',
+    bandwidth: 0,
+    urls: [opaque, segment1],
+    source: 'trusted-api',
+  })
+  void vault.register({
+    generation: state.generation,
+    epoch: state.epoch,
+    kind: 'video',
+    key: 'durl:q80:1',
+    height: 0,
+    codec: 'flv',
+    bandwidth: 0,
+    urls: [segment2],
+    source: 'trusted-api',
+  })
   const resource =
     'https://upos-hz-mirrorakam.akamaized.net/v1/resource/progressive-segment?token=resource'
   const resourceBackup =
     'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/resource-backup.mp4?token=valid'
-  const resourceRep = base.vault.register({
-    generation: base.state.generation,
-    epoch: base.state.epoch,
+  const resourceRep = vault.register({
+    generation: state.generation,
+    epoch: state.epoch,
     kind: 'video',
     key: 'durl:q64:0',
     height: 0,
@@ -199,45 +143,114 @@ async function createAResourcePrimaryWithALegalSameSegmentBackupRegisters3Contex
     urls: [resource, resourceBackup],
     source: 'trusted-api',
   })
-  return extendFixture(base, { resource, resourceBackup, resourceRep } as const)
+  return {
+    resourceRep,
+  }
 }
 
 async function createResourcePrimaryIsReplacedUsingItsExactLegalBackupSource4Context3(
   t: TestContext,
 ) {
-  const base = await createAResourcePrimaryWithALegalSameSegmentBackupRegisters3Context2(t)
-  await base.settings.update({ fixedHost: null })
-  base.routes.invalidateForUserSetting()
-  return extendFixture(base, {} as const)
-}
+  const resources = await createRoutingResources(t)
+  const { vault, state, routes } = resources
 
-async function createCatalogResourceOutputContext4(t: TestContext) {
-  const base = await createResourcePrimaryIsReplacedUsingItsExactLegalBackupSource4Context3(t)
-  if (base.resourceRep) {
-    const resourcePlan = base.routes.plan(base.resourceRep, base.demand, 'startup')
-    const resourceOutput = base.routes.playerOutput(base.resourceRep, base.resource, resourcePlan, [
-      base.resource,
-      base.resourceBackup,
-    ])
-    void (
-      resourceOutput.primary &&
-      new URL(resourceOutput.primary).pathname === new URL(base.resourceBackup).pathname
-    )
-    void resourceOutput.backups.every(
-      (url) => new URL(url).pathname === new URL(base.resourceBackup).pathname,
-    )
-    void base.routes.apply(base.resource).decision.reason
+  const demand = { kind: 'video' as const, requiredMbps: 4, highDemand: false }
+  const block1 = createPlaybackResourcesBlock1()
+  const { opaque, segment1, segment2 } = block1
+  void vault.register({
+    generation: state.generation,
+    epoch: state.epoch,
+    kind: 'video',
+    key: 'durl:q80:0',
+    height: 0,
+    codec: 'mp4',
+    bandwidth: 0,
+    urls: [opaque, segment1],
+    source: 'trusted-api',
+  })
+  void vault.register({
+    generation: state.generation,
+    epoch: state.epoch,
+    kind: 'video',
+    key: 'durl:q80:1',
+    height: 0,
+    codec: 'flv',
+    bandwidth: 0,
+    urls: [segment2],
+    source: 'trusted-api',
+  })
+  const resource =
+    'https://upos-hz-mirrorakam.akamaized.net/v1/resource/progressive-segment?token=resource'
+  const resourceBackup =
+    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/resource-backup.mp4?token=valid'
+  const resourceRep = vault.register({
+    generation: state.generation,
+    epoch: state.epoch,
+    kind: 'video',
+    key: 'durl:q64:0',
+    height: 0,
+    codec: 'mp4',
+    bandwidth: 0,
+    urls: [resource, resourceBackup],
+    source: 'trusted-api',
+  })
+  return {
+    demand,
+    resource,
+    resourceBackup,
+    resourceRep,
+    routes,
   }
-  return extendFixture(base, {} as const)
 }
 
 async function createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t: TestContext) {
-  const base = await createCatalogResourceOutputContext4(t)
-  let measurementResets = 0,
-    recoveryResets = 0
+  const resources = await createRoutingResources(t)
+  const { vault, state, settings, routes, scope, now } = resources
+
+  const block1 = createPlaybackResourcesBlock1()
+  const { opaque, segment1, segment2 } = block1
+  void vault.register({
+    generation: state.generation,
+    epoch: state.epoch,
+    kind: 'video',
+    key: 'durl:q80:0',
+    height: 0,
+    codec: 'mp4',
+    bandwidth: 0,
+    urls: [opaque, segment1],
+    source: 'trusted-api',
+  })
+  void vault.register({
+    generation: state.generation,
+    epoch: state.epoch,
+    kind: 'video',
+    key: 'durl:q80:1',
+    height: 0,
+    codec: 'flv',
+    bandwidth: 0,
+    urls: [segment2],
+    source: 'trusted-api',
+  })
+  const resource =
+    'https://upos-hz-mirrorakam.akamaized.net/v1/resource/progressive-segment?token=resource'
+  const resourceBackup =
+    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/resource-backup.mp4?token=valid'
+  void vault.register({
+    generation: state.generation,
+    epoch: state.epoch,
+    kind: 'video',
+    key: 'durl:q64:0',
+    height: 0,
+    codec: 'mp4',
+    bandwidth: 0,
+    urls: [resource, resourceBackup],
+    source: 'trusted-api',
+  })
+  let measurementResets = 0
+  let recoveryResets = 0
   const runtime = new RuntimeController(
-    base.settings,
-    base.routes,
+    settings,
+    routes,
     {
       snapshot: () => {
         throw new Error('snapshot should not be called')
@@ -264,41 +277,46 @@ async function createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t: T
     { subscribeEpoch: () => () => undefined },
   )
   runtime.install()
-  base.scope.defer(() => runtime.dispose())
-  await base.settings.update({ fixedHost: TRUSTED_CATALOG[4] })
-  return extendFixture(base, {
+  scope.defer(() => runtime.dispose())
+  await settings.update({ fixedHost: TRUSTED_CATALOG[4] })
+  return {
     get measurementResets() {
       return measurementResets
     },
-    set measurementResets(next: typeof measurementResets) {
-      measurementResets = next
+    set measurementResets(value: typeof measurementResets) {
+      measurementResets = value
     },
+    now,
     get recoveryResets() {
       return recoveryResets
     },
-    set recoveryResets(next: typeof recoveryResets) {
-      recoveryResets = next
+    set recoveryResets(value: typeof recoveryResets) {
+      recoveryResets = value
     },
-  } as const)
+    scope,
+    settings,
+  }
 }
 
 async function createCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7Context6(
   t: TestContext,
 ) {
-  const base = await createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t)
-  const pcdnStorage = new FakeStorage(),
-    pcdnSettings = base.scope.own(new CatalogSettingsStore(pcdnStorage, () => base.now))
-  const pcdnSession = new SessionStore(),
-    pcdnState = pcdnSession.beginGeneration(false)
+  const scope = testScope(t)
+  const now = 2_000_000_000_000
+  const demand = { kind: 'video' as const, requiredMbps: 4, highDemand: false }
+  const pcdnStorage = new FakeStorage()
+  const pcdnSettings = scope.own(new CatalogSettingsStore(pcdnStorage, () => now))
+  const pcdnSession = new SessionStore()
+  const pcdnState = pcdnSession.beginGeneration(false)
   const pcdnVault = new SignedRouteVault()
   pcdnVault.reset(pcdnState.generation, pcdnState.epoch)
-  const pcdnRestrictions = base.scope.own(new RestrictionStore(pcdnStorage, () => base.now))
+  const pcdnRestrictions = scope.own(new RestrictionStore(pcdnStorage, () => now))
   const pcdnRoutes = new RouteCoordinator(
-    { now: () => base.now },
+    { now: () => now },
     pcdnSession,
     pcdnSettings,
     pcdnRestrictions,
-    base.scope.own(new EvidenceStore(pcdnStorage, () => base.now)),
+    scope.own(new EvidenceStore(pcdnStorage, () => now)),
     pcdnVault,
     createRuntimeIds(),
   )
@@ -315,33 +333,35 @@ async function createCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7Cont
     urls: [pcdnSource],
     source: 'trusted-api',
   })
-  return extendFixture(base, {
-    pcdnSettings,
-    pcdnVault,
+  return {
+    demand,
+    now,
+    pcdnRep,
     pcdnRestrictions,
     pcdnRoutes,
+    pcdnSettings,
     pcdnSource,
-    pcdnRep,
-  } as const)
+    pcdnVault,
+  }
 }
 
 async function createMeasurementFixtureHasTwoIndependentProgressiveSegments8Context7(
   t: TestContext,
 ) {
-  const base = await createCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7Context6(t)
-  const probeClock = base.scope.own(new FakeClock()),
-    probeStorage = new FakeStorage()
-  const probeSettings = base.scope.own(new CatalogSettingsStore(probeStorage, probeClock.now))
-  const probeSession = new SessionStore(),
-    probeState = probeSession.beginGeneration(false)
+  const scope = testScope(t)
+  const probeClock = scope.own(new FakeClock())
+  const probeStorage = new FakeStorage()
+  const probeSettings = scope.own(new CatalogSettingsStore(probeStorage, probeClock.now))
+  const probeSession = new SessionStore()
+  const probeState = probeSession.beginGeneration(false)
   const probeVault = new SignedRouteVault()
   probeVault.reset(probeState.generation, probeState.epoch)
   const probeRoutes = new RouteCoordinator(
     { now: probeClock.now },
     probeSession,
     probeSettings,
-    base.scope.own(new RestrictionStore(probeStorage, probeClock.now)),
-    base.scope.own(new EvidenceStore(probeStorage, probeClock.now)),
+    scope.own(new RestrictionStore(probeStorage, probeClock.now)),
+    scope.own(new EvidenceStore(probeStorage, probeClock.now)),
     probeVault,
     createRuntimeIds(),
   )
@@ -371,14 +391,15 @@ async function createMeasurementFixtureHasTwoIndependentProgressiveSegments8Cont
     urls: [probeSecond],
     source: 'trusted-api',
   })
-  return extendFixture(base, {
+  return {
     probeClock,
-    probeRoutes,
     probeFirst,
-    probeSecond,
     probeRep1,
     probeRep2,
-  } as const)
+    probeRoutes,
+    probeSecond,
+    scope,
+  }
 }
 
 async function checkMeasurementFixtureHasTwoIndependentProgressiveSegments8(
@@ -497,10 +518,8 @@ async function checkMeasurementFixtureHasTwoIndependentProgressiveSegments8(
       timeoutClock,
     ),
   )
-  false
-  timedProbe.prepareStartup(base.probeFirst).then(() => {
-    true
-  })
+
+  timedProbe.prepareStartup(base.probeFirst).then(() => {})
   assert.strictEqual(hangingReads, 3, 'all three startup probes begin in parallel')
 }
 
@@ -1029,7 +1048,7 @@ async function checkCatalogSourceResolvesTheFirstLegalSameSegmentBackupWhenThe(
 async function checkTwoProgressiveSegmentsRegisterAsSeparateVideoRepresentations1(
   t: TestContext,
 ): Promise<void> {
-  await createProgressiveRoutingScenario(t)
+  testScope(t)
 
   const session = new SessionStore()
   const state = session.beginGeneration(false)
