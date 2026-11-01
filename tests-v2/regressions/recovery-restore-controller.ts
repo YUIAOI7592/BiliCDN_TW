@@ -60,8 +60,8 @@ function fixture(t: TestContext, rate: number, target = 120) {
       const valid = () => active && controls.reloadRevision === revision
       return {
         valid,
-        dispatch: () => {
-          if (!valid()) throw Error('Fixture reload expired')
+        dispatch: (commit: () => boolean) => {
+          if (!valid() || !commit() || !valid()) throw Error('Fixture reload expired')
           return this.reload()
         },
       }

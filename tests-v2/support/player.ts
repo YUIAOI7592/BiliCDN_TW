@@ -76,8 +76,8 @@ export function currentResumePlayer<T extends PlayerPort>(player: T): T & Recove
       }
       return {
         valid,
-        dispatch: () => {
-          if (!valid()) throw Error('Fixture reload owner ended')
+        dispatch: (commit: () => boolean) => {
+          if (!valid() || !commit() || !valid()) throw Error('Fixture reload owner ended')
           return Reflect.apply(reload, player, [])
         },
       }

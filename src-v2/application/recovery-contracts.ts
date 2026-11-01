@@ -87,7 +87,7 @@ export interface RecoveryPlayerPort extends Pick<
   | 'setRate'
   | 'snapshot'
 > {
-  prepareReload(): { valid(): boolean; dispatch(): unknown } | null
+  prepareReload(): { valid(): boolean; dispatch(commit: () => boolean): unknown } | null
   captureResumePosition(): ResumePositionCapture
   validateResumePosition(capture: ResumePositionCapture, initializationRevision?: number): boolean
   performRestore(command: RestoreCommand, guard: RestoreGuard): RestoreAttempt

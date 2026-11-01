@@ -1023,10 +1023,10 @@ export class PlayerControlObserver {
   reload(): unknown {
     const prepared = this.prepareReload()
     if (!prepared) throw new Error('player.reload unavailable')
-    return prepared.dispatch()
+    return prepared.dispatch(() => true)
   }
 
-  prepareReload(): { valid(): boolean; dispatch(): unknown } | null {
+  prepareReload(): { valid(): boolean; dispatch(commit: () => boolean): unknown } | null {
     const userRevision = this.#userRevision,
       beforeRevision = this.#reloadRevision
     const player = this.sources.player(),
@@ -1058,8 +1058,8 @@ export class PlayerControlObserver {
     if (!valid()) throw new Error('player.reload ownership ended')
     return Object.freeze({
       valid,
-      dispatch: () => {
-        if (!valid()) throw new Error('player.reload ownership ended')
+      dispatch: (commit: () => boolean) => {
+        if (!valid() || !commit() || !valid()) throw new Error('player.reload ownership ended')
         dispatched = true
         this.#clearKeyboardPlayback()
         this.#clearOwnedReload()

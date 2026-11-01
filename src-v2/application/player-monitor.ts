@@ -1,3 +1,4 @@
+import { stallProgressTransition, type StallProgress } from '../domain/playback-flow.ts'
 import type { VideoSnapshot, SchedulerPort, PlayerControlSnapshot } from './ports.ts'
 import type { EarlyRetryPort } from './early-retry-contracts.ts'
 import { controlPlaybackDemand } from '../domain/playback-demand.ts'
@@ -19,7 +20,7 @@ interface StallEpisode {
   request: ReturnType<MonitorRoutes['latestRequested']>
   fallback: 'available' | 'submitted'
   action: 'waiting' | 'armed' | 'spent'
-  progress: { phase: 'stalled' | 'confirming' | 'settling'; ticks: number }
+  progress: StallProgress
   readonly reloadCount: number
 }
 
@@ -274,9 +275,13 @@ export class PlayerMonitor implements MonitorPort {
     else if (progress) {
       if (this.#stall) {
         const stall = this.#stall
-        stall.progress.ticks++
-        stall.progress.phase = stall.progress.ticks >= 2 ? 'settling' : 'confirming'
-        if (stall.progress.ticks >= 10 && video.playableBufferSec >= 10) this.#endStall()
+        const transition = stallProgressTransition(
+          stall.progress,
+          'progress',
+          video.playableBufferSec,
+        )
+        stall.progress = transition.next
+        if (transition.complete) this.#endStall()
       }
     } else if (
       !ownedReload &&
@@ -466,7 +471,11 @@ export class PlayerMonitor implements MonitorPort {
         reloadCount: this.recovery.snapshot().reloadCount,
       }
     const stall = this.#stall
-    stall.progress = { phase: 'stalled', ticks: 0 }
+    stall.progress = stallProgressTransition(
+      stall.progress,
+      'stalled',
+      video.playableBufferSec,
+    ).next
     const routeIntent =
       this.recovery.isRecovering() &&
       ['route-failure', 'watchdog'].includes(this.recovery.snapshot().source ?? '')

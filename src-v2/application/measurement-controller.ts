@@ -1,3 +1,4 @@
+import { startupTransition } from '../domain/playback-flow.ts'
 import { sameMeasurementSettings } from '../state/settings-policy.ts'
 import type { AppliedRouteDecision, StartupCandidate, StartupOptions } from './route-contracts.ts'
 import type {
@@ -62,7 +63,7 @@ export class MeasurementController implements MeasurementPort {
     | { phase: 'available' }
     | { phase: 'closed' }
     | {
-        phase: 'running'
+        phase: 'reserved' | 'probing'
         controller: AbortController
         pending: Promise<void>
       } = { phase: 'available' }
@@ -134,14 +135,14 @@ export class MeasurementController implements MeasurementPort {
     const lease = this.#startupLease
     this.#startupLease = { phase: 'closed' }
     this.#startupState = Object.freeze({
-      state: lease.phase === 'running' ? 'cancelled' : 'skipped',
+      state: lease.phase === 'reserved' || lease.phase === 'probing' ? 'cancelled' : 'skipped',
       result: 'none',
-      reason: lease.phase === 'running' ? reason : 'budget-consumed',
+      reason: lease.phase === 'reserved' || lease.phase === 'probing' ? reason : 'budget-consumed',
       candidates: 0,
       selectedHost: null,
       delayed: false,
     })
-    if (lease.phase === 'running') lease.controller.abort(reason)
+    if (lease.phase === 'reserved' || lease.phase === 'probing') lease.controller.abort(reason)
   }
 
   startupFallbackHosts(): readonly string[] {
@@ -188,7 +189,8 @@ export class MeasurementController implements MeasurementPort {
       const pending = new Promise<void>((resolve) => {
         release = resolve
       })
-      const lease = { phase: 'running' as const, controller, pending }
+      if (startupTransition('available', 'reserve').reason !== 'accepted') return
+      const lease = { phase: 'reserved' as 'reserved' | 'probing', controller, pending }
       this.#startupLease = lease
       void this.#runStartup(url, options, controller, marker)
         .catch(() => {
@@ -214,7 +216,7 @@ export class MeasurementController implements MeasurementPort {
         })
         .catch(() => undefined)
     }
-    const pending = this.#startupLease.phase === 'running' ? this.#startupLease.pending : null
+    const pending = 'pending' in this.#startupLease ? this.#startupLease.pending : null
     if (!pending) return
     if (!signal) {
       await pending
@@ -252,6 +254,16 @@ export class MeasurementController implements MeasurementPort {
     controller: AbortController,
     marker: number,
   ): Promise<void> {
+    const lease = this.#startupLease
+    if (
+      lease.phase === 'available' ||
+      lease.phase === 'closed' ||
+      lease.controller !== controller ||
+      startupTransition(lease.phase, 'probe').reason !== 'accepted'
+    )
+      return
+    lease.phase = 'probing'
+    const current = () => this.#startupLease === lease && this.#marker === marker && !this.#disposed
     const results: ProbeResult[] = []
     const startedAt = this.now(),
       catalogOnlyAtStart = this.routes.isCatalogOnly()
@@ -336,6 +348,8 @@ export class MeasurementController implements MeasurementPort {
         : winner
           ? ('unverified' as const)
           : ('none' as const)
+    const transition = startupTransition(lease.phase, result === 'none' ? 'exhausted' : result)
+    if (!current() || transition.reason !== 'accepted') return
     const decision = winner
       ? this.routes.commitStartupChoice(
           url,
@@ -343,6 +357,7 @@ export class MeasurementController implements MeasurementPort {
           valid.length ? 'startup-preflight' : 'startup-inconclusive',
         )
       : this.routes.commitStartupChoice(url, null, 'startup-exhausted')
+    if (!current()) return
     this.#startupQualifiedHosts = Object.freeze(
       [...valid]
         .sort((a, b) => (b.safeMbps ?? 0) - (a.safeMbps ?? 0))

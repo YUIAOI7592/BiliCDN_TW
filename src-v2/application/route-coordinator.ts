@@ -236,6 +236,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     const owned = request ? this.#requestOwners.get(request) : null
     const representation = observation.representation
     const plan = representation ? this.#plans.get(representation) : null
+    const host = plan?.host ?? observation.targetHost
+    const forbidden = host ? this.#hardRestriction(host, observation.kind) : null
+    if (
+      (forbidden && forbidden !== 'circuit-open') ||
+      (representation && host && this.vault.isInvalid(representation, host))
+    )
+      return false
     if (!representation && observation.streamKey) {
       const streamPlan = this.#streamPlans.get(observation.streamKey)
       return !!streamPlan && streamPlan.id === (owned?.decisionId ?? observation.decisionId)
@@ -882,7 +889,11 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       },
       valid,
     )
-    if (context.kind === 'video' && valid())
+    if (
+      context.kind === 'video' &&
+      valid() &&
+      this.#plans.get(context.representation)?.host === candidate.host
+    )
       this.#lastVideoEvidence = {
         host: candidate.host,
         requestId: this.#measurementId(candidate, 'startup'),
@@ -1539,7 +1550,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       },
       valid,
     )
-    if (outcome === 'success' && context.kind === 'video' && valid() && applied.decision.host)
+    if (
+      outcome === 'success' &&
+      context.kind === 'video' &&
+      valid() &&
+      applied.decision.host &&
+      this.#plans.get(context.representation)?.host === applied.decision.host
+    )
       this.#lastVideoEvidence = {
         host: applied.decision.host!,
         requestId: this.#measurementId(applied, 'challenge'),
@@ -1649,7 +1666,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       result.type === 'success' &&
       result.kind === 'video' &&
       observation.representation &&
-      valid()
+      controlsCurrent()
     ) {
       const identity = this.vault.identity(observation.representation)
       if (identity)

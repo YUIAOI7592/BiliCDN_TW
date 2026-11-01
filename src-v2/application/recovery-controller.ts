@@ -1,3 +1,4 @@
+import { restoreTransition } from '../domain/playback-flow.ts'
 import type { VideoSnapshot, PlayerControlSnapshot } from './ports.ts'
 import {
   comparePlaybackControls,
@@ -638,18 +639,22 @@ export class RecoveryController implements RecoveryPort {
         )
       return
     }
-    if (!prepared || !prepared.valid()) {
-      this.#finish('failed', 'reload-unavailable')
+    const ready = (): boolean => {
+      try {
+        return prepared?.valid() === true
+      } catch {
+        return false
+      }
+    }
+    if (this.#token !== token) return
+    if (!prepared || !ready()) {
+      if (this.#token === token) this.#finish('failed', 'reload-unavailable')
       return
     }
-    if (!this.#owns(token, this.player.controls()) || !this.isActive() || !prepared.valid()) {
+    if (!this.#owns(token, this.player.controls()) || !this.isActive() || !ready()) {
       if (this.#token === token) this.#finish('failed', 'ownership-ended')
       return
     }
-    token.reloadingAt = this.now()
-    this.#reloadCount++
-    if (token.source === 'startup-failure') this.#startupReloaded = true
-    this.#breakerUntil = this.now() + 90_000
     const lifecycle = this.#lifecycleSerial
     if (!this.#owns(token, this.player.controls())) return
     try {
@@ -658,7 +663,20 @@ export class RecoveryController implements RecoveryPort {
       token.reloadRevision = Number.isSafeInteger(before.reloadRevision)
         ? before.reloadRevision + 1
         : null
-      const result = prepared.dispatch()
+      const result = prepared.dispatch(() => {
+        if (
+          !this.#owns(token, this.player.controls()) ||
+          !this.isActive() ||
+          !ready() ||
+          this.#token !== token
+        )
+          return false
+        token.reloadingAt = this.now()
+        this.#reloadCount++
+        if (token.source === 'startup-failure') this.#startupReloaded = true
+        this.#breakerUntil = this.now() + 90_000
+        return true
+      })
       if (result !== null && (typeof result === 'object' || typeof result === 'function'))
         void Promise.resolve(result).catch(() => {
           if (this.#lifecycleSerial === lifecycle && this.#token === token)
@@ -696,6 +714,13 @@ export class RecoveryController implements RecoveryPort {
       if (this.#token === token) this.#finish('failed', 'ownership-ended')
       return false
     }
+    return true
+  }
+
+  #advanceRestore(plan: RestorePlan, next: RestorePlan['phase']): boolean {
+    const transition = restoreTransition(plan.phase, 'verified')
+    if (transition.reason !== 'accepted' || transition.next !== next) return false
+    plan.phase = next
     return true
   }
 
@@ -762,7 +787,7 @@ export class RecoveryController implements RecoveryPort {
       for (let step = 0; step < 2; step++) {
         if (!this.#restoreReady(token)) return
         if (!token.restorePosition && plan.phase === 'position') {
-          plan.phase = 'rate'
+          if (!this.#advanceRestore(plan, 'rate')) return
           plan.attempt = null
         }
         if (!plan.attempt) {
@@ -856,7 +881,7 @@ export class RecoveryController implements RecoveryPort {
             rate: reading.rate,
             paused: reading.paused,
           }
-          plan.phase = 'rate'
+          if (!this.#advanceRestore(plan, 'rate')) return
           plan.attempt = null
           continue
         }
@@ -893,7 +918,7 @@ export class RecoveryController implements RecoveryPort {
     )
       return
     const beforePosition = beforePlay.positionSec
-    token.restore!.phase = 'play'
+    if (!this.#advanceRestore(token.restore!, 'play')) return
     const playAt = this.now()
     const lifecycle = this.#lifecycleSerial
     let playResult: unknown
@@ -927,7 +952,7 @@ export class RecoveryController implements RecoveryPort {
       const baseline = this.player.snapshot(),
         controls = this.player.controls()
       if (!this.#restoreReady(token)) return
-      token.restore!.phase = 'progress'
+      if (!this.#advanceRestore(token.restore!, 'progress')) return
       const restoredAt = this.now()
       token.restore!.progress = { positionSec: beforePosition, at: playAt, restoredAt }
       token.restore!.result =
