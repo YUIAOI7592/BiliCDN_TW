@@ -5,6 +5,8 @@ baseline/UP141_B_pre_prototype_relocation_2026-10-30_613632f.json -text -diff
 archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json -text -diff
 Release/**/*.user.js -text
 Release/**/*.diff -text
+Release/v2.2.4/** -text
+Release/v2.2.4/TEST_REPORT_v2.2.4.md whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 archive/retired/releases/** -text
 # These original checksum-protected reports contain a CRLF line; retain the raw bytes.
 archive/retired/releases/Release/v2.1.14/TEST_REPORT_v2.1.14.md whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
