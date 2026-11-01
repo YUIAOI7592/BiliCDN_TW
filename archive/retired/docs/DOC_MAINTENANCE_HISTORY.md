@@ -1016,3 +1016,8 @@ TEST_REPORT 只追加公開交付事實；TODO 更新唯一工作狀態，HISTOR
 換版前完整 v2.2.2 TEST_REPORT（含公開交付及第二階段銜接）原樣追加至 TEST_REPORT_HISTORY。先保存 RELOCATION_MANIFEST_BEFORE_v2.2.3.json，再將前版五份 Release 原件按原始位元組移至 archive/retired/releases/Release/v2.2.2/，核對大小與 SHA-256，更新搬移及保護範圍。423 份原有受核對原件、前版五檔及三份日誌完整前綴保持；progressive-playurl 原件保持。
 
 最終自動驗證通過，保留原 1,598 案，加一案初始化契約；公開交付另按實際發布結果追加。未執行 v2.2.3 瀏覽器／安裝驗收，不恢復停止窗口。Release 封裝後原件不回寫，舊 FAIL／INVALID 與永久禁令不變。
+
+
+## 2026-11-01：v2.2.3 公開交付結案
+
+將 main／標籤／唯一附件與 latest 的實際核對結果追加至現行 TEST_REPORT，TODO 改為已交付且無新啟動工作；發行標籤固定 c28b674f4cec54529c537755bd9c50d9827cb974。五份本版封裝保持原始雜湊，三份日誌只追加；原有未解問題、FAIL／INVALID、停止決策及未執行安裝驗收維持。

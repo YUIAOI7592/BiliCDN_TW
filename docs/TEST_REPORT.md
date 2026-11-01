@@ -77,7 +77,13 @@ v2.2.3 腳本 **418,897 bytes**；SHA-256：`7fc87054390d7141abcd2b8481054578d16
 
 ### 公開交付與安裝結案
 
-本節為封裝前檢查點，尚未完成公開發布核對。正式發布後在本報告追加 main／標籤／唯一腳本附件及 latest 的版本、大小與 SHA-256；已封裝的五份本機原件不回寫。
+封裝快照保存發布前檢查點；以下為 2026-11-01 發布後追加，五份本機 Release 原件不回寫。
+
+正式 [v2.2.3 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.3) 已發布，非 draft／prerelease，並為 latest。發布時遠端 main 與標籤所指提交均為 `c28b674f4cec54529c537755bd9c50d9827cb974`；標籤物件為 `f51a2780169342d030de377e05ae55da709a8434`。Release ID `430417538`，唯一附件為 `BiliCDN_TW.user.js`（asset ID `697607951`）。
+
+獨立下載公開 main 原件、v2.2.3 標籤原件、版本附件及 [latest 腳本](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js)，四者都與本機逐位元組相同：版本 **2.2.3**、**418,897 bytes**、SHA-256 **7fc87054390d7141abcd2b8481054578d16b7ddf77852dbdcdf7f6146fd66914**。GitHub 附件 digest 亦一致。
+
+後續 main 的文件結案提交與發行提交分開；v2.2.3 標籤維持上述發行提交。原件保護再次核對前版五檔、423 份既有原件與三份日誌全部既有前綴；另核對 189 份本次未變更的正式來源／測試／工具原始雜湊不變。這些原件與差異核對不代表重新全文閱讀舊清查的 211 檔，也不代表安裝版驗收。
 
 ### 來源隔離與實際安裝
 
