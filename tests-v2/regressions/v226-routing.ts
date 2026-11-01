@@ -295,6 +295,32 @@ test('V226 H01 late old-host success learns without replacing current affinity',
   assert.equal(f.evidence.get(previous, 'video')?.samples.length, 3)
 })
 
+for (const native of [false, true])
+  test(`V226 T01: stale player backup cannot reclaim a newer route native=${native}`, async (t) => {
+    const f = fixture(testScope(t))
+    await f.settings.update({ considerNativeSources: native })
+    const body = dash(media('stale-output', 'v.m4s'))
+    assert.equal(f.adapter.transform(body).accepted, true)
+    const item = body.data.dash.video[0]!,
+      primary = item.base_url
+    const backup = item.backup_url[0]!
+    assert.ok(backup)
+    await finish(f, start(f, primary, 1))
+    await finish(f, start(f, primary, 2))
+    const oldHosts = new Set([new URL(primary).hostname, new URL(backup).hostname])
+    const target = f.routes
+      .startupOptions(primary)!
+      .candidates.find((candidate) => !oldHosts.has(candidate.host))!
+    assert.ok(target)
+    const decision = f.routes.commitStartupChoice(primary, target, 'new-route')!
+    assert.ok(decision)
+    await finish(f, start(f, primary, 3))
+    const applied = f.routes.apply(backup)
+    assert.equal(applied.decision, decision)
+    assert.equal(new URL(applied.url!).hostname, target.host)
+    assert.equal(f.session.get().affinity?.host, target.host)
+  })
+
 test('V226 ownership: a restriction added during dispatch forbids later control confirmation', async (t) => {
   const f = fixture(testScope(t)),
     body = dash(media('restriction', 'video.m4s'))

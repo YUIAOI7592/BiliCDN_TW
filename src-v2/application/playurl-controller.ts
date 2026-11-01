@@ -13,6 +13,12 @@ import type { PlayurlRequestContext } from '../domain/playurl-model.ts'
 
 type WriteOutput = (item: PlayurlItem, primary: string, backups: readonly string[]) => void
 
+type IngestionOwner = {
+  readonly generation: GenerationId
+  epoch: EpochId
+  readonly sequence: number | undefined
+}
+
 import type {
   PlayurlControllerPort,
   PlayurlSessionPort,
@@ -30,6 +36,7 @@ export class PlayurlController implements PlayurlControllerPort {
   #responses = new Set<string>()
   #generation = -1
   #apiWatermark = 0
+  #ingestion: IngestionOwner | null = null
   #apiCandidate: {
     readonly context: PlayurlRequestContext
     readonly generation: GenerationId
@@ -64,6 +71,54 @@ export class PlayurlController implements PlayurlControllerPort {
     source: 'trusted-api' | 'player-mpd' | 'page-hint' = 'trusted-api',
     responseKey?: string,
     context?: PlayurlRequestContext,
+  ): readonly PlayurlOutput[] | null {
+    const state = this.session.get(),
+      active = this.#ingestion
+    const sequence =
+      source === 'trusted-api' &&
+      Number.isSafeInteger(context?.requestSequence) &&
+      context!.requestSequence! > 0
+        ? context!.requestSequence
+        : undefined
+    if (
+      state.disabled ||
+      (context?.generation !== undefined && context.generation !== Number(state.generation))
+    )
+      return null
+    // Only a newer ordered API response may supersede synchronous ingestion.
+    // This reservation is not the accepted-response watermark.
+    if (
+      active &&
+      active.generation === state.generation &&
+      (sequence === undefined || active.sequence === undefined || sequence <= active.sequence)
+    )
+      return null
+    const owner: IngestionOwner = { generation: state.generation, epoch: state.epoch, sequence }
+    this.#ingestion = owner
+    const valid = (): boolean => {
+      const current = this.session.get()
+      return (
+        this.#ingestion === owner &&
+        !current.disabled &&
+        current.generation === owner.generation &&
+        current.epoch === owner.epoch
+      )
+    }
+    try {
+      const outputs = this.#ingest(payload, source, responseKey, context, owner, valid)
+      return valid() ? outputs : null
+    } finally {
+      if (this.#ingestion === owner) this.#ingestion = null
+    }
+  }
+
+  #ingest(
+    payload: PlayurlInput | null,
+    source: 'trusted-api' | 'player-mpd' | 'page-hint',
+    responseKey: string | undefined,
+    context: PlayurlRequestContext | undefined,
+    owner: IngestionOwner,
+    valid: () => boolean,
   ): readonly PlayurlOutput[] | null {
     const outputs: PlayurlOutput[] = []
     const rewriteItem: WriteOutput = (item, primary, backups) => {
@@ -138,13 +193,21 @@ export class PlayurlController implements PlayurlControllerPort {
       if (next.changed) {
         this.session.beginEpoch()
         const state = this.session.get()
+        if (this.#ingestion !== owner || state.disabled || state.generation !== owner.generation)
+          return null
+        owner.epoch = state.epoch
         this.vault.reset(state.generation, state.epoch)
         this.routes.resetEpoch()
+        if (!valid()) return null
         this.#trustedItems = new WeakMap()
         const identity = Object.freeze({ generation: state.generation, epoch: state.epoch })
-        for (const listener of this.#epochListeners) listener(identity)
+        for (const listener of this.#epochListeners) {
+          listener(identity)
+          if (!valid()) return null
+        }
       }
     }
+    if (!valid()) return null
     if (responseKey) {
       this.#responses.add(responseKey)
       while (this.#responses.size > 128)
@@ -156,6 +219,7 @@ export class PlayurlController implements PlayurlControllerPort {
       ['audio', dash.audio],
     ] as const) {
       items.forEach((item) => {
+        if (!valid()) return
         if (ordered && sequence! < this.#apiWatermark) {
           if (context?.contentId !== this.#contentIdentity?.contentId) {
             rewriteItem(item, '', [])
@@ -264,6 +328,7 @@ export class PlayurlController implements PlayurlControllerPort {
           demand,
           this.session.get().affinity ? 'representation' : 'startup',
         )
+        if (!valid()) return
         const output = this.routes.playerOutput(
           rep,
           primary,
@@ -274,6 +339,7 @@ export class PlayurlController implements PlayurlControllerPort {
         rewriteItem(item, output.primary, output.backups)
       })
     }
+    if (!valid()) return null
     if (ordered && context)
       this.#apiCandidate = { context, generation: state.generation, epoch: state.epoch }
     return outputs
