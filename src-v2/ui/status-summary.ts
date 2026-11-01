@@ -1,5 +1,6 @@
 import { assessDemandRatio } from '../domain/routing.ts'
 import type { ControlCenterSnapshot } from './control-contracts.ts'
+import { overviewPresentation } from './overview-presentation.ts'
 import {
   plain,
   routeLabel,
@@ -78,32 +79,23 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
   }
   const routes = model.routes,
     latest = routes.latest
+  const display = overviewPresentation(model, now)
   const activePlan = routes.activePlan
-  const selected = activePlan?.ranking?.find(
-    (row) => row.host === activePlan.host && row.type === activePlan.routeType,
-  )
   if (activePlan?.host)
-    summary += `\n目前路線容量：${plain(assessDemandRatio(selected?.ratio ?? null), {
+    summary += `\n目前路線容量：${plain(assessDemandRatio(display.ratio), {
       'below-required': '低於本次需求',
       'below-headroom': '未達安全餘量',
       'meets-headroom': '達到安全餘量',
       unknown: '速度樣本不足',
-    })}${selected?.ratio == null || !Number.isFinite(selected.ratio) ? '' : `（保守速度約為需求的 ${selected.ratio.toFixed(2)} 倍）`}`
-  const safeMbps = selected?.safeMbps,
-    ratio = selected?.ratio,
-    requiredMbps = safeMbps != null && ratio != null && ratio > 0 ? safeMbps / ratio : null
-  if (
-    safeMbps != null &&
-    Number.isFinite(safeMbps) &&
-    safeMbps > 0 &&
-    ratio != null &&
-    Number.isFinite(ratio) &&
-    ratio > 0 &&
-    requiredMbps != null &&
-    Number.isFinite(requiredMbps) &&
-    requiredMbps > 0
-  )
-    summary += `\n保守吞吐 ${safeMbps.toFixed(2)} Mbps｜需求 ${requiredMbps.toFixed(2)} Mbps｜餘裕 ${ratio.toFixed(2)} 倍`
+    })}${display.ratio === null ? '' : `（保守速度約為需求的 ${display.ratio.toFixed(2)} 倍）`}`
+  const { safeMbps, ratio, requiredMbps } = display
+  summary +=
+    safeMbps !== null
+      ? `\n保守吞吐 ${safeMbps.toFixed(2)} Mbps` +
+        (ratio !== null && requiredMbps !== null
+          ? `｜需求 ${requiredMbps.toFixed(2)} Mbps｜餘裕 ${ratio.toFixed(2)} 倍`
+          : `｜${display.marginHint}`)
+      : `\n安全吞吐：${display.speedHint}`
   const restricted = activePlan?.ranking.filter((row) => !row.eligible).slice(0, 5) ?? []
   if (restricted.length)
     summary += `\n候選限制：${restricted.map((row) => `${row.host}（${row.reasons.map(restrictionLabel).join('、')}）`).join('；')}`
@@ -112,9 +104,10 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
     ['audio', '音訊'],
     ['unknown', '尚未分類媒體'],
   ] as const) {
-    const row = latest[kind]
+    const transfer = display.transfers.find((entry) => entry.kind === kind)
+    const row = kind === 'unknown' ? latest[kind] : transfer?.observed
     if (!row) {
-      if (kind !== 'unknown') summary += `\n${label}：還沒有可確認的請求`
+      if (kind !== 'unknown') summary += `\n${label}：${transfer!.detail}`
       continue
     }
     const age = Math.max(0, Math.floor((now - Number(row.observedAt)) / 1000))
@@ -123,8 +116,7 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
     if (output)
       summary += `\n  播放器取得的${output.role === 'backup' ? '備用' : '主要'}網址：${output.originalHost} → ${output.outputHost}`
   }
-  const rep = routes.representation
-  summary += `\n目前畫質：${rep ? `${rep.height}p / ${rep.codec}` : attributionLabel(routes.attribution)}`
+  summary += `\n目前畫質：${display.format}`
   const fallback = routes.fallback
   for (const [kind, label] of [
     ['video', '影片'],

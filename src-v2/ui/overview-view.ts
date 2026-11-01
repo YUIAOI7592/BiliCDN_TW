@@ -6,7 +6,8 @@ import type {
 } from './control-contracts.ts'
 import { createButton } from './elements.ts'
 import { describeStatus } from './status-summary.ts'
-import { playbackLabel, measurementLabel, startupLabel, plain, attributionLabel } from './labels.ts'
+import { playbackLabel, measurementLabel, startupLabel, plain } from './labels.ts'
+import { overviewPresentation } from './overview-presentation.ts'
 
 function text(tag: string, className: string, value = ''): HTMLElement {
   const node = document.createElement(tag)
@@ -69,26 +70,11 @@ export function renderOverview(
     currentModel = model
     const video = model.monitor.video,
       plan = model.routes.activePlan
-    const row = plan?.ranking.find(
-      (entry) => entry.host === plan.host && entry.type === plan.routeType,
-    )
-    const safe = row?.safeMbps,
-      ratio = row?.ratio
-    const valid =
-      safe != null &&
-      Number.isFinite(safe) &&
-      safe > 0 &&
-      ratio != null &&
-      Number.isFinite(ratio) &&
-      ratio > 0 &&
-      Number.isFinite(safe / ratio)
+    const display = overviewPresentation(model, now())
     status.textContent = model.settings.disabled
       ? '腳本已停用'
       : playbackLabel(model.monitor.watchdog)
-    const rep = model.routes.representation
-    format.textContent = rep
-      ? rep.height + 'p / ' + rep.codec
-      : attributionLabel(model.routes.attribution)
+    format.textContent = display.format
     buffer.value.textContent =
       video.available && Number.isFinite(video.playableBufferSec)
         ? Math.max(0, video.playableBufferSec).toFixed(1)
@@ -96,30 +82,14 @@ export function renderOverview(
     buffer.hint.textContent = video.available
       ? '已按 ' + video.effectiveRate + ' 倍速折算'
       : '尚未取得播放資料'
-    speed.value.textContent = valid ? safe.toFixed(2) : '—'
-    speed.hint.textContent = valid ? '最近選路的保守估計' : '缺少有效速度證據'
-    margin.value.textContent = valid ? ratio.toFixed(2) : '—'
-    margin.hint.textContent = valid
-      ? '需求 ' +
-        (safe / ratio).toFixed(2) +
-        ' Mbps · ' +
-        (ratio >= 1.35 ? '達到安全餘裕' : '未達安全餘裕')
-      : '需求或證據不足'
+    speed.value.textContent = display.safeMbps !== null ? display.safeMbps.toFixed(2) : '—'
+    speed.hint.textContent = display.speedHint
+    margin.value.textContent = display.ratio !== null ? display.ratio.toFixed(2) : '—'
+    margin.hint.textContent = display.marginHint
     for (const entry of transfers) {
-      const observed = model.routes.latest[entry.kind]
-      const requested = model.routes.requested[entry.kind]
-      entry.host.textContent = observed?.responseHost ?? '尚未確認回應主機'
-      entry.meta.textContent = observed
-        ? plain(observed.outcome, { success: '成功', failure: '失敗', abort: '已取消' }) +
-          ' · HTTP ' +
-          observed.status +
-          ' · ' +
-          Math.max(0, Math.floor((now() - observed.observedAt) / 1000)) +
-          ' 秒前' +
-          (now() - observed.observedAt > 60000 ? '（較早的回應）' : '')
-        : requested
-          ? '已送往 ' + requested.targetHost + '，等待回應'
-          : '尚未觀察到請求'
+      const transfer = display.transfers.find((row) => row.kind === entry.kind)!
+      entry.host.textContent = transfer.host
+      entry.meta.textContent = transfer.detail
     }
     selected.textContent =
       '選定路線：' +
