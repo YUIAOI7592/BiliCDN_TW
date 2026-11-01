@@ -153,61 +153,24 @@ async function createNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecover
   }
 }
 
-async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t: TestContext) {
+function createLifecycleResources(t: TestContext) {
   const scope = testScope(t)
   const clock = scope.own(new FakeClock())
   const storage = new FakeStorage()
   const settings = scope.own(new CatalogSettingsStore(storage, clock.now))
   const session = new SessionStore()
   const block1 = createPlaybackResourcesBlock1()
-  const { routeControl, video, calls, monitor } = block1
-  const runtime = scope.own(
-    new RuntimeController(
-      settings,
-      routeControl,
-      {
-        snapshot: () => video,
-        reset: () => {
-          calls.push('player.reset')
-        },
-      },
-      monitor,
-      {
-        reset: () => {
-          calls.push('measurement.reset')
-        },
-      },
-      {
-        reset: () => {
-          calls.push('recovery.reset')
-        },
-        armRouteFailure: () => {
-          calls.push('recovery.arm')
-        },
-      },
-      {
-        setEnabled: () => {
-          calls.push('visibility')
-        },
-      },
-      { subscribeEpoch: () => () => undefined },
-    ),
-  )
-  calls.length = 0
-  storage.remote('bilicdn.v2.settings', {
-    ...settings.get(),
-    considerNativeSources: false,
-    updatedAt: settings.get().updatedAt + 1,
-  })
-  calls.length = 0
-  runtime.reset()
-  calls.length = 0
-  calls.length = 0
-  runtime.dispose()
-  calls.length = 0
+  const { calls, monitor } = block1
   const restrictions = scope.own(new RestrictionStore(storage, clock.now))
   const evidence = scope.own(new EvidenceStore(storage, clock.now))
   const meta = new MeasurementMetaStore(storage, clock.now)
+  return { scope, clock, storage, settings, session, calls, monitor, restrictions, evidence, meta }
+}
+
+async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t: TestContext) {
+  const resources = createLifecycleResources(t)
+  const { scope, clock, storage, settings, session, calls, monitor, restrictions, evidence, meta } =
+    resources
   const commands = new ControlCommands(
     settings,
     {
@@ -344,15 +307,7 @@ async function checkBlacklistCommandPersistsBeforeRouteInvalidation2(
 }
 
 async function checkDisableStartsADisabledGeneration3(t: TestContext): Promise<void> {
-  const base = await createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t)
-
-  void base.calls.join(',')
-  void base.restrictions.has(TRUSTED_CATALOG[0], 'audio', 'black')
-  base.meta.update({ catalogCursor: 2, lastChallengeAt: base.clock.now() })
-  base.calls.length = 0
-  await base.commands.clearLearning()
-  void base.calls.join(',')
-  void base.storage.values.has('bilicdn.v2.meta')
+  const base = createLifecycleResources(t)
   const vault = new SignedRouteVault(),
     routes = new RouteCoordinator(
       base.clock,
@@ -363,18 +318,11 @@ async function checkDisableStartsADisabledGeneration3(t: TestContext): Promise<v
       vault,
       createRuntimeIds(),
     )
-  let pageKey = '/video/a',
-    transformed = 0,
+  let transformed = 0,
     accept = true
-  let navigationListener: () => void = () => undefined
   const navigation: NavigationPort = {
-    key: () => pageKey,
-    subscribe(listener) {
-      navigationListener = listener
-      return () => {
-        navigationListener = () => undefined
-      }
-    },
+    key: () => '/video/a',
+    subscribe: () => () => undefined,
   }
   const lifecycle = base.scope.own(
     new LifecycleController(
@@ -396,14 +344,6 @@ async function checkDisableStartsADisabledGeneration3(t: TestContext): Promise<v
     ),
   )
   lifecycle.start()
-  const initial = base.session.get().generation
-  lifecycle.start()
-  void base.session.get().generation
-  lifecycle.acceptPageAssignment({}, 1)
-  base.clock.advance(0)
-  pageKey = '/video/b'
-  navigationListener()
-  void (base.session.get().generation !== initial)
   await base.settings.update({ disabled: true })
 
   assert.strictEqual(base.session.get().disabled, true, 'disable starts a disabled generation')

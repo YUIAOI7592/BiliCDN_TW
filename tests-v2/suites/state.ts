@@ -115,7 +115,7 @@ async function createScopeContext2(t: TestContext) {
   const invalidHintVault = new SignedRouteVault()
   invalidHintVault.reset(generation, epoch)
   const invalidHintHost = 'upos-hz-mirrorakam.akamaized.net'
-  void invalidHintVault.register({
+  const invalidHintRep = invalidHintVault.register({
     generation: generation,
     epoch: epoch,
     kind: 'video',
@@ -126,6 +126,8 @@ async function createScopeContext2(t: TestContext) {
     urls: [hintedUrl],
     source: 'page-hint',
   })
+  assert.ok(invalidHintRep)
+  invalidHintVault.invalidate(invalidHintRep, invalidHintHost)
   const sameHostTrustedUrl = `https://${invalidHintHost}/upgcxcode/a/b/trusted.m4s?token=trusted`
   const invalidHintTrustedRep = invalidHintVault.register({
     generation: generation,
@@ -530,6 +532,12 @@ async function createExistingSchema2SettingsWithoutNativeToggleDefaultOn13Contex
   const scope = testScope(t)
   const now = 2_000_000_000_000
   const nativeSettingStorage = new FakeStorage()
+  nativeSettingStorage.set('bilicdn.v2.settings', {
+    schema: 2,
+    disabled: false,
+    codec: 'hevc',
+    updatedAt: now - 10,
+  })
   const nativeSettings = scope.own(new SettingsStore(nativeSettingStorage, () => now))
   return {
     nativeSettingStorage,
@@ -544,8 +552,18 @@ async function createOtherTabReceivesANativeOnSettingWithAFutureTimestampContext
   const now = 2_000_000_000_000
   const clock = { now: () => now }
   const futureSettingsStorage = new FakeStorage()
+  futureSettingsStorage.set('bilicdn.v2.settings', {
+    schema: 2,
+    considerNativeSources: false,
+    updatedAt: now - 1,
+  })
   const futureResetTab = scope.own(new SettingsStore(futureSettingsStorage, () => now))
   const futureOtherTab = scope.own(new SettingsStore(futureSettingsStorage, () => now))
+  futureSettingsStorage.remote('bilicdn.v2.settings', {
+    ...futureResetTab.get(),
+    considerNativeSources: true,
+    updatedAt: now + 60_000,
+  })
   return {
     clock,
     futureOtherTab,
@@ -597,6 +615,8 @@ async function createNativeOnPageHintInitiallyPreservesItsOriginalURL15Context13
       },
     },
   }
+  assert.equal(reuseSettings.get().considerNativeSources, true)
+  assert.equal(reusePlayurl.transform(reusedPagePayload, 'page-hint').accepted, true)
   return {
     clock,
     now,
@@ -1108,6 +1128,7 @@ async function checkOtherTabReceivesANativeOnSettingWithAFutureTimestamp(
   t: TestContext,
 ): Promise<void> {
   const base = await createOtherTabReceivesANativeOnSettingWithAFutureTimestampContext12(t)
+  assert.equal(base.futureOtherTab.get().updatedAt, base.now + 60_000)
 
   assert.strictEqual(
     base.futureOtherTab.get().considerNativeSources,

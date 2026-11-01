@@ -263,7 +263,7 @@ async function checkAlreadyCancelledProbeDoesNotStartNetworkWork3(t: TestContext
   } satisfies Pick<History, 'pushState' | 'replaceState'>
   historyFixture.pushState
   historyFixture.replaceState
-  Object.defineProperties(globalThis, {
+  for (const [name, descriptor] of Object.entries({
     history: { configurable: true, value: historyFixture },
     location: { configurable: true, value: { pathname: '/video/test', search: '?p=2' } },
     addEventListener: {
@@ -275,7 +275,8 @@ async function checkAlreadyCancelledProbeDoesNotStartNetworkWork3(t: TestContext
       value: eventTarget.removeEventListener.bind(eventTarget),
     },
     queueMicrotask: { configurable: true, value: (task: () => void) => tasks.push(task) },
-  })
+  }))
+    base.scope.defineGlobal(name, descriptor)
   const navigation = new BrowserNavigation(),
     stop = navigation.subscribe(() => notifications++)
   base.scope.defer(stop)
@@ -349,7 +350,7 @@ async function checkNavigationObservesHistoryAndPopstate4(t: TestContext): Promi
   } satisfies Pick<History, 'pushState' | 'replaceState'>
   const originalPush = historyFixture.pushState,
     originalReplace = historyFixture.replaceState
-  Object.defineProperties(globalThis, {
+  for (const [name, descriptor] of Object.entries({
     history: { configurable: true, value: historyFixture },
     location: { configurable: true, value: { pathname: '/video/test', search: '?p=2' } },
     addEventListener: {
@@ -361,7 +362,8 @@ async function checkNavigationObservesHistoryAndPopstate4(t: TestContext): Promi
       value: eventTarget.removeEventListener.bind(eventTarget),
     },
     queueMicrotask: { configurable: true, value: (task: () => void) => tasks.push(task) },
-  })
+  }))
+    base.scope.defineGlobal(name, descriptor)
   const navigation = new BrowserNavigation(),
     stop = navigation.subscribe(() => notifications++)
   base.scope.defer(stop)

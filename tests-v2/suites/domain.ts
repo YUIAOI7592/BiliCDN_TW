@@ -164,68 +164,6 @@ async function checkOneSampleUses70Percent1(t: TestContext): Promise<void> {
 
 async function checkColdStartRewritesToCatalogDefault2(t: TestContext): Promise<void> {
   const base = await createDomainScenario(t)
-
-  void evidenceMetrics(base.evidence, base.now).safeThroughputMbps
-  const second = addEvidenceSample(
-    base.evidence,
-    {
-      requestId: '2',
-      at: base.now + 1,
-      source: 'transport',
-      outcome: 'success',
-      throughputMbps: 6,
-      ttfbMs: 40,
-      failureKind: null,
-    },
-    base.now + 1,
-  )
-  void evidenceMetrics(second, base.now + 1).safeThroughputMbps
-  void evidenceMetrics(second, base.now + 1).state
-  const failed = addEvidenceSample(
-    second,
-    {
-      requestId: '3',
-      at: base.now + 2,
-      source: 'transport',
-      outcome: 'failure',
-      throughputMbps: null,
-      ttfbMs: null,
-      failureKind: 'timeout',
-    },
-    base.now + 2,
-  )
-  void evidenceMetrics(failed, base.now + 2).state
-  let stepped = failed
-  for (let level = 2; level <= 4; level++) {
-    stepped = addEvidenceSample(
-      stepped,
-      {
-        requestId: `failure-${level}`,
-        at: base.now + level,
-        source: 'transport',
-        outcome: 'failure',
-        throughputMbps: null,
-        ttfbMs: null,
-        failureKind: 'network',
-      },
-      base.now + level,
-    )
-  }
-  let bounded = emptyEvidence('bounded.example', 'video')
-  for (let index = 0; index < 20; index++)
-    bounded = addEvidenceSample(
-      bounded,
-      {
-        requestId: String(index),
-        at: base.now + index,
-        source: 'transport',
-        outcome: 'success',
-        throughputMbps: index + 1,
-        ttfbMs: index,
-        failureKind: null,
-      },
-      base.now + index,
-    )
   const candidate = {
     type: 'catalog-generated' as const,
     host: TRUSTED_CATALOG[0],
@@ -248,9 +186,6 @@ async function checkColdStartRewritesToCatalogDefault2(t: TestContext): Promise<
     boundary: 'startup' as const,
     failedHost: null,
   }
-  const restricted = rankRoutes(restrictionInput, base.now)[0]
-  void restricted?.reasons.includes('black')
-  void chooseRoute(restrictionInput, base.clock, decisionId('d1')).action
   const coldInput = {
     ...restrictionInput,
     restrictions: { ...restrictionInput.restrictions, blackHosts: new Set<string>() },

@@ -449,7 +449,7 @@ async function createNativeEnabledXHRPreservesRejectedUpstreamPayload5Context4(t
   }
 }
 
-async function createNonFinitePlayurlSummaryCountsContext5(t: TestContext) {
+function createSummaryTransportResources(t: TestContext) {
   const scope = testScope(t)
   installProgressEvent(scope)
   const session = new SessionStore()
@@ -474,38 +474,12 @@ async function createNonFinitePlayurlSummaryCountsContext5(t: TestContext) {
   )
   transport.install()
   const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
-  void transport.snapshot().lastPlayurl
-  const makeXhr = (type: XMLHttpRequestResponseType, value: unknown = { code: 0 }) => {
-    const xhr = new windowFixture.XMLHttpRequest()
-    xhr.responseType = type
-    xhr.payload = value
-    xhr.open('GET', endpoint)
-    xhr.send()
-    return xhr
-  }
-  void (transport.snapshot().lastPlayurl?.accepted === false)
-  block1.strict = true
-  const stale = makeXhr('text', { data: { url: secret } })
-  session.beginGeneration(false)
-  void !stale.responseText.includes('summary-secret')
-  let releaseBody = (): void => {}
-  block1.responseOverride = new Response(
-    new ReadableStream<Uint8Array>({
-      start(controller) {
-        releaseBody = () => {
-          controller.enqueue(new TextEncoder().encode('{"code":0}'))
-          controller.close()
-        }
-      },
-    }),
-    { status: 201 },
-  )
-  block1.result = accepted
-  const staleFetch = windowFixture.fetch(endpoint)
-  session.beginGeneration(false)
-  releaseBody()
-  await staleFetch
-  block1.responseOverride = null
+  return { block1, transport, endpoint, accepted, secret, windowFixture }
+}
+
+async function createNonFinitePlayurlSummaryCountsContext5(t: TestContext) {
+  const { block1, transport, endpoint, accepted, secret, windowFixture } =
+    createSummaryTransportResources(t)
   block1.result = {
     ...accepted,
     videoCount: Infinity,
@@ -517,12 +491,6 @@ async function createNonFinitePlayurlSummaryCountsContext5(t: TestContext) {
   await windowFixture.fetch(endpoint)
   return {
     accepted,
-    get disabled(): boolean {
-      return block1.disabled
-    },
-    set disabled(value: boolean) {
-      block1.disabled = value
-    },
     endpoint,
     get now() {
       return block1.now
@@ -590,25 +558,11 @@ async function checkNonFinitePlayurlSummaryCountsAreNormalized6(t: TestContext):
 async function checkDisabledTransportPreservesTheRecentPlayurlSummary7(
   t: TestContext,
 ): Promise<void> {
-  const base = await createNonFinitePlayurlSummaryCountsContext5(t)
-
-  void base.transport.snapshot().lastPlayurl?.videoCount
-  void base.transport.snapshot().lastPlayurl?.audioCount
-  void base.transport.snapshot().lastPlayurl?.segmentCount
-  void base.transport.snapshot().lastPlayurl?.upstreamCode
-  void base.transport.snapshot().lastPlayurl?.formats.join(',')
-  const augmented = {
-    ...base.accepted,
-    url: base.secret,
-    token: 'summary-secret',
-    payload: { raw: base.secret },
-  }
-  base.result = augmented
+  const base = createSummaryTransportResources(t)
   await base.windowFixture.fetch(base.endpoint)
-  void base.transport.snapshot().lastPlayurl
-  void !JSON.stringify(base.transport.snapshot()).includes('summary-secret')
-  base.disabled = true
+  base.block1.disabled = true
   const previous = base.transport.snapshot().lastPlayurl
+  assert.ok(previous, 'disabled preservation starts with a completed summary')
   await base.windowFixture.fetch(base.endpoint)
   assert.strictEqual(
     base.transport.snapshot().lastPlayurl,

@@ -44,6 +44,75 @@ import { BrowserScheduler } from '../../src-v2/adapters/scheduler.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
 
+async function createRateMonitorResources(t: TestContext) {
+  const scope = testScope(t)
+  const now = 2_000_000_000_000
+  const storage = new FakeStorage()
+  const settings = scope.own(new CatalogSettingsStore(storage, () => now))
+  const session = new SessionStore()
+  void session.beginGeneration(false)
+  const block1 = createPlaybackResourcesBlock1()
+  const { recoveryPlayer } = block1
+  let selectedRate = 1
+  let rateWrites = 0
+  let observedRate = 0
+  let rateSamples = 0
+  const ratePlayer: PlayerPort = {
+    ...recoveryPlayer,
+    snapshot: () => ({
+      ...block1.playerSnapshot,
+      playbackRate: selectedRate,
+      effectiveRate: selectedRate,
+      currentTime: 50,
+    }),
+    playbackRate: () => selectedRate,
+    setRate: () => {
+      rateWrites++
+    },
+  }
+  const rateMonitor = scope.own(
+    new PlayerMonitor(
+      ratePlayer,
+      session,
+      settings,
+      new SignedRouteVault(),
+      monitorRoutes({
+        observePlaybackRate: (rate: number) => {
+          observedRate = rate
+          rateSamples++
+        },
+        firstMediaAt: () => 0,
+      }),
+      monitorMeasurement({ tick: () => undefined }),
+      monitorRecovery({ tick: () => undefined, isRecovering: () => false }),
+      () => true,
+      () => now,
+      new BrowserScheduler(),
+    ),
+  )
+  return {
+    get rateWrites() {
+      return rateWrites
+    },
+    get rateSamples() {
+      return rateSamples
+    },
+    get observedRate() {
+      return observedRate
+    },
+    set observedRate(value: typeof observedRate) {
+      observedRate = value
+    },
+    rateMonitor,
+    get selectedRate() {
+      return selectedRate
+    },
+    set selectedRate(value: typeof selectedRate) {
+      selectedRate = value
+    },
+  }
+}
+
 function createPlaybackResourcesBlock1() {
   let reloads = 0
   let seeks: number[] = []
@@ -1048,126 +1117,8 @@ async function createStartupRecoveryContext8(t: TestContext) {
 }
 
 async function createRedirectChallengeFetchContext9(t: TestContext) {
-  const resources = await createRouteStateResources(t)
-  const { liveVault, state, clock, session, settings, restrictions, evidenceStore, now, scope } =
-    resources
-
-  const liveRep = liveVault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: '80:av1',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 3_000_000,
-    urls: ['https://upos-sz-mirrorali.bilivideo.com/upgcxcode/c/d/2.m4s?k=1'],
-    source: 'page-hint',
-  })
-  const coordinator = new RouteCoordinator(
-    clock,
-    session,
-    settings,
-    restrictions,
-    evidenceStore,
-    liveVault,
-    createRuntimeIds(),
-  )
-  const opaqueAudioUrl =
-    'https://upos-hz-mirrorakam.akamaized.net/opaque/audio-segment?signature=private'
-  liveVault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'audio',
-    key: 'opaque-audio',
-    height: 0,
-    codec: 'other',
-    bandwidth: 192_000,
-    urls: [opaqueAudioUrl],
-    source: 'trusted-api',
-  })
-  if (liveRep) {
-    coordinator.plan(liveRep, { kind: 'video', requiredMbps: 7.5, highDemand: false }, 'startup')
-    const startupRoot = liveVault.rootUrl(liveRep) ?? ''
-    const catalogChoice = coordinator
-      .startupOptions(startupRoot)
-      ?.candidates.find((candidate) => candidate.type === 'catalog-generated')
-    if (catalogChoice) coordinator.commitStartupChoice(startupRoot, catalogChoice, 'test-preflight')
-    const applied = coordinator.apply(startupRoot)
-    await coordinator.observe({
-      generation: state.generation,
-      epoch: state.epoch,
-      decisionId: applied.decision.id,
-      representation: liveRep,
-      kind: 'video',
-      routeType: 'catalog-generated',
-      originalHost: applied.sourceHost ?? '',
-      targetHost: applied.decision.host ?? '',
-      finalHost: applied.decision.host,
-      streamKey: applied.streamKey,
-      status: 403,
-      bytes: 0,
-      ttfbMs: 30,
-      elapsedMs: 60,
-      completedAt: now,
-      outcome: 'failure',
-    })
-    coordinator.apply(applied.url ?? '')
-    await restrictions.add({
-      host: 'upos-sz-mirrorali.bilivideo.com',
-      type: 'black',
-      kind: 'all',
-      reason: 'cold-start-test',
-      expireAt: now + 60_000,
-    })
-    coordinator.apply(startupRoot)
-    await restrictions.remove('upos-sz-mirrorali.bilivideo.com', 'black')
-  }
-  for (let index = 0; index < 40; index++) {
-    const group = liveVault.register({
-      generation: state.generation,
-      epoch: state.epoch,
-      kind: 'video',
-      key: `diagnostic:${index}`,
-      height: 1080,
-      codec: 'av1',
-      bandwidth: 3_000_000,
-      urls: [`https://upos-sz-mirrorali.bilivideo.com/upgcxcode/c/d/${index + 100}.m4s?k=1`],
-      source: 'page-hint',
-    })
-    if (group)
-      coordinator.plan(group, { kind: 'video', requiredMbps: 7.5, highDemand: false }, 'startup')
-  }
-  let recoveryNow = now
-  const block1 = createPlaybackResourcesBlock1()
-  const { recoveryPlayer } = block1
-  const recovery = scope.own(
-    new RecoveryController(currentResumePlayer(recoveryPlayer), () => recoveryNow),
-  )
-  recovery.tick(block1.playerSnapshot)
-  recovery.armRouteFailure('route-failure', block1.playerSnapshot)
-  block1.playerSnapshot = {
-    ...block1.playerSnapshot,
-    readyState: 0,
-    width: 0,
-    height: 0,
-    currentTime: 349.434,
-    frames: 1000,
-    coreInitialized: false,
-  }
-  recoveryNow += 4000
-  recovery.tick(block1.playerSnapshot)
-  recoveryNow += 1000
-  recovery.tick(block1.playerSnapshot)
-  block1.playerSnapshot = {
-    ...block1.playerSnapshot,
-    readyState: 3,
-    width: 1920,
-    height: 1080,
-    coreInitialized: true,
-    frames: 1,
-  }
-  recoveryNow += 1000
-  recovery.tick(block1.playerSnapshot)
+  const scope = testScope(t)
+  const now = 2_000_000_000_000
   const block3 = createPlaybackResourcesBlock3()
   const { startupVault, startupGeneration, startupSession } = block3
   startupVault.reset(startupGeneration.generation, startupGeneration.epoch)
@@ -1312,67 +1263,6 @@ async function createRedirectChallengeFetchContext9(t: TestContext) {
     )
     for (const host of TRUSTED_CATALOG) await stallRestrictions.remove(host, 'black')
   }
-  const deadStartup: VideoSnapshot = {
-    ...block1.playerSnapshot,
-    currentTime: 0,
-    readyState: 0,
-    width: 0,
-    height: 0,
-    frames: 0,
-    bufferAheadSec: 0,
-    playableBufferSec: 0,
-    coreInitialized: false,
-    paused: false,
-  }
-
-  let originalRecoveryTicks = 0
-  let originalFallbacks = 0
-  const originalMonitor = scope.own(
-    new PlayerMonitor(
-      {
-        ...recoveryPlayer,
-        snapshot: () => deadStartup,
-        syncManifest: () => true,
-      } satisfies PlayerPort,
-      startupSession,
-      { get: () => ({ disabled: true }) },
-      startupVault,
-      monitorRoutes({
-        observePlaybackRate: () => undefined,
-        firstMediaAt: () => now,
-        latestRequested: () => ({
-          routePolicyRevision: 0,
-          targetHost: 'upos-sz-mirrorali.bilivideo.com',
-          representation: startupRep,
-          generation: startupGeneration.generation,
-          epoch: startupGeneration.epoch,
-        }),
-        recoverStartup: () => {
-          originalFallbacks++
-          return null
-        },
-        recover: () => {
-          originalFallbacks++
-          return null
-        },
-      }),
-      monitorMeasurement({
-        tick: (input: { disabled: boolean }) => {
-          void input.disabled
-        },
-      }),
-      monitorRecovery({
-        tick: () => {
-          originalRecoveryTicks++
-        },
-        isRecovering: () => false,
-      }),
-      () => true,
-      () => now + 16_000,
-      new BrowserScheduler(),
-    ),
-  )
-  for (let i = 0; i < 17; i++) originalMonitor.tick()
   const directRangeResponse = (url: string, bytes: number): Response => {
     const response = new Response(new Uint8Array(bytes), { status: 206 })
     Object.defineProperty(response, 'url', { value: url })
@@ -1388,475 +1278,19 @@ async function createRedirectChallengeFetchContext9(t: TestContext) {
   }
 }
 
-async function createMonitorObservesSelectedParameterX11ParameterParameterContext10(
-  t: TestContext,
-) {
-  const scope = testScope(t)
-  const now = 2_000_000_000_000
-  const storage = new FakeStorage()
-  const settings = scope.own(new CatalogSettingsStore(storage, () => now))
-  const session = new SessionStore()
-  void session.beginGeneration(false)
-  const block1 = createPlaybackResourcesBlock1()
-  const { recoveryPlayer } = block1
-  const block3 = createPlaybackResourcesBlock3()
-  const { startupVault, startupGeneration, startupSession } = block3
-  startupVault.reset(startupGeneration.generation, startupGeneration.epoch)
-  const startupRoot = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/startup/video.m4s?k=1'
-  void startupVault.register({
-    generation: startupGeneration.generation,
-    epoch: startupGeneration.epoch,
-    kind: 'video',
-    key: 'startup:80',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 3_000_000,
-    urls: [startupRoot],
-    source: 'trusted-api',
-  })
-  const block2 = createPlaybackResourcesBlock2(now, scope)
-  const { stallSettings, stallRestrictions, stallEvidence } = block2
-  const stallRoutes = new RouteCoordinator(
-    { now: () => block2.stallNow },
-    startupSession,
-    stallSettings,
-    stallRestrictions,
-    stallEvidence,
-    startupVault,
-    createRuntimeIds(),
-  )
-  const directRangeResponse = (url: string, bytes: number): Response => {
-    const response = new Response(new Uint8Array(bytes), { status: 206 })
-    Object.defineProperty(response, 'url', { value: url })
-    return response
-  }
-  const preflightOptions = stallRoutes.startupOptions(startupRoot)
-  const preflightOptionsSetup2 = preflightOptions
-  if (preflightOptionsSetup2) {
-    let preflightFetches = 0
-
-    let startupSamples = 0
-    const preflightRoutes = {
-      isCatalogOnly: () => false,
-      startupOptions: () => preflightOptionsSetup2,
-      commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
-        candidate?.host ?? null
-        return candidate ? { host: candidate.host } : null
-      },
-      recordStartupSuccess: async () => {
-        startupSamples++
-      },
-      noteStartupProbeResult: () => undefined,
-    }
-    const preflightFetch = async (input: RequestInfo | URL): Promise<Response> => {
-      preflightFetches++
-      const host = new URL(String(input)).host
-      const length =
-        host ===
-        preflightOptionsSetup2.candidates.find(
-          (candidate) => candidate.type === 'catalog-generated',
-        )?.host
-          ? 256 * 1024
-          : 70 * 1024
-      return directRangeResponse(String(input), length)
-    }
-    const preflight = scope.own(
-      new MeasurementController(
-        measurementRoutes(preflightRoutes),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(preflightFetch as typeof fetch, () => now),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    const abortedStartup = new AbortController()
-    abortedStartup.abort()
-
-    try {
-      await preflight.prepareStartup(startupRoot, abortedStartup.signal)
-    } catch {}
-    await preflight.prepareStartup(startupRoot)
-    await preflight.prepareStartup(startupRoot)
-    const timeoutRoutes = {
-      ...preflightRoutes,
-      commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
-        candidate?.host ?? null
-        return candidate ? { host: candidate.host } : null
-      },
-    }
-    let hangingProbes = 0
-    const probesStarted = deferred<void>(),
-      deadlineClock = scope.own(new FakeClock())
-    const hangingFetch = async (
-      _input: RequestInfo | URL,
-      init?: RequestInit,
-    ): Promise<Response> => {
-      hangingProbes++
-      if (hangingProbes === preflightOptionsSetup2.candidates.length) probesStarted.resolve()
-      return await new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener(
-          'abort',
-          () => reject(new DOMException('Aborted', 'AbortError')),
-          { once: true },
-        )
-      })
-    }
-    const timedPreflight = scope.own(
-      new MeasurementController(
-        measurementRoutes(timeoutRoutes),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(hangingFetch as typeof fetch, deadlineClock.now),
-        deadlineClock.now,
-        deadlineClock,
-      ),
-    )
-    let gateSettled = false
-    const pendingGate = timedPreflight.prepareStartup(startupRoot).then(() => {
-      gateSettled = true
-    })
-    await probesStarted.promise
-    deadlineClock.advance(2999)
-    await Promise.resolve()
-    assert.strictEqual(gateSettled, false, 'startup remains pending at 2999 ms')
-    deadlineClock.advance(1)
-    await pendingGate
-    assert.strictEqual(gateSettled, true, 'startup completes at 3000 ms')
-    const cachedHost = preflightOptionsSetup2.candidates.find(
-      (candidate) => candidate.type === 'catalog-generated',
-    )?.host
-    const cachedOptions = {
-      ...preflightOptionsSetup2,
-      candidates: preflightOptionsSetup2.candidates.map((candidate) =>
-        candidate.host === cachedHost ? { ...candidate, cachedSafeMbps: 1000 } : candidate,
-      ),
-    }
-    const ranges = new Map<string, string>()
-    const compatibilityFetch = async (
-      input: RequestInfo | URL,
-      init?: RequestInit,
-    ): Promise<Response> => {
-      const host = new URL(String(input)).host
-      ranges.set(host, String((init?.headers as Record<string, string> | undefined)?.Range ?? ''))
-      return directRangeResponse(String(input), host === cachedHost ? 16 * 1024 : 70 * 1024)
-    }
-    const cachedPreflight = scope.own(
-      new MeasurementController(
-        measurementRoutes({ ...preflightRoutes, startupOptions: () => cachedOptions }),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(compatibilityFetch as typeof fetch, () => now),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    await cachedPreflight.prepareStartup(startupRoot)
-    let redirectStartupSamples = 0
-    const redirectStartup = scope.own(
-      new MeasurementController(
-        measurementRoutes({
-          ...preflightRoutes,
-          recordStartupSuccess: async () => {
-            redirectStartupSamples++
-          },
-        }),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(
-          (async (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-            init?.redirect
-            if (init?.redirect === 'error') throw new TypeError('redirect refused')
-            return new Response(new Uint8Array(70 * 1024), { status: 206 })
-          }) as typeof fetch,
-          () => now,
-        ),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    await redirectStartup.prepareStartup(startupRoot)
-    const wrongHostStartup = scope.own(
-      new MeasurementController(
-        measurementRoutes({
-          ...preflightRoutes,
-          recordStartupSuccess: async () => {
-            redirectStartupSamples++
-          },
-        }),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(
-          (async (): Promise<Response> => {
-            const response = new Response(new Uint8Array(70 * 1024), { status: 206 })
-            Object.defineProperty(response, 'url', {
-              value: 'https://upos-sz-mirrorhwov.bilivideo.com/upgcxcode/a/b/redirected.m4s',
-            })
-            return response
-          }) as typeof fetch,
-          () => now,
-        ),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    await wrongHostStartup.prepareStartup(startupRoot)
-  }
-  let selectedRate = 1
-  let rateWrites = 0
-  let observedRate = 0
-  const ratePlayer: PlayerPort = {
-    ...recoveryPlayer,
-    snapshot: () => ({
-      ...block1.playerSnapshot,
-      playbackRate: selectedRate,
-      effectiveRate: selectedRate,
-      currentTime: 50,
-    }),
-    playbackRate: () => selectedRate,
-    setRate: () => {
-      rateWrites++
-    },
-  }
-  const rateMonitor = scope.own(
-    new PlayerMonitor(
-      ratePlayer,
-      session,
-      settings,
-      new SignedRouteVault(),
-      monitorRoutes({
-        observePlaybackRate: (rate: number) => {
-          observedRate = rate
-        },
-        firstMediaAt: () => 0,
-      }),
-      monitorMeasurement({ tick: () => undefined }),
-      monitorRecovery({ tick: () => undefined, isRecovering: () => false }),
-      () => true,
-      () => now,
-      new BrowserScheduler(),
-    ),
-  )
-  return {
-    get observedRate() {
-      return observedRate
-    },
-    set observedRate(value: typeof observedRate) {
-      observedRate = value
-    },
-    rateMonitor,
-    get selectedRate() {
-      return selectedRate
-    },
-    set selectedRate(value: typeof selectedRate) {
-      selectedRate = value
-    },
-  }
-}
-
 async function createRepeatedMonitoringNeverWritesPlaybackSpeed12Context11(t: TestContext) {
-  const scope = testScope(t)
-  const now = 2_000_000_000_000
-  const block3 = createPlaybackResourcesBlock3()
-  const { startupVault, startupGeneration, startupSession } = block3
-  startupVault.reset(startupGeneration.generation, startupGeneration.epoch)
-  const startupRoot = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/startup/video.m4s?k=1'
-  void startupVault.register({
-    generation: startupGeneration.generation,
-    epoch: startupGeneration.epoch,
-    kind: 'video',
-    key: 'startup:80',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 3_000_000,
-    urls: [startupRoot],
-    source: 'trusted-api',
-  })
-  const block2 = createPlaybackResourcesBlock2(now, scope)
-  const { stallSettings, stallRestrictions, stallEvidence } = block2
-  const stallRoutes = new RouteCoordinator(
-    { now: () => block2.stallNow },
-    startupSession,
-    stallSettings,
-    stallRestrictions,
-    stallEvidence,
-    startupVault,
-    createRuntimeIds(),
-  )
-  const directRangeResponse = (url: string, bytes: number): Response => {
-    const response = new Response(new Uint8Array(bytes), { status: 206 })
-    Object.defineProperty(response, 'url', { value: url })
-    return response
+  const resources = await createRateMonitorResources(t)
+  for (const rate of [1, 1.5, 0.75, 2, 1]) {
+    resources.selectedRate = rate
+    resources.rateMonitor.tick()
+    resources.rateMonitor.tick()
   }
-  const preflightOptions = stallRoutes.startupOptions(startupRoot)
-  const preflightOptionsSetup2 = preflightOptions
-  if (preflightOptionsSetup2) {
-    let preflightFetches = 0
-
-    let startupSamples = 0
-    const preflightRoutes = {
-      isCatalogOnly: () => false,
-      startupOptions: () => preflightOptionsSetup2,
-      commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
-        candidate?.host ?? null
-        return candidate ? { host: candidate.host } : null
-      },
-      recordStartupSuccess: async () => {
-        startupSamples++
-      },
-      noteStartupProbeResult: () => undefined,
-    }
-    const preflightFetch = async (input: RequestInfo | URL): Promise<Response> => {
-      preflightFetches++
-      const host = new URL(String(input)).host
-      const length =
-        host ===
-        preflightOptionsSetup2.candidates.find(
-          (candidate) => candidate.type === 'catalog-generated',
-        )?.host
-          ? 256 * 1024
-          : 70 * 1024
-      return directRangeResponse(String(input), length)
-    }
-    const preflight = scope.own(
-      new MeasurementController(
-        measurementRoutes(preflightRoutes),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(preflightFetch as typeof fetch, () => now),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    const abortedStartup = new AbortController()
-    abortedStartup.abort()
-
-    try {
-      await preflight.prepareStartup(startupRoot, abortedStartup.signal)
-    } catch {}
-    await preflight.prepareStartup(startupRoot)
-    await preflight.prepareStartup(startupRoot)
-    const timeoutRoutes = {
-      ...preflightRoutes,
-      commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
-        candidate?.host ?? null
-        return candidate ? { host: candidate.host } : null
-      },
-    }
-    let hangingProbes = 0
-    const probesStarted = deferred<void>(),
-      deadlineClock = scope.own(new FakeClock())
-    const hangingFetch = async (
-      _input: RequestInfo | URL,
-      init?: RequestInit,
-    ): Promise<Response> => {
-      hangingProbes++
-      if (hangingProbes === preflightOptionsSetup2.candidates.length) probesStarted.resolve()
-      return await new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener(
-          'abort',
-          () => reject(new DOMException('Aborted', 'AbortError')),
-          { once: true },
-        )
-      })
-    }
-    const timedPreflight = scope.own(
-      new MeasurementController(
-        measurementRoutes(timeoutRoutes),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(hangingFetch as typeof fetch, deadlineClock.now),
-        deadlineClock.now,
-        deadlineClock,
-      ),
-    )
-    let gateSettled = false
-    const pendingGate = timedPreflight.prepareStartup(startupRoot).then(() => {
-      gateSettled = true
-    })
-    await probesStarted.promise
-    deadlineClock.advance(2999)
-    await Promise.resolve()
-    assert.strictEqual(gateSettled, false, 'startup remains pending at 2999 ms')
-    deadlineClock.advance(1)
-    await pendingGate
-    assert.strictEqual(gateSettled, true, 'startup completes at 3000 ms')
-    const cachedHost = preflightOptionsSetup2.candidates.find(
-      (candidate) => candidate.type === 'catalog-generated',
-    )?.host
-    const cachedOptions = {
-      ...preflightOptionsSetup2,
-      candidates: preflightOptionsSetup2.candidates.map((candidate) =>
-        candidate.host === cachedHost ? { ...candidate, cachedSafeMbps: 1000 } : candidate,
-      ),
-    }
-    const ranges = new Map<string, string>()
-    const compatibilityFetch = async (
-      input: RequestInfo | URL,
-      init?: RequestInit,
-    ): Promise<Response> => {
-      const host = new URL(String(input)).host
-      ranges.set(host, String((init?.headers as Record<string, string> | undefined)?.Range ?? ''))
-      return directRangeResponse(String(input), host === cachedHost ? 16 * 1024 : 70 * 1024)
-    }
-    const cachedPreflight = scope.own(
-      new MeasurementController(
-        measurementRoutes({ ...preflightRoutes, startupOptions: () => cachedOptions }),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(compatibilityFetch as typeof fetch, () => now),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    await cachedPreflight.prepareStartup(startupRoot)
-    let redirectStartupSamples = 0
-    const redirectStartup = scope.own(
-      new MeasurementController(
-        measurementRoutes({
-          ...preflightRoutes,
-          recordStartupSuccess: async () => {
-            redirectStartupSamples++
-          },
-        }),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(
-          (async (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-            init?.redirect
-            if (init?.redirect === 'error') throw new TypeError('redirect refused')
-            return new Response(new Uint8Array(70 * 1024), { status: 206 })
-          }) as typeof fetch,
-          () => now,
-        ),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    await redirectStartup.prepareStartup(startupRoot)
-    const wrongHostStartup = scope.own(
-      new MeasurementController(
-        measurementRoutes({
-          ...preflightRoutes,
-          recordStartupSuccess: async () => {
-            redirectStartupSamples++
-          },
-        }),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(
-          (async (): Promise<Response> => {
-            const response = new Response(new Uint8Array(70 * 1024), { status: 206 })
-            Object.defineProperty(response, 'url', {
-              value: 'https://upos-sz-mirrorhwov.bilivideo.com/upgcxcode/a/b/redirected.m4s',
-            })
-            return response
-          }) as typeof fetch,
-          () => now,
-        ),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    await wrongHostStartup.prepareStartup(startupRoot)
-  }
-  let rateWrites = 0
   return {
     get rateWrites() {
-      return rateWrites
+      return resources.rateWrites
     },
-    set rateWrites(value: typeof rateWrites) {
-      rateWrites = value
+    get rateSamples() {
+      return resources.rateSamples
     },
   }
 }
@@ -1866,204 +1300,6 @@ async function createRateAdapterContext13(t: TestContext) {
   const now = 2_000_000_000_000
   const block1 = createPlaybackResourcesBlock1()
   const { recoveryPlayer } = block1
-  const block3 = createPlaybackResourcesBlock3()
-  const { startupVault, startupGeneration, startupSession } = block3
-  startupVault.reset(startupGeneration.generation, startupGeneration.epoch)
-  const startupRoot = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/startup/video.m4s?k=1'
-  void startupVault.register({
-    generation: startupGeneration.generation,
-    epoch: startupGeneration.epoch,
-    kind: 'video',
-    key: 'startup:80',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 3_000_000,
-    urls: [startupRoot],
-    source: 'trusted-api',
-  })
-  const block2 = createPlaybackResourcesBlock2(now, scope)
-  const { stallSettings, stallRestrictions, stallEvidence } = block2
-  const stallRoutes = new RouteCoordinator(
-    { now: () => block2.stallNow },
-    startupSession,
-    stallSettings,
-    stallRestrictions,
-    stallEvidence,
-    startupVault,
-    createRuntimeIds(),
-  )
-  const directRangeResponse = (url: string, bytes: number): Response => {
-    const response = new Response(new Uint8Array(bytes), { status: 206 })
-    Object.defineProperty(response, 'url', { value: url })
-    return response
-  }
-  const preflightOptions = stallRoutes.startupOptions(startupRoot)
-  const preflightOptionsSetup2 = preflightOptions
-  if (preflightOptionsSetup2) {
-    let preflightFetches = 0
-
-    let startupSamples = 0
-    const preflightRoutes = {
-      isCatalogOnly: () => false,
-      startupOptions: () => preflightOptionsSetup2,
-      commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
-        candidate?.host ?? null
-        return candidate ? { host: candidate.host } : null
-      },
-      recordStartupSuccess: async () => {
-        startupSamples++
-      },
-      noteStartupProbeResult: () => undefined,
-    }
-    const preflightFetch = async (input: RequestInfo | URL): Promise<Response> => {
-      preflightFetches++
-      const host = new URL(String(input)).host
-      const length =
-        host ===
-        preflightOptionsSetup2.candidates.find(
-          (candidate) => candidate.type === 'catalog-generated',
-        )?.host
-          ? 256 * 1024
-          : 70 * 1024
-      return directRangeResponse(String(input), length)
-    }
-    const preflight = scope.own(
-      new MeasurementController(
-        measurementRoutes(preflightRoutes),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(preflightFetch as typeof fetch, () => now),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    const abortedStartup = new AbortController()
-    abortedStartup.abort()
-
-    try {
-      await preflight.prepareStartup(startupRoot, abortedStartup.signal)
-    } catch {}
-    await preflight.prepareStartup(startupRoot)
-    await preflight.prepareStartup(startupRoot)
-    const timeoutRoutes = {
-      ...preflightRoutes,
-      commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
-        candidate?.host ?? null
-        return candidate ? { host: candidate.host } : null
-      },
-    }
-    let hangingProbes = 0
-    const probesStarted = deferred<void>(),
-      deadlineClock = scope.own(new FakeClock())
-    const hangingFetch = async (
-      _input: RequestInfo | URL,
-      init?: RequestInit,
-    ): Promise<Response> => {
-      hangingProbes++
-      if (hangingProbes === preflightOptionsSetup2.candidates.length) probesStarted.resolve()
-      return await new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener(
-          'abort',
-          () => reject(new DOMException('Aborted', 'AbortError')),
-          { once: true },
-        )
-      })
-    }
-    const timedPreflight = scope.own(
-      new MeasurementController(
-        measurementRoutes(timeoutRoutes),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(hangingFetch as typeof fetch, deadlineClock.now),
-        deadlineClock.now,
-        deadlineClock,
-      ),
-    )
-    let gateSettled = false
-    const pendingGate = timedPreflight.prepareStartup(startupRoot).then(() => {
-      gateSettled = true
-    })
-    await probesStarted.promise
-    deadlineClock.advance(2999)
-    await Promise.resolve()
-    assert.strictEqual(gateSettled, false, 'startup remains pending at 2999 ms')
-    deadlineClock.advance(1)
-    await pendingGate
-    assert.strictEqual(gateSettled, true, 'startup completes at 3000 ms')
-    const cachedHost = preflightOptionsSetup2.candidates.find(
-      (candidate) => candidate.type === 'catalog-generated',
-    )?.host
-    const cachedOptions = {
-      ...preflightOptionsSetup2,
-      candidates: preflightOptionsSetup2.candidates.map((candidate) =>
-        candidate.host === cachedHost ? { ...candidate, cachedSafeMbps: 1000 } : candidate,
-      ),
-    }
-    const ranges = new Map<string, string>()
-    const compatibilityFetch = async (
-      input: RequestInfo | URL,
-      init?: RequestInit,
-    ): Promise<Response> => {
-      const host = new URL(String(input)).host
-      ranges.set(host, String((init?.headers as Record<string, string> | undefined)?.Range ?? ''))
-      return directRangeResponse(String(input), host === cachedHost ? 16 * 1024 : 70 * 1024)
-    }
-    const cachedPreflight = scope.own(
-      new MeasurementController(
-        measurementRoutes({ ...preflightRoutes, startupOptions: () => cachedOptions }),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(compatibilityFetch as typeof fetch, () => now),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    await cachedPreflight.prepareStartup(startupRoot)
-    let redirectStartupSamples = 0
-    const redirectStartup = scope.own(
-      new MeasurementController(
-        measurementRoutes({
-          ...preflightRoutes,
-          recordStartupSuccess: async () => {
-            redirectStartupSamples++
-          },
-        }),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(
-          (async (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-            init?.redirect
-            if (init?.redirect === 'error') throw new TypeError('redirect refused')
-            return new Response(new Uint8Array(70 * 1024), { status: 206 })
-          }) as typeof fetch,
-          () => now,
-        ),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    await redirectStartup.prepareStartup(startupRoot)
-    const wrongHostStartup = scope.own(
-      new MeasurementController(
-        measurementRoutes({
-          ...preflightRoutes,
-          recordStartupSuccess: async () => {
-            redirectStartupSamples++
-          },
-        }),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(
-          (async (): Promise<Response> => {
-            const response = new Response(new Uint8Array(70 * 1024), { status: 206 })
-            Object.defineProperty(response, 'url', {
-              value: 'https://upos-sz-mirrorhwov.bilivideo.com/upgcxcode/a/b/redirected.m4s',
-            })
-            return response
-          }) as typeof fetch,
-          () => now,
-        ),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    await wrongHostStartup.prepareStartup(startupRoot)
-  }
   const adapterVideo = {
     isConnected: true,
     paused: false,
@@ -2136,204 +1372,6 @@ async function createHostLockNeverRestoresADeadRootAndMayChooseAContext14(t: Tes
   )
   const block1 = createPlaybackResourcesBlock1()
   const { recoveryPlayer } = block1
-  const block3 = createPlaybackResourcesBlock3()
-  const { startupVault, startupGeneration, startupSession } = block3
-  startupVault.reset(startupGeneration.generation, startupGeneration.epoch)
-  const startupRoot = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/startup/video.m4s?k=1'
-  void startupVault.register({
-    generation: startupGeneration.generation,
-    epoch: startupGeneration.epoch,
-    kind: 'video',
-    key: 'startup:80',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 3_000_000,
-    urls: [startupRoot],
-    source: 'trusted-api',
-  })
-  const block2 = createPlaybackResourcesBlock2(now, scope)
-  const { stallSettings, stallRestrictions, stallEvidence } = block2
-  const stallRoutes = new RouteCoordinator(
-    { now: () => block2.stallNow },
-    startupSession,
-    stallSettings,
-    stallRestrictions,
-    stallEvidence,
-    startupVault,
-    createRuntimeIds(),
-  )
-  const directRangeResponse = (url: string, bytes: number): Response => {
-    const response = new Response(new Uint8Array(bytes), { status: 206 })
-    Object.defineProperty(response, 'url', { value: url })
-    return response
-  }
-  const preflightOptions = stallRoutes.startupOptions(startupRoot)
-  const preflightOptionsSetup2 = preflightOptions
-  if (preflightOptionsSetup2) {
-    let preflightFetches = 0
-
-    let startupSamples = 0
-    const preflightRoutes = {
-      isCatalogOnly: () => false,
-      startupOptions: () => preflightOptionsSetup2,
-      commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
-        candidate?.host ?? null
-        return candidate ? { host: candidate.host } : null
-      },
-      recordStartupSuccess: async () => {
-        startupSamples++
-      },
-      noteStartupProbeResult: () => undefined,
-    }
-    const preflightFetch = async (input: RequestInfo | URL): Promise<Response> => {
-      preflightFetches++
-      const host = new URL(String(input)).host
-      const length =
-        host ===
-        preflightOptionsSetup2.candidates.find(
-          (candidate) => candidate.type === 'catalog-generated',
-        )?.host
-          ? 256 * 1024
-          : 70 * 1024
-      return directRangeResponse(String(input), length)
-    }
-    const preflight = scope.own(
-      new MeasurementController(
-        measurementRoutes(preflightRoutes),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(preflightFetch as typeof fetch, () => now),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    const abortedStartup = new AbortController()
-    abortedStartup.abort()
-
-    try {
-      await preflight.prepareStartup(startupRoot, abortedStartup.signal)
-    } catch {}
-    await preflight.prepareStartup(startupRoot)
-    await preflight.prepareStartup(startupRoot)
-    const timeoutRoutes = {
-      ...preflightRoutes,
-      commitStartupChoice: (_url: string, candidate: { host: string } | null) => {
-        candidate?.host ?? null
-        return candidate ? { host: candidate.host } : null
-      },
-    }
-    let hangingProbes = 0
-    const probesStarted = deferred<void>(),
-      deadlineClock = scope.own(new FakeClock())
-    const hangingFetch = async (
-      _input: RequestInfo | URL,
-      init?: RequestInit,
-    ): Promise<Response> => {
-      hangingProbes++
-      if (hangingProbes === preflightOptionsSetup2.candidates.length) probesStarted.resolve()
-      return await new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener(
-          'abort',
-          () => reject(new DOMException('Aborted', 'AbortError')),
-          { once: true },
-        )
-      })
-    }
-    const timedPreflight = scope.own(
-      new MeasurementController(
-        measurementRoutes(timeoutRoutes),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(hangingFetch as typeof fetch, deadlineClock.now),
-        deadlineClock.now,
-        deadlineClock,
-      ),
-    )
-    let gateSettled = false
-    const pendingGate = timedPreflight.prepareStartup(startupRoot).then(() => {
-      gateSettled = true
-    })
-    await probesStarted.promise
-    deadlineClock.advance(2999)
-    await Promise.resolve()
-    assert.strictEqual(gateSettled, false, 'startup remains pending at 2999 ms')
-    deadlineClock.advance(1)
-    await pendingGate
-    assert.strictEqual(gateSettled, true, 'startup completes at 3000 ms')
-    const cachedHost = preflightOptionsSetup2.candidates.find(
-      (candidate) => candidate.type === 'catalog-generated',
-    )?.host
-    const cachedOptions = {
-      ...preflightOptionsSetup2,
-      candidates: preflightOptionsSetup2.candidates.map((candidate) =>
-        candidate.host === cachedHost ? { ...candidate, cachedSafeMbps: 1000 } : candidate,
-      ),
-    }
-    const ranges = new Map<string, string>()
-    const compatibilityFetch = async (
-      input: RequestInfo | URL,
-      init?: RequestInit,
-    ): Promise<Response> => {
-      const host = new URL(String(input)).host
-      ranges.set(host, String((init?.headers as Record<string, string> | undefined)?.Range ?? ''))
-      return directRangeResponse(String(input), host === cachedHost ? 16 * 1024 : 70 * 1024)
-    }
-    const cachedPreflight = scope.own(
-      new MeasurementController(
-        measurementRoutes({ ...preflightRoutes, startupOptions: () => cachedOptions }),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(compatibilityFetch as typeof fetch, () => now),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    await cachedPreflight.prepareStartup(startupRoot)
-    let redirectStartupSamples = 0
-    const redirectStartup = scope.own(
-      new MeasurementController(
-        measurementRoutes({
-          ...preflightRoutes,
-          recordStartupSuccess: async () => {
-            redirectStartupSamples++
-          },
-        }),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(
-          (async (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-            init?.redirect
-            if (init?.redirect === 'error') throw new TypeError('redirect refused')
-            return new Response(new Uint8Array(70 * 1024), { status: 206 })
-          }) as typeof fetch,
-          () => now,
-        ),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    await redirectStartup.prepareStartup(startupRoot)
-    const wrongHostStartup = scope.own(
-      new MeasurementController(
-        measurementRoutes({
-          ...preflightRoutes,
-          recordStartupSuccess: async () => {
-            redirectStartupSamples++
-          },
-        }),
-        new MeasurementMetaStore(new FakeStorage(), () => now),
-        new RangeProbeAdapter(
-          (async (): Promise<Response> => {
-            const response = new Response(new Uint8Array(70 * 1024), { status: 206 })
-            Object.defineProperty(response, 'url', {
-              value: 'https://upos-sz-mirrorhwov.bilivideo.com/upgcxcode/a/b/redirected.m4s',
-            })
-            return response
-          }) as typeof fetch,
-          () => now,
-        ),
-        () => now,
-        new BrowserScheduler(),
-      ),
-    )
-    await wrongHostStartup.prepareStartup(startupRoot)
-  }
   return {
     coordinator,
     liveRep,
@@ -3177,6 +2215,7 @@ async function checkNormalShortResumeReturnsHealthyState16(t: TestContext): Prom
 async function checkRepeatedMonitoringNeverWritesPlaybackSpeed12(t: TestContext): Promise<void> {
   const base = await createRepeatedMonitoringNeverWritesPlaybackSpeed12Context11(t)
 
+  assert.strictEqual(base.rateSamples, 10, 'all ten monitoring ticks reach the rate observer')
   assert.strictEqual(base.rateWrites, 0, 'repeated monitoring never writes playback speed')
 }
 
@@ -3184,7 +2223,7 @@ async function checkMonitorObservesSelectedParameterX11ParameterParameter(
   t: TestContext,
   parameter = 0,
 ): Promise<void> {
-  const base = await createMonitorObservesSelectedParameterX11ParameterParameterContext10(t)
+  const base = await createRateMonitorResources(t)
 
   let iteration = 0
   for (const rate of [1, 1.5, 0.75, 2, 1]) {

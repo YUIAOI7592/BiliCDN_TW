@@ -252,26 +252,6 @@ async function checkXHRParameterAcceptsMP4Durl2ParameterParameter(
 
 async function checkMP4CatalogOnlyFetchRejectsRedirects3(t: TestContext): Promise<void> {
   const base = await createPayloadContext1(t)
-
-  for (const responseType of ['text', 'json'] as const) {
-    const xhr = new base.FakeXhr()
-    xhr.responseType = responseType
-    xhr.open('GET', base.api)
-    xhr.send()
-    const result = (
-      responseType === 'json' ? xhr.response : JSON.parse(xhr.responseText)
-    ) as ReturnType<typeof progressivePayload>
-    void result.code
-    void isCatalogHost(new URL(result.data.durl[0]!.url).hostname)
-    xhr.payload = base.fixture()
-    xhr.open('GET', base.api)
-    xhr.send()
-    void (
-      responseType === 'json'
-        ? (xhr.response as ReturnType<typeof progressivePayload>)
-        : JSON.parse(xhr.responseText)
-    ).code
-  }
   await base.fakeWindow.fetch(base.payload.data.durl[0]!.url)
 
   assert.strictEqual(
