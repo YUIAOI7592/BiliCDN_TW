@@ -480,10 +480,10 @@ export class SignedRouteVault implements SignedRouteVaultPort {
 
   startupMediaKind(): import('../domain/model.ts').MediaKind | null {
     const groups = [...this.#groups.values()]
-    if (groups.some((group) => group.identity.kind === 'video')) return 'video'
-    return groups.some((group) => group.identity.kind === 'audio' && group.source === 'trusted-api')
-      ? 'audio'
-      : null
+    const trusted = groups.filter((group) => group.source === 'trusted-api')
+    if (trusted.some((group) => group.identity.kind === 'video')) return 'video'
+    if (trusted.some((group) => group.identity.kind === 'audio')) return 'audio'
+    return groups.some((group) => group.identity.kind === 'video') ? 'video' : null
   }
 
   groupSummary(representation: RepresentationId): VaultGroupSnapshot | null {

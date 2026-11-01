@@ -523,6 +523,7 @@ function stalledStartup(t: TestContext, initialPosition: number, progressing = f
   const start = clock.now(),
     state = f.session.get()
   const routes = monitorRoutes({
+    recoveryEligible: () => true,
     firstMediaAt: () => start,
     latestRequested: () => ({
       routePolicyRevision: 0,

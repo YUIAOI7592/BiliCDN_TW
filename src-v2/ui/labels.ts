@@ -93,7 +93,7 @@ export const measurementLabel = (state: unknown, reason: unknown): string => {
 }
 
 export const startupLabel = (state: unknown, reason: unknown, result?: unknown): string => {
-  if (state === 'complete' && result)
+  if ((state === 'complete' || (state === 'skipped' && result === 'none')) && result)
     return plain(result, {
       adequate: '本輪已選定足速路線',
       insufficient: '已選定本輪最快路線，尚未達足速門檻',
@@ -109,6 +109,9 @@ export const startupLabel = (state: unknown, reason: unknown, result?: unknown):
       {
         'unsupported-or-no-legal-candidate': '這筆請求無法安全預測試，後續依目前選路設定處理',
         'preflight-error': '預測試未完成，後續依目前選路設定處理',
+        'video-priority': '等待影片取得起播窗口',
+        'preflight-skipped:synchronous-xhr': '同步 XHR 保留原生行為，未消耗起播窗口',
+        'preflight-skipped:xhr-explicit-timeout': '網站已設定逾時，未消耗起播窗口',
       },
       '這筆請求未進行起播預測試',
     )

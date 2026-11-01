@@ -90,6 +90,50 @@ test('V226 S07 trusted audio-only inventory can use the same single budget', asy
   assert.equal(probes, 3)
 })
 
+test('V226 S07: trusted audio-only ownership overrides a provisional video inventory', async (t) => {
+  const f = fixture(testScope(t)),
+    state = f.session.get()
+  assert.ok(
+    f.vault.register({
+      generation: state.generation,
+      epoch: state.epoch,
+      kind: 'video',
+      key: 'provisional',
+      height: 1080,
+      codec: 'avc',
+      bandwidth: 4_000_000,
+      urls: [media('provisional', 'v.m4s')],
+      source: 'page-hint',
+    }),
+  )
+  const audio = {
+    id: 30280,
+    bandwidth: 192_000,
+    base_url: media('audio-only', 'a.m4s'),
+    backup_url: [],
+  }
+  assert.equal(
+    f.adapter.transform({ code: 0, data: { dash: { video: [], audio: [audio] } } }).accepted,
+    true,
+  )
+  let probes = 0
+  const controller = measurement(t, f, {
+    read: async () => {
+      probes++
+      return {
+        bytes: 262144,
+        elapsedMs: 100,
+        ttfbMs: 1,
+        status: 206,
+        directRange: true,
+        reason: 'measured',
+      }
+    },
+  })
+  await controller.prepareStartup(audio.base_url)
+  assert.equal(probes, 3)
+})
+
 test('V226 S13 unsuccessful probes select one legal untested fallback without more probes', async (t) => {
   const scope = testScope(t),
     f = fixture(scope)

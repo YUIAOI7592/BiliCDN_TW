@@ -148,9 +148,9 @@ export class TransportContext {
     this.#stats.blocked++
     this.#lastBlocked = Object.freeze({ method, host: hostOf(url), reason })
   }
-  apiDispatch(url: string): PlayurlRequestContext {
+  apiDispatch(url: string, captured?: PlayurlRequestContext): PlayurlRequestContext {
     return Object.freeze({
-      ...playurlRequestContext(url),
+      ...(captured ?? playurlRequestContext(url)),
       generation: Number(this.session.get().generation),
       requestSequence: ++this.#apiDispatchSerial,
     })

@@ -856,6 +856,7 @@ export class RecoveryController implements RecoveryPort {
           if (
             !used &&
             known &&
+            (plan.phase === 'position' || this.#positionMatches(reading, plan)) &&
             reading.status !== 'pending' &&
             reading.seeking === false &&
             reading.readyState !== null &&

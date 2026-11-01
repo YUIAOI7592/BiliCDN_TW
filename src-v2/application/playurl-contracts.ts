@@ -49,6 +49,7 @@ export interface PlayurlRoutesPort extends Pick<
   | 'resetEpoch'
 > {}
 export interface PlayurlControllerPort {
+  acceptResponse(context?: PlayurlRequestContext): void
   catalogOnly(): boolean
   subscribeEpoch(
     listener: (state: { readonly generation: GenerationId; readonly epoch: EpochId }) => void,

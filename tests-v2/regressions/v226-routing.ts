@@ -11,6 +11,87 @@ function setup(t: TestContext) {
   return { scope: testScope(t) }
 }
 
+test('V226 S11: a valid original below headroom cannot win through ninety-percent preference', async (t) => {
+  const scope = testScope(t),
+    f = fixture(scope)
+  await f.settings.update({ considerNativeSources: true })
+  const url = media('headroom', 'v.m4s')
+  assert.equal(f.adapter.transform(dash(url)).accepted, true)
+  const options = f.routes.startupOptions(url)!,
+    original = options.candidates.find((c) => c.original)!,
+    other = options.candidates.find((c) => !c.original)!
+  assert.equal(options.demand.requiredMbps, 10)
+  let probes = 0
+  const controller = scope.own(
+    new MeasurementController(
+      f.routes,
+      new MeasurementMetaStore(f.storage, f.clock.now),
+      {
+        read: async ({ host }) => {
+          probes++
+          const safe = host === original.host ? 13.4 : host === other.host ? 14.8 : null
+          return safe === null
+            ? {
+                bytes: 0,
+                elapsedMs: 3000,
+                ttfbMs: null,
+                status: 0,
+                directRange: false,
+                reason: 'timeout',
+              }
+            : {
+                bytes: 65536,
+                elapsedMs: (65536 * 8 * 0.7) / (safe * 1000),
+                ttfbMs: 1,
+                status: 206,
+                directRange: true,
+                reason: 'measured',
+              }
+        },
+      },
+      f.clock.now,
+      f.clock,
+      undefined,
+      () => 0,
+      f.settings,
+    ),
+  )
+  await controller.prepareStartup(url)
+  assert.equal(probes, 3)
+  assert.equal(controller.snapshot().startup?.selectedHost, other.host)
+  assert.equal(controller.snapshot().startup?.result, 'adequate')
+})
+
+test('V226 R01: audio dispatch does not start the cold-video rescue clock', (t) => {
+  const f = fixture(testScope(t)),
+    state = f.session.get(),
+    audio = media('clock', 'audio.m4s'),
+    video = media('clock', 'video.m4s')
+  for (const [kind, url] of [
+    ['audio', audio],
+    ['video', video],
+  ] as const)
+    assert.ok(
+      f.vault.register({
+        generation: state.generation,
+        epoch: state.epoch,
+        kind,
+        key: kind,
+        height: kind === 'video' ? 1080 : 0,
+        codec: 'avc',
+        bandwidth: kind === 'video' ? 4_000_000 : 192_000,
+        urls: [url],
+        source: 'trusted-api',
+      }),
+    )
+  const first = start(f, audio, 1, 'audio')
+  f.clock.advance(10_000)
+  const next = start(f, video, 2)
+  assert.equal(f.routes.firstMediaAt(), first.request.startedAt)
+  assert.equal(f.routes.firstMediaAt('video'), next.request.startedAt)
+  assert.equal(f.routes.firstMediaAt('video') - f.routes.firstMediaAt(), 10_000)
+})
+
 for (const safeMbps of [12, 20]) {
   test(
     `V226 S10: successful candidate safe=${safeMbps} demand=10`,
@@ -267,4 +348,36 @@ test('V226 L02 concurrent requests share selection ownership and a genuine later
   assert.equal(f.session.get().representation, b2.request.representation)
   await finish(f, return2)
   assert.equal(f.session.get().representation, return2.request.representation)
+})
+
+test('V226 L02: A returning before pending B confirms still needs two fresh successes', async (t) => {
+  const f = fixture(testScope(t)),
+    body = dash(media('pending-return', 'a.m4s'))
+  body.data.dash.video.push({
+    ...body.data.dash.video[0]!,
+    id: 120,
+    height: 2160,
+    base_url: media('pending-return', 'b.m4s'),
+  })
+  assert.equal(f.adapter.transform(body).accepted, true)
+  const a = body.data.dash.video[0]!.base_url,
+    b = body.data.dash.video[1]!.base_url
+  await finish(f, start(f, a, 1))
+  await finish(f, start(f, a, 2))
+  const oldA = start(f, a, 3),
+    pendingB = start(f, b, 4),
+    newA1 = start(f, a, 5),
+    newA2 = start(f, a, 6)
+  assert.equal(f.routes.snapshot().selection?.phase, 'pending')
+  assert.equal(f.routes.snapshot().currentCapacity, null)
+  await finish(f, oldA)
+  assert.equal(f.routes.snapshot().selection?.sampleCount, 0)
+  await finish(f, newA1)
+  assert.equal(f.routes.snapshot().selection?.phase, 'pending')
+  assert.equal(f.routes.snapshot().selection?.sampleCount, 1)
+  await finish(f, pendingB)
+  assert.equal(f.routes.snapshot().selection?.sampleCount, 1)
+  await finish(f, newA2)
+  assert.equal(f.routes.snapshot().selection?.phase, 'confirmed')
+  assert.equal(f.session.get().representation, newA2.request.representation)
 })

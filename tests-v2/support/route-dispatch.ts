@@ -4,10 +4,16 @@ import {
   requestId,
   type RequestContext,
   type TransportObservation,
+  type MediaKind,
 } from '../../src-v2/domain/model.ts'
 import type { AppliedRouteDecision } from '../../src-v2/application/route-contracts.ts'
-export function start(f: ReturnType<typeof fixture>, url: string, serial: number) {
-  const applied: AppliedRouteDecision = f.routes.apply(url, 'video')
+export function start(
+  f: ReturnType<typeof fixture>,
+  url: string,
+  serial: number,
+  kind: MediaKind = 'video',
+) {
+  const applied: AppliedRouteDecision = f.routes.apply(url, kind)
   assert.ok(applied.url && applied.context)
   const identity = applied.context
   const request: RequestContext = {
@@ -17,7 +23,7 @@ export function start(f: ReturnType<typeof fixture>, url: string, serial: number
     representation: identity.representation,
     authorityRevision: identity.authorityRevision,
     routePolicyRevision: f.routes.policyRevision(),
-    kind: 'video',
+    kind,
     attributionStatus: 'matched',
     attributionSource: 'exact',
     decisionStage: 'request',
@@ -48,7 +54,7 @@ export async function finish(
     generation: r.generation,
     epoch: r.epoch,
     representation: r.representation,
-    kind: 'video',
+    kind: r.kind,
     decisionId: r.decisionId,
     routeType: r.routeType,
     originalHost: r.originalHost,

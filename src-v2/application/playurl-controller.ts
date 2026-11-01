@@ -30,6 +30,11 @@ export class PlayurlController implements PlayurlControllerPort {
   #responses = new Set<string>()
   #generation = -1
   #apiWatermark = 0
+  #apiCandidate: {
+    readonly context: PlayurlRequestContext
+    readonly generation: GenerationId
+    readonly epoch: EpochId
+  } | null = null
   #contentIdentity: PlayurlContentIdentity | null = null
   constructor(
     private readonly session: PlayurlSessionPort,
@@ -69,6 +74,7 @@ export class PlayurlController implements PlayurlControllerPort {
       this.#generation = Number(this.session.get().generation)
       this.#responses.clear()
       this.#apiWatermark = 0
+      this.#apiCandidate = null
       this.#contentIdentity = null
       this.#seenTrusted = new WeakSet()
       this.#trustedItems = new WeakMap()
@@ -129,7 +135,6 @@ export class PlayurlController implements PlayurlControllerPort {
         context,
       )
       this.#contentIdentity = next.identity
-      if (ordered) this.#apiWatermark = Math.max(this.#apiWatermark, sequence!)
       if (next.changed) {
         this.session.beginEpoch()
         const state = this.session.get()
@@ -269,7 +274,25 @@ export class PlayurlController implements PlayurlControllerPort {
         rewriteItem(item, output.primary, output.backups)
       })
     }
+    if (ordered && context)
+      this.#apiCandidate = { context, generation: state.generation, epoch: state.epoch }
     return outputs
+  }
+
+  acceptResponse(context?: PlayurlRequestContext): void {
+    const candidate = this.#apiCandidate,
+      state = this.session.get()
+    if (
+      !context ||
+      candidate?.context !== context ||
+      state.disabled ||
+      state.generation !== candidate.generation ||
+      state.epoch !== candidate.epoch
+    )
+      return
+    this.#apiCandidate = null
+    if (Number.isSafeInteger(context.requestSequence) && context.requestSequence! > 0)
+      this.#apiWatermark = Math.max(this.#apiWatermark, context.requestSequence!)
   }
 
   #sanitizeKnownItem(

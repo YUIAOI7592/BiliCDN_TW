@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fixture, dash, media } from './functional-races/routing-fixture.ts'
 import { testScope } from '../support/scope.ts'
+import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 
 test('V226 L01: reverse API responses cannot restore an older cid', async (t) => {
   const f = fixture(testScope(t))
@@ -51,4 +52,35 @@ test('V226 L01: an old response without a cid cannot introduce Native authority'
   })
   assert.equal(f.vault.contextForUrl(unknown), null)
   assert.ok(f.vault.contextForUrl(current))
+})
+
+test('V226 L01: rejected newer output does not advance the accepted API watermark', async (t) => {
+  const f = fixture(testScope(t))
+  assert.equal(
+    f.adapter.transform(dash(media('accepted-2', 'v.m4s')), 'trusted-api', '2', {
+      contentId: '2',
+      requestSequence: 2,
+    }).accepted,
+    true,
+  )
+  await f.settings.update({
+    catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, false])),
+  })
+  f.routes.invalidateForUserSetting()
+  assert.equal(
+    f.adapter.transform(dash(media('rejected-4', 'v.m4s')), 'trusted-api', '4', {
+      contentId: '4',
+      requestSequence: 4,
+    }).accepted,
+    false,
+  )
+  await f.settings.update({ catalogOverrides: {} })
+  f.routes.invalidateForUserSetting()
+  const valid = media('accepted-3', 'v.m4s')
+  assert.equal(
+    f.adapter.transform(dash(valid), 'trusted-api', '3', { contentId: '3', requestSequence: 3 })
+      .accepted,
+    true,
+  )
+  assert.ok(f.vault.contextForUrl(valid))
 })

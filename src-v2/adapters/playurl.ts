@@ -10,7 +10,7 @@ import { parseMediaUrl } from '../domain/url-policy.ts'
 
 export interface PlayurlIngestionPort extends Pick<
   PlayurlControllerPort,
-  'lifecycleKey' | 'catalogOnly' | 'ingest' | 'active'
+  'lifecycleKey' | 'catalogOnly' | 'ingest' | 'active' | 'acceptResponse'
 > {}
 
 type UnknownRecord = Record<string, unknown>
@@ -227,6 +227,7 @@ export class PlayurlAdapter {
     // Atomic writeback keeps all required segments and aliases intact on rejection.
     for (const output of outputs)
       if (isRecord(output.token)) rewriteItem(output.token, output.primary, output.backups)
+    if (source === 'trusted-api') this.controller.acceptResponse(context)
     return result(null)
   }
 }

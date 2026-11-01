@@ -372,6 +372,17 @@ test('BR-03 XHR successful synchronous open reentry owns the new cid', async (t)
   assert.deepEqual(seen, [{ contentId: '2000', generation: 1, requestSequence: 1 }])
 })
 
+test('V226 L01: protocol-relative XHR retains its open-owned cid at actual dispatch', async (t) => {
+  const f = await fixture(t),
+    seen = captureContentContexts(f),
+    xhr = new f.NativeXhr()
+  xhr.open('GET', apiUrl.replace('https:', ''))
+  xhr.send()
+  xhr.complete()
+  void xhr.responseText
+  assert.deepEqual(seen, [{ contentId: '1000', generation: 1, requestSequence: 1 }])
+})
+
 for (const query of [
   'cid=0',
   'cid=000',

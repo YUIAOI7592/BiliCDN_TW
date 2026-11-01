@@ -16,10 +16,11 @@ async function routeFixture(
   t: Parameters<typeof testScope>[0],
   suppressed = false,
   verified = true,
+  native = false,
 ) {
   const scope = testScope(t),
     f = fixture(scope)
-  await f.settings.update({ earlyRetryEnabled: true })
+  await f.settings.update({ earlyRetryEnabled: true, considerNativeSources: native })
   const state = f.session.get(),
     original = media('retry', 'video.m4s')
   const rep = f.vault.register({
@@ -35,7 +36,7 @@ async function routeFixture(
   })!
   const applied = f.routes.apply(original)
   assert.ok(applied.context)
-  const request: RequestContext = {
+  let request: RequestContext = {
     requestId: requestId('retry-current'),
     generation: state.generation,
     epoch: state.epoch,
@@ -57,14 +58,39 @@ async function routeFixture(
     hostChanged: false,
     startedAt: f.clock.now(),
   }
+  const select = (host: string) => {
+    const url = new URL(original)
+    url.hostname = host
+    const context = f.vault.identity(rep)!
+    assert.ok(
+      f.routes.commitStartupChoice(
+        original,
+        {
+          host,
+          type: 'catalog-generated',
+          url: url.href,
+          original: false,
+          cachedSafeMbps: null,
+          context,
+        },
+        'retry-fixture-owned-route',
+      ),
+    )
+    const output = f.routes.apply(original)
+    assert.equal(output.decision.host, host)
+    return output
+  }
+  const priorApplied = select(alternative)
   if (suppressed) scope.defer(f.routes.suppressEarlyRetryEvidence(['retry-past-1', 'retry-past-2']))
   for (const serial of [1, 2]) {
     const past = {
       ...request,
       requestId: requestId(`retry-past-${serial}`),
+      decisionId: priorApplied.decision.id,
       targetHost: alternative,
       startedAt: f.clock.now() - 100,
     }
+    f.routes.requestStarted(past)
     const observation: TransportObservation = {
       ...(verified ? { retryVerifiedBytes: 256 * 1024 } : {}),
       request: past,
@@ -88,6 +114,8 @@ async function routeFixture(
     }
     await f.routes.observe(observation)
   }
+  const current = select(first)
+  request = { ...request, decisionId: current.decision.id }
   f.routes.requestStarted(request)
   return { ...f, request, original, rep, scope }
 }
@@ -115,6 +143,21 @@ test('UP141-RETRY route permit prepares without affinity and commits only accept
   assert.equal(f.routes.acceptEarlyRetry(permit, retry), true)
   assert.equal(f.session.get().affinity?.host, alternative)
   assert.equal(f.routes.acceptEarlyRetry(permit, retry), false)
+})
+
+test('V226 H04: real Catalog proof remains eligible with Native globally enabled', async (t) => {
+  const f = await routeFixture(t, false, true, true)
+  assert.equal(f.routes.isCatalogOnly(), false)
+  assert.equal(f.routes.earlyRetryRequestCurrent(f.request), true)
+  assert.equal(
+    f.routes.earlyRetryAlternative(f.request, { kind: 'video', requiredMbps: 2, highDemand: false })
+      ?.host,
+    alternative,
+  )
+  assert.equal(
+    f.routes.earlyRetryRequestCurrent({ ...f.request, routeType: 'native-signed' }),
+    false,
+  )
 })
 
 test('UP141-RETRY expired or policy-revoked route permit cannot be consumed', async (t) => {

@@ -980,6 +980,7 @@ async function createStartupRecoveryContext8(t: TestContext) {
       scope.own(new CatalogSettingsStore(new FakeStorage(), () => stallNow)),
       startupVault,
       monitorRoutes({
+        recoveryEligible: () => true,
         firstMediaAt: () => now,
         latestRequested: () => ({
           routePolicyRevision: 0,
@@ -2648,6 +2649,7 @@ async function checkDisabledModeNeitherProbesNorInitiatesScriptRouteCoreRecovery
       base.scope.own(new CatalogSettingsStore(new FakeStorage(), () => base.stallNow)),
       base.startupVault,
       monitorRoutes({
+        recoveryEligible: () => true,
         firstMediaAt: () => base.now,
         latestRequested: () => ({
           routePolicyRevision: 0,

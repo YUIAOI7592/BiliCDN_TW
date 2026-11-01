@@ -88,7 +88,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     representation: RepresentationId
     revision: number
     phase: 'pending' | 'confirmed'
-    successes: Set<string>
   } | null = null
   #tentativeRequests = new Set<string>()
   #measurementIds = new WeakMap<object, string>()
@@ -103,7 +102,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #hostLockedStreams = new Set<string>()
   #startupIncompatible = new Map<string, Set<string>>()
   #tentativeRepresentation: RepresentationId | null = null
-  #tentativeTransfers = 0
   #streamPlans = new Map<string, RouteDecision>()
   #latest = new Map<string, RouteTransferSnapshot>()
   #lastSuccess = new Map<string, RouteTransferSnapshot>()
@@ -168,7 +166,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#startupIncompatible.clear()
     this.#requestedRepresentations.clear()
     this.#tentativeRepresentation = null
-    this.#tentativeTransfers = 0
+
     this.#streamPlans.clear()
     this.#latest.clear()
     this.#lastSuccess.clear()
@@ -285,11 +283,10 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       this.#selection = {
         representation: stamped.representation,
         revision: stamped.selectionRevision!,
-        phase: state.representation === stamped.representation ? 'confirmed' : 'pending',
-        successes: new Set(),
+        phase: 'pending',
       }
       this.#tentativeRepresentation = null
-      this.#tentativeTransfers = 0
+
       this.#tentativeRequests.clear()
     }
     if (request.kind && !this.#firstMediaAt) this.#firstMediaAt = request.startedAt
@@ -343,6 +340,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       !settings.disabled &&
       !state.disabled &&
       !settings.fixedHost &&
+      (!this.#selection || this.#selection.phase === 'confirmed') &&
       request.kind === 'video' &&
       request.routeType === 'catalog-generated' &&
       request.attributionStatus === 'matched' &&
@@ -1741,36 +1739,38 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     }
     if (observation.kind === 'video') {
       const active = this.session.get().representation
-      if (representation && representation !== active) {
+      if (
+        representation &&
+        (representation !== active ||
+          (this.#selection?.representation === representation &&
+            this.#selection.phase === 'pending'))
+      ) {
         const key =
           observation.request?.requestId ??
           String(observation.decisionId) + ':' + observation.completedAt
         if (this.#tentativeRepresentation === representation) {
           this.#tentativeRequests.add(key)
-          this.#tentativeTransfers = this.#tentativeRequests.size
         } else {
           this.#tentativeRepresentation = representation
           this.#tentativeRequests = new Set([key])
-          this.#tentativeTransfers = 1
         }
-        if (this.#tentativeTransfers >= 2) {
+        if (this.#tentativeRequests.size >= 2) {
           this.session.setRepresentation(representation)
           if (this.#selection?.representation === representation) {
             this.#selection.phase = 'confirmed'
-            this.#selection.successes = new Set(this.#tentativeRequests)
           }
           this.#tentativeRequests.clear()
           this.#tentativeRepresentation = null
-          this.#tentativeTransfers = 0
         }
       } else {
         this.#tentativeRepresentation = null
-        this.#tentativeTransfers = 0
+
         this.#tentativeRequests.clear()
       }
       if (
         representation &&
         this.session.get().representation === representation &&
+        (!this.#selection || this.#selection.phase === 'confirmed') &&
         observation.decisionId
       ) {
         this.session.setAffinity({
@@ -2162,7 +2162,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       this.#requestedRepresentations.delete(representation)
       if (this.#tentativeRepresentation === representation) {
         this.#tentativeRepresentation = null
-        this.#tentativeTransfers = 0
       }
       for (const [kind, fallback] of this.#fallbacks)
         if (fallback.representation === representation) this.#fallbacks.delete(kind)

@@ -18,7 +18,8 @@ function fixture(t: TestContext, rate: number, target = 120) {
   let active = true,
     pending = false,
     nativeUsed = false,
-    effect = true
+    effect = true,
+    rateEffect = true
   let onRead = () => {}
   let onCommand = (_command: RestoreCommand) => {}
   const calls: string[] = [],
@@ -95,7 +96,7 @@ function fixture(t: TestContext, rate: number, target = 120) {
       calls.push(`sdk:${command.kind}:${command.value}`)
       const attempt: RestoreAttempt = { kind: command.kind, proof: {} }
       records.set(attempt.proof, { command, landing: null })
-      if (command.kind === 'rate') video.playbackRate = command.value
+      if (command.kind === 'rate' && rateEffect) video.playbackRate = command.value
       return attempt
     },
     readRestore(attempt) {
@@ -124,6 +125,7 @@ function fixture(t: TestContext, rate: number, target = 120) {
       nativeUsed = true
       const record = records.get(attempt.proof)!
       if (effect && attempt.kind === 'position') video.currentTime = record.command.value
+      if (effect && attempt.kind === 'rate') video.playbackRate = record.command.value
     },
   } satisfies RecoveryPlayerPort
   const recovery = scope.own(new RecoveryController(player, clock.now, () => active))
@@ -161,6 +163,9 @@ function fixture(t: TestContext, rate: number, target = 120) {
     },
     effect: (value: boolean) => {
       effect = value
+    },
+    rateEffect: (value: boolean) => {
+      rateEffect = value
     },
     used: () => {
       nativeUsed = true
@@ -277,3 +282,20 @@ test('V226 R08: rate restoration validates the old-rate interval before acceptin
   assert.equal(f.video.playbackRate, 2)
   assert.equal(f.calls.filter((v) => v === 'play').length, 1)
 })
+
+for (const position of [NaN, 123])
+  test(`V226 R07: rate correction waits for a valid position baseline position=${position}`, (t) => {
+    const f = fixture(t, 2)
+    f.video.currentTime = 120
+    f.video.playbackRate = 1
+    f.rateEffect(false)
+    f.tick()
+    assert.equal(f.recovery.snapshot().restoration?.phase, 'rate')
+    f.video.currentTime = position
+    f.tick(1000)
+    assert.equal(f.calls.includes('native:rate'), false)
+    f.video.currentTime = 120
+    f.tick(1000)
+    assert.equal(f.calls.filter((call) => call === 'native:rate').length, 1)
+    assert.equal(f.video.playbackRate, 2)
+  })

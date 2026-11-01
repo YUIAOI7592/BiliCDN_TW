@@ -12,7 +12,9 @@ function monitor(t: Parameters<typeof rescuePlayerFixture>[0], candidate = true)
     state = session.beginGeneration(false)
   let attempts = 0,
     arms = 0,
-    authority = 1
+    authority = 1,
+    inventory = 1,
+    eligible = true
   const firstAt = f.clock.now()
   const request = () => ({
     ...state,
@@ -27,11 +29,19 @@ function monitor(t: Parameters<typeof rescuePlayerFixture>[0], candidate = true)
       f.player,
       session,
       { get: () => ({ disabled: false }) },
-      { groupSummary: () => null },
+      {
+        groupSummary: () => ({
+          kind: 'video',
+          codec: 'avc',
+          height: 720,
+          bandwidth: 4_000_000,
+          routeCount: inventory,
+        }),
+      },
       monitorRoutes({
         firstMediaAt: () => firstAt,
         latestRequested: () => request(),
-        recoveryEligible: () => true,
+        recoveryEligible: () => eligible,
         recover: () => ({ host: 'next' }),
         recoverStartup: () => {
           attempts++
@@ -67,6 +77,12 @@ function monitor(t: Parameters<typeof rescuePlayerFixture>[0], candidate = true)
     changeAuthority: () => {
       authority++
     },
+    addSource: () => {
+      inventory++
+    },
+    revoke: () => {
+      eligible = false
+    },
   }
 }
 
@@ -95,6 +111,29 @@ test('V226 R02: no candidate waits for a changed qualification without consuming
   f.tick()
   assert.equal(f.attempts(), 2)
   assert.equal(f.m.snapshot().startupRescue.ageSec, 18)
+})
+
+test('V226 R02: newly admitted sources permit one preparation under the original cold deadline', (t) => {
+  const f = monitor(t, false)
+  f.m.tick()
+  f.tick(15_000)
+  f.tick()
+  assert.equal(f.attempts(), 1)
+  f.addSource()
+  f.tick()
+  assert.equal(f.attempts(), 2)
+  f.tick()
+  assert.equal(f.attempts(), 2)
+  assert.equal(f.m.snapshot().startupRescue.ageSec, 18)
+})
+
+test('V226 R02: a revoked dispatched request cannot prepare a cold rescue', (t) => {
+  const f = monitor(t)
+  f.m.tick()
+  f.revoke()
+  f.tick(15_000)
+  assert.equal(f.attempts(), 0)
+  assert.equal(f.arms(), 0)
 })
 
 test('V226 H03: progress ticks are time-qualified and duplicate calls do not accumulate stability', (t) => {

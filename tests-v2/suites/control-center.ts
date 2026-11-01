@@ -1397,3 +1397,4 @@ for (const closeWhilePending of [false, true]) {
     )
   })
 }
+import '../regressions/v226-ui-state.ts'

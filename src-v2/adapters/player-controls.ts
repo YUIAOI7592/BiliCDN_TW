@@ -1028,7 +1028,9 @@ export class PlayerControlObserver {
 
   prepareReload(): { valid(): boolean; dispatch(commit: () => boolean): unknown } | null {
     const userRevision = this.#userRevision,
-      beforeRevision = this.#reloadRevision
+      beforeRevision = this.#reloadRevision,
+      seekRevision = this.#seekRevision,
+      controlRevision = this.#controlRevision
     const player = this.sources.player(),
       video = this.sources.video(),
       lifecycle = this.sources.lifecycleKey()
@@ -1036,8 +1038,13 @@ export class PlayerControlObserver {
       reload = player?.reload
     if (!player || typeof reload !== 'function') return null
     let dispatched = false
+    const revisionsMatch = () =>
+      userRevision === this.#userRevision &&
+      beforeRevision === this.#reloadRevision &&
+      seekRevision === this.#seekRevision &&
+      controlRevision === this.#controlRevision
     const valid = (): boolean => {
-      if (dispatched) return false
+      if (dispatched || !revisionsMatch()) return false
       const currentPlayer = this.sources.player(),
         currentVideo = this.sources.video(),
         currentCore = safeCall(player, '__core')
@@ -1053,13 +1060,14 @@ export class PlayerControlObserver {
         !visible
       )
         return false
-      return userRevision === this.#userRevision && beforeRevision === this.#reloadRevision
+      return revisionsMatch()
     }
     if (!valid()) throw new Error('player.reload ownership ended')
     return Object.freeze({
       valid,
       dispatch: (commit: () => boolean) => {
-        if (!valid() || !commit() || !valid()) throw new Error('player.reload ownership ended')
+        if (!valid() || !commit() || !revisionsMatch())
+          throw new Error('player.reload ownership ended')
         dispatched = true
         this.#clearKeyboardPlayback()
         this.#clearOwnedReload()
@@ -1088,6 +1096,8 @@ export class PlayerControlObserver {
         if (
           this.#ownedReload !== owner ||
           this.#reloadRevision !== revision ||
+          this.#seekRevision !== seekRevision ||
+          this.#controlRevision !== controlRevision ||
           this.#userRevision !== userRevision
         ) {
           if (this.#ownedReload === owner) this.#clearOwnedReload()

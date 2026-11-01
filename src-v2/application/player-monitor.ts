@@ -368,7 +368,8 @@ export class PlayerMonitor implements MonitorPort {
       if (
         requested?.representation &&
         requested.epoch === this.session.get().epoch &&
-        requested.generation === this.session.get().generation
+        requested.generation === this.session.get().generation &&
+        this.routes.recoveryEligible(requested)
       ) {
         const qualification = [
           requested.generation,
@@ -377,12 +378,14 @@ export class PlayerMonitor implements MonitorPort {
           requested.authorityRevision,
           requested.routePolicyRevision,
           requested.targetHost,
+          this.vault.groupSummary(requested.representation)?.routeCount ?? 0,
         ].join(':')
         if (
           this.#startupRescue.phase === 'waiting' &&
           this.#startupRescue.qualification === qualification
         )
           return startupAge
+        if (!this.routes.recoveryEligible(requested)) return startupAge
         this.#startupRescue = { phase: 'waiting', qualification }
         const fallback = this.routes.recoverStartup(
           requested.representation,
