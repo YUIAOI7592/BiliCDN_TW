@@ -4,6 +4,7 @@ import { catalogRestrictions, catalogCandidates } from '../domain/route-policy.t
 import type { EarlyRetryAlternative, EarlyRetryPermit } from './early-retry-contracts.ts'
 import { TRUSTED_CATALOG, isCatalogHost } from '../domain/catalog.ts'
 import { chooseRoute } from '../domain/routing.ts'
+import { evidenceMetrics, EVIDENCE_TTL_MS } from '../domain/evidence.ts'
 import {
   isKnownPcdnHost,
   isOversizedBilibiliMedia,
@@ -58,6 +59,7 @@ import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
 
 import type {
   AppliedRouteDecision,
+  CurrentRouteCapacity,
   DecisionRecord,
   FallbackProgress,
   RoutePlanSummary,
@@ -1518,7 +1520,11 @@ export class RouteCoordinator implements RouteCoordinatorPort {
 
   snapshot(): RouteSnapshot {
     const session = this.session.get(),
-      active = session.representation ? this.#plans.get(session.representation) : null
+      active = session.representation ? this.#plans.get(session.representation) : null,
+      representation = session.representation
+        ? this.vault.groupSummary(session.representation)
+        : null,
+      currentCapacity = this.#capacity(session, active)
     const summarize = (decision: RouteDecision): RoutePlanSummary =>
       Object.freeze({
         id: decision.id,
@@ -1528,6 +1534,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         host: decision.host,
       })
     return Object.freeze({
+      currentCapacity,
       activePlan: active
         ? Object.freeze({
             ...summarize(active),
@@ -1555,10 +1562,69 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         : this.#tentativeRepresentation
           ? 'awaiting-second-video-transfer'
           : 'awaiting-matched-video',
-      representation: session.representation
-        ? this.vault.groupSummary(session.representation)
-        : null,
+      representation,
       fallback: Object.freeze(Object.fromEntries(this.#fallbacks)),
+    })
+  }
+
+  #capacity(
+    session: ReturnType<RouteSessionPort['get']>,
+    plan: RouteDecision | null | undefined,
+  ): CurrentRouteCapacity | null {
+    const representation = session.representation
+    if (!representation || !plan || plan.action === 'block' || !plan.host) return null
+    const identity = this.#planIdentities.get(representation),
+      revision = this.#policyRevision
+    if (!identity || identity.kind !== 'video') return null
+    // Read the owned plan directly: #currentPlan performs control-state cleanup.
+    const current = () => {
+      const settings = this.settings.get(),
+        vaultCurrent = this.vault.isCurrentIdentity(identity),
+        state = this.session.get()
+      return (
+        !settings.disabled &&
+        !state.disabled &&
+        vaultCurrent &&
+        state.generation === session.generation &&
+        state.epoch === session.epoch &&
+        identity.generation === state.generation &&
+        identity.epoch === state.epoch &&
+        state.representation === representation &&
+        this.#policyRevision === revision &&
+        this.#planIdentities.get(representation) === identity &&
+        this.#plans.get(representation) === plan
+      )
+    }
+    if (!current() || !this.#decisionAllowed(plan, identity, 'video')) return null
+    const evidence = this.evidence.get(plan.host, 'video'),
+      now = this.clock.now()
+    const speed = evidenceMetrics(evidence, now).safeThroughputMbps
+    const safeMbps = speed !== null && Number.isFinite(speed) && speed > 0 ? speed : null
+    const speeds =
+      evidence?.samples.filter(
+        (sample) =>
+          sample.outcome === 'success' &&
+          sample.throughputMbps !== null &&
+          Number.isFinite(sample.throughputMbps) &&
+          sample.throughputMbps > 0,
+      ) ?? []
+    const sampleStatus =
+      safeMbps !== null
+        ? 'available'
+        : speeds.length > 0 && speeds.every((sample) => now - sample.at > EVIDENCE_TTL_MS)
+          ? 'expired'
+          : 'missing'
+    // External reads may reenter and replace the plan, policy or content identity.
+    if (!this.#decisionAllowed(plan, identity, 'video') || !current()) return null
+    return Object.freeze({
+      generation: session.generation,
+      epoch: session.epoch,
+      representation,
+      decisionId: plan.id,
+      host: plan.host,
+      routeType: plan.routeType,
+      safeMbps,
+      sampleStatus,
     })
   }
 

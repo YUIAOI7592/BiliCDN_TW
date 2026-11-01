@@ -8,10 +8,264 @@ import {
 } from '../../../src-v2/domain/model.ts'
 import type { AppliedRouteDecision } from '../../../src-v2/application/route-contracts.ts'
 import { EVIDENCE_KEY } from '../../../src-v2/state/evidence-store.ts'
+import { EVIDENCE_TTL_MS, evidenceMetrics } from '../../../src-v2/domain/evidence.ts'
 import { testScope } from '../../support/scope.ts'
 import { FakeStorage } from '../../support/storage.ts'
 import { fixture, media, dash } from './routing-fixture.ts'
 import { fixture as runtimeFixture, media as runtimeMedia } from '../../support/runtime-fixture.ts'
+
+async function capacityRoute(t: TestContext, role: 'primary' | 'backup' | 'startup' = 'primary') {
+  const scope = testScope(t),
+    f = fixture(scope),
+    body = dash(media('capacity', 'video.m4s'))
+  assert.equal(f.adapter.transform(body).accepted, true)
+  const video = body.data.dash.video[0]!
+  const url = role === 'backup' ? video.backup_url[0]! : video.base_url
+  if (role === 'startup') {
+    const options = f.routes.startupOptions(url)!
+    assert.ok(f.routes.commitStartupChoice(url, options.candidates[0]!, 'capacity-startup'))
+  }
+  const applied = f.routes.apply(url, 'video')
+  await f.routes.observe(completion(f, applied, 1))
+  await f.routes.observe(completion(f, applied, 2))
+  assert.equal(f.session.get().representation, applied.context!.representation)
+  return { ...f, scope, url, applied }
+}
+
+for (const role of ['primary', 'backup', 'startup'] as const) {
+  test(`V225 current capacity learns after ${role} planning without changing routing`, async (t) => {
+    const f = await capacityRoute(t, role),
+      host = f.applied.decision.host!
+    if (role !== 'primary') assert.equal(f.applied.decision.ranking.length, 0)
+    else
+      assert.equal(
+        f.applied.decision.ranking.find((row) => row.candidate.host === host)?.safeThroughputMbps,
+        null,
+      )
+    const events: string[] = []
+    f.scope.defer(f.routes.subscribe((event) => events.push(event.type)))
+    const session = f.session.get(),
+      stored = structuredClone([...f.storage.values])
+    const first = f.routes.snapshot().currentCapacity
+    assert.ok(first)
+    assert.equal(first.host, host)
+    assert.equal(first.decisionId, f.applied.decision.id)
+    assert.equal(first.representation, session.representation)
+    assert.equal(first.generation, session.generation)
+    assert.equal(first.epoch, session.epoch)
+    assert.equal(first.safeMbps, 10.48576)
+    assert.equal(first.sampleStatus, 'available')
+    assert.deepEqual(f.routes.snapshot().currentCapacity, first)
+    assert.equal(f.session.get(), session)
+    assert.deepEqual([...f.storage.values], stored)
+    assert.deepEqual(events, [])
+    if (role !== 'backup') assert.equal(f.routes.apply(f.url, 'video').decision, f.applied.decision)
+  })
+}
+
+test('V225 capacity refresh respects inclusive TTL without deleting stored evidence', async (t) => {
+  const f = await capacityRoute(t),
+    stored = structuredClone([...f.storage.values])
+  const session = f.session.get(),
+    events: string[] = []
+  f.scope.defer(f.routes.subscribe((event) => events.push(event.type)))
+  f.clock.advance(EVIDENCE_TTL_MS - 1)
+  assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, 10.48576)
+  f.clock.advance(1)
+  assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, 10.48576)
+  f.clock.advance(1)
+  assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, null)
+  assert.equal(f.routes.snapshot().currentCapacity?.sampleStatus, 'expired')
+  assert.deepEqual([...f.storage.values], stored)
+  assert.equal(f.session.get(), session)
+  assert.deepEqual(events, [])
+  await f.routes.observe(completion(f, f.applied, 3))
+  assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, 10.48576 * 0.7)
+  assert.equal(f.routes.snapshot().currentCapacity?.sampleStatus, 'available')
+})
+
+test('V225 capacity uses existing weighted decay and mixed sample expiry', async (t) => {
+  const f = await capacityRoute(t),
+    host = f.applied.decision.host!
+  f.clock.advance(EVIDENCE_TTL_MS / 2)
+  await f.routes.observe(completion(f, f.applied, 3, { bytes: 262144 }))
+  await f.routes.observe(completion(f, f.applied, 4, { bytes: 524288 }))
+  assert.equal(
+    f.routes.snapshot().currentCapacity?.safeMbps,
+    evidenceMetrics(f.evidence.get(host, 'video'), f.clock.now()).safeThroughputMbps,
+  )
+  f.clock.advance(EVIDENCE_TTL_MS / 2 + 1)
+  assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, 20.97152)
+})
+
+test('V225 current capacity survives a selected host outside the twelve ranking rows', async (t) => {
+  const scope = testScope(t),
+    f = fixture(scope)
+  await f.settings.update({
+    considerNativeSources: true,
+    catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, true])),
+  })
+  const { original, representation } = register(f)
+  for (const host of TRUSTED_CATALOG)
+    await f.evidence.record(host, 'video', {
+      requestId: `rank-${host}`,
+      at: f.clock.now(),
+      source: 'transport',
+      outcome: 'success',
+      throughputMbps: 20,
+      ttfbMs: 10,
+      failureKind: null,
+    })
+  const decision = f.routes.plan(
+    representation,
+    { kind: 'video', requiredMbps: 10, highDemand: false },
+    'startup',
+  )
+  const applied = f.routes.apply(original, 'video')
+  assert.equal(applied.decision, decision)
+  await f.routes.observe(completion(f, applied, 1))
+  await f.routes.observe(completion(f, applied, 2))
+  const snapshot = f.routes.snapshot()
+  assert.equal(snapshot.activePlan!.ranking.length, 12)
+  assert.equal(
+    snapshot.activePlan!.ranking.some((row) => row.host === decision.host),
+    false,
+  )
+  assert.equal(snapshot.currentCapacity?.host, decision.host)
+  assert.equal(snapshot.currentCapacity?.safeMbps, 10.48576)
+  await f.settings.update({ considerNativeSources: false })
+  assert.equal(f.routes.snapshot().currentCapacity, null)
+  assert.equal(f.routes.apply(original, 'video').decision.routeType, 'catalog-generated')
+})
+
+for (const change of [
+  'disabled',
+  'black',
+  'dead',
+  'catalog',
+  'policy',
+  'generation',
+  'epoch',
+  'authority',
+] as const) {
+  test(`V225 capacity rejects ${change} invalidation without cleaning the old plan`, async (t) => {
+    const f = await capacityRoute(t),
+      identity = f.applied.context!
+    if (change === 'disabled') await f.settings.update({ disabled: true })
+    else if (change === 'black' || change === 'dead')
+      await f.restrictions.add({
+        host: f.applied.decision.host!,
+        kind: 'video',
+        type: change,
+        reason: 'contract',
+        expireAt: f.clock.now() + 1000,
+      })
+    else if (change === 'catalog')
+      await f.settings.update({ catalogOverrides: { [f.applied.decision.host!]: false } })
+    else if (change === 'policy') f.routes.invalidateForUserSetting()
+    else if (change === 'generation') f.session.beginGeneration(false)
+    else if (change === 'epoch')
+      f.vault.reset(identity.generation, (Number(identity.epoch) + 1) as typeof identity.epoch)
+    else {
+      assert.equal(
+        f.vault.register({
+          ...identity,
+          key: '80:avc:1080',
+          codec: 'avc',
+          height: 1080,
+          bandwidth: 4_000_000,
+          urls: [media('capacity', 'video.m4s', 'renewed')],
+          source: 'trusted-api',
+          refreshTrustedSources: true,
+        }),
+        identity.representation,
+      )
+      assert.equal(f.vault.isCurrentIdentity(identity), false)
+    }
+    const before = f.session.get(),
+      stored = structuredClone([...f.storage.values])
+    const active = f.routes.snapshot().activePlan
+    assert.equal(f.routes.snapshot().currentCapacity, null)
+    assert.deepEqual(f.routes.snapshot().activePlan, active)
+    assert.equal(f.session.get(), before)
+    assert.deepEqual([...f.storage.values], stored)
+  })
+}
+
+for (const boundary of ['evidence', 'policy'] as const) {
+  test(`V225 capacity discards a synchronous ${boundary} read that changes ownership`, async (t) => {
+    const f = await capacityRoute(t)
+    if (boundary === 'evidence') {
+      const get = f.evidence.get.bind(f.evidence)
+      f.evidence.get = (host, kind) => {
+        const result = get(host, kind)
+        f.routes.invalidateForUserSetting()
+        return result
+      }
+    } else {
+      const snapshot = f.restrictions.snapshot.bind(f.restrictions)
+      f.restrictions.snapshot = (kind) => {
+        const result = snapshot(kind)
+        f.session.beginGeneration(false)
+        return result
+      }
+    }
+    assert.equal(f.routes.snapshot().currentCapacity, null)
+  })
+}
+
+test('V225 capacity isolates media and host evidence, clear and remote updates', async (t) => {
+  const f = await capacityRoute(t),
+    host = f.applied.decision.host!
+  await f.evidence.clear()
+  const sample = {
+    requestId: 'capacity-sample',
+    at: f.clock.now(),
+    outcome: 'success' as const,
+    throughputMbps: 20,
+    ttfbMs: 10,
+    source: 'transport' as const,
+    failureKind: null,
+  }
+  await f.evidence.record(host, 'audio', sample)
+  await f.evidence.record(
+    TRUSTED_CATALOG.find((value) => value !== host)!,
+    'video',
+    sample,
+  )
+  assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, null)
+  assert.equal(f.routes.snapshot().currentCapacity?.sampleStatus, 'missing')
+  await f.evidence.record(host, 'video', sample)
+  const saved = structuredClone(f.storage.values.get(EVIDENCE_KEY))
+  assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, 14)
+  await f.evidence.clear()
+  assert.equal(f.routes.snapshot().currentCapacity?.sampleStatus, 'missing')
+  f.storage.remote(EVIDENCE_KEY, saved)
+  assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, 14)
+})
+
+test('V225 failed evidence writes and stale completions do not create current capacity', async (t) => {
+  const f = await capacityRoute(t)
+  await f.evidence.clear()
+  const set = f.storage.set.bind(f.storage)
+  f.storage.set = (key, value) => {
+    if (key === EVIDENCE_KEY) throw Error('capacity storage failure')
+    set(key, value)
+  }
+  await assert.rejects(f.routes.observe(completion(f, f.applied, 3)), /capacity storage failure/)
+  assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, null)
+  f.storage.set = set
+  f.routes.invalidateForUserSetting()
+  await f.routes.observe(
+    completion(f, f.applied, 4, {
+      request: {
+        ...completion(f, f.applied, 4).request!,
+        routePolicyRevision: f.routes.policyRevision() - 1,
+      },
+    }),
+  )
+  assert.equal(f.routes.snapshot().currentCapacity, null)
+})
 
 function register(f: ReturnType<typeof fixture>, kind: MediaKind = 'video') {
   const state = f.session.get()

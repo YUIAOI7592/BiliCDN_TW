@@ -95,7 +95,18 @@ export interface RouteRankingSummary {
   readonly ratio: number | null
   readonly ttfbMs: number | null
 }
+export interface CurrentRouteCapacity {
+  readonly generation: SessionSnapshot['generation']
+  readonly epoch: SessionSnapshot['epoch']
+  readonly representation: RepresentationId
+  readonly decisionId: DecisionId
+  readonly host: string
+  readonly routeType: RouteType
+  readonly safeMbps: number | null
+  readonly sampleStatus: 'available' | 'expired' | 'missing'
+}
 export interface RouteSnapshot {
+  readonly currentCapacity: CurrentRouteCapacity | null
   readonly activePlan:
     (RoutePlanSummary & { readonly ranking: readonly RouteRankingSummary[] }) | null
   readonly affinity: SessionSnapshot['affinity']
