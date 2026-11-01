@@ -2768,7 +2768,7 @@
         "verification"
       ],
       "versions": [
-        "v2.2.1"
+        "v2.2.2"
       ],
       "date": "2026-11-01",
       "requiredAnchors": [
@@ -3222,7 +3222,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.1/CHANGELOG_v2.2.1.md",
+      "path": "archive/retired/releases/Release/v2.2.1/CHANGELOG_v2.2.1.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -3234,7 +3234,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.1/TEST_REPORT_v2.2.1.md",
+      "path": "archive/retired/releases/Release/v2.2.1/TEST_REPORT_v2.2.1.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -3260,6 +3260,30 @@
         "確認殘留與最小清除方案",
         "附錄完整逐檔覆蓋與原始雜湊"
       ]
+    },
+    {
+      "path": "Release/v2.2.2/CHANGELOG_v2.2.2.md",
+      "kind": "immutable",
+      "topics": [
+        "release-snapshot"
+      ],
+      "versions": [
+        "v2.2.2"
+      ],
+      "date": "2026-11-01",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.2/TEST_REPORT_v2.2.2.md",
+      "kind": "immutable",
+      "topics": [
+        "release-snapshot"
+      ],
+      "versions": [
+        "v2.2.2"
+      ],
+      "date": "2026-11-01",
+      "requiredAnchors": []
     }
   ],
   "protections": [
@@ -6820,35 +6844,35 @@
       "sha256": "5ff6510f893bb657ee833a6d2838fd703e3ba01857c70eee52279104fc2c6da2"
     },
     {
-      "path": "Release/v2.2.1/BUILD_MANIFEST_v2.2.1.json",
+      "path": "archive/retired/releases/Release/v2.2.1/BUILD_MANIFEST_v2.2.1.json",
       "mode": "exact",
       "encoding": "raw",
       "bytes": 9094,
       "sha256": "fa446238c4511b2f003249d4451f177247c696bf79a62ca23e35ef1c5289ef95"
     },
     {
-      "path": "Release/v2.2.1/BiliCDN_TW.user.js",
+      "path": "archive/retired/releases/Release/v2.2.1/BiliCDN_TW.user.js",
       "mode": "exact",
       "encoding": "raw",
       "bytes": 419507,
       "sha256": "e89b94bb92eecb818ce038f09c1de2b9fb5db8b2ffa35adb2357141384db149d"
     },
     {
-      "path": "Release/v2.2.1/CHANGELOG_v2.2.1.md",
+      "path": "archive/retired/releases/Release/v2.2.1/CHANGELOG_v2.2.1.md",
       "mode": "exact",
       "encoding": "raw",
       "bytes": 59137,
       "sha256": "f39bb352e10d40a78ca8ed75a24ff67a763d8a6f66805b04f9eb9d6d5fef4038"
     },
     {
-      "path": "Release/v2.2.1/SHA256SUMS_v2.2.1.txt",
+      "path": "archive/retired/releases/Release/v2.2.1/SHA256SUMS_v2.2.1.txt",
       "mode": "exact",
       "encoding": "raw",
       "bytes": 412,
       "sha256": "7138eab406ae3c37a7c6beaaf4105ba51909a42b14f4237f8a8b21ac260366c7"
     },
     {
-      "path": "Release/v2.2.1/TEST_REPORT_v2.2.1.md",
+      "path": "archive/retired/releases/Release/v2.2.1/TEST_REPORT_v2.2.1.md",
       "mode": "exact",
       "encoding": "raw",
       "bytes": 9529,
@@ -6860,6 +6884,41 @@
       "encoding": "lf",
       "bytes": 56577,
       "sha256": "3c20690fa45697992754b1d31909624c4e9d2ec8686db39c560dc8ad4ebc2418"
+    },
+    {
+      "path": "Release/v2.2.2/BiliCDN_TW.user.js",
+      "bytes": 419470,
+      "sha256": "ffece767ff55ddcd08db7fb286189d49cf6bd4d4e141dd283648b6d29548bd08",
+      "mode": "exact",
+      "encoding": "raw"
+    },
+    {
+      "path": "Release/v2.2.2/BUILD_MANIFEST_v2.2.2.json",
+      "bytes": 9094,
+      "sha256": "67f1f5a5da88e8c73be0fae6d12542469d5468e2b227bc8d54ffe4c158d3afe5",
+      "mode": "exact",
+      "encoding": "raw"
+    },
+    {
+      "path": "Release/v2.2.2/CHANGELOG_v2.2.2.md",
+      "bytes": 61152,
+      "sha256": "5791be0fd5cad7e3d63dc3e65271836274a69f6902a8d6fe67668da3ba5ddacc",
+      "mode": "exact",
+      "encoding": "raw"
+    },
+    {
+      "path": "Release/v2.2.2/SHA256SUMS_v2.2.2.txt",
+      "bytes": 412,
+      "sha256": "aa23fc42aae7959428fe0d64d73bf09b424063d9f2c3eb6e0644df4f01af1ffe",
+      "mode": "exact",
+      "encoding": "raw"
+    },
+    {
+      "path": "Release/v2.2.2/TEST_REPORT_v2.2.2.md",
+      "bytes": 49311,
+      "sha256": "615559a8466e1ffbeddb42a80a7118b3b34408fd120af1cdb4a8acc411b719b9",
+      "mode": "exact",
+      "encoding": "raw"
     }
   ],
   "privateEvidenceReferences": [

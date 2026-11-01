@@ -170,27 +170,28 @@ async function createManyQualityGroupsStillEnterTheRouteCoordinator3Context4(t: 
     base.coordinator.apply(startupRoot)
     await base.restrictions.remove('upos-sz-mirrorali.bilivideo.com', 'black')
   }
-  for (let index = 0; index < 40; index++) {
+  const groupPlans = Array.from({ length: 40 }, (_, index) => {
     const group = base.liveVault.register({
       generation: base.state.generation,
       epoch: base.state.epoch,
       kind: 'video',
-      key: `diagnostic:${index}`,
+      key: `quality-group:${index}`,
       height: 1080,
       codec: 'av1',
       bandwidth: 3_000_000,
       urls: [`https://upos-sz-mirrorali.bilivideo.com/upgcxcode/c/d/${index + 100}.m4s?k=1`],
       source: 'page-hint',
     })
-    if (group)
-      base.coordinator.plan(
-        group,
-        { kind: 'video', requiredMbps: 7.5, highDemand: false },
-        'startup',
-      )
-  }
+    assert.ok(group)
+    const decision = base.coordinator.plan(
+      group,
+      { kind: 'video', requiredMbps: 7.5, highDemand: false },
+      'startup',
+    )
+    return { representation: group, decision }
+  })
   const routeReadModel = base.coordinator.snapshot()
-  return extendFixture(base, { routeReadModel } as const)
+  return extendFixture(base, { routeReadModel, groupPlans } as const)
 }
 
 async function createStartupSessionAndstartupGenerationContext5(t: TestContext) {
@@ -1696,10 +1697,21 @@ async function checkStartupStallFixtureHasARepresentation4(t: TestContext): Prom
 async function checkManyQualityGroupsStillEnterTheRouteCoordinator3(t: TestContext): Promise<void> {
   const base = await createManyQualityGroupsStillEnterTheRouteCoordinator3Context4(t)
 
-  assert.ok(
-    base.routeReadModel.planCount > 30,
-    'many quality groups still enter the route coordinator',
-  )
+  assert.equal(base.groupPlans.length, 40)
+  assert.equal(new Set(base.groupPlans.map((row) => row.representation)).size, 40)
+  for (const { representation, decision } of base.groupPlans) {
+    assert.strictEqual(
+      base.coordinator.plan(
+        representation,
+        { kind: 'video', requiredMbps: 7.5, highDemand: false },
+        'startup',
+      ),
+      decision,
+      'each quality group retains its current route plan',
+    )
+    assert.equal(base.coordinator.decisionRecord(decision.id)?.representation, representation)
+  }
+  assert.equal(Object.hasOwn(base.routeReadModel, 'planCount'), false)
   assert.ok(
     base.routeReadModel.recentPlans.length <= 4,
     'current route snapshot bounds inactive plans',

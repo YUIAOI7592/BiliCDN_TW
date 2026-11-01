@@ -32,7 +32,7 @@ import { FakeClock } from '../support/clock.ts'
 import { testScope } from '../support/scope.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
-async function createOrchestrationScenario(t: TestContext, _observeRetry = false) {
+async function createOrchestrationScenario(t: TestContext) {
   const scope = testScope(t)
   const clock = scope.own(new FakeClock()),
     storage = new FakeStorage()
@@ -59,8 +59,7 @@ async function createOrchestrationScenario(t: TestContext, _observeRetry = false
     coreInitialized: true,
     manifestHasVideo: true,
   }
-  let routeListener: (event: DomainEvent) => void = () => undefined,
-    comparison = false
+  let routeListener: (event: DomainEvent) => void = () => undefined
   const routeControl = {
     latestRequested: () => null,
     recoveryEligible: () => true,
@@ -133,12 +132,6 @@ async function createOrchestrationScenario(t: TestContext, _observeRetry = false
     set routeListener(next: typeof routeListener) {
       routeListener = next
     },
-    get comparison() {
-      return comparison
-    },
-    set comparison(next: typeof comparison) {
-      comparison = next
-    },
     monitor,
     runtime,
   } as const)
@@ -146,22 +139,15 @@ async function createOrchestrationScenario(t: TestContext, _observeRetry = false
 
 async function createNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecoveryWork1Context1(
   t: TestContext,
-  observeRetry = false,
 ) {
-  const base = await createOrchestrationScenario(t, observeRetry)
+  const base = await createOrchestrationScenario(t)
   await base.settings.update({ considerNativeSources: true })
   return extendFixture(base, {} as const)
 }
 
-async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(
-  t: TestContext,
-  observeRetry = false,
-) {
+async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t: TestContext) {
   const base =
-    await createNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecoveryWork1Context1(
-      t,
-      observeRetry,
-    )
+    await createNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecoveryWork1Context1(t)
   void base.calls.join(',')
   base.calls.length = 0
   base.storage.remote('bilicdn.v2.settings', {
@@ -178,7 +164,6 @@ async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(
 
   base.calls.length = 0
   void base.calls.join(',')
-  base.comparison = true
   base.calls.length = 0
   void base.calls.join(',')
   base.runtime.dispose()
@@ -226,9 +211,8 @@ async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(
 
 async function checkBlacklistCommandPersistsBeforeRouteInvalidation2(
   t: TestContext,
-  observeRetry = false,
 ): Promise<void> {
-  const base = await createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t, observeRetry)
+  const base = await createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t)
 
   assert.strictEqual(
     base.calls.join(','),
@@ -311,11 +295,8 @@ async function checkBlacklistCommandPersistsBeforeRouteInvalidation2(
   )
 }
 
-async function checkDisableStartsADisabledGeneration3(
-  t: TestContext,
-  observeRetry = false,
-): Promise<void> {
-  const base = await createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t, observeRetry)
+async function checkDisableStartsADisabledGeneration3(t: TestContext): Promise<void> {
+  const base = await createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t)
 
   void base.calls.join(',')
   void base.restrictions.has(TRUSTED_CATALOG[0], 'audio', 'black')
@@ -393,13 +374,9 @@ async function checkDisableStartsADisabledGeneration3(
 
 async function checkNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecoveryWork1(
   t: TestContext,
-  observeRetry = false,
 ): Promise<void> {
   const base =
-    await createNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecoveryWork1Context1(
-      t,
-      observeRetry,
-    )
+    await createNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecoveryWork1Context1(t)
 
   assert.strictEqual(
     base.calls.join(','),
@@ -472,12 +449,12 @@ test(
   'Native switch invalidates plans before cancelling probe and recovery work [1]',
   { timeout: 5000 },
   async (t) => {
-    await checkNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecoveryWork1(t, false)
+    await checkNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecoveryWork1(t)
   },
 )
 test('blacklist command persists before route invalidation [2]', { timeout: 5000 }, async (t) => {
-  await checkBlacklistCommandPersistsBeforeRouteInvalidation2(t, false)
+  await checkBlacklistCommandPersistsBeforeRouteInvalidation2(t)
 })
 test('disable starts a disabled generation [3]', { timeout: 5000 }, async (t) => {
-  await checkDisableStartsADisabledGeneration3(t, false)
+  await checkDisableStartsADisabledGeneration3(t)
 })

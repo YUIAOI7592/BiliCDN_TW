@@ -2,12 +2,19 @@
 
 各節只描述標示版本的變更；舊版診斷、分頁原線對照及掉幀用途不構成現行功能或規則。現行契約與撤除說明見 [產品與架構指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/ARCHITECTURE.md)。
 
+## v2.2.2
+
+- 清除兩個無產生者／消費者的舊診斷事件、選路快照計畫總數投影，以及 orchestration 的原線對照狀態與舊診斷參數。
+- 改以 40 組計畫重用、決策所有權與同步重入事件順序保護原契約，保留全部 1,598 個功能與工具案例。
+- 正式來源、宣告、metadata、測試及工具共 211 檔全文複查；零殘留範圍、雜湊、離線驗證與安裝限制見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 使用者操作、三頁總覽、Native 預設及保存值、選路／量測／重試／恢復保持；整合候選只在公開發布後分析，本版不提前實作。
+
 ## v2.2.1
 
 - 撤除所有內建診斷、事故與報告管線、診斷頁、剪貼簿授權及本分頁原線對照。
 - 保留總覽數值與詳細狀態、三頁控制中心及正常選路／量測／學習／提前重試／恢復。設定 schema 2、四鍵與 Native 預設保持。
 - 移除診斷專用開發工具與測試；一般播放驗收不再以完整 Network 或診斷工具成功為必要條件。
-- 自動、安全、公開交付及安裝狀態見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 自動、安全、公開交付及安裝狀態見 [當版完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v221-完整正文保存2026-11-01)。
 
 ## v2.2.0
 

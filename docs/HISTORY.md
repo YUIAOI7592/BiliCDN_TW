@@ -50,7 +50,8 @@
 | 適用版本 | 原始紀錄 |
 | --- | --- |
 | 未單列／跨版 | [新增 B 站 CDN 節點的驗證方案（2026-09-25）](../archive/retired/docs/CDN_CANDIDATE_TEST_PLAN_2026-09-25.md)、[B 站 CDN 全量初篩與比較測試報告](../archive/retired/docs/CDN_NODE_FULL_SCREENING_2026-09-25.md)、[B 站 CDN 優化公開專案調查（2026-09-25）](../archive/retired/docs/CDN_OPEN_SOURCE_SURVEY_2026-09-25.md)、[內建瀏覽器 Range 與實際播放對照（2026-09-25）](../archive/retired/docs/CDN_RANGE_PLAYBACK_EXPERIMENT_2026-09-25.md)、[B 站 CDN 節點測試結果（2026-09-25）](../archive/retired/docs/CDN_TEST_RESULTS_2026-09-25.md)、[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)、[歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[測試工具驗證紀錄](TEST_TOOLING_REPORT.md) |
-| v2.2.1 | [最新版完整驗證](TEST_REPORT.md)、[發行快照](../Release/v2.2.1/TEST_REPORT_v2.2.1.md)、[發行變更](../Release/v2.2.1/CHANGELOG_v2.2.1.md) |
+| v2.2.2 | [最新版完整驗證](TEST_REPORT.md) |
+| v2.2.1 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v221-完整正文保存2026-11-01)、[發行快照](../archive/retired/releases/Release/v2.2.1/TEST_REPORT_v2.2.1.md)、[發行變更](../archive/retired/releases/Release/v2.2.1/CHANGELOG_v2.2.1.md) |
 | v2.2.0 | [當版完整驗證及追加更正](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)、[發行快照](../archive/retired/releases/Release/v2.2.0/TEST_REPORT_v2.2.0.md)、[發行變更](../archive/retired/releases/Release/v2.2.0/CHANGELOG_v2.2.0.md) |
 | v2.1.40 | [當版完整報告原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01) |
 | v2.1.39 | [當版完整報告原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2139-完整報告保存2026-10-31) |
@@ -209,7 +210,7 @@
 
 ### 版本安裝紀錄
 
-- [v2.2.1 R1：使用者更新後的基本安裝／操作與 Auto 1／2 倍播放](TEST_REPORT.md#v221-r1-安裝驗收2026-11-01)
+- [v2.2.1 R1：使用者更新後的基本安裝／操作與 Auto 1／2 倍播放](../archive/retired/docs/TEST_REPORT_HISTORY.md#v221-完整正文保存2026-11-01)
 - [v2.2.0：原驗收全文與追加判定更正](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)
 
 - [v2.1.36 IR36 第二輪逐案結果與尾端稽核](../archive/retired/docs/INSTALLED_RESTORE_IR36_R2_2026-10-25.md)
@@ -342,6 +343,11 @@
 
 ## v2.2.1 診斷撤除
 
-現行完整結果見 [TEST_REPORT](TEST_REPORT.md)；v2.2.0 原驗收與判定更正見 [完整歷史正文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)。退役程式可由 [6df9eda 固定提交](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/) 追溯。
+當版完整結果見 [歷史正文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v221-完整正文保存2026-11-01)；v2.2.0 原驗收與判定更正見 [完整歷史正文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)。退役程式可由 [6df9eda 固定提交](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/) 追溯。
 
-本版後續安裝紀錄見 [R1 基本驗收](TEST_REPORT.md#v221-r1-安裝驗收2026-11-01)，封裝時的未實測敘述仍只屬原發布時點。
+本版後續安裝紀錄見 [R1 基本驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v221-完整正文保存2026-11-01)，封裝時的未實測敘述仍只屬原發布時點。
+
+## v2.2.2 診斷殘留清除（2026-11-01）
+
+- [清除結果、全文範圍與逐檔 SHA-256](TEST_REPORT.md#清除結果與零殘留範圍)
+- [原 v2.2.1 清查與階段門檻](../archive/retired/docs/CODE_AUDIT_POST_DIAGNOSTICS_v2.2.1_2026-11-01.md)

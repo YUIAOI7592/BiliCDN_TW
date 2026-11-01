@@ -223,14 +223,6 @@ export type DomainEvent =
       readonly observation: TransportObservation
     }
   | { readonly type: 'route-decision'; readonly at: number; readonly decision: RouteDecision }
-  | { readonly type: 'transport'; readonly at: number; readonly observation: TransportObservation }
-  | {
-      readonly type: 'route-observed'
-      readonly at: number
-      readonly routeType: RouteType
-      readonly host: string
-      readonly decisionId: DecisionId | null
-    }
   | { readonly type: 'recovery'; readonly at: number; readonly action: RecoveryAction }
 
 export interface Clock {

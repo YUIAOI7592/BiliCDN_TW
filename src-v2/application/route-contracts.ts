@@ -96,7 +96,6 @@ export interface RouteRankingSummary {
   readonly ttfbMs: number | null
 }
 export interface RouteSnapshot {
-  readonly planCount: number
   readonly activePlan:
     (RoutePlanSummary & { readonly ranking: readonly RouteRankingSummary[] }) | null
   readonly recentPlans: readonly (RoutePlanSummary & {

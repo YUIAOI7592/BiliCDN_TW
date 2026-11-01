@@ -288,8 +288,13 @@ test('routing convergence route-planned reentry preserves nested IDs and outer p
       if (event.type !== 'route-planned') return
       emitted.push(event.decision.id)
       if (emitted.length === 1) {
-        assert.equal(f.routes.snapshot().planCount, 0)
         nested = f.routes.apply(original)
+        assert.notStrictEqual(nested.decision, event.decision)
+        assert.equal(
+          nested.decision.id,
+          'decision-2',
+          'outer plan is not committed during its event',
+        )
       }
     }),
   )

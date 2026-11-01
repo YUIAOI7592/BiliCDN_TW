@@ -110,6 +110,8 @@ Vault 是唯一 Native 授權來源。可信提升撤銷較低信任 handle；�
 
 同一次同步決策共用解析 URL、分類及 AppliedRouteDecision 共同欄位；助手不持有授權。Catalog-only、Native 與不可改寫來源仍分支處理，RouteCoordinator 保有計畫、許可與提交。
 
+DomainEvent 只保留有產生者與功能消費者的事件；TransportObservation 是傳輸／學習輸入，沒有同名的獨立診斷事件。RouteSnapshot 不投影計畫總數；私有計畫集合仍保存各表示的當前決策，重用與同步重入提交順序由行為契約保護。
+
 ### 漸進式 playurl 處理
 
 [PlayurlAdapter](../src-v2/adapters/playurl.ts) 在有界深度內走訪已辨識的根層／`data`／`result`／`video_info` 容器，收集 DASH 與 MP4／FLV `durl`。分段身分包含分支、格式、畫質及陣列索引；缺少或重複的 `order` 不會合併不同分段。資料內容保留原始分段順序與中繼資料，DASH 表示順序由網站保留。解析器拒絕格式錯誤的資料內容、非零頂層 `code`、不支援格式及超過容量的影片／音訊項目。

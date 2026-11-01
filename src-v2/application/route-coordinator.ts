@@ -1531,7 +1531,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         host: decision.host,
       })
     return Object.freeze({
-      planCount: this.#plans.size,
       activePlan: active
         ? Object.freeze({
             ...summarize(active),
