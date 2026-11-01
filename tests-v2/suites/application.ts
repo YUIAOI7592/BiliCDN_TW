@@ -2785,10 +2785,19 @@ async function checkManyQualityGroupsStillEnterTheRouteCoordinator3(t: TestConte
     assert.equal(base.coordinator.decisionRecord(decision.id)?.representation, representation)
   }
   assert.equal(Object.hasOwn(base.routeReadModel, 'planCount'), false)
-  assert.ok(
-    base.routeReadModel.recentPlans.length <= 4,
-    'current route snapshot bounds inactive plans',
-  )
+  const snapshot = base.coordinator.snapshot()
+  assert.equal(Object.hasOwn(snapshot, 'recentPlans'), false)
+  assert.equal(Object.hasOwn(snapshot, 'lastSuccess'), false)
+  for (const { representation, decision } of base.groupPlans)
+    assert.strictEqual(
+      base.coordinator.plan(
+        representation,
+        { kind: 'video', requiredMbps: 7.5, highDemand: false },
+        'startup',
+      ),
+      decision,
+      'reading the display snapshot preserves every quality group decision',
+    )
   assert.ok(
     ![...base.storage.values.keys()].some((key) => !key.startsWith('bilicdn.v2.')),
     'stores only use v2 namespace',

@@ -98,12 +98,8 @@ export interface RouteRankingSummary {
 export interface RouteSnapshot {
   readonly activePlan:
     (RoutePlanSummary & { readonly ranking: readonly RouteRankingSummary[] }) | null
-  readonly recentPlans: readonly (RoutePlanSummary & {
-    readonly representation: RepresentationId
-  })[]
   readonly affinity: SessionSnapshot['affinity']
   readonly latest: MediaRows<RouteTransferSnapshot>
-  readonly lastSuccess: MediaRows<RouteTransferSnapshot>
   readonly requested: MediaRows<RequestContext>
   readonly attribution: 'confirmed' | 'awaiting-second-video-transfer' | 'awaiting-matched-video'
   readonly representation: VaultGroupSnapshot | null

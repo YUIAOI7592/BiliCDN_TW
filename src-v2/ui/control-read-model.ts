@@ -1,14 +1,9 @@
 import type { ControlModelSources, ControlReadModelPort } from './control-contracts.ts'
 
-export function createControlReadModel(
-  sources: ControlModelSources,
-  version: string,
-): ControlReadModelPort {
+export function createControlReadModel(sources: ControlModelSources): ControlReadModelPort {
   return {
     snapshot() {
       return Object.freeze({
-        version,
-        releaseStage: 'stable' as const,
         settings: sources.settings.get(),
         session: sources.session.get(),
         monitor: sources.monitor.snapshot(),

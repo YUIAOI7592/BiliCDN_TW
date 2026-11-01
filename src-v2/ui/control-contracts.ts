@@ -9,9 +9,7 @@ import { type RestrictionRecord } from '../state/restriction-contracts.ts'
 import { type SettingsReader, type SettingsState } from '../state/settings-contracts.ts'
 import { type EarlyRetrySnapshot } from '../application/early-retry-contracts.ts'
 export interface ControlCenterSnapshot {
-  readonly releaseStage: 'test' | 'stable'
   readonly earlyRetry?: EarlyRetrySnapshot
-  readonly version: string
   readonly settings: SettingsState
   readonly session: SessionSnapshot
   readonly monitor: MonitorSnapshot
@@ -66,7 +64,6 @@ export interface ControlModelSources {
   readonly monitor: ControlMonitorReader
   readonly recovery: ControlRecoveryReader
   readonly transport: ControlTransportReader
-  readonly now: () => number
 }
 
 export interface ControlReadModelPort {

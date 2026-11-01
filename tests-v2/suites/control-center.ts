@@ -766,7 +766,7 @@ function ui(t: TestContext) {
     value: (task: () => void) => f.clock.microtask(task),
   })
   const center = new ControlCenter({
-    model: createControlReadModel(f.deps, 'contract'),
+    model: createControlReadModel(f.deps),
     version: 'contract',
     commands: f.deps.commands,
     now: f.deps.now,

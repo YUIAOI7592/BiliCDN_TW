@@ -307,7 +307,12 @@ test('routing convergence route-planned reentry preserves nested IDs and outer p
   assert.equal((nested as AppliedRouteDecision | null)?.decision.id, 'decision-2')
   assert.equal(outer.id, 'decision-1')
   assert.equal(f.session.get().lastDecisionId, 'decision-2')
-  assert.equal(f.routes.snapshot().recentPlans[0]?.id, outer.id)
+  f.routes.snapshot()
+  assert.strictEqual(f.routes.decisionRecord(outer.id)?.decision, outer)
+  assert.strictEqual(
+    f.routes.plan(representation, { kind: 'video', requiredMbps: 8, highDemand: false }, 'startup'),
+    outer,
+  )
   assert.equal(f.routes.apply(original).decision, outer)
 })
 

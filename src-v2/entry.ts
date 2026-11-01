@@ -141,21 +141,17 @@ export const start = (): void => {
     version,
     commands,
     now,
-    model: createControlReadModel(
-      {
-        settings,
-        restrictions,
-        session,
-        routes,
-        measurement,
-        monitor,
-        recovery,
-        transport,
-        earlyRetry,
-        now,
-      },
-      version,
-    ),
+    model: createControlReadModel({
+      settings,
+      restrictions,
+      session,
+      routes,
+      measurement,
+      monitor,
+      recovery,
+      transport,
+      earlyRetry,
+    }),
   })
   const panel = new PlayerPanel(center, settings, session, monitor)
 

@@ -2209,7 +2209,6 @@ async function createNativeControlUrlContext11(t: TestContext) {
     'page-hint',
   )
   void outputVault.contextForUrl(nativeControlBackup)!.representation
-  void outputRoutes.snapshot().recentPlans
   return {
     now,
     outputRestrictions,

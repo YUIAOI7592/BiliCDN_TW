@@ -1519,9 +1519,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   snapshot(): RouteSnapshot {
     const session = this.session.get(),
       active = session.representation ? this.#plans.get(session.representation) : null
-    const recent = [...this.#plans.entries()]
-      .filter(([representation]) => representation !== session.representation)
-      .slice(-4)
     const summarize = (decision: RouteDecision): RoutePlanSummary =>
       Object.freeze({
         id: decision.id,
@@ -1550,14 +1547,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
             ),
           })
         : null,
-      recentPlans: Object.freeze(
-        recent.map(([representation, decision]) =>
-          Object.freeze({ representation, ...summarize(decision) }),
-        ),
-      ),
       affinity: session.affinity,
       latest: Object.freeze(Object.fromEntries(this.#latest)),
-      lastSuccess: Object.freeze(Object.fromEntries(this.#lastSuccess)),
       requested: Object.freeze(Object.fromEntries(this.#requested)),
       attribution: session.representation
         ? 'confirmed'

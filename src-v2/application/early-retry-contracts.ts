@@ -81,11 +81,6 @@ export interface EarlyRetryRoutingPort {
   earlyRetryRequestCurrent(request: RequestContext): boolean
 }
 
-/** A tool-owned, in-memory scope; never exposed through UI, DOM or page messages. */
-export interface EarlyRetryEvidenceControlPort {
-  suppressEarlyRetryEvidence(requestIds: readonly string[]): () => void
-}
-
 export const EARLY_RETRY_STATES = Object.freeze([
   'idle',
   'waiting',
