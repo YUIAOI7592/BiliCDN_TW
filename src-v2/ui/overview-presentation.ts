@@ -4,31 +4,65 @@ import { attributionLabel, plain } from './labels.ts'
 const positive = (value: number | null | undefined): value is number =>
   value != null && Number.isFinite(value) && value > 0
 
+function currentDemand(model: ControlCenterSnapshot): number | null {
+  const video = model.monitor.video,
+    rep = model.routes.representation
+  if (
+    !video.available ||
+    !model.session.representation ||
+    model.routes.attribution !== 'confirmed' ||
+    rep?.kind !== 'video' ||
+    !positive(rep.bandwidth) ||
+    !positive(video.playbackRate)
+  )
+    return null
+  const mbps = rep.bandwidth / 1_000_000,
+    scaled = mbps * video.playbackRate,
+    demand = scaled * 1.25
+  // Reject overflow and subnormal arithmetic before applying the 2 Mbps floor.
+  if (![mbps, scaled, demand].every((value) => Number.isFinite(value) && value >= 2 ** -1022))
+    return null
+  return Math.max(2, demand)
+}
+
 /** Derive this refresh only; display fallbacks never change routing or retain history. */
 export function overviewPresentation(model: ControlCenterSnapshot, now: number) {
   const video = model.monitor.video,
     routes = model.routes,
     plan = routes.activePlan
-  const selected = plan?.ranking.find(
-    (row) => row.host === plan.host && row.type === plan.routeType,
-  )
-  const safeMbps = positive(selected?.safeMbps) ? selected.safeMbps : null
-  const demand = safeMbps !== null && positive(selected?.ratio) ? safeMbps / selected.ratio : null
-  const requiredMbps = positive(demand) ? demand : null
-  const ratio = requiredMbps !== null ? selected!.ratio! : null
+  const candidate = routes.currentCapacity
+  const capacity =
+    candidate &&
+    !model.settings.disabled &&
+    !model.session.disabled &&
+    candidate.generation === model.session.generation &&
+    candidate.epoch === model.session.epoch &&
+    candidate.representation === model.session.representation &&
+    candidate.decisionId === plan?.id &&
+    candidate.host === plan.host &&
+    candidate.routeType === plan.routeType
+      ? candidate
+      : null
+  const safeMbps =
+    capacity?.sampleStatus === 'available' && positive(capacity.safeMbps) ? capacity.safeMbps : null
+  const requiredMbps = currentDemand(model)
+  const margin = safeMbps !== null && requiredMbps !== null ? safeMbps / requiredMbps : null
+  const ratio = positive(margin) ? margin : null
   const missing = model.settings.disabled
     ? '腳本已停用'
     : model.interception.hookState !== 'installed' ||
         !model.interception.fetchInstalled ||
         !model.interception.xhrInstalled
       ? '請求攔截未完整'
-      : !plan
+      : !capacity
         ? routes.attribution === 'awaiting-second-video-transfer'
           ? '等待第二筆影片資料'
           : routes.attribution === 'awaiting-matched-video'
             ? '等待可辨識影片資料'
             : '尚未建立目前路線'
-        : '目前路線尚無有效速度樣本'
+        : capacity.sampleStatus === 'expired'
+          ? '目前路線的速度樣本已過期'
+          : '目前路線尚無有效速度樣本'
   const dimensions =
     video.available &&
     Number.isInteger(video.width) &&
@@ -80,7 +114,7 @@ export function overviewPresentation(model: ControlCenterSnapshot, now: number) 
     ratio,
     requiredMbps,
     transfers,
-    speedHint: safeMbps !== null ? '最近選路的保守估計' : missing,
+    speedHint: safeMbps !== null ? capacity!.host + ' · 有效影片樣本的保守估計' : missing,
     marginHint:
       ratio !== null && requiredMbps !== null
         ? '需求 ' +

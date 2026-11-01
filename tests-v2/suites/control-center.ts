@@ -8,15 +8,281 @@ import type { ControlModelSources } from '../../src-v2/ui/control-contracts.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { DEFAULT_UNAVAILABLE_HOSTS } from '../../src-v2/domain/catalog.ts'
 import { media } from '../support/runtime-fixture.ts'
+import { representationId } from '../../src-v2/domain/model.ts'
+import { overviewPresentation } from '../../src-v2/ui/overview-presentation.ts'
+import { EVIDENCE_TTL_MS } from '../../src-v2/domain/evidence.ts'
+import { EVIDENCE_KEY } from '../../src-v2/state/evidence-store.ts'
+
+async function completeVideo(f: ReturnType<typeof ui>, url: string) {
+  f.request(url)
+  const request = f.routes.latestRequested('video')!
+  await f.routes.observe({
+    request,
+    generation: request.generation,
+    epoch: request.epoch,
+    representation: request.representation,
+    kind: 'video',
+    decisionId: request.decisionId,
+    routeType: request.routeType,
+    originalHost: request.originalHost,
+    targetHost: request.targetHost,
+    finalHost: request.targetHost,
+    streamKey: null,
+    status: 206,
+    bytes: 1024 * 1024,
+    elapsedMs: 200,
+    ttfbMs: 10,
+    completedAt: f.clock.now(),
+    outcome: 'success',
+    responseUrlMatchesRequest: true,
+  })
+}
+
+function capacityView(t: TestContext) {
+  const f = ui(t),
+    body = media(225)
+  assert.equal(f.playurl.transform(body, 'trusted-api').accepted, true)
+  f.setVideo({
+    ...f.video(),
+    playbackRate: 1,
+    effectiveRate: 1,
+    paused: true,
+    width: 1920,
+    height: 1080,
+    readyState: 4,
+    bufferAheadSec: 100,
+    playableBufferSec: 100,
+  })
+  f.deps.monitor.tick()
+  return { f, body }
+}
+
+for (const role of ['primary', 'backup'] as const) {
+  test(`V225 ${role} successful learning updates the real read model and overview on the existing tick`, async (t) => {
+    const { f, body } = capacityView(t),
+      row = body.data.dash.video[0]!
+    const url = role === 'primary' ? row.base_url : row.backup_url[0]!
+    assert.ok(url)
+    const decision = f.routes.apply(url, 'video').decision
+    if (role === 'backup') assert.equal(decision.ranking.length, 0)
+    await completeVideo(f, url)
+    assert.equal(
+      f.routes.snapshot().currentCapacity,
+      null,
+      'one transfer does not confirm the video representation',
+    )
+    await completeVideo(f, url)
+    f.clock.advance(1000)
+    const display = overviewPresentation(createControlReadModel(f.deps).snapshot(), f.clock.now())
+    assert.equal(display.safeMbps, 41.94304)
+    assert.equal(display.requiredMbps, 5)
+    assert.equal(display.ratio, 41.94304 / 5)
+    assert.ok(display.speedHint.includes(f.routes.snapshot().currentCapacity!.host))
+    const values = f.doc.flatten().filter((e) => e.className === 'value')
+    assert.equal(values[1]!.textContent, '41.94')
+    assert.equal(values[2]!.textContent, '8.39')
+    assert.equal(
+      f.doc.flatten().some((e) => e.className === 'summary'),
+      false,
+    )
+    assert.match(readSummary(f).textContent, /保守吞吐 41\.94 Mbps｜需求 5\.00 Mbps｜餘裕 8\.39 倍/)
+    if (role === 'primary') assert.equal(f.routes.apply(url, 'video').decision, decision)
+  })
+}
+
+test('V225 actual rate changes update margin while on-demand text and route ownership remain stable', async (t) => {
+  const { f, body } = capacityView(t),
+    url = body.data.dash.video[0]!.base_url
+  await completeVideo(f, url)
+  await completeVideo(f, url)
+  f.clock.advance(1000)
+  const decision = f.routes.apply(url, 'video').decision,
+    affinity = f.session.get().affinity
+  const summary = readSummary(f),
+    before = summary.textContent,
+    calls = structuredClone(f.calls)
+  const events: string[] = []
+  f.scope.defer(f.routes.subscribe((event) => events.push(event.type)))
+  const stored = structuredClone([...f.storage.values]),
+    tasks = f.clock.pendingCount
+  f.setVideo({ ...f.video(), playbackRate: 2, effectiveRate: 2 })
+  f.clock.advance(1000)
+  assert.equal(summary.textContent, before, 'the long text is not rebuilt on each tick')
+  assert.equal(f.doc.flatten().filter((e) => e.className === 'value')[2]!.textContent, '4.19')
+  f.button('收起詳細狀態').emit('click')
+  assert.match(readSummary(f).textContent, /需求 10\.00 Mbps｜餘裕 4\.19 倍/)
+  assert.equal(f.routes.apply(url, 'video').decision, decision)
+  assert.equal(f.session.get().affinity, affinity)
+  assert.deepEqual(events, [])
+  assert.deepEqual([...f.storage.values], stored)
+  assert.deepEqual(f.calls, calls)
+  assert.equal(f.clock.pendingCount, tasks)
+  for (const page of ['CDN', '播放設定', '總覽']) f.button(page).emit('click')
+  assert.equal(f.doc.flatten().filter((e) => e.className === 'value')[2]!.textContent, '4.19')
+  f.center.close()
+  f.center.show()
+  assert.match(readSummary(f).textContent, /需求 10\.00 Mbps/)
+})
+
+test('V225 confirmed representation change uses its bitrate and keeps the two-transfer threshold', async (t) => {
+  const { f, body } = capacityView(t),
+    first = body.data.dash.video[0]!.base_url
+  await completeVideo(f, first)
+  await completeVideo(f, first)
+  const state = f.session.get(),
+    second = first.replace('30080.m4s', '30120.m4s')
+  const representation = f.vault.register({
+    generation: state.generation,
+    epoch: state.epoch,
+    kind: 'video',
+    key: 'higher-bitrate',
+    height: 2160,
+    codec: 'avc',
+    bandwidth: 8_000_000,
+    urls: [second],
+    source: 'trusted-api',
+  })
+  assert.ok(representation)
+  await completeVideo(f, second)
+  assert.equal(f.session.get().representation, state.representation)
+  await completeVideo(f, second)
+  assert.equal(f.session.get().representation, representation)
+  const display = overviewPresentation(createControlReadModel(f.deps).snapshot(), f.clock.now())
+  assert.equal(display.requiredMbps, 10)
+  assert.equal(display.ratio, 41.94304 / 10)
+})
+
+test('V225 overview expires retained samples without a transfer and recovers after learning', async (t) => {
+  const { f, body } = capacityView(t),
+    url = body.data.dash.video[0]!.base_url
+  await completeVideo(f, url)
+  await completeVideo(f, url)
+  f.deps.monitor.stop()
+  f.clock.advance(EVIDENCE_TTL_MS + 1)
+  f.center.show()
+  assert.equal(f.doc.flatten().filter((e) => e.className === 'value')[1]!.textContent, '—')
+  assert.match(readSummary(f).textContent, /目前路線的速度樣本已過期/)
+  await completeVideo(f, url)
+  f.center.show()
+  assert.equal(f.doc.flatten().filter((e) => e.className === 'value')[1]!.textContent, '29.36')
+})
+
+for (const rate of [NaN, Infinity, 0, -1, Number.MIN_VALUE, Number.MAX_VALUE]) {
+  test(`V225 actual playback rate ${rate} never uses the control fallback for UI demand`, (t) => {
+    const f = ui(t)
+    setOverviewCapacity(f, 12, rate === Number.MAX_VALUE ? Number.MAX_VALUE : 4_000_000, rate)
+    const display = overviewPresentation(createControlReadModel(f.deps).snapshot(), f.clock.now())
+    assert.equal(display.safeMbps, 12)
+    assert.equal(display.ratio, null)
+    assert.equal(display.requiredMbps, null)
+    assert.equal(display.marginHint, '尚無有效需求估計')
+  })
+}
+
+test('V225 unavailable player keeps valid speed but cannot establish demand', (t) => {
+  const f = ui(t)
+  setOverviewCapacity(f, 12, 4_000_000)
+  f.setVideo({ ...f.video(), available: false })
+  f.deps.monitor.tick()
+  const display = overviewPresentation(createControlReadModel(f.deps).snapshot(), f.clock.now())
+  assert.equal(display.safeMbps, 12)
+  assert.equal(display.requiredMbps, null)
+  assert.equal(display.ratio, null)
+})
+
+test('V225 shared measurement cooldown does not attribute it to another tab', (t) => {
+  const f = ui(t),
+    before = f.measurement.snapshot()
+  f.measurement.snapshot = () => ({ ...before, state: 'waiting', reason: 'cross-tab-cooldown' })
+  f.center.show()
+  assert.match(readSummary(f).textContent, /共用測速冷卻中/)
+  assert.doesNotMatch(readSummary(f).textContent, /其他分頁最近/)
+})
+
+test('V225 remote learning and clear are reflected by the existing overview refresh', async (t) => {
+  const { f, body } = capacityView(t),
+    url = body.data.dash.video[0]!.base_url
+  await completeVideo(f, url)
+  await completeVideo(f, url)
+  const saved = structuredClone(f.storage.values.get(EVIDENCE_KEY))
+  await f.deps.evidence.clear()
+  f.clock.advance(1000)
+  assert.equal(f.doc.flatten().filter((e) => e.className === 'value')[1]!.textContent, '—')
+  assert.match(readSummary(f).textContent, /目前路線尚無有效速度樣本/)
+  f.storage.remote(EVIDENCE_KEY, { ...(saved as object), updatedAt: f.clock.now() })
+  f.clock.advance(1000)
+  assert.equal(f.doc.flatten().filter((e) => e.className === 'value')[1]!.textContent, '41.94')
+  f.navigate()
+  assert.equal(f.routes.snapshot().currentCapacity, null)
+  f.clock.advance(1000)
+  assert.equal(f.doc.flatten().filter((e) => e.className === 'value')[1]!.textContent, '—')
+})
+
+for (const field of [
+  'generation',
+  'epoch',
+  'representation',
+  'decisionId',
+  'host',
+  'routeType',
+] as const) {
+  test(`V225 mixed read-model ${field} cannot display another plan's capacity`, (t) => {
+    const f = ui(t)
+    setOverviewCapacity(f, 12, 4_000_000)
+    const model = createControlReadModel(f.deps).snapshot(),
+      capacity = model.routes.currentCapacity!
+    const mismatch = {
+      ...capacity,
+      [field]: typeof capacity[field] === 'number' ? Number(capacity[field]) + 1 : 'other',
+    }
+    const display = overviewPresentation(
+      { ...model, routes: { ...model.routes, currentCapacity: mismatch } },
+      f.clock.now(),
+    )
+    assert.equal(display.safeMbps, null)
+    assert.equal(display.ratio, null)
+  })
+}
+
+test('V225 valid low bitrate uses the existing two Mbps display floor', (t) => {
+  const f = ui(t)
+  setOverviewCapacity(f, 12, 800_000, 1)
+  const display = overviewPresentation(createControlReadModel(f.deps).snapshot(), f.clock.now())
+  assert.equal(display.requiredMbps, 2)
+  assert.equal(display.ratio, 6)
+})
 
 function setOverviewCapacity(
   f: ReturnType<typeof ui>,
   safeMbps: number | null,
-  ratio: number | null,
+  bandwidth: number | null,
+  playbackRate = 1,
 ) {
+  const representation = representationId('capacity-display')
+  f.session.setRepresentation(representation)
+  f.setVideo({ ...f.video(), playbackRate })
+  f.deps.monitor.tick()
   const before = f.routes.snapshot()
   f.routes.snapshot = () => ({
     ...before,
+    attribution: 'confirmed',
+    representation: {
+      kind: 'video',
+      height: 1080,
+      codec: 'avc',
+      bandwidth: bandwidth ?? 0,
+      routeCount: 1,
+    },
+    currentCapacity: {
+      generation: f.session.get().generation,
+      epoch: f.session.get().epoch,
+      representation,
+      decisionId: 'v224-capacity' as NonNullable<typeof before.activePlan>['id'],
+      host: TRUSTED_CATALOG[0],
+      routeType: 'catalog-generated',
+      safeMbps,
+      sampleStatus: safeMbps !== null ? 'available' : 'missing',
+    },
     activePlan: {
       id: 'v224-capacity' as NonNullable<typeof before.activePlan>['id'],
       action: 'rewrite',
@@ -31,7 +297,7 @@ function setOverviewCapacity(
           eligible: true,
           reasons: [],
           safeMbps,
-          ratio,
+          ratio: null,
           ttfbMs: 30,
         },
       ],
@@ -130,29 +396,23 @@ test('V224 playing without request attribution shows native dimensions without g
   assert.equal(f.clock.pendingCount, tasks)
 })
 
-for (const [label, safe, ratio] of [
-  ['missing demand', 12, null],
-  ['invalid demand', 12, NaN],
-  ['zero demand', 12, 0],
-  ['overflowing demand', Number.MAX_VALUE, Number.MIN_VALUE],
-  ['underflowing demand', Number.MIN_VALUE, Number.MAX_VALUE],
-  ['invalid speed', Infinity, 1.5],
-  ['missing speed', null, 1.5],
-  ['zero speed', 0, 1.5],
-  ['valid capacity', 12, 1.5],
+for (const [label, safe, bandwidth, rate, ratio] of [
+  ['missing demand', 12, null, 1, null],
+  ['invalid demand', 12, NaN, 1, null],
+  ['zero demand', 12, 0, 1, null],
+  ['overflowing demand', Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE, null],
+  ['underflowing demand', Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE, null],
+  ['invalid speed', Infinity, 6_400_000, 1, null],
+  ['missing speed', null, 6_400_000, 1, null],
+  ['zero speed', 0, 6_400_000, 1, null],
+  ['valid capacity', 12, 6_400_000, 1, 1.5],
 ] as const) {
   test(`V224 independent capacity display: ${label}`, (t) => {
     const f = ui(t)
-    setOverviewCapacity(f, safe, ratio)
+    setOverviewCapacity(f, safe, bandwidth, rate)
     f.center.show()
     const speedValid = safe != null && Number.isFinite(safe) && safe > 0
-    const demandValid =
-      speedValid &&
-      ratio != null &&
-      Number.isFinite(ratio) &&
-      ratio > 0 &&
-      Number.isFinite(safe / ratio) &&
-      safe / ratio > 0
+    const demandValid = ratio !== null
     const values = f.doc.flatten().filter((e) => e.className === 'value')
     assert.equal(values[1]!.textContent, speedValid ? safe.toFixed(2) : '—')
     assert.equal(values[2]!.textContent, demandValid ? ratio.toFixed(2) : '—')
@@ -515,14 +775,15 @@ async function flushCommands(): Promise<void> {
 }
 
 test('UP141-DIAG overview reports conservative throughput, demand and rejected alternatives on demand', (t) => {
-  const f = ui(t),
-    before = f.routes.snapshot()
+  const f = ui(t)
+  setOverviewCapacity(f, 12, 6_400_000)
+  const before = f.routes.snapshot()
   f.clock.advance(0)
   const baselineTasks = f.clock.pendingCount
   f.routes.snapshot = () => ({
     ...before,
     activePlan: {
-      id: 'up141' as NonNullable<typeof before.activePlan>['id'],
+      id: before.activePlan!.id,
       action: 'rewrite',
       reason: 'recent-success',
       routeType: 'catalog-generated',
@@ -659,37 +920,15 @@ for (const [kind, expected] of [
   })
 }
 
-for (const [label, safeMbps, ratio] of [
-  ['missing', null, null],
-  ['non-finite', Infinity, NaN],
-  ['zero', 0, 0],
-  ['overflowing demand', Number.MAX_VALUE, Number.MIN_VALUE],
+for (const [label, safeMbps, bandwidth, rate] of [
+  ['missing', null, null, 1],
+  ['non-finite', Infinity, NaN, 1],
+  ['zero', 0, 0, 1],
+  ['overflowing demand', Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE],
 ] as const) {
   test(`UP141-DIAG ${label} capacity never displays a fabricated or non-finite demand`, (t) => {
-    const f = ui(t),
-      before = f.routes.snapshot()
-    f.routes.snapshot = () => ({
-      ...before,
-      activePlan: {
-        id: 'up141' as NonNullable<typeof before.activePlan>['id'],
-        action: 'rewrite',
-        reason: 'recent-success',
-        routeType: 'catalog-generated',
-        host: TRUSTED_CATALOG[0],
-        ranking: [
-          {
-            host: TRUSTED_CATALOG[0],
-            type: 'catalog-generated',
-            state: 'unknown',
-            eligible: true,
-            reasons: [],
-            safeMbps,
-            ratio,
-            ttfbMs: null,
-          },
-        ],
-      },
-    })
+    const f = ui(t)
+    setOverviewCapacity(f, safeMbps, bandwidth, rate)
     f.center.show()
     const text = readSummary(f)!.textContent
     assert.doesNotMatch(text, /需求 (?:Infinity|NaN)|餘裕 (?:Infinity|NaN)/)
@@ -701,7 +940,7 @@ for (const [label, safeMbps, ratio] of [
     if (safeMbps != null && Number.isFinite(safeMbps) && safeMbps > 0)
       assert.ok(text.includes('保守吞吐 ' + safeMbps.toFixed(2) + ' Mbps'))
     else assert.doesNotMatch(text, /保守吞吐/)
-    if (ratio === null || !Number.isFinite(ratio)) assert.match(text, /速度樣本不足/)
+    if (label === 'missing' || label === 'non-finite') assert.match(text, /速度樣本不足/)
   })
 }
 

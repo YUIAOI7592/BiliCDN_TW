@@ -86,7 +86,7 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
       'below-required': '低於本次需求',
       'below-headroom': '未達安全餘量',
       'meets-headroom': '達到安全餘量',
-      unknown: '速度樣本不足',
+      unknown: display.safeMbps !== null ? display.marginHint : '速度樣本不足',
     })}${display.ratio === null ? '' : `（保守速度約為需求的 ${display.ratio.toFixed(2)} 倍）`}`
   const { safeMbps, ratio, requiredMbps } = display
   summary +=
@@ -94,7 +94,8 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
       ? `\n保守吞吐 ${safeMbps.toFixed(2)} Mbps` +
         (ratio !== null && requiredMbps !== null
           ? `｜需求 ${requiredMbps.toFixed(2)} Mbps｜餘裕 ${ratio.toFixed(2)} 倍`
-          : `｜${display.marginHint}`)
+          : `｜${display.marginHint}`) +
+        `｜${display.speedHint}`
       : `\n安全吞吐：${display.speedHint}`
   const restricted = activePlan?.ranking.filter((row) => !row.eligible).slice(0, 5) ?? []
   if (restricted.length)

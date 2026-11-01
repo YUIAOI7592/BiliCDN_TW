@@ -71,7 +71,7 @@ export const measurementLabel = (state: unknown, reason: unknown): string => {
       recovering: '正在恢復播放',
       'awaiting-progress': '等待影片穩定播放',
       'low-buffer': '緩衝還不夠，暫不測速',
-      'cross-tab-cooldown': '其他分頁最近測過速，等待冷卻',
+      'cross-tab-cooldown': '共用測速冷卻中',
       'no-stale-candidate': '目前沒有需要測試的 CDN',
       'sample-recorded': '已記下測速結果',
       'short-response': '下載資料太少，無法判斷速度',

@@ -98,6 +98,27 @@ test('V225 capacity uses existing weighted decay and mixed sample expiry', async
   assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, 20.97152)
 })
 
+for (const source of ['startup', 'health'] as const) {
+  test(`V225 ${source} measurement contributes only after a valid evidence commit`, async (t) => {
+    const f = await capacityRoute(t)
+    await f.evidence.clear()
+    const candidate = f.routes
+      .startupOptions(f.url)!
+      .candidates.find((row) => row.host === f.applied.decision.host)!
+    assert.ok(candidate)
+    const record = (valid: boolean) =>
+      source === 'startup'
+        ? f.routes.recordStartupSuccess(candidate, 1024 * 1024, 200, 10, () => valid)
+        : f.routes.recordChallenge(f.applied, 1024 * 1024, 200, 10, 'success', null, () => valid)
+    await record(false)
+    assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, null)
+    await record(true)
+    assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, 41.94304 * 0.7)
+    assert.equal(f.evidence.get(candidate.host, 'video')?.samples[0]?.source, 'challenge')
+    assert.equal(f.routes.apply(f.url, 'video').decision, f.applied.decision)
+  })
+}
+
 test('V225 current capacity survives a selected host outside the twelve ranking rows', async (t) => {
   const scope = testScope(t),
     f = fixture(scope)
