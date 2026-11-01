@@ -1,4 +1,3 @@
-import { extendFixture } from '../support/fixture-context.ts'
 import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { currentResumePlayer } from '../support/player.ts'
 import { installProgressEvent } from '../support/progress-event.ts'
@@ -28,17 +27,8 @@ import { FakeStorage } from '../support/storage.ts'
 import { testScope } from '../support/scope.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
-async function createAdaptersScenario(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const now = 2_000_000_000_000
-  return extendFixture({}, { scope, now } as const)
-}
 
-async function createRuntimeSessionContext1(t: TestContext) {
-  const base = await createAdaptersScenario(t)
-  const runtimeSession = new SessionStore()
-  runtimeSession.beginGeneration(false)
+async function createPlaybackResourcesBlock1() {
   const passDecision: AppliedRouteDecision = {
     decision: {
       action: 'pass',
@@ -86,11 +76,211 @@ async function createRuntimeSessionContext1(t: TestContext) {
       return playurlResult(true)
     },
   }
-  let disabled = false,
-    blockHttpDns = true
-  const settingsStub = { get: () => ({ disabled, blockHttpDns, considerNativeSources: true }) }
-  let nativeFetchCalls = 0,
-    cancelReason: unknown = null
+  let disabled = false
+  let blockHttpDns = true
+  const settingsStub = {
+    get: () => ({ disabled: disabled, blockHttpDns: blockHttpDns, considerNativeSources: true }),
+  }
+  let nativeFetchCalls = 0
+  let playurlFetchBody = JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } })
+  let playurlFetchOverride: Response | null = null
+  const nativeFetchUrls: string[] = []
+  const nativeFetchMethods: string[] = []
+  const nativeFetchRedirects: RequestRedirect[] = []
+  const nativeFetchHeaders: (string | null)[] = []
+  const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
+    nativeFetchCalls++
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+    nativeFetchUrls.push(url)
+    nativeFetchMethods.push(
+      input instanceof Request ? input.method : String(_init?.method ?? 'GET'),
+    )
+    nativeFetchRedirects.push(
+      input instanceof Request
+        ? input.redirect
+        : (String(_init?.redirect ?? 'follow') as RequestRedirect),
+    )
+    nativeFetchHeaders.push(input instanceof Request ? input.headers.get('x-bilicdn-test') : null)
+    if (url.includes('/stream-body.m4s') && input instanceof Request) void (await input.text())
+    if (url.includes('/player/wbi/playurl'))
+      return playurlFetchOverride ?? new Response(playurlFetchBody, { status: 200 })
+    let emitted = false
+    return new Response(
+      new ReadableStream<Uint8Array>({
+        pull(controller) {
+          if (!emitted) {
+            emitted = true
+            controller.enqueue(new Uint8Array(70 * 1024))
+          }
+        },
+        cancel(_reason) {},
+      }),
+      { status: 206, headers: { 'content-type': 'video/mp4' } },
+    )
+  }
+  class FakeXhr extends EventTarget {
+    #state = 0
+    get readyState() {
+      return this.#state
+    }
+    set readyState(value: number) {
+      this.#state = value
+    }
+    method = ''
+    url = ''
+    status = 200
+    responseURL = ''
+    sync = false
+    sent = false
+    #responseType: XMLHttpRequestResponseType = ''
+    #timeout = 0
+    get responseType(): XMLHttpRequestResponseType {
+      return this.#responseType
+    }
+    set responseType(value: XMLHttpRequestResponseType) {
+      if (this.sync) throw new DOMException('synchronous XHR', 'InvalidAccessError')
+      this.#responseType = value
+    }
+    get timeout(): number {
+      return this.#timeout
+    }
+    set timeout(value: number) {
+      if (this.sync) throw new DOMException('synchronous XHR', 'InvalidAccessError')
+      this.#timeout = value
+    }
+    finalResponseUrl: string | null = null
+    rawResponseText: string | null = null
+    holdAtLoading = false
+    withCredentials = false
+    payload: unknown = { ok: true }
+    nativeSends = 0
+    get response(): unknown {
+      return this.payload
+    }
+    get responseText(): string {
+      return this.rawResponseText ?? JSON.stringify(this.payload)
+    }
+    open(method: string, url: string | URL, async = true): void {
+      this.method = method
+      this.url = String(url)
+      this.responseURL = this.url
+      this.readyState = 1
+      this.sync = !async
+      this.sent = false
+    }
+    send(): void {
+      if (this.readyState !== 1 || this.sent)
+        throw new DOMException('send invalid state', 'InvalidStateError')
+      this.sent = true
+      this.nativeSends++
+      if (this.finalResponseUrl) this.responseURL = this.finalResponseUrl
+      this.readyState = this.holdAtLoading ? 3 : 4
+      this.dispatchEvent(new Event('readystatechange'))
+      if (!this.holdAtLoading) {
+        this.dispatchEvent(new Event('load'))
+        this.dispatchEvent(new Event('loadend'))
+      }
+    }
+    abort(): void {
+      if ((this.readyState === 1 && this.sent) || this.readyState === 2 || this.readyState === 3) {
+        this.readyState = 4
+        this.sent = false
+        this.status = 0
+        this.dispatchEvent(new Event('readystatechange'))
+        this.dispatchEvent(new Event('abort'))
+        this.dispatchEvent(new Event('loadend'))
+      }
+      if (this.readyState === 4) this.readyState = 0
+    }
+    setRequestHeader(_name: string, _value: string): void {}
+  }
+  const originalWorker = function WorkerIdentity() {
+    return undefined
+  }
+  const fakeWindow = {
+    fetch: nativeFetch,
+    XMLHttpRequest: FakeXhr,
+    Worker: originalWorker,
+    navigator: globalThis.navigator,
+  }
+  return {
+    passDecision,
+    routeStub,
+    playurlStub,
+    get disabled(): boolean {
+      return disabled
+    },
+    set disabled(value: boolean) {
+      disabled = value
+    },
+    settingsStub,
+    get nativeFetchCalls() {
+      return nativeFetchCalls
+    },
+    set nativeFetchCalls(value: typeof nativeFetchCalls) {
+      nativeFetchCalls = value
+    },
+    nativeFetch,
+    FakeXhr,
+    fakeWindow,
+  }
+}
+
+async function createPlaybackResourcesBlock2() {
+  const passDecision: AppliedRouteDecision = {
+    decision: {
+      action: 'pass',
+      target: { type: 'request' },
+      id: decisionId('runtime-pass'),
+      reason: 'test',
+      routeType: 'root-original',
+      host: 'upos-sz-mirrorali.bilivideo.com',
+      ranking: [],
+    },
+    url: 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/runtime.m4s',
+    context: null,
+    streamKey: 'runtime',
+    sourceHost: 'upos-sz-mirrorali.bilivideo.com',
+  }
+  const observations: TransportObservation[] = []
+  const routeStub = {
+    policyRevision(): number {
+      return 0
+    },
+    requestStarted(): void {},
+    isCatalogOnly(): boolean {
+      return false
+    },
+    isBilibiliMedia(url: string): boolean {
+      return /\.bilivideo\.com\/|\.akamaized\.net\//.test(url)
+    },
+    recognizesMedia(url: string): boolean {
+      return parseMediaUrl(url)?.kind !== 'unknown'
+    },
+    inspectOriginal(url: string): AppliedRouteDecision {
+      return this.apply(url)
+    },
+    apply(url: string): AppliedRouteDecision {
+      return { ...passDecision, url }
+    },
+    async observe(observation: TransportObservation): Promise<void> {
+      observations.push(observation)
+    },
+  }
+  let transformed = 0
+  const playurlStub = {
+    transform() {
+      transformed++
+      return playurlResult(true)
+    },
+  }
+  let disabled = false
+  let blockHttpDns = true
+  const settingsStub = {
+    get: () => ({ disabled: disabled, blockHttpDns: blockHttpDns, considerNativeSources: true }),
+  }
+  let nativeFetchCalls = 0
+  let cancelReason: unknown = null
   let playurlFetchBody = JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } })
   let playurlFetchOverride: Response | null = null
   const nativeFetchUrls: string[] = []
@@ -216,8 +406,301 @@ async function createRuntimeSessionContext1(t: TestContext) {
     Worker: originalWorker,
     navigator: globalThis.navigator,
   }
-  base.scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
-  base.scope.defineGlobal('location', {
+  return {
+    passDecision,
+    observations,
+    routeStub,
+    get transformed() {
+      return transformed
+    },
+    set transformed(value: typeof transformed) {
+      transformed = value
+    },
+    playurlStub,
+    get disabled(): boolean {
+      return disabled
+    },
+    set disabled(value: boolean) {
+      disabled = value
+    },
+    settingsStub,
+    get nativeFetchCalls() {
+      return nativeFetchCalls
+    },
+    set nativeFetchCalls(value: typeof nativeFetchCalls) {
+      nativeFetchCalls = value
+    },
+    get cancelReason() {
+      return cancelReason
+    },
+    set cancelReason(value: typeof cancelReason) {
+      cancelReason = value
+    },
+    nativeFetchUrls,
+    nativeFetchMethods,
+    nativeFetchHeaders,
+    get streamedRequestBody() {
+      return streamedRequestBody
+    },
+    set streamedRequestBody(value: typeof streamedRequestBody) {
+      streamedRequestBody = value
+    },
+    nativeFetch,
+    FakeXhr,
+    originalWorker,
+    fakeWindow,
+  }
+}
+
+function createPlaybackResourcesBlock3() {
+  let reloads = 0
+  let seeks: number[] = []
+  let rates: number[] = []
+  let plays = 0
+  let playerSnapshot: VideoSnapshot = {
+    available: true,
+    paused: false,
+    seeking: false,
+    ended: false,
+    readyState: 4,
+    currentTime: 349.434,
+    duration: 900,
+    width: 1920,
+    height: 1080,
+    playbackRate: 2,
+    effectiveRate: 2,
+    bufferAheadSec: 30,
+    playableBufferSec: 15,
+    bufferedToEnd: false,
+    frames: 1000,
+    mediaError: false,
+    coreInitialized: true,
+    manifestHasVideo: true,
+  }
+  const recoveryPlayer: PlayerPort = {
+    controls: idleControls,
+    observePlayIntent: () => () => undefined,
+    snapshot: () => playerSnapshot,
+    syncManifest: () => true,
+    reload: () => {
+      reloads++
+    },
+    currentTime: () => 349.434,
+    playbackRate: () => 2,
+    seek: (value) => {
+      seeks.push(value)
+    },
+    setRate: (value) => {
+      rates.push(value)
+    },
+    play: () => {
+      plays++
+      return Promise.resolve()
+    },
+    reset: () => undefined,
+  }
+  return {
+    get playerSnapshot() {
+      return playerSnapshot
+    },
+    set playerSnapshot(value: typeof playerSnapshot) {
+      playerSnapshot = value
+    },
+    recoveryPlayer,
+  }
+}
+
+function createPlaybackResourcesBlock4() {
+  const gatedUrl = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/gated.m4s'
+  const gateControl: { release: () => void; done: Promise<void> } = {
+    release: () => undefined,
+    done: Promise.resolve(),
+  }
+  let gateReady = false
+  return {
+    gatedUrl,
+    gateControl,
+    get gateReady(): boolean {
+      return gateReady
+    },
+    set gateReady(value: boolean) {
+      gateReady = value
+    },
+  }
+}
+
+function createPlaybackResourcesBlock5() {
+  const nativeControlUrl =
+    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/control/clip.m4s?signature=private'
+  const nativeControlBackup =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/control/clip.m4s?signature=other'
+  const controlItem = {
+    id: 240,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 1_000_000,
+    base_url: nativeControlUrl,
+    backup_url: [nativeControlBackup],
+  }
+  return { nativeControlUrl, nativeControlBackup, controlItem }
+}
+
+function createPlaybackResourcesBlock6() {
+  const opaquePrimary =
+    'https://upos-hz-mirrorakam.akamaized.net/opaque/video-chunk?signature=private'
+  const opaqueBackup =
+    'https://upos-sz-mirrorali.bilivideo.com/opaque/video-chunk?signature=private'
+  const opaqueItem = {
+    id: 81,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 1_000_000,
+    base_url: opaquePrimary,
+    backup_url: [opaqueBackup],
+  }
+  return { opaquePrimary, opaqueBackup, opaqueItem }
+}
+
+function createPlaybackResourcesBlock7() {
+  const outputStorage = new FakeStorage()
+  const outputSession = new SessionStore()
+  const outputState = outputSession.beginGeneration(false)
+  const outputVault = new SignedRouteVault()
+  return { outputStorage, outputSession, outputState, outputVault }
+}
+
+async function createRuntimeSessionContext1(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block2 = await createPlaybackResourcesBlock2()
+  const { fakeWindow, settingsStub, routeStub, playurlStub, observations, passDecision } = block2
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
+  }
+  const transport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  return {
+    get cancelReason() {
+      return block2.cancelReason
+    },
+    set cancelReason(value: typeof block2.cancelReason) {
+      block2.cancelReason = value
+    },
+    fakeWindow,
+    get nativeFetchCalls() {
+      return block2.nativeFetchCalls
+    },
+    set nativeFetchCalls(value: typeof block2.nativeFetchCalls) {
+      block2.nativeFetchCalls = value
+    },
+    observations,
+    passDecision,
+    transport,
+  }
+}
+
+async function createMediaResponseContext2(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block2 = await createPlaybackResourcesBlock2()
+  const {
+    fakeWindow,
+    settingsStub,
+    routeStub,
+    playurlStub,
+    nativeFetchMethods,
+    nativeFetchUrls,
+    passDecision,
+  } = block2
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
+  }
+  const transport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  return {
+    get disabled(): boolean {
+      return block2.disabled
+    },
+    set disabled(value: boolean) {
+      block2.disabled = value
+    },
+    fakeWindow,
+    measurementStub,
+    get nativeFetchCalls() {
+      return block2.nativeFetchCalls
+    },
+    set nativeFetchCalls(value: typeof block2.nativeFetchCalls) {
+      block2.nativeFetchCalls = value
+    },
+    nativeFetchMethods,
+    nativeFetchUrls,
+    passDecision,
+    routeStub,
+    runtimeSession,
+  }
+}
+
+async function createRewrittenRequestPreservesRequestHeaders3Context3(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block2 = await createPlaybackResourcesBlock2()
+  const {
+    fakeWindow,
+    settingsStub,
+    routeStub,
+    playurlStub,
+    passDecision,
+    FakeXhr,
+    nativeFetchHeaders,
+    nativeFetchUrls,
+  } = block2
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
     configurable: true,
     value: new URL('https://www.bilibili.com/video/BVtest/'),
   })
@@ -229,451 +712,36 @@ async function createRuntimeSessionContext1(t: TestContext) {
       skippedPreflightReason = reason
     },
   }
-  const transport = base.scope.own(
+  const transport = scope.own(
     new TransportAdapter(
       runtimeSession,
       settingsStub,
       routeStub,
       playurlStub,
       measurementStub,
-      () => base.now,
+      () => now,
       createRuntimeIds(),
     ),
   )
   transport.install()
-  return extendFixture(base, {
-    runtimeSession,
-    passDecision,
-    observations,
-    routeStub,
-    get transformed() {
-      return transformed
-    },
-    set transformed(next: typeof transformed) {
-      transformed = next
-    },
-    playurlStub,
-    get disabled() {
-      return disabled
-    },
-    set disabled(next: typeof disabled) {
-      disabled = next
-    },
-    settingsStub,
-    get nativeFetchCalls() {
-      return nativeFetchCalls
-    },
-    set nativeFetchCalls(next: typeof nativeFetchCalls) {
-      nativeFetchCalls = next
-    },
-    get cancelReason() {
-      return cancelReason
-    },
-    set cancelReason(next: typeof cancelReason) {
-      cancelReason = next
-    },
-    nativeFetchUrls,
-    nativeFetchMethods,
-    nativeFetchHeaders,
-    get streamedRequestBody() {
-      return streamedRequestBody
-    },
-    set streamedRequestBody(next: typeof streamedRequestBody) {
-      streamedRequestBody = next
-    },
-    nativeFetch,
-    FakeXhr,
-    originalWorker,
-    fakeWindow,
-    get skippedPreflightReason() {
-      return skippedPreflightReason
-    },
-    set skippedPreflightReason(next: typeof skippedPreflightReason) {
-      skippedPreflightReason = next
-    },
-    measurementStub,
-    transport,
-  } as const)
-}
-
-async function createMediaResponseContext2(t: TestContext) {
-  const base = await createRuntimeSessionContext1(t)
-  const mediaResponse = await base.fakeWindow.fetch(base.passDecision.url ?? '')
-  base.transport.snapshot().lastMediaRequest
-  const mediaReader = mediaResponse.body?.getReader()
-  await mediaReader?.read()
-  await mediaReader?.cancel('caller-cancel')
-  return extendFixture(base, {} as const)
-}
-
-async function createRewrittenRequestPreservesRequestHeaders3Context3(t: TestContext) {
-  const base = await createMediaResponseContext2(t)
-  await base.fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
-  base.disabled = true
-  await base.fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
-  base.disabled = false
-  const gatedUrl = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/gated.m4s'
-  const gateControl: { release: () => void; done: Promise<void> } = {
-    release: () => undefined,
-    done: Promise.resolve(),
-  }
-  let gateReady = false
-  base.measurementStub.willGateStartup = () => true
-  base.measurementStub.prepareStartup = () => {
-    const done = deferred<void>()
-    gateControl.done = done.promise
-    gateControl.release = () => {
-      gateReady = true
-      done.resolve()
-    }
-    return done.promise
-  }
-  base.routeStub.apply = (url: string): AppliedRouteDecision =>
-    gateReady
-      ? {
-          ...base.passDecision,
-          decision: {
-            action: 'rewrite',
-            id: decisionId('gated-rewrite'),
-            reason: 'preflight',
-            routeType: 'catalog-generated',
-            host: TRUSTED_CATALOG[0],
-            candidate: {
-              type: 'catalog-generated',
-              host: TRUSTED_CATALOG[0],
-              kind: 'video',
-              catalogIndex: 0,
-            },
-            ranking: [],
-          },
-          url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]),
-        }
-      : { ...base.passDecision, url }
-  const gatedFetch = base.fakeWindow.fetch(gatedUrl)
-  gateControl.release()
-  await gatedFetch
-  gateReady = false
-  const mutableMediaUrl = new URL(gatedUrl)
-  const mutableInit: RequestInit = { method: 'GET' }
-  const lifecycleFetch = base.fakeWindow.fetch(mutableMediaUrl, mutableInit)
-  mutableMediaUrl.hostname = 'upos-sz-mirrorcosov.bilivideo.com'
-  mutableInit.method = 'POST'
-  base.runtimeSession.beginGeneration(false)
-  gateControl.release()
-  await lifecycleFetch
-  const originalInspect = base.routeStub.inspectOriginal
-  const staleForbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/stale.m4s'
-  base.routeStub.inspectOriginal = (url: string): AppliedRouteDecision =>
-    url === staleForbiddenUrl
-      ? {
-          ...base.passDecision,
-          url: null,
-          decision: {
-            action: 'block',
-            id: decisionId('stale-black'),
-            reason: 'black',
-            routeType: 'root-original',
-            host: 'upos-sz-mirrorcosov.bilivideo.com',
-            ranking: [],
-          },
-        }
-      : { ...base.passDecision, url }
-  gateReady = false
-  const staleForbiddenFetch = base.fakeWindow.fetch(staleForbiddenUrl)
-  base.runtimeSession.beginGeneration(false)
-  gateControl.release()
-  await staleForbiddenFetch.then(
-    () => {
-      throw new Error('stale generation must still block restricted original')
-    },
-    () => undefined,
-  )
-  base.routeStub.inspectOriginal = originalInspect
-  const requestInput = new Request(gatedUrl, { method: 'GET' })
-  base.measurementStub.willGateStartup = () => false
-  await base.fakeWindow.fetch(requestInput)
-  const headerRequest = new Request(gatedUrl, { headers: { 'x-bilicdn-test': 'kept' } })
-  await base.fakeWindow.fetch(headerRequest)
-  return extendFixture(base, {
-    gatedUrl,
-    gateControl,
-    get gateReady() {
-      return gateReady
-    },
-    set gateReady(next: typeof gateReady) {
-      gateReady = next
-    },
-  } as const)
-}
-
-async function createBlacklistedNonGETFetchNeverReachesNativeFetch4Context4(t: TestContext) {
-  const base = await createRewrittenRequestPreservesRequestHeaders3Context3(t)
-  await base.fakeWindow.fetch(new URL(base.gatedUrl))
-  base.measurementStub.willGateStartup = () => true
-  const gatedXhr = new base.FakeXhr()
-  gatedXhr.open('GET', base.gatedUrl)
-  gatedXhr.send()
-  base.gateControl.release()
-  await base.gateControl.done
-  const abortedXhr = new base.FakeXhr()
-  abortedXhr.open('GET', base.gatedUrl)
-  abortedXhr.send()
-  abortedXhr.abort()
-  base.gateControl.release()
-  await base.gateControl.done
-  const finiteTimeoutXhr = new base.FakeXhr()
-  finiteTimeoutXhr.timeout = 5000
-  finiteTimeoutXhr.open('GET', base.gatedUrl)
-  finiteTimeoutXhr.send()
-  const forbiddenNonGetUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/forbidden.m4s'
-  base.routeStub.apply = (url: string): AppliedRouteDecision => ({
-    ...base.passDecision,
-    url: url === forbiddenNonGetUrl ? null : url,
-    decision:
-      url === forbiddenNonGetUrl
-        ? {
-            action: 'block',
-            id: decisionId('blocked-non-get'),
-            reason: 'black',
-            routeType: 'root-original',
-            host: 'upos-sz-mirrorcosov.bilivideo.com',
-            ranking: [],
-          }
-        : base.passDecision.decision,
-  })
-  return extendFixture(base, { forbiddenNonGetUrl } as const)
-}
-
-async function createClockContext5(t: TestContext) {
-  const base = await createAdaptersScenario(t)
-  const clock = { now: () => base.now }
-  const runtimeSession = new SessionStore()
-  runtimeSession.beginGeneration(false)
-  const passDecision: AppliedRouteDecision = {
-    decision: {
-      action: 'pass',
-      target: { type: 'request' },
-      id: decisionId('runtime-pass'),
-      reason: 'test',
-      routeType: 'root-original',
-      host: 'upos-sz-mirrorali.bilivideo.com',
-      ranking: [],
-    },
-    url: 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/runtime.m4s',
-    context: null,
-    streamKey: 'runtime',
-    sourceHost: 'upos-sz-mirrorali.bilivideo.com',
-  }
-  const observations: TransportObservation[] = []
-  const routeStub = {
-    policyRevision(): number {
-      return 0
-    },
-    requestStarted(): void {},
-    isCatalogOnly(): boolean {
-      return false
-    },
-    isBilibiliMedia(url: string): boolean {
-      return /\.bilivideo\.com\/|\.akamaized\.net\//.test(url)
-    },
-    recognizesMedia(url: string): boolean {
-      return parseMediaUrl(url)?.kind !== 'unknown'
-    },
-    inspectOriginal(url: string): AppliedRouteDecision {
-      return this.apply(url)
-    },
-    apply(url: string): AppliedRouteDecision {
-      return { ...passDecision, url }
-    },
-    async observe(observation: TransportObservation): Promise<void> {
-      observations.push(observation)
-    },
-  }
-  let transformed = 0
-  const playurlStub = {
-    transform() {
-      transformed++
-      return playurlResult(true)
-    },
-  }
-  let disabled = false,
-    blockHttpDns = true
-  const settingsStub = { get: () => ({ disabled, blockHttpDns, considerNativeSources: true }) }
-  let nativeFetchCalls = 0
-  let playurlFetchBody = JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } })
-  let playurlFetchOverride: Response | null = null
-  const nativeFetchUrls: string[] = []
-  const nativeFetchMethods: string[] = []
-  const nativeFetchRedirects: RequestRedirect[] = []
-  const nativeFetchHeaders: (string | null)[] = []
-  const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
-    nativeFetchCalls++
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
-    nativeFetchUrls.push(url)
-    nativeFetchMethods.push(
-      input instanceof Request ? input.method : String(_init?.method ?? 'GET'),
-    )
-    nativeFetchRedirects.push(
-      input instanceof Request
-        ? input.redirect
-        : (String(_init?.redirect ?? 'follow') as RequestRedirect),
-    )
-    nativeFetchHeaders.push(input instanceof Request ? input.headers.get('x-bilicdn-test') : null)
-    if (url.includes('/stream-body.m4s') && input instanceof Request) void (await input.text())
-    if (url.includes('/player/wbi/playurl'))
-      return playurlFetchOverride ?? new Response(playurlFetchBody, { status: 200 })
-    let emitted = false
-    return new Response(
-      new ReadableStream<Uint8Array>({
-        pull(controller) {
-          if (!emitted) {
-            emitted = true
-            controller.enqueue(new Uint8Array(70 * 1024))
-          }
-        },
-        cancel(reason) {
-          void reason
-        },
-      }),
-      { status: 206, headers: { 'content-type': 'video/mp4' } },
-    )
-  }
-  class FakeXhr extends EventTarget {
-    #state = 0
-    get readyState() {
-      return this.#state
-    }
-    set readyState(value: number) {
-      this.#state = value
-    }
-    method = ''
-    url = ''
-    status = 200
-    responseURL = ''
-    sync = false
-    sent = false
-    #responseType: XMLHttpRequestResponseType = ''
-    #timeout = 0
-    get responseType(): XMLHttpRequestResponseType {
-      return this.#responseType
-    }
-    set responseType(value: XMLHttpRequestResponseType) {
-      if (this.sync) throw new DOMException('synchronous XHR', 'InvalidAccessError')
-      this.#responseType = value
-    }
-    get timeout(): number {
-      return this.#timeout
-    }
-    set timeout(value: number) {
-      if (this.sync) throw new DOMException('synchronous XHR', 'InvalidAccessError')
-      this.#timeout = value
-    }
-    finalResponseUrl: string | null = null
-    rawResponseText: string | null = null
-    holdAtLoading = false
-    withCredentials = false
-    payload: unknown = { ok: true }
-    nativeSends = 0
-    get response(): unknown {
-      return this.payload
-    }
-    get responseText(): string {
-      return this.rawResponseText ?? JSON.stringify(this.payload)
-    }
-    open(method: string, url: string | URL, async = true): void {
-      this.method = method
-      this.url = String(url)
-      this.responseURL = this.url
-      this.readyState = 1
-      this.sync = !async
-      this.sent = false
-    }
-    send(): void {
-      if (this.readyState !== 1 || this.sent)
-        throw new DOMException('send invalid state', 'InvalidStateError')
-      this.sent = true
-      this.nativeSends++
-      if (this.finalResponseUrl) this.responseURL = this.finalResponseUrl
-      this.readyState = this.holdAtLoading ? 3 : 4
-      this.dispatchEvent(new Event('readystatechange'))
-      if (!this.holdAtLoading) {
-        this.dispatchEvent(new Event('load'))
-        this.dispatchEvent(new Event('loadend'))
-      }
-    }
-    abort(): void {
-      if ((this.readyState === 1 && this.sent) || this.readyState === 2 || this.readyState === 3) {
-        this.readyState = 4
-        this.sent = false
-        this.status = 0
-        this.dispatchEvent(new Event('readystatechange'))
-        this.dispatchEvent(new Event('abort'))
-        this.dispatchEvent(new Event('loadend'))
-      }
-      if (this.readyState === 4) this.readyState = 0
-    }
-    setRequestHeader(_name: string, _value: string): void {}
-  }
-  const originalWorker = function WorkerIdentity() {
-    return undefined
-  }
-  const fakeWindow = {
-    fetch: nativeFetch,
-    XMLHttpRequest: FakeXhr,
-    Worker: originalWorker,
-    navigator: globalThis.navigator,
-  }
-  base.scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
-  base.scope.defineGlobal('location', {
-    configurable: true,
-    value: new URL('https://www.bilibili.com/video/BVtest/'),
-  })
-  const measurementStub = {
-    willGateStartup: (): boolean => false,
-    prepareStartup: async (): Promise<void> => {},
-    noteUnpreflighted(reason: string): void {
-      void reason
-    },
-  }
-  const transport = base.scope.own(
-    new TransportAdapter(
-      runtimeSession,
-      settingsStub,
-      routeStub,
-      playurlStub,
-      measurementStub,
-      () => base.now,
-      createRuntimeIds(),
-    ),
-  )
-  transport.install()
-  const mediaResponse = await fakeWindow.fetch(passDecision.url ?? '')
-  transport.snapshot().lastMediaRequest
-  const mediaReader = mediaResponse.body?.getReader()
-  await mediaReader?.read()
-  await mediaReader?.cancel('caller-cancel')
   await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
-  disabled = true
+  block2.disabled = true
   await fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
-  disabled = false
-  const gatedUrl = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/gated.m4s'
-  const gateControl: { release: () => void; done: Promise<void> } = {
-    release: () => undefined,
-    done: Promise.resolve(),
-  }
-  let gateReady = false
+  block2.disabled = false
+  const block4 = createPlaybackResourcesBlock4()
+  const { gateControl, gatedUrl } = block4
   measurementStub.willGateStartup = () => true
   measurementStub.prepareStartup = () => {
     const done = deferred<void>()
     gateControl.done = done.promise
     gateControl.release = () => {
-      gateReady = true
+      block4.gateReady = true
       done.resolve()
     }
     return done.promise
   }
   routeStub.apply = (url: string): AppliedRouteDecision =>
-    gateReady
+    block4.gateReady
       ? {
           ...passDecision,
           decision: {
@@ -693,18 +761,7 @@ async function createClockContext5(t: TestContext) {
           url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]),
         }
       : { ...passDecision, url }
-  const gatedFetch = fakeWindow.fetch(gatedUrl)
-  gateControl.release()
-  await gatedFetch
-  gateReady = false
-  const mutableMediaUrl = new URL(gatedUrl)
-  const mutableInit: RequestInit = { method: 'GET' }
-  const lifecycleFetch = fakeWindow.fetch(mutableMediaUrl, mutableInit)
-  mutableMediaUrl.hostname = 'upos-sz-mirrorcosov.bilivideo.com'
-  mutableInit.method = 'POST'
-  runtimeSession.beginGeneration(false)
-  gateControl.release()
-  await lifecycleFetch
+  block4.gateReady = false
   const originalInspect = routeStub.inspectOriginal
   const staleForbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/stale.m4s'
   routeStub.inspectOriginal = (url: string): AppliedRouteDecision =>
@@ -722,7 +779,7 @@ async function createClockContext5(t: TestContext) {
           },
         }
       : { ...passDecision, url }
-  gateReady = false
+  block4.gateReady = false
   const staleForbiddenFetch = fakeWindow.fetch(staleForbiddenUrl)
   runtimeSession.beginGeneration(false)
   gateControl.release()
@@ -738,15 +795,251 @@ async function createClockContext5(t: TestContext) {
   await fakeWindow.fetch(requestInput)
   const headerRequest = new Request(gatedUrl, { headers: { 'x-bilicdn-test': 'kept' } })
   await fakeWindow.fetch(headerRequest)
+  return {
+    FakeXhr,
+    fakeWindow,
+    gateControl,
+    get gateReady(): boolean {
+      return block4.gateReady
+    },
+    set gateReady(value: boolean) {
+      block4.gateReady = value
+    },
+    gatedUrl,
+    measurementStub,
+    nativeFetchHeaders,
+    nativeFetchUrls,
+    get skippedPreflightReason() {
+      return skippedPreflightReason
+    },
+    set skippedPreflightReason(value: typeof skippedPreflightReason) {
+      skippedPreflightReason = value
+    },
+  }
+}
+
+async function createBlacklistedNonGETFetchNeverReachesNativeFetch4Context4(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block2 = await createPlaybackResourcesBlock2()
+  const {
+    fakeWindow,
+    settingsStub,
+    routeStub,
+    playurlStub,
+    FakeXhr,
+    passDecision,
+    nativeFetch,
+    nativeFetchMethods,
+    nativeFetchUrls,
+    originalWorker,
+  } = block2
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
+  }
+  const transport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  const gatedUrl = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/gated.m4s'
+  const gateControl: { release: () => void; done: Promise<void> } = {
+    release: () => undefined,
+    done: Promise.resolve(),
+  }
   await fakeWindow.fetch(new URL(gatedUrl))
   measurementStub.willGateStartup = () => true
-  gateReady = false
   const gatedXhr = new FakeXhr()
   gatedXhr.open('GET', gatedUrl)
   gatedXhr.send()
   gateControl.release()
   await gateControl.done
-  gateReady = false
+  const abortedXhr = new FakeXhr()
+  abortedXhr.open('GET', gatedUrl)
+  abortedXhr.send()
+  abortedXhr.abort()
+  gateControl.release()
+  await gateControl.done
+  const finiteTimeoutXhr = new FakeXhr()
+  finiteTimeoutXhr.timeout = 5000
+  finiteTimeoutXhr.open('GET', gatedUrl)
+  finiteTimeoutXhr.send()
+  const forbiddenNonGetUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/forbidden.m4s'
+  routeStub.apply = (url: string): AppliedRouteDecision => ({
+    ...passDecision,
+    url: url === forbiddenNonGetUrl ? null : url,
+    decision:
+      url === forbiddenNonGetUrl
+        ? {
+            action: 'block',
+            id: decisionId('blocked-non-get'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          }
+        : passDecision.decision,
+  })
+  return {
+    FakeXhr,
+    fakeWindow,
+    forbiddenNonGetUrl,
+    gatedUrl,
+    measurementStub,
+    nativeFetch,
+    get nativeFetchCalls() {
+      return block2.nativeFetchCalls
+    },
+    set nativeFetchCalls(value: typeof block2.nativeFetchCalls) {
+      block2.nativeFetchCalls = value
+    },
+    nativeFetchMethods,
+    nativeFetchUrls,
+    now,
+    originalWorker,
+    passDecision,
+    playurlStub,
+    routeStub,
+    runtimeSession,
+    scope,
+    settingsStub,
+    get streamedRequestBody() {
+      return block2.streamedRequestBody
+    },
+    set streamedRequestBody(value: typeof block2.streamedRequestBody) {
+      block2.streamedRequestBody = value
+    },
+    get transformed() {
+      return block2.transformed
+    },
+    set transformed(value: typeof block2.transformed) {
+      block2.transformed = value
+    },
+    transport,
+  }
+}
+
+async function createHealthyObservationContext6(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, settingsStub, routeStub, playurlStub, passDecision, FakeXhr, nativeFetch } =
+    block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
+  }
+  const transport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
+  block1.disabled = true
+  await fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
+  block1.disabled = false
+  const block4 = createPlaybackResourcesBlock4()
+  const { gateControl, gatedUrl } = block4
+  measurementStub.willGateStartup = () => true
+  measurementStub.prepareStartup = () => {
+    const done = deferred<void>()
+    gateControl.done = done.promise
+    gateControl.release = () => {
+      block4.gateReady = true
+      done.resolve()
+    }
+    return done.promise
+  }
+  routeStub.apply = (url: string): AppliedRouteDecision =>
+    block4.gateReady
+      ? {
+          ...passDecision,
+          decision: {
+            action: 'rewrite',
+            id: decisionId('gated-rewrite'),
+            reason: 'preflight',
+            routeType: 'catalog-generated',
+            host: TRUSTED_CATALOG[0],
+            candidate: {
+              type: 'catalog-generated',
+              host: TRUSTED_CATALOG[0],
+              kind: 'video',
+              catalogIndex: 0,
+            },
+            ranking: [],
+          },
+          url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]),
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  const originalInspect = routeStub.inspectOriginal
+  const staleForbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/stale.m4s'
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision =>
+    url === staleForbiddenUrl
+      ? {
+          ...passDecision,
+          url: null,
+          decision: {
+            action: 'block',
+            id: decisionId('stale-black'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          },
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  routeStub.inspectOriginal = originalInspect
+  const requestInput = new Request(gatedUrl, { method: 'GET' })
+  measurementStub.willGateStartup = () => false
+  await fakeWindow.fetch(requestInput)
+  const headerRequest = new Request(gatedUrl, { headers: { 'x-bilicdn-test': 'kept' } })
+  await fakeWindow.fetch(headerRequest)
+  await fakeWindow.fetch(new URL(gatedUrl))
+  measurementStub.willGateStartup = () => true
+  block4.gateReady = false
+  const gatedXhr = new FakeXhr()
+  gatedXhr.open('GET', gatedUrl)
+  gatedXhr.send()
+  gateControl.release()
+  await gateControl.done
+  block4.gateReady = false
   const abortedXhr = new FakeXhr()
   abortedXhr.open('GET', gatedUrl)
   abortedXhr.send()
@@ -836,100 +1129,29 @@ async function createClockContext5(t: TestContext) {
     configurable: true,
   })
   const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
-  base.scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
-  const partialTransport = base.scope.own(
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
+  const partialTransport = scope.own(
     new TransportAdapter(
       runtimeSession,
       settingsStub,
       routeStub,
       playurlStub,
       measurementStub,
-      () => base.now,
+      () => now,
       createRuntimeIds(),
     ),
   )
   partialTransport.install()
-  base.scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
-  let reloads = 0
-  let seeks: number[] = []
-  let rates: number[] = []
-  let plays = 0
-  let playerSnapshot: VideoSnapshot = {
-    available: true,
-    paused: false,
-    seeking: false,
-    ended: false,
-    readyState: 4,
-    currentTime: 349.434,
-    duration: 900,
-    width: 1920,
-    height: 1080,
-    playbackRate: 2,
-    effectiveRate: 2,
-    bufferAheadSec: 30,
-    playableBufferSec: 15,
-    bufferedToEnd: false,
-    frames: 1000,
-    mediaError: false,
-    coreInitialized: true,
-    manifestHasVideo: true,
-  }
-  const recoveryPlayer: PlayerPort = {
-    controls: idleControls,
-    observePlayIntent: () => () => undefined,
-    snapshot: () => playerSnapshot,
-    syncManifest: () => true,
-    reload: () => {
-      reloads++
-    },
-    currentTime: () => 349.434,
-    playbackRate: () => 2,
-    seek: (value) => {
-      seeks.push(value)
-    },
-    setRate: (value) => {
-      rates.push(value)
-    },
-    play: () => {
-      plays++
-      return Promise.resolve()
-    },
-    reset: () => undefined,
-  }
-  return extendFixture(base, {
-    clock,
-    get nativeFetchCalls() {
-      return nativeFetchCalls
-    },
-    set nativeFetchCalls(next: typeof nativeFetchCalls) {
-      nativeFetchCalls = next
-    },
-    FakeXhr,
-    fakeWindow,
-    measurementStub,
-    get playerSnapshot() {
-      return playerSnapshot
-    },
-    set playerSnapshot(next: typeof playerSnapshot) {
-      playerSnapshot = next
-    },
-    recoveryPlayer,
-  } as const)
-}
-
-async function createHealthyObservationContext6(t: TestContext) {
-  const base = await createClockContext5(t)
-  const outputStorage = new FakeStorage(),
-    outputSession = new SessionStore()
-  const outputState = outputSession.beginGeneration(false),
-    outputVault = new SignedRouteVault()
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  const block7 = createPlaybackResourcesBlock7()
+  const { outputVault, outputState, outputStorage, outputSession } = block7
   outputVault.reset(outputState.generation, outputState.epoch)
-  const outputSettings = base.scope.own(new CatalogSettingsStore(outputStorage, () => base.now))
+  const outputSettings = scope.own(new CatalogSettingsStore(outputStorage, () => now))
   await outputSettings.update({ considerNativeSources: true })
-  const outputRestrictions = base.scope.own(new RestrictionStore(outputStorage, () => base.now))
-  const outputEvidence = base.scope.own(new EvidenceStore(outputStorage, () => base.now))
+  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
+  const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
   const outputRoutes = new RouteCoordinator(
-    base.clock,
+    clock,
     outputSession,
     outputSettings,
     outputRestrictions,
@@ -950,244 +1172,229 @@ async function createHealthyObservationContext6(t: TestContext) {
     backup_url: [forbiddenUrl],
   }
   outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
-  return extendFixture(base, {
-    outputState,
-    outputVault,
-    outputSettings,
-    outputRestrictions,
-    outputRoutes,
-    outputAdapter,
+  return {
     forbiddenUrl,
+    outputAdapter,
     outputItem,
-  } as const)
+    outputRoutes,
+  }
 }
 
 async function createExceptionalForbiddenContext7(t: TestContext) {
-  const base = await createHealthyObservationContext6(t)
-  const exceptionalForbidden = `${base.forbiddenUrl}&os=mcdn`
-  const exceptionalItem = {
-    ...base.outputItem,
-    base_url: exceptionalForbidden,
-    backup_url: [exceptionalForbidden],
-  }
-  base.outputAdapter.transform({ data: { dash: { video: [exceptionalItem], audio: [] } } })
-  const opaquePrimary =
-    'https://upos-hz-mirrorakam.akamaized.net/opaque/video-chunk?signature=private'
-  const opaqueBackup =
-    'https://upos-sz-mirrorali.bilivideo.com/opaque/video-chunk?signature=private'
-  const opaqueItem = {
-    id: 81,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 1_000_000,
-    base_url: opaquePrimary,
-    backup_url: [opaqueBackup],
-  }
-  base.outputAdapter.transform({ data: { dash: { video: [opaqueItem], audio: [] } } }, 'page-hint')
-  const opaqueLineage = base.outputRoutes.apply(opaquePrimary)
-  return extendFixture(base, { opaquePrimary, opaqueBackup, opaqueItem, opaqueLineage } as const)
-}
-
-async function createPausedDeadCoreWithoutIntentNeverReloads8Context8(t: TestContext) {
-  const base = await createExceptionalForbiddenContext7(t)
-  await base.outputRestrictions.add({
-    host: 'upos-hz-mirrorakam.akamaized.net',
-    type: 'black',
-    kind: 'all',
-    reason: 'opaque-output',
-    expireAt: base.now + 60_000,
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, settingsStub, routeStub, playurlStub, passDecision, FakeXhr, nativeFetch } =
+    block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
   })
-  const opaqueRestricted = {
-    ...base.opaqueItem,
-    base_url: base.opaquePrimary,
-    backup_url: [base.opaqueBackup],
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
   }
-  base.outputAdapter.transform(
-    { data: { dash: { video: [opaqueRestricted], audio: [] } } },
-    'page-hint',
-  )
-  await base.outputRestrictions.remove('upos-hz-mirrorakam.akamaized.net', 'black')
-  const mixedItem = {
-    id: 82,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 1_000_000,
-    base_url:
-      'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/test/mixed/82.m4s?signature=private',
-    backup_url: ['https://upos-hz-mirrorakam.akamaized.net/opaque/mixed-82?signature=private'],
-  }
-  base.outputAdapter.transform({ data: { dash: { video: [mixedItem], audio: [] } } }, 'page-hint')
-  const alternateOutput = base.outputItem.backup_url.find(
-    (url) => new URL(url).host !== new URL(base.outputItem.base_url).host,
-  )
-  void base.outputRoutes.apply(alternateOutput ?? '')
-  let coreClock = base.now,
-    coreReloads = 0
-  const coreObserver = base.scope.own(
-    new RecoveryController(
-      currentResumePlayer({
-        ...base.recoveryPlayer,
-        reload: () => {
-          coreReloads++
-        },
-      }),
-      () => coreClock,
+  const transport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
     ),
   )
-  coreObserver.tick({
-    ...base.playerSnapshot,
-    paused: false,
-    readyState: 4,
-    width: 1920,
-    height: 1080,
-  })
-  const deadPaused = {
-    ...base.playerSnapshot,
-    paused: true,
-    readyState: 0,
-    width: 0,
-    height: 0,
-    frames: 0,
-    coreInitialized: false,
-  }
-  for (let tick = 0; tick < 5; tick++) {
-    coreClock += 1000
-    coreObserver.tick(deadPaused)
-  }
-  return extendFixture(base, {
-    alternateOutput,
-    get coreClock() {
-      return coreClock
-    },
-    set coreClock(next: typeof coreClock) {
-      coreClock = next
-    },
-    get coreReloads() {
-      return coreReloads
-    },
-    set coreReloads(next: typeof coreReloads) {
-      coreReloads = next
-    },
-    coreObserver,
-    deadPaused,
-  } as const)
-}
-
-async function createParameterInvalidatesCachedFallbackOnNextRequest9ParameterParameterContext9(
-  t: TestContext,
-) {
-  const base = await createPausedDeadCoreWithoutIntentNeverReloads8Context8(t)
-  void base.outputVault.contextForUrl(base.outputItem.base_url)!.representation
-  void (
-    base.outputRoutes.apply(base.outputItem.base_url) as AppliedRouteDecision & {
-      playurlOutput?: {
-        originalHost: string
-        outputHost: string
-        source: string
-        decisionId: string
-        role: string
-      }
+  transport.install()
+  await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
+  block1.disabled = true
+  await fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
+  block1.disabled = false
+  const block4 = createPlaybackResourcesBlock4()
+  const { gateControl, gatedUrl } = block4
+  measurementStub.willGateStartup = () => true
+  measurementStub.prepareStartup = () => {
+    const done = deferred<void>()
+    gateControl.done = done.promise
+    gateControl.release = () => {
+      block4.gateReady = true
+      done.resolve()
     }
-  ).playurlOutput
-  const alternateHost = new URL(base.alternateOutput!).host
-  return extendFixture(base, { alternateHost } as const)
-}
-
-async function createRestrictedFixedRouteContext10(t: TestContext) {
-  const base =
-    await createParameterInvalidatesCachedFallbackOnNextRequest9ParameterParameterContext9(t)
-  for (const type of ['black', 'dead'] as const) {
-    await base.outputRestrictions.add({
-      host: base.alternateHost,
-      type,
-      kind: 'all',
-      reason: 'regression',
-      expireAt: base.now + 60_000,
-    })
-    await base.outputSettings.update({ fixedHost: base.alternateHost })
-    base.outputRoutes.invalidateForUserSetting()
-    const item = {
-      ...base.outputItem,
-      base_url: base.forbiddenUrl,
-      backup_url: [base.alternateOutput!],
-    }
-    base.outputAdapter.transform({ data: { dash: { video: [item], audio: [] } } })
-    await base.outputRestrictions.remove(base.alternateHost, type)
+    return done.promise
   }
-  await base.outputSettings.update({ fixedHost: null })
-  base.outputRoutes.invalidateForUserSetting()
-  await base.outputSettings.update({ considerNativeSources: true })
-  return extendFixture(base, {} as const)
-}
-
-async function createNativeControlUrlContext11(t: TestContext) {
-  const base = await createRestrictedFixedRouteContext10(t)
-  const nativeControlUrl =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/control/clip.m4s?signature=private'
-  const nativeControlBackup =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/control/clip.m4s?signature=other'
-  const controlItem = {
-    id: 240,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 1_000_000,
-    base_url: nativeControlUrl,
-    backup_url: [nativeControlBackup],
-  }
-  base.outputAdapter.transform({ data: { dash: { video: [controlItem], audio: [] } } }, 'page-hint')
-  await base.outputRestrictions.add({
-    host: 'upos-sz-mirrorali.bilivideo.com',
-    type: 'black',
-    kind: 'all',
-    reason: 'original-mode',
-    expireAt: base.now + 60_000,
+  routeStub.apply = (url: string): AppliedRouteDecision =>
+    block4.gateReady
+      ? {
+          ...passDecision,
+          decision: {
+            action: 'rewrite',
+            id: decisionId('gated-rewrite'),
+            reason: 'preflight',
+            routeType: 'catalog-generated',
+            host: TRUSTED_CATALOG[0],
+            candidate: {
+              type: 'catalog-generated',
+              host: TRUSTED_CATALOG[0],
+              kind: 'video',
+              catalogIndex: 0,
+            },
+            ranking: [],
+          },
+          url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]),
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  const originalInspect = routeStub.inspectOriginal
+  const staleForbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/stale.m4s'
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision =>
+    url === staleForbiddenUrl
+      ? {
+          ...passDecision,
+          url: null,
+          decision: {
+            action: 'block',
+            id: decisionId('stale-black'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          },
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  routeStub.inspectOriginal = originalInspect
+  const requestInput = new Request(gatedUrl, { method: 'GET' })
+  measurementStub.willGateStartup = () => false
+  await fakeWindow.fetch(requestInput)
+  const headerRequest = new Request(gatedUrl, { headers: { 'x-bilicdn-test': 'kept' } })
+  await fakeWindow.fetch(headerRequest)
+  await fakeWindow.fetch(new URL(gatedUrl))
+  measurementStub.willGateStartup = () => true
+  block4.gateReady = false
+  const gatedXhr = new FakeXhr()
+  gatedXhr.open('GET', gatedUrl)
+  gatedXhr.send()
+  gateControl.release()
+  await gateControl.done
+  block4.gateReady = false
+  const abortedXhr = new FakeXhr()
+  abortedXhr.open('GET', gatedUrl)
+  abortedXhr.send()
+  abortedXhr.abort()
+  gateControl.release()
+  await gateControl.done
+  const finiteTimeoutXhr = new FakeXhr()
+  finiteTimeoutXhr.timeout = 5000
+  finiteTimeoutXhr.open('GET', gatedUrl)
+  finiteTimeoutXhr.send()
+  const forbiddenNonGetUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/forbidden.m4s'
+  routeStub.apply = (url: string): AppliedRouteDecision => ({
+    ...passDecision,
+    url: url === forbiddenNonGetUrl ? null : url,
+    decision:
+      url === forbiddenNonGetUrl
+        ? {
+            action: 'block',
+            id: decisionId('blocked-non-get'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          }
+        : passDecision.decision,
   })
-  const blockedControlItem = {
-    ...controlItem,
-    base_url: nativeControlUrl,
-    backup_url: [nativeControlBackup],
-  }
-  base.outputAdapter.transform(
-    { data: { dash: { video: [blockedControlItem], audio: [] } } },
-    'page-hint',
+  await fakeWindow.fetch(forbiddenNonGetUrl, { method: 'POST' }).then(
+    () => {
+      throw new Error('blacklisted POST Fetch must reject locally')
+    },
+    () => undefined,
   )
-  const promotedRep = base.outputVault.contextForUrl(nativeControlBackup)!.representation
-  const promotedPlan = base.outputRoutes.snapshot().recentPlans
-  return extendFixture(base, { nativeControlBackup, promotedRep, promotedPlan } as const)
-}
-
-async function createHealthyCustomRateContext12(t: TestContext) {
-  const base = await createClockContext5(t)
-  const healthyCustomRate = { ...base.playerSnapshot, playbackRate: 1.5, effectiveRate: 1.5 }
-  const healthyObservation: TransportObservation = {
-    generation: generationId(1),
-    epoch: epochId(1),
-    decisionId: decisionId('aggregate'),
-    representation: null,
-    kind: 'video',
-    routeType: 'catalog-generated',
-    originalHost: 'a.example',
-    targetHost: 'b.example',
-    finalHost: 'b.example',
-    status: 206,
-    bytes: 100_000,
-    ttfbMs: 20,
-    elapsedMs: 100,
-    completedAt: base.now,
-    outcome: 'success',
-    streamKey: 'aggregate',
-  }
-  const outputStorage = new FakeStorage(),
-    outputSession = new SessionStore()
-  const outputState = outputSession.beginGeneration(false),
-    outputVault = new SignedRouteVault()
+  const forbiddenXhr = new FakeXhr()
+  forbiddenXhr.open('POST', forbiddenNonGetUrl)
+  forbiddenXhr.send()
+  const forbiddenRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  await fakeWindow.fetch(forbiddenRequest).then(
+    () => {
+      throw new Error('blacklisted Request object must reject locally')
+    },
+    () => undefined,
+  )
+  const spoofedRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  Object.defineProperty(spoofedRequest, 'href', {
+    value: 'https://upos-sz-mirrorali.bilivideo.com/live-bvc/allowed.m4s',
+  })
+  await fakeWindow.fetch(spoofedRequest).then(
+    () => {
+      throw new Error('forged Request.href must not bypass blocked POST')
+    },
+    () => undefined,
+  )
+  measurementStub.willGateStartup = () => false
+  const converseRequest = new Request(passDecision.url ?? '')
+  Object.defineProperty(converseRequest, 'href', { value: forbiddenNonGetUrl })
+  await fakeWindow.fetch(converseRequest)
+  const spoofedDns = new Request('https://httpdns.bilivideo.com/resolve')
+  Object.defineProperty(spoofedDns, 'href', { value: passDecision.url })
+  await fakeWindow.fetch(spoofedDns)
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision => ({ ...passDecision, url })
+  const overrideRequest = new Request(gatedUrl, { method: 'GET' })
+  await fakeWindow.fetch(overrideRequest, { method: 'POST' })
+  const streamBody = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('stream-ok'))
+      controller.close()
+    },
+  })
+  await fakeWindow.fetch(
+    new Request('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/stream-body.m4s', {
+      method: 'POST',
+      body: streamBody,
+      duplex: 'half',
+    } as RequestInit),
+  )
+  measurementStub.willGateStartup = () => false
+  const xhr = new FakeXhr()
+  xhr.responseType = 'json'
+  xhr.payload = { code: 0, data: { dash: { video: [], audio: [] } } }
+  xhr.open('GET', 'https://api.bilibili.com/x/player/wbi/playurl')
+  xhr.send()
+  transport.dispose()
+  class UnpatchableXhr extends FakeXhr {}
+  Object.defineProperty(UnpatchableXhr.prototype, 'send', {
+    value: FakeXhr.prototype.send,
+    writable: false,
+    configurable: true,
+  })
+  const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
+  const partialTransport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  partialTransport.install()
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  const block7 = createPlaybackResourcesBlock7()
+  const { outputVault, outputState, outputStorage, outputSession } = block7
   outputVault.reset(outputState.generation, outputState.epoch)
-  const outputSettings = base.scope.own(new CatalogSettingsStore(outputStorage, () => base.now))
+  const outputSettings = scope.own(new CatalogSettingsStore(outputStorage, () => now))
   await outputSettings.update({ considerNativeSources: true })
-  const outputRestrictions = base.scope.own(new RestrictionStore(outputStorage, () => base.now))
-  const outputEvidence = base.scope.own(new EvidenceStore(outputStorage, () => base.now))
+  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
+  const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
   const outputRoutes = new RouteCoordinator(
-    base.clock,
+    clock,
     outputSession,
     outputSettings,
     outputRestrictions,
@@ -1215,34 +1422,1076 @@ async function createHealthyCustomRateContext12(t: TestContext) {
     backup_url: [exceptionalForbidden],
   }
   outputAdapter.transform({ data: { dash: { video: [exceptionalItem], audio: [] } } })
-  const opaquePrimary =
-    'https://upos-hz-mirrorakam.akamaized.net/opaque/video-chunk?signature=private'
-  const opaqueBackup =
-    'https://upos-sz-mirrorali.bilivideo.com/opaque/video-chunk?signature=private'
-  const opaqueItem = {
-    id: 81,
+  const block6 = createPlaybackResourcesBlock6()
+  const { opaqueItem, opaquePrimary, opaqueBackup } = block6
+  outputAdapter.transform({ data: { dash: { video: [opaqueItem], audio: [] } } }, 'page-hint')
+  const opaqueLineage = outputRoutes.apply(opaquePrimary)
+  return {
+    now,
+    opaqueBackup,
+    opaqueItem,
+    opaqueLineage,
+    opaquePrimary,
+    outputAdapter,
+    outputItem,
+    outputRestrictions,
+    outputRoutes,
+  }
+}
+
+async function createPausedDeadCoreWithoutIntentNeverReloads8Context8(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, settingsStub, routeStub, playurlStub, passDecision, FakeXhr, nativeFetch } =
+    block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
+  }
+  const transport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
+  block1.disabled = true
+  await fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
+  block1.disabled = false
+  const block4 = createPlaybackResourcesBlock4()
+  const { gateControl, gatedUrl } = block4
+  measurementStub.willGateStartup = () => true
+  measurementStub.prepareStartup = () => {
+    const done = deferred<void>()
+    gateControl.done = done.promise
+    gateControl.release = () => {
+      block4.gateReady = true
+      done.resolve()
+    }
+    return done.promise
+  }
+  routeStub.apply = (url: string): AppliedRouteDecision =>
+    block4.gateReady
+      ? {
+          ...passDecision,
+          decision: {
+            action: 'rewrite',
+            id: decisionId('gated-rewrite'),
+            reason: 'preflight',
+            routeType: 'catalog-generated',
+            host: TRUSTED_CATALOG[0],
+            candidate: {
+              type: 'catalog-generated',
+              host: TRUSTED_CATALOG[0],
+              kind: 'video',
+              catalogIndex: 0,
+            },
+            ranking: [],
+          },
+          url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]),
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  const originalInspect = routeStub.inspectOriginal
+  const staleForbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/stale.m4s'
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision =>
+    url === staleForbiddenUrl
+      ? {
+          ...passDecision,
+          url: null,
+          decision: {
+            action: 'block',
+            id: decisionId('stale-black'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          },
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  routeStub.inspectOriginal = originalInspect
+  const requestInput = new Request(gatedUrl, { method: 'GET' })
+  measurementStub.willGateStartup = () => false
+  await fakeWindow.fetch(requestInput)
+  const headerRequest = new Request(gatedUrl, { headers: { 'x-bilicdn-test': 'kept' } })
+  await fakeWindow.fetch(headerRequest)
+  await fakeWindow.fetch(new URL(gatedUrl))
+  measurementStub.willGateStartup = () => true
+  block4.gateReady = false
+  const gatedXhr = new FakeXhr()
+  gatedXhr.open('GET', gatedUrl)
+  gatedXhr.send()
+  gateControl.release()
+  await gateControl.done
+  block4.gateReady = false
+  const abortedXhr = new FakeXhr()
+  abortedXhr.open('GET', gatedUrl)
+  abortedXhr.send()
+  abortedXhr.abort()
+  gateControl.release()
+  await gateControl.done
+  const finiteTimeoutXhr = new FakeXhr()
+  finiteTimeoutXhr.timeout = 5000
+  finiteTimeoutXhr.open('GET', gatedUrl)
+  finiteTimeoutXhr.send()
+  const forbiddenNonGetUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/forbidden.m4s'
+  routeStub.apply = (url: string): AppliedRouteDecision => ({
+    ...passDecision,
+    url: url === forbiddenNonGetUrl ? null : url,
+    decision:
+      url === forbiddenNonGetUrl
+        ? {
+            action: 'block',
+            id: decisionId('blocked-non-get'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          }
+        : passDecision.decision,
+  })
+  await fakeWindow.fetch(forbiddenNonGetUrl, { method: 'POST' }).then(
+    () => {
+      throw new Error('blacklisted POST Fetch must reject locally')
+    },
+    () => undefined,
+  )
+  const forbiddenXhr = new FakeXhr()
+  forbiddenXhr.open('POST', forbiddenNonGetUrl)
+  forbiddenXhr.send()
+  const forbiddenRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  await fakeWindow.fetch(forbiddenRequest).then(
+    () => {
+      throw new Error('blacklisted Request object must reject locally')
+    },
+    () => undefined,
+  )
+  const spoofedRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  Object.defineProperty(spoofedRequest, 'href', {
+    value: 'https://upos-sz-mirrorali.bilivideo.com/live-bvc/allowed.m4s',
+  })
+  await fakeWindow.fetch(spoofedRequest).then(
+    () => {
+      throw new Error('forged Request.href must not bypass blocked POST')
+    },
+    () => undefined,
+  )
+  measurementStub.willGateStartup = () => false
+  const converseRequest = new Request(passDecision.url ?? '')
+  Object.defineProperty(converseRequest, 'href', { value: forbiddenNonGetUrl })
+  await fakeWindow.fetch(converseRequest)
+  const spoofedDns = new Request('https://httpdns.bilivideo.com/resolve')
+  Object.defineProperty(spoofedDns, 'href', { value: passDecision.url })
+  await fakeWindow.fetch(spoofedDns)
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision => ({ ...passDecision, url })
+  const overrideRequest = new Request(gatedUrl, { method: 'GET' })
+  await fakeWindow.fetch(overrideRequest, { method: 'POST' })
+  const streamBody = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('stream-ok'))
+      controller.close()
+    },
+  })
+  await fakeWindow.fetch(
+    new Request('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/stream-body.m4s', {
+      method: 'POST',
+      body: streamBody,
+      duplex: 'half',
+    } as RequestInit),
+  )
+  measurementStub.willGateStartup = () => false
+  const xhr = new FakeXhr()
+  xhr.responseType = 'json'
+  xhr.payload = { code: 0, data: { dash: { video: [], audio: [] } } }
+  xhr.open('GET', 'https://api.bilibili.com/x/player/wbi/playurl')
+  xhr.send()
+  transport.dispose()
+  class UnpatchableXhr extends FakeXhr {}
+  Object.defineProperty(UnpatchableXhr.prototype, 'send', {
+    value: FakeXhr.prototype.send,
+    writable: false,
+    configurable: true,
+  })
+  const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
+  const partialTransport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  partialTransport.install()
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  const block3 = createPlaybackResourcesBlock3()
+  const { recoveryPlayer } = block3
+  const block7 = createPlaybackResourcesBlock7()
+  const { outputVault, outputState, outputStorage, outputSession } = block7
+  outputVault.reset(outputState.generation, outputState.epoch)
+  const outputSettings = scope.own(new CatalogSettingsStore(outputStorage, () => now))
+  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
+  const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
+  const outputRoutes = new RouteCoordinator(
+    clock,
+    outputSession,
+    outputSettings,
+    outputRestrictions,
+    outputEvidence,
+    outputVault,
+    createRuntimeIds(),
+  )
+  const outputAdapter = new PlayurlAdapter(
+    new PlayurlController(outputSession, outputVault, outputRoutes),
+  )
+  const forbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/test/output/1.m4s?k=1'
+  const outputItem = {
+    id: 80,
     codecid: 13,
     height: 1080,
     bandwidth: 1_000_000,
-    base_url: opaquePrimary,
-    backup_url: [opaqueBackup],
+    base_url: forbiddenUrl,
+    backup_url: [forbiddenUrl],
   }
+  outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
+  void outputItem.backup_url.find((url) => new URL(url).host !== new URL(outputItem.base_url).host)
+  let coreClock = now
+  let coreReloads = 0
+  const coreObserver = scope.own(
+    new RecoveryController(
+      currentResumePlayer({
+        ...recoveryPlayer,
+        reload: () => {
+          coreReloads++
+        },
+      }),
+      () => coreClock,
+    ),
+  )
+  const deadPaused = {
+    ...block3.playerSnapshot,
+    paused: true,
+    readyState: 0,
+    width: 0,
+    height: 0,
+    frames: 0,
+    coreInitialized: false,
+  }
+  return {
+    get coreClock() {
+      return coreClock
+    },
+    set coreClock(value: typeof coreClock) {
+      coreClock = value
+    },
+    coreObserver,
+    get coreReloads() {
+      return coreReloads
+    },
+    set coreReloads(value: typeof coreReloads) {
+      coreReloads = value
+    },
+    deadPaused,
+    outputItem,
+    outputRoutes,
+    outputVault,
+  }
+}
+
+async function createParameterInvalidatesCachedFallbackOnNextRequest9ParameterParameterContext9(
+  t: TestContext,
+) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, settingsStub, routeStub, playurlStub, passDecision, FakeXhr, nativeFetch } =
+    block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
+  }
+  const transport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
+  block1.disabled = true
+  await fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
+  block1.disabled = false
+  const block4 = createPlaybackResourcesBlock4()
+  const { gateControl, gatedUrl } = block4
+  measurementStub.willGateStartup = () => true
+  measurementStub.prepareStartup = () => {
+    const done = deferred<void>()
+    gateControl.done = done.promise
+    gateControl.release = () => {
+      block4.gateReady = true
+      done.resolve()
+    }
+    return done.promise
+  }
+  routeStub.apply = (url: string): AppliedRouteDecision =>
+    block4.gateReady
+      ? {
+          ...passDecision,
+          decision: {
+            action: 'rewrite',
+            id: decisionId('gated-rewrite'),
+            reason: 'preflight',
+            routeType: 'catalog-generated',
+            host: TRUSTED_CATALOG[0],
+            candidate: {
+              type: 'catalog-generated',
+              host: TRUSTED_CATALOG[0],
+              kind: 'video',
+              catalogIndex: 0,
+            },
+            ranking: [],
+          },
+          url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]),
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  const originalInspect = routeStub.inspectOriginal
+  const staleForbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/stale.m4s'
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision =>
+    url === staleForbiddenUrl
+      ? {
+          ...passDecision,
+          url: null,
+          decision: {
+            action: 'block',
+            id: decisionId('stale-black'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          },
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  routeStub.inspectOriginal = originalInspect
+  const requestInput = new Request(gatedUrl, { method: 'GET' })
+  measurementStub.willGateStartup = () => false
+  await fakeWindow.fetch(requestInput)
+  const headerRequest = new Request(gatedUrl, { headers: { 'x-bilicdn-test': 'kept' } })
+  await fakeWindow.fetch(headerRequest)
+  await fakeWindow.fetch(new URL(gatedUrl))
+  measurementStub.willGateStartup = () => true
+  block4.gateReady = false
+  const gatedXhr = new FakeXhr()
+  gatedXhr.open('GET', gatedUrl)
+  gatedXhr.send()
+  gateControl.release()
+  await gateControl.done
+  block4.gateReady = false
+  const abortedXhr = new FakeXhr()
+  abortedXhr.open('GET', gatedUrl)
+  abortedXhr.send()
+  abortedXhr.abort()
+  gateControl.release()
+  await gateControl.done
+  const finiteTimeoutXhr = new FakeXhr()
+  finiteTimeoutXhr.timeout = 5000
+  finiteTimeoutXhr.open('GET', gatedUrl)
+  finiteTimeoutXhr.send()
+  const forbiddenNonGetUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/forbidden.m4s'
+  routeStub.apply = (url: string): AppliedRouteDecision => ({
+    ...passDecision,
+    url: url === forbiddenNonGetUrl ? null : url,
+    decision:
+      url === forbiddenNonGetUrl
+        ? {
+            action: 'block',
+            id: decisionId('blocked-non-get'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          }
+        : passDecision.decision,
+  })
+  await fakeWindow.fetch(forbiddenNonGetUrl, { method: 'POST' }).then(
+    () => {
+      throw new Error('blacklisted POST Fetch must reject locally')
+    },
+    () => undefined,
+  )
+  const forbiddenXhr = new FakeXhr()
+  forbiddenXhr.open('POST', forbiddenNonGetUrl)
+  forbiddenXhr.send()
+  const forbiddenRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  await fakeWindow.fetch(forbiddenRequest).then(
+    () => {
+      throw new Error('blacklisted Request object must reject locally')
+    },
+    () => undefined,
+  )
+  const spoofedRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  Object.defineProperty(spoofedRequest, 'href', {
+    value: 'https://upos-sz-mirrorali.bilivideo.com/live-bvc/allowed.m4s',
+  })
+  await fakeWindow.fetch(spoofedRequest).then(
+    () => {
+      throw new Error('forged Request.href must not bypass blocked POST')
+    },
+    () => undefined,
+  )
+  measurementStub.willGateStartup = () => false
+  const converseRequest = new Request(passDecision.url ?? '')
+  Object.defineProperty(converseRequest, 'href', { value: forbiddenNonGetUrl })
+  await fakeWindow.fetch(converseRequest)
+  const spoofedDns = new Request('https://httpdns.bilivideo.com/resolve')
+  Object.defineProperty(spoofedDns, 'href', { value: passDecision.url })
+  await fakeWindow.fetch(spoofedDns)
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision => ({ ...passDecision, url })
+  const overrideRequest = new Request(gatedUrl, { method: 'GET' })
+  await fakeWindow.fetch(overrideRequest, { method: 'POST' })
+  const streamBody = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('stream-ok'))
+      controller.close()
+    },
+  })
+  await fakeWindow.fetch(
+    new Request('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/stream-body.m4s', {
+      method: 'POST',
+      body: streamBody,
+      duplex: 'half',
+    } as RequestInit),
+  )
+  measurementStub.willGateStartup = () => false
+  const xhr = new FakeXhr()
+  xhr.responseType = 'json'
+  xhr.payload = { code: 0, data: { dash: { video: [], audio: [] } } }
+  xhr.open('GET', 'https://api.bilibili.com/x/player/wbi/playurl')
+  xhr.send()
+  transport.dispose()
+  class UnpatchableXhr extends FakeXhr {}
+  Object.defineProperty(UnpatchableXhr.prototype, 'send', {
+    value: FakeXhr.prototype.send,
+    writable: false,
+    configurable: true,
+  })
+  const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
+  const partialTransport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  partialTransport.install()
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  const block7 = createPlaybackResourcesBlock7()
+  const { outputVault, outputState, outputStorage, outputSession } = block7
+  outputVault.reset(outputState.generation, outputState.epoch)
+  const outputSettings = scope.own(new CatalogSettingsStore(outputStorage, () => now))
+  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
+  const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
+  const outputRoutes = new RouteCoordinator(
+    clock,
+    outputSession,
+    outputSettings,
+    outputRestrictions,
+    outputEvidence,
+    outputVault,
+    createRuntimeIds(),
+  )
+  const outputAdapter = new PlayurlAdapter(
+    new PlayurlController(outputSession, outputVault, outputRoutes),
+  )
+  const forbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/test/output/1.m4s?k=1'
+  const outputItem = {
+    id: 80,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 1_000_000,
+    base_url: forbiddenUrl,
+    backup_url: [forbiddenUrl],
+  }
+  outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
+  const alternateOutput = outputItem.backup_url.find(
+    (url) => new URL(url).host !== new URL(outputItem.base_url).host,
+  )
+  const alternateHost = new URL(alternateOutput!).host
+  return {
+    alternateHost,
+    alternateOutput,
+    forbiddenUrl,
+    now,
+    outputAdapter,
+    outputItem,
+    outputRestrictions,
+    outputRoutes,
+    outputSettings,
+  }
+}
+
+async function createNativeControlUrlContext11(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, settingsStub, routeStub, playurlStub, passDecision, FakeXhr, nativeFetch } =
+    block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
+  }
+  const transport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
+  block1.disabled = true
+  await fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
+  block1.disabled = false
+  const block4 = createPlaybackResourcesBlock4()
+  const { gateControl, gatedUrl } = block4
+  measurementStub.willGateStartup = () => true
+  measurementStub.prepareStartup = () => {
+    const done = deferred<void>()
+    gateControl.done = done.promise
+    gateControl.release = () => {
+      block4.gateReady = true
+      done.resolve()
+    }
+    return done.promise
+  }
+  routeStub.apply = (url: string): AppliedRouteDecision =>
+    block4.gateReady
+      ? {
+          ...passDecision,
+          decision: {
+            action: 'rewrite',
+            id: decisionId('gated-rewrite'),
+            reason: 'preflight',
+            routeType: 'catalog-generated',
+            host: TRUSTED_CATALOG[0],
+            candidate: {
+              type: 'catalog-generated',
+              host: TRUSTED_CATALOG[0],
+              kind: 'video',
+              catalogIndex: 0,
+            },
+            ranking: [],
+          },
+          url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]),
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  const originalInspect = routeStub.inspectOriginal
+  const staleForbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/stale.m4s'
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision =>
+    url === staleForbiddenUrl
+      ? {
+          ...passDecision,
+          url: null,
+          decision: {
+            action: 'block',
+            id: decisionId('stale-black'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          },
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  routeStub.inspectOriginal = originalInspect
+  const requestInput = new Request(gatedUrl, { method: 'GET' })
+  measurementStub.willGateStartup = () => false
+  await fakeWindow.fetch(requestInput)
+  const headerRequest = new Request(gatedUrl, { headers: { 'x-bilicdn-test': 'kept' } })
+  await fakeWindow.fetch(headerRequest)
+  await fakeWindow.fetch(new URL(gatedUrl))
+  measurementStub.willGateStartup = () => true
+  block4.gateReady = false
+  const gatedXhr = new FakeXhr()
+  gatedXhr.open('GET', gatedUrl)
+  gatedXhr.send()
+  gateControl.release()
+  await gateControl.done
+  block4.gateReady = false
+  const abortedXhr = new FakeXhr()
+  abortedXhr.open('GET', gatedUrl)
+  abortedXhr.send()
+  abortedXhr.abort()
+  gateControl.release()
+  await gateControl.done
+  const finiteTimeoutXhr = new FakeXhr()
+  finiteTimeoutXhr.timeout = 5000
+  finiteTimeoutXhr.open('GET', gatedUrl)
+  finiteTimeoutXhr.send()
+  const forbiddenNonGetUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/forbidden.m4s'
+  routeStub.apply = (url: string): AppliedRouteDecision => ({
+    ...passDecision,
+    url: url === forbiddenNonGetUrl ? null : url,
+    decision:
+      url === forbiddenNonGetUrl
+        ? {
+            action: 'block',
+            id: decisionId('blocked-non-get'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          }
+        : passDecision.decision,
+  })
+  await fakeWindow.fetch(forbiddenNonGetUrl, { method: 'POST' }).then(
+    () => {
+      throw new Error('blacklisted POST Fetch must reject locally')
+    },
+    () => undefined,
+  )
+  const forbiddenXhr = new FakeXhr()
+  forbiddenXhr.open('POST', forbiddenNonGetUrl)
+  forbiddenXhr.send()
+  const forbiddenRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  await fakeWindow.fetch(forbiddenRequest).then(
+    () => {
+      throw new Error('blacklisted Request object must reject locally')
+    },
+    () => undefined,
+  )
+  const spoofedRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  Object.defineProperty(spoofedRequest, 'href', {
+    value: 'https://upos-sz-mirrorali.bilivideo.com/live-bvc/allowed.m4s',
+  })
+  await fakeWindow.fetch(spoofedRequest).then(
+    () => {
+      throw new Error('forged Request.href must not bypass blocked POST')
+    },
+    () => undefined,
+  )
+  measurementStub.willGateStartup = () => false
+  const converseRequest = new Request(passDecision.url ?? '')
+  Object.defineProperty(converseRequest, 'href', { value: forbiddenNonGetUrl })
+  await fakeWindow.fetch(converseRequest)
+  const spoofedDns = new Request('https://httpdns.bilivideo.com/resolve')
+  Object.defineProperty(spoofedDns, 'href', { value: passDecision.url })
+  await fakeWindow.fetch(spoofedDns)
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision => ({ ...passDecision, url })
+  const overrideRequest = new Request(gatedUrl, { method: 'GET' })
+  await fakeWindow.fetch(overrideRequest, { method: 'POST' })
+  const streamBody = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('stream-ok'))
+      controller.close()
+    },
+  })
+  await fakeWindow.fetch(
+    new Request('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/stream-body.m4s', {
+      method: 'POST',
+      body: streamBody,
+      duplex: 'half',
+    } as RequestInit),
+  )
+  measurementStub.willGateStartup = () => false
+  const xhr = new FakeXhr()
+  xhr.responseType = 'json'
+  xhr.payload = { code: 0, data: { dash: { video: [], audio: [] } } }
+  xhr.open('GET', 'https://api.bilibili.com/x/player/wbi/playurl')
+  xhr.send()
+  transport.dispose()
+  class UnpatchableXhr extends FakeXhr {}
+  Object.defineProperty(UnpatchableXhr.prototype, 'send', {
+    value: FakeXhr.prototype.send,
+    writable: false,
+    configurable: true,
+  })
+  const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
+  const partialTransport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  partialTransport.install()
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  const block7 = createPlaybackResourcesBlock7()
+  const { outputVault, outputState, outputStorage, outputSession } = block7
+  outputVault.reset(outputState.generation, outputState.epoch)
+  const outputSettings = scope.own(new CatalogSettingsStore(outputStorage, () => now))
+  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
+  const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
+  const outputRoutes = new RouteCoordinator(
+    clock,
+    outputSession,
+    outputSettings,
+    outputRestrictions,
+    outputEvidence,
+    outputVault,
+    createRuntimeIds(),
+  )
+  const outputAdapter = new PlayurlAdapter(
+    new PlayurlController(outputSession, outputVault, outputRoutes),
+  )
+  const block5 = createPlaybackResourcesBlock5()
+  const { controlItem, nativeControlUrl, nativeControlBackup } = block5
+  outputAdapter.transform({ data: { dash: { video: [controlItem], audio: [] } } }, 'page-hint')
+  const blockedControlItem = {
+    ...controlItem,
+    base_url: nativeControlUrl,
+    backup_url: [nativeControlBackup],
+  }
+  outputAdapter.transform(
+    { data: { dash: { video: [blockedControlItem], audio: [] } } },
+    'page-hint',
+  )
+  void outputVault.contextForUrl(nativeControlBackup)!.representation
+  void outputRoutes.snapshot().recentPlans
+  return {
+    now,
+    outputRestrictions,
+    outputRoutes,
+    outputSettings,
+    outputState,
+    outputVault,
+  }
+}
+
+async function createHealthyCustomRateContext12(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, settingsStub, routeStub, playurlStub, passDecision, FakeXhr, nativeFetch } =
+    block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
+  }
+  const transport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
+  block1.disabled = true
+  await fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
+  block1.disabled = false
+  const block4 = createPlaybackResourcesBlock4()
+  const { gateControl, gatedUrl } = block4
+  measurementStub.willGateStartup = () => true
+  measurementStub.prepareStartup = () => {
+    const done = deferred<void>()
+    gateControl.done = done.promise
+    gateControl.release = () => {
+      block4.gateReady = true
+      done.resolve()
+    }
+    return done.promise
+  }
+  routeStub.apply = (url: string): AppliedRouteDecision =>
+    block4.gateReady
+      ? {
+          ...passDecision,
+          decision: {
+            action: 'rewrite',
+            id: decisionId('gated-rewrite'),
+            reason: 'preflight',
+            routeType: 'catalog-generated',
+            host: TRUSTED_CATALOG[0],
+            candidate: {
+              type: 'catalog-generated',
+              host: TRUSTED_CATALOG[0],
+              kind: 'video',
+              catalogIndex: 0,
+            },
+            ranking: [],
+          },
+          url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]),
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  const originalInspect = routeStub.inspectOriginal
+  const staleForbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/stale.m4s'
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision =>
+    url === staleForbiddenUrl
+      ? {
+          ...passDecision,
+          url: null,
+          decision: {
+            action: 'block',
+            id: decisionId('stale-black'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          },
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  routeStub.inspectOriginal = originalInspect
+  const requestInput = new Request(gatedUrl, { method: 'GET' })
+  measurementStub.willGateStartup = () => false
+  await fakeWindow.fetch(requestInput)
+  const headerRequest = new Request(gatedUrl, { headers: { 'x-bilicdn-test': 'kept' } })
+  await fakeWindow.fetch(headerRequest)
+  await fakeWindow.fetch(new URL(gatedUrl))
+  measurementStub.willGateStartup = () => true
+  block4.gateReady = false
+  const gatedXhr = new FakeXhr()
+  gatedXhr.open('GET', gatedUrl)
+  gatedXhr.send()
+  gateControl.release()
+  await gateControl.done
+  block4.gateReady = false
+  const abortedXhr = new FakeXhr()
+  abortedXhr.open('GET', gatedUrl)
+  abortedXhr.send()
+  abortedXhr.abort()
+  gateControl.release()
+  await gateControl.done
+  const finiteTimeoutXhr = new FakeXhr()
+  finiteTimeoutXhr.timeout = 5000
+  finiteTimeoutXhr.open('GET', gatedUrl)
+  finiteTimeoutXhr.send()
+  const forbiddenNonGetUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/forbidden.m4s'
+  routeStub.apply = (url: string): AppliedRouteDecision => ({
+    ...passDecision,
+    url: url === forbiddenNonGetUrl ? null : url,
+    decision:
+      url === forbiddenNonGetUrl
+        ? {
+            action: 'block',
+            id: decisionId('blocked-non-get'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          }
+        : passDecision.decision,
+  })
+  await fakeWindow.fetch(forbiddenNonGetUrl, { method: 'POST' }).then(
+    () => {
+      throw new Error('blacklisted POST Fetch must reject locally')
+    },
+    () => undefined,
+  )
+  const forbiddenXhr = new FakeXhr()
+  forbiddenXhr.open('POST', forbiddenNonGetUrl)
+  forbiddenXhr.send()
+  const forbiddenRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  await fakeWindow.fetch(forbiddenRequest).then(
+    () => {
+      throw new Error('blacklisted Request object must reject locally')
+    },
+    () => undefined,
+  )
+  const spoofedRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  Object.defineProperty(spoofedRequest, 'href', {
+    value: 'https://upos-sz-mirrorali.bilivideo.com/live-bvc/allowed.m4s',
+  })
+  await fakeWindow.fetch(spoofedRequest).then(
+    () => {
+      throw new Error('forged Request.href must not bypass blocked POST')
+    },
+    () => undefined,
+  )
+  measurementStub.willGateStartup = () => false
+  const converseRequest = new Request(passDecision.url ?? '')
+  Object.defineProperty(converseRequest, 'href', { value: forbiddenNonGetUrl })
+  await fakeWindow.fetch(converseRequest)
+  const spoofedDns = new Request('https://httpdns.bilivideo.com/resolve')
+  Object.defineProperty(spoofedDns, 'href', { value: passDecision.url })
+  await fakeWindow.fetch(spoofedDns)
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision => ({ ...passDecision, url })
+  const overrideRequest = new Request(gatedUrl, { method: 'GET' })
+  await fakeWindow.fetch(overrideRequest, { method: 'POST' })
+  const streamBody = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('stream-ok'))
+      controller.close()
+    },
+  })
+  await fakeWindow.fetch(
+    new Request('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/stream-body.m4s', {
+      method: 'POST',
+      body: streamBody,
+      duplex: 'half',
+    } as RequestInit),
+  )
+  measurementStub.willGateStartup = () => false
+  const xhr = new FakeXhr()
+  xhr.responseType = 'json'
+  xhr.payload = { code: 0, data: { dash: { video: [], audio: [] } } }
+  xhr.open('GET', 'https://api.bilibili.com/x/player/wbi/playurl')
+  xhr.send()
+  transport.dispose()
+  class UnpatchableXhr extends FakeXhr {}
+  Object.defineProperty(UnpatchableXhr.prototype, 'send', {
+    value: FakeXhr.prototype.send,
+    writable: false,
+    configurable: true,
+  })
+  const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
+  const partialTransport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  partialTransport.install()
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  const block3 = createPlaybackResourcesBlock3()
+  const { recoveryPlayer } = block3
+  const healthyCustomRate = { ...block3.playerSnapshot, playbackRate: 1.5, effectiveRate: 1.5 }
+  const healthyObservation: TransportObservation = {
+    generation: generationId(1),
+    epoch: epochId(1),
+    decisionId: decisionId('aggregate'),
+    representation: null,
+    kind: 'video',
+    routeType: 'catalog-generated',
+    originalHost: 'a.example',
+    targetHost: 'b.example',
+    finalHost: 'b.example',
+    status: 206,
+    bytes: 100_000,
+    ttfbMs: 20,
+    elapsedMs: 100,
+    completedAt: now,
+    outcome: 'success',
+    streamKey: 'aggregate',
+  }
+  const block7 = createPlaybackResourcesBlock7()
+  const { outputVault, outputState, outputStorage, outputSession } = block7
+  outputVault.reset(outputState.generation, outputState.epoch)
+  const outputSettings = scope.own(new CatalogSettingsStore(outputStorage, () => now))
+  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
+  const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
+  const outputRoutes = new RouteCoordinator(
+    clock,
+    outputSession,
+    outputSettings,
+    outputRestrictions,
+    outputEvidence,
+    outputVault,
+    createRuntimeIds(),
+  )
+  const outputAdapter = new PlayurlAdapter(
+    new PlayurlController(outputSession, outputVault, outputRoutes),
+  )
+  const forbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/test/output/1.m4s?k=1'
+  const outputItem = {
+    id: 80,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 1_000_000,
+    base_url: forbiddenUrl,
+    backup_url: [forbiddenUrl],
+  }
+  outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
+  const exceptionalForbidden = `${forbiddenUrl}&os=mcdn`
+  const exceptionalItem = {
+    ...outputItem,
+    base_url: exceptionalForbidden,
+    backup_url: [exceptionalForbidden],
+  }
+  outputAdapter.transform({ data: { dash: { video: [exceptionalItem], audio: [] } } })
+  const block6 = createPlaybackResourcesBlock6()
+  const { opaqueItem, opaquePrimary, opaqueBackup } = block6
   outputAdapter.transform({ data: { dash: { video: [opaqueItem], audio: [] } } }, 'page-hint')
   void outputRoutes.apply(opaquePrimary)
-  await outputRestrictions.add({
-    host: 'upos-hz-mirrorakam.akamaized.net',
-    type: 'black',
-    kind: 'all',
-    reason: 'opaque-output',
-    expireAt: base.now + 60_000,
-  })
   const opaqueRestricted = {
     ...opaqueItem,
     base_url: opaquePrimary,
     backup_url: [opaqueBackup],
   }
   outputAdapter.transform({ data: { dash: { video: [opaqueRestricted], audio: [] } } }, 'page-hint')
-  await outputRestrictions.remove('upos-hz-mirrorakam.akamaized.net', 'black')
   const mixedItem = {
     id: 82,
     codecid: 13,
@@ -1257,12 +2506,12 @@ async function createHealthyCustomRateContext12(t: TestContext) {
     (url) => new URL(url).host !== new URL(outputItem.base_url).host,
   )
   const fallbackApplied = outputRoutes.apply(alternateOutput ?? '')
-  let coreClock = base.now,
-    coreReloads = 0
-  const coreObserver = base.scope.own(
+  let coreClock = now
+  let coreReloads = 0
+  const coreObserver = scope.own(
     new RecoveryController(
       currentResumePlayer({
-        ...base.recoveryPlayer,
+        ...recoveryPlayer,
         reload: () => {
           coreReloads++
         },
@@ -1271,14 +2520,14 @@ async function createHealthyCustomRateContext12(t: TestContext) {
     ),
   )
   coreObserver.tick({
-    ...base.playerSnapshot,
+    ...block3.playerSnapshot,
     paused: false,
     readyState: 4,
     width: 1920,
     height: 1080,
   })
   const deadPaused = {
-    ...base.playerSnapshot,
+    ...block3.playerSnapshot,
     paused: true,
     readyState: 0,
     width: 0,
@@ -1314,7 +2563,7 @@ async function createHealthyCustomRateContext12(t: TestContext) {
       type,
       kind: 'all',
       reason: 'regression',
-      expireAt: base.now + 60_000,
+      expireAt: now + 60_000,
     })
     await outputSettings.update({ fixedHost: alternateHost })
     outputRoutes.invalidateForUserSetting()
@@ -1322,29 +2571,10 @@ async function createHealthyCustomRateContext12(t: TestContext) {
     outputAdapter.transform({ data: { dash: { video: [item], audio: [] } } })
     await outputRestrictions.remove(alternateHost, type)
   }
-  await outputSettings.update({ fixedHost: null })
   outputRoutes.invalidateForUserSetting()
-  await outputSettings.update({ considerNativeSources: true })
-  const nativeControlUrl =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/control/clip.m4s?signature=private'
-  const nativeControlBackup =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/control/clip.m4s?signature=other'
-  const controlItem = {
-    id: 240,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 1_000_000,
-    base_url: nativeControlUrl,
-    backup_url: [nativeControlBackup],
-  }
+  const block5 = createPlaybackResourcesBlock5()
+  const { controlItem, nativeControlUrl, nativeControlBackup } = block5
   outputAdapter.transform({ data: { dash: { video: [controlItem], audio: [] } } }, 'page-hint')
-  await outputRestrictions.add({
-    host: 'upos-sz-mirrorali.bilivideo.com',
-    type: 'black',
-    kind: 'all',
-    reason: 'original-mode',
-    expireAt: base.now + 60_000,
-  })
   const blockedControlItem = {
     ...controlItem,
     base_url: nativeControlUrl,
@@ -1355,18 +2585,7 @@ async function createHealthyCustomRateContext12(t: TestContext) {
     'page-hint',
   )
   void outputVault.contextForUrl(nativeControlBackup)!.representation
-  void outputRoutes.snapshot().recentPlans
-  await outputRestrictions.remove('upos-sz-mirrorali.bilivideo.com', 'black')
-  await outputSettings.update({ considerNativeSources: false })
   const ungroupedHost = TRUSTED_CATALOG[0]
-  await outputRestrictions.add({
-    host: ungroupedHost,
-    type: 'black',
-    kind: 'audio',
-    reason: 'ungrouped-audio',
-    expireAt: base.now + 60_000,
-  })
-  await outputRestrictions.remove(ungroupedHost, 'black')
   const audioScopedUrl = `https://${ungroupedHost}/upgcxcode/test/audio/1.m4s?k=1`
   outputVault.register({
     generation: outputState.generation,
@@ -1379,225 +2598,1276 @@ async function createHealthyCustomRateContext12(t: TestContext) {
     urls: [audioScopedUrl],
     source: 'trusted-api',
   })
-  await outputRestrictions.add({
-    host: ungroupedHost,
-    type: 'black',
-    kind: 'all',
-    reason: 'user',
-    expireAt: base.now + 60_000,
-  })
-  await outputRestrictions.remove(ungroupedHost, 'black')
   for (const type of ['black', 'dead'] as const) {
     await outputRestrictions.add({
       host: ungroupedHost,
       type,
       kind: 'all',
       reason: 'exceptional',
-      expireAt: base.now + 60_000,
+      expireAt: now + 60_000,
     })
     await outputRestrictions.remove(ungroupedHost, type)
   }
   const unknownQuery = alternateOutput!.replace('k=1', 'k=unknown')
-  return extendFixture(base, {
-    healthyCustomRate,
-    healthyObservation,
-    outputSession,
-    outputVault,
-    outputSettings,
-    outputRestrictions,
-    outputEvidence,
-    outputRoutes,
-    outputAdapter,
-    forbiddenUrl,
-    outputItem,
-    exceptionalForbidden,
-    fallbackApplied,
+  return {
     get coreClock() {
       return coreClock
     },
-    set coreClock(next: typeof coreClock) {
-      coreClock = next
+    set coreClock(value: typeof coreClock) {
+      coreClock = value
     },
     deadPaused,
+    fallbackApplied,
+    forbiddenUrl,
+    healthyCustomRate,
+    healthyObservation,
+    now,
+    outputAdapter,
+    outputEvidence,
+    outputItem,
     outputRep,
+    outputRoutes,
+    outputSession,
+    outputSettings,
+    recoveryPlayer,
+    scope,
     unknownQuery,
-  } as const)
+  }
 }
 
 async function createInitialDeadLookingStartupWithoutPreviousHealthIsNotAnIncidentContext13(
   t: TestContext,
 ) {
-  const base = await createHealthyCustomRateContext12(t)
-  await base.outputEvidence.record(TRUSTED_CATALOG[0], 'video', {
-    requestId: 'fresh-challenger',
-    at: base.now,
-    source: 'transport',
-    outcome: 'success',
-    throughputMbps: 10,
-    ttfbMs: 1,
-    failureKind: null,
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, settingsStub, routeStub, playurlStub, passDecision, FakeXhr, nativeFetch } =
+    block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
   })
-  const beforeGeneration = base.outputSession.get()
-  await base.outputRoutes.observe({
-    ...base.healthyObservation,
-    generation: beforeGeneration.generation,
-    epoch: beforeGeneration.epoch,
-    representation: base.outputRep,
-    originalHost: base.forbiddenUrl,
-    targetHost: TRUSTED_CATALOG[2],
-    finalHost: TRUSTED_CATALOG[2],
-    completedAt: base.now,
-    decisionId: base.fallbackApplied.decision.id,
-  })
-  await base.outputRoutes.observe({
-    ...base.healthyObservation,
-    generation: beforeGeneration.generation,
-    epoch: beforeGeneration.epoch,
-    representation: base.outputRep,
-    targetHost: TRUSTED_CATALOG[2],
-    finalHost: null,
-    outcome: 'abort',
-    status: 0,
-    completedAt: base.now + 1,
-  })
-  await base.outputRoutes.observe({
-    ...base.healthyObservation,
-    generation: beforeGeneration.generation,
-    epoch: beforeGeneration.epoch,
-    representation: base.outputRep,
-    targetHost: TRUSTED_CATALOG[3],
-    finalHost: null,
-    outcome: 'failure',
-    failureKind: 'network',
-    status: 0,
-    completedAt: base.now + 2,
-  })
-  await base.outputSettings.update({
-    catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, false])),
-  })
-  base.outputRoutes.invalidateForUserSetting()
-  const noOutput = {
-    ...base.outputItem,
-    base_url: base.forbiddenUrl,
-    backup_url: [base.forbiddenUrl],
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
   }
-  base.outputAdapter.transform({ data: { dash: { video: [noOutput], audio: [] } } })
-  const gapRecovery = base.scope.own(
-    new RecoveryController(currentResumePlayer(base.recoveryPlayer), () => base.coreClock),
+  const transport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
   )
-  gapRecovery.tick(base.healthyCustomRate)
-  for (let i = 0; i < 5; i++) {
-    base.coreClock += 10_000
-    gapRecovery.tick(base.deadPaused)
+  transport.install()
+  await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
+  block1.disabled = true
+  await fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
+  block1.disabled = false
+  const block4 = createPlaybackResourcesBlock4()
+  const { gateControl, gatedUrl } = block4
+  measurementStub.willGateStartup = () => true
+  measurementStub.prepareStartup = () => {
+    const done = deferred<void>()
+    gateControl.done = done.promise
+    gateControl.release = () => {
+      block4.gateReady = true
+      done.resolve()
+    }
+    return done.promise
   }
+  routeStub.apply = (url: string): AppliedRouteDecision =>
+    block4.gateReady
+      ? {
+          ...passDecision,
+          decision: {
+            action: 'rewrite',
+            id: decisionId('gated-rewrite'),
+            reason: 'preflight',
+            routeType: 'catalog-generated',
+            host: TRUSTED_CATALOG[0],
+            candidate: {
+              type: 'catalog-generated',
+              host: TRUSTED_CATALOG[0],
+              kind: 'video',
+              catalogIndex: 0,
+            },
+            ranking: [],
+          },
+          url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]),
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  const originalInspect = routeStub.inspectOriginal
+  const staleForbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/stale.m4s'
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision =>
+    url === staleForbiddenUrl
+      ? {
+          ...passDecision,
+          url: null,
+          decision: {
+            action: 'block',
+            id: decisionId('stale-black'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          },
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  routeStub.inspectOriginal = originalInspect
+  const requestInput = new Request(gatedUrl, { method: 'GET' })
+  measurementStub.willGateStartup = () => false
+  await fakeWindow.fetch(requestInput)
+  const headerRequest = new Request(gatedUrl, { headers: { 'x-bilicdn-test': 'kept' } })
+  await fakeWindow.fetch(headerRequest)
+  await fakeWindow.fetch(new URL(gatedUrl))
+  measurementStub.willGateStartup = () => true
+  block4.gateReady = false
+  const gatedXhr = new FakeXhr()
+  gatedXhr.open('GET', gatedUrl)
+  gatedXhr.send()
+  gateControl.release()
+  await gateControl.done
+  block4.gateReady = false
+  const abortedXhr = new FakeXhr()
+  abortedXhr.open('GET', gatedUrl)
+  abortedXhr.send()
+  abortedXhr.abort()
+  gateControl.release()
+  await gateControl.done
+  const finiteTimeoutXhr = new FakeXhr()
+  finiteTimeoutXhr.timeout = 5000
+  finiteTimeoutXhr.open('GET', gatedUrl)
+  finiteTimeoutXhr.send()
+  const forbiddenNonGetUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/forbidden.m4s'
+  routeStub.apply = (url: string): AppliedRouteDecision => ({
+    ...passDecision,
+    url: url === forbiddenNonGetUrl ? null : url,
+    decision:
+      url === forbiddenNonGetUrl
+        ? {
+            action: 'block',
+            id: decisionId('blocked-non-get'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          }
+        : passDecision.decision,
+  })
+  await fakeWindow.fetch(forbiddenNonGetUrl, { method: 'POST' }).then(
+    () => {
+      throw new Error('blacklisted POST Fetch must reject locally')
+    },
+    () => undefined,
+  )
+  const forbiddenXhr = new FakeXhr()
+  forbiddenXhr.open('POST', forbiddenNonGetUrl)
+  forbiddenXhr.send()
+  const forbiddenRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  await fakeWindow.fetch(forbiddenRequest).then(
+    () => {
+      throw new Error('blacklisted Request object must reject locally')
+    },
+    () => undefined,
+  )
+  const spoofedRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  Object.defineProperty(spoofedRequest, 'href', {
+    value: 'https://upos-sz-mirrorali.bilivideo.com/live-bvc/allowed.m4s',
+  })
+  await fakeWindow.fetch(spoofedRequest).then(
+    () => {
+      throw new Error('forged Request.href must not bypass blocked POST')
+    },
+    () => undefined,
+  )
+  measurementStub.willGateStartup = () => false
+  const converseRequest = new Request(passDecision.url ?? '')
+  Object.defineProperty(converseRequest, 'href', { value: forbiddenNonGetUrl })
+  await fakeWindow.fetch(converseRequest)
+  const spoofedDns = new Request('https://httpdns.bilivideo.com/resolve')
+  Object.defineProperty(spoofedDns, 'href', { value: passDecision.url })
+  await fakeWindow.fetch(spoofedDns)
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision => ({ ...passDecision, url })
+  const overrideRequest = new Request(gatedUrl, { method: 'GET' })
+  await fakeWindow.fetch(overrideRequest, { method: 'POST' })
+  const streamBody = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('stream-ok'))
+      controller.close()
+    },
+  })
+  await fakeWindow.fetch(
+    new Request('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/stream-body.m4s', {
+      method: 'POST',
+      body: streamBody,
+      duplex: 'half',
+    } as RequestInit),
+  )
+  measurementStub.willGateStartup = () => false
+  const xhr = new FakeXhr()
+  xhr.responseType = 'json'
+  xhr.payload = { code: 0, data: { dash: { video: [], audio: [] } } }
+  xhr.open('GET', 'https://api.bilibili.com/x/player/wbi/playurl')
+  xhr.send()
+  transport.dispose()
+  class UnpatchableXhr extends FakeXhr {}
+  Object.defineProperty(UnpatchableXhr.prototype, 'send', {
+    value: FakeXhr.prototype.send,
+    writable: false,
+    configurable: true,
+  })
+  const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
+  const partialTransport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  partialTransport.install()
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  const block3 = createPlaybackResourcesBlock3()
+  const { recoveryPlayer } = block3
+  const block7 = createPlaybackResourcesBlock7()
+  const { outputVault, outputState, outputStorage, outputSession } = block7
+  outputVault.reset(outputState.generation, outputState.epoch)
+  const outputSettings = scope.own(new CatalogSettingsStore(outputStorage, () => now))
+  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
+  const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
+  const outputRoutes = new RouteCoordinator(
+    clock,
+    outputSession,
+    outputSettings,
+    outputRestrictions,
+    outputEvidence,
+    outputVault,
+    createRuntimeIds(),
+  )
+  const outputAdapter = new PlayurlAdapter(
+    new PlayurlController(outputSession, outputVault, outputRoutes),
+  )
+  const forbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/test/output/1.m4s?k=1'
+  const outputItem = {
+    id: 80,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 1_000_000,
+    base_url: forbiddenUrl,
+    backup_url: [forbiddenUrl],
+  }
+  outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
+  const exceptionalForbidden = `${forbiddenUrl}&os=mcdn`
+  const exceptionalItem = {
+    ...outputItem,
+    base_url: exceptionalForbidden,
+    backup_url: [exceptionalForbidden],
+  }
+  outputAdapter.transform({ data: { dash: { video: [exceptionalItem], audio: [] } } })
+  const block6 = createPlaybackResourcesBlock6()
+  const { opaqueItem, opaquePrimary, opaqueBackup } = block6
+  outputAdapter.transform({ data: { dash: { video: [opaqueItem], audio: [] } } }, 'page-hint')
+  void outputRoutes.apply(opaquePrimary)
+  const opaqueRestricted = {
+    ...opaqueItem,
+    base_url: opaquePrimary,
+    backup_url: [opaqueBackup],
+  }
+  outputAdapter.transform({ data: { dash: { video: [opaqueRestricted], audio: [] } } }, 'page-hint')
+  const mixedItem = {
+    id: 82,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 1_000_000,
+    base_url:
+      'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/test/mixed/82.m4s?signature=private',
+    backup_url: ['https://upos-hz-mirrorakam.akamaized.net/opaque/mixed-82?signature=private'],
+  }
+  outputAdapter.transform({ data: { dash: { video: [mixedItem], audio: [] } } }, 'page-hint')
+  const alternateOutput = outputItem.backup_url.find(
+    (url) => new URL(url).host !== new URL(outputItem.base_url).host,
+  )
+  void outputRoutes.apply(alternateOutput ?? '')
+  let coreClock = now
+  let coreReloads = 0
+  const coreObserver = scope.own(
+    new RecoveryController(
+      currentResumePlayer({
+        ...recoveryPlayer,
+        reload: () => {
+          coreReloads++
+        },
+      }),
+      () => coreClock,
+    ),
+  )
+  coreObserver.tick({
+    ...block3.playerSnapshot,
+    paused: false,
+    readyState: 4,
+    width: 1920,
+    height: 1080,
+  })
+  const deadPaused = {
+    ...block3.playerSnapshot,
+    paused: true,
+    readyState: 0,
+    width: 0,
+    height: 0,
+    frames: 0,
+    coreInitialized: false,
+  }
+  for (let tick = 0; tick < 5; tick++) {
+    coreClock += 1000
+    coreObserver.tick(deadPaused)
+  }
+  coreClock += 31_000
+  for (let tick = 0; tick < 100; tick++) {
+    coreClock += 1000
+    coreObserver.tick(deadPaused)
+  }
+  void outputVault.contextForUrl(outputItem.base_url)!.representation
+  ;(
+    outputRoutes.apply(outputItem.base_url) as AppliedRouteDecision & {
+      playurlOutput?: {
+        originalHost: string
+        outputHost: string
+        source: string
+        decisionId: string
+        role: string
+      }
+    }
+  ).playurlOutput
+  const alternateHost = new URL(alternateOutput!).host
+  for (const type of ['black', 'dead'] as const) {
+    await outputRestrictions.add({
+      host: alternateHost,
+      type,
+      kind: 'all',
+      reason: 'regression',
+      expireAt: now + 60_000,
+    })
+    await outputSettings.update({ fixedHost: alternateHost })
+    outputRoutes.invalidateForUserSetting()
+    const item = { ...outputItem, base_url: forbiddenUrl, backup_url: [alternateOutput!] }
+    outputAdapter.transform({ data: { dash: { video: [item], audio: [] } } })
+    await outputRestrictions.remove(alternateHost, type)
+  }
+  outputRoutes.invalidateForUserSetting()
+  const block5 = createPlaybackResourcesBlock5()
+  const { controlItem, nativeControlUrl, nativeControlBackup } = block5
+  outputAdapter.transform({ data: { dash: { video: [controlItem], audio: [] } } }, 'page-hint')
+  const blockedControlItem = {
+    ...controlItem,
+    base_url: nativeControlUrl,
+    backup_url: [nativeControlBackup],
+  }
+  outputAdapter.transform(
+    { data: { dash: { video: [blockedControlItem], audio: [] } } },
+    'page-hint',
+  )
+  void outputVault.contextForUrl(nativeControlBackup)!.representation
+  const ungroupedHost = TRUSTED_CATALOG[0]
+  const audioScopedUrl = `https://${ungroupedHost}/upgcxcode/test/audio/1.m4s?k=1`
+  outputVault.register({
+    generation: outputState.generation,
+    epoch: outputState.epoch,
+    kind: 'audio',
+    key: 'scope-audio',
+    height: 0,
+    codec: 'other',
+    bandwidth: 128_000,
+    urls: [audioScopedUrl],
+    source: 'trusted-api',
+  })
+  for (const type of ['black', 'dead'] as const) {
+    await outputRestrictions.add({
+      host: ungroupedHost,
+      type,
+      kind: 'all',
+      reason: 'exceptional',
+      expireAt: now + 60_000,
+    })
+    await outputRestrictions.remove(ungroupedHost, type)
+  }
+  void alternateOutput!.replace('k=1', 'k=unknown')
+  void outputSession.get()
+  const gapRecovery = scope.own(
+    new RecoveryController(currentResumePlayer(recoveryPlayer), () => coreClock),
+  )
   gapRecovery.reset()
-  for (let i = 0; i < 5; i++) {
-    base.coreClock += 1000
-    gapRecovery.tick(base.deadPaused)
+  return {
+    FakeXhr,
+    forbiddenUrl,
+    measurementStub,
+    now,
+    outputAdapter,
+    outputItem,
+    outputRestrictions,
+    outputRoutes,
+    outputSession,
+    outputSettings,
+    scope,
   }
-  return extendFixture(base, {} as const)
 }
 
 async function createXHRDoesNotSendDefaultUnavailablePCDNMarkedMedia15Context14(t: TestContext) {
-  const base = await createInitialDeadLookingStartupWithoutPreviousHealthIsNotAnIncidentContext13(t)
-  await base.outputSettings.update({ catalogOverrides: {}, fixedHost: null })
-  base.outputRoutes.invalidateForUserSetting()
-  const realAdapter = base.scope.own(
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, settingsStub, routeStub, playurlStub, passDecision, FakeXhr, nativeFetch } =
+    block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
+  }
+  const transport = scope.own(
     new TransportAdapter(
-      base.outputSession,
-      base.outputSettings,
-      base.outputRoutes,
-      base.outputAdapter,
-      base.measurementStub,
-      () => base.now,
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
+  block1.disabled = true
+  await fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
+  block1.disabled = false
+  const block4 = createPlaybackResourcesBlock4()
+  const { gateControl, gatedUrl } = block4
+  measurementStub.willGateStartup = () => true
+  measurementStub.prepareStartup = () => {
+    const done = deferred<void>()
+    gateControl.done = done.promise
+    gateControl.release = () => {
+      block4.gateReady = true
+      done.resolve()
+    }
+    return done.promise
+  }
+  routeStub.apply = (url: string): AppliedRouteDecision =>
+    block4.gateReady
+      ? {
+          ...passDecision,
+          decision: {
+            action: 'rewrite',
+            id: decisionId('gated-rewrite'),
+            reason: 'preflight',
+            routeType: 'catalog-generated',
+            host: TRUSTED_CATALOG[0],
+            candidate: {
+              type: 'catalog-generated',
+              host: TRUSTED_CATALOG[0],
+              kind: 'video',
+              catalogIndex: 0,
+            },
+            ranking: [],
+          },
+          url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]),
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  const originalInspect = routeStub.inspectOriginal
+  const staleForbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/stale.m4s'
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision =>
+    url === staleForbiddenUrl
+      ? {
+          ...passDecision,
+          url: null,
+          decision: {
+            action: 'block',
+            id: decisionId('stale-black'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          },
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  routeStub.inspectOriginal = originalInspect
+  const requestInput = new Request(gatedUrl, { method: 'GET' })
+  measurementStub.willGateStartup = () => false
+  await fakeWindow.fetch(requestInput)
+  const headerRequest = new Request(gatedUrl, { headers: { 'x-bilicdn-test': 'kept' } })
+  await fakeWindow.fetch(headerRequest)
+  await fakeWindow.fetch(new URL(gatedUrl))
+  measurementStub.willGateStartup = () => true
+  block4.gateReady = false
+  const gatedXhr = new FakeXhr()
+  gatedXhr.open('GET', gatedUrl)
+  gatedXhr.send()
+  gateControl.release()
+  await gateControl.done
+  block4.gateReady = false
+  const abortedXhr = new FakeXhr()
+  abortedXhr.open('GET', gatedUrl)
+  abortedXhr.send()
+  abortedXhr.abort()
+  gateControl.release()
+  await gateControl.done
+  const finiteTimeoutXhr = new FakeXhr()
+  finiteTimeoutXhr.timeout = 5000
+  finiteTimeoutXhr.open('GET', gatedUrl)
+  finiteTimeoutXhr.send()
+  const forbiddenNonGetUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/forbidden.m4s'
+  routeStub.apply = (url: string): AppliedRouteDecision => ({
+    ...passDecision,
+    url: url === forbiddenNonGetUrl ? null : url,
+    decision:
+      url === forbiddenNonGetUrl
+        ? {
+            action: 'block',
+            id: decisionId('blocked-non-get'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          }
+        : passDecision.decision,
+  })
+  await fakeWindow.fetch(forbiddenNonGetUrl, { method: 'POST' }).then(
+    () => {
+      throw new Error('blacklisted POST Fetch must reject locally')
+    },
+    () => undefined,
+  )
+  const forbiddenXhr = new FakeXhr()
+  forbiddenXhr.open('POST', forbiddenNonGetUrl)
+  forbiddenXhr.send()
+  const forbiddenRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  await fakeWindow.fetch(forbiddenRequest).then(
+    () => {
+      throw new Error('blacklisted Request object must reject locally')
+    },
+    () => undefined,
+  )
+  const spoofedRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  Object.defineProperty(spoofedRequest, 'href', {
+    value: 'https://upos-sz-mirrorali.bilivideo.com/live-bvc/allowed.m4s',
+  })
+  await fakeWindow.fetch(spoofedRequest).then(
+    () => {
+      throw new Error('forged Request.href must not bypass blocked POST')
+    },
+    () => undefined,
+  )
+  measurementStub.willGateStartup = () => false
+  const converseRequest = new Request(passDecision.url ?? '')
+  Object.defineProperty(converseRequest, 'href', { value: forbiddenNonGetUrl })
+  await fakeWindow.fetch(converseRequest)
+  const spoofedDns = new Request('https://httpdns.bilivideo.com/resolve')
+  Object.defineProperty(spoofedDns, 'href', { value: passDecision.url })
+  await fakeWindow.fetch(spoofedDns)
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision => ({ ...passDecision, url })
+  const overrideRequest = new Request(gatedUrl, { method: 'GET' })
+  await fakeWindow.fetch(overrideRequest, { method: 'POST' })
+  const streamBody = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('stream-ok'))
+      controller.close()
+    },
+  })
+  await fakeWindow.fetch(
+    new Request('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/stream-body.m4s', {
+      method: 'POST',
+      body: streamBody,
+      duplex: 'half',
+    } as RequestInit),
+  )
+  measurementStub.willGateStartup = () => false
+  const xhr = new FakeXhr()
+  xhr.responseType = 'json'
+  xhr.payload = { code: 0, data: { dash: { video: [], audio: [] } } }
+  xhr.open('GET', 'https://api.bilibili.com/x/player/wbi/playurl')
+  xhr.send()
+  transport.dispose()
+  class UnpatchableXhr extends FakeXhr {}
+  Object.defineProperty(UnpatchableXhr.prototype, 'send', {
+    value: FakeXhr.prototype.send,
+    writable: false,
+    configurable: true,
+  })
+  const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
+  const partialTransport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  partialTransport.install()
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  const block3 = createPlaybackResourcesBlock3()
+  const { recoveryPlayer } = block3
+  const block7 = createPlaybackResourcesBlock7()
+  const { outputVault, outputState, outputStorage, outputSession } = block7
+  outputVault.reset(outputState.generation, outputState.epoch)
+  const outputSettings = scope.own(new CatalogSettingsStore(outputStorage, () => now))
+  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
+  const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
+  const outputRoutes = new RouteCoordinator(
+    clock,
+    outputSession,
+    outputSettings,
+    outputRestrictions,
+    outputEvidence,
+    outputVault,
+    createRuntimeIds(),
+  )
+  const outputAdapter = new PlayurlAdapter(
+    new PlayurlController(outputSession, outputVault, outputRoutes),
+  )
+  const forbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/test/output/1.m4s?k=1'
+  const outputItem = {
+    id: 80,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 1_000_000,
+    base_url: forbiddenUrl,
+    backup_url: [forbiddenUrl],
+  }
+  outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
+  const exceptionalForbidden = `${forbiddenUrl}&os=mcdn`
+  const exceptionalItem = {
+    ...outputItem,
+    base_url: exceptionalForbidden,
+    backup_url: [exceptionalForbidden],
+  }
+  outputAdapter.transform({ data: { dash: { video: [exceptionalItem], audio: [] } } })
+  const block6 = createPlaybackResourcesBlock6()
+  const { opaqueItem, opaquePrimary, opaqueBackup } = block6
+  outputAdapter.transform({ data: { dash: { video: [opaqueItem], audio: [] } } }, 'page-hint')
+  void outputRoutes.apply(opaquePrimary)
+  const opaqueRestricted = {
+    ...opaqueItem,
+    base_url: opaquePrimary,
+    backup_url: [opaqueBackup],
+  }
+  outputAdapter.transform({ data: { dash: { video: [opaqueRestricted], audio: [] } } }, 'page-hint')
+  const mixedItem = {
+    id: 82,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 1_000_000,
+    base_url:
+      'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/test/mixed/82.m4s?signature=private',
+    backup_url: ['https://upos-hz-mirrorakam.akamaized.net/opaque/mixed-82?signature=private'],
+  }
+  outputAdapter.transform({ data: { dash: { video: [mixedItem], audio: [] } } }, 'page-hint')
+  const alternateOutput = outputItem.backup_url.find(
+    (url) => new URL(url).host !== new URL(outputItem.base_url).host,
+  )
+  void outputRoutes.apply(alternateOutput ?? '')
+  let coreClock = now
+  let coreReloads = 0
+  const coreObserver = scope.own(
+    new RecoveryController(
+      currentResumePlayer({
+        ...recoveryPlayer,
+        reload: () => {
+          coreReloads++
+        },
+      }),
+      () => coreClock,
+    ),
+  )
+  coreObserver.tick({
+    ...block3.playerSnapshot,
+    paused: false,
+    readyState: 4,
+    width: 1920,
+    height: 1080,
+  })
+  const deadPaused = {
+    ...block3.playerSnapshot,
+    paused: true,
+    readyState: 0,
+    width: 0,
+    height: 0,
+    frames: 0,
+    coreInitialized: false,
+  }
+  for (let tick = 0; tick < 5; tick++) {
+    coreClock += 1000
+    coreObserver.tick(deadPaused)
+  }
+  coreClock += 31_000
+  for (let tick = 0; tick < 100; tick++) {
+    coreClock += 1000
+    coreObserver.tick(deadPaused)
+  }
+  void outputVault.contextForUrl(outputItem.base_url)!.representation
+  ;(
+    outputRoutes.apply(outputItem.base_url) as AppliedRouteDecision & {
+      playurlOutput?: {
+        originalHost: string
+        outputHost: string
+        source: string
+        decisionId: string
+        role: string
+      }
+    }
+  ).playurlOutput
+  const alternateHost = new URL(alternateOutput!).host
+  for (const type of ['black', 'dead'] as const) {
+    await outputRestrictions.add({
+      host: alternateHost,
+      type,
+      kind: 'all',
+      reason: 'regression',
+      expireAt: now + 60_000,
+    })
+    await outputSettings.update({ fixedHost: alternateHost })
+    outputRoutes.invalidateForUserSetting()
+    const item = { ...outputItem, base_url: forbiddenUrl, backup_url: [alternateOutput!] }
+    outputAdapter.transform({ data: { dash: { video: [item], audio: [] } } })
+    await outputRestrictions.remove(alternateHost, type)
+  }
+  outputRoutes.invalidateForUserSetting()
+  const block5 = createPlaybackResourcesBlock5()
+  const { controlItem, nativeControlUrl, nativeControlBackup } = block5
+  outputAdapter.transform({ data: { dash: { video: [controlItem], audio: [] } } }, 'page-hint')
+  const blockedControlItem = {
+    ...controlItem,
+    base_url: nativeControlUrl,
+    backup_url: [nativeControlBackup],
+  }
+  outputAdapter.transform(
+    { data: { dash: { video: [blockedControlItem], audio: [] } } },
+    'page-hint',
+  )
+  void outputVault.contextForUrl(nativeControlBackup)!.representation
+  const ungroupedHost = TRUSTED_CATALOG[0]
+  const audioScopedUrl = `https://${ungroupedHost}/upgcxcode/test/audio/1.m4s?k=1`
+  outputVault.register({
+    generation: outputState.generation,
+    epoch: outputState.epoch,
+    kind: 'audio',
+    key: 'scope-audio',
+    height: 0,
+    codec: 'other',
+    bandwidth: 128_000,
+    urls: [audioScopedUrl],
+    source: 'trusted-api',
+  })
+  for (const type of ['black', 'dead'] as const) {
+    await outputRestrictions.add({
+      host: ungroupedHost,
+      type,
+      kind: 'all',
+      reason: 'exceptional',
+      expireAt: now + 60_000,
+    })
+    await outputRestrictions.remove(ungroupedHost, type)
+  }
+  void alternateOutput!.replace('k=1', 'k=unknown')
+  void outputSession.get()
+  const gapRecovery = scope.own(
+    new RecoveryController(currentResumePlayer(recoveryPlayer), () => coreClock),
+  )
+  gapRecovery.reset()
+  outputRoutes.invalidateForUserSetting()
+  const realAdapter = scope.own(
+    new TransportAdapter(
+      outputSession,
+      outputSettings,
+      outputRoutes,
+      outputAdapter,
+      measurementStub,
+      () => now,
       createRuntimeIds(),
     ),
   )
   realAdapter.install()
-  const tracedXhr = new base.FakeXhr()
-  tracedXhr.open('GET', base.outputItem.base_url)
+  const tracedXhr = new FakeXhr()
+  tracedXhr.open('GET', outputItem.base_url)
   tracedXhr.send()
   await Promise.resolve()
-  base.outputRoutes.snapshot().latest.video
-  const actualXhr = new base.FakeXhr()
-  actualXhr.open('GET', base.forbiddenUrl)
-  const initiallySentHost = new URL(actualXhr.url).host
-  await base.outputRestrictions.add({
-    host: initiallySentHost,
-    type: 'black',
-    kind: 'all',
-    reason: 'before-send',
-    expireAt: base.now + 60_000,
-  })
+  outputRoutes.snapshot().latest.video
+  const actualXhr = new FakeXhr()
+  actualXhr.open('GET', forbiddenUrl)
   actualXhr.send()
-  await base.outputSettings.update({
+  await outputSettings.update({
     catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, false])),
   })
-  const blockedXhr = new base.FakeXhr()
-  blockedXhr.open('GET', base.forbiddenUrl)
+  const blockedXhr = new FakeXhr()
+  blockedXhr.open('GET', forbiddenUrl)
   blockedXhr.send()
-  const exceptionalXhr = new base.FakeXhr()
-  exceptionalXhr.open('GET', base.exceptionalForbidden)
+  const exceptionalXhr = new FakeXhr()
+  exceptionalXhr.open('GET', exceptionalForbidden)
   exceptionalXhr.send()
-  return extendFixture(base, { realAdapter, exceptionalXhr } as const)
+  return {
+    FakeXhr,
+    exceptionalForbidden,
+    exceptionalXhr,
+    fakeWindow,
+    forbiddenUrl,
+    get nativeFetchCalls() {
+      return block1.nativeFetchCalls
+    },
+    set nativeFetchCalls(value: typeof block1.nativeFetchCalls) {
+      block1.nativeFetchCalls = value
+    },
+    outputSettings,
+  }
 }
 
 async function createPlayObserverInstalledOnFirstPausedTickNotThirtySecondsLaterContext15(
   t: TestContext,
 ) {
-  const base = await createXHRDoesNotSendDefaultUnavailablePCDNMarkedMedia15Context14(t)
-  try {
-    await base.fakeWindow.fetch(base.forbiddenUrl)
-  } catch {
-    true
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const runtimeSession = new SessionStore()
+  runtimeSession.beginGeneration(false)
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, settingsStub, routeStub, playurlStub, passDecision, FakeXhr, nativeFetch } =
+    block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
   }
-  try {
-    await base.fakeWindow.fetch(base.exceptionalForbidden)
-  } catch {
-    true
+  const transport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  await fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
+  block1.disabled = true
+  await fakeWindow.fetch('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/disabled.m4s')
+  block1.disabled = false
+  const block4 = createPlaybackResourcesBlock4()
+  const { gateControl, gatedUrl } = block4
+  measurementStub.willGateStartup = () => true
+  measurementStub.prepareStartup = () => {
+    const done = deferred<void>()
+    gateControl.done = done.promise
+    gateControl.release = () => {
+      block4.gateReady = true
+      done.resolve()
+    }
+    return done.promise
   }
-  await base.outputSettings.update({ disabled: true })
-  const enabledAfterOpen = new base.FakeXhr()
-  enabledAfterOpen.open('GET', base.forbiddenUrl)
-  await base.outputSettings.update({ disabled: false })
-  enabledAfterOpen.send()
-  await base.outputSettings.update({ disabled: true })
-  const disabledXhr = new base.FakeXhr()
-  disabledXhr.open('GET', base.forbiddenUrl)
-  disabledXhr.send()
-  base.realAdapter.dispose()
-  let intentClock = base.now,
-    intentReloads = 0,
-    activation = false
-  let intentVideo = { ...base.healthyCustomRate }
+  routeStub.apply = (url: string): AppliedRouteDecision =>
+    block4.gateReady
+      ? {
+          ...passDecision,
+          decision: {
+            action: 'rewrite',
+            id: decisionId('gated-rewrite'),
+            reason: 'preflight',
+            routeType: 'catalog-generated',
+            host: TRUSTED_CATALOG[0],
+            candidate: {
+              type: 'catalog-generated',
+              host: TRUSTED_CATALOG[0],
+              kind: 'video',
+              catalogIndex: 0,
+            },
+            ranking: [],
+          },
+          url: url.replace('upos-sz-mirrorali.bilivideo.com', TRUSTED_CATALOG[0]),
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  const originalInspect = routeStub.inspectOriginal
+  const staleForbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/stale.m4s'
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision =>
+    url === staleForbiddenUrl
+      ? {
+          ...passDecision,
+          url: null,
+          decision: {
+            action: 'block',
+            id: decisionId('stale-black'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          },
+        }
+      : { ...passDecision, url }
+  block4.gateReady = false
+  routeStub.inspectOriginal = originalInspect
+  const requestInput = new Request(gatedUrl, { method: 'GET' })
+  measurementStub.willGateStartup = () => false
+  await fakeWindow.fetch(requestInput)
+  const headerRequest = new Request(gatedUrl, { headers: { 'x-bilicdn-test': 'kept' } })
+  await fakeWindow.fetch(headerRequest)
+  await fakeWindow.fetch(new URL(gatedUrl))
+  measurementStub.willGateStartup = () => true
+  block4.gateReady = false
+  const gatedXhr = new FakeXhr()
+  gatedXhr.open('GET', gatedUrl)
+  gatedXhr.send()
+  gateControl.release()
+  await gateControl.done
+  block4.gateReady = false
+  const abortedXhr = new FakeXhr()
+  abortedXhr.open('GET', gatedUrl)
+  abortedXhr.send()
+  abortedXhr.abort()
+  gateControl.release()
+  await gateControl.done
+  const finiteTimeoutXhr = new FakeXhr()
+  finiteTimeoutXhr.timeout = 5000
+  finiteTimeoutXhr.open('GET', gatedUrl)
+  finiteTimeoutXhr.send()
+  const forbiddenNonGetUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/a/b/forbidden.m4s'
+  routeStub.apply = (url: string): AppliedRouteDecision => ({
+    ...passDecision,
+    url: url === forbiddenNonGetUrl ? null : url,
+    decision:
+      url === forbiddenNonGetUrl
+        ? {
+            action: 'block',
+            id: decisionId('blocked-non-get'),
+            reason: 'black',
+            routeType: 'root-original',
+            host: 'upos-sz-mirrorcosov.bilivideo.com',
+            ranking: [],
+          }
+        : passDecision.decision,
+  })
+  await fakeWindow.fetch(forbiddenNonGetUrl, { method: 'POST' }).then(
+    () => {
+      throw new Error('blacklisted POST Fetch must reject locally')
+    },
+    () => undefined,
+  )
+  const forbiddenXhr = new FakeXhr()
+  forbiddenXhr.open('POST', forbiddenNonGetUrl)
+  forbiddenXhr.send()
+  const forbiddenRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  await fakeWindow.fetch(forbiddenRequest).then(
+    () => {
+      throw new Error('blacklisted Request object must reject locally')
+    },
+    () => undefined,
+  )
+  const spoofedRequest = new Request(forbiddenNonGetUrl, { method: 'POST' })
+  Object.defineProperty(spoofedRequest, 'href', {
+    value: 'https://upos-sz-mirrorali.bilivideo.com/live-bvc/allowed.m4s',
+  })
+  await fakeWindow.fetch(spoofedRequest).then(
+    () => {
+      throw new Error('forged Request.href must not bypass blocked POST')
+    },
+    () => undefined,
+  )
+  measurementStub.willGateStartup = () => false
+  const converseRequest = new Request(passDecision.url ?? '')
+  Object.defineProperty(converseRequest, 'href', { value: forbiddenNonGetUrl })
+  await fakeWindow.fetch(converseRequest)
+  const spoofedDns = new Request('https://httpdns.bilivideo.com/resolve')
+  Object.defineProperty(spoofedDns, 'href', { value: passDecision.url })
+  await fakeWindow.fetch(spoofedDns)
+  routeStub.inspectOriginal = (url: string): AppliedRouteDecision => ({ ...passDecision, url })
+  const overrideRequest = new Request(gatedUrl, { method: 'GET' })
+  await fakeWindow.fetch(overrideRequest, { method: 'POST' })
+  const streamBody = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('stream-ok'))
+      controller.close()
+    },
+  })
+  await fakeWindow.fetch(
+    new Request('https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/stream-body.m4s', {
+      method: 'POST',
+      body: streamBody,
+      duplex: 'half',
+    } as RequestInit),
+  )
+  measurementStub.willGateStartup = () => false
+  const xhr = new FakeXhr()
+  xhr.responseType = 'json'
+  xhr.payload = { code: 0, data: { dash: { video: [], audio: [] } } }
+  xhr.open('GET', 'https://api.bilibili.com/x/player/wbi/playurl')
+  xhr.send()
+  transport.dispose()
+  class UnpatchableXhr extends FakeXhr {}
+  Object.defineProperty(UnpatchableXhr.prototype, 'send', {
+    value: FakeXhr.prototype.send,
+    writable: false,
+    configurable: true,
+  })
+  const partialWindow = { fetch: nativeFetch, XMLHttpRequest: UnpatchableXhr }
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: partialWindow })
+  const partialTransport = scope.own(
+    new TransportAdapter(
+      runtimeSession,
+      settingsStub,
+      routeStub,
+      playurlStub,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  partialTransport.install()
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  const block3 = createPlaybackResourcesBlock3()
+  const { recoveryPlayer } = block3
+  const healthyCustomRate = { ...block3.playerSnapshot, playbackRate: 1.5, effectiveRate: 1.5 }
+  const block7 = createPlaybackResourcesBlock7()
+  const { outputVault, outputState, outputStorage, outputSession } = block7
+  outputVault.reset(outputState.generation, outputState.epoch)
+  const outputSettings = scope.own(new CatalogSettingsStore(outputStorage, () => now))
+  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
+  const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
+  const outputRoutes = new RouteCoordinator(
+    clock,
+    outputSession,
+    outputSettings,
+    outputRestrictions,
+    outputEvidence,
+    outputVault,
+    createRuntimeIds(),
+  )
+  const outputAdapter = new PlayurlAdapter(
+    new PlayurlController(outputSession, outputVault, outputRoutes),
+  )
+  const forbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/test/output/1.m4s?k=1'
+  const outputItem = {
+    id: 80,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 1_000_000,
+    base_url: forbiddenUrl,
+    backup_url: [forbiddenUrl],
+  }
+  outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
+  const exceptionalForbidden = `${forbiddenUrl}&os=mcdn`
+  const exceptionalItem = {
+    ...outputItem,
+    base_url: exceptionalForbidden,
+    backup_url: [exceptionalForbidden],
+  }
+  outputAdapter.transform({ data: { dash: { video: [exceptionalItem], audio: [] } } })
+  const block6 = createPlaybackResourcesBlock6()
+  const { opaqueItem, opaquePrimary, opaqueBackup } = block6
+  outputAdapter.transform({ data: { dash: { video: [opaqueItem], audio: [] } } }, 'page-hint')
+  void outputRoutes.apply(opaquePrimary)
+  const opaqueRestricted = {
+    ...opaqueItem,
+    base_url: opaquePrimary,
+    backup_url: [opaqueBackup],
+  }
+  outputAdapter.transform({ data: { dash: { video: [opaqueRestricted], audio: [] } } }, 'page-hint')
+  await outputRestrictions.remove('upos-hz-mirrorakam.akamaized.net', 'black')
+  const mixedItem = {
+    id: 82,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 1_000_000,
+    base_url:
+      'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/test/mixed/82.m4s?signature=private',
+    backup_url: ['https://upos-hz-mirrorakam.akamaized.net/opaque/mixed-82?signature=private'],
+  }
+  outputAdapter.transform({ data: { dash: { video: [mixedItem], audio: [] } } }, 'page-hint')
+  const alternateOutput = outputItem.backup_url.find(
+    (url) => new URL(url).host !== new URL(outputItem.base_url).host,
+  )
+  void outputRoutes.apply(alternateOutput ?? '')
+  let coreClock = now
+  let coreReloads = 0
+  const coreObserver = scope.own(
+    new RecoveryController(
+      currentResumePlayer({
+        ...recoveryPlayer,
+        reload: () => {
+          coreReloads++
+        },
+      }),
+      () => coreClock,
+    ),
+  )
+  coreObserver.tick({
+    ...block3.playerSnapshot,
+    paused: false,
+    readyState: 4,
+    width: 1920,
+    height: 1080,
+  })
+  const deadPaused = {
+    ...block3.playerSnapshot,
+    paused: true,
+    readyState: 0,
+    width: 0,
+    height: 0,
+    frames: 0,
+    coreInitialized: false,
+  }
+  for (let tick = 0; tick < 5; tick++) {
+    coreClock += 1000
+    coreObserver.tick(deadPaused)
+  }
+  coreClock += 31_000
+  for (let tick = 0; tick < 100; tick++) {
+    coreClock += 1000
+    coreObserver.tick(deadPaused)
+  }
+  void outputVault.contextForUrl(outputItem.base_url)!.representation
+  ;(
+    outputRoutes.apply(outputItem.base_url) as AppliedRouteDecision & {
+      playurlOutput?: {
+        originalHost: string
+        outputHost: string
+        source: string
+        decisionId: string
+        role: string
+      }
+    }
+  ).playurlOutput
+  const alternateHost = new URL(alternateOutput!).host
+  for (const type of ['black', 'dead'] as const) {
+    await outputRestrictions.add({
+      host: alternateHost,
+      type,
+      kind: 'all',
+      reason: 'regression',
+      expireAt: now + 60_000,
+    })
+    await outputSettings.update({ fixedHost: alternateHost })
+    outputRoutes.invalidateForUserSetting()
+    const item = { ...outputItem, base_url: forbiddenUrl, backup_url: [alternateOutput!] }
+    outputAdapter.transform({ data: { dash: { video: [item], audio: [] } } })
+    await outputRestrictions.remove(alternateHost, type)
+  }
+  outputRoutes.invalidateForUserSetting()
+  const block5 = createPlaybackResourcesBlock5()
+  const { controlItem, nativeControlUrl, nativeControlBackup } = block5
+  outputAdapter.transform({ data: { dash: { video: [controlItem], audio: [] } } }, 'page-hint')
+  const blockedControlItem = {
+    ...controlItem,
+    base_url: nativeControlUrl,
+    backup_url: [nativeControlBackup],
+  }
+  outputAdapter.transform(
+    { data: { dash: { video: [blockedControlItem], audio: [] } } },
+    'page-hint',
+  )
+  void outputVault.contextForUrl(nativeControlBackup)!.representation
+  const ungroupedHost = TRUSTED_CATALOG[0]
+  const audioScopedUrl = `https://${ungroupedHost}/upgcxcode/test/audio/1.m4s?k=1`
+  outputVault.register({
+    generation: outputState.generation,
+    epoch: outputState.epoch,
+    kind: 'audio',
+    key: 'scope-audio',
+    height: 0,
+    codec: 'other',
+    bandwidth: 128_000,
+    urls: [audioScopedUrl],
+    source: 'trusted-api',
+  })
+  for (const type of ['black', 'dead'] as const) {
+    await outputRestrictions.add({
+      host: ungroupedHost,
+      type,
+      kind: 'all',
+      reason: 'exceptional',
+      expireAt: now + 60_000,
+    })
+    await outputRestrictions.remove(ungroupedHost, type)
+  }
+  void alternateOutput!.replace('k=1', 'k=unknown')
+  void outputSession.get()
+  const gapRecovery = scope.own(
+    new RecoveryController(currentResumePlayer(recoveryPlayer), () => coreClock),
+  )
+  gapRecovery.reset()
+  let intentClock = now
+  let intentReloads = 0
+  let activation = false
+  let intentVideo = { ...healthyCustomRate }
   const intentTarget = { play: () => 'original-result' }
-  return extendFixture(base, {
+  return {
+    get activation() {
+      return activation
+    },
+    set activation(value: typeof activation) {
+      activation = value
+    },
+    deadPaused,
+    fakeWindow,
     get intentClock() {
       return intentClock
     },
-    set intentClock(next: typeof intentClock) {
-      intentClock = next
+    set intentClock(value: typeof intentClock) {
+      intentClock = value
     },
     get intentReloads() {
       return intentReloads
     },
-    set intentReloads(next: typeof intentReloads) {
-      intentReloads = next
+    set intentReloads(value: typeof intentReloads) {
+      intentReloads = value
     },
-    get activation() {
-      return activation
-    },
-    set activation(next: typeof activation) {
-      activation = next
-    },
+    intentTarget,
     get intentVideo() {
       return intentVideo
     },
-    set intentVideo(next: typeof intentVideo) {
-      intentVideo = next
+    set intentVideo(value: typeof intentVideo) {
+      intentVideo = value
     },
-    intentTarget,
-  } as const)
+    outputAdapter,
+    outputRoutes,
+    outputSession,
+    outputSettings,
+    outputVault,
+    recoveryPlayer,
+    scope,
+  }
 }
 
 async function checkBlacklistedNonGETFetchNeverReachesNativeFetch4(t: TestContext): Promise<void> {

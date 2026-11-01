@@ -1,4 +1,3 @@
-import { extendFixture } from '../support/fixture-context.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
@@ -9,18 +8,18 @@ import { testScope } from '../support/scope.ts'
 // Named scenarios create only their prerequisite state; resources belong to this test.
 
 async function createHostAndurlContext1(_t: TestContext) {
-  const host = 'upos-sz-mirrorcos.bilivideo.com',
-    url = `https://${host}/test.m4s`
+  const host = 'upos-sz-mirrorcos.bilivideo.com'
+  const url = `https://${host}/test.m4s`
   const input = {
-    url,
-    host,
+    url: url,
+    host: host,
     limit: 16,
     signal: new AbortController().signal,
     completionReason: 'enough',
   }
-  let requestInit: RequestInit | undefined,
-    reason: unknown,
-    body: ReadableStream<Uint8Array> | null = null
+  let requestInit: RequestInit | undefined
+  let reason: unknown
+  let body: ReadableStream<Uint8Array> | null = null
   const response = (status: number, responseUrl: string, redirected = false): Response => {
     body = new ReadableStream<Uint8Array>({
       start(controller) {
@@ -45,54 +44,51 @@ async function createHostAndurlContext1(_t: TestContext) {
     () => 10,
   )
   const measured = await direct.read(input)
-  return extendFixture({}, {
-    host,
-    url,
-    input,
-    get requestInit() {
-      return requestInit
-    },
-    set requestInit(next: typeof requestInit) {
-      requestInit = next
-    },
-    get reason() {
-      return reason
-    },
-    set reason(next: typeof reason) {
-      reason = next
-    },
+  return {
     get body() {
       return body
     },
-    set body(next: typeof body) {
-      body = next
+    set body(value: typeof body) {
+      body = value
+    },
+    host,
+    input,
+    measured,
+    get reason() {
+      return reason
+    },
+    set reason(value: typeof reason) {
+      reason = value
+    },
+    get requestInit() {
+      return requestInit
+    },
+    set requestInit(value: typeof requestInit) {
+      requestInit = value
     },
     response,
-    measured,
-  } as const)
+    url,
+  }
 }
 
 async function createScopeContext2(t: TestContext) {
   const scope = testScope(t)
-  const host = 'upos-sz-mirrorcos.bilivideo.com',
-    url = `https://${host}/test.m4s`
+  const host = 'upos-sz-mirrorcos.bilivideo.com'
+  const url = `https://${host}/test.m4s`
   const input = {
-    url,
-    host,
+    url: url,
+    host: host,
     limit: 16,
     signal: new AbortController().signal,
     completionReason: 'enough',
   }
-
   let body: ReadableStream<Uint8Array> | null = null
   const response = (status: number, responseUrl: string, redirected = false): Response => {
     body = new ReadableStream<Uint8Array>({
       start(controller) {
         controller.enqueue(new Uint8Array(32))
       },
-      cancel(value) {
-        void value
-      },
+      cancel(_value) {},
     })
     const result = new Response(body, { status })
     Object.defineProperties(result, {
@@ -118,18 +114,18 @@ async function createScopeContext2(t: TestContext) {
     },
     () => 10,
   ).read({ ...input, signal: aborted.signal })
-  return extendFixture({}, {
-    scope,
-    url,
-    input,
+  return {
+    cancelled,
     get fetchCalls() {
       return fetchCalls
     },
-    set fetchCalls(next: typeof fetchCalls) {
-      fetchCalls = next
+    set fetchCalls(value: typeof fetchCalls) {
+      fetchCalls = value
     },
-    cancelled,
-  } as const)
+    input,
+    scope,
+    url,
+  }
 }
 
 async function checkProbeCapsConsumedBytesAtItsDeclaredLimit1(t: TestContext): Promise<void> {

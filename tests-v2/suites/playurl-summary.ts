@@ -1,4 +1,3 @@
-import { extendFixture } from '../support/fixture-context.ts'
 import { installProgressEvent } from '../support/progress-event.ts'
 import '../regressions/up141-api.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
@@ -15,17 +14,14 @@ import { SessionStore } from '../../src-v2/state/session-store.ts'
 import { testScope } from '../support/scope.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
-async function createPlayurlSummaryScenario(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const session = new SessionStore()
-  session.beginGeneration(false)
-  let strict = true,
-    disabled = false,
-    status = 200,
-    body = '{"code":0}',
-    throws = false,
-    calls = 0
+
+function createPlaybackResourcesBlock1() {
+  let strict = true
+  let disabled = false
+  let status = 200
+  let body = '{"code":0}'
+  let throws = false
+  let calls = 0
   let responseOverride: Response | null = null
   let now = 2_000_000_000_000
   const secret = 'https://example.invalid/private/video.m4s?token=summary-secret'
@@ -60,7 +56,9 @@ async function createPlayurlSummaryScenario(t: TestContext) {
     requestStarted() {},
     async observe() {},
   } satisfies TransportRoutes
-  const settings = { get: () => ({ disabled, blockHttpDns: false }) } satisfies TransportSettings
+  const settings = {
+    get: () => ({ disabled: disabled, blockHttpDns: false }),
+  } satisfies TransportSettings
   const measurement = {
     willGateStartup: () => false,
     async prepareStartup() {},
@@ -102,8 +100,75 @@ async function createPlayurlSummaryScenario(t: TestContext) {
     }
     setRequestHeader(): void {}
   }
-  const nativeFetch: typeof fetch = async () => responseOverride ?? new Response(body, { status })
+  const nativeFetch: typeof fetch = async () =>
+    responseOverride ?? new Response(body, { status: status })
   const windowFixture = { fetch: nativeFetch, XMLHttpRequest: FakeXhr }
+  return {
+    get strict(): boolean {
+      return strict
+    },
+    set strict(value: boolean) {
+      strict = value
+    },
+    get disabled(): boolean {
+      return disabled
+    },
+    set disabled(value: boolean) {
+      disabled = value
+    },
+    get body() {
+      return body
+    },
+    set body(value: typeof body) {
+      body = value
+    },
+    get throws() {
+      return throws
+    },
+    set throws(value: typeof throws) {
+      throws = value
+    },
+    get calls() {
+      return calls
+    },
+    set calls(value: typeof calls) {
+      calls = value
+    },
+    get responseOverride() {
+      return responseOverride
+    },
+    set responseOverride(value: typeof responseOverride) {
+      responseOverride = value
+    },
+    get now() {
+      return now
+    },
+    set now(value: typeof now) {
+      now = value
+    },
+    secret,
+    accepted,
+    get result() {
+      return result
+    },
+    set result(value: typeof result) {
+      result = value
+    },
+    playurl,
+    routes,
+    settings,
+    measurement,
+    windowFixture,
+  }
+}
+
+async function createPlayurlSummaryScenario(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const session = new SessionStore()
+  session.beginGeneration(false)
+  const block1 = createPlaybackResourcesBlock1()
+  const { windowFixture, settings, routes, playurl, measurement } = block1
   scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
   scope.defineGlobal('location', {
     configurable: true,
@@ -116,77 +181,48 @@ async function createPlayurlSummaryScenario(t: TestContext) {
       routes,
       playurl,
       measurement,
-      () => now,
+      () => block1.now,
       createRuntimeIds(),
     ),
   )
   transport.install()
   const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
-  return extendFixture({}, {
-    session,
-    get strict() {
-      return strict
-    },
-    set strict(next: typeof strict) {
-      strict = next
-    },
-    get disabled() {
-      return disabled
-    },
-    set disabled(next: typeof disabled) {
-      disabled = next
-    },
-    get body() {
-      return body
-    },
-    set body(next: typeof body) {
-      body = next
-    },
-    get throws() {
-      return throws
-    },
-    set throws(next: typeof throws) {
-      throws = next
-    },
-    get calls() {
-      return calls
-    },
-    set calls(next: typeof calls) {
-      calls = next
-    },
-    get responseOverride() {
-      return responseOverride
-    },
-    set responseOverride(next: typeof responseOverride) {
-      responseOverride = next
-    },
-    get now() {
-      return now
-    },
-    set now(next: typeof now) {
-      now = next
-    },
-    secret,
-    accepted,
-    get result() {
-      return result
-    },
-    set result(next: typeof result) {
-      result = next
-    },
-    windowFixture,
-    transport,
+  return {
     endpoint,
-  } as const)
+    transport,
+    windowFixture,
+  }
 }
 
 async function createARejectedResultObjectCannotTruthilyPassStrictFetch2Context1(t: TestContext) {
-  const base = await createPlayurlSummaryScenario(t)
-  void base.transport.snapshot().lastPlayurl
-  void (await base.windowFixture.fetch(base.endpoint)).status
-  const first = base.transport.snapshot().lastPlayurl
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const session = new SessionStore()
+  session.beginGeneration(false)
+  const block1 = createPlaybackResourcesBlock1()
+  const { windowFixture, settings, routes, playurl, measurement } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/'),
+  })
+  const transport = scope.own(
+    new TransportAdapter(
+      session,
+      settings,
+      routes,
+      playurl,
+      measurement,
+      () => block1.now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
+  void (await windowFixture.fetch(endpoint)).status
+  const first = transport.snapshot().lastPlayurl
   void first?.formats.join(',')
-  base.result = {
+  block1.result = {
     accepted: false,
     formats: ['mp4'],
     videoCount: 0,
@@ -195,80 +231,265 @@ async function createARejectedResultObjectCannotTruthilyPassStrictFetch2Context1
     upstreamCode: -10403,
     reason: 'upstream-error',
   }
-  const rejected = await base.windowFixture.fetch(base.endpoint)
-  return extendFixture(base, { rejected } as const)
+  const rejected = await windowFixture.fetch(endpoint)
+  return {
+    rejected,
+    transport,
+  }
 }
 
 async function createRejectedBodyContext2(t: TestContext) {
-  const base = await createARejectedResultObjectCannotTruthilyPassStrictFetch2Context1(t)
-  void (await base.rejected.json())
-  void base.transport.snapshot().lastPlayurl?.upstreamCode
-  void base.transport.snapshot().lastPlayurl?.reason
-  void base.transport.snapshot().lastPlayurl?.status
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const session = new SessionStore()
+  session.beginGeneration(false)
+  const block1 = createPlaybackResourcesBlock1()
+  const { windowFixture, settings, routes, playurl, measurement, secret } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/'),
+  })
+  const transport = scope.own(
+    new TransportAdapter(
+      session,
+      settings,
+      routes,
+      playurl,
+      measurement,
+      () => block1.now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
+  void (await windowFixture.fetch(endpoint)).status
+  const first = transport.snapshot().lastPlayurl
+  void first?.formats.join(',')
+  block1.result = {
+    accepted: false,
+    formats: ['mp4'],
+    videoCount: 0,
+    audioCount: 0,
+    segmentCount: 2,
+    upstreamCode: -10403,
+    reason: 'upstream-error',
+  }
   const makeXhr = (type: XMLHttpRequestResponseType, value: unknown = { code: 0 }) => {
-    const xhr = new base.windowFixture.XMLHttpRequest()
+    const xhr = new windowFixture.XMLHttpRequest()
     xhr.responseType = type
     xhr.payload = value
-    xhr.open('GET', base.endpoint)
+    xhr.open('GET', endpoint)
     xhr.send()
     return xhr
   }
-  return extendFixture(base, { makeXhr } as const)
+  return {
+    get calls() {
+      return block1.calls
+    },
+    set calls(value: typeof block1.calls) {
+      block1.calls = value
+    },
+    makeXhr,
+    secret,
+    transport,
+  }
 }
 
 async function createXHRResponseTextAcceptsATypedAcceptedResult4Context3(t: TestContext) {
-  const base = await createRejectedBodyContext2(t)
-  for (const type of ['text', 'json'] as const) {
-    const xhr = base.makeXhr(type, { code: 0, data: { url: base.secret } })
-    const output = type === 'json' ? JSON.stringify(xhr.response) : xhr.responseText
-    void !output.includes('summary-secret')
-    void xhr.status
-    void base.transport.snapshot().lastPlayurl?.transport
-    void base.transport.snapshot().lastPlayurl?.reason
-    const transformedAt = base.calls
-    void xhr.response
-    if (type === 'text') void xhr.responseText
-    void base.calls
-    void transformedAt
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const session = new SessionStore()
+  session.beginGeneration(false)
+  const block1 = createPlaybackResourcesBlock1()
+  const { windowFixture, settings, routes, playurl, measurement, accepted, secret } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/'),
+  })
+  const transport = scope.own(
+    new TransportAdapter(
+      session,
+      settings,
+      routes,
+      playurl,
+      measurement,
+      () => block1.now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
+  void transport.snapshot().lastPlayurl
+  const makeXhr = (type: XMLHttpRequestResponseType, value: unknown = { code: 0 }) => {
+    const xhr = new windowFixture.XMLHttpRequest()
+    xhr.responseType = type
+    xhr.payload = value
+    xhr.open('GET', endpoint)
+    xhr.send()
+    return xhr
   }
-  base.result = base.accepted
-  const acceptedXhr = base.makeXhr('text')
-  return extendFixture(base, { acceptedXhr } as const)
+  const acceptedXhr = makeXhr('text')
+  return {
+    accepted,
+    acceptedXhr,
+    get body() {
+      return block1.body
+    },
+    set body(value: typeof block1.body) {
+      block1.body = value
+    },
+    endpoint,
+    makeXhr,
+    get result() {
+      return block1.result
+    },
+    set result(value: typeof block1.result) {
+      block1.result = value
+    },
+    secret,
+    get strict(): boolean {
+      return block1.strict
+    },
+    set strict(value: boolean) {
+      block1.strict = value
+    },
+    get throws() {
+      return block1.throws
+    },
+    set throws(value: typeof block1.throws) {
+      block1.throws = value
+    },
+    transport,
+    windowFixture,
+  }
 }
 
 async function createNativeEnabledXHRPreservesRejectedUpstreamPayload5Context4(t: TestContext) {
-  const base = await createXHRResponseTextAcceptsATypedAcceptedResult4Context3(t)
-  void base.transport.snapshot().lastPlayurl?.segmentCount
-  void base.transport.snapshot().lastPlayurl?.accepted
-  base.body = '{malformed:' + base.secret
-  void (await base.windowFixture.fetch(base.endpoint)).status
-  void base.transport.snapshot().lastPlayurl?.reason
-  const malformedXhr = base.makeXhr('text')
-  malformedXhr.rawText = base.body
-  void base.transport.snapshot().lastPlayurl?.reason
-  base.body = '{"code":0}'
-  base.throws = true
-  await base.windowFixture.fetch(base.endpoint)
-  void base.transport.snapshot().lastPlayurl?.reason
-  base.throws = false
-  base.strict = false
-  base.result = { ...base.accepted, accepted: false, reason: 'no-legal-route' }
-  base.body = JSON.stringify({ code: 0, data: { url: base.secret } })
-  void (await (await base.windowFixture.fetch(base.endpoint)).text())
-  const nativeXhr = base.makeXhr('json', { code: 0, data: { url: base.secret } })
-  return extendFixture(base, { nativeXhr } as const)
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const session = new SessionStore()
+  session.beginGeneration(false)
+  const block1 = createPlaybackResourcesBlock1()
+  const { windowFixture, settings, routes, playurl, measurement, secret, accepted } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/'),
+  })
+  const transport = scope.own(
+    new TransportAdapter(
+      session,
+      settings,
+      routes,
+      playurl,
+      measurement,
+      () => block1.now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
+  void transport.snapshot().lastPlayurl
+  const makeXhr = (type: XMLHttpRequestResponseType, value: unknown = { code: 0 }) => {
+    const xhr = new windowFixture.XMLHttpRequest()
+    xhr.responseType = type
+    xhr.payload = value
+    xhr.open('GET', endpoint)
+    xhr.send()
+    return xhr
+  }
+  block1.body = '{malformed:' + secret
+  void (await windowFixture.fetch(endpoint)).status
+  const malformedXhr = makeXhr('text')
+  malformedXhr.rawText = block1.body
+  block1.body = '{"code":0}'
+  block1.throws = true
+  await windowFixture.fetch(endpoint)
+  block1.throws = false
+  block1.strict = false
+  block1.result = { ...accepted, accepted: false, reason: 'no-legal-route' }
+  block1.body = JSON.stringify({ code: 0, data: { url: secret } })
+  void (await (await windowFixture.fetch(endpoint)).text())
+  const nativeXhr = makeXhr('json', { code: 0, data: { url: secret } })
+  return {
+    accepted,
+    get calls() {
+      return block1.calls
+    },
+    set calls(value: typeof block1.calls) {
+      block1.calls = value
+    },
+    endpoint,
+    makeXhr,
+    nativeXhr,
+    get responseOverride() {
+      return block1.responseOverride
+    },
+    set responseOverride(value: typeof block1.responseOverride) {
+      block1.responseOverride = value
+    },
+    get result() {
+      return block1.result
+    },
+    set result(value: typeof block1.result) {
+      block1.result = value
+    },
+    secret,
+    session,
+    get strict(): boolean {
+      return block1.strict
+    },
+    set strict(value: boolean) {
+      block1.strict = value
+    },
+    transport,
+    windowFixture,
+  }
 }
 
 async function createNonFinitePlayurlSummaryCountsContext5(t: TestContext) {
-  const base = await createNativeEnabledXHRPreservesRejectedUpstreamPayload5Context4(t)
-  void (base.transport.snapshot().lastPlayurl?.accepted === false)
-  base.strict = true
-  const stale = base.makeXhr('text', { data: { url: base.secret } })
-  base.session.beginGeneration(false)
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const session = new SessionStore()
+  session.beginGeneration(false)
+  const block1 = createPlaybackResourcesBlock1()
+  const { windowFixture, settings, routes, playurl, measurement, secret, accepted } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/'),
+  })
+  const transport = scope.own(
+    new TransportAdapter(
+      session,
+      settings,
+      routes,
+      playurl,
+      measurement,
+      () => block1.now,
+      createRuntimeIds(),
+    ),
+  )
+  transport.install()
+  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
+  void transport.snapshot().lastPlayurl
+  const makeXhr = (type: XMLHttpRequestResponseType, value: unknown = { code: 0 }) => {
+    const xhr = new windowFixture.XMLHttpRequest()
+    xhr.responseType = type
+    xhr.payload = value
+    xhr.open('GET', endpoint)
+    xhr.send()
+    return xhr
+  }
+  void (transport.snapshot().lastPlayurl?.accepted === false)
+  block1.strict = true
+  const stale = makeXhr('text', { data: { url: secret } })
+  session.beginGeneration(false)
   void !stale.responseText.includes('summary-secret')
-  void base.transport.snapshot().lastPlayurl?.reason
   let releaseBody = (): void => {}
-  base.responseOverride = new Response(
+  block1.responseOverride = new Response(
     new ReadableStream<Uint8Array>({
       start(controller) {
         releaseBody = () => {
@@ -279,23 +500,46 @@ async function createNonFinitePlayurlSummaryCountsContext5(t: TestContext) {
     }),
     { status: 201 },
   )
-  base.result = base.accepted
-  void base.windowFixture.fetch(base.endpoint)
-  base.session.beginGeneration(false)
+  block1.result = accepted
+  const staleFetch = windowFixture.fetch(endpoint)
+  session.beginGeneration(false)
   releaseBody()
-  void base.transport.snapshot().lastPlayurl?.reason
-  void base.transport.snapshot().lastPlayurl?.status
-  base.responseOverride = null
-  base.result = {
-    ...base.accepted,
+  await staleFetch
+  block1.responseOverride = null
+  block1.result = {
+    ...accepted,
     videoCount: Infinity,
     audioCount: -1,
     segmentCount: 1_000_000,
     upstreamCode: Infinity,
     formats: ['dash', 'dash', 'mp4', 'flv', 'mp4'],
   }
-  await base.windowFixture.fetch(base.endpoint)
-  return extendFixture(base, {} as const)
+  await windowFixture.fetch(endpoint)
+  return {
+    accepted,
+    get disabled(): boolean {
+      return block1.disabled
+    },
+    set disabled(value: boolean) {
+      block1.disabled = value
+    },
+    endpoint,
+    get now() {
+      return block1.now
+    },
+    set now(value: typeof block1.now) {
+      block1.now = value
+    },
+    get result() {
+      return block1.result
+    },
+    set result(value: typeof block1.result) {
+      block1.result = value
+    },
+    secret,
+    transport,
+    windowFixture,
+  }
 }
 
 async function checkNonFinitePlayurlSummaryCountsAreNormalized6(t: TestContext): Promise<void> {

@@ -1,4 +1,3 @@
-import { extendFixture } from '../support/fixture-context.ts'
 import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { installProgressEvent } from '../support/progress-event.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
@@ -7,7 +6,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
 import { PlayurlController } from '../../src-v2/application/playurl-controller.ts'
-import { decisionId } from '../../src-v2/domain/model.ts'
+
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { SignedRouteVault } from '../../src-v2/state/signed-route-vault.ts'
 import { RestrictionStore } from '../../src-v2/state/restriction-store.ts'
@@ -21,11 +20,8 @@ import { FakeStorage } from '../support/storage.ts'
 import { testScope } from '../support/scope.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
-async function createNativeTransportScenario(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const now = 2_000_000_000_000
-  const clock = { now: () => now }
+
+async function createPlaybackResourcesBlock1() {
   let nativeFetchCalls = 0
   let playurlFetchBody = JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } })
   let playurlFetchOverride: Response | null = null
@@ -58,9 +54,7 @@ async function createNativeTransportScenario(t: TestContext) {
             controller.enqueue(new Uint8Array(70 * 1024))
           }
         },
-        cancel(reason) {
-          reason
-        },
+        cancel(_reason) {},
       }),
       { status: 206, headers: { 'content-type': 'video/mp4' } },
     )
@@ -121,143 +115,107 @@ async function createNativeTransportScenario(t: TestContext) {
     Worker: originalWorker,
     navigator: globalThis.navigator,
   }
-  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
-  scope.defineGlobal('location', {
-    configurable: true,
-    value: new URL('https://www.bilibili.com/video/BVtest/'),
-  })
-  return extendFixture({}, {
-    scope,
-    now,
-    clock,
+  return {
     get nativeFetchCalls() {
       return nativeFetchCalls
     },
-    set nativeFetchCalls(next: typeof nativeFetchCalls) {
-      nativeFetchCalls = next
+    set nativeFetchCalls(value: typeof nativeFetchCalls) {
+      nativeFetchCalls = value
     },
     get playurlFetchBody() {
       return playurlFetchBody
     },
-    set playurlFetchBody(next: typeof playurlFetchBody) {
-      playurlFetchBody = next
+    set playurlFetchBody(value: typeof playurlFetchBody) {
+      playurlFetchBody = value
     },
     get playurlFetchOverride() {
       return playurlFetchOverride
     },
-    set playurlFetchOverride(next: typeof playurlFetchOverride) {
-      playurlFetchOverride = next
+    set playurlFetchOverride(value: typeof playurlFetchOverride) {
+      playurlFetchOverride = value
     },
     nativeFetchUrls,
     nativeFetchRedirects,
     FakeXhr,
     fakeWindow,
-  } as const)
+  }
 }
 
-async function createDispatchStorageAnddispatchSettingsContext1(t: TestContext) {
-  const base = await createNativeTransportScenario(t)
-  const dispatchStorage = new FakeStorage(),
-    dispatchSettings = base.scope.own(new CatalogSettingsStore(dispatchStorage, () => base.now))
-  await dispatchSettings.update({ considerNativeSources: true })
-  const dispatchSession = new SessionStore(),
-    dispatchState = dispatchSession.beginGeneration(false)
-  const dispatchVault = new SignedRouteVault()
-  dispatchVault.reset(dispatchState.generation, dispatchState.epoch)
-  const dispatchEvidence = base.scope.own(new EvidenceStore(dispatchStorage, () => base.now))
-  const dispatchRoutes = new RouteCoordinator(
-    base.clock,
-    dispatchSession,
-    dispatchSettings,
-    base.scope.own(new RestrictionStore(dispatchStorage, () => base.now)),
-    dispatchEvidence,
-    dispatchVault,
-    createRuntimeIds(),
-  )
-  const dispatchPlayurl = new PlayurlAdapter(
-    new PlayurlController(dispatchSession, dispatchVault, dispatchRoutes),
-  )
-  const dispatchRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/dispatch/video.m4s?signature=private'
-  const dispatchNativeBackup =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/dispatch/video.m4s?signature=backup'
-  const dispatchItem = {
-    id: 80,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 1_000_000,
-    base_url: dispatchRoot,
-    backup_url: [dispatchNativeBackup],
+async function createPlaybackResourcesBlock2() {
+  const apiEndpoint = 'https://api.bilibili.com/x/player/wbi/playurl?cid=contract'
+  const leakedNativeUrl =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/api-failure/video.m4s?signature=raw-secret'
+  const malformedApi = `{"data":{"dash":{"video":[{"base_url":"${leakedNativeUrl}"}`
+  const unsupportedApi = { code: 0, data: { sources: [{ url: leakedNativeUrl }] } }
+  const assertNoRawNative = async (
+    read: () => unknown | Promise<unknown>,
+    message: string,
+  ): Promise<void> => {
+    let value: unknown = null,
+      rejected = false
+    try {
+      value = await read()
+    } catch {
+      rejected = true
+    }
+    assert.ok(rejected || !JSON.stringify(value)?.includes('signature=raw-secret'), message)
   }
-  dispatchPlayurl.transform({ data: { dash: { video: [dispatchItem], audio: [] } } })
-  let gateDispatch = true
-  const dispatchGate: { release: () => void; done: Promise<void> } = {
-    release: () => undefined,
-    done: Promise.resolve(),
-  }
-  const dispatchMeasurement = {
-    willGateStartup: () => gateDispatch,
-    prepareStartup: (): Promise<void> => {
-      const done = deferred<void>()
-      dispatchGate.done = done.promise
-      dispatchGate.release = () => done.resolve()
-      return done.promise
-    },
-    noteUnpreflighted: (_reason: string): void => undefined,
-  }
-  const dispatchTransport = base.scope.own(
-    new TransportAdapter(
-      dispatchSession,
-      dispatchSettings,
-      dispatchRoutes,
-      dispatchPlayurl,
-      dispatchMeasurement,
-      () => base.now,
-      createRuntimeIds(),
-    ),
-  )
-  dispatchTransport.install()
-  return extendFixture(base, {
-    dispatchSettings,
-    dispatchSession,
-    dispatchVault,
-    dispatchEvidence,
-    dispatchRoutes,
-    dispatchRoot,
-    dispatchNativeBackup,
-    get gateDispatch() {
-      return gateDispatch
-    },
-    set gateDispatch(next: typeof gateDispatch) {
-      gateDispatch = next
-    },
-    dispatchGate,
-    dispatchTransport,
-  } as const)
+  return { apiEndpoint, leakedNativeUrl, malformedApi, unsupportedApi, assertNoRawNative }
 }
 
-async function createMeasurementStubContext2(t: TestContext) {
-  const base = await createNativeTransportScenario(t)
+function createPlaybackResourcesBlock3(now: number, scope: ReturnType<typeof testScope>) {
   const measurementStub = {
     willGateStartup: (): boolean => false,
     prepareStartup: async (): Promise<void> => {},
-    noteUnpreflighted(reason: string): void {
-      reason
-    },
+    noteUnpreflighted(_reason: string): void {},
   }
-  const dispatchStorage = new FakeStorage(),
-    dispatchSettings = base.scope.own(new CatalogSettingsStore(dispatchStorage, () => base.now))
-  await dispatchSettings.update({ considerNativeSources: true })
-  const dispatchSession = new SessionStore(),
-    dispatchState = dispatchSession.beginGeneration(false)
+  const pageStorage = new FakeStorage()
+  const pageSettings = scope.own(new CatalogSettingsStore(pageStorage, () => now))
+  const pageSession = new SessionStore()
+  const pageState = pageSession.beginGeneration(false)
+  const pageVault = new SignedRouteVault()
+  return { measurementStub, pageStorage, pageSettings, pageSession, pageState, pageVault }
+}
+
+function createPlaybackResourcesBlock4(now: number, scope: ReturnType<typeof testScope>) {
+  const apiFailureStorage = new FakeStorage()
+  const apiFailureSettings = scope.own(new CatalogSettingsStore(apiFailureStorage, () => now))
+  const apiFailureSession = new SessionStore()
+  const apiFailureState = apiFailureSession.beginGeneration(false)
+  const apiFailureVault = new SignedRouteVault()
+  return {
+    apiFailureStorage,
+    apiFailureSettings,
+    apiFailureSession,
+    apiFailureState,
+    apiFailureVault,
+  }
+}
+
+async function createDispatchStorageAnddispatchSettingsContext1(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, FakeXhr, nativeFetchRedirects, nativeFetchUrls } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const dispatchStorage = new FakeStorage()
+  const dispatchSettings = scope.own(new CatalogSettingsStore(dispatchStorage, () => now))
+  const dispatchSession = new SessionStore()
+  const dispatchState = dispatchSession.beginGeneration(false)
   const dispatchVault = new SignedRouteVault()
   dispatchVault.reset(dispatchState.generation, dispatchState.epoch)
-  const dispatchEvidence = base.scope.own(new EvidenceStore(dispatchStorage, () => base.now))
+  const dispatchEvidence = scope.own(new EvidenceStore(dispatchStorage, () => now))
   const dispatchRoutes = new RouteCoordinator(
-    base.clock,
+    clock,
     dispatchSession,
     dispatchSettings,
-    base.scope.own(new RestrictionStore(dispatchStorage, () => base.now)),
+    scope.own(new RestrictionStore(dispatchStorage, () => now)),
     dispatchEvidence,
     dispatchVault,
     createRuntimeIds(),
@@ -293,52 +251,149 @@ async function createMeasurementStubContext2(t: TestContext) {
     },
     noteUnpreflighted: (_reason: string): void => undefined,
   }
-  const dispatchTransport = base.scope.own(
+  const dispatchTransport = scope.own(
     new TransportAdapter(
       dispatchSession,
       dispatchSettings,
       dispatchRoutes,
       dispatchPlayurl,
       dispatchMeasurement,
-      () => base.now,
+      () => now,
       createRuntimeIds(),
     ),
   )
   dispatchTransport.install()
-  const pendingToggleFetch = base.fakeWindow.fetch(dispatchRoot)
-  await dispatchSettings.update({ considerNativeSources: false })
+  return {
+    FakeXhr,
+    dispatchEvidence,
+    dispatchGate,
+    dispatchNativeBackup,
+    dispatchRoot,
+    dispatchRoutes,
+    dispatchSession,
+    dispatchSettings,
+    dispatchTransport,
+    dispatchVault,
+    fakeWindow,
+    get gateDispatch() {
+      return gateDispatch
+    },
+    set gateDispatch(value: typeof gateDispatch) {
+      gateDispatch = value
+    },
+    get nativeFetchCalls() {
+      return block1.nativeFetchCalls
+    },
+    set nativeFetchCalls(value: typeof block1.nativeFetchCalls) {
+      block1.nativeFetchCalls = value
+    },
+    nativeFetchRedirects,
+    nativeFetchUrls,
+  }
+}
+
+async function createMeasurementStubContext2(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, FakeXhr } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
+  }
+  const dispatchStorage = new FakeStorage()
+  const dispatchSettings = scope.own(new CatalogSettingsStore(dispatchStorage, () => now))
+  const dispatchSession = new SessionStore()
+  const dispatchState = dispatchSession.beginGeneration(false)
+  const dispatchVault = new SignedRouteVault()
+  dispatchVault.reset(dispatchState.generation, dispatchState.epoch)
+  const dispatchEvidence = scope.own(new EvidenceStore(dispatchStorage, () => now))
+  const dispatchRoutes = new RouteCoordinator(
+    clock,
+    dispatchSession,
+    dispatchSettings,
+    scope.own(new RestrictionStore(dispatchStorage, () => now)),
+    dispatchEvidence,
+    dispatchVault,
+    createRuntimeIds(),
+  )
+  const dispatchPlayurl = new PlayurlAdapter(
+    new PlayurlController(dispatchSession, dispatchVault, dispatchRoutes),
+  )
+  const dispatchRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/dispatch/video.m4s?signature=private'
+  const dispatchNativeBackup =
+    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/dispatch/video.m4s?signature=backup'
+  const dispatchItem = {
+    id: 80,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 1_000_000,
+    base_url: dispatchRoot,
+    backup_url: [dispatchNativeBackup],
+  }
+  dispatchPlayurl.transform({ data: { dash: { video: [dispatchItem], audio: [] } } })
+  let gateDispatch = true
+  const dispatchGate: { release: () => void; done: Promise<void> } = {
+    release: () => undefined,
+    done: Promise.resolve(),
+  }
+  const dispatchMeasurement = {
+    willGateStartup: () => gateDispatch,
+    prepareStartup: (): Promise<void> => {
+      const done = deferred<void>()
+      dispatchGate.done = done.promise
+      dispatchGate.release = () => done.resolve()
+      return done.promise
+    },
+    noteUnpreflighted: (_reason: string): void => undefined,
+  }
+  const dispatchTransport = scope.own(
+    new TransportAdapter(
+      dispatchSession,
+      dispatchSettings,
+      dispatchRoutes,
+      dispatchPlayurl,
+      dispatchMeasurement,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  dispatchTransport.install()
   dispatchRoutes.invalidateForUserSetting()
-  dispatchGate.release()
-  await pendingToggleFetch
-  await dispatchSettings.update({ considerNativeSources: true })
-  dispatchRoutes.invalidateForUserSetting()
-  const pendingToggleXhr = new base.FakeXhr()
+  const pendingToggleXhr = new FakeXhr()
   pendingToggleXhr.open('GET', dispatchRoot)
   pendingToggleXhr.send()
-  await dispatchSettings.update({ considerNativeSources: false })
   dispatchRoutes.invalidateForUserSetting()
   dispatchGate.release()
   await dispatchGate.done
   gateDispatch = false
-  await base.fakeWindow.fetch(dispatchRoot, { method: 'POST' }).then(
+  await fakeWindow.fetch(dispatchRoot, { method: 'POST' }).then(
     () => {
       throw new Error('Catalog-only POST Fetch must reject locally')
     },
     () => undefined,
   )
-  void (await base.fakeWindow.fetch(dispatchNativeBackup))
-  const blockedPostXhr = new base.FakeXhr()
+  void (await fakeWindow.fetch(dispatchNativeBackup))
+  const blockedPostXhr = new FakeXhr()
   blockedPostXhr.open('POST', dispatchRoot)
   blockedPostXhr.send()
-  const catalogXhr = new base.FakeXhr()
+  const catalogXhr = new FakeXhr()
   catalogXhr.open('GET', dispatchRoot)
   catalogXhr.send()
-  const redirectedXhr = new base.FakeXhr()
+  const redirectedXhr = new FakeXhr()
   redirectedXhr.finalResponseUrl = dispatchRoot
   redirectedXhr.open('GET', dispatchRoot)
   redirectedXhr.send()
   await Promise.resolve()
-  await dispatchSettings.update({ considerNativeSources: true })
   dispatchRoutes.invalidateForUserSetting()
   const staleOpaqueUrl =
     'https://upos-hz-mirrorakam.akamaized.net/opaque/stale-audio?signature=private'
@@ -353,34 +408,30 @@ async function createMeasurementStubContext2(t: TestContext) {
     urls: [staleOpaqueUrl],
     source: 'trusted-api',
   })
-  const staleOpaqueXhr = new base.FakeXhr()
+  const staleOpaqueXhr = new FakeXhr()
   staleOpaqueXhr.open('GET', staleOpaqueUrl)
-  await dispatchSettings.update({ considerNativeSources: false })
   dispatchRoutes.invalidateForUserSetting()
   const nextDispatchState = dispatchSession.beginGeneration(false)
   dispatchVault.reset(nextDispatchState.generation, nextDispatchState.epoch)
   dispatchRoutes.resetEpoch()
   staleOpaqueXhr.send()
-  await dispatchSettings.update({ disabled: true })
-  const disabledDispatch = new base.FakeXhr()
+  const disabledDispatch = new FakeXhr()
   disabledDispatch.open('GET', dispatchRoot)
   disabledDispatch.send()
   dispatchTransport.dispose()
-  const emittedBackupStorage = new FakeStorage(),
-    emittedBackupSettings = base.scope.own(
-      new CatalogSettingsStore(emittedBackupStorage, () => base.now),
-    )
+  const emittedBackupStorage = new FakeStorage()
+  const emittedBackupSettings = scope.own(new CatalogSettingsStore(emittedBackupStorage, () => now))
   await emittedBackupSettings.update({ considerNativeSources: true })
-  const emittedBackupSession = new SessionStore(),
-    emittedBackupState = emittedBackupSession.beginGeneration(false)
+  const emittedBackupSession = new SessionStore()
+  const emittedBackupState = emittedBackupSession.beginGeneration(false)
   const emittedBackupVault = new SignedRouteVault()
   emittedBackupVault.reset(emittedBackupState.generation, emittedBackupState.epoch)
   const emittedBackupRoutes = new RouteCoordinator(
-    base.clock,
+    clock,
     emittedBackupSession,
     emittedBackupSettings,
-    base.scope.own(new RestrictionStore(emittedBackupStorage, () => base.now)),
-    base.scope.own(new EvidenceStore(emittedBackupStorage, () => base.now)),
+    scope.own(new RestrictionStore(emittedBackupStorage, () => now)),
+    scope.own(new EvidenceStore(emittedBackupStorage, () => now)),
     emittedBackupVault,
     createRuntimeIds(),
   )
@@ -391,88 +442,165 @@ async function createMeasurementStubContext2(t: TestContext) {
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/emitted-backup/root.m4s?signature=root'
   const emittedThirdPartyBackup =
     'https://cdn.example.net/upgcxcode/emitted-backup/final.m4s?signature=old-player-backup'
-  return extendFixture(base, {
-    measurementStub,
-    emittedBackupSettings,
-    emittedBackupSession,
-    emittedBackupVault,
-    emittedBackupRoutes,
+  return {
+    FakeXhr,
     emittedBackupPlayurl,
     emittedBackupRoot,
+    emittedBackupRoutes,
+    emittedBackupSession,
+    emittedBackupSettings,
+    emittedBackupVault,
     emittedThirdPartyBackup,
-  } as const)
+    fakeWindow,
+    measurementStub,
+    get nativeFetchCalls() {
+      return block1.nativeFetchCalls
+    },
+    set nativeFetchCalls(value: typeof block1.nativeFetchCalls) {
+      block1.nativeFetchCalls = value
+    },
+    now,
+    scope,
+  }
 }
 
 async function createEmittedBackupTransportContext3(t: TestContext) {
-  const base = await createMeasurementStubContext2(t)
-  const emittedBackupTransport = base.scope.own(
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, FakeXhr } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
+  }
+  const emittedBackupStorage = new FakeStorage()
+  const emittedBackupSettings = scope.own(new CatalogSettingsStore(emittedBackupStorage, () => now))
+  const emittedBackupSession = new SessionStore()
+  const emittedBackupState = emittedBackupSession.beginGeneration(false)
+  const emittedBackupVault = new SignedRouteVault()
+  emittedBackupVault.reset(emittedBackupState.generation, emittedBackupState.epoch)
+  const emittedBackupRoutes = new RouteCoordinator(
+    clock,
+    emittedBackupSession,
+    emittedBackupSettings,
+    scope.own(new RestrictionStore(emittedBackupStorage, () => now)),
+    scope.own(new EvidenceStore(emittedBackupStorage, () => now)),
+    emittedBackupVault,
+    createRuntimeIds(),
+  )
+  const emittedBackupPlayurl = new PlayurlAdapter(
+    new PlayurlController(emittedBackupSession, emittedBackupVault, emittedBackupRoutes),
+  )
+  const emittedBackupRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/emitted-backup/root.m4s?signature=root'
+  const emittedBackupTransport = scope.own(
     new TransportAdapter(
-      base.emittedBackupSession,
-      base.emittedBackupSettings,
-      base.emittedBackupRoutes,
-      base.emittedBackupPlayurl,
-      base.measurementStub,
-      () => base.now,
+      emittedBackupSession,
+      emittedBackupSettings,
+      emittedBackupRoutes,
+      emittedBackupPlayurl,
+      measurementStub,
+      () => now,
       createRuntimeIds(),
     ),
   )
-  emittedBackupTransport.install()
-  await base.emittedBackupSettings.update({ considerNativeSources: false })
-  base.emittedBackupRoutes.invalidateForUserSetting()
-  try {
-    await base.fakeWindow.fetch(base.emittedThirdPartyBackup)
-  } catch {
-    true
+  void emittedBackupVault.contextForUrl(emittedBackupRoot)?.representation
+  return {
+    FakeXhr,
+    clock,
+    emittedBackupPlayurl,
+    emittedBackupRoutes,
+    emittedBackupSettings,
+    emittedBackupTransport,
+    fakeWindow,
+    get nativeFetchCalls() {
+      return block1.nativeFetchCalls
+    },
+    set nativeFetchCalls(value: typeof block1.nativeFetchCalls) {
+      block1.nativeFetchCalls = value
+    },
+    now,
+    scope,
   }
-  const emittedBackupXhr = new base.FakeXhr()
-  emittedBackupXhr.open('GET', base.emittedThirdPartyBackup)
-  emittedBackupXhr.send()
-  const unrelatedThirdPartyUrl = 'https://media.other-example.org/unrelated/video.m4s?source=site'
-  await base.fakeWindow.fetch(unrelatedThirdPartyUrl)
-  const unrelatedThirdPartyXhr = new base.FakeXhr()
-  unrelatedThirdPartyXhr.open('GET', unrelatedThirdPartyUrl)
-  unrelatedThirdPartyXhr.send()
-  await base.emittedBackupSettings.update({ considerNativeSources: true })
-  base.emittedBackupRoutes.invalidateForUserSetting()
-  const outputCapRep = base.emittedBackupVault.contextForUrl(base.emittedBackupRoot)?.representation
-  for (let index = 0; index < 1200; index++) {
-    const fillerUrl = `https://fill.example.net/upgcxcode/output-cap/${index}.m4s?signature=filler`
-    base.emittedBackupVault.registerAlias(outputCapRep!, fillerUrl)
-    base.emittedBackupVault.registerOutput(
-      outputCapRep!,
-      base.emittedBackupRoot,
-      fillerUrl,
-      [],
-      decisionId('output-cap-fill'),
-      'trusted-api',
-    )
-  }
-  return extendFixture(base, { emittedBackupTransport } as const)
 }
 
 async function createCappedThirdPartyBackupContext4(t: TestContext) {
-  const base = await createEmittedBackupTransportContext3(t)
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, FakeXhr } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const measurementStub = {
+    willGateStartup: (): boolean => false,
+    prepareStartup: async (): Promise<void> => {},
+    noteUnpreflighted(_reason: string): void {},
+  }
+  const emittedBackupStorage = new FakeStorage()
+  const emittedBackupSettings = scope.own(new CatalogSettingsStore(emittedBackupStorage, () => now))
+  const emittedBackupSession = new SessionStore()
+  const emittedBackupState = emittedBackupSession.beginGeneration(false)
+  const emittedBackupVault = new SignedRouteVault()
+  emittedBackupVault.reset(emittedBackupState.generation, emittedBackupState.epoch)
+  const emittedBackupRoutes = new RouteCoordinator(
+    clock,
+    emittedBackupSession,
+    emittedBackupSettings,
+    scope.own(new RestrictionStore(emittedBackupStorage, () => now)),
+    scope.own(new EvidenceStore(emittedBackupStorage, () => now)),
+    emittedBackupVault,
+    createRuntimeIds(),
+  )
+  const emittedBackupPlayurl = new PlayurlAdapter(
+    new PlayurlController(emittedBackupSession, emittedBackupVault, emittedBackupRoutes),
+  )
+  const emittedBackupRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/emitted-backup/root.m4s?signature=root'
+  const emittedBackupTransport = scope.own(
+    new TransportAdapter(
+      emittedBackupSession,
+      emittedBackupSettings,
+      emittedBackupRoutes,
+      emittedBackupPlayurl,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  void emittedBackupVault.contextForUrl(emittedBackupRoot)?.representation
   const cappedThirdPartyBackup =
     'https://cdn.example.net/upgcxcode/emitted-backup/capped-final.m4s?signature=capped-old-backup'
-  await base.emittedBackupSettings.update({ considerNativeSources: false })
-  base.emittedBackupRoutes.invalidateForUserSetting()
-  await base.fakeWindow.fetch(cappedThirdPartyBackup)
-  const cappedBackupXhr = new base.FakeXhr()
+  emittedBackupRoutes.invalidateForUserSetting()
+  await fakeWindow.fetch(cappedThirdPartyBackup)
+  const cappedBackupXhr = new FakeXhr()
   cappedBackupXhr.open('GET', cappedThirdPartyBackup)
   cappedBackupXhr.send()
-  base.emittedBackupTransport.dispose()
-  const pageStorage = new FakeStorage(),
-    pageSettings = base.scope.own(new CatalogSettingsStore(pageStorage, () => base.now))
-  const pageSession = new SessionStore(),
-    pageState = pageSession.beginGeneration(false)
+  emittedBackupTransport.dispose()
+  const pageStorage = new FakeStorage()
+  const pageSettings = scope.own(new CatalogSettingsStore(pageStorage, () => now))
+  const pageSession = new SessionStore()
+  const pageState = pageSession.beginGeneration(false)
   const pageVault = new SignedRouteVault()
   pageVault.reset(pageState.generation, pageState.epoch)
   const pageRoutes = new RouteCoordinator(
-    base.clock,
+    clock,
     pageSession,
     pageSettings,
-    base.scope.own(new RestrictionStore(pageStorage, () => base.now)),
-    base.scope.own(new EvidenceStore(pageStorage, () => base.now)),
+    scope.own(new RestrictionStore(pageStorage, () => now)),
+    scope.own(new EvidenceStore(pageStorage, () => now)),
     pageVault,
     createRuntimeIds(),
   )
@@ -480,7 +608,7 @@ async function createCappedThirdPartyBackupContext4(t: TestContext) {
   const assignedAtSetter: string[] = []
   const assignedPayloadAtSetter: string[] = []
   let pageOwnedPlayinfo: unknown = undefined
-  Object.defineProperty(base.fakeWindow, '__playinfo__', {
+  Object.defineProperty(fakeWindow, '__playinfo__', {
     configurable: true,
     get: () => pageOwnedPlayinfo,
     set: (value: unknown) => {
@@ -491,7 +619,7 @@ async function createCappedThirdPartyBackupContext4(t: TestContext) {
       pageOwnedPlayinfo = value
     },
   })
-  const pageInfo = base.scope.own(
+  const pageInfo = scope.own(
     new PagePlayinfoAdapter(
       (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
       () => pageRoutes.isCatalogOnly(),
@@ -517,7 +645,7 @@ async function createCappedThirdPartyBackupContext4(t: TestContext) {
       },
     },
   }
-  Reflect.set(base.fakeWindow, '__playinfo__', earlyPagePayload)
+  Reflect.set(fakeWindow, '__playinfo__', earlyPagePayload)
   const trustedPageUrl =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/trusted.m4s?signature=trusted'
   const trustedPagePayload = {
@@ -562,35 +690,82 @@ async function createCappedThirdPartyBackupContext4(t: TestContext) {
       },
     },
   }
-  Reflect.set(base.fakeWindow, '__playinfo__', latePagePayload)
-  return extendFixture(base, {
-    pageSettings,
+  Reflect.set(fakeWindow, '__playinfo__', latePagePayload)
+  return {
+    assignedAtSetter,
+    latePagePayload,
+    latePageUrl,
     pageSession,
     pageVault,
-    pageRoutes,
-    pagePlayurl,
-    assignedAtSetter,
-    assignedPayloadAtSetter,
-    pageInfo,
-    trustedPageUrl,
-    trustedPageRep,
-    trustedPageOutput,
     trustedOutputRole,
-    latePageUrl,
-    latePagePayload,
-  } as const)
+    trustedPageOutput,
+    trustedPageRep,
+    trustedPageUrl,
+  }
 }
 
 async function createAffinityFixtureHasADifferentLegalCatalogHost6Context5(t: TestContext) {
-  const base = await createCappedThirdPartyBackupContext4(t)
-  base.trustedPageRep
-    ? base.pageVault.outputRole(base.trustedPageRep, base.trustedPageOutput)
-    : null
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const pageStorage = new FakeStorage()
+  const pageSettings = scope.own(new CatalogSettingsStore(pageStorage, () => now))
+  const pageSession = new SessionStore()
+  const pageState = pageSession.beginGeneration(false)
+  const pageVault = new SignedRouteVault()
+  pageVault.reset(pageState.generation, pageState.epoch)
+  const pageRoutes = new RouteCoordinator(
+    clock,
+    pageSession,
+    pageSettings,
+    scope.own(new RestrictionStore(pageStorage, () => now)),
+    scope.own(new EvidenceStore(pageStorage, () => now)),
+    pageVault,
+    createRuntimeIds(),
+  )
+  const pagePlayurl = new PlayurlAdapter(new PlayurlController(pageSession, pageVault, pageRoutes))
+  const assignedPayloadAtSetter: string[] = []
+  const pageInfo = scope.own(
+    new PagePlayinfoAdapter(
+      (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
+      () => pageRoutes.isCatalogOnly(),
+    ),
+  )
+  const trustedPageUrl =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/trusted.m4s?signature=trusted'
+  const trustedPagePayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: trustedPageUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  const trustedPageRep = pageVault.contextForUrl(trustedPageUrl)?.representation
+  const trustedPageOutput = trustedPagePayload.data.dash.video[0]?.base_url ?? ''
+  void (trustedPageRep ? pageVault.outputRole(trustedPageRep, trustedPageOutput) : null)
   const affinityPageRoot =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/affinity.m4s?signature=affinity'
-  const affinityPageRep = base.pageVault.register({
-    generation: base.pageSession.get().generation,
-    epoch: base.pageSession.get().epoch,
+  const affinityPageRep = pageVault.register({
+    generation: pageSession.get().generation,
+    epoch: pageSession.get().epoch,
     kind: 'video',
     key: 'affinity:64',
     height: 720,
@@ -599,35 +774,129 @@ async function createAffinityFixtureHasADifferentLegalCatalogHost6Context5(t: Te
     urls: [affinityPageRoot],
     source: 'trusted-api',
   })
-  const affinityChoice = base.pageRoutes
+  const affinityChoice = pageRoutes
     .startupOptions(affinityPageRoot)
     ?.candidates.find(
       (candidate) =>
         candidate.type === 'catalog-generated' &&
-        candidate.host !== new URL(base.trustedPageOutput).host,
+        candidate.host !== new URL(trustedPageOutput).host,
     )
-  return extendFixture(base, { affinityPageRoot, affinityPageRep, affinityChoice } as const)
+  return {
+    affinityChoice,
+    affinityPageRep,
+    affinityPageRoot,
+    assignedPayloadAtSetter,
+    fakeWindow,
+    now,
+    pageInfo,
+    pagePlayurl,
+    pageRoutes,
+    pageSession,
+    pageSettings,
+    scope,
+    trustedPageOutput,
+  }
 }
 
 async function createCatalogOnlyPlayinfoAccessorGetterSanitizesEveryFreshUnsupportedNativeValueContext6(
+  _t: TestContext,
+) {
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow } = block1
+  return {
+    fakeWindow,
+  }
+}
+
+async function createNativeOnPlayinfoAccessorGetterPreservesFreshWebsiteValue8Context7(
   t: TestContext,
 ) {
-  const base = await createAffinityFixtureHasADifferentLegalCatalogHost6Context5(t)
-  base.pageRoutes.commitStartupChoice(
-    base.affinityPageRoot,
-    base.affinityChoice ?? null,
-    'test-observed-affinity',
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const pageStorage = new FakeStorage()
+  const pageSettings = scope.own(new CatalogSettingsStore(pageStorage, () => now))
+  const pageSession = new SessionStore()
+  const pageState = pageSession.beginGeneration(false)
+  const pageVault = new SignedRouteVault()
+  pageVault.reset(pageState.generation, pageState.epoch)
+  const pageRoutes = new RouteCoordinator(
+    clock,
+    pageSession,
+    pageSettings,
+    scope.own(new RestrictionStore(pageStorage, () => now)),
+    scope.own(new EvidenceStore(pageStorage, () => now)),
+    pageVault,
+    createRuntimeIds(),
   )
-  const affinityApplied = base.pageRoutes.apply(base.affinityPageRoot)
+  const pagePlayurl = new PlayurlAdapter(new PlayurlController(pageSession, pageVault, pageRoutes))
+  const pageInfo = scope.own(
+    new PagePlayinfoAdapter(
+      (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
+      () => pageRoutes.isCatalogOnly(),
+    ),
+  )
+  const trustedPageUrl =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/trusted.m4s?signature=trusted'
+  const trustedPagePayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: trustedPageUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  const trustedPageRep = pageVault.contextForUrl(trustedPageUrl)?.representation
+  const trustedPageOutput = trustedPagePayload.data.dash.video[0]?.base_url ?? ''
+  void (trustedPageRep ? pageVault.outputRole(trustedPageRep, trustedPageOutput) : null)
+  const affinityPageRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/affinity.m4s?signature=affinity'
+  const affinityPageRep = pageVault.register({
+    generation: pageSession.get().generation,
+    epoch: pageSession.get().epoch,
+    kind: 'video',
+    key: 'affinity:64',
+    height: 720,
+    codec: 'av1',
+    bandwidth: 1_000_000,
+    urls: [affinityPageRoot],
+    source: 'trusted-api',
+  })
+  const affinityChoice = pageRoutes
+    .startupOptions(affinityPageRoot)
+    ?.candidates.find(
+      (candidate) =>
+        candidate.type === 'catalog-generated' &&
+        candidate.host !== new URL(trustedPageOutput).host,
+    )
+  pageRoutes.commitStartupChoice(affinityPageRoot, affinityChoice ?? null, 'test-observed-affinity')
+  const affinityApplied = pageRoutes.apply(affinityPageRoot)
   for (let index = 0; index < 2; index++)
-    await base.pageRoutes.observe({
-      generation: base.pageSession.get().generation,
-      epoch: base.pageSession.get().epoch,
+    await pageRoutes.observe({
+      generation: pageSession.get().generation,
+      epoch: pageSession.get().epoch,
       decisionId: affinityApplied.decision.id,
-      representation: base.affinityPageRep,
+      representation: affinityPageRep,
       kind: 'video',
       routeType: 'catalog-generated',
-      originalHost: new URL(base.affinityPageRoot).host,
+      originalHost: new URL(affinityPageRoot).host,
       targetHost: affinityApplied.decision.host ?? '',
       finalHost: affinityApplied.decision.host,
       responseUrlMatchesRequest: true,
@@ -636,52 +905,50 @@ async function createCatalogOnlyPlayinfoAccessorGetterSanitizesEveryFreshUnsuppo
       bytes: 70 * 1024,
       ttfbMs: 20,
       elapsedMs: 100,
-      completedAt: base.now + index + 1,
+      completedAt: now + index + 1,
       outcome: 'success',
     })
   const unsupportedPageUrl =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/unsupported.m4s?signature=unsupported-secret'
   const unsupportedPagePayload = { data: { durl: [{ url: unsupportedPageUrl }] } }
-  Reflect.set(base.fakeWindow, '__playinfo__', unsupportedPagePayload)
-  base.pageInfo.dispose()
-  Reflect.deleteProperty(base.fakeWindow, '__playinfo__')
+  Reflect.set(fakeWindow, '__playinfo__', unsupportedPagePayload)
+  pageInfo.dispose()
+  Reflect.deleteProperty(fakeWindow, '__playinfo__')
   const initialUnsupportedUrl =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/initial.m4s?signature=initial-secret'
   const initialUnsupportedPlayinfo = { data: { durl: [{ url: initialUnsupportedUrl }] } }
-  Object.defineProperty(base.fakeWindow, '__playinfo__', {
+  Object.defineProperty(fakeWindow, '__playinfo__', {
     configurable: true,
     writable: true,
     value: initialUnsupportedPlayinfo,
   })
-  const initialPageInfo = base.scope.own(
+  const initialPageInfo = scope.own(
     new PagePlayinfoAdapter(
-      (payload) => base.pagePlayurl.transform(payload, 'page-hint').accepted,
-      () => base.pageRoutes.isCatalogOnly(),
+      (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
+      () => pageRoutes.isCatalogOnly(),
     ),
   )
   initialPageInfo.install()
   initialPageInfo.dispose()
-  Reflect.deleteProperty(base.fakeWindow, '__playinfo__')
-  await base.pageSettings.update({ considerNativeSources: true })
-  base.pageRoutes.invalidateForUserSetting()
-  Object.defineProperty(base.fakeWindow, '__playinfo__', {
+  Reflect.deleteProperty(fakeWindow, '__playinfo__')
+  pageRoutes.invalidateForUserSetting()
+  Object.defineProperty(fakeWindow, '__playinfo__', {
     configurable: true,
     writable: true,
     value: initialUnsupportedPlayinfo,
   })
-  const nativeOnInitialPageInfo = base.scope.own(
+  const nativeOnInitialPageInfo = scope.own(
     new PagePlayinfoAdapter(
-      (payload) => base.pagePlayurl.transform(payload, 'page-hint').accepted,
-      () => base.pageRoutes.isCatalogOnly(),
+      (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
+      () => pageRoutes.isCatalogOnly(),
     ),
   )
   nativeOnInitialPageInfo.install()
   nativeOnInitialPageInfo.dispose()
-  Reflect.deleteProperty(base.fakeWindow, '__playinfo__')
-  await base.pageSettings.update({ considerNativeSources: false })
-  base.pageRoutes.invalidateForUserSetting()
+  Reflect.deleteProperty(fakeWindow, '__playinfo__')
+  pageRoutes.invalidateForUserSetting()
   let freshPlayinfoReads = 0
-  Object.defineProperty(base.fakeWindow, '__playinfo__', {
+  Object.defineProperty(fakeWindow, '__playinfo__', {
     configurable: true,
     get: () => ({
       data: {
@@ -693,94 +960,143 @@ async function createCatalogOnlyPlayinfoAccessorGetterSanitizesEveryFreshUnsuppo
       },
     }),
   })
-  const freshPageInfo = base.scope.own(
+  const freshPageInfo = scope.own(
     new PagePlayinfoAdapter(
-      (payload) => base.pagePlayurl.transform(payload, 'page-hint').accepted,
-      () => base.pageRoutes.isCatalogOnly(),
+      (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
+      () => pageRoutes.isCatalogOnly(),
     ),
   )
   freshPageInfo.install()
-  return extendFixture(base, { freshPageInfo } as const)
-}
-
-async function createNativeOnPlayinfoAccessorGetterPreservesFreshWebsiteValue8Context7(
-  t: TestContext,
-) {
-  const base =
-    await createCatalogOnlyPlayinfoAccessorGetterSanitizesEveryFreshUnsupportedNativeValueContext6(
-      t,
-    )
-
-  await base.pageSettings.update({ considerNativeSources: true })
-  base.pageRoutes.invalidateForUserSetting()
-  return extendFixture(base, {} as const)
+  await pageSettings.update({ considerNativeSources: true })
+  pageRoutes.invalidateForUserSetting()
+  return {
+    fakeWindow,
+  }
 }
 
 async function createCatalogOnlyXHRParameterPlayurlIsBlockedBeforeNativeSendBecauseContext8(
   t: TestContext,
 ) {
-  const base = await createNativeOnPlayinfoAccessorGetterPreservesFreshWebsiteValue8Context7(t)
-  base.freshPageInfo.dispose()
-  Reflect.deleteProperty(base.fakeWindow, '__playinfo__')
-  const apiFailureStorage = new FakeStorage(),
-    apiFailureSettings = base.scope.own(new CatalogSettingsStore(apiFailureStorage, () => base.now))
-  const apiFailureSession = new SessionStore(),
-    apiFailureState = apiFailureSession.beginGeneration(false)
-  const apiFailureVault = new SignedRouteVault()
-  apiFailureVault.reset(apiFailureState.generation, apiFailureState.epoch)
-  const apiFailureRoutes = new RouteCoordinator(
-    base.clock,
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, FakeXhr } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const block3 = createPlaybackResourcesBlock3(now, scope)
+  const { pageVault, pageState, pageSession, pageSettings, pageStorage, measurementStub } = block3
+  pageVault.reset(pageState.generation, pageState.epoch)
+  const pageRoutes = new RouteCoordinator(
+    clock,
+    pageSession,
+    pageSettings,
+    scope.own(new RestrictionStore(pageStorage, () => now)),
+    scope.own(new EvidenceStore(pageStorage, () => now)),
+    pageVault,
+    createRuntimeIds(),
+  )
+  const pagePlayurl = new PlayurlAdapter(new PlayurlController(pageSession, pageVault, pageRoutes))
+  const trustedPageUrl =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/trusted.m4s?signature=trusted'
+  const trustedPagePayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: trustedPageUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  const trustedPageRep = pageVault.contextForUrl(trustedPageUrl)?.representation
+  const trustedPageOutput = trustedPagePayload.data.dash.video[0]?.base_url ?? ''
+  void (trustedPageRep ? pageVault.outputRole(trustedPageRep, trustedPageOutput) : null)
+  const affinityPageRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/affinity.m4s?signature=affinity'
+  void pageVault.register({
+    generation: pageSession.get().generation,
+    epoch: pageSession.get().epoch,
+    kind: 'video',
+    key: 'affinity:64',
+    height: 720,
+    codec: 'av1',
+    bandwidth: 1_000_000,
+    urls: [affinityPageRoot],
+    source: 'trusted-api',
+  })
+  void pageRoutes
+    .startupOptions(affinityPageRoot)
+    ?.candidates.find(
+      (candidate) =>
+        candidate.type === 'catalog-generated' &&
+        candidate.host !== new URL(trustedPageOutput).host,
+    )
+  const freshPageInfo = scope.own(
+    new PagePlayinfoAdapter(
+      (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
+      () => pageRoutes.isCatalogOnly(),
+    ),
+  )
+  freshPageInfo.dispose()
+  Reflect.deleteProperty(fakeWindow, '__playinfo__')
+  const block4 = createPlaybackResourcesBlock4(now, scope)
+  const {
+    apiFailureVault,
+    apiFailureState,
     apiFailureSession,
     apiFailureSettings,
-    base.scope.own(new RestrictionStore(apiFailureStorage, () => base.now)),
-    base.scope.own(new EvidenceStore(apiFailureStorage, () => base.now)),
+    apiFailureStorage,
+  } = block4
+  apiFailureVault.reset(apiFailureState.generation, apiFailureState.epoch)
+  const apiFailureRoutes = new RouteCoordinator(
+    clock,
+    apiFailureSession,
+    apiFailureSettings,
+    scope.own(new RestrictionStore(apiFailureStorage, () => now)),
+    scope.own(new EvidenceStore(apiFailureStorage, () => now)),
     apiFailureVault,
     createRuntimeIds(),
   )
   const apiFailurePlayurl = new PlayurlAdapter(
     new PlayurlController(apiFailureSession, apiFailureVault, apiFailureRoutes),
   )
-  const apiFailureTransport = base.scope.own(
+  const apiFailureTransport = scope.own(
     new TransportAdapter(
       apiFailureSession,
       apiFailureSettings,
       apiFailureRoutes,
       apiFailurePlayurl,
-      base.measurementStub,
-      () => base.now,
+      measurementStub,
+      () => now,
       createRuntimeIds(),
     ),
   )
   apiFailureTransport.install()
-  const apiEndpoint = 'https://api.bilibili.com/x/player/wbi/playurl?cid=contract'
-  const leakedNativeUrl =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/api-failure/video.m4s?signature=raw-secret'
-  const malformedApi = `{"data":{"dash":{"video":[{"base_url":"${leakedNativeUrl}"}`
-  const unsupportedApi = { code: 0, data: { sources: [{ url: leakedNativeUrl }] } }
-  const assertNoRawNative = async (
-    read: () => unknown | Promise<unknown>,
-    message: string,
-  ): Promise<void> => {
-    let value: unknown = null,
-      rejected = false
-    try {
-      value = await read()
-    } catch {
-      rejected = true
-    }
-    assert.ok(rejected || !JSON.stringify(value)?.includes('signature=raw-secret'), message)
-  }
-  base.playurlFetchBody = malformedApi
+  const block2 = await createPlaybackResourcesBlock2()
+  const { malformedApi, assertNoRawNative, apiEndpoint, unsupportedApi } = block2
+  block1.playurlFetchBody = malformedApi
   await assertNoRawNative(
-    async () => await (await base.fakeWindow.fetch(apiEndpoint)).text(),
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
     'Catalog-only Fetch does not expose a malformed HTTP-200 playurl carrying a signed Native URL',
   )
-  base.playurlFetchBody = JSON.stringify(unsupportedApi)
+  block1.playurlFetchBody = JSON.stringify(unsupportedApi)
   await assertNoRawNative(
-    async () => await (await base.fakeWindow.fetch(apiEndpoint)).text(),
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
     'Catalog-only Fetch does not expose a non-DASH HTTP-200 playurl carrying a signed Native URL',
   )
-  const malformedTextXhr = new base.FakeXhr()
+  const malformedTextXhr = new FakeXhr()
   malformedTextXhr.responseType = 'text'
   malformedTextXhr.payload = malformedApi
   malformedTextXhr.rawResponseText = malformedApi
@@ -794,7 +1110,7 @@ async function createCatalogOnlyXHRParameterPlayurlIsBlockedBeforeNativeSendBeca
     () => malformedTextXhr.response,
     'Catalog-only XHR response getter does not expose malformed playurl signed Native URL',
   )
-  const unsupportedTextXhr = new base.FakeXhr()
+  const unsupportedTextXhr = new FakeXhr()
   unsupportedTextXhr.responseType = 'text'
   unsupportedTextXhr.payload = JSON.stringify(unsupportedApi)
   unsupportedTextXhr.rawResponseText = JSON.stringify(unsupportedApi)
@@ -804,7 +1120,7 @@ async function createCatalogOnlyXHRParameterPlayurlIsBlockedBeforeNativeSendBeca
     () => unsupportedTextXhr.responseText,
     'Catalog-only XHR text response does not expose non-DASH playurl signed Native URL',
   )
-  const unsupportedJsonXhr = new base.FakeXhr()
+  const unsupportedJsonXhr = new FakeXhr()
   unsupportedJsonXhr.responseType = 'json'
   unsupportedJsonXhr.payload = unsupportedApi
   unsupportedJsonXhr.open('GET', apiEndpoint)
@@ -813,116 +1129,376 @@ async function createCatalogOnlyXHRParameterPlayurlIsBlockedBeforeNativeSendBeca
     () => unsupportedJsonXhr.response,
     'Catalog-only XHR JSON response does not expose non-DASH playurl signed Native URL',
   )
-  return extendFixture(base, {
-    apiFailureSettings,
-    apiFailureSession,
-    apiFailureVault,
-    apiFailureRoutes,
-    apiFailureTransport,
+  return {
+    FakeXhr,
     apiEndpoint,
-    leakedNativeUrl,
-    malformedApi,
-    assertNoRawNative,
-  } as const)
+  }
 }
 
 async function createPartialPlayurlXHRFixtureIsStillLoading10Context9(t: TestContext) {
-  const base = await createCatalogOnlyXHRParameterPlayurlIsBlockedBeforeNativeSendBecauseContext8(t)
-  const loadingSignedText = `{"data":{"dash":{"video":[{"base_url":"${base.leakedNativeUrl}"`
-  const loadingTextXhr = new base.FakeXhr()
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, FakeXhr } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const block3 = createPlaybackResourcesBlock3(now, scope)
+  const { pageVault, pageState, pageSession, pageSettings, pageStorage, measurementStub } = block3
+  pageVault.reset(pageState.generation, pageState.epoch)
+  const pageRoutes = new RouteCoordinator(
+    clock,
+    pageSession,
+    pageSettings,
+    scope.own(new RestrictionStore(pageStorage, () => now)),
+    scope.own(new EvidenceStore(pageStorage, () => now)),
+    pageVault,
+    createRuntimeIds(),
+  )
+  const pagePlayurl = new PlayurlAdapter(new PlayurlController(pageSession, pageVault, pageRoutes))
+  const trustedPageUrl =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/trusted.m4s?signature=trusted'
+  const trustedPagePayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: trustedPageUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  const trustedPageRep = pageVault.contextForUrl(trustedPageUrl)?.representation
+  const trustedPageOutput = trustedPagePayload.data.dash.video[0]?.base_url ?? ''
+  void (trustedPageRep ? pageVault.outputRole(trustedPageRep, trustedPageOutput) : null)
+  const affinityPageRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/affinity.m4s?signature=affinity'
+  void pageVault.register({
+    generation: pageSession.get().generation,
+    epoch: pageSession.get().epoch,
+    kind: 'video',
+    key: 'affinity:64',
+    height: 720,
+    codec: 'av1',
+    bandwidth: 1_000_000,
+    urls: [affinityPageRoot],
+    source: 'trusted-api',
+  })
+  void pageRoutes
+    .startupOptions(affinityPageRoot)
+    ?.candidates.find(
+      (candidate) =>
+        candidate.type === 'catalog-generated' &&
+        candidate.host !== new URL(trustedPageOutput).host,
+    )
+  const freshPageInfo = scope.own(
+    new PagePlayinfoAdapter(
+      (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
+      () => pageRoutes.isCatalogOnly(),
+    ),
+  )
+  freshPageInfo.dispose()
+  Reflect.deleteProperty(fakeWindow, '__playinfo__')
+  const block4 = createPlaybackResourcesBlock4(now, scope)
+  const {
+    apiFailureVault,
+    apiFailureState,
+    apiFailureSession,
+    apiFailureSettings,
+    apiFailureStorage,
+  } = block4
+  apiFailureVault.reset(apiFailureState.generation, apiFailureState.epoch)
+  const apiFailureRoutes = new RouteCoordinator(
+    clock,
+    apiFailureSession,
+    apiFailureSettings,
+    scope.own(new RestrictionStore(apiFailureStorage, () => now)),
+    scope.own(new EvidenceStore(apiFailureStorage, () => now)),
+    apiFailureVault,
+    createRuntimeIds(),
+  )
+  const apiFailurePlayurl = new PlayurlAdapter(
+    new PlayurlController(apiFailureSession, apiFailureVault, apiFailureRoutes),
+  )
+  const apiFailureTransport = scope.own(
+    new TransportAdapter(
+      apiFailureSession,
+      apiFailureSettings,
+      apiFailureRoutes,
+      apiFailurePlayurl,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  apiFailureTransport.install()
+  const block2 = await createPlaybackResourcesBlock2()
+  const { malformedApi, assertNoRawNative, apiEndpoint, unsupportedApi, leakedNativeUrl } = block2
+  block1.playurlFetchBody = malformedApi
+  await assertNoRawNative(
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+    'Catalog-only Fetch does not expose a malformed HTTP-200 playurl carrying a signed Native URL',
+  )
+  block1.playurlFetchBody = JSON.stringify(unsupportedApi)
+  await assertNoRawNative(
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+    'Catalog-only Fetch does not expose a non-DASH HTTP-200 playurl carrying a signed Native URL',
+  )
+  const malformedTextXhr = new FakeXhr()
+  malformedTextXhr.responseType = 'text'
+  malformedTextXhr.payload = malformedApi
+  malformedTextXhr.rawResponseText = malformedApi
+  malformedTextXhr.open('GET', apiEndpoint)
+  malformedTextXhr.send()
+  await assertNoRawNative(
+    () => malformedTextXhr.responseText,
+    'Catalog-only XHR text response does not expose malformed playurl signed Native URL',
+  )
+  await assertNoRawNative(
+    () => malformedTextXhr.response,
+    'Catalog-only XHR response getter does not expose malformed playurl signed Native URL',
+  )
+  const unsupportedTextXhr = new FakeXhr()
+  unsupportedTextXhr.responseType = 'text'
+  unsupportedTextXhr.payload = JSON.stringify(unsupportedApi)
+  unsupportedTextXhr.rawResponseText = JSON.stringify(unsupportedApi)
+  unsupportedTextXhr.open('GET', apiEndpoint)
+  unsupportedTextXhr.send()
+  await assertNoRawNative(
+    () => unsupportedTextXhr.responseText,
+    'Catalog-only XHR text response does not expose non-DASH playurl signed Native URL',
+  )
+  const unsupportedJsonXhr = new FakeXhr()
+  unsupportedJsonXhr.responseType = 'json'
+  unsupportedJsonXhr.payload = unsupportedApi
+  unsupportedJsonXhr.open('GET', apiEndpoint)
+  unsupportedJsonXhr.send()
+  await assertNoRawNative(
+    () => unsupportedJsonXhr.response,
+    'Catalog-only XHR JSON response does not expose non-DASH playurl signed Native URL',
+  )
+  const loadingSignedText = `{"data":{"dash":{"video":[{"base_url":"${leakedNativeUrl}"`
+  const loadingTextXhr = new FakeXhr()
   loadingTextXhr.responseType = 'text'
   loadingTextXhr.holdAtLoading = true
   loadingTextXhr.payload = loadingSignedText
   loadingTextXhr.rawResponseText = loadingSignedText
-  loadingTextXhr.open('GET', base.apiEndpoint)
+  loadingTextXhr.open('GET', apiEndpoint)
   loadingTextXhr.send()
-  return extendFixture(base, { loadingSignedText, loadingTextXhr } as const)
+  return {
+    FakeXhr,
+    apiEndpoint,
+    apiFailureRoutes,
+    apiFailureSession,
+    apiFailureSettings,
+    apiFailureTransport,
+    apiFailureVault,
+    assertNoRawNative,
+    fakeWindow,
+    leakedNativeUrl,
+    loadingSignedText,
+    loadingTextXhr,
+    malformedApi,
+    measurementStub,
+    now,
+    get playurlFetchBody() {
+      return block1.playurlFetchBody
+    },
+    set playurlFetchBody(value: typeof block1.playurlFetchBody) {
+      block1.playurlFetchBody = value
+    },
+    get playurlFetchOverride() {
+      return block1.playurlFetchOverride
+    },
+    set playurlFetchOverride(value: typeof block1.playurlFetchOverride) {
+      block1.playurlFetchOverride = value
+    },
+    scope,
+  }
 }
 
 async function createNativeOnXHRParameterPlayurlRetainsWebsiteDispatch11ParameterParameterContext10(
   t: TestContext,
 ) {
-  const base = await createPartialPlayurlXHRFixtureIsStillLoading10Context9(t)
-  const delayedSitePlayurl = JSON.stringify(
-    {
-      code: 0,
-      data: {
-        dash: {
-          video: [
-            {
-              id: 80,
-              codecid: 13,
-              height: 1080,
-              bandwidth: 1_000_000,
-              base_url: base.leakedNativeUrl,
-              backup_url: [],
-            },
-          ],
-          audio: [],
-        },
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, FakeXhr } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const block3 = createPlaybackResourcesBlock3(now, scope)
+  const { pageVault, pageState, pageSession, pageSettings, pageStorage, measurementStub } = block3
+  pageVault.reset(pageState.generation, pageState.epoch)
+  const pageRoutes = new RouteCoordinator(
+    clock,
+    pageSession,
+    pageSettings,
+    scope.own(new RestrictionStore(pageStorage, () => now)),
+    scope.own(new EvidenceStore(pageStorage, () => now)),
+    pageVault,
+    createRuntimeIds(),
+  )
+  const pagePlayurl = new PlayurlAdapter(new PlayurlController(pageSession, pageVault, pageRoutes))
+  const trustedPageUrl =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/trusted.m4s?signature=trusted'
+  const trustedPagePayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: trustedPageUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
       },
     },
-    null,
-    2,
-  )
-  const stalePlayurlTextXhr = new base.FakeXhr()
-  stalePlayurlTextXhr.responseType = 'text'
-  stalePlayurlTextXhr.payload = delayedSitePlayurl
-  stalePlayurlTextXhr.rawResponseText = delayedSitePlayurl
-  stalePlayurlTextXhr.open('GET', base.apiEndpoint)
-  stalePlayurlTextXhr.send()
-  const stalePlayurlJsonXhr = new base.FakeXhr()
-  stalePlayurlJsonXhr.responseType = 'json'
-  stalePlayurlJsonXhr.payload = JSON.parse(delayedSitePlayurl) as unknown
-  stalePlayurlJsonXhr.open('GET', base.apiEndpoint)
-  stalePlayurlJsonXhr.send()
-  const nextApiFailureState = base.apiFailureSession.beginGeneration(false)
-  base.apiFailureVault.reset(nextApiFailureState.generation, nextApiFailureState.epoch)
-  base.apiFailureRoutes.resetEpoch()
-  let releaseDelayedPlayurl: () => void = () => undefined
-  const bodyReadStarted = deferred<void>()
-  base.playurlFetchOverride = new Response(
-    new ReadableStream<Uint8Array>({
-      start(controller) {
-        releaseDelayedPlayurl = () => {
-          controller.enqueue(new TextEncoder().encode(delayedSitePlayurl))
-          controller.close()
-        }
-      },
-    }),
-    { status: 201, headers: { 'x-website-playurl': 'original' } },
-  )
-  const readWebsiteBody = base.playurlFetchOverride.text.bind(base.playurlFetchOverride)
-  Object.defineProperty(base.playurlFetchOverride, 'text', {
-    value: () => {
-      bodyReadStarted.resolve()
-      return readWebsiteBody()
-    },
+  }
+  const trustedPageRep = pageVault.contextForUrl(trustedPageUrl)?.representation
+  const trustedPageOutput = trustedPagePayload.data.dash.video[0]?.base_url ?? ''
+  void (trustedPageRep ? pageVault.outputRole(trustedPageRep, trustedPageOutput) : null)
+  const affinityPageRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/affinity.m4s?signature=affinity'
+  void pageVault.register({
+    generation: pageSession.get().generation,
+    epoch: pageSession.get().epoch,
+    kind: 'video',
+    key: 'affinity:64',
+    height: 720,
+    codec: 'av1',
+    bandwidth: 1_000_000,
+    urls: [affinityPageRoot],
+    source: 'trusted-api',
   })
-  const delayedPlayurlFetch = base.fakeWindow.fetch(base.apiEndpoint).then((response) => {
-    true
-    return response
-  })
-  await bodyReadStarted.promise
-  await base.apiFailureSettings.update({ disabled: true })
-  releaseDelayedPlayurl()
-  await delayedPlayurlFetch
-  base.playurlFetchOverride = null
-  await base.apiFailureSettings.update({ disabled: false })
-  base.apiFailureTransport.dispose()
+  void pageRoutes
+    .startupOptions(affinityPageRoot)
+    ?.candidates.find(
+      (candidate) =>
+        candidate.type === 'catalog-generated' &&
+        candidate.host !== new URL(trustedPageOutput).host,
+    )
+  const freshPageInfo = scope.own(
+    new PagePlayinfoAdapter(
+      (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
+      () => pageRoutes.isCatalogOnly(),
+    ),
+  )
+  freshPageInfo.dispose()
+  Reflect.deleteProperty(fakeWindow, '__playinfo__')
+  const block4 = createPlaybackResourcesBlock4(now, scope)
+  const {
+    apiFailureVault,
+    apiFailureState,
+    apiFailureSession,
+    apiFailureSettings,
+    apiFailureStorage,
+  } = block4
+  apiFailureVault.reset(apiFailureState.generation, apiFailureState.epoch)
+  const apiFailureRoutes = new RouteCoordinator(
+    clock,
+    apiFailureSession,
+    apiFailureSettings,
+    scope.own(new RestrictionStore(apiFailureStorage, () => now)),
+    scope.own(new EvidenceStore(apiFailureStorage, () => now)),
+    apiFailureVault,
+    createRuntimeIds(),
+  )
+  const apiFailurePlayurl = new PlayurlAdapter(
+    new PlayurlController(apiFailureSession, apiFailureVault, apiFailureRoutes),
+  )
+  const apiFailureTransport = scope.own(
+    new TransportAdapter(
+      apiFailureSession,
+      apiFailureSettings,
+      apiFailureRoutes,
+      apiFailurePlayurl,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  apiFailureTransport.install()
+  const block2 = await createPlaybackResourcesBlock2()
+  const { malformedApi, assertNoRawNative, apiEndpoint, unsupportedApi, leakedNativeUrl } = block2
+  block1.playurlFetchBody = malformedApi
+  await assertNoRawNative(
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+    'Catalog-only Fetch does not expose a malformed HTTP-200 playurl carrying a signed Native URL',
+  )
+  block1.playurlFetchBody = JSON.stringify(unsupportedApi)
+  await assertNoRawNative(
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+    'Catalog-only Fetch does not expose a non-DASH HTTP-200 playurl carrying a signed Native URL',
+  )
+  const malformedTextXhr = new FakeXhr()
+  malformedTextXhr.responseType = 'text'
+  malformedTextXhr.payload = malformedApi
+  malformedTextXhr.rawResponseText = malformedApi
+  malformedTextXhr.open('GET', apiEndpoint)
+  malformedTextXhr.send()
+  await assertNoRawNative(
+    () => malformedTextXhr.responseText,
+    'Catalog-only XHR text response does not expose malformed playurl signed Native URL',
+  )
+  await assertNoRawNative(
+    () => malformedTextXhr.response,
+    'Catalog-only XHR response getter does not expose malformed playurl signed Native URL',
+  )
+  const unsupportedTextXhr = new FakeXhr()
+  unsupportedTextXhr.responseType = 'text'
+  unsupportedTextXhr.payload = JSON.stringify(unsupportedApi)
+  unsupportedTextXhr.rawResponseText = JSON.stringify(unsupportedApi)
+  unsupportedTextXhr.open('GET', apiEndpoint)
+  unsupportedTextXhr.send()
+  await assertNoRawNative(
+    () => unsupportedTextXhr.responseText,
+    'Catalog-only XHR text response does not expose non-DASH playurl signed Native URL',
+  )
+  const unsupportedJsonXhr = new FakeXhr()
+  unsupportedJsonXhr.responseType = 'json'
+  unsupportedJsonXhr.payload = unsupportedApi
+  unsupportedJsonXhr.open('GET', apiEndpoint)
+  unsupportedJsonXhr.send()
+  await assertNoRawNative(
+    () => unsupportedJsonXhr.response,
+    'Catalog-only XHR JSON response does not expose non-DASH playurl signed Native URL',
+  )
+  const loadingSignedText = `{"data":{"dash":{"video":[{"base_url":"${leakedNativeUrl}"`
+  block1.playurlFetchOverride = null
+  apiFailureTransport.dispose()
   const throwingPlayurl = {
     transform: (): never => {
       throw new Error('synthetic transform failure')
     },
   }
-  const throwingTransport = base.scope.own(
+  const throwingTransport = scope.own(
     new TransportAdapter(
-      base.apiFailureSession,
-      base.apiFailureSettings,
-      base.apiFailureRoutes,
+      apiFailureSession,
+      apiFailureSettings,
+      apiFailureRoutes,
       throwingPlayurl,
-      base.measurementStub,
-      () => base.now,
+      measurementStub,
+      () => now,
       createRuntimeIds(),
     ),
   )
@@ -937,7 +1513,7 @@ async function createNativeOnXHRParameterPlayurlRetainsWebsiteDispatch11Paramete
             codecid: 13,
             height: 1080,
             bandwidth: 1_000_000,
-            base_url: base.leakedNativeUrl,
+            base_url: leakedNativeUrl,
             backup_url: [],
           },
         ],
@@ -945,126 +1521,1030 @@ async function createNativeOnXHRParameterPlayurlRetainsWebsiteDispatch11Paramete
       },
     },
   }
-  base.playurlFetchBody = JSON.stringify(transformFailurePayload)
-  const throwingTextXhr = new base.FakeXhr()
+  block1.playurlFetchBody = JSON.stringify(transformFailurePayload)
+  const throwingTextXhr = new FakeXhr()
   throwingTextXhr.responseType = 'text'
   throwingTextXhr.payload = JSON.stringify(transformFailurePayload)
   throwingTextXhr.rawResponseText = JSON.stringify(transformFailurePayload)
-  throwingTextXhr.open('GET', base.apiEndpoint)
+  throwingTextXhr.open('GET', apiEndpoint)
   throwingTextXhr.send()
-  const throwingJsonXhr = new base.FakeXhr()
+  const throwingJsonXhr = new FakeXhr()
   throwingJsonXhr.responseType = 'json'
   throwingJsonXhr.payload = transformFailurePayload
-  throwingJsonXhr.open('GET', base.apiEndpoint)
+  throwingJsonXhr.open('GET', apiEndpoint)
   throwingJsonXhr.send()
-  await base.apiFailureSettings.update({ considerNativeSources: true })
-  base.apiFailureRoutes.invalidateForUserSetting()
-  base.playurlFetchBody = base.malformedApi
-  const nativeOnXhr = new base.FakeXhr()
+  await apiFailureSettings.update({ considerNativeSources: true })
+  apiFailureRoutes.invalidateForUserSetting()
+  block1.playurlFetchBody = malformedApi
+  const nativeOnXhr = new FakeXhr()
   nativeOnXhr.responseType = 'text'
-  nativeOnXhr.payload = base.malformedApi
-  nativeOnXhr.rawResponseText = base.malformedApi
-  nativeOnXhr.open('GET', base.apiEndpoint)
+  nativeOnXhr.payload = malformedApi
+  nativeOnXhr.rawResponseText = malformedApi
+  nativeOnXhr.open('GET', apiEndpoint)
   nativeOnXhr.send()
-  const nativeOnLoadingXhr = new base.FakeXhr()
+  const nativeOnLoadingXhr = new FakeXhr()
   nativeOnLoadingXhr.responseType = 'text'
   nativeOnLoadingXhr.holdAtLoading = true
-  nativeOnLoadingXhr.payload = base.loadingSignedText
-  nativeOnLoadingXhr.rawResponseText = base.loadingSignedText
-  nativeOnLoadingXhr.open('GET', base.apiEndpoint)
+  nativeOnLoadingXhr.payload = loadingSignedText
+  nativeOnLoadingXhr.rawResponseText = loadingSignedText
+  nativeOnLoadingXhr.open('GET', apiEndpoint)
   nativeOnLoadingXhr.send()
-  return extendFixture(base, { throwingTransport } as const)
+  return {
+    FakeXhr,
+    apiEndpoint,
+  }
 }
 
 async function createDisabledScriptPreservesMalformedWebsiteFetchPlayurlResponse12Context11(
   t: TestContext,
 ) {
-  const base =
-    await createNativeOnXHRParameterPlayurlRetainsWebsiteDispatch11ParameterParameterContext10(t)
-  await base.apiFailureSettings.update({
-    disabled: true,
-    considerNativeSources: false,
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, FakeXhr } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
   })
-  return extendFixture(base, {} as const)
+  const block3 = createPlaybackResourcesBlock3(now, scope)
+  const { pageVault, pageState, pageSession, pageSettings, pageStorage, measurementStub } = block3
+  pageVault.reset(pageState.generation, pageState.epoch)
+  const pageRoutes = new RouteCoordinator(
+    clock,
+    pageSession,
+    pageSettings,
+    scope.own(new RestrictionStore(pageStorage, () => now)),
+    scope.own(new EvidenceStore(pageStorage, () => now)),
+    pageVault,
+    createRuntimeIds(),
+  )
+  const pagePlayurl = new PlayurlAdapter(new PlayurlController(pageSession, pageVault, pageRoutes))
+  const trustedPageUrl =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/trusted.m4s?signature=trusted'
+  const trustedPagePayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: trustedPageUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  const trustedPageRep = pageVault.contextForUrl(trustedPageUrl)?.representation
+  const trustedPageOutput = trustedPagePayload.data.dash.video[0]?.base_url ?? ''
+  void (trustedPageRep ? pageVault.outputRole(trustedPageRep, trustedPageOutput) : null)
+  const affinityPageRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/affinity.m4s?signature=affinity'
+  void pageVault.register({
+    generation: pageSession.get().generation,
+    epoch: pageSession.get().epoch,
+    kind: 'video',
+    key: 'affinity:64',
+    height: 720,
+    codec: 'av1',
+    bandwidth: 1_000_000,
+    urls: [affinityPageRoot],
+    source: 'trusted-api',
+  })
+  void pageRoutes
+    .startupOptions(affinityPageRoot)
+    ?.candidates.find(
+      (candidate) =>
+        candidate.type === 'catalog-generated' &&
+        candidate.host !== new URL(trustedPageOutput).host,
+    )
+  const freshPageInfo = scope.own(
+    new PagePlayinfoAdapter(
+      (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
+      () => pageRoutes.isCatalogOnly(),
+    ),
+  )
+  freshPageInfo.dispose()
+  Reflect.deleteProperty(fakeWindow, '__playinfo__')
+  const block4 = createPlaybackResourcesBlock4(now, scope)
+  const {
+    apiFailureVault,
+    apiFailureState,
+    apiFailureSession,
+    apiFailureSettings,
+    apiFailureStorage,
+  } = block4
+  apiFailureVault.reset(apiFailureState.generation, apiFailureState.epoch)
+  const apiFailureRoutes = new RouteCoordinator(
+    clock,
+    apiFailureSession,
+    apiFailureSettings,
+    scope.own(new RestrictionStore(apiFailureStorage, () => now)),
+    scope.own(new EvidenceStore(apiFailureStorage, () => now)),
+    apiFailureVault,
+    createRuntimeIds(),
+  )
+  const apiFailurePlayurl = new PlayurlAdapter(
+    new PlayurlController(apiFailureSession, apiFailureVault, apiFailureRoutes),
+  )
+  const apiFailureTransport = scope.own(
+    new TransportAdapter(
+      apiFailureSession,
+      apiFailureSettings,
+      apiFailureRoutes,
+      apiFailurePlayurl,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  apiFailureTransport.install()
+  const block2 = await createPlaybackResourcesBlock2()
+  const { malformedApi, assertNoRawNative, apiEndpoint, unsupportedApi, leakedNativeUrl } = block2
+  block1.playurlFetchBody = malformedApi
+  await assertNoRawNative(
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+    'Catalog-only Fetch does not expose a malformed HTTP-200 playurl carrying a signed Native URL',
+  )
+  block1.playurlFetchBody = JSON.stringify(unsupportedApi)
+  await assertNoRawNative(
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+    'Catalog-only Fetch does not expose a non-DASH HTTP-200 playurl carrying a signed Native URL',
+  )
+  const malformedTextXhr = new FakeXhr()
+  malformedTextXhr.responseType = 'text'
+  malformedTextXhr.payload = malformedApi
+  malformedTextXhr.rawResponseText = malformedApi
+  malformedTextXhr.open('GET', apiEndpoint)
+  malformedTextXhr.send()
+  await assertNoRawNative(
+    () => malformedTextXhr.responseText,
+    'Catalog-only XHR text response does not expose malformed playurl signed Native URL',
+  )
+  await assertNoRawNative(
+    () => malformedTextXhr.response,
+    'Catalog-only XHR response getter does not expose malformed playurl signed Native URL',
+  )
+  const unsupportedTextXhr = new FakeXhr()
+  unsupportedTextXhr.responseType = 'text'
+  unsupportedTextXhr.payload = JSON.stringify(unsupportedApi)
+  unsupportedTextXhr.rawResponseText = JSON.stringify(unsupportedApi)
+  unsupportedTextXhr.open('GET', apiEndpoint)
+  unsupportedTextXhr.send()
+  await assertNoRawNative(
+    () => unsupportedTextXhr.responseText,
+    'Catalog-only XHR text response does not expose non-DASH playurl signed Native URL',
+  )
+  const unsupportedJsonXhr = new FakeXhr()
+  unsupportedJsonXhr.responseType = 'json'
+  unsupportedJsonXhr.payload = unsupportedApi
+  unsupportedJsonXhr.open('GET', apiEndpoint)
+  unsupportedJsonXhr.send()
+  await assertNoRawNative(
+    () => unsupportedJsonXhr.response,
+    'Catalog-only XHR JSON response does not expose non-DASH playurl signed Native URL',
+  )
+  const loadingSignedText = `{"data":{"dash":{"video":[{"base_url":"${leakedNativeUrl}"`
+  block1.playurlFetchOverride = null
+  apiFailureTransport.dispose()
+  const throwingPlayurl = {
+    transform: (): never => {
+      throw new Error('synthetic transform failure')
+    },
+  }
+  const throwingTransport = scope.own(
+    new TransportAdapter(
+      apiFailureSession,
+      apiFailureSettings,
+      apiFailureRoutes,
+      throwingPlayurl,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  throwingTransport.install()
+  const transformFailurePayload = {
+    code: 0,
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: leakedNativeUrl,
+            backup_url: [],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  block1.playurlFetchBody = JSON.stringify(transformFailurePayload)
+  const throwingTextXhr = new FakeXhr()
+  throwingTextXhr.responseType = 'text'
+  throwingTextXhr.payload = JSON.stringify(transformFailurePayload)
+  throwingTextXhr.rawResponseText = JSON.stringify(transformFailurePayload)
+  throwingTextXhr.open('GET', apiEndpoint)
+  throwingTextXhr.send()
+  const throwingJsonXhr = new FakeXhr()
+  throwingJsonXhr.responseType = 'json'
+  throwingJsonXhr.payload = transformFailurePayload
+  throwingJsonXhr.open('GET', apiEndpoint)
+  throwingJsonXhr.send()
+  await apiFailureSettings.update({ considerNativeSources: true })
+  apiFailureRoutes.invalidateForUserSetting()
+  block1.playurlFetchBody = malformedApi
+  const nativeOnXhr = new FakeXhr()
+  nativeOnXhr.responseType = 'text'
+  nativeOnXhr.payload = malformedApi
+  nativeOnXhr.rawResponseText = malformedApi
+  nativeOnXhr.open('GET', apiEndpoint)
+  nativeOnXhr.send()
+  const nativeOnLoadingXhr = new FakeXhr()
+  nativeOnLoadingXhr.responseType = 'text'
+  nativeOnLoadingXhr.holdAtLoading = true
+  nativeOnLoadingXhr.payload = loadingSignedText
+  nativeOnLoadingXhr.rawResponseText = loadingSignedText
+  nativeOnLoadingXhr.open('GET', apiEndpoint)
+  nativeOnLoadingXhr.send()
+  return {
+    FakeXhr,
+    apiEndpoint,
+    fakeWindow,
+    loadingSignedText,
+    malformedApi,
+  }
 }
 
 async function createDisabledApiXhrContext12(t: TestContext) {
-  const base = await createDisabledScriptPreservesMalformedWebsiteFetchPlayurlResponse12Context11(t)
-  const disabledApiXhr = new base.FakeXhr()
-  disabledApiXhr.responseType = 'text'
-  disabledApiXhr.payload = base.malformedApi
-  disabledApiXhr.rawResponseText = base.malformedApi
-  disabledApiXhr.open('GET', base.apiEndpoint)
-  disabledApiXhr.send()
-  const disabledLoadingXhr = new base.FakeXhr()
-  disabledLoadingXhr.responseType = 'text'
-  disabledLoadingXhr.holdAtLoading = true
-  disabledLoadingXhr.payload = base.loadingSignedText
-  disabledLoadingXhr.rawResponseText = base.loadingSignedText
-  disabledLoadingXhr.open('GET', base.apiEndpoint)
-  disabledLoadingXhr.send()
-  return extendFixture(base, {} as const)
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, FakeXhr } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const block3 = createPlaybackResourcesBlock3(now, scope)
+  const { pageVault, pageState, pageSession, pageSettings, pageStorage, measurementStub } = block3
+  pageVault.reset(pageState.generation, pageState.epoch)
+  const pageRoutes = new RouteCoordinator(
+    clock,
+    pageSession,
+    pageSettings,
+    scope.own(new RestrictionStore(pageStorage, () => now)),
+    scope.own(new EvidenceStore(pageStorage, () => now)),
+    pageVault,
+    createRuntimeIds(),
+  )
+  const pagePlayurl = new PlayurlAdapter(new PlayurlController(pageSession, pageVault, pageRoutes))
+  const trustedPageUrl =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/trusted.m4s?signature=trusted'
+  const trustedPagePayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: trustedPageUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  const trustedPageRep = pageVault.contextForUrl(trustedPageUrl)?.representation
+  const trustedPageOutput = trustedPagePayload.data.dash.video[0]?.base_url ?? ''
+  void (trustedPageRep ? pageVault.outputRole(trustedPageRep, trustedPageOutput) : null)
+  const affinityPageRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/affinity.m4s?signature=affinity'
+  void pageVault.register({
+    generation: pageSession.get().generation,
+    epoch: pageSession.get().epoch,
+    kind: 'video',
+    key: 'affinity:64',
+    height: 720,
+    codec: 'av1',
+    bandwidth: 1_000_000,
+    urls: [affinityPageRoot],
+    source: 'trusted-api',
+  })
+  void pageRoutes
+    .startupOptions(affinityPageRoot)
+    ?.candidates.find(
+      (candidate) =>
+        candidate.type === 'catalog-generated' &&
+        candidate.host !== new URL(trustedPageOutput).host,
+    )
+  const freshPageInfo = scope.own(
+    new PagePlayinfoAdapter(
+      (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
+      () => pageRoutes.isCatalogOnly(),
+    ),
+  )
+  freshPageInfo.dispose()
+  Reflect.deleteProperty(fakeWindow, '__playinfo__')
+  const block4 = createPlaybackResourcesBlock4(now, scope)
+  const {
+    apiFailureVault,
+    apiFailureState,
+    apiFailureSession,
+    apiFailureSettings,
+    apiFailureStorage,
+  } = block4
+  apiFailureVault.reset(apiFailureState.generation, apiFailureState.epoch)
+  const apiFailureRoutes = new RouteCoordinator(
+    clock,
+    apiFailureSession,
+    apiFailureSettings,
+    scope.own(new RestrictionStore(apiFailureStorage, () => now)),
+    scope.own(new EvidenceStore(apiFailureStorage, () => now)),
+    apiFailureVault,
+    createRuntimeIds(),
+  )
+  const apiFailurePlayurl = new PlayurlAdapter(
+    new PlayurlController(apiFailureSession, apiFailureVault, apiFailureRoutes),
+  )
+  const apiFailureTransport = scope.own(
+    new TransportAdapter(
+      apiFailureSession,
+      apiFailureSettings,
+      apiFailureRoutes,
+      apiFailurePlayurl,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  apiFailureTransport.install()
+  const block2 = await createPlaybackResourcesBlock2()
+  const { malformedApi, assertNoRawNative, apiEndpoint, unsupportedApi, leakedNativeUrl } = block2
+  block1.playurlFetchBody = malformedApi
+  await assertNoRawNative(
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+    'Catalog-only Fetch does not expose a malformed HTTP-200 playurl carrying a signed Native URL',
+  )
+  block1.playurlFetchBody = JSON.stringify(unsupportedApi)
+  await assertNoRawNative(
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+    'Catalog-only Fetch does not expose a non-DASH HTTP-200 playurl carrying a signed Native URL',
+  )
+  const malformedTextXhr = new FakeXhr()
+  malformedTextXhr.responseType = 'text'
+  malformedTextXhr.payload = malformedApi
+  malformedTextXhr.rawResponseText = malformedApi
+  malformedTextXhr.open('GET', apiEndpoint)
+  malformedTextXhr.send()
+  await assertNoRawNative(
+    () => malformedTextXhr.responseText,
+    'Catalog-only XHR text response does not expose malformed playurl signed Native URL',
+  )
+  await assertNoRawNative(
+    () => malformedTextXhr.response,
+    'Catalog-only XHR response getter does not expose malformed playurl signed Native URL',
+  )
+  const unsupportedTextXhr = new FakeXhr()
+  unsupportedTextXhr.responseType = 'text'
+  unsupportedTextXhr.payload = JSON.stringify(unsupportedApi)
+  unsupportedTextXhr.rawResponseText = JSON.stringify(unsupportedApi)
+  unsupportedTextXhr.open('GET', apiEndpoint)
+  unsupportedTextXhr.send()
+  await assertNoRawNative(
+    () => unsupportedTextXhr.responseText,
+    'Catalog-only XHR text response does not expose non-DASH playurl signed Native URL',
+  )
+  const unsupportedJsonXhr = new FakeXhr()
+  unsupportedJsonXhr.responseType = 'json'
+  unsupportedJsonXhr.payload = unsupportedApi
+  unsupportedJsonXhr.open('GET', apiEndpoint)
+  unsupportedJsonXhr.send()
+  await assertNoRawNative(
+    () => unsupportedJsonXhr.response,
+    'Catalog-only XHR JSON response does not expose non-DASH playurl signed Native URL',
+  )
+  const loadingSignedText = `{"data":{"dash":{"video":[{"base_url":"${leakedNativeUrl}"`
+  block1.playurlFetchOverride = null
+  apiFailureTransport.dispose()
+  const throwingPlayurl = {
+    transform: (): never => {
+      throw new Error('synthetic transform failure')
+    },
+  }
+  const throwingTransport = scope.own(
+    new TransportAdapter(
+      apiFailureSession,
+      apiFailureSettings,
+      apiFailureRoutes,
+      throwingPlayurl,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  throwingTransport.install()
+  const transformFailurePayload = {
+    code: 0,
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: leakedNativeUrl,
+            backup_url: [],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  block1.playurlFetchBody = JSON.stringify(transformFailurePayload)
+  const throwingTextXhr = new FakeXhr()
+  throwingTextXhr.responseType = 'text'
+  throwingTextXhr.payload = JSON.stringify(transformFailurePayload)
+  throwingTextXhr.rawResponseText = JSON.stringify(transformFailurePayload)
+  throwingTextXhr.open('GET', apiEndpoint)
+  throwingTextXhr.send()
+  const throwingJsonXhr = new FakeXhr()
+  throwingJsonXhr.responseType = 'json'
+  throwingJsonXhr.payload = transformFailurePayload
+  throwingJsonXhr.open('GET', apiEndpoint)
+  throwingJsonXhr.send()
+  await apiFailureSettings.update({ considerNativeSources: true })
+  apiFailureRoutes.invalidateForUserSetting()
+  block1.playurlFetchBody = malformedApi
+  const nativeOnXhr = new FakeXhr()
+  nativeOnXhr.responseType = 'text'
+  nativeOnXhr.payload = malformedApi
+  nativeOnXhr.rawResponseText = malformedApi
+  nativeOnXhr.open('GET', apiEndpoint)
+  nativeOnXhr.send()
+  const nativeOnLoadingXhr = new FakeXhr()
+  nativeOnLoadingXhr.responseType = 'text'
+  nativeOnLoadingXhr.holdAtLoading = true
+  nativeOnLoadingXhr.payload = loadingSignedText
+  nativeOnLoadingXhr.rawResponseText = loadingSignedText
+  nativeOnLoadingXhr.open('GET', apiEndpoint)
+  nativeOnLoadingXhr.send()
+  return {
+    FakeXhr,
+    apiEndpoint,
+  }
 }
 
 async function createCatalogOnlyFetchBlocksKnownBStationPCDNSuffixParameterBeforeContext13(
   t: TestContext,
 ) {
-  const base = await createDisabledApiXhrContext12(t)
-  base.throwingTransport.dispose()
-  base.playurlFetchBody = JSON.stringify({
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, FakeXhr } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const block3 = createPlaybackResourcesBlock3(now, scope)
+  const { pageVault, pageState, pageSession, pageSettings, pageStorage, measurementStub } = block3
+  pageVault.reset(pageState.generation, pageState.epoch)
+  const pageRoutes = new RouteCoordinator(
+    clock,
+    pageSession,
+    pageSettings,
+    scope.own(new RestrictionStore(pageStorage, () => now)),
+    scope.own(new EvidenceStore(pageStorage, () => now)),
+    pageVault,
+    createRuntimeIds(),
+  )
+  const pagePlayurl = new PlayurlAdapter(new PlayurlController(pageSession, pageVault, pageRoutes))
+  const trustedPageUrl =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/trusted.m4s?signature=trusted'
+  const trustedPagePayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: trustedPageUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  const trustedPageRep = pageVault.contextForUrl(trustedPageUrl)?.representation
+  const trustedPageOutput = trustedPagePayload.data.dash.video[0]?.base_url ?? ''
+  void (trustedPageRep ? pageVault.outputRole(trustedPageRep, trustedPageOutput) : null)
+  const affinityPageRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/affinity.m4s?signature=affinity'
+  void pageVault.register({
+    generation: pageSession.get().generation,
+    epoch: pageSession.get().epoch,
+    kind: 'video',
+    key: 'affinity:64',
+    height: 720,
+    codec: 'av1',
+    bandwidth: 1_000_000,
+    urls: [affinityPageRoot],
+    source: 'trusted-api',
+  })
+  void pageRoutes
+    .startupOptions(affinityPageRoot)
+    ?.candidates.find(
+      (candidate) =>
+        candidate.type === 'catalog-generated' &&
+        candidate.host !== new URL(trustedPageOutput).host,
+    )
+  const freshPageInfo = scope.own(
+    new PagePlayinfoAdapter(
+      (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
+      () => pageRoutes.isCatalogOnly(),
+    ),
+  )
+  freshPageInfo.dispose()
+  Reflect.deleteProperty(fakeWindow, '__playinfo__')
+  const block4 = createPlaybackResourcesBlock4(now, scope)
+  const {
+    apiFailureVault,
+    apiFailureState,
+    apiFailureSession,
+    apiFailureSettings,
+    apiFailureStorage,
+  } = block4
+  apiFailureVault.reset(apiFailureState.generation, apiFailureState.epoch)
+  const apiFailureRoutes = new RouteCoordinator(
+    clock,
+    apiFailureSession,
+    apiFailureSettings,
+    scope.own(new RestrictionStore(apiFailureStorage, () => now)),
+    scope.own(new EvidenceStore(apiFailureStorage, () => now)),
+    apiFailureVault,
+    createRuntimeIds(),
+  )
+  const apiFailurePlayurl = new PlayurlAdapter(
+    new PlayurlController(apiFailureSession, apiFailureVault, apiFailureRoutes),
+  )
+  const apiFailureTransport = scope.own(
+    new TransportAdapter(
+      apiFailureSession,
+      apiFailureSettings,
+      apiFailureRoutes,
+      apiFailurePlayurl,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  apiFailureTransport.install()
+  const block2 = await createPlaybackResourcesBlock2()
+  const { malformedApi, assertNoRawNative, apiEndpoint, unsupportedApi, leakedNativeUrl } = block2
+  block1.playurlFetchBody = malformedApi
+  await assertNoRawNative(
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+    'Catalog-only Fetch does not expose a malformed HTTP-200 playurl carrying a signed Native URL',
+  )
+  block1.playurlFetchBody = JSON.stringify(unsupportedApi)
+  await assertNoRawNative(
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+    'Catalog-only Fetch does not expose a non-DASH HTTP-200 playurl carrying a signed Native URL',
+  )
+  const malformedTextXhr = new FakeXhr()
+  malformedTextXhr.responseType = 'text'
+  malformedTextXhr.payload = malformedApi
+  malformedTextXhr.rawResponseText = malformedApi
+  malformedTextXhr.open('GET', apiEndpoint)
+  malformedTextXhr.send()
+  await assertNoRawNative(
+    () => malformedTextXhr.responseText,
+    'Catalog-only XHR text response does not expose malformed playurl signed Native URL',
+  )
+  await assertNoRawNative(
+    () => malformedTextXhr.response,
+    'Catalog-only XHR response getter does not expose malformed playurl signed Native URL',
+  )
+  const unsupportedTextXhr = new FakeXhr()
+  unsupportedTextXhr.responseType = 'text'
+  unsupportedTextXhr.payload = JSON.stringify(unsupportedApi)
+  unsupportedTextXhr.rawResponseText = JSON.stringify(unsupportedApi)
+  unsupportedTextXhr.open('GET', apiEndpoint)
+  unsupportedTextXhr.send()
+  await assertNoRawNative(
+    () => unsupportedTextXhr.responseText,
+    'Catalog-only XHR text response does not expose non-DASH playurl signed Native URL',
+  )
+  const unsupportedJsonXhr = new FakeXhr()
+  unsupportedJsonXhr.responseType = 'json'
+  unsupportedJsonXhr.payload = unsupportedApi
+  unsupportedJsonXhr.open('GET', apiEndpoint)
+  unsupportedJsonXhr.send()
+  await assertNoRawNative(
+    () => unsupportedJsonXhr.response,
+    'Catalog-only XHR JSON response does not expose non-DASH playurl signed Native URL',
+  )
+  const loadingSignedText = `{"data":{"dash":{"video":[{"base_url":"${leakedNativeUrl}"`
+  block1.playurlFetchOverride = null
+  apiFailureTransport.dispose()
+  const throwingPlayurl = {
+    transform: (): never => {
+      throw new Error('synthetic transform failure')
+    },
+  }
+  const throwingTransport = scope.own(
+    new TransportAdapter(
+      apiFailureSession,
+      apiFailureSettings,
+      apiFailureRoutes,
+      throwingPlayurl,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  throwingTransport.install()
+  const transformFailurePayload = {
+    code: 0,
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: leakedNativeUrl,
+            backup_url: [],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  block1.playurlFetchBody = JSON.stringify(transformFailurePayload)
+  const throwingTextXhr = new FakeXhr()
+  throwingTextXhr.responseType = 'text'
+  throwingTextXhr.payload = JSON.stringify(transformFailurePayload)
+  throwingTextXhr.rawResponseText = JSON.stringify(transformFailurePayload)
+  throwingTextXhr.open('GET', apiEndpoint)
+  throwingTextXhr.send()
+  const throwingJsonXhr = new FakeXhr()
+  throwingJsonXhr.responseType = 'json'
+  throwingJsonXhr.payload = transformFailurePayload
+  throwingJsonXhr.open('GET', apiEndpoint)
+  throwingJsonXhr.send()
+  apiFailureRoutes.invalidateForUserSetting()
+  block1.playurlFetchBody = malformedApi
+  const nativeOnXhr = new FakeXhr()
+  nativeOnXhr.responseType = 'text'
+  nativeOnXhr.payload = malformedApi
+  nativeOnXhr.rawResponseText = malformedApi
+  nativeOnXhr.open('GET', apiEndpoint)
+  nativeOnXhr.send()
+  const nativeOnLoadingXhr = new FakeXhr()
+  nativeOnLoadingXhr.responseType = 'text'
+  nativeOnLoadingXhr.holdAtLoading = true
+  nativeOnLoadingXhr.payload = loadingSignedText
+  nativeOnLoadingXhr.rawResponseText = loadingSignedText
+  nativeOnLoadingXhr.open('GET', apiEndpoint)
+  nativeOnLoadingXhr.send()
+  throwingTransport.dispose()
+  block1.playurlFetchBody = JSON.stringify({
     code: 0,
     data: { dash: { video: [], audio: [] } },
   })
-  const oversizedStorage = new FakeStorage(),
-    oversizedSettings = base.scope.own(new CatalogSettingsStore(oversizedStorage, () => base.now))
-  const oversizedSession = new SessionStore(),
-    oversizedState = oversizedSession.beginGeneration(false)
+  const oversizedStorage = new FakeStorage()
+  const oversizedSettings = scope.own(new CatalogSettingsStore(oversizedStorage, () => now))
+  const oversizedSession = new SessionStore()
+  const oversizedState = oversizedSession.beginGeneration(false)
   const oversizedVault = new SignedRouteVault()
   oversizedVault.reset(oversizedState.generation, oversizedState.epoch)
   const oversizedRoutes = new RouteCoordinator(
-    base.clock,
+    clock,
     oversizedSession,
     oversizedSettings,
-    base.scope.own(new RestrictionStore(oversizedStorage, () => base.now)),
-    base.scope.own(new EvidenceStore(oversizedStorage, () => base.now)),
+    scope.own(new RestrictionStore(oversizedStorage, () => now)),
+    scope.own(new EvidenceStore(oversizedStorage, () => now)),
     oversizedVault,
     createRuntimeIds(),
   )
   const oversizedPlayurl = new PlayurlAdapter(
     new PlayurlController(oversizedSession, oversizedVault, oversizedRoutes),
   )
-  const oversizedTransport = base.scope.own(
+  const oversizedTransport = scope.own(
     new TransportAdapter(
       oversizedSession,
       oversizedSettings,
       oversizedRoutes,
       oversizedPlayurl,
-      base.measurementStub,
-      () => base.now,
+      measurementStub,
+      () => now,
       createRuntimeIds(),
     ),
   )
   oversizedTransport.install()
-  return extendFixture(base, { oversizedSettings, oversizedRoutes, oversizedTransport } as const)
+  return {
+    FakeXhr,
+    fakeWindow,
+    get nativeFetchCalls() {
+      return block1.nativeFetchCalls
+    },
+    set nativeFetchCalls(value: typeof block1.nativeFetchCalls) {
+      block1.nativeFetchCalls = value
+    },
+  }
 }
 
 async function createUnattributedThirdPartyM4sFetchRemainsWebsiteOwned15Context14(t: TestContext) {
-  const base = await createCatalogOnlyFetchBlocksKnownBStationPCDNSuffixParameterBeforeContext13(t)
-  for (const suffix of ['szbdyd.com', 'mountaintoys.cn', 'nexusedgeio.com', 'ahdohpiechei.com']) {
-    const knownPcdnUrl = `https://node.${suffix}/video.m4s?signature=pcdn-secret`
-    base.nativeFetchCalls
-    false
-    try {
-      await base.fakeWindow.fetch(knownPcdnUrl)
-    } catch {
-      true
-    }
-    const pcdnXhr = new base.FakeXhr()
-    pcdnXhr.open('GET', knownPcdnUrl)
-    pcdnXhr.send()
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const block1 = await createPlaybackResourcesBlock1()
+  const { fakeWindow, FakeXhr } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/video/BVtest/'),
+  })
+  const block3 = createPlaybackResourcesBlock3(now, scope)
+  const { pageVault, pageState, pageSession, pageSettings, pageStorage, measurementStub } = block3
+  pageVault.reset(pageState.generation, pageState.epoch)
+  const pageRoutes = new RouteCoordinator(
+    clock,
+    pageSession,
+    pageSettings,
+    scope.own(new RestrictionStore(pageStorage, () => now)),
+    scope.own(new EvidenceStore(pageStorage, () => now)),
+    pageVault,
+    createRuntimeIds(),
+  )
+  const pagePlayurl = new PlayurlAdapter(new PlayurlController(pageSession, pageVault, pageRoutes))
+  const trustedPageUrl =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/trusted.m4s?signature=trusted'
+  const trustedPagePayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: trustedPageUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
+      },
+    },
   }
+  const trustedPageRep = pageVault.contextForUrl(trustedPageUrl)?.representation
+  const trustedPageOutput = trustedPagePayload.data.dash.video[0]?.base_url ?? ''
+  void (trustedPageRep ? pageVault.outputRole(trustedPageRep, trustedPageOutput) : null)
+  const affinityPageRoot =
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/page-hint/affinity.m4s?signature=affinity'
+  void pageVault.register({
+    generation: pageSession.get().generation,
+    epoch: pageSession.get().epoch,
+    kind: 'video',
+    key: 'affinity:64',
+    height: 720,
+    codec: 'av1',
+    bandwidth: 1_000_000,
+    urls: [affinityPageRoot],
+    source: 'trusted-api',
+  })
+  void pageRoutes
+    .startupOptions(affinityPageRoot)
+    ?.candidates.find(
+      (candidate) =>
+        candidate.type === 'catalog-generated' &&
+        candidate.host !== new URL(trustedPageOutput).host,
+    )
+  const freshPageInfo = scope.own(
+    new PagePlayinfoAdapter(
+      (payload) => pagePlayurl.transform(payload, 'page-hint').accepted,
+      () => pageRoutes.isCatalogOnly(),
+    ),
+  )
+  freshPageInfo.dispose()
+  Reflect.deleteProperty(fakeWindow, '__playinfo__')
+  const block4 = createPlaybackResourcesBlock4(now, scope)
+  const {
+    apiFailureVault,
+    apiFailureState,
+    apiFailureSession,
+    apiFailureSettings,
+    apiFailureStorage,
+  } = block4
+  apiFailureVault.reset(apiFailureState.generation, apiFailureState.epoch)
+  const apiFailureRoutes = new RouteCoordinator(
+    clock,
+    apiFailureSession,
+    apiFailureSettings,
+    scope.own(new RestrictionStore(apiFailureStorage, () => now)),
+    scope.own(new EvidenceStore(apiFailureStorage, () => now)),
+    apiFailureVault,
+    createRuntimeIds(),
+  )
+  const apiFailurePlayurl = new PlayurlAdapter(
+    new PlayurlController(apiFailureSession, apiFailureVault, apiFailureRoutes),
+  )
+  const apiFailureTransport = scope.own(
+    new TransportAdapter(
+      apiFailureSession,
+      apiFailureSettings,
+      apiFailureRoutes,
+      apiFailurePlayurl,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  apiFailureTransport.install()
+  const block2 = await createPlaybackResourcesBlock2()
+  const { malformedApi, assertNoRawNative, apiEndpoint, unsupportedApi, leakedNativeUrl } = block2
+  block1.playurlFetchBody = malformedApi
+  await assertNoRawNative(
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+    'Catalog-only Fetch does not expose a malformed HTTP-200 playurl carrying a signed Native URL',
+  )
+  block1.playurlFetchBody = JSON.stringify(unsupportedApi)
+  await assertNoRawNative(
+    async () => await (await fakeWindow.fetch(apiEndpoint)).text(),
+    'Catalog-only Fetch does not expose a non-DASH HTTP-200 playurl carrying a signed Native URL',
+  )
+  const malformedTextXhr = new FakeXhr()
+  malformedTextXhr.responseType = 'text'
+  malformedTextXhr.payload = malformedApi
+  malformedTextXhr.rawResponseText = malformedApi
+  malformedTextXhr.open('GET', apiEndpoint)
+  malformedTextXhr.send()
+  await assertNoRawNative(
+    () => malformedTextXhr.responseText,
+    'Catalog-only XHR text response does not expose malformed playurl signed Native URL',
+  )
+  await assertNoRawNative(
+    () => malformedTextXhr.response,
+    'Catalog-only XHR response getter does not expose malformed playurl signed Native URL',
+  )
+  const unsupportedTextXhr = new FakeXhr()
+  unsupportedTextXhr.responseType = 'text'
+  unsupportedTextXhr.payload = JSON.stringify(unsupportedApi)
+  unsupportedTextXhr.rawResponseText = JSON.stringify(unsupportedApi)
+  unsupportedTextXhr.open('GET', apiEndpoint)
+  unsupportedTextXhr.send()
+  await assertNoRawNative(
+    () => unsupportedTextXhr.responseText,
+    'Catalog-only XHR text response does not expose non-DASH playurl signed Native URL',
+  )
+  const unsupportedJsonXhr = new FakeXhr()
+  unsupportedJsonXhr.responseType = 'json'
+  unsupportedJsonXhr.payload = unsupportedApi
+  unsupportedJsonXhr.open('GET', apiEndpoint)
+  unsupportedJsonXhr.send()
+  await assertNoRawNative(
+    () => unsupportedJsonXhr.response,
+    'Catalog-only XHR JSON response does not expose non-DASH playurl signed Native URL',
+  )
+  const loadingSignedText = `{"data":{"dash":{"video":[{"base_url":"${leakedNativeUrl}"`
+  block1.playurlFetchOverride = null
+  apiFailureTransport.dispose()
+  const throwingPlayurl = {
+    transform: (): never => {
+      throw new Error('synthetic transform failure')
+    },
+  }
+  const throwingTransport = scope.own(
+    new TransportAdapter(
+      apiFailureSession,
+      apiFailureSettings,
+      apiFailureRoutes,
+      throwingPlayurl,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  throwingTransport.install()
+  const transformFailurePayload = {
+    code: 0,
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            codecid: 13,
+            height: 1080,
+            bandwidth: 1_000_000,
+            base_url: leakedNativeUrl,
+            backup_url: [],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  block1.playurlFetchBody = JSON.stringify(transformFailurePayload)
+  const throwingTextXhr = new FakeXhr()
+  throwingTextXhr.responseType = 'text'
+  throwingTextXhr.payload = JSON.stringify(transformFailurePayload)
+  throwingTextXhr.rawResponseText = JSON.stringify(transformFailurePayload)
+  throwingTextXhr.open('GET', apiEndpoint)
+  throwingTextXhr.send()
+  const throwingJsonXhr = new FakeXhr()
+  throwingJsonXhr.responseType = 'json'
+  throwingJsonXhr.payload = transformFailurePayload
+  throwingJsonXhr.open('GET', apiEndpoint)
+  throwingJsonXhr.send()
+  apiFailureRoutes.invalidateForUserSetting()
+  block1.playurlFetchBody = malformedApi
+  const nativeOnXhr = new FakeXhr()
+  nativeOnXhr.responseType = 'text'
+  nativeOnXhr.payload = malformedApi
+  nativeOnXhr.rawResponseText = malformedApi
+  nativeOnXhr.open('GET', apiEndpoint)
+  nativeOnXhr.send()
+  const nativeOnLoadingXhr = new FakeXhr()
+  nativeOnLoadingXhr.responseType = 'text'
+  nativeOnLoadingXhr.holdAtLoading = true
+  nativeOnLoadingXhr.payload = loadingSignedText
+  nativeOnLoadingXhr.rawResponseText = loadingSignedText
+  nativeOnLoadingXhr.open('GET', apiEndpoint)
+  nativeOnLoadingXhr.send()
+  throwingTransport.dispose()
+  block1.playurlFetchBody = JSON.stringify({
+    code: 0,
+    data: { dash: { video: [], audio: [] } },
+  })
+  const oversizedStorage = new FakeStorage()
+  const oversizedSettings = scope.own(new CatalogSettingsStore(oversizedStorage, () => now))
+  const oversizedSession = new SessionStore()
+  const oversizedState = oversizedSession.beginGeneration(false)
+  const oversizedVault = new SignedRouteVault()
+  oversizedVault.reset(oversizedState.generation, oversizedState.epoch)
+  const oversizedRoutes = new RouteCoordinator(
+    clock,
+    oversizedSession,
+    oversizedSettings,
+    scope.own(new RestrictionStore(oversizedStorage, () => now)),
+    scope.own(new EvidenceStore(oversizedStorage, () => now)),
+    oversizedVault,
+    createRuntimeIds(),
+  )
+  const oversizedPlayurl = new PlayurlAdapter(
+    new PlayurlController(oversizedSession, oversizedVault, oversizedRoutes),
+  )
+  const oversizedTransport = scope.own(
+    new TransportAdapter(
+      oversizedSession,
+      oversizedSettings,
+      oversizedRoutes,
+      oversizedPlayurl,
+      measurementStub,
+      () => now,
+      createRuntimeIds(),
+    ),
+  )
+  oversizedTransport.install()
   const thirdPartyMedia = 'https://cdn.example.net/video.m4s?signature=outside'
-  return extendFixture(base, { thirdPartyMedia } as const)
+  return {
+    FakeXhr,
+    fakeWindow,
+    get nativeFetchCalls() {
+      return block1.nativeFetchCalls
+    },
+    set nativeFetchCalls(value: typeof block1.nativeFetchCalls) {
+      block1.nativeFetchCalls = value
+    },
+    oversizedRoutes,
+    oversizedSettings,
+    oversizedTransport,
+    thirdPartyMedia,
+  }
 }
 
 async function checkCatalogOnlyDispatchFixtureInstallsFetchAndXHRHooks1(
@@ -1330,9 +2810,7 @@ async function checkDisabledScriptPreservesOversizedWebsiteFetchDispatch16(
     'x'.repeat(17 * 1024)
   try {
     await base.fakeWindow.fetch(oversizedBilibiliMedia)
-  } catch {
-    true
-  }
+  } catch {}
   const oversizedXhr = new base.FakeXhr()
   oversizedXhr.open('GET', oversizedBilibiliMedia)
   oversizedXhr.send()

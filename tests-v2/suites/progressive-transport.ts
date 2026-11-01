@@ -1,4 +1,3 @@
-import { extendFixture } from '../support/fixture-context.ts'
 import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { installProgressEvent } from '../support/progress-event.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
@@ -18,29 +17,9 @@ import { FakeStorage } from '../support/storage.ts'
 import { testScope } from '../support/scope.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
-async function createProgressiveTransportScenario(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const now = () => 2_000_000_000_000,
-    storage = new FakeStorage()
-  const settings = scope.own(new CatalogSettingsStore(storage, now)),
-    session = new SessionStore(),
-    vault = new SignedRouteVault()
-  const state = session.beginGeneration(false)
-  vault.reset(state.generation, state.epoch)
-  const routes = new RouteCoordinator(
-    { now },
-    session,
-    settings,
-    scope.own(new RestrictionStore(storage, now)),
-    scope.own(new EvidenceStore(storage, now)),
-    vault,
-    createRuntimeIds(),
-  )
-  const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes))
-  const original =
-    'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/progressive-transport/one.mp4?fixture=primary'
-  const fixture = () => ({
+
+function progressivePayload(original: string) {
+  return {
     code: 0,
     message: 'OK',
     data: {
@@ -58,7 +37,13 @@ async function createProgressiveTransportScenario(t: TestContext) {
         },
       ],
     },
-  })
+  }
+}
+
+function createPlaybackResourcesBlock1() {
+  const original =
+    'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/progressive-transport/one.mp4?fixture=primary'
+  const fixture = () => progressivePayload(original)
   let apiBody = JSON.stringify(fixture())
   const api = 'https://api.bilibili.com/x/player/wbi/playurl?fixture=progressive'
   const sent: { url: string; method: string; redirect: RequestRedirect }[] = []
@@ -112,6 +97,44 @@ async function createProgressiveTransportScenario(t: TestContext) {
     setRequestHeader(_name: string, _value: string): void {}
   }
   const fakeWindow = { fetch: nativeFetch, XMLHttpRequest: FakeXhr }
+  return {
+    original,
+    fixture,
+    get apiBody() {
+      return apiBody
+    },
+    set apiBody(value: typeof apiBody) {
+      apiBody = value
+    },
+    api,
+    sent,
+    FakeXhr,
+    fakeWindow,
+  }
+}
+
+async function createProgressiveTransportScenario(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = () => 2_000_000_000_000
+  const storage = new FakeStorage()
+  const settings = scope.own(new CatalogSettingsStore(storage, now))
+  const session = new SessionStore()
+  const vault = new SignedRouteVault()
+  const state = session.beginGeneration(false)
+  vault.reset(state.generation, state.epoch)
+  const routes = new RouteCoordinator(
+    { now: now },
+    session,
+    settings,
+    scope.own(new RestrictionStore(storage, now)),
+    scope.own(new EvidenceStore(storage, now)),
+    vault,
+    createRuntimeIds(),
+  )
+  const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes))
+  const block1 = createPlaybackResourcesBlock1()
+  const { fakeWindow, api } = block1
   scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
   scope.defineGlobal('location', {
     configurable: true,
@@ -127,28 +150,65 @@ async function createProgressiveTransportScenario(t: TestContext) {
   )
   transport.install()
   const response = await fakeWindow.fetch(api)
-  return extendFixture({}, {
-    settings,
-    original,
-    fixture,
-    get apiBody() {
-      return apiBody
-    },
-    set apiBody(next: typeof apiBody) {
-      apiBody = next
-    },
-    api,
-    sent,
-    FakeXhr,
-    fakeWindow,
+  return {
     response,
-  } as const)
+  }
 }
 
 async function createPayloadContext1(t: TestContext) {
-  const base = await createProgressiveTransportScenario(t)
-  const payload = (await base.response.json()) as ReturnType<typeof base.fixture>
-  return extendFixture(base, { payload } as const)
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const now = () => 2_000_000_000_000
+  const storage = new FakeStorage()
+  const settings = scope.own(new CatalogSettingsStore(storage, now))
+  const session = new SessionStore()
+  const vault = new SignedRouteVault()
+  const state = session.beginGeneration(false)
+  vault.reset(state.generation, state.epoch)
+  const routes = new RouteCoordinator(
+    { now: now },
+    session,
+    settings,
+    scope.own(new RestrictionStore(storage, now)),
+    scope.own(new EvidenceStore(storage, now)),
+    vault,
+    createRuntimeIds(),
+  )
+  const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes))
+  const block1 = createPlaybackResourcesBlock1()
+  const { fakeWindow, api, FakeXhr, fixture, original, sent } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/'),
+  })
+  const measurement = {
+    willGateStartup: () => false,
+    prepareStartup: async () => undefined,
+    noteUnpreflighted: () => undefined,
+  } satisfies ConstructorParameters<typeof TransportAdapter>[4]
+  const transport = scope.own(
+    new TransportAdapter(session, settings, routes, playurl, measurement, now, createRuntimeIds()),
+  )
+  transport.install()
+  const response = await fakeWindow.fetch(api)
+  const payload = (await response.json()) as ReturnType<typeof progressivePayload>
+  return {
+    FakeXhr,
+    api,
+    get apiBody() {
+      return block1.apiBody
+    },
+    set apiBody(value: typeof block1.apiBody) {
+      block1.apiBody = value
+    },
+    fakeWindow,
+    fixture,
+    original,
+    payload,
+    sent,
+    settings,
+  }
 }
 
 async function checkXHRParameterAcceptsMP4Durl2ParameterParameter(
@@ -166,7 +226,7 @@ async function checkXHRParameterAcceptsMP4Durl2ParameterParameter(
       xhr.send()
       const result = (
         responseType === 'json' ? xhr.response : JSON.parse(xhr.responseText)
-      ) as ReturnType<typeof base.fixture>
+      ) as ReturnType<typeof progressivePayload>
       assert.strictEqual(result.code, 0, `XHR ${responseType} accepts MP4 durl`)
       assert.ok(
         isCatalogHost(new URL(result.data.durl[0]!.url).hostname),
@@ -177,7 +237,7 @@ async function checkXHRParameterAcceptsMP4Durl2ParameterParameter(
       xhr.send()
       assert.strictEqual(
         (responseType === 'json'
-          ? (xhr.response as ReturnType<typeof base.fixture>)
+          ? (xhr.response as ReturnType<typeof progressivePayload>)
           : JSON.parse(xhr.responseText)
         ).code,
         0,
@@ -200,7 +260,7 @@ async function checkMP4CatalogOnlyFetchRejectsRedirects3(t: TestContext): Promis
     xhr.send()
     const result = (
       responseType === 'json' ? xhr.response : JSON.parse(xhr.responseText)
-    ) as ReturnType<typeof base.fixture>
+    ) as ReturnType<typeof progressivePayload>
     void result.code
     void isCatalogHost(new URL(result.data.durl[0]!.url).hostname)
     xhr.payload = base.fixture()
@@ -208,7 +268,7 @@ async function checkMP4CatalogOnlyFetchRejectsRedirects3(t: TestContext): Promis
     xhr.send()
     void (
       responseType === 'json'
-        ? (xhr.response as ReturnType<typeof base.fixture>)
+        ? (xhr.response as ReturnType<typeof progressivePayload>)
         : JSON.parse(xhr.responseText)
     ).code
   }
@@ -264,7 +324,7 @@ async function checkSuccessfulMP4APIRemainsHTTP200ThroughFetch1(t: TestContext):
   const base = await createProgressiveTransportScenario(t)
 
   assert.strictEqual(base.response.status, 200, 'successful MP4 API remains HTTP 200 through Fetch')
-  const payload = (await base.response.json()) as ReturnType<typeof base.fixture>
+  const payload = (await base.response.json()) as ReturnType<typeof progressivePayload>
   assert.strictEqual(payload.code, 0, 'successful MP4 API is not replaced with synthetic -1')
   assert.ok(
     isCatalogHost(new URL(payload.data.durl[0]!.url).hostname),
