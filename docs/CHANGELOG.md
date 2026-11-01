@@ -1,5 +1,7 @@
 # BiliCDN_TW 變更紀錄
 
+各節只描述標示版本的變更；舊版診斷、分頁原線對照及掉幀用途不構成現行功能或規則。現行契約與撤除說明見 [產品與架構指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/ARCHITECTURE.md)。
+
 ## v2.2.1
 
 - 撤除所有內建診斷、事故與報告管線、診斷頁、剪貼簿授權及本分頁原線對照。
