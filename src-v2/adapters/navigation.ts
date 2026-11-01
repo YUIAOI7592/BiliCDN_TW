@@ -1,8 +1,21 @@
 import type { NavigationPort } from '../application/ports.ts'
 
+function navigationKey(pathname: string, search: string): string {
+  if (!/^\/(?:video\/[^/]+|bangumi\/play\/[^/]+)\/?$/.test(pathname)) return pathname + search
+  const path = pathname.replace(/\/$/, '')
+  const query = new URLSearchParams(search)
+  query.delete('vd_source')
+  query.delete('spm_id_from')
+  const parts = query.getAll('p')
+  if (path.startsWith('/video/') && parts.length === 1 && parts[0] === '1') query.delete('p')
+  query.sort() // Stable by name: repeated values retain their order and meaning.
+  const suffix = query.toString()
+  return path + (suffix ? '?' + suffix : '')
+}
+
 export class BrowserNavigation implements NavigationPort {
   key(): string {
-    return `${location.pathname}${location.search}`.slice(0, 512)
+    return navigationKey(location.pathname, location.search)
   }
   subscribe(listener: () => void): () => void {
     const push = history.pushState,
