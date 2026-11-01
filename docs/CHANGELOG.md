@@ -2,11 +2,18 @@
 
 各節只描述標示版本的變更；舊版診斷、分頁原線對照及掉幀用途不構成現行功能或規則。現行契約與撤除說明見 [產品與架構指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/ARCHITECTURE.md)。
 
+## v2.2.3
+
+- 重整十三個現役套件，移除繼承式情境支援、跨情境前置重播與無作用敘述；原 1,598 案名稱及參數展開完整保留，新增三頁初始化契約。
+- 移除未用的模型版本／階段／時鐘依賴、重試抑制介面及 recentPlans／lastSuccess 快照投影；保留私有選路計畫、成功資料與實際抑制方法。
+- 由控制中心統一首次完整刷新，總覽與 CDN 不再各自重做同一遍；每次建構／刷新仍共用單份快照，詳細狀態按需建立。
+- 使用者功能、Native 預設及保存值、schema 2 與四鍵保持；通知合併、latestVideoHost 退役與重試抑制重封裝延後。離線驗證及安裝限制見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+
 ## v2.2.2
 
 - 清除兩個無產生者／消費者的舊診斷事件、選路快照計畫總數投影，以及 orchestration 的原線對照狀態與舊診斷參數。
 - 改以 40 組計畫重用、決策所有權與同步重入事件順序保護原契約，保留全部 1,598 個功能與工具案例。
-- 正式來源、宣告、metadata、測試及工具共 211 檔全文複查；零殘留範圍、雜湊、離線驗證與安裝限制見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 正式來源、宣告、metadata、測試及工具共 211 檔全文複查；零殘留範圍、雜湊、離線驗證與安裝限制見 [當版完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v222-完整正文保存2026-11-01)。
 - 使用者操作、三頁總覽、Native 預設及保存值、選路／量測／重試／恢復保持；整合候選只在公開發布後分析，本版不提前實作。
 
 ## v2.2.1

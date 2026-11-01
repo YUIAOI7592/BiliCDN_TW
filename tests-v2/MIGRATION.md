@@ -4,6 +4,8 @@
 
 2026-11-01／v2.2.0 追記：13 份套件改以具名情境直接建立必要前置狀態，移除數字 scenario 分派；套件選擇器、116 個測試宣告及其參數展開保留，仍使用 testScope 清理。唯一有意變更的原案例是 `existing schema 2 settings without Native toggle default off [13]` 改為 `default on [13]`；其餘 Catalog-only 案例明確關閉 Native。下面的 v2.1.8 對照保留當時名稱與數值，不回寫為新版結果。
 
+2026-11-01／v2.2.3 追記：十三個現役套件改為直接組裝，移除跨完整情境重播、繼承支援與已確認無作用的敘述。現役範圍為 domain-boundaries、domain、state、measurement-state、native-routing、progressive-routing、application、adapter-boundaries、native-transport、progressive-transport、adapters、playurl-summary、orchestration；已獨立的 progressive-playurl 保持原件，已撤除套件不恢復。沿用 e4eeb29 的原 1,598 案名稱、選擇器及參數展開；新增一案驗證三頁首次初始化。多群組與同步重入由實際決策身分、事件順序及快照讀取前後的計畫重用驗證，不再依賴被移除的 recentPlans 投影。下方原表及舊版追記保持歷史內容。
+
 下方原表的基準為 2026-10-07 遷移前保存的 v2.1.8 工作樹（當次正式來源未變）。當次以保存的套件及支援工具重跑，15 個套件共 891 項功能斷言；另有 18 項架構規則期待。Node 案例數表示具名情境，不等於舊斷言數。
 
 同情境的多項期待保留在同一案例；參數案例名稱帶有輸入及序號。建立函式（factory）每次重建設定、儲存元件（store）、Vault、控制器與攔截，較早的必要狀態轉換僅作該情境的前置設定，較早的期待由各自案例檢查。獨立 MP4／FLV 測試情境（fixture）直接於各案例建立。原比較保留字串、JSON、物件身分及 strictEqual（Object.is）語意。

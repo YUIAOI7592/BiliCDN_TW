@@ -201,6 +201,8 @@ Prettier 3.9.10 只作開發工具。固定格式為兩空格、單引號、無�
 
 ## 測試套件與隔離
 
+各套件使用本地具名建立函式與窄資源工具，每案只建立需要的資源與狀態轉移；不以數字 scenario 分派，不由一個完整案例的建立函式呼叫另一個完整案例，也不透過原型繼承可變情境。閉包中的可變欄位以明確存取器轉交，不以物件展開凍結 getter 讀值。testScope(t) 管理當案清理，全域替換沿用 defineGlobal()；歷史對照及各版變更見 [MIGRATION](../tests-v2/MIGRATION.md)。
+
 [test-registry.mts](../scripts/testing/test-registry.mts) 明確登記下列 18 個套件。支援工具、暫存測試情境及封存資料不透過萬用字元模式（glob）執行：
 
 | 套件選擇器 | 涵蓋範圍 |

@@ -343,6 +343,10 @@ Vault 的輸出對照及來源大小只附著於既有 handle 與 RouteIdentity�
 
 ControlCenter 只提供總覽、CDN、播放設定三頁，經 ControlReadModelPort 訂閱並取得當次快照。每次建構／刷新共用單份模型，CDN 開關不各自取快照；snapshot() 沒有詳細證據參數。
 
+`createControlReadModel(sources)` 只組合畫面使用的功能來源，不接收版本或時鐘；版本與顯示時間仍由入口直接注入 ControlCenter。快照不包含未使用的 version／releaseStage，亦不展開其他表示的 recentPlans 或複製 lastSuccess。RouteCoordinator 的私有計畫集合、最後成功資料及 latestVideoHost() 仍服務原功能。
+
+總覽與 CDN 視圖保留初始模型供閉包及開關初始化，完整首次刷新統一由 ControlCenter 在建構視圖後執行一次；播放設定也使用同一中心流程。通知刷新仍沿用既有事件，不合併通知。
+
 總覽保留目前緩衝、保守吞吐、需求餘裕、影音回應、量測／恢復／提前重試狀態與詳細狀態。資料僅為功能本身的當前狀態、最後一筆摘要與既有計數，不建立另一套歷程。選路學習的 EvidenceStore 仍供選路與量測使用，不列舉為報告。
 
 `TransportSnapshot.lastPlayurl` 保存一筆不可變的最近結果：Fetch／XHR、觀察時間、原生 HTTP 狀態、接納結果、辨識出的 DASH／MP4／FLV 格式、影片／音訊／分段數量、數字上游 `code` 及拒絕原因。`TransportContext` 複製固定欄位清單，去重後最多三種格式，數量限制為 0–65,535，丟棄非有限值或非安全整數的上游 `code`。不複製原始資料內容、URL、路徑、權杖或例外文字。控制中心消費此摘要；接納結果不證明實際網路目的地或播放成功。
