@@ -3,6 +3,8 @@ export type PlayurlEndpointKind = 'playurl' | 'ogv-playview' | 'ogv-precheck'
 /** Request-owned content correlation only; never a route authorization. */
 export interface PlayurlRequestContext {
   readonly contentId: string | null
+  readonly requestSequence?: number
+  readonly generation?: number
 }
 export type PlayurlRejection =
   | 'upstream-error'

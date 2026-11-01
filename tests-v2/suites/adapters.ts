@@ -1,3 +1,4 @@
+import { requestDispatch } from '../support/request-dispatch.ts'
 import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { currentResumePlayer } from '../support/player.ts'
 import { installProgressEvent } from '../support/progress-event.ts'
@@ -46,6 +47,7 @@ async function createPlaybackResourcesBlock1() {
   }
   const observations: TransportObservation[] = []
   const routeStub = {
+    prepareRequest: requestDispatch(),
     policyRevision(): number {
       return 0
     },
@@ -244,6 +246,7 @@ async function createPlaybackResourcesBlock2() {
   }
   const observations: TransportObservation[] = []
   const routeStub = {
+    prepareRequest: requestDispatch(),
     policyRevision(): number {
       return 0
     },

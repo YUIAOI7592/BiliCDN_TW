@@ -82,6 +82,15 @@ export class SignedRouteVault implements SignedRouteVaultPort {
     this.#authoritySerial = 0
   }
 
+  registeredRepresentation(
+    kind: MediaKind,
+    key: string,
+    codec: string,
+    height: number,
+  ): RepresentationId | null {
+    return this.#byKey.get(`${kind}:${key}:${codec}:${height}`) ?? null
+  }
+
   register(input: RegisterRepresentationInput): RepresentationId | null {
     if (input.generation !== this.#generation || input.epoch !== this.#epoch) return null
     const key = `${input.kind}:${input.key}:${input.codec}:${input.height}`
@@ -490,3 +499,4 @@ export class SignedRouteVault implements SignedRouteVaultPort {
       : null
   }
 }
+import type { MediaKind } from '../domain/model.ts'

@@ -29,6 +29,7 @@ export class PlayurlController implements PlayurlControllerPort {
   #seenPage = new WeakMap<object, number>()
   #responses = new Set<string>()
   #generation = -1
+  #apiWatermark = 0
   #contentIdentity: PlayurlContentIdentity | null = null
   constructor(
     private readonly session: PlayurlSessionPort,
@@ -67,10 +68,23 @@ export class PlayurlController implements PlayurlControllerPort {
     if (this.#generation !== Number(this.session.get().generation)) {
       this.#generation = Number(this.session.get().generation)
       this.#responses.clear()
+      this.#apiWatermark = 0
       this.#contentIdentity = null
       this.#seenTrusted = new WeakSet()
       this.#trustedItems = new WeakMap()
     }
+    const sequence = context?.requestSequence
+    const ordered = source === 'trusted-api' && Number.isSafeInteger(sequence) && sequence! > 0
+    if (
+      source === 'trusted-api' &&
+      context?.generation !== undefined &&
+      context.generation !== this.#generation
+    )
+      return null
+    const older = ordered && sequence! < this.#apiWatermark
+    // An older response can only supplement a proven same-content inventory.
+    if (older && (!context?.contentId || context.contentId !== this.#contentIdentity?.contentId))
+      return null
     const catalogOnly = this.routes.isCatalogOnly()
     if (responseKey && this.#responses.has(responseKey) && !catalogOnly) return outputs
     const dash = payload
@@ -107,7 +121,7 @@ export class PlayurlController implements PlayurlControllerPort {
         this.#seenPage.set(payload.token, generation)
       }
     }
-    if (source === 'trusted-api') {
+    if (source === 'trusted-api' && !older) {
       const next = observePlayurlContent(
         this.#contentIdentity,
         dash.video.map((item) => item.primary),
@@ -115,6 +129,7 @@ export class PlayurlController implements PlayurlControllerPort {
         context,
       )
       this.#contentIdentity = next.identity
+      if (ordered) this.#apiWatermark = Math.max(this.#apiWatermark, sequence!)
       if (next.changed) {
         this.session.beginEpoch()
         const state = this.session.get()
@@ -136,6 +151,22 @@ export class PlayurlController implements PlayurlControllerPort {
       ['audio', dash.audio],
     ] as const) {
       items.forEach((item) => {
+        if (ordered && sequence! < this.#apiWatermark) {
+          if (context?.contentId !== this.#contentIdentity?.contentId) {
+            rewriteItem(item, '', [])
+            return
+          }
+          const existing = this.vault.registeredRepresentation(
+            kind,
+            item.key,
+            item.codec,
+            item.height,
+          )
+          if (existing) {
+            this.#sanitizeKnownItem(item, existing, kind, 'trusted-api', false, rewriteItem)
+            return
+          }
+        }
         const primary = item.primary,
           urls = item.urls
         if (!item.progressive && parseMediaUrl(primary)?.kind === 'unknown') {

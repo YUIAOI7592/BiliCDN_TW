@@ -313,7 +313,7 @@ test('BR-03 Fetch captures the once-normalized request cid before awaiting its r
   pending.resolve(new Response(JSON.stringify(payload())))
   await (await response).text()
   assert.equal(conversions, 1)
-  assert.deepEqual(seen, [{ contentId: '9007199254740993' }])
+  assert.deepEqual(seen, [{ contentId: '9007199254740993', generation: 1, requestSequence: 1 }])
   assert.ok(f.fetchCalls[0]!.endsWith('cid=0009007199254740993'))
 })
 
@@ -339,12 +339,15 @@ for (const type of ['text', 'json'] as const) {
     void xhr.response
     if (type === 'text') void xhr.responseText
     assert.equal(conversions, 1)
-    assert.deepEqual(seen, [{ contentId: '1000' }])
+    assert.deepEqual(seen, [{ contentId: '1000', generation: 1, requestSequence: 1 }])
     xhr.open('GET', apiUrl.replace('1000', '3000'))
     xhr.send()
     xhr.complete()
     void xhr.response
-    assert.deepEqual(seen, [{ contentId: '1000' }, { contentId: '3000' }])
+    assert.deepEqual(seen, [
+      { contentId: '1000', generation: 1, requestSequence: 1 },
+      { contentId: '3000', generation: 1, requestSequence: 2 },
+    ])
   })
 }
 
@@ -366,7 +369,7 @@ test('BR-03 XHR successful synchronous open reentry owns the new cid', async (t)
   xhr.complete()
   void xhr.responseText
   assert.equal(xhr.nativeSends, 1)
-  assert.deepEqual(seen, [{ contentId: '2000' }])
+  assert.deepEqual(seen, [{ contentId: '2000', generation: 1, requestSequence: 1 }])
 })
 
 for (const query of [
@@ -391,7 +394,10 @@ for (const query of [
     xhr.send()
     xhr.complete()
     void xhr.responseText
-    assert.deepEqual(seen, [{ contentId: null }, { contentId: null }])
+    assert.deepEqual(seen, [
+      { contentId: null, generation: 1, requestSequence: 1 },
+      { contentId: null, generation: 1, requestSequence: 2 },
+    ])
   })
 }
 

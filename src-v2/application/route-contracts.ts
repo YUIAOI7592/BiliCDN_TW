@@ -107,6 +107,12 @@ export interface CurrentRouteCapacity {
   readonly sampleStatus: 'available' | 'expired' | 'missing'
 }
 export interface RouteSnapshot {
+  readonly selection?: {
+    readonly phase: 'pending' | 'confirmed'
+    readonly sampleCount: number
+    readonly nextAction: 'await-video-success' | 'observe-playback'
+    readonly revision: number
+  } | null
   readonly currentCapacity: CurrentRouteCapacity | null
   readonly activePlan:
     (RoutePlanSummary & { readonly ranking: readonly RouteRankingSummary[] }) | null
@@ -149,6 +155,7 @@ export interface RouteCoordinatorPort {
   invalidateForUserSetting(): void
   policyRevision(): number
   isCatalogOnly(): boolean
+  prepareRequest(request: RequestContext): RequestContext
   requestStarted(request: RequestContext): void
   observePlaybackRate(rate: number): void
   playbackRate(): number

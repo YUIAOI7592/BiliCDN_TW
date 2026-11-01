@@ -395,6 +395,7 @@ export class XhrHookAdapter {
         self.count('nativeCalled')
         self.noteNativeCall(meta.request)
         meta.phase = 'sent'
+        if (meta.playurl) meta.requestContext = self.apiDispatch(meta.originalUrl)
         try {
           Reflect.apply(originalSend, this, [body ?? null])
         } catch (error) {

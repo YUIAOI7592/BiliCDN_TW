@@ -18,6 +18,10 @@ export interface PlayurlOutputSummary {
 }
 
 export interface RequestContext {
+  /** Assigned by the route owner at dispatch preparation; absent before dispatch. */
+  readonly dispatchSequence?: number
+  readonly routeRevision?: number
+  readonly selectionRevision?: number
   readonly routePolicyRevision: number
   readonly requestId: RequestId
   readonly generation: GenerationId

@@ -56,6 +56,12 @@ export interface VaultCandidates {
 
 export interface SignedRouteVaultPort {
   reset(generation: GenerationId, epoch: EpochId): void
+  registeredRepresentation(
+    kind: MediaKind,
+    key: string,
+    codec: string,
+    height: number,
+  ): RepresentationId | null
   register(input: RegisterRepresentationInput): RepresentationId | null
   source(representation: RepresentationId): RegisterRepresentationInput['source'] | null
   isCurrentIdentity(identity: RouteIdentity): boolean

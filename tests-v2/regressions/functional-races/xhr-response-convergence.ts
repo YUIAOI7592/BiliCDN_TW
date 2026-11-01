@@ -1,3 +1,4 @@
+import { requestDispatch } from '../../support/request-dispatch.ts'
 import assert from 'node:assert/strict'
 import { test, type TestContext } from 'node:test'
 import { XhrHookAdapter } from '../../../src-v2/adapters/xhr-hook.ts'
@@ -106,6 +107,7 @@ function fixture(t: TestContext) {
     get: () => ({ disabled: policy.disabled, blockHttpDns: false }),
   } satisfies TransportSettings
   const routes = {
+    prepareRequest: requestDispatch(),
     policyRevision: () => 0,
     isCatalogOnly: () => policy.strict,
     recognizesMedia: () => false,

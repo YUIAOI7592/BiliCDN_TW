@@ -78,6 +78,19 @@ import type {
 } from './route-contracts.ts'
 export class RouteCoordinator implements RouteCoordinatorPort {
   #policyRevision = 0
+  #dispatchSequence = 0
+  #routeSerial = 0
+  #selectionSerial = 0
+  #planRevisions = new Map<RepresentationId, number>()
+  #requestOwners = new WeakMap<RequestContext, RequestContext>()
+  #preparedVideo: RequestContext | null = null
+  #selection: {
+    representation: RepresentationId
+    revision: number
+    phase: 'pending' | 'confirmed'
+    successes: Set<string>
+  } | null = null
+  #tentativeRequests = new Set<string>()
   #measurementIds = new WeakMap<object, string>()
   #serial = 0
   #recoverySerial = 0
@@ -137,6 +150,10 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#retryPermit = null
     this.#policyRevision++
     this.#plans.clear()
+    this.#planRevisions.clear()
+    this.#preparedVideo = null
+    this.#selection = null
+    this.#tentativeRequests.clear()
     this.#planIdentities.clear()
     this.#unlockedNative.clear()
     this.#decisions.clear()
@@ -161,6 +178,10 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#retryPermit = null
     this.#policyRevision++
     this.#plans.clear()
+    this.#planRevisions.clear()
+    this.#preparedVideo = null
+    this.#selection = null
+    this.#tentativeRequests.clear()
     this.#planIdentities.clear()
     this.#streamPlans.clear()
     this.#fallbacks.clear()
@@ -173,11 +194,92 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     return !this.settings.get().considerNativeSources
   }
 
+  prepareRequest(request: RequestContext): RequestContext {
+    const owned = this.#requestOwners.get(request)
+    if (owned) return owned
+    let selectionRevision = 0
+    if (request.kind === 'video' && request.representation) {
+      const previous = this.#preparedVideo
+      const same =
+        previous?.representation === request.representation &&
+        previous.generation === request.generation &&
+        previous.epoch === request.epoch &&
+        previous.authorityRevision === request.authorityRevision &&
+        previous.routePolicyRevision === request.routePolicyRevision
+      selectionRevision = same ? previous.selectionRevision! : ++this.#selectionSerial
+    }
+    const stamped = Object.freeze({
+      ...request,
+      dispatchSequence: ++this.#dispatchSequence,
+      routeRevision: request.representation
+        ? (this.#planRevisions.get(request.representation) ?? 0)
+        : 0,
+      selectionRevision,
+    })
+    this.#requestOwners.set(request, stamped)
+    this.#requestOwners.set(stamped, stamped)
+    if (request.kind === 'video' && request.representation) this.#preparedVideo = stamped
+    return stamped
+  }
+
+  #controlCurrent(observation: TransportObservation): boolean {
+    const request = observation.request
+    const owned = request ? this.#requestOwners.get(request) : null
+    const representation = observation.representation
+    const plan = representation ? this.#plans.get(representation) : null
+    if (!representation && observation.streamKey) {
+      const streamPlan = this.#streamPlans.get(observation.streamKey)
+      return !!streamPlan && streamPlan.id === (owned?.decisionId ?? observation.decisionId)
+    }
+    if (owned) {
+      if (
+        !representation ||
+        owned.routeRevision !== this.#planRevisions.get(representation) ||
+        plan?.id !== owned.decisionId
+      )
+        return false
+      return (
+        observation.kind !== 'video' ||
+        (this.#selection?.representation === representation &&
+          this.#selection.revision === owned.selectionRevision)
+      )
+    }
+    // Direct pre-dispatch observations can confirm their owned plan only while no dispatched
+    // selection exists. Once native dispatch begins, its request proof is mandatory.
+    if (observation.kind && this.#requested.has(observation.kind)) return false
+    return !!plan && plan.id === observation.decisionId
+  }
+
   requestStarted(request: RequestContext): void {
+    const stamped = this.prepareRequest(request)
+    const state = this.session.get()
+    if (
+      stamped.generation !== state.generation ||
+      stamped.epoch !== state.epoch ||
+      stamped.routePolicyRevision !== this.#policyRevision
+    )
+      return
+    const current = this.#requested.get(stamped.kind ?? 'unknown')
+    if ((current?.dispatchSequence ?? -1) > stamped.dispatchSequence!) return
+    if (
+      stamped.kind === 'video' &&
+      stamped.representation &&
+      this.#selection?.revision !== stamped.selectionRevision
+    ) {
+      this.#selection = {
+        representation: stamped.representation,
+        revision: stamped.selectionRevision!,
+        phase: state.representation === stamped.representation ? 'confirmed' : 'pending',
+        successes: new Set(),
+      }
+      this.#tentativeRepresentation = null
+      this.#tentativeTransfers = 0
+      this.#tentativeRequests.clear()
+    }
     if (request.kind && !this.#firstMediaAt) this.#firstMediaAt = request.startedAt
     if (request.kind) this.#pendingMedia.add(request.requestId)
     const key = request.kind ?? 'unknown'
-    this.#requested.set(key, request)
+    this.#requested.set(key, stamped)
     if (request.kind && request.representation) {
       const fallback = this.#fallbacks.get(request.kind)
       if (
@@ -986,6 +1088,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (
       context &&
       outputRole?.role === 'backup' &&
+      (!decision || outputRole.decisionId === decision.id) &&
       decision?.host !== parsed.host &&
       !this.settings.get().fixedHost &&
       !this.#hardRestriction(parsed.host, kind)
@@ -1143,6 +1246,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (
       context &&
       outputRole?.role === 'backup' &&
+      (!decision || outputRole.decisionId === decision.id) &&
       outputRole.catalogGenerated &&
       isCatalogHost(parsed.host) &&
       !this.settings.get().fixedHost &&
@@ -1414,6 +1518,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       catalogObservationAllowed(this.isCatalogOnly(), observation)
     const controlsCurrent = (): boolean =>
       valid() &&
+      this.#controlCurrent(observation) &&
       (observation.request
         ? observation.request.routePolicyRevision === this.#policyRevision
         : !!observation.decisionId &&
@@ -1445,9 +1550,15 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       }
     }
     const key = observation.kind ?? 'unknown'
-    this.#latest.set(key, transportSnapshot(observation))
-    if (observation.outcome === 'success' && observation.finalHost)
-      this.#lastSuccess.set(key, this.#latest.get(key)!)
+    if (
+      !observation.request ||
+      !this.#requestOwners.has(observation.request) ||
+      controlsCurrent()
+    ) {
+      this.#latest.set(key, transportSnapshot(observation))
+      if (observation.outcome === 'success' && observation.finalHost)
+        this.#lastSuccess.set(key, this.#latest.get(key)!)
+    }
     const result = classifyTransportResult(observation)
     if (result.type === 'ignore') return
     if (result.type === 'catalog-forbidden') {
@@ -1542,19 +1653,31 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (observation.kind === 'video') {
       const active = this.session.get().representation
       if (representation && representation !== active) {
-        if (this.#tentativeRepresentation === representation) this.#tentativeTransfers++
-        else {
+        const key =
+          observation.request?.requestId ??
+          String(observation.decisionId) + ':' + observation.completedAt
+        if (this.#tentativeRepresentation === representation) {
+          this.#tentativeRequests.add(key)
+          this.#tentativeTransfers = this.#tentativeRequests.size
+        } else {
           this.#tentativeRepresentation = representation
+          this.#tentativeRequests = new Set([key])
           this.#tentativeTransfers = 1
         }
         if (this.#tentativeTransfers >= 2) {
           this.session.setRepresentation(representation)
+          if (this.#selection?.representation === representation) {
+            this.#selection.phase = 'confirmed'
+            this.#selection.successes = new Set(this.#tentativeRequests)
+          }
+          this.#tentativeRequests.clear()
           this.#tentativeRepresentation = null
           this.#tentativeTransfers = 0
         }
       } else {
         this.#tentativeRepresentation = null
         this.#tentativeTransfers = 0
+        this.#tentativeRequests.clear()
       }
       if (
         representation &&
@@ -1575,10 +1698,11 @@ export class RouteCoordinator implements RouteCoordinatorPort {
 
   snapshot(): RouteSnapshot {
     const session = this.session.get(),
-      active = session.representation ? this.#plans.get(session.representation) : null,
-      representation = session.representation
-        ? this.vault.groupSummary(session.representation)
-        : null,
+      pending = this.#selection?.phase === 'pending',
+      activeRepresentation = this.#selection?.representation ?? session.representation,
+      active = activeRepresentation ? this.#plans.get(activeRepresentation) : null,
+      representation =
+        !pending && session.representation ? this.vault.groupSummary(session.representation) : null,
       currentCapacity = this.#capacity(session, active)
     const summarize = (decision: RouteDecision): RoutePlanSummary =>
       Object.freeze({
@@ -1590,6 +1714,17 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       })
     return Object.freeze({
       currentCapacity,
+      selection: this.#selection
+        ? {
+            phase: this.#selection.phase,
+            sampleCount: this.#selection.phase === 'confirmed' ? 2 : this.#tentativeRequests.size,
+            nextAction:
+              this.#selection.phase === 'confirmed'
+                ? ('observe-playback' as const)
+                : ('await-video-success' as const),
+            revision: this.#selection.revision,
+          }
+        : null,
       activePlan: active
         ? Object.freeze({
             ...summarize(active),
@@ -1612,11 +1747,12 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       affinity: session.affinity,
       latest: Object.freeze(Object.fromEntries(this.#latest)),
       requested: Object.freeze(Object.fromEntries(this.#requested)),
-      attribution: session.representation
-        ? 'confirmed'
-        : this.#tentativeRepresentation
-          ? 'awaiting-second-video-transfer'
-          : 'awaiting-matched-video',
+      attribution:
+        !pending && session.representation
+          ? 'confirmed'
+          : this.#tentativeRepresentation
+            ? 'awaiting-second-video-transfer'
+            : 'awaiting-matched-video',
       representation,
       fallback: Object.freeze(Object.fromEntries(this.#fallbacks)),
     })
@@ -1627,7 +1763,16 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     plan: RouteDecision | null | undefined,
   ): CurrentRouteCapacity | null {
     const representation = session.representation
-    if (!representation || !plan || plan.action === 'block' || !plan.host) return null
+    if (
+      !representation ||
+      !plan ||
+      plan.action === 'block' ||
+      !plan.host ||
+      (this.#selection &&
+        (this.#selection.representation !== representation ||
+          this.#selection.phase !== 'confirmed'))
+    )
+      return null
     const identity = this.#planIdentities.get(representation),
       revision = this.#policyRevision
     if (!identity || identity.kind !== 'video') return null
@@ -1963,6 +2108,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#currentPlan(representation)
     const identity = this.vault.identity(representation)
     if (!identity) return
+    if (this.#plans.get(representation) !== decision)
+      this.#planRevisions.set(representation, ++this.#routeSerial)
     this.#plans.set(representation, decision)
     this.#planIdentities.set(representation, identity)
   }

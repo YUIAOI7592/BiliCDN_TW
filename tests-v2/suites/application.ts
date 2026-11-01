@@ -2875,3 +2875,6 @@ import { idleControls } from '../support/player.ts'
 import '../regressions/up141-test-release.ts'
 
 import '../regressions/v226-startup.ts'
+
+import '../regressions/v226-routing.ts'
+import '../regressions/v226-api-order.ts'

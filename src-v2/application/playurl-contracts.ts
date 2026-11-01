@@ -27,6 +27,7 @@ export interface PlayurlOutput {
 export interface PlayurlSessionPort extends Pick<SessionPort, 'beginEpoch' | 'get'> {}
 export interface PlayurlVaultPort extends Pick<
   SignedRouteVaultPort,
+  | 'registeredRepresentation'
   | 'groupSummary'
   | 'identity'
   | 'isCurrentIdentity'

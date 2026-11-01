@@ -1,6 +1,5 @@
 import { responseFailure } from './transport-context.ts'
 import { classifyPlayurlApi } from '../domain/catalog.ts'
-import { playurlRequestContext } from '../domain/playurl-content.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
 import type { FailureKind, RequestContext } from '../domain/model.ts'
 import {
@@ -51,7 +50,7 @@ export class FetchHookAdapter {
       if (endpoint) {
         const generation = self.session.get().generation,
           responseKey = self.nextResponseKey('api-fetch')
-        const requestContext = playurlRequestContext(originalUrl)
+        const requestContext = self.apiDispatch(originalUrl)
         const response = await native(sourceRequest, false)
         if (self.settings.get().disabled) return response
         const catalogOnly = (): boolean =>

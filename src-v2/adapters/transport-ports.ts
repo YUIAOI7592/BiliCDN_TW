@@ -11,6 +11,7 @@ export interface TransportRoutes extends Pick<
   | 'isBilibiliMedia'
   | 'apply'
   | 'inspectOriginal'
+  | 'prepareRequest'
   | 'requestStarted'
   | 'observe'
 > {}

@@ -1,3 +1,5 @@
+import { playurlRequestContext } from '../domain/playurl-content.ts'
+import type { PlayurlRequestContext } from '../domain/playurl-model.ts'
 import type {
   LastMediaRequest,
   TransportStats,
@@ -99,6 +101,7 @@ export const copyResponseSurface = (target: Response, source: Response): Respons
 
 export class TransportContext {
   #requestSerial = 0
+  #apiDispatchSerial = 0
   #stats = {
     enteredFetch: 0,
     enteredXhr: 0,
@@ -144,6 +147,13 @@ export class TransportContext {
   blocked(method: string, url: string, reason: string): void {
     this.#stats.blocked++
     this.#lastBlocked = Object.freeze({ method, host: hostOf(url), reason })
+  }
+  apiDispatch(url: string): PlayurlRequestContext {
+    return Object.freeze({
+      ...playurlRequestContext(url),
+      generation: Number(this.session.get().generation),
+      requestSequence: ++this.#apiDispatchSerial,
+    })
   }
   nextResponseKey(prefix: string): string {
     return `${prefix}-${++this.#requestSerial}`
@@ -207,28 +217,30 @@ export class TransportContext {
   ): RequestContext {
     const state = this.session.get(),
       matched = applied.attributionStatus ?? (applied.context ? 'matched' : 'waiting-data')
-    const request: RequestContext = Object.freeze({
-      requestId: requestId(this.ids.next('request')),
-      generation: state.generation,
-      epoch: state.epoch,
-      routePolicyRevision: this.routes.policyRevision(),
-      decisionId: applied.decision.id,
-      representation: applied.context?.representation ?? null,
-      authorityRevision: applied.context?.authorityRevision ?? null,
-      kind: applied.context?.kind ?? null,
-      attributionStatus: matched,
-      attributionSource: applied.attributionSource ?? (applied.context ? 'exact' : 'none'),
-      decisionStage: 'request',
-      routeType: applied.decision.routeType,
-      originalHost: hostOf(originalUrl),
-      targetHost: hostOf(targetUrl),
-      sourceHost: applied.sourceHost,
-      playurlHostChanged: applied.playurlHostChanged ?? false,
-      playurlOutput: applied.playurlOutput ?? null,
-      urlChanged: originalUrl !== targetUrl,
-      hostChanged: hostOf(originalUrl) !== hostOf(targetUrl),
-      startedAt,
-    })
+    const request: RequestContext = this.routes.prepareRequest(
+      Object.freeze({
+        requestId: requestId(this.ids.next('request')),
+        generation: state.generation,
+        epoch: state.epoch,
+        routePolicyRevision: this.routes.policyRevision(),
+        decisionId: applied.decision.id,
+        representation: applied.context?.representation ?? null,
+        authorityRevision: applied.context?.authorityRevision ?? null,
+        kind: applied.context?.kind ?? null,
+        attributionStatus: matched,
+        attributionSource: applied.attributionSource ?? (applied.context ? 'exact' : 'none'),
+        decisionStage: 'request',
+        routeType: applied.decision.routeType,
+        originalHost: hostOf(originalUrl),
+        targetHost: hostOf(targetUrl),
+        sourceHost: applied.sourceHost,
+        playurlHostChanged: applied.playurlHostChanged ?? false,
+        playurlOutput: applied.playurlOutput ?? null,
+        urlChanged: originalUrl !== targetUrl,
+        hostChanged: hostOf(originalUrl) !== hostOf(targetUrl),
+        startedAt,
+      }),
+    )
     this.#lastMedia = {
       requestId: request.requestId,
       method,

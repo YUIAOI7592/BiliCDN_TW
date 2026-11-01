@@ -1,3 +1,4 @@
+import { requestDispatch } from '../support/request-dispatch.ts'
 import { installProgressEvent } from '../support/progress-event.ts'
 import '../regressions/up141-api.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
@@ -43,6 +44,7 @@ function createPlaybackResourcesBlock1() {
     },
   } satisfies PlayurlPort
   const routes = {
+    prepareRequest: requestDispatch(),
     policyRevision: () => 0,
     isCatalogOnly: () => strict,
     isBilibiliMedia: () => false,
