@@ -14,8 +14,12 @@ export interface StallRecoveryIntent {
   readonly valid: () => boolean
 }
 export interface RecoverySnapshot {
+  readonly remainingReloads?: number
+  readonly deadlineAt?: number | undefined
+  readonly nextAction?:
+    'await-play' | 'verify-restore' | 'await-core' | 'await-reload-deadline' | 'none'
   readonly restoration?: {
-    readonly phase: 'position' | 'rate' | 'progress'
+    readonly phase: 'position' | 'rate' | 'play' | 'progress'
     readonly channel: 'sdk' | 'native' | 'none'
     readonly result: 'pending' | 'unknown' | 'verified' | 'mismatch'
   }
@@ -83,6 +87,7 @@ export interface RecoveryPlayerPort extends Pick<
   | 'setRate'
   | 'snapshot'
 > {
+  prepareReload(): { valid(): boolean; dispatch(): unknown } | null
   captureResumePosition(): ResumePositionCapture
   validateResumePosition(capture: ResumePositionCapture, initializationRevision?: number): boolean
   performRestore(command: RestoreCommand, guard: RestoreGuard): RestoreAttempt

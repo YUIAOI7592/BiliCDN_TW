@@ -26,7 +26,7 @@ function ready(f: ReturnType<typeof fixture>): MeasurementStatus {
     generationActive: true,
     representation: f.vault.match(url).context!.representation,
     demand: { kind: 'video', requiredMbps: 8, highDemand: false },
-    stableProgressSec: 25,
+    stableProgressTicks: 25,
     playableBufferSec: 40,
     visible: true,
     seeking: false,

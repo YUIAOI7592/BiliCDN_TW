@@ -132,34 +132,53 @@ function playbackFixture(t: TestContext) {
 
 test('player convergence: monitor keeps initial, exact time, missing frame and seeking baselines', (t) => {
   const f = playbackFixture(t)
+  f.clock.advance(1000)
   f.monitor.tick()
-  assert.equal(f.monitor.snapshot().stableProgressSec, 0)
+  assert.equal(f.monitor.snapshot().stableProgressTicks, 0)
   f.set({ currentTime: 0.05 })
+  f.clock.advance(1000)
   f.monitor.tick()
-  assert.equal(f.monitor.snapshot().stableProgressSec, 0, 'the boundary is strictly greater')
+  assert.equal(f.monitor.snapshot().stableProgressTicks, 0, 'the boundary is strictly greater')
   f.set({ currentTime: 0.100001 })
+  f.clock.advance(1000)
   f.monitor.tick()
-  assert.equal(f.monitor.snapshot().stableProgressSec, 1)
+  assert.equal(f.monitor.snapshot().stableProgressTicks, 1)
   f.set({ currentTime: 1, frames: 10 })
+  f.clock.advance(1000)
   f.monitor.tick()
-  assert.equal(f.monitor.snapshot().stableProgressSec, 0, 'first known frame is not a frame delta')
+  assert.equal(
+    f.monitor.snapshot().stableProgressTicks,
+    0,
+    'first known frame is not a frame delta',
+  )
   f.set({ currentTime: 2, frames: 11 })
+  f.clock.advance(1000)
   f.monitor.tick()
-  assert.equal(f.monitor.snapshot().stableProgressSec, 1)
+  assert.equal(f.monitor.snapshot().stableProgressTicks, 1)
   f.set({ currentTime: 3, frames: 12, seeking: true })
+  f.clock.advance(1000)
   f.monitor.tick()
   f.set({ currentTime: 4, frames: 13, seeking: false })
+  f.clock.advance(1000)
   f.monitor.tick()
-  assert.equal(f.monitor.snapshot().stableProgressSec, 0, 'seek completion establishes a baseline')
+  assert.equal(
+    f.monitor.snapshot().stableProgressTicks,
+    0,
+    'seek completion establishes a baseline',
+  )
   f.set({ currentTime: 5, frames: 14 })
+  f.clock.advance(1000)
   f.monitor.tick()
-  assert.equal(f.monitor.snapshot().stableProgressSec, 1)
+  assert.equal(f.monitor.snapshot().stableProgressTicks, 1)
   f.set({ available: false, currentTime: 6, frames: 15 })
+  f.clock.advance(1000)
   f.monitor.tick()
   f.set({ available: true, currentTime: 7, frames: 16 })
+  f.clock.advance(1000)
   f.monitor.tick()
-  assert.equal(f.monitor.snapshot().stableProgressSec, 0, 'unavailable media clears monitor time')
+  assert.equal(f.monitor.snapshot().stableProgressTicks, 0, 'unavailable media clears monitor time')
   f.set({ currentTime: 8, frames: 17 })
+  f.clock.advance(1000)
   f.monitor.tick()
   f.set({ currentTime: 9 })
   let monitorFrameReads = 0
@@ -170,8 +189,13 @@ test('player convergence: monitor keeps initial, exact time, missing frame and s
       return 18
     },
   })
+  f.clock.advance(1000)
   f.monitor.tick()
-  assert.equal(f.monitor.snapshot().stableProgressSec, 0, 'getter reset clears the previous frame')
+  assert.equal(
+    f.monitor.snapshot().stableProgressTicks,
+    0,
+    'getter reset clears the previous frame',
+  )
   assert.equal(monitorFrameReads, 3, 'frame guards and final sampling keep their read sequence')
   f.set({ currentTime: 0, frames: 1 })
   f.recovery.tick(f.video())
@@ -191,16 +215,19 @@ test('player convergence: monitor keeps initial, exact time, missing frame and s
 
 test('player convergence: each control identity change rejects one monitor progress sample', (t) => {
   const f = playbackFixture(t)
+  f.clock.advance(1000)
   f.monitor.tick()
   let position = 0
   for (const name of ['seekRevision', 'userRevision', 'mediaId', 'coreId'] as const) {
     f.controls({ [name]: 10 })
     f.set({ currentTime: ++position })
+    f.clock.advance(1000)
     f.monitor.tick()
-    assert.equal(f.monitor.snapshot().stableProgressSec, 0, name)
+    assert.equal(f.monitor.snapshot().stableProgressTicks, 0, name)
     f.set({ currentTime: ++position })
+    f.clock.advance(1000)
     f.monitor.tick()
-    assert.equal(f.monitor.snapshot().stableProgressSec, 1, name)
+    assert.equal(f.monitor.snapshot().stableProgressTicks, 1, name)
   }
 })
 

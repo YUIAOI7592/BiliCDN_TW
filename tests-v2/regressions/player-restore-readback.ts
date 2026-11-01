@@ -45,10 +45,18 @@ for (const rate of [1, 2]) {
     f.site.setPlaybackRate = () => {
       throw Error('SDK unavailable')
     }
+    f.video().playbackRate = rate === 1 ? 2 : 1
     const attempt = f.observer.performRestore(
       { kind: 'rate', value: rate, at: f.clock.now() },
       f.guard,
     )
+    assert.equal(f.observer.readRestore(attempt).channel, 'sdk')
+    assert.equal(f.observer.readRestore(attempt).status, 'rejected')
+    f.observer.correctRestore(attempt)
+    assert.equal(f.video().playbackRate, rate === 1 ? 2 : 1, 'no correction before one second')
+    f.clock.advance(1000)
+    f.observer.correctRestore(attempt)
+    assert.equal(f.video().playbackRate, rate)
     assert.equal(f.observer.readRestore(attempt).channel, 'native')
     const old = Object.getOwnPropertyDescriptor(f.video(), 'playbackRate')!
     let extra = 0

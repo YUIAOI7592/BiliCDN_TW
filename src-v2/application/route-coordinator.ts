@@ -111,6 +111,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #effectiveRate = 2
   #challengeAttempts = new Map<string, number>()
   #firstMediaAt = 0
+  #firstVideoAt = 0
+  #lastVideoEvidence: {
+    readonly host: string
+    readonly requestId: string
+    readonly identity: RouteIdentity
+    readonly source: 'current-transport' | 'current-probe'
+  } | null = null
   #startupExhausted = new Set<RepresentationId>()
   #pendingMedia = new Set<string>()
   #fallbacks = new Map<MediaKind, FallbackProgress>()
@@ -169,6 +176,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#effectiveRate = 2
     this.#challengeAttempts.clear()
     this.#firstMediaAt = 0
+    this.#firstVideoAt = 0
+    this.#lastVideoEvidence = null
     this.#startupExhausted.clear()
     this.#pendingMedia.clear()
     this.#fallbacks.clear()
@@ -277,6 +286,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       this.#tentativeRequests.clear()
     }
     if (request.kind && !this.#firstMediaAt) this.#firstMediaAt = request.startedAt
+    if (request.kind === 'video' && !this.#firstVideoAt) this.#firstVideoAt = request.startedAt
     if (request.kind) this.#pendingMedia.add(request.requestId)
     const key = request.kind ?? 'unknown'
     this.#requested.set(key, stamped)
@@ -310,12 +320,22 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   earlyRetryRequestCurrent(request: RequestContext): boolean {
     const settings = this.settings.get(),
       state = this.session.get()
+    const owned = this.#requestOwners.get(request)
+    const plan = request.representation ? this.#plans.get(request.representation) : null
+    const preparedRetry = this.#retryPermit?.applied?.decision.id === request.decisionId
+    const currentOwner =
+      !owned ||
+      (this.#selection?.representation === request.representation &&
+        this.#selection.revision === owned.selectionRevision &&
+        (preparedRetry ||
+          (plan?.id === request.decisionId &&
+            owned.routeRevision === this.#planRevisions.get(request.representation!))))
     return (
+      currentOwner &&
       settings.earlyRetryEnabled &&
       !settings.disabled &&
       !state.disabled &&
       !settings.fixedHost &&
-      this.isCatalogOnly() &&
       request.kind === 'video' &&
       request.routeType === 'catalog-generated' &&
       request.attributionStatus === 'matched' &&
@@ -492,6 +512,16 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (!this.#decisionAllowed(decision, pending.applied.context, 'video')) return false
     this.#retryPermit = null
     this.#savePlan(request.representation!, decision)
+    const owner = this.#requestOwners.get(request)
+    if (owner) {
+      const committed = Object.freeze({
+        ...owner,
+        routeRevision: this.#planRevisions.get(request.representation!)!,
+      })
+      this.#requestOwners.set(request, committed)
+      this.#requestOwners.set(owner, committed)
+      this.#requested.set('video', committed)
+    }
     this.session.setAffinity({
       type: 'catalog-generated',
       host: pending.host,
@@ -517,8 +547,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   playbackRate(): number {
     return this.#effectiveRate
   }
-  firstMediaAt(): number {
-    return this.#firstMediaAt
+  firstMediaAt(kind?: MediaKind): number {
+    return kind === 'video' ? this.#firstVideoAt : this.#firstMediaAt
   }
   pendingMediaCount(): number {
     return this.#pendingMedia.size
@@ -852,6 +882,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       },
       valid,
     )
+    if (context.kind === 'video' && valid())
+      this.#lastVideoEvidence = {
+        host: candidate.host,
+        requestId: this.#measurementId(candidate, 'startup'),
+        identity: context,
+        source: 'current-probe',
+      }
   }
 
   latestVideoHost(): string | null {
@@ -1502,6 +1539,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       },
       valid,
     )
+    if (outcome === 'success' && context.kind === 'video' && valid() && applied.decision.host)
+      this.#lastVideoEvidence = {
+        host: applied.decision.host!,
+        requestId: this.#measurementId(applied, 'challenge'),
+        identity: context,
+        source: 'current-probe',
+      }
   }
 
   async observe(observation: TransportObservation): Promise<void> {
@@ -1561,6 +1605,19 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     }
     const result = classifyTransportResult(observation)
     if (result.type === 'ignore') return
+    if (result.type === 'request-rejected') return
+    if (result.type === 'catalog-resource-missing') {
+      if (!controlsCurrent()) return
+      this.#markIncompatibleKey(observation.streamKey!, observation.targetHost)
+      if (observation.representation && observation.kind)
+        this.recover(
+          observation.representation,
+          this.#demandFor(observation.representation, observation.kind),
+          'verified-failure',
+          observation.targetHost,
+        )
+      return
+    }
     if (result.type === 'catalog-forbidden') {
       if (!controlsCurrent()) return
       this.#markIncompatibleKey(observation.streamKey!, observation.targetHost)
@@ -1588,6 +1645,21 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       result.sample,
       () => valid() && catalogObserved(),
     )
+    if (
+      result.type === 'success' &&
+      result.kind === 'video' &&
+      observation.representation &&
+      valid()
+    ) {
+      const identity = this.vault.identity(observation.representation)
+      if (identity)
+        this.#lastVideoEvidence = {
+          host: result.host,
+          requestId: result.sample.requestId,
+          identity,
+          source: 'current-transport',
+        }
+    }
     if (!controlsCurrent() || !catalogObserved()) return
     if (result.type === 'success') {
       const request = observation.request
@@ -1825,6 +1897,20 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       routeType: plan.routeType,
       safeMbps,
       sampleStatus,
+      evidenceOrigin:
+        safeMbps === null
+          ? null
+          : this.#lastVideoEvidence &&
+              this.#lastVideoEvidence.host === plan.host &&
+              this.#lastVideoEvidence.identity.representation === representation &&
+              this.#lastVideoEvidence.identity === identity &&
+              speeds.some(
+                (sample) =>
+                  sample.requestId === this.#lastVideoEvidence!.requestId &&
+                  now - sample.at <= EVIDENCE_TTL_MS,
+              )
+            ? this.#lastVideoEvidence.source
+            : 'historical-cache',
     })
   }
 

@@ -109,6 +109,7 @@ function fixture(t: TestContext) {
         recover() {
           effects.fallbacks++
           recovery.armRouteFailure('watchdog', video)
+          return { host: 'upos-sz-mirrorbos.bilivideo.com' }
         },
       }),
       monitorMeasurement(),

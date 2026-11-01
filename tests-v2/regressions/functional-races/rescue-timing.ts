@@ -111,6 +111,7 @@ function fixture(t: TestContext, rate: number, realRecovery: boolean) {
       recover() {
         effects.push('fallback')
         recovery?.armRouteFailure('route-failure', video)
+        return { host: 'upos-sz-mirrorbos.bilivideo.com' }
       },
     }),
     monitorMeasurement(),
@@ -213,7 +214,11 @@ for (const rate of [1, 2]) {
     f.set({ currentTime: 121 + rate, frames: 160 })
     f.tick()
     f.advance(1)
-    assert.deepEqual(f.effects, [])
+    assert.deepEqual(
+      f.effects,
+      ['arm', 'fallback'],
+      'one progress blip preserves the original stall deadline',
+    )
   })
   test(`I-T01 ordinary 6/12/15 ends once at 27000 rate=${rate}`, (t) => {
     const f = fixture(t, rate, true)

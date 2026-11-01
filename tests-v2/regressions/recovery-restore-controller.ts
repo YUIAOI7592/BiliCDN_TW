@@ -20,6 +20,7 @@ function fixture(t: TestContext, rate: number, target = 120) {
     nativeUsed = false,
     effect = true
   let onRead = () => {}
+  let onCommand = (_command: RestoreCommand) => {}
   const calls: string[] = [],
     controls = { ...idleControls() }
   const video: { -readonly [K in keyof VideoSnapshot]: VideoSnapshot[K] } = {
@@ -54,6 +55,17 @@ function fixture(t: TestContext, rate: number, target = 120) {
     captureResumePosition: () => ({ positionSec: target, proof: null }),
     validateResumePosition: () => true,
     observePlayIntent: () => () => {},
+    prepareReload() {
+      const revision = controls.reloadRevision
+      const valid = () => active && controls.reloadRevision === revision
+      return {
+        valid,
+        dispatch: () => {
+          if (!valid()) throw Error('Fixture reload expired')
+          return this.reload()
+        },
+      }
+    },
     reload() {
       calls.push('reload')
       controls.reloadRevision++
@@ -79,6 +91,7 @@ function fixture(t: TestContext, rate: number, target = 120) {
       video.paused = false
     },
     performRestore(command) {
+      onCommand(command)
       calls.push(`sdk:${command.kind}:${command.value}`)
       const attempt: RestoreAttempt = { kind: command.kind, proof: {} }
       records.set(attempt.proof, { command, landing: null })
@@ -135,6 +148,10 @@ function fixture(t: TestContext, rate: number, target = 120) {
     recovery.tick(video)
   }
   return {
+    clock,
+    onCommand: (fn: (command: RestoreCommand) => void) => {
+      onCommand = fn
+    },
     recovery,
     video,
     calls,
@@ -241,3 +258,22 @@ for (const rate of [1, 2]) {
     ])
   })
 }
+
+test('V226 R08: rate restoration validates the old-rate interval before accepting its new baseline', (t) => {
+  const f = fixture(t, 2)
+  f.video.currentTime = 120
+  f.video.playbackRate = 1
+  f.video.paused = false
+  f.onCommand((command) => {
+    if (command.kind === 'rate') {
+      f.clock.advance(5000)
+      f.video.currentTime += 5
+    }
+  })
+  f.tick()
+  assert.equal(f.recovery.snapshot().state, 'waiting')
+  assert.equal(f.recovery.snapshot().restoration?.phase, 'progress')
+  assert.equal(f.video.currentTime, 125)
+  assert.equal(f.video.playbackRate, 2)
+  assert.equal(f.calls.filter((v) => v === 'play').length, 1)
+})

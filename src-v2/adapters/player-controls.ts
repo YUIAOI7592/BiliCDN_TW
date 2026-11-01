@@ -1021,7 +1021,12 @@ export class PlayerControlObserver {
   }
 
   reload(): unknown {
-    this.#clearKeyboardPlayback()
+    const prepared = this.prepareReload()
+    if (!prepared) throw new Error('player.reload unavailable')
+    return prepared.dispatch()
+  }
+
+  prepareReload(): { valid(): boolean; dispatch(): unknown } | null {
     const userRevision = this.#userRevision,
       beforeRevision = this.#reloadRevision
     const player = this.sources.player(),
@@ -1029,78 +1034,91 @@ export class PlayerControlObserver {
       lifecycle = this.sources.lifecycleKey()
     const sourceCore = safeCall(player, '__core'),
       reload = player?.reload
-    if (!player || typeof reload !== 'function') throw new Error('player.reload unavailable')
-    const currentPlayer = this.sources.player(),
-      currentVideo = this.sources.video(),
-      currentCore = safeCall(player, '__core')
-    const visible = this.environment.isActuallyVisible(),
-      currentLifecycle = this.sources.lifecycleKey()
-    if (
-      userRevision !== this.#userRevision ||
-      beforeRevision !== this.#reloadRevision ||
-      currentPlayer !== player ||
-      currentVideo !== video ||
-      currentCore !== sourceCore ||
-      currentLifecycle !== lifecycle ||
-      !visible
-    ) {
-      throw new Error('player.reload ownership ended')
+    if (!player || typeof reload !== 'function') return null
+    let dispatched = false
+    const valid = (): boolean => {
+      if (dispatched) return false
+      const currentPlayer = this.sources.player(),
+        currentVideo = this.sources.video(),
+        currentCore = safeCall(player, '__core')
+      const visible = this.environment.isActuallyVisible(),
+        currentLifecycle = this.sources.lifecycleKey()
+      if (
+        userRevision !== this.#userRevision ||
+        beforeRevision !== this.#reloadRevision ||
+        currentPlayer !== player ||
+        currentVideo !== video ||
+        currentCore !== sourceCore ||
+        currentLifecycle !== lifecycle ||
+        !visible
+      )
+        return false
+      return userRevision === this.#userRevision && beforeRevision === this.#reloadRevision
     }
-    this.#clearOwnedReload()
-    this.#reloadCore = sourceCore
-    const revision = ++this.#reloadRevision
-    const owner: OwnedReload | null = video
-      ? {
-          revision,
-          video,
-          player,
-          lifecycle,
-          userRevision,
-          sourceCore: this.#reloadCore,
-          replacement: null,
-          sawNull: false,
-          stable: false,
-          cancel: () => undefined,
-        }
-      : null
-    this.#ownedReload = owner
-    this.#awaitReloadCore = owner !== null
-    if (owner)
-      owner.cancel = this.environment.scheduler.timeout(() => {
-        if (this.#ownedReload === owner) this.#clearOwnedReload()
-      }, 15_000)
-    if (
-      this.#ownedReload !== owner ||
-      this.#reloadRevision !== revision ||
-      this.#userRevision !== userRevision
-    ) {
-      if (this.#ownedReload === owner) this.#clearOwnedReload()
-      throw new Error('player.reload ownership ended')
-    }
-    this.#internalReload++
-    const beforePosition = this.#nativePosition
-    try {
-      const result: unknown = Reflect.apply(reload, player, [])
-      if (result && (typeof result === 'object' || typeof result === 'function'))
-        void Promise.resolve(result).catch(() => {
+    if (!valid()) throw new Error('player.reload ownership ended')
+    return Object.freeze({
+      valid,
+      dispatch: () => {
+        if (!valid()) throw new Error('player.reload ownership ended')
+        dispatched = true
+        this.#clearKeyboardPlayback()
+        this.#clearOwnedReload()
+        this.#reloadCore = sourceCore
+        const revision = ++this.#reloadRevision
+        const owner: OwnedReload | null = video
+          ? {
+              revision,
+              video,
+              player,
+              lifecycle,
+              userRevision,
+              sourceCore: this.#reloadCore,
+              replacement: null,
+              sawNull: false,
+              stable: false,
+              cancel: () => undefined,
+            }
+          : null
+        this.#ownedReload = owner
+        this.#awaitReloadCore = owner !== null
+        if (owner)
+          owner.cancel = this.environment.scheduler.timeout(() => {
+            if (this.#ownedReload === owner) this.#clearOwnedReload()
+          }, 15_000)
+        if (
+          this.#ownedReload !== owner ||
+          this.#reloadRevision !== revision ||
+          this.#userRevision !== userRevision
+        ) {
           if (this.#ownedReload === owner) this.#clearOwnedReload()
-        })
-      return result
-    } catch (error) {
-      if (this.#ownedReload === owner) this.#clearOwnedReload()
-      throw error
-    } finally {
-      try {
-        if (video && this.#ownedReload === owner)
-          this.#observeNativePosition(video, player, this.#nativePosition === beforePosition)
-      } catch {
-        // An observation failure must not replace the SDK's result/exception
-        // or retain our method-source marker. The saved position is uncertain.
-        if (this.#ownedReload === owner) this.#seekRevision++
-      } finally {
-        this.#internalReload--
-      }
-    }
+          throw new Error('player.reload ownership ended')
+        }
+        this.#internalReload++
+        const beforePosition = this.#nativePosition
+        try {
+          const result: unknown = Reflect.apply(reload, player, [])
+          if (result && (typeof result === 'object' || typeof result === 'function'))
+            void Promise.resolve(result).catch(() => {
+              if (this.#ownedReload === owner) this.#clearOwnedReload()
+            })
+          return result
+        } catch (error) {
+          if (this.#ownedReload === owner) this.#clearOwnedReload()
+          throw error
+        } finally {
+          try {
+            if (video && this.#ownedReload === owner)
+              this.#observeNativePosition(video, player, this.#nativePosition === beforePosition)
+          } catch {
+            // An observation failure must not replace the SDK's result/exception
+            // or retain our method-source marker. The saved position is uncertain.
+            if (this.#ownedReload === owner) this.#seekRevision++
+          } finally {
+            this.#internalReload--
+          }
+        }
+      },
+    })
   }
 
   #nativeWriteGuard(canCommit: () => boolean): () => boolean {
@@ -1173,6 +1191,7 @@ export class PlayerControlObserver {
   #rateCommand(
     value: number,
     canCommit: () => boolean,
+    fallbackOnThrow = true,
   ): { channel: RestoreReadback['channel']; result: unknown } {
     this.#clearKeyboardPlayback()
     const nativeCurrent = this.#nativeWriteGuard(canCommit)
@@ -1181,8 +1200,8 @@ export class PlayerControlObserver {
     try {
       const dispatched = this.#sdkCommand(player, method, value, nativeCurrent)
       if (dispatched) return dispatched
-    } catch {
-      /* Rate failures retain their native fallback; seek failures propagate. */
+    } catch (error) {
+      if (!fallbackOnThrow) throw error
     }
     const video = this.sources.video()
     if (video && nativeCurrent()) {
@@ -1275,7 +1294,11 @@ export class PlayerControlObserver {
       applied =
         command.kind === 'position'
           ? this.#seekCommand(command.value, current)
-          : this.#rateCommand(command.value, current)
+          : this.#rateCommand(command.value, current, false)
+    } catch {
+      record.channel = 'sdk'
+      record.status = 'rejected'
+      return attempt
     } finally {
       record.inCall = false
     }
@@ -1371,6 +1394,7 @@ export class PlayerControlObserver {
       !record ||
       record.channel === 'native' ||
       record.status === 'pending' ||
+      record.guard.now() - record.command.at < 1000 ||
       !this.#restoreCurrent(record)
     )
       return

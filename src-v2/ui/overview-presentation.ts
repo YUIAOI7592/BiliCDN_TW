@@ -109,7 +109,17 @@ export function overviewPresentation(model: ControlCenterSnapshot, now: number) 
     ratio,
     requiredMbps,
     transfers,
-    speedHint: safeMbps !== null ? capacity!.host + ' · 有效影片樣本的保守估計' : missing,
+    speedHint:
+      safeMbps !== null
+        ? capacity!.host +
+          ' · ' +
+          (capacity!.evidenceOrigin === 'current-transport'
+            ? '目前內容傳輸'
+            : capacity!.evidenceOrigin === 'current-probe'
+              ? '目前內容探測'
+              : '歷史影片樣本') +
+          '的保守估計'
+        : missing,
     marginHint:
       ratio !== null && requiredMbps !== null
         ? '需求 ' +

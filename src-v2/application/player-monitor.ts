@@ -17,10 +17,9 @@ interface StallEpisode {
   longSeek: boolean
   seekRevision: number
   request: ReturnType<MonitorRoutes['latestRequested']>
-  fallbackAttempted: boolean
-  armed: boolean
-  finished: boolean
-  progressEnded: boolean
+  fallback: 'available' | 'submitted'
+  action: 'waiting' | 'armed' | 'spent'
+  progress: { phase: 'stalled' | 'confirming' | 'settling'; ticks: number }
   readonly reloadCount: number
 }
 
@@ -37,13 +36,16 @@ import type { MonitorSnapshot } from './monitor-contracts.ts'
 export class PlayerMonitor implements MonitorPort {
   #timer: (() => void) | null = null
   #lastTime: number | null = null
-  #stableProgressSec = 0
+  #stableProgressTicks = 0
+  #sampleAt: number | null = null
   #stallTicks = 0
   #lastRecoveryAt = 0
   #seekGraceUntil = 0
   #manifestTick = 0
   #manifestReady = false
-  #startupRescueAttempted = false
+  #startupRescue:
+    { phase: 'available' } | { phase: 'waiting'; qualification: string } | { phase: 'committed' } =
+    { phase: 'available' }
   #startupObservedProgress = false
   #lastFrames: number | null = null
   #startupRescueState: MonitorSnapshot['startupRescue']['state'] = 'watching'
@@ -77,7 +79,7 @@ export class PlayerMonitor implements MonitorPort {
   ) {
     this.#snapshot = Object.freeze({
       video: player.snapshot(),
-      stableProgressSec: 0,
+      stableProgressTicks: 0,
       watchdog: 'no-video',
       stallTicks: 0,
       startupRescue: { state: 'watching' as const, ageSec: 0 },
@@ -100,13 +102,14 @@ export class PlayerMonitor implements MonitorPort {
   reset(): void {
     this.earlyRetry?.reset()
     this.#lastTime = null
-    this.#stableProgressSec = 0
+    this.#stableProgressTicks = 0
     this.#stallTicks = 0
     this.#lastRecoveryAt = 0
     this.#seekGraceUntil = 0
     this.#manifestTick = 0
     this.#manifestReady = false
-    this.#startupRescueAttempted = false
+    this.#startupRescue = { phase: 'available' }
+    this.#sampleAt = null
     this.#startupObservedProgress = false
     this.#lastFrames = null
     this.#startupRescueState = 'watching'
@@ -145,7 +148,7 @@ export class PlayerMonitor implements MonitorPort {
       visible,
       progress,
     )
-    const firstMediaAt = this.routes.firstMediaAt()
+    const firstMediaAt = this.routes.firstMediaAt('video')
     const watchdog = this.#observeWatchdog(video, controls, now, progress, advanced, ownedReload)
     if (
       !this.#stall &&
@@ -171,7 +174,7 @@ export class PlayerMonitor implements MonitorPort {
       generationActive: true,
       representation: this.session.get().representation,
       demand,
-      stableProgressSec: this.#stableProgressSec,
+      stableProgressTicks: this.#stableProgressTicks,
       playableBufferSec: video.playableBufferSec,
       visible,
       seeking: video.seeking || now < this.#seekGraceUntil,
@@ -186,7 +189,7 @@ export class PlayerMonitor implements MonitorPort {
       fixedHost: !!retrySettings.fixedHost,
       visible,
       recovering: this.recovery.isRecovering() || !!this.#stall,
-      stableProgressSec: this.#stableProgressSec,
+      stableProgressTicks: this.#stableProgressTicks,
       video,
       controls,
       demand,
@@ -214,13 +217,19 @@ export class PlayerMonitor implements MonitorPort {
       this.#lastFrames !== null &&
       playbackFramesAdvanced(video.frames, this.#lastFrames)
     const progress = advanced && (video.frames === null || newFrames)
-    if (progress || (!video.seeking && video.playableBufferSec >= 1)) {
+    if (progress) {
       this.#startupObservedProgress = true
-      if (!this.#startupRescueAttempted) this.#startupRescueState = 'not-needed'
+      if (this.#startupRescue.phase !== 'committed') this.#startupRescueState = 'not-needed'
     }
-    if (progress) this.#stableProgressSec++
-    else this.#stableProgressSec = 0
-    return { advanced, progress }
+    const now = this.now(),
+      gap = this.#sampleAt === null ? null : now - this.#sampleAt
+    if (gap !== null && gap <= 0) return { advanced, progress: false }
+    this.#sampleAt = now
+    if (progress)
+      this.#stableProgressTicks =
+        gap !== null && gap >= 1000 && gap <= 2000 ? this.#stableProgressTicks + 1 : 1
+    else this.#stableProgressTicks = 0
+    return { advanced, progress: progress && gap !== null && gap >= 1000 && gap <= 2000 }
   }
 
   #advanceStall(
@@ -233,10 +242,11 @@ export class PlayerMonitor implements MonitorPort {
   ): { readonly active: boolean; readonly ownedReload: boolean } {
     // An existing action owns its terminal deadline. Settle it before a paused
     // SDK transition can make the monitor cancel the same action generically.
-    const recoveryTicked = !disabled && !!this.#stall?.armed && this.recovery.isRecovering()
+    const recoveryTicked =
+      !disabled && this.#stall?.action === 'armed' && this.recovery.isRecovering()
     if (recoveryTicked) this.recovery.tick(video)
     if (
-      this.#stall?.armed &&
+      this.#stall?.action === 'armed' &&
       !this.recovery.isRecovering() &&
       this.recovery.snapshot().reloadCount > this.#stall.reloadCount &&
       ['failed', 'breaker', 'recovered-paused'].includes(this.recovery.snapshot().state)
@@ -244,7 +254,7 @@ export class PlayerMonitor implements MonitorPort {
       this.#failedStall = { userRevision: this.#stall.userRevision, mediaId: this.#stall.mediaId }
     }
     if (
-      progress ||
+      (progress && this.#stableProgressTicks >= 10 && video.playableBufferSec >= 10) ||
       (this.#failedStall &&
         (this.#failedStall.userRevision !== controls.userRevision ||
           this.#failedStall.mediaId !== controls.mediaId))
@@ -261,14 +271,21 @@ export class PlayerMonitor implements MonitorPort {
       !video.mediaError &&
       !controls.dragging
     if (!active) this.#endStall()
-    else if (progress) this.#endStall(true)
-    else if (
+    else if (progress) {
+      if (this.#stall) {
+        const stall = this.#stall
+        stall.progress.ticks++
+        stall.progress.phase = stall.progress.ticks >= 2 ? 'settling' : 'confirming'
+        if (stall.progress.ticks >= 10 && video.playableBufferSec >= 10) this.#endStall()
+      }
+    } else if (
       !ownedReload &&
       (this.#startupObservedProgress || video.seeking || controls.pendingSeekGoal)
     )
       this.#observeStall(video, controls, now)
     if (!disabled && !recoveryTicked) this.recovery.tick(video)
-    if (this.#stall?.armed && !this.recovery.isRecovering()) this.#stall.finished = true
+    if (this.#stall?.action === 'armed' && !this.recovery.isRecovering())
+      this.#stall.action = 'spent'
     return { active, ownedReload }
   }
 
@@ -331,7 +348,7 @@ export class PlayerMonitor implements MonitorPort {
       visible &&
       firstMediaAt &&
       startupAge >= 15_000 &&
-      !this.#startupRescueAttempted &&
+      this.#startupRescue.phase !== 'committed' &&
       !this.#startupObservedProgress &&
       video.available &&
       !video.paused &&
@@ -339,7 +356,6 @@ export class PlayerMonitor implements MonitorPort {
       !video.ended &&
       !video.mediaError &&
       video.playableBufferSec < 1 &&
-      (video.readyState <= 1 || (video.width === 0 && video.height === 0)) &&
       !this.recovery.isRecovering() &&
       now >= this.#seekGraceUntil
     ) {
@@ -349,7 +365,20 @@ export class PlayerMonitor implements MonitorPort {
         requested.epoch === this.session.get().epoch &&
         requested.generation === this.session.get().generation
       ) {
-        this.#startupRescueAttempted = true
+        const qualification = [
+          requested.generation,
+          requested.epoch,
+          requested.representation,
+          requested.authorityRevision,
+          requested.routePolicyRevision,
+          requested.targetHost,
+        ].join(':')
+        if (
+          this.#startupRescue.phase === 'waiting' &&
+          this.#startupRescue.qualification === qualification
+        )
+          return startupAge
+        this.#startupRescue = { phase: 'waiting', qualification }
         const fallback = this.routes.recoverStartup(
           requested.representation,
           this.#demand(video),
@@ -357,7 +386,10 @@ export class PlayerMonitor implements MonitorPort {
           this.measurement.startupFallbackHosts?.() ?? [],
         )
         this.#startupRescueState = fallback ? 'fallback-submitted' : 'no-alternative'
-        if (fallback) this.recovery.armStartupFailure(video)
+        if (fallback) {
+          this.#startupRescue = { phase: 'committed' }
+          this.recovery.armStartupFailure(video)
+        }
       }
     }
     return startupAge
@@ -380,19 +412,27 @@ export class PlayerMonitor implements MonitorPort {
     }
     this.#snapshot = Object.freeze({
       video,
-      stableProgressSec: this.#stableProgressSec,
+      stableProgressTicks: this.#stableProgressTicks,
       watchdog,
       stallTicks: this.#stallTicks,
+      stall: this.#stall
+        ? Object.freeze({
+            id: this.#stall.id,
+            phase: this.#stall.progress.phase,
+            action: this.#stall.action,
+            startedAt: this.#stall.startedAt,
+            fallbackAt: this.#stall.startedAt + (this.#stall.longSeek ? 15_000 : 6000),
+            reloadAt: this.#stall.startedAt + (this.#stall.longSeek ? 30_000 : 12_000),
+            fallbackAvailable: this.#stall.fallback === 'available',
+          })
+        : null,
       startupRescue: { state: this.#startupRescueState, ageSec: Math.floor(startupAge / 1000) },
     })
     for (const listener of this.#listeners) listener(this.#snapshot)
   }
 
-  #endStall(progress = false): void {
-    if (this.#stall) {
-      this.#stall.progressEnded = progress
-      if (!progress) this.recovery.cancelStall(this.#stall.id)
-    }
+  #endStall(): void {
+    if (this.#stall) this.recovery.cancelStall(this.#stall.id)
     this.#stall = null
   }
 
@@ -416,19 +456,21 @@ export class PlayerMonitor implements MonitorPort {
         targetSec: video.currentTime,
         longSeek: video.seeking || controls.pendingSeekGoal === true,
         request: requested,
-        fallbackAttempted:
+        fallback:
           this.recovery.isRecovering() &&
-          ['route-failure', 'watchdog'].includes(this.recovery.snapshot().source ?? ''),
-        armed: false,
-        finished: false,
-        progressEnded: false,
+          ['route-failure', 'watchdog'].includes(this.recovery.snapshot().source ?? '')
+            ? 'submitted'
+            : 'available',
+        action: 'waiting',
+        progress: { phase: 'stalled', ticks: 0 },
         reloadCount: this.recovery.snapshot().reloadCount,
       }
     const stall = this.#stall
+    stall.progress = { phase: 'stalled', ticks: 0 }
     const routeIntent =
       this.recovery.isRecovering() &&
       ['route-failure', 'watchdog'].includes(this.recovery.snapshot().source ?? '')
-    if (routeIntent) stall.fallbackAttempted = true
+    if (routeIntent) stall.fallback = 'submitted'
     const deadCore =
       video.readyState === 0 &&
       video.width === 0 &&
@@ -436,12 +478,13 @@ export class PlayerMonitor implements MonitorPort {
       video.coreInitialized === false &&
       video.manifestHasVideo
     const joinRouteIntent = routeIntent && !video.seeking && !deadCore
-    if (this.recovery.snapshot().reloadCount > stall.reloadCount) stall.finished = true
+    if (this.recovery.snapshot().reloadCount > stall.reloadCount && stall.action !== 'armed')
+      stall.action = 'spent'
     if (!stall.longSeek && (video.seeking || controls.pendingSeekGoal)) {
       stall.longSeek = true
-      if (stall.armed) {
+      if (stall.action === 'armed') {
         this.recovery.cancelStall(stall.id)
-        stall.armed = false
+        stall.action = 'waiting'
       }
     }
     const rebound =
@@ -451,8 +494,7 @@ export class PlayerMonitor implements MonitorPort {
       stall.request?.routePolicyRevision !== requested?.routePolicyRevision
     if (rebound) {
       this.recovery.cancelStall(stall.id)
-      stall.finished ||= this.recovery.snapshot().reloadCount > stall.reloadCount
-      stall.armed = false
+      stall.action = this.recovery.snapshot().reloadCount > stall.reloadCount ? 'spent' : 'waiting'
       stall.seekRevision = controls.seekRevision
       stall.request = requested
       stall.targetSec = video.currentTime
@@ -461,8 +503,8 @@ export class PlayerMonitor implements MonitorPort {
     const fallbackAfter = stall.longSeek ? 15_000 : 6000
     if (
       (now - stall.startedAt < fallbackAfter && !joinRouteIntent) ||
-      stall.finished ||
-      stall.armed
+      stall.action === 'spent' ||
+      stall.action === 'armed'
     )
       return
     if (
@@ -471,7 +513,7 @@ export class PlayerMonitor implements MonitorPort {
       requested.epoch !== state.epoch ||
       !this.routes.recoveryEligible(requested)
     ) {
-      stall.finished = true
+      stall.action = 'spent'
       this.recovery.rejectStall()
       return
     }
@@ -482,7 +524,7 @@ export class PlayerMonitor implements MonitorPort {
       const current = this.player.controls(),
         latest = this.routes.latestRequested('video')
       if (
-        (this.#stall !== stall && !stall.progressEnded) ||
+        this.#stall !== stall ||
         !this.isVisible() ||
         this.settings.get().disabled ||
         current.userRevision !== stall.userRevision ||
@@ -503,7 +545,7 @@ export class PlayerMonitor implements MonitorPort {
         this.routes.recoveryEligible(request)
       )
     }
-    stall.armed = true
+    stall.action = 'armed'
     this.recovery.armStall(video, {
       id: stall.id,
       startedAt: stall.startedAt,
@@ -511,14 +553,21 @@ export class PlayerMonitor implements MonitorPort {
       reloadAfterMs: stall.longSeek ? 30_000 : 12_000,
       valid,
     })
-    if (!stall.fallbackAttempted) {
-      stall.fallbackAttempted = true
-      this.routes.recover(
+    if (stall.fallback === 'available') {
+      const decision = this.routes.recover(
         requested.representation,
         this.#demand(video),
         'watchdog',
         requested.targetHost,
       )
+      if (
+        decision &&
+        typeof decision === 'object' &&
+        'host' in decision &&
+        decision.host &&
+        decision.host !== requested.targetHost
+      )
+        stall.fallback = 'submitted'
     }
   }
 

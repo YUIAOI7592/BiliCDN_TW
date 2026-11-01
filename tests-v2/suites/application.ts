@@ -1075,7 +1075,7 @@ async function createStartupRecoveryContext8(t: TestContext) {
     generationActive: true,
     representation: representationId('video:test'),
     demand: { kind: 'video' as const, requiredMbps: 8, highDemand: false },
-    stableProgressSec: 20,
+    stableProgressTicks: 20,
     playableBufferSec: 29,
     visible: true,
     seeking: false,
@@ -1315,6 +1315,18 @@ async function createRateAdapterContext13(t: TestContext) {
     error: null,
   } as unknown as HTMLVideoElement
   class RateAdapter extends PlayerAdapter {
+    override controls() {
+      return {
+        mediaId: 1,
+        coreId: 1,
+        seekRevision: 0,
+        userRevision: 0,
+        dragging: false,
+        targetSec: null,
+        reloadRevision: 0,
+        coreReloadRevision: 0,
+      }
+    }
     override video(): HTMLVideoElement {
       return adapterVideo
     }
@@ -2735,7 +2747,7 @@ async function checkDisabledModeNeitherProbesNorInitiatesScriptRouteCoreRecovery
     generationActive: true,
     representation: representationId('video:test'),
     demand: { kind: 'video' as const, requiredMbps: 8, highDemand: false },
-    stableProgressSec: 20,
+    stableProgressTicks: 20,
     playableBufferSec: 29,
     visible: true,
     seeking: false,
@@ -2878,3 +2890,6 @@ import '../regressions/v226-startup.ts'
 
 import '../regressions/v226-routing.ts'
 import '../regressions/v226-api-order.ts'
+import '../regressions/v226-http-status.ts'
+import '../regressions/v226-monitor.ts'
+import '../regressions/v226-recovery.ts'

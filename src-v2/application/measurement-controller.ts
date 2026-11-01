@@ -178,6 +178,8 @@ export class MeasurementController implements MeasurementPort {
       this.#startupState = Object.freeze({
         state: 'running',
         reason: 'player-media-request',
+        deadlineAt: this.now() + TIMEOUT_MS,
+        remainingProbes: options.candidates.length,
         candidates: options.candidates.length,
         selectedHost: null,
         delayed: true,
@@ -280,6 +282,10 @@ export class MeasurementController implements MeasurementPort {
         (result) => {
           if (sealed || marker !== this.#marker) return
           results.push(result)
+          this.#startupState = Object.freeze({
+            ...this.#startupState!,
+            remainingProbes: options.candidates.length - results.length,
+          })
           if (
             catalogOnlyAtStart &&
             this.settings?.get().startupEarlyReleaseEnabled !== false &&
@@ -436,6 +442,7 @@ export class MeasurementController implements MeasurementPort {
     if (!status.representation || !status.demand || this.#running || this.#planning) return
     const planning = {}
     this.#planning = planning
+    this.#snapshot = Object.freeze({ ...this.#snapshot, state: 'waiting', reason: 'storage-lock' })
     const planningMarker = this.#marker
     let running: MeasurementWork | null = null
     try {
@@ -707,7 +714,7 @@ export class MeasurementController implements MeasurementPort {
     if (!status.visible) return 'hidden'
     if (status.seeking) return 'seeking'
     if (status.recovering) return 'recovering'
-    if (status.stableProgressSec < 20) return 'awaiting-progress'
+    if (status.stableProgressTicks < 20) return 'awaiting-progress'
     if (status.playableBufferSec < 30) return 'low-buffer'
     return null
   }

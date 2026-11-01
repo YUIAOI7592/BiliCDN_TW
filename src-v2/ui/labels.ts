@@ -72,6 +72,7 @@ export const measurementLabel = (state: unknown, reason: unknown): string => {
       'awaiting-progress': '等待影片穩定播放',
       'low-buffer': '緩衝還不夠，暫不測速',
       'cross-tab-cooldown': '共用測速冷卻中',
+      'storage-lock': '等待設定儲存鎖',
       'no-stale-candidate': '目前沒有需要測試的 CDN',
       'sample-recorded': '已記下測速結果',
       'short-response': '下載資料太少，無法判斷速度',
@@ -91,7 +92,14 @@ export const measurementLabel = (state: unknown, reason: unknown): string => {
   )
 }
 
-export const startupLabel = (state: unknown, reason: unknown): string => {
+export const startupLabel = (state: unknown, reason: unknown, result?: unknown): string => {
+  if (state === 'complete' && result)
+    return plain(result, {
+      adequate: '本輪已選定足速路線',
+      insufficient: '已選定本輪最快路線，尚未達足速門檻',
+      unverified: '已使用一次合法未測退路，尚未驗證',
+      none: '本輪沒有合法可用選擇',
+    })
   if (state === 'running') return '正在起播前測試可用路線（最長 3 秒）'
   if (state === 'complete')
     return reason === 'measured' ? '已測試並選好起播路線' : '已選好合法起播路線，測試沒有明確結果'

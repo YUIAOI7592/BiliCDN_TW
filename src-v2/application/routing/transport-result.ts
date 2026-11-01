@@ -35,6 +35,8 @@ export function transportSnapshot(observation: TransportObservation): RouteTrans
 export type TransportResult =
   | { readonly type: 'ignore' }
   | { readonly type: 'catalog-forbidden' }
+  | { readonly type: 'catalog-resource-missing' }
+  | { readonly type: 'request-rejected' }
   | { readonly type: 'native-invalid'; readonly host: string; readonly kind: MediaKind }
   | {
       readonly type: 'success' | 'failure'
@@ -55,6 +57,18 @@ export function classifyTransportResult(observation: TransportObservation): Tran
   )
     return { type: 'catalog-forbidden' }
   const request = observation.request
+  if (
+    observation.routeType === 'catalog-generated' &&
+    observation.streamKey &&
+    [404, 410].includes(observation.status)
+  )
+    return { type: 'catalog-resource-missing' }
+  if (
+    observation.status >= 400 &&
+    observation.status < 500 &&
+    !(observation.failureKind === 'native-invalid' && observation.representation)
+  )
+    return { type: 'request-rejected' }
   if (!observation.kind || (request && request.attributionStatus !== 'matched'))
     return { type: 'ignore' }
   const requestId =

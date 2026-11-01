@@ -7,7 +7,7 @@ import { type SignedRouteVaultPort } from '../state/vault-contracts.ts'
 import { type RequestContext } from '../domain/model.ts'
 export interface MonitorSnapshot {
   readonly video: VideoSnapshot
-  readonly stableProgressSec: number
+  readonly stableProgressTicks: number
   readonly watchdog:
     | 'no-video'
     | 'paused'
@@ -16,6 +16,15 @@ export interface MonitorSnapshot {
     | 'healthy'
     | 'low-buffer'
     | 'recovering'
+  readonly stall?: {
+    readonly id: number
+    readonly phase: 'stalled' | 'confirming' | 'settling'
+    readonly action: 'waiting' | 'armed' | 'spent'
+    readonly startedAt: number
+    readonly fallbackAt: number
+    readonly reloadAt: number
+    readonly fallbackAvailable: boolean
+  } | null
   readonly stallTicks: number
   readonly startupRescue: {
     readonly state: 'watching' | 'not-needed' | 'fallback-submitted' | 'no-alternative'

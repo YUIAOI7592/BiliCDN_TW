@@ -212,7 +212,7 @@ for (const outcome of ['success', '416', 'cancelled'] as const)
       generationActive: true,
       representation: identity.representation,
       demand: { kind: 'video', requiredMbps: 8, highDemand: false },
-      stableProgressSec: 25,
+      stableProgressTicks: 25,
       playableBufferSec: 40,
       visible: true,
       seeking: false,

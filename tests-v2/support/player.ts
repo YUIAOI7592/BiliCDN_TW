@@ -63,6 +63,25 @@ export function synchronousRestoreMethods(
 export function currentResumePlayer<T extends PlayerPort>(player: T): T & RecoveryPlayerPort {
   return Object.assign(player, {
     ...synchronousRestoreMethods(player),
+    prepareReload: () => {
+      const reload = player.reload,
+        before = player.controls()
+      const valid = () => {
+        const current = player.controls()
+        return (
+          current.mediaId === before.mediaId &&
+          current.userRevision === before.userRevision &&
+          current.reloadRevision === before.reloadRevision
+        )
+      }
+      return {
+        valid,
+        dispatch: () => {
+          if (!valid()) throw Error('Fixture reload owner ended')
+          return Reflect.apply(reload, player, [])
+        },
+      }
+    },
     captureResumePosition: () => ({ positionSec: player.currentTime(), proof: null }),
     validateResumePosition: (capture: { readonly proof: object | null }) => capture.proof === null,
   })

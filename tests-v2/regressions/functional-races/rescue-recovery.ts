@@ -65,6 +65,17 @@ function fixture(t: TestContext, rate: number, target = 978) {
       return rate
     },
     observePlayIntent: () => () => undefined,
+    prepareReload() {
+      const revision = controls.reloadRevision
+      const valid = () => active && controls.reloadRevision === revision
+      return {
+        valid,
+        dispatch: () => {
+          if (!valid()) throw Error('Fixture reload expired')
+          return this.reload()
+        },
+      }
+    },
     ownedReload: (revision) => revision === controls.reloadRevision,
     reload() {
       effects.push({ method: 'reload' })

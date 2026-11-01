@@ -92,6 +92,10 @@ export class PlayerAdapter {
     return accepted
   }
 
+  prepareReload() {
+    return this.#controls.prepareReload()
+  }
+
   reload(): unknown {
     return this.#controls.reload()
   }
@@ -112,8 +116,28 @@ export class PlayerAdapter {
   }
 
   playbackRate(): number {
-    const rate = safeNumber(safeCall(this.player(), 'getPlaybackRate'))
-    return rate !== null && rate > 0 ? rate : this.snapshot().playbackRate
+    const before = this.controls(),
+      video = this.video()
+    let native: number | null = null
+    try {
+      native = safeNumber(video?.playbackRate)
+    } catch {
+      /* SDK fallback below */
+    }
+    const rate =
+      native !== null && native > 0
+        ? native
+        : safeNumber(safeCall(this.player(), 'getPlaybackRate'))
+    const after = this.controls()
+    return before.mediaId === after.mediaId &&
+      before.userRevision === after.userRevision &&
+      before.seekRevision === after.seekRevision &&
+      before.coreId === after.coreId &&
+      video === this.video() &&
+      rate !== null &&
+      rate > 0
+      ? rate
+      : 0
   }
 
   seek(value: number, canCommit?: () => boolean): void {

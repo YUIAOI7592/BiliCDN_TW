@@ -33,7 +33,7 @@ export interface EarlyRetryStatus {
   readonly fixedHost: boolean
   readonly visible: boolean
   readonly recovering: boolean
-  readonly stableProgressSec: number
+  readonly stableProgressTicks: number
   readonly video: VideoSnapshot
   readonly controls: PlayerControlSnapshot
   readonly demand: PlaybackDemand | null

@@ -87,7 +87,7 @@ export class EarlyRetryController implements EarlyRetryPort {
         } else if (now >= pending.permit.expiresAt) this.#suspend('handoff-expired')
         return
       }
-      if (status.stableProgressSec < 10 || !Number.isFinite(status.stableProgressSec)) {
+      if (status.stableProgressTicks < 10 || !Number.isFinite(status.stableProgressTicks)) {
         this.#publish('waiting', 'stable-progress', null)
         return
       }
@@ -177,7 +177,7 @@ export class EarlyRetryController implements EarlyRetryPort {
   #unsafe(status: EarlyRetryStatus): string | null {
     if (!status.enabled) return 'disabled-setting'
     if (status.disabled) return 'disabled'
-    if (!status.catalogOnly || status.fixedHost) return 'route-mode'
+    if (status.fixedHost) return 'route-mode'
     if (!status.visible) return 'hidden'
     if (status.recovering) return 'recovering'
     const video = status.video
@@ -211,9 +211,9 @@ export class EarlyRetryController implements EarlyRetryPort {
   #observeHealthy(status: EarlyRetryStatus, now: number): void {
     if (
       !Number.isFinite(status.video.playableBufferSec) ||
-      !Number.isFinite(status.stableProgressSec) ||
+      !Number.isFinite(status.stableProgressTicks) ||
       status.video.playableBufferSec < 10 ||
-      status.stableProgressSec < 10
+      status.stableProgressTicks < 10
     ) {
       this.#healthyAt = null
       this.#healthyTicks = 0

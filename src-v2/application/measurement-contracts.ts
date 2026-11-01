@@ -6,7 +6,7 @@ export interface MeasurementStatus {
   readonly generationActive: boolean
   readonly representation: RepresentationId | null
   readonly demand: PlaybackDemand | null
-  readonly stableProgressSec: number
+  readonly stableProgressTicks: number
   readonly playableBufferSec: number
   readonly visible: boolean
   readonly seeking: boolean
@@ -22,6 +22,8 @@ export interface MeasurementSnapshot {
   readonly startup?: {
     readonly state: 'idle' | 'reserved' | 'running' | 'complete' | 'skipped' | 'cancelled'
     readonly result?: 'adequate' | 'insufficient' | 'unverified' | 'none'
+    readonly deadlineAt?: number
+    readonly remainingProbes?: number
     readonly reason: string
     readonly candidates: number
     readonly selectedHost: string | null

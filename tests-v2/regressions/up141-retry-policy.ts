@@ -48,7 +48,7 @@ function status(): EarlyRetryStatus {
     fixedHost: false,
     visible: true,
     recovering: false,
-    stableProgressSec: 10,
+    stableProgressTicks: 10,
     video: {
       available: true,
       paused: false,
@@ -226,11 +226,10 @@ test('UP141-RETRY controller respects all playback and mode exclusions', (t) => 
   const variants: EarlyRetryStatus[] = [
     { ...base, enabled: false },
     { ...base, disabled: true },
-    { ...base, catalogOnly: false },
     { ...base, fixedHost: true },
     { ...base, visible: false },
     { ...base, recovering: true },
-    { ...base, stableProgressSec: 9 },
+    { ...base, stableProgressTicks: 9 },
     { ...base, demand: null },
     ...[
       { paused: true },
@@ -243,6 +242,20 @@ test('UP141-RETRY controller respects all playback and mode exclusions', (t) => 
     { ...base, controls: { ...base.controls, pendingSeekGoal: true } },
   ]
   for (const variant of variants) f.controller.tick(variant)
+  assert.equal(f.arms(), 0)
+})
+
+test('V226 H04: Native enabled still permits a qualified Catalog request', (t) => {
+  const f = fixture(t)
+  f.controller.tick({ ...f.status, catalogOnly: false })
+  assert.equal(f.arms(), 1)
+})
+
+test('V226 H04: an actual Native request never receives a Catalog retry permit', (t) => {
+  const f = fixture(t),
+    native = sample()
+  f.setSamples([{ ...native, request: { ...native.request, routeType: 'native-signed' } }])
+  f.controller.tick({ ...f.status, catalogOnly: false })
   assert.equal(f.arms(), 0)
 })
 

@@ -34,7 +34,7 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
     summary += `｜${recoveryReasonLabel(recovery.reason)}`
   if (measurement.startup) {
     const startup = measurement.startup
-    summary += `\n起播前測試：${startup.state === 'complete' && startup.reason === 'qualified-early' ? '已測試並選好起播路線' : startupLabel(startup.state, startup.reason)}`
+    summary += `\n起播前測試：${startup.state === 'complete' && startup.reason === 'qualified-early' ? '已測試並選好起播路線' : startupLabel(startup.state, startup.reason, startup.result)}`
     if (startup.elapsedMs != null && Number.isFinite(startup.elapsedMs))
       summary += `｜等待 ${Math.max(0, Math.round(startup.elapsedMs))} ms`
     if (startup.state === 'complete')
@@ -42,6 +42,17 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
   }
   if (measurement.range)
     summary += `\n健康探測：${measurement.range.mode === 'middle' ? '中段' : '首段'}｜${measurement.range.sizeKnown ? '大小已驗證' : '大小未知'}（不代表未快取）`
+  if (monitor.stall)
+    summary += `
+停滯段：${monitor.stall.id}｜${plain(monitor.stall.phase, { stalled: '等待進度', confirming: '確認短暫前進', settling: '確認持續健康' })}｜備援${monitor.stall.fallbackAvailable ? '尚可提交' : '已提交'}｜重載期限剩餘 ${Math.max(0, Math.ceil((monitor.stall.reloadAt - now) / 1000))} 秒`
+  if (recovery.remainingReloads !== undefined)
+    summary += `
+重載剩餘額度：${recovery.remainingReloads}｜${plain(recovery.nextAction, { 'await-play': '等待播放命令結果', 'verify-restore': '核對還原結果', 'await-core': '等待核心就緒', 'await-reload-deadline': '等待升級期限', none: '沒有待處理動作' })}`
+  if (recovery.deadlineAt !== undefined)
+    summary += `｜本階段剩餘 ${Math.max(0, Math.ceil((recovery.deadlineAt - now) / 1000))} 秒`
+  if (model.routes.selection?.phase === 'pending')
+    summary += `
+表示選擇：待確認（${model.routes.selection.sampleCount}／2 筆成功影片傳輸），等待目前選擇的下一筆成功`
   const hook = model.interception
   const retry = model.earlyRetry
   if (retry)

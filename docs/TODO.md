@@ -8,7 +8,7 @@
 
 ## 起播 CDN 多次切換逐步調查
 
-依使用者 2026-11-02 要求逐步討論起播流程，主線／備援、起播預測速、實際下載／換站及恢復／重載／還原的機制與疑點集中保存於 [v2.2.5 調查紀錄](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#已保存疑點)；恢復觸發見 [第四步](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#第四步-恢復與重載)，重載後的位置／倍率／播放與成功確認見 [第五步](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#第五步-位置倍率還原與成功確認)，後續沿用、傳輸學習、健康探索及再次停滯見 [第六步](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#第六步-恢復後的沿用學習與再次介入)，換片／切畫質的導覽、內容與表示失效邊界見 [第七步](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#第七步-換片與切畫質的失效邊界)。調查已進入 [條件判定與離線反例](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#判定收斂與離線反例)，尚未確認使用者現場根因；產品修復尚未開始。
+依使用者 2026-11-02 要求逐步討論起播流程，主線／備援、起播預測速、實際下載／換站及恢復／重載／還原的機制與疑點集中保存於 [v2.2.5 調查紀錄](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#已保存疑點)；恢復觸發見 [第四步](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#第四步-恢復與重載)，重載後的位置／倍率／播放與成功確認見 [第五步](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#第五步-位置倍率還原與成功確認)，後續沿用、傳輸學習、健康探索及再次停滯見 [第六步](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#第六步-恢復後的沿用學習與再次介入)，換片／切畫質的導覽、內容與表示失效邊界見 [第七步](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#第七步-換片與切畫質的失效邊界)。調查已進入 [條件判定與離線反例](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#判定收斂與離線反例)，尚未確認使用者現場根因；v2.2.6 修復進行中；原調查與六案觀察保持原件，完成結論以新版報告銜接。
 
 ## 文件與狀態核對
 

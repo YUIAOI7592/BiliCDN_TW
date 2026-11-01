@@ -100,7 +100,7 @@ export function renderOverview(
     startup.textContent =
       '起播：' +
       (start
-        ? startupLabel(start.state, start.reason) +
+        ? startupLabel(start.state, start.reason, start.result) +
           (start.elapsedMs != null && Number.isFinite(start.elapsedMs)
             ? ' · ' + Math.round(start.elapsedMs) + ' ms'
             : '')

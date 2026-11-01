@@ -75,7 +75,7 @@ async function scenario(reject: boolean): Promise<Result> {
     generationActive: true,
     representation,
     demand: { kind: 'video', requiredMbps: 8, highDemand: false },
-    stableProgressSec: 25,
+    stableProgressTicks: 25,
     playableBufferSec: 40,
     visible: true,
     seeking: false,

@@ -105,6 +105,7 @@ export interface CurrentRouteCapacity {
   readonly routeType: RouteType
   readonly safeMbps: number | null
   readonly sampleStatus: 'available' | 'expired' | 'missing'
+  readonly evidenceOrigin?: 'current-transport' | 'current-probe' | 'historical-cache' | null
 }
 export interface RouteSnapshot {
   readonly selection?: {
@@ -159,7 +160,7 @@ export interface RouteCoordinatorPort {
   requestStarted(request: RequestContext): void
   observePlaybackRate(rate: number): void
   playbackRate(): number
-  firstMediaAt(): number
+  firstMediaAt(kind?: MediaKind): number
   pendingMediaCount(): number
   latestRequested(kind: MediaKind): RequestContext | null
   recoveryEligible(
