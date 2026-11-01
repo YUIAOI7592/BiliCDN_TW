@@ -146,14 +146,14 @@ v2.1.20 的 E／S／B／P／C 完整矩陣及當時門檻保存在 [重整前原
 | --- | --- |
 | `BASELINE.json` | 基準、來源／產物雜湊、環境、版本／singleton、原狀態及預定 ID；不含 URL／憑證／播放器物件 |
 | `CASES.json` | ID、層級、倍速、前提、開始／結束、有效性、五種結果、原因與證據指向 |
-| `TIMELINE.jsonl` | 連續有界事件摘要、游標／截斷／丟失狀態；寫出前去除網址、路徑、查詢、cookie、IP、物件 |
+| `TIMELINE.jsonl` | 需要事件時序的案例保存連續有界事件摘要、游標／截斷／丟失狀態；寫出前去除網址、路徑、查詢、cookie、IP、物件 |
 | `CLEANUP.json` | held／patterns、自有資源、方法所有權、設定復原、受控樣本匹配數 |
 | `CHECKPOINT.md` | 已完成 ID、問題、剩餘前提與下一個具體步驟；不把過期 tab/object ID 當續行入口 |
 | `RERUN.md` | 使用的工具能力、操作序列、預期值與清理步驟；需重新解析當前實例／請求身分 |
 | `REPORT.md` | 當次範圍完成門檻、五種結果對照、確認缺陷、條件式缺口與清理 |
 | `screenshots/` | 必要的可核對畫面；沒有畫面也不能用修改過的媒體 getter 冒充現場 |
 
-新案例的必要欄位：`id, level, version, bodySha256, rate, preconditions, validity, verdict, reason, expected, actual, evidence, cleanup`；另保存起訖、事件完整性及核心／條件式分類。verdict 使用上述五種結果；舊原件中的 VALID＋PASS／FAIL、INVALID＋null 保留原格式，不回寫遷移。時限案例另寫實際 T0、第一次合資格 tick、備援／reload／終止次數與時間。報告不只保存最後狀態，也保存因果順序。
+新案例的必要欄位：`id, level, version, bodySha256, rate, preconditions, validity, verdict, reason, expected, actual, evidence, cleanup`；另保存起訖、案例所需證據的完整性及核心／條件式分類。verdict 使用上述五種結果；舊原件中的 VALID＋PASS／FAIL、INVALID＋null 保留原格式，不回寫遷移。時限案例另寫實際 T0、第一次合資格 tick、備援／reload／終止次數與時間。報告不只保存最後狀態，也保存因果順序。
 
 同一內容改寫後重新連線時，先讀 CHECKPOINT 並重新核對安裝本體，不能復用舊 singleton handle。持續觀察的缺口要明記；不能把兩個分開窗口拼成一個完整時限。
 

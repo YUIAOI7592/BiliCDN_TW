@@ -950,3 +950,36 @@ v2.2.0 五份封裝原件已登記於文件及封存保護清單；正式 Releas
 全面核對方法統一追加至 DEVELOPMENT，區分現行規則、歷史原件、第三方資料及外部採樣；原生 totalVideoFrames 的進度判定、合法 Native 選路及原生 API 對照維持。此次不修改正式程式、測試、版本、Release、安全產物或既有忽略目錄內的 Markdown，不恢復瀏覽器窗口；歷史正文與三份日誌完整既有內容保留。最終檢查及保護核對結果於本節後續追加。
 
 結案檢查：以不區分副檔名大小寫的實體清單再次核對，仍為 5,501 份可讀 Markdown；只變更五份公開文件，5,253 份忽略檔與 227 份受保護歷史文件逐檔 SHA-256 不變，三份日誌完整舊正文前綴保持，80 個發行建置輸入雜湊及非文件範圍不變。docs:check 通過 248 Markdown／2,771 本機與儲存庫連結；7 個不可變舊斷鏈、434 個歷史原址限制、18 個私有證據引用及 514 個外部未連線引用保持原檢查限制，全文可讀不等於已驗證其引用或原始證據。archive:check 通過 439 個搬移項目、3 份追加日誌、109 份未變更檔及 69 份 checksum／318 列，沒有搬移或 local 模式。git diff --check 通過；結案文字追加後再執行這三項檢查，不宣稱新的產品／瀏覽器或安全驗證。
+
+## 2026-11-01：現行指南完整逐段閱讀與撤除規則確認
+
+使用者明確要求建立目標並完整讀取 AGENTS 與現行指南。本次基準為 f8801d922194768dd591cce8a8eef81e16c0f8a8，依文件清單完整展開十份 guide、五份導覽及狀態／驗證／變更各一份，共十八份文件、2,702 行、336,099 bytes。長文按完整連續行範圍分為 57 段，所有段落均實際回傳並閱讀，沒有截斷或缺頁；逐檔原始 SHA-256、首末行及分段覆蓋記錄留在 `.work/doc-state-audit/full-read-ledger.json`，以下行數屬修改前完整讀取基準。
+
+| 文件 | 完整讀取範圍 |
+| --- | --- |
+| AGENTS.md | 1–99 |
+| README.md | 1–163 |
+| SECURITY.md | 1–138 |
+| docs/ARCHITECTURE.md | 1–354 |
+| docs/DEVELOPMENT.md | 1–376 |
+| docs/IAB_TESTING.md | 1–175 |
+| docs/INDEX.md | 1–54 |
+| docs/PROJECT_CONTEXT.md | 1–63 |
+| docs/HISTORY.md | 1–343 |
+| docs/CHANGELOG.md | 1–418 |
+| docs/TEST_REPORT.md | 1–147 |
+| docs/TODO.md | 1–78 |
+| docs/THIRD_PARTY_NOTICES.md | 1–19 |
+| docs/UPSTREAM_MANIFEST.md | 1–40 |
+| scripts/evaluation/README.md | 1–35 |
+| tests-v2/MIGRATION.md | 1–184 |
+| archive/README.md | 1–9 |
+| archive/retired/README.md | 1–7 |
+
+逐段確認 AGENTS 沒有診斷事件消費者、分頁原線對照模式或掉幀用途的舊不變量；產品指南只描述三頁與當前狀態快照。舊錨點、版本變更及遷移表已有撤除／版本界線。原生 totalVideoFrames 用於停滯與恢復的真實進度，合法 Native 與原生 API 對照仍屬保留能力；外部掉幀採樣不是產品功能。來源另核對 ControlCommandPort、ControlReadModelPort、ControlPage、RuntimeController、PlayerMediaReader 及純進度比較；92 個正式來源／宣告檔沒有撤銷功能識別碼或掉幀計數讀取。
+
+本輪修正三處措辭：SECURITY「每窗保存事件完整性」改為依案例所需觀察與時序證據，並明稱外部測試紀錄；IAB 的 TIMELINE 與必要欄位同步限定案例所需證據，既有故障攔截與清理要求不變。DEVELOPMENT 的 UP141-DIAG 回歸描述對照現行案例後，改明列總覽吞吐／等待／探測／播放入口狀態摘要；保留測試及其既有名稱，不將識別字誤當診斷管線。另釐清歷史工具不構成現行入口，並將全文閱讀方法整合於既有核對章節。
+
+本次只修正文義與追加本紀錄，不改產品、測試、版本、封裝、歷史判定或已停止窗口；未執行新的 Node 功能測試、瀏覽器或安全掃描。修改段落另逐字核對差異，檢查與交付結果於本節後續追加。
+
+結案核對：十八份文件的首末行、57 段連續覆蓋、閱讀基準及修改後雜湊均已保存；三份日誌完整舊正文前綴、80 個發行建置輸入雜湊及所有非文件範圍保持。docs:check 通過 248 Markdown／2,771 本機與儲存庫連結；7 個不可變舊斷鏈、434 個歷史原址限制、18 個私有證據引用及 514 個外部未連線引用照實保留。archive:check 通過 439 個搬移項目、3 份追加日誌、109 份未變更檔與 69 份 checksum／318 列，沒有私有搬移或 local 模式；git diff --check 通過。結案文字追加後重查這三項，交付僅提交推送 main，不升版、不發布。
