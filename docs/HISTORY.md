@@ -50,7 +50,7 @@
 | 適用版本 | 原始紀錄 |
 | --- | --- |
 | 未單列／跨版 | [新增 B 站 CDN 節點的驗證方案（2026-09-25）](../archive/retired/docs/CDN_CANDIDATE_TEST_PLAN_2026-09-25.md)、[B 站 CDN 全量初篩與比較測試報告](../archive/retired/docs/CDN_NODE_FULL_SCREENING_2026-09-25.md)、[B 站 CDN 優化公開專案調查（2026-09-25）](../archive/retired/docs/CDN_OPEN_SOURCE_SURVEY_2026-09-25.md)、[內建瀏覽器 Range 與實際播放對照（2026-09-25）](../archive/retired/docs/CDN_RANGE_PLAYBACK_EXPERIMENT_2026-09-25.md)、[B 站 CDN 節點測試結果（2026-09-25）](../archive/retired/docs/CDN_TEST_RESULTS_2026-09-25.md)、[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)、[歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[測試工具驗證紀錄](TEST_TOOLING_REPORT.md) |
-| v2.2.3 | [最新版完整驗證](TEST_REPORT.md) |
+| v2.2.3 | [最新版完整驗證](TEST_REPORT.md)、[R1 基本安裝驗收](TEST_REPORT.md#v223-r1-安裝驗收2026-11-01) |
 | v2.2.2 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v222-完整正文保存2026-11-01)、[發布後整合盤點](../archive/retired/docs/POST_DIAGNOSTICS_INTEGRATION_v2.2.2_2026-11-01.md) |
 | v2.2.1 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v221-完整正文保存2026-11-01)、[發行快照](../archive/retired/releases/Release/v2.2.1/TEST_REPORT_v2.2.1.md)、[發行變更](../archive/retired/releases/Release/v2.2.1/CHANGELOG_v2.2.1.md) |
 | v2.2.0 | [當版完整驗證及追加更正](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)、[發行快照](../archive/retired/releases/Release/v2.2.0/TEST_REPORT_v2.2.0.md)、[發行變更](../archive/retired/releases/Release/v2.2.0/CHANGELOG_v2.2.0.md) |
