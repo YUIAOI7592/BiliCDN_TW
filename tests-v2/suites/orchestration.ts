@@ -1,4 +1,3 @@
-import { extendFixture } from '../support/fixture-context.ts'
 import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import '../regressions/functional-races/runtime.ts'
 import '../regressions/functional-races/content.ts'
@@ -32,12 +31,8 @@ import { FakeClock } from '../support/clock.ts'
 import { testScope } from '../support/scope.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
-async function createOrchestrationScenario(t: TestContext) {
-  const scope = testScope(t)
-  const clock = scope.own(new FakeClock()),
-    storage = new FakeStorage()
-  const settings = scope.own(new CatalogSettingsStore(storage, clock.now)),
-    session = new SessionStore()
+
+function createPlaybackResourcesBlock1() {
   const calls: string[] = []
   const video: VideoSnapshot = {
     available: true,
@@ -84,6 +79,29 @@ async function createOrchestrationScenario(t: TestContext) {
       calls.push('monitor.reset')
     },
   } satisfies ConstructorParameters<typeof RuntimeController>[3]
+  return {
+    calls,
+    video,
+    get routeListener() {
+      return routeListener
+    },
+    set routeListener(value: typeof routeListener) {
+      routeListener = value
+    },
+    routeControl,
+    monitor,
+  }
+}
+
+async function createNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecoveryWork1Context1(
+  t: TestContext,
+) {
+  const scope = testScope(t)
+  const clock = scope.own(new FakeClock())
+  const storage = new FakeStorage()
+  const settings = scope.own(new CatalogSettingsStore(storage, clock.now))
+  const block1 = createPlaybackResourcesBlock1()
+  const { routeControl, video, calls, monitor } = block1
   const runtime = scope.own(
     new RuntimeController(
       settings,
@@ -119,94 +137,124 @@ async function createOrchestrationScenario(t: TestContext) {
   runtime.install()
   runtime.install()
   calls.length = 0
-  return extendFixture({}, {
-    scope,
-    clock,
-    storage,
-    settings,
-    session,
+  await settings.update({ considerNativeSources: true })
+  return {
     calls,
+    clock,
     get routeListener() {
-      return routeListener
+      return block1.routeListener
     },
-    set routeListener(next: typeof routeListener) {
-      routeListener = next
+    set routeListener(value: typeof block1.routeListener) {
+      block1.routeListener = value
     },
-    monitor,
     runtime,
-  } as const)
-}
-
-async function createNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecoveryWork1Context1(
-  t: TestContext,
-) {
-  const base = await createOrchestrationScenario(t)
-  await base.settings.update({ considerNativeSources: true })
-  return extendFixture(base, {} as const)
+    settings,
+    storage,
+  }
 }
 
 async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t: TestContext) {
-  const base =
-    await createNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecoveryWork1Context1(t)
-  void base.calls.join(',')
-  base.calls.length = 0
-  base.storage.remote('bilicdn.v2.settings', {
-    ...base.settings.get(),
+  const scope = testScope(t)
+  const clock = scope.own(new FakeClock())
+  const storage = new FakeStorage()
+  const settings = scope.own(new CatalogSettingsStore(storage, clock.now))
+  const session = new SessionStore()
+  const block1 = createPlaybackResourcesBlock1()
+  const { routeControl, video, calls, monitor } = block1
+  const runtime = scope.own(
+    new RuntimeController(
+      settings,
+      routeControl,
+      {
+        snapshot: () => video,
+        reset: () => {
+          calls.push('player.reset')
+        },
+      },
+      monitor,
+      {
+        reset: () => {
+          calls.push('measurement.reset')
+        },
+      },
+      {
+        reset: () => {
+          calls.push('recovery.reset')
+        },
+        armRouteFailure: () => {
+          calls.push('recovery.arm')
+        },
+      },
+      {
+        setEnabled: () => {
+          calls.push('visibility')
+        },
+      },
+      { subscribeEpoch: () => () => undefined },
+    ),
+  )
+  calls.length = 0
+  storage.remote('bilicdn.v2.settings', {
+    ...settings.get(),
     considerNativeSources: false,
-    updatedAt: base.settings.get().updatedAt + 1,
+    updatedAt: settings.get().updatedAt + 1,
   })
-  void base.calls.join(',')
-  base.calls.length = 0
-  await base.settings.update({ blockHttpDns: false })
-  void base.calls.join(',')
-  base.runtime.reset()
-  void base.calls.slice(1).join(',')
-
-  base.calls.length = 0
-  void base.calls.join(',')
-  base.calls.length = 0
-  void base.calls.join(',')
-  base.runtime.dispose()
-  base.calls.length = 0
-  const restrictions = base.scope.own(new RestrictionStore(base.storage, base.clock.now)),
-    evidence = base.scope.own(new EvidenceStore(base.storage, base.clock.now))
-  const meta = new MeasurementMetaStore(base.storage, base.clock.now)
+  calls.length = 0
+  runtime.reset()
+  calls.length = 0
+  calls.length = 0
+  runtime.dispose()
+  calls.length = 0
+  const restrictions = scope.own(new RestrictionStore(storage, clock.now))
+  const evidence = scope.own(new EvidenceStore(storage, clock.now))
+  const meta = new MeasurementMetaStore(storage, clock.now)
   const commands = new ControlCommands(
-    base.settings,
+    settings,
     {
       clear: async () => {
-        base.calls.push('restrictions.clear')
+        calls.push('restrictions.clear')
         await restrictions.clear()
       },
     },
     {
       clear: async () => {
-        base.calls.push('evidence.clear')
+        calls.push('evidence.clear')
         await evidence.clear()
       },
     },
     {
       clear: () => {
-        base.calls.push('meta.clear')
+        calls.push('meta.clear')
         meta.clear()
       },
     },
     {
       invalidateForUserSetting: () => {
-        base.calls.push('routes.invalidate')
+        calls.push('routes.invalidate')
       },
     },
   )
-  void base.calls.join(',')
-  base.calls.length = 0
+  calls.length = 0
   await restrictions.add({
     host: TRUSTED_CATALOG[0],
     kind: 'all',
     type: 'black',
     reason: 'user',
-    expireAt: base.clock.now() + 60000,
+    expireAt: clock.now() + 60000,
   })
-  return extendFixture(base, { restrictions, evidence, meta, commands } as const)
+  return {
+    calls,
+    clock,
+    commands,
+    evidence,
+    meta,
+    monitor,
+    restrictions,
+    scope,
+    session,
+    settings,
+    storage,
+  }
 }
 
 async function checkBlacklistCommandPersistsBeforeRouteInvalidation2(
