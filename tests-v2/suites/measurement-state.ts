@@ -1,4 +1,3 @@
-import { extendFixture } from '../support/fixture-context.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
@@ -36,10 +35,15 @@ async function createMeasurementStateScenario(t: TestContext) {
       return await task()
     }
   }
-  const storage = new MeasurementStorage(),
-    clock = scope.own(new FakeClock())
+  const storage = new MeasurementStorage()
+  const clock = scope.own(new FakeClock())
   const meta = new MeasurementMetaStore(storage, clock.now)
-  return extendFixture({}, { scope, storage, clock, meta } as const)
+  return {
+    clock,
+    meta,
+    scope,
+    storage,
+  }
 }
 
 async function checkMeasurementMetadataDefaultsToFirstCatalogCursor1(

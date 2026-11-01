@@ -16,150 +16,95 @@ import {
 import { backupOutputPlan, catalogOutputPlan } from '../src-v2/domain/player-output-plan.ts'
 import { testScope } from './support/scope.ts'
 
-// Each call creates fresh resources and replays only this fixture's prerequisite transitions.
-// Earlier expectations run in their own cases; no mutable state crosses a test boundary.
-async function fixture(
-  t: TestContext,
-  scenario: number,
-  _parameter = 0,
-): Promise<() => Promise<void>> {
+async function checkExplicitUrlBases(t: TestContext): Promise<void> {
   testScope(t)
-
-  if (scenario === 0)
-    return async () => {
-      assert.strictEqual(typeof location, 'undefined', 'domain suite has no browser location')
-      assert.strictEqual(
-        isPlayurlApi('https://api.bilibili.com/x/player/wbi/playurl'),
-        true,
-        'absolute playurl classification is independent of browser globals',
-      )
-      assert.strictEqual(
-        isHttpDnsUrl('https://httpdns.bilivideo.com/resolve'),
-        true,
-        'absolute HTTPDNS classification is independent of browser globals',
-      )
-      assert.strictEqual(
-        isPlayurlApi('/x/player/wbi/playurl', 'https://api.bilibili.com/'),
-        true,
-        'relative playurl uses explicit base',
-      )
-      assert.strictEqual(
-        isPlayurlApi('/x/player/wbi/playurl', 'https://www.bilibili.com/'),
-        false,
-        'base host does not grant API authority',
-      )
-      assert.strictEqual(
-        isHttpDnsUrl('/resolve', 'https://httpdns.bilivideo.com/'),
-        true,
-        'relative HTTPDNS uses explicit base',
-      )
-      assert.strictEqual(
-        isHttpDnsUrl('/resolve'),
-        false,
-        'relative URL without base is not admitted',
-      )
-      const primary = TRUSTED_CATALOG[0]!
-      TRUSTED_CATALOG[1]!
-      const unavailable = [...DEFAULT_UNAVAILABLE_HOSTS][0]!
-      const restrictions = catalogRestrictions({ [primary]: false, [unavailable]: true })
-      assert.strictEqual(
-        restrictions.disabledCatalogHosts.has(primary),
-        true,
-        'explicit Catalog disable enters the restriction snapshot',
-      )
-      assert.strictEqual(
-        restrictions.defaultUnavailableHosts.has(unavailable),
-        false,
-        'explicit Catalog enable removes only the default restriction',
-      )
-      assert.strictEqual(
-        catalogCandidates('audio', new Set([primary])).every(
-          (row) => row.kind === 'audio' && row.host !== primary,
-        ),
-        true,
-        'candidate construction preserves media kind and exclusions',
-      )
-    }
-  void typeof location
-  void isPlayurlApi('https://api.bilibili.com/x/player/wbi/playurl')
-  void isHttpDnsUrl('https://httpdns.bilivideo.com/resolve')
-  void isPlayurlApi('/x/player/wbi/playurl', 'https://api.bilibili.com/')
-  void isPlayurlApi('/x/player/wbi/playurl', 'https://www.bilibili.com/')
-  void isHttpDnsUrl('/resolve', 'https://httpdns.bilivideo.com/')
-  void isHttpDnsUrl('/resolve')
-  const primary = TRUSTED_CATALOG[0]!,
-    next = TRUSTED_CATALOG[1]!,
-    unavailable = [...DEFAULT_UNAVAILABLE_HOSTS][0]!
-  const restrictions = catalogRestrictions({ [primary]: false, [unavailable]: true })
-  void restrictions.disabledCatalogHosts.has(primary)
-  void restrictions.defaultUnavailableHosts.has(unavailable)
-  void catalogCandidates('audio', new Set([primary])).every(
-    (row) => row.kind === 'audio' && row.host !== primary,
+  assert.strictEqual(typeof location, 'undefined', 'domain suite has no browser location')
+  assert.strictEqual(
+    isPlayurlApi('https://api.bilibili.com/x/player/wbi/playurl'),
+    true,
+    'absolute playurl classification is independent of browser globals',
   )
+  assert.strictEqual(
+    isHttpDnsUrl('https://httpdns.bilivideo.com/resolve'),
+    true,
+    'absolute HTTPDNS classification is independent of browser globals',
+  )
+  assert.strictEqual(
+    isPlayurlApi('/x/player/wbi/playurl', 'https://api.bilibili.com/'),
+    true,
+    'relative playurl uses explicit base',
+  )
+  assert.strictEqual(
+    isPlayurlApi('/x/player/wbi/playurl', 'https://www.bilibili.com/'),
+    false,
+    'base host does not grant API authority',
+  )
+  assert.strictEqual(
+    isHttpDnsUrl('/resolve', 'https://httpdns.bilivideo.com/'),
+    true,
+    'relative HTTPDNS uses explicit base',
+  )
+  assert.strictEqual(isHttpDnsUrl('/resolve'), false, 'relative URL without base is not admitted')
+  const primary = TRUSTED_CATALOG[0]!
+  TRUSTED_CATALOG[1]!
+  const unavailable = [...DEFAULT_UNAVAILABLE_HOSTS][0]!
+  const restrictions = catalogRestrictions({ [primary]: false, [unavailable]: true })
+  assert.strictEqual(
+    restrictions.disabledCatalogHosts.has(primary),
+    true,
+    'explicit Catalog disable enters the restriction snapshot',
+  )
+  assert.strictEqual(
+    restrictions.defaultUnavailableHosts.has(unavailable),
+    false,
+    'explicit Catalog enable removes only the default restriction',
+  )
+  assert.strictEqual(
+    catalogCandidates('audio', new Set([primary])).every(
+      (row) => row.kind === 'audio' && row.host !== primary,
+    ),
+    true,
+    'candidate construction preserves media kind and exclusions',
+  )
+}
+
+async function checkRestrictionPrecedence(t: TestContext): Promise<void> {
+  testScope(t)
+  const primary = TRUSTED_CATALOG[0]!,
+    next = TRUSTED_CATALOG[1]!
   const restrictionInput = {
     blackHosts: new Set([primary]),
     deadHosts: new Set([primary]),
     overrides: { [primary]: false },
     circuitUntil: 101,
   }
-  if (scenario === 1)
-    return async () => {
-      assert.strictEqual(
-        hardRestriction(primary, restrictionInput, 100),
-        'black',
-        'blacklist takes priority over other restrictions',
-      )
-      assert.strictEqual(
-        hardRestriction(primary, { ...restrictionInput, blackHosts: new Set() }, 100),
-        'dead',
-        'dead restriction precedes Catalog settings',
-      )
-      assert.strictEqual(
-        hardRestriction(
-          primary,
-          { ...restrictionInput, blackHosts: new Set(), deadHosts: new Set() },
-          100,
-        ),
-        'catalog-disabled',
-        'explicit Catalog restriction precedes circuit',
-      )
-      assert.strictEqual(
-        hardRestriction(
-          primary,
-          { blackHosts: new Set(), deadHosts: new Set(), overrides: {}, circuitUntil: 100 },
-          100,
-        ),
-        null,
-        'expired circuit does not block a legal route',
-      )
-      const candidates = [
-        { index: 0, host: primary, allowed: false },
-        { index: 1, host: next, allowed: true },
-        { index: 2, host: primary, allowed: true },
-        { index: 3, host: next, allowed: true },
-      ]
-      assert.strictEqual(
-        backupOutputPlan(primary, candidates, false).join(','),
-        '1,2,3',
-        'backup policy prioritizes distinct hosts before same-host entries',
-      )
-      assert.strictEqual(
-        backupOutputPlan(primary, candidates, true).length,
-        0,
-        'host-locked stream has no generated backup candidates',
-      )
-    }
-  void hardRestriction(primary, restrictionInput, 100)
-  void hardRestriction(primary, { ...restrictionInput, blackHosts: new Set() }, 100)
-  void hardRestriction(
-    primary,
-    { ...restrictionInput, blackHosts: new Set(), deadHosts: new Set() },
-    100,
+  assert.strictEqual(
+    hardRestriction(primary, restrictionInput, 100),
+    'black',
+    'blacklist takes priority over other restrictions',
   )
-  void hardRestriction(
-    primary,
-    { blackHosts: new Set(), deadHosts: new Set(), overrides: {}, circuitUntil: 100 },
-    100,
+  assert.strictEqual(
+    hardRestriction(primary, { ...restrictionInput, blackHosts: new Set() }, 100),
+    'dead',
+    'dead restriction precedes Catalog settings',
+  )
+  assert.strictEqual(
+    hardRestriction(
+      primary,
+      { ...restrictionInput, blackHosts: new Set(), deadHosts: new Set() },
+      100,
+    ),
+    'catalog-disabled',
+    'explicit Catalog restriction precedes circuit',
+  )
+  assert.strictEqual(
+    hardRestriction(
+      primary,
+      { blackHosts: new Set(), deadHosts: new Set(), overrides: {}, circuitUntil: 100 },
+      100,
+    ),
+    null,
+    'expired circuit does not block a legal route',
   )
   const candidates = [
     { index: 0, host: primary, allowed: false },
@@ -167,48 +112,45 @@ async function fixture(
     { index: 2, host: primary, allowed: true },
     { index: 3, host: next, allowed: true },
   ]
-  void backupOutputPlan(primary, candidates, false).join(',')
-  void backupOutputPlan(primary, candidates, true).length
+  assert.strictEqual(
+    backupOutputPlan(primary, candidates, false).join(','),
+    '1,2,3',
+    'backup policy prioritizes distinct hosts before same-host entries',
+  )
+  assert.strictEqual(
+    backupOutputPlan(primary, candidates, true).length,
+    0,
+    'host-locked stream has no generated backup candidates',
+  )
+}
+
+async function checkCatalogBackupOrder(t: TestContext): Promise<void> {
+  testScope(t)
+  const primary = TRUSTED_CATALOG[0]!,
+    next = TRUSTED_CATALOG[1]!
   const catalog = catalogOutputPlan(
     primary,
     ['not-catalog.example', next, next],
     new Set([primary]),
   )
-  if (scenario === 2)
-    return async () => {
-      assert.strictEqual(
-        catalog[0],
-        next,
-        'Catalog backup preferences retain stable first occurrence',
-      )
-      assert.strictEqual(
-        catalog.length <= 5 && catalog.every((host) => host !== primary && isCatalogHost(host)),
-        true,
-        'Catalog output plan is bounded and only returns built-in hosts',
-      )
-    }
-  void catalog[0]
-  void next
-  void (catalog.length <= 5 && catalog.every((host) => host !== primary && isCatalogHost(host)))
-  throw Error('Unknown fixture scenario')
+  assert.strictEqual(catalog[0], next, 'Catalog backup preferences retain stable first occurrence')
+  assert.strictEqual(
+    catalog.length <= 5 && catalog.every((host) => host !== primary && isCatalogHost(host)),
+    true,
+    'Catalog output plan is bounded and only returns built-in hosts',
+  )
 }
 
 test('domain suite has no browser location [1]', { timeout: 5000 }, async (t) => {
-  await (
-    await fixture(t, 0)
-  )()
+  await checkExplicitUrlBases(t)
 })
 test('blacklist takes priority over other restrictions [2]', { timeout: 5000 }, async (t) => {
-  await (
-    await fixture(t, 1)
-  )()
+  await checkRestrictionPrecedence(t)
 })
 test(
   'Catalog backup preferences retain stable first occurrence [3]',
   { timeout: 5000 },
   async (t) => {
-    await (
-      await fixture(t, 2)
-    )()
+    await checkCatalogBackupOrder(t)
   },
 )

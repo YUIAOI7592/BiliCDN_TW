@@ -1,4 +1,3 @@
-import { extendFixture } from '../support/fixture-context.ts'
 import { test } from 'node:test'
 import '../regressions/functional-races/content-domain.ts'
 import assert from 'node:assert/strict'
@@ -33,7 +32,11 @@ async function createDomainScenario(_t: TestContext) {
     },
     now,
   )
-  return extendFixture({}, { now, clock, evidence } as const)
+  return {
+    clock,
+    evidence,
+    now,
+  }
 }
 
 async function checkOneSampleUses70Percent1(t: TestContext): Promise<void> {

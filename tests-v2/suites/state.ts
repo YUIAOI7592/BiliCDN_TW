@@ -1,4 +1,3 @@
-import { extendFixture } from '../support/fixture-context.ts'
 import '../regressions/v220-settings.ts'
 import '../regressions/v220-settings-policy.ts'
 import { CatalogSettingsStore } from '../support/catalog-settings.ts'
@@ -22,114 +21,20 @@ import { testScope } from '../support/scope.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
 
-async function createVaultAndgenerationAndepochContext1(_t: TestContext) {
-  const vault = new SignedRouteVault(),
-    generation = generationId(1),
-    epoch = epochId(1)
-  vault.reset(generation, epoch)
-  const rep = vault.register({
-    generation,
-    epoch,
-    kind: 'video',
-    key: '80:av1',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 4_000_000,
-    urls: ['https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret'],
-    source: 'trusted-api',
-  })
-  return extendFixture({}, { vault, generation, epoch, rep } as const)
-}
-
-async function createScopeContext2(t: TestContext) {
+async function createRoutingResources(t: TestContext) {
   const scope = testScope(t)
   const now = 2_000_000_000_000
   const clock = { now: () => now }
-  const vault = new SignedRouteVault(),
-    generation = generationId(1),
-    epoch = epochId(1)
-  vault.reset(generation, epoch)
-  const rep = vault.register({
-    generation,
-    epoch,
-    kind: 'video',
-    key: '80:av1',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 4_000_000,
-    urls: ['https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret'],
-    source: 'trusted-api',
-  })
-  void vault.register({
-    generation,
-    epoch,
-    kind: 'video',
-    key: '80:av1',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 4_000_000,
-    urls: ['https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret'],
-    source: 'player-mpd',
-  })
   const hintedUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/hint.m4s?token=hint'
   const trustedUrl = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/api.m4s?token=api'
   const lateHintUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/late.m4s?token=late'
-  const invalidHintVault = new SignedRouteVault()
-  invalidHintVault.reset(generation, epoch)
-  const invalidHintHost = 'upos-hz-mirrorakam.akamaized.net'
-  const invalidHintRep = invalidHintVault.register({
-    generation,
-    epoch,
-    kind: 'video',
-    key: '80:av1',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 4_000_000,
-    urls: [hintedUrl],
-    source: 'page-hint',
-  })
-  invalidHintVault.invalidate(invalidHintRep!, invalidHintHost)
-  const sameHostTrustedUrl = `https://${invalidHintHost}/upgcxcode/a/b/trusted.m4s?token=trusted`
-  const invalidHintTrustedRep = invalidHintVault.register({
-    generation,
-    epoch,
-    kind: 'video',
-    key: '80:av1',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 4_000_000,
-    urls: [sameHostTrustedUrl],
-    source: 'trusted-api',
-  })
-  return extendFixture({}, {
-    scope,
-    now,
-    clock,
-    vault,
-    generation,
-    epoch,
-    rep,
-    hintedUrl,
-    trustedUrl,
-    lateHintUrl,
-    invalidHintVault,
-    invalidHintHost,
-    invalidHintTrustedRep,
-  } as const)
-}
-
-async function createLateLowerTrustPageHintDoesNotRewriteOrMergeIntoContext3(t: TestContext) {
-  const base = await createScopeContext2(t)
   const authoritySession = new SessionStore()
   authoritySession.beginGeneration(false)
-  const authorityState = authoritySession.beginEpoch(),
-    authorityStorage = new FakeStorage()
-  const authoritySettings = base.scope.own(new SettingsStore(authorityStorage, () => base.now))
-  await authoritySettings.update({ considerNativeSources: true })
-  const authorityRestrictions = base.scope.own(
-    new RestrictionStore(authorityStorage, () => base.now),
-  )
-  const authorityEvidence = base.scope.own(new EvidenceStore(authorityStorage, () => base.now))
+  const authorityState = authoritySession.beginEpoch()
+  const authorityStorage = new FakeStorage()
+  const authoritySettings = scope.own(new SettingsStore(authorityStorage, () => now))
+  const authorityRestrictions = scope.own(new RestrictionStore(authorityStorage, () => now))
+  const authorityEvidence = scope.own(new EvidenceStore(authorityStorage, () => now))
   const plannedVault = new SignedRouteVault()
   plannedVault.reset(authorityState.generation, authorityState.epoch)
   const plannedRep = plannedVault.register({
@@ -140,11 +45,11 @@ async function createLateLowerTrustPageHintDoesNotRewriteOrMergeIntoContext3(t: 
     height: 1080,
     codec: 'av1',
     bandwidth: 4_000_000,
-    urls: [base.hintedUrl],
+    urls: [hintedUrl],
     source: 'page-hint',
   })
   const plannedRoutes = new RouteCoordinator(
-    base.clock,
+    clock,
     authoritySession,
     authoritySettings,
     authorityRestrictions,
@@ -153,11 +58,115 @@ async function createLateLowerTrustPageHintDoesNotRewriteOrMergeIntoContext3(t: 
     createRuntimeIds(),
   )
   const plannedDemand = { kind: 'video' as const, requiredMbps: 8, highDemand: false }
+  return {
+    now,
+    hintedUrl,
+    trustedUrl,
+    lateHintUrl,
+    authoritySession,
+    authorityState,
+    authorityEvidence,
+    plannedVault,
+    plannedRep,
+    plannedRoutes,
+    plannedDemand,
+  }
+}
+
+async function createRouteStateResourcesGroup2(_t: TestContext) {
+  const vault = new SignedRouteVault()
+  const generation = generationId(1)
+  const epoch = epochId(1)
+  vault.reset(generation, epoch)
+  const rep = vault.register({
+    generation: generation,
+    epoch: epoch,
+    kind: 'video',
+    key: '80:av1',
+    height: 1080,
+    codec: 'av1',
+    bandwidth: 4_000_000,
+    urls: ['https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret'],
+    source: 'trusted-api',
+  })
+  return { vault, generation, epoch, rep }
+}
+
+async function createVaultAndgenerationAndepochContext1(_t: TestContext) {
+  const resources = await createRouteStateResourcesGroup2(_t)
+  const { epoch, generation, rep, vault } = resources
+
+  return {
+    epoch,
+    generation,
+    rep,
+    vault,
+  }
+}
+
+async function createScopeContext2(t: TestContext) {
+  const scope = testScope(t)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const generation = generationId(1)
+  const epoch = epochId(1)
+  const hintedUrl = 'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/hint.m4s?token=hint'
+  const trustedUrl = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/api.m4s?token=api'
+  const invalidHintVault = new SignedRouteVault()
+  invalidHintVault.reset(generation, epoch)
+  const invalidHintHost = 'upos-hz-mirrorakam.akamaized.net'
+  void invalidHintVault.register({
+    generation: generation,
+    epoch: epoch,
+    kind: 'video',
+    key: '80:av1',
+    height: 1080,
+    codec: 'av1',
+    bandwidth: 4_000_000,
+    urls: [hintedUrl],
+    source: 'page-hint',
+  })
+  const sameHostTrustedUrl = `https://${invalidHintHost}/upgcxcode/a/b/trusted.m4s?token=trusted`
+  const invalidHintTrustedRep = invalidHintVault.register({
+    generation: generation,
+    epoch: epoch,
+    kind: 'video',
+    key: '80:av1',
+    height: 1080,
+    codec: 'av1',
+    bandwidth: 4_000_000,
+    urls: [sameHostTrustedUrl],
+    source: 'trusted-api',
+  })
+  return {
+    clock,
+    hintedUrl,
+    invalidHintHost,
+    invalidHintTrustedRep,
+    invalidHintVault,
+    now,
+    scope,
+    trustedUrl,
+  }
+}
+
+async function createLateLowerTrustPageHintDoesNotRewriteOrMergeIntoContext3(t: TestContext) {
+  const resources = await createRoutingResources(t)
+  const {
+    plannedRep,
+    plannedRoutes,
+    plannedDemand,
+    hintedUrl,
+    authoritySession,
+    plannedVault,
+    trustedUrl,
+    lateHintUrl,
+    authorityEvidence,
+  } = resources
+
   void (plannedRep ? plannedRoutes.plan(plannedRep, plannedDemand, 'startup').host : null)
-  const staleStartup = plannedRoutes.startupOptions(base.hintedUrl)?.candidates[0] ?? null
-  const staleChallenge = plannedRep
-    ? plannedRoutes.challenge(plannedRep, plannedDemand, false)
-    : null
+  const staleStartup = plannedRoutes.startupOptions(hintedUrl)?.candidates[0] ?? null
+  void (plannedRep ? plannedRoutes.challenge(plannedRep, plannedDemand, false) : null)
   const plannedAdapter = new PlayurlAdapter(
     new PlayurlController(authoritySession, plannedVault, plannedRoutes),
   )
@@ -170,7 +179,7 @@ async function createLateLowerTrustPageHintDoesNotRewriteOrMergeIntoContext3(t: 
             height: 1080,
             codecs: 'av01',
             bandwidth: 4_000_000,
-            base_url: base.trustedUrl,
+            base_url: trustedUrl,
             backup_url: [] as string[],
           },
         ],
@@ -190,7 +199,7 @@ async function createLateLowerTrustPageHintDoesNotRewriteOrMergeIntoContext3(t: 
             height: 1080,
             codecs: 'av01',
             bandwidth: 4_000_000,
-            base_url: base.lateHintUrl,
+            base_url: lateHintUrl,
             backup_url: [] as string[],
           },
         ],
@@ -199,59 +208,180 @@ async function createLateLowerTrustPageHintDoesNotRewriteOrMergeIntoContext3(t: 
     },
   }
   plannedAdapter.transform(lateHintPayload, 'page-hint')
-  return extendFixture(base, {
-    authorityState,
+  return {
     authorityEvidence,
-    plannedRep,
+    lateHintPayload,
+    lateHintUrl,
     plannedRoutes,
     staleStartup,
-    staleChallenge,
-    lateHintPayload,
-  } as const)
+  }
 }
 
 async function createLateChallengerResultFromTheRetiredHintCannotCreateHealthEvidenceContext4(
   t: TestContext,
 ) {
-  const base = await createLateLowerTrustPageHintDoesNotRewriteOrMergeIntoContext3(t)
-  if (base.staleStartup) {
-    await base.plannedRoutes.recordStartupSuccess(base.staleStartup, 70 * 1024, 100, 10)
-    void base.authorityEvidence.get(base.staleStartup.host, 'video')
+  const resources = await createRoutingResources(t)
+  const {
+    plannedRep,
+    plannedRoutes,
+    plannedDemand,
+    hintedUrl,
+    authoritySession,
+    plannedVault,
+    trustedUrl,
+    lateHintUrl,
+    authorityEvidence,
+  } = resources
+
+  void (plannedRep ? plannedRoutes.plan(plannedRep, plannedDemand, 'startup').host : null)
+  void (plannedRoutes.startupOptions(hintedUrl)?.candidates[0] ?? null)
+  const staleChallenge = plannedRep
+    ? plannedRoutes.challenge(plannedRep, plannedDemand, false)
+    : null
+  const plannedAdapter = new PlayurlAdapter(
+    new PlayurlController(authoritySession, plannedVault, plannedRoutes),
+  )
+  const trustedPayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            height: 1080,
+            codecs: 'av01',
+            bandwidth: 4_000_000,
+            base_url: trustedUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
+      },
+    },
   }
-  return extendFixture(base, {} as const)
+  void plannedAdapter.transform(trustedPayload, 'trusted-api').accepted
+  void (plannedRep ? plannedVault.rootUrl(plannedRep) : null)
+  void (plannedRep ? plannedRoutes.plan(plannedRep, plannedDemand, 'startup').host : null)
+  const lateHintPayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            height: 1080,
+            codecs: 'av01',
+            bandwidth: 4_000_000,
+            base_url: lateHintUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  plannedAdapter.transform(lateHintPayload, 'page-hint')
+  return {
+    authorityEvidence,
+    plannedRoutes,
+    staleChallenge,
+  }
 }
 
 async function createRetiredPageHintTransportDoesNotPunishItsOldHostAfterContext5(t: TestContext) {
-  const base =
-    await createLateChallengerResultFromTheRetiredHintCannotCreateHealthEvidenceContext4(t)
-  if (base.staleChallenge) {
-    await base.plannedRoutes.recordChallenge(
-      base.staleChallenge,
-      70 * 1024,
-      100,
-      10,
-      'success',
-      null,
-    )
-    void base.authorityEvidence.get(base.staleChallenge.decision.host ?? '', 'video')
+  const resources = await createRoutingResources(t)
+  const {
+    plannedRep,
+    plannedRoutes,
+    plannedDemand,
+    hintedUrl,
+    authoritySession,
+    plannedVault,
+    trustedUrl,
+    lateHintUrl,
+    authorityEvidence,
+    authorityState,
+    now,
+  } = resources
+
+  void (plannedRep ? plannedRoutes.plan(plannedRep, plannedDemand, 'startup').host : null)
+  void (plannedRoutes.startupOptions(hintedUrl)?.candidates[0] ?? null)
+  void (plannedRep ? plannedRoutes.challenge(plannedRep, plannedDemand, false) : null)
+  const plannedAdapter = new PlayurlAdapter(
+    new PlayurlController(authoritySession, plannedVault, plannedRoutes),
+  )
+  const trustedPayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            height: 1080,
+            codecs: 'av01',
+            bandwidth: 4_000_000,
+            base_url: trustedUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
+      },
+    },
   }
-  return extendFixture(base, {} as const)
+  void plannedAdapter.transform(trustedPayload, 'trusted-api').accepted
+  void (plannedRep ? plannedVault.rootUrl(plannedRep) : null)
+  void (plannedRep ? plannedRoutes.plan(plannedRep, plannedDemand, 'startup').host : null)
+  const lateHintPayload = {
+    data: {
+      dash: {
+        video: [
+          {
+            id: 80,
+            height: 1080,
+            codecs: 'av01',
+            bandwidth: 4_000_000,
+            base_url: lateHintUrl,
+            backup_url: [] as string[],
+          },
+        ],
+        audio: [],
+      },
+    },
+  }
+  plannedAdapter.transform(lateHintPayload, 'page-hint')
+  return {
+    authorityEvidence,
+    authorityState,
+    now,
+    plannedRep,
+    plannedRoutes,
+  }
 }
 
-async function createExactSignedRouteMapsToCurrentEpoch8Context6(t: TestContext) {
-  const base = await createRetiredPageHintTransportDoesNotPunishItsOldHostAfterContext5(t)
-  const context = base.vault.contextForUrl(
+async function createExactSignedRouteMapsToCurrentEpoch8Context6(_t: TestContext) {
+  const resources = await createRouteStateResourcesGroup2(_t)
+  const { vault, epoch, generation, rep } = resources
+
+  const context = vault.contextForUrl(
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret',
   )
-  return extendFixture(base, { context } as const)
+  return {
+    context,
+    epoch,
+    generation,
+    rep,
+    vault,
+  }
 }
 
-async function createProtectedUrlContext7(t: TestContext) {
-  const base = await createExactSignedRouteMapsToCurrentEpoch8Context6(t)
+async function createProtectedUrlContext7(_t: TestContext) {
+  const resources = await createRouteStateResourcesGroup2(_t)
+  const { vault, generation, epoch, rep } = resources
+
+  void vault.contextForUrl(
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret',
+  )
   const protectedUrl = 'https://upos-hz-mirrorakam.akamaized.net/opaque/signed-segment?token=secret'
-  const protectedRep = base.vault.register({
-    generation: base.generation,
-    epoch: base.epoch,
+  void vault.register({
+    generation: generation,
+    epoch: epoch,
     kind: 'audio',
     key: '30280:opaque',
     height: 0,
@@ -260,12 +390,10 @@ async function createProtectedUrlContext7(t: TestContext) {
     urls: [protectedUrl],
     source: 'trusted-api',
   })
-  void base.vault.match(protectedUrl).context?.kind
-  void (protectedRep ? base.vault.candidates(protectedRep, new Set()).native.length : -1)
   const externalOpaque = 'https://media.example.org/private/chunk?signature=private'
-  const externalRep = base.vault.register({
-    generation: base.generation,
-    epoch: base.epoch,
+  void vault.register({
+    generation: generation,
+    epoch: epoch,
     kind: 'audio',
     key: 'external:opaque',
     height: 0,
@@ -274,31 +402,91 @@ async function createProtectedUrlContext7(t: TestContext) {
     urls: [externalOpaque],
     source: 'page-hint',
   })
-  void (externalRep ? base.vault.candidates(externalRep, new Set()).native.length : -1)
-  const native = base.rep ? base.vault.candidates(base.rep, new Set()).native[0] : null
-  return extendFixture(base, { native } as const)
+  const native = rep ? vault.candidates(rep, new Set()).native[0] : null
+  return {
+    native,
+    rep,
+    vault,
+  }
 }
 
-async function createSignedRouteNeverCrossesGeneration10Context8(t: TestContext) {
-  const base = await createProtectedUrlContext7(t)
-  if (base.rep && base.native) {
-    void base.vault.resolve(base.native.handle, base.native.route)?.includes('token=secret')
-    base.vault.invalidate(base.rep, base.native.host)
-    void base.vault.candidates(base.rep, new Set()).native.length
+async function createSignedRouteNeverCrossesGeneration10Context8(_t: TestContext) {
+  const resources = await createRouteStateResourcesGroup2(_t)
+  const { vault, generation, epoch, rep } = resources
+
+  const context = vault.contextForUrl(
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret',
+  )
+  const protectedUrl = 'https://upos-hz-mirrorakam.akamaized.net/opaque/signed-segment?token=secret'
+  void vault.register({
+    generation: generation,
+    epoch: epoch,
+    kind: 'audio',
+    key: '30280:opaque',
+    height: 0,
+    codec: 'other',
+    bandwidth: 192_000,
+    urls: [protectedUrl],
+    source: 'trusted-api',
+  })
+  const externalOpaque = 'https://media.example.org/private/chunk?signature=private'
+  void vault.register({
+    generation: generation,
+    epoch: epoch,
+    kind: 'audio',
+    key: 'external:opaque',
+    height: 0,
+    codec: 'other',
+    bandwidth: 192_000,
+    urls: [externalOpaque],
+    source: 'page-hint',
+  })
+  const native = rep ? vault.candidates(rep, new Set()).native[0] : null
+  vault.reset(generationId(2), epochId(0))
+  return {
+    context,
+    native,
+    vault,
   }
-  base.vault.reset(generationId(2), epochId(0))
-  return extendFixture(base, {} as const)
 }
 
 async function createPCDNCatalogSourceHandleResolvesOnlyTheCurrentExactSignedURLContext9(
-  t: TestContext,
+  _t: TestContext,
 ) {
-  const base = await createSignedRouteNeverCrossesGeneration10Context8(t)
-  void (base.context
-    ? base.vault.resolve(base.native?.handle ?? signedRouteHandle('missing'), base.context)
-    : null)
+  const resources = await createRouteStateResourcesGroup2(_t)
+  const { vault, generation, epoch, rep } = resources
+
+  void vault.contextForUrl(
+    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/a/b/1.m4s?token=secret',
+  )
+  const protectedUrl = 'https://upos-hz-mirrorakam.akamaized.net/opaque/signed-segment?token=secret'
+  void vault.register({
+    generation: generation,
+    epoch: epoch,
+    kind: 'audio',
+    key: '30280:opaque',
+    height: 0,
+    codec: 'other',
+    bandwidth: 192_000,
+    urls: [protectedUrl],
+    source: 'trusted-api',
+  })
+  const externalOpaque = 'https://media.example.org/private/chunk?signature=private'
+  void vault.register({
+    generation: generation,
+    epoch: epoch,
+    kind: 'audio',
+    key: 'external:opaque',
+    height: 0,
+    codec: 'other',
+    bandwidth: 192_000,
+    urls: [externalOpaque],
+    source: 'page-hint',
+  })
+  void (rep ? vault.candidates(rep, new Set()).native[0] : null)
+  vault.reset(generationId(2), epochId(0))
   const pcdnUrl = 'https://x.szbdyd.com/a.m4s'
-  const pcdnRep = base.vault.register({
+  const pcdnRep = vault.register({
     generation: generationId(2),
     epoch: epochId(0),
     kind: 'video',
@@ -309,118 +497,81 @@ async function createPCDNCatalogSourceHandleResolvesOnlyTheCurrentExactSignedURL
     urls: [pcdnUrl],
     source: 'trusted-api',
   })
-  return extendFixture(base, { pcdnUrl, pcdnRep } as const)
+  return {
+    pcdnRep,
+    pcdnUrl,
+    vault,
+  }
 }
 
 async function createRestrictionAppliesToAudio12Context10(t: TestContext) {
-  const base = await createPCDNCatalogSourceHandleResolvesOnlyTheCurrentExactSignedURLContext9(t)
-  const storage = new FakeStorage(),
-    restrictions = base.scope.own(new RestrictionStore(storage, () => base.now))
+  const scope = testScope(t)
+  const now = 2_000_000_000_000
+  const storage = new FakeStorage()
+  const restrictions = scope.own(new RestrictionStore(storage, () => now))
   await restrictions.add({
     host: TRUSTED_CATALOG[0],
     type: 'black',
     kind: 'all',
     reason: 'test',
-    expireAt: base.now + 1000,
+    expireAt: now + 1000,
   })
-  return extendFixture(base, { storage, restrictions } as const)
+  return {
+    now,
+    restrictions,
+    scope,
+    storage,
+  }
 }
 
 async function createExistingSchema2SettingsWithoutNativeToggleDefaultOn13Context11(
   t: TestContext,
 ) {
-  const base = await createRestrictionAppliesToAudio12Context10(t)
+  const scope = testScope(t)
+  const now = 2_000_000_000_000
   const nativeSettingStorage = new FakeStorage()
-  nativeSettingStorage.set('bilicdn.v2.settings', {
-    schema: 2,
-    disabled: false,
-    codec: 'hevc',
-    updatedAt: base.now - 10,
-  })
-  const nativeSettings = base.scope.own(new SettingsStore(nativeSettingStorage, () => base.now))
-  return extendFixture(base, { nativeSettingStorage, nativeSettings } as const)
+  const nativeSettings = scope.own(new SettingsStore(nativeSettingStorage, () => now))
+  return {
+    nativeSettingStorage,
+    nativeSettings,
+    now,
+    scope,
+  }
 }
 
 async function createOtherTabReceivesANativeOnSettingWithAFutureTimestampContext12(t: TestContext) {
-  const base = await createExistingSchema2SettingsWithoutNativeToggleDefaultOn13Context11(t)
+  const scope = testScope(t)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
   const futureSettingsStorage = new FakeStorage()
-  const futureResetTab = base.scope.own(new SettingsStore(futureSettingsStorage, () => base.now))
-  const futureOtherTab = base.scope.own(new SettingsStore(futureSettingsStorage, () => base.now))
-  futureSettingsStorage.remote('bilicdn.v2.settings', {
-    ...futureResetTab.get(),
-    considerNativeSources: true,
-    updatedAt: base.now + 60_000,
-  })
-  return extendFixture(base, { futureSettingsStorage, futureResetTab, futureOtherTab } as const)
+  const futureResetTab = scope.own(new SettingsStore(futureSettingsStorage, () => now))
+  const futureOtherTab = scope.own(new SettingsStore(futureSettingsStorage, () => now))
+  return {
+    clock,
+    futureOtherTab,
+    futureResetTab,
+    futureSettingsStorage,
+    now,
+    scope,
+  }
 }
 
 async function createNativeOnPageHintInitiallyPreservesItsOriginalURL15Context13(t: TestContext) {
-  const base = await createOtherTabReceivesANativeOnSettingWithAFutureTimestampContext12(t)
-  const delayedStorage = new DelayedSettingsStorage(),
-    delayedSettings = base.scope.own(new SettingsStore(delayedStorage, () => base.now))
-  await delayedSettings.update({ considerNativeSources: true })
-  const delayedSession = new SessionStore(),
-    delayedState = delayedSession.beginGeneration(false)
-  const delayedVault = new SignedRouteVault()
-  delayedVault.reset(delayedState.generation, delayedState.epoch)
-  const delayedRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/delayed/video.m4s?signature=delayed'
-  delayedVault.register({
-    generation: delayedState.generation,
-    epoch: delayedState.epoch,
-    kind: 'video',
-    key: 'delayed',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 1_000_000,
-    urls: [delayedRoot],
-    source: 'trusted-api',
-  })
-  const delayedRoutes = new RouteCoordinator(
-    base.clock,
-    delayedSession,
-    delayedSettings,
-    base.scope.own(new RestrictionStore(delayedStorage, () => base.now)),
-    base.scope.own(new EvidenceStore(delayedStorage, () => base.now)),
-    delayedVault,
-    createRuntimeIds(),
-  )
-  void delayedRoutes.apply(delayedRoot).decision.routeType
-  delayedStorage.holdNextSettingsLock = true
-  const pendingNativeOff = delayedSettings.update({
-    considerNativeSources: false,
-  })
-  void delayedSettings.get().considerNativeSources
-  void delayedRoutes.apply(delayedRoot).decision.routeType
-  delayedStorage.remote('bilicdn.v2.settings', {
-    ...delayedSettings.get(),
-    considerNativeSources: true,
-    updatedAt: base.now + 100,
-  })
-  void delayedSettings.get().considerNativeSources
-  delayedStorage.releaseSettingsLock()
-  await pendingNativeOff
-  void delayedSettings.get().considerNativeSources
-  await delayedSettings.update({ considerNativeSources: true })
-  delayedStorage.holdNextSettingsLock = true
-  const pendingNativeReset = delayedSettings.reset()
-  void delayedSettings.get().considerNativeSources
-  void delayedRoutes.apply(delayedRoot).decision.routeType
-  delayedStorage.releaseSettingsLock()
-  await pendingNativeReset
-  const reuseStorage = new FakeStorage(),
-    reuseSettings = base.scope.own(new SettingsStore(reuseStorage, () => base.now))
-  await reuseSettings.update({ considerNativeSources: true })
-  const reuseSession = new SessionStore(),
-    reuseState = reuseSession.beginGeneration(false)
+  const scope = testScope(t)
+  const now = 2_000_000_000_000
+  const clock = { now: () => now }
+  const reuseStorage = new FakeStorage()
+  const reuseSettings = scope.own(new SettingsStore(reuseStorage, () => now))
+  const reuseSession = new SessionStore()
+  const reuseState = reuseSession.beginGeneration(false)
   const reuseVault = new SignedRouteVault()
   reuseVault.reset(reuseState.generation, reuseState.epoch)
   const reuseRoutes = new RouteCoordinator(
-    base.clock,
+    clock,
     reuseSession,
     reuseSettings,
-    base.scope.own(new RestrictionStore(reuseStorage, () => base.now)),
-    base.scope.own(new EvidenceStore(reuseStorage, () => base.now)),
+    scope.own(new RestrictionStore(reuseStorage, () => now)),
+    scope.own(new EvidenceStore(reuseStorage, () => now)),
     reuseVault,
     createRuntimeIds(),
   )
@@ -446,14 +597,16 @@ async function createNativeOnPageHintInitiallyPreservesItsOriginalURL15Context13
       },
     },
   }
-  reusePlayurl.transform(reusedPagePayload, 'page-hint')
-  return extendFixture(base, {
-    reuseSettings,
-    reuseRoutes,
+  return {
+    clock,
+    now,
     reusePlayurl,
-    reusedPageRoot,
+    reuseRoutes,
+    reuseSettings,
     reusedPagePayload,
-  } as const)
+    reusedPageRoot,
+    scope,
+  }
 }
 
 async function checkSignedRouteRegistered1(t: TestContext): Promise<void> {
@@ -686,7 +839,6 @@ async function checkLatePageHintsCannotReplaceTheTrustedRoot2(t: TestContext): P
   )
   const invalidHintVault = new SignedRouteVault()
   invalidHintVault.reset(base.generation, base.epoch)
-  ;('upos-hz-mirrorakam.akamaized.net')
   const invalidHintRep = invalidHintVault.register({
     generation: base.generation,
     epoch: base.epoch,
