@@ -103,7 +103,15 @@
 
 ## 公開交付與安裝結案
 
-發布前已核對 v2.2.5 五份原件，搬移至 archive/retired/releases/Release/v2.2.5；大小、SHA-256 與 mtime 完全不變。當前完整 v2.2.5 報告（含 R1）原樣追加到歷史正文，與當年 Release 快照分開保存。v2.2.6 公開 main／標籤、唯一腳本附件及 latest 位元組核對於實際發布後追加，本段目前不宣稱遠端已完成。
+發布前已核對 v2.2.5 五份原件，搬移至 archive/retired/releases/Release/v2.2.5；大小、SHA-256 與 mtime 完全不變。當前完整 v2.2.5 報告（含 R1）原樣追加到歷史正文，與當年 Release 快照分開保存。新版本五份本機產物及校驗值已登記保護；Release 中報告保留封裝當時的發布前狀態，以下為實際發布後追加結果，不回寫封裝原件。
+
+2026-11-02 04:07:54（Asia/Taipei）公開核對完成：遠端 main 與 v2.2.6 標籤解析為發行提交 `85f95d636eb1d319ad5743a4e863a464e697d872`。正式 [GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.6) 非草稿／非預發行，唯一附件為 BiliCDN_TW.user.js。逐位元組下載正式附件與公開 latest 更新入口，兩者均與本機封裝相同：
+
+- 版本：2.2.6。
+- 大小：455,309 bytes。
+- SHA-256：`798bbb33cb6bcc8c117ba389c151f5f6a2afff3e6f521f1d221acf3d7a57caca`。
+
+本次記錄完成後 main 僅追加交付文件，標籤維持上述發行提交，產品來源、版本與五份封裝原件保持相同。未觸發安裝版更新或新的瀏覽器窗口。
 
 ## 歷史驗證導覽
 
