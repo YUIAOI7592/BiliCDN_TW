@@ -79,6 +79,27 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "kind": "record",
+      "topics": [
+        "startup-routing-review"
+      ],
+      "versions": [
+        "v2.2.5"
+      ],
+      "date": "2026-11-02",
+      "requiredAnchors": [
+        "調查基準與判定方式",
+        "已保存疑點",
+        "第三步-實際下載與換站",
+        "第四步-恢復與重載",
+        "第五步-位置倍率還原與成功確認",
+        "第六步-恢復後的沿用學習與再次介入",
+        "第七步-換片與切畫質的失效邊界",
+        "判定收斂與離線反例"
+      ]
+    },
+    {
       "path": "archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md",
       "kind": "record",
       "topics": [
@@ -3380,6 +3401,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 9443,
+      "sha256": "f48b0fd9e23b280430edbec9258d27d932a88cf73a5b114ca6e9285e55ed0808"
+    },
     {
       "path": "archive/retired/originals/PRE_UP141_RELEASE_2026-10-30_08ed843.json",
       "encoding": "raw",

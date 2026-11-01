@@ -919,3 +919,9 @@ main／標籤原件、唯一 Release 附件及公開 latest 均與本機腳本�
 本輪 IAB／Tampermonkey 的完整本體、singleton、hooks、自然影片學習及 1／2 倍兩窗已核對；原始有界樣本可獨立重算速度及需求。高階工具不支援封閉 ShadowRoot 時使用同一 IAB 的已授權 CDP 原生輸入；準備定位與清理選單的未生效操作保留在報告，不作產品失敗或額外輪次。觀察器固定期限後自動清理，registry、斷點、物件群組及唯一分頁均已釋放。
 
 完整結果與限制見 [本版 R1](TEST_REPORT.md#v225-r1-安裝驗收2026-11-01)。本輪只執行文件／封存／差異檢查，未重跑已通過的執行期套件、不修改版本或 Release。
+
+## 2026-11-02：起播調查離線條件驗證
+
+使用 Node 26.8.1 與本機 esbuild 0.28.2，將 `.work/startup-review-2026-11-02/rigor-check.test.ts` bundle 為 ESM 後執行六個現況特徵案例，退出碼 0；六案完成，無失敗、取消、略過或待辦。S10 有足速／不足速對照，L02 有同內容／真正換片對照，另驗證 T02 的需求差異與 R04 的候選集合排除。這是實際控制器搭配 FakeClock／FakeStorage／合成探測的離線重現，不是六項修復通過或實機測速；正式測試登記與案例總數未變。
+
+初次直接執行使用該 Node 不支援的 `--experimental-transform-types`，退出碼 9，尚未執行案例；原輸出保留為 `rigor-check.direct-node.log`。後續改用專案既有先 bundle 再執行方式，未更換工具版本或下載依賴。程序、bundle、TAP 雜湊與精確條件集中於 [調查追加判定](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#判定收斂與離線反例)。未啟動 HTTP 服務、瀏覽器或產品診斷，未改產品／正式測試／版本／Release，也未重跑完整 verify。

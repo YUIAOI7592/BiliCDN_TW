@@ -363,3 +363,7 @@
 - [v2.2.5 容量、倍率與時效修復及 R1](TEST_REPORT.md#v225-r1-安裝驗收2026-11-01)
 - [v2.2.4 修復、回歸覆蓋與 R1 證據邊界](../archive/retired/docs/TEST_REPORT_HISTORY.md#v224-完整正文保存2026-11-01)
 - [v2.2.3 原基本驗收及原始限制](../archive/retired/docs/TEST_REPORT_HISTORY.md#v223-完整正文保存2026-11-01)
+
+## 起播 CDN 多次切換調查（2026-11-02）
+
+- [v2.2.5 逐步討論與疑點紀錄](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#已保存疑點)
