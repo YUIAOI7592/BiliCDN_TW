@@ -925,3 +925,8 @@ main／標籤原件、唯一 Release 附件及公開 latest 均與本機腳本�
 使用 Node 26.8.1 與本機 esbuild 0.28.2，將 `.work/startup-review-2026-11-02/rigor-check.test.ts` bundle 為 ESM 後執行六個現況特徵案例，退出碼 0；六案完成，無失敗、取消、略過或待辦。S10 有足速／不足速對照，L02 有同內容／真正換片對照，另驗證 T02 的需求差異與 R04 的候選集合排除。這是實際控制器搭配 FakeClock／FakeStorage／合成探測的離線重現，不是六項修復通過或實機測速；正式測試登記與案例總數未變。
 
 初次直接執行使用該 Node 不支援的 `--experimental-transform-types`，退出碼 9，尚未執行案例；原輸出保留為 `rigor-check.direct-node.log`。後續改用專案既有先 bundle 再執行方式，未更換工具版本或下載依賴。程序、bundle、TAP 雜湊與精確條件集中於 [調查追加判定](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#判定收斂與離線反例)。未啟動 HTTP 服務、瀏覽器或產品診斷，未改產品／正式測試／版本／Release，也未重跑完整 verify。
+
+
+## 2026-11-02：v2.2.6 離線基線與契約整合
+
+固定 Node 26.8.1／npm 11.19.0／TypeScript 7.0.2／esbuild 0.28.2；確認不啟動網站服務。最初受限權限令 tooling 暫存 Git 建立失敗，產品套件結果與環境限制分列；依授權以可建立暫存 Git 的權限重跑，18 套件／1,675 案基線通過。最終 18 套件／1,856 案通過，逐套件名稱／參數對照無原案例遺失；新增 181 案含 96 個有限完成順序交錯。只由新修改或失敗觸發相關重跑，未啟動瀏覽器或安裝版窗口。工具實測與安全掃描範圍見 [當版完整報告](TEST_REPORT.md)。

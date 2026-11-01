@@ -2789,9 +2789,9 @@
         "verification"
       ],
       "versions": [
-        "v2.2.5"
+        "v2.2.6"
       ],
-      "date": "2026-11-01",
+      "date": "2026-11-02",
       "requiredAnchors": [
         "自動驗證",
         "安全差異",
@@ -2801,7 +2801,8 @@
         "v223-r1-安裝驗收2026-11-01",
         "歷史驗證導覽",
         "bilicdn_tw-v218-release-verification--2026-10-04",
-        "v225-r1-安裝驗收2026-11-01"
+        "v225-r1-安裝驗收2026-11-01",
+        "三十五項閉環對照"
       ]
     },
     {
@@ -2886,7 +2887,8 @@
         "v2.2.0",
         "v2.2.1",
         "v2.2.3",
-        "v2.2.5"
+        "v2.2.5",
+        "v2.2.6"
       ],
       "date": null,
       "requiredAnchors": [
@@ -3376,7 +3378,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.5/CHANGELOG_v2.2.5.md",
+      "path": "archive/retired/releases/Release/v2.2.5/CHANGELOG_v2.2.5.md",
       "kind": "immutable",
       "topics": [
         "release-snapshot"
@@ -3388,7 +3390,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.5/TEST_REPORT_v2.2.5.md",
+      "path": "archive/retired/releases/Release/v2.2.5/TEST_REPORT_v2.2.5.md",
       "kind": "immutable",
       "topics": [
         "release-snapshot"
@@ -3397,6 +3399,30 @@
         "v2.2.5"
       ],
       "date": "2026-11-01",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.6/CHANGELOG_v2.2.6.md",
+      "kind": "immutable",
+      "topics": [
+        "release-snapshot"
+      ],
+      "versions": [
+        "v2.2.6"
+      ],
+      "date": "2026-11-02",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "kind": "immutable",
+      "topics": [
+        "release-snapshot"
+      ],
+      "versions": [
+        "v2.2.6"
+      ],
+      "date": "2026-11-02",
       "requiredAnchors": []
     }
   ],
@@ -7133,39 +7159,81 @@
       "sha256": "3f246419b8f9023bfe39cb8b9c3af7ece7e4c0236f07984bb035b2eb1db6c273"
     },
     {
-      "path": "Release/v2.2.5/BUILD_MANIFEST_v2.2.5.json",
+      "path": "archive/retired/releases/Release/v2.2.5/BUILD_MANIFEST_v2.2.5.json",
       "encoding": "raw",
       "bytes": 9204,
       "sha256": "83e23454190d65685e14b64a8f1a5eb3adee198a777809f8a5de4f3e79c792e3",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.5/BiliCDN_TW.user.js",
+      "path": "archive/retired/releases/Release/v2.2.5/BiliCDN_TW.user.js",
       "encoding": "raw",
       "bytes": 424558,
       "sha256": "c2ce2bad31c766e4c40236a1919b133f8272c9d33511e796f6803ba8d3f0f87f",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.5/CHANGELOG_v2.2.5.md",
+      "path": "archive/retired/releases/Release/v2.2.5/CHANGELOG_v2.2.5.md",
       "encoding": "raw",
       "bytes": 63637,
       "sha256": "dde0b294baf4b123f34bae0709a859570479de3129fdc89def00f9826b713101",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.5/SHA256SUMS_v2.2.5.txt",
+      "path": "archive/retired/releases/Release/v2.2.5/SHA256SUMS_v2.2.5.txt",
       "encoding": "raw",
       "bytes": 412,
       "sha256": "116f49fb2df6fa2cf679fd247904dd556955414fe02d7f26e556e171ea6dde6e",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.5/TEST_REPORT_v2.2.5.md",
+      "path": "archive/retired/releases/Release/v2.2.5/TEST_REPORT_v2.2.5.md",
       "encoding": "raw",
       "bytes": 13258,
       "sha256": "9a752001ccaea18b39334ee7ed82e9f900c27c75c662cca6ab045fc56ca4bd0a",
       "mode": "exact"
+    },
+    {
+      "path": "archive/retired/originals/RELOCATION_MANIFEST_BEFORE_v2.2.6.json",
+      "encoding": "raw",
+      "bytes": 504858,
+      "sha256": "05594f36bda6833fc1978ef62a264388a2df289b65540abb3ba29b6c0d0fdcd7",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.6/BiliCDN_TW.user.js",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 455309,
+      "sha256": "798bbb33cb6bcc8c117ba389c151f5f6a2afff3e6f521f1d221acf3d7a57caca"
+    },
+    {
+      "path": "Release/v2.2.6/BUILD_MANIFEST_v2.2.6.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 9418,
+      "sha256": "122717868efb7d1cd26b2c603a08fad541f44f79752df7810592136a263bba47"
+    },
+    {
+      "path": "Release/v2.2.6/CHANGELOG_v2.2.6.md",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 64448,
+      "sha256": "5e96c4f995de4e95f2b32e8287052b7a745076f9cbb433ae5fbd328420d4ab7d"
+    },
+    {
+      "path": "Release/v2.2.6/SHA256SUMS_v2.2.6.txt",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 412,
+      "sha256": "2241db2187986c03337bce52040eb621b7e4407887148e774ae2745a14d8e72f"
+    },
+    {
+      "path": "Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 15954,
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09"
     }
   ],
   "privateEvidenceReferences": [

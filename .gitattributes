@@ -8,6 +8,7 @@ Release/**/*.diff -text
 Release/v2.2.4/** -text
 Release/v2.2.4/TEST_REPORT_v2.2.4.md whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 Release/v2.2.5/** -text
+Release/v2.2.6/** -text
 Release/v2.2.5/TEST_REPORT_v2.2.5.md whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 archive/retired/releases/** -text
 # These original checksum-protected reports contain a CRLF line; retain the raw bytes.
