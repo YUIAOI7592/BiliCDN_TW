@@ -26,7 +26,7 @@
 | N06 合法 Native／原網址 | SignedRouteVault 授權當前內容的精確 URL；正常 original／root-original／inspectOriginal 用於合法傳輸與禁止判定 | 正常來源政策，不是已撤除的分頁原線對照 |
 | N07 離線工具與否定契約 | Node reporter／testScope 管理測試輸出；上游比較固定載入歷史版本至 Node VM；verify 及 UI 測試檢查撤除標記不存在 | 通用測試與歷史相容用途；不進產品、不啟動網站服務，不因名稱誤刪 |
 
-舊 DIAG 案例前綴、diagnostic 表示鍵與不必要的情境鏈，經追查實際執行的是保留的選路／總覽契約；它們不建立診斷流程。命名及前置狀態負擔留給第二階段，不把一般待整理程式碼誤列為確認診斷殘留。第二階段須待公開發布核對完成才開始，本版未實作 O01–O04。
+舊 DIAG 案例前綴、diagnostic 表示鍵與不必要的情境鏈，經追查實際執行的是保留的選路／總覽契約；它們不建立診斷流程。命名及前置狀態負擔交由第二階段分析，不把一般待整理程式碼誤列為確認診斷殘留。第二階段已在公開發布核對完成後展開並交付整合報告，本版未實作 O01–O04；發布後結果見下方公開交付段落。
 
 ## 自動驗證
 
@@ -59,6 +59,12 @@ v2.2.2 腳本 **419,470 bytes**；SHA-256：`ffece767ff55ddcd08db7fb286189d49cf6
 ### 公開交付與安裝結案
 
 本節為封裝前檢查點；公開 main／標籤／唯一附件及 latest 下載核對由發布後接續記錄，已發布的五份封裝快照不回寫。
+
+2026-11-01 發布後追加：正式 [v2.2.2 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.2) 已發布，非 draft／prerelease，並為 latest。發布時遠端 main 與標籤所指提交均為 `f4cc2e45689b5b9c4b0e99d82f65be38d7600132`；標籤物件為 `49f4da56426a6c86e6f3b1c21f529524ae7518cc`。GitHub Release ID `430365704`，唯一附件 `BiliCDN_TW.user.js`（asset ID `697337978`）。
+
+獨立下載公開 main 原件、v2.2.2 標籤原件、版本附件及 [latest 腳本](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js)，四者都與本機正式腳本逐位元組相同：版本 **2.2.2**、**419,470 bytes**、SHA-256 **ffece767ff55ddcd08db7fb286189d49cf6bd4d4e141dd283648b6d29548bd08**。GitHub 附件 digest 亦一致。
+
+完成上述公開核對後才以該提交開始第二階段，[整合盤點報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/POST_DIAGNOSTICS_INTEGRATION_v2.2.2_2026-11-01.md) 只分析、不實作。後續 main 的文件提交與發行提交分開；v2.2.2 標籤及五份 Release 原件不變。本段為現行報告追加，不回寫封裝快照，也不改原 v2.2.1 清查結論。
 
 ### 來源隔離與實際安裝
 

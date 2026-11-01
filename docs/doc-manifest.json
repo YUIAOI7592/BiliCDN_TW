@@ -3284,6 +3284,22 @@
       ],
       "date": "2026-11-01",
       "requiredAnchors": []
+    },
+    {
+      "path": "archive/retired/docs/POST_DIAGNOSTICS_INTEGRATION_v2.2.2_2026-11-01.md",
+      "kind": "record",
+      "topics": [
+        "post-diagnostics-integration"
+      ],
+      "versions": [
+        "v2.2.2"
+      ],
+      "date": "2026-11-01",
+      "requiredAnchors": [
+        "凍結基準與方法",
+        "排序與建議邊界",
+        "後續實作的建議順序與交付界線"
+      ]
     }
   ],
   "protections": [
@@ -6919,6 +6935,13 @@
       "sha256": "615559a8466e1ffbeddb42a80a7118b3b34408fd120af1cdb4a8acc411b719b9",
       "mode": "exact",
       "encoding": "raw"
+    },
+    {
+      "path": "archive/retired/docs/POST_DIAGNOSTICS_INTEGRATION_v2.2.2_2026-11-01.md",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 23709,
+      "sha256": "4daf5eebb9e0b55de2ba04d45b830749ecc528215095d11e9cf5333ff1f18ecf"
     }
   ],
   "privateEvidenceReferences": [
