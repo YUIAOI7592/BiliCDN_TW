@@ -88,6 +88,5 @@ export function renderCdn(
         : ''
     }
   }
-  refresh(initialModel)
   return { refresh }
 }

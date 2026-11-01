@@ -167,6 +167,5 @@ export function renderOverview(
           : '尚未取得狀態')
     // The long summary is captured only on request, never rebuilt by the playback tick.
   }
-  refresh(initialModel)
   return { refresh }
 }

@@ -51,6 +51,49 @@ test('V220 CDN construction and refresh each capture one shared read model', (t)
   assert.equal(reads, 1)
 })
 
+test('V223 navigation initializes all three pages once from the current model', (t) => {
+  const f = ui(t)
+  const playback = () => f.doc.flatten().find((e) => e.className === 'playback')!
+  const initial = playback()
+  assert.ok(initial.textContent)
+  assert.ok(f.doc.flatten().some((e) => e.textContent === 'vcontract · 播放與路線狀態'))
+  f.button('CDN').emit('click')
+  const restrictions = f.doc.flatten().filter((e) => e.className === 'detail restriction')
+  assert.equal(restrictions.length, TRUSTED_CATALOG.length)
+  assert.equal(f.doc.flatten().find((e) => e.tag === 'select')!.value, '')
+  assert.equal(f.toggle('允許參考 B 站原生來源').checked, true)
+  for (const host of TRUSTED_CATALOG)
+    assert.equal(f.toggle(host).checked, !DEFAULT_UNAVAILABLE_HOSTS.has(host))
+  f.button('播放設定').emit('click')
+  assert.equal(f.doc.flatten().filter((e) => e.type === 'checkbox').length, 6)
+  for (const [key, label] of [
+    ['startupEarlyReleaseEnabled', '起播提前放行'],
+    ['healthMiddleRangeEnabled', '健康中段探測'],
+    ['backupFamilyDiversityEnabled', '備援家族分散'],
+    ['earlyRetryEnabled', '慢請求提前重試'],
+    ['blockWebRtc', '阻止網頁使用 WebRTC'],
+    ['blockHttpDns', '阻止網頁使用 HTTPDNS'],
+  ] as const)
+    assert.equal(f.toggle(label).checked, f.settings.get()[key])
+  f.button('總覽').emit('click')
+  const returned = playback()
+  assert.notEqual(returned, initial)
+  assert.equal(returned.textContent, initial.textContent)
+  f.center.close()
+  f.center.show()
+  const reopened = playback()
+  assert.notEqual(reopened, returned)
+  assert.equal(reopened.textContent, initial.textContent)
+  assert.deepEqual(
+    [initial, returned, reopened].map((node) => node.textWrites.filter(Boolean).length),
+    [1, 1, 1],
+  )
+  assert.deepEqual(
+    restrictions.map((node) => node.textWrites.length),
+    restrictions.map(() => 1),
+  )
+})
+
 class QueuedSettingsStorage extends FakeStorage {
   held = true
   tasks: (() => Promise<void>)[] = []
@@ -101,7 +144,15 @@ class Element {
   parent: Element | null = null
   dataset: Record<string, string> = {}
   style: Record<string, string> = {}
-  textContent = ''
+  #textContent = ''
+  readonly textWrites: string[] = []
+  get textContent(): string {
+    return this.#textContent
+  }
+  set textContent(value: string) {
+    this.#textContent = value
+    this.textWrites.push(value)
+  }
   className = ''
   type = ''
   value = ''
