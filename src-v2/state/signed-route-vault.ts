@@ -469,6 +469,14 @@ export class SignedRouteVault implements SignedRouteVaultPort {
     else if (Number.isSafeInteger(totalBytes) && totalBytes > 0) stored.totalBytes = totalBytes
   }
 
+  startupMediaKind(): import('../domain/model.ts').MediaKind | null {
+    const groups = [...this.#groups.values()]
+    if (groups.some((group) => group.identity.kind === 'video')) return 'video'
+    return groups.some((group) => group.identity.kind === 'audio' && group.source === 'trusted-api')
+      ? 'audio'
+      : null
+  }
+
   groupSummary(representation: RepresentationId): VaultGroupSnapshot | null {
     const group = this.#groups.get(representation)
     return group

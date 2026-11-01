@@ -25,6 +25,7 @@ export interface StartupAssemblyInput {
   readonly parsed: NonNullable<ReturnType<typeof parseMediaUrl>>
   readonly source: string
   readonly catalogCursor: number
+  readonly limit?: number
 }
 
 // Yield each admitted candidate before reading the next one. The coordinator
@@ -32,6 +33,7 @@ export interface StartupAssemblyInput {
 export function* startupCandidates(input: StartupAssemblyInput): Generator<StartupCandidate> {
   const { clock, evidence, policy, context, parsed, source, catalogCursor } = input
   const candidates: StartupCandidate[] = []
+  const limit = Math.min(TRUSTED_CATALOG.length + 2, Math.max(1, input.limit ?? 3))
   const add = (
     host: string,
     type: RouteType,
@@ -39,7 +41,7 @@ export function* startupCandidates(input: StartupAssemblyInput): Generator<Start
     original: boolean,
   ): StartupCandidate | null => {
     if (
-      candidates.length >= 3 ||
+      candidates.length >= limit ||
       candidates.some((candidate) => candidate.host === host) ||
       policy.hardRestriction(host, context.kind) ||
       policy.vault.isInvalid(context.representation, host)
@@ -79,7 +81,7 @@ export function* startupCandidates(input: StartupAssemblyInput): Generator<Start
     }
   }
   const catalog = TRUSTED_CATALOG.filter((host) => !policy.hardRestriction(host, context.kind))
-  for (let offset = 0; offset < catalog.length && candidates.length < 3; offset++) {
+  for (let offset = 0; offset < catalog.length && candidates.length < limit; offset++) {
     const host = catalog[(catalogCursor + offset) % catalog.length]
     if (!host) continue
     const generated = replaceUrlHost(source, host)

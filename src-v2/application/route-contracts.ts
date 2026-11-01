@@ -44,6 +44,7 @@ export interface StartupOptions {
   readonly candidates: readonly StartupCandidate[]
   readonly demand: PlaybackDemand
   readonly originalHost: string
+  readonly deferredToVideo?: boolean
 }
 
 export interface DecisionRecord {
@@ -128,6 +129,7 @@ export interface RouteVaultPort extends Pick<
   | 'candidates'
   | 'catalogSourceHandle'
   | 'groupSummary'
+  | 'startupMediaKind'
   | 'hosts'
   | 'identity'
   | 'invalidate'
@@ -163,6 +165,7 @@ export interface RouteCoordinatorPort {
   isBilibiliMedia(url: string): boolean
   inspectOriginal(url: string): AppliedRouteDecision
   startupOptions(url: string, catalogCursor?: number): StartupOptions | null
+  startupFallback(url: string, excludedHosts: ReadonlySet<string>): StartupCandidate | null
   noteStartupProbeResult(candidate: StartupCandidate, status: number | null): void
   commitStartupChoice(
     url: string,

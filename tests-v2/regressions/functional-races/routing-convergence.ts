@@ -127,6 +127,11 @@ test('V225 current capacity survives a selected host outside the twelve ranking 
     catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, true])),
   })
   const { original, representation } = register(f)
+  const decision = f.routes.plan(
+    representation,
+    { kind: 'video', requiredMbps: 10, highDemand: false },
+    'startup',
+  )
   for (const host of TRUSTED_CATALOG)
     await f.evidence.record(host, 'video', {
       requestId: `rank-${host}`,
@@ -137,11 +142,6 @@ test('V225 current capacity survives a selected host outside the twelve ranking 
       ttfbMs: 10,
       failureKind: null,
     })
-  const decision = f.routes.plan(
-    representation,
-    { kind: 'video', requiredMbps: 10, highDemand: false },
-    'startup',
-  )
   const applied = f.routes.apply(original, 'video')
   assert.equal(applied.decision, decision)
   await f.routes.observe(completion(f, applied, 1))

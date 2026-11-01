@@ -82,6 +82,7 @@ export interface SignedRouteVaultPort {
   catalogSourceHandle(representation: RepresentationId): SignedRouteHandle | null
   sourceURLs(representation: RepresentationId): readonly string[]
   resolve(handle: SignedRouteHandle, identity: RouteIdentity): string | null
+  startupMediaKind(): MediaKind | null
   groupSummary(representation: RepresentationId): VaultGroupSnapshot | null
   rangeSize(identity: RouteIdentity, handle: SignedRouteHandle): number | null
   recordRangeSize(

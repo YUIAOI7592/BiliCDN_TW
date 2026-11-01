@@ -2332,6 +2332,7 @@ async function checkAlreadyAbortedPlayerRequestRejectsStartupGate10(t: TestConte
         )
       })
     }
+    committedHost = null
     const timedPreflight = base.scope.own(
       new MeasurementController(
         measurementRoutes(timeoutRoutes),
@@ -2364,8 +2365,8 @@ async function checkAlreadyAbortedPlayerRequestRejectsStartupGate10(t: TestConte
     )
     assert.strictEqual(
       committedHost,
-      preflightOptions.candidates.find((candidate) => candidate.original)?.host,
-      'inconclusive preflight releases the legal original',
+      null,
+      'inconclusive window without an untested candidate never selects a tested failure',
     )
     const cachedHost = preflightOptions.candidates.find(
       (candidate) => candidate.type === 'catalog-generated',
@@ -2437,8 +2438,8 @@ async function checkAlreadyAbortedPlayerRequestRejectsStartupGate10(t: TestConte
     )
     assert.strictEqual(
       committedHost,
-      preflightOptions.candidates.find((candidate) => candidate.original)?.host,
-      'inconclusive redirected startup releases the legal original',
+      null,
+      'redirected startup without an untested fallback cannot select a failed original',
     )
     const wrongHostStartup = base.scope.own(
       new MeasurementController(
@@ -2872,3 +2873,5 @@ import '../regressions/functional-races/rescue-runtime.ts'
 import '../regressions/functional-races/rescue-sustained.ts'
 import { idleControls } from '../support/player.ts'
 import '../regressions/up141-test-release.ts'
+
+import '../regressions/v226-startup.ts'

@@ -294,9 +294,9 @@ async function checkColdStartRewritesToCatalogDefault2(t: TestContext): Promise<
     decisionId('insufficient-selection'),
   )
   assert.strictEqual(
-    insufficientDecision.action,
-    'pass',
-    'insufficient measured throughput preserves the legal original',
+    insufficientDecision.host,
+    candidate.host,
+    'a valid measured route precedes an unverified original even below headroom',
   )
   const parsed = parseMediaUrl(
     'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/1.m4s?token=x',

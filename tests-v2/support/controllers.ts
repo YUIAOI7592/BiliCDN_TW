@@ -5,6 +5,7 @@ export const measurementRoutes = (overrides: Partial<MeasurementRoutes> = {}): M
   ({
     isCatalogOnly: () => false,
     startupOptions: () => null,
+    startupFallback: () => null,
     noteStartupProbeResult: () => undefined,
     commitStartupChoice: () => null,
     recordStartupSuccess: async () => undefined,

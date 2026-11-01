@@ -98,6 +98,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #effectiveRate = 2
   #challengeAttempts = new Map<string, number>()
   #firstMediaAt = 0
+  #startupExhausted = new Set<RepresentationId>()
   #pendingMedia = new Set<string>()
   #fallbacks = new Map<MediaKind, FallbackProgress>()
   #retrySuccesses: {
@@ -151,10 +152,12 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#effectiveRate = 2
     this.#challengeAttempts.clear()
     this.#firstMediaAt = 0
+    this.#startupExhausted.clear()
     this.#pendingMedia.clear()
     this.#fallbacks.clear()
   }
   invalidateForUserSetting(): void {
+    this.#startupExhausted.clear()
     this.#retryPermit = null
     this.#policyRevision++
     this.#plans.clear()
@@ -524,6 +527,22 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   startupOptions(url: string, catalogCursor = 0): StartupOptions | null {
+    const pool = this.#startupPool(url, catalogCursor)
+    if (!pool) return null
+    const candidates = pool.candidates.slice(0, 3)
+    for (const candidate of candidates) this.#measurementId(candidate, 'startup')
+    return { ...pool, candidates }
+  }
+
+  startupFallback(url: string, excludedHosts: ReadonlySet<string>): StartupCandidate | null {
+    return (
+      this.#startupPool(url, 0)?.candidates.find(
+        (candidate) => !excludedHosts.has(candidate.host),
+      ) ?? null
+    )
+  }
+
+  #startupPool(url: string, catalogCursor = 0): StartupOptions | null {
     const parsed = parseMediaUrl(url),
       match = this.vault.match(url)
     const context = match.status === 'matched' || match.source === 'exact' ? match.context : null
@@ -541,6 +560,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     )
       return null
     const demand = this.#demandFor(context.representation, context.kind)
+    if (context.kind === 'audio' && this.vault.startupMediaKind() !== 'audio')
+      return { candidates: [], demand, originalHost: parsedSource.host, deferredToVideo: true }
     const candidates: StartupCandidate[] = []
     for (const candidate of startupCandidates({
       clock: this.clock,
@@ -550,12 +571,27 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       parsed,
       source,
       catalogCursor,
-    })) {
-      this.#measurementId(candidate, 'startup')
+      limit: TRUSTED_CATALOG.length + 2,
+    }))
       candidates.push(candidate)
-    }
+    const now = this.clock.now()
+    const ranked = candidates.map((candidate, index) => ({
+      candidate,
+      index,
+      speed: evidenceMetrics(this.evidence.get(candidate.host, context.kind), now)
+        .safeThroughputMbps,
+    }))
+    ranked.sort((a, b) => {
+      const qualifiedA = (a.speed ?? 0) >= demand.requiredMbps * 1.35
+      const qualifiedB = (b.speed ?? 0) >= demand.requiredMbps * 1.35
+      return (
+        Number(qualifiedB) - Number(qualifiedA) ||
+        (b.speed ?? -1) - (a.speed ?? -1) ||
+        a.index - b.index
+      )
+    })
     return {
-      candidates,
+      candidates: ranked.map((row) => row.candidate),
       demand,
       originalHost: parsedSource.host,
     }
@@ -579,7 +615,16 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     selected: StartupCandidate | null,
     reason: string,
   ): RouteDecision | null {
-    if (!selected || this.session.get().disabled) return null
+    if (this.session.get().disabled || this.settings.get().disabled) return null
+    if (!selected) {
+      const context = this.vault.match(url).context
+      if (reason === 'startup-exhausted' && context && this.vault.isCurrentIdentity(context)) {
+        this.#startupExhausted.add(context.representation)
+        this.#plans.delete(context.representation)
+        this.#planIdentities.delete(context.representation)
+      }
+      return null
+    }
     if (this.isCatalogOnly() && selected.type !== 'catalog-generated') return null
     const fixedHost = this.settings.get().fixedHost
     if (fixedHost && (selected.type !== 'catalog-generated' || selected.host !== fixedHost))
@@ -594,6 +639,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       this.#startupIncompatible.get(mediaIdentity(selected.url) ?? '')?.has(selected.host)
     )
       return null
+    this.#startupExhausted.delete(context.representation)
     const source = this.isCatalogOnly() ? this.#catalogSource(context, url) : url
     if (!source) return null
     let decision: RouteDecision
@@ -779,7 +825,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         ? this.#catalogSource(context)
         : this.vault.rootUrl(representation)
     if (!root || !failedHost || demand.kind !== 'video') return null
-    const options = this.startupOptions(root)
+    const options = this.#startupPool(root)
     if (!options) return null
     const alternatives = options.candidates.filter((candidate) => candidate.host !== failedHost)
     const locked = mediaIdentity(root) && this.#hostLockedStreams.has(mediaIdentity(root)!)
@@ -803,6 +849,26 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     trustedPlayurl = false,
   ): AppliedRouteDecision {
     const parsed = parseMediaUrl(url)
+    const startupContext = this.vault.match(url).context
+    if (parsed && startupContext && this.#startupExhausted.has(startupContext.representation)) {
+      if (this.isCatalogOnly())
+        return appliedRoute(
+          this.#block('catalog-unavailable', parsed.host),
+          null,
+          startupContext,
+          mediaIdentity(url),
+          parsed.host,
+          this.vault.match(url),
+          null,
+        )
+      const original = this.inspectOriginal(url)
+      return original.url && original.decision.action === 'pass'
+        ? {
+            ...original,
+            decision: { ...original.decision, reason: 'startup-exhausted-site-owned' },
+          }
+        : original
+    }
     if (!parsed && this.isCatalogOnly() && (trustedPlayurl || this.isBilibiliMedia(url))) {
       return {
         decision: this.#block('catalog-unreplaceable', null),

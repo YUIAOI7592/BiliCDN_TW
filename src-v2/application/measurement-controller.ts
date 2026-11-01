@@ -58,9 +58,14 @@ export class MeasurementController implements MeasurementPort {
   #preferNative = false
   #marker = 0
   #lastStatus: MeasurementStatus | null = null
-  #startupUsed = false
-  #startupPending: Promise<void> | null = null
-  #startupController: AbortController | null = null
+  #startupLease:
+    | { phase: 'available' }
+    | { phase: 'closed' }
+    | {
+        phase: 'running'
+        controller: AbortController
+        pending: Promise<void>
+      } = { phase: 'available' }
   #startupQualifiedHosts: readonly string[] = []
   #startupState: NonNullable<MeasurementSnapshot['startup']> = Object.freeze({
     state: 'idle',
@@ -94,7 +99,7 @@ export class MeasurementController implements MeasurementPort {
         previous = next
         this.#marker++
         this.cancel('test-policy-changed')
-        this.#startupController?.abort('test-policy-changed')
+        this.#closeStartup('test-policy-changed')
       })
     }
   }
@@ -107,9 +112,7 @@ export class MeasurementController implements MeasurementPort {
   }
   reset(): void {
     this.cancel('generation')
-    this.#startupController?.abort('generation')
-    this.#startupController = null
-    this.#startupPending = null
+    this.#closeStartup('generation')
     this.#startupQualifiedHosts = []
     this.#marker++
     this.#failedAt = null
@@ -126,6 +129,21 @@ export class MeasurementController implements MeasurementPort {
     this.#stopSettings = null
     this.reset()
   }
+  #closeStartup(reason: string): void {
+    if (this.#startupLease.phase === 'available') return
+    const lease = this.#startupLease
+    this.#startupLease = { phase: 'closed' }
+    this.#startupState = Object.freeze({
+      state: lease.phase === 'running' ? 'cancelled' : 'skipped',
+      result: 'none',
+      reason: lease.phase === 'running' ? reason : 'budget-consumed',
+      candidates: 0,
+      selectedHost: null,
+      delayed: false,
+    })
+    if (lease.phase === 'running') lease.controller.abort(reason)
+  }
+
   startupFallbackHosts(): readonly string[] {
     return this.#startupQualifiedHosts
   }
@@ -137,26 +155,26 @@ export class MeasurementController implements MeasurementPort {
   }
   willGateStartup(url: string): boolean {
     return (
-      !!this.#startupPending ||
-      (!this.#startupUsed && !!this.routes.startupOptions(url)?.candidates.length)
+      this.#startupLease.phase !== 'closed' && !!this.routes.startupOptions(url)?.candidates.length
     )
   }
 
   /** The player request, never a page hint, authorizes this one bounded startup window. */
   async prepareStartup(url: string, signal: AbortSignal | null = null): Promise<void> {
     if (signal?.aborted) throw cancellationReason(signal)
-    if (!this.#startupPending) {
-      if (this.#startupUsed) return
+    if (this.#startupLease.phase === 'closed') return
+    if (this.#startupLease.phase === 'available') {
       const cursor = Math.max(0, Number(this.meta.get().catalogCursor) || 0)
       const options = this.routes.startupOptions(url, cursor)
       if (!options?.candidates.length) {
-        this.noteUnpreflighted('unsupported-or-no-legal-candidate')
+        this.noteUnpreflighted(
+          options?.deferredToVideo ? 'video-priority' : 'unsupported-or-no-legal-candidate',
+        )
         return
       }
       const controller = new AbortController(),
         marker = this.#marker
-      this.#startupUsed = true
-      this.#startupController = controller
+
       this.#startupState = Object.freeze({
         state: 'running',
         reason: 'player-media-request',
@@ -165,9 +183,11 @@ export class MeasurementController implements MeasurementPort {
         delayed: true,
       })
       let release!: () => void
-      this.#startupPending = new Promise<void>((resolve) => {
+      const pending = new Promise<void>((resolve) => {
         release = resolve
       })
+      const lease = { phase: 'running' as const, controller, pending }
+      this.#startupLease = lease
       void this.#runStartup(url, options, controller, marker)
         .catch(() => {
           if (marker === this.#marker)
@@ -180,8 +200,7 @@ export class MeasurementController implements MeasurementPort {
             })
         })
         .finally(() => {
-          if (this.#startupController === controller) this.#startupController = null
-          if (marker === this.#marker) this.#startupPending = null
+          if (this.#startupLease === lease) this.#startupLease = { phase: 'closed' }
           release()
         })
       void this.meta
@@ -193,7 +212,7 @@ export class MeasurementController implements MeasurementPort {
         })
         .catch(() => undefined)
     }
-    const pending = this.#startupPending
+    const pending = this.#startupLease.phase === 'running' ? this.#startupLease.pending : null
     if (!pending) return
     if (!signal) {
       await pending
@@ -215,7 +234,7 @@ export class MeasurementController implements MeasurementPort {
   }
 
   noteUnpreflighted(reason: string): void {
-    if (this.#startupUsed || this.#startupPending) return
+    if (this.#startupLease.phase !== 'available') return
     this.#startupState = Object.freeze({
       state: 'skipped',
       reason: reason.slice(0, 48),
@@ -295,31 +314,29 @@ export class MeasurementController implements MeasurementPort {
       (result) => (result.safeMbps ?? 0) / options.demand.requiredMbps >= 1.35,
     )
     const ranked = [...qualified].sort((a, b) => (b.safeMbps ?? 0) - (a.safeMbps ?? 0))
-    const catalogOnly = this.routes.isCatalogOnly()
     const fastestValid =
       [...valid].sort((a, b) => (b.safeMbps ?? 0) - (a.safeMbps ?? 0))[0]?.candidate ?? null
-    let winner =
+    const winner =
       ranked[0]?.candidate ??
-      (!catalogOnly ? options.candidates.find((candidate) => candidate.original) : null) ??
       fastestValid ??
-      (!catalogOnly ? options.candidates[0] : null) ??
-      null
-    const original = valid.find((result) => result.candidate.original)
-    if (
-      !catalogOnly &&
-      winner &&
-      original &&
-      !winner.original &&
-      (original.safeMbps ?? 0) >= (ranked[0]?.safeMbps ?? 0) * 0.9
-    )
-      winner = original.candidate
+      this.routes.startupFallback(
+        url,
+        new Set(options.candidates.map((candidate) => candidate.host)),
+      )
+    const result = ranked.length
+      ? ('adequate' as const)
+      : valid.length
+        ? ('insufficient' as const)
+        : winner
+          ? ('unverified' as const)
+          : ('none' as const)
     const decision = winner
       ? this.routes.commitStartupChoice(
           url,
           winner,
           valid.length ? 'startup-preflight' : 'startup-inconclusive',
         )
-      : null
+      : this.routes.commitStartupChoice(url, null, 'startup-exhausted')
     this.#startupQualifiedHosts = Object.freeze(
       [...valid]
         .sort((a, b) => (b.safeMbps ?? 0) - (a.safeMbps ?? 0))
@@ -327,6 +344,7 @@ export class MeasurementController implements MeasurementPort {
     )
     this.#startupState = Object.freeze({
       state: decision ? 'complete' : 'skipped',
+      result,
       reason:
         releaseReason === 'qualified-early'
           ? releaseReason

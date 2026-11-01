@@ -424,6 +424,7 @@ async function checkMeasurementFixtureHasTwoIndependentProgressiveSegments8(
       measurementRoutes({
         isCatalogOnly: () => true,
         startupOptions: (url) => base.probeRoutes.startupOptions(url),
+        startupFallback: (url, excluded) => base.probeRoutes.startupFallback(url, excluded),
         noteStartupProbeResult: (candidate, status) =>
           base.probeRoutes.noteStartupProbeResult(candidate, status),
         commitStartupChoice: (...args) => {
@@ -453,8 +454,8 @@ async function checkMeasurementFixtureHasTwoIndependentProgressiveSegments8(
   assert.strictEqual(attempted, 3, 'cold startup probes only three Catalog candidates')
   assert.strictEqual(
     inconclusiveCommits,
-    0,
-    'Catalog-only startup commits no candidate when every probe is invalid',
+    1,
+    'Catalog-only startup commits one untested fallback when every probe is invalid',
   )
   assert.ok(
     base.probeRoutes.apply(base.probeFirst).url &&
@@ -487,6 +488,7 @@ async function checkMeasurementFixtureHasTwoIndependentProgressiveSegments8(
       measurementRoutes({
         isCatalogOnly: () => true,
         startupOptions: (url) => base.probeRoutes.startupOptions(url),
+        startupFallback: (url, excluded) => base.probeRoutes.startupFallback(url, excluded),
         noteStartupProbeResult: (candidate, status) =>
           base.probeRoutes.noteStartupProbeResult(candidate, status),
         commitStartupChoice: (...args) => {
@@ -536,6 +538,7 @@ async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
       measurementRoutes({
         isCatalogOnly: () => true,
         startupOptions: (url) => base.probeRoutes.startupOptions(url),
+        startupFallback: (url, excluded) => base.probeRoutes.startupFallback(url, excluded),
         noteStartupProbeResult: (candidate, status) =>
           base.probeRoutes.noteStartupProbeResult(candidate, status),
         commitStartupChoice: (...args) => {
@@ -584,6 +587,7 @@ async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
       measurementRoutes({
         isCatalogOnly: () => true,
         startupOptions: (url) => base.probeRoutes.startupOptions(url),
+        startupFallback: (url, excluded) => base.probeRoutes.startupFallback(url, excluded),
         noteStartupProbeResult: (candidate, status) =>
           base.probeRoutes.noteStartupProbeResult(candidate, status),
         commitStartupChoice: (...args) => {
@@ -630,7 +634,11 @@ async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
   timeoutClock.advance(1)
   await timed
   assert.strictEqual(timeoutSettled, true, 'startup gate releases at the three-second deadline')
-  assert.strictEqual(timeoutCommits, 0, 'timed-out Catalog probes commit no route')
+  assert.strictEqual(
+    timeoutCommits,
+    1,
+    'timed-out probes commit one untested route without a new probe',
+  )
   assert.strictEqual(
     base.probeRoutes
       .startupOptions(base.probeFirst)
@@ -712,9 +720,10 @@ async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
   await nativeProbe.prepareStartup(base.probeSecond)
   assert.strictEqual(
     nativeWinner,
-    nativeOriginal.host,
-    'Native-enabled inconclusive startup retains its original fallback',
+    null,
+    'Native-enabled inconclusive startup cannot select a failed candidate as a measured winner',
   )
+  assert.equal(nativeProbe.snapshot().startup?.result, 'none')
 }
 
 async function checkCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7(

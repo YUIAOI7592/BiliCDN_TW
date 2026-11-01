@@ -141,7 +141,14 @@ export const chooseRoute = (
     input.boundary !== 'verified-failure' &&
     input.boundary !== 'watchdog' &&
     input.boundary !== 'user-setting'
-  if (!fixed && current && healthyBoundary && input.boundary !== 'new-epoch') {
+  if (
+    !fixed &&
+    current &&
+    healthyBoundary &&
+    input.boundary !== 'new-epoch' &&
+    current.successCount > 0 &&
+    (current.demandRatio ?? 0) >= 1.35
+  ) {
     const candidate = current.candidate
     if (candidate.type === 'root-original')
       return {
@@ -164,17 +171,6 @@ export const chooseRoute = (
     }
   }
   const original = ranking.find((row) => row.eligible && row.candidate.type === 'root-original')
-  if (!fixed && input.boundary === 'startup' && original?.candidate.type === 'root-original') {
-    return {
-      action: 'pass',
-      target: { type: 'selected-original', candidate: original.candidate },
-      id,
-      reason: 'startup-original-pending-preflight',
-      routeType: 'root-original',
-      host: original.candidate.host,
-      ranking,
-    }
-  }
   const selected =
     fixed ??
     ranking.find(
@@ -190,6 +186,9 @@ export const chooseRoute = (
         row.candidate.type !== 'root-original' &&
         row.successCount > 0 &&
         (row.demandRatio ?? 0) >= 1.35,
+    ) ??
+    ranking.find(
+      (row) => row.eligible && row.successCount > 0 && row.safeThroughputMbps !== null,
     ) ??
     original ??
     ranking.find((row) => row.eligible && row.candidate.type === 'catalog-generated')
