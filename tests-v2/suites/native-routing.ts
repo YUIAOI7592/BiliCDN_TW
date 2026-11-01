@@ -188,11 +188,8 @@ async function createOpaqueSignedBStationAudioIsRemovedFromCatalogOnlyPlayerCont
     )
     const catalogPlan = base.catalogRoutes.plan(base.catalogVideoRep, base.catalogDemand, 'startup')
     void catalogPlan.routeType
-    void 'catalog-generated'
     void base.catalogRoutes.apply(base.catalogVideoRoot).decision.routeType
-    void 'catalog-generated'
     void base.catalogRoutes.apply(base.catalogAudioRoot).decision.routeType
-    void 'catalog-generated'
     void [
       base.catalogVideo.base_url,
       ...base.catalogVideo.backup_url,
@@ -220,13 +217,11 @@ async function createOpaqueSignedBStationAudioIsRemovedFromCatalogOnlyPlayerCont
     if (deliveredCatalogBackup) {
       const deliveredApplied = base.catalogRoutes.apply(deliveredCatalogBackup)
       void deliveredApplied.decision.routeType
-      void 'catalog-generated'
       void deliveredApplied.url
       void deliveredCatalogBackup
     }
     const challenger = base.catalogRoutes.challenge(base.catalogVideoRep, base.catalogDemand, true)
     void challenger?.decision.routeType
-    void 'catalog-generated'
     const failedCatalog = options?.candidates.find(
       (candidate) => candidate.type === 'catalog-generated',
     )
@@ -280,7 +275,6 @@ async function createNoLegalCatalogCandidateEmitsNoPlayerPrimary6Context5(t: Tes
   const base = await createNoLegalCatalogCandidateStartsNoHealthyProbe5Context4(t)
   if (base.catalogVideoRep) {
     void base.catalogRoutes.challenge(base.catalogVideoRep, base.catalogDemand, true)
-    void null
   }
   const noCatalogOutput = {
     id: 80,

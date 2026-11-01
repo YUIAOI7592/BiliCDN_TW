@@ -217,7 +217,6 @@ async function createLateChallengerResultFromTheRetiredHintCannotCreateHealthEvi
   if (base.staleStartup) {
     await base.plannedRoutes.recordStartupSuccess(base.staleStartup, 70 * 1024, 100, 10)
     void base.authorityEvidence.get(base.staleStartup.host, 'video')
-    void null
   }
   return extendFixture(base, {} as const)
 }
@@ -235,7 +234,6 @@ async function createRetiredPageHintTransportDoesNotPunishItsOldHostAfterContext
       null,
     )
     void base.authorityEvidence.get(base.staleChallenge.decision.host ?? '', 'video')
-    void null
   }
   return extendFixture(base, {} as const)
 }
@@ -285,10 +283,8 @@ async function createSignedRouteNeverCrossesGeneration10Context8(t: TestContext)
   const base = await createProtectedUrlContext7(t)
   if (base.rep && base.native) {
     void base.vault.resolve(base.native.handle, base.native.route)?.includes('token=secret')
-    void true
     base.vault.invalidate(base.rep, base.native.host)
     void base.vault.candidates(base.rep, new Set()).native.length
-    void 0
   }
   base.vault.reset(generationId(2), epochId(0))
   return extendFixture(base, {} as const)
@@ -330,7 +326,7 @@ async function createRestrictionAppliesToAudio12Context10(t: TestContext) {
   return extendFixture(base, { storage, restrictions } as const)
 }
 
-async function createExistingSchema2SettingsWithoutNativeToggleDefaultOff13Context11(
+async function createExistingSchema2SettingsWithoutNativeToggleDefaultOn13Context11(
   t: TestContext,
 ) {
   const base = await createRestrictionAppliesToAudio12Context10(t)
@@ -346,7 +342,7 @@ async function createExistingSchema2SettingsWithoutNativeToggleDefaultOff13Conte
 }
 
 async function createOtherTabReceivesANativeOnSettingWithAFutureTimestampContext12(t: TestContext) {
-  const base = await createExistingSchema2SettingsWithoutNativeToggleDefaultOff13Context11(t)
+  const base = await createExistingSchema2SettingsWithoutNativeToggleDefaultOn13Context11(t)
   const futureSettingsStorage = new FakeStorage()
   const futureResetTab = base.scope.own(new SettingsStore(futureSettingsStorage, () => base.now))
   const futureOtherTab = base.scope.own(new SettingsStore(futureSettingsStorage, () => base.now))
@@ -1059,7 +1055,7 @@ async function checkOtherTabReceivesANativeOnSettingWithAFutureTimestamp(
 async function checkExistingSchema2SettingsWithoutNativeToggleDefaultOn13(
   t: TestContext,
 ): Promise<void> {
-  const base = await createExistingSchema2SettingsWithoutNativeToggleDefaultOff13Context11(t)
+  const base = await createExistingSchema2SettingsWithoutNativeToggleDefaultOn13Context11(t)
 
   assert.strictEqual(
     base.nativeSettings.get().considerNativeSources,

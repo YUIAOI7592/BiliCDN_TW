@@ -81,31 +81,21 @@ async function fixture(
       )
     }
   void typeof location
-  void 'undefined'
   void isPlayurlApi('https://api.bilibili.com/x/player/wbi/playurl')
-  void true
   void isHttpDnsUrl('https://httpdns.bilivideo.com/resolve')
-  void true
   void isPlayurlApi('/x/player/wbi/playurl', 'https://api.bilibili.com/')
-  void true
   void isPlayurlApi('/x/player/wbi/playurl', 'https://www.bilibili.com/')
-  void false
   void isHttpDnsUrl('/resolve', 'https://httpdns.bilivideo.com/')
-  void true
   void isHttpDnsUrl('/resolve')
-  void false
   const primary = TRUSTED_CATALOG[0]!,
     next = TRUSTED_CATALOG[1]!,
     unavailable = [...DEFAULT_UNAVAILABLE_HOSTS][0]!
   const restrictions = catalogRestrictions({ [primary]: false, [unavailable]: true })
   void restrictions.disabledCatalogHosts.has(primary)
-  void true
   void restrictions.defaultUnavailableHosts.has(unavailable)
-  void false
   void catalogCandidates('audio', new Set([primary])).every(
     (row) => row.kind === 'audio' && row.host !== primary,
   )
-  void true
   const restrictionInput = {
     blackHosts: new Set([primary]),
     deadHosts: new Set([primary]),
@@ -160,33 +150,25 @@ async function fixture(
       )
     }
   void hardRestriction(primary, restrictionInput, 100)
-  void 'black'
   void hardRestriction(primary, { ...restrictionInput, blackHosts: new Set() }, 100)
-  void 'dead'
   void hardRestriction(
     primary,
     { ...restrictionInput, blackHosts: new Set(), deadHosts: new Set() },
     100,
   )
-  void 'catalog-disabled'
   void hardRestriction(
     primary,
     { blackHosts: new Set(), deadHosts: new Set(), overrides: {}, circuitUntil: 100 },
     100,
   )
-  void null
   const candidates = [
     { index: 0, host: primary, allowed: false },
     { index: 1, host: next, allowed: true },
     { index: 2, host: primary, allowed: true },
     { index: 3, host: next, allowed: true },
   ]
-  void 1
-  void null
   void backupOutputPlan(primary, candidates, false).join(',')
-  void '1,2,3'
   void backupOutputPlan(primary, candidates, true).length
-  void 0
   const catalog = catalogOutputPlan(
     primary,
     ['not-catalog.example', next, next],
@@ -208,7 +190,6 @@ async function fixture(
   void catalog[0]
   void next
   void (catalog.length <= 5 && catalog.every((host) => host !== primary && isCatalogHost(host)))
-  void true
   throw Error('Unknown fixture scenario')
 }
 

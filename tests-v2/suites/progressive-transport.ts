@@ -202,7 +202,6 @@ async function checkMP4CatalogOnlyFetchRejectsRedirects3(t: TestContext): Promis
       responseType === 'json' ? xhr.response : JSON.parse(xhr.responseText)
     ) as ReturnType<typeof base.fixture>
     void result.code
-    void 0
     void isCatalogHost(new URL(result.data.durl[0]!.url).hostname)
     xhr.payload = base.fixture()
     xhr.open('GET', base.api)
@@ -212,7 +211,6 @@ async function checkMP4CatalogOnlyFetchRejectsRedirects3(t: TestContext): Promis
         ? (xhr.response as ReturnType<typeof base.fixture>)
         : JSON.parse(xhr.responseText)
     ).code
-    void 0
   }
   await base.fakeWindow.fetch(base.payload.data.durl[0]!.url)
 

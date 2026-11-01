@@ -105,7 +105,6 @@ async function createAResourcePrimaryWithALegalSameSegmentBackupRegisters3Contex
 
     const planned = base.routes.plan(base.rep1, base.demand, 'startup')
     void planned.routeType
-    void 'catalog-generated'
     void planned.ranking.length
     void TRUSTED_CATALOG.length
     void planned.ranking.filter((row) => row.eligible).length
@@ -118,13 +117,10 @@ async function createAResourcePrimaryWithALegalSameSegmentBackupRegisters3Contex
       playerUrls.primary && new URL(playerUrls.primary).pathname === new URL(base.segment1).pathname
     )
     void playerUrls.backups.length
-    void 5
     void new Set([playerUrls.primary, ...playerUrls.backups].map((url) => new URL(url).hostname))
       .size
-    void 6
     const applied = base.routes.apply(base.segment1)
     void applied.decision.routeType
-    void 'catalog-generated'
     void applied.url
     if (applied.url) {
       void (new URL(applied.url).pathname + new URL(applied.url).search)
@@ -185,7 +181,6 @@ async function createAResourcePrimaryWithALegalSameSegmentBackupRegisters3Contex
     await base.settings.update({ fixedHost })
     base.routes.invalidateForUserSetting()
     void base.routes.commitStartupChoice(base.segment2, lateChoice, 'late-preflight')
-    void null
     void base.routes.apply(base.segment2).decision.host
     void fixedHost
   }
@@ -232,7 +227,6 @@ async function createCatalogResourceOutputContext4(t: TestContext) {
       (url) => new URL(url).pathname === new URL(base.resourceBackup).pathname,
     )
     void base.routes.apply(base.resource).decision.reason
-    void 'catalog-unreplaceable'
   }
   return extendFixture(base, {} as const)
 }

@@ -223,11 +223,8 @@ async function createXHRResponseTextAcceptsATypedAcceptedResult4Context3(t: Test
     const output = type === 'json' ? JSON.stringify(xhr.response) : xhr.responseText
     void !output.includes('summary-secret')
     void xhr.status
-    void 200
     void base.transport.snapshot().lastPlayurl?.transport
-    void 'xhr'
     void base.transport.snapshot().lastPlayurl?.reason
-    void 'upstream-error'
     const transformedAt = base.calls
     void xhr.response
     if (type === 'text') void xhr.responseText
