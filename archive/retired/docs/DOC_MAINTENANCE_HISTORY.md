@@ -1055,3 +1055,8 @@ TEST_REPORT 只追加公開交付事實；TODO 更新唯一工作狀態，HISTOR
 同步版本三處、README、架構顯示契約、CHANGELOG、TEST_REPORT、TODO 與測試遷移；HISTORY 的版本／議題／日期導覽及文件登記同步銜接 v2.2.4 完整原文。舊完整報告含 R1 原樣追加，另述原驗收未涵蓋成功學習後數字更新，保留原六項 PASS 與證據限制。
 
 v2.2.4 五份發行原件依 checksum、既有保護及逐位元組比對移至封存；搬移前清單另存 `archive/retired/originals/RELOCATION_MANIFEST_BEFORE_v2.2.5.json` 並登記精確保護。三份日誌完整既有前綴保持，Release／安全產物不回寫；既有停止決策與永久禁令不變。文件與封存納入 verify 通過；公開發布核對由最新版 TEST_REPORT 後續記錄，不以本次整理宣稱瀏覽器通過。
+
+
+### v2.2.5 發布後結案
+
+公開位元組核對完成後更新 TEST_REPORT 與 TODO，追加工具結果。v2.2.5 標籤保持發行提交，Release 五份原件不再改寫；Git 索引已核對本版／前版十份原件及三份日誌完整前綴。個別 CRLF 原件沿用保留行尾的 Git 屬性，仍檢查真正尾隨空白。結案只推送文件，不重新升版、發布或開始安裝驗收。
