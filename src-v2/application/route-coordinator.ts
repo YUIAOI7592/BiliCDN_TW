@@ -1,3 +1,4 @@
+import { controlPlaybackDemand } from '../domain/playback-demand.ts'
 import type { SettingsReader } from '../state/settings-contracts.ts'
 import { appliedRoute } from './routing/request-routing.ts'
 import { catalogRestrictions, catalogCandidates } from '../domain/route-policy.ts'
@@ -397,6 +398,14 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     return true
   }
 
+  #demandFor(representation: RepresentationId | null, kind: MediaKind): PlaybackDemand {
+    return controlPlaybackDemand(
+      kind,
+      representation ? this.vault.groupSummary(representation)?.bandwidth : null,
+      this.#effectiveRate,
+    )
+  }
+
   observePlaybackRate(rate: number): void {
     this.#effectiveRate = Number.isFinite(rate) && rate > 0 ? rate : 2
   }
@@ -531,13 +540,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       this.session.get().disabled
     )
       return null
-    const bandwidth = this.vault.groupSummary(context.representation)?.bandwidth ?? 0
-    const requiredMbps = Math.max(
-      context.kind === 'audio' ? 0.5 : 2,
-      ((bandwidth || (context.kind === 'audio' ? 192_000 : 4_000_000)) / 1_000_000) *
-        this.#effectiveRate *
-        1.25,
-    )
+    const demand = this.#demandFor(context.representation, context.kind)
     const candidates: StartupCandidate[] = []
     for (const candidate of startupCandidates({
       clock: this.clock,
@@ -553,7 +556,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     }
     return {
       candidates,
-      demand: { kind: context.kind, requiredMbps, highDemand: requiredMbps >= 12 },
+      demand,
       originalHost: parsedSource.host,
     }
   }
@@ -894,11 +897,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     const kind = context?.kind ?? kindHint ?? null
     if (streamKey && this.#hostLockedStreams.has(streamKey))
       return this.#applyHostLocked(url, parsed, context, streamKey, kind, demand)
-    const playbackDemand = demand ?? {
-      kind: kind ?? 'video',
-      requiredMbps: kind === 'audio' ? 0.5 : 8,
-      highDemand: false,
-    }
+    const playbackDemand =
+      demand ?? this.#demandFor(context?.representation ?? null, kind ?? 'video')
     let decision = context
       ? this.#currentPlan(context.representation)
       : streamKey
@@ -998,7 +998,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (hard && context) {
       const fallback = this.#choose(
         context,
-        demand ?? { kind: context.kind, requiredMbps: 8, highDemand: false },
+        demand ?? this.#demandFor(context.representation, context.kind),
         'watchdog',
         originalHost,
       )
@@ -1058,11 +1058,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       return blocked('catalog-unreplaceable')
     }
     const kind = context?.kind ?? kindHint
-    const playbackDemand = demand ?? {
-      kind: kind ?? 'video',
-      requiredMbps: kind === 'audio' ? 0.5 : 8,
-      highDemand: false,
-    }
+    const playbackDemand =
+      demand ?? this.#demandFor(context?.representation ?? null, kind ?? 'video')
     let decision = context
       ? this.#currentPlan(context.representation)
       : streamKey
@@ -1394,7 +1391,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       if (observation.kind === 'video' && observation.representation)
         this.recoverStartup(
           observation.representation,
-          { kind: 'video', requiredMbps: 8, highDemand: false },
+          this.#demandFor(observation.representation, 'video'),
           observation.targetHost,
           [],
         )
@@ -1404,11 +1401,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (result.type === 'native-invalid') {
       if (!controlsCurrent()) return
       this.vault.invalidate(representation!, result.host)
-      const demand: PlaybackDemand = {
-        kind: result.kind,
-        requiredMbps: result.kind === 'audio' ? 0.5 : 8,
-        highDemand: false,
-      }
+      const demand = this.#demandFor(representation, result.kind)
       this.recover(representation!, demand, 'verified-failure', result.host)
       return
     }
@@ -1468,11 +1461,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       return
     }
     if (representation) {
-      const demand: PlaybackDemand = {
-        kind: observation.kind!,
-        requiredMbps: observation.kind === 'audio' ? 0.5 : 8,
-        highDemand: false,
-      }
+      const demand = this.#demandFor(representation, observation.kind!)
       this.recover(representation, demand, 'verified-failure', result.host)
     }
   }

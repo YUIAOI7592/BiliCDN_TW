@@ -1,3 +1,4 @@
+import { observedPlaybackDemand } from '../domain/playback-demand.ts'
 import type { ControlCenterSnapshot } from './control-contracts.ts'
 import { attributionLabel, plain } from './labels.ts'
 
@@ -16,13 +17,7 @@ function currentDemand(model: ControlCenterSnapshot): number | null {
     !positive(video.playbackRate)
   )
     return null
-  const mbps = rep.bandwidth / 1_000_000,
-    scaled = mbps * video.playbackRate,
-    demand = scaled * 1.25
-  // Reject overflow and subnormal arithmetic before applying the 2 Mbps floor.
-  if (![mbps, scaled, demand].every((value) => Number.isFinite(value) && value >= 2 ** -1022))
-    return null
-  return Math.max(2, demand)
+  return observedPlaybackDemand('video', rep.bandwidth, video.playbackRate)?.requiredMbps ?? null
 }
 
 /** Derive this refresh only; display fallbacks never change routing or retain history. */

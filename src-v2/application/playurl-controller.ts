@@ -1,5 +1,4 @@
 import type {
-  PlaybackDemand,
   RepresentationId,
   MediaKind,
   RouteIdentity,
@@ -7,6 +6,7 @@ import type {
   EpochId,
 } from '../domain/model.ts'
 
+import { controlPlaybackDemand } from '../domain/playback-demand.ts'
 import { parseMediaUrl } from '../domain/url-policy.ts'
 import { observePlayurlContent, type PlayurlContentIdentity } from '../domain/playurl-content.ts'
 import type { PlayurlRequestContext } from '../domain/playurl-model.ts'
@@ -222,13 +222,7 @@ export class PlayurlController implements PlayurlControllerPort {
           return
         }
         if (source === 'player-mpd') return
-        const requiredMbps = Math.max(
-          kind === 'audio' ? 0.5 : 2,
-          ((bandwidth || (kind === 'audio' ? 192_000 : 4_000_000)) / 1_000_000) *
-            this.routes.playbackRate() *
-            1.25,
-        )
-        const demand: PlaybackDemand = { kind, requiredMbps, highDemand: requiredMbps >= 12 }
+        const demand = controlPlaybackDemand(kind, bandwidth, this.routes.playbackRate())
         const decision = this.routes.plan(
           rep,
           demand,
@@ -261,13 +255,7 @@ export class PlayurlController implements PlayurlControllerPort {
       return
     }
     const bandwidth = this.vault.groupSummary(representation)?.bandwidth ?? 0
-    const requiredMbps = Math.max(
-      kind === 'audio' ? 0.5 : 2,
-      ((bandwidth || (kind === 'audio' ? 192_000 : 4_000_000)) / 1_000_000) *
-        this.routes.playbackRate() *
-        1.25,
-    )
-    const demand: PlaybackDemand = { kind, requiredMbps, highDemand: requiredMbps >= 12 }
+    const demand = controlPlaybackDemand(kind, bandwidth, this.routes.playbackRate())
     const decision = this.routes.plan(
       representation,
       demand,

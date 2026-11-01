@@ -1,5 +1,6 @@
 import type { VideoSnapshot, SchedulerPort, PlayerControlSnapshot } from './ports.ts'
 import type { EarlyRetryPort } from './early-retry-contracts.ts'
+import { controlPlaybackDemand } from '../domain/playback-demand.ts'
 import type { PlaybackDemand } from '../domain/model.ts'
 import {
   comparePlaybackControls,
@@ -525,13 +526,6 @@ export class PlayerMonitor implements MonitorPort {
     const rep =
         this.routes.latestRequested('video')?.representation ?? this.session.get().representation,
       summary = rep ? this.vault.groupSummary(rep) : null
-    const base = summary?.bandwidth
-      ? summary.bandwidth / 1_000_000
-      : summary?.kind === 'audio'
-        ? 0.192
-        : 4
-    const kind = summary?.kind ?? 'video',
-      requiredMbps = Math.max(kind === 'audio' ? 0.5 : 2, base * video.effectiveRate * 1.25)
-    return { kind, requiredMbps, highDemand: requiredMbps >= 12 }
+    return controlPlaybackDemand(summary?.kind ?? 'video', summary?.bandwidth, video.playbackRate)
   }
 }
