@@ -825,3 +825,14 @@ DOM／AX未列出封閉ShadowRoot，改用同一IAB受控CDP讀既有節點與�
 固定 Node 26.8.1 執行 typecheck 與 format:check 通過。受影響的五個套件分別為 adapters 210、application 588、native-transport 167、progressive-routing 51、playurl-summary 22，合計 1,038 案全部通過，failed／cancelled／skipped／todo 均為 0；application 包含改名的 br01-followthrough 回歸。執行紀錄保存於本機忽略目錄 `.work/doc-state-audit/`，沒有啟動本機網站服務。未重跑其餘套件、完整 verify、安全掃描或安裝案例，既有發行 1,598 案及 R1 結果保持原執行範圍。
 
 docs:check 通過 248 Markdown／2,769 本機與儲存庫連結，7 個不可變舊斷鏈、434 個歷史原址限制、18 個私有證據引用及 514 個外部未連線引用保持原限制；archive:check 通過 439 個搬移項目、3 份追加日誌、109 份未變更檔及 69 份 checksum／318 列，沒有私有搬移或 local 模式。80 個發行建置輸入雜湊、v2.2.1 腳本大小／SHA-256、三份日誌舊正文完整前綴與 git diff --check 均核對通過；產品與可執行工具、版本及封裝未變。結案文字追加後重新執行文件、封存及差異檢查。
+
+
+## 2026-11-01：v2.2.1 診斷撤除後程式碼清查離線基線
+
+依使用者批准的唯讀計畫，以 8d41a0ba51ec6fe72bd7b1532187061b1d96acc8 凍結基準，完整讀取 211 個正式來源／測試／工具檔、58,551 行；雜湊、閱讀範圍、判定及覆蓋缺口集中於 [單一清查報告](../archive/retired/docs/CODE_AUDIT_POST_DIAGNOSTICS_v2.2.1_2026-11-01.md)。執行前完整檢查 verify 及其工具鏈，沒有啟動網站服務。
+
+固定 Node 26.8.1、npm 11.19.0、TypeScript 7.0.2、esbuild 0.28.2 執行一次既有 verify，退出碼 0，完整 1,598 案通過，failed／cancelled／skipped／todo 均為 0。型別、91 模組架構、匯入純度、確定性建置、語法、禁止標記與暫存封裝校驗通過，封裝檢查只用 dist/verify-package-* 並清理。原始輸出保存於本機忽略路徑 `.work/code-audit-v221/verify.log`，其雜湊在報告中登記。
+
+本次沒有修改產品、測試或工具，沒有新瀏覽器／安裝窗口或安全差異掃描。現有 verify 沒有阻擋報告指出的契約與測試殘留，不能把基線通過當作撤除零殘留。文件交付檢查與保護核對結果於下方追加。
+
+交付檢查：docs:check 通過 249 Markdown／2,779 本機與儲存庫連結；7 個不可變舊斷鏈、434 個歷史原址限制、18 個私有證據引用及 515 個外部未連線引用保持各自限制。archive:check 通過 439 個搬移項目、3 份追加日誌、109 份未變更檔及 69 份 checksum／318 列，沒有搬移或 local 模式。211 個程式閱讀基準、80 個發行建置輸入、792 份其他既有追蹤檔的原始雜湊與三份日誌完整舊正文前綴核對通過；只有六個文件路徑變更。git diff --check 通過，追加此結果後重查文件、封存、保護及差異。

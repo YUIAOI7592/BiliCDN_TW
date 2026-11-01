@@ -8,6 +8,8 @@
 
 ## 版本
 
+- [v2.2.1 診斷撤除後程式碼全文清查（2026-11-01）](../archive/retired/docs/CODE_AUDIT_POST_DIAGNOSTICS_v2.2.1_2026-11-01.md#凍結基準範圍與方法)
+
 - [v2.1.40 完整正文（2026-10-31；2026-11-01 保存）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)
 
 - [UP141 安裝版實測與工具阻塞（2026-10-30，v2.1.38）](../archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-30up141-安裝版實測)
@@ -90,6 +92,8 @@
 | v1.6.0 | [當版發行快照](../archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md)、[v1.6.0 公開安全摘要](../archive/retired/docs/SECURITY_REVIEW_v1.6.0.md) |
 
 ## 議題
+
+- [診斷契約／快照與測試殘留：完整證據及最小清除方案](../archive/retired/docs/CODE_AUDIT_POST_DIAGNOSTICS_v2.2.1_2026-11-01.md#確認殘留與最小清除方案)
 
 ### 上游更新與來源比較
 
@@ -268,7 +272,7 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
-| 2026-11-01 | [v2.2.1 正式交付與 R1 安裝驗收](TEST_REPORT.md)、[v2.2.0 完整正文與判定更正](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)、[本日狀態全面核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-01v221-後現行狀態與矛盾全面核對) |
+| 2026-11-01 | [v2.2.1 程式碼完整清查](../archive/retired/docs/CODE_AUDIT_POST_DIAGNOSTICS_v2.2.1_2026-11-01.md)、[v2.2.1 正式交付與 R1 安裝驗收](TEST_REPORT.md)、[v2.2.0 完整正文與判定更正](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)、[本日狀態全面核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-01v221-後現行狀態與矛盾全面核對) |
 | 2026-10-31 | [控制中心整合與移除前驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2139-完整報告保存2026-10-31)、[固定 CDN 備援恢復與移除後取證](#2026-10-31-固定-cdn-備援恢復與移除後取證)、[文件狀態對齊](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-31現行文件與歷史狀態全面對齊) |
 | 2026-10-30 | [UP141 安裝版實測](../archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-30up141-安裝版實測)、[完整測試版操作表](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md)、[隔離 B 原型](../archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md) |
 | 2026-10-25 | [IR36 安裝版驗證](../archive/retired/docs/INSTALLED_RESTORE_IR36_2026-10-25.md)、[診斷成本基準](../archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md)、[實際緩衝效用第一輪](../archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md)、[第二輪十二窗](../archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md)、[風險覆蓋](../archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md)、[採用決策](../archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md)、[救援還原](../archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md#2026-10-25-後續交付結案導引)、[v2.1.36 完整報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2136-完整報告2026-10-30)、[私有封存存取](TEST_TOOLING_REPORT.md#2026-10-25舊私有封存-eperm-調查與本機驗證)、[文件狀態核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-25文件狀態全面核對) |

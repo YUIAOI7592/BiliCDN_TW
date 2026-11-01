@@ -3244,6 +3244,22 @@
       ],
       "date": "2026-11-01",
       "requiredAnchors": []
+    },
+    {
+      "path": "archive/retired/docs/CODE_AUDIT_POST_DIAGNOSTICS_v2.2.1_2026-11-01.md",
+      "kind": "record",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.1"
+      ],
+      "date": "2026-11-01",
+      "requiredAnchors": [
+        "結論與階段門檻",
+        "確認殘留與最小清除方案",
+        "附錄完整逐檔覆蓋與原始雜湊"
+      ]
     }
   ],
   "protections": [
@@ -6837,6 +6853,13 @@
       "encoding": "raw",
       "bytes": 9529,
       "sha256": "58432cdf4cd1e5dc1386ca26c38b08a93b7b4195fcd1806f8461ce1a35460d38"
+    },
+    {
+      "path": "archive/retired/docs/CODE_AUDIT_POST_DIAGNOSTICS_v2.2.1_2026-11-01.md",
+      "mode": "exact",
+      "encoding": "lf",
+      "bytes": 56577,
+      "sha256": "3c20690fa45697992754b1d31909624c4e9d2ec8686db39c560dc8ad4ebc2418"
     }
   ],
   "privateEvidenceReferences": [
