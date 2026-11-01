@@ -1,6 +1,6 @@
 # 目前工作
 
-現行版本 **v2.2.4**。儀錶板資料遺失與缺值顯示修復正在完成發行檢查，尚未發布；完整結果與限制由 [TEST_REPORT](TEST_REPORT.md) 維護。本輪採離線交付，不啟動安裝版窗口。
+現行版本 **v2.2.4**。儀錶板資料遺失與缺值顯示修復已完成並正式發布，公開原件、附件及 latest 核對一致；完整證據與限制只在 [TEST_REPORT](TEST_REPORT.md) 維護。本輪採離線交付，安裝版及使用者原截圖觸發情境尚未實測；沒有新啟動的瀏覽器工作。
 
 ## 文件與狀態核對
 
@@ -8,7 +8,7 @@
 
 ## 程式碼完整清查與後續狀態
 
-原 [v2.2.1 清查報告](../archive/retired/docs/CODE_AUDIT_POST_DIAGNOSTICS_v2.2.1_2026-11-01.md#結論與階段門檻) 的確認殘留已清除，逐檔結論與範圍見 [v2.2.2 零殘留驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v222-完整正文保存2026-11-01)。第二階段以公開 v2.2.2 標籤提交 `f4cc2e4` 凍結基準，[整合盤點報告](../archive/retired/docs/POST_DIAGNOSTICS_INTEGRATION_v2.2.2_2026-11-01.md#排序與建議邊界) 已列 O01–O04 的證據、排序、相容影響與驗證方法。本版實作已批准的優先整理項目；通知合併、latestVideoHost 退役及重試抑制重封裝維持延後。v2.2.2 標籤與歷史報告保持原件。
+原 [v2.2.1 清查報告](../archive/retired/docs/CODE_AUDIT_POST_DIAGNOSTICS_v2.2.1_2026-11-01.md#結論與階段門檻) 的確認殘留已清除，逐檔結論與範圍見 [v2.2.2 零殘留驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v222-完整正文保存2026-11-01)。第二階段以公開 v2.2.2 標籤提交 `f4cc2e4` 凍結基準，[整合盤點報告](../archive/retired/docs/POST_DIAGNOSTICS_INTEGRATION_v2.2.2_2026-11-01.md#排序與建議邊界) 已列 O01–O04 的證據、排序、相容影響與驗證方法。v2.2.3 已實作已批准的優先整理項目；通知合併、latestVideoHost 退役及重試抑制重封裝維持延後。v2.2.2 標籤與歷史報告保持原件。
 
 ## 已交付的 v2.2.1 撤除範圍
 

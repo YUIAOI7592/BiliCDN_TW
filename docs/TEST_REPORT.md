@@ -68,6 +68,12 @@ Codex Security 差異掃描 `b2d6e70e-e8e6-44aa-9d59-b2446fb51996` 固定範圍 
 
 五份本機產物已封裝並逐項核對 SHA-256，v2.2.4 發行檔以原始位元組加入 Git，不做換行轉換。此為發布前檢查點；公開核對依實際完成結果追加，封裝後五份原件不回寫。
 
+2026-11-01 發布後追加：正式 [v2.2.4 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.4) 已發布，非 draft／prerelease。發行時遠端 main 與標籤所指提交均為 `7f3c5e0023b29b4a386c3e5011add0d37d2f6e23`，標籤物件 `29befe32ece5a618bf604f62be6a5d62406674d1`。Release ID `430557228`，唯一附件 BiliCDN_TW.user.js，asset ID `698233887`；附件 digest 與本機 SHA-256 一致。
+
+獨立下載公開 main 原件、v2.2.4 標籤原件、版本附件及 [latest 腳本](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js)，四者均為 **2.2.4／421,364 bytes／SHA-256 57300645ad2da226e4141f6ebe0439a3da4e718a534408bc9fc20968f4446d89**，與本機逐位元組一致。後續 main 文件結案與發行提交分開，v2.2.4 標籤維持上述提交。
+
+本版五份 Release 原件與上一版五份歸檔原件、三份日誌全部舊正文前綴及完整 v2.2.3 報告保持；後續只做文件結案，不重跑已通過的執行期驗證。安裝版與使用者原截圖情境仍未實測，舊判定不改寫。
+
 ### 來源隔離與實際安裝
 
 本輪不啟動瀏覽器、不更新安裝版或恢復停止窗口。v2.2.4 安裝版及使用者原截圖情境尚未實測，來源隔離亦未另行執行。v2.2.3 的七項基本驗收只屬當版當輪，不涵蓋本次新增的導覽重建回歸；舊 FAIL、INVALID 與未解根因不改判。
