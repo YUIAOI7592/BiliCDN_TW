@@ -954,3 +954,8 @@ main／標籤原件、唯一 Release 附件及公開 latest 均與本機腳本�
 ## 2026-11-03：v2.2.7 固定離線選路模型
 
 鎖定 Node 26.8.1／npm 11.19.0；新增 evaluate:routing 與四個工具契約，固定 Git 基準純政策在記憶體編譯，不啟動服務或網路。十個模型的輸入、逐案數值與限制見[完整報告](TEST_REPORT.md#固定合成模型對照)。原早重試效用評估保持獨立，其 FAIL 不混入 verify。最終格式、型別、測試、文件與封存結果在交付報告登記；沒有實機測速或安裝版結論。
+
+
+### v2.2.7 交付工具結果
+
+最終 verify 通過 18 套件／1,931 案及可重現建置／暫存封裝；格式、文件、封存與差異通過。GitHub 公開附件／latest 原始位元組與本機相同，精確數值集中[發布核對](TEST_REPORT.md#發布後公開核對2026-11-03)。沒有新的瀏覽器或效用 PASS；獨立 evaluate:early-retry 仍退出 1，normalCasesHaveNoUnnecessaryIntervention=false，原 FAIL 保留。

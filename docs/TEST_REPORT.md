@@ -87,6 +87,14 @@ Codex Security 掃描 0eaaf6bd-c86d-48fa-af4e-6d621c48323f，固定 048b0f9..5ca
 
 v2.2.6 五份原件已移至 archive/retired/releases/Release/v2.2.6，大小、SHA-256、修改時間與原始位元組均一致；三份追加日誌及研究原文前綴完整保留。v2.2.7 腳本 473572 bytes，SHA-256：`b003602488183398bc9af5a7d4ed42e3280719e794b528b20c81c3387df9b672`。本機五份產物由鎖定工具封裝，公開 main／標籤／唯一附件／latest 核對於發布後追加至現行報告，不回寫封裝快照。本次未執行安裝驗收，不啟動歷史窗口。
 
+## 發布後公開核對（2026-11-03）
+
+核對時間 2026-11-02T19:17:44.292Z（Asia/Taipei 03:17:44）。發行提交及遠端 main／v2.2.7 解參照均為 `80935889d8c01a7f56f4815509f8a3ef034a0303`；正式 [GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.7) 非 draft／prerelease，唯一附件為 BiliCDN_TW.user.js。
+
+公開版本附件與 latest 均實際下載並逐 bytes 比對本機封裝：版本 **2.2.7**、**473,572 bytes**、SHA-256 `b003602488183398bc9af5a7d4ed42e3280719e794b528b20c81c3387df9b672`；GitHub asset digest 亦一致。來源為正式附件與既有更新網址，不啟動瀏覽器或安裝腳本。結果保存 .work/v227/public-verification.json。
+
+發行後 main 僅追加本次核對與工作結案文件；v2.2.7 標籤與五份 Release 快照保持發行原件。三份日誌、研究原文前綴與上一版完整報告再次核對，未更動已掃描的程式或測試。文件／封存／差異檢查通過；安裝版仍未驗證，歷史提前重試效用 FAIL 與停止決策均保留。
+
 ## 歷史驗證導覽
 
 [v2.2.6 完整正文與 R1](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v226-完整正文保存2026-11-03)；[所有歷史與停止決策](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md)。目前工作只在 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
