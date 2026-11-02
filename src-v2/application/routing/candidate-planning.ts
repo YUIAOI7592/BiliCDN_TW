@@ -54,7 +54,8 @@ export function* startupCandidates(input: StartupAssemblyInput): Generator<Start
     if (key && policy.incompatible(candidateUrl, host)) return null
     const prior = evidence.get(host, context.kind)
     const metrics = evidenceMetrics(prior, clock.now())
-    const cachedSafeMbps = type === 'catalog-generated' && recentCapacity(metrics) ? metrics.safeThroughputMbps : null
+    const cachedSafeMbps =
+      type === 'catalog-generated' && recentCapacity(metrics) ? metrics.safeThroughputMbps : null
     return { host, type, url: candidateUrl, original, cachedSafeMbps, context }
   }
   if (!policy.isCatalogOnly()) {

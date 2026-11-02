@@ -1,7 +1,8 @@
 import { evidenceMetrics } from './evidence.ts'
-import { capacityPriority, adequateCapacity, ROUTE_HEADROOM } from './route-capacity.ts'
+import { orderCapacityRows, adequateCapacity, ROUTE_HEADROOM } from './route-capacity.ts'
 import type {
   Clock,
+  CompletionBudget,
   DecisionId,
   PlaybackDemand,
   RestrictionReason,
@@ -21,6 +22,7 @@ export interface RestrictionSnapshot {
 }
 
 export interface RankRoutesInput {
+  readonly completionBudget?: CompletionBudget | null
   readonly candidates: readonly RouteCandidate[]
   readonly evidenceFor: (host: string, kind: 'video' | 'audio') => RouteEvidence | null
   readonly restrictions: RestrictionSnapshot
@@ -60,57 +62,129 @@ const restrictionReasons = (
   return [...new Set(reasons)]
 }
 
-export const assessDemandRatio = (ratio: number | null): 'unknown' | 'below-required' | 'meets-headroom' =>
-  ratio === null || !Number.isFinite(ratio) ? 'unknown' : ratio < ROUTE_HEADROOM ? 'below-required' : 'meets-headroom'
+export const assessDemandRatio = (
+  ratio: number | null,
+): 'unknown' | 'below-required' | 'meets-headroom' =>
+  ratio === null || !Number.isFinite(ratio)
+    ? 'unknown'
+    : ratio < ROUTE_HEADROOM
+      ? 'below-required'
+      : 'meets-headroom'
 
 export const rankRoutes = (input: RankRoutesInput, now: number): readonly RouteRankingEntry[] => {
   const entries = input.candidates.map((candidate, candidateOrder) => {
     const reasons = restrictionReasons(candidate, input, now)
     const metrics = evidenceMetrics(input.evidenceFor(candidate.host, candidate.kind), now)
     return Object.freeze({
-      candidate, candidateOrder, state: reasons.length ? 'forbidden' : metrics.state,
-      eligible: reasons.length === 0, reasons: Object.freeze(reasons),
+      candidate,
+      candidateOrder,
+      state: reasons.length ? 'forbidden' : metrics.state,
+      eligible: reasons.length === 0,
+      reasons: Object.freeze(reasons),
       safeThroughputMbps: metrics.safeThroughputMbps,
-      demandRatio: metrics.safeThroughputMbps === null ? null : metrics.safeThroughputMbps / Math.max(0.001,input.demand.requiredMbps),
-      medianTtfbMs: metrics.medianTtfbMs, successCount: metrics.successCount, failureCount: metrics.failureCount,
-      capacityConfidence: metrics.capacityConfidence, freshSpeedCount: metrics.freshSpeedCount,
-      newestSpeedAt: metrics.newestSpeedAt, safePayloadMbps: metrics.safePayloadMbps, predictionTtfbMs: metrics.predictionTtfbMs,
-    }) satisfies RouteRankingEntry
+      demandRatio:
+        metrics.safeThroughputMbps === null
+          ? null
+          : metrics.safeThroughputMbps / Math.max(0.001, input.demand.requiredMbps),
+      medianTtfbMs: metrics.medianTtfbMs,
+      successCount: metrics.successCount,
+      failureCount: metrics.failureCount,
+      capacityConfidence: metrics.capacityConfidence,
+      freshSpeedCount: metrics.freshSpeedCount,
+      newestSpeedAt: metrics.newestSpeedAt,
+      safePayloadMbps: metrics.safePayloadMbps,
+      predictionTtfbMs: metrics.predictionTtfbMs,
+    })
   })
-  return Object.freeze(entries.sort((a,b)=>{
-    if (a.eligible !== b.eligible) return a.eligible ? -1 : 1
-    const fixedA=input.fixedHost===a.candidate.host, fixedB=input.fixedHost===b.candidate.host
-    if (fixedA!==fixedB) return fixedA ? -1 : 1
-    return capacityPriority(a)-capacityPriority(b) ||
-      (b.demandRatio ?? -1)-(a.demandRatio ?? -1) ||
-      (a.medianTtfbMs ?? Number.MAX_SAFE_INTEGER)-(b.medianTtfbMs ?? Number.MAX_SAFE_INTEGER) ||
-      a.candidateOrder-b.candidateOrder
-  }))
+  const ranked = orderCapacityRows(entries, input.completionBudget, now)
+  return Object.freeze(
+    [...ranked].sort((a, b) => {
+      if (a.eligible !== b.eligible) return a.eligible ? -1 : 1
+      const fixedA = input.fixedHost === a.candidate.host,
+        fixedB = input.fixedHost === b.candidate.host
+      return Number(fixedB) - Number(fixedA)
+    }),
+  )
 }
 
 /** A current legal route remains stable unless fresh inadequacy has a fresh adequate replacement. */
-export function retainedRoute(input: RankRoutesInput, ranking: readonly RouteRankingEntry[]): RouteRankingEntry | undefined {
-  if (!input.current || ['verified-failure','watchdog','user-setting','new-epoch'].includes(input.boundary)) return
-  const current=ranking.find(row=>row.eligible && row.candidate.host===input.current!.host)
-  const fixed=ranking.find(row=>row.eligible && row.candidate.host===input.fixedHost)
-  if (!current || (fixed && fixed.candidate.host!==current.candidate.host)) return
-  if (current.capacityConfidence === 'sufficient' && (current.demandRatio ?? 0)<ROUTE_HEADROOM &&
-    ranking.some(row=>row.eligible && row.candidate.host!==current.candidate.host && adequateCapacity(row))) return
+export function retainedRoute(
+  input: RankRoutesInput,
+  ranking: readonly RouteRankingEntry[],
+): RouteRankingEntry | undefined {
+  if (
+    !input.current ||
+    ['verified-failure', 'watchdog', 'user-setting', 'new-epoch'].includes(input.boundary)
+  )
+    return
+  const current = ranking.find((row) => row.eligible && row.candidate.host === input.current!.host)
+  const fixed = ranking.find((row) => row.eligible && row.candidate.host === input.fixedHost)
+  if (!current || (fixed && fixed.candidate.host !== current.candidate.host)) return
+  if (
+    current.capacityConfidence === 'sufficient' &&
+    (current.demandRatio ?? 0) < ROUTE_HEADROOM &&
+    ranking.some(
+      (row) =>
+        row.eligible && row.candidate.host !== current.candidate.host && adequateCapacity(row),
+    )
+  )
+    return
   return current
 }
-export const chooseRoute = (input: RankRoutesInput, clock: Clock, id: DecisionId, rows?: readonly RouteRankingEntry[]): RouteDecision => {
-  const ranking=rows ?? rankRoutes(input,clock.now())
-  const fixed=ranking.find(row=>row.eligible && row.candidate.host===input.fixedHost)
-  const retained=retainedRoute(input,ranking)
-  const selected=fixed ?? retained ?? ranking.find(row=>row.eligible)
+export const chooseRoute = (
+  input: RankRoutesInput,
+  clock: Clock,
+  id: DecisionId,
+  rows?: readonly RouteRankingEntry[],
+): RouteDecision => {
+  const ranking = rows ?? rankRoutes(input, clock.now())
+  const fixed = ranking.find((row) => row.eligible && row.candidate.host === input.fixedHost)
+  const retained = retainedRoute(input, ranking)
+  const selected = fixed ?? retained ?? ranking.find((row) => row.eligible)
   if (!selected) {
-    const first=ranking[0]
-    return {action:'block',id,reason:first?.reasons[0]??'invalid-url',routeType:first?.candidate.type??'root-original',host:first?.candidate.host??null,ranking}
+    const first = ranking[0]
+    return {
+      action: 'block',
+      id,
+      reason: first?.reasons[0] ?? 'invalid-url',
+      routeType: first?.candidate.type ?? 'root-original',
+      host: first?.candidate.host ?? null,
+      ranking,
+    }
   }
-  const candidate=selected.candidate
-  const reason=fixed ? 'fixed' : retained ? adequateCapacity(retained) ? 'healthy-affinity' : 'retained-unverified'
-    : selected.capacityConfidence==='sufficient' ? 'proven' : selected.capacityConfidence==='provisional' ? 'recent-success'
-    : selected.capacityConfidence==='historical' ? 'historical-estimate' : selected.capacityConfidence==='revalidation' ? 'revalidation-fallback' : 'unverified-fallback'
-  if (candidate.type==='root-original') return {action:'pass',target:{type:'selected-original',candidate},id,reason,routeType:'root-original',host:candidate.host,ranking}
-  return {action:'rewrite',id,reason,routeType:candidate.type,host:candidate.host,candidate,ranking}
+  const candidate = selected.candidate
+  const reason = fixed
+    ? 'fixed'
+    : retained
+      ? adequateCapacity(retained)
+        ? 'healthy-affinity'
+        : 'retained-unverified'
+      : selected.capacityConfidence === 'sufficient'
+        ? 'proven'
+        : selected.capacityConfidence === 'provisional'
+          ? 'recent-success'
+          : selected.capacityConfidence === 'historical'
+            ? 'historical-estimate'
+            : selected.capacityConfidence === 'revalidation'
+              ? 'revalidation-fallback'
+              : 'unverified-fallback'
+  if (candidate.type === 'root-original')
+    return {
+      action: 'pass',
+      target: { type: 'selected-original', candidate },
+      id,
+      reason,
+      routeType: 'root-original',
+      host: candidate.host,
+      ranking,
+    }
+  return {
+    action: 'rewrite',
+    id,
+    reason,
+    routeType: candidate.type,
+    host: candidate.host,
+    candidate,
+    ranking,
+  }
 }

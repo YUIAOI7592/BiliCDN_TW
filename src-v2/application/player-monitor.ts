@@ -132,6 +132,8 @@ export class PlayerMonitor implements MonitorPort {
   }
 
   tick(): void {
+    const playbackOwner = this.session.get(),
+      playbackRequest = this.routes.latestRequested('video')
     const video = this.player.snapshot(),
       controls = this.player.controls(),
       now = this.now(),
@@ -165,7 +167,13 @@ export class PlayerMonitor implements MonitorPort {
       const state = this.session.get(),
         rep = state.representation
       if (rep) {
-        this.routes.recover(rep, this.#demand(video), 'watchdog', state.affinity?.host ?? null)
+        this.routes.recover(
+          rep,
+          this.#demand(video),
+          'watchdog',
+          state.affinity?.host ?? null,
+          this.routes.latestRequested('video')?.expectedBytes ?? null,
+        )
         this.#lastRecoveryAt = now
       }
     }
@@ -195,7 +203,34 @@ export class PlayerMonitor implements MonitorPort {
       controls,
       demand,
     })
-    this.#publishSnapshot(video, controls, active, watchdog, startupAge)
+    const routingPlayback =
+      !disabled &&
+      visible &&
+      video.available &&
+      !video.paused &&
+      !video.seeking &&
+      !video.ended &&
+      !video.mediaError &&
+      !controls.dragging &&
+      playbackRequest &&
+      playbackOwner === this.session.get() &&
+      playbackOwner.representation === playbackRequest.representation
+        ? {
+            generation: playbackRequest.generation,
+            epoch: playbackRequest.epoch,
+            representation: playbackRequest.representation,
+            routePolicyRevision: playbackRequest.routePolicyRevision,
+            ...(playbackRequest.authorityRevision !== undefined
+              ? { authorityRevision: playbackRequest.authorityRevision }
+              : {}),
+            ...(playbackRequest.selectionRevision !== undefined
+              ? { selectionRevision: playbackRequest.selectionRevision }
+              : {}),
+            sampledAt: now,
+            playableBufferSec: video.playableBufferSec,
+          }
+        : null
+    this.#publishSnapshot(video, controls, active, watchdog, startupAge, routingPlayback)
   }
 
   #sampleProgress(
@@ -409,6 +444,7 @@ export class PlayerMonitor implements MonitorPort {
     active: boolean,
     watchdog: MonitorSnapshot['watchdog'],
     startupAge: number,
+    routingPlayback: import('../domain/model.ts').RoutePlaybackFacts | null,
   ): void {
     this.#lastTime = video.available ? video.currentTime : null
     this.#lastFrames = video.frames
@@ -420,6 +456,7 @@ export class PlayerMonitor implements MonitorPort {
     }
     this.#snapshot = Object.freeze({
       video,
+      routingPlayback,
       stableProgressTicks: this.#stableProgressTicks,
       watchdog,
       stallTicks: this.#stallTicks,
@@ -571,6 +608,7 @@ export class PlayerMonitor implements MonitorPort {
         this.#demand(video),
         'watchdog',
         requested.targetHost,
+        requested.expectedBytes ?? null,
       )
       if (
         decision &&

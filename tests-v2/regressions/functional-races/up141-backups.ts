@@ -24,6 +24,9 @@ const cos = 'upos-sz-mirrorcos.bilivideo.com'
 
 function ranked(host: string, ratio: number | null, eligible = true): RouteRankingEntry {
   return {
+    comparisonMode: 'throughput',
+    predictionReason: 'unknown-size',
+    estimatedCompletionMs: null,
     candidateOrder: TRUSTED_CATALOG.indexOf(host as (typeof TRUSTED_CATALOG)[number]),
     capacityConfidence: ratio === null ? 'missing' : 'sufficient',
     freshSpeedCount: ratio === null ? 0 : 2,

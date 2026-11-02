@@ -1,3 +1,4 @@
+import { closedRangeLength } from '../domain/route-completion.ts'
 import { responseFailure } from './transport-context.ts'
 import { classifyPlayurlApi } from '../domain/catalog.ts'
 import { isHttpDnsUrl } from '../domain/url-policy.ts'
@@ -115,10 +116,12 @@ export class FetchHookAdapter {
       const method = sourceRequest.method.toUpperCase()
       if (!self.routes.recognizesMedia(originalUrl)) return await native(sourceRequest, false)
       self.count('mediaRecognized')
+      const requestBytes =
+        method === 'GET' ? closedRangeLength(sourceRequest.headers.get('Range')) : null
       const generation = self.session.get().generation
       if (method === 'GET') {
         if (self.measurement.willGateStartup(originalUrl)) {
-          await self.measurement.prepareStartup(originalUrl, sourceRequest.signal)
+          await self.measurement.prepareStartup(originalUrl, sourceRequest.signal, requestBytes)
         } else self.measurement.noteUnpreflighted('no-safe-startup-candidate')
       }
       if (self.settings.get().disabled) return await native(sourceRequest, false)
@@ -136,7 +139,9 @@ export class FetchHookAdapter {
         return await native(sourceRequest, false)
       }
       const applied =
-        method === 'GET' ? self.routes.apply(originalUrl) : self.routes.inspectOriginal(originalUrl)
+        method === 'GET'
+          ? self.routes.apply(originalUrl, null, undefined, false, requestBytes)
+          : self.routes.inspectOriginal(originalUrl)
       const reason = self.dispatchFailure({
         generation,
         applied,
@@ -153,7 +158,14 @@ export class FetchHookAdapter {
         ? new Request(targetInput, { redirect: 'error' })
         : targetInput
       const startedAt = self.now()
-      const request = self.request(applied, originalUrl, applied.url, startedAt, method)
+      const request = self.request(
+        applied,
+        originalUrl,
+        applied.url,
+        startedAt,
+        method,
+        requestBytes,
+      )
       activeRequest = request
       self.routes.requestStarted(request)
       let response: Response

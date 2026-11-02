@@ -8,10 +8,17 @@ import type { PlayurlControllerPort } from './playurl-contracts.ts'
 
 export interface RuntimeRoutesPort extends Pick<
   RouteCoordinatorPort,
-  'subscribe' | 'invalidateForUserSetting' | 'latestRequested' | 'recoveryEligible'
+  | 'subscribe'
+  | 'invalidateForUserSetting'
+  | 'latestRequested'
+  | 'recoveryEligible'
+  | 'observePlaybackFacts'
 > {}
 export interface RuntimePlayerPort extends Pick<PlayerPort, 'snapshot' | 'reset'> {}
-export interface RuntimeMonitorPort extends Pick<MonitorPort, 'start' | 'stop' | 'reset'> {}
+export interface RuntimeMonitorPort extends Pick<
+  MonitorPort,
+  'start' | 'stop' | 'reset' | 'subscribe'
+> {}
 export interface RuntimeMeasurementPort extends Pick<MeasurementPort, 'reset'> {}
 export interface RuntimeRecoveryPort extends Pick<RecoveryPort, 'reset' | 'armRouteFailure'> {}
 export interface RuntimeContentPort extends Pick<PlayurlControllerPort, 'subscribeEpoch'> {}

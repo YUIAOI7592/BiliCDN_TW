@@ -16,6 +16,7 @@ interface EarlyRetryFacts {
   readonly alternative: {
     readonly host: string
     readonly safeMbps: number
+    readonly safePayloadMbps: number
     readonly ttfbMs: number
     readonly successCount: number
     readonly oldestAt: number
@@ -52,6 +53,7 @@ function frozenScenarios(): readonly FrozenScenario[] {
     alternative: {
       host: 'upos-sz-mirrorbos.bilivideo.com',
       safeMbps: 40,
+      safePayloadMbps: 40,
       ttfbMs: 100,
       successCount: 2,
       oldestAt: 5000,

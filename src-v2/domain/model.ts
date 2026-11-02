@@ -19,6 +19,7 @@ export interface PlayurlOutputSummary {
 
 export interface RequestContext {
   /** Assigned by the route owner at dispatch preparation; absent before dispatch. */
+  readonly expectedBytes?: number | null
   readonly dispatchSequence?: number
   readonly routeRevision?: number
   readonly selectionRevision?: number
@@ -50,7 +51,8 @@ export type MediaKind = 'video' | 'audio'
 export type RouteType = 'catalog-generated' | 'native-signed' | 'root-original'
 export type RouteState = 'unknown' | 'usable' | 'proven' | 'degraded' | 'circuit-open' | 'forbidden'
 export type EvidenceSource = 'transport' | 'challenge'
-export type CapacityConfidence = 'missing' | 'provisional' | 'sufficient' | 'historical' | 'revalidation'
+export type CapacityConfidence =
+  'missing' | 'provisional' | 'sufficient' | 'historical' | 'revalidation'
 export type FailureKind = 'network' | 'body' | 'timeout' | 'http-5xx' | 'native-invalid'
 
 export interface RouteIdentity {
@@ -104,6 +106,9 @@ export type RestrictionReason =
   | 'catalog-only-non-get'
 
 export interface RouteRankingEntry {
+  readonly comparisonMode: 'throughput' | 'completion'
+  readonly predictionReason: PredictionReason
+  readonly estimatedCompletionMs: number | null
   readonly candidateOrder: number
   readonly capacityConfidence: CapacityConfidence
   readonly freshSpeedCount: number
@@ -200,6 +205,31 @@ export interface PlaybackDemand {
   readonly kind: MediaKind
   readonly requiredMbps: number
   readonly highDemand: boolean
+}
+
+export interface CompletionBudget {
+  readonly requestBytes: number | null
+  readonly playableBufferSec: number | null
+  readonly sampledAt: number
+}
+export type PredictionReason =
+  | 'available'
+  | 'unknown-size'
+  | 'unknown-buffer'
+  | 'stale-playback'
+  | 'unknown-body-rate'
+  | 'cohort-incomplete'
+export interface RoutePlaybackFacts extends Pick<
+  RequestContext,
+  | 'generation'
+  | 'epoch'
+  | 'representation'
+  | 'authorityRevision'
+  | 'selectionRevision'
+  | 'routePolicyRevision'
+> {
+  readonly sampledAt: number
+  readonly playableBufferSec: number
 }
 
 export interface RouteAffinity {

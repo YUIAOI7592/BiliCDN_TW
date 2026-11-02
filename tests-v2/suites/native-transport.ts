@@ -18,6 +18,11 @@ import { PlayurlAdapter } from '../../src-v2/adapters/playurl.ts'
 import { PagePlayinfoAdapter } from '../../src-v2/adapters/page-playinfo.ts'
 import { FakeStorage } from '../support/storage.ts'
 import { testScope } from '../support/scope.ts'
+import {
+  fixture as routingFixture,
+  media as routingMedia,
+  dash as routingDash,
+} from '../regressions/functional-races/routing-fixture.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
 
@@ -2734,3 +2739,67 @@ import '../regressions/functional-races/xhr.ts'
 import '../regressions/functional-races/cr-xhr-headers.ts'
 import '../regressions/functional-races/cr-xhr-send-conversion.ts'
 import '../regressions/functional-races/xhr-response-convergence.ts'
+
+for (const transportKind of ['fetch', 'xhr'] as const) {
+  for (const range of ['bytes=10-65545', 'bytes=1-', 'bytes=0-1,3-4']) {
+    test(
+      'V227 dispatch: ' + transportKind + ' passes bounded request facts for ' + range,
+      async (t) => {
+        const scope = testScope(t),
+          f = routingFixture(scope),
+          resources = await createPlaybackResourcesBlock1()
+        scope.defineGlobal('unsafeWindow', { configurable: true, value: resources.fakeWindow })
+        scope.defineGlobal('location', {
+          configurable: true,
+          value: new URL('https://www.bilibili.com/video/synthetic'),
+        })
+        installProgressEvent(scope)
+        const url = routingMedia('v227-range', 'video.m4s')
+        assert.equal(f.adapter.transform(routingDash(url)).accepted, true)
+        const sizes: (number | null | undefined)[] = [],
+          gates: (number | null | undefined)[] = [],
+          apply = f.routes.apply.bind(f.routes)
+        f.routes.apply = (...args) => {
+          sizes.push(args[4])
+          return apply(...args)
+        }
+        const transport = scope.own(
+          new TransportAdapter(
+            f.session,
+            f.settings,
+            f.routes,
+            f.adapter,
+            {
+              willGateStartup: () => true,
+              prepareStartup: async (_url, _signal, bytes) => {
+                gates.push(bytes)
+              },
+              noteUnpreflighted: () => undefined,
+            },
+            f.clock.now,
+            createRuntimeIds(),
+          ),
+        )
+        transport.install()
+        assert.equal(transport.snapshot().hookState, 'installed')
+        if (transportKind === 'fetch') {
+          const response = await resources.fakeWindow.fetch(url, { headers: { Range: range } })
+          await response.body?.cancel('case-complete')
+        } else {
+          const xhr = new resources.FakeXhr()
+          xhr.open('GET', url)
+          xhr.setRequestHeader('Range', range)
+          const complete = deferred<void>()
+          xhr.addEventListener('loadend', () => complete.resolve(), { once: true })
+          xhr.send()
+          await complete.promise
+          assert.equal(xhr.nativeSends, 1)
+        }
+        const expected = range === 'bytes=10-65545' ? 65536 : null
+        assert.equal(gates.at(-1), expected)
+        assert.equal(sizes.at(-1), expected)
+        assert.equal(f.routes.latestRequested('video')?.expectedBytes, expected)
+      },
+    )
+  }
+}

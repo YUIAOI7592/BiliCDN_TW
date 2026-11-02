@@ -107,6 +107,7 @@ function fixture(t: TestContext, rate: number) {
       }
     },
     invalidateForUserSetting() {},
+    observePlaybackFacts() {}, // Recovery-only double; real forwarding has its own integration case.
     latestRequested: () => request,
     recoveryEligible: () => policyValid,
     recover: () => {

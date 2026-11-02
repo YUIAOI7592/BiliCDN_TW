@@ -1,5 +1,5 @@
 import { startupTransition } from '../domain/playback-flow.ts'
-import { capacityPriority, ROUTE_HEADROOM } from '../domain/route-capacity.ts'
+import { orderCapacityRows, ROUTE_HEADROOM } from '../domain/route-capacity.ts'
 import { sameMeasurementSettings } from '../state/settings-policy.ts'
 import type { AppliedRouteDecision, StartupCandidate, StartupOptions } from './route-contracts.ts'
 import type {
@@ -27,6 +27,8 @@ interface ProbeResult {
   readonly valid: boolean
   readonly safeMbps: number | null
   readonly capacityConfidence: CapacityConfidence
+  readonly safePayloadMbps: number | null
+  readonly predictionTtfbMs: number | null
   readonly bytes: number
   readonly elapsedMs: number
   readonly ttfbMs: number | null
@@ -164,12 +166,16 @@ export class MeasurementController implements MeasurementPort {
   }
 
   /** The player request, never a page hint, authorizes this one bounded startup window. */
-  async prepareStartup(url: string, signal: AbortSignal | null = null): Promise<void> {
+  async prepareStartup(
+    url: string,
+    signal: AbortSignal | null = null,
+    requestBytes: number | null = null,
+  ): Promise<void> {
     if (signal?.aborted) throw cancellationReason(signal)
     if (this.#startupLease.phase === 'closed') return
     if (this.#startupLease.phase === 'available') {
       const cursor = Math.max(0, Number(this.meta.get().catalogCursor) || 0)
-      const options = this.routes.startupOptions(url, cursor)
+      const options = this.routes.startupOptions(url, cursor, requestBytes)
       if (!options?.candidates.length) {
         this.noteUnpreflighted(
           options?.deferredToVideo ? 'video-priority' : 'unsupported-or-no-legal-candidate',
@@ -334,10 +340,28 @@ export class MeasurementController implements MeasurementPort {
     const qualified = valid.filter(
       (result) => (result.safeMbps ?? 0) / options.demand.requiredMbps >= ROUTE_HEADROOM,
     )
-    const compare = (a: ProbeResult, b: ProbeResult): number => {
-      const priority = (row: ProbeResult) => capacityPriority({capacityConfidence:row.capacityConfidence,safeThroughputMbps:row.safeMbps,demandRatio:row.safeMbps === null ? null : row.safeMbps/options.demand.requiredMbps})
-      return priority(a)-priority(b) || (b.safeMbps ?? 0)-(a.safeMbps ?? 0) || options.candidates.indexOf(a.candidate)-options.candidates.indexOf(b.candidate)
-    }
+    const budget = options.candidates[0]
+      ? this.routes.completionBudget(
+          options.candidates[0].context.representation,
+          options.requestBytes ?? null,
+        )
+      : null
+    const ordered = orderCapacityRows(
+      valid.map((result) => ({
+        result,
+        candidateOrder: options.candidates.indexOf(result.candidate),
+        capacityConfidence: result.capacityConfidence,
+        safeThroughputMbps: result.safeMbps,
+        demandRatio:
+          result.safeMbps === null ? null : result.safeMbps / options.demand.requiredMbps,
+        safePayloadMbps: result.safePayloadMbps,
+        predictionTtfbMs: result.predictionTtfbMs,
+      })),
+      budget,
+      this.now(),
+    ).map((row) => row.result)
+    const compare = (a: ProbeResult, b: ProbeResult): number =>
+      ordered.indexOf(a) - ordered.indexOf(b)
     const ranked = [...qualified].sort(compare)
     const fastestValid = [...valid].sort(compare)[0]?.candidate ?? null
     const winner =
@@ -365,9 +389,7 @@ export class MeasurementController implements MeasurementPort {
       : this.routes.commitStartupChoice(url, null, 'startup-exhausted')
     if (!current()) return
     this.#startupQualifiedHosts = Object.freeze(
-      [...valid]
-        .sort(compare)
-        .map((result) => result.candidate.host),
+      [...valid].sort(compare).map((result) => result.candidate.host),
     )
     this.#startupState = Object.freeze({
       state: decision ? 'complete' : 'skipped',
@@ -423,19 +445,43 @@ export class MeasurementController implements MeasurementPort {
       signal,
       completionReason: 'startup-sample-complete',
     })
-    const rangeValid = result.directRange && Number.isSafeInteger(result.bytes) && Number.isFinite(result.elapsedMs) && result.elapsedMs > 0 && (candidate.cachedSafeMbps !== null ? result.bytes >= 16 * 1024 : result.bytes >= 64 * 1024)
-    const metrics = rangeValid ? this.routes.startupCapacity(candidate, candidate.cachedSafeMbps !== null ? null : {
-      requestId:'startup-preview',at:this.now(),source:'challenge',outcome:'success',
-      throughputMbps:(result.bytes*8)/result.elapsedMs/1000,ttfbMs:result.ttfbMs,failureKind:null,
-      bytes:result.bytes,elapsedMs:result.elapsedMs,
-    }) : null
-    const valid = rangeValid && !!metrics && ['sufficient','provisional'].includes(metrics.capacityConfidence) && metrics.safeThroughputMbps !== null
+    const rangeValid =
+      result.directRange &&
+      Number.isSafeInteger(result.bytes) &&
+      Number.isFinite(result.elapsedMs) &&
+      result.elapsedMs > 0 &&
+      (candidate.cachedSafeMbps !== null ? result.bytes >= 16 * 1024 : result.bytes >= 64 * 1024)
+    const metrics = rangeValid
+      ? this.routes.startupCapacity(
+          candidate,
+          candidate.cachedSafeMbps !== null
+            ? null
+            : {
+                requestId: 'startup-preview',
+                at: this.now(),
+                source: 'challenge',
+                outcome: 'success',
+                throughputMbps: (result.bytes * 8) / result.elapsedMs / 1000,
+                ttfbMs: result.ttfbMs,
+                failureKind: null,
+                bytes: result.bytes,
+                elapsedMs: result.elapsedMs,
+              },
+        )
+      : null
+    const valid =
+      rangeValid &&
+      !!metrics &&
+      ['sufficient', 'provisional'].includes(metrics.capacityConfidence) &&
+      metrics.safeThroughputMbps !== null
     return {
       candidate,
       ...result,
       valid,
       safeMbps: valid ? metrics!.safeThroughputMbps : null,
       capacityConfidence: metrics?.capacityConfidence ?? 'missing',
+      safePayloadMbps: metrics?.safePayloadMbps ?? null,
+      predictionTtfbMs: metrics?.predictionTtfbMs ?? null,
       reason: result.directRange ? (valid ? 'measured' : 'short-response') : result.reason,
     }
   }

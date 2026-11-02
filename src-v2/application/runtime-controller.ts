@@ -13,6 +13,7 @@ import type {
 } from './runtime-ports.ts'
 
 export class RuntimeController implements RuntimePort {
+  #running = false
   #stops: (() => void)[] = []
   constructor(
     private readonly settings: SettingsReader & SettingsObserver,
@@ -30,6 +31,10 @@ export class RuntimeController implements RuntimePort {
     this.#stops.push(
       this.content.subscribeEpoch(() => this.reset()),
       this.routes.subscribe((event) => this.handleRouteEvent(event)),
+      this.monitor.subscribe((snapshot) => {
+        if (this.#stops.length && this.#running)
+          this.routes.observePlaybackFacts(snapshot.routingPlayback ?? null)
+      }),
     )
     this.visibility.setEnabled(!this.settings.get().disabled)
     let routeSettings = this.settings.get()
@@ -66,18 +71,24 @@ export class RuntimeController implements RuntimePort {
     }
   }
   start(): void {
+    this.#running = true
     this.monitor.start()
   }
   stop(): void {
+    this.#running = false
+    this.routes.observePlaybackFacts(null)
     this.monitor.stop()
   }
   reset(): void {
+    this.routes.observePlaybackFacts(null)
     this.monitor.reset()
     this.measurement.reset()
     this.recovery.reset()
     this.player.reset()
   }
   dispose(): void {
+    this.#running = false
+    this.routes.observePlaybackFacts(null)
     this.earlyRetry?.dispose()
     for (const stop of this.#stops.splice(0).reverse()) stop()
   }

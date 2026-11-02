@@ -4,8 +4,9 @@ import { type MeasurementPort } from './measurement-contracts.ts'
 import { type RecoveryPort } from './recovery-contracts.ts'
 import { type SessionPort } from '../state/session-contracts.ts'
 import { type SignedRouteVaultPort } from '../state/vault-contracts.ts'
-import { type RequestContext } from '../domain/model.ts'
+import { type RequestContext, type RoutePlaybackFacts } from '../domain/model.ts'
 export interface MonitorSnapshot {
+  readonly routingPlayback?: RoutePlaybackFacts | null
   readonly video: VideoSnapshot
   readonly stableProgressTicks: number
   readonly watchdog:
@@ -46,6 +47,8 @@ export interface MonitorRoutes extends Pick<
     | 'targetHost'
     | 'routePolicyRevision'
     | 'authorityRevision'
+    | 'selectionRevision'
+    | 'expectedBytes'
   > | null
   recoveryEligible: RouteCoordinatorPort['recoveryEligible']
   recover(...args: Parameters<RouteCoordinatorPort['recover']>): unknown

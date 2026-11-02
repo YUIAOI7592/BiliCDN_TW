@@ -11,6 +11,7 @@ export interface InFlightVideoSample {
 }
 
 export interface EarlyRetryAlternative {
+  readonly safePayloadMbps?: number | null
   readonly host: string
   readonly safeMbps: number
   readonly ttfbMs: number
@@ -108,6 +109,7 @@ const reasons: readonly string[] = Object.freeze([
   'adequate-current',
   'alternative-evidence',
   'alternative-capacity',
+  'alternative-timing',
   'alternative-late',
   'current-finishes-in-time',
   'insufficient-benefit',

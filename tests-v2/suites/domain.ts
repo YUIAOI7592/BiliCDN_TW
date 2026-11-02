@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import '../regressions/v227-evidence.ts'
 import '../regressions/v227-routing.ts'
+import '../regressions/v227-completion.ts'
 import '../regressions/functional-races/content-domain.ts'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'

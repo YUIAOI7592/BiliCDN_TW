@@ -2,6 +2,10 @@ import {
   type AttributionSource,
   type EvidenceSample,
   type EvidenceMetrics,
+  type CompletionBudget,
+  type RoutePlaybackFacts,
+  type CapacityConfidence,
+  type PredictionReason,
   type AttributionStatus,
   type DecisionId,
   type MediaKind,
@@ -43,6 +47,7 @@ export interface StartupCandidate {
 }
 
 export interface StartupOptions {
+  readonly requestBytes?: number | null
   readonly candidates: readonly StartupCandidate[]
   readonly demand: PlaybackDemand
   readonly originalHost: string
@@ -99,6 +104,12 @@ export interface RouteRankingSummary {
   readonly ttfbMs: number | null
 }
 export interface CurrentRouteCapacity {
+  readonly capacityConfidence: CapacityConfidence
+  readonly freshSpeedCount: number
+  readonly newestSpeedAt: number | null
+  readonly safePayloadMbps: number | null
+  readonly estimatedCompletionMs: number | null
+  readonly predictionReason: PredictionReason
   readonly generation: SessionSnapshot['generation']
   readonly epoch: SessionSnapshot['epoch']
   readonly representation: RepresentationId
@@ -174,8 +185,20 @@ export interface RouteCoordinatorPort {
   recognizesMedia(url: string): boolean
   isBilibiliMedia(url: string): boolean
   inspectOriginal(url: string): AppliedRouteDecision
-  startupOptions(url: string, catalogCursor?: number): StartupOptions | null
-  startupCapacity(candidate: StartupCandidate, sample: EvidenceSample | null): EvidenceMetrics | null
+  startupOptions(
+    url: string,
+    catalogCursor?: number,
+    requestBytes?: number | null,
+  ): StartupOptions | null
+  observePlaybackFacts(facts: RoutePlaybackFacts | null): void
+  completionBudget(
+    representation: RepresentationId,
+    requestBytes: number | null,
+  ): CompletionBudget | null
+  startupCapacity(
+    candidate: StartupCandidate,
+    sample: EvidenceSample | null,
+  ): EvidenceMetrics | null
   startupFallback(url: string, excludedHosts: ReadonlySet<string>): StartupCandidate | null
   noteStartupProbeResult(candidate: StartupCandidate, status: number | null): void
   commitStartupChoice(
@@ -198,12 +221,14 @@ export interface RouteCoordinatorPort {
     boundary:
       'startup' | 'new-epoch' | 'representation' | 'verified-failure' | 'watchdog' | 'user-setting',
     failedHost?: string | null,
+    requestBytes?: number | null,
   ): RouteDecision
   recover(
     representation: RepresentationId,
     demand: PlaybackDemand,
     boundary: 'verified-failure' | 'watchdog',
     failedHost: string | null,
+    requestBytes?: number | null,
   ): RouteDecision
   recoverStartup(
     representation: RepresentationId,
@@ -216,6 +241,7 @@ export interface RouteCoordinatorPort {
     kindHint?: MediaKind | null,
     demand?: PlaybackDemand,
     trustedPlayurl?: boolean,
+    requestBytes?: number | null,
   ): AppliedRouteDecision
   decisionRecord(id: DecisionId | null): DecisionRecord | null
   opaqueOutput(

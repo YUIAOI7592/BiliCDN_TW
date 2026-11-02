@@ -40,6 +40,16 @@ export function overviewPresentation(model: ControlCenterSnapshot, now: number) 
       : null
   const safeMbps =
     capacity?.sampleStatus === 'available' && positive(capacity.safeMbps) ? capacity.safeMbps : null
+  const confidence = capacity?.capacityConfidence
+  const historical = confidence === 'historical' || confidence === 'revalidation'
+  const evidenceLabel =
+    confidence === 'sufficient'
+      ? '近期容量'
+      : confidence === 'provisional'
+        ? '單筆試用'
+        : confidence === 'revalidation'
+          ? '隔離到期，待再驗證'
+          : '歷史估計，待驗證'
   const requiredMbps = currentDemand(model)
   const margin = safeMbps !== null && requiredMbps !== null ? safeMbps / requiredMbps : null
   const ratio = positive(margin) ? margin : null
@@ -105,6 +115,10 @@ export function overviewPresentation(model: ControlCenterSnapshot, now: number) 
   })
   return {
     format,
+    capacityConfidence: confidence,
+    historical,
+    estimatedCompletionMs: capacity?.estimatedCompletionMs ?? null,
+    predictionReason: capacity?.predictionReason ?? 'unknown-size',
     safeMbps,
     ratio,
     requiredMbps,
@@ -118,14 +132,16 @@ export function overviewPresentation(model: ControlCenterSnapshot, now: number) 
             : capacity!.evidenceOrigin === 'current-probe'
               ? '目前內容探測'
               : '歷史影片樣本') +
-          '的保守估計'
+          '的保守估計 · ' +
+          evidenceLabel
         : missing,
     marginHint:
       ratio !== null && requiredMbps !== null
-        ? '需求 ' +
+        ? (historical ? '歷史估計 · ' : confidence === 'provisional' ? '單筆試用 · ' : '') +
+          '需求 ' +
           requiredMbps.toFixed(2) +
           ' Mbps · ' +
-          (ratio >= 1.35 ? '達到安全餘裕' : '未達安全餘裕')
+          (ratio >= 1 ? '達到安全餘裕' : '未達安全餘裕')
         : safeMbps !== null
           ? '尚無有效需求估計'
           : missing,

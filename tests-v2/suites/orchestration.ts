@@ -57,6 +57,7 @@ function createPlaybackResourcesBlock1() {
   }
   let routeListener: (event: DomainEvent) => void = () => undefined
   const routeControl = {
+    observePlaybackFacts: () => undefined,
     latestRequested: () => null,
     recoveryEligible: () => true,
     subscribe(listener: (event: DomainEvent) => void) {
@@ -70,6 +71,7 @@ function createPlaybackResourcesBlock1() {
     },
   } satisfies ConstructorParameters<typeof RuntimeController>[1]
   const monitor = {
+    subscribe: () => () => undefined,
     start: () => {
       calls.push('monitor.start')
     },

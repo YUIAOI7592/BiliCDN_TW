@@ -93,12 +93,14 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
   const display = overviewPresentation(model, now)
   const activePlan = routes.activePlan
   if (activePlan?.host)
-    summary += `\n目前路線容量：${plain(assessDemandRatio(display.ratio), {
-      'below-required': '低於本次需求',
-      'below-headroom': '未達安全餘量',
-      'meets-headroom': '達到安全餘量',
-      unknown: display.safeMbps !== null ? display.marginHint : '速度樣本不足',
-    })}${display.ratio === null ? '' : `（保守速度約為需求的 ${display.ratio.toFixed(2)} 倍）`}`
+    summary += `\n目前路線容量：${display.historical ? '歷史估計，待驗證 · ' : ''}${plain(
+      assessDemandRatio(display.ratio),
+      {
+        'below-required': '低於本次需求',
+        'meets-headroom': '達到安全餘量',
+        unknown: display.safeMbps !== null ? display.marginHint : '速度樣本不足',
+      },
+    )}${display.ratio === null ? '' : `（保守速度約為需求的 ${display.ratio.toFixed(2)} 倍）`}`
   const { safeMbps, ratio, requiredMbps } = display
   summary +=
     safeMbps !== null
@@ -108,6 +110,8 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
           : `｜${display.marginHint}`) +
         `｜${display.speedHint}`
       : `\n安全吞吐：${display.speedHint}`
+  if (display.estimatedCompletionMs !== null)
+    summary += '\n目前請求完成預估：約 ' + (display.estimatedCompletionMs / 1000).toFixed(2) + ' 秒'
   const restricted = activePlan?.ranking.filter((row) => !row.eligible).slice(0, 5) ?? []
   if (restricted.length)
     summary += `\n候選限制：${restricted.map((row) => `${row.host}（${row.reasons.map(restrictionLabel).join('、')}）`).join('；')}`

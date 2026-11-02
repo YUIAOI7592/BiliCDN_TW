@@ -50,7 +50,8 @@ const parsePayload = (value: unknown, now: number): EvidencePayload => {
       const outcome =
         sample.outcome === 'failure' ? 'failure' : sample.outcome === 'success' ? 'success' : null
       if (!outcome) continue
-      const timing = outcome === 'success' ? sampleTiming(sample.bytes, sample.elapsedMs, sample.ttfbMs) : null
+      const timing =
+        outcome === 'success' ? sampleTiming(sample.bytes, sample.elapsedMs, sample.ttfbMs) : null
       samples.push(
         Object.freeze({
           requestId: String(sample.requestId ?? '').slice(0, 64),

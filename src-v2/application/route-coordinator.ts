@@ -1,3 +1,4 @@
+import { predictCompletionMs, completionReason } from '../domain/route-completion.ts'
 import { controlPlaybackDemand } from '../domain/playback-demand.ts'
 import type { SettingsReader } from '../state/settings-contracts.ts'
 import { appliedRoute } from './routing/request-routing.ts'
@@ -5,8 +6,18 @@ import { catalogRestrictions, catalogCandidates } from '../domain/route-policy.t
 import type { EarlyRetryAlternative, EarlyRetryPermit } from './early-retry-contracts.ts'
 import { TRUSTED_CATALOG, isCatalogHost } from '../domain/catalog.ts'
 import { chooseRoute, rankRoutes, retainedRoute, type RankRoutesInput } from '../domain/routing.ts'
-import { evidenceMetrics, EVIDENCE_TTL_MS, sampleTiming, addEvidenceSample, emptyEvidence } from '../domain/evidence.ts'
-import { capacityPriority, adequateCapacity } from '../domain/route-capacity.ts'
+import {
+  evidenceMetrics,
+  EVIDENCE_TTL_MS,
+  sampleTiming,
+  addEvidenceSample,
+  emptyEvidence,
+} from '../domain/evidence.ts'
+import {
+  capacityPriority,
+  adequateCapacity,
+  EARLY_RETRY_HEADROOM,
+} from '../domain/route-capacity.ts'
 import {
   isKnownPcdnHost,
   isOversizedBilibiliMedia,
@@ -23,6 +34,8 @@ import {
   type DomainEvent,
   type EvidenceSample,
   type EvidenceMetrics,
+  type CompletionBudget,
+  type RoutePlaybackFacts,
   type FailureKind,
   type MediaKind,
   type NativeCandidate,
@@ -109,6 +122,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #latest = new Map<string, RouteTransferSnapshot>()
   #lastSuccess = new Map<string, RouteTransferSnapshot>()
   #requested = new Map<string, RequestContext>()
+  #playbackFacts: RoutePlaybackFacts | null = null
   #effectiveRate = 2
   #challengeAttempts = new Map<string, number>()
   #firstMediaAt = 0
@@ -127,6 +141,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     at: number
     bytes: number
     mbps: number
+    payloadMbps: number | null
     ttfbMs: number
   }[] = []
   #retryPermit: {
@@ -174,6 +189,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#latest.clear()
     this.#lastSuccess.clear()
     this.#requested.clear()
+    this.#playbackFacts = null
     this.#effectiveRate = 2
     this.#challengeAttempts.clear()
     this.#firstMediaAt = 0
@@ -184,6 +200,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#fallbacks.clear()
   }
   invalidateForUserSetting(): void {
+    this.#playbackFacts = null
     this.#startupExhausted.clear()
     this.#retryPermit = null
     this.#policyRevision++
@@ -397,11 +414,16 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       const unique = [...new Map(successes.map((row) => [row.request.requestId, row])).values()]
       if (unique.length < 2) continue
       const safeMbps = Math.min(...unique.map((row) => row.mbps))
-      if (safeMbps < demand.requiredMbps * 1.35) continue
+      if (safeMbps < demand.requiredMbps * EARLY_RETRY_HEADROOM) continue
+      const safePayloadMbps = unique.every((row) => row.payloadMbps !== null)
+        ? Math.min(...unique.map((row) => row.payloadMbps!))
+        : null
+      if (safePayloadMbps === null) continue
       alternatives.push(
         Object.freeze({
           host,
           safeMbps,
+          safePayloadMbps,
           ttfbMs: Math.max(...unique.map((row) => row.ttfbMs)),
           successCount: unique.length,
           oldestAt: Math.min(...unique.map((row) => row.at)),
@@ -666,15 +688,99 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     }
   }
 
-  startupOptions(url: string, catalogCursor = 0): StartupOptions | null {
+  startupOptions(
+    url: string,
+    catalogCursor = 0,
+    requestBytes: number | null = null,
+  ): StartupOptions | null {
     const pool = this.#startupPool(url, catalogCursor)
     if (!pool) return null
     const selected = pool.exploration
-      ? [...pool.candidates.filter(candidate => candidate !== pool.exploration).slice(0, 2), pool.exploration]
+      ? [
+          ...pool.candidates.filter((candidate) => candidate !== pool.exploration).slice(0, 2),
+          pool.exploration,
+        ]
       : pool.candidates.slice(0, 3)
-    const candidates = pool.candidates.filter(candidate => selected.includes(candidate))
+    const candidates = pool.candidates.filter((candidate) => selected.includes(candidate))
     for (const candidate of candidates) this.#measurementId(candidate, 'startup')
-    return { ...pool, candidates }
+    return { ...pool, candidates, requestBytes }
+  }
+
+  observePlaybackFacts(facts: RoutePlaybackFacts | null): void {
+    this.#playbackFacts = null
+    if (!facts) return
+    const now = this.clock.now(),
+      state = this.session.get(),
+      requested = this.#requested.get('video')
+    const identity = facts.representation ? this.vault.identity(facts.representation) : null
+    if (
+      !identity ||
+      state.disabled ||
+      this.settings.get().disabled ||
+      !requested ||
+      facts.generation !== state.generation ||
+      facts.epoch !== state.epoch ||
+      facts.representation !== state.representation ||
+      facts.routePolicyRevision !== this.#policyRevision ||
+      facts.authorityRevision !== identity.authorityRevision ||
+      facts.selectionRevision === undefined ||
+      facts.selectionRevision !== requested.selectionRevision ||
+      facts.representation !== requested.representation ||
+      !Number.isFinite(facts.playableBufferSec) ||
+      facts.playableBufferSec < 0 ||
+      !Number.isFinite(facts.sampledAt) ||
+      facts.sampledAt > now ||
+      now - facts.sampledAt > 2000
+    )
+      return
+    this.#playbackFacts = Object.freeze({
+      generation: facts.generation,
+      epoch: facts.epoch,
+      representation: facts.representation,
+      authorityRevision: facts.authorityRevision,
+      routePolicyRevision: facts.routePolicyRevision,
+      selectionRevision: facts.selectionRevision,
+      sampledAt: facts.sampledAt,
+      playableBufferSec: facts.playableBufferSec,
+    })
+  }
+
+  completionBudget(
+    representation: RepresentationId,
+    requestBytes: number | null,
+  ): CompletionBudget | null {
+    const facts = this.#playbackFacts,
+      revision = this.#policyRevision
+    if (!facts || !Number.isSafeInteger(requestBytes) || (requestBytes ?? 0) <= 0) return null
+    const current = (): boolean => {
+      const state = this.session.get(),
+        identity = this.vault.identity(representation),
+        requested = this.#requested.get('video'),
+        now = this.clock.now()
+      return (
+        !state.disabled &&
+        !this.settings.get().disabled &&
+        this.#policyRevision === revision &&
+        this.#playbackFacts === facts &&
+        facts.generation === state.generation &&
+        facts.epoch === state.epoch &&
+        facts.representation === representation &&
+        state.representation === representation &&
+        facts.routePolicyRevision === revision &&
+        facts.authorityRevision === identity?.authorityRevision &&
+        facts.selectionRevision === requested?.selectionRevision &&
+        requested?.representation === representation &&
+        now >= facts.sampledAt &&
+        now - facts.sampledAt <= 2000
+      )
+    }
+    if (!current()) return null
+    const result = Object.freeze({
+      requestBytes,
+      playableBufferSec: facts.playableBufferSec,
+      sampledAt: facts.sampledAt,
+    })
+    return current() ? result : null
   }
 
   startupFallback(url: string, excludedHosts: ReadonlySet<string>): StartupCandidate | null {
@@ -685,7 +791,10 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     )
   }
 
-  #startupPool(url: string, catalogCursor = 0): (StartupOptions & { readonly exploration?: StartupCandidate | null }) | null {
+  #startupPool(
+    url: string,
+    catalogCursor = 0,
+  ): (StartupOptions & { readonly exploration?: StartupCandidate | null }) | null {
     const parsed = parseMediaUrl(url),
       match = this.vault.match(url)
     const context = match.status === 'matched' || match.source === 'exact' ? match.context : null
@@ -720,33 +829,65 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     const now = this.clock.now()
     const ranked = candidates.map((candidate, index) => {
       const metrics = evidenceMetrics(this.evidence.get(candidate.host, context.kind), now)
-      return { candidate, index, ...metrics, demandRatio: metrics.safeThroughputMbps === null ? null : metrics.safeThroughputMbps / demand.requiredMbps }
+      return {
+        candidate,
+        index,
+        ...metrics,
+        demandRatio:
+          metrics.safeThroughputMbps === null
+            ? null
+            : metrics.safeThroughputMbps / demand.requiredMbps,
+      }
     })
-    ranked.sort((a,b) => capacityPriority(a)-capacityPriority(b) || (b.safeThroughputMbps ?? -1)-(a.safeThroughputMbps ?? -1) || a.index-b.index)
-    const exploratory = ranked.filter(row => !['sufficient','provisional'].includes(row.capacityConfidence))
-      .sort((a,b) => {
-        const priority = (row: typeof a) => row.revalidationRequired ? 0 : row.capacityConfidence === 'missing' ? 1 : 2
-        return priority(a)-priority(b) || a.index-b.index
+    ranked.sort(
+      (a, b) =>
+        capacityPriority(a) - capacityPriority(b) ||
+        (b.safeThroughputMbps ?? -1) - (a.safeThroughputMbps ?? -1) ||
+        a.index - b.index,
+    )
+    const exploratory = ranked
+      .filter((row) => !['sufficient', 'provisional'].includes(row.capacityConfidence))
+      .sort((a, b) => {
+        const priority = (row: typeof a) =>
+          row.revalidationRequired ? 0 : row.capacityConfidence === 'missing' ? 1 : 2
+        return priority(a) - priority(b) || a.index - b.index
       })
     return {
-      candidates: ranked.map(row=>row.candidate),
-      exploration: ranked.some(adequateCapacity) ? exploratory[0]?.candidate ?? null : null,
+      candidates: ranked.map((row) => row.candidate),
+      exploration: ranked.some(adequateCapacity) ? (exploratory[0]?.candidate ?? null) : null,
       demand,
       originalHost: parsedSource.host,
     }
   }
 
   /** Read-only preview: selecting a result never commits a sample or route. */
-  startupCapacity(candidate: StartupCandidate, sample: EvidenceSample | null): EvidenceMetrics | null {
+  startupCapacity(
+    candidate: StartupCandidate,
+    sample: EvidenceSample | null,
+  ): EvidenceMetrics | null {
     const revision = this.#policyRevision
-    const current = () => !this.session.get().disabled && !this.settings.get().disabled &&
-      this.#policyRevision === revision && candidate.context.generation === this.session.get().generation && candidate.context.epoch === this.session.get().epoch &&
+    const current = () =>
+      !this.session.get().disabled &&
+      !this.settings.get().disabled &&
+      this.#policyRevision === revision &&
+      candidate.context.generation === this.session.get().generation &&
+      candidate.context.epoch === this.session.get().epoch &&
       this.vault.isCurrentIdentity(candidate.context) &&
       (!this.isCatalogOnly() || candidate.type === 'catalog-generated') &&
-      !this.#hardRestriction(candidate.host,candidate.context.kind) && !this.vault.isInvalid(candidate.context.representation,candidate.host)
+      !this.#hardRestriction(candidate.host, candidate.context.kind) &&
+      !this.vault.isInvalid(candidate.context.representation, candidate.host)
     if (!current()) return null
-    const prior=this.evidence.get(candidate.host,candidate.context.kind)
-    const metrics=evidenceMetrics(sample ? addEvidenceSample(prior ?? emptyEvidence(candidate.host,candidate.context.kind),sample,this.clock.now()) : prior,this.clock.now())
+    const prior = this.evidence.get(candidate.host, candidate.context.kind)
+    const metrics = evidenceMetrics(
+      sample
+        ? addEvidenceSample(
+            prior ?? emptyEvidence(candidate.host, candidate.context.kind),
+            sample,
+            this.clock.now(),
+          )
+        : prior,
+      this.clock.now(),
+    )
     return current() ? metrics : null
   }
 
@@ -939,11 +1080,20 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     boundary:
       'startup' | 'new-epoch' | 'representation' | 'verified-failure' | 'watchdog' | 'user-setting',
     failedHost: string | null = null,
+    requestBytes: number | null = null,
   ): RouteDecision {
     const context = this.vault.identity(representation)
     if (!context) return this.#pass('missing-representation', null, demand.kind)
     const previous = this.#currentPlan(representation)
-    const decision = this.#choose(context, demand, boundary, failedHost, undefined, previous)
+    const decision = this.#choose(
+      context,
+      demand,
+      boundary,
+      failedHost,
+      undefined,
+      previous,
+      requestBytes,
+    )
     this.#savePlan(representation, decision)
     return decision
   }
@@ -953,8 +1103,9 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     demand: PlaybackDemand,
     boundary: 'verified-failure' | 'watchdog',
     failedHost: string | null,
+    requestBytes: number | null = null,
   ): RouteDecision {
-    const decision = this.plan(representation, demand, boundary, failedHost)
+    const decision = this.plan(representation, demand, boundary, failedHost, requestBytes)
     if (decision.action !== 'block' && decision.host && decision.host !== failedHost)
       this.#trackFallback(representation, demand.kind, decision)
     else {
@@ -1006,6 +1157,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     kindHint: MediaKind | null = null,
     demand?: PlaybackDemand,
     trustedPlayurl = false,
+    requestBytes: number | null = null,
   ): AppliedRouteDecision {
     const parsed = parseMediaUrl(url)
     const startupContext = this.vault.match(url).context
@@ -1046,14 +1198,14 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         sourceHost: null,
       }
     if (this.isCatalogOnly() && (trustedPlayurl || this.isBilibiliMedia(url))) {
-      return this.#applyCatalogOnly(url, parsed, kindHint, demand)
+      return this.#applyCatalogOnly(url, parsed, kindHint, demand, requestBytes)
     }
     const streamKey = mediaIdentity(url)
     const source = classifyRequestSource({ kind: parsed.kind })
     if (source.type === 'opaque') return this.#applyOpaque(url, parsed, kindHint, streamKey)
     if (source.type === 'unreplaceable')
       return this.#applyUnreplaceable(url, parsed, kindHint, streamKey, source.reason)
-    return this.#applyNormal(url, parsed, kindHint, streamKey, demand)
+    return this.#applyNormal(url, parsed, kindHint, streamKey, demand, requestBytes)
   }
 
   #applyOpaque(
@@ -1116,6 +1268,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     kindHint: MediaKind | null,
     streamKey: string | null,
     demand?: PlaybackDemand,
+    requestBytes: number | null = null,
   ): AppliedRouteDecision {
     const match = this.vault.match(url)
     const context = match.status === 'matched' ? match.context : null
@@ -1174,15 +1327,29 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         decision = this.#planPlayerFallback(candidate)
       }
     }
-    if (context && decision && decision.action !== 'block' && this.#decisionAllowed(decision, context, kind)) {
-      decision = this.#choose(context, playbackDemand, 'request', null, url, decision)
+    if (
+      context &&
+      decision &&
+      decision.action !== 'block' &&
+      this.#decisionAllowed(decision, context, kind)
+    ) {
+      decision = this.#choose(context, playbackDemand, 'request', null, url, decision, requestBytes)
     }
     if (
       !decision ||
       decision.action === 'block' ||
       !this.#decisionAllowed(decision, context, kind)
     ) {
-      if (context) decision = this.#choose(context, playbackDemand, 'request', null)
+      if (context)
+        decision = this.#choose(
+          context,
+          playbackDemand,
+          'request',
+          null,
+          url,
+          undefined,
+          requestBytes,
+        )
       else if (!this.settings.get().fixedHost && !this.#hardRestriction(parsed.host, kind)) {
         decision = this.#pass('unattributed-original-no-preflight', parsed.host, kind ?? 'video')
       } else decision = this.#catalogOnly(playbackDemand, parsed.host, kind)
@@ -1255,6 +1422,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     parsed: NonNullable<ReturnType<typeof parseMediaUrl>>,
     kindHint: MediaKind | null,
     demand?: PlaybackDemand,
+    requestBytes: number | null = null,
   ): AppliedRouteDecision {
     const match = this.vault.match(url),
       context = match.status === 'matched' ? match.context : null
@@ -1329,10 +1497,19 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       !this.#hardRestriction(candidate.host, kind) &&
       !this.#incompatible(url, candidate.host) &&
       (!context || !this.vault.isInvalid(context.representation, candidate.host))
-    if (context && allowed(decision)) decision = this.#choose(context, playbackDemand, 'request', null, url, decision!)
+    if (context && allowed(decision))
+      decision = this.#choose(
+        context,
+        playbackDemand,
+        'request',
+        null,
+        url,
+        decision!,
+        requestBytes,
+      )
     if (!allowed(decision)) {
       decision = context
-        ? this.#choose(context, playbackDemand, 'request', null, url)
+        ? this.#choose(context, playbackDemand, 'request', null, url, undefined, requestBytes)
         : this.#catalogOnly(playbackDemand, parsed.host, kind, url)
     }
     if (!decision || decision.action !== 'rewrite' || !allowed(decision)) {
@@ -1646,6 +1823,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
           this.#demandFor(observation.representation, observation.kind),
           'verified-failure',
           observation.targetHost,
+          observation.request?.expectedBytes ?? null,
         )
       return
     }
@@ -1667,7 +1845,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       if (!controlsCurrent()) return
       this.vault.invalidate(representation!, result.host)
       const demand = this.#demandFor(representation, result.kind)
-      this.recover(representation!, demand, 'verified-failure', result.host)
+      this.recover(
+        representation!,
+        demand,
+        'verified-failure',
+        result.host,
+        observation.request?.expectedBytes ?? null,
+      )
       return
     }
     await this.evidence.record(
@@ -1733,6 +1917,15 @@ export class RouteCoordinator implements RouteCoordinatorPort {
           at: observation.completedAt,
           bytes: observation.retryVerifiedBytes!,
           mbps: (observation.retryVerifiedBytes! * 8) / observation.elapsedMs / 1000,
+          payloadMbps: sampleTiming(
+            observation.retryVerifiedBytes,
+            observation.elapsedMs,
+            observation.ttfbMs,
+          )
+            ? (observation.retryVerifiedBytes! * 8) /
+              (observation.elapsedMs - observation.ttfbMs!) /
+              1000
+            : null,
           ttfbMs: observation.ttfbMs,
         })
         this.#retrySuccesses = this.#retrySuccesses.slice(-32)
@@ -1742,7 +1935,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     }
     if (representation) {
       const demand = this.#demandFor(representation, observation.kind!)
-      this.recover(representation, demand, 'verified-failure', result.host)
+      this.recover(
+        representation,
+        demand,
+        'verified-failure',
+        result.host,
+        observation.request?.expectedBytes ?? null,
+      )
     }
   }
 
@@ -1903,7 +2102,23 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (!current() || !this.#decisionAllowed(plan, identity, 'video')) return null
     const evidence = this.evidence.get(plan.host, 'video'),
       now = this.clock.now()
-    const speed = evidenceMetrics(evidence, now).safeThroughputMbps
+    const metrics = evidenceMetrics(evidence, now)
+    const speed = metrics.safeThroughputMbps
+    const requestBytes = this.#requested.get('video')?.expectedBytes ?? null
+    const budget = this.completionBudget(representation, requestBytes)
+    const estimatedCompletionMs = budget
+      ? predictCompletionMs(budget.requestBytes, metrics.safePayloadMbps, metrics.predictionTtfbMs)
+      : null
+    const unavailable = completionReason(
+      budget ?? { requestBytes, playableBufferSec: null, sampledAt: now },
+      now,
+    )
+    const predictionReason =
+      estimatedCompletionMs !== null
+        ? 'available'
+        : unavailable === 'available'
+          ? 'unknown-body-rate'
+          : unavailable
     const safeMbps = speed !== null && Number.isFinite(speed) && speed > 0 ? speed : null
     const speeds =
       evidence?.samples.filter(
@@ -1929,6 +2144,12 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       host: plan.host,
       routeType: plan.routeType,
       safeMbps,
+      capacityConfidence: metrics.capacityConfidence,
+      freshSpeedCount: metrics.freshSpeedCount,
+      newestSpeedAt: metrics.newestSpeedAt,
+      safePayloadMbps: metrics.safePayloadMbps,
+      estimatedCompletionMs,
+      predictionReason,
       sampleStatus,
       evidenceOrigin:
         safeMbps === null
@@ -1987,6 +2208,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     failedHost: string | null,
     sourceUrl?: string,
     reuse?: RouteDecision,
+    requestBytes: number | null = null,
   ): RouteDecision {
     const settings = this.settings.get()
     const { disabledCatalogHosts, defaultUnavailableHosts } = catalogRestrictions(
@@ -2018,23 +2240,33 @@ export class RouteCoordinator implements RouteCoordinatorPort {
             ? { type: affinity.type, host: affinity.host }
             : null
     const input: RankRoutesInput = {
-        candidates,
-        evidenceFor: (host, kind) => this.evidence.get(host, kind),
-        restrictions: {
-          disabledCatalogHosts,
-          defaultUnavailableHosts,
-          blackHosts: restriction.blackHosts,
-          deadHosts: restriction.deadHosts,
-          hostLocked: new Set(),
-        },
-        demand,
-        fixedHost: settings.fixedHost,
-        current: currentRoute,
-        boundary,
-        failedHost,
-      }
+      completionBudget: this.completionBudget(context.representation, requestBytes) ?? {
+        requestBytes,
+        playableBufferSec: null,
+        sampledAt: this.clock.now(),
+      },
+      candidates,
+      evidenceFor: (host, kind) => this.evidence.get(host, kind),
+      restrictions: {
+        disabledCatalogHosts,
+        defaultUnavailableHosts,
+        blackHosts: restriction.blackHosts,
+        deadHosts: restriction.deadHosts,
+        hostLocked: new Set(),
+      },
+      demand,
+      fixedHost: settings.fixedHost,
+      current: currentRoute,
+      boundary,
+      failedHost,
+    }
     const ranking = rankRoutes(input, this.clock.now())
-    if (reuse && this.#decisionAllowed(reuse, context, demand.kind) && retainedRoute(input, ranking)?.candidate.host === reuse.host) return reuse
+    if (
+      reuse &&
+      this.#decisionAllowed(reuse, context, demand.kind) &&
+      retainedRoute(input, ranking)?.candidate.host === reuse.host
+    )
+      return reuse
     const id = this.#nextId()
     const decision = chooseRoute(input, this.clock, id, ranking)
     this.session.noteDecision(id)

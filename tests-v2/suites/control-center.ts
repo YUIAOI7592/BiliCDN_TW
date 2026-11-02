@@ -1,4 +1,5 @@
 import { createControlReadModel } from '../../src-v2/ui/control-read-model.ts'
+import '../regressions/v227-capacity-ui.ts'
 import test, { type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { fixture } from '../support/runtime-fixture.ts'
@@ -274,6 +275,12 @@ function setOverviewCapacity(
       routeCount: 1,
     },
     currentCapacity: {
+      capacityConfidence: safeMbps !== null ? 'sufficient' : 'missing',
+      freshSpeedCount: safeMbps !== null ? 2 : 0,
+      newestSpeedAt: safeMbps !== null ? f.clock.now() : null,
+      safePayloadMbps: null,
+      estimatedCompletionMs: null,
+      predictionReason: 'unknown-size',
       generation: f.session.get().generation,
       epoch: f.session.get().epoch,
       representation,

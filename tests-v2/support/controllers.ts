@@ -6,9 +6,23 @@ export const measurementRoutes = (overrides: Partial<MeasurementRoutes> = {}): M
   ({
     isCatalogOnly: () => false,
     startupOptions: () => null,
-    startupCapacity: (candidate, sample) => sample
-      ? evidenceMetrics(addEvidenceSample(emptyEvidence(candidate.host,candidate.context.kind),sample,sample.at),sample.at)
-      : {...evidenceMetrics(null,0),safeThroughputMbps:candidate.cachedSafeMbps,capacityConfidence:'sufficient',freshSpeedCount:2},
+    startupCapacity: (candidate, sample) =>
+      sample
+        ? evidenceMetrics(
+            addEvidenceSample(
+              emptyEvidence(candidate.host, candidate.context.kind),
+              sample,
+              sample.at,
+            ),
+            sample.at,
+          )
+        : {
+            ...evidenceMetrics(null, 0),
+            safeThroughputMbps: candidate.cachedSafeMbps,
+            capacityConfidence: 'sufficient',
+            freshSpeedCount: 2,
+          },
+    completionBudget: () => null,
     startupFallback: () => null,
     noteStartupProbeResult: () => undefined,
     commitStartupChoice: () => null,

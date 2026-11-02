@@ -49,6 +49,7 @@ export interface MeasurementRoutes extends Pick<
   RouteCoordinatorPort,
   | 'startupOptions'
   | 'startupCapacity'
+  | 'completionBudget'
   | 'startupFallback'
   | 'noteStartupProbeResult'
   | 'recordStartupSuccess'
@@ -71,7 +72,11 @@ export interface MeasurementPort {
   startupFallbackHosts(): readonly string[]
   cancel(reason: string): void
   willGateStartup(url: string): boolean
-  prepareStartup(url: string, signal?: AbortSignal | null): Promise<void>
+  prepareStartup(
+    url: string,
+    signal?: AbortSignal | null,
+    requestBytes?: number | null,
+  ): Promise<void>
   noteUnpreflighted(reason: string): void
   tick(status: MeasurementStatus): void
 }

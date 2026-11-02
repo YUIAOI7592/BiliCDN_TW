@@ -261,6 +261,7 @@ async function createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t: T
       start: () => undefined,
       stop: () => undefined,
       reset: () => undefined,
+      subscribe: () => () => undefined,
     },
     {
       reset: () => {

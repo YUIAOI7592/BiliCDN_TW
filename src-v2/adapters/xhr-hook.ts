@@ -1,3 +1,4 @@
+import { closedRangeLength } from '../domain/route-completion.ts'
 import { responseFailure } from './transport-context.ts'
 import { classifyPlayurlApi } from '../domain/catalog.ts'
 import { playurlRequestContext } from '../domain/playurl-content.ts'
@@ -261,7 +262,18 @@ export class XhrHookAdapter {
               if (!meta.applied) self.count('mediaRecognized')
               applied =
                 !stale && meta.method === 'GET'
-                  ? self.routes.apply(meta.originalUrl)
+                  ? self.routes.apply(
+                      meta.originalUrl,
+                      null,
+                      undefined,
+                      false,
+                      closedRangeLength(
+                        meta.headers
+                          .filter(([key]) => key.toLowerCase() === 'range')
+                          .map(([, value]) => value)
+                          .join(','),
+                      ),
+                    )
                   : self.routes.inspectOriginal(meta.originalUrl)
               applied = retry.select(this, meta) ?? applied
               if (applied.url) targetUrl = applied.url
@@ -306,6 +318,12 @@ export class XhrHookAdapter {
             meta.targetUrl,
             meta.startedAt,
             meta.method,
+            closedRangeLength(
+              meta.headers
+                .filter(([key]) => key.toLowerCase() === 'range')
+                .map(([, value]) => value)
+                .join(','),
+            ),
           )
           self.routes.requestStarted(meta.request)
         }
@@ -459,7 +477,18 @@ export class XhrHookAdapter {
             }
           }
         }
-        void self.measurement.prepareStartup(meta.originalUrl).then(release, release)
+        void self.measurement
+          .prepareStartup(
+            meta.originalUrl,
+            null,
+            closedRangeLength(
+              meta.headers
+                .filter(([key]) => key.toLowerCase() === 'range')
+                .map(([, value]) => value)
+                .join(','),
+            ),
+          )
+          .then(release, release)
         return
       }
       if (!meta.playurl && self.routes.recognizesMedia(meta.originalUrl)) {

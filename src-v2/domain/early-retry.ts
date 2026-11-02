@@ -1,4 +1,8 @@
+import { predictCompletionMs } from './route-completion.ts'
+import { EARLY_RETRY_HEADROOM } from './route-capacity.ts'
+
 export interface EarlyRetryCapacity {
+  readonly safePayloadMbps?: number | null
   readonly host: string
   readonly safeMbps: number
   readonly ttfbMs: number
@@ -69,13 +73,18 @@ export function evaluateEarlyRetry(input: EarlyRetryFacts): EarlyRetryAssessment
     return reject('alternative-evidence')
   if (
     !Number.isFinite(alternative.safeMbps) ||
-    alternative.safeMbps / requiredMbps < 1.35 ||
+    alternative.safeMbps / requiredMbps < EARLY_RETRY_HEADROOM ||
     !Number.isFinite(alternative.ttfbMs) ||
     alternative.ttfbMs < 0
   )
     return reject('alternative-capacity')
-  const alternativeSec =
-    alternative.ttfbMs / 1000 + (totalBytes * 8) / (alternative.safeMbps * 1_000_000)
+  const alternativeMs = predictCompletionMs(
+    totalBytes,
+    alternative.safePayloadMbps ?? null,
+    alternative.ttfbMs,
+  )
+  if (alternativeMs === null) return reject('alternative-timing')
+  const alternativeSec = alternativeMs / 1000
   if (!Number.isFinite(alternativeSec) || alternativeSec > 0.8 * playableBufferSec)
     return reject('alternative-late')
   // A zero-byte observation is an actual no-progress interval, not an unknown sample.

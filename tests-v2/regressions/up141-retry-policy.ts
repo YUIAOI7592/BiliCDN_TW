@@ -33,6 +33,7 @@ function facts() {
     alternative: {
       host: 'upos-sz-mirrorbos.bilivideo.com',
       safeMbps: 40,
+      safePayloadMbps: 40,
       ttfbMs: 100,
       successCount: 2,
       oldestAt: 0,
