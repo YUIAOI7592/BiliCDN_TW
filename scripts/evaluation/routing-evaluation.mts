@@ -2,15 +2,50 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { posix, resolve } from 'node:path'
 import { build } from 'esbuild'
-import { chooseRoute, rankRoutes, type RankRoutesInput } from '../../src-v2/domain/routing.ts'
-import { evidenceMetrics, emptyEvidence } from '../../src-v2/domain/evidence.ts'
-import { startupCapacityPool, startupSelection } from '../../src-v2/domain/route-capacity.ts'
-import { decisionId, type RouteEvidence } from '../../src-v2/domain/model.ts'
 
 export const baselineRevision = '048b0f94e6bb98922ee5bcc0d1b30003cf3b12a9'
 const now = 2_000_000_000_000,
   probeBytes = 192 * 1024
-type Baseline = { chooseRoute: typeof chooseRoute; rankRoutes: typeof rankRoutes }
+interface RankingRow {
+  readonly candidate: { readonly host: string }
+  readonly eligible: boolean
+  readonly capacityConfidence: string
+  readonly safeThroughputMbps: number | null
+  readonly demandRatio: number | null
+}
+type Baseline = {
+  chooseRoute(
+    input: ReturnType<typeof facts>,
+    clock: { now(): number },
+    id: string,
+  ): { host: string | null }
+  rankRoutes(input: ReturnType<typeof facts>, now: number): RankingRow[]
+}
+type Policy = Baseline & {
+  evidenceMetrics(evidence: unknown, now: number): { revalidationRequired: boolean }
+  startupCapacityPool(rows: RankingRow[]): { ranked: RankingRow[]; exploration: RankingRow | null }
+  startupSelection(rows: RankingRow[], exploration: RankingRow | null): RankingRow[]
+}
+let currentPolicy: Promise<Policy> | undefined
+function current(): Promise<Policy> {
+  return (currentPolicy ??= (async () => {
+    const compiled = await build({
+      stdin: {
+        contents:
+          "export {chooseRoute,rankRoutes} from './src-v2/domain/routing.ts'; export {evidenceMetrics} from './src-v2/domain/evidence.ts'; export {startupCapacityPool,startupSelection} from './src-v2/domain/route-capacity.ts'",
+        resolveDir: process.cwd(),
+      },
+      bundle: true,
+      write: false,
+      platform: 'node',
+      format: 'esm',
+      logLevel: 'silent',
+    })
+    return import(
+      `data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0]!.contents).toString('base64')}`
+    ) as Promise<Policy>
+  })())
+}
 let reference: Promise<Baseline> | undefined
 function baseline(): Promise<Baseline> {
   return (reference ??= (async () => {
@@ -77,10 +112,12 @@ function frozenScenarios(): readonly Scenario[] {
     { id: 'future-divergence', rates: [30, 20], ttfb: [50, 50], delivery: [5000, 300] },
   ]
 }
-function facts(scenario: Scenario): RankRoutesInput {
+function facts(scenario: Scenario) {
   const hosts = ['original.example', 'catalog.example', 'third.example', 'unknown.example']
-  const records = scenario.rates.map((rate, index): RouteEvidence => ({
-    ...emptyEvidence(hosts[index]!, 'video'),
+  const records = scenario.rates.map((rate, index) => ({
+    host: hosts[index]!,
+    kind: 'video' as const,
+    circuitLevel: 0,
     circuitUntil: scenario.revalidation && index === 0 ? now - 1 : 0,
     updatedAt: now,
     samples:
@@ -111,7 +148,7 @@ function facts(scenario: Scenario): RankRoutesInput {
           }
         : { type: 'catalog-generated', host: hosts[index]!, kind: 'video', catalogIndex: index },
     ),
-    evidenceFor: (host) => records.find((row) => row.host === host) ?? null,
+    evidenceFor: (host: string) => records.find((row) => row.host === host) ?? null,
     restrictions: {
       disabledCatalogHosts: new Set(),
       defaultUnavailableHosts: new Set(),
@@ -133,17 +170,19 @@ function facts(scenario: Scenario): RankRoutesInput {
 }
 export async function evaluateRouting() {
   const old = await baseline(),
+    { rankRoutes, chooseRoute, evidenceMetrics, startupCapacityPool, startupSelection } =
+      await current(),
     inputs = frozenScenarios()
   const scenarios = inputs.map((scenario) => {
     const input = facts(scenario),
       oldRows = old.rankRoutes(input, now),
       rows = rankRoutes(input, now)
-    const oldDecision = old.chooseRoute(input, { now: () => now }, decisionId('reference'))
-    const decision = chooseRoute(input, { now: () => now }, decisionId('current'))
+    const oldDecision = old.chooseRoute(input, { now: () => now }, 'reference')
+    const decision = chooseRoute(input, { now: () => now }, 'current')
     const pool = startupCapacityPool(
       rows.map((row) => ({
         ...row,
-        revalidationRequired: evidenceMetrics(input.evidenceFor(row.candidate.host, 'video'), now)
+        revalidationRequired: evidenceMetrics(input.evidenceFor(row.candidate.host), now)
           .revalidationRequired,
       })),
     )
