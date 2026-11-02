@@ -1,4 +1,5 @@
 import { isCatalogHost } from '../../domain/catalog.ts'
+import { sampleTiming } from '../../domain/evidence.ts'
 import type { EvidenceSample, MediaKind, TransportObservation } from '../../domain/model.ts'
 import type { RouteTransferSnapshot } from '../route-contracts.ts'
 
@@ -91,6 +92,7 @@ export function classifyTransportResult(observation: TransportObservation): Tran
             : null,
         ttfbMs: observation.ttfbMs,
         failureKind: null,
+        ...(sampleTiming(observation.bytes, observation.elapsedMs, observation.ttfbMs) ?? {}),
       },
     }
   }

@@ -4,6 +4,7 @@ import {
   EVIDENCE_TTL_MS,
   MAX_EVIDENCE_SAMPLES,
   pruneSamples,
+  sampleTiming,
 } from '../domain/evidence.ts'
 import type { EvidenceSample, MediaKind, RouteEvidence } from '../domain/model.ts'
 import type { StoragePort } from '../platform/storage-port.ts'
@@ -49,6 +50,7 @@ const parsePayload = (value: unknown, now: number): EvidencePayload => {
       const outcome =
         sample.outcome === 'failure' ? 'failure' : sample.outcome === 'success' ? 'success' : null
       if (!outcome) continue
+      const timing = outcome === 'success' ? sampleTiming(sample.bytes, sample.elapsedMs, sample.ttfbMs) : null
       samples.push(
         Object.freeze({
           requestId: String(sample.requestId ?? '').slice(0, 64),
@@ -66,6 +68,7 @@ const parsePayload = (value: unknown, now: number): EvidencePayload => {
           )
             ? (sample.failureKind as EvidenceSample['failureKind'])
             : null,
+          ...(timing ?? {}),
         }),
       )
     }

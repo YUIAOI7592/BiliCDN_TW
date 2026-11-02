@@ -5,7 +5,7 @@ import { catalogRestrictions, catalogCandidates } from '../domain/route-policy.t
 import type { EarlyRetryAlternative, EarlyRetryPermit } from './early-retry-contracts.ts'
 import { TRUSTED_CATALOG, isCatalogHost } from '../domain/catalog.ts'
 import { chooseRoute } from '../domain/routing.ts'
-import { evidenceMetrics, EVIDENCE_TTL_MS } from '../domain/evidence.ts'
+import { evidenceMetrics, EVIDENCE_TTL_MS, sampleTiming } from '../domain/evidence.ts'
 import {
   isKnownPcdnHost,
   isOversizedBilibiliMedia,
@@ -884,6 +884,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         throughputMbps: (bytes * 8) / elapsedMs / 1000,
         ttfbMs,
         failureKind: null,
+        ...(sampleTiming(bytes, elapsedMs, ttfbMs) ?? {}),
       },
       valid,
     )
@@ -1545,6 +1546,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
             : null,
         ttfbMs,
         failureKind,
+        ...(sampleTiming(bytes, elapsedMs, ttfbMs) ?? {}),
       },
       valid,
     )

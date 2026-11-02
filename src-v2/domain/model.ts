@@ -50,6 +50,7 @@ export type MediaKind = 'video' | 'audio'
 export type RouteType = 'catalog-generated' | 'native-signed' | 'root-original'
 export type RouteState = 'unknown' | 'usable' | 'proven' | 'degraded' | 'circuit-open' | 'forbidden'
 export type EvidenceSource = 'transport' | 'challenge'
+export type CapacityConfidence = 'missing' | 'provisional' | 'sufficient' | 'historical' | 'revalidation'
 export type FailureKind = 'network' | 'body' | 'timeout' | 'http-5xx' | 'native-invalid'
 
 export interface RouteIdentity {
@@ -176,6 +177,8 @@ export interface EvidenceSample {
   readonly throughputMbps: number | null
   readonly ttfbMs: number | null
   readonly failureKind: FailureKind | null
+  readonly bytes?: number
+  readonly elapsedMs?: number
 }
 
 export interface RouteEvidence {
