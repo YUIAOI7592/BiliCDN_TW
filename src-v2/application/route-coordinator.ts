@@ -4,7 +4,7 @@ import { appliedRoute } from './routing/request-routing.ts'
 import { catalogRestrictions, catalogCandidates } from '../domain/route-policy.ts'
 import type { EarlyRetryAlternative, EarlyRetryPermit } from './early-retry-contracts.ts'
 import { TRUSTED_CATALOG, isCatalogHost } from '../domain/catalog.ts'
-import { chooseRoute } from '../domain/routing.ts'
+import { chooseRoute, rankRoutes, retainedRoute, type RankRoutesInput } from '../domain/routing.ts'
 import { evidenceMetrics, EVIDENCE_TTL_MS, sampleTiming } from '../domain/evidence.ts'
 import {
   isKnownPcdnHost,
@@ -927,13 +927,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     const context = this.vault.identity(representation)
     if (!context) return this.#pass('missing-representation', null, demand.kind)
     const previous = this.#currentPlan(representation)
-    if (
-      previous &&
-      !['verified-failure', 'watchdog', 'user-setting'].includes(boundary) &&
-      this.#decisionAllowed(previous, context, demand.kind)
-    )
-      return previous
-    const decision = this.#choose(context, demand, boundary, failedHost)
+    const decision = this.#choose(context, demand, boundary, failedHost, undefined, previous)
     this.#savePlan(representation, decision)
     return decision
   }
@@ -1164,6 +1158,9 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         decision = this.#planPlayerFallback(candidate)
       }
     }
+    if (context && decision && decision.action !== 'block' && this.#decisionAllowed(decision, context, kind)) {
+      decision = this.#choose(context, playbackDemand, 'request', null, url, decision)
+    }
     if (
       !decision ||
       decision.action === 'block' ||
@@ -1316,6 +1313,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       !this.#hardRestriction(candidate.host, kind) &&
       !this.#incompatible(url, candidate.host) &&
       (!context || !this.vault.isInvalid(context.representation, candidate.host))
+    if (context && allowed(decision)) decision = this.#choose(context, playbackDemand, 'request', null, url, decision!)
     if (!allowed(decision)) {
       decision = context
         ? this.#choose(context, playbackDemand, 'request', null, url)
@@ -1972,6 +1970,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       | 'user-setting',
     failedHost: string | null,
     sourceUrl?: string,
+    reuse?: RouteDecision,
   ): RouteDecision {
     const settings = this.settings.get()
     const { disabledCatalogHosts, defaultUnavailableHosts } = catalogRestrictions(
@@ -1992,8 +1991,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       () => this.isCatalogOnly(),
       (url, host) => this.#incompatible(url, host),
     )
-    const id = this.#nextId()
-    const current = this.#currentPlan(context.representation),
+    const current = reuse ?? this.#currentPlan(context.representation),
       affinity = this.session.get().affinity
     const currentRoute =
       boundary === 'representation' && context.kind === 'video' && affinity
@@ -2003,8 +2001,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
           : context.kind === 'video' && affinity
             ? { type: affinity.type, host: affinity.host }
             : null
-    const decision = chooseRoute(
-      {
+    const input: RankRoutesInput = {
         candidates,
         evidenceFor: (host, kind) => this.evidence.get(host, kind),
         restrictions: {
@@ -2019,10 +2016,11 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         current: currentRoute,
         boundary,
         failedHost,
-      },
-      this.clock,
-      id,
-    )
+      }
+    const ranking = rankRoutes(input, this.clock.now())
+    if (reuse && this.#decisionAllowed(reuse, context, demand.kind) && retainedRoute(input, ranking)?.candidate.host === reuse.host) return reuse
+    const id = this.#nextId()
+    const decision = chooseRoute(input, this.clock, id, ranking)
     this.session.noteDecision(id)
     this.#remember(decision, context, context.kind)
     this.#emit({ type: 'route-planned', at: this.clock.now(), decision })

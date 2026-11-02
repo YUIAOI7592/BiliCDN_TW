@@ -1,6 +1,6 @@
 import { evidenceMetrics } from './evidence.ts'
+import { capacityPriority, adequateCapacity, ROUTE_HEADROOM } from './route-capacity.ts'
 import type {
-  CatalogCandidate,
   Clock,
   DecisionId,
   PlaybackDemand,
@@ -60,174 +60,57 @@ const restrictionReasons = (
   return [...new Set(reasons)]
 }
 
-const stateRank = (state: RouteRankingEntry['state']): number =>
-  ({
-    proven: 5,
-    usable: 4,
-    unknown: 3,
-    degraded: 2,
-    'circuit-open': 1,
-    forbidden: 0,
-  })[state]
-
-export const assessDemandRatio = (
-  ratio: number | null,
-): 'unknown' | 'below-required' | 'below-headroom' | 'meets-headroom' =>
-  ratio === null || !Number.isFinite(ratio)
-    ? 'unknown'
-    : ratio < 1
-      ? 'below-required'
-      : ratio < 1.35
-        ? 'below-headroom'
-        : 'meets-headroom'
+export const assessDemandRatio = (ratio: number | null): 'unknown' | 'below-required' | 'meets-headroom' =>
+  ratio === null || !Number.isFinite(ratio) ? 'unknown' : ratio < ROUTE_HEADROOM ? 'below-required' : 'meets-headroom'
 
 export const rankRoutes = (input: RankRoutesInput, now: number): readonly RouteRankingEntry[] => {
-  const entries = input.candidates.map((candidate) => {
+  const entries = input.candidates.map((candidate, candidateOrder) => {
     const reasons = restrictionReasons(candidate, input, now)
     const metrics = evidenceMetrics(input.evidenceFor(candidate.host, candidate.kind), now)
-    const state = reasons.length ? 'forbidden' : metrics.state
     return Object.freeze({
-      candidate,
-      state,
-      eligible: reasons.length === 0,
-      reasons: Object.freeze(reasons),
+      candidate, candidateOrder, state: reasons.length ? 'forbidden' : metrics.state,
+      eligible: reasons.length === 0, reasons: Object.freeze(reasons),
       safeThroughputMbps: metrics.safeThroughputMbps,
-      demandRatio:
-        metrics.safeThroughputMbps === null
-          ? null
-          : metrics.safeThroughputMbps / Math.max(0.001, input.demand.requiredMbps),
-      medianTtfbMs: metrics.medianTtfbMs,
-      successCount: metrics.successCount,
-      failureCount: metrics.failureCount,
+      demandRatio: metrics.safeThroughputMbps === null ? null : metrics.safeThroughputMbps / Math.max(0.001,input.demand.requiredMbps),
+      medianTtfbMs: metrics.medianTtfbMs, successCount: metrics.successCount, failureCount: metrics.failureCount,
+      capacityConfidence: metrics.capacityConfidence, freshSpeedCount: metrics.freshSpeedCount,
+      newestSpeedAt: metrics.newestSpeedAt, safePayloadMbps: metrics.safePayloadMbps, predictionTtfbMs: metrics.predictionTtfbMs,
     }) satisfies RouteRankingEntry
   })
-  return Object.freeze(
-    entries.sort((a, b) => {
-      if (a.eligible !== b.eligible) return a.eligible ? -1 : 1
-      const fixedA = input.fixedHost === a.candidate.host
-      const fixedB = input.fixedHost === b.candidate.host
-      if (fixedA !== fixedB) return fixedA ? -1 : 1
-      const sufficientA = (a.demandRatio ?? 0) >= 1.35
-      const sufficientB = (b.demandRatio ?? 0) >= 1.35
-      if (sufficientA !== sufficientB) return sufficientA ? -1 : 1
-      if ((a.demandRatio ?? -1) !== (b.demandRatio ?? -1))
-        return (b.demandRatio ?? -1) - (a.demandRatio ?? -1)
-      if (stateRank(a.state) !== stateRank(b.state)) return stateRank(b.state) - stateRank(a.state)
-      if (
-        (a.medianTtfbMs ?? Number.MAX_SAFE_INTEGER) !== (b.medianTtfbMs ?? Number.MAX_SAFE_INTEGER)
-      ) {
-        return (
-          (a.medianTtfbMs ?? Number.MAX_SAFE_INTEGER) - (b.medianTtfbMs ?? Number.MAX_SAFE_INTEGER)
-        )
-      }
-      return a.candidate.catalogIndex - b.candidate.catalogIndex
-    }),
-  )
+  return Object.freeze(entries.sort((a,b)=>{
+    if (a.eligible !== b.eligible) return a.eligible ? -1 : 1
+    const fixedA=input.fixedHost===a.candidate.host, fixedB=input.fixedHost===b.candidate.host
+    if (fixedA!==fixedB) return fixedA ? -1 : 1
+    return capacityPriority(a)-capacityPriority(b) ||
+      (b.demandRatio ?? -1)-(a.demandRatio ?? -1) ||
+      (a.medianTtfbMs ?? Number.MAX_SAFE_INTEGER)-(b.medianTtfbMs ?? Number.MAX_SAFE_INTEGER) ||
+      a.candidateOrder-b.candidateOrder
+  }))
 }
 
-export const chooseRoute = (
-  input: RankRoutesInput,
-  clock: Clock,
-  id: DecisionId,
-): RouteDecision => {
-  const ranking = rankRoutes(input, clock.now())
-  const fixed = input.fixedHost
-    ? ranking.find((row) => row.eligible && row.candidate.host === input.fixedHost)
-    : null
-  const current =
-    input.current &&
-    ranking.find((row) => row.eligible && row.candidate.host === input.current?.host)
-  const healthyBoundary =
-    input.boundary !== 'verified-failure' &&
-    input.boundary !== 'watchdog' &&
-    input.boundary !== 'user-setting'
-  if (
-    !fixed &&
-    current &&
-    healthyBoundary &&
-    input.boundary !== 'new-epoch' &&
-    current.successCount > 0 &&
-    (current.demandRatio ?? 0) >= 1.35
-  ) {
-    const candidate = current.candidate
-    if (candidate.type === 'root-original')
-      return {
-        action: 'pass',
-        target: { type: 'selected-original', candidate },
-        id,
-        reason: 'healthy-affinity',
-        routeType: 'root-original',
-        host: candidate.host,
-        ranking,
-      }
-    return {
-      action: 'rewrite',
-      id,
-      reason: 'healthy-affinity',
-      routeType: candidate.type,
-      host: candidate.host,
-      candidate,
-      ranking,
-    }
-  }
-  const original = ranking.find((row) => row.eligible && row.candidate.type === 'root-original')
-  const selected =
-    fixed ??
-    ranking.find(
-      (row) =>
-        row.eligible &&
-        row.candidate.type !== 'root-original' &&
-        row.state === 'proven' &&
-        (row.demandRatio ?? 0) >= 1.35,
-    ) ??
-    ranking.find(
-      (row) =>
-        row.eligible &&
-        row.candidate.type !== 'root-original' &&
-        row.successCount > 0 &&
-        (row.demandRatio ?? 0) >= 1.35,
-    ) ??
-    ranking.find(
-      (row) => row.eligible && row.successCount > 0 && row.safeThroughputMbps !== null,
-    ) ??
-    original ??
-    ranking.find((row) => row.eligible && row.candidate.type === 'catalog-generated')
+/** A current legal route remains stable unless fresh inadequacy has a fresh adequate replacement. */
+export function retainedRoute(input: RankRoutesInput, ranking: readonly RouteRankingEntry[]): RouteRankingEntry | undefined {
+  if (!input.current || ['verified-failure','watchdog','user-setting','new-epoch'].includes(input.boundary)) return
+  const current=ranking.find(row=>row.eligible && row.candidate.host===input.current!.host)
+  const fixed=ranking.find(row=>row.eligible && row.candidate.host===input.fixedHost)
+  if (!current || (fixed && fixed.candidate.host!==current.candidate.host)) return
+  if (current.capacityConfidence === 'sufficient' && (current.demandRatio ?? 0)<ROUTE_HEADROOM &&
+    ranking.some(row=>row.eligible && row.candidate.host!==current.candidate.host && adequateCapacity(row))) return
+  return current
+}
+export const chooseRoute = (input: RankRoutesInput, clock: Clock, id: DecisionId, rows?: readonly RouteRankingEntry[]): RouteDecision => {
+  const ranking=rows ?? rankRoutes(input,clock.now())
+  const fixed=ranking.find(row=>row.eligible && row.candidate.host===input.fixedHost)
+  const retained=retainedRoute(input,ranking)
+  const selected=fixed ?? retained ?? ranking.find(row=>row.eligible)
   if (!selected) {
-    const first = ranking[0]
-    return {
-      action: 'block',
-      id,
-      reason: first?.reasons[0] ?? 'invalid-url',
-      routeType: first?.candidate.type ?? 'root-original',
-      host: first?.candidate.host ?? null,
-      ranking,
-    }
+    const first=ranking[0]
+    return {action:'block',id,reason:first?.reasons[0]??'invalid-url',routeType:first?.candidate.type??'root-original',host:first?.candidate.host??null,ranking}
   }
-  if (selected.candidate.type === 'root-original') {
-    return {
-      action: 'pass',
-      target: { type: 'selected-original', candidate: selected.candidate },
-      id,
-      reason: 'root-fallback',
-      routeType: 'root-original',
-      host: selected.candidate.host,
-      ranking,
-    }
-  }
-  return {
-    action: 'rewrite',
-    id,
-    reason: fixed
-      ? 'fixed'
-      : selected.state === 'proven'
-        ? 'proven'
-        : selected.successCount
-          ? 'recent-success'
-          : 'catalog-default',
-    routeType: selected.candidate.type,
-    host: selected.candidate.host,
-    candidate: selected.candidate as
-      CatalogCandidate | Extract<RouteCandidate, { type: 'native-signed' }>,
-    ranking,
-  }
+  const candidate=selected.candidate
+  const reason=fixed ? 'fixed' : retained ? adequateCapacity(retained) ? 'healthy-affinity' : 'retained-unverified'
+    : selected.capacityConfidence==='sufficient' ? 'proven' : selected.capacityConfidence==='provisional' ? 'recent-success'
+    : selected.capacityConfidence==='historical' ? 'historical-estimate' : selected.capacityConfidence==='revalidation' ? 'revalidation-fallback' : 'unverified-fallback'
+  if (candidate.type==='root-original') return {action:'pass',target:{type:'selected-original',candidate},id,reason,routeType:'root-original',host:candidate.host,ranking}
+  return {action:'rewrite',id,reason,routeType:candidate.type,host:candidate.host,candidate,ranking}
 }

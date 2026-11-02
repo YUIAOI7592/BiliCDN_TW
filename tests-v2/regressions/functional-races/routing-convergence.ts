@@ -95,7 +95,7 @@ test('V225 capacity uses existing weighted decay and mixed sample expiry', async
     evidenceMetrics(f.evidence.get(host, 'video'), f.clock.now()).safeThroughputMbps,
   )
   f.clock.advance(EVIDENCE_TTL_MS / 2 + 1)
-  assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, 20.97152)
+  assert.equal(f.routes.snapshot().currentCapacity?.safeMbps, 20.97152 + (1 - 2 ** (-1 / 5)) * 20.97152)
 })
 
 for (const source of ['startup', 'health'] as const) {
@@ -126,11 +126,20 @@ test('V225 current capacity survives a selected host outside the twelve ranking 
     considerNativeSources: true,
     catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, true])),
   })
-  const { original, representation } = register(f)
-  const decision = f.routes.plan(
+  const initial = register(f)
+  const first = f.routes.apply(initial.original, 'video')
+  await f.routes.observe(completion(f, first, 101))
+  await f.routes.observe(completion(f, first, 102))
+  for (const host of TRUSTED_CATALOG) await f.evidence.record(host, 'video', {
+    requestId: 'prior-' + host, at: f.clock.now(), source: 'transport', outcome: 'success',
+    throughputMbps: 40, ttfbMs: 10, failureKind: null,
+  })
+  const original = media('convergence', 'second-video.m4s'), state = f.session.get()
+  const representation = f.vault.register({generation:state.generation,epoch:state.epoch,kind:'video',key:'second-video',height:720,codec:'avc',bandwidth:4_000_000,urls:[original],source:'trusted-api'})!
+  const planned = f.routes.plan(
     representation,
     { kind: 'video', requiredMbps: 10, highDemand: false },
-    'startup',
+    'representation',
   )
   for (const host of TRUSTED_CATALOG)
     await f.evidence.record(host, 'video', {
@@ -143,7 +152,9 @@ test('V225 current capacity survives a selected host outside the twelve ranking 
       failureKind: null,
     })
   const applied = f.routes.apply(original, 'video')
-  assert.equal(applied.decision, decision)
+  assert.equal(applied.decision.host, planned.host)
+  const decision = applied.decision
+  assert.equal(f.routes.apply(original, 'video').decision, decision)
   await f.routes.observe(completion(f, applied, 1))
   await f.routes.observe(completion(f, applied, 2))
   const snapshot = f.routes.snapshot()

@@ -104,6 +104,12 @@ export type RestrictionReason =
   | 'catalog-only-non-get'
 
 export interface RouteRankingEntry {
+  readonly candidateOrder: number
+  readonly capacityConfidence: CapacityConfidence
+  readonly freshSpeedCount: number
+  readonly newestSpeedAt: number | null
+  readonly safePayloadMbps: number | null
+  readonly predictionTtfbMs: number | null
   readonly candidate: RouteCandidate
   readonly state: RouteState
   readonly eligible: boolean

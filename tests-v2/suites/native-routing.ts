@@ -162,7 +162,7 @@ async function createNativeRoutingScenario(t: TestContext) {
   transitionAdapter.transform({ data: { dash: { video: transitionItems, audio: [] } } })
   const firstTransition = transitionItems[0]!
   const nextTransition = transitionItems[1]!
-  const transitionNative = firstTransition.backup_url.find((url) => url.includes('.akamaized.net'))!
+  const transitionNative = [firstTransition.base_url, ...firstTransition.backup_url].find((url) => url.includes('.akamaized.net'))!
   const transitionApplied = transitionRoutes.apply(transitionNative)
   for (let index = 0; index < 2; index++)
     await transitionRoutes.observe({
@@ -175,7 +175,7 @@ async function createNativeRoutingScenario(t: TestContext) {
       originalHost: 'upos-hz-mirrorakam.akamaized.net',
       targetHost: 'upos-hz-mirrorakam.akamaized.net',
       finalHost: 'upos-hz-mirrorakam.akamaized.net',
-      completedAt: now + index,
+      completedAt: now - 1 + index,
     })
   return {
     clock,
@@ -911,7 +911,7 @@ async function checkCatalogFailureFixtureRegistersParameter12ParameterParameter(
         bytes: 0,
         ttfbMs: null,
         elapsedMs: 100,
-        completedAt: base.now + (kind === 'video' ? 1 : 2),
+        completedAt: base.now,
         outcome: 'failure',
         failureKind: 'network',
       }
@@ -1592,7 +1592,7 @@ async function checkFirstGroupEstablishesObservedNativeAffinity1(t: TestContext)
   const nextTransitionApplied = base.transitionRoutes.apply(base.nextTransition.base_url)
   assert.strictEqual(
     nextTransitionApplied.url,
-    base.nextTransition.backup_url.find((url) => url.includes('.akamaized.net')),
+    [base.nextTransition.base_url, ...base.nextTransition.backup_url].find((url) => url.includes('.akamaized.net')),
     'new quality uses its own exact Native URL instead of reviving its startup Catalog plan',
   )
   assert.strictEqual(

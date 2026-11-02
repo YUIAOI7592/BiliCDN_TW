@@ -1,4 +1,5 @@
 import { TRUSTED_CATALOG, isCatalogHost } from '../../domain/catalog.ts'
+import { adequateCapacity } from '../../domain/route-capacity.ts'
 import { backupOutputPlan, catalogOutputPlan } from '../../domain/player-output-plan.ts'
 import { mediaIdentity, parseMediaUrl, replaceUrlHost } from '../../domain/url-policy.ts'
 import type { RepresentationId, RouteDecision, RouteIdentity } from '../../domain/model.ts'
@@ -11,10 +12,11 @@ function measuredSufficientHosts(decision: RouteDecision): ReadonlySet<string> {
         (row) =>
           row.eligible &&
           row.successCount > 0 &&
+          adequateCapacity(row) &&
           Number.isFinite(row.safeThroughputMbps) &&
           (row.safeThroughputMbps ?? 0) > 0 &&
           Number.isFinite(row.demandRatio) &&
-          (row.demandRatio ?? 0) >= 1.35,
+          (row.demandRatio ?? 0) >= 1,
       )
       .map((row) => row.candidate.host),
   )

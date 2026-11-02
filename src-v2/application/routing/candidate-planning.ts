@@ -109,7 +109,7 @@ export function selectionCandidates(
   )
   return catalogOnly()
     ? catalog
-    : [...catalog, ...routes.native, ...(routes.root ? [routes.root] : [])]
+    : [...(routes.root ? [routes.root] : []), ...routes.native, ...catalog]
 }
 
 export function challengerCandidates(

@@ -24,6 +24,12 @@ const cos = 'upos-sz-mirrorcos.bilivideo.com'
 
 function ranked(host: string, ratio: number | null, eligible = true): RouteRankingEntry {
   return {
+    candidateOrder: TRUSTED_CATALOG.indexOf(host as (typeof TRUSTED_CATALOG)[number]),
+    capacityConfidence: ratio === null ? 'missing' : 'sufficient',
+    freshSpeedCount: ratio === null ? 0 : 2,
+    newestSpeedAt: ratio === null ? null : 0,
+    safePayloadMbps: null,
+    predictionTtfbMs: null,
     candidate: {
       type: 'catalog-generated',
       host,
@@ -86,7 +92,7 @@ test('UP141-ROUTE measured sufficient backups diversify families before same-fam
 
 test('UP141-ROUTE unmeasured or insufficient diverse host cannot outrank sufficient same-family host', (t) => {
   testScope(t)
-  const result = output([ranked(cos, null), ranked(bos, 1.349), ranked(ali2, 1.35)])
+  const result = output([ranked(cos, null), ranked(bos, 0.999), ranked(ali2, 1)])
   assert.equal(new URL(result.backups[0]!).hostname, ali2)
   assert.equal(new URL(result.backups[1]!).hostname, cos)
 })

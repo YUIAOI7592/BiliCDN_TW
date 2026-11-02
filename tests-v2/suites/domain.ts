@@ -1,5 +1,6 @@
 import { test } from 'node:test'
 import '../regressions/v227-evidence.ts'
+import '../regressions/v227-routing.ts'
 import '../regressions/functional-races/content-domain.ts'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
@@ -11,7 +12,7 @@ import { parseMediaUrl, replaceUrlHost } from '../../src-v2/domain/url-policy.ts
 
 test('V221 overview demand headroom retains threshold semantics', () => {
   assert.strictEqual(assessDemandRatio(0.55), 'below-required')
-  assert.strictEqual(assessDemandRatio(1.2), 'below-headroom')
+  assert.strictEqual(assessDemandRatio(1.2), 'meets-headroom') // V227: demand already includes the 25% margin.
   assert.strictEqual(assessDemandRatio(1.35), 'meets-headroom')
   assert.strictEqual(assessDemandRatio(null), 'unknown')
 })
@@ -211,8 +212,8 @@ async function checkColdStartRewritesToCatalogDefault2(t: TestContext): Promise<
   )
   assert.strictEqual(
     coldWithRoot.action,
-    'pass',
-    'cold start with a legal signed original does not blindly use first Catalog',
+    'rewrite',
+    'V227 unverified candidates follow the supplied stable candidate order',
   )
   const secondCatalog = {
     type: 'catalog-generated' as const,
