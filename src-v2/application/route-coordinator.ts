@@ -14,9 +14,9 @@ import {
   emptyEvidence,
 } from '../domain/evidence.ts'
 import {
-  capacityPriority,
-  adequateCapacity,
   EARLY_RETRY_HEADROOM,
+  startupCapacityPool,
+  startupSelection,
 } from '../domain/route-capacity.ts'
 import {
   isKnownPcdnHost,
@@ -695,13 +695,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   ): StartupOptions | null {
     const pool = this.#startupPool(url, catalogCursor)
     if (!pool) return null
-    const selected = pool.exploration
-      ? [
-          ...pool.candidates.filter((candidate) => candidate !== pool.exploration).slice(0, 2),
-          pool.exploration,
-        ]
-      : pool.candidates.slice(0, 3)
-    const candidates = pool.candidates.filter((candidate) => selected.includes(candidate))
+    const candidates = startupSelection(pool.candidates, pool.exploration)
     for (const candidate of candidates) this.#measurementId(candidate, 'startup')
     return { ...pool, candidates, requestBytes }
   }
@@ -831,7 +825,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       const metrics = evidenceMetrics(this.evidence.get(candidate.host, context.kind), now)
       return {
         candidate,
-        index,
+        candidateOrder: index,
         ...metrics,
         demandRatio:
           metrics.safeThroughputMbps === null
@@ -839,22 +833,10 @@ export class RouteCoordinator implements RouteCoordinatorPort {
             : metrics.safeThroughputMbps / demand.requiredMbps,
       }
     })
-    ranked.sort(
-      (a, b) =>
-        capacityPriority(a) - capacityPriority(b) ||
-        (b.safeThroughputMbps ?? -1) - (a.safeThroughputMbps ?? -1) ||
-        a.index - b.index,
-    )
-    const exploratory = ranked
-      .filter((row) => !['sufficient', 'provisional'].includes(row.capacityConfidence))
-      .sort((a, b) => {
-        const priority = (row: typeof a) =>
-          row.revalidationRequired ? 0 : row.capacityConfidence === 'missing' ? 1 : 2
-        return priority(a) - priority(b) || a.index - b.index
-      })
+    const pool = startupCapacityPool(ranked)
     return {
-      candidates: ranked.map((row) => row.candidate),
-      exploration: ranked.some(adequateCapacity) ? (exploratory[0]?.candidate ?? null) : null,
+      candidates: pool.ranked.map((row) => row.candidate),
+      exploration: pool.exploration?.candidate ?? null,
       demand,
       originalHost: parsedSource.host,
     }

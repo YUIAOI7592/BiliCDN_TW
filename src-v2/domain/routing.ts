@@ -1,5 +1,10 @@
 import { evidenceMetrics } from './evidence.ts'
-import { orderCapacityRows, adequateCapacity, ROUTE_HEADROOM } from './route-capacity.ts'
+import {
+  orderCapacityRows,
+  adequateCapacity,
+  recentCapacity,
+  ROUTE_HEADROOM,
+} from './route-capacity.ts'
 import type {
   Clock,
   CompletionBudget,
@@ -121,7 +126,7 @@ export function retainedRoute(
   const fixed = ranking.find((row) => row.eligible && row.candidate.host === input.fixedHost)
   if (!current || (fixed && fixed.candidate.host !== current.candidate.host)) return
   if (
-    current.capacityConfidence === 'sufficient' &&
+    recentCapacity(current) &&
     (current.demandRatio ?? 0) < ROUTE_HEADROOM &&
     ranking.some(
       (row) =>

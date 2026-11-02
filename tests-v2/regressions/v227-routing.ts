@@ -116,7 +116,7 @@ test('V227 routing: fresh inadequacy yields to a fresh adequate alternative', ()
   })
   assert.equal(chooseRoute(f, clock, decisionId('needs-capacity')).host, catalog.host)
 })
-test('V227 routing: a discounted first success cannot bounce a newly selected route', () => {
+test('V227 routing: provisional inadequacy reselects only when a recent adequate alternative exists', () => {
   const f = input(10.5, 20, {
       current: { type: 'root-original', host: original.host },
       boundary: 'request',
@@ -131,6 +131,17 @@ test('V227 routing: a discounted first success cannot bounce a newly selected ro
   }
   assert.equal(
     chooseRoute(provisional, clock, decisionId('provisional-stability')).host,
+    catalog.host,
+  )
+  assert.equal(
+    chooseRoute(
+      {
+        ...provisional,
+        restrictions: { ...provisional.restrictions, blackHosts: new Set([catalog.host]) },
+      },
+      clock,
+      decisionId('no-alternative'),
+    ).host,
     original.host,
   )
 })

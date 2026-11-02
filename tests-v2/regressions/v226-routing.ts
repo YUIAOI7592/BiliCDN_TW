@@ -300,6 +300,8 @@ for (const native of [false, true])
     const f = fixture(testScope(t))
     await f.settings.update({ considerNativeSources: native })
     const body = dash(media('stale-output', 'v.m4s'))
+    // This ownership case requires a healthy new route, independent of capacity reselection.
+    body.data.dash.video[0]!.bandwidth = 2_000_000
     assert.equal(f.adapter.transform(body).accepted, true)
     const item = body.data.dash.video[0]!,
       primary = item.base_url

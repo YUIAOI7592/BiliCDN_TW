@@ -19,7 +19,8 @@
     "docs:check": "node scripts/checks/docs-check.mts",
     "archive:check": "node scripts/checks/archive-check.mts",
     "compare:upstream": "node scripts/evaluation/upstream-compare.mts",
-    "evaluate:early-retry": "node scripts/evaluation/early-retry-evaluation.mts"
+    "evaluate:early-retry": "node scripts/evaluation/early-retry-evaluation.mts",
+    "evaluate:routing": "node scripts/evaluation/routing-evaluation.mts"
   },
   "devDependencies": {
     "@types/node": "26.6.4",

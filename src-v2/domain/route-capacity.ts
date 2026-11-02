@@ -39,6 +39,36 @@ interface ComparedCapacity extends CapacityFacts {
   readonly safePayloadMbps: number | null
   readonly predictionTtfbMs: number | null
 }
+/** Exploration uses admitted cursor order and shares the existing three-slot budget. */
+export function startupCapacityPool<
+  T extends ComparedCapacity & { readonly revalidationRequired: boolean },
+>(rows: readonly T[]) {
+  const ranked = [...rows].sort(
+    (a, b) =>
+      capacityPriority(a) - capacityPriority(b) ||
+      (b.safeThroughputMbps ?? -1) - (a.safeThroughputMbps ?? -1) ||
+      a.candidateOrder - b.candidateOrder,
+  )
+  const exploration = ranked.some(adequateCapacity)
+    ? ([...ranked]
+        .filter((row) => !recentCapacity(row))
+        .sort((a, b) => {
+          const priority = (row: T) =>
+            row.revalidationRequired ? 0 : row.capacityConfidence === 'missing' ? 1 : 2
+          return priority(a) - priority(b) || a.candidateOrder - b.candidateOrder
+        })[0] ?? null)
+    : null
+  return { ranked, exploration }
+}
+export function startupSelection<T>(
+  ranked: readonly T[],
+  exploration: T | null | undefined,
+): readonly T[] {
+  const selected = exploration
+    ? [...ranked.filter((row) => row !== exploration).slice(0, 2), exploration]
+    : ranked.slice(0, 3)
+  return ranked.filter((row) => selected.includes(row))
+}
 export function orderCapacityRows<T extends ComparedCapacity>(
   rows: readonly T[],
   budget: CompletionBudget | null | undefined,

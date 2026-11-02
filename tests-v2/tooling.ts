@@ -17,6 +17,7 @@ import './regressions/documentation.ts'
 import './regressions/archive.ts'
 import './regressions/project-config.ts'
 import './regressions/upstream-comparison.ts'
+import './regressions/v227-evaluation.ts'
 
 test('formatting reaches a stable source before the next check', { timeout: 5000 }, async () => {
   const source =
