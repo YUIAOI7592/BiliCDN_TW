@@ -8,6 +8,8 @@
 
 ## 版本
 
+- [v2.2.6 基準的選路演算法與開源方案研究（2026-11-03）](../archive/retired/docs/ROUTING_ALGORITHM_RESEARCH_v2.2.6_2026-11-03.md)
+
 - [v2.2.1 診斷撤除後程式碼全文清查（2026-11-01）](../archive/retired/docs/CODE_AUDIT_POST_DIAGNOSTICS_v2.2.1_2026-11-01.md#凍結基準範圍與方法)
 
 - [v2.1.40 完整正文（2026-10-31；2026-11-01 保存）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01)
@@ -97,6 +99,10 @@
 | v1.6.0 | [當版發行快照](../archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md)、[v1.6.0 公開安全摘要](../archive/retired/docs/SECURITY_REVIEW_v1.6.0.md) |
 
 ## 議題
+
+### 選路演算法研究
+
+- [現行流程、確定行為、十二個開源專案比較與驗證建議](../archive/retired/docs/ROUTING_ALGORITHM_RESEARCH_v2.2.6_2026-11-03.md#研究結論)
 
 - [診斷契約／快照與測試殘留：完整證據及最小清除方案](../archive/retired/docs/CODE_AUDIT_POST_DIAGNOSTICS_v2.2.1_2026-11-01.md#確認殘留與最小清除方案)
 
@@ -282,6 +288,7 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
+| 2026-11-03 | [選路演算法研究與開源方案比較](../archive/retired/docs/ROUTING_ALGORITHM_RESEARCH_v2.2.6_2026-11-03.md) |
 | 2026-11-02 | [v2.2.6 35 項整合與離線驗證](TEST_REPORT.md#三十五項閉環對照)、[正式發布核對](TEST_REPORT.md#公開交付與安裝結案)、[R1 基本安裝驗收](TEST_REPORT.md#v226-r1-安裝驗收2026-11-02)、[v2.2.5 起播調查原文](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md)、[R1 後文件狀態核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#v226-r1-文件狀態核對-2026-11-02) |
 | 2026-11-01 | [v2.2.5 容量、倍率與時效修復及 R1](../archive/retired/docs/TEST_REPORT_HISTORY.md#v225-完整正文保存2026-11-02)、[v2.2.4 儀錶板修復與 R1](../archive/retired/docs/TEST_REPORT_HISTORY.md#v224-完整正文保存2026-11-01)、[v2.2.3 介面、初始化、測試重整與 R1](../archive/retired/docs/TEST_REPORT_HISTORY.md#v223-完整正文保存2026-11-01)、[v2.2.2 清除與公開交付](../archive/retired/docs/TEST_REPORT_HISTORY.md#v222-完整正文保存2026-11-01)、[v2.2.2 發布後整合盤點](../archive/retired/docs/POST_DIAGNOSTICS_INTEGRATION_v2.2.2_2026-11-01.md)、[v2.2.1 程式碼完整清查](../archive/retired/docs/CODE_AUDIT_POST_DIAGNOSTICS_v2.2.1_2026-11-01.md)、[v2.2.1 正式交付與 R1 安裝驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v221-完整正文保存2026-11-01)、[v2.2.0 完整正文與判定更正](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)、[本日狀態全面核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-01v221-後現行狀態與矛盾全面核對) |
 | 2026-10-31 | [控制中心整合與移除前驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2139-完整報告保存2026-10-31)、[固定 CDN 備援恢復與移除後取證](#2026-10-31-固定-cdn-備援恢復與移除後取證)、[文件狀態對齊](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-31現行文件與歷史狀態全面對齊) |

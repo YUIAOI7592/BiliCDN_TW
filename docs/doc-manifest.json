@@ -79,6 +79,23 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/ROUTING_ALGORITHM_RESEARCH_v2.2.6_2026-11-03.md",
+      "kind": "record",
+      "topics": [
+        "routing-algorithm-research"
+      ],
+      "versions": [
+        "v2.2.6"
+      ],
+      "date": "2026-11-03",
+      "requiredAnchors": [
+        "研究基準與範圍",
+        "研究結論",
+        "建議排序與相容影響",
+        "後續驗證設計"
+      ]
+    },
+    {
       "path": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
       "kind": "record",
       "topics": [
@@ -3429,6 +3446,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/ROUTING_ALGORITHM_RESEARCH_v2.2.6_2026-11-03.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 42472,
+      "sha256": "b136884392217080aa27d0d877bdd7e1d39133927dd7f15ea1e807b84b56fcd3"
+    },
     {
       "path": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
       "mode": "prefix",
