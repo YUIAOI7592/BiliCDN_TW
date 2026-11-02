@@ -154,6 +154,8 @@ verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安�
 
 UP141／CC39 契約依能力分開：npm test -- application --name CC39、npm test -- control-center --name CC39，另保留 UP141-API／START／PROBE／ROUTE／RETRY 回歸。總覽吞吐、起播等待、探測及播放入口摘要由 `control-center` 套件的現行案例驗證，只讀功能狀態，不要求診斷歷程或報告。新版六個設定與 HK 預設開啟、明確 false 保留；codec／verbose／手動及定向能力完整移除。先紅色契約再執行期修改，離線效用與必要安全掃描獨立於 verify。舊操作表僅適用 v2.1.38，不是新版入口或續跑授權。
 
+選路固定合成場景以 `npm run evaluate:routing` 執行，範圍、最壞上限記帳及結果限制見[選路模型對照](../scripts/evaluation/README.md#選路模型對照)。
+
 提前重試離線效用的固定輸入、退出碼及證據限制見 [評估指南](../scripts/evaluation/README.md#慢請求提前重試)。
 
 `docs:check` 已納入 `verify`，以鎖定的 GFM 解析／格式及標題錨點套件執行，不讀取私有證據。預設輸出檔案、行號、規則及原因；`npm run docs:check -- --json` 輸出 schemaVersion 2 結果，包含 findings、legacyLinks、archivedReferences、私有證據未核對及外部連結未連線資料。archivedReferences 表示受保護原文中的原網址因搬移失效，另有登記封存目標；它不算有效現行連結。既有快照斷鏈另列 legacyLinks，不能宣稱歷史網址全部有效。

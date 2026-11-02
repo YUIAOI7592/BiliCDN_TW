@@ -203,9 +203,12 @@
 
 最後安全複核再加入 API epoch 清理的六個重入案例：Native 開／關與內層較舊／較新序號四案、低信任提示一案、世代變更一案；核對接納結果及互斥的實際 Vault 來源。另以兩種 Native 設定驗證舊播放器備援清單不能奪回新決策、目的主機與親和。原有名稱／參數展開對照無遺失，最終新增 181 案，完整結果見當版 TEST_REPORT。
 
-
 ## v2.2.7 選路與容量政策對照
 
 以 main `048b0f94e6bb98922ee5bcc0d1b30003cf3b12a9` 凍結十八套件／1,856 案；鎖定 Node 26.8.1 與 npm 11.19.0 的離線基線全部通過，沒有失敗、取消、略過或待辦。套件／案例名稱與參數展開的順序清單 SHA-256 為 `a2cc256c38e403dde5132dcad04966d99c946f4ef26b36d3b294aeba4401fb46`，原始結果及全追蹤檔基準保存於 `.work/v227/`。本輪修改前先加入具名失敗回歸。
 
 本次明確變更為：快慢 EWMA、近期容量充分程度、來源平等、一般足速門檻、起播探索名額與同分決勝、隔離到期再驗證及完成期限模型；既有案例名稱與參數保留，只有這些政策的預期按新版規格映射，原有授權、所有權、清理與副作用斷言保持。完成對照集中最新版 TEST_REPORT，不將舊版本結果改寫成新版結果。
+
+### v2.2.7 完成映射
+
+原 1,856 案（名稱、kind、參數展開）無缺漏，新增 domain 44、state 2、application 15、native-transport 6、control-center 4、tooling 4，共 75。政策與替身調整逐項見[完整驗證報告](../docs/TEST_REPORT.md#政策映射與契約保留)。正式新案例集中 v227-evidence／evidence-state／routing／route-owner／startup／completion／completion-owner／capacity-ui／evaluation；原清理與全域替換方法保持。
