@@ -249,3 +249,18 @@ export const decisionId = (value: string): DecisionId => value as DecisionId
 export const requestId = (value: string): RequestId => value as RequestId
 export const recoveryActionId = (value: string): RecoveryActionId => value as RecoveryActionId
 export const signedRouteHandle = (value: string): SignedRouteHandle => value as SignedRouteHandle
+
+export interface EvidenceMetrics {
+  readonly state: RouteState
+  readonly safeThroughputMbps: number | null
+  readonly medianTtfbMs: number | null
+  readonly successCount: number
+  readonly failureCount: number
+  readonly speedSampleCount: number
+  readonly freshSpeedCount: number
+  readonly capacityConfidence: CapacityConfidence
+  readonly newestSpeedAt: number | null
+  readonly revalidationRequired: boolean
+  readonly safePayloadMbps: number | null
+  readonly predictionTtfbMs: number | null
+}

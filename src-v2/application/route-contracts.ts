@@ -1,5 +1,7 @@
 import {
   type AttributionSource,
+  type EvidenceSample,
+  type EvidenceMetrics,
   type AttributionStatus,
   type DecisionId,
   type MediaKind,
@@ -173,6 +175,7 @@ export interface RouteCoordinatorPort {
   isBilibiliMedia(url: string): boolean
   inspectOriginal(url: string): AppliedRouteDecision
   startupOptions(url: string, catalogCursor?: number): StartupOptions | null
+  startupCapacity(candidate: StartupCandidate, sample: EvidenceSample | null): EvidenceMetrics | null
   startupFallback(url: string, excludedHosts: ReadonlySet<string>): StartupCandidate | null
   noteStartupProbeResult(candidate: StartupCandidate, status: number | null): void
   commitStartupChoice(

@@ -5,7 +5,8 @@ import { catalogRestrictions, catalogCandidates } from '../domain/route-policy.t
 import type { EarlyRetryAlternative, EarlyRetryPermit } from './early-retry-contracts.ts'
 import { TRUSTED_CATALOG, isCatalogHost } from '../domain/catalog.ts'
 import { chooseRoute, rankRoutes, retainedRoute, type RankRoutesInput } from '../domain/routing.ts'
-import { evidenceMetrics, EVIDENCE_TTL_MS, sampleTiming } from '../domain/evidence.ts'
+import { evidenceMetrics, EVIDENCE_TTL_MS, sampleTiming, addEvidenceSample, emptyEvidence } from '../domain/evidence.ts'
+import { capacityPriority, adequateCapacity } from '../domain/route-capacity.ts'
 import {
   isKnownPcdnHost,
   isOversizedBilibiliMedia,
@@ -20,6 +21,8 @@ import {
   type Clock,
   type DecisionId,
   type DomainEvent,
+  type EvidenceSample,
+  type EvidenceMetrics,
   type FailureKind,
   type MediaKind,
   type NativeCandidate,
@@ -666,7 +669,10 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   startupOptions(url: string, catalogCursor = 0): StartupOptions | null {
     const pool = this.#startupPool(url, catalogCursor)
     if (!pool) return null
-    const candidates = pool.candidates.slice(0, 3)
+    const selected = pool.exploration
+      ? [...pool.candidates.filter(candidate => candidate !== pool.exploration).slice(0, 2), pool.exploration]
+      : pool.candidates.slice(0, 3)
+    const candidates = pool.candidates.filter(candidate => selected.includes(candidate))
     for (const candidate of candidates) this.#measurementId(candidate, 'startup')
     return { ...pool, candidates }
   }
@@ -679,7 +685,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     )
   }
 
-  #startupPool(url: string, catalogCursor = 0): StartupOptions | null {
+  #startupPool(url: string, catalogCursor = 0): (StartupOptions & { readonly exploration?: StartupCandidate | null }) | null {
     const parsed = parseMediaUrl(url),
       match = this.vault.match(url)
     const context = match.status === 'matched' || match.source === 'exact' ? match.context : null
@@ -712,26 +718,36 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     }))
       candidates.push(candidate)
     const now = this.clock.now()
-    const ranked = candidates.map((candidate, index) => ({
-      candidate,
-      index,
-      speed: evidenceMetrics(this.evidence.get(candidate.host, context.kind), now)
-        .safeThroughputMbps,
-    }))
-    ranked.sort((a, b) => {
-      const qualifiedA = (a.speed ?? 0) >= demand.requiredMbps * 1.35
-      const qualifiedB = (b.speed ?? 0) >= demand.requiredMbps * 1.35
-      return (
-        Number(qualifiedB) - Number(qualifiedA) ||
-        (b.speed ?? -1) - (a.speed ?? -1) ||
-        a.index - b.index
-      )
+    const ranked = candidates.map((candidate, index) => {
+      const metrics = evidenceMetrics(this.evidence.get(candidate.host, context.kind), now)
+      return { candidate, index, ...metrics, demandRatio: metrics.safeThroughputMbps === null ? null : metrics.safeThroughputMbps / demand.requiredMbps }
     })
+    ranked.sort((a,b) => capacityPriority(a)-capacityPriority(b) || (b.safeThroughputMbps ?? -1)-(a.safeThroughputMbps ?? -1) || a.index-b.index)
+    const exploratory = ranked.filter(row => !['sufficient','provisional'].includes(row.capacityConfidence))
+      .sort((a,b) => {
+        const priority = (row: typeof a) => row.revalidationRequired ? 0 : row.capacityConfidence === 'missing' ? 1 : 2
+        return priority(a)-priority(b) || a.index-b.index
+      })
     return {
-      candidates: ranked.map((row) => row.candidate),
+      candidates: ranked.map(row=>row.candidate),
+      exploration: ranked.some(adequateCapacity) ? exploratory[0]?.candidate ?? null : null,
       demand,
       originalHost: parsedSource.host,
     }
+  }
+
+  /** Read-only preview: selecting a result never commits a sample or route. */
+  startupCapacity(candidate: StartupCandidate, sample: EvidenceSample | null): EvidenceMetrics | null {
+    const revision = this.#policyRevision
+    const current = () => !this.session.get().disabled && !this.settings.get().disabled &&
+      this.#policyRevision === revision && candidate.context.generation === this.session.get().generation && candidate.context.epoch === this.session.get().epoch &&
+      this.vault.isCurrentIdentity(candidate.context) &&
+      (!this.isCatalogOnly() || candidate.type === 'catalog-generated') &&
+      !this.#hardRestriction(candidate.host,candidate.context.kind) && !this.vault.isInvalid(candidate.context.representation,candidate.host)
+    if (!current()) return null
+    const prior=this.evidence.get(candidate.host,candidate.context.kind)
+    const metrics=evidenceMetrics(sample ? addEvidenceSample(prior ?? emptyEvidence(candidate.host,candidate.context.kind),sample,this.clock.now()) : prior,this.clock.now())
+    return current() ? metrics : null
   }
 
   noteStartupProbeResult(candidate: StartupCandidate, status: number | null): void {

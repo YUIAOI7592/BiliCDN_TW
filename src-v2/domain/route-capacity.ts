@@ -7,7 +7,7 @@ export interface CapacityFacts {
   readonly safeThroughputMbps: number | null
   readonly demandRatio: number | null
 }
-export function recentCapacity(row: CapacityFacts): boolean {
+export function recentCapacity(row: Pick<CapacityFacts, 'capacityConfidence'>): boolean {
   return row.capacityConfidence === 'sufficient' || row.capacityConfidence === 'provisional'
 }
 export function adequateCapacity(row: CapacityFacts): boolean {

@@ -1,8 +1,10 @@
 import { startupTransition } from '../domain/playback-flow.ts'
+import { capacityPriority, ROUTE_HEADROOM } from '../domain/route-capacity.ts'
 import { sameMeasurementSettings } from '../state/settings-policy.ts'
 import type { AppliedRouteDecision, StartupCandidate, StartupOptions } from './route-contracts.ts'
 import type {
   FailureKind,
+  CapacityConfidence,
   PlaybackDemand,
   RouteIdentity,
   SignedRouteHandle,
@@ -24,6 +26,7 @@ interface ProbeResult {
   readonly candidate: StartupCandidate
   readonly valid: boolean
   readonly safeMbps: number | null
+  readonly capacityConfidence: CapacityConfidence
   readonly bytes: number
   readonly elapsedMs: number
   readonly ttfbMs: number | null
@@ -304,7 +307,7 @@ export class MeasurementController implements MeasurementPort {
             this.routes.isCatalogOnly() &&
             candidate.type === 'catalog-generated' &&
             result.valid &&
-            (result.safeMbps ?? 0) / options.demand.requiredMbps >= 1.35
+            (result.safeMbps ?? 0) / options.demand.requiredMbps >= ROUTE_HEADROOM
           )
             finish('qualified-early')
           else if (--remaining === 0) finish('complete')
@@ -329,11 +332,14 @@ export class MeasurementController implements MeasurementPort {
       this.routes.noteStartupProbeResult(result.candidate, result.status)
     const valid = results.filter((result) => result.valid && result.safeMbps !== null)
     const qualified = valid.filter(
-      (result) => (result.safeMbps ?? 0) / options.demand.requiredMbps >= 1.35,
+      (result) => (result.safeMbps ?? 0) / options.demand.requiredMbps >= ROUTE_HEADROOM,
     )
-    const ranked = [...qualified].sort((a, b) => (b.safeMbps ?? 0) - (a.safeMbps ?? 0))
-    const fastestValid =
-      [...valid].sort((a, b) => (b.safeMbps ?? 0) - (a.safeMbps ?? 0))[0]?.candidate ?? null
+    const compare = (a: ProbeResult, b: ProbeResult): number => {
+      const priority = (row: ProbeResult) => capacityPriority({capacityConfidence:row.capacityConfidence,safeThroughputMbps:row.safeMbps,demandRatio:row.safeMbps === null ? null : row.safeMbps/options.demand.requiredMbps})
+      return priority(a)-priority(b) || (b.safeMbps ?? 0)-(a.safeMbps ?? 0) || options.candidates.indexOf(a.candidate)-options.candidates.indexOf(b.candidate)
+    }
+    const ranked = [...qualified].sort(compare)
+    const fastestValid = [...valid].sort(compare)[0]?.candidate ?? null
     const winner =
       ranked[0]?.candidate ??
       fastestValid ??
@@ -360,7 +366,7 @@ export class MeasurementController implements MeasurementPort {
     if (!current()) return
     this.#startupQualifiedHosts = Object.freeze(
       [...valid]
-        .sort((a, b) => (b.safeMbps ?? 0) - (a.safeMbps ?? 0))
+        .sort(compare)
         .map((result) => result.candidate.host),
     )
     this.#startupState = Object.freeze({
@@ -417,16 +423,19 @@ export class MeasurementController implements MeasurementPort {
       signal,
       completionReason: 'startup-sample-complete',
     })
-    const valid =
-      result.directRange &&
-      (candidate.cachedSafeMbps !== null ? result.bytes >= 16 * 1024 : result.bytes >= 64 * 1024)
+    const rangeValid = result.directRange && Number.isSafeInteger(result.bytes) && Number.isFinite(result.elapsedMs) && result.elapsedMs > 0 && (candidate.cachedSafeMbps !== null ? result.bytes >= 16 * 1024 : result.bytes >= 64 * 1024)
+    const metrics = rangeValid ? this.routes.startupCapacity(candidate, candidate.cachedSafeMbps !== null ? null : {
+      requestId:'startup-preview',at:this.now(),source:'challenge',outcome:'success',
+      throughputMbps:(result.bytes*8)/result.elapsedMs/1000,ttfbMs:result.ttfbMs,failureKind:null,
+      bytes:result.bytes,elapsedMs:result.elapsedMs,
+    }) : null
+    const valid = rangeValid && !!metrics && ['sufficient','provisional'].includes(metrics.capacityConfidence) && metrics.safeThroughputMbps !== null
     return {
       candidate,
       ...result,
       valid,
-      safeMbps: valid
-        ? (candidate.cachedSafeMbps ?? ((result.bytes * 8) / result.elapsedMs / 1000) * 0.7)
-        : null,
+      safeMbps: valid ? metrics!.safeThroughputMbps : null,
+      capacityConfidence: metrics?.capacityConfidence ?? 'missing',
       reason: result.directRange ? (valid ? 'measured' : 'short-response') : result.reason,
     }
   }

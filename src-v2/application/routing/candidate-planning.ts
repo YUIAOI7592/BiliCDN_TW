@@ -1,6 +1,7 @@
 import { TRUSTED_CATALOG } from '../../domain/catalog.ts'
 import { catalogCandidates } from '../../domain/route-policy.ts'
 import { evidenceMetrics } from '../../domain/evidence.ts'
+import { recentCapacity } from '../../domain/route-capacity.ts'
 import { mediaIdentity, parseMediaUrl, replaceUrlHost } from '../../domain/url-policy.ts'
 import type {
   Clock,
@@ -52,10 +53,8 @@ export function* startupCandidates(input: StartupAssemblyInput): Generator<Start
     const key = mediaIdentity(candidateUrl)
     if (key && policy.incompatible(candidateUrl, host)) return null
     const prior = evidence.get(host, context.kind)
-    const cachedSafeMbps =
-      type === 'catalog-generated' && prior && clock.now() - prior.updatedAt <= 5 * 60_000
-        ? evidenceMetrics(prior, clock.now()).safeThroughputMbps
-        : null
+    const metrics = evidenceMetrics(prior, clock.now())
+    const cachedSafeMbps = type === 'catalog-generated' && recentCapacity(metrics) ? metrics.safeThroughputMbps : null
     return { host, type, url: candidateUrl, original, cachedSafeMbps, context }
   }
   if (!policy.isCatalogOnly()) {

@@ -1,4 +1,4 @@
-import type { CapacityConfidence, EvidenceSample, MediaKind, RouteEvidence, RouteState } from './model.ts'
+import type { CapacityConfidence, EvidenceMetrics, EvidenceSample, MediaKind, RouteEvidence, RouteState } from './model.ts'
 
 export const EVIDENCE_TTL_MS = 24 * 60 * 60 * 1000
 export const FRESH_EVIDENCE_MS = 5 * 60 * 1000
@@ -42,20 +42,6 @@ export function conservativeEwma(values: readonly number[]): number | null {
     slow += (1-2**(-1/5))*(value-slow)
   }
   return speed(Math.min(fast, slow, values.at(-1)!) * (values.length === 1 ? 0.7 : 1))
-}
-export interface EvidenceMetrics {
-  readonly state: RouteState
-  readonly safeThroughputMbps: number | null
-  readonly medianTtfbMs: number | null
-  readonly successCount: number
-  readonly failureCount: number
-  readonly speedSampleCount: number
-  readonly freshSpeedCount: number
-  readonly capacityConfidence: CapacityConfidence
-  readonly newestSpeedAt: number | null
-  readonly revalidationRequired: boolean
-  readonly safePayloadMbps: number | null
-  readonly predictionTtfbMs: number | null
 }
 export const evidenceMetrics = (evidence: RouteEvidence | null, now: number): EvidenceMetrics => {
   const unique = new Map<string, EvidenceSample>()

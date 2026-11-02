@@ -1,3 +1,4 @@
+import { evidenceMetrics, emptyEvidence, addEvidenceSample } from '../../src-v2/domain/evidence.ts'
 import type { MeasurementRoutes } from '../../src-v2/application/measurement-contracts.ts'
 import type { PlayerMonitor } from '../../src-v2/application/player-monitor.ts'
 import type { MonitorRoutes } from '../../src-v2/application/monitor-contracts.ts'
@@ -5,6 +6,9 @@ export const measurementRoutes = (overrides: Partial<MeasurementRoutes> = {}): M
   ({
     isCatalogOnly: () => false,
     startupOptions: () => null,
+    startupCapacity: (candidate, sample) => sample
+      ? evidenceMetrics(addEvidenceSample(emptyEvidence(candidate.host,candidate.context.kind),sample,sample.at),sample.at)
+      : {...evidenceMetrics(null,0),safeThroughputMbps:candidate.cachedSafeMbps,capacityConfidence:'sufficient',freshSpeedCount:2},
     startupFallback: () => null,
     noteStartupProbeResult: () => undefined,
     commitStartupChoice: () => null,

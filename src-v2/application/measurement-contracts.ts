@@ -48,6 +48,7 @@ export interface MeasurementRangeMetadataPort extends Pick<
 export interface MeasurementRoutes extends Pick<
   RouteCoordinatorPort,
   | 'startupOptions'
+  | 'startupCapacity'
   | 'startupFallback'
   | 'noteStartupProbeResult'
   | 'recordStartupSuccess'
