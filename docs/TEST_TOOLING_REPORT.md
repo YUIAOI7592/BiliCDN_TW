@@ -937,3 +937,8 @@ main／標籤原件、唯一 Release 附件及公開 latest 均與本機腳本�
 ## 2026-11-02：v2.2.6 R1 已安裝版工具與清理
 
 新一輪從空 IAB 清單建立唯一背景分頁，動態取得 browser／tab；已載入完整本體與正式 Release 原件 SHA-256 一致。原生輸入與唯讀斷點組合先遭自動審查拒絕，收到使用者明確批准後才繼續；不改 isTrusted、不強制呼叫產品命令、不搶前景。身分取得後移除斷點／停用 Debugger。兩個各六十秒的原生媒體觀察器自動截止並釋放 timer／listener／MutationObserver，最大採樣空隙約 1.006 秒；未用完整 Network 作一般播放門檻。原設定與倍率復原、靜音 pause、registry 清除、關閉唯一分頁均已核對；完整範圍與結果只在 [R1](TEST_REPORT.md#v226-r1-安裝驗收2026-11-02) 維護，未新增執行期或安裝版故障矩陣。
+
+
+## 2026-11-02：v2.2.6 R1 後文件狀態檢查
+
+本輪只核對文件與既有結果範圍，執行 docs:check、archive:check、git diff --check，另比對 958a422 基準下全部非文件檔案雜湊及三份追加日誌的完整既有前綴。未重跑已完成的 1,856 案、verify 或瀏覽器窗口；R1 結果仍以當輪正式紀錄為準。實際輸出與完整性證明保存於 .work/doc-status-2026-11-02-v226；導覽修正與狀態判讀見 [同次維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#v226-r1-文件狀態核對-2026-11-02)。

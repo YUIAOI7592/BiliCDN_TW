@@ -14,6 +14,7 @@
 | 撰寫或執行測試 | [TODO](TODO.md) → [DEVELOPMENT 測試套件與隔離](DEVELOPMENT.md#測試套件與隔離)；涉及瀏覽器時再讀 [IAB_TESTING](IAB_TESTING.md)；結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
 | 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#發行規則) → [DEVELOPMENT 封裝與發行](DEVELOPMENT.md#封裝與發行)，並依 [發布文件更新順序](DEVELOPMENT.md#發布文件更新順序) 準備文件 |
 | 查舊版或舊議題 | [HISTORY](HISTORY.md) → 依版本、議題或日期進入原始報告 |
+| 核對自動驗證、發布與安裝結果 | [TEST_REPORT 證據範圍](TEST_REPORT.md#驗證階段與證據範圍) → 相應階段正文；目前工作與停止決策回到 [TODO](TODO.md) |
 | 核對文件是否落後或矛盾 | [TODO](TODO.md) → [TEST_REPORT](TEST_REPORT.md) → [狀態與矛盾核對](DEVELOPMENT.md#狀態與矛盾核對) → [HISTORY](HISTORY.md)；修正權威內容，其他入口維持導引 |
 
 修改時需要更新哪些文件，直接查 [文件更新對照表](DEVELOPMENT.md#文件更新對照表)。
