@@ -8,7 +8,7 @@
 
 重新準備不覆寫網站較新的 timeout；同世代換片的 Catalog 等待者也檢查 epoch。起播租期保存唯一 startedAt／deadlineAt，接納結果時檢查絕對期限，恰好三秒及之後的結果不回填；既有候選、bytes、一次預算、足速與退路保持。提前重試正數 timeout 的原限制保持。三頁、詳細狀態按需建立、Native 預設、schema 2 與四鍵均不變。
 
-本版採離線驗證交付，未開瀏覽器、更新安裝版或恢復歷史窗口。原 v2.2.7 指定片 86／86 略過是修前證據，不能改寫成修後實測；原始摘要、完整逐筆陣列未保存與清理讀回限制均保留在歷史正文。本版不宣稱已改善實機起播速度或解決多輪換站的全部原因。
+發行階段採離線驗證交付，當時未開瀏覽器、更新安裝版或恢復歷史窗口；後續新授權的 R1／R2 結果見各節。原 v2.2.7 指定片 86／86 略過是修前證據，不能改寫成修後實測；原始摘要、完整逐筆陣列未保存與清理讀回限制均保留在歷史正文。本版不宣稱已改善實機起播速度或解決多輪換站的全部原因。
 
 ## 自動驗證
 
@@ -148,3 +148,38 @@ v2.2.7 五份原件已按位元組搬至 archive/retired/releases/Release/v2.2.7
 導覽後立即真正靜音並讀回；後續讀回及清理均 muted=true，沒有連續媒體採樣，不宣稱完整無卡頓或逐時刻靜音證明。沒有把播放進度當起播取證替代。原設定 considerNativeSources=false、earlyRetryEnabled=false、無固定主機、未停用，均沿用使用者現況，未為測試改值。
 
 準備階段的導覽前觀察組合兩次遭自動審查拒絕，工具將「非必要的起播前靜音」誤讀成禁止導覽前觀察；收到使用者對限定操作的明確批准後才續行。Page.addScriptToEvaluateOnNewDocument 當次回報不支援，未使用；改用已批准、工具支援的不暫停條件斷點，只在記憶體記錄去敏數字及主機，不呼叫產品命令，不保存簽名網址。這些觀察仍有時序開銷，非零干擾量測。已結案，不自行新增窗口；本次只更新文件，不升版、不封裝、不重新發布。
+
+## v2.2.8 R2 專項完成（2026-11-03／04）
+
+使用者新設「允許你窮盡一切手段完成所有驗收項目」目標，補足本版缺口；不恢復歷史矩陣。基準 main 84f24a6，產品、測試與發行原件均未改。唯一背景 IAB／Tampermonkey，指定 BV1tFZZBQE57／P1／Auto／1 倍，沿用使用者設定 considerNativeSources=false、earlyRetryEnabled=false、未停用、無固定主機。
+
+**本版專項完成：五項安裝行為、一項清理，以及兩組共六案原生 API 校準均 PASS。** 原 1,982 案離線與安全結果沿用未變產品的既有證據，不宣稱此次重跑。R1 原判定保留，以本節新增直接證據關閉逐筆影片分類及原生 API 缺口；不將安裝行為、官方原生校準及一般效用混為同一結果。
+
+| ID／層級 | 預期與實際證據 | 結果 |
+| --- | --- | --- |
+| R2-I1／I 身分 | Tampermonkey 5.5.1／2.2.8；完整已載入本體與 474,008 bytes 發行原件完全相同、SHA-256 7573766cb33a425a109b5edb2649998e1cf90b6d7f3d8dddf052e338c6bd6027；Runtime、ControlCenter、Transport 各一，兩種 hooks installed | PASS |
+| R2-I2／I 影片起播 | api-xhr-1 明確為 video／非同步 GET／10,000 ms，23:40:08.227 進入 prepareStartup；下一毫秒保留 video 窗口，三個候選與探測也均為 video | PASS |
+| R2-I3／I 共用窗口與結果 | api-xhr-9 為 video／13,000 ms，23:40:10.283 加入同輪。唯一保留、三個探測、唯一結果，elapsedMs=3,001，未因後來請求另開三秒；選最快有效 ali，result=insufficient | PASS |
+| R2-I4／I 值保持與真正送出 | api-xhr-9 於 23:40:10.282 進入、23:40:11.234 原生 send 返回並 accepted=true，等待 952 ms；入口、送出與接受均 13,000 ms。23:40:11.316 收到可信 load／206／10,313 bytes。69 筆配對媒體請求全部保持 timeout、全部原生接受，無重複送出 | PASS |
+| R2-I5／I 取消與影音隔離 | 首筆影片於等待 2,054 ms 後由頁面側呼叫 abort，timeout 仍為 10,000；整窗未原生送出或復活。另一影片繼續共用窗口。首筆 audio 不佔影片窗口，原生接受後有可信 206；全窗 35 video＋35 audio 明確分類，只有兩筆影片進入 gate | PASS |
+| R2-E1／E 原生事件 | 同一 IAB 執行官方 WPT aborted 三案：open 後未 send、timeout=2,000，5,000 ms 檢查無終止事件；send 後立即 abort；設定 5,000 ms 後 abort 前已觸發 2,000 ms 原生 timeout。harness OK／3 Pass／pending=0 | PASS |
+| R2-E2／E 動態期限 | 官方 WPT overridesexpires 三案：完成後改短不重啟；5,000 ms 初值、send 後 2,000 ms 改為已過期的 1,100 ms，觸發 timeout；已 timeout 後再改值不重啟。harness OK／3 Pass／pending=0，支持改值仍相對原 fetching 起點而非重新計時 | PASS |
+| R2-C1／I＋E 清理 | 安裝觀察十點、物件群組、Debugger、registry、媒體 timer／MutationObserver 均釋放；真正媒體 paused=true／muted=true／rate=1，設定未改。最後官方頁關閉後 IAB 零自有分頁，無 Fetch 攔截 | PASS |
+
+### R2 窗口、候選與證據
+
+安裝階段 T0 為 2026-11-03 Asia/Taipei **23:37:44.039**，並保存單調值 936582.2839 ms；硬截止 23:52:44.039、最後三分鐘保留清理。唯一自然窗口 **23:40:07.504–23:41:37.504**，九十秒，511 列／容量 20,000／dropped=0。媒體靜音讀回始於 23:40:08.337，當時 paused=true；後續九十筆一秒採樣均 muted=true，最大間隔 1,234 ms。23:42:16.635 已暫停媒體並完成安裝觀察清理；初次載入至靜音讀回不冒稱全程無聲，不以此窗口證明完整無卡頓效用。
+
+候選為 upos-sz-mirrorali.bilivideo.com、upos-tf-all-tx.bilivideo.com、upos-sz-mirrorali02.bilivideo.com，各設定 512 KiB 上限；一期仍只有三個。接納 ali 的 4.7074 Mbps 與 tx 的 2.2122 Mbps 有效 206，均低於本輪 29.1070725 Mbps 需求，因此不足速選擇 ali；ali02 無期限內接納結果。這不是增加探測或調整來源以製造通過，速度也不是穩定頻寬保證。
+
+本輪 I 的成功鏈是 **video／正數 timeout → 共用測速與結果 → 同一請求的原生 send 接受 → 可信 206**，不是只有送出前 logpoint 或計畫主機。觀察修正為 meta.applied.context.kind；保留已讀來源的完整本體比對。紀錄只含去敏 ID、數值、分類及主機，不保存簽名 URL、路徑、查詢、憑證或播放器物件。FIRST.json 每次讀取後即落地，最終 WINDOW.json／TIMELINE.jsonl 保存整窗；SUMMARY.json、PAIRS.json、IDENTITY.json、I-CLEANUP.json 及 CLEANUP.json 位於 .work/iab-testing/2026-11-03-v2.2.8-84f24a6-r2。
+
+### 原生校準與工具限制
+
+本機 HTML 被工具 URL 政策阻擋，沒有透過 CDP 重載、代理、本機服務或其他瀏覽器繞過；合成頁與其攔截從未執行。改用現成官方 [WPT aborted](https://wpt.live/xhr/xmlhttprequest-timeout-aborted.html) 與 [WPT overridesexpires](https://wpt.live/xhr/xmlhttprequest-timeout-overridesexpires.html)，先閱讀實際來源與參數。它們是 **E 原生 API 校準**，不是產品 S 隔離或 Tampermonkey I 安裝驗收；產品接線使用上列真實 I 證據，複雜重入、改值／重用交錯使用原有 N 契約，不修改網站 timeout 製造條件。
+
+首個官方 overrides 導覽工具耗時 **957.3294 秒**，返回已超過前階段硬截止；停止新增工作並清理。停止時頁面雖顯示 3 Pass，當時新掛回呼已太晚，沒有可證明在截止內的完成時間；保留 WPT-STOP.json，**不計入有期限的產品窗口或上述六案通過數**。此工具延遲不否定早已在期限內完成的安裝證據。
+
+剩餘兩組未測原生案例另依新自主目標建立獨立有界校準階段：2026-11-04 **00:03:41.477–00:06:16.614**，單調耗時約 155.137 秒；固定十分鐘、最後三分鐘清理，單次工具呼叫另設十秒期限。兩組均完整讀得 harness OK／3 Pass，保存 WPT-ABORTED.json、WPT-EXPIRES.json 及對應畫面後關閉，沒有重跑已通過的影片或官方案例。這不是拼接兩個影片窗口。
+
+準備保存時自動審查要求縮小執行期快照，改為明確白名單數值與有界主機後通過；沒有持久化被拒的完整物件。所有限制、超時及原 R1 不足均保留，不把工具成敗當成播放產品的判定。此次僅更新現行結果與方法文件；不升版、不封裝、不發布、不改版本標籤。
