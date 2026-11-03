@@ -212,3 +212,16 @@
 ### v2.2.7 完成映射
 
 原 1,856 案（名稱、kind、參數展開）無缺漏，新增 domain 44、state 2、application 15、native-transport 6、control-center 4、tooling 4，共 75。政策與替身調整逐項見[完整驗證報告](../docs/TEST_REPORT.md#政策映射與契約保留)。正式新案例集中 v227-evidence／evidence-state／routing／route-owner／startup／completion／completion-owner／capacity-ui／evaluation；原清理與全域替換方法保持。
+
+## v2.2.8 正數 XHR timeout 起播契約
+
+基準 main ddd41a0／十八套件 1,931 案；新增 native-transport 48、application 3，共 51 案，最終 1,982 案。名稱、kind 與參數展開多重集合無缺漏。正數 timeout 政策改為共用起播等待，原值保持；沒有六秒門檻，也不擴張提前重試資格。
+
+| 原案例 | 新預期與保留斷言 |
+| --- | --- |
+| adapters：rewritten Request preserves request headers | 5,000 ms XHR 先等待再送出一次；headers、URL 與 timeout 保持，不產生退役略過原因 |
+| BR-02 failed sync open never replays an already-sent native request | 先完成起播等待，再驗已送請求的失敗同步 open；原生例外及不重播斷言保持 |
+| B2 native sent timeout and cancellation are not synthesized or replayed after policy change | 正數請求先等待；實際送出後才驗政策變更、取消事件與不重播 |
+| V226 UI：xhr-explicit-timeout 原因 | 名稱與輸入保留，改為負向確認退役原因只走一般缺省文案 |
+
+新 V228 案用真實 Routes／Vault／Measurement／Transport，核對零至 19,000 ms、網站改值、重新準備、並行 Fetch／XHR、影音優先、模式、取消與內容隔離；延遲排程在 2,999／3,000／3,001 ms 驗絕對截止。替身的原生計時紀錄不是實際瀏覽器計時證明。完整結果見[最新版報告](../docs/TEST_REPORT.md)。
