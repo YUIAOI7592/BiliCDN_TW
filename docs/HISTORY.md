@@ -52,7 +52,7 @@
 | 適用版本 | 原始紀錄 |
 | --- | --- |
 | 未單列／跨版 | [新增 B 站 CDN 節點的驗證方案（2026-09-25）](../archive/retired/docs/CDN_CANDIDATE_TEST_PLAN_2026-09-25.md)、[B 站 CDN 全量初篩與比較測試報告](../archive/retired/docs/CDN_NODE_FULL_SCREENING_2026-09-25.md)、[B 站 CDN 優化公開專案調查（2026-09-25）](../archive/retired/docs/CDN_OPEN_SOURCE_SURVEY_2026-09-25.md)、[內建瀏覽器 Range 與實際播放對照（2026-09-25）](../archive/retired/docs/CDN_RANGE_PLAYBACK_EXPERIMENT_2026-09-25.md)、[B 站 CDN 節點測試結果（2026-09-25）](../archive/retired/docs/CDN_TEST_RESULTS_2026-09-25.md)、[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)、[歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[測試工具驗證紀錄](TEST_TOOLING_REPORT.md) |
-| v2.2.7 | [選路、容量與探索完整驗證](TEST_REPORT.md#研究項目完成對照) |
+| v2.2.7 | [選路、容量與探索完整驗證](TEST_REPORT.md#研究項目完成對照)、[R1 基本安裝驗收](TEST_REPORT.md#v227-r1-基本安裝驗收2026-11-03) |
 | v2.2.6 | [確定性選路、狀態機與提交所有權完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#三十五項閉環對照)、[R1 基本安裝驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v226-r1-安裝驗收2026-11-02) |
 | v2.2.5 | [完整容量、倍率、時效驗證與 R1 原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v225-完整正文保存2026-11-02)、[起播逐步調查](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md) |
 | v2.2.4 | [完整修復與 R1 原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v224-完整正文保存2026-11-01) |

@@ -959,3 +959,8 @@ main／標籤原件、唯一 Release 附件及公開 latest 均與本機腳本�
 ### v2.2.7 交付工具結果
 
 最終 verify 通過 18 套件／1,931 案及可重現建置／暫存封裝；格式、文件、封存與差異通過。GitHub 公開附件／latest 原始位元組與本機相同，精確數值集中[發布核對](TEST_REPORT.md#發布後公開核對2026-11-03)。沒有新的瀏覽器或效用 PASS；獨立 evaluate:early-retry 仍退出 1，normalCasesHaveNoUnnecessaryIntervention=false，原 FAIL 保留。
+
+
+## 2026-11-03：v2.2.7 R1 IAB 基本驗收工具
+
+本輪 type=iab／Tampermonkey 5.5.1，以完整腳本 bytes、單例、hooks 及可信原生輸入校準；閉合 Shadow DOM 用限定 CDP 唯讀節點與原生滑鼠，不偽造 isTrusted。兩個 60 秒觀察器自動截止並釋放，無 Network 全記錄或診斷工具門檻。T0 使用首次 inventory 前時鐘保守計算，原 metadata 誤認時間與首次單調起點未量測限制明列；正式窗口單調時間完整。結果、截圖、條件式缺口及清理見[R1 紀錄](TEST_REPORT.md#v227-r1-基本安裝驗收2026-11-03)，不把基本 PASS 擴張成完整模型／效用通過。
