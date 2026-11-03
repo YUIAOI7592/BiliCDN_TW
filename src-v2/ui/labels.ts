@@ -111,7 +111,6 @@ export const startupLabel = (state: unknown, reason: unknown, result?: unknown):
         'preflight-error': '預測試未完成，後續依目前選路設定處理',
         'video-priority': '等待影片取得起播窗口',
         'preflight-skipped:synchronous-xhr': '同步 XHR 保留原生行為，未消耗起播窗口',
-        'preflight-skipped:xhr-explicit-timeout': '網站已設定逾時，未消耗起播窗口',
       },
       '這筆請求未進行起播預測試',
     )
