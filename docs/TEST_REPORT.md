@@ -176,3 +176,40 @@ T0 保守採第一次 inventory 前的 UTC 時鐘讀值，Asia/Taipei **20:47:07
 私有去敏證據位於 .work/iab-testing/2026-11-03-v2.2.7-3950c00-r1：BASELINE（含原始時間記錄與修正）、IDENTITY、INITIAL、INPUT-CALIBRATION、I1／I2 原始連續樣本與模型、I3 數值、I4 三頁／詳細／重開、I5 持久讀回／復原、CASES、SUMMARY、CLEANUP、CHECKPOINT／RERUN 與實際截圖。未保存簽名媒體 URL、Cookie、IP 或播放器物件。
 
 原生媒體在清理時 paused=true、muted=true、rate=1；控制中心關閉、訂閱零、視圖與鍵盤釋放，工具 registry 均不存在、無自有攔截／持有請求／包裝／受控樣本；遠端物件引用釋放，自有 IAB 分頁零個。產品、測試、版本、Release 及標籤保持；本次僅更新文件並執行文件／封存／差異與原件核對，不冒稱重新跑過 1,931 案。是否有新工作只看 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
+
+## v2.2.7 XHR timeout 起播分支調查（2026-11-03）
+
+依使用者新要求，以 main d8087ef 的現行程式調查正數 XHR timeout 是否讓起播測速失去作用；只調查與記錄，未修改產品或測試。使用一個新 IAB 分頁，指定 BV1tFZZBQE57／P1／Auto／1 倍，從自然導覽觀察，沿網站既有進度續播，沒有清快取、重設起播額度、改 timeout、製造請求或故障注入。導覽後立即將真正媒體靜音並讀回。
+
+### 實際分支結果
+
+固定窗口為 Asia/Taipei **21:28:05.543–21:29:35.543**，共 90 秒，包含初始導覽。使用自動截止且不暫停的五個條件觀察點，分別位於 XHR send 入口、起播等待分支、正數 timeout 略過分支、媒體 Fetch 與 prepareStartup 入口；僅記錄種類、數值及工具內請求識別，不保存媒體 URL。已載入完整腳本與 v2.2.7 發行本體相符：473,572 bytes，SHA-256 b003602488183398bc9af5a7d4ed42e3280719e794b528b20c81c3387df9b672，匹配腳本來源一份。
+
+| 項目 | 當時工具統計 |
+| --- | --- |
+| 影片 XHR send | 48 筆，全部正數 timeout，全部配對到實際略過分支 |
+| 音訊 XHR send | 38 筆，全部正數 timeout，全部配對到實際略過分支 |
+| 合計 | 86／86，均為非停用狀態的非同步 GET |
+| timeout 範圍 | 5,000–19,000 ms；首筆影片及音訊皆為 10,000 ms |
+| XHR 起播等待／prepareStartup | 各 0 次 |
+| 媒體 Fetch 攔截入口 | 0 次 |
+
+XHR send 入口另有 86 筆非媒體呼叫，不混入分母。上述數量是適配器送出呼叫及實際分支命中，不宣稱全部成功完成或等同獨立 Network 最終目的地證據。事件以同一游標持續排空，工具回報 truncated=false。固定窗口後不追加資料或輪次。
+
+**判定：本次指定影片的自然影音請求全部走到正數 timeout 略過分支，起播測速確實未啟動。** 不能擴張為所有影片、OGV、所有帳戶或其他播放器版本都必定相同；但現行條件對任何正數 timeout 都會排除起播等待。
+
+### 原因與影響範圍
+
+[XHR 條件](https://github.com/YUIAOI7592/BiliCDN_TW/blob/d8087ef0194ff3bbab2d32a2a7d50b9ae3f88db8/src-v2/adapters/xhr-hook.ts#L454) 要求 this.timeout === 0，才會繼續檢查 willGateStartup 並呼叫 prepareStartup；正數直接記錄 preflight-skipped:xhr-explicit-timeout，再執行正常 perform。沒有將 timeout 與三秒起播期限比較，所以 10 秒、19 秒也全部排除。這是專案保留原生逾時行為的相容政策，不是瀏覽器禁止對有 timeout 的 XHR 測速。
+
+[noteUnpreflighted](https://github.com/YUIAOI7592/BiliCDN_TW/blob/d8087ef0194ff3bbab2d32a2a7d50b9ae3f88db8/src-v2/application/measurement-controller.ts#L249) 只更新可用窗口的目前顯示，不消耗或關閉起播租期。「未消耗窗口」不能解讀為已完成測速；後續請求若也全部被略過，窗口就一直未使用。普通選路與被動速度學習仍可執行；健康探索是另一條流程，本次沒有據此判定它失效。
+
+同一條件至少可追溯到 03beb91（v2.1.7），原 S06 調查已列出覆蓋風險。現有 adapters 與 B2 契約刻意斷言明確 timeout 立即原生送出；它們證明相容政策保持，沒有證明網站實際請求能進入起播測速。原 R1 基本播放 PASS 保留，I6 原本的證據不足不改為 PASS；本次補上該路徑確實未啟動的證據。
+
+後續修復需要同時定義有限 timeout 下的起播等待、原生計時起點、取消及晚到工作契約，不能只把網站 timeout 清零或直接移除 guard。這是建議，尚未實作或授權新的實測窗口。
+
+### 證據保存與工具限制
+
+原始工具文字輸出保存在 .work/xhr-timeout-review-2026-11-03/EVIDENCE.json，包含首批請求、完整本體核對、最終統計與五個觀察點移除結果。工具工作階段後續失去原有變數，完整逐筆陣列未落盤；只保留當時實際輸出的摘要與首批樣本，不冒稱可由保存檔逐筆重算全部 86 筆。
+
+五個觀察點已於 **21:31:26.438** 移除；額外的管理器／singleton／租期唯讀核對遭自動審查逾時，沒有取得該次新讀值，不沿用舊分頁身分冒稱本輪完整安裝驗收。工作階段變更後的 inventory 顯示 IAB 分頁零個；未取得原分頁最後 pause／Debugger.disable 的讀回，因此不宣稱完整清理契約 PASS，也不重開分頁補跑。已完成的請求分支統計與這些未取得的額外證據分開記錄。本次不形成新的播放、效能或完整安裝驗收通過結論。
