@@ -71,6 +71,8 @@ export class MeasurementController implements MeasurementPort {
         phase: 'reserved' | 'probing'
         controller: AbortController
         pending: Promise<void>
+        startedAt: number
+        deadlineAt: number
       } = { phase: 'available' }
   #startupQualifiedHosts: readonly string[] = []
   #startupState: NonNullable<MeasurementSnapshot['startup']> = Object.freeze({
@@ -183,12 +185,14 @@ export class MeasurementController implements MeasurementPort {
         return
       }
       const controller = new AbortController(),
-        marker = this.#marker
+        marker = this.#marker,
+        startedAt = this.now(),
+        deadlineAt = startedAt + TIMEOUT_MS
 
       this.#startupState = Object.freeze({
         state: 'running',
         reason: 'player-media-request',
-        deadlineAt: this.now() + TIMEOUT_MS,
+        deadlineAt,
         remainingProbes: options.candidates.length,
         candidates: options.candidates.length,
         selectedHost: null,
@@ -199,7 +203,13 @@ export class MeasurementController implements MeasurementPort {
         release = resolve
       })
       if (startupTransition('available', 'reserve').reason !== 'accepted') return
-      const lease = { phase: 'reserved' as 'reserved' | 'probing', controller, pending }
+      const lease = {
+        phase: 'reserved' as 'reserved' | 'probing',
+        controller,
+        pending,
+        startedAt,
+        deadlineAt,
+      }
       this.#startupLease = lease
       void this.#runStartup(url, options, controller, marker)
         .catch(() => {
@@ -274,8 +284,8 @@ export class MeasurementController implements MeasurementPort {
     lease.phase = 'probing'
     const current = () => this.#startupLease === lease && this.#marker === marker && !this.#disposed
     const results: ProbeResult[] = []
-    const startedAt = this.now(),
-      catalogOnlyAtStart = this.routes.isCatalogOnly()
+    const { startedAt, deadlineAt } = lease
+    const catalogOnlyAtStart = this.routes.isCatalogOnly()
     let timer: (() => void) | null = null
     let sealed = false,
       releaseReason = 'complete',
@@ -292,16 +302,25 @@ export class MeasurementController implements MeasurementPort {
       resolveWindow()
     }
     const aborted = (): void => finish('cancelled')
-    controller.signal.addEventListener('abort', aborted, { once: true })
-    timer = this.scheduler.timeout(() => {
+    const expire = (): void => {
       finish('deadline')
       controller.abort('startup-deadline')
-    }, TIMEOUT_MS)
+    }
+    const accepting = (): boolean => {
+      if (sealed || !current()) return false
+      if (this.now() >= deadlineAt) {
+        expire()
+        return false
+      }
+      return true
+    }
+    controller.signal.addEventListener('abort', aborted, { once: true })
+    timer = this.scheduler.timeout(expire, Math.max(0, deadlineAt - this.now()))
     for (const candidate of options.candidates) {
-      if (sealed || controller.signal.aborted) break
+      if (!accepting() || controller.signal.aborted) break
       void this.#probeStartup(candidate, options.demand, controller.signal).then(
         (result) => {
-          if (sealed || marker !== this.#marker) return
+          if (!accepting()) return
           results.push(result)
           this.#startupState = Object.freeze({
             ...this.#startupState!,
@@ -319,7 +338,7 @@ export class MeasurementController implements MeasurementPort {
           else if (--remaining === 0) finish('complete')
         },
         (error: unknown) => {
-          if (sealed) return
+          if (!accepting()) return
           sealed = true
           rejectWindow(error)
         },

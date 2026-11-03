@@ -176,7 +176,6 @@ export class XhrHookAdapter {
       const perform = (): void => {
         if (!waiting(this, meta)) return
         const responseType = this.responseType,
-          requestTimeout = this.timeout,
           credentials = this.withCredentials
         let preparations = 0
         const nativeReady = (): boolean =>
@@ -198,6 +197,13 @@ export class XhrHookAdapter {
           }
           if (meta.async) {
             this.responseType = responseType
+            if (!nativeReady()) {
+              if (waiting(this, meta)) meta.needsNativeOpen = true
+              return
+            }
+            // open() and responseType restoration may let the website change its
+            // timeout synchronously. Preserve the latest value, never a pre-open copy.
+            const requestTimeout = this.timeout
             if (!nativeReady()) {
               if (waiting(this, meta)) meta.needsNativeOpen = true
               return
@@ -246,12 +252,14 @@ export class XhrHookAdapter {
             const strictManaged =
               self.routes.isCatalogOnly() &&
               (meta.managedBilibili || self.routes.recognizesMedia(meta.originalUrl))
-            if (!self.session.isGeneration(meta.generation) && strictManaged) {
+            const sameContent =
+              self.session.isGeneration(meta.generation) && self.session.get().epoch === meta.epoch
+            if (!sameContent && strictManaged) {
               self.blocked(meta.method, meta.originalUrl, 'catalog-unavailable')
               rejectLocal(this, meta)
               return
             }
-            stale = !self.session.isGeneration(meta.generation)
+            stale = !sameContent
             if (
               !meta.playurl &&
               (meta.applied ||
@@ -457,7 +465,6 @@ export class XhrHookAdapter {
         meta.method === 'GET' &&
         self.routes.recognizesMedia(meta.originalUrl) &&
         !self.settings.get().disabled &&
-        this.timeout === 0 &&
         self.measurement.willGateStartup(meta.originalUrl)
       ) {
         const release = (): void => {
@@ -493,8 +500,6 @@ export class XhrHookAdapter {
       }
       if (!meta.playurl && self.routes.recognizesMedia(meta.originalUrl)) {
         if (!meta.async) self.measurement.noteUnpreflighted('preflight-skipped:synchronous-xhr')
-        else if (this.timeout > 0)
-          self.measurement.noteUnpreflighted('preflight-skipped:xhr-explicit-timeout')
         else self.measurement.noteUnpreflighted('no-safe-startup-candidate')
       }
       perform()
