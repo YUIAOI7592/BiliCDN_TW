@@ -60,7 +60,7 @@ Codex Security 掃描 174fe7d9-2fba-4fbc-b94d-ecb02a856ac4，固定 ddd41a0..684
 
 v2.2.7 五份原件已按位元組搬至 archive/retired/releases/Release/v2.2.7，保留原校驗內容。v2.2.8 腳本 474,008 bytes，SHA-256：`7573766cb33a425a109b5edb2649998e1cf90b6d7f3d8dddf052e338c6bd6027`。五份本機產物已由鎖定工具封裝，公開核對見下節；Release 快照保持封裝時原件，後續結果只追加現行報告。
 
-安裝版尚未驗證。使用者更新並另行授權後，僅依本次缺陷的新專項驗收：固定指定片 P1／Auto／1 倍、一個 IAB 分頁、十五分鐘總期限含最後三分鐘清理、一個九十秒自然窗口；須核對正數 timeout 的合格影片請求、真正起播輪次、探測／選擇、等待後送出與 timeout 保持。每批立即保存去敏證據。一般播放正常不代替此證據；前提不足不改 timeout、重設額度或自動補跑。永久靜音、無網站服務與不要求前景的規則保持。
+發行時安裝版尚未驗證；使用者更新後新授權的專項結果見下列 R1。專項固定指定片 P1／Auto／1 倍、一個 IAB 分頁、十五分鐘總期限含最後三分鐘清理、一個九十秒自然窗口。一般播放正常不代替起播證據；前提不足不改 timeout、重設額度或自動補跑。永久靜音、無網站服務與不要求前景的規則保持。
 
 ## 歷史驗證導覽
 
@@ -124,3 +124,27 @@ v2.2.7 五份原件已按位元組搬至 archive/retired/releases/Release/v2.2.7
 版本附件與公開 latest 均實際下載並與本機逐 bytes 比對：版本 **2.2.8**、**474,008 bytes**、SHA-256 `7573766cb33a425a109b5edb2649998e1cf90b6d7f3d8dddf052e338c6bd6027`，GitHub asset digest 亦一致。核對時間為 Asia/Taipei **22:50:03**；原始公開核對保存在 .work/v228/public-verification.json。
 
 上一版五份原件、完整報告及三份追加日誌前綴均按原始 bytes 核對；本版五份產物、建置來源雜湊及已掃描程式未變亦通過。文件／封存／差異檢查完成後提交推送 main；不再次升版、封裝或發布。安裝版仍未驗證，原 R1／調查限制及停止決策保持。
+
+## v2.2.8 R1 正數 timeout 專項（2026-11-03）
+
+使用者確認已更新並新授權。基準 main 2dca84a；唯一 IAB 背景分頁，指定 BV1tFZZBQE57／P1／Auto／1 倍。自然窗口為 Asia/Taipei **23:27:10.300–23:28:40.300**，完整九十秒；沒有重新安裝、改 timeout、修改設定、重設額度或補跑。工具初次準備早於目標建立時間 23:21:55，採更保守的 23:21 起算／23:36 硬截止，最後三分鐘保留清理；原始前置單調起點未量測。23:30:42 已完成媒體暫停靜音及分頁清理。
+
+**已確認正數 timeout 不再阻擋起播測速，送出邊界保留網站值。逐筆影片／音訊分類證據不足，因此不宣稱本輪全部專項通過，也沒有確認產品 FAIL。**
+
+| 項目 | 結果與直接證據 |
+| --- | --- |
+| 安裝身分 | PASS：Tampermonkey 5.5.1／2.2.8，已載入完整本體與發行原件逐字元一致，474,008 bytes／SHA-256 7573766cb33a425a109b5edb2649998e1cf90b6d7f3d8dddf052e338c6bd6027；RuntimeController、ControlCenter、TransportAdapter 各一，Fetch／XHR hooks installed |
+| 正數 timeout 起播接線 | PASS：api-xhr-1 為合格非同步媒體 GET，timeout 10,000 ms，23:27:11.941 進入 prepareStartup；下一毫秒保留唯一窗口，啟動三個候選。api-xhr-9 的 13,000 ms 請求加入同一窗口，未另開輪次 |
+| 起播結果與有界等待 | PASS：唯一輪次 elapsedMs=3,002，deadline 收束；兩個有效 206 結果均未達當時 29.1070725 Mbps 需求，選最快有效 aliov，result=insufficient。此為正常不足速選擇，不是測速未啟動 |
+| 等待後送出及 timeout | PASS（程式送出邊界）：api-xhr-9 於 23:27:13.995 進入、23:27:14.947 到原生 send 呼叫邊界，等待 952 ms，13,000→13,000 ms，目標 aliov。118 筆可配對媒體請求全部保持值、無重複原生 send 觀察；119 筆媒體入口均為正數 |
+| 逐筆影片歸因 | 證據不足：觀察器錯讀 meta.applied.kind，正確欄位應為 meta.applied.context.kind；逐筆均 null。影片優先程式契約、4K Auto 畫面及影音回應可支持流程判讀，但不冒充本輪直接記錄的逐筆 video 標籤 |
+| 真正原生 timeout 到期與動態改值 | 未執行：本輪不修改網站 timeout，不以送出前讀值宣稱已驗證原生計時起點、到期事件或全部網站改值交錯 |
+| 清理 | PASS：七個不暫停觀察點移除、Debugger 停用、物件群組與記憶體 registry 清除；真正媒體 paused=true／muted=true／rate=1，唯一自有分頁關閉後 IAB 零分頁。無自有計時器、攔截或訂閱；設定與初讀一致，合法自然學習保留 |
+
+本輪候選依序為 upos-sz-mirroraliov.bilivideo.com、upos-sz-mirrorali.bilivideo.com、upos-sz-mirrorali02.bilivideo.com，每個上限 512 KiB。期限前接納 aliov 的 524,288 bytes／187 ms／保守 22.4294 Mbps，及 ali 的 524,288 bytes／606 ms／6.9213 Mbps；ali02 沒有本輪接納結果，不能推定已全面故障。已選主機仍不代表所有後續實際回應都由它提供。
+
+觀察記錄 405 列，容量 10,000，dropped=0，條件在固定截止後不再追加。完整逐筆已保存於 .work/iab-testing/2026-11-03-v2.2.8-2dca84a-r1 的 FIRST.json、WINDOW.json、TIMELINE.jsonl、PAIRS.json、SUMMARY.json、IDENTITY.json、BODY.json 及 CLEANUP.json。第一批約在窗口第 69 秒落地，後續完整批落地；並非每次讀取都立即寫檔，原始工具輸出亦保留。原生送出觀察點位於 Reflect.apply(originalSend) 前，不是獨立 Chrome Network 確認。api-xhr-1 沒有原生 send 觀察；未設 abort 觀察，取消原因未確認，不能歸因產品錯誤。
+
+導覽後立即真正靜音並讀回；後續讀回及清理均 muted=true，沒有連續媒體採樣，不宣稱完整無卡頓或逐時刻靜音證明。沒有把播放進度當起播取證替代。原設定 considerNativeSources=false、earlyRetryEnabled=false、無固定主機、未停用，均沿用使用者現況，未為測試改值。
+
+準備階段的導覽前觀察組合兩次遭自動審查拒絕，工具將「非必要的起播前靜音」誤讀成禁止導覽前觀察；收到使用者對限定操作的明確批准後才續行。Page.addScriptToEvaluateOnNewDocument 當次回報不支援，未使用；改用已批准、工具支援的不暫停條件斷點，只在記憶體記錄去敏數字及主機，不呼叫產品命令，不保存簽名網址。這些觀察仍有時序開銷，非零干擾量測。已結案，不自行新增窗口；本次只更新文件，不升版、不封裝、不重新發布。

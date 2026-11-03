@@ -384,3 +384,7 @@
 - [v2.2.5 逐步討論與疑點紀錄](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md#已保存疑點)
 - [v2.2.6 35 項實作規則與正式案例](../archive/retired/docs/TEST_REPORT_HISTORY.md#三十五項閉環對照)
 - [v2.2.6 R1 基本安裝驗收及未實測分支](../archive/retired/docs/TEST_REPORT_HISTORY.md#v226-r1-安裝驗收2026-11-02)
+
+## v2.2.8 正數 timeout 專項導覽（2026-11-03）
+
+更新後新授權的九十秒安裝觀察、判定與工具限制見 [R1 完整紀錄](TEST_REPORT.md#v228-r1-正數-timeout-專項2026-11-03)。現行工作與停止狀態仍由 [TODO](TODO.md) 維護；不改寫發行快照或舊版調查。
