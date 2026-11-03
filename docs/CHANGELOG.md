@@ -4,7 +4,7 @@
 
 - 修復合格非同步媒體 XHR 因正數 timeout 而未啟動起播測速；沿用共用三秒窗口，保留網站最新 timeout，不設六秒門檻或自動延長。
 - 保護重新 open 時的網站 timeout 更新，補上同世代換片的 Catalog 等待者隔離；絕對截止後的探測結果不回填。
-- 原 1,931 案名稱與參數展開保留，新增 51 案；離線驗證、安全差異及安裝版範圍見[完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。測速等待另計，不能宣稱網站端到端期限保持不變。
+- 原 1,931 案名稱與參數展開保留，新增 51 案；離線驗證、安全差異及後續安裝專項結果見[完整報告的驗收結論](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論)。測速等待另計，不能宣稱網站端到端期限保持不變。
 
 ## v2.2.7
 

@@ -1,6 +1,12 @@
 # BiliCDN_TW v2.2.8 正數 XHR timeout 起播修復驗證
 
-日期：2026-11-03（Asia/Taipei）。固定基準 main ddd41a0ad91a9a5673e8944ff86c5cb234f46443／v2.2.7；程式與測試審查固定至 6840815281b0cfb1d70409123b4aae66dd1b8ba8。先保存基線與失敗回歸，再修改執行期，各階段獨立提交。
+驗證日期：2026-11-03／04（Asia/Taipei）。固定基準 main ddd41a0ad91a9a5673e8944ff86c5cb234f46443／v2.2.7；程式與測試審查固定至 6840815281b0cfb1d70409123b4aae66dd1b8ba8。先保存基線與失敗回歸，再修改執行期，各階段獨立提交。
+
+## 驗收結論
+
+**最終判定：v2.2.8 本次正數 XHR timeout 專項驗收通過（R2，8／8 PASS）。** 已確認正數 timeout 的影片請求啟動起播測速，等待後保留網站 timeout 原值，原生 send 接受後收到可信 206；清理完成。逐項證據見 [R2 完整紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v228-r2-專項完成2026-11-0304)。八項包含五項安裝行為、兩組原生 API 校準及一項清理；兩組校準合計六案，與產品安裝證據分列。
+
+本文依離線／發布、R1、R2 的時間順序保留原紀錄。R1 的證據不足、未執行及工具超時描述各自當時的檢查點；後續完成判定由 R2 的新增直接證據支持。原始判定、歷史限制及發行快照保留。
 
 ## 修復結果與證據邊界
 
@@ -60,7 +66,7 @@ Codex Security 掃描 174fe7d9-2fba-4fbc-b94d-ecb02a856ac4，固定 ddd41a0..684
 
 v2.2.7 五份原件已按位元組搬至 archive/retired/releases/Release/v2.2.7，保留原校驗內容。v2.2.8 腳本 474,008 bytes，SHA-256：`7573766cb33a425a109b5edb2649998e1cf90b6d7f3d8dddf052e338c6bd6027`。五份本機產物已由鎖定工具封裝，公開核對見下節；Release 快照保持封裝時原件，後續結果只追加現行報告。
 
-發行時安裝版尚未驗證；使用者更新後新授權的專項結果見下列 R1。專項固定指定片 P1／Auto／1 倍、一個 IAB 分頁、十五分鐘總期限含最後三分鐘清理、一個九十秒自然窗口。一般播放正常不代替起播證據；前提不足不改 timeout、重設額度或自動補跑。永久靜音、無網站服務與不要求前景的規則保持。
+發行檢查點當時安裝版尚未驗證；使用者更新後的原始觀察見 [R1](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v228-r1-正數-timeout-專項2026-11-03)，後續專項通過結果見 [R2](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v228-r2-專項完成2026-11-0304)。各輪指定片 P1／Auto／1 倍、單一 IAB 分頁、窗口及清理時限分別記於對應段落。一般播放正常不代替起播證據；前提不足不改 timeout、重設額度或自動補跑。永久靜音、無網站服務與不要求前景的規則保持。
 
 ## 歷史驗證導覽
 
@@ -119,11 +125,11 @@ v2.2.7 五份原件已按位元組搬至 archive/retired/releases/Release/v2.2.7
 
 ## 發布後公開核對（2026-11-03）
 
-正式 [v2.2.8 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.8) 已發布，非 draft／prerelease，唯一附件為 BiliCDN_TW.user.js。發行提交與標籤解參照為 b58bad4c72aefa6e090a2e0814f01c86ff58ceba；公開核對當時 main 相同，後續 main 僅追加本節及工作結案，不移動標籤。
+正式 [v2.2.8 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.8) 已發布，非 draft／prerelease，唯一附件為 BiliCDN_TW.user.js。發行提交與標籤解參照為 b58bad4c72aefa6e090a2e0814f01c86ff58ceba；公開核對當時 main 相同，後續 main 僅維護文件，不移動標籤。
 
 版本附件與公開 latest 均實際下載並與本機逐 bytes 比對：版本 **2.2.8**、**474,008 bytes**、SHA-256 `7573766cb33a425a109b5edb2649998e1cf90b6d7f3d8dddf052e338c6bd6027`，GitHub asset digest 亦一致。核對時間為 Asia/Taipei **22:50:03**；原始公開核對保存在 .work/v228/public-verification.json。
 
-上一版五份原件、完整報告及三份追加日誌前綴均按原始 bytes 核對；本版五份產物、建置來源雜湊及已掃描程式未變亦通過。文件／封存／差異檢查完成後提交推送 main；不再次升版、封裝或發布。安裝版仍未驗證，原 R1／調查限制及停止決策保持。
+上一版五份原件、完整報告及三份追加日誌前綴均按原始 bytes 核對；本版五份產物、建置來源雜湊及已掃描程式未變亦通過。該次發行核對於文件／封存／差異檢查後提交推送 main，當時尚未進行 v2.2.8 安裝驗收。後續 R1 原始觀察與 R2 通過結果分列下文；發行原件、修前調查限制及歷史停止決策保持，沒有再次升版、封裝或發布。
 
 ## v2.2.8 R1 正數 timeout 專項（2026-11-03）
 

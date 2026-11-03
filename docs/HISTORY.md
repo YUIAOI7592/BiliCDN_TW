@@ -52,7 +52,7 @@
 | 適用版本 | 原始紀錄 |
 | --- | --- |
 | 未單列／跨版 | [新增 B 站 CDN 節點的驗證方案（2026-09-25）](../archive/retired/docs/CDN_CANDIDATE_TEST_PLAN_2026-09-25.md)、[B 站 CDN 全量初篩與比較測試報告](../archive/retired/docs/CDN_NODE_FULL_SCREENING_2026-09-25.md)、[B 站 CDN 優化公開專案調查（2026-09-25）](../archive/retired/docs/CDN_OPEN_SOURCE_SURVEY_2026-09-25.md)、[內建瀏覽器 Range 與實際播放對照（2026-09-25）](../archive/retired/docs/CDN_RANGE_PLAYBACK_EXPERIMENT_2026-09-25.md)、[B 站 CDN 節點測試結果（2026-09-25）](../archive/retired/docs/CDN_TEST_RESULTS_2026-09-25.md)、[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)、[歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[測試工具驗證紀錄](TEST_TOOLING_REPORT.md) |
-| v2.2.8 | [正數 timeout 起播修復驗證](TEST_REPORT.md#修復結果與證據邊界) |
+| v2.2.8 | [最終驗收結論](TEST_REPORT.md#驗收結論)、[R2 專項與原生校準](TEST_REPORT.md#v228-r2-專項完成2026-11-0304)、[離線修復驗證](TEST_REPORT.md#修復結果與證據邊界) |
 | v2.2.7 | [選路、容量與探索完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#研究項目完成對照)、[R1 基本安裝驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v227-r1-基本安裝驗收2026-11-03)、[XHR timeout 起播覆蓋調查](../archive/retired/docs/TEST_REPORT_HISTORY.md#v227-xhr-timeout-起播分支調查2026-11-03) |
 | v2.2.6 | [確定性選路、狀態機與提交所有權完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#三十五項閉環對照)、[R1 基本安裝驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v226-r1-安裝驗收2026-11-02) |
 | v2.2.5 | [完整容量、倍率、時效驗證與 R1 原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v225-完整正文保存2026-11-02)、[起播逐步調查](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md) |
@@ -387,6 +387,6 @@
 
 ## v2.2.8 正數 timeout 專項導覽（2026-11-03）
 
-更新後新授權的九十秒安裝觀察、判定與工具限制見 [R1 完整紀錄](TEST_REPORT.md#v228-r1-正數-timeout-專項2026-11-03)。現行工作與停止狀態仍由 [TODO](TODO.md) 維護；不改寫發行快照或舊版調查。
+現行判定見 [驗收結論](TEST_REPORT.md#驗收結論)，2026-11-03／04 補足的逐項證據與原生校準見 [R2 完整紀錄](TEST_REPORT.md#v228-r2-專項完成2026-11-0304)。現行工作與停止狀態仍由 [TODO](TODO.md) 維護。
 
-2026-11-03／04 使用者另授權完成本版全部專項後，補足結果與原生校準見 [R2 完整紀錄](TEST_REPORT.md#v228-r2-專項完成2026-11-0304)。R1 原判定保留，以新證據銜接。
+2026-11-03 更新後首輪觀察與當時限制保存在 [R1 完整紀錄](TEST_REPORT.md#v228-r1-正數-timeout-專項2026-11-03)，原判定保留。2026-11-04 文件狀態核對見 [維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-04v228-驗收通過狀態一致性核對)；發行快照及舊版調查保持原件。
