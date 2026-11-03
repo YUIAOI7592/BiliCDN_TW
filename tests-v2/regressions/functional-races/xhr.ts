@@ -16,6 +16,10 @@ import { deferred } from '../../support/deferred.ts'
 import { FakeStorage } from '../../support/storage.ts'
 import { startupAbortFixture } from '../../support/startup-abort.ts'
 import type { StartupGate } from '../../../src-v2/adapters/transport-ports.ts'
+import { MeasurementController } from '../../../src-v2/application/measurement-controller.ts'
+import { MeasurementMetaStore } from '../../../src-v2/state/measurement-meta-store.ts'
+import type { RangeProbePort, RangeProbeResult } from '../../../src-v2/application/ports.ts'
+import { FakeClock } from '../../support/clock.ts'
 const originalUrl =
   'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/11/22/1000/1000-1-30080.m4s?test=synthetic'
 const apiUrl = 'https://api.bilibili.com/x/player/wbi/playurl?cid=1000'
@@ -44,9 +48,11 @@ async function fixture(
   gate = false,
   fetchResponse?: () => Promise<Response>,
   startup?: StartupGate,
+  probe?: RangeProbePort,
 ) {
   const scope = testScope(t),
-    now = () => 2_000_000_000_000
+    clock = probe ? scope.own(new FakeClock()) : null,
+    now = clock?.now ?? (() => 2_000_000_000_000)
   installProgressEvent(scope)
   // Minimal native state model follows https://xhr.spec.whatwg.org/#the-abort()-method.
   // Unlike existing FakeXhr, abort() before native send does not invent terminal events.
@@ -100,6 +106,9 @@ async function fixture(
     method = ''
     url = ''
     nativeSends = 0
+    sentTimeouts: number[] = []
+    sentAt: number[] = []
+    onOpen: (() => void) | null = null
     sendInvoked = false
     user: string | null = null
     password: string | null = null
@@ -150,6 +159,7 @@ async function fixture(
       this.user = user
       this.password = password
       this.headers = []
+      this.onOpen?.()
       if (changed) this.dispatchEvent(new Event('readystatechange'))
     }
     send(_body?: unknown) {
@@ -158,6 +168,8 @@ async function fixture(
       if (this.sendError) throw this.sendError
       this.sendInvoked = true
       this.nativeSends++
+      this.sentTimeouts.push(this.timeout)
+      this.sentAt.push(now())
     }
     abort() {
       if (
@@ -241,17 +253,20 @@ async function fixture(
     configurable: true,
     value: new URL('https://www.bilibili.com/video/BVsynthetic'),
   })
+  const measurement = probe
+    ? scope.own(new MeasurementController(routes, new MeasurementMetaStore(storage, now), probe, now, clock!, undefined, () => 0, settings))
+    : startup ?? {
+        willGateStartup: () => gate,
+        prepareStartup: () => wait.promise,
+        noteUnpreflighted: () => undefined,
+      }
   const transport = scope.own(
     new TransportAdapter(
       session,
       settings,
       routes,
       playurl,
-      startup ?? {
-        willGateStartup: () => gate,
-        prepareStartup: () => wait.promise,
-        noteUnpreflighted: () => undefined,
-      },
+      measurement,
       now,
       createRuntimeIds(),
     ),
@@ -265,6 +280,11 @@ async function fixture(
     routes.resetEpoch()
   }
   return {
+    scope,
+    clock,
+    storage,
+    vault,
+    measurement,
     session,
     settings,
     restrictions,
@@ -284,6 +304,123 @@ async function fixture(
 
 const blockedUrl = 'https://httpdns.bilivideo.com/bilicdn-browser-contract'
 const ordinaryUrl = 'https://example.invalid/synthetic-control'
+
+function startupProbe() {
+  const pending: { host: string; limit: number; signal: AbortSignal; complete: (result: RangeProbeResult) => void }[] = []
+  const probe: RangeProbePort = {
+    async read({ host, limit, signal }) {
+      const d = deferred<RangeProbeResult>()
+      const abort = () => d.resolve({ bytes: 0, elapsedMs: 1, ttfbMs: null, status: null, directRange: false, reason: 'cancelled' })
+      signal.addEventListener('abort', abort, { once: true })
+      pending.push({ host, limit, signal, complete: d.resolve })
+      try { return await d.promise } finally { signal.removeEventListener('abort', abort) }
+    },
+  }
+  const complete = () => pending.forEach((p, i) => p.complete({ bytes: 262144, elapsedMs: i === pending.length - 1 ? 100 : 2000, ttfbMs: 10, status: 206, directRange: true, reason: 'measured' }))
+  return { probe, pending, complete }
+}
+
+for (const native of [false, true]) {
+  for (const timeout of [0, 1, 500, 2999, 3000, 5000, 6000, 10000, 19000]) {
+    test(`V228 startup: real XHR gate retains timeout=${timeout} native=${native}`, async (t) => {
+      const probes = startupProbe(), f = await fixture(t, native, false, undefined, undefined, probes.probe)
+      assert.ok(f.measurement instanceof MeasurementController)
+      const xhr = new f.NativeXhr(), start = f.now()
+      xhr.open('GET', originalUrl)
+      xhr.timeout = timeout
+      xhr.send()
+      assert.equal(xhr.nativeSends, 0)
+      assert.ok(probes.pending.length > 0 && probes.pending.length <= 3)
+      assert.equal(f.measurement.snapshot().startup?.state, 'running')
+      assert.equal(f.measurement.snapshot().startup?.deadlineAt, start + 3000)
+      const count = probes.pending.length, done = f.measurement.prepareStartup(originalUrl)
+      f.clock!.advance(500)
+      assert.equal(xhr.nativeSends, 0, 'waiting does not run the native timeout')
+      probes.complete()
+      await done
+      await Promise.resolve()
+      const selected = f.measurement.snapshot().startup!
+      assert.equal(selected.result, 'adequate')
+      assert.equal(new URL(xhr.url).host, selected.selectedHost)
+      assert.equal(xhr.nativeSends, 1)
+      assert.deepEqual(xhr.sentTimeouts, [timeout])
+      assert.deepEqual(xhr.sentAt, [start + 500])
+      assert.equal(probes.pending.length, count)
+      assert.ok(probes.pending.every(p => p.limit <= 512 * 1024 && p.signal.aborted))
+      assert.equal(f.clock!.pendingCount, 0)
+      xhr.complete()
+    })
+  }
+}
+
+for (const [before, after] of [[0, 5000], [5000, 0], [10000, 1], [1, 19000]] as const) {
+  test(`V228 startup: website timeout ${before}->${after} during wait survives reopen`, async (t) => {
+    const probes = startupProbe(), f = await fixture(t, true, false, undefined, undefined, probes.probe)
+    assert.ok(f.measurement instanceof MeasurementController)
+    const xhr = new f.NativeXhr()
+    xhr.open('GET', originalUrl)
+    xhr.timeout = before
+    xhr.send()
+    xhr.timeout = after
+    const deadline = f.measurement.snapshot().startup?.deadlineAt
+    const done = f.measurement.prepareStartup(originalUrl)
+    assert.equal(f.measurement.snapshot().startup?.deadlineAt, deadline)
+    probes.complete()
+    await done
+    await Promise.resolve()
+    assert.equal(xhr.nativeSends, 1)
+    assert.deepEqual(xhr.sentTimeouts, [after])
+    xhr.timeout = 7777
+    assert.equal(xhr.timeout, 7777)
+    xhr.complete()
+  })
+}
+
+test('V228 startup: timeout changed inside native reopen is not overwritten by an earlier snapshot', async (t) => {
+  const f = await fixture(t, true, true), xhr = new f.NativeXhr()
+  xhr.open('GET', originalUrl)
+  xhr.timeout = 5000
+  xhr.send()
+  f.routes.apply = (url) => ({ ...f.routes.inspectOriginal(url), url: url.replace('upos-sz-mirrorali', 'upos-sz-mirroraliov') })
+  xhr.onOpen = () => { xhr.timeout = 19000 }
+  f.wait.resolve()
+  await f.wait.promise
+  await Promise.resolve()
+  assert.equal(xhr.successfulOpens, 2)
+  assert.deepEqual(xhr.sentTimeouts, [19000])
+  assert.equal(xhr.timeout, 19000)
+  xhr.complete()
+})
+
+test('V228 startup: finite XHR and Fetch share one deadline and one cancelled waiter cannot dispatch', async (t) => {
+  const probes = startupProbe(), f = await fixture(t, true, false, undefined, undefined, probes.probe)
+  assert.ok(f.measurement instanceof MeasurementController)
+  const a = new f.NativeXhr(), b = new f.NativeXhr(), events: string[] = []
+  a.open('GET', originalUrl); a.timeout = 5000; a.send()
+  const used = probes.pending.length, deadline = f.measurement.snapshot().startup?.deadlineAt
+  const fetched = f.fakeWindow.fetch(originalUrl)
+  f.clock!.advance(2000)
+  b.open('GET', originalUrl); b.timeout = 10000; b.send()
+  for (const type of ['abort', 'timeout', 'error', 'loadend']) a.addEventListener(type, () => events.push(type))
+  a.abort()
+  assert.deepEqual(events, ['abort', 'loadend'])
+  assert.equal(probes.pending.length, used)
+  assert.equal(f.measurement.snapshot().startup?.deadlineAt, deadline)
+  assert.ok(probes.pending.every(p => !p.signal.aborted))
+  const done = f.measurement.prepareStartup(originalUrl)
+  probes.complete()
+  await done; await fetched; await Promise.resolve()
+  assert.equal(a.nativeSends, 0)
+  assert.equal(b.nativeSends, 1)
+  assert.equal(f.fetchCalls.length, 1)
+  assert.deepEqual(b.sentTimeouts, [10000])
+  b.complete()
+  const c = new f.NativeXhr(); c.open('GET', originalUrl); c.timeout = 1; c.send()
+  assert.equal(c.nativeSends, 1)
+  assert.equal(probes.pending.length, used)
+  assert.equal(f.clock!.pendingCount, 0)
+  c.complete()
+})
 
 function captureContentContexts(f: Awaited<ReturnType<typeof fixture>>) {
   const seen: unknown[] = [],
@@ -1161,7 +1298,12 @@ test('B2 native sent timeout and cancellation are not synthesized or replayed af
   xhr.open('GET', originalUrl)
   xhr.timeout = 5000
   xhr.send()
-  assert.equal(xhr.nativeSends, 1, 'explicit timeout bypasses the gate')
+  assert.equal(xhr.nativeSends, 0, 'explicit timeout joins the startup gate')
+  f.wait.resolve()
+  await f.wait.promise
+  await Promise.resolve()
+  assert.equal(xhr.nativeSends, 1, 'native timeout begins only after actual dispatch')
+  assert.equal(xhr.timeout, 5000)
   for (const type of ['abort', 'timeout', 'loadend'])
     xhr.addEventListener(type, () => events.push(type))
   await f.settings.update({ disabled: true })

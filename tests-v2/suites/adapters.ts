@@ -2350,18 +2350,23 @@ async function checkRewrittenRequestPreservesRequestHeaders3(t: TestContext): Pr
     'XHR abort during preflight never dispatches the website request',
   )
   const finiteTimeoutXhr = new base.FakeXhr()
+  base.skippedPreflightReason = ''
   finiteTimeoutXhr.timeout = 5000
   finiteTimeoutXhr.open('GET', base.gatedUrl)
   finiteTimeoutXhr.send()
   assert.strictEqual(
     finiteTimeoutXhr.nativeSends,
-    1,
-    'explicit XHR timeout bypasses delay to preserve native timeout semantics',
+    0,
+    'explicit XHR timeout joins the same bounded preflight',
   )
+  base.gateControl.release()
+  await base.gateControl.done
+  assert.strictEqual(finiteTimeoutXhr.nativeSends, 1)
+  assert.strictEqual(finiteTimeoutXhr.timeout, 5000)
   assert.strictEqual(
     base.skippedPreflightReason,
-    'preflight-skipped:xhr-explicit-timeout',
-    'XHR timeout is labelled as skipped preflight, not skipped interception',
+    '',
+    'XHR timeout no longer generates a skipped-preflight reason',
   )
 }
 

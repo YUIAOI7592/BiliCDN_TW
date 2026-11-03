@@ -174,3 +174,35 @@ test('V227 startup: capacity preview has no control effects and discards synchro
   }
   assert.equal(f.routes.startupCapacity(candidate, null), null)
 })
+
+for (const elapsed of [2999, 3000, 3001]) {
+  test(`V228 startup: absolute deadline rejects results at elapsed=${elapsed} with delayed scheduler`, async (t) => {
+    const { f, url, scope } = await setup(t)
+    let commits = 0, records = 0
+    const pending: ReturnType<typeof deferred<RangeProbeResult>>[] = []
+    const commit = f.routes.commitStartupChoice.bind(f.routes), record = f.routes.recordStartupSuccess.bind(f.routes)
+    f.routes.commitStartupChoice = (...args) => { commits++; return commit(...args) }
+    f.routes.recordStartupSuccess = (...args) => { records++; return record(...args) }
+    const controller = scope.own(new MeasurementController(f.routes, new MeasurementMetaStore(f.storage, f.clock.now), {
+      read: async () => { const d = deferred<RangeProbeResult>(); pending.push(d); return await d.promise },
+    }, f.clock.now, {
+      timeout: (run, delay) => { assert.equal(delay, 3000); return f.clock.timeout(run, delay + 10000) },
+      interval: f.clock.interval.bind(f.clock), microtask: f.clock.microtask.bind(f.clock),
+    }, undefined, () => 0, f.settings))
+    const start = f.clock.now(), done = controller.prepareStartup(url)
+    assert.equal(controller.snapshot().startup?.deadlineAt, start + 3000)
+    assert.equal(pending.length, 3)
+    f.clock.advance(elapsed)
+    for (const d of pending) d.resolve({ bytes: 262144, elapsedMs: 100, ttfbMs: 10, status: 206, directRange: true, reason: 'measured' })
+    await done
+    assert.equal(controller.snapshot().startup?.result, elapsed < 3000 ? 'adequate' : 'unverified')
+    assert.equal(controller.snapshot().startup?.results?.length, elapsed < 3000 ? 3 : 0)
+    assert.equal(records, elapsed < 3000 ? 3 : 0)
+    assert.equal(commits, 1)
+    assert.equal(f.clock.pendingCount, 0)
+    f.clock.advance(4000)
+    await controller.prepareStartup(url)
+    assert.equal(commits, 1)
+    assert.equal(pending.length, 3)
+  })
+}
