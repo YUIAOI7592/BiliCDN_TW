@@ -58,7 +58,7 @@ Codex Security 掃描 174fe7d9-2fba-4fbc-b94d-ecb02a856ac4，固定 ddd41a0..684
 
 ## 交付與安裝範圍
 
-v2.2.7 五份原件已按位元組搬至 archive/retired/releases/Release/v2.2.7，保留原校驗內容。v2.2.8 腳本 474,008 bytes，SHA-256：`7573766cb33a425a109b5edb2649998e1cf90b6d7f3d8dddf052e338c6bd6027`。五份本機產物將由鎖定工具封裝；公開 main／標籤／唯一附件／latest 的核對在發布後追加至現行報告，不回寫發布快照。
+v2.2.7 五份原件已按位元組搬至 archive/retired/releases/Release/v2.2.7，保留原校驗內容。v2.2.8 腳本 474,008 bytes，SHA-256：`7573766cb33a425a109b5edb2649998e1cf90b6d7f3d8dddf052e338c6bd6027`。五份本機產物已由鎖定工具封裝，公開核對見下節；Release 快照保持封裝時原件，後續結果只追加現行報告。
 
 安裝版尚未驗證。使用者更新並另行授權後，僅依本次缺陷的新專項驗收：固定指定片 P1／Auto／1 倍、一個 IAB 分頁、十五分鐘總期限含最後三分鐘清理、一個九十秒自然窗口；須核對正數 timeout 的合格影片請求、真正起播輪次、探測／選擇、等待後送出與 timeout 保持。每批立即保存去敏證據。一般播放正常不代替此證據；前提不足不改 timeout、重設額度或自動補跑。永久靜音、無網站服務與不要求前景的規則保持。
 
@@ -116,3 +116,11 @@ v2.2.7 五份原件已按位元組搬至 archive/retired/releases/Release/v2.2.7
 <a name="證據保存與工具限制"></a>
 
 舊錨點僅保留導引，原文見上列完整歷史保存。
+
+## 發布後公開核對（2026-11-03）
+
+正式 [v2.2.8 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.8) 已發布，非 draft／prerelease，唯一附件為 BiliCDN_TW.user.js。發行提交與標籤解參照為 b58bad4c72aefa6e090a2e0814f01c86ff58ceba；公開核對當時 main 相同，後續 main 僅追加本節及工作結案，不移動標籤。
+
+版本附件與公開 latest 均實際下載並與本機逐 bytes 比對：版本 **2.2.8**、**474,008 bytes**、SHA-256 `7573766cb33a425a109b5edb2649998e1cf90b6d7f3d8dddf052e338c6bd6027`，GitHub asset digest 亦一致。核對時間為 Asia/Taipei **22:50:03**；原始公開核對保存在 .work/v228/public-verification.json。
+
+上一版五份原件、完整報告及三份追加日誌前綴均按原始 bytes 核對；本版五份產物、建置來源雜湊及已掃描程式未變亦通過。文件／封存／差異檢查完成後提交推送 main；不再次升版、封裝或發布。安裝版仍未驗證，原 R1／調查限制及停止決策保持。
