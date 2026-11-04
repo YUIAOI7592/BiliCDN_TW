@@ -81,10 +81,19 @@
     {
       "path": "archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md",
       "kind": "record",
-      "topics": ["measurement-routing-optimization"],
-      "versions": ["v2.2.9", "v2.2.10"],
+      "topics": [
+        "measurement-routing-optimization"
+      ],
+      "versions": [
+        "v2.2.9",
+        "v2.2.10"
+      ],
       "date": "2026-11-05",
-      "requiredAnchors": ["批次與政策", "資料字典", "評估與保存"]
+      "requiredAnchors": [
+        "批次與政策",
+        "資料字典",
+        "評估與保存"
+      ]
     },
     {
       "path": "archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md",
@@ -3511,7 +3520,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.8/CHANGELOG_v2.2.8.md",
+      "path": "archive/retired/releases/Release/v2.2.8/CHANGELOG_v2.2.8.md",
       "kind": "immutable",
       "topics": [
         "release-snapshot"
@@ -3523,7 +3532,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.8/TEST_REPORT_v2.2.8.md",
+      "path": "archive/retired/releases/Release/v2.2.8/TEST_REPORT_v2.2.8.md",
       "kind": "immutable",
       "topics": [
         "release-snapshot"
@@ -3532,6 +3541,30 @@
         "v2.2.8"
       ],
       "date": "2026-11-03",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.9/CHANGELOG_v2.2.9.md",
+      "kind": "immutable",
+      "topics": [
+        "release-snapshot"
+      ],
+      "versions": [
+        "v2.2.9"
+      ],
+      "date": "2026-11-05",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.9/TEST_REPORT_v2.2.9.md",
+      "kind": "immutable",
+      "topics": [
+        "release-snapshot"
+      ],
+      "versions": [
+        "v2.2.9"
+      ],
+      "date": "2026-11-05",
       "requiredAnchors": []
     }
   ],
@@ -7401,38 +7434,73 @@
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.8/BiliCDN_TW.user.js",
+      "path": "archive/retired/releases/Release/v2.2.8/BiliCDN_TW.user.js",
       "encoding": "raw",
       "bytes": 474008,
       "sha256": "7573766cb33a425a109b5edb2649998e1cf90b6d7f3d8dddf052e338c6bd6027",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.8/BUILD_MANIFEST_v2.2.8.json",
+      "path": "archive/retired/releases/Release/v2.2.8/BUILD_MANIFEST_v2.2.8.json",
       "encoding": "raw",
       "bytes": 9634,
       "sha256": "5eb86f325f50c84ab199178db3cfd545d175b9e82da83164efeb001e57500895",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.8/CHANGELOG_v2.2.8.md",
+      "path": "archive/retired/releases/Release/v2.2.8/CHANGELOG_v2.2.8.md",
       "encoding": "raw",
       "bytes": 65838,
       "sha256": "5ca06b65607166163a07f4a1bb521ff774c49f67259db13bc4478a806492eb19",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.8/SHA256SUMS_v2.2.8.txt",
+      "path": "archive/retired/releases/Release/v2.2.8/SHA256SUMS_v2.2.8.txt",
       "encoding": "raw",
       "bytes": 412,
       "sha256": "f529dc9bfab38ea349a5e45e6344c27615d1a17d726fcf58c0ccab7bc2fc4107",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.8/TEST_REPORT_v2.2.8.md",
+      "path": "archive/retired/releases/Release/v2.2.8/TEST_REPORT_v2.2.8.md",
       "encoding": "raw",
       "bytes": 8763,
       "sha256": "87bfc634398105721c64fccacf7c752dc76c408347e65665e3b2d0d2e23c1284",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.9/BiliCDN_TW.user.js",
+      "encoding": "raw",
+      "bytes": 485880,
+      "sha256": "ed2e5cd6f9959b49ed588118d52c7d8c5b3229e50d82ebc86442fadda75df6bf",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.9/BUILD_MANIFEST_v2.2.9.json",
+      "encoding": "raw",
+      "bytes": 9846,
+      "sha256": "9f49c3a1058a6eea6312229b343fc658fafa484af99cfe07feda6028a0db91c4",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.9/CHANGELOG_v2.2.9.md",
+      "encoding": "raw",
+      "bytes": 66246,
+      "sha256": "3fe5124954dd41ddb591ec8cf2c12487e1919b88ce7d7a3ca30f213f463f795b",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.9/SHA256SUMS_v2.2.9.txt",
+      "encoding": "raw",
+      "bytes": 412,
+      "sha256": "84ff670d80c93c31481c406699c9fa43b37062ff81fc128993d93fd33f07a2e1",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.9/TEST_REPORT_v2.2.9.md",
+      "encoding": "raw",
+      "bytes": 6222,
+      "sha256": "3f600386fadaf7437c8b5d7502f8186aa4e74187b7f61887bde810cb83a58d5e",
       "mode": "exact"
     }
   ],

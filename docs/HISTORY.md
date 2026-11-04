@@ -10,6 +10,8 @@
 
 ## 版本
 
+- [v2.2.9 完整驗證](TEST_REPORT.md#驗收結論)；[v2.2.8 完整保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)。
+
 - [v2.2.8 基準的 Auto 與選路數學模型研究（2026-11-04）](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#研究結論)
 
 - [同日追加的模型參數驗證、VBR 索引與保留資料比較](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#模型參數驗證與保留資料結果)

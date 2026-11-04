@@ -1,5 +1,10 @@
 # BiliCDN_TW 變更紀錄
 
+## v2.2.9
+
+- 以 304c631 為基準，修正傳輸與探測單調計時、清理前凍結、有效 bytes 核對，以及實際倍率／快照年齡與播放事實失效；保留原選路與 Catalog-only 起播早放政策。
+- 完整離線、安全與交付範圍見[報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)，安裝版未驗證。
+
 ## v2.2.8
 
 - 修復合格非同步媒體 XHR 因正數 timeout 而未啟動起播測速；沿用共用三秒窗口，保留網站最新 timeout，不設六秒門檻或自動延長。
