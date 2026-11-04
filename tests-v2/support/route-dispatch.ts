@@ -5,6 +5,7 @@ import {
   type RequestContext,
   type TransportObservation,
   type MediaKind,
+  type TimingBasis,
 } from '../../src-v2/domain/model.ts'
 import type { AppliedRouteDecision } from '../../src-v2/application/route-contracts.ts'
 export function start(
@@ -12,11 +13,22 @@ export function start(
   url: string,
   serial: number,
   kind: MediaKind = 'video',
+  timingBasis?: TimingBasis,
+  expectedBytes: number | null = null,
 ) {
-  const applied: AppliedRouteDecision = f.routes.apply(url, kind)
+  const applied: AppliedRouteDecision = f.routes.apply(
+    url,
+    kind,
+    undefined,
+    false,
+    expectedBytes,
+    timingBasis,
+  )
   assert.ok(applied.url && applied.context)
   const identity = applied.context
   const request: RequestContext = {
+    ...(timingBasis ? { timingBasis } : {}),
+    expectedBytes,
     requestId: requestId(`rigor-${serial}`),
     generation: identity.generation,
     epoch: identity.epoch,

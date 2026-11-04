@@ -108,6 +108,27 @@ test('V227 completion: early retry adds TTFB only to body transfer time', () => 
     'three-second delivery plus two-second handoff exceeds 80% of four seconds',
   )
   assert.equal(result.reason, 'alternative-late')
+  const eligible = evaluateEarlyRetry({
+    now: 2000,
+    startedAt: 0,
+    currentHost: 'old.example',
+    loadedBytes: 100_000,
+    totalBytes: 1_000_000,
+    recentBytesPerSec: 10_000,
+    playableBufferSec: 4,
+    requiredMbps: 1,
+    alternative: {
+      host: 'next.example',
+      safeMbps: 8 / 3,
+      safePayloadMbps: 16,
+      ttfbMs: 500,
+      successCount: 2,
+      oldestAt: 1000,
+    },
+  })
+  assert.equal(eligible.eligible, true)
+  assert.equal(eligible.remainingSec, 90, 'remaining bytes exclude the already delivered bytes')
+  assert.equal(eligible.alternativeSec, 3, 'two-second handoff plus one-second complete retry')
 })
 for (const [value, length] of [
   ['bytes=0-0', 1],

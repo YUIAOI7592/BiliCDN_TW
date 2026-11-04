@@ -1897,6 +1897,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
           'verified-failure',
           observation.targetHost,
           observation.request?.expectedBytes ?? null,
+          observation.request?.timingBasis,
         )
       return
     }
@@ -1924,6 +1925,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         'verified-failure',
         result.host,
         observation.request?.expectedBytes ?? null,
+        observation.request?.timingBasis,
       )
       return
     }
@@ -2015,6 +2017,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         'verified-failure',
         result.host,
         observation.request?.expectedBytes ?? null,
+        observation.request?.timingBasis,
       )
     }
   }

@@ -6,6 +6,8 @@ import { MeasurementController } from '../../src-v2/application/measurement-cont
 import { MeasurementMetaStore } from '../../src-v2/state/measurement-meta-store.ts'
 import { deferred } from '../support/deferred.ts'
 import type { RangeProbeResult } from '../../src-v2/application/ports.ts'
+import { start, finish } from '../support/route-dispatch.ts'
+import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 for (const native of [false, true])
   for (const early of [false, true])
     test(`V230 startup early release native=${native} enabled=${early}`, async (t) => {
@@ -181,4 +183,53 @@ test('V230 startup rechecks changed playback demand without reopening its deadli
   await gate
   assert.equal(controller.snapshot().startup?.result, 'insufficient')
   assert.equal(controller.snapshot().startup?.elapsedMs, 3000)
+})
+
+test('V230 transport failure carries its timing basis into recovery ranking', async (t) => {
+  const f = fixture(testScope(t)),
+    url = media('v230-failure-basis', 'video.m4s')
+  assert.equal(f.adapter.transform(dash(url)).accepted, true)
+  await finish(f, start(f, url, 1))
+  await finish(f, start(f, url, 2))
+  const a = TRUSTED_CATALOG[2]!,
+    b = TRUSTED_CATALOG[3]!
+  for (const [host, rate, wait, elapsed] of [
+    [a, 10, 10, 800],
+    [b, 20, 300, 400],
+  ] as const)
+    for (const i of [0, 1])
+      await f.evidence.record(host, 'video', {
+        requestId: host + i,
+        at: f.clock.now(),
+        source: 'transport',
+        outcome: 'success',
+        throughputMbps: rate,
+        ttfbMs: wait,
+        failureKind: null,
+        bytes: 1_000_000,
+        elapsedMs: elapsed,
+        timingBasis: 'xhr-terminal',
+      })
+  const work = start(f, url, 3, 'video', 'xhr-terminal', 65536),
+    r = f.routes.latestRequested('video')!
+  f.routes.observePlaybackFacts({
+    generation: r.generation,
+    epoch: r.epoch,
+    representation: r.representation,
+    authorityRevision: r.authorityRevision!,
+    routePolicyRevision: r.routePolicyRevision,
+    selectionRevision: r.selectionRevision!,
+    sampledAt: f.clock.now(),
+    sampledTick: f.clock.monotonicNow(),
+    playbackRate: 2,
+    bufferAheadSec: 2,
+    playableBufferSec: 1,
+    playbackRevision: 0,
+  })
+  await finish(f, work, true)
+  assert.equal(
+    f.routes.snapshot().fallback.video?.plannedHost,
+    a,
+    'matching completion beats greater overall rate after an actual failure',
+  )
 })
