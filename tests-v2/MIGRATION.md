@@ -229,3 +229,18 @@
 ## v2.2.9 量測與期限契約
 
 以 304c631 為基準，修正傳輸與探測單調計時、清理前凍結、有效 bytes 核對，以及實際倍率／快照年齡與播放事實失效；保留原選路與 Catalog-only 起播早放政策。 原 1,982 案保留；本版總計 2021 案。測試時鐘改為明確提供單調讀值，零起點有效、零耗時不虛構一毫秒；播放器 listener 新增失效通知但維持原可信操作與逆序清理。原 already-aborted 起播案例改用有實際耗時的探測替身，原主機／事件／bytes 斷言保留。完整政策差異與結果見[報告](../docs/TEST_REPORT.md)。
+
+## v2.2.10 量測與期限契約
+
+原 1,982 案及前版新增 39 案全部保留，本版新增 27 案，共 2,048；原名稱、kind、參數展開以多重集合對照。
+
+| 原案例 | 明確政策映射與保留斷言 |
+| --- | --- |
+| UP141-START Native mode waits for comparison | 明確關閉早放，保留三秒期限、單輪及晚到學習封存；新增三來源早放正反例 |
+| already-aborted player request rejects startup gate | 明確關閉早放，保留中止零探測與整輪較快 Catalog 決勝、數量及學習斷言 |
+| V226 S11 below headroom | 探測值改為當前 10 Mbps 門檻下的 9.4／10.8，保留不足原始來源不能勝出 |
+| V227 evidence／completion／forced recovery／evaluation | 有效計時明確標記 xhr-terminal；缺語意新增負向案例，數值與主機斷言保留 |
+| V227 early retry adds TTFB only to body transfer time | 原 3 秒交付加 2 秒交接改拒絕；仍驗 TTFB 恰加一次，另合法對照保留 remainingSec=90 與總替代 3 秒 |
+| META I lock waiters | 需求替身保存當輪需求，避免重播 startupOptions；原游標、鎖及提交順序斷言不變 |
+
+新增真實失敗重選回歸核對提示貫穿三個錯誤入口；原片／表示／政策、影音隔離、取消、重入、過期與晚到契約保持。數值模型與安裝效益的界線見[完整報告](../docs/TEST_REPORT.md)。

@@ -149,3 +149,5 @@ XHR header 依 ByteString 在入口轉換一次，原生接受後才存字串供
 此功能與專用工具已於 v2.2.1 撤除；[撤除前固定原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/SECURITY.md#剪貼簿寫入邊界) 僅供歷史追溯，不是現行操作或驗收要求。
 
 目前來源不包含剪貼簿適配器、呼叫或 GM_setClipboard 授權。
+
+全模式起播早放仍須在提交時核對目前精確 Native 授權；完成估計的 timingBasis 只縮小可比較證據，不授予路線權限。兩秒交接是既有許可上限的保守估計，網站 timeout 寫入優先、單次送出、取消及晚到工作防護保持。詳細排序與數值由[架構](docs/ARCHITECTURE.md#選路證據與完成期限)維護。

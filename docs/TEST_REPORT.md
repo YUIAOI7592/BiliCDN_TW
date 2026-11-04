@@ -1,10 +1,10 @@
-# BiliCDN_TW v2.2.9 完整驗證報告
+# BiliCDN_TW v2.2.10 完整驗證報告
 
-日期：2026-11-05（Asia/Taipei）。以 304c631 為基準，修正傳輸與探測單調計時、清理前凍結、有效 bytes 核對，以及實際倍率／快照年齡與播放事實失效；保留原選路與 Catalog-only 起播早放政策。
+日期：2026-11-05（Asia/Taipei）。沿用 v2.2.9 的量測與時間修正，完成相同量測語意估計、足速候選跨組完成排序、所有合法模式首個足速早放，以及含兩秒交接預算的提前重試；保留網站 timeout、唯一控制所有者與既有資源上限。
 
 ## 驗收結論
 
-本版採離線驗證交付；十八套件／2,021 案通過，failed／cancelled／skipped／todo 均零。安裝版、來源隔離與實機效益未測，不啟動瀏覽器、不恢復已停止窗口。型別、架構、完整測試、唯讀格式、文件、封存、git diff --check 與 verify 已通過。兩次建置、語法及暫存封裝校驗通過；公開交付核對在發布後追加。
+本版採離線驗證交付；十八套件／2,048 案通過，failed／cancelled／skipped／todo 均零。安裝版、來源隔離與實機效益未測，不啟動瀏覽器、不恢復已停止窗口。本版型別、架構、完整測試、唯讀格式、文件、封存、git diff --check 及最終 verify 已通過；兩次建置、語法與暫存封裝校驗一致。兩份安全差異已封印；公開交付核對在發布後追加。
 
 ## 自動驗證
 
@@ -15,9 +15,9 @@
 | architecture | 41 | PASS |
 | imports | 1 | PASS |
 | domain-boundaries | 3 | PASS |
-| domain | 81 | PASS |
+| domain | 97 | PASS |
 | state | 42 | PASS |
-| application | 771 | PASS |
+| application | 780 | PASS |
 | adapters | 210 | PASS |
 | native-routing | 13 | PASS |
 | native-transport | 222 | PASS |
@@ -29,7 +29,7 @@
 | progressive-transport | 4 | PASS |
 | playurl-summary | 22 | PASS |
 | control-center | 92 | PASS |
-| tooling | 201 | PASS |
+| tooling | 203 | PASS |
 
 原 1,982 案名稱、kind 與參數展開以多重集合核對，政策差異見[測試遷移](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/MIGRATION.md)。新增案例只補充契約，不刪除原有效斷言。原始結果及失敗回歸保存在本機 .work/v229，不作正式工具輸入。
 
@@ -37,20 +37,47 @@
 
 [固定數字模型](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/scripts/evaluation/README.md#選路模型對照) 區分量測語意、快照年齡、表示與服務情境。獨立算式一致只證明實作計算，合成 Auto、FPS、VBR 或交接成本不是現場參數，也不是未來分位數保證。舊探索性資料未取得獨立核對的部分保持未知。
 
+## 七步交付對照
+
+| 步驟 | 實作及正式證據 |
+| --- | --- |
+| ① 基線與身分 | 304c631／原 1,982 案；研究獨立提交 eae7840；資料字典與停止狀態保留 |
+| ② 量測方法 | v2.2.9 單調時鐘、清理前凍結、實收量與可見標頭核對、timingBasis；合法可達性與速度分離 |
+| ③ 播放期限 | 實際倍率／連續緩衝與單調年齡，兩秒邊界及 Observer 失效通知；v2.2.9 已獨立發布並公開核對 |
+| ④ 估計校準 | 相同語意近期樣本；十六個固定合成場景，預測只用送出前完成資料，原 EWMA 與數值保持 |
+| ⑤ 起播 | 所有三種合法來源、開關關閉、當前倍率需求、唯一期限、取消及晚到最快結果均有回歸 |
+| ⑥ 選路與重試 | 足速跨充分程度完成比較／整組退回；兩秒交接、完整重送、剩餘 bytes 與失敗重選提示 |
+| ⑦ 驗證與交付 | 兩版各自完整離線、安全、封裝與公開核對；安裝版均另案 |
+
+原 1,982 案及 v2.2.9 新增的 39 案完整保留；v2.2.10 再加 27 案，共 2,048。補充回歸先確認缺提示時會選較差的本文期限，再修正三個失敗入口；初次前置修訂未完整的試作輸出不作有效失敗證據。
+
+## 固定合成對照與取捨
+
+輸入 SHA-256：`e6523280ae5214137a99434f65fbea37a8c3c76dc972c70a0a205237e33dc5a2`。十六場景、各版十四筆可計誤差的預測；各有一筆選中服務未知，取消／未完成為零，未選來源缺值不列失敗。
+
+| 指標 | 固定 v2.2.8 政策 | 本版政策 |
+| --- | ---: | ---: |
+| 平均絕對誤差 | 1,591.732 ms | 1,592.713 ms |
+| 期限誤判 | 4 | 3 |
+| 全模式早放算例等待 | 3,000 ms | 800 ms |
+
+早放算例會選到足夠快但非整輪最快的路線；等待、各主機未來供片、下載、換站及表示軌跡均逐案輸出。兩秒交接算例將原可重試改為拒絕：這是已批准的保守取捨，並不保證停滯更少。探測部分下載用線性交付假設，三候選／每候選 256 KiB 上限相同；恢復未模擬，重載零是建模設定。Auto／4K／60000÷1001 FPS／VBR 僅為明列的外生壓力輸入，沒有還原網站閉環或解碼服務率。
+
+既有六情境 `evaluate:early-retry` 另行執行為有效 **效用 FAIL**：不能滿足所有慢場景都改善及所有正常場景都不介入；原程式退出碼 1 與逐案結果保留，不更改舊效用門檻或稱作 PASS。它的「所有慢場景均介入改善」與本次明確採用的兩秒保守抑制不同；此結果列為效益限制，不冒充離線功能／安全契約失敗或已完成實機校準。完整測試、verify 與安全仍須獨立通過。
+
 ## 安全差異
 
-Codex Security 掃描 5bb8484b-8697-46b3-bc49-559e32fea3a0，固定提交範圍及逐檔審查結果由工作台管理。能力前置檢查及全部變更來源／測試／工具的獨立來源審查已完成，成立漏洞、未結候選與未審檔案均零；正式產物已封印並讀回。來源掃描不代替原生瀏覽器計時或安裝證據。
+Codex Security 掃描 68d06a33-f3d7-45a7-8eb9-abfe49533867，固定提交範圍及逐檔審查結果由工作台管理。前置檢查及固定 41763c5..faf9b1a 的 32 個來源／測試／工具全部審查，成立漏洞與未結項目零；補充掃描 68060141-20da-4e0b-b08c-4500d59dbc26 固定 faf9b1a..f9157f3 四檔，核對失敗重選提示及有效斷言補強，同樣無成立項目。兩份正式產物已封印並讀回。來源掃描不代替瀏覽器計時或安裝證據。
 
 ## 交付與安裝範圍
 
-前版 v2.2.8 五份原件按原始位元組封存並核對 SHA-256；本版腳本 485880 bytes；SHA-256：`ed2e5cd6f9959b49ed588118d52c7d8c5b3229e50d82ebc86442fadda75df6bf`。五項本機產物按鎖定工具封裝，公開 main／標籤／唯一腳本附件／latest 核對於發布後追加，發行快照不回寫。不改使用者 Native 預設、既有布林值、schema 2、四鍵或三頁操作。沒有新增診斷、原線對照、掉幀收集、剪貼簿、探測或恢復額度。
+前版 v2.2.9 五份原件按原始位元組封存並核對 SHA-256；本版腳本 488579 bytes；SHA-256：`361b8d22a3b62b72fc671e3c440b4b089e8d3cc96a77050baf011b2b7aa5812f`。五項本機產物按鎖定工具封裝，公開 main／標籤／唯一腳本附件／latest 核對於發布後追加，發行快照不回寫。不改使用者 Native 預設、既有布林值、schema 2、四鍵或三頁操作。沒有新增診斷、原線對照、掉幀收集、剪貼簿、探測或恢復額度。
 
 ## 歷史驗證導覽
 
-2026-11-05 公開交付核對：main 與 v2.2.9 均為 7ddae23e68361884e9709e3d82af31560e18675e；GitHub 正式 Release 只有 BiliCDN_TW.user.js。附件及公開 latest 皆為 2.2.9／485,880 bytes，SHA-256：`ed2e5cd6f9959b49ed588118d52c7d8c5b3229e50d82ebc86442fadda75df6bf`，與本機原件一致。v2.2.9 離線交付完成；安裝版未測。後續文件提交不移動標籤。
+[v2.2.9 完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v229-完整正文保存2026-11-05)，含原先已批准驗收及限制；[研究與執行計畫](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md)。目前工作只見 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
 
-[v2.2.8 完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)，含原先已批准驗收及限制；[研究與執行計畫](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md)。目前工作只見 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
-
+<a name="bilicdn_tw-v229-完整驗證報告"></a>
 <a name="bilicdn_tw-v228-正數-xhr-timeout-起播修復驗證"></a>
 <a name="修復結果與證據邊界"></a>
 <a name="失敗回歸與契約對照"></a>
