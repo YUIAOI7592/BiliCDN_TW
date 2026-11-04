@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { posix, resolve } from 'node:path'
 import { build } from 'esbuild'
+import { evaluateMeasurement } from './measurement-evaluation.mts'
 
 export const baselineRevision = '048b0f94e6bb98922ee5bcc0d1b30003cf3b12a9'
 const now = 2_000_000_000_000,
@@ -236,4 +237,12 @@ if (
   process.argv[1] &&
   resolve(process.argv[1]) === resolve('scripts/evaluation/routing-evaluation.mts')
 )
-  console.log(JSON.stringify(await evaluateRouting(), null, 2))
+  console.log(
+    JSON.stringify(
+      process.argv.includes('--measurement')
+        ? await evaluateMeasurement()
+        : await evaluateRouting(),
+      null,
+      2,
+    ),
+  )
