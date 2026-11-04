@@ -36,6 +36,7 @@ import {
   type EvidenceSample,
   type EvidenceMetrics,
   type CompletionBudget,
+  type TimingBasis,
   type RoutePlaybackFacts,
   type FailureKind,
   type MediaKind,
@@ -143,6 +144,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     bytes: number
     mbps: number
     payloadMbps: number | null
+    timingBasis: TimingBasis | undefined
     ttfbMs: number
   }[] = []
   #retryPermit: {
@@ -410,7 +412,9 @@ export class RouteCoordinator implements RouteCoordinatorPort {
           row.request.epoch === request.epoch &&
           row.request.representation === request.representation &&
           row.request.authorityRevision === request.authorityRevision &&
-          row.request.routePolicyRevision === request.routePolicyRevision,
+          row.request.routePolicyRevision === request.routePolicyRevision &&
+          !!request.timingBasis &&
+          row.timingBasis === request.timingBasis,
       )
       const unique = [...new Map(successes.map((row) => [row.request.requestId, row])).values()]
       if (unique.length < 2) continue
@@ -767,6 +771,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   completionBudget(
     representation: RepresentationId,
     requestBytes: number | null,
+    timingBasis?: TimingBasis,
   ): CompletionBudget | null {
     const facts = this.#playbackFacts,
       revision = this.#policyRevision
@@ -802,6 +807,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (ageMs < 0 || ageMs > 2000) return null
     const result = Object.freeze({
       requestBytes,
+      ...(timingBasis ? { timingBasis } : {}),
       playableBufferSec: Math.max(0, facts.bufferAheadSec / facts.playbackRate - ageMs / 1000),
       sampledAt: facts.sampledAt,
       ageMs,
@@ -875,6 +881,12 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   /** Read-only preview: selecting a result never commits a sample or route. */
+  startupDemand(candidate: StartupCandidate): PlaybackDemand | null {
+    if (!this.startupCapacity(candidate, null)) return null
+    const demand = this.#demandFor(candidate.context.representation, candidate.context.kind)
+    return this.startupCapacity(candidate, null) ? demand : null
+  }
+
   startupCapacity(
     candidate: StartupCandidate,
     sample: EvidenceSample | null,
@@ -901,6 +913,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
           )
         : prior,
       this.clock.now(),
+      'probe-reader',
     )
     return current() ? metrics : null
   }
@@ -1097,6 +1110,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       'startup' | 'new-epoch' | 'representation' | 'verified-failure' | 'watchdog' | 'user-setting',
     failedHost: string | null = null,
     requestBytes: number | null = null,
+    timingBasis?: TimingBasis,
   ): RouteDecision {
     const context = this.vault.identity(representation)
     if (!context) return this.#pass('missing-representation', null, demand.kind)
@@ -1109,6 +1123,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       undefined,
       previous,
       requestBytes,
+      timingBasis,
     )
     this.#savePlan(representation, decision)
     return decision
@@ -1120,8 +1135,16 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     boundary: 'verified-failure' | 'watchdog',
     failedHost: string | null,
     requestBytes: number | null = null,
+    timingBasis?: TimingBasis,
   ): RouteDecision {
-    const decision = this.plan(representation, demand, boundary, failedHost, requestBytes)
+    const decision = this.plan(
+      representation,
+      demand,
+      boundary,
+      failedHost,
+      requestBytes,
+      timingBasis,
+    )
     if (decision.action !== 'block' && decision.host && decision.host !== failedHost)
       this.#trackFallback(representation, demand.kind, decision)
     else {
@@ -1174,6 +1197,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     demand?: PlaybackDemand,
     trustedPlayurl = false,
     requestBytes: number | null = null,
+    timingBasis?: TimingBasis,
   ): AppliedRouteDecision {
     const parsed = parseMediaUrl(url)
     const startupContext = this.vault.match(url).context
@@ -1214,14 +1238,14 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         sourceHost: null,
       }
     if (this.isCatalogOnly() && (trustedPlayurl || this.isBilibiliMedia(url))) {
-      return this.#applyCatalogOnly(url, parsed, kindHint, demand, requestBytes)
+      return this.#applyCatalogOnly(url, parsed, kindHint, demand, requestBytes, timingBasis)
     }
     const streamKey = mediaIdentity(url)
     const source = classifyRequestSource({ kind: parsed.kind })
     if (source.type === 'opaque') return this.#applyOpaque(url, parsed, kindHint, streamKey)
     if (source.type === 'unreplaceable')
       return this.#applyUnreplaceable(url, parsed, kindHint, streamKey, source.reason)
-    return this.#applyNormal(url, parsed, kindHint, streamKey, demand, requestBytes)
+    return this.#applyNormal(url, parsed, kindHint, streamKey, demand, requestBytes, timingBasis)
   }
 
   #applyOpaque(
@@ -1285,6 +1309,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     streamKey: string | null,
     demand?: PlaybackDemand,
     requestBytes: number | null = null,
+    timingBasis?: TimingBasis,
   ): AppliedRouteDecision {
     const match = this.vault.match(url)
     const context = match.status === 'matched' ? match.context : null
@@ -1349,7 +1374,16 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       decision.action !== 'block' &&
       this.#decisionAllowed(decision, context, kind)
     ) {
-      decision = this.#choose(context, playbackDemand, 'request', null, url, decision, requestBytes)
+      decision = this.#choose(
+        context,
+        playbackDemand,
+        'request',
+        null,
+        url,
+        decision,
+        requestBytes,
+        timingBasis,
+      )
     }
     if (
       !decision ||
@@ -1365,6 +1399,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
           url,
           undefined,
           requestBytes,
+          timingBasis,
         )
       else if (!this.settings.get().fixedHost && !this.#hardRestriction(parsed.host, kind)) {
         decision = this.#pass('unattributed-original-no-preflight', parsed.host, kind ?? 'video')
@@ -1439,6 +1474,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     kindHint: MediaKind | null,
     demand?: PlaybackDemand,
     requestBytes: number | null = null,
+    timingBasis?: TimingBasis,
   ): AppliedRouteDecision {
     const match = this.vault.match(url),
       context = match.status === 'matched' ? match.context : null
@@ -1522,10 +1558,20 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         url,
         decision!,
         requestBytes,
+        timingBasis,
       )
     if (!allowed(decision)) {
       decision = context
-        ? this.#choose(context, playbackDemand, 'request', null, url, undefined, requestBytes)
+        ? this.#choose(
+            context,
+            playbackDemand,
+            'request',
+            null,
+            url,
+            undefined,
+            requestBytes,
+            timingBasis,
+          )
         : this.#catalogOnly(playbackDemand, parsed.host, kind, url)
     }
     if (!decision || decision.action !== 'rewrite' || !allowed(decision)) {
@@ -1937,6 +1983,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
           request,
           at: observation.completedAt,
           bytes: observation.retryVerifiedBytes!,
+          timingBasis: observation.timingBasis,
           mbps: (observation.retryVerifiedBytes! * 8) / observation.elapsedMs / 1000,
           payloadMbps: sampleTiming(
             observation.retryVerifiedBytes,
@@ -2123,10 +2170,14 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (!current() || !this.#decisionAllowed(plan, identity, 'video')) return null
     const evidence = this.evidence.get(plan.host, 'video'),
       now = this.clock.now()
-    const metrics = evidenceMetrics(evidence, now)
+    const metrics = evidenceMetrics(evidence, now, this.#requested.get('video')?.timingBasis)
     const speed = metrics.safeThroughputMbps
     const requestBytes = this.#requested.get('video')?.expectedBytes ?? null
-    const budget = this.completionBudget(representation, requestBytes)
+    const budget = this.completionBudget(
+      representation,
+      requestBytes,
+      this.#requested.get('video')?.timingBasis,
+    )
     const estimatedCompletionMs = budget
       ? predictCompletionMs(budget.requestBytes, metrics.safePayloadMbps, metrics.predictionTtfbMs)
       : null
@@ -2230,6 +2281,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     sourceUrl?: string,
     reuse?: RouteDecision,
     requestBytes: number | null = null,
+    timingBasis?: TimingBasis,
   ): RouteDecision {
     const settings = this.settings.get()
     const { disabledCatalogHosts, defaultUnavailableHosts } = catalogRestrictions(
@@ -2261,8 +2313,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
             ? { type: affinity.type, host: affinity.host }
             : null
     const input: RankRoutesInput = {
-      completionBudget: this.completionBudget(context.representation, requestBytes) ?? {
+      completionBudget: this.completionBudget(
+        context.representation,
         requestBytes,
+        timingBasis,
+      ) ?? {
+        requestBytes,
+        ...(timingBasis ? { timingBasis } : {}),
         playableBufferSec: null,
         sampledAt: this.clock.now(),
       },

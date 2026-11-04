@@ -2267,6 +2267,10 @@ async function checkMonitorObservesSelectedParameterX11ParameterParameter(
 
 async function checkAlreadyAbortedPlayerRequestRejectsStartupGate10(t: TestContext): Promise<void> {
   const base = await createRedirectChallengeFetchContext9(t)
+  const preflightSettings = base.scope.own(
+    new CatalogSettingsStore(new FakeStorage(), () => base.now),
+  )
+  await preflightSettings.update({ startupEarlyReleaseEnabled: false })
   const preflightOptions = base.preflightOptions
   assert.ok(preflightOptions)
 
@@ -2312,7 +2316,7 @@ async function checkAlreadyAbortedPlayerRequestRejectsStartupGate10(t: TestConte
         new BrowserScheduler(),
         undefined,
         undefined,
-        undefined,
+        preflightSettings,
         () => base.now,
       ),
     )
@@ -2954,3 +2958,4 @@ import '../regressions/v226-monitor.ts'
 import '../regressions/v226-recovery.ts'
 import '../regressions/v226-interleavings.ts'
 import '../regressions/v229-playback-facts.ts'
+import '../regressions/v230-startup.ts'

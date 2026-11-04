@@ -2,10 +2,19 @@ import { evidenceMetrics, emptyEvidence, addEvidenceSample } from '../../src-v2/
 import type { MeasurementRoutes } from '../../src-v2/application/measurement-contracts.ts'
 import type { PlayerMonitor } from '../../src-v2/application/player-monitor.ts'
 import type { MonitorRoutes } from '../../src-v2/application/monitor-contracts.ts'
-export const measurementRoutes = (overrides: Partial<MeasurementRoutes> = {}): MeasurementRoutes =>
-  ({
+export const measurementRoutes = (
+  overrides: Partial<MeasurementRoutes> = {},
+): MeasurementRoutes => {
+  const { startupOptions, ...rest } = overrides
+  let demand: ReturnType<MeasurementRoutes['startupDemand']> = null
+  return {
     isCatalogOnly: () => false,
-    startupOptions: () => null,
+    startupOptions: (...args) => {
+      const options = startupOptions?.(...args) ?? null
+      demand = options?.demand ?? null
+      return options
+    },
+    startupDemand: () => demand,
     startupCapacity: (candidate, sample) =>
       sample
         ? evidenceMetrics(
@@ -29,8 +38,9 @@ export const measurementRoutes = (overrides: Partial<MeasurementRoutes> = {}): M
     recordStartupSuccess: async () => undefined,
     challenge: () => null,
     recordChallenge: async () => undefined,
-    ...overrides,
-  }) satisfies MeasurementRoutes
+    ...rest,
+  } satisfies MeasurementRoutes
+}
 export const monitorRoutes = (overrides: Partial<MonitorRoutes> = {}): MonitorRoutes =>
   ({
     observePlaybackRate: () => undefined,

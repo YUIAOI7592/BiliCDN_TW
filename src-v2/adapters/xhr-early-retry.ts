@@ -225,11 +225,16 @@ export class XhrEarlyRetry implements InFlightVideoPort {
       return
     }
     flight.loaded = loaded
-    this.#sample(flight, this.context.now())
+    const tick = this.context.tick()
+    if (tick !== null) this.#sample(flight, tick)
   }
 
   #sample(flight: Flight, now: number): void {
     const last = flight.samples.at(-1)
+    if (last && now < last.at) {
+      flight.samples = []
+      return
+    }
     if (last && last.at === now) {
       last.bytes = flight.loaded
       return
@@ -241,12 +246,16 @@ export class XhrEarlyRetry implements InFlightVideoPort {
       .slice(-8)
   }
 
-  samples(now: number): readonly InFlightVideoSample[] {
+  samples(_now: number): readonly InFlightVideoSample[] {
     if (!this.#enabled()) return []
+    const now = this.context.tick()
+    if (now === null) return []
     const results: InFlightVideoSample[] = []
     for (const flight of this.#active.values()) {
       if (
         !flight.meta.request ||
+        flight.meta.startedTick === null ||
+        now < flight.meta.startedTick ||
         flight.lease ||
         this.#timeout(flight.xhr) !== 0 ||
         !this.#response(flight)
@@ -257,6 +266,7 @@ export class XhrEarlyRetry implements InFlightVideoPort {
       results.push(
         Object.freeze({
           request: flight.meta.request,
+          ageMs: now - flight.meta.startedTick!,
           loadedBytes: flight.loaded,
           totalBytes: flight.total!,
           recentBytesPerSec: first
@@ -271,6 +281,8 @@ export class XhrEarlyRetry implements InFlightVideoPort {
   arm(requestId: string, permit: EarlyRetryPermit): boolean {
     const flight = this.#active.get(requestId),
       now = this.context.now()
+    const tick = this.context.tick(),
+      started = flight?.meta.startedTick ?? null
     if (
       !this.#enabled() ||
       !flight ||
@@ -280,11 +292,13 @@ export class XhrEarlyRetry implements InFlightVideoPort {
       !this.#response(flight) ||
       flight.total === null ||
       flight.loaded >= flight.total * 0.8 ||
-      now - flight.meta.startedAt < 1500 ||
+      tick === null ||
+      started === null ||
+      tick - started < 1500 ||
       this.#timeout(flight.xhr) !== 0
     )
       return false
-    const applied = Math.max(1, Math.floor(now - flight.meta.startedAt))
+    const applied = Math.floor(tick! - started!)
     flight.lease = { before: 0, applied, revision: this.#writes.get(flight.xhr) ?? 0, permit }
     const action: Action = { permit, flight, state: 'pending', replacement: null, observations: [] }
     this.#actions.set(permit.id, action)

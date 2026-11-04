@@ -18,7 +18,11 @@ export function renderSettings(
   rows.className = 'grid'
   const toggles = (
     [
-      ['startupEarlyReleaseEnabled', '起播提前放行', '找到足夠快的候選後提早開始播放。'],
+      [
+        'startupEarlyReleaseEnabled',
+        '起播提前放行',
+        '所有合法模式找到首個足夠快的候選後提早放行；不表示已找出全輪最快。',
+      ],
       ['healthMiddleRangeEnabled', '健康中段探測', '檔案大小可靠時，從中段量測速度。'],
       ['backupFamilyDiversityEnabled', '備援家族分散', '速度足夠的備援優先分散至不同主機家族。'],
       [

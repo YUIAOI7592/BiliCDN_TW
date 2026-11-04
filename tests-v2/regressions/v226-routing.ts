@@ -29,7 +29,7 @@ test('V226 S11: a valid original below headroom cannot win through ninety-percen
       {
         read: async ({ host }) => {
           probes++
-          const safe = host === original.host ? 13.4 : host === other.host ? 14.8 : null
+          const safe = host === original.host ? 9.4 : host === other.host ? 10.8 : null
           return safe === null
             ? {
                 bytes: 0,

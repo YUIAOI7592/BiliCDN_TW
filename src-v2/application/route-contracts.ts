@@ -3,6 +3,7 @@ import {
   type EvidenceSample,
   type EvidenceMetrics,
   type CompletionBudget,
+  type TimingBasis,
   type RoutePlaybackFacts,
   type CapacityConfidence,
   type PredictionReason,
@@ -194,7 +195,9 @@ export interface RouteCoordinatorPort {
   completionBudget(
     representation: RepresentationId,
     requestBytes: number | null,
+    timingBasis?: TimingBasis,
   ): CompletionBudget | null
+  startupDemand(candidate: StartupCandidate): PlaybackDemand | null
   startupCapacity(
     candidate: StartupCandidate,
     sample: EvidenceSample | null,
@@ -223,6 +226,7 @@ export interface RouteCoordinatorPort {
       'startup' | 'new-epoch' | 'representation' | 'verified-failure' | 'watchdog' | 'user-setting',
     failedHost?: string | null,
     requestBytes?: number | null,
+    timingBasis?: TimingBasis,
   ): RouteDecision
   recover(
     representation: RepresentationId,
@@ -230,6 +234,7 @@ export interface RouteCoordinatorPort {
     boundary: 'verified-failure' | 'watchdog',
     failedHost: string | null,
     requestBytes?: number | null,
+    timingBasis?: TimingBasis,
   ): RouteDecision
   recoverStartup(
     representation: RepresentationId,
@@ -243,6 +248,7 @@ export interface RouteCoordinatorPort {
     demand?: PlaybackDemand,
     trustedPlayurl?: boolean,
     requestBytes?: number | null,
+    timingBasis?: TimingBasis,
   ): AppliedRouteDecision
   decisionRecord(id: DecisionId | null): DecisionRecord | null
   opaqueOutput(

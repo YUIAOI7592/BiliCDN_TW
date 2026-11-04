@@ -123,6 +123,7 @@ test('V227 completion owner: forced recovery ranks actual evidence using the own
         failureKind: null,
         bytes: 1_000_000,
         elapsedMs: duration,
+        timingBasis: 'xhr-terminal',
       })
     }
   f.routes.observePlaybackFacts({
@@ -145,6 +146,7 @@ test('V227 completion owner: forced recovery ranks actual evidence using the own
     'watchdog',
     request.targetHost,
     65536,
+    'xhr-terminal',
   )
   assert.equal(decision.host, a)
   assert.equal(

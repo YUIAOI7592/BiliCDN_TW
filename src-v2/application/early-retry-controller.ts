@@ -124,6 +124,7 @@ export class EarlyRetryController implements EarlyRetryPort {
         const assessment = evaluateEarlyRetry({
           now,
           startedAt: request.startedAt,
+          ...(sample.ageMs !== undefined ? { ageMs: sample.ageMs } : {}),
           currentHost: request.targetHost,
           loadedBytes: sample.loadedBytes,
           totalBytes: sample.totalBytes,

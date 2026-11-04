@@ -285,6 +285,7 @@ export class XhrHookAdapter {
                           .map(([, value]) => value)
                           .join(','),
                       ),
+                      'xhr-terminal',
                     )
                   : self.routes.inspectOriginal(meta.originalUrl)
               applied = retry.select(this, meta) ?? applied
@@ -336,6 +337,7 @@ export class XhrHookAdapter {
                 .map(([, value]) => value)
                 .join(','),
             ),
+            'xhr-terminal',
           )
           self.routes.requestStarted(meta.request)
         }
@@ -373,6 +375,7 @@ export class XhrHookAdapter {
           } catch {
             /* unavailable native metadata */
           }
+          if (xhrMeta.get(this) !== meta || meta.settled) return
           meta.measurement = {
             ...meta.measurement,
             speedEligible: meta.measurement.speedEligible && payloadValid,

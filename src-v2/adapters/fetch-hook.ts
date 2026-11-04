@@ -140,7 +140,7 @@ export class FetchHookAdapter {
       }
       const applied =
         method === 'GET'
-          ? self.routes.apply(originalUrl, null, undefined, false, requestBytes)
+          ? self.routes.apply(originalUrl, null, undefined, false, requestBytes, 'fetch-consumer')
           : self.routes.inspectOriginal(originalUrl)
       const reason = self.dispatchFailure({
         generation,
@@ -165,6 +165,7 @@ export class FetchHookAdapter {
         startedAt,
         method,
         requestBytes,
+        'fetch-consumer',
       )
       activeRequest = request
       self.routes.requestStarted(request)

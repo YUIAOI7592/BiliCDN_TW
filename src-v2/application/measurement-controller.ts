@@ -299,7 +299,6 @@ export class MeasurementController implements MeasurementPort {
     const current = () => this.#startupLease === lease && this.#marker === marker && !this.#disposed
     const results: ProbeResult[] = []
     const { startedTick, deadlineTick } = lease
-    const catalogOnlyAtStart = this.routes.isCatalogOnly()
     let timer: (() => void) | null = null
     let sealed = false,
       releaseReason = 'complete',
@@ -350,12 +349,12 @@ export class MeasurementController implements MeasurementPort {
             remainingProbes: options.candidates.length - results.length,
           })
           if (
-            catalogOnlyAtStart &&
             this.settings?.get().startupEarlyReleaseEnabled !== false &&
-            this.routes.isCatalogOnly() &&
-            candidate.type === 'catalog-generated' &&
             result.valid &&
-            (result.safeMbps ?? 0) / options.demand.requiredMbps >= ROUTE_HEADROOM
+            (result.safeMbps ?? 0) /
+              (this.routes.startupDemand(candidate)?.requiredMbps ?? Infinity) >=
+              ROUTE_HEADROOM &&
+            accepting()
           )
             finish('qualified-early')
           else if (--remaining === 0) finish('complete')
@@ -386,14 +385,23 @@ export class MeasurementController implements MeasurementPort {
     }
     for (const result of results)
       this.routes.noteStartupProbeResult(result.candidate, result.status)
-    const valid = results.filter((result) => result.valid && result.safeMbps !== null)
+    const valid = results.filter(
+      (result) =>
+        result.valid &&
+        result.safeMbps !== null &&
+        this.routes.startupDemand(result.candidate) !== null,
+    )
     const qualified = valid.filter(
-      (result) => (result.safeMbps ?? 0) / options.demand.requiredMbps >= ROUTE_HEADROOM,
+      (result) =>
+        (result.safeMbps ?? 0) /
+          (this.routes.startupDemand(result.candidate)?.requiredMbps ?? Infinity) >=
+        ROUTE_HEADROOM,
     )
     const budget = options.candidates[0]
       ? this.routes.completionBudget(
           options.candidates[0].context.representation,
           options.requestBytes ?? null,
+          'probe-reader',
         )
       : null
     const ordered = orderCapacityRows(
@@ -403,7 +411,10 @@ export class MeasurementController implements MeasurementPort {
         capacityConfidence: result.capacityConfidence,
         safeThroughputMbps: result.safeMbps,
         demandRatio:
-          result.safeMbps === null ? null : result.safeMbps / options.demand.requiredMbps,
+          result.safeMbps === null
+            ? null
+            : result.safeMbps /
+              (this.routes.startupDemand(result.candidate)?.requiredMbps ?? Infinity),
         safePayloadMbps: result.safePayloadMbps,
         predictionTtfbMs: result.predictionTtfbMs,
       })),

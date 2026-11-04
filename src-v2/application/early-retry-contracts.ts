@@ -3,6 +3,7 @@ import { type PlayerControlSnapshot, type VideoSnapshot } from './ports.ts'
 import { type AppliedRouteDecision } from './route-contracts.ts'
 /** Adapter-owned qualified request; no URL, Range or native object crosses this port. */
 export interface InFlightVideoSample {
+  readonly ageMs?: number
   readonly request: RequestContext
   readonly loadedBytes: number
   readonly totalBytes: number

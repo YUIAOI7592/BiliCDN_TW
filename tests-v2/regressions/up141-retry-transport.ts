@@ -37,6 +37,7 @@ async function routeFixture(
   const applied = f.routes.apply(original)
   assert.ok(applied.context)
   let request: RequestContext = {
+    timingBasis: 'xhr-terminal',
     requestId: requestId('retry-current'),
     generation: state.generation,
     epoch: state.epoch,
@@ -92,6 +93,7 @@ async function routeFixture(
     }
     f.routes.requestStarted(past)
     const observation: TransportObservation = {
+      timingBasis: 'xhr-terminal',
       ...(verified ? { retryVerifiedBytes: 256 * 1024 } : {}),
       request: past,
       generation: past.generation,

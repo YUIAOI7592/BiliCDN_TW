@@ -102,6 +102,7 @@ test('UP141-START qualified Catalog releases 2500ms before hanging tail and seal
 
 test('UP141-START Native mode waits for comparison and preserves the common deadline', async (t) => {
   const f = startup(t, false)
+  await f.f.settings.update({ startupEarlyReleaseEnabled: false })
   let released = false
   const wait = f.controller.prepareStartup(f.url).then(() => {
     released = true

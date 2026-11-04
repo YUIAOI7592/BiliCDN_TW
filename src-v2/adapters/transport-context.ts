@@ -235,6 +235,7 @@ export class TransportContext {
     startedAt: number,
     method: string,
     expectedBytes: number | null = null,
+    timingBasis?: TimingBasis,
   ): RequestContext {
     const state = this.session.get(),
       matched = applied.attributionStatus ?? (applied.context ? 'matched' : 'waiting-data')
@@ -262,6 +263,7 @@ export class TransportContext {
         startedAt,
         expectedBytes:
           Number.isSafeInteger(expectedBytes) && (expectedBytes ?? 0) > 0 ? expectedBytes : null,
+        ...(timingBasis ? { timingBasis } : {}),
       }),
     )
     this.#lastMedia = {

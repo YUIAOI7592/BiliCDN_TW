@@ -49,6 +49,7 @@ export interface MeasurementRoutes extends Pick<
   RouteCoordinatorPort,
   | 'startupOptions'
   | 'startupCapacity'
+  | 'startupDemand'
   | 'completionBudget'
   | 'startupFallback'
   | 'noteStartupProbeResult'
