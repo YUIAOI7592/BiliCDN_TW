@@ -882,9 +882,24 @@ export class RouteCoordinator implements RouteCoordinatorPort {
 
   /** Read-only preview: selecting a result never commits a sample or route. */
   startupDemand(candidate: StartupCandidate): PlaybackDemand | null {
-    if (!this.startupCapacity(candidate, null)) return null
+    const revision = this.#policyRevision
+    if (!this.#startupCandidateCurrent(candidate, revision)) return null
     const demand = this.#demandFor(candidate.context.representation, candidate.context.kind)
-    return this.startupCapacity(candidate, null) ? demand : null
+    return this.#startupCandidateCurrent(candidate, revision) ? demand : null
+  }
+
+  #startupCandidateCurrent(candidate: StartupCandidate, revision: number): boolean {
+    return (
+      !this.session.get().disabled &&
+      !this.settings.get().disabled &&
+      candidate.context.generation === this.session.get().generation &&
+      candidate.context.epoch === this.session.get().epoch &&
+      this.vault.isCurrentIdentity(candidate.context) &&
+      (!this.isCatalogOnly() || candidate.type === 'catalog-generated') &&
+      !this.#hardRestriction(candidate.host, candidate.context.kind) &&
+      !this.vault.isInvalid(candidate.context.representation, candidate.host) &&
+      this.#policyRevision === revision
+    )
   }
 
   startupCapacity(
@@ -892,16 +907,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     sample: EvidenceSample | null,
   ): EvidenceMetrics | null {
     const revision = this.#policyRevision
-    const current = () =>
-      !this.session.get().disabled &&
-      !this.settings.get().disabled &&
-      this.#policyRevision === revision &&
-      candidate.context.generation === this.session.get().generation &&
-      candidate.context.epoch === this.session.get().epoch &&
-      this.vault.isCurrentIdentity(candidate.context) &&
-      (!this.isCatalogOnly() || candidate.type === 'catalog-generated') &&
-      !this.#hardRestriction(candidate.host, candidate.context.kind) &&
-      !this.vault.isInvalid(candidate.context.representation, candidate.host)
+    const current = () => this.#startupCandidateCurrent(candidate, revision)
     if (!current()) return null
     const prior = this.evidence.get(candidate.host, candidate.context.kind)
     const metrics = evidenceMetrics(
