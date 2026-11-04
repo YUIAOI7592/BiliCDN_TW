@@ -47,6 +47,8 @@ Codex Security 掃描 5bb8484b-8697-46b3-bc49-559e32fea3a0，固定提交範圍�
 
 ## 歷史驗證導覽
 
+2026-11-05 公開交付核對：main 與 v2.2.9 均為 7ddae23e68361884e9709e3d82af31560e18675e；GitHub 正式 Release 只有 BiliCDN_TW.user.js。附件及公開 latest 皆為 2.2.9／485,880 bytes，SHA-256：`ed2e5cd6f9959b49ed588118d52c7d8c5b3229e50d82ebc86442fadda75df6bf`，與本機原件一致。v2.2.9 離線交付完成；安裝版未測。後續文件提交不移動標籤。
+
 [v2.2.8 完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)，含原先已批准驗收及限制；[研究與執行計畫](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md)。目前工作只見 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
 
 <a name="bilicdn_tw-v228-正數-xhr-timeout-起播修復驗證"></a>
