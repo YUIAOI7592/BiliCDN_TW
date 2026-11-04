@@ -153,6 +153,7 @@ function fixture(t: TestContext) {
     gate,
     () => 2_000_000_000_000,
     createRuntimeIds((bytes) => bytes.fill(2)),
+    () => 2_000_000_000_000,
   )
   const installation = new XhrHookAdapter(context).install()
   assert.ok(installation)

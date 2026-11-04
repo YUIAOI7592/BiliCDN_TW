@@ -1,4 +1,5 @@
 import { closedRangeLength } from '../domain/route-completion.ts'
+import { measuredPayload } from '../domain/measurement-time.ts'
 import { responseFailure } from './transport-context.ts'
 import { classifyPlayurlApi } from '../domain/catalog.ts'
 import { playurlRequestContext } from '../domain/playurl-content.ts'
@@ -109,6 +110,9 @@ export class XhrHookAdapter {
         targetUrl,
         applied,
         startedAt: 0,
+        startedTick: null,
+        responseTick: null,
+        measurement: null,
         responseAt: 0,
         bytes: 0,
         settled: false,
@@ -336,8 +340,10 @@ export class XhrHookAdapter {
           self.routes.requestStarted(meta.request)
         }
         const noteHeaders = (): void => {
-          if (xhrMeta.get(this) === meta && !meta.responseAt && this.readyState >= 2)
+          if (xhrMeta.get(this) === meta && meta.responseTick === null && this.readyState >= 2) {
             meta.responseAt = self.now()
+            meta.responseTick = self.tick()
+          }
         }
         const progress = (event: ProgressEvent): void => {
           if (xhrMeta.get(this) !== meta) return
@@ -352,6 +358,25 @@ export class XhrHookAdapter {
           event?: Event,
         ): void => {
           if (meta.settled || xhrMeta.get(this) !== meta) return
+          meta.measurement = self.freezeMeasurement(
+            meta.startedTick,
+            meta.responseTick,
+            'xhr-terminal',
+          )
+          let payloadValid = false
+          try {
+            payloadValid = measuredPayload(
+              meta.bytes,
+              this.getResponseHeader('Content-Length'),
+              this.getResponseHeader('Content-Range'),
+            )
+          } catch {
+            /* unavailable native metadata */
+          }
+          meta.measurement = {
+            ...meta.measurement,
+            speedEligible: meta.measurement.speedEligible && payloadValid,
+          }
           if (event && !event.isTrusted && retry.tracks(meta)) return
           const verifiedBytes = outcome === 'success' ? retry.verifiedBytes(this, meta) : null
           const controlledTimeout = retry.terminal(this, meta, nativeTimeout ? 'timeout' : outcome)
@@ -387,6 +412,7 @@ export class XhrHookAdapter {
               outcome,
               failure,
               sameUrl(finalUrl, meta.targetUrl),
+              meta.measurement,
             ),
             ...(controlledTimeout ? { terminationReason: 'early-retry-timeout' as const } : {}),
             ...(verifiedBytes !== null ? { retryVerifiedBytes: verifiedBytes } : {}),
@@ -424,6 +450,7 @@ export class XhrHookAdapter {
         if (meta.playurl)
           meta.requestContext = self.apiDispatch(meta.originalUrl, meta.requestContext)
         try {
+          meta.startedTick = self.tick()
           Reflect.apply(originalSend, this, [body ?? null])
         } catch (error) {
           // Native did not accept dispatch. Release attribution without blaming the

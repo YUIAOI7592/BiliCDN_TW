@@ -169,6 +169,7 @@ export class FetchHookAdapter {
       activeRequest = request
       self.routes.requestStarted(request)
       let response: Response
+      const startedTick = self.tick()
       try {
         response = await native(outbound, false)
       } catch (error) {
@@ -186,10 +187,12 @@ export class FetchHookAdapter {
           0,
           aborted ? 'abort' : 'failure',
           aborted ? undefined : 'network',
+          self.freezeMeasurement(startedTick, null, 'fetch-consumer'),
         )
         throw error
       }
       const responseAt = self.now()
+      const responseTick = self.tick()
       if (!response.body) {
         void self.observeFetch(
           request,
@@ -202,6 +205,7 @@ export class FetchHookAdapter {
           0,
           response.ok ? 'success' : 'failure',
           responseFailure(applied.decision.routeType, response.status),
+          self.freezeMeasurement(startedTick, responseTick, 'fetch-consumer'),
         )
         return response
       }
@@ -210,6 +214,7 @@ export class FetchHookAdapter {
         settled = false
       const settle = (outcome: 'success' | 'abort' | 'failure', failure?: FailureKind): void => {
         if (settled) return
+        const measurement = self.freezeMeasurement(startedTick, responseTick, 'fetch-consumer')
         settled = true
         void self.observeFetch(
           request,
@@ -222,6 +227,7 @@ export class FetchHookAdapter {
           bytes,
           outcome,
           failure,
+          measurement,
         )
       }
       const body = new ReadableStream<Uint8Array>({

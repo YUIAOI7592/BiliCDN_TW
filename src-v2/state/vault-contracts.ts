@@ -12,6 +12,7 @@ import {
   type SignedRouteHandle,
 } from '../domain/model.ts'
 export interface RegisterRepresentationInput {
+  readonly frameRate?: number
   readonly generation: GenerationId
   readonly epoch: EpochId
   readonly kind: MediaKind
@@ -36,6 +37,7 @@ export interface OutputRole {
 }
 
 export interface VaultGroupSnapshot {
+  readonly frameRate?: number
   readonly kind: MediaKind
   readonly height: number
   readonly codec: string

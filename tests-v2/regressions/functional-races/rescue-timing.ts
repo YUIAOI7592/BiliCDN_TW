@@ -119,6 +119,8 @@ function fixture(t: TestContext, rate: number, realRecovery: boolean) {
     () => true,
     clock.now,
     clock,
+    undefined,
+    clock.now,
   )
   scope.defer(() => {
     monitor.dispose()

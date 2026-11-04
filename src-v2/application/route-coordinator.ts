@@ -1,5 +1,6 @@
 import { predictCompletionMs, completionReason } from '../domain/route-completion.ts'
 import { controlPlaybackDemand } from '../domain/playback-demand.ts'
+import { readMonotonic } from '../domain/measurement-time.ts'
 import type { SettingsReader } from '../state/settings-contracts.ts'
 import { appliedRoute } from './routing/request-routing.ts'
 import { catalogRestrictions, catalogCandidates } from '../domain/route-policy.ts'
@@ -700,10 +701,19 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     return { ...pool, candidates, requestBytes }
   }
 
-  observePlaybackFacts(facts: RoutePlaybackFacts | null): void {
+  #playbackRevision = 0
+  #playbackObservation = 0
+  observePlaybackFacts(facts: RoutePlaybackFacts | null, revision?: number): void {
+    const observation = ++this.#playbackObservation
     this.#playbackFacts = null
+    if (
+      revision !== undefined &&
+      Number.isSafeInteger(revision) &&
+      revision >= this.#playbackRevision
+    )
+      this.#playbackRevision = revision
     if (!facts) return
-    const now = this.clock.now(),
+    const tick = readMonotonic(() => this.clock.monotonicNow?.() ?? null),
       state = this.session.get(),
       requested = this.#requested.get('video')
     const identity = facts.representation ? this.vault.identity(facts.representation) : null
@@ -723,8 +733,18 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       !Number.isFinite(facts.playableBufferSec) ||
       facts.playableBufferSec < 0 ||
       !Number.isFinite(facts.sampledAt) ||
-      facts.sampledAt > now ||
-      now - facts.sampledAt > 2000
+      tick === null ||
+      !Number.isFinite(facts.sampledTick) ||
+      facts.sampledTick < 0 ||
+      tick < facts.sampledTick ||
+      tick - facts.sampledTick > 2000 ||
+      !Number.isFinite(facts.playbackRate) ||
+      facts.playbackRate <= 0 ||
+      !Number.isFinite(facts.bufferAheadSec) ||
+      facts.bufferAheadSec < 0 ||
+      !Number.isSafeInteger(facts.playbackRevision) ||
+      facts.playbackRevision < this.#playbackRevision ||
+      observation !== this.#playbackObservation
     )
       return
     this.#playbackFacts = Object.freeze({
@@ -736,7 +756,12 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       selectionRevision: facts.selectionRevision,
       sampledAt: facts.sampledAt,
       playableBufferSec: facts.playableBufferSec,
+      sampledTick: facts.sampledTick,
+      playbackRate: facts.playbackRate,
+      bufferAheadSec: facts.bufferAheadSec,
+      playbackRevision: facts.playbackRevision,
     })
+    this.#playbackRevision = facts.playbackRevision
   }
 
   completionBudget(
@@ -750,7 +775,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       const state = this.session.get(),
         identity = this.vault.identity(representation),
         requested = this.#requested.get('video'),
-        now = this.clock.now()
+        tick = readMonotonic(() => this.clock.monotonicNow?.() ?? null)
       return (
         !state.disabled &&
         !this.settings.get().disabled &&
@@ -764,15 +789,22 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         facts.authorityRevision === identity?.authorityRevision &&
         facts.selectionRevision === requested?.selectionRevision &&
         requested?.representation === representation &&
-        now >= facts.sampledAt &&
-        now - facts.sampledAt <= 2000
+        tick !== null &&
+        tick >= facts.sampledTick &&
+        tick - facts.sampledTick <= 2000 &&
+        facts.playbackRevision === this.#playbackRevision
       )
     }
     if (!current()) return null
+    const tick = readMonotonic(() => this.clock.monotonicNow?.() ?? null)
+    if (tick === null) return null
+    const ageMs = tick - facts.sampledTick
+    if (ageMs < 0 || ageMs > 2000) return null
     const result = Object.freeze({
       requestBytes,
-      playableBufferSec: facts.playableBufferSec,
+      playableBufferSec: Math.max(0, facts.bufferAheadSec / facts.playbackRate - ageMs / 1000),
       sampledAt: facts.sampledAt,
+      ageMs,
     })
     return current() ? result : null
   }
@@ -1000,8 +1032,9 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     elapsedMs: number,
     ttfbMs: number | null,
     workCurrent: () => boolean = () => true,
+    measurement?: Pick<TransportObservation, 'timingBasis' | 'speedEligible'>,
   ): Promise<void> {
-    if (bytes < 64 * 1024 || elapsedMs <= 0) return
+    if (bytes < 64 * 1024 || elapsedMs <= 0 || measurement?.speedEligible === false) return
     if (this.isCatalogOnly() && candidate.type !== 'catalog-generated') return
     const context = candidate.context
     const valid = (): boolean =>
@@ -1017,6 +1050,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       context.kind,
       {
         requestId: this.#measurementId(candidate, 'startup'),
+        ...(measurement?.timingBasis ? { timingBasis: measurement.timingBasis } : {}),
         at: this.clock.now(),
         source: 'challenge',
         outcome: 'success',
@@ -1686,6 +1720,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     outcome: 'success' | 'failure',
     failureKind: FailureKind | null,
     workCurrent: () => boolean = () => true,
+    measurement?: Pick<TransportObservation, 'timingBasis' | 'speedEligible'>,
   ): Promise<void> {
     const context = applied.context
     if (!context || applied.decision.action !== 'rewrite') return
@@ -1710,11 +1745,15 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       context.kind,
       {
         requestId: this.#measurementId(applied, 'challenge'),
+        ...(measurement?.timingBasis ? { timingBasis: measurement.timingBasis } : {}),
         at: this.clock.now(),
         source: 'challenge',
         outcome,
         throughputMbps:
-          outcome === 'success' && bytes >= 64 * 1024 && elapsedMs > 0
+          measurement?.speedEligible !== false &&
+          outcome === 'success' &&
+          bytes >= 64 * 1024 &&
+          elapsedMs > 0
             ? (bytes * 8) / elapsedMs / 1000
             : null,
         ttfbMs,

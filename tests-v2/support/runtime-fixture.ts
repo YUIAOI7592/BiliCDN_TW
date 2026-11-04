@@ -118,7 +118,19 @@ export function fixture(
   }
   const recovery = scope.own(new RecoveryController(currentResumePlayer(player), clock.now))
   const measurement = probe
-    ? scope.own(new MeasurementController(routes, meta, probe, clock.now, clock))
+    ? scope.own(
+        new MeasurementController(
+          routes,
+          meta,
+          probe,
+          clock.now,
+          clock,
+          undefined,
+          undefined,
+          undefined,
+          clock.now,
+        ),
+      )
     : {
         reset: () => undefined,
         cancel: () => undefined,
@@ -143,6 +155,8 @@ export function fixture(
       () => true,
       clock.now,
       clock,
+      undefined,
+      clock.now,
     ),
   )
   const runtime = scope.own(
@@ -232,6 +246,7 @@ export function fixture(
       },
       clock.now,
       createRuntimeIds(),
+      clock.now,
     )
     const started = context.request(applied, url, applied.url, clock.now(), 'GET')
     routes.requestStarted(started)

@@ -158,6 +158,8 @@ export async function fixture(
       },
       clock.now,
       ids,
+      undefined,
+      clock.now,
     ),
   )
   const nativeSend = NativeXhr.prototype.send

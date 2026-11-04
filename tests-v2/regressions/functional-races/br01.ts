@@ -117,6 +117,8 @@ function fixture(t: TestContext) {
       () => visible,
       clock.now,
       clock,
+      undefined,
+      clock.now,
     ),
   )
   scope.defer(() => recovery.reset())

@@ -206,6 +206,8 @@ for (const outcome of ['success', '416', 'cancelled'] as const)
         f.clock,
         f.vault,
         () => 0.5,
+        undefined,
+        f.clock.now,
       ),
     )
     controller.tick({

@@ -8,9 +8,11 @@ import type {
   PlaybackDemand,
   RouteIdentity,
   SignedRouteHandle,
+  TimingBasis,
 } from '../domain/model.ts'
 import { probeStartByte } from '../domain/probe-range.ts'
 import { mediaIdentity } from '../domain/url-policy.ts'
+import { readMonotonic } from '../domain/measurement-time.ts'
 import type { SettingsReader, SettingsObserver } from '../state/settings-contracts.ts'
 
 import type { RangeProbePort, SchedulerPort } from './ports.ts'
@@ -23,6 +25,8 @@ const cancellationReason = (signal: AbortSignal): unknown =>
   'reason' in signal ? signal.reason : new DOMException('Aborted', 'AbortError')
 
 interface ProbeResult {
+  readonly timingBasis?: TimingBasis
+  readonly speedEligible?: boolean
   readonly candidate: StartupCandidate
   readonly valid: boolean
   readonly safeMbps: number | null
@@ -73,6 +77,8 @@ export class MeasurementController implements MeasurementPort {
         pending: Promise<void>
         startedAt: number
         deadlineAt: number
+        startedTick: number
+        deadlineTick: number
       } = { phase: 'available' }
   #startupQualifiedHosts: readonly string[] = []
   #startupState: NonNullable<MeasurementSnapshot['startup']> = Object.freeze({
@@ -98,6 +104,7 @@ export class MeasurementController implements MeasurementPort {
     private readonly rangeMetadata?: MeasurementRangeMetadataPort,
     private readonly random: () => number = () => 0,
     private readonly settings?: SettingsReader & SettingsObserver,
+    private readonly monotonicNow: () => number | null = () => null,
   ) {
     if (settings) {
       let previous = settings.get()
@@ -188,6 +195,11 @@ export class MeasurementController implements MeasurementPort {
         marker = this.#marker,
         startedAt = this.now(),
         deadlineAt = startedAt + TIMEOUT_MS
+      const startedTick = readMonotonic(this.monotonicNow)
+      if (startedTick === null) {
+        this.noteUnpreflighted('monotonic-unavailable')
+        return
+      }
 
       this.#startupState = Object.freeze({
         state: 'running',
@@ -209,6 +221,8 @@ export class MeasurementController implements MeasurementPort {
         pending,
         startedAt,
         deadlineAt,
+        startedTick,
+        deadlineTick: startedTick + TIMEOUT_MS,
       }
       this.#startupLease = lease
       void this.#runStartup(url, options, controller, marker)
@@ -284,7 +298,7 @@ export class MeasurementController implements MeasurementPort {
     lease.phase = 'probing'
     const current = () => this.#startupLease === lease && this.#marker === marker && !this.#disposed
     const results: ProbeResult[] = []
-    const { startedAt, deadlineAt } = lease
+    const { startedTick, deadlineTick } = lease
     const catalogOnlyAtStart = this.routes.isCatalogOnly()
     let timer: (() => void) | null = null
     let sealed = false,
@@ -308,14 +322,23 @@ export class MeasurementController implements MeasurementPort {
     }
     const accepting = (): boolean => {
       if (sealed || !current()) return false
-      if (this.now() >= deadlineAt) {
+      const tick = readMonotonic(this.monotonicNow)
+      if (tick === null || tick < startedTick) {
+        finish('clock-invalid')
+        controller.abort('clock-invalid')
+        return false
+      }
+      if (tick >= deadlineTick) {
         expire()
         return false
       }
       return true
     }
     controller.signal.addEventListener('abort', aborted, { once: true })
-    timer = this.scheduler.timeout(expire, Math.max(0, deadlineAt - this.now()))
+    timer = this.scheduler.timeout(
+      expire,
+      Math.max(0, deadlineTick - (readMonotonic(this.monotonicNow) ?? deadlineTick)),
+    )
     for (const candidate of options.candidates) {
       if (!accepting() || controller.signal.aborted) break
       void this.#probeStartup(candidate, options.demand, controller.signal).then(
@@ -353,6 +376,14 @@ export class MeasurementController implements MeasurementPort {
       controller.abort('startup-complete')
     }
     if (marker !== this.#marker) return
+    if (releaseReason === 'clock-invalid') {
+      this.#startupState = Object.freeze({
+        ...this.#startupState,
+        state: 'cancelled',
+        reason: releaseReason,
+      })
+      return
+    }
     for (const result of results)
       this.routes.noteStartupProbeResult(result.candidate, result.status)
     const valid = results.filter((result) => result.valid && result.safeMbps !== null)
@@ -422,7 +453,7 @@ export class MeasurementController implements MeasurementPort {
       candidates: options.candidates.length,
       selectedHost: decision?.host ?? null,
       delayed: true,
-      elapsedMs: Math.max(0, this.now() - startedAt),
+      elapsedMs: Math.max(0, (readMonotonic(this.monotonicNow) ?? startedTick) - startedTick),
       results: Object.freeze(
         results.slice(0, 3).map((result) =>
           Object.freeze({
@@ -445,6 +476,7 @@ export class MeasurementController implements MeasurementPort {
             result.elapsedMs,
             result.ttfbMs,
             () => !this.#disposed && marker === this.#marker,
+            result,
           )
           .catch(() => undefined)
       }
@@ -468,7 +500,9 @@ export class MeasurementController implements MeasurementPort {
       result.directRange &&
       Number.isSafeInteger(result.bytes) &&
       Number.isFinite(result.elapsedMs) &&
-      result.elapsedMs > 0 &&
+      (candidate.cachedSafeMbps !== null ||
+        (result.elapsedMs > 0 && result.speedEligible !== false)) &&
+      result.payloadValid !== false &&
       (candidate.cachedSafeMbps !== null ? result.bytes >= 16 * 1024 : result.bytes >= 64 * 1024)
     const metrics = rangeValid
       ? this.routes.startupCapacity(
@@ -477,6 +511,7 @@ export class MeasurementController implements MeasurementPort {
             ? null
             : {
                 requestId: 'startup-preview',
+                ...(result.timingBasis ? { timingBasis: result.timingBasis } : {}),
                 at: this.now(),
                 source: 'challenge',
                 outcome: 'success',
@@ -760,7 +795,7 @@ export class MeasurementController implements MeasurementPort {
       else if (result.directRange && result.range)
         this.rangeMetadata.recordRangeSize(range.identity, range.handle, result.range.totalBytes)
     }
-    const ok = result.directRange && result.bytes >= 64 * 1024
+    const ok = result.directRange && result.payloadValid !== false && result.bytes >= 64 * 1024
     const failure: FailureKind | null =
       applied.decision.routeType === 'native-signed' && [403, 451, 959].includes(result.status ?? 0)
         ? 'native-invalid'
@@ -781,6 +816,7 @@ export class MeasurementController implements MeasurementPort {
         marker === this.#marker &&
         this.#running?.controller === round &&
         !round.signal.aborted,
+      result,
     )
     if (marker !== this.#marker || this.#running?.controller !== round || round.signal.aborted)
       return

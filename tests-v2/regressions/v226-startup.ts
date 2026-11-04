@@ -20,6 +20,7 @@ function measurement(t: TestContext, f: ReturnType<typeof fixture>, probe: Range
       undefined,
       () => 0,
       f.settings,
+      f.clock.now,
     ),
   )
 }

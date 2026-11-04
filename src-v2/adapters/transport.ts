@@ -31,8 +31,18 @@ export class TransportAdapter {
     now: () => number,
     ids: RuntimeIdPort,
     private readonly retryRoutes?: EarlyRetryRoutingPort,
+    monotonicNow: () => number | null = () => null,
   ) {
-    this.#context = new TransportContext(session, settings, routes, playurl, measurement, now, ids)
+    this.#context = new TransportContext(
+      session,
+      settings,
+      routes,
+      playurl,
+      measurement,
+      now,
+      ids,
+      monotonicNow,
+    )
   }
   install(): void {
     if (this.#fetch && this.#xhr) return

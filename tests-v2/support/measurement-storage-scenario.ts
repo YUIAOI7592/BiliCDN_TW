@@ -69,6 +69,10 @@ async function scenario(reject: boolean): Promise<Result> {
       },
       f.clock.now,
       f.clock,
+      undefined,
+      undefined,
+      undefined,
+      f.clock.now,
     ),
   )
   const status: MeasurementStatus = {

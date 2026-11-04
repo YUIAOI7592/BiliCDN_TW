@@ -101,6 +101,7 @@ for (const reverse of [false, true]) {
         undefined,
         () => 0,
         f.settings,
+        f.clock.now,
       ),
     )
     const pending = controller.prepareStartup(url)
@@ -148,6 +149,7 @@ test('V227 startup: demand includes the single margin and a 1.2 ratio is adequat
       undefined,
       () => 0,
       f.settings,
+      f.clock.now,
     ),
   )
   await controller.prepareStartup(url)
@@ -214,6 +216,7 @@ for (const elapsed of [2999, 3000, 3001]) {
         undefined,
         () => 0,
         f.settings,
+        f.clock.now,
       ),
     )
     const start = f.clock.now(),

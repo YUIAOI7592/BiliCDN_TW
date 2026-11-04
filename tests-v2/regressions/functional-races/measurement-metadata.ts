@@ -254,6 +254,10 @@ test('META U healthy round advances each candidate cursor safely through rollove
       },
       clock.now,
       clock,
+      undefined,
+      undefined,
+      undefined,
+      clock.now,
     ),
   )
   controller.tick({
@@ -360,6 +364,10 @@ function scenario(t: TestContext, initialCursor = 4) {
         },
         clock.now,
         clock,
+        undefined,
+        undefined,
+        undefined,
+        clock.now,
       ),
     )
   scope.defer(async () => {
@@ -463,6 +471,10 @@ test('META I healthy planning retains exact ten-minute cooldown after startup cu
       },
       f.clock.now,
       f.clock,
+      undefined,
+      undefined,
+      undefined,
+      f.clock.now,
     ),
   )
   const status: MeasurementStatus = {

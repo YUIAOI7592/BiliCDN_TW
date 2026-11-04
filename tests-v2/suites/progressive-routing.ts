@@ -44,7 +44,7 @@ async function createRoutingResources(t: TestContext) {
   const vault = new SignedRouteVault()
   vault.reset(state.generation, state.epoch)
   const routes = new RouteCoordinator(
-    { now: () => now },
+    { now: () => now, monotonicNow: () => now },
     session,
     settings,
     restrictions,
@@ -313,7 +313,7 @@ async function createCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7Cont
   pcdnVault.reset(pcdnState.generation, pcdnState.epoch)
   const pcdnRestrictions = scope.own(new RestrictionStore(pcdnStorage, () => now))
   const pcdnRoutes = new RouteCoordinator(
-    { now: () => now },
+    { now: () => now, monotonicNow: () => now },
     pcdnSession,
     pcdnSettings,
     pcdnRestrictions,
@@ -358,7 +358,7 @@ async function createMeasurementFixtureHasTwoIndependentProgressiveSegments8Cont
   const probeVault = new SignedRouteVault()
   probeVault.reset(probeState.generation, probeState.epoch)
   const probeRoutes = new RouteCoordinator(
-    { now: probeClock.now },
+    { now: probeClock.now, monotonicNow: probeClock.now },
     probeSession,
     probeSettings,
     scope.own(new RestrictionStore(probeStorage, probeClock.now)),
@@ -449,6 +449,10 @@ async function checkMeasurementFixtureHasTwoIndependentProgressiveSegments8(
       },
       base.probeClock.now,
       base.probeClock,
+      undefined,
+      undefined,
+      undefined,
+      base.probeClock.now,
     ),
   )
   await invalidProbe.prepareStartup(base.probeFirst)
@@ -519,6 +523,10 @@ async function checkMeasurementFixtureHasTwoIndependentProgressiveSegments8(
       },
       timeoutClock.now,
       timeoutClock,
+      undefined,
+      undefined,
+      undefined,
+      timeoutClock.now,
     ),
   )
 
@@ -563,6 +571,10 @@ async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
       },
       base.probeClock.now,
       base.probeClock,
+      undefined,
+      undefined,
+      undefined,
+      base.probeClock.now,
     ),
   )
   await invalidProbe.prepareStartup(base.probeFirst)
@@ -618,6 +630,10 @@ async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
       },
       timeoutClock.now,
       timeoutClock,
+      undefined,
+      undefined,
+      undefined,
+      timeoutClock.now,
     ),
   )
   let timeoutSettled = false
@@ -676,6 +692,10 @@ async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
       },
       base.probeClock.now,
       base.probeClock,
+      undefined,
+      undefined,
+      undefined,
+      base.probeClock.now,
     ),
   )
   await belowProbe.prepareStartup(base.probeSecond)
@@ -716,6 +736,10 @@ async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
       },
       base.probeClock.now,
       base.probeClock,
+      undefined,
+      undefined,
+      undefined,
+      base.probeClock.now,
     ),
   )
   await nativeProbe.prepareStartup(base.probeSecond)
@@ -827,7 +851,7 @@ async function checkFixedCatalogChangeCancelsAPendingStartupProbe6(t: TestContex
   pcdnVault.reset(pcdnState.generation, pcdnState.epoch)
   const pcdnRestrictions = base.scope.own(new RestrictionStore(pcdnStorage, () => base.now))
   new RouteCoordinator(
-    { now: () => base.now },
+    { now: () => base.now, monotonicNow: () => base.now },
     pcdnSession,
     pcdnSettings,
     pcdnRestrictions,

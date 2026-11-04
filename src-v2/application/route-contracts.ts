@@ -190,7 +190,7 @@ export interface RouteCoordinatorPort {
     catalogCursor?: number,
     requestBytes?: number | null,
   ): StartupOptions | null
-  observePlaybackFacts(facts: RoutePlaybackFacts | null): void
+  observePlaybackFacts(facts: RoutePlaybackFacts | null, revision?: number): void
   completionBudget(
     representation: RepresentationId,
     requestBytes: number | null,
@@ -212,6 +212,7 @@ export interface RouteCoordinatorPort {
     elapsedMs: number,
     ttfbMs: number | null,
     workCurrent?: () => boolean,
+    measurement?: Pick<TransportObservation, 'timingBasis' | 'speedEligible'>,
   ): Promise<void>
   latestVideoHost(): string | null
   unlockNative(representation: RepresentationId, host: string): void
@@ -273,6 +274,7 @@ export interface RouteCoordinatorPort {
     outcome: 'success' | 'failure',
     failureKind: FailureKind | null,
     workCurrent?: () => boolean,
+    measurement?: Pick<TransportObservation, 'timingBasis' | 'speedEligible'>,
   ): Promise<void>
   observe(observation: TransportObservation): Promise<void>
   snapshot(): RouteSnapshot

@@ -135,6 +135,10 @@ async function checkMeasurementMetadataDefaultsToFirstCatalogCursor1(
       },
       base.clock.now,
       base.clock,
+      undefined,
+      undefined,
+      undefined,
+      base.clock.now,
     ),
   )
   const pending = controller.prepareStartup(url)

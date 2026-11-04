@@ -84,6 +84,10 @@ for (const phase of ['measurement', 'routeEvidence', 'probe'] as const)
         },
         f.clock.now,
         f.clock,
+        undefined,
+        undefined,
+        undefined,
+        f.clock.now,
       ),
     )
     controller.tick(status)
@@ -134,6 +138,10 @@ for (const reject of [false, true])
         { read: async () => (++probes === 1 ? measured : await newer.promise) },
         f.clock.now,
         f.clock,
+        undefined,
+        undefined,
+        undefined,
+        f.clock.now,
       ),
     )
     controller.tick(status)

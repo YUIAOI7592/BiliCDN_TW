@@ -25,6 +25,10 @@ for (const boundary of ['fresh', 'expired', 'policy', 'selection'] as const) {
       routePolicyRevision: request.routePolicyRevision,
       selectionRevision: request.selectionRevision,
       sampledAt: f.clock.now(),
+      sampledTick: f.clock.monotonicNow(),
+      playbackRate: 2,
+      bufferAheadSec: 4,
+      playbackRevision: 0,
       playableBufferSec: 2,
     }
     Reflect.get(f.routes, 'observePlaybackFacts').call(f.routes, facts)
@@ -129,6 +133,10 @@ test('V227 completion owner: forced recovery ranks actual evidence using the own
     routePolicyRevision: request.routePolicyRevision,
     selectionRevision: request.selectionRevision!,
     sampledAt: f.clock.now(),
+    sampledTick: f.clock.monotonicNow(),
+    playbackRate: 2,
+    bufferAheadSec: 2,
+    playbackRevision: 0,
     playableBufferSec: 1,
   })
   const decision = f.routes.recover(

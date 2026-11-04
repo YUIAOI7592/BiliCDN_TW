@@ -4,6 +4,7 @@ import { type SessionPort } from '../state/session-contracts.ts'
 import { type SignedRouteVaultPort } from '../state/vault-contracts.ts'
 import { type PlayurlRequestContext } from '../domain/playurl-model.ts'
 export interface PlayurlItem {
+  readonly frameRate?: number
   readonly token: object
   readonly key: string
   readonly height: number

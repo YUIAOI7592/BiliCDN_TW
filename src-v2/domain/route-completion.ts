@@ -29,7 +29,8 @@ export function completionReason(
     budget.playableBufferSec < 0
   )
     return 'unknown-buffer'
-  if (!Number.isFinite(budget.sampledAt) || budget.sampledAt > now || now - budget.sampledAt > 2000)
+  const age = budget.ageMs ?? now - budget.sampledAt
+  if (!Number.isFinite(budget.sampledAt) || !Number.isFinite(age) || age < 0 || age > 2000)
     return 'stale-playback'
   return 'available'
 }

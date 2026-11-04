@@ -206,6 +206,7 @@ function routeFixture(scope: ReturnType<typeof testScope>, clock: FakeClock, sto
     },
     clock.now,
     createRuntimeIds(),
+    clock.now,
   )
   return { session, settings, restrictions, evidence, vault, representation, routes, transport }
 }
@@ -351,6 +352,10 @@ async function measurementLockFixture(
       },
       clock.now,
       clock,
+      undefined,
+      undefined,
+      undefined,
+      clock.now,
     ),
   )
   scope.defer(() => storage.gate.resolve())
@@ -553,6 +558,8 @@ function stalledStartup(t: TestContext, initialPosition: number, progressing = f
       () => true,
       clock.now,
       clock,
+      undefined,
+      clock.now,
     ),
   )
   monitor.tick()

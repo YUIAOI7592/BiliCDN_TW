@@ -253,6 +253,8 @@ function fixture(t: TestContext) {
       () => visible,
       clock.now,
       clock,
+      undefined,
+      clock.now,
     ),
   )
   const runtime = scope.own(
@@ -292,6 +294,7 @@ function fixture(t: TestContext) {
     { willGateStartup: () => false, prepareStartup: async () => undefined, noteUnpreflighted() {} },
     clock.now,
     ids,
+    clock.now,
   )
   routes.requestStarted(transport.request(applied, output, applied.url, clock.now(), 'GET'))
   assert.equal(routes.recoveryEligible(routes.latestRequested('video')!), true)

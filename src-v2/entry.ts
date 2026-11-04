@@ -30,7 +30,14 @@ import { BrowserNavigation } from './adapters/navigation.ts'
 
 export const start = (): void => {
   const now = (): number => Date.now()
-  const clock = { now }
+  const monotonicNow: () => number | null = (() => {
+    try {
+      return performance.now.bind(performance)
+    } catch {
+      return () => null
+    }
+  })()
+  const clock = { now, monotonicNow }
   const scheduler = new BrowserScheduler()
   const storage = new TampermonkeyStorage()
   const settings = new SettingsStore(storage, now)
@@ -66,12 +73,13 @@ export const start = (): void => {
   const measurement = new MeasurementController(
     routes,
     meta,
-    new RangeProbeAdapter(nativeFetch, now),
+    new RangeProbeAdapter(nativeFetch, monotonicNow),
     now,
     scheduler,
     vault,
     Math.random,
     settings,
+    monotonicNow,
   )
   const transport = new TransportAdapter(
     session,
@@ -82,6 +90,7 @@ export const start = (): void => {
     now,
     ids,
     routes,
+    monotonicNow,
   )
   transport.install()
   const earlyRetry = new EarlyRetryController(
@@ -105,6 +114,7 @@ export const start = (): void => {
     now,
     scheduler,
     earlyRetry,
+    monotonicNow,
   )
   const runtime = new RuntimeController(
     settings,

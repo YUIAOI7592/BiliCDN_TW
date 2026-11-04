@@ -61,6 +61,7 @@ function startup(t: TestContext, catalogOnly = true, cached = false) {
       undefined,
       () => 0,
       f.settings,
+      f.clock.now,
     ),
   )
   const measured = (bytes = 256 * 1024, elapsedMs = 500): RangeProbeResult => ({

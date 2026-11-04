@@ -56,7 +56,7 @@ const fixture = (scope: TestScope) => {
   const restrictions = scope.own(new RestrictionStore(storage, () => now))
   const evidence = scope.own(new EvidenceStore(storage, () => now))
   const routes = new RouteCoordinator(
-    { now: () => now },
+    { now: () => now, monotonicNow: () => now },
     session,
     settings,
     restrictions,

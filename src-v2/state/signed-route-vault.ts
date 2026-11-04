@@ -1,4 +1,5 @@
 import { catalogIndex, TRUSTED_CATALOG } from '../domain/catalog.ts'
+import { declaredFrameRate } from '../domain/frame-rate.ts'
 import { isKnownNativeFamily, parseMediaUrl, replaceUrlHost } from '../domain/url-policy.ts'
 import {
   representationId,
@@ -39,6 +40,7 @@ interface StoredRoute {
   readonly selectable: boolean
 }
 interface Group {
+  readonly frameRate?: number
   readonly identity: RouteIdentity
   readonly height: number
   readonly codec: string
@@ -225,6 +227,9 @@ export class SignedRouteVault implements SignedRouteVaultPort {
         height: input.height,
         codec: input.codec.slice(0, 48),
         bandwidth: input.bandwidth,
+        ...(declaredFrameRate(input.frameRate) !== undefined
+          ? { frameRate: declaredFrameRate(input.frameRate)! }
+          : {}),
         source: prior?.source === 'trusted-api' ? prior.source : input.source,
         routes: Object.freeze(routes),
       }),
@@ -494,6 +499,7 @@ export class SignedRouteVault implements SignedRouteVaultPort {
           height: group.height,
           codec: group.codec,
           bandwidth: group.bandwidth,
+          ...(group.frameRate !== undefined ? { frameRate: group.frameRate } : {}),
           routeCount: group.routes.length,
         })
       : null

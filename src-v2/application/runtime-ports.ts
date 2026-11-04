@@ -14,7 +14,10 @@ export interface RuntimeRoutesPort extends Pick<
   | 'recoveryEligible'
   | 'observePlaybackFacts'
 > {}
-export interface RuntimePlayerPort extends Pick<PlayerPort, 'snapshot' | 'reset'> {}
+export interface RuntimePlayerPort extends Pick<
+  PlayerPort,
+  'snapshot' | 'reset' | 'observePlaybackInvalidation'
+> {}
 export interface RuntimeMonitorPort extends Pick<
   MonitorPort,
   'start' | 'stop' | 'reset' | 'subscribe'

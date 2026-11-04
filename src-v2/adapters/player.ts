@@ -68,6 +68,12 @@ export class PlayerAdapter {
   observePlayIntent(listener: () => void): () => void {
     return this.#controls.observePlayIntent(listener)
   }
+  playbackRevision(): number {
+    return this.#controls.playbackRevision()
+  }
+  observePlaybackInvalidation(listener: (revision: number) => void): () => void {
+    return this.#controls.observePlaybackInvalidation(listener)
+  }
   video(): HTMLVideoElement | null {
     return this.#media.video()
   }

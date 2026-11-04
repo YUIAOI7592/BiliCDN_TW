@@ -54,6 +54,7 @@ test('V226 S11: a valid original below headroom cannot win through ninety-percen
       undefined,
       () => 0,
       f.settings,
+      f.clock.now,
     ),
   )
   await controller.prepareStartup(url)
@@ -136,6 +137,7 @@ for (const safeMbps of [12, 20]) {
           undefined,
           () => 0,
           f.settings,
+          f.clock.now,
         ),
       )
       await controller.prepareStartup(url)

@@ -56,6 +56,7 @@ function createNavigationPlayback(t: TestContext) {
     },
     f.clock.now,
     createRuntimeIds(),
+    f.clock.now,
   )
   const payload = (content: string) => ({
     code: 0,

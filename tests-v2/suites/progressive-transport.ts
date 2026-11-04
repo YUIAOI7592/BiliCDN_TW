@@ -124,7 +124,7 @@ async function createProgressiveTransportScenario(t: TestContext) {
   const state = session.beginGeneration(false)
   vault.reset(state.generation, state.epoch)
   const routes = new RouteCoordinator(
-    { now: now },
+    { now: now, monotonicNow: now },
     session,
     settings,
     scope.own(new RestrictionStore(storage, now)),
@@ -146,7 +146,17 @@ async function createProgressiveTransportScenario(t: TestContext) {
     noteUnpreflighted: () => undefined,
   } satisfies ConstructorParameters<typeof TransportAdapter>[4]
   const transport = scope.own(
-    new TransportAdapter(session, settings, routes, playurl, measurement, now, createRuntimeIds()),
+    new TransportAdapter(
+      session,
+      settings,
+      routes,
+      playurl,
+      measurement,
+      now,
+      createRuntimeIds(),
+      undefined,
+      now,
+    ),
   )
   transport.install()
   const response = await fakeWindow.fetch(api)
@@ -166,7 +176,7 @@ async function createPayloadContext1(t: TestContext) {
   const state = session.beginGeneration(false)
   vault.reset(state.generation, state.epoch)
   const routes = new RouteCoordinator(
-    { now: now },
+    { now: now, monotonicNow: now },
     session,
     settings,
     scope.own(new RestrictionStore(storage, now)),
@@ -188,7 +198,17 @@ async function createPayloadContext1(t: TestContext) {
     noteUnpreflighted: () => undefined,
   } satisfies ConstructorParameters<typeof TransportAdapter>[4]
   const transport = scope.own(
-    new TransportAdapter(session, settings, routes, playurl, measurement, now, createRuntimeIds()),
+    new TransportAdapter(
+      session,
+      settings,
+      routes,
+      playurl,
+      measurement,
+      now,
+      createRuntimeIds(),
+      undefined,
+      now,
+    ),
   )
   transport.install()
   const response = await fakeWindow.fetch(api)

@@ -74,6 +74,10 @@ export function startupAbortFixture(t: TestContext, onOptions: () => void = () =
       } satisfies RangeProbePort,
       clock.now,
       clock,
+      undefined,
+      undefined,
+      undefined,
+      clock.now,
     ),
   )
   return {

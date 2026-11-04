@@ -91,6 +91,8 @@ async function createRateMonitorResources(t: TestContext) {
       () => true,
       () => now,
       new BrowserScheduler(),
+      undefined,
+      () => now,
     ),
   )
   return {
@@ -492,7 +494,7 @@ async function createStallNowAndstartupReloadsContext6(t: TestContext) {
   const { stallSettings, stallRestrictions, stallEvidence } = block2
   await stallSettings.update({ considerNativeSources: true })
   const stallRoutes = new RouteCoordinator(
-    { now: () => block2.stallNow },
+    { now: () => block2.stallNow, monotonicNow: () => block2.stallNow },
     startupSession,
     stallSettings,
     stallRestrictions,
@@ -672,7 +674,7 @@ async function createChallengeDoneAndredirectDoneAndmismatchedDoneAndmissingDone
   const stallRestrictions = scope.own(new RestrictionStore(new FakeStorage(), () => stallNow))
   const stallSettings = scope.own(new CatalogSettingsStore(new FakeStorage(), () => stallNow))
   const stallRoutes = new RouteCoordinator(
-    { now: () => stallNow },
+    { now: () => stallNow, monotonicNow: () => stallNow },
     startupSession,
     stallSettings,
     stallRestrictions,
@@ -855,6 +857,8 @@ async function createChallengeDoneAndredirectDoneAndmismatchedDoneAndmissingDone
       () => true,
       () => now + 16_000,
       new BrowserScheduler(),
+      undefined,
+      () => now + 16_000,
     ),
   )
   for (let i = 0; i < 17; i++) originalMonitor.tick()
@@ -931,7 +935,7 @@ async function createStartupRecoveryContext8(t: TestContext) {
   const stallRestrictions = scope.own(new RestrictionStore(new FakeStorage(), () => stallNow))
   const stallSettings = scope.own(new CatalogSettingsStore(new FakeStorage(), () => stallNow))
   const stallRoutes = new RouteCoordinator(
-    { now: () => stallNow },
+    { now: () => stallNow, monotonicNow: () => stallNow },
     startupSession,
     stallSettings,
     stallRestrictions,
@@ -1009,6 +1013,8 @@ async function createStartupRecoveryContext8(t: TestContext) {
       () => true,
       () => stallNow,
       new BrowserScheduler(),
+      undefined,
+      () => stallNow,
     ),
   )
   stallNow = now + 14_000
@@ -1073,6 +1079,10 @@ async function createStartupRecoveryContext8(t: TestContext) {
       new RangeProbeAdapter(challengeFetch as typeof fetch, () => now),
       () => now,
       new BrowserScheduler(),
+      undefined,
+      undefined,
+      undefined,
+      () => now,
     ),
   )
   const baseMeasurement = {
@@ -1142,7 +1152,7 @@ async function createRedirectChallengeFetchContext9(t: TestContext) {
   const { stallSettings, stallRestrictions, stallEvidence } = block2
   await stallSettings.update({ considerNativeSources: true })
   const stallRoutes = new RouteCoordinator(
-    { now: () => block2.stallNow },
+    { now: () => block2.stallNow, monotonicNow: () => block2.stallNow },
     startupSession,
     stallSettings,
     stallRestrictions,
@@ -2291,9 +2301,19 @@ async function checkAlreadyAbortedPlayerRequestRejectsStartupGate10(t: TestConte
       new MeasurementController(
         measurementRoutes(preflightRoutes),
         new MeasurementMetaStore(new FakeStorage(), () => base.now),
-        new RangeProbeAdapter(preflightFetch as typeof fetch, () => base.now),
+        new RangeProbeAdapter(
+          preflightFetch as typeof fetch,
+          (() => {
+            let tick = 0
+            return () => tick++
+          })(),
+        ),
         () => base.now,
         new BrowserScheduler(),
+        undefined,
+        undefined,
+        undefined,
+        () => base.now,
       ),
     )
     const abortedStartup = new AbortController()
@@ -2356,6 +2376,10 @@ async function checkAlreadyAbortedPlayerRequestRejectsStartupGate10(t: TestConte
         new RangeProbeAdapter(hangingFetch as typeof fetch, deadlineClock.now),
         deadlineClock.now,
         deadlineClock,
+        undefined,
+        undefined,
+        undefined,
+        deadlineClock.now,
       ),
     )
     let gateSettled = false
@@ -2409,6 +2433,10 @@ async function checkAlreadyAbortedPlayerRequestRejectsStartupGate10(t: TestConte
         new RangeProbeAdapter(compatibilityFetch as typeof fetch, () => base.now),
         () => base.now,
         new BrowserScheduler(),
+        undefined,
+        undefined,
+        undefined,
+        () => base.now,
       ),
     )
     await cachedPreflight.prepareStartup(base.startupRoot)
@@ -2443,6 +2471,10 @@ async function checkAlreadyAbortedPlayerRequestRejectsStartupGate10(t: TestConte
         ),
         () => base.now,
         new BrowserScheduler(),
+        undefined,
+        undefined,
+        undefined,
+        () => base.now,
       ),
     )
     await redirectStartup.prepareStartup(base.startupRoot)
@@ -2478,6 +2510,10 @@ async function checkAlreadyAbortedPlayerRequestRejectsStartupGate10(t: TestConte
         ),
         () => base.now,
         new BrowserScheduler(),
+        undefined,
+        undefined,
+        undefined,
+        () => base.now,
       ),
     )
     await wrongHostStartup.prepareStartup(base.startupRoot)
@@ -2526,6 +2562,10 @@ async function checkSafePlaybackConsidersUpToThreeFairChallengers9(t: TestContex
       new RangeProbeAdapter(redirectChallengeFetch as typeof fetch, () => base.now),
       () => base.now,
       new BrowserScheduler(),
+      undefined,
+      undefined,
+      undefined,
+      () => base.now,
     ),
   )
   redirectChallenge.tick({ ...base.baseMeasurement, playableBufferSec: 30 })
@@ -2557,6 +2597,10 @@ async function checkSafePlaybackConsidersUpToThreeFairChallengers9(t: TestContex
       new RangeProbeAdapter((async () => redirectedResponse) as typeof fetch, () => base.now),
       () => base.now,
       new BrowserScheduler(),
+      undefined,
+      undefined,
+      undefined,
+      () => base.now,
     ),
   )
   mismatchedChallenge.tick({ ...base.baseMeasurement, playableBufferSec: 30 })
@@ -2589,6 +2633,10 @@ async function checkSafePlaybackConsidersUpToThreeFairChallengers9(t: TestContex
       ),
       () => base.now,
       new BrowserScheduler(),
+      undefined,
+      undefined,
+      undefined,
+      () => base.now,
     ),
   )
   missingHostChallenge.tick({ ...base.baseMeasurement, playableBufferSec: 30 })
@@ -2678,6 +2726,8 @@ async function checkDisabledModeNeitherProbesNorInitiatesScriptRouteCoreRecovery
       () => true,
       () => base.stallNow,
       new BrowserScheduler(),
+      undefined,
+      () => base.stallNow,
     ),
   )
   base.stallNow = base.now + 14_000
@@ -2746,6 +2796,10 @@ async function checkDisabledModeNeitherProbesNorInitiatesScriptRouteCoreRecovery
       new RangeProbeAdapter(challengeFetch as typeof fetch, () => base.now),
       () => base.now,
       new BrowserScheduler(),
+      undefined,
+      undefined,
+      undefined,
+      () => base.now,
     ),
   )
   const baseMeasurement = {
@@ -2899,3 +2953,4 @@ import '../regressions/v226-http-status.ts'
 import '../regressions/v226-monitor.ts'
 import '../regressions/v226-recovery.ts'
 import '../regressions/v226-interleavings.ts'
+import '../regressions/v229-playback-facts.ts'

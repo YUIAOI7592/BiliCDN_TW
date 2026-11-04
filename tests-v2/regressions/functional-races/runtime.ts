@@ -204,6 +204,7 @@ for (const late of [false, true]) {
       },
       f.clock.now,
       createRuntimeIds(),
+      f.clock.now,
     )
     f.scope.defineGlobal('location', {
       configurable: true,

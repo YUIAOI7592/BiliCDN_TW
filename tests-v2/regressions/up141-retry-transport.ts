@@ -350,6 +350,7 @@ async function xhrFixture(
       f.clock.now,
       createRuntimeIds((bytes) => bytes.fill(42)),
       f.routes,
+      f.clock.now,
     ),
   )
   transport.install()

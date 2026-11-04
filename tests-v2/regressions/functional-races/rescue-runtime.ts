@@ -126,6 +126,8 @@ function fixture(t: TestContext, rate: number) {
     f.environment.isActuallyVisible,
     f.clock.now,
     f.clock,
+    undefined,
+    f.clock.now,
   )
   const runtime = new RuntimeController(
     settings,

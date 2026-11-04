@@ -247,6 +247,7 @@ export class PlayurlController implements PlayurlControllerPort {
             height: item.height,
             codec: item.codec,
             bandwidth: item.bandwidth,
+            ...(item.frameRate !== undefined ? { frameRate: item.frameRate } : {}),
             urls,
             source,
           })
@@ -276,6 +277,7 @@ export class PlayurlController implements PlayurlControllerPort {
           height: item.height,
           codec: item.codec,
           bandwidth,
+          ...(item.frameRate !== undefined ? { frameRate: item.frameRate } : {}),
           urls,
           source,
           refreshTrustedSources: source === 'trusted-api' && item.progressive === true,

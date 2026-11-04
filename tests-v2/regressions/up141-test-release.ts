@@ -145,6 +145,7 @@ async function validation(t: TestContext, storage = new FakeStorage()) {
       f.vault,
       () => 0.5,
       f.settings,
+      f.clock.now,
     ),
   )
   const status: MeasurementStatus = {

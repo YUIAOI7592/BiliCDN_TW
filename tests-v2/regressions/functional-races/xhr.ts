@@ -226,7 +226,7 @@ async function fixture(
   const restrictions = scope.own(new RestrictionStore(storage, now)),
     evidence = scope.own(new EvidenceStore(storage, now))
   const routes = new RouteCoordinator(
-    { now },
+    { now, monotonicNow: now },
     session,
     settings,
     restrictions,
@@ -265,6 +265,7 @@ async function fixture(
           undefined,
           () => 0,
           settings,
+          now,
         ),
       )
     : (startup ?? {
@@ -273,7 +274,17 @@ async function fixture(
         noteUnpreflighted: () => undefined,
       })
   const transport = scope.own(
-    new TransportAdapter(session, settings, routes, playurl, measurement, now, createRuntimeIds()),
+    new TransportAdapter(
+      session,
+      settings,
+      routes,
+      playurl,
+      measurement,
+      now,
+      createRuntimeIds(),
+      undefined,
+      now,
+    ),
   )
   transport.install()
   scope.defer(() => wait.resolve())

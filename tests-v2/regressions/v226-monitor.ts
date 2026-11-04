@@ -61,6 +61,8 @@ function monitor(t: Parameters<typeof rescuePlayerFixture>[0], candidate = true)
       () => true,
       f.clock.now,
       f.clock,
+      undefined,
+      f.clock.now,
     ),
   )
   const tick = (ms = 1000) => {

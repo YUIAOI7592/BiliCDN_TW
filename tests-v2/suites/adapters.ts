@@ -600,6 +600,8 @@ async function createRuntimeSessionContext1(t: TestContext) {
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   transport.install()
@@ -659,6 +661,8 @@ async function createMediaResponseContext2(t: TestContext) {
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   transport.install()
@@ -724,6 +728,8 @@ async function createRewrittenRequestPreservesRequestHeaders3Context3(t: TestCon
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   transport.install()
@@ -860,6 +866,8 @@ async function createBlacklistedNonGETFetchNeverReachesNativeFetch4Context4(t: T
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   transport.install()
@@ -1841,6 +1849,8 @@ async function createXHRDoesNotSendDefaultUnavailablePCDNMarkedMedia15Context14(
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   realAdapter.install()
@@ -2289,6 +2299,8 @@ async function checkInitMethodOverrideIsPreservedForNativeFetch5(t: TestContext)
       base.measurementStub,
       () => base.now,
       createRuntimeIds(),
+      undefined,
+      () => base.now,
     ),
   )
   partialTransport.install()
@@ -3316,6 +3328,8 @@ test(
         base.measurementStub,
         () => base.now,
         createRuntimeIds(),
+        undefined,
+        () => base.now,
       ),
     )
     adapter.install()

@@ -2,6 +2,7 @@ import { stallProgressTransition, type StallProgress } from '../domain/playback-
 import type { VideoSnapshot, SchedulerPort, PlayerControlSnapshot } from './ports.ts'
 import type { EarlyRetryPort } from './early-retry-contracts.ts'
 import { controlPlaybackDemand } from '../domain/playback-demand.ts'
+import { readMonotonic } from '../domain/measurement-time.ts'
 import type { PlaybackDemand } from '../domain/model.ts'
 import {
   comparePlaybackControls,
@@ -77,6 +78,7 @@ export class PlayerMonitor implements MonitorPort {
     private readonly now: () => number,
     private readonly scheduler: SchedulerPort,
     private readonly earlyRetry?: EarlyRetryPort,
+    private readonly monotonicNow: () => number | null = () => null,
   ) {
     this.#snapshot = Object.freeze({
       video: player.snapshot(),
@@ -134,6 +136,8 @@ export class PlayerMonitor implements MonitorPort {
   tick(): void {
     const playbackOwner = this.session.get(),
       playbackRequest = this.routes.latestRequested('video')
+    const sampledTick = readMonotonic(this.monotonicNow),
+      playbackRevision = this.player.playbackRevision?.() ?? 0
     const video = this.player.snapshot(),
       controls = this.player.controls(),
       now = this.now(),
@@ -204,6 +208,10 @@ export class PlayerMonitor implements MonitorPort {
       demand,
     })
     const routingPlayback =
+      sampledTick !== null &&
+      playbackRevision === (this.player.playbackRevision?.() ?? 0) &&
+      Number.isFinite(video.playbackRate) &&
+      video.playbackRate > 0 &&
       !disabled &&
       visible &&
       video.available &&
@@ -227,6 +235,10 @@ export class PlayerMonitor implements MonitorPort {
               ? { selectionRevision: playbackRequest.selectionRevision }
               : {}),
             sampledAt: now,
+            sampledTick,
+            playbackRate: video.playbackRate,
+            bufferAheadSec: video.bufferAheadSec,
+            playbackRevision,
             playableBufferSec: video.playableBufferSec,
           }
         : null

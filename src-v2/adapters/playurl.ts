@@ -1,4 +1,5 @@
 import type { PlayurlItem } from '../application/playurl-contracts.ts'
+import { declaredFrameRate } from '../domain/frame-rate.ts'
 import type { PlayurlControllerPort } from '../application/playurl-contracts.ts'
 import type {
   PlayurlFormat,
@@ -99,6 +100,7 @@ export class PlayurlAdapter {
       format?: PlayurlFormat,
     ): PlayurlItem => {
       const primary = progressive ? text(item.url) : baseUrl(item)
+      const frameRate = declaredFrameRate(item.frame_rate ?? item.frameRate)
       return {
         token: item,
         key: progressive
@@ -107,6 +109,7 @@ export class PlayurlAdapter {
         height: finite(item.height),
         codec: progressive ? (format ?? 'other') : codecName(item),
         bandwidth: finite(item.bandwidth),
+        ...(frameRate !== undefined ? { frameRate } : {}),
         primary,
         urls: [primary, ...backupUrls(item)].filter(Boolean),
         ...(progressive ? { progressive: true } : {}),

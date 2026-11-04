@@ -28,6 +28,12 @@ export class RuntimeController implements RuntimePort {
   ) {}
   install(): void {
     if (this.#stops.length) return
+    if (this.player.observePlaybackInvalidation)
+      this.#stops.push(
+        this.player.observePlaybackInvalidation((revision) =>
+          this.routes.observePlaybackFacts(null, revision),
+        ),
+      )
     this.#stops.push(
       this.content.subscribeEpoch(() => this.reset()),
       this.routes.subscribe((event) => this.handleRouteEvent(event)),

@@ -58,7 +58,7 @@ export interface MonitorRoutes extends Pick<
 }
 export interface MonitorPlayerPort extends Pick<
   PlayerPort,
-  'controls' | 'snapshot' | 'syncManifest'
+  'controls' | 'snapshot' | 'syncManifest' | 'playbackRevision'
 > {}
 export interface MonitorSessionPort extends Pick<SessionPort, 'get'> {}
 export interface MonitorVaultPort extends Pick<SignedRouteVaultPort, 'groupSummary'> {}

@@ -123,6 +123,26 @@ export class PlayerControlObserver {
   #ownedReload: OwnedReload | null = null
   #nativePosition: NativePosition | null = null
   #controlRevision = 0
+  #playbackRevision = 0
+  readonly #playbackListeners = new Set<(revision: number) => void>()
+  playbackRevision(): number {
+    return this.#playbackRevision
+  }
+  observePlaybackInvalidation(listener: (revision: number) => void): () => void {
+    this.#playbackListeners.add(listener)
+    this.controls()
+    return () => this.#playbackListeners.delete(listener)
+  }
+  #invalidatePlayback(): void {
+    const revision = ++this.#playbackRevision
+    for (const listener of this.#playbackListeners) {
+      try {
+        listener(revision)
+      } catch {
+        /* a readonly consumer cannot break player observation */
+      }
+    }
+  }
   #goal: PendingGoal | null = null
   #positionRestore: RestoreRecord | null = null
   #rateRestore: RestoreRecord | null = null
@@ -423,10 +443,13 @@ export class PlayerControlObserver {
   }
 
   #observeControls(video: HTMLVideoElement | null, player: UnknownRecord | null): void {
+    this.#invalidatePlayback()
     this.#clearControls()
     this.#controlVideo = video
     this.#seekOwner = player
     if (!video) return
+    for (const type of ['pause', 'play', 'ratechange', 'seeking', 'emptied', 'ended'])
+      this.#listen(video, type, () => this.#invalidatePlayback())
     const region = video.closest('.bpx-player-container, .bilibili-player') ?? video.parentElement
     const inRegion = (event: Event): boolean =>
       event.target instanceof Node && !!region?.contains(event.target)
@@ -841,6 +864,7 @@ export class PlayerControlObserver {
     const valid = keepGoal && !!goal && !goal.completed && this.#goalCurrent(goal)
     if (revision !== this.#userRevision) return false
     this.#userRevision++
+    this.#invalidatePlayback()
     this.#clearOwnedReload()
     if (valid && this.#goal === goal) goal.userRevision = this.#userRevision
     else this.#goal = null
@@ -1169,6 +1193,7 @@ export class PlayerControlObserver {
     value: number,
     canCommit: () => boolean,
   ): { channel: RestoreReadback['channel']; result: unknown } {
+    this.#invalidatePlayback()
     this.#clearKeyboardSeek()
     this.#clearKeyboardPlayback()
     const nativeCurrent = this.#nativeWriteGuard(canCommit)
@@ -1203,6 +1228,7 @@ export class PlayerControlObserver {
     canCommit: () => boolean,
     fallbackOnThrow = true,
   ): { channel: RestoreReadback['channel']; result: unknown } {
+    this.#invalidatePlayback()
     this.#clearKeyboardPlayback()
     const nativeCurrent = this.#nativeWriteGuard(canCommit)
     const player = this.sources.player(),
@@ -1433,6 +1459,7 @@ export class PlayerControlObserver {
   }
 
   play(canCommit: () => boolean = () => true): unknown {
+    this.#invalidatePlayback()
     this.#clearKeyboardPlayback()
     const current = this.#nativeWriteGuard(canCommit)
     const player = this.sources.player(),
@@ -1443,6 +1470,7 @@ export class PlayerControlObserver {
   }
 
   reset(): void {
+    this.#invalidatePlayback()
     this.#clearControls()
     this.#awaitReloadCore = false
     this.#coreReloadRevision = 0

@@ -9,6 +9,7 @@ import {
 import type { EvidenceSample, MediaKind, RouteEvidence } from '../domain/model.ts'
 import type { StoragePort } from '../platform/storage-port.ts'
 import type { EvidencePort } from './evidence-ports.ts'
+import { timingBasis } from '../domain/measurement-time.ts'
 
 export const EVIDENCE_KEY = 'bilicdn.v2.routeEvidence'
 const MAX_VIDEO_HOSTS = 64
@@ -70,6 +71,9 @@ const parsePayload = (value: unknown, now: number): EvidencePayload => {
             ? (sample.failureKind as EvidenceSample['failureKind'])
             : null,
           ...(timing ?? {}),
+          ...(timingBasis(sample.timingBasis)
+            ? { timingBasis: timingBasis(sample.timingBasis)! }
+            : {}),
         }),
       )
     }

@@ -1,3 +1,5 @@
+import type { TimingBasis } from './measurement-model.ts'
+export type { TimingBasis, FrozenMeasurement } from './measurement-model.ts'
 export type Brand<T, Name extends string> = T & { readonly __brand: Name }
 
 export type GenerationId = Brand<number, 'GenerationId'>
@@ -157,6 +159,8 @@ export type RouteDecision =
     }
 
 export interface TransportObservation {
+  readonly timingBasis?: TimingBasis
+  readonly speedEligible?: boolean
   readonly retryVerifiedBytes?: number
   readonly terminationReason?: 'early-retry-timeout'
   readonly request?: RequestContext
@@ -181,6 +185,7 @@ export interface TransportObservation {
 }
 
 export interface EvidenceSample {
+  readonly timingBasis?: TimingBasis
   readonly requestId: string
   readonly at: number
   readonly source: EvidenceSource
@@ -208,6 +213,7 @@ export interface PlaybackDemand {
 }
 
 export interface CompletionBudget {
+  readonly ageMs?: number
   readonly requestBytes: number | null
   readonly playableBufferSec: number | null
   readonly sampledAt: number
@@ -228,6 +234,10 @@ export interface RoutePlaybackFacts extends Pick<
   | 'selectionRevision'
   | 'routePolicyRevision'
 > {
+  readonly sampledTick: number
+  readonly playbackRate: number
+  readonly bufferAheadSec: number
+  readonly playbackRevision: number
   readonly sampledAt: number
   readonly playableBufferSec: number
 }
@@ -270,6 +280,7 @@ export type DomainEvent =
 
 export interface Clock {
   now(): number
+  monotonicNow?(): number | null
 }
 
 export const generationId = (value: number): GenerationId => value as GenerationId

@@ -185,6 +185,8 @@ async function createPlayurlSummaryScenario(t: TestContext) {
       measurement,
       () => block1.now,
       createRuntimeIds(),
+      undefined,
+      () => block1.now,
     ),
   )
   transport.install()
@@ -217,6 +219,8 @@ async function createARejectedResultObjectCannotTruthilyPassStrictFetch2Context1
       measurement,
       () => block1.now,
       createRuntimeIds(),
+      undefined,
+      () => block1.now,
     ),
   )
   transport.install()
@@ -261,6 +265,8 @@ async function createRejectedBodyContext2(t: TestContext) {
       measurement,
       () => block1.now,
       createRuntimeIds(),
+      undefined,
+      () => block1.now,
     ),
   )
   transport.install()
@@ -319,6 +325,8 @@ async function createXHRResponseTextAcceptsATypedAcceptedResult4Context3(t: Test
       measurement,
       () => block1.now,
       createRuntimeIds(),
+      undefined,
+      () => block1.now,
     ),
   )
   transport.install()
@@ -389,6 +397,8 @@ async function createNativeEnabledXHRPreservesRejectedUpstreamPayload5Context4(t
       measurement,
       () => block1.now,
       createRuntimeIds(),
+      undefined,
+      () => block1.now,
     ),
   )
   transport.install()
@@ -472,6 +482,8 @@ function createSummaryTransportResources(t: TestContext) {
       measurement,
       () => block1.now,
       createRuntimeIds(),
+      undefined,
+      () => block1.now,
     ),
   )
   transport.install()

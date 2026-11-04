@@ -78,6 +78,7 @@ function fixture(t: TestContext) {
     },
     f.clock.now,
     createRuntimeIds(),
+    f.clock.now,
   )
   const fetchHook = new FetchHookAdapter(context).install()
   const xhrHook = new XhrHookAdapter(context).install()

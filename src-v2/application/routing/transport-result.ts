@@ -82,12 +82,15 @@ export function classifyTransportResult(observation: TransportObservation): Tran
       host: observation.finalHost,
       kind: observation.kind,
       sample: {
+        ...(observation.timingBasis ? { timingBasis: observation.timingBasis } : {}),
         requestId,
         at: observation.completedAt,
         source: 'transport',
         outcome: 'success',
         throughputMbps:
-          observation.bytes >= 64 * 1024 && observation.elapsedMs > 0
+          observation.speedEligible !== false &&
+          observation.bytes >= 64 * 1024 &&
+          observation.elapsedMs > 0
             ? (observation.bytes * 8) / observation.elapsedMs / 1000
             : null,
         ttfbMs: observation.ttfbMs,

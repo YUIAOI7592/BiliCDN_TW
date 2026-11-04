@@ -8,6 +8,7 @@ export class FakeClock implements SchedulerPort {
   #microtasks: (() => void)[] = []
   #tasks = new Map<number, { at: number; every: number; run: () => void }>()
   now = (): number => this.#now
+  monotonicNow = (): number => this.#now
   get pendingCount(): number {
     return this.#tasks.size + this.#microtasks.length
   }

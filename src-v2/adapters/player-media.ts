@@ -1,4 +1,5 @@
 import type { VideoSnapshot } from '../application/ports.ts'
+import { declaredFrameRate } from '../domain/frame-rate.ts'
 import { isRecord, safeCall, safeNumber } from './player-sdk.ts'
 import type { UnknownRecord } from './player-sdk.ts'
 
@@ -132,6 +133,7 @@ export function clonePlayerManifest(mpd: UnknownRecord): UnknownRecord | null {
         )
         .slice(0, 4)
       if (!urls.length) return []
+      const frameRate = declaredFrameRate(item.frame_rate ?? item.frameRate)
       return [
         {
           base_url: urls[0],
@@ -142,6 +144,7 @@ export function clonePlayerManifest(mpd: UnknownRecord): UnknownRecord | null {
           width: item.width,
           height: item.height,
           bandwidth: item.bandwidth ?? item.bitrate,
+          ...(frameRate !== undefined ? { frame_rate: frameRate } : {}),
         },
       ]
     })

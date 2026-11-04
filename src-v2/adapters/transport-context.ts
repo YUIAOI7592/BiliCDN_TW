@@ -20,7 +20,10 @@ import {
   type RouteType,
   type TransportObservation,
   type GenerationId,
+  type FrozenMeasurement,
+  type TimingBasis,
 } from '../domain/model.ts'
+import { measuredPayload, measuredTiming, readMonotonic } from '../domain/measurement-time.ts'
 import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
 import type { AppliedRouteDecision } from '../application/route-contracts.ts'
 import type {
@@ -122,7 +125,24 @@ export class TransportContext {
     readonly measurement: StartupGate,
     readonly now: () => number,
     private readonly ids: RuntimeIdPort,
+    private readonly monotonicNow: () => number | null = () => null,
   ) {}
+  tick(): number | null {
+    return readMonotonic(this.monotonicNow)
+  }
+  freezeMeasurement(
+    start: number | null,
+    response: number | null,
+    basis: TimingBasis,
+  ): FrozenMeasurement {
+    const end = this.tick(),
+      completedAt = this.now()
+    return Object.freeze({
+      ...measuredTiming(start, response, end),
+      completedAt,
+      timingBasis: basis,
+    })
+  }
   count(
     stage:
       | 'enteredFetch'
@@ -282,8 +302,22 @@ export class TransportContext {
     bytes: number,
     outcome: 'success' | 'abort' | 'failure',
     failureKind?: FailureKind,
+    measurement?: FrozenMeasurement,
   ): Promise<void> {
     const finalUrl = response?.url || ''
+    if (measurement && response) {
+      let valid = false
+      try {
+        valid = measuredPayload(
+          bytes,
+          response.headers.get('Content-Length'),
+          response.headers.get('Content-Range'),
+        )
+      } catch {
+        /* no comparable size proof */
+      }
+      measurement = { ...measurement, speedEligible: measurement.speedEligible && valid }
+    }
     await this.routes.observe(
       this.observation(
         request,
@@ -298,6 +332,7 @@ export class TransportContext {
         outcome,
         failureKind,
         !!response && !response.redirected && sameUrl(finalUrl, targetUrl),
+        measurement,
       ),
     )
   }
@@ -315,8 +350,9 @@ export class TransportContext {
     outcome: 'success' | 'abort' | 'failure',
     failureKind?: FailureKind,
     responseUrlMatchesRequest = false,
+    measurement?: FrozenMeasurement,
   ): TransportObservation {
-    const completedAt = this.now(),
+    const completedAt = measurement?.completedAt ?? this.now(),
       kind = request.kind
     const routeType: RouteType = applied.decision.routeType
     return {
@@ -334,8 +370,11 @@ export class TransportContext {
       streamKey: applied.streamKey,
       status,
       bytes,
-      ttfbMs: responseAt > 0 ? responseAt - startedAt : null,
-      elapsedMs: Math.max(1, completedAt - startedAt),
+      ttfbMs: measurement ? measurement.ttfbMs : responseAt > 0 ? responseAt - startedAt : null,
+      elapsedMs: measurement ? measurement.elapsedMs : Math.max(0, completedAt - startedAt),
+      ...(measurement
+        ? { timingBasis: measurement.timingBasis, speedEligible: measurement.speedEligible }
+        : {}),
       completedAt,
       outcome,
       ...(failureKind ? { failureKind } : {}),

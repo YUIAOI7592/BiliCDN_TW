@@ -1,5 +1,6 @@
 import type { PlayurlTransformResult, PlayurlRequestContext } from '../domain/playurl-model.ts'
 import type { ProbeRange } from '../domain/probe-model.ts'
+import type { TimingBasis } from '../domain/measurement-model.ts'
 
 export interface VideoSnapshot {
   readonly available: boolean
@@ -35,6 +36,8 @@ export interface PlayerControlSnapshot {
 }
 
 export interface PlayerPort {
+  readonly observePlaybackInvalidation?: (listener: (revision: number) => void) => () => void
+  readonly playbackRevision?: () => number
   controls(): PlayerControlSnapshot
   readonly ownedReload?: (revision: number) => boolean
   observePlayIntent(listener: () => void): () => void
@@ -86,6 +89,10 @@ export interface RangeProbeInput {
   readonly completionReason: string
 }
 export interface RangeProbeResult {
+  readonly receivedBytes?: number
+  readonly payloadValid?: boolean
+  readonly speedEligible?: boolean
+  readonly timingBasis?: TimingBasis
   readonly range?: ProbeRange | null
   readonly bytes: number
   readonly elapsedMs: number

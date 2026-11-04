@@ -3,6 +3,9 @@ import type { RequestContext, GenerationId, EpochId } from '../domain/model.ts'
 import type { AppliedRouteDecision } from '../application/route-contracts.ts'
 
 export interface XhrMeta {
+  startedTick: number | null
+  responseTick: number | null
+  measurement: import('../domain/model.ts').FrozenMeasurement | null
   method: string
   originalUrl: string
   managedBilibili: boolean

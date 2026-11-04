@@ -207,6 +207,8 @@ function fixture(t: TestContext, options: { prime?: boolean; firstMediaAt?: numb
       () => true,
       clock.now,
       clock,
+      undefined,
+      clock.now,
     ),
   )
   monitor.tick()

@@ -251,6 +251,8 @@ async function createDispatchStorageAnddispatchSettingsContext1(t: TestContext) 
       dispatchMeasurement,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   dispatchTransport.install()
@@ -356,6 +358,8 @@ async function createMeasurementStubContext2(t: TestContext) {
       dispatchMeasurement,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   dispatchTransport.install()
@@ -501,6 +505,8 @@ async function createEmittedBackupTransportContext3(t: TestContext) {
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   void emittedBackupVault.contextForUrl(emittedBackupRoot)?.representation
@@ -569,6 +575,8 @@ async function createCappedThirdPartyBackupContext4(t: TestContext) {
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   void emittedBackupVault.contextForUrl(emittedBackupRoot)?.representation
@@ -1014,6 +1022,8 @@ async function createCatalogOnlyXHRParameterPlayurlIsBlockedBeforeNativeSendBeca
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   apiFailureTransport.install()
@@ -1072,6 +1082,8 @@ async function createPartialPlayurlXHRFixtureIsStillLoading10Context9(t: TestCon
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   apiFailureTransport.install()
@@ -1214,6 +1226,8 @@ async function createNativeOnXHRParameterPlayurlRetainsWebsiteDispatch11Paramete
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   throwingTransport.install()
@@ -1293,6 +1307,8 @@ async function createDisabledScriptPreservesMalformedWebsiteFetchPlayurlResponse
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   throwingTransport.install()
@@ -1359,6 +1375,8 @@ async function createDisabledApiXhrContext12(t: TestContext) {
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   throwingTransport.install()
@@ -1417,6 +1435,8 @@ async function createCatalogOnlyFetchBlocksKnownBStationPCDNSuffixParameterBefor
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   oversizedTransport.install()
@@ -1476,6 +1496,8 @@ async function createUnattributedThirdPartyM4sFetchRemainsWebsiteOwned15Context1
       measurementStub,
       () => now,
       createRuntimeIds(),
+      undefined,
+      () => now,
     ),
   )
   oversizedTransport.install()
@@ -2057,6 +2079,8 @@ async function checkPartialPlayurlXHRFixtureIsStillLoading10(t: TestContext): Pr
       base.measurementStub,
       () => base.now,
       createRuntimeIds(),
+      undefined,
+      () => base.now,
     ),
   )
   throwingTransport.install()
@@ -2546,6 +2570,8 @@ async function checkNativeOnPlayurlFixtureAcceptsPrimaryPlusFourBackups3(
       base.measurementStub,
       () => base.now,
       createRuntimeIds(),
+      undefined,
+      () => base.now,
     ),
   )
   emittedBackupTransport.install()
@@ -2778,6 +2804,8 @@ for (const transportKind of ['fetch', 'xhr'] as const) {
             },
             f.clock.now,
             createRuntimeIds(),
+            undefined,
+            f.clock.now,
           ),
         )
         transport.install()

@@ -4,6 +4,7 @@ import type { TestContext } from 'node:test'
 import { RangeProbeAdapter } from '../../src-v2/adapters/range-probe.ts'
 import { BrowserNavigation } from '../../src-v2/adapters/navigation.ts'
 import { testScope } from '../support/scope.ts'
+import '../regressions/v229-measurement.ts'
 
 for (const [label, pathname, before, after, equal] of [
   ['tracking and ordering', '/video/test/', '?p=1&cid=7&vd_source=a', '?spm_id_from=b&cid=7', true],

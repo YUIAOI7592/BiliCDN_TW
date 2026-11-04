@@ -104,6 +104,8 @@ function playbackFixture(t: TestContext) {
       () => true,
       clock.now,
       clock,
+      undefined,
+      clock.now,
     ),
   )
   return {
@@ -401,6 +403,12 @@ test('player convergence: bindings, SDK reads, exact results and reverse cleanup
   scope.defer(() => observer.reset())
   observer.controls()
   assert.deepEqual(log, [
+    'add:video:pause',
+    'add:video:play',
+    'add:video:ratechange',
+    'add:video:seeking',
+    'add:video:emptied',
+    'add:video:ended',
     'add:document:pointerdown',
     'add:document:pointerup',
     'add:document:pointercancel',
@@ -445,6 +453,12 @@ test('player convergence: bindings, SDK reads, exact results and reverse cleanup
     'remove:document:pointercancel',
     'remove:document:pointerup',
     'remove:document:pointerdown',
+    'remove:video:ended',
+    'remove:video:emptied',
+    'remove:video:seeking',
+    'remove:video:ratechange',
+    'remove:video:play',
+    'remove:video:pause',
   ])
   assert.equal(seek, originalSeek)
   assert.equal(reload, originalReload)
