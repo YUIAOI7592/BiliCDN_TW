@@ -73,6 +73,12 @@ Codex Security 掃描 68d06a33-f3d7-45a7-8eb9-abfe49533867，固定提交範圍�
 
 前版 v2.2.9 五份原件按原始位元組封存並核對 SHA-256；本版腳本 488579 bytes；SHA-256：`361b8d22a3b62b72fc671e3c440b4b089e8d3cc96a77050baf011b2b7aa5812f`。五項本機產物按鎖定工具封裝，公開 main／標籤／唯一腳本附件／latest 核對於發布後追加，發行快照不回寫。不改使用者 Native 預設、既有布林值、schema 2、四鍵或三頁操作。沒有新增診斷、原線對照、掉幀收集、剪貼簿、探測或恢復額度。
 
+## 公開交付核對
+
+2026-11-05 公開核對：main／v2.2.10 發行提交為 18b9cc90bd31e4f6ee4467a80f52b4562a30c7aa；[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.10) 只有 BiliCDN_TW.user.js。版本附件與公開 latest 皆為 2.2.10／488,579 bytes，SHA-256：`361b8d22a3b62b72fc671e3c440b4b089e8d3cc96a77050baf011b2b7aa5812f`，與本機五項封裝一致。後續文件提交只前進 main，不移動 v2.2.10 標籤。
+
+v2.2.9 已先完成獨立發布核對，原發行提交 7ddae23、485,880 bytes／ed2e5cd6f9959b49ed588118d52c7d8c5b3229e50d82ebc86442fadda75df6bf；五份原件與完整報告保留於前版封存。兩批離線交付完成；安裝版、原生計時與實際效益仍未驗證。
+
 ## 歷史驗證導覽
 
 [v2.2.9 完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v229-完整正文保存2026-11-05)，含原先已批准驗收及限制；[研究與執行計畫](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md)。目前工作只見 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md)。
