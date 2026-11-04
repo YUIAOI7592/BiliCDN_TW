@@ -5,6 +5,7 @@ import type {
   MediaKind,
   RouteEvidence,
   RouteState,
+  TimingBasis,
 } from './model.ts'
 
 export const EVIDENCE_TTL_MS = 24 * 60 * 60 * 1000
@@ -98,7 +99,11 @@ export function conservativeEwma(values: readonly number[]): number | null {
   }
   return speed(Math.min(fast, slow, values.at(-1)!) * (values.length === 1 ? 0.7 : 1))
 }
-export const evidenceMetrics = (evidence: RouteEvidence | null, now: number): EvidenceMetrics => {
+export const evidenceMetrics = (
+  evidence: RouteEvidence | null,
+  now: number,
+  basis?: TimingBasis,
+): EvidenceMetrics => {
   const unique = new Map<string, EvidenceSample>()
   for (const sample of pruneSamples(evidence?.samples ?? [], now))
     unique.set(sample.requestId || `${sample.at}:${sample.source}:${sample.outcome}`, sample)
@@ -115,6 +120,7 @@ export const evidenceMetrics = (evidence: RouteEvidence | null, now: number): Ev
     .filter((value): value is number => value !== null && Number.isFinite(value) && value >= 0)
     .sort((a, b) => a - b)
   const payload = fresh.flatMap((sample) => {
+    if (!basis || sample.timingBasis !== basis) return []
     const timing = sampleTiming(sample.bytes, sample.elapsedMs, sample.ttfbMs)
     if (!timing || sample.ttfbMs === null) return []
     const rate = speed((timing.bytes * 8) / (timing.elapsedMs - sample.ttfbMs) / 1000)

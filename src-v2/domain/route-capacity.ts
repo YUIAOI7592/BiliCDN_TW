@@ -87,9 +87,10 @@ export function orderCapacityRows<T extends ComparedCapacity>(
         : null,
   }))
   const complete = new Map<number, boolean>()
+  const cohort = (row: T): number => (adequateCapacity(row) ? 0 : capacityPriority(row))
   for (const item of predicted) {
     if (item.row.eligible === false) continue
-    const tier = capacityPriority(item.row)
+    const tier = cohort(item.row)
     complete.set(tier, (complete.get(tier) ?? true) && item.time !== null)
   }
   const decorated = predicted.map(({ row, time }) =>
@@ -97,7 +98,7 @@ export function orderCapacityRows<T extends ComparedCapacity>(
       ...row,
       estimatedCompletionMs: time,
       comparisonMode:
-        row.eligible !== false && complete.get(capacityPriority(row)) === true
+        row.eligible !== false && complete.get(cohort(row)) === true
           ? ('completion' as const)
           : ('throughput' as const),
       predictionReason:
@@ -105,7 +106,7 @@ export function orderCapacityRows<T extends ComparedCapacity>(
           ? reason
           : time === null
             ? ('unknown-body-rate' as const)
-            : complete.get(capacityPriority(row))
+            : complete.get(cohort(row))
               ? ('available' as const)
               : ('cohort-incomplete' as const),
     }),
@@ -114,15 +115,13 @@ export function orderCapacityRows<T extends ComparedCapacity>(
     decorated.sort((a, b) => {
       if (a.eligible !== false && b.eligible === false) return -1
       if (a.eligible === false && b.eligible !== false) return 1
-      const tier = capacityPriority(a) - capacityPriority(b)
+      const merged = adequateCapacity(a) && adequateCapacity(b) && complete.get(0) === true
+      const tier = merged ? 0 : capacityPriority(a) - capacityPriority(b)
       if (tier) return tier
       if (a.comparisonMode === 'completion' && b.comparisonMode === 'completion') {
-        const deadline = budget!.playableBufferSec! * 1000
-        const fitsA = a.estimatedCompletionMs! <= deadline,
-          fitsB = b.estimatedCompletionMs! <= deadline
         return (
-          Number(fitsB) - Number(fitsA) ||
           a.estimatedCompletionMs! - b.estimatedCompletionMs! ||
+          capacityPriority(a) - capacityPriority(b) ||
           a.candidateOrder - b.candidateOrder
         )
       }

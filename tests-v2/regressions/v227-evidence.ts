@@ -24,7 +24,7 @@ const evidence = (samples: readonly EvidenceSample[]): RouteEvidence => ({
   updatedAt: now,
 })
 const metric = (row: RouteEvidence, key: string, at = now): unknown =>
-  Reflect.get(evidenceMetrics(row, at), key)
+  Reflect.get(evidenceMetrics(row, at, 'xhr-terminal'), key)
 
 test('V227 evidence: dual EWMA permits a slow bounded recovery instead of retaining the minimum', () => {
   const row = evidence([sample('first', 100, now - 1), sample('second', 200)])
@@ -91,7 +91,12 @@ test('V227 evidence: equal timestamps have a stable request-id ordering', () => 
   )
 })
 test('V227 evidence: valid body timing is separate from end-to-end throughput', () => {
-  const s = Object.assign(sample('body', 8), { bytes: 1_000_000, elapsedMs: 1000, ttfbMs: 500 })
+  const s = Object.assign(sample('body', 8), {
+    bytes: 1_000_000,
+    elapsedMs: 1000,
+    ttfbMs: 500,
+    timingBasis: 'xhr-terminal' as const,
+  })
   const row = evidence([s])
   assert.equal(evidenceMetrics(row, now).safeThroughputMbps, 5.6)
   assert.equal(metric(row, 'safePayloadMbps'), 11.2)

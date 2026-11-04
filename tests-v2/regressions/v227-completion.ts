@@ -4,7 +4,7 @@ import { rankRoutes, type RankRoutesInput } from '../../src-v2/domain/routing.ts
 import { emptyEvidence } from '../../src-v2/domain/evidence.ts'
 import { evaluateEarlyRetry } from '../../src-v2/domain/early-retry.ts'
 import type { RouteEvidence } from '../../src-v2/domain/model.ts'
-import { closedRangeLength } from '../../src-v2/domain/route-completion.ts'
+import { closedRangeLength, predictCompletionMs } from '../../src-v2/domain/route-completion.ts'
 
 const now = 2_000_000_000_000
 function facts(incomplete = false, age = 0, requestBytes: number | null = 65536): RankRoutesInput {
@@ -21,6 +21,7 @@ function facts(incomplete = false, age = 0, requestBytes: number | null = 65536)
           throughputMbps: index === 0 ? 10 : 20,
           ttfbMs: index === 0 ? 10 : 300,
           failureKind: null,
+          timingBasis: 'xhr-terminal' as const,
           ...(incomplete && index === 0
             ? {}
             : { bytes: 1_000_000, elapsedMs: index === 0 ? 800 : 400 }),
@@ -49,7 +50,12 @@ function facts(incomplete = false, age = 0, requestBytes: number | null = 65536)
     current: null,
     boundary: 'startup' as const,
     failedHost: null,
-    completionBudget: { requestBytes, playableBufferSec: 1, sampledAt: now - age },
+    completionBudget: {
+      requestBytes,
+      playableBufferSec: 1,
+      sampledAt: now - age,
+      timingBasis: 'xhr-terminal',
+    },
   }
 }
 test('V227 completion: a small request prefers fast response over greater body capacity', () => {
@@ -95,9 +101,13 @@ test('V227 completion: early retry adds TTFB only to body transfer time', () => 
       ...{ safePayloadMbps: 16 },
     },
   })
-  assert.equal(result.eligible, true)
-  assert.equal(result.alternativeSec, 3)
-  assert.equal(result.remainingSec, 90)
+  assert.equal(predictCompletionMs(1_000_000, 16, 2500), 3000, 'TTFB is included exactly once')
+  assert.equal(
+    result.eligible,
+    false,
+    'three-second delivery plus two-second handoff exceeds 80% of four seconds',
+  )
+  assert.equal(result.reason, 'alternative-late')
 })
 for (const [value, length] of [
   ['bytes=0-0', 1],

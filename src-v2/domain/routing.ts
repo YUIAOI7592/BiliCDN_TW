@@ -79,7 +79,11 @@ export const assessDemandRatio = (
 export const rankRoutes = (input: RankRoutesInput, now: number): readonly RouteRankingEntry[] => {
   const entries = input.candidates.map((candidate, candidateOrder) => {
     const reasons = restrictionReasons(candidate, input, now)
-    const metrics = evidenceMetrics(input.evidenceFor(candidate.host, candidate.kind), now)
+    const metrics = evidenceMetrics(
+      input.evidenceFor(candidate.host, candidate.kind),
+      now,
+      input.completionBudget?.timingBasis,
+    )
     return Object.freeze({
       candidate,
       candidateOrder,

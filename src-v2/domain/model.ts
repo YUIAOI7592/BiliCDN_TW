@@ -20,6 +20,7 @@ export interface PlayurlOutputSummary {
 }
 
 export interface RequestContext {
+  readonly timingBasis?: TimingBasis
   /** Assigned by the route owner at dispatch preparation; absent before dispatch. */
   readonly expectedBytes?: number | null
   readonly dispatchSequence?: number
@@ -213,6 +214,7 @@ export interface PlaybackDemand {
 }
 
 export interface CompletionBudget {
+  readonly timingBasis?: TimingBasis
   readonly ageMs?: number
   readonly requestBytes: number | null
   readonly playableBufferSec: number | null

@@ -11,6 +11,7 @@ export interface EarlyRetryCapacity {
 }
 
 export interface EarlyRetryFacts {
+  readonly ageMs?: number
   readonly now: number
   readonly startedAt: number
   readonly currentHost: string
@@ -54,7 +55,9 @@ export function evaluateEarlyRetry(input: EarlyRetryFacts): EarlyRetryAssessment
     requiredMbps <= 0
   )
     return reject('invalid-input')
-  if (now - startedAt < 1500) return reject('request-young')
+  const age = input.ageMs ?? now - startedAt
+  if (!Number.isFinite(age) || age < 0) return reject('invalid-input')
+  if (age < 1500) return reject('request-young')
   if (loadedBytes / totalBytes >= 0.8) return reject('mostly-complete')
   if (playableBufferSec <= 0 || playableBufferSec >= 6) return reject('buffer-window')
   const rate = input.recentBytesPerSec
@@ -84,7 +87,8 @@ export function evaluateEarlyRetry(input: EarlyRetryFacts): EarlyRetryAssessment
     alternative.ttfbMs,
   )
   if (alternativeMs === null) return reject('alternative-timing')
-  const alternativeSec = alternativeMs / 1000
+  // The existing two-second permit is a conservative handoff budget, not measured latency.
+  const alternativeSec = 2 + alternativeMs / 1000
   if (!Number.isFinite(alternativeSec) || alternativeSec > 0.8 * playableBufferSec)
     return reject('alternative-late')
   // A zero-byte observation is an actual no-progress interval, not an unknown sample.
