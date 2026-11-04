@@ -595,3 +595,4 @@ test(
     await assert.rejects(inspectImportPurity([effect]), /Import side effect: Date.now/)
   },
 )
+import './regressions/v230-evaluation.ts'

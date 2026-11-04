@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import { posix, resolve } from 'node:path'
 import { build } from 'esbuild'
 import { evaluateMeasurement } from './measurement-evaluation.mts'
+import { evaluateDeadlines } from './deadline-evaluation.mts'
 
 export const baselineRevision = '048b0f94e6bb98922ee5bcc0d1b30003cf3b12a9'
 const now = 2_000_000_000_000,
@@ -134,6 +135,7 @@ function facts(scenario: Scenario) {
             failureKind: null,
             bytes: 1000000,
             elapsedMs: 8000 / rate,
+            timingBasis: 'xhr-terminal',
           })),
   }))
   return {
@@ -166,6 +168,7 @@ function facts(scenario: Scenario) {
       requestBytes: scenario.bytes === undefined ? 1000000 : scenario.bytes,
       playableBufferSec: scenario.buffer ?? 1,
       sampledAt: now,
+      timingBasis: 'xhr-terminal',
     },
   }
 }
@@ -239,9 +242,11 @@ if (
 )
   console.log(
     JSON.stringify(
-      process.argv.includes('--measurement')
-        ? await evaluateMeasurement()
-        : await evaluateRouting(),
+      process.argv.includes('--deadlines')
+        ? await evaluateDeadlines()
+        : process.argv.includes('--measurement')
+          ? await evaluateMeasurement()
+          : await evaluateRouting(),
       null,
       2,
     ),

@@ -107,7 +107,7 @@ export async function evaluateMeasurement() {
       observationStatus: 'completed',
       representation: { bandwidth: 4_000_000, declaredFps: 60000 / 1001 },
       interpretation:
-        'Fixed representation and held-out delivery; FPS does not multiply already encoded bitrate.',
+        'Arithmetic identity using the supplied duration, not held-out prediction; FPS does not multiply already encoded bitrate.',
     }
   })
   return {
