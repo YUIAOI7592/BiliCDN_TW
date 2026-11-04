@@ -79,6 +79,46 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md",
+      "kind": "record",
+      "topics": ["measurement-routing-optimization"],
+      "versions": ["v2.2.9", "v2.2.10"],
+      "date": "2026-11-05",
+      "requiredAnchors": ["批次與政策", "資料字典", "評估與保存"]
+    },
+    {
+      "path": "archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md",
+      "kind": "record",
+      "topics": [
+        "auto-cdn-mathematical-model"
+      ],
+      "versions": [
+        "v2.2.8"
+      ],
+      "date": "2026-11-04",
+      "requiredAnchors": [
+        "研究結論",
+        "時間狀態與可觀測性",
+        "自動畫質與選路的閉環",
+        "決策條件與推導",
+        "數值核算與反例",
+        "後續驗證與研究順序",
+        "同輪補充自動畫質與預留裕度",
+        "模型參數驗證與保留資料結果",
+        "實際參數與資源大小",
+        "完成時間的保留資料檢查",
+        "校準結論與下一步",
+        "auto-結構識別與換站收益界限",
+        "可重建的穩態決策公式",
+        "換站收益的可識別界限",
+        "編碼能力與分段期限的離線驗證",
+        "以真實-vbr-分段建立期限遞迴",
+        "未知參數的集合與結案界線",
+        "完成時間的逐筆時序核對",
+        "點預測誤差與保守性必須分開"
+      ]
+    },
+    {
       "path": "archive/retired/docs/ROUTING_ALGORITHM_RESEARCH_v2.2.6_2026-11-03.md",
       "kind": "record",
       "topics": [
@@ -3496,6 +3536,20 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 3136,
+      "sha256": "bdd467bfb7337906d15422301b18466ab6e36d3e351fd3ba5654d6eb5b8b5c31"
+    },
+    {
+      "path": "archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 50716,
+      "sha256": "5ba347424a4e6d961d783de5e9d67d145c7975bbffd9a0397748e887886fa236"
+    },
     {
       "path": "archive/retired/docs/ROUTING_ALGORITHM_RESEARCH_v2.2.6_2026-11-03.md",
       "mode": "prefix",
