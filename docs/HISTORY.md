@@ -10,6 +10,8 @@
 
 ## 版本
 
+- [v2.2.10 熔斷研究：機制、並行升級、同步反例與 B0–B4 對照（2026-11-05）](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#研究結論)
+
 - [v2.2.10 完整驗證](TEST_REPORT.md#驗收結論)；[安裝輪次與原始限制](#v2210-安裝驗收與工具限制2026-11-05)；[v2.2.9 完整保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v229-完整正文保存2026-11-05)。
 
 - [v2.2.9 完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v229-完整正文保存2026-11-05)；[v2.2.8 完整保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)。
@@ -117,6 +119,17 @@
 | v1.6.0 | [當版發行快照](../archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md)、[v1.6.0 公開安全摘要](../archive/retired/docs/SECURITY_REVIEW_v1.6.0.md) |
 
 ## 議題
+
+### 熔斷研究
+
+- [2026-11-06：觀察與熔斷聯動、提交順序及舊資料相容](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-觀察與熔斷的整合狀態機)
+- [2026-11-06：觀察期啟動、中斷、結算與工程邊界](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-觀察期的啟動中斷與結算邊界)
+- [2026-11-06：無失敗觀察期的候選完整狀態機與取捨](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-無失敗觀察期的候選狀態機)
+- [2026-11-06：成功降級速度、反覆故障及完成順序的假設情境](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-降級速度的假設情境推演)
+- [後續政策討論、全部寫入入口與狀態轉移](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#後續討論與熔斷狀態機逐入口盤點)
+- [現況狀態、六個問題及受控反例](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#六個問題的反例與覆蓋)
+- [候選取捨、相容影響與後續順序](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#後續優化順序與相容影響)
+- [來源隔離協定限制與未啟動的自然觀察](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#來源隔離與安裝版執行情況)
 
 ### v2.2.10 安裝驗收與工具限制（2026-11-05）
 
@@ -310,12 +323,18 @@
 
 ## 日期
 
+- [2026-11-05：v2.2.10 熔斷研究與證據邊界](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md)
+
 - [2026-10-29：原作者 v1.4.1 保存與來源比較](../archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md)
 
 - [2026-10-25：IR36 工具修正與第二輪安裝版驗證](../archive/retired/docs/INSTALLED_RESTORE_IR36_R2_2026-10-25.md)
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
+| 2026-11-06 | [熔斷降級的假設情境與恢復政策界線](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-降級速度的假設情境推演) |
+| 2026-11-06 | [無失敗觀察期的候選狀態機、未決窗口及參數限制](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-無失敗觀察期的候選狀態機) |
+| 2026-11-06 | [觀察期無成功、閒置、長請求與共享提交的細部推演](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-觀察期的啟動中斷與結算邊界) |
+| 2026-11-06 | [觀察與熔斷整合的十五條事件軌跡](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-觀察與熔斷的整合狀態機) |
 | 2026-11-05 | [v2.2.10 各輪安裝驗收與工具限制](#v2210-安裝驗收與工具限制2026-11-05)、[兩版量測與選路優化](../archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md)、[驗收後文件核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#v2210-驗收通過狀態一致性核對2026-11-05) |
 | 2026-11-04 | [Auto 與選路數學模型、條件推導及數值反例](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md) |
 | 2026-11-03 | [選路演算法研究與開源方案比較](../archive/retired/docs/ROUTING_ALGORITHM_RESEARCH_v2.2.6_2026-11-03.md) |

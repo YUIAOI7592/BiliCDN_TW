@@ -79,6 +79,28 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md",
+      "kind": "record",
+      "topics": [
+        "circuit-breaker-research"
+      ],
+      "versions": [
+        "v2.2.10"
+      ],
+      "date": "2026-11-05",
+      "requiredAnchors": [
+        "研究結論",
+        "現況流程與狀態模型",
+        "候選政策與模型結果",
+        "來源隔離與安裝版執行情況",
+        "後續優化順序與相容影響",
+        "2026-11-06-降級速度的假設情境推演",
+        "2026-11-06-無失敗觀察期的候選狀態機",
+        "2026-11-06-觀察期的啟動中斷與結算邊界",
+        "2026-11-06-觀察與熔斷的整合狀態機"
+      ]
+    },
+    {
       "path": "archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md",
       "kind": "record",
       "topics": [
@@ -3597,6 +3619,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 25460,
+      "sha256": "c23ba45c0911f7b3a355ccb8638d5b10f37f09652224511cdec463567cddfbda"
+    },
     {
       "path": "archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md",
       "mode": "prefix",
