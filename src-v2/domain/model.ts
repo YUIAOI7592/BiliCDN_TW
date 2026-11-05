@@ -198,7 +198,18 @@ export interface EvidenceSample {
   readonly elapsedMs?: number
 }
 
+export interface CircuitControlStamp {
+  readonly generation: string
+  readonly recordId: string
+  readonly revision: number
+}
+export interface CircuitRecordControl {
+  readonly recordId: string
+  readonly revision: number
+  readonly lastCommitId: string | null
+}
 export interface RouteEvidence {
+  readonly circuitControl?: CircuitRecordControl
   readonly host: string
   readonly kind: MediaKind
   readonly samples: readonly EvidenceSample[]

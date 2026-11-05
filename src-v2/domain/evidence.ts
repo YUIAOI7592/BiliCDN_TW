@@ -7,18 +7,14 @@ import type {
   RouteState,
   TimingBasis,
 } from './model.ts'
+import { failedCircuit } from './circuit-policy.ts'
+export { CIRCUIT_BACKOFF_MS } from './circuit-policy.ts'
 
 export const EVIDENCE_TTL_MS = 24 * 60 * 60 * 1000
 export const FRESH_EVIDENCE_MS = 5 * 60 * 1000
 export const MAX_EVIDENCE_SAMPLES = 12
 export const MIN_THROUGHPUT_BYTES = 64 * 1024
 const PROVEN_FAILURE_QUIET_MS = 30 * 60 * 1000
-export const CIRCUIT_BACKOFF_MS = Object.freeze([
-  10 * 60_000,
-  30 * 60_000,
-  2 * 3_600_000,
-  6 * 3_600_000,
-])
 const positive = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value > 0
 const speed = (value: number | null): number | null =>
@@ -75,17 +71,12 @@ export const addEvidenceSample = (
   const samples = pruneSamples([...evidence.samples, Object.freeze({ ...sample })], now)
   const failed = sample.outcome === 'failure',
     verified = hasSpeed(sample)
-  const level = failed
-    ? Math.min(CIRCUIT_BACKOFF_MS.length, evidence.circuitLevel + 1)
-    : verified
-      ? Math.max(0, evidence.circuitLevel - 1)
-      : evidence.circuitLevel
-  const circuitUntil = failed
-    ? now + (CIRCUIT_BACKOFF_MS[level - 1] ?? CIRCUIT_BACKOFF_MS.at(-1) ?? 0)
-    : verified && evidence.circuitUntil <= now
-      ? 0
-      : evidence.circuitUntil
-  return Object.freeze({ ...evidence, samples, circuitLevel: level, circuitUntil, updatedAt: now })
+  // Success establishes reachability/capacity, never a time-based recovery proof.
+  const circuit = failed ? failedCircuit(evidence.circuitLevel, evidence.circuitUntil, now) : {
+    circuitLevel: evidence.circuitLevel,
+    circuitUntil: verified && evidence.circuitUntil <= now ? 0 : evidence.circuitUntil,
+  }
+  return Object.freeze({ ...evidence, samples, ...circuit, updatedAt: now })
 }
 
 /** Sample-count half lives; idle time is freshness, never a fabricated rate. */
