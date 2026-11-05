@@ -10,9 +10,11 @@
 
 ## 版本
 
+- [v2.2.11 熔斷觀察執行紀錄](../archive/retired/docs/CIRCUIT_OBSERVATION_v2.2.11_2026-11-06.md)；[完整驗證](TEST_REPORT.md#驗收結論)。
+
 - [v2.2.10 熔斷研究：機制、並行升級、同步反例與 B0–B4 對照（2026-11-05）](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#研究結論)
 
-- [v2.2.10 完整驗證](TEST_REPORT.md#驗收結論)；[安裝輪次與原始限制](#v2210-安裝驗收與工具限制2026-11-05)；[v2.2.9 完整保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v229-完整正文保存2026-11-05)。
+- [v2.2.10 完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-完整正文保存2026-11-06)；[安裝輪次與原始限制](#v2210-安裝驗收與工具限制2026-11-05)；[v2.2.9 完整保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v229-完整正文保存2026-11-05)。
 
 - [v2.2.9 完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v229-完整正文保存2026-11-05)；[v2.2.8 完整保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)。
 
@@ -133,10 +135,10 @@
 
 ### v2.2.10 安裝驗收與工具限制（2026-11-05）
 
-- [R1 有限驗收與原始 INVALID／未執行](TEST_REPORT.md#v2210-r1-安裝版驗收2026-11-05)
-- [R2 Terra 當次能力結果及受阻稽核](TEST_REPORT.md#v2210-r2-補驗能力確認2026-11-05)
-- [R3 主代理播放、三頁及設定操作](TEST_REPORT.md#v2210-r3-補驗2026-11-05)
-- [R4 正數 timeout 配對、方法偏差及清理](TEST_REPORT.md#v2210-r4-正數-timeout-專項2026-11-05)
+- [R1 有限驗收與原始 INVALID／未執行](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-r1-安裝版驗收2026-11-05)
+- [R2 Terra 當次能力結果及受阻稽核](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-r2-補驗能力確認2026-11-05)
+- [R3 主代理播放、三頁及設定操作](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-r3-補驗2026-11-05)
+- [R4 正數 timeout 配對、方法偏差及清理](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-r4-正數-timeout-專項2026-11-05)
 - [本次文件狀態一致性核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#v2210-驗收通過狀態一致性核對2026-11-05)
 
 ### 選路演算法研究
