@@ -727,3 +727,30 @@ test('UP141-RETRY synthetic timeout and load cannot become native retry handoff 
   retry.complete()
   assert.equal(f.transport.state(permit), 'succeeded')
 })
+
+for (const mode of ['synthetic-terminal', 'synthetic-bytes', 'native'] as const) {
+  test(`V2211 ordinary XHR ${mode} has independent native circuit proof with positive timeout`, async (t) => {
+    const f = await xhrFixture(t)
+    await f.settings.update({ earlyRetryEnabled: false })
+    const observations: TransportObservation[] = [],
+      observe = f.routes.observe.bind(f.routes)
+    f.routes.observe = async (observation) => {
+      observations.push(observation)
+      await observe(observation)
+    }
+    const xhr = f.open()
+    xhr.timeout = 19000
+    xhr.progress(1)
+    f.clock.advance(100)
+    if (mode === 'native') xhr.complete()
+    else {
+      xhr.progress(400000, false)
+      if (mode === 'synthetic-terminal') xhr.dispatchEvent(new Event('load'))
+      else xhr.complete(1)
+    }
+    assert.equal(observations.length, 1)
+    assert.equal(observations[0]!.circuitVerified, mode === 'native')
+    assert.equal(xhr.timeout, 19000)
+    assert.equal(xhr.nativeSends, 1)
+  })
+}

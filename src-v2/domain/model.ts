@@ -160,6 +160,8 @@ export type RouteDecision =
     }
 
 export interface TransportObservation {
+  /** XHR native terminal and trusted byte evidence; independent of early-retry eligibility. */
+  readonly circuitVerified?: boolean
   readonly timingBasis?: TimingBasis
   readonly speedEligible?: boolean
   readonly retryVerifiedBytes?: number

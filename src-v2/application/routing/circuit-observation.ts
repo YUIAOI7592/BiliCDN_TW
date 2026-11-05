@@ -274,7 +274,7 @@ export class CircuitObservations {
     return (
       this.#playbackActive &&
       this.#active.get(state.kind) === state &&
-      state.period === proof.period &&
+      state.period?.id === proof.period.id &&
       state.epoch === proof.epoch &&
       !state.blocked &&
       state.certain &&
@@ -282,7 +282,7 @@ export class CircuitObservations {
       shared.until <= wall &&
       shared.synchronized &&
       sameCircuitStamp(proof.period.stamp, shared.stamp) &&
-      circuitWindowReady(proof.period, tick, this.#pending(state))
+      circuitWindowReady(state.period, tick, this.#pending(state))
     )
   }
   submitted(
@@ -297,7 +297,7 @@ export class CircuitObservations {
     if (
       this.#active.get(state.kind) !== state ||
       state.epoch !== proof.epoch ||
-      state.period !== proof.period
+      state.period?.id !== proof.period.id
     )
       return
     this.#close(state, result.status === 'committed' ? 'downgrade-committed' : result.status)

@@ -194,6 +194,27 @@ test('V2211 routing: a cancellation unblocks existing evidence without adding su
   })
   assert.equal(f.evidence.get(f.host, 'video')!.circuitLevel, 0)
 })
+
+test('V2211 routing: a valid same-window success during submission preserves the pending proposal', async (t) => {
+  const f = await createObservation(t)
+  await finish(f, start(f, f.url, 1))
+  const began = f.clock.now()
+  for (let i = 1; i <= 4; i++) await succeedAt(f, began + i * 60000, i + 1)
+  const offered = deferred<void>(),
+    hold = deferred<void>(),
+    down = f.evidence.tryDowngrade.bind(f.evidence)
+  f.evidence.tryDowngrade = async (...args) => {
+    offered.resolve()
+    await hold.promise
+    return await down(...args)
+  }
+  const pending = succeedAt(f, began + 300000, 6)
+  await offered.promise
+  await succeedAt(f, began + 301000, 7)
+  hold.resolve()
+  await pending
+  assert.equal(f.evidence.get(f.host, 'video')!.circuitLevel, 0)
+})
 test('V2211 routing: repeated short responses cannot extend the success lease', async (t) => {
   const f = await createObservation(t)
   await finish(f, start(f, f.url, 1))
@@ -223,6 +244,36 @@ test('V2211 routing: repeated short responses cannot extend the success lease', 
   }
   assert.equal(f.evidence.get(f.host, 'video')!.circuitLevel, 1)
   assert.equal(f.routes.snapshot().circuits.find((r) => r.kind === 'video')!.phase, 'awaiting')
+})
+test('V2211 routing: unverified XHR delivery can learn but cannot earn recovery credit', async (t) => {
+  const f = await createObservation(t)
+  for (let i = 0; i < 7; i++) {
+    f.clock.advance(60000)
+    const work = start(f, f.url, i + 1),
+      r = work.request
+    await f.routes.observe({
+      request: r,
+      generation: r.generation,
+      epoch: r.epoch,
+      representation: r.representation,
+      kind: r.kind,
+      decisionId: r.decisionId,
+      routeType: r.routeType,
+      originalHost: r.originalHost,
+      targetHost: r.targetHost,
+      finalHost: r.targetHost,
+      status: 206,
+      bytes: 131072,
+      elapsedMs: 100,
+      ttfbMs: 10,
+      completedAt: f.clock.now(),
+      outcome: 'success',
+      streamKey: work.applied.streamKey,
+      circuitVerified: false,
+    })
+  }
+  assert.equal(f.evidence.get(f.host, 'video')!.circuitLevel, 1)
+  assert.ok(f.evidence.get(f.host, 'video')!.samples.some((row) => row.outcome === 'success'))
 })
 test('V2211 routing: clock loss discards observation without creating a host failure', async (t) => {
   const f = await createObservation(t)

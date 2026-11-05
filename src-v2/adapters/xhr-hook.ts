@@ -341,6 +341,7 @@ export class XhrHookAdapter {
           )
           self.routes.requestStarted(meta.request)
         }
+        let nativeBytes = 0
         const noteHeaders = (): void => {
           if (xhrMeta.get(this) === meta && meta.responseTick === null && this.readyState >= 2) {
             meta.responseAt = self.now()
@@ -351,6 +352,8 @@ export class XhrHookAdapter {
           if (xhrMeta.get(this) !== meta) return
           noteHeaders()
           meta.bytes = Math.max(meta.bytes, Number(event.loaded) || 0)
+          if (event.isTrusted && Number.isSafeInteger(event.loaded) && event.loaded >= 0)
+            nativeBytes = Math.max(nativeBytes, event.loaded)
           retry.progress(this, meta, event)
         }
         const settle = (
@@ -402,6 +405,8 @@ export class XhrHookAdapter {
             }
           })()
           void self.routes.observe({
+            circuitVerified:
+              event?.isTrusted === true && nativeBytes === meta.bytes && nativeBytes >= 65536,
             ...self.observation(
               meta.request,
               meta.applied,

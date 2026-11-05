@@ -1977,6 +1977,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       if (
         result.type === 'success' &&
         confirmed &&
+        observation.circuitVerified !== false &&
         result.sample.bytes !== undefined &&
         result.sample.bytes >= 65536 &&
         result.sample.elapsedMs !== undefined &&
