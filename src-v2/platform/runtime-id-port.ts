@@ -1,3 +1,3 @@
 export interface RuntimeIdPort {
-  next(kind: 'request' | 'startup' | 'challenge'): string
+  next(kind: 'request' | 'startup' | 'challenge' | 'circuit' | 'observation' | 'commit'): string
 }

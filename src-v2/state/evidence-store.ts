@@ -3,24 +3,38 @@ import {
   emptyEvidence,
   EVIDENCE_TTL_MS,
   MAX_EVIDENCE_SAMPLES,
-  pruneSamples,
   sampleTiming,
 } from '../domain/evidence.ts'
-import type { EvidenceSample, MediaKind, RouteEvidence } from '../domain/model.ts'
+import type { EvidenceSample, MediaKind, RouteEvidence, CircuitControlStamp, CircuitRecordControl } from '../domain/model.ts'
 import type { StoragePort } from '../platform/storage-port.ts'
-import type { EvidencePort } from './evidence-ports.ts'
+import type { EvidencePort, EvidenceCommitResult } from './evidence-ports.ts'
 import { timingBasis } from '../domain/measurement-time.ts'
+import { sameCircuitStamp } from '../domain/circuit-policy.ts'
+import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
 
 export const EVIDENCE_KEY = 'bilicdn.v2.routeEvidence'
 const MAX_VIDEO_HOSTS = 64
 const MAX_AUDIO_HOSTS = 32
 
 interface EvidencePayload {
+  readonly controlProtocol?: 1
+  readonly generation?: string
+  readonly dataRevision?: number
   readonly schema: 2
   readonly records: Readonly<Record<string, RouteEvidence>>
   readonly updatedAt: number
 }
 const recordKey = (host: string, kind: MediaKind): string => `${kind}:${host}`
+const identifier = (value: unknown): value is string =>
+  typeof value === 'string' && /^[a-zA-Z0-9:_-]{1,64}$/.test(value)
+const revision = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0
+const parseControl = (value: unknown): CircuitRecordControl | undefined => {
+  if (!value || typeof value !== 'object') return undefined
+  const row = value as Record<string, unknown>
+  if (!identifier(row.recordId) || !revision(row.revision) ||
+      (row.lastCommitId !== null && !identifier(row.lastCommitId))) return undefined
+  return Object.freeze({ recordId: row.recordId, revision: row.revision, lastCommitId: row.lastCommitId })
+}
 
 const safeHost = (value: unknown): string | null => {
   const host = String(value ?? '')
@@ -78,87 +92,98 @@ const parsePayload = (value: unknown, now: number): EvidencePayload => {
       )
     }
     const updatedAt = Math.min(now + 5 * 60_000, Math.max(0, Number(row.updatedAt) || 0))
-    const expiredHistory = !samples.length && now - updatedAt > EVIDENCE_TTL_MS
+    const control = parseControl(row.circuitControl)
     const evidence: RouteEvidence = Object.freeze({
       host,
       kind,
       samples: Object.freeze(samples),
-      circuitLevel: expiredHistory ? 0 : Math.max(0, Math.min(4, Number(row.circuitLevel) || 0)),
-      circuitUntil: expiredHistory
-        ? 0
-        : Math.min(now + 7 * 24 * 60 * 60_000, Math.max(0, Number(row.circuitUntil) || 0)),
+      circuitLevel: Math.max(0, Math.min(4, Math.ceil(Number(row.circuitLevel) || 0))),
+      circuitUntil: Math.min(now + 7 * 24 * 60 * 60_000, Math.max(0, Number(row.circuitUntil) || 0)),
+      ...(control ? { circuitControl: control } : {}),
       updatedAt,
     })
     records[recordKey(host, kind)] = evidence
   }
   return Object.freeze({
+    ...(raw.controlProtocol === 1 && identifier(raw.generation) && revision(raw.dataRevision)
+      ? { controlProtocol: 1 as const, generation: raw.generation, dataRevision: raw.dataRevision } : {}),
     schema: 2,
     records: Object.freeze(records),
     updatedAt: Number(raw.updatedAt) || now,
   })
 }
 
-const mergeEvidence = (
-  a: RouteEvidence | undefined,
-  b: RouteEvidence | undefined,
-  now: number,
-): RouteEvidence | null => {
-  if (!a && !b) return null
-  const base = a ?? b
-  if (!base) return null
-  const samples = new Map<string, EvidenceSample>()
-  for (const sample of [...(a?.samples ?? []), ...(b?.samples ?? [])]) {
-    const key = sample.requestId || `${sample.at}:${sample.source}:${sample.outcome}`
-    const old = samples.get(key)
-    if (!old || sample.at >= old.at) samples.set(key, sample)
-  }
-  const newer = !a ? b : !b ? a : b.updatedAt >= a.updatedAt ? b : a
-  return Object.freeze({
-    host: base.host,
-    kind: base.kind,
-    samples: pruneSamples(
-      [...samples.values()].sort((x, y) => x.at - y.at),
-      now,
-    ),
-    circuitLevel: newer?.circuitLevel ?? 0,
-    circuitUntil: newer?.circuitUntil ?? 0,
-    updatedAt: Math.max(a?.updatedAt ?? 0, b?.updatedAt ?? 0),
-  })
-}
-
-const mergePayload = (a: EvidencePayload, b: EvidencePayload, now: number): EvidencePayload => {
-  const records: Record<string, RouteEvidence> = {}
-  for (const key of new Set([...Object.keys(a.records), ...Object.keys(b.records)])) {
-    const merged = mergeEvidence(a.records[key], b.records[key], now)
-    if (merged) records[key] = merged
-  }
-  for (const kind of ['video', 'audio'] as const) {
-    const max = kind === 'video' ? MAX_VIDEO_HOSTS : MAX_AUDIO_HOSTS
-    const rows = Object.entries(records)
-      .filter(([, row]) => row.kind === kind)
-      .sort((x, y) => y[1].updatedAt - x[1].updatedAt)
-    for (const [key] of rows.slice(max)) delete records[key]
-  }
-  return Object.freeze({
-    schema: 2,
-    records: Object.freeze(records),
-    updatedAt: Math.max(a.updatedAt, b.updatedAt, now),
-  })
-}
-
 export class EvidenceStore implements EvidencePort {
   #payload: EvidencePayload
   #stopRemote: () => void
+  #readable = true
+  #writes = new WeakMap<object, Promise<EvidenceCommitResult>>()
+  #downgrades = new WeakSet<CircuitControlStamp>()
   constructor(
     private readonly storage: StoragePort,
     private readonly now: () => number,
+    private readonly ids?: RuntimeIdPort,
   ) {
-    this.#payload = parsePayload(storage.get<unknown>(EVIDENCE_KEY, null), now())
-    this.#stopRemote = storage.listen<unknown>(EVIDENCE_KEY, (value, remote) => {
+    this.#payload = parsePayload(null, now())
+    this.#refresh()
+    this.#stopRemote = storage.listen<unknown>(EVIDENCE_KEY, (_value, remote) => {
       if (!remote) return
-      const incoming = parsePayload(value, this.now())
-      if (incoming.updatedAt >= this.#payload.updatedAt) this.#payload = incoming
+      // Notification order and wall timestamps cannot establish commit order.
+      this.#refresh()
     })
+  }
+
+  #refresh(): EvidencePayload | null {
+    try {
+      const result = this.storage.readResult?.<unknown>(EVIDENCE_KEY, null)
+      if (result && !result.ok) { this.#readable = false; return null }
+      const raw = result?.ok ? result.value : this.storage.get<unknown>(EVIDENCE_KEY, null)
+      this.#payload = parsePayload(raw, this.now())
+      this.#readable = true
+      return this.#payload
+    } catch { this.#readable = false; return null }
+  }
+
+  control(host: string, kind: MediaKind) {
+    const row = this.get(host, kind), control = row?.circuitControl
+    return {
+      level: row?.circuitLevel ?? 0, until: row?.circuitUntil ?? 0,
+      stamp: this.#readable && this.#payload.generation && control ? Object.freeze({
+        generation: this.#payload.generation, recordId: control.recordId, revision: control.revision,
+      }) : null,
+      synchronized: this.#readable && !!this.ids && !!this.storage.readResult &&
+        this.storage.sharedLockAvailable?.() === true,
+    }
+  }
+
+  #result(status: EvidenceCommitResult['status'], host: string, kind: MediaKind): EvidenceCommitResult {
+    return { status, evidence: this.get(host, kind) ?? emptyEvidence(host, kind), stamp: this.control(host, kind).stamp }
+  }
+
+  #updatedPayload(latest: EvidencePayload, row: RouteEvidence | null): EvidencePayload {
+    const records = { ...latest.records }
+    if (row) records[recordKey(row.host, row.kind)] = row
+    for (const kind of ['video', 'audio'] as const) {
+      const rows = Object.entries(records).filter(([, value]) => value.kind === kind)
+        .sort((a, b) => b[1].updatedAt - a[1].updatedAt)
+      for (const [key] of rows.slice(kind === 'video' ? MAX_VIDEO_HOSTS : MAX_AUDIO_HOSTS)) delete records[key]
+    }
+    const rotate = !latest.generation || latest.dataRevision === Number.MAX_SAFE_INTEGER
+    return Object.freeze({ schema: 2, records: Object.freeze(records), updatedAt: this.now(),
+      ...(this.ids ? { controlProtocol: 1 as const,
+        generation: rotate ? this.ids.next('circuit') : latest.generation!,
+        dataRevision: rotate ? 1 : (latest.dataRevision ?? 0) + 1,
+      } : {}),
+    })
+  }
+
+  #save(payload: EvidencePayload): boolean {
+    let accepted = false
+    try { this.storage.set(EVIDENCE_KEY, payload); accepted = true } catch { /* reconcile ambiguous write */ }
+    const actual = this.#refresh()
+    if (!actual) return false
+    if (payload.generation) return actual.generation === payload.generation && actual.dataRevision === payload.dataRevision
+    return accepted
   }
 
   get(host: string, kind: MediaKind): RouteEvidence | null {
@@ -176,24 +201,71 @@ export class EvidenceStore implements EvidencePort {
     sample: EvidenceSample,
     valid: () => boolean = () => true,
   ): Promise<RouteEvidence> {
-    return await this.storage.withLock('routeEvidence', () => {
-      if (!valid()) return this.get(host, kind) ?? emptyEvidence(host, kind)
-      const now = this.now(),
-        latest = parsePayload(this.storage.get<unknown>(EVIDENCE_KEY, null), now)
-      const key = recordKey(host, kind),
-        prior = latest.records[key] ?? emptyEvidence(host, kind)
-      const updated = addEvidenceSample(prior, sample, now)
-      const incoming: EvidencePayload = { schema: 2, records: { [key]: updated }, updatedAt: now }
-      const committed = mergePayload(latest, incoming, now)
-      this.storage.set(EVIDENCE_KEY, committed)
-      this.#payload = committed
-      return this.#payload.records[key] ?? updated
-    })
+    const result = await this.commit(host, kind, sample, sample, valid)
+    if (result.status === 'unconfirmed') throw Error('Evidence write unconfirmed')
+    return result.evidence
+  }
+
+  async commit(host: string, kind: MediaKind, sample: EvidenceSample, receipt: object,
+    valid: () => boolean = () => true): Promise<EvidenceCommitResult> {
+    const previous = this.#writes.get(receipt)
+    if (previous) return { ...(await previous), status: 'duplicate' }
+    // Register before invoking storage: native callbacks/storage doubles can synchronously reenter.
+    const pending = Promise.resolve().then(() => this.storage.withLock('routeEvidence', () => {
+      const latest = this.#refresh()
+      if (!latest) return this.#result('unconfirmed', host, kind)
+      if (!valid()) return this.#result('invalid', host, kind)
+      const prior = latest.records[recordKey(host, kind)] ?? emptyEvidence(host, kind)
+      const deduped = { ...prior, samples: prior.samples.filter(row => row.requestId !== sample.requestId) }
+      let updated = addEvidenceSample(deduped, sample, this.now())
+      if (this.ids) {
+        const old = prior.circuitControl
+        const rotate = !old || old.revision === Number.MAX_SAFE_INTEGER
+        updated = { ...updated, circuitControl: Object.freeze({
+          recordId: rotate ? this.ids.next('circuit') : old.recordId,
+          revision: rotate ? 0 : old.revision + (sample.outcome === 'failure' ? 1 : 0),
+          lastCommitId: sample.outcome === 'failure' ? this.ids.next('commit') : old?.lastCommitId ?? null,
+        }) }
+      }
+      if (!valid()) return this.#result('invalid', host, kind)
+      return this.#result(this.#save(this.#updatedPayload(latest, updated)) ? 'committed' : 'unconfirmed', host, kind)
+    })).catch(() => this.#result('unconfirmed', host, kind))
+    this.#writes.set(receipt, pending)
+    return await pending
+  }
+
+  async tryDowngrade(host: string, kind: MediaKind, stamp: CircuitControlStamp,
+    commitId: string, valid: () => boolean): Promise<EvidenceCommitResult> {
+    if (this.#downgrades.has(stamp)) return this.#result('duplicate', host, kind)
+    this.#downgrades.add(stamp)
+    try {
+      return await this.storage.withLock('routeEvidence', (lock) => {
+        if (!lock?.exclusive || !this.ids || !this.storage.readResult)
+          return this.#result('no-common-lock', host, kind)
+        const latest = this.#refresh()
+        if (!latest) return this.#result('unconfirmed', host, kind)
+        if (!sameCircuitStamp(stamp, this.control(host, kind).stamp)) return this.#result('stale', host, kind)
+        const prior = this.get(host, kind)!
+        if (!valid() || prior.circuitLevel <= 0 || prior.circuitUntil > this.now() || !identifier(commitId))
+          return this.#result('invalid', host, kind)
+        const old = prior.circuitControl!, rotate = old.revision === Number.MAX_SAFE_INTEGER
+        const updated = { ...prior, circuitLevel: prior.circuitLevel - 1, circuitUntil: 0,
+          updatedAt: this.now(), circuitControl: {
+            recordId: rotate ? this.ids.next('circuit') : old.recordId,
+            revision: rotate ? 0 : old.revision + 1, lastCommitId: commitId,
+          } }
+        return this.#result(this.#save(this.#updatedPayload(latest, updated)) ? 'committed' : 'unconfirmed', host, kind)
+      })
+    } catch { this.#refresh(); return this.#result('unconfirmed', host, kind) }
   }
 
   async clear(): Promise<void> {
-    await this.storage.withLock('routeEvidence', () => this.storage.delete(EVIDENCE_KEY))
-    this.#payload = Object.freeze({ schema: 2, records: Object.freeze({}), updatedAt: this.now() })
+    await this.storage.withLock('routeEvidence', () => {
+      const empty: EvidencePayload = { schema: 2, records: Object.freeze({}), updatedAt: this.now(),
+        ...(this.ids ? { controlProtocol: 1 as const, generation: this.ids.next('circuit'), dataRevision: 0 } : {}),
+      }
+      if (!this.#save(empty)) throw Error('Evidence clear unconfirmed')
+    })
   }
   dispose(): void {
     this.#stopRemote()

@@ -1,5 +1,9 @@
-import type { StoragePort } from './storage-port.ts'
+import type { StoragePort, StorageLock, StorageRead } from './storage-port.ts'
 export class TampermonkeyStorage implements StoragePort {
+  readResult<T>(key: string, fallback: T): StorageRead<T> {
+    try { return { ok: true, value: GM_getValue<T>(key, fallback) } } catch { return { ok: false } }
+  }
+  sharedLockAvailable(): boolean { return typeof navigator.locks?.request === 'function' }
   get<T>(key: string, fallback: T): T {
     try {
       return GM_getValue<T>(key, fallback)
@@ -39,9 +43,9 @@ export class TampermonkeyStorage implements StoragePort {
     }
   }
 
-  async withLock<T>(name: string, task: () => Promise<T> | T): Promise<T> {
+  async withLock<T>(name: string, task: (lock?: StorageLock) => Promise<T> | T): Promise<T> {
     const manager = navigator.locks
-    if (!manager?.request) return await task()
-    return await manager.request(`bilicdn.v2.${name}`, async () => await task())
+    if (!manager?.request) return await task({ exclusive: false })
+    return await manager.request(`bilicdn.v2.${name}`, async () => await task({ exclusive: true }))
   }
 }
