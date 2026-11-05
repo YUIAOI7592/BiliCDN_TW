@@ -10,7 +10,7 @@
 
 ## 版本
 
-- [v2.2.10 完整驗證](TEST_REPORT.md#驗收結論)；[v2.2.9 完整保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v229-完整正文保存2026-11-05)。
+- [v2.2.10 完整驗證](TEST_REPORT.md#驗收結論)；[安裝輪次與原始限制](#v2210-安裝驗收與工具限制2026-11-05)；[v2.2.9 完整保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v229-完整正文保存2026-11-05)。
 
 - [v2.2.9 完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v229-完整正文保存2026-11-05)；[v2.2.8 完整保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)。
 
@@ -117,6 +117,14 @@
 | v1.6.0 | [當版發行快照](../archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md)、[v1.6.0 公開安全摘要](../archive/retired/docs/SECURITY_REVIEW_v1.6.0.md) |
 
 ## 議題
+
+### v2.2.10 安裝驗收與工具限制（2026-11-05）
+
+- [R1 有限驗收與原始 INVALID／未執行](TEST_REPORT.md#v2210-r1-安裝版驗收2026-11-05)
+- [R2 Terra 當次能力結果及受阻稽核](TEST_REPORT.md#v2210-r2-補驗能力確認2026-11-05)
+- [R3 主代理播放、三頁及設定操作](TEST_REPORT.md#v2210-r3-補驗2026-11-05)
+- [R4 正數 timeout 配對、方法偏差及清理](TEST_REPORT.md#v2210-r4-正數-timeout-專項2026-11-05)
+- [本次文件狀態一致性核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#v2210-驗收通過狀態一致性核對2026-11-05)
 
 ### 選路演算法研究
 
@@ -308,6 +316,7 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
+| 2026-11-05 | [v2.2.10 各輪安裝驗收與工具限制](#v2210-安裝驗收與工具限制2026-11-05)、[兩版量測與選路優化](../archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md)、[驗收後文件核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#v2210-驗收通過狀態一致性核對2026-11-05) |
 | 2026-11-04 | [Auto 與選路數學模型、條件推導及數值反例](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md) |
 | 2026-11-03 | [選路演算法研究與開源方案比較](../archive/retired/docs/ROUTING_ALGORITHM_RESEARCH_v2.2.6_2026-11-03.md) |
 | 2026-11-02 | [v2.2.6 35 項整合與離線驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#三十五項閉環對照)、[正式發布核對](../archive/retired/docs/TEST_REPORT_HISTORY.md#公開交付與安裝結案)、[R1 基本安裝驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v226-r1-安裝驗收2026-11-02)、[v2.2.5 起播調查原文](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md)、[R1 後文件狀態核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#v226-r1-文件狀態核對-2026-11-02) |

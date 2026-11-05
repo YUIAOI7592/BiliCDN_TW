@@ -3,7 +3,7 @@
 ## v2.2.10
 
 - 沿用 v2.2.9 的量測與時間修正，完成相同量測語意估計、足速候選跨組完成排序、所有合法模式首個足速早放，以及含兩秒交接預算的提前重試；保留網站 timeout、唯一控制所有者與既有資源上限。
-- 完整離線、安全與交付範圍見[報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)，安裝版未驗證。
+- 完整離線、安全、交付及發布後安裝結果見[報告驗收結論](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論)；發行快照保留封裝時狀態，各輪原始判定與方法限制由現行報告保存。
 
 ## v2.2.9
 

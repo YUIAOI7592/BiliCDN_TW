@@ -17,6 +17,7 @@
 | 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#發行規則) → [DEVELOPMENT 封裝與發行](DEVELOPMENT.md#封裝與發行)，並依 [發布文件更新順序](DEVELOPMENT.md#發布文件更新順序) 準備文件 |
 | 查舊版或舊議題 | [HISTORY](HISTORY.md) → 依版本、議題或日期進入原始報告 |
 | 核對自動驗證、發布與安裝結果 | [TEST_REPORT 驗收結論](TEST_REPORT.md#驗收結論) → 相應階段正文；目前工作與停止決策回到 [TODO](TODO.md) |
+| 核對 v2.2.10 安裝輪次 | [驗收結論](TEST_REPORT.md#驗收結論) → [R3 播放與 UI](TEST_REPORT.md#v2210-r3-補驗2026-11-05) → [R4 正數 timeout](TEST_REPORT.md#v2210-r4-正數-timeout-專項2026-11-05)；R1／R2 原判定由 [HISTORY](HISTORY.md#v2210-安裝驗收與工具限制2026-11-05) 進入 |
 | 核對文件是否落後或矛盾 | [TODO](TODO.md) → [TEST_REPORT](TEST_REPORT.md) → [狀態與矛盾核對](DEVELOPMENT.md#狀態與矛盾核對) → [HISTORY](HISTORY.md)；修正權威內容，其他入口維持導引 |
 
 修改時需要更新哪些文件，直接查 [文件更新對照表](DEVELOPMENT.md#文件更新對照表)。
