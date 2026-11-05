@@ -3633,6 +3633,30 @@
         "所有權與相容",
         "測試與交付"
       ]
+    },
+    {
+      "path": "Release/v2.2.11/CHANGELOG_v2.2.11.md",
+      "kind": "immutable",
+      "topics": [
+        "release-snapshot"
+      ],
+      "versions": [
+        "v2.2.11"
+      ],
+      "date": "2026-11-06",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.11/TEST_REPORT_v2.2.11.md",
+      "kind": "immutable",
+      "topics": [
+        "release-snapshot"
+      ],
+      "versions": [
+        "v2.2.11"
+      ],
+      "date": "2026-11-06",
+      "requiredAnchors": []
     }
   ],
   "protections": [
@@ -7618,6 +7642,41 @@
       "encoding": "lf",
       "bytes": 4443,
       "sha256": "c378bce9100be7ea04830038095dd1d32d227472a51ed00e0713d88bd3c92d9a"
+    },
+    {
+      "path": "Release/v2.2.11/BiliCDN_TW.user.js",
+      "encoding": "raw",
+      "bytes": 512504,
+      "sha256": "55133271b78b0265974b64fb713ff68b5d07c40d9df89bf67c988ed453d73acf",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.11/BUILD_MANIFEST_v2.2.11.json",
+      "encoding": "raw",
+      "bytes": 10188,
+      "sha256": "b57a47355eadc09b812dfd42d283724e4a1ced5974877a7f17423577877b9a96",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.11/CHANGELOG_v2.2.11.md",
+      "encoding": "raw",
+      "bytes": 67415,
+      "sha256": "2646b741f2df7cb1b060e9f66677a8ba5b29d990e3b93a95df604f61d8587401",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.11/SHA256SUMS_v2.2.11.txt",
+      "encoding": "raw",
+      "bytes": 419,
+      "sha256": "2e3d9d9577f7525af5650c6ebca03d0e0818893835cde1014980d715f491ef6e",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.11/TEST_REPORT_v2.2.11.md",
+      "encoding": "raw",
+      "bytes": 8338,
+      "sha256": "7403935bbaa694e80630a627764154f092a1c22e051110ee6054e32910285154",
+      "mode": "exact"
     }
   ],
   "privateEvidenceReferences": [

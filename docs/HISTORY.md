@@ -122,6 +122,12 @@
 
 ## 議題
 
+### 熔斷降級與穩定觀察（v2.2.11）
+
+- [正式政策、相容與契約映射](../archive/retired/docs/CIRCUIT_OBSERVATION_v2.2.11_2026-11-06.md#政策與狀態)
+- [審查後的提交交錯與原生 XHR 信用補強](../archive/retired/docs/CIRCUIT_OBSERVATION_v2.2.11_2026-11-06.md#安全後補強與最終對照)
+- [完整驗證與交付](TEST_REPORT.md#驗收結論)
+
 ### 熔斷研究
 
 - [2026-11-06：觀察與熔斷聯動、提交順序及舊資料相容](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-觀察與熔斷的整合狀態機)
@@ -333,6 +339,7 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
+| 2026-11-06 | [v2.2.11 熔斷降級與穩定觀察執行紀錄](../archive/retired/docs/CIRCUIT_OBSERVATION_v2.2.11_2026-11-06.md) |
 | 2026-11-06 | [熔斷降級的假設情境與恢復政策界線](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-降級速度的假設情境推演) |
 | 2026-11-06 | [無失敗觀察期的候選狀態機、未決窗口及參數限制](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-無失敗觀察期的候選狀態機) |
 | 2026-11-06 | [觀察期無成功、閒置、長請求與共享提交的細部推演](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-觀察期的啟動中斷與結算邊界) |
