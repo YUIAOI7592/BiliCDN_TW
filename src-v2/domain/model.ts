@@ -208,6 +208,16 @@ export interface CircuitRecordControl {
   readonly revision: number
   readonly lastCommitId: string | null
 }
+export interface CircuitObservationSnapshot {
+  readonly host: string
+  readonly kind: MediaKind
+  readonly level: number
+  readonly until: number
+  readonly phase: 'clear' | 'isolated' | 'awaiting' | 'observing' | 'settling'
+  readonly reason: string
+  readonly progressSec: number
+  readonly remainingSec: number | null
+}
 export interface RouteEvidence {
   readonly circuitControl?: CircuitRecordControl
   readonly host: string

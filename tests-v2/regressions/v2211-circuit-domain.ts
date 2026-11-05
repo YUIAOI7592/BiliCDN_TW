@@ -13,8 +13,17 @@ test('V2211 circuit: ordinary and probe successes retain the failure level', () 
   for (const source of ['transport', 'challenge'] as const) {
     const row = addEvidenceSample(
       { ...emptyEvidence('cdn.example', 'video'), circuitLevel: 4, circuitUntil: 100 },
-      { requestId: source, at: 101, source, outcome: 'success', throughputMbps: 10,
-        ttfbMs: 10, bytes: 65536, elapsedMs: 100, failureKind: null },
+      {
+        requestId: source,
+        at: 101,
+        source,
+        outcome: 'success',
+        throughputMbps: 10,
+        ttfbMs: 10,
+        bytes: 65536,
+        elapsedMs: 100,
+        failureKind: null,
+      },
       101,
     )
     assert.equal(row.circuitLevel, 4)
@@ -24,19 +33,35 @@ test('V2211 circuit: ordinary and probe successes retain the failure level', () 
 test('V2211 circuit: a failure cannot shorten a legacy longer isolation', () => {
   const row = addEvidenceSample(
     { ...emptyEvidence('cdn.example', 'video'), circuitLevel: 1, circuitUntil: 21600000 },
-    { requestId: 'failure', at: 100, source: 'transport', outcome: 'failure',
-      throughputMbps: null, ttfbMs: null, failureKind: 'network' }, 100,
+    {
+      requestId: 'failure',
+      at: 100,
+      source: 'transport',
+      outcome: 'failure',
+      throughputMbps: null,
+      ttfbMs: null,
+      failureKind: 'network',
+    },
+    100,
   )
   assert.equal(row.circuitLevel, 2)
   assert.equal(row.circuitUntil, 21600000)
 })
-for (const [gap, active] of [[120000, true], [120001, false]] as const) {
+for (const [gap, active] of [
+  [120000, true],
+  [120001, false],
+] as const) {
   test(`V2211 observation: success gap ${gap}ms has an exact inclusive boundary`, () => {
     const w = startCircuitWindow('window', stamp, 0)
     assert.equal(advanceCircuitWindow(w, gap).period !== null, active)
   })
 }
-for (const [at, ready] of [[299999, false], [300000, true], [359999, true], [360000, false]] as const) {
+for (const [at, ready] of [
+  [299999, false],
+  [300000, true],
+  [359999, true],
+  [360000, false],
+] as const) {
   test(`V2211 observation: settlement at ${at}ms respects the absolute window`, () => {
     const w = { ...startCircuitWindow('window', stamp, 0), lastSuccess: at }
     assert.equal(circuitWindowReady(w, at, 0), ready)

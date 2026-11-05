@@ -19,7 +19,7 @@ export const fixture = (scope: ReturnType<typeof testScope>, storage = new FakeS
   vault.reset(state.generation, state.epoch)
   const settings = scope.own(new CatalogSettingsStore(storage, clock.now))
   const restrictions = scope.own(new RestrictionStore(storage, clock.now))
-  const evidence = scope.own(new EvidenceStore(storage, clock.now))
+  const evidence = scope.own(new EvidenceStore(storage, clock.now, createRuntimeIds()))
   const routes = new RouteCoordinator(
     clock,
     session,

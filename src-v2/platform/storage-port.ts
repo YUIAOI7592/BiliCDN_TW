@@ -1,4 +1,6 @@
-export interface StorageLock { readonly exclusive: boolean }
+export interface StorageLock {
+  readonly exclusive: boolean
+}
 export type StorageRead<T> = { readonly ok: true; readonly value: T } | { readonly ok: false }
 export interface StoragePort {
   readResult?<T>(key: string, fallback: T): StorageRead<T>

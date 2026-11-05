@@ -17,29 +17,45 @@ export interface CircuitWindow {
 export const sameCircuitStamp = (
   a: CircuitControlStamp | null,
   b: CircuitControlStamp | null,
-): boolean => !!a && !!b && a.generation === b.generation && a.recordId === b.recordId && a.revision === b.revision
+): boolean =>
+  !!a &&
+  !!b &&
+  a.generation === b.generation &&
+  a.recordId === b.recordId &&
+  a.revision === b.revision
 
 export const startCircuitWindow = (
   id: string,
   stamp: CircuitControlStamp,
   now: number,
-): CircuitWindow => Object.freeze({
-  id, stamp, start: now, deadline: now + CIRCUIT_OBSERVATION_MS,
-  hardDeadline: now + CIRCUIT_OBSERVATION_MS + CIRCUIT_SETTLEMENT_GRACE_MS,
-  lastSuccess: now,
-})
+): CircuitWindow =>
+  Object.freeze({
+    id,
+    stamp,
+    start: now,
+    deadline: now + CIRCUIT_OBSERVATION_MS,
+    hardDeadline: now + CIRCUIT_OBSERVATION_MS + CIRCUIT_SETTLEMENT_GRACE_MS,
+    lastSuccess: now,
+  })
 
 export function advanceCircuitWindow(period: CircuitWindow | null, now: number) {
   if (!period) return { period: null, reason: 'awaiting-new-transfer' }
-  const reason = !Number.isFinite(now) || now < period.lastSuccess ? 'clock-invalid'
-    : now >= period.hardDeadline ? 'settlement-expired'
-      : now - period.lastSuccess > CIRCUIT_SUCCESS_GAP_MS ? 'success-gap-expired' : null
+  const reason =
+    !Number.isFinite(now) || now < period.lastSuccess
+      ? 'clock-invalid'
+      : now >= period.hardDeadline
+        ? 'settlement-expired'
+        : now - period.lastSuccess > CIRCUIT_SUCCESS_GAP_MS
+          ? 'success-gap-expired'
+          : null
   return { period: reason ? null : period, reason }
 }
 
 export const circuitWindowReady = (period: CircuitWindow, now: number, pending: number): boolean =>
-  advanceCircuitWindow(period, now).period !== null && now >= period.deadline &&
-  period.lastSuccess >= period.deadline && pending === 0
+  advanceCircuitWindow(period, now).period !== null &&
+  now >= period.deadline &&
+  period.lastSuccess >= period.deadline &&
+  pending === 0
 
 export function failedCircuit(level: number, until: number, now: number) {
   const next = Math.min(4, Math.max(0, Math.ceil(level)) + 1)

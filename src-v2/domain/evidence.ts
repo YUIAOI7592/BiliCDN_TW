@@ -72,10 +72,12 @@ export const addEvidenceSample = (
   const failed = sample.outcome === 'failure',
     verified = hasSpeed(sample)
   // Success establishes reachability/capacity, never a time-based recovery proof.
-  const circuit = failed ? failedCircuit(evidence.circuitLevel, evidence.circuitUntil, now) : {
-    circuitLevel: evidence.circuitLevel,
-    circuitUntil: verified && evidence.circuitUntil <= now ? 0 : evidence.circuitUntil,
-  }
+  const circuit = failed
+    ? failedCircuit(evidence.circuitLevel, evidence.circuitUntil, now)
+    : {
+        circuitLevel: evidence.circuitLevel,
+        circuitUntil: verified && evidence.circuitUntil <= now ? 0 : evidence.circuitUntil,
+      }
   return Object.freeze({ ...evidence, samples, ...circuit, updatedAt: now })
 }
 

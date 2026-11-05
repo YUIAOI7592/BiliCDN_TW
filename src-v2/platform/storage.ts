@@ -1,9 +1,19 @@
 import type { StoragePort, StorageLock, StorageRead } from './storage-port.ts'
 export class TampermonkeyStorage implements StoragePort {
   readResult<T>(key: string, fallback: T): StorageRead<T> {
-    try { return { ok: true, value: GM_getValue<T>(key, fallback) } } catch { return { ok: false } }
+    try {
+      return { ok: true, value: GM_getValue<T>(key, fallback) }
+    } catch {
+      return { ok: false }
+    }
   }
-  sharedLockAvailable(): boolean { return typeof navigator.locks?.request === 'function' }
+  sharedLockAvailable(): boolean {
+    try {
+      return typeof navigator.locks?.request === 'function'
+    } catch {
+      return false
+    }
+  }
   get<T>(key: string, fallback: T): T {
     try {
       return GM_getValue<T>(key, fallback)

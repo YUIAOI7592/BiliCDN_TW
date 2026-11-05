@@ -21,6 +21,7 @@ import {
   type TransportObservation,
   type DomainEvent,
   type FailureKind,
+  type CircuitObservationSnapshot,
 } from '../domain/model.ts'
 import { type SessionSnapshot, type SessionPort } from '../state/session-contracts.ts'
 import { type VaultGroupSnapshot, type SignedRouteVaultPort } from '../state/vault-contracts.ts'
@@ -122,6 +123,7 @@ export interface CurrentRouteCapacity {
   readonly evidenceOrigin?: 'current-transport' | 'current-probe' | 'historical-cache' | null
 }
 export interface RouteSnapshot {
+  readonly circuits: readonly CircuitObservationSnapshot[]
   readonly selection?: {
     readonly phase: 'pending' | 'confirmed'
     readonly sampleCount: number
@@ -144,7 +146,10 @@ export interface RouteSessionPort extends Pick<
   'get' | 'noteDecision' | 'setAffinity' | 'setRepresentation'
 > {}
 export interface RouteRestrictionsPort extends Pick<RestrictionPort, 'snapshot'> {}
-export interface RouteEvidencePort extends Pick<EvidencePort, 'get' | 'record'> {}
+export interface RouteEvidencePort extends Pick<
+  EvidencePort,
+  'get' | 'list' | 'record' | 'control' | 'commit' | 'tryDowngrade'
+> {}
 export interface RouteVaultPort extends Pick<
   SignedRouteVaultPort,
   | 'candidates'

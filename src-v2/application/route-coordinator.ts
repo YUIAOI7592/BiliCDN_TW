@@ -1,6 +1,8 @@
 import { predictCompletionMs, completionReason } from '../domain/route-completion.ts'
 import { controlPlaybackDemand } from '../domain/playback-demand.ts'
 import { readMonotonic } from '../domain/measurement-time.ts'
+import { CIRCUIT_SUCCESS_GAP_MS } from '../domain/circuit-policy.ts'
+import { CircuitObservations } from './routing/circuit-observation.ts'
 import type { SettingsReader } from '../state/settings-contracts.ts'
 import { appliedRoute } from './routing/request-routing.ts'
 import { catalogRestrictions, catalogCandidates } from '../domain/route-policy.ts'
@@ -95,6 +97,8 @@ import type {
   RouteVaultPort,
 } from './route-contracts.ts'
 export class RouteCoordinator implements RouteCoordinatorPort {
+  #circuits = new CircuitObservations()
+  #observedReceipts = new WeakSet<object>()
   #policyRevision = 0
   #dispatchSequence = 0
   #routeSerial = 0
@@ -172,6 +176,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   resetEpoch(): void {
+    this.#circuits.reset('content-changed')
     this.#retrySuccesses = []
     this.#retryPermit = null
     this.#policyRevision++
@@ -203,6 +208,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#fallbacks.clear()
   }
   invalidateForUserSetting(): void {
+    this.#circuits.invalidate('policy-changed')
     this.#playbackFacts = null
     this.#startupExhausted.clear()
     this.#retryPermit = null
@@ -317,6 +323,15 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (request.kind) this.#pendingMedia.add(request.requestId)
     const key = request.kind ?? 'unknown'
     this.#requested.set(key, stamped)
+    this.#stepCircuits()
+    if (stamped.kind)
+      this.#circuits.capture(
+        stamped,
+        stamped,
+        this.evidence.control(stamped.targetHost, stamped.kind),
+        this.#circuitTick(),
+        this.clock.now(),
+      )
     if (request.kind && request.representation) {
       const fallback = this.#fallbacks.get(request.kind)
       if (
@@ -577,7 +592,9 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   observePlaybackRate(rate: number): void {
-    this.#effectiveRate = Number.isFinite(rate) && rate > 0 ? rate : 2
+    const next = Number.isFinite(rate) && rate > 0 ? rate : 2
+    if (next !== this.#effectiveRate) this.#circuits.invalidate('rate-changed')
+    this.#effectiveRate = next
   }
   playbackRate(): number {
     return this.#effectiveRate
@@ -708,6 +725,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #playbackRevision = 0
   #playbackObservation = 0
   observePlaybackFacts(facts: RoutePlaybackFacts | null, revision?: number): void {
+    this.#stepCircuits()
     const observation = ++this.#playbackObservation
     this.#playbackFacts = null
     if (
@@ -716,7 +734,10 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       revision >= this.#playbackRevision
     )
       this.#playbackRevision = revision
-    if (!facts) return
+    if (!facts) {
+      this.#circuits.playbackActive(false)
+      return
+    }
     const tick = readMonotonic(() => this.clock.monotonicNow?.() ?? null),
       state = this.session.get(),
       requested = this.#requested.get('video')
@@ -751,6 +772,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       observation !== this.#playbackObservation
     )
       return
+    this.#circuits.playbackActive(true)
     this.#playbackFacts = Object.freeze({
       generation: facts.generation,
       epoch: facts.epoch,
@@ -1830,196 +1852,312 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   async observe(observation: TransportObservation): Promise<void> {
-    if (observation.request) this.#pendingMedia.delete(observation.request.requestId)
-    const valid = (): boolean =>
-      observation.generation === this.session.get().generation &&
-      observation.epoch === this.session.get().epoch &&
-      !this.session.get().disabled &&
-      (observation.request?.authorityRevision == null ||
-        !observation.representation ||
-        this.vault.identity(observation.representation)?.authorityRevision ===
-          observation.request.authorityRevision)
-    const catalogObserved = (): boolean =>
-      catalogObservationAllowed(this.isCatalogOnly(), observation)
-    const controlsCurrent = (): boolean =>
-      valid() &&
-      this.#controlCurrent(observation) &&
-      (observation.request
-        ? observation.request.routePolicyRevision === this.#policyRevision
-        : !!observation.decisionId &&
-          this.#decisions.get(observation.decisionId)?.policyRevision === this.#policyRevision)
-    if (
-      controlsCurrent() &&
-      this.isCatalogOnly() &&
-      observation.routeType === 'catalog-generated' &&
-      isCatalogHost(observation.targetHost) &&
-      observation.finalHost &&
-      observation.finalHost !== observation.targetHost &&
-      observation.streamKey
-    )
-      this.#markIncompatibleKey(observation.streamKey, observation.targetHost)
-    if (!valid() || !catalogObserved()) return
-    if (controlsCurrent() && observation.kind && observation.request) {
-      const fallback = this.#fallbacks.get(observation.kind)
+    const receipt = observation.request
+      ? (this.#requestOwners.get(observation.request) ?? observation.request)
+      : observation
+    if (this.#observedReceipts.has(receipt)) return
+    this.#observedReceipts.add(receipt)
+    this.#stepCircuits()
+    const terminalTick = this.#circuitTick()
+    let credit: { host: string; kind: MediaKind; valid: () => boolean } | null = null
+    let releaseFailure: (() => void) | null = null
+    let confirmed = true
+    try {
+      if (observation.request) this.#pendingMedia.delete(observation.request.requestId)
+      const valid = (): boolean =>
+        observation.generation === this.session.get().generation &&
+        observation.epoch === this.session.get().epoch &&
+        !this.session.get().disabled &&
+        (observation.request?.authorityRevision == null ||
+          !observation.representation ||
+          this.vault.identity(observation.representation)?.authorityRevision ===
+            observation.request.authorityRevision)
+      const catalogObserved = (): boolean =>
+        catalogObservationAllowed(this.isCatalogOnly(), observation)
+      const controlsCurrent = (): boolean =>
+        valid() &&
+        this.#controlCurrent(observation) &&
+        (observation.request
+          ? observation.request.routePolicyRevision === this.#policyRevision
+          : !!observation.decisionId &&
+            this.#decisions.get(observation.decisionId)?.policyRevision === this.#policyRevision)
       if (
-        fallback?.requestId === observation.request.requestId &&
-        fallback.stage === 'entered-hook'
-      ) {
-        this.#fallbacks.set(observation.kind, {
-          ...fallback,
-          stage: observation.status > 0 ? 'response-observed' : 'request-failed',
-          responseHost: observation.finalHost,
-          outcome: observation.outcome,
-          status: observation.status,
-        })
+        controlsCurrent() &&
+        this.isCatalogOnly() &&
+        observation.routeType === 'catalog-generated' &&
+        isCatalogHost(observation.targetHost) &&
+        observation.finalHost &&
+        observation.finalHost !== observation.targetHost &&
+        observation.streamKey
+      )
+        this.#markIncompatibleKey(observation.streamKey, observation.targetHost)
+      if (!valid() || !catalogObserved()) return
+      if (controlsCurrent() && observation.kind && observation.request) {
+        const fallback = this.#fallbacks.get(observation.kind)
+        if (
+          fallback?.requestId === observation.request.requestId &&
+          fallback.stage === 'entered-hook'
+        ) {
+          this.#fallbacks.set(observation.kind, {
+            ...fallback,
+            stage: observation.status > 0 ? 'response-observed' : 'request-failed',
+            responseHost: observation.finalHost,
+            outcome: observation.outcome,
+            status: observation.status,
+          })
+        }
       }
-    }
-    const key = observation.kind ?? 'unknown'
-    if (
-      !observation.request ||
-      !this.#requestOwners.has(observation.request) ||
-      controlsCurrent()
-    ) {
-      this.#latest.set(key, transportSnapshot(observation))
-      if (observation.outcome === 'success' && observation.finalHost)
-        this.#lastSuccess.set(key, this.#latest.get(key)!)
-    }
-    const result = classifyTransportResult(observation)
-    if (result.type === 'ignore') return
-    if (result.type === 'request-rejected') return
-    if (result.type === 'catalog-resource-missing') {
-      if (!controlsCurrent()) return
-      this.#markIncompatibleKey(observation.streamKey!, observation.targetHost)
-      if (observation.representation && observation.kind)
+      const key = observation.kind ?? 'unknown'
+      if (
+        !observation.request ||
+        !this.#requestOwners.has(observation.request) ||
+        controlsCurrent()
+      ) {
+        this.#latest.set(key, transportSnapshot(observation))
+        if (observation.outcome === 'success' && observation.finalHost)
+          this.#lastSuccess.set(key, this.#latest.get(key)!)
+      }
+      const result = classifyTransportResult(observation)
+      if (result.type === 'ignore') return
+      if (result.type === 'request-rejected') return
+      if (result.type === 'catalog-resource-missing') {
+        if (!controlsCurrent()) return
+        this.#markIncompatibleKey(observation.streamKey!, observation.targetHost)
+        if (observation.representation && observation.kind)
+          this.recover(
+            observation.representation,
+            this.#demandFor(observation.representation, observation.kind),
+            'verified-failure',
+            observation.targetHost,
+            observation.request?.expectedBytes ?? null,
+            observation.request?.timingBasis,
+          )
+        return
+      }
+      if (result.type === 'catalog-forbidden') {
+        if (!controlsCurrent()) return
+        this.#markIncompatibleKey(observation.streamKey!, observation.targetHost)
+        this.#hostLockedStreams.add(observation.streamKey!)
+        if (observation.kind === 'video' && observation.representation)
+          this.recoverStartup(
+            observation.representation,
+            this.#demandFor(observation.representation, 'video'),
+            observation.targetHost,
+            [],
+          )
+        return
+      }
+      const representation = observation.representation
+      if (result.type === 'native-invalid') {
+        if (!controlsCurrent()) return
+        this.vault.invalidate(representation!, result.host)
+        const demand = this.#demandFor(representation, result.kind)
         this.recover(
-          observation.representation,
-          this.#demandFor(observation.representation, observation.kind),
+          representation!,
+          demand,
           'verified-failure',
-          observation.targetHost,
+          result.host,
           observation.request?.expectedBytes ?? null,
           observation.request?.timingBasis,
         )
-      return
-    }
-    if (result.type === 'catalog-forbidden') {
-      if (!controlsCurrent()) return
-      this.#markIncompatibleKey(observation.streamKey!, observation.targetHost)
-      this.#hostLockedStreams.add(observation.streamKey!)
-      if (observation.kind === 'video' && observation.representation)
-        this.recoverStartup(
-          observation.representation,
-          this.#demandFor(observation.representation, 'video'),
-          observation.targetHost,
-          [],
-        )
-      return
-    }
-    const representation = observation.representation
-    if (result.type === 'native-invalid') {
-      if (!controlsCurrent()) return
-      this.vault.invalidate(representation!, result.host)
-      const demand = this.#demandFor(representation, result.kind)
-      this.recover(
-        representation!,
-        demand,
-        'verified-failure',
-        result.host,
-        observation.request?.expectedBytes ?? null,
-        observation.request?.timingBasis,
-      )
-      return
-    }
-    await this.evidence.record(
-      result.host,
-      result.kind,
-      result.sample,
-      () => valid() && catalogObserved(),
-    )
-    if (
-      result.type === 'success' &&
-      result.kind === 'video' &&
-      observation.representation &&
-      controlsCurrent()
-    ) {
-      const identity = this.vault.identity(observation.representation)
-      if (identity)
-        this.#lastVideoEvidence = {
-          host: result.host,
-          requestId: result.sample.requestId,
-          identity,
-          source: 'current-transport',
-        }
-    }
-    if (!controlsCurrent() || !catalogObserved()) return
-    if (result.type === 'success') {
-      const request = observation.request
-      if (
-        request &&
-        !this.#retrySuppressed.has(request.requestId) &&
-        Number.isSafeInteger(observation.retryVerifiedBytes) &&
-        (observation.retryVerifiedBytes ?? 0) >= 64 * 1024 &&
-        request.generation === observation.generation &&
-        request.epoch === observation.epoch &&
-        request.representation === observation.representation &&
-        request.kind === observation.kind &&
-        request.targetHost === observation.targetHost &&
-        observation.kind === 'video' &&
-        observation.routeType === 'catalog-generated' &&
-        observation.status === 206 &&
-        observation.responseUrlMatchesRequest === true &&
-        observation.finalHost === observation.targetHost &&
-        observation.bytes >= 64 * 1024 &&
-        observation.elapsedMs > 0 &&
-        observation.ttfbMs !== null &&
-        Number.isFinite(observation.ttfbMs) &&
-        observation.ttfbMs >= 0 &&
-        this.evidence
-          .get(observation.targetHost, 'video')
-          ?.samples.some(
-            (sample) =>
-              sample.requestId === request.requestId &&
-              sample.at === observation.completedAt &&
-              sample.outcome === 'success' &&
-              sample.source === 'transport',
-          )
-      ) {
-        this.#retrySuccesses = this.#retrySuccesses.filter(
-          (row) =>
-            row.request.requestId !== request.requestId && this.clock.now() - row.at <= 60_000,
-        )
-        this.#retrySuccesses.push({
-          request,
-          at: observation.completedAt,
-          bytes: observation.retryVerifiedBytes!,
-          timingBasis: observation.timingBasis,
-          mbps: (observation.retryVerifiedBytes! * 8) / observation.elapsedMs / 1000,
-          payloadMbps: sampleTiming(
-            observation.retryVerifiedBytes,
-            observation.elapsedMs,
-            observation.ttfbMs,
-          )
-            ? (observation.retryVerifiedBytes! * 8) /
-              (observation.elapsedMs - observation.ttfbMs!) /
-              1000
-            : null,
-          ttfbMs: observation.ttfbMs,
-        })
-        this.#retrySuccesses = this.#retrySuccesses.slice(-32)
+        return
       }
-      this.#confirmObservedTransport(observation, representation)
-      return
-    }
-    if (representation) {
-      const demand = this.#demandFor(representation, observation.kind!)
-      this.recover(
-        representation,
-        demand,
-        'verified-failure',
+      if (result.type === 'failure')
+        releaseFailure = this.#circuits.failure(result.host, result.kind)
+      const saved = await this.evidence.commit(
         result.host,
-        observation.request?.expectedBytes ?? null,
-        observation.request?.timingBasis,
+        result.kind,
+        result.sample,
+        receipt,
+        () => valid() && catalogObserved(),
       )
+      confirmed = saved.status === 'committed'
+      this.#circuits.persisted(result.host, result.kind, confirmed)
+      if (saved.status === 'unconfirmed') throw saved.error ?? Error('Evidence write unconfirmed')
+      if (
+        result.type === 'success' &&
+        confirmed &&
+        result.sample.bytes !== undefined &&
+        result.sample.bytes >= 65536 &&
+        result.sample.elapsedMs !== undefined &&
+        Number.isFinite(result.sample.throughputMbps) &&
+        (result.sample.throughputMbps ?? 0) > 0
+      )
+        credit = {
+          host: result.host,
+          kind: result.kind,
+          valid: () => controlsCurrent() && catalogObserved(),
+        }
+      if (
+        result.type === 'success' &&
+        result.kind === 'video' &&
+        observation.representation &&
+        controlsCurrent()
+      ) {
+        const identity = this.vault.identity(observation.representation)
+        if (identity)
+          this.#lastVideoEvidence = {
+            host: result.host,
+            requestId: result.sample.requestId,
+            identity,
+            source: 'current-transport',
+          }
+      }
+      if (!controlsCurrent() || !catalogObserved()) return
+      if (result.type === 'success') {
+        const request = observation.request
+        if (
+          request &&
+          !this.#retrySuppressed.has(request.requestId) &&
+          Number.isSafeInteger(observation.retryVerifiedBytes) &&
+          (observation.retryVerifiedBytes ?? 0) >= 64 * 1024 &&
+          request.generation === observation.generation &&
+          request.epoch === observation.epoch &&
+          request.representation === observation.representation &&
+          request.kind === observation.kind &&
+          request.targetHost === observation.targetHost &&
+          observation.kind === 'video' &&
+          observation.routeType === 'catalog-generated' &&
+          observation.status === 206 &&
+          observation.responseUrlMatchesRequest === true &&
+          observation.finalHost === observation.targetHost &&
+          observation.bytes >= 64 * 1024 &&
+          observation.elapsedMs > 0 &&
+          observation.ttfbMs !== null &&
+          Number.isFinite(observation.ttfbMs) &&
+          observation.ttfbMs >= 0 &&
+          this.evidence
+            .get(observation.targetHost, 'video')
+            ?.samples.some(
+              (sample) =>
+                sample.requestId === request.requestId &&
+                sample.at === observation.completedAt &&
+                sample.outcome === 'success' &&
+                sample.source === 'transport',
+            )
+        ) {
+          this.#retrySuccesses = this.#retrySuccesses.filter(
+            (row) =>
+              row.request.requestId !== request.requestId && this.clock.now() - row.at <= 60_000,
+          )
+          this.#retrySuccesses.push({
+            request,
+            at: observation.completedAt,
+            bytes: observation.retryVerifiedBytes!,
+            timingBasis: observation.timingBasis,
+            mbps: (observation.retryVerifiedBytes! * 8) / observation.elapsedMs / 1000,
+            payloadMbps: sampleTiming(
+              observation.retryVerifiedBytes,
+              observation.elapsedMs,
+              observation.ttfbMs,
+            )
+              ? (observation.retryVerifiedBytes! * 8) /
+                (observation.elapsedMs - observation.ttfbMs!) /
+                1000
+              : null,
+            ttfbMs: observation.ttfbMs,
+          })
+          this.#retrySuccesses = this.#retrySuccesses.slice(-32)
+        }
+        this.#confirmObservedTransport(observation, representation)
+        return
+      }
+      if (representation) {
+        const demand = this.#demandFor(representation, observation.kind!)
+        this.recover(
+          representation,
+          demand,
+          'verified-failure',
+          result.host,
+          observation.request?.expectedBytes ?? null,
+          observation.request?.timingBasis,
+        )
+      }
+    } finally {
+      releaseFailure?.()
+      this.#stepCircuits()
+      const tick = this.#circuitTick()
+      const fresh =
+        tick !== null &&
+        terminalTick !== null &&
+        tick >= terminalTick &&
+        tick - terminalTick <= CIRCUIT_SUCCESS_GAP_MS
+      const kind = this.#circuits.finish(
+        receipt,
+        !!credit && fresh && credit.valid(),
+        confirmed,
+        credit ? this.evidence.control(credit.host, credit.kind) : null,
+        tick,
+        () => this.ids.next('observation'),
+      )
+      if (kind) await this.#settleCircuit(kind)
     }
+  }
+
+  #circuitTick(): number | null {
+    return readMonotonic(() => this.clock.monotonicNow?.() ?? null)
+  }
+  #stepCircuits(): void {
+    this.#circuits.step(this.clock.now(), this.#circuitTick(), (host, kind) =>
+      this.evidence.control(host, kind),
+    )
+  }
+  async #settleCircuit(kind: MediaKind): Promise<void> {
+    const proof = this.#circuits.proposal(kind, this.#circuitTick())
+    if (!proof) return
+    const { host } = proof
+    const result = await this.evidence.tryDowngrade(
+      host,
+      kind,
+      proof.period.stamp,
+      this.ids.next('commit'),
+      () => {
+        this.#stepCircuits()
+        return (
+          this.#circuits.ready(
+            proof,
+            this.evidence.control(host, kind),
+            this.clock.now(),
+            this.#circuitTick(),
+          ) && this.#circuitOwnerCurrent(proof.request)
+        )
+      },
+    )
+    this.#circuits.submitted(proof, result, this.#circuitTick(), () => this.ids.next('observation'))
+  }
+  #circuitOwnerCurrent(request: RequestContext): boolean {
+    const state = this.session.get(),
+      revision = this.#policyRevision
+    const representation = request.representation
+    if (!representation || !request.kind || state.disabled || this.settings.get().disabled)
+      return false
+    const identity = this.vault.identity(representation),
+      plan = this.#plans.get(representation)
+    const current = this.#requested.get(request.kind)
+    const allowed =
+      request.generation === state.generation &&
+      request.epoch === state.epoch &&
+      request.routePolicyRevision === revision &&
+      !!identity &&
+      this.vault.isCurrentIdentity(identity) &&
+      request.authorityRevision === identity.authorityRevision &&
+      !this.vault.isInvalid(representation, request.targetHost) &&
+      !this.#hardRestriction(request.targetHost, request.kind) &&
+      plan?.id === request.decisionId &&
+      plan.host === request.targetHost &&
+      request.routeRevision === this.#planRevisions.get(representation) &&
+      current?.representation === representation &&
+      current.targetHost === request.targetHost &&
+      (request.kind !== 'video' || this.#selection?.revision === request.selectionRevision)
+    return (
+      allowed &&
+      revision === this.#policyRevision &&
+      this.session.get().generation === state.generation &&
+      this.session.get().epoch === state.epoch &&
+      !this.session.get().disabled &&
+      !this.settings.get().disabled &&
+      this.vault.identity(representation)?.authorityRevision === identity?.authorityRevision
+    )
   }
 
   #confirmObservedTransport(
@@ -2095,6 +2233,20 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       })
     return Object.freeze({
       currentCapacity,
+      circuits: Object.freeze(
+        this.evidence
+          .list()
+          .filter((row) => row.circuitLevel > 0 || row.circuitUntil > this.clock.now())
+          .map((row) =>
+            this.#circuits.snapshot(
+              row.host,
+              row.kind,
+              this.evidence.control(row.host, row.kind),
+              this.clock.now(),
+              this.#circuitTick(),
+            ),
+          ),
+      ),
       selection: this.#selection
         ? {
             phase: this.#selection.phase,

@@ -656,10 +656,10 @@ test('routing convergence evidence persistence reentry records learning without 
   const { original } = register(f)
   const applied = f.routes.apply(original)
   let confirmed = 0
-  const record = f.evidence.record.bind(f.evidence)
-  f.evidence.record = (...args) => {
+  const commit = f.evidence.commit.bind(f.evidence)
+  f.evidence.commit = (...args) => {
     f.routes.invalidateForUserSetting()
-    return record(...args)
+    return commit(...args)
   }
   scope.defer(
     f.routes.subscribe((event) => {
