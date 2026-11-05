@@ -9,6 +9,7 @@ import type {
 import { createRow } from './elements.ts'
 import { settingToggle } from './setting-controls.ts'
 import { restrictionLabel } from './labels.ts'
+import { circuitPresentation } from './circuit-presentation.ts'
 
 export function renderCdn(
   commands: ControlCommandPort,
@@ -73,7 +74,7 @@ export function renderCdn(
     for (const node of nodes) {
       node.toggle.refresh(model)
       const rows = model.restrictions.filter((row) => row.host === node.host)
-      node.restrictions.textContent = rows.length
+      const restriction = rows.length
         ? '目前限制：' +
           rows
             .map(
@@ -86,6 +87,12 @@ export function renderCdn(
             .join('、') +
           '；勾選不會解除禁止'
         : ''
+      node.restrictions.textContent = [
+        restriction,
+        ...model.routes.circuits.filter((row) => row.host === node.host).map(circuitPresentation),
+      ]
+        .filter(Boolean)
+        .join('；')
     }
   }
   return { refresh }

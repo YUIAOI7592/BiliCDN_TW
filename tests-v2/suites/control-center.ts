@@ -1297,6 +1297,47 @@ function readSummary(f: ReturnType<typeof ui>): Element {
   return f.doc.flatten().find((e) => e.className === 'summary')!
 }
 
+for (const [phase, expected] of [
+  ['isolated', '隔離中'],
+  ['awaiting', '等待本頁新實傳'],
+  ['observing', '本頁觀察 120／300 秒'],
+  ['settling', '等待期末成功'],
+] as const) {
+  test(`V2211 UI: ${phase} uses the same current circuit projection in CDN and details`, (t) => {
+    const f = ui(t),
+      snapshot = f.routes.snapshot.bind(f.routes),
+      host = TRUSTED_CATALOG[0]!
+    f.routes.snapshot = () => ({
+      ...snapshot(),
+      circuits: [
+        {
+          host,
+          kind: 'video',
+          level: 2,
+          until: phase === 'isolated' ? f.clock.now() + 600000 : 0,
+          phase,
+          reason: phase === 'settling' ? 'awaiting-end-success' : 'awaiting-new-transfer',
+          progressSec: 120,
+          remainingSec: 60,
+        },
+      ],
+    })
+    f.center.close()
+    f.center.show()
+    assert.match(readSummary(f).textContent, new RegExp(expected))
+    f.button('CDN').emit('click')
+    const row = f.doc
+      .flatten()
+      .find((e) => e.className === 'detail restriction' && e.textContent.includes('共享熔斷 L2'))
+    assert.ok(row)
+    assert.ok(row.textContent.includes(expected))
+    assert.equal(
+      f.doc.flatten().some((e) => e.className === 'summary'),
+      false,
+    )
+  })
+}
+
 function ui(t: TestContext) {
   const storage = new QueuedSettingsStorage()
   storage.values.set('bilicdn.v2.settings', { schema: 2, considerNativeSources: true })

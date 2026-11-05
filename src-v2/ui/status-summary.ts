@@ -1,6 +1,7 @@
 import { assessDemandRatio } from '../domain/routing.ts'
 import type { ControlCenterSnapshot } from './control-contracts.ts'
 import { overviewPresentation } from './overview-presentation.ts'
+import { circuitPresentation } from './circuit-presentation.ts'
 import {
   plain,
   routeLabel,
@@ -90,6 +91,7 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
   }
   const routes = model.routes,
     latest = routes.latest
+  for (const row of routes.circuits) summary += `\n${row.host}：${circuitPresentation(row)}`
   const display = overviewPresentation(model, now)
   const activePlan = routes.activePlan
   if (activePlan?.host)
