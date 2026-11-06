@@ -10,7 +10,7 @@
 
 ## 版本
 
-- [v2.2.11 熔斷觀察執行紀錄](../archive/retired/docs/CIRCUIT_OBSERVATION_v2.2.11_2026-11-06.md)；[完整驗證](TEST_REPORT.md#驗收結論)。
+- [v2.2.11 熔斷觀察執行紀錄](../archive/retired/docs/CIRCUIT_OBSERVATION_v2.2.11_2026-11-06.md)；[完整驗證](TEST_REPORT.md#驗收結論)；[R1 原判定](TEST_REPORT.md#v2211-r1-熔斷安裝驗收2026-11-06)與 [R2 受控整合／安裝接線](TEST_REPORT.md#v2211-r2-受控熔斷與安裝接線2026-11-06)。
 
 - [v2.2.10 熔斷研究：機制、並行升級、同步反例與 B0–B4 對照（2026-11-05）](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#研究結論)
 
@@ -126,6 +126,8 @@
 
 - [正式政策、相容與契約映射](../archive/retired/docs/CIRCUIT_OBSERVATION_v2.2.11_2026-11-06.md#政策與狀態)
 - [審查後的提交交錯與原生 XHR 信用補強](../archive/retired/docs/CIRCUIT_OBSERVATION_v2.2.11_2026-11-06.md#安全後補強與最終對照)
+- [R1 自然條件不足的原始判定](TEST_REPORT.md#v2211-r1-熔斷安裝驗收2026-11-06)
+- [R2 受控四段觀察、安裝接線與方法限制](TEST_REPORT.md#v2211-r2-受控熔斷與安裝接線2026-11-06)
 - [完整驗證與交付](TEST_REPORT.md#驗收結論)
 
 ### 熔斷研究
@@ -339,6 +341,8 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
+| 2026-11-07 | [v2.2.11 文件狀態核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#v2211-文件狀態核對2026-11-07)；只整理導覽與狀態，不新增執行證據 |
+| 2026-11-06 | [v2.2.11 R1](TEST_REPORT.md#v2211-r1-熔斷安裝驗收2026-11-06)與 [R2 雙層驗收](TEST_REPORT.md#v2211-r2-受控熔斷與安裝接線2026-11-06) |
 | 2026-11-06 | [v2.2.11 熔斷降級與穩定觀察執行紀錄](../archive/retired/docs/CIRCUIT_OBSERVATION_v2.2.11_2026-11-06.md) |
 | 2026-11-06 | [熔斷降級的假設情境與恢復政策界線](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-降級速度的假設情境推演) |
 | 2026-11-06 | [無失敗觀察期的候選狀態機、未決窗口及參數限制](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#2026-11-06-無失敗觀察期的候選狀態機) |
