@@ -222,7 +222,6 @@ export interface RouteCoordinatorPort {
     workCurrent?: () => boolean,
     measurement?: Pick<TransportObservation, 'timingBasis' | 'speedEligible'>,
   ): Promise<void>
-  latestVideoHost(): string | null
   unlockNative(representation: RepresentationId, host: string): void
   plan(
     representation: RepresentationId,

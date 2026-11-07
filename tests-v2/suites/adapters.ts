@@ -3046,11 +3046,10 @@ async function checkEligibleNativeBackupUsesItsOwnFullSignedURL17(t: TestContext
     null,
     'generation reset discards output roles',
   )
-  assert.strictEqual(
-    base.outputRoutes.latestVideoHost(),
-    null,
-    'generation reset drops old successful host',
-  )
+  const resetSnapshot = base.outputRoutes.snapshot()
+  assert.deepEqual(resetSnapshot.latest, {}, 'generation reset drops old response attribution')
+  assert.deepEqual(resetSnapshot.requested, {}, 'generation reset drops old requests')
+  assert.equal(resetSnapshot.currentCapacity, null, 'generation reset drops old capacity')
 }
 
 async function checkXHRDoesNotSendDefaultUnavailablePCDNMarkedMedia15(
@@ -3146,6 +3145,20 @@ async function checkWeakQueryMatchIsNotABackupCapability13(t: TestContext): Prom
     completedAt: base.now,
     decisionId: base.fallbackApplied.decision.id,
   })
+  const savedSuccess = structuredClone(base.outputEvidence.get(TRUSTED_CATALOG[2], 'video'))
+  assert.ok(savedSuccess)
+  assert.ok(
+    savedSuccess.samples.some(
+      (sample) =>
+        sample.requestId ===
+          `${Number(beforeGeneration.generation)}:${Number(beforeGeneration.epoch)}:${base.now}:${TRUSTED_CATALOG[2]}` &&
+        sample.outcome === 'success' &&
+        sample.bytes === base.healthyObservation.bytes &&
+        sample.throughputMbps === 8 &&
+        sample.at === base.now,
+    ),
+    'the exact successful transfer was persisted before abort',
+  )
   await base.outputRoutes.observe({
     ...base.healthyObservation,
     generation: beforeGeneration.generation,
@@ -3157,10 +3170,10 @@ async function checkWeakQueryMatchIsNotABackupCapability13(t: TestContext): Prom
     status: 0,
     completedAt: base.now + 1,
   })
-  assert.strictEqual(
-    base.outputRoutes.latestVideoHost(),
-    TRUSTED_CATALOG[2],
-    'latest abort does not erase last successful video host',
+  assert.deepEqual(
+    base.outputEvidence.get(TRUSTED_CATALOG[2], 'video'),
+    savedSuccess,
+    'abort does not change the successfully committed health evidence',
   )
   await base.outputRoutes.observe({
     ...base.healthyObservation,

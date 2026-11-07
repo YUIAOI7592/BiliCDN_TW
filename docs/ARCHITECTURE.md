@@ -401,7 +401,7 @@ Vault 的輸出對照及來源大小只附著於既有 handle 與 RouteIdentity�
 
 ControlCenter 只提供總覽、CDN、播放設定三頁，經 ControlReadModelPort 訂閱並取得當次快照。每次建構／刷新共用單份模型，CDN 開關不各自取快照；snapshot() 沒有詳細證據參數。
 
-`createControlReadModel(sources)` 只組合畫面使用的功能來源，不接收版本或時鐘；版本與顯示時間仍由入口直接注入 ControlCenter。快照不包含未使用的 version／releaseStage，亦不展開其他表示的 recentPlans 或複製 lastSuccess。RouteCoordinator 的私有計畫集合、最後成功資料及 latestVideoHost() 仍服務原功能。
+`createControlReadModel(sources)` 只組合畫面使用的功能來源，不接收版本或時鐘；版本與顯示時間仍由入口直接注入 ControlCenter。快照不包含未使用的 version／releaseStage，亦不展開其他表示的 recentPlans。RouteCoordinator 保留私有計畫集合、目前影音請求與回應摘要；健康學習由 EvidenceStore 保存，不另維護沒有產品消費者的最後成功主機索引。
 
 總覽與 CDN 視圖保留初始模型供閉包及開關初始化，完整首次刷新統一由 ControlCenter 在建構視圖後執行一次；播放設定也使用同一中心流程。通知刷新仍沿用既有事件，不合併通知。
 

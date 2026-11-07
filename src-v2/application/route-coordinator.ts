@@ -126,7 +126,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #tentativeRepresentation: RepresentationId | null = null
   #streamPlans = new Map<string, RouteDecision>()
   #latest = new Map<string, RouteTransferSnapshot>()
-  #lastSuccess = new Map<string, RouteTransferSnapshot>()
   #requested = new Map<string, RequestContext>()
   #playbackFacts: RoutePlaybackFacts | null = null
   #effectiveRate = 2
@@ -195,7 +194,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
 
     this.#streamPlans.clear()
     this.#latest.clear()
-    this.#lastSuccess.clear()
     this.#requested.clear()
     this.#playbackFacts = null
     this.#effectiveRate = 2
@@ -1115,16 +1113,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       }
   }
 
-  latestVideoHost(): string | null {
-    const row = this.#lastSuccess.get('video')
-    return row?.outcome === 'success' &&
-      row.attributionStatus === 'matched' &&
-      this.clock.now() - Number(row.observedAt) <= 60_000 &&
-      typeof row.responseHost === 'string'
-      ? row.responseHost
-      : null
-  }
-
   unlockNative(representation: RepresentationId, host: string): void {
     const hosts = this.#unlockedNative.get(representation) ?? new Set<string>()
     hosts.add(host)
@@ -1914,8 +1902,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         controlsCurrent()
       ) {
         this.#latest.set(key, transportSnapshot(observation))
-        if (observation.outcome === 'success' && observation.finalHost)
-          this.#lastSuccess.set(key, this.#latest.get(key)!)
       }
       const result = classifyTransportResult(observation)
       if (result.type === 'ignore') return
