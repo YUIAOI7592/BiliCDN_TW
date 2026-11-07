@@ -6,7 +6,7 @@
 
 十八套件／2,140 案完整通過，failed／cancelled／skipped／todo 均零；原 2,106 案的名稱、kind 及參數展開無遺失，新增 34 案。退休最後成功主機索引，UI 合併同批 monitor／routes 刷新，settings、換頁與命令完成仍立即刷新。選路、熔斷、W／G／C、Native 預設、schema 2、四鍵、網路及恢復額度不變。
 
-本版採離線交付。最終 verify、型別、架構、唯讀格式、文件、封存、差異及安全封印均已通過；兩次建置、語法、暫存封裝及校驗一致。正式封裝及公開核對完成後另列實際結果。沒有啟動瀏覽器、更新安裝版或重跑已通過熔斷窗口；實機適用率與效益尚未新增驗證。原六情境提前重試效用仍 FAIL，與功能契約／模型算式通過分開。
+本版採離線交付。最終 verify、型別、架構、唯讀格式、文件、封存、差異及安全封印均已通過；兩次建置、語法、暫存封裝及校驗一致。正式封裝、main／標籤推送、Release 及公開下載核對已完成，結果見下列公開交付紀錄。沒有啟動瀏覽器、更新安裝版或重跑已通過熔斷窗口；實機適用率與效益尚未新增驗證。原六情境提前重試效用仍 FAIL，與功能契約／模型算式通過分開。
 
 ## 自動驗證
 
@@ -61,7 +61,13 @@ Codex Security 掃描 b3c3ca06-4bb1-4bc0-8bfb-cae432ca45c4，固定 b3185ed..faa
 
 ## 交付與安裝範圍
 
-v2.2.11 五項 Release 原件已逐筆核對原 SHA-256，按原始 bytes 搬至 archive/retired/releases/Release/v2.2.11；原搬移清單另存不可變快照。上一版完整報告含 R1／R2 已原樣追加，三份日誌只追加。本版腳本 512,863 bytes，SHA-256：`9a8ec881aa30390576e8c90d67d0034f51da307df9a36f96b83ec22ffa3b1235`。五項正式封裝及公開核對完成後另記，不移動舊標籤。
+v2.2.11 五項 Release 原件已逐筆核對原 SHA-256，按原始 bytes 搬至 archive/retired/releases/Release/v2.2.11；原搬移清單另存不可變快照。上一版完整報告含 R1／R2 已原樣追加，三份日誌只追加。本版五項正式產物已封裝並核對；公開 Release 僅附使用者腳本，不移動舊標籤。
+
+### v2.2.12 公開交付核對（2026-11-07）
+
+23:55:05 Asia/Taipei 完成獨立下載核對。[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.12) 非草稿、非預發行，只有 BiliCDN_TW.user.js 一個附件；遠端 main 與 v2.2.12 標籤在發布時均為 `2798719546b73918aa92b993cfbdf01c1ceff2dc`。後續公開核對紀錄以文件提交推送 main，版本標籤固定在此發行提交。
+
+[版本附件](https://github.com/YUIAOI7592/BiliCDN_TW/releases/download/v2.2.12/BiliCDN_TW.user.js) 與[公開 latest](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js) 均回傳 200，標頭版本為 2.2.12，大小 512,863 bytes；兩份下載與本機正式產物逐位元組相同，SHA-256 均為 `9a8ec881aa30390576e8c90d67d0034f51da307df9a36f96b83ec22ffa3b1235`，亦符合 GitHub 附件 digest。公開核對不代表安裝版已更新或驗收通過。
 
 <a name="v2211-r1-熔斷安裝驗收2026-11-06"></a>
 <a name="v2211-r2-受控熔斷與安裝接線2026-11-06"></a>
