@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fixture, media } from './functional-races/routing-fixture.ts'
 import { testScope } from '../support/scope.ts'
+import { installProgressEvent } from '../support/progress-event.ts'
 import {
   requestId,
   type RequestContext,
@@ -290,9 +291,9 @@ async function xhrFixture(
       this.#ready = 0
       this.dispatchEvent(new NativeEvent('abort'))
     }
-    progress(loaded: number, trusted = true) {
+    progress(loaded: number, trusted = true, status = 206) {
       this.#ready = 3
-      this.#status = 206
+      this.#status = status
       this.#responseURL = this.responseOverride ?? this.url
       this.dispatchEvent(new NativeEvent('readystatechange'))
       const event = trusted
@@ -420,6 +421,92 @@ test('UP141-RETRY native timeout hands matching website retry to alternative onl
     false,
   )
 })
+
+for (const timeout of [0, 1, 500, 3000, 10000, 13000]) {
+  test(`V2212 retry qualification: website timeout ${timeout} preserves the existing eligibility boundary`, async (t) => {
+    const f = await xhrFixture(t),
+      xhr = new f.NativeXhr()
+    xhr.open('GET', f.original)
+    xhr.timeout = timeout
+    xhr.setRequestHeader('Range', 'bytes=0-399999')
+    xhr.send()
+    await f.ready(xhr)
+    const samples = f.transport.samples(f.clock.now())
+    assert.equal(samples.length, timeout === 0 ? 1 : 0)
+    if (timeout === 0) {
+      assert.equal(samples[0]!.request.kind, 'video')
+      assert.equal(samples[0]!.request.routeType, 'catalog-generated')
+      assert.equal(samples[0]!.loadedBytes, 11000)
+      assert.equal(samples[0]!.recentBytesPerSec, 6250)
+    }
+    assert.equal(xhr.timeout, timeout)
+    assert.equal(xhr.nativeSends, 1)
+    assert.equal(xhr.nativeTimeouts, 0, 'qualification itself does not request a timeout')
+  })
+}
+
+for (const exclusion of [
+  'sync',
+  'post',
+  'no-range',
+  'open-range',
+  'multi-range',
+  'audio',
+  'untrusted-progress',
+  'status-200',
+  'disabled',
+] as const) {
+  test(`V2212 retry qualification: zero timeout still respects ${exclusion}`, async (t) => {
+    const f = await xhrFixture(t)
+    installProgressEvent(f.scope)
+    if (exclusion === 'disabled') await f.settings.update({ earlyRetryEnabled: false })
+    let url = f.original
+    if (exclusion === 'audio') {
+      url = media('retry', 'audio.m4s')
+      const state = f.session.get()
+      f.vault.register({
+        generation: state.generation,
+        epoch: state.epoch,
+        kind: 'audio',
+        key: 'audio',
+        height: 0,
+        codec: 'other',
+        bandwidth: 128000,
+        urls: [url],
+        source: 'trusted-api',
+      })
+    }
+    const xhr = new f.NativeXhr()
+    xhr.open(exclusion === 'post' ? 'POST' : 'GET', url, exclusion !== 'sync')
+    if (exclusion !== 'no-range')
+      xhr.setRequestHeader(
+        'Range',
+        exclusion === 'open-range'
+          ? 'bytes=0-'
+          : exclusion === 'multi-range'
+            ? 'bytes=0-10,20-30'
+            : 'bytes=0-399999',
+      )
+    xhr.send()
+    xhr.progress(1000, exclusion !== 'untrusted-progress', exclusion === 'status-200' ? 200 : 206)
+    f.clock.advance(1600)
+    xhr.progress(11000, exclusion !== 'untrusted-progress', exclusion === 'status-200' ? 200 : 206)
+    const samples = f.transport.samples(f.clock.now())
+    if (exclusion === 'untrusted-progress') {
+      assert.equal(samples.length, 1)
+      assert.equal(samples[0]!.loadedBytes, 0)
+      assert.equal(samples[0]!.recentBytesPerSec, null)
+    } else assert.deepEqual(samples, [])
+    assert.equal(xhr.timeout, 0)
+    assert.equal(
+      xhr.nativeSends,
+      exclusion === 'post' ? 0 : 1,
+      'Catalog-only non-GET rejection preserves the existing native-send boundary',
+    )
+    assert.equal(xhr.nativeTimeouts, 0)
+    await Promise.resolve()
+  })
+}
 
 test('UP141-RETRY same-value website timeout write revokes lease and survives cancellation', async (t) => {
   const f = await xhrFixture(t),

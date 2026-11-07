@@ -4,6 +4,7 @@ import { posix, resolve } from 'node:path'
 import { build } from 'esbuild'
 import { evaluateMeasurement } from './measurement-evaluation.mts'
 import { evaluateDeadlines } from './deadline-evaluation.mts'
+import { evaluateOptimization } from './optimization-evaluation.mts'
 
 export const baselineRevision = '048b0f94e6bb98922ee5bcc0d1b30003cf3b12a9'
 const now = 2_000_000_000_000,
@@ -240,14 +241,23 @@ if (
   process.argv[1] &&
   resolve(process.argv[1]) === resolve('scripts/evaluation/routing-evaluation.mts')
 )
-  console.log(
-    JSON.stringify(
-      process.argv.includes('--deadlines')
-        ? await evaluateDeadlines()
-        : process.argv.includes('--measurement')
-          ? await evaluateMeasurement()
-          : await evaluateRouting(),
-      null,
-      2,
-    ),
-  )
+  if (
+    process.argv.includes('--optimization') &&
+    (process.argv.length !== 3 || process.argv[2] !== '--optimization')
+  ) {
+    console.error('Usage: npm run evaluate:routing -- --optimization')
+    process.exitCode = 2
+  } else
+    console.log(
+      JSON.stringify(
+        process.argv.includes('--optimization')
+          ? await evaluateOptimization()
+          : process.argv.includes('--deadlines')
+            ? await evaluateDeadlines()
+            : process.argv.includes('--measurement')
+              ? await evaluateMeasurement()
+              : await evaluateRouting(),
+        null,
+        2,
+      ),
+    )

@@ -156,6 +156,8 @@ UP141／CC39 契約依能力分開：npm test -- application --name CC39、npm t
 
 選路固定合成場景以 `npm run evaluate:routing` 執行，範圍、最壞上限記帳及結果限制見[選路模型對照](../scripts/evaluation/README.md#選路模型對照)。
 
+v2.2.12 的 `--optimization` 補充模式、提前重試資格對照及私有取證方法契約見[優化補充模型](../scripts/evaluation/README.md#v2212-優化補充模型)；模型完成與原六情境效用 FAIL 分開記錄。
+
 提前重試離線效用的固定輸入、退出碼及證據限制見 [評估指南](../scripts/evaluation/README.md#慢請求提前重試)。
 
 `docs:check` 已納入 `verify`，以鎖定的 GFM 解析／格式及標題錨點套件執行，不讀取私有證據。預設輸出檔案、行號、規則及原因；`npm run docs:check -- --json` 輸出 schemaVersion 2 結果，包含 findings、legacyLinks、archivedReferences、私有證據未核對及外部連結未連線資料。archivedReferences 表示受保護原文中的原網址因搬移失效，另有登記封存目標；它不算有效現行連結。既有快照斷鏈另列 legacyLinks，不能宣稱歷史網址全部有效。
