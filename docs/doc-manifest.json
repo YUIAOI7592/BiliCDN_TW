@@ -3637,6 +3637,22 @@
       ]
     },
     {
+      "path": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
+      "kind": "record",
+      "topics": [
+        "todo-optimization-research"
+      ],
+      "versions": [
+        "v2.2.11"
+      ],
+      "date": "2026-11-07",
+      "requiredAnchors": [
+        "研究結論",
+        "建議執行順序與風險",
+        "保存與驗證邊界"
+      ]
+    },
+    {
       "path": "Release/v2.2.11/CHANGELOG_v2.2.11.md",
       "kind": "immutable",
       "topics": [
@@ -3662,6 +3678,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 27251,
+      "sha256": "588b9aeb8e91e065101c4c9a1679de73e4a1f155dcd527df37869ef36de55e69"
+    },
     {
       "path": "archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md",
       "mode": "prefix",

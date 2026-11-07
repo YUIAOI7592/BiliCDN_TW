@@ -9,6 +9,7 @@
 | 目的 | 閱讀順序 |
 | --- | --- |
 | 安裝、操作與排查 | [README](../README.md) |
+| 研究剩餘 TODO 如何優化 | [v2.2.11 基準研究](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md#研究結論) → [建議順序與風險](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md#建議執行順序與風險) → [目前工作](TODO.md#剩餘-todo-優化研究)；研究建議與實作／實測授權分開 |
 | UP141 歷史測試操作 | [v2.1.38 操作表](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md) → [對應完整報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2138-完整正文保存2026-10-31)；不構成新輪次授權 |
 | 研究選路與開源方案 | [Auto 與選路數學模型](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#研究結論) → [參數驗證及保留資料](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#模型參數驗證與保留資料結果) → [既有選路研究](../archive/retired/docs/ROUTING_ALGORITHM_RESEARCH_v2.2.6_2026-11-03.md#研究結論) → [現行架構](ARCHITECTURE.md#選路與傳輸)；研究與採用狀態看 [TODO](TODO.md) |
 | 校準 Auto 與換站收益 | [來源及收益界限](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#auto-結構識別與換站收益界限) → [編碼／分段期限](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#編碼能力與分段期限的離線驗證) → [逐筆時序核對](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#完成時間的逐筆時序核對) → [目前工作](TODO.md#auto-決策與換站收益校準)；觀察、合成重建與未識別參數分開閱讀 |
