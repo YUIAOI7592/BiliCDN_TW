@@ -2656,6 +2656,7 @@
         "內建瀏覽器驗證",
         "剪貼簿驗證",
         "封裝與發行",
+        "更新現有段落避免累積副本",
         "狀態與矛盾核對"
       ]
     },
@@ -2940,6 +2941,8 @@
       "requiredAnchors": [
         "v2-工作狀態與後續方向",
         "現在的執行狀態",
+        "已結案與未啟動工作",
+        "過往工作檢查點",
         "執行邊界"
       ]
     },
@@ -3654,6 +3657,24 @@
       ]
     },
     {
+      "path": "archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md",
+      "kind": "record",
+      "topics": [
+        "early-retry-applicability-research"
+      ],
+      "versions": [
+        "v2.2.12"
+      ],
+      "date": "2026-11-08",
+      "requiredAnchors": [
+        "研究結論",
+        "方法校準與偏差",
+        "自然請求與逐層分母",
+        "建議順序與研究邊界",
+        "保存與驗證邊界"
+      ]
+    },
+    {
       "path": "archive/retired/releases/Release/v2.2.11/CHANGELOG_v2.2.11.md",
       "kind": "immutable",
       "topics": [
@@ -3703,6 +3724,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 18731,
+      "sha256": "d8308349c318e24c1bd9eb4c71c648b0c0fa9797ad865f40cf7df7fbccb02883"
+    },
     {
       "path": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
       "mode": "prefix",

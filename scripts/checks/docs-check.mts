@@ -207,6 +207,11 @@ function plainText(node: MarkdownNode): string {
   if (node.type === 'html') return ''
   return node.value ?? node.alt ?? (node.children ?? []).map(plainText).join('')
 }
+function proseParagraphs(node: MarkdownNode): MarkdownNode[] {
+  if (['blockquote', 'code', 'table'].includes(node.type)) return []
+  if (node.type === 'paragraph') return [node]
+  return (node.children ?? []).flatMap(proseParagraphs)
+}
 export function markdownAnchors(source: string): ReadonlySet<string> {
   const tree = unified().use(remarkParse).use(remarkGfm).parse(source)
   const slugger = new GithubSlugger(),
@@ -635,6 +640,23 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
     for (const error of errors)
       add(file, error.ruleNames[0]!, error.ruleDescription, error.lineNumber)
   for (const file of Object.keys(current)) {
+    if (['guide', 'navigation', 'status'].includes(entries.get(file)!.kind)) {
+      const firstLines = new Map<string, number>()
+      for (const paragraph of proseParagraphs(trees.get(file)!)) {
+        const text = plainText(paragraph).replace(/\s+/g, ' ').trim()
+        if ([...text].length < 32) continue
+        const line = paragraph.position?.start.line ?? 1
+        const first = firstLines.get(text)
+        if (first === undefined) firstLines.set(text, line)
+        else
+          add(
+            file,
+            'duplicate-paragraph',
+            `Repeated visible paragraph; first occurrence at line ${first}`,
+            line,
+          )
+      }
+    }
     if (
       descendants(trees.get(file)!).filter((node) => node.type === 'heading' && node.depth === 1)
         .length !== 1

@@ -12,27 +12,16 @@
 
 ## 已撤除的專用評估
 
+<a name="實際緩衝效用與採用判定工具"></a>
+<a name="緩衝影子效用與成本評估"></a>
+<a name="診斷成本基準"></a>
+<a name="唯讀緩衝趨勢診斷"></a>
+
 診斷成本、緩衝趨勢／shadow／live／risk／adoption 及 scripts/iab 工具已於 v2.2.1 撤除；沒有正式可執行副本。[固定提交中的原工具與操作](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/scripts/evaluation/README.md) 可供歷史追溯；原報告、效用 FAIL 與停止決策保持。
 
 ## 慢請求提前重試
 
 `npm run evaluate:early-retry -- --json` 獨立執行六個固定模型情境，保存 policy／input SHA-256、逐案預測、held-out 未來供片、停頓及不必要重下載。退出碼 0 為門檻全通過、1 為效用 FAIL、2 為非法參數；不能把效用 FAIL 改為預期失敗或混入 verify 的全綠。測試工具無執行期依賴、不連網，不為取得介入放寬產品資格。它不能證明原生瀏覽器或實機效益。
-
-<a name="實際緩衝效用與採用判定工具"></a>
-
-此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/scripts/evaluation/README.md#實際緩衝效用與採用判定工具)；現行內容以本頁正文為準。
-
-<a name="緩衝影子效用與成本評估"></a>
-
-此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/scripts/evaluation/README.md#緩衝影子效用與成本評估)；現行內容以本頁正文為準。
-
-<a name="診斷成本基準"></a>
-
-此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/scripts/evaluation/README.md#診斷成本基準)；現行內容以本頁正文為準。
-
-<a name="唯讀緩衝趨勢診斷"></a>
-
-此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/scripts/evaluation/README.md#唯讀緩衝趨勢診斷)；現行內容以本頁正文為準。
 
 ## 選路模型對照
 
@@ -56,7 +45,7 @@
 | 判斷、許可與認領 | [純政策](../../src-v2/domain/early-retry.ts)、[RouteCoordinator](../../src-v2/application/route-coordinator.ts) | 同控制器／實傳契約核對 1.35 倍、完成度、兩秒交接、許可過期、認領與送出一次。7,680 組模型僅補充純政策條件，不繞過前層資格。 |
 | 起播獨立流程 | [MeasurementController](../../src-v2/application/measurement-controller.ts) | [正數 timeout 起播契約](../../tests-v2/regressions/functional-races/xhr.ts)：正數仍可等待起播窗口，不能與提前重試的正數排除混用。 |
 
-真正現場各層適用率仍未量測；沒有為拒絕原因新增產品計數器或公開測試介面。
+本表只說明離線資格與覆蓋，不包含現場分母。自然觀察、方法限制與效益證據由 [HISTORY](../../docs/HISTORY.md#提前重試現場適用率與成本) 追溯；沒有為拒絕原因新增產品計數器或公開測試介面。
 
 ### 後續取證方法契約
 

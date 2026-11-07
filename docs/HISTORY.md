@@ -10,6 +10,8 @@
 
 ## 版本
 
+- [v2.2.12 觀察校準與提前重試適用率研究（2026-11-08）](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md)。
+
 - [v2.2.12 程式精簡、刷新與離線補強](TEST_REPORT.md#驗收結論)；[契約映射](../tests-v2/MIGRATION.md#v2212-索引退役刷新與評估)；[R1 三頁與刷新安裝專項](TEST_REPORT.md#v2212-r1-三頁與刷新專項2026-11-08)。
 
 - [v2.2.11 基準的剩餘 TODO 優化研究（2026-11-07）](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md)。
@@ -125,6 +127,10 @@
 | v1.6.0 | [當版發行快照](../archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md)、[v1.6.0 公開安全摘要](../archive/retired/docs/SECURITY_REVIEW_v1.6.0.md) |
 
 ## 議題
+
+### 提前重試現場適用率與成本
+
+[方法校準](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md#方法校準與偏差)、[自然請求分母](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md#自然請求與逐層分母)、[交接及反例](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md#交接成本預測與離線反例)；工作狀態回到 [TODO](TODO.md#v2212-提前重試適用率研究)。
 
 ### 剩餘 TODO 優化研究
 
@@ -261,6 +267,7 @@
 
 ### 文件維護與指南快照
 
+- [README 去重、現行導覽與更新規則整理 — 2026-11-08](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#現行文件去重與更新規則整理2026-11-08)
 - [現行文件與歷史狀態全面對齊 — 2026-10-31](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-31現行文件與歷史狀態全面對齊)
 - [本次整理前 TODO 全文 — 固定提交 fede700](https://github.com/YUIAOI7592/BiliCDN_TW/blob/fede7003e7c5056b9ca1a713dbee7266370e45e0/docs/TODO.md)
 - [舊 IAB 矩陣、時限及雙分頁方法 — 固定提交 fede700](https://github.com/YUIAOI7592/BiliCDN_TW/blob/fede7003e7c5056b9ca1a713dbee7266370e45e0/docs/IAB_TESTING.md)
@@ -351,7 +358,9 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
+| 2026-11-08 | [現行文件去重與更新規則](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#現行文件去重與更新規則整理2026-11-08)；[重複段落檢查契約](TEST_TOOLING_REPORT.md#2026-11-08現行文件重複段落檢查) |
 | 2026-11-08 | [v2.2.12 R1 三頁、設定與 UI 刷新專項](TEST_REPORT.md#v2212-r1-三頁與刷新專項2026-11-08) |
+| 2026-11-08 | [v2.2.12 觀察校準與提前重試適用率研究](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md) |
 | 2026-11-07 | [v2.2.12 程式整理與離線評估](TEST_REPORT.md#驗收結論)；[v2.2.11 原報告保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-完整正文保存2026-11-07) |
 | 2026-11-07 | [剩餘 TODO 六類優化研究與離線反例](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md) |
 | 2026-11-07 | [v2.2.11 文件狀態核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#v2211-文件狀態核對2026-11-07)；只整理導覽與狀態，不新增執行證據 |

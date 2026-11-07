@@ -9,22 +9,18 @@
 | 目的 | 閱讀順序 |
 | --- | --- |
 | 安裝、操作與排查 | [README](../README.md) |
-| 研究剩餘 TODO 如何優化 | [v2.2.11 基準研究](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md#研究結論) → [建議順序與風險](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md#建議執行順序與風險) → [目前工作](TODO.md#剩餘-todo-優化研究)；[本版實作對照](TEST_REPORT.md#政策與契約對照)，未實作建議與實測仍分開 |
-| UP141 歷史測試操作 | [v2.1.38 操作表](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md) → [對應完整報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2138-完整正文保存2026-10-31)；不構成新輪次授權 |
-| 研究選路與開源方案 | [Auto 與選路數學模型](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#研究結論) → [參數驗證及保留資料](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#模型參數驗證與保留資料結果) → [既有選路研究](../archive/retired/docs/ROUTING_ALGORITHM_RESEARCH_v2.2.6_2026-11-03.md#研究結論) → [現行架構](ARCHITECTURE.md#選路與傳輸)；研究與採用狀態看 [TODO](TODO.md) |
-| 校準 Auto 與換站收益 | [來源及收益界限](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#auto-結構識別與換站收益界限) → [編碼／分段期限](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#編碼能力與分段期限的離線驗證) → [逐筆時序核對](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#完成時間的逐筆時序核對) → [目前工作](TODO.md#auto-決策與換站收益校準)；觀察、合成重建與未識別參數分開閱讀 |
-| 熔斷現行規則 | [狀態與期限](ARCHITECTURE.md#熔斷與降級觀察) → [原版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-完整正文保存2026-11-07) → [執行紀錄](../archive/retired/docs/CIRCUIT_OBSERVATION_v2.2.11_2026-11-06.md) |
-| 核對 v2.2.11 驗收輪次 | [R1 原判定](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-r1-熔斷安裝驗收2026-11-06) → [R2 受控整合與安裝接線](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-r2-受控熔斷與安裝接線2026-11-06)；證據層級、方法偏差及未測範圍由同一報告維護 |
-| 研究熔斷與恢復 | [現況及研究結論](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#研究結論) → [候選政策與模型](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#候選政策與模型結果) → [瀏覽器限制](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#來源隔離與安裝版執行情況)；工作狀態只看 [TODO](TODO.md) |
+| 理解選路、熔斷、恢復與資料顯示 | [ARCHITECTURE](ARCHITECTURE.md)；使用者操作回到 README，安全要求見 SECURITY |
+| 研究選路、Auto、熔斷或提前重試效益 | [HISTORY 議題](HISTORY.md#議題) → 該議題的原始研究與限制；是否已採用或啟動只看 TODO |
 | 開始修改程式 | [TODO](TODO.md) → [AGENTS](../AGENTS.md) → [ARCHITECTURE](ARCHITECTURE.md) → [SECURITY](../SECURITY.md) → [DEVELOPMENT](DEVELOPMENT.md) |
 | 撰寫或執行測試 | [TODO](TODO.md) → [DEVELOPMENT 測試套件與隔離](DEVELOPMENT.md#測試套件與隔離)；涉及瀏覽器時再讀 [IAB_TESTING](IAB_TESTING.md)；結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
 | 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#發行規則) → [DEVELOPMENT 封裝與發行](DEVELOPMENT.md#封裝與發行)，並依 [發布文件更新順序](DEVELOPMENT.md#發布文件更新順序) 準備文件 |
 | 查舊版或舊議題 | [HISTORY](HISTORY.md) → 依版本、議題或日期進入原始報告 |
-| 核對自動驗證、發布與安裝結果 | [TEST_REPORT 驗收結論](TEST_REPORT.md#驗收結論) → [v2.2.12 R1 三頁／刷新專項](TEST_REPORT.md#v2212-r1-三頁與刷新專項2026-11-08)；目前工作與停止決策回到 [TODO](TODO.md) |
-| 核對 v2.2.10 安裝輪次 | [原版結論](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-完整正文保存2026-11-06) → [R3 播放與 UI](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-r3-補驗2026-11-05) → [R4 正數 timeout](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-r4-正數-timeout-專項2026-11-05)；R1／R2 原判定由 [HISTORY](HISTORY.md#v2210-安裝驗收與工具限制2026-11-05) 進入 |
+| 核對自動驗證、發布與安裝結果 | [TEST_REPORT 驗收結論](TEST_REPORT.md#驗收結論)；舊版本與各輪原判定由 [HISTORY 版本](HISTORY.md#版本) 進入 |
 | 核對文件是否落後或矛盾 | [TODO](TODO.md) → [TEST_REPORT](TEST_REPORT.md) → [狀態與矛盾核對](DEVELOPMENT.md#狀態與矛盾核對) → [HISTORY](HISTORY.md)；修正權威內容，其他入口維持導引 |
 
 修改時需要更新哪些文件，直接查 [文件更新對照表](DEVELOPMENT.md#文件更新對照表)。
+
+新版本或研究只在 HISTORY 登記版本、議題與日期入口；本表不逐版累積第二份報告目錄。避免重複與過時規則的操作方式見[更新現有段落](DEVELOPMENT.md#更新現有段落避免累積副本)。
 
 ## 現行指南
 

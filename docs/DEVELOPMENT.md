@@ -168,27 +168,11 @@ v2.2.12 的 `--optimization` 補充模式、提前重試資格對照及私有取
 
 詳細操作、輸入、期限與判定見 [離線評估指南](../scripts/evaluation/README.md#原版與-v2-的獨立離線比較)。
 
-### 安裝版還原觀察工具
-
-本節的安裝版觀察／插樁工具已於 v2.2.1 撤除；播放器的實際恢復與位置／倍速還原能力保留，契約及驗證方法見 [救援還原驗證](#救援還原驗證)。[撤除前工具原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md#安裝版還原觀察工具) 僅供歷史追溯，不是現行操作或驗收要求。
-
-### 實際緩衝效用與採用判定工具
-
-此功能與專用工具已於 v2.2.1 撤除；[撤除前固定原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md) 僅供歷史追溯，不是現行操作或驗收要求。
-
-### 緩衝影子效用與成本評估
-
-此功能與專用工具已於 v2.2.1 撤除；[撤除前固定原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md) 僅供歷史追溯，不是現行操作或驗收要求。
-
 ### 原始碼格式與靜態規則
 
 Prettier 3.9.10 只作開發工具。固定格式為兩空格、單引號、無分號、100 字元行寬、LF 與尾端逗號；關閉嵌入語言格式化，保留測試字串及模板內容。格式工具使用明確維護清單，只遍歷正式來源、測試與工具，另含根目錄維護 JSON 設定；Release、封存、基準、私有證據、生成 JS 與依賴鎖定檔不寫入。輸出最多四次格式計算取得穩定內容，無法穩定時失敗；check 模式不寫入。
 
 三個型別專案沿用 strict，並檢查未使用宣告／參數及明確型別匯入。移除多餘綁定仍保留初始化的副作用；既有位置參數使用明確未用名稱而不變更呼叫介面。不加入 ESLint／typescript-eslint，TypeScript 7 保持既有精確版本，架構規則仍使用本機 AST。
-
-## 診斷成本基準
-
-此功能與專用工具已於 v2.2.1 撤除；[撤除前固定原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md) 僅供歷史追溯，不是現行操作或驗收要求。
 
 ## 新增行為
 
@@ -262,10 +246,6 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 成功契約除 state 外還須核對原 action 的 source／保存目標及 reason，避免將失敗後的普通 playback-progress-observed 誤算成原還原成功。真實 Monitor／Runtime／Routes 閉環使用 `SR2-I-F01`；補正等待時段不算播放時間，SDK 快取前進而原生時間不前進、未知倍速、play getter 新操作及十五秒尾段復發各有拒絕對照。
 
-## 唯讀緩衝趨勢診斷
-
-此功能與專用工具已於 v2.2.1 撤除；[撤除前固定原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md) 僅供歷史追溯，不是現行操作或驗收要求。
-
 ## 建置輸出
 
 [build.mts](../scripts/build.mts) 將 `src-v2/entry.ts` 打包成單一瀏覽器 IIFE，以 Chrome 120 為目標，不分割程式碼；前置 [使用者腳本中繼資料](../src-v2/metadata.txt) 並填入設定版本。輸出為 `dist/BiliCDN_TW.user.js`、外部原始碼對照及 `dist/build-manifest.json`。資訊清單記錄建置選項、輸入雜湊及使用者腳本雜湊。建置不會上傳產物。v2 來源不得加入執行期依賴、遠端程式載入、Worker 攔截或歷史 v1 匯入。
@@ -276,13 +256,9 @@ metadata.txt 中既有的 `@version` 是建置模板值；實際輸出由 releas
 
 唯一執行方法與證據層級見 [IAB_TESTING](IAB_TESTING.md)；目前工作只看 [TODO](TODO.md)。本節不維護第二份校準、故障、清理或停止流程，也不構成開啟新窗口的授權。舊 real-chrome-validation 錨點只保留相容，不授權外部 Chrome。
 
-### 剪貼簿驗證
-
-剪貼簿功能及相關驗收已於 v2.2.1 撤除；原始方法與結果只供歷史追溯。
-
 ## 封裝與發行
 
-現行產品版本以 release.json 為準。v2.1.37／v2.1.38 保留歷史測試定位；v2.1.39 起依使用者 2026-10-31 決定正式整合，六項功能與 HK 缺值預設開啟，既有 false 保留。正式交付不把離線效用 FAIL 或不足實機改判通過；版本發布不恢復已結束的實測，單分頁及永久禁令優先。
+現行產品版本以 release.json 為準；預設及產品政策由 README／ARCHITECTURE 維護，歷史整合決策由 HISTORY 追溯。正式交付不把離線效用 FAIL 或不足實機改判通過；版本發布不恢復已結束的實測，單分頁及永久禁令優先。
 
 明確執行 `npm run package` 會建置，依 `release.json` 版本在 `Release/v<version>/` 寫入五項設定產物：
 
@@ -319,6 +295,15 @@ metadata.txt 中既有的 `@version` 是建置模板值；實際輸出由 releas
 | 發布新版 | 依 [發布文件更新順序](#發布文件更新順序) 更新版本、變更、完整結果與工作狀態，並核對上列受影響指南 |
 
 實測結果只維護 [TEST_REPORT](TEST_REPORT.md) 或對應原始紀錄；新增測試及本輪驗證不得改寫舊版發布時的案例數。普通修復不再分開建立 FIX／ACCEPTANCE／CONTINUATION 多份報告。必要獨立調查或設計紀錄保存於 `archive/retired/docs/`，檔名標示版本或日期並登記 HISTORY；同議題按日期追加，原判定及限制保留。`docs/` 維持現行文件用途。
+
+### 更新現有段落，避免累積副本
+
+1. 先定位同一議題的權威章節及所有現行提及位置，再修改原段落或表格。政策改變時替換舊規則，不在文末追加一段相反說明；歷史差異留在 CHANGELOG 或版本紀錄。
+2. README 依安裝、操作、預設、排查及隱私組織。格式解析、數值公式、授權與內部時序連到 ARCHITECTURE；開發限制與工具操作連到 DEVELOPMENT／IAB_TESTING。使用者仍需知道的功能限制保留簡短提示與證據入口。
+3. INDEX 只列穩定的閱讀目的與權威位置；版本、日期與研究報告清單集中 HISTORY。新增報告不必在兩個索引各插入一套詳細閱讀路徑。
+4. TODO 開頭只維護目前範圍、下一步及未啟動項目。已結案原文保留於明確標記的歷史區或固定快照，不把「當時尚未完成」帶入新待辦；驗收數字與原判定連回報告。
+5. 相同撤除說明合併成一個歷史導引區，集中保留 requiredAnchors 與各原文連結。不得為去重刪除永久禁令、停止決策、證據或授權聲明。
+6. 交付前同時查差異及完整章節的 GFM 解析結果，確認安裝步驟沒有混入測試操作、表格與正文沒有不同政策。`docs:check` 可攔同文件的重複長段落，無法證明不同措辭的語意一致；預設與條件仍須對照正式來源。
 
 <a name="release-documentation"></a>
 
@@ -371,7 +356,7 @@ metadata.txt 中既有的 `@version` 是建置模板值；實際輸出由 releas
 
 新增工具時另執行型別、tooling 與 verify；單純文件修改不新增產品或瀏覽器通過宣稱。工具結果追加 TEST_TOOLING_REPORT，文件核對追加 [維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)。
 
-docs:check 以 Git 已追蹤及未忽略的新 Markdown 為公開範圍；無 Git 的來源副本按明確公共目錄及清單的現行／封存 Release 目錄掃描，不遍歷私有 .work 或本機舊工具。它檢查 GFM、連結、唯一權威、兩次點擊、相容錨點、現行版本／npm 命令與正文保護。外部 URL 不連網；既有快照斷鏈、搬移後不可用原網址及歷史私有證據未核對數分開列出。未登記的私有證據連結即使本機有檔也會失敗。
+docs:check 以 Git 已追蹤及未忽略的新 Markdown 為公開範圍；無 Git 的來源副本按明確公共目錄及清單的現行／封存 Release 目錄掃描，不遍歷私有 .work 或本機舊工具。它檢查 GFM、連結、唯一權威、兩次點擊、相容錨點、現行版本／npm 命令與正文保護。指南、導覽及工作狀態另檢查同檔可見文字至少 32 字元的完全重複段落，忽略空白與連結目的地差異，保留首段及重複位置；程式碼、表格、引文、版本紀錄與追加日誌不以此規則改寫。外部 URL 不連網；既有快照斷鏈、搬移後不可用原網址及歷史私有證據未核對數分開列出。未登記的私有證據連結即使本機有檔也會失敗。
 
 只執行使用者批准範圍；文件整理不新增排程／CI/CD，不開安全掃描或瀏覽器窗口。
 
@@ -379,6 +364,14 @@ docs:check 以 Git 已追蹤及未忽略的新 Markdown 為公開範圍；無 Gi
 
 此相容入口保留 2026-10-30 隔離原型的重現導覽。使用固定提交的 [原始重現程序](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2a5851761d5a066cd3b54cb447b9da546a23187e/docs/DEVELOPMENT.md#慢請求提前重試原型重現分支限定)，並遵守目前永久禁令；本入口不恢復實機窗口。原型完整結果見 [歷史報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#隔離-b-分支原型驗證2026-10-30)。
 
+## 已撤除工具的舊入口
+
+<a name="安裝版還原觀察工具"></a>
+<a name="實際緩衝效用與採用判定工具"></a>
+<a name="緩衝影子效用與成本評估"></a>
+<a name="診斷成本基準"></a>
+<a name="唯讀緩衝趨勢診斷"></a>
+<a name="剪貼簿驗證"></a>
 <a name="風險覆蓋與可介入性離線評估"></a>
 
-此舊入口的原文及當時判定見 [固定歷史版本](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md#風險覆蓋與可介入性離線評估)；現行內容以本頁正文為準。
+上述診斷、緩衝專用評估、安裝版插樁及剪貼簿工具已於 v2.2.1 撤除；[撤除前完整開發指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/DEVELOPMENT.md)保留各原章節，不是現行操作或驗收要求。播放器恢復能力仍保留，現行方法見[救援還原驗證](#救援還原驗證)；其餘評估見[離線評估指南](../scripts/evaluation/README.md)。

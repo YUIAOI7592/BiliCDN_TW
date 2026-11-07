@@ -115,13 +115,11 @@ v2.1.20 的 E／S／B／P／C 完整矩陣及當時門檻保存在 [重整前原
 - 保存方法完整描述子，只還原仍由工具持有的包裝；原為繼承方法則移除自有遮蔽，不覆寫其他腳本新包裝。
 - 清理未完成會使本輪交付不通過，另列清理原因；不得先宣稱通過再把殘留交給下一輪。
 
-### 剪貼簿校準與保護
+<a name="解除延遲與剪貼簿寫入"></a>
 
-此功能與專用工具已於 v2.2.1 撤除；[撤除前固定原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/IAB_TESTING.md#剪貼簿校準與保護) 僅供歷史追溯，不是現行操作或驗收要求。
+### 解除受控延遲
 
-### 解除延遲與剪貼簿寫入
-
-解除受控延遲時立即清空自有攔截模式並核對後續新請求不再被持有。Network 截斷只使依賴完整時序的結論無效；獨立媒體採樣及產品操作結果保留。剪貼簿功能已撤除，歷史方法只供追溯。
+解除受控延遲時立即清空自有攔截模式並核對後續新請求不再被持有。Network 截斷只使依賴完整時序的結論無效；獨立媒體採樣及產品操作結果保留。
 
 ## 6. 結果、期限與停止規則
 
@@ -181,3 +179,7 @@ Tampermonkey 更新先用內建瀏覽器開啟本儲存庫既有 [公開 latest 
 - 實際已知能力與撤回的背景判定：[2026-10-11 可用性報告](../archive/retired/docs/IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md)。
 - 產品契約：[ARCHITECTURE](ARCHITECTURE.md)；原生／偽裝可見性與所有權：[ARCHITECTURE](ARCHITECTURE.md#網站前景偽裝與內部可見性)、[SECURITY](../SECURITY.md#瀏覽器行為)。
 - 工作範圍與當前執行狀態只看 [TODO](TODO.md)；已取得的版本證據只看 [TEST_REPORT](TEST_REPORT.md) 與有日期的原始報告。
+
+<a name="剪貼簿校準與保護"></a>
+
+舊剪貼簿功能及其驗收已於 v2.2.1 撤除；[原始校準與保護規則](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/docs/IAB_TESTING.md#剪貼簿校準與保護)僅供歷史追溯，不列入現行矩陣。

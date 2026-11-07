@@ -233,6 +233,50 @@ test('documentation accepts Chinese headings, emphasis and duplicate heading suf
   const anchors = markdownAnchors('# 中文標題\n\n## **操作** `seek`\n\n## **操作** `seek`\n')
   assert.deepEqual([...anchors], ['中文標題', '操作-seek', '操作-seek-1'])
 })
+
+for (const kind of ['guide', 'navigation', 'status']) {
+  test(`documentation duplicate paragraphs: reports visible copies in ${kind}`, async (t) => {
+    const f = fixture(t)
+    f.manifest.documents[1]!.kind = kind
+    f.write(
+      'docs/guide.md',
+      '# 指南\n\n此舊入口的原文及當時判定見 [固定歷史版本](https://example.test/one)；現行內容以本頁正文為準。\n\n' +
+        '## 舊入口\n\n此舊入口的原文及當時判定見 **固定歷史版本**；現行內容以本頁正文為準。\n',
+    )
+    const report = await f.check()
+    const duplicates = report.findings.filter((item) => item.rule === 'duplicate-paragraph')
+    assert.equal(report.success, false)
+    assert.equal(duplicates.length, 1)
+    assert.equal(duplicates[0]?.file, 'docs/guide.md')
+    assert.equal(duplicates[0]?.line, 7)
+    assert.match(duplicates[0]!.message, /line 3/)
+  })
+}
+
+test('documentation duplicate paragraphs: excludes quoted evidence, code, tables and short labels', async (t) => {
+  const f = fixture(t)
+  const paragraph = 'This paragraph is long enough to describe a complete historical observation.'
+  f.write(
+    'docs/guide.md',
+    `# 指南\n\n${paragraph}\n\n> ${paragraph}\n>\n> ${paragraph}\n\n` +
+      `\`\`\`text\n${paragraph}\n${paragraph}\n\`\`\`\n\n` +
+      `| Evidence |\n| --- |\n| ${paragraph} |\n| ${paragraph} |\n\n` +
+      '短導引。\n\n## 另一入口\n\n短導引。\n',
+  )
+  assert.equal((await f.check()).success, true)
+})
+
+for (const kind of ['verification', 'changelog', 'record', 'journal', 'immutable']) {
+  test(`documentation duplicate paragraphs: preserves repeated evidence in ${kind}`, async (t) => {
+    const f = fixture(t)
+    const paragraph =
+      'The historical result and original limitations remain unchanged for this run.'
+    f.manifest.documents[1]!.kind = kind
+    f.write('docs/guide.md', `# Report\n\n${paragraph}\n\n${paragraph}\n`)
+    if (['record', 'journal', 'immutable'].includes(kind)) f.protect('docs/guide.md')
+    assert.equal((await f.check()).success, true)
+  })
+}
 test('documentation validates encoded paths, images, references and custom anchors', async (t) => {
   const f = fixture(t)
   f.manifest.documents[1]!.path = 'docs/中文 guide.md'
