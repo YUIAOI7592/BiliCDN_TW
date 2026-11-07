@@ -66,9 +66,10 @@ export interface ControlModelSources {
   readonly transport: ControlTransportReader
 }
 
+export type ControlModelChange = 'settings' | 'monitor' | 'routes'
 export interface ControlReadModelPort {
   snapshot(): ControlCenterSnapshot
-  subscribe(listener: () => void): () => void
+  subscribe(listener: (source: ControlModelChange) => void): () => void
 }
 export interface ControlCenterDependencies {
   readonly model: ControlReadModelPort

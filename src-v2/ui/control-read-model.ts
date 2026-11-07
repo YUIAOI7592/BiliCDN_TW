@@ -16,9 +16,10 @@ export function createControlReadModel(sources: ControlModelSources): ControlRea
       })
     },
     subscribe(listener) {
-      const stops = [sources.settings, sources.monitor, sources.routes].flatMap((source) =>
-        source.subscribe ? [source.subscribe(listener)] : [],
-      )
+      const stops = (['settings', 'monitor', 'routes'] as const).flatMap((kind) => {
+        const source = sources[kind]
+        return source.subscribe ? [source.subscribe(() => listener(kind))] : []
+      })
       return () => {
         for (const stop of stops) stop()
       }

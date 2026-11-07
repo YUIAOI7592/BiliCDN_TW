@@ -403,7 +403,7 @@ ControlCenter 只提供總覽、CDN、播放設定三頁，經 ControlReadModelP
 
 `createControlReadModel(sources)` 只組合畫面使用的功能來源，不接收版本或時鐘；版本與顯示時間仍由入口直接注入 ControlCenter。快照不包含未使用的 version／releaseStage，亦不展開其他表示的 recentPlans。RouteCoordinator 保留私有計畫集合、目前影音請求與回應摘要；健康學習由 EvidenceStore 保存，不另維護沒有產品消費者的最後成功主機索引。
 
-總覽與 CDN 視圖保留初始模型供閉包及開關初始化，完整首次刷新統一由 ControlCenter 在建構視圖後執行一次；播放設定也使用同一中心流程。通知刷新仍沿用既有事件，不合併通知。
+總覽與 CDN 視圖保留初始模型供閉包及開關初始化，完整首次刷新統一由 ControlCenter 在建構視圖後執行一次；播放設定也使用同一中心流程。讀模型以 settings／monitor／routes 分類通知。ControlCenter 將同批 monitor／routes 通知合併為一個 microtask，執行時才取得最新快照；settings、換頁及命令完成仍立即刷新。排隊工作綁定視圖修訂，關閉、重開或明確刷新撤銷舊工作；快照讀取期間的新通知保留到下一次刷新，讀回後再次核對視圖所有權。此合併只作用於 UI，功能事件與 Runtime 的影片恢復交接維持同步。
 
 總覽保留目前緩衝、保守吞吐、需求餘裕、影音回應、量測／恢復／提前重試狀態與詳細狀態。資料僅為功能本身的當前狀態、最後一筆摘要與既有計數，不建立另一套歷程。選路學習的 EvidenceStore 仍供選路與量測使用，不列舉為報告。
 

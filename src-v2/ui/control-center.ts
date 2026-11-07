@@ -14,6 +14,7 @@ export class ControlCenter implements ShowControlCenterPort {
   #shadow: ShadowRoot | null = null
   #opener: HTMLElement | null = null
   #viewVersion = 0
+  #queuedRefresh: { readonly version: number } | null = null
   #open = false
   #releaseKeyboard: (() => void) | null = null
   #binding: ControlViewBinding | null = null
@@ -33,7 +34,12 @@ export class ControlCenter implements ShowControlCenterPort {
     this.#releaseView()
     this.#shell()
     this.#navigate('overview')
-    this.#subscriptions.push(this.deps.model.subscribe(() => this.#refresh()))
+    this.#subscriptions.push(
+      this.deps.model.subscribe((source) => {
+        if (source === 'settings') this.#refresh()
+        else this.#queueRefresh()
+      }),
+    )
   }
 
   close(): void {
@@ -103,6 +109,7 @@ export class ControlCenter implements ShowControlCenterPort {
   }
 
   #releaseView(): void {
+    this.#queuedRefresh = null
     for (const release of this.#subscriptions.splice(0)) release()
     this.#binding?.dispose?.()
     this.#binding = null
@@ -176,6 +183,7 @@ export class ControlCenter implements ShowControlCenterPort {
 
   #navigate(page: ControlPage): void {
     if (!this.#frame) return
+    this.#queuedRefresh = null
     const version = ++this.#viewVersion
     this.#binding?.dispose?.()
     this.#binding = null
@@ -192,6 +200,7 @@ export class ControlCenter implements ShowControlCenterPort {
       refreshAfter: (command, settled) => this.#refreshAfter(command, version, settled),
     }
     const model = this.deps.model.snapshot()
+    if (!this.#ownsView(version)) return
     this.#binding =
       page === 'overview'
         ? renderOverview(this.#frame, actions, this.deps.now, model)
@@ -203,13 +212,31 @@ export class ControlCenter implements ShowControlCenterPort {
 
   #refresh(model?: ControlCenterSnapshot): void {
     if (!this.#open || !this.#host?.isConnected) return
-    model ??= this.deps.model.snapshot()
+    const version = this.#viewVersion,
+      host = this.#host
+    if (!model) {
+      // Invalidate only work queued before this read; reentrant notifications are newer.
+      this.#queuedRefresh = null
+      model = this.deps.model.snapshot()
+    }
+    if (!this.#ownsView(version) || this.#host !== host || !host.isConnected) return
     if (this.#power) {
       const enabled = !model.settings.disabled
       this.#power.textContent = enabled ? '停用腳本' : '啟用腳本'
       this.#power.setAttribute('aria-pressed', String(enabled))
     }
     this.#binding?.refresh(model)
+  }
+
+  #queueRefresh(): void {
+    if (!this.#open || this.#queuedRefresh) return
+    const work = { version: this.#viewVersion }
+    this.#queuedRefresh = work
+    queueMicrotask(() => {
+      if (this.#queuedRefresh !== work) return
+      this.#queuedRefresh = null
+      if (this.#ownsView(work.version)) this.#refresh()
+    })
   }
 
   #ownsView(version: number): boolean {
