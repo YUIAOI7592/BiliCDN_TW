@@ -10,7 +10,7 @@
 
 ## 版本
 
-- [v2.2.12 程式精簡、刷新與離線補強](TEST_REPORT.md#驗收結論)；[契約映射](../tests-v2/MIGRATION.md#v2212-索引退役刷新與評估)。
+- [v2.2.12 程式精簡、刷新與離線補強](TEST_REPORT.md#驗收結論)；[契約映射](../tests-v2/MIGRATION.md#v2212-索引退役刷新與評估)；[R1 三頁與刷新安裝專項](TEST_REPORT.md#v2212-r1-三頁與刷新專項2026-11-08)。
 
 - [v2.2.11 基準的剩餘 TODO 優化研究（2026-11-07）](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md)。
 
@@ -351,6 +351,7 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
+| 2026-11-08 | [v2.2.12 R1 三頁、設定與 UI 刷新專項](TEST_REPORT.md#v2212-r1-三頁與刷新專項2026-11-08) |
 | 2026-11-07 | [v2.2.12 程式整理與離線評估](TEST_REPORT.md#驗收結論)；[v2.2.11 原報告保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-完整正文保存2026-11-07) |
 | 2026-11-07 | [剩餘 TODO 六類優化研究與離線反例](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md) |
 | 2026-11-07 | [v2.2.11 文件狀態核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#v2211-文件狀態核對2026-11-07)；只整理導覽與狀態，不新增執行證據 |

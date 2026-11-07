@@ -20,7 +20,7 @@
 | 撰寫或執行測試 | [TODO](TODO.md) → [DEVELOPMENT 測試套件與隔離](DEVELOPMENT.md#測試套件與隔離)；涉及瀏覽器時再讀 [IAB_TESTING](IAB_TESTING.md)；結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
 | 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#發行規則) → [DEVELOPMENT 封裝與發行](DEVELOPMENT.md#封裝與發行)，並依 [發布文件更新順序](DEVELOPMENT.md#發布文件更新順序) 準備文件 |
 | 查舊版或舊議題 | [HISTORY](HISTORY.md) → 依版本、議題或日期進入原始報告 |
-| 核對自動驗證、發布與安裝結果 | [TEST_REPORT 驗收結論](TEST_REPORT.md#驗收結論) → 相應階段正文；目前工作與停止決策回到 [TODO](TODO.md) |
+| 核對自動驗證、發布與安裝結果 | [TEST_REPORT 驗收結論](TEST_REPORT.md#驗收結論) → [v2.2.12 R1 三頁／刷新專項](TEST_REPORT.md#v2212-r1-三頁與刷新專項2026-11-08)；目前工作與停止決策回到 [TODO](TODO.md) |
 | 核對 v2.2.10 安裝輪次 | [原版結論](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-完整正文保存2026-11-06) → [R3 播放與 UI](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-r3-補驗2026-11-05) → [R4 正數 timeout](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-r4-正數-timeout-專項2026-11-05)；R1／R2 原判定由 [HISTORY](HISTORY.md#v2210-安裝驗收與工具限制2026-11-05) 進入 |
 | 核對文件是否落後或矛盾 | [TODO](TODO.md) → [TEST_REPORT](TEST_REPORT.md) → [狀態與矛盾核對](DEVELOPMENT.md#狀態與矛盾核對) → [HISTORY](HISTORY.md)；修正權威內容，其他入口維持導引 |
 
