@@ -9,12 +9,12 @@
 | 目的 | 閱讀順序 |
 | --- | --- |
 | 安裝、操作與排查 | [README](../README.md) |
-| 研究剩餘 TODO 如何優化 | [v2.2.11 基準研究](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md#研究結論) → [建議順序與風險](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md#建議執行順序與風險) → [目前工作](TODO.md#剩餘-todo-優化研究)；研究建議與實作／實測授權分開 |
+| 研究剩餘 TODO 如何優化 | [v2.2.11 基準研究](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md#研究結論) → [建議順序與風險](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md#建議執行順序與風險) → [目前工作](TODO.md#剩餘-todo-優化研究)；[本版實作對照](TEST_REPORT.md#政策與契約對照)，未實作建議與實測仍分開 |
 | UP141 歷史測試操作 | [v2.1.38 操作表](../archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md) → [對應完整報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2138-完整正文保存2026-10-31)；不構成新輪次授權 |
 | 研究選路與開源方案 | [Auto 與選路數學模型](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#研究結論) → [參數驗證及保留資料](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#模型參數驗證與保留資料結果) → [既有選路研究](../archive/retired/docs/ROUTING_ALGORITHM_RESEARCH_v2.2.6_2026-11-03.md#研究結論) → [現行架構](ARCHITECTURE.md#選路與傳輸)；研究與採用狀態看 [TODO](TODO.md) |
 | 校準 Auto 與換站收益 | [來源及收益界限](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#auto-結構識別與換站收益界限) → [編碼／分段期限](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#編碼能力與分段期限的離線驗證) → [逐筆時序核對](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#完成時間的逐筆時序核對) → [目前工作](TODO.md#auto-決策與換站收益校準)；觀察、合成重建與未識別參數分開閱讀 |
-| 熔斷現行規則 | [狀態與期限](ARCHITECTURE.md#熔斷與降級觀察) → [本版驗證](TEST_REPORT.md#驗收結論) → [執行紀錄](../archive/retired/docs/CIRCUIT_OBSERVATION_v2.2.11_2026-11-06.md) |
-| 核對 v2.2.11 驗收輪次 | [R1 原判定](TEST_REPORT.md#v2211-r1-熔斷安裝驗收2026-11-06) → [R2 受控整合與安裝接線](TEST_REPORT.md#v2211-r2-受控熔斷與安裝接線2026-11-06)；證據層級、方法偏差及未測範圍由同一報告維護 |
+| 熔斷現行規則 | [狀態與期限](ARCHITECTURE.md#熔斷與降級觀察) → [原版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-完整正文保存2026-11-07) → [執行紀錄](../archive/retired/docs/CIRCUIT_OBSERVATION_v2.2.11_2026-11-06.md) |
+| 核對 v2.2.11 驗收輪次 | [R1 原判定](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-r1-熔斷安裝驗收2026-11-06) → [R2 受控整合與安裝接線](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-r2-受控熔斷與安裝接線2026-11-06)；證據層級、方法偏差及未測範圍由同一報告維護 |
 | 研究熔斷與恢復 | [現況及研究結論](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#研究結論) → [候選政策與模型](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#候選政策與模型結果) → [瀏覽器限制](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md#來源隔離與安裝版執行情況)；工作狀態只看 [TODO](TODO.md) |
 | 開始修改程式 | [TODO](TODO.md) → [AGENTS](../AGENTS.md) → [ARCHITECTURE](ARCHITECTURE.md) → [SECURITY](../SECURITY.md) → [DEVELOPMENT](DEVELOPMENT.md) |
 | 撰寫或執行測試 | [TODO](TODO.md) → [DEVELOPMENT 測試套件與隔離](DEVELOPMENT.md#測試套件與隔離)；涉及瀏覽器時再讀 [IAB_TESTING](IAB_TESTING.md)；結果與限制看 [TEST_REPORT](TEST_REPORT.md) |

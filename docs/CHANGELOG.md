@@ -1,10 +1,16 @@
 # BiliCDN_TW 變更紀錄
 
+## v2.2.12
+
+- 退役沒有產品消費者的最後成功主機索引，保留精確已保存學習、目前影音摘要、計畫及親和。
+- ControlCenter 合併同批 monitor／routes 通知，設定、首次建構、換頁與命令完成保持立即刷新；排隊工作核對視圖所有權，不改功能事件順序。
+- 新增提前重試資格對照與 `evaluate:routing -- --optimization` 離線模型，保留 VBR、換站成本、負向及未知結果；正數 timeout 的提前重試排除與原效用 FAIL 保持。完整功能、安全、交付與未測範圍見[報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論)。
+
 ## v2.2.11
 
 - 熔斷降級改為本頁普通實傳五分鐘觀察，成功缺口兩分鐘、結算寬限一分鐘；保留逐筆失敗升級及四級期限，新失敗不縮短原隔離。
 - 速度樣本過期仍保留故障等級，加入清除世代／紀錄身分／熔斷修訂及共同鎖提交，防止舊通知與重複降級。
-- CDN 與總覽詳細狀態顯示共享等級及本頁觀察；不新增歷程、探測或設定。完整離線及發布狀態見[報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論)，本版安裝未驗證。
+- CDN 與總覽詳細狀態顯示共享等級及本頁觀察；不新增歷程、探測或設定。原發布時安裝未驗證，後續 R1／R2 與原始限制見[當版完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-完整正文保存2026-11-07)。
 
 ## v2.2.10
 
