@@ -6,6 +6,8 @@
 
 建置改用唯一版本占位符，封存檢查支援額外私有清單；完成本機工作分類、封存與可重建快取刪除。十八套件／2,269 案、verify、文件、公開／本機封存及安全差異審查通過。沒有刪除缺乏證據的產品邏輯，也沒有調整產品政策；公開發布核對另記於下節。
 
+使用者更新後的本版必要載入身分驗證亦已通過，範圍及 R1／R2 原始限制見[本輪結果](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2214-載入身分驗證2026-11-08)，不擴張為其他功能重測。
+
 ## 自動驗證
 
 固定提交的十八套件／2,261 案基線通過；原案例名稱及參數展開零遺失，新增八個工具契約，共 2,269 案全數通過，failed／skipped／todo／cancelled 均零。工具套件為 226 案；新增前的拒絕證據與沙箱 Git 暫存寫入限制另存本輪紀錄，基線使用固定提交隔離副本，不將環境失敗算成產品失敗。
@@ -55,17 +57,35 @@ Codex Security 已封印並讀回 8f3cf2f→407c0c4 的不可變差異：四個�
 
 ## 來源隔離與實際安裝
 
-本版未執行瀏覽器、來源隔離或安裝版驗收；未重測已通過的三頁、播放或熔斷窗口。v2.2.13 R1–R5、B1 與人工播放更正完整保留於[上一版正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-完整正文保存2026-11-08)，不轉算為 v2.2.14 通過。提前重試原效用 FAIL、自然效益未知及真正跨頁限制保持。
+發布時未執行瀏覽器或來源隔離；使用者更新後另獲授權的[載入身分驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2214-載入身分驗證2026-11-08)已完成。只確認本版所需的管理器、完整本體、唯一實例與 hooks，不重測三頁、播放、選路、黑名單、Native 刷新或熔斷窗口。v2.2.13 原判定與更正見[上一版正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-完整正文保存2026-11-08)，不轉算新版功能通過；提前重試效用 FAIL、自然效益未知及真正跨頁限制保持。
 
 ## 公開交付與安裝結案
 
 已原樣封存 v2.2.13 五份原件並封裝 v2.2.14。main 與 v2.2.14 標籤於發布時均核對為 fa7eb6dd777785e4bdef1ff14d6c8cda4df4d326；[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.14)非草稿／預覽版，唯一附件為 BiliCDN_TW.user.js。
 
-公開 latest 的既有精確網址已實際 GET，HTTP 200、@version 2.2.14、532,263 bytes，完整 SHA-256 與本機產物及 GitHub asset digest 一致。後續僅提交這次交付文件，標籤與五份發行原件保持發布提交；Release 報告中的待公開核對描述封裝當時，不回寫。安裝版未驗證，不自動更新或恢復舊窗口。
+公開 latest 的既有精確網址已實際 GET，HTTP 200、@version 2.2.14、532,263 bytes，完整 SHA-256 與本機產物及 GitHub asset digest 一致。標籤與五份發行原件保持發布提交；Release 報告的待核對描述封裝當時，不回寫。後續載入身分驗證已完成，未因此恢復歷史功能窗口；驗證當時先只存本機，結案後使用者另行要求提交並推送文件，不升版或發布。
 
 ## 歷史驗證導覽
 
 版本、議題、日期與完整歷史由 [HISTORY](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md) 維護；以下舊錨點只提供相容導引。
+
+## v2.2.14 載入身分驗證（2026-11-08）
+
+使用者更新後明確要求只驗本次變更，基準為 ae04bef。R1 於 21:22:58–21:31:40（Asia/Taipei）完成完整本體配對及清理；暫停式身分操作遭自動審查拒絕，因此 R1 管理器／單例／hooks 原結果保留為未完成，不改算通過。使用者後續明確授權自主補驗，R2 於 21:34:20–21:36:49 完成剩餘身分核對及清理，未超過五分鐘上限。
+
+| 項目 | 結果與證據 |
+| --- | --- |
+| 完整載入本體 | PASS。Tampermonkey 包裝中包含完整 532,263 bytes，與正式附件 SHA-256 e1c66d9e3933b6f7138a5acbff445203ff01c0fe82be20d4bb253dec8d6c5a76 相同；R2 新文件前置亦相符，不另重跑功能案例 |
+| 管理器及版本 | PASS。實際 GM_info：Tampermonkey 5.5.1／script version 2.2.14 |
+| 唯一執行實例 | PASS。以本文件同一腳本的建構原型 queryObjects，RuntimeController／ControlCenter／TransportAdapter 各一個 |
+| Hooks 所有權 | PASS。讀取 Transport 私有安裝狀態與純 isInstalled 比較；Fetch／XHR 均 true，hookState=installed；沒有呼叫產品 snapshot 或命令 |
+| 清理 | PASS。兩輪自有分頁均關閉，最後 IAB 自有分頁零；真正媒體 muted／paused 均 true、error=false，Debugger／Runtime domains 及物件群組釋放，設定寫入與學習清除均零 |
+
+R2 透過既有 DOM click handler 的唯讀閉包作用域取得 GM_info 與建構原型，沒有點擊入口、開啟選單、設斷點或暫停 JavaScript；paused 事件為零且游標未截斷。最初一次讀取發生在入口 DOM 尚未出現，回報 Invalid parameters；新狀態出現後重新定位，沒有重載或重開功能窗口。R1 兩次自動審查拒絕及其限制保留為工具事件，不當成產品失敗。
+
+私有 PLAN／IDENTITY／CASES／CLEANUP 位於 .work/iab-testing/2026-11-08-v2.2.14-ae04bef-R1 與 R2。結論限於「v2.2.14 正確載入、本版必要身分驗證通過」，不宣稱新的一／兩倍播放、選路、黑名單、Native 刷新或熔斷結果；未修改產品、正式測試、版本、標籤或發行原件。
+
+載入驗證結案後，使用者明確要求將本次六份文件提交並推送 main。此交付保留 R1 受阻、R2 通過、原方法事件與驗證範圍；只交付文件，不新增測試、瀏覽器窗口、版本、標籤或 Release。工具及維護日誌原先的「只存本機」保留為當時授權，後續交付另行追加。
 
 <a name="v2212-r1-三頁與刷新專項2026-11-08"></a>
 

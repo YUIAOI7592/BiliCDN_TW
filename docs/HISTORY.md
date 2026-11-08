@@ -11,6 +11,7 @@
 ## 版本
 
 - [v2.2.14 全面清理](../archive/retired/docs/CLEANUP_v2.2.14_2026-11-08.md)；[完整驗證](TEST_REPORT.md#驗收結論)。
+- [v2.2.14 更新後載入身分核對（2026-11-08）](TEST_REPORT.md#v2214-載入身分驗證2026-11-08)。
 
 - [v2.2.13 R5 受控真實 API 接線（2026-11-08）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r5-受控真實-api-接線2026-11-08)
 
