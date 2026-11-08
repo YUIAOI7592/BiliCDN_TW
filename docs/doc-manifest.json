@@ -2898,9 +2898,9 @@
         "verification"
       ],
       "versions": [
-        "v2.2.14"
+        "v2.2.15"
       ],
-      "date": "2026-11-08",
+      "date": "2026-11-09",
       "requiredAnchors": [
         "驗收結論",
         "v2212-r1-三頁與刷新專項2026-11-08",
@@ -3806,7 +3806,7 @@
       ]
     },
     {
-      "path": "Release/v2.2.14/CHANGELOG_v2.2.14.md",
+      "path": "archive/retired/releases/Release/v2.2.14/CHANGELOG_v2.2.14.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -3818,7 +3818,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.14/TEST_REPORT_v2.2.14.md",
+      "path": "archive/retired/releases/Release/v2.2.14/TEST_REPORT_v2.2.14.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -3827,6 +3827,30 @@
         "v2.2.14"
       ],
       "date": "2026-11-08",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.15/CHANGELOG_v2.2.15.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.15"
+      ],
+      "date": "2026-11-09",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.15/TEST_REPORT_v2.2.15.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.15"
+      ],
+      "date": "2026-11-09",
       "requiredAnchors": []
     }
   ],
@@ -7955,38 +7979,73 @@
       "sha256": "a4ee91f1786161758c48c23f2cec1d229569575b2d00e9d93aa4dd99d9ff24b6"
     },
     {
-      "path": "Release/v2.2.14/BiliCDN_TW.user.js",
+      "path": "archive/retired/releases/Release/v2.2.14/BiliCDN_TW.user.js",
       "encoding": "raw",
       "bytes": 532263,
       "sha256": "e1c66d9e3933b6f7138a5acbff445203ff01c0fe82be20d4bb253dec8d6c5a76",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.14/BUILD_MANIFEST_v2.2.14.json",
+      "path": "archive/retired/releases/Release/v2.2.14/BUILD_MANIFEST_v2.2.14.json",
       "encoding": "raw",
       "bytes": 10297,
       "sha256": "19f8b085cebc652758ce5111f019eb6df11d73371fd9279416047d4762c6f18a",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.14/CHANGELOG_v2.2.14.md",
+      "path": "archive/retired/releases/Release/v2.2.14/CHANGELOG_v2.2.14.md",
       "encoding": "raw",
       "bytes": 70030,
       "sha256": "2418719946c31a5d321f3571cc67516a1203eb32077d58d82805010e095579f7",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.14/SHA256SUMS_v2.2.14.txt",
+      "path": "archive/retired/releases/Release/v2.2.14/SHA256SUMS_v2.2.14.txt",
       "encoding": "raw",
       "bytes": 419,
       "sha256": "d0e7a893d9a5de22ecfb4a2605cd91c75379ac567730324cbddd30cbac014eda",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.14/TEST_REPORT_v2.2.14.md",
+      "path": "archive/retired/releases/Release/v2.2.14/TEST_REPORT_v2.2.14.md",
       "encoding": "raw",
       "bytes": 13991,
       "sha256": "5dce1099283ba4428eb3e4f66288e4f1a94c7fc35adc0d43584924ed37d586c0",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.15/BiliCDN_TW.user.js",
+      "encoding": "raw",
+      "bytes": 535486,
+      "sha256": "96bff42ad7ac5deb9b500605b244af3598a6f67b7f93bf85d6c26992ff0b8cef",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.15/BUILD_MANIFEST_v2.2.15.json",
+      "encoding": "raw",
+      "bytes": 13055,
+      "sha256": "385a0e8b760ffc08096268989141a9bdf9a19893354295ceb2f2b3f4dcca2dd6",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.15/CHANGELOG_v2.2.15.md",
+      "encoding": "raw",
+      "bytes": 70840,
+      "sha256": "07fa852698fe73c84b6ff8619072876be2031dcfb4ef62bdf17f3354641f22e2",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.15/SHA256SUMS_v2.2.15.txt",
+      "encoding": "raw",
+      "bytes": 419,
+      "sha256": "18f8af1d79c283570cbc3311e1f5e03b744a73c2bc907cb691722d921b679523",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.15/TEST_REPORT_v2.2.15.md",
+      "encoding": "raw",
+      "bytes": 14329,
+      "sha256": "ebf303a53c5f0df327c62ba2cc79676a043f4b59a94d4b794f515272ecb07269",
       "mode": "exact"
     }
   ],

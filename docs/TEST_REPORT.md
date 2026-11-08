@@ -1,26 +1,24 @@
-# BiliCDN_TW v2.2.14 完整驗證報告
+# BiliCDN_TW v2.2.15 完整驗證報告
 
-日期：2026-11-08（Asia/Taipei）。基準 main／8f3cf2f，v2.2.13；本次採離線清理交付。
+日期：2026-11-09（Asia/Taipei）。基準 main／dc3b6f0、v2.2.14；本次採離線模組整合交付。
 
 ## 驗收結論
 
-建置改用唯一版本占位符，封存檢查支援額外私有清單；完成本機工作分類、封存與可重建快取刪除。十八套件／2,269 案、verify、文件、公開／本機封存及安全差異審查通過。沒有刪除缺乏證據的產品邏輯，也沒有調整產品政策；公開發布核對另記於下節。
-
-使用者更新後的本版必要載入身分驗證亦已通過，範圍及 R1／R2 原始限制見[本輪結果](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2214-載入身分驗證2026-11-08)，不擴張為其他功能重測。
+完成契約功能歸位、選路帳本與純投影抽取、量測／恢復／播放器／XHR 熱點整理及測試功能分布。十八套件／2,292 案通過；原 2,269 案名稱、參數展開與相對註冊順序逐項保留。型別、架構、完整測試、唯讀格式、文件、公開／本機封存、verify、bundle 與安全差異門檻均已通過；公開發布核對接續執行，沒有啟動瀏覽器。
 
 ## 自動驗證
 
-固定提交的十八套件／2,261 案基線通過；原案例名稱及參數展開零遺失，新增八個工具契約，共 2,269 案全數通過，failed／skipped／todo／cancelled 均零。工具套件為 226 案；新增前的拒絕證據與沙箱 Git 暫存寫入限制另存本輪紀錄，基線使用固定提交隔離副本，不將環境失敗算成產品失敗。
+固定 Node 26.8.1／npm 11.19.0。原基線沙箱暫存 Git 寫入限制與允許環境下完整通過分開保存，不當成產品失敗。新增 23 案：五個架構私有邊界、十二個助手與純驗證、六個工具契約。全部 failed／skipped／todo／cancelled 為零。
 
 | 套件 | 案例 | 結果 |
 | --- | ---: | --- |
-| architecture | 41 | PASS |
+| architecture | 46 | PASS |
 | imports | 1 | PASS |
 | domain-boundaries | 3 | PASS |
-| domain | 107 | PASS |
+| domain | 111 | PASS |
 | state | 81 | PASS |
-| application | 837 | PASS |
-| adapters | 210 | PASS |
+| application | 841 | PASS |
+| adapters | 214 | PASS |
 | native-routing | 13 | PASS |
 | native-transport | 222 | PASS |
 | orchestration | 40 | PASS |
@@ -31,61 +29,37 @@
 | progressive-transport | 4 | PASS |
 | playurl-summary | 22 | PASS |
 | control-center | 108 | PASS |
-| tooling | 226 | PASS |
+| tooling | 232 | PASS |
 
-最終型別、103 模組架構、全部測試、唯讀格式、文件、公開／本機封存及 verify 已實際通過。verify 再執行 2,269 案、可重現建置、語法、退役標記與暫存封裝／校驗。文件檢查保留七個不可變舊斷鏈、434 個搬移後原網址限制及十八個私有證據未核對，不將它們改算有效連結。本機封存核對 11,922 檔，包含本輪新增 1,571 檔；無雜湊或所有權差異。
-
-正式腳本 532,263 bytes；將上一版唯一 @version 改成 2.2.14 後，與新版完整腳本逐位元組相同，證明沒有其他執行期內容差異。SHA-256 為 e1c66d9e3933b6f7138a5acbff445203ff01c0fe82be20d4bb253dec8d6c5a76。
+型別、107 個執行期模組架構、匯入純度、完整案例、唯讀格式、文件及公開封存已通過。最終 verify 已實際通過：再執行 2,292 案、可重現建置、語法、v2-only／退役標記及暫存封裝校驗；本機封存 11,922 檔核對通過。正式腳本 535,486 bytes，SHA-256 96bff42ad7ac5deb9b500605b244af3598a6f67b7f93bf85d6c26992ff0b8cef。案例搬移及每階段證據見[本輪紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md)。
 
 ## 安全差異
 
-Codex Security 已封印並讀回 8f3cf2f→407c0c4 的不可變差異：四個來源項目及 metadata／指南均覆蓋，漏洞與待釐清安全候選為零。掃描 ID：64957be7-dd52-40b9-86e5-72f8fd40965b；manifest SHA-256 所屬封印與完整結果由本機 Codex Security 保存。後續僅文件、版本、封存登記及產物，不變更受審程式。
+Codex Security 已完成並封印不可變 dc3b6f0→60870f9 差異，canonical 結果已讀回。291 個來源差異項目及額外測試定義／架構支援均覆蓋；漏洞、未結案候選及 deferred 為零。掃描 ID 06be0f32-1aa1-4cdf-b535-45599ef32046；scan-reported 模型 gpt-6.1-sol／xhigh。來源抽取後的授權、原生重入與唯一所有者保持；不代表安裝版驗收。後續只有版本、文件、封存及生成物，受審程式未變。
 
-工具回報用量為 input 1,803,839（cached 1,788,672）、output 2,582，total 1,806,421 tokens；是工具按對話來源回報的計數，不當成獨立新輸入量。Daybreak advisory 為 not_granted；本次 canonical 完成結果已實際讀回。
+工具計量為 input 16,914,267（cached 16,476,160）、output 56,115、total 16,970,382 tokens，coverage complete／五個 thread；這是 rollout 彙總計量，不當成獨立新輸入或費用。Daybreak advisory not_granted，canonical 完成結果已實際讀回。
 
-## 清理與功能保持
+## 模組責任與功能保持
 
-| 項目 | 實際結果 |
-| --- | --- |
-| 舊工作封存 | 1,571 檔、154,865,201 bytes；逐檔複製校驗後移除原位置 |
-| 可重建快取 | 刪除七檔、41,460,492 bytes（約 39.54 MiB）；保留重建依據及刪前雜湊 |
-| 正式功能與測試 | 未證實無用途的邏輯保留；原 2,261 案不刪減，新增工具契約獨立列示 |
-| 原始資料 | 報告引用證據原位保留；既有封存、日誌、baseline 與 Git 保持 |
-| 工具環境 | 現用 Node 26.8.1／npm 11.19.0 與根目錄依賴保留，dist 維持三項正式輸出 |
+application 按 routing／measurement／playback／playurl 共置控制器及窄契約，adapters 按 transport／player／playurl 分組。RouteCoordinator 保留決策、許可與親和提交；Measurement 保留 probe、鎖與取消；Recovery 保留 token、期限、補正與 SDK 派送；Observer 與 XHR Hook 保留原生操作及請求所有權。抽出助手不取得完整控制器或可公開修改的集合。
 
-逐項分類及限制見[清理報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/CLEANUP_v2.2.14_2026-11-08.md)。
+六層、Native 精確授權與預設、schema 2、四鍵、選路／熔斷 W/G/C、需求與提前重試政策及資源上限保持。三頁、設定同步生效、刷新合併、單次快照及按需詳細狀態沿用既有契約。沒有新增診斷、歷程、報告、剪貼簿或週期工作；原效用 FAIL 與未識別實機效益保持。
 
 ## 來源隔離與實際安裝
 
-發布時未執行瀏覽器或來源隔離；使用者更新後另獲授權的[載入身分驗證](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2214-載入身分驗證2026-11-08)已完成。只確認本版所需的管理器、完整本體、唯一實例與 hooks，不重測三頁、播放、選路、黑名單、Native 刷新或熔斷窗口。v2.2.13 原判定與更正見[上一版正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-完整正文保存2026-11-08)，不轉算新版功能通過；提前重試效用 FAIL、自然效益未知及真正跨頁限制保持。
+本版未啟動瀏覽器、來源隔離或 Tampermonkey 安裝驗收；未重跑已通過的播放、選單或熔斷窗口。v2.2.14 載入身分通過只屬舊版，保存在[原版完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2214-完整正文保存2026-11-09)，不轉算新版通過。自然通知交錯、真正跨分頁與提前重試實機效益限制仍保持。
 
 ## 公開交付與安裝結案
 
-已原樣封存 v2.2.13 五份原件並封裝 v2.2.14。main 與 v2.2.14 標籤於發布時均核對為 fa7eb6dd777785e4bdef1ff14d6c8cda4df4d326；[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.14)非草稿／預覽版，唯一附件為 BiliCDN_TW.user.js。
-
-公開 latest 的既有精確網址已實際 GET，HTTP 200、@version 2.2.14、532,263 bytes，完整 SHA-256 與本機產物及 GitHub asset digest 一致。標籤與五份發行原件保持發布提交；Release 報告的待核對描述封裝當時，不回寫。後續載入身分驗證已完成，未因此恢復歷史功能窗口；驗證當時先只存本機，結案後使用者另行要求提交並推送文件，不升版或發布。
+v2.2.14 五份 Release 原件已逐位元組封存並校驗。v2.2.15 本機封裝、遠端 main／標籤、唯一附件及公開 latest 核對待全部門檻通過後執行；封裝時狀態照實保留，後續公開結果只更新現行報告，不回寫 Release 快照。
 
 ## 歷史驗證導覽
 
-版本、議題、日期與完整歷史由 [HISTORY](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md) 維護；以下舊錨點只提供相容導引。
+版本、議題、日期由 [HISTORY](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md) 維護；以下錨點只作相容導引。
 
-## v2.2.14 載入身分驗證（2026-11-08）
+<a name="v2214-載入身分驗證2026-11-08"></a>
 
-使用者更新後明確要求只驗本次變更，基準為 ae04bef。R1 於 21:22:58–21:31:40（Asia/Taipei）完成完整本體配對及清理；暫停式身分操作遭自動審查拒絕，因此 R1 管理器／單例／hooks 原結果保留為未完成，不改算通過。使用者後續明確授權自主補驗，R2 於 21:34:20–21:36:49 完成剩餘身分核對及清理，未超過五分鐘上限。
-
-| 項目 | 結果與證據 |
-| --- | --- |
-| 完整載入本體 | PASS。Tampermonkey 包裝中包含完整 532,263 bytes，與正式附件 SHA-256 e1c66d9e3933b6f7138a5acbff445203ff01c0fe82be20d4bb253dec8d6c5a76 相同；R2 新文件前置亦相符，不另重跑功能案例 |
-| 管理器及版本 | PASS。實際 GM_info：Tampermonkey 5.5.1／script version 2.2.14 |
-| 唯一執行實例 | PASS。以本文件同一腳本的建構原型 queryObjects，RuntimeController／ControlCenter／TransportAdapter 各一個 |
-| Hooks 所有權 | PASS。讀取 Transport 私有安裝狀態與純 isInstalled 比較；Fetch／XHR 均 true，hookState=installed；沒有呼叫產品 snapshot 或命令 |
-| 清理 | PASS。兩輪自有分頁均關閉，最後 IAB 自有分頁零；真正媒體 muted／paused 均 true、error=false，Debugger／Runtime domains 及物件群組釋放，設定寫入與學習清除均零 |
-
-R2 透過既有 DOM click handler 的唯讀閉包作用域取得 GM_info 與建構原型，沒有點擊入口、開啟選單、設斷點或暫停 JavaScript；paused 事件為零且游標未截斷。最初一次讀取發生在入口 DOM 尚未出現，回報 Invalid parameters；新狀態出現後重新定位，沒有重載或重開功能窗口。R1 兩次自動審查拒絕及其限制保留為工具事件，不當成產品失敗。
-
-私有 PLAN／IDENTITY／CASES／CLEANUP 位於 .work/iab-testing/2026-11-08-v2.2.14-ae04bef-R1 與 R2。結論限於「v2.2.14 正確載入、本版必要身分驗證通過」，不宣稱新的一／兩倍播放、選路、黑名單、Native 刷新或熔斷結果；未修改產品、正式測試、版本、標籤或發行原件。
-
-載入驗證結案後，使用者明確要求將本次六份文件提交並推送 main。此交付保留 R1 受阻、R2 通過、原方法事件與驗證範圍；只交付文件，不新增測試、瀏覽器窗口、版本、標籤或 Release。工具及維護日誌原先的「只存本機」保留為當時授權，後續交付另行追加。
+[原版載入身分與 R1／R2 限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2214-載入身分驗證2026-11-08)。
 
 <a name="v2212-r1-三頁與刷新專項2026-11-08"></a>
 
