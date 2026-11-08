@@ -52,7 +52,7 @@ P01 採用 [第 2 輪](IAB_v2.1.20_BR01_R2_2026-10-11.md#5-p01獨立-xhr-子集-
 | MP4／FLV／混合格式 | `BR-03 mp4`、`BR-03 flv`、`BR-03 mixed same-cid source refresh preserves epoch and different cid revokes old authority`；progressive-playurl | N 三案通過；同 cid 六次刷新、簽名撤銷及不同 cid 對照 |
 | 請求與生命週期所有權 | Fetch 等待前保存 cid、XHR failed open／重入／重複 getter、低信任來源、generation、延後工作及診斷／持久資料隱私 | N 通過；完整 43 個名稱保存於本機證據索引 |
 
-正式入口仍明確匯入對應回歸；案例位於 [內容回歸](../../../tests-v2/regressions/functional-races/content.ts)、[領域回歸](../../../tests-v2/regressions/functional-races/content-domain.ts)、[傳輸回歸](../../../tests-v2/regressions/functional-races/xhr.ts) 與 [漸進式套件](../../../tests-v2/suites/progressive-playurl.ts)。
+正式入口仍明確匯入對應回歸；案例位於 [內容回歸](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/content.ts)、[領域回歸](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/content-domain.ts)、[傳輸回歸](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/xhr.ts) 與 [漸進式套件](../../../tests-v2/suites/progressive-playurl.ts)。
 
 ### 瀏覽器：原環境與覆蓋限制
 

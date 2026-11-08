@@ -20,7 +20,7 @@ Auto 是主要場景，不強制畫質、不變更網站 ABR，正常降解析�
 
 ## 測試及失敗紀錄
 
-正式案例在 [br01.ts](../../../tests-v2/regressions/functional-races/br01.ts)（application，22 個）與 [br01-player.ts](../../../tests-v2/regressions/functional-races/br01-player.ts)（adapters，4 個），沿用既有正式登記。原六個案例先在未修改執行期來源時執行，**3 正常對照 pass／A、B、C fail／退出碼 1**。pre-fix-contracts.txt 保留失敗斷言，沒有將錯誤行為存在當作正確契約。
+正式案例在 [br01.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br01.ts)（application，22 個）與 [br01-player.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br01-player.ts)（adapters，4 個），沿用既有正式登記。原六個案例先在未修改執行期來源時執行，**3 正常對照 pass／A、B、C fail／退出碼 1**。pre-fix-contracts.txt 保留失敗斷言，沒有將錯誤行為存在當作正確契約。
 
 完整具名案例、Fixture／FakeClock／deferred／testScope 安排：14,999／15,000、29,999／30,000、重載後 14,999／15,000 ms；單次備援／重載／終止；新 seek／拖曳／hidden／pause／disable／0 位置；Auto 表示／編碼變更；有進度降畫質；授權失效；同步還原／reload 重入；late play／reload reject；核心替換及兩次進度。方法回傳／例外原身分、參數／receiver、內部 seek、外部 reload marker、reset 與新 wrapper 所有權另有直接適配器契約。可信真輸入與網站 SDK 時序仍需 Chrome 證據，不能從 Node 合成事件推出。
 

@@ -4,7 +4,7 @@ import { MeasurementController } from '../../src-v2/application/measurement/meas
 import { type MeasurementStatus } from '../../src-v2/application/measurement/measurement-contracts.ts'
 import { MeasurementMetaStore } from '../../src-v2/state/measurement-meta-store.ts'
 import { EVIDENCE_KEY } from '../../src-v2/state/evidence-store.ts'
-import { fixture, media, dash } from '../regressions/functional-races/routing-fixture.ts'
+import { fixture, media, dash } from '../cases/routing/routing-fixture.ts'
 import { FakeStorage } from './storage.ts'
 import { testScope } from './scope.ts'
 

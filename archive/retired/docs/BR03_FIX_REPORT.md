@@ -37,9 +37,9 @@ cid 與目錄只在分頁記憶體使用，不讀取頁面全域／播放器／�
 
 | 案例來源／數量 | 覆蓋與重跑 |
 | --- | --- |
-| [content.ts](../../../tests-v2/regressions/functional-races/content.ts)：21 | `npm test -- orchestration`。原四契約、audio 身分、cid 相同／不同／首次／缺失恢復、子集、低信任、同物件防篡改、generation、正常／撤銷的恢復與 deferred 起播量測、診斷／持久資料隱私。 |
-| [content-domain.ts](../../../tests-v2/regressions/functional-races/content-domain.ts)：5 | `npm test -- domain`。字串精度與 URL 接納、三目錄全部六種排列、協定相對 URL／簽名、兩種容量淘汰、無效基準。 |
-| [xhr.ts](../../../tests-v2/regressions/functional-races/xhr.ts)：14 | `npm test -- native-transport`。Fetch 一次轉換與等待前 cid；XHR text／json failed open、重用、重複 getter、同步重入；十種缺失／不合法 cid 在兩種傳輸均不串錯身分。既有 BR-02 契約保留。 |
+| [content.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/content.ts)：21 | `npm test -- orchestration`。原四契約、audio 身分、cid 相同／不同／首次／缺失恢復、子集、低信任、同物件防篡改、generation、正常／撤銷的恢復與 deferred 起播量測、診斷／持久資料隱私。 |
+| [content-domain.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/content-domain.ts)：5 | `npm test -- domain`。字串精度與 URL 接納、三目錄全部六種排列、協定相對 URL／簽名、兩種容量淘汰、無效基準。 |
+| [xhr.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/xhr.ts)：14 | `npm test -- native-transport`。Fetch 一次轉換與等待前 cid；XHR text／json failed open、重用、重複 getter、同步重入；十種缺失／不合法 cid 在兩種傳輸均不串錯身分。既有 BR-02 契約保留。 |
 | [progressive-playurl.ts](../../../tests-v2/suites/progressive-playurl.ts)：3 | `npm test -- progressive-playurl`。MP4、FLV、混合格式：同 cid 六次完全換目錄不換 epoch，漸進式舊簽名仍撤銷，不同 cid 仍換片。 |
 
 [runtime-fixture.ts](../../../tests-v2/support/runtime-fixture.ts) 可選擇注入 RangeProbePort，讓新增交錯案例使用真正 MeasurementController、FakeClock 與 deferred；資源由 testScope 管理，其他案例保留既有替身。

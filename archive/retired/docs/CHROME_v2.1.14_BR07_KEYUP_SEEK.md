@@ -54,7 +54,7 @@ Auto 2 倍的播放器焦點對照也呈現相同行為：左鍵在 keydown 更�
 1. [player.ts:88](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L88) 只註冊 keydown 候選，沒有可信 keyup 的實際命令觀察入口。
 2. [player.ts:136](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L136) 建立的候選持有原 keydown；[player.ts:155](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L155) 在其 `eventPhase === NONE` 時撤銷。右鍵真正於 keyup 改位置時，原 keydown 已結束，所以不會增加 userRevision。零延遲清理不是這項缺口的唯一原因，延長 timer 也不能跨過明確 phase 檢查。
 3. [player-monitor.ts:165](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L165) 只有 userRevision／媒體身分改變才結束舊停滯段；[player-monitor.ts:172](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L172) 的單純 seekRevision 重綁保留 startedAt。這個規則本來用來阻止網站／Auto 重試無限延長期限，不能把所有 seekRevision 改變都改成使用者操作。
-4. 正式 [br06.ts:105](../../../tests-v2/regressions/functional-races/br06.ts#L105) 模型將左右鍵都安排在 keydown 執行。來源隔離同樣證明同派送策略，沒有覆蓋網站右鍵的 keyup 提交；此處是需要校準的測試前提。
+4. 正式 [br06.ts:105](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br06.ts#L105) 模型將左右鍵都安排在 keydown 執行。來源隔離同樣證明同派送策略，沒有覆蓋網站右鍵的 keyup 提交；此處是需要校準的測試前提。
 
 ## 獨立契約與重跑
 

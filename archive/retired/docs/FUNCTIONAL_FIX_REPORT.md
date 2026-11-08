@@ -8,17 +8,17 @@
 
 | 項目 | 修復結果與來源 | 正式回歸位置與契約名稱 |
 | --- | --- | --- |
-| R01 | [PlayurlController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/playurl-controller.ts) 同步通知內容週期；[Runtime](../../../src-v2/application/runtime-controller.ts) 重設並釋放訂閱 | [runtime.ts](../../../tests-v2/regressions/functional-races/runtime.ts)：`R01`，generation／epoch、同片畫質、登記順序、釋放 |
-| C-01 | [RecoveryController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts) 在任何還原前處理 seek／ended／mediaError | [recovery.ts](../../../tests-v2/regressions/functional-races/recovery.ts)：`C-01`，中斷與正常還原對照 |
+| R01 | [PlayurlController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/playurl-controller.ts) 同步通知內容週期；[Runtime](../../../src-v2/application/runtime-controller.ts) 重設並釋放訂閱 | [runtime.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/runtime.ts)：`R01`，generation／epoch、同片畫質、登記順序、釋放 |
+| C-01 | [RecoveryController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts) 在任何還原前處理 seek／ended／mediaError | [recovery.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/recovery.ts)：`C-01`，中斷與正常還原對照 |
 | C-04 | [PlayerMonitor](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts) 首次位置只建立基準 | recovery.ts：`C-04`，非零續播停滯與真實增量對照 |
 | C-05 | RecoveryController 的 play 拒絕檢查生命週期與最近動作 | recovery.ts：`C-05`，舊 Promise／reset／新恢復完成 |
 | R04 | Runtime 只以 video 備援建立影片核心恢復意圖 | runtime.ts：`R04`，音訊隔離、影片合法恢復及健康影片對照 |
-| A01 | [Vault](../../../src-v2/state/signed-route-vault.ts) 刷新漸進式可信來源、撤銷舊授權，正規化相同集合保留身分 | [routing.ts](../../../tests-v2/regressions/functional-races/routing.ts)：`A01`，MP4／FLV、八次刷新、舊 handles／aliases、空合法來源及 DASH |
+| A01 | [Vault](../../../src-v2/state/signed-route-vault.ts) 刷新漸進式可信來源、撤銷舊授權，正規化相同集合保留身分 | [routing.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/routing.ts)：`A01`，MP4／FLV、八次刷新、舊 handles／aliases、空合法來源及 DASH |
 | A02 | PlayurlController 從已接納的 parseMediaUrl 結果推導內容鍵 | routing.ts：`A02`，絕對及協定相對 URL 換片 |
 | A03 | [RouteCoordinator](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts) 政策版本控制完成結果；[排名](../../../src-v2/domain/routing.ts) 合法固定主機優先 | routing.ts 與 runtime.ts：`A03`，先完成／晚完成、成功／失敗儲存鎖等待、真正設定訂閱 |
 | C-02 | [平台 ID factory](../../../src-v2/platform/runtime-ids.ts) 由入口注入，請求及量測工作沿用獨立 ID | recovery.ts：`C-02`，雙執行環境、startup／challenge、同工作去重與 64 字元上限；state 既有 schema 讀取 |
 | C-03 | [MeasurementController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts) 取得鎖後先重查安全條件及表示，再記錄候選／冷卻 | recovery.ts：`C-03`，hidden／seek／recovering／低緩衝／表示／停用、取得鎖時間及正常對照 |
-| B1 | [XhrHookAdapter](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts) 送出前重查最新限制，舊世代不得使用舊計畫 | [xhr.ts](../../../tests-v2/regressions/functional-races/xhr.ts)：`B1`，HTTPDNS、禁止主機、gate、過期 opaque 歸因 |
+| B1 | [XhrHookAdapter](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts) 送出前重查最新限制，舊世代不得使用舊計畫 | [xhr.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/xhr.ts)：`B1`，HTTPDNS、禁止主機、gate、過期 opaque 歸因 |
 | B2 | XHR 等待／原生送出／終止狀態分離，取消只完成一次 | xhr.ts：`B2`，DONE→UNSENT、空回應、重複取消、gate 晚到、原生已送出及明確 timeout |
 | B3 | XHR 安全失敗維持 default／text 字串及 json 物件，getter 例外與原生 HTTP 狀態維持 | xhr.ts：`B3` 與正常型別對照；攔截還原保留後來的所有者 |
 | B4 | 排隊本地失敗及事件回呼重查 metadata 所有權 | xhr.ts：`B4`，排隊後 reopen、readystatechange／abort／error 內重用 |

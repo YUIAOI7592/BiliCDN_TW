@@ -6516,15 +6516,15 @@
       "path": "archive/retired/docs/BR01_FIX_REPORT.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 9657,
-      "sha256": "5af2a962163d448f3a5a41068197d3e695e2757e6352e6fc73c591a230fc77f1"
+      "bytes": 9813,
+      "sha256": "d17a5e67f84f8f648c718bb558f3590612cb52a539f03f8f3b320c68ae5fcf85"
     },
     {
       "path": "archive/retired/docs/BR01_FOLLOWTHROUGH_FIX_REPORT.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 11769,
-      "sha256": "bd3477bc6f812d68f91bc1b8cc37c1f6fea030ffa91b69495549d65c0159f2a9"
+      "bytes": 11841,
+      "sha256": "460d68d344a99ad49690a68bf0669099e3e315a79c7a13d22a758b9e25cdc054"
     },
     {
       "path": "archive/retired/docs/BR01_NATIVE_KEYBOARD_FIX_REPORT.md",
@@ -6537,15 +6537,15 @@
       "path": "archive/retired/docs/BR01_NATIVE_POSITION_FIX_REPORT.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 6787,
-      "sha256": "6de24769cea4f8741bf6c59b23ce605ef3bc587fb97d3e102e5ef562980b6775"
+      "bytes": 6865,
+      "sha256": "e033d99bb410e2467d1d65050b6a4a830e90b2ccb9db8ccd2db9279c3494103d"
     },
     {
       "path": "archive/retired/docs/BR01_POLICY_REASSESSMENT_2026-10-14.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 10258,
-      "sha256": "bc28ca91f5060f0e147547981adfc3750c9f1a14a8cba39e09148df922458493"
+      "bytes": 10336,
+      "sha256": "1b1d8656ab770e03a9b9e09ad509edcd11f32c04b6f3b9cee19a295f3f03d047"
     },
     {
       "path": "archive/retired/docs/BR01_RCA_2026-10-16.md",
@@ -6593,22 +6593,22 @@
       "path": "archive/retired/docs/BR02_FIX_REPORT.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 8884,
-      "sha256": "d28044369763a17bd9beabb8e84c032076e22a2bb1ac6a769e36557d65b0c89b"
+      "bytes": 8962,
+      "sha256": "f0e6abae72f23b350584e3ca684df5ebb96eea2968307b03b2cb1f00bc731409"
     },
     {
       "path": "archive/retired/docs/BR03_FIX_REPORT.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 13183,
-      "sha256": "f01fa445953b8788c966b728f9168c661327ed91b3b45568065c29b47d3f65b0"
+      "bytes": 13417,
+      "sha256": "9567347adfce696fe66f44c844d1c1569a0e9cfe58ce43e603b6aa35880b408d"
     },
     {
       "path": "archive/retired/docs/BR04_BR05_FIX_REPORT.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 9133,
-      "sha256": "67d3742844e87d9624f1a6b4cf3e5876556346e3d18224fc23e4bd0807609818"
+      "bytes": 9289,
+      "sha256": "4c9e38614cbeee5c6b204acbfb083e66f73bfc66288cc9b2b89d7aa6c88afcfb"
     },
     {
       "path": "archive/retired/docs/BR06_FIX_REPORT.md",
@@ -6628,15 +6628,15 @@
       "path": "archive/retired/docs/BR08_FIX_REPORT.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 11967,
-      "sha256": "aeea2d32adfb7fcbb953d7dc9dca2f86d0ff410e03d541f516d03cd323c5747f"
+      "bytes": 12123,
+      "sha256": "2b9ebb660a02416fcca12e3c4ecbdda5ffae10b763bb35d32407eb64a537796e"
     },
     {
       "path": "archive/retired/docs/BR09_FIX_REPORT.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 6488,
-      "sha256": "8953c5b26ce28e472fd5d8a29a5f2c3ff627d62291a87b1ea5461628bf1bfad0"
+      "bytes": 6566,
+      "sha256": "cc3c7fbdc126535a7dbf332a222b773e815e059ffee6272a32ffe3d0a1dbe065"
     },
     {
       "path": "archive/retired/docs/BR10_FIX_REPORT.md",
@@ -6712,8 +6712,8 @@
       "path": "archive/retired/docs/CHROME_v2.1.13_BR06_KEYBOARD_SEEK_OWNERSHIP.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 10214,
-      "sha256": "6a945b7426d2a42543e12747f03e055e94c1ddd4f049f37cbbc0b9fcf1fe692f"
+      "bytes": 10370,
+      "sha256": "2de4b67549288e2acb597b8a568c0d4af97e2bd4c40ff5db738a14fc4f82eb4d"
     },
     {
       "path": "archive/retired/docs/CHROME_v2.1.14_ACCEPTANCE.md",
@@ -6726,8 +6726,8 @@
       "path": "archive/retired/docs/CHROME_v2.1.14_BR07_KEYUP_SEEK.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 9654,
-      "sha256": "a1e902f9bedd34663bc26dd801f6d9e6241be3e0f1e8221efa324dd675732779"
+      "bytes": 9732,
+      "sha256": "3c27278c1135b5d9997869c097823a5bbea0d04af6266db1ca7c13e5fe8847f3"
     },
     {
       "path": "archive/retired/docs/CHROME_v2.1.15_ACCEPTANCE.md",
@@ -6789,8 +6789,8 @@
       "path": "archive/retired/docs/CHROME_v2.1.9_BR02_XHR_FAILED_OPEN.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 11991,
-      "sha256": "a56aac062b6234ba36afaa0696926119aae746c767ba8671606f34b4171970a1"
+      "bytes": 12069,
+      "sha256": "b75e97dab245d86df75255dce6a4e3b93c37f76d5f0d3bbb9ed1627b98bd9e67"
     },
     {
       "path": "archive/retired/docs/CODE_REVIEW_2026-10-13.md",
@@ -6810,15 +6810,15 @@
       "path": "archive/retired/docs/CR01_CR05_FIX_REPORT.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 10991,
-      "sha256": "0cf900c41c04f6aba912cdad0b55ff18f19028622cbd332f71764fb29a10d7a7"
+      "bytes": 11615,
+      "sha256": "077f67c669022c97a57993a808728c20216a0423a20f3d923976b940b656c6c1"
     },
     {
       "path": "archive/retired/docs/FUNCTIONAL_FIX_REPORT.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 9832,
-      "sha256": "449d71f63bd1ecd8652afa63df6e0210f71e8a5caf0c7720c10ceb4945d08cb6"
+      "bytes": 10144,
+      "sha256": "c70f50c7eeaa4e7dbf380046450a97eb924ab595c40a6eedc2b1fb1df1768b9b"
     },
     {
       "path": "archive/retired/docs/IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md",
@@ -6908,8 +6908,8 @@
       "path": "archive/retired/docs/TODO_CLOSURE_2026-10-13.md",
       "mode": "exact",
       "encoding": "lf",
-      "bytes": 10059,
-      "sha256": "d3f93e6d27916173405a84ed85066e1b3247f2c82fda89233ab2f93eb643d939"
+      "bytes": 10293,
+      "sha256": "5a56673e1881bd380957bee1291581ba756a90985484cf1367a0a943e563ab42"
     },
     {
       "path": "archive/retired/releases/Release/v2.1.28/BiliCDN_TW.user.js",
@@ -8322,6 +8322,398 @@
     {
       "originalPath": "src-v2/application/routing/route-materialization.ts",
       "currentPath": "src-v2/application/routing/request-policy.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/archive.ts",
+      "currentPath": "tests-v2/cases/tooling/archive.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/cc39-integration.ts",
+      "currentPath": "tests-v2/cases/playback/cc39-integration.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/documentation.ts",
+      "currentPath": "tests-v2/cases/tooling/documentation.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/adapter-controls.ts",
+      "currentPath": "tests-v2/cases/playback/adapter-controls.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/br01-followthrough.ts",
+      "currentPath": "tests-v2/cases/playback/br01-followthrough.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/br01-play-intent.ts",
+      "currentPath": "tests-v2/cases/playback/br01-play-intent.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/br01-player.ts",
+      "currentPath": "tests-v2/cases/playback/br01-player.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/br01-reload-controls.ts",
+      "currentPath": "tests-v2/cases/playback/br01-reload-controls.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/br01.ts",
+      "currentPath": "tests-v2/cases/playback/br01.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/br06.ts",
+      "currentPath": "tests-v2/cases/playback/br06.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/br08-player.ts",
+      "currentPath": "tests-v2/cases/playback/br08-player.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/br08.ts",
+      "currentPath": "tests-v2/cases/playback/br08.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/br09.ts",
+      "currentPath": "tests-v2/cases/playback/br09.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/content-domain.ts",
+      "currentPath": "tests-v2/cases/playurl/content-domain.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/content.ts",
+      "currentPath": "tests-v2/cases/playurl/content.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/cr-measurement-errors.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/cr-measurement-errors.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/cr-measurement-lifecycle.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/cr-measurement-lifecycle.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/cr-routing.ts",
+      "currentPath": "tests-v2/cases/routing/cr-routing.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/cr-startup.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/cr-startup.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/cr-xhr-fixture.ts",
+      "currentPath": "tests-v2/cases/transport/cr-xhr-fixture.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/cr-xhr-headers.ts",
+      "currentPath": "tests-v2/cases/transport/cr-xhr-headers.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/cr-xhr-send-conversion.ts",
+      "currentPath": "tests-v2/cases/transport/cr-xhr-send-conversion.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/measurement-metadata.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/measurement-metadata.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/navigation.ts",
+      "currentPath": "tests-v2/cases/playback/navigation.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/player-convergence.ts",
+      "currentPath": "tests-v2/cases/playback/player-convergence.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/recovery.ts",
+      "currentPath": "tests-v2/cases/playback/recovery.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/rescue-goals.ts",
+      "currentPath": "tests-v2/cases/playback/rescue-goals.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/rescue-position.ts",
+      "currentPath": "tests-v2/cases/playback/rescue-position.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/rescue-recovery.ts",
+      "currentPath": "tests-v2/cases/playback/rescue-recovery.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/rescue-runtime.ts",
+      "currentPath": "tests-v2/cases/playback/rescue-runtime.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/rescue-sustained.ts",
+      "currentPath": "tests-v2/cases/playback/rescue-sustained.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/rescue-timing.ts",
+      "currentPath": "tests-v2/cases/playback/rescue-timing.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+      "currentPath": "tests-v2/cases/playback/restore-closed-loop.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/restore-ownership.ts",
+      "currentPath": "tests-v2/cases/playback/restore-ownership.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/routing-convergence.ts",
+      "currentPath": "tests-v2/cases/routing/routing-convergence.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/routing-fixture.ts",
+      "currentPath": "tests-v2/cases/routing/routing-fixture.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/routing-modularization.ts",
+      "currentPath": "tests-v2/cases/routing/routing-modularization.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/routing.ts",
+      "currentPath": "tests-v2/cases/routing/routing.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/runtime.ts",
+      "currentPath": "tests-v2/cases/playback/runtime.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/startup-abort.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/startup-abort.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/up141-backups.ts",
+      "currentPath": "tests-v2/cases/routing/up141-backups.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/up141-probe.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/up141-probe.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/up141-start.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/up141-start.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/visibility-ownership.ts",
+      "currentPath": "tests-v2/cases/playback/visibility-ownership.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/xhr-response-convergence.ts",
+      "currentPath": "tests-v2/cases/transport/xhr-response-convergence.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/functional-races/xhr.ts",
+      "currentPath": "tests-v2/cases/transport/xhr.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/player-restore-ownership.ts",
+      "currentPath": "tests-v2/cases/playback/player-restore-ownership.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/player-restore-readback.ts",
+      "currentPath": "tests-v2/cases/playback/player-restore-readback.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/project-config.ts",
+      "currentPath": "tests-v2/cases/tooling/project-config.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/recovery-restore-controller.ts",
+      "currentPath": "tests-v2/cases/playback/recovery-restore-controller.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/up141-api.ts",
+      "currentPath": "tests-v2/cases/playurl/up141-api.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/up141-retry-policy.ts",
+      "currentPath": "tests-v2/cases/routing/up141-retry-policy.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/up141-retry-transport.ts",
+      "currentPath": "tests-v2/cases/transport/up141-retry-transport.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/up141-test-release.ts",
+      "currentPath": "tests-v2/cases/tooling/up141-test-release.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/upstream-comparison.ts",
+      "currentPath": "tests-v2/cases/tooling/upstream-comparison.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v220-settings-policy.ts",
+      "currentPath": "tests-v2/cases/state/v220-settings-policy.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v220-settings.ts",
+      "currentPath": "tests-v2/cases/state/v220-settings.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2211-circuit-domain.ts",
+      "currentPath": "tests-v2/cases/state/v2211-circuit-domain.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2211-circuit-routing.ts",
+      "currentPath": "tests-v2/cases/routing/v2211-circuit-routing.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2211-circuit-state.ts",
+      "currentPath": "tests-v2/cases/state/v2211-circuit-state.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2212-evaluation.ts",
+      "currentPath": "tests-v2/cases/tooling/v2212-evaluation.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2212-route-retirement.ts",
+      "currentPath": "tests-v2/cases/routing/v2212-route-retirement.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2213-health-controller.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/v2213-health-controller.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2213-health-routing.ts",
+      "currentPath": "tests-v2/cases/routing/v2213-health-routing.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2213-meta.ts",
+      "currentPath": "tests-v2/cases/state/v2213-meta.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2213-native-sources.ts",
+      "currentPath": "tests-v2/cases/playurl/v2213-native-sources.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2213-policy.ts",
+      "currentPath": "tests-v2/cases/routing/v2213-policy.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2213-restriction-state.ts",
+      "currentPath": "tests-v2/cases/state/v2213-restriction-state.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2215-measurement.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/v2215-measurement.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2215-player-bindings.ts",
+      "currentPath": "tests-v2/cases/playback/v2215-player-bindings.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2215-restoration.ts",
+      "currentPath": "tests-v2/cases/playback/v2215-restoration.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2215-routing.ts",
+      "currentPath": "tests-v2/cases/routing/v2215-routing.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v2215-xhr.ts",
+      "currentPath": "tests-v2/cases/transport/v2215-xhr.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v226-api-order.ts",
+      "currentPath": "tests-v2/cases/playurl/v226-api-order.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v226-demand.ts",
+      "currentPath": "tests-v2/cases/routing/v226-demand.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v226-flow.ts",
+      "currentPath": "tests-v2/cases/playback/v226-flow.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v226-http-status.ts",
+      "currentPath": "tests-v2/cases/transport/v226-http-status.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v226-interleavings.ts",
+      "currentPath": "tests-v2/cases/routing/v226-interleavings.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v226-monitor.ts",
+      "currentPath": "tests-v2/cases/playback/v226-monitor.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v226-recovery.ts",
+      "currentPath": "tests-v2/cases/playback/v226-recovery.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v226-routing.ts",
+      "currentPath": "tests-v2/cases/routing/v226-routing.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v226-startup.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/v226-startup.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v226-ui-state.ts",
+      "currentPath": "tests-v2/cases/ui/v226-ui-state.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v227-capacity-ui.ts",
+      "currentPath": "tests-v2/cases/ui/v227-capacity-ui.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v227-completion-owner.ts",
+      "currentPath": "tests-v2/cases/routing/v227-completion-owner.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v227-completion.ts",
+      "currentPath": "tests-v2/cases/routing/v227-completion.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v227-evaluation.ts",
+      "currentPath": "tests-v2/cases/tooling/v227-evaluation.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v227-evidence-state.ts",
+      "currentPath": "tests-v2/cases/state/v227-evidence-state.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v227-evidence.ts",
+      "currentPath": "tests-v2/cases/state/v227-evidence.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v227-route-owner.ts",
+      "currentPath": "tests-v2/cases/routing/v227-route-owner.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v227-routing.ts",
+      "currentPath": "tests-v2/cases/routing/v227-routing.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v227-startup.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/v227-startup.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v229-evidence-state.ts",
+      "currentPath": "tests-v2/cases/state/v229-evidence-state.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v229-measurement.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/v229-measurement.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v229-playback-facts.ts",
+      "currentPath": "tests-v2/cases/playback/v229-playback-facts.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v230-evaluation.ts",
+      "currentPath": "tests-v2/cases/tooling/v230-evaluation.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v230-policy.ts",
+      "currentPath": "tests-v2/cases/routing/v230-policy.ts"
+    },
+    {
+      "originalPath": "tests-v2/regressions/v230-startup.ts",
+      "currentPath": "tests-v2/cases/routing/measurement/v230-startup.ts"
     }
   ],
   "retiredSources": [

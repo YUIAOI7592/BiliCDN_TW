@@ -437,13 +437,46 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
   const originalSources = new Map(
     archive?.entries.map((item) => [item.archivedPath, item.originalPath]) ?? [],
   )
+  const journalProofs = new Map<string, string | null>()
   const archiveSourceMatches = (
     file: string,
     node: MarkdownNode,
     expectedHash: string,
+    sourceRevision?: string,
   ): boolean => {
     const source = read(file)
     if (entries.get(file)?.kind !== 'journal') return digest(source) === expectedHash
+    if (sourceRevision) {
+      const key = sourceRevision + ':' + file
+      if (!journalProofs.has(key)) {
+        try {
+          journalProofs.set(
+            key,
+            normalize(
+              execFileSync('git', ['show', key], {
+                cwd: root,
+                encoding: 'utf8',
+                windowsHide: true,
+                maxBuffer: 32 * 1024 * 1024,
+                stdio: ['ignore', 'pipe', 'pipe'],
+              }),
+            ),
+          )
+        } catch {
+          journalProofs.set(key, null)
+        }
+      }
+      const original = journalProofs.get(key),
+        end = node.position?.end?.offset
+      if (!original || end === undefined || digest(original) !== expectedHash) return false
+      const bytes = Buffer.byteLength(original),
+        current = Buffer.from(source)
+      return (
+        Buffer.byteLength(source.slice(0, end)) <= bytes &&
+        current.length >= bytes &&
+        digest(current.subarray(0, bytes)) === expectedHash
+      )
+    }
     const baseline = archive?.appendOnly.find((item) => item.path === file)
     if (!baseline) {
       // Exact frozen journals remain valid without an append-only baseline.
@@ -554,7 +587,7 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
           item.source === file &&
           item.line === line &&
           item.url === original &&
-          archiveSourceMatches(file, node, item.sha256) &&
+          archiveSourceMatches(file, node, item.sha256, item.sourceRevision) &&
           item.originalTarget === historicalTarget &&
           relocations.get(item.originalTarget) === item.archivedTarget &&
           (retiredSources.has(item.archivedTarget) ||

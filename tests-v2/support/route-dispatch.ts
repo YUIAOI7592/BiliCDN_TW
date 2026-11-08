@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { type fixture } from '../regressions/functional-races/routing-fixture.ts'
+import { type fixture } from '../cases/routing/routing-fixture.ts'
 import { requestId, type MediaKind } from '../../src-v2/domain/model.ts'
 import {
   type RequestContext,

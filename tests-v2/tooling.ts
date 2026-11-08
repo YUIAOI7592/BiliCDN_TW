@@ -13,12 +13,13 @@ import { formattedSource } from '../scripts/checks/format.mts'
 import { testScope } from './support/scope.ts'
 import { FakeClock } from './support/clock.ts'
 import { deferred } from './support/deferred.ts'
-import './regressions/documentation.ts'
-import './regressions/archive.ts'
-import './regressions/project-config.ts'
-import './regressions/upstream-comparison.ts'
-import './regressions/v227-evaluation.ts'
+import './cases/tooling/documentation.ts'
+import './cases/tooling/archive.ts'
+import './cases/tooling/project-config.ts'
+import './cases/tooling/upstream-comparison.ts'
+import './cases/tooling/v227-evaluation.ts'
 import { renderMetadata } from '../scripts/build.mts'
+import './cases/tooling/definition-imports.ts'
 
 test('V2214 metadata injects exactly one explicit release version placeholder', () => {
   assert.equal(
@@ -611,5 +612,5 @@ test(
     await assert.rejects(inspectImportPurity([effect]), /Import side effect: Date.now/)
   },
 )
-import './regressions/v230-evaluation.ts'
-import './regressions/v2212-evaluation.ts'
+import './cases/tooling/v230-evaluation.ts'
+import './cases/tooling/v2212-evaluation.ts'

@@ -24,6 +24,7 @@ export interface ArchiveEntry {
   urlEdits?: ArchiveUrlEdit[]
 }
 export interface HistoricalArchiveReference {
+  sourceRevision?: string
   source: string
   line: number
   url: string
@@ -220,8 +221,15 @@ function parseManifest(value: unknown): ArchiveManifest {
   const historicalReferences = rows(raw.historicalReferences).map((row) => {
     const line = integer(row.line)
     if (line === 0) throw Error('Historical reference lines start at one')
+    const sourceRevision = row.sourceRevision
+    if (
+      sourceRevision !== undefined &&
+      (typeof sourceRevision !== 'string' || !/^[a-f0-9]{40}$/.test(sourceRevision))
+    )
+      throw Error('Historical source revision must be an immutable Git commit')
     return {
       source: publicPath(row.source),
+      ...(sourceRevision === undefined ? {} : { sourceRevision }),
       line,
       url: string(row.url),
       sha256: sha(row.sha256),

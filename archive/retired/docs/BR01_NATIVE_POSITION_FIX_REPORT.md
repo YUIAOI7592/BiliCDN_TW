@@ -20,7 +20,7 @@
 
 ## 契約與結果
 
-正式案例位於既有 application 匯入的 [br09.ts](../../../tests-v2/regressions/functional-races/br09.ts)，不讀取調查目錄。
+正式案例位於既有 application 匯入的 [br09.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br09.ts)，不讀取調查目錄。
 
 | 群組 | 案例 | 修復前 | 修復後 |
 | --- | --- | --- | --- |

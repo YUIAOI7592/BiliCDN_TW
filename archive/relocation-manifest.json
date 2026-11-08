@@ -364,8 +364,8 @@
       "encoding": "lf",
       "bytes": 9129,
       "sha256": "212ae62dec9ac8b72bf86c87c8059e8e58fc5259606ef608fca649c584e60c0e",
-      "archivedBytes": 9657,
-      "archivedSha256": "5af2a962163d448f3a5a41068197d3e695e2757e6352e6fc73c591a230fc77f1",
+      "archivedBytes": 9813,
+      "archivedSha256": "d17a5e67f84f8f648c718bb558f3590612cb52a539f03f8f3b320c68ae5fcf85",
       "urlEdits": [
         {
           "start": 525,
@@ -419,13 +419,13 @@
           "start": 1928,
           "end": 1976,
           "from": "../tests-v2/regressions/functional-races/br01.ts",
-          "to": "../../../tests-v2/regressions/functional-races/br01.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br01.ts"
         },
         {
           "start": 2014,
           "end": 2069,
           "from": "../tests-v2/regressions/functional-races/br01-player.ts",
-          "to": "../../../tests-v2/regressions/functional-races/br01-player.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br01-player.ts"
         }
       ]
     },
@@ -436,8 +436,8 @@
       "encoding": "lf",
       "bytes": 11593,
       "sha256": "963f998cbea4f16df3e919d7081345a389d216e279d42aa3b3214ae8d5d9aa74",
-      "archivedBytes": 11769,
-      "archivedSha256": "bd3477bc6f812d68f91bc1b8cc37c1f6fea030ffa91b69495549d65c0159f2a9",
+      "archivedBytes": 11841,
+      "archivedSha256": "460d68d344a99ad49690a68bf0669099e3e315a79c7a13d22a758b9e25cdc054",
       "urlEdits": [
         {
           "start": 334,
@@ -468,6 +468,18 @@
           "end": 1987,
           "from": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/src-v2/application/player-monitor.ts",
           "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts"
+        },
+        {
+          "start": 2283,
+          "end": 2393,
+          "from": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/functional-races/br01-followthrough.ts",
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br01-followthrough.ts"
+        },
+        {
+          "start": 2435,
+          "end": 2547,
+          "from": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/functional-races/br01-reload-controls.ts",
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br01-reload-controls.ts"
         },
         {
           "start": 6281,
@@ -508,8 +520,8 @@
       "encoding": "lf",
       "bytes": 6599,
       "sha256": "28faf76d4bfe3b2f104d6034db1c379ed1882415e9eff533de1d56accb839338",
-      "archivedBytes": 6787,
-      "archivedSha256": "6de24769cea4f8741bf6c59b23ce605ef3bc587fb97d3e102e5ef562980b6775",
+      "archivedBytes": 6865,
+      "archivedSha256": "e033d99bb410e2467d1d65050b6a4a830e90b2ccb9db8ccd2db9279c3494103d",
       "urlEdits": [
         {
           "start": 132,
@@ -533,7 +545,7 @@
           "start": 1513,
           "end": 1561,
           "from": "../tests-v2/regressions/functional-races/br09.ts",
-          "to": "../../../tests-v2/regressions/functional-races/br09.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br09.ts"
         }
       ]
     },
@@ -544,8 +556,8 @@
       "encoding": "lf",
       "bytes": 10154,
       "sha256": "0c6bb0e60cd6015269212210ffd7230f72ac5d8dd62bd6f0e4b6719b8b06ca91",
-      "archivedBytes": 10258,
-      "archivedSha256": "bc28ca91f5060f0e147547981adfc3750c9f1a14a8cba39e09148df922458493",
+      "archivedBytes": 10336,
+      "archivedSha256": "1b1d8656ab770e03a9b9e09ad509edcd11f32c04b6f3b9cee19a295f3f03d047",
       "urlEdits": [
         {
           "start": 2045,
@@ -557,7 +569,7 @@
           "start": 2082,
           "end": 2142,
           "from": "../tests-v2/regressions/functional-races/br01-play-intent.ts",
-          "to": "../../../tests-v2/regressions/functional-races/br01-play-intent.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br01-play-intent.ts"
         },
         {
           "start": 3009,
@@ -685,8 +697,8 @@
       "encoding": "lf",
       "bytes": 8780,
       "sha256": "d1276ca910c1b5f19b0310817ad6520da40bca8f1b9f606c1584a4e081c74a1c",
-      "archivedBytes": 8884,
-      "archivedSha256": "d28044369763a17bd9beabb8e84c032076e22a2bb1ac6a769e36557d65b0c89b",
+      "archivedBytes": 8962,
+      "archivedSha256": "f0e6abae72f23b350584e3ca684df5ebb96eea2968307b03b2cb1f00bc731409",
       "urlEdits": [
         {
           "start": 218,
@@ -704,7 +716,7 @@
           "start": 1003,
           "end": 1050,
           "from": "../tests-v2/regressions/functional-races/xhr.ts",
-          "to": "../../../tests-v2/regressions/functional-races/xhr.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/xhr.ts"
         }
       ]
     },
@@ -715,8 +727,8 @@
       "encoding": "lf",
       "bytes": 12707,
       "sha256": "a035b675f1dcf72f012685c6d6b4312a8a47ddc72746aab1ea70371ca7ffec74",
-      "archivedBytes": 13183,
-      "archivedSha256": "f01fa445953b8788c966b728f9168c661327ed91b3b45568065c29b47d3f65b0",
+      "archivedBytes": 13417,
+      "archivedSha256": "9567347adfce696fe66f44c844d1c1569a0e9cfe58ce43e603b6aa35880b408d",
       "urlEdits": [
         {
           "start": 211,
@@ -770,19 +782,19 @@
           "start": 2578,
           "end": 2629,
           "from": "../tests-v2/regressions/functional-races/content.ts",
-          "to": "../../../tests-v2/regressions/functional-races/content.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/content.ts"
         },
         {
           "start": 2780,
           "end": 2838,
           "from": "../tests-v2/regressions/functional-races/content-domain.ts",
-          "to": "../../../tests-v2/regressions/functional-races/content-domain.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/content-domain.ts"
         },
         {
           "start": 2926,
           "end": 2973,
           "from": "../tests-v2/regressions/functional-races/xhr.ts",
-          "to": "../../../tests-v2/regressions/functional-races/xhr.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/xhr.ts"
         },
         {
           "start": 3143,
@@ -805,8 +817,8 @@
       "encoding": "lf",
       "bytes": 8925,
       "sha256": "1f8f750bc094e3b53075b324d089fee7a1cfc330deb748c89858726475fc8fb4",
-      "archivedBytes": 9133,
-      "archivedSha256": "67d3742844e87d9624f1a6b4cf3e5876556346e3d18224fc23e4bd0807609818",
+      "archivedBytes": 9289,
+      "archivedSha256": "4c9e38614cbeee5c6b204acbfb083e66f73bfc66288cc9b2b89d7aa6c88afcfb",
       "urlEdits": [
         {
           "start": 625,
@@ -818,7 +830,7 @@
           "start": 666,
           "end": 713,
           "from": "../tests-v2/regressions/functional-races/xhr.ts",
-          "to": "../../../tests-v2/regressions/functional-races/xhr.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/xhr.ts"
         },
         {
           "start": 923,
@@ -830,7 +842,7 @@
           "start": 979,
           "end": 1036,
           "from": "../tests-v2/regressions/functional-races/startup-abort.ts",
-          "to": "../../../tests-v2/regressions/functional-races/startup-abort.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/startup-abort.ts"
         },
         {
           "start": 2522,
@@ -895,8 +907,8 @@
       "encoding": "lf",
       "bytes": 11663,
       "sha256": "49ca93e32b57768fbb69ec1bf6400c951c99df9d00c00abb9f79f6b728d1fcde",
-      "archivedBytes": 11967,
-      "archivedSha256": "aeea2d32adfb7fcbb953d7dc9dca2f86d0ff410e03d541f516d03cd323c5747f",
+      "archivedBytes": 12123,
+      "archivedSha256": "2b9ebb660a02416fcca12e3c4ecbdda5ffae10b763bb35d32407eb64a537796e",
       "urlEdits": [
         {
           "start": 311,
@@ -920,13 +932,13 @@
           "start": 1357,
           "end": 1412,
           "from": "../tests-v2/regressions/functional-races/br08-player.ts",
-          "to": "../../../tests-v2/regressions/functional-races/br08-player.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br08-player.ts"
         },
         {
           "start": 1512,
           "end": 1560,
           "from": "../tests-v2/regressions/functional-races/br08.ts",
-          "to": "../../../tests-v2/regressions/functional-races/br08.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br08.ts"
         },
         {
           "start": 1844,
@@ -961,8 +973,8 @@
       "encoding": "lf",
       "bytes": 6378,
       "sha256": "95f7e984caa4b04c656658838942c3f0374abcc2cf40c0f961d98d02ded45794",
-      "archivedBytes": 6488,
-      "archivedSha256": "8953c5b26ce28e472fd5d8a29a5f2c3ff627d62291a87b1ea5461628bf1bfad0",
+      "archivedBytes": 6566,
+      "archivedSha256": "cc3c7fbdc126535a7dbf332a222b773e815e059ffee6272a32ffe3d0a1dbe065",
       "urlEdits": [
         {
           "start": 596,
@@ -974,7 +986,7 @@
           "start": 1183,
           "end": 1231,
           "from": "../tests-v2/regressions/functional-races/br09.ts",
-          "to": "../../../tests-v2/regressions/functional-races/br09.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br09.ts"
         },
         {
           "start": 1250,
@@ -1343,8 +1355,8 @@
       "encoding": "lf",
       "bytes": 9950,
       "sha256": "51ca4e5a270b9ed68c4fa3f237375cd9b482a959ae35d221a7943d39b7167fa1",
-      "archivedBytes": 10214,
-      "archivedSha256": "6a945b7426d2a42543e12747f03e055e94c1ddd4f049f37cbbc0b9fcf1fe692f",
+      "archivedBytes": 10370,
+      "archivedSha256": "2de4b67549288e2acb597b8a568c0d4af97e2bd4c40ff5db738a14fc4f82eb4d",
       "urlEdits": [
         {
           "start": 2133,
@@ -1368,13 +1380,13 @@
           "start": 2732,
           "end": 2780,
           "from": "../tests-v2/regressions/functional-races/br01.ts",
-          "to": "../../../tests-v2/regressions/functional-races/br01.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br01.ts"
         },
         {
           "start": 2826,
           "end": 2881,
           "from": "../tests-v2/regressions/functional-races/br01-player.ts",
-          "to": "../../../tests-v2/regressions/functional-races/br01-player.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br01-player.ts"
         }
       ]
     },
@@ -1396,8 +1408,8 @@
       "encoding": "lf",
       "bytes": 9228,
       "sha256": "4695c847257ebe0faed186ac28595813c3019c381e20744ddf7cff769e8538a2",
-      "archivedBytes": 9654,
-      "archivedSha256": "a1e902f9bedd34663bc26dd801f6d9e6241be3e0f1e8221efa324dd675732779",
+      "archivedBytes": 9732,
+      "archivedSha256": "3c27278c1135b5d9997869c097823a5bbea0d04af6266db1ca7c13e5fe8847f3",
       "urlEdits": [
         {
           "start": 2414,
@@ -1433,7 +1445,7 @@
           "start": 3014,
           "end": 3067,
           "from": "../tests-v2/regressions/functional-races/br06.ts#L105",
-          "to": "../../../tests-v2/regressions/functional-races/br06.ts#L105"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br06.ts#L105"
         }
       ]
     },
@@ -1672,8 +1684,8 @@
       "encoding": "lf",
       "bytes": 11901,
       "sha256": "1ab42453163d06aa4b8a0c954ae7a43c8b876d98306b4c8bda809aa8d65a9d06",
-      "archivedBytes": 11991,
-      "archivedSha256": "a56aac062b6234ba36afaa0696926119aae746c767ba8671606f34b4171970a1",
+      "archivedBytes": 12069,
+      "archivedSha256": "b75e97dab245d86df75255dce6a4e3b93c37f76d5f0d3bbb9ed1627b98bd9e67",
       "urlEdits": [
         {
           "start": 3190,
@@ -1685,7 +1697,7 @@
           "start": 3699,
           "end": 3746,
           "from": "../tests-v2/regressions/functional-races/xhr.ts",
-          "to": "../../../tests-v2/regressions/functional-races/xhr.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/xhr.ts"
         }
       ]
     },
@@ -1948,8 +1960,8 @@
       "encoding": "lf",
       "bytes": 10337,
       "sha256": "eb1248f0e7e26b400bcf7b392f8701998ba3a9c9abe07093bef70875dbb81809",
-      "archivedBytes": 10991,
-      "archivedSha256": "0cf900c41c04f6aba912cdad0b55ff18f19028622cbd332f71764fb29a10d7a7",
+      "archivedBytes": 11615,
+      "archivedSha256": "077f67c669022c97a57993a808728c20216a0423a20f3d923976b940b656c6c1",
       "urlEdits": [
         {
           "start": 400,
@@ -1967,7 +1979,7 @@
           "start": 505,
           "end": 559,
           "from": "../tests-v2/regressions/functional-races/cr-routing.ts",
-          "to": "../../../tests-v2/regressions/functional-races/cr-routing.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/cr-routing.ts"
         },
         {
           "start": 659,
@@ -1979,7 +1991,7 @@
           "start": 711,
           "end": 765,
           "from": "../tests-v2/regressions/functional-races/cr-routing.ts",
-          "to": "../../../tests-v2/regressions/functional-races/cr-routing.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/cr-routing.ts"
         },
         {
           "start": 863,
@@ -1991,7 +2003,7 @@
           "start": 925,
           "end": 979,
           "from": "../tests-v2/regressions/functional-races/cr-startup.ts",
-          "to": "../../../tests-v2/regressions/functional-races/cr-startup.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/cr-startup.ts"
         },
         {
           "start": 1096,
@@ -2003,13 +2015,13 @@
           "start": 1154,
           "end": 1219,
           "from": "../tests-v2/regressions/functional-races/cr-measurement-errors.ts",
-          "to": "../../../tests-v2/regressions/functional-races/cr-measurement-errors.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/cr-measurement-errors.ts"
         },
         {
           "start": 1233,
           "end": 1301,
           "from": "../tests-v2/regressions/functional-races/cr-measurement-lifecycle.ts",
-          "to": "../../../tests-v2/regressions/functional-races/cr-measurement-lifecycle.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/cr-measurement-lifecycle.ts"
         },
         {
           "start": 1382,
@@ -2021,7 +2033,7 @@
           "start": 1429,
           "end": 1497,
           "from": "../tests-v2/regressions/functional-races/cr-measurement-lifecycle.ts",
-          "to": "../../../tests-v2/regressions/functional-races/cr-measurement-lifecycle.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/cr-measurement-lifecycle.ts"
         },
         {
           "start": 1581,
@@ -2045,7 +2057,7 @@
           "start": 1837,
           "end": 1895,
           "from": "../tests-v2/regressions/functional-races/cr-xhr-headers.ts",
-          "to": "../../../tests-v2/regressions/functional-races/cr-xhr-headers.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/cr-xhr-headers.ts"
         },
         {
           "start": 2011,
@@ -2057,7 +2069,7 @@
           "start": 2068,
           "end": 2134,
           "from": "../tests-v2/regressions/functional-races/cr-xhr-send-conversion.ts",
-          "to": "../../../tests-v2/regressions/functional-races/cr-xhr-send-conversion.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/cr-xhr-send-conversion.ts"
         }
       ]
     },
@@ -2068,8 +2080,8 @@
       "encoding": "lf",
       "bytes": 9242,
       "sha256": "fe0b57335e3374db8462f37f0a1c4abffa5f86950919729165dd0dfa2a9d117e",
-      "archivedBytes": 9832,
-      "archivedSha256": "449d71f63bd1ecd8652afa63df6e0210f71e8a5caf0c7720c10ceb4945d08cb6",
+      "archivedBytes": 10144,
+      "archivedSha256": "c70f50c7eeaa4e7dbf380046450a97eb924ab595c40a6eedc2b1fb1df1768b9b",
       "urlEdits": [
         {
           "start": 226,
@@ -2093,7 +2105,7 @@
           "start": 612,
           "end": 663,
           "from": "../tests-v2/regressions/functional-races/runtime.ts",
-          "to": "../../../tests-v2/regressions/functional-races/runtime.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/runtime.ts"
         },
         {
           "start": 733,
@@ -2105,7 +2117,7 @@
           "start": 826,
           "end": 878,
           "from": "../tests-v2/regressions/functional-races/recovery.ts",
-          "to": "../../../tests-v2/regressions/functional-races/recovery.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/recovery.ts"
         },
         {
           "start": 924,
@@ -2123,7 +2135,7 @@
           "start": 1282,
           "end": 1333,
           "from": "../tests-v2/regressions/functional-races/routing.ts",
-          "to": "../../../tests-v2/regressions/functional-races/routing.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/routing.ts"
         },
         {
           "start": 1503,
@@ -2159,7 +2171,7 @@
           "start": 2084,
           "end": 2131,
           "from": "../tests-v2/regressions/functional-races/xhr.ts",
-          "to": "../../../tests-v2/regressions/functional-races/xhr.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/xhr.ts"
         },
         {
           "start": 2587,
@@ -2469,8 +2481,8 @@
       "encoding": "lf",
       "bytes": 9881,
       "sha256": "ea6501506e6064f39ec547c6eb323d3ff1cf3f7b24d09275c4bc7e43b4c5f26d",
-      "archivedBytes": 10059,
-      "archivedSha256": "d3f93e6d27916173405a84ed85066e1b3247f2c82fda89233ab2f93eb643d939",
+      "archivedBytes": 10293,
+      "archivedSha256": "5a56673e1881bd380957bee1291581ba756a90985484cf1367a0a943e563ab42",
       "urlEdits": [
         {
           "start": 138,
@@ -2506,19 +2518,19 @@
           "start": 3455,
           "end": 3506,
           "from": "../tests-v2/regressions/functional-races/content.ts",
-          "to": "../../../tests-v2/regressions/functional-races/content.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/content.ts"
         },
         {
           "start": 3515,
           "end": 3573,
           "from": "../tests-v2/regressions/functional-races/content-domain.ts",
-          "to": "../../../tests-v2/regressions/functional-races/content-domain.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/content-domain.ts"
         },
         {
           "start": 3582,
           "end": 3629,
           "from": "../tests-v2/regressions/functional-races/xhr.ts",
-          "to": "../../../tests-v2/regressions/functional-races/xhr.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/xhr.ts"
         },
         {
           "start": 3641,
@@ -12156,6 +12168,457 @@
       "sha256": "c33a3afdddd1cdf4ab23e9f3a257addd2c54fa8201d9ffd533b11a00dd356e02",
       "originalTarget": "src-v2/application/recovery-controller.ts",
       "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md",
+      "line": 103,
+      "url": "../../../tests-v2/regressions/v227-evidence.ts",
+      "sha256": "de0ed691fb4d165e7c1caa8b6747f11475d25b3b9d3756a3fc90903be5029e98",
+      "originalTarget": "tests-v2/regressions/v227-evidence.ts",
+      "archivedTarget": "tests-v2/cases/state/v227-evidence.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md",
+      "line": 103,
+      "url": "../../../tests-v2/regressions/v227-startup.ts",
+      "sha256": "de0ed691fb4d165e7c1caa8b6747f11475d25b3b9d3756a3fc90903be5029e98",
+      "originalTarget": "tests-v2/regressions/v227-startup.ts",
+      "archivedTarget": "tests-v2/cases/routing/measurement/v227-startup.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 145,
+      "url": "../../../tests-v2/regressions/functional-races/restore-closed-loop.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+      "archivedTarget": "tests-v2/cases/playback/restore-closed-loop.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 146,
+      "url": "../../../tests-v2/regressions/functional-races/restore-closed-loop.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+      "archivedTarget": "tests-v2/cases/playback/restore-closed-loop.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 147,
+      "url": "../../../tests-v2/regressions/functional-races/rescue-recovery.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/rescue-recovery.ts",
+      "archivedTarget": "tests-v2/cases/playback/rescue-recovery.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 153,
+      "url": "../../../tests-v2/regressions/recovery-restore-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/recovery-restore-controller.ts",
+      "archivedTarget": "tests-v2/cases/playback/recovery-restore-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 153,
+      "url": "../../../tests-v2/regressions/player-restore-readback.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/player-restore-readback.ts",
+      "archivedTarget": "tests-v2/cases/playback/player-restore-readback.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 153,
+      "url": "../../../tests-v2/regressions/functional-races/restore-closed-loop.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/restore-closed-loop.ts",
+      "archivedTarget": "tests-v2/cases/playback/restore-closed-loop.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 153,
+      "url": "../../../tests-v2/regressions/functional-races/rescue-recovery.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/rescue-recovery.ts",
+      "archivedTarget": "tests-v2/cases/playback/rescue-recovery.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 206,
+      "url": "../../../tests-v2/regressions/functional-races/routing-convergence.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/routing-convergence.ts",
+      "archivedTarget": "tests-v2/cases/routing/routing-convergence.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 207,
+      "url": "../../../tests-v2/regressions/functional-races/routing.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/routing.ts",
+      "archivedTarget": "tests-v2/cases/routing/routing.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 208,
+      "url": "../../../tests-v2/regressions/functional-races/rescue-timing.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/rescue-timing.ts",
+      "archivedTarget": "tests-v2/cases/playback/rescue-timing.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 209,
+      "url": "../../../tests-v2/regressions/up141-test-release.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/up141-test-release.ts",
+      "archivedTarget": "tests-v2/cases/tooling/up141-test-release.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 209,
+      "url": "../../../tests-v2/regressions/functional-races/measurement-metadata.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/measurement-metadata.ts",
+      "archivedTarget": "tests-v2/cases/routing/measurement/measurement-metadata.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 210,
+      "url": "../../../tests-v2/regressions/up141-retry-policy.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/up141-retry-policy.ts",
+      "archivedTarget": "tests-v2/cases/routing/up141-retry-policy.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 210,
+      "url": "../../../tests-v2/regressions/up141-retry-transport.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/up141-retry-transport.ts",
+      "archivedTarget": "tests-v2/cases/transport/up141-retry-transport.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 259,
+      "url": "../../../tests-v2/regressions/functional-races/content.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/content.ts",
+      "archivedTarget": "tests-v2/cases/playurl/content.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 270,
+      "url": "../../../tests-v2/regressions/functional-races/navigation.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/navigation.ts",
+      "archivedTarget": "tests-v2/cases/playback/navigation.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 271,
+      "url": "../../../tests-v2/regressions/functional-races/content.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/content.ts",
+      "archivedTarget": "tests-v2/cases/playurl/content.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 272,
+      "url": "../../../tests-v2/regressions/functional-races/runtime.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "tests-v2/regressions/functional-races/runtime.ts",
+      "archivedTarget": "tests-v2/cases/playback/runtime.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4409,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-demand.ts",
+      "sha256": "f2fe96976dd2ba421e6b371e4f977bd9f6be447df0f5452c327b0eb88739245e",
+      "originalTarget": "tests-v2/regressions/v226-demand.ts",
+      "archivedTarget": "tests-v2/cases/routing/v226-demand.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。",
+      "sourceRevision": "dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4409,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-flow.ts",
+      "sha256": "f2fe96976dd2ba421e6b371e4f977bd9f6be447df0f5452c327b0eb88739245e",
+      "originalTarget": "tests-v2/regressions/v226-flow.ts",
+      "archivedTarget": "tests-v2/cases/playback/v226-flow.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。",
+      "sourceRevision": "dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4409,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-startup.ts",
+      "sha256": "f2fe96976dd2ba421e6b371e4f977bd9f6be447df0f5452c327b0eb88739245e",
+      "originalTarget": "tests-v2/regressions/v226-startup.ts",
+      "archivedTarget": "tests-v2/cases/routing/measurement/v226-startup.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。",
+      "sourceRevision": "dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4409,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-routing.ts",
+      "sha256": "f2fe96976dd2ba421e6b371e4f977bd9f6be447df0f5452c327b0eb88739245e",
+      "originalTarget": "tests-v2/regressions/v226-routing.ts",
+      "archivedTarget": "tests-v2/cases/routing/v226-routing.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。",
+      "sourceRevision": "dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4409,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-api-order.ts",
+      "sha256": "f2fe96976dd2ba421e6b371e4f977bd9f6be447df0f5452c327b0eb88739245e",
+      "originalTarget": "tests-v2/regressions/v226-api-order.ts",
+      "archivedTarget": "tests-v2/cases/playurl/v226-api-order.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。",
+      "sourceRevision": "dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4409,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-http-status.ts",
+      "sha256": "f2fe96976dd2ba421e6b371e4f977bd9f6be447df0f5452c327b0eb88739245e",
+      "originalTarget": "tests-v2/regressions/v226-http-status.ts",
+      "archivedTarget": "tests-v2/cases/transport/v226-http-status.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。",
+      "sourceRevision": "dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4409,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-monitor.ts",
+      "sha256": "f2fe96976dd2ba421e6b371e4f977bd9f6be447df0f5452c327b0eb88739245e",
+      "originalTarget": "tests-v2/regressions/v226-monitor.ts",
+      "archivedTarget": "tests-v2/cases/playback/v226-monitor.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。",
+      "sourceRevision": "dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4409,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-recovery.ts",
+      "sha256": "f2fe96976dd2ba421e6b371e4f977bd9f6be447df0f5452c327b0eb88739245e",
+      "originalTarget": "tests-v2/regressions/v226-recovery.ts",
+      "archivedTarget": "tests-v2/cases/playback/v226-recovery.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。",
+      "sourceRevision": "dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4409,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-interleavings.ts",
+      "sha256": "f2fe96976dd2ba421e6b371e4f977bd9f6be447df0f5452c327b0eb88739245e",
+      "originalTarget": "tests-v2/regressions/v226-interleavings.ts",
+      "archivedTarget": "tests-v2/cases/routing/v226-interleavings.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。",
+      "sourceRevision": "dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4409,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-ui-state.ts",
+      "sha256": "f2fe96976dd2ba421e6b371e4f977bd9f6be447df0f5452c327b0eb88739245e",
+      "originalTarget": "tests-v2/regressions/v226-ui-state.ts",
+      "archivedTarget": "tests-v2/cases/ui/v226-ui-state.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。",
+      "sourceRevision": "dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea"
+    },
+    {
+      "source": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
+      "line": 62,
+      "url": "../../../tests-v2/regressions/up141-retry-transport.ts",
+      "sha256": "588b9aeb8e91e065101c4c9a1679de73e4a1f155dcd527df37869ef36de55e69",
+      "originalTarget": "tests-v2/regressions/up141-retry-transport.ts",
+      "archivedTarget": "tests-v2/cases/transport/up141-retry-transport.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
+      "line": 161,
+      "url": "../../../tests-v2/regressions/functional-races/up141-probe.ts",
+      "sha256": "588b9aeb8e91e065101c4c9a1679de73e4a1f155dcd527df37869ef36de55e69",
+      "originalTarget": "tests-v2/regressions/functional-races/up141-probe.ts",
+      "archivedTarget": "tests-v2/cases/routing/measurement/up141-probe.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
+      "line": 161,
+      "url": "../../../tests-v2/regressions/functional-races/up141-backups.ts",
+      "sha256": "588b9aeb8e91e065101c4c9a1679de73e4a1f155dcd527df37869ef36de55e69",
+      "originalTarget": "tests-v2/regressions/functional-races/up141-backups.ts",
+      "archivedTarget": "tests-v2/cases/routing/up141-backups.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
+      "line": 161,
+      "url": "../../../tests-v2/regressions/up141-retry-transport.ts",
+      "sha256": "588b9aeb8e91e065101c4c9a1679de73e4a1f155dcd527df37869ef36de55e69",
+      "originalTarget": "tests-v2/regressions/up141-retry-transport.ts",
+      "archivedTarget": "tests-v2/cases/transport/up141-retry-transport.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
+      "line": 161,
+      "url": "../../../tests-v2/regressions/functional-races/xhr.ts",
+      "sha256": "588b9aeb8e91e065101c4c9a1679de73e4a1f155dcd527df37869ef36de55e69",
+      "originalTarget": "tests-v2/regressions/functional-races/xhr.ts",
+      "archivedTarget": "tests-v2/cases/transport/xhr.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
+      "line": 161,
+      "url": "../../../tests-v2/regressions/v2211-circuit-state.ts",
+      "sha256": "588b9aeb8e91e065101c4c9a1679de73e4a1f155dcd527df37869ef36de55e69",
+      "originalTarget": "tests-v2/regressions/v2211-circuit-state.ts",
+      "archivedTarget": "tests-v2/cases/state/v2211-circuit-state.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md",
+      "line": 71,
+      "url": "../../../tests-v2/regressions/functional-races/rescue-timing.ts",
+      "sha256": "730c2cd3998af49609fb038c29e8ef7dcd8c7a8286943d7f7784a1ece1ce1280",
+      "originalTarget": "tests-v2/regressions/functional-races/rescue-timing.ts",
+      "archivedTarget": "tests-v2/cases/playback/rescue-timing.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md",
+      "line": 71,
+      "url": "../../../tests-v2/regressions/functional-races/rescue-recovery.ts",
+      "sha256": "730c2cd3998af49609fb038c29e8ef7dcd8c7a8286943d7f7784a1ece1ce1280",
+      "originalTarget": "tests-v2/regressions/functional-races/rescue-recovery.ts",
+      "archivedTarget": "tests-v2/cases/playback/rescue-recovery.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md",
+      "line": 71,
+      "url": "../../../tests-v2/regressions/functional-races/rescue-sustained.ts",
+      "sha256": "730c2cd3998af49609fb038c29e8ef7dcd8c7a8286943d7f7784a1ece1ce1280",
+      "originalTarget": "tests-v2/regressions/functional-races/rescue-sustained.ts",
+      "archivedTarget": "tests-v2/cases/playback/rescue-sustained.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "line": 15,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-demand.ts",
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09",
+      "originalTarget": "tests-v2/regressions/v226-demand.ts",
+      "archivedTarget": "tests-v2/cases/routing/v226-demand.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "line": 15,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-flow.ts",
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09",
+      "originalTarget": "tests-v2/regressions/v226-flow.ts",
+      "archivedTarget": "tests-v2/cases/playback/v226-flow.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "line": 15,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-startup.ts",
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09",
+      "originalTarget": "tests-v2/regressions/v226-startup.ts",
+      "archivedTarget": "tests-v2/cases/routing/measurement/v226-startup.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "line": 15,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-routing.ts",
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09",
+      "originalTarget": "tests-v2/regressions/v226-routing.ts",
+      "archivedTarget": "tests-v2/cases/routing/v226-routing.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "line": 15,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-api-order.ts",
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09",
+      "originalTarget": "tests-v2/regressions/v226-api-order.ts",
+      "archivedTarget": "tests-v2/cases/playurl/v226-api-order.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "line": 15,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-http-status.ts",
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09",
+      "originalTarget": "tests-v2/regressions/v226-http-status.ts",
+      "archivedTarget": "tests-v2/cases/transport/v226-http-status.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "line": 15,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-monitor.ts",
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09",
+      "originalTarget": "tests-v2/regressions/v226-monitor.ts",
+      "archivedTarget": "tests-v2/cases/playback/v226-monitor.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "line": 15,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-recovery.ts",
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09",
+      "originalTarget": "tests-v2/regressions/v226-recovery.ts",
+      "archivedTarget": "tests-v2/cases/playback/v226-recovery.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "line": 15,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-interleavings.ts",
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09",
+      "originalTarget": "tests-v2/regressions/v226-interleavings.ts",
+      "archivedTarget": "tests-v2/cases/routing/v226-interleavings.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "line": 15,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/v226-ui-state.ts",
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09",
+      "originalTarget": "tests-v2/regressions/v226-ui-state.ts",
+      "archivedTarget": "tests-v2/cases/ui/v226-ui-state.ts",
       "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
     }
   ],

@@ -33,17 +33,17 @@
 
 片段採序列下載及整段完成後 append：下載秒數為回應等待加 `bytes × 8 / 本文 bits/s`，期限為連續媒體緩衝除以實際倍率，停頓為下載超過期限的部分。完成後緩衝為 `max(0, 舊緩衝 − 倍率 × 下載秒數) + 片段媒體秒數`。相同總 bytes 的均勻／VBR 對照保存碼率、FPS、大小、時長及表示軌跡；FPS 不再次乘入碼率。沒有模擬漸進 append、網站 ABR、解碼或音訊競爭。
 
-兩秒政策交接預算只計一次；合成實際交接耗時另列。輸出完成時間差、停頓差、期限誤判、額外下載及換站；未完成或未知結果為 `null`，未模擬探測／重載也為 `null`，不能解讀成零成本。獨立算式、資源守恆及重現性契約在 [v2212-evaluation.ts](../../tests-v2/regressions/v2212-evaluation.ts)，模型組數不列入正式案例數。
+兩秒政策交接預算只計一次；合成實際交接耗時另列。輸出完成時間差、停頓差、期限誤判、額外下載及換站；未完成或未知結果為 `null`，未模擬探測／重載也為 `null`，不能解讀成零成本。獨立算式、資源守恆及重現性契約在 [v2212-evaluation.ts](../../tests-v2/cases/tooling/v2212-evaluation.ts)，模型組數不列入正式案例數。
 
 ### 提前重試資格與覆蓋
 
 | 層次 | 正式來源 | 契約與拒絕邊界 |
 | --- | --- | --- |
-| 請求與適配器跟蹤 | [XHR hook](../../src-v2/adapters/transport/xhr-hook.ts)、[Fetch hook](../../src-v2/adapters/transport/fetch-hook.ts) | [實傳契約](../../tests-v2/regressions/up141-retry-transport.ts)：XHR timeout 0／1／500／3000／10000／13000；正數不跟蹤提前重試。同步、非 GET、無效 Range、音訊、停用均不因 timeout=0 自動合格。 |
+| 請求與適配器跟蹤 | [XHR hook](../../src-v2/adapters/transport/xhr-hook.ts)、[Fetch hook](../../src-v2/adapters/transport/fetch-hook.ts) | [實傳契約](../../tests-v2/cases/transport/up141-retry-transport.ts)：XHR timeout 0／1／500／3000／10000／13000；正數不跟蹤提前重試。同步、非 GET、無效 Range、音訊、停用均不因 timeout=0 自動合格。 |
 | 可信進度與結果 | [TransportAdapter](../../src-v2/adapters/transport/transport.ts) | 同一實傳契約核對不可信 progress 不提供速度、200 不冒充 206；保留原取消、重用及網站 timeout 寫入優先斷言。 |
-| 控制與替代資格 | [EarlyRetryController](../../src-v2/application/routing/early-retry-controller.ts) | [控制器契約](../../tests-v2/regressions/up141-retry-policy.ts)：Catalog、固定／停用、播放狀態及同內容兩筆實傳；逐一評估有界候選，選 eligible 者中完整預測耗時最短者，同時保留固定順序決勝、全部拒絕原因及 prepare 失敗不改選的契約。主動探測不取得替代權限。 |
+| 控制與替代資格 | [EarlyRetryController](../../src-v2/application/routing/early-retry-controller.ts) | [控制器契約](../../tests-v2/cases/routing/up141-retry-policy.ts)：Catalog、固定／停用、播放狀態及同內容兩筆實傳；逐一評估有界候選，選 eligible 者中完整預測耗時最短者，同時保留固定順序決勝、全部拒絕原因及 prepare 失敗不改選的契約。主動探測不取得替代權限。 |
 | 判斷、許可與認領 | [純政策](../../src-v2/domain/early-retry.ts)、[RouteCoordinator](../../src-v2/application/routing/route-coordinator.ts) | 同控制器／實傳契約核對 1.35 倍、完成度、兩秒交接、許可過期、認領與送出一次。7,680 組模型僅補充純政策條件，不繞過前層資格。 |
-| 起播獨立流程 | [MeasurementController](../../src-v2/application/measurement/measurement-controller.ts) | [正數 timeout 起播契約](../../tests-v2/regressions/functional-races/xhr.ts)：正數仍可等待起播窗口，不能與提前重試的正數排除混用。 |
+| 起播獨立流程 | [MeasurementController](../../src-v2/application/measurement/measurement-controller.ts) | [正數 timeout 起播契約](../../tests-v2/cases/transport/xhr.ts)：正數仍可等待起播窗口，不能與提前重試的正數排除混用。 |
 
 本表只說明離線資格與覆蓋，不包含現場分母。自然觀察、方法限制與效益證據由 [HISTORY](../../docs/HISTORY.md#提前重試現場適用率與成本) 追溯；沒有為拒絕原因新增產品計數器或公開測試介面。
 

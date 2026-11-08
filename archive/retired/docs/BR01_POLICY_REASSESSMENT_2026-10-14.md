@@ -40,7 +40,7 @@
 
 ## 正式契約與來源對照
 
-來源： [PlayerAdapter](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts)、[正式契約](../../../tests-v2/regressions/functional-races/br01-play-intent.ts)，由 adapters 套件匯入。
+來源： [PlayerAdapter](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts)、[正式契約](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br01-play-intent.ts)，由 adapters 套件匯入。
 
 未修來源的原始 8 案：**2 fail／6 pass**。修復後擴充為 14 案：可信按鈕、短暫停／無操作、合成／區域外、正常恢復、播放中、hidden／替換／舊週期、清理／新 wrapper、SDK 參數／receiver／結果／原例外、重複通知、位置 0、同步清理、reset 及 100 個 paused tick 的單一 listener。
 

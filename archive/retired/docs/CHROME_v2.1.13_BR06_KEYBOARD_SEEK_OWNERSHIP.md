@@ -37,7 +37,7 @@
 
 可達入口就是網站支援的 BODY／頁面焦點方向鍵 seek；不依賴修改設定或不合法路線。本輪保留其他腳本的實際環境，沒有對網站快捷鍵的提供者作超出證據的歸因。
 
-既有 [控制器回歸](../../../tests-v2/regressions/functional-races/br01.ts) 直接注入已增加的 userRevision，因此新 seek 測試通過；[適配器回歸](../../../tests-v2/regressions/functional-races/br01-player.ts) 未測可信 BODY keydown 與實際尋位的關聯。兩者之間的觀察缺口讓正式測試漏掉本問題。
+既有 [控制器回歸](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br01.ts) 直接注入已增加的 userRevision，因此新 seek 測試通過；[適配器回歸](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br01-player.ts) 未測可信 BODY keydown 與實際尋位的關聯。兩者之間的觀察缺口讓正式測試漏掉本問題。
 
 ## 獨立正確契約與重跑
 

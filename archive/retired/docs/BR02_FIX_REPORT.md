@@ -12,7 +12,7 @@ Chrome 154 另有實測邊界：Window 同步選項不合法時，原生 open �
 
 ## 正式契約與修復前後證據
 
-正式案例位於 [functional-races/xhr.ts](../../../tests-v2/regressions/functional-races/xhr.ts)，由既有 `native-transport` 套件登記，新增 40 個 `BR-02` 具名案例。替身先模擬原生驗證，再變更狀態；OPENED→OPENED 不憑空發事件，並依 Chrome 證據模擬同步選項錯誤的 UNSENT 邊界。每個 XHR 由 testScope 登記取消清理。
+正式案例位於 [functional-races/xhr.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/xhr.ts)，由既有 `native-transport` 套件登記，新增 40 個 `BR-02` 具名案例。替身先模擬原生驗證，再變更狀態；OPENED→OPENED 不憑空發事件，並依 Chrome 證據模擬同步選項錯誤的 UNSENT 邊界。每個 XHR 由 testScope 登記取消清理。
 
 | 契約群組／名稱前綴 | 覆蓋 |
 | --- | --- |

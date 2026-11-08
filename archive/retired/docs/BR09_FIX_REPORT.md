@@ -14,7 +14,7 @@
 
 ## 正式契約對照
 
-正式 [br09.ts](../../../tests-v2/regressions/functional-races/br09.ts)由既有 [application](../../../tests-v2/suites/application.ts)明確匯入。原五項先於執行期改動保存 **2 fail／3 pass**，修復後 **5／5**；擴充為 **25／25**，沒有調查目錄正式輸入。
+正式 [br09.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/br09.ts)由既有 [application](../../../tests-v2/suites/application.ts)明確匯入。原五項先於執行期改動保存 **2 fail／3 pass**，修復後 **5／5**；擴充為 **25／25**，沒有調查目錄正式輸入。
 
 | 群組／測試名称關鍵字 | 修復及回歸 |
 | --- | --- |

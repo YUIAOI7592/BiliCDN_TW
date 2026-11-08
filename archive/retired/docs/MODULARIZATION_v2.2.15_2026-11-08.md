@@ -40,3 +40,114 @@
 PlayerInputBindings 集中可信輸入篩選、播放失效／鍵盤／指標釋放註冊與原順序清理；狀態、手勢及 SDK 回呼仍由 Observer 管理，SDK 描述子恢復已與安全呼叫共置。新增兩案核對合成輸入拒絕、自有 listener 及清理中新增 listener 的所有權。Node 原生 EventTarget 的 boolean capture 移除差異由既有模型的正規化方式抽為窄資源，不改產品 capture 行為。型別、adapters 212 案與 application 841 案通過；不是瀏覽器原生輸入證據。
 
 XHR 原生準備抽至 xhr-dispatch，仍逐步核對 metadata／readyState，重開最多兩次並採網站最新 timeout。當筆進度、計時凍結及一次終止併入 xhr-request；Hook 保留唯一 metadata 索引、原生 send 接受與安裝／還原。新增兩案核對 setter 重入、最新 timeout 及兩次準備界線；adapters 214 案與 native-transport 222 案通過。
+
+## 測試分布對照
+
+原十八套件保持選擇器及案例註冊順序。14 個大型入口改為明確匯入，原內嵌案例拆為 38 個功能檔；完整情境仍獨立建立，只共用窄資源。98 份既有回歸按用途搬移如下；版本及事故名稱不改。
+
+| 舊路徑（tests-v2/ 下） | 新路徑（tests-v2/ 下） |
+| --- | --- |
+| `regressions/archive.ts` | `cases/tooling/archive.ts` |
+| `regressions/cc39-integration.ts` | `cases/playback/cc39-integration.ts` |
+| `regressions/documentation.ts` | `cases/tooling/documentation.ts` |
+| `regressions/functional-races/adapter-controls.ts` | `cases/playback/adapter-controls.ts` |
+| `regressions/functional-races/br01-followthrough.ts` | `cases/playback/br01-followthrough.ts` |
+| `regressions/functional-races/br01-play-intent.ts` | `cases/playback/br01-play-intent.ts` |
+| `regressions/functional-races/br01-player.ts` | `cases/playback/br01-player.ts` |
+| `regressions/functional-races/br01-reload-controls.ts` | `cases/playback/br01-reload-controls.ts` |
+| `regressions/functional-races/br01.ts` | `cases/playback/br01.ts` |
+| `regressions/functional-races/br06.ts` | `cases/playback/br06.ts` |
+| `regressions/functional-races/br08-player.ts` | `cases/playback/br08-player.ts` |
+| `regressions/functional-races/br08.ts` | `cases/playback/br08.ts` |
+| `regressions/functional-races/br09.ts` | `cases/playback/br09.ts` |
+| `regressions/functional-races/content-domain.ts` | `cases/playurl/content-domain.ts` |
+| `regressions/functional-races/content.ts` | `cases/playurl/content.ts` |
+| `regressions/functional-races/cr-measurement-errors.ts` | `cases/routing/measurement/cr-measurement-errors.ts` |
+| `regressions/functional-races/cr-measurement-lifecycle.ts` | `cases/routing/measurement/cr-measurement-lifecycle.ts` |
+| `regressions/functional-races/cr-routing.ts` | `cases/routing/cr-routing.ts` |
+| `regressions/functional-races/cr-startup.ts` | `cases/routing/measurement/cr-startup.ts` |
+| `regressions/functional-races/cr-xhr-fixture.ts` | `cases/transport/cr-xhr-fixture.ts` |
+| `regressions/functional-races/cr-xhr-headers.ts` | `cases/transport/cr-xhr-headers.ts` |
+| `regressions/functional-races/cr-xhr-send-conversion.ts` | `cases/transport/cr-xhr-send-conversion.ts` |
+| `regressions/functional-races/measurement-metadata.ts` | `cases/routing/measurement/measurement-metadata.ts` |
+| `regressions/functional-races/navigation.ts` | `cases/playback/navigation.ts` |
+| `regressions/functional-races/player-convergence.ts` | `cases/playback/player-convergence.ts` |
+| `regressions/functional-races/recovery.ts` | `cases/playback/recovery.ts` |
+| `regressions/functional-races/rescue-goals.ts` | `cases/playback/rescue-goals.ts` |
+| `regressions/functional-races/rescue-position.ts` | `cases/playback/rescue-position.ts` |
+| `regressions/functional-races/rescue-recovery.ts` | `cases/playback/rescue-recovery.ts` |
+| `regressions/functional-races/rescue-runtime.ts` | `cases/playback/rescue-runtime.ts` |
+| `regressions/functional-races/rescue-sustained.ts` | `cases/playback/rescue-sustained.ts` |
+| `regressions/functional-races/rescue-timing.ts` | `cases/playback/rescue-timing.ts` |
+| `regressions/functional-races/restore-closed-loop.ts` | `cases/playback/restore-closed-loop.ts` |
+| `regressions/functional-races/restore-ownership.ts` | `cases/playback/restore-ownership.ts` |
+| `regressions/functional-races/routing-convergence.ts` | `cases/routing/routing-convergence.ts` |
+| `regressions/functional-races/routing-fixture.ts` | `cases/routing/routing-fixture.ts` |
+| `regressions/functional-races/routing-modularization.ts` | `cases/routing/routing-modularization.ts` |
+| `regressions/functional-races/routing.ts` | `cases/routing/routing.ts` |
+| `regressions/functional-races/runtime.ts` | `cases/playback/runtime.ts` |
+| `regressions/functional-races/startup-abort.ts` | `cases/routing/measurement/startup-abort.ts` |
+| `regressions/functional-races/up141-backups.ts` | `cases/routing/up141-backups.ts` |
+| `regressions/functional-races/up141-probe.ts` | `cases/routing/measurement/up141-probe.ts` |
+| `regressions/functional-races/up141-start.ts` | `cases/routing/measurement/up141-start.ts` |
+| `regressions/functional-races/visibility-ownership.ts` | `cases/playback/visibility-ownership.ts` |
+| `regressions/functional-races/xhr-response-convergence.ts` | `cases/transport/xhr-response-convergence.ts` |
+| `regressions/functional-races/xhr.ts` | `cases/transport/xhr.ts` |
+| `regressions/player-restore-ownership.ts` | `cases/playback/player-restore-ownership.ts` |
+| `regressions/player-restore-readback.ts` | `cases/playback/player-restore-readback.ts` |
+| `regressions/project-config.ts` | `cases/tooling/project-config.ts` |
+| `regressions/recovery-restore-controller.ts` | `cases/playback/recovery-restore-controller.ts` |
+| `regressions/up141-api.ts` | `cases/playurl/up141-api.ts` |
+| `regressions/up141-retry-policy.ts` | `cases/routing/up141-retry-policy.ts` |
+| `regressions/up141-retry-transport.ts` | `cases/transport/up141-retry-transport.ts` |
+| `regressions/up141-test-release.ts` | `cases/tooling/up141-test-release.ts` |
+| `regressions/upstream-comparison.ts` | `cases/tooling/upstream-comparison.ts` |
+| `regressions/v220-settings-policy.ts` | `cases/state/v220-settings-policy.ts` |
+| `regressions/v220-settings.ts` | `cases/state/v220-settings.ts` |
+| `regressions/v2211-circuit-domain.ts` | `cases/state/v2211-circuit-domain.ts` |
+| `regressions/v2211-circuit-routing.ts` | `cases/routing/v2211-circuit-routing.ts` |
+| `regressions/v2211-circuit-state.ts` | `cases/state/v2211-circuit-state.ts` |
+| `regressions/v2212-evaluation.ts` | `cases/tooling/v2212-evaluation.ts` |
+| `regressions/v2212-route-retirement.ts` | `cases/routing/v2212-route-retirement.ts` |
+| `regressions/v2213-health-controller.ts` | `cases/routing/measurement/v2213-health-controller.ts` |
+| `regressions/v2213-health-routing.ts` | `cases/routing/v2213-health-routing.ts` |
+| `regressions/v2213-meta.ts` | `cases/state/v2213-meta.ts` |
+| `regressions/v2213-native-sources.ts` | `cases/playurl/v2213-native-sources.ts` |
+| `regressions/v2213-policy.ts` | `cases/routing/v2213-policy.ts` |
+| `regressions/v2213-restriction-state.ts` | `cases/state/v2213-restriction-state.ts` |
+| `regressions/v2215-measurement.ts` | `cases/routing/measurement/v2215-measurement.ts` |
+| `regressions/v2215-player-bindings.ts` | `cases/playback/v2215-player-bindings.ts` |
+| `regressions/v2215-restoration.ts` | `cases/playback/v2215-restoration.ts` |
+| `regressions/v2215-routing.ts` | `cases/routing/v2215-routing.ts` |
+| `regressions/v2215-xhr.ts` | `cases/transport/v2215-xhr.ts` |
+| `regressions/v226-api-order.ts` | `cases/playurl/v226-api-order.ts` |
+| `regressions/v226-demand.ts` | `cases/routing/v226-demand.ts` |
+| `regressions/v226-flow.ts` | `cases/playback/v226-flow.ts` |
+| `regressions/v226-http-status.ts` | `cases/transport/v226-http-status.ts` |
+| `regressions/v226-interleavings.ts` | `cases/routing/v226-interleavings.ts` |
+| `regressions/v226-monitor.ts` | `cases/playback/v226-monitor.ts` |
+| `regressions/v226-recovery.ts` | `cases/playback/v226-recovery.ts` |
+| `regressions/v226-routing.ts` | `cases/routing/v226-routing.ts` |
+| `regressions/v226-startup.ts` | `cases/routing/measurement/v226-startup.ts` |
+| `regressions/v226-ui-state.ts` | `cases/ui/v226-ui-state.ts` |
+| `regressions/v227-capacity-ui.ts` | `cases/ui/v227-capacity-ui.ts` |
+| `regressions/v227-completion-owner.ts` | `cases/routing/v227-completion-owner.ts` |
+| `regressions/v227-completion.ts` | `cases/routing/v227-completion.ts` |
+| `regressions/v227-evaluation.ts` | `cases/tooling/v227-evaluation.ts` |
+| `regressions/v227-evidence-state.ts` | `cases/state/v227-evidence-state.ts` |
+| `regressions/v227-evidence.ts` | `cases/state/v227-evidence.ts` |
+| `regressions/v227-route-owner.ts` | `cases/routing/v227-route-owner.ts` |
+| `regressions/v227-routing.ts` | `cases/routing/v227-routing.ts` |
+| `regressions/v227-startup.ts` | `cases/routing/measurement/v227-startup.ts` |
+| `regressions/v229-evidence-state.ts` | `cases/state/v229-evidence-state.ts` |
+| `regressions/v229-measurement.ts` | `cases/routing/measurement/v229-measurement.ts` |
+| `regressions/v229-playback-facts.ts` | `cases/playback/v229-playback-facts.ts` |
+| `regressions/v230-evaluation.ts` | `cases/tooling/v230-evaluation.ts` |
+| `regressions/v230-policy.ts` | `cases/routing/v230-policy.ts` |
+| `regressions/v230-startup.ts` | `cases/routing/measurement/v230-startup.ts` |
+
+測試定義檢查新增執行期靜態匯入追蹤，保留具名案例、拒絕 only 與空套件的原規則；三個薄入口負向／正向案例通過。歷史連結保留日誌全文，新來源例外採固定提交的完整前綴證明；三個新增案例驗證追加不能擴大、原文修改及不可讀提交均拒絕。已搬移閱讀副本只調整登記過的 URL，原快照與不可變文件保持。
+
+## 功能分布階段完成（2026-11-09）
+
+完整十八套件／2,292 案通過，原 2,269 案的名稱、參數展開與相對註冊順序逐項零遺失。新增 23 案為五個架構、十二個助手／純驗證及六個工具契約；不是瀏覽器窗口。型別、107 個模組架構與匯入純度、文件及公開封存檢查通過。來源閱讀副本只改登記的 URL；晚期追加日誌由 dc3b6f0 固定全文與雜湊證明，不改原文。

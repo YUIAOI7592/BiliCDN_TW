@@ -79,7 +79,7 @@ await Promise.resolve();
 4. **第 46–59 行：** 舊本地失敗微任務及事件序列會核對 WeakMap／phase；因此視為原請求已失去所有權而直接返回。這項防止成功 reopen 污染新請求的保護本身合理，錯誤在於失敗 open 也先移交了所有權。
 5. **第 87–88 行與第 130–132 行：** 下一次 send 讀取錯誤的新 metadata；原生 XHR 仍可能保存舊目的地，但政策檢查已使用新輸入。
 
-正式回歸替身 [tests-v2/regressions/functional-races/xhr.ts](../../../tests-v2/regressions/functional-races/xhr.ts) 第 40–45 行的 open 直接覆寫狀態，沒有 method／URL／同步選項驗證失敗邊界。既有 B4 的成功 reopen 案例因此不能發現本次問題；原先 299 案例通過與本次新失敗並不矛盾。
+正式回歸替身 [tests-v2/regressions/functional-races/xhr.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/tests-v2/regressions/functional-races/xhr.ts) 第 40–45 行的 open 直接覆寫狀態，沒有 method／URL／同步選項驗證失敗邊界。既有 B4 的成功 reopen 案例因此不能發現本次問題；原先 299 案例通過與本次新失敗並不矛盾。
 
 ## 獨立重現與反證
 

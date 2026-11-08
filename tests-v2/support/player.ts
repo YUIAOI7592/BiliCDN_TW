@@ -1,6 +1,7 @@
 import {
   type PlayerControlSnapshot,
   type PlayerPort,
+  type VideoSnapshot,
 } from '../../src-v2/application/playback/player-contracts.ts'
 import {
   type RecoveryPlayerPort,
@@ -100,3 +101,61 @@ export const idleControls = (): PlayerControlSnapshot => ({
   reloadRevision: 0,
   coreReloadRevision: 0,
 })
+
+export function createMutablePlaybackResources() {
+  let reloads = 0
+  let seeks: number[] = []
+  let rates: number[] = []
+  let plays = 0
+  let playerSnapshot: VideoSnapshot = {
+    available: true,
+    paused: false,
+    seeking: false,
+    ended: false,
+    readyState: 4,
+    currentTime: 349.434,
+    duration: 900,
+    width: 1920,
+    height: 1080,
+    playbackRate: 2,
+    effectiveRate: 2,
+    bufferAheadSec: 30,
+    playableBufferSec: 15,
+    bufferedToEnd: false,
+    frames: 1000,
+    mediaError: false,
+    coreInitialized: true,
+    manifestHasVideo: true,
+  }
+  const recoveryPlayer: PlayerPort = {
+    controls: idleControls,
+    observePlayIntent: () => () => undefined,
+    snapshot: () => playerSnapshot,
+    syncManifest: () => true,
+    reload: () => {
+      reloads++
+    },
+    currentTime: () => 349.434,
+    playbackRate: () => 2,
+    seek: (value) => {
+      seeks.push(value)
+    },
+    setRate: (value) => {
+      rates.push(value)
+    },
+    play: () => {
+      plays++
+      return Promise.resolve()
+    },
+    reset: () => undefined,
+  }
+  return {
+    get playerSnapshot() {
+      return playerSnapshot
+    },
+    set playerSnapshot(value: typeof playerSnapshot) {
+      playerSnapshot = value
+    },
+    recoveryPlayer,
+  }
+}
