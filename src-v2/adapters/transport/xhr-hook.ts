@@ -1,9 +1,8 @@
+import { createXhrPreparation } from './xhr-dispatch.ts'
 import { closedRangeLength } from '../../domain/route-completion.ts'
-import { measuredPayload } from '../../domain/measurement-time.ts'
 import {
   responseFailure,
   type TransportContext,
-  sameUrl,
   blockedPlayurl,
   blockedPlayurlText,
   rejectedPlayurl,
@@ -11,11 +10,15 @@ import {
 import { classifyPlayurlApi } from '../../domain/catalog.ts'
 import { playurlRequestContext } from '../../domain/playurl-content.ts'
 import { isHttpDnsUrl } from '../../domain/url-policy.ts'
-import { type FailureKind } from '../../domain/evidence-model.ts'
 import { type AppliedRouteDecision } from '../../application/routing/route-contracts.ts'
 import { type HookInstallation } from './transport-ports.ts'
 import { convertXhrOpen, convertXhrHeader, createXhrBodyConverter } from './xhr-values.ts'
-import { createXhrRequestState, resetXhrTransform, type XhrMeta } from './xhr-request.ts'
+import {
+  createXhrRequestState,
+  resetXhrTransform,
+  createXhrCompletion,
+  type XhrMeta,
+} from './xhr-request.ts'
 import { transformXhrJson, transformXhrText } from './xhr-response.ts'
 import { XhrEarlyRetry } from './xhr-early-retry.ts'
 import {
@@ -177,60 +180,11 @@ export class XhrHookAdapter {
       let nativeAccepted = false
       const perform = (): void => {
         if (!waiting(this, meta)) return
-        const responseType = this.responseType,
-          credentials = this.withCredentials
-        let preparations = 0
-        const nativeReady = (): boolean =>
-          waiting(this, meta) && readyStateDescriptor?.get?.call(this) === 1
-        const reopen = (url: string): void => {
-          if (++preparations > 2)
-            throw new DOMException('XHR preparation did not stabilize', 'InvalidStateError')
-          Reflect.apply(originalOpen, this, [
-            meta.method,
-            url,
-            meta.async,
-            meta.username ?? null,
-            meta.password ?? null,
-          ])
-          if (!waiting(this, meta)) return
-          if (!nativeReady()) {
-            meta.needsNativeOpen = true
-            return
-          }
-          if (meta.async) {
-            this.responseType = responseType
-            if (!nativeReady()) {
-              if (waiting(this, meta)) meta.needsNativeOpen = true
-              return
-            }
-            // open() and responseType restoration may let the website change its
-            // timeout synchronously. Preserve the latest value, never a pre-open copy.
-            const requestTimeout = this.timeout
-            if (!nativeReady()) {
-              if (waiting(this, meta)) meta.needsNativeOpen = true
-              return
-            }
-            this.timeout = requestTimeout
-            if (!nativeReady()) {
-              if (waiting(this, meta)) meta.needsNativeOpen = true
-              return
-            }
-          }
-          this.withCredentials = credentials
-          if (!nativeReady()) {
-            if (waiting(this, meta)) meta.needsNativeOpen = true
-            return
-          }
-          for (const [key, value] of meta.headers) {
-            Reflect.apply(originalSetHeader, this, [key, value])
-            if (!nativeReady()) {
-              if (waiting(this, meta)) meta.needsNativeOpen = true
-              return
-            }
-          }
-          meta.targetUrl = url
-          meta.needsNativeOpen = false
-        }
+        const { nativeReady, reopen } = createXhrPreparation(this, meta, waiting, {
+          open: originalOpen,
+          setHeader: originalSetHeader,
+          readyState: readyStateDescriptor,
+        })
         // Every native preparation can synchronously change ownership, native state or
         // policy. Recompute the decision before attribution, with at most two opens.
         let disabled = false,
@@ -339,91 +293,13 @@ export class XhrHookAdapter {
           )
           self.routes.requestStarted(meta.request)
         }
-        let nativeBytes = 0
-        const noteHeaders = (): void => {
-          if (xhrMeta.get(this) === meta && meta.responseTick === null && this.readyState >= 2) {
-            meta.responseAt = self.now()
-            meta.responseTick = self.tick()
-          }
-        }
-        const progress = (event: ProgressEvent): void => {
-          if (xhrMeta.get(this) !== meta) return
-          noteHeaders()
-          meta.bytes = Math.max(meta.bytes, Number(event.loaded) || 0)
-          if (event.isTrusted && Number.isSafeInteger(event.loaded) && event.loaded >= 0)
-            nativeBytes = Math.max(nativeBytes, event.loaded)
-          retry.progress(this, meta, event)
-        }
-        const settle = (
-          outcome: 'success' | 'abort' | 'failure',
-          failure?: FailureKind,
-          nativeTimeout = false,
-          event?: Event,
-        ): void => {
-          if (meta.settled || xhrMeta.get(this) !== meta) return
-          meta.measurement = self.freezeMeasurement(
-            meta.startedTick,
-            meta.responseTick,
-            'xhr-terminal',
-          )
-          let payloadValid = false
-          try {
-            payloadValid = measuredPayload(
-              meta.bytes,
-              this.getResponseHeader('Content-Length'),
-              this.getResponseHeader('Content-Range'),
-            )
-          } catch {
-            /* unavailable native metadata */
-          }
-          if (xhrMeta.get(this) !== meta || meta.settled) return
-          meta.measurement = {
-            ...meta.measurement,
-            speedEligible: meta.measurement.speedEligible && payloadValid,
-          }
-          if (event && !event.isTrusted && retry.tracks(meta)) return
-          const verifiedBytes = outcome === 'success' ? retry.verifiedBytes(this, meta) : null
-          const controlledTimeout = retry.terminal(this, meta, nativeTimeout ? 'timeout' : outcome)
-          if (controlledTimeout) {
-            outcome = 'abort'
-            failure = undefined
-          }
-          meta.settled = true
-          meta.cleanup()
-          if (meta.responseAt > 0 || this.status > 0) {
-            self.count('responseObserved')
-            self.noteResponse(meta.request, Number(this.status) || 0)
-          }
-          if (!meta.applied || !meta.request) return
-          const finalUrl = (() => {
-            try {
-              return this.responseURL || ''
-            } catch {
-              return ''
-            }
-          })()
-          void self.routes.observe({
-            circuitVerified:
-              event?.isTrusted === true && nativeBytes === meta.bytes && nativeBytes >= 65536,
-            ...self.observation(
-              meta.request,
-              meta.applied,
-              meta.originalUrl,
-              meta.targetUrl,
-              finalUrl,
-              Number(this.status) || 0,
-              meta.bytes,
-              meta.startedAt,
-              meta.responseAt,
-              outcome,
-              failure,
-              sameUrl(finalUrl, meta.targetUrl),
-              meta.measurement,
-            ),
-            ...(controlledTimeout ? { terminationReason: 'early-retry-timeout' as const } : {}),
-            ...(verifiedBytes !== null ? { retryVerifiedBytes: verifiedBytes } : {}),
-          })
-        }
+        const { noteHeaders, progress, settle } = createXhrCompletion(
+          this,
+          meta,
+          self,
+          retry,
+          () => xhrMeta.get(this) === meta,
+        )
         const load = (event: Event): void => {
           settle(
             this.status >= 200 && this.status < 400 ? 'success' : 'failure',

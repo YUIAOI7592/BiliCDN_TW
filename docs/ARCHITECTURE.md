@@ -73,7 +73,7 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 | ControlCenter | ControlReadModelPort／labels／styles／elements／overview／settings views | 宿主／封閉 ShadowRoot、鍵盤／焦點、視圖版本與非同步命令 |
 | PlayerAdapter | media／sdk／input-bindings 與單一 PlayerControlObserver | 既有外部及測試覆寫介面；Observer 擁有操作修訂、可信目標及自有重載，私有 bindings 只管理註冊與按原順序清理 |
 | PlayerMonitor／RecoveryController | domain/playback-progress 的純控制身分、時間及影格比較 | Monitor 保有停滯段；Recovery 保有 token、額度、breaker、reload／restore；兩者各自保留資格、基準、計數與終止檢查順序 |
-| XhrHookAdapter | xhr-values／xhr-request／xhr-response | 唯一 metadata WeakMap、原生 getter／guards、派送、安裝與按所有權還原；回應助手只轉換及快取當筆狀態 |
+| XhrHookAdapter | xhr-values／xhr-dispatch／xhr-request／xhr-response | 唯一 metadata WeakMap、原生 getter／guards、send 派送、安裝與按所有權還原；dispatch 只處理本次原生準備，request 管理當筆終止，response 只轉換及快取當筆狀態 |
 
 助手沒有第二份 Native 授權索引或可獨立變更親和的能力。詳見 [模組化紀錄](../archive/retired/docs/MODULARIZATION_v2.1.25_REPORT.md)。
 

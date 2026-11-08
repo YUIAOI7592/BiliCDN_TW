@@ -1,5 +1,6 @@
 import { requestDispatch } from '../support/request-dispatch.ts'
 import '../regressions/v2215-player-bindings.ts'
+import '../regressions/v2215-xhr.ts'
 import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { currentResumePlayer } from '../support/player.ts'
 import { installProgressEvent } from '../support/progress-event.ts'

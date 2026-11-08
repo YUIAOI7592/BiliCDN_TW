@@ -38,3 +38,5 @@
 ## 播放器與原生適配器
 
 PlayerInputBindings 集中可信輸入篩選、播放失效／鍵盤／指標釋放註冊與原順序清理；狀態、手勢及 SDK 回呼仍由 Observer 管理，SDK 描述子恢復已與安全呼叫共置。新增兩案核對合成輸入拒絕、自有 listener 及清理中新增 listener 的所有權。Node 原生 EventTarget 的 boolean capture 移除差異由既有模型的正規化方式抽為窄資源，不改產品 capture 行為。型別、adapters 212 案與 application 841 案通過；不是瀏覽器原生輸入證據。
+
+XHR 原生準備抽至 xhr-dispatch，仍逐步核對 metadata／readyState，重開最多兩次並採網站最新 timeout。當筆進度、計時凍結及一次終止併入 xhr-request；Hook 保留唯一 metadata 索引、原生 send 接受與安裝／還原。新增兩案核對 setter 重入、最新 timeout 及兩次準備界線；adapters 214 案與 native-transport 222 案通過。

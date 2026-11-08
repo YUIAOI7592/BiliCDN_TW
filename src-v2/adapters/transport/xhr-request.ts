@@ -1,3 +1,7 @@
+import type { TransportContext } from './transport-context.ts'
+import { sameUrl } from './transport-context.ts'
+import { measuredPayload } from '../../domain/measurement-time.ts'
+import type { FailureKind } from '../../domain/evidence-model.ts'
 import { type PlayurlEndpointKind, type PlayurlRequestContext } from '../../domain/playurl-model.ts'
 import { type RequestContext } from '../../domain/transport-model.ts'
 import { type GenerationId, type EpochId } from '../../domain/model.ts'
@@ -72,4 +76,107 @@ export function resetXhrTransform(meta: XhrMeta, strict: boolean): void {
     meta.transformedJson = undefined
     meta.catalogOnlyAtTransform = strict
   }
+}
+
+interface XhrCompletionRetry {
+  progress(xhr: XMLHttpRequest, meta: XhrMeta, event: ProgressEvent): void
+  tracks(meta: XhrMeta): boolean
+  verifiedBytes(xhr: XMLHttpRequest, meta: XhrMeta): number | null
+  terminal(
+    xhr: XMLHttpRequest,
+    meta: XhrMeta,
+    type: 'success' | 'failure' | 'abort' | 'timeout',
+  ): boolean
+}
+/** Completion state for one accepted owner; no metadata index or independent authorization. */
+export function createXhrCompletion(
+  xhr: XMLHttpRequest,
+  meta: XhrMeta,
+  self: TransportContext,
+  retry: XhrCompletionRetry,
+  current: () => boolean,
+) {
+  let nativeBytes = 0
+  const noteHeaders = (): void => {
+    if (current() && meta.responseTick === null && xhr.readyState >= 2) {
+      meta.responseAt = self.now()
+      meta.responseTick = self.tick()
+    }
+  }
+  const progress = (event: ProgressEvent): void => {
+    if (!current()) return
+    noteHeaders()
+    meta.bytes = Math.max(meta.bytes, Number(event.loaded) || 0)
+    if (event.isTrusted && Number.isSafeInteger(event.loaded) && event.loaded >= 0)
+      nativeBytes = Math.max(nativeBytes, event.loaded)
+    retry.progress(xhr, meta, event)
+  }
+  const settle = (
+    outcome: 'success' | 'abort' | 'failure',
+    failure?: FailureKind,
+    nativeTimeout = false,
+    event?: Event,
+  ): void => {
+    if (meta.settled || !current()) return
+    meta.measurement = self.freezeMeasurement(meta.startedTick, meta.responseTick, 'xhr-terminal')
+    let payloadValid = false
+    try {
+      payloadValid = measuredPayload(
+        meta.bytes,
+        xhr.getResponseHeader('Content-Length'),
+        xhr.getResponseHeader('Content-Range'),
+      )
+    } catch {
+      /* unavailable native metadata */
+    }
+    if (!current() || meta.settled) return
+    meta.measurement = {
+      ...meta.measurement,
+      speedEligible: meta.measurement.speedEligible && payloadValid,
+    }
+    if (event && !event.isTrusted && retry.tracks(meta)) return
+    const verifiedBytes = outcome === 'success' ? retry.verifiedBytes(xhr, meta) : null
+    const controlledTimeout = retry.terminal(xhr, meta, nativeTimeout ? 'timeout' : outcome)
+    if (controlledTimeout) {
+      outcome = 'abort'
+      failure = undefined
+    }
+    meta.settled = true
+    meta.cleanup()
+    if (meta.responseAt > 0 || xhr.status > 0) {
+      self.count('responseObserved')
+      self.noteResponse(meta.request, Number(xhr.status) || 0)
+    }
+    if (!meta.applied || !meta.request) return
+    const finalUrl = (() => {
+      try {
+        return xhr.responseURL || ''
+      } catch {
+        return ''
+      }
+    })()
+    void self.routes.observe({
+      circuitVerified:
+        event?.isTrusted === true && nativeBytes === meta.bytes && nativeBytes >= 65536,
+      ...self.observation(
+        meta.request,
+        meta.applied,
+        meta.originalUrl,
+        meta.targetUrl,
+        finalUrl,
+        Number(xhr.status) || 0,
+        meta.bytes,
+        meta.startedAt,
+        meta.responseAt,
+        outcome,
+        failure,
+        sameUrl(finalUrl, meta.targetUrl),
+        meta.measurement,
+      ),
+      ...(controlledTimeout ? { terminationReason: 'early-retry-timeout' as const } : {}),
+      ...(verifiedBytes !== null ? { retryVerifiedBytes: verifiedBytes } : {}),
+    })
+  }
+
+  return { noteHeaders, progress, settle }
 }
