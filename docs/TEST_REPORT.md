@@ -4,7 +4,7 @@
 
 ## 驗收結論
 
-十八套件／2,306 案通過；原 2,292 案名稱、參數展開與相對註冊順序逐項保留。RequestOwnership、RetryPermitState 與普通傳輸前提歸位，唯一控制所有者及既有政策保持。型別、架構、匯入純度、唯讀格式、文件、公開／本機封存、verify、可重現建置與安全差異門檻已通過；main／標籤、正式 Release 唯一附件及公開 latest 核對一致，交付完成。本輪沒有啟動瀏覽器，v2.2.16 安裝版尚未驗證。
+十八套件／2,306 案通過；原 2,292 案名稱、參數展開與相對註冊順序逐項保留。RequestOwnership、RetryPermitState 與普通傳輸前提歸位，唯一控制所有者及既有政策保持。型別、架構、匯入純度、唯讀格式、文件、公開／本機封存、verify、可重現建置與安全差異門檻已通過；main／標籤、正式 Release 唯一附件及公開 latest 核對一致，交付完成。發行階段採離線交付；使用者更新後另獲授權的[本版載入與重構接線核對](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2216-r1-載入身分與選路提交接線2026-11-09)已通過，未重測未修改的功能。
 
 ## 自動驗證
 
@@ -45,7 +45,7 @@ RouteCoordinator 保有路線、計畫修訂、外部讀值、事件與提交；
 
 ## 來源隔離與實際安裝
 
-本版未執行來源隔離或安裝驗收；沒有啟動瀏覽器、重測播放／選單／熔斷窗口或修改正式學習。v2.2.15 的載入確認只屬舊版，見[原版完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2215-完整正文保存2026-11-09)。原效用 FAIL、自然交接與跨分頁證據限制保持，不因重構改判。
+發布階段未執行來源隔離或安裝驗收；使用者更新後，本版 R1 只完成載入身分與選路／提交重構的初始化接線確認，範圍見下節。播放、選單、設定及熔斷窗口未重測，正式學習未清除或回灌。v2.2.15 的載入確認仍只屬舊版，見[原版完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2215-完整正文保存2026-11-09)。原效用 FAIL、自然交接與跨分頁證據限制保持；本輪接線通過不代替這些分支或效益驗證。
 
 ## 公開交付與安裝結案
 
@@ -53,7 +53,26 @@ v2.2.15 五份 Release 原件已與固定基準逐位元組核對並封存，原
 
 2026-11-09 02:15:56（Asia/Taipei）已公開核對：發行 main／v2.2.16 標籤解參照同為 517c04be217ff3374d25e9e2cc7f06f898a5f45b；[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.16) 非草稿／預覽版，且為 latest，唯一附件 BiliCDN_TW.user.js。版本附件與既有精確 latest 網址均實際 GET／HTTP 200，@version 2.2.16、538,269 bytes、SHA-256 7068ee5a53b3646c08a67691055f59905b6b4d7d585269b41284ca4fa9cfd145，與完整本機產物及 GitHub asset digest 一致。
 
-封裝報告保留當時待公開核對文字；本次後續文件提交只更新現行結果，不移動版本標籤或回寫五份原件。安裝版仍未驗證，公開下載不轉算安裝通過。
+封裝報告保留當時待公開核對與安裝未驗證文字；後續文件只更新現行結果，不移動版本標籤或回寫五份原件。使用者更新後的 R1 載入接線結果另列，公開下載本身不轉算安裝通過。
+
+## v2.2.16 R1 載入身分與選路提交接線（2026-11-09）
+
+本輪 L0／L1／L2／Z0 均 PASS。基準 main／a82fa0c、v2.2.16；唯一 type=iab 自有分頁正常導覽指定影片後，立即對真正媒體靜音暫停並讀回。保守外層 02:43:47–02:50:00（Asia/Taipei），約 6 分 13 秒，在十五分鐘上限內完成及清理；初始單調 T0 未取得，沒有播放連續窗口或精確時間契約結論。
+
+| 案例 | 必要證據與實際結果 | 結果 |
+| --- | --- | --- |
+| L0 完整本體 | 從當前文件取得完整本體，538,269 bytes／SHA-256 7068ee5a53b3646c08a67691055f59905b6b4d7d585269b41284ca4fa9cfd145，與 v2.2.16 發行檔逐位元組相同 | PASS |
+| L1 管理器與唯一實例 | 實際 GM_info 為 Tampermonkey 5.5.1／script 2.2.16；七個既有核心所有者、兩個新助手及 EvidenceStore 各一個實例，Fetch／XHR 純安裝比較成立 | PASS |
+| L2 本次重構接線 | Coordinator 的私有 RequestOwnership／RetryPermitState、EvidenceStore 及 Runtime／Transport／Playurl Adapter→Controller 依賴參照完全相同；助手沒有外部相依欄位 | PASS |
+| Z0 清理 | 真正媒體 muted／paused=true、readyState4、無 media error；物件群組及 Runtime／Debugger 釋放，零自有分頁 | PASS |
+
+以既有入口 listener 的唯讀閉包取得當版管理器及類別，再用 queryObjects／getProperties 與嚴格物件身分比較；沒有點擊入口或呼叫 handler。只呼叫已核對純比較的 isInstalled，未呼叫 snapshot、prepare、observe、commit、tryDowngrade 或產品命令。完整本體與參照可證明載入及初始化，不表示重試、健康保存、降級等所有政策分支已執行；正式 2,306 案與未修改功能未重跑。
+
+初次本體擷取錯把 UTF-8 byte 長度當 UTF-16 slice 長度，造成假雜湊不符；同一文件按正確完整文字長度擷取後逐位元組一致，原方法錯誤保留。沒有斷點或 Debugger 暫停；可讀事件游標有一筆 script 121 Promise 例外，未匹配產品本體 script 19，本輪未確認其他腳本來源，不判成 BiliCDN 缺陷，也不宣稱整段啟動零例外。最初載入至首次靜音確認的區間不宣稱已全程量測。
+
+去敏證據、案例、清理、截圖及限制保存於 `.work/iab-testing/2026-11-09-v2.2.16-a82fa0c-R1/`。產品設定人工寫入、學習清除／回灌及故障注入均零，正常合法學習保留；本次只存本機，不提交推送、不升版或發布。
+
+使用者於驗收結案後明確要求將本批文件提交並推送 main，並授權往後主動交付已完成且通過檢查的專案工作。前段保留當時的本機保存範圍；本次只做文件、封存、差異及原件完整性核對，不新增執行期或瀏覽器驗收，不變更版本、標籤或 Release。
 
 <a name="v2215-r1-載入身分與模組初始化2026-11-09"></a>
 
