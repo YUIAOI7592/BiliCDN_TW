@@ -2,6 +2,18 @@ import { test } from 'node:test'
 for (const [file, source] of [
   [
     'application/routing/early-retry-controller.ts',
+    "import { RetryPermitState } from './retry-permit-state.ts'",
+  ],
+  [
+    'application/routing/retry-permit-state.ts',
+    "import type { RouteCoordinator } from './route-coordinator.ts'",
+  ],
+  [
+    'application/routing/retry-permit-state.ts',
+    'export const run = (clock: {now(): number}) => clock.now()',
+  ],
+  [
+    'application/routing/early-retry-controller.ts',
     "import { RequestOwnership } from './request-ownership.ts'",
   ],
   [

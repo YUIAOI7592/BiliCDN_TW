@@ -1,5 +1,6 @@
 import { RetryEvidence } from './retry-evidence.ts'
 import { RequestOwnership } from './request-ownership.ts'
+import { RetryPermitState } from './retry-permit-state.ts'
 import { capacityNumbers, planSummary, rankingSummary } from './route-projection.ts'
 import { type CompletionBudget } from '../../domain/route-completion.ts'
 import {
@@ -138,13 +139,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #pendingMedia = new Set<string>()
   #fallbacks = new Map<MediaKind, FallbackProgress>()
   #retryEvidence = new RetryEvidence()
-  #retryPermit: {
-    permit: EarlyRetryPermit
-    request: RequestContext
-    host: string
-    demand: PlaybackDemand
-    applied: AppliedRouteDecision | null
-  } | null = null
+  #retryPermits = new RetryPermitState()
 
   constructor(
     private readonly clock: Clock,
@@ -164,7 +159,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   resetEpoch(): void {
     this.#circuits.reset('content-changed')
     this.#retryEvidence.reset()
-    this.#retryPermit = null
+    this.#retryPermits.clear()
     this.#policyRevision++
     this.#plans.clear()
     this.#planRevisions.clear()
@@ -193,7 +188,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#circuits.invalidate('policy-changed')
     this.#playbackFacts = null
     this.#startupExhausted.clear()
-    this.#retryPermit = null
+    this.#retryPermits.clear()
     this.#policyRevision++
     this.#plans.clear()
     this.#planRevisions.clear()
@@ -310,7 +305,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       state = this.session.get()
     const owned = this.#ownership.owner(request)
     const plan = request.representation ? this.#plans.get(request.representation) : null
-    const preparedRetry = this.#retryPermit?.applied?.decision.id === request.decisionId
+    const preparedRetry = this.#retryPermits.applied()?.decision.id === request.decisionId
     const currentOwner =
       !owned ||
       (this.#ownership.selection?.representation === request.representation &&
@@ -406,13 +401,17 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     host: string,
     demand: PlaybackDemand,
   ): EarlyRetryPermit | null {
-    if (this.#retryPermit && this.#retryPermit.permit.expiresAt > this.clock.now()) return null
+    if (
+      this.#retryPermits.current &&
+      this.#retryPermits.current.permit.expiresAt > this.clock.now()
+    )
+      return null
     if (!this.#earlyRetryAlternativeForHost(request, demand, host)) return null
     const permit = Object.freeze({
       id: this.ids.next('request'),
       expiresAt: this.clock.now() + 2000,
     })
-    this.#retryPermit = { permit, request, host, demand, applied: null }
+    this.#retryPermits.prepare(permit, request, host, demand)
     return permit
   }
 
@@ -421,11 +420,11 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   revokeEarlyRetry(permit: EarlyRetryPermit): void {
-    if (this.#retryPermit?.permit === permit) this.#retryPermit = null
+    this.#retryPermits.revoke(permit)
   }
 
   applyEarlyRetry(url: string, permit: EarlyRetryPermit): AppliedRouteDecision | null {
-    const pending = this.#retryPermit
+    const pending = this.#retryPermits.current
     if (
       !pending ||
       pending.permit !== permit ||
@@ -449,7 +448,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       kind: 'video',
       catalogIndex: TRUSTED_CATALOG.indexOf(pending.host as (typeof TRUSTED_CATALOG)[number]),
     }
-    const decision: RouteDecision = pending.applied?.decision ?? {
+    const decision: RouteDecision = this.#retryPermits.applied(pending)?.decision ?? {
       action: 'rewrite',
       id: this.#nextId(),
       reason: 'early-retry',
@@ -461,33 +460,33 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     const output = this.#materialize(url, decision, matched.context)
     if (!output) return null
     this.#remember(decision, matched.context, 'video')
-    pending.applied = {
+    return this.#retryPermits.materialize(pending, {
       decision,
       url: output,
       context: matched.context,
       streamKey: mediaIdentity(url),
       sourceHost: parseMediaUrl(url)?.host ?? null,
-    }
-    return pending.applied
+    })
   }
 
   acceptEarlyRetry(permit: EarlyRetryPermit, request: RequestContext): boolean {
-    const pending = this.#retryPermit
+    const pending = this.#retryPermits.current
     if (
       !pending ||
       pending.permit !== permit ||
-      !pending.applied ||
+      !this.#retryPermits.applied(pending) ||
       this.clock.now() >= permit.expiresAt ||
       !this.earlyRetryRequestCurrent(pending.request) ||
       !this.earlyRetryRequestCurrent(request) ||
       request.targetHost !== pending.host ||
-      request.decisionId !== pending.applied.decision.id ||
+      request.decisionId !== this.#retryPermits.applied(pending)!.decision.id ||
       this.latestRequested('video')?.requestId !== request.requestId
     )
       return false
-    const decision = pending.applied.decision
-    if (!this.#decisionAllowed(decision, pending.applied.context, 'video')) return false
-    this.#retryPermit = null
+    const decision = this.#retryPermits.applied(pending)!.decision
+    if (!this.#decisionAllowed(decision, this.#retryPermits.applied(pending)!.context, 'video'))
+      return false
+    if (!this.#retryPermits.consume(pending)) return false
     this.#savePlan(request.representation!, decision)
     if (this.#ownership.has(request)) {
       const committed = this.#ownership.commitRoute(
