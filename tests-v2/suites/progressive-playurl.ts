@@ -12,6 +12,7 @@ import { SessionStore } from '../../src-v2/state/session-store.ts'
 import { SignedRouteVault } from '../../src-v2/state/signed-route-vault.ts'
 import { testScope } from '../support/scope.ts'
 import { FakeStorage } from '../support/storage.ts'
+import '../regressions/v2213-native-sources.ts'
 type TestScope = ReturnType<typeof testScope>
 const now = 2_000_000_000_000
 const media = (name: string, host = 'upos-hz-mirrorakam.akamaized.net'): string =>
@@ -961,7 +962,7 @@ for (const alias of ['backupUrl', 'backup_url'] as const) {
   )
 }
 test(
-  'fifth raw source cannot supply Catalog authority beyond the four-source limit [22]',
+  'seventeenth raw source cannot supply Catalog authority beyond the sixteen-source scan [22]',
   { timeout: 5000 },
   async (t) => {
     const scope = testScope(t)
@@ -970,12 +971,11 @@ test(
       const item = {
         ...segment('fifth-source', 1),
         url: 'https://upos-hz-mirrorakam.akamaized.net/v1/resource/first.mp4',
-        backup_url: [1, 2, 3]
-          .map(
-            (index) =>
-              `https://upos-hz-mirrorakam.akamaized.net/v1/resource/unreplaceable-${index}.mp4`,
-          )
-          .concat(media('fifth-legal.mp4')),
+        backup_url: Array.from(
+          { length: 15 },
+          (_, index) =>
+            `https://upos-hz-mirrorakam.akamaized.net/v1/resource/unreplaceable-${index}.mp4`,
+        ).concat(media('fifth-legal.mp4')),
       }
       const payload = { code: 0, data: { format: 'mp4', durl: [item] } }
       const before = JSON.stringify(payload),
@@ -983,7 +983,7 @@ test(
       assert.strictEqual(
         result.accepted,
         false,
-        'fifth raw source cannot supply Catalog authority beyond the four-source limit',
+        'seventeenth raw source cannot supply Catalog authority beyond the sixteen-source scan',
       )
       assert.strictEqual(
         JSON.stringify(payload),

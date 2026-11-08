@@ -75,8 +75,8 @@ export function* startupCandidates(input: StartupAssemblyInput): Generator<Start
         if (candidate) {
           yield candidate
           candidates.push(candidate)
+          break
         }
-        break
       }
     }
   }

@@ -1,6 +1,7 @@
 import { catalogIndex, TRUSTED_CATALOG } from '../domain/catalog.ts'
 import { declaredFrameRate } from '../domain/frame-rate.ts'
-import { isKnownNativeFamily, parseMediaUrl, replaceUrlHost } from '../domain/url-policy.ts'
+import { parseMediaUrl, replaceUrlHost } from '../domain/url-policy.ts'
+import { admitSources, MAX_EXACT_SOURCES } from '../domain/source-admission.ts'
 import {
   representationId,
   signedRouteHandle,
@@ -21,7 +22,7 @@ import type {
 import type { SignedRouteVaultPort } from './vault-contracts.ts'
 const MAX_VIDEO_GROUPS = 128
 const MAX_AUDIO_GROUPS = 64
-const MAX_URLS_PER_GROUP = 4
+const MAX_URLS_PER_GROUP = MAX_EXACT_SOURCES
 const MAX_URL_CHARS = 1024 * 1024
 const catalogSource = (raw: string): boolean => {
   const parsed = parseMediaUrl(raw)
@@ -99,12 +100,10 @@ export class SignedRouteVault implements SignedRouteVaultPort {
     const priorId = this.#byKey.get(key),
       prior = priorId ? this.#groups.get(priorId) : undefined
     if (prior?.source === 'trusted-api' && input.source !== 'trusted-api') return priorId ?? null
+    const admittedSources = admitSources(input.urls, input.source === 'trusted-api')
     const sharedExact = new Set<RepresentationId>()
-    for (const raw of [...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP)) {
-      const parsed = parseMediaUrl(raw)
-      if (!parsed || (parsed.kind !== 'normal' && parsed.kind !== 'unknown' && !catalogSource(raw)))
-        continue
-      for (const rep of this.#byUrl.get(parsed.url.href) ?? []) {
+    for (const route of admittedSources) {
+      for (const rep of this.#byUrl.get(route.url) ?? []) {
         if (this.#groups.get(rep)?.identity.kind === input.kind) sharedExact.add(rep)
       }
     }
@@ -122,23 +121,7 @@ export class SignedRouteVault implements SignedRouteVaultPort {
         this.#dropGroup(rep)
       }
     }
-    const admitted = [
-      ...new Set(
-        [...new Set(input.urls)]
-          .slice(0, MAX_URLS_PER_GROUP)
-          .map((raw) => parseMediaUrl(raw))
-          .filter(
-            (parsed) =>
-              parsed &&
-              (parsed.kind === 'normal' ||
-                (parsed.kind === 'unknown' &&
-                  parsed.url.protocol === 'https:' &&
-                  !parsed.url.port) ||
-                (parsed.kind === 'pcdn' && catalogSource(parsed.url.href))),
-          )
-          .map((parsed) => parsed!.url.href),
-      ),
-    ]
+    const admitted = admittedSources.map((route) => route.url)
     const refresh =
       !!prior &&
       input.source === 'trusted-api' &&
@@ -169,37 +152,28 @@ export class SignedRouteVault implements SignedRouteVaultPort {
             Object.freeze({ ...prior.routes.find((route) => route.url === url)!, order }),
           )
         : [...(prior?.routes ?? [])]
-    for (const raw of [...new Set(input.urls)].slice(0, MAX_URLS_PER_GROUP)) {
-      const parsed = parseMediaUrl(raw)
-      const opaque =
-        parsed?.kind === 'unknown' && parsed.url.protocol === 'https:' && !parsed.url.port
-      const pcdnCatalogSource = parsed?.kind === 'pcdn' && catalogSource(raw)
-      if (
-        !parsed ||
-        (parsed.kind !== 'normal' && !opaque && !pcdnCatalogSource) ||
-        this.#urlChars + raw.length > MAX_URL_CHARS
-      )
-        continue
-      if (routes.some((route) => route.url === parsed.url.href)) continue
+    for (const source of admittedSources) {
+      if (this.#urlChars + source.url.length > MAX_URL_CHARS) continue
+      if (routes.some((route) => route.url === source.url)) continue
       if (routes.length >= MAX_URLS_PER_GROUP) {
-        this.registerAlias(rep, parsed.url.href)
+        this.registerAlias(rep, source.url)
         continue
       }
       const handle = signedRouteHandle(`route:${rep}:${++this.#handleSerial}`)
       routes.push(
         Object.freeze({
           handle,
-          host: parsed.host,
-          url: parsed.url.href,
+          host: source.host,
+          url: source.url,
           order: routes.length,
-          activelyExplorable: !opaque && !pcdnCatalogSource && isKnownNativeFamily(parsed.host),
-          selectable: !opaque && !pcdnCatalogSource,
+          activelyExplorable: source.activelyExplorable,
+          selectable: source.selectable,
         }),
       )
-      this.#handles.set(handle, { representation: rep, url: parsed.url.href })
-      this.#index(this.#byUrl, parsed.url.href, rep)
-      if (!opaque && !pcdnCatalogSource) this.#index(this.#byPath, parsed.url.pathname, rep)
-      this.#urlChars += parsed.url.href.length
+      this.#handles.set(handle, { representation: rep, url: source.url })
+      this.#index(this.#byUrl, source.url, rep)
+      if (source.selectable) this.#index(this.#byPath, new URL(source.url).pathname, rep)
+      this.#urlChars += source.url.length
     }
     if (!routes.length) {
       if (replaced) {

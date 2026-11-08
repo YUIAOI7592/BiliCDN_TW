@@ -1,4 +1,5 @@
 import type { PlayurlItem } from '../application/playurl-contracts.ts'
+import type { MediaKind } from '../domain/model.ts'
 import { declaredFrameRate } from '../domain/frame-rate.ts'
 import type { PlayurlControllerPort } from '../application/playurl-contracts.ts'
 import type {
@@ -8,6 +9,7 @@ import type {
   PlayurlRequestContext,
 } from '../domain/playurl-model.ts'
 import { parseMediaUrl } from '../domain/url-policy.ts'
+import { PROVISIONAL_SOURCE_SCAN, TRUSTED_SOURCE_SCAN } from '../domain/source-admission.ts'
 
 export interface PlayurlIngestionPort extends Pick<
   PlayurlControllerPort,
@@ -22,10 +24,10 @@ const finite = (value: unknown): number =>
 const text = (value: unknown): string => (typeof value === 'string' ? value : '')
 
 const baseUrl = (item: UnknownRecord): string => text(item.baseUrl || item.base_url)
-const backupUrls = (item: UnknownRecord): string[] => {
+const backupUrls = (item: UnknownRecord, limit: number): string[] => {
   const value = item.backupUrl || item.backup_url
   return Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === 'string')
+    ? value.slice(0, limit - 1).map((entry) => (typeof entry === 'string' ? entry : ''))
     : []
 }
 const codecName = (item: UnknownRecord): string => {
@@ -111,17 +113,44 @@ export class PlayurlAdapter {
         bandwidth: finite(item.bandwidth),
         ...(frameRate !== undefined ? { frameRate } : {}),
         primary,
-        urls: [primary, ...backupUrls(item)].filter(Boolean),
+        urls: [
+          primary,
+          ...backupUrls(
+            item,
+            source === 'trusted-api' ? TRUSTED_SOURCE_SCAN : PROVISIONAL_SOURCE_SCAN,
+          ),
+        ],
         ...(progressive ? { progressive: true } : {}),
       }
     }
-    const records = (value: unknown, required = false): UnknownRecord[] => {
-      if ((value === undefined || value === null) && !required) return []
-      if (!Array.isArray(value) || value.some((item) => !isRecord(item))) {
+    const inventory: {
+      readonly items: readonly unknown[]
+      readonly kind: MediaKind
+      readonly branch: string
+      readonly progressive: boolean
+      readonly container: UnknownRecord
+    }[] = []
+    let videoLength = 0,
+      audioLength = 0
+    const queue = (
+      value: unknown,
+      kind: MediaKind,
+      branch: string,
+      container: UnknownRecord,
+      progressive = false,
+    ): void => {
+      if ((value === undefined || value === null) && !progressive) return
+      if (!Array.isArray(value) || (progressive && !value.length)) {
         failure = 'malformed-payload'
-        return []
+        return
       }
-      return value as UnknownRecord[]
+      if (kind === 'video') videoLength += value.length
+      else audioLength += value.length
+      if (videoLength > 128 || audioLength > 64) {
+        failure = 'malformed-payload'
+        return
+      }
+      inventory.push({ items: value, kind, branch, progressive, container })
     }
     const collect = (data: UnknownRecord, branch: string, depth: number): void => {
       if (visited.has(data)) return
@@ -129,32 +158,41 @@ export class PlayurlAdapter {
       if ('dash' in data) {
         if (!isRecord(data.dash)) failure = 'malformed-payload'
         else {
-          const dash = data.dash,
-            videos = records(dash.video),
-            audios = records(dash.audio)
+          const dash = data.dash
           const dashBranch =
             branch === primaryBranch || branch === `${primaryBranch}.video_info`
               ? ''
               : `${branch}.dash`
           addFormat('dash')
 
-          video.push(...videos.map((item, index) => normalize(item, index, dashBranch)))
-          audio.push(...audios.map((item, index) => normalize(item, index, dashBranch)))
+          queue(dash.video, 'video', dashBranch, data)
+          queue(dash.audio, 'audio', dashBranch, data)
           // Every recognized audio alias is planned before any payload field is changed.
           for (const key of ['dolby', 'flac'] as const) {
             const variant = isRecord(dash[key]) ? dash[key] : null,
               nested = variant?.audio
-            const items = isRecord(nested) ? [nested] : records(nested)
-            audio.push(
-              ...items.map((item, index) => normalize(item, index, `${dashBranch}.${key}`)),
-            )
+            queue(isRecord(nested) ? [nested] : nested, 'audio', `${dashBranch}.${key}`, data)
           }
         }
       }
       if ('durl' in data) {
-        const segments = records(data.durl, true)
-        if (!segments.length) failure = 'malformed-payload'
-        for (const [index, item] of segments.entries()) {
+        queue(data.durl, 'video', `${branch}.durl`, data, true)
+      }
+      if (depth < 2)
+        for (const key of ['data', 'result', 'video_info'])
+          if (isRecord(data[key])) collect(data[key], `${branch}.${key}`, depth + 1)
+    }
+    collect(root, 'root', 0)
+    if (failure) return result(failure)
+    // Check every bounded container's length before touching any representation fields.
+    for (const group of inventory) {
+      for (let index = 0; index < group.items.length; index++) {
+        const item = group.items[index]
+        if (!isRecord(item)) {
+          failure = 'malformed-payload'
+          continue
+        }
+        if (group.progressive) {
           if (
             typeof item.url !== 'string' ||
             !item.url ||
@@ -164,7 +202,7 @@ export class PlayurlAdapter {
             failure = 'malformed-payload'
             continue
           }
-          const declared = text(data.format).toLowerCase(),
+          const declared = text(group.container.format).toLowerCase(),
             parsed = parseMediaUrl(item.url)
           const extension = parsed?.url.pathname.match(/\.(mp4|flv)$/i)?.[1]?.toLowerCase()
           const format =
@@ -184,7 +222,7 @@ export class PlayurlAdapter {
           const entry = normalize(
             item,
             index,
-            `${branch}.durl:${finite(data.quality)}`,
+            `${group.branch}:${finite(group.container.quality)}`,
             true,
             format,
           )
@@ -194,15 +232,10 @@ export class PlayurlAdapter {
             !entry.urls.some((url) => parseMediaUrl(url)?.replaceable)
           )
             failure = 'unreplaceable-source'
-        }
+        } else (group.kind === 'video' ? video : audio).push(normalize(item, index, group.branch))
       }
-      if (depth < 2)
-        for (const key of ['data', 'result', 'video_info'])
-          if (isRecord(data[key])) collect(data[key], `${branch}.${key}`, depth + 1)
     }
-    collect(root, 'root', 0)
     if (failure) return result(failure)
-    if (video.length > 128 || audio.length > 64) return result('malformed-payload')
     if (!video.length && !audio.length) return result('unsupported-format')
     const outputs = this.controller.ingest(
       { token: root, video, audio },

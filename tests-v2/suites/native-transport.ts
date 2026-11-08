@@ -2545,8 +2545,8 @@ async function checkNativeOnPlayurlFixtureAcceptsPrimaryPlusFourBackups3(
     backup_url: [
       'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/emitted-backup/first.m4s?signature=first',
       'https://upos-sz-mirroralib.bilivideo.com/upgcxcode/emitted-backup/second.m4s?signature=second',
-      'https://upos-sz-mirrorali02.bilivideo.com/upgcxcode/emitted-backup/third.m4s?signature=third',
       base.emittedThirdPartyBackup,
+      'https://upos-sz-mirrorali02.bilivideo.com/upgcxcode/emitted-backup/third.m4s?signature=third',
     ],
   }
 
@@ -2559,7 +2559,19 @@ async function checkNativeOnPlayurlFixtureAcceptsPrimaryPlusFourBackups3(
   )
   assert.ok(
     emittedBackupItem.backup_url.includes(base.emittedThirdPartyBackup),
-    'Native-on player output can emit a fifth signed route on an arbitrary host',
+    'Native-on player output can emit an admitted signed route on an arbitrary host',
+  )
+  const current = base.emittedBackupVault.contextForUrl(base.emittedBackupRoot)!
+  assert.equal(base.emittedBackupVault.sourceURLs(current.representation).length, 4)
+  assert.ok(
+    base.emittedBackupVault
+      .sourceURLs(current.representation)
+      .includes(base.emittedThirdPartyBackup),
+  )
+  assert.ok(
+    !emittedBackupItem.backup_url.includes(
+      'https://upos-sz-mirrorali02.bilivideo.com/upgcxcode/emitted-backup/third.m4s?signature=third',
+    ),
   )
   const emittedBackupTransport = base.scope.own(
     new TransportAdapter(

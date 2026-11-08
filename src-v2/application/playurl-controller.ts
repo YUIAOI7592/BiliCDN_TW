@@ -8,6 +8,7 @@ import type {
 
 import { controlPlaybackDemand } from '../domain/playback-demand.ts'
 import { parseMediaUrl } from '../domain/url-policy.ts'
+import { admitSources } from '../domain/source-admission.ts'
 import { observePlayurlContent, type PlayurlContentIdentity } from '../domain/playurl-content.ts'
 import type { PlayurlRequestContext } from '../domain/playurl-model.ts'
 
@@ -250,6 +251,7 @@ export class PlayurlController implements PlayurlControllerPort {
             ...(item.frameRate !== undefined ? { frameRate: item.frameRate } : {}),
             urls,
             source,
+            refreshTrustedSources: source === 'trusted-api',
           })
           if (rep && source === 'trusted-api') {
             const identity = this.vault.identity(rep)
@@ -262,7 +264,7 @@ export class PlayurlController implements PlayurlControllerPort {
           }
           if (source !== 'player-mpd') {
             const output = rep
-              ? this.routes.opaqueOutput(rep, primary, urls, source)
+              ? this.routes.opaqueOutput(rep, primary, this.vault.sourceURLs(rep), source)
               : { primary: '', backups: [] }
             rewriteItem(item, output.primary, output.backups)
           }
@@ -280,7 +282,7 @@ export class PlayurlController implements PlayurlControllerPort {
           ...(item.frameRate !== undefined ? { frameRate: item.frameRate } : {}),
           urls,
           source,
-          refreshTrustedSources: source === 'trusted-api' && item.progressive === true,
+          refreshTrustedSources: source === 'trusted-api',
         })
         if (rep && source === 'trusted-api') {
           const identity = this.vault.identity(rep)
@@ -298,12 +300,13 @@ export class PlayurlController implements PlayurlControllerPort {
               return
             }
             const primaryOutput = this.routes.apply(primary, kind, undefined, true)
+            const admitted = admitSources(urls, source === 'trusted-api').map((route) => route.url)
             const backups = this.routes.isCatalogOnly()
               ? []
               : primaryOutput.url
                 ? [
                     ...new Set(
-                      urls
+                      admitted
                         .map((url) => this.routes.apply(url).url)
                         .filter((url): url is string => !!url && url !== primaryOutput.url),
                     ),
@@ -335,7 +338,7 @@ export class PlayurlController implements PlayurlControllerPort {
           rep,
           primary,
           decision,
-          item.progressive ? this.vault.sourceURLs(rep) : urls,
+          this.vault.sourceURLs(rep),
           source,
         )
         rewriteItem(item, output.primary, output.backups)

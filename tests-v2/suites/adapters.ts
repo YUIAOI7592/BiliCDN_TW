@@ -1027,6 +1027,7 @@ async function createExceptionalForbiddenContext7(t: TestContext) {
   const exceptionalForbidden = `${forbiddenUrl}&os=mcdn`
   const exceptionalItem = {
     ...outputItem,
+    id: 180,
     base_url: exceptionalForbidden,
     backup_url: [exceptionalForbidden],
   }
@@ -1293,6 +1294,7 @@ async function createHealthyCustomRateContext12(t: TestContext) {
   const exceptionalForbidden = `${forbiddenUrl}&os=mcdn`
   const exceptionalItem = {
     ...outputItem,
+    id: 180,
     base_url: exceptionalForbidden,
     backup_url: [exceptionalForbidden],
   }
@@ -1502,6 +1504,7 @@ async function createInitialDeadLookingStartupWithoutPreviousHealthIsNotAnIncide
   const exceptionalForbidden = `${forbiddenUrl}&os=mcdn`
   const exceptionalItem = {
     ...outputItem,
+    id: 180,
     base_url: exceptionalForbidden,
     backup_url: [exceptionalForbidden],
   }
@@ -1703,6 +1706,7 @@ async function createXHRDoesNotSendDefaultUnavailablePCDNMarkedMedia15Context14(
   const exceptionalForbidden = `${forbiddenUrl}&os=mcdn`
   const exceptionalItem = {
     ...outputItem,
+    id: 180,
     base_url: exceptionalForbidden,
     backup_url: [exceptionalForbidden],
   }
@@ -1935,6 +1939,7 @@ async function createPlayObserverInstalledOnFirstPausedTickNotThirtySecondsLater
   const exceptionalForbidden = `${forbiddenUrl}&os=mcdn`
   const exceptionalItem = {
     ...outputItem,
+    id: 180,
     base_url: exceptionalForbidden,
     backup_url: [exceptionalForbidden],
   }
@@ -2817,6 +2822,7 @@ async function checkForbiddenOriginalCannotRemainInPlayurlPrimaryOrBackup6(
   )
   const exceptionalItem = {
     ...base.outputItem,
+    id: 180,
     base_url: exceptionalForbidden,
     backup_url: [exceptionalForbidden],
   }
