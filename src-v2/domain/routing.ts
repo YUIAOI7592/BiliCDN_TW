@@ -1,4 +1,5 @@
 import { evidenceMetrics } from './evidence.ts'
+import { orderedRestrictions } from './route-policy.ts'
 import {
   orderCapacityRows,
   adequateCapacity,
@@ -50,21 +51,20 @@ const restrictionReasons = (
   input: RankRoutesInput,
   now: number,
 ): RestrictionReason[] => {
-  const reasons: RestrictionReason[] = []
   const host = candidate.host
-  if (input.restrictions.disabledCatalogHosts.has(host)) reasons.push('catalog-disabled')
-  if (input.restrictions.defaultUnavailableHosts.has(host)) reasons.push('default-unavailable')
-  if (input.restrictions.blackHosts.has(host)) reasons.push('black')
-  if (input.restrictions.deadHosts.has(host)) reasons.push('dead')
-  if (input.restrictions.hostLocked.has(host)) reasons.push('host-lock')
-  if (
-    input.failedHost === host &&
-    (input.boundary === 'verified-failure' || input.boundary === 'watchdog')
-  )
-    reasons.push('circuit-open')
   const evidence = input.evidenceFor(host, candidate.kind)
-  if (evidence && evidence.circuitUntil > now) reasons.push('circuit-open')
-  return [...new Set(reasons)]
+  return [
+    ...orderedRestrictions({
+      black: input.restrictions.blackHosts.has(host),
+      dead: input.restrictions.deadHosts.has(host),
+      catalogDisabled: input.restrictions.disabledCatalogHosts.has(host),
+      defaultUnavailable: input.restrictions.defaultUnavailableHosts.has(host),
+      hostLocked: input.restrictions.hostLocked.has(host),
+      circuitOpen:
+        !!(evidence && evidence.circuitUntil > now) ||
+        (input.failedHost === host && ['verified-failure', 'watchdog'].includes(input.boundary)),
+    }),
+  ]
 }
 
 export const assessDemandRatio = (
