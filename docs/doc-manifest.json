@@ -3799,6 +3799,14 @@
       "requiredAnchors": []
     },
     {
+      "path": "archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md",
+      "kind": "record",
+      "topics": ["history"],
+      "versions": ["v2.2.16"],
+      "date": "2026-11-09",
+      "requiredAnchors": ["研究結論", "比較方法與結果", "版本鎖定建議與優先順序"]
+    },
+    {
       "path": "archive/retired/docs/ROUTING_OWNERSHIP_v2.2.16_2026-11-09.md",
       "kind": "record",
       "topics": ["history"],
@@ -8032,6 +8040,13 @@
       "encoding": "raw",
       "bytes": 11355,
       "sha256": "e403f0fcfc8208599086273e746f2602a514124f95e1b3eb6313e679d063d5c0"
+    },
+    {
+      "path": "archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 15152,
+      "sha256": "665111a6bec1ce8ee1f4bcfee0c04b3b5efec40cbcd4f6345e035be5cd29337c"
     },
     {
       "path": "archive/retired/docs/ROUTING_OWNERSHIP_v2.2.16_2026-11-09.md",

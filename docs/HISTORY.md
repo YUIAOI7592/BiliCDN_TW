@@ -10,6 +10,8 @@
 
 ## 版本
 
+- [v2.2.16 基準的工具鏈相容性與版本鎖定評估（2026-11-09）](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md)。
+
 - [v2.2.16 更新後載入身分與選路／提交接線（2026-11-09）](TEST_REPORT.md#v2216-r1-載入身分與選路提交接線2026-11-09)。
 
 - [v2.2.16 選路狀態與證據提交契約整理](../archive/retired/docs/ROUTING_OWNERSHIP_v2.2.16_2026-11-09.md)。
@@ -146,6 +148,10 @@
 | v1.6.0 | [當版發行快照](../archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md)、[v1.6.0 公開安全摘要](../archive/retired/docs/SECURITY_REVIEW_v1.6.0.md) |
 
 ## 議題
+
+### 工具鏈、Runtime 與版本限制
+
+[固定環境與輸入](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#固定環境與輸入)、[相容性矩陣](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#比較方法與結果)、[逐項鎖定建議](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#版本鎖定建議與優先順序)；現行操作要求仍由 [DEVELOPMENT](DEVELOPMENT.md#環境需求) 維護，工作由 TODO 管理。
 
 ### 黑畫面、媒體讀值與原生終止
 
@@ -374,6 +380,8 @@
 - [測試工具驗證紀錄](TEST_TOOLING_REPORT.md)
 
 ## 日期
+
+- 2026-11-09：[工具鏈 A／B 相容性與版本鎖定評估](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md)。
 
 - 2026-11-08：[v2.2.14 清理、分類與保留證明](../archive/retired/docs/CLEANUP_v2.2.14_2026-11-08.md)。
 
