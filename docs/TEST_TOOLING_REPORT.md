@@ -1214,3 +1214,53 @@ R1 原始 INVALID 與限制保持；未修改選單不再充作本版待補門�
 結案補記：主代理實際執行 docs:check、archive:check 與 git diff --check 均通過，輸出保存 R2 私有目錄。FINAL_INTEGRITY 核對原 R1 正文、三份日誌既有內容、142 列受控輸入雜湊及正式產品／測試／工具／版本／Release 未變；工作區仍僅原六份文件修改。
 
 文件交付授權補記：使用者於 R2 結案後另行要求提交推送 main，本次僅交付已核對的六份文件並重做文件／封存／差異檢查。原輪次本機保存、R1 操作 INVALID、R2 實機刷新證據不足與工具限制保持，不新增產品或瀏覽器測試結果，不升版或發布。
+
+## 2026-11-08：v2.2.13 R3 更新確認與作用域校準
+
+使用者再次更新後授權確認並實機驗證。本輪新文件完整本體為 532,263 bytes，SHA-256 ab0c2b1ad1a80f3f9d042cad9f426fe3c7574d655629e194ee4f8f9d3affb706；Tampermonkey 5.5.1，Runtime／ControlCenter／Transport 各一，Fetch／XHR hooks installed。沿用既有正式及受控結果，不重測選單或熔斷窗口，產品與正式測試未改。
+
+本輪取得可重現的工具作用域差異：Runtime 頁面 globalThis 看不到 registry，Measurement tick 的使用者腳本詞法 globalThis 則可見；同一哨兵在兩處分別讀為 null／59。改由該作用域取得自有 registry 的 objectId 續讀，沒有持有播放器或核心物件，得到前置 350 列、errors／overflow 零及 stackDepth 零。其內 11 筆可信 API accepted，240 筆同世代／週期／表示的 changed-set 登記均有後續接受配對，authority／新 handles 與接納集合斷言成立；same-set 為零，舊 aliases／晚到工作拒絕未測。這些全部標為前置，不回填正式窗口；R1／R2 原始資料與判定不回寫，對 R2 過往未校準的作用域缺口只追加本次方法銜接。
+
+正式唯一窗口預定 180,000 ms，新列零、errors／overflow 零，來源已停止，停止回呼延遲 12.7 ms；窗口內 Debugger 暫停情況另由主代理核對，不在本項先填通過。本輪原生媒體讀值為 readyState 0、currentTime 0、paused=true，最後影片摘要 status 0，畫面為黑；不宣稱正常播放，也不推定已確認 BiliCDN 根因。前置 API 接線事實不能代替播放成功或正式窗完整分支通過。
+
+2026-11-08 18:48:14.531（Asia/Taipei）已清理，工具設定寫入零，設定逐欄排序比較後相同；最初 JSON 鍵順序比較的 false 是工具判斷偏差，未以此執行復原寫入。自有 registry／sentinel／timer／斷點／物件群組、Debugger／Runtime 均解除，自有分頁零；未清除或回灌 GM 學習。私有索引為 .work/iab-testing/2026-11-08-v2.2.13-cff9597-R3，包含 PRELUDE 與 ANALYSIS_PRELUDE；本輪文件僅保存本機，不提交推送、升版或發布，文件／封存／差異檢查由主代理實際執行後另記。
+
+## 2026-11-08：v2.2.13 黑畫面調查方法核對
+
+新目標先離線稽核 R3，再做唯一 B1 自然觀察；不延長 R3。R3 清理 paused 在工具自己 pause 後取得，不能代算清理前；清理前零值另有工具輸出，仍欠實體節點與 getter 對照。頁面／使用者腳本 registry 差異不證明媒體必定相同或不同。新 B1 用 document/backendNode 及直接／prototype getter 核對同一實體影片，觀察初始化 0→readyState 4、4K、進度及畫面相符；沒有起播身分暫停，不呼叫產品 snapshot／controls 等方法。未取使用者腳本詞法作用域同節點對照，getter provenance 亦不另作保證。
+
+私有 XHR settle 觀察器先經 VM 校準，複製既有終止局部值；最初 CUA 的字串 eval 被環境禁止，改用普通具名函式宣告，失敗發生於導覽／Network 準備前。另一工具呼叫 limit=2000 超過支援上限，改為1000；兩者均為方法錯誤，不是產品失敗，也沒有為此重新導覽。完整本體於觀察後核對為正式 532,263 bytes／SHA-256，沒有 Debugger.pause 命令或身分暫停。
+
+窗內105筆終止為104可信load／206、1可信abort／0，failure及兩種timeout零；不當完整請求分母。來源自行截止比外層晚1286ms，逐列依外層重新篩選，實際沒有窗外WIRE列。結果晚取回、稀疏媒體讀值與窗外12筆Network另列，不能拼成精確連續播放。首份Network在約74.95秒取回且truncated，保存游標方法沒有挽回早段遺失；僅八筆窗內子集可唯一配對、七筆完整終止，MIME四筆音訊誤分類以產品context.kind校正。早段缺口、取消發起者及R3因果仍未知。
+
+另以真Fetch／XHR適配器及原生窄替身執行兩個私有反證，來源換簽名後已接受206仍交付完整128KiB、abort零、舊健康信用零，外部入口呼叫零；只屬元件契約，不增加正式2,261案或代稱原生實測。B1真正媒體暫停靜音，自有alias／registry／timer／斷點／物件群組與CDP domains解除、自有分頁零；無設定、timeout、學習或產品寫入。完整證據及界線由[調查報告](../archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md)維護。本輪只存本機，文件與差異檢查結果另記。
+
+結案補充：前段「無學習或產品寫入」指工具未人工寫入／清除／回灌；正常播放合法新增學習保持，不能解讀為產品沒有保存。私有反證沒有實例化RecoveryController／SDK，recovery零是Routes事件零，不是全部間接重載交錯的保證。來源刷新結論限於已查路徑及兩個具體反例，不能外推所有時序。
+
+文件、封存與差異檢查已實際通過；新歷史報告初次缺保護基準的失敗，透過登記該新文件prefix修正，既有基準不動。完整性初稿另因歷史文字既有三個CRLF與Git正規化raw bytes不同而失敗；獨立確認LF全文相同，改依既有文字規則比對，Release仍比原始bytes，初稿原件保留。最終完整性逐項結果及輸入雜湊另存FINAL_INTEGRITY，沒有重跑完整產品測試或新增正式案例。
+
+使用者隨後提供人工點擊可播放的回報與畫面；R3未測正常點擊後仍失敗，將「未播放」稱為「無法起播」的說法撤回，屬代理驗收判讀錯誤。B1可播放證據保持，R3原始黑畫面／零值不刪除，但不再登記為已確認播放缺陷。本次只更正紀錄，沒有接管使用者分頁、再次操作或新增窗口；圖片原件保存USER_MANUAL_PLAY.png，與代理實測分開。
+
+## 2026-11-08：v2.2.13 R4 來源方法與實際接納分類
+
+新自主目標先校準私有觀察器：首次事件即自動180秒，不再等來源前置事件發生後arm；兩realm同一工具registry／alias可跨呼叫保存與雙處清理。真private欄位class／VM驗證四條件、巢狀ingest stack、零時間起點、截止拒收、停止冪等、私有Map上限及主機去IP。這些是私有工具校準，不增加正式2261案。
+
+IAB四位置實際resolved與命中，完整本體／單一實例／hooks吻合；原生媒體自然播放且保持靜音。唯一180秒48列全部窗內，停止晚0.6ms、errors／privateReadErrors／overflow／stackDepth均零。當次只有page-hint24筆登記、player-mpd20筆追加及各一個accepted，trusted-api零；不能將player-mpd當可信API，也不能把非refresh追加保留舊handles判為撤銷失敗。四十四筆新handles解析與最多四來源可核對，但不證尚未出現的可信刷新分支。早期口頭來源推測由實際source欄位校正，正式判定見TEST_REPORT。
+
+增量保存八批，與完整副本48列無衝突；工具準備／往返有超過十秒的取回間隔，固定來源截止及容量與取回延遲分開，不以補抓延窗。沒有完整Network要求或新增週期媒體錄製；未保存倍率，不新增倍速結果。來源與播放觀察前無Debugger.pause；唯一實例身分暫停在窗口後且媒體已暫停，完成即解除。
+
+19:41:32.308（Asia/Taipei）已關閉唯一自有分頁，階段7分12.506秒；設定逐欄完全相同、工具寫入零，不清除／回灌學習，媒體真正paused／muted=true。兩處registry／alias、timer、四個source斷點及一個身分斷點、物件群組與CDP域解除，使用者分頁未碰。私有R4目錄保存所有方法／原始數字／來源雜湊，核心F1仍證據不足、條件F2不足／F3未執行，沒有據此推定產品FAIL。文件與差異結果待主代理實際核對，本次僅本機、不發布或推送。
+
+結案核對：docs:check、archive:check、git diff --check實際通過；FINAL_INTEGRITY另外確認五份Release原始bytes、產品／正式測試／工具／版本未變、先前完整報告與兩份追加日誌全文prefix保持，以及人工播放更正紀錄完全未變。來源與清理獨立審核FINAL_REVIEW列明首次取回晚35.012秒、最大相鄰50.002秒、最後取回晚截止9.425秒，不能冒稱精確十秒或完整Network；固定48列無衝突／overflow之證據保持。這些完整性檢查通過不等於核心可信刷新通過，驗收結果仍由TEST_REPORT分層記錄。
+
+## 2026-11-08：R5 受控真API與安全替代方法
+
+R4之後只讀核對保存的網站來源，排除把重選同Auto、play／pause／seek當可靠新清單觸發。來源日期11/4而非現行網站身份，未據此宣稱所有可能路徑；沒有重開R4。依另獲明確批准的方法，準備最多三筆官方WBI playurl GET；純簽章工具以九組Node MD5及獨立WBI算式／合成來源驗證，不執行整份網站bundle，不新增產品依賴，真網路只在R5批准後使用。
+
+自動審查拒絕導覽前條件觀察點，原動作未執行；安全替代是先正常起播、靜音暫停，再加觀察。被拒區塊未建立變數，後續導覽後的宣告疏漏造成一次ReferenceError，修正後立即真正靜音；最初聲音狀態不冒稱全程已量測。網站正常點擊後readyState4、原生進度成立，再暫停做metadata。窗口後完整Transport.snapshot身分讀取也遭拒，未執行該方法且立即resume；只讀實例與HookInstallation.isInstalled純參照比較取得最終身分，沒有改產品快取／所有權。
+
+三筆真回應均200/code0/21video/3audio，普通已裝Fetch hook內實際trusted-api序號4/5/6配對，78列含72個同內容／表示changed-set。24組各三次authority鏈、新handles、舊handles／舊exact及aliases／output roles登記邊界撤銷全部成立，errors／privateReadErrors／overflow／stackDepth零；source自動180秒、停止晚11.3ms、窗口暫停零。不是網站SDK自然採用，same-set零、晚到控制未新增，不能外推。
+
+IAB20:01:15.712–20:11:25.030，10分9.318秒，十五分鐘硬截止內清理。工具metadata預算3、每筆已完成且finally取消自有timer；源registry／兩處alias、budget、全部斷點與引用／domains解除，真正媒體paused/muted=true、rate1、errornull，自有分頁不在，使用者分頁未碰。十二設定欄位一致、工具設定及學習清除／回灌零。完整原始數字與ANALYSIS在R5私有目錄，正式2261案及熔斷窗口未重跑，文件／封存／差異的最終結果另核。
+
+最終docs:check、archive:check與差異檢查實際通過，FINAL_INTEGRITY核對原始發行bytes、正式程式／測試／工具／版本、既有全文prefix及人工更正保持；CASES與COMPLETION_AUDIT區分E0/M0/F1/Z0通過、F2不足與F3未執行。三筆真實API與72筆changed-set各條件全通過，沒有把完整性或工具VM綠燈當自然端到端結論，不新增正式測試案數或恢復其他窗口。

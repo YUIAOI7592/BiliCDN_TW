@@ -10,7 +10,13 @@
 
 ## 版本
 
-- [v2.2.13 選路、限制與來源整合](TEST_REPORT.md#驗收結論)；[契約映射](../tests-v2/MIGRATION.md#v2213-選路限制與-native-來源)；[R1 安裝與受控整合（2026-11-08）](TEST_REPORT.md#v2213-r1-選路黑名單與來源驗收2026-11-08)；[R2 本版變更接線補驗（2026-11-08）](TEST_REPORT.md#v2213-r2-本版變更接線補驗2026-11-08)。
+- [v2.2.13 R5 受控真實 API 接線（2026-11-08）](TEST_REPORT.md#v2213-r5-受控真實-api-接線2026-11-08)
+
+- [v2.2.13 R4 自主接線補驗（2026-11-08）](TEST_REPORT.md#v2213-r4-自主接線補驗2026-11-08)
+
+- [v2.2.13 播放狀態調查與人工播放判讀更正（2026-11-08）](../archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md#使用者人工播放與判讀更正)
+
+- [v2.2.13 選路、限制與來源整合](TEST_REPORT.md#驗收結論)；[契約映射](../tests-v2/MIGRATION.md#v2213-選路限制與-native-來源)；[R1 安裝與受控整合（2026-11-08）](TEST_REPORT.md#v2213-r1-選路黑名單與來源驗收2026-11-08)；[R2 本版變更接線補驗（2026-11-08）](TEST_REPORT.md#v2213-r2-本版變更接線補驗2026-11-08)；[R3 更新確認與實機觀察（2026-11-08）](TEST_REPORT.md#v2213-r3-更新確認與實機觀察2026-11-08)。
 
 - [v2.2.12 觀察校準與提前重試適用率研究（2026-11-08）](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md)。
 
@@ -129,6 +135,10 @@
 | v1.6.0 | [當版發行快照](../archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md)、[v1.6.0 公開安全摘要](../archive/retired/docs/SECURITY_REVIEW_v1.6.0.md) |
 
 ## 議題
+
+### 黑畫面、媒體讀值與原生終止
+
+[工具誤判與同節點校準](../archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md#先排除工具誤判)、[終止分類及 Network 缺口](../archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md#終止分類與網路證據)、[來源刷新反證與原因界線](../archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md#原因分類與下一步)；現行工作由 [TODO](TODO.md) 維護。
 
 ### 提前重試現場適用率與成本
 
@@ -351,6 +361,12 @@
 - [測試工具驗證紀錄](TEST_TOOLING_REPORT.md)
 
 ## 日期
+
+- [2026-11-08：v2.2.13 R5 真實 API、來源授權與撤銷](TEST_REPORT.md#v2213-r5-受控真實-api-接線2026-11-08)
+
+- [2026-11-08：v2.2.13 R4 來源辨識與接線補驗](TEST_REPORT.md#v2213-r4-自主接線補驗2026-11-08)
+
+- [2026-11-08：v2.2.13 黑畫面獨立調查](../archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md)
 
 - [2026-11-05：v2.2.10 熔斷研究與證據邊界](../archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md)
 

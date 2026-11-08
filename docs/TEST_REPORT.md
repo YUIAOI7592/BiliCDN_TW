@@ -8,6 +8,12 @@
 
 後續依使用者縮減範圍完成 [R2 本版變更接線補驗](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2213-r2-本版變更接線補驗2026-11-08)：**受控補驗完成，安裝版可信清單再次刷新仍未驗證**。R1 一般選路、Native 接線及來源提升的既有通過證據沿用；固定主機操作 INVALID 保留於 [R1 原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2213-r1-選路黑名單與來源驗收2026-11-08)，未修改的選單不再當成本版待補門檻。不把 N 層結果或自然條件缺席改寫成完整安裝版全部通過。
 
+使用者再次更新後的 [R3 更新確認與實機觀察](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2213-r3-更新確認與實機觀察2026-11-08) 已確認新文件載入正式 v2.2.13；前置事件補得可信集合變更的實機接線事實，正式窗口沒有新增刷新。當次媒體為黑畫面、readyState 0／進度 0，正常播放未成立，原因未確認；不以更新成功或來源接線證據覆蓋該現象。
+
+後續[播放狀態調查與判讀更正](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md#使用者人工播放與判讀更正)已確認新 B1 可自然播放，使用者亦回報人工點擊可播放。**R3 沒有驗證正常點擊後仍失敗，撤回「已確認無法起播」的表述，不將其登記為播放缺陷。** 原黑畫面／零值與工具限制保留；兩個受控案例未見來源刷新取消已接受本文，其他安裝分支仍按各自證據判定。
+
+使用者另行批准的 [R5 受控真實 API 接線](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2213-r5-受控真實-api-接線2026-11-08)已完成：三筆真實 API 回應經已安裝 hook 接納，七十二筆可信 changed-set 的新授權、舊 handles／索引撤銷及清理核對通過。此為受控安裝版 API→Vault 核心接線，不冒稱網站 SDK 自然採用；同集合與晚到控制仍保留分層限制。R4 的不足原判不回寫。
+
 ## 自動驗證
 
 鎖定 Node 26.8.1／npm 11.19.0／TypeScript 7.0.2／esbuild 0.28.2／Prettier 3.9.10。原十八套件／2,149 案先完整通過；其中包含 v2.2.12 發布時 2,140 案及後續文件工具九案，歷史數字不回寫。最終來源 61a4840 的十八套件／2,261 案完整通過，failed／cancelled／skipped／todo 均零；新增 112 案，唯一改名是正式來源政策映射，其餘名稱、kind 與參數展開完整保留。
@@ -245,3 +251,109 @@ N 層使用非入口真實 Session／Vault／Routes／RestrictionStore／Evidenc
 ### R2 文件交付授權銜接（2026-11-08）
 
 使用者在補驗結案後明確授權將本次文件更新提交並推送 main。本次交付包含同批六份文件內保留的 R1 原始紀錄與 R2 補驗結果；前文的本機保存限制仍描述各輪結案當時的授權，不是目前禁止交付。受控八案通過、實機可信清單再次刷新證據不足及所有原始限制保持，沒有新增測試、瀏覽器輪次、版本標籤或 Release。
+
+## v2.2.13 R3 更新確認與實機觀察（2026-11-08）
+
+使用者再次更新後明確要求先確認，再開始實機驗證。基準 main cff9597，開始工作區乾淨；保守時限為 18:33:11–18:53:11 Asia/Taipei，18:47 已開始清理，18:48:14.531 關閉唯一自有分頁。只針對尚缺來源刷新接線，未操作控制中心設定、固定主機或重測熔斷／播放矩陣；沒有重新導覽或改畫質製造第二輪。
+
+| 項目 | 結果與證據界線 |
+| --- | --- |
+| 更新確認 E0 | PASS。新文件 GM_info 為 Tampermonkey 5.5.1、腳本 2.2.13；完整本體 532,263 bytes、SHA-256 ab0c2b1ad1a80f3f9d042cad9f426fe3c7574d655629e194ee4f8f9d3affb706；Runtime／ControlCenter／Transport 各一，Fetch／XHR hooks installed。 |
+| 前置可信集合變更 | 取得實機事實。350 筆前置事件中有 11 筆可信 API accepted；其中 240 筆同 generation／epoch／representation 的可信集合變更能串接前筆 authority、當次 ingest 及後續 Adapter accepted。新 authority／handles、實際接納集合與最多四來源的局部斷言均符合。這些資料全屬 prelude，不回填正式窗口。 |
+| 正式 I-FRESH 窗口 | 證據不足。唯一 180,000 ms 窗口沒有新增來源事件，停止回呼晚 12.7 ms；errors／overflow 均零。同集合保留分支未出現，舊 aliases／output roles 實際撤銷及晚到控制拒絕亦不由前述資料代算通過。 |
+| 附帶播放現象 | 當次正常播放未成立：原生媒體讀值 readyState 0、currentTime 0、paused=true、error=null；最後影片傳輸摘要為 status 0，收尾畫面為黑。網站顯示的保存位置不能代替原生進度，未確定是網路、網站或腳本造成，不改寫 R1 當時播放結果。 |
+| 清理 Z0 | PASS。設定逐欄相同、changedSettingKeys 為空、工具設定寫入零；真正媒體暫停且靜音。使用者腳本作用域的 registry／sentinel／timer、全部自有斷點、物件群組及 Debugger 已釋放，唯一自有分頁關閉。沒有清除或回灌正式學習。 |
+
+### 作用域校準與前置資料
+
+本輪先按已知腳本 URL／包裝偏移預置四個不暫停條件，並以新文件完整本體與實際 resolved 行核對。頁面 Runtime.evaluate 查 registry 為 false；在同腳本 Measurement tick 的短暫身分斷點內，使用者腳本 globalThis 查同 key 為 true，工具哨兵分別為 null／59。這證明頁面與使用者腳本作用域不同，不能以相同 executionContextId 假定全域綁定相同。改以自有 registry 的遠端引用讀取後取得 350 筆前置列，未持有播放器／核心物件；這是工具修正，不是產品修改。
+
+新觀察器使用有界數字 ingest stack／finally 配對，不再以單一全域 sequence 當嚴格請求證明；四條條件均有私有 VM 校準。前置 240 筆變更的 authority 鏈、callId、集合／handle 斷言及 Adapter accepted 配對不符均零；同集合案例零。資料只保存數字、枚舉、主機與集合比較布林，沒有保存原始 URL／query／handles，也不從新 handles 推論舊索引已全部撤銷。正式窗口啟動前曾因讀錯作用域未 arm；修正後只啟動一次，不延長、不拼接前置為窗口。
+
+R2 當時已保留作用域未命中限制；本輪提供了可重現的新工具原因，不能用 R2 的零列當作來源函式未執行證明。R2 的原判及原始資料保持，不追改成 PASS。環境清單未列出使用者 ambient 所示管理器分頁，但新建的唯一 IAB 分頁可正常核對實際管理器與本體；未推論環境整體不可用，也未轉用外部 Chrome 或要求前景。
+
+設定確認初稿以 JSON 字串比較，因鍵順序不同誤得 false；使用同一份已取得資料逐欄正規化比較後，全部欄位一致，沒有為此重讀、重寫或還原設定。當輪 Native／提前重試原本為 true，保持原值。導覽後立即真正靜音；未把黑畫面、空媒體或工具準備時間算作正常播放窗口，不新增效用結論。
+
+私有證據位於 .work/iab-testing/2026-11-08-v2.2.13-cff9597-R3，含 PLAN／BASELINE、OBSERVER_SPEC、INSTALLATION、SCOPE_PROOF、PRELUDE 與獨立分析、WINDOW、增量與 OBSERVATION、TRANSPORT_CURRENT、CLEANUP 及黑畫面。產品、正式測試、版本與 Release 不變，正式 2,261 案不重跑；本輪文件只保存本機，不提交推送或發布。黑畫面與密集可信回應的原因尚待另立調查，不自動追加故障或播放窗口。
+
+## v2.2.13 黑畫面獨立調查（2026-11-08）
+
+使用者另行建立調查目標後，先稽核 R3 作用域、媒體與 status 0，再完成一次 B1 自然觀察及兩個隔離元件反證。完整方法、去敏數字、原因分類與限制集中於[單一調查紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md)，不延長或補寫 R3。
+
+B1 管理器／完整本體吻合正式 v2.2.13；沒有起播身分暫停，同一 DOM backendNode 的直接／prototype 讀值從初始化 0 轉為 readyState 4、3840×2160，進度與畫面相符。180 秒內保存的 105 筆 XHR 終止為 104 成功／206、1 可信 abort／0，沒有保存到 failure 或兩種 timeout；這是終止子集，不是完整請求分母。Network 早段截斷，只有八筆窗內子集、七筆完整終止配對；晚讀與窗口外資料分開。不能據此宣稱全程無網路錯誤或固定時長順播。
+
+R3 清理前零值與黑畫面保留；其清理後 paused 不代算清理前狀態。新方法未回溯排除 R3 錯元素／getter，也無 R3 起播暫停與請求終止的因果配對。兩個私有真元件案例確認換簽名不直接取消已接受 Fetch／XHR 或丟本文，但舊授權信用拒絕與網站／網路其他機制仍需對應證據。**本次根因未識別，沒有確定產品修補，也不新增完整安裝通過判定。**
+
+最終媒體真正暫停靜音、觀察 registry／alias／timer／斷點與引用解除、相關 CDP domains 關閉、自有分頁零。工具沒有設定寫入、清除或回灌學習；正常合法學習保留。產品、正式測試、版本與 Release 未改，本輪只保存本機，不提交推送或發布。
+
+### 人工點擊可播放與原判讀更正
+
+使用者隨後回報在 Codex 瀏覽器點擊即可播放並提供畫面，與 B1 可播放證據一致。R3 未驗證正常點擊後仍失敗，故先前將「當時未播放」概括為「無法起播」的說法撤回；本輪沒有建立播放缺陷。這是代理的驗收判讀錯誤，不能以「原因未識別」繼續暗示已有產品故障。原始零值／黑畫面留作當時觀察，現行結論依[更正紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md#使用者人工播放與判讀更正)；未另開瀏覽器窗口或操作使用者分頁。
+
+## v2.2.13 R4 自主接線補驗（2026-11-08）
+
+依使用者新目標，以 main cff9597／正式 v2.2.13 與既有七份文件變更凍結基準，先完成觀察器校準，再使用唯一自有 IAB。**本輪已結案並清理，核心可信 API 刷新補驗仍未完成：必要接納事件沒有出現，判為證據不足。** 沒有新的產品 FAIL，也不將正常播放或工具校準代算刷新通過；R1／R2／R3 與人工播放更正保持。
+
+| ID／項目 | 結果 | 實際證據及界線 |
+| --- | --- | --- |
+| E0 本體與執行身分 | PASS | Tampermonkey 5.5.1／腳本 2.2.13；當前包裝包含正式完整本體 532,263 bytes，SHA-256 ab0c2b1ad1a80f3f9d042cad9f426fe3c7574d655629e194ee4f8f9d3affb706。Runtime／ControlCenter／Transport 各一，Fetch／XHR hooks installed。 |
+| P0 正常播放前置 | 成立，不重計舊播放案例 | 原生媒體自然由初始化進入 readyState 4／3840×2160，操作讀值進度 3727.67→3822.07→3882.08 秒、paused=false、muted=true、error=null，網站顯示 Auto。無須點擊便已播放；沒有將起初 readyState 0 判成故障，未另驗倍速或固定時長順播。 |
+| F1 可信集合變更及撤銷 | 證據不足（核心） | 唯一 180 秒內有 48 列，但 trusted-api 接納／登記零；沒有可信→可信 changed-set，不能判定舊 handles／aliases／output roles 的刷新撤銷實機通過。 |
+| F2 同集合保留 | 證據不足（條件式） | 未出現可信同集合再次接納；既有正式／受控契約保持，不以其他來源追加代算。 |
+| F3 晚到控制拒絕 | 未執行（條件式） | 本輪沒有設置安全且具名的控制拒絕觀察，亦未注入舊工作；不宣稱所有晚到結果已拒絕。 |
+| Z0 清理與資料保存 | PASS | 正式設定逐欄相同、工具設定寫入零，不清除／回灌學習；媒體真正暫停靜音。雙作用域 registry／alias、timer、五個自有斷點與物件群組解除，相關 CDP domains 關閉，自有分頁已關閉；使用者分頁未操作。 |
+
+### 固定窗口與來源辨識
+
+IAB 自第一次能力檢查 19:34:19.802 Asia/Taipei 起算，19:41:32.308 完成自有分頁清理，耗時 7 分 12.506 秒。來源觀察在導覽前就緒，從首事件 19:35:21.011 自動開始 180,000 ms，停止回呼晚 0.6 ms；截止及之後拒收。四個本體位置零起算 547／550／2622／7552，加一行包裝後均實際解析並命中；窗口內及起播前沒有身分暫停。必要唯一實例／hooks 核對只在固定窗口後、媒體已暫停時進行，完成解除；不拿該暫停評估播放或網路期限。
+
+48 列是兩筆 ingest、四十四筆登記及兩筆 Adapter accepted。實際來源為二十四筆 page-hint 初始登記、二十筆 player-mpd 追加；accepted 各一。**player-mpd 不是 trusted-api**，不能把這兩個 accepted 誤稱為可信 API 提升或刷新。Transport 當時 lastPlayurl=null 亦未提供可信接納佐證；不將此摘要外推為整站完全沒有 API 請求。
+
+四十四筆來源數最多四，當次新 handles 均能在既有索引解析。privateReadErrors／errors／overflow／stackDepth 均零，證明本輪私有欄位讀取已實際工作。二十筆非 refresh 追加保留舊 handles／aliases，且當次接納清單不必等於累積來源；這符合既有低信任追加政策，不算刷新 FAIL。未自然出現的 trusted 分支沒有以舊 R3 與本輪不同條件拼接通過。
+
+增量與完整副本按序號核對，48 列沒有衝突或窗外事件；保存成功才推進續讀游標。實際工具準備／往返使部分取回晚於十秒目標，沒有連續補抓或宣稱精確十秒取樣；固定來源期限、容量與取回時間分開保存。沒有建立全站 Network 分母，也不新增媒體週期錄製器；媒體僅作操作前提及旁證，未直接保存倍率，故不新增一／兩倍契約通過。
+
+### 方法與交付
+
+私有觀察器先以 Node 26.8.1 的真私有欄位 class／VM 校準，來源 stack、首次事件自動期限、兩作用域 alias、超額與停止清理均成立；Map 讀取前限制 aliases≤1,024／outputs≤1,152，輸出主機排除 IP。不呼叫產品資格／選路／控制方法、不修改回應，不為湊樣本刷新、尋位、切畫質或改設定。所有原始 URL／query／handles 與播放器／核心物件不落地。
+
+私有索引為 .work/iab-testing/2026-11-08-v2.2.13-cff9597-R4：PLAN／BASELINE、OBSERVER_SPEC／VALIDATION、RESOLVED、八批增量、WINDOW_FINAL／ANALYSIS、BODY_IDENTITY／INSTALLATION、三個媒體讀點、畫面及 CLEANUP／TAB_CLEANUP。正式 2,261 案及已通過熔斷窗口不重跑，產品／正式測試／版本／Release 不變，正常合法學習保留。本次僅本機記錄，不提交推送、升版或發布；未完成的核心項目保留為具體證據缺口，不因輪次清理完成改寫通過。
+
+## v2.2.13 R5 受控真實 API 接線（2026-11-08）
+
+R4 之後先離線追查合法觸發：已保存網站來源顯示再次選同一 Auto 可能直接返回，play／pause／一般 seek 也不保證取得新 playurl，因此沒有盲目重跑。該來源為 2026-11-04 快照，不冒稱當前網站全部行為。使用者隨後明確批准新的最多十五分鐘受控輪次、最後五分鐘清理，以及最多三筆官方播放資料 GET；R4 不延長或回填。
+
+**本次批准的受控安裝版 API→Vault 核心接線完成。** E0／M0／F1／Z0 通過；F2 沒有同集合回應，仍列證據不足；晚到控制及網站 SDK 自然採用未新增實測。工具發出的請求不能改稱網站自然刷新，原 R1–R4、既有 N 層／受控通過及人工播放更正全部保留。
+
+| ID／項目 | 結果 | 當次證據 |
+| --- | --- | --- |
+| E0 完整身分 | PASS | 正式本體 532,263 bytes／SHA-256 ab0c2b1ad1a80f3f9d042cad9f426fe3c7574d655629e194ee4f8f9d3affb706；Tampermonkey 5.5.1／2.2.13。Runtime／ControlCenter／Transport 各一，Fetch／XHR isInstalled 的純身分比較均為 true。 |
+| M0 真實 API 接納 | PASS（I 受控） | 經頁面普通 Fetch hook 順序發三筆 WBI playurl GET，皆 HTTP 200／code 0、21 video／3 audio，實際 trusted-api 請求序號 4／5／6 分別配對 ingest、24 筆登記及 Adapter accepted。工具預算確認三筆後封存，沒有第四筆。 |
+| F1 可信集合刷新與撤銷 | PASS（I 受控） | 共72筆，均為同 generation／epoch／representation 的 trusted→trusted changed-set；24組各連接三次 authority 修訂。新 handles 可解析、接納集合正確且每組兩來源；舊 handles 已不存在，未重新接納的舊 exact 歸因／aliases 已移除，登記完成邊界的該表示 output roles 為零。 |
+| F2 相同集合保持 | 證據不足（條件式） | 三次真回應全部 changed-set，same-set 零；不更改回應或 cache 強迫出現，原 N／受控同集合契約保持，不新增 I 層通過。 |
+| F3 晚到控制／自然 SDK 採用 | 未執行（條件式） | 沒有注入舊在途工作或讓 SDK 採用工具回應，不推論所有晚到路徑或網站自然端到端通過。 |
+| Z0 清理與資料保留 | PASS | 工具設定寫入及學習清除／回灌零、十二個設定欄位相同；三筆 metadata 均已完成。媒體暫停且靜音，雙作用域 registry／alias、budget registry、timer、全部自有斷點、物件群組及 Runtime／Debugger 解除，自有分頁關閉、使用者分頁未動。 |
+
+### 執行方法與實際時間
+
+IAB 自 20:01:15.712 Asia/Taipei 起算，20:11:25.030 關閉自有分頁，耗時10分9.318秒，十五分鐘硬期限內完成。正常播放前提以網站可信播放按鈕操作確認：初讀 paused=true／readyState 1 後沒有判為故障；點擊後待資料成立，原生 readyState 4、進度 3882→3890.62 秒、rate=1、error=null，再真正暫停靜音。Auto 自然由4K選到1080，未強制畫質，不新增倍率或定時順播矩陣。
+
+自動審查首先拒絕「導覽前設條件觀察點」，理由為可能除錯暫停干擾起播；該方案沒有執行。安全替代為先正常載入、靜音及暫停，再核對完整本體、加入四個非暫停來源位置；沒有重試導覽前設點。被拒區塊未建立 cdp 變數，後續宣告疏漏在導覽後造成一次 ReferenceError，立即以明確宣告修正並讀回真正靜音；首次可見媒體仍暫停，最初至確認的聲音狀態未完整量測，不宣稱起播前全程無聲。
+
+工具只讀當前文件公開 bvid／cid 與 localStorage 的 wbi_img_url／wbi_sub_url 兩個公開圖片鍵；簽章算法按保存的官方來源核對，獨立 Node MD5 九組向量及合成 WBI 對照通過，沒有執行整份網站 bundle。真 GET 沿用既有登入狀態，不輸出 Cookie、圖片鍵、簽章、URL／query 或回應本文；不修改回應、網站 timeout、設定、cache、SDK 命令或產品預算。第三筆在第二批完成後至少兩秒，並非額外媒體探測。
+
+來源窗口從首受控接納 20:05:12.583 自動開始180,000ms，停止回呼晚11.3ms；78列序號連續且全在截止前（3 ingest／72 registered／3 accepted），errors／privateReadErrors／overflow／stackDepth均零。觀察游標沒有暫停或截斷；同一窗口增量與完整讀回保存，不把身份核對時間算入該窗口。沒有全站Network分母或新診斷管線，也不宣稱取回固定每十秒。
+
+窗口後的身分核對曾因完整 Transport.snapshot 呼叫被自動審查拒絕，該方法沒有執行；立即解除暫停，改為只讀實例數與 HookInstallation.isInstalled 的純函式參照比較。最終核對仍在媒體暫停、來源窗口已停止的條件下進行，完成解除；工具方法偏差不算產品 FAIL，不回填播放或傳輸期限。
+
+### 證據與結案界線
+
+撤銷斷言只證登記完成、Controller 寫入新 output roles 前的既有索引狀態；不是永久禁止同 URL 作合法 Catalog 請求，也沒有單靠這些布林代算所有晚到控制被拒絕。真回應只由受控 Fetch caller 消費、未傳給網站 SDK，所以本結果不能證 SDK 自然切換清單或實際換站效益。已通過的選單、三頁、timeout與熔斷窗口沒有重測。
+
+私有索引 .work/iab-testing/2026-11-08-v2.2.13-cff9597-R5 保存 PLAN／BASELINE、準備規格、批准範圍、METADATA_PREFLIGHT／12／3／BUDGET、BATCH／INCREMENT／WINDOW_FINAL、BODY_IDENTITY／INSTALLATION、ANALYSIS、媒體及清理。完整性、文件／封存／差異檢查由最終紀錄核對；產品、正式測試、版本及五份Release原件保持，沒有新增正式2,261案數、提交推送或發布。正常合法學習保留，不以全份GM雜湊不變作資料保留標準。
+
+結案檢查已實際通過：docs:check、archive:check、git diff --check；FINAL_INTEGRITY 確認正式非文件範圍、五份發行原始bytes、三份追加日誌及R1–R4／人工播放更正保持。COMPLETION_AUDIT 按完整自主目標及後續明確批准的受控範圍逐項對照，本輪受控API接線核心完成；F2／F3與自然SDK界線不改為通過。所有紀錄僅本機保存，沒有自動追加輪次。
+
+### R4／R5 與判讀更正文件交付授權（2026-11-08）
+
+使用者於各輪結案後明確要求將 R4／R5 驗收及先前判讀更正一併提交並推送 main。本批七份文件也保留同批 R3／B1 原始觀察、調查與更正；前文「只存本機／不提交推送」仍描述各輪當時範圍，不是目前禁止交付。R4 不足、R5 受控核心完成、條件式／自然 SDK 限制與「未建立播放缺陷」更正均保持。此次只交付文件，不新增瀏覽器驗收、執行期測試、版本、標籤、封裝或 Release。

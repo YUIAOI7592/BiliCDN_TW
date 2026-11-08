@@ -79,6 +79,26 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md",
+      "kind": "record",
+      "topics": [
+        "black-screen-investigation"
+      ],
+      "versions": [
+        "v2.2.13"
+      ],
+      "date": "2026-11-08",
+      "requiredAnchors": [
+        "調查結論",
+        "先排除工具誤判",
+        "終止分類與網路證據",
+        "來源刷新與腳本控制路徑",
+        "原因分類與下一步",
+        "清理與交付邊界",
+        "使用者人工播放與判讀更正"
+      ]
+    },
+    {
       "path": "archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md",
       "kind": "record",
       "topics": [
@@ -2904,7 +2924,10 @@
         "v226-r1-安裝驗收2026-11-02",
         "驗證階段與證據範圍",
         "v2213-r1-選路黑名單與來源驗收2026-11-08",
-        "v2213-r2-本版變更接線補驗2026-11-08"
+        "v2213-r2-本版變更接線補驗2026-11-08",
+        "v2213-r3-更新確認與實機觀察2026-11-08",
+        "v2213-r4-自主接線補驗2026-11-08",
+        "v2213-r5-受控真實-api-接線2026-11-08"
       ]
     },
     {
@@ -3750,6 +3773,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 13470,
+      "sha256": "a6c2af7a43f42084cffe402db33dc9ef09430e8dcf7621b5184c35559417d834"
+    },
     {
       "path": "archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md",
       "mode": "prefix",
