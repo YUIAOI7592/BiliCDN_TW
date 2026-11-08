@@ -8,6 +8,7 @@ import { inspectModule, validateGraph } from '../checks/architecture-rules.mts'
 
 for (const [file, source] of [
   ['ui/leak.ts', "import { x } from '../application/routing/retry-evidence.ts'"],
+  ['ui/probe-leak.ts', "import { x } from '../application/measurement/startup-evaluation.ts'"],
   ['application/measurement/leak.ts', "import { x } from '../routing/candidate-planning.ts'"],
   ['adapters/playurl/leak.ts', "import { x } from '../player/player-controls.ts'"],
   ['entry.ts', "import { x } from './adapters/transport/xhr-request.ts'"],

@@ -1,5 +1,6 @@
 import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import '../regressions/v2215-routing.ts'
+import '../regressions/v2215-measurement.ts'
 import { currentResumePlayer } from '../support/player.ts'
 import '../regressions/cc39-integration.ts'
 import '../regressions/v2211-circuit-routing.ts'

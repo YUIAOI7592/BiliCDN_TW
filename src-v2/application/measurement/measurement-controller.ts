@@ -1,16 +1,22 @@
+import {
+  probeResultUsable,
+  evaluatedProbeResult,
+  rankStartupResults,
+  classifyProbeOutcome,
+  type ProbeResult,
+} from './startup-evaluation.ts'
 import { startupTransition } from '../../domain/startup-policy.ts'
-import { orderCapacityRows, ROUTE_HEADROOM } from '../../domain/route-capacity.ts'
+import { ROUTE_HEADROOM } from '../../domain/route-capacity.ts'
 import { sameMeasurementSettings } from '../../state/settings-policy.ts'
 import {
   type AppliedRouteDecision,
   type StartupCandidate,
   type StartupOptions,
 } from '../routing/route-contracts.ts'
-import { type FailureKind, type CapacityConfidence } from '../../domain/evidence-model.ts'
 import { type PlaybackDemand } from '../../domain/playback-demand.ts'
 import { type RouteIdentity } from '../../domain/route-model.ts'
 import { type SignedRouteHandle } from '../../domain/model.ts'
-import { type TimingBasis, readMonotonic } from '../../domain/measurement-time.ts'
+import { readMonotonic } from '../../domain/measurement-time.ts'
 import { probeStartByte } from '../../domain/probe-range.ts'
 import { mediaIdentity } from '../../domain/url-policy.ts'
 import { type RuntimeIdPort } from '../../platform/runtime-id-port.ts'
@@ -32,22 +38,6 @@ const nextCursor = (cursor: number): number =>
   Number.isSafeInteger(cursor) && cursor >= 0 && cursor < Number.MAX_SAFE_INTEGER ? cursor + 1 : 0
 const cancellationReason = (signal: AbortSignal): unknown =>
   'reason' in signal ? signal.reason : new DOMException('Aborted', 'AbortError')
-
-interface ProbeResult {
-  readonly timingBasis?: TimingBasis
-  readonly speedEligible?: boolean
-  readonly candidate: StartupCandidate
-  readonly valid: boolean
-  readonly safeMbps: number | null
-  readonly capacityConfidence: CapacityConfidence
-  readonly safePayloadMbps: number | null
-  readonly predictionTtfbMs: number | null
-  readonly bytes: number
-  readonly elapsedMs: number
-  readonly ttfbMs: number | null
-  readonly status: number | null
-  readonly reason: string
-}
 
 interface MeasurementWork {
   readonly controller: AbortController
@@ -413,7 +403,7 @@ export class MeasurementController implements MeasurementPort {
           'probe-reader',
         )
       : null
-    const ordered = orderCapacityRows(
+    const { ranked, fastestValid, compare } = rankStartupResults(
       valid.map((result) => ({
         result,
         candidateOrder: options.candidates.indexOf(result.candidate),
@@ -427,13 +417,10 @@ export class MeasurementController implements MeasurementPort {
         safePayloadMbps: result.safePayloadMbps,
         predictionTtfbMs: result.predictionTtfbMs,
       })),
+      qualified,
       budget,
       this.now(),
-    ).map((row) => row.result)
-    const compare = (a: ProbeResult, b: ProbeResult): number =>
-      ordered.indexOf(a) - ordered.indexOf(b)
-    const ranked = [...qualified].sort(compare)
-    const fastestValid = [...valid].sort(compare)[0]?.candidate ?? null
+    )
     const winner =
       ranked[0]?.candidate ??
       fastestValid ??
@@ -516,14 +503,7 @@ export class MeasurementController implements MeasurementPort {
       signal,
       completionReason: 'startup-sample-complete',
     })
-    const rangeValid =
-      result.directRange &&
-      Number.isSafeInteger(result.bytes) &&
-      Number.isFinite(result.elapsedMs) &&
-      (candidate.cachedSafeMbps !== null ||
-        (result.elapsedMs > 0 && result.speedEligible !== false)) &&
-      result.payloadValid !== false &&
-      (candidate.cachedSafeMbps !== null ? result.bytes >= 16 * 1024 : result.bytes >= 64 * 1024)
+    const rangeValid = probeResultUsable(candidate, result)
     const metrics = rangeValid
       ? this.routes.startupCapacity(
           candidate,
@@ -543,21 +523,7 @@ export class MeasurementController implements MeasurementPort {
               },
         )
       : null
-    const valid =
-      rangeValid &&
-      !!metrics &&
-      ['sufficient', 'provisional'].includes(metrics.capacityConfidence) &&
-      metrics.safeThroughputMbps !== null
-    return {
-      candidate,
-      ...result,
-      valid,
-      safeMbps: valid ? metrics!.safeThroughputMbps : null,
-      capacityConfidence: metrics?.capacityConfidence ?? 'missing',
-      safePayloadMbps: metrics?.safePayloadMbps ?? null,
-      predictionTtfbMs: metrics?.predictionTtfbMs ?? null,
-      reason: result.directRange ? (valid ? 'measured' : 'short-response') : result.reason,
-    }
+    return evaluatedProbeResult(candidate, result, rangeValid, metrics)
   }
 
   tick(status: MeasurementStatus): void {
@@ -911,15 +877,7 @@ export class MeasurementController implements MeasurementPort {
       else if (result.directRange && result.range)
         this.rangeMetadata.recordRangeSize(range.identity, range.handle, result.range.totalBytes)
     }
-    const ok = result.directRange && result.payloadValid !== false && result.bytes >= 64 * 1024
-    const failure: FailureKind | null =
-      applied.decision.routeType === 'native-signed' && [403, 451, 959].includes(result.status ?? 0)
-        ? 'native-invalid'
-        : result.reason === 'timeout'
-          ? 'timeout'
-          : result.reason === 'network'
-            ? 'network'
-            : null
+    const { ok, failure } = classifyProbeOutcome(applied, result)
     await this.routes.recordChallenge(
       applied,
       result.bytes,

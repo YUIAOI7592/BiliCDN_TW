@@ -43,6 +43,10 @@ const featureBoundaries = [
     ],
   },
   { prefix: 'adapters/player/', publicFiles: ['player.ts'] },
+  {
+    prefix: 'application/measurement/',
+    publicFiles: ['measurement-controller.ts', 'measurement-contracts.ts'],
+  },
   { prefix: 'adapters/transport/', publicFiles: ['transport.ts', 'range-probe.ts'] },
 ] as const
 const browserGlobals = new Set([

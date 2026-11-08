@@ -28,3 +28,7 @@
 請求分類、輸出歸因與 URL 物化合併為 request-policy。RetryEvidence 私有帳本保留每請求去重、32 筆界線、60 秒有效期、抑制引用計數與跨 reset 的抑制生命週期；所有保存資格、候選檢查、許可與提交仍在 Coordinator。純 route-projection 只組裝數字與摘要，現有外部讀取與前後所有權重驗順序不變。
 
 新增兩個回歸保護帳本與投影，先保存缺少抽取模組的拒絕結果，再實作。architecture／imports／application／native-routing／progressive-routing／control-center 對應檢查通過；原案例不刪減。容量缺值、樣本過期、重入快照及三頁既有契約由原套件一併覆蓋。
+
+## 量測與恢復熱點
+
+量測的起播結果資格、決勝及健康探測結果分類集中於 startup-evaluation；需求與授權讀取、探測、鎖、三秒窗口及取消仍由 MeasurementController 執行，沒有提前快取跨回呼的資料。新增短快取／新速度資格及同速逆序完成兩個回歸；application 841 案及 measurement-state 135 案通過，另增加量測私有邊界拒絕契約。
