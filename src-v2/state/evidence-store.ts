@@ -15,7 +15,8 @@ import { type MediaKind } from '../domain/model.ts'
 import { type StoragePort } from '../platform/storage-port.ts'
 import {
   type EvidencePort,
-  type EvidenceCommitResult,
+  type EvidenceWriteResult,
+  type CircuitDowngradeResult,
   type CurrentCircuitControlReader,
 } from './evidence-ports.ts'
 import { timingBasis } from '../domain/measurement-time.ts'
@@ -139,7 +140,7 @@ export class EvidenceStore implements EvidencePort, CurrentCircuitControlReader 
   #payload: EvidencePayload
   #stopRemote: () => void
   #readable = true
-  #writes = new WeakMap<object, Map<string, Promise<EvidenceCommitResult>>>()
+  #writes = new WeakMap<object, Map<string, Promise<EvidenceWriteResult>>>()
   #downgrades = new WeakSet<CircuitControlStamp>()
   constructor(
     private readonly storage: StoragePort,
@@ -199,11 +200,15 @@ export class EvidenceStore implements EvidencePort, CurrentCircuitControlReader 
     }
   }
 
-  #result(
-    status: EvidenceCommitResult['status'],
+  #result<Status extends CircuitDowngradeResult['status']>(
+    status: Status,
     host: string,
     kind: MediaKind,
-  ): EvidenceCommitResult {
+  ): {
+    readonly status: Status
+    readonly evidence: CircuitDowngradeResult['evidence']
+    readonly stamp: CircuitDowngradeResult['stamp']
+  } {
     return {
       status,
       evidence: this.get(host, kind) ?? emptyEvidence(host, kind),
@@ -280,7 +285,7 @@ export class EvidenceStore implements EvidencePort, CurrentCircuitControlReader 
     sample: EvidenceSample,
     receipt: object,
     valid: () => boolean = () => true,
-  ): Promise<EvidenceCommitResult> {
+  ): Promise<EvidenceWriteResult> {
     const key = recordKey(host, kind)
     let operations = this.#writes.get(receipt)
     const previous = operations?.get(key)
@@ -338,7 +343,7 @@ export class EvidenceStore implements EvidencePort, CurrentCircuitControlReader 
     stamp: CircuitControlStamp,
     commitId: string,
     valid: () => boolean,
-  ): Promise<EvidenceCommitResult> {
+  ): Promise<CircuitDowngradeResult> {
     if (this.#downgrades.has(stamp)) return this.#result('duplicate', host, kind)
     this.#downgrades.add(stamp)
     try {

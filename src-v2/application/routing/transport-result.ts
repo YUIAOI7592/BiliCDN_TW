@@ -2,7 +2,7 @@ import { isCatalogHost } from '../../domain/catalog.ts'
 import { sampleTiming } from '../../domain/evidence.ts'
 import { type EvidenceSample } from '../../domain/evidence-model.ts'
 import { type MediaKind } from '../../domain/model.ts'
-import { type TransportObservation } from '../../domain/transport-model.ts'
+import { type RequestContext, type TransportObservation } from '../../domain/transport-model.ts'
 import { type RouteTransferSnapshot } from './route-contracts.ts'
 export function catalogObservationAllowed(
   catalogOnly: boolean,
@@ -32,6 +32,46 @@ export function transportSnapshot(observation: TransportObservation): RouteTrans
     attributionStatus:
       request?.attributionStatus ?? (observation.representation ? 'matched' : 'waiting-data'),
   })
+}
+
+/** Static transport facts only; persistence, current ownership and timing stay at the call site. */
+export function circuitCreditEligible(
+  observation: TransportObservation,
+  sample: EvidenceSample,
+): boolean {
+  return (
+    observation.circuitVerified !== false &&
+    sample.bytes !== undefined &&
+    sample.bytes >= 65536 &&
+    sample.elapsedMs !== undefined &&
+    Number.isFinite(sample.throughputMbps) &&
+    (sample.throughputMbps ?? 0) > 0
+  )
+}
+
+export function retryTransportEligible(
+  request: RequestContext,
+  observation: TransportObservation,
+): boolean {
+  return (
+    Number.isSafeInteger(observation.retryVerifiedBytes) &&
+    (observation.retryVerifiedBytes ?? 0) >= 64 * 1024 &&
+    request.generation === observation.generation &&
+    request.epoch === observation.epoch &&
+    request.representation === observation.representation &&
+    request.kind === observation.kind &&
+    request.targetHost === observation.targetHost &&
+    observation.kind === 'video' &&
+    observation.routeType === 'catalog-generated' &&
+    observation.status === 206 &&
+    observation.responseUrlMatchesRequest === true &&
+    observation.finalHost === observation.targetHost &&
+    observation.bytes >= 64 * 1024 &&
+    observation.elapsedMs > 0 &&
+    observation.ttfbMs !== null &&
+    Number.isFinite(observation.ttfbMs) &&
+    observation.ttfbMs >= 0
+  )
 }
 
 export type TransportResult =

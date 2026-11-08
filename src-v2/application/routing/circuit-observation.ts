@@ -13,7 +13,7 @@ import {
 } from '../../domain/evidence-model.ts'
 import { type MediaKind } from '../../domain/model.ts'
 import { type RequestContext } from '../../domain/transport-model.ts'
-import { type CircuitControlRead, type EvidenceCommitResult } from '../../state/evidence-ports.ts'
+import { type CircuitControlRead, type CircuitDowngradeResult } from '../../state/evidence-ports.ts'
 interface LocalObservation {
   request: RequestContext
   readonly host: string
@@ -286,7 +286,7 @@ export class CircuitObservations {
   }
   submitted(
     proof: CircuitProposal,
-    result: EvidenceCommitResult,
+    result: CircuitDowngradeResult,
     tick: number | null,
     nextId: () => string,
   ): void {

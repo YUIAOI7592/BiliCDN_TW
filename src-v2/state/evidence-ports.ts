@@ -13,13 +13,18 @@ export interface CircuitControlRead {
 export interface CurrentCircuitControlReader {
   readCurrentControl(host: string, kind: MediaKind): CircuitControlRead | null
 }
-export interface EvidenceCommitResult {
+interface EvidenceResult<Status extends string> {
   readonly error?: unknown
-  readonly status:
-    'committed' | 'duplicate' | 'invalid' | 'unconfirmed' | 'stale' | 'no-common-lock'
+  readonly status: Status
   readonly evidence: RouteEvidence
   readonly stamp: CircuitControlStamp | null
 }
+export type EvidenceWriteResult = EvidenceResult<
+  'committed' | 'duplicate' | 'invalid' | 'unconfirmed'
+>
+export type CircuitDowngradeResult = EvidenceResult<
+  EvidenceWriteResult['status'] | 'stale' | 'no-common-lock'
+>
 
 export interface EvidencePort {
   control(host: string, kind: MediaKind): CircuitControlRead
@@ -29,14 +34,14 @@ export interface EvidencePort {
     sample: EvidenceSample,
     receipt: object,
     valid?: () => boolean,
-  ): Promise<EvidenceCommitResult>
+  ): Promise<EvidenceWriteResult>
   tryDowngrade(
     host: string,
     kind: MediaKind,
     stamp: CircuitControlStamp,
     commitId: string,
     valid: () => boolean,
-  ): Promise<EvidenceCommitResult>
+  ): Promise<CircuitDowngradeResult>
   get(host: string, kind: MediaKind): RouteEvidence | null
   list(kind?: MediaKind): readonly RouteEvidence[]
   record(

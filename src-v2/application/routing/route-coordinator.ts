@@ -96,6 +96,8 @@ import {
 import { type RoutingPolicyReader } from './routing-ports.ts'
 import {
   catalogObservationAllowed,
+  circuitCreditEligible,
+  retryTransportEligible,
   classifyTransportResult,
   transportSnapshot,
 } from './transport-result.ts'
@@ -2036,12 +2038,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       if (
         result.type === 'success' &&
         confirmed &&
-        observation.circuitVerified !== false &&
-        result.sample.bytes !== undefined &&
-        result.sample.bytes >= 65536 &&
-        result.sample.elapsedMs !== undefined &&
-        Number.isFinite(result.sample.throughputMbps) &&
-        (result.sample.throughputMbps ?? 0) > 0
+        circuitCreditEligible(observation, result.sample)
       )
         credit = {
           host: result.host,
@@ -2069,23 +2066,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         if (
           request &&
           !this.#retryEvidence.isSuppressed(request.requestId) &&
-          Number.isSafeInteger(observation.retryVerifiedBytes) &&
-          (observation.retryVerifiedBytes ?? 0) >= 64 * 1024 &&
-          request.generation === observation.generation &&
-          request.epoch === observation.epoch &&
-          request.representation === observation.representation &&
-          request.kind === observation.kind &&
-          request.targetHost === observation.targetHost &&
-          observation.kind === 'video' &&
-          observation.routeType === 'catalog-generated' &&
-          observation.status === 206 &&
-          observation.responseUrlMatchesRequest === true &&
-          observation.finalHost === observation.targetHost &&
-          observation.bytes >= 64 * 1024 &&
-          observation.elapsedMs > 0 &&
-          observation.ttfbMs !== null &&
-          Number.isFinite(observation.ttfbMs) &&
-          observation.ttfbMs >= 0 &&
+          retryTransportEligible(request, observation) &&
           this.evidence
             .get(observation.targetHost, 'video')
             ?.samples.some(
