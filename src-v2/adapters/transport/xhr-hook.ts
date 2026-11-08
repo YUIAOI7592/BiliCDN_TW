@@ -1,0 +1,736 @@
+import { closedRangeLength } from '../../domain/route-completion.ts'
+import { measuredPayload } from '../../domain/measurement-time.ts'
+import {
+  responseFailure,
+  type TransportContext,
+  sameUrl,
+  blockedPlayurl,
+  blockedPlayurlText,
+  rejectedPlayurl,
+} from './transport-context.ts'
+import { classifyPlayurlApi } from '../../domain/catalog.ts'
+import { playurlRequestContext } from '../../domain/playurl-content.ts'
+import { isHttpDnsUrl } from '../../domain/url-policy.ts'
+import { type FailureKind } from '../../domain/evidence-model.ts'
+import { type AppliedRouteDecision } from '../../application/routing/route-contracts.ts'
+import { type HookInstallation } from './transport-ports.ts'
+import { convertXhrOpen, convertXhrHeader, createXhrBodyConverter } from './xhr-values.ts'
+import { createXhrRequestState, resetXhrTransform, type XhrMeta } from './xhr-request.ts'
+import { transformXhrJson, transformXhrText } from './xhr-response.ts'
+import { XhrEarlyRetry } from './xhr-early-retry.ts'
+import {
+  type EarlyRetryRoutingPort,
+  type EarlyRetryPermit,
+  type InFlightVideoSample,
+  type EarlyRetryActionState,
+} from '../../application/routing/early-retry-contracts.ts'
+export class XhrHookAdapter {
+  #xhrMeta = new WeakMap<XMLHttpRequest, XhrMeta>()
+  #retry: XhrEarlyRetry | null = null
+  constructor(
+    private readonly context: TransportContext,
+    private readonly retryRoutes?: EarlyRetryRoutingPort,
+  ) {}
+  samples(now: number): readonly InFlightVideoSample[] {
+    return this.#retry?.samples(now) ?? []
+  }
+  arm(requestId: string, permit: EarlyRetryPermit): boolean {
+    return this.#retry?.arm(requestId, permit) ?? false
+  }
+  state(permit: EarlyRetryPermit): EarlyRetryActionState | null {
+    return this.#retry?.state(permit) ?? null
+  }
+  observations(permit: EarlyRetryPermit) {
+    return this.#retry?.observations(permit) ?? []
+  }
+  cancel(permit?: EarlyRetryPermit): void {
+    this.#retry?.cancel(permit)
+  }
+  install(): HookInstallation | null {
+    const proto = unsafeWindow.XMLHttpRequest?.prototype
+    if (!proto) return null
+    const originalOpen = proto.open,
+      originalSend = proto.send,
+      originalAbort = proto.abort,
+      originalSetHeader = proto.setRequestHeader
+    const responseDescriptor = Object.getOwnPropertyDescriptor(proto, 'response')
+    const responseTextDescriptor = Object.getOwnPropertyDescriptor(proto, 'responseText')
+    const readyStateDescriptor = Object.getOwnPropertyDescriptor(proto, 'readyState')
+    const bodyValue = createXhrBodyConverter()
+    const self = this.context,
+      xhrMeta = this.#xhrMeta
+    const retry = (this.#retry = new XhrEarlyRetry(
+      proto,
+      self,
+      (xhr) => xhrMeta.get(xhr),
+      this.retryRoutes,
+    ))
+    const { waiting, finishLocal, rejectLocal } = createXhrRequestState((xhr) => xhrMeta.get(xhr))
+
+    const open: typeof XMLHttpRequest.prototype.open = function (
+      this: XMLHttpRequest,
+      method: string,
+      url: string | URL,
+      async?: boolean,
+      username?: string | null,
+      password?: string | null,
+    ): void {
+      // Check the receiver before user-controlled argument conversions. Native open still
+      // owns method/URL/options validation and its original exception.
+      readyStateDescriptor?.get?.call(this)
+      retry.beforeOpen(this)
+      if (arguments.length < 2) {
+        Reflect.apply(originalOpen, this, Array.from(arguments))
+        return
+      }
+      // Web IDL converts arguments before entering open's algorithm. Convert once, in
+      // order, before saving an owner: a conversion can itself reopen this XHR.
+      const { methodString, originalUrl, asynchronous, user, pass, normalizedMethod } =
+        convertXhrOpen(method, url, arguments.length, async, username, password)
+      self.count('enteredXhr')
+      const apiEndpoint = classifyPlayurlApi(originalUrl, location.href)
+      const playurl = apiEndpoint !== null && apiEndpoint !== 'ogv-precheck'
+      const previous = xhrMeta.get(this)
+      let applied: AppliedRouteDecision | null = null,
+        targetUrl = originalUrl
+      if (!self.settings.get().disabled && !playurl && self.routes.recognizesMedia(originalUrl)) {
+        self.count('mediaRecognized')
+        applied =
+          normalizedMethod === 'GET'
+            ? self.routes.apply(originalUrl)
+            : self.routes.inspectOriginal(originalUrl)
+        if (applied.url) targetUrl = applied.url
+      }
+      const next: XhrMeta = {
+        method: normalizedMethod,
+        originalUrl,
+        managedBilibili: self.routes.isBilibiliMedia(originalUrl),
+        targetUrl,
+        applied,
+        startedAt: 0,
+        startedTick: null,
+        responseTick: null,
+        measurement: null,
+        responseAt: 0,
+        bytes: 0,
+        settled: false,
+        playurl,
+        apiEndpoint,
+        requestContext: playurlRequestContext(originalUrl, location.href),
+        transformedText: null,
+        transformedJson: undefined,
+        catalogOnlyAtTransform: null,
+        request: null,
+        generation: self.session.get().generation,
+        epoch: self.session.get().epoch,
+        responseKey: self.nextResponseKey('api-xhr'),
+        cleanup: () => undefined,
+        async: asynchronous,
+        headers: [],
+        phase: 'opened',
+        virtualReadyState: null,
+        needsNativeOpen: false,
+        username: user,
+        password: pass,
+      }
+      // Publish for synchronous readystatechange callbacks, but retain the previous
+      // request intact until native validation succeeds. Nested successful open wins.
+      xhrMeta.set(this, next)
+      try {
+        Reflect.apply(originalOpen, this, [methodString, targetUrl, asynchronous, user, pass])
+      } catch (error) {
+        if (xhrMeta.get(this) === next) {
+          if (previous) {
+            xhrMeta.set(this, previous)
+            // Chrome can reset to UNSENT when rejecting Window synchronous options.
+            // Only our still-unsent waiter may be prepared again; never replay sent work.
+            if (previous.phase === 'waiting' && readyStateDescriptor?.get?.call(this) === 0)
+              previous.needsNativeOpen = true
+          } else xhrMeta.delete(this)
+        }
+        throw error
+      }
+      if (xhrMeta.get(this) === next && apiEndpoint && !self.settings.get().disabled)
+        self.noteApiEndpoint('xhr', apiEndpoint)
+      if (previous) {
+        previous.phase = 'terminal'
+        previous.cleanup()
+      }
+    }
+
+    const send: typeof XMLHttpRequest.prototype.send = function (
+      this: XMLHttpRequest,
+      body?: Document | XMLHttpRequestBodyInit | null,
+    ): void {
+      readyStateDescriptor?.get?.call(this)
+      // Conversion may throw, open another request or abort this one. Do it before
+      // selecting the metadata owner and before reserving the virtual send flag.
+      body = bodyValue(body)
+      const meta = xhrMeta.get(this)
+      if (!meta) {
+        Reflect.apply(originalSend, this, [body ?? null])
+        return
+      }
+      if (meta.phase !== 'opened' || this.readyState !== 1)
+        throw new DOMException('send invalid state', 'InvalidStateError')
+      meta.phase = 'waiting'
+      let nativeAccepted = false
+      const perform = (): void => {
+        if (!waiting(this, meta)) return
+        const responseType = this.responseType,
+          credentials = this.withCredentials
+        let preparations = 0
+        const nativeReady = (): boolean =>
+          waiting(this, meta) && readyStateDescriptor?.get?.call(this) === 1
+        const reopen = (url: string): void => {
+          if (++preparations > 2)
+            throw new DOMException('XHR preparation did not stabilize', 'InvalidStateError')
+          Reflect.apply(originalOpen, this, [
+            meta.method,
+            url,
+            meta.async,
+            meta.username ?? null,
+            meta.password ?? null,
+          ])
+          if (!waiting(this, meta)) return
+          if (!nativeReady()) {
+            meta.needsNativeOpen = true
+            return
+          }
+          if (meta.async) {
+            this.responseType = responseType
+            if (!nativeReady()) {
+              if (waiting(this, meta)) meta.needsNativeOpen = true
+              return
+            }
+            // open() and responseType restoration may let the website change its
+            // timeout synchronously. Preserve the latest value, never a pre-open copy.
+            const requestTimeout = this.timeout
+            if (!nativeReady()) {
+              if (waiting(this, meta)) meta.needsNativeOpen = true
+              return
+            }
+            this.timeout = requestTimeout
+            if (!nativeReady()) {
+              if (waiting(this, meta)) meta.needsNativeOpen = true
+              return
+            }
+          }
+          this.withCredentials = credentials
+          if (!nativeReady()) {
+            if (waiting(this, meta)) meta.needsNativeOpen = true
+            return
+          }
+          for (const [key, value] of meta.headers) {
+            Reflect.apply(originalSetHeader, this, [key, value])
+            if (!nativeReady()) {
+              if (waiting(this, meta)) meta.needsNativeOpen = true
+              return
+            }
+          }
+          meta.targetUrl = url
+          meta.needsNativeOpen = false
+        }
+        // Every native preparation can synchronously change ownership, native state or
+        // policy. Recompute the decision before attribution, with at most two opens.
+        let disabled = false,
+          stale = false
+        for (;;) {
+          if (!waiting(this, meta)) return
+          disabled = self.settings.get().disabled
+          let targetUrl = meta.originalUrl,
+            applied: AppliedRouteDecision | null = null
+          if (!disabled) {
+            if (
+              meta.playurl &&
+              self.routes.isCatalogOnly() &&
+              !['', 'text', 'json'].includes(this.responseType)
+            ) {
+              self.blocked(meta.method, meta.originalUrl, 'playurl-response-type')
+              self.notePlayurl('xhr', 0, rejectedPlayurl('unsupported-format'))
+              rejectLocal(this, meta)
+              return
+            }
+            const strictManaged =
+              self.routes.isCatalogOnly() &&
+              (meta.managedBilibili || self.routes.recognizesMedia(meta.originalUrl))
+            const sameContent =
+              self.session.isGeneration(meta.generation) && self.session.get().epoch === meta.epoch
+            if (!sameContent && strictManaged) {
+              self.blocked(meta.method, meta.originalUrl, 'catalog-unavailable')
+              rejectLocal(this, meta)
+              return
+            }
+            stale = !sameContent
+            if (
+              !meta.playurl &&
+              (meta.applied ||
+                meta.managedBilibili ||
+                self.routes.recognizesMedia(meta.originalUrl) ||
+                strictManaged)
+            ) {
+              if (!meta.applied) self.count('mediaRecognized')
+              applied =
+                !stale && meta.method === 'GET'
+                  ? self.routes.apply(
+                      meta.originalUrl,
+                      null,
+                      undefined,
+                      false,
+                      closedRangeLength(
+                        meta.headers
+                          .filter(([key]) => key.toLowerCase() === 'range')
+                          .map(([, value]) => value)
+                          .join(','),
+                      ),
+                      'xhr-terminal',
+                    )
+                  : self.routes.inspectOriginal(meta.originalUrl)
+              applied = retry.select(this, meta) ?? applied
+              if (applied.url) targetUrl = applied.url
+            }
+            if (self.settings.get().blockHttpDns && isHttpDnsUrl(meta.originalUrl, location.href)) {
+              rejectLocal(this, meta)
+              return
+            }
+            const reason = self.dispatchFailure({
+              generation: meta.generation,
+              applied,
+              targetUrl,
+              managedMedia: strictManaged,
+            })
+            if (reason) {
+              self.blocked(meta.method, meta.originalUrl, reason)
+              rejectLocal(this, meta)
+              return
+            }
+          }
+          if (!waiting(this, meta)) return
+          if (meta.needsNativeOpen || !nativeReady() || targetUrl !== meta.targetUrl) {
+            reopen(targetUrl)
+            continue
+          }
+          meta.applied = stale ? null : applied
+          break
+        }
+        if (!waiting(this, meta)) return
+        if (disabled) {
+          meta.phase = 'sent'
+          self.count('nativeCalled')
+          Reflect.apply(originalSend, this, [body ?? null])
+          nativeAccepted = true
+          return
+        }
+        meta.startedAt = self.now()
+        if (meta.applied) {
+          meta.request = self.request(
+            meta.applied,
+            meta.originalUrl,
+            meta.targetUrl,
+            meta.startedAt,
+            meta.method,
+            closedRangeLength(
+              meta.headers
+                .filter(([key]) => key.toLowerCase() === 'range')
+                .map(([, value]) => value)
+                .join(','),
+            ),
+            'xhr-terminal',
+          )
+          self.routes.requestStarted(meta.request)
+        }
+        let nativeBytes = 0
+        const noteHeaders = (): void => {
+          if (xhrMeta.get(this) === meta && meta.responseTick === null && this.readyState >= 2) {
+            meta.responseAt = self.now()
+            meta.responseTick = self.tick()
+          }
+        }
+        const progress = (event: ProgressEvent): void => {
+          if (xhrMeta.get(this) !== meta) return
+          noteHeaders()
+          meta.bytes = Math.max(meta.bytes, Number(event.loaded) || 0)
+          if (event.isTrusted && Number.isSafeInteger(event.loaded) && event.loaded >= 0)
+            nativeBytes = Math.max(nativeBytes, event.loaded)
+          retry.progress(this, meta, event)
+        }
+        const settle = (
+          outcome: 'success' | 'abort' | 'failure',
+          failure?: FailureKind,
+          nativeTimeout = false,
+          event?: Event,
+        ): void => {
+          if (meta.settled || xhrMeta.get(this) !== meta) return
+          meta.measurement = self.freezeMeasurement(
+            meta.startedTick,
+            meta.responseTick,
+            'xhr-terminal',
+          )
+          let payloadValid = false
+          try {
+            payloadValid = measuredPayload(
+              meta.bytes,
+              this.getResponseHeader('Content-Length'),
+              this.getResponseHeader('Content-Range'),
+            )
+          } catch {
+            /* unavailable native metadata */
+          }
+          if (xhrMeta.get(this) !== meta || meta.settled) return
+          meta.measurement = {
+            ...meta.measurement,
+            speedEligible: meta.measurement.speedEligible && payloadValid,
+          }
+          if (event && !event.isTrusted && retry.tracks(meta)) return
+          const verifiedBytes = outcome === 'success' ? retry.verifiedBytes(this, meta) : null
+          const controlledTimeout = retry.terminal(this, meta, nativeTimeout ? 'timeout' : outcome)
+          if (controlledTimeout) {
+            outcome = 'abort'
+            failure = undefined
+          }
+          meta.settled = true
+          meta.cleanup()
+          if (meta.responseAt > 0 || this.status > 0) {
+            self.count('responseObserved')
+            self.noteResponse(meta.request, Number(this.status) || 0)
+          }
+          if (!meta.applied || !meta.request) return
+          const finalUrl = (() => {
+            try {
+              return this.responseURL || ''
+            } catch {
+              return ''
+            }
+          })()
+          void self.routes.observe({
+            circuitVerified:
+              event?.isTrusted === true && nativeBytes === meta.bytes && nativeBytes >= 65536,
+            ...self.observation(
+              meta.request,
+              meta.applied,
+              meta.originalUrl,
+              meta.targetUrl,
+              finalUrl,
+              Number(this.status) || 0,
+              meta.bytes,
+              meta.startedAt,
+              meta.responseAt,
+              outcome,
+              failure,
+              sameUrl(finalUrl, meta.targetUrl),
+              meta.measurement,
+            ),
+            ...(controlledTimeout ? { terminationReason: 'early-retry-timeout' as const } : {}),
+            ...(verifiedBytes !== null ? { retryVerifiedBytes: verifiedBytes } : {}),
+          })
+        }
+        const load = (event: Event): void => {
+          settle(
+            this.status >= 200 && this.status < 400 ? 'success' : 'failure',
+            responseFailure(meta.applied?.decision.routeType, this.status),
+            false,
+            event,
+          )
+        }
+        const error = (event: Event): void => settle('failure', 'network', false, event),
+          timeout = (event: Event): void => settle('failure', 'timeout', true, event),
+          abort = (event: Event): void => settle('abort', undefined, false, event)
+        this.addEventListener('readystatechange', noteHeaders)
+        this.addEventListener('progress', progress)
+        this.addEventListener('load', load)
+        this.addEventListener('error', error)
+        this.addEventListener('timeout', timeout, true)
+        this.addEventListener('abort', abort)
+        meta.cleanup = () => {
+          retry.cleanup(this, meta)
+          this.removeEventListener('readystatechange', noteHeaders)
+          this.removeEventListener('progress', progress)
+          this.removeEventListener('load', load)
+          this.removeEventListener('error', error)
+          this.removeEventListener('timeout', timeout, true)
+          this.removeEventListener('abort', abort)
+        }
+        self.count('nativeCalled')
+        self.noteNativeCall(meta.request)
+        meta.phase = 'sent'
+        if (meta.playurl)
+          meta.requestContext = self.apiDispatch(meta.originalUrl, meta.requestContext)
+        try {
+          meta.startedTick = self.tick()
+          Reflect.apply(originalSend, this, [body ?? null])
+        } catch (error) {
+          // Native did not accept dispatch. Release attribution without blaming the
+          // CDN; the deferred caller owns local error events, direct send still throws.
+          if (!meta.settled && xhrMeta.get(this) === meta) {
+            meta.cleanup()
+            if (meta.applied && meta.request)
+              void self.routes.observe(
+                self.observation(
+                  meta.request,
+                  meta.applied,
+                  meta.originalUrl,
+                  meta.targetUrl,
+                  '',
+                  0,
+                  0,
+                  meta.startedAt,
+                  0,
+                  'abort',
+                  undefined,
+                  false,
+                ),
+              )
+          }
+          throw error
+        }
+        nativeAccepted = true
+        try {
+          retry.accepted(this, meta)
+          retry.register(this, meta)
+        } catch {
+          // A successful native send is final even when optional bookkeeping fails.
+          retry.cancel()
+        }
+      }
+      if (
+        meta.async &&
+        !meta.playurl &&
+        meta.method === 'GET' &&
+        self.routes.recognizesMedia(meta.originalUrl) &&
+        !self.settings.get().disabled &&
+        self.measurement.willGateStartup(meta.originalUrl)
+      ) {
+        const release = (): void => {
+          try {
+            perform()
+          } catch {
+            // send() already returned to the caller. A preparation/dispatch exception
+            // must terminate this waiter, unless native events or a newer owner won.
+            if (
+              !nativeAccepted &&
+              xhrMeta.get(this) === meta &&
+              !meta.settled &&
+              (meta.phase === 'waiting' || meta.phase === 'sent')
+            ) {
+              meta.phase = 'waiting'
+              finishLocal(this, meta, 'error')
+            }
+          }
+        }
+        void self.measurement
+          .prepareStartup(
+            meta.originalUrl,
+            null,
+            closedRangeLength(
+              meta.headers
+                .filter(([key]) => key.toLowerCase() === 'range')
+                .map(([, value]) => value)
+                .join(','),
+            ),
+          )
+          .then(release, release)
+        return
+      }
+      if (!meta.playurl && self.routes.recognizesMedia(meta.originalUrl)) {
+        if (!meta.async) self.measurement.noteUnpreflighted('preflight-skipped:synchronous-xhr')
+        else self.measurement.noteUnpreflighted('no-safe-startup-candidate')
+      }
+      perform()
+    }
+
+    const abort: typeof XMLHttpRequest.prototype.abort = function (this: XMLHttpRequest): void {
+      const meta = xhrMeta.get(this)
+      if (meta?.phase === 'waiting') {
+        finishLocal(this, meta, 'abort')
+        if (xhrMeta.get(this) === meta) meta.virtualReadyState = 0
+        return
+      }
+      if (meta?.virtualReadyState !== null && meta?.virtualReadyState !== undefined) {
+        meta.virtualReadyState = 0
+        return
+      }
+      Reflect.apply(originalAbort, this, [])
+    }
+    const setHeader: typeof XMLHttpRequest.prototype.setRequestHeader = function (
+      this: XMLHttpRequest,
+      name: string,
+      value: string,
+    ): void {
+      readyStateDescriptor?.get?.call(this)
+      if (arguments.length < 2) {
+        Reflect.apply(originalSetHeader, this, Array.from(arguments))
+        return
+      }
+      const [key, text] = convertXhrHeader(name, value)
+      const meta = xhrMeta.get(this)
+      if (meta && (meta.phase === 'waiting' || meta.virtualReadyState !== null))
+        throw new DOMException('header invalid state', 'InvalidStateError')
+      Reflect.apply(originalSetHeader, this, [key, text])
+      if (meta && xhrMeta.get(this) === meta) meta.headers.push([key, text])
+    }
+    let responseGetter: PropertyDescriptor['get'],
+      responseTextGetter: PropertyDescriptor['get'],
+      readyStateGetter: PropertyDescriptor['get']
+    const rollback = (): void => {
+      retry.restore()
+      try {
+        if (proto.open === open) proto.open = originalOpen
+      } catch {
+        /* host-owned */
+      }
+      try {
+        if (proto.send === send) proto.send = originalSend
+      } catch {
+        /* host-owned */
+      }
+      try {
+        if (proto.abort === abort) proto.abort = originalAbort
+      } catch {
+        /* host-owned */
+      }
+      try {
+        if (proto.setRequestHeader === setHeader) proto.setRequestHeader = originalSetHeader
+      } catch {
+        /* host-owned */
+      }
+      try {
+        if (
+          responseDescriptor &&
+          Object.getOwnPropertyDescriptor(proto, 'response')?.get === responseGetter
+        )
+          Object.defineProperty(proto, 'response', responseDescriptor)
+      } catch {
+        /* host-owned */
+      }
+      try {
+        if (
+          responseTextDescriptor &&
+          Object.getOwnPropertyDescriptor(proto, 'responseText')?.get === responseTextGetter
+        )
+          Object.defineProperty(proto, 'responseText', responseTextDescriptor)
+      } catch {
+        /* host-owned */
+      }
+      try {
+        if (
+          readyStateDescriptor &&
+          Object.getOwnPropertyDescriptor(proto, 'readyState')?.get === readyStateGetter
+        )
+          Object.defineProperty(proto, 'readyState', readyStateDescriptor)
+      } catch {
+        /* host-owned */
+      }
+    }
+    try {
+      proto.open = open
+      proto.send = send
+      proto.abort = abort
+      proto.setRequestHeader = setHeader
+      if (
+        proto.open !== open ||
+        proto.send !== send ||
+        proto.abort !== abort ||
+        proto.setRequestHeader !== setHeader
+      )
+        throw new Error('XHR hook assignment did not stick')
+      if (readyStateDescriptor?.get && readyStateDescriptor.configurable) {
+        readyStateGetter = function (this: XMLHttpRequest): number {
+          return xhrMeta.get(this)?.virtualReadyState ?? readyStateDescriptor.get!.call(this)
+        }
+        Object.defineProperty(proto, 'readyState', {
+          ...readyStateDescriptor,
+          get: readyStateGetter,
+        })
+      }
+      if (responseDescriptor?.get && responseDescriptor.configurable) {
+        responseGetter = function (this: XMLHttpRequest): unknown {
+          const raw: unknown = responseDescriptor.get?.call(this),
+            meta = xhrMeta.get(this)
+          if (meta && meta.virtualReadyState !== null)
+            return this.responseType === '' || this.responseType === 'text' ? '' : null
+          if (!meta?.playurl || self.settings.get().disabled) return raw
+          if (this.readyState !== 4)
+            return self.routes.isCatalogOnly()
+              ? this.responseType === '' || this.responseType === 'text'
+                ? ''
+                : null
+              : raw
+          if (!self.session.isGeneration(meta.generation)) {
+            self.notePlayurl(
+              'xhr',
+              this.status,
+              rejectedPlayurl('inactive'),
+              meta.apiEndpoint ?? 'playurl',
+            )
+            return self.routes.isCatalogOnly()
+              ? this.responseType === '' || this.responseType === 'text'
+                ? blockedPlayurlText()
+                : blockedPlayurl()
+              : raw
+          }
+          const strict = self.routes.isCatalogOnly()
+          resetXhrTransform(meta, strict)
+          if (this.responseType === 'json') {
+            return transformXhrJson(self, meta, raw, strict, () => this.status)
+          }
+          if (
+            (this.responseType === '' || this.responseType === 'text') &&
+            typeof raw === 'string'
+          ) {
+            return transformXhrText(self, meta, raw, strict, () => this.status)
+          }
+          self.notePlayurl(
+            'xhr',
+            this.status,
+            rejectedPlayurl('unsupported-format'),
+            meta.apiEndpoint ?? 'playurl',
+          )
+          return strict ? blockedPlayurl() : raw
+        }
+        Object.defineProperty(proto, 'response', { ...responseDescriptor, get: responseGetter })
+      }
+      if (responseTextDescriptor?.get && responseTextDescriptor.configurable) {
+        responseTextGetter = function (this: XMLHttpRequest): string {
+          const raw = String(responseTextDescriptor.get?.call(this) ?? ''),
+            meta = xhrMeta.get(this)
+          if (meta && meta.virtualReadyState !== null) return ''
+          if (!meta?.playurl || self.settings.get().disabled) return raw
+          if (this.readyState !== 4) return self.routes.isCatalogOnly() ? '' : raw
+          if (!self.session.isGeneration(meta.generation)) {
+            self.notePlayurl(
+              'xhr',
+              this.status,
+              rejectedPlayurl('inactive'),
+              meta.apiEndpoint ?? 'playurl',
+            )
+            return self.routes.isCatalogOnly() ? blockedPlayurlText() : raw
+          }
+          const strict = self.routes.isCatalogOnly()
+          resetXhrTransform(meta, strict)
+          return transformXhrText(self, meta, raw, strict, () => this.status)
+        }
+        Object.defineProperty(proto, 'responseText', {
+          ...responseTextDescriptor,
+          get: responseTextGetter,
+        })
+      }
+      return {
+        restore: rollback,
+        isInstalled: () =>
+          proto.open === open &&
+          proto.send === send &&
+          proto.abort === abort &&
+          proto.setRequestHeader === setHeader &&
+          (!responseGetter ||
+            Object.getOwnPropertyDescriptor(proto, 'response')?.get === responseGetter) &&
+          (!responseTextGetter ||
+            Object.getOwnPropertyDescriptor(proto, 'responseText')?.get === responseTextGetter) &&
+          (!readyStateGetter ||
+            Object.getOwnPropertyDescriptor(proto, 'readyState')?.get === readyStateGetter),
+      }
+    } catch {
+      rollback()
+      return null
+    }
+  }
+}

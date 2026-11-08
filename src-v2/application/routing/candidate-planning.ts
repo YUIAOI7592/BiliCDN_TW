@@ -3,21 +3,19 @@ import { catalogCandidates } from '../../domain/route-policy.ts'
 import { evidenceMetrics } from '../../domain/evidence.ts'
 import { recentCapacity } from '../../domain/route-capacity.ts'
 import { mediaIdentity, parseMediaUrl, replaceUrlHost } from '../../domain/url-policy.ts'
-import type {
-  Clock,
-  MediaKind,
-  RouteCandidate,
-  RouteIdentity,
-  RouteType,
-} from '../../domain/model.ts'
-import type { VaultCandidates } from '../../state/vault-contracts.ts'
-import type { StartupCandidate } from '../route-contracts.ts'
-import type {
-  RoutingEvidenceReader,
-  RoutingPolicyReader,
-  RoutingVaultReader,
+import { type Clock, type MediaKind } from '../../domain/model.ts'
+import {
+  type RouteCandidate,
+  type RouteIdentity,
+  type RouteType,
+} from '../../domain/route-model.ts'
+import { type VaultCandidates } from '../../state/vault-contracts.ts'
+import { type StartupCandidate } from './route-contracts.ts'
+import {
+  type RoutingEvidenceReader,
+  type RoutingPolicyReader,
+  type RoutingVaultReader,
 } from './routing-ports.ts'
-
 export interface StartupAssemblyInput {
   readonly clock: Clock
   readonly evidence: RoutingEvidenceReader

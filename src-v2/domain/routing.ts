@@ -6,19 +6,17 @@ import {
   recentCapacity,
   ROUTE_HEADROOM,
 } from './route-capacity.ts'
-import type {
-  Clock,
-  CompletionBudget,
-  DecisionId,
-  PlaybackDemand,
-  RestrictionReason,
-  RouteCandidate,
-  RouteDecision,
-  RouteEvidence,
-  RouteRankingEntry,
-  RouteType,
-} from './model.ts'
-
+import { type Clock, type DecisionId } from './model.ts'
+import { type CompletionBudget } from './route-completion.ts'
+import { type PlaybackDemand } from './playback-demand.ts'
+import {
+  type RestrictionReason,
+  type RouteCandidate,
+  type RouteDecision,
+  type RouteRankingEntry,
+  type RouteType,
+} from './route-model.ts'
+import { type RouteEvidence } from './evidence-model.ts'
 export interface RestrictionSnapshot {
   readonly disabledCatalogHosts: ReadonlySet<string>
   readonly defaultUnavailableHosts: ReadonlySet<string>

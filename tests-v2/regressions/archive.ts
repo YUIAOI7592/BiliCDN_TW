@@ -12,7 +12,7 @@ import {
   readArchiveManifest,
   readTarArchive,
 } from '../../scripts/checks/archive-check.mts'
-import type { ArchiveManifest, ArchiveEntry } from '../../scripts/checks/archive-check.mts'
+import { type ArchiveManifest, type ArchiveEntry } from '../../scripts/checks/archive-check.mts'
 import { testScope } from '../support/scope.ts'
 
 const sha = (bytes: string | Uint8Array) => createHash('sha256').update(bytes).digest('hex')

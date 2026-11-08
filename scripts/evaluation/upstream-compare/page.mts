@@ -1,6 +1,6 @@
 import { Script, createContext } from 'node:vm'
 import { PageClock } from './model.mts'
-import type { Observation, Cleanup, Rate } from './model.mts'
+import { type Observation, type Cleanup, type Rate } from './model.mts'
 
 type Listener = (event: PageEvent) => void
 export class PageEvent {

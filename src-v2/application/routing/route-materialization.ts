@@ -1,8 +1,7 @@
 import { TRUSTED_CATALOG } from '../../domain/catalog.ts'
 import { parseMediaUrl, replaceUrlHost } from '../../domain/url-policy.ts'
-import type { RouteDecision, RouteIdentity } from '../../domain/model.ts'
-import type { DecisionEligibility, RoutingVaultReader } from './routing-ports.ts'
-
+import { type RouteDecision, type RouteIdentity } from '../../domain/route-model.ts'
+import { type DecisionEligibility, type RoutingVaultReader } from './routing-ports.ts'
 export function materializeRoute(
   original: string,
   decision: RouteDecision,

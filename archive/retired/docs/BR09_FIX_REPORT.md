@@ -6,7 +6,7 @@
 
 自有 reload 將原生媒體重設到 HAVE_NOTHING 時，直接設定 currentTime 可改变位置而沒有 seeking。SDK 尚回傳舊快取；PlayerAdapter 原先只辨識公用 seek 包裝或 seeking，因此保存 0.25 的舊恢復意圖在觀察到 0.7→0 後仍可能回寫 0.25。這是可重現的 P2 位置所有權缺口，不把未完整歸因的網站回退都歸入此問題。
 
-[PlayerAdapter](../../../src-v2/adapters/player.ts)新增私有單筆 NativePosition：媒體、播放器、內容 lifecycle、有限原生位置及 readyState。controls 確認鍵盤後採樣；當目前 readyState=0 且位置改變，更新既有 targetSec，適用時增加 seekRevision，Recovery 沿原所有權檢查撤銷 restorePosition。0 是有效位置，NaN／Infinity 不覆蓋有效基準。
+[PlayerAdapter](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts)新增私有單筆 NativePosition：媒體、播放器、內容 lifecycle、有限原生位置及 readyState。controls 確認鍵盤後採樣；當目前 readyState=0 且位置改變，更新既有 targetSec，適用時增加 seekRevision，Recovery 沿原所有權檢查撤銷 restorePosition。0 是有效位置，NaN／Infinity 不覆蓋有效基準。
 
 讀取後再次核對控制版本、原基準、媒體、播放器、lifecycle、seek/user 修訂及 pendingSeek，避免 getter 同步重入提交舊結果。reset／媒體／播放器替換清除基準。reload 的 finally 同步採樣，保留本次正常初始零；來源標記一定釋放，觀察例外不得替換 SDK 原結果或原例外。已初始化正常播放增量不變成 seek。腳本自己的 seek、pendingSeek 及公用 seek 去重維持原契約。
 

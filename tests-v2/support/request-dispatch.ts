@@ -1,4 +1,4 @@
-import type { RequestContext } from '../../src-v2/domain/model.ts'
+import { type RequestContext } from '../../src-v2/domain/transport-model.ts'
 
 // Adapter contracts without a real coordinator still model a unique native dispatch.
 export function requestDispatch() {

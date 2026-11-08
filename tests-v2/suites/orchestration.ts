@@ -11,14 +11,15 @@ import { playurlResult } from '../support/playurl.ts'
 import { RuntimeController } from '../../src-v2/application/runtime-controller.ts'
 import { LifecycleController } from '../../src-v2/application/lifecycle-controller.ts'
 import { ControlCommands } from '../../src-v2/application/control-commands.ts'
-import { RouteCoordinator } from '../../src-v2/application/route-coordinator.ts'
+import { RouteCoordinator } from '../../src-v2/application/routing/route-coordinator.ts'
 import { SessionStore } from '../../src-v2/state/session-store.ts'
 import { RestrictionStore } from '../../src-v2/state/restriction-store.ts'
 import { EvidenceStore } from '../../src-v2/state/evidence-store.ts'
 import { SignedRouteVault } from '../../src-v2/state/signed-route-vault.ts'
 import { MeasurementMetaStore } from '../../src-v2/state/measurement-meta-store.ts'
-import type { VideoSnapshot, NavigationPort } from '../../src-v2/application/ports.ts'
-import type { DomainEvent } from '../../src-v2/domain/model.ts'
+import { type VideoSnapshot } from '../../src-v2/application/playback/player-contracts.ts'
+import { type NavigationPort } from '../../src-v2/application/lifecycle-contracts.ts'
+import { type DomainEvent } from '../../src-v2/application/routing/route-contracts.ts'
 import {
   decisionId,
   generationId,

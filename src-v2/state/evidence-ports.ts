@@ -1,10 +1,9 @@
-import type {
-  EvidenceSample,
-  MediaKind,
-  RouteEvidence,
-  CircuitControlStamp,
-} from '../domain/model.ts'
-
+import {
+  type EvidenceSample,
+  type RouteEvidence,
+  type CircuitControlStamp,
+} from '../domain/evidence-model.ts'
+import { type MediaKind } from '../domain/model.ts'
 export interface CircuitControlRead {
   readonly stamp: CircuitControlStamp | null
   readonly level: number

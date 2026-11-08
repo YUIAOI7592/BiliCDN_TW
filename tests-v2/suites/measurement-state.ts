@@ -8,7 +8,7 @@ import {
   MeasurementMetaStore,
   MEASUREMENT_META_KEY,
 } from '../../src-v2/state/measurement-meta-store.ts'
-import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
+import { MeasurementController } from '../../src-v2/application/measurement/measurement-controller.ts'
 import { generationId, epochId, representationId } from '../../src-v2/domain/model.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { FakeStorage } from '../support/storage.ts'

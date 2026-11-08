@@ -2,9 +2,9 @@ import { TRUSTED_CATALOG, isCatalogHost } from '../../domain/catalog.ts'
 import { adequateCapacity } from '../../domain/route-capacity.ts'
 import { backupOutputPlan, catalogOutputPlan } from '../../domain/player-output-plan.ts'
 import { mediaIdentity, parseMediaUrl, replaceUrlHost } from '../../domain/url-policy.ts'
-import type { RepresentationId, RouteDecision, RouteIdentity } from '../../domain/model.ts'
-import type { RoutingPolicyReader } from './routing-ports.ts'
-
+import { type RepresentationId } from '../../domain/model.ts'
+import { type RouteDecision, type RouteIdentity } from '../../domain/route-model.ts'
+import { type RoutingPolicyReader } from './routing-ports.ts'
 function measuredSufficientHosts(decision: RouteDecision): ReadonlySet<string> {
   return new Set(
     decision.ranking

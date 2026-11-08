@@ -1,6 +1,6 @@
 import type { TestContext } from 'node:test'
-import { PlayerAdapter } from '../../src-v2/adapters/player.ts'
-import { RecoveryController } from '../../src-v2/application/recovery-controller.ts'
+import { PlayerAdapter } from '../../src-v2/adapters/player/player.ts'
+import { RecoveryController } from '../../src-v2/application/playback/recovery-controller.ts'
 import { playurlResult } from './playurl.ts'
 import { rescueDomFixture as domFixture } from './rescue-dom.ts'
 export function rescuePlayerFixture(t: TestContext, rate: number) {

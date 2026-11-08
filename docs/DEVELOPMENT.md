@@ -12,6 +12,8 @@
 
 ### 目錄結構
 
+v2.2.15 的 application 依 routing／measurement／playback／playurl 歸屬控制器與契約；adapters 依 transport／player／playurl 分組，瀏覽器導覽、排程、可見性及 WebRTC 保留獨立邊界。模組責任與允許依賴見 [ARCHITECTURE](ARCHITECTURE.md#模組與所有權)。搬移同步更新正式匯入及工具來源；歷史原始碼連結依文件清單與封存清單保留固定基線或搬移對照。
+
 以下列出主要目錄及關鍵檔案，以儲存庫根目錄為起點；`v<version>` 表示 `release.json` 的版本。主機專用目錄不隨公開 checkout 提供。
 
 ```text

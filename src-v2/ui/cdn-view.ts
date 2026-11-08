@@ -1,16 +1,15 @@
-import type { ControlCenterSnapshot } from './control-contracts.ts'
-import { DEFAULT_UNAVAILABLE_HOSTS, TRUSTED_CATALOG } from '../domain/catalog.ts'
-import type { ControlCommandPort } from '../application/control-ports.ts'
-import type {
-  ControlViewFrame,
-  ControlViewActions,
-  ControlViewBinding,
+import {
+  type ControlCenterSnapshot,
+  type ControlViewFrame,
+  type ControlViewActions,
+  type ControlViewBinding,
 } from './control-contracts.ts'
+import { DEFAULT_UNAVAILABLE_HOSTS, TRUSTED_CATALOG } from '../domain/catalog.ts'
+import { type ControlCommandPort } from '../application/control-ports.ts'
 import { createRow } from './elements.ts'
 import { settingToggle } from './setting-controls.ts'
 import { restrictionLabel } from './labels.ts'
 import { circuitPresentation } from './circuit-presentation.ts'
-
 export function renderCdn(
   commands: ControlCommandPort,
   frame: ControlViewFrame,

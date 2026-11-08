@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { rankRoutes, type RankRoutesInput } from '../../src-v2/domain/routing.ts'
 import { emptyEvidence } from '../../src-v2/domain/evidence.ts'
 import { evaluateEarlyRetry } from '../../src-v2/domain/early-retry.ts'
-import type { RouteEvidence } from '../../src-v2/domain/model.ts'
+import { type RouteEvidence } from '../../src-v2/domain/evidence-model.ts'
 import { closedRangeLength, predictCompletionMs } from '../../src-v2/domain/route-completion.ts'
 
 const now = 2_000_000_000_000

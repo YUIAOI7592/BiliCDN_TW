@@ -1,13 +1,13 @@
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
-import { RecoveryController } from '../../src-v2/application/recovery-controller.ts'
-import type {
-  RecoveryPlayerPort,
-  RestoreAttempt,
-  RestoreCommand,
-  RestoreReadback,
-} from '../../src-v2/application/recovery-contracts.ts'
-import type { VideoSnapshot } from '../../src-v2/application/ports.ts'
+import { RecoveryController } from '../../src-v2/application/playback/recovery-controller.ts'
+import {
+  type RecoveryPlayerPort,
+  type RestoreAttempt,
+  type RestoreCommand,
+  type RestoreReadback,
+} from '../../src-v2/application/playback/recovery-contracts.ts'
+import { type VideoSnapshot } from '../../src-v2/application/playback/player-contracts.ts'
 import { FakeClock } from '../support/clock.ts'
 import { testScope } from '../support/scope.ts'
 import { idleControls } from '../support/player.ts'

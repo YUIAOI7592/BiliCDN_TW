@@ -2,7 +2,9 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { chooseRoute, rankRoutes, type RankRoutesInput } from '../../src-v2/domain/routing.ts'
 import { emptyEvidence } from '../../src-v2/domain/evidence.ts'
-import { decisionId, type RouteCandidate, type RouteEvidence } from '../../src-v2/domain/model.ts'
+import { decisionId } from '../../src-v2/domain/model.ts'
+import { type RouteCandidate } from '../../src-v2/domain/route-model.ts'
+import { type RouteEvidence } from '../../src-v2/domain/evidence-model.ts'
 
 const now = 2_000_000_000_000,
   clock = { now: () => now }

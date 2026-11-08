@@ -4,8 +4,8 @@ import { fixture as runtimeFixture } from '../../support/runtime-fixture.ts'
 import { blankVideo } from '../../support/runtime-fixture.ts'
 import { FakeStorage } from '../../support/storage.ts'
 import { TRUSTED_CATALOG } from '../../../src-v2/domain/catalog.ts'
-import { MeasurementController } from '../../../src-v2/application/measurement-controller.ts'
-import type { RangeProbeResult } from '../../../src-v2/application/ports.ts'
+import { MeasurementController } from '../../../src-v2/application/measurement/measurement-controller.ts'
+import { type RangeProbeResult } from '../../../src-v2/application/measurement/measurement-contracts.ts'
 import { deferred } from '../../support/deferred.ts'
 const ingest = (
   f: ReturnType<typeof runtimeFixture>,

@@ -20,9 +20,9 @@
 | 修復面 | 現行來源與行為 |
 | --- | --- |
 | cid 正規化 | [playurl-content.ts](../../../src-v2/domain/playurl-content.ts) 只解析既有 `isPlayurlApi` 接納的 URL，唯一一個 1～20 位 ASCII 十進位 cid，去除前導零；不轉成 Number。零、重複、空白、負數、小數及超長值均視為缺失。 |
-| 私有介面 | [playurl-model.ts](../../../src-v2/domain/playurl-model.ts)、[ports.ts](../../../src-v2/application/ports.ts) 增加唯讀 `PlayurlRequestContext`，由 [PlayurlAdapter](../../../src-v2/adapters/playurl.ts) 的可選第四參數傳入控制器；既有三參數呼叫相容。 |
-| 請求所有權 | [Fetch](../../../src-v2/adapters/fetch-hook.ts) 在等待前保存平台 Request.url 的 cid；[XHR](../../../src-v2/adapters/xhr-hook.ts) 從一次轉換的 URL 建立候選 metadata。BR-02 failed open 回復整份舊 metadata，同步成功重入使用新 metadata；所有 text／json getter 使用請求自己的 context。 |
-| 內容週期 | [PlayurlController](../../../src-v2/application/playurl-controller.ts) 只允許 trusted-api 更新私有 cid／目錄基準；同物件防篡改與重複回應防護先執行。generation 改變清空基準。 |
+| 私有介面 | [playurl-model.ts](../../../src-v2/domain/playurl-model.ts)、[ports.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/ports.ts) 增加唯讀 `PlayurlRequestContext`，由 [PlayurlAdapter](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/playurl.ts) 的可選第四參數傳入控制器；既有三參數呼叫相容。 |
+| 請求所有權 | [Fetch](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/fetch-hook.ts) 在等待前保存平台 Request.url 的 cid；[XHR](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts) 從一次轉換的 URL 建立候選 metadata。BR-02 failed open 回復整份舊 metadata，同步成功重入使用新 metadata；所有 text／json getter 使用請求自己的 context。 |
+| 內容週期 | [PlayurlController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/playurl-controller.ts) 只允許 trusted-api 更新私有 cid／目錄基準；同物件防篡改與重複回應防護先執行。generation 改變清空基準。 |
 | 真換片撤銷 | 順序維持 Session → Vault → Routes → generation／epoch 同步通知 Runtime → 新表示登記；起播預算不重開。Vault 仍是唯一 Native 授權來源，cid 不提供 URL 選路權限。 |
 
 兩側有效 cid 相同時維持 epoch，即使清單完全換組；cid 不同則重設，即使路徑／音訊相同。首次 cid 與既有路徑對齊可沿用；已有基準但無法對齊則先重設。缺少 cid 的重疊回應保留已綁定 cid，缺少 cid 且不重疊的換片會解除舊綁定。

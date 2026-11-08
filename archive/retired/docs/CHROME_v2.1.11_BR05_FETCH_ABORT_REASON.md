@@ -21,10 +21,10 @@
 
 ## 根因及位置
 
-- [fetch-hook.ts](../../../src-v2/adapters/fetch-hook.ts) **第 70–71 行**把平台正規化 Request 的 signal 傳入 `prepareStartup()`，直接等待其 Promise；錯誤在原生 Fetch 送出前向外傳遞。
-- [measurement-controller.ts](../../../src-v2/application/measurement-controller.ts) **第 90 行、第 118 行**在已取消 signal 的兩個邊界自行建立 `AbortError`。
+- [fetch-hook.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/fetch-hook.ts) **第 70–71 行**把平台正規化 Request 的 signal 傳入 `prepareStartup()`，直接等待其 Promise；錯誤在原生 Fetch 送出前向外傳遞。
+- [measurement-controller.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts) **第 90 行、第 118 行**在已取消 signal 的兩個邊界自行建立 `AbortError`。
 - 同檔 **第 122 行**的等待中 abort listener 也自行建立 `AbortError`，沒有使用 `signal.reason`。
-- 已送出的媒體 Fetch 在 [fetch-hook.ts](../../../src-v2/adapters/fetch-hook.ts) 第 103–108 行重新拋出原生錯誤；stream cancel 在第 141–143 行傳遞 reader 的取消原因。這些分支不是本次根因，不能以修它們代替 gate 修復。
+- 已送出的媒體 Fetch 在 [fetch-hook.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/fetch-hook.ts) 第 103–108 行重新拋出原生錯誤；stream cancel 在第 141–143 行傳遞 reader 的取消原因。這些分支不是本次根因，不能以修它們代替 gate 修復。
 
 ## 獨立失敗契約
 

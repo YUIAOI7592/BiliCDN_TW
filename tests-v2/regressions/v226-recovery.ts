@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { rescuePlayerFixture } from '../support/rescue-player.ts'
 import { rescueDomFixture } from '../support/rescue-dom.ts'
-import { PlayerControlObserver } from '../../src-v2/adapters/player-controls.ts'
+import { PlayerControlObserver } from '../../src-v2/adapters/player/player-controls.ts'
 
 test('V226 R06: unavailable reload closes without consuming the committed reload quota', (t) => {
   const f = rescuePlayerFixture(t, 1)

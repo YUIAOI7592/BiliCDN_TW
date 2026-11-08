@@ -1,7 +1,7 @@
 import { evidenceMetrics, emptyEvidence, addEvidenceSample } from '../../src-v2/domain/evidence.ts'
-import type { MeasurementRoutes } from '../../src-v2/application/measurement-contracts.ts'
-import type { PlayerMonitor } from '../../src-v2/application/player-monitor.ts'
-import type { MonitorRoutes } from '../../src-v2/application/monitor-contracts.ts'
+import { type MeasurementRoutes } from '../../src-v2/application/measurement/measurement-contracts.ts'
+import { type PlayerMonitor } from '../../src-v2/application/playback/player-monitor.ts'
+import { type MonitorRoutes } from '../../src-v2/application/playback/monitor-contracts.ts'
 export const measurementRoutes = (
   overrides: Partial<MeasurementRoutes> = {},
 ): MeasurementRoutes => {

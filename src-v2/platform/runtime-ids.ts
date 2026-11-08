@@ -1,4 +1,4 @@
-import type { RuntimeIdPort } from './runtime-id-port.ts'
+import { type RuntimeIdPort } from './runtime-id-port.ts'
 /** Called by composition, never on import. No content or user identifier enters an ID. */
 export const createRuntimeIds = (
   random: (bytes: Uint8Array<ArrayBuffer>) => Uint8Array<ArrayBuffer> = (bytes) =>

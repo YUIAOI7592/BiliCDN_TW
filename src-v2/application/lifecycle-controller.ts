@@ -1,6 +1,11 @@
-import type { SettingsReader, SettingsObserver } from '../state/settings-contracts.ts'
-import type { PagePlayinfoPort, PlayurlPort, NavigationPort, SchedulerPort } from './ports.ts'
-
+import { type SettingsReader, type SettingsObserver } from '../state/settings-contracts.ts'
+import { type PagePlayinfoPort, type PlayurlPort } from './playurl/playurl-contracts.ts'
+import { type NavigationPort } from './lifecycle-contracts.ts'
+import { type SchedulerPort } from './scheduler-contracts.ts'
+import { type MonitorPort } from './playback/monitor-contracts.ts'
+import { type RouteCoordinatorPort } from './routing/route-contracts.ts'
+import { type SessionPort } from '../state/session-contracts.ts'
+import { type SignedRouteVaultPort } from '../state/vault-contracts.ts'
 interface PendingAssignment {
   readonly payload: unknown
   readonly serial: number
@@ -9,13 +14,6 @@ interface PendingAssignment {
   appliedGeneration: number
 }
 
-import type {
-  LifecyclePort,
-  LifecycleSessionPort,
-  LifecycleVaultPort,
-  LifecycleRoutesPort,
-  LifecycleMonitorPort,
-} from './lifecycle-ports.ts'
 export class LifecycleController implements LifecyclePort {
   #restores: (() => void)[] = []
   #pending: PendingAssignment | null = null
@@ -105,4 +103,14 @@ export class LifecycleController implements LifecyclePort {
     if (accepted) pending.appliedGeneration = Number(state.generation)
     return accepted
   }
+}
+
+interface LifecycleSessionPort extends Pick<SessionPort, 'beginGeneration' | 'get'> {}
+interface LifecycleVaultPort extends Pick<SignedRouteVaultPort, 'reset'> {}
+interface LifecycleRoutesPort extends Pick<RouteCoordinatorPort, 'resetEpoch'> {}
+interface LifecycleMonitorPort extends Pick<MonitorPort, 'start' | 'stop' | 'reset'> {}
+interface LifecyclePort {
+  start(): void
+  acceptPageAssignment(payload: unknown, serial: number): boolean
+  dispose(): void
 }

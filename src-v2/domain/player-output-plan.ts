@@ -1,5 +1,4 @@
 import { TRUSTED_CATALOG, isCatalogHost } from './catalog.ts'
-
 /** Plans opaque input indexes; signed URLs never enter this policy module. */
 export interface OutputCandidate {
   readonly index: number

@@ -1,5 +1,4 @@
-import type { ControlModelSources, ControlReadModelPort } from './control-contracts.ts'
-
+import { type ControlModelSources, type ControlReadModelPort } from './control-contracts.ts'
 export function createControlReadModel(sources: ControlModelSources): ControlReadModelPort {
   return {
     snapshot() {

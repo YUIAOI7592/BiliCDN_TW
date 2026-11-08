@@ -1,5 +1,5 @@
 import { assessDemandRatio } from '../domain/routing.ts'
-import type { ControlCenterSnapshot } from './control-contracts.ts'
+import { type ControlCenterSnapshot } from './control-contracts.ts'
 import { overviewPresentation } from './overview-presentation.ts'
 import { circuitPresentation } from './circuit-presentation.ts'
 import {
@@ -13,7 +13,6 @@ import {
   attributionLabel,
   restrictionLabel,
 } from './labels.ts'
-
 export function describeStatus(model: ControlCenterSnapshot, now: number): string {
   const state = model.session,
     settings = model.settings,

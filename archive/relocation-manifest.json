@@ -364,44 +364,44 @@
       "encoding": "lf",
       "bytes": 9129,
       "sha256": "212ae62dec9ac8b72bf86c87c8059e8e58fc5259606ef608fca649c584e60c0e",
-      "archivedBytes": 9189,
-      "archivedSha256": "83bdcdcbf9d07a7c9766b8d3fecaa70ae86e7ff75fe791ed2a163a7d48f96814",
+      "archivedBytes": 9657,
+      "archivedSha256": "5af2a962163d448f3a5a41068197d3e695e2757e6352e6fc73c591a230fc77f1",
       "urlEdits": [
         {
           "start": 525,
           "end": 569,
           "from": "../src-v2/application/player-monitor.ts#L163",
-          "to": "../../../src-v2/application/player-monitor.ts#L163"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L163"
         },
         {
           "start": 742,
           "end": 791,
           "from": "../src-v2/application/recovery-controller.ts#L165",
-          "to": "../../../src-v2/application/recovery-controller.ts#L165"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L165"
         },
         {
           "start": 943,
           "end": 992,
           "from": "../src-v2/application/recovery-controller.ts#L104",
-          "to": "../../../src-v2/application/recovery-controller.ts#L104"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L104"
         },
         {
           "start": 1122,
           "end": 1154,
           "from": "../src-v2/adapters/player.ts#L34",
-          "to": "../../../src-v2/adapters/player.ts#L34"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L34"
         },
         {
           "start": 1203,
           "end": 1252,
           "from": "../src-v2/application/recovery-controller.ts#L248",
-          "to": "../../../src-v2/application/recovery-controller.ts#L248"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L248"
         },
         {
           "start": 1373,
           "end": 1420,
           "from": "../src-v2/application/route-coordinator.ts#L185",
-          "to": "../../../src-v2/application/route-coordinator.ts#L185"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts#L185"
         },
         {
           "start": 1437,
@@ -436,14 +436,38 @@
       "encoding": "lf",
       "bytes": 11593,
       "sha256": "963f998cbea4f16df3e919d7081345a389d216e279d42aa3b3214ae8d5d9aa74",
-      "archivedBytes": 11625,
-      "archivedSha256": "85999fe35853aa133db8a0d9edb7c9b163e70547ed3f0c22dcc3c3e435491e2e",
+      "archivedBytes": 11769,
+      "archivedSha256": "bd3477bc6f812d68f91bc1b8cc37c1f6fea030ffa91b69495549d65c0159f2a9",
       "urlEdits": [
         {
           "start": 334,
           "end": 418,
           "from": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/CHROME_v2.1.16_ACCEPTANCE.md",
           "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/CHROME_v2.1.16_ACCEPTANCE.md"
+        },
+        {
+          "start": 1146,
+          "end": 1222,
+          "from": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/src-v2/adapters/player.ts",
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts"
+        },
+        {
+          "start": 1357,
+          "end": 1435,
+          "from": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/src-v2/application/ports.ts",
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/ports.ts"
+        },
+        {
+          "start": 1681,
+          "end": 1773,
+          "from": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/src-v2/application/recovery-controller.ts",
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts"
+        },
+        {
+          "start": 1900,
+          "end": 1987,
+          "from": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/src-v2/application/player-monitor.ts",
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts"
         },
         {
           "start": 6281,
@@ -484,8 +508,8 @@
       "encoding": "lf",
       "bytes": 6599,
       "sha256": "28faf76d4bfe3b2f104d6034db1c379ed1882415e9eff533de1d56accb839338",
-      "archivedBytes": 6631,
-      "archivedSha256": "cc8289821ab141c23e8ab43ea1d151268d17b7a4ddf1c8b1a6db640d4f4f5cce",
+      "archivedBytes": 6787,
+      "archivedSha256": "6de24769cea4f8741bf6c59b23ce605ef3bc587fb97d3e102e5ef562980b6775",
       "urlEdits": [
         {
           "start": 132,
@@ -497,13 +521,13 @@
           "start": 917,
           "end": 945,
           "from": "../src-v2/adapters/player.ts",
-          "to": "../../../src-v2/adapters/player.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts"
         },
         {
           "start": 1017,
           "end": 1061,
           "from": "../src-v2/application/recovery-controller.ts",
-          "to": "../../../src-v2/application/recovery-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts"
         },
         {
           "start": 1513,
@@ -520,14 +544,14 @@
       "encoding": "lf",
       "bytes": 10154,
       "sha256": "0c6bb0e60cd6015269212210ffd7230f72ac5d8dd62bd6f0e4b6719b8b06ca91",
-      "archivedBytes": 10180,
-      "archivedSha256": "51b69d16b9dc49b95778aaa8de6888266bc9c5c4f8f8c14f5662cbd1798ed49e",
+      "archivedBytes": 10258,
+      "archivedSha256": "bc28ca91f5060f0e147547981adfc3750c9f1a14a8cba39e09148df922458493",
       "urlEdits": [
         {
           "start": 2045,
           "end": 2073,
           "from": "../src-v2/adapters/player.ts",
-          "to": "../../../src-v2/adapters/player.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts"
         },
         {
           "start": 2082,
@@ -619,38 +643,38 @@
       "encoding": "lf",
       "bytes": 7694,
       "sha256": "2715d976a8f34ab1d72192888b6bc33ff2fce54b0fb4fa00daa610509d27c905",
-      "archivedBytes": 7724,
-      "archivedSha256": "9bf84d958d1cb79767177ccff1a3306b0375d2e95df4386690e3585702a7033d",
+      "archivedBytes": 8114,
+      "archivedSha256": "c4f2daaa00029e6653c7a9d62a21748a39c6e581202a23c31c68f3832e122618",
       "urlEdits": [
         {
           "start": 1217,
           "end": 1250,
           "from": "../src-v2/adapters/player.ts#L114",
-          "to": "../../../src-v2/adapters/player.ts#L114"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L114"
         },
         {
           "start": 1338,
           "end": 1371,
           "from": "../src-v2/adapters/player.ts#L225",
-          "to": "../../../src-v2/adapters/player.ts#L225"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L225"
         },
         {
           "start": 1459,
           "end": 1492,
           "from": "../src-v2/adapters/player.ts#L546",
-          "to": "../../../src-v2/adapters/player.ts#L546"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L546"
         },
         {
           "start": 1592,
           "end": 1641,
           "from": "../src-v2/application/recovery-controller.ts#L198",
-          "to": "../../../src-v2/application/recovery-controller.ts#L198"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L198"
         },
         {
           "start": 1756,
           "end": 1805,
           "from": "../src-v2/application/recovery-controller.ts#L122",
-          "to": "../../../src-v2/application/recovery-controller.ts#L122"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L122"
         }
       ]
     },
@@ -661,8 +685,8 @@
       "encoding": "lf",
       "bytes": 8780,
       "sha256": "d1276ca910c1b5f19b0310817ad6520da40bca8f1b9f606c1584a4e081c74a1c",
-      "archivedBytes": 8806,
-      "archivedSha256": "7c521ee58ae30f56cba3451bc7099569f7ce8a3e10a47fcf82d46d62cd7047e1",
+      "archivedBytes": 8884,
+      "archivedSha256": "d28044369763a17bd9beabb8e84c032076e22a2bb1ac6a769e36557d65b0c89b",
       "urlEdits": [
         {
           "start": 218,
@@ -674,7 +698,7 @@
           "start": 454,
           "end": 484,
           "from": "../src-v2/adapters/xhr-hook.ts",
-          "to": "../../../src-v2/adapters/xhr-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts"
         },
         {
           "start": 1003,
@@ -691,8 +715,8 @@
       "encoding": "lf",
       "bytes": 12707,
       "sha256": "a035b675f1dcf72f012685c6d6b4312a8a47ddc72746aab1ea70371ca7ffec74",
-      "archivedBytes": 12793,
-      "archivedSha256": "ee8e9da416190b64b0644a57ba87f4b76ea6dbb645d52547af9ea2c43538cf96",
+      "archivedBytes": 13183,
+      "archivedSha256": "f01fa445953b8788c966b728f9168c661327ed91b3b45568065c29b47d3f65b0",
       "urlEdits": [
         {
           "start": 211,
@@ -716,31 +740,31 @@
           "start": 1351,
           "end": 1381,
           "from": "../src-v2/application/ports.ts",
-          "to": "../../../src-v2/application/ports.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/ports.ts"
         },
         {
           "start": 1431,
           "end": 1460,
           "from": "../src-v2/adapters/playurl.ts",
-          "to": "../../../src-v2/adapters/playurl.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/playurl.ts"
         },
         {
           "start": 1506,
           "end": 1538,
           "from": "../src-v2/adapters/fetch-hook.ts",
-          "to": "../../../src-v2/adapters/fetch-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/fetch-hook.ts"
         },
         {
           "start": 1573,
           "end": 1603,
           "from": "../src-v2/adapters/xhr-hook.ts",
-          "to": "../../../src-v2/adapters/xhr-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts"
         },
         {
           "start": 1750,
           "end": 1793,
           "from": "../src-v2/application/playurl-controller.ts",
-          "to": "../../../src-v2/application/playurl-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/playurl-controller.ts"
         },
         {
           "start": 2578,
@@ -781,14 +805,14 @@
       "encoding": "lf",
       "bytes": 8925,
       "sha256": "1f8f750bc094e3b53075b324d089fee7a1cfc330deb748c89858726475fc8fb4",
-      "archivedBytes": 8977,
-      "archivedSha256": "168662a0150d0029cc708dd05dbab91269b0843b5dcd03e65fa939d02b8c3b84",
+      "archivedBytes": 9133,
+      "archivedSha256": "67d3742844e87d9624f1a6b4cf3e5876556346e3d18224fc23e4bd0807609818",
       "urlEdits": [
         {
           "start": 625,
           "end": 655,
           "from": "../src-v2/adapters/xhr-hook.ts",
-          "to": "../../../src-v2/adapters/xhr-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts"
         },
         {
           "start": 666,
@@ -800,7 +824,7 @@
           "start": 923,
           "end": 970,
           "from": "../src-v2/application/measurement-controller.ts",
-          "to": "../../../src-v2/application/measurement-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts"
         },
         {
           "start": 979,
@@ -871,8 +895,8 @@
       "encoding": "lf",
       "bytes": 11663,
       "sha256": "49ca93e32b57768fbb69ec1bf6400c951c99df9d00c00abb9f79f6b728d1fcde",
-      "archivedBytes": 11733,
-      "archivedSha256": "db1ca501e17fd8bf3e16f3b832d67078c886d8e74cae73c7dc540be9a86e7d2b",
+      "archivedBytes": 11967,
+      "archivedSha256": "aeea2d32adfb7fcbb953d7dc9dca2f86d0ff410e03d541f516d03cd323c5747f",
       "urlEdits": [
         {
           "start": 311,
@@ -890,7 +914,7 @@
           "start": 1288,
           "end": 1316,
           "from": "../src-v2/adapters/player.ts",
-          "to": "../../../src-v2/adapters/player.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts"
         },
         {
           "start": 1357,
@@ -920,13 +944,13 @@
           "start": 2087,
           "end": 2126,
           "from": "../src-v2/application/player-monitor.ts",
-          "to": "../../../src-v2/application/player-monitor.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts"
         },
         {
           "start": 2313,
           "end": 2357,
           "from": "../src-v2/application/recovery-controller.ts",
-          "to": "../../../src-v2/application/recovery-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts"
         }
       ]
     },
@@ -937,14 +961,14 @@
       "encoding": "lf",
       "bytes": 6378,
       "sha256": "95f7e984caa4b04c656658838942c3f0374abcc2cf40c0f961d98d02ded45794",
-      "archivedBytes": 6410,
-      "archivedSha256": "49ddd57c88cbed642c8fd83bdcb0c2e4b79241c21ea055873386e503bf11ddd5",
+      "archivedBytes": 6488,
+      "archivedSha256": "8953c5b26ce28e472fd5d8a29a5f2c3ff627d62291a87b1ea5461628bf1bfad0",
       "urlEdits": [
         {
           "start": 596,
           "end": 624,
           "from": "../src-v2/adapters/player.ts",
-          "to": "../../../src-v2/adapters/player.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts"
         },
         {
           "start": 1183,
@@ -1014,8 +1038,8 @@
       "encoding": "lf",
       "bytes": 8066,
       "sha256": "b45496eb09049d2b1d403aefebb3abc91436e363b566dc48ddcca63f158741e8",
-      "archivedBytes": 8112,
-      "archivedSha256": "094fb242a93145de5e2710dd708469f7430db6e2572670c987119785e34f5699",
+      "archivedBytes": 8190,
+      "archivedSha256": "2a5570710493492e140871be85171a009d668d253f3c639e689d82c1d04df1ff",
       "urlEdits": [
         {
           "start": 425,
@@ -1033,7 +1057,7 @@
           "start": 1351,
           "end": 1394,
           "from": "../src-v2/application/playurl-controller.ts",
-          "to": "../../../src-v2/application/playurl-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/playurl-controller.ts"
         },
         {
           "start": 1594,
@@ -1056,14 +1080,14 @@
       "encoding": "lf",
       "bytes": 8121,
       "sha256": "6926e6879624cb483908decd8ac0c15f2dd3792e0066e738125b7477e01c983f",
-      "archivedBytes": 8141,
-      "archivedSha256": "7703acf2553d6573d058225cc9642ae8f4505942698375c537a36898c1eb387a",
+      "archivedBytes": 8219,
+      "archivedSha256": "0dd68892986fbf53c621f14fa86693892922bb1e831c89db832a38ae463659c3",
       "urlEdits": [
         {
           "start": 2210,
           "end": 2240,
           "from": "../src-v2/adapters/xhr-hook.ts",
-          "to": "../../../src-v2/adapters/xhr-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts"
         },
         {
           "start": 4459,
@@ -1080,8 +1104,8 @@
       "encoding": "lf",
       "bytes": 5557,
       "sha256": "8a46b6db9e66b015bb569fc98541c302a298a7c30e027d93e415911a57740c42",
-      "archivedBytes": 5591,
-      "archivedSha256": "e30775df5c305b5fd49be9151ec5f412c10ee82bc576a4e2e1be898ac08c0088",
+      "archivedBytes": 5825,
+      "archivedSha256": "c357c14d2123843e8739a5ca7f88374d2587efc9f5d7a5acf6d58e95db125537",
       "urlEdits": [
         {
           "start": 520,
@@ -1099,19 +1123,19 @@
           "start": 1545,
           "end": 1577,
           "from": "../src-v2/adapters/fetch-hook.ts",
-          "to": "../../../src-v2/adapters/fetch-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/fetch-hook.ts"
         },
         {
           "start": 1703,
           "end": 1750,
           "from": "../src-v2/application/measurement-controller.ts",
-          "to": "../../../src-v2/application/measurement-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts"
         },
         {
           "start": 1916,
           "end": 1948,
           "from": "../src-v2/adapters/fetch-hook.ts",
-          "to": "../../../src-v2/adapters/fetch-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/fetch-hook.ts"
         }
       ]
     },
@@ -1122,14 +1146,14 @@
       "encoding": "lf",
       "bytes": 7352,
       "sha256": "cb6ac9f25526d6c3ab185fa15368a35839994a4c03db4444669d59c30b521f50",
-      "archivedBytes": 7372,
-      "archivedSha256": "01826e7cb05f73e1fec19c5e524ad2bd27dc67f8a0a2fd4219a9ecc450e7a19f",
+      "archivedBytes": 7450,
+      "archivedSha256": "d6d18e4ce315117946c608d8429bac524205d0ee627057b75b02bdbc01fe409e",
       "urlEdits": [
         {
           "start": 2779,
           "end": 2809,
           "from": "../src-v2/adapters/xhr-hook.ts",
-          "to": "../../../src-v2/adapters/xhr-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts"
         },
         {
           "start": 3954,
@@ -1146,8 +1170,8 @@
       "encoding": "lf",
       "bytes": 13518,
       "sha256": "506046967c7e47f0f6a43a079ef1265364ad46f6304d8e277c0eaebd5cd685a2",
-      "archivedBytes": 13544,
-      "archivedSha256": "25a34ab372b631bc0087fe26b71bfeeae07bfce77155197131e22550e0ad7c87",
+      "archivedBytes": 13700,
+      "archivedSha256": "ab2c0f47844c2277e8165054d25d2d6c7487ebdce3410b34370db9dd98f48f60",
       "urlEdits": [
         {
           "start": 887,
@@ -1159,13 +1183,13 @@
           "start": 1736,
           "end": 1775,
           "from": "../src-v2/application/player-monitor.ts",
-          "to": "../../../src-v2/application/player-monitor.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts"
         },
         {
           "start": 2012,
           "end": 2056,
           "from": "../src-v2/application/recovery-controller.ts",
-          "to": "../../../src-v2/application/recovery-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts"
         }
       ]
     },
@@ -1200,8 +1224,8 @@
       "encoding": "lf",
       "bytes": 18840,
       "sha256": "186d7be5c6595d68d5d80f949355d96a732fe00746c463cb7d7cc32748166b07",
-      "archivedBytes": 18952,
-      "archivedSha256": "6759ee7247bdeb3b4025f00caf06d98007b430901beb1fbeafa51dc7be5b599f",
+      "archivedBytes": 19966,
+      "archivedSha256": "bfacdfbbe4c66db68689fc3b188a31bad43d9365cd4fad13aa6706b110c826dd",
       "urlEdits": [
         {
           "start": 288,
@@ -1219,25 +1243,25 @@
           "start": 3272,
           "end": 3315,
           "from": "../src-v2/application/player-monitor.ts#L70",
-          "to": "../../../src-v2/application/player-monitor.ts#L70"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L70"
         },
         {
           "start": 3398,
           "end": 3441,
           "from": "../src-v2/application/player-monitor.ts#L84",
-          "to": "../../../src-v2/application/player-monitor.ts#L84"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L84"
         },
         {
           "start": 3577,
           "end": 3620,
           "from": "../src-v2/application/player-monitor.ts#L98",
-          "to": "../../../src-v2/application/player-monitor.ts#L98"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L98"
         },
         {
           "start": 3652,
           "end": 3696,
           "from": "../src-v2/application/player-monitor.ts#L114",
-          "to": "../../../src-v2/application/player-monitor.ts#L114"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L114"
         },
         {
           "start": 3759,
@@ -1249,55 +1273,55 @@
           "start": 3849,
           "end": 3897,
           "from": "../src-v2/application/recovery-controller.ts#L65",
-          "to": "../../../src-v2/application/recovery-controller.ts#L65"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L65"
         },
         {
           "start": 3944,
           "end": 3992,
           "from": "../src-v2/application/recovery-controller.ts#L79",
-          "to": "../../../src-v2/application/recovery-controller.ts#L79"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L79"
         },
         {
           "start": 4765,
           "end": 4814,
           "from": "../src-v2/application/recovery-controller.ts#L124",
-          "to": "../../../src-v2/application/recovery-controller.ts#L124"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L124"
         },
         {
           "start": 4862,
           "end": 4911,
           "from": "../src-v2/application/recovery-controller.ts#L125",
-          "to": "../../../src-v2/application/recovery-controller.ts#L125"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L125"
         },
         {
           "start": 4971,
           "end": 5020,
           "from": "../src-v2/application/recovery-controller.ts#L128",
-          "to": "../../../src-v2/application/recovery-controller.ts#L128"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L128"
         },
         {
           "start": 5050,
           "end": 5099,
           "from": "../src-v2/application/recovery-controller.ts#L129",
-          "to": "../../../src-v2/application/recovery-controller.ts#L129"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L129"
         },
         {
           "start": 5744,
           "end": 5792,
           "from": "../src-v2/application/recovery-controller.ts#L83",
-          "to": "../../../src-v2/application/recovery-controller.ts#L83"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L83"
         },
         {
           "start": 5823,
           "end": 5871,
           "from": "../src-v2/application/recovery-controller.ts#L96",
-          "to": "../../../src-v2/application/recovery-controller.ts#L96"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L96"
         },
         {
           "start": 8750,
           "end": 8797,
           "from": "../src-v2/application/route-coordinator.ts#L744",
-          "to": "../../../src-v2/application/route-coordinator.ts#L744"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts#L744"
         }
       ]
     },
@@ -1319,26 +1343,26 @@
       "encoding": "lf",
       "bytes": 9950,
       "sha256": "51ca4e5a270b9ed68c4fa3f237375cd9b482a959ae35d221a7943d39b7167fa1",
-      "archivedBytes": 9980,
-      "archivedSha256": "d5d4091ea94cfb3ca634ed0a33cf9ef783f5e0b4c8bdbe81906cf862d37d5bee",
+      "archivedBytes": 10214,
+      "archivedSha256": "6a945b7426d2a42543e12747f03e055e94c1ddd4f049f37cbbc0b9fcf1fe692f",
       "urlEdits": [
         {
           "start": 2133,
           "end": 2161,
           "from": "../src-v2/adapters/player.ts",
-          "to": "../../../src-v2/adapters/player.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts"
         },
         {
           "start": 2322,
           "end": 2350,
           "from": "../src-v2/adapters/player.ts",
-          "to": "../../../src-v2/adapters/player.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts"
         },
         {
           "start": 2444,
           "end": 2483,
           "from": "../src-v2/application/player-monitor.ts",
-          "to": "../../../src-v2/application/player-monitor.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts"
         },
         {
           "start": 2732,
@@ -1372,38 +1396,38 @@
       "encoding": "lf",
       "bytes": 9228,
       "sha256": "4695c847257ebe0faed186ac28595813c3019c381e20744ddf7cff769e8538a2",
-      "archivedBytes": 9264,
-      "archivedSha256": "2ce37f69c68653619f58f9064bbc2d54117b171b03e5cef645c6c1a3c1ada6d2",
+      "archivedBytes": 9654,
+      "archivedSha256": "a1e902f9bedd34663bc26dd801f6d9e6241be3e0f1e8221efa324dd675732779",
       "urlEdits": [
         {
           "start": 2414,
           "end": 2446,
           "from": "../src-v2/adapters/player.ts#L88",
-          "to": "../../../src-v2/adapters/player.ts#L88"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L88"
         },
         {
           "start": 2504,
           "end": 2537,
           "from": "../src-v2/adapters/player.ts#L136",
-          "to": "../../../src-v2/adapters/player.ts#L136"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L136"
         },
         {
           "start": 2572,
           "end": 2605,
           "from": "../src-v2/adapters/player.ts#L155",
-          "to": "../../../src-v2/adapters/player.ts#L155"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L155"
         },
         {
           "start": 2758,
           "end": 2802,
           "from": "../src-v2/application/player-monitor.ts#L165",
-          "to": "../../../src-v2/application/player-monitor.ts#L165"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L165"
         },
         {
           "start": 2858,
           "end": 2902,
           "from": "../src-v2/application/player-monitor.ts#L172",
-          "to": "../../../src-v2/application/player-monitor.ts#L172"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L172"
         },
         {
           "start": 3014,
@@ -1438,56 +1462,56 @@
       "encoding": "lf",
       "bytes": 14923,
       "sha256": "f3b7702bda3a3555b13e9e953316c5cef9bfb7c7a627cdbb1ce5f12a1bb61eca",
-      "archivedBytes": 14971,
-      "archivedSha256": "346d0e5c8068b0248205bf4284fc51450d7909f435b577313a7cc9c103f084f8",
+      "archivedBytes": 15595,
+      "archivedSha256": "8449b4c5a8df6caf2a42204fe0695eae082f40fb99aab06bcce8b3767ce61788",
       "urlEdits": [
         {
           "start": 4454,
           "end": 4486,
           "from": "../src-v2/adapters/player.ts#L80",
-          "to": "../../../src-v2/adapters/player.ts#L80"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L80"
         },
         {
           "start": 4566,
           "end": 4598,
           "from": "../src-v2/adapters/player.ts#L84",
-          "to": "../../../src-v2/adapters/player.ts#L84"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L84"
         },
         {
           "start": 4869,
           "end": 4913,
           "from": "../src-v2/application/player-monitor.ts#L103",
-          "to": "../../../src-v2/application/player-monitor.ts#L103"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L103"
         },
         {
           "start": 4972,
           "end": 5016,
           "from": "../src-v2/application/player-monitor.ts#L167",
-          "to": "../../../src-v2/application/player-monitor.ts#L167"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L167"
         },
         {
           "start": 5047,
           "end": 5091,
           "from": "../src-v2/application/player-monitor.ts#L180",
-          "to": "../../../src-v2/application/player-monitor.ts#L180"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L180"
         },
         {
           "start": 5125,
           "end": 5169,
           "from": "../src-v2/application/player-monitor.ts#L192",
-          "to": "../../../src-v2/application/player-monitor.ts#L192"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L192"
         },
         {
           "start": 5226,
           "end": 5275,
           "from": "../src-v2/application/recovery-controller.ts#L165",
-          "to": "../../../src-v2/application/recovery-controller.ts#L165"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L165"
         },
         {
           "start": 5365,
           "end": 5397,
           "from": "../src-v2/adapters/player.ts#L86",
-          "to": "../../../src-v2/adapters/player.ts#L86"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L86"
         }
       ]
     },
@@ -1534,32 +1558,32 @@
       "encoding": "lf",
       "bytes": 10137,
       "sha256": "d87f130a63f89c216bd91bb58c3d40d6a2651567a1078fcd4183d5fad175687f",
-      "archivedBytes": 10189,
-      "archivedSha256": "0f2524b055ff44afdd0953a8779badbaa65af1379843ed6f404ae819feb32bb8",
+      "archivedBytes": 10501,
+      "archivedSha256": "fbcc394e8418f5f4217a3b2992189316a538659f51c883bad31a6b8045f7d15f",
       "urlEdits": [
         {
           "start": 1353,
           "end": 1386,
           "from": "../src-v2/adapters/player.ts#L103",
-          "to": "../../../src-v2/adapters/player.ts#L103"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L103"
         },
         {
           "start": 1486,
           "end": 1519,
           "from": "../src-v2/adapters/player.ts#L187",
-          "to": "../../../src-v2/adapters/player.ts#L187"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L187"
         },
         {
           "start": 1618,
           "end": 1667,
           "from": "../src-v2/application/recovery-controller.ts#L283",
-          "to": "../../../src-v2/application/recovery-controller.ts#L283"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L283"
         },
         {
           "start": 1749,
           "end": 1798,
           "from": "../src-v2/application/recovery-controller.ts#L245",
-          "to": "../../../src-v2/application/recovery-controller.ts#L245"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L245"
         },
         {
           "start": 5244,
@@ -1618,26 +1642,26 @@
       "encoding": "lf",
       "bytes": 9948,
       "sha256": "e12856f220942053e8178862d54921e1c29fd1136fe8cb5e4c76a71f2c8b5ae8",
-      "archivedBytes": 9966,
-      "archivedSha256": "0814cdcebd707d643eaa44794a2e07176283190c01dee7d4c7fdd4bed1d5a93d",
+      "archivedBytes": 10200,
+      "archivedSha256": "7d26e9d61a49bb447759539cd03aa7d4717ddb5e5754d90fdee48d04fbbddbbd",
       "urlEdits": [
         {
           "start": 3704,
           "end": 3743,
           "from": "../src-v2/application/player-monitor.ts",
-          "to": "../../../src-v2/application/player-monitor.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts"
         },
         {
           "start": 3870,
           "end": 3914,
           "from": "../src-v2/application/recovery-controller.ts",
-          "to": "../../../src-v2/application/recovery-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts"
         },
         {
           "start": 4042,
           "end": 4085,
           "from": "../src-v2/application/playurl-controller.ts",
-          "to": "../../../src-v2/application/playurl-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/playurl-controller.ts"
         }
       ]
     },
@@ -1648,14 +1672,14 @@
       "encoding": "lf",
       "bytes": 11901,
       "sha256": "1ab42453163d06aa4b8a0c954ae7a43c8b876d98306b4c8bda809aa8d65a9d06",
-      "archivedBytes": 11913,
-      "archivedSha256": "9e508d645724e81d125fef0c9bf4c92692cf4007dbb11b7efdb3c35ce8aaa7b3",
+      "archivedBytes": 11991,
+      "archivedSha256": "a56aac062b6234ba36afaa0696926119aae746c767ba8671606f34b4171970a1",
       "urlEdits": [
         {
           "start": 3190,
           "end": 3220,
           "from": "../src-v2/adapters/xhr-hook.ts",
-          "to": "../../../src-v2/adapters/xhr-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts"
         },
         {
           "start": 3699,
@@ -1672,8 +1696,8 @@
       "encoding": "lf",
       "bytes": 20242,
       "sha256": "648673945ebf0bad58768ffda5b8f7dfc205a74864d6e229b5b954846a517d60",
-      "archivedBytes": 20939,
-      "archivedSha256": "021185e2d9952f124e57366d6fcd7607b215faf783b3762fe67fc6308ceff473",
+      "archivedBytes": 21485,
+      "archivedSha256": "f0b0b33530c279ae7d1141a9129d292e3db7e6aebac0f4bfe587eee514ac0c79",
       "urlEdits": [
         {
           "start": 1102,
@@ -1715,7 +1739,7 @@
           "start": 2287,
           "end": 2329,
           "from": "../src-v2/application/route-coordinator.ts",
-          "to": "../../../src-v2/application/route-coordinator.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts"
         },
         {
           "start": 2692,
@@ -1739,13 +1763,13 @@
           "start": 3431,
           "end": 3473,
           "from": "../src-v2/application/route-coordinator.ts",
-          "to": "../../../src-v2/application/route-coordinator.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts"
         },
         {
           "start": 3531,
           "end": 3574,
           "from": "../src-v2/application/playurl-controller.ts",
-          "to": "../../../src-v2/application/playurl-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/playurl-controller.ts"
         },
         {
           "start": 3666,
@@ -1775,7 +1799,7 @@
           "start": 4384,
           "end": 4431,
           "from": "../src-v2/application/measurement-controller.ts",
-          "to": "../../../src-v2/application/measurement-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts"
         },
         {
           "start": 4589,
@@ -1805,7 +1829,7 @@
           "start": 5504,
           "end": 5551,
           "from": "../src-v2/application/measurement-controller.ts",
-          "to": "../../../src-v2/application/measurement-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts"
         },
         {
           "start": 5654,
@@ -1823,7 +1847,7 @@
           "start": 5781,
           "end": 5823,
           "from": "../src-v2/application/route-coordinator.ts",
-          "to": "../../../src-v2/application/route-coordinator.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts"
         },
         {
           "start": 5976,
@@ -1847,7 +1871,7 @@
           "start": 6892,
           "end": 6934,
           "from": "../src-v2/application/route-coordinator.ts",
-          "to": "../../../src-v2/application/route-coordinator.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts"
         },
         {
           "start": 7123,
@@ -1924,8 +1948,8 @@
       "encoding": "lf",
       "bytes": 10337,
       "sha256": "eb1248f0e7e26b400bcf7b392f8701998ba3a9c9abe07093bef70875dbb81809",
-      "archivedBytes": 10601,
-      "archivedSha256": "518fbb6969a019697dd2a777cffb105bf7df1df15ef3534c9753cdb111940438",
+      "archivedBytes": 10991,
+      "archivedSha256": "0cf900c41c04f6aba912cdad0b55ff18f19028622cbd332f71764fb29a10d7a7",
       "urlEdits": [
         {
           "start": 400,
@@ -1937,7 +1961,7 @@
           "start": 448,
           "end": 490,
           "from": "../src-v2/application/route-coordinator.ts",
-          "to": "../../../src-v2/application/route-coordinator.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts"
         },
         {
           "start": 505,
@@ -1961,7 +1985,7 @@
           "start": 863,
           "end": 910,
           "from": "../src-v2/application/measurement-controller.ts",
-          "to": "../../../src-v2/application/measurement-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts"
         },
         {
           "start": 925,
@@ -1973,7 +1997,7 @@
           "start": 1096,
           "end": 1143,
           "from": "../src-v2/application/measurement-controller.ts",
-          "to": "../../../src-v2/application/measurement-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts"
         },
         {
           "start": 1154,
@@ -2015,7 +2039,7 @@
           "start": 1788,
           "end": 1818,
           "from": "../src-v2/adapters/xhr-hook.ts",
-          "to": "../../../src-v2/adapters/xhr-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts"
         },
         {
           "start": 1837,
@@ -2027,7 +2051,7 @@
           "start": 2011,
           "end": 2041,
           "from": "../src-v2/adapters/xhr-hook.ts",
-          "to": "../../../src-v2/adapters/xhr-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts"
         },
         {
           "start": 2068,
@@ -2044,8 +2068,8 @@
       "encoding": "lf",
       "bytes": 9242,
       "sha256": "fe0b57335e3374db8462f37f0a1c4abffa5f86950919729165dd0dfa2a9d117e",
-      "archivedBytes": 9364,
-      "archivedSha256": "31aa717a60547f52cee3a546aa6f51879976b0d1a0c0d097cbdcb898d2122fb8",
+      "archivedBytes": 9832,
+      "archivedSha256": "449d71f63bd1ecd8652afa63df6e0210f71e8a5caf0c7720c10ceb4945d08cb6",
       "urlEdits": [
         {
           "start": 226,
@@ -2057,7 +2081,7 @@
           "start": 480,
           "end": 523,
           "from": "../src-v2/application/playurl-controller.ts",
-          "to": "../../../src-v2/application/playurl-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/playurl-controller.ts"
         },
         {
           "start": 544,
@@ -2075,7 +2099,7 @@
           "start": 733,
           "end": 777,
           "from": "../src-v2/application/recovery-controller.ts",
-          "to": "../../../src-v2/application/recovery-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts"
         },
         {
           "start": 826,
@@ -2087,7 +2111,7 @@
           "start": 924,
           "end": 963,
           "from": "../src-v2/application/player-monitor.ts",
-          "to": "../../../src-v2/application/player-monitor.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts"
         },
         {
           "start": 1200,
@@ -2105,7 +2129,7 @@
           "start": 1503,
           "end": 1545,
           "from": "../src-v2/application/route-coordinator.ts",
-          "to": "../../../src-v2/application/route-coordinator.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts"
         },
         {
           "start": 1563,
@@ -2123,13 +2147,13 @@
           "start": 1856,
           "end": 1903,
           "from": "../src-v2/application/measurement-controller.ts",
-          "to": "../../../src-v2/application/measurement-controller.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts"
         },
         {
           "start": 2020,
           "end": 2050,
           "from": "../src-v2/adapters/xhr-hook.ts",
-          "to": "../../../src-v2/adapters/xhr-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts"
         },
         {
           "start": 2084,
@@ -2445,8 +2469,8 @@
       "encoding": "lf",
       "bytes": 9881,
       "sha256": "ea6501506e6064f39ec547c6eb323d3ff1cf3f7b24d09275c4bc7e43b4c5f26d",
-      "archivedBytes": 9981,
-      "archivedSha256": "410829bcdc422a6dc27a6286ba83725e2db0617bac50eb58247646f0b9f33e83",
+      "archivedBytes": 10059,
+      "archivedSha256": "d3f93e6d27916173405a84ed85066e1b3247f2c82fda89233ab2f93eb643d939",
       "urlEdits": [
         {
           "start": 138,
@@ -2464,7 +2488,7 @@
           "start": 1556,
           "end": 1586,
           "from": "../src-v2/adapters/xhr-hook.ts",
-          "to": "../../../src-v2/adapters/xhr-hook.ts"
+          "to": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts"
         },
         {
           "start": 1706,
@@ -6804,55 +6828,55 @@
       "sha256": "e94643e81a9699d60bf084475fcc5a85f8f2dc2185b05042db402c5acccdb490"
     },
     {
-      "path": "src-v2/adapters/page-playinfo.ts",
+      "path": "archive/retired/originals/v2.2.14-modularization/src-v2/adapters/page-playinfo.ts.snapshot",
       "encoding": "raw",
       "bytes": 3241,
       "sha256": "9de1d6998e99847b6bdc3deec64ada08721797538a404126d837620b7873d3a8"
     },
     {
-      "path": "src-v2/adapters/player-method.ts",
+      "path": "archive/retired/originals/v2.2.14-modularization/src-v2/adapters/player-method.ts.snapshot",
       "encoding": "raw",
       "bytes": 1445,
       "sha256": "691f0becb27af0e53e9f52a53ce6a3bdd46e42db18e8a5b66bc5ca7aea87c012"
     },
     {
-      "path": "src-v2/adapters/player-sdk.ts",
+      "path": "archive/retired/originals/v2.2.14-modularization/src-v2/adapters/player-sdk.ts.snapshot",
       "encoding": "raw",
       "bytes": 565,
       "sha256": "d7fe4b1ce5b0c375525f57d8bd46b67a724b309b490ba3f657b3f8654bd1b6fb"
     },
     {
-      "path": "src-v2/adapters/scheduler.ts",
+      "path": "archive/retired/originals/v2.2.14-modularization/src-v2/adapters/scheduler.ts.snapshot",
       "encoding": "raw",
       "bytes": 467,
       "sha256": "e3ffcfe1ae9c448db862a5e0610ec01ca89a511d3d8e224933fe862e9421f319"
     },
     {
-      "path": "src-v2/adapters/xhr-values.ts",
+      "path": "archive/retired/originals/v2.2.14-modularization/src-v2/adapters/xhr-values.ts.snapshot",
       "encoding": "raw",
       "bytes": 3375,
       "sha256": "279e619587cd96b3ef93df642de10f14af6ca62826cfb088c397d567ce76096e"
     },
     {
-      "path": "src-v2/application/routing/route-materialization.ts",
+      "path": "archive/retired/originals/v2.2.14-modularization/src-v2/application/routing/route-materialization.ts.snapshot",
       "encoding": "raw",
       "bytes": 2341,
       "sha256": "c7312a72c606cee9d4fad52a5d16e4cf2a502a9dccc1dbfa885959360347440b"
     },
     {
-      "path": "src-v2/domain/playback-progress.ts",
+      "path": "archive/retired/originals/v2.2.14-modularization/src-v2/domain/playback-progress.ts.snapshot",
       "encoding": "raw",
       "bytes": 1010,
       "sha256": "ce5c9ae64922b62655e20b97f798da38d5ee1c2b68f3a85f83a304ff2b02af82"
     },
     {
-      "path": "src-v2/domain/playurl-content.ts",
+      "path": "archive/retired/originals/v2.2.14-modularization/src-v2/domain/playurl-content.ts.snapshot",
       "encoding": "raw",
       "bytes": 2761,
       "sha256": "f7ea073fcadf47c69f1e3041d64211462dd9098f98642228d7d53263d914887d"
     },
     {
-      "path": "src-v2/domain/url-policy.ts",
+      "path": "archive/retired/originals/v2.2.14-modularization/src-v2/domain/url-policy.ts.snapshot",
       "encoding": "raw",
       "bytes": 4113,
       "sha256": "22de63bea2e0a0255c85711b8aecb05629628d1eac81c55a6e438bdf384b360f"
@@ -11341,6 +11365,798 @@
       "originalTarget": "tests-v2/regressions/iab-event-collector.ts",
       "archivedTarget": "tests-v2/regressions/iab-event-collector.ts",
       "reason": "v2.2.1 retired diagnostic tool; exact baseline source is verified in Git by docs/doc-manifest.json."
+    },
+    {
+      "source": "archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md",
+      "line": 42,
+      "url": "../../../src-v2/adapters/xhr-hook.ts",
+      "sha256": "de0ed691fb4d165e7c1caa8b6747f11475d25b3b9d3756a3fc90903be5029e98",
+      "originalTarget": "src-v2/adapters/xhr-hook.ts",
+      "archivedTarget": "src-v2/adapters/transport/xhr-hook.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md",
+      "line": 42,
+      "url": "../../../src-v2/adapters/fetch-hook.ts",
+      "sha256": "de0ed691fb4d165e7c1caa8b6747f11475d25b3b9d3756a3fc90903be5029e98",
+      "originalTarget": "src-v2/adapters/fetch-hook.ts",
+      "archivedTarget": "src-v2/adapters/transport/fetch-hook.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/CIRCUIT_BREAKER_RESEARCH_v2.2.10_2026-11-05.md",
+      "line": 44,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "de0ed691fb4d165e7c1caa8b6747f11475d25b3b9d3756a3fc90903be5029e98",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md",
+      "line": 38,
+      "url": "../../../src-v2/adapters/xhr-hook.ts",
+      "sha256": "d8308349c318e24c1bd9eb4c71c648b0c0fa9797ad865f40cf7df7fbccb02883",
+      "originalTarget": "src-v2/adapters/xhr-hook.ts",
+      "archivedTarget": "src-v2/adapters/transport/xhr-hook.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md",
+      "line": 39,
+      "url": "../../../src-v2/adapters/xhr-early-retry.ts",
+      "sha256": "d8308349c318e24c1bd9eb4c71c648b0c0fa9797ad865f40cf7df7fbccb02883",
+      "originalTarget": "src-v2/adapters/xhr-early-retry.ts",
+      "archivedTarget": "src-v2/adapters/transport/xhr-early-retry.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md",
+      "line": 40,
+      "url": "../../../src-v2/application/early-retry-controller.ts",
+      "sha256": "d8308349c318e24c1bd9eb4c71c648b0c0fa9797ad865f40cf7df7fbccb02883",
+      "originalTarget": "src-v2/application/early-retry-controller.ts",
+      "archivedTarget": "src-v2/application/routing/early-retry-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md",
+      "line": 41,
+      "url": "../../../src-v2/adapters/fetch-hook.ts",
+      "sha256": "d8308349c318e24c1bd9eb4c71c648b0c0fa9797ad865f40cf7df7fbccb02883",
+      "originalTarget": "src-v2/adapters/fetch-hook.ts",
+      "archivedTarget": "src-v2/adapters/transport/fetch-hook.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md",
+      "line": 42,
+      "url": "../../../src-v2/application/player-monitor.ts",
+      "sha256": "d8308349c318e24c1bd9eb4c71c648b0c0fa9797ad865f40cf7df7fbccb02883",
+      "originalTarget": "src-v2/application/player-monitor.ts",
+      "archivedTarget": "src-v2/application/playback/player-monitor.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 18,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 25,
+      "url": "../../../src-v2/adapters/xhr-hook.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/xhr-hook.ts",
+      "archivedTarget": "src-v2/adapters/transport/xhr-hook.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 26,
+      "url": "../../../src-v2/application/measurement-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/measurement-controller.ts",
+      "archivedTarget": "src-v2/application/measurement/measurement-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 26,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 28,
+      "url": "../../../src-v2/application/measurement-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/measurement-controller.ts",
+      "archivedTarget": "src-v2/application/measurement/measurement-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 29,
+      "url": "../../../src-v2/application/measurement-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/measurement-controller.ts",
+      "archivedTarget": "src-v2/application/measurement/measurement-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 30,
+      "url": "../../../src-v2/application/measurement-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/measurement-controller.ts",
+      "archivedTarget": "src-v2/application/measurement/measurement-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 31,
+      "url": "../../../src-v2/application/measurement-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/measurement-controller.ts",
+      "archivedTarget": "src-v2/application/measurement/measurement-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 32,
+      "url": "../../../src-v2/application/measurement-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/measurement-controller.ts",
+      "archivedTarget": "src-v2/application/measurement/measurement-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 32,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 50,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 50,
+      "url": "../../../src-v2/adapters/transport-context.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/transport-context.ts",
+      "archivedTarget": "src-v2/adapters/transport/transport-context.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 56,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 57,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 57,
+      "url": "../../../src-v2/application/playurl-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/playurl-controller.ts",
+      "archivedTarget": "src-v2/application/playurl/playurl-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 58,
+      "url": "../../../src-v2/adapters/transport-context.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/transport-context.ts",
+      "archivedTarget": "src-v2/adapters/transport/transport-context.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 76,
+      "url": "../../../src-v2/application/player-monitor.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/player-monitor.ts",
+      "archivedTarget": "src-v2/application/playback/player-monitor.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 76,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 76,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 103,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 103,
+      "url": "../../../src-v2/adapters/player-controls.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/player-controls.ts",
+      "archivedTarget": "src-v2/adapters/player/player-controls.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 103,
+      "url": "../../../src-v2/application/recovery-contracts.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-contracts.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-contracts.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 109,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 109,
+      "url": "../../../src-v2/application/player-monitor.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/player-monitor.ts",
+      "archivedTarget": "src-v2/application/playback/player-monitor.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 109,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 110,
+      "url": "../../../src-v2/application/player-monitor.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/player-monitor.ts",
+      "archivedTarget": "src-v2/application/playback/player-monitor.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 111,
+      "url": "../../../src-v2/application/player-monitor.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/player-monitor.ts",
+      "archivedTarget": "src-v2/application/playback/player-monitor.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 112,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 113,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 113,
+      "url": "../../../src-v2/adapters/player-controls.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/player-controls.ts",
+      "archivedTarget": "src-v2/adapters/player/player-controls.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 114,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 114,
+      "url": "../../../src-v2/adapters/player-controls.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/player-controls.ts",
+      "archivedTarget": "src-v2/adapters/player/player-controls.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 132,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 132,
+      "url": "../../../src-v2/adapters/player.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/player.ts",
+      "archivedTarget": "src-v2/adapters/player/player.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 132,
+      "url": "../../../src-v2/adapters/player-controls.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/player-controls.ts",
+      "archivedTarget": "src-v2/adapters/player/player-controls.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 144,
+      "url": "../../../src-v2/adapters/player-controls.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/player-controls.ts",
+      "archivedTarget": "src-v2/adapters/player/player-controls.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 144,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 145,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 145,
+      "url": "../../../src-v2/adapters/player-controls.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/player-controls.ts",
+      "archivedTarget": "src-v2/adapters/player/player-controls.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 146,
+      "url": "../../../src-v2/adapters/player.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/player.ts",
+      "archivedTarget": "src-v2/adapters/player/player.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 146,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 147,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 171,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 171,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 171,
+      "url": "../../../src-v2/application/player-monitor.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/player-monitor.ts",
+      "archivedTarget": "src-v2/application/playback/player-monitor.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 171,
+      "url": "../../../src-v2/adapters/player-media.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/player-media.ts",
+      "archivedTarget": "src-v2/adapters/player/player-media.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 186,
+      "url": "../../../src-v2/application/measurement-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/measurement-controller.ts",
+      "archivedTarget": "src-v2/application/measurement/measurement-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 186,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 186,
+      "url": "../../../src-v2/application/early-retry-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/early-retry-controller.ts",
+      "archivedTarget": "src-v2/application/routing/early-retry-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 192,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 193,
+      "url": "../../../src-v2/application/player-monitor.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/player-monitor.ts",
+      "archivedTarget": "src-v2/application/playback/player-monitor.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 193,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 194,
+      "url": "../../../src-v2/application/measurement-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/measurement-controller.ts",
+      "archivedTarget": "src-v2/application/measurement/measurement-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 194,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 195,
+      "url": "../../../src-v2/application/player-monitor.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/player-monitor.ts",
+      "archivedTarget": "src-v2/application/playback/player-monitor.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 195,
+      "url": "../../../src-v2/application/early-retry-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/early-retry-controller.ts",
+      "archivedTarget": "src-v2/application/routing/early-retry-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 196,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 198,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 226,
+      "url": "../../../src-v2/application/playurl-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/playurl-controller.ts",
+      "archivedTarget": "src-v2/application/playurl/playurl-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 241,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 241,
+      "url": "../../../src-v2/application/measurement-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/measurement-controller.ts",
+      "archivedTarget": "src-v2/application/measurement/measurement-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 241,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 241,
+      "url": "../../../src-v2/application/player-monitor.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/player-monitor.ts",
+      "archivedTarget": "src-v2/application/playback/player-monitor.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 251,
+      "url": "../../../src-v2/adapters/playurl.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/playurl.ts",
+      "archivedTarget": "src-v2/adapters/playurl/playurl.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 251,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 257,
+      "url": "../../../src-v2/adapters/fetch-hook.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/fetch-hook.ts",
+      "archivedTarget": "src-v2/adapters/transport/fetch-hook.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 257,
+      "url": "../../../src-v2/adapters/xhr-hook.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/adapters/xhr-hook.ts",
+      "archivedTarget": "src-v2/adapters/transport/xhr-hook.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 257,
+      "url": "../../../src-v2/application/playurl-controller.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/playurl-controller.ts",
+      "archivedTarget": "src-v2/application/playurl/playurl-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md",
+      "line": 258,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "7bea07017d26edf662e84eb491cb1ed3585262e5e6f6be529d922d4598a5dcaa",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
+      "line": 42,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "588b9aeb8e91e065101c4c9a1679de73e4a1f155dcd527df37869ef36de55e69",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
+      "line": 42,
+      "url": "../../../src-v2/application/route-contracts.ts",
+      "sha256": "588b9aeb8e91e065101c4c9a1679de73e4a1f155dcd527df37869ef36de55e69",
+      "originalTarget": "src-v2/application/route-contracts.ts",
+      "archivedTarget": "src-v2/application/routing/route-contracts.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
+      "line": 104,
+      "url": "../../../src-v2/adapters/xhr-early-retry.ts",
+      "sha256": "588b9aeb8e91e065101c4c9a1679de73e4a1f155dcd527df37869ef36de55e69",
+      "originalTarget": "src-v2/adapters/xhr-early-retry.ts",
+      "archivedTarget": "src-v2/adapters/transport/xhr-early-retry.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md",
+      "line": 73,
+      "url": "../../../src-v2/adapters/playurl.ts",
+      "sha256": "c33a3afdddd1cdf4ab23e9f3a257addd2c54fa8201d9ffd533b11a00dd356e02",
+      "originalTarget": "src-v2/adapters/playurl.ts",
+      "archivedTarget": "src-v2/adapters/playurl/playurl.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md",
+      "line": 73,
+      "url": "../../../src-v2/adapters/fetch-hook.ts",
+      "sha256": "c33a3afdddd1cdf4ab23e9f3a257addd2c54fa8201d9ffd533b11a00dd356e02",
+      "originalTarget": "src-v2/adapters/fetch-hook.ts",
+      "archivedTarget": "src-v2/adapters/transport/fetch-hook.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md",
+      "line": 73,
+      "url": "../../../src-v2/adapters/xhr-hook.ts",
+      "sha256": "c33a3afdddd1cdf4ab23e9f3a257addd2c54fa8201d9ffd533b11a00dd356e02",
+      "originalTarget": "src-v2/adapters/xhr-hook.ts",
+      "archivedTarget": "src-v2/adapters/transport/xhr-hook.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md",
+      "line": 74,
+      "url": "../../../src-v2/application/route-coordinator.ts",
+      "sha256": "c33a3afdddd1cdf4ab23e9f3a257addd2c54fa8201d9ffd533b11a00dd356e02",
+      "originalTarget": "src-v2/application/route-coordinator.ts",
+      "archivedTarget": "src-v2/application/routing/route-coordinator.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md",
+      "line": 76,
+      "url": "../../../src-v2/application/measurement-controller.ts",
+      "sha256": "c33a3afdddd1cdf4ab23e9f3a257addd2c54fa8201d9ffd533b11a00dd356e02",
+      "originalTarget": "src-v2/application/measurement-controller.ts",
+      "archivedTarget": "src-v2/application/measurement/measurement-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md",
+      "line": 77,
+      "url": "../../../src-v2/adapters/range-probe.ts",
+      "sha256": "c33a3afdddd1cdf4ab23e9f3a257addd2c54fa8201d9ffd533b11a00dd356e02",
+      "originalTarget": "src-v2/adapters/range-probe.ts",
+      "archivedTarget": "src-v2/adapters/transport/range-probe.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md",
+      "line": 78,
+      "url": "../../../src-v2/application/player-monitor.ts",
+      "sha256": "c33a3afdddd1cdf4ab23e9f3a257addd2c54fa8201d9ffd533b11a00dd356e02",
+      "originalTarget": "src-v2/application/player-monitor.ts",
+      "archivedTarget": "src-v2/application/playback/player-monitor.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_V1_4_1_COMPARISON_2026-10-29.md",
+      "line": 78,
+      "url": "../../../src-v2/application/recovery-controller.ts",
+      "sha256": "c33a3afdddd1cdf4ab23e9f3a257addd2c54fa8201d9ffd533b11a00dd356e02",
+      "originalTarget": "src-v2/application/recovery-controller.ts",
+      "archivedTarget": "src-v2/application/playback/recovery-controller.ts",
+      "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
     }
   ],
   "additionalLocalManifests": [

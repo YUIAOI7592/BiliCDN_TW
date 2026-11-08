@@ -42,7 +42,7 @@ BR-02 對照包含 method／URL 例外、參數轉換、opened／sent／done、�
 4. 回呼再次嘗試同步 `open()` 並捕捉同類例外，原生再次變 UNSENT，metadata 仍屬原等待請求。
 5. 外層僅檢查 metadata 身分及 phase，清除 `needsNativeOpen`；原生 `send()` 隨後拋 `InvalidStateError`。
 
-位置：[xhr-hook.ts](../../../src-v2/adapters/xhr-hook.ts) 第 112 行標記失敗後重新準備；第 130–135 行內部 reopen 未辨識同步重入後原生準備失效；第 216 行送出、第 221 行 gate Promise 鏈未處理該 throw。
+位置：[xhr-hook.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts) 第 112 行標記失敗後重新準備；第 130–135 行內部 reopen 未辨識同步重入後原生準備失效；第 216 行送出、第 221 行 gate Promise 鏈未處理該 throw。
 
 契約沿用現有 NativeXhr 情境與測試執行器，沒有修改正式登記。正常對照「內部回呼內 SyntaxError」通過；問題契約要求原等待請求送出一次，實際 **0 次，`0 !== 1`**，另記錄 `InvalidStateError: send invalid state` 的未處理拒絕。結果 **1 通過／1 失敗、exit 1**，是調查失敗證據，不是正式套件結果。
 

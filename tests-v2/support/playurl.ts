@@ -1,4 +1,4 @@
-import type { PlayurlTransformResult } from '../../src-v2/domain/playurl-model.ts'
+import { type PlayurlTransformResult } from '../../src-v2/domain/playurl-model.ts'
 
 export const playurlResult = (accepted: boolean): PlayurlTransformResult => ({
   accepted,

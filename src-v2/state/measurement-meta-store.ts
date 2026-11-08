@@ -1,12 +1,12 @@
-import type { StoragePort, StorageLock } from '../platform/storage-port.ts'
-import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
+import { type StoragePort, type StorageLock } from '../platform/storage-port.ts'
+import { type RuntimeIdPort } from '../platform/runtime-id-port.ts'
 import { sameCircuitStamp } from '../domain/circuit-policy.ts'
-import type { CurrentCircuitControlReader } from './evidence-ports.ts'
-import type {
-  MeasurementMeta,
-  MeasurementMetaPort,
-  MeasurementCoordination,
-  RevalidationClaim,
+import { type CurrentCircuitControlReader } from './evidence-ports.ts'
+import {
+  type MeasurementMeta,
+  type MeasurementMetaPort,
+  type MeasurementCoordination,
+  type RevalidationClaim,
 } from './measurement-meta-ports.ts'
 export const MEASUREMENT_META_KEY = 'bilicdn.v2.meta'
 

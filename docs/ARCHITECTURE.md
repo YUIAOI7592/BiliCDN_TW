@@ -24,6 +24,10 @@
 
 分層、單一副作用所有者與純契約一併受架構檢查保護。
 
+application 的 routing、measurement、playback、playurl 群組將控制器與契約共置；Runtime／Lifecycle 的本地依賴介面不另設轉接檔。adapters 的 transport、player、playurl 群組分別管理原生差異。State、UI 與工具維持原有用途分布。群組不新增控制所有者，外部只能匯入指定所有者及共享契約，不能直接依賴功能私有助手。
+
+`domain/model.ts` 僅保存共用 ID、媒體種類、時鐘與轉移結果基礎；選路、證據、傳輸資料直接匯入各功能模型。需求、完成預算、量測計時及探測型別與對應純政策共置；起播、還原、停滯分別依所屬生命週期維護。路線功能事件與備援動作由選路契約定義，不建立中介轉匯出入口。
+
 ### 依賴方向
 
 本節定義目前的依賴方向與檢查邊界；歷史修復與版本證據由 [HISTORY](HISTORY.md) 追溯。
@@ -42,7 +46,7 @@
 
 此表列出可以匯入的層，並不要求全部匯入。狀態儲存元件從 `platform/storage-port.ts` 匯入 `StoragePort` 型別；`platform/storage.ts` 實作 Tampermonkey 儲存。執行識別碼介面也獨立於產生器。同功能模型與具名介面共置於 `*-contracts.ts`；量測、監控、playurl、恢復、選路、提前重試、設定、Session、Restriction、Vault 及控制中心已合併。提前重試控制與傳輸許可仍是不同窄介面。消費端直接匯入契約，實作不轉匯出型別；設定讀取共用 `SettingsReader`／`SettingsObserver`，不傳入完整 Store。契約不得依賴具體 Store、控制器或適配器。`SettingsChange` 唯一定義於狀態模型；三個視圖使用具名唯讀快照，經 ControlCommandPort 修改設定或執行保留命令。UI 匯入應用層／狀態層型別與領域輔助函式，消費快照，透過 `ControlCommandPort` 執行產品變更；UI 不匯入瀏覽器適配器。[entry.ts](../src-v2/entry.ts) 建立、連接這些物件並啟動執行環境。
 
-AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、`import type` 及 `import-equals` 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環與契約對實作的依賴。唯一寫入者依完整相對路徑辨識，不能以同名檔案繞過；只有 `application/measurement-controller.ts` 可以呼叫 `probe.read()`。額外語法規則拒絕領域層／應用層中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、路線協調器以外的點號 `setAffinity()` 呼叫、恢復控制器以外應用層的點號 `reload()` 呼叫，以及命令接收器以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
+AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、`import type` 及 `import-equals` 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環與契約對實作的依賴。唯一寫入者依完整相對路徑辨識，不能以同名檔案繞過；只有 `application/measurement/measurement-controller.ts` 可以呼叫 `probe.read()`。額外語法規則拒絕領域層／應用層中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、路線協調器以外的點號 `setAffinity()` 呼叫、恢復控制器以外應用層的點號 `reload()` 呼叫，以及命令接收器以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
 
 獨立的匯入純度測試將全部非入口、非宣告模組打包在一起，停用未使用程式碼移除（tree shaking）並忽略打包最佳化註記，再於不載入 `node:test` 的獨立 Node 子程序匯入，期限為 3 秒。外層具名案例監督結果，框架不受全域陷阱干擾。測試攔截固定清單中的瀏覽器、網路、GM、計時器全域與 `Date.now`／`Math.random`，檢查匯入時行為；建構函式及方法仍須契約測試。架構規則期待各自使用具名 `node:test` 案例；命令、期限與實際保障範圍見 [測試流程](DEVELOPMENT.md#測試套件與隔離)。
 
@@ -118,7 +122,7 @@ DomainEvent 只保留有產生者與功能消費者的事件；TransportObservat
 
 ### 漸進式 playurl 處理
 
-[PlayurlAdapter](../src-v2/adapters/playurl.ts) 在有界深度內走訪已辨識的根層／`data`／`result`／`video_info` 容器，先統計所有容器的 DASH、Dolby／FLAC 與 MP4／FLV `durl` 項目總數，並凍結每個容器的成員數。超過影片 128／音訊 64 時，在讀取任何成員欄位前拒絕；通過後只處理已計入預檢的索引，讀取成員時的陣列增長不擴大解析額度，再逐項驗證及正規化。分段身分包含分支、格式、畫質及陣列索引；缺少或重複的 `order` 不會合併不同分段。資料內容保留原始分段順序與中繼資料，DASH 表示順序由網站保留。格式錯誤、非零頂層 `code` 及不支援格式仍拒絕。
+[PlayurlAdapter](../src-v2/adapters/playurl/playurl.ts) 在有界深度內走訪已辨識的根層／`data`／`result`／`video_info` 容器，先統計所有容器的 DASH、Dolby／FLAC 與 MP4／FLV `durl` 項目總數，並凍結每個容器的成員數。超過影片 128／音訊 64 時，在讀取任何成員欄位前拒絕；通過後只處理已計入預檢的索引，讀取成員時的陣列增長不擴大解析額度，再逐項驗證及正規化。分段身分包含分支、格式、畫質及陣列索引；缺少或重複的 `order` 不會合併不同分段。資料內容保留原始分段順序與中繼資料，DASH 表示順序由網站保留。格式錯誤、非零頂層 `code` 及不支援格式仍拒絕。
 
 控制器逐段登記，維持當前世代／內容週期及可信來源提升規則。漸進式 Catalog 生成從 `SignedRouteVault` 取得該段第一個安全來源的不透明識別碼，不假設第一個提供的 URL 可以改寫。精確來源路徑／查詢字串保持與本段關聯。Vault 僅在換主機後能生成正常內建 Catalog 目標時，才可為此保留安全可改寫的 PCDN 來源；它不取得 Native 可選資格，也不得成為第二份 URL 索引。DASH 保留既有行為：同媒體表示中，傳入的安全精確 URL 或 Catalog 別名 URL 連同當前查詢字串保留。
 

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
-import { RangeProbeAdapter } from '../../src-v2/adapters/range-probe.ts'
+import { RangeProbeAdapter } from '../../src-v2/adapters/transport/range-probe.ts'
 import { BrowserNavigation } from '../../src-v2/adapters/navigation.ts'
 import { testScope } from '../support/scope.ts'
 import '../regressions/v229-measurement.ts'

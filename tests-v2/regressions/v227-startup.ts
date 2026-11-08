@@ -2,11 +2,11 @@ import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { fixture, dash, media } from './functional-races/routing-fixture.ts'
 import { testScope } from '../support/scope.ts'
-import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
+import { MeasurementController } from '../../src-v2/application/measurement/measurement-controller.ts'
 import { MeasurementMetaStore } from '../../src-v2/state/measurement-meta-store.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { deferred } from '../support/deferred.ts'
-import type { RangeProbeResult } from '../../src-v2/application/ports.ts'
+import { type RangeProbeResult } from '../../src-v2/application/measurement/measurement-contracts.ts'
 
 async function setup(t: TestContext) {
   const scope = testScope(t),

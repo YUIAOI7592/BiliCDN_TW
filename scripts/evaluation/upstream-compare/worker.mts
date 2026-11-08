@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { testScope } from '../../../tests-v2/support/scope.ts'
 import { inputs, loadInput, commonHosts } from './inputs.mts'
 import { scenarios } from './model.mts'
-import type { CaseResult, Version, Scenario, Rate } from './model.mts'
+import { type CaseResult, type Version, type Scenario, type Rate } from './model.mts'
 import { runCase } from './cases.mts'
 
 const [version, scenario, rate, mode] = process.argv.slice(2)

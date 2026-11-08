@@ -8,14 +8,14 @@
 
 | 項目 | 修復與契約 | 來源／正式案例 |
 | --- | --- | --- |
-| CR-01 | 原樣通行與選中的原線分離；返回原線解析 Vault 精確 handle，檢查當前身分、政策及禁止規則；同主機 DASH 保留當次查詢字串 | [routing](../../../src-v2/domain/routing.ts)、[RouteCoordinator](../../../src-v2/application/route-coordinator.ts)、[cr-routing](../../../tests-v2/regressions/functional-races/cr-routing.ts) |
+| CR-01 | 原樣通行與選中的原線分離；返回原線解析 Vault 精確 handle，檢查當前身分、政策及禁止規則；同主機 DASH 保留當次查詢字串 | [routing](../../../src-v2/domain/routing.ts)、[RouteCoordinator](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts)、[cr-routing](../../../tests-v2/regressions/functional-races/cr-routing.ts) |
 | CR-02 | MP4／FLV 正規化、去重及限額後比較 URL 集合；換序及同集合 primary 變更保留身分與 handle，更新標準來源／順序；真換簽名仍撤銷 | [Vault](../../../src-v2/state/signed-route-vault.ts)、[cr-routing](../../../tests-v2/regressions/functional-races/cr-routing.ts) |
-| CR-03 | 第一個合法起播窗口開始即消耗分頁預算；後來等待者先加入 pending；reset 不恢復預算，沒有合法候選不消耗 | [MeasurementController](../../../src-v2/application/measurement-controller.ts)、[cr-startup](../../../tests-v2/regressions/functional-races/cr-startup.ts) |
-| CR-04 | planning／running 由各輪所有權在 finally 釋放；probe／鎖／寫入拒絕以固定原因收束，冷卻後可再量測；舊完成／拒絕不清除新工作 | [MeasurementController](../../../src-v2/application/measurement-controller.ts)、[errors](../../../tests-v2/regressions/functional-races/cr-measurement-errors.ts)、[lifecycle](../../../tests-v2/regressions/functional-races/cr-measurement-lifecycle.ts) |
+| CR-03 | 第一個合法起播窗口開始即消耗分頁預算；後來等待者先加入 pending；reset 不恢復預算，沒有合法候選不消耗 | [MeasurementController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts)、[cr-startup](../../../tests-v2/regressions/functional-races/cr-startup.ts) |
+| CR-04 | planning／running 由各輪所有權在 finally 釋放；probe／鎖／寫入拒絕以固定原因收束，冷卻後可再量測；舊完成／拒絕不清除新工作 | [MeasurementController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts)、[errors](../../../tests-v2/regressions/functional-races/cr-measurement-errors.ts)、[lifecycle](../../../tests-v2/regressions/functional-races/cr-measurement-lifecycle.ts) |
 | CR-04 儲存對照 | set 成功後才發布記憶體 payload；失敗不得留下成功樣本，也不算 CDN 失敗 | [EvidenceStore](../../../src-v2/state/evidence-store.ts)、[lifecycle](../../../tests-v2/regressions/functional-races/cr-measurement-lifecycle.ts) |
 | CR-05 | 只有首次有效回應建立進度基準；額外同身分／路線成功不撤回已確認進度或首次 playbackAt，也不延長觀察期限 | [recorder](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/src-v2/diagnostics/recorder.ts)、[cr-diagnostics](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/tests-v2/regressions/functional-races/cr-diagnostics.ts) |
-| S-01 | header 在公開入口依 ByteString 轉換一次，原生接受後才存字串；內部 reopen 不再次呼叫原物件，重入後選擇正確 metadata | [XHR](../../../src-v2/adapters/xhr-hook.ts)、[cr-xhr-headers](../../../tests-v2/regressions/functional-races/cr-xhr-headers.ts) |
-| S-03 | 字串分支 body 在變更 phase 前完成 USVString 轉換；失敗後仍可更正送出。平台品牌檢查保留跨 realm 原生 body；轉換內 open／abort 以當前所有者處理 | [XHR](../../../src-v2/adapters/xhr-hook.ts)、[cr-xhr-send-conversion](../../../tests-v2/regressions/functional-races/cr-xhr-send-conversion.ts) |
+| S-01 | header 在公開入口依 ByteString 轉換一次，原生接受後才存字串；內部 reopen 不再次呼叫原物件，重入後選擇正確 metadata | [XHR](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts)、[cr-xhr-headers](../../../tests-v2/regressions/functional-races/cr-xhr-headers.ts) |
+| S-03 | 字串分支 body 在變更 phase 前完成 USVString 轉換；失敗後仍可更正送出。平台品牌檢查保留跨 realm 原生 body；轉換內 open／abort 以當前所有者處理 | [XHR](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts)、[cr-xhr-send-conversion](../../../tests-v2/regressions/functional-races/cr-xhr-send-conversion.ts) |
 
 全部正式新增案例由既有套件匯入，不依賴 `.work`。原 12 案及正常對照先移植，再修改執行期；未修失敗不算通過。
 

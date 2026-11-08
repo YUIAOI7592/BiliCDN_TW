@@ -1,6 +1,6 @@
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
-import { PlayerAdapter } from '../../../src-v2/adapters/player.ts'
+import { PlayerAdapter } from '../../../src-v2/adapters/player/player.ts'
 import { testScope } from '../../support/scope.ts'
 import { FakeClock } from '../../support/clock.ts'
 

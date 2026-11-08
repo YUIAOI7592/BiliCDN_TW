@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { SignedRouteVault } from '../../src-v2/state/signed-route-vault.ts'
 import { generationId, epochId } from '../../src-v2/domain/model.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
-import { PlayurlAdapter } from '../../src-v2/adapters/playurl.ts'
+import { PlayurlAdapter } from '../../src-v2/adapters/playurl/playurl.ts'
 import { fixture } from './functional-races/routing-fixture.ts'
 import { testScope } from '../support/scope.ts'
 

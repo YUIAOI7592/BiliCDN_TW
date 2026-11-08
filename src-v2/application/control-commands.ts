@@ -1,14 +1,12 @@
-import type { SettingsState } from '../state/settings-contracts.ts'
-
-import type {
-  ControlCommandPort,
-  ControlSettingsPort,
-  ControlRestrictionsPort,
-  ControlEvidencePort,
-  ControlMetaPort,
-  ControlRoutesPort,
+import { type SettingsState, type SettingsChange } from '../state/settings-contracts.ts'
+import {
+  type ControlCommandPort,
+  type ControlSettingsPort,
+  type ControlRestrictionsPort,
+  type ControlEvidencePort,
+  type ControlMetaPort,
+  type ControlRoutesPort,
 } from './control-ports.ts'
-import type { SettingsChange } from '../state/settings-contracts.ts'
 export class ControlCommands implements ControlCommandPort {
   constructor(
     private readonly settings: ControlSettingsPort,

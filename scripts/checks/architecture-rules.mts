@@ -31,6 +31,20 @@ const layers: Record<string, readonly string[]> = {
   adapters: ['adapters', 'application', 'state', 'domain', 'platform'],
   ui: ['ui', 'application', 'state', 'domain', 'platform'],
 }
+// Feature groups expose owners and shared contracts, never private implementation helpers.
+const featureBoundaries = [
+  {
+    prefix: 'application/routing/',
+    publicFiles: [
+      'route-coordinator.ts',
+      'route-contracts.ts',
+      'early-retry-controller.ts',
+      'early-retry-contracts.ts',
+    ],
+  },
+  { prefix: 'adapters/player/', publicFiles: ['player.ts'] },
+  { prefix: 'adapters/transport/', publicFiles: ['transport.ts', 'range-probe.ts'] },
+] as const
 const browserGlobals = new Set([
   'globalThis',
   'self',
@@ -92,6 +106,15 @@ export function inspectModule(source: SourceFile, root: string): ModuleInspectio
       targetPath = modulePath(root, target),
       toLayer = targetPath.split('/')[0]
     dependencies.push(target)
+    for (const feature of featureBoundaries)
+      if (
+        targetPath.startsWith(feature.prefix) &&
+        !path.startsWith(feature.prefix) &&
+        !(feature.publicFiles as readonly string[]).includes(
+          targetPath.slice(feature.prefix.length),
+        )
+      )
+        violations.push(`${file}: feature-private implementation ${targetPath}`)
     if (!entry && !layers[layer]?.includes(toLayer!))
       violations.push(`${file}: ${layer} -> ${toLayer}`)
     if (isContractModule(path) && toLayer !== 'domain' && !isContractModule(targetPath))
@@ -112,12 +135,12 @@ export function inspectModule(source: SourceFile, root: string): ModuleInspectio
       addImport(node.arguments[0], true)
     if (isCallExpression(node) && isPropertyAccessExpression(node.expression)) {
       const method = nameOf(node.expression.name)
-      if (method === 'setAffinity' && path !== 'application/route-coordinator.ts')
+      if (method === 'setAffinity' && path !== 'application/routing/route-coordinator.ts')
         violations.push(`${file}: only RouteCoordinator may change affinity`)
       if (
         layer === 'application' &&
         method === 'reload' &&
-        path !== 'application/recovery-controller.ts'
+        path !== 'application/playback/recovery-controller.ts'
       )
         violations.push(`${file}: only RecoveryController may reload the player`)
       const receiver = node.expression.expression
@@ -127,7 +150,7 @@ export function inspectModule(source: SourceFile, root: string): ModuleInspectio
       if (
         method === 'read' &&
         receiverName === 'probe' &&
-        path !== 'application/measurement-controller.ts'
+        path !== 'application/measurement/measurement-controller.ts'
       )
         violations.push(`${file}: only MeasurementController may start active probes`)
       if (

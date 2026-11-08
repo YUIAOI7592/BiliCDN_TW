@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { RangeProbeAdapter } from '../../src-v2/adapters/range-probe.ts'
+import { RangeProbeAdapter } from '../../src-v2/adapters/transport/range-probe.ts'
 import { testScope } from '../support/scope.ts'
-import { PlayerAdapter } from '../../src-v2/adapters/player.ts'
+import { PlayerAdapter } from '../../src-v2/adapters/player/player.ts'
 import { playurlResult } from '../support/playurl.ts'
 import { measuredPayload, measuredTiming } from '../../src-v2/domain/measurement-time.ts'
 

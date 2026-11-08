@@ -5,23 +5,22 @@ import {
   MAX_EVIDENCE_SAMPLES,
   sampleTiming,
 } from '../domain/evidence.ts'
-import type {
-  EvidenceSample,
-  MediaKind,
-  RouteEvidence,
-  CircuitControlStamp,
-  CircuitRecordControl,
-} from '../domain/model.ts'
-import type { StoragePort } from '../platform/storage-port.ts'
-import type {
-  EvidencePort,
-  EvidenceCommitResult,
-  CurrentCircuitControlReader,
+import {
+  type EvidenceSample,
+  type RouteEvidence,
+  type CircuitControlStamp,
+  type CircuitRecordControl,
+} from '../domain/evidence-model.ts'
+import { type MediaKind } from '../domain/model.ts'
+import { type StoragePort } from '../platform/storage-port.ts'
+import {
+  type EvidencePort,
+  type EvidenceCommitResult,
+  type CurrentCircuitControlReader,
 } from './evidence-ports.ts'
 import { timingBasis } from '../domain/measurement-time.ts'
 import { sameCircuitStamp } from '../domain/circuit-policy.ts'
-import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
-
+import { type RuntimeIdPort } from '../platform/runtime-id-port.ts'
 export const EVIDENCE_KEY = 'bilicdn.v2.routeEvidence'
 const MAX_VIDEO_HOSTS = 64
 const MAX_AUDIO_HOSTS = 32

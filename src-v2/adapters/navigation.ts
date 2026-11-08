@@ -1,5 +1,4 @@
-import type { NavigationPort } from '../application/ports.ts'
-
+import { type NavigationPort } from '../application/lifecycle-contracts.ts'
 function navigationKey(pathname: string, search: string): string {
   if (!/^\/(?:video\/[^/]+|bangumi\/play\/[^/]+)\/?$/.test(pathname)) return pathname + search
   const path = pathname.replace(/\/$/, '')

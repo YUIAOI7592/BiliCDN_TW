@@ -1,6 +1,5 @@
 import { predictCompletionMs } from './route-completion.ts'
 import { EARLY_RETRY_HEADROOM } from './route-capacity.ts'
-
 export interface EarlyRetryCapacity {
   readonly safePayloadMbps?: number | null
   readonly host: string

@@ -14,7 +14,7 @@ import {
   validCaseResult,
   audioPassesDuringHold,
 } from '../../scripts/evaluation/upstream-compare/model.mts'
-import type { Observation } from '../../scripts/evaluation/upstream-compare/model.mts'
+import { type Observation } from '../../scripts/evaluation/upstream-compare/model.mts'
 import {
   ComparisonPage,
   PageEvent,

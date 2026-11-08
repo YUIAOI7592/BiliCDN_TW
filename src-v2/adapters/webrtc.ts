@@ -1,5 +1,4 @@
-import type { SettingsReader, SettingsObserver } from '../state/settings-contracts.ts'
-
+import { type SettingsReader, type SettingsObserver } from '../state/settings-contracts.ts'
 const API_NAMES = [
   'RTCPeerConnection',
   'mozRTCPeerConnection',

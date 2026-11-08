@@ -8,18 +8,19 @@ import {
   type EpochId,
   type GenerationId,
   type RepresentationId,
-  type RouteIdentity,
   type SignedRouteHandle,
   type DecisionId,
+  type MediaKind,
 } from '../domain/model.ts'
-import type {
-  OutputRole,
-  RegisterRepresentationInput,
-  VaultCandidates,
-  VaultGroupSnapshot,
-  VaultMatch,
+import { type RouteIdentity } from '../domain/route-model.ts'
+import {
+  type OutputRole,
+  type RegisterRepresentationInput,
+  type VaultCandidates,
+  type VaultGroupSnapshot,
+  type VaultMatch,
+  type SignedRouteVaultPort,
 } from './vault-contracts.ts'
-import type { SignedRouteVaultPort } from './vault-contracts.ts'
 const MAX_VIDEO_GROUPS = 128
 const MAX_AUDIO_GROUPS = 64
 const MAX_URLS_PER_GROUP = MAX_EXACT_SOURCES
@@ -479,4 +480,3 @@ export class SignedRouteVault implements SignedRouteVaultPort {
       : null
   }
 }
-import type { MediaKind } from '../domain/model.ts'

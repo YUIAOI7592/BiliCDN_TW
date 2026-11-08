@@ -7,14 +7,13 @@ import {
   CIRCUIT_PENDING_LIMIT,
   type CircuitWindow,
 } from '../../domain/circuit-policy.ts'
-import type {
-  CircuitControlStamp,
-  MediaKind,
-  RequestContext,
-  CircuitObservationSnapshot,
-} from '../../domain/model.ts'
-import type { CircuitControlRead, EvidenceCommitResult } from '../../state/evidence-ports.ts'
-
+import {
+  type CircuitControlStamp,
+  type CircuitObservationSnapshot,
+} from '../../domain/evidence-model.ts'
+import { type MediaKind } from '../../domain/model.ts'
+import { type RequestContext } from '../../domain/transport-model.ts'
+import { type CircuitControlRead, type EvidenceCommitResult } from '../../state/evidence-ports.ts'
 interface LocalObservation {
   request: RequestContext
   readonly host: string

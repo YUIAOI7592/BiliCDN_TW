@@ -3,12 +3,12 @@ import assert from 'node:assert/strict'
 import { fixture, media } from './functional-races/routing-fixture.ts'
 import { testScope } from '../support/scope.ts'
 import { installProgressEvent } from '../support/progress-event.ts'
+import { requestId } from '../../src-v2/domain/model.ts'
 import {
-  requestId,
   type RequestContext,
   type TransportObservation,
-} from '../../src-v2/domain/model.ts'
-import { TransportAdapter } from '../../src-v2/adapters/transport.ts'
+} from '../../src-v2/domain/transport-model.ts'
+import { TransportAdapter } from '../../src-v2/adapters/transport/transport.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 const first = 'upos-sz-mirroraliov.bilivideo.com'
 const alternative = 'upos-sz-mirrorbos.bilivideo.com'

@@ -1,6 +1,6 @@
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
-import { PlayerControlObserver } from '../../../src-v2/adapters/player-controls.ts'
+import { PlayerControlObserver } from '../../../src-v2/adapters/player/player-controls.ts'
 import { VisibilityAdapter } from '../../../src-v2/adapters/visibility.ts'
 import { rescueDomFixture } from '../../support/rescue-dom.ts'
 

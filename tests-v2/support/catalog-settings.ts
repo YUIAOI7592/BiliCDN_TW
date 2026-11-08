@@ -1,5 +1,5 @@
 import { SettingsStore, defaultSettings, SETTINGS_KEY } from '../../src-v2/state/settings-store.ts'
-import type { FakeStorage } from './storage.ts'
+import { type FakeStorage } from './storage.ts'
 
 /** Explicit Catalog-only prerequisite; production default coverage uses SettingsStore directly. */
 export class CatalogSettingsStore extends SettingsStore {

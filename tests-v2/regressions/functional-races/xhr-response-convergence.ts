@@ -1,17 +1,17 @@
 import { requestDispatch } from '../../support/request-dispatch.ts'
 import assert from 'node:assert/strict'
 import { test, type TestContext } from 'node:test'
-import { XhrHookAdapter } from '../../../src-v2/adapters/xhr-hook.ts'
-import { TransportContext } from '../../../src-v2/adapters/transport-context.ts'
-import type {
-  StartupGate,
-  TransportRoutes,
-  TransportSettings,
-} from '../../../src-v2/adapters/transport-ports.ts'
-import type { PlayurlPort } from '../../../src-v2/application/ports.ts'
-import type {
-  PlayurlRequestContext,
-  PlayurlTransformResult,
+import { XhrHookAdapter } from '../../../src-v2/adapters/transport/xhr-hook.ts'
+import { TransportContext } from '../../../src-v2/adapters/transport/transport-context.ts'
+import {
+  type StartupGate,
+  type TransportRoutes,
+  type TransportSettings,
+} from '../../../src-v2/adapters/transport/transport-ports.ts'
+import { type PlayurlPort } from '../../../src-v2/application/playurl/playurl-contracts.ts'
+import {
+  type PlayurlRequestContext,
+  type PlayurlTransformResult,
 } from '../../../src-v2/domain/playurl-model.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
 import { SessionStore } from '../../../src-v2/state/session-store.ts'

@@ -2,13 +2,13 @@ import { CatalogSettingsStore } from '../support/catalog-settings.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { evaluateEarlyRetry } from '../../src-v2/domain/early-retry.ts'
-import { EarlyRetryController } from '../../src-v2/application/early-retry-controller.ts'
-import type {
-  EarlyRetryActionState,
-  EarlyRetryAlternative,
-  EarlyRetryStatus,
-  InFlightVideoSample,
-} from '../../src-v2/application/early-retry-contracts.ts'
+import { EarlyRetryController } from '../../src-v2/application/routing/early-retry-controller.ts'
+import {
+  type EarlyRetryActionState,
+  type EarlyRetryAlternative,
+  type EarlyRetryStatus,
+  type InFlightVideoSample,
+} from '../../src-v2/application/routing/early-retry-contracts.ts'
 import {
   generationId,
   epochId,

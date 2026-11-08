@@ -7,8 +7,8 @@ import { fixture, media, dash } from './functional-races/routing-fixture.ts'
 import { SettingsStore, SETTINGS_KEY } from '../../src-v2/state/settings-store.ts'
 import { DEFAULT_UNAVAILABLE_HOSTS } from '../../src-v2/domain/catalog.ts'
 import { ControlCommands } from '../../src-v2/application/control-commands.ts'
-import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
-import { RouteCoordinator } from '../../src-v2/application/route-coordinator.ts'
+import { MeasurementController } from '../../src-v2/application/measurement/measurement-controller.ts'
+import { RouteCoordinator } from '../../src-v2/application/routing/route-coordinator.ts'
 const flags = [
   'startupEarlyReleaseEnabled',
   'healthMiddleRangeEnabled',

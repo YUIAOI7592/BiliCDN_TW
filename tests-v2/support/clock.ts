@@ -1,4 +1,4 @@
-import type { SchedulerPort } from '../../src-v2/application/ports.ts'
+import { type SchedulerPort } from '../../src-v2/application/scheduler-contracts.ts'
 
 export class FakeClock implements SchedulerPort {
   #now = 2_000_000_000_000

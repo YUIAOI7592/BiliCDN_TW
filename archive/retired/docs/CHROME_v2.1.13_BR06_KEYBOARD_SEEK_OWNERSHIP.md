@@ -31,9 +31,9 @@
 
 ## 根因與可達入口
 
-1. [player.ts:63–75](../../../src-v2/adapters/player.ts) 的 keydown 監聽要求 `region.contains(event.target)`。BODY 不屬播放器區域，所以第 73 行提早 return，沒有增加 userRevision。事件可信且屬支援的 ArrowRight 仍被排除。
-2. 網站的頁面鍵盤處理實際尋位；[player.ts:76–100](../../../src-v2/adapters/player.ts) 的媒體觀察／site.seek 包裝只更新 seekRevision 與 targetSec，不能補上缺失的使用者身分。
-3. [player-monitor.ts:163–180](../../../src-v2/application/player-monitor.ts) 只在 userRevision／mediaId 改變時結束舊段。單獨 seekRevision 改變走 rebound 分支：撤銷舊 token、綁定最新目標，但保留 startedAt 及 fallbackAttempted。這對網站／Auto 自行調整是正確設計，對被錯分的使用者快捷鍵則導致提早救援。
+1. [player.ts:63–75](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts) 的 keydown 監聽要求 `region.contains(event.target)`。BODY 不屬播放器區域，所以第 73 行提早 return，沒有增加 userRevision。事件可信且屬支援的 ArrowRight 仍被排除。
+2. 網站的頁面鍵盤處理實際尋位；[player.ts:76–100](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts) 的媒體觀察／site.seek 包裝只更新 seekRevision 與 targetSec，不能補上缺失的使用者身分。
+3. [player-monitor.ts:163–180](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts) 只在 userRevision／mediaId 改變時結束舊段。單獨 seekRevision 改變走 rebound 分支：撤銷舊 token、綁定最新目標，但保留 startedAt 及 fallbackAttempted。這對網站／Auto 自行調整是正確設計，對被錯分的使用者快捷鍵則導致提早救援。
 
 可達入口就是網站支援的 BODY／頁面焦點方向鍵 seek；不依賴修改設定或不合法路線。本輪保留其他腳本的實際環境，沒有對網站快捷鍵的提供者作超出證據的歸因。
 

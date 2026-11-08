@@ -8,11 +8,11 @@ Auto 是主要場景，不強制畫質、不變更網站 ABR，正常降解析�
 
 | 項目 | 修復及精確入口 | 主要正式契約 |
 | --- | --- | --- |
-| A：seeking 無限寬限 | [PlayerMonitor](../../../src-v2/application/player-monitor.ts#L163) 單一停滯段；網站 retry／Auto 改表示重綁最新 video 請求但保留起點及額度 | br01.ts 的 A、exact 15/30/15 boundaries、website target adjustments、dragging and hidden |
-| B：初始化核心無限意圖 | [RecoveryController](../../../src-v2/application/recovery-controller.ts#L165) 普通活核心等待也有 30 秒上限，重載後 15 秒終止並釋放 token | B、reload rejection、missing legal authority、no retry after terminal failure |
-| C：寬高誤標恢復 | [RecoveryController](../../../src-v2/application/recovery-controller.ts#L104) 分離核心存在與實際進度，兩次連續有效採樣才 recovered | C、two genuine progressing samples、time jump without new frames |
-| 操作／核心所有權 | [PlayerAdapter](../../../src-v2/adapters/player.ts#L34) 數字身分／修訂，內部 seek／reload 標記；[RecoveryController](../../../src-v2/application/recovery-controller.ts#L248) 每個副作用及非同步提交重查 | user seek 到 0、rate command、同步 reset／新操作、外部／自有核心替換、late play rejection |
-| 路線／影音隔離 | [RouteCoordinator](../../../src-v2/application/route-coordinator.ts#L185) 唯讀資格；[Runtime](../../../src-v2/application/runtime-controller.ts#L52) 僅 video 備援建立核心意圖；[entry](../../../src-v2/entry.ts#L47) 注入真可見性／資格 | policy revocation、既有 R01／R04／BR-03 orchestration |
+| A：seeking 無限寬限 | [PlayerMonitor](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L163) 單一停滯段；網站 retry／Auto 改表示重綁最新 video 請求但保留起點及額度 | br01.ts 的 A、exact 15/30/15 boundaries、website target adjustments、dragging and hidden |
+| B：初始化核心無限意圖 | [RecoveryController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L165) 普通活核心等待也有 30 秒上限，重載後 15 秒終止並釋放 token | B、reload rejection、missing legal authority、no retry after terminal failure |
+| C：寬高誤標恢復 | [RecoveryController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L104) 分離核心存在與實際進度，兩次連續有效採樣才 recovered | C、two genuine progressing samples、time jump without new frames |
+| 操作／核心所有權 | [PlayerAdapter](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L34) 數字身分／修訂，內部 seek／reload 標記；[RecoveryController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L248) 每個副作用及非同步提交重查 | user seek 到 0、rate command、同步 reset／新操作、外部／自有核心替換、late play rejection |
+| 路線／影音隔離 | [RouteCoordinator](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts#L185) 唯讀資格；[Runtime](../../../src-v2/application/runtime-controller.ts#L52) 僅 video 備援建立核心意圖；[entry](../../../src-v2/entry.ts#L47) 注入真可見性／資格 | policy revocation、既有 R01／R04／BR-03 orchestration |
 
 有效進度需非 seeking／paused／ended／mediaError、影片時間前進大於 0.05 秒，可取得影格數時還須有新影格。首次採樣、seek 位置跳躍、緩衝／尺寸不算。第一個有效進度停止救援時鐘，RecoveryController 留有界確認窗口等第二次；不在 play 呼叫後直接宣告成功。
 

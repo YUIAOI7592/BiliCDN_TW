@@ -41,7 +41,7 @@ P2 表示具體條件下功能不符合契約，P3 表示診斷呈現錯誤。�
 
 事件順序為：播放器請求 B → B 發生可歸因 network failure → circuit 阻擋 B → recover 選定仍合法的 A → 播放器重試 B → 腳本把 A 的計畫實體化為 B → 最後限制檢查回傳 `url=null`。已規劃的恢復路線因此無法生效，可能持續卡住，是否恢復取決於網站是否自行改請 A。
 
-根因在 [routing.ts](../../../src-v2/domain/routing.ts) 第 105～106 行：root candidate 使用 `action: 'pass'`；[route-coordinator.ts](../../../src-v2/application/route-coordinator.ts) 第 884～888 行對 pass 一律返回呼叫者的 URL。此 URL 在重試入口是 B，不一定是 Vault 的 A。第 363～375 行已記錄 A 的 fallback，第 477～485 行卻核對錯誤的 B 並阻擋。
+根因在 [routing.ts](../../../src-v2/domain/routing.ts) 第 105～106 行：root candidate 使用 `action: 'pass'`；[route-coordinator.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts) 第 884～888 行對 pass 一律返回呼叫者的 URL。此 URL 在重試入口是 B，不一定是 Vault 的 A。第 363～375 行已記錄 A 的 fallback，第 477～485 行卻核對錯誤的 B 並阻擋。
 
 既有契約要求合法選路計畫由後續請求實際套用，Native 必須使用目前 Vault 的精確 URL。禁止規則仍有效，這是決策與實際目標失配，**不是已證實的禁止繞過**。
 
@@ -58,7 +58,7 @@ P2 表示具體條件下功能不符合契約，P3 表示診斷呈現錯誤。�
 
 第一份回應建立 revision 1 與在途傳輸；第二份只換序，Vault 卻建立 revision 2；原傳輸正常完成後被 authority 檢查丟棄。實際健康樣本 0，預期 1。這也使仍屬舊身分的工作失去提交資格；沒有證明自然網站發生的頻率。
 
-[signed-route-vault.ts](../../../src-v2/state/signed-route-vault.ts) 第 87～91 行逐索引比較 URL，將集合等價誤判為順序等價；第 97～100 行撤銷 handles，第 124～127 行旋轉身分。[route-coordinator.ts](../../../src-v2/application/route-coordinator.ts) 第 721～725 行拒絕舊身分是必要保護，問題在上游過早撤銷。[playurl-controller.ts](../../../src-v2/application/playurl-controller.ts) 第 119～122 行的 progressive 刷新讓 MP4／FLV 共享此路徑；**執行重現是 MP4，FLV 是同分支靜態推論**。
+[signed-route-vault.ts](../../../src-v2/state/signed-route-vault.ts) 第 87～91 行逐索引比較 URL，將集合等價誤判為順序等價；第 97～100 行撤銷 handles，第 124～127 行旋轉身分。[route-coordinator.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts) 第 721～725 行拒絕舊身分是必要保護，問題在上游過早撤銷。[playurl-controller.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/playurl-controller.ts) 第 119～122 行的 progressive 刷新讓 MP4／FLV 共享此路徑；**執行重現是 MP4，FLV 是同分支靜態推論**。
 
 [PROJECT_CONTEXT](../../../docs/PROJECT_CONTEXT.md) 第 78 行及 [ARCHITECTURE](../../../docs/ARCHITECTURE.md) 第 64 行已明定相同正規化集合不無故輪替。
 
@@ -74,7 +74,7 @@ P2 表示具體條件下功能不符合契約，P3 表示診斷呈現錯誤。�
 
 真正 PlayurlController 通知 Runtime reset，舊 3 個 probe 全部 abort；新內容媒體請求再次 prepareStartup，累計 probe 數變成 6。反覆在未完成窗口切換可重開預算，也再次讓後續媒體請求等待。這不表示一個窗口同時超過 3 個候選。
 
-[measurement-controller.ts](../../../src-v2/application/measurement-controller.ts) 第 74～78 行 reset 清空 pending 並撤銷 marker；第 149 行讓舊工作退出；但 `#startupUsed` 第 162 行才在完成時設置，第 93～105 行因而允許新窗口。Runtime 的同步取消本身正確，錯在「已開始」沒有保留分頁預算。
+[measurement-controller.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts) 第 74～78 行 reset 清空 pending 並撤銷 marker；第 149 行讓舊工作退出；但 `#startupUsed` 第 162 行才在完成時設置，第 93～105 行因而允許新窗口。Runtime 的同步取消本身正確，錯在「已開始」沒有保留分頁預算。
 
 [PROJECT_CONTEXT](../../../docs/PROJECT_CONTEXT.md) 第 26、71 行與 [ARCHITECTURE](../../../docs/ARCHITECTURE.md) 第 83、99 行明定每分頁一次，換片不重開。
 
@@ -90,7 +90,7 @@ P2 表示具體條件下功能不符合契約，P3 表示診斷呈現錯誤。�
 
 probe 完成 → RouteCoordinator.recordChallenge → EvidenceStore.record 的 set 拋錯 → runCandidate 拒絕 → runRound 跳過末尾清理 → tick 的 fire-and-forget Promise 產生未處理拒絕。儲存恢復且冷卻超過 10 分鐘，下一個合資格 tick 仍被留下的 running 阻擋，手動 request 也不能啟動新輪次。
 
-[measurement-controller.ts](../../../src-v2/application/measurement-controller.ts) 第 196 行未接拒絕；第 234 行 finally 只清 planning；第 253、280 行 await 拒絕跳過第 261 行 running 清理。外部可達鏈為 [storage.ts](../../../src-v2/platform/storage.ts) 第 14～16 行、[evidence-store.ts](../../../src-v2/state/evidence-store.ts) 第 106 行、[route-coordinator.ts](../../../src-v2/application/route-coordinator.ts) 第 713 行。
+[measurement-controller.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts) 第 196 行未接拒絕；第 234 行 finally 只清 planning；第 253、280 行 await 拒絕跳過第 261 行 running 清理。外部可達鏈為 [storage.ts](../../../src-v2/platform/storage.ts) 第 14～16 行、[evidence-store.ts](../../../src-v2/state/evidence-store.ts) 第 106 行、[route-coordinator.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts) 第 713 行。
 
 - 正確契約失敗：`unhandled=1`、狀態 running、探測累計 1→1。
 - 正常儲存對照：`unhandled=0`、狀態 complete，下一輪累計 3→6。
@@ -106,7 +106,7 @@ probe 完成 → RouteCoordinator.recordChallenge → EvidenceStore.record 的 s
 
 案例在第 28、29 秒取得進度並成為 `playback-observed`；29.5 秒第二筆成功到達，狀態退回 `response-observed`；30 秒变成 `unconfirmed`，但 `playbackAt` 仍保留第 29 秒。UI 因而顯示「30 秒內未取得足夠證據」，與已取得證據矛盾。這是診斷錯誤，不直接改路線或重載播放器。
 
-[recorder.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/src-v2/diagnostics/recorder.ts) 第 305～306 行無條件降級並清除 progressTicks，第 75 行到期轉 unconfirmed；第 84 行 attempt 觀察發生在第 93 行 route-confirmed 去重之前，所以去重無效。[route-coordinator.ts](../../../src-v2/application/route-coordinator.ts) 第 763～791 行讓每筆合法成功分段都能到達此入口。
+[recorder.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/6df9edacf8afa83ef4608fa0496d8d2e0ecf7cbb/src-v2/diagnostics/recorder.ts) 第 305～306 行無條件降級並清除 progressTicks，第 75 行到期轉 unconfirmed；第 84 行 attempt 觀察發生在第 93 行 route-confirmed 去重之前，所以去重無效。[route-coordinator.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts) 第 763～791 行讓每筆合法成功分段都能到達此入口。
 
 - 正確契約：後續同路線成功不應撤銷未失效的已確認進度；實際 unconfirmed。
 - 正常對照：同樣第 28／29 秒進度但沒有額外回應，30 秒仍 playback-observed。

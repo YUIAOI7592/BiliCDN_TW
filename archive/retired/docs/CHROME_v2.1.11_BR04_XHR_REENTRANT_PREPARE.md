@@ -38,7 +38,7 @@ BR-02 已選定「failed open 保留舊等待請求的所有權及後續終止�
 
 ## 精確根因
 
-來源為 [xhr-hook.ts](../../../src-v2/adapters/xhr-hook.ts)：
+來源為 [xhr-hook.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts)：
 
 - **第 112 行**：failed open 還原舊 waiting metadata；原生 UNSENT 時設定 `needsNativeOpen=true`。
 - **第 128–135 行**：內部 `reopen()` 呼叫原生 open，同步事件返回後只以 `waiting(this, meta)` 檢查 metadata 身分及 phase，沒有確認原生仍可送出；之後將 `needsNativeOpen=false`，覆蓋回呼中第二次失敗所設的 true。

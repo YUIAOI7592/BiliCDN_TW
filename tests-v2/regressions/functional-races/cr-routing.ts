@@ -2,7 +2,8 @@ import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { fixture, media, dash, progressive } from './routing-fixture.ts'
 import { testScope } from '../../support/scope.ts'
-import { requestId, type TransportObservation } from '../../../src-v2/domain/model.ts'
+import { requestId } from '../../../src-v2/domain/model.ts'
+import { type TransportObservation } from '../../../src-v2/domain/transport-model.ts'
 
 async function failedNativeBackup(t: TestContext) {
   const f = fixture(testScope(t))

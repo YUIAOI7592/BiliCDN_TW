@@ -12,7 +12,7 @@ import {
   parseComparisonArgs,
   validCaseResult,
 } from './upstream-compare/model.mts'
-import type { CaseResult } from './upstream-compare/model.mts'
+import { type CaseResult } from './upstream-compare/model.mts'
 
 export async function compareUpstream(calibrationOnly = false) {
   for (const input of inputs) loadInput(input.version)

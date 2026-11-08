@@ -12,7 +12,7 @@
 
 ## 根因、契約與修正
 
-[PlayerAdapter.currentTime](../../../src-v2/adapters/player.ts) 原先始終優先 getCurrentTime，僅在 SDK 非有限值時才回退原生快照。[RecoveryController.#begin](../../../src-v2/application/recovery-controller.ts) 對非 stall 意圖讀取此值，並依既有前後 controls／生命週期／資格檢查提交。所有權沒有改變，因此那些檢查不能識別同一 SDK 的過期快取。
+[PlayerAdapter.currentTime](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts) 原先始終優先 getCurrentTime，僅在 SDK 非有限值時才回退原生快照。[RecoveryController.#begin](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts) 對非 stall 意圖讀取此值，並依既有前後 controls／生命週期／資格檢查提交。所有權沒有改變，因此那些檢查不能識別同一 SDK 的過期快取。
 
 修正僅在目前媒體 readyState===0 且原生 currentTime 有限時，以該值保存新目標，**0 也有效**。其他狀態、非有限原生值或 native getter 拋錯仍走既有 SDK／snapshot 回退。該讀取只返回數字，不建立 userRevision、路線權限或新恢復政策。讀取前後的同步媒體／核心／操作／生命週期撤銷仍由 RecoveryController 負責。
 

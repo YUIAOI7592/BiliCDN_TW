@@ -1,5 +1,3 @@
-import type { ProbeRange } from './probe-model.ts'
-
 export function parseProbeRange(
   value: string,
   startByte: number,
@@ -40,4 +38,10 @@ export function probeStartByte(totalBytes: number | null, limit: number, draw: n
     return 0
   const slots = Math.floor((totalBytes - limit - minimum) / alignment) + 1
   return minimum + Math.floor(draw * slots) * alignment
+}
+
+export interface ProbeRange {
+  readonly startByte: number
+  readonly endByte: number
+  readonly totalBytes: number
 }

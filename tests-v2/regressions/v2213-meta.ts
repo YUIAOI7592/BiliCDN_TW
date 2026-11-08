@@ -9,7 +9,7 @@ import { SharedEvidenceStorage } from '../support/shared-evidence-storage.ts'
 import { FakeStorage } from '../support/storage.ts'
 import { EvidenceStore, EVIDENCE_KEY } from '../../src-v2/state/evidence-store.ts'
 import { testScope } from '../support/scope.ts'
-import type { StoragePort } from '../../src-v2/platform/storage-port.ts'
+import { type StoragePort } from '../../src-v2/platform/storage-port.ts'
 
 const now = 2_000_000_000_000
 const claim = (revision = 1) => ({

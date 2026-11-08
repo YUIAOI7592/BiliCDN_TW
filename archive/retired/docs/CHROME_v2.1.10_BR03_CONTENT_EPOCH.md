@@ -28,7 +28,7 @@
 
 | 位置 | 行為及影響 |
 | --- | --- |
-| [playurl-controller.ts](../../../src-v2/application/playurl-controller.ts)，78–90 行 | 只從 `dash.video[0] ?? dash.audio[0]` 的正規化 URL 父目錄產生 `contentKey`；第一項換目錄即認定換片 |
+| [playurl-controller.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/playurl-controller.ts)，78–90 行 | 只從 `dash.video[0] ?? dash.audio[0]` 的正規化 URL 父目錄產生 `contentKey`；第一項換目錄即認定換片 |
 | 同檔 81–88 行 | `beginEpoch()`、`vault.reset()`、`routes.resetEpoch()`，隨後同步通知內容週期訂閱者 |
 | [runtime-controller.ts](../../../src-v2/application/runtime-controller.ts)，30–33、60 行 | 收到通知即重設 monitor／measurement／recovery／player，並記錄 `content-epoch` |
 | [signed-route-vault.ts](../../../src-v2/state/signed-route-vault.ts)，56–61、135–138 行 | reset 清除索引並更新 epoch；`isCurrentIdentity` 要求 epoch 與物件身分均一致，舊 audio 因此失效 |

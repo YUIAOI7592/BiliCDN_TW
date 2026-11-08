@@ -1,5 +1,4 @@
-import type { SchedulerPort } from '../application/ports.ts'
-
+import { type SchedulerPort } from '../application/scheduler-contracts.ts'
 export class BrowserScheduler implements SchedulerPort {
   timeout(task: () => void, delayMs: number): () => void {
     const id = setTimeout(task, delayMs)

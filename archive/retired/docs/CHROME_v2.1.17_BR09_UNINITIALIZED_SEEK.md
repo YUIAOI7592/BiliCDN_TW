@@ -20,10 +20,10 @@ HTML 的 `currentTime` setter 在 `HAVE_NOTHING` 時保存預設起點，並不�
 
 ## 精確根因
 
-- [PlayerAdapter.controls](../../../src-v2/adapters/player.ts#L103) 第110–113行，只在 `video.seeking` 為真才採樣有限目標並增加 seekRevision，漏掉 HAVE_NOTHING 的直接目標變更。
-- [媒體及公開 seek 觀察](../../../src-v2/adapters/player.ts#L187) 第187–193、205–215行，另外依賴 seeking 事件及公開 SDK 包裝；內部直接寫入而沒有原生事件時，兩個入口也不會補上。
-- [RecoveryController 所有權](../../../src-v2/application/recovery-controller.ts#L283) 第283–288行，僅 seekRevision 已改變時才設 `restorePosition=false`。修訂漏變，舊保存位置保留。
-- [恢復副作用](../../../src-v2/application/recovery-controller.ts#L245) 第245–252行，合法核心就緒後依該旗標呼叫 PlayerAdapter.seek。既有 generation／epoch、授權、核心及使用者檢查均可成立，但沒有證明保存位置仍是最新目標。
+- [PlayerAdapter.controls](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L103) 第110–113行，只在 `video.seeking` 為真才採樣有限目標並增加 seekRevision，漏掉 HAVE_NOTHING 的直接目標變更。
+- [媒體及公開 seek 觀察](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L187) 第187–193、205–215行，另外依賴 seeking 事件及公開 SDK 包裝；內部直接寫入而沒有原生事件時，兩個入口也不會補上。
+- [RecoveryController 所有權](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L283) 第283–288行，僅 seekRevision 已改變時才設 `restorePosition=false`。修訂漏變，舊保存位置保留。
+- [恢復副作用](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L245) 第245–252行，合法核心就緒後依該旗標呼叫 PlayerAdapter.seek。既有 generation／epoch、授權、核心及使用者檢查均可成立，但沒有證明保存位置仍是最新目標。
 
 既有防護有效的入口沒有被推翻：公開SDK seek、一般原生seeking、可信新userRevision及可觀察外部核心替換仍會撤銷。缺口是「有新目標、但沒有上述修訂／事件」，不是要把所有網站變動猜成新使用者操作。
 

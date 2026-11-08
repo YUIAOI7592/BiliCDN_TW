@@ -1,10 +1,12 @@
-import type { SettingsChange, SettingsState } from '../state/settings-contracts.ts'
-import type { SettingsPort } from '../state/settings-contracts.ts'
-import type { RestrictionPort } from '../state/restriction-contracts.ts'
-import type { EvidencePort } from '../state/evidence-ports.ts'
-import type { MeasurementMetaPort } from '../state/measurement-meta-ports.ts'
-import type { RouteCoordinatorPort } from './route-contracts.ts'
-
+import {
+  type SettingsChange,
+  type SettingsState,
+  type SettingsPort,
+} from '../state/settings-contracts.ts'
+import { type RestrictionPort } from '../state/restriction-contracts.ts'
+import { type EvidencePort } from '../state/evidence-ports.ts'
+import { type MeasurementMetaPort } from '../state/measurement-meta-ports.ts'
+import { type RouteCoordinatorPort } from './routing/route-contracts.ts'
 export interface ControlCommandPort {
   updateSettings(change: SettingsChange): Promise<SettingsState>
   setCatalogEnabled(host: string, enabled: boolean): Promise<SettingsState>

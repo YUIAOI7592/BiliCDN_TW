@@ -3,8 +3,8 @@ import {
   type EpochId,
   type GenerationId,
   type RepresentationId,
-  type RouteAffinity,
 } from '../domain/model.ts'
+import { type RouteAffinity } from '../domain/route-model.ts'
 export interface SessionSnapshot {
   readonly generation: GenerationId
   readonly epoch: EpochId

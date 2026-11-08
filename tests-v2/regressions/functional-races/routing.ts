@@ -4,8 +4,9 @@ import { testScope } from '../../support/scope.ts'
 import { fixture, media, progressive, dash } from './routing-fixture.ts'
 import { deferred } from '../../support/deferred.ts'
 import { TRUSTED_CATALOG } from '../../../src-v2/domain/catalog.ts'
-import { requestId, type TransportObservation } from '../../../src-v2/domain/model.ts'
-import type { AppliedRouteDecision } from '../../../src-v2/application/route-contracts.ts'
+import { requestId } from '../../../src-v2/domain/model.ts'
+import { type TransportObservation } from '../../../src-v2/domain/transport-model.ts'
+import { type AppliedRouteDecision } from '../../../src-v2/application/routing/route-contracts.ts'
 import { FakeStorage } from '../../support/storage.ts'
 
 const success = (

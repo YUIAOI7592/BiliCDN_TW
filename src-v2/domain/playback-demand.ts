@@ -1,5 +1,5 @@
-import type { MediaKind, PlaybackDemand } from './model.ts'
-
+import { type RequestContext } from './transport-model.ts'
+import { type MediaKind } from './model.ts'
 const positive = (value: number | null | undefined): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value > 0
 
@@ -31,4 +31,27 @@ export function controlPlaybackDemand(
       positive(rate) ? rate : 2,
     ) ?? observedPlaybackDemand(kind, kind === 'audio' ? 192_000 : 4_000_000, 2)!
   )
+}
+
+export interface PlaybackDemand {
+  readonly kind: MediaKind
+  readonly requiredMbps: number
+  readonly highDemand: boolean
+}
+
+export interface RoutePlaybackFacts extends Pick<
+  RequestContext,
+  | 'generation'
+  | 'epoch'
+  | 'representation'
+  | 'authorityRevision'
+  | 'selectionRevision'
+  | 'routePolicyRevision'
+> {
+  readonly sampledTick: number
+  readonly playbackRate: number
+  readonly bufferAheadSec: number
+  readonly playbackRevision: number
+  readonly sampledAt: number
+  readonly playableBufferSec: number
 }

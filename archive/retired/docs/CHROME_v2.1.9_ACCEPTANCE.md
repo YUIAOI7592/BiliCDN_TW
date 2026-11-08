@@ -58,9 +58,9 @@
 
 靜態對照提供續查方向：
 
-- [PlayerMonitor](../../../src-v2/application/player-monitor.ts) 第 70、84 行：每次 seeking 都延後 grace，且清除 stallTicks。這能解釋持續 seeking 時 watchdog 不會進入 recovering，不能單獨證明造成最初停滯。
-- [RecoveryController](../../../src-v2/application/recovery-controller.ts) 第 65、70、79 行：seeking 期間不建立恢復動作，已有恢復會被中斷。
-- 事故快照為同一網址、generation 1／epoch 1、2160p HEVC；較早及乾淨對照為 epoch 0、AV1。[PlayurlController](../../../src-v2/application/playurl-controller.ts) 第 78–90 行以來源目錄推導內容變化；需要再確認這次世代內內容週期變動的輸入，不能直接斷定是錯誤 reset。
+- [PlayerMonitor](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts) 第 70、84 行：每次 seeking 都延後 grace，且清除 stallTicks。這能解釋持續 seeking 時 watchdog 不會進入 recovering，不能單獨證明造成最初停滯。
+- [RecoveryController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts) 第 65、70、79 行：seeking 期間不建立恢復動作，已有恢復會被中斷。
+- 事故快照為同一網址、generation 1／epoch 1、2160p HEVC；較早及乾淨對照為 epoch 0、AV1。[PlayurlController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/playurl-controller.ts) 第 78–90 行以來源目錄推導內容變化；需要再確認這次世代內內容週期變動的輸入，不能直接斷定是錯誤 reset。
 
 續查應在同片記錄品質／codec 切換、每次 seek 起訖、表示身分、請求開始／取消／逾時與恢復動作，建立有界且確定性的失敗契約；並區分 CDN 傳輸、網站播放器與 Evolved 共存影響。本次未修改恢復政策或自動套用修復。
 

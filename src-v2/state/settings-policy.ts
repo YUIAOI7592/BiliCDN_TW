@@ -1,5 +1,4 @@
-import type { SettingsState } from './settings-contracts.ts'
-
+import { type SettingsState } from './settings-contracts.ts'
 // Match the former signatures, including override insertion order.
 function sameOverrides(a: SettingsState, b: SettingsState): boolean {
   const left = Object.entries(a.catalogOverrides),

@@ -1,11 +1,11 @@
-import type { MediaKind } from '../domain/model.ts'
-import type { StoragePort } from '../platform/storage-port.ts'
-import type {
-  RestrictionRecord,
-  RestrictionSnapshot,
-  RestrictionType,
+import { type MediaKind } from '../domain/model.ts'
+import { type StoragePort } from '../platform/storage-port.ts'
+import {
+  type RestrictionRecord,
+  type RestrictionSnapshot,
+  type RestrictionType,
+  type RestrictionPort,
 } from './restriction-contracts.ts'
-import type { RestrictionPort } from './restriction-contracts.ts'
 export const RESTRICTIONS_KEY = 'bilicdn.v2.restrictions'
 
 interface RestrictionPayload {

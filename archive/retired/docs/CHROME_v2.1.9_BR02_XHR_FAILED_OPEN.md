@@ -71,7 +71,7 @@ await Promise.resolve();
 
 ## 根因與精確位置
 
-來源：[src-v2/adapters/xhr-hook.ts](../../../src-v2/adapters/xhr-hook.ts)。
+來源：[src-v2/adapters/xhr-hook.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts)。
 
 1. **第 65–66 行：** 尚未成功呼叫原生 `open()`，便把前一筆 metadata 設為 terminal 並呼叫 cleanup。
 2. **第 73–80 行：** 新 metadata 立即覆蓋 WeakMap；新狀態是 opened、virtualReadyState 是 null。

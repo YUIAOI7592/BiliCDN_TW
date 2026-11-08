@@ -27,3 +27,20 @@ export function playbackTimeAdvanced(currentTime: number, previousTime: number):
 export function playbackFramesAdvanced(currentFrames: number, previousFrames: number): boolean {
   return currentFrames > previousFrames
 }
+
+export type StallProgress =
+  | { readonly phase: 'stalled'; readonly ticks: 0 }
+  | { readonly phase: 'confirming'; readonly ticks: 1 }
+  | { readonly phase: 'settling'; readonly ticks: number }
+export function stallProgressTransition(
+  state: StallProgress,
+  event: 'progress' | 'stalled',
+  bufferSec: number,
+): { readonly next: StallProgress; readonly complete: boolean } {
+  if (event === 'stalled') return { next: { phase: 'stalled', ticks: 0 }, complete: false }
+  const ticks = Math.min(10, state.ticks + 1)
+  return {
+    next: ticks === 1 ? { phase: 'confirming', ticks: 1 } : { phase: 'settling', ticks },
+    complete: ticks === 10 && Number.isFinite(bufferSec) && bufferSec >= 10,
+  }
+}

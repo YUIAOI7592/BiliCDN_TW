@@ -1,14 +1,14 @@
 import { currentResumePlayer } from '../../support/player.ts'
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
-import { PlayerAdapter } from '../../../src-v2/adapters/player.ts'
-import { PlayerMonitor } from '../../../src-v2/application/player-monitor.ts'
-import { RecoveryController } from '../../../src-v2/application/recovery-controller.ts'
-import type {
-  PlayerPort,
-  PlayerControlSnapshot,
-  VideoSnapshot,
-} from '../../../src-v2/application/ports.ts'
+import { PlayerAdapter } from '../../../src-v2/adapters/player/player.ts'
+import { PlayerMonitor } from '../../../src-v2/application/playback/player-monitor.ts'
+import { RecoveryController } from '../../../src-v2/application/playback/recovery-controller.ts'
+import {
+  type PlayerPort,
+  type PlayerControlSnapshot,
+  type VideoSnapshot,
+} from '../../../src-v2/application/playback/player-contracts.ts'
 import { representationId, generationId, epochId } from '../../../src-v2/domain/model.ts'
 import { FakeClock } from '../../support/clock.ts'
 import { testScope } from '../../support/scope.ts'

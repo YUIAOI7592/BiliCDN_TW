@@ -1,7 +1,7 @@
-import type { AppliedRouteDecision } from '../route-contracts.ts'
-import type { VaultMatch } from '../../state/vault-contracts.ts'
-import type { PlayurlOutputSummary } from '../../domain/model.ts'
-
+import { type AppliedRouteDecision } from './route-contracts.ts'
+import { type VaultMatch } from '../../state/vault-contracts.ts'
+import { type PlayurlOutputSummary } from '../../domain/transport-model.ts'
+import { type DeliveryKind } from '../../domain/url-policy.ts'
 /** Assemble observations only; this never selects or authorizes a route. */
 export function appliedRoute(
   decision: AppliedRouteDecision['decision'],
@@ -24,8 +24,6 @@ export function appliedRoute(
     ...(output ? { playurlOutput: output } : {}),
   }
 }
-
-import type { DeliveryKind } from '../../domain/url-policy.ts'
 
 export interface RequestSourceFacts {
   readonly kind: DeliveryKind

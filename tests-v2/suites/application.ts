@@ -21,7 +21,7 @@ import {
   monitorMeasurement,
   monitorRecovery,
 } from '../support/controllers.ts'
-import { RangeProbeAdapter } from '../../src-v2/adapters/range-probe.ts'
+import { RangeProbeAdapter } from '../../src-v2/adapters/transport/range-probe.ts'
 import { MeasurementMetaStore } from '../../src-v2/state/measurement-meta-store.ts'
 import {
   decisionId,
@@ -35,13 +35,16 @@ import { SignedRouteVault } from '../../src-v2/state/signed-route-vault.ts'
 import { RestrictionStore } from '../../src-v2/state/restriction-store.ts'
 import { EvidenceStore } from '../../src-v2/state/evidence-store.ts'
 import { SessionStore } from '../../src-v2/state/session-store.ts'
-import { RouteCoordinator } from '../../src-v2/application/route-coordinator.ts'
-import type { AppliedRouteDecision } from '../../src-v2/application/route-contracts.ts'
-import { RecoveryController } from '../../src-v2/application/recovery-controller.ts'
-import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
-import { PlayerMonitor } from '../../src-v2/application/player-monitor.ts'
-import { PlayerAdapter } from '../../src-v2/adapters/player.ts'
-import type { PlayerPort, VideoSnapshot } from '../../src-v2/application/ports.ts'
+import { RouteCoordinator } from '../../src-v2/application/routing/route-coordinator.ts'
+import { type AppliedRouteDecision } from '../../src-v2/application/routing/route-contracts.ts'
+import { RecoveryController } from '../../src-v2/application/playback/recovery-controller.ts'
+import { MeasurementController } from '../../src-v2/application/measurement/measurement-controller.ts'
+import { PlayerMonitor } from '../../src-v2/application/playback/player-monitor.ts'
+import { PlayerAdapter } from '../../src-v2/adapters/player/player.ts'
+import {
+  type PlayerPort,
+  type VideoSnapshot,
+} from '../../src-v2/application/playback/player-contracts.ts'
 import { FakeStorage } from '../support/storage.ts'
 import { testScope } from '../support/scope.ts'
 import { BrowserScheduler } from '../../src-v2/adapters/scheduler.ts'

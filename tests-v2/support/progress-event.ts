@@ -1,4 +1,4 @@
-import type { testScope } from './scope.ts'
+import { type testScope } from './scope.ts'
 
 export function installProgressEvent(scope: ReturnType<typeof testScope>): void {
   class SyntheticProgressEvent extends Event {

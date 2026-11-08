@@ -28,9 +28,9 @@
 
 根因鏈已定位到下列設計：
 
-- [PlayerMonitor](../../../src-v2/application/player-monitor.ts) 第 **70 行**每次 `video.seeking` 都把 `seekGraceUntil` 延到「現在＋5／8 秒」。它是 seeking 結束後的寬限，並非 seek 最長時間。
+- [PlayerMonitor](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts) 第 **70 行**每次 `video.seeking` 都把 `seekGraceUntil` 延到「現在＋5／8 秒」。它是 seeking 結束後的寬限，並非 seek 最長時間。
 - 第 **84 行**在 seeking／寬限內將 watchdog 設 `seek-grace` 並清空 stall ticks；第 88–95 行的停滯選路救援無法成立。第 **98 行**也排除 startup rescue。
-- [RecoveryController](../../../src-v2/application/recovery-controller.ts) 第 **65／70 行**拒絕 seeking 時建立恢復；第 **79–80 行**取消既有恢復，以保留使用者尋位。這項防護本身有必要。
+- [RecoveryController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts) 第 **65／70 行**拒絕 seeking 時建立恢復；第 **79–80 行**取消既有恢復，以保留使用者尋位。這項防護本身有必要。
 - 安裝版 Monitor 的確定性時鐘對照：持續 seeking **90 秒**仍為 `seek-grace`／0 stall ticks／0 recovery；清除 seeking 後 8 秒才開始 stall，13 秒時才出現 watchdog recovery。另驗證首個非零位置只是基準（stable 0），下一個增量才為 stable 1。
 
 因此可以解釋原 [87.785 秒現場](CHROME_v2.1.10_ACCEPTANCE.md#br-01-追加觀察)「長 seeking＋seek-grace＋seek-interrupted」為何沒有脚本救援。但**最初 timeout 是哪個 CDN／網站重試造成、以及最後 1080p 與 4K 標籤分歧，仍未建立乾淨因果證據**。BR-03 排列問題、BR-04 重入及 BR-05 取消原因都不能據此宣稱是 BR-01 起因。

@@ -1,5 +1,4 @@
-import type { CompletionBudget, PredictionReason } from './model.ts'
-
+import { type TimingBasis } from './measurement-time.ts'
 /** A request hint only; this never grants route or transport authority. */
 export function closedRangeLength(value: unknown): number | null {
   if (typeof value !== 'string') return null
@@ -56,3 +55,19 @@ export function predictCompletionMs(
     ? totalMs
     : null
 }
+
+export interface CompletionBudget {
+  readonly timingBasis?: TimingBasis
+  readonly ageMs?: number
+  readonly requestBytes: number | null
+  readonly playableBufferSec: number | null
+  readonly sampledAt: number
+}
+
+export type PredictionReason =
+  | 'available'
+  | 'unknown-size'
+  | 'unknown-buffer'
+  | 'stale-playback'
+  | 'unknown-body-rate'
+  | 'cohort-incomplete'

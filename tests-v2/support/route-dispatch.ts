@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict'
-import type { fixture } from '../regressions/functional-races/routing-fixture.ts'
+import { type fixture } from '../regressions/functional-races/routing-fixture.ts'
+import { requestId, type MediaKind } from '../../src-v2/domain/model.ts'
 import {
-  requestId,
   type RequestContext,
   type TransportObservation,
-  type MediaKind,
-  type TimingBasis,
-} from '../../src-v2/domain/model.ts'
-import type { AppliedRouteDecision } from '../../src-v2/application/route-contracts.ts'
+} from '../../src-v2/domain/transport-model.ts'
+import { type TimingBasis } from '../../src-v2/domain/measurement-time.ts'
+import { type AppliedRouteDecision } from '../../src-v2/application/routing/route-contracts.ts'
 export function start(
   f: ReturnType<typeof fixture>,
   url: string,

@@ -4,7 +4,7 @@ import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { fixture, media, dash } from './functional-races/routing-fixture.ts'
 import { testScope } from '../support/scope.ts'
-import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
+import { MeasurementController } from '../../src-v2/application/measurement/measurement-controller.ts'
 import { MeasurementMetaStore } from '../../src-v2/state/measurement-meta-store.ts'
 
 function setup(t: TestContext) {

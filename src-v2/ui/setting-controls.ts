@@ -1,7 +1,5 @@
-import type { ControlCenterSnapshot } from './control-contracts.ts'
-import type { ControlViewActions } from './control-contracts.ts'
+import { type ControlCenterSnapshot, type ControlViewActions } from './control-contracts.ts'
 import { createRow } from './elements.ts'
-
 /** Refresh the same input, including remote updates, without replacing focus or handlers. */
 export function settingToggle(
   label: string,

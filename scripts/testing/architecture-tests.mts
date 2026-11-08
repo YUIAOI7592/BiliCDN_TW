@@ -6,7 +6,25 @@ import { tmpdir } from 'node:os'
 import { withProjectAst } from '../lib/typescript-ast.mts'
 import { inspectModule, validateGraph } from '../checks/architecture-rules.mts'
 
+for (const [file, source] of [
+  ['ui/leak.ts', "import { x } from '../application/routing/retry-evidence.ts'"],
+  ['application/measurement/leak.ts', "import { x } from '../routing/candidate-planning.ts'"],
+  ['adapters/playurl/leak.ts', "import { x } from '../player/player-controls.ts'"],
+  ['entry.ts', "import { x } from './adapters/transport/xhr-request.ts'"],
+] as const)
+  test(`V2215 feature-private implementation rejects external import: ${file}`, () => {
+    const modules = architectureFixture({ [file]: source })
+    assert.throws(() => validateGraph([modules.get(file)!]), /feature-private/)
+  })
+
 function architectureFixture(additional: Readonly<Record<string, string>> = {}) {
+  // Keep historical case labels while checking the current exact owner locations.
+  const currentPath = (name: string): string =>
+    ({
+      'application/route-coordinator.ts': 'application/routing/route-coordinator.ts',
+      'application/recovery-controller.ts': 'application/playback/recovery-controller.ts',
+      'application/measurement-controller.ts': 'application/measurement/measurement-controller.ts',
+    })[name] ?? name
   const scratch = mkdtempSync(join(tmpdir(), 'bilicdn-architecture-'))
   try {
     const fixtures = {
@@ -33,7 +51,7 @@ function architectureFixture(additional: Readonly<Record<string, string>> = {}) 
       ...additional,
     }
     for (const [name, source] of Object.entries(fixtures)) {
-      const path = join(scratch, name)
+      const path = join(scratch, currentPath(name))
       mkdirSync(dirname(path), { recursive: true })
       writeFileSync(path, source)
     }
@@ -50,7 +68,7 @@ function architectureFixture(additional: Readonly<Record<string, string>> = {}) 
       (program) =>
         new Map(
           Object.keys(fixtures).map((name) => {
-            const source = program.getSourceFile(join(scratch, name))
+            const source = program.getSourceFile(join(scratch, currentPath(name)))
             if (!source) throw Error(`Missing fixture: ${name}`)
             return [name, inspectModule(source, scratch)]
           }),
@@ -128,9 +146,15 @@ for (const [file, source] of [
   ],
 ] as const)
   test(`sole effect owner rejects a spoofed module path: ${file}`, { timeout: 5000 }, () => {
-    const modules = architectureFixture({ [file]: source })
+    const inspected =
+      file === 'application/routing/route-coordinator.ts'
+        ? 'application/routing/internal/route-coordinator.ts'
+        : file === 'application/measurement/measurement-controller.ts'
+          ? 'application/measurement/internal/measurement-controller.ts'
+          : file
+    const modules = architectureFixture({ [inspected]: source })
     assert.throws(
-      () => validateGraph([modules.get(file)!]),
+      () => validateGraph([modules.get(inspected)!]),
       /only (RouteCoordinator|RecoveryController|MeasurementController)/,
     )
   })

@@ -3,10 +3,10 @@ import type { TestContext } from 'node:test'
 import { getEventListeners } from 'node:events'
 import { FakeClock } from './clock.ts'
 import { testScope } from './scope.ts'
-import type {
-  PlayerControlObserver,
-  PlayerControlEnvironment,
-} from '../../src-v2/adapters/player-controls.ts'
+import {
+  type PlayerControlObserver,
+  type PlayerControlEnvironment,
+} from '../../src-v2/adapters/player/player-controls.ts'
 export function rescueDomFixture(t: TestContext) {
   const scope = testScope(t),
     clock = new FakeClock(),

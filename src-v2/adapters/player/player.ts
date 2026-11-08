@@ -1,0 +1,160 @@
+import { type LifecyclePlayurlPort } from '../../application/playurl/playurl-contracts.ts'
+import {
+  type PlayerControlSnapshot,
+  type VideoSnapshot,
+} from '../../application/playback/player-contracts.ts'
+import { PlayerControlObserver, type PlayerControlEnvironment } from './player-controls.ts'
+import { PlayerMediaReader, readVideoSnapshot, clonePlayerManifest } from './player-media.ts'
+import { isRecord, safeCall, safeNumber, type UnknownRecord } from './player-sdk.ts'
+import {
+  type ResumePositionCapture,
+  type RestoreCommand,
+  type RestoreGuard,
+  type RestoreAttempt,
+  type RestoreReadback,
+  type RestoreReadMode,
+} from '../../application/playback/recovery-contracts.ts'
+export class PlayerAdapter {
+  readonly #media = new PlayerMediaReader()
+  readonly #controls: PlayerControlObserver
+  #manifestFingerprint = ''
+
+  constructor(
+    private readonly playurl: LifecyclePlayurlPort,
+    environment: PlayerControlEnvironment,
+  ) {
+    this.#controls = new PlayerControlObserver(
+      {
+        video: () => this.video(),
+        player: () => this.player(),
+        lifecycleKey: () => this.playurl.lifecycleKey(),
+      },
+      environment,
+    )
+  }
+
+  protected player(): UnknownRecord | null {
+    try {
+      return isRecord(unsafeWindow.player) ? unsafeWindow.player : null
+    } catch {
+      return null
+    }
+  }
+
+  controls(): PlayerControlSnapshot {
+    return this.#controls.controls()
+  }
+  captureResumePosition(): ResumePositionCapture {
+    return this.#controls.captureResumePosition(() => this.currentTime())
+  }
+  validateResumePosition(capture: ResumePositionCapture, initializationRevision?: number): boolean {
+    return this.#controls.validateResumePosition(capture, initializationRevision)
+  }
+  ownedReload(revision: number): boolean {
+    return this.#controls.ownedReload(revision)
+  }
+  performRestore(command: RestoreCommand, guard: RestoreGuard): RestoreAttempt {
+    return this.#controls.performRestore(command, guard)
+  }
+  readRestore(attempt: RestoreAttempt, mode?: RestoreReadMode): RestoreReadback {
+    return this.#controls.readRestore(attempt, mode)
+  }
+  correctRestore(attempt: RestoreAttempt): void {
+    this.#controls.correctRestore(attempt)
+  }
+  observePlayIntent(listener: () => void): () => void {
+    return this.#controls.observePlayIntent(listener)
+  }
+  playbackRevision(): number {
+    return this.#controls.playbackRevision()
+  }
+  observePlaybackInvalidation(listener: (revision: number) => void): () => void {
+    return this.#controls.observePlaybackInvalidation(listener)
+  }
+  video(): HTMLVideoElement | null {
+    return this.#media.video()
+  }
+  snapshot(): VideoSnapshot {
+    return readVideoSnapshot(this.video(), this.player())
+  }
+
+  syncManifest(): boolean {
+    const player = this.player(),
+      core = safeCall(player, '__core'),
+      mpd = safeCall(core, 'getMpd')
+    if (!isRecord(mpd)) return false
+    const cloned = clonePlayerManifest(mpd)
+    if (!cloned) return false
+    const fingerprint = `${this.playurl.lifecycleKey()}:${JSON.stringify(cloned)}`
+    if (fingerprint === this.#manifestFingerprint) return true
+    const accepted = this.playurl.transform(
+      { code: 0, data: { dash: cloned } },
+      'player-mpd',
+    ).accepted
+    if (accepted) this.#manifestFingerprint = fingerprint
+    return accepted
+  }
+
+  prepareReload() {
+    return this.#controls.prepareReload()
+  }
+
+  reload(): unknown {
+    return this.#controls.reload()
+  }
+
+  currentTime(): number {
+    const video = this.video()
+    try {
+      // HAVE_NOTHING can already hold a new native seek target while the SDK
+      // reader still returns its cached pre-seek time. Zero is a valid target.
+      if (video?.readyState === 0) {
+        const position = video.currentTime
+        if (Number.isFinite(position)) return position
+      }
+    } catch {
+      /* preserve the SDK fallback when native observation is unavailable */
+    }
+    return safeNumber(safeCall(this.player(), 'getCurrentTime')) ?? this.snapshot().currentTime
+  }
+
+  playbackRate(): number {
+    const before = this.controls(),
+      video = this.video()
+    let native: number | null = null
+    try {
+      native = safeNumber(video?.playbackRate)
+    } catch {
+      /* SDK fallback below */
+    }
+    const rate =
+      native !== null && native > 0
+        ? native
+        : safeNumber(safeCall(this.player(), 'getPlaybackRate'))
+    const after = this.controls()
+    return before.mediaId === after.mediaId &&
+      before.userRevision === after.userRevision &&
+      before.seekRevision === after.seekRevision &&
+      before.coreId === after.coreId &&
+      video === this.video() &&
+      rate !== null &&
+      rate > 0
+      ? rate
+      : 0
+  }
+
+  seek(value: number, canCommit?: () => boolean): void {
+    this.#controls.seek(value, canCommit)
+  }
+  setRate(value: number, canCommit?: () => boolean): void {
+    this.#controls.setRate(value, canCommit)
+  }
+  play(canCommit?: () => boolean): unknown {
+    return this.#controls.play(canCommit)
+  }
+  reset(): void {
+    this.#controls.reset()
+    this.#media.reset()
+    this.#manifestFingerprint = ''
+  }
+}

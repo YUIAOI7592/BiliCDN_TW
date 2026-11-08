@@ -9,7 +9,13 @@ import {
   comparisonMetrics,
   audioPassesDuringHold,
 } from './model.mts'
-import type { Assertion, CaseResult, Rate, Scenario, Version } from './model.mts'
+import {
+  type Assertion,
+  type CaseResult,
+  type Rate,
+  type Scenario,
+  type Version,
+} from './model.mts'
 
 export async function runCase(
   source: string,

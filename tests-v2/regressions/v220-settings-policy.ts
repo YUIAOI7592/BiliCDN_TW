@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { defaultSettings } from '../../src-v2/state/settings-store.ts'
 import { sameRouteSettings, sameMeasurementSettings } from '../../src-v2/state/settings-policy.ts'
-import type { SettingsChange } from '../../src-v2/state/settings-contracts.ts'
+import { type SettingsChange } from '../../src-v2/state/settings-contracts.ts'
 
 const cases: readonly [string, SettingsChange, boolean, boolean][] = [
   ['Native permission', { considerNativeSources: false }, false, false],

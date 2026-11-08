@@ -1,18 +1,12 @@
-import type { SettingsReader } from '../../state/settings-contracts.ts'
-import type {
-  Clock,
-  MediaKind,
-  RepresentationId,
-  RouteDecision,
-  RouteIdentity,
-} from '../../domain/model.ts'
-import type { HardRestriction } from '../../domain/route-policy.ts'
-import type {
-  RouteEvidencePort,
-  RouteRestrictionsPort,
-  RouteVaultPort,
-} from '../route-contracts.ts'
-
+import { type SettingsReader } from '../../state/settings-contracts.ts'
+import { type Clock, type MediaKind, type RepresentationId } from '../../domain/model.ts'
+import { type RouteDecision, type RouteIdentity } from '../../domain/route-model.ts'
+import { type HardRestriction } from '../../domain/route-policy.ts'
+import {
+  type RouteEvidencePort,
+  type RouteRestrictionsPort,
+  type RouteVaultPort,
+} from './route-contracts.ts'
 export interface RoutingVaultReader extends Pick<
   RouteVaultPort,
   | 'candidates'

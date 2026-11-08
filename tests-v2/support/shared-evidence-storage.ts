@@ -1,5 +1,5 @@
 import { FakeStorage } from './storage.ts'
-import type { StorageLock } from '../../src-v2/platform/storage-port.ts'
+import { type StorageLock } from '../../src-v2/platform/storage-port.ts'
 
 /** One shared FIFO per name; unlike FakeStorage, this actually serializes callers. */
 export class SharedEvidenceStorage extends FakeStorage {

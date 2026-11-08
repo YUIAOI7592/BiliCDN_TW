@@ -8,11 +8,8 @@ import {
 } from '../../../src-v2/domain/catalog.ts'
 import { catalogCandidates } from '../../../src-v2/domain/route-policy.ts'
 import { backupOutputPlan, catalogHostFamily } from '../../../src-v2/domain/player-output-plan.ts'
-import {
-  decisionId,
-  type RouteDecision,
-  type RouteRankingEntry,
-} from '../../../src-v2/domain/model.ts'
+import { decisionId } from '../../../src-v2/domain/model.ts'
+import { type RouteDecision, type RouteRankingEntry } from '../../../src-v2/domain/route-model.ts'
 import { catalogPlayerOutput } from '../../../src-v2/application/routing/player-output.ts'
 
 const ali = 'upos-sz-mirroraliov.bilivideo.com'

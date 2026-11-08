@@ -1,7 +1,6 @@
 import { isPlayurlApi } from './catalog.ts'
 import { parseMediaUrl } from './url-policy.ts'
-import type { PlayurlRequestContext } from './playurl-model.ts'
-
+import { type PlayurlRequestContext } from './playurl-model.ts'
 export function playurlRequestContext(value: string, base?: string): PlayurlRequestContext {
   let contentId: string | null = null
   if (isPlayurlApi(value, base)) {

@@ -1,13 +1,12 @@
-import type { ControlCenterSnapshot } from './control-contracts.ts'
-import type { ControlCommandPort } from '../application/control-ports.ts'
-import type {
-  ControlViewFrame,
-  ControlViewActions,
-  ControlViewBinding,
+import {
+  type ControlCenterSnapshot,
+  type ControlViewFrame,
+  type ControlViewActions,
+  type ControlViewBinding,
 } from './control-contracts.ts'
+import { type ControlCommandPort } from '../application/control-ports.ts'
 import { createButton } from './elements.ts'
 import { settingToggle } from './setting-controls.ts'
-
 export function renderSettings(
   commands: ControlCommandPort,
   frame: ControlViewFrame,

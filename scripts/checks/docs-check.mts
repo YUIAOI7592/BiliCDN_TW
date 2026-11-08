@@ -8,7 +8,7 @@ import remarkGfm from 'remark-gfm'
 import GithubSlugger from 'github-slugger'
 import { lint } from 'markdownlint/promise'
 import { readArchiveManifest } from './archive-check.mts'
-import type { ArchiveManifest, HistoricalArchiveReference } from './archive-check.mts'
+import { type ArchiveManifest, type HistoricalArchiveReference } from './archive-check.mts'
 
 interface MarkdownNode {
   type: string

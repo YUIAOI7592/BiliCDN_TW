@@ -1,8 +1,9 @@
 import { isCatalogHost } from '../../domain/catalog.ts'
 import { sampleTiming } from '../../domain/evidence.ts'
-import type { EvidenceSample, MediaKind, TransportObservation } from '../../domain/model.ts'
-import type { RouteTransferSnapshot } from '../route-contracts.ts'
-
+import { type EvidenceSample } from '../../domain/evidence-model.ts'
+import { type MediaKind } from '../../domain/model.ts'
+import { type TransportObservation } from '../../domain/transport-model.ts'
+import { type RouteTransferSnapshot } from './route-contracts.ts'
 export function catalogObservationAllowed(
   catalogOnly: boolean,
   observation: TransportObservation,

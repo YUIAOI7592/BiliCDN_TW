@@ -1,0 +1,962 @@
+import { startupTransition } from '../../domain/startup-policy.ts'
+import { orderCapacityRows, ROUTE_HEADROOM } from '../../domain/route-capacity.ts'
+import { sameMeasurementSettings } from '../../state/settings-policy.ts'
+import {
+  type AppliedRouteDecision,
+  type StartupCandidate,
+  type StartupOptions,
+} from '../routing/route-contracts.ts'
+import { type FailureKind, type CapacityConfidence } from '../../domain/evidence-model.ts'
+import { type PlaybackDemand } from '../../domain/playback-demand.ts'
+import { type RouteIdentity } from '../../domain/route-model.ts'
+import { type SignedRouteHandle } from '../../domain/model.ts'
+import { type TimingBasis, readMonotonic } from '../../domain/measurement-time.ts'
+import { probeStartByte } from '../../domain/probe-range.ts'
+import { mediaIdentity } from '../../domain/url-policy.ts'
+import { type RuntimeIdPort } from '../../platform/runtime-id-port.ts'
+import { type StorageLock } from '../../platform/storage-port.ts'
+import { type SettingsReader, type SettingsObserver } from '../../state/settings-contracts.ts'
+import {
+  type RangeProbePort,
+  type MeasurementPort,
+  type MeasurementRoutes,
+  type MeasurementMetadataPort,
+  type MeasurementRangeMetadataPort,
+  type MeasurementStatus,
+  type MeasurementSnapshot,
+} from './measurement-contracts.ts'
+import { type SchedulerPort } from '../scheduler-contracts.ts'
+const COOLDOWN_MS = 10 * 60_000
+const TIMEOUT_MS = 3000
+const nextCursor = (cursor: number): number =>
+  Number.isSafeInteger(cursor) && cursor >= 0 && cursor < Number.MAX_SAFE_INTEGER ? cursor + 1 : 0
+const cancellationReason = (signal: AbortSignal): unknown =>
+  'reason' in signal ? signal.reason : new DOMException('Aborted', 'AbortError')
+
+interface ProbeResult {
+  readonly timingBasis?: TimingBasis
+  readonly speedEligible?: boolean
+  readonly candidate: StartupCandidate
+  readonly valid: boolean
+  readonly safeMbps: number | null
+  readonly capacityConfidence: CapacityConfidence
+  readonly safePayloadMbps: number | null
+  readonly predictionTtfbMs: number | null
+  readonly bytes: number
+  readonly elapsedMs: number
+  readonly ttfbMs: number | null
+  readonly status: number | null
+  readonly reason: string
+}
+
+interface MeasurementWork {
+  readonly controller: AbortController
+  readonly marker: number
+}
+
+interface HealthRound {
+  readonly id: string
+  generation: string | null
+  priorityUnavailable: boolean
+}
+
+interface RoundRange {
+  readonly identity: RouteIdentity
+  readonly handle: SignedRouteHandle
+  readonly startByte: number
+  readonly sizeKnown: boolean
+}
+
+export class MeasurementController implements MeasurementPort {
+  #stopSettings: (() => void) | null = null
+  #disposed = false
+  #running: MeasurementWork | null = null
+  #failedAt: number | null = null
+  #planning: object | null = null
+  #preferNative = false
+  #marker = 0
+  #lastStatus: MeasurementStatus | null = null
+  #startupLease:
+    | { phase: 'available' }
+    | { phase: 'closed' }
+    | {
+        phase: 'reserved' | 'probing'
+        controller: AbortController
+        pending: Promise<void>
+        startedAt: number
+        deadlineAt: number
+        startedTick: number
+        deadlineTick: number
+      } = { phase: 'available' }
+  #startupQualifiedHosts: readonly string[] = []
+  #startupState: NonNullable<MeasurementSnapshot['startup']> = Object.freeze({
+    state: 'idle',
+    reason: 'not-requested',
+    candidates: 0,
+    selectedHost: null,
+    delayed: false,
+  })
+  #snapshot: MeasurementSnapshot = Object.freeze({
+    state: 'idle',
+    reason: 'startup',
+    lastAttemptAt: 0,
+    host: null,
+  })
+
+  constructor(
+    private readonly routes: MeasurementRoutes,
+    private readonly meta: MeasurementMetadataPort,
+    private readonly probe: RangeProbePort,
+    private readonly now: () => number,
+    private readonly scheduler: SchedulerPort,
+    private readonly rangeMetadata?: MeasurementRangeMetadataPort,
+    private readonly random: () => number = () => 0,
+    private readonly settings?: SettingsReader & SettingsObserver,
+    private readonly monotonicNow: () => number | null = () => null,
+    private readonly ids?: RuntimeIdPort,
+  ) {
+    if (settings) {
+      let previous = settings.get()
+      this.#stopSettings = settings.subscribe(() => {
+        const next = settings.get()
+        if (sameMeasurementSettings(previous, next)) return
+        previous = next
+        this.#marker++
+        this.cancel('test-policy-changed')
+        this.#closeStartup('test-policy-changed')
+      })
+    }
+  }
+
+  snapshot(): MeasurementSnapshot {
+    return Object.freeze({
+      ...this.#snapshot,
+      startup: this.#startupState,
+    })
+  }
+  reset(): void {
+    this.cancel('generation')
+    this.#closeStartup('generation')
+    this.#startupQualifiedHosts = []
+    this.#marker++
+    this.#failedAt = null
+    this.#snapshot = Object.freeze({
+      state: 'idle',
+      reason: 'generation',
+      lastAttemptAt: 0,
+      host: null,
+    })
+  }
+  dispose(): void {
+    this.#disposed = true
+    this.#stopSettings?.()
+    this.#stopSettings = null
+    this.reset()
+  }
+  #closeStartup(reason: string): void {
+    if (this.#startupLease.phase === 'available') return
+    const lease = this.#startupLease
+    this.#startupLease = { phase: 'closed' }
+    this.#startupState = Object.freeze({
+      state: lease.phase === 'reserved' || lease.phase === 'probing' ? 'cancelled' : 'skipped',
+      result: 'none',
+      reason: lease.phase === 'reserved' || lease.phase === 'probing' ? reason : 'budget-consumed',
+      candidates: 0,
+      selectedHost: null,
+      delayed: false,
+    })
+    if (lease.phase === 'reserved' || lease.phase === 'probing') lease.controller.abort(reason)
+  }
+
+  startupFallbackHosts(): readonly string[] {
+    return this.#startupQualifiedHosts
+  }
+  cancel(reason: string): void {
+    const running = this.#running
+    this.#planning = null
+    this.#running = null
+    running?.controller.abort(reason)
+  }
+  willGateStartup(url: string): boolean {
+    return (
+      this.#startupLease.phase !== 'closed' && !!this.routes.startupOptions(url)?.candidates.length
+    )
+  }
+
+  /** The player request, never a page hint, authorizes this one bounded startup window. */
+  async prepareStartup(
+    url: string,
+    signal: AbortSignal | null = null,
+    requestBytes: number | null = null,
+  ): Promise<void> {
+    if (signal?.aborted) throw cancellationReason(signal)
+    if (this.#startupLease.phase === 'closed') return
+    if (this.#startupLease.phase === 'available') {
+      const cursor = Math.max(0, Number(this.meta.get().catalogCursor) || 0)
+      const options = this.routes.startupOptions(url, cursor, requestBytes)
+      if (!options?.candidates.length) {
+        this.noteUnpreflighted(
+          options?.deferredToVideo ? 'video-priority' : 'unsupported-or-no-legal-candidate',
+        )
+        return
+      }
+      const controller = new AbortController(),
+        marker = this.#marker,
+        startedAt = this.now(),
+        deadlineAt = startedAt + TIMEOUT_MS
+      const startedTick = readMonotonic(this.monotonicNow)
+      if (startedTick === null) {
+        this.noteUnpreflighted('monotonic-unavailable')
+        return
+      }
+
+      this.#startupState = Object.freeze({
+        state: 'running',
+        reason: 'player-media-request',
+        deadlineAt,
+        remainingProbes: options.candidates.length,
+        candidates: options.candidates.length,
+        selectedHost: null,
+        delayed: true,
+      })
+      let release!: () => void
+      const pending = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      if (startupTransition('available', 'reserve').reason !== 'accepted') return
+      const lease = {
+        phase: 'reserved' as 'reserved' | 'probing',
+        controller,
+        pending,
+        startedAt,
+        deadlineAt,
+        startedTick,
+        deadlineTick: startedTick + TIMEOUT_MS,
+      }
+      this.#startupLease = lease
+      void this.#runStartup(url, options, controller, marker)
+        .catch(() => {
+          if (marker === this.#marker)
+            this.#startupState = Object.freeze({
+              state: 'skipped',
+              reason: 'preflight-error',
+              candidates: options.candidates.length,
+              selectedHost: null,
+              delayed: true,
+            })
+        })
+        .finally(() => {
+          if (this.#startupLease === lease) this.#startupLease = { phase: 'closed' }
+          release()
+        })
+      void this.meta
+        .withLock(() => {
+          if (marker !== this.#marker) return
+          const currentCursor = this.meta.get().catalogCursor
+          if (marker !== this.#marker) return
+          this.meta.update({ catalogCursor: nextCursor(currentCursor) })
+        })
+        .catch(() => undefined)
+    }
+    const pending = 'pending' in this.#startupLease ? this.#startupLease.pending : null
+    if (!pending) return
+    if (!signal) {
+      await pending
+      return
+    }
+    if (signal.aborted) throw cancellationReason(signal)
+    let onAbort: (() => void) | null = null
+    try {
+      await Promise.race([
+        pending,
+        new Promise<never>((_resolve, reject) => {
+          onAbort = () => reject(cancellationReason(signal))
+          signal.addEventListener('abort', onAbort, { once: true })
+        }),
+      ])
+    } finally {
+      if (onAbort) signal.removeEventListener('abort', onAbort)
+    }
+  }
+
+  noteUnpreflighted(reason: string): void {
+    if (this.#startupLease.phase !== 'available') return
+    this.#startupState = Object.freeze({
+      state: 'skipped',
+      reason: reason.slice(0, 48),
+      candidates: 0,
+      selectedHost: null,
+      delayed: false,
+    })
+  }
+
+  async #runStartup(
+    url: string,
+    options: StartupOptions,
+    controller: AbortController,
+    marker: number,
+  ): Promise<void> {
+    const lease = this.#startupLease
+    if (
+      lease.phase === 'available' ||
+      lease.phase === 'closed' ||
+      lease.controller !== controller ||
+      startupTransition(lease.phase, 'probe').reason !== 'accepted'
+    )
+      return
+    lease.phase = 'probing'
+    const current = () => this.#startupLease === lease && this.#marker === marker && !this.#disposed
+    const results: ProbeResult[] = []
+    const { startedTick, deadlineTick } = lease
+    let timer: (() => void) | null = null
+    let sealed = false,
+      releaseReason = 'complete',
+      remaining = options.candidates.length
+    let resolveWindow!: () => void, rejectWindow!: (error: unknown) => void
+    const completion = new Promise<void>((resolve, reject) => {
+      resolveWindow = resolve
+      rejectWindow = reject
+    })
+    const finish = (reason: string): void => {
+      if (sealed) return
+      sealed = true
+      releaseReason = reason
+      resolveWindow()
+    }
+    const aborted = (): void => finish('cancelled')
+    const expire = (): void => {
+      finish('deadline')
+      controller.abort('startup-deadline')
+    }
+    const accepting = (): boolean => {
+      if (sealed || !current()) return false
+      const tick = readMonotonic(this.monotonicNow)
+      if (tick === null || tick < startedTick) {
+        finish('clock-invalid')
+        controller.abort('clock-invalid')
+        return false
+      }
+      if (tick >= deadlineTick) {
+        expire()
+        return false
+      }
+      return true
+    }
+    controller.signal.addEventListener('abort', aborted, { once: true })
+    timer = this.scheduler.timeout(
+      expire,
+      Math.max(0, deadlineTick - (readMonotonic(this.monotonicNow) ?? deadlineTick)),
+    )
+    for (const candidate of options.candidates) {
+      if (!accepting() || controller.signal.aborted) break
+      void this.#probeStartup(candidate, options.demand, controller.signal).then(
+        (result) => {
+          if (!accepting()) return
+          results.push(result)
+          this.#startupState = Object.freeze({
+            ...this.#startupState!,
+            remainingProbes: options.candidates.length - results.length,
+          })
+          if (
+            this.settings?.get().startupEarlyReleaseEnabled !== false &&
+            result.valid &&
+            (result.safeMbps ?? 0) /
+              (this.routes.startupDemand(candidate)?.requiredMbps ?? Infinity) >=
+              ROUTE_HEADROOM &&
+            accepting()
+          )
+            finish('qualified-early')
+          else if (--remaining === 0) finish('complete')
+        },
+        (error: unknown) => {
+          if (!accepting()) return
+          sealed = true
+          rejectWindow(error)
+        },
+      )
+    }
+    try {
+      await completion
+    } finally {
+      sealed = true
+      if (timer !== null) (timer as () => void)()
+      controller.signal.removeEventListener('abort', aborted)
+      controller.abort('startup-complete')
+    }
+    if (marker !== this.#marker) return
+    if (releaseReason === 'clock-invalid') {
+      this.#startupState = Object.freeze({
+        ...this.#startupState,
+        state: 'cancelled',
+        reason: releaseReason,
+      })
+      return
+    }
+    for (const result of results)
+      this.routes.noteStartupProbeResult(result.candidate, result.status)
+    const valid = results.filter(
+      (result) =>
+        result.valid &&
+        result.safeMbps !== null &&
+        this.routes.startupDemand(result.candidate) !== null,
+    )
+    const qualified = valid.filter(
+      (result) =>
+        (result.safeMbps ?? 0) /
+          (this.routes.startupDemand(result.candidate)?.requiredMbps ?? Infinity) >=
+        ROUTE_HEADROOM,
+    )
+    const budget = options.candidates[0]
+      ? this.routes.completionBudget(
+          options.candidates[0].context.representation,
+          options.requestBytes ?? null,
+          'probe-reader',
+        )
+      : null
+    const ordered = orderCapacityRows(
+      valid.map((result) => ({
+        result,
+        candidateOrder: options.candidates.indexOf(result.candidate),
+        capacityConfidence: result.capacityConfidence,
+        safeThroughputMbps: result.safeMbps,
+        demandRatio:
+          result.safeMbps === null
+            ? null
+            : result.safeMbps /
+              (this.routes.startupDemand(result.candidate)?.requiredMbps ?? Infinity),
+        safePayloadMbps: result.safePayloadMbps,
+        predictionTtfbMs: result.predictionTtfbMs,
+      })),
+      budget,
+      this.now(),
+    ).map((row) => row.result)
+    const compare = (a: ProbeResult, b: ProbeResult): number =>
+      ordered.indexOf(a) - ordered.indexOf(b)
+    const ranked = [...qualified].sort(compare)
+    const fastestValid = [...valid].sort(compare)[0]?.candidate ?? null
+    const winner =
+      ranked[0]?.candidate ??
+      fastestValid ??
+      this.routes.startupFallback(
+        url,
+        new Set(options.candidates.map((candidate) => candidate.host)),
+      )
+    const result = ranked.length
+      ? ('adequate' as const)
+      : valid.length
+        ? ('insufficient' as const)
+        : winner
+          ? ('unverified' as const)
+          : ('none' as const)
+    const transition = startupTransition(lease.phase, result === 'none' ? 'exhausted' : result)
+    if (!current() || transition.reason !== 'accepted') return
+    const decision = winner
+      ? this.routes.commitStartupChoice(
+          url,
+          winner,
+          valid.length ? 'startup-preflight' : 'startup-inconclusive',
+        )
+      : this.routes.commitStartupChoice(url, null, 'startup-exhausted')
+    if (!current()) return
+    this.#startupQualifiedHosts = Object.freeze(
+      [...valid].sort(compare).map((result) => result.candidate.host),
+    )
+    this.#startupState = Object.freeze({
+      state: decision ? 'complete' : 'skipped',
+      result,
+      reason:
+        releaseReason === 'qualified-early'
+          ? releaseReason
+          : valid.length
+            ? 'measured'
+            : 'inconclusive',
+      candidates: options.candidates.length,
+      selectedHost: decision?.host ?? null,
+      delayed: true,
+      elapsedMs: Math.max(0, (readMonotonic(this.monotonicNow) ?? startedTick) - startedTick),
+      results: Object.freeze(
+        results.slice(0, 3).map((result) =>
+          Object.freeze({
+            host: result.candidate.host,
+            type: result.candidate.type,
+            valid: result.valid,
+            safeMbps: result.safeMbps,
+            status: result.status,
+            reason: result.reason,
+          }),
+        ),
+      ),
+    })
+    for (const result of valid)
+      if (result.candidate.cachedSafeMbps === null) {
+        void this.routes
+          .recordStartupSuccess(
+            result.candidate,
+            result.bytes,
+            result.elapsedMs,
+            result.ttfbMs,
+            () => !this.#disposed && marker === this.#marker,
+            result,
+          )
+          .catch(() => undefined)
+      }
+  }
+
+  async #probeStartup(
+    candidate: StartupCandidate,
+    demand: PlaybackDemand,
+    signal: AbortSignal,
+  ): Promise<ProbeResult> {
+    const limit =
+      candidate.cachedSafeMbps !== null ? 16 * 1024 : demand.highDemand ? 512 * 1024 : 256 * 1024
+    const result = await this.probe.read({
+      url: candidate.url,
+      host: candidate.host,
+      limit,
+      signal,
+      completionReason: 'startup-sample-complete',
+    })
+    const rangeValid =
+      result.directRange &&
+      Number.isSafeInteger(result.bytes) &&
+      Number.isFinite(result.elapsedMs) &&
+      (candidate.cachedSafeMbps !== null ||
+        (result.elapsedMs > 0 && result.speedEligible !== false)) &&
+      result.payloadValid !== false &&
+      (candidate.cachedSafeMbps !== null ? result.bytes >= 16 * 1024 : result.bytes >= 64 * 1024)
+    const metrics = rangeValid
+      ? this.routes.startupCapacity(
+          candidate,
+          candidate.cachedSafeMbps !== null
+            ? null
+            : {
+                requestId: 'startup-preview',
+                ...(result.timingBasis ? { timingBasis: result.timingBasis } : {}),
+                at: this.now(),
+                source: 'challenge',
+                outcome: 'success',
+                throughputMbps: (result.bytes * 8) / result.elapsedMs / 1000,
+                ttfbMs: result.ttfbMs,
+                failureKind: null,
+                bytes: result.bytes,
+                elapsedMs: result.elapsedMs,
+              },
+        )
+      : null
+    const valid =
+      rangeValid &&
+      !!metrics &&
+      ['sufficient', 'provisional'].includes(metrics.capacityConfidence) &&
+      metrics.safeThroughputMbps !== null
+    return {
+      candidate,
+      ...result,
+      valid,
+      safeMbps: valid ? metrics!.safeThroughputMbps : null,
+      capacityConfidence: metrics?.capacityConfidence ?? 'missing',
+      safePayloadMbps: metrics?.safePayloadMbps ?? null,
+      predictionTtfbMs: metrics?.predictionTtfbMs ?? null,
+      reason: result.directRange ? (valid ? 'measured' : 'short-response') : result.reason,
+    }
+  }
+
+  tick(status: MeasurementStatus): void {
+    if (this.#disposed) return
+    this.#lastStatus = status
+    const unsafe = this.#unsafeReason(status)
+    if (this.#running && unsafe) {
+      this.cancel(unsafe)
+      this.#snapshot = Object.freeze({ ...this.#snapshot, state: 'cancelled', reason: unsafe })
+      return
+    }
+    if (this.#running || this.#planning) return
+    if (unsafe) {
+      this.#snapshot = Object.freeze({
+        ...this.#snapshot,
+        state: 'waiting',
+        reason: unsafe,
+      })
+      return
+    }
+    if (this.#failedAt !== null && this.now() - this.#failedAt < COOLDOWN_MS) return
+    void this.#tryStart(status)
+  }
+
+  async #tryStart(status: MeasurementStatus): Promise<void> {
+    if (!status.representation || !status.demand || this.#running || this.#planning) return
+    const planning = {}
+    this.#planning = planning
+    this.#snapshot = Object.freeze({ ...this.#snapshot, state: 'waiting', reason: 'storage-lock' })
+    const planningMarker = this.#marker
+    const round: HealthRound = {
+      id: this.ids?.next('challenge') ?? '',
+      generation: null,
+      priorityUnavailable: false,
+    }
+    let running: MeasurementWork | null = null
+    try {
+      let at = this.now()
+      let first: AppliedRouteDecision | null = null,
+        cursor = 0
+      await this.meta.withLock((lock) => {
+        if (planningMarker !== this.#marker || this.#planning !== planning) return
+        const current = this.#lastStatus
+        if (
+          !current ||
+          this.#unsafeReason(current) ||
+          current.representation !== status.representation ||
+          !current.demand
+        )
+          return
+        at = this.now()
+        const meta = this.meta.get()
+        if (at - (Number(meta.lastChallengeAt) || 0) < COOLDOWN_MS) return
+        cursor = Math.max(0, Number(meta.catalogCursor) || 0)
+        first = this.#reserveChallenge(
+          current,
+          this.#preferNative,
+          new Set(),
+          cursor,
+          lock,
+          round,
+          () => planningMarker === this.#marker && this.#planning === planning,
+        )
+        if (!first?.url) return
+        if (
+          planningMarker !== this.#marker ||
+          this.#planning !== planning ||
+          (this.routes.isCatalogOnly() && first.decision.routeType !== 'catalog-generated')
+        )
+          return
+        this.meta.update({ lastChallengeAt: at, catalogCursor: nextCursor(cursor) })
+      })
+      if (planningMarker !== this.#marker || this.#planning !== planning) return
+      const current = this.#lastStatus
+      if (
+        !current ||
+        this.#unsafeReason(current) ||
+        current.representation !== status.representation
+      )
+        return
+      const planned = first as AppliedRouteDecision | null
+      if (
+        planned &&
+        this.routes.isCatalogOnly() &&
+        planned.decision.routeType !== 'catalog-generated'
+      )
+        return
+      if (!planned?.url) {
+        const cooldown = at - (Number(this.meta.get().lastChallengeAt) || 0) < COOLDOWN_MS
+        this.#snapshot = Object.freeze({
+          ...this.#snapshot,
+          state: 'waiting',
+          reason: cooldown ? 'cross-tab-cooldown' : 'no-stale-candidate',
+        })
+        return
+      }
+      this.#preferNative = !this.#preferNative
+      const controller = new AbortController(),
+        marker = this.#marker
+      running = { controller, marker }
+      this.#running = running
+      await this.#runRound(planned, status, controller, marker, cursor, round)
+    } catch {
+      if (
+        planningMarker === this.#marker &&
+        this.#planning === planning &&
+        (!running || (this.#running === running && !running.controller.signal.aborted))
+      ) {
+        this.#failedAt = this.now()
+        this.#snapshot = Object.freeze({
+          ...this.#snapshot,
+          state: 'failed',
+          reason: 'measurement-error',
+          lastAttemptAt: this.#failedAt,
+        })
+      }
+    } finally {
+      if (running && this.#running === running) this.#running = null
+      if (this.#planning === planning) this.#planning = null
+    }
+  }
+
+  #reserveChallenge(
+    status: MeasurementStatus,
+    preferNative: boolean,
+    excluded: ReadonlySet<string>,
+    cursor: number,
+    lock: StorageLock | undefined,
+    round: HealthRound,
+    valid: () => boolean,
+    allowNative = true,
+  ): AppliedRouteDecision | null {
+    if (!valid() || this.#unsafeReason(status) || !status.representation || !status.demand)
+      return null
+    const coordination = this.ids ? this.meta.coordination?.(lock) : null
+    if (round.generation !== null && coordination && coordination.generation !== round.generation)
+      return null
+    if (coordination) round.generation ??= coordination.generation
+    else round.priorityUnavailable = true
+    if (!this.routes.proposeChallenge || !this.routes.commitChallenge)
+      return this.routes.challenge(
+        status.representation,
+        status.demand,
+        preferNative,
+        excluded,
+        cursor,
+      )
+    const ordinary = () =>
+      valid()
+        ? this.routes.proposeChallenge!(
+            status.representation!,
+            status.demand!,
+            preferNative,
+            excluded,
+            cursor,
+          )
+        : null
+    let proposal = this.routes.proposeChallenge(
+      status.representation,
+      status.demand,
+      preferNative,
+      excluded,
+      cursor,
+      coordination && !round.priorityUnavailable
+        ? { claims: coordination.claims, allowNative }
+        : undefined,
+    )
+    if (!proposal || (!allowNative && proposal.candidate.type === 'native-signed') || !valid())
+      return null
+    let claimed = false
+    if (proposal.priorityStamp) {
+      if (coordination && round.id && this.ids)
+        try {
+          claimed =
+            this.meta.claimRevalidation?.(coordination.generation, {
+              host: proposal.candidate.host,
+              kind: proposal.candidate.kind,
+              stamp: proposal.priorityStamp,
+              claimId: this.ids.next('challenge'),
+              roundId: round.id,
+            }) === true
+        } catch {
+          claimed = false
+        }
+      if (!claimed) {
+        round.priorityUnavailable = true
+        proposal = ordinary()
+      }
+    }
+    if (
+      !proposal ||
+      (!allowNative && proposal.candidate.type === 'native-signed') ||
+      !valid() ||
+      (proposal.priorityStamp !== null &&
+        (round.generation === null || this.meta.coordinationCurrent?.(round.generation) !== true))
+    )
+      return null
+    return this.routes.commitChallenge(proposal, claimed)
+  }
+
+  async #runRound(
+    first: AppliedRouteDecision,
+    status: MeasurementStatus,
+    controller: AbortController,
+    marker: number,
+    cursor: number,
+    round: HealthRound,
+  ): Promise<void> {
+    const context = first.context
+    const handle =
+      context && this.routes.isCatalogOnly()
+        ? (this.rangeMetadata?.catalogSourceHandle(context.representation) ?? null)
+        : null
+    const totalBytes =
+      context && handle ? (this.rangeMetadata?.rangeSize(context, handle) ?? null) : null
+    const range: RoundRange | null =
+      context && handle
+        ? {
+            identity: context,
+            handle,
+            sizeKnown: totalBytes !== null,
+            startByte: probeStartByte(
+              this.settings?.get().healthMiddleRangeEnabled === false ? null : totalBytes,
+              status.demand!.highDemand ? 768 * 1024 : 384 * 1024,
+              totalBytes === null ? 0 : this.random(),
+            ),
+          }
+        : null
+    const excluded = new Set<string>()
+    let catalogCount = 0,
+      nativeCount = 0
+    let next: AppliedRouteDecision | null = first
+    for (let index = 0; index < 3 && next?.url && !controller.signal.aborted; index++) {
+      const current = this.#lastStatus ?? status
+      const unsafe = this.#unsafeReason(current)
+      if (unsafe || marker !== this.#marker || current.representation !== status.representation) {
+        controller.abort(unsafe ?? 'representation-changed')
+        break
+      }
+      const applied: AppliedRouteDecision = next
+      if (
+        range &&
+        (!this.rangeMetadata?.resolve(range.handle, range.identity) ||
+          this.rangeMetadata.catalogSourceHandle(range.identity.representation) !== range.handle)
+      ) {
+        controller.abort('source-changed')
+        break
+      }
+      if (applied.decision.host) excluded.add(applied.decision.host)
+      if (applied.decision.routeType === 'native-signed') nativeCount++
+      else catalogCount++
+      this.#snapshot = Object.freeze({
+        state: 'running',
+        reason: 'candidate-' + (index + 1),
+        lastAttemptAt: this.now(),
+        host: applied.decision.host,
+        range: {
+          mode: range?.startByte ? ('middle' as const) : ('head' as const),
+          sizeKnown: range?.sizeKnown ?? false,
+        },
+      })
+      await this.#runCandidate(applied, status.demand!, controller, marker, range)
+      if (
+        index === 2 ||
+        controller.signal.aborted ||
+        marker !== this.#marker ||
+        this.#running?.controller !== controller
+      )
+        break
+      cursor = nextCursor(cursor)
+      next = await this.meta.withLock((lock) => {
+        const current = this.#lastStatus ?? status
+        return this.#reserveChallenge(
+          current,
+          nativeCount === 0 && catalogCount >= 2,
+          excluded,
+          cursor,
+          lock,
+          round,
+          () =>
+            marker === this.#marker &&
+            this.#running?.controller === controller &&
+            !controller.signal.aborted &&
+            current.representation === status.representation,
+          nativeCount < 1,
+        )
+      })
+      if (nativeCount >= 1 && next?.decision.routeType === 'native-signed') next = null
+    }
+    if (
+      controller.signal.aborted &&
+      marker === this.#marker &&
+      this.#running?.controller === controller
+    )
+      this.#snapshot = Object.freeze({
+        ...this.#snapshot,
+        state: 'cancelled',
+        reason: String(controller.signal.reason ?? 'cancelled').slice(0, 48),
+      })
+  }
+
+  async #runCandidate(
+    applied: AppliedRouteDecision,
+    demand: PlaybackDemand,
+    round: AbortController,
+    marker: number,
+    range: RoundRange | null,
+  ): Promise<void> {
+    const startedAt = this.now(),
+      limit = demand.highDemand ? 768 * 1024 : 384 * 1024
+    const controller = new AbortController()
+    const cancel = (): void => controller.abort(round.signal.reason)
+    round.signal.addEventListener('abort', cancel, { once: true })
+    const stopTimeout = this.scheduler.timeout(() => controller.abort('timeout'), TIMEOUT_MS)
+    let result
+    const source = range ? this.rangeMetadata?.resolve(range.handle, range.identity) : null
+    const usesRange =
+      !!source &&
+      !!applied.url &&
+      applied.decision.routeType === 'catalog-generated' &&
+      mediaIdentity(source) === mediaIdentity(applied.url!)
+    const startByte = usesRange ? range!.startByte : 0
+    try {
+      result = await this.probe.read({
+        url: applied.url ?? '',
+        host: applied.decision.host,
+        limit,
+        startByte,
+        signal: controller.signal,
+        completionReason: 'sample-complete',
+      })
+    } finally {
+      stopTimeout()
+      round.signal.removeEventListener('abort', cancel)
+    }
+    if (
+      marker !== this.#marker ||
+      this.#running?.controller !== round ||
+      round.signal.aborted ||
+      (controller.signal.aborted && controller.signal.reason !== 'timeout')
+    )
+      return
+    if (
+      usesRange &&
+      range &&
+      this.rangeMetadata?.resolve(range.handle, range.identity) &&
+      this.rangeMetadata.catalogSourceHandle(range.identity.representation) === range.handle
+    ) {
+      if (result.status === 416)
+        this.rangeMetadata.recordRangeSize(range.identity, range.handle, null)
+      else if (result.directRange && result.range)
+        this.rangeMetadata.recordRangeSize(range.identity, range.handle, result.range.totalBytes)
+    }
+    const ok = result.directRange && result.payloadValid !== false && result.bytes >= 64 * 1024
+    const failure: FailureKind | null =
+      applied.decision.routeType === 'native-signed' && [403, 451, 959].includes(result.status ?? 0)
+        ? 'native-invalid'
+        : result.reason === 'timeout'
+          ? 'timeout'
+          : result.reason === 'network'
+            ? 'network'
+            : null
+    await this.routes.recordChallenge(
+      applied,
+      result.bytes,
+      result.elapsedMs,
+      result.ttfbMs,
+      ok ? 'success' : 'failure',
+      failure,
+      () =>
+        !this.#disposed &&
+        marker === this.#marker &&
+        this.#running?.controller === round &&
+        !round.signal.aborted,
+      result,
+    )
+    if (marker !== this.#marker || this.#running?.controller !== round || round.signal.aborted)
+      return
+    this.#snapshot = Object.freeze({
+      state: ok ? 'complete' : 'failed',
+      reason: ok ? 'sample-recorded' : result.directRange ? 'short-response' : result.reason,
+      lastAttemptAt: startedAt,
+      host: applied.decision.host,
+      range: {
+        mode: startByte > 0 ? ('middle' as const) : ('head' as const),
+        sizeKnown: !!result.range || (usesRange && range!.sizeKnown),
+      },
+    })
+  }
+
+  #unsafeReason(status: MeasurementStatus): string | null {
+    if (status.disabled) return 'disabled'
+    if (!status.generationActive || !status.representation || !status.demand)
+      return 'no-representation'
+    if (!status.visible) return 'hidden'
+    if (status.seeking) return 'seeking'
+    if (status.recovering) return 'recovering'
+    if (status.stableProgressTicks < 20) return 'awaiting-progress'
+    if (status.playableBufferSec < 30) return 'low-buffer'
+    return null
+  }
+}

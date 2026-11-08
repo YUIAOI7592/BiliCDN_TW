@@ -1,5 +1,4 @@
-import type { PlayurlEndpointKind } from './playurl-model.ts'
-
+import { type PlayurlEndpointKind } from './playurl-model.ts'
 export const HK_CATALOG_HOSTS = Object.freeze([
   'cn-hk-eq-01-03.bilivideo.com',
   'cn-hk-eq-01-05.bilivideo.com',

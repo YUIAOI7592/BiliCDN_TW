@@ -6,7 +6,7 @@
 
 原 `open()` 在原生驗證之前撤銷舊 phase、監聽器與 metadata。無效 method／URL 或同步選項拋錯後，原生請求與政策身分分離，使排隊錯誤遺失、DONE 倒退，並可能錯誤允許第二次 send。
 
-[XhrHookAdapter](../../../src-v2/adapters/xhr-hook.ts) 現在先按參數順序完成一次轉換，再暫存候選 metadata，供原生同步事件使用。成功後才釋放舊請求；失敗時只有仍持有候選的呼叫可以回復舊所有權，並傳回原例外。較新的巢狀 open 不會被外層蓋掉；舊狀態／進度監聽器也先檢查所有權。必要的 ByteString／USVString、參數省略及 credentials 語意一起保留，未新增公開 API 或持久資料。
+[XhrHookAdapter](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts) 現在先按參數順序完成一次轉換，再暫存候選 metadata，供原生同步事件使用。成功後才釋放舊請求；失敗時只有仍持有候選的呼叫可以回復舊所有權，並傳回原例外。較新的巢狀 open 不會被外層蓋掉；舊狀態／進度監聽器也先檢查所有權。必要的 ByteString／USVString、參數省略及 credentials 語意一起保留，未新增公開 API 或持久資料。
 
 Chrome 154 另有實測邊界：Window 同步選項不合法時，原生 open 拋 InvalidAccessError 並把底層重設為 UNSENT，沒有終止事件。初版修復的 Chrome 矩陣增加 gate 交錯後為 30 通過／1 失敗，捕捉到晚到 send 的 InvalidStateError。補充修復只標記**仍未原生送出的 waiting 請求**；gate 釋放時重新準備原目標、選項與 headers，然後重查所有權及送出政策。期間 abort 或成功 reopen 仍可撤銷它。已送出請求不重播；原生自身的重設／取消行為不被偽裝成成功完成。
 

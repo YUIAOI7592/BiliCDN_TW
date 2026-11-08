@@ -6,14 +6,17 @@ import { testScope } from '../support/scope.ts'
 import { fixture, media, dash } from './functional-races/routing-fixture.ts'
 import { DelayedSettingsStorage, FakeStorage } from '../support/storage.ts'
 import { SETTINGS_KEY } from '../../src-v2/state/settings-store.ts'
-import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
-import type { MeasurementStatus } from '../../src-v2/application/measurement-contracts.ts'
+import { MeasurementController } from '../../src-v2/application/measurement/measurement-controller.ts'
+import { type MeasurementStatus } from '../../src-v2/application/measurement/measurement-contracts.ts'
 import {
   MeasurementMetaStore,
   MEASUREMENT_META_KEY,
 } from '../../src-v2/state/measurement-meta-store.ts'
 import { catalogOutputPlan, backupOutputPlan } from '../../src-v2/domain/player-output-plan.ts'
-import type { RangeProbeInput, RangeProbeResult } from '../../src-v2/application/ports.ts'
+import {
+  type RangeProbeInput,
+  type RangeProbeResult,
+} from '../../src-v2/application/measurement/measurement-contracts.ts'
 import { deferred } from '../support/deferred.ts'
 
 class HeldEvidenceStorage extends FakeStorage {

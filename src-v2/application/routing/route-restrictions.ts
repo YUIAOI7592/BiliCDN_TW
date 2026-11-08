@@ -1,15 +1,14 @@
 import { isCatalogHost } from '../../domain/catalog.ts'
-import { hardRestriction } from '../../domain/route-policy.ts'
+import { hardRestriction, type HardRestriction } from '../../domain/route-policy.ts'
 import { parseMediaUrl } from '../../domain/url-policy.ts'
-import type { HardRestriction } from '../../domain/route-policy.ts'
-import type { MediaKind, RouteDecision, RouteIdentity } from '../../domain/model.ts'
-import type { RestrictionSnapshot } from '../../state/restriction-contracts.ts'
-import type {
-  RoutingEnvironmentReader,
-  RoutingPolicyReader,
-  RoutingRestrictionsReader,
+import { type MediaKind } from '../../domain/model.ts'
+import { type RouteDecision, type RouteIdentity } from '../../domain/route-model.ts'
+import { type RestrictionSnapshot } from '../../state/restriction-contracts.ts'
+import {
+  type RoutingEnvironmentReader,
+  type RoutingPolicyReader,
+  type RoutingRestrictionsReader,
 } from './routing-ports.ts'
-
 export function restrictionSnapshot(
   restrictions: RoutingRestrictionsReader,
   kind: MediaKind | null,

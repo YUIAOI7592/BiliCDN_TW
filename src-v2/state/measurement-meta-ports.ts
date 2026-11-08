@@ -1,3 +1,6 @@
+import { type CircuitControlStamp } from '../domain/evidence-model.ts'
+import { type MediaKind } from '../domain/model.ts'
+import { type StorageLock } from '../platform/storage-port.ts'
 export interface MeasurementMeta {
   readonly catalogCursor: number
   readonly lastChallengeAt: number
@@ -13,9 +16,6 @@ export interface MeasurementMetaPort {
   coordinationCurrent?(generation: string): boolean
   clear(): Promise<void> | void
 }
-import type { CircuitControlStamp, MediaKind } from '../domain/model.ts'
-import type { StorageLock } from '../platform/storage-port.ts'
-
 export interface RevalidationClaim {
   readonly host: string
   readonly kind: MediaKind

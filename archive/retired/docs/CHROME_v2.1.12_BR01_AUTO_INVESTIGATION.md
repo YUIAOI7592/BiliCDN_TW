@@ -49,10 +49,10 @@
 
 可達入口為正常使用者 seek → `PlayerMonitor.tick()`，以及 video 路線備援 → `RuntimeController.record()` → `RecoveryController.armRouteFailure()`。
 
-- [player-monitor.ts:70](../../../src-v2/application/player-monitor.ts#L70)：每次取樣，只要 `video.seeking` 就把寬限推至「現在＋5／8 秒」，沒有保存該次尋位的絕對起點。
-- [player-monitor.ts:84](../../../src-v2/application/player-monitor.ts#L84)：`video.seeking` 本身也無條件進入 `seek-grace` 並把 stallTicks 歸零。因此**只停止延長計時器仍不足以修復**，即使計時器過期，seeking 分支仍會阻止 watchdog。
-- [player-monitor.ts:98](../../../src-v2/application/player-monitor.ts#L98)：startup 救援也明確排除 seeking；[114](../../../src-v2/application/player-monitor.ts#L114) 將該狀態傳給量測，健康探索暫停本身符合避免干擾播放的既有契約。
-- [runtime-controller.ts:52](../../../src-v2/application/runtime-controller.ts#L52) 只轉交 video 備援；[recovery-controller.ts:65](../../../src-v2/application/recovery-controller.ts#L65) 拒絕在 seeking 時建立 route-failure 意圖，已有意圖則在 [79](../../../src-v2/application/recovery-controller.ts#L79) 以 `seek-interrupted` 結束。
+- [player-monitor.ts:70](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L70)：每次取樣，只要 `video.seeking` 就把寬限推至「現在＋5／8 秒」，沒有保存該次尋位的絕對起點。
+- [player-monitor.ts:84](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L84)：`video.seeking` 本身也無條件進入 `seek-grace` 並把 stallTicks 歸零。因此**只停止延長計時器仍不足以修復**，即使計時器過期，seeking 分支仍會阻止 watchdog。
+- [player-monitor.ts:98](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L98)：startup 救援也明確排除 seeking；[114](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L114) 將該狀態傳給量測，健康探索暫停本身符合避免干擾播放的既有契約。
+- [runtime-controller.ts:52](../../../src-v2/application/runtime-controller.ts#L52) 只轉交 video 備援；[recovery-controller.ts:65](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L65) 拒絕在 seeking 時建立 route-failure 意圖，已有意圖則在 [79](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L79) 以 `seek-interrupted` 結束。
 
 反證：短程正常 seek 不重載、最新使用者 seek 撤銷舊還原是必要保護，不能直接移除。已送出請求的原生取消語意也不能為了製造備援而更改。此次正常 seek 對照成立，受控 Auto 故障輪 epoch 沒有改變；不是 BR-03 換片重設造成這段救援未介入。
 
@@ -66,10 +66,10 @@
 
 可達入口為影片曾健康播放 → seeking 已結束但緩衝為 0／無影格前進 → video fallback 或 watchdog 建立 route-failure 意圖。進度不再前進，readyState 1，寬高仍為 3840×2160、`coreInitialized=true`。
 
-- [recovery-controller.ts:124](../../../src-v2/application/recovery-controller.ts#L124)：`dead` 必須同時 readyState 0、寬高 0、核心未初始化。
-- [125](../../../src-v2/application/recovery-controller.ts#L125)：一般卡住只在來源為 `startup-failure` 時構成 `startupStalled`。
-- [128](../../../src-v2/application/recovery-controller.ts#L128)：4 秒後也只有上述兩種狀態能開始重載。
-- [129](../../../src-v2/application/recovery-controller.ts#L129)：15 秒 timeout 只在已開始重載後生效；**沒有涵蓋開始重載前的等待**。
+- [recovery-controller.ts:124](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L124)：`dead` 必須同時 readyState 0、寬高 0、核心未初始化。
+- [125](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L125)：一般卡住只在來源為 `startup-failure` 時構成 `startupStalled`。
+- [128](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L128)：4 秒後也只有上述兩種狀態能開始重載。
+- [129](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L129)：15 秒 timeout 只在已開始重載後生效；**沒有涵蓋開始重載前的等待**。
 
 FakeClock 前進 300 秒後，route-failure token 仍存在、`isRecovering()=true`，沒有進度、沒有重載／完成／失敗。新意圖因既有 token 被拒絕，量測也會因 recovering 停止；該狀態不必然讓網站永久不能播放，但腳本工作沒有自己的結束上限。
 
@@ -83,7 +83,7 @@ FakeClock 前進 300 秒後，route-failure token 仍存在、`isRecovering()=tr
 
 事件順序：先建立 route-failure 意圖 → 使用者 seek 使該意圖正確以 `seek-interrupted` 失敗 → 下一個取樣仍 seeking、readyState 1、0 緩衝、影格不變。
 
-[recovery-controller.ts:83](../../../src-v2/application/recovery-controller.ts#L83) 的 `healthy` 包含「寬或高大於 0」，[96](../../../src-v2/application/recovery-controller.ts#L96) 在無 token、未暫停、原狀態 failed／breaker 時直接設為 `recovered / healthy-playback-observed`，沒有要求 seeking 結束或真實播放進度。Node 正確契約在這一步失敗。
+[recovery-controller.ts:83](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L83) 的 `healthy` 包含「寬或高大於 0」，[96](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L96) 在無 token、未暫停、原狀態 failed／breaker 時直接設為 `recovered / healthy-playback-observed`，沒有要求 seeking 結束或真實播放進度。Node 正確契約在這一步失敗。
 
 反證：寬高可以作「核心／解碼器存在」的線索，但不是卡住後的播放恢復證據。有效 Chrome 延遲輪開始前 recovery 就已顯示歷史 `recovered`；那個歷史值不能作本輪救援成功證據，也不直接證明 C 在此輪發生過狀態轉換。
 
@@ -124,7 +124,7 @@ FakeClock 前進 300 秒後，route-failure token 仍存在、`isRecovering()=tr
 | `sdk-auto-state.json`、`auto-stall.png` | 早期混合狀態，只作現場快照；當時的降解析度／品質文字不能單獨定義新缺陷 |
 | 同片 epoch 0→1 的早期觀察 | 發生在準備不完整的階段，缺少完整前後請求 cid／內容基準；後續有效窗口 epoch 1 穩定。不能判定 BR-03 回歸 |
 | Auto 解析度與選單文字不同 | 網站 Auto 實際表示、選單標籤以及 Session 確認時間可能不同；RouteCoordinator 在兩次成功影片傳輸後才更新目前表示。未證明持續不一致由本腳本造成，不能當作固定畫質被強制降級 |
-| SDK 提前取消等於 CDN timeout | 排除這項推論；[route-coordinator.ts:744](../../../src-v2/application/route-coordinator.ts#L744) 不把 abort 作健康懲罰是現行語意，不能全面改判為失敗 |
+| SDK 提前取消等於 CDN timeout | 排除這項推論；[route-coordinator.ts:744](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/route-coordinator.ts#L744) 不把 abort 作健康懲罰是現行語意，不能全面改判為失敗 |
 
 原 87.785 秒自然停滯仍需完整的最初請求、原生 transport 錯誤與網站重試時間線，才能區分傳輸速度、Range／緩衝、ABR 決策或核心內部停滯。本輪沒有錄到該自然起因。網站 Abort 呼叫的堆疊與 1 倍速自然長 seek 對照也未取得。
 

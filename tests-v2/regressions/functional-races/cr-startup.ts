@@ -1,7 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { MeasurementController } from '../../../src-v2/application/measurement-controller.ts'
-import type { RangeProbePort, RangeProbeResult } from '../../../src-v2/application/ports.ts'
+import { MeasurementController } from '../../../src-v2/application/measurement/measurement-controller.ts'
+import {
+  type RangeProbePort,
+  type RangeProbeResult,
+} from '../../../src-v2/application/measurement/measurement-contracts.ts'
 import { fixture, media } from '../../support/runtime-fixture.ts'
 import { deferred } from '../../support/deferred.ts'
 

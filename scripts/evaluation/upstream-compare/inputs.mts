@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { checkSource } from './model.mts'
-import type { Version } from './model.mts'
+import { type Version } from './model.mts'
 
 export const inputs = [
   {

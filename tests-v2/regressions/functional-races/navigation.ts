@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { fixture } from '../../support/runtime-fixture.ts'
 import { BrowserNavigation } from '../../../src-v2/adapters/navigation.ts'
 import { LifecycleController } from '../../../src-v2/application/lifecycle-controller.ts'
-import { TransportContext } from '../../../src-v2/adapters/transport-context.ts'
+import { TransportContext } from '../../../src-v2/adapters/transport/transport-context.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
 
 function createNavigationPlayback(t: TestContext) {

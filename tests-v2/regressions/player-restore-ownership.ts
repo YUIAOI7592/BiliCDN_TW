@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { PlayerControlObserver } from '../../src-v2/adapters/player-controls.ts'
+import { PlayerControlObserver } from '../../src-v2/adapters/player/player-controls.ts'
 import { rescueDomFixture } from '../support/rescue-dom.ts'
 
 for (const rate of [1, 2]) {

@@ -1,11 +1,14 @@
-import type { PlayerControlSnapshot, PlayerPort } from '../../src-v2/application/ports.ts'
-import type {
-  RecoveryPlayerPort,
-  RestoreAttempt,
-  RestoreCommand,
-  RestoreGuard,
-  RestoreReadback,
-} from '../../src-v2/application/recovery-contracts.ts'
+import {
+  type PlayerControlSnapshot,
+  type PlayerPort,
+} from '../../src-v2/application/playback/player-contracts.ts'
+import {
+  type RecoveryPlayerPort,
+  type RestoreAttempt,
+  type RestoreCommand,
+  type RestoreGuard,
+  type RestoreReadback,
+} from '../../src-v2/application/playback/recovery-contracts.ts'
 
 // Existing controller unit fixtures model a synchronous SDK. Readback uses their
 // actual supplied snapshot; these methods cannot manufacture media progress.

@@ -4,8 +4,8 @@ import { EvidenceStore, EVIDENCE_KEY } from '../../src-v2/state/evidence-store.t
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
 import { SharedEvidenceStorage } from '../support/shared-evidence-storage.ts'
 import { testScope } from '../support/scope.ts'
-import type { EvidenceSample } from '../../src-v2/domain/model.ts'
-import type { StorageLock, StorageRead } from '../../src-v2/platform/storage-port.ts'
+import { type EvidenceSample } from '../../src-v2/domain/evidence-model.ts'
+import { type StorageLock, type StorageRead } from '../../src-v2/platform/storage-port.ts'
 import { deferred } from '../support/deferred.ts'
 
 const host = 'cdn.example',

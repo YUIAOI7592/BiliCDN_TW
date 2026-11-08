@@ -1,14 +1,13 @@
-import type { ControlCenterSnapshot } from './control-contracts.ts'
-import type {
-  ControlViewFrame,
-  ControlViewActions,
-  ControlViewBinding,
+import {
+  type ControlCenterSnapshot,
+  type ControlViewFrame,
+  type ControlViewActions,
+  type ControlViewBinding,
 } from './control-contracts.ts'
 import { createButton } from './elements.ts'
 import { describeStatus } from './status-summary.ts'
 import { playbackLabel, measurementLabel, startupLabel, plain } from './labels.ts'
 import { overviewPresentation } from './overview-presentation.ts'
-
 function text(tag: string, className: string, value = ''): HTMLElement {
   const node = document.createElement(tag)
   node.className = className

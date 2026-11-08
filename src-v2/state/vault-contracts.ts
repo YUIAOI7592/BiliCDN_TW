@@ -1,16 +1,17 @@
+import { type AttributionSource, type AttributionStatus } from '../domain/transport-model.ts'
 import {
-  type AttributionSource,
-  type AttributionStatus,
   type DecisionId,
   type EpochId,
   type GenerationId,
   type MediaKind,
-  type NativeCandidate,
   type RepresentationId,
-  type RootCandidate,
-  type RouteIdentity,
   type SignedRouteHandle,
 } from '../domain/model.ts'
+import {
+  type NativeCandidate,
+  type RootCandidate,
+  type RouteIdentity,
+} from '../domain/route-model.ts'
 export interface RegisterRepresentationInput {
   readonly frameRate?: number
   readonly generation: GenerationId

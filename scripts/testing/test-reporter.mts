@@ -1,7 +1,7 @@
 import { findSourceMap } from 'node:module'
 import type { EventData } from 'node:test'
 import type { TestEvent } from 'node:test/reporters'
-import type { CaseRecord, FailureRecord, ReportLocation } from '../test.mts'
+import { type CaseRecord, type FailureRecord, type ReportLocation } from '../test.mts'
 import { isRecord } from '../lib/lib.mts'
 export const REPORT_VERSION = 1
 function position(data: EventData.TestPass | EventData.TestFail): ReportLocation {

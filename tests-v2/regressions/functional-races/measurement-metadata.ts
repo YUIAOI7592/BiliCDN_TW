@@ -5,10 +5,10 @@ import {
   MeasurementMetaStore,
   MEASUREMENT_META_KEY,
 } from '../../../src-v2/state/measurement-meta-store.ts'
-import type { MeasurementMeta } from '../../../src-v2/state/measurement-meta-ports.ts'
-import { MeasurementController } from '../../../src-v2/application/measurement-controller.ts'
-import type { MeasurementStatus } from '../../../src-v2/application/measurement-contracts.ts'
-import type { StoragePort } from '../../../src-v2/platform/storage-port.ts'
+import { type MeasurementMeta } from '../../../src-v2/state/measurement-meta-ports.ts'
+import { MeasurementController } from '../../../src-v2/application/measurement/measurement-controller.ts'
+import { type MeasurementStatus } from '../../../src-v2/application/measurement/measurement-contracts.ts'
+import { type StoragePort } from '../../../src-v2/platform/storage-port.ts'
 import {
   generationId,
   epochId,
@@ -21,8 +21,8 @@ import { FakeClock } from '../../support/clock.ts'
 import { testScope } from '../../support/scope.ts'
 import { measurementRoutes } from '../../support/controllers.ts'
 import { deferred } from '../../support/deferred.ts'
-import type { MeasurementMetadataPort } from '../../../src-v2/application/measurement-contracts.ts'
-import type { AppliedRouteDecision } from '../../../src-v2/application/route-contracts.ts'
+import { type MeasurementMetadataPort } from '../../../src-v2/application/measurement/measurement-contracts.ts'
+import { type AppliedRouteDecision } from '../../../src-v2/application/routing/route-contracts.ts'
 
 const at = 2_000_000_000_000
 const zero = { catalogCursor: 0, lastChallengeAt: 0 }

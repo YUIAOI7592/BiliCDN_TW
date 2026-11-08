@@ -1,17 +1,12 @@
-import type { SettingsReader, SettingsObserver } from '../state/settings-contracts.ts'
+import { type SettingsReader, type SettingsObserver } from '../state/settings-contracts.ts'
 import { sameRouteSettings } from '../state/settings-policy.ts'
-import type { DomainEvent } from '../domain/model.ts'
-import type { EarlyRetryPort } from './early-retry-contracts.ts'
-import type {
-  RuntimePort,
-  RuntimeRoutesPort,
-  RuntimePlayerPort,
-  RuntimeMonitorPort,
-  RuntimeMeasurementPort,
-  RuntimeRecoveryPort,
-  RuntimeContentPort,
-} from './runtime-ports.ts'
-
+import { type DomainEvent, type RouteCoordinatorPort } from './routing/route-contracts.ts'
+import { type EarlyRetryPort } from './routing/early-retry-contracts.ts'
+import { type PlayerPort } from './playback/player-contracts.ts'
+import { type MeasurementPort } from './measurement/measurement-contracts.ts'
+import { type RecoveryPort } from './playback/recovery-contracts.ts'
+import { type MonitorPort } from './playback/monitor-contracts.ts'
+import { type PlayurlControllerPort } from './playurl/playurl-contracts.ts'
 export class RuntimeController implements RuntimePort {
   #running = false
   #stops: (() => void)[] = []
@@ -98,4 +93,29 @@ export class RuntimeController implements RuntimePort {
     this.earlyRetry?.dispose()
     for (const stop of this.#stops.splice(0).reverse()) stop()
   }
+}
+
+interface RuntimeRoutesPort extends Pick<
+  RouteCoordinatorPort,
+  | 'subscribe'
+  | 'invalidateForUserSetting'
+  | 'latestRequested'
+  | 'recoveryEligible'
+  | 'observePlaybackFacts'
+> {}
+interface RuntimePlayerPort extends Pick<
+  PlayerPort,
+  'snapshot' | 'reset' | 'observePlaybackInvalidation'
+> {}
+interface RuntimeMonitorPort extends Pick<MonitorPort, 'start' | 'stop' | 'reset' | 'subscribe'> {}
+interface RuntimeMeasurementPort extends Pick<MeasurementPort, 'reset'> {}
+interface RuntimeRecoveryPort extends Pick<RecoveryPort, 'reset' | 'armRouteFailure'> {}
+interface RuntimeContentPort extends Pick<PlayurlControllerPort, 'subscribeEpoch'> {}
+interface RuntimePort {
+  install(): void
+  handleRouteEvent(event: DomainEvent): void
+  start(): void
+  stop(): void
+  reset(): void
+  dispose(): void
 }

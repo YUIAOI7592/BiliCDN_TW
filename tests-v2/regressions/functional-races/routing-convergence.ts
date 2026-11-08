@@ -1,12 +1,9 @@
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { TRUSTED_CATALOG } from '../../../src-v2/domain/catalog.ts'
-import {
-  requestId,
-  type MediaKind,
-  type TransportObservation,
-} from '../../../src-v2/domain/model.ts'
-import type { AppliedRouteDecision } from '../../../src-v2/application/route-contracts.ts'
+import { requestId, type MediaKind } from '../../../src-v2/domain/model.ts'
+import { type TransportObservation } from '../../../src-v2/domain/transport-model.ts'
+import { type AppliedRouteDecision } from '../../../src-v2/application/routing/route-contracts.ts'
 import { EVIDENCE_KEY } from '../../../src-v2/state/evidence-store.ts'
 import { EVIDENCE_TTL_MS, evidenceMetrics } from '../../../src-v2/domain/evidence.ts'
 import { testScope } from '../../support/scope.ts'

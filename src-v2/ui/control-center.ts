@@ -1,9 +1,11 @@
-import type {
-  ControlCenterDependencies,
-  ControlCenterSnapshot,
-  ShowControlCenterPort,
+import {
+  type ControlCenterDependencies,
+  type ControlCenterSnapshot,
+  type ShowControlCenterPort,
+  type ControlViewActions,
+  type ControlViewBinding,
+  type ControlPage,
 } from './control-contracts.ts'
-import type { ControlViewActions, ControlViewBinding, ControlPage } from './control-contracts.ts'
 import { createControlCenterStyle } from './styles.ts'
 import { createButton } from './elements.ts'
 import { renderOverview } from './overview-view.ts'

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
-import { TransportContext } from '../../../src-v2/adapters/transport-context.ts'
+import { TransportContext } from '../../../src-v2/adapters/transport/transport-context.ts'
 import { TRUSTED_CATALOG } from '../../../src-v2/domain/catalog.ts'
 import { fixture, media, blankVideo } from '../../support/runtime-fixture.ts'
 

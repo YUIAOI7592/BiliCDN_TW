@@ -1,5 +1,3 @@
-import type { TimingBasis } from './measurement-model.ts'
-
 /** Completed delivery bytes must agree with every visible length declaration. */
 export function measuredPayload(
   bytes: number,
@@ -56,4 +54,14 @@ export function readMonotonic(now: () => number | null): number | null {
   } catch {
     return null
   }
+}
+
+export type TimingBasis = 'fetch-consumer' | 'xhr-terminal' | 'probe-reader'
+
+export interface FrozenMeasurement {
+  readonly completedAt: number
+  readonly elapsedMs: number
+  readonly ttfbMs: number | null
+  readonly timingBasis: TimingBasis
+  readonly speedEligible: boolean
 }

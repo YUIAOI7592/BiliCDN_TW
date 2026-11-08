@@ -1,9 +1,9 @@
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
-import { PlayerMonitor } from '../../../src-v2/application/player-monitor.ts'
+import { PlayerMonitor } from '../../../src-v2/application/playback/player-monitor.ts'
 import { RuntimeController } from '../../../src-v2/application/runtime-controller.ts'
-import type { RuntimeRoutesPort } from '../../../src-v2/application/runtime-ports.ts'
-import type { MonitorRoutes } from '../../../src-v2/application/monitor-contracts.ts'
+type RuntimeRoutesPort = ConstructorParameters<typeof RuntimeController>[1]
+import { type MonitorRoutes } from '../../../src-v2/application/playback/monitor-contracts.ts'
 import { defaultSettings } from '../../../src-v2/state/settings-store.ts'
 import {
   decisionId,
@@ -12,9 +12,9 @@ import {
   representationId,
   requestId,
   recoveryActionId,
-  type DomainEvent,
-  type RequestContext,
 } from '../../../src-v2/domain/model.ts'
+import { type DomainEvent } from '../../../src-v2/application/routing/route-contracts.ts'
+import { type RequestContext } from '../../../src-v2/domain/transport-model.ts'
 import { rescuePlayerFixture } from '../../support/rescue-player.ts'
 import { monitorRoutes, monitorMeasurement } from '../../support/controllers.ts'
 import { sustainedPlayback, type RescueProgressSample } from '../../support/rescue-acceptance.ts'

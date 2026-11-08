@@ -1,6 +1,5 @@
-import type { CircuitObservationSnapshot } from '../domain/model.ts'
+import { type CircuitObservationSnapshot } from '../domain/evidence-model.ts'
 import { plain } from './labels.ts'
-
 /** Current shared debt and page-local proof; never describes request history. */
 export function circuitPresentation(row: CircuitObservationSnapshot): string {
   const prefix = `${row.kind === 'video' ? '影片' : '音訊'}共享熔斷 L${row.level}｜`

@@ -14,10 +14,10 @@
 
 | 修復面 | 來源與契約 |
 | --- | --- |
-| 有限 own reload 證明 | [PlayerAdapter](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/src-v2/adapters/player.ts) 的私有單一 owner 綁定 SDK／媒體／生命週期／user／reload 修訂，最多 15 秒；old core→null→首個標記替換，第二替換、hidden、reset、新操作、外部 reload、throw／reject 均撤銷。[PlayerPort](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/src-v2/application/ports.ts) optional readonly ownedReload，缺失=false |
+| 有限 own reload 證明 | [PlayerAdapter](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts) 的私有單一 owner 綁定 SDK／媒體／生命週期／user／reload 修訂，最多 15 秒；old core→null→首個標記替換，第二替換、hidden、reset、新操作、外部 reload、throw／reject 均撤銷。[PlayerPort](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/ports.ts) optional readonly ownedReload，缺失=false |
 | 真正 BODY 操作 | 同 trusted keydown、同媒體／SDK／core／內容的實際 paused 或 rate 變化才增加一次 userRevision；region 舊行為保留。排除 editable／控制中心／IME／modifiers／synthetic／keyup／忽略命令與派送後工作，腳本內部操作先清候選 |
-| 有界核心恢復 | [RecoveryController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/src-v2/application/recovery-controller.ts) 只用精確本次 reload 證明容許 paused／null gap，首新核心就緒後處理 rate／play；SDK 未知非 user seek 撤銷舊位置還原，不能猜成新使用者或重開期限 |
-| 停滯協調與進度 | [PlayerMonitor](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/src-v2/application/player-monitor.ts) 與 Recovery 共用現有意圖、先處理終止期限；已完成 seek／核心切換只建立採樣基準。等待兩個有效進度時不得再次備援，failed 後的 SDK resume 不重試，新的使用者操作／真正恢復後新停滯才可重新建立 |
+| 有界核心恢復 | [RecoveryController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts) 只用精確本次 reload 證明容許 paused／null gap，首新核心就緒後處理 rate／play；SDK 未知非 user seek 撤銷舊位置還原，不能猜成新使用者或重開期限 |
+| 停滯協調與進度 | [PlayerMonitor](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts) 與 Recovery 共用現有意圖、先處理終止期限；已完成 seek／核心切換只建立採樣基準。等待兩個有效進度時不得再次備援，failed 後的 SDK resume 不重試，新的使用者操作／真正恢復後新停滯才可重新建立 |
 | 方法／晚到所有權 | SDK setter／accessor、receiver、參數、原回傳及例外保留；完整描述子與函式所有權一起核對，繼承方法清理自有 shadow。舊 Promise／timer／core 讀取不撤銷或標記新 owner，方法讀取同步新操作後不呼叫過期 reload |
 | 正式入口 | [br01-followthrough.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/functional-races/br01-followthrough.ts) 在 application；[br01-reload-controls.ts](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/functional-races/br01-reload-controls.ts) 在 adapters；沒有新增測試套件登記或調查目錄匯入 |
 

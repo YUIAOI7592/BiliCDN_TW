@@ -56,17 +56,17 @@
 
 ## 根因與精確位置
 
-1. [player.ts:80](../../../src-v2/adapters/player.ts#L80) 在document捕捉可信播放器區域pointerdown，會清除鍵盤候選並增加userRevision，這部分正常。
-2. [player.ts:84](../../../src-v2/adapters/player.ts#L84) 的dragging判定只查：
+1. [player.ts:80](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L80) 在document捕捉可信播放器區域pointerdown，會清除鍵盤候選並增加userRevision，這部分正常。
+2. [player.ts:84](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L84) 的dragging判定只查：
 
    ```ts
    event.target.closest('.bpx-player-progress, .bilibili-player-video-progress, [role="slider"]')
    ```
 
    真正功能性外層 `.bpx-player-progress-wrap` 本身不在selector中；`closest()`只走自己及祖先，不往下找內層子節點，因此外層命中會得到false。已辨識的內層子節點則正常。
-3. [player-monitor.ts:103](../../../src-v2/application/player-monitor.ts#L103) 以 `!controls.dragging` 作停滯資格；漏辨後 [player-monitor.ts:167](../../../src-v2/application/player-monitor.ts#L167) 建立起點，[player-monitor.ts:180](../../../src-v2/application/player-monitor.ts#L180) 到15秒，再由 [player-monitor.ts:192](../../../src-v2/application/player-monitor.ts#L192) 備援。這是現場15.079秒後果的因果路徑。
-4. [recovery-controller.ts:165](../../../src-v2/application/recovery-controller.ts#L165) 在有效stall達30秒時可重載；私有完整Adapter／Monitor／Recovery模型證明漏辨也能進入該後果，現場未形成必要窗口。
-5. [player.ts:86](../../../src-v2/adapters/player.ts#L86) 已有pointerup／pointercancel／lostpointercapture／blur釋放，不需要把所有pointer操作當成進度拖曳。修復仍須維持範圍、可信輸入與釋放所有權。
+3. [player-monitor.ts:103](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L103) 以 `!controls.dragging` 作停滯資格；漏辨後 [player-monitor.ts:167](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L167) 建立起點，[player-monitor.ts:180](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L180) 到15秒，再由 [player-monitor.ts:192](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts#L192) 備援。這是現場15.079秒後果的因果路徑。
+4. [recovery-controller.ts:165](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts#L165) 在有效stall達30秒時可重載；私有完整Adapter／Monitor／Recovery模型證明漏辨也能進入該後果，現場未形成必要窗口。
+5. [player.ts:86](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts#L86) 已有pointerup／pointercancel／lostpointercapture／blur釋放，不需要把所有pointer操作當成進度拖曳。修復仍須維持範圍、可信輸入與釋放所有權。
 
 ## 獨立正確契約與重跑
 

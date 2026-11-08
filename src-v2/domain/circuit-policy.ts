@@ -1,5 +1,4 @@
-import type { CircuitControlStamp } from './model.ts'
-
+import { type CircuitControlStamp } from './evidence-model.ts'
 export const CIRCUIT_OBSERVATION_MS = 300_000
 export const CIRCUIT_SUCCESS_GAP_MS = 120_000
 export const CIRCUIT_SETTLEMENT_GRACE_MS = 60_000

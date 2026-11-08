@@ -1,6 +1,6 @@
 import type { TestContext } from 'node:test'
-import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
-import type { RangeProbePort } from '../../src-v2/application/ports.ts'
+import { MeasurementController } from '../../src-v2/application/measurement/measurement-controller.ts'
+import { type RangeProbePort } from '../../src-v2/application/measurement/measurement-contracts.ts'
 import { generationId, epochId, representationId } from '../../src-v2/domain/model.ts'
 import { MeasurementMetaStore } from '../../src-v2/state/measurement-meta-store.ts'
 import { FakeStorage } from './storage.ts'

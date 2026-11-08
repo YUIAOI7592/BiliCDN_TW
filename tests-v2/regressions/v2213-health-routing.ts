@@ -7,7 +7,7 @@ import { FakeStorage } from '../support/storage.ts'
 import { testScope } from '../support/scope.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
 import { EVIDENCE_KEY } from '../../src-v2/state/evidence-store.ts'
-import type { ChallengeProposal } from '../../src-v2/application/route-contracts.ts'
+import { type ChallengeProposal } from '../../src-v2/application/routing/route-contracts.ts'
 
 const target = TRUSTED_CATALOG[2],
   demand = { kind: 'video' as const, requiredMbps: 5, highDemand: false }

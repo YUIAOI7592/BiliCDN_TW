@@ -16,11 +16,11 @@ Monitor 一般停滯、舊 watchdog、冷起播均拒絕 dragging，清除停滯
 
 | 修復需求 | 來源位置 | 正式契約 |
 | --- | --- | --- |
-| wrapper／子節點，保留 inner／舊版／slider，限制目前區域 | [PlayerAdapter](../../../src-v2/adapters/player.ts)，control pointerdown | [br08-player.ts](../../../tests-v2/regressions/functional-races/br08-player.ts)：hit protects uncommitted preview、outside slider ancestor、synthetic/external pointerdown；[br08.ts](../../../tests-v2/regressions/functional-races/br08.ts)：原七契約 |
+| wrapper／子節點，保留 inner／舊版／slider，限制目前區域 | [PlayerAdapter](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/player.ts)，control pointerdown | [br08-player.ts](../../../tests-v2/regressions/functional-races/br08-player.ts)：hit protects uncommitted preview、outside slider ancestor、synthetic/external pointerdown；[br08.ts](../../../tests-v2/regressions/functional-races/br08.ts)：原七契約 |
 | 指標取代、區域外結束、合成排除及同步重入 | PlayerAdapter 私有 gesture／pointer revision／release | only current trusted pointer owner can release、nonprogress preserves owner、visibility/initial-region/matched-hit-region reentry、nested synthetic |
 | blur／hidden 在 guard 前通知、清理 | [VisibilityAdapter](../../../src-v2/adapters/visibility.ts)、[entry 注入](../../../src-v2/entry.ts) | trusted blur reaches player before guard、hidden visibilitychange/webkitvisibilitychange、listener failures、disable/reinstall、reset unsubscribes |
-| 拖曳阻止三種監控救援 | [PlayerMonitor](../../../src-v2/application/player-monitor.ts)，active/watchdog/startup gates | held wrapper exact boundaries、held non-seeking preview、watchdog reset、cold startup does not consume rescue |
-| token 提交前最新資格及同步重入 | [RecoveryController](../../../src-v2/application/recovery-controller.ts)，begin/ownership | dragging prevents stall/startup/long-pause/paused-transition token；rate reentry、eligibility changes during final controls、newer token/breaker/quota |
+| 拖曳阻止三種監控救援 | [PlayerMonitor](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/player-monitor.ts)，active/watchdog/startup gates | held wrapper exact boundaries、held non-seeking preview、watchdog reset、cold startup does not consume rescue |
+| token 提交前最新資格及同步重入 | [RecoveryController](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/recovery-controller.ts)，begin/ownership | dragging prevents stall/startup/long-pause/paused-transition token；rate reentry、eligibility changes during final controls、newer token/breaker/quota |
 | 放開後期限、位置 0 與晚到結果 | Monitor／Recovery 既有 stall intent | ordinary release exact 15/30 from zero；cold startup original age；late reload/play rejection、drag revokes old intent |
 | BR-01～07 相容 | 未擴充公開 API、應用層 ports／snapshot、schema 2 | 全套 application／adapters／orchestration／measurement／diagnostics／native-transport 等既有回歸 |
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { rescuePlayerFixture } from '../support/rescue-player.ts'
 import { monitorRoutes, monitorMeasurement, monitorRecovery } from '../support/controllers.ts'
 import { SessionStore } from '../../src-v2/state/session-store.ts'
-import { PlayerMonitor } from '../../src-v2/application/player-monitor.ts'
+import { PlayerMonitor } from '../../src-v2/application/playback/player-monitor.ts'
 import { representationId } from '../../src-v2/domain/model.ts'
 
 function monitor(t: Parameters<typeof rescuePlayerFixture>[0], candidate = true) {

@@ -1,10 +1,9 @@
-import type {
-  ShowControlCenterPort,
-  ControlMonitorReader,
-  ControlSessionReader,
+import {
+  type ShowControlCenterPort,
+  type ControlMonitorReader,
+  type ControlSessionReader,
 } from './control-contracts.ts'
-import type { SettingsReader } from '../state/settings-contracts.ts'
-
+import { type SettingsReader } from '../state/settings-contracts.ts'
 export class PlayerPanel {
   #timer: number | null = null
   constructor(

@@ -1,7 +1,6 @@
 import { isCatalogHost } from '../domain/catalog.ts'
-import type { StoragePort } from '../platform/storage-port.ts'
-import type { SettingsChange, SettingsState } from './settings-contracts.ts'
-import type { SettingsPort } from './settings-contracts.ts'
+import { type StoragePort } from '../platform/storage-port.ts'
+import { type SettingsChange, type SettingsState, type SettingsPort } from './settings-contracts.ts'
 export const SETTINGS_KEY = 'bilicdn.v2.settings'
 
 const BOOLEAN_DEFAULTS = Object.freeze({

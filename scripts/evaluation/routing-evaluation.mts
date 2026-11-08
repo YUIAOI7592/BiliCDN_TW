@@ -35,7 +35,7 @@ function current(): Promise<Policy> {
     const compiled = await build({
       stdin: {
         contents:
-          "export {chooseRoute,rankRoutes} from './src-v2/domain/routing.ts'; export {evidenceMetrics} from './src-v2/domain/evidence.ts'; export {startupCapacityPool,startupSelection} from './src-v2/domain/route-capacity.ts'",
+          "export {chooseRoute,rankRoutes} from './src-v2/domain/routing.ts'; export {evidenceMetrics} from './src-v2/domain/evidence.ts'; export {startupCapacityPool,startupSelection} from './src-v2/domain/startup-policy.ts'",
         resolveDir: process.cwd(),
       },
       bundle: true,

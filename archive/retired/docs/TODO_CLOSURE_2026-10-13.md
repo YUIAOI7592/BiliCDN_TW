@@ -26,7 +26,7 @@ P01 採用 [第 2 輪](IAB_v2.1.20_BR01_R2_2026-10-11.md#5-p01獨立-xhr-子集-
 - 第 3 輪 12 筆斷言中，只採用 10 筆不依賴完整網路窗口的 Blob／本地所有權案例。兩筆 timeout 雖有局部斷言成功，當輪 Network 截斷，仍維持無效。
 - 第 4 輪另有原生／安裝 hook 各一筆完整 timeout 窗口；DONE、空回應與 timeout→loadend 符合原判定，收集未截斷。原生已終止的兩個攔截 ID 清理錯誤保留，不改寫成未發生。
 
-現行 [XHR 入口](../../../src-v2/adapters/xhr-hook.ts) 僅在非同步、合資格媒體 GET 且 `timeout === 0` 時等待起播 gate；明確 timeout 記錄 `preflight-skipped:xhr-explicit-timeout` 後維持直接送出。這與 [產品契約](../../../docs/PROJECT_CONTEXT.md#選路與量測) 及第 3～5 輪觀察一致，沒有依據把跳過本身列為程式缺陷。
+現行 [XHR 入口](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts) 僅在非同步、合資格媒體 GET 且 `timeout === 0` 時等待起播 gate；明確 timeout 記錄 `preflight-skipped:xhr-explicit-timeout` 後維持直接送出。這與 [產品契約](../../../docs/PROJECT_CONTEXT.md#選路與量測) 及第 3～5 輪觀察一致，沒有依據把跳過本身列為程式缺陷。
 
 以下安裝版情境仍未取得自然前提，**限制封存，未作通過判定**：
 

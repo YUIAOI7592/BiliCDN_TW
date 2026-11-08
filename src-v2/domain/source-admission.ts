@@ -1,6 +1,5 @@
 import { TRUSTED_CATALOG } from './catalog.ts'
 import { isKnownNativeFamily, parseMediaUrl, replaceUrlHost } from './url-policy.ts'
-
 export const MAX_EXACT_SOURCES = 4
 export const TRUSTED_SOURCE_SCAN = 16
 export const PROVISIONAL_SOURCE_SCAN = 4

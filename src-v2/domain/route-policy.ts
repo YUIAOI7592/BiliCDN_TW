@@ -1,6 +1,6 @@
 import { DEFAULT_UNAVAILABLE_HOSTS, TRUSTED_CATALOG } from './catalog.ts'
-import type { CatalogCandidate, MediaKind } from './model.ts'
-
+import { type CatalogCandidate } from './route-model.ts'
+import { type MediaKind } from './model.ts'
 export interface RestrictionFacts {
   readonly black: boolean
   readonly dead: boolean

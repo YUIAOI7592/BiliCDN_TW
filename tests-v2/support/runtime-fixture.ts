@@ -9,19 +9,23 @@ import { SessionStore } from '../../src-v2/state/session-store.ts'
 import { RestrictionStore } from '../../src-v2/state/restriction-store.ts'
 import { EvidenceStore } from '../../src-v2/state/evidence-store.ts'
 import { MeasurementMetaStore } from '../../src-v2/state/measurement-meta-store.ts'
-import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
+import { MeasurementController } from '../../src-v2/application/measurement/measurement-controller.ts'
 import { SignedRouteVault } from '../../src-v2/state/signed-route-vault.ts'
-import { RouteCoordinator } from '../../src-v2/application/route-coordinator.ts'
-import { PlayurlController } from '../../src-v2/application/playurl-controller.ts'
-import { PlayurlAdapter } from '../../src-v2/adapters/playurl.ts'
-import { TransportContext } from '../../src-v2/adapters/transport-context.ts'
-import { RecoveryController } from '../../src-v2/application/recovery-controller.ts'
-import { PlayerMonitor } from '../../src-v2/application/player-monitor.ts'
+import { RouteCoordinator } from '../../src-v2/application/routing/route-coordinator.ts'
+import { PlayurlController } from '../../src-v2/application/playurl/playurl-controller.ts'
+import { PlayurlAdapter } from '../../src-v2/adapters/playurl/playurl.ts'
+import { TransportContext } from '../../src-v2/adapters/transport/transport-context.ts'
+import { RecoveryController } from '../../src-v2/application/playback/recovery-controller.ts'
+import { PlayerMonitor } from '../../src-v2/application/playback/player-monitor.ts'
 import { RuntimeController } from '../../src-v2/application/runtime-controller.ts'
 import { LifecycleController } from '../../src-v2/application/lifecycle-controller.ts'
 import { ControlCommands } from '../../src-v2/application/control-commands.ts'
-import type { PlayerPort, VideoSnapshot, RangeProbePort } from '../../src-v2/application/ports.ts'
-import type { TransportSnapshot } from '../../src-v2/domain/transport-model.ts'
+import {
+  type PlayerPort,
+  type VideoSnapshot,
+} from '../../src-v2/application/playback/player-contracts.ts'
+import { type RangeProbePort } from '../../src-v2/application/measurement/measurement-contracts.ts'
+import { type TransportSnapshot } from '../../src-v2/domain/transport-model.ts'
 
 export const blankVideo = (): VideoSnapshot => ({
   available: true,

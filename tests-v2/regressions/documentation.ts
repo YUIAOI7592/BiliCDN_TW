@@ -11,8 +11,8 @@ import {
   documentationCli,
   markdownAnchors,
 } from '../../scripts/checks/docs-check.mts'
-import type { DocumentationManifest } from '../../scripts/checks/docs-check.mts'
-import type { ArchiveManifest } from '../../scripts/checks/archive-check.mts'
+import { type DocumentationManifest } from '../../scripts/checks/docs-check.mts'
+import { type ArchiveManifest } from '../../scripts/checks/archive-check.mts'
 import { testScope } from '../support/scope.ts'
 
 function fixture(t: TestContext) {

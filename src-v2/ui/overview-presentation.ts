@@ -1,7 +1,6 @@
 import { observedPlaybackDemand } from '../domain/playback-demand.ts'
-import type { ControlCenterSnapshot } from './control-contracts.ts'
+import { type ControlCenterSnapshot } from './control-contracts.ts'
 import { attributionLabel, plain } from './labels.ts'
-
 const positive = (value: number | null | undefined): value is number =>
   value != null && Number.isFinite(value) && value > 0
 

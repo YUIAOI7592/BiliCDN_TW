@@ -2,13 +2,15 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   startupTransition,
-  restoreTransition,
-  stallProgressTransition,
   type StartupStage,
   type StartupEvent,
+} from '../../src-v2/domain/startup-policy.ts'
+import {
+  restoreTransition,
   type RestoreStage,
   type RestoreEvent,
-} from '../../src-v2/domain/playback-flow.ts'
+} from '../../src-v2/domain/restore-policy.ts'
+import { stallProgressTransition } from '../../src-v2/domain/playback-progress.ts'
 
 for (const stage of [
   'available',

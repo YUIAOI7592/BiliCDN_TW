@@ -1,12 +1,12 @@
-import type {
-  CapacityConfidence,
-  EvidenceMetrics,
-  EvidenceSample,
-  MediaKind,
-  RouteEvidence,
-  RouteState,
-  TimingBasis,
-} from './model.ts'
+import {
+  type CapacityConfidence,
+  type EvidenceMetrics,
+  type EvidenceSample,
+  type RouteEvidence,
+  type RouteState,
+} from './evidence-model.ts'
+import { type MediaKind } from './model.ts'
+import { type TimingBasis } from './measurement-time.ts'
 import { failedCircuit } from './circuit-policy.ts'
 export { CIRCUIT_BACKOFF_MS } from './circuit-policy.ts'
 

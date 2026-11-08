@@ -8,15 +8,15 @@ import {
   MeasurementMetaStore,
   MEASUREMENT_META_KEY,
 } from '../../src-v2/state/measurement-meta-store.ts'
-import { MeasurementController } from '../../src-v2/application/measurement-controller.ts'
-import type {
-  MeasurementMeta,
-  RevalidationClaim,
+import { MeasurementController } from '../../src-v2/application/measurement/measurement-controller.ts'
+import {
+  type MeasurementMeta,
+  type RevalidationClaim,
 } from '../../src-v2/state/measurement-meta-ports.ts'
 import { createRuntimeIds } from '../../src-v2/platform/runtime-ids.ts'
-import type { StoragePort } from '../../src-v2/platform/storage-port.ts'
+import { type StoragePort } from '../../src-v2/platform/storage-port.ts'
 import { TRUSTED_CATALOG } from '../../src-v2/domain/catalog.ts'
-import type { MeasurementStatus } from '../../src-v2/application/measurement-contracts.ts'
+import { type MeasurementStatus } from '../../src-v2/application/measurement/measurement-contracts.ts'
 
 async function createPriorityRound(t: TestContext, storage = new SharedEvidenceStorage()) {
   const scope = testScope(t),

@@ -6,7 +6,7 @@ import {
   evidenceMetrics,
   EVIDENCE_TTL_MS,
 } from '../../src-v2/domain/evidence.ts'
-import type { EvidenceSample, RouteEvidence } from '../../src-v2/domain/model.ts'
+import { type EvidenceSample, type RouteEvidence } from '../../src-v2/domain/evidence-model.ts'
 
 const now = 2_000_000_000_000
 const sample = (id: string, speed: number | null, at = now): EvidenceSample => ({

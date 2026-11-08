@@ -6,8 +6,8 @@
 
 | 缺陷 | 原因與行為 | 來源與正式契約 |
 | --- | --- | --- |
-| BR-04 | gate 等待中的 failed sync open 使原生回到 UNSENT；內部準備的同步回呼可再次破壞狀態，原流程仍標成 sent、native send 拋錯且無終止通知。現在使用保存的原生 readyState getter，準備最多兩次；每次 open／選項／header 後重查 owner、phase、OPENED，重新決定最新合法目標。持續失效以一次 DONE／readystatechange→error→loadend 終止，已送出／取代／中止請求不補發、不重送。 | [xhr-hook](../../../src-v2/adapters/xhr-hook.ts)；[XHR 回歸](../../../tests-v2/regressions/functional-races/xhr.ts)，新增 19 個 BR-04。 |
-| BR-05 | prepareStartup 三處取消邊界建立新的 AbortError，遺失 caller reason 身分或 falsy 原值。現在使用 signal.reason；只在平台沒有 reason 能力時相容回退。取消只拒絕自己的 waiter，不取消共用 probe，各完成路徑移除 listener。 | [measurement-controller](../../../src-v2/application/measurement-controller.ts)；[取消回歸](../../../tests-v2/regressions/functional-races/startup-abort.ts) 31 個，XHR 檔另含 16 個 Fetch 整合案例。 |
+| BR-04 | gate 等待中的 failed sync open 使原生回到 UNSENT；內部準備的同步回呼可再次破壞狀態，原流程仍標成 sent、native send 拋錯且無終止通知。現在使用保存的原生 readyState getter，準備最多兩次；每次 open／選項／header 後重查 owner、phase、OPENED，重新決定最新合法目標。持續失效以一次 DONE／readystatechange→error→loadend 終止，已送出／取代／中止請求不補發、不重送。 | [xhr-hook](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/adapters/xhr-hook.ts)；[XHR 回歸](../../../tests-v2/regressions/functional-races/xhr.ts)，新增 19 個 BR-04。 |
+| BR-05 | prepareStartup 三處取消邊界建立新的 AbortError，遺失 caller reason 身分或 falsy 原值。現在使用 signal.reason；只在平台沒有 reason 能力時相容回退。取消只拒絕自己的 waiter，不取消共用 probe，各完成路徑移除 listener。 | [measurement-controller](https://github.com/YUIAOI7592/BiliCDN_TW/blob/dc3b6f08ce6a09ffcb5a0009d803a9adad8d60ea/src-v2/application/measurement-controller.ts)；[取消回歸](../../../tests-v2/regressions/functional-races/startup-abort.ts) 31 個，XHR 檔另含 16 個 Fetch 整合案例。 |
 
 額外複核在原生 send 拋錯契約確認 pending media 歸因殘留 1。修復使用既有 abort observation 釋放 pending，保留直接 send 的原例外，deferred caller 仍收到本地 error；不記錄 CDN 失敗樣本、不改親和或 Native 授權。正式斷言要求 pendingMediaCount 為 0、evidence 為空。準備失败在建立歸因前終止。
 
