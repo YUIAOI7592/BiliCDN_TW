@@ -1,4 +1,7 @@
 import { test } from 'node:test'
+import '../regressions/v2213-health-controller.ts'
+import '../regressions/v2213-meta.ts'
+import '../regressions/v2213-health-routing.ts'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
 import {
@@ -84,11 +87,12 @@ async function checkMeasurementMetadataDefaultsToFirstCatalogCursor1(
     'measurement',
     'metadata keeps the existing cross-tab measurement lock',
   )
-  base.meta.clear()
+  await base.meta.clear()
   assert.ok(
-    !base.storage.values.has(MEASUREMENT_META_KEY),
-    'clear removes only the existing measurement key',
+    base.storage.values.has(MEASUREMENT_META_KEY),
+    'clear confirms empty coordination in the existing measurement key',
   )
+  assert.deepEqual(base.meta.get(), { catalogCursor: 0, lastChallengeAt: 0 })
   const host = TRUSTED_CATALOG[0]!,
     url = `https://${host}/test.m4s`
   const context = {

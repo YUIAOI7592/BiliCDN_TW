@@ -189,9 +189,9 @@ async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t:
       },
     },
     {
-      clear: () => {
+      clear: async () => {
         calls.push('meta.clear')
-        meta.clear()
+        await meta.clear()
       },
     },
     {
@@ -248,9 +248,10 @@ async function checkBlacklistCommandPersistsBeforeRouteInvalidation2(
   )
   assert.strictEqual(
     base.storage.values.has('bilicdn.v2.meta'),
-    false,
-    'measurement metadata cleared through its store',
+    true,
+    'measurement metadata clear is confirmed in its existing key',
   )
+  assert.deepEqual(base.meta.get(), { catalogCursor: 0, lastChallengeAt: 0 })
   const vault = new SignedRouteVault(),
     routes = new RouteCoordinator(
       base.clock,

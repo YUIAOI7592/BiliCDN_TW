@@ -22,11 +22,15 @@ import {
   type DomainEvent,
   type FailureKind,
   type CircuitObservationSnapshot,
+  type CircuitControlStamp,
+  type CatalogCandidate,
+  type NativeCandidate,
 } from '../domain/model.ts'
 import { type SessionSnapshot, type SessionPort } from '../state/session-contracts.ts'
 import { type VaultGroupSnapshot, type SignedRouteVaultPort } from '../state/vault-contracts.ts'
 import { type EvidencePort } from '../state/evidence-ports.ts'
 import { type RestrictionPort } from '../state/restriction-contracts.ts'
+import type { RevalidationClaim } from '../state/measurement-meta-ports.ts'
 export interface AppliedRouteDecision {
   readonly decision: RouteDecision
   readonly url: string | null
@@ -46,6 +50,19 @@ export interface StartupCandidate {
   readonly original: boolean
   readonly cachedSafeMbps: number | null
   readonly context: RouteIdentity
+}
+
+export interface ChallengePriority {
+  readonly claims: readonly RevalidationClaim[]
+  readonly allowNative?: boolean
+}
+
+export interface ChallengeProposal {
+  readonly context: RouteIdentity
+  readonly candidate: CatalogCandidate | NativeCandidate
+  readonly url: string
+  readonly streamKey: string | null
+  readonly priorityStamp: CircuitControlStamp | null
 }
 
 export interface StartupOptions {
@@ -275,6 +292,18 @@ export interface RouteCoordinatorPort {
     preferNative: boolean,
     excludedHosts?: ReadonlySet<string>,
     catalogCursor?: number,
+  ): AppliedRouteDecision | null
+  proposeChallenge(
+    representation: RepresentationId,
+    demand: PlaybackDemand,
+    preferNative: boolean,
+    excludedHosts?: ReadonlySet<string>,
+    catalogCursor?: number,
+    priority?: ChallengePriority,
+  ): ChallengeProposal | null
+  commitChallenge(
+    proposal: ChallengeProposal,
+    priorityClaimed?: boolean,
   ): AppliedRouteDecision | null
   recordChallenge(
     applied: AppliedRouteDecision,

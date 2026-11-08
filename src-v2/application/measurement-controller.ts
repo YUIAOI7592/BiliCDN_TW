@@ -13,6 +13,8 @@ import type {
 import { probeStartByte } from '../domain/probe-range.ts'
 import { mediaIdentity } from '../domain/url-policy.ts'
 import { readMonotonic } from '../domain/measurement-time.ts'
+import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
+import type { StorageLock } from '../platform/storage-port.ts'
 import type { SettingsReader, SettingsObserver } from '../state/settings-contracts.ts'
 
 import type { RangeProbePort, SchedulerPort } from './ports.ts'
@@ -43,6 +45,11 @@ interface ProbeResult {
 interface MeasurementWork {
   readonly controller: AbortController
   readonly marker: number
+}
+
+interface HealthRound {
+  readonly id: string
+  generation: string | null
 }
 
 interface RoundRange {
@@ -105,6 +112,7 @@ export class MeasurementController implements MeasurementPort {
     private readonly random: () => number = () => 0,
     private readonly settings?: SettingsReader & SettingsObserver,
     private readonly monotonicNow: () => number | null = () => null,
+    private readonly ids?: RuntimeIdPort,
   ) {
     if (settings) {
       let previous = settings.get()
@@ -579,12 +587,13 @@ export class MeasurementController implements MeasurementPort {
     this.#planning = planning
     this.#snapshot = Object.freeze({ ...this.#snapshot, state: 'waiting', reason: 'storage-lock' })
     const planningMarker = this.#marker
+    const round: HealthRound = { id: this.ids?.next('challenge') ?? '', generation: null }
     let running: MeasurementWork | null = null
     try {
       let at = this.now()
       let first: AppliedRouteDecision | null = null,
         cursor = 0
-      await this.meta.withLock(() => {
+      await this.meta.withLock((lock) => {
         if (planningMarker !== this.#marker || this.#planning !== planning) return
         const current = this.#lastStatus
         if (
@@ -598,12 +607,14 @@ export class MeasurementController implements MeasurementPort {
         const meta = this.meta.get()
         if (at - (Number(meta.lastChallengeAt) || 0) < COOLDOWN_MS) return
         cursor = Math.max(0, Number(meta.catalogCursor) || 0)
-        first = this.routes.challenge(
-          current.representation!,
-          current.demand,
+        first = this.#reserveChallenge(
+          current,
           this.#preferNative,
           new Set(),
           cursor,
+          lock,
+          round,
+          () => planningMarker === this.#marker && this.#planning === planning,
         )
         if (!first?.url) return
         if (
@@ -643,7 +654,7 @@ export class MeasurementController implements MeasurementPort {
         marker = this.#marker
       running = { controller, marker }
       this.#running = running
-      await this.#runRound(planned, status, controller, marker, cursor)
+      await this.#runRound(planned, status, controller, marker, cursor, round)
     } catch {
       if (
         planningMarker === this.#marker &&
@@ -664,12 +675,67 @@ export class MeasurementController implements MeasurementPort {
     }
   }
 
+  #reserveChallenge(
+    status: MeasurementStatus,
+    preferNative: boolean,
+    excluded: ReadonlySet<string>,
+    cursor: number,
+    lock: StorageLock | undefined,
+    round: HealthRound,
+    valid: () => boolean,
+    allowNative = true,
+  ): AppliedRouteDecision | null {
+    if (!valid() || this.#unsafeReason(status) || !status.representation || !status.demand)
+      return null
+    const coordination = this.ids ? this.meta.coordination?.(lock) : null
+    if (round.generation !== null && coordination?.generation !== round.generation) return null
+    if (coordination) round.generation ??= coordination.generation
+    if (!this.routes.proposeChallenge || !this.routes.commitChallenge)
+      return this.routes.challenge(
+        status.representation,
+        status.demand,
+        preferNative,
+        excluded,
+        cursor,
+      )
+    const proposal = this.routes.proposeChallenge(
+      status.representation,
+      status.demand,
+      preferNative,
+      excluded,
+      cursor,
+      coordination ? { claims: coordination.claims, allowNative } : undefined,
+    )
+    if (!proposal || (!allowNative && proposal.candidate.type === 'native-signed') || !valid())
+      return null
+    let claimed = false
+    if (proposal.priorityStamp) {
+      if (!coordination || !round.id || !this.ids) return null
+      claimed =
+        this.meta.claimRevalidation?.(coordination.generation, {
+          host: proposal.candidate.host,
+          kind: proposal.candidate.kind,
+          stamp: proposal.priorityStamp,
+          claimId: this.ids.next('challenge'),
+          roundId: round.id,
+        }) === true
+      if (!claimed) return null
+    }
+    if (
+      !valid() ||
+      (round.generation !== null && this.meta.coordinationCurrent?.(round.generation) !== true)
+    )
+      return null
+    return this.routes.commitChallenge(proposal, claimed)
+  }
+
   async #runRound(
     first: AppliedRouteDecision,
     status: MeasurementStatus,
     controller: AbortController,
     marker: number,
     cursor: number,
+    round: HealthRound,
   ): Promise<void> {
     const context = first.context
     const handle =
@@ -733,13 +799,23 @@ export class MeasurementController implements MeasurementPort {
       )
         break
       cursor = nextCursor(cursor)
-      next = this.routes.challenge(
-        status.representation!,
-        status.demand!,
-        nativeCount === 0 && catalogCount >= 2,
-        excluded,
-        cursor,
-      )
+      next = await this.meta.withLock((lock) => {
+        const current = this.#lastStatus ?? status
+        return this.#reserveChallenge(
+          current,
+          nativeCount === 0 && catalogCount >= 2,
+          excluded,
+          cursor,
+          lock,
+          round,
+          () =>
+            marker === this.#marker &&
+            this.#running?.controller === controller &&
+            !controller.signal.aborted &&
+            current.representation === status.representation,
+          nativeCount < 1,
+        )
+      })
       if (nativeCount >= 1 && next?.decision.routeType === 'native-signed') next = null
     }
     if (

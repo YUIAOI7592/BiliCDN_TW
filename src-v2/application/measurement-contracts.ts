@@ -58,13 +58,15 @@ export interface MeasurementRoutes extends Pick<
   | 'isCatalogOnly'
   | 'recordChallenge'
 > {
+  proposeChallenge?: RouteCoordinatorPort['proposeChallenge']
+  commitChallenge?: RouteCoordinatorPort['commitChallenge']
   commitStartupChoice(
     ...args: Parameters<RouteCoordinatorPort['commitStartupChoice']>
   ): { readonly host: string | null } | null
 }
 export interface MeasurementMetadataPort extends Pick<
   MeasurementMetaPort,
-  'get' | 'update' | 'withLock'
+  'get' | 'update' | 'withLock' | 'coordination' | 'coordinationCurrent' | 'claimRevalidation'
 > {}
 export interface MeasurementPort {
   snapshot(): MeasurementSnapshot

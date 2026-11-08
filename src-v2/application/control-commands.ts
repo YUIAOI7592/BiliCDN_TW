@@ -26,7 +26,7 @@ export class ControlCommands implements ControlCommandPort {
   async clearLearning(): Promise<void> {
     await this.evidence.clear()
     await this.restrictions.clear()
-    this.meta.clear()
+    await this.meta.clear()
   }
   async resetSettings(): Promise<void> {
     await this.settings.reset()

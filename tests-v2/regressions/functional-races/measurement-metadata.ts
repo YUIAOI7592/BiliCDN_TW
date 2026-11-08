@@ -30,6 +30,7 @@ function store(raw: unknown, now = at) {
   let value = raw
   const writes: unknown[] = []
   const storage = {
+    readResult: <T>(_key: string, _fallback: T) => ({ ok: true as const, value: value as T }),
     get: <T>(_key: string, _fallback: T): T => value as T,
     set: <T>(_key: string, next: T) => {
       value = next
@@ -143,7 +144,7 @@ test('META U invalid partial fields and accessor patch preserve validated curren
   assert.deepEqual(f.meta.get(), zero)
 })
 
-test('META U returned values are isolated and reads observe the latest storage', () => {
+test('META U returned values are isolated and reads observe the latest storage', async () => {
   const f = store({ schema: 2, catalogCursor: 2, lastChallengeAt: 0 })
   const result = f.meta.get()
   try {
@@ -152,7 +153,7 @@ test('META U returned values are isolated and reads observe the latest storage',
   assert.equal(f.meta.get().catalogCursor, 2)
   f.meta.update({ catalogCursor: 8 })
   assert.equal(f.meta.get().catalogCursor, 8)
-  f.meta.clear()
+  await f.meta.clear()
   assert.deepEqual(f.meta.get(), zero)
 })
 

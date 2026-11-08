@@ -1,7 +1,7 @@
 import { predictCompletionMs, completionReason } from '../domain/route-completion.ts'
 import { controlPlaybackDemand } from '../domain/playback-demand.ts'
 import { readMonotonic } from '../domain/measurement-time.ts'
-import { CIRCUIT_SUCCESS_GAP_MS } from '../domain/circuit-policy.ts'
+import { CIRCUIT_SUCCESS_GAP_MS, sameCircuitStamp } from '../domain/circuit-policy.ts'
 import { CircuitObservations } from './routing/circuit-observation.ts'
 import type { SettingsReader } from '../state/settings-contracts.ts'
 import { appliedRoute } from './routing/request-routing.ts'
@@ -80,6 +80,8 @@ import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
 
 import type {
   AppliedRouteDecision,
+  ChallengeProposal,
+  ChallengePriority,
   CurrentRouteCapacity,
   DecisionRecord,
   FallbackProgress,
@@ -130,6 +132,10 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #playbackFacts: RoutePlaybackFacts | null = null
   #effectiveRate = 2
   #challengeAttempts = new Map<string, number>()
+  #challengeProposals = new WeakMap<
+    ChallengeProposal,
+    { readonly revision: number; readonly root: string; readonly allowNative: boolean }
+  >()
   #firstMediaAt = 0
   #firstVideoAt = 0
   #lastVideoEvidence: {
@@ -1720,11 +1726,30 @@ export class RouteCoordinator implements RouteCoordinatorPort {
 
   challenge(
     representation: RepresentationId,
-    _demand: PlaybackDemand,
+    demand: PlaybackDemand,
     preferNative: boolean,
     excludedHosts: ReadonlySet<string> = new Set(),
     catalogCursor = 0,
   ): AppliedRouteDecision | null {
+    const proposal = this.proposeChallenge(
+      representation,
+      demand,
+      preferNative,
+      excludedHosts,
+      catalogCursor,
+    )
+    return proposal ? this.commitChallenge(proposal) : null
+  }
+
+  proposeChallenge(
+    representation: RepresentationId,
+    _demand: PlaybackDemand,
+    preferNative: boolean,
+    excludedHosts: ReadonlySet<string> = new Set(),
+    catalogCursor = 0,
+    priority?: ChallengePriority,
+  ): ChallengeProposal | null {
+    const revision = this.#policyRevision
     const context = this.vault.identity(representation)
     const root =
       context && this.isCatalogOnly()
@@ -1734,59 +1759,195 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (
       !context ||
       !root ||
+      this.session.get().disabled ||
+      this.settings.get().disabled ||
       this.settings.get().fixedHost ||
       (rootKey !== null && this.#hostLockedStreams.has(rootKey))
     )
       return null
-    this.settings.get()
-    this.restrictions.snapshot(context.kind)
-    const native = this.isCatalogOnly()
-      ? []
-      : this.vault
-          .candidates(representation, this.#unlockedNative.get(representation) ?? new Set())
-          .native.filter((candidate) => candidate.activelyExplorable)
+    const native =
+      this.isCatalogOnly() || priority?.allowNative === false
+        ? []
+        : this.vault
+            .candidates(representation, this.#unlockedNative.get(representation) ?? new Set())
+            .native.filter((candidate) => candidate.activelyExplorable)
     const candidates = challengerCandidates(context.kind, native, preferNative, catalogCursor)
     const now = this.clock.now(),
       currentHost = this.session.get().affinity?.host
-    const selected = candidates.find((candidate) => {
+    const legal = candidates.filter((candidate) => {
       if (candidate.host === currentHost || excludedHosts.has(candidate.host)) return false
       if (this.#hardRestriction(candidate.host, candidate.kind)) return false
+      if (this.vault.isInvalid(context.representation, candidate.host)) return false
       if (candidate.type === 'catalog-generated' && this.#incompatible(root, candidate.host))
         return false
-      const attemptKey = `${context.representation}:${candidate.host}`
-      if (now - (this.#challengeAttempts.get(attemptKey) ?? 0) < 6 * 60 * 60_000) return false
-      const evidence = this.evidence.get(candidate.host, candidate.kind)
-      return !evidence || !evidence.updatedAt || now - evidence.updatedAt >= 6 * 60 * 60 * 1000
+      return true
     })
+    const prioritized = priority
+      ? legal.find((candidate) => {
+          const row = this.evidence.get(candidate.host, candidate.kind),
+            control = this.evidence.control(candidate.host, candidate.kind)
+          return (
+            !!row &&
+            row.circuitUntil > 0 &&
+            row.circuitUntil <= now &&
+            control.synchronized &&
+            control.until === row.circuitUntil &&
+            !!control.stamp &&
+            !priority.claims.some(
+              (claim) =>
+                claim.host === candidate.host &&
+                claim.kind === candidate.kind &&
+                sameCircuitStamp(claim.stamp, control.stamp),
+            )
+          )
+        })
+      : null
+    const selected =
+      prioritized ??
+      legal.find((candidate) => {
+        const attemptKey = `${context.representation}:${candidate.host}`
+        if (now - (this.#challengeAttempts.get(attemptKey) ?? 0) < 6 * 60 * 60_000) return false
+        const evidence = this.evidence.get(candidate.host, candidate.kind)
+        return !evidence || !evidence.updatedAt || now - evidence.updatedAt >= 6 * 60 * 60 * 1000
+      })
     if (!selected) return null
-    const id = this.#nextId()
-    const decision: RouteDecision = {
-      action: 'rewrite',
-      id,
-      reason: 'safe-challenger',
-      routeType: selected.type,
-      host: selected.host,
-      candidate: selected,
-      ranking: Object.freeze([]),
-    }
     const url =
       selected.type === 'catalog-generated'
         ? replaceUrlHost(root, selected.host)
         : this.vault.resolve(selected.handle, context)
     if (!url || (selected.type === 'catalog-generated' && parseMediaUrl(url)?.kind !== 'normal'))
       return null
-    this.#challengeAttempts.set(`${context.representation}:${selected.host}`, now)
+    const proposal: ChallengeProposal = Object.freeze({
+      context,
+      candidate: selected,
+      url,
+      streamKey: rootKey,
+      priorityStamp: prioritized ? this.evidence.control(selected.host, selected.kind).stamp : null,
+    })
+    const proof = { revision, root, allowNative: priority?.allowNative !== false }
+    if (!this.#challengeCurrent(proposal, proof)) return null
+    if (prioritized && !proposal.priorityStamp) return null
+    this.#challengeProposals.set(proposal, proof)
+    return proposal
+  }
+
+  #challengeCurrent(
+    proposal: ChallengeProposal,
+    proof: { readonly revision: number; readonly root: string; readonly allowNative: boolean },
+  ): boolean {
+    const { context, candidate } = proposal,
+      state = this.session.get(),
+      settings = this.settings.get(),
+      root = this.isCatalogOnly()
+        ? this.#catalogSource(context)
+        : this.vault.rootUrl(context.representation)
+    if (
+      state.disabled ||
+      settings.disabled ||
+      settings.fixedHost ||
+      context.generation !== state.generation ||
+      context.epoch !== state.epoch ||
+      !this.vault.isCurrentIdentity(context) ||
+      proof.revision !== this.#policyRevision ||
+      !root ||
+      root !== proof.root ||
+      mediaIdentity(root) !== proposal.streamKey ||
+      (proposal.streamKey !== null && this.#hostLockedStreams.has(proposal.streamKey)) ||
+      candidate.kind !== context.kind ||
+      candidate.host === state.affinity?.host ||
+      this.#hardRestriction(candidate.host, candidate.kind) ||
+      this.vault.isInvalid(context.representation, candidate.host)
+    )
+      return false
+    const legal =
+      candidate.type === 'catalog-generated'
+        ? !this.#incompatible(root, candidate.host) &&
+          replaceUrlHost(root, candidate.host) === proposal.url &&
+          parseMediaUrl(proposal.url)?.kind === 'normal'
+        : proof.allowNative &&
+          !this.isCatalogOnly() &&
+          this.vault
+            .candidates(
+              context.representation,
+              this.#unlockedNative.get(context.representation) ?? new Set(),
+            )
+            .native.some(
+              (route) =>
+                route.handle === candidate.handle &&
+                route.host === candidate.host &&
+                route.activelyExplorable,
+            ) &&
+          this.vault.resolve(candidate.handle, context) === proposal.url
+    const priorityCurrent = this.#challengePriorityCurrent(proposal)
+    const latest = this.session.get(),
+      latestSettings = this.settings.get()
+    return (
+      legal &&
+      priorityCurrent &&
+      !latest.disabled &&
+      !latestSettings.disabled &&
+      !latestSettings.fixedHost &&
+      latest.generation === context.generation &&
+      latest.epoch === context.epoch &&
+      candidate.host !== latest.affinity?.host &&
+      proof.revision === this.#policyRevision &&
+      this.vault.isCurrentIdentity(context)
+    )
+  }
+
+  #challengePriorityCurrent(proposal: ChallengeProposal): boolean {
+    if (!proposal.priorityStamp) return true
+    const control = this.evidence.control(proposal.candidate.host, proposal.candidate.kind)
+    return (
+      control.synchronized &&
+      control.until > 0 &&
+      control.until <= this.clock.now() &&
+      sameCircuitStamp(control.stamp, proposal.priorityStamp)
+    )
+  }
+
+  commitChallenge(
+    proposal: ChallengeProposal,
+    priorityClaimed = false,
+  ): AppliedRouteDecision | null {
+    const proof = this.#challengeProposals.get(proposal)
+    if (!proof || !this.#challengeCurrent(proposal, proof)) return null
+    const { context, candidate } = proposal,
+      now = this.clock.now()
+    if (proposal.priorityStamp) {
+      if (!priorityClaimed || !this.#challengePriorityCurrent(proposal)) return null
+    } else {
+      const row = this.evidence.get(candidate.host, candidate.kind)
+      if (
+        now - (this.#challengeAttempts.get(`${context.representation}:${candidate.host}`) ?? 0) <
+          6 * 60 * 60_000 ||
+        (row?.updatedAt && now - row.updatedAt < 6 * 60 * 60_000)
+      )
+        return null
+    }
+    if (!this.#challengeCurrent(proposal, proof)) return null
+    this.#challengeProposals.delete(proposal)
+    const decision: RouteDecision = {
+      action: 'rewrite',
+      id: this.#nextId(),
+      reason: 'safe-challenger',
+      routeType: candidate.type,
+      host: candidate.host,
+      candidate,
+      ranking: Object.freeze([]),
+    }
+    this.#challengeAttempts.set(`${context.representation}:${candidate.host}`, now)
     this.#remember(decision, context, context.kind)
     this.#emit({ type: 'route-planned', at: now, decision })
     const applied = {
       decision,
-      url,
+      url: proposal.url,
       context,
-      streamKey: rootKey,
-      sourceHost: parseMediaUrl(root)?.host ?? null,
+      streamKey: proposal.streamKey,
+      sourceHost: parseMediaUrl(proof.root)?.host ?? null,
     }
     this.#measurementId(applied, 'challenge')
-    return applied
+    return this.#challengeCurrent(proposal, proof) ? applied : null
   }
 
   async recordChallenge(
