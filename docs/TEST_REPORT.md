@@ -75,7 +75,11 @@ Codex Security 三批不可變差異均完成逐檔覆蓋、正式封印及讀�
 
 v2.2.12 五份 Release 原件已核對 bytes／SHA-256，原樣搬至 archive/retired/releases/Release/v2.2.12；原搬移清單另保存不可變快照。上一版完整正文含 R1、研究入口、後續文件交付與限制已原樣追加歷史，三份日誌只追加。
 
-目前仍在發布前驗證；正式封裝、main／v2.2.13 標籤、唯一使用者腳本附件及公開 latest 的版本、大小與 SHA-256 於完成後記錄，不以本段預告通過。
+五項正式產物已封裝、登記並核對；正式發行提交為 `626432a800b42b56478676716f6f526209953543`，發布時遠端 main 與 v2.2.13 標籤均指向此提交。後續公開核對以文件提交推送 main，標籤保持發行提交，不改寫 Release 快照。
+
+2026-11-08 09:06:15 Asia/Taipei 完成獨立下載。[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.13) 非草稿／非預發行，只有 `BiliCDN_TW.user.js` 一個附件，亦為 GitHub latest。[版本附件](https://github.com/YUIAOI7592/BiliCDN_TW/releases/download/v2.2.13/BiliCDN_TW.user.js) 與[公開 latest](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js) 均回傳 200、版本 2.2.13、532,263 bytes，逐 bytes 相同於正式產物；SHA-256 均為 `ab0c2b1ad1a80f3f9d042cad9f426fe3c7574d655629e194ee4f8f9d3affb706`，符合唯一附件 digest。舊 v2.2.12 標籤保持 `2798719546b73918aa92b993cfbdf01c1ceff2dc`。
+
+原件、完整舊報告及三份日誌前綴已另做 SHA-256／bytes 核對。正式封裝後文件與封存檢查再通過，受審產品／測試／工具未變；安裝版仍未執行，不將公開更新可取得寫成 Tampermonkey 已驗收。
 
 ## 歷史驗證導覽
 
