@@ -25,6 +25,17 @@ export interface BuildOptions {
   write?: boolean
 }
 
+export function renderMetadata(template: string, version: string): string {
+  const lines = template.match(/^\/\/\s*@version\b[^\r\n]*$/gm) ?? []
+  if (
+    lines.length !== 1 ||
+    !/^\/\/\s*@version\s+__VERSION__\s*$/.test(lines[0]!) ||
+    template.split('__VERSION__').length !== 2
+  )
+    throw Error('Metadata requires exactly one explicit version placeholder')
+  return template.replace(/(@version\s+)__VERSION__/, `$1${version}`)
+}
+
 export async function build({ write = true }: BuildOptions = {}) {
   const release = readRelease()
   if (esbuild.version !== release.esbuildVersion)
@@ -39,10 +50,7 @@ export async function build({ write = true }: BuildOptions = {}) {
     outfile: 'dist/BiliCDN_TW.user.js',
     metafile: true,
   })
-  const metadata = readFileSync('src-v2/metadata.txt', 'utf8').replace(
-    /(@version\s+)\S+/,
-    `$1${release.version}`,
-  )
+  const metadata = renderMetadata(readFileSync('src-v2/metadata.txt', 'utf8'), release.version)
   const codeFile = result.outputFiles.find((file) => file.path.endsWith('.js'))
   const mapFile = result.outputFiles.find((file) => file.path.endsWith('.map'))
   if (!codeFile || !mapFile) throw Error('esbuild did not return JavaScript and source map outputs')

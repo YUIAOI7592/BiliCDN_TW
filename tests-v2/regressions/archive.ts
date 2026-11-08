@@ -106,6 +106,74 @@ test('archive accepts a clean source copy without Git or private payload', (t) =
   assert.equal(f.check().success, true)
   assert.equal(f.check().localChecked, false)
 })
+
+test('V2214 archive additional private manifests remain unread by public checks', (t) => {
+  const f = fixture(t)
+  const path = 'archive/retired/local/2026-11-08-cleanup/private-manifest.json'
+  Object.assign(f.manifest, { additionalLocalManifests: [path] })
+  f.write(path, 'private content is deliberately not JSON')
+  assert.equal(f.check().success, true)
+  assert.deepEqual(readArchiveManifest(f.root).additionalLocalManifests, [path])
+})
+
+for (const paths of [
+  ['.work/private-manifest.json'],
+  ['archive/retired/local/../private-manifest.json'],
+  ['archive/retired/local/new/nested/private-manifest.json'],
+  [`${privateRoot}/private-manifest.json`],
+  [
+    'archive/retired/local/new/private-manifest.json',
+    'archive/retired/local/new/private-manifest.json',
+  ],
+])
+  test(`V2214 archive rejects unsafe or duplicate additional manifest ${paths.join(',')}`, (t) => {
+    const f = fixture(t)
+    Object.assign(f.manifest, { additionalLocalManifests: paths })
+    assert.equal(hasRule(f.check(), 'manifest'), true)
+  })
+
+test('V2214 archive checks every additional private payload and its ownership', (t) => {
+  const f = fixture(t)
+  execFileSync('git', ['init', '-q'], { cwd: f.root })
+  f.write('.gitignore', '/archive/retired/local/\n')
+  f.write(
+    f.manifest.localManifest,
+    JSON.stringify({
+      schemaVersion: 1,
+      baseline: f.manifest.baseline,
+      root: privateRoot,
+      entries: [],
+    }),
+  )
+  const root = 'archive/retired/local/2026-11-08-cleanup'
+  const path = `${root}/private-manifest.json`
+  const archivedPath = `${root}/old-tool.mts`
+  const payload = 'preserved tool\r\n'
+  Object.assign(f.manifest, { additionalLocalManifests: [path] })
+  f.write(archivedPath, payload)
+  const entry = { originalPath: '.work/old-tool.mts', archivedPath, ...proof(payload) }
+  const save = (entries = [entry], identity = root) =>
+    f.write(
+      path,
+      JSON.stringify({ schemaVersion: 1, baseline: 'b'.repeat(40), root: identity, entries }),
+    )
+  save()
+  assert.equal(f.check(true).success, true)
+  assert.equal(f.check(true).localFiles, 1)
+  f.write(archivedPath, 'corrupted')
+  assert.equal(hasRule(f.check(true), 'private'), true)
+  f.write(archivedPath, payload)
+  f.write(entry.originalPath, payload)
+  assert.equal(hasRule(f.check(true), 'private'), true)
+  rmSync(join(f.root, entry.originalPath))
+  save([entry], privateRoot)
+  assert.equal(hasRule(f.check(true), 'private'), true)
+  save([{ ...entry, archivedPath: `${privateRoot}/old-tool.mts` }])
+  assert.equal(hasRule(f.check(true), 'private'), true)
+  save()
+  execFileSync('git', ['add', '-f', '--', archivedPath], { cwd: f.root })
+  assert.equal(hasRule(f.check(true), 'private'), true)
+})
 test('archive validates raw release and evidence relocation without altering bytes', (t) => {
   const f = fixture(t)
   for (const kind of ['release', 'evidence'] as const) {

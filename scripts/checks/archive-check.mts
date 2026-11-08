@@ -46,6 +46,7 @@ export interface ArchiveManifest {
   appendOnly: (ArchiveFileProof & { snapshotEntry: string })[]
   unchangedFiles: (ArchiveFileProof & { encoding: 'raw' })[]
   localManifest: string
+  additionalLocalManifests?: string[]
   historicalReferences: HistoricalArchiveReference[]
 }
 export interface ArchiveFinding {
@@ -205,6 +206,17 @@ function parseManifest(value: unknown): ArchiveManifest {
   const localManifest = localPath(raw.localManifest)
   if (pathKey(localManifest) !== `${localRoot}/private-manifest.json`)
     throw Error('Unexpected private archive manifest path')
+  const additionalLocalManifests: string[] = []
+  if (raw.additionalLocalManifests !== undefined) {
+    if (!Array.isArray(raw.additionalLocalManifests)) throw Error('Expected local manifest array')
+    for (const value of raw.additionalLocalManifests) {
+      const path = localPath(value)
+      if (!/^archive\/retired\/local\/[^/]+\/private-manifest\.json$/.test(path))
+        throw Error('Unexpected additional private archive manifest path')
+      additionalLocalManifests.push(path)
+    }
+    uniquePaths([localManifest, ...additionalLocalManifests], 'private manifest')
+  }
   const historicalReferences = rows(raw.historicalReferences).map((row) => {
     const line = integer(row.line)
     if (line === 0) throw Error('Historical reference lines start at one')
@@ -250,6 +262,7 @@ function parseManifest(value: unknown): ArchiveManifest {
     appendOnly,
     unchangedFiles,
     localManifest,
+    ...(additionalLocalManifests.length ? { additionalLocalManifests } : {}),
     historicalReferences,
   }
 }
@@ -480,11 +493,18 @@ function checkChecksums(
   }
 }
 const isChecksum = (file: string) => /(?:^|\/)SHA256SUMS_v[0-9.]+\.txt$/.test(file)
-function checkLocal(root: string, manifest: ArchiveManifest, result: ArchiveResult): void {
-  const raw = object(JSON.parse(read(root, manifest.localManifest).toString('utf8')) as unknown)
+function checkLocal(
+  root: string,
+  manifest: ArchiveManifest,
+  result: ArchiveResult,
+  privateManifest = manifest.localManifest,
+): void {
+  const localRoot = dirname(privateManifest).replaceAll('\\', '/')
+  const raw = object(JSON.parse(read(root, privateManifest).toString('utf8')) as unknown)
   if (
     raw.schemaVersion !== 1 ||
-    raw.baseline !== manifest.baseline ||
+    !/^[a-f0-9]{40}$/.test(string(raw.baseline)) ||
+    (privateManifest === manifest.localManifest && raw.baseline !== manifest.baseline) ||
     pathKey(localPath(raw.root)) !== localRoot
   )
     throw Error('Invalid private archive manifest identity')
@@ -536,15 +556,14 @@ function checkLocal(root: string, manifest: ArchiveManifest, result: ArchiveResu
     execFileSync('git', ['check-ignore', '--no-index', '-z', '--stdin'], {
       cwd: root,
       encoding: 'utf8',
-      input:
-        [manifest.localManifest, ...entries.map((entry) => entry.archivedPath)].join('\0') + '\0',
+      input: [privateManifest, ...entries.map((entry) => entry.archivedPath)].join('\0') + '\0',
       maxBuffer: 32 * 1024 * 1024,
     })
       .split('\0')
       .filter(Boolean)
       .map(pathKey),
   )
-  if (tracked.has(pathKey(manifest.localManifest)) || !ignored.has(pathKey(manifest.localManifest)))
+  if (tracked.has(pathKey(privateManifest)) || !ignored.has(pathKey(privateManifest)))
     throw Error('Private archive manifest must be ignored and untracked')
   for (const entry of entries) {
     try {
@@ -725,7 +744,8 @@ export function checkArchive(
         throw Error(`Only the three normal rebuildable outputs may remain in dist/: ${entry.name}`)
   })
   if (options.local)
-    attempt(manifest.localManifest, 'private', () => checkLocal(root, manifest, result))
+    for (const path of [manifest.localManifest, ...(manifest.additionalLocalManifests ?? [])])
+      attempt(path, 'private', () => checkLocal(root, manifest, result, path))
   result.findings.sort((a, b) => a.file.localeCompare(b.file) || a.rule.localeCompare(b.rule))
   result.success = result.findings.length === 0
   return result

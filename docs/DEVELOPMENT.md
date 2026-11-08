@@ -166,6 +166,8 @@ v2.2.12 的 `--optimization` 補充模式、提前重試資格對照及私有取
 
 ### 原版與 v2 的獨立離線比較
 
+本機封存可在搬移清單的 `additionalLocalManifests` 登記額外日期清單，位置限定 `archive/retired/local/<日期目錄>/private-manifest.json`。每份沿用 schema 1、該輪完整 baseline、root 與 entries；目標須位於自己的 root，逐檔保存大小及 SHA-256。`--local` 同時核對原清單與所有追加清單，拒絕重複登記、原位置殘留、原件變動及被 Git 追蹤的私有資料；公開模式只核對登記路徑，不讀私有清單。刪除快取的重建依據、刪前雜湊與刪後結果另存當輪私有操作紀錄，不以搬移證明代替刪除證明。
+
 詳細操作、輸入、期限與判定見 [離線評估指南](../scripts/evaluation/README.md#原版與-v2-的獨立離線比較)。
 
 ### 原始碼格式與靜態規則
@@ -250,7 +252,7 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 [build.mts](../scripts/build.mts) 將 `src-v2/entry.ts` 打包成單一瀏覽器 IIFE，以 Chrome 120 為目標，不分割程式碼；前置 [使用者腳本中繼資料](../src-v2/metadata.txt) 並填入設定版本。輸出為 `dist/BiliCDN_TW.user.js`、外部原始碼對照及 `dist/build-manifest.json`。資訊清單記錄建置選項、輸入雜湊及使用者腳本雜湊。建置不會上傳產物。v2 來源不得加入執行期依賴、遠端程式載入、Worker 攔截或歷史 v1 匯入。
 
-metadata.txt 中既有的 `@version` 是建置模板值；實際輸出由 release.json 覆寫，不能把模板數字或版本標頭單獨當成已發布／已安裝身分。核對發布版本時使用完整附件及實際載入本體的雜湊。
+metadata.txt 的 `@version` 使用唯一的 `__VERSION__` 占位符，由 release.json 注入；缺少、重複或混用數字版本宣告時拒絕建置。版本標頭不能單獨證明已發布／已安裝身分；核對時使用完整附件及實際載入本體的雜湊。
 
 ## 內建瀏覽器驗證
 

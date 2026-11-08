@@ -18,6 +18,22 @@ import './regressions/archive.ts'
 import './regressions/project-config.ts'
 import './regressions/upstream-comparison.ts'
 import './regressions/v227-evaluation.ts'
+import { renderMetadata } from '../scripts/build.mts'
+
+test('V2214 metadata injects exactly one explicit release version placeholder', () => {
+  assert.equal(
+    renderMetadata('// @version      __VERSION__\n', '2.2.14'),
+    '// @version      2.2.14\n',
+  )
+  for (const template of [
+    '',
+    '// @version 2.2.1\n',
+    '// @version __VERSION__\n// @version __VERSION__\n',
+    '// @version __VERSION__\n// @version 2.2.1\n',
+    '// @version __VERSION__\n// __VERSION__\n',
+  ])
+    assert.throws(() => renderMetadata(template, '2.2.14'), /version placeholder/)
+})
 
 test('formatting reaches a stable source before the next check', { timeout: 5000 }, async () => {
   const source =
