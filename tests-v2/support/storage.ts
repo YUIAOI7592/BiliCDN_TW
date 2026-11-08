@@ -1,9 +1,16 @@
-import type { StoragePort } from '../../src-v2/platform/storage-port.ts'
+import type { StoragePort, StorageRead } from '../../src-v2/platform/storage-port.ts'
 export class FakeStorage implements StoragePort {
   readonly values = new Map<string, unknown>()
   readonly listeners = new Map<string, Set<(value: unknown, remote: boolean) => void>>()
   get<T>(key: string, fallback: T): T {
     return (this.values.has(key) ? this.values.get(key) : fallback) as T
+  }
+  readResult<T>(key: string, fallback: T): StorageRead<T> {
+    try {
+      return { ok: true, value: this.get(key, fallback) }
+    } catch {
+      return { ok: false }
+    }
   }
   set<T>(key: string, value: T): void {
     this.values.set(key, structuredClone(value))

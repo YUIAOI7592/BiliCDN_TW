@@ -14,6 +14,42 @@ interface RestrictionPayload {
   readonly updatedAt: number
 }
 
+type RestrictionStorage = Pick<StoragePort, 'set' | 'listen' | 'withLock'> &
+  Required<Pick<StoragePort, 'readResult'>>
+
+interface AuthoritativeRestrictionRead {
+  readonly raw: unknown
+  readonly payload: RestrictionPayload
+  readonly token: number
+}
+
+// Confirm persisted fields before normalization can discard malformed rows or coerce values.
+const savedPayloadMatches = (raw: unknown, expected: RestrictionPayload): boolean => {
+  if (!raw || typeof raw !== 'object') return false
+  const payload = raw as Record<string, unknown>
+  if (
+    payload.schema !== 2 ||
+    payload.updatedAt !== expected.updatedAt ||
+    !Array.isArray(payload.records) ||
+    payload.records.length !== expected.records.length
+  )
+    return false
+  return payload.records.every((rawRecord, index) => {
+    if (!rawRecord || typeof rawRecord !== 'object') return false
+    const actual = rawRecord as Record<string, unknown>,
+      row = expected.records[index]!
+    return (
+      actual.host === row.host &&
+      actual.type === row.type &&
+      actual.kind === row.kind &&
+      actual.reason === row.reason &&
+      actual.createdAt === row.createdAt &&
+      actual.expireAt === row.expireAt &&
+      actual.updatedAt === row.updatedAt
+    )
+  })
+}
+
 const safeHost = (value: unknown): string | null => {
   const host = String(value ?? '')
     .trim()
@@ -86,15 +122,54 @@ const mergePayload = (
 export class RestrictionStore implements RestrictionPort {
   #payload: RestrictionPayload
   #stopRemote: () => void
+  #readToken = 0
+  #disposed = false
   constructor(
-    private readonly storage: StoragePort,
+    private readonly storage: RestrictionStorage,
     private readonly now: () => number,
   ) {
-    this.#payload = parsePayload(storage.get<unknown>(RESTRICTIONS_KEY, null), now())
-    this.#stopRemote = storage.listen<unknown>(RESTRICTIONS_KEY, (value, remote) => {
+    this.#payload = parsePayload(null, now())
+    this.#read()
+    this.#stopRemote = storage.listen<unknown>(RESTRICTIONS_KEY, (_value, remote) => {
       if (!remote) return
-      const incoming = parsePayload(value, this.now())
-      if (incoming.updatedAt >= this.#payload.updatedAt) this.#payload = incoming
+      this.#read()
+    })
+  }
+
+  #read(): AuthoritativeRestrictionRead | null {
+    if (this.#disposed) return null
+    const token = ++this.#readToken
+    try {
+      const result = this.storage.readResult<unknown>(RESTRICTIONS_KEY, null)
+      if (!result.ok || token !== this.#readToken) return null
+      const payload = parsePayload(result.value, this.now())
+      if (token !== this.#readToken) return null
+      this.#payload = payload
+      return { raw: result.value, payload, token }
+    } catch {
+      return null
+    }
+  }
+
+  async #write(
+    build: (current: RestrictionPayload, now: number) => RestrictionPayload,
+  ): Promise<void> {
+    await this.storage.withLock('restrictions', () => {
+      const current = this.#read()
+      if (!current) throw Error('Restriction read unconfirmed')
+      const now = this.now()
+      if (!Number.isFinite(now) || now < 0) throw Error('Restriction clock invalid')
+      const next = build(current.payload, now)
+      if (current.token !== this.#readToken) throw Error('Restriction read superseded')
+      let writeError: unknown
+      try {
+        this.storage.set(RESTRICTIONS_KEY, next)
+      } catch (error) {
+        writeError = error
+      }
+      const actual = this.#read()
+      if (!actual || !savedPayloadMatches(actual.raw, next) || actual.token !== this.#readToken)
+        throw writeError ?? Error('Restriction write unconfirmed')
     })
   }
 
@@ -125,39 +200,36 @@ export class RestrictionStore implements RestrictionPort {
   }
 
   async add(record: Omit<RestrictionRecord, 'createdAt' | 'updatedAt'>): Promise<void> {
-    await this.storage.withLock('restrictions', () => {
-      const now = this.now()
-      const current = parsePayload(this.storage.get<unknown>(RESTRICTIONS_KEY, null), now)
+    await this.#write((current, now) => {
       const incoming = parsePayload(
         { schema: 2, updatedAt: now, records: [{ ...record, createdAt: now, updatedAt: now }] },
         now,
       )
-      this.#payload = mergePayload(current, incoming, now)
-      this.storage.set(RESTRICTIONS_KEY, this.#payload)
+      return mergePayload(current, incoming, now)
     })
   }
 
   async remove(host: string, type?: RestrictionType): Promise<void> {
-    await this.storage.withLock('restrictions', () => {
-      const now = this.now()
-      const current = parsePayload(this.storage.get<unknown>(RESTRICTIONS_KEY, null), now)
-      this.#payload = Object.freeze({
+    await this.#write((current, now) =>
+      Object.freeze({
         schema: 2,
         updatedAt: now,
         records: Object.freeze(
           current.records.filter((row) => row.host !== host || (!!type && row.type !== type)),
         ),
-      })
-      this.storage.set(RESTRICTIONS_KEY, this.#payload)
-    })
+      }),
+    )
   }
 
   async clear(): Promise<void> {
-    await this.storage.withLock('restrictions', () => this.storage.delete(RESTRICTIONS_KEY))
-    this.#payload = Object.freeze({ schema: 2, records: Object.freeze([]), updatedAt: this.now() })
+    await this.#write((_current, now) =>
+      Object.freeze({ schema: 2, records: Object.freeze([]), updatedAt: now }),
+    )
   }
 
   dispose(): void {
+    this.#disposed = true
+    this.#readToken++
     this.#stopRemote()
   }
 }

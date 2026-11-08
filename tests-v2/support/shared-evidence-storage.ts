@@ -7,7 +7,7 @@ export class SharedEvidenceStorage extends FakeStorage {
   sharedLockAvailable(): boolean {
     return true
   }
-  readResult<T>(key: string, fallback: T): { ok: true; value: T } | { ok: false } {
+  override readResult<T>(key: string, fallback: T): { ok: true; value: T } | { ok: false } {
     return { ok: true, value: this.get(key, fallback) }
   }
   override async withLock<T>(
