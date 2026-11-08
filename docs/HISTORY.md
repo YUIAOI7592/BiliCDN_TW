@@ -10,6 +10,8 @@
 
 ## 版本
 
+- [v2.2.16 選路狀態與證據提交契約整理](../archive/retired/docs/ROUTING_OWNERSHIP_v2.2.16_2026-11-09.md)。
+
 - [v2.2.15 更新後載入身分與模組初始化（2026-11-09）](TEST_REPORT.md#v2215-r1-載入身分與模組初始化2026-11-09)。
 
 - [v2.2.15 模組歸屬整合與大型控制器精簡](../archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md)。

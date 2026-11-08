@@ -3774,6 +3774,14 @@
       "requiredAnchors": []
     },
     {
+      "path": "archive/retired/docs/ROUTING_OWNERSHIP_v2.2.16_2026-11-09.md",
+      "kind": "record",
+      "topics": ["history"],
+      "versions": ["v2.2.15", "v2.2.16"],
+      "date": "2026-11-09",
+      "requiredAnchors": ["固定基線", "所有權與重設對照"]
+    },
+    {
       "path": "archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md",
       "kind": "record",
       "topics": [
@@ -7964,6 +7972,13 @@
       "encoding": "raw",
       "bytes": 11355,
       "sha256": "e403f0fcfc8208599086273e746f2602a514124f95e1b3eb6313e679d063d5c0"
+    },
+    {
+      "path": "archive/retired/docs/ROUTING_OWNERSHIP_v2.2.16_2026-11-09.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 2009,
+      "sha256": "ec4907bf44d4b9ba9423844f27c36fc837de19a8e1c33e3765934da9f0ed1b80"
     },
     {
       "path": "archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md",
