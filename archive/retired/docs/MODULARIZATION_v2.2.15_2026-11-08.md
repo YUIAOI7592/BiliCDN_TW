@@ -22,3 +22,9 @@
 型別、架構、匯入純度及唯讀格式通過；十八套件／2,273 案通過，原 2,269 案名稱與參數無遺失，新增四個功能私有邊界拒絕契約。既有架構案例名稱保留，實際唯一所有者及偽同名檔案位置配合新目錄核對。
 
 歷史閱讀版只調整已登記 URL，連至重構前固定提交；不可變報告原文保持，新增來源搬移對照。九份列入舊清理保護的產品原始碼從固定基準逐檔保存至 `archive/retired/originals/v2.2.14-modularization/`，原 bytes／SHA-256 不變，舊清理保護改核對這些 `.snapshot` 原件，並非取消保護。Release、安全、原始證據與三份既有日誌正文均未回寫。
+
+## 選路助手階段
+
+請求分類、輸出歸因與 URL 物化合併為 request-policy。RetryEvidence 私有帳本保留每請求去重、32 筆界線、60 秒有效期、抑制引用計數與跨 reset 的抑制生命週期；所有保存資格、候選檢查、許可與提交仍在 Coordinator。純 route-projection 只組裝數字與摘要，現有外部讀取與前後所有權重驗順序不變。
+
+新增兩個回歸保護帳本與投影，先保存缺少抽取模組的拒絕結果，再實作。architecture／imports／application／native-routing／progressive-routing／control-center 對應檢查通過；原案例不刪減。容量缺值、樣本過期、重入快照及三頁既有契約由原套件一併覆蓋。

@@ -8314,6 +8314,14 @@
     {
       "originalPath": "scripts/docs-check.mts",
       "currentPath": "scripts/checks/docs-check.mts"
+    },
+    {
+      "originalPath": "src-v2/application/routing/request-routing.ts",
+      "currentPath": "src-v2/application/routing/request-policy.ts"
+    },
+    {
+      "originalPath": "src-v2/application/routing/route-materialization.ts",
+      "currentPath": "src-v2/application/routing/request-policy.ts"
     }
   ],
   "retiredSources": [

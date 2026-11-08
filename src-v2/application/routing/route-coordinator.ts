@@ -1,8 +1,6 @@
-import {
-  predictCompletionMs,
-  completionReason,
-  type CompletionBudget,
-} from '../../domain/route-completion.ts'
+import { RetryEvidence } from './retry-evidence.ts'
+import { capacityNumbers, planSummary, rankingSummary } from './route-projection.ts'
+import { type CompletionBudget } from '../../domain/route-completion.ts'
 import {
   controlPlaybackDemand,
   type RoutePlaybackFacts,
@@ -12,7 +10,7 @@ import { readMonotonic, type TimingBasis } from '../../domain/measurement-time.t
 import { CIRCUIT_SUCCESS_GAP_MS, sameCircuitStamp } from '../../domain/circuit-policy.ts'
 import { CircuitObservations } from './circuit-observation.ts'
 import { type SettingsReader } from '../../state/settings-contracts.ts'
-import { appliedRoute, classifyRequestSource, catalogRequestEligible } from './request-routing.ts'
+import { appliedRoute, classifyRequestSource, catalogRequestEligible } from './request-policy.ts'
 import {
   catalogRestrictions,
   catalogCandidates,
@@ -64,7 +62,6 @@ import {
   type CurrentRouteCapacity,
   type DecisionRecord,
   type FallbackProgress,
-  type RoutePlanSummary,
   type RouteSnapshot,
   type RouteTransferSnapshot,
   type StartupCandidate,
@@ -86,7 +83,7 @@ import {
   selectionCandidates,
   challengerCandidates,
 } from './candidate-planning.ts'
-import { materializeRoute, catalogSource } from './route-materialization.ts'
+import { materializeRoute, catalogSource } from './request-policy.ts'
 import { restrictionSnapshot, restrictedHost, canUseDecision } from './route-restrictions.ts'
 import {
   outputAllowed,
@@ -150,15 +147,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #startupExhausted = new Set<RepresentationId>()
   #pendingMedia = new Set<string>()
   #fallbacks = new Map<MediaKind, FallbackProgress>()
-  #retrySuccesses: {
-    request: RequestContext
-    at: number
-    bytes: number
-    mbps: number
-    payloadMbps: number | null
-    timingBasis: TimingBasis | undefined
-    ttfbMs: number
-  }[] = []
+  #retryEvidence = new RetryEvidence()
   #retryPermit: {
     permit: EarlyRetryPermit
     request: RequestContext
@@ -166,7 +155,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     demand: PlaybackDemand
     applied: AppliedRouteDecision | null
   } | null = null
-  #retrySuppressed = new Map<string, number>()
 
   constructor(
     private readonly clock: Clock,
@@ -185,7 +173,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
 
   resetEpoch(): void {
     this.#circuits.reset('content-changed')
-    this.#retrySuccesses = []
+    this.#retryEvidence.reset()
     this.#retryPermit = null
     this.#policyRevision++
     this.#plans.clear()
@@ -421,9 +409,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     )
       return null
     const now = this.clock.now()
-    this.#retrySuccesses = this.#retrySuccesses.filter(
-      (row) => now - row.at <= 60_000 && now >= row.at,
-    )
+    this.#retryEvidence.prune(now)
     const identity = this.vault.identity(request.representation!)
     if (!identity) return null
     const source = this.#catalogSource(identity)
@@ -446,19 +432,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       this.vault.isInvalid(context.identity.representation, host)
     )
       return null
-    const successes = this.#retrySuccesses.filter(
-      (row) =>
-        !this.#retrySuppressed.has(row.request.requestId) &&
-        row.request.targetHost === host &&
-        row.request.generation === request.generation &&
-        row.request.epoch === request.epoch &&
-        row.request.representation === request.representation &&
-        row.request.authorityRevision === request.authorityRevision &&
-        row.request.routePolicyRevision === request.routePolicyRevision &&
-        !!request.timingBasis &&
-        row.timingBasis === request.timingBasis,
-    )
-    const unique = [...new Map(successes.map((row) => [row.request.requestId, row])).values()]
+    const unique = this.#retryEvidence.matching(request, host)
     if (unique.length < 2) return null
     const safeMbps = Math.min(...unique.map((row) => row.mbps))
     if (safeMbps < demand.requiredMbps * EARLY_RETRY_HEADROOM) return null
@@ -492,27 +466,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   suppressEarlyRetryEvidence(requestIds: readonly string[]): () => void {
-    const ids = [...new Set(requestIds)]
-    if (
-      ids.length > 32 ||
-      ids.some((id) => typeof id !== 'string' || id.length < 1 || id.length > 64) ||
-      new Set([...this.#retrySuppressed.keys(), ...ids]).size > 32
-    )
-      throw new RangeError('Invalid early retry suppression scope')
-    for (const id of ids) this.#retrySuppressed.set(id, (this.#retrySuppressed.get(id) ?? 0) + 1)
-    this.#retrySuccesses = this.#retrySuccesses.filter(
-      (row) => !this.#retrySuppressed.has(row.request.requestId),
-    )
-    let released = false
-    return () => {
-      if (released) return
-      released = true
-      for (const id of ids) {
-        const count = this.#retrySuppressed.get(id) ?? 0
-        if (count > 1) this.#retrySuppressed.set(id, count - 1)
-        else this.#retrySuppressed.delete(id)
-      }
-    }
+    return this.#retryEvidence.suppress(requestIds)
   }
 
   revokeEarlyRetry(permit: EarlyRetryPermit): void {
@@ -2174,7 +2128,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         const request = observation.request
         if (
           request &&
-          !this.#retrySuppressed.has(request.requestId) &&
+          !this.#retryEvidence.isSuppressed(request.requestId) &&
           Number.isSafeInteger(observation.retryVerifiedBytes) &&
           (observation.retryVerifiedBytes ?? 0) >= 64 * 1024 &&
           request.generation === observation.generation &&
@@ -2202,28 +2156,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
                 sample.source === 'transport',
             )
         ) {
-          this.#retrySuccesses = this.#retrySuccesses.filter(
-            (row) =>
-              row.request.requestId !== request.requestId && this.clock.now() - row.at <= 60_000,
-          )
-          this.#retrySuccesses.push({
-            request,
-            at: observation.completedAt,
-            bytes: observation.retryVerifiedBytes!,
-            timingBasis: observation.timingBasis,
-            mbps: (observation.retryVerifiedBytes! * 8) / observation.elapsedMs / 1000,
-            payloadMbps: sampleTiming(
-              observation.retryVerifiedBytes,
-              observation.elapsedMs,
-              observation.ttfbMs,
-            )
-              ? (observation.retryVerifiedBytes! * 8) /
-                (observation.elapsedMs - observation.ttfbMs!) /
-                1000
-              : null,
-            ttfbMs: observation.ttfbMs,
-          })
-          this.#retrySuccesses = this.#retrySuccesses.slice(-32)
+          this.#retryEvidence.record(request, observation, () => this.clock.now())
         }
         this.#confirmObservedTransport(observation, representation)
         return
@@ -2389,14 +2322,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       representation =
         !pending && session.representation ? this.vault.groupSummary(session.representation) : null,
       currentCapacity = this.#capacity(session, active)
-    const summarize = (decision: RouteDecision): RoutePlanSummary =>
-      Object.freeze({
-        id: decision.id,
-        action: decision.action,
-        reason: decision.reason,
-        routeType: decision.routeType,
-        host: decision.host,
-      })
     return Object.freeze({
       currentCapacity,
       circuits: Object.freeze(
@@ -2426,21 +2351,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         : null,
       activePlan: active
         ? Object.freeze({
-            ...summarize(active),
-            ranking: Object.freeze(
-              active.ranking.slice(0, 12).map((row) =>
-                Object.freeze({
-                  host: row.candidate.host,
-                  type: row.candidate.type,
-                  state: row.state,
-                  eligible: row.eligible,
-                  reasons: row.reasons,
-                  safeMbps: row.safeThroughputMbps,
-                  ratio: row.demandRatio,
-                  ttfbMs: row.medianTtfbMs,
-                }),
-              ),
-            ),
+            ...planSummary(active),
+            ranking: rankingSummary(active.ranking),
           })
         : null,
       affinity: session.affinity,
@@ -2498,41 +2410,14 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     const evidence = this.evidence.get(plan.host, 'video'),
       now = this.clock.now()
     const metrics = evidenceMetrics(evidence, now, this.#requested.get('video')?.timingBasis)
-    const speed = metrics.safeThroughputMbps
     const requestBytes = this.#requested.get('video')?.expectedBytes ?? null
     const budget = this.completionBudget(
       representation,
       requestBytes,
       this.#requested.get('video')?.timingBasis,
     )
-    const estimatedCompletionMs = budget
-      ? predictCompletionMs(budget.requestBytes, metrics.safePayloadMbps, metrics.predictionTtfbMs)
-      : null
-    const unavailable = completionReason(
-      budget ?? { requestBytes, playableBufferSec: null, sampledAt: now },
-      now,
-    )
-    const predictionReason =
-      estimatedCompletionMs !== null
-        ? 'available'
-        : unavailable === 'available'
-          ? 'unknown-body-rate'
-          : unavailable
-    const safeMbps = speed !== null && Number.isFinite(speed) && speed > 0 ? speed : null
-    const speeds =
-      evidence?.samples.filter(
-        (sample) =>
-          sample.outcome === 'success' &&
-          sample.throughputMbps !== null &&
-          Number.isFinite(sample.throughputMbps) &&
-          sample.throughputMbps > 0,
-      ) ?? []
-    const sampleStatus =
-      safeMbps !== null
-        ? 'available'
-        : speeds.length > 0 && speeds.every((sample) => now - sample.at > EVIDENCE_TTL_MS)
-          ? 'expired'
-          : 'missing'
+    const { estimatedCompletionMs, predictionReason, safeMbps, speeds, sampleStatus } =
+      capacityNumbers(evidence, metrics, now, budget, requestBytes)
     // External reads may reenter and replace the plan, policy or content identity.
     if (!this.#decisionAllowed(plan, identity, 'video') || !current()) return null
     return Object.freeze({
