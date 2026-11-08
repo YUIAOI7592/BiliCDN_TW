@@ -11,8 +11,6 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 export interface ReleaseConfig {
   version: string
   artifactName: string
-  nodeVersion: string
-  npmVersion: string
   typescriptVersion: string
   esbuildVersion: string
 }
@@ -22,8 +20,6 @@ export function readRelease(): ReleaseConfig {
     !isRecord(value) ||
     typeof value.version !== 'string' ||
     typeof value.artifactName !== 'string' ||
-    typeof value.nodeVersion !== 'string' ||
-    typeof value.npmVersion !== 'string' ||
     typeof value.typescriptVersion !== 'string' ||
     typeof value.esbuildVersion !== 'string'
   )
@@ -31,8 +27,6 @@ export function readRelease(): ReleaseConfig {
   return {
     version: value.version,
     artifactName: value.artifactName,
-    nodeVersion: value.nodeVersion,
-    npmVersion: value.npmVersion,
     typescriptVersion: value.typescriptVersion,
     esbuildVersion: value.esbuildVersion,
   }

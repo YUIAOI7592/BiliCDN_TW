@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
+import { reportRuntimeInfo } from '../lib/toolchain.mts'
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
@@ -758,6 +759,7 @@ export async function documentationCli(args: readonly string[], root = process.c
   return { exitCode: report.success ? 0 : 1, output }
 }
 if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/checks/docs-check.mts')) {
+  reportRuntimeInfo()
   try {
     const cli = await documentationCli(process.argv.slice(2))
     process.stdout.write(cli.output)

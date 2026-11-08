@@ -1,6 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { evaluateOptimization } from '../../../scripts/evaluation/optimization-evaluation.mts'
 
 test('V2212 optimization CLI selects the supplemental model without replacing old modes', () => {
@@ -22,8 +24,11 @@ test('V2212 optimization model is deterministic with explicit source and input i
   assert.deepEqual(a, b)
   assert.equal(a.baselineRevision, '060b79ffba2c257a73e8d3a5257291d028a7097a')
   assert.match(a.inputSha256, /^[a-f0-9]{64}$/)
+  assert.ok(Object.hasOwn(a.sourceSha256, 'scripts/lib/toolchain.mts'))
   for (const [path, hash] of Object.entries(a.sourceSha256)) {
-    assert.match(path, /^(src-v2\/domain\/|scripts\/evaluation\/)/)
+    if (path === 'scripts/lib/toolchain.mts')
+      assert.equal(hash, createHash('sha256').update(readFileSync(path)).digest('hex'))
+    else assert.match(path, /^(src-v2\/domain\/|scripts\/evaluation\/)/)
     assert.match(hash, /^[a-f0-9]{64}$/)
   }
 })

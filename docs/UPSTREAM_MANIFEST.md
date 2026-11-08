@@ -33,7 +33,7 @@ v2 系列從 v2.0.0 的 TypeScript 架構重整開始；v1.9.6 僅作使用者�
 - esbuild 0.28.2 及依賴鎖定檔鎖定的平台套件：只作建置／測試打包。
 - Prettier 3.9.10：只作本機格式化與唯讀格式檢查。
 - unified、remark-parse、remark-gfm、markdownlint、github-slugger：只作本機離線文件檢查，版本與授權見 [第三方聲明](THIRD_PARTY_NOTICES.md)。
-- `@types/node` 26.6.4 及依賴鎖定檔鎖定的 `undici-types`：只供開發型別檢查。Node 26.8.1 內建測試 API 執行本機契約。
+- `@types/node` 26.6.4 及依賴鎖定檔鎖定的 `undici-types`：只供開發型別檢查。所選 Node 的內建測試 API 執行本機契約，依 [Runtime 能力要求](DEVELOPMENT.md#環境需求) 驗證，不固定 Node 版本或以型別版本號代替執行相容性。
 
 `archive:check` 使用上述既有工具與 Node 內建檔案／雜湊 API 作離線維護檢查，不新增依賴，也不把封存來源加入產品建置。
 

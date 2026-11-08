@@ -2,6 +2,7 @@ import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from '
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
+import { reportRuntimeInfo } from '../lib/toolchain.mts'
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
@@ -776,6 +777,7 @@ export function archiveCli(args: readonly string[], root = process.cwd()) {
   }
 }
 if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/checks/archive-check.mts')) {
+  reportRuntimeInfo()
   try {
     const cli = archiveCli(process.argv.slice(2))
     process.stdout.write(cli.output)

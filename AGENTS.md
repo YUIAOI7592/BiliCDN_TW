@@ -30,6 +30,7 @@
 4. 原始碼修改使用 `apply_patch`，保留使用者的無關變更。
 5. 發布前執行 `npm run typecheck`、`npm run architecture`、`npm test` 及 `npm run verify`。
 6. 分開記錄自動驗證、內建瀏覽器來源隔離與 Tampermonkey 實際安裝版結果。
+7. Codex 工作先以內建依賴工具取得當次 Node／必要時的 Python 路徑，明確執行；不得硬寫安裝位置、bundle 或版本，也不默默退回系統／歷史 up141 工具鏈。需要 npm 時只調整當次程序 PATH，維持父子 Node 一致。專案不固定 Node／Python 版本；Node 以必要能力探測與完整 verify 判定，實際版本與路徑另行記錄。開發依賴與 lock 保持精確版本；一般 npm／Shell 入口繼續相容，啟動器路徑選擇見 DEVELOPMENT。
 
 **唯一瀏覽器測試環境為 Codex 內建瀏覽器＋Tampermonkey。** 依 [IAB_TESTING](docs/IAB_TESTING.md) 執行環境校準、來源隔離、安裝版驗收與發布後回歸；不得改用外部 Chrome／Edge、獨立 Playwright／Puppeteer 或 headless 瀏覽器。Node 契約、型別、架構與建置驗證仍按原流程執行。工具阻塞須保存具體原因，不能自行改換瀏覽器。
 

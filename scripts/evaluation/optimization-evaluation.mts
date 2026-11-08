@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { build } from 'esbuild'
+import { NODE_BUILD_TARGET } from '../lib/toolchain.mts'
 
 const baselineRevision = '060b79ffba2c257a73e8d3a5257291d028a7097a'
 const sha256 = (value: string | Uint8Array) => createHash('sha256').update(value).digest('hex')
@@ -237,7 +238,7 @@ export async function evaluateOptimization() {
     write: false,
     platform: 'node',
     format: 'esm',
-    target: 'node26',
+    target: NODE_BUILD_TARGET,
     metafile: true,
     logLevel: 'silent',
   })
@@ -252,6 +253,7 @@ export async function evaluateOptimization() {
   const sources = [
     ...Object.keys(compiled.metafile!.inputs),
     'scripts/evaluation/optimization-evaluation.mts',
+    'scripts/lib/toolchain.mts',
   ].sort()
   return {
     schemaVersion: 1,

@@ -185,3 +185,9 @@ early-retry 的「慢案例至少改善 500 ms」及「正常案例沒有不必�
 新增 25 個具名工具契約，Codex Node 24.22.1 的完整 tooling 共 257 案通過，三組型別通過。最小探測核對原生 mts／ESM、測試選項、具名案例、位置及同版報告；同一程序共用 Promise，成功與失敗都清理本頁程序專屬暫存目錄。PowerShell 的參數、環境與 PATH 優先序，以及兩個啟動器的空白路徑、失敗退出與不存在路徑均經窄替身核對。原列表 stderr 為空的契約保持，最小探測不列入正式案例。
 
 先保存缺少新模組的失敗結果；其後曾出現新增測試的 Windows 路徑大小寫與 MSYS PATH 格式錯誤，修正情境後通過。受限環境另回報 Git Shell `NtCreateDirectoryObject` 初始化拒絕；相同正式來源於允許環境完成，沒有放寬斷言或期限。此階段尚未移除 verify 的原精確版本閘門，不宣稱已完成 Runtime 遷移。
+
+### 設定與紀錄階段
+
+移除 release 的 Node／npm 固定欄位及 package／lock 根目錄 Node 下限，第三方 engines 與依賴解析保持；四處 Node 編譯使用同一 node24 目標。新建置清單移除 npm，TypeScript 欄位由已安裝且與 release 核對的版本取得；此資訊不等於 build 執行了型別檢查。各正式 CLI 在 stderr 顯示 Node，純列表／用法與 JSON stdout 契約保持。
+
+新增三案先保存失敗結果，再完成設定解析、建置 metadata 與 TypeScript 漂移拒絕；完整 tooling 260 案通過。原 V2212 來源身分案例保留名稱與原政策／評估路徑斷言，僅對新增的單一 `scripts/lib/toolchain.mts` 來源明確檢查存在及真實雜湊，沒有放寬為整個 lib 目錄。該新增來源保留於評估雜湊，原模型數值與效用門檻不改。

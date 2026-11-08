@@ -4,6 +4,7 @@ import { join, resolve, sep } from 'node:path'
 import { tmpdir } from 'node:os'
 import { filesUnder } from '../lib/lib.mts'
 import { supervise } from './test-process.mts'
+import { NODE_BUILD_TARGET } from '../lib/toolchain.mts'
 export const purityTraps = [
   'window',
   'document',
@@ -43,7 +44,7 @@ export async function inspectImportPurity(
       bundle: true,
       platform: 'node',
       format: 'esm',
-      target: 'node26',
+      target: NODE_BUILD_TARGET,
       treeShaking: false,
       ignoreAnnotations: true,
       sourcemap: 'inline',

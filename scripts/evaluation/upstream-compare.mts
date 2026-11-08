@@ -2,6 +2,7 @@ import { resolve } from 'node:path'
 import { readFileSync } from 'node:fs'
 import { supervise } from '../testing/test-process.mts'
 import { errorMessage } from '../lib/lib.mts'
+import { reportRuntimeInfo } from '../lib/toolchain.mts'
 import { inputs, loadInput, commonHosts } from './upstream-compare/inputs.mts'
 import {
   scenarios,
@@ -106,6 +107,7 @@ if (
   }
   if (options)
     try {
+      reportRuntimeInfo()
       const report = await compareUpstream(options.calibration)
       if (options.json) console.log(JSON.stringify(report))
       else {

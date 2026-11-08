@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process'
+import { reportRuntimeInfo } from '../lib/toolchain.mts'
 import { createHash } from 'node:crypto'
 import { posix, resolve } from 'node:path'
 import { build } from 'esbuild'
@@ -247,7 +248,8 @@ if (
   ) {
     console.error('Usage: npm run evaluate:routing -- --optimization')
     process.exitCode = 2
-  } else
+  } else {
+    reportRuntimeInfo()
     console.log(
       JSON.stringify(
         process.argv.includes('--optimization')
@@ -261,3 +263,4 @@ if (
         2,
       ),
     )
+  }

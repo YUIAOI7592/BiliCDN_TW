@@ -117,12 +117,18 @@ v2.2.15 的 application 依 routing／measurement／playback／playurl 歸屬控
 
 ## 環境需求
 
-- Node.js 26.8.1
-- npm 11.19.0
+- Node：原生 mts／ESM／型別移除、必要測試 API／選項與來源映射能力成立；不固定版本號或使用版本白名單。
+- npm：保留既有命令與 package-lock，實際使用時記錄 CLI 路徑、版本與所選 Node；不假設 Codex bundle 一定附帶 npm，也不自動改用 pnpm。
 - TypeScript 7.0.2、esbuild 0.28.2 及 `@types/node@26.6.4`（鎖定的開發依賴）
 - 瀏覽器驗證只使用 Codex 內建瀏覽器及其中的 Tampermonkey，實際版本於每輪記錄
 
-準備 Node／npm 後，在儲存庫根目錄執行 `npm ci`，安裝 [package-lock.json](../package-lock.json) 鎖定的開發依賴。[release.json](../release.json) 記錄發行工具版本。`verify` 先檢查實際執行的精確 Node 版本，以及產品版本、直接開發依賴宣告、lock 根目錄／解析版本與已安裝套件版本的一致性；TypeScript／esbuild 另須與 release 設定一致。檢查器 [project-config.mts](../scripts/checks/project-config.mts) 唯讀、不執行套件、不連網；它核對套件版本，不能證明整個 node_modules 內容未被修改。`build` 仍檢查載入的精確 esbuild 版本。建置清單的 npm 版本取自設定，不獨立驗證執行中的 npm；直接以 Node 執行 verify 也不假裝測得 npm 版本。[package.json](../package.json) 沒有執行期依賴。
+Codex 作業每次先使用內建依賴工具 `load_workspace_dependencies` 取得當前 Node 路徑，再以該檔案啟動命令；取得失敗就記錄受影響工作，不默默改用系統 Node 或 `.work/up141`。需要 npm 時將所選 Node 目錄放在當次程序 PATH 首項，再以明確選定的 CLI 執行；不修改全域 PATH。Python 目前沒有正式程式、依賴配置或版本鎖定，需要時同樣取得 Codex 內建路徑。
+
+一般使用者仍可從自己的 PATH 執行原 npm 命令，工具在 stderr 顯示實際 Node 版本與執行路徑，不冒稱為 Codex Runtime。`scripts/verify.ps1` 選擇順序為 `-NodePath`、`BILICDN_NODE`、PATH；`scripts/verify.sh` 為 `BILICDN_NODE`、PATH。路徑以獨立引數處理，支援空白；子程序退出碼傳回，工作目錄由啟動器管理。純 `test --list` 及其用法錯誤保留既有文字／退出碼契約，不啟動能力探測或增加身分列；JSON stdout 不混入環境文字。
+
+[toolchain.mts](../scripts/lib/toolchain.mts) 共用能力判定、測試選項與 `node24` 語法目標；後者不是執行器版本閘門，也不隨目前 Node 自動提高。verify 與完整測試入口以所選 Node 啟動一個最多五秒的隔離 mts 探測，核對具名成功、位置、完整報告、退出及父子版本一致；探測不計入正式案例。同一程序共用已完成 Promise，匯入不啟動探測，成功與失敗均檢查並清理專屬暫存目錄。能力不足明確失敗，不下載或切換 runtime，也沒有略過開關。通過探測只代表可進入驗證，完整 verify 才是本次環境的完成門檻；未來版本與其他平台不因一次通過便自動取得相容結論。
+
+準備所選 Node／npm 後，日常乾淨安裝仍使用 `npm ci` 與 [package-lock.json](../package-lock.json)；本次工具鏈整理沒有重新安裝根目錄依賴，也沒有新增乾淨安裝證據。[release.json](../release.json) 只保存產品版本、附件名稱及鎖定 TypeScript／esbuild 版本。verify 核對產品版本、九項直接依賴宣告、lock 根目錄／解析版本及已安裝版本的一致性；[project-config.mts](../scripts/checks/project-config.mts) 唯讀、不執行套件、不連網，不能證明整個 node_modules 內容未被修改。build 檢查載入的 esbuild 及已安裝 TypeScript 精確版本；建置清單保存實際 Node、載入 esbuild 與核對後 TypeScript 資訊，不宣稱 build 已執行型別檢查，也不填入未使用的 npm。npm 的實際使用另記當輪工具日誌，歷史清單不回寫。[package.json](../package.json) 沒有執行期依賴。
 
 ## 命令
 
@@ -150,7 +156,7 @@ npm run verify        # 自動檢查及暫存封裝驗證
 
 從儲存庫根目錄執行命令。`typecheck` 與 verify 共用 [typecheck.mts](../scripts/checks/typecheck.mts)，依序檢查正式來源、測試及維護工具。[tsconfig.json](../tsconfig.json) 保留嚴格 DOM 環境並設 `types: []`；[tsconfig.tests.json](../tsconfig.tests.json) 加入 Node 型別、DOM 及使用者腳本全域宣告。[tsconfig.tools.json](../tsconfig.tools.json) 使用 NodeNext、Node 型別、可移除型別語法與明確型別匯入，涵蓋全部 `.mts` 工具。工具由既有 Node 直接執行，不新增轉譯載入器；Node 只移除型別、不讀取 tsconfig，另由 typecheck 檢查型別，依 [官方 TypeScript 文件](https://nodejs.org/api/typescript.html) 使用 `.mts` ESM、可移除語法及型別匯入；測試打包及匯入純度的暫存 `.mjs` 仍是生成產物。`architecture` 檢查正式模組；獨立的 `npm test -- architecture` 測試架構檢查器自身測試情境。判斷這些檢查能證明哪些不變量前，先閱讀 [架構檢查範圍](ARCHITECTURE.md#依賴方向)。
 
-[verify.mts](../scripts/verify.mts) 檢查設定的 Node 版本、唯讀格式、公開封存、文件、typecheck、來源架構、全部測試、兩次建置的輸出／資訊清單一致性、JavaScript 語法、指定舊版／Worker 標記清單、必要儲存標記及封裝 SHA-256。封裝步驟會再建置一次。命令寫入 `dist/`，於新的 `dist/verify-package-*` 目錄封裝，確認解析後位置及前綴再刪除該目錄；不寫入 `Release/v<version>/`。
+[verify.mts](../scripts/verify.mts) 檢查 Node 必要能力、唯讀格式、公開封存、文件、typecheck、來源架構、全部測試、兩次建置的輸出／資訊清單一致性、JavaScript 語法、指定舊版／Worker 標記清單、必要儲存標記及封裝 SHA-256。封裝步驟會再建置一次。命令寫入 `dist/`，於新的 `dist/verify-package-*` 目錄封裝，確認解析後位置及前綴再刪除該目錄；不寫入 `Release/v<version>/`。
 
 verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安全敏感變更或使用者明確要求時，另行執行安全差異掃描；不要求每版掃描。上一版通過報告不能作為新本機變更的證據。
 

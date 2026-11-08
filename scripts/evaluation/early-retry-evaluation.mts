@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build } from 'esbuild'
+import { NODE_BUILD_TARGET, reportRuntimeInfo } from '../lib/toolchain.mts'
 
 interface EarlyRetryFacts {
   readonly now: number
@@ -100,7 +101,7 @@ export async function evaluateFrozenEarlyRetry() {
     write: false,
     platform: 'node',
     format: 'esm',
-    target: 'node26',
+    target: NODE_BUILD_TARGET,
     logLevel: 'silent',
   })
   const module: { evaluateEarlyRetry(input: EarlyRetryFacts): Assessment } = await import(
@@ -158,6 +159,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.stderr.write('Usage: node scripts/evaluation/early-retry-evaluation.mts [--json]\n')
     process.exitCode = 2
   } else {
+    reportRuntimeInfo()
     const result = await evaluateFrozenEarlyRetry()
     process.stdout.write(
       args[0] === '--json'

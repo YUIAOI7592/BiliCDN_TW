@@ -2,6 +2,7 @@ import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { build } from './build.mts'
 import { filesUnder, readRelease, sha256 } from './lib/lib.mts'
+import { reportRuntimeInfo } from './lib/toolchain.mts'
 
 export interface PackageOptions {
   directory?: string
@@ -26,6 +27,7 @@ export async function packageRelease({ directory }: PackageOptions = {}) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/package.mts')) {
+  reportRuntimeInfo()
   const result = await packageRelease()
   console.log(`Packaged ${result.script}; no historical patches were generated.`)
 }

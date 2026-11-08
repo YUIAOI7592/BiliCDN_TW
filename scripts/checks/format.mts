@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as prettier from 'prettier'
 import { filesUnder, errorMessage } from '../lib/lib.mts'
+import { reportRuntimeInfo } from '../lib/toolchain.mts'
 
 /** A fixed maintenance allowlist never traverses release, archive or evidence trees. */
 export function formatFiles(): readonly string[] {
@@ -48,6 +49,7 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/checks/form
     const args = process.argv.slice(2)
     if (args.length > 1 || args.some((arg) => arg !== '--check'))
       throw Error('Usage: npm run format [-- --check]')
+    reportRuntimeInfo()
     const changed = await formatProject(args[0] === '--check')
     console.log(
       args[0] === '--check'

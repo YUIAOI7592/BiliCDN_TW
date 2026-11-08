@@ -4,9 +4,6 @@
   "private": true,
   "description": "Locally built, modular BiliCDN Taiwan userscript",
   "license": "MIT",
-  "engines": {
-    "node": ">=26.8.1"
-  },
   "scripts": {
     "typecheck": "node scripts/checks/typecheck.mts",
     "architecture": "node scripts/checks/architecture-check.mts",

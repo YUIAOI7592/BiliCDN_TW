@@ -13,8 +13,6 @@ import { assertRuntimeCapabilities } from './lib/toolchain.mts'
 
 export async function verify() {
   const config = readRelease()
-  if (process.versions.node !== config.nodeVersion)
-    throw Error(`Expected Node ${config.nodeVersion}; found ${process.versions.node}`)
   await assertRuntimeCapabilities()
   const project = checkProjectConfiguration()
   if (!project.success) throw Error(project.findings.join('\n'))

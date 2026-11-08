@@ -11,7 +11,7 @@ import { validateTestDefinitions } from './testing/test-contracts.mts'
 import { isRecord, errorMessage } from './lib/lib.mts'
 import { type ProcessResult } from './testing/test-process.mts'
 import { type TestSuite } from './testing/test-registry.mts'
-import { assertRuntimeCapabilities } from './lib/toolchain.mts'
+import { assertRuntimeCapabilities, NODE_BUILD_TARGET, NODE_TEST_FLAGS } from './lib/toolchain.mts'
 export type { ProcessResult } from './testing/test-process.mts'
 export type CaseStatus = 'passed' | 'failed' | 'cancelled' | 'skipped' | 'todo'
 export interface ReportLocation {
@@ -218,7 +218,7 @@ export async function executeSuites(
           bundle: true,
           platform: 'node',
           format: 'esm',
-          target: 'node26',
+          target: NODE_BUILD_TARGET,
           sourcemap: 'inline',
           sourcesContent: true,
           logLevel: 'silent',
@@ -246,11 +246,7 @@ export async function executeSuites(
         })
         result.phase = 'execute'
         const args = [
-          '--enable-source-maps',
-          '--test',
-          '--test-isolation=none',
-          '--test-concurrency=1',
-          '--test-timeout=5000',
+          ...NODE_TEST_FLAGS,
           '--test-reporter=spec',
           '--test-reporter-destination=stdout',
           `--test-reporter=${pathToFileURL(resolve('scripts/testing/test-reporter.mts')).href}`,

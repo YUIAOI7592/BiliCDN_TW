@@ -2,7 +2,8 @@ import * as esbuild from 'esbuild'
 import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { readRelease } from './lib/lib.mts'
+import { readRelease, readJson, isRecord } from './lib/lib.mts'
+import { reportRuntimeInfo } from './lib/toolchain.mts'
 
 export const buildOptions = Object.freeze({
   bundle: true,
@@ -40,6 +41,11 @@ export async function build({ write = true }: BuildOptions = {}) {
   const release = readRelease()
   if (esbuild.version !== release.esbuildVersion)
     throw Error(`Expected esbuild ${release.esbuildVersion}; found ${esbuild.version}`)
+  const typescript = readJson('node_modules/typescript/package.json')
+  if (!isRecord(typescript) || typescript.version !== release.typescriptVersion)
+    throw Error(
+      `Expected TypeScript ${release.typescriptVersion}; found ${isRecord(typescript) ? String(typescript.version) : 'invalid package'}`,
+    )
   const result = await esbuild.build({
     ...buildOptions,
     stdin: {
@@ -61,6 +67,7 @@ export async function build({ write = true }: BuildOptions = {}) {
   for (const path of [
     'scripts/build.mts',
     'scripts/lib/lib.mts',
+    'scripts/lib/toolchain.mts',
     'package.json',
     'package-lock.json',
     'release.json',
@@ -72,8 +79,7 @@ export async function build({ write = true }: BuildOptions = {}) {
     version: release.version,
     tools: {
       node: process.versions.node,
-      npm: release.npmVersion,
-      typescript: release.typescriptVersion,
+      typescript: typescript.version,
       esbuild: esbuild.version,
     },
     options: buildOptions,
@@ -90,6 +96,7 @@ export async function build({ write = true }: BuildOptions = {}) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/build.mts')) {
+  reportRuntimeInfo()
   const result = await build()
   console.log(`Built BiliCDN_TW v${result.manifest.version}: ${result.manifest.userscriptSha256}`)
 }
