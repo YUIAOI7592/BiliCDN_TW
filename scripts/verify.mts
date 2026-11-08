@@ -9,11 +9,13 @@ import { checkArchive } from './checks/archive-check.mts'
 import { checkProjectConfiguration } from './checks/project-config.mts'
 import { packageRelease } from './package.mts'
 import { command, readRelease, sha256 } from './lib/lib.mts'
+import { assertRuntimeCapabilities } from './lib/toolchain.mts'
 
 export async function verify() {
   const config = readRelease()
   if (process.versions.node !== config.nodeVersion)
     throw Error(`Expected Node ${config.nodeVersion}; found ${process.versions.node}`)
+  await assertRuntimeCapabilities()
   const project = checkProjectConfiguration()
   if (!project.success) throw Error(project.findings.join('\n'))
   console.log(

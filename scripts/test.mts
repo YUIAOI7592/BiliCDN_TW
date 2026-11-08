@@ -11,6 +11,7 @@ import { validateTestDefinitions } from './testing/test-contracts.mts'
 import { isRecord, errorMessage } from './lib/lib.mts'
 import { type ProcessResult } from './testing/test-process.mts'
 import { type TestSuite } from './testing/test-registry.mts'
+import { assertRuntimeCapabilities } from './lib/toolchain.mts'
 export type { ProcessResult } from './testing/test-process.mts'
 export type CaseStatus = 'passed' | 'failed' | 'cancelled' | 'skipped' | 'todo'
 export interface ReportLocation {
@@ -323,6 +324,7 @@ export async function runTests(filter = '', options: RunnerOptions = {}): Promis
       throw new UsageError('Invalid case expression')
     }
   }
+  await assertRuntimeCapabilities()
   const outcome = await executeSuites(selected, options)
   const executed = finishOutcome(outcome)
   process.stdout.write(`Contract cases: ${executed}; total ${outcome.durationMs.toFixed(1)} ms\n`)

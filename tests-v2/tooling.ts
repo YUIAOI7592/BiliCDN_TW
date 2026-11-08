@@ -614,3 +614,5 @@ test(
 )
 import './cases/tooling/v230-evaluation.ts'
 import './cases/tooling/v2212-evaluation.ts'
+import './cases/tooling/toolchain.ts'
+import './cases/tooling/toolchain-launchers.ts'
