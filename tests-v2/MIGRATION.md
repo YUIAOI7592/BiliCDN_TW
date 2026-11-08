@@ -1,5 +1,7 @@
 # Node 內建測試遷移對照
 
+2026-11-09／v2.2.16：RouteCoordinator 的請求身分與表示確認集中於 RequestOwnership，單次重試許可集中於 RetryPermitState；普通證據保存與降級結果分型，靜態前提共置於傳輸分類。原 2,292 案名稱、參數與相對註冊順序保持，新增八個助手／前提與六個架構拒絕契約；96 組固定 Git 基準軌跡逐欄比較決策、修訂、事件、保存及重複完成，不以案例數代替副作用對照。
+
 本文保存 2026-10-07／v2.1.8 的原遷移對照及其後按版本追加的說明。現行套件及命令見 [開發流程](../docs/DEVELOPMENT.md#測試套件與隔離)，後續新增契約見 [測試工具紀錄](../docs/TEST_TOOLING_REPORT.md)，最新版完整結果見 [TEST_REPORT](../docs/TEST_REPORT.md)。下方舊斷言數、名稱與行號只描述原遷移版本，不代表目前案例數或仍可執行的套件。
 
 2026-11-01／v2.2.0 追記：13 份套件改以具名情境直接建立必要前置狀態，移除數字 scenario 分派；套件選擇器、116 個測試宣告及其參數展開保留，仍使用 testScope 清理。唯一有意變更的原案例是 `existing schema 2 settings without Native toggle default off [13]` 改為 `default on [13]`；其餘 Catalog-only 案例明確關閉 Native。下面的 v2.1.8 對照保留當時名稱與數值，不回寫為新版結果。

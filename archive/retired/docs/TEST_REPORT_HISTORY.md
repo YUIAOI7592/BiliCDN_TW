@@ -6421,3 +6421,271 @@ R2 透過既有 DOM click handler 的唯讀閉包作用域取得 GM_info 與建�
 <a name="政策映射與契約保留"></a>
 
 [原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#政策映射與契約保留)。
+
+## v2.2.15 完整正文保存（2026-11-09）
+
+以下保留上一版完整正文與載入判定；目前版本見 [TEST_REPORT](../../../docs/TEST_REPORT.md)。
+
+# BiliCDN_TW v2.2.15 完整驗證報告
+
+日期：2026-11-09（Asia/Taipei）。基準 main／dc3b6f0、v2.2.14；本次採離線模組整合交付。
+
+## 驗收結論
+
+完成契約功能歸位、選路帳本與純投影抽取、量測／恢復／播放器／XHR 熱點整理及測試功能分布。十八套件／2,292 案通過；原 2,269 案名稱、參數展開與相對註冊順序逐項保留。型別、架構、完整測試、唯讀格式、文件、公開／本機封存、verify、bundle 與安全差異門檻均已通過；正式 Release、遠端 main／標籤、唯一附件及公開 latest 已核對一致；交付當時沒有啟動瀏覽器。使用者更新後的本版載入身分與模組初始化確認亦已通過，範圍見[本輪結果](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2215-r1-載入身分與模組初始化2026-11-09)。
+
+## 自動驗證
+
+固定 Node 26.8.1／npm 11.19.0。原基線沙箱暫存 Git 寫入限制與允許環境下完整通過分開保存，不當成產品失敗。新增 23 案：五個架構私有邊界、十二個助手與純驗證、六個工具契約。全部 failed／skipped／todo／cancelled 為零。
+
+| 套件 | 案例 | 結果 |
+| --- | ---: | --- |
+| architecture | 46 | PASS |
+| imports | 1 | PASS |
+| domain-boundaries | 3 | PASS |
+| domain | 111 | PASS |
+| state | 81 | PASS |
+| application | 841 | PASS |
+| adapters | 214 | PASS |
+| native-routing | 13 | PASS |
+| native-transport | 222 | PASS |
+| orchestration | 40 | PASS |
+| adapter-boundaries | 84 | PASS |
+| measurement-state | 135 | PASS |
+| progressive-playurl | 64 | PASS |
+| progressive-routing | 71 | PASS |
+| progressive-transport | 4 | PASS |
+| playurl-summary | 22 | PASS |
+| control-center | 108 | PASS |
+| tooling | 232 | PASS |
+
+型別、107 個執行期模組架構、匯入純度、完整案例、唯讀格式、文件及公開封存已通過。最終 verify 已實際通過：再執行 2,292 案、可重現建置、語法、v2-only／退役標記及暫存封裝校驗；本機封存 11,922 檔核對通過。正式腳本 535,486 bytes，SHA-256 96bff42ad7ac5deb9b500605b244af3598a6f67b7f93bf85d6c26992ff0b8cef。案例搬移及每階段證據見[本輪紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md)。
+
+## 安全差異
+
+Codex Security 已完成並封印不可變 dc3b6f0→60870f9 差異，canonical 結果已讀回。291 個來源差異項目及額外測試定義／架構支援均覆蓋；漏洞、未結案候選及 deferred 為零。掃描 ID 06be0f32-1aa1-4cdf-b535-45599ef32046；scan-reported 模型 gpt-6.1-sol／xhigh。來源抽取後的授權、原生重入與唯一所有者保持；不代表安裝版驗收。後續只有版本、文件、封存及生成物，受審程式未變。
+
+工具計量為 input 16,914,267（cached 16,476,160）、output 56,115、total 16,970,382 tokens，coverage complete／五個 thread；這是 rollout 彙總計量，不當成獨立新輸入或費用。Daybreak advisory not_granted，canonical 完成結果已實際讀回。
+
+## 模組責任與功能保持
+
+application 按 routing／measurement／playback／playurl 共置控制器及窄契約，adapters 按 transport／player／playurl 分組。RouteCoordinator 保留決策、許可與親和提交；Measurement 保留 probe、鎖與取消；Recovery 保留 token、期限、補正與 SDK 派送；Observer 與 XHR Hook 保留原生操作及請求所有權。抽出助手不取得完整控制器或可公開修改的集合。
+
+六層、Native 精確授權與預設、schema 2、四鍵、選路／熔斷 W/G/C、需求與提前重試政策及資源上限保持。三頁、設定同步生效、刷新合併、單次快照及按需詳細狀態沿用既有契約。沒有新增診斷、歷程、報告、剪貼簿或週期工作；原效用 FAIL 與未識別實機效益保持。
+
+## 來源隔離與實際安裝
+
+本版發布前採離線交付；使用者更新後另行授權的[載入身分與初始化核對](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2215-r1-載入身分與模組初始化2026-11-09)已完成。只確認本版重構所需身分與接線，未重跑已通過的播放、選單或熔斷窗口。v2.2.14 載入身分通過只屬舊版，保存在[原版完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2214-完整正文保存2026-11-09)，不轉算新版通過。自然通知交錯、真正跨分頁與提前重試實機效益限制仍保持。
+
+## 公開交付與安裝結案
+
+v2.2.14 五份 Release 原件已逐位元組封存並校驗；v2.2.15 五份本機產物與發行提交逐位元組一致。發布前核對發現 Git 正規化報告行尾，已沿既有 Release 規則補上 raw 屬性並重新登記索引，保留原封裝 bytes 及校驗值，確認五份均相同後才推送。
+
+2026-11-09 00:21（Asia/Taipei）已公開核對：發行 main／v2.2.15 標籤解參照為 3a90b6cce69569cc45ae43e591ad86f0709b6404；[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.15) 非草稿／預覽版，唯一附件 BiliCDN_TW.user.js。版本附件與既有精確 latest 網址均實際 GET／HTTP 200，@version 2.2.15、535,486 bytes、SHA-256 96bff42ad7ac5deb9b500605b244af3598a6f67b7f93bf85d6c26992ff0b8cef，與本機完整本體一致。
+
+本次後續文件提交只更新現行公開結果，不移動版本標籤、不回寫五份封裝快照；Release 報告的待公開核對文字描述封裝當時。封裝時尚未執行安裝驗收；後續本輪載入確認通過，未新增其他功能窗口，不把公開下載當作安裝驗收。
+
+## v2.2.15 R1 載入身分與模組初始化（2026-11-09）
+
+使用者更新後要求只做本次模組重構所需驗證。基準 main／d29bc01，唯一自有 IAB 文件為指定 BV1tFZZBQE57／P1，保留 Auto 與既有倍率。保守外層起點 00:25:11、清理完成 00:30:58（Asia/Taipei），約 5 分 47 秒；二十分鐘上限、最後五分鐘清理預算內結束，沒有追加輪次。
+
+| 案例 | 實際結果 |
+| --- | --- |
+| L0 完整本體 | PASS。載入包裝內完整 535,486 bytes／SHA-256 96bff42ad7ac5deb9b500605b244af3598a6f67b7f93bf85d6c26992ff0b8cef，與正式附件逐位元組相符，版本 2.2.15 |
+| L1 管理器 | PASS。同文件 GM_info 為 Tampermonkey 5.5.1／script version 2.2.15 |
+| L2 初始化接線 | PASS。RuntimeController、ControlCenter、TransportAdapter、RouteCoordinator、MeasurementController、RecoveryController、PlayurlController 各一；Runtime 連接相同 Routes／Measurement／Recovery／PlayurlController，TransportContext 連接相同 Routes／Measurement 及 PlayurlAdapter→Controller；Fetch／XHR 純 isInstalled 比較均 true、hookState=installed |
+| Z0 清理 | PASS。真正媒體 muted／paused=true、rate1、readyState4、error=false；自有物件群組與 Runtime／Debugger domains 釋放，自有分頁關閉、IAB 剩餘零；無自有斷點、攔截或採樣器 |
+
+身分透過既有入口事件的唯讀閉包與同一腳本建構原型取得；沒有點開選單、設斷點、暫停 JavaScript、呼叫產品命令或 snapshot。只讀既有參照，hooks 使用已核對的純身分比較。正式本體包含本輪帳本、投影、XHR、輸入綁定與純驗證助手，但名稱存在不等於所有政策分支已執行；本次不宣稱測過故障還原或額度。
+
+方法事件保留：一次工具區塊變數 ReferenceError 由重新取得同一有效入口 listener 修正；Transport 先直接與 Controller 比較為 false，entry.ts 證明應為 Adapter→Controller，依正確邊界再比對成立。兩者是工具方法更正，不當成產品曾故障，也不刪除原觀察。觀察期間讀得 paused／產品例外為零，只涵蓋 attach 後游標，不外推啟動全程。導覽後立即真正靜音暫停並讀回，最初至首次確認前區間不宣稱已全程量測。
+
+產品設定人工寫入及學習清除／回灌均零，保留正常合法學習。沒有重裝腳本、改 timeout、開啟控制中心、重跑三頁／倍速／選路／熔斷或正式 2,292 案。本輪 IDENTITY／CASES／CLEANUP／REPORT／截圖保存於 .work/iab-testing/2026-11-09-v2.2.15-d29bc01-R1；文件、封存及差異檢查通過，FINAL_INTEGRITY 確認正式來源／測試／工具、五份原件及三份日誌既有前綴保持。結論限於「v2.2.15 正確載入、本次必要模組初始化確認通過」。驗收結案時文件先只保存本機，使用者其後明確要求提交並推送這次六份文件；本次不升版、不封裝或發布，發行標籤與五份原件保持。
+
+## 歷史驗證導覽
+
+版本、議題、日期由 [HISTORY](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/HISTORY.md) 維護；以下錨點只作相容導引。
+
+<a name="v2214-載入身分驗證2026-11-08"></a>
+
+[原版載入身分與 R1／R2 限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2214-載入身分驗證2026-11-08)。
+
+<a name="v2212-r1-三頁與刷新專項2026-11-08"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2212-r1-三頁與刷新專項2026-11-08)。
+
+<a name="v2211-r1-熔斷安裝驗收2026-11-06"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-r1-熔斷安裝驗收2026-11-06)。
+
+<a name="v2211-r2-受控熔斷與安裝接線2026-11-06"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-r2-受控熔斷與安裝接線2026-11-06)。
+
+<a name="v2210-r1-安裝版驗收2026-11-05"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-r1-安裝版驗收2026-11-05)。
+
+<a name="v2210-r2-補驗能力確認2026-11-05"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-r2-補驗能力確認2026-11-05)。
+
+<a name="v2210-r3-補驗2026-11-05"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-r3-補驗2026-11-05)。
+
+<a name="v2210-r4-正數-timeout-專項2026-11-05"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-r4-正數-timeout-專項2026-11-05)。
+
+<a name="v228-r2-專項完成2026-11-0304"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v228-r2-專項完成2026-11-0304)。
+
+<a name="v224-r1-安裝驗收2026-11-01"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v224-r1-安裝驗收2026-11-01)。
+
+<a name="v223-r1-安裝驗收2026-11-01"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v223-r1-安裝驗收2026-11-01)。
+
+<a name="bilicdn_tw-v218-release-verification--2026-10-04"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v218-release-verification--2026-10-04)。
+
+<a name="v225-r1-安裝驗收2026-11-01"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v225-r1-安裝驗收2026-11-01)。
+
+<a name="三十五項閉環對照"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#三十五項閉環對照)。
+
+<a name="v226-r1-安裝驗收2026-11-02"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v226-r1-安裝驗收2026-11-02)。
+
+<a name="驗證階段與證據範圍"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#驗證階段與證據範圍)。
+
+<a name="v2213-r1-選路黑名單與來源驗收2026-11-08"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r1-選路黑名單與來源驗收2026-11-08)。
+
+<a name="v2213-r2-本版變更接線補驗2026-11-08"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r2-本版變更接線補驗2026-11-08)。
+
+<a name="v2213-r3-更新確認與實機觀察2026-11-08"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r3-更新確認與實機觀察2026-11-08)。
+
+<a name="v2213-r4-自主接線補驗2026-11-08"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r4-自主接線補驗2026-11-08)。
+
+<a name="v2213-r5-受控真實-api-接線2026-11-08"></a>
+
+[原版結果與限制](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r5-受控真實-api-接線2026-11-08)。
+
+<a name="公開交付核對2026-11-06"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#公開交付核對2026-11-06)。
+
+<a name="研究項目完成對照"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#研究項目完成對照)。
+
+<a name="v228-r1-正數-timeout-專項2026-11-03"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v228-r1-正數-timeout-專項2026-11-03)。
+
+<a name="隔離-b-分支原型驗證2026-10-30"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#隔離-b-分支原型驗證2026-10-30)。
+
+<a name="公開交付"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#公開交付)。
+
+<a name="修復結果與證據邊界"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#修復結果與證據邊界)。
+
+<a name="發布與安裝限制"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#發布與安裝限制)。
+
+<a name="2026-10-30up141-安裝版實測"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-30up141-安裝版實測)。
+
+<a name="2026-10-31更新後安裝核對"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31更新後安裝核對)。
+
+<a name="2026-10-31六十分鐘驗證計畫執行結果"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31六十分鐘驗證計畫執行結果)。
+
+<a name="2026-10-31iab-可用但持續靜音前提受阻"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31iab-可用但持續靜音前提受阻)。
+
+<a name="2026-10-31依使用者更正靜音方法續行與下載工具超時"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31依使用者更正靜音方法續行與下載工具超時)。
+
+<a name="2026-10-31補測與單分頁重測"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31補測與單分頁重測)。
+
+<a name="2026-10-31一次授權的單分頁缺口補測"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#2026-10-31一次授權的單分頁缺口補測)。
+
+<a name="v220-安裝驗收-r12026-11-01"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v220-安裝驗收-r12026-11-01)。
+
+<a name="澄清後在原期限內續行"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#澄清後在原期限內續行)。
+
+<a name="auto-2-倍補充與本次驗收結案"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#auto-2-倍補充與本次驗收結案)。
+
+<a name="v221-r1-安裝驗收2026-11-01"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v221-r1-安裝驗收2026-11-01)。
+
+<a name="全文閱讀覆蓋清單"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#全文閱讀覆蓋清單)。
+
+<a name="發布後公開核對2026-11-01"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#發布後公開核對2026-11-01)。
+
+<a name="固定合成模型對照"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#固定合成模型對照)。
+
+<a name="發布後公開核對2026-11-03"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#發布後公開核對2026-11-03)。
+
+<a name="v227-r1-基本安裝驗收2026-11-03"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v227-r1-基本安裝驗收2026-11-03)。
+
+<a name="v227-xhr-timeout-起播分支調查2026-11-03"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v227-xhr-timeout-起播分支調查2026-11-03)。
+
+<a name="政策映射與契約保留"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#政策映射與契約保留)。

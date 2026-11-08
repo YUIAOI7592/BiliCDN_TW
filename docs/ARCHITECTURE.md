@@ -69,13 +69,15 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 
 | 協調／所有者 | 獨立助手 | 保留權責 |
 | --- | --- | --- |
-| RouteCoordinator | routing/ 的 request-policy、候選／限制／播放器輸出、傳輸分類、私有 RetryEvidence、純 route-projection 與熔斷觀察 | 所有政策修訂、計畫、工作 ID、事件、等待後重新驗證、傳輸提交、親和與 Vault 登記 |
+| RouteCoordinator | routing/ 的 request-policy、候選／限制／播放器輸出、傳輸分類、私有 RequestOwnership／RetryPermitState／RetryEvidence、純 route-projection 與熔斷觀察 | 所有政策修訂、計畫、工作 ID、事件、等待後重新驗證、傳輸提交、親和與 Vault 登記 |
 | ControlCenter | ControlReadModelPort／labels／styles／elements／overview／settings views | 宿主／封閉 ShadowRoot、鍵盤／焦點、視圖版本與非同步命令 |
 | PlayerAdapter | media／sdk／input-bindings 與單一 PlayerControlObserver | 既有外部及測試覆寫介面；Observer 擁有操作修訂、可信目標及自有重載，私有 bindings 只管理註冊與按原順序清理 |
 | PlayerMonitor／RecoveryController | domain/playback-progress 的純控制身分、時間及影格比較 | Monitor 保有停滯段；Recovery 保有 token、額度、breaker、reload／restore；兩者各自保留資格、基準、計數與終止檢查順序 |
 | XhrHookAdapter | xhr-values／xhr-dispatch／xhr-request／xhr-response | 唯一 metadata WeakMap、原生 getter／guards、send 派送、安裝與按所有權還原；dispatch 只處理本次原生準備，request 管理當筆終止，response 只轉換及快取當筆狀態 |
 
 助手沒有第二份 Native 授權索引或可獨立變更親和的能力。詳見[本版模組歸屬紀錄](../archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md)。
+
+RequestOwnership 集中請求身分、送出／選擇序號、表示確認進度及單次結果憑證；計畫修訂透過窄回呼在原讀取點取得，Session／Vault 與所有控制副作用仍由 Coordinator 操作。RetryPermitState 只保存一份 prepared／materialized 許可及選定目標，不讀取時鐘或判定資格；準備、物化與接受均由 Coordinator 在當次邊界重驗，原生接受後才提交親和。兩個助手只允許 Coordinator 匯入，不取得 Store、播放器或派送能力。
 
 ### 應用控制器
 
@@ -141,6 +143,8 @@ DomainEvent 只保留有產生者與功能消費者的事件；TransportObservat
 媒體請求的不可變脈絡包含送出序號、路線修訂及表示選擇修訂。相同有效表示的並行請求共享選擇修訂；兩個不同成功請求才確認新表示，等待期間不顯示舊表示容量。新送出的合法回切建立新修訂；即使前一個表示仍待確認、Session 尚記得更早的相同表示，也必須以兩筆新選擇的不同成功請求重新確認。較早路線／選擇的合法完成仍可提交健康證據，但不能重設目前親和、表示或觸發恢復；舊播放器輸出清單也不能奪回腳本已提交的新路線。
 
 合法固定主機優先於健康親和。每筆傳輸保存路線政策修訂，設定失效後的舊結果可按原資格保留歷史證據，但不能改寫親和、當前表示、來源授權或觸發恢復；儲存等待前後均檢查。影片、音訊的證據及恢復隔離，audio 備援不能建立 video 核心意圖。
+
+普通實傳的靜態重試資格與降級信用前提由 transport-result 共置；健康保存、當前控制、重試證明及降級信用是不同判定。動態抑制、保存樣本查證與等待後授權檢查仍在 Coordinator 的原位置執行，不將跨等待檢查快取成布林值。EvidenceStore 的普通保存回傳 EvidenceWriteResult，受保護降級回傳 CircuitDowngradeResult；狀態字串及持久協定不變，健康與熔斷仍由同一 Store 在鎖內原子提交。
 
 固定主機失敗或受限後，選路器選出的當前合法備援可以取得恢復資格，不再要求其主機等於固定偏好。資格仍依世代、內容週期、表示授權、政策修訂、當前計畫身分及禁止規則核對；不改寫固定設定，也不增加重載額度。
 

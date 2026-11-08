@@ -1,23 +1,23 @@
-# BiliCDN_TW v2.2.15 完整驗證報告
+# BiliCDN_TW v2.2.16 完整驗證報告
 
-日期：2026-11-09（Asia/Taipei）。基準 main／dc3b6f0、v2.2.14；本次採離線模組整合交付。
+日期：2026-11-09（Asia/Taipei）。基準 main／92aef15、v2.2.15；本次採離線選路狀態與提交整理。
 
 ## 驗收結論
 
-完成契約功能歸位、選路帳本與純投影抽取、量測／恢復／播放器／XHR 熱點整理及測試功能分布。十八套件／2,292 案通過；原 2,269 案名稱、參數展開與相對註冊順序逐項保留。型別、架構、完整測試、唯讀格式、文件、公開／本機封存、verify、bundle 與安全差異門檻均已通過；正式 Release、遠端 main／標籤、唯一附件及公開 latest 已核對一致；交付當時沒有啟動瀏覽器。使用者更新後的本版載入身分與模組初始化確認亦已通過，範圍見[本輪結果](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2215-r1-載入身分與模組初始化2026-11-09)。
+十八套件／2,306 案通過；原 2,292 案名稱、參數展開與相對註冊順序逐項保留。RequestOwnership、RetryPermitState 與普通傳輸前提歸位，唯一控制所有者及既有政策保持。型別、架構、匯入純度、唯讀格式、文件、公開／本機封存、verify、可重現建置與安全差異門檻已通過；公開交付另見下節。本輪沒有啟動瀏覽器，v2.2.16 安裝版尚未驗證。
 
 ## 自動驗證
 
-固定 Node 26.8.1／npm 11.19.0。原基線沙箱暫存 Git 寫入限制與允許環境下完整通過分開保存，不當成產品失敗。新增 23 案：五個架構私有邊界、十二個助手與純驗證、六個工具契約。全部 failed／skipped／todo／cancelled 為零。
+固定 Node 26.8.1／npm 11.19.0 與既有依賴。新增十四案：四個請求所有權、兩個許可、兩個資格分離／短路與六個架構拒絕契約。全部 failed／skipped／todo／cancelled 為零。新測試先保存缺模組／匯出的失敗結果後實作；原基線沙箱十三個工具案例的暫存 Git 寫入限制另留原始結果，相同來源在允許環境完整通過。
 
 | 套件 | 案例 | 結果 |
 | --- | ---: | --- |
-| architecture | 46 | PASS |
+| architecture | 52 | PASS |
 | imports | 1 | PASS |
 | domain-boundaries | 3 | PASS |
 | domain | 111 | PASS |
 | state | 81 | PASS |
-| application | 841 | PASS |
+| application | 849 | PASS |
 | adapters | 214 | PASS |
 | native-routing | 13 | PASS |
 | native-transport | 222 | PASS |
@@ -31,48 +31,31 @@
 | control-center | 108 | PASS |
 | tooling | 232 | PASS |
 
-型別、107 個執行期模組架構、匯入純度、完整案例、唯讀格式、文件及公開封存已通過。最終 verify 已實際通過：再執行 2,292 案、可重現建置、語法、v2-only／退役標記及暫存封裝校驗；本機封存 11,922 檔核對通過。正式腳本 535,486 bytes，SHA-256 96bff42ad7ac5deb9b500605b244af3598a6f67b7f93bf85d6c26992ff0b8cef。案例搬移及每階段證據見[本輪紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md)。
+固定 Git 基準的 96 組兩主機／兩表示交錯逐欄一致，涵蓋決策重用與 ID、請求／表示修訂、事件、Session、路線快照、健康樣本、儲存及重複完成。原始案例對照與軌跡保存於私有 .work/v2216；這些不增加正式案例數，也不代表瀏覽器原生行為或效能實測。
 
 ## 安全差異
 
-Codex Security 已完成並封印不可變 dc3b6f0→60870f9 差異，canonical 結果已讀回。291 個來源差異項目及額外測試定義／架構支援均覆蓋；漏洞、未結案候選及 deferred 為零。掃描 ID 06be0f32-1aa1-4cdf-b535-45599ef32046；scan-reported 模型 gpt-6.1-sol／xhigh。來源抽取後的授權、原生重入與唯一所有者保持；不代表安裝版驗收。後續只有版本、文件、封存及生成物，受審程式未變。
+Codex Security 已完成並封印不可變 92aef15→5440677 差異，canonical 結果已讀回；十二個自動來源項目、額外架構測試來源及四份文件全部覆蓋，漏洞、未結案候選及 deferred 為零。掃描 ID d20a9849-9dbc-4246-a080-e6e60e896cdf，scan-reported 模型 gpt-6.1-sol／xhigh。後續只有版本、文件、封存與生成物，受審執行期程式未變；此靜態審查不代表安裝版通過。
 
-工具計量為 input 16,914,267（cached 16,476,160）、output 56,115、total 16,970,382 tokens，coverage complete／五個 thread；這是 rollout 彙總計量，不當成獨立新輸入或費用。Daybreak advisory not_granted，canonical 完成結果已實際讀回。
+工具 rollout 彙總計量 input 11,048,725（cached 10,774,144）、output 36,132、total 11,084,857 tokens，coverage complete／五個 thread；不當成獨立新輸入或費用。Daybreak advisory not_granted，canonical 完成結果仍已實際讀回。
 
 ## 模組責任與功能保持
 
-application 按 routing／measurement／playback／playurl 共置控制器及窄契約，adapters 按 transport／player／playurl 分組。RouteCoordinator 保留決策、許可與親和提交；Measurement 保留 probe、鎖與取消；Recovery 保留 token、期限、補正與 SDK 派送；Observer 與 XHR Hook 保留原生操作及請求所有權。抽出助手不取得完整控制器或可公開修改的集合。
-
-六層、Native 精確授權與預設、schema 2、四鍵、選路／熔斷 W/G/C、需求與提前重試政策及資源上限保持。三頁、設定同步生效、刷新合併、單次快照及按需詳細狀態沿用既有契約。沒有新增診斷、歷程、報告、剪貼簿或週期工作；原效用 FAIL 與未識別實機效益保持。
+RouteCoordinator 保有路線、計畫修訂、外部讀值、事件與提交；私有助手只集中請求／選擇確認及單一許可狀態。EvidenceStore 仍在同一鎖內原子保存健康與熔斷控制；型別分開普通保存與降級結果。Native 精確授權與預設、schema 2、四鍵、黑名單、熔斷 W／G／C、需求與正數 timeout 政策及額度保持。三頁、同步設定、刷新合併與按需詳細狀態沿用既有契約。
 
 ## 來源隔離與實際安裝
 
-本版發布前採離線交付；使用者更新後另行授權的[載入身分與初始化核對](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2215-r1-載入身分與模組初始化2026-11-09)已完成。只確認本版重構所需身分與接線，未重跑已通過的播放、選單或熔斷窗口。v2.2.14 載入身分通過只屬舊版，保存在[原版完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2214-完整正文保存2026-11-09)，不轉算新版通過。自然通知交錯、真正跨分頁與提前重試實機效益限制仍保持。
+本版未執行來源隔離或安裝驗收；沒有啟動瀏覽器、重測播放／選單／熔斷窗口或修改正式學習。v2.2.15 的載入確認只屬舊版，見[原版完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2215-完整正文保存2026-11-09)。原效用 FAIL、自然交接與跨分頁證據限制保持，不因重構改判。
 
 ## 公開交付與安裝結案
 
-v2.2.14 五份 Release 原件已逐位元組封存並校驗；v2.2.15 五份本機產物與發行提交逐位元組一致。發布前核對發現 Git 正規化報告行尾，已沿既有 Release 規則補上 raw 屬性並重新登記索引，保留原封裝 bytes 及校驗值，確認五份均相同後才推送。
+v2.2.15 五份 Release 原件已與固定基準逐位元組核對並封存，原保護雜湊沿用；上一版完整報告含 R1 已原樣保存。公開封存 514 個搬移項目及三份追加日誌通過，本機 11,922 份保護資料通過。v2.2.16 正式本體為 538,269 bytes，SHA-256 7068ee5a53b3646c08a67691055f59905b6b4d7d585269b41284ca4fa9cfd145。
 
-2026-11-09 00:21（Asia/Taipei）已公開核對：發行 main／v2.2.15 標籤解參照為 3a90b6cce69569cc45ae43e591ad86f0709b6404；[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.15) 非草稿／預覽版，唯一附件 BiliCDN_TW.user.js。版本附件與既有精確 latest 網址均實際 GET／HTTP 200，@version 2.2.15、535,486 bytes、SHA-256 96bff42ad7ac5deb9b500605b244af3598a6f67b7f93bf85d6c26992ff0b8cef，與本機完整本體一致。
+封裝時尚待遠端 main／標籤與公開附件／latest GET 核對，不宣稱安裝版通過。Release 保存封裝當時狀態，後續公開核對只更新現行文件，不移動版本標籤或回寫原件。
 
-本次後續文件提交只更新現行公開結果，不移動版本標籤、不回寫五份封裝快照；Release 報告的待公開核對文字描述封裝當時。封裝時尚未執行安裝驗收；後續本輪載入確認通過，未新增其他功能窗口，不把公開下載當作安裝驗收。
+<a name="v2215-r1-載入身分與模組初始化2026-11-09"></a>
 
-## v2.2.15 R1 載入身分與模組初始化（2026-11-09）
-
-使用者更新後要求只做本次模組重構所需驗證。基準 main／d29bc01，唯一自有 IAB 文件為指定 BV1tFZZBQE57／P1，保留 Auto 與既有倍率。保守外層起點 00:25:11、清理完成 00:30:58（Asia/Taipei），約 5 分 47 秒；二十分鐘上限、最後五分鐘清理預算內結束，沒有追加輪次。
-
-| 案例 | 實際結果 |
-| --- | --- |
-| L0 完整本體 | PASS。載入包裝內完整 535,486 bytes／SHA-256 96bff42ad7ac5deb9b500605b244af3598a6f67b7f93bf85d6c26992ff0b8cef，與正式附件逐位元組相符，版本 2.2.15 |
-| L1 管理器 | PASS。同文件 GM_info 為 Tampermonkey 5.5.1／script version 2.2.15 |
-| L2 初始化接線 | PASS。RuntimeController、ControlCenter、TransportAdapter、RouteCoordinator、MeasurementController、RecoveryController、PlayurlController 各一；Runtime 連接相同 Routes／Measurement／Recovery／PlayurlController，TransportContext 連接相同 Routes／Measurement 及 PlayurlAdapter→Controller；Fetch／XHR 純 isInstalled 比較均 true、hookState=installed |
-| Z0 清理 | PASS。真正媒體 muted／paused=true、rate1、readyState4、error=false；自有物件群組與 Runtime／Debugger domains 釋放，自有分頁關閉、IAB 剩餘零；無自有斷點、攔截或採樣器 |
-
-身分透過既有入口事件的唯讀閉包與同一腳本建構原型取得；沒有點開選單、設斷點、暫停 JavaScript、呼叫產品命令或 snapshot。只讀既有參照，hooks 使用已核對的純身分比較。正式本體包含本輪帳本、投影、XHR、輸入綁定與純驗證助手，但名稱存在不等於所有政策分支已執行；本次不宣稱測過故障還原或額度。
-
-方法事件保留：一次工具區塊變數 ReferenceError 由重新取得同一有效入口 listener 修正；Transport 先直接與 Controller 比較為 false，entry.ts 證明應為 Adapter→Controller，依正確邊界再比對成立。兩者是工具方法更正，不當成產品曾故障，也不刪除原觀察。觀察期間讀得 paused／產品例外為零，只涵蓋 attach 後游標，不外推啟動全程。導覽後立即真正靜音暫停並讀回，最初至首次確認前區間不宣稱已全程量測。
-
-產品設定人工寫入及學習清除／回灌均零，保留正常合法學習。沒有重裝腳本、改 timeout、開啟控制中心、重跑三頁／倍速／選路／熔斷或正式 2,292 案。本輪 IDENTITY／CASES／CLEANUP／REPORT／截圖保存於 .work/iab-testing/2026-11-09-v2.2.15-d29bc01-R1；文件、封存及差異檢查通過，FINAL_INTEGRITY 確認正式來源／測試／工具、五份原件及三份日誌既有前綴保持。結論限於「v2.2.15 正確載入、本次必要模組初始化確認通過」。驗收結案時文件先只保存本機，使用者其後明確要求提交並推送這次六份文件；本次不升版、不封裝或發布，發行標籤與五份原件保持。
+[v2.2.15 R1 原始載入判定](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2215-r1-載入身分與模組初始化2026-11-09)。
 
 ## 歷史驗證導覽
 
