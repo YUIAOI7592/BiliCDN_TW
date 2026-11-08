@@ -1,4 +1,5 @@
 import { RetryEvidence } from './retry-evidence.ts'
+import { RequestOwnership } from './request-ownership.ts'
 import { capacityNumbers, planSummary, rankingSummary } from './route-projection.ts'
 import { type CompletionBudget } from '../../domain/route-completion.ts'
 import {
@@ -100,20 +101,10 @@ import {
 import { type RuntimeIdPort } from '../../platform/runtime-id-port.ts'
 export class RouteCoordinator implements RouteCoordinatorPort {
   #circuits = new CircuitObservations()
-  #observedReceipts = new WeakSet<object>()
+  #ownership = new RequestOwnership()
   #policyRevision = 0
-  #dispatchSequence = 0
   #routeSerial = 0
-  #selectionSerial = 0
   #planRevisions = new Map<RepresentationId, number>()
-  #requestOwners = new WeakMap<RequestContext, RequestContext>()
-  #preparedVideo: RequestContext | null = null
-  #selection: {
-    representation: RepresentationId
-    revision: number
-    phase: 'pending' | 'confirmed'
-  } | null = null
-  #tentativeRequests = new Set<string>()
   #measurementIds = new WeakMap<object, string>()
   #serial = 0
   #recoverySerial = 0
@@ -125,7 +116,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #listeners = new Set<(event: DomainEvent) => void>()
   #hostLockedStreams = new Set<string>()
   #startupIncompatible = new Map<string, Set<string>>()
-  #tentativeRepresentation: RepresentationId | null = null
   #streamPlans = new Map<string, RouteDecision>()
   #latest = new Map<string, RouteTransferSnapshot>()
   #requested = new Map<string, RequestContext>()
@@ -178,16 +168,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#policyRevision++
     this.#plans.clear()
     this.#planRevisions.clear()
-    this.#preparedVideo = null
-    this.#selection = null
-    this.#tentativeRequests.clear()
+    this.#ownership.reset('content')
     this.#planIdentities.clear()
     this.#unlockedNative.clear()
     this.#decisions.clear()
     this.#hostLockedStreams.clear()
     this.#startupIncompatible.clear()
     this.#requestedRepresentations.clear()
-    this.#tentativeRepresentation = null
 
     this.#streamPlans.clear()
     this.#latest.clear()
@@ -210,9 +197,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#policyRevision++
     this.#plans.clear()
     this.#planRevisions.clear()
-    this.#preparedVideo = null
-    this.#selection = null
-    this.#tentativeRequests.clear()
+    this.#ownership.reset('policy')
     this.#planIdentities.clear()
     this.#streamPlans.clear()
     this.#fallbacks.clear()
@@ -226,36 +211,15 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   prepareRequest(request: RequestContext): RequestContext {
-    const owned = this.#requestOwners.get(request)
-    if (owned) return owned
-    let selectionRevision = 0
-    if (request.kind === 'video' && request.representation) {
-      const previous = this.#preparedVideo
-      const same =
-        previous?.representation === request.representation &&
-        previous.generation === request.generation &&
-        previous.epoch === request.epoch &&
-        previous.authorityRevision === request.authorityRevision &&
-        previous.routePolicyRevision === request.routePolicyRevision
-      selectionRevision = same ? previous.selectionRevision! : ++this.#selectionSerial
-    }
-    const stamped = Object.freeze({
-      ...request,
-      dispatchSequence: ++this.#dispatchSequence,
-      routeRevision: request.representation
-        ? (this.#planRevisions.get(request.representation) ?? 0)
-        : 0,
-      selectionRevision,
-    })
-    this.#requestOwners.set(request, stamped)
-    this.#requestOwners.set(stamped, stamped)
-    if (request.kind === 'video' && request.representation) this.#preparedVideo = stamped
-    return stamped
+    return this.#ownership.prepare(
+      request,
+      (representation) => this.#planRevisions.get(representation) ?? 0,
+    )
   }
 
   #controlCurrent(observation: TransportObservation): boolean {
     const request = observation.request
-    const owned = request ? this.#requestOwners.get(request) : null
+    const owned = request ? this.#ownership.owner(request) : null
     const representation = observation.representation
     const plan = representation ? this.#plans.get(representation) : null
     const host = plan?.host ?? observation.targetHost
@@ -278,8 +242,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         return false
       return (
         observation.kind !== 'video' ||
-        (this.#selection?.representation === representation &&
-          this.#selection.revision === owned.selectionRevision)
+        (this.#ownership.selection?.representation === representation &&
+          this.#ownership.selection.revision === owned.selectionRevision)
       )
     }
     // Direct pre-dispatch observations can confirm their owned plan only while no dispatched
@@ -299,20 +263,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       return
     const current = this.#requested.get(stamped.kind ?? 'unknown')
     if ((current?.dispatchSequence ?? -1) > stamped.dispatchSequence!) return
-    if (
-      stamped.kind === 'video' &&
-      stamped.representation &&
-      this.#selection?.revision !== stamped.selectionRevision
-    ) {
-      this.#selection = {
-        representation: stamped.representation,
-        revision: stamped.selectionRevision!,
-        phase: 'pending',
-      }
-      this.#tentativeRepresentation = null
-
-      this.#tentativeRequests.clear()
-    }
+    this.#ownership.started(stamped)
     if (request.kind && !this.#firstMediaAt) this.#firstMediaAt = request.startedAt
     if (request.kind === 'video' && !this.#firstVideoAt) this.#firstVideoAt = request.startedAt
     if (request.kind) this.#pendingMedia.add(request.requestId)
@@ -357,13 +308,13 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   earlyRetryRequestCurrent(request: RequestContext): boolean {
     const settings = this.settings.get(),
       state = this.session.get()
-    const owned = this.#requestOwners.get(request)
+    const owned = this.#ownership.owner(request)
     const plan = request.representation ? this.#plans.get(request.representation) : null
     const preparedRetry = this.#retryPermit?.applied?.decision.id === request.decisionId
     const currentOwner =
       !owned ||
-      (this.#selection?.representation === request.representation &&
-        this.#selection.revision === owned.selectionRevision &&
+      (this.#ownership.selection?.representation === request.representation &&
+        this.#ownership.selection.revision === owned.selectionRevision &&
         (preparedRetry ||
           (plan?.id === request.decisionId &&
             owned.routeRevision === this.#planRevisions.get(request.representation!))))
@@ -373,7 +324,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       !settings.disabled &&
       !state.disabled &&
       !settings.fixedHost &&
-      (!this.#selection || this.#selection.phase === 'confirmed') &&
+      (!this.#ownership.selection || this.#ownership.selection.phase === 'confirmed') &&
       request.kind === 'video' &&
       request.routeType === 'catalog-generated' &&
       request.attributionStatus === 'matched' &&
@@ -538,14 +489,11 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (!this.#decisionAllowed(decision, pending.applied.context, 'video')) return false
     this.#retryPermit = null
     this.#savePlan(request.representation!, decision)
-    const owner = this.#requestOwners.get(request)
-    if (owner) {
-      const committed = Object.freeze({
-        ...owner,
-        routeRevision: this.#planRevisions.get(request.representation!)!,
-      })
-      this.#requestOwners.set(request, committed)
-      this.#requestOwners.set(owner, committed)
+    if (this.#ownership.has(request)) {
+      const committed = this.#ownership.commitRoute(
+        request,
+        this.#planRevisions.get(request.representation!)!,
+      )!
       this.#requested.set('video', committed)
     }
     this.session.setAffinity({
@@ -1973,11 +1921,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   async observe(observation: TransportObservation): Promise<void> {
-    const receipt = observation.request
-      ? (this.#requestOwners.get(observation.request) ?? observation.request)
-      : observation
-    if (this.#observedReceipts.has(receipt)) return
-    this.#observedReceipts.add(receipt)
+    const receipt = this.#ownership.beginObservation(observation)
+    if (!receipt) return
     this.#stepCircuits()
     const terminalTick = this.#circuitTick()
     let credit: { host: string; kind: MediaKind; valid: () => boolean } | null = null
@@ -2029,11 +1974,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         }
       }
       const key = observation.kind ?? 'unknown'
-      if (
-        !observation.request ||
-        !this.#requestOwners.has(observation.request) ||
-        controlsCurrent()
-      ) {
+      if (!observation.request || !this.#ownership.has(observation.request) || controlsCurrent()) {
         this.#latest.set(key, transportSnapshot(observation))
       }
       const result = classifyTransportResult(observation)
@@ -2247,7 +2188,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       request.routeRevision === this.#planRevisions.get(representation) &&
       current?.representation === representation &&
       current.targetHost === request.targetHost &&
-      (request.kind !== 'video' || this.#selection?.revision === request.selectionRevision)
+      (request.kind !== 'video' ||
+        this.#ownership.selection?.revision === request.selectionRevision)
     return (
       allowed &&
       revision === this.#policyRevision &&
@@ -2271,35 +2213,23 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       if (
         representation &&
         (representation !== active ||
-          (this.#selection?.representation === representation &&
-            this.#selection.phase === 'pending'))
+          (this.#ownership.selection?.representation === representation &&
+            this.#ownership.selection.phase === 'pending'))
       ) {
         const key =
           observation.request?.requestId ??
           String(observation.decisionId) + ':' + observation.completedAt
-        if (this.#tentativeRepresentation === representation) {
-          this.#tentativeRequests.add(key)
-        } else {
-          this.#tentativeRepresentation = representation
-          this.#tentativeRequests = new Set([key])
-        }
-        if (this.#tentativeRequests.size >= 2) {
+        if (this.#ownership.success(representation, key)) {
           this.session.setRepresentation(representation)
-          if (this.#selection?.representation === representation) {
-            this.#selection.phase = 'confirmed'
-          }
-          this.#tentativeRequests.clear()
-          this.#tentativeRepresentation = null
+          this.#ownership.confirm(representation)
         }
       } else {
-        this.#tentativeRepresentation = null
-
-        this.#tentativeRequests.clear()
+        this.#ownership.clearSuccesses()
       }
       if (
         representation &&
         this.session.get().representation === representation &&
-        (!this.#selection || this.#selection.phase === 'confirmed') &&
+        (!this.#ownership.selection || this.#ownership.selection.phase === 'confirmed') &&
         observation.decisionId
       ) {
         this.session.setAffinity({
@@ -2316,8 +2246,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
 
   snapshot(): RouteSnapshot {
     const session = this.session.get(),
-      pending = this.#selection?.phase === 'pending',
-      activeRepresentation = this.#selection?.representation ?? session.representation,
+      pending = this.#ownership.selection?.phase === 'pending',
+      activeRepresentation = this.#ownership.selection?.representation ?? session.representation,
       active = activeRepresentation ? this.#plans.get(activeRepresentation) : null,
       representation =
         !pending && session.representation ? this.vault.groupSummary(session.representation) : null,
@@ -2338,15 +2268,16 @@ export class RouteCoordinator implements RouteCoordinatorPort {
             ),
           ),
       ),
-      selection: this.#selection
+      selection: this.#ownership.selection
         ? {
-            phase: this.#selection.phase,
-            sampleCount: this.#selection.phase === 'confirmed' ? 2 : this.#tentativeRequests.size,
+            phase: this.#ownership.selection.phase,
+            sampleCount:
+              this.#ownership.selection.phase === 'confirmed' ? 2 : this.#ownership.sampleCount,
             nextAction:
-              this.#selection.phase === 'confirmed'
+              this.#ownership.selection.phase === 'confirmed'
                 ? ('observe-playback' as const)
                 : ('await-video-success' as const),
-            revision: this.#selection.revision,
+            revision: this.#ownership.selection.revision,
           }
         : null,
       activePlan: active
@@ -2361,7 +2292,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       attribution:
         !pending && session.representation
           ? 'confirmed'
-          : this.#tentativeRepresentation
+          : this.#ownership.tentativeRepresentation
             ? 'awaiting-second-video-transfer'
             : 'awaiting-matched-video',
       representation,
@@ -2379,9 +2310,9 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       !plan ||
       plan.action === 'block' ||
       !plan.host ||
-      (this.#selection &&
-        (this.#selection.representation !== representation ||
-          this.#selection.phase !== 'confirmed'))
+      (this.#ownership.selection &&
+        (this.#ownership.selection.representation !== representation ||
+          this.#ownership.selection.phase !== 'confirmed'))
     )
       return null
     const identity = this.#planIdentities.get(representation),
@@ -2698,9 +2629,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       this.#planIdentities.delete(representation)
       this.#unlockedNative.delete(representation)
       this.#requestedRepresentations.delete(representation)
-      if (this.#tentativeRepresentation === representation) {
-        this.#tentativeRepresentation = null
-      }
+      this.#ownership.forgetRepresentation(representation)
       for (const [kind, fallback] of this.#fallbacks)
         if (fallback.representation === representation) this.#fallbacks.delete(kind)
       for (const key of this.#challengeAttempts.keys())

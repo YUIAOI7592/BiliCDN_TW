@@ -1,4 +1,22 @@
 import { test } from 'node:test'
+for (const [file, source] of [
+  [
+    'application/routing/early-retry-controller.ts',
+    "import { RequestOwnership } from './request-ownership.ts'",
+  ],
+  [
+    'application/routing/request-ownership.ts',
+    "import type { SessionStore } from '../../state/session-store.ts'",
+  ],
+  [
+    'application/routing/request-ownership.ts',
+    'export const run = (session: {get(): void}) => session.get()',
+  ],
+] as const)
+  test(`V2216 request bookkeeping rejects capability leak: ${file}`, () => {
+    const modules = architectureFixture({ [file]: source })
+    assert.throws(() => validateGraph([modules.get(file)!]), /private bookkeeping/)
+  })
 import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'

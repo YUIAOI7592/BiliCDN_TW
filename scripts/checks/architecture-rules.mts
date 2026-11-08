@@ -73,6 +73,10 @@ const browserGlobals = new Set([
   'cancelAnimationFrame',
   'performance',
 ])
+const bookkeeping = new Set([
+  'application/routing/request-ownership.ts',
+  'application/routing/retry-permit-state.ts',
+])
 const nameOf = (node: Node | undefined): string =>
   node && 'text' in node && typeof node.text === 'string'
     ? node.text
@@ -110,6 +114,17 @@ export function inspectModule(source: SourceFile, root: string): ModuleInspectio
       targetPath = modulePath(root, target),
       toLayer = targetPath.split('/')[0]
     dependencies.push(target)
+    if (bookkeeping.has(targetPath) && path !== 'application/routing/route-coordinator.ts')
+      violations.push(`${file}: private bookkeeping belongs to RouteCoordinator`)
+    if (
+      bookkeeping.has(path) &&
+      toLayer !== 'domain' &&
+      ![
+        'application/routing/route-contracts.ts',
+        'application/routing/early-retry-contracts.ts',
+      ].includes(targetPath)
+    )
+      violations.push(`${file}: private bookkeeping cannot import capabilities ${targetPath}`)
     for (const feature of featureBoundaries)
       if (
         targetPath.startsWith(feature.prefix) &&
@@ -151,6 +166,20 @@ export function inspectModule(source: SourceFile, root: string): ModuleInspectio
       const receiverName = isPropertyAccessExpression(receiver)
         ? nameOf(receiver.name)
         : nameOf(receiver)
+      if (
+        bookkeeping.has(path) &&
+        [
+          'session',
+          'vault',
+          'storage',
+          'evidence',
+          'settings',
+          'clock',
+          'probe',
+          'player',
+        ].includes(receiverName)
+      )
+        violations.push(`${file}: private bookkeeping cannot access ${receiverName}`)
       if (
         method === 'read' &&
         receiverName === 'probe' &&
