@@ -1,10 +1,18 @@
 # BiliCDN_TW 變更紀錄
 
+## v2.2.13
+
+- 限制資料改為權威讀回確認，清除保存空 payload；遠端通知只觸發重讀，避免寫入假成功、舊通知及同步重入造成快取分歧。
+- 可信 API 在前十六個原始來源位置內接納最多四個精確 URL，保留 primary 並優先可選來源及主機分散；可信 DASH 集合更新與 progressive 一致，起播會跳過不合格 Native 備援繼續搜尋。
+- 提前重試評估所有合格替代站的完成時間，許可固定於選中主機；正數 timeout 排除、兩秒交接預算及其他資格保持。
+- 熔斷到期後，合作新版分頁可在既有健康探索預算內共享一次優先再驗證；標記保存於原 meta 鍵，清除世代與共同鎖防止舊輪次重取。熔斷期限、W／G／C 與資源上限保持。
+- 提前拒絕超額表示資料並統一禁止原因排序。完整契約、安全審查、發布與安裝範圍見[完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論)；本版採離線交付，不新增實機效益通過結論。
+
 ## v2.2.12
 
 - 退役沒有產品消費者的最後成功主機索引，保留精確已保存學習、目前影音摘要、計畫及親和。
 - ControlCenter 合併同批 monitor／routes 通知，設定、首次建構、換頁與命令完成保持立即刷新；排隊工作核對視圖所有權，不改功能事件順序。
-- 新增提前重試資格對照與 `evaluate:routing -- --optimization` 離線模型，保留 VBR、換站成本、負向及未知結果；正數 timeout 的提前重試排除與原效用 FAIL 保持。完整功能、安全、交付與未測範圍見[報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論)。
+- 新增提前重試資格對照與 `evaluate:routing -- --optimization` 離線模型，保留 VBR、換站成本、負向及未知結果；正數 timeout 的提前重試排除與原效用 FAIL 保持。完整功能、安全、交付與未測範圍見[當版報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2212-完整正文保存2026-11-08)。
 
 ## v2.2.11
 

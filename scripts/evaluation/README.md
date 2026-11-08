@@ -41,7 +41,7 @@
 | --- | --- | --- |
 | 請求與適配器跟蹤 | [XHR hook](../../src-v2/adapters/xhr-hook.ts)、[Fetch hook](../../src-v2/adapters/fetch-hook.ts) | [實傳契約](../../tests-v2/regressions/up141-retry-transport.ts)：XHR timeout 0／1／500／3000／10000／13000；正數不跟蹤提前重試。同步、非 GET、無效 Range、音訊、停用均不因 timeout=0 自動合格。 |
 | 可信進度與結果 | [TransportAdapter](../../src-v2/adapters/transport.ts) | 同一實傳契約核對不可信 progress 不提供速度、200 不冒充 206；保留原取消、重用及網站 timeout 寫入優先斷言。 |
-| 控制與替代資格 | [EarlyRetryController](../../src-v2/application/early-retry-controller.ts) | [控制器契約](../../tests-v2/regressions/up141-retry-policy.ts)：Catalog、固定／停用、播放狀態及同內容兩筆實傳；主動探測不取得替代權限。 |
+| 控制與替代資格 | [EarlyRetryController](../../src-v2/application/early-retry-controller.ts) | [控制器契約](../../tests-v2/regressions/up141-retry-policy.ts)：Catalog、固定／停用、播放狀態及同內容兩筆實傳；逐一評估有界候選，選 eligible 者中完整預測耗時最短者，同時保留固定順序決勝、全部拒絕原因及 prepare 失敗不改選的契約。主動探測不取得替代權限。 |
 | 判斷、許可與認領 | [純政策](../../src-v2/domain/early-retry.ts)、[RouteCoordinator](../../src-v2/application/route-coordinator.ts) | 同控制器／實傳契約核對 1.35 倍、完成度、兩秒交接、許可過期、認領與送出一次。7,680 組模型僅補充純政策條件，不繞過前層資格。 |
 | 起播獨立流程 | [MeasurementController](../../src-v2/application/measurement-controller.ts) | [正數 timeout 起播契約](../../tests-v2/regressions/functional-races/xhr.ts)：正數仍可等待起播窗口，不能與提前重試的正數排除混用。 |
 

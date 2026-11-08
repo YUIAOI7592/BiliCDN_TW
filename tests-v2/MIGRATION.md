@@ -256,3 +256,19 @@
 `CC39-UI opened view consumes existing notifications` 對 monitor 通知改為等待指定 microtask，再保留原畫面及清理斷言；settings 仍同步。新增同批 2／8 次、不同批、同步設定、關閉／換頁／重開、快照內通知、重入及命令成功／失敗的所有權契約。詳細狀態保持按需，功能路線事件仍同步。
 
 新增 15 案適配器提前重試資格及 6 案補充評估工具契約；產品政策未改。7,680 組合成輸入與五案私有取證方法不計入正式案例數。原六情境效用 FAIL 獨立保留，詳見[評估指南](../scripts/evaluation/README.md#v2212-優化補充模型)。
+
+## v2.2.13 選路、限制與 Native 來源
+
+基線為 main 24021da，十八套件／2,149 案（含後續文件檢查九案）。本版完整執行 2,261 案；新增 domain 1、state 25、application 10、measurement-state 41、progressive-playurl 35，共 112 案。除下列正式來源政策映射外，原名稱、kind 及參數展開沒有遺失；舊版發布數字保持。
+
+| 原案例／契約 | v2.2.13 映射與保留斷言 |
+| --- | --- |
+| fifth raw source cannot supply Catalog authority beyond the four-source limit [22] | 改為第十七 raw 位置不能供應授權；另新增第十六可接納、非法前置、重複與主機分散，保留拒絕原子性及不改 payload |
+| metadata clear 刪除既有鍵 | 改為等待可確認的空 payload／新協調世代；保留清除次序與游標、冷卻歸零，新增失敗與晚到輪次不得復活 |
+| adapters 的一般 CDN 與 PCDN 前置 | 六處 PCDN 使用獨立 id 180，避免新版同 key 可信清單刷新撤銷另一情境；原案例名稱及有效斷言保持 |
+| native-transport [3] 的五個來源輸入 | 保留輸入數，將被測任意主機放入接納四筆；補第五筆不輸出，維持 Native 關閉時 Fetch／XHR 拒絕及無關網站媒體通行 |
+| 一般選路禁止原因 | 共用 black／dead／節點停用／預設不可用／host-lock／熔斷順序，禁止資格與跨送出邊界重查不變 |
+
+新案例以真實 Store／Vault／Routes／Controller 組合保護權威通知、未知保存、來源撤銷、指定主機重試、三個逐次挑戰認領與跨 Store 協作。四個控制器整合案例與十三個 Routes 案例使用合成請求／播放事實，並非瀏覽器或真正 GM 跨頁驗收。正數 timeout 資格、影音隔離、同主機 DASH 當次 query、取消與晚到契約保持；原效用 FAIL 不因功能修復改判。
+
+交叉核對另補 25 案：七案保護優先認領失敗後的六小時一般退路與單輪額度，四案以權威 Evidence 控制讀值阻止延遲通知的舊戳記覆寫，十四案保護 getter 擴長及非法 Proxy length 不增加 128／64 的解析工作。原四個 Controller 案例仍保留，現共十一案；實時與安裝證據沒有因此增加。

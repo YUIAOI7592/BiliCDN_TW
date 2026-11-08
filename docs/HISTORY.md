@@ -10,9 +10,11 @@
 
 ## 版本
 
+- [v2.2.13 選路、限制與來源整合](TEST_REPORT.md#驗收結論)；[契約映射](../tests-v2/MIGRATION.md#v2213-選路限制與-native-來源)。
+
 - [v2.2.12 觀察校準與提前重試適用率研究（2026-11-08）](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md)。
 
-- [v2.2.12 程式精簡、刷新與離線補強](TEST_REPORT.md#驗收結論)；[契約映射](../tests-v2/MIGRATION.md#v2212-索引退役刷新與評估)；[R1 三頁與刷新安裝專項](TEST_REPORT.md#v2212-r1-三頁與刷新專項2026-11-08)。
+- [v2.2.12 完整驗證與 R1 三頁／刷新原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2212-完整正文保存2026-11-08)；[契約映射](../tests-v2/MIGRATION.md#v2212-索引退役刷新與評估)。
 
 - [v2.2.11 基準的剩餘 TODO 優化研究（2026-11-07）](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md)。
 

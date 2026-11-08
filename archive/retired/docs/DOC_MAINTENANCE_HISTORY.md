@@ -1355,3 +1355,13 @@ AGENTS 連結 DEVELOPMENT 新增的「更新現有段落，避免累積副本」
 使用者另行要求「提交推送」，本次將上述文件整理、重複段落檢查與九項工具案例，以及先前保留的提前重試研究紀錄一併提交 main。TODO 更新交付範圍，TEST_REPORT 追加研究當時僅存本機與後續交付的銜接；原研究與日誌不改寫，私有工具及原始數字不納入提交。
 
 提交前重新執行文件、封存及差異檢查，並核對三份日誌前綴、研究原文、產品／版本／Release 保持。沿用前輪已通過且來源未再修改的型別、格式及 218 項工具契約，不宣稱新增產品或瀏覽器驗收。本次不升版、封裝、移動標籤或發布。
+
+## v2.2.13 指南與發行原件整理（2026-11-08）
+
+依九項實作更新 README、ARCHITECTURE、SECURITY 及評估指南的原章節，涵蓋 16／4 raw、四個 exact、DASH 集合刷新、限制權威確認、指定重試主機、共享認領與一般退路。同步測試映射、版本、CHANGELOG、最新完整報告與 TODO；狀態仍由 TODO、驗收仍由 TEST_REPORT 單一維護，不增加平行報告。
+
+v2.2.12 五份 Release 按原 bytes／SHA-256 搬入 archive/retired/releases/Release/v2.2.12；完整報告含 R1、研究入口及後續文件交付保持原字節並追加 TEST_REPORT_HISTORY。搬移前清單另存 PRE_RELEASE_v2.2.13_2026-11-08.json。因批准修改 domain/route-policy.ts 與 state/measurement-meta-ports.ts，移除當前清單中對兩個正式來源的舊 unchanged proof，舊證明留於不可變清單快照，沒有更新舊 hash 冒充未變。
+
+文件檢查初期因已搬移但尚未 staged 的 Release 舊路徑被 git ls-files 列入而 ENOENT；將核對完成的搬移加入 index 後通過，沒有改檢查器或建立空替代檔。三份日誌只追加，舊 Release、安全產物、研究及原判定不改寫。完整 verify 已通過；正式封裝及公開交付核對續記最新版報告，不將離線結果寫成新安裝驗收。
+
+正式封裝補充：新版五項產物及搬移前清單含必須保留的 CRLF bytes；沿既有模式只為 v2.2.13 原件設定 -text，並對這兩份 Markdown 與該清單允許 CR 作行尾，不放寬實際尾空白規則。正式產物、四列 checksum 與建置逐 bytes 相符；這是檔案原件保存設定，不改產品或歷史原件。

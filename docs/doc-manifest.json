@@ -2878,7 +2878,7 @@
         "verification"
       ],
       "versions": [
-        "v2.2.12"
+        "v2.2.13"
       ],
       "date": "2026-11-08",
       "requiredAnchors": [
@@ -3699,7 +3699,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.12/CHANGELOG_v2.2.12.md",
+      "path": "archive/retired/releases/Release/v2.2.12/CHANGELOG_v2.2.12.md",
       "kind": "immutable",
       "topics": [
         "release-snapshot"
@@ -3711,7 +3711,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.12/TEST_REPORT_v2.2.12.md",
+      "path": "archive/retired/releases/Release/v2.2.12/TEST_REPORT_v2.2.12.md",
       "kind": "immutable",
       "topics": [
         "release-snapshot"
@@ -3720,6 +3720,30 @@
         "v2.2.12"
       ],
       "date": "2026-11-07",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.13/CHANGELOG_v2.2.13.md",
+      "kind": "immutable",
+      "topics": [
+        "release-snapshot"
+      ],
+      "versions": [
+        "v2.2.13"
+      ],
+      "date": "2026-11-08",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.13/TEST_REPORT_v2.2.13.md",
+      "kind": "immutable",
+      "topics": [
+        "release-snapshot"
+      ],
+      "versions": [
+        "v2.2.13"
+      ],
+      "date": "2026-11-08",
       "requiredAnchors": []
     }
   ],
@@ -7757,39 +7781,74 @@
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.12/BiliCDN_TW.user.js",
+      "path": "archive/retired/releases/Release/v2.2.12/BiliCDN_TW.user.js",
       "encoding": "raw",
       "bytes": 512863,
       "sha256": "9a8ec881aa30390576e8c90d67d0034f51da307df9a36f96b83ec22ffa3b1235",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.12/BUILD_MANIFEST_v2.2.12.json",
+      "path": "archive/retired/releases/Release/v2.2.12/BUILD_MANIFEST_v2.2.12.json",
       "encoding": "raw",
       "bytes": 10188,
       "sha256": "c2ef0e80a62c9478c9c2c3263f0ca38f4ee075dd0f20cc37685f76873d130805",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.12/CHANGELOG_v2.2.12.md",
+      "path": "archive/retired/releases/Release/v2.2.12/CHANGELOG_v2.2.12.md",
       "encoding": "raw",
       "bytes": 68157,
       "sha256": "b027c2b3945fcf0d7829a307beb78703e1837cbb5b956b7cb78c4e770b6e7746",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.12/SHA256SUMS_v2.2.12.txt",
+      "path": "archive/retired/releases/Release/v2.2.12/SHA256SUMS_v2.2.12.txt",
       "encoding": "raw",
       "bytes": 419,
       "sha256": "8c84f2de667bc3c3cbc773aca5497f25f81dfcb10b49d47ff748bec7e8c2f0af",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.12/TEST_REPORT_v2.2.12.md",
+      "path": "archive/retired/releases/Release/v2.2.12/TEST_REPORT_v2.2.12.md",
       "encoding": "raw",
       "bytes": 10388,
       "sha256": "c0965c0513f44e2b2edc2be379054e30f300cc525a94898febae53577538db7d",
       "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.13/BUILD_MANIFEST_v2.2.13.json",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 10297,
+      "sha256": "50b335c3b2d607d03c4b11eba8d714c95f944e1d2087fa59ddf7a8836c98ee78"
+    },
+    {
+      "path": "Release/v2.2.13/BiliCDN_TW.user.js",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 532263,
+      "sha256": "ab0c2b1ad1a80f3f9d042cad9f426fe3c7574d655629e194ee4f8f9d3affb706"
+    },
+    {
+      "path": "Release/v2.2.13/CHANGELOG_v2.2.13.md",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 69290,
+      "sha256": "a41c789f94547af31162aff1ff8e0019ab9ec4ee25b8187ee5d2429f43321ac4"
+    },
+    {
+      "path": "Release/v2.2.13/SHA256SUMS_v2.2.13.txt",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 419,
+      "sha256": "eb93cf4d39434220a9b9a84f69a0202447421bdce2f00412fd3f79867202c1c4"
+    },
+    {
+      "path": "Release/v2.2.13/TEST_REPORT_v2.2.13.md",
+      "mode": "exact",
+      "encoding": "raw",
+      "bytes": 11355,
+      "sha256": "e403f0fcfc8208599086273e746f2602a514124f95e1b3eb6313e679d063d5c0"
     }
   ],
   "privateEvidenceReferences": [
