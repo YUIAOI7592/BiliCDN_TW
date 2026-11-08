@@ -1,3 +1,9 @@
+import {
+  PlayerInputBindings,
+  isControlKeyboard,
+  isEditableTarget,
+  progressPointerId,
+} from './input-bindings.ts'
 import { type PlayerControlSnapshot } from '../../application/playback/player-contracts.ts'
 import { type TimeoutSchedulerPort } from '../../application/scheduler-contracts.ts'
 import { safeCall, type UnknownRecord, observeMethod } from './player-sdk.ts'
@@ -107,7 +113,7 @@ export class PlayerControlObserver {
   #targetSec: number | null = null
   #internalSeek = 0
   #pendingSeek: number | null = null
-  #controlStops: (() => void)[] = []
+  #inputs = new PlayerInputBindings()
   #controlVideo: HTMLVideoElement | null = null
   #seekOwner: UnknownRecord | null = null
   #reloadRevision = 0
@@ -446,8 +452,7 @@ export class PlayerControlObserver {
     this.#controlVideo = video
     this.#seekOwner = player
     if (!video) return
-    for (const type of ['pause', 'play', 'ratechange', 'seeking', 'emptied', 'ended'])
-      this.#listen(video, type, () => this.#invalidatePlayback())
+    this.#inputs.playback(video, () => this.#invalidatePlayback())
     const region = video.closest('.bpx-player-container, .bilibili-player') ?? video.parentElement
     const inRegion = (event: Event): boolean =>
       event.target instanceof Node && !!region?.contains(event.target)
@@ -458,24 +463,13 @@ export class PlayerControlObserver {
     this.#bindSdkControls(player)
   }
 
-  #listen(target: EventTarget, type: string, listener: EventListener): void {
-    target.addEventListener(type, listener, true)
-    this.#controlStops.push(() => target.removeEventListener(type, listener, true))
-  }
-
-  #listenTrusted(target: EventTarget, type: string, listener: EventListener): void {
-    this.#listen(target, type, (event) => {
-      if (event.isTrusted) listener(event)
-    })
-  }
-
   #bindPointerControls(
     video: HTMLVideoElement,
     player: UnknownRecord | null,
     region: Element | null,
     inRegion: (event: Event) => boolean,
   ): void {
-    this.#listenTrusted(document, 'pointerdown', (event) => {
+    this.#inputs.trusted(document, 'pointerdown', (event) => {
       const revision = ++this.#pointerRevision
       if (
         !this.environment.isActuallyVisible() ||
@@ -489,21 +483,8 @@ export class PlayerControlObserver {
         event.target instanceof Element && event.target.closest('.bpx-player-ctrl-play')
       if (!this.#advanceUser(!!playTarget && video.paused)) return
       const lifecycle = this.sources.lifecycleKey()
-      const hit =
-        event.target instanceof Element
-          ? event.target.closest(
-              '.bpx-player-progress-wrap, .bpx-player-progress, .bilibili-player-video-progress, [role="slider"]',
-            )
-          : null
-      if (
-        !hit ||
-        !region?.contains(hit) ||
-        typeof PointerEvent !== 'function' ||
-        !(event instanceof PointerEvent)
-      )
-        return
-      const pointerId = event.pointerId
-      if (!Number.isInteger(pointerId)) return
+      const pointerId = progressPointerId(event, region)
+      if (pointerId === null) return
       const current =
         video === this.sources.video() &&
         player === this.sources.player() &&
@@ -534,8 +515,7 @@ export class PlayerControlObserver {
         this.#pointerRevision++
       }
     }
-    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'])
-      this.#listen(document, type, release)
+    this.#inputs.pointerRelease(release)
   }
 
   #bindControlLoss(): void {
@@ -547,10 +527,10 @@ export class PlayerControlObserver {
       this.#clearOwnedReload()
       this.#goal = null
     }
-    this.#listenTrusted(window, 'blur', (event) => {
+    this.#inputs.trusted(window, 'blur', (event) => {
       if (event.target === window) controlLoss()
     })
-    this.#controlStops.push(this.environment.subscribeControlLoss(controlLoss))
+    this.#inputs.own(this.environment.subscribeControlLoss(controlLoss))
   }
 
   #bindKeyboardControls(
@@ -562,24 +542,12 @@ export class PlayerControlObserver {
       const revision = ++this.#keyboardRevision
       this.#clearKeyboardSeek()
       this.#clearKeyboardPlayback()
+      if (!isControlKeyboard(event) || !this.environment.isActuallyVisible()) return
       if (
-        !(event instanceof KeyboardEvent) ||
-        !event.isTrusted ||
-        event.isComposing ||
-        event.keyCode === 229 ||
-        event.ctrlKey ||
-        event.metaKey ||
-        event.altKey ||
-        !this.environment.isActuallyVisible()
+        event.composedPath().some(isEditableTarget) ||
+        (event.target && isEditableTarget(event.target))
       )
         return
-      const editable = (target: EventTarget): boolean =>
-        target instanceof Element &&
-        (!!target.closest(
-          'input, textarea, select, [role="textbox"], #bilicdn-v2-control-center',
-        ) ||
-          (target instanceof HTMLElement && target.isContentEditable))
-      if (event.composedPath().some(editable) || (event.target && editable(event.target))) return
       if (['ArrowLeft', 'ArrowRight', 'Home', 'End', 'j', 'J', 'l', 'L'].includes(event.key)) {
         this.#beginKeyboardSeek(event, video, player, revision)
       } else if (
@@ -592,11 +560,11 @@ export class PlayerControlObserver {
         else this.#beginKeyboardPlayback(event, video, player, revision)
       }
     }
-    for (const type of ['keydown', 'keyup']) this.#listen(document, type, observeKeyboard)
+    this.#inputs.keyboard(observeKeyboard)
   }
 
   #bindMediaControls(video: HTMLVideoElement): void {
-    this.#listen(video, 'seeking', () => {
+    this.#inputs.listen(video, 'seeking', () => {
       const position = Number.isFinite(video.currentTime) ? video.currentTime : null
       if (
         !this.#internalSeek &&
@@ -617,7 +585,7 @@ export class PlayerControlObserver {
       )
         this.#goal = null
     })
-    this.#listen(video, 'seeked', () => {
+    this.#inputs.listen(video, 'seeked', () => {
       this.#pendingSeek = null
       this.#sampleGoal(video, video.currentTime)
       this.#noteRestoreLanding()
@@ -638,7 +606,7 @@ export class PlayerControlObserver {
         return Reflect.apply(reload, this, args)
       }
       try {
-        this.#controlStops.push(observeMethod(player, 'reload', reload, wrapped))
+        this.#inputs.own(observeMethod(player, 'reload', reload, wrapped))
       } catch {
         /* core identity still revokes unmarked replacements */
       }
@@ -661,7 +629,7 @@ export class PlayerControlObserver {
         }
       }
       try {
-        this.#controlStops.push(observeMethod(player, 'seek', original, wrapped))
+        this.#inputs.own(observeMethod(player, 'seek', original, wrapped))
       } catch {
         /* observation through media events remains available */
       }
@@ -954,7 +922,7 @@ export class PlayerControlObserver {
     this.#clearKeyboardPlayback()
     this.#keyboardRevision++
     this.#clearOwnedReload()
-    for (const stop of this.#controlStops.splice(0).reverse()) stop()
+    this.#inputs.clear()
     this.#controlVideo = null
     this.#seekOwner = null
     this.#drag = null

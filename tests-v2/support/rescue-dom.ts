@@ -3,6 +3,7 @@ import type { TestContext } from 'node:test'
 import { getEventListeners } from 'node:events'
 import { FakeClock } from './clock.ts'
 import { testScope } from './scope.ts'
+import { CaptureEventTarget } from './event-target.ts'
 import {
   type PlayerControlObserver,
   type PlayerControlEnvironment,
@@ -11,7 +12,7 @@ export function rescueDomFixture(t: TestContext) {
   const scope = testScope(t),
     clock = new FakeClock(),
     targets: Target[] = []
-  class Target extends EventTarget {
+  class Target extends CaptureEventTarget {
     types = new Set<string>()
     override addEventListener(
       type: string,
@@ -20,17 +21,6 @@ export function rescueDomFixture(t: TestContext) {
     ) {
       this.types.add(type)
       super.addEventListener(type, callback, options)
-    }
-    override removeEventListener(
-      type: string,
-      callback: EventListenerOrEventListenerObject | null,
-      options?: boolean | EventListenerOptions,
-    ) {
-      super.removeEventListener(
-        type,
-        callback,
-        typeof options === 'boolean' ? { capture: options } : options,
-      )
     }
     constructor() {
       super()
