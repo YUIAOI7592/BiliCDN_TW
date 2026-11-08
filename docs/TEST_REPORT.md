@@ -59,7 +59,9 @@ Codex Security 已封印並讀回 8f3cf2f→407c0c4 的不可變差異：四個�
 
 ## 公開交付與安裝結案
 
-已原樣封存 v2.2.13 五份原件；v2.2.14 封裝、main／標籤、唯一附件與公開 latest 核對尚未完成。安裝版未驗證，不自動更新或恢復舊窗口。
+已原樣封存 v2.2.13 五份原件並封裝 v2.2.14。main 與 v2.2.14 標籤於發布時均核對為 fa7eb6dd777785e4bdef1ff14d6c8cda4df4d326；[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.14)非草稿／預覽版，唯一附件為 BiliCDN_TW.user.js。
+
+公開 latest 的既有精確網址已實際 GET，HTTP 200、@version 2.2.14、532,263 bytes，完整 SHA-256 與本機產物及 GitHub asset digest 一致。後續僅提交這次交付文件，標籤與五份發行原件保持發布提交；Release 報告中的待公開核對描述封裝當時，不回寫。安裝版未驗證，不自動更新或恢復舊窗口。
 
 ## 歷史驗證導覽
 
