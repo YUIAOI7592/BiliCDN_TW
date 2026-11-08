@@ -122,13 +122,18 @@ function fixture(t: Parameters<typeof testScope>[0]) {
   let arms = 0
   let revokes = 0
   let cancellations = 0
-  let alternate: EarlyRetryAlternative | null = facts().alternative
+  let alternatives: readonly EarlyRetryAlternative[] = [facts().alternative]
+  const preparedHosts: string[] = []
+  let prepareAllowed = true
   let armAllowed = true
   const controller = scope.own(
     new EarlyRetryController(
       {
-        alternative: () => alternate,
-        prepare: () => ({ id: `permit-${arms + 1}`, expiresAt: now + 2000 }),
+        alternatives: () => alternatives,
+        prepare: (_request, host) => {
+          preparedHosts.push(host)
+          return prepareAllowed ? { id: `permit-${arms + 1}`, expiresAt: now + 2000 } : null
+        },
         revoke: () => {
           revokes++
         },
@@ -160,7 +165,14 @@ function fixture(t: Parameters<typeof testScope>[0]) {
       actionState = next
     },
     alternate: (next: EarlyRetryAlternative | null) => {
-      alternate = next
+      alternatives = next ? [next] : []
+    },
+    alternatives: (next: readonly EarlyRetryAlternative[]) => {
+      alternatives = next
+    },
+    preparedHosts: () => [...preparedHosts],
+    prepareAllowed: (next: boolean) => {
+      prepareAllowed = next
     },
     armAllowed: (next: boolean) => {
       armAllowed = next
@@ -219,6 +231,103 @@ test('UP141-RETRY controller arms once and observes successful website retry', (
   f.controller.tick(f.status)
   assert.equal(f.arms(), 1)
   assert.equal(f.controller.snapshot().attempts, 1)
+})
+
+test('V2213 retry selects an on-time alternative after the higher-throughput host is late', (t) => {
+  const f = fixture(t),
+    first = { ...facts().alternative, safeMbps: 8, safePayloadMbps: 20, ttfbMs: 2000 },
+    second = {
+      ...facts().alternative,
+      host: 'upos-sz-mirroralib.bilivideo.com',
+      safeMbps: 7,
+      safePayloadMbps: 8,
+      ttfbMs: 50,
+    }
+  f.setSamples([
+    { ...sample(), loadedBytes: 131072, totalBytes: 1048576, recentBytesPerSec: 125000 },
+  ])
+  f.alternatives([first, second])
+  f.controller.tick({
+    ...f.status,
+    video: { ...f.status.video, playableBufferSec: 4.5 },
+    demand: { kind: 'video', requiredMbps: 5, highDemand: false },
+  })
+  assert.equal(f.arms(), 1)
+  assert.deepEqual(f.preparedHosts(), [second.host])
+  assert.equal(f.controller.snapshot().attempts, 1)
+})
+
+test('V2213 retry compares all eligible alternatives by full completion time', (t) => {
+  const f = fixture(t),
+    first = { ...facts().alternative, safeMbps: 80, safePayloadMbps: 80, ttfbMs: 800 },
+    second = {
+      ...facts().alternative,
+      host: 'upos-sz-mirroralib.bilivideo.com',
+      safeMbps: 20,
+      safePayloadMbps: 20,
+      ttfbMs: 10,
+    }
+  f.alternatives([first, second])
+  f.controller.tick(f.status)
+  assert.deepEqual(f.preparedHosts(), [second.host])
+  assert.equal(f.arms(), 1)
+})
+
+test('V2213 retry preserves candidate order for exactly equal completion times', (t) => {
+  const f = fixture(t),
+    first = { ...facts().alternative, safeMbps: 10 },
+    second = { ...facts().alternative, host: 'upos-sz-mirroralib.bilivideo.com', safeMbps: 80 }
+  f.alternatives([first, second])
+  f.controller.tick(f.status)
+  assert.deepEqual(f.preparedHosts(), [first.host])
+  assert.equal(f.arms(), 1)
+})
+
+test('V2213 retry reports the first candidate rejection when none is eligible', (t) => {
+  const f = fixture(t)
+  f.alternatives([
+    { ...facts().alternative, safePayloadMbps: null },
+    { ...facts().alternative, host: 'upos-sz-mirroralib.bilivideo.com', safeMbps: 1 },
+  ])
+  f.controller.tick(f.status)
+  assert.equal(f.controller.snapshot().reason, 'alternative-timing')
+  assert.equal(f.arms(), 0)
+  assert.deepEqual(f.preparedHosts(), [])
+  assert.equal(f.controller.snapshot().attempts, 0)
+})
+
+test('V2213 retry does not switch hosts after prepare rejects the selected candidate', (t) => {
+  const f = fixture(t),
+    first = facts().alternative,
+    second = { ...facts().alternative, host: 'upos-sz-mirroralib.bilivideo.com', ttfbMs: 200 }
+  f.alternatives([first, second])
+  f.prepareAllowed(false)
+  f.controller.tick(f.status)
+  assert.deepEqual(f.preparedHosts(), [first.host])
+  assert.equal(f.arms(), 0)
+  assert.equal(f.controller.snapshot().attempts, 0)
+  f.alternatives([second])
+  f.prepareAllowed(true)
+  f.controller.tick(f.status)
+  assert.deepEqual(f.preparedHosts(), [first.host, second.host])
+  assert.equal(f.arms(), 1)
+})
+
+test('V2213 retry reentry while assessing a later candidate cannot arm an earlier result', (t) => {
+  const f = fixture(t)
+  const second: EarlyRetryAlternative = {
+    ...facts().alternative,
+    host: 'upos-sz-mirroralib.bilivideo.com',
+    get safePayloadMbps() {
+      f.controller.cancel('owner-changed')
+      return 40
+    },
+  }
+  f.alternatives([facts().alternative, second])
+  f.controller.tick(f.status)
+  assert.equal(f.arms(), 0)
+  assert.equal(f.controller.snapshot().state, 'cancelled')
+  assert.equal(f.controller.snapshot().attempts, 0)
 })
 
 test('UP141-RETRY controller respects all playback and mode exclusions', (t) => {

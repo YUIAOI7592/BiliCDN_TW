@@ -95,7 +95,7 @@ export const start = (): void => {
   transport.install()
   const earlyRetry = new EarlyRetryController(
     {
-      alternative: (request, demand) => routes.earlyRetryAlternative(request, demand),
+      alternatives: (request, demand) => routes.earlyRetryAlternatives(request, demand),
       prepare: (request, host, demand) => routes.prepareEarlyRetry(request, host, demand),
       revoke: (permit) => routes.revokeEarlyRetry(permit),
     },

@@ -18,6 +18,12 @@ async function routeFixture(
   suppressed = false,
   verified = true,
   native = false,
+  additionalProofs: readonly {
+    host: string
+    bytes: number
+    elapsedMs: number
+    ttfbMs: number
+  }[] = [],
 ) {
   const scope = testScope(t),
     f = fixture(scope)
@@ -82,40 +88,48 @@ async function routeFixture(
     assert.equal(output.decision.host, host)
     return output
   }
-  const priorApplied = select(alternative)
   if (suppressed) scope.defer(f.routes.suppressEarlyRetryEvidence(['retry-past-1', 'retry-past-2']))
-  for (const serial of [1, 2]) {
-    const past = {
-      ...request,
-      requestId: requestId(`retry-past-${serial}`),
-      decisionId: priorApplied.decision.id,
-      targetHost: alternative,
-      startedAt: f.clock.now() - 100,
+  const proofs = [
+    { host: alternative, bytes: 256 * 1024, elapsedMs: 100, ttfbMs: 20 },
+    ...additionalProofs,
+  ]
+  for (const [index, proof] of proofs.entries()) {
+    const priorApplied = select(proof.host)
+    for (const serial of [1, 2]) {
+      const past = {
+        ...request,
+        requestId: requestId(
+          index === 0 ? `retry-past-${serial}` : `retry-extra-${index}-${serial}`,
+        ),
+        decisionId: priorApplied.decision.id,
+        targetHost: proof.host,
+        startedAt: f.clock.now() - proof.elapsedMs,
+      }
+      f.routes.requestStarted(past)
+      const observation: TransportObservation = {
+        timingBasis: 'xhr-terminal',
+        ...(verified ? { retryVerifiedBytes: proof.bytes } : {}),
+        request: past,
+        generation: past.generation,
+        epoch: past.epoch,
+        decisionId: past.decisionId,
+        representation: rep,
+        kind: 'video',
+        routeType: 'catalog-generated',
+        originalHost: first,
+        targetHost: proof.host,
+        finalHost: proof.host,
+        responseUrlMatchesRequest: true,
+        streamKey: applied.streamKey,
+        status: 206,
+        bytes: proof.bytes,
+        ttfbMs: proof.ttfbMs,
+        elapsedMs: proof.elapsedMs,
+        completedAt: f.clock.now(),
+        outcome: 'success',
+      }
+      await f.routes.observe(observation)
     }
-    f.routes.requestStarted(past)
-    const observation: TransportObservation = {
-      timingBasis: 'xhr-terminal',
-      ...(verified ? { retryVerifiedBytes: 256 * 1024 } : {}),
-      request: past,
-      generation: past.generation,
-      epoch: past.epoch,
-      decisionId: past.decisionId,
-      representation: rep,
-      kind: 'video',
-      routeType: 'catalog-generated',
-      originalHost: first,
-      targetHost: alternative,
-      finalHost: alternative,
-      responseUrlMatchesRequest: true,
-      streamKey: applied.streamKey,
-      status: 206,
-      bytes: 256 * 1024,
-      ttfbMs: 20,
-      elapsedMs: 100,
-      completedAt: f.clock.now(),
-      outcome: 'success',
-    }
-    await f.routes.observe(observation)
   }
   const current = select(first)
   request = { ...request, decisionId: current.decision.id }
@@ -123,10 +137,80 @@ async function routeFixture(
   return { ...f, request, original, rep, scope }
 }
 
+const slowerProof = {
+  host: 'upos-sz-mirroralib.bilivideo.com',
+  bytes: 128 * 1024,
+  elapsedMs: 200,
+  ttfbMs: 20,
+}
+
+test('V2213 retry route lists every qualified alternative in Catalog order', async (t) => {
+  const f = await routeFixture(t, false, true, false, [slowerProof]),
+    demand = { kind: 'video' as const, requiredMbps: 2, highDemand: false }
+  const alternatives = f.routes.earlyRetryAlternatives(f.request, demand)
+  assert.deepEqual(
+    alternatives.map((row) => row.host),
+    [slowerProof.host, alternative],
+  )
+  assert.equal(alternatives[0]!.successCount, 2)
+  assert.equal(alternatives[1]!.successCount, 2)
+  assert.ok(alternatives[0]!.safeMbps < alternatives[1]!.safeMbps)
+  assert.ok(Object.isFrozen(alternatives))
+  assert.ok(alternatives.every(Object.isFrozen))
+})
+
+test('V2213 retry route prepares and claims the selected slower host without re-ranking', async (t) => {
+  const f = await routeFixture(t, false, true, false, [slowerProof]),
+    demand = { kind: 'video' as const, requiredMbps: 2, highDemand: false }
+  const before = f.session.get().affinity
+  const permit = f.routes.prepareEarlyRetry(f.request, slowerProof.host, demand)
+  assert.ok(permit)
+  assert.deepEqual(f.session.get().affinity, before)
+  const selected = f.routes.applyEarlyRetry(f.original, permit)
+  assert.ok(selected)
+  assert.equal(new URL(selected.url!).hostname, slowerProof.host)
+  assert.deepEqual(f.session.get().affinity, before)
+  const retry = {
+    ...f.request,
+    requestId: requestId('retry-slower-selected'),
+    targetHost: slowerProof.host,
+    decisionId: selected.decision.id,
+  }
+  f.routes.requestStarted(retry)
+  assert.equal(f.routes.acceptEarlyRetry(permit, retry), true)
+  assert.equal(f.session.get().affinity?.host, slowerProof.host)
+  assert.equal(f.routes.acceptEarlyRetry(permit, retry), false)
+})
+
+test('V2213 retry route cannot substitute a different host after selected proof is revoked', async (t) => {
+  const f = await routeFixture(t, false, true, false, [slowerProof]),
+    demand = { kind: 'video' as const, requiredMbps: 2, highDemand: false }
+  const permit = f.routes.prepareEarlyRetry(f.request, slowerProof.host, demand)
+  assert.ok(permit)
+  const before = f.session.get().affinity
+  f.vault.invalidate(f.rep, slowerProof.host)
+  assert.deepEqual(
+    f.routes.earlyRetryAlternatives(f.request, demand).map((row) => row.host),
+    [alternative],
+  )
+  assert.equal(f.routes.applyEarlyRetry(f.original, permit), null)
+  assert.deepEqual(f.session.get().affinity, before)
+})
+
+test('V2213 retry route refuses a revoked selected host before preparing a permit', async (t) => {
+  const f = await routeFixture(t, false, true, false, [slowerProof]),
+    demand = { kind: 'video' as const, requiredMbps: 2, highDemand: false }
+  const before = f.session.get().affinity
+  f.vault.invalidate(f.rep, slowerProof.host)
+  assert.equal(f.routes.prepareEarlyRetry(f.request, slowerProof.host, demand), null)
+  assert.ok(f.routes.prepareEarlyRetry(f.request, alternative, demand))
+  assert.deepEqual(f.session.get().affinity, before)
+})
+
 test('UP141-RETRY route permit prepares without affinity and commits only accepted dispatch', async (t) => {
   const f = await routeFixture(t)
   const demand = { kind: 'video' as const, requiredMbps: 2, highDemand: false }
-  const found = f.routes.earlyRetryAlternative(f.request, demand)
+  const found = f.routes.earlyRetryAlternatives(f.request, demand)[0]
   assert.equal(found?.host, alternative)
   const before = f.session.get().affinity
   const permit = f.routes.prepareEarlyRetry(f.request, alternative, demand)
@@ -153,8 +237,11 @@ test('V226 H04: real Catalog proof remains eligible with Native globally enabled
   assert.equal(f.routes.isCatalogOnly(), false)
   assert.equal(f.routes.earlyRetryRequestCurrent(f.request), true)
   assert.equal(
-    f.routes.earlyRetryAlternative(f.request, { kind: 'video', requiredMbps: 2, highDemand: false })
-      ?.host,
+    f.routes.earlyRetryAlternatives(f.request, {
+      kind: 'video',
+      requiredMbps: 2,
+      highDemand: false,
+    })[0]?.host,
     alternative,
   )
   assert.equal(
@@ -179,9 +266,9 @@ test('UP141-RETRY expired or policy-revoked route permit cannot be consumed', as
 test('UP141-RETRY alternative evidence requires current identity and persisted unique successes', async (t) => {
   const f = await routeFixture(t)
   const demand = { kind: 'video' as const, requiredMbps: 2, highDemand: false }
-  assert.equal(f.routes.earlyRetryAlternative(f.request, demand)?.successCount, 2)
+  assert.equal(f.routes.earlyRetryAlternatives(f.request, demand)[0]?.successCount, 2)
   await f.clock.advance(60001)
-  assert.equal(f.routes.earlyRetryAlternative(f.request, demand), null)
+  assert.deepEqual(f.routes.earlyRetryAlternatives(f.request, demand), [])
   assert.equal(f.routes.prepareEarlyRetry(f.request, alternative, demand), null)
 })
 
@@ -632,13 +719,13 @@ test('UP141-RETRY native timeout brand errors precede bookkeeping and argument c
 test('UP141-RETRY tool-owned suppression excludes controlled successes from private alternative ledger', async (t) => {
   const f = await routeFixture(t, true)
   assert.equal(f.evidence.get(alternative, 'video')?.samples.length, 2)
-  assert.equal(
-    f.routes.earlyRetryAlternative(f.request, {
+  assert.deepEqual(
+    f.routes.earlyRetryAlternatives(f.request, {
       kind: 'video',
       requiredMbps: 2,
       highDemand: false,
     }),
-    null,
+    [],
   )
   assert.throws(
     () => f.routes.suppressEarlyRetryEvidence(Array.from({ length: 33 }, (_, i) => `scope-${i}`)),
@@ -780,13 +867,13 @@ test('UP141-RETRY off-mode timeout assignment delegates native setter without ex
 
 test('UP141-RETRY passive byte counts without verified native range bytes cannot qualify alternatives', async (t) => {
   const f = await routeFixture(t, false, false)
-  assert.equal(
-    f.routes.earlyRetryAlternative(f.request, {
+  assert.deepEqual(
+    f.routes.earlyRetryAlternatives(f.request, {
       kind: 'video',
       requiredMbps: 2,
       highDemand: false,
     }),
-    null,
+    [],
   )
 })
 

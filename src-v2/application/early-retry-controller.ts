@@ -1,4 +1,5 @@
 import { evaluateEarlyRetry } from '../domain/early-retry.ts'
+import { TRUSTED_CATALOG } from '../domain/catalog.ts'
 import { earlyRetryReason } from './early-retry-contracts.ts'
 import type { RequestContext } from '../domain/model.ts'
 import type { PlayerControlSnapshot } from './ports.ts'
@@ -6,6 +7,7 @@ import type {
   EarlyRetryPermit,
   EarlyRetrySnapshot,
   EarlyRetryStatus,
+  EarlyRetryAlternative,
 } from './early-retry-contracts.ts'
 import type {
   EarlyRetryPort,
@@ -115,13 +117,13 @@ export class EarlyRetryController implements EarlyRetryPort {
           now - (this.#hostLast.get(request.targetHost) ?? -Infinity) < 8000
         )
           continue
-        const alternative = this.routes.alternative(request, demand)
+        const alternatives = this.routes.alternatives(request, demand)
         if (revision !== this.#revision) return
-        if (!alternative) {
+        if (!alternatives.length) {
           waitingReason = 'no-alternative'
           continue
         }
-        const assessment = evaluateEarlyRetry({
+        const facts = {
           now,
           startedAt: request.startedAt,
           ...(sample.ageMs !== undefined ? { ageMs: sample.ageMs } : {}),
@@ -131,13 +133,25 @@ export class EarlyRetryController implements EarlyRetryPort {
           recentBytesPerSec: sample.recentBytesPerSec,
           playableBufferSec: status.video.playableBufferSec,
           requiredMbps: demand.requiredMbps,
-          alternative,
-        })
-        if (!assessment.eligible) {
-          waitingReason = assessment.reason
+        }
+        let selected: { alternative: EarlyRetryAlternative; seconds: number } | null = null
+        let firstReason: string | null = null
+        for (const alternative of alternatives.slice(0, TRUSTED_CATALOG.length)) {
+          const assessment = evaluateEarlyRetry({ ...facts, alternative })
+          if (revision !== this.#revision) return
+          firstReason ??= assessment.reason
+          if (
+            assessment.eligible &&
+            assessment.alternativeSec !== null &&
+            (!selected || assessment.alternativeSec < selected.seconds)
+          )
+            selected = { alternative, seconds: assessment.alternativeSec }
+        }
+        if (!selected) {
+          waitingReason = firstReason ?? 'no-alternative'
           continue
         }
-        const permit = this.routes.prepare(request, alternative.host, demand)
+        const permit = this.routes.prepare(request, selected.alternative.host, demand)
         if (!permit) continue
         if (
           revision !== this.#revision ||

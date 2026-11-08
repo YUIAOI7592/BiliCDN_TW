@@ -62,7 +62,7 @@ export interface InFlightVideoPort {
 }
 
 export interface RouteEarlyRetryPort {
-  alternative(request: RequestContext, demand: PlaybackDemand): EarlyRetryAlternative | null
+  alternatives(request: RequestContext, demand: PlaybackDemand): readonly EarlyRetryAlternative[]
   prepare(request: RequestContext, host: string, demand: PlaybackDemand): EarlyRetryPermit | null
   revoke(permit: EarlyRetryPermit): void
 }

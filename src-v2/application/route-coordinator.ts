@@ -389,10 +389,21 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     )
   }
 
-  earlyRetryAlternative(
+  earlyRetryAlternatives(
     request: RequestContext,
     demand: PlaybackDemand,
-  ): EarlyRetryAlternative | null {
+  ): readonly EarlyRetryAlternative[] {
+    const context = this.#earlyRetryContext(request, demand)
+    if (!context) return Object.freeze([])
+    const alternatives: EarlyRetryAlternative[] = []
+    for (const host of TRUSTED_CATALOG) {
+      const alternative = this.#earlyRetryAlternativeForHost(request, demand, host, context)
+      if (alternative) alternatives.push(alternative)
+    }
+    return this.earlyRetryRequestCurrent(request) ? Object.freeze(alternatives) : Object.freeze([])
+  }
+
+  #earlyRetryContext(request: RequestContext, demand: PlaybackDemand) {
     if (
       !this.earlyRetryRequestCurrent(request) ||
       demand.kind !== 'video' ||
@@ -408,47 +419,52 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     if (!identity) return null
     const source = this.#catalogSource(identity)
     if (!source) return null
-    const alternatives: EarlyRetryAlternative[] = []
-    for (const host of TRUSTED_CATALOG) {
-      if (
-        host === request.targetHost ||
-        this.#hardRestriction(host, 'video') ||
-        this.#incompatible(source, host) ||
-        this.vault.isInvalid(identity.representation, host)
-      )
-        continue
-      const successes = this.#retrySuccesses.filter(
-        (row) =>
-          !this.#retrySuppressed.has(row.request.requestId) &&
-          row.request.targetHost === host &&
-          row.request.generation === request.generation &&
-          row.request.epoch === request.epoch &&
-          row.request.representation === request.representation &&
-          row.request.authorityRevision === request.authorityRevision &&
-          row.request.routePolicyRevision === request.routePolicyRevision &&
-          !!request.timingBasis &&
-          row.timingBasis === request.timingBasis,
-      )
-      const unique = [...new Map(successes.map((row) => [row.request.requestId, row])).values()]
-      if (unique.length < 2) continue
-      const safeMbps = Math.min(...unique.map((row) => row.mbps))
-      if (safeMbps < demand.requiredMbps * EARLY_RETRY_HEADROOM) continue
-      const safePayloadMbps = unique.every((row) => row.payloadMbps !== null)
-        ? Math.min(...unique.map((row) => row.payloadMbps!))
-        : null
-      if (safePayloadMbps === null) continue
-      alternatives.push(
-        Object.freeze({
-          host,
-          safeMbps,
-          safePayloadMbps,
-          ttfbMs: Math.max(...unique.map((row) => row.ttfbMs)),
-          successCount: unique.length,
-          oldestAt: Math.min(...unique.map((row) => row.at)),
-        }),
-      )
-    }
-    return alternatives.sort((a, b) => b.safeMbps - a.safeMbps)[0] ?? null
+    return { identity, source }
+  }
+
+  #earlyRetryAlternativeForHost(
+    request: RequestContext,
+    demand: PlaybackDemand,
+    host: string,
+    context = this.#earlyRetryContext(request, demand),
+  ): EarlyRetryAlternative | null {
+    if (
+      !context ||
+      !isCatalogHost(host) ||
+      host === request.targetHost ||
+      this.#hardRestriction(host, 'video') ||
+      this.#incompatible(context.source, host) ||
+      this.vault.isInvalid(context.identity.representation, host)
+    )
+      return null
+    const successes = this.#retrySuccesses.filter(
+      (row) =>
+        !this.#retrySuppressed.has(row.request.requestId) &&
+        row.request.targetHost === host &&
+        row.request.generation === request.generation &&
+        row.request.epoch === request.epoch &&
+        row.request.representation === request.representation &&
+        row.request.authorityRevision === request.authorityRevision &&
+        row.request.routePolicyRevision === request.routePolicyRevision &&
+        !!request.timingBasis &&
+        row.timingBasis === request.timingBasis,
+    )
+    const unique = [...new Map(successes.map((row) => [row.request.requestId, row])).values()]
+    if (unique.length < 2) return null
+    const safeMbps = Math.min(...unique.map((row) => row.mbps))
+    if (safeMbps < demand.requiredMbps * EARLY_RETRY_HEADROOM) return null
+    const safePayloadMbps = unique.every((row) => row.payloadMbps !== null)
+      ? Math.min(...unique.map((row) => row.payloadMbps!))
+      : null
+    if (safePayloadMbps === null || !this.earlyRetryRequestCurrent(request)) return null
+    return Object.freeze({
+      host,
+      safeMbps,
+      safePayloadMbps,
+      ttfbMs: Math.max(...unique.map((row) => row.ttfbMs)),
+      successCount: unique.length,
+      oldestAt: Math.min(...unique.map((row) => row.at)),
+    })
   }
 
   prepareEarlyRetry(
@@ -457,8 +473,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     demand: PlaybackDemand,
   ): EarlyRetryPermit | null {
     if (this.#retryPermit && this.#retryPermit.permit.expiresAt > this.clock.now()) return null
-    const alternative = this.earlyRetryAlternative(request, demand)
-    if (!alternative || alternative.host !== host) return null
+    if (!this.#earlyRetryAlternativeForHost(request, demand, host)) return null
     const permit = Object.freeze({
       id: this.ids.next('request'),
       expiresAt: this.clock.now() + 2000,
@@ -512,8 +527,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       matched.context.authorityRevision !== pending.request.authorityRevision
     )
       return null
-    const alternative = this.earlyRetryAlternative(pending.request, pending.demand)
-    if (!alternative || alternative.host !== pending.host) return null
+    if (!this.#earlyRetryAlternativeForHost(pending.request, pending.demand, pending.host))
+      return null
     const candidate: CatalogCandidate = {
       type: 'catalog-generated',
       host: pending.host,
