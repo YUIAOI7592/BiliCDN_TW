@@ -50,6 +50,7 @@ interface MeasurementWork {
 interface HealthRound {
   readonly id: string
   generation: string | null
+  priorityUnavailable: boolean
 }
 
 interface RoundRange {
@@ -587,7 +588,11 @@ export class MeasurementController implements MeasurementPort {
     this.#planning = planning
     this.#snapshot = Object.freeze({ ...this.#snapshot, state: 'waiting', reason: 'storage-lock' })
     const planningMarker = this.#marker
-    const round: HealthRound = { id: this.ids?.next('challenge') ?? '', generation: null }
+    const round: HealthRound = {
+      id: this.ids?.next('challenge') ?? '',
+      generation: null,
+      priorityUnavailable: false,
+    }
     let running: MeasurementWork | null = null
     try {
       let at = this.now()
@@ -688,8 +693,10 @@ export class MeasurementController implements MeasurementPort {
     if (!valid() || this.#unsafeReason(status) || !status.representation || !status.demand)
       return null
     const coordination = this.ids ? this.meta.coordination?.(lock) : null
-    if (round.generation !== null && coordination?.generation !== round.generation) return null
+    if (round.generation !== null && coordination && coordination.generation !== round.generation)
+      return null
     if (coordination) round.generation ??= coordination.generation
+    else round.priorityUnavailable = true
     if (!this.routes.proposeChallenge || !this.routes.commitChallenge)
       return this.routes.challenge(
         status.representation,
@@ -698,32 +705,54 @@ export class MeasurementController implements MeasurementPort {
         excluded,
         cursor,
       )
-    const proposal = this.routes.proposeChallenge(
+    const ordinary = () =>
+      valid()
+        ? this.routes.proposeChallenge!(
+            status.representation!,
+            status.demand!,
+            preferNative,
+            excluded,
+            cursor,
+          )
+        : null
+    let proposal = this.routes.proposeChallenge(
       status.representation,
       status.demand,
       preferNative,
       excluded,
       cursor,
-      coordination ? { claims: coordination.claims, allowNative } : undefined,
+      coordination && !round.priorityUnavailable
+        ? { claims: coordination.claims, allowNative }
+        : undefined,
     )
     if (!proposal || (!allowNative && proposal.candidate.type === 'native-signed') || !valid())
       return null
     let claimed = false
     if (proposal.priorityStamp) {
-      if (!coordination || !round.id || !this.ids) return null
-      claimed =
-        this.meta.claimRevalidation?.(coordination.generation, {
-          host: proposal.candidate.host,
-          kind: proposal.candidate.kind,
-          stamp: proposal.priorityStamp,
-          claimId: this.ids.next('challenge'),
-          roundId: round.id,
-        }) === true
-      if (!claimed) return null
+      if (coordination && round.id && this.ids)
+        try {
+          claimed =
+            this.meta.claimRevalidation?.(coordination.generation, {
+              host: proposal.candidate.host,
+              kind: proposal.candidate.kind,
+              stamp: proposal.priorityStamp,
+              claimId: this.ids.next('challenge'),
+              roundId: round.id,
+            }) === true
+        } catch {
+          claimed = false
+        }
+      if (!claimed) {
+        round.priorityUnavailable = true
+        proposal = ordinary()
+      }
     }
     if (
+      !proposal ||
+      (!allowNative && proposal.candidate.type === 'native-signed') ||
       !valid() ||
-      (round.generation !== null && this.meta.coordinationCurrent?.(round.generation) !== true)
+      (proposal.priorityStamp !== null &&
+        (round.generation === null || this.meta.coordinationCurrent?.(round.generation) !== true))
     )
       return null
     return this.routes.commitChallenge(proposal, claimed)

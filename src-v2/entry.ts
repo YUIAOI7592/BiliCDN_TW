@@ -47,7 +47,9 @@ export const start = (): void => {
   const session = new SessionStore()
   const vault = new SignedRouteVault()
   const routes = new RouteCoordinator(clock, session, settings, restrictions, evidence, vault, ids)
-  const meta = new MeasurementMetaStore(storage, now, ids)
+  const meta = new MeasurementMetaStore(storage, now, ids, (host, kind) =>
+    evidence.readCurrentControl(host, kind),
+  )
   const content = new PlayurlController(session, vault, routes)
   const playurl = new PlayurlAdapter(content)
   const visibility = new VisibilityAdapter()

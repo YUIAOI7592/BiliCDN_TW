@@ -125,6 +125,7 @@ export class PlayurlAdapter {
     }
     const inventory: {
       readonly items: readonly unknown[]
+      readonly count: number
       readonly kind: MediaKind
       readonly branch: string
       readonly progressive: boolean
@@ -140,17 +141,22 @@ export class PlayurlAdapter {
       progressive = false,
     ): void => {
       if ((value === undefined || value === null) && !progressive) return
-      if (!Array.isArray(value) || (progressive && !value.length)) {
+      if (!Array.isArray(value)) {
         failure = 'malformed-payload'
         return
       }
-      if (kind === 'video') videoLength += value.length
-      else audioLength += value.length
+      const count = value.length
+      if (progressive && !count) {
+        failure = 'malformed-payload'
+        return
+      }
+      if (kind === 'video') videoLength += count
+      else audioLength += count
       if (videoLength > 128 || audioLength > 64) {
         failure = 'malformed-payload'
         return
       }
-      inventory.push({ items: value, kind, branch, progressive, container })
+      inventory.push({ items: value, count, kind, branch, progressive, container })
     }
     const collect = (data: UnknownRecord, branch: string, depth: number): void => {
       if (visited.has(data)) return
@@ -186,7 +192,7 @@ export class PlayurlAdapter {
     if (failure) return result(failure)
     // Check every bounded container's length before touching any representation fields.
     for (const group of inventory) {
-      for (let index = 0; index < group.items.length; index++) {
+      for (let index = 0; index < group.count; index++) {
         const item = group.items[index]
         if (!isRecord(item)) {
           failure = 'malformed-payload'

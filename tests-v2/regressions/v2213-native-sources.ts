@@ -385,3 +385,46 @@ test('V2213 parser: raw position sixteen is admitted without reading position se
   const rep = f.vault.match(original).context!.representation
   assert.deepEqual(f.vault.sourceURLs(rep), [original, last])
 })
+
+for (const kind of ['video', 'audio'] as const)
+  test(`V2213 parser: page-hint ${kind} getter cannot extend preflighted inventory`, () => {
+    const limit = kind === 'video' ? 128 : 64
+    let extraUrlReads = 0,
+      grown = false,
+      admittedCount = 0
+    const entries = Array.from({ length: limit }, (_, index) => ({
+      id: index,
+      base_url: url(hosts[0]!, String(index)),
+    }))
+    Object.defineProperty(entries[0]!, 'base_url', {
+      get() {
+        if (!grown) {
+          grown = true
+          entries.push({
+            id: limit,
+            get base_url() {
+              extraUrlReads++
+              return url(hosts[1]!, 'late-member')
+            },
+          })
+        }
+        return url(hosts[0]!, 'first-member')
+      },
+      enumerable: true,
+    })
+    const adapter = new PlayurlAdapter({
+      active: () => true,
+      catalogOnly: () => false,
+      lifecycleKey: () => 'synthetic',
+      ingest: (input) => {
+        admittedCount = input![kind].length
+        return []
+      },
+      acceptResponse: () => undefined,
+    })
+    const result = adapter.transform({ data: { dash: { [kind]: entries } } }, 'page-hint')
+    assert.equal(result.accepted, true)
+    assert.equal(entries.length, limit + 1, 'the ordinary member getter grew its source array')
+    assert.equal(admittedCount, limit, 'ingestion retains the preflighted media bound')
+    assert.equal(extraUrlReads, 0, 'late members cannot add URL reads to this transformation')
+  })

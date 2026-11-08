@@ -1,6 +1,7 @@
 import type { StoragePort, StorageLock } from '../platform/storage-port.ts'
 import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
 import { sameCircuitStamp } from '../domain/circuit-policy.ts'
+import type { CurrentCircuitControlReader } from './evidence-ports.ts'
 import type {
   MeasurementMeta,
   MeasurementMetaPort,
@@ -95,6 +96,7 @@ export class MeasurementMetaStore implements MeasurementMetaPort {
     private readonly storage: StoragePort,
     private readonly now: () => number,
     private readonly ids?: RuntimeIdPort,
+    private readonly readControl?: CurrentCircuitControlReader['readCurrentControl'],
   ) {}
   #read(): unknown {
     const result = this.storage.readResult?.<unknown>(MEASUREMENT_META_KEY, null)
@@ -227,6 +229,17 @@ export class MeasurementMetaStore implements MeasurementMetaPort {
     }
     if (!parseCoordination(payload)) return false
     try {
+      const control = this.readControl?.(claim.host, claim.kind),
+        now = timeValue(this.now())
+      if (
+        !control?.synchronized ||
+        !sameCircuitStamp(control.stamp, claim.stamp) ||
+        now === undefined ||
+        control.until <= 0 ||
+        control.until > now ||
+        !this.coordinationCurrent(generation)
+      )
+        return false
       this.#save(payload)
       return true
     } catch {

@@ -13,7 +13,11 @@ import type {
   CircuitRecordControl,
 } from '../domain/model.ts'
 import type { StoragePort } from '../platform/storage-port.ts'
-import type { EvidencePort, EvidenceCommitResult } from './evidence-ports.ts'
+import type {
+  EvidencePort,
+  EvidenceCommitResult,
+  CurrentCircuitControlReader,
+} from './evidence-ports.ts'
 import { timingBasis } from '../domain/measurement-time.ts'
 import { sameCircuitStamp } from '../domain/circuit-policy.ts'
 import type { RuntimeIdPort } from '../platform/runtime-id-port.ts'
@@ -132,7 +136,7 @@ const parsePayload = (value: unknown, now: number): EvidencePayload => {
   })
 }
 
-export class EvidenceStore implements EvidencePort {
+export class EvidenceStore implements EvidencePort, CurrentCircuitControlReader {
   #payload: EvidencePayload
   #stopRemote: () => void
   #readable = true
@@ -167,6 +171,11 @@ export class EvidenceStore implements EvidencePort {
       this.#readable = false
       return null
     }
+  }
+
+  readCurrentControl(host: string, kind: MediaKind) {
+    if (!this.storage.readResult || !this.#refresh()) return null
+    return this.control(host, kind)
   }
 
   control(host: string, kind: MediaKind) {

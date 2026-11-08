@@ -11,6 +11,9 @@ export interface CircuitControlRead {
   readonly until: number
   readonly synchronized: boolean
 }
+export interface CurrentCircuitControlReader {
+  readCurrentControl(host: string, kind: MediaKind): CircuitControlRead | null
+}
 export interface EvidenceCommitResult {
   readonly error?: unknown
   readonly status:
