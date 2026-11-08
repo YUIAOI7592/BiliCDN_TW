@@ -428,3 +428,62 @@ for (const kind of ['video', 'audio'] as const)
     assert.equal(admittedCount, limit, 'ingestion retains the preflighted media bound')
     assert.equal(extraUrlReads, 0, 'late members cannot add URL reads to this transformation')
   })
+
+for (const kind of ['video', 'audio'] as const) {
+  const limit = kind === 'video' ? 128 : 64
+  for (const count of [NaN, -1, 0.5, Infinity, Number.MAX_SAFE_INTEGER + 1])
+    test(`V2213 parser: ${kind} rejects invalid inventory count ${count}`, () => {
+      let reads = 0
+      const prefix = new Proxy([], {
+        get(target, property, receiver) {
+          return property === 'length' ? count : Reflect.get(target, property, receiver)
+        },
+      })
+      const member = {
+        get id() {
+          reads++
+          return 80
+        },
+      }
+      const entries = Array.from({ length: Number.isNaN(count) ? limit + 1 : 1 }, () => member)
+      const adapter = new PlayurlAdapter({
+        active: () => true,
+        catalogOnly: () => false,
+        lifecycleKey: () => 'synthetic',
+        ingest: () => [],
+        acceptResponse: () => undefined,
+      })
+      const result = adapter.transform(
+        {
+          data: { dash: { [kind]: prefix } },
+          result: { dash: { [kind]: entries } },
+        },
+        'page-hint',
+      )
+      assert.equal(reads, 0, 'an invalid prefix cannot expose later representation fields')
+      assert.equal(result.reason, 'malformed-payload')
+    })
+
+  test(`V2213 parser: ${kind} accepts zero and maximum valid inventory counts`, () => {
+    let admittedCount = 0
+    const adapter = new PlayurlAdapter({
+      active: () => true,
+      catalogOnly: () => false,
+      lifecycleKey: () => 'synthetic',
+      ingest: (input) => {
+        admittedCount = input![kind].length
+        return []
+      },
+      acceptResponse: () => undefined,
+    })
+    const result = adapter.transform(
+      {
+        data: { dash: { [kind]: [] } },
+        result: { dash: { [kind]: Array.from({ length: limit }, (_, id) => ({ id })) } },
+      },
+      'page-hint',
+    )
+    assert.equal(result.accepted, true)
+    assert.equal(admittedCount, limit)
+  })
+}

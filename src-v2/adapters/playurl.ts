@@ -146,7 +146,7 @@ export class PlayurlAdapter {
         return
       }
       const count = value.length
-      if (progressive && !count) {
+      if (!Number.isSafeInteger(count) || count < 0 || (progressive && !count)) {
         failure = 'malformed-payload'
         return
       }
