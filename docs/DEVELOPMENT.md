@@ -164,9 +164,9 @@ v2.2.12 的 `--optimization` 補充模式、提前重試資格對照及私有取
 
 `archive:check` 的公開模式同樣納入 `verify`，依 [搬移清單](../archive/relocation-manifest.json) 核對 TAR 原件、發行與圖片原始位元組、閱讀版 URL 編輯及三份既有日誌完整正文。另驗舊路徑退出、Release 僅現行版及校驗清單；無 Git 的乾淨來源副本也可執行。`--local` 額外核對被忽略的本機搬移清單與私有檔案原始雜湊，公開 checkout 不含這些資料，預設不執行。兩個檢查命令的退出碼均為 0／1／2，分別代表通過、檢查失敗及非法參數；檢查不會搬移或改寫檔案。
 
-### 原版與 v2 的獨立離線比較
-
 本機封存可在搬移清單的 `additionalLocalManifests` 登記額外日期清單，位置限定 `archive/retired/local/<日期目錄>/private-manifest.json`。每份沿用 schema 1、該輪完整 baseline、root 與 entries；目標須位於自己的 root，逐檔保存大小及 SHA-256。`--local` 同時核對原清單與所有追加清單，拒絕重複登記、原位置殘留、原件變動及被 Git 追蹤的私有資料；公開模式只核對登記路徑，不讀私有清單。刪除快取的重建依據、刪前雜湊與刪後結果另存當輪私有操作紀錄，不以搬移證明代替刪除證明。
+
+### 原版與 v2 的獨立離線比較
 
 詳細操作、輸入、期限與判定見 [離線評估指南](../scripts/evaluation/README.md#原版與-v2-的獨立離線比較)。
 

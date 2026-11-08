@@ -11,6 +11,8 @@ Release/v2.2.5/** -text
 Release/v2.2.6/** -text
 Release/v2.2.13/** -text
 Release/v2.2.13/*.md whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+Release/v2.2.14/** -text
+Release/v2.2.14/*.md whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 Release/v2.2.5/TEST_REPORT_v2.2.5.md whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 archive/retired/releases/** -text
 # These original checksum-protected reports contain a CRLF line; retain the raw bytes.
@@ -20,6 +22,7 @@ archive/retired/originals/*.tar -text
 archive/retired/originals/*.json -text
 archive/retired/originals/RELOCATION_MANIFEST_BEFORE_v2.2.5.json whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 archive/retired/originals/PRE_RELEASE_v2.2.13_2026-11-08.json whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+archive/retired/originals/PRE_RELEASE_v2.2.14_2026-11-08.json whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 archive/retired/docs/evidence/BUFFER_CANDIDATE_V2_PROTOTYPE_2026-10-23.patch -text -diff
 archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_2026-10-23.json -text -diff
 archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_DELIVERY_2026-10-23.json -text -diff

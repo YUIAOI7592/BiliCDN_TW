@@ -10,13 +10,15 @@
 
 ## 版本
 
-- [v2.2.13 R5 受控真實 API 接線（2026-11-08）](TEST_REPORT.md#v2213-r5-受控真實-api-接線2026-11-08)
+- [v2.2.14 全面清理](../archive/retired/docs/CLEANUP_v2.2.14_2026-11-08.md)；[完整驗證](TEST_REPORT.md#驗收結論)。
 
-- [v2.2.13 R4 自主接線補驗（2026-11-08）](TEST_REPORT.md#v2213-r4-自主接線補驗2026-11-08)
+- [v2.2.13 R5 受控真實 API 接線（2026-11-08）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r5-受控真實-api-接線2026-11-08)
+
+- [v2.2.13 R4 自主接線補驗（2026-11-08）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r4-自主接線補驗2026-11-08)
 
 - [v2.2.13 播放狀態調查與人工播放判讀更正（2026-11-08）](../archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md#使用者人工播放與判讀更正)
 
-- [v2.2.13 選路、限制與來源整合](TEST_REPORT.md#驗收結論)；[契約映射](../tests-v2/MIGRATION.md#v2213-選路限制與-native-來源)；[R1 安裝與受控整合（2026-11-08）](TEST_REPORT.md#v2213-r1-選路黑名單與來源驗收2026-11-08)；[R2 本版變更接線補驗（2026-11-08）](TEST_REPORT.md#v2213-r2-本版變更接線補驗2026-11-08)；[R3 更新確認與實機觀察（2026-11-08）](TEST_REPORT.md#v2213-r3-更新確認與實機觀察2026-11-08)。
+- [v2.2.13 選路、限制與來源整合](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-完整正文保存2026-11-08)；[契約映射](../tests-v2/MIGRATION.md#v2213-選路限制與-native-來源)；[R1 安裝與受控整合（2026-11-08）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r1-選路黑名單與來源驗收2026-11-08)；[R2 本版變更接線補驗（2026-11-08）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r2-本版變更接線補驗2026-11-08)；[R3 更新確認與實機觀察（2026-11-08）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r3-更新確認與實機觀察2026-11-08)。
 
 - [v2.2.12 觀察校準與提前重試適用率研究（2026-11-08）](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md)。
 
@@ -337,6 +339,8 @@
 
 ### 模組化／收斂
 
+- [v2.2.14 全面清理與本機封存](../archive/retired/docs/CLEANUP_v2.2.14_2026-11-08.md)。
+
 - [v2.1.26 四階段模組收斂紀錄](../archive/retired/docs/CONVERGENCE_v2.1.26_REPORT.md)
 - [v2.1.25 模組化與 TypeScript 標準化紀錄](../archive/retired/docs/MODULARIZATION_v2.1.25_REPORT.md)
 
@@ -362,9 +366,11 @@
 
 ## 日期
 
-- [2026-11-08：v2.2.13 R5 真實 API、來源授權與撤銷](TEST_REPORT.md#v2213-r5-受控真實-api-接線2026-11-08)
+- 2026-11-08：[v2.2.14 清理、分類與保留證明](../archive/retired/docs/CLEANUP_v2.2.14_2026-11-08.md)。
 
-- [2026-11-08：v2.2.13 R4 來源辨識與接線補驗](TEST_REPORT.md#v2213-r4-自主接線補驗2026-11-08)
+- [2026-11-08：v2.2.13 R5 真實 API、來源授權與撤銷](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r5-受控真實-api-接線2026-11-08)
+
+- [2026-11-08：v2.2.13 R4 來源辨識與接線補驗](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2213-r4-自主接線補驗2026-11-08)
 
 - [2026-11-08：v2.2.13 黑畫面獨立調查](../archive/retired/docs/BLACK_SCREEN_INVESTIGATION_v2.2.13_2026-11-08.md)
 
