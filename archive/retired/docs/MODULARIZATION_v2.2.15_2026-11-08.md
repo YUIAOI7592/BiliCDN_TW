@@ -161,3 +161,7 @@ XHR 原生準備抽至 xhr-dispatch，仍逐步核對 metadata／readyState，�
 ## 安全差異結案
 
 Codex Security 掃描 06be0f32-1aa1-4cdf-b535-45599ef32046 固定 dc3b6f0→60870f9，291 個來源差異項目與額外定義檢查支援均完成，canonical 已封印讀回；漏洞、未結案候選與 deferred 為零。三組獨立差異檢查與父代理工具檢查覆蓋原生派送、精確授權、重入／取消與唯一所有者；不是安裝版驗收。工具計量及範圍由最新版 TEST_REPORT 保存，完整 canonical 由本機 Codex Security 管理。
+
+## v2.2.15 公開交付（2026-11-09）
+
+發行提交 3a90b6c，main／標籤與正式唯一腳本附件已核對；精確公開 latest 實際 GET 為 v2.2.15／535,486 bytes／SHA-256 96bff42ad7ac5deb9b500605b244af3598a6f67b7f93bf85d6c26992ff0b8cef。五項本機產物與提交位元組一致；發布前發現報告行尾轉換，依既有 Release raw 規則保留原封裝 bytes 後才推送。公開結果更新只用後續文件提交，不移動標籤或回寫 Release。沒有啟動瀏覽器或改動已結案功能窗口。
