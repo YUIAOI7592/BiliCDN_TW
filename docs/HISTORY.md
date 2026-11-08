@@ -10,7 +10,7 @@
 
 ## 版本
 
-- [v2.2.13 選路、限制與來源整合](TEST_REPORT.md#驗收結論)；[契約映射](../tests-v2/MIGRATION.md#v2213-選路限制與-native-來源)。
+- [v2.2.13 選路、限制與來源整合](TEST_REPORT.md#驗收結論)；[契約映射](../tests-v2/MIGRATION.md#v2213-選路限制與-native-來源)；[R1 安裝與受控整合（2026-11-08）](TEST_REPORT.md#v2213-r1-選路黑名單與來源驗收2026-11-08)；[R2 本版變更接線補驗（2026-11-08）](TEST_REPORT.md#v2213-r2-本版變更接線補驗2026-11-08)。
 
 - [v2.2.12 觀察校準與提前重試適用率研究（2026-11-08）](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md)。
 
