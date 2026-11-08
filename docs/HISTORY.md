@@ -10,6 +10,8 @@
 
 ## 版本
 
+- [v2.2.15 模組歸屬整合與大型控制器精簡](../archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md)。
+
 - [v2.2.14 全面清理](../archive/retired/docs/CLEANUP_v2.2.14_2026-11-08.md)；[完整驗證](TEST_REPORT.md#驗收結論)。
 - [v2.2.14 更新後載入身分核對（2026-11-08）](TEST_REPORT.md#v2214-載入身分驗證2026-11-08)。
 

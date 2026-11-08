@@ -3773,6 +3773,14 @@
       "requiredAnchors": []
     },
     {
+      "path": "archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md",
+      "kind": "record",
+      "topics": ["history"],
+      "versions": ["v2.2.14", "v2.2.15"],
+      "date": "2026-11-08",
+      "requiredAnchors": ["固定基線", "責任與相容邊界"]
+    },
+    {
       "path": "archive/retired/docs/CLEANUP_v2.2.14_2026-11-08.md",
       "kind": "record",
       "topics": [
@@ -7923,6 +7931,13 @@
       "encoding": "raw",
       "bytes": 11355,
       "sha256": "e403f0fcfc8208599086273e746f2602a514124f95e1b3eb6313e679d063d5c0"
+    },
+    {
+      "path": "archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 1535,
+      "sha256": "2678ec242a954150a713620ab99a826af6234ccdaa7465de5047e584229f7caa"
     },
     {
       "path": "archive/retired/docs/CLEANUP_v2.2.14_2026-11-08.md",
