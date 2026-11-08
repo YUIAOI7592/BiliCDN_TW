@@ -32,3 +32,5 @@
 ## 量測與恢復熱點
 
 量測的起播結果資格、決勝及健康探測結果分類集中於 startup-evaluation；需求與授權讀取、探測、鎖、三秒窗口及取消仍由 MeasurementController 執行，沒有提前快取跨回呼的資料。新增短快取／新速度資格及同速逆序完成兩個回歸；application 841 案及 measurement-state 135 案通過，另增加量測私有邊界拒絕契約。
+
+恢復的舊／目標倍率可達區間、已落地位置驗證、已知錯位及後續進度界線併入 restore-policy。時鐘仍在原條件成立的位置讀取；Controller 保留 token、還原階段、派送及一次補正。新增四案保護一／兩倍、未知讀值不取得補正與不讀時鐘，以及一秒漂移邊界；domain 111 案與 application 841 案通過。

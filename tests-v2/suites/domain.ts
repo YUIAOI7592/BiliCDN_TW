@@ -1,4 +1,5 @@
 import { test } from 'node:test'
+import '../regressions/v2215-restoration.ts'
 import '../regressions/v2213-policy.ts'
 import '../regressions/v227-evidence.ts'
 import '../regressions/v227-routing.ts'
