@@ -191,3 +191,24 @@ early-retry 的「慢案例至少改善 500 ms」及「正常案例沒有不必�
 移除 release 的 Node／npm 固定欄位及 package／lock 根目錄 Node 下限，第三方 engines 與依賴解析保持；四處 Node 編譯使用同一 node24 目標。新建置清單移除 npm，TypeScript 欄位由已安裝且與 release 核對的版本取得；此資訊不等於 build 執行了型別檢查。各正式 CLI 在 stderr 顯示 Node，純列表／用法與 JSON stdout 契約保持。
 
 新增三案先保存失敗結果，再完成設定解析、建置 metadata 與 TypeScript 漂移拒絕；完整 tooling 260 案通過。原 V2212 來源身分案例保留名稱與原政策／評估路徑斷言，僅對新增的單一 `scripts/lib/toolchain.mts` 來源明確檢查存在及真實雜湊，沒有放寬為整個 lib 目錄。該新增來源保留於評估雜湊，原模型數值與效用門檻不改。
+
+### 完整驗證與安全差異結果
+
+Codex 內建 Node 24.22.1 的完整十八套件／2,334 案通過；其中新增 28 個工具案例，原 2,306 案名稱、參數展開與相對順序逐項相同，沒有刪案或未完成狀態。完整案例先保存結構化結果以核對原清單，再執行正式 verify 整合命令；verify 的能力、型別、架構、唯讀格式、文件、公開封存、完整測試、重複建置、語法、禁止標記與暫存封裝均通過。舊 Node 26.8.1 只補驗完整 tooling 260 案與其啟動器／能力接線，同樣通過，不重跑產品矩陣。
+
+| 核對項目 | 實作後結果 |
+| --- | --- |
+| 使用者腳本 | 538,269 bytes；SHA-256 與上文研究及正式 Release 相同 |
+| source map | 985,755 bytes；SHA-256 與上文研究相同 |
+| 根目錄 node_modules | 原 2,261 個檔案與檔名集合逐項相同 |
+| package／lock／release | 只移除本計畫的 Node／npm 欄位；九項直接依賴、間接解析與第三方 engines 不變 |
+| 新建置清單 | 移除 tools.npm；Node 記錄實際 24.22.1；來源雜湊只變更 package、lock、release、build、lib 與新增 toolchain |
+| 五種離線評估 | 決策、輸入、數值與退出碼相同；optimization 只多／更新兩項已明列工具來源 hash |
+| 提前重試效用 | 原退出 1 與效用 FAIL 保持，不改採用門檻 |
+| 發行原件／標籤 | 五份 Release 原件及 v2.2.16 指向 517c04be217ff3374d25e9e2cc7f06f898a5f45b 保持 |
+
+本次沒有呼叫 npm、安裝依賴或執行 Python 產品工具；主要工作明確使用當次 Codex Node，舊 Node 僅用於計畫指定的相容性補驗。新增探測不列入正式案例數，也沒有新增週期工作、網路工作或產品插樁。
+
+Codex Security 差異掃描 `8f959fa5-2d37-4882-9601-4f7d85749f5d` 已完成並封存，範圍為固定 `774a2314a1e75785be719fb2393ef740158a75a2..0d2335f1c9fcfd2d65bdb70d70e3c9dcde1f6197`，模型紀錄 gpt-6.1-sol／xhigh。三項前置能力通過；獨立架構複核、全部 24 個變更來源／配置／測試項目及其鎖定檔、文件差異完成審閱，沒有可報告發現或未決項目。結果位於該 scan ID 的 Codex Security 管理目錄，不在本報告重製或改寫其封存產物。這是開發工具差異審查，不是完整產品重掃或惡意同帳戶檔案競爭的動態證明。
+
+原始結果見新實作目錄的 `full-contracts.json`、`verify.txt`、`baseline-tooling-contracts.json`、`results.json` 與五種 evaluation JSON；原研究目錄不變。本次沒有新增乾淨安裝、跨平台、瀏覽器或安裝版效益證據。
