@@ -3,7 +3,7 @@ import type { EventData } from 'node:test'
 import type { TestEvent } from 'node:test/reporters'
 import { type CaseRecord, type FailureRecord, type ReportLocation } from '../test.mts'
 import { isRecord } from '../lib/lib.mts'
-export const REPORT_VERSION = 1
+const REPORT_VERSION = 1
 function position(data: EventData.TestPass | EventData.TestFail): ReportLocation {
   const mapped =
     data.file && data.line

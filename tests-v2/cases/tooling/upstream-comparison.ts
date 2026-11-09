@@ -21,6 +21,19 @@ import {
   PageNode,
 } from '../../../scripts/evaluation/upstream-compare/page.mts'
 import { testScope } from '../../support/scope.ts'
+import { inputs, loadInput } from '../../../scripts/evaluation/upstream-compare/inputs.mts'
+
+test(
+  'comparison loads both immutable inputs after release originals are compressed',
+  { timeout: 5000 },
+  async () => {
+    for (const input of inputs) {
+      const source = await loadInput(input.version)
+      assert.equal(Buffer.byteLength(source), input.bytes)
+      assert.equal(sha256(source), input.sha256)
+    }
+  },
+)
 
 test(
   'comparison audio isolation rejects a missing held-second even when later audio succeeds',

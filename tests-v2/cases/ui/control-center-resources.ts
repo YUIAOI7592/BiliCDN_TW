@@ -66,7 +66,7 @@ export function setOverviewCapacity(
   })
 }
 
-export class QueuedSettingsStorage extends FakeStorage {
+class QueuedSettingsStorage extends FakeStorage {
   held = true
   tasks: (() => Promise<void>)[] = []
   override async withLock<T>(name: string, task: () => Promise<T> | T): Promise<T> {
@@ -110,7 +110,7 @@ export class UiEvent {
   }
 }
 
-export type UiListener = (event: UiEvent) => void
+type UiListener = (event: UiEvent) => void
 
 export class Element {
   children: Element[] = []
@@ -132,7 +132,6 @@ export class Element {
   value = ''
   checked = false
   disabled = false
-  readOnly = false
   id = ''
   shadow: Element | null = null
   attributes = new Map<string, string>()

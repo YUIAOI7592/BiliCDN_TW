@@ -67,7 +67,7 @@ export function scenarioHash(scenario: Scenario, rate: Rate): string {
     JSON.stringify({ schemaVersion: 1, scenario, rate, preludeMs: 60000, durationMs: 180000 }),
   )
 }
-export async function drainJobs(): Promise<void> {
+async function drainJobs(): Promise<void> {
   // A bounded host turn also lets Node's Response body jobs settle. No wall-clock sleep.
   for (let i = 0; i < 16; i++) await Promise.resolve()
   await new Promise<void>((resolve) => setImmediate(resolve))

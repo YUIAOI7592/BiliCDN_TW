@@ -134,7 +134,7 @@ function sha(value: unknown): string {
   if (!/^[a-f0-9]{64}$/.test(result)) throw Error('Expected SHA-256')
   return result
 }
-export function parseDocumentationManifest(value: unknown): DocumentationManifest {
+function parseDocumentationManifest(value: unknown): DocumentationManifest {
   const raw = object(value)
   if (raw.schemaVersion !== 1) throw Error('Unsupported documentation schema')
   const navigation = object(raw.navigation)

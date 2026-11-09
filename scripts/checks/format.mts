@@ -5,7 +5,7 @@ import { filesUnder, errorMessage } from '../lib/lib.mts'
 import { reportRuntimeInfo } from '../lib/toolchain.mts'
 
 /** A fixed maintenance allowlist never traverses release, archive or evidence trees. */
-export function formatFiles(): readonly string[] {
+function formatFiles(): readonly string[] {
   const sources = ['src-v2', 'tests-v2', 'scripts'].flatMap((directory) =>
     existsSync(directory) ? filesUnder(directory).filter((file) => /\.(?:ts|mts)$/.test(file)) : [],
   )

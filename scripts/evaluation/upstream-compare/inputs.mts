@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { ArchiveStorage, parseArchiveBundles } from '../../lib/archive-storage.mts'
 import { checkSource } from './model.mts'
 import { type Version } from './model.mts'
 
@@ -16,15 +17,27 @@ export const inputs = [
     sha256: '1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795',
   },
 ] as const
-export function loadInput(version: Version): string {
+export async function loadInput(version: Version): Promise<string> {
   const input = inputs.find((e) => e.version === version)!
-  const bytes = readFileSync(input.path)
+  let bytes: Buffer
+  if (input.path.startsWith('archive/')) {
+    const manifest = JSON.parse(readFileSync('archive/relocation-manifest.json', 'utf8'))
+    const bundles = parseArchiveBundles(manifest.bundles).filter((bundle) =>
+      bundle.files.some((file) => file.path === input.path),
+    )
+    if (bundles.length !== 1)
+      throw Error('Immutable comparison input location is ambiguous or missing')
+    const storage = await ArchiveStorage.open(process.cwd(), bundles, {
+      metadataPaths: new Set([input.path]),
+    })
+    bytes = storage.read(input.path)
+  } else bytes = readFileSync(input.path)
   checkSource(bytes, input.bytes, input.sha256)
   return bytes.toString('utf8')
 }
-export function commonHosts(): readonly string[] {
-  const original = loadInput('1.3.4'),
-    current = loadInput('2.1.27')
+export async function commonHosts(): Promise<readonly string[]> {
+  const original = await loadInput('1.3.4'),
+    current = await loadInput('2.1.27')
   const list = (source: string, name: string): string[] => {
     const block = new RegExp(`${name} = (?:Object\\.freeze\\()?\\[([\\s\\S]*?)\\]`).exec(
       source,

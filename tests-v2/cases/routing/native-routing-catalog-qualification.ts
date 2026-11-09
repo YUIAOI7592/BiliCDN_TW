@@ -243,12 +243,10 @@ async function createOpaqueSignedBStationAudioIsRemovedFromCatalogOnlyPlayerCont
     const deliveredCatalogBackup = catalogVideo.backup_url.find(
       (url) => new URL(url).host !== new URL(catalogVideo.base_url).host,
     )
-    void deliveredCatalogBackup
     if (deliveredCatalogBackup) {
       const deliveredApplied = catalogRoutes.apply(deliveredCatalogBackup)
       void deliveredApplied.decision.routeType
       void deliveredApplied.url
-      void deliveredCatalogBackup
     }
     const challenger = catalogRoutes.challenge(catalogVideoRep, catalogDemand, true)
     void challenger?.decision.routeType

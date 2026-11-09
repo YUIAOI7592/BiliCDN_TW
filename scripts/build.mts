@@ -5,7 +5,7 @@ import { resolve } from 'node:path'
 import { readRelease, readJson, isRecord } from './lib/lib.mts'
 import { reportRuntimeInfo } from './lib/toolchain.mts'
 
-export const buildOptions = Object.freeze({
+const buildOptions = Object.freeze({
   bundle: true,
   platform: 'browser',
   format: 'iife',

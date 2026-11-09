@@ -12,7 +12,6 @@ import { isRecord, errorMessage } from './lib/lib.mts'
 import { type ProcessResult } from './testing/test-process.mts'
 import { type TestSuite } from './testing/test-registry.mts'
 import { assertRuntimeCapabilities, NODE_BUILD_TARGET, NODE_TEST_FLAGS } from './lib/toolchain.mts'
-export type { ProcessResult } from './testing/test-process.mts'
 export type CaseStatus = 'passed' | 'failed' | 'cancelled' | 'skipped' | 'todo'
 export interface ReportLocation {
   file: string | null

@@ -16,7 +16,7 @@ import {
 import { type CaseResult } from './upstream-compare/model.mts'
 
 export async function compareUpstream(calibrationOnly = false) {
-  for (const input of inputs) loadInput(input.version)
+  for (const input of inputs) await loadInput(input.version)
   const results: (CaseResult & { exitCode: number | null })[] = []
   for (const scenario of calibrationOnly ? (['healthy'] as const) : scenarios)
     for (const rate of [1, 2] as const)
@@ -79,10 +79,11 @@ export async function compareUpstream(calibrationOnly = false) {
     },
     limits: { caseMs: 5000, cleanupMs: 5000, suiteMs: 60000, maxBytes: 32 * 1024 * 1024 },
     inputs,
-    hosts: commonHosts(),
+    hosts: await commonHosts(),
     toolHashes: Object.fromEntries(
       [
         'scripts/evaluation/upstream-compare.mts',
+        'scripts/lib/archive-storage.mts',
         ...['model', 'page', 'inputs', 'cases', 'worker'].map(
           (name) => `scripts/evaluation/upstream-compare/${name}.mts`,
         ),

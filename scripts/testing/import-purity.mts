@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { filesUnder } from '../lib/lib.mts'
 import { supervise } from './test-process.mts'
 import { NODE_BUILD_TARGET } from '../lib/toolchain.mts'
-export const purityTraps = [
+const purityTraps = [
   'window',
   'document',
   'unsafeWindow',

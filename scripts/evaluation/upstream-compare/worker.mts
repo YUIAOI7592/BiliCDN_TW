@@ -18,11 +18,11 @@ let result: CaseResult | undefined
 await test(`${scenario} at ${rate}x / full ${version}`, { timeout: 5000 }, async (t) => {
   const scope = testScope(t)
   result = await runCase(
-    loadInput(version as Version),
+    await loadInput(version as Version),
     version as Version,
     scenario as Scenario,
     Number(rate) as Rate,
-    commonHosts(),
+    await commonHosts(),
     mode === 'calibration',
     scope,
   )
