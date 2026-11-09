@@ -151,7 +151,7 @@
 
 ### 工具鏈、Runtime 與版本限制
 
-[固定環境與輸入](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#固定環境與輸入)、[相容性矩陣](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#比較方法與結果)、[逐項鎖定建議](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#版本鎖定建議與優先順序)；現行操作要求仍由 [DEVELOPMENT](DEVELOPMENT.md#環境需求) 維護，工作由 TODO 管理。
+[固定環境與輸入](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#固定環境與輸入)、[相容性矩陣](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#比較方法與結果)、[逐項鎖定建議](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#版本鎖定建議與優先順序)、[後續實作與完整驗證](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#工具鏈整理實作銜接)；現行操作要求仍由 [DEVELOPMENT](DEVELOPMENT.md#環境需求) 維護，工作由 TODO 管理。
 
 ### 黑畫面、媒體讀值與原生終止
 

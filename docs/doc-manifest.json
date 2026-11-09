@@ -3804,7 +3804,7 @@
       "topics": ["history"],
       "versions": ["v2.2.16"],
       "date": "2026-11-09",
-      "requiredAnchors": ["研究結論", "比較方法與結果", "版本鎖定建議與優先順序"]
+      "requiredAnchors": ["研究結論", "比較方法與結果", "版本鎖定建議與優先順序", "工具鏈整理實作銜接", "完整驗證與安全差異結果"]
     },
     {
       "path": "archive/retired/docs/ROUTING_OWNERSHIP_v2.2.16_2026-11-09.md",
