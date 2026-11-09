@@ -26,6 +26,7 @@ coverage/
 !/Release/v*/
 !/Release/v*/**
 /.work/
+/tools/
 /.agents/
 /.codex/
 /scripts/package-v*.cjs

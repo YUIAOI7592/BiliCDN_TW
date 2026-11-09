@@ -447,7 +447,7 @@
 - [整理前固定提交](https://github.com/YUIAOI7592/BiliCDN_TW/tree/0f4cb8d669a144cf6876575a979fd98e4b586300) 保留原始儲存庫路徑；[原始文件 TAR](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/originals/PRE_CLEANUP_2026-10-20_0f4cb8d.tar) 保存本輪搬移前正文及完整日誌基準。
 - [搬移清單](../archive/relocation-manifest.json) 登記舊／新路徑、雜湊、閱讀版 URL 編輯及精確歷史引用限制。舊 `main` 網址不因 Git 搬移自動取得新入口；這些限制與有效現行連結分開報告，不宣稱原歷史網址仍全部有效。
 - 舊矩陣、TODO 及舊索引的完整原文見 [重整前快照](../archive/retired/docs/DOCS_BEFORE_REORGANIZATION_2026-10-17.md)。
-- [2026-11-10 archive 精簡與還原報告](../archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md) 記錄壓縮、可重建副本、保留項目與驗證界線，另含[原 34 項的後續處置](../archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md#原-34-項的後續處置)；還原指令由 [開發指南](DEVELOPMENT.md#壓縮清理與還原) 維護。
+- [2026-11-10 archive 精簡與還原報告](../archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md) 記錄壓縮、可重建副本、保留項目與驗證界線，另含[原 34 項的後續處置](../archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md#原-34-項的後續處置)及[.work 全面整理與工具歸位](../archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md#work-全面整理與工具歸位)；還原指令由 [開發指南](DEVELOPMENT.md#壓縮清理與還原) 維護。
 
 ## 私有證據邊界
 
