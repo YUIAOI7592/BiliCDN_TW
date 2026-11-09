@@ -10,6 +10,8 @@
 
 ## 版本
 
+- [v2.2.16 基準的全工作區整理與工具斷鏈修正（2026-11-10）](../archive/retired/docs/WORKSPACE_CLEANUP_2026-11-10.md)。
+
 - [v2.2.16 基準的工具鏈相容性與版本鎖定評估（2026-11-09）](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md)。
 
 - [v2.2.16 更新後載入身分與選路／提交接線（2026-11-09）](TEST_REPORT.md#v2216-r1-載入身分與選路提交接線2026-11-09)。
@@ -148,6 +150,8 @@
 | v1.6.0 | [當版發行快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md)、[v1.6.0 公開安全摘要](../archive/retired/docs/SECURITY_REVIEW_v1.6.0.md) |
 
 ## 議題
+
+- 工作區與檔案治理：[全工作區整理（2026-11-10）](../archive/retired/docs/WORKSPACE_CLEANUP_2026-11-10.md)。
 
 ### 工具鏈、Runtime 與版本限制
 
@@ -380,6 +384,8 @@
 - [測試工具驗證紀錄](TEST_TOOLING_REPORT.md)
 
 ## 日期
+
+- 2026-11-10：[全工作區整理與工具斷鏈修正](../archive/retired/docs/WORKSPACE_CLEANUP_2026-11-10.md)。
 
 - 2026-11-09：[工具鏈 A／B 相容性與版本鎖定評估](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md)。
 

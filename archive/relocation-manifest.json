@@ -13754,7 +13754,9 @@
       "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
     }
   ],
-  "additionalLocalManifests": [],
+  "additionalLocalManifests": [
+    "archive/retired/local/2026-11-10-workspace-audit/private-manifest.json"
+  ],
   "bundles": [
     {
       "path": "archive/retired/bundles/public-evidence-2026-11-09-01.tar.gz",

@@ -79,6 +79,14 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/WORKSPACE_CLEANUP_2026-11-10.md",
+      "kind": "record",
+      "topics": ["history"],
+      "versions": ["v2.2.16"],
+      "date": "2026-11-10",
+      "requiredAnchors": []
+    },
+    {
       "path": "Release/v2.2.16/CHANGELOG_v2.2.16.md",
       "kind": "immutable",
       "topics": [
@@ -3927,6 +3935,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/WORKSPACE_CLEANUP_2026-11-10.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 6106,
+      "sha256": "2b7995469a237b1a125349d2b2cb532ec6bafeb4430a57624d99369976001211"
+    },
     {
       "path": "Release/v2.2.16/BUILD_MANIFEST_v2.2.16.json",
       "encoding": "raw",
