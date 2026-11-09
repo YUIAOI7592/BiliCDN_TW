@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "baseline": "0f4cb8d669a144cf6876575a979fd98e4b586300",
   "snapshot": {
     "path": "archive/retired/originals/PRE_CLEANUP_2026-10-20_0f4cb8d.tar",
@@ -7628,9 +7628,15 @@
       "bytes": 14329,
       "sha256": "ebf303a53c5f0df327c62ba2cc79676a043f4b59a94d4b794f515272ecb07269",
       "encoding": "raw"
+    },
+    {
+      "path": "archive/retired/originals/ARCHIVE_POLICY_2077805.tar",
+      "bytes": 962560,
+      "sha256": "3e6cf2613a9c6e1a675ca732b9f43ff7dd8a5c5b5930ead6e6c423812fede578",
+      "encoding": "raw"
     }
   ],
-  "localManifest": "archive/retired/local/2026-10-20-cleanup/private-manifest.json",
+  "localManifest": "archive/retired/local/2026-11-09-compaction/private-manifest.json",
   "historicalReferences": [
     {
       "source": "archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md",
@@ -12780,9 +12786,3741 @@
       "originalTarget": "tests-v2/regressions/v226-ui-state.ts",
       "archivedTarget": "tests-v2/cases/ui/v226-ui-state.ts",
       "reason": "v2.2.15 模組搬移；保留固定歷史原文，現行來源由 sourceRelocations 對照。"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md",
+      "line": 27,
+      "url": "evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "sha256": "153a2e1e71a8a209d30baf10b5dd6bf029345bb5e380f6bfbbcdb6c9c224e3a1",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md",
+      "line": 31,
+      "url": "evidence/BUFFER_ADOPTION_DECISION_2026-10-25.json",
+      "sha256": "153a2e1e71a8a209d30baf10b5dd6bf029345bb5e380f6bfbbcdb6c9c224e3a1",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_ADOPTION_DECISION_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_ADOPTION_DECISION_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md",
+      "line": 9,
+      "url": "evidence/BUFFER_CANDIDATE_V2_PROTOTYPE_2026-10-23.patch",
+      "sha256": "3e46cb903136fedcbfbed4d5ef3ed534a96cfacc984e930051bfbcff461323e5",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V2_PROTOTYPE_2026-10-23.patch",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V2_PROTOTYPE_2026-10-23.patch",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.md",
+      "line": 9,
+      "url": "evidence/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.json",
+      "sha256": "3e46cb903136fedcbfbed4d5ef3ed534a96cfacc984e930051bfbcff461323e5",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md",
+      "line": 7,
+      "url": "evidence/BUFFER_CANDIDATE_V3_BASELINE_2026-10-23.json",
+      "sha256": "2047ac3dbc4ade11d66ca4decf67d654f0a5162c49e26d3805b69e87d62f0c4b",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_BASELINE_2026-10-23.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_BASELINE_2026-10-23.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md",
+      "line": 7,
+      "url": "../originals/PRE_BUFFER_CANDIDATE_V3_2026-10-23_cfc1592.json",
+      "sha256": "2047ac3dbc4ade11d66ca4decf67d654f0a5162c49e26d3805b69e87d62f0c4b",
+      "originalTarget": "archive/retired/originals/PRE_BUFFER_CANDIDATE_V3_2026-10-23_cfc1592.json",
+      "archivedTarget": "archive/retired/originals/PRE_BUFFER_CANDIDATE_V3_2026-10-23_cfc1592.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_CANDIDATE_V3_2026-10-23.md",
+      "line": 45,
+      "url": "evidence/BUFFER_CANDIDATE_V3_2026-10-23.json",
+      "sha256": "2047ac3dbc4ade11d66ca4decf67d654f0a5162c49e26d3805b69e87d62f0c4b",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_2026-10-23.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_2026-10-23.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md",
+      "line": 35,
+      "url": "evidence/BUFFER_CANDIDATE_V4_2026-10-24.json",
+      "sha256": "39369f770228efadf99a75a66b313379015ea972fe73c2f78df2d901a7760e35",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_CANDIDATE_V4_2026-10-24.md",
+      "line": 67,
+      "url": "evidence/BUFFER_CANDIDATE_V4_DELIVERY_2026-10-24.json",
+      "sha256": "39369f770228efadf99a75a66b313379015ea972fe73c2f78df2d901a7760e35",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md",
+      "line": 11,
+      "url": "evidence/BUFFER_LIVE_EVALUATION_2026-10-25.json",
+      "sha256": "2af93c965589a57ca24eb9800a7a9178227f88bdedbb6ff027e68a7e91010456",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md",
+      "line": 9,
+      "url": "evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "sha256": "ea69fa80d1a0a15b5ff20de2f8ad01639fce0c846f165cb96e457c5f1177a341",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.md",
+      "line": 56,
+      "url": "evidence/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.json",
+      "sha256": "53b7587e9216d1a820570f48085f08efe826e65b713ba1a84cc0ac58ec8082e3",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md",
+      "line": 11,
+      "url": "evidence/BUFFER_RISK_EVALUATION_2026-10-25.json",
+      "sha256": "9f09359a9017f8d122cc5d60d8b9453a7c935927d70eda5bcec3517e9e8c185c",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_RISK_EVALUATION_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_RISK_EVALUATION_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md",
+      "line": 15,
+      "url": "evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "sha256": "9f09359a9017f8d122cc5d60d8b9453a7c935927d70eda5bcec3517e9e8c185c",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_TREND_2026-10-23.md",
+      "line": 7,
+      "url": "evidence/BUFFER_TREND_2026-10-23.json",
+      "sha256": "73f3a27e2731a689e1ef901abbaec15d123a11ad83e99896b87a54b1bf35a5eb",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_TREND_2026-10-23.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_TREND_2026-10-23.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_TREND_2026-10-23.md",
+      "line": 46,
+      "url": "../originals/PRE_BUFFER_TREND_2026-10-23_8e410b7.json",
+      "sha256": "73f3a27e2731a689e1ef901abbaec15d123a11ad83e99896b87a54b1bf35a5eb",
+      "originalTarget": "archive/retired/originals/PRE_BUFFER_TREND_2026-10-23_8e410b7.json",
+      "archivedTarget": "archive/retired/originals/PRE_BUFFER_TREND_2026-10-23_8e410b7.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_TREND_2026-10-23.md",
+      "line": 64,
+      "url": "evidence/BUFFER_TREND_DELIVERY_2026-10-23.json",
+      "sha256": "73f3a27e2731a689e1ef901abbaec15d123a11ad83e99896b87a54b1bf35a5eb",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_TREND_DELIVERY_2026-10-23.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_TREND_DELIVERY_2026-10-23.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md",
+      "line": 57,
+      "url": "evidence/CHROME_v2.1.6_FINAL_SETTINGS_2026-10-01.jpg",
+      "sha256": "9f2f15bff65af1477285084db914ca060d6f4e0b70b0e6b1ffe653a81cd85777",
+      "originalTarget": "archive/retired/docs/evidence/CHROME_v2.1.6_FINAL_SETTINGS_2026-10-01.jpg",
+      "archivedTarget": "archive/retired/docs/evidence/CHROME_v2.1.6_FINAL_SETTINGS_2026-10-01.jpg",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md",
+      "line": 42,
+      "url": "evidence/DIAGNOSTICS_COST_2026-10-25.json",
+      "sha256": "2887c038c992d44b06d4c8029631eb89d48fe62a51c81d28115f6a561ac2f03b",
+      "originalTarget": "archive/retired/docs/evidence/DIAGNOSTICS_COST_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/DIAGNOSTICS_COST_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md",
+      "line": 42,
+      "url": "evidence/DIAGNOSTICS_COST_CANDIDATE_2026-10-25.patch",
+      "sha256": "2887c038c992d44b06d4c8029631eb89d48fe62a51c81d28115f6a561ac2f03b",
+      "originalTarget": "archive/retired/docs/evidence/DIAGNOSTICS_COST_CANDIDATE_2026-10-25.patch",
+      "archivedTarget": "archive/retired/docs/evidence/DIAGNOSTICS_COST_CANDIDATE_2026-10-25.patch",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/DOC_MAINTENANCE_HISTORY.md",
+      "line": 498,
+      "url": "../originals/PRE_CLEANUP_2026-10-20_0f4cb8d.tar",
+      "sha256": "6cc0341f202894fd28f5df56e3643dfcc0060e71c00868a6c93d846e9d5dda6b",
+      "originalTarget": "archive/retired/originals/PRE_CLEANUP_2026-10-20_0f4cb8d.tar",
+      "archivedTarget": "archive/retired/originals/PRE_CLEANUP_2026-10-20_0f4cb8d.tar",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/DOC_MAINTENANCE_HISTORY.md",
+      "line": 711,
+      "url": "evidence/DOCUMENTATION_STATUS_2026-10-25.json",
+      "sha256": "6cc0341f202894fd28f5df56e3643dfcc0060e71c00868a6c93d846e9d5dda6b",
+      "originalTarget": "archive/retired/docs/evidence/DOCUMENTATION_STATUS_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/DOCUMENTATION_STATUS_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/INSTALLED_RESTORE_IR36_2026-10-25.md",
+      "line": 3,
+      "url": "evidence/INSTALLED_RESTORE_IR36_2026-10-25.json",
+      "sha256": "dbfe4c7cf0a12933594f20d174fe88bb784a5b66d755dcb7f59f0c4b257bde4c",
+      "originalTarget": "archive/retired/docs/evidence/INSTALLED_RESTORE_IR36_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/INSTALLED_RESTORE_IR36_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/INSTALLED_RESTORE_IR36_R2_2026-10-25.md",
+      "line": 5,
+      "url": "evidence/INSTALLED_RESTORE_IR36_R2_2026-10-25.json",
+      "sha256": "7fa18eadabc939374b698e13d7ad47074b5603190cc9849d7bbf223d7b670c67",
+      "originalTarget": "archive/retired/docs/evidence/INSTALLED_RESTORE_IR36_R2_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/INSTALLED_RESTORE_IR36_R2_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/P05_COPY_FIX_REPORT.md",
+      "line": 55,
+      "url": "evidence/P05_v2.1.22_COPY_2026-10-12.png",
+      "sha256": "2548b72c3614443f07fae108e3a76f62b0e685d30e0ee25295ea7323777d3402",
+      "originalTarget": "docs/evidence/P05_v2.1.22_COPY_2026-10-12.png",
+      "archivedTarget": "archive/retired/docs/evidence/P05_v2.1.22_COPY_2026-10-12.png",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md",
+      "line": 7,
+      "url": "evidence/PROJECT_FILE_INVENTORY_2026-10-22.json",
+      "sha256": "d5b31dd3e35b231643aca583fecdbd80d955a769127be0c1c7dc70bb55fed603",
+      "originalTarget": "archive/retired/docs/evidence/PROJECT_FILE_INVENTORY_2026-10-22.json",
+      "archivedTarget": "archive/retired/docs/evidence/PROJECT_FILE_INVENTORY_2026-10-22.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md",
+      "line": 3,
+      "url": "evidence/RESTORE_VERIFICATION_2026-10-25.json",
+      "sha256": "58bdd56a02b06b3ba1c527338f69b72cc1564038f2c67db1ad2063090b65d40c",
+      "originalTarget": "archive/retired/docs/evidence/RESTORE_VERIFICATION_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/RESTORE_VERIFICATION_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md",
+      "line": 128,
+      "url": "evidence/RESTORE_SOURCE_2026-10-25.json",
+      "sha256": "58bdd56a02b06b3ba1c527338f69b72cc1564038f2c67db1ad2063090b65d40c",
+      "originalTarget": "archive/retired/docs/evidence/RESTORE_SOURCE_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/RESTORE_SOURCE_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md",
+      "line": 136,
+      "url": "evidence/RESTORE_DELIVERY_2026-10-25.json",
+      "sha256": "58bdd56a02b06b3ba1c527338f69b72cc1564038f2c67db1ad2063090b65d40c",
+      "originalTarget": "archive/retired/docs/evidence/RESTORE_DELIVERY_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/RESTORE_DELIVERY_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 1811,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_TREND_2026-10-23.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_TREND_2026-10-23.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_TREND_2026-10-23.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 1827,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-23_34672b0.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/originals/PRE_RELEASE_2026-10-23_34672b0.json",
+      "archivedTarget": "archive/retired/originals/PRE_RELEASE_2026-10-23_34672b0.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 1875,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_2026-10-23.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_2026-10-23.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_2026-10-23.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 1889,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-23_4ce7195.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/originals/PRE_RELEASE_2026-10-23_4ce7195.json",
+      "archivedTarget": "archive/retired/originals/PRE_RELEASE_2026-10-23_4ce7195.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 1893,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_DELIVERY_2026-10-23.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_DELIVERY_2026-10-23.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_DELIVERY_2026-10-23.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 1921,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 1937,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_a8713c6.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_a8713c6.json",
+      "archivedTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_a8713c6.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 1937,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_DELIVERY_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 1963,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 1989,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_c65c506.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_c65c506.json",
+      "archivedTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_c65c506.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 1997,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_DELIVERY_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2019,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2051,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_5fa25f8.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_5fa25f8.json",
+      "archivedTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_5fa25f8.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2055,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/MEASUREMENT_METADATA_DELIVERY_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2063,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/MEASUREMENT_METADATA_INSTALLED_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_INSTALLED_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_INSTALLED_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2087,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2118,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_d6197de.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_d6197de.json",
+      "archivedTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_d6197de.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2124,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_DELIVERY_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2143,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_INSTALLED_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_INSTALLED_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_INSTALLED_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2163,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_LOW_V5_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2221,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_LOW_V5_DELIVERY_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2236,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_LOW_V5_INSTALLED_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_INSTALLED_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_INSTALLED_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2257,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2315,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_DELIVERY_2026-10-24.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2355,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/RESTORE_SOURCE_2026-10-25.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/RESTORE_SOURCE_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/RESTORE_SOURCE_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2369,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/RESTORE_DELIVERY_2026-10-25.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/RESTORE_DELIVERY_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/RESTORE_DELIVERY_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2512,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/UP141_TEST_EFFICACY_2026-10-30.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/UP141_TEST_EFFICACY_2026-10-30.json",
+      "archivedTarget": "archive/retired/docs/evidence/UP141_TEST_EFFICACY_2026-10-30.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 2646,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/CC39_EARLY_RETRY_EFFICACY_2026-10-31.json",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "archive/retired/docs/evidence/CC39_EARLY_RETRY_EFFICACY_2026-10-31.json",
+      "archivedTarget": "archive/retired/docs/evidence/CC39_EARLY_RETRY_EFFICACY_2026-10-31.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4409,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/functional-races",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "tests-v2/regressions/functional-races",
+      "archivedTarget": "tests-v2/regressions/functional-races",
+      "reason": "Retired source directory is preserved at its report-version Git commit; an empty leftover directory is not source evidence",
+      "targetRevision": "85f95d636eb1d319ad5743a4e863a464e697d872",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4409,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "tests-v2/regressions",
+      "archivedTarget": "tests-v2/regressions",
+      "reason": "Retired source directory is preserved at its report-version Git commit; an empty leftover directory is not source evidence",
+      "targetRevision": "85f95d636eb1d319ad5743a4e863a464e697d872",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "line": 4608,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions",
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904",
+      "originalTarget": "tests-v2/regressions",
+      "archivedTarget": "tests-v2/regressions",
+      "reason": "Retired source directory is preserved at its report-version Git commit; an empty leftover directory is not source evidence",
+      "targetRevision": "80935889d8c01a7f56f4815509f8a3ef034a0303",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md",
+      "line": 51,
+      "url": "evidence/UP141_TEST_EFFICACY_2026-10-30.json",
+      "sha256": "a7338faedc1506daf3b29949059b17bff697a43452466daf47212500ac3c6c1a",
+      "originalTarget": "archive/retired/docs/evidence/UP141_TEST_EFFICACY_2026-10-30.json",
+      "archivedTarget": "archive/retired/docs/evidence/UP141_TEST_EFFICACY_2026-10-30.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md",
+      "line": 7,
+      "url": "evidence/UPSTREAM_RESCUE_COMPARISON_2026-10-23.json",
+      "sha256": "730c2cd3998af49609fb038c29e8ef7dcd8c7a8286943d7f7784a1ece1ce1280",
+      "originalTarget": "archive/retired/docs/evidence/UPSTREAM_RESCUE_COMPARISON_2026-10-23.json",
+      "archivedTarget": "archive/retired/docs/evidence/UPSTREAM_RESCUE_COMPARISON_2026-10-23.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md",
+      "line": 25,
+      "url": "evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json",
+      "sha256": "c3b0871e6ca841132ef8a7be53a42c44c665f059ae2d0778e20f8fcb0b4a8dbe",
+      "originalTarget": "archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json",
+      "archivedTarget": "archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.28/TEST_REPORT_v2.1.28.md",
+      "line": 20,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_TREND_2026-10-23.json",
+      "sha256": "ae9101edde43751c6f869db68045e030eb0851dc9180450e9ab1d0ed8e8c7510",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_TREND_2026-10-23.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_TREND_2026-10-23.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.28/TEST_REPORT_v2.1.28.md",
+      "line": 36,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-23_34672b0.json",
+      "sha256": "ae9101edde43751c6f869db68045e030eb0851dc9180450e9ab1d0ed8e8c7510",
+      "originalTarget": "archive/retired/originals/PRE_RELEASE_2026-10-23_34672b0.json",
+      "archivedTarget": "archive/retired/originals/PRE_RELEASE_2026-10-23_34672b0.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.29/TEST_REPORT_v2.1.29.md",
+      "line": 20,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_2026-10-23.json",
+      "sha256": "47208f3bfd65bd2adf86a9040fbcd058728869d547c6ecc7946d83f1374d57c1",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_2026-10-23.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_2026-10-23.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.29/TEST_REPORT_v2.1.29.md",
+      "line": 34,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-23_4ce7195.json",
+      "sha256": "47208f3bfd65bd2adf86a9040fbcd058728869d547c6ecc7946d83f1374d57c1",
+      "originalTarget": "archive/retired/originals/PRE_RELEASE_2026-10-23_4ce7195.json",
+      "archivedTarget": "archive/retired/originals/PRE_RELEASE_2026-10-23_4ce7195.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.30/TEST_REPORT_v2.1.30.md",
+      "line": 9,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_2026-10-24.json",
+      "sha256": "7a4b175f11b3aa1b231b4935c643d38f349d6cb747bd668c5dddd1b0ac8d3a3e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.30/TEST_REPORT_v2.1.30.md",
+      "line": 25,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_a8713c6.json",
+      "sha256": "7a4b175f11b3aa1b231b4935c643d38f349d6cb747bd668c5dddd1b0ac8d3a3e",
+      "originalTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_a8713c6.json",
+      "archivedTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_a8713c6.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.31/TEST_REPORT_v2.1.31.md",
+      "line": 7,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_2026-10-24.json",
+      "sha256": "bbb88afc4691c81e3e95f9398227e8289e70e97646f61294e1cd91bf018c5dbb",
+      "originalTarget": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.31/TEST_REPORT_v2.1.31.md",
+      "line": 33,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_c65c506.json",
+      "sha256": "bbb88afc4691c81e3e95f9398227e8289e70e97646f61294e1cd91bf018c5dbb",
+      "originalTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_c65c506.json",
+      "archivedTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_c65c506.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.32/TEST_REPORT_v2.1.32.md",
+      "line": 7,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json",
+      "sha256": "b0dac94df944daeae416f27efb8db75afb95864ee6677ff38995d37c2c7ed9f3",
+      "originalTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.32/TEST_REPORT_v2.1.32.md",
+      "line": 39,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_5fa25f8.json",
+      "sha256": "b0dac94df944daeae416f27efb8db75afb95864ee6677ff38995d37c2c7ed9f3",
+      "originalTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_5fa25f8.json",
+      "archivedTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_5fa25f8.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.33/TEST_REPORT_v2.1.33.md",
+      "line": 7,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_2026-10-24.json",
+      "sha256": "090f01fd914ba665c539fabb4cb97052bee5fa1e36895151811951db7946d76e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.33/TEST_REPORT_v2.1.33.md",
+      "line": 38,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/originals/PRE_RELEASE_2026-10-24_d6197de.json",
+      "sha256": "090f01fd914ba665c539fabb4cb97052bee5fa1e36895151811951db7946d76e",
+      "originalTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_d6197de.json",
+      "archivedTarget": "archive/retired/originals/PRE_RELEASE_2026-10-24_d6197de.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.34/TEST_REPORT_v2.1.34.md",
+      "line": 9,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_LOW_V5_2026-10-24.json",
+      "sha256": "b541edff2ab44d4c83f50eabf3582aec78eda44de3cdfadad89215e89313f5b9",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.35/TEST_REPORT_v2.1.35.md",
+      "line": 9,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_2026-10-24.json",
+      "sha256": "d24953b4c2f648d5cd040cfba63c672ace09409c0001c57df75d39dda44f71c0",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.36/TEST_REPORT_v2.1.36.md",
+      "line": 23,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/RESTORE_SOURCE_2026-10-25.json",
+      "sha256": "67ef7358026aae1f616496d0b9b526e6c0ca6ac86ca3dbb976d8dfba906d5391",
+      "originalTarget": "archive/retired/docs/evidence/RESTORE_SOURCE_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/RESTORE_SOURCE_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.38/TEST_REPORT_v2.1.38.md",
+      "line": 32,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/UP141_TEST_EFFICACY_2026-10-30.json",
+      "sha256": "d354d9984ddefe5acbaef0e336ba51fdf976a1483dd02a2c0462d7a8a196b21b",
+      "originalTarget": "archive/retired/docs/evidence/UP141_TEST_EFFICACY_2026-10-30.json",
+      "archivedTarget": "archive/retired/docs/evidence/UP141_TEST_EFFICACY_2026-10-30.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.1.39/TEST_REPORT_v2.1.39.md",
+      "line": 29,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/evidence/CC39_EARLY_RETRY_EFFICACY_2026-10-31.json",
+      "sha256": "d754b0707a8b5e03990bd4fb7ac97dae0377aeec47a8e9449ea33028945ff737",
+      "originalTarget": "archive/retired/docs/evidence/CC39_EARLY_RETRY_EFFICACY_2026-10-31.json",
+      "archivedTarget": "archive/retired/docs/evidence/CC39_EARLY_RETRY_EFFICACY_2026-10-31.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "line": 15,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions/functional-races",
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09",
+      "originalTarget": "tests-v2/regressions/functional-races",
+      "archivedTarget": "tests-v2/regressions/functional-races",
+      "reason": "Retired source directory is preserved at its report-version Git commit; an empty leftover directory is not source evidence",
+      "targetRevision": "85f95d636eb1d319ad5743a4e863a464e697d872"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+      "line": 15,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions",
+      "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09",
+      "originalTarget": "tests-v2/regressions",
+      "archivedTarget": "tests-v2/regressions",
+      "reason": "Retired source directory is preserved at its report-version Git commit; an empty leftover directory is not source evidence",
+      "targetRevision": "85f95d636eb1d319ad5743a4e863a464e697d872"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.7/TEST_REPORT_v2.2.7.md",
+      "line": 26,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/regressions",
+      "sha256": "cc26cfa496e6d882ac9f4d4c108664c219b5f12003441cecf05fea47cac4e6ca",
+      "originalTarget": "tests-v2/regressions",
+      "archivedTarget": "tests-v2/regressions",
+      "reason": "Retired source directory is preserved at its report-version Git commit; an empty leftover directory is not source evidence",
+      "targetRevision": "80935889d8c01a7f56f4815509f8a3ef034a0303"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 415,
+      "url": "../archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_DELIVERY_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 421,
+      "url": "../archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 425,
+      "url": "../archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_DELIVERY_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 433,
+      "url": "../archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 439,
+      "url": "../archive/retired/docs/evidence/MEASUREMENT_METADATA_DELIVERY_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 445,
+      "url": "../archive/retired/docs/evidence/MEASUREMENT_METADATA_INSTALLED_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_INSTALLED_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/MEASUREMENT_METADATA_INSTALLED_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 451,
+      "url": "../archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 457,
+      "url": "../archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_DELIVERY_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 463,
+      "url": "../archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_INSTALLED_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_INSTALLED_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_INSTALLED_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 469,
+      "url": "../archive/retired/docs/evidence/BUFFER_LOW_V5_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 475,
+      "url": "../archive/retired/docs/evidence/BUFFER_LOW_V5_DELIVERY_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 479,
+      "url": "../archive/retired/docs/evidence/BUFFER_LOW_V5_INSTALLED_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_INSTALLED_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_LOW_V5_INSTALLED_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 493,
+      "url": "../archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_DELIVERY_2026-10-24.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_DELIVERY_2026-10-24.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_DELIVERY_2026-10-24.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 517,
+      "url": "../archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 527,
+      "url": "../archive/retired/docs/evidence/BUFFER_RISK_EVALUATION_2026-10-25.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_RISK_EVALUATION_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_RISK_EVALUATION_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 539,
+      "url": "../archive/retired/docs/evidence/BUFFER_ADOPTION_DECISION_2026-10-25.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/BUFFER_ADOPTION_DECISION_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/BUFFER_ADOPTION_DECISION_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 601,
+      "url": "../archive/retired/docs/evidence/PRIVATE_ARCHIVE_ACCESS_2026-10-25.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/PRIVATE_ARCHIVE_ACCESS_2026-10-25.json",
+      "archivedTarget": "archive/retired/docs/evidence/PRIVATE_ARCHIVE_ACCESS_2026-10-25.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "line": 672,
+      "url": "../archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json",
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e",
+      "originalTarget": "archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json",
+      "archivedTarget": "archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json",
+      "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
+      "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
     }
   ],
-  "additionalLocalManifests": [
-    "archive/retired/local/2026-11-08-v2.2.14-cleanup/private-manifest.json"
-  ]
+  "additionalLocalManifests": [],
+  "bundles": [
+    {
+      "path": "archive/retired/bundles/public-evidence-2026-11-09-01.tar.gz",
+      "bytes": 7089116,
+      "sha256": "042f4898e628cbf447de110b822cb17ce7f9f0288bb0ef136640f5bf6cbb4fe5",
+      "tarBytes": 142888960,
+      "inventory": {
+        "path": "_archive-manifests/public-evidence-2026-11-09-01.json",
+        "bytes": 12365,
+        "sha256": "7d302da7ba837897f7d8fd4c2cfd55c312de841aeb4fcc0e5b307ce0f9b28957"
+      },
+      "files": [
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_ADOPTION_DECISION_2026-10-25.json",
+          "bytes": 1175641,
+          "sha256": "7a65930ad9006d490883b8cc5002dbf5239e1b2de1decb9f7a2dcc919b9fd2a8"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_CONFIRMATION_2026-10-23.json",
+          "bytes": 14713941,
+          "sha256": "35548237535fd13279b00c6ddaed37ed87fe6752da52a6bc9ec9bb3b6551f8e3"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V2_PROTOTYPE_2026-10-23.patch",
+          "bytes": 38979,
+          "sha256": "033a9cb2e5b64a1a5fe95f29c7a89d1f59cc85a8c103c5f222718c0d96a41935"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_2026-10-23.json",
+          "bytes": 17980904,
+          "sha256": "df99e630ba64e20a79ad1e35208fbcf2af4c38587a054b50abf997e481b4cd1f"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_BASELINE_2026-10-23.json",
+          "bytes": 234912,
+          "sha256": "26b9e7d9cddbc646068554f8c276ca43ed54371ffe7554dee4d3190c72a9cab1"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V3_DELIVERY_2026-10-23.json",
+          "bytes": 12983,
+          "sha256": "fba5f2b6c12ff8a7e447f707ef6ceca3a1839ab497517709684d350b45ee7630"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_2026-10-24.json",
+          "bytes": 18611432,
+          "sha256": "26ca6345bc3d390b5fc469aa7451c8879b420fff830c1c1526259a27d58245c2"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_CANDIDATE_V4_DELIVERY_2026-10-24.json",
+          "bytes": 17982,
+          "sha256": "47a7256bf7d6f51f2655b87e869da004ab75a2c2a0ae9027c4a863c501ecf1c2"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_2026-10-24.json",
+          "bytes": 32307822,
+          "sha256": "d9278fd5904a8ec2fb1421790221c9572cf737147aca57241cadda0bae704059"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_CONTINUITY_V6_DELIVERY_2026-10-24.json",
+          "bytes": 436026,
+          "sha256": "0e846fdcdac45d1078d53cce086dc903672718aba581dcf68fde9336eef30819"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_2026-10-24.json",
+          "bytes": 1816202,
+          "sha256": "7e7ffff218faa3c0b05d2eb63cd07ebf399763be371a08889a165303ce4591f9"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_DELIVERY_2026-10-24.json",
+          "bytes": 2286,
+          "sha256": "ceba57b2379c942bd9452ff0e5f190ad8b6c8f240ba45c0645c150e02e7b5ce0"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_CYCLE_RENEWAL_INSTALLED_2026-10-24.json",
+          "bytes": 22885,
+          "sha256": "d474b1533e618363001374d6e0d3105f731ee7668a1ccb83dc274136eea9830a"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_2026-10-25.json",
+          "bytes": 133201,
+          "sha256": "1c29062581e9404e39408faa02e0c62c862f55a780bd3646a9ff8b484544222b"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_LIVE_EVALUATION_R2_2026-10-25.json",
+          "bytes": 3488160,
+          "sha256": "9e5c726c603c1b1eb8780622e702b13b243668c3bc96588145230732dc92d2f6"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_LOW_V5_2026-10-24.json",
+          "bytes": 14455177,
+          "sha256": "d698a4313c339aabfbde55fda52afa14000bfdbbfd9abb00ce651d48ddcbacc9"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_LOW_V5_DELIVERY_2026-10-24.json",
+          "bytes": 256384,
+          "sha256": "56458772cec1b5b5be880211f763dd27e85efdce28d4e33d3995517f7dc5dd5a"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_LOW_V5_INSTALLED_2026-10-24.json",
+          "bytes": 21669,
+          "sha256": "e7ad1697b4a60cc123fc741dc84564f1767ff6f4257b9b212db9f47d77b3d0c8"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_OBSERVATION_OPTIMIZATION_2026-10-23.json",
+          "bytes": 4090414,
+          "sha256": "ac24fef58f3dfc5769b8353372d4893abe6f921e67af8d09d47e67c720bf9def"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_RISK_EVALUATION_2026-10-25.json",
+          "bytes": 7412052,
+          "sha256": "1cc9c19326a04b0ea69278058ee181e451ca7e806f3f5aafbd243ed6915f5800"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_TREND_2026-10-23.json",
+          "bytes": 668810,
+          "sha256": "b5c612eb019ee4058497450a585fd0df9895da61cf02b02e363d786312ad8872"
+        },
+        {
+          "path": "archive/retired/docs/evidence/BUFFER_TREND_DELIVERY_2026-10-23.json",
+          "bytes": 727,
+          "sha256": "8e721e01abe83f4305ec1453a8e57549073354eb2886f3dff2751efad48994b1"
+        },
+        {
+          "path": "archive/retired/docs/evidence/CC39_EARLY_RETRY_EFFICACY_2026-10-31.json",
+          "bytes": 6539,
+          "sha256": "94220088a787f3e21cbf7df87dcfabe796deebd5eb74ac182c8dab009f6f3a42"
+        },
+        {
+          "path": "archive/retired/docs/evidence/CHROME_v2.1.6_FINAL_SETTINGS_2026-10-01.jpg",
+          "bytes": 132593,
+          "sha256": "671cea964f5f1f4ce768b6bb4aec2e036e3722ebb58d463a130c2ca298a085b9"
+        },
+        {
+          "path": "archive/retired/docs/evidence/DIAGNOSTICS_COST_2026-10-25.json",
+          "bytes": 6240627,
+          "sha256": "0743114167cfd68f3d4cd1f5ce55cf6c7a2ac84e62728871366e0d3bba753acf"
+        },
+        {
+          "path": "archive/retired/docs/evidence/DIAGNOSTICS_COST_CANDIDATE_2026-10-25.patch",
+          "bytes": 4452,
+          "sha256": "f8fbf53b5a3d684997a73ba5aead1e00abe70ab75b6daacd46e92b9c53d28576"
+        },
+        {
+          "path": "archive/retired/docs/evidence/DOCUMENTATION_STATUS_2026-10-25.json",
+          "bytes": 176272,
+          "sha256": "c7e22643eb29d4fc94c40eb6610a982e4cd183409898df38f41dbef0ed8489a7"
+        },
+        {
+          "path": "archive/retired/docs/evidence/INSTALLED_RESTORE_IR36_2026-10-25.json",
+          "bytes": 1583576,
+          "sha256": "288de56872cafeaa084e432c3c766f4fe09aab09e234b25683c3f633099e37e1"
+        },
+        {
+          "path": "archive/retired/docs/evidence/INSTALLED_RESTORE_IR36_R2_2026-10-25.json",
+          "bytes": 2201032,
+          "sha256": "23774858156fa58e88e774a57e8e76d0529286941f6e8ecfe1413700f7970b96"
+        },
+        {
+          "path": "archive/retired/docs/evidence/MEASUREMENT_METADATA_2026-10-24.json",
+          "bytes": 26435,
+          "sha256": "392cfd4395fb8afc7180865c0ccf70480699a72fb09c914238196a0aa6acd584"
+        },
+        {
+          "path": "archive/retired/docs/evidence/MEASUREMENT_METADATA_DELIVERY_2026-10-24.json",
+          "bytes": 2361,
+          "sha256": "fa4f46b25623fa973787b994602303be78be2424f7f17b6d04a3bee65811b5ae"
+        },
+        {
+          "path": "archive/retired/docs/evidence/MEASUREMENT_METADATA_INSTALLED_2026-10-24.json",
+          "bytes": 24374,
+          "sha256": "1f3e98bd763c386360367f9368216b6e4379f847a995c4500993b6782868a1f9"
+        },
+        {
+          "path": "archive/retired/docs/evidence/P05_v2.1.22_COPY_2026-10-12.png",
+          "bytes": 7930,
+          "sha256": "add1250f22a24610e04a1be7c4ffaa0f616dc09f337e9bb59f3880e92ac33256"
+        },
+        {
+          "path": "archive/retired/docs/evidence/PRIVATE_ARCHIVE_ACCESS_2026-10-25.json",
+          "bytes": 29013,
+          "sha256": "722c492ba63b327c5ef386dabdc7638682301894839064ff00a1c42df15ac54c"
+        },
+        {
+          "path": "archive/retired/docs/evidence/PROJECT_FILE_INVENTORY_2026-10-22.json",
+          "bytes": 287966,
+          "sha256": "3dec6ed5af8a02642195bcbbd52a9b2269289cc51eaedcd068b3ef52d65b27f8"
+        },
+        {
+          "path": "archive/retired/docs/evidence/RESTORE_DELIVERY_2026-10-25.json",
+          "bytes": 41743,
+          "sha256": "437ddc1380a4a71e6324c9ebad135e6f994421ff61ffcb1c4eb20a7a654e63d1"
+        },
+        {
+          "path": "archive/retired/docs/evidence/RESTORE_SOURCE_2026-10-25.json",
+          "bytes": 591268,
+          "sha256": "9bd1fcc334435b7a3f1bfd147da88338b3f5d48c7a98df07ca997a3ae025beb0"
+        },
+        {
+          "path": "archive/retired/docs/evidence/RESTORE_VERIFICATION_2026-10-25.json",
+          "bytes": 84695,
+          "sha256": "e1b313b36634c942ea64836e6b7ca3deb8e6fe7b6ea329ef9138423a5dab0c43"
+        },
+        {
+          "path": "archive/retired/docs/evidence/UP141_TEST_EFFICACY_2026-10-30.json",
+          "bytes": 6539,
+          "sha256": "94220088a787f3e21cbf7df87dcfabe796deebd5eb74ac182c8dab009f6f3a42"
+        },
+        {
+          "path": "archive/retired/docs/evidence/UPSTREAM_RESCUE_COMPARISON_2026-10-23.json",
+          "bytes": 13440067,
+          "sha256": "e0c537319fab8530876d6e6367fa9e1f816eb603de6488d879e29f93604d8b9c"
+        },
+        {
+          "path": "archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json",
+          "bytes": 6785,
+          "sha256": "31a06ccd301f9a9add79158adac0058665eb6fd34953d2a398a8f598bd8cbc35"
+        },
+        {
+          "path": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_2026-10-24.json",
+          "bytes": 21487,
+          "sha256": "c0a9720521164c06e44aaaa69a9cf086f01929925d2dc940567caf32f1c797e9"
+        },
+        {
+          "path": "archive/retired/docs/evidence/VISIBILITY_OWNERSHIP_DELIVERY_2026-10-24.json",
+          "bytes": 27400,
+          "sha256": "bcedd6971a5b5b1659dd56a3673b8a16beac12f342765bdd7de73d57a1b73509"
+        }
+      ]
+    },
+    {
+      "path": "archive/retired/bundles/public-originals-2026-11-09-01.tar.gz",
+      "bytes": 2368909,
+      "sha256": "8de450202e834246a6edd72caed83d8d92dd6b93f2dd841021846d6f4e86337b",
+      "tarBytes": 17838080,
+      "inventory": {
+        "path": "_archive-manifests/public-originals-2026-11-09-01.json",
+        "bytes": 12176,
+        "sha256": "0319f3ed3c9ea6139b0c23b0bc90ff9aa4350492d24d5517418b38f6797857be"
+      },
+      "files": [
+        {
+          "path": "archive/retired/originals/ARCHIVE_POLICY_2077805.tar",
+          "bytes": 962560,
+          "sha256": "3e6cf2613a9c6e1a675ca732b9f43ff7dd8a5c5b5930ead6e6c423812fede578"
+        },
+        {
+          "path": "archive/retired/originals/PRE_BUFFER_CANDIDATE_V3_2026-10-23_cfc1592.json",
+          "bytes": 456365,
+          "sha256": "e5248c575ba2b97e59f2d9ac71664611968f00073eeb19976b51ff7b27839d42"
+        },
+        {
+          "path": "archive/retired/originals/PRE_BUFFER_CYCLE_2026-10-23_60de147.json",
+          "bytes": 458572,
+          "sha256": "96aa2cbc9951c623f25145122f093c93a3ec19e6f45a1ae3db5f1e9bf6fdbddd"
+        },
+        {
+          "path": "archive/retired/originals/PRE_BUFFER_OBSERVATION_2026-10-23_2588f12.json",
+          "bytes": 458572,
+          "sha256": "96aa2cbc9951c623f25145122f093c93a3ec19e6f45a1ae3db5f1e9bf6fdbddd"
+        },
+        {
+          "path": "archive/retired/originals/PRE_BUFFER_TREND_2026-10-23_8e410b7.json",
+          "bytes": 454979,
+          "sha256": "d767b94aa1158bedab5862ff27b38e33e6c8c8ac5b76ba81180250211c179418"
+        },
+        {
+          "path": "archive/retired/originals/PRE_BUFFER_V5_2026-10-24_b4f997c.json",
+          "bytes": 473141,
+          "sha256": "88a3201ce2195bfcf4224dbc86378d16f5659bf452a3b756291fc2531733cd38"
+        },
+        {
+          "path": "archive/retired/originals/PRE_CLEANUP_2026-10-20_0f4cb8d.tar",
+          "bytes": 1873920,
+          "sha256": "f72ae96bba7589eccfd6ca1b5edd6840823eef731ee9b44fbd7774d9b1026a32"
+        },
+        {
+          "path": "archive/retired/originals/PRE_DIAGNOSTICS_COST_2026-10-25_2f6b67e.json",
+          "bytes": 485197,
+          "sha256": "9c1b2725c13a4823368792e599a94d02d0456bf6d70fdd9bdec43e1d2972355a"
+        },
+        {
+          "path": "archive/retired/originals/PRE_INSTALLED_RESTORE_IR36_2026-10-25_9f8f435.json",
+          "bytes": 485887,
+          "sha256": "b2d4365d2267f094f5ed8b3426913aeef060fec28b7b6176909edf1fe26d3bc7"
+        },
+        {
+          "path": "archive/retired/originals/PRE_INSTALLED_RESTORE_IR36_R2_2026-10-25_957da3f.json",
+          "bytes": 486356,
+          "sha256": "764739207b20893be2c800ccf264d8c3948f7e4d99bbbb4cb6ac2614e466c984"
+        },
+        {
+          "path": "archive/retired/originals/PRE_MEASUREMENT_2026-10-24_ac44474.json",
+          "bytes": 464825,
+          "sha256": "00654d2ffebc932c5591d29bae4393849d71b8b51425222c523f1858c01c245f"
+        },
+        {
+          "path": "archive/retired/originals/PRE_RELEASE_2026-10-23_34672b0.json",
+          "bytes": 453043,
+          "sha256": "61220ca76000f00decf3e3261814f2aba39be43734ba04bc3798212a88858ba3"
+        },
+        {
+          "path": "archive/retired/originals/PRE_RELEASE_2026-10-23_4ce7195.json",
+          "bytes": 456365,
+          "sha256": "e5248c575ba2b97e59f2d9ac71664611968f00073eeb19976b51ff7b27839d42"
+        },
+        {
+          "path": "archive/retired/originals/PRE_RELEASE_2026-10-24_5fa25f8.json",
+          "bytes": 464649,
+          "sha256": "844b222a58c23951f8906da9564f05b8c2a703d4301d08e5d674f0a306f824fc"
+        },
+        {
+          "path": "archive/retired/originals/PRE_RELEASE_2026-10-24_a8713c6.json",
+          "bytes": 458572,
+          "sha256": "96aa2cbc9951c623f25145122f093c93a3ec19e6f45a1ae3db5f1e9bf6fdbddd"
+        },
+        {
+          "path": "archive/retired/originals/PRE_RELEASE_2026-10-24_c65c506.json",
+          "bytes": 461043,
+          "sha256": "c06cf9e7babae10fa7337a7d6b59a5c93ee3e264ad9fbbe06f2a4287c8bdf8ca"
+        },
+        {
+          "path": "archive/retired/originals/PRE_RELEASE_2026-10-24_d6197de.json",
+          "bytes": 468894,
+          "sha256": "6a745337bdacfe89356aa7dee5b33bd5cfd9f0d7b8714ab4bd41176d3e528ec9"
+        },
+        {
+          "path": "archive/retired/originals/PRE_RELEASE_V5_2026-10-24_a32cff3.json",
+          "bytes": 473366,
+          "sha256": "cffa54bf1c3029ad895f9fa7924d3ef15c6d8a3269453208458f762158562942"
+        },
+        {
+          "path": "archive/retired/originals/PRE_RELEASE_v2.2.11_2026-11-06.json",
+          "bytes": 515293,
+          "sha256": "939fd217631ff46616ab7ec1107e6a80cbb6f548a42b8835b62eddb9ae98f0f9"
+        },
+        {
+          "path": "archive/retired/originals/PRE_RELEASE_v2.2.12_2026-11-07.json",
+          "bytes": 517153,
+          "sha256": "7e0af71cb9aec13935ba4720823bf9fbd768445519bffa84e2ccf5a63aa09d1b"
+        },
+        {
+          "path": "archive/retired/originals/PRE_RELEASE_v2.2.13_2026-11-08.json",
+          "bytes": 531889,
+          "sha256": "1d1b2e4f1cfefee7470d67c6fc0bd758778fca742f2d498cbcffef5d433a4708"
+        },
+        {
+          "path": "archive/retired/originals/PRE_RELEASE_v2.2.14_2026-11-08.json",
+          "bytes": 523869,
+          "sha256": "dbec1ff0e9a36ae2f67ecaf8831c16413b95e6b4cc492b2d4ff9a5f429f41e67"
+        },
+        {
+          "path": "archive/retired/originals/PRE_RESTORE_2026-10-25_20ba3b2.json",
+          "bytes": 481682,
+          "sha256": "cab57a14e50c2e6a623438b2d4e9931eb2fd99d62b239858f87046d4fa3e9921"
+        },
+        {
+          "path": "archive/retired/originals/PRE_UP141_RELEASE_2026-10-30_08ed843.json",
+          "bytes": 483581,
+          "sha256": "aed10806365e7e4e8b04551a6d87ada944ebbaafc67a8d8be619a130f98f555e"
+        },
+        {
+          "path": "archive/retired/originals/PRE_VISIBILITY_2026-10-24_f582069.json",
+          "bytes": 460779,
+          "sha256": "7a661b4c0fda98046f02619fdbb875f5ba37011810d27d641b1d0b1f862f61e3"
+        },
+        {
+          "path": "archive/retired/originals/RELOCATION_MANIFEST_BEFORE_v2.2.0.json",
+          "bytes": 491109,
+          "sha256": "3ef3607f1f7c4f1d0477e53cf3a3c6008c474cda256f9bbcaed0bd29649b5dc3"
+        },
+        {
+          "path": "archive/retired/originals/RELOCATION_MANIFEST_BEFORE_v2.2.2.json",
+          "bytes": 494272,
+          "sha256": "4ab0607ff326f015201c5d69599bd8c15c0bbb3439a36414b1dfd43e60a88921"
+        },
+        {
+          "path": "archive/retired/originals/RELOCATION_MANIFEST_BEFORE_v2.2.3.json",
+          "bytes": 496688,
+          "sha256": "e34f34f1fb3530cbe93fb01227d63cf5b49042125f52bb89511eb62172864dfa"
+        },
+        {
+          "path": "archive/retired/originals/RELOCATION_MANIFEST_BEFORE_v2.2.4.json",
+          "bytes": 499105,
+          "sha256": "0fc32dcbb546728fe48fa7c33bc06a8101d8d2cff56101df15a8708e0023b111"
+        },
+        {
+          "path": "archive/retired/originals/RELOCATION_MANIFEST_BEFORE_v2.2.5.json",
+          "bytes": 512077,
+          "sha256": "3f246419b8f9023bfe39cb8b9c3af7ece7e4c0236f07984bb035b2eb1db6c273"
+        },
+        {
+          "path": "archive/retired/originals/RELOCATION_MANIFEST_BEFORE_v2.2.6.json",
+          "bytes": 504858,
+          "sha256": "05594f36bda6833fc1978ef62a264388a2df289b65540abb3ba29b6c0d0fdcd7"
+        },
+        {
+          "path": "archive/retired/originals/relocation-manifest-before-buffer-live-2026-10-25.json",
+          "bytes": 480512,
+          "sha256": "c8b625d0c2829c78a596cd6623f8699664c708e4009bed4264e1194b43bbb5b8"
+        },
+        {
+          "path": "archive/retired/originals/relocation-manifest-before-buffer-v6-2026-10-24.json",
+          "bytes": 477598,
+          "sha256": "3d6b6301e84b099008b2aecc822305fb2d78a0d9debdae4085bade666a4575fa"
+        },
+        {
+          "path": "archive/retired/originals/v2.2.14-modularization/src-v2/adapters/page-playinfo.ts.snapshot",
+          "bytes": 3241,
+          "sha256": "9de1d6998e99847b6bdc3deec64ada08721797538a404126d837620b7873d3a8"
+        },
+        {
+          "path": "archive/retired/originals/v2.2.14-modularization/src-v2/adapters/player-method.ts.snapshot",
+          "bytes": 1445,
+          "sha256": "691f0becb27af0e53e9f52a53ce6a3bdd46e42db18e8a5b66bc5ca7aea87c012"
+        },
+        {
+          "path": "archive/retired/originals/v2.2.14-modularization/src-v2/adapters/player-sdk.ts.snapshot",
+          "bytes": 565,
+          "sha256": "d7fe4b1ce5b0c375525f57d8bd46b67a724b309b490ba3f657b3f8654bd1b6fb"
+        },
+        {
+          "path": "archive/retired/originals/v2.2.14-modularization/src-v2/adapters/scheduler.ts.snapshot",
+          "bytes": 467,
+          "sha256": "e3ffcfe1ae9c448db862a5e0610ec01ca89a511d3d8e224933fe862e9421f319"
+        },
+        {
+          "path": "archive/retired/originals/v2.2.14-modularization/src-v2/adapters/xhr-values.ts.snapshot",
+          "bytes": 3375,
+          "sha256": "279e619587cd96b3ef93df642de10f14af6ca62826cfb088c397d567ce76096e"
+        },
+        {
+          "path": "archive/retired/originals/v2.2.14-modularization/src-v2/application/routing/route-materialization.ts.snapshot",
+          "bytes": 2341,
+          "sha256": "c7312a72c606cee9d4fad52a5d16e4cf2a502a9dccc1dbfa885959360347440b"
+        },
+        {
+          "path": "archive/retired/originals/v2.2.14-modularization/src-v2/domain/playback-progress.ts.snapshot",
+          "bytes": 1010,
+          "sha256": "ce5c9ae64922b62655e20b97f798da38d5ee1c2b68f3a85f83a304ff2b02af82"
+        },
+        {
+          "path": "archive/retired/originals/v2.2.14-modularization/src-v2/domain/playurl-content.ts.snapshot",
+          "bytes": 2761,
+          "sha256": "f7ea073fcadf47c69f1e3041d64211462dd9098f98642228d7d53263d914887d"
+        },
+        {
+          "path": "archive/retired/originals/v2.2.14-modularization/src-v2/domain/url-policy.ts.snapshot",
+          "bytes": 4113,
+          "sha256": "22de63bea2e0a0255c85711b8aecb05629628d1eac81c55a6e438bdf384b360f"
+        }
+      ]
+    },
+    {
+      "path": "archive/retired/bundles/public-releases-v1-2026-11-09-01.tar.gz",
+      "bytes": 7014935,
+      "sha256": "fa49c71347a391d9fc03c3aa5adb98a1e4c99980c573b6b2c354050dc1936a18",
+      "tarBytes": 29736960,
+      "inventory": {
+        "path": "_archive-manifests/public-releases-v1-2026-11-09-01.json",
+        "bytes": 39928,
+        "sha256": "13aca88b4a2818c84736ed595fa33396078ba1b5d7bad3d1d39e7556919b5719"
+      },
+      "files": [
+        {
+          "path": "archive/retired/releases/Release/v1.6.0/BUILD_MANIFEST_v1.6.0.json",
+          "bytes": 4564,
+          "sha256": "c423540a84bb55378f1ee24ce324cc4eac02f67465da1cb12a896ceda097849a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.0/BiliCDN_TW_1.6.0.user.js",
+          "bytes": 440083,
+          "sha256": "0186bb2d7a0093b474c0f750d9856d7293b6df82d42c8a2f3c708b5f40f730e5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.0/CHANGELOG_v1.6.0.md",
+          "bytes": 1249,
+          "sha256": "75fd76ebd759b497c24fd9522934d4fcb57cccd817ebabf4e40f1878e24c79d2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.0/SHA256SUMS_v1.6.0.txt",
+          "bytes": 636,
+          "sha256": "ef04ed14d82c660fb5e396f91373cf1c04e8d82244c98fd929bbc432a70dbfe2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md",
+          "bytes": 3500,
+          "sha256": "6fd8da9c4b3fa55ea6c9a70a38ded6c29cdcda74401345d23a5c3d75d3741e52"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.0/v1.3.4_to_v1.6.0.patch.diff",
+          "bytes": 750684,
+          "sha256": "3f48102b68ca8e27130aa600be2ebcb01ca15837ce88c7e4678417ea1198d2b4"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.0/v1.5.5_to_v1.6.0.patch.diff",
+          "bytes": 869598,
+          "sha256": "443cf51b3aa93e3937e2009acb6c79a75ec387082d7152c306bfa28a5ef2e829"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.1/BUILD_MANIFEST_v1.6.1.json",
+          "bytes": 4564,
+          "sha256": "2bacd35e901232150a116ef92c6575037037f1f51516abfee1679ae16efaee36"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.1/BiliCDN_TW.user.js",
+          "bytes": 440410,
+          "sha256": "e30a0fd4117067296ec022225705b52aa4f063d22ac761a2bce8d370ae5eae30"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.1/CHANGELOG_v1.6.1.md",
+          "bytes": 546,
+          "sha256": "a59adf153f0382c1a4a4ca5f7b89eb0bbd25f508dc5b3c62a56cd8b79284aeba"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.1/SHA256SUMS_v1.6.1.txt",
+          "bytes": 630,
+          "sha256": "cd3a6b2c39d69adb14819c0bb4ffd101bd5f7856f8f040c88924a0be0bef60e5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.1/TEST_REPORT_v1.6.1.md",
+          "bytes": 1133,
+          "sha256": "73ba7d644342741a63c68c77e3e4887751e8c5cb2b8e8205208290ec04f13134"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.1/v1.3.4_to_v1.6.1.patch.diff",
+          "bytes": 751167,
+          "sha256": "b3037e6525f4b808d113323b5a58762d0aabb087eb7b1ceb29dcfe8e50b59bb3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.1/v1.6.0_to_v1.6.1.patch.diff",
+          "bytes": 1759,
+          "sha256": "d3ed4c402fda3c6b92f05b759334f96d8689ae5545b978df307b6d26f421305a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.2/BUILD_MANIFEST_v1.6.2.json",
+          "bytes": 4564,
+          "sha256": "532dcece38769586c10807f11cb207fcd67fe843aabde3d1883421b5d1718524"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.2/BiliCDN_TW.user.js",
+          "bytes": 451797,
+          "sha256": "1c1620013f636a0feae46d1cc3f75d8f6c3a0d1ecec62e7c1b875523bb289cc7"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.2/CHANGELOG_v1.6.2.md",
+          "bytes": 850,
+          "sha256": "96df922a316f5f2002630bbb421cc6c363f4b010029f26a4e88aee6a6b7ef33a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.2/SHA256SUMS_v1.6.2.txt",
+          "bytes": 630,
+          "sha256": "4dce15d8c629b3d43db37aa65eb594ef85e9541c8dfd21764fdc278459e75af0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.2/TEST_REPORT_v1.6.2.md",
+          "bytes": 1944,
+          "sha256": "116ec8452a1f478ce903fa82094715490380cdea7b3cc65a571359597d3897b2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.2/v1.3.4_to_v1.6.2.patch.diff",
+          "bytes": 763015,
+          "sha256": "6114800d49b05de0c47cb5abb8cdf7560cf950b2ac7fd033a9628b6e5aeff389"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.2/v1.6.1_to_v1.6.2.patch.diff",
+          "bytes": 64416,
+          "sha256": "96ea1c8a305bda41b3c8f3c07aee3d3a4f3d85f78f79d21c84d54d4e0a79b8ac"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.3/BUILD_MANIFEST_v1.6.3.json",
+          "bytes": 4564,
+          "sha256": "76cdd2e6e1bb83d39aebf0d477b0f7cd6b166a6a3e2105b0fe0d201b2a7b897e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.3/BiliCDN_TW.user.js",
+          "bytes": 461436,
+          "sha256": "4184185d2b0191670aa82c28073d193abd0a99b5815bfa72166366383eabd45a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.3/CHANGELOG_v1.6.3.md",
+          "bytes": 1482,
+          "sha256": "f7fa6c976d473c586fbc05f96fd8b65aa254fcbff27a40379efb5724e4f7301e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.3/SHA256SUMS_v1.6.3.txt",
+          "bytes": 630,
+          "sha256": "4f1715e469cf3db2a77fb64f5bc53a48784cca370c8a6a1c7a6754c46aec3d89"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.3/TEST_REPORT_v1.6.3.md",
+          "bytes": 2689,
+          "sha256": "c3a635fa05eb657bb28027dcec39abfac87740517b804809f9b0a5e66f95a03c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.3/v1.3.4_to_v1.6.3.patch.diff",
+          "bytes": 773063,
+          "sha256": "55839b29f7cb486f943eb5c00d2635e238824612d84eaf32a24e28e0ae646a4a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.6.3/v1.6.2_to_v1.6.3.patch.diff",
+          "bytes": 59749,
+          "sha256": "e124a8f429ec42c4dca9088905e3ff3953d9827c73af3377d63dc09489605ba3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.7.0/BUILD_MANIFEST_v1.7.0.json",
+          "bytes": 4180,
+          "sha256": "1536d381cb83d0ea9b744fbe35015bd09348f87d30c607a6d99ea049e2c5a369"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.7.0/BiliCDN_TW.user.js",
+          "bytes": 397169,
+          "sha256": "61dce8a100d3cb6112c960f5a77d92bdc17e4d4c1ef76d325c1aea5f689777f1"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.7.0/CHANGELOG_v1.7.0.md",
+          "bytes": 1194,
+          "sha256": "dae71f8553070a25d727a5c0de36e8b5bae7ca0bae830820a504600d484d054f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.7.0/SHA256SUMS_v1.7.0.txt",
+          "bytes": 630,
+          "sha256": "b8a6be3fc0a4e2a0312fff69631b5818943cb50768884a5e91090cb1d7c3c793"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.7.0/TEST_REPORT_v1.7.0.md",
+          "bytes": 2804,
+          "sha256": "e1eec96ff267405b599ea8df18c2d559c47f961da9c9615e3af48b4c3882da7a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.7.0/v1.3.4_to_v1.7.0.patch.diff",
+          "bytes": 708509,
+          "sha256": "fa3a43631baf597be6c7c9de06dcf5251016c3ccda250c978ee6cacbb703aacb"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.7.0/v1.6.3_to_v1.7.0.patch.diff",
+          "bytes": 87191,
+          "sha256": "7c6c492bb4d487a2022bbbc4c94b653eb7721aaadaf834d2e5ad2971024d56f8"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.0/BUILD_MANIFEST_v1.8.0.json",
+          "bytes": 4285,
+          "sha256": "0129748d68f7d99759c8a451e211449ef70ccae38752bc668757c198177f6480"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.0/BiliCDN_TW.user.js",
+          "bytes": 441493,
+          "sha256": "556e2f367f8c887ce7ea7323033c71a7d9039d46110f6997b12432f0af5bb266"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.0/CHANGELOG_v1.8.0.md",
+          "bytes": 1816,
+          "sha256": "ec635f924983fb6b1f507c5c32e2cbd302e213c4cfc85d63cb1ceb1e3a028faf"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.0/SHA256SUMS_v1.8.0.txt",
+          "bytes": 630,
+          "sha256": "3ba5a45f64636440c172a7db3af63f0c46120ea6c775a89c45de727f4ecca2ba"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.0/TEST_REPORT_v1.8.0.md",
+          "bytes": 3549,
+          "sha256": "39b4e83abb6fc1aa6835556b9618caa754fa1a64a1af257ea472f61f1c8ed9bc"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.0/v1.3.4_to_v1.8.0.patch.diff",
+          "bytes": 753736,
+          "sha256": "9c46d7cf5644a360df75c549fe36ebfa93aac4d317a60173209fd399673b71c4"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.0/v1.7.0_to_v1.8.0.patch.diff",
+          "bytes": 79954,
+          "sha256": "d97095eac4d88a4561848cda3db213b84ef628e0fa5cea3efbe304f417e870dc"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.1/BUILD_MANIFEST_v1.8.1.json",
+          "bytes": 4285,
+          "sha256": "6230af353c19c373fd7211b595bb617a4c796453b2cf229f193a96418e776489"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.1/BiliCDN_TW.user.js",
+          "bytes": 451226,
+          "sha256": "9f99486a60538d8909a5b60b2a1b15757453b2cb7bed5581edcfd52f37b281d5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.1/CHANGELOG_v1.8.1.md",
+          "bytes": 1899,
+          "sha256": "528804e8ad71704fafbf33e6afda3171b435be60c08afa3365202f5d3755a29e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.1/SHA256SUMS_v1.8.1.txt",
+          "bytes": 630,
+          "sha256": "5074b4dee33716df196ff178a0f06f67aa8277c4348314dd26654be6acb68382"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.1/TEST_REPORT_v1.8.1.md",
+          "bytes": 3237,
+          "sha256": "bbe455cc14678069c4f267a8653d6454a0bd2e332dc4dafdcc17cf4c937a3d02"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.1/v1.3.4_to_v1.8.1.patch.diff",
+          "bytes": 763732,
+          "sha256": "50d1601f6b7cd8ff8b76e5876724cb435c7a77a585d9c9b7404740100cac408f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.1/v1.8.0_to_v1.8.1.patch.diff",
+          "bytes": 40612,
+          "sha256": "bde8c512fb353118b7b8db4c2f33ff8e75f98c8d280a257cf87901528b1d11ed"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.2/BUILD_MANIFEST_v1.8.2.json",
+          "bytes": 4389,
+          "sha256": "5fc855c8a0cb7c077a944208e3abbcb8eb08353ef62488b9f8fe5ae8ea1051fd"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.2/BiliCDN_TW.user.js",
+          "bytes": 485004,
+          "sha256": "e2be3130304706060acfef3dd2edecbc7f4422445f14c7a61a0049050a0cabb1"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.2/CHANGELOG_v1.8.2.md",
+          "bytes": 1683,
+          "sha256": "4e71d711317998b6897011982608d5eee3627af0684b36a74843906fce414e30"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.2/SHA256SUMS_v1.8.2.txt",
+          "bytes": 630,
+          "sha256": "665c768907fa6ec579a306fe1ac019403c481fe8c29d286b3b15065f5be465bd"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.2/TEST_REPORT_v1.8.2.md",
+          "bytes": 6154,
+          "sha256": "139c945a024092227676a4373d8299b41bc4dedfe8e389d9940987e354a14b32"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.2/v1.3.4_to_v1.8.2.patch.diff",
+          "bytes": 798279,
+          "sha256": "bbc58b0976f967a90e9c8519fd04cfaaa2cb81a3a436d0b9148064d2cac513ea"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.2/v1.8.1_to_v1.8.2.patch.diff",
+          "bytes": 102298,
+          "sha256": "196d352157a91bfa0f3a44257ddc6275524dc23208465022f1cecf8fb70a19f9"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.3/BUILD_MANIFEST_v1.8.3.json",
+          "bytes": 4491,
+          "sha256": "7639257d246c83f94eab8aed1fc9853e3ecfcc704ca1dd2825866389bd24f04d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.3/BiliCDN_TW.user.js",
+          "bytes": 498683,
+          "sha256": "a55b80eb3d23cf9c15145399978b532117c2b2bce5205615a8d2d7d1ebcac4f6"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.3/CHANGELOG_v1.8.3.md",
+          "bytes": 1405,
+          "sha256": "e20f4993314cfc55cb0712b8332a3af5ef85550ca449612705c299087919ab5d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.3/SHA256SUMS_v1.8.3.txt",
+          "bytes": 630,
+          "sha256": "4f58160bd4e833518e8f43bd40ad62cf764e935d1dc5c32dd6ddabadec72ff63"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.3/TEST_REPORT_v1.8.3.md",
+          "bytes": 2878,
+          "sha256": "0d5f691685bc1c91e90a45323afeba004c58ef044bde96ee443cb2065f533100"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.3/v1.3.4_to_v1.8.3.patch.diff",
+          "bytes": 812348,
+          "sha256": "8671a84bf3f3e5f449b7a6c43de8ac96466a8923414ac81dff0d1966885e480d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.3/v1.8.2_to_v1.8.3.patch.diff",
+          "bytes": 50727,
+          "sha256": "fdb151f41c76fab729030285536c3a7e14471ca2086b97b77e8a33ae0744da68"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.4/BUILD_MANIFEST_v1.8.4.json",
+          "bytes": 4491,
+          "sha256": "2c02fefa789277d5b84d5b08204009a554019ddba1bc147362723a04558f3386"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.4/BiliCDN_TW.user.js",
+          "bytes": 501660,
+          "sha256": "17e38f523c0cd0aed1c6c607d8a1c9bf141e9a3bd9036a409964e934c2ae44c5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.4/CHANGELOG_v1.8.4.md",
+          "bytes": 1200,
+          "sha256": "cdb2245adc9ca1c441bb7b2bead137c9e78f95e7c3d849c5cb6840dad20224fd"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.4/SHA256SUMS_v1.8.4.txt",
+          "bytes": 630,
+          "sha256": "703e15a61620aefda1d411717f95a2a899df22aca8b56d95e9ed84d09ab95d04"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.4/TEST_REPORT_v1.8.4.md",
+          "bytes": 2840,
+          "sha256": "c79590f83a35a0e73e3fe0eb831b07428537ec470b88c2f17e7db03406bb5f94"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.4/v1.3.4_to_v1.8.4.patch.diff",
+          "bytes": 815367,
+          "sha256": "899c066cac528ac29859ca8fb51bb7b44052ef515c3c02b9173308345d534005"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.4/v1.8.3_to_v1.8.4.patch.diff",
+          "bytes": 19834,
+          "sha256": "4b7b2a7a090dbb016cd2a84513d0d611510a59e8bf709ef274a4fd1ce5e822ec"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.5/BUILD_MANIFEST_v1.8.5.json",
+          "bytes": 4491,
+          "sha256": "5b30725284354d8d5a2701d4bb473d1da7628739bb047bd9da79f2383872ab70"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.5/BiliCDN_TW.user.js",
+          "bytes": 504487,
+          "sha256": "d600ffb24e012638ccdef4f18894bbd6d0a818af5be8c08df10685bc0cfed89d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.5/CHANGELOG_v1.8.5.md",
+          "bytes": 906,
+          "sha256": "443bee518a31befabef8df1d5cba210c3cd439073d957f566d28a7f837832974"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.5/SHA256SUMS_v1.8.5.txt",
+          "bytes": 630,
+          "sha256": "13cc89bb54c0813dedab3dbe1f17fcad39d249f28560a8ad6cbabad90137964e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.5/TEST_REPORT_v1.8.5.md",
+          "bytes": 3186,
+          "sha256": "836777b60ebd52a332a5f683958c575fda7884f78e4fe83c360b13ab762d3273"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.5/v1.3.4_to_v1.8.5.patch.diff",
+          "bytes": 818254,
+          "sha256": "b06bedc66cdfe1d5f44c28a20f0f0e42b8c4fa10155131561bb70d3c00d4bccf"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.5/v1.8.4_to_v1.8.5.patch.diff",
+          "bytes": 7821,
+          "sha256": "b522d465e7a3390886ac26fd841e9b8873c4ee5a8e426d903149803678446ad8"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.6/BUILD_MANIFEST_v1.8.6.json",
+          "bytes": 4491,
+          "sha256": "e47e2e9d440a9072c241d701946cf6265a56a842407ebb01be10012bef9d3ff2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.6/BiliCDN_TW.user.js",
+          "bytes": 511324,
+          "sha256": "a1ffdbd81337a0ca19bda738c39bfc7e550d32a75a359759701b86a9d57630ce"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.6/CHANGELOG_v1.8.6.md",
+          "bytes": 1234,
+          "sha256": "13cf8d40d87940fedff0f504a9a31118a51ad0f257099bd9198f71fc29be22c5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.6/SHA256SUMS_v1.8.6.txt",
+          "bytes": 630,
+          "sha256": "96377af31498426c60edc6cf9b61721abc757a335e41912dd1670a0e096bbd80"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.6/TEST_REPORT_v1.8.6.md",
+          "bytes": 2197,
+          "sha256": "7a34060ae1d34d4ce24dde881350962033e54db0564ef4d955d2eb57680ffa19"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.6/v1.3.4_to_v1.8.6.patch.diff",
+          "bytes": 825419,
+          "sha256": "7109fa2c00aca33d975c35fdeb42338e2c32cf7e14a95b62254e9acf2964caa8"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.6/v1.8.5_to_v1.8.6.patch.diff",
+          "bytes": 19882,
+          "sha256": "9437a014ce3fd73b82aa402fce6fe11b44e8e34ac486b306ad8c517edd73a628"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.7/BUILD_MANIFEST_v1.8.7.json",
+          "bytes": 4491,
+          "sha256": "9b778ce78226fc5d9261baf14c54beb68c82398ffcfc4d7e52e8dddc0270db01"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.7/BiliCDN_TW.user.js",
+          "bytes": 514030,
+          "sha256": "781293f07fcffc094964b52ba0dfb493dc25215b154199b3f6f5a6076568874b"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.7/CHANGELOG_v1.8.7.md",
+          "bytes": 848,
+          "sha256": "85f6a29779eacf27230184c8700634b79f52720af84d06ad61c64949ffe9621e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.7/SHA256SUMS_v1.8.7.txt",
+          "bytes": 630,
+          "sha256": "2dfbca8e3de6eefb0f7f57109c645295d7e6abeb98807fa00dff000909857f3c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.7/TEST_REPORT_v1.8.7.md",
+          "bytes": 2074,
+          "sha256": "6dab28d850526f0a1c3489801e79062357a95d6e600990900607bef19fc2fdcd"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.7/v1.3.4_to_v1.8.7.patch.diff",
+          "bytes": 828168,
+          "sha256": "0902a109cd58d1bcb5fd52ded2cc9281e019268dfad2b1ac3c0d19bd9b04c579"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.7/v1.8.6_to_v1.8.7.patch.diff",
+          "bytes": 8357,
+          "sha256": "a46bfa2b1e59811b349b225c035155b3a3bb2538f56bf89a83ee7bd901145266"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.8/BUILD_MANIFEST_v1.8.8.json",
+          "bytes": 4491,
+          "sha256": "3a1837b55807991e000ff59910d78b73c66da3a5ddd75c284a623ca72599a289"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.8/BiliCDN_TW.user.js",
+          "bytes": 517271,
+          "sha256": "da0f9e7a886f7052c684a4f99cea83d5bfa3fe9a1a6dd7334e65e5d0a8acb35d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.8/CHANGELOG_v1.8.8.md",
+          "bytes": 942,
+          "sha256": "b86c058b6eb9b28a31af7d130011ffdda1d35d293ca2ed41a87bf7c1683a853a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.8/SHA256SUMS_v1.8.8.txt",
+          "bytes": 630,
+          "sha256": "5ab2e20f20053e8e3b7e6f4d65ecdc2d0ad666c74ff0b9f0455eb054f1480771"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.8/TEST_REPORT_v1.8.8.md",
+          "bytes": 1835,
+          "sha256": "9ec1463997dbe400c1a348f5e6fffd284d40c8e7b466a160901853f2bd221efa"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.8/v1.3.4_to_v1.8.8.patch.diff",
+          "bytes": 834115,
+          "sha256": "a1df57c7ee37ee8627cfb41b132895e16079e956a657616f7f1941815a391a14"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.8/v1.8.7_to_v1.8.8.patch.diff",
+          "bytes": 8529,
+          "sha256": "05cd09b5a09ea744c76cdbc48f06d03349e4696aa894061caafb599a4c1901f1"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.9/BUILD_MANIFEST_v1.8.9.json",
+          "bytes": 4491,
+          "sha256": "f576c98827f5f72cde5122d9b3ea98dbaf4d0c9185706f61ea575dceea86b265"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.9/BiliCDN_TW.user.js",
+          "bytes": 518753,
+          "sha256": "c2f0db083c7821326d20a6d7dfc9b4e9dc010773756ef4a557c545c65fa7d3f3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.9/CHANGELOG_v1.8.9.md",
+          "bytes": 843,
+          "sha256": "691ac7516655ddc7e355c1f99f11fc3def8d4cc8c7468a2bbdf0eb338c535f47"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.9/SHA256SUMS_v1.8.9.txt",
+          "bytes": 630,
+          "sha256": "404dd3b1ae05a2836d404b844394ba68100e4aa1a75113bbc90b8e84a7f1e9eb"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.9/TEST_REPORT_v1.8.9.md",
+          "bytes": 1703,
+          "sha256": "612fe27c678e7ed1f0ba2a2e1fcd234134ce8976a4f00447cf6d57c32cb8963b"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.9/v1.3.4_to_v1.8.9.patch.diff",
+          "bytes": 835625,
+          "sha256": "4901d991271ab797042cdb605fb5e5416ea04df2b426abb162e89971c4690a68"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.8.9/v1.8.8_to_v1.8.9.patch.diff",
+          "bytes": 4648,
+          "sha256": "d02abb6018d21cd5320221aad2e5d0b8bcf4433cbd599e8f0a709cb259a68fc1"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.0/BUILD_MANIFEST_v1.9.0.json",
+          "bytes": 4599,
+          "sha256": "49758dadae0867a94a01a523f164e490fe7f86386d4eb9225d0dcc1d073b7e38"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.0/BiliCDN_TW.user.js",
+          "bytes": 536451,
+          "sha256": "f7628173de6fce49bd8606ac31ab647a7bd02152bc6ab6b93c437524ead74f9f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.0/CHANGELOG_v1.9.0.md",
+          "bytes": 1150,
+          "sha256": "0963b9a700e4f9277c094aad3fdf99f441d36ab01dea5ccebd677d4b08187846"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.0/SHA256SUMS_v1.9.0.txt",
+          "bytes": 630,
+          "sha256": "46a9a75fc8cbbc28526bca0d24ab9da7042328a5302e3eb006253baabc62bedd"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.0/TEST_REPORT_v1.9.0.md",
+          "bytes": 2602,
+          "sha256": "29cab3a938d966a0421da4a39be0e12a66b1e183a044c948e6e838160c6209b4"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.0/v1.3.4_to_v1.9.0.patch.diff",
+          "bytes": 853717,
+          "sha256": "3d1943b870c1d07bddf1d02750ec425b34e0db6e86879473675496f5062a76a0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.0/v1.8.9_to_v1.9.0.patch.diff",
+          "bytes": 46130,
+          "sha256": "a32314f21bde041348c06ad757563730cb9734007bffd826b8bf96476c0faa15"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.2/BUILD_MANIFEST_v1.9.2.json",
+          "bytes": 4811,
+          "sha256": "ed750800fd0863dabb7e299109640bfa9cd2874ba980faf775fcb84b300357dc"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.2/BiliCDN_TW.user.js",
+          "bytes": 562144,
+          "sha256": "2ad6b39b9d7b0a13e75a73c3984611afcc69c78cbe90a2e62ddb1f92ec5f0084"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.2/CHANGELOG_v1.9.2.md",
+          "bytes": 1251,
+          "sha256": "eb723c5e5e5b10538313eed5a521e36540d86d5d9bbb89acba58052729fecbc2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.2/SHA256SUMS_v1.9.2.txt",
+          "bytes": 630,
+          "sha256": "fa9eb24065ae4fcc5a89d755e6e8385206ed0cd56000607bb61c4e2b5ee55276"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.2/TEST_REPORT_v1.9.2.md",
+          "bytes": 2097,
+          "sha256": "d7d2d9948f1d6f49f40e9fde0718d0db85a65e62d63895e93781ce4ca92f0d9c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.2/v1.3.4_to_v1.9.2.patch.diff",
+          "bytes": 879804,
+          "sha256": "d2f37ccf500d76847219a53002938d522bc174eb01fe0497679a14a94f174d17"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.2/v1.9.0_to_v1.9.2.patch.diff",
+          "bytes": 56392,
+          "sha256": "078d87544ec2b5d9b6a832ac8cb80ce18b004bef5c322790f49883e73028de8e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.3/BUILD_MANIFEST_v1.9.3.json",
+          "bytes": 4918,
+          "sha256": "4d74c477b086f54a47f773afce15dcdf2b7bde4f1171de6f2882c14ad09677f7"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.3/BiliCDN_TW.user.js",
+          "bytes": 562194,
+          "sha256": "e104f9b0d83bd8e9043f987792c606d0c3c8b64ec2934e652a60562799b1fc46"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.3/CHANGELOG_v1.9.3.md",
+          "bytes": 954,
+          "sha256": "a88bba3386f20f3a0aff6e0b8cbc3cd3699af1f757a0d03c9735a8b35e6f5ea3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.3/SHA256SUMS_v1.9.3.txt",
+          "bytes": 630,
+          "sha256": "1d36f47e89c27c6b7bf5266518c0cb871365610a756222360a73bf84dc8bcff6"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.3/TEST_REPORT_v1.9.3.md",
+          "bytes": 1563,
+          "sha256": "f604d5b3dbf381091af48335a23ad03256b3866b5d4b9a596d934d82893e8d3b"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.3/v1.3.4_to_v1.9.3.patch.diff",
+          "bytes": 877491,
+          "sha256": "e942e32bf7cb93049b11bbd729d0d3b4545101f3adca18be6c90b05a1a21e004"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.3/v1.9.2_to_v1.9.3.patch.diff",
+          "bytes": 18099,
+          "sha256": "964c865404b922963dced076531c9d87dfeb8268fbdc100018ebfedc938b20e3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.4/BUILD_MANIFEST_v1.9.4.json",
+          "bytes": 4918,
+          "sha256": "a27a6b5d7b550cc4832eb0b7ae03d4465bc07a51222d88a1511a18a95c188b5f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.4/BiliCDN_TW.user.js",
+          "bytes": 572398,
+          "sha256": "3ba990b2bf5f00409a7e8e8dda27e4a10046ecb5734b512b3b470e098067255c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.4/CHANGELOG_v1.9.4.md",
+          "bytes": 1153,
+          "sha256": "68e88b642d830fd26713af6209f398ab3e9ec9523fd237b87f9114f84f43298e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.4/SHA256SUMS_v1.9.4.txt",
+          "bytes": 630,
+          "sha256": "04d902fe05ad92202e67f3bc4ae1300a4f5a27be2e7604e10ff89928cf43378b"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.4/TEST_REPORT_v1.9.4.md",
+          "bytes": 2239,
+          "sha256": "b7d90dccea0d871b7a388cd2003abc5059c71651e592907591fa563251d9710d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.4/v1.3.4_to_v1.9.4.patch.diff",
+          "bytes": 887886,
+          "sha256": "5c2530812118348ff60c4f33ad3b91ae763d25661b8a86f96b9b23559bb77bc1"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.4/v1.9.3_to_v1.9.4.patch.diff",
+          "bytes": 30255,
+          "sha256": "fe85e428bb29ef93995ec16fa7a8aa1bd3a309a766c691f0b991453d0155824c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.5/BUILD_MANIFEST_v1.9.5.json",
+          "bytes": 4918,
+          "sha256": "7a28b0802ef3db05182c6929b748b57827281baa11578d48a72b5040bdad4da0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.5/BiliCDN_TW.user.js",
+          "bytes": 579998,
+          "sha256": "8221fee2ec6b313bfba6459fc0203d56f71f410b3094e7c4422fc732c0aedde0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.5/CHANGELOG_v1.9.5.md",
+          "bytes": 1394,
+          "sha256": "1fadc0a1d8fe5280bfcebc0237c77614cd0c9173b76e67b2e00e082a92bfe7e5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.5/SHA256SUMS_v1.9.5.txt",
+          "bytes": 630,
+          "sha256": "db523be5117b07d5fc627d36f7230f4d201b84fe9fac0b2a753e7b0fb501f680"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.5/TEST_REPORT_v1.9.5.md",
+          "bytes": 2137,
+          "sha256": "defe468ee926ecde8a75573156dcb059d8274dac26607aee99a490d608c2533d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.5/v1.3.4_to_v1.9.5.patch.diff",
+          "bytes": 895626,
+          "sha256": "d5e04f4aaa5f19349e8983dc68d4c31c4b2e5ae38e0a5e36eef532a301d638d5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.5/v1.9.4_to_v1.9.5.patch.diff",
+          "bytes": 36773,
+          "sha256": "6310151a5e293f09b17bc81bbb44c20ea17795905020fdeafb627704f27983a2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.6/BUILD_MANIFEST_v1.9.6.json",
+          "bytes": 4918,
+          "sha256": "c4a7bc0d243d15c3f7ced72b571fe795bb12d37933c432de34ea22ec8d31c757"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.6/BiliCDN_TW.user.js",
+          "bytes": 609594,
+          "sha256": "5843a2c26b8b84f37594c6cbdb3850d39bcd22aedfdeb363d1454b3ae9f5c070"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.6/CHANGELOG_v1.9.6.md",
+          "bytes": 1620,
+          "sha256": "40c6748550fb233759f33e3123b7c883776a79b619db578523b1a26d83bb61e2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.6/SHA256SUMS_v1.9.6.txt",
+          "bytes": 630,
+          "sha256": "e6e32a21e80cc0b6ddfeb885dabe4fedf5f2e71e855a4beb403b2ab922bc65e9"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.6/TEST_REPORT_v1.9.6.md",
+          "bytes": 2410,
+          "sha256": "b8cd0465f6de464da90526c819b422ffe7199159c86f074be8208ae2566e71c2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.6/v1.3.4_to_v1.9.6.patch.diff",
+          "bytes": 925989,
+          "sha256": "a8d9341f42ff9a36461acf1619bc97750d529602f1741bfc25b85f6b985eedbd"
+        },
+        {
+          "path": "archive/retired/releases/Release/v1.9.6/v1.9.5_to_v1.9.6.patch.diff",
+          "bytes": 66282,
+          "sha256": "a74c8a9334c8379326c20b014b5b14189d845550005d02a386efc98771d00518"
+        }
+      ]
+    },
+    {
+      "path": "archive/retired/bundles/public-releases-v2-2026-11-09-01.tar.gz",
+      "bytes": 6213395,
+      "sha256": "e74ec60011fb1362c3279f209db98c20e03b04395533cbc569cb41f6e73bb3c0",
+      "tarBytes": 26429440,
+      "inventory": {
+        "path": "_archive-manifests/public-releases-v2-2026-11-09-01.json",
+        "bytes": 83664,
+        "sha256": "1c037667aed87d722e455ec57c02fd72b6f4d6a1941271fd7913b941efb3a3d6"
+      },
+      "files": [
+        {
+          "path": "archive/retired/releases/Release/v2.0.0/BUILD_MANIFEST_v2.0.0.json",
+          "bytes": 3767,
+          "sha256": "36bf78622bb22ef7a02082cdea9885773ae2eec2bebbbbf043637523df467931"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.0/BiliCDN_TW.user.js",
+          "bytes": 141467,
+          "sha256": "bcf8f368685ad8451e9353b849791edd086632e8198589510edfc5cec9204382"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.0/CHANGELOG_v2.0.0.md",
+          "bytes": 1219,
+          "sha256": "ae3b97906088238ff0212382b8b572eed01a5b9b95cb2d61a97e879c92f7a114"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.0/SHA256SUMS_v2.0.0.txt",
+          "bytes": 412,
+          "sha256": "689268c76be1ff6d3103de661f79817cb8f23e042a5f884423cbf59b4b135628"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.0/TEST_REPORT_v2.0.0.md",
+          "bytes": 6503,
+          "sha256": "c16feb0c584c41580cdc996cefd0b67802976b9cdfcb56c5114dbf818a282747"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.1/BUILD_MANIFEST_v2.0.1.json",
+          "bytes": 3767,
+          "sha256": "ad3d71815128cf048288796f334b0634d52fc3dc61d8c6fd518d2ab07c0298a2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.1/BiliCDN_TW.user.js",
+          "bytes": 159766,
+          "sha256": "ec2be1e39cea70ddfb04241b26b23b7f787d63896bea100bcb5e12cc8d3ef279"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.1/CHANGELOG_v2.0.1.md",
+          "bytes": 2316,
+          "sha256": "6460f2f78a9145b5b8b87b26973ddc1b66d3e8b69a5008bb7097741dc97277f3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.1/SHA256SUMS_v2.0.1.txt",
+          "bytes": 412,
+          "sha256": "b80a5118054494cba74b4e2b50dae57786cdc71b52faeec76568db6bd10e1aaf"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.1/TEST_REPORT_v2.0.1.md",
+          "bytes": 2665,
+          "sha256": "04d497cb7ee99caaee0d03174e282f5bce815f4778576e5fe11c674ce648c091"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.2/BUILD_MANIFEST_v2.0.2.json",
+          "bytes": 3767,
+          "sha256": "d4281d644fe94ed58d2dbe18e17cc3433eb7634876b06c789f69988192a0d5ec"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.2/BiliCDN_TW.user.js",
+          "bytes": 165148,
+          "sha256": "d36b1271af5107b14c3820d7afc55ea56ba0ec0f307643b2b1c2471792745ea8"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.2/CHANGELOG_v2.0.2.md",
+          "bytes": 3682,
+          "sha256": "417bb5040d6efe9a9c3e4c0ad91e8a94f436436541cafaf3c4a05aa3708269f6"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.2/SHA256SUMS_v2.0.2.txt",
+          "bytes": 412,
+          "sha256": "7a7546c114ed37bc7c9c6355c4c5472d99dc5572b4bd23a25bf8f0bb546efaad"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.2/TEST_REPORT_v2.0.2.md",
+          "bytes": 3933,
+          "sha256": "424672dd3f80e0557d0d7494eefb3edd9250927ea7bb7e2024010f093eb91888"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.3/BUILD_MANIFEST_v2.0.3.json",
+          "bytes": 3767,
+          "sha256": "b047f2d1b7adfe194968a27f9b4df9c5c720868a9be9b7f0fa63ae8d1a0c0d7d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.3/BiliCDN_TW.user.js",
+          "bytes": 166045,
+          "sha256": "667476a1a8b04c75437410c35ac15b5d52f568682d7d3934f55e22650507a19d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.3/CHANGELOG_v2.0.3.md",
+          "bytes": 4279,
+          "sha256": "707f5d6f166d1dfc8d0a69a28bde283210d066b7a800235b02f955aa9739432d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.3/SHA256SUMS_v2.0.3.txt",
+          "bytes": 412,
+          "sha256": "3109bfd32c436a7dcaa834343c06f281f39a16c2ccdf5d31d038f089d04deeb5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.3/TEST_REPORT_v2.0.3.md",
+          "bytes": 5686,
+          "sha256": "06d040fe7e63953a95a5e70b2cb1f19e6e80e7cb90b6ebfde616e240865b462a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.4/BUILD_MANIFEST_v2.0.4.json",
+          "bytes": 3767,
+          "sha256": "ab5acac2163fba2b8ee444c2eb25b47343440db37aea88179e42af31e5ebb9cd"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.4/BiliCDN_TW.user.js",
+          "bytes": 167265,
+          "sha256": "daa39f5aec02500bd42e45f33a831df2bbf6d28eaeefdc31e366d7cfc3aef3ae"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.4/CHANGELOG_v2.0.4.md",
+          "bytes": 5474,
+          "sha256": "38638d3739a36c5c22ceaaf582808729905422535787e3e6da3bc24f94df89cb"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.4/SHA256SUMS_v2.0.4.txt",
+          "bytes": 412,
+          "sha256": "ea5b6c19adf0784eb38e17bdc3abbff498a7564812fe21de08637ce621e23406"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.0.4/TEST_REPORT_v2.0.4.md",
+          "bytes": 7513,
+          "sha256": "6d7be25417e95f3953ad6c30ea88cf9d75f75802a4f4d1c5cdc27921efcebab6"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.0/BUILD_MANIFEST_v2.1.0.json",
+          "bytes": 3767,
+          "sha256": "8f8aaaabc2017a4aa7703f75747971b4847a25976aaac53c14b7b341b5a27f1a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.0/BiliCDN_TW.user.js",
+          "bytes": 193602,
+          "sha256": "2403f7021c98b7b4f4b2303a05c5b85bd58c4c677c73ec0db8b3a2124e962137"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.0/CHANGELOG_v2.1.0.md",
+          "bytes": 6985,
+          "sha256": "eae567e701a338a7c0341bc4d8cf2aa1bd0c72bbb7edb078bbd4f4caa6e94677"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.0/SHA256SUMS_v2.1.0.txt",
+          "bytes": 412,
+          "sha256": "01810aa496499bc467eb81016ea63e148bb3756abcfa9b74d713c4680bfb561d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.0/TEST_REPORT_v2.1.0.md",
+          "bytes": 9670,
+          "sha256": "ca2645622098d79ed5f15c981ab5a3c51113d9fc646d8f5055a2a3f3671ac143"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.1/BUILD_MANIFEST_v2.1.1.json",
+          "bytes": 3767,
+          "sha256": "7ae72b4747d3f8cb1a690a661c4ac92122a7399aed57b2697edfdc3cc6547091"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.1/BiliCDN_TW.user.js",
+          "bytes": 202745,
+          "sha256": "20414a4e33cc124db7a0b52c60dcfcc104e69de4ad6ecf1cea5a2051421f08f7"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.1/CHANGELOG_v2.1.1.md",
+          "bytes": 8186,
+          "sha256": "dcdea1adffe0cd8cacffb77ae366cbd9b37d3782c21a026a5067b23ea69a1da9"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.1/SHA256SUMS_v2.1.1.txt",
+          "bytes": 412,
+          "sha256": "9f45fb6ed4ef967b5bc298ba77879e27db53835471946cd9aa60c99ae0a4f508"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.1/TEST_REPORT_v2.1.1.md",
+          "bytes": 12681,
+          "sha256": "2607b254ab282010af40538585af021e4609d0175365967f4f6bfe3afe1ca9bd"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.10/BUILD_MANIFEST_v2.1.10.json",
+          "bytes": 5185,
+          "sha256": "f6c0fc9db80391c7b4bedbaa2e7417d70a4466d55c6d69f30d992a2338e1330c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.10/BiliCDN_TW.user.js",
+          "bytes": 293972,
+          "sha256": "f30464996ee9da7e3b655e029746693e3db1c8b547ea70ed44a794d00a04acf8"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.10/CHANGELOG_v2.1.10.md",
+          "bytes": 18692,
+          "sha256": "5bc6d624608f3e83bfc3358fa51e8ecbabb608a2b6d8f22910bd72581661f195"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.10/SHA256SUMS_v2.1.10.txt",
+          "bytes": 419,
+          "sha256": "0dc3b82ef1cab1104c3446f0f24317f0fb7dbc400e5568cf1080424e7f4d257d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.10/TEST_REPORT_v2.1.10.md",
+          "bytes": 8928,
+          "sha256": "b055f4617f56e4fa3a2f288fe3c12bb3f90b3934a3fa6b4865f43998efb12b3a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.11/BUILD_MANIFEST_v2.1.11.json",
+          "bytes": 5293,
+          "sha256": "35d4072a19c6a2270238e548ada6467339e163279b3850640780aedf0ced3d47"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.11/BiliCDN_TW.user.js",
+          "bytes": 296341,
+          "sha256": "9b84b4702d3c272d59f85421fa65a6a2401be59cad7790392318ff4e87bf99b9"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.11/CHANGELOG_v2.1.11.md",
+          "bytes": 20673,
+          "sha256": "b82098211ddace1d4f72bd0b6c9a3f59357793c2aba689a7558a2870f700c4ba"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.11/SHA256SUMS_v2.1.11.txt",
+          "bytes": 419,
+          "sha256": "5cfb3c83b6d657f9035e169c8d18e2dbfff090755f0eae72c2d184dcc9dcc525"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.11/TEST_REPORT_v2.1.11.md",
+          "bytes": 9808,
+          "sha256": "72c576234c93ab6223185f57d0e668cb96676499d80fc7195fe7a5e75b2b5c40"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.12/BUILD_MANIFEST_v2.1.12.json",
+          "bytes": 5293,
+          "sha256": "7ff88aadde089d6f739f83c18a9085516e3b06eba2b6d1996f64c3ac37efc066"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.12/BiliCDN_TW.user.js",
+          "bytes": 298785,
+          "sha256": "c3874efbf718a3eebcc64cf2591d1a328d7ddde1aac40b7d91faf593f7c6e28d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.12/CHANGELOG_v2.1.12.md",
+          "bytes": 21952,
+          "sha256": "dbc8e6c9e710d0c974c5072c955bd7d2b8ecfec67585101cc7c35f3ebfd703e5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.12/SHA256SUMS_v2.1.12.txt",
+          "bytes": 419,
+          "sha256": "841a80e3771dc39ae9ce1e6e5cfc620e92062e3260c5db00f348a28d52b165e2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.12/TEST_REPORT_v2.1.12.md",
+          "bytes": 3720,
+          "sha256": "edbd3fda4a25f4e62145b9031d4f5610d0d6f89b3e8b7dd42fd27bb6f26a0131"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.13/BUILD_MANIFEST_v2.1.13.json",
+          "bytes": 5293,
+          "sha256": "f44e13040978ecef09f0eec98daece72f453803c4313872031399ab0e78b77ef"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.13/BiliCDN_TW.user.js",
+          "bytes": 314188,
+          "sha256": "646515874ea4088b11830907826c5d1275f823c155a5fb1523999a9755ffa816"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.13/CHANGELOG_v2.1.13.md",
+          "bytes": 23470,
+          "sha256": "8e7e928a6a9d1dd311d2f47e6def037b79b256534a9b34e5ffca36cc32cef645"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.13/SHA256SUMS_v2.1.13.txt",
+          "bytes": 419,
+          "sha256": "687b88e4f9d8c44d4e5fafb4d70f7d9af5e41ab915f99161e8386dbc05ea4c60"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.13/TEST_REPORT_v2.1.13.md",
+          "bytes": 3694,
+          "sha256": "f36e94b04ff5a4aa7f9619c47efcd23f43fbe8c99b29aa96b8d0143cc06f4cf6"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.14/BUILD_MANIFEST_v2.1.14.json",
+          "bytes": 5293,
+          "sha256": "779875630a5d12dbdea9fd22a9696734045dafc01b609ce21822dbbefc5c17fc"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.14/BiliCDN_TW.user.js",
+          "bytes": 317276,
+          "sha256": "fc2a38d182fd94b3c2ffc786510e858f99f41d702ed279a6c88da7edc0d6c02a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.14/CHANGELOG_v2.1.14.md",
+          "bytes": 24724,
+          "sha256": "1ecb0e74567afcd5958e835d5140343678944de71ead9dc8fee4b0bdc878e0e8"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.14/SHA256SUMS_v2.1.14.txt",
+          "bytes": 419,
+          "sha256": "b47a51601403e3d7266f0f1c1df2f38e82477c15f4a3f9eb9b3c205ac19bf88c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.14/TEST_REPORT_v2.1.14.md",
+          "bytes": 4281,
+          "sha256": "ada0d11b6907984e617a83a9f7f1ebdae985a35d370065cc81a1a6821fb25a00"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.15/BUILD_MANIFEST_v2.1.15.json",
+          "bytes": 5293,
+          "sha256": "337eba7405b3580e311fdf483c4e98fc2050281d6c7547b4e153552924bbb921"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.15/BiliCDN_TW.user.js",
+          "bytes": 317487,
+          "sha256": "affedbeef854462c60fd5fd68947fc4c37ef7ddb7bd2922e72fed6cca6b342bf"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.15/CHANGELOG_v2.1.15.md",
+          "bytes": 26561,
+          "sha256": "672968006a2a9a3ed26198a142a427ee3e5c61acd5e1e7f748fdb6a703b1baed"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.15/SHA256SUMS_v2.1.15.txt",
+          "bytes": 419,
+          "sha256": "143eda830edf1a6b8734f321c889289fa5307f392f04f42e77164766e738a86d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.15/TEST_REPORT_v2.1.15.md",
+          "bytes": 6420,
+          "sha256": "1a1b215eb2f1031a6a4b52bd7ec8f5a264a38f362337c1a5fbdb1c92921b2732"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.16/BUILD_MANIFEST_v2.1.16.json",
+          "bytes": 5293,
+          "sha256": "8fa62adb5797e072cebb9ff8f1450a6e983bbfaeb432dcbdfa1dc94fbb7dd441"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.16/BiliCDN_TW.user.js",
+          "bytes": 320794,
+          "sha256": "5eaeb8444503886244b06f81cb24a81081720a0ea5dcb978c284c776eb05e8d4"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.16/CHANGELOG_v2.1.16.md",
+          "bytes": 30009,
+          "sha256": "5ec244e44f1aedf265fa0cfc86a6a41cbdd3e5167cad8f68b27bd94cc9f84060"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.16/SHA256SUMS_v2.1.16.txt",
+          "bytes": 419,
+          "sha256": "cedbb1b8591cc7e25fb0fe1e7f0fa37568d61e75cde6e126eb7cade9b74b5f76"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.16/TEST_REPORT_v2.1.16.md",
+          "bytes": 7727,
+          "sha256": "394a2c7b5eba2b6be453acfdaf843e11f6d593d0e96b01fbb6cfa69e03e9c4e7"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.17/BUILD_MANIFEST_v2.1.17.json",
+          "bytes": 5293,
+          "sha256": "713a1dfe6a19e4d067bd591e9b33afb552115cd32a8afeae66c1f4bf7b6b315f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.17/BiliCDN_TW.user.js",
+          "bytes": 332575,
+          "sha256": "4bb4601a91e5e752595a5a8ec1b4d8905036954f299d578ca93209c059ce6a06"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.17/CHANGELOG_v2.1.17.md",
+          "bytes": 33548,
+          "sha256": "caab0618f9f24f096a8fc2d7b5ccae568f3a99378c5ddb7ad094e006e7ba5d8e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.17/SHA256SUMS_v2.1.17.txt",
+          "bytes": 419,
+          "sha256": "81ee921848c5cb549fdccbce24c861b8ed3b7062bf1a0550f94a076c990d9fe1"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.17/TEST_REPORT_v2.1.17.md",
+          "bytes": 8857,
+          "sha256": "143accb6547930f81c96b000bad1a074a15cd8b8ea7e2d2b1e2e5b990dd28175"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.18/BUILD_MANIFEST_v2.1.18.json",
+          "bytes": 5293,
+          "sha256": "44cfc1d15ca9402284b63733f2090e181cd303115cf856328d97a7309e1c08a1"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.18/BiliCDN_TW.user.js",
+          "bytes": 334747,
+          "sha256": "812fa114b1b99d0a38f4d1df9622bce416147b05c048693d68ce4b24b16831c9"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.18/CHANGELOG_v2.1.18.md",
+          "bytes": 35364,
+          "sha256": "af655ce705a32e2c9545898254b9663aaa3c80cca5a3541809730e8a3580e741"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.18/SHA256SUMS_v2.1.18.txt",
+          "bytes": 419,
+          "sha256": "833ac84c85a17d4bbce713fee1cbdf36719421c180e8c36c9c26e6dc2ee10446"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.18/TEST_REPORT_v2.1.18.md",
+          "bytes": 4730,
+          "sha256": "fa22c61dab00fefef14fe4c397b4bf94bc8c969817b84902c95121504894f208"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.19/BUILD_MANIFEST_v2.1.19.json",
+          "bytes": 5293,
+          "sha256": "1f9baf467feff062ad6a8fedbb178200f3620a9d1f96f41afbe0d91c446804d3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.19/BiliCDN_TW.user.js",
+          "bytes": 335996,
+          "sha256": "d51be6e17ca8263052b1022b465f4f8247f358eaa654be8ec1f128579b2354d1"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.19/CHANGELOG_v2.1.19.md",
+          "bytes": 36090,
+          "sha256": "ed24ef0caecc38ee561851aa2745fb0e8bc90d164005c4d1ffc4320ee97c5608"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.19/SHA256SUMS_v2.1.19.txt",
+          "bytes": 419,
+          "sha256": "df182faab51dfd62fd1f63415777112552dd14688f0e31d9b44929833206a53e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.19/TEST_REPORT_v2.1.19.md",
+          "bytes": 2878,
+          "sha256": "df99bc3fba29fc263719c1c6768e06e41c04db8bac573a6cc1cdf1798eca10a5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.2/BUILD_MANIFEST_v2.1.2.json",
+          "bytes": 3767,
+          "sha256": "e9f74cbde7f80ebd4a56d7eb19a407c8964f014d8ae3b6bf7fa3fa91270fec3e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.2/BiliCDN_TW.user.js",
+          "bytes": 212357,
+          "sha256": "029ec8d7ac4bf9996beab487eec71e4866888ee232d3bb7514f8484a7cee6eed"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.2/CHANGELOG_v2.1.2.md",
+          "bytes": 9437,
+          "sha256": "a73043f234f1db2be811d9b27eed58d4a576ed5dc03357c72bca84c72f6ac093"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.2/SHA256SUMS_v2.1.2.txt",
+          "bytes": 412,
+          "sha256": "8909b24e282af142a5562c9c9f591edf7a45d6a4c9343dc89825877c338fac72"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.2/TEST_REPORT_v2.1.2.md",
+          "bytes": 15509,
+          "sha256": "3d52586eec3036580e858765bbb74f031653b51e6065d490e2b70aaca1583055"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.20/BUILD_MANIFEST_v2.1.20.json",
+          "bytes": 5293,
+          "sha256": "5aa8e2b43dec21317b739fd994b72605d089eaee1a5aae7307964dc4742f1587"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.20/BiliCDN_TW.user.js",
+          "bytes": 336219,
+          "sha256": "b8e5bd4744737537f348fcc7d9fb9f258fd41bc5e60327e5f4259560dcd5b54e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.20/CHANGELOG_v2.1.20.md",
+          "bytes": 36683,
+          "sha256": "8f0cfe4cecdce5dae9d3ff8a234c90cc43aea9980323c7e2192641a8dcc7a989"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.20/SHA256SUMS_v2.1.20.txt",
+          "bytes": 419,
+          "sha256": "abfb4a02e6bc3718e41fb90c435af638eea53a2d067c74341466b920b717ad7a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.20/TEST_REPORT_v2.1.20.md",
+          "bytes": 3457,
+          "sha256": "4d9b1094f9a85d673f74f543214ac9df0adb2510d46ad2cafa7470eeb2a31ce7"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.21/BUILD_MANIFEST_v2.1.21.json",
+          "bytes": 5293,
+          "sha256": "052b1ab382199fd36d475af5660b1a78a201d3f9783cf29f0f83030e163ea9ec"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.21/BiliCDN_TW.user.js",
+          "bytes": 337000,
+          "sha256": "09b1c36fd9f8da578189fd5360481127552f4277585ede83e00aa526c344884b"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.21/CHANGELOG_v2.1.21.md",
+          "bytes": 37315,
+          "sha256": "e03c9ee4e16f2357139c420dd6436a49df3e815c4c63d8a3df55f7ef61a25e61"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.21/SHA256SUMS_v2.1.21.txt",
+          "bytes": 419,
+          "sha256": "c678300c84b34111fab634dec5fff0267a975ca8c6a670ab2b500d7f9b31454d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.21/TEST_REPORT_v2.1.21.md",
+          "bytes": 3186,
+          "sha256": "2624951a537d034bbcaf37930448b925f7d8161439534970ae1a9c509f950ab9"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.22/BUILD_MANIFEST_v2.1.22.json",
+          "bytes": 5293,
+          "sha256": "751593b014af41a3fa177c4898715cb1f31a80b3079764a1ccb2f81d426dba11"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.22/BiliCDN_TW.user.js",
+          "bytes": 338653,
+          "sha256": "7a4411c594385a65489a2b294df543ebe479d49ec8e8c37a797118a79f980508"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.22/CHANGELOG_v2.1.22.md",
+          "bytes": 39104,
+          "sha256": "bcd862db9771d27cbbcab47779941c89cedab7466687a2bb096ab1ac6c91b1d2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.22/SHA256SUMS_v2.1.22.txt",
+          "bytes": 419,
+          "sha256": "2acf6fdd574a5f7f23c95702e8c626d494ab0a7731b932d7a8d16a79c6ba8dff"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.22/TEST_REPORT_v2.1.22.md",
+          "bytes": 2628,
+          "sha256": "f9bf6f99bf3897f63c37a8aac73a6fadb2f8a1928bbbde2cdc265900b54c938f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.23/BUILD_MANIFEST_v2.1.23.json",
+          "bytes": 5293,
+          "sha256": "c033c5fae9f0a35d08cb05e91762bac54f07c0b4d97d4ebf66fd7d26f46823d0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.23/BiliCDN_TW.user.js",
+          "bytes": 343834,
+          "sha256": "ae68637fd73599d6561ca396249246c64f070491030a5e106260d597ceb41f2a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.23/CHANGELOG_v2.1.23.md",
+          "bytes": 40155,
+          "sha256": "fd93bdcbcece43c24e7ac824881ee362540042820908ce067104979c152e62ee"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.23/SHA256SUMS_v2.1.23.txt",
+          "bytes": 419,
+          "sha256": "cb25b7c28d18e69d752698dfae249d47835dbd4ede11f02e5957146f0392254b"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.23/TEST_REPORT_v2.1.23.md",
+          "bytes": 2709,
+          "sha256": "2d748fa4c0153943626fc4527651717ea68dec8853995722379f89497fada4e1"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.24/BUILD_MANIFEST_v2.1.24.json",
+          "bytes": 5293,
+          "sha256": "9817792e2b57e5be79d0ad3e1a0e5fdf51a714ed42d7f5129c61abd5144e616c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.24/BiliCDN_TW.user.js",
+          "bytes": 345540,
+          "sha256": "9a58836ab79b56ca8b4a4741a3236011df19aade872baea19d8e56066cef7e3d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.24/CHANGELOG_v2.1.24.md",
+          "bytes": 40848,
+          "sha256": "65ab0a0b1e82a5230f276883a554403798447e5cd01df5162e63ae82e262396e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.24/SHA256SUMS_v2.1.24.txt",
+          "bytes": 419,
+          "sha256": "b2a8c776a12a940236b4212e57d2976062ab5333ff08b8b0b3c3696b2cad515d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.24/TEST_REPORT_v2.1.24.md",
+          "bytes": 2422,
+          "sha256": "bc9f1f450187ec0f50126ef0d9a7b2bf39ff53d737c2e6c0c980e95272cdb0f0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.25/BUILD_MANIFEST_v2.1.25.json",
+          "bytes": 7555,
+          "sha256": "54e85134ccb47b3e391840255316fc25adbe6c9faf6bf6057e41625a266f9bc4"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.25/BiliCDN_TW.user.js",
+          "bytes": 368486,
+          "sha256": "2cdf191565668fb1c63bd815fedec1fd227b7e476885a6102c83c530e8657aa6"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.25/CHANGELOG_v2.1.25.md",
+          "bytes": 42834,
+          "sha256": "0f91fc1b5e07ed1932f35845be036bab3a9afc52188601260c00adaf047bb47e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.25/SHA256SUMS_v2.1.25.txt",
+          "bytes": 419,
+          "sha256": "d3ada538811aac7d0aa48d41ac9c77cbf7c5cc9fff30b5c14331118d46ec6d7d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.25/TEST_REPORT_v2.1.25.md",
+          "bytes": 4537,
+          "sha256": "de9de85354c543c12739bb3cde88046499ec060d22341a93cca91b7051f37115"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.26/BUILD_MANIFEST_v2.1.26.json",
+          "bytes": 8015,
+          "sha256": "c30c4da843d7b39af0e4f0a00aac7c6b5ce22db2bb66bb96c27e1d27bf3f2482"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.26/BiliCDN_TW.user.js",
+          "bytes": 372448,
+          "sha256": "107d345c557e18769e0d2e8876e3d046107c051e795228c69f72c97bcfbdaea0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.26/CHANGELOG_v2.1.26.md",
+          "bytes": 44323,
+          "sha256": "5173e9e8e5e936ecd9b0d21c84a881c5c6015a625ef4f316c0c543c027a30114"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.26/SHA256SUMS_v2.1.26.txt",
+          "bytes": 419,
+          "sha256": "1578145ef20af38e512a71006ad10edb28a8f4f31a03d76dce4694e5ac29b525"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.26/TEST_REPORT_v2.1.26.md",
+          "bytes": 7701,
+          "sha256": "fd6fe83ae5a41169761fba46807c4b2989decc1c72cd0b5a540a273cad78bcc2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.27/BUILD_MANIFEST_v2.1.27.json",
+          "bytes": 8015,
+          "sha256": "f56b97a370f6238bcb623ce9cfe542f757c528deb6926030145d12b1b8b61d1f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.27/BiliCDN_TW.user.js",
+          "bytes": 382934,
+          "sha256": "1b2ec2175ba2f1193509b0dea3e2f295ea8275b022ccb5a76e77d55c954f3795"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.27/CHANGELOG_v2.1.27.md",
+          "bytes": 45865,
+          "sha256": "e44ef2de847ce0cf8e8af0a410661075350347bc3094ad7abd29e696e345a26a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.27/SHA256SUMS_v2.1.27.txt",
+          "bytes": 419,
+          "sha256": "80b0c5520076746e2068a3ec6a69ec4ea9cc28ad0e743a0bb973e7bdfe1115dc"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.27/TEST_REPORT_v2.1.27.md",
+          "bytes": 6926,
+          "sha256": "c4eecefaf24e183844a8024a65c8a6a4fc268f5fd99e82f0b8c585cdaedde2fd"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.28/BUILD_MANIFEST_v2.1.28.json",
+          "bytes": 8230,
+          "sha256": "d50eb9854e6e22b6e56009586b498b099d62d84cfe835472d93575400fea8e94"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.28/BiliCDN_TW.user.js",
+          "bytes": 403700,
+          "sha256": "8b3ec29aa2b26cb0b9708a91aed65e2d6411e09875e2ac87c70436f0eeec418d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.28/CHANGELOG_v2.1.28.md",
+          "bytes": 49195,
+          "sha256": "b621fe9f6e14d30ce35ccef7098d21821be44790809ffb0ac5a64f5b55f97ba5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.28/SHA256SUMS_v2.1.28.txt",
+          "bytes": 419,
+          "sha256": "a517c591578cbfd00d7db582059e7ff61680167ed5ed3e09679938ffb39d3256"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.28/TEST_REPORT_v2.1.28.md",
+          "bytes": 5460,
+          "sha256": "ae9101edde43751c6f869db68045e030eb0851dc9180450e9ab1d0ed8e8c7510"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.29/BUILD_MANIFEST_v2.1.29.json",
+          "bytes": 8230,
+          "sha256": "3bd5788c0f30b5b10dee9105890afb8ed9debf2ffa4affb18d36fb72072ba760"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.29/BiliCDN_TW.user.js",
+          "bytes": 407926,
+          "sha256": "e0c178987111d99ae69762287fe3769cc1af722a1ee6e586d125ce0ba8b2e9b4"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.29/CHANGELOG_v2.1.29.md",
+          "bytes": 49854,
+          "sha256": "6bc8730412497b0b690b66ad4f613c042f2e7f1a25dd139cc22d9ce59077224a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.29/SHA256SUMS_v2.1.29.txt",
+          "bytes": 419,
+          "sha256": "60a0a99d0fc47a8001891411045f8a21739460128cde56e47339205497e5c757"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.29/TEST_REPORT_v2.1.29.md",
+          "bytes": 4854,
+          "sha256": "47208f3bfd65bd2adf86a9040fbcd058728869d547c6ecc7946d83f1374d57c1"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.3/BUILD_MANIFEST_v2.1.3.json",
+          "bytes": 3767,
+          "sha256": "863c5991b1b56edfa23eacf923c8021c65741d1f7af68fa747be206a1785ed36"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.3/BiliCDN_TW.user.js",
+          "bytes": 219210,
+          "sha256": "3ca34a80b7525018710d7a89d5b8ad8458735eb949bbf5b6f9865214d1c2053a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.3/CHANGELOG_v2.1.3.md",
+          "bytes": 10177,
+          "sha256": "556bff7b5676bbf2d2d3af9f652f740db61bdcdbc8a8ace9bb7817256154dc22"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.3/SHA256SUMS_v2.1.3.txt",
+          "bytes": 412,
+          "sha256": "b7bbf8052682ef87a550f1f8ba48f2914376a22912b8be73e0156dd89e6cab6f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.3/TEST_REPORT_v2.1.3.md",
+          "bytes": 16747,
+          "sha256": "2debccf75e89c5091acd167c03e1aa6dd8296565b45e434bf970020a6e707591"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.30/BUILD_MANIFEST_v2.1.30.json",
+          "bytes": 8335,
+          "sha256": "b6d1bc5ee413f62421b8d617f9d29d0177a301ba9af7dab7158b8b321468f7c0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.30/BiliCDN_TW.user.js",
+          "bytes": 415345,
+          "sha256": "124830e7d08e71ef34a2ba048c6624f578060276a09b01e0b9905c0f4175f03d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.30/CHANGELOG_v2.1.30.md",
+          "bytes": 50620,
+          "sha256": "c7ac64a9734e5021e0a31e278e01df56ad7a2b0dc960834ac673b9c5dd703605"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.30/SHA256SUMS_v2.1.30.txt",
+          "bytes": 419,
+          "sha256": "1ceaa78a4bc0ab380e6d8c7437ceed6e4b5f448bdfd8971e76470305e7e8a570"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.30/TEST_REPORT_v2.1.30.md",
+          "bytes": 4480,
+          "sha256": "7a4b175f11b3aa1b231b4935c643d38f349d6cb747bd668c5dddd1b0ac8d3a3e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.31/BUILD_MANIFEST_v2.1.31.json",
+          "bytes": 8335,
+          "sha256": "04db748bb8d186ac0665f0b5537ddc83ba30ed9bd2ed769d10d8f9a102b8578d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.31/BiliCDN_TW.user.js",
+          "bytes": 415770,
+          "sha256": "5461c534325ad2063007eb220576b2d4b5d9472cce9d3a00a773e23521dd2507"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.31/CHANGELOG_v2.1.31.md",
+          "bytes": 51211,
+          "sha256": "b2a47cef02ea4aec32811e64132c0e29c39f49dbd18ee38ed1644655fe07f4e8"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.31/SHA256SUMS_v2.1.31.txt",
+          "bytes": 419,
+          "sha256": "2ede8bd0bfb322648b3bb6d714c2a67c74ad871ae53ec93a354a2751b952e1d6"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.31/TEST_REPORT_v2.1.31.md",
+          "bytes": 5913,
+          "sha256": "bbb88afc4691c81e3e95f9398227e8289e70e97646f61294e1cd91bf018c5dbb"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.32/BUILD_MANIFEST_v2.1.32.json",
+          "bytes": 8335,
+          "sha256": "fbbf6ff9afb95aa9e475fb21e5298f7852576c961f15b0be16e023e615f29446"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.32/BiliCDN_TW.user.js",
+          "bytes": 417076,
+          "sha256": "156d4b0f80fc30c8e88a220bc39727c49b95408585e6c39bf7c9d193f8737e0d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.32/CHANGELOG_v2.1.32.md",
+          "bytes": 51912,
+          "sha256": "2d820d1e8372ea942f6e5f43d5bd6fcae062bbd0e152b15d8d48224874d28fd1"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.32/SHA256SUMS_v2.1.32.txt",
+          "bytes": 419,
+          "sha256": "69a2e72673d6c4b4aea1d4231f69903b76a97a2fe5029d7ee131f9937952ece5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.32/TEST_REPORT_v2.1.32.md",
+          "bytes": 6434,
+          "sha256": "b0dac94df944daeae416f27efb8db75afb95864ee6677ff38995d37c2c7ed9f3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.33/BUILD_MANIFEST_v2.1.33.json",
+          "bytes": 8335,
+          "sha256": "4b287d608f0969c4b3263c84367290f04b4a8343b73a7b6fe08572c52e97f43b"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.33/BiliCDN_TW.user.js",
+          "bytes": 417110,
+          "sha256": "892fb339625d4d2a241ce4387050c8d08201e224c6211844c5be5f0eaad5a761"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.33/CHANGELOG_v2.1.33.md",
+          "bytes": 52393,
+          "sha256": "8590c99ea44670b98d4acd4a129427b665185897576b2cb4107c5472c1915d0c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.33/SHA256SUMS_v2.1.33.txt",
+          "bytes": 419,
+          "sha256": "83d59ded36db8461c5db2b237a662a85a54592f69188e43a4152fdaeabea2a5c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.33/TEST_REPORT_v2.1.33.md",
+          "bytes": 5804,
+          "sha256": "090f01fd914ba665c539fabb4cb97052bee5fa1e36895151811951db7946d76e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.34/BUILD_MANIFEST_v2.1.34.json",
+          "bytes": 8335,
+          "sha256": "dad815bfc39c99ee69cc0ed9c114911832fee7c6939e4cab9efb77db344df1e6"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.34/BiliCDN_TW.user.js",
+          "bytes": 420404,
+          "sha256": "504f63ffa61cce2d974ef4722344919d63ecadb5e542e362aad87948c3608392"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.34/CHANGELOG_v2.1.34.md",
+          "bytes": 53015,
+          "sha256": "2ed2456d9b1ce7277cd88e8fc341a00678ec2d79bd57a23c6b8bc113f4e4fb01"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.34/SHA256SUMS_v2.1.34.txt",
+          "bytes": 419,
+          "sha256": "5e8c774f8c0d08c4e1fc41df6a0dbf5c5b4aef51cd14155f9a256165e1ae24e7"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.34/TEST_REPORT_v2.1.34.md",
+          "bytes": 8059,
+          "sha256": "b541edff2ab44d4c83f50eabf3582aec78eda44de3cdfadad89215e89313f5b9"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.35/BUILD_MANIFEST_v2.1.35.json",
+          "bytes": 8335,
+          "sha256": "b7bc81466dca729e02f15c2f7208ec53d57bcbed4e590beb926b2cd1890840c0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.35/BiliCDN_TW.user.js",
+          "bytes": 422022,
+          "sha256": "7458f27610a0b2a9f13e07c1e087502198809dacb2a411f5112acf9aaf3b9cc3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.35/CHANGELOG_v2.1.35.md",
+          "bytes": 53757,
+          "sha256": "c2300ac459112e7418be83207adb4068652c296142cf605096d023d7c852304d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.35/SHA256SUMS_v2.1.35.txt",
+          "bytes": 419,
+          "sha256": "1c450698c50c783f07ae6d62f2d3330b0c77fdac033ae2723b46a036aea964f7"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.35/TEST_REPORT_v2.1.35.md",
+          "bytes": 8923,
+          "sha256": "d24953b4c2f648d5cd040cfba63c672ace09409c0001c57df75d39dda44f71c0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.36/BUILD_MANIFEST_v2.1.36.json",
+          "bytes": 8335,
+          "sha256": "3ab2f635bdd7f2a40778fa04474a703e4c8b2268fe8773c75060b3992fb0742c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.36/BiliCDN_TW.user.js",
+          "bytes": 439664,
+          "sha256": "3960ac923f1cbd61d197e1b713c2c0e620debfcb40df1111cfc5af7d8dab3ae7"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.36/CHANGELOG_v2.1.36.md",
+          "bytes": 54347,
+          "sha256": "7164802e585ebd25db040f1c1b3ad2915488e48d0178cf5a24e52ce873077213"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.36/SHA256SUMS_v2.1.36.txt",
+          "bytes": 419,
+          "sha256": "07775f451237edd1b266a8693a8313b139cbd5f2cb9ab035a7d98b56d000a3ae"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.36/TEST_REPORT_v2.1.36.md",
+          "bytes": 5573,
+          "sha256": "67ef7358026aae1f616496d0b9b526e6c0ca6ac86ca3dbb976d8dfba906d5391"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.37/BUILD_MANIFEST_v2.1.37.json",
+          "bytes": 8439,
+          "sha256": "203caff03a742cc0f674aa6c9796f82b8640d2152a15e64b01043b9404812eb5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.37/BiliCDN_TW.user.js",
+          "bytes": 451802,
+          "sha256": "1293587c8bd0c5133289a981feccc3ffa6c28297da06e4d6d9570d3895222ac4"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.37/CHANGELOG_v2.1.37.md",
+          "bytes": 55234,
+          "sha256": "adfa09d381f5eacb2494431839be5df45e1aa8c4e992d8c321482faf90d58ac4"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.37/SHA256SUMS_v2.1.37.txt",
+          "bytes": 419,
+          "sha256": "fbe3fcb94166e089528e0021ac791e8a351319321c594eff647a229dab0ded14"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.37/TEST_REPORT_v2.1.37.md",
+          "bytes": 5682,
+          "sha256": "409b27947236765d70ed6153cbc7531f682e0bf09f206f0740d2e2f1b3d6e45e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.38/BUILD_MANIFEST_v2.1.38.json",
+          "bytes": 8888,
+          "sha256": "23ed1aa73a6eb0832e3b9a0a4051f8b312666a156c1200db63d5a8a40e9278eb"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.38/BiliCDN_TW.user.js",
+          "bytes": 507104,
+          "sha256": "6464ef5f6fd21ea849e045cf1b7efe93f6d2aa72626f50642b16770893991e73"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.38/CHANGELOG_v2.1.38.md",
+          "bytes": 56258,
+          "sha256": "74135318973e0ea415e773e03d9c5fe0c94796ab611892341fcc98947c8ca494"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.38/SHA256SUMS_v2.1.38.txt",
+          "bytes": 419,
+          "sha256": "1c61fc719feac95cec2511b5ba2f482d7ae38bdc636b4e9e692351b93105cf24"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.38/TEST_REPORT_v2.1.38.md",
+          "bytes": 6920,
+          "sha256": "d354d9984ddefe5acbaef0e336ba51fdf976a1483dd02a2c0462d7a8a196b21b"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.39/BUILD_MANIFEST_v2.1.39.json",
+          "bytes": 9193,
+          "sha256": "6c3e18b410c18ca80e35d365cce3accf4351224655874b4f6f059dfb709bdc11"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.39/BiliCDN_TW.user.js",
+          "bytes": 507387,
+          "sha256": "583c906d9f5123cd6c220fe78c815242a74d661bee3b0358b24bd69e379fd5e3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.39/CHANGELOG_v2.1.39.md",
+          "bytes": 57127,
+          "sha256": "5db65f467c965dad720532e3d8247c3bd7a0338dcda8ce261297d48e525a4b4f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.39/SHA256SUMS_v2.1.39.txt",
+          "bytes": 419,
+          "sha256": "c1120dfeaf833a495d31f5e8208a2f3092f16e11a44816f6587dd4cb62a36703"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.39/TEST_REPORT_v2.1.39.md",
+          "bytes": 6315,
+          "sha256": "d754b0707a8b5e03990bd4fb7ac97dae0377aeec47a8e9449ea33028945ff737"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.4/BUILD_MANIFEST_v2.1.4.json",
+          "bytes": 3767,
+          "sha256": "25cf21225106fd5dc324a8a1b291339413ce9e12c09b232f7c1f7741670b86ae"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.4/BiliCDN_TW.user.js",
+          "bytes": 225539,
+          "sha256": "6fbc7349af5a31c40105e6012238bd26a21e4a46c991f2ac72884801a80eb389"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.4/CHANGELOG_v2.1.4.md",
+          "bytes": 11080,
+          "sha256": "9905fe73d6a5a0d0e658f27b523d684071ca48c67567987d953a1e69f3db667b"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.4/SHA256SUMS_v2.1.4.txt",
+          "bytes": 412,
+          "sha256": "e5d85620aee2719b7893adafad674e48415df49c037b27fd2b1d741ba158d308"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.4/TEST_REPORT_v2.1.4.md",
+          "bytes": 20468,
+          "sha256": "0c92674e0f4be1b50c608a039187904e8312db6b1b7213af02ec13b9083cb43d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.40/BUILD_MANIFEST_v2.1.40.json",
+          "bytes": 9193,
+          "sha256": "a24aaca5ad47b8d6614854ccb557c63dfe0b4d0e549252bbdc4fd55ed1b4fe8c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.40/BiliCDN_TW.user.js",
+          "bytes": 507322,
+          "sha256": "0877ef16869c6270c613ae24ae71b50c358d99e765f70b3303fc412f574d8f58"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.40/CHANGELOG_v2.1.40.md",
+          "bytes": 57675,
+          "sha256": "12acdc2e3c94538a01383ec4f05f3b4b74d024028eaafb72408f7db4c37e8865"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.40/SHA256SUMS_v2.1.40.txt",
+          "bytes": 419,
+          "sha256": "963ffb1613623d3792da1d4b12736436b68a8dbc84971da204e1e816892d5432"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.40/TEST_REPORT_v2.1.40.md",
+          "bytes": 6875,
+          "sha256": "312d59a22640adbcb782fa1a4bc91b889bfc8649018f6febcb0bd684c23b1e3f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.5/BUILD_MANIFEST_v2.1.5.json",
+          "bytes": 3767,
+          "sha256": "cb5183e9d52edec541c6d245016a29797c25785099414ba6fa50d82cbb1d1cbc"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.5/BiliCDN_TW.user.js",
+          "bytes": 242181,
+          "sha256": "3d929b44eea8054061f9ae9c101640ea6eec41bf8cf2b56b061708bb56889744"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.5/CHANGELOG_v2.1.5.md",
+          "bytes": 12111,
+          "sha256": "ed37e665d05cdd7fbc852804a3b49420afca40ef40846f9931cad0f0ca854cd5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.5/SHA256SUMS_v2.1.5.txt",
+          "bytes": 412,
+          "sha256": "91aa7e6a6054e0335edde1cc40406482326ff3106c5ab182fc7ab3254ba26cc3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.5/TEST_REPORT_v2.1.5.md",
+          "bytes": 22917,
+          "sha256": "1448cf85036eb0b99ec0cfa6555ab2c42f85297a91715658f99538e3058a60eb"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.6/BUILD_MANIFEST_v2.1.6.json",
+          "bytes": 3767,
+          "sha256": "0d3e514a0ce1a5d301933237ef97e4a0c232c36cf5bceedde448556da4fd8a70"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.6/BiliCDN_TW.user.js",
+          "bytes": 265217,
+          "sha256": "de37c415a129b295e52089f86315b44d47cd153ff4805a7b796f283955bbe31b"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.6/CHANGELOG_v2.1.6.md",
+          "bytes": 13012,
+          "sha256": "e4bbfcbd538d32c3cb199e3adf963ef8ca748c164972cad50ac461ccf712fb82"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.6/SHA256SUMS_v2.1.6.txt",
+          "bytes": 412,
+          "sha256": "1f1d21143e8b9c6951576c226d1784495339b2896a5f889c29f23700818aeba2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.6/TEST_REPORT_v2.1.6.md",
+          "bytes": 26921,
+          "sha256": "7b0bb208874bb3f84f1e3aa591edce087f9bffcdf8b3db36995f3084b14aeb13"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.7/BUILD_MANIFEST_v2.1.7.json",
+          "bytes": 5078,
+          "sha256": "cc34b15d2ec1c3a11ce58769faaee0d609893f8fa9c0dad1ff5516cc7244906e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.7/BiliCDN_TW.user.js",
+          "bytes": 273691,
+          "sha256": "6cc8d1bdcc1afd76859a7831c3b467d9d7f5fddf4f238df47a4a28c475f2e405"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.7/CHANGELOG_v2.1.7.md",
+          "bytes": 14150,
+          "sha256": "b940b772d598d9941d208dc17dfe28a0a61a15a10836697f6a5b6eb96fe9fbb8"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.7/SHA256SUMS_v2.1.7.txt",
+          "bytes": 412,
+          "sha256": "6195e1c2e5069ef74439d0fbae4b8e5d3f9dd5c789d79cf5fed8c50a94b9e894"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.7/TEST_REPORT_v2.1.7.md",
+          "bytes": 35961,
+          "sha256": "1a657c4fba7ce294833a638c6e350d687ae99134d5b54a4b7105a1b671418f3c"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.8/BUILD_MANIFEST_v2.1.8.json",
+          "bytes": 5078,
+          "sha256": "92d1c2aaa6130e1a402442519188c97eb64c62f58c57ed46853de50b0e42ef29"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.8/BiliCDN_TW.user.js",
+          "bytes": 285037,
+          "sha256": "c2bda1e0be4b086e7622e34d3fba0a6cdfdd5eb612afea700289758112c9eb4f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.8/CHANGELOG_v2.1.8.md",
+          "bytes": 16973,
+          "sha256": "3de7fe137323aa039078c4b44acab505d74431ab3c413cabfd0f3821e6e1997f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.8/SHA256SUMS_v2.1.8.txt",
+          "bytes": 412,
+          "sha256": "bd2325fc13e489e479968495934cd1eaa8558718894c04b9ccfb85eb03169939"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.8/TEST_REPORT_v2.1.8.md",
+          "bytes": 44356,
+          "sha256": "c01a716e1f38c8355be67eef4582f5144904491aa683a6812d77992a44725557"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.9/BUILD_MANIFEST_v2.1.9.json",
+          "bytes": 5184,
+          "sha256": "95857e6906a84419e0fb2a2a4631bc1d2e9500ec9b89e9c371328ec2193a9ed4"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.9/BiliCDN_TW.user.js",
+          "bytes": 292728,
+          "sha256": "051066c36a2e90aa19507671de75483667beb9757502b54f44522e4390b07f55"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.9/CHANGELOG_v2.1.9.md",
+          "bytes": 17043,
+          "sha256": "e860339d8e9e94bea2f3bae9e8098df6694b2c989d2e90be9f3d0d255f28d5bf"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.9/SHA256SUMS_v2.1.9.txt",
+          "bytes": 412,
+          "sha256": "55961da3e3c85a5ce46cbd041c0eee0313ba0661df3bc1b65ab17feef9df9668"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.1.9/TEST_REPORT_v2.1.9.md",
+          "bytes": 8576,
+          "sha256": "205fb3f0ab07f2c38eec33fa9f8b674ac24e47906916ac7fcd400b0c9200b1f3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.0/BUILD_MANIFEST_v2.2.0.json",
+          "bytes": 9514,
+          "sha256": "e0537d606f9facd45cd6f56f4a59aad70ed561c11e104e2b5f51f11e50ea86a6"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.0/BiliCDN_TW.user.js",
+          "bytes": 507211,
+          "sha256": "abca87caeb995fb924f5869c8fd60accdfe250994b448607e22803a38a610a1f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.0/CHANGELOG_v2.2.0.md",
+          "bytes": 58583,
+          "sha256": "a428707ac271a0fc633e81f9a562d27e608d59c45385c2f3149ca293f7dd7db3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.0/SHA256SUMS_v2.2.0.txt",
+          "bytes": 412,
+          "sha256": "fd1981053df017aa0217593233bf9950121d259a0d6281b203512dde20c1bc28"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.0/TEST_REPORT_v2.2.0.md",
+          "bytes": 8804,
+          "sha256": "5ff6510f893bb657ee833a6d2838fd703e3ba01857c70eee52279104fc2c6da2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.1/BUILD_MANIFEST_v2.2.1.json",
+          "bytes": 9094,
+          "sha256": "fa446238c4511b2f003249d4451f177247c696bf79a62ca23e35ef1c5289ef95"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.1/BiliCDN_TW.user.js",
+          "bytes": 419507,
+          "sha256": "e89b94bb92eecb818ce038f09c1de2b9fb5db8b2ffa35adb2357141384db149d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.1/CHANGELOG_v2.2.1.md",
+          "bytes": 59137,
+          "sha256": "f39bb352e10d40a78ca8ed75a24ff67a763d8a6f66805b04f9eb9d6d5fef4038"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.1/SHA256SUMS_v2.2.1.txt",
+          "bytes": 412,
+          "sha256": "7138eab406ae3c37a7c6beaaf4105ba51909a42b14f4237f8a8b21ac260366c7"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.1/TEST_REPORT_v2.2.1.md",
+          "bytes": 9529,
+          "sha256": "58432cdf4cd1e5dc1386ca26c38b08a93b7b4195fcd1806f8461ce1a35460d38"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.10/BUILD_MANIFEST_v2.2.10.json",
+          "bytes": 9847,
+          "sha256": "def93da87714481ad014579adf09130fde8b6d3f1777e2a4bee6e95814c0b5e0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.10/BiliCDN_TW.user.js",
+          "bytes": 488579,
+          "sha256": "361b8d22a3b62b72fc671e3c440b4b089e8d3cc96a77050baf011b2b7aa5812f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.10/CHANGELOG_v2.2.10.md",
+          "bytes": 66667,
+          "sha256": "0d7441cd5b61b1bf0a1b2de618bc7e04ab1a2e1acb650f4c1545e2594d02fd0a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.10/SHA256SUMS_v2.2.10.txt",
+          "bytes": 419,
+          "sha256": "fba52dfdda006173d039e8d8bd3582eb796674f551f550dadab702e90b8f6bde"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.10/TEST_REPORT_v2.2.10.md",
+          "bytes": 9202,
+          "sha256": "a09cc4a16eb40f6f51ffc169a0ccc4c254e205e0a36a1e89374abad667396ead"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.11/BUILD_MANIFEST_v2.2.11.json",
+          "bytes": 10188,
+          "sha256": "b57a47355eadc09b812dfd42d283724e4a1ced5974877a7f17423577877b9a96"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.11/BiliCDN_TW.user.js",
+          "bytes": 512504,
+          "sha256": "55133271b78b0265974b64fb713ff68b5d07c40d9df89bf67c988ed453d73acf"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.11/CHANGELOG_v2.2.11.md",
+          "bytes": 67415,
+          "sha256": "2646b741f2df7cb1b060e9f66677a8ba5b29d990e3b93a95df604f61d8587401"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.11/SHA256SUMS_v2.2.11.txt",
+          "bytes": 419,
+          "sha256": "2e3d9d9577f7525af5650c6ebca03d0e0818893835cde1014980d715f491ef6e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.11/TEST_REPORT_v2.2.11.md",
+          "bytes": 8338,
+          "sha256": "7403935bbaa694e80630a627764154f092a1c22e051110ee6054e32910285154"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.12/BUILD_MANIFEST_v2.2.12.json",
+          "bytes": 10188,
+          "sha256": "c2ef0e80a62c9478c9c2c3263f0ca38f4ee075dd0f20cc37685f76873d130805"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.12/BiliCDN_TW.user.js",
+          "bytes": 512863,
+          "sha256": "9a8ec881aa30390576e8c90d67d0034f51da307df9a36f96b83ec22ffa3b1235"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.12/CHANGELOG_v2.2.12.md",
+          "bytes": 68157,
+          "sha256": "b027c2b3945fcf0d7829a307beb78703e1837cbb5b956b7cb78c4e770b6e7746"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.12/SHA256SUMS_v2.2.12.txt",
+          "bytes": 419,
+          "sha256": "8c84f2de667bc3c3cbc773aca5497f25f81dfcb10b49d47ff748bec7e8c2f0af"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.12/TEST_REPORT_v2.2.12.md",
+          "bytes": 10388,
+          "sha256": "c0965c0513f44e2b2edc2be379054e30f300cc525a94898febae53577538db7d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.13/BUILD_MANIFEST_v2.2.13.json",
+          "bytes": 10297,
+          "sha256": "50b335c3b2d607d03c4b11eba8d714c95f944e1d2087fa59ddf7a8836c98ee78"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.13/BiliCDN_TW.user.js",
+          "bytes": 532263,
+          "sha256": "ab0c2b1ad1a80f3f9d042cad9f426fe3c7574d655629e194ee4f8f9d3affb706"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.13/CHANGELOG_v2.2.13.md",
+          "bytes": 69290,
+          "sha256": "a41c789f94547af31162aff1ff8e0019ab9ec4ee25b8187ee5d2429f43321ac4"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.13/SHA256SUMS_v2.2.13.txt",
+          "bytes": 419,
+          "sha256": "eb93cf4d39434220a9b9a84f69a0202447421bdce2f00412fd3f79867202c1c4"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.13/TEST_REPORT_v2.2.13.md",
+          "bytes": 11355,
+          "sha256": "e403f0fcfc8208599086273e746f2602a514124f95e1b3eb6313e679d063d5c0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.14/BUILD_MANIFEST_v2.2.14.json",
+          "bytes": 10297,
+          "sha256": "19f8b085cebc652758ce5111f019eb6df11d73371fd9279416047d4762c6f18a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.14/BiliCDN_TW.user.js",
+          "bytes": 532263,
+          "sha256": "e1c66d9e3933b6f7138a5acbff445203ff01c0fe82be20d4bb253dec8d6c5a76"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.14/CHANGELOG_v2.2.14.md",
+          "bytes": 70030,
+          "sha256": "2418719946c31a5d321f3571cc67516a1203eb32077d58d82805010e095579f7"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.14/SHA256SUMS_v2.2.14.txt",
+          "bytes": 419,
+          "sha256": "d0e7a893d9a5de22ecfb4a2605cd91c75379ac567730324cbddd30cbac014eda"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.14/TEST_REPORT_v2.2.14.md",
+          "bytes": 13991,
+          "sha256": "5dce1099283ba4428eb3e4f66288e4f1a94c7fc35adc0d43584924ed37d586c0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.15/BUILD_MANIFEST_v2.2.15.json",
+          "bytes": 13055,
+          "sha256": "385a0e8b760ffc08096268989141a9bdf9a19893354295ceb2f2b3f4dcca2dd6"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.15/BiliCDN_TW.user.js",
+          "bytes": 535486,
+          "sha256": "96bff42ad7ac5deb9b500605b244af3598a6f67b7f93bf85d6c26992ff0b8cef"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.15/CHANGELOG_v2.2.15.md",
+          "bytes": 70840,
+          "sha256": "07fa852698fe73c84b6ff8619072876be2031dcfb4ef62bdf17f3354641f22e2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.15/SHA256SUMS_v2.2.15.txt",
+          "bytes": 419,
+          "sha256": "18f8af1d79c283570cbc3311e1f5e03b744a73c2bc907cb691722d921b679523"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.15/TEST_REPORT_v2.2.15.md",
+          "bytes": 14329,
+          "sha256": "ebf303a53c5f0df327c62ba2cc79676a043f4b59a94d4b794f515272ecb07269"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.2/BUILD_MANIFEST_v2.2.2.json",
+          "bytes": 9094,
+          "sha256": "67f1f5a5da88e8c73be0fae6d12542469d5468e2b227bc8d54ffe4c158d3afe5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.2/BiliCDN_TW.user.js",
+          "bytes": 419470,
+          "sha256": "ffece767ff55ddcd08db7fb286189d49cf6bd4d4e141dd283648b6d29548bd08"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.2/CHANGELOG_v2.2.2.md",
+          "bytes": 61152,
+          "sha256": "5791be0fd5cad7e3d63dc3e65271836274a69f6902a8d6fe67668da3ba5ddacc"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.2/SHA256SUMS_v2.2.2.txt",
+          "bytes": 412,
+          "sha256": "aa23fc42aae7959428fe0d64d73bf09b424063d9f2c3eb6e0644df4f01af1ffe"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.2/TEST_REPORT_v2.2.2.md",
+          "bytes": 49311,
+          "sha256": "615559a8466e1ffbeddb42a80a7118b3b34408fd120af1cdb4a8acc411b719b9"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.3/BUILD_MANIFEST_v2.2.3.json",
+          "bytes": 9094,
+          "sha256": "daa8c26027ae4fa4c64520455637cbdde5f61bd8da7edd5d4270ebcc07e8aadd"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.3/BiliCDN_TW.user.js",
+          "bytes": 418897,
+          "sha256": "7fc87054390d7141abcd2b8481054578d16b7ddf77852dbdcdf7f6146fd66914"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.3/CHANGELOG_v2.2.3.md",
+          "bytes": 62022,
+          "sha256": "4d8baed447ca7cff9854f2b2e501f3188727ab12b4d864fb7ed477c63b79eef5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.3/SHA256SUMS_v2.2.3.txt",
+          "bytes": 412,
+          "sha256": "344f8e8ffb9b9c3dad3b485a91b9a9926399c956a7c93f8b3248c305bef62191"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.3/TEST_REPORT_v2.2.3.md",
+          "bytes": 14483,
+          "sha256": "92d10235b45e56c923ff6e6a517b92520ce22a2870a0046e16d562d0c851fe7f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.4/BUILD_MANIFEST_v2.2.4.json",
+          "bytes": 9204,
+          "sha256": "14a7777ea6a4163d6a1ec00f6d9ee4bf6b2284a5569487a0f80f4858c50e998a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.4/BiliCDN_TW.user.js",
+          "bytes": 421364,
+          "sha256": "57300645ad2da226e4141f6ebe0439a3da4e718a534408bc9fc20968f4446d89"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.4/CHANGELOG_v2.2.4.md",
+          "bytes": 62836,
+          "sha256": "95c679ba08fb9c627f10c9af3b70601ca85eeba86b9f432b2e253778992f95dd"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.4/SHA256SUMS_v2.2.4.txt",
+          "bytes": 412,
+          "sha256": "a0aa6efeb950089b13d6205535b5e574e7179854d34f5675715d8803d5cb5ce0"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.4/TEST_REPORT_v2.2.4.md",
+          "bytes": 13290,
+          "sha256": "7b8411903669da21e4f0e0f9037b189925a6d7146bf91d6f3284889c2e4eebc9"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.5/BUILD_MANIFEST_v2.2.5.json",
+          "bytes": 9204,
+          "sha256": "83e23454190d65685e14b64a8f1a5eb3adee198a777809f8a5de4f3e79c792e3"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.5/BiliCDN_TW.user.js",
+          "bytes": 424558,
+          "sha256": "c2ce2bad31c766e4c40236a1919b133f8272c9d33511e796f6803ba8d3f0f87f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.5/CHANGELOG_v2.2.5.md",
+          "bytes": 63637,
+          "sha256": "dde0b294baf4b123f34bae0709a859570479de3129fdc89def00f9826b713101"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.5/SHA256SUMS_v2.2.5.txt",
+          "bytes": 412,
+          "sha256": "116f49fb2df6fa2cf679fd247904dd556955414fe02d7f26e556e171ea6dde6e"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.5/TEST_REPORT_v2.2.5.md",
+          "bytes": 13258,
+          "sha256": "9a752001ccaea18b39334ee7ed82e9f900c27c75c662cca6ab045fc56ca4bd0a"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.6/BUILD_MANIFEST_v2.2.6.json",
+          "bytes": 9418,
+          "sha256": "122717868efb7d1cd26b2c603a08fad541f44f79752df7810592136a263bba47"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.6/BiliCDN_TW.user.js",
+          "bytes": 455309,
+          "sha256": "798bbb33cb6bcc8c117ba389c151f5f6a2afff3e6f521f1d221acf3d7a57caca"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.6/CHANGELOG_v2.2.6.md",
+          "bytes": 64448,
+          "sha256": "5e96c4f995de4e95f2b32e8287052b7a745076f9cbb433ae5fbd328420d4ab7d"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.6/SHA256SUMS_v2.2.6.txt",
+          "bytes": 412,
+          "sha256": "2241db2187986c03337bce52040eb621b7e4407887148e774ae2745a14d8e72f"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.6/TEST_REPORT_v2.2.6.md",
+          "bytes": 15954,
+          "sha256": "e414aed18f73f5999e4720756bf9420b8b0aec03a44f6725b22ab1142a78ed09"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.7/BUILD_MANIFEST_v2.2.7.json",
+          "bytes": 9634,
+          "sha256": "e67c31150d0b9b37503f29630b7c1f6b3ac23f5acc0340cdc3233ce6c141bea2"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.7/BiliCDN_TW.user.js",
+          "bytes": 473572,
+          "sha256": "b003602488183398bc9af5a7d4ed42e3280719e794b528b20c81c3387df9b672"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.7/CHANGELOG_v2.2.7.md",
+          "bytes": 65242,
+          "sha256": "46b4a55ba2361fe61696e9cfd639e1a8fc773bd342e5d2f87a6c960daa5a9de5"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.7/SHA256SUMS_v2.2.7.txt",
+          "bytes": 412,
+          "sha256": "1027e6ffd2da83d5b62bbe0f2958df01566b479476a8043b77f951624cac87cf"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.7/TEST_REPORT_v2.2.7.md",
+          "bytes": 11360,
+          "sha256": "cc26cfa496e6d882ac9f4d4c108664c219b5f12003441cecf05fea47cac4e6ca"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.8/BUILD_MANIFEST_v2.2.8.json",
+          "bytes": 9634,
+          "sha256": "5eb86f325f50c84ab199178db3cfd545d175b9e82da83164efeb001e57500895"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.8/BiliCDN_TW.user.js",
+          "bytes": 474008,
+          "sha256": "7573766cb33a425a109b5edb2649998e1cf90b6d7f3d8dddf052e338c6bd6027"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.8/CHANGELOG_v2.2.8.md",
+          "bytes": 65838,
+          "sha256": "5ca06b65607166163a07f4a1bb521ff774c49f67259db13bc4478a806492eb19"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.8/SHA256SUMS_v2.2.8.txt",
+          "bytes": 412,
+          "sha256": "f529dc9bfab38ea349a5e45e6344c27615d1a17d726fcf58c0ccab7bc2fc4107"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.8/TEST_REPORT_v2.2.8.md",
+          "bytes": 8763,
+          "sha256": "87bfc634398105721c64fccacf7c752dc76c408347e65665e3b2d0d2e23c1284"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.9/BUILD_MANIFEST_v2.2.9.json",
+          "bytes": 9846,
+          "sha256": "9f49c3a1058a6eea6312229b343fc658fafa484af99cfe07feda6028a0db91c4"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.9/BiliCDN_TW.user.js",
+          "bytes": 485880,
+          "sha256": "ed2e5cd6f9959b49ed588118d52c7d8c5b3229e50d82ebc86442fadda75df6bf"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.9/CHANGELOG_v2.2.9.md",
+          "bytes": 66246,
+          "sha256": "3fe5124954dd41ddb591ec8cf2c12487e1919b88ce7d7a3ca30f213f463f795b"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.9/SHA256SUMS_v2.2.9.txt",
+          "bytes": 412,
+          "sha256": "84ff670d80c93c31481c406699c9fa43b37062ff81fc128993d93fd33f07a2e1"
+        },
+        {
+          "path": "archive/retired/releases/Release/v2.2.9/TEST_REPORT_v2.2.9.md",
+          "bytes": 6222,
+          "sha256": "3f600386fadaf7437c8b5d7502f8186aa4e74187b7f61887bde810cb83a58d5e"
+        }
+      ]
+    }
+  ],
+  "localManifestProof": {
+    "bytes": 13811873,
+    "sha256": "4240ac659d79eb351ad248fdba5a9f31f79c7d00e615d89e212e6cfc4d040921"
+  }
 }

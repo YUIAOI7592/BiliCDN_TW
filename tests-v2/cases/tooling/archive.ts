@@ -96,23 +96,23 @@ function fixture(t: TestContext) {
   save()
   return { root, write, manifest, originals, save, relocated, check }
 }
-function hasRule(report: ReturnType<typeof checkArchive>, rule: string): boolean {
+function hasRule(report: Awaited<ReturnType<typeof checkArchive>>, rule: string): boolean {
   return report.findings.some((finding) => finding.rule === rule)
 }
 
-test('archive accepts a clean source copy without Git or private payload', (t) => {
+test('archive accepts a clean source copy without Git or private payload', async (t) => {
   const f = fixture(t)
   f.write(f.manifest.localManifest, 'invalid private content must not be read')
-  assert.equal(f.check().success, true)
-  assert.equal(f.check().localChecked, false)
+  assert.equal((await f.check()).success, true)
+  assert.equal((await f.check()).localChecked, false)
 })
 
-test('V2214 archive additional private manifests remain unread by public checks', (t) => {
+test('V2214 archive additional private manifests remain unread by public checks', async (t) => {
   const f = fixture(t)
   const path = 'archive/retired/local/2026-11-08-cleanup/private-manifest.json'
   Object.assign(f.manifest, { additionalLocalManifests: [path] })
   f.write(path, 'private content is deliberately not JSON')
-  assert.equal(f.check().success, true)
+  assert.equal((await f.check()).success, true)
   assert.deepEqual(readArchiveManifest(f.root).additionalLocalManifests, [path])
 })
 
@@ -126,13 +126,13 @@ for (const paths of [
     'archive/retired/local/new/private-manifest.json',
   ],
 ])
-  test(`V2214 archive rejects unsafe or duplicate additional manifest ${paths.join(',')}`, (t) => {
+  test(`V2214 archive rejects unsafe or duplicate additional manifest ${paths.join(',')}`, async (t) => {
     const f = fixture(t)
     Object.assign(f.manifest, { additionalLocalManifests: paths })
-    assert.equal(hasRule(f.check(), 'manifest'), true)
+    assert.equal(hasRule(await f.check(), 'manifest'), true)
   })
 
-test('V2214 archive checks every additional private payload and its ownership', (t) => {
+test('V2214 archive checks every additional private payload and its ownership', async (t) => {
   const f = fixture(t)
   execFileSync('git', ['init', '-q'], { cwd: f.root })
   f.write('.gitignore', '/archive/retired/local/\n')
@@ -158,23 +158,23 @@ test('V2214 archive checks every additional private payload and its ownership', 
       JSON.stringify({ schemaVersion: 1, baseline: 'b'.repeat(40), root: identity, entries }),
     )
   save()
-  assert.equal(f.check(true).success, true)
-  assert.equal(f.check(true).localFiles, 1)
+  assert.equal((await f.check(true)).success, true)
+  assert.equal((await f.check(true)).localFiles, 1)
   f.write(archivedPath, 'corrupted')
-  assert.equal(hasRule(f.check(true), 'private'), true)
+  assert.equal(hasRule(await f.check(true), 'private'), true)
   f.write(archivedPath, payload)
   f.write(entry.originalPath, payload)
-  assert.equal(hasRule(f.check(true), 'private'), true)
+  assert.equal(hasRule(await f.check(true), 'private'), true)
   rmSync(join(f.root, entry.originalPath))
   save([entry], privateRoot)
-  assert.equal(hasRule(f.check(true), 'private'), true)
+  assert.equal(hasRule(await f.check(true), 'private'), true)
   save([{ ...entry, archivedPath: `${privateRoot}/old-tool.mts` }])
-  assert.equal(hasRule(f.check(true), 'private'), true)
+  assert.equal(hasRule(await f.check(true), 'private'), true)
   save()
   execFileSync('git', ['add', '-f', '--', archivedPath], { cwd: f.root })
-  assert.equal(hasRule(f.check(true), 'private'), true)
+  assert.equal(hasRule(await f.check(true), 'private'), true)
 })
-test('archive validates raw release and evidence relocation without altering bytes', (t) => {
+test('archive validates raw release and evidence relocation without altering bytes', async (t) => {
   const f = fixture(t)
   for (const kind of ['release', 'evidence'] as const) {
     const body = Buffer.from([0, 255, 13, 10, 17])
@@ -189,25 +189,25 @@ test('archive validates raw release and evidence relocation without altering byt
     })
     f.write(`archive/releases/${kind}.bin`, body)
   }
-  assert.equal(f.check().success, true)
+  assert.equal((await f.check()).success, true)
 })
-test('archive rejects release content drift even when destination hash is rewritten', (t) => {
+test('archive rejects release content drift even when destination hash is rewritten', async (t) => {
   const f = fixture(t),
     entry = f.relocated('docs/old.md', 'archive/old.md', 'original\n')
   entry.kind = 'release'
   f.write(entry.archivedPath, 'changed\n')
   entry.archivedBytes = 8
   entry.archivedSha256 = sha('changed\n')
-  assert.equal(hasRule(f.check(), 'relocation'), true)
+  assert.equal(hasRule(await f.check(), 'relocation'), true)
 })
-test('archive rejects a retained original or missing destination', (t) => {
+test('archive rejects a retained original or missing destination', async (t) => {
   const f = fixture(t),
     entry = f.relocated('docs/old.md', 'archive/old.md', 'history\n')
   f.write(entry.originalPath, 'history\n')
-  assert.equal(hasRule(f.check(), 'relocation'), true)
+  assert.equal(hasRule(await f.check(), 'relocation'), true)
   rmSync(join(f.root, entry.originalPath))
   rmSync(join(f.root, entry.archivedPath))
-  assert.equal(hasRule(f.check(), 'relocation'), true)
+  assert.equal(hasRule(await f.check(), 'relocation'), true)
 })
 for (const [name, body, from, to] of [
   [
@@ -236,7 +236,7 @@ for (const [name, body, from, to] of [
     '../evidence/image.png',
   ],
 ] as const)
-  test(`archive permits URL-only ${name}`, (t) => {
+  test(`archive permits URL-only ${name}`, async (t) => {
     const f = fixture(t),
       entry = f.relocated('docs/old.md', 'archive/old.md', body)
     const start = name.includes('second') ? body.lastIndexOf(from) : body.indexOf(from)
@@ -245,7 +245,7 @@ for (const [name, body, from, to] of [
     entry.archivedBytes = Buffer.byteLength(archived)
     entry.archivedSha256 = sha(archived)
     f.write(entry.archivedPath, archived)
-    assert.equal(f.check().success, true)
+    assert.equal((await f.check()).success, true)
   })
 for (const [name, body, from, to] of [
   ['plain prose', '# Report\n\nold.md text\n', 'old.md', 'changed.md'],
@@ -255,7 +255,7 @@ for (const [name, body, from, to] of [
   ['link title', '[link](target.md "old.md")\n', 'old.md', 'changed.md'],
   ['replacement syntax injection', '[link](old.md)\n', 'old.md', 'new.md) extra [link](else.md'],
 ] as const)
-  test(`archive rejects URL edit of ${name}`, (t) => {
+  test(`archive rejects URL edit of ${name}`, async (t) => {
     const f = fixture(t),
       entry = f.relocated('docs/old.md', 'archive/old.md', body),
       start = body.indexOf(from)
@@ -264,18 +264,18 @@ for (const [name, body, from, to] of [
     entry.archivedBytes = Buffer.byteLength(archived)
     entry.archivedSha256 = sha(archived)
     f.write(entry.archivedPath, archived)
-    assert.equal(hasRule(f.check(), 'relocation'), true)
+    assert.equal(hasRule(await f.check(), 'relocation'), true)
   })
-test('archive rejects historical prose drift despite a destination hash update', (t) => {
+test('archive rejects historical prose drift despite a destination hash update', async (t) => {
   const f = fixture(t),
     entry = f.relocated('docs/old.md', 'archive/old.md', '# History\n\nFAIL\n')
   const changed = '# History\n\nPASS\n'
   entry.archivedBytes = Buffer.byteLength(changed)
   entry.archivedSha256 = sha(changed)
   f.write(entry.archivedPath, changed)
-  assert.equal(hasRule(f.check(), 'relocation'), true)
+  assert.equal(hasRule(await f.check(), 'relocation'), true)
 })
-test('archive protects the complete baseline journal including formerly unhashed tail', (t) => {
+test('archive protects the complete baseline journal including formerly unhashed tail', async (t) => {
   const f = fixture(t),
     body = '# Journal\n\nold baseline\n\nnewer existing tail\n'
   f.originals.set('docs/journal.md', body)
@@ -285,11 +285,11 @@ test('archive protects the complete baseline journal including formerly unhashed
     ...proof(body),
   })
   f.write('docs/journal.md', body + '\nnew entry\n')
-  assert.equal(f.check().success, true)
+  assert.equal((await f.check()).success, true)
   f.write('docs/journal.md', body.replace('newer existing tail', 'rewritten tail'))
-  assert.equal(hasRule(f.check(), 'append-only'), true)
+  assert.equal(hasRule(await f.check(), 'append-only'), true)
 })
-test('archive requires removed compatibility content in TAR and a replacement', (t) => {
+test('archive requires removed compatibility content in TAR and a replacement', async (t) => {
   const f = fixture(t),
     body = '# Compatibility\n'
   f.originals.set('docs/old.md', body)
@@ -299,18 +299,18 @@ test('archive requires removed compatibility content in TAR and a replacement', 
     replacementPath: 'docs/guide.md',
     ...proof(body),
   })
-  assert.equal(hasRule(f.check(), 'removed'), true)
+  assert.equal(hasRule(await f.check(), 'removed'), true)
   f.write('docs/guide.md', '# Guide\n')
-  assert.equal(f.check().success, true)
+  assert.equal((await f.check()).success, true)
 })
-test('archive verifies unchanged product and current release files by raw hash', (t) => {
+test('archive verifies unchanged product and current release files by raw hash', async (t) => {
   const f = fixture(t),
     body = 'source\r\n'
   f.manifest.unchangedFiles.push({ path: 'src-v2/fixture.ts', encoding: 'raw', ...proof(body) })
   f.write('src-v2/fixture.ts', body)
-  assert.equal(f.check().success, true)
+  assert.equal((await f.check()).success, true)
   f.write('src-v2/fixture.ts', 'source\n')
-  assert.equal(hasRule(f.check(), 'unchanged'), true)
+  assert.equal(hasRule(await f.check(), 'unchanged'), true)
 })
 for (const path of [
   '../escape.md',
@@ -319,17 +319,17 @@ for (const path of [
   'archive/../escape.md',
   'archive\\escape.md',
 ])
-  test(`archive rejects unsafe manifest path ${path}`, (t) => {
+  test(`archive rejects unsafe manifest path ${path}`, async (t) => {
     const f = fixture(t)
     f.manifest.snapshot.path = path
     f.write('archive/relocation-manifest.json', JSON.stringify(f.manifest))
     assert.throws(() => readArchiveManifest(f.root), /path/i)
   })
-test('archive rejects case-folded destination collisions', (t) => {
+test('archive rejects case-folded destination collisions', async (t) => {
   const f = fixture(t)
   f.relocated('docs/a.md', 'archive/A.md', '# A\n')
   f.relocated('docs/b.md', 'archive/a.md', '# B\n')
-  assert.equal(hasRule(f.check(), 'manifest'), true)
+  assert.equal(hasRule(await f.check(), 'manifest'), true)
 })
 for (const path of [
   '.WORK/private.tar',
@@ -337,26 +337,26 @@ for (const path of [
   '.CoDeX/private.tar',
   'archive/retired/LOCAL/private.tar',
 ])
-  test(`archive rejects case-variant private public-manifest path ${path}`, (t) => {
+  test(`archive rejects case-variant private public-manifest path ${path}`, async (t) => {
     const f = fixture(t)
     f.manifest.snapshot.path = path
     f.write('archive/relocation-manifest.json', JSON.stringify(f.manifest))
     assert.throws(() => readArchiveManifest(f.root), /Private path/)
   })
-test('archive rejects old Release files and historical records remaining in docs', (t) => {
+test('archive rejects old Release files and historical records remaining in docs', async (t) => {
   const f = fixture(t)
   f.write('Release/v1.5.0/script.js', 'old')
-  assert.equal(hasRule(f.check(), 'layout'), true)
+  assert.equal(hasRule(await f.check(), 'layout'), true)
   rmSync(join(f.root, 'Release'), { recursive: true })
   f.write('docs/doc-manifest.json', '{"documents":[{"path":"docs/old.md","kind":"record"}]}')
-  assert.equal(hasRule(f.check(), 'layout'), true)
+  assert.equal(hasRule(await f.check(), 'layout'), true)
 })
-test('archive rejects an empty old Release directory rather than hiding it from file counts', (t) => {
+test('archive rejects an empty old Release directory rather than hiding it from file counts', async (t) => {
   const f = fixture(t)
   mkdirSync(join(f.root, 'Release/v1.5.0'), { recursive: true })
-  assert.equal(hasRule(f.check(), 'layout'), true)
+  assert.equal(hasRule(await f.check(), 'layout'), true)
 })
-test('archive checks require exactly five files if current Release is present', (t) => {
+test('archive checks require exactly five files if current Release is present', async (t) => {
   const f = fixture(t)
   const names = [
     'BiliCDN_TW.user.js',
@@ -366,7 +366,7 @@ test('archive checks require exactly five files if current Release is present', 
     'SHA256SUMS_v2.1.27.txt',
   ]
   for (const name of names.slice(0, 4)) f.write(`Release/v2.1.27/${name}`, 'fixture')
-  assert.equal(hasRule(f.check(), 'layout'), true)
+  assert.equal(hasRule(await f.check(), 'layout'), true)
   f.write(`Release/v2.1.27/${names[4]}`, 'fixture')
   const artifact = `Release/v2.1.27/${names[0]}`,
     sumFile = `Release/v2.1.27/${names[4]}`,
@@ -376,7 +376,7 @@ test('archive checks require exactly five files if current Release is present', 
     { path: artifact, encoding: 'raw', ...proof('fixture') },
     { path: sumFile, encoding: 'raw', ...proof(rows) },
   )
-  assert.equal(f.check().success, true)
+  assert.equal((await f.check()).success, true)
 })
 function checksumFixture(t: TestContext, rows?: string) {
   const f = fixture(t),
@@ -394,9 +394,9 @@ function checksumFixture(t: TestContext, rows?: string) {
   }
   return f
 }
-test('archive verifies original root-relative Release checksum paths under the public archive root', (t) => {
+test('archive verifies original root-relative Release checksum paths under the public archive root', async (t) => {
   const f = checksumFixture(t),
-    result = f.check()
+    result = await f.check()
   assert.equal(result.success, true)
   assert.equal(result.checksumFiles, 1)
   assert.equal(result.checksums, 1)
@@ -411,29 +411,29 @@ for (const [name, rows] of [
     `${sha('artifact\r\n')}  Release/v1.6.0/BiliCDN_TW.user.js\n${sha('artifact\r\n')}  Release/v1.6.0/BiliCDN_TW.user.js\n`,
   ],
 ] as const)
-  test(`archive checksum rejects ${name}`, (t) => {
-    assert.equal(hasRule(checksumFixture(t, rows).check(), 'checksum'), true)
+  test(`archive checksum rejects ${name}`, async (t) => {
+    assert.equal(hasRule(await checksumFixture(t, rows).check(), 'checksum'), true)
   })
-test('archive checksum discovers an unregistered checksum list instead of omitting it', (t) => {
+test('archive checksum discovers an unregistered checksum list instead of omitting it', async (t) => {
   const f = checksumFixture(t)
   f.write('archive/retired/releases/Release/v1.6.1/SHA256SUMS_v1.6.1.txt', 'unregistered')
-  assert.equal(hasRule(f.check(), 'checksum'), true)
+  assert.equal(hasRule(await f.check(), 'checksum'), true)
 })
-test('archive CLI parses local and JSON flags in either order and preserves exit codes', (t) => {
+test('archive CLI parses local and JSON flags in either order and preserves exit codes', async (t) => {
   const f = fixture(t)
-  assert.equal(archiveCli([], f.root).exitCode, 0)
+  assert.equal((await archiveCli([], f.root)).exitCode, 0)
   for (const args of [
     ['--json', '--local'],
     ['--local', '--json'],
   ]) {
-    const cli = archiveCli(args, f.root)
+    const cli = await archiveCli(args, f.root)
     assert.equal(cli.exitCode, 1)
     assert.equal((JSON.parse(cli.output) as { localChecked: boolean }).localChecked, true)
   }
   for (const args of [['--unknown'], ['--json', '--json'], ['extra']])
-    assert.equal(archiveCli(args, f.root).exitCode, 2)
+    assert.equal((await archiveCli(args, f.root)).exitCode, 2)
 })
-test('archive private mode validates ignored raw files and rejects tracked payload', (t) => {
+test('archive private mode validates ignored raw files and rejects tracked payload', async (t) => {
   const f = fixture(t),
     archivedPath = `${privateRoot}/Release/old.js`,
     body = 'private raw\r\n',
@@ -459,12 +459,12 @@ test('archive private mode validates ignored raw files and rejects tracked paylo
       ],
     }),
   )
-  const checked = f.check(true)
+  const checked = await f.check(true)
   assert.equal(checked.success, true)
   assert.equal(checked.checksumFiles, 1)
   assert.equal(checked.checksums, 1)
   execFileSync('git', ['add', '-f', '--', archivedPath], { cwd: f.root })
-  assert.equal(hasRule(f.check(true), 'private'), true)
+  assert.equal(hasRule(await f.check(true), 'private'), true)
 })
 
 for (const originalPath of [
@@ -472,7 +472,7 @@ for (const originalPath of [
   'dist/BiliCDN_TW.user.js.map',
   'dist/build-manifest.json',
 ])
-  test(`archive permits newly rebuilt output ${originalPath} beside its preserved old artifact`, (t) => {
+  test(`archive permits newly rebuilt output ${originalPath} beside its preserved old artifact`, async (t) => {
     const f = fixture(t),
       archivedPath = `${privateRoot}/${originalPath}`,
       body = 'old artifact\r\n'
@@ -489,11 +489,11 @@ for (const originalPath of [
         entries: [{ originalPath, archivedPath, ...proof(body) }],
       }),
     )
-    const result = f.check(true)
+    const result = await f.check(true)
     assert.equal(result.success, true)
     assert.equal(result.localFiles, 1)
   })
-test('archive still rejects a retained old dist task path after allowing normal rebuilds', (t) => {
+test('archive still rejects a retained old dist task path after allowing normal rebuilds', async (t) => {
   const f = fixture(t),
     originalPath = 'dist/old-task/report.json',
     archivedPath = `${privateRoot}/${originalPath}`,
@@ -511,7 +511,7 @@ test('archive still rejects a retained old dist task path after allowing normal 
       entries: [{ originalPath, archivedPath, ...proof(body) }],
     }),
   )
-  const result = f.check(true)
+  const result = await f.check(true)
   assert.ok(
     result.findings.some(
       (item) => item.rule === 'private' && item.message.includes('original path'),
@@ -520,12 +520,14 @@ test('archive still rejects a retained old dist task path after allowing normal 
   assert.ok(result.findings.some((item) => item.rule === 'layout' && item.file === 'dist'))
 })
 for (const file of ['dist/BiliCDN_TW.user.js.backup', 'dist/unknown.json'])
-  test(`archive default layout rejects an extra dist artifact ${file}`, (t) => {
+  test(`archive default layout rejects an extra dist artifact ${file}`, async (t) => {
     const f = fixture(t)
     f.write(file, 'extra')
-    assert.ok(f.check().findings.some((item) => item.rule === 'layout' && item.file === 'dist'))
+    assert.ok(
+      (await f.check()).findings.some((item) => item.rule === 'layout' && item.file === 'dist'),
+    )
   })
-test('archive private mode rejects destinations outside the designated local root', (t) => {
+test('archive private mode rejects destinations outside the designated local root', async (t) => {
   const f = fixture(t)
   f.write(
     f.manifest.localManifest,
@@ -543,13 +545,13 @@ test('archive private mode rejects destinations outside the designated local roo
       ],
     }),
   )
-  assert.equal(hasRule(f.check(true), 'private'), true)
+  assert.equal(hasRule(await f.check(true), 'private'), true)
 })
 for (const archivedPath of [
   `${privateRoot}/OPERATIONS/helper.mts`,
   `${privateRoot.toUpperCase()}-OTHER/payload.bin`,
 ])
-  test(`archive private mode rejects case-variant operations or sibling root ${archivedPath}`, (t) => {
+  test(`archive private mode rejects case-variant operations or sibling root ${archivedPath}`, async (t) => {
     const f = fixture(t)
     f.write(
       f.manifest.localManifest,
@@ -560,12 +562,12 @@ for (const archivedPath of [
         entries: [{ originalPath: 'dist/old.bin', archivedPath, bytes: 0, sha256: sha('') }],
       }),
     )
-    const result = f.check(true)
+    const result = await f.check(true)
     assert.ok(
       result.findings.some((item) => item.rule === 'private' && item.message.includes('outside')),
     )
   })
-test('archive private mode reports unreadable preserved objects as unverified failure', (t) => {
+test('archive private mode reports unreadable preserved objects as unverified failure', async (t) => {
   const f = fixture(t)
   f.write(
     f.manifest.localManifest,
@@ -586,8 +588,8 @@ test('archive private mode reports unreadable preserved objects as unverified fa
       ],
     }),
   )
-  assert.equal(hasRule(f.check(true), 'private-unverified'), true)
-  assert.equal(f.check().success, true)
+  assert.equal(hasRule(await f.check(true), 'private-unverified'), true)
+  assert.equal((await f.check()).success, true)
 })
 test('archive TAR reader accepts Git global PAX and per-file Unicode path metadata', () => {
   const bytes = Buffer.concat([
@@ -598,7 +600,7 @@ test('archive TAR reader accepts Git global PAX and per-file Unicode path metada
   ])
   assert.equal(readTarArchive(bytes).get('docs/中文 long.md')?.toString(), '# 中文\n')
 })
-test('archive TAR reader consumes a self-contained real git archive without extraction', (t) => {
+test('archive TAR reader consumes a self-contained real git archive without extraction', async (t) => {
   const f = fixture(t)
   f.write('docs/INDEX.md', '# 閱讀路徑\n\n獨立 Git fixture。\n')
   execFileSync('git', ['init', '-q'], { cwd: f.root })
@@ -659,7 +661,7 @@ test('archive TAR reader rejects bad header checksums and unsafe PAX path overri
     /Unsafe/,
   )
 })
-test('archive checker and JSON CLI leave every fixture byte unchanged', (t) => {
+test('archive checker and JSON CLI leave every fixture byte unchanged', async (t) => {
   const f = fixture(t)
   f.relocated('docs/old.md', 'archive/old.md', '# History\n')
   f.save()
@@ -672,7 +674,7 @@ test('archive checker and JSON CLI leave every fixture byte unchanged', (t) => {
       })
       .sort((a, b) => a[0]!.localeCompare(b[0]!))
   const before = state()
-  assert.equal(checkArchive(f.root).success, true)
-  assert.equal(archiveCli(['--json'], f.root).exitCode, 0)
+  assert.equal((await checkArchive(f.root)).success, true)
+  assert.equal((await archiveCli(['--json'], f.root)).exitCode, 0)
   assert.deepEqual(state(), before)
 })

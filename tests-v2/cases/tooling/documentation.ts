@@ -14,6 +14,7 @@ import {
 import { type DocumentationManifest } from '../../../scripts/checks/docs-check.mts'
 import { type ArchiveManifest } from '../../../scripts/checks/archive-check.mts'
 import { testScope } from '../../support/scope.ts'
+import { writePackedArchive } from '../../support/archive-packing.ts'
 
 function fixture(t: TestContext) {
   const scope = testScope(t),
@@ -970,3 +971,80 @@ test('documentation rejects undeclared archived private evidence even when it ex
   assert.equal(report.privateEvidenceNotChecked.length, 0)
   assert.ok(report.findings.some((item) => item.rule === 'link'))
 })
+
+test('documentation checks compressed immutable text protection anchors and historical references', async (t) => {
+  const f = relocatedReleaseReferenceFixture(t)
+  const body = readFileSync(join(f.root, f.source))
+  f.archive.schemaVersion = 2
+  f.archive.bundles = [writePackedArchive(f.root, [[f.source, body]])]
+  rmSync(join(f.root, f.source))
+  f.write(
+    'docs/INDEX.md',
+    `# Index\n\n[Guide](guide.md)\n\n[Readable](../${encodeURI(f.archivedTarget)})\n\n[Archive](../${f.archive.bundles[0]!.path})\n`,
+  )
+  const report = await f.check()
+  assert.equal(report.success, true, JSON.stringify(report.findings))
+  assert.equal(report.archivedReferences.length, 1)
+  f.archive.bundles[0]!.files[0]!.sha256 = '0'.repeat(64)
+  assert.ok((await f.check()).findings.some((item) => item.rule === 'archive-manifest'))
+})
+
+test('documentation requires maintained links to packed files to use a real readable destination', async (t) => {
+  const f = relocatedReleaseReferenceFixture(t)
+  f.archive.schemaVersion = 2
+  f.archive.bundles = [
+    writePackedArchive(f.root, [[f.source, readFileSync(join(f.root, f.source))]]),
+  ]
+  rmSync(join(f.root, f.source))
+  f.write(
+    'docs/INDEX.md',
+    `# Index\n\n[Guide](guide.md)\n\n[Readable](../${encodeURI(f.archivedTarget)})\n\n[Archive](../${f.archive.bundles[0]!.path})\n`,
+  )
+  f.write('docs/guide.md', `# Guide\n\n[packed](../${f.source})\n`)
+  const report = await f.check()
+  assert.ok(report.findings.some((item) => item.file === 'docs/guide.md' && item.rule === 'link'))
+})
+
+for (const condition of [
+  'absent',
+  'empty leftover',
+  'wrong revision',
+  'wrong source hash',
+  'live directory',
+])
+  test(`documentation frozen historical directory proof: ${condition}`, async (t) => {
+    const f = archiveFixture(t, '../old-tree')
+    f.write('old-tree/member.txt', 'historical source\n')
+    const git = (...args: string[]) =>
+      execFileSync('git', args, { cwd: f.root, encoding: 'utf8' }).trim()
+    git('init', '-q')
+    git('add', 'old-tree/member.txt')
+    git(
+      '-c',
+      'user.name=Fixture',
+      '-c',
+      'user.email=fixture@example.test',
+      '-c',
+      'commit.gpgsign=false',
+      'commit',
+      '-qm',
+      'old directory',
+    )
+    const ref = f.archive.historicalReferences[0]!
+    ref.originalTarget = 'old-tree'
+    ref.archivedTarget = 'old-tree'
+    ref.targetRevision = condition === 'wrong revision' ? '0'.repeat(40) : git('rev-parse', 'HEAD')
+    if (condition === 'wrong source hash') ref.sha256 = '0'.repeat(64)
+    if (condition === 'empty leftover') rmSync(join(f.root, 'old-tree/member.txt'))
+    else if (condition !== 'live directory') rmSync(join(f.root, 'old-tree'), { recursive: true })
+    const report = await f.check()
+    assert.equal(
+      report.success,
+      ['absent', 'empty leftover'].includes(condition),
+      JSON.stringify(report.findings),
+    )
+    assert.equal(
+      report.archivedReferences.length,
+      ['absent', 'empty leftover'].includes(condition) ? 1 : 0,
+    )
+  })

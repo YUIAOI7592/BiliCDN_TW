@@ -20,7 +20,7 @@ export async function verify() {
     `Project configuration passed: ${project.checkedDependencies} pinned development tools.`,
   )
   await formatProject(true)
-  const archived = checkArchive()
+  const archived = await checkArchive()
   if (!archived.success)
     throw Error(
       archived.findings

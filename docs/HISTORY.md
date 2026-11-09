@@ -106,8 +106,8 @@
 | v2.2.4 | [完整修復與 R1 原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v224-完整正文保存2026-11-01) |
 | v2.2.3 | [當版完整驗證與 R1](../archive/retired/docs/TEST_REPORT_HISTORY.md#v223-完整正文保存2026-11-01) |
 | v2.2.2 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v222-完整正文保存2026-11-01)、[發布後整合盤點](../archive/retired/docs/POST_DIAGNOSTICS_INTEGRATION_v2.2.2_2026-11-01.md) |
-| v2.2.1 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v221-完整正文保存2026-11-01)、[發行快照](../archive/retired/releases/Release/v2.2.1/TEST_REPORT_v2.2.1.md)、[發行變更](../archive/retired/releases/Release/v2.2.1/CHANGELOG_v2.2.1.md) |
-| v2.2.0 | [當版完整驗證及追加更正](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)、[發行快照](../archive/retired/releases/Release/v2.2.0/TEST_REPORT_v2.2.0.md)、[發行變更](../archive/retired/releases/Release/v2.2.0/CHANGELOG_v2.2.0.md) |
+| v2.2.1 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v221-完整正文保存2026-11-01)、[發行快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.2.1/TEST_REPORT_v2.2.1.md)、[發行變更](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.2.1/CHANGELOG_v2.2.1.md) |
+| v2.2.0 | [當版完整驗證及追加更正](../archive/retired/docs/TEST_REPORT_HISTORY.md#v220-完整正文保存2026-11-01)、[發行快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.2.0/TEST_REPORT_v2.2.0.md)、[發行變更](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.2.0/CHANGELOG_v2.2.0.md) |
 | v2.1.40 | [當版完整報告原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2140-完整正文保存2026-11-01) |
 | v2.1.39 | [當版完整報告原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2139-完整報告保存2026-10-31) |
 | v2.1.38 | [當版完整報告原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2138-完整正文保存2026-10-31) |
@@ -141,11 +141,11 @@
 | v2.1.10 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v2110-release-verification--2026-10-09)、[BR-02 XHR 例外安全性修復 — 2026-10-09](../archive/retired/docs/BR02_FIX_REPORT.md)、[BR-03 本機修復與驗證報告 — 2026-10-10](../archive/retired/docs/BR03_FIX_REPORT.md)、[BiliCDN_TW v2.1.10 Chrome／Tampermonkey 自主驗收 — 2026-10-09～10](../archive/retired/docs/CHROME_v2.1.10_ACCEPTANCE.md)、[BR-03：相同 DASH 清單排列改變誤觸內容週期 — 2026-10-10](../archive/retired/docs/CHROME_v2.1.10_BR03_CONTENT_EPOCH.md) |
 | v2.1.9 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v219-release-verification--2026-10-09)、[BR-02 XHR 例外安全性修復 — 2026-10-09](../archive/retired/docs/BR02_FIX_REPORT.md)、[v2.1.9 Chrome／Tampermonkey 功能驗收 — 2026-10-09](../archive/retired/docs/CHROME_v2.1.9_ACCEPTANCE.md)、[BR-02：XHR `open()` 拋出例外後，原請求失去終止事件與狀態所有權](../archive/retired/docs/CHROME_v2.1.9_BR02_XHR_FAILED_OPEN.md)、[BiliCDN_TW 功能與競態修復對照](../archive/retired/docs/FUNCTIONAL_FIX_REPORT.md) |
 | v2.1.8 | [當版完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#bilicdn_tw-v218-release-verification--2026-10-04)、[BiliCDN_TW 功能與競態修復對照](../archive/retired/docs/FUNCTIONAL_FIX_REPORT.md) |
-| v2.1.6 | [當版發行快照](../archive/retired/releases/Release/v2.1.6/TEST_REPORT_v2.1.6.md)、[v2.1.6 Chrome acceptance — user approved](../archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md) |
-| v2.1.2 | [當版發行快照](../archive/retired/releases/Release/v2.1.2/TEST_REPORT_v2.1.2.md)、[BiliCDN_TW v2.1.2 Chrome/Tampermonkey 驗收](../archive/retired/docs/CHROME_v2.1.2_ACCEPTANCE.md) |
-| v2.0.3 | [當版發行快照](../archive/retired/releases/Release/v2.0.3/TEST_REPORT_v2.0.3.md)、[v2.0.3 Chrome acceptance — targeted pass completed](../archive/retired/docs/CHROME_v2.0.3_ACCEPTANCE.md) |
-| v2.0.2 | [當版發行快照](../archive/retired/releases/Release/v2.0.2/TEST_REPORT_v2.0.2.md)、[v2.0.2：禁止出口、播放器備援與死核心事故修復計畫](../archive/retired/docs/PLAN_v2.0.2.md)、[v2.0.2 post-release findings — 2026-09-21](../archive/retired/docs/POST_RELEASE_v2.0.2.md) |
-| v1.6.0 | [當版發行快照](../archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md)、[v1.6.0 公開安全摘要](../archive/retired/docs/SECURITY_REVIEW_v1.6.0.md) |
+| v2.1.6 | [當版發行快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.1.6/TEST_REPORT_v2.1.6.md)、[v2.1.6 Chrome acceptance — user approved](../archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md) |
+| v2.1.2 | [當版發行快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.1.2/TEST_REPORT_v2.1.2.md)、[BiliCDN_TW v2.1.2 Chrome/Tampermonkey 驗收](../archive/retired/docs/CHROME_v2.1.2_ACCEPTANCE.md) |
+| v2.0.3 | [當版發行快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.0.3/TEST_REPORT_v2.0.3.md)、[v2.0.3 Chrome acceptance — targeted pass completed](../archive/retired/docs/CHROME_v2.0.3_ACCEPTANCE.md) |
+| v2.0.2 | [當版發行快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.0.2/TEST_REPORT_v2.0.2.md)、[v2.0.2：禁止出口、播放器備援與死核心事故修復計畫](../archive/retired/docs/PLAN_v2.0.2.md)、[v2.0.2 post-release findings — 2026-09-21](../archive/retired/docs/POST_RELEASE_v2.0.2.md) |
+| v1.6.0 | [當版發行快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md)、[v1.6.0 公開安全摘要](../archive/retired/docs/SECURITY_REVIEW_v1.6.0.md) |
 
 ## 議題
 
@@ -443,10 +443,11 @@
 
 - [封存總覽](../archive/README.md)、[退出流程資料](../archive/retired/README.md)。
 - [完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[工具驗證日誌](TEST_TOOLING_REPORT.md)。
-- [現行 Release](../Release) 僅保存版本設定對應的五項封裝檔；[過往 Release 原件](../archive/retired/releases/Release) 保持原始位元組、檔名及目錄結構。[來源基準](../baseline) 與歷史安全封存不回寫。
-- [整理前固定提交](https://github.com/YUIAOI7592/BiliCDN_TW/tree/0f4cb8d669a144cf6876575a979fd98e4b586300) 保留原始儲存庫路徑；[原始文件 TAR](../archive/retired/originals/PRE_CLEANUP_2026-10-20_0f4cb8d.tar) 保存本輪搬移前正文及完整日誌基準。
+- [現行 Release](../Release) 僅保存版本設定對應的五項封裝檔；過往 Release 與大型證據以 [壓縮包索引](../archive/relocation-manifest.json) 保存原始位元組及邏輯路徑，也可閱讀[精簡前固定提交](https://github.com/YUIAOI7592/BiliCDN_TW/tree/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release)。[來源基準](../baseline) 與歷史安全原件不回寫。
+- [整理前固定提交](https://github.com/YUIAOI7592/BiliCDN_TW/tree/0f4cb8d669a144cf6876575a979fd98e4b586300) 保留原始儲存庫路徑；[原始文件 TAR](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/originals/PRE_CLEANUP_2026-10-20_0f4cb8d.tar) 保存本輪搬移前正文及完整日誌基準。
 - [搬移清單](../archive/relocation-manifest.json) 登記舊／新路徑、雜湊、閱讀版 URL 編輯及精確歷史引用限制。舊 `main` 網址不因 Git 搬移自動取得新入口；這些限制與有效現行連結分開報告，不宣稱原歷史網址仍全部有效。
 - 舊矩陣、TODO 及舊索引的完整原文見 [重整前快照](../archive/retired/docs/DOCS_BEFORE_REORGANIZATION_2026-10-17.md)。
+- [2026-11-10 archive 精簡與還原報告](../archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md) 記錄壓縮、可重建副本、保留項目與驗證界線；還原指令由 [開發指南](DEVELOPMENT.md#壓縮清理與還原) 維護。
 
 ## 私有證據邊界
 
@@ -458,13 +459,13 @@
 
 | 快照來源／行號 | 原始相對路徑 |
 | --- | --- |
-| [Release/v2.1.7/TEST_REPORT_v2.1.7.md](../archive/retired/releases/Release/v2.1.7/TEST_REPORT_v2.1.7.md)：84 | `docs/CHROME_v2.1.6_ACCEPTANCE.md` |
-| [Release/v2.1.8/CHANGELOG_v2.1.8.md](../archive/retired/releases/Release/v2.1.8/CHANGELOG_v2.1.8.md)：3 | `../README.md` |
-| [Release/v2.1.8/CHANGELOG_v2.1.8.md](../archive/retired/releases/Release/v2.1.8/CHANGELOG_v2.1.8.md)：3 | `TEST_REPORT.md` |
-| [Release/v2.1.8/CHANGELOG_v2.1.8.md](../archive/retired/releases/Release/v2.1.8/CHANGELOG_v2.1.8.md)：3 | `INDEX.md` |
-| [Release/v2.1.8/TEST_REPORT_v2.1.8.md](../archive/retired/releases/Release/v2.1.8/TEST_REPORT_v2.1.8.md)：3 | `INDEX.md` |
-| [Release/v2.1.8/TEST_REPORT_v2.1.8.md](../archive/retired/releases/Release/v2.1.8/TEST_REPORT_v2.1.8.md)：31 | `INDEX.md` |
-| [Release/v2.1.8/TEST_REPORT_v2.1.8.md](../archive/retired/releases/Release/v2.1.8/TEST_REPORT_v2.1.8.md)：130 | `../archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md` |
+| [Release/v2.1.7/TEST_REPORT_v2.1.7.md](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.1.7/TEST_REPORT_v2.1.7.md)：84 | `docs/CHROME_v2.1.6_ACCEPTANCE.md` |
+| [Release/v2.1.8/CHANGELOG_v2.1.8.md](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.1.8/CHANGELOG_v2.1.8.md)：3 | `../README.md` |
+| [Release/v2.1.8/CHANGELOG_v2.1.8.md](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.1.8/CHANGELOG_v2.1.8.md)：3 | `TEST_REPORT.md` |
+| [Release/v2.1.8/CHANGELOG_v2.1.8.md](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.1.8/CHANGELOG_v2.1.8.md)：3 | `INDEX.md` |
+| [Release/v2.1.8/TEST_REPORT_v2.1.8.md](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.1.8/TEST_REPORT_v2.1.8.md)：3 | `INDEX.md` |
+| [Release/v2.1.8/TEST_REPORT_v2.1.8.md](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.1.8/TEST_REPORT_v2.1.8.md)：31 | `INDEX.md` |
+| [Release/v2.1.8/TEST_REPORT_v2.1.8.md](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v2.1.8/TEST_REPORT_v2.1.8.md)：130 | `../archive/retired/docs/CHROME_v2.1.6_ACCEPTANCE.md` |
 
 ## 2026-10-31 分支整併導覽
 
@@ -476,7 +477,7 @@
 
 - [v2.1.39 完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2139-完整報告保存2026-10-31)
 - [v2.1.38 改版前完整正文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2138-完整正文保存2026-10-31)
-- [v2.1.39 提前重試效用原始資料](../archive/retired/docs/evidence/CC39_EARLY_RETRY_EFFICACY_2026-10-31.json)
+- [v2.1.39 提前重試效用原始資料](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/docs/evidence/CC39_EARLY_RETRY_EFFICACY_2026-10-31.json)
 - [第二階段前封存配置原件](../baseline/CC39_pre_integration_relocation_2026-10-31.json)
 
 ## 2026-10-31 固定 CDN 備援恢復與移除後取證

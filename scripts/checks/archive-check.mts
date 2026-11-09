@@ -3,6 +3,8 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { reportRuntimeInfo } from '../lib/toolchain.mts'
+import { ArchiveStorage, parseArchiveBundles, readArchivePax } from '../lib/archive-storage.mts'
+import type { ArchiveBundle } from '../lib/archive-storage.mts'
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
@@ -26,6 +28,7 @@ export interface ArchiveEntry {
 }
 export interface HistoricalArchiveReference {
   sourceRevision?: string
+  targetRevision?: string
   source: string
   line: number
   url: string
@@ -40,7 +43,7 @@ interface ArchiveFileProof {
   sha256: string
 }
 export interface ArchiveManifest {
-  schemaVersion: 1
+  schemaVersion: 1 | 2
   baseline: string
   snapshot: ArchiveFileProof
   entries: ArchiveEntry[]
@@ -50,6 +53,8 @@ export interface ArchiveManifest {
   localManifest: string
   additionalLocalManifests?: string[]
   historicalReferences: HistoricalArchiveReference[]
+  bundles?: ArchiveBundle[]
+  localManifestProof?: { bytes: number; sha256: string }
 }
 export interface ArchiveFinding {
   file: string
@@ -69,6 +74,10 @@ export interface ArchiveResult {
   checksumFiles: number
   checksums: number
   findings: ArchiveFinding[]
+  packedFiles: number
+  reconstructedFiles: number
+  restoreChecked: boolean
+  reconstructedChecksumTargets: number
 }
 const manifestPath = 'archive/relocation-manifest.json'
 const localRoot = 'archive/retired/local/2026-10-20-cleanup'
@@ -155,16 +164,24 @@ function safeFile(root: string, file: string): string {
   }
   return absolute
 }
-function read(root: string, file: string): Buffer {
-  return readFileSync(safeFile(root, file))
+function read(root: string, file: string, storage?: ArchiveStorage): Buffer {
+  return storage ? storage.read(file) : readFileSync(safeFile(root, file))
 }
-function content(root: string, file: string, encoding: 'lf' | 'raw'): Buffer {
-  const bytes = read(root, file)
+function content(
+  root: string,
+  file: string,
+  encoding: 'lf' | 'raw',
+  storage?: ArchiveStorage,
+): Buffer {
+  const bytes = read(root, file, storage)
   return encoding === 'lf' ? Buffer.from(normalize(bytes.toString('utf8'))) : bytes
 }
 function parseManifest(value: unknown): ArchiveManifest {
   const raw = object(value)
-  if (raw.schemaVersion !== 1) throw Error('Unsupported archive schema')
+  if (raw.schemaVersion !== 1 && raw.schemaVersion !== 2) throw Error('Unsupported archive schema')
+  if (raw.schemaVersion === 1 && raw.bundles !== undefined)
+    throw Error('Schema 1 cannot declare bundles')
+  const bundles = raw.schemaVersion === 2 ? parseArchiveBundles(raw.bundles) : undefined
   const baseline = string(raw.baseline)
   if (!/^[a-f0-9]{40}$/.test(baseline)) throw Error('Expected full baseline commit SHA')
   const entries = rows(raw.entries).map((row): ArchiveEntry => {
@@ -206,7 +223,11 @@ function parseManifest(value: unknown): ArchiveManifest {
     return { ...proof(row), encoding: 'raw' as const }
   })
   const localManifest = localPath(raw.localManifest)
-  if (pathKey(localManifest) !== `${localRoot}/private-manifest.json`)
+  if (
+    raw.schemaVersion === 1
+      ? pathKey(localManifest) !== `${localRoot}/private-manifest.json`
+      : !/^archive\/retired\/local\/[^/]+\/private-manifest\.json$/.test(localManifest)
+  )
     throw Error('Unexpected private archive manifest path')
   const additionalLocalManifests: string[] = []
   if (raw.additionalLocalManifests !== undefined) {
@@ -223,14 +244,21 @@ function parseManifest(value: unknown): ArchiveManifest {
     const line = integer(row.line)
     if (line === 0) throw Error('Historical reference lines start at one')
     const sourceRevision = row.sourceRevision
+    const targetRevision = row.targetRevision
     if (
       sourceRevision !== undefined &&
       (typeof sourceRevision !== 'string' || !/^[a-f0-9]{40}$/.test(sourceRevision))
     )
       throw Error('Historical source revision must be an immutable Git commit')
+    if (
+      targetRevision !== undefined &&
+      (typeof targetRevision !== 'string' || !/^[a-f0-9]{40}$/.test(targetRevision))
+    )
+      throw Error('Historical target revision must be an immutable Git commit')
     return {
       source: publicPath(row.source),
       ...(sourceRevision === undefined ? {} : { sourceRevision }),
+      ...(targetRevision === undefined ? {} : { targetRevision }),
       line,
       url: string(row.url),
       sha256: sha(row.sha256),
@@ -263,7 +291,7 @@ function parseManifest(value: unknown): ArchiveManifest {
   if (entries.some((entry) => originals.has(pathKey(entry.archivedPath))))
     throw Error('Archive destination collides with an original path')
   return {
-    schemaVersion: 1,
+    schemaVersion: raw.schemaVersion,
     baseline,
     snapshot: proof(object(raw.snapshot)),
     entries,
@@ -273,6 +301,15 @@ function parseManifest(value: unknown): ArchiveManifest {
     localManifest,
     ...(additionalLocalManifests.length ? { additionalLocalManifests } : {}),
     historicalReferences,
+    ...(bundles === undefined ? {} : { bundles }),
+    ...(raw.localManifestProof === undefined
+      ? {}
+      : {
+          localManifestProof: {
+            bytes: integer(object(raw.localManifestProof).bytes),
+            sha256: sha(object(raw.localManifestProof).sha256),
+          },
+        }),
   }
 }
 export function readArchiveManifest(root: string, relativePath = manifestPath): ArchiveManifest {
@@ -292,29 +329,6 @@ function tarNumber(header: Buffer, start: number, size: number): number {
   if (!Number.isSafeInteger(result)) throw Error('Oversized TAR number')
   return result
 }
-function paxFields(bytes: Buffer): Record<string, string> {
-  const result: Record<string, string> = {}
-  let cursor = 0
-  while (cursor < bytes.length) {
-    const space = bytes.indexOf(32, cursor)
-    if (space < 0) throw Error('Invalid PAX record length')
-    const digits = bytes.subarray(cursor, space).toString('ascii')
-    if (!/^[1-9][0-9]*$/.test(digits)) throw Error('Invalid PAX record length')
-    const length = Number(digits)
-    if (
-      !Number.isSafeInteger(length) ||
-      length <= space - cursor + 2 ||
-      cursor + length > bytes.length
-    )
-      throw Error('Truncated PAX record')
-    const record = bytes.subarray(space + 1, cursor + length).toString('utf8')
-    if (!record.endsWith('\n') || !record.includes('=')) throw Error('Invalid PAX record')
-    const equal = record.indexOf('=')
-    result[record.slice(0, equal)] = record.slice(equal + 1, -1)
-    cursor += length
-  }
-  return result
-}
 /** Read git archive TAR bytes without extracting or following filesystem paths. */
 export function readTarArchive(bytes: Uint8Array): ReadonlyMap<string, Buffer> {
   const input = Buffer.from(bytes),
@@ -322,7 +336,8 @@ export function readTarArchive(bytes: Uint8Array): ReadonlyMap<string, Buffer> {
     names = new Set<string>()
   let cursor = 0,
     ended = false,
-    nextPax: Record<string, string> = {}
+    nextPax: Record<string, string> = {},
+    pendingPax = false
   while (cursor + 512 <= input.length) {
     const header = input.subarray(cursor, cursor + 512)
     if (header.every((value) => value === 0)) {
@@ -348,16 +363,23 @@ export function readTarArchive(bytes: Uint8Array): ReadonlyMap<string, Buffer> {
     if (prefix) name = `${prefix}/${name}`
     localPath(type === '5' ? name.replace(/\/$/, '') : name)
     if (type === 'x' || type === 'g') {
-      const fields = paxFields(data)
-      if (fields.linkpath !== undefined) throw Error('TAR links are not permitted')
+      if (pendingPax) throw Error('Consecutive PAX extension headers')
+      const fields = readArchivePax(data)
       if (type === 'g' && (fields.path !== undefined || fields.size !== undefined))
         throw Error('Global PAX cannot replace paths or sizes')
-      if (type === 'x') nextPax = fields
+      if (type === 'x') {
+        nextPax = fields
+        pendingPax = true
+      }
     } else {
       if (nextPax.path !== undefined) name = nextPax.path
-      if (nextPax.size !== undefined && Number(nextPax.size) !== size)
+      if (
+        nextPax.size !== undefined &&
+        (!/^[0-9]+$/.test(nextPax.size) || Number(nextPax.size) !== size)
+      )
         throw Error('PAX size differs from TAR header')
       nextPax = {}
+      pendingPax = false
       if (type !== '0' && type !== '\0' && type !== '5')
         throw Error(`Unsupported TAR entry type: ${type}`)
       const key = localPath(type === '5' ? name.replace(/\/$/, '') : name)
@@ -368,7 +390,7 @@ export function readTarArchive(bytes: Uint8Array): ReadonlyMap<string, Buffer> {
     }
     cursor = padded
   }
-  if (!ended || Object.keys(nextPax).length) throw Error('Truncated TAR archive')
+  if (!ended || pendingPax) throw Error('Truncated TAR archive')
   return result
 }
 
@@ -468,13 +490,15 @@ function checkChecksums(
   verificationRoot: string,
   registered: ReadonlySet<string>,
   result: ArchiveResult,
+  storage?: ArchiveStorage,
+  reconstructed?: ReadonlyMap<string, { bytes: number; sha256: string }>,
 ): void {
   for (const file of files) {
     result.checksumFiles++
     try {
       if (!registered.has(pathKey(file)))
         throw Error('Checksum list is not registered in the archive manifest')
-      const lines = normalize(read(root, file).toString('utf8')).split('\n')
+      const lines = normalize(read(root, file, storage).toString('utf8')).split('\n')
       if (lines.at(-1) === '') lines.pop()
       if (!lines.length) throw Error('Empty checksum list')
       const targets = new Set<string>()
@@ -490,7 +514,14 @@ function checkChecksums(
             throw Error('Checksum target is not registered in the archive manifest')
           if (targets.has(pathKey(target))) throw Error('Duplicate checksum target')
           targets.add(pathKey(target))
-          if (digest(read(root, archived)) !== match[1]) throw Error('Release checksum mismatch')
+          const rebuilt = reconstructed?.get(pathKey(archived))
+          if (
+            (rebuilt?.sha256 ??
+              (storage ? storage.proof(archived).sha256 : digest(read(root, archived)))) !==
+            match[1]
+          )
+            throw Error('Release checksum mismatch')
+          if (rebuilt) result.reconstructedChecksumTargets++
           result.checksums++
         } catch (error) {
           result.findings.push({ file, line: index + 1, rule: 'checksum', message: message(error) })
@@ -502,14 +533,198 @@ function checkChecksums(
   }
 }
 const isChecksum = (file: string) => /(?:^|\/)SHA256SUMS_v[0-9.]+\.txt$/.test(file)
-function checkLocal(
+async function checkLocalPacked(
+  root: string,
+  manifest: ArchiveManifest,
+  result: ArchiveResult,
+  privateManifest: string,
+  raw: Record<string, unknown>,
+): Promise<ArchiveStorage> {
+  if (manifest.schemaVersion !== 2 || raw.root !== 'archive' || raw.baseline !== manifest.baseline)
+    throw Error('Invalid private archive manifest identity')
+  const bundles = parseArchiveBundles(raw.bundles, true)
+  if (bundles.some((bundle) => !bundle.path.startsWith('archive/retired/local/bundles/')))
+    throw Error('Private bundle is outside private archive')
+  const privateFile = (value: unknown) => {
+    const path = localPath(value)
+    if (!/^archive\/(?:retired\/local\/|pre-upstream-[^/]+\/)/.test(path))
+      throw Error('Private file is outside private archive')
+    return path
+  }
+  const records = rows(raw.records).map((row) => ({
+    path: privateFile(row.path),
+    bytes: integer(row.bytes),
+    sha256: sha(row.sha256),
+    disposition: string(row.disposition),
+  }))
+  uniquePaths(
+    records.map((row) => row.path),
+    'private record',
+  )
+  const declared = new Set(records.map((row) => pathKey(row.path)))
+  const removed = rows(raw.removed ?? []).map((row) => ({
+    path: privateFile(row.path),
+    bytes: integer(row.bytes),
+    sha256: sha(row.sha256),
+    proof: privateFile(row.proof),
+  }))
+  uniquePaths(
+    [...records, ...removed].map((row) => row.path),
+    'private disposition',
+  )
+  const storage = await ArchiveStorage.open(root, bundles, {
+    private: true,
+    metadataPaths: new Set(removed.map((row) => row.proof)),
+  })
+  if (storage.paths().some((path) => !declared.has(pathKey(path))))
+    throw Error('Unregistered private bundle member')
+  result.packedFiles += storage.paths().length
+  if (!existsSync(resolve(root, '.git')))
+    throw Error('Local archive checks require Git tracking state')
+  const tracked = new Set(
+    execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
+      .split('\0')
+      .filter(Boolean)
+      .map(pathKey),
+  )
+  const physical = [
+    privateManifest,
+    ...bundles.map((bundle) => bundle.path),
+    ...records.filter((row) => row.disposition === 'kept').map((row) => row.path),
+  ]
+  const ignored = new Set(
+    execFileSync('git', ['check-ignore', '--no-index', '-z', '--stdin'], {
+      cwd: root,
+      encoding: 'utf8',
+      input: physical.join('\0') + '\0',
+      maxBuffer: 32 * 1024 * 1024,
+    })
+      .split('\0')
+      .filter(Boolean)
+      .map(pathKey),
+  )
+  for (const path of physical)
+    if (tracked.has(pathKey(path)) || !ignored.has(pathKey(path)))
+      throw Error('Private archive payload must be ignored and untracked')
+  for (const record of records) {
+    if (!['packed', 'kept'].includes(record.disposition)) throw Error('Invalid private disposition')
+    if ((record.disposition === 'packed') !== storage.isPacked(record.path))
+      throw Error('Private location differs from its disposition')
+    if (record.disposition === 'packed' && existsSync(safeFile(root, record.path)))
+      throw Error('Packed private original still exists')
+    const actual = await storage.physicalProof(record.path)
+    if (actual.bytes !== record.bytes || actual.sha256 !== record.sha256)
+      throw Error('Private bytes or SHA-256 differ from baseline')
+    result.localFiles++
+  }
+  const ledgers = new Map<string, Map<string, Record<string, unknown>>>()
+  const dependencySets = new Map<string, Set<string>>()
+  const sourceRevision =
+    raw.sourceRevision === undefined ? manifest.baseline : string(raw.sourceRevision)
+  if (!/^[a-f0-9]{40}$/.test(sourceRevision)) throw Error('Invalid reconstruction source revision')
+  const proofRecords = new Map(records.map((row) => [pathKey(row.path), row]))
+  for (const record of removed) {
+    if (existsSync(safeFile(root, record.path)))
+      throw Error('Reconstructed private copy still exists')
+    if (!declared.has(pathKey(record.proof))) throw Error('Reconstruction proof is missing')
+    if (!ledgers.has(record.proof)) {
+      if (proofRecords.get(pathKey(record.proof))!.bytes > 16 * 1024 * 1024)
+        throw Error('Reconstruction ledger exceeds 16 MiB')
+      const ledger = object(JSON.parse(storage.read(record.proof).toString('utf8')) as unknown)
+      if (ledger.schemaVersion !== 1 || ledger.baseline !== sourceRevision)
+        throw Error('Invalid reconstruction ledger identity')
+      const sets = new Set<string>()
+      for (const entry of rows(ledger.dependencySets ?? [])) {
+        const name = string(entry.name),
+          packageHash = sha(entry.packageSha256),
+          lockHash = sha(entry.lockSha256)
+        if (
+          !/^[a-z0-9][a-z0-9-]{0,63}$/.test(name) ||
+          sets.has(name) ||
+          entry.code !== 0 ||
+          !records.some((row) => row.sha256 === packageHash) ||
+          !records.some((row) => row.sha256 === lockHash)
+        )
+          throw Error('Dependency reconstruction inputs missing')
+        sets.add(name)
+      }
+      dependencySets.set(record.proof, sets)
+      const items = rows(ledger.removed),
+        indexed = new Map<string, Record<string, unknown>>()
+      for (const item of items) {
+        const identity = pathKey(privateFile(item.path))
+        if (indexed.has(identity)) throw Error('Duplicate reconstruction ledger path')
+        indexed.set(identity, item)
+      }
+      ledgers.set(record.proof, indexed)
+    }
+    const item = ledgers.get(record.proof)!.get(pathKey(record.path))
+    if (!item || item.bytes !== record.bytes || item.sha256 !== record.sha256)
+      throw Error('Reconstruction proof does not cover the removed bytes')
+    const method = object(item.method),
+      kind = string(method.kind)
+    if (
+      !['dependency-rebuild', 'git-object-store', 'git-blob', 'duplicate', 'git-archive'].includes(
+        kind,
+      )
+    )
+      throw Error('Invalid reconstruction method')
+    if (kind === 'duplicate') {
+      const source = privateFile(method.source)
+      if (!declared.has(pathKey(source))) throw Error('Reconstruction source missing')
+      const actual = await storage.physicalProof(source)
+      if (actual.bytes !== record.bytes || actual.sha256 !== record.sha256)
+        throw Error('Duplicate reconstruction bytes differ')
+    }
+    if (
+      kind === 'git-blob' &&
+      (!/^[a-f0-9]{40}$/.test(string(method.blob)) || method.reachableFrom !== sourceRevision)
+    )
+      throw Error('Invalid Git blob reconstruction')
+    if (kind === 'git-archive' && !/^[a-f0-9]{40}$/.test(string(method.commit)))
+      throw Error('Invalid Git archive reconstruction')
+    if (
+      kind === 'git-object-store' &&
+      (!declared.has(pathKey(privateFile(method.uniquePack))) ||
+        method.stableCommit !== sourceRevision)
+    )
+      throw Error('Git object rescue pack missing')
+    if (kind === 'dependency-rebuild' && !dependencySets.get(record.proof)?.has(string(method.set)))
+      throw Error('Dependency reconstruction set missing')
+    result.reconstructedFiles++
+  }
+  const registered = new Set([...records, ...removed].map((row) => pathKey(row.path)))
+  const reconstructed = new Map(
+    removed.map((row) => [pathKey(row.path), { bytes: row.bytes, sha256: row.sha256 }]),
+  )
+  for (const path of records.map((row) => row.path).filter(isChecksum)) {
+    const offset = path.indexOf('/Release/')
+    if (offset < 0) continue
+    checkChecksums(root, [path], path.slice(0, offset), registered, result, storage, reconstructed)
+  }
+  return storage
+}
+async function checkLocal(
   root: string,
   manifest: ArchiveManifest,
   result: ArchiveResult,
   privateManifest = manifest.localManifest,
-): void {
+): Promise<ArchiveStorage | undefined> {
   const localRoot = dirname(privateManifest).replaceAll('\\', '/')
-  const raw = object(JSON.parse(read(root, privateManifest).toString('utf8')) as unknown)
+  const bytes = read(root, privateManifest)
+  if (manifest.schemaVersion === 2 && privateManifest === manifest.localManifest) {
+    if (!manifest.localManifestProof)
+      throw Error('Private manifest has no public preservation proof')
+    verifyProof(bytes, manifest.localManifestProof)
+  }
+  const raw = object(JSON.parse(bytes.toString('utf8')) as unknown)
+  if (
+    manifest.schemaVersion === 2 &&
+    privateManifest === manifest.localManifest &&
+    raw.schemaVersion !== 2
+  )
+    throw Error('Private archive schema downgrade is not permitted')
+  if (raw.schemaVersion === 2) return checkLocalPacked(root, manifest, result, privateManifest, raw)
   if (
     raw.schemaVersion !== 1 ||
     !/^[a-f0-9]{40}$/.test(string(raw.baseline)) ||
@@ -604,10 +819,10 @@ function checkLocal(
     result,
   )
 }
-export function checkArchive(
+export async function checkArchive(
   root = process.cwd(),
-  options: { local?: boolean } = {},
-): ArchiveResult {
+  options: { local?: boolean; restoreRoot?: string } = {},
+): Promise<ArchiveResult> {
   const result: ArchiveResult = {
     schemaVersion: 1,
     success: false,
@@ -620,6 +835,10 @@ export function checkArchive(
     checksumFiles: 0,
     checksums: 0,
     findings: [],
+    packedFiles: 0,
+    reconstructedFiles: 0,
+    restoreChecked: false,
+    reconstructedChecksumTargets: 0,
   }
   const attempt = (file: string, rule: string, action: () => void) => {
     try {
@@ -628,10 +847,14 @@ export function checkArchive(
       result.findings.push({ file, line: 1, rule, message: message(error) })
     }
   }
-  let manifest: ArchiveManifest, snapshot: ReadonlyMap<string, Buffer>
+  let manifest: ArchiveManifest, snapshot: ReadonlyMap<string, Buffer>, storage: ArchiveStorage
   try {
     manifest = readArchiveManifest(root)
-    const bytes = read(root, manifest.snapshot.path)
+    storage = await ArchiveStorage.open(root, manifest.bundles ?? [])
+    result.packedFiles = storage.paths().length
+    for (const path of storage.paths())
+      if (existsSync(safeFile(root, path))) throw Error('Packed public original still exists')
+    const bytes = read(root, manifest.snapshot.path, storage)
     verifyProof(bytes, manifest.snapshot)
     snapshot = readTarArchive(bytes)
   } catch (error) {
@@ -642,7 +865,7 @@ export function checkArchive(
     attempt(entry.archivedPath, 'relocation', () => {
       if (existsSync(safeFile(root, entry.originalPath)))
         throw Error('Original relocated path still exists')
-      const archived = content(root, entry.archivedPath, entry.encoding)
+      const archived = content(root, entry.archivedPath, entry.encoding, storage)
       verifyProof(archived, { bytes: entry.archivedBytes, sha256: entry.archivedSha256 })
       if (entry.kind === 'record') {
         const bytes = snapshot.get(entry.originalPath)
@@ -667,22 +890,21 @@ export function checkArchive(
       verifyProof(original, entry)
       if (existsSync(safeFile(root, entry.path)))
         throw Error('Removed compatibility path still exists')
-      if (!existsSync(safeFile(root, entry.replacementPath)))
-        throw Error('Compatibility replacement is missing')
+      if (!storage.has(entry.replacementPath)) throw Error('Compatibility replacement is missing')
     })
   for (const entry of manifest.appendOnly)
     attempt(entry.path, 'append-only', () => {
       const original = snapshot.get(entry.snapshotEntry)
       if (!original) throw Error('Append-only baseline is missing from the snapshot')
       verifyProof(original, entry)
-      const current = content(root, entry.path, 'lf')
+      const current = content(root, entry.path, 'lf', storage)
       if (!current.subarray(0, entry.bytes).equals(original))
         throw Error('Existing journal body was modified or truncated')
       result.appendOnly++
     })
   for (const entry of manifest.unchangedFiles)
     attempt(entry.path, 'unchanged', () => {
-      verifyProof(read(root, entry.path), entry)
+      verifyProof(read(root, entry.path, storage), entry)
       result.unchangedFiles++
     })
   const publicReleases = manifest.entries.filter((entry) => entry.kind === 'release'),
@@ -695,10 +917,16 @@ export function checkArchive(
   attempt('archive/retired/releases', 'checksum', () =>
     checkChecksums(
       root,
-      fileList(root, 'archive/retired/releases/Release').filter(isChecksum),
+      [
+        ...new Set([
+          ...fileList(root, 'archive/retired/releases/Release'),
+          ...storage.paths().filter((path) => path.startsWith('archive/retired/releases/Release/')),
+        ]),
+      ].filter(isChecksum),
       'archive/retired/releases',
       registeredReleases,
       result,
+      storage,
     ),
   )
   attempt('Release', 'checksum', () =>
@@ -708,6 +936,7 @@ export function checkArchive(
       '',
       registeredReleases,
       result,
+      storage,
     ),
   )
   attempt('Release', 'layout', () => {
@@ -752,20 +981,55 @@ export function checkArchive(
       if (!entry.isFile() || !rebuildableOutputs.has(`dist/${entry.name}`))
         throw Error(`Only the three normal rebuildable outputs may remain in dist/: ${entry.name}`)
   })
+  const privateStorages: ArchiveStorage[] = []
   if (options.local)
-    for (const path of [manifest.localManifest, ...(manifest.additionalLocalManifests ?? [])])
-      attempt(path, 'private', () => checkLocal(root, manifest, result, path))
+    for (const path of [manifest.localManifest, ...(manifest.additionalLocalManifests ?? [])]) {
+      try {
+        const local = await checkLocal(root, manifest, result, path)
+        if (local) privateStorages.push(local)
+      } catch (error) {
+        result.findings.push({ file: path, line: 1, rule: 'private', message: message(error) })
+      }
+    }
+  if (options.restoreRoot) {
+    try {
+      await storage.verifyRestore(options.restoreRoot, privateStorages)
+      result.restoreChecked = true
+    } catch (error) {
+      result.findings.push({
+        file: options.restoreRoot,
+        line: 1,
+        rule: 'restore',
+        message: message(error),
+      })
+    }
+  }
   result.findings.sort((a, b) => a.file.localeCompare(b.file) || a.rule.localeCompare(b.rule))
   result.success = result.findings.length === 0
   return result
 }
-export function archiveCli(args: readonly string[], root = process.cwd()) {
-  if (
-    new Set(args).size !== args.length ||
-    args.some((arg) => arg !== '--json' && arg !== '--local')
-  )
-    return { exitCode: 2, output: 'Usage: npm run archive:check [-- --local] [--json]\n' }
-  const report = checkArchive(root, { local: args.includes('--local') })
+export async function archiveCli(args: readonly string[], root = process.cwd()) {
+  const flags = new Set<string>()
+  let restoreRoot: string | undefined
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index]!
+    if (!['--json', '--local', '--restore-root'].includes(arg) || flags.has(arg))
+      return {
+        exitCode: 2,
+        output: 'Usage: npm run archive:check [-- --local] [--json] [--restore-root directory]\n',
+      }
+    flags.add(arg)
+    if (arg === '--restore-root') {
+      const path = args[++index]
+      if (!path || path.startsWith('--'))
+        return { exitCode: 2, output: 'Expected restore directory\n' }
+      restoreRoot = resolve(root, path)
+    }
+  }
+  const report = await checkArchive(root, {
+    local: flags.has('--local'),
+    ...(restoreRoot === undefined ? {} : { restoreRoot }),
+  })
   return {
     exitCode: report.success ? 0 : 1,
     output: args.includes('--json')
@@ -779,7 +1043,7 @@ export function archiveCli(args: readonly string[], root = process.cwd()) {
 if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/checks/archive-check.mts')) {
   reportRuntimeInfo()
   try {
-    const cli = archiveCli(process.argv.slice(2))
+    const cli = await archiveCli(process.argv.slice(2))
     process.stdout.write(cli.output)
     process.exitCode = cli.exitCode
   } catch (error) {

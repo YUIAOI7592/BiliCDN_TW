@@ -46,26 +46,16 @@ v2.2.15 的 application 依 routing／measurement／playback／playurl 歸屬控
 ├─ tsconfig*.json / 格式與 Git 設定
 └─ archive/
    ├─ README.md                    封存導覽
-   ├─ relocation-manifest.json     公開搬移、雜湊與 URL 修改清單
-   ├─ retired/
-   │  ├─ README.md                 退出流程資料導覽
-   │  ├─ docs/                     公開歷史閱讀版、彙編與指南快照
-   │  │  └─ evidence/              指定公開圖片與固定盤點證據
-   │  ├─ releases/Release/         過往版本原始封裝及校驗清單
-   │  ├─ originals/                搬移前原始文件與完整日誌 TAR
-   │  └─ local/                    本機私有封存，Git 忽略
-   │     ├─ 2026-10-20-cleanup/     當日清理封存，保留原相對路徑
-   │     │  ├─ .work/              調查、證據、快取與一次性工作
-   │     │  ├─ dist/               舊建置與檢查資料
-   │     │  ├─ Release/            原散落的舊版產物
-   │     │  ├─ .codex/local/       舊發行筆記
-   │     │  ├─ operations/         搬移腳本、驗證紀錄與乾淨副本
-   │     │  └─ private-manifest.json
-   │     ├─ development/ / review/ / scripts/ / security/ / src/ / work/
-   │     │                         更早輪次的私有封存
-   │     ├─ relocation-manifest.json
-   │     └─ root-document-relocation.json
-   └─ pre-upstream-v1.3.4-20260904/ 既有上游更新前私有封存，Git 忽略
+   ├─ relocation-manifest.json     schema 2：原件、邏輯路徑、壓縮位置及歷史引用
+   └─ retired/
+      ├─ README.md                 退出流程資料導覽
+      ├─ docs/                     可讀歷史報告、研究及追加日誌
+      ├─ bundles/                  公開 TAR＋gzip 原件包，Git 追蹤
+      └─ local/                    本機私有資料，Git 忽略
+         ├─ bundles/               私有 TAR＋gzip 原件與還原證明
+         ├─ <整理輪次>/private-manifest.json
+         │                         私有位置、原件及本輪重建證明索引
+         └─ 其他保留原件            已壓縮原件或待釐清資料，依清單判讀
 ```
 
 ### 檔案分類
@@ -85,15 +75,15 @@ v2.2.15 的 application 依 routing／measurement／playback／playurl 歸屬控
 | 分類 | 維護規則 |
 | --- | --- |
 | 現行公開檔案 | 正式來源、測試、可重用工具、指南與設定隨變更維護；現行 Release 發布後不回寫。`baseline/` 仍作來源歸屬基準，保持不變，不作 v2 建置／測試輸入 |
-| 公開封存 | 歷史閱讀版、原始封裝、指定圖片與 TAR 可隨公開 checkout 取得；閱讀版只允許可由原件重建的已登記 URL 編輯，原始封裝、校驗清單、安全產物與證據保持原始位元組 |
+| 公開封存 | 歷史報告與日誌維持可讀；大型證據、過往發行及政策原件以標準 TAR＋gzip 保存。原始位元組及校驗值保持，閱讀版只允許已登記 URL 編輯；保護不要求散落原位置永久存在 |
 | 本機現行資料 | 開發依賴、正式建置輸出及工作中的工具資料由 Git 忽略；有現行用途的依賴與生成產物不當成舊檔搬走 |
-| 本機私有封存 | 已結案工作、舊工具、原始證據、私有清單與獨立 Git 快照保持忽略；不公開 payload，不作現行 v2 建置／測試輸入 |
+| 本機私有封存 | 唯一證據、必要工具與 metadata 壓縮保存；可核對還原的依賴、Git 物件容器及驗證副本可清除。私有清單、檔名與內容不公開，不作產品建置／測試輸入；未知資料保留並列明缺口 |
 
 正式工具依現行消費者與契約判定用途：PowerShell／Shell 驗證入口仍呼叫正式 `verify`，上游比較與提前重試評估保留。診斷與 IAB 專用工具已撤除，原碼由固定提交追溯，不保留正式可執行副本。其他已結案的任務專用腳本及舊依賴副本按私有封存規則處理。歷史封存不取代上游基準，也不得整包覆蓋現行來源。
 
 ### 工作資料與結案
 
-只有已批准任務實際開始時才建立 `.work/` 等暫存位置；例如新 IAB 輪次使用 `.work/iab-testing/`，不能因目錄範例而恢復已停止工作。結案先釋放自有活動資源，原始證據及操作紀錄保留於報告實際指定的本機忽略目錄，不因仍在 `.work/` 就判定案例未清理；一次性工具、舊依賴及乾淨副本另按用途收入日期分類的私有封存。實際搬移須登記清單、核對原始位元組並執行 `archive:check -- --local`，不能只改文件聲稱已搬移。2026-10-20 的操作資料位於上述日期目錄的 `operations/`；後續輪次使用自己的目錄，不改寫舊證據。
+只有已批准任務實際開始時才建立 `.work/` 等暫存位置；不能因範例恢復已停止工作。結案先釋放自有資源，必要原件及操作紀錄保存於報告指定位置或已登記壓縮包；完成雜湊、來源及獨立還原核對後，才移除原位置與已證實可重建的副本。歷史報告中的舊位置描述當時狀態，現行查找使用封存清單；不能只改文件聲稱已搬移或清除，也不能把暫存目錄仍有原件當成案例未清理。
 
 確認是否仍有舊檔，須同時核對實體檔案遍歷、Git 追蹤清單與忽略清單，不能只看 `git status`。現行 `dist/` 只保留上列三項正式輸出，過往 Release 應已移出現行 `Release/`；核對命令與保護規則見本指南的 [命令](#命令) 及 [文件登記與保護](#文件登記與保護)。原始位置、存取失敗、首次可讀雜湊與逐位元組比較須按實際證據分開記錄，不能補算未執行的核對。
 
@@ -170,9 +160,34 @@ v2.2.12 的 `--optimization` 補充模式、提前重試資格對照及私有取
 
 `docs:check` 已納入 `verify`，以鎖定的 GFM 解析／格式及標題錨點套件執行，不讀取私有證據。預設輸出檔案、行號、規則及原因；`npm run docs:check -- --json` 輸出 schemaVersion 2 結果，包含 findings、legacyLinks、archivedReferences、私有證據未核對及外部連結未連線資料。archivedReferences 表示受保護原文中的原網址因搬移失效，另有登記封存目標；它不算有效現行連結。既有快照斷鏈另列 legacyLinks，不能宣稱歷史網址全部有效。
 
-`archive:check` 的公開模式同樣納入 `verify`，依 [搬移清單](../archive/relocation-manifest.json) 核對 TAR 原件、發行與圖片原始位元組、閱讀版 URL 編輯及三份既有日誌完整正文。另驗舊路徑退出、Release 僅現行版及校驗清單；無 Git 的乾淨來源副本也可執行。`--local` 額外核對被忽略的本機搬移清單與私有檔案原始雜湊，公開 checkout 不含這些資料，預設不執行。兩個檢查命令的退出碼均為 0／1／2，分別代表通過、檢查失敗及非法參數；檢查不會搬移或改寫檔案。
+`archive:check` 的公開模式納入 verify，核對公開壓縮包、原件、歷史閱讀版 URL 編輯、三份日誌及當前 Release；公開封存檢查不要求 Git 或私有資料。`--local` 額外核對私有包、原位保留檔與本輪已保存的重建證明，需要 Git 追蹤／忽略狀態。`--restore-root` 逐檔唯讀核對已解壓的 payload 與包內清單；結果仍使用 schemaVersion 1，另列 packedFiles、reconstructedFiles、reconstructedChecksumTargets 及 restoreChecked，重建證明與新讀到的原件不混稱。退出碼仍為 0／1／2；檢查器不解壓、刪除或改寫資料。
 
-本機封存可在搬移清單的 `additionalLocalManifests` 登記額外日期清單，位置限定 `archive/retired/local/<日期目錄>/private-manifest.json`。每份沿用 schema 1、該輪完整 baseline、root 與 entries；目標須位於自己的 root，逐檔保存大小及 SHA-256。`--local` 同時核對原清單與所有追加清單，拒絕重複登記、原位置殘留、原件變動及被 Git 追蹤的私有資料；公開模式只核對登記路徑，不讀私有清單。刪除快取的重建依據、刪前雜湊與刪後結果另存當輪私有操作紀錄，不以搬移證明代替刪除證明。
+封存清單 schema 2 以 bundles 登記壓縮檔大小／SHA-256、TAR 輸出大小、包內索引及各成員原件證明；邏輯路徑保持，位置改為實體檔或包成員。原 schema 1 與舊清單原件仍可核對；原本 `archive/retired/releases/Release/`、`originals/` 及日期私有目錄可只存在於清單與還原內容中。新私有索引的原始雜湊由公開清單固定，`--local` 先核對該證明再解析，不能改回 schema 1 略過壓縮成員；預設公開模式不讀私有索引或檔名。跨輪整理先保存舊清單，歷史刪除表不當成永久新增的資料保留義務。
+
+### 壓縮、清理與還原
+
+新原件包使用標準 TAR＋gzip，公開／私有分開，依任務分包，目標每包未壓縮內容不超過 256 MiB，單一大型原件獨立保存。固定容器排序、時間及權限欄位，原件本身不改寫；包內保留相對路徑、大小、SHA-256、來源及必要時間資訊。已有 gzip／ZIP 等原件先核對完整性與重複性，保留一份，不為整齊再套壓縮。
+
+清理前建立完整清單並區分原件、可重建副本及未知資料。舊依賴在隔離目錄以精確鎖定來源重建，不執行舊安裝腳本、不動根 node_modules；差異保留原件。Git 副本檢查 refs、index、工作差異及不可達物件，主倉庫穩定提交以外的必要物件另存救援包並做獨立還原；不只執行 bundle --all。原件逐位元組還原與 Git 物件等價重建分開記錄，不承諾重建相同的快取 pack 排列。
+
+順序固定為壓縮、獨立解壓、逐檔比對、新清單驗證，最後才刪除原件。路徑須限定核對後的專案／暫存根，拒絕連結、路徑逃逸、重複成員、超量輸出及目標衝突；失敗保留原件及操作紀錄。TAR 只接受已支援的標準 PAX 路徑、大小與被動中繼資料，拒絕未知解讀欄位及覆蓋未使用的局部延伸標頭。私有大檔以串流核對，僅明確指定且有上限的驗證 metadata 可載入；不執行封存的程式或恢復舊測試窗口。
+
+以下還原公開包；目的地必須是新空目錄。依當次 Runtime 選擇規則執行 npm；先檢查包，再用標準 tar 解壓，最後核對解壓內容。私有還原另先通過 `--local`，並把私有包解至同一新目錄，最後使用 `--local --restore-root`。不要解回現行來源或 Release。
+
+```powershell
+npm run archive:check
+if ($LASTEXITCODE -ne 0) { throw 'Archive validation failed' }
+$archiveRestore = Join-Path (Get-Location).Path '.work/archive-restore'
+if (Test-Path -LiteralPath $archiveRestore) { throw 'Choose a new empty directory' }
+New-Item -ItemType Directory -Path $archiveRestore | Out-Null
+Get-ChildItem -LiteralPath archive/retired/bundles -Filter '*.tar.gz' | ForEach-Object {
+  & tar -xzf $_.FullName -C $archiveRestore
+  if ($LASTEXITCODE -ne 0) { throw 'Archive extraction failed' }
+}
+npm run archive:check -- --restore-root $archiveRestore
+```
+
+本機壓縮不是異機備份，刪除／壓縮容量不包含 Git 歷史減重。保留既有 Git 歷史與標籤，不執行強制推送、歷史重寫或廣域清空；未知項目列出缺口，不為達成容量目標勉強刪除。
 
 ### 原版與 v2 的獨立離線比較
 
@@ -323,16 +338,16 @@ metadata.txt 的 `@version` 使用唯一的 `__VERSION__` 占位符，由 releas
 2. 同步 [release.json](../release.json)、[package.json](../package.json) 及對應 [package-lock.json](../package-lock.json) 的版本設定；一般指南引用版本來源，避免逐份硬寫目前版本。
 3. 更新 [CHANGELOG](CHANGELOG.md) 的本版行為差異及證據入口，保留舊條目；TEST_REPORT 保存新版完整證據，分列自動、安全、來源隔離及實際安裝結果。未執行、失敗、無效及依指示跳過的項目照實保留。
 4. 更新 TODO 的交付／停止／結案狀態，依文件更新對照表核對受影響指南，不將完整發布摘要或測試數字複製到其他入口。
-5. 封裝新版前，將前版 Release 按原始位元組歸檔至 `archive/retired/releases/Release/`，核對原件及校驗清單，再更新搬移清單與適用保護資料；`Release/` 只保留現行版本五項產物。搬移不重寫已發布快照或版本標籤。
+5. 封裝新版前，先核對前版五份 Release 原始位元組及校驗清單，再壓縮至公開原件包並登記原邏輯路徑；獨立解壓核對通過後才移除舊散件。`Release/` 只保留現行版本五項產物；不重寫已發布快照、標籤或原始雜湊。
 6. 保留 `docs/CHANGELOG.md`、`docs/TEST_REPORT.md` 兩個封裝輸入路徑；它們連至其他儲存庫文件時使用完整 URL，確保複製到 Release 後仍可閱讀。封裝及發布命令見 [封裝與發行](#封裝與發行)；檢查已發布版本時只使用暫存封裝，不回寫快照。
 
 ### 文件登記與保護
 
 1. 新增公開 Markdown 時更新清單的分類、topics、versions、date 與導覽。versions 可含調查基準和交付版本；缺少可確認日期填 null，不推測執行時間。主題權威由 owners 唯一定義，清單不保存 PASS 數或工作狀態。
-2. 清單 schemaVersion 為 1；documents.kind 分別標記指南、導覽、狀態、驗證、變更、日誌、版本紀錄、不可變快照與相容頁。protections 的 exact 禁止正文改寫；prefix 只允許追加。文字雜湊按 LF 正規化，二進位按原始位元組；不得改基準雜湊來消除失敗。
+2. 文件清單 schemaVersion 維持 1，封存位置清單使用 schema 2。documents.kind 區分現行權威與歷史用途；protections 的 exact 保護全文、prefix 只允許追加。文字按 LF、二進位按原始位元組核對，包內內容也經同一讀取介面驗證；不能刪基準或改雜湊來掩蓋原件變動。
 3. 修改標題先核對引用與 requiredAnchors；[HISTORY](HISTORY.md) 提供版本、議題、日期及封存入口。`TEST_REPORT_HISTORY`、`DOC_MAINTENANCE_HISTORY` 與 `TEST_TOOLING_REPORT` 三份日誌的全部既有正文只追加；搬移清單的完整基準補足原 prefix 保護之後的既有尾段。發行原件、baseline 與安全封存不回寫。
 4. 失效連結例外只適用原檔雜湊相符的不可變文件，逐筆指定 source、line、url、sha256、reason；修復後刪除例外。歷史報告中的本機私有證據另以 privateEvidenceReferences 記錄相同精確欄位，只適用受保護原報告，無論本機是否有檔都列為未核對，不讀取私有內容。不得對現行文件、未知新錯誤或整個目錄設定豁免。
-5. `archiveManifest` 連至公開搬移清單；歷史引用限制須精確符合 source、line、url、原檔 LF 雜湊及登記的 originalTarget／archivedTarget。現行指南及搬移閱讀版本身的連結必須有效，不能借歷史限制隱藏新錯誤。工具重新分組的現行路徑由文件清單 sourceRelocations 登記；原路徑必須消失且新檔存在。退役原碼改由 retiredSources 登記完整提交與原始 blob SHA-256，檢查本機檔案已消失且 Git 原件相符；只供精確受保護的歷史引用使用，不豁免現行指南或新斷鏈。閱讀版只准修改原件中已解析的連結 URL，文字、程式碼、標題與結果均與 TAR 原文核對。
+5. `archiveManifest` 連至公開封存清單；歷史引用限制必須精確符合來源、行號、URL、原文雜湊及保存目標。已驗證包內目標可支持原文歷史連結限制，但不算 GitHub 上仍有效的原網址；現行指南改連可讀入口、封存包或固定 Git 提交。退役來源目錄可用 targetRevision 綁定當時 Git commit 的 tree，空目錄殘留不算來源證據；新規則不豁免現行文件、未知錯誤或整個目錄。來源檔搬移與退役仍核對精確新檔或 Git blob，不把歷史限制混為現行連結通過。
 6. 搬移清單的 unchangedFiles 是本輪未改產品的證明。後續已授權產品變更先保存舊清單快照，再明確更新適用範圍；不得回寫歷史原件 entries、原始雜湊或既有 URL 編輯證據來消除失敗。
 
 持續維護而未限定版本的指南、導覽與跨版彙編，清單的 versions 使用空陣列、date 使用 null，現行產品版本仍由 release.json 決定；不要保留已失去範圍意義的舊版標籤。固定來源／工具版本、明確日期的遷移對照與版本驗收文件保留其實際關聯。文件狀態改變時，同輪核對清單的分類與範圍，日期不是執行時間或驗收成功的替代證據。

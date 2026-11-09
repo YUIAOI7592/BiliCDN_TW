@@ -20,6 +20,7 @@ import './cases/tooling/upstream-comparison.ts'
 import './cases/tooling/v227-evaluation.ts'
 import { renderMetadata } from '../scripts/build.mts'
 import './cases/tooling/definition-imports.ts'
+import './cases/tooling/archive-compressed.ts'
 
 test('V2214 metadata injects exactly one explicit release version placeholder', () => {
   assert.equal(

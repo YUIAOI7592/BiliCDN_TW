@@ -3801,18 +3801,36 @@
     {
       "path": "archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md",
       "kind": "record",
-      "topics": ["history"],
-      "versions": ["v2.2.16"],
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.16"
+      ],
       "date": "2026-11-09",
-      "requiredAnchors": ["研究結論", "比較方法與結果", "版本鎖定建議與優先順序", "工具鏈整理實作銜接", "完整驗證與安全差異結果"]
+      "requiredAnchors": [
+        "研究結論",
+        "比較方法與結果",
+        "版本鎖定建議與優先順序",
+        "工具鏈整理實作銜接",
+        "完整驗證與安全差異結果"
+      ]
     },
     {
       "path": "archive/retired/docs/ROUTING_OWNERSHIP_v2.2.16_2026-11-09.md",
       "kind": "record",
-      "topics": ["history"],
-      "versions": ["v2.2.15", "v2.2.16"],
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.15",
+        "v2.2.16"
+      ],
       "date": "2026-11-09",
-      "requiredAnchors": ["固定基線", "所有權與重設對照"]
+      "requiredAnchors": [
+        "固定基線",
+        "所有權與重設對照"
+      ]
     },
     {
       "path": "archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md",
@@ -3893,6 +3911,18 @@
         "v2.2.15"
       ],
       "date": "2026-11-09",
+      "requiredAnchors": []
+    },
+    {
+      "path": "archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md",
+      "kind": "record",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.16"
+      ],
+      "date": "2026-11-10",
       "requiredAnchors": []
     }
   ],
@@ -8138,6 +8168,34 @@
       "bytes": 14329,
       "sha256": "ebf303a53c5f0df327c62ba2cc79676a043f4b59a94d4b794f515272ecb07269",
       "mode": "exact"
+    },
+    {
+      "path": "docs/TEST_TOOLING_REPORT.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 224461,
+      "sha256": "6871a93c28a5515be3a1442624421c1ea4680cba29c3919366040fddb1667b2e"
+    },
+    {
+      "path": "archive/retired/docs/DOC_MAINTENANCE_HISTORY.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 217645,
+      "sha256": "6cc0341f202894fd28f5df56e3643dfcc0060e71c00868a6c93d846e9d5dda6b"
+    },
+    {
+      "path": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 770164,
+      "sha256": "c425603cc33fea01f03ebb8695ea34fe9b92026e61c636c47238323af547e904"
+    },
+    {
+      "path": "archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 4183,
+      "sha256": "8b7e071c3602132fe6c4e2e8443db8e91837ea841d1e1ad802057aba3d172bec"
     }
   ],
   "privateEvidenceReferences": [

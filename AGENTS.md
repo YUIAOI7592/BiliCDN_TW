@@ -8,7 +8,7 @@
 - 發行產物：`Release/v<version>/BiliCDN_TW.user.js`，`version` 取自 `release.json`。通過自動驗證及必要安全驗證後發布；Codex 內建瀏覽器／Tampermonkey 驗收另行記錄。
 - 歷史 v1 Release 與標籤僅供參考；v2 建置及測試不得匯入。
 - 現行文件與歷史紀錄的狀態見 `docs/INDEX.md`。有版本的計畫、驗收紀錄及發行快照只描述當時版本；目前工作見 `docs/TODO.md`。
-- 已退出流程的文件位於 `archive/retired/docs/`；舊本機工具與私有證據位於 `archive/retired/local/`。封存不作 v2 建置／測試輸入，配置見 `archive/retired/README.md`。
+- 已退出流程的可讀文件位於 `archive/retired/docs/`；大型公開原件以 TAR＋gzip 保存於 `archive/retired/bundles/`，私有資料繼續保持 Git 忽略。保護以原件內容、來源及已核對還原能力為準；經批准且完成核對後，允許移除原位置與可重建副本，現行規則見 `docs/DEVELOPMENT.md`，保存位置由封存清單維護。
 
 ## 使用者永久執行禁令
 
@@ -94,9 +94,9 @@
 - 隨對應原始碼變更更新現行指南。依程式／設定核對預設值、介面／權責、儲存行為、UI 名稱、測試命令及發布狀態。
 - 文件更新依 [更新現有段落](docs/DEVELOPMENT.md#更新現有段落避免累積副本) 處理：先修正原章節及同議題的現行提及位置，再補歷史入口；不要只追加新規則而留下舊規則。README 面向使用者，版本研究目錄集中 HISTORY。
 - 事實來源為 `release.json`、`package.json`、`package-lock.json`、`src-v2/` 及 `scripts/`；有日期的測試／瀏覽器紀錄只作對應版本的證據。
-- 歷史紀錄標示版本／日期並連至現行指南。保留原始觀察、限制及計畫撤銷狀態；不得將舊待完成文字或已批准驗收的限制轉為現行待辦。歸檔閱讀版只允許經搬移清單登記、可由原始快照重建的連結 URL 調整；Release、安全產物及原始證據保持原始位元組。
+- 歷史紀錄標示版本／日期並連至現行指南。保留原始觀察、限制及計畫撤銷狀態；不得將舊待完成文字或已批准驗收的限制轉為現行待辦。閱讀版只允許經登記、可由原始快照重建的連結 URL 調整；Release、安全產物及原始證據的內容保持原始位元組。壓縮、來源核對及獨立還原通過後可移除散落原件；不能只刪保護登記或改雜湊來消除失敗。
 - `docs/INDEX.md` 是閱讀入口，`docs/TODO.md` 唯一維護工作狀態，`docs/TEST_REPORT.md` 唯一保存最新版完整驗收結果；其他入口使用連結保持一致，不複製狀態摘要。修正現行文件時，不得回寫 `Release/v*/` 快照或已封存且不可變更的安全產物。
 - `docs/TEST_REPORT.md` 保存最新版完整報告與歷史導覽；換版時將上一版完整正文加入 `archive/retired/docs/TEST_REPORT_HISTORY.md`，保留日期、版本、原錨點導引及原始限制。文件整理結果另按日期記入 `archive/retired/docs/DOC_MAINTENANCE_HISTORY.md`。
 - 保留 `docs/CHANGELOG.md`、`docs/TEST_REPORT.md` 兩個封裝輸入路徑；它們指向其他儲存庫文件的連結使用完整儲存庫 URL，確保複製到 Release 後仍可閱讀。
 - 僅修改文件時，執行 `npm run docs:check`，另核對事實與使用者範圍及 `git diff --check`；新增文件登記 `docs/doc-manifest.json` 並加入 `docs/HISTORY.md` 或現行入口。未實際執行時，不得宣稱新的執行期測試或瀏覽器驗收。
-- 變更封存配置、搬移清單或保護資料時，另執行 `npm run archive:check`；本機搬移另加 `-- --local`，不可把內容無法讀取列為通過。三份既有日誌的完整正文只能追加，詳細規則見開發指南。
+- 變更封存配置、位置清單或保護資料時，另執行 `npm run archive:check`；本機處置另加 `-- --local`，完整解壓後以 `--restore-root` 唯讀核對，不可把內容無法讀取列為通過。三份既有日誌的完整正文只能追加；壓縮、還原與可重建副本判定見開發指南。

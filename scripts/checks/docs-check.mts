@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, statSync, lstatSync } from 'node:fs'
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
@@ -10,6 +10,7 @@ import GithubSlugger from 'github-slugger'
 import { lint } from 'markdownlint/promise'
 import { readArchiveManifest } from './archive-check.mts'
 import { type ArchiveManifest, type HistoricalArchiveReference } from './archive-check.mts'
+import { ArchiveStorage } from '../lib/archive-storage.mts'
 
 interface MarkdownNode {
   type: string
@@ -231,11 +232,10 @@ function markdownFiles(root: string, manifest: DocumentationManifest): string[] 
       ...new Set(
         execFileSync(
           'git',
-          ['ls-files', '--cached', '--others', '--exclude-standard', '--', '*.md'],
+          ['ls-files', '--cached', '--others', '--exclude-standard', '-z', '--', '*.md'],
           { cwd: root, encoding: 'utf8' },
         )
-          .trim()
-          .split('\n')
+          .split('\0')
           .filter(Boolean),
       ),
     ].sort()
@@ -281,7 +281,8 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
   }
   const add = (file: string, rule: string, message: string, line = 1) =>
     result.findings.push({ file, line, rule, message })
-  const read = (file: string) => normalize(readFileSync(resolve(root, file), 'utf8'))
+  let storage = new ArchiveStorage(root)
+  const read = (file: string) => normalize(storage.read(file).toString('utf8'))
   let manifest: DocumentationManifest
   let archive: ArchiveManifest | undefined
   try {
@@ -297,6 +298,7 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
   if (manifest.archiveManifest) {
     try {
       archive = readArchiveManifest(root, manifest.archiveManifest)
+      storage = await ArchiveStorage.open(root, archive.bundles ?? [])
     } catch (error) {
       add(
         manifest.archiveManifest,
@@ -306,7 +308,12 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
       return result
     }
   }
-  const files = markdownFiles(root, manifest),
+  const files = [
+      ...new Set([
+        ...markdownFiles(root, manifest),
+        ...storage.paths().filter((path) => path.endsWith('.md')),
+      ]),
+    ].sort(),
     entries = new Map<string, DocumentEntry>(),
     anchors = new Map<string, ReadonlySet<string>>(),
     trees = new Map<string, MarkdownNode>(),
@@ -369,11 +376,11 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
   const protectedPaths = new Set<string>()
   for (const item of manifest.protections) {
     protectedPaths.add(item.path)
-    if (!existsSync(resolve(root, item.path))) {
+    if (!storage.has(item.path)) {
       add(item.path, 'preservation', 'Protected file missing')
       continue
     }
-    const raw = readFileSync(resolve(root, item.path)),
+    const raw = storage.read(item.path),
       data = item.encoding === 'lf' ? Buffer.from(normalize(raw.toString('utf8'))) : raw,
       original = item.mode === 'prefix' ? data.subarray(0, item.bytes) : data
     if (
@@ -391,6 +398,37 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
   const evidenceMatches = new Set<number>()
   const archivedMatches = new Set<number>()
   const archivedReferences = archive?.historicalReferences ?? []
+  const directoryProofs = new Map<string, boolean>()
+  const frozenDirectory = (item: HistoricalArchiveReference): boolean => {
+    if (!item.targetRevision || item.originalTarget !== item.archivedTarget) return false
+    const target = item.targetRevision + ':' + item.archivedTarget
+    if (!directoryProofs.has(target)) {
+      try {
+        const options = {
+          cwd: root,
+          encoding: 'utf8' as const,
+          windowsHide: true,
+          stdio: ['ignore', 'pipe', 'pipe'] as ['ignore', 'pipe', 'pipe'],
+        }
+        directoryProofs.set(
+          target,
+          execFileSync('git', ['cat-file', '-t', item.targetRevision], options).trim() ===
+            'commit' && execFileSync('git', ['cat-file', '-t', target], options).trim() === 'tree',
+        )
+      } catch {
+        directoryProofs.set(target, false)
+      }
+    }
+    return directoryProofs.get(target) === true
+  }
+  const directoryHasFiles = (path: string): boolean =>
+    lstatSync(path).isSymbolicLink() ||
+    readdirSync(path, { withFileTypes: true }).some(
+      (entry) =>
+        entry.isSymbolicLink() ||
+        !entry.isDirectory() ||
+        directoryHasFiles(resolve(path, entry.name)),
+    )
   const retiredSources = new Set<string>()
   for (const item of manifest.retiredSources ?? []) {
     try {
@@ -431,6 +469,7 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
     relocations.set(item.originalPath, item.currentPath)
   }
   for (const path of retiredSources) if (!relocations.has(path)) relocations.set(path, path)
+  for (const path of storage.paths()) if (!relocations.has(path)) relocations.set(path, path)
   const readingCopies = new Set(
     archive?.entries.filter((item) => item.kind === 'record').map((item) => item.archivedPath) ??
       [],
@@ -571,6 +610,18 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
         } else if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel))
           error = 'Link leaves repository'
         else if (!existsSync(target)) error = 'Link target missing'
+        else if (
+          statSync(target).isDirectory() &&
+          archivedReferences.some(
+            (item) =>
+              item.source === file &&
+              item.line === line &&
+              item.url === original &&
+              item.targetRevision !== undefined,
+          ) &&
+          !directoryHasFiles(target)
+        )
+          error = 'Link target missing'
         else {
           const key = rel.replaceAll('\\', '/')
           if (key.endsWith('.md')) {
@@ -590,15 +641,16 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
           item.url === original &&
           archiveSourceMatches(file, node, item.sha256, item.sourceRevision) &&
           item.originalTarget === historicalTarget &&
-          relocations.get(item.originalTarget) === item.archivedTarget &&
-          (retiredSources.has(item.archivedTarget) ||
-            (existsSync(resolve(root, item.archivedTarget)) &&
-              statSync(resolve(root, item.archivedTarget)).isFile())) &&
+          (item.targetRevision === undefined || frozenDirectory(item)) &&
+          (relocations.get(item.originalTarget) === item.archivedTarget || frozenDirectory(item)) &&
+          (frozenDirectory(item) ||
+            retiredSources.has(item.archivedTarget) ||
+            storage.has(item.archivedTarget)) &&
           (!originalFragment ||
             !item.archivedTarget.endsWith('.md') ||
             anchors.get(item.archivedTarget)?.has(originalFragment)) &&
           ['immutable', 'record', 'journal'].includes(entries.get(file)?.kind ?? '') &&
-          !readingCopies.has(file) &&
+          (!readingCopies.has(file) || storage.isPacked(item.archivedTarget)) &&
           protectedPaths.has(file),
       )
       if (archivedIndex >= 0) {
