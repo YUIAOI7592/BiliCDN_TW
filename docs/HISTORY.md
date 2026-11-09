@@ -399,6 +399,7 @@
 
 | 文件日期 | 原始紀錄 |
 | --- | --- |
+| 2026-11-09 | [七日舊副本清理](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#七日舊副本清理2026-11-09)；[還原證明與檢查](TEST_TOOLING_REPORT.md#七日舊副本清理驗證2026-11-09) |
 | 2026-11-08 | [現行文件去重與更新規則](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#現行文件去重與更新規則整理2026-11-08)；[重複段落檢查契約](TEST_TOOLING_REPORT.md#2026-11-08現行文件重複段落檢查) |
 | 2026-11-08 | [v2.2.12 R1 三頁、設定與 UI 刷新專項](TEST_REPORT.md#v2212-r1-三頁與刷新專項2026-11-08) |
 | 2026-11-08 | [v2.2.12 觀察校準與提前重試適用率研究](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md) |
