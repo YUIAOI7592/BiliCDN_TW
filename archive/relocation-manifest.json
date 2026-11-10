@@ -13837,7 +13837,8 @@
   "additionalLocalManifests": [
     "archive/retired/local/2026-11-10-workspace-audit/private-manifest.json",
     "archive/retired/local/2026-11-10-recovering-research/private-manifest.json",
-    "archive/retired/local/2026-11-10-v2217/private-manifest.json"
+    "archive/retired/local/2026-11-10-v2217/private-manifest.json",
+    "archive/retired/local/2026-11-10-v2217-closure/private-manifest.json"
   ],
   "bundles": [
     {
