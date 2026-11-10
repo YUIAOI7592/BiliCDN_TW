@@ -10,6 +10,8 @@
 
 ## 版本
 
+- [v2.2.17 假停滯與恢復後重試抑制修復（2026-11-10）](../archive/retired/docs/PROGRESS_STABILITY_v2.2.17_2026-11-10.md)。
+
 - [v2.2.16 recovering 與提前重試抑制調查（2026-11-10）](../archive/retired/docs/RECOVERING_SUPPRESSION_v2.2.16_2026-11-10.md)。
 
 - [v2.2.16 基準的全工作區整理與工具斷鏈修正（2026-11-10）](../archive/retired/docs/WORKSPACE_CLEANUP_2026-11-10.md)。

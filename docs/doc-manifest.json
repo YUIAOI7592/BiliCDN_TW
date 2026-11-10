@@ -81,21 +81,29 @@
     {
       "path": "archive/retired/docs/RECOVERING_SUPPRESSION_v2.2.16_2026-11-10.md",
       "kind": "record",
-      "topics": ["history"],
-      "versions": ["v2.2.16"],
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.16"
+      ],
       "date": "2026-11-10",
       "requiredAnchors": []
     },
     {
       "path": "archive/retired/docs/WORKSPACE_CLEANUP_2026-11-10.md",
       "kind": "record",
-      "topics": ["history"],
-      "versions": ["v2.2.16"],
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.16"
+      ],
       "date": "2026-11-10",
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.16/CHANGELOG_v2.2.16.md",
+      "path": "archive/retired/releases/Release/v2.2.16/CHANGELOG_v2.2.16.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -107,7 +115,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.16/TEST_REPORT_v2.2.16.md",
+      "path": "archive/retired/releases/Release/v2.2.16/TEST_REPORT_v2.2.16.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -2938,9 +2946,9 @@
         "verification"
       ],
       "versions": [
-        "v2.2.16"
+        "v2.2.17"
       ],
-      "date": "2026-11-09",
+      "date": "2026-11-10",
       "requiredAnchors": [
         "驗收結論",
         "v2216-r1-載入身分與選路提交接線2026-11-09",
@@ -3004,8 +3012,10 @@
       "topics": [
         "work"
       ],
-      "versions": [],
-      "date": null,
+      "versions": [
+        "v2.2.17"
+      ],
+      "date": "2026-11-10",
       "requiredAnchors": [
         "v2-工作狀態與後續方向",
         "現在的執行狀態",
@@ -3940,6 +3950,48 @@
       ],
       "date": "2026-11-10",
       "requiredAnchors": []
+    },
+    {
+      "path": "archive/retired/docs/PROGRESS_STABILITY_v2.2.17_2026-11-10.md",
+      "kind": "record",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.16",
+        "v2.2.17"
+      ],
+      "date": "2026-11-10",
+      "requiredAnchors": [
+        "固定基線與責任",
+        "政策與原案例映射",
+        "回歸與固定輸入對照",
+        "安全與交付界線"
+      ]
+    },
+    {
+      "path": "Release/v2.2.17/CHANGELOG_v2.2.17.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.17"
+      ],
+      "date": "2026-11-10",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.17/TEST_REPORT_v2.2.17.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.17"
+      ],
+      "date": "2026-11-10",
+      "requiredAnchors": []
     }
   ],
   "protections": [
@@ -3958,35 +4010,35 @@
       "sha256": "2b7995469a237b1a125349d2b2cb532ec6bafeb4430a57624d99369976001211"
     },
     {
-      "path": "Release/v2.2.16/BUILD_MANIFEST_v2.2.16.json",
+      "path": "archive/retired/releases/Release/v2.2.16/BUILD_MANIFEST_v2.2.16.json",
       "encoding": "raw",
       "bytes": 13302,
       "sha256": "59595549cc171bbf5116381491aab6d78e14690179b54d034a498f32f3e21520",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.16/BiliCDN_TW.user.js",
+      "path": "archive/retired/releases/Release/v2.2.16/BiliCDN_TW.user.js",
       "encoding": "raw",
       "bytes": 538269,
       "sha256": "7068ee5a53b3646c08a67691055f59905b6b4d7d585269b41284ca4fa9cfd145",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.16/CHANGELOG_v2.2.16.md",
+      "path": "archive/retired/releases/Release/v2.2.16/CHANGELOG_v2.2.16.md",
       "encoding": "raw",
       "bytes": 71523,
       "sha256": "1f2033143951a478e053f42ceba3f7a2193a369cea795d69bec2cbc0d307a2e7",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.16/SHA256SUMS_v2.2.16.txt",
+      "path": "archive/retired/releases/Release/v2.2.16/SHA256SUMS_v2.2.16.txt",
       "encoding": "raw",
       "bytes": 419,
       "sha256": "5285553c325e0182cf97e9e038760bf9cb305e4ba339ce0112cc5b7f4068a5b3",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.16/TEST_REPORT_v2.2.16.md",
+      "path": "archive/retired/releases/Release/v2.2.16/TEST_REPORT_v2.2.16.md",
       "encoding": "raw",
       "bytes": 14437,
       "sha256": "b9b3782bd838cb04aabe677caeead927ee0ced2e353e11738d3cdc97140893d8",
@@ -8226,6 +8278,48 @@
       "encoding": "lf",
       "bytes": 4183,
       "sha256": "8b7e071c3602132fe6c4e2e8443db8e91837ea841d1e1ad802057aba3d172bec"
+    },
+    {
+      "path": "archive/retired/docs/PROGRESS_STABILITY_v2.2.17_2026-11-10.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 5495,
+      "sha256": "59d91212172824aa0c1ca8755f1e23d847afb7ad5e57f389d5833ef40392d0d1"
+    },
+    {
+      "path": "Release/v2.2.17/BiliCDN_TW.user.js",
+      "encoding": "raw",
+      "bytes": 543717,
+      "sha256": "b6dff6e3cecd48eb40589587ae2093e47ad38a34f56c1fc76c3288accec1967b",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.17/BUILD_MANIFEST_v2.2.17.json",
+      "encoding": "raw",
+      "bytes": 13382,
+      "sha256": "8b10dc22f32d996b72463bacdd6b6545ffa330dad94bd24093e124d84bc6135d",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.17/CHANGELOG_v2.2.17.md",
+      "encoding": "raw",
+      "bytes": 72336,
+      "sha256": "46b80a91b5b0a2c7ecdb186e9f97f57e631d52ded2b9d3fb233ccd11d9a8db21",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.17/SHA256SUMS_v2.2.17.txt",
+      "encoding": "raw",
+      "bytes": 419,
+      "sha256": "9e022aa89d659a9ffc55ea536fcd7b7dbc3f19483f5b6f822a78148e7e6544ae",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.17/TEST_REPORT_v2.2.17.md",
+      "encoding": "raw",
+      "bytes": 14956,
+      "sha256": "9c79de9102f91230ba87430217009e6acd0d7e979caeecf2226e8035f4f40cc2",
+      "mode": "exact"
     }
   ],
   "privateEvidenceReferences": [

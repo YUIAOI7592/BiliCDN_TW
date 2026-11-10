@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili CDN 台灣優化
 // @namespace    BiliCDN_TW
-// @version      2.2.16
+// @version      2.2.17
 // @description  台灣 CDN 與播放整合：自動選路、香港節點、起播與健康量測、慢請求重試及三頁控制中心
 // @author       jiyunshi <chocosensei214@gmail.com>
 // @license      MIT
@@ -153,6 +153,79 @@
   }
   __name(probeStartByte, "probeStartByte");
 
+  // src-v2/domain/playback-progress.ts
+  function comparePlaybackControls(current, previous) {
+    if (previous === null) return "initial";
+    return current.seekRevision !== previous.seekRevision || current.userRevision !== previous.userRevision || current.mediaId !== previous.mediaId || current.coreId !== previous.coreId ? "changed" : "same";
+  }
+  __name(comparePlaybackControls, "comparePlaybackControls");
+  function playbackTimeAdvanced(currentTime, previousTime) {
+    return currentTime - previousTime > 0.05;
+  }
+  __name(playbackTimeAdvanced, "playbackTimeAdvanced");
+  function playbackFramesAdvanced(currentFrames, previousFrames) {
+    return currentFrames > previousFrames;
+  }
+  __name(playbackFramesAdvanced, "playbackFramesAdvanced");
+  function stableProgress(ticks, elapsedMs, minimum) {
+    return Number.isFinite(ticks) && ticks >= minimum && Number.isFinite(elapsedMs) && elapsedMs >= minimum * 1e3;
+  }
+  __name(stableProgress, "stableProgress");
+  function samplePlaybackProgress(state, sample) {
+    const previous = state.baseline;
+    const reset = /* @__PURE__ */ __name((observation, advanced2 = false) => ({
+      next: { baseline: sample, observedAt: sample.at, ticks: 0, elapsedMs: 0 },
+      observation,
+      advanced: advanced2
+    }), "reset");
+    if (previous && (comparePlaybackControls(sample, previous) !== "same" || sample.playbackRevision !== previous.playbackRevision || sample.generation !== previous.generation || sample.epoch !== previous.epoch || sample.representation !== previous.representation || sample.active !== previous.active || sample.seeking !== previous.seeking || sample.pendingSeekGoal !== previous.pendingSeekGoal))
+      return reset("owner-changed");
+    if (sample.at === null || !Number.isFinite(sample.at) || sample.at < 0 || state.observedAt != null && sample.at < state.observedAt)
+      return reset("clock-invalid");
+    if (!previous || previous.at === null || !Number.isFinite(previous.at) || previous.at < 0)
+      return reset("insufficient");
+    const gap = sample.at - (state.observedAt ?? previous.at);
+    if (gap === 0) return { next: state, observation: "duplicate", advanced: false };
+    const advanced = sample.active && !sample.seeking && !previous.seeking && playbackTimeAdvanced(sample.position, previous.position);
+    const progress = advanced && (sample.frames === null || previous.frames !== null && playbackFramesAdvanced(sample.frames, previous.frames));
+    if (progress) {
+      if (gap > 2e3) return reset("gap-progress", true);
+      return {
+        next: {
+          baseline: sample,
+          observedAt: sample.at,
+          ticks: state.ticks + 1,
+          elapsedMs: state.elapsedMs + gap
+        },
+        observation: "progress",
+        advanced
+      };
+    }
+    if (!sample.active) return reset("insufficient");
+    if (sample.at - previous.at < 1e3)
+      return { next: { ...state, observedAt: sample.at }, observation: "insufficient", advanced };
+    return {
+      next: {
+        baseline: { ...sample, at: previous.at },
+        observedAt: sample.at,
+        ticks: 0,
+        elapsedMs: 0
+      },
+      observation: "stalled",
+      advanced
+    };
+  }
+  __name(samplePlaybackProgress, "samplePlaybackProgress");
+  function stallProgressTransition(state, event, bufferSec, elapsedMs) {
+    if (event === "stalled") return { next: { phase: "stalled", ticks: 0 }, complete: false };
+    const ticks = Math.min(10, state.ticks + 1);
+    return {
+      next: stableProgress(ticks, elapsedMs, 10) ? { phase: "stable-retained", ticks } : ticks === 1 ? { phase: "confirming", ticks: 1 } : { phase: "settling", ticks },
+      complete: stableProgress(ticks, elapsedMs, 10) && Number.isFinite(bufferSec) && bufferSec >= 10
+    };
+  }
+  __name(stallProgressTransition, "stallProgressTransition");
+
   // src-v2/application/routing/early-retry-contracts.ts
   var EARLY_RETRY_STATES = Object.freeze([
     "idle",
@@ -202,6 +275,9 @@
     "route-mode",
     "hidden",
     "recovering",
+    "stall-confirming",
+    "observation-insufficient",
+    "clock-invalid",
     "playback-state",
     "user-operation",
     "unknown-demand",
@@ -1119,6 +1195,7 @@
     #episodeUsed = false;
     #healthyTicks = 0;
     #healthyAt = null;
+    #healthyMs = 0;
     #breaker = false;
     #disposed = false;
     #revision = 0;
@@ -1138,7 +1215,7 @@
           this.cancel(unsafe);
           return;
         }
-        this.#observeHealthy(status, now);
+        this.#observeHealthy(status);
         const pending = this.#pending;
         if (pending) {
           if (!this.#sameControls(pending.controls, status.controls)) {
@@ -1169,7 +1246,11 @@
           } else if (now >= pending.permit.expiresAt) this.#suspend("handoff-expired");
           return;
         }
-        if (status.stableProgressTicks < 10 || !Number.isFinite(status.stableProgressTicks)) {
+        if (status.progressObservation !== "progress") {
+          this.#publish("waiting", "observation-insufficient", null);
+          return;
+        }
+        if (!stableProgress(status.stableProgressTicks, status.stableProgressMs, 10)) {
           this.#publish("waiting", "stable-progress", null);
           return;
         }
@@ -1258,6 +1339,9 @@
       if (status.fixedHost) return "route-mode";
       if (!status.visible) return "hidden";
       if (status.recovering) return "recovering";
+      if (status.progressObservation === "clock-invalid") return "clock-invalid";
+      if (status.progressObservation === "owner-changed") return "owner-changed";
+      if (status.stallPending || status.progressObservation === "stalled") return "stall-confirming";
       const video = status.video;
       if (!video.available || video.paused || video.seeking || video.ended || video.mediaError || video.coreInitialized !== true || !video.manifestHasVideo || video.bufferedToEnd)
         return "playback-state";
@@ -1268,18 +1352,31 @@
     #sameControls(a, b) {
       return a.mediaId === b.mediaId && a.coreId === b.coreId && a.seekRevision === b.seekRevision && a.userRevision === b.userRevision && a.reloadRevision === b.reloadRevision && a.coreReloadRevision === b.coreReloadRevision;
     }
-    #observeHealthy(status, now) {
-      if (!Number.isFinite(status.video.playableBufferSec) || !Number.isFinite(status.stableProgressTicks) || status.video.playableBufferSec < 10 || status.stableProgressTicks < 10) {
+    #observeHealthy(status) {
+      const now = status.sampledTick;
+      if (!Number.isFinite(status.video.playableBufferSec) || status.video.playableBufferSec < 10 || !stableProgress(status.stableProgressTicks, status.stableProgressMs, 10) || now === null || !Number.isFinite(now) || now < 0 || status.progressObservation === "gap-progress") {
         this.#healthyAt = null;
         this.#healthyTicks = 0;
+        this.#healthyMs = 0;
+        return;
+      }
+      if (status.progressObservation !== "progress") {
+        if (status.progressObservation === "insufficient" && this.#healthyAt !== null) {
+          if (now - this.#healthyAt > 2e3) {
+            this.#healthyTicks = 0;
+            this.#healthyMs = 0;
+            this.#healthyAt = null;
+          } else if (now > this.#healthyAt) this.#healthyAt = now;
+        }
         return;
       }
       if (this.#healthyAt === now) return;
       const gap = this.#healthyAt === null ? 0 : now - this.#healthyAt;
-      if (gap > 0 && gap < 1e3) return;
-      this.#healthyTicks = gap >= 1e3 && gap <= 2e3 ? this.#healthyTicks + 1 : 1;
+      const continuous = this.#healthyAt !== null && gap > 0 && gap <= 2e3;
+      this.#healthyTicks = continuous ? this.#healthyTicks + 1 : 1;
+      this.#healthyMs = continuous ? this.#healthyMs + gap : 0;
       this.#healthyAt = now;
-      if (this.#healthyTicks >= 10) this.#episodeUsed = false;
+      if (stableProgress(this.#healthyTicks, this.#healthyMs, 10)) this.#episodeUsed = false;
     }
     #release() {
       const pending = this.#pending;
@@ -1305,6 +1402,7 @@
       this.#revision++;
       this.#healthyAt = null;
       this.#healthyTicks = 0;
+      this.#healthyMs = 0;
       try {
         this.#release();
       } catch {
@@ -5991,11 +6089,11 @@
         return;
       }
       if (this.#running || this.#planning) return;
-      if (unsafe) {
+      if (unsafe || status.progressObservation !== "progress") {
         this.#snapshot = Object.freeze({
           ...this.#snapshot,
           state: "waiting",
-          reason: unsafe
+          reason: unsafe ?? "awaiting-progress"
         });
         return;
       }
@@ -6262,7 +6360,8 @@
       if (!status.visible) return "hidden";
       if (status.seeking) return "seeking";
       if (status.recovering) return "recovering";
-      if (status.stableProgressTicks < 20) return "awaiting-progress";
+      if (!["progress", "duplicate", "insufficient"].includes(status.progressObservation) || !stableProgress(status.stableProgressTicks, status.stableProgressMs, 20))
+        return "awaiting-progress";
       if (status.playableBufferSec < 30) return "low-buffer";
       return null;
     }
@@ -6318,30 +6417,6 @@
     return { next: stage, effects: [], reason: "illegal-event" };
   }
   __name(restoreTransition, "restoreTransition");
-
-  // src-v2/domain/playback-progress.ts
-  function comparePlaybackControls(current, previous) {
-    if (previous === null) return "initial";
-    return current.seekRevision !== previous.seekRevision || current.userRevision !== previous.userRevision || current.mediaId !== previous.mediaId || current.coreId !== previous.coreId ? "changed" : "same";
-  }
-  __name(comparePlaybackControls, "comparePlaybackControls");
-  function playbackTimeAdvanced(currentTime, previousTime) {
-    return currentTime - previousTime > 0.05;
-  }
-  __name(playbackTimeAdvanced, "playbackTimeAdvanced");
-  function playbackFramesAdvanced(currentFrames, previousFrames) {
-    return currentFrames > previousFrames;
-  }
-  __name(playbackFramesAdvanced, "playbackFramesAdvanced");
-  function stallProgressTransition(state, event, bufferSec) {
-    if (event === "stalled") return { next: { phase: "stalled", ticks: 0 }, complete: false };
-    const ticks = Math.min(10, state.ticks + 1);
-    return {
-      next: ticks === 1 ? { phase: "confirming", ticks: 1 } : { phase: "settling", ticks },
-      complete: ticks === 10 && Number.isFinite(bufferSec) && bufferSec >= 10
-    };
-  }
-  __name(stallProgressTransition, "stallProgressTransition");
 
   // src-v2/application/playback/recovery-controller.ts
   function restored(token) {
@@ -7037,6 +7112,9 @@
       this.#snapshot = Object.freeze({
         video: player.snapshot(),
         stableProgressTicks: 0,
+        stableProgressMs: 0,
+        progressObservation: "insufficient",
+        recoveryActive: false,
         watchdog: "no-video",
         stallTicks: 0,
         startupRescue: { state: "watching", ageSec: 0 }
@@ -7058,9 +7136,8 @@
       __name(this, "PlayerMonitor");
     }
     #timer = null;
-    #lastTime = null;
-    #stableProgressTicks = 0;
-    #sampleAt = null;
+    #progress = { baseline: null, ticks: 0, elapsedMs: 0 };
+    #observation = "insufficient";
     #stallTicks = 0;
     #lastRecoveryAt = 0;
     #seekGraceUntil = 0;
@@ -7068,11 +7145,9 @@
     #manifestReady = false;
     #startupRescue = { phase: "available" };
     #startupObservedProgress = false;
-    #lastFrames = null;
     #startupRescueState = "watching";
     #snapshot;
     #controls = null;
-    #lastSeeking = false;
     #stall = null;
     #stallSerial = 0;
     #failedStall = null;
@@ -7092,21 +7167,18 @@
     }
     reset() {
       this.earlyRetry?.reset();
-      this.#lastTime = null;
-      this.#stableProgressTicks = 0;
+      this.#progress = { baseline: null, ticks: 0, elapsedMs: 0 };
+      this.#observation = "insufficient";
       this.#stallTicks = 0;
       this.#lastRecoveryAt = 0;
       this.#seekGraceUntil = 0;
       this.#manifestTick = 0;
       this.#manifestReady = false;
       this.#startupRescue = { phase: "available" };
-      this.#sampleAt = null;
       this.#startupObservedProgress = false;
-      this.#lastFrames = null;
       this.#startupRescueState = "watching";
       this.#endStall();
       this.#controls = null;
-      this.#lastSeeking = false;
       this.#failedStall = null;
     }
     snapshot() {
@@ -7128,7 +7200,27 @@
       this.routes.observePlaybackRate(video.available ? video.playbackRate : 0);
       if (!this.#manifestReady || this.#manifestTick++ % 5 === 0)
         this.#manifestReady = this.player.syncManifest();
-      const { advanced, progress } = this.#sampleProgress(video, controls);
+      const sample = {
+        ...controls,
+        at: sampledTick,
+        position: video.currentTime,
+        frames: video.frames,
+        seeking: video.seeking,
+        active: !disabled && visible && video.available && !video.paused && !video.ended && !video.mediaError && !controls.dragging,
+        playbackRevision: this.player.playbackRevision?.() ?? 0,
+        generation: playbackOwner.generation,
+        epoch: playbackOwner.epoch,
+        representation: playbackRequest?.representation ?? playbackOwner.representation
+      };
+      const sampled = samplePlaybackProgress(this.#progress, sample);
+      this.#progress = sampled.next;
+      this.#observation = sampled.observation;
+      const { advanced } = sampled;
+      const progress = sampled.observation === "progress" || sampled.observation === "gap-progress";
+      if (progress) {
+        this.#startupObservedProgress = true;
+        if (this.#startupRescue.phase !== "committed") this.#startupRescueState = "not-needed";
+      }
       const { active, ownedReload } = this.#advanceStall(
         video,
         controls,
@@ -7139,7 +7231,7 @@
       );
       const firstMediaAt = this.routes.firstMediaAt("video");
       const watchdog = this.#observeWatchdog(video, controls, now, progress, advanced, ownedReload);
-      if (!this.#stall && !this.#failedStall && !this.recovery.isRecovering() && !controls.dragging && !disabled && visible && watchdog === "recovering" && (this.#startupObservedProgress || !firstMediaAt) && now - this.#lastRecoveryAt >= 3e4) {
+      if (!this.#stall && !this.#failedStall && !this.recovery.isRecovering() && !controls.dragging && !disabled && visible && watchdog === "recovering" && this.#observation === "stalled" && (this.#startupObservedProgress || !firstMediaAt) && now - this.#lastRecoveryAt >= 3e4) {
         const state = this.session.get(), rep = state.representation;
         if (rep) {
           this.routes.recover(
@@ -7158,7 +7250,9 @@
         generationActive: true,
         representation: this.session.get().representation,
         demand,
-        stableProgressTicks: this.#stableProgressTicks,
+        stableProgressTicks: this.#progress.ticks,
+        stableProgressMs: this.#progress.elapsedMs,
+        progressObservation: this.#observation,
         playableBufferSec: video.playableBufferSec,
         visible,
         seeking: video.seeking || now < this.#seekGraceUntil,
@@ -7172,8 +7266,12 @@
         catalogOnly: !retrySettings.considerNativeSources,
         fixedHost: !!retrySettings.fixedHost,
         visible,
-        recovering: this.recovery.isRecovering() || !!this.#stall,
-        stableProgressTicks: this.#stableProgressTicks,
+        recovering: this.recovery.isRecovering(),
+        stallPending: !!this.#stall && this.#stall.progress.phase !== "stable-retained",
+        progressObservation: this.#observation,
+        sampledTick,
+        stableProgressTicks: this.#progress.ticks,
+        stableProgressMs: this.#progress.elapsedMs,
         video,
         controls,
         demand
@@ -7194,47 +7292,36 @@
       } : null;
       this.#publishSnapshot(video, controls, active, watchdog, startupAge, routingPlayback);
     }
-    #sampleProgress(video, controls) {
-      const controlChanged = comparePlaybackControls(controls, this.#controls) === "changed";
-      const advanced = video.available && !video.seeking && !this.#lastSeeking && !video.paused && !video.ended && !video.mediaError && !controlChanged && this.#lastTime !== null && playbackTimeAdvanced(video.currentTime, this.#lastTime);
-      const newFrames = video.frames !== null && this.#lastFrames !== null && playbackFramesAdvanced(video.frames, this.#lastFrames);
-      const progress = advanced && (video.frames === null || newFrames);
-      if (progress) {
-        this.#startupObservedProgress = true;
-        if (this.#startupRescue.phase !== "committed") this.#startupRescueState = "not-needed";
-      }
-      const now = this.now(), gap = this.#sampleAt === null ? null : now - this.#sampleAt;
-      if (gap !== null && gap <= 0) return { advanced, progress: false };
-      this.#sampleAt = now;
-      if (progress)
-        this.#stableProgressTicks = gap !== null && gap >= 1e3 && gap <= 2e3 ? this.#stableProgressTicks + 1 : 1;
-      else this.#stableProgressTicks = 0;
-      return { advanced, progress: progress && gap !== null && gap >= 1e3 && gap <= 2e3 };
-    }
     #advanceStall(video, controls, now, disabled, visible, progress) {
       const recoveryTicked = !disabled && this.#stall?.action === "armed" && this.recovery.isRecovering();
       if (recoveryTicked) this.recovery.tick(video);
       if (this.#stall?.action === "armed" && !this.recovery.isRecovering() && this.recovery.snapshot().reloadCount > this.#stall.reloadCount && ["failed", "breaker", "recovered-paused"].includes(this.recovery.snapshot().state)) {
         this.#failedStall = { userRevision: this.#stall.userRevision, mediaId: this.#stall.mediaId };
       }
-      if (progress && this.#stableProgressTicks >= 10 && video.playableBufferSec >= 10 || this.#failedStall && (this.#failedStall.userRevision !== controls.userRevision || this.#failedStall.mediaId !== controls.mediaId))
+      if (progress && stableProgress(this.#progress.ticks, this.#progress.elapsedMs, 10) && video.playableBufferSec >= 10 || this.#failedStall && (this.#failedStall.userRevision !== controls.userRevision || this.#failedStall.mediaId !== controls.mediaId))
         this.#failedStall = null;
       const ownedReload = !!this.#stall && this.recovery.ongoingStallReload(this.#stall.id, video, controls);
       const active = !disabled && visible && video.available && (!video.paused || ownedReload) && !video.ended && !video.mediaError && !controls.dragging;
       if (!active) this.#endStall();
-      else if (progress) {
+      else if (this.#observation === "progress") {
         if (this.#stall) {
           const stall = this.#stall;
           const transition = stallProgressTransition(
             stall.progress,
             "progress",
-            video.playableBufferSec
+            video.playableBufferSec,
+            this.#progress.elapsedMs
           );
           stall.progress = transition.next;
           if (transition.complete) this.#endStall();
         }
-      } else if (!ownedReload && (this.#startupObservedProgress || video.seeking || controls.pendingSeekGoal))
+      } else if (!ownedReload && this.#observation === "stalled" && (this.#startupObservedProgress || video.seeking || controls.pendingSeekGoal))
         this.#observeStall(video, controls, now);
+      else if (this.#stall && ["gap-progress", "clock-invalid", "owner-changed"].includes(this.#observation)) {
+        this.#stall.progress = { phase: "settling", ticks: 0 };
+        if (this.#observation === "owner-changed" && !ownedReload)
+          this.#observeStall(video, controls, now, false);
+      }
       if (!disabled && !recoveryTicked) this.recovery.tick(video);
       if (this.#stall?.action === "armed" && !this.recovery.isRecovering())
         this.#stall.action = "spent";
@@ -7258,6 +7345,8 @@
       } else if (video.paused || video.ended) {
         watchdog = "paused";
         this.#stallTicks = 0;
+      } else if (this.#observation !== "stalled") {
+        watchdog = "observing";
       } else if (video.seeking && (!this.#stall || now - this.#stall.startedAt < fallbackAfter)) {
         watchdog = "seek-grace";
         this.#stallTicks = 0;
@@ -7278,7 +7367,7 @@
     }
     #observeStartup(video, controls, now, disabled, visible, firstMediaAt) {
       const startupAge = firstMediaAt ? Math.max(0, now - firstMediaAt) : 0;
-      if (!controls.dragging && !disabled && visible && firstMediaAt && startupAge >= 15e3 && this.#startupRescue.phase !== "committed" && !this.#startupObservedProgress && video.available && !video.paused && !video.seeking && !video.ended && !video.mediaError && video.playableBufferSec < 1 && !this.recovery.isRecovering() && now >= this.#seekGraceUntil) {
+      if (!controls.dragging && !disabled && visible && firstMediaAt && startupAge >= 15e3 && this.#observation === "stalled" && this.#startupRescue.phase !== "committed" && !this.#startupObservedProgress && video.available && !video.paused && !video.seeking && !video.ended && !video.mediaError && video.playableBufferSec < 1 && !this.recovery.isRecovering() && now >= this.#seekGraceUntil) {
         const requested = this.routes.latestRequested("video");
         if (requested?.representation && requested.epoch === this.session.get().epoch && requested.generation === this.session.get().generation && this.routes.recoveryEligible(requested)) {
           const qualification = [
@@ -7310,19 +7399,18 @@
       return startupAge;
     }
     #publishSnapshot(video, controls, active, watchdog, startupAge, routingPlayback) {
-      this.#lastTime = video.available ? video.currentTime : null;
-      this.#lastFrames = video.frames;
-      this.#lastSeeking = video.seeking;
       this.#controls = controls;
       if (!active) {
-        this.#lastTime = null;
-        this.#lastFrames = null;
+        this.#progress = { ...this.#progress, ticks: 0, elapsedMs: 0 };
       }
       this.#snapshot = Object.freeze({
         video,
         routingPlayback,
-        stableProgressTicks: this.#stableProgressTicks,
+        stableProgressTicks: this.#progress.ticks,
+        stableProgressMs: this.#progress.elapsedMs,
+        progressObservation: this.#observation,
         watchdog,
+        recoveryActive: this.recovery.isRecovering(),
         stallTicks: this.#stallTicks,
         stall: this.#stall ? Object.freeze({
           id: this.#stall.id,
@@ -7341,11 +7429,12 @@
       if (this.#stall) this.recovery.cancelStall(this.#stall.id);
       this.#stall = null;
     }
-    #observeStall(video, controls, now) {
+    #observeStall(video, controls, now, canConfirm = true) {
       if (this.#failedStall) return;
       const requested = this.routes.latestRequested("video"), state = this.session.get();
       if (this.#stall && (this.#stall.userRevision !== controls.userRevision || this.#controls?.mediaId !== controls.mediaId))
         this.#endStall();
+      if (!this.#stall && !canConfirm) return;
       if (!this.#stall)
         this.#stall = {
           id: ++this.#stallSerial,
@@ -7365,7 +7454,8 @@
       stall.progress = stallProgressTransition(
         stall.progress,
         "stalled",
-        video.playableBufferSec
+        video.playableBufferSec,
+        0
       ).next;
       const routeIntent = this.recovery.isRecovering() && ["route-failure", "watchdog"].includes(this.recovery.snapshot().source ?? "");
       if (routeIntent) stall.fallback = "submitted";
@@ -7390,7 +7480,7 @@
       }
       if (video.seeking) stall.targetSec = video.currentTime;
       const fallbackAfter = stall.longSeek ? 15e3 : 6e3;
-      if (now - stall.startedAt < fallbackAfter && !joinRouteIntent || stall.action === "spent" || stall.action === "armed")
+      if (!canConfirm || now - stall.startedAt < fallbackAfter && !joinRouteIntent || stall.action === "spent" || stall.action === "armed")
         return;
       if (!requested?.representation || requested.generation !== state.generation || requested.epoch !== state.epoch || !this.routes.recoveryEligible(requested)) {
         stall.action = "spent";
@@ -11026,8 +11116,17 @@ h2,h3,p{margin:0}h2{font-size:21px;font-weight:600}h3{font-size:15px;font-weight
     "buffered-to-end": "已緩衝到片尾",
     healthy: "播放正常",
     "low-buffer": "緩衝不足",
-    recovering: "正在嘗試恢復"
+    recovering: "正在嘗試恢復",
+    observing: "觀察不足，等待下一筆播放資料"
   }), "playbackLabel");
+  function monitorPlaybackLabel(monitor) {
+    if (monitor.recoveryActive) return "正在嘗試恢復";
+    if (monitor.watchdog === "observing") return playbackLabel("observing");
+    if (monitor.stall?.phase === "stable-retained") return "播放穩定，保留本段額度";
+    if (monitor.stall && monitor.watchdog === "healthy") return "已有播放進度，等待穩定";
+    return playbackLabel(monitor.watchdog);
+  }
+  __name(monitorPlaybackLabel, "monitorPlaybackLabel");
   var recoveryLabel = /* @__PURE__ */ __name((state) => plain(state, {
     healthy: "正常",
     "pause-armed": "已暫停，等待播放",
@@ -11237,7 +11336,7 @@ h2,h3,p{margin:0}h2{font-size:21px;font-weight:600}h3{font-size:15px;font-weight
     const recovery = model.recovery, measurement = model.measurement;
     summary = `腳本：${settings.disabled ? "已停用" : "已啟用"}｜CDN：${mode}
 選定路線：${affinity}（實際請求見下方）
-播放：${playbackLabel(monitor.watchdog)}｜已緩衝約 ${monitor.video.playableBufferSec.toFixed(1)} 秒可播放內容｜${monitor.video.effectiveRate} 倍速
+播放：${monitorPlaybackLabel(monitor)}｜已緩衝約 ${monitor.video.playableBufferSec.toFixed(1)} 秒可播放內容｜${monitor.video.effectiveRate} 倍速
 播放器：${recoveryLabel(recovery.state)}｜測速：${measurementLabel(measurement.state, measurement.reason)}`;
     if (recovery.state === "failed" || recovery.state === "recovered-paused")
       summary += `｜${recoveryReasonLabel(recovery.reason)}`;
@@ -11255,7 +11354,9 @@ h2,h3,p{margin:0}h2{font-size:21px;font-weight:600}h3{font-size:15px;font-weight
 健康探測：${measurement.range.mode === "middle" ? "中段" : "首段"}｜${measurement.range.sizeKnown ? "大小已驗證" : "大小未知"}（不代表未快取）`;
     if (monitor.stall)
       summary += `
-停滯段：${monitor.stall.id}｜${plain(monitor.stall.phase, { stalled: "等待進度", confirming: "確認短暫前進", settling: "確認持續健康" })}｜備援${monitor.stall.fallbackAvailable ? "尚可提交" : "已提交"}｜重載期限剩餘 ${Math.max(0, Math.ceil((monitor.stall.reloadAt - now) / 1e3))} 秒`;
+停滯段：${monitor.stall.id}｜${plain(monitor.stall.phase, { stalled: "等待進度", confirming: "確認短暫前進", settling: "等待穩定", "stable-retained": "播放穩定，保留本段額度" })}｜備援${monitor.stall.fallbackAvailable ? "尚可提交" : "已提交"}｜原段重載期限剩餘 ${Math.max(0, Math.ceil((monitor.stall.reloadAt - now) / 1e3))} 秒`;
+    summary += `
+穩定進度：${monitor.stableProgressTicks} 次／${(monitor.stableProgressMs / 1e3).toFixed(2)} 秒有效觀察`;
     if (recovery.remainingReloads !== void 0)
       summary += `
 重載剩餘額度：${recovery.remainingReloads}｜${plain(recovery.nextAction, { "await-play": "等待播放命令結果", "verify-restore": "核對還原結果", "await-core": "等待核心就緒", "await-reload-deadline": "等待升級期限", none: "沒有待處理動作" })}`;
@@ -11420,7 +11521,7 @@ ${label}備用路線：${row.plannedHost}｜${stage}` + (row.responseHost ? `｜
       currentModel = model;
       const video = model.monitor.video, plan = model.routes.activePlan;
       const display = overviewPresentation(model, now());
-      status.textContent = model.settings.disabled ? "腳本已停用" : playbackLabel(model.monitor.watchdog);
+      status.textContent = model.settings.disabled ? "腳本已停用" : monitorPlaybackLabel(model.monitor);
       format.textContent = display.format;
       buffer.value.textContent = video.available && Number.isFinite(video.playableBufferSec) ? Math.max(0, video.playableBufferSec).toFixed(1) : "—";
       buffer.hint.textContent = video.available ? "已按 " + video.effectiveRate + " 倍速折算" : "尚未取得播放資料";
