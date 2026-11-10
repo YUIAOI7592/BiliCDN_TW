@@ -79,6 +79,14 @@
   ],
   "documents": [
     {
+      "path": "archive/retired/docs/RECOVERING_SUPPRESSION_v2.2.16_2026-11-10.md",
+      "kind": "record",
+      "topics": ["history"],
+      "versions": ["v2.2.16"],
+      "date": "2026-11-10",
+      "requiredAnchors": []
+    },
+    {
       "path": "archive/retired/docs/WORKSPACE_CLEANUP_2026-11-10.md",
       "kind": "record",
       "topics": ["history"],
@@ -3935,6 +3943,13 @@
     }
   ],
   "protections": [
+    {
+      "path": "archive/retired/docs/RECOVERING_SUPPRESSION_v2.2.16_2026-11-10.md",
+      "mode": "prefix",
+      "encoding": "lf",
+      "bytes": 12481,
+      "sha256": "6864f48ea4e8b62b542e9b79f5d14acbebf559409bd5e4185bee69ef4188cffd"
+    },
     {
       "path": "archive/retired/docs/WORKSPACE_CLEANUP_2026-11-10.md",
       "mode": "prefix",

@@ -10,6 +10,8 @@
 
 ## 版本
 
+- [v2.2.16 recovering 與提前重試抑制調查（2026-11-10）](../archive/retired/docs/RECOVERING_SUPPRESSION_v2.2.16_2026-11-10.md)。
+
 - [v2.2.16 基準的全工作區整理與工具斷鏈修正（2026-11-10）](../archive/retired/docs/WORKSPACE_CLEANUP_2026-11-10.md)。
 
 - [v2.2.16 基準的工具鏈相容性與版本鎖定評估（2026-11-09）](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md)。
@@ -150,6 +152,8 @@
 | v1.6.0 | [當版發行快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/releases/Release/v1.6.0/TEST_REPORT_v1.6.0.md)、[v1.6.0 公開安全摘要](../archive/retired/docs/SECURITY_REVIEW_v1.6.0.md) |
 
 ## 議題
+
+- 播放狀態與提前重試：[正常進度、採樣資格與段落保留（2026-11-10）](../archive/retired/docs/RECOVERING_SUPPRESSION_v2.2.16_2026-11-10.md)。
 
 - 工作區與檔案治理：[全工作區整理（2026-11-10）](../archive/retired/docs/WORKSPACE_CLEANUP_2026-11-10.md)。
 
@@ -384,6 +388,8 @@
 - [測試工具驗證紀錄](TEST_TOOLING_REPORT.md)
 
 ## 日期
+
+- 2026-11-10：[recovering 抑制離線調查與歷史數字重分析](../archive/retired/docs/RECOVERING_SUPPRESSION_v2.2.16_2026-11-10.md)。
 
 - 2026-11-10：[全工作區整理與工具斷鏈修正](../archive/retired/docs/WORKSPACE_CLEANUP_2026-11-10.md)。
 
