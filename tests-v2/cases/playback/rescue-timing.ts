@@ -132,6 +132,7 @@ function fixture(t: TestContext, rate: number, realRecovery: boolean) {
   clock.advance(1000)
   video = { ...video, currentTime: 120 + rate, frames: 130 }
   monitor.tick()
+  clock.advance(1000) // The next tick can confirm no progress rather than duplicate the prior one.
   const start = clock.now()
   const tick = () => monitor.tick(),
     advance = (ms: number) => {
@@ -189,6 +190,7 @@ for (const rate of [1, 2]) {
       f.set({ seeking: !pending })
       f.controls({ pendingSeekGoal: pending })
       f.tick()
+      f.advance(1000)
       f.advance(14999)
       assert.deepEqual(f.effects, [])
       f.advance(1)
@@ -205,6 +207,8 @@ for (const rate of [1, 2]) {
     assert.deepEqual(f.effects, [])
     f.set({ seeking: false })
     f.advance(9000)
+    assert.deepEqual(f.effects, [], 'seek completion only establishes the new comparison baseline')
+    f.advance(1000)
     assert.deepEqual(f.effects, ['arm', 'fallback'])
     assert.equal(f.intents[0]?.startedAt, f.start)
     assert.equal(f.intents[0]?.reloadAfterMs, 30000)
@@ -216,6 +220,12 @@ for (const rate of [1, 2]) {
     f.set({ currentTime: 121 + rate, frames: 160 })
     f.tick()
     f.advance(1)
+    assert.deepEqual(
+      f.effects,
+      [],
+      'new motion cannot authorize fallback at a short sample boundary',
+    )
+    f.advance(1000)
     assert.deepEqual(
       f.effects,
       ['arm', 'fallback'],

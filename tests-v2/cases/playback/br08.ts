@@ -229,6 +229,8 @@ function fixture(t: TestContext, options: { prime?: boolean; firstMediaAt?: numb
   const release = (type: 'pointerup' | 'pointercancel' | 'lostpointercapture'): void => {
     document.dispatchEvent(new PointerBoundary(type, true, wrapper))
     monitor.tick()
+    clock.advance(1000)
+    monitor.tick() // V2217: released ownership must establish a valid comparison.
   }
   return {
     player,
@@ -369,7 +371,7 @@ test('BR-08 preview resets the old watchdog counter rather than postponing its r
     f.clock.advance(1000)
     f.monitor.tick()
   }
-  assert.equal(f.monitor.snapshot().stallTicks, 5)
+  assert.equal(f.monitor.snapshot().stallTicks, 4)
   f.down(f.inner)
   f.clock.advance(31_000)
   f.monitor.tick()
@@ -383,7 +385,7 @@ test('BR-08 preview resets the old watchdog counter rather than postponing its r
   assert.equal(
     f.effects.fallbacks,
     0,
-    'five fresh low-buffer samples have not reached the six-tick watchdog',
+    'five confirmed low-buffer observations have not reached the six-tick watchdog',
   )
   f.clock.advance(1000)
   f.monitor.tick()

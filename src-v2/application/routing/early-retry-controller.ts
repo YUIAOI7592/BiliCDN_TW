@@ -1,4 +1,5 @@
 import { evaluateEarlyRetry } from '../../domain/early-retry.ts'
+import { stableProgress } from '../../domain/playback-progress.ts'
 import { TRUSTED_CATALOG } from '../../domain/catalog.ts'
 import {
   earlyRetryReason,
@@ -29,6 +30,7 @@ export class EarlyRetryController implements EarlyRetryPort {
   #episodeUsed = false
   #healthyTicks = 0
   #healthyAt: number | null = null
+  #healthyMs = 0
   #breaker = false
   #disposed = false
   #revision = 0
@@ -55,7 +57,7 @@ export class EarlyRetryController implements EarlyRetryPort {
         this.cancel(unsafe)
         return
       }
-      this.#observeHealthy(status, now)
+      this.#observeHealthy(status)
       const pending = this.#pending
       if (pending) {
         if (!this.#sameControls(pending.controls, status.controls)) {
@@ -86,7 +88,11 @@ export class EarlyRetryController implements EarlyRetryPort {
         } else if (now >= pending.permit.expiresAt) this.#suspend('handoff-expired')
         return
       }
-      if (status.stableProgressTicks < 10 || !Number.isFinite(status.stableProgressTicks)) {
+      if (status.progressObservation !== 'progress') {
+        this.#publish('waiting', 'observation-insufficient', null)
+        return
+      }
+      if (!stableProgress(status.stableProgressTicks, status.stableProgressMs, 10)) {
         this.#publish('waiting', 'stable-progress', null)
         return
       }
@@ -192,6 +198,9 @@ export class EarlyRetryController implements EarlyRetryPort {
     if (status.fixedHost) return 'route-mode'
     if (!status.visible) return 'hidden'
     if (status.recovering) return 'recovering'
+    if (status.progressObservation === 'clock-invalid') return 'clock-invalid'
+    if (status.progressObservation === 'owner-changed') return 'owner-changed'
+    if (status.stallPending || status.progressObservation === 'stalled') return 'stall-confirming'
     const video = status.video
     if (
       !video.available ||
@@ -220,23 +229,41 @@ export class EarlyRetryController implements EarlyRetryPort {
     )
   }
 
-  #observeHealthy(status: EarlyRetryStatus, now: number): void {
+  #observeHealthy(status: EarlyRetryStatus): void {
+    const now = status.sampledTick
     if (
       !Number.isFinite(status.video.playableBufferSec) ||
-      !Number.isFinite(status.stableProgressTicks) ||
       status.video.playableBufferSec < 10 ||
-      status.stableProgressTicks < 10
+      !stableProgress(status.stableProgressTicks, status.stableProgressMs, 10) ||
+      now === null ||
+      !Number.isFinite(now) ||
+      now < 0 ||
+      status.progressObservation === 'gap-progress'
     ) {
       this.#healthyAt = null
       this.#healthyTicks = 0
+      this.#healthyMs = 0
+      return
+    }
+    if (status.progressObservation !== 'progress') {
+      // A short negative observation carries no time credit. Keep the latest
+      // observed boundary so a later success cannot fill that unknown interval.
+      if (status.progressObservation === 'insufficient' && this.#healthyAt !== null) {
+        if (now - this.#healthyAt > 2000) {
+          this.#healthyTicks = 0
+          this.#healthyMs = 0
+          this.#healthyAt = null
+        } else if (now > this.#healthyAt) this.#healthyAt = now
+      }
       return
     }
     if (this.#healthyAt === now) return
     const gap = this.#healthyAt === null ? 0 : now - this.#healthyAt
-    if (gap > 0 && gap < 1000) return
-    this.#healthyTicks = gap >= 1000 && gap <= 2000 ? this.#healthyTicks + 1 : 1
+    const continuous = this.#healthyAt !== null && gap > 0 && gap <= 2000
+    this.#healthyTicks = continuous ? this.#healthyTicks + 1 : 1
+    this.#healthyMs = continuous ? this.#healthyMs + gap : 0
     this.#healthyAt = now
-    if (this.#healthyTicks >= 10) this.#episodeUsed = false
+    if (stableProgress(this.#healthyTicks, this.#healthyMs, 10)) this.#episodeUsed = false
   }
 
   #release(): void {
@@ -266,6 +293,7 @@ export class EarlyRetryController implements EarlyRetryPort {
     this.#revision++
     this.#healthyAt = null
     this.#healthyTicks = 0
+    this.#healthyMs = 0
     try {
       this.#release()
     } catch {

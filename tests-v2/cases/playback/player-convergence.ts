@@ -198,7 +198,11 @@ test('player convergence: monitor keeps initial, exact time, missing frame and s
     0,
     'getter reset clears the previous frame',
   )
-  assert.equal(monitorFrameReads, 3, 'frame guards and final sampling keep their read sequence')
+  assert.equal(
+    monitorFrameReads,
+    1,
+    'the pure observation freezes frames once and honors getter reset',
+  )
   f.set({ currentTime: 0, frames: 1 })
   f.recovery.tick(f.video())
   f.set({ currentTime: 1 })

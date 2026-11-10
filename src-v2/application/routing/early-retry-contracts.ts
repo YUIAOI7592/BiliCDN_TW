@@ -1,4 +1,5 @@
 import { type PlaybackDemand } from '../../domain/playback-demand.ts'
+import { type ProgressObservation } from '../../domain/playback-progress.ts'
 import { type RequestContext } from '../../domain/transport-model.ts'
 import { type PlayerControlSnapshot, type VideoSnapshot } from '../playback/player-contracts.ts'
 import { type AppliedRouteDecision } from './route-contracts.ts'
@@ -36,7 +37,11 @@ export interface EarlyRetryStatus {
   readonly fixedHost: boolean
   readonly visible: boolean
   readonly recovering: boolean
+  readonly stallPending: boolean
+  readonly progressObservation: ProgressObservation
+  readonly sampledTick: number | null
   readonly stableProgressTicks: number
+  readonly stableProgressMs: number
   readonly video: VideoSnapshot
   readonly controls: PlayerControlSnapshot
   readonly demand: PlaybackDemand | null
@@ -133,6 +138,9 @@ const reasons: readonly string[] = Object.freeze([
   'route-mode',
   'hidden',
   'recovering',
+  'stall-confirming',
+  'observation-insufficient',
+  'clock-invalid',
   'playback-state',
   'user-operation',
   'unknown-demand',

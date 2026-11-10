@@ -68,15 +68,15 @@ for (const stage of [
   })
 
 test('V226 stall progress transition preserves a bounded confirmation count', () => {
-  let state = stallProgressTransition({ phase: 'stalled', ticks: 0 }, 'progress', 0).next
+  let state = stallProgressTransition({ phase: 'stalled', ticks: 0 }, 'progress', 0, 1000).next
   assert.equal(state.phase, 'confirming')
-  state = stallProgressTransition(state, 'stalled', 0).next
+  state = stallProgressTransition(state, 'stalled', 0, 0).next
   assert.deepEqual(state, { phase: 'stalled', ticks: 0 })
   for (let i = 0; i < 30; i++) {
-    const step = stallProgressTransition(state, 'progress', 9)
+    const step = stallProgressTransition(state, 'progress', 9, (i + 1) * 1000)
     assert.equal(step.complete, false)
     state = step.next
   }
   assert.equal(state.ticks, 10)
-  assert.equal(stallProgressTransition(state, 'progress', 10).complete, true)
+  assert.equal(stallProgressTransition(state, 'progress', 10, 31_000).complete, true)
 })

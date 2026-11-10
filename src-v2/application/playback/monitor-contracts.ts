@@ -6,10 +6,14 @@ import { type SessionPort } from '../../state/session-contracts.ts'
 import { type SignedRouteVaultPort } from '../../state/vault-contracts.ts'
 import { type RequestContext } from '../../domain/transport-model.ts'
 import { type RoutePlaybackFacts } from '../../domain/playback-demand.ts'
+import { type ProgressObservation } from '../../domain/playback-progress.ts'
 export interface MonitorSnapshot {
   readonly routingPlayback?: RoutePlaybackFacts | null
   readonly video: VideoSnapshot
   readonly stableProgressTicks: number
+  readonly stableProgressMs: number
+  readonly progressObservation: ProgressObservation
+  readonly recoveryActive: boolean
   readonly watchdog:
     | 'no-video'
     | 'paused'
@@ -18,9 +22,10 @@ export interface MonitorSnapshot {
     | 'healthy'
     | 'low-buffer'
     | 'recovering'
+    | 'observing'
   readonly stall?: {
     readonly id: number
-    readonly phase: 'stalled' | 'confirming' | 'settling'
+    readonly phase: 'stalled' | 'confirming' | 'settling' | 'stable-retained'
     readonly action: 'waiting' | 'armed' | 'spent'
     readonly startedAt: number
     readonly fallbackAt: number

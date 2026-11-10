@@ -367,6 +367,8 @@ async function measurementLockFixture(
     representation: f.representation,
     demand: { kind: 'video' as const, requiredMbps: 4, highDemand: false },
     stableProgressTicks: 30,
+    stableProgressMs: 30_000,
+    progressObservation: 'progress' as const,
     playableBufferSec: 60,
     visible: true,
     seeking: false,

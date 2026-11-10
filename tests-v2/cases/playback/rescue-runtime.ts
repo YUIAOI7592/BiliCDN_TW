@@ -194,6 +194,8 @@ for (const rate of [1, 2]) {
       const f = fixture(t, rate)
       f.key(target)
       f.monitor.tick()
+      f.clock.advance(1000)
+      f.monitor.tick()
       f.returns.reload = () => {
         f.core(null)
         f.video().paused = true

@@ -41,7 +41,7 @@ function facts() {
   }
 }
 
-function status(): EarlyRetryStatus {
+function status(now: () => number = () => 10_000): EarlyRetryStatus {
   return {
     enabled: true,
     disabled: false,
@@ -49,7 +49,13 @@ function status(): EarlyRetryStatus {
     fixedHost: false,
     visible: true,
     recovering: false,
+    stallPending: false,
+    progressObservation: 'progress',
+    get sampledTick() {
+      return now()
+    },
     stableProgressTicks: 10,
+    stableProgressMs: 10_000,
     video: {
       available: true,
       paused: false,
@@ -154,7 +160,7 @@ function fixture(t: Parameters<typeof testScope>[0]) {
   )
   return {
     controller,
-    status: status(),
+    status: status(() => now),
     advance: (ms: number) => {
       now += ms
     },
@@ -400,7 +406,13 @@ test('UP141-RETRY low-buffer episode needs ten separate healthy ticks before ano
   f.advance(8000)
   f.controller.tick(f.status)
   assert.equal(f.arms(), 1)
-  const healthy = { ...f.status, video: { ...f.status.video, playableBufferSec: 10 } }
+  const healthy = {
+    ...f.status,
+    get sampledTick() {
+      return f.status.sampledTick
+    },
+    video: { ...f.status.video, playableBufferSec: 10 },
+  }
   for (let i = 0; i < 9; i++) {
     f.advance(1000)
     f.controller.tick(healthy)
@@ -411,6 +423,13 @@ test('UP141-RETRY low-buffer episode needs ten separate healthy ticks before ano
     f.advance(1000)
     f.controller.tick(healthy)
   }
+  assert.equal(
+    f.arms(),
+    1,
+    'ten observations span only nine seconds from the first healthy observation',
+  )
+  f.advance(1000)
+  f.controller.tick(healthy)
   f.state('pending')
   f.controller.tick(f.status)
   assert.equal(f.arms(), 2)

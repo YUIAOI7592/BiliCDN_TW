@@ -1,4 +1,5 @@
 import { type ProbeRange } from '../../domain/probe-range.ts'
+import { type ProgressObservation } from '../../domain/playback-progress.ts'
 import { type TimingBasis } from '../../domain/measurement-time.ts'
 import { type PlaybackDemand } from '../../domain/playback-demand.ts'
 import { type RepresentationId } from '../../domain/model.ts'
@@ -10,6 +11,8 @@ export interface MeasurementStatus {
   readonly representation: RepresentationId | null
   readonly demand: PlaybackDemand | null
   readonly stableProgressTicks: number
+  readonly stableProgressMs: number
+  readonly progressObservation: ProgressObservation
   readonly playableBufferSec: number
   readonly visible: boolean
   readonly seeking: boolean

@@ -80,6 +80,8 @@ async function scenario(reject: boolean): Promise<Result> {
     representation,
     demand: { kind: 'video', requiredMbps: 8, highDemand: false },
     stableProgressTicks: 25,
+    stableProgressMs: 25_000,
+    progressObservation: 'progress' as const,
     playableBufferSec: 40,
     visible: true,
     seeking: false,

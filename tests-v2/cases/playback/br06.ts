@@ -298,6 +298,8 @@ function fixture(t: TestContext) {
     document.dispatchEvent(new InputEvent('pointerdown', '', true, video))
     site.seek(target)
     monitor.tick()
+    clock.advance(1000)
+    monitor.tick() // V2217: compare one full interval under the new seek owner.
   }
   return {
     player,
@@ -425,6 +427,8 @@ test('BR-01 uninitialized trusted keyboard target receives a new full stall dead
   })
   f.keyup(true)
   f.monitor.tick()
+  f.clock.advance(1000)
+  f.monitor.tick() // V2217: confirm no progress under the new operation.
   f.clock.advance(14999)
   f.monitor.tick()
   assert.equal(f.effects.fallbacks, 0, 'the old 8-second stall must not consume the new user grace')
@@ -464,6 +468,8 @@ test('BR-01 trusted uninitialized seek revokes an active reload and ignores its 
   })
   f.keyup(true)
   f.monitor.tick()
+  f.clock.advance(1000)
+  f.monitor.tick() // V2217: confirm no progress under the new operation.
   assert.equal(f.player.controls().userRevision, revision + 1)
   assert.equal(
     f.recovery.isRecovering(),
@@ -543,6 +549,8 @@ for (const rate of [1, 2]) {
     })
     f.keyup(true)
     f.monitor.tick()
+    f.clock.advance(1000)
+    f.monitor.tick() // V2217: confirm no progress under the new operation.
     f.clock.advance(14999)
     f.monitor.tick()
     assert.equal(f.effects.fallbacks, 0)
@@ -615,6 +623,8 @@ test('BR-07 trusted keyup seek receives a fresh 15000 ms grace', (t) => {
   f.key(true)
   f.keyup(true)
   f.monitor.tick()
+  f.clock.advance(1000)
+  f.monitor.tick() // V2217: confirm no progress under the new operation.
   f.clock.advance(7000)
   f.monitor.tick()
   assert.equal(f.effects.fallbacks, 0, 'only 7000 ms elapsed since the new trusted right seek')
@@ -674,6 +684,8 @@ test('BR-06 trusted page keyboard seek receives a fresh 15000 ms grace period', 
   f.monitor.tick()
   f.key(true)
   f.monitor.tick()
+  f.clock.advance(1000)
+  f.monitor.tick() // V2217: confirm no progress under the new operation.
   f.clock.advance(7000)
   f.monitor.tick()
   assert.equal(f.effects.fallbacks, 0, 'only 7000 ms elapsed since the new keyboard seek')
@@ -692,6 +704,8 @@ test('BR-06 control: in-player keyboard seek receives fresh grace', (t) => {
   f.monitor.tick()
   f.key(true, true)
   f.monitor.tick()
+  f.clock.advance(1000)
+  f.monitor.tick() // V2217: confirm no progress under the new operation.
   f.clock.advance(14999)
   f.monitor.tick()
   assert.equal(f.effects.fallbacks, 0)
@@ -929,6 +943,8 @@ test('BR-06 new keyboard seek after an old fallback gets new 15/30/15 boundaries
   assert.equal(f.effects.fallbacks, 1)
   f.key(true)
   f.monitor.tick()
+  f.clock.advance(1000)
+  f.monitor.tick() // V2217: confirm no progress under the new operation.
   f.clock.advance(14999)
   f.monitor.tick()
   assert.equal(f.effects.fallbacks, 1)
@@ -963,6 +979,8 @@ test('BR-06 a late reload rejection cannot cancel the new keyboard stall owner',
   f.monitor.tick()
   f.key(true)
   f.monitor.tick()
+  f.clock.advance(1000)
+  f.monitor.tick() // V2217: confirm no progress under the new operation.
   const before = f.recovery.snapshot()
   reload.reject(new Error('old reload rejected'))
   await Promise.resolve()
@@ -991,6 +1009,8 @@ test('BR-06 a late play rejection cannot revive restoration after a new actual k
   assert.equal(f.recovery.snapshot().state, 'waiting')
   f.key(true)
   f.monitor.tick()
+  f.clock.advance(1000)
+  f.monitor.tick() // V2217: confirm no progress under the new operation.
   const before = f.recovery.snapshot()
   play.reject(new Error('old play rejected'))
   await Promise.resolve()
@@ -1066,6 +1086,8 @@ test('BR-07 repeated ignored dispatches cannot extend a stall', (t) => {
     f.clock.advance(4000)
     f.keyup(true, false, 'ArrowRight', { repeat: true })
     f.monitor.tick()
+    f.clock.advance(1000)
+    f.monitor.tick() // V2217: confirm no progress under the new operation.
   }
   assert.equal(f.player.controls().userRevision, before)
   f.clock.advance(3000)
@@ -1428,6 +1450,8 @@ test('BR-07 actual keyup seek starts precise 15/30/15 boundaries and releases th
   f.key(true)
   f.keyup(true)
   f.monitor.tick()
+  f.clock.advance(1000)
+  f.monitor.tick() // V2217: confirm no progress under the new operation.
   f.clock.advance(14999)
   f.monitor.tick()
   assert.equal(f.effects.fallbacks, 0)
@@ -1460,6 +1484,8 @@ test('BR-07 keyup after old fallback starts a new stage allowance and saves the 
   assert.equal(f.effects.fallbacks, 1)
   f.keyup(true)
   f.monitor.tick()
+  f.clock.advance(1000)
+  f.monitor.tick() // V2217: confirm no progress under the new operation.
   f.clock.advance(14999)
   f.monitor.tick()
   assert.equal(f.effects.fallbacks, 1)
@@ -1476,6 +1502,8 @@ test('BR-07 later website seeking updates the target without extending the keyup
   const f = rightOnKeyup(t)
   f.keyup(true)
   f.monitor.tick()
+  f.clock.advance(1000)
+  f.monitor.tick() // V2217: confirm no progress under the new operation.
   f.clock.advance(8000)
   f.site.seek(900)
   f.monitor.tick()
@@ -1500,6 +1528,8 @@ for (const outcome of ['fulfilled', 'rejected'] as const) {
     f.monitor.tick()
     f.keyup(true)
     f.monitor.tick()
+    f.clock.advance(1000)
+    f.monitor.tick() // V2217: confirm no progress under the new operation.
     const before = f.recovery.snapshot()
     if (outcome === 'fulfilled') reload.resolve()
     else reload.reject(new Error('old reload rejected'))
@@ -1529,6 +1559,8 @@ for (const outcome of ['fulfilled', 'rejected'] as const) {
     assert.equal(f.recovery.snapshot().state, 'waiting')
     f.keyup(true)
     f.monitor.tick()
+    f.clock.advance(1000)
+    f.monitor.tick() // V2217: confirm no progress under the new operation.
     const before = f.recovery.snapshot()
     if (outcome === 'fulfilled') play.resolve()
     else play.reject(new Error('old play rejected'))

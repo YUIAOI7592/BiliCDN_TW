@@ -174,6 +174,7 @@ function longSeek(t: TestContext) {
   f.set({ seeking: true, currentTime: 978, readyState: 1, playableBufferSec: 0, bufferAheadSec: 0 })
   f.controls({ userRevision: 1, seekRevision: 1, targetSec: 978 })
   f.monitor.tick()
+  f.ticks(1) // V2217: establish a full no-progress observation before timing the episode.
   return f
 }
 
@@ -226,6 +227,7 @@ test('BR-01 a new user seek starts a new grace period and cancels the old restor
   f.controls({ userRevision: 2, seekRevision: 2 })
   f.set({ currentTime: 0 })
   f.monitor.tick()
+  f.ticks(1)
   f.ticks(10)
   assert.equal(f.effects.reloads, 0)
   f.ticks(20)
@@ -242,12 +244,14 @@ test('BR-01 dragging and hidden time are excluded from the stall deadline', (t) 
   assert.equal(f.effects.fallbacks, 0)
   f.controls({ dragging: false })
   f.monitor.tick()
+  f.ticks(1)
   f.ticks(14)
   assert.equal(f.effects.fallbacks, 0)
   f.visible(false)
   f.ticks(60)
   f.visible(true)
   f.monitor.tick()
+  f.ticks(1)
   f.ticks(14)
   assert.equal(f.effects.fallbacks, 0)
   f.ticks(1)

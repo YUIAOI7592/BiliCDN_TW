@@ -46,6 +46,8 @@ async function createPriorityRound(t: TestContext, storage = new SharedEvidenceS
     representation: identity.representation,
     demand: { kind: 'video', requiredMbps: 5, highDemand: false },
     stableProgressTicks: 25,
+    stableProgressMs: 25_000,
+    progressObservation: 'progress' as const,
     playableBufferSec: 40,
     visible: true,
     seeking: false,

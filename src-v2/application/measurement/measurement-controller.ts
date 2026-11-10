@@ -1,3 +1,4 @@
+import { stableProgress } from '../../domain/playback-progress.ts'
 import {
   probeResultUsable,
   evaluatedProbeResult,
@@ -536,11 +537,11 @@ export class MeasurementController implements MeasurementPort {
       return
     }
     if (this.#running || this.#planning) return
-    if (unsafe) {
+    if (unsafe || status.progressObservation !== 'progress') {
       this.#snapshot = Object.freeze({
         ...this.#snapshot,
         state: 'waiting',
-        reason: unsafe,
+        reason: unsafe ?? 'awaiting-progress',
       })
       return
     }
@@ -913,7 +914,11 @@ export class MeasurementController implements MeasurementPort {
     if (!status.visible) return 'hidden'
     if (status.seeking) return 'seeking'
     if (status.recovering) return 'recovering'
-    if (status.stableProgressTicks < 20) return 'awaiting-progress'
+    if (
+      !['progress', 'duplicate', 'insufficient'].includes(status.progressObservation) ||
+      !stableProgress(status.stableProgressTicks, status.stableProgressMs, 20)
+    )
+      return 'awaiting-progress'
     if (status.playableBufferSec < 30) return 'low-buffer'
     return null
   }

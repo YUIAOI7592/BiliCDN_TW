@@ -308,6 +308,8 @@ function fixture(t: TestContext) {
   effects.seeks.length = 0
   video.readyState = 1
   monitor.tick()
+  clock.advance(1000)
+  monitor.tick() // V2217: confirmed no progress starts the original 15/30-second episode.
   const ticks = (count: number) => {
     for (let index = 0; index < count; index++) {
       clock.advance(1000)
@@ -724,6 +726,7 @@ test('BR-01 late SDK ownership control: a fresh user operation starts a new six-
   f.userPause()
   f.lateSdkResume()
   f.monitor.tick()
+  f.ticks(1) // The new owner must first confirm no progress.
   f.ticks(5)
   assert.equal(f.effects.fallbacks, 1)
   f.ticks(1)
