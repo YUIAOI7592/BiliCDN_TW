@@ -10,6 +10,8 @@
 
 ## 版本
 
+- [v2.2.17 R1 更新後採樣與抑制專項（2026-11-11）](TEST_REPORT.md#v2217-r1-採樣與抑制專項2026-11-11)。
+
 - [v2.2.17 假停滯與恢復後重試抑制修復（2026-11-10）](../archive/retired/docs/PROGRESS_STABILITY_v2.2.17_2026-11-10.md)。
 
 - [v2.2.16 recovering 與提前重試抑制調查（2026-11-10）](../archive/retired/docs/RECOVERING_SUPPRESSION_v2.2.16_2026-11-10.md)。
@@ -328,6 +330,8 @@
 
 ### 版本安裝紀錄
 
+- [v2.2.17 R1 採樣、尋位後解除抑制與未出現分支](TEST_REPORT.md#v2217-r1-採樣與抑制專項2026-11-11)。
+
 - [v2.2.6 R1：基本播放、數值、三頁、Native 保存與清理](../archive/retired/docs/TEST_REPORT_HISTORY.md#v226-r1-安裝驗收2026-11-02)
 - [v2.2.5 R1：容量、倍率與樣本時效的當版原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v225-完整正文保存2026-11-02)
 - [v2.2.4 R1：儀錶板修復後的當版原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v224-完整正文保存2026-11-01)
@@ -390,6 +394,8 @@
 - [測試工具驗證紀錄](TEST_TOOLING_REPORT.md)
 
 ## 日期
+
+- 2026-11-11：[v2.2.17 R1 專項與證據限制](TEST_REPORT.md#v2217-r1-採樣與抑制專項2026-11-11)。
 
 - 2026-11-10：[recovering 抑制離線調查與歷史數字重分析](../archive/retired/docs/RECOVERING_SUPPRESSION_v2.2.16_2026-11-10.md)。
 
