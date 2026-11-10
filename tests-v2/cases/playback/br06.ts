@@ -1086,11 +1086,13 @@ test('BR-07 repeated ignored dispatches cannot extend a stall', (t) => {
     f.clock.advance(4000)
     f.keyup(true, false, 'ArrowRight', { repeat: true })
     f.monitor.tick()
-    f.clock.advance(1000)
-    f.monitor.tick() // V2217: confirm no progress under the new operation.
+    assert.equal(f.effects.fallbacks, 0)
   }
   assert.equal(f.player.controls().userRevision, before)
-  f.clock.advance(3000)
+  f.clock.advance(2999)
+  f.monitor.tick()
+  assert.equal(f.effects.fallbacks, 0)
+  f.clock.advance(1)
   f.monitor.tick()
   assert.equal(f.effects.fallbacks, 1)
 })
