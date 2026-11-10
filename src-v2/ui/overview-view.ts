@@ -6,7 +6,7 @@ import {
 } from './control-contracts.ts'
 import { createButton } from './elements.ts'
 import { describeStatus } from './status-summary.ts'
-import { playbackLabel, measurementLabel, startupLabel, plain } from './labels.ts'
+import { monitorPlaybackLabel, measurementLabel, startupLabel, plain } from './labels.ts'
 import { overviewPresentation } from './overview-presentation.ts'
 function text(tag: string, className: string, value = ''): HTMLElement {
   const node = document.createElement(tag)
@@ -72,7 +72,7 @@ export function renderOverview(
     const display = overviewPresentation(model, now())
     status.textContent = model.settings.disabled
       ? '腳本已停用'
-      : playbackLabel(model.monitor.watchdog)
+      : monitorPlaybackLabel(model.monitor)
     format.textContent = display.format
     buffer.value.textContent =
       video.available && Number.isFinite(video.playableBufferSec)

@@ -1,3 +1,4 @@
+import { type MonitorSnapshot } from '../application/playback/monitor-contracts.ts'
 export const plain = (
   value: unknown,
   labels: Readonly<Record<string, string>>,
@@ -23,7 +24,16 @@ export const playbackLabel = (state: unknown): string =>
     healthy: '播放正常',
     'low-buffer': '緩衝不足',
     recovering: '正在嘗試恢復',
+    observing: '觀察不足，等待下一筆播放資料',
   })
+
+export function monitorPlaybackLabel(monitor: MonitorSnapshot): string {
+  if (monitor.recoveryActive) return '正在嘗試恢復'
+  if (monitor.watchdog === 'observing') return playbackLabel('observing')
+  if (monitor.stall?.phase === 'stable-retained') return '播放穩定，保留本段額度'
+  if (monitor.stall && monitor.watchdog === 'healthy') return '已有播放進度，等待穩定'
+  return playbackLabel(monitor.watchdog)
+}
 
 export const recoveryLabel = (state: unknown): string =>
   plain(state, {

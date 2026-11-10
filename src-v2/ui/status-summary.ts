@@ -5,7 +5,7 @@ import { circuitPresentation } from './circuit-presentation.ts'
 import {
   plain,
   routeLabel,
-  playbackLabel,
+  monitorPlaybackLabel,
   recoveryLabel,
   recoveryReasonLabel,
   measurementLabel,
@@ -29,7 +29,7 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
       : `自動挑選 CDN（${sourceMode}）`
   const recovery = model.recovery,
     measurement = model.measurement
-  summary = `腳本：${settings.disabled ? '已停用' : '已啟用'}｜CDN：${mode}\n選定路線：${affinity}（實際請求見下方）\n播放：${playbackLabel(monitor.watchdog)}｜已緩衝約 ${monitor.video.playableBufferSec.toFixed(1)} 秒可播放內容｜${monitor.video.effectiveRate} 倍速\n播放器：${recoveryLabel(recovery.state)}｜測速：${measurementLabel(measurement.state, measurement.reason)}`
+  summary = `腳本：${settings.disabled ? '已停用' : '已啟用'}｜CDN：${mode}\n選定路線：${affinity}（實際請求見下方）\n播放：${monitorPlaybackLabel(monitor)}｜已緩衝約 ${monitor.video.playableBufferSec.toFixed(1)} 秒可播放內容｜${monitor.video.effectiveRate} 倍速\n播放器：${recoveryLabel(recovery.state)}｜測速：${measurementLabel(measurement.state, measurement.reason)}`
   if (recovery.state === 'failed' || recovery.state === 'recovered-paused')
     summary += `｜${recoveryReasonLabel(recovery.reason)}`
   if (measurement.startup) {
@@ -44,7 +44,8 @@ export function describeStatus(model: ControlCenterSnapshot, now: number): strin
     summary += `\n健康探測：${measurement.range.mode === 'middle' ? '中段' : '首段'}｜${measurement.range.sizeKnown ? '大小已驗證' : '大小未知'}（不代表未快取）`
   if (monitor.stall)
     summary += `
-停滯段：${monitor.stall.id}｜${plain(monitor.stall.phase, { stalled: '等待進度', confirming: '確認短暫前進', settling: '確認持續健康' })}｜備援${monitor.stall.fallbackAvailable ? '尚可提交' : '已提交'}｜重載期限剩餘 ${Math.max(0, Math.ceil((monitor.stall.reloadAt - now) / 1000))} 秒`
+停滯段：${monitor.stall.id}｜${plain(monitor.stall.phase, { stalled: '等待進度', confirming: '確認短暫前進', settling: '等待穩定', 'stable-retained': '播放穩定，保留本段額度' })}｜備援${monitor.stall.fallbackAvailable ? '尚可提交' : '已提交'}｜原段重載期限剩餘 ${Math.max(0, Math.ceil((monitor.stall.reloadAt - now) / 1000))} 秒`
+  summary += `\n穩定進度：${monitor.stableProgressTicks} 次／${(monitor.stableProgressMs / 1000).toFixed(2)} 秒有效觀察`
   if (recovery.remainingReloads !== undefined)
     summary += `
 重載剩餘額度：${recovery.remainingReloads}｜${plain(recovery.nextAction, { 'await-play': '等待播放命令結果', 'verify-restore': '核對還原結果', 'await-core': '等待核心就緒', 'await-reload-deadline': '等待升級期限', none: '沒有待處理動作' })}`
