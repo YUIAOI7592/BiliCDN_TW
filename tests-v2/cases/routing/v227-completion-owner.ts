@@ -15,8 +15,13 @@ for (const boundary of ['fresh', 'expired', 'policy', 'selection'] as const) {
     await finish(f, start(f, url, 2))
     const request = f.routes.latestRequested('video')!
     assert.ok(request.representation)
-    assert.ok(typeof request.authorityRevision === 'number')
-    assert.ok(typeof request.selectionRevision === 'number')
+    assert.ok(request.authorityRevision !== undefined)
+    assert.ok(request.selectionRevision !== undefined)
+    assert.equal(
+      request.authorityRevision,
+      f.vault.identity(request.representation)?.authorityRevision,
+    )
+    assert.ok(Number.isSafeInteger(request.selectionRevision) && request.selectionRevision > 0)
     const facts = {
       generation: request.generation,
       epoch: request.epoch,
@@ -31,21 +36,18 @@ for (const boundary of ['fresh', 'expired', 'policy', 'selection'] as const) {
       playbackRevision: 0,
       playableBufferSec: 2,
     }
-    Reflect.get(f.routes, 'observePlaybackFacts').call(f.routes, facts)
+    f.routes.observePlaybackFacts(facts)
+    assert.equal(f.routes.completionBudget(request.representation, 65536)?.playableBufferSec, 2)
     const session = f.session.get(),
       values = structuredClone([...f.storage.values])
     if (boundary === 'expired') f.clock.advance(2001)
     if (boundary === 'policy') f.routes.invalidateForUserSetting()
     if (boundary === 'selection')
-      Reflect.get(f.routes, 'observePlaybackFacts').call(f.routes, {
+      f.routes.observePlaybackFacts({
         ...facts,
         selectionRevision: (facts.selectionRevision ?? 0) + 1,
       })
-    const budget = Reflect.get(f.routes, 'completionBudget').call(
-      f.routes,
-      request.representation,
-      65536,
-    )
+    const budget = f.routes.completionBudget(request.representation, 65536)
     assert.equal(budget !== null, boundary === 'fresh')
     if (boundary === 'fresh') {
       assert.ok(budget)

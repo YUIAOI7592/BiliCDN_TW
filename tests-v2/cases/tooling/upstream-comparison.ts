@@ -27,6 +27,10 @@ test(
   'comparison loads both immutable inputs after release originals are compressed',
   { timeout: 5000 },
   async () => {
+    assert.deepEqual(
+      inputs.map((input) => input.version),
+      ['1.3.4', '2.1.27'],
+    )
     for (const input of inputs) {
       const source = await loadInput(input.version)
       assert.equal(Buffer.byteLength(source), input.bytes)
@@ -125,7 +129,7 @@ test(
     assert.throws(() => checkSource(Buffer.from('synthetic fixturE'), bytes.length, sha256(bytes)))
   },
 )
-test('comparison scenario identity includes rate and event script', { timeout: 5000 }, () => {
+test('comparison scenario identity distinguishes scenario and rate', { timeout: 5000 }, () => {
   assert.equal(scenarioHash('healthy', 1), scenarioHash('healthy', 1))
   assert.notEqual(scenarioHash('healthy', 1), scenarioHash('healthy', 2))
   assert.notEqual(scenarioHash('healthy', 1), scenarioHash('short-stall', 1))

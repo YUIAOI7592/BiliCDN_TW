@@ -203,7 +203,9 @@ async function createBackup403RoutesContext9(t: TestContext) {
     scope,
   } = resources
 
+  assert.ok(redirectedRep, 'redirect requires a trusted representation')
   const redirectedFirst = redirectedRoutes.apply(redirectedRoot)
+  assert.equal(redirectedFirst.decision.routeType, 'catalog-generated')
   const redirectedRequest = {
     requestId: requestId('catalog-xhr-redirect'),
     generation: redirectedState.generation,
@@ -249,84 +251,27 @@ async function createBackup403RoutesContext9(t: TestContext) {
     completedAt: now + 1,
     outcome: 'success',
   })
-  void redirectedEvidence.get(new URL(redirectedRoot).host, 'video')
-  void redirectedSession.get().affinity
+
   const redirectedNext = redirectedRoutes.apply(redirectedRoot)
   return {
     clock,
     now,
     redirectedFirst,
     redirectedNext,
+    redirectedEvidence,
+    redirectedSession,
+    redirectedRoot,
     scope,
   }
 }
 
-async function createCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11Context10(t: TestContext) {
-  const resources = await createRoutingResourcesGroup2(t)
-  const {
-    redirectedRoutes,
-    redirectedRoot,
-    redirectedState,
-    redirectedRep,
-    redirectedVault,
-    now,
-    redirectedEvidence,
-    redirectedSession,
-    scope,
-    clock,
-  } = resources
-
-  const redirectedFirst = redirectedRoutes.apply(redirectedRoot)
-  const redirectedRequest = {
-    requestId: requestId('catalog-xhr-redirect'),
-    generation: redirectedState.generation,
-    epoch: redirectedState.epoch,
-    decisionId: redirectedFirst.decision.id,
-    representation: redirectedRep,
-    routePolicyRevision: redirectedRoutes.policyRevision(),
-    authorityRevision: redirectedRep
-      ? (redirectedVault.identity(redirectedRep)?.authorityRevision ?? null)
-      : null,
-    kind: 'video' as const,
-    attributionStatus: 'matched' as const,
-    attributionSource: 'exact' as const,
-    decisionStage: 'request' as const,
-    routeType: 'catalog-generated' as const,
-    originalHost: new URL(redirectedRoot).host,
-    targetHost: redirectedFirst.decision.host ?? '',
-    sourceHost: new URL(redirectedRoot).host,
-    playurlHostChanged: false,
-    playurlOutput: null,
-    urlChanged: true,
-    hostChanged: true,
-    startedAt: now,
-  }
-  redirectedRoutes.requestStarted(redirectedRequest)
-  await redirectedRoutes.observe({
-    request: redirectedRequest,
-    generation: redirectedState.generation,
-    epoch: redirectedState.epoch,
-    decisionId: redirectedFirst.decision.id,
-    representation: redirectedRep,
-    kind: 'video',
-    routeType: 'catalog-generated',
-    originalHost: new URL(redirectedRoot).host,
-    targetHost: redirectedFirst.decision.host ?? '',
-    finalHost: new URL(redirectedRoot).host,
-    responseUrlMatchesRequest: false,
-    streamKey: redirectedFirst.streamKey,
-    status: 206,
-    bytes: 70 * 1024,
-    ttfbMs: 20,
-    elapsedMs: 100,
-    completedAt: now + 1,
-    outcome: 'success',
-  })
-  void redirectedEvidence.get(new URL(redirectedRoot).host, 'video')
-  void redirectedSession.get().affinity
-  void redirectedRoutes.apply(redirectedRoot)
+async function createNestedAudioScenario(t: TestContext, native = false) {
+  const scope = testScope(t),
+    now = 2_000_000_000_000,
+    clock = { now: () => now }
   const nestedStorage = new FakeStorage()
   const nestedSettings = scope.own(new CatalogSettingsStore(nestedStorage, () => now))
+  if (native) await nestedSettings.update({ considerNativeSources: true })
   const nestedSession = new SessionStore()
   const nestedState = nestedSession.beginGeneration(false)
   const nestedVault = new SignedRouteVault()
@@ -388,7 +333,6 @@ async function createCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11Context
       },
     },
   })
-  void nestedPayload()
   const strictNested = nestedPayload()
   return {
     clock,
@@ -396,13 +340,15 @@ async function createCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11Context
     now,
     scope,
     strictNested,
+    dolbyRoot,
+    flacRoot,
   }
 }
 
 async function checkCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11(
   t: TestContext,
 ): Promise<void> {
-  const base = await createCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11Context10(t)
+  const base = await createNestedAudioScenario(t)
 
   assert.ok(
     base.nestedAdapter.transform(base.strictNested, 'trusted-api').accepted,
@@ -417,30 +363,19 @@ async function checkCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11(
   assert.ok(
     nestedAudioUrls.every(
       (url) =>
-        url === '' ||
-        TRUSTED_CATALOG.includes(new URL(url).host as (typeof TRUSTED_CATALOG)[number]),
+        !!url && TRUSTED_CATALOG.includes(new URL(url).host as (typeof TRUSTED_CATALOG)[number]),
     ),
-    'Catalog-only playurl rewrites or clears every nested Dolby and FLAC audio primary and backup URL',
+    'Catalog-only playurl rewrites every valid nested Dolby and FLAC audio primary and backup URL',
   )
+  const native = await createNestedAudioScenario(t, true)
+  assert.equal(native.nestedAdapter.transform(native.strictNested, 'trusted-api').accepted, true)
+  assert.equal(native.strictNested.data.dash.dolby.audio[0]?.base_url, native.dolbyRoot)
+  assert.equal(native.strictNested.data.dash.flac.audio.base_url, native.flacRoot)
 }
 
-async function checkCatalogFailureFixtureRegistersParameter12ParameterParameter(
-  t: TestContext,
-  parameter = 0,
-): Promise<void> {
-  const base = await createCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11Context10(t)
-
-  void base.nestedAdapter.transform(base.strictNested, 'trusted-api').accepted
-  const nestedAudioUrls = [
-    base.strictNested.data.dash.dolby.audio[0]?.base_url ?? '',
-    ...base.strictNested.data.dash.dolby.audio[0]!.backup_url,
-    base.strictNested.data.dash.flac.audio.base_url,
-    ...base.strictNested.data.dash.flac.audio.backup_url,
-  ]
-  void nestedAudioUrls.every(
-    (url) =>
-      url === '' || TRUSTED_CATALOG.includes(new URL(url).host as (typeof TRUSTED_CATALOG)[number]),
-  )
+async function checkCatalogFailure(t: TestContext, kind: 'video' | 'audio'): Promise<void> {
+  const now = 2_000_000_000_000,
+    base = { scope: testScope(t), now, clock: { now: () => now } }
   const failureStorage = new FakeStorage(),
     failureSession = new SessionStore()
   const failureState = failureSession.beginGeneration(false),
@@ -463,89 +398,90 @@ async function checkCatalogFailureFixtureRegistersParameter12ParameterParameter(
       'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-failure/audio.m4s?signature=audio',
   }
 
-  let iteration = 0
-  for (const kind of ['video', 'audio'] as const) {
-    if (iteration++ === parameter) {
-      const root = failureRoots[kind]
-      const rep = failureVault.register({
-        generation: failureState.generation,
-        epoch: failureState.epoch,
-        kind,
-        key: `failure:${kind}`,
-        height: kind === 'video' ? 1080 : 0,
-        codec: kind === 'video' ? 'av1' : 'other',
-        bandwidth: kind === 'video' ? 2_000_000 : 192_000,
-        urls: [root],
-        source: 'trusted-api',
-      })
-      assert.ok(rep, `Catalog failure fixture registers ${kind}`)
-      const applied = failureRoutes.apply(root)
-      assert.strictEqual(
-        applied.decision.routeType,
-        'catalog-generated',
-        `${kind} failure fixture targets Catalog`,
-      )
-      const targetHost = applied.decision.host ?? ''
-      const observed: TransportObservation = {
-        generation: failureState.generation,
-        epoch: failureState.epoch,
-        decisionId: applied.decision.id,
-        representation: rep,
-        kind,
-        routeType: 'catalog-generated',
-        originalHost: new URL(root).host,
-        targetHost,
-        finalHost: null,
-        responseUrlMatchesRequest: false,
-        streamKey: applied.streamKey,
-        status: 0,
-        bytes: 0,
-        ttfbMs: null,
-        elapsedMs: 100,
-        completedAt: base.now,
-        outcome: 'failure',
-        failureKind: 'network',
-      }
-      const { failureKind: _failureKind, ...redirected } = observed
-      await failureRoutes.observe({
-        ...redirected,
-        finalHost: new URL(root).host,
-        status: 206,
-        bytes: 70 * 1024,
-        outcome: 'success',
-      })
-      assert.strictEqual(
-        failureEvidence.get(new URL(root).host, kind),
-        null,
-        `${kind} response redirected to Native host cannot gain success evidence`,
-      )
-      assert.strictEqual(
-        failureSession.get().affinity,
-        null,
-        'detached response cannot establish playback affinity',
-      )
-      await failureRoutes.observe(observed)
-      assert.ok(
-        failureEvidence
-          .get(targetHost, kind)
-          ?.samples.some((sample) => sample.outcome === 'failure'),
-        `${kind} Catalog network failure without response host still records transport failure`,
-      )
-      assert.ok(
-        failureRoutes.snapshot().fallback[kind],
-        `${kind} Catalog network failure without response host still plans recovery`,
-      )
-
-      return
-    }
+  const root = failureRoots[kind]
+  const rep = failureVault.register({
+    generation: failureState.generation,
+    epoch: failureState.epoch,
+    kind,
+    key: `failure:${kind}`,
+    height: kind === 'video' ? 1080 : 0,
+    codec: kind === 'video' ? 'av1' : 'other',
+    bandwidth: kind === 'video' ? 2_000_000 : 192_000,
+    urls: [root],
+    source: 'trusted-api',
+  })
+  assert.ok(rep, `Catalog failure fixture registers ${kind}`)
+  const applied = failureRoutes.apply(root)
+  assert.strictEqual(
+    applied.decision.routeType,
+    'catalog-generated',
+    `${kind} failure fixture targets Catalog`,
+  )
+  const targetHost = applied.decision.host ?? ''
+  const observed: TransportObservation = {
+    generation: failureState.generation,
+    epoch: failureState.epoch,
+    decisionId: applied.decision.id,
+    representation: rep,
+    kind,
+    routeType: 'catalog-generated',
+    originalHost: new URL(root).host,
+    targetHost,
+    finalHost: null,
+    responseUrlMatchesRequest: false,
+    streamKey: applied.streamKey,
+    status: 0,
+    bytes: 0,
+    ttfbMs: null,
+    elapsedMs: 100,
+    completedAt: base.now,
+    outcome: 'failure',
+    failureKind: 'network',
   }
-  throw Error('Unknown fixture parameter')
+  const { failureKind: _failureKind, ...redirected } = observed
+  await failureRoutes.observe({
+    ...redirected,
+    finalHost: new URL(root).host,
+    status: 206,
+    bytes: 70 * 1024,
+    outcome: 'success',
+  })
+  assert.strictEqual(
+    failureEvidence.get(new URL(root).host, kind),
+    null,
+    `${kind} response redirected to Native host cannot gain success evidence`,
+  )
+  assert.strictEqual(
+    failureSession.get().affinity,
+    null,
+    'detached response cannot establish playback affinity',
+  )
+  await failureRoutes.observe(observed)
+  assert.ok(
+    failureEvidence.get(targetHost, kind)?.samples.some((sample) => sample.outcome === 'failure'),
+    `${kind} Catalog network failure without response host still records transport failure`,
+  )
+  assert.ok(
+    failureRoutes.snapshot().fallback[kind],
+    `${kind} Catalog network failure without response host still plans recovery`,
+  )
 }
 
 async function checkXHRRedirectAwayFromCatalogInvalidatesThatCatalogHostForThe(
   t: TestContext,
 ): Promise<void> {
   const base = await createBackup403RoutesContext9(t)
+
+  assert.equal(
+    base.redirectedEvidence.get(new URL(base.redirectedRoot).host, 'video'),
+    null,
+    'XHR redirected to Native host stays detached from successful health evidence',
+  )
+  assert.equal(
+    base.redirectedSession.get().affinity,
+    null,
+    'XHR redirected to Native host cannot confirm playback affinity',
+  )
 
   assert.ok(
     base.redirectedNext.decision.routeType === 'catalog-generated' &&
@@ -606,85 +542,6 @@ async function checkXHRRedirectAwayFromCatalogInvalidatesThatCatalogHostForThe(
         !!url && TRUSTED_CATALOG.includes(new URL(url).host as (typeof TRUSTED_CATALOG)[number]),
     ),
     'no Native signed URL remains in either playurl field spelling',
-  )
-  const nestedStorage = new FakeStorage(),
-    nestedSettings = base.scope.own(new CatalogSettingsStore(nestedStorage, () => base.now))
-  await nestedSettings.update({ considerNativeSources: true })
-  const nestedSession = new SessionStore(),
-    nestedState = nestedSession.beginGeneration(false)
-  const nestedVault = new SignedRouteVault()
-  nestedVault.reset(nestedState.generation, nestedState.epoch)
-  const nestedRoutes = new RouteCoordinator(
-    base.clock,
-    nestedSession,
-    nestedSettings,
-    base.scope.own(new RestrictionStore(nestedStorage, () => base.now)),
-    base.scope.own(new EvidenceStore(nestedStorage, () => base.now)),
-    nestedVault,
-    createRuntimeIds(),
-  )
-  const nestedAdapter = new PlayurlAdapter(
-    new PlayurlController(nestedSession, nestedVault, nestedRoutes),
-  )
-  const nestedVideoRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/video.m4s?signature=video'
-  const dolbyRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/dolby.m4s?signature=dolby'
-  const dolbyBackup =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/dolby-backup.m4s?signature=dolby-backup'
-  const flacRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/flac.m4s?signature=flac'
-  const flacBackup =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/nested/flac-backup.m4s?signature=flac-backup'
-  const nestedPayload = () => ({
-    data: {
-      dash: {
-        video: [
-          {
-            id: 80,
-            codecid: 13,
-            height: 1080,
-            bandwidth: 1_000_000,
-            base_url: nestedVideoRoot,
-            backup_url: [] as string[],
-          },
-        ],
-        audio: [] as unknown[],
-        dolby: {
-          audio: [
-            {
-              id: 30280,
-              bandwidth: 448_000,
-              base_url: dolbyRoot,
-              backup_url: [dolbyBackup],
-            },
-          ],
-        },
-        flac: {
-          audio: {
-            id: 30251,
-            bandwidth: 1_000_000,
-            base_url: flacRoot,
-            backup_url: [flacBackup],
-          },
-        },
-      },
-    },
-  })
-  const nativeOnNested = nestedPayload()
-  assert.ok(
-    nestedAdapter.transform(nativeOnNested, 'trusted-api').accepted,
-    'Native-on nested audio fixture accepts valid DASH video',
-  )
-  assert.strictEqual(
-    nativeOnNested.data.dash.dolby.audio[0]?.base_url,
-    dolbyRoot,
-    'Native-on preserves legacy Dolby audio URL',
-  )
-  assert.strictEqual(
-    nativeOnNested.data.dash.flac.audio.base_url,
-    flacRoot,
-    'Native-on preserves legacy FLAC audio URL',
   )
 }
 
@@ -780,96 +637,6 @@ async function checkKnownBackup403FixtureHasACurrentEpochRepresentation9(
     unmatched403Next.decision.routeType === 'catalog-generated' &&
       unmatched403Next.decision.host !== unmatched403First.decision.host,
     'unattributed B station stream avoids a Catalog host after its own 403',
-  )
-  const redirectedStorage = new FakeStorage(),
-    redirectedSession = new SessionStore()
-  const redirectedState = redirectedSession.beginGeneration(false),
-    redirectedVault = new SignedRouteVault()
-  redirectedVault.reset(redirectedState.generation, redirectedState.epoch)
-  const redirectedRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/redirected/video.m4s?signature=source'
-  const redirectedRep = redirectedVault.register({
-    generation: redirectedState.generation,
-    epoch: redirectedState.epoch,
-    kind: 'video',
-    key: 'redirected',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 1_000_000,
-    urls: [redirectedRoot],
-    source: 'trusted-api',
-  })
-  assert.ok(redirectedRep, 'redirected XHR fixture has trusted representation')
-  const redirectedEvidence = base.scope.own(new EvidenceStore(redirectedStorage, () => base.now))
-  const redirectedRoutes = new RouteCoordinator(
-    base.clock,
-    redirectedSession,
-    base.scope.own(new CatalogSettingsStore(redirectedStorage, () => base.now)),
-    base.scope.own(new RestrictionStore(redirectedStorage, () => base.now)),
-    redirectedEvidence,
-    redirectedVault,
-    createRuntimeIds(),
-  )
-  const redirectedFirst = redirectedRoutes.apply(redirectedRoot)
-  assert.strictEqual(
-    redirectedFirst.decision.routeType,
-    'catalog-generated',
-    'XHR redirect fixture initially selects Catalog',
-  )
-  const redirectedRequest = {
-    requestId: requestId('catalog-xhr-redirect'),
-    generation: redirectedState.generation,
-    epoch: redirectedState.epoch,
-    decisionId: redirectedFirst.decision.id,
-    representation: redirectedRep,
-    routePolicyRevision: redirectedRoutes.policyRevision(),
-    authorityRevision: redirectedRep
-      ? (redirectedVault.identity(redirectedRep)?.authorityRevision ?? null)
-      : null,
-    kind: 'video' as const,
-    attributionStatus: 'matched' as const,
-    attributionSource: 'exact' as const,
-    decisionStage: 'request' as const,
-    routeType: 'catalog-generated' as const,
-    originalHost: new URL(redirectedRoot).host,
-    targetHost: redirectedFirst.decision.host ?? '',
-    sourceHost: new URL(redirectedRoot).host,
-    playurlHostChanged: false,
-    playurlOutput: null,
-    urlChanged: true,
-    hostChanged: true,
-    startedAt: base.now,
-  }
-  redirectedRoutes.requestStarted(redirectedRequest)
-  await redirectedRoutes.observe({
-    request: redirectedRequest,
-    generation: redirectedState.generation,
-    epoch: redirectedState.epoch,
-    decisionId: redirectedFirst.decision.id,
-    representation: redirectedRep,
-    kind: 'video',
-    routeType: 'catalog-generated',
-    originalHost: new URL(redirectedRoot).host,
-    targetHost: redirectedFirst.decision.host ?? '',
-    finalHost: new URL(redirectedRoot).host,
-    responseUrlMatchesRequest: false,
-    streamKey: redirectedFirst.streamKey,
-    status: 206,
-    bytes: 70 * 1024,
-    ttfbMs: 20,
-    elapsedMs: 100,
-    completedAt: base.now + 1,
-    outcome: 'success',
-  })
-  assert.strictEqual(
-    redirectedEvidence.get(new URL(redirectedRoot).host, 'video'),
-    null,
-    'XHR redirected to Native host stays detached from successful health evidence',
-  )
-  assert.strictEqual(
-    redirectedSession.get().affinity,
-    null,
-    'XHR redirected to Native host cannot confirm playback affinity',
   )
 }
 
@@ -1016,23 +783,19 @@ test(
 )
 
 test(
-  'Catalog-only nested audio fixture accepts valid DASH video [11]',
+  'nested Dolby/FLAC audio preserves Native or rewrites Catalog URLs [11]',
   { timeout: 5000 },
   async (t) => {
     await checkCatalogOnlyNestedAudioFixtureAcceptsValidDASHVideo11(t)
   },
 )
 
-{
-  let parameter = 0
-  for (const kind of ['video', 'audio'] as const) {
-    const selected = parameter++
-    test(
-      '`Catalog failure fixture registers ${kind}` [12]' + ` / ${String(kind)} / ${selected}`,
-      { timeout: 5000 },
-      async (t) => {
-        await checkCatalogFailureFixtureRegistersParameter12ParameterParameter(t, selected)
-      },
-    )
-  }
+for (const kind of ['video', 'audio'] as const) {
+  test(
+    `Catalog ${kind} network failure records debt without response host [12]`,
+    { timeout: 5000 },
+    async (t) => {
+      await checkCatalogFailure(t, kind)
+    },
+  )
 }

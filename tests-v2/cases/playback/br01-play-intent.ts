@@ -6,11 +6,12 @@ import { RecoveryController } from '../../../src-v2/application/playback/recover
 import { FakeClock } from '../../support/clock.ts'
 import { testScope } from '../../support/scope.ts'
 import { playurlResult } from '../../support/playurl.ts'
+import { CaptureEventTarget } from '../../support/event-target.ts'
 
 function fixture(t: TestContext) {
   const scope = testScope(t),
     clock = scope.own(new FakeClock())
-  class Element extends EventTarget {
+  class Element extends CaptureEventTarget {
     parentElement: Element | null = null
     constructor(readonly classes: readonly string[] = []) {
       super()
@@ -64,8 +65,8 @@ function fixture(t: TestContext) {
       }
     }
   }
-  const document = new EventTarget(),
-    window = new EventTarget(),
+  const document = new CaptureEventTarget(),
+    window = new CaptureEventTarget(),
     region = new Element(['bpx-player-container'])
   const button = new Element(['bpx-player-ctrl-play']),
     icon = new Element(),
@@ -196,8 +197,8 @@ function fixture(t: TestContext) {
     visible: (value: boolean) => {
       visible = value
     },
-    lifecycle: () => {
-      lifecycle = 'two'
+    lifecycle: (value = 'two') => {
+      lifecycle = value
     },
     replaceVideo: () => {
       currentVideo = new Media()
@@ -281,14 +282,19 @@ test('BR-01 play intent: hidden, replaced media and old lifecycle clicks are ign
   f.pause()
   let calls = 0
   f.scope.defer(f.player.observePlayIntent(() => calls++))
+  f.click()
+  assert.equal(calls, 1, 'the paused current owner accepts a trusted control click')
   f.visible(false)
   f.click()
+  assert.equal(calls, 1)
   f.visible(true)
   f.lifecycle()
   f.click()
+  assert.equal(calls, 1)
+  f.lifecycle('one')
   f.replaceVideo()
   f.click()
-  assert.equal(calls, 0)
+  assert.equal(calls, 1, 'media replacement is tested with the original visible lifecycle restored')
 })
 
 test('BR-01 play intent: disposal removes the UI observer and preserves a newer SDK wrapper', (t) => {
@@ -304,16 +310,18 @@ test('BR-01 play intent: disposal removes the UI observer and preserves a newer 
   assert.equal(f.site.play, newer)
 })
 
-test('BR-01 play intent: SDK arguments receiver and result stay intact', (t) => {
+test('BR-01 play intent: SDK arguments receiver result and exception stay intact', (t) => {
   const f = fixture(t)
   const original = f.site.play
   const receiver = f.site
   const args: unknown[] = [{ token: 'synthetic' }, 0]
   let actualThis: unknown,
-    actualArgs: unknown[] = []
+    actualArgs: unknown[] = [],
+    failure: Error | null = null
   f.site.play = function (...values) {
     actualThis = this
     actualArgs = values
+    if (failure) throw failure
     return 'kept'
   }
   let calls = 0
@@ -324,6 +332,12 @@ test('BR-01 play intent: SDK arguments receiver and result stay intact', (t) => 
   assert.equal(actualThis, receiver)
   assert.deepEqual(actualArgs, args)
   assert.equal(calls, 1)
+  failure = new Error('synthetic SDK failure')
+  assert.throws(
+    () => f.site.play(...args),
+    (thrown) => thrown === failure,
+  )
+  assert.equal(calls, 2, 'intent delivery preserves the SDK exception path')
   stop()
   f.site.play = original
 })
@@ -374,20 +388,6 @@ test('BR-01 play intent: reset invalidates an observer even when the same video 
   f.player.reset()
   f.click()
   assert.equal(calls, 0)
-})
-
-test('BR-01 play intent: original SDK exceptions retain their identity', (t) => {
-  const f = fixture(t)
-  const error = new Error('synthetic SDK failure')
-  f.site.play = () => {
-    throw error
-  }
-  f.scope.defer(f.player.observePlayIntent(() => undefined))
-  f.activation(true)
-  assert.throws(
-    () => f.site.play(),
-    (thrown) => thrown === error,
-  )
 })
 
 test('BR-01 play intent: repeated paused ticks retain one listener and reset removes it', (t) => {

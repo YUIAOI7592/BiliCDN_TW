@@ -6,6 +6,7 @@ test('V230 model uses immutable input and identical resource ceilings', async ()
     b = await evaluateDeadlines()
   assert.deepEqual(a, b)
   assert.equal(a.baselineRevision, '304c63196a2110943387848765cf5156a01af066')
+  assert.equal(a.scenarios.length, 16)
   for (const scene of a.scenarios)
     for (const row of [scene.baseline, scene.current]) {
       assert.ok(row.probeCount <= 3)

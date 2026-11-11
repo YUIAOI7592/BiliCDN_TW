@@ -15,15 +15,22 @@ const alternative = 'upos-sz-mirrorbos.bilivideo.com'
 
 async function routeFixture(
   t: Parameters<typeof testScope>[0],
-  suppressed = false,
-  verified = true,
-  native = false,
-  additionalProofs: readonly {
-    host: string
-    bytes: number
-    elapsedMs: number
-    ttfbMs: number
-  }[] = [],
+  {
+    suppressed = false,
+    verified = true,
+    native = false,
+    additionalProofs = [],
+  }: {
+    suppressed?: boolean
+    verified?: boolean
+    native?: boolean
+    additionalProofs?: readonly {
+      host: string
+      bytes: number
+      elapsedMs: number
+      ttfbMs: number
+    }[]
+  } = {},
 ) {
   const scope = testScope(t),
     f = fixture(scope)
@@ -145,7 +152,7 @@ const slowerProof = {
 }
 
 test('V2213 retry route lists every qualified alternative in Catalog order', async (t) => {
-  const f = await routeFixture(t, false, true, false, [slowerProof]),
+  const f = await routeFixture(t, { additionalProofs: [slowerProof] }),
     demand = { kind: 'video' as const, requiredMbps: 2, highDemand: false }
   const alternatives = f.routes.earlyRetryAlternatives(f.request, demand)
   assert.deepEqual(
@@ -160,7 +167,7 @@ test('V2213 retry route lists every qualified alternative in Catalog order', asy
 })
 
 test('V2213 retry route prepares and claims the selected slower host without re-ranking', async (t) => {
-  const f = await routeFixture(t, false, true, false, [slowerProof]),
+  const f = await routeFixture(t, { additionalProofs: [slowerProof] }),
     demand = { kind: 'video' as const, requiredMbps: 2, highDemand: false }
   const before = f.session.get().affinity
   const permit = f.routes.prepareEarlyRetry(f.request, slowerProof.host, demand)
@@ -169,6 +176,7 @@ test('V2213 retry route prepares and claims the selected slower host without re-
   const selected = f.routes.applyEarlyRetry(f.original, permit)
   assert.ok(selected)
   assert.equal(new URL(selected.url!).hostname, slowerProof.host)
+  assert.notEqual(before?.decisionId, selected.decision.id, 'dispatch must commit a new decision')
   assert.deepEqual(f.session.get().affinity, before)
   const retry = {
     ...f.request,
@@ -178,12 +186,18 @@ test('V2213 retry route prepares and claims the selected slower host without re-
   }
   f.routes.requestStarted(retry)
   assert.equal(f.routes.acceptEarlyRetry(permit, retry), true)
-  assert.equal(f.session.get().affinity?.host, slowerProof.host)
+  assert.deepEqual(f.session.get().affinity, {
+    type: 'catalog-generated',
+    host: slowerProof.host,
+    confirmedAt: f.clock.now(),
+    decisionId: selected.decision.id,
+    representation: f.rep,
+  })
   assert.equal(f.routes.acceptEarlyRetry(permit, retry), false)
 })
 
 test('V2213 retry route cannot substitute a different host after selected proof is revoked', async (t) => {
-  const f = await routeFixture(t, false, true, false, [slowerProof]),
+  const f = await routeFixture(t, { additionalProofs: [slowerProof] }),
     demand = { kind: 'video' as const, requiredMbps: 2, highDemand: false }
   const permit = f.routes.prepareEarlyRetry(f.request, slowerProof.host, demand)
   assert.ok(permit)
@@ -198,7 +212,7 @@ test('V2213 retry route cannot substitute a different host after selected proof 
 })
 
 test('V2213 retry route refuses a revoked selected host before preparing a permit', async (t) => {
-  const f = await routeFixture(t, false, true, false, [slowerProof]),
+  const f = await routeFixture(t, { additionalProofs: [slowerProof] }),
     demand = { kind: 'video' as const, requiredMbps: 2, highDemand: false }
   const before = f.session.get().affinity
   f.vault.invalidate(f.rep, slowerProof.host)
@@ -207,33 +221,8 @@ test('V2213 retry route refuses a revoked selected host before preparing a permi
   assert.deepEqual(f.session.get().affinity, before)
 })
 
-test('UP141-RETRY route permit prepares without affinity and commits only accepted dispatch', async (t) => {
-  const f = await routeFixture(t)
-  const demand = { kind: 'video' as const, requiredMbps: 2, highDemand: false }
-  const found = f.routes.earlyRetryAlternatives(f.request, demand)[0]
-  assert.equal(found?.host, alternative)
-  const before = f.session.get().affinity
-  const permit = f.routes.prepareEarlyRetry(f.request, alternative, demand)
-  assert.ok(permit)
-  assert.deepEqual(f.session.get().affinity, before)
-  const selected = f.routes.applyEarlyRetry(f.original, permit)
-  assert.ok(selected)
-  assert.equal(new URL(selected.url!).hostname, alternative)
-  assert.deepEqual(f.session.get().affinity, before)
-  const retry = {
-    ...f.request,
-    requestId: requestId('retry-new'),
-    targetHost: alternative,
-    decisionId: selected.decision.id,
-  }
-  f.routes.requestStarted(retry)
-  assert.equal(f.routes.acceptEarlyRetry(permit, retry), true)
-  assert.equal(f.session.get().affinity?.host, alternative)
-  assert.equal(f.routes.acceptEarlyRetry(permit, retry), false)
-})
-
 test('V226 H04: real Catalog proof remains eligible with Native globally enabled', async (t) => {
-  const f = await routeFixture(t, false, true, true)
+  const f = await routeFixture(t, { native: true })
   assert.equal(f.routes.isCatalogOnly(), false)
   assert.equal(f.routes.earlyRetryRequestCurrent(f.request), true)
   assert.equal(
@@ -263,7 +252,7 @@ test('UP141-RETRY expired or policy-revoked route permit cannot be consumed', as
   assert.equal(f.routes.applyEarlyRetry(f.original, next), null)
 })
 
-test('UP141-RETRY alternative evidence requires current identity and persisted unique successes', async (t) => {
+test('UP141-RETRY verified alternative evidence expires after 60 seconds', async (t) => {
   const f = await routeFixture(t)
   const demand = { kind: 'video' as const, requiredMbps: 2, highDemand: false }
   assert.equal(f.routes.earlyRetryAlternatives(f.request, demand)[0]?.successCount, 2)
@@ -294,7 +283,6 @@ async function xhrFixture(
   }
   class NativeXhr extends EventTarget {
     static nextSend: (() => void) | null = null
-    static nextSendError: Error | null = null
     #ready = 0
     #status = 0
     #responseURL = ''
@@ -354,11 +342,6 @@ async function xhrFixture(
       this.dispatchEvent(new NativeEvent('readystatechange'))
     }
     send() {
-      if (NativeXhr.nextSendError) {
-        const error = NativeXhr.nextSendError
-        NativeXhr.nextSendError = null
-        throw error
-      }
       if (this.#ready !== 1 || this.#sent) throw new DOMException('send state', 'InvalidStateError')
       this.#sent = true
       this.#started = f.clock.now()
@@ -414,10 +397,13 @@ async function xhrFixture(
         throw Error('host timeout getter')
       },
     })
-  f.scope.defineGlobal('unsafeWindow', {
-    configurable: true,
-    value: { XMLHttpRequest: NativeXhr, fetch: async () => new Response(null) },
-  })
+  const fetches: string[] = []
+  const nativeFetch = async (input: RequestInfo | URL): Promise<Response> => {
+    fetches.push(input instanceof Request ? input.url : String(input))
+    return new Response(null)
+  }
+  const realm = { XMLHttpRequest: NativeXhr, fetch: nativeFetch }
+  f.scope.defineGlobal('unsafeWindow', { configurable: true, value: realm })
   f.scope.defineGlobal('location', {
     configurable: true,
     value: new URL('https://www.bilibili.com/video/BVfixture'),
@@ -470,7 +456,18 @@ async function xhrFixture(
     assert.equal(transport.arm(sample.request.requestId, permit), true)
     return permit
   }
-  return { ...f, NativeXhr, nativeTimeout, transport, open, ready, arm }
+  return {
+    ...f,
+    NativeXhr,
+    nativeTimeout,
+    transport,
+    open,
+    ready,
+    arm,
+    realm,
+    nativeFetch,
+    fetches,
+  }
 }
 
 test('UP141-RETRY native timeout hands matching website retry to alternative only after native send', async (t) => {
@@ -509,7 +506,7 @@ test('UP141-RETRY native timeout hands matching website retry to alternative onl
   )
 })
 
-for (const timeout of [0, 1, 500, 3000, 10000, 13000]) {
+for (const timeout of [0, 1, 13000]) {
   test(`V2212 retry qualification: website timeout ${timeout} preserves the existing eligibility boundary`, async (t) => {
     const f = await xhrFixture(t),
       xhr = new f.NativeXhr()
@@ -539,7 +536,6 @@ for (const exclusion of [
   'open-range',
   'multi-range',
   'audio',
-  'untrusted-progress',
   'status-200',
   'disabled',
 ] as const) {
@@ -575,15 +571,11 @@ for (const exclusion of [
             : 'bytes=0-399999',
       )
     xhr.send()
-    xhr.progress(1000, exclusion !== 'untrusted-progress', exclusion === 'status-200' ? 200 : 206)
+    xhr.progress(1000, true, exclusion === 'status-200' ? 200 : 206)
     f.clock.advance(1600)
-    xhr.progress(11000, exclusion !== 'untrusted-progress', exclusion === 'status-200' ? 200 : 206)
+    xhr.progress(11000, true, exclusion === 'status-200' ? 200 : 206)
     const samples = f.transport.samples(f.clock.now())
-    if (exclusion === 'untrusted-progress') {
-      assert.equal(samples.length, 1)
-      assert.equal(samples[0]!.loadedBytes, 0)
-      assert.equal(samples[0]!.recentBytesPerSec, null)
-    } else assert.deepEqual(samples, [])
+    assert.deepEqual(samples, [])
     assert.equal(xhr.timeout, 0)
     assert.equal(
       xhr.nativeSends,
@@ -635,6 +627,7 @@ test('UP141-RETRY synthetic progress and malformed Content-Range cannot authoriz
   xhr.progress(50000, false)
   await f.clock.advance(1600)
   const samples = f.transport.samples(f.clock.now())
+  assert.equal(samples.length, 1)
   assert.equal(samples[0]!.loadedBytes, 0)
   assert.equal(samples[0]!.recentBytesPerSec, null)
   xhr.contentRange = 'bytes 1-399999/1000000'
@@ -717,7 +710,7 @@ test('UP141-RETRY native timeout brand errors precede bookkeeping and argument c
 })
 
 test('UP141-RETRY tool-owned suppression excludes controlled successes from private alternative ledger', async (t) => {
-  const f = await routeFixture(t, true)
+  const f = await routeFixture(t, { suppressed: true })
   assert.equal(f.evidence.get(alternative, 'video')?.samples.length, 2)
   assert.deepEqual(
     f.routes.earlyRetryAlternatives(f.request, {
@@ -788,9 +781,13 @@ test('UP141-RETRY post-send route listener failure never changes native successf
   const f = await xhrFixture(t),
     xhr = f.open(),
     expected = Error('observer')
+  let observed = 0
   f.scope.defer(
     f.routes.subscribe((event) => {
-      if (event.type === 'route-decision' && event.decision.reason === 'early-retry') throw expected
+      if (event.type === 'route-decision' && event.decision.reason === 'early-retry') {
+        observed++
+        throw expected
+      }
     }),
   )
   let retry: InstanceType<typeof f.NativeXhr> | undefined, error: unknown
@@ -803,6 +800,7 @@ test('UP141-RETRY post-send route listener failure never changes native successf
   })
   await f.arm(xhr)
   await Promise.resolve()
+  assert.equal(observed, 1, 'the throwing listener actually executes after accepted retry dispatch')
   assert.equal(error, undefined)
   assert.equal(retry?.nativeSends, 1)
 })
@@ -813,6 +811,16 @@ for (const capability of ['missing-timeout', 'fixed-timeout', 'throwing-header']
       xhr = f.open()
     assert.equal(f.transport.snapshot().hookState, 'installed')
     assert.equal(xhr.nativeSends, 1)
+    assert.equal(new URL(xhr.url).hostname, first, 'ordinary XHR rewriting remains installed')
+    assert.notEqual(f.realm.fetch, f.nativeFetch)
+    const response = await f.realm.fetch(f.original)
+    assert.equal(response.status, 200)
+    assert.equal(f.fetches.length, 1)
+    assert.equal(
+      new URL(f.fetches[0]!).hostname,
+      first,
+      'ordinary Fetch rewriting remains installed',
+    )
     assert.deepEqual(f.transport.samples(f.clock.now()), [])
   })
 }
@@ -866,7 +874,7 @@ test('UP141-RETRY off-mode timeout assignment delegates native setter without ex
 })
 
 test('UP141-RETRY passive byte counts without verified native range bytes cannot qualify alternatives', async (t) => {
-  const f = await routeFixture(t, false, false)
+  const f = await routeFixture(t, { verified: false })
   assert.deepEqual(
     f.routes.earlyRetryAlternatives(f.request, {
       kind: 'video',

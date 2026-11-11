@@ -44,9 +44,15 @@ test('CC39-SETTINGS migration drops codec and verbose while preserving explicit 
   assert.equal('verbose' in settings.get(), false)
   await settings.update({ fixedHost: null })
   const saved = storage.get<Record<string, unknown>>(SETTINGS_KEY, {})
+  assert.equal(saved.schema, 2)
+  assert.equal(saved.earlyRetryEnabled, false)
   assert.equal('codec' in saved, false)
   assert.equal('verbose' in saved, false)
   assert.equal(settings.get().catalogOverrides[hk[0]!], false)
+  await settings.update({ earlyRetryEnabled: true })
+  assert.equal(storage.get<Record<string, unknown>>(SETTINGS_KEY, {}).earlyRetryEnabled, true)
+  await settings.update({ earlyRetryEnabled: false })
+  assert.equal(storage.get<Record<string, unknown>>(SETTINGS_KEY, {}).earlyRetryEnabled, false)
   await settings.reset()
   for (const flag of flags) assert.equal(settings.get()[flag], true)
 })
@@ -55,19 +61,25 @@ test('CC39-SETTINGS pending off wins over a remote on until the locked write com
   const scope = testScope(t),
     storage = new DelayedSettingsStorage()
   const settings = scope.own(new CatalogSettingsStore(storage, () => 1000))
-  const controlled = ['earlyRetryEnabled'] as const
   storage.holdNextSettingsLock = true
   scope.defer(() => storage.releaseSettingsLock())
-  const pending = settings.update(Object.fromEntries(controlled.map((key) => [key, false])))
+  const pending = settings.update({ earlyRetryEnabled: false })
+  assert.equal(
+    settings.get().earlyRetryEnabled,
+    false,
+    'suppression starts before any remote notification',
+  )
   storage.remote(SETTINGS_KEY, {
     schema: 2,
-    ...Object.fromEntries(controlled.map((key) => [key, true])),
+    earlyRetryEnabled: true,
     updatedAt: 1001,
   })
-  for (const key of controlled) assert.equal(settings.get()[key], false)
+  assert.equal(settings.get().earlyRetryEnabled, false)
   storage.releaseSettingsLock()
   await pending
-  for (const key of controlled) assert.equal(settings.get()[key], false)
+  assert.equal(settings.get().earlyRetryEnabled, false)
+  const restored = scope.own(new CatalogSettingsStore(storage, () => 1002))
+  assert.equal(restored.get().earlyRetryEnabled, false, 'the locked update persists across reload')
 })
 
 for (const host of hk)
@@ -78,7 +90,7 @@ for (const host of hk)
       assert.equal(DEFAULT_UNAVAILABLE_HOSTS.has(host), false)
       await f.settings.update({ fixedHost: host })
       const url = media('cc39', 'video.m4s')
-      f.adapter.transform(dash(url))
+      assert.equal(f.adapter.transform(dash(url)).accepted, true)
       assert.equal(f.routes.apply(url).decision.host, host)
       await f.restrictions.add({
         host,
@@ -102,7 +114,7 @@ test('CC39-CODEC old AV1 preference leaves website DASH representation order unc
     base_url: media('cc39', 'av1.m4s'),
   })
   const expected = payload.data.dash.video.map((item) => item.codecs)
-  f.adapter.transform(payload)
+  assert.equal(f.adapter.transform(payload).accepted, true)
   assert.deepEqual(
     payload.data.dash.video.map((item) => item.codecs),
     expected,
@@ -110,8 +122,7 @@ test('CC39-CODEC old AV1 preference leaves website DASH representation order unc
   assert.ok(payload.data.dash.video.every((item) => item.base_url.includes('.bilivideo.com/')))
 })
 
-test('CC39-CONTROL removed manual capabilities are absent from executable ports', (t) => {
-  testScope(t)
+test('CC39-CONTROL removed manual capabilities are absent from executable ports', () => {
   for (const name of ['requestMeasurement', 'requestCatalogValidation', 'blacklistLatestVideo'])
     assert.equal(name in ControlCommands.prototype, false, name)
   for (const name of ['requestManual', 'requestCatalogValidation'])

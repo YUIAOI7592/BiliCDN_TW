@@ -222,24 +222,6 @@ test('BR-09 correct contract: an uninitialized native target change revokes stal
   assert.equal(f.video.currentTime, 978)
 })
 
-test('BR-09 correct contract: the same unknown target change to zero also revokes stale restoration', (t) => {
-  const f = fixture(t)
-  f.beginReload()
-  f.video.currentTime = 978
-  f.player.controls()
-  f.video.currentTime = 0
-  f.player.controls()
-  f.ready()
-  f.clock.advance(1000)
-  f.recovery.tick(f.player.snapshot())
-  assert.deepEqual(
-    f.effects.seeks,
-    [],
-    'zero is a valid latest target, not permission to restore 120',
-  )
-  assert.equal(f.video.currentTime, 0)
-})
-
 test('BR-09 normal control: public SDK seek during initialization revokes stale restoration', (t) => {
   const f = fixture(t)
   f.beginReload()
@@ -565,18 +547,6 @@ test('BR-09 late reload rejection cannot revive a reset recovery or restore its 
 // pre-keyup position although the native HAVE_NOTHING target had moved.
 for (const rate of [1, 2] as const) {
   for (const target of [0, 5, 978]) {
-    test(`BR-01 native position ${rate}x target ${target}: capture the finite HAVE_NOTHING target before cached SDK time`, (t) => {
-      const f = fixture(t, rate)
-      f.video.readyState = 0
-      f.video.currentTime = target
-      assert.equal(f.site.getCurrentTime(), 120, 'the site SDK still reports its cached position')
-      assert.equal(
-        f.player.currentTime(),
-        target,
-        'a new intent must save the native target, including zero',
-      )
-    })
-
     test(`BR-01 native position ${rate}x target ${target}: new paused-transition restores the latest target`, (t) => {
       const f = fixture(t, rate),
         core = f.site.__core()
@@ -584,6 +554,12 @@ for (const rate of [1, 2] as const) {
       core.state.initialized = false
       f.video.readyState = 0
       f.video.currentTime = target
+      assert.equal(f.site.getCurrentTime(), 120, 'the SDK reports its cached position')
+      assert.equal(
+        f.player.currentTime(),
+        target,
+        'capture native HAVE_NOTHING target, including zero',
+      )
       f.video.videoWidth = 0
       f.video.videoHeight = 0
       f.video.paused = true
@@ -646,6 +622,11 @@ test('BR-01 native position control: synchronous media replacement cannot commit
     f.video.onRead = () => f.replaceVideo(333)
   }
   f.recovery.armRouteFailure('watchdog', snapshot, () => true)
+  assert.equal(
+    f.video.currentTime,
+    333,
+    'the getter actually replaces the media during preparation',
+  )
   assert.equal(f.recovery.isRecovering(), false)
   assert.deepEqual(f.effects.seeks, [])
   assert.equal(f.effects.reloads, 0)

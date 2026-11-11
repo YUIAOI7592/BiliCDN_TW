@@ -17,10 +17,9 @@ import {
   createStartupVaultResources,
 } from './application-resources.ts'
 
-async function createStallNowAndstartupReloadsContext6(t: TestContext) {
+async function startupFixture(t: TestContext) {
   const scope = testScope(t),
-    now = 2_000_000_000_000,
-    clock = { now: () => now }
+    now = 2_000_000_000_000
   const block3 = createStartupVaultResources()
   const { startupVault, startupGeneration, startupSession } = block3
   startupVault.reset(startupGeneration.generation, startupGeneration.epoch)
@@ -49,15 +48,9 @@ async function createStallNowAndstartupReloadsContext6(t: TestContext) {
     createRuntimeIds(),
   )
   return {
-    clock,
-    now,
-    scope,
     stallEvidence,
     get stallNow() {
       return block2.stallNow
-    },
-    set stallNow(value: typeof block2.stallNow) {
-      block2.stallNow = value
     },
     stallRestrictions,
     stallRoutes,
@@ -71,7 +64,7 @@ async function createStallNowAndstartupReloadsContext6(t: TestContext) {
 async function checkCatalogHostSignedBackupCompetesAsItsOwnExactNativeURL(
   t: TestContext,
 ): Promise<void> {
-  const base = await createStallNowAndstartupReloadsContext6(t)
+  const base = await startupFixture(t)
 
   assert.ok(base.startupRep, 'startup behavior requires its registered representation')
   {
@@ -106,10 +99,10 @@ async function checkCatalogHostSignedBackupCompetesAsItsOwnExactNativeURL(
     assert.ok(incompatibleCatalog, 'startup behavior requires a Catalog candidate')
     {
       base.stallRoutes.noteStartupProbeResult(incompatibleCatalog, 403)
+      const remaining = base.stallRoutes.startupOptions(base.startupRoot)
+      assert.ok(remaining && remaining.candidates.length > 0, 'other startup candidates remain')
       assert.ok(
-        !base.stallRoutes
-          .startupOptions(base.startupRoot)
-          ?.candidates.some((candidate) => candidate.host === incompatibleCatalog.host),
+        !remaining.candidates.some((candidate) => candidate.host === incompatibleCatalog.host),
         'Catalog 403 excludes only this stream-host pairing from startup fallback',
       )
       await base.stallEvidence.record(incompatibleCatalog.host, 'video', {
@@ -126,6 +119,7 @@ async function checkCatalogHostSignedBackupCompetesAsItsOwnExactNativeURL(
         { kind: 'video', requiredMbps: 8, highDemand: false },
         'new-epoch',
       )
+      assert.ok(laterChoice.host, 'a different legal route is still selected')
       assert.ok(
         laterChoice.host !== incompatibleCatalog.host,
         'this-stream 403 remains ineligible at a later route ranking boundary despite global speed evidence',
@@ -171,14 +165,12 @@ async function checkCatalogHostSignedBackupCompetesAsItsOwnExactNativeURL(
         firstFairProbe.decision.host !== secondFairProbe.decision.host,
       'failed or unmeasured challenger is not selected again in the same round',
     )
-    if (firstFairProbe) {
-      await base.stallRoutes.recordChallenge(firstFairProbe, 0, 100, 50, 'failure', null)
-      assert.strictEqual(
-        base.stallRoutes.snapshot().affinity,
-        null,
-        'active probe failure does not change playback affinity',
-      )
-    }
+    await base.stallRoutes.recordChallenge(firstFairProbe, 0, 100, 50, 'failure', null)
+    assert.strictEqual(
+      base.stallRoutes.snapshot().affinity,
+      null,
+      'active probe failure does not change playback affinity',
+    )
     const plannedFallback = base.stallRoutes.snapshot().fallback.video
     assert.strictEqual(
       plannedFallback?.stage,
@@ -275,7 +267,6 @@ async function checkCatalogHostSignedBackupCompetesAsItsOwnExactNativeURL(
       undefined,
       'no legal fallback clears an older submitted fallback instead of presenting it as current',
     )
-    for (const host of TRUSTED_CATALOG) await base.stallRestrictions.remove(host, 'black')
   }
 }
 

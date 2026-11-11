@@ -332,46 +332,48 @@ test('V2217 progress: a real recovery token suppresses a stable retained episode
   assert.ok(before.reloadAt > before.startedAt)
 })
 
-for (const gap of [0, 999, 1000, 2000, 2001]) {
-  test(`V2217 progress policy: interval ${gap} has explicit observation and time credit`, (t) => {
-    testScope(t)
-    const first: ProgressSample = {
-      at: 0,
-      position: 1,
-      frames: 10,
-      active: true,
-      seeking: false,
-      seekRevision: 0,
-      userRevision: 0,
-      mediaId: 1,
-      coreId: 1,
-      playbackRevision: 0,
-      generation: 1,
-      epoch: 1,
-      representation: 'video',
-    }
-    const initial: ProgressState = { baseline: null, ticks: 0, elapsedMs: 0 }
-    const base = samplePlaybackProgress(initial, first).next
+test('V2217 progress policy: interval boundaries have explicit observation and time credit', () => {
+  const first: ProgressSample = {
+    at: 0,
+    position: 1,
+    frames: 10,
+    active: true,
+    seeking: false,
+    seekRevision: 0,
+    userRevision: 0,
+    mediaId: 1,
+    coreId: 1,
+    playbackRevision: 0,
+    generation: 1,
+    epoch: 1,
+    representation: 'video',
+  }
+  const initial: ProgressState = { baseline: null, ticks: 0, elapsedMs: 0 }
+  const base = samplePlaybackProgress(initial, first).next
+  for (const [gap, observation, ticks, elapsedMs] of [
+    [0, 'duplicate', 0, 0],
+    [999, 'progress', 1, 999],
+    [1000, 'progress', 1, 1000],
+    [2000, 'progress', 1, 2000],
+    [2001, 'gap-progress', 0, 0],
+  ] as const) {
     const result = samplePlaybackProgress(base, { ...first, at: gap, position: 2, frames: 11 })
-    const valid = gap > 0 && gap <= 2000
-    assert.equal(
-      result.observation,
-      gap === 0 ? 'duplicate' : gap > 2000 ? 'gap-progress' : 'progress',
+    assert.deepEqual(
+      [result.observation, result.next.ticks, result.next.elapsedMs],
+      [observation, ticks, elapsedMs],
+      'interval ' + gap,
     )
-    assert.equal(result.next.ticks, valid ? 1 : 0)
-    assert.equal(result.next.elapsedMs, valid ? gap : 0)
     if (gap === 0) assert.equal(result.next.baseline, first)
-    const owner = samplePlaybackProgress(base, { ...first, mediaId: 2 })
-    assert.equal(
-      owner.observation,
-      'owner-changed',
-      'owner revocation precedes timestamp deduplication',
-    )
-  })
-}
+  }
+  const owner = samplePlaybackProgress(base, { ...first, mediaId: 2 })
+  assert.equal(
+    owner.observation,
+    'owner-changed',
+    'owner revocation precedes timestamp deduplication',
+  )
+})
 
-test('V2217 progress: an invalid negative baseline cannot earn credit on returning to zero', (t) => {
-  testScope(t)
+test('V2217 progress: an invalid negative baseline cannot earn credit on returning to zero', () => {
   const sample: ProgressSample = {
     at: -1,
     position: 1,
@@ -437,7 +439,7 @@ test('V2217 health: actual Measurement waits for twenty observations and twenty 
   f.step(999)
   controller.tick({ ...f.observed.at(-1)!, representation: rep })
   await nextTurn()
-  assert.ok(probes > 0 && probes <= 3)
+  assert.equal(probes, 3, 'the eligible round probes all three available candidates')
   const count = probes
   f.monitor.tick()
   controller.tick({ ...f.observed.at(-1)!, representation: rep })

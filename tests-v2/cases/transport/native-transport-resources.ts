@@ -5,23 +5,16 @@ export async function createNativeTransportResources() {
   let playurlFetchBody = JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } })
   let playurlFetchOverride: Response | null = null
   const nativeFetchUrls: string[] = []
-  const nativeFetchMethods: string[] = []
   const nativeFetchRedirects: RequestRedirect[] = []
-  const nativeFetchHeaders: (string | null)[] = []
   const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
     nativeFetchCalls++
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
     nativeFetchUrls.push(url)
-    nativeFetchMethods.push(
-      input instanceof Request ? input.method : String(_init?.method ?? 'GET'),
-    )
     nativeFetchRedirects.push(
       input instanceof Request
         ? input.redirect
         : (String(_init?.redirect ?? 'follow') as RequestRedirect),
     )
-    nativeFetchHeaders.push(input instanceof Request ? input.headers.get('x-bilicdn-test') : null)
-    if (url.includes('/stream-body.m4s') && input instanceof Request) await input.text()
     if (url.includes('/player/wbi/playurl'))
       return playurlFetchOverride ?? new Response(playurlFetchBody, { status: 200 })
     let emitted = false
@@ -85,21 +78,13 @@ export async function createNativeTransportResources() {
     }
     setRequestHeader(_name: string, _value: string): void {}
   }
-  const originalWorker = function WorkerIdentity() {
-    return undefined
-  }
   const fakeWindow = {
     fetch: nativeFetch,
     XMLHttpRequest: FakeXhr,
-    Worker: originalWorker,
-    navigator: globalThis.navigator,
   }
   return {
     get nativeFetchCalls() {
       return nativeFetchCalls
-    },
-    set nativeFetchCalls(value: typeof nativeFetchCalls) {
-      nativeFetchCalls = value
     },
     get playurlFetchBody() {
       return playurlFetchBody

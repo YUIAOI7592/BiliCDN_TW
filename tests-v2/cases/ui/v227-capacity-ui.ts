@@ -62,7 +62,7 @@ for (const state of ['recent', 'provisional', 'historical', 'revalidation'] as c
     }
     const model = createControlReadModel(f.deps).snapshot(),
       result = overviewPresentation(model, f.clock.now())
-    assert.ok(result.safeMbps !== null)
+    assert.equal(result.safeMbps, state === 'provisional' ? 14 : 10.48576)
     const expected = {
       recent: '近期容量',
       provisional: '單筆試用',

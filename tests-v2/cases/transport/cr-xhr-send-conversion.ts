@@ -2,56 +2,31 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fixture, ordinaryUrl } from './cr-xhr-fixture.ts'
 
-test('CONTROL: native rejected body conversion keeps OPENED sendable', async (t) => {
-  const f = await fixture(t),
-    xhr = f.createXhr(),
-    marker = new Error('synthetic body conversion')
-  xhr.open('POST', ordinaryUrl)
-  const body = {
-    toString() {
-      throw marker
-    },
-  }
-  assert.throws(
-    () => Reflect.apply(f.nativeSend, xhr, [body]),
-    (error) => error === marker,
-  )
-  assert.equal(xhr.readyState, 1)
-  assert.equal(xhr.nativeSends, 0)
-  Reflect.apply(f.nativeSend, xhr, ['valid'])
-  assert.equal(xhr.nativeSends, 1)
-})
-
-test('CONTROL: hooked valid body sends once and rejects duplicate send', async (t) => {
-  const f = await fixture(t),
-    xhr = f.createXhr()
-  xhr.open('POST', ordinaryUrl)
-  xhr.send('valid')
-  assert.equal(xhr.nativeSends, 1)
-  assert.throws(() => xhr.send('second'), { name: 'InvalidStateError' })
-})
-
 test('S-03: body conversion failure must preserve native retry capability', async (t) => {
-  const f = await fixture(t),
-    xhr = f.createXhr(),
-    marker = new Error('synthetic body conversion')
-  xhr.open('POST', ordinaryUrl)
-  const body = {
-    toString() {
-      throw marker
-    },
+  const f = await fixture(t)
+  for (const channel of ['native', 'hooked'] as const) {
+    const xhr = f.createXhr(),
+      marker = new Error(channel + ' body conversion')
+    xhr.open('POST', ordinaryUrl)
+    const send = (body: unknown) =>
+      Reflect.apply(channel === 'native' ? f.nativeSend : xhr.send, xhr, [body])
+    const body = {
+      toString() {
+        throw marker
+      },
+    }
+    assert.throws(
+      () => send(body),
+      (error) => error === marker,
+      channel,
+    )
+    assert.equal(xhr.readyState, 1, channel)
+    assert.equal(xhr.nativeSends, 0, channel)
+    assert.doesNotThrow(() => send('valid'), channel + ' failed conversion leaves OPENED sendable')
+    assert.equal(xhr.nativeSends, 1, channel)
+    assert.throws(() => send('duplicate'), { name: 'InvalidStateError' }, channel)
+    assert.equal(xhr.nativeSends, 1, channel)
   }
-  assert.throws(
-    () => xhr.send(body),
-    (error) => error === marker,
-  )
-  assert.equal(xhr.readyState, 1)
-  assert.equal(xhr.nativeSends, 0)
-  assert.doesNotThrow(
-    () => xhr.send('valid'),
-    'failed Web IDL conversion never set native send flag',
-  )
-  assert.equal(xhr.nativeSends, 1)
 })
 
 test('S-03 body conversion reentrant open sends the new request once', async (t) => {

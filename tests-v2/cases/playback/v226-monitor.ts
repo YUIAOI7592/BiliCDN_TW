@@ -156,7 +156,7 @@ test('V226 H03: progress ticks are time-qualified and duplicate calls do not acc
   f.video().currentTime += 10
   f.video().frames += 10
   f.tick(10_000)
-  assert.ok(f.observed.at(-1)! < 20)
+  assert.equal(f.observed.at(-1), 0, 'a ten-second observation gap resets stability')
 })
 
 test('V226 R05 H02: isolated progress preserves one stall id deadline and fallback quota', (t) => {

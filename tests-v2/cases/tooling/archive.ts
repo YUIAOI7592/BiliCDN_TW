@@ -14,26 +14,10 @@ import {
 } from '../../../scripts/checks/archive-check.mts'
 import { type ArchiveManifest, type ArchiveEntry } from '../../../scripts/checks/archive-check.mts'
 import { testScope } from '../../support/scope.ts'
+import { archiveProof as proof, archiveTarFile as tarFile } from '../../support/archive-packing.ts'
 
 const sha = (bytes: string | Uint8Array) => createHash('sha256').update(bytes).digest('hex')
 const privateRoot = 'archive/retired/local/2026-10-20-cleanup'
-const proof = (body: string | Buffer) => ({ bytes: Buffer.byteLength(body), sha256: sha(body) })
-function tarFile(name: string, body: string | Buffer, type = '0'): Buffer {
-  const payload = Buffer.from(body),
-    header = Buffer.alloc(512)
-  header.write(name, 0, 100)
-  header.write('0000644\0', 100)
-  header.write('0000000\0', 108)
-  header.write('0000000\0', 116)
-  header.write(payload.length.toString(8).padStart(11, '0') + '\0', 124)
-  header.write('00000000000\0', 136)
-  header.fill(32, 148, 156)
-  header.write(type, 156)
-  header.write('ustar\0', 257)
-  const checksum = [...header].reduce((sum, byte) => sum + byte, 0)
-  header.write(checksum.toString(8).padStart(6, '0') + '\0 ', 148)
-  return Buffer.concat([header, payload, Buffer.alloc((512 - (payload.length % 512)) % 512)])
-}
 function tar(files: readonly [string, string | Buffer][]): Buffer {
   return Buffer.concat([...files.map(([file, body]) => tarFile(file, body)), Buffer.alloc(1024)])
 }
@@ -103,8 +87,9 @@ function hasRule(report: Awaited<ReturnType<typeof checkArchive>>, rule: string)
 test('archive accepts a clean source copy without Git or private payload', async (t) => {
   const f = fixture(t)
   f.write(f.manifest.localManifest, 'invalid private content must not be read')
-  assert.equal((await f.check()).success, true)
-  assert.equal((await f.check()).localChecked, false)
+  const result = await f.check()
+  assert.equal(result.success, true)
+  assert.equal(result.localChecked, false)
 })
 
 test('V2214 archive additional private manifests remain unread by public checks', async (t) => {
@@ -158,8 +143,9 @@ test('V2214 archive checks every additional private payload and its ownership', 
       JSON.stringify({ schemaVersion: 1, baseline: 'b'.repeat(40), root: identity, entries }),
     )
   save()
-  assert.equal((await f.check(true)).success, true)
-  assert.equal((await f.check(true)).localFiles, 1)
+  const result = await f.check(true)
+  assert.equal(result.success, true)
+  assert.equal(result.localFiles, 1)
   f.write(archivedPath, 'corrupted')
   assert.equal(hasRule(await f.check(true), 'private'), true)
   f.write(archivedPath, payload)
@@ -545,7 +531,10 @@ test('archive private mode rejects destinations outside the designated local roo
       ],
     }),
   )
-  assert.equal(hasRule(await f.check(true), 'private'), true)
+  const result = await f.check(true)
+  assert.ok(
+    result.findings.some((item) => item.rule === 'private' && item.message.includes('outside')),
+  )
 })
 for (const archivedPath of [
   `${privateRoot}/OPERATIONS/helper.mts`,

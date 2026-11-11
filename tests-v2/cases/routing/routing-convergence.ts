@@ -473,6 +473,7 @@ for (const change of ['black', 'dead', 'disabled', 'policy', 'generation', 'auth
 test('CC40 fixed failure with no legal alternative cannot authorize recovery', async (t) => {
   const f = await fixedFailure(t, true)
   assert.equal(f.next.decision.action, 'block')
+  assert.ok(f.next.context, 'blocked fallback must still carry the current representation')
   assert.equal(
     f.routes.recoveryEligible({
       ...f.next.context!,

@@ -1,10 +1,9 @@
-import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { setImmediate as nextTurn } from 'node:timers/promises'
 import { testScope } from '../../support/scope.ts'
 import { fixture, media, dash } from '../routing/routing-fixture.ts'
-import { DelayedSettingsStorage, FakeStorage } from '../../support/storage.ts'
+import { FakeStorage } from '../../support/storage.ts'
 import { SETTINGS_KEY } from '../../../src-v2/state/settings-store.ts'
 import { MeasurementController } from '../../../src-v2/application/measurement/measurement-controller.ts'
 import { type MeasurementStatus } from '../../../src-v2/application/measurement/measurement-contracts.ts'
@@ -58,28 +57,6 @@ const hk = [
   'cn-hk-eq-01-05.bilivideo.com',
   'cn-hk-eq-01-01.bilivideo.com',
 ]
-const flags = ['earlyRetryEnabled'] as const
-
-test('UP141-TEST retained retry preference preserves false and suppresses off while locked', async (t) => {
-  const scope = testScope(t),
-    storage = new DelayedSettingsStorage()
-  const settings = scope.own(new CatalogSettingsStore(storage, () => 1000))
-  for (const key of flags) assert.equal(settings.get()[key], true)
-  assert.equal(settings.get().earlyRetryEnabled, true)
-  storage.holdNextSettingsLock = true
-  const pending = settings.update(Object.fromEntries(flags.map((key) => [key, false])))
-  for (const key of flags) assert.equal(settings.get()[key], false)
-  storage.remote(SETTINGS_KEY, {
-    ...settings.get(),
-    ...Object.fromEntries(flags.map((key) => [key, true])),
-    updatedAt: 1001,
-  })
-  for (const key of flags) assert.equal(settings.get()[key], false)
-  storage.releaseSettingsLock()
-  await pending
-  const restored = scope.own(new CatalogSettingsStore(storage, () => 1002))
-  for (const key of flags) assert.equal(restored.get()[key], false)
-})
 
 async function validation(t: TestContext, storage = new FakeStorage()) {
   const scope = testScope(t),
@@ -197,6 +174,9 @@ for (const condition of ['hidden', 'seeking', 'recovering', 'disabled', 'represe
       v.f.storage.get<Record<string, unknown>>(MEASUREMENT_META_KEY, {}).lastChallengeAt,
       before,
     )
+    v.controller.tick(v.status)
+    await nextTurn()
+    assert.equal(v.calls.length, 3, 'a later eligible observation can still start a full round')
   })
 
 test('UP141-TEST disabling cancels owned work and refuses late learning', async (t) => {
@@ -292,6 +272,11 @@ for (const kind of ['health', 'startup'] as const)
     }
     await gate
     assert.equal(v.calls.length, 3)
+    assert.equal(
+      kind === 'health' ? v.controller.snapshot().state : v.controller.snapshot().startup?.state,
+      'complete',
+      'the active round finished before checking whether its consumed budget can reopen',
+    )
     notify()
     if (kind === 'health') v.controller.tick(v.status)
     else await v.controller.prepareStartup(media('up141-test', 'video.m4s'))

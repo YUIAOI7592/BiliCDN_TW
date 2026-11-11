@@ -168,7 +168,7 @@ async function checkOtherTabReceivesANativeOnSettingWithAFutureTimestamp(
   )
   await delayedSettings.update({ considerNativeSources: true })
   delayedStorage.holdNextSettingsLock = true
-  delayedSettings.reset()
+  const pendingReset = delayedSettings.reset()
   assert.strictEqual(
     delayedSettings.get().considerNativeSources,
     false,
@@ -179,6 +179,9 @@ async function checkOtherTabReceivesANativeOnSettingWithAFutureTimestamp(
     'catalog-generated',
     'pre-dispatch routing obeys pending settings reset',
   )
+  delayedStorage.releaseSettingsLock()
+  await pendingReset
+  assert.equal(delayedSettings.get().considerNativeSources, true)
 }
 
 async function checkExistingSchema2SettingsWithoutNativeToggleDefaultOn13(
@@ -305,7 +308,6 @@ async function checkRestrictionAppliesToAudio12(t: TestContext): Promise<void> {
   )
   const settings = base.scope.own(new SettingsStore(base.storage, () => base.now))
   const evidenceStore = base.scope.own(new EvidenceStore(base.storage, () => base.now))
-  new SessionStore()
   await settings.update({ considerNativeSources: true })
   await evidenceStore.record(TRUSTED_CATALOG[0], 'video', {
     requestId: 'remote-clear',

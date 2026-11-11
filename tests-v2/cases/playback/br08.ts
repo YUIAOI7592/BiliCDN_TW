@@ -252,48 +252,6 @@ function fixture(t: TestContext, options: { prime?: boolean; firstMediaAt?: numb
   }
 }
 
-test('BR-08 wrapper hitbox trusted pointerdown owns the active progress drag', (t) => {
-  const f = fixture(t),
-    before = f.player.controls().userRevision
-  f.holdSeek(f.wrapper)
-  assert.equal(f.player.controls().userRevision, before + 1)
-  assert.equal(f.player.controls().targetSec, 900)
-  assert.equal(
-    f.player.controls().dragging,
-    true,
-    'the website progress wrapper is a functional seek hitbox, so a held pointer must suppress rescue',
-  )
-})
-
-test('BR-08 wrapper drag held for 15000 ms must not issue video fallback', (t) => {
-  const f = fixture(t)
-  f.holdSeek(f.wrapper)
-  f.clock.advance(14999)
-  f.monitor.tick()
-  assert.equal(f.effects.fallbacks, 0)
-  f.clock.advance(1)
-  f.monitor.tick()
-  assert.equal(
-    f.effects.fallbacks,
-    0,
-    'a still-held user progress drag cannot start the seek rescue deadline',
-  )
-})
-
-test('BR-08 wrapper drag held for 30000 ms must not reload the core', (t) => {
-  const f = fixture(t)
-  f.holdSeek(f.wrapper)
-  f.clock.advance(15000)
-  f.monitor.tick()
-  f.clock.advance(15000)
-  f.monitor.tick()
-  assert.equal(
-    f.effects.reloads,
-    0,
-    'a held progress drag must remain protected at the core reload boundary',
-  )
-})
-
 test('BR-08 control: inner progress descendant acquires drag ownership and suppresses rescue', (t) => {
   const f = fixture(t)
   f.holdSeek(f.schedule)
@@ -354,8 +312,12 @@ test('BR-08 held non-seeking low-buffer preview clears watchdog counts and canno
 
 test('BR-08 held wrapper seek is protected at every precise fallback and reload boundary', (t) => {
   const f = fixture(t),
-    start = f.clock.now()
+    start = f.clock.now(),
+    before = f.player.controls().userRevision
   f.holdSeek(f.wrapper)
+  assert.equal(f.player.controls().userRevision, before + 1)
+  assert.equal(f.player.controls().targetSec, 900)
+  assert.equal(f.player.controls().dragging, true)
   for (const age of [14_999, 15_000, 29_999, 30_000, 31_000]) {
     f.clock.advance(age - (f.clock.now() - start))
     f.monitor.tick()
@@ -608,7 +570,9 @@ for (const change of [
 ] as const)
   test(`BR-08 recovery preparation must reject ${change} reentry while reading saved position`, (t) => {
     const f = recoveryFixture(t)
+    let reads = 0
     f.onCurrent(() => {
+      reads++
       f.onCurrent(() => undefined)
       if (change === 'drag') f.controls({ dragging: true })
       else if (change === 'user') f.controls({ userRevision: 1 })
@@ -620,6 +584,7 @@ for (const change of [
       else f.legal(false)
     })
     f.recovery.armRouteFailure('route-failure', f.video(), f.eligible)
+    assert.equal(reads, 1, 'the position getter invalidates an active preparation')
     assert.equal(
       f.recovery.isRecovering(),
       false,
@@ -630,12 +595,15 @@ for (const change of [
 
 test('BR-08 rate getter reentry must not create a token with a stale saved speed', (t) => {
   const f = recoveryFixture(t)
+  let reads = 0
   f.onRate(() => {
+    reads++
     f.onRate(() => undefined)
     f.controls({ userRevision: 1 })
     f.set({ playbackRate: 1 })
   })
   f.recovery.armRouteFailure('route-failure', f.video())
+  assert.equal(reads, 1, 'the rate getter reaches the reentry boundary')
   assert.equal(f.recovery.isRecovering(), false)
 })
 
@@ -737,7 +705,7 @@ test('BR-08 drag revokes a pending reload token and late reload rejection cannot
   f.clock.advance(4000)
   f.tick()
   assert.equal(f.effects.reloads, 1)
-  f.controls({ dragging: true, userRevision: 1 })
+  f.controls({ dragging: true })
   f.tick()
   assert.equal(f.recovery.isRecovering(), false)
   const state = f.recovery.snapshot()
@@ -758,7 +726,7 @@ test('BR-08 drag revokes a pending play token and late play rejection cannot res
   f.set({ readyState: 3, width: 1920, height: 1080, coreInitialized: true })
   f.tick()
   assert.equal(f.effects.plays, 1)
-  f.controls({ dragging: true, userRevision: 1 })
+  f.controls({ dragging: true })
   f.set({ currentTime: 0 })
   f.tick()
   const state = f.recovery.snapshot()

@@ -1,4 +1,3 @@
-import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { evaluateEarlyRetry } from '../../../src-v2/domain/early-retry.ts'
@@ -16,8 +15,6 @@ import {
   decisionId,
   requestId,
 } from '../../../src-v2/domain/model.ts'
-import { SETTINGS_KEY, defaultSettings } from '../../../src-v2/state/settings-store.ts'
-import { FakeStorage, DelayedSettingsStorage } from '../../support/storage.ts'
 import { testScope } from '../../support/scope.ts'
 
 function facts() {
@@ -189,22 +186,27 @@ function fixture(t: Parameters<typeof testScope>[0]) {
   }
 }
 
-test('UP141-RETRY policy uses current buffer seconds once and full redownload cost', (t) => {
-  testScope(t)
-  assert.equal(evaluateEarlyRetry(facts()).eligible, true)
+test('UP141-RETRY policy uses current buffer seconds once and full redownload cost', () => {
+  assert.deepEqual(evaluateEarlyRetry(facts()), {
+    eligible: true,
+    reason: 'eligible',
+    remainingSec: 18,
+    alternativeSec: 2.3,
+  })
   const result = evaluateEarlyRetry({
     ...facts(),
     alternative: { ...facts().alternative, safeMbps: 2 },
   })
   assert.equal(result.eligible, false)
-  assert.equal(evaluateEarlyRetry({ ...facts(), recentBytesPerSec: 0 }).eligible, true)
-  assert.ok(
-    !JSON.stringify(evaluateEarlyRetry({ ...facts(), recentBytesPerSec: 0 })).includes('Infinity'),
-  )
+  assert.deepEqual(evaluateEarlyRetry({ ...facts(), recentBytesPerSec: 0 }), {
+    eligible: true,
+    reason: 'eligible',
+    remainingSec: null,
+    alternativeSec: 2.3,
+  })
 })
 
-test('UP141-RETRY policy rejects threshold boundaries and unknown or stale evidence', (t) => {
-  testScope(t)
+test('UP141-RETRY policy rejects threshold boundaries and unknown or stale evidence', () => {
   const base = facts()
   for (const change of [
     { startedAt: base.now - 1499 },
@@ -337,8 +339,7 @@ test('V2213 retry reentry while assessing a later candidate cannot arm an earlie
 })
 
 test('UP141-RETRY controller respects all playback and mode exclusions', (t) => {
-  const f = fixture(t)
-  const base = f.status
+  const base = status()
   const variants: EarlyRetryStatus[] = [
     { ...base, enabled: false },
     { ...base, disabled: true },
@@ -357,8 +358,13 @@ test('UP141-RETRY controller respects all playback and mode exclusions', (t) => 
     { ...base, controls: { ...base.controls, dragging: true } },
     { ...base, controls: { ...base.controls, pendingSeekGoal: true } },
   ]
-  for (const variant of variants) f.controller.tick(variant)
-  assert.equal(f.arms(), 0)
+  for (const [index, variant] of variants.entries()) {
+    const f = fixture(t)
+    f.controller.tick(variant)
+    assert.equal(f.arms(), 0, `exclusion=${index}`)
+    f.controller.tick(f.status)
+    assert.equal(f.arms(), 1, `exclusion=${index} must not suspend the document`)
+  }
 })
 
 test('V226 H04: Native enabled still permits a qualified Catalog request', (t) => {
@@ -468,14 +474,32 @@ test('UP141-RETRY unknown healthy readings cannot reopen a consumed episode', (t
   f.state('succeeded')
   f.controller.tick(f.status)
   f.setSamples([sample(2, 'upos-sz-mirrorcos.bilivideo.com')])
-  const unknown = { ...f.status, video: { ...f.status.video, playableBufferSec: Number.NaN } }
-  for (let i = 0; i < 10; i++) {
+  const unknown = {
+    ...f.status,
+    get sampledTick() {
+      return f.status.sampledTick
+    },
+    video: { ...f.status.video, playableBufferSec: Number.NaN },
+  }
+  for (let i = 0; i < 11; i++) {
     f.advance(1000)
     f.controller.tick(unknown)
   }
   f.state('pending')
   f.controller.tick(f.status)
   assert.equal(f.arms(), 1)
+  const healthy = { ...unknown, video: { ...f.status.video, playableBufferSec: 10 } }
+  for (let i = 0; i < 11; i++) {
+    f.advance(1000)
+    f.controller.tick({
+      ...healthy,
+      get sampledTick() {
+        return f.status.sampledTick
+      },
+    })
+  }
+  f.controller.tick(f.status)
+  assert.equal(f.arms(), 2, 'valid continuous health can reopen the same episode budget')
 })
 
 test('UP141-RETRY failed website retry and lost pending state both suspend', (t) => {
@@ -500,30 +524,4 @@ test('UP141-RETRY cancelled controller exposes a detached current status without
   assert.equal(f.controller.snapshot().state, 'cancelled')
   assert.equal('history' in f.controller.snapshot(), false)
   assert.ok(Object.isFrozen(f.controller.snapshot()))
-})
-
-test('UP141-RETRY settings default on and preserve explicit values in schema 2', async (t) => {
-  const scope = testScope(t)
-  const storage = new FakeStorage()
-  storage.set(SETTINGS_KEY, { ...defaultSettings(100), earlyRetryEnabled: undefined })
-  const settings = scope.own(new CatalogSettingsStore(storage, () => 100))
-  assert.equal(settings.get().earlyRetryEnabled, true)
-  assert.equal(settings.get().schema, 2)
-  await settings.update({ earlyRetryEnabled: true })
-  assert.equal(settings.get().earlyRetryEnabled, true)
-  await settings.update({ earlyRetryEnabled: false })
-  assert.equal(settings.get().earlyRetryEnabled, false)
-})
-
-test('UP141-RETRY turning off suppresses immediately while settings lock is pending', async (t) => {
-  const scope = testScope(t)
-  const storage = new DelayedSettingsStorage()
-  const settings = scope.own(new CatalogSettingsStore(storage, () => 100))
-  await settings.update({ earlyRetryEnabled: true })
-  storage.holdNextSettingsLock = true
-  const pending = settings.update({ earlyRetryEnabled: false })
-  assert.equal(settings.get().earlyRetryEnabled, false)
-  storage.releaseSettingsLock()
-  await pending
-  assert.equal(settings.get().earlyRetryEnabled, false)
 })

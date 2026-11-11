@@ -27,6 +27,7 @@ import { TRUSTED_CATALOG } from '../../../src-v2/domain/catalog.ts'
 import { FakeStorage } from '../../support/storage.ts'
 import { FakeClock } from '../../support/clock.ts'
 import { testScope } from '../../support/scope.ts'
+import { deferred } from '../../support/deferred.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
 
@@ -85,9 +86,6 @@ function createRuntimeControlResources() {
     get routeListener() {
       return routeListener
     },
-    set routeListener(value: typeof routeListener) {
-      routeListener = value
-    },
     routeControl,
     monitor,
   }
@@ -144,9 +142,6 @@ async function createNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecover
     get routeListener() {
       return block1.routeListener
     },
-    set routeListener(value: typeof block1.routeListener) {
-      block1.routeListener = value
-    },
     runtime,
     settings,
     storage,
@@ -167,10 +162,11 @@ function createLifecycleResources(t: TestContext) {
   return { scope, clock, storage, settings, session, calls, monitor, restrictions, evidence, meta }
 }
 
-async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t: TestContext) {
+async function createClearLearningScenario(t: TestContext) {
   const resources = createLifecycleResources(t)
   const { scope, clock, storage, settings, session, calls, monitor, restrictions, evidence, meta } =
     resources
+  const evidenceGate = deferred<void>()
   const commands = new ControlCommands(
     settings,
     {
@@ -182,6 +178,7 @@ async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t:
     {
       clear: async () => {
         calls.push('evidence.clear')
+        await evidenceGate.promise
         await evidence.clear()
       },
     },
@@ -209,6 +206,7 @@ async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t:
     calls,
     clock,
     commands,
+    releaseEvidence: evidenceGate.resolve,
     evidence,
     meta,
     monitor,
@@ -220,24 +218,40 @@ async function createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t:
   }
 }
 
-async function checkBlacklistCommandPersistsBeforeRouteInvalidation2(
-  t: TestContext,
-): Promise<void> {
-  const base = await createBlacklistCommandPersistsBeforeRouteInvalidation2Context2(t)
+async function checkClearLearningOrder(t: TestContext): Promise<void> {
+  const base = await createClearLearningScenario(t)
 
-  assert.strictEqual(
-    base.calls.join(','),
-    '',
-    'existing restriction data does not recreate the removed manual command',
-  )
   assert.strictEqual(
     base.restrictions.has(TRUSTED_CATALOG[0], 'audio', 'black'),
     true,
     'UI blacklist remains applicable to audio',
   )
   base.meta.update({ catalogCursor: 2, lastChallengeAt: base.clock.now() })
+  await base.evidence.record(TRUSTED_CATALOG[0], 'video', {
+    requestId: 'clear-learning-positive',
+    at: base.clock.now(),
+    source: 'transport',
+    outcome: 'success',
+    throughputMbps: 10,
+    ttfbMs: 10,
+    failureKind: null,
+  })
+  assert.ok(base.evidence.get(TRUSTED_CATALOG[0], 'video'))
   base.calls.length = 0
-  await base.commands.clearLearning()
+  const pending = base.commands.clearLearning()
+  base.scope.defer(() => {
+    base.releaseEvidence()
+    return pending
+  })
+  assert.deepEqual(
+    base.calls,
+    ['evidence.clear'],
+    'later stores must wait for evidence persistence',
+  )
+  base.releaseEvidence()
+  await pending
+  assert.equal(base.evidence.get(TRUSTED_CATALOG[0], 'video'), null)
+  assert.equal(base.restrictions.has(TRUSTED_CATALOG[0], 'audio', 'black'), false)
   assert.strictEqual(
     base.calls.join(','),
     'evidence.clear,restrictions.clear,meta.clear',
@@ -249,6 +263,10 @@ async function checkBlacklistCommandPersistsBeforeRouteInvalidation2(
     'measurement metadata clear is confirmed in its existing key',
   )
   assert.deepEqual(base.meta.get(), { catalogCursor: 0, lastChallengeAt: 0 })
+}
+
+async function checkLifecycleOwnership(t: TestContext): Promise<void> {
+  const base = createLifecycleResources(t)
   const vault = new SignedRouteVault(),
     routes = new RouteCoordinator(
       base.clock,
@@ -305,46 +323,6 @@ async function checkBlacklistCommandPersistsBeforeRouteInvalidation2(
     base.session.get().generation !== initial,
     'navigation observation advances generation without browser API access',
   )
-}
-
-async function checkDisableStartsADisabledGeneration3(t: TestContext): Promise<void> {
-  const base = createLifecycleResources(t)
-  const vault = new SignedRouteVault(),
-    routes = new RouteCoordinator(
-      base.clock,
-      base.session,
-      base.settings,
-      base.restrictions,
-      base.evidence,
-      vault,
-      createRuntimeIds(),
-    )
-  let transformed = 0,
-    accept = true
-  const navigation: NavigationPort = {
-    key: () => '/video/a',
-    subscribe: () => () => undefined,
-  }
-  const lifecycle = base.scope.own(
-    new LifecycleController(
-      base.session,
-      base.settings,
-      vault,
-      routes,
-      {
-        transform: () => {
-          transformed++
-          return playurlResult(accept)
-        },
-      },
-      { install: () => undefined, dispose: () => undefined },
-      base.monitor,
-      base.clock.now,
-      navigation,
-      base.clock,
-    ),
-  )
-  lifecycle.start()
   await base.settings.update({ disabled: true })
 
   assert.strictEqual(base.session.get().disabled, true, 'disable starts a disabled generation')
@@ -442,10 +420,18 @@ test(
   },
 )
 
-test('blacklist command persists before route invalidation [2]', { timeout: 5000 }, async (t) => {
-  await checkBlacklistCommandPersistsBeforeRouteInvalidation2(t)
-})
+test(
+  'clear learning awaits each store before starting the next [2]',
+  { timeout: 5000 },
+  async (t) => {
+    await checkClearLearningOrder(t)
+  },
+)
 
-test('disable starts a disabled generation [3]', { timeout: 5000 }, async (t) => {
-  await checkDisableStartsADisabledGeneration3(t)
-})
+test(
+  'lifecycle installation, navigation, disable and disposal retain ownership [3]',
+  { timeout: 5000 },
+  async (t) => {
+    await checkLifecycleOwnership(t)
+  },
+)

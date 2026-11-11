@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { supervise } from '../../../scripts/testing/test-process.mts'
-import { readRelease } from '../../../scripts/lib/lib.mts'
+import { readRelease, sha256 } from '../../../scripts/lib/lib.mts'
 import { build } from '../../../scripts/build.mts'
 import { NODE_BUILD_TARGET } from '../../../scripts/lib/toolchain.mts'
 import { testScope } from '../../support/scope.ts'
@@ -47,6 +47,10 @@ test('TOOLCHAIN actual build records runtime and installed tools without claimin
     JSON.parse(readFileSync('node_modules/typescript/package.json', 'utf8')).version,
   )
   assert.ok(Object.hasOwn(result.manifest.sources, 'scripts/lib/toolchain.mts'))
+  assert.equal(
+    result.manifest.sources['src-v2/metadata.txt'],
+    sha256(readFileSync('src-v2/metadata.txt')),
+  )
   assert.equal(NODE_BUILD_TARGET, 'node24')
 })
 

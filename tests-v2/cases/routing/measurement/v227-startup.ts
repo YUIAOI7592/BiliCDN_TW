@@ -125,6 +125,7 @@ test('V227 startup: demand includes the single margin and a 1.2 ratio is adequat
   const { f, url, scope } = await setup(t),
     options = f.routes.startupOptions(url)!,
     safe = options.demand.requiredMbps * 1.2
+  assert.equal(options.demand.requiredMbps, 10, '4 Mbps at 2x with one 1.25 margin')
   let count = 0
   const controller = scope.own(
     new MeasurementController(

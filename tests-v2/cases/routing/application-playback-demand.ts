@@ -18,7 +18,7 @@ import { BrowserScheduler } from '../../../src-v2/adapters/scheduler.ts'
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
 
-async function createRateMonitorResources(t: TestContext) {
+function createRateMonitorResources(t: TestContext) {
   const scope = testScope(t)
   const now = 2_000_000_000_000
   const storage = new FakeStorage()
@@ -76,9 +76,6 @@ async function createRateMonitorResources(t: TestContext) {
     get observedRate() {
       return observedRate
     },
-    set observedRate(value: typeof observedRate) {
-      observedRate = value
-    },
     rateMonitor,
     get selectedRate() {
       return selectedRate
@@ -89,28 +86,8 @@ async function createRateMonitorResources(t: TestContext) {
   }
 }
 
-async function createRepeatedMonitoringNeverWritesPlaybackSpeed12Context11(t: TestContext) {
-  const resources = await createRateMonitorResources(t)
-  for (const rate of [1, 1.5, 0.75, 2, 1]) {
-    resources.selectedRate = rate
-    resources.rateMonitor.tick()
-    resources.rateMonitor.tick()
-  }
-  return {
-    get rateWrites() {
-      return resources.rateWrites
-    },
-    get rateSamples() {
-      return resources.rateSamples
-    },
-  }
-}
-
-async function createRateAdapterContext13(t: TestContext) {
+function rateAdapterFixture(t: TestContext) {
   const scope = testScope(t)
-  const now = 2_000_000_000_000
-  const block1 = createMutablePlaybackResources()
-  const { recoveryPlayer } = block1
   const adapterVideo = {
     isConnected: true,
     paused: false,
@@ -153,48 +130,44 @@ async function createRateAdapterContext13(t: TestContext) {
       subscribeControlLoss: () => () => undefined,
     },
   )
-  return {
-    adapterVideo,
-    now,
-    get playerSnapshot() {
-      return block1.playerSnapshot
-    },
-    set playerSnapshot(value: typeof block1.playerSnapshot) {
-      block1.playerSnapshot = value
-    },
-    rateAdapter,
-    recoveryPlayer,
-    scope,
+  scope.defer(() => rateAdapter.reset())
+  return { adapterVideo, rateAdapter, scope }
+}
+
+test('monitor observes selected rates without writing playback speed [11-12]', (t) => {
+  const f = createRateMonitorResources(t)
+  let ticks = 0
+  for (const rate of [1, 1.5, 0.75, 2, 1]) {
+    f.selectedRate = rate
+    for (let i = 0; i < 2; i++) {
+      f.rateMonitor.tick()
+      assert.equal(f.observedRate, rate)
+      assert.equal(f.rateSamples, ++ticks)
+      assert.equal(f.rateWrites, 0)
+    }
   }
-}
+})
 
-async function checkAdapterUsesRealParameterXForDemand13ParameterParameter(
-  t: TestContext,
-  rate: number,
-): Promise<void> {
-  const base = await createRateAdapterContext13(t)
+test('adapter uses each real rate for demand and playable buffer [13]', (t) => {
+  const f = rateAdapterFixture(t)
+  for (const rate of [1, 1.5, 2, 0.75]) {
+    f.adapterVideo.playbackRate = rate
+    const snapshot = f.rateAdapter.snapshot()
+    assert.equal(snapshot.effectiveRate, rate)
+    assert.equal(snapshot.playableBufferSec, 60 / rate)
+    assert.equal(f.rateAdapter.playbackRate(), rate)
+  }
+})
 
-  base.adapterVideo.playbackRate = rate
-  assert.strictEqual(
-    base.rateAdapter.snapshot().effectiveRate,
-    rate,
-    `adapter uses real ${rate}x for demand`,
-  )
-  assert.strictEqual(
-    base.rateAdapter.snapshot().playableBufferSec,
-    60 / rate,
-    `buffer duration respects ${rate}x`,
-  )
-  assert.strictEqual(
-    base.rateAdapter.playbackRate(),
-    rate,
-    'unavailable player API falls back to video rate',
-  )
-}
-
-async function check2xIsOnlyTheUnknownRatePlanningFallback14(t: TestContext): Promise<void> {
-  const base = await createRateAdapterContext13(t)
-
+test('unknown rate uses 2x planning; recovery preserves the saved user rate [14]', (t) => {
+  const adapter = rateAdapterFixture(t),
+    block = createMutablePlaybackResources()
+  const base = {
+    ...adapter,
+    now: 2_000_000_000_000,
+    playerSnapshot: block.playerSnapshot,
+    recoveryPlayer: block.recoveryPlayer,
+  }
   base.adapterVideo.playbackRate = Number.NaN
 
   assert.strictEqual(
@@ -236,59 +209,4 @@ async function check2xIsOnlyTheUnknownRatePlanningFallback14(t: TestContext): Pr
     1.5,
     'core recovery restores the saved user rate, not forced 2x',
   )
-}
-
-async function checkRepeatedMonitoringNeverWritesPlaybackSpeed12(t: TestContext): Promise<void> {
-  const base = await createRepeatedMonitoringNeverWritesPlaybackSpeed12Context11(t)
-
-  assert.strictEqual(base.rateSamples, 10, 'all ten monitoring ticks reach the rate observer')
-  assert.strictEqual(base.rateWrites, 0, 'repeated monitoring never writes playback speed')
-}
-
-async function checkMonitorObservesSelectedParameterX11ParameterParameter(
-  t: TestContext,
-  rate: number,
-): Promise<void> {
-  const base = await createRateMonitorResources(t)
-
-  base.selectedRate = rate
-  base.rateMonitor.tick()
-  base.rateMonitor.tick()
-  assert.strictEqual(base.observedRate, rate, `monitor observes selected ${rate}x`)
-}
-
-{
-  let parameter = 0
-  for (const rate of [1, 1.5, 0.75, 2]) {
-    const selected = parameter++
-    test(
-      '`monitor observes selected ${rate}x` [11]' + ` / ${String(rate)} / ${selected}`,
-      { timeout: 5000 },
-      async (t) => {
-        await checkMonitorObservesSelectedParameterX11ParameterParameter(t, rate)
-      },
-    )
-  }
-}
-
-test('repeated monitoring never writes playback speed [12]', { timeout: 5000 }, async (t) => {
-  await checkRepeatedMonitoringNeverWritesPlaybackSpeed12(t)
-})
-
-{
-  let parameter = 0
-  for (const rate of [1, 1.5, 2, 0.75]) {
-    const selected = parameter++
-    test(
-      '`adapter uses real ${rate}x for demand` [13]' + ` / ${String(rate)} / ${selected}`,
-      { timeout: 5000 },
-      async (t) => {
-        await checkAdapterUsesRealParameterXForDemand13ParameterParameter(t, rate)
-      },
-    )
-  }
-}
-
-test('2x is only the unknown-rate planning fallback [14]', { timeout: 5000 }, async (t) => {
-  await check2xIsOnlyTheUnknownRatePlanningFallback14(t)
 })

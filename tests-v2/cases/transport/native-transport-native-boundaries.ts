@@ -1,19 +1,9 @@
-import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
-import { installProgressEvent } from '../../support/progress-event.ts'
-import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
-import { deferred } from '../../support/deferred.ts'
-import { test } from 'node:test'
+import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
-import { type TestContext } from 'node:test'
-import { PlayurlController } from '../../../src-v2/application/playurl/playurl-controller.ts'
-import { SignedRouteVault } from '../../../src-v2/state/signed-route-vault.ts'
-import { RestrictionStore } from '../../../src-v2/state/restriction-store.ts'
-import { EvidenceStore } from '../../../src-v2/state/evidence-store.ts'
-import { SessionStore } from '../../../src-v2/state/session-store.ts'
-import { RouteCoordinator } from '../../../src-v2/application/routing/route-coordinator.ts'
+import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
 import { TransportAdapter } from '../../../src-v2/adapters/transport/transport.ts'
-import { PlayurlAdapter } from '../../../src-v2/adapters/playurl/playurl.ts'
-import { FakeStorage } from '../../support/storage.ts'
+import { deferred } from '../../support/deferred.ts'
+import { installProgressEvent } from '../../support/progress-event.ts'
 import { testScope } from '../../support/scope.ts'
 import {
   fixture as routingFixture,
@@ -22,323 +12,101 @@ import {
 } from '../routing/routing-fixture.ts'
 import { createNativeTransportResources } from './native-transport-resources.ts'
 
-async function createCatalogOnlyFetchBlocksKnownBStationPCDNSuffixParameterBeforeContext13(
-  t: TestContext,
-) {
-  const scope = testScope(t)
+async function fixture(t: TestContext) {
+  const scope = testScope(t),
+    f = routingFixture(scope),
+    resources = await createNativeTransportResources()
   installProgressEvent(scope)
-  const now = 2_000_000_000_000
-  const clock = { now: () => now }
-  const block1 = await createNativeTransportResources()
-  const { fakeWindow, FakeXhr } = block1
-  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: resources.fakeWindow })
   scope.defineGlobal('location', {
     configurable: true,
     value: new URL('https://www.bilibili.com/video/BVtest/'),
   })
-  const measurementStub = {
-    willGateStartup: (): boolean => false,
-    prepareStartup: async (): Promise<void> => {},
-    noteUnpreflighted(_reason: string): void {},
-  }
-  const oversizedStorage = new FakeStorage()
-  const oversizedSettings = scope.own(new CatalogSettingsStore(oversizedStorage, () => now))
-  const oversizedSession = new SessionStore()
-  const oversizedState = oversizedSession.beginGeneration(false)
-  const oversizedVault = new SignedRouteVault()
-  oversizedVault.reset(oversizedState.generation, oversizedState.epoch)
-  const oversizedRoutes = new RouteCoordinator(
-    clock,
-    oversizedSession,
-    oversizedSettings,
-    scope.own(new RestrictionStore(oversizedStorage, () => now)),
-    scope.own(new EvidenceStore(oversizedStorage, () => now)),
-    oversizedVault,
-    createRuntimeIds(),
-  )
-  const oversizedPlayurl = new PlayurlAdapter(
-    new PlayurlController(oversizedSession, oversizedVault, oversizedRoutes),
-  )
-  const oversizedTransport = scope.own(
+  const transport = scope.own(
     new TransportAdapter(
-      oversizedSession,
-      oversizedSettings,
-      oversizedRoutes,
-      oversizedPlayurl,
-      measurementStub,
-      () => now,
-      createRuntimeIds(),
-      undefined,
-      () => now,
-    ),
-  )
-  oversizedTransport.install()
-  return {
-    FakeXhr,
-    fakeWindow,
-    get nativeFetchCalls() {
-      return block1.nativeFetchCalls
-    },
-    set nativeFetchCalls(value: typeof block1.nativeFetchCalls) {
-      block1.nativeFetchCalls = value
-    },
-  }
-}
-
-async function createUnattributedThirdPartyM4sFetchRemainsWebsiteOwned15Context14(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const now = 2_000_000_000_000
-  const clock = { now: () => now }
-  const block1 = await createNativeTransportResources()
-  const { fakeWindow, FakeXhr } = block1
-  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
-  scope.defineGlobal('location', {
-    configurable: true,
-    value: new URL('https://www.bilibili.com/video/BVtest/'),
-  })
-  const measurementStub = {
-    willGateStartup: (): boolean => false,
-    prepareStartup: async (): Promise<void> => {},
-    noteUnpreflighted(_reason: string): void {},
-  }
-  const oversizedStorage = new FakeStorage()
-  const oversizedSettings = scope.own(new CatalogSettingsStore(oversizedStorage, () => now))
-  const oversizedSession = new SessionStore()
-  const oversizedState = oversizedSession.beginGeneration(false)
-  const oversizedVault = new SignedRouteVault()
-  oversizedVault.reset(oversizedState.generation, oversizedState.epoch)
-  const oversizedRoutes = new RouteCoordinator(
-    clock,
-    oversizedSession,
-    oversizedSettings,
-    scope.own(new RestrictionStore(oversizedStorage, () => now)),
-    scope.own(new EvidenceStore(oversizedStorage, () => now)),
-    oversizedVault,
-    createRuntimeIds(),
-  )
-  const oversizedPlayurl = new PlayurlAdapter(
-    new PlayurlController(oversizedSession, oversizedVault, oversizedRoutes),
-  )
-  const oversizedTransport = scope.own(
-    new TransportAdapter(
-      oversizedSession,
-      oversizedSettings,
-      oversizedRoutes,
-      oversizedPlayurl,
-      measurementStub,
-      () => now,
-      createRuntimeIds(),
-      undefined,
-      () => now,
-    ),
-  )
-  oversizedTransport.install()
-  const thirdPartyMedia = 'https://cdn.example.net/video.m4s?signature=outside'
-  return {
-    FakeXhr,
-    fakeWindow,
-    get nativeFetchCalls() {
-      return block1.nativeFetchCalls
-    },
-    set nativeFetchCalls(value: typeof block1.nativeFetchCalls) {
-      block1.nativeFetchCalls = value
-    },
-    oversizedRoutes,
-    oversizedSettings,
-    oversizedTransport,
-    thirdPartyMedia,
-  }
-}
-
-async function checkUnattributedThirdPartyM4sFetchRemainsWebsiteOwned15(
-  t: TestContext,
-): Promise<void> {
-  const base = await createUnattributedThirdPartyM4sFetchRemainsWebsiteOwned15Context14(t)
-
-  const beforeThirdPartyFetch = base.nativeFetchCalls
-  await base.fakeWindow.fetch(base.thirdPartyMedia)
-
-  assert.strictEqual(
-    base.nativeFetchCalls,
-    beforeThirdPartyFetch + 1,
-    'unattributed third-party .m4s Fetch remains website-owned',
-  )
-  const thirdPartyXhr = new base.FakeXhr()
-  thirdPartyXhr.open('GET', base.thirdPartyMedia)
-  thirdPartyXhr.send()
-  assert.strictEqual(
-    thirdPartyXhr.nativeSends,
-    1,
-    'unattributed third-party .m4s XHR remains website-owned',
-  )
-  const oversizedBilibiliMedia =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/video.m4s?signature=oversized-secret-' +
-    'x'.repeat(17 * 1024)
-  const beforeOversizedFetch = base.nativeFetchCalls
-  let oversizedFetchBlocked = false
-  try {
-    await base.fakeWindow.fetch(oversizedBilibiliMedia)
-  } catch {
-    oversizedFetchBlocked = true
-  }
-  assert.ok(
-    oversizedFetchBlocked,
-    'Catalog-only oversized recognizable B station media Fetch rejects before native dispatch',
-  )
-  assert.strictEqual(
-    base.nativeFetchCalls,
-    beforeOversizedFetch,
-    'Catalog-only oversized recognizable B station media Fetch never calls native fetch',
-  )
-  const oversizedXhr = new base.FakeXhr()
-  oversizedXhr.open('GET', oversizedBilibiliMedia)
-  oversizedXhr.send()
-  assert.strictEqual(
-    oversizedXhr.nativeSends,
-    0,
-    'Catalog-only oversized recognizable B station media XHR never calls native send',
-  )
-  assert.ok(
-    !JSON.stringify(base.oversizedTransport.snapshot()).includes('oversized-secret'),
-    'oversized media block status never includes the signed URL or query',
-  )
-  await base.oversizedSettings.update({ considerNativeSources: true })
-  base.oversizedRoutes.invalidateForUserSetting()
-  const beforeOversizedNativeOn = base.nativeFetchCalls
-  await base.fakeWindow.fetch(oversizedBilibiliMedia)
-  assert.strictEqual(
-    base.nativeFetchCalls,
-    beforeOversizedNativeOn + 1,
-    'Native-on oversized website Fetch preserves native dispatch',
-  )
-  const nativeOnOversizedXhr = new base.FakeXhr()
-  nativeOnOversizedXhr.open('GET', oversizedBilibiliMedia)
-  nativeOnOversizedXhr.send()
-  assert.strictEqual(
-    nativeOnOversizedXhr.nativeSends,
-    1,
-    'Native-on oversized website XHR preserves native dispatch',
-  )
-}
-
-async function checkDisabledScriptPreservesOversizedWebsiteFetchDispatch16(
-  t: TestContext,
-): Promise<void> {
-  const base = await createUnattributedThirdPartyM4sFetchRemainsWebsiteOwned15Context14(t)
-
-  await base.fakeWindow.fetch(base.thirdPartyMedia)
-  const thirdPartyXhr = new base.FakeXhr()
-  thirdPartyXhr.open('GET', base.thirdPartyMedia)
-  thirdPartyXhr.send()
-  const oversizedBilibiliMedia =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/video.m4s?signature=oversized-secret-' +
-    'x'.repeat(17 * 1024)
-  try {
-    await base.fakeWindow.fetch(oversizedBilibiliMedia)
-  } catch {}
-  const oversizedXhr = new base.FakeXhr()
-  oversizedXhr.open('GET', oversizedBilibiliMedia)
-  oversizedXhr.send()
-  await base.oversizedSettings.update({ considerNativeSources: true })
-  base.oversizedRoutes.invalidateForUserSetting()
-  await base.fakeWindow.fetch(oversizedBilibiliMedia)
-  const nativeOnOversizedXhr = new base.FakeXhr()
-  nativeOnOversizedXhr.open('GET', oversizedBilibiliMedia)
-  nativeOnOversizedXhr.send()
-  await base.oversizedSettings.update({
-    disabled: true,
-    considerNativeSources: false,
-  })
-  const beforeDisabledOversized = base.nativeFetchCalls
-  await base.fakeWindow.fetch(oversizedBilibiliMedia)
-
-  assert.strictEqual(
-    base.nativeFetchCalls,
-    beforeDisabledOversized + 1,
-    'disabled script preserves oversized website Fetch dispatch',
-  )
-  const disabledOversizedXhr = new base.FakeXhr()
-  disabledOversizedXhr.open('GET', oversizedBilibiliMedia)
-  disabledOversizedXhr.send()
-  assert.strictEqual(
-    disabledOversizedXhr.nativeSends,
-    1,
-    'disabled script preserves oversized website XHR dispatch',
-  )
-}
-
-async function checkCatalogOnlyFetchBlocksKnownBStationPCDNSuffixParameterBefore(
-  t: TestContext,
-  parameter = 0,
-): Promise<void> {
-  const base = await createCatalogOnlyFetchBlocksKnownBStationPCDNSuffixParameterBeforeContext13(t)
-
-  let iteration = 0
-  for (const suffix of ['szbdyd.com', 'mountaintoys.cn', 'nexusedgeio.com', 'ahdohpiechei.com']) {
-    if (iteration++ === parameter) {
-      const knownPcdnUrl = `https://node.${suffix}/video.m4s?signature=pcdn-secret`
-      const beforePcdnFetch = base.nativeFetchCalls
-      let pcdnFetchBlocked = false
-      try {
-        await base.fakeWindow.fetch(knownPcdnUrl)
-      } catch {
-        pcdnFetchBlocked = true
-      }
-      assert.ok(
-        pcdnFetchBlocked,
-        `Catalog-only Fetch blocks known B station PCDN suffix ${suffix} before native dispatch`,
-      )
-      assert.strictEqual(
-        base.nativeFetchCalls,
-        beforePcdnFetch,
-        `known PCDN suffix ${suffix} never reaches native Fetch`,
-      )
-      const pcdnXhr = new base.FakeXhr()
-      pcdnXhr.open('GET', knownPcdnUrl)
-      pcdnXhr.send()
-      assert.strictEqual(
-        pcdnXhr.nativeSends,
-        0,
-        `Catalog-only XHR blocks known B station PCDN suffix ${suffix} before native send`,
-      )
-
-      return
-    }
-  }
-  throw Error('Unknown fixture parameter')
-}
-
-{
-  let parameter = 0
-  for (const suffix of ['szbdyd.com', 'mountaintoys.cn', 'nexusedgeio.com', 'ahdohpiechei.com']) {
-    const selected = parameter++
-    test(
-      '`Catalog-only Fetch blocks known B station PCDN suffix ${suffix} before native dispatch` [14]' +
-        ` / ${String(suffix)} / ${selected}`,
-      { timeout: 5000 },
-      async (t) => {
-        await checkCatalogOnlyFetchBlocksKnownBStationPCDNSuffixParameterBefore(t, selected)
+      f.session,
+      f.settings,
+      f.routes,
+      f.adapter,
+      {
+        willGateStartup: () => false,
+        prepareStartup: async () => undefined,
+        noteUnpreflighted: () => undefined,
       },
-    )
-  }
+      f.clock.now,
+      createRuntimeIds(),
+      undefined,
+      f.clock.now,
+    ),
+  )
+  transport.install()
+  assert.equal(transport.snapshot().hookState, 'installed')
+  return { ...f, resources, transport }
+}
+const oversized =
+  'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/video.m4s?signature=oversized-secret-' +
+  'x'.repeat(17 * 1024)
+
+for (const suffix of ['szbdyd.com', 'mountaintoys.cn', 'nexusedgeio.com', 'ahdohpiechei.com']) {
+  test(`Catalog-only Fetch and XHR block known PCDN suffix ${suffix} [14]`, async (t) => {
+    const f = await fixture(t),
+      r = f.resources
+    const url = `https://node.${suffix}/video.m4s?signature=pcdn-secret`
+    await assert.rejects(r.fakeWindow.fetch(url), /blocked media request/)
+    assert.equal(r.nativeFetchCalls, 0)
+    const xhr = new r.FakeXhr()
+    xhr.open('GET', url)
+    xhr.send()
+    assert.equal(xhr.nativeSends, 0)
+  })
 }
 
-test(
-  'unattributed third-party .m4s Fetch remains website-owned [15]',
-  { timeout: 5000 },
-  async (t) => {
-    await checkUnattributedThirdPartyM4sFetchRemainsWebsiteOwned15(t)
-  },
-)
+test('third-party media stays website-owned while oversized B station media obeys Native policy [15]', async (t) => {
+  const f = await fixture(t),
+    r = f.resources
+  const thirdParty = 'https://cdn.example.net/video.m4s?signature=outside'
+  const response = await r.fakeWindow.fetch(thirdParty)
+  assert.deepEqual(r.nativeFetchUrls, [thirdParty])
+  await response.body?.cancel('case-complete')
+  const other = new r.FakeXhr()
+  other.open('GET', thirdParty)
+  other.send()
+  assert.equal(other.nativeSends, 1)
+  assert.equal(other.url, thirdParty)
 
-test(
-  'disabled script preserves oversized website Fetch dispatch [16]',
-  { timeout: 5000 },
-  async (t) => {
-    await checkDisabledScriptPreservesOversizedWebsiteFetchDispatch16(t)
-  },
-)
+  await assert.rejects(r.fakeWindow.fetch(oversized), /blocked media request/)
+  assert.equal(r.nativeFetchCalls, 1)
+  const blocked = new r.FakeXhr()
+  blocked.open('GET', oversized)
+  blocked.send()
+  assert.equal(blocked.nativeSends, 0)
+  assert.equal(JSON.stringify(f.transport.snapshot()).includes('oversized-secret'), false)
+  await f.settings.update({ considerNativeSources: true })
+  f.routes.invalidateForUserSetting()
+  const allowed = await r.fakeWindow.fetch(oversized)
+  assert.equal(r.nativeFetchCalls, 2)
+  assert.equal(r.nativeFetchUrls.at(-1), oversized)
+  await allowed.body?.cancel('case-complete')
+  const native = new r.FakeXhr()
+  native.open('GET', oversized)
+  native.send()
+  assert.equal(native.nativeSends, 1)
+  assert.equal(native.url, oversized)
+})
+
+test('disabled script preserves oversized website Fetch and XHR dispatch [16]', async (t) => {
+  const f = await fixture(t),
+    r = f.resources
+  await f.settings.update({ disabled: true, considerNativeSources: false })
+  const response = await r.fakeWindow.fetch(oversized)
+  assert.deepEqual(r.nativeFetchUrls, [oversized])
+  await response.body?.cancel('case-complete')
+  const xhr = new r.FakeXhr()
+  xhr.open('GET', oversized)
+  xhr.send()
+  assert.equal(xhr.nativeSends, 1)
+  assert.equal(xhr.url, oversized)
+})
 
 for (const transportKind of ['fetch', 'xhr'] as const) {
   for (const range of ['bytes=10-65545', 'bytes=1-', 'bytes=0-1,3-4']) {

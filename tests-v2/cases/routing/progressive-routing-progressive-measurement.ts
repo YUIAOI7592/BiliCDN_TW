@@ -17,54 +17,12 @@ import { FakeStorage } from '../../support/storage.ts'
 import { testScope } from '../../support/scope.ts'
 import { FakeClock } from '../../support/clock.ts'
 import { measurementRoutes } from '../../support/controllers.ts'
-import {
-  createProgressiveSourceUrls,
-  createRoutingResources,
-} from './progressive-routing-resources.ts'
+import { createRoutingResources } from './progressive-routing-resources.ts'
 
 async function createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t: TestContext) {
   const resources = await createRoutingResources(t)
-  const { vault, state, settings, routes, scope, now } = resources
+  const { settings, routes, scope } = resources
 
-  const block1 = createProgressiveSourceUrls()
-  const { opaque, segment1, segment2 } = block1
-  void vault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: 'durl:q80:0',
-    height: 0,
-    codec: 'mp4',
-    bandwidth: 0,
-    urls: [opaque, segment1],
-    source: 'trusted-api',
-  })
-  void vault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: 'durl:q80:1',
-    height: 0,
-    codec: 'flv',
-    bandwidth: 0,
-    urls: [segment2],
-    source: 'trusted-api',
-  })
-  const resource =
-    'https://upos-hz-mirrorakam.akamaized.net/v1/resource/progressive-segment?token=resource'
-  const resourceBackup =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/resource-backup.mp4?token=valid'
-  void vault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: 'durl:q64:0',
-    height: 0,
-    codec: 'mp4',
-    bandwidth: 0,
-    urls: [resource, resourceBackup],
-    source: 'trusted-api',
-  })
   let measurementResets = 0
   let recoveryResets = 0
   const runtime = new RuntimeController(
@@ -103,15 +61,8 @@ async function createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t: T
     get measurementResets() {
       return measurementResets
     },
-    set measurementResets(value: typeof measurementResets) {
-      measurementResets = value
-    },
-    now,
     get recoveryResets() {
       return recoveryResets
-    },
-    set recoveryResets(value: typeof recoveryResets) {
-      recoveryResets = value
     },
     scope,
     settings,
@@ -300,57 +251,6 @@ async function checkMeasurementFixtureHasTwoIndependentProgressiveSegments8(
     3,
     'the next progressive segment shares the one-time startup window',
   )
-  const timeoutClock = base.scope.own(new FakeClock())
-  let hangingReads = 0,
-    timeoutCommits = 0
-  base.probeRoutes
-    .startupOptions(base.probeFirst)
-    ?.candidates.map((candidate) => candidate.host)
-    .join('|')
-  const timedProbe = base.scope.own(
-    new MeasurementController(
-      measurementRoutes({
-        isCatalogOnly: () => true,
-        startupOptions: (url) => base.probeRoutes.startupOptions(url),
-        startupFallback: (url, excluded) => base.probeRoutes.startupFallback(url, excluded),
-        noteStartupProbeResult: (candidate, status) =>
-          base.probeRoutes.noteStartupProbeResult(candidate, status),
-        commitStartupChoice: (...args) => {
-          timeoutCommits++
-          return base.probeRoutes.commitStartupChoice(...args)
-        },
-      }),
-      new MeasurementMetaStore(new FakeStorage(), timeoutClock.now),
-      {
-        read: (input) =>
-          new Promise((resolve) => {
-            hangingReads++
-            input.signal.addEventListener(
-              'abort',
-              () =>
-                resolve({
-                  bytes: 0,
-                  elapsedMs: 3000,
-                  ttfbMs: null,
-                  status: null,
-                  directRange: false,
-                  reason: 'timeout',
-                }),
-              { once: true },
-            )
-          }),
-      },
-      timeoutClock.now,
-      timeoutClock,
-      undefined,
-      undefined,
-      undefined,
-      timeoutClock.now,
-    ),
-  )
-
-  timedProbe.prepareStartup(base.probeFirst).then(() => {})
-  assert.strictEqual(hangingReads, 3, 'all three startup probes begin in parallel')
 }
 
 async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
@@ -358,55 +258,6 @@ async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
 ): Promise<void> {
   const base = await createMeasurementFixtureHasTwoIndependentProgressiveSegments8Context7(t)
 
-  const initialCandidates = base.probeRoutes.startupOptions(base.probeFirst)?.candidates ?? []
-  let inconclusiveCommits = 0,
-    attempted = 0
-  const invalidProbe = base.scope.own(
-    new MeasurementController(
-      measurementRoutes({
-        isCatalogOnly: () => true,
-        startupOptions: (url) => base.probeRoutes.startupOptions(url),
-        startupFallback: (url, excluded) => base.probeRoutes.startupFallback(url, excluded),
-        noteStartupProbeResult: (candidate, status) =>
-          base.probeRoutes.noteStartupProbeResult(candidate, status),
-        commitStartupChoice: (...args) => {
-          inconclusiveCommits++
-          return base.probeRoutes.commitStartupChoice(...args)
-        },
-      }),
-      new MeasurementMetaStore(new FakeStorage(), base.probeClock.now),
-      {
-        read: async () => {
-          attempted++
-          return {
-            bytes: 0,
-            elapsedMs: 20,
-            ttfbMs: null,
-            status: 403,
-            directRange: false,
-            reason: 'http-403',
-          }
-        },
-      },
-      base.probeClock.now,
-      base.probeClock,
-      undefined,
-      undefined,
-      undefined,
-      base.probeClock.now,
-    ),
-  )
-  await invalidProbe.prepareStartup(base.probeFirst)
-  void (
-    base.probeRoutes.apply(base.probeFirst).url &&
-    !initialCandidates.some(
-      (candidate) => candidate.host === base.probeRoutes.apply(base.probeFirst).decision.host,
-    )
-  )
-  void base.probeRoutes
-    .startupOptions(base.probeSecond)
-    ?.candidates.some((candidate) => candidate.host === initialCandidates[0]?.host)
-  await invalidProbe.prepareStartup(base.probeSecond)
   const timeoutClock = base.scope.own(new FakeClock())
   let hangingReads = 0,
     timeoutCommits = 0
@@ -459,6 +310,7 @@ async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
   const timed = timedProbe.prepareStartup(base.probeFirst).then(() => {
     timeoutSettled = true
   })
+  assert.strictEqual(hangingReads, 3, 'all three startup probes begin in parallel')
   timeoutClock.advance(2999)
   await Promise.resolve()
 
@@ -484,6 +336,7 @@ async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
     'timeouts alone do not mark otherwise legal Catalog hosts dead',
   )
   const belowOptions = base.probeRoutes.startupOptions(base.probeSecond)!
+  assert.strictEqual(belowOptions.candidates.length, 3)
   let belowWinner: string | null = null
   const belowProbe = base.scope.own(
     new MeasurementController(
@@ -521,7 +374,7 @@ async function checkStartupGateRemainsBoundedButOpenBeforeItsDeadline9(
   assert.strictEqual(
     belowWinner,
     belowOptions.candidates[0]?.host,
-    'fastest valid Catalog 206 wins when no sample meets 1.35 times playback demand',
+    'fastest valid Catalog 206 wins when no sample meets playback demand',
   )
   const nativeOriginal = {
     ...belowOptions.candidates[0]!,
@@ -575,7 +428,12 @@ async function checkCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7(
 ): Promise<void> {
   const base = await createCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7Context6(t)
 
-  assert.ok(base.pcdnRep, 'behavior requires its fixture prerequisites')
+  assert.strictEqual(
+    parseMediaUrl(base.pcdnSource)?.kind,
+    'pcdn',
+    'fixture is a recognized PCDN media source',
+  )
+  assert.ok(base.pcdnRep, 'exact PCDN source is retained for Catalog generation')
   {
     const identity = base.pcdnVault.identity(base.pcdnRep)!
     assert.strictEqual(
@@ -646,63 +504,24 @@ async function checkCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7(
 async function checkFixedCatalogChangeCancelsAPendingStartupProbe6(t: TestContext): Promise<void> {
   const base = await createFixedCatalogChangeCancelsAPendingStartupProbe6Context5(t)
 
-  assert.strictEqual(
-    base.measurementResets,
-    1,
-    'fixed Catalog change cancels a pending startup probe',
-  )
-  assert.strictEqual(base.recoveryResets, 1, 'fixed Catalog change clears pending route recovery')
+  assert.strictEqual(base.measurementResets, 1, 'fixed Catalog change requests measurement reset')
+  assert.strictEqual(base.recoveryResets, 1, 'fixed Catalog change requests recovery reset')
   await base.settings.update({ catalogOverrides: { [TRUSTED_CATALOG[0]]: false } })
   assert.strictEqual(
     base.measurementResets,
     2,
-    'Catalog restrictions change cancels a pending startup probe',
+    'Catalog restrictions change requests measurement reset',
   )
-  assert.strictEqual(
-    base.recoveryResets,
-    2,
-    'Catalog restrictions change clears pending route recovery',
-  )
-  const pcdnStorage = new FakeStorage(),
-    pcdnSettings = base.scope.own(new CatalogSettingsStore(pcdnStorage, () => base.now))
-  const pcdnSession = new SessionStore(),
-    pcdnState = pcdnSession.beginGeneration(false)
-  const pcdnVault = new SignedRouteVault()
-  pcdnVault.reset(pcdnState.generation, pcdnState.epoch)
-  const pcdnRestrictions = base.scope.own(new RestrictionStore(pcdnStorage, () => base.now))
-  new RouteCoordinator(
-    { now: () => base.now, monotonicNow: () => base.now },
-    pcdnSession,
-    pcdnSettings,
-    pcdnRestrictions,
-    base.scope.own(new EvidenceStore(pcdnStorage, () => base.now)),
-    pcdnVault,
-    createRuntimeIds(),
-  )
-  const pcdnSource =
-    'https://upos-pc.mcdn.bilivideo.com/upgcxcode/progressive/pcdn-source.mp4?token=pcdn'
-  assert.strictEqual(
-    parseMediaUrl(pcdnSource)?.kind,
-    'pcdn',
-    'fixture is a recognized PCDN media source',
-  )
-  const pcdnRep = pcdnVault.register({
-    generation: pcdnState.generation,
-    epoch: pcdnState.epoch,
-    kind: 'video',
-    key: 'durl:q80:pcdn',
-    height: 0,
-    codec: 'mp4',
-    bandwidth: 0,
-    urls: [pcdnSource],
-    source: 'trusted-api',
-  })
-  assert.ok(pcdnRep, 'exact PCDN source is retained privately for safe Catalog generation')
+  assert.strictEqual(base.recoveryResets, 2, 'Catalog restrictions change requests recovery reset')
 }
 
-test('fixed Catalog change cancels a pending startup probe [6]', { timeout: 5000 }, async (t) => {
-  await checkFixedCatalogChangeCancelsAPendingStartupProbe6(t)
-})
+test(
+  'fixed Catalog and restriction changes reset measurement and recovery [6]',
+  { timeout: 5000 },
+  async (t) => {
+    await checkFixedCatalogChangeCancelsAPendingStartupProbe6(t)
+  },
+)
 
 test(
   'Catalog source handle resolves exact current-epoch PCDN source [7]',
@@ -713,7 +532,7 @@ test(
 )
 
 test(
-  'measurement fixture has two independent progressive segments [8]',
+  'progressive 403 probes stay bounded and isolate segment exclusions [8]',
   { timeout: 5000 },
   async (t) => {
     await checkMeasurementFixtureHasTwoIndependentProgressiveSegments8(t)

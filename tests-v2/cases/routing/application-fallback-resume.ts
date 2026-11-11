@@ -9,7 +9,7 @@ import { RecoveryController } from '../../../src-v2/application/playback/recover
 import { createRouteStateResources } from './application-resources.ts'
 import { testScope } from '../../support/scope.ts'
 
-async function createHostLockNeverRestoresADeadRootAndMayChooseAContext14(t: TestContext) {
+async function catalogFallbackFixture(t: TestContext) {
   const resources = await createRouteStateResources(t)
   const { liveVault, state, clock, session, settings, restrictions, evidenceStore, now } = resources
 
@@ -42,8 +42,8 @@ async function createHostLockNeverRestoresADeadRootAndMayChooseAContext14(t: Tes
   }
 }
 
-async function checkHostLockNeverRestoresADeadRootAndMayChooseA(t: TestContext): Promise<void> {
-  const base = await createHostLockNeverRestoresADeadRootAndMayChooseAContext14(t)
+async function checkCatalogFallback(t: TestContext): Promise<void> {
+  const base = await catalogFallbackFixture(t)
 
   assert.ok(base.liveRep, 'behavior requires its fixture prerequisites')
   {
@@ -57,18 +57,22 @@ async function checkHostLockNeverRestoresADeadRootAndMayChooseA(t: TestContext):
       expireAt: base.now + 60_000,
     })
     const deadRootFallback = base.coordinator.apply(root)
+    assert.ok(deadRootFallback.url, 'a legal alternative remains available')
+    assert.equal(new URL(deadRootFallback.url).host, deadRootFallback.decision.host)
     assert.ok(
       deadRootFallback.url !== root && deadRootFallback.decision.host !== lockedHost,
-      'host-lock never restores a dead root and may choose a legal alternative',
+      'Catalog-only routing replaces the forbidden source with a legal alternative',
     )
     const lockedPlan = base.coordinator.plan(
       base.liveRep,
       { kind: 'video', requiredMbps: 3, highDemand: false },
       'startup',
     )
+    const output = base.coordinator.playerOutput(base.liveRep, root, lockedPlan, [root])
+    assert.ok(output.primary, 'the player receives a legal primary URL')
     assert.ok(
-      base.coordinator.playerOutput(base.liveRep, root, lockedPlan, [root]).primary !== root,
-      'host-locked dead root cannot leak through playurl output',
+      output.primary !== root,
+      'the forbidden source cannot leak through Catalog-only player output',
     )
   }
 }
@@ -83,6 +87,7 @@ async function checkNormalShortResumeReturnsHealthyState16(t: TestContext): Prom
   shortResume.tick({ ...base.playerSnapshot, paused: false })
   shortResumeNow += 1000
   shortResume.tick({ ...base.playerSnapshot, paused: true })
+  assert.equal(shortResume.snapshot().state, 'pause-armed')
   shortResumeNow += 1000
   shortResume.tick({ ...base.playerSnapshot, paused: false, frames: 100 })
 
@@ -94,10 +99,10 @@ async function checkNormalShortResumeReturnsHealthyState16(t: TestContext): Prom
 }
 
 test(
-  'host-lock never restores a dead root and may choose a legal alternative [15]',
+  'Catalog-only fallback replaces a forbidden source in request and player output [15]',
   { timeout: 5000 },
   async (t) => {
-    await checkHostLockNeverRestoresADeadRootAndMayChooseA(t)
+    await checkCatalogFallback(t)
   },
 )
 

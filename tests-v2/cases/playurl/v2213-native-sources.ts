@@ -100,7 +100,10 @@ test('V2213 sources: selectable hosts precede extra opaque or PCDN observations 
     url(hosts[1]!),
     url(hosts[2]!),
   ])
-  assert.ok(f.vault.candidates(rep, new Set()).native.every((row) => hosts.includes(row.host)))
+  assert.deepEqual(
+    f.vault.candidates(rep, new Set()).native.map((row) => row.host),
+    hosts.slice(0, 3),
+  )
   const other = f.vault.register({ ...f.input([pcdn, opaque]), key: 'non-selectable' })!
   assert.equal(f.vault.candidates(other, new Set()).native.length, 0)
   assert.equal(f.vault.candidates(other, new Set()).root, null)
@@ -225,10 +228,11 @@ test('V2213 DASH: player output cannot grant aliases to non-admitted raw sources
   )
   assert.equal(f.vault.match(url(hosts[4]!)).source, 'path-hint')
   assert.equal(f.vault.match(url(hosts[4]!)).status, 'weak')
-  assert.ok(
+  assert.deepEqual(
     f.vault
       .candidates(identity.representation, new Set())
-      .native.every((row) => admitted.includes(f.vault.resolve(row.handle, identity)!)),
+      .native.map((row) => f.vault.resolve(row.handle, identity)),
+    admitted,
   )
 })
 
@@ -431,8 +435,8 @@ for (const kind of ['video', 'audio'] as const)
 
 for (const kind of ['video', 'audio'] as const) {
   const limit = kind === 'video' ? 128 : 64
-  for (const count of [NaN, -1, 0.5, Infinity, Number.MAX_SAFE_INTEGER + 1])
-    test(`V2213 parser: ${kind} rejects invalid inventory count ${count}`, () => {
+  test(`V2213 parser: ${kind} rejects invalid inventory counts before reading members`, () => {
+    for (const count of [NaN, -1, 0.5, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
       let reads = 0
       const prefix = new Proxy([], {
         get(target, property, receiver) {
@@ -460,9 +464,10 @@ for (const kind of ['video', 'audio'] as const) {
         },
         'page-hint',
       )
-      assert.equal(reads, 0, 'an invalid prefix cannot expose later representation fields')
-      assert.equal(result.reason, 'malformed-payload')
-    })
+      assert.equal(reads, 0, `invalid count ${count} cannot expose later representation fields`)
+      assert.equal(result.reason, 'malformed-payload', `invalid count ${count}`)
+    }
+  })
 
   test(`V2213 parser: ${kind} accepts zero and maximum valid inventory counts`, () => {
     let admittedCount = 0

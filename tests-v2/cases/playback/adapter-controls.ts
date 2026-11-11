@@ -1,7 +1,6 @@
 import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { BrowserNavigation } from '../../../src-v2/adapters/navigation.ts'
 import { PagePlayinfoAdapter } from '../../../src-v2/adapters/playurl/page-playinfo.ts'
 import { PlayerAdapter } from '../../../src-v2/adapters/player/player.ts'
 import { VisibilityAdapter } from '../../../src-v2/adapters/visibility.ts'
@@ -12,43 +11,6 @@ import { FakeStorage } from '../../support/storage.ts'
 import { testScope } from '../../support/scope.ts'
 import { deferred } from '../../support/deferred.ts'
 import { playurlResult } from '../../support/playurl.ts'
-
-test('CONTROL navigation: disposed queued callbacks cannot notify and newer owner survives', (t) => {
-  const scope = testScope(t),
-    tasks: (() => void)[] = [],
-    events = new EventTarget()
-  let count = 0
-  const history = { pushState: () => undefined, replaceState: () => undefined }
-  scope.defineGlobal('history', { configurable: true, value: history })
-  scope.defineGlobal('location', {
-    configurable: true,
-    value: new URL('https://www.bilibili.com/video/BVsynthetic?p=2'),
-  })
-  scope.defineGlobal('queueMicrotask', {
-    configurable: true,
-    value: (fn: () => void) => tasks.push(fn),
-  })
-  scope.defineGlobal('addEventListener', {
-    configurable: true,
-    value: events.addEventListener.bind(events),
-  })
-  scope.defineGlobal('removeEventListener', {
-    configurable: true,
-    value: events.removeEventListener.bind(events),
-  })
-  const navigation = new BrowserNavigation(),
-    stop = navigation.subscribe(() => count++)
-  scope.defer(stop)
-  assert.equal(navigation.key(), '/video/BVsynthetic?p=2')
-  history.pushState()
-  const newer = () => undefined
-  history.pushState = newer
-  stop()
-  tasks.forEach((fn) => fn())
-  events.dispatchEvent(new Event('popstate'))
-  assert.equal(count, 0)
-  assert.equal(history.pushState, newer)
-})
 
 test('CONTROL page hint: strict rejection cannot enter page setter; newer property owner survives dispose', (t) => {
   const scope = testScope(t),

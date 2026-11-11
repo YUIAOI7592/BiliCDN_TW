@@ -10,8 +10,9 @@ const retired = [
   'healthMiddleRangeEnabled',
   'backupFamilyDiversityEnabled',
 ] as const
-for (const value of [true, false, undefined, 'false', null])
-  test(`V2218 retired policies ignore legacy ${typeof value}:${String(value)} without read-time writes`, async (t) => {
+test('V2218 retired policies ignore legacy values without read-time writes', async (t) => {
+  for (const value of [true, false, undefined, 'false', null]) {
+    const label = `${typeof value}:${String(value)}`
     const storage = new FakeStorage()
     const legacy = Object.fromEntries(retired.map((key) => [key, value]))
     storage.set(SETTINGS_KEY, {
@@ -23,7 +24,8 @@ for (const value of [true, false, undefined, 'false', null])
     })
     const before = structuredClone([...storage.values])
     const settings = testScope(t).own(new SettingsStore(storage, () => 1000))
-    for (const key of retired) assert.equal(Object.hasOwn(settings.get(), key), false)
+    for (const key of retired)
+      assert.equal(Object.hasOwn(settings.get(), key), false, `${key}: ${label}`)
     assert.equal(settings.get().earlyRetryEnabled, false)
     assert.equal(settings.get().considerNativeSources, false)
     assert.equal(settings.get().blockHttpDns, false)
@@ -33,7 +35,8 @@ for (const value of [true, false, undefined, 'false', null])
     assert.equal(sameMeasurementSettings(previous, settings.get()), true)
     await settings.update({ blockWebRtc: false, ...legacy })
     const saved = storage.get<Record<string, unknown>>(SETTINGS_KEY, {})
-    for (const key of retired) assert.equal(Object.hasOwn(saved, key), false)
+    for (const key of retired) assert.equal(Object.hasOwn(saved, key), false, `${key}: ${label}`)
     assert.equal(saved.earlyRetryEnabled, false)
     assert.equal(saved.considerNativeSources, false)
-  })
+  }
+})

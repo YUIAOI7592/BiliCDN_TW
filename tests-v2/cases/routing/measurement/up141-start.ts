@@ -9,7 +9,7 @@ import { testScope } from '../../../support/scope.ts'
 import { fixture, dash, media } from '../routing-fixture.ts'
 import { deferred } from '../../../support/deferred.ts'
 
-function startup(t: TestContext, catalogOnly = true, cached = false) {
+function startup(t: TestContext, cached = false) {
   const scope = testScope(t),
     f = fixture(scope),
     url = media('up141', 'video.m4s')
@@ -37,7 +37,6 @@ function startup(t: TestContext, catalogOnly = true, cached = false) {
           demand: { kind: 'video', requiredMbps: 1, highDemand: false },
           originalHost: '',
         }),
-        isCatalogOnly: () => catalogOnly,
         commitStartupChoice: (_url, candidate) => {
           if (!candidate) return null
           decisions.push(candidate.host)
@@ -100,25 +99,7 @@ test('UP141-START qualified Catalog releases 2500ms before hanging tail and seal
   assert.equal(f.pending.length, 2, 'reset must not replenish the per-tab budget')
 })
 
-test('UP141-START Native without adequate results preserves the common deadline', async (t) => {
-  const f = startup(t, false)
-  let released = false
-  const wait = f.controller.prepareStartup(f.url).then(() => {
-    released = true
-  })
-  f.f.clock.advance(500)
-  f.pending[0]!.resolve(f.measured(65536, 2000))
-  await nextTurn()
-  assert.equal(released, false)
-  f.f.clock.advance(2500)
-  await wait
-  assert.equal(f.controller.snapshot().startup?.elapsedMs, 3000)
-  f.pending[1]!.resolve(f.measured())
-  await nextTurn()
-  assert.equal(f.recorded.length, 1)
-})
-
-test('V2218 startup below demand waits full comparison without adding probes', async (t) => {
+test('V2218 startup below demand waits common deadline, preserves probe count and seals late learning', async (t) => {
   const f = startup(t)
   let released = false
   const wait = f.controller.prepareStartup(f.url).then(() => {
@@ -133,6 +114,8 @@ test('V2218 startup below demand waits full comparison without adding probes', a
   assert.equal(f.controller.snapshot().startup?.elapsedMs, 3000)
   assert.equal(f.pending.length, 2)
   f.pending[1]!.resolve(f.measured())
+  await nextTurn()
+  assert.equal(f.recorded.length, 1)
 })
 
 test('UP141-TEST startup policy change releases owned gate but never renews startup budget', async (t) => {
@@ -149,7 +132,7 @@ test('UP141-TEST startup policy change releases owned gate but never renews star
 })
 
 test('UP141-START cached candidate must complete all 16KiB before early release', async (t) => {
-  const f = startup(t, true, true)
+  const f = startup(t, true)
   let released = false
   const wait = f.controller.prepareStartup(f.url).then(() => {
     released = true

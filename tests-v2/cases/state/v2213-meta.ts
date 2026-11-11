@@ -238,14 +238,16 @@ test('V2213 meta: clear failure preserves claims and does not announce a new gen
 
 test('V2213 meta: a queued clear prevents a stale round from resurrecting its old claim', async () => {
   const storage = new SharedEvidenceStorage(),
-    a = metadata(storage),
-    b = metadata(storage)
+    authority = { revision: 1 },
+    a = metadata(storage, authority),
+    b = metadata(storage, authority)
   let generation = ''
   await a.withLock((lock) => {
     const lease = a.coordination(lock)!
     generation = lease.generation
     assert.equal(a.claimRevalidation(generation, claim()), true)
   })
+  authority.revision = 2
   const clear = b.clear()
   const staleRound = a.withLock(() => a.claimRevalidation(generation, claim(2)))
   await clear
@@ -254,6 +256,11 @@ test('V2213 meta: a queued clear prevents a stale round from resurrecting its ol
     const lease = a.coordination(lock)!
     assert.notEqual(lease.generation, generation)
     assert.deepEqual(lease.claims, [])
+    assert.equal(
+      a.claimRevalidation(lease.generation, claim(2)),
+      true,
+      'the same current evidence is eligible when owned by the new round',
+    )
   })
 })
 

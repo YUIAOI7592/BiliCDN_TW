@@ -56,30 +56,6 @@ async function createResourcePrimaryIsReplacedUsingItsExactLegalBackupSource4Con
   const { vault, state, routes } = resources
 
   const demand = { kind: 'video' as const, requiredMbps: 4, highDemand: false }
-  const block1 = createProgressiveSourceUrls()
-  const { opaque, segment1, segment2 } = block1
-  void vault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: 'durl:q80:0',
-    height: 0,
-    codec: 'mp4',
-    bandwidth: 0,
-    urls: [opaque, segment1],
-    source: 'trusted-api',
-  })
-  void vault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: 'durl:q80:1',
-    height: 0,
-    codec: 'flv',
-    bandwidth: 0,
-    urls: [segment2],
-    source: 'trusted-api',
-  })
   const resource =
     'https://upos-hz-mirrorakam.akamaized.net/v1/resource/progressive-segment?token=resource'
   const resourceBackup =
@@ -118,12 +94,20 @@ async function checkResourcePrimaryIsReplacedUsingItsExactLegalBackupSource4(
     ])
     assert.ok(
       resourceOutput.primary &&
-        new URL(resourceOutput.primary).pathname === new URL(base.resourceBackup).pathname,
+        new URL(resourceOutput.primary).pathname + new URL(resourceOutput.primary).search ===
+          new URL(base.resourceBackup).pathname + new URL(base.resourceBackup).search,
       'resource primary is replaced using its exact legal backup source',
+    )
+    assert.strictEqual(
+      resourceOutput.backups.length,
+      5,
+      'legal resource source retains five Catalog backups',
     )
     assert.ok(
       resourceOutput.backups.every(
-        (url) => new URL(url).pathname === new URL(base.resourceBackup).pathname,
+        (url) =>
+          new URL(url).pathname + new URL(url).search ===
+          new URL(base.resourceBackup).pathname + new URL(base.resourceBackup).search,
       ),
       'every Catalog fallback retains the promoted backup path and query',
     )

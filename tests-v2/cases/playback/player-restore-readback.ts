@@ -21,7 +21,9 @@ function fixture(t: TestContext) {
   return { ...f, observer, guard }
 }
 
-for (const rate of [1, 2]) {
+// Readback/ownership has no rate-dependent timing; use a mismatching initial rate.
+{
+  const rate = 2
   test(`SR2-U01 native readback confirms the actual SDK landing and detached proof rate=${rate}`, (t) => {
     const f = fixture(t),
       result = { sdkResult: true }
@@ -45,7 +47,7 @@ for (const rate of [1, 2]) {
     f.site.setPlaybackRate = () => {
       throw Error('SDK unavailable')
     }
-    f.video().playbackRate = rate === 1 ? 2 : 1
+    f.video().playbackRate = 1
     const attempt = f.observer.performRestore(
       { kind: 'rate', value: rate, at: f.clock.now() },
       f.guard,
@@ -53,18 +55,22 @@ for (const rate of [1, 2]) {
     assert.equal(f.observer.readRestore(attempt).channel, 'sdk')
     assert.equal(f.observer.readRestore(attempt).status, 'rejected')
     f.observer.correctRestore(attempt)
-    assert.equal(f.video().playbackRate, rate === 1 ? 2 : 1, 'no correction before one second')
+    assert.equal(f.video().playbackRate, 1, 'no correction before one second')
     f.clock.advance(1000)
     f.observer.correctRestore(attempt)
     assert.equal(f.video().playbackRate, rate)
     assert.equal(f.observer.readRestore(attempt).channel, 'native')
-    const old = Object.getOwnPropertyDescriptor(f.video(), 'playbackRate')!
-    let extra = 0
-    Object.defineProperty(f.video(), 'playbackRate', { ...old, value: rate, writable: false })
+    let writes = 0
+    Object.defineProperty(f.video(), 'playbackRate', {
+      configurable: true,
+      get: () => rate,
+      set: () => {
+        writes++
+      },
+    })
     // Repeated correction cannot re-enter a native channel already consumed.
     f.observer.correctRestore(attempt)
-    extra = f.video().playbackRate
-    assert.equal(extra, rate)
+    assert.equal(writes, 0, 'consumed native correction does not attempt another write')
   })
   for (const value of ['throw', 'NaN', 'Infinity'] as const)
     test(`SR2-U03 unavailable native position ${value} remains unknown rate=${rate}`, (t) => {
@@ -88,10 +94,16 @@ for (const rate of [1, 2]) {
     test(`SR2-U04 native correction cannot retain an obsolete ${change} owner rate=${rate}`, (t) => {
       const f = fixture(t)
       f.site.setPlaybackRate = () => undefined
-      f.video().playbackRate = rate === 1 ? 2 : 1
+      f.video().playbackRate = 1
       const attempt = f.observer.performRestore(
         { kind: 'rate', value: rate, at: f.clock.now() },
         f.guard,
+      )
+      f.clock.advance(1000)
+      assert.equal(
+        f.observer.readRestore(attempt).owned,
+        true,
+        'the correction starts with a live owner and elapsed wait',
       )
       if (change === 'pointer') f.pointer()
       if (change === 'core') f.core({ state: { initialized: true } })
@@ -99,7 +111,7 @@ for (const rate of [1, 2]) {
       if (change === 'hidden') f.visible(false)
       if (change === 'reset') f.observer.reset()
       f.observer.correctRestore(attempt)
-      assert.equal(f.video().playbackRate, rate === 1 ? 2 : 1)
+      assert.equal(f.video().playbackRate, 1)
       assert.equal(f.observer.readRestore(attempt).owned, false)
     })
   test(`SR2-U05 pending SDK seek cannot absorb a different unknown seek rate=${rate}`, async (t) => {
@@ -124,15 +136,15 @@ for (const rate of [1, 2]) {
   test(`SR2-U06 progress-only observation cannot renew a native write lease rate=${rate}`, (t) => {
     const f = fixture(t)
     f.site.setPlaybackRate = () => undefined
-    f.video().playbackRate = rate === 1 ? 2 : 1
+    f.video().playbackRate = 1
     const attempt = f.observer.performRestore(
       { kind: 'rate', value: rate, at: f.clock.now() },
       f.guard,
     )
     f.clock.advance(15_000)
     assert.equal(f.observer.readRestore(attempt).owned, false)
-    assert.equal(f.observer.readRestore(attempt, 'progress').rate, rate === 1 ? 2 : 1)
+    assert.equal(f.observer.readRestore(attempt, 'progress').rate, 1)
     f.observer.correctRestore(attempt)
-    assert.equal(f.video().playbackRate, rate === 1 ? 2 : 1)
+    assert.equal(f.video().playbackRate, 1)
   })
 }

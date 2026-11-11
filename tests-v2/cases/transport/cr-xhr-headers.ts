@@ -2,20 +2,6 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fixture, mediaUrl, ordinaryUrl } from './cr-xhr-fixture.ts'
 
-test('CONTROL: immutable header survives a policy reopen', async (t) => {
-  const f = await fixture(t),
-    xhr = f.createXhr()
-  await f.settings.update({ fixedHost: 'upos-sz-mirrorcos.bilivideo.com' })
-  f.routes.invalidateForUserSetting()
-  xhr.open('GET', mediaUrl)
-  xhr.setRequestHeader('Range', 'bytes=0-99')
-  await f.settings.update({ disabled: true })
-  xhr.send()
-  assert.equal(xhr.nativeOpens, 2)
-  assert.equal(xhr.nativeSends, 1)
-  assert.deepEqual(xhr.headers, [['Range', 'bytes=0-99']])
-})
-
 test('CONTROL: stateful header input is converted once without reopen', async (t) => {
   const f = await fixture(t),
     xhr = f.createXhr()

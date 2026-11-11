@@ -298,9 +298,12 @@ test(
           [item.url, ...item.backup_url],
           'all progressive URLs across wrappers are rewritten',
         )
-      const videoGroups = [video, nestedVideo].map(
-        (item) => context.vault.match(item.base_url).context?.representation,
-      )
+      const videoGroups = [video, nestedVideo].map((item) => {
+        const identity = context.vault.match(item.base_url).context
+        assert.ok(identity, 'each wrapper has a registered video identity')
+        assert.strictEqual(identity.kind, 'video')
+        return identity.representation
+      })
       assert.strictEqual(
         new Set(videoGroups).size,
         2,
@@ -655,7 +658,6 @@ test(
       const context = fixture(scope)
       await context.settings.update({ considerNativeSources: true })
       const primary = media('native-limit.mp4', 'fixture-native-0.bilivideo.com')
-      const excluded = media('native-limit.mp4', 'fixture-native-4.bilivideo.com')
       const originals = Array.from({ length: 5 }, (_, index) =>
         media('native-limit.mp4', `fixture-native-${index}.bilivideo.com`),
       )
@@ -665,7 +667,6 @@ test(
       assert.strictEqual(result.accepted, true, 'Native mode accepts progressive data')
       const identity = context.vault.match(primary).context
       assert.ok(identity, 'the original progressive source has an identity')
-      if (!identity) throw new Error('Missing progressive Native identity')
       assert.strictEqual(
         context.vault.groupSummary(identity.representation)?.routeCount,
         4,
@@ -675,61 +676,65 @@ test(
       const resolved = candidates.native.map((candidate) =>
         context.vault.resolve(candidate.handle, identity),
       )
-      assert.ok(
-        resolved.every((url) => url !== null && originals.slice(0, 4).includes(url)),
-        'every Native candidate resolves to an authorized original source',
+      assert.deepEqual(
+        resolved,
+        originals.slice(0, 4),
+        'all four admitted sources resolve exactly; the fifth receives no authority',
       )
-      assert.ok(!resolved.includes(excluded), 'fifth source receives no Native selection authority')
     }
   })
 }
 
-test('initial progressive response is accepted [16]', { timeout: 5000 }, async (t) => {
-  const scope = testScope(t)
-  {
-    const context = fixture(scope)
-    const original = media('repeat-original.mp4'),
-      injected = media('repeat-injected.mp4')
-    const item = { ...segment('repeat-original', 1), backup_url: [media('repeat-backup.mp4')] }
-    const payload = { code: 0, data: { format: 'mp4', durl: [item] } }
-    assert.strictEqual(
-      context.adapter.transform(payload).accepted,
-      true,
-      'initial progressive response is accepted',
-    )
-    const identity = context.vault.match(original).context
-    assert.ok(identity, 'initial progressive source has an identity for repeated processing')
-    if (!identity) throw new Error('Missing repeated progressive identity')
-    const sources = JSON.stringify(context.vault.sourceURLs(identity.representation))
-    assert.strictEqual(
-      context.adapter.transform(payload).accepted,
-      true,
-      'same progressive payload can be processed repeatedly',
-    )
-    item.url = injected
-    item.backup_url = [injected]
-    assert.strictEqual(
-      context.adapter.transform(payload).accepted,
-      true,
-      'repeated trusted object is sanitized through its recorded identity',
-    )
-    assert.strictEqual(
-      new URL(item.url).pathname,
-      new URL(original).pathname,
-      'repeated payload uses its original authorized source path',
-    )
-    catalogURLs([item.url, ...item.backup_url], 'repeated payload remains Catalog-only')
-    assert.strictEqual(
-      JSON.stringify(context.vault.sourceURLs(identity.representation)),
-      sources,
-      'repeated processing cannot add page-edited sources to Native authority',
-    )
-    assert.ok(
-      context.vault.match(injected).source !== 'exact',
-      'injected source receives no exact attribution',
-    )
-  }
-})
+test(
+  'repeated progressive payloads cannot expand original source authority [16]',
+  { timeout: 5000 },
+  async (t) => {
+    const scope = testScope(t)
+    {
+      const context = fixture(scope)
+      const original = media('repeat-original.mp4'),
+        injected = media('repeat-injected.mp4')
+      const item = { ...segment('repeat-original', 1), backup_url: [media('repeat-backup.mp4')] }
+      const payload = { code: 0, data: { format: 'mp4', durl: [item] } }
+      assert.strictEqual(
+        context.adapter.transform(payload).accepted,
+        true,
+        'initial progressive response is accepted',
+      )
+      const identity = context.vault.match(original).context
+      assert.ok(identity, 'initial progressive source has an identity for repeated processing')
+      if (!identity) throw new Error('Missing repeated progressive identity')
+      const sources = JSON.stringify(context.vault.sourceURLs(identity.representation))
+      assert.strictEqual(
+        context.adapter.transform(payload).accepted,
+        true,
+        'same progressive payload can be processed repeatedly',
+      )
+      item.url = injected
+      item.backup_url = [injected]
+      assert.strictEqual(
+        context.adapter.transform(payload).accepted,
+        true,
+        'repeated trusted object is sanitized through its recorded identity',
+      )
+      assert.strictEqual(
+        new URL(item.url).pathname,
+        new URL(original).pathname,
+        'repeated payload uses its original authorized source path',
+      )
+      catalogURLs([item.url, ...item.backup_url], 'repeated payload remains Catalog-only')
+      assert.strictEqual(
+        JSON.stringify(context.vault.sourceURLs(identity.representation)),
+        sources,
+        'repeated processing cannot add page-edited sources to Native authority',
+      )
+      assert.ok(
+        context.vault.match(injected).source !== 'exact',
+        'injected source receives no exact attribution',
+      )
+    }
+  },
+)
 
 test(
   'page hint can provisionally register a progressive segment [17]',
@@ -805,67 +810,71 @@ test(
   },
 )
 
-test('first SPA progressive content is accepted [18]', { timeout: 5000 }, async (t) => {
-  const scope = testScope(t)
-  {
-    const context = fixture(scope)
-    const oldSource = media('spa-old.mp4'),
-      nextSource = media('spa-new.mp4').replace('/progressive-fixture/', '/progressive-next/')
-    const oldItem = segment('spa-old', 1),
-      nextItem = { ...segment('spa-new', 1), url: nextSource }
-    const oldPayload = { code: 0, data: { format: 'mp4', durl: [oldItem] } }
-    assert.strictEqual(
-      context.adapter.transform(oldPayload).accepted,
-      true,
-      'first SPA progressive content is accepted',
-    )
-    const oldIdentity = context.vault.match(oldSource).context
-    assert.ok(oldIdentity, 'first SPA content has an identity')
-    if (!oldIdentity) throw new Error('Missing old SPA progressive identity')
-    const priorEpoch = context.session.get().epoch
-    assert.strictEqual(
-      context.adapter.transform({ code: 0, data: { format: 'mp4', durl: [nextItem] } }).accepted,
-      true,
-      'new SPA content is accepted',
-    )
-    assert.ok(
-      context.session.get().epoch !== priorEpoch,
-      'new progressive content directory advances the epoch',
-    )
-    assert.ok(
-      !context.vault.isCurrentIdentity(oldIdentity),
-      'SPA epoch switch revokes the old identity',
-    )
-    assert.ok(
-      context.vault.match(oldSource).source !== 'exact',
-      'SPA epoch switch removes old exact source authority',
-    )
-    const oldBefore = JSON.stringify(oldPayload)
-    assert.strictEqual(
-      context.adapter.transform(oldPayload).accepted,
-      false,
-      'old cached payload cannot restore a prior epoch',
-    )
-    assert.strictEqual(
-      JSON.stringify(oldPayload),
-      oldBefore,
-      'rejected prior-epoch payload remains unchanged',
-    )
-    const nextState = context.session.beginGeneration(false)
-    context.vault.reset(nextState.generation, nextState.epoch)
-    context.routes.resetEpoch()
-    const fresh = { code: 0, data: { format: 'mp4', durl: [segment('fresh-generation', 1)] } }
-    assert.strictEqual(
-      context.adapter.transform(fresh).accepted,
-      true,
-      'fresh progressive response is admitted after a generation reset',
-    )
-  }
-})
+test(
+  'SPA progressive content revokes old identity and cached payload authority [18]',
+  { timeout: 5000 },
+  async (t) => {
+    const scope = testScope(t)
+    {
+      const context = fixture(scope)
+      const oldSource = media('spa-old.mp4'),
+        nextSource = media('spa-new.mp4').replace('/progressive-fixture/', '/progressive-next/')
+      const oldItem = segment('spa-old', 1),
+        nextItem = { ...segment('spa-new', 1), url: nextSource }
+      const oldPayload = { code: 0, data: { format: 'mp4', durl: [oldItem] } }
+      assert.strictEqual(
+        context.adapter.transform(oldPayload).accepted,
+        true,
+        'first SPA progressive content is accepted',
+      )
+      const oldIdentity = context.vault.match(oldSource).context
+      assert.ok(oldIdentity, 'first SPA content has an identity')
+      if (!oldIdentity) throw new Error('Missing old SPA progressive identity')
+      const priorEpoch = context.session.get().epoch
+      assert.strictEqual(
+        context.adapter.transform({ code: 0, data: { format: 'mp4', durl: [nextItem] } }).accepted,
+        true,
+        'new SPA content is accepted',
+      )
+      assert.ok(
+        context.session.get().epoch !== priorEpoch,
+        'new progressive content directory advances the epoch',
+      )
+      assert.ok(
+        !context.vault.isCurrentIdentity(oldIdentity),
+        'SPA epoch switch revokes the old identity',
+      )
+      assert.ok(
+        context.vault.match(oldSource).source !== 'exact',
+        'SPA epoch switch removes old exact source authority',
+      )
+      const oldBefore = JSON.stringify(oldPayload)
+      assert.strictEqual(
+        context.adapter.transform(oldPayload).accepted,
+        false,
+        'old cached payload cannot restore a prior epoch',
+      )
+      assert.strictEqual(
+        JSON.stringify(oldPayload),
+        oldBefore,
+        'rejected prior-epoch payload remains unchanged',
+      )
+      const nextState = context.session.beginGeneration(false)
+      context.vault.reset(nextState.generation, nextState.epoch)
+      context.routes.resetEpoch()
+      const fresh = { code: 0, data: { format: 'mp4', durl: [segment('fresh-generation', 1)] } }
+      assert.strictEqual(
+        context.adapter.transform(fresh).accepted,
+        true,
+        'fresh progressive response is admitted after a generation reset',
+      )
+    }
+  },
+)
 
 for (const occupied of [127, 128]) {
   test(
-    'capacity fixture fills existing video groups successfully [19]' + ' / ' + String(occupied),
+    'vault capacity rejects the entire progressive response [19]' + ' / ' + String(occupied),
     { timeout: 5000 },
     async (t) => {
       const scope = testScope(t)

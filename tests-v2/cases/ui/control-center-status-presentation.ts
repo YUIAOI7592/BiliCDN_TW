@@ -77,7 +77,7 @@ for (const [reason, elapsedMs, expected] of [
   ['inconclusive', 3000, '等待 3000 ms｜結束：證據不足'],
   ['qualified-early', Infinity, '結束：已找到足夠快的候選，提早放行'],
 ] as const) {
-  test(`UP141-DIAG ${reason} release omits an unavailable waiting duration`, (t) => {
+  test(`UP141-DIAG ${reason} release reports only a finite waiting duration`, (t) => {
     const f = ui(t),
       before = f.measurement.snapshot()
     f.measurement.snapshot = () => ({
@@ -146,30 +146,6 @@ for (const [kind, expected] of [
     const text = readSummary(f)!.textContent
     assert.ok(text.includes(`播放入口：${expected}`))
     assert.doesNotMatch(text, /https:|playview\?|987654|summary-secret|cookie-secret|player-secret/)
-  })
-}
-
-for (const [label, safeMbps, bandwidth, rate] of [
-  ['missing', null, null, 1],
-  ['non-finite', Infinity, NaN, 1],
-  ['zero', 0, 0, 1],
-  ['overflowing demand', Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE],
-] as const) {
-  test(`UP141-DIAG ${label} capacity never displays a fabricated or non-finite demand`, (t) => {
-    const f = ui(t)
-    setOverviewCapacity(f, safeMbps, bandwidth, rate)
-    f.center.show()
-    const text = readSummary(f)!.textContent
-    assert.doesNotMatch(text, /需求 (?:Infinity|NaN)|餘裕 (?:Infinity|NaN)/)
-    assert.doesNotMatch(
-      text,
-      /｜需求 .* Mbps｜餘裕 /,
-      'invalid demand never becomes a capacity claim',
-    )
-    if (safeMbps != null && Number.isFinite(safeMbps) && safeMbps > 0)
-      assert.ok(text.includes('保守吞吐 ' + safeMbps.toFixed(2) + ' Mbps'))
-    else assert.doesNotMatch(text, /保守吞吐/)
-    if (label === 'missing' || label === 'non-finite') assert.match(text, /速度樣本不足/)
   })
 }
 

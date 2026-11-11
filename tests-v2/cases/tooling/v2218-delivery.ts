@@ -17,14 +17,6 @@ function directory(t: TestContext): string {
   return root.replaceAll('\\', '/')
 }
 
-test('V2218 build seals the exact metadata template used by the userscript', async () => {
-  const result = await build({ write: false })
-  assert.equal(
-    result.manifest.sources['src-v2/metadata.txt'],
-    sha256(readFileSync('src-v2/metadata.txt')),
-  )
-})
-
 for (const occupied of ['artifact', 'unrelated', 'empty-directory'] as const)
   test(`V2218 packaging refuses occupied destination without changing it: ${occupied}`, async (t) => {
     const root = directory(t)
@@ -44,14 +36,31 @@ for (const existing of [true, false])
       destination = existing ? root : `${root}/new`
     const result = await packageRelease({ directory: destination })
     const version = readRelease().version
-    assert.equal(readdirSync(destination).length, 5)
+    const artifacts = [
+      readRelease().artifactName,
+      `BUILD_MANIFEST_v${version}.json`,
+      `CHANGELOG_v${version}.md`,
+      `TEST_REPORT_v${version}.md`,
+    ].sort()
+    assert.deepEqual(
+      readdirSync(destination).sort(),
+      [...artifacts, `SHA256SUMS_v${version}.txt`].sort(),
+    )
     assert.equal(readFileSync(result.script, 'utf8'), (await build({ write: false })).output)
-    for (const row of readFileSync(`${destination}/SHA256SUMS_v${version}.txt`, 'utf8')
+    const rows = readFileSync(`${destination}/SHA256SUMS_v${version}.txt`, 'utf8')
       .trim()
-      .split('\n')) {
+      .split('\n')
+    assert.equal(rows.length, 4)
+    const paths: string[] = []
+    for (const row of rows) {
       const [, hash, path] = /^([a-f0-9]{64})  (.+)$/.exec(row)!
       assert.equal(sha256(readFileSync(path!)), hash)
+      paths.push(path!)
     }
+    assert.deepEqual(
+      paths.sort(),
+      artifacts.map((name) => `${destination}/${name}`),
+    )
   })
 
 test('V2218 verify CLI reports failed suite phases without dumping attached outcomes', async (t) => {

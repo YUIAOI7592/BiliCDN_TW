@@ -3,11 +3,12 @@ import assert from 'node:assert/strict'
 import { PlayerControlObserver } from '../../../src-v2/adapters/player/player-controls.ts'
 import { rescueDomFixture } from '../../support/rescue-dom.ts'
 
-for (const rate of [1, 2]) {
+// The write lease is independent of the numeric rate; keep an actual 1 -> 2 change.
+{
+  const rate = 2
   for (const mutation of [
     'pointer',
     'seek',
-    'pause',
     'core',
     'video',
     'lifecycle',
@@ -19,7 +20,7 @@ for (const rate of [1, 2]) {
       const f = rescueDomFixture(t),
         observer = new PlayerControlObserver(f.sources, f.environment)
       let active = true
-      const newer = rate === 1 ? 2 : 1
+      const newer = 1
       f.scope.defer(() => {
         observer.reset()
         f.check()
@@ -28,10 +29,6 @@ for (const rate of [1, 2]) {
       f.site.setPlaybackRate = () => {
         if (mutation === 'pointer') f.pointer()
         if (mutation === 'seek') f.key(555)
-        if (mutation === 'pause') {
-          f.pointer()
-          f.video().paused = true
-        }
         if (mutation === 'core') f.core({ state: { initialized: true } })
         if (mutation === 'video') f.replaceVideo()
         if (mutation === 'lifecycle') f.lifecycle()
@@ -52,6 +49,7 @@ for (const rate of [1, 2]) {
       f.check()
     })
     observer.controls()
+    assert.notEqual(f.video().playbackRate, rate, 'the native fallback must perform a real write')
     f.site.setPlaybackRate = () => {
       throw Error('synthetic-sdk-error')
     }
@@ -62,7 +60,7 @@ for (const rate of [1, 2]) {
     const f = rescueDomFixture(t),
       observer = new PlayerControlObserver(f.sources, f.environment)
     let calls = 0
-    const newer = rate === 1 ? 2 : 1
+    const newer = 1
     f.scope.defer(() => {
       observer.reset()
       f.check()

@@ -56,7 +56,8 @@ for (const key of ['Enter', ' ']) {
       // Model the contract that the native default action remains eligible. IAB proves actual activation.
       if (!down.defaultPrevented && !press.defaultPrevented && !up.defaultPrevented)
         button.emit('click')
-      assert.equal(f.doc.flatten().find((e) => e.tag === 'h2')?.textContent, 'BiliCDN 控制中心')
+      assert.equal(f.doc.flatten().filter((e) => e.type === 'checkbox').length, 3)
+      assert.ok(f.toggle('慢請求提前重試'))
       assert.equal(pageCalls, 0)
       assert.equal(external.focusCount, 0)
     })
@@ -67,15 +68,11 @@ test('R03 completing an older command cannot replace the settings view or take f
   const f = ui(t)
   f.button('停用腳本').emit('click')
   f.button('播放設定').emit('click')
-  const heading = f.doc.flatten().find((e) => e.tag === 'h2')
+  const input = f.toggle('慢請求提前重試')
   await f.storage.drain()
   for (let i = 0; i < 8; i++) await Promise.resolve()
   f.clock.advance(0)
-  assert.equal(
-    f.doc.flatten().find((e) => e.tag === 'h2'),
-    heading,
-  )
-  assert.equal(heading?.textContent, 'BiliCDN 控制中心')
+  assert.equal(f.toggle('慢請求提前重試'), input, 'the settings view and its input survive')
   const close = f.button('關閉')
   assert.equal(close.focusCount, 1)
 })

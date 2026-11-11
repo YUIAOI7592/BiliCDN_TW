@@ -47,6 +47,11 @@ test('V2216 permit: old revocation, materialization and acceptance cannot replac
   assert.strictEqual(permits.current?.permit, next)
   assert.equal(permits.applied(permits.current!), null)
   assert.equal(permits.consume(prior), false)
+  assert.strictEqual(
+    permits.current?.permit,
+    next,
+    'rejected consumption leaves the new permit owned',
+  )
   permits.clear()
   assert.equal(permits.current, null)
 })

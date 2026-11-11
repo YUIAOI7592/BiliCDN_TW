@@ -87,6 +87,7 @@ test('V2216 ownership: committed request aliases share one terminal receipt', as
   assert.equal(owner.beginObservation({ ...observation, request: prepared }), null)
   await finish(f, work)
   const before = f.evidence.list()
+  assert.equal(f.evidence.get(work.request.targetHost, 'video')?.samples.length, 1)
   await finish(f, work)
   assert.deepEqual(f.evidence.list(), before)
 })

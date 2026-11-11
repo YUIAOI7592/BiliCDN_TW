@@ -1,3 +1,9 @@
+import { type TestContext } from 'node:test'
+import { TransportAdapter } from '../../../src-v2/adapters/transport/transport.ts'
+import { SessionStore } from '../../../src-v2/state/session-store.ts'
+import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
+import { testScope } from '../../support/scope.ts'
+import { installProgressEvent } from '../../support/progress-event.ts'
 import { requestDispatch } from '../../support/request-dispatch.ts'
 import { type StartupGate } from '../../../src-v2/adapters/transport/transport-ports.ts'
 import { type TransportRoutes } from '../../../src-v2/adapters/transport/transport-ports.ts'
@@ -7,10 +13,9 @@ import { type PlayurlTransformResult } from '../../../src-v2/domain/playurl-mode
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
 
-export function createSummaryHookPrimitives() {
+function createSummaryHookPrimitives() {
   let strict = true
   let disabled = false
-  let status = 200
   let body = '{"code":0}'
   let throws = false
   let calls = 0
@@ -94,7 +99,7 @@ export function createSummaryHookPrimitives() {
     setRequestHeader(): void {}
   }
   const nativeFetch: typeof fetch = async () =>
-    responseOverride ?? new Response(body, { status: status })
+    responseOverride ?? new Response(body, { status: 200 })
   const windowFixture = { fetch: nativeFetch, XMLHttpRequest: FakeXhr }
   return {
     get strict(): boolean {
@@ -124,9 +129,6 @@ export function createSummaryHookPrimitives() {
     get calls() {
       return calls
     },
-    set calls(value: typeof calls) {
-      calls = value
-    },
     get responseOverride() {
       return responseOverride
     },
@@ -153,4 +155,42 @@ export function createSummaryHookPrimitives() {
     measurement,
     windowFixture,
   }
+}
+
+export function createSummaryTransportResources(t: TestContext) {
+  const scope = testScope(t)
+  installProgressEvent(scope)
+  const session = new SessionStore()
+  session.beginGeneration(false)
+  const block1 = createSummaryHookPrimitives()
+  const { windowFixture, settings, routes, playurl, measurement, secret, accepted } = block1
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
+  scope.defineGlobal('location', {
+    configurable: true,
+    value: new URL('https://www.bilibili.com/'),
+  })
+  const transport = scope.own(
+    new TransportAdapter(
+      session,
+      settings,
+      routes,
+      playurl,
+      measurement,
+      () => block1.now,
+      createRuntimeIds(),
+      undefined,
+      () => block1.now,
+    ),
+  )
+  transport.install()
+  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
+  const makeXhr = (type: XMLHttpRequestResponseType, value: unknown = { code: 0 }) => {
+    const xhr = new windowFixture.XMLHttpRequest()
+    xhr.responseType = type
+    xhr.payload = value
+    xhr.open('GET', endpoint)
+    xhr.send()
+    return xhr
+  }
+  return { block1, session, transport, endpoint, accepted, secret, windowFixture, makeXhr }
 }

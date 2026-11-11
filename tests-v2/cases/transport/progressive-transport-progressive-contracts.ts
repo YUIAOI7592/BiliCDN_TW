@@ -113,59 +113,7 @@ function createProgressiveTransportResources() {
   }
 }
 
-async function createProgressiveTransportScenario(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const now = () => 2_000_000_000_000
-  const storage = new FakeStorage()
-  const settings = scope.own(new CatalogSettingsStore(storage, now))
-  const session = new SessionStore()
-  const vault = new SignedRouteVault()
-  const state = session.beginGeneration(false)
-  vault.reset(state.generation, state.epoch)
-  const routes = new RouteCoordinator(
-    { now: now, monotonicNow: now },
-    session,
-    settings,
-    scope.own(new RestrictionStore(storage, now)),
-    scope.own(new EvidenceStore(storage, now)),
-    vault,
-    createRuntimeIds(),
-  )
-  const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes))
-  const block1 = createProgressiveTransportResources()
-  const { fakeWindow, api } = block1
-  scope.defineGlobal('unsafeWindow', { configurable: true, value: fakeWindow })
-  scope.defineGlobal('location', {
-    configurable: true,
-    value: new URL('https://www.bilibili.com/'),
-  })
-  const measurement = {
-    willGateStartup: () => false,
-    prepareStartup: async () => undefined,
-    noteUnpreflighted: () => undefined,
-  } satisfies ConstructorParameters<typeof TransportAdapter>[4]
-  const transport = scope.own(
-    new TransportAdapter(
-      session,
-      settings,
-      routes,
-      playurl,
-      measurement,
-      now,
-      createRuntimeIds(),
-      undefined,
-      now,
-    ),
-  )
-  transport.install()
-  const response = await fakeWindow.fetch(api)
-  return {
-    response,
-  }
-}
-
-async function createPayloadContext1(t: TestContext) {
+function createProgressiveTransportScenario(t: TestContext) {
   const scope = testScope(t)
   installProgressEvent(scope)
   const now = () => 2_000_000_000_000
@@ -211,8 +159,6 @@ async function createPayloadContext1(t: TestContext) {
     ),
   )
   transport.install()
-  const response = await fakeWindow.fetch(api)
-  const payload = (await response.json()) as ReturnType<typeof progressivePayload>
   return {
     FakeXhr,
     api,
@@ -225,54 +171,51 @@ async function createPayloadContext1(t: TestContext) {
     fakeWindow,
     fixture,
     original,
-    payload,
     sent,
     settings,
   }
 }
 
-async function checkXHRParameterAcceptsMP4Durl2ParameterParameter(
-  t: TestContext,
-  parameter = 0,
-): Promise<void> {
-  const base = await createPayloadContext1(t)
+function checkXhrReuse(t: TestContext, responseType: 'text' | 'json'): void {
+  const base = createProgressiveTransportScenario(t)
+  const xhr = new base.FakeXhr()
+  xhr.responseType = responseType
+  const readPayload = (): ReturnType<typeof progressivePayload> =>
+    responseType === 'json'
+      ? (xhr.response as ReturnType<typeof progressivePayload>)
+      : JSON.parse(xhr.responseText)
+  xhr.open('GET', base.api)
+  xhr.send()
+  const result = readPayload()
+  assert.strictEqual(result.code, 0, `XHR ${responseType} accepts MP4 durl`)
+  assert.strictEqual(result.data.quality, 64)
+  assert.ok(isCatalogHost(new URL(result.data.durl[0]!.url).hostname), 'initial Catalog primary')
 
-  let iteration = 0
-  for (const responseType of ['text', 'json'] as const) {
-    if (iteration++ === parameter) {
-      const xhr = new base.FakeXhr()
-      xhr.responseType = responseType
-      xhr.open('GET', base.api)
-      xhr.send()
-      const result = (
-        responseType === 'json' ? xhr.response : JSON.parse(xhr.responseText)
-      ) as ReturnType<typeof progressivePayload>
-      assert.strictEqual(result.code, 0, `XHR ${responseType} accepts MP4 durl`)
-      assert.ok(
-        isCatalogHost(new URL(result.data.durl[0]!.url).hostname),
-        `XHR ${responseType} emits Catalog primary`,
-      )
-      xhr.payload = base.fixture()
-      xhr.open('GET', base.api)
-      xhr.send()
-      assert.strictEqual(
-        (responseType === 'json'
-          ? (xhr.response as ReturnType<typeof progressivePayload>)
-          : JSON.parse(xhr.responseText)
-        ).code,
-        0,
-        `XHR ${responseType} reuse resets transformed response`,
-      )
-
-      return
-    }
-  }
-  throw Error('Unknown fixture parameter')
+  const fresh = base.fixture()
+  fresh.data.quality = 80
+  fresh.data.durl[0]!.url = base.original.replace('fixture=primary', 'fixture=reused')
+  xhr.payload = fresh
+  xhr.open('GET', base.api)
+  xhr.send()
+  const reused = readPayload()
+  assert.strictEqual(reused.code, 0)
+  assert.strictEqual(
+    reused.data.quality,
+    80,
+    'reuse reads the new response rather than cached payload',
+  )
+  const primary = new URL(reused.data.durl[0]!.url)
+  assert.ok(isCatalogHost(primary.hostname), 'reused response is transformed')
+  assert.strictEqual(primary.search, '?fixture=reused', 'reused response keeps the new signature')
+  assert.strictEqual(xhr.nativeSends, 2)
 }
 
 async function checkMP4CatalogOnlyFetchRejectsRedirects3(t: TestContext): Promise<void> {
-  const base = await createPayloadContext1(t)
-  await base.fakeWindow.fetch(base.payload.data.durl[0]!.url)
+  const base = createProgressiveTransportScenario(t)
+  const payload = (await (await base.fakeWindow.fetch(base.api)).json()) as ReturnType<
+    typeof progressivePayload
+  >
+  await base.fakeWindow.fetch(payload.data.durl[0]!.url)
 
   assert.strictEqual(
     base.sent.at(-1)?.redirect,
@@ -321,10 +264,11 @@ async function checkMP4CatalogOnlyFetchRejectsRedirects3(t: TestContext): Promis
 }
 
 async function checkSuccessfulMP4APIRemainsHTTP200ThroughFetch1(t: TestContext): Promise<void> {
-  const base = await createProgressiveTransportScenario(t)
+  const base = createProgressiveTransportScenario(t)
+  const response = await base.fakeWindow.fetch(base.api)
 
-  assert.strictEqual(base.response.status, 200, 'successful MP4 API remains HTTP 200 through Fetch')
-  const payload = (await base.response.json()) as ReturnType<typeof progressivePayload>
+  assert.strictEqual(response.status, 200, 'successful MP4 API remains HTTP 200 through Fetch')
+  const payload = (await response.json()) as ReturnType<typeof progressivePayload>
   assert.strictEqual(payload.code, 0, 'successful MP4 API is not replaced with synthetic -1')
   assert.ok(
     isCatalogHost(new URL(payload.data.durl[0]!.url).hostname),
@@ -336,18 +280,10 @@ test('successful MP4 API remains HTTP 200 through Fetch [1]', { timeout: 5000 },
   await checkSuccessfulMP4APIRemainsHTTP200ThroughFetch1(t)
 })
 
-{
-  let parameter = 0
-  for (const responseType of ['text', 'json'] as const) {
-    const selected = parameter++
-    test(
-      '`XHR ${responseType} accepts MP4 durl` [2]' + ` / ${String(responseType)} / ${selected}`,
-      { timeout: 5000 },
-      async (t) => {
-        await checkXHRParameterAcceptsMP4Durl2ParameterParameter(t, selected)
-      },
-    )
-  }
+for (const responseType of ['text', 'json'] as const) {
+  test(`XHR ${responseType} transforms fresh MP4 body on reuse [2]`, { timeout: 5000 }, (t) => {
+    checkXhrReuse(t, responseType)
+  })
 }
 
 test('MP4 Catalog-only Fetch rejects redirects [3]', { timeout: 5000 }, async (t) => {

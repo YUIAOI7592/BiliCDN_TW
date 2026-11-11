@@ -130,7 +130,7 @@ function fixture(t: TestContext, rate: number, target = 120, reloadAtZero = fals
       if (effect && attempt.kind === 'rate') video.playbackRate = record.command.value
     },
   } satisfies RecoveryPlayerPort
-  const recovery = scope.own(new RecoveryController(player, now, () => active))
+  const recovery = new RecoveryController(player, now, () => active)
   scope.defer(() => {
     recovery.dispose()
     assert.equal(clock.pendingCount, 0)

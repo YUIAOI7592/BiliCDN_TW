@@ -152,7 +152,6 @@ test('UP141-PROBE size belongs to current exact source handle and expires with a
   const identity = vault.identity(rep)!,
     handle = vault.catalogSourceHandle(rep)!
   const port = vault
-  assert.equal(typeof port.recordRangeSize, 'function')
   port.recordRangeSize(identity, handle, 4194304)
   assert.equal(port.rangeSize(identity, handle), 4194304)
   vault.register({ ...input, source: 'trusted-api' })

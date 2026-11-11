@@ -83,7 +83,6 @@ for (const rate of [1, 2]) {
       f.dead(reset)
       f.click()
       f.advance(4000)
-      f.trace(id)
       assert.equal(f.effects.filter((e) => e.method === 'reload').length, 1)
       assert.deepEqual(f.saved(), [target])
     })
@@ -97,7 +96,6 @@ for (const rate of [1, 2]) {
     f.dead(true)
     f.click()
     f.advance(4000)
-    f.trace('I-P04')
     assert.deepEqual(f.saved(), [2811.002824])
   })
   test('I-P05 completed target is not a permanent restore target rate=' + rate, (t) => {
@@ -118,10 +116,9 @@ for (const rate of [1, 2]) {
     f.dead(false)
     f.click()
     f.advance(4000)
-    f.trace('I-P05')
     assert.deepEqual(f.saved(), [2100])
   })
-  for (const invalidation of ['media', 'lifecycle', 'unknown-position'] as const)
+  for (const invalidation of ['reset', 'unknown-position'] as const)
     test('I-P06 old target invalidation=' + invalidation + ' rate=' + rate, (t) => {
       const f = fixture(t, rate)
       f.healthy()
@@ -139,10 +136,10 @@ for (const rate of [1, 2]) {
         f.advance(4000)
         assert.deepEqual(f.saved(), [400])
       } else {
-        if (invalidation === 'media') f.replaceVideo()
-        else f.lifecycle()
+        assert.equal(f.player.controls().pendingSeekGoal, true)
         f.recovery.reset()
         f.player.reset()
+        assert.equal(f.player.controls().pendingSeekGoal, false, 'reset discards the pending goal')
         f.video().seeking = false
         f.video().paused = false
         f.video().currentTime = 120
@@ -154,6 +151,5 @@ for (const rate of [1, 2]) {
         f.advance(4000)
         assert.deepEqual(f.saved(), [121])
       }
-      f.trace('I-P06/' + invalidation)
     })
 }

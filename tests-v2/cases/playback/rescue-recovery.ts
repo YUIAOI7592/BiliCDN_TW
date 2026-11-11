@@ -171,28 +171,6 @@ for (const rate of [1, 2]) {
     f.advance(1000)
     assert.equal(f.recovery.snapshot().state, 'recovered')
   })
-  test(`U-A02 play rejection after synchronous new operation is handled rate=${rate}`, async (t) => {
-    const f = fixture(t, rate),
-      pending = deferred<unknown>()
-    f.returns.play = () => {
-      f.user()
-      return pending.promise
-    }
-    f.begin()
-    f.dead()
-    f.advance(4000)
-    f.healthy()
-    f.tick()
-    f.tick()
-    const before = f.recovery.snapshot(),
-      count = f.effects.length
-    pending.reject(Error('controlled stale play rejection'))
-    await Promise.resolve()
-    await Promise.resolve()
-    await Promise.resolve()
-    assert.deepEqual(f.recovery.snapshot(), before)
-    assert.equal(f.effects.length, count)
-  })
   for (const target of [0, 2811.002824])
     test(`U-R01 captured position ${target} and rate read once rate=${rate}`, (t) => {
       const f = fixture(t, rate, target)
@@ -212,6 +190,38 @@ for (const rate of [1, 2]) {
       ])
       assert.equal(f.recovery.snapshot().savedPositionSec, target)
     })
+}
+
+{
+  // Ownership rejection and cancellation do not branch on speed.
+  // Positive restoration/progress above retain both 1x and 2x.
+  const rate = 2
+  test(`U-A02 play rejection after synchronous new operation is handled rate=${rate}`, async (t) => {
+    const f = fixture(t, rate),
+      pending = deferred<unknown>()
+    f.returns.play = () => {
+      f.user()
+      return pending.promise
+    }
+    f.begin()
+    f.dead()
+    f.advance(4000)
+    f.healthy()
+    f.tick()
+    f.tick()
+    assert.deepEqual(
+      f.effects.map((effect) => effect.method),
+      ['reload', 'seek', 'rate', 'play'],
+    )
+    const before = f.recovery.snapshot(),
+      count = f.effects.length
+    pending.reject(Error('controlled stale play rejection'))
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    assert.deepEqual(f.recovery.snapshot(), before)
+    assert.equal(f.effects.length, count)
+  })
   for (const boundary of ['capture', 'rate', 'snapshot'] as const)
     for (const operation of ['user', 'reset', 'inactive', 'proof'] as const)
       test(`U-O01 ${boundary} ${operation} reentry rejects stale intent rate=${rate}`, (t) => {
@@ -228,6 +238,7 @@ for (const rate of [1, 2]) {
         f.begin()
         f.dead()
         f.advance(4000)
+        assert.equal(done, true, 'the selected getter actually reaches the reentry boundary')
         assert.equal(f.recovery.isRecovering(), false)
         assert.deepEqual(f.effects, [])
       })
@@ -288,6 +299,8 @@ for (const rate of [1, 2]) {
           f.healthy()
           f.tick()
         }
+        assert.equal(f.effects.filter((effect) => effect.method === method).length, 1)
+        assert.equal(f.recovery.isRecovering(), true)
         f.recovery.reset()
         const before = f.recovery.snapshot(),
           count = f.effects.length

@@ -90,24 +90,30 @@ test('V227 evidence: equal timestamps have a stable request-id ordering', () => 
     evidenceMetrics(evidence([a, b, c]), now),
   )
 })
-test('V227 evidence: valid body timing is separate from end-to-end throughput', () => {
-  const s = Object.assign(sample('body', 8), {
-    bytes: 1_000_000,
-    elapsedMs: 1000,
-    ttfbMs: 500,
-    timingBasis: 'xhr-terminal' as const,
-  })
-  const row = evidence([s])
-  assert.equal(evidenceMetrics(row, now).safeThroughputMbps, 5.6)
-  assert.equal(metric(row, 'safePayloadMbps'), 11.2)
-})
-for (const elapsedMs of [0, 100, Infinity, NaN]) {
-  test(`V227 evidence: invalid or zero body interval ${String(elapsedMs)} cannot predict completion`, () => {
-    const row = evidence([Object.assign(sample('body', 8), { bytes: 1_000_000, elapsedMs })])
-    assert.equal(metric(row, 'safePayloadMbps'), null)
+test('V227 evidence: payload prediction requires valid body timing and preserves end-to-end throughput', () => {
+  for (const [elapsedMs, ttfbMs, payloadMbps] of [
+    [1000, 500, 11.2],
+    [0, 100, null],
+    [100, 100, null],
+    [Infinity, 100, null],
+    [NaN, 100, null],
+  ] as const) {
+    const row = evidence([
+      Object.assign(sample('body', 8), {
+        bytes: 1_000_000,
+        elapsedMs,
+        ttfbMs,
+        timingBasis: 'xhr-terminal' as const,
+      }),
+    ])
+    assert.equal(
+      metric(row, 'safePayloadMbps'),
+      payloadMbps,
+      `elapsed=${elapsedMs}, ttfb=${ttfbMs}`,
+    )
     assert.equal(evidenceMetrics(row, now).safeThroughputMbps, 5.6)
-  })
-}
+  }
+})
 test('V227 evidence: circuit expiry requires capacity revalidation and a short success cannot clear it', () => {
   const expired = {
     ...evidence([sample('old', 100, now - 2000)]),

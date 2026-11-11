@@ -36,6 +36,7 @@ test('V227 evidence storage: optional timing round trips without upgrading old s
     .samples[0]!
   assert.equal(Object.hasOwn(legacy, 'bytes'), false)
   assert.equal(Object.hasOwn(legacy, 'elapsedMs'), false)
+  assert.deepEqual([...storage.values.keys()], [EVIDENCE_KEY])
 })
 test('V227 evidence storage: malformed optional timing is discarded without deleting valid legacy throughput', async (t) => {
   const scope = testScope(t),

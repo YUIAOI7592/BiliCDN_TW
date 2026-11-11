@@ -18,7 +18,11 @@ test('V221 control center exposes only overview, CDN and settings without diagno
     assert.equal(
       f.doc
         .flatten()
-        .some((e) => /診斷|複製報告|匯出報告|記下剛剛的卡頓|只用 B 站原本/.test(e.textContent)),
+        .some((e) =>
+          /診斷|複製報告|匯出報告|記下剛剛的卡頓|只用 B 站原本|偏好的影片格式|安排測速|安排香港候選|封鎖最近|UP141 測試功能|起播提前放行|健康中段探測|備援家族分散/.test(
+            e.textContent,
+          ),
+        ),
       false,
     )
     assert.equal(

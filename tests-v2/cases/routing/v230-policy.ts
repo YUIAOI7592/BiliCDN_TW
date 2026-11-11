@@ -25,7 +25,7 @@ for (const basis of ['fetch-consumer', 'xhr-terminal', 'probe-reader'] as const)
       metrics.safePayloadMbps,
       (8_000 / (100 + samples.findIndex((s) => s.timingBasis === basis) * 100)) * 0.7,
     )
-    assert.equal(metrics.freshSpeedCount, 3, 'capacity keeps the same twelve-sample window')
+    assert.equal(metrics.freshSpeedCount, 3, 'timing-basis filtering preserves throughput samples')
   })
 test('V230 legacy timing cannot qualify a completion comparison', () => {
   const sample = {
@@ -88,7 +88,12 @@ test('V230 incomplete adequate cohort restores every original tier', () => {
   assert.ok(ranked.every((r) => r.comparisonMode === 'throughput'))
 })
 test('V230 equal completion prefers sufficient evidence before fixed candidate order', () => {
-  const source = rows().map((r) => ({ ...r, safePayloadMbps: 10, predictionTtfbMs: 10 }))
+  const source = rows().map((r) => ({
+    ...r,
+    candidateOrder: 1 - r.candidateOrder,
+    safePayloadMbps: 10,
+    predictionTtfbMs: 10,
+  }))
   source.reverse()
   assert.equal(
     orderCapacityRows(
@@ -99,8 +104,8 @@ test('V230 equal completion prefers sufficient evidence before fixed candidate o
     'sufficient',
   )
 })
-for (const buffer of [1, 2, 3, 4, 5])
-  test(`V230 retry reserves two seconds before ${buffer}s buffer deadline`, () => {
+test('V230 retry reserves two seconds across buffer deadlines', () => {
+  for (const buffer of [1, 2, 3, 4, 5]) {
     const result = evaluateEarlyRetry({
       now: 2000,
       startedAt: 0,
@@ -119,9 +124,10 @@ for (const buffer of [1, 2, 3, 4, 5])
         oldestAt: 1000,
       },
     })
-    assert.equal(result.eligible, 2.6 <= 0.8 * buffer)
-    if (result.eligible) assert.equal(result.alternativeSec, 2.6)
-  })
+    assert.equal(result.eligible, 2.6 <= 0.8 * buffer, `buffer=${buffer}`)
+    if (result.eligible) assert.equal(result.alternativeSec, 2.6, `buffer=${buffer}`)
+  }
+})
 
 for (const ageMs of [1499, 1500, NaN, -1])
   test(`V230 retry age uses independent monotonic observation ${String(ageMs)}`, () => {

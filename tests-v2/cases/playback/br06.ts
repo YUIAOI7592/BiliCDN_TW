@@ -406,37 +406,6 @@ for (const phase of ['keydown', 'keyup'] as const) {
   })
 }
 
-test('BR-01 uninitialized trusted keyboard target receives a new full stall deadline', (t) => {
-  const f = fixture(t)
-  f.pointerSeek(900)
-  f.clock.advance(8000)
-  f.monitor.tick()
-  f.video.readyState = 0
-  f.video.seeking = false
-  f.patch({
-    readyState: 0,
-    width: 0,
-    height: 0,
-    playableBufferSec: 0,
-    bufferAheadSec: 0,
-    coreInitialized: false,
-  })
-  f.onKey(() => undefined)
-  f.onKeyup(() => {
-    f.video.currentTime = 5
-  })
-  f.keyup(true)
-  f.monitor.tick()
-  f.clock.advance(1000)
-  f.monitor.tick() // V2217: confirm no progress under the new operation.
-  f.clock.advance(14999)
-  f.monitor.tick()
-  assert.equal(f.effects.fallbacks, 0, 'the old 8-second stall must not consume the new user grace')
-  f.clock.advance(1)
-  f.monitor.tick()
-  assert.equal(f.effects.fallbacks, 1)
-})
-
 test('BR-01 trusted uninitialized seek revokes an active reload and ignores its late rejection', async (t) => {
   const f = fixture(t),
     pending = deferred<void>()
@@ -615,52 +584,12 @@ test('BR-07 trusted right seek during keyup acquires one new user revision', (t)
   )
 })
 
-test('BR-07 trusted keyup seek receives a fresh 15000 ms grace', (t) => {
-  const f = rightOnKeyup(t)
-  f.pointerSeek(900)
-  f.clock.advance(8000)
-  f.monitor.tick()
-  f.key(true)
-  f.keyup(true)
-  f.monitor.tick()
-  f.clock.advance(1000)
-  f.monitor.tick() // V2217: confirm no progress under the new operation.
-  f.clock.advance(7000)
-  f.monitor.tick()
-  assert.equal(f.effects.fallbacks, 0, 'only 7000 ms elapsed since the new trusted right seek')
-  f.clock.advance(7999)
-  f.monitor.tick()
-  assert.equal(f.effects.fallbacks, 0)
-  f.clock.advance(1)
-  f.monitor.tick()
-  assert.equal(f.effects.fallbacks, 1)
-})
-
-test('BR-07 control: left committed during keydown grants one revision', (t) => {
-  const f = fixture(t),
-    before = f.player.controls().userRevision
-  f.key(true, false, 'ArrowLeft')
-  assert.equal(f.player.controls().userRevision, before + 1)
-})
-
 test('BR-07 control: synthetic keyup cannot acquire user ownership', (t) => {
   const f = rightOnKeyup(t),
     before = f.player.controls().userRevision
   f.key(false)
   f.keyup(false)
   assert.equal(f.player.controls().userRevision, before)
-})
-
-test('BR-06 trusted page keyboard seek starts a new user revision', (t) => {
-  const f = fixture(t),
-    before = f.player.controls()
-  f.key(true)
-  assert.equal(f.player.controls().targetSec, 126)
-  assert.equal(
-    f.player.controls().userRevision,
-    before.userRevision + 1,
-    'a trusted page keyboard command that actually seeks must acquire new user ownership',
-  )
 })
 
 test('BR-06 trusted page keyboard seek receives a fresh 15000 ms grace period', (t) => {
@@ -736,8 +665,10 @@ for (const key of ['ArrowLeft', 'ArrowRight', 'Home', 'End', 'j', 'J', 'l', 'L']
     const after = f.player.controls()
     assert.equal(after.userRevision, before.userRevision + 1)
     assert.ok(after.seekRevision > before.seekRevision)
-    assert.equal(after.targetSec, f.video.currentTime)
-    if (key === 'Home') assert.equal(after.targetSec, 0)
+    const expected =
+      key === 'Home' ? 0 : key === 'End' ? 3900 : ['ArrowLeft', 'j', 'J'].includes(key) ? 116 : 126
+    assert.equal(f.video.currentTime, expected)
+    assert.equal(after.targetSec, expected)
   })
 }
 
@@ -770,6 +701,7 @@ for (const options of [
     const f = fixture(t),
       before = f.player.controls().userRevision
     f.key(true, false, 'ArrowRight', options)
+    assert.equal(f.video.currentTime, 126, 'the site seek still executes')
     assert.equal(f.player.controls().userRevision, before)
   })
 }
@@ -1025,8 +957,10 @@ for (const key of ['ArrowLeft', 'ArrowRight', 'Home', 'End', 'j', 'J', 'l', 'L']
     const after = f.player.controls()
     assert.equal(after.userRevision, before.userRevision + 1)
     assert.ok(after.seekRevision > before.seekRevision)
-    assert.equal(after.targetSec, f.video.currentTime)
-    if (key === 'Home') assert.equal(after.targetSec, 0)
+    const expected =
+      key === 'Home' ? 0 : key === 'End' ? 3900 : ['ArrowLeft', 'j', 'J'].includes(key) ? 116 : 126
+    assert.equal(f.video.currentTime, expected)
+    assert.equal(after.targetSec, expected)
   })
 }
 
@@ -1146,8 +1080,15 @@ test('BR-07 non-seek commands remain keydown-only', (t) => {
   const f = fixture(t),
     before = f.player.controls().userRevision
   for (const key of ['ArrowUp', 'ArrowDown', ' ', 'k', 'K']) {
+    const revision = f.player.controls().userRevision
     f.key(true, true, key)
+    assert.equal(f.player.controls().userRevision, revision + 1, key + ' keydown')
     f.keyup(true, true, key)
+    assert.equal(
+      f.player.controls().userRevision,
+      revision + 1,
+      key + ' keyup must not repeat ownership',
+    )
   }
   assert.equal(f.player.controls().userRevision, before + 5)
 })

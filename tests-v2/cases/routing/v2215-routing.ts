@@ -2,7 +2,9 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { RetryEvidence } from '../../../src-v2/application/routing/retry-evidence.ts'
 import { capacityNumbers } from '../../../src-v2/application/routing/route-projection.ts'
-import { fixture, media } from '../../support/runtime-fixture.ts'
+import { fixture, media, dash } from './routing-fixture.ts'
+import { start } from '../../support/route-dispatch.ts'
+import { testScope } from '../../support/scope.ts'
 import { requestId } from '../../../src-v2/domain/model.ts'
 import type {
   RequestContext,
@@ -40,10 +42,10 @@ function observation(request: RequestContext, at: number): TransportObservation 
 }
 
 test('V2215 retry ledger preserves request identity, TTL, overlapping suppression and reset', (t) => {
-  const f = fixture(t),
-    payload = media(2215)
-  assert.equal(f.playurl.transform(payload, 'trusted-api').accepted, true)
-  f.request(payload.data.dash.video[0]!.base_url)
+  const f = fixture(testScope(t)),
+    payload = dash(media('ledger', 'video.m4s'))
+  assert.equal(f.adapter.transform(payload, 'trusted-api').accepted, true)
+  start(f, payload.data.dash.video[0]!.base_url, 1)
   const base = f.routes.latestRequested('video')!
   const a: RequestContext = {
     ...base,
@@ -73,6 +75,7 @@ test('V2215 retry ledger preserves request identity, TTL, overlapping suppressio
     ['ledger-b'],
   )
   ledger.reset()
+  assert.deepEqual(ledger.matching(a, a.targetHost), [])
   assert.equal(ledger.isSuppressed('ledger-a'), true)
   second()
   assert.equal(ledger.isSuppressed('ledger-a'), false)
@@ -105,6 +108,7 @@ test('V2215 capacity projection preserves independent speed, missing demand and 
   const before = JSON.stringify(evidence),
     metrics = evidenceMetrics(evidence, at)
   const value = capacityNumbers(evidence, metrics, at, null, null)
+  assert.ok(metrics.safeThroughputMbps !== null && metrics.safeThroughputMbps > 0)
   assert.equal(value.safeMbps, metrics.safeThroughputMbps)
   assert.equal(value.sampleStatus, 'available')
   assert.equal(value.predictionReason, 'unknown-size')

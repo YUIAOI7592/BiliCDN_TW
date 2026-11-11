@@ -421,28 +421,8 @@ function fixture(t: TestContext) {
     externalCore: () => {
       core = makeCore(true)
     },
-    sample: () => ({
-      controls: player.controls(),
-      video: player.snapshot(),
-      monitor: monitor.snapshot(),
-      recovery: recovery.snapshot(),
-    }),
   }
 }
-
-test('BR-01 followthrough: owned SDK reload transient pause and null core must retain bounded ownership', (t) => {
-  const f = fixture(t)
-  f.ticks(30)
-  assert.equal(f.effects.reloads, 1)
-  assert.equal(f.video.paused, true)
-  assert.equal(f.player.controls().reloadRevision, 1)
-  f.ticks(1)
-  assert.equal(
-    f.recovery.isRecovering(),
-    true,
-    'pause caused by our accepted reload cannot cancel its own still-bounded restoration',
-  )
-})
 
 test('BR-01 followthrough: the marked own core must restore current target, speed and play after SDK pause', (t) => {
   const f = fixture(t)
@@ -456,18 +436,6 @@ test('BR-01 followthrough: the marked own core must restore current target, spee
   assert.deepEqual(f.effects.seeks, [978])
   assert.deepEqual(f.effects.rates, [2])
   assert.equal(f.effects.plays, 1)
-})
-
-test('BR-01 followthrough: own reload without progress expires after its complete 15 second window', (t) => {
-  const f = fixture(t)
-  f.ticks(30)
-  f.ticks(14)
-  assert.equal(f.recovery.isRecovering(), true)
-  f.ticks(1)
-  assert.equal(f.recovery.isRecovering(), false)
-  assert.equal(f.recovery.snapshot().reason, 'reload-timeout')
-  f.ticks(3)
-  assert.equal(f.effects.reloads, 1)
 })
 
 test('BR-01 followthrough control: website pause before our reload ends the stalled action safely', (t) => {
@@ -619,7 +587,13 @@ test('BR-01 progress ownership control: two unchanged-owner advancing samples cl
 test('BR-01 followthrough: the owned null-core interval ends at exactly 15 seconds without extra attempts', (t) => {
   const f = fixture(t)
   f.ticks(30)
-  f.clock.advance(14_999)
+  assert.equal(f.effects.reloads, 1)
+  assert.equal(f.video.paused, true)
+  assert.equal(f.player.controls().coreId, 0)
+  assert.equal(f.player.controls().reloadRevision, 1)
+  f.ticks(1)
+  assert.equal(f.recovery.isRecovering(), true)
+  f.clock.advance(13_999)
   f.monitor.tick()
   assert.equal(f.recovery.isRecovering(), true)
   f.clock.advance(1)
@@ -887,16 +861,6 @@ for (const rate of [1, 2])
     }
     for (let i = 0; i < 6; i++) {
       progress()
-      t.diagnostic(
-        JSON.stringify({
-          tick: i + 1,
-          rate,
-          position: f.video.currentTime,
-          nativeRate: f.video.playbackRate,
-          recovery: f.recovery.snapshot(),
-          effects: f.effects,
-        }),
-      )
     }
     assert.equal(f.recovery.snapshot().state, 'recovered')
     assert.equal(f.recovery.snapshot().savedPositionSec, 978)

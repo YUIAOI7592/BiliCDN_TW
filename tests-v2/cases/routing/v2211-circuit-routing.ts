@@ -65,7 +65,7 @@ for (const [end, level] of [
     assert.equal(f.evidence.get(f.host, 'video')!.circuitLevel, level)
   })
 }
-test('V2211 routing: pending failure closes observation before its storage commit', async (t) => {
+test('V2211 routing: pending failure advances the circuit level and cooldown', async (t) => {
   const f = await createObservation(t),
     { pending } = await endpointWithPending(f)
   await finish(f, pending, true)

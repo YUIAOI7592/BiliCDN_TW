@@ -46,7 +46,6 @@ async function checkExplicitUrlBases(t: TestContext): Promise<void> {
   )
   assert.strictEqual(isHttpDnsUrl('/resolve'), false, 'relative URL without base is not admitted')
   const primary = TRUSTED_CATALOG[0]!
-  TRUSTED_CATALOG[1]!
   const unavailable = [...DEFAULT_UNAVAILABLE_HOSTS][0]!
   const restrictions = catalogRestrictions({ [primary]: false, [unavailable]: true })
   assert.strictEqual(
@@ -59,12 +58,15 @@ async function checkExplicitUrlBases(t: TestContext): Promise<void> {
     false,
     'explicit Catalog enable removes only the default restriction',
   )
-  assert.strictEqual(
-    catalogCandidates('audio', new Set([primary])).every(
-      (row) => row.kind === 'audio' && row.host !== primary,
-    ),
-    true,
-    'candidate construction preserves media kind and exclusions',
+  assert.deepEqual(
+    catalogCandidates('audio', new Set([primary])),
+    TRUSTED_CATALOG.slice(1).map((host, index) => ({
+      type: 'catalog-generated',
+      host,
+      kind: 'audio',
+      catalogIndex: index + 1,
+    })),
+    'candidate construction preserves the complete inventory, media kind, order and exclusions',
   )
 }
 

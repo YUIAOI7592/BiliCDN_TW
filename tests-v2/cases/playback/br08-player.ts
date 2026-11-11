@@ -4,31 +4,23 @@ import { PlayerAdapter } from '../../../src-v2/adapters/player/player.ts'
 import { VisibilityAdapter } from '../../../src-v2/adapters/visibility.ts'
 import { FakeClock } from '../../support/clock.ts'
 import { testScope } from '../../support/scope.ts'
+import { CaptureEventTarget } from '../../support/event-target.ts'
+import { getEventListeners } from 'node:events'
 
 // This model searches ancestors only, as DOM closest() does. Real trusted
 // pointer dispatch and native hidden/blur are recorded separately in Chrome.
-class Target extends EventTarget {
-  readonly listeners = new Map<string, Set<EventListenerOrEventListenerObject | null>>()
+class Target extends CaptureEventTarget {
+  readonly types = new Set<string>()
   override addEventListener(
     type: string,
     listener: EventListenerOrEventListenerObject | null,
     options?: boolean | AddEventListenerOptions,
   ): void {
+    this.types.add(type)
     super.addEventListener(type, listener, options)
-    const entries = this.listeners.get(type) ?? new Set()
-    entries.add(listener)
-    this.listeners.set(type, entries)
-  }
-  override removeEventListener(
-    type: string,
-    listener: EventListenerOrEventListenerObject | null,
-    options?: boolean | EventListenerOptions,
-  ): void {
-    super.removeEventListener(type, listener, options)
-    this.listeners.get(type)?.delete(listener)
   }
   count(): number {
-    return [...this.listeners.values()].reduce((total, entries) => total + entries.size, 0)
+    return [...this.types].reduce((sum, type) => sum + getEventListeners(this, type).length, 0)
   }
 }
 
@@ -443,9 +435,11 @@ test('BR-08 control-loss subscriber failures do not interrupt later listeners or
   assert.equal(calls, 1, 'cancelled listener is no longer called')
 })
 
-test('BR-08 resetting player unsubscribes control loss and restores only its own site methods', (t) => {
-  const f = fixture(t),
-    before = f.notificationCount()
+test('BR-08 resetting player unsubscribes control loss and removes owned input listeners', (t) => {
+  const f = fixture(t)
+  f.blur()
+  const before = f.notificationCount()
+  assert.ok(before > 0, 'the player subscription is active before reset')
   f.player.reset()
   f.blur()
   assert.equal(f.notificationCount(), before)

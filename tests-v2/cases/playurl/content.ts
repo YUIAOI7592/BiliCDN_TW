@@ -65,25 +65,18 @@ test('BR-03 identical DASH inventory reordered across representation directories
   assert.equal(f.playurl.transform(first, 'trusted-api').accepted, true)
   const before = f.session.get(),
     resets = f.calls.resets
-  assert.equal(f.playurl.transform(second, 'trusted-api').accepted, true)
-  assert.equal(f.session.get().generation, before.generation)
-  assert.equal(f.session.get().epoch, before.epoch, 'array order must not become new content')
-  assert.equal(f.calls.resets, resets, 'same-content permutation must not reset Runtime')
-})
-
-test('BR-03 same-content permutation preserves the issued audio authority identity', (t) => {
-  const f = runtimeFixture(t),
-    first = payload()
-  assert.equal(f.playurl.transform(first, 'trusted-api').accepted, true)
   const audio = f.vault.match(first.data.dash.audio[0]!.base_url).context
   assert.ok(audio)
   assert.equal(f.vault.isCurrentIdentity(audio), true)
-  assert.equal(f.playurl.transform(payload(true), 'trusted-api').accepted, true)
+  assert.equal(f.playurl.transform(second, 'trusted-api').accepted, true)
   assert.equal(
     f.vault.isCurrentIdentity(audio),
     true,
     'array order must not revoke in-flight audio ownership',
   )
+  assert.equal(f.session.get().generation, before.generation)
+  assert.equal(f.session.get().epoch, before.epoch, 'array order must not become new content')
+  assert.equal(f.calls.resets, resets, 'same-content permutation must not reset Runtime')
 })
 
 test('BR-03 control: same-directory DASH permutation preserves epoch and runtime', (t) => {
@@ -259,6 +252,12 @@ test('BR-03 a repeated trusted object cannot change cid or authorize tampered di
   assert.equal(f.session.get().epoch, epoch)
   ingest(f, payload(false, false, 'B'), '123')
   assert.equal(f.session.get().epoch, epoch)
+  ingest(f, payload(false, false, 'tampered'), null)
+  assert.equal(
+    Number(f.session.get().epoch),
+    Number(epoch) + 1,
+    'repeated-object directories were not added to the trusted fallback history',
+  )
 })
 
 test('BR-03 generation boundary clears both cid and all fallback directories', (t) => {
@@ -373,9 +372,11 @@ for (const changed of [false, true])
         'late results cannot publish a measurement state',
       )
     else assert.equal(f.measurement.snapshot().startup?.state, 'complete')
-    assert.equal(
-      f.measurement.snapshot().startup?.selectedHost !== null,
-      !changed,
-      'only a current probe may commit a startup route',
-    )
+    const selected = f.measurement.snapshot().startup?.selectedHost
+    if (changed) assert.equal(selected, null)
+    else
+      assert.ok(
+        selected && TRUSTED_CATALOG.includes(selected as (typeof TRUSTED_CATALOG)[number]),
+        'current probe publishes a legal selected host',
+      )
   })

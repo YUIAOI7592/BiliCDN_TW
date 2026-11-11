@@ -252,6 +252,11 @@ for (const rate of [1, 2]) {
       const controls = f.player.controls()
       assert.equal(controls.pendingSeekGoal, false)
     })
+}
+
+// Eligibility and reentrant ownership do not branch on playback speed.
+{
+  const rate = 2
   for (const kind of ['audio', 'video'] as const)
     test(`I-R04 Runtime ${kind} fallback eligibility is isolated rate=${rate}`, (t) => {
       const f = fixture(t, rate)

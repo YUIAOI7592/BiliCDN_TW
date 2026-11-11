@@ -130,13 +130,17 @@ async function createCatalogDemandContext2(t: TestContext) {
     base_url: catalogAudioRoot,
     backup_url: [] as string[],
   }
-  void catalogAdapter.transform({
-    data: { dash: { video: [catalogVideo], audio: [catalogAudio] } },
-  }).accepted
+  assert.equal(
+    catalogAdapter.transform({
+      data: { dash: { video: [catalogVideo], audio: [catalogAudio] } },
+    }).accepted,
+    true,
+  )
   const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
   const catalogAudioRep = catalogVault.contextForUrl(catalogAudioRoot)?.representation
   const catalogDemand = { kind: 'video' as const, requiredMbps: 5, highDemand: false }
   return {
+    ...resources,
     catalogAudio,
     catalogAudioRep,
     catalogAudioRoot,
@@ -153,84 +157,6 @@ async function createOpaqueSignedBStationAudioIsRemovedFromCatalogOnlyPlayerCont
   t: TestContext,
 ) {
   const resources = await createRoutingResources(t)
-  const {
-    catalogVideoRoot,
-    catalogVideoBackup,
-    catalogAudioRoot,
-    catalogVault,
-    catalogRoutes,
-    catalogAdapter,
-    catalogSettings,
-  } = resources
-
-  const catalogVideo = {
-    id: 80,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 2_000_000,
-    base_url: catalogVideoRoot,
-    backup_url: [catalogVideoBackup],
-  }
-  const catalogAudio = {
-    id: 30280,
-    bandwidth: 192_000,
-    base_url: catalogAudioRoot,
-    backup_url: [] as string[],
-  }
-  const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
-  const catalogAudioRep = catalogVault.contextForUrl(catalogAudioRoot)?.representation
-  const catalogDemand = { kind: 'video' as const, requiredMbps: 5, highDemand: false }
-  if (catalogVideoRep && catalogAudioRep) {
-    const options = catalogRoutes.startupOptions(catalogVideoRoot)
-    void (options && options.candidates.length > 0)
-    void options?.candidates.every(
-      (candidate) => candidate.type === 'catalog-generated' && !candidate.original,
-    )
-    const catalogPlan = catalogRoutes.plan(catalogVideoRep, catalogDemand, 'startup')
-    void catalogPlan.routeType
-    void catalogRoutes.apply(catalogVideoRoot).decision.routeType
-    void catalogRoutes.apply(catalogAudioRoot).decision.routeType
-    void [
-      catalogVideo.base_url,
-      ...catalogVideo.backup_url,
-      catalogAudio.base_url,
-      ...catalogAudio.backup_url,
-    ].every(
-      (url) =>
-        !!url && TRUSTED_CATALOG.includes(new URL(url).host as (typeof TRUSTED_CATALOG)[number]),
-    )
-    void ![catalogVideo.base_url, ...catalogVideo.backup_url].includes(catalogVideoBackup)
-    const signedBackupApplied = catalogRoutes.apply(catalogVideoBackup)
-    void (signedBackupApplied.url && signedBackupApplied.decision.routeType === 'catalog-generated')
-    if (signedBackupApplied.url) {
-      const requested = new URL(catalogVideoBackup),
-        sent = new URL(signedBackupApplied.url)
-      void `${sent.pathname}${sent.search}`
-      void `${requested.pathname}${requested.search}`
-    }
-    const deliveredCatalogBackup = catalogVideo.backup_url.find(
-      (url) => new URL(url).host !== new URL(catalogVideo.base_url).host,
-    )
-    if (deliveredCatalogBackup) {
-      const deliveredApplied = catalogRoutes.apply(deliveredCatalogBackup)
-      void deliveredApplied.decision.routeType
-      void deliveredApplied.url
-    }
-    const challenger = catalogRoutes.challenge(catalogVideoRep, catalogDemand, true)
-    void challenger?.decision.routeType
-    const failedCatalog = options?.candidates.find(
-      (candidate) => candidate.type === 'catalog-generated',
-    )
-    if (failedCatalog) {
-      catalogRoutes.noteStartupProbeResult(failedCatalog, 403)
-      void !catalogRoutes
-        .startupOptions(catalogVideoRoot)
-        ?.candidates.some((candidate) => candidate.host === failedCatalog.host)
-      void (
-        catalogRoutes.plan(catalogVideoRep, catalogDemand, 'new-epoch').host !== failedCatalog.host
-      )
-    }
-  }
   const opaqueCatalogUrl =
     'https://upos-hz-mirrorakam.akamaized.net/opaque/catalog-only-audio?signature=opaque'
   const opaqueCatalogItem = {
@@ -239,141 +165,30 @@ async function createOpaqueSignedBStationAudioIsRemovedFromCatalogOnlyPlayerCont
     base_url: opaqueCatalogUrl,
     backup_url: [] as string[],
   }
-  catalogAdapter.transform(
+  resources.catalogAdapter.transform(
     { data: { dash: { video: [], audio: [opaqueCatalogItem] } } },
     'page-hint',
   )
-  return {
-    catalogRoutes,
-    catalogSettings,
-    catalogVideoRoot,
-    opaqueCatalogItem,
-    opaqueCatalogUrl,
-  }
+  return { ...resources, opaqueCatalogItem, opaqueCatalogUrl }
 }
 
-async function createNoLegalCatalogCandidateStartsNoHealthyProbe5Context4(t: TestContext) {
-  const resources = await createRoutingResources(t)
-  const {
-    catalogVideoRoot,
-    catalogVideoBackup,
-    catalogAudioRoot,
-    catalogAdapter,
-    catalogVault,
-    catalogRoutes,
-    catalogSettings,
-  } = resources
-
-  const catalogVideo = {
-    id: 80,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 2_000_000,
-    base_url: catalogVideoRoot,
-    backup_url: [catalogVideoBackup],
-  }
-  const catalogAudio = {
-    id: 30280,
-    bandwidth: 192_000,
-    base_url: catalogAudioRoot,
-    backup_url: [] as string[],
-  }
-  void catalogAdapter.transform({
-    data: { dash: { video: [catalogVideo], audio: [catalogAudio] } },
-  }).accepted
-  const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
-  void catalogVault.contextForUrl(catalogAudioRoot)?.representation
-  const catalogDemand = { kind: 'video' as const, requiredMbps: 5, highDemand: false }
-  const opaqueCatalogUrl =
-    'https://upos-hz-mirrorakam.akamaized.net/opaque/catalog-only-audio?signature=opaque'
-  void catalogRoutes.apply(opaqueCatalogUrl).decision.reason
-  void catalogRoutes.inspectOriginal(catalogVideoRoot).decision.reason
-  void catalogRoutes.apply('https://upos-hz-mirrorakam.akamaized.net/live-bvc/catalog-only.m4s')
-    .decision.reason
-  void catalogRoutes.apply('https://cdn.example.net/unrelated/media.bin').decision.action
-  await catalogSettings.update({ fixedHost: TRUSTED_CATALOG[3] })
-  catalogRoutes.invalidateForUserSetting()
-  void catalogRoutes.apply(catalogVideoRoot).decision.host
-  catalogRoutes.invalidateForUserSetting()
-  void catalogRoutes.apply(catalogVideoRoot).decision.reason
-  return {
-    catalogDemand,
-    catalogRoutes,
-    catalogVideoRep,
-  }
+async function createFixedCatalogProbeScenario(t: TestContext) {
+  const base = await createCatalogDemandContext2(t)
+  await base.catalogSettings.update({ fixedHost: TRUSTED_CATALOG[3] })
+  base.catalogRoutes.invalidateForUserSetting()
+  assert.equal(base.catalogRoutes.apply(base.catalogVideoRoot).decision.host, TRUSTED_CATALOG[3])
+  return base
 }
 
-async function createNoLegalCatalogCandidateEmitsNoPlayerPrimary6Context5(t: TestContext) {
-  const resources = await createRoutingResources(t)
-  const {
-    catalogVault,
-    catalogVideoRoot,
-    catalogAudioRoot,
-    catalogRoutes,
-    catalogSettings,
-    catalogVideoBackup,
-    catalogAdapter,
-  } = resources
-
-  const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
-  void catalogVault.contextForUrl(catalogAudioRoot)?.representation
-  const catalogDemand = { kind: 'video' as const, requiredMbps: 5, highDemand: false }
-  const opaqueCatalogUrl =
-    'https://upos-hz-mirrorakam.akamaized.net/opaque/catalog-only-audio?signature=opaque'
-  void catalogRoutes.apply(opaqueCatalogUrl).decision.reason
-  void catalogRoutes.inspectOriginal(catalogVideoRoot).decision.reason
-  void catalogRoutes.apply('https://upos-hz-mirrorakam.akamaized.net/live-bvc/catalog-only.m4s')
-    .decision.reason
-  void catalogRoutes.apply('https://cdn.example.net/unrelated/media.bin').decision.action
-  catalogRoutes.invalidateForUserSetting()
-  void catalogRoutes.apply(catalogVideoRoot).decision.host
-  await catalogSettings.update({
-    fixedHost: null,
-    catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, false])),
-  })
-  catalogRoutes.invalidateForUserSetting()
-  void catalogRoutes.apply(catalogVideoRoot).decision.reason
-  if (catalogVideoRep) {
-    void catalogRoutes.challenge(catalogVideoRep, catalogDemand, true)
-  }
-  const noCatalogOutput = {
-    id: 80,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 2_000_000,
-    base_url: catalogVideoRoot,
-    backup_url: [catalogVideoBackup],
-  }
-  catalogAdapter.transform({ data: { dash: { video: [noCatalogOutput], audio: [] } } })
-  return {
-    noCatalogOutput,
-  }
-}
-
-async function checkNoLegalCatalogCandidateEmitsNoPlayerPrimary6(t: TestContext): Promise<void> {
-  const base = await createNoLegalCatalogCandidateEmitsNoPlayerPrimary6Context5(t)
-
-  assert.strictEqual(
-    base.noCatalogOutput.base_url,
-    '',
-    'no legal Catalog candidate emits no player primary',
-  )
-  assert.strictEqual(
-    base.noCatalogOutput.backup_url.length,
-    0,
-    'no legal Catalog candidate emits no player backups',
-  )
-}
-
-async function checkNoLegalCatalogCandidateStartsNoHealthyProbe5(t: TestContext): Promise<void> {
-  const base = await createNoLegalCatalogCandidateStartsNoHealthyProbe5Context4(t)
+async function checkFixedCatalogStartsNoHealthyProbe(t: TestContext): Promise<void> {
+  const base = await createFixedCatalogProbeScenario(t)
 
   assert.ok(base.catalogVideoRep, 'behavior requires its fixture prerequisites')
 
   assert.strictEqual(
     base.catalogRoutes.challenge(base.catalogVideoRep, base.catalogDemand, true),
     null,
-    'no legal Catalog candidate starts no healthy probe',
+    'fixed Catalog selection starts no healthy probe',
   )
 }
 
@@ -424,6 +239,21 @@ async function checkOpaqueSignedBStationAudioIsRemovedFromCatalogOnlyPlayer(
     base.catalogRoutes.apply(base.catalogVideoRoot).decision.reason,
     'catalog-unavailable',
     'no legal Catalog candidate blocks the original media request',
+  )
+  const noCatalogOutput = {
+    id: 80,
+    codecid: 13,
+    height: 1080,
+    bandwidth: 2_000_000,
+    base_url: base.catalogVideoRoot,
+    backup_url: [base.catalogVideoBackup],
+  }
+  base.catalogAdapter.transform({ data: { dash: { video: [noCatalogOutput], audio: [] } } })
+  assert.equal(noCatalogOutput.base_url, '', 'no legal Catalog candidate emits no player primary')
+  assert.deepEqual(
+    noCatalogOutput.backup_url,
+    [],
+    'no legal Catalog candidate emits no player backups',
   )
 }
 
@@ -616,53 +446,6 @@ async function checkFirstGroupEstablishesObservedNativeAffinity1(t: TestContext)
       observedTransitionHost,
     'first-use affinity inheritance cannot bypass a newly blacklisted Native host',
   )
-  // Native source permission is a routing boundary, including URLs the player already received.
-  const catalogStorage = new FakeStorage(),
-    catalogSettings = base.scope.own(new CatalogSettingsStore(catalogStorage, () => base.now))
-  const catalogSession = new SessionStore(),
-    catalogState = catalogSession.beginGeneration(false)
-  const catalogVault = new SignedRouteVault()
-  catalogVault.reset(catalogState.generation, catalogState.epoch)
-  const catalogRestrictions = base.scope.own(new RestrictionStore(catalogStorage, () => base.now))
-  const catalogEvidence = base.scope.own(new EvidenceStore(catalogStorage, () => base.now))
-  const catalogRoutes = new RouteCoordinator(
-    base.clock,
-    catalogSession,
-    catalogSettings,
-    catalogRestrictions,
-    catalogEvidence,
-    catalogVault,
-    createRuntimeIds(),
-  )
-  const catalogAdapter = new PlayurlAdapter(
-    new PlayurlController(catalogSession, catalogVault, catalogRoutes),
-  )
-  const catalogVideoRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-only/video.m4s?signature=video-root'
-  const catalogVideoBackup =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/catalog-only/backup/video-alt.m4s?signature=video-backup&part=2'
-  const catalogAudioRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/catalog-only/audio.m4s?signature=audio-root'
-  const catalogVideo = {
-    id: 80,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 2_000_000,
-    base_url: catalogVideoRoot,
-    backup_url: [catalogVideoBackup],
-  }
-  const catalogAudio = {
-    id: 30280,
-    bandwidth: 192_000,
-    base_url: catalogAudioRoot,
-    backup_url: [] as string[],
-  }
-  assert.ok(
-    catalogAdapter.transform({
-      data: { dash: { video: [catalogVideo], audio: [catalogAudio] } },
-    }).accepted,
-    'Catalog-only fixture adopts trusted video and audio playurl',
-  )
 }
 
 test('first group establishes observed Native affinity [1]', { timeout: 5000 }, async (t) => {
@@ -681,10 +464,6 @@ test(
   },
 )
 
-test('no legal Catalog candidate starts no healthy probe [5]', { timeout: 5000 }, async (t) => {
-  await checkNoLegalCatalogCandidateStartsNoHealthyProbe5(t)
-})
-
-test('no legal Catalog candidate emits no player primary [6]', { timeout: 5000 }, async (t) => {
-  await checkNoLegalCatalogCandidateEmitsNoPlayerPrimary6(t)
+test('fixed Catalog selection starts no healthy probe [5]', { timeout: 5000 }, async (t) => {
+  await checkFixedCatalogStartsNoHealthyProbe(t)
 })

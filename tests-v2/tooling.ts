@@ -101,7 +101,7 @@ test(
 )
 
 test(
-  'registry aliases, listing and CLI validation do not allocate or execute',
+  'registry aliases, listing options and CLI argument validation preserve their contracts',
   { timeout: 5000 },
   () => {
     assert.deepEqual(selection('adapters'), selection('suites/adapters'))
@@ -314,7 +314,7 @@ test(
 )
 
 test(
-  'cleanup failure and hook timeout fail the suite while later cases run',
+  'cleanup errors and an unresolved after hook fail the suite while later cases run',
   { timeout: 5000 },
   async (t) => {
     const scope = testScope(t),
@@ -331,10 +331,13 @@ test('later clean case',()=>{});`,
     const out = await executeSuites([{ name: 'cleanup', source }], { emit: false })
     assert.equal(out.results[0]!.success, false)
     assert.equal(out.results[0]!.report!.counts.passed, 1)
-    assert.match(
-      out.results[0]!.report!.failures.map((row) => row.message).join('\n'),
-      /cleanup failure|timed out/,
+    const failures = out.results[0]!.report!.failures
+    assert.deepEqual(
+      failures.map((row) => row.name),
+      ['cleanup throws', 'cleanup hangs'],
     )
+    assert.match(failures[0]!.message, /cleanup failure/)
+    assert.match(failures[1]!.message, /after hook/)
   },
 )
 

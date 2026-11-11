@@ -39,18 +39,19 @@ async function currentPlayback(t: import('node:test').TestContext, rate: number)
   }
 }
 for (const rate of [1, 2])
-  for (const age of [0, 1000, 2000, 2001])
-    test(`V229 playback deadline projects ${rate}x at ${age}ms`, async (t) => {
-      const p = await currentPlayback(t, rate),
-        session = p.f.session.get(),
-        stored = structuredClone([...p.f.storage.values])
+  test(`V229 playback deadline projects ${rate}x through the two-second expiry boundary`, async (t) => {
+    const p = await currentPlayback(t, rate),
+      session = p.f.session.get(),
+      stored = structuredClone([...p.f.storage.values])
+    for (const age of [0, 1000, 2000, 2001]) {
       p.setTick(age)
       const budget = p.budget()
-      if (age > 2000) assert.equal(budget, null)
-      else assert.equal(budget?.playableBufferSec, 10 / rate - age / 1000)
+      if (age > 2000) assert.equal(budget, null, `age=${age}`)
+      else assert.equal(budget?.playableBufferSec, 10 / rate - age / 1000, `age=${age}`)
       assert.equal(p.f.session.get(), session)
       assert.deepEqual([...p.f.storage.values], stored)
-    })
+    }
+  })
 test('V229 playback deadline ignores a wall-clock jump and invalidates on a newer observation revision', async (t) => {
   const p = await currentPlayback(t, 2)
   p.setTick(1000)
@@ -72,29 +73,35 @@ test('V229 playback deadline rejects missing monotonic input and unknown actual 
   p.f.clock.monotonicNow = () => NaN
   assert.equal(p.budget(), null)
   p.f.clock.monotonicNow = () => 0
+  assert.equal(p.budget()?.playableBufferSec, 5)
   p.f.routes.observePlaybackFacts({ ...p.facts, playbackRate: 0 })
   assert.equal(p.budget(), null)
 })
 
-for (const [input, expected] of [
-  ['60000/1001', 60000 / 1001],
-  ['59.935', 59.935],
-  [0, undefined],
-  ['1/0', undefined],
-  ['Infinity', undefined],
-] as const)
-  test(`V229 declared FPS stays optional and never changes route authority: ${input}`, (t) => {
+test('V229 declared FPS table stays optional and never changes route authority', (t) => {
+  for (const [input, expected] of [
+    ['60000/1001', 60000 / 1001],
+    ['59.935', 59.935],
+    [0, undefined],
+    ['1/0', undefined],
+    ['Infinity', undefined],
+  ] as const) {
     const f = fixture(testScope(t)),
       url = media('v229-fps', 'video.m4s'),
       body = dash(url)
     Object.assign(body.data.dash.video[0]!, { frame_rate: input })
     assert.equal(f.adapter.transform(body).accepted, true)
     const first = f.vault.contextForUrl(url)!
-    assert.equal(f.vault.groupSummary(first.representation)?.frameRate, expected)
+    assert.equal(
+      f.vault.groupSummary(first.representation)?.frameRate,
+      expected,
+      `frame_rate=${input}`,
+    )
     const again = dash(url)
     Object.assign(again.data.dash.video[0]!, { frame_rate: '30/1' })
     assert.equal(f.adapter.transform(again).accepted, true)
     const second = f.vault.contextForUrl(url)!
     assert.equal(second.representation, first.representation)
     assert.equal(second.authorityRevision, first.authorityRevision)
-  })
+  }
+})

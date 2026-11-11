@@ -1,6 +1,5 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { testScope } from '../../support/scope.ts'
 import {
   TRUSTED_CATALOG,
   DEFAULT_UNAVAILABLE_HOSTS,
@@ -59,19 +58,22 @@ function decision(rows: readonly RouteRankingEntry[]): RouteDecision {
   }
 }
 
-function output(rows: readonly RouteRankingEntry[], blocked = new Set<string>()) {
+function output(
+  rows: readonly RouteRankingEntry[],
+  blocked = new Set<string>(),
+  incompatible = new Set<string>(),
+) {
   const result = catalogPlayerOutput(
     'https://upos.example.akamaized.net/upgcxcode/fixture/video.m4s?token=private',
     decision(rows),
     (url) => !blocked.has(new URL(url).hostname),
-    (_url, host) => blocked.has(host),
+    (_url, host) => incompatible.has(host),
   )
   assert.ok(result)
   return result
 }
 
-test('UP141-ROUTE measured sufficient backups diversify families before same-family headroom', (t) => {
-  testScope(t)
+test('UP141-ROUTE measured sufficient backups diversify families before same-family headroom', () => {
   const result = output([
     ranked(ali2, 3),
     ranked(alib, 2.5),
@@ -90,24 +92,26 @@ test('UP141-ROUTE measured sufficient backups diversify families before same-fam
   }
 })
 
-test('UP141-ROUTE unmeasured or insufficient diverse host cannot outrank sufficient same-family host', (t) => {
-  testScope(t)
+test('UP141-ROUTE unmeasured or insufficient diverse host cannot outrank sufficient same-family host', () => {
   const result = output([ranked(cos, null), ranked(bos, 0.999), ranked(ali2, 1)])
   assert.equal(new URL(result.backups[0]!).hostname, ali2)
   assert.equal(new URL(result.backups[1]!).hostname, cos)
 })
 
-test('UP141-ROUTE forbidden and incompatible rows never gain diversity admission', (t) => {
-  testScope(t)
-  const blocked = new Set([bos, tx])
-  const result = output([ranked(bos, 4, false), ranked(tx, 3), ranked(ali2, 2)], blocked)
+test('UP141-ROUTE forbidden and incompatible rows never gain diversity admission', () => {
+  const blocked = new Set([bos]),
+    incompatible = new Set([tx])
+  const result = output([ranked(bos, 4), ranked(tx, 3), ranked(ali2, 2)], blocked, incompatible)
   assert.equal(new URL(result.backups[0]!).hostname, ali2)
-  assert.ok(result.backups.every((url) => !blocked.has(new URL(url).hostname)))
-  assert.ok(result.backups.length <= 5)
+  assert.equal(result.backups.length, 5)
+  assert.ok(
+    result.backups.every(
+      (url) => !blocked.has(new URL(url).hostname) && !incompatible.has(new URL(url).hostname),
+    ),
+  )
 })
 
-test('UP141-ROUTE normal backup plan preserves locks and distinct-host priority', (t) => {
-  testScope(t)
+test('UP141-ROUTE normal backup plan preserves locks and distinct-host priority', () => {
   const candidates = [
     { index: 0, host: ali2, allowed: true, meetsHeadroom: true },
     { index: 1, host: alib, allowed: true, meetsHeadroom: true },
@@ -121,8 +125,7 @@ test('UP141-ROUTE normal backup plan preserves locks and distinct-host priority'
   assert.deepEqual(backupOutputPlan(ali, candidates, true), [])
 })
 
-test('UP141-ROUTE unknown family gets no inferred diversity bonus', (t) => {
-  testScope(t)
+test('UP141-ROUTE unknown family gets no inferred diversity bonus', () => {
   const candidates = [
     { index: 0, host: ali2, allowed: true, meetsHeadroom: true },
     { index: 1, host: 'unknown.example.invalid', allowed: true, meetsHeadroom: true },
@@ -131,8 +134,7 @@ test('UP141-ROUTE unknown family gets no inferred diversity bonus', (t) => {
   assert.deepEqual(backupOutputPlan(ali, candidates, false), [2, 0, 1])
 })
 
-test('UP141-ROUTE family labels require exact built-in hosts and make no location claim', (t) => {
-  testScope(t)
+test('UP141-ROUTE family labels require exact built-in hosts and make no location claim', () => {
   assert.equal(catalogHostFamily(ali.toUpperCase()), 'ali')
   assert.equal(catalogHostFamily('cn-hk-eq-01-03.bilivideo.com'), 'hk-eq-01')
   assert.equal(catalogHostFamily('cn-hk-eq-01-05.bilivideo.com'), 'hk-eq-01')
@@ -141,8 +143,7 @@ test('UP141-ROUTE family labels require exact built-in hosts and make no locatio
   assert.equal(catalogHostFamily('__proto__'), null)
 })
 
-test('UP141-ROUTE invalid or success-free evidence cannot gain measured backup priority', (t) => {
-  testScope(t)
+test('UP141-ROUTE invalid or success-free evidence cannot gain measured backup priority', () => {
   const result = output([
     { ...ranked(cos, 5), successCount: 0 },
     { ...ranked(bos, 5), demandRatio: Number.POSITIVE_INFINITY },
@@ -153,8 +154,7 @@ test('UP141-ROUTE invalid or success-free evidence cannot gain measured backup p
   assert.equal(new URL(result.backups[1]!).hostname, cos)
 })
 
-test('UP141-ROUTE integration enables all HK candidates and preserves the four old defaults', (t) => {
-  testScope(t)
+test('UP141-ROUTE integration enables all HK candidates and preserves the four old defaults', () => {
   const hk = [
     'cn-hk-eq-01-03.bilivideo.com',
     'cn-hk-eq-01-05.bilivideo.com',

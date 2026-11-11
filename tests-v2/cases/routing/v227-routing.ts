@@ -147,7 +147,7 @@ test('V227 routing: provisional inadequacy reselects only when a recent adequate
     original.host,
   )
 })
-test('V227 routing: legal fixed selection precedes fresh evidence and all restrictions still win', () => {
+test('V227 routing: legal fixed selection precedes fresh evidence and black restriction still wins', () => {
   const f = input(5, 20, {
     fixedHost: original.host,
     current: { type: 'catalog-generated', host: catalog.host },

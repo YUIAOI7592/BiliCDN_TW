@@ -1,230 +1,13 @@
-import { installProgressEvent } from '../../support/progress-event.ts'
-import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
-import { test } from 'node:test'
+import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
-import { type TestContext } from 'node:test'
-import { TransportAdapter } from '../../../src-v2/adapters/transport/transport.ts'
-import { SessionStore } from '../../../src-v2/state/session-store.ts'
-import { testScope } from '../../support/scope.ts'
-import { createSummaryHookPrimitives } from './playurl-summary-resources.ts'
-
-async function createPlayurlSummaryScenario(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const session = new SessionStore()
-  session.beginGeneration(false)
-  const block1 = createSummaryHookPrimitives()
-  const { windowFixture, settings, routes, playurl, measurement } = block1
-  scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
-  scope.defineGlobal('location', {
-    configurable: true,
-    value: new URL('https://www.bilibili.com/'),
-  })
-  const transport = scope.own(
-    new TransportAdapter(
-      session,
-      settings,
-      routes,
-      playurl,
-      measurement,
-      () => block1.now,
-      createRuntimeIds(),
-      undefined,
-      () => block1.now,
-    ),
-  )
-  transport.install()
-  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
-  return {
-    endpoint,
-    transport,
-    windowFixture,
-  }
-}
-
-async function createARejectedResultObjectCannotTruthilyPassStrictFetch2Context1(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const session = new SessionStore()
-  session.beginGeneration(false)
-  const block1 = createSummaryHookPrimitives()
-  const { windowFixture, settings, routes, playurl, measurement } = block1
-  scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
-  scope.defineGlobal('location', {
-    configurable: true,
-    value: new URL('https://www.bilibili.com/'),
-  })
-  const transport = scope.own(
-    new TransportAdapter(
-      session,
-      settings,
-      routes,
-      playurl,
-      measurement,
-      () => block1.now,
-      createRuntimeIds(),
-      undefined,
-      () => block1.now,
-    ),
-  )
-  transport.install()
-  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
-  void (await windowFixture.fetch(endpoint)).status
-  const first = transport.snapshot().lastPlayurl
-  void first?.formats.join(',')
-  block1.result = {
-    accepted: false,
-    formats: ['mp4'],
-    videoCount: 0,
-    audioCount: 0,
-    segmentCount: 2,
-    upstreamCode: -10403,
-    reason: 'upstream-error',
-  }
-  const rejected = await windowFixture.fetch(endpoint)
-  return {
-    rejected,
-    transport,
-  }
-}
-
-async function createRejectedBodyContext2(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const session = new SessionStore()
-  session.beginGeneration(false)
-  const block1 = createSummaryHookPrimitives()
-  const { windowFixture, settings, routes, playurl, measurement, secret } = block1
-  scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
-  scope.defineGlobal('location', {
-    configurable: true,
-    value: new URL('https://www.bilibili.com/'),
-  })
-  const transport = scope.own(
-    new TransportAdapter(
-      session,
-      settings,
-      routes,
-      playurl,
-      measurement,
-      () => block1.now,
-      createRuntimeIds(),
-      undefined,
-      () => block1.now,
-    ),
-  )
-  transport.install()
-  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
-  void (await windowFixture.fetch(endpoint)).status
-  const first = transport.snapshot().lastPlayurl
-  void first?.formats.join(',')
-  block1.result = {
-    accepted: false,
-    formats: ['mp4'],
-    videoCount: 0,
-    audioCount: 0,
-    segmentCount: 2,
-    upstreamCode: -10403,
-    reason: 'upstream-error',
-  }
-  const makeXhr = (type: XMLHttpRequestResponseType, value: unknown = { code: 0 }) => {
-    const xhr = new windowFixture.XMLHttpRequest()
-    xhr.responseType = type
-    xhr.payload = value
-    xhr.open('GET', endpoint)
-    xhr.send()
-    return xhr
-  }
-  return {
-    get calls() {
-      return block1.calls
-    },
-    set calls(value: typeof block1.calls) {
-      block1.calls = value
-    },
-    makeXhr,
-    secret,
-    transport,
-  }
-}
-
-async function createXHRResponseTextAcceptsATypedAcceptedResult4Context3(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const session = new SessionStore()
-  session.beginGeneration(false)
-  const block1 = createSummaryHookPrimitives()
-  const { windowFixture, settings, routes, playurl, measurement, accepted, secret } = block1
-  scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
-  scope.defineGlobal('location', {
-    configurable: true,
-    value: new URL('https://www.bilibili.com/'),
-  })
-  const transport = scope.own(
-    new TransportAdapter(
-      session,
-      settings,
-      routes,
-      playurl,
-      measurement,
-      () => block1.now,
-      createRuntimeIds(),
-      undefined,
-      () => block1.now,
-    ),
-  )
-  transport.install()
-  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
-  void transport.snapshot().lastPlayurl
-  const makeXhr = (type: XMLHttpRequestResponseType, value: unknown = { code: 0 }) => {
-    const xhr = new windowFixture.XMLHttpRequest()
-    xhr.responseType = type
-    xhr.payload = value
-    xhr.open('GET', endpoint)
-    xhr.send()
-    return xhr
-  }
-  const acceptedXhr = makeXhr('text')
-  return {
-    accepted,
-    acceptedXhr,
-    get body() {
-      return block1.body
-    },
-    set body(value: typeof block1.body) {
-      block1.body = value
-    },
-    endpoint,
-    makeXhr,
-    get result() {
-      return block1.result
-    },
-    set result(value: typeof block1.result) {
-      block1.result = value
-    },
-    secret,
-    get strict(): boolean {
-      return block1.strict
-    },
-    set strict(value: boolean) {
-      block1.strict = value
-    },
-    get throws() {
-      return block1.throws
-    },
-    set throws(value: typeof block1.throws) {
-      block1.throws = value
-    },
-    transport,
-    windowFixture,
-  }
-}
+import { createSummaryTransportResources } from './playurl-summary-resources.ts'
 
 async function checkXHRResponseTextAcceptsATypedAcceptedResult4(t: TestContext): Promise<void> {
-  const base = await createXHRResponseTextAcceptsATypedAcceptedResult4Context3(t)
+  const base = createSummaryTransportResources(t)
+  const acceptedXhr = base.makeXhr('text')
 
   assert.strictEqual(
-    base.acceptedXhr.response,
+    acceptedXhr.response,
     '{"code":0}',
     'XHR response text accepts a typed accepted result',
   )
@@ -234,12 +17,18 @@ async function checkXHRResponseTextAcceptsATypedAcceptedResult4(t: TestContext):
     'XHR accepted result includes segment count',
   )
   const jsonXhr = base.makeXhr('json')
-  void jsonXhr.response
+  const beforeJson = base.block1.calls
+  assert.deepEqual(jsonXhr.response, { code: 0 })
+  assert.strictEqual(
+    base.block1.calls,
+    beforeJson + 1,
+    'JSON acceptance must have its own transformation',
+  )
   assert.ok(
     base.transport.snapshot().lastPlayurl?.accepted,
     'XHR JSON accepts a typed accepted result',
   )
-  base.body = '{malformed:' + base.secret
+  base.block1.body = '{malformed:' + base.secret
   assert.strictEqual(
     (await base.windowFixture.fetch(base.endpoint)).status,
     503,
@@ -251,28 +40,28 @@ async function checkXHRResponseTextAcceptsATypedAcceptedResult4(t: TestContext):
     'malformed Fetch JSON receives a safe reason',
   )
   const malformedXhr = base.makeXhr('text')
-  malformedXhr.rawText = base.body
+  malformedXhr.rawText = base.block1.body
   void malformedXhr.responseText
   assert.strictEqual(
     base.transport.snapshot().lastPlayurl?.reason,
     'malformed-payload',
     'malformed XHR JSON receives a safe reason',
   )
-  base.body = '{"code":0}'
-  base.throws = true
+  base.block1.body = '{"code":0}'
+  base.block1.throws = true
   await base.windowFixture.fetch(base.endpoint)
   assert.strictEqual(
     base.transport.snapshot().lastPlayurl?.reason,
     'malformed-payload',
     'transform exceptions receive no raw error message',
   )
-  base.throws = false
-  base.strict = false
-  base.result = { ...base.accepted, accepted: false, reason: 'no-legal-route' }
-  base.body = JSON.stringify({ code: 0, data: { url: base.secret } })
+  base.block1.throws = false
+  base.block1.strict = false
+  base.block1.result = { ...base.accepted, accepted: false, reason: 'no-legal-route' }
+  base.block1.body = JSON.stringify({ code: 0, data: { url: base.secret } })
   assert.strictEqual(
     await (await base.windowFixture.fetch(base.endpoint)).text(),
-    base.body,
+    base.block1.body,
     'Native-enabled Fetch preserves rejected upstream payload',
   )
 }
@@ -281,7 +70,16 @@ async function checkStrictXHRParameterRejectsAnUnacceptedTypedResult3ParameterPa
   t: TestContext,
   type: 'text' | 'json',
 ): Promise<void> {
-  const base = await createRejectedBodyContext2(t)
+  const base = createSummaryTransportResources(t)
+  base.block1.result = {
+    accepted: false as const,
+    formats: ['mp4'] as const,
+    videoCount: 0,
+    audioCount: 0,
+    segmentCount: 2,
+    upstreamCode: -10403,
+    reason: 'upstream-error' as const,
+  }
 
   const xhr = base.makeXhr(type, { code: 0, data: { url: base.secret } })
   const output = type === 'json' ? JSON.stringify(xhr.response) : xhr.responseText
@@ -300,23 +98,37 @@ async function checkStrictXHRParameterRejectsAnUnacceptedTypedResult3ParameterPa
     'upstream-error',
     `XHR ${type} reports rejection reason`,
   )
-  const transformedAt = base.calls
+  const transformedAt = base.block1.calls
   void xhr.response
   if (type === 'text') void xhr.responseText
-  assert.strictEqual(base.calls, transformedAt, `XHR ${type} reads reuse the cached transformation`)
+  assert.strictEqual(
+    base.block1.calls,
+    transformedAt,
+    `XHR ${type} reads reuse the cached transformation`,
+  )
 }
 
 async function checkARejectedResultObjectCannotTruthilyPassStrictFetch2(
   t: TestContext,
 ): Promise<void> {
-  const base = await createARejectedResultObjectCannotTruthilyPassStrictFetch2Context1(t)
+  const base = createSummaryTransportResources(t)
+  base.block1.result = {
+    accepted: false as const,
+    formats: ['mp4'] as const,
+    videoCount: 0,
+    audioCount: 0,
+    segmentCount: 2,
+    upstreamCode: -10403,
+    reason: 'upstream-error' as const,
+  }
+  const rejected = await base.windowFixture.fetch(base.endpoint)
 
   assert.strictEqual(
-    base.rejected.status,
+    rejected.status,
     503,
     'a rejected result object cannot truthily pass strict Fetch',
   )
-  const rejectedBody: unknown = await base.rejected.json()
+  const rejectedBody: unknown = await rejected.json()
   assert.ok(
     typeof rejectedBody === 'object' &&
       rejectedBody !== null &&
@@ -341,7 +153,7 @@ async function checkARejectedResultObjectCannotTruthilyPassStrictFetch2(
 }
 
 async function checkPlayurlSummaryStartsEmpty1(t: TestContext): Promise<void> {
-  const base = await createPlayurlSummaryScenario(t)
+  const base = createSummaryTransportResources(t)
 
   assert.strictEqual(base.transport.snapshot().lastPlayurl, null, 'playurl summary starts empty')
   assert.strictEqual(
@@ -380,19 +192,14 @@ test(
   },
 )
 
-{
-  let parameter = 0
-  for (const type of ['text', 'json'] as const) {
-    const selected = parameter++
-    test(
-      '`strict XHR ${type} rejects an unaccepted typed result` [3]' +
-        ` / ${String(type)} / ${selected}`,
-      { timeout: 5000 },
-      async (t) => {
-        await checkStrictXHRParameterRejectsAnUnacceptedTypedResult3ParameterParameter(t, type)
-      },
-    )
-  }
+for (const type of ['text', 'json'] as const) {
+  test(
+    `strict XHR ${type} rejects an unaccepted typed result [3]`,
+    { timeout: 5000 },
+    async (t) => {
+      await checkStrictXHRParameterRejectsAnUnacceptedTypedResult3ParameterParameter(t, type)
+    },
+  )
 }
 
 test('XHR response text accepts a typed accepted result [4]', { timeout: 5000 }, async (t) => {

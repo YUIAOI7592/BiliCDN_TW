@@ -48,7 +48,30 @@ for (const [file, source] of [
     assert.throws(() => validateGraph([modules.get(file)!]), /feature-private/)
   })
 
-function architectureFixture(additional: Readonly<Record<string, string>> = {}) {
+const baseFixtures: Readonly<Record<string, string>> = {
+  'domain/pure.ts': 'export const same = (value: number) => value * 2',
+  'state/store.ts': 'export interface Store {}',
+  'domain/type-import.ts': "import type { Store } from '../state/store.ts'",
+  'domain/re-export.ts': "export type { Store } from '../state/store.ts'",
+  'domain/import-type.ts': "type X = import('../state/store.ts').Store",
+  'domain/dynamic.ts': "export const load = () => import('./pure.ts')",
+  'domain/variable-import.ts': 'export const load = (name: string) => import(name)',
+  'domain/location.ts': 'export const current = () => location.href',
+  'domain/qualified.ts': 'export const current = () => globalThis.location.href',
+  'domain/clock.ts': 'export const current = () => Date.now()',
+  'domain/date.ts': 'export const current = () => new Date()',
+  'domain/gm.ts': 'export const current = () => GM_getValue("key")',
+  'application/location.ts': 'export const key = () => location.pathname',
+  'application/timer.ts': 'export const run = () => setTimeout(() => {}, 10)',
+  'application/reload.ts': 'export const run = (player: any) => player.reload()',
+  'adapters/affinity.ts': 'export const run = (session: any) => session.setAffinity(null)',
+  'ui/storage.ts': 'export const run = () => GM_setValue("bilicdn.v2.meta", {})',
+  'ui/reset.ts': 'export const run = (measurement: any) => measurement.reset()',
+  'domain/cycle-a.ts': "export { b } from './cycle-b.ts'; export const a = 1",
+  'domain/cycle-b.ts': "export { a } from './cycle-a.ts'; export const b = 2",
+}
+
+function architectureFixture(fixtures: Readonly<Record<string, string>>) {
   // Keep historical case labels while checking the current exact owner locations.
   const currentPath = (name: string): string =>
     ({
@@ -58,29 +81,6 @@ function architectureFixture(additional: Readonly<Record<string, string>> = {}) 
     })[name] ?? name
   const scratch = mkdtempSync(join(tmpdir(), 'bilicdn-architecture-'))
   try {
-    const fixtures = {
-      'domain/pure.ts': 'export const same = (value: number) => value * 2',
-      'state/store.ts': 'export interface Store {}',
-      'domain/type-import.ts': "import type { Store } from '../state/store.ts'",
-      'domain/re-export.ts': "export type { Store } from '../state/store.ts'",
-      'domain/import-type.ts': "type X = import('../state/store.ts').Store",
-      'domain/dynamic.ts': "export const load = () => import('../state/store.ts')",
-      'domain/variable-import.ts': 'export const load = (name: string) => import(name)',
-      'domain/location.ts': 'export const current = () => location.href',
-      'domain/qualified.ts': 'export const current = () => globalThis.location.href',
-      'domain/clock.ts': 'export const current = () => Date.now()',
-      'domain/date.ts': 'export const current = () => new Date()',
-      'domain/gm.ts': 'export const current = () => GM_getValue("key")',
-      'application/location.ts': 'export const key = () => location.pathname',
-      'application/timer.ts': 'export const run = () => setTimeout(() => {}, 10)',
-      'application/reload.ts': 'export const run = (player: any) => player.reload()',
-      'adapters/affinity.ts': 'export const run = (session: any) => session.setAffinity(null)',
-      'ui/storage.ts': 'export const run = () => GM_setValue("bilicdn.v2.meta", {})',
-      'ui/reset.ts': 'export const run = (measurement: any) => measurement.reset()',
-      'domain/cycle-a.ts': "export { b } from './cycle-b.ts'; export const a = 1",
-      'domain/cycle-b.ts': "export { a } from './cycle-a.ts'; export const b = 2",
-      ...additional,
-    }
     for (const [name, source] of Object.entries(fixtures)) {
       const path = join(scratch, currentPath(name))
       mkdirSync(dirname(path), { recursive: true })
@@ -116,38 +116,42 @@ function architectureFixture(additional: Readonly<Record<string, string>> = {}) 
     rmSync(target, { recursive: true })
   }
 }
-const rejected = [
-  'domain/type-import.ts',
-  'domain/re-export.ts',
-  'domain/import-type.ts',
-  'domain/dynamic.ts',
-  'domain/variable-import.ts',
-  'domain/location.ts',
-  'domain/qualified.ts',
-  'domain/clock.ts',
-  'domain/date.ts',
-  'domain/gm.ts',
-  'application/location.ts',
-  'application/timer.ts',
-  'application/reload.ts',
-  'adapters/affinity.ts',
-  'ui/storage.ts',
-  'ui/reset.ts',
+const rejected: readonly [string, RegExp][] = [
+  ['domain/type-import.ts', /domain -> state/],
+  ['domain/re-export.ts', /domain -> state/],
+  ['domain/import-type.ts', /domain -> state/],
+  ['domain/dynamic.ts', /dynamic runtime loading/],
+  ['domain/variable-import.ts', /non-literal dynamic import/],
+  ['domain/location.ts', /forbidden global location/],
+  ['domain/qualified.ts', /forbidden global globalThis/],
+  ['domain/clock.ts', /reads Date.now/],
+  ['domain/date.ts', /reads current Date/],
+  ['domain/gm.ts', /forbidden global GM_getValue/],
+  ['application/location.ts', /forbidden global location/],
+  ['application/timer.ts', /forbidden global setTimeout/],
+  ['application/reload.ts', /only RecoveryController/],
+  ['adapters/affinity.ts', /only RouteCoordinator/],
+  ['ui/storage.ts', /forbidden global GM_setValue/],
+  ['ui/reset.ts', /UI mutations must use the command port/],
 ]
 test('pure domain module is allowed', { timeout: 5000 }, () => {
-  const modules = architectureFixture()
+  const modules = architectureFixture({ 'domain/pure.ts': baseFixtures['domain/pure.ts']! })
   assert.doesNotThrow(() => validateGraph([modules.get('domain/pure.ts')!]))
 })
-for (const name of rejected)
+for (const [name, reason] of rejected)
   test(`reject forbidden architecture: ${name}`, { timeout: 5000 }, () => {
-    const modules = architectureFixture()
+    const modules = architectureFixture({ [name]: baseFixtures[name]! })
     assert.throws(
       () => validateGraph([modules.get(name)!]),
+      reason,
       `Architecture rule failed to reject ${name}`,
     )
   })
 test('reject re-export cycle', { timeout: 5000 }, () => {
-  const modules = architectureFixture()
+  const modules = architectureFixture({
+    'domain/cycle-a.ts': baseFixtures['domain/cycle-a.ts']!,
+    'domain/cycle-b.ts': baseFixtures['domain/cycle-b.ts']!,
+  })
   assert.throws(
     () => validateGraph([modules.get('domain/cycle-a.ts')!, modules.get('domain/cycle-b.ts')!]),
     /Import cycle/,

@@ -1,7 +1,6 @@
 import { createMutablePlaybackResources } from '../../support/player.ts'
 import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { currentResumePlayer } from '../../support/player.ts'
-import { installProgressEvent } from '../../support/progress-event.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -10,24 +9,21 @@ import { PlayurlController } from '../../../src-v2/application/playurl/playurl-c
 import { RestrictionStore } from '../../../src-v2/state/restriction-store.ts'
 import { EvidenceStore } from '../../../src-v2/state/evidence-store.ts'
 import { RouteCoordinator } from '../../../src-v2/application/routing/route-coordinator.ts'
-import { type AppliedRouteDecision } from '../../../src-v2/application/routing/route-contracts.ts'
 import { RecoveryController } from '../../../src-v2/application/playback/recovery-controller.ts'
 import { PlayurlAdapter } from '../../../src-v2/adapters/playurl/playurl.ts'
 import { testScope } from '../../support/scope.ts'
 import { createOpaqueControlSources, createOutputStores } from './adapters-resources.ts'
 
-async function createHealthyObservationContext6(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const now = 2_000_000_000_000
-  const clock = { now: () => now }
-  const block7 = createOutputStores()
-  const { outputVault, outputState, outputStorage, outputSession } = block7
+async function createOutputContext(t: TestContext) {
+  const scope = testScope(t),
+    now = 2_000_000_000_000,
+    clock = { now: () => now }
+  const { outputVault, outputState, outputStorage, outputSession } = createOutputStores()
   outputVault.reset(outputState.generation, outputState.epoch)
   const outputSettings = scope.own(new CatalogSettingsStore(outputStorage, () => now))
   await outputSettings.update({ considerNativeSources: true })
-  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
-  const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
+  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now)),
+    outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
   const outputRoutes = new RouteCoordinator(
     clock,
     outputSession,
@@ -49,125 +45,32 @@ async function createHealthyObservationContext6(t: TestContext) {
     base_url: forbiddenUrl,
     backup_url: [forbiddenUrl],
   }
-  outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
-  return {
-    forbiddenUrl,
-    outputAdapter,
-    outputItem,
-    outputRoutes,
-  }
+  assert.equal(
+    outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } }).accepted,
+    true,
+  )
+  return { now, forbiddenUrl, outputAdapter, outputItem, outputRoutes, outputRestrictions }
 }
 
-async function createExceptionalForbiddenContext7(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const now = 2_000_000_000_000
-  const clock = { now: () => now }
-  const block7 = createOutputStores()
-  const { outputVault, outputState, outputStorage, outputSession } = block7
-  outputVault.reset(outputState.generation, outputState.epoch)
-  const outputSettings = scope.own(new CatalogSettingsStore(outputStorage, () => now))
-  await outputSettings.update({ considerNativeSources: true })
-  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
-  const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
-  const outputRoutes = new RouteCoordinator(
-    clock,
-    outputSession,
-    outputSettings,
-    outputRestrictions,
-    outputEvidence,
-    outputVault,
-    createRuntimeIds(),
-  )
-  const outputAdapter = new PlayurlAdapter(
-    new PlayurlController(outputSession, outputVault, outputRoutes),
-  )
-  const forbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/test/output/1.m4s?k=1'
-  const outputItem = {
-    id: 80,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 1_000_000,
-    base_url: forbiddenUrl,
-    backup_url: [forbiddenUrl],
-  }
-  outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
-  const exceptionalForbidden = `${forbiddenUrl}&os=mcdn`
-  const exceptionalItem = {
-    ...outputItem,
-    id: 180,
-    base_url: exceptionalForbidden,
-    backup_url: [exceptionalForbidden],
-  }
-  outputAdapter.transform({ data: { dash: { video: [exceptionalItem], audio: [] } } })
-  const block6 = createOpaqueControlSources()
-  const { opaqueItem, opaquePrimary, opaqueBackup } = block6
-  outputAdapter.transform({ data: { dash: { video: [opaqueItem], audio: [] } } }, 'page-hint')
-  const opaqueLineage = outputRoutes.apply(opaquePrimary)
-  return {
-    now,
-    opaqueBackup,
-    opaqueItem,
-    opaqueLineage,
-    opaquePrimary,
-    outputAdapter,
-    outputItem,
-    outputRestrictions,
-    outputRoutes,
-  }
-}
-
-async function createPausedDeadCoreWithoutIntentNeverReloads8Context8(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const now = 2_000_000_000_000
-  const clock = { now: () => now }
-  const block3 = createMutablePlaybackResources()
-  const { recoveryPlayer } = block3
-  const block7 = createOutputStores()
-  const { outputVault, outputState, outputStorage, outputSession } = block7
-  outputVault.reset(outputState.generation, outputState.epoch)
-  const outputSettings = scope.own(new CatalogSettingsStore(outputStorage, () => now))
-  const outputRestrictions = scope.own(new RestrictionStore(outputStorage, () => now))
-  const outputEvidence = scope.own(new EvidenceStore(outputStorage, () => now))
-  const outputRoutes = new RouteCoordinator(
-    clock,
-    outputSession,
-    outputSettings,
-    outputRestrictions,
-    outputEvidence,
-    outputVault,
-    createRuntimeIds(),
-  )
-  const outputAdapter = new PlayurlAdapter(
-    new PlayurlController(outputSession, outputVault, outputRoutes),
-  )
-  const forbiddenUrl = 'https://upos-sz-mirrorcosov.bilivideo.com/upgcxcode/test/output/1.m4s?k=1'
-  const outputItem = {
-    id: 80,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 1_000_000,
-    base_url: forbiddenUrl,
-    backup_url: [forbiddenUrl],
-  }
-  outputAdapter.transform({ data: { dash: { video: [outputItem], audio: [] } } })
-  void outputItem.backup_url.find((url) => new URL(url).host !== new URL(outputItem.base_url).host)
-  let coreClock = now
-  let coreReloads = 0
-  const coreObserver = scope.own(
+async function checkPausedDeadCoreWithoutIntentNeverReloads8(t: TestContext): Promise<void> {
+  const scope = testScope(t),
+    resources = createMutablePlaybackResources()
+  let now = 2_000_000_000_000,
+    reloads = 0
+  const observer = scope.own(
     new RecoveryController(
       currentResumePlayer({
-        ...recoveryPlayer,
+        ...resources.recoveryPlayer,
         reload: () => {
-          coreReloads++
+          reloads++
         },
       }),
-      () => coreClock,
+      () => now,
     ),
   )
+  observer.tick(resources.playerSnapshot)
   const deadPaused = {
-    ...block3.playerSnapshot,
+    ...resources.playerSnapshot,
     paused: true,
     readyState: 0,
     width: 0,
@@ -175,90 +78,34 @@ async function createPausedDeadCoreWithoutIntentNeverReloads8Context8(t: TestCon
     frames: 0,
     coreInitialized: false,
   }
-  coreObserver.tick({
-    ...block3.playerSnapshot,
-    paused: false,
-    readyState: 4,
-    width: 1920,
-    height: 1080,
-  })
+  resources.playerSnapshot = deadPaused
   for (let tick = 0; tick < 5; tick++) {
-    coreClock += 1000
-    coreObserver.tick(deadPaused)
+    now += 1000
+    observer.tick(deadPaused)
   }
-  return {
-    get coreClock() {
-      return coreClock
-    },
-    set coreClock(value: typeof coreClock) {
-      coreClock = value
-    },
-    coreObserver,
-    get coreReloads() {
-      return coreReloads
-    },
-    set coreReloads(value: typeof coreReloads) {
-      coreReloads = value
-    },
-    deadPaused,
-    outputItem,
-    outputRoutes,
-    outputVault,
-  }
-}
-
-async function checkPausedDeadCoreWithoutIntentNeverReloads8(t: TestContext): Promise<void> {
-  const base = await createPausedDeadCoreWithoutIntentNeverReloads8Context8(t)
-  assert.strictEqual(base.coreReloads, 0, 'dead paused core without play intent never reloads')
-  base.coreClock += 31_000
+  assert.equal(reloads, 0, 'paused dead core cannot reload without play intent')
+  now += 31_000
   for (let tick = 0; tick < 100; tick++) {
-    base.coreClock += 1000
-    base.coreObserver.tick(base.deadPaused)
+    now += 1000
+    observer.tick(deadPaused)
   }
-  base.outputVault.contextForUrl(base.outputItem.base_url)!.representation
-  const playurlLineage = (
-    base.outputRoutes.apply(base.outputItem.base_url) as AppliedRouteDecision & {
-      playurlOutput?: {
-        originalHost: string
-        outputHost: string
-        source: string
-        decisionId: string
-        role: string
-      }
-    }
-  ).playurlOutput
-  assert.strictEqual(
-    playurlLineage?.originalHost,
-    'upos-sz-mirrorcosov.bilivideo.com',
-    'playurl lineage retains the original host without retaining a signed URL',
-  )
-  assert.strictEqual(
-    playurlLineage?.outputHost,
-    new URL(base.outputItem.base_url).host,
-    'playurl lineage names the host actually offered to the player',
-  )
-  assert.strictEqual(
-    playurlLineage?.source,
-    'trusted-api',
-    'playurl lineage identifies trusted API output separately from page hints',
-  )
-  assert.ok(
-    !!playurlLineage?.decisionId && playurlLineage.role === 'primary',
-    'playurl output links its plan to a primary request',
-  )
+  assert.equal(reloads, 0, 'long pause and repeated observations still grant no reload intent')
 }
 
 async function checkOpaqueSignedOutputRemainsObservationOnly7(t: TestContext): Promise<void> {
-  const base = await createExceptionalForbiddenContext7(t)
+  const base = await createOutputContext(t)
+  const { opaqueItem, opaquePrimary, opaqueBackup } = createOpaqueControlSources()
+  base.outputAdapter.transform({ data: { dash: { video: [opaqueItem], audio: [] } } }, 'page-hint')
+  const opaqueLineage = base.outputRoutes.apply(opaquePrimary)
 
   assert.strictEqual(
-    base.opaqueLineage.attributionStatus,
+    opaqueLineage.attributionStatus,
     'weak',
     'opaque signed output remains observation-only',
   )
   assert.strictEqual(
-    base.opaqueLineage.playurlOutput?.outputHost,
-    new URL(base.opaquePrimary).host,
+    opaqueLineage.playurlOutput?.outputHost,
+    new URL(opaquePrimary).host,
     'an exact opaque output still links playurl delivery to the later segment request by host',
   )
   await base.outputRestrictions.add({
@@ -269,9 +116,9 @@ async function checkOpaqueSignedOutputRemainsObservationOnly7(t: TestContext): P
     expireAt: base.now + 60_000,
   })
   const opaqueRestricted = {
-    ...base.opaqueItem,
-    base_url: base.opaquePrimary,
-    backup_url: [base.opaqueBackup],
+    ...opaqueItem,
+    base_url: opaquePrimary,
+    backup_url: [opaqueBackup],
   }
   base.outputAdapter.transform(
     { data: { dash: { video: [opaqueRestricted], audio: [] } } },
@@ -279,7 +126,7 @@ async function checkOpaqueSignedOutputRemainsObservationOnly7(t: TestContext): P
   )
   assert.strictEqual(
     opaqueRestricted.base_url,
-    base.opaqueBackup,
+    opaqueBackup,
     'opaque signed fallback uses its own exact URL when source is forbidden',
   )
   await base.outputRestrictions.remove('upos-hz-mirrorakam.akamaized.net', 'black')
@@ -324,7 +171,15 @@ async function checkOpaqueSignedOutputRemainsObservationOnly7(t: TestContext): P
 async function checkForbiddenOriginalCannotRemainInPlayurlPrimaryOrBackup6(
   t: TestContext,
 ): Promise<void> {
-  const base = await createHealthyObservationContext6(t)
+  const base = await createOutputContext(t)
+  const applied = base.outputRoutes.apply(base.outputItem.base_url),
+    lineage = applied.playurlOutput
+  assert.ok(lineage)
+  assert.equal(lineage.originalHost, 'upos-sz-mirrorcosov.bilivideo.com')
+  assert.equal(lineage.outputHost, new URL(base.outputItem.base_url).host)
+  assert.equal(lineage.source, 'trusted-api')
+  assert.equal(lineage.role, 'primary')
+  assert.ok(lineage.decisionId)
 
   assert.ok(
     ![base.outputItem.base_url, ...base.outputItem.backup_url].some((url) =>

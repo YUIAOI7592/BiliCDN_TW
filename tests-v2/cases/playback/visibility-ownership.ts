@@ -73,6 +73,7 @@ for (const key of ['hidden', 'visibilityState'] as const) {
         })
       const before = Object.getOwnPropertyDescriptor(f.document, key)
       f.adapter.install()
+      assert.equal(f.document[key], key === 'hidden' ? false : 'visible')
       f.adapter.dispose()
       assert.deepEqual(Object.getOwnPropertyDescriptor(f.document, key), before)
     })
@@ -191,6 +192,8 @@ for (const key of ['hidden', 'visibilityState'] as const) {
     Object.defineProperty(f.document, key, { configurable: false, value: 'browser-owned' })
     const before = Object.getOwnPropertyDescriptor(f.document, key)
     f.adapter.install()
+    const other = key === 'hidden' ? 'visibilityState' : 'hidden'
+    assert.equal(f.document[other], other === 'hidden' ? false : 'visible')
     f.adapter.dispose()
     assert.deepEqual(Object.getOwnPropertyDescriptor(f.document, key), before)
     assert.equal(
@@ -216,58 +219,47 @@ test('VIS-OWN reinstall captures current owner and install is idempotent', (t) =
   assert.deepEqual(Object.getOwnPropertyDescriptor(f.document, 'hidden'), newer)
 })
 
-for (const rate of [1, 2]) {
-  test(`VIS-OWN integration Runtime settings preserve newer owner without extra actions rate=${rate}`, async (t) => {
-    const f = fixture(t)
-    class Storage extends FakeStorage {
-      writes: string[] = []
-      override set<T>(key: string, value: T): void {
-        this.writes.push(key)
-        super.set(key, value)
-      }
+test('VIS-OWN integration Runtime settings preserve newer owner without extra actions', async (t) => {
+  const f = fixture(t)
+  class Storage extends FakeStorage {
+    writes: string[] = []
+    override set<T>(key: string, value: T): void {
+      this.writes.push(key)
+      super.set(key, value)
     }
-    const storage = new Storage()
-    const r = runtimeFixture(t, storage, undefined, f.adapter)
-    const controlStorage = new Storage()
-    const control = runtimeFixture(t, controlStorage)
-    r.setVideo({ ...r.video(), playbackRate: rate, effectiveRate: rate })
-    control.setVideo({ ...control.video(), playbackRate: rate, effectiveRate: rate })
-    for (const disabled of [true, false, true]) await control.settings.update({ disabled })
-    const newer = { configurable: true, enumerable: false, get: () => true }
-    Object.defineProperty(f.document, 'hidden', newer)
-    await r.settings.update({ disabled: true })
-    assert.deepEqual(Object.getOwnPropertyDescriptor(f.document, 'hidden'), {
-      ...newer,
-      set: undefined,
-    })
-    await r.settings.update({ disabled: false })
-    await r.settings.update({ disabled: true })
-    assert.deepEqual(Object.getOwnPropertyDescriptor(f.document, 'hidden'), {
-      ...newer,
-      set: undefined,
-    })
-    assert.deepEqual(r.calls, control.calls)
-    assert.deepEqual(r.calls, { seeks: [], rates: [], plays: 0, reloads: 0, resets: 4 })
-    assert.deepEqual(storage.writes, Array(3).fill('bilicdn.v2.settings'))
-    assert.deepEqual(storage.writes, controlStorage.writes)
-    assert.equal(r.recovery.snapshot().reloadCount, 0)
-    for (const instance of [r, control]) {
-      instance.lifecycle.dispose()
-      instance.runtime.dispose()
-      instance.deps.monitor.dispose()
-      instance.recovery.dispose()
-      instance.settings.dispose()
-      instance.deps.restrictions.dispose()
-      instance.deps.evidence.dispose()
-      assert.equal(instance.clock.pendingCount, 0, 'owned work is released before FakeClock')
-    }
-    for (const item of [storage, controlStorage])
-      assert.equal(
-        [...item.listeners.values()].reduce((n, rows) => n + rows.size, 0),
-        0,
-      )
-    f.adapter.dispose()
-    assert.equal(f.document.count(), 0)
-    assert.equal(f.window.count(), 0)
+  }
+  const storage = new Storage()
+  const r = runtimeFixture(t, storage, undefined, f.adapter)
+  r.setVideo({ ...r.video(), playbackRate: 2, effectiveRate: 2 })
+  const newer = { configurable: true, enumerable: true, get: () => true }
+  Object.defineProperty(f.document, 'hidden', newer)
+  await r.settings.update({ disabled: true })
+  assert.deepEqual(Object.getOwnPropertyDescriptor(f.document, 'hidden'), {
+    ...newer,
+    set: undefined,
   })
-}
+  await r.settings.update({ disabled: false })
+  await r.settings.update({ disabled: true })
+  assert.deepEqual(Object.getOwnPropertyDescriptor(f.document, 'hidden'), {
+    ...newer,
+    set: undefined,
+  })
+  assert.deepEqual(r.calls, { seeks: [], rates: [], plays: 0, reloads: 0, resets: 4 })
+  assert.deepEqual(storage.writes, Array(3).fill('bilicdn.v2.settings'))
+  assert.equal(r.recovery.snapshot().reloadCount, 0)
+  r.lifecycle.dispose()
+  r.runtime.dispose()
+  r.deps.monitor.dispose()
+  r.recovery.dispose()
+  r.settings.dispose()
+  r.deps.restrictions.dispose()
+  r.deps.evidence.dispose()
+  assert.equal(r.clock.pendingCount, 0, 'owned work is released before FakeClock')
+  assert.equal(
+    [...storage.listeners.values()].reduce((n, rows) => n + rows.size, 0),
+    0,
+  )
+  f.adapter.dispose()
+  assert.equal(f.document.count(), 0)
+  assert.equal(f.window.count(), 0)
+})

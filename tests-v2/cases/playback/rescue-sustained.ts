@@ -30,46 +30,49 @@ for (const rate of [1, 2]) {
       true,
     )
   })
-  for (const change of [
-    'time',
-    'frames',
-    'rate',
-    'owner',
-    'pause',
-    'seeking',
-    'ended',
-    'error',
-    'reload',
-    'gap',
-    'NaN',
-    'tail',
-  ] as const)
-    test(`TOOL-SP relapse ${change} rejects sustained acceptance rate=${rate}`, () => {
-      const input = samples(),
-        previous = input[7]!,
-        value = input[8]!
-      const patch: { -readonly [K in keyof RescueProgressSample]?: RescueProgressSample[K] } = {}
-      if (change === 'time') patch.position = previous.position
-      if (change === 'frames') patch.frames = previous.frames
-      if (change === 'rate') patch.rate = rate === 1 ? 2 : 1
-      if (change === 'owner') patch.owner = 'other'
-      if (change === 'pause') patch.paused = true
-      if (change === 'seeking') patch.seeking = true
-      if (change === 'ended') patch.ended = true
-      if (change === 'error') patch.error = true
-      if (change === 'reload') patch.reloadCount = 2
-      if (change === 'gap') patch.at = value.at + 1000
-      if (change === 'NaN') patch.frames = NaN
-      input[8] = { ...value, ...patch }
-      if (change === 'tail') input.pop()
-      assert.equal(sustainedPlayback(input, rate), false)
-    })
-  for (const error of [0, 0.999999, 1, 1.000001])
-    test(`TOOL-RP elapsed position correction error=${error} rate=${rate}`, () => {
-      assert.equal(restoredPosition(rate + error, 0, rate, 1000), error <= 1)
-    })
-  test(`TOOL-RP frames cannot excuse wrong position rate=${rate}`, () => {
-    assert.equal(sustainedPlayback(samples(), rate), true)
+  if (rate === 2)
+    for (const change of [
+      'time',
+      'frames',
+      'rate',
+      'owner',
+      'pause',
+      'seeking',
+      'ended',
+      'error',
+      'reload',
+      'gap',
+      'NaN',
+      'tail',
+    ] as const)
+      test(`TOOL-SP relapse ${change} rejects sustained acceptance rate=${rate}`, () => {
+        const input = samples(),
+          previous = input[7]!,
+          value = input[8]!
+        const patch: { -readonly [K in keyof RescueProgressSample]?: RescueProgressSample[K] } = {}
+        if (change === 'time') patch.position = previous.position
+        if (change === 'frames') patch.frames = previous.frames
+        if (change === 'rate') patch.rate = 1
+        if (change === 'owner') patch.owner = 'other'
+        if (change === 'pause') patch.paused = true
+        if (change === 'seeking') patch.seeking = true
+        if (change === 'ended') patch.ended = true
+        if (change === 'error') patch.error = true
+        if (change === 'reload') patch.reloadCount = 2
+        if (change === 'gap') patch.at = value.at + 1000
+        if (change === 'NaN') patch.frames = NaN
+        input[8] = { ...value, ...patch }
+        if (change === 'tail') input.pop()
+        assert.equal(sustainedPlayback(input, rate), false)
+      })
+  test(`TOOL-RP elapsed position correction boundaries rate=${rate}`, () => {
+    for (const [error, expected] of [
+      [0, true],
+      [0.999999, true],
+      [1, true],
+      [1.000001, false],
+    ] as const)
+      assert.equal(restoredPosition(rate + error, 0, rate, 1000), expected, `error=${error}`)
     assert.equal(restoredPosition(0, 978, rate, 0), false)
     assert.equal(restoredPosition(NaN, 0, rate, 0), false)
   })

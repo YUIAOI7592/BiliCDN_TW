@@ -43,15 +43,6 @@ function fixture(t: Parameters<typeof testScope>[0]) {
   return { root, release, pkg, lock, save, write }
 }
 
-test('project configuration accepts matching pinned scoped and unscoped tools', (t) => {
-  const f = fixture(t)
-  assert.deepEqual(checkProjectConfiguration(f.root), {
-    success: true,
-    checkedDependencies: 3,
-    findings: [],
-  })
-})
-
 for (const [name, mutate, expected] of [
   [
     'release TypeScript metadata drift',
@@ -188,7 +179,9 @@ for (const failing of [false, true]) {
           })
           .sort()
       const before = snapshot(f.root)
-      assert.equal(checkProjectConfiguration(f.root).success, !failing)
+      const result = checkProjectConfiguration(f.root)
+      if (failing) assert.equal(result.success, false)
+      else assert.deepEqual(result, { success: true, checkedDependencies: 3, findings: [] })
       assert.deepEqual(snapshot(f.root), before)
     },
   )

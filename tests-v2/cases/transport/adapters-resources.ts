@@ -1,105 +1,13 @@
-import { requestDispatch } from '../../support/request-dispatch.ts'
-import { playurlResult } from '../../support/playurl.ts'
-import { decisionId } from '../../../src-v2/domain/model.ts'
-import { parseMediaUrl } from '../../../src-v2/domain/url-policy.ts'
 import { SignedRouteVault } from '../../../src-v2/state/signed-route-vault.ts'
 import { SessionStore } from '../../../src-v2/state/session-store.ts'
-import { type AppliedRouteDecision } from '../../../src-v2/application/routing/route-contracts.ts'
-import { type TransportObservation } from '../../../src-v2/domain/transport-model.ts'
 import { FakeStorage } from '../../support/storage.ts'
 
-// Named scenarios create only their prerequisite state; resources belong to this test.
-
-export async function createTransportHookResources() {
-  const passDecision: AppliedRouteDecision = {
-    decision: {
-      action: 'pass',
-      target: { type: 'request' },
-      id: decisionId('runtime-pass'),
-      reason: 'test',
-      routeType: 'root-original',
-      host: 'upos-sz-mirrorali.bilivideo.com',
-      ranking: [],
-    },
-    url: 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/runtime.m4s',
-    context: null,
-    streamKey: 'runtime',
-    sourceHost: 'upos-sz-mirrorali.bilivideo.com',
-  }
-  const observations: TransportObservation[] = []
-  const routeStub = {
-    prepareRequest: requestDispatch(),
-    policyRevision(): number {
-      return 0
-    },
-    requestStarted(): void {},
-    isCatalogOnly(): boolean {
-      return false
-    },
-    isBilibiliMedia(url: string): boolean {
-      return /\.bilivideo\.com\/|\.akamaized\.net\//.test(url)
-    },
-    recognizesMedia(url: string): boolean {
-      return parseMediaUrl(url)?.kind !== 'unknown'
-    },
-    inspectOriginal(url: string): AppliedRouteDecision {
-      return this.apply(url)
-    },
-    apply(url: string): AppliedRouteDecision {
-      return { ...passDecision, url }
-    },
-    async observe(observation: TransportObservation): Promise<void> {
-      observations.push(observation)
-    },
-  }
-  let transformed = 0
-  const playurlStub = {
-    transform() {
-      transformed++
-      return playurlResult(true)
-    },
-  }
-  let disabled = false
-  let blockHttpDns = true
-  const settingsStub = {
-    get: () => ({ disabled: disabled, blockHttpDns: blockHttpDns, considerNativeSources: true }),
-  }
+// Each caller owns its installed transport and globals; this helper has no external effects.
+export function createTransportHookResources() {
   let nativeFetchCalls = 0
-  let playurlFetchBody = JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } })
-  let playurlFetchOverride: Response | null = null
-  const nativeFetchUrls: string[] = []
-  const nativeFetchMethods: string[] = []
-  const nativeFetchRedirects: RequestRedirect[] = []
-  const nativeFetchHeaders: (string | null)[] = []
-  const nativeFetch = async (input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
+  const nativeFetch: typeof fetch = async () => {
     nativeFetchCalls++
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
-    nativeFetchUrls.push(url)
-    nativeFetchMethods.push(
-      input instanceof Request ? input.method : String(_init?.method ?? 'GET'),
-    )
-    nativeFetchRedirects.push(
-      input instanceof Request
-        ? input.redirect
-        : (String(_init?.redirect ?? 'follow') as RequestRedirect),
-    )
-    nativeFetchHeaders.push(input instanceof Request ? input.headers.get('x-bilicdn-test') : null)
-    if (url.includes('/stream-body.m4s') && input instanceof Request) void (await input.text())
-    if (url.includes('/player/wbi/playurl'))
-      return playurlFetchOverride ?? new Response(playurlFetchBody, { status: 200 })
-    let emitted = false
-    return new Response(
-      new ReadableStream<Uint8Array>({
-        pull(controller) {
-          if (!emitted) {
-            emitted = true
-            controller.enqueue(new Uint8Array(70 * 1024))
-          }
-        },
-        cancel(_reason) {},
-      }),
-      { status: 206, headers: { 'content-type': 'video/mp4' } },
-    )
+    return new Response(null, { status: 206 })
   }
   class FakeXhr extends EventTarget {
     #state = 0
@@ -177,52 +85,14 @@ export async function createTransportHookResources() {
     }
     setRequestHeader(_name: string, _value: string): void {}
   }
-  const originalWorker = function WorkerIdentity() {
-    return undefined
-  }
-  const fakeWindow = {
-    fetch: nativeFetch,
-    XMLHttpRequest: FakeXhr,
-    Worker: originalWorker,
-    navigator: globalThis.navigator,
-  }
+  const fakeWindow = { fetch: nativeFetch, XMLHttpRequest: FakeXhr }
   return {
-    passDecision,
-    routeStub,
-    playurlStub,
-    get disabled(): boolean {
-      return disabled
-    },
-    set disabled(value: boolean) {
-      disabled = value
-    },
-    settingsStub,
+    fakeWindow,
+    FakeXhr,
     get nativeFetchCalls() {
       return nativeFetchCalls
     },
-    set nativeFetchCalls(value: typeof nativeFetchCalls) {
-      nativeFetchCalls = value
-    },
-    nativeFetch,
-    FakeXhr,
-    fakeWindow,
   }
-}
-
-export function createNativeControlSources() {
-  const nativeControlUrl =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/control/clip.m4s?signature=private'
-  const nativeControlBackup =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/control/clip.m4s?signature=other'
-  const controlItem = {
-    id: 240,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 1_000_000,
-    base_url: nativeControlUrl,
-    backup_url: [nativeControlBackup],
-  }
-  return { nativeControlUrl, nativeControlBackup, controlItem }
 }
 
 export function createOpaqueControlSources() {

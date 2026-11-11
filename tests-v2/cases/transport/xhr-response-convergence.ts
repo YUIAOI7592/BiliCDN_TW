@@ -261,9 +261,13 @@ for (const type of ['text', 'json'] as const) {
       xhr = f.createXhr(type)
     xhr.receive({ code: 0, marker: 'first' })
     const first = xhr.response
+    const object = (value: unknown) =>
+      responseObject(type === 'text' ? JSON.parse(String(value)) : value)
+    assert.deepEqual(object(first), { code: 0, marker: 'first', transformed: true })
     xhr.open('GET', apiUrl.replace('1000', '2000'), true)
     xhr.receive({ code: 0, marker: 'second' })
     const second = xhr.response
+    assert.deepEqual(object(second), { code: 0, marker: 'second', transformed: true })
     assert.notEqual(second, first)
     assert.equal(xhr.response, second)
     assert.equal(f.calls.length, 2)

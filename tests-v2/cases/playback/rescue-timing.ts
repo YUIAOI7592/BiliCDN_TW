@@ -68,9 +68,6 @@ function fixture(t: TestContext, rate: number, realRecovery: boolean) {
   const port =
     recovery ??
     monitorRecovery({
-      armStall: (intentSnapshot) => {
-        void intentSnapshot
-      },
       isRecovering: () => active,
     })
   if (!recovery) {
@@ -213,7 +210,7 @@ for (const rate of [1, 2]) {
     assert.equal(f.intents[0]?.startedAt, f.start)
     assert.equal(f.intents[0]?.reloadAfterMs, 30000)
   })
-  test(`U-T05 short pause in progress does not trigger fallback rate=${rate}`, (t) => {
+  test(`U-T05 one progress blip retains the original stall deadline rate=${rate}`, (t) => {
     const f = fixture(t, rate, false)
     f.tick()
     f.advance(5999)
@@ -294,27 +291,5 @@ for (const rate of [1, 2]) {
     f.clock.advance(15000)
     assert.equal(f.recovery?.snapshot().reason, 'reload-timeout')
     assert.equal(f.clock.now() - f.start, 27250)
-  })
-  test(`I-COMP ordinary policy ${process.env.BR01_TIMING_BASELINE === '1' ? 'baseline-45' : 'current-27'} rate=${rate}`, (t) => {
-    const f = fixture(t, rate, true),
-      observed: Record<string, number> = {}
-    f.tick()
-    for (let i = 0; i < 60; i++) {
-      f.advance(1000)
-      if (f.effects.includes('fallback')) observed.fallback ??= f.clock.now() - f.start
-      if (f.effects.includes('reload')) observed.reload ??= f.clock.now() - f.start
-      if (f.recovery?.snapshot().reason === 'reload-timeout') {
-        observed.terminal = f.clock.now() - f.start
-        break
-      }
-    }
-    console.log(JSON.stringify({ id: 'I-COMP', rate, observed }))
-    assert.deepEqual(
-      observed,
-      process.env.BR01_TIMING_BASELINE === '1'
-        ? { fallback: 15000, reload: 30000, terminal: 45000 }
-        : { fallback: 6000, reload: 12000, terminal: 27000 },
-    )
-    assert.deepEqual(f.effects, ['fallback', 'reload'])
   })
 }

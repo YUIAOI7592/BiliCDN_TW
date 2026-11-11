@@ -26,14 +26,14 @@ test('R01 epoch notification resets runtime synchronously before registration; q
   )
   f.playurl.transform(media(200), 'trusted-api')
   assert.equal(notices, 1)
-})
-
-test('R01 disposed runtime releases the content subscription', (t) => {
-  const f = fixture(t)
-  f.playurl.transform(media(100), 'trusted-api')
   f.runtime.dispose()
   const resets = f.calls.resets
-  f.playurl.transform(media(200), 'trusted-api')
+  f.playurl.transform(media(300), 'trusted-api')
+  assert.equal(
+    notices,
+    2,
+    'content still notifies the independent subscriber after runtime disposal',
+  )
   assert.equal(f.calls.resets, resets)
 })
 
@@ -118,6 +118,16 @@ for (const kind of ['video', 'audio'] as const) {
     })
     assert.ok(rep)
     if (kind === 'video') f.request(original)
+    else {
+      const video = media(100)
+      assert.equal(f.playurl.transform(video, 'trusted-api').accepted, true)
+      f.request(video.data.dash.video[0]!.base_url)
+      assert.equal(
+        f.routes.recoveryEligible(f.routes.latestRequested('video')!),
+        true,
+        'audio isolation requires a valid video recovery owner',
+      )
+    }
     f.setVideo({
       ...blankVideo(),
       readyState: 4,
@@ -137,6 +147,17 @@ for (const kind of ['video', 'audio'] as const) {
       fallback.host && fallback.host !== TRUSTED_CATALOG[0],
       'real coordinator emitted a legal different-host fallback',
     )
+    if (kind === 'audio') {
+      assert.equal(
+        f.recovery.isRecovering(),
+        false,
+        'audio event must not arm the valid video owner',
+      )
+      f.setVideo({ ...f.video(), currentTime: 121 })
+      f.clock.advance(1000)
+      assert.equal(f.recovery.isRecovering(), false)
+      assert.equal(f.calls.reloads, 0, 'progressing video is unaffected by audio fallback')
+    }
     f.setVideo(blankVideo())
     f.clock.advance(4000)
     assert.equal(
@@ -146,45 +167,6 @@ for (const kind of ['video', 'audio'] as const) {
     )
   })
 }
-
-test('CONTROL R04 audio fallback does not reload a video that continues progressing', (t) => {
-  const f = fixture(t),
-    state = f.session.get()
-  const rep = f.vault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'audio',
-    key: 'healthy-audio',
-    height: 0,
-    codec: 'aac',
-    bandwidth: 192_000,
-    urls: [
-      'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/01/02/100/100-1-30280.m4s?fixture=healthy',
-    ],
-    source: 'trusted-api',
-  })
-  assert.ok(rep)
-  const healthy = {
-    ...blankVideo(),
-    readyState: 4,
-    width: 1920,
-    height: 1080,
-    playableBufferSec: 40,
-    coreInitialized: true,
-  }
-  f.setVideo(healthy)
-  f.clock.advance(1000)
-  f.routes.recover(
-    rep,
-    { kind: 'audio', requiredMbps: 0.5, highDemand: false },
-    'verified-failure',
-    TRUSTED_CATALOG[0],
-  )
-  f.setVideo({ ...healthy, currentTime: 121 })
-  f.clock.advance(1000)
-  assert.equal(f.recovery.isRecovering(), false)
-  assert.equal(f.calls.reloads, 0)
-})
 
 for (const late of [false, true]) {
   test(`${late ? 'CROSS A03' : 'CONTROL CROSS A03'} actual runtime fixed-host update survives ${late ? 'late' : 'prior'} transfer`, async (t) => {

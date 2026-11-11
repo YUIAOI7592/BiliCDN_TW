@@ -20,7 +20,12 @@ function fixture(t: TestContext, rate: number) {
     f.video().currentTime = 0
     observer.controls()
   }
-  return { ...f, observer, capture, resetMedia }
+  const key = (...args: Parameters<typeof f.key>) => {
+    const event = f.key(...args)
+    assert.ok(capture().proof, 'trusted seek establishes a goal before testing its lifetime')
+    return event
+  }
+  return { ...f, observer, capture, resetMedia, key }
 }
 
 for (const target of ['descendant', 'window'] as const)
@@ -52,7 +57,9 @@ for (const target of ['descendant', 'window'] as const)
     assert.equal(notifications, target === 'window' ? 1 : 0)
   })
 
-for (const rate of [1, 2]) {
+// These ownership transitions do not use rate-dependent progress calculations.
+{
+  const rate = 2
   test(`U-G08 unknown native movement while paused revokes pending goal rate=${rate}`, (t) => {
     const f = fixture(t, rate)
     f.video().paused = true
@@ -156,21 +163,6 @@ for (const rate of [1, 2]) {
       assert.equal(f.observer.validateResumePosition(before), false)
       assert.equal(f.capture().proof, null)
     })
-  test(`U-G06 completed goal yields later current position rate=${rate}`, (t) => {
-    const f = fixture(t, rate)
-    f.key(978)
-    f.video().seeking = false
-    f.video().dispatchEvent(new Event('seeked'))
-    for (let i = 0; i < 2; i++) {
-      f.clock.advance(1000)
-      f.video().currentTime += rate
-      f.video().frames += 30
-      f.observer.controls()
-    }
-    const after = f.capture()
-    assert.equal(after.proof, null)
-    assert.equal(after.positionSec, 978 + 2 * rate)
-  })
   for (const invalidation of [
     'second-seek',
     'second-core',
@@ -225,5 +217,23 @@ for (const rate of [1, 2]) {
     })
     assert.equal(f.observer.validateResumePosition(capture), false)
     assert.equal(f.capture().proof, null)
+  })
+}
+
+for (const rate of [1, 2]) {
+  test(`U-G06 completed goal yields later current position rate=${rate}`, (t) => {
+    const f = fixture(t, rate)
+    f.key(978)
+    f.video().seeking = false
+    f.video().dispatchEvent(new Event('seeked'))
+    for (let i = 0; i < 2; i++) {
+      f.clock.advance(1000)
+      f.video().currentTime += rate
+      f.video().frames += 30
+      f.observer.controls()
+    }
+    const after = f.capture()
+    assert.equal(after.proof, null)
+    assert.equal(after.positionSec, 978 + 2 * rate)
   })
 }

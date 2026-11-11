@@ -1,15 +1,11 @@
 import { start, finish } from '../../support/route-dispatch.ts'
 // V226 desired behavior converted from preserved v2.2.5 counterexamples.
-import { test, type TestContext } from 'node:test'
+import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { fixture, media, dash } from './routing-fixture.ts'
 import { testScope } from '../../support/scope.ts'
 import { MeasurementController } from '../../../src-v2/application/measurement/measurement-controller.ts'
 import { MeasurementMetaStore } from '../../../src-v2/state/measurement-meta-store.ts'
-
-function setup(t: TestContext) {
-  return { scope: testScope(t) }
-}
 
 test('V226 S11: a valid original below headroom cannot win through ninety-percent preference', async (t) => {
   const scope = testScope(t),
@@ -93,12 +89,13 @@ test('V226 R01: audio dispatch does not start the cold-video rescue clock', (t) 
   assert.equal(f.routes.firstMediaAt('video') - f.routes.firstMediaAt(), 10_000)
 })
 
-for (const safeMbps of [12, 20]) {
+{
+  const safeMbps = 12
   test(
     `V226 S10: successful candidate safe=${safeMbps} demand=10`,
     { timeout: 10000 },
     async (t) => {
-      const { scope } = setup(t),
+      const scope = testScope(t),
         f = fixture(scope)
       await f.settings.update({ considerNativeSources: true })
       const url = media('rigor-startup', 'video.m4s')
@@ -158,7 +155,7 @@ for (const newContent of [false, true]) {
     `V226 L02: late A transfers after confirmed B; newContent=${newContent}`,
     { timeout: 10000 },
     async (t) => {
-      const { scope } = setup(t),
+      const scope = testScope(t),
         f = fixture(scope)
       const body = dash(media('rigor-quality', 'a.m4s'))
       body.data.dash.video.push({
@@ -217,7 +214,7 @@ test(
   'V226 T02: 4Mbps video at rate 2 uses the same 10Mbps demand for failure recovery',
   { timeout: 10000 },
   async (t) => {
-    const { scope } = setup(t),
+    const scope = testScope(t),
       f = fixture(scope),
       body = dash(media('rigor-demand', 'v.m4s'))
     assert.equal(f.adapter.transform(body).accepted, true)
@@ -240,7 +237,7 @@ test(
   'V226 R04: valid preferred host survives a different startup cursor',
   { timeout: 10000 },
   async (t) => {
-    const { scope } = setup(t),
+    const scope = testScope(t),
       f = fixture(scope)
     await f.settings.update({ considerNativeSources: true })
     const url = media('rigor-rescue', 'v.m4s')

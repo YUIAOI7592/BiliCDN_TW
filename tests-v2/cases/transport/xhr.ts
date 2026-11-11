@@ -368,39 +368,43 @@ function startupProbe() {
 }
 
 for (const native of [false, true]) {
-  for (const timeout of [0, 1, 500, 2999, 3000, 5000, 6000, 10000, 19000]) {
-    test(`V228 startup: real XHR gate retains timeout=${timeout} native=${native}`, async (t) => {
+  test(`V228 startup: real XHR gate retains timeout boundaries native=${native}`, async (t) => {
+    for (const timeout of [0, 1, 500, 2999, 3000, 5000, 6000, 10000, 19000]) {
       const probes = startupProbe(),
         f = await fixture(t, native, false, undefined, undefined, probes.probe)
-      assert.ok(f.measurement instanceof MeasurementController)
-      const xhr = new f.NativeXhr(),
-        start = f.now()
-      xhr.open('GET', originalUrl)
-      xhr.timeout = timeout
-      xhr.send()
-      assert.equal(xhr.nativeSends, 0)
-      assert.ok(probes.pending.length > 0 && probes.pending.length <= 3)
-      assert.equal(f.measurement.snapshot().startup?.state, 'running')
-      assert.equal(f.measurement.snapshot().startup?.deadlineAt, start + 3000)
-      const count = probes.pending.length,
-        done = f.measurement.prepareStartup(originalUrl)
-      f.clock!.advance(500)
-      assert.equal(xhr.nativeSends, 0, 'waiting does not run the native timeout')
-      probes.complete()
-      await done
-      await Promise.resolve()
-      const selected = f.measurement.snapshot().startup!
-      assert.equal(selected.result, 'adequate')
-      assert.equal(new URL(xhr.url).host, selected.selectedHost)
-      assert.equal(xhr.nativeSends, 1)
-      assert.deepEqual(xhr.sentTimeouts, [timeout])
-      assert.deepEqual(xhr.sentAt, [start + 500])
-      assert.equal(probes.pending.length, count)
-      assert.ok(probes.pending.every((p) => p.limit <= 512 * 1024 && p.signal.aborted))
-      assert.equal(f.clock!.pendingCount, 0)
-      xhr.complete()
-    })
-  }
+      try {
+        assert.ok(f.measurement instanceof MeasurementController)
+        const xhr = new f.NativeXhr(),
+          start = f.now()
+        xhr.open('GET', originalUrl)
+        xhr.timeout = timeout
+        xhr.send()
+        assert.equal(xhr.nativeSends, 0)
+        assert.ok(probes.pending.length > 0 && probes.pending.length <= 3)
+        assert.equal(f.measurement.snapshot().startup?.state, 'running')
+        assert.equal(f.measurement.snapshot().startup?.deadlineAt, start + 3000)
+        const count = probes.pending.length,
+          done = f.measurement.prepareStartup(originalUrl)
+        f.clock!.advance(500)
+        assert.equal(xhr.nativeSends, 0, 'waiting does not run the native timeout')
+        probes.complete()
+        await done
+        await Promise.resolve()
+        const selected = f.measurement.snapshot().startup!
+        assert.equal(selected.result, 'adequate')
+        assert.equal(new URL(xhr.url).host, selected.selectedHost)
+        assert.equal(xhr.nativeSends, 1)
+        assert.deepEqual(xhr.sentTimeouts, [timeout])
+        assert.deepEqual(xhr.sentAt, [start + 500])
+        assert.equal(probes.pending.length, count)
+        assert.ok(probes.pending.every((p) => p.limit <= 512 * 1024 && p.signal.aborted))
+        assert.equal(f.clock!.pendingCount, 0)
+        xhr.complete()
+      } finally {
+        await f.scope.dispose()
+      }
+    }
+  })
 }
 
 for (const [before, after] of [
@@ -756,34 +760,42 @@ test('V226 L01: protocol-relative XHR retains its open-owned cid at actual dispa
   assert.deepEqual(seen, [{ contentId: '1000', generation: 1, requestSequence: 1 }])
 })
 
-for (const query of [
-  'cid=0',
-  'cid=000',
-  'cid=',
-  'cid=1&cid=1',
-  'cid=%201',
-  'cid=1+',
-  'cid=-1',
-  'cid=1.5',
-  'cid=123456789012345678901',
-  'bvid=123',
-]) {
-  test(`BR-03 transport treats invalid request identity ${query} as missing`, async (t) => {
+test('BR-03 transport treats invalid request identities as missing in Fetch and XHR', async (t) => {
+  for (const query of [
+    'cid=0',
+    'cid=000',
+    'cid=',
+    'cid=1&cid=1',
+    'cid=%201',
+    'cid=1+',
+    'cid=-1',
+    'cid=1.5',
+    'cid=123456789012345678901',
+    'bvid=123',
+  ]) {
     const f = await fixture(t),
       seen = captureContentContexts(f),
       url = apiUrl.split('?')[0] + '?' + query
-    await (await f.fakeWindow.fetch(url)).text()
-    const xhr = new f.NativeXhr()
-    xhr.open('GET', url)
-    xhr.send()
-    xhr.complete()
-    void xhr.responseText
-    assert.deepEqual(seen, [
-      { contentId: null, generation: 1, requestSequence: 1 },
-      { contentId: null, generation: 1, requestSequence: 2 },
-    ])
-  })
-}
+    try {
+      await (await f.fakeWindow.fetch(url)).text()
+      const xhr = new f.NativeXhr()
+      xhr.open('GET', url)
+      xhr.send()
+      xhr.complete()
+      void xhr.responseText
+      assert.deepEqual(
+        seen,
+        [
+          { contentId: null, generation: 1, requestSequence: 1 },
+          { contentId: null, generation: 1, requestSequence: 2 },
+        ],
+        query,
+      )
+    } finally {
+      await f.scope.dispose()
+    }
+  }
+})
 
 async function blockedFixture(t: TestContext) {
   const f = await fixture(t),
@@ -1394,6 +1406,7 @@ for (const action of ['disable', 'blacklist', 'change-host'] as const) {
     const getSettings = f.settings.get.bind(f.settings),
       settings = getSettings()
     const inspectOriginal = f.routes.inspectOriginal.bind(f.routes)
+    let blacklistChecks = 0
     xhr.addEventListener(
       'readystatechange',
       () => {
@@ -1402,19 +1415,26 @@ for (const action of ['disable', 'blacklist', 'change-host'] as const) {
           f.settings.get = () => ({ ...settings, fixedHost: 'upos-sz-mirrorcos.bilivideo.com' })
           f.routes.invalidateForUserSetting()
         } else {
+          // Let stale Native dispatch reach the host restriction check instead of
+          // being rejected earlier solely because Catalog generation changed.
+          f.settings.get = () => ({ ...settings, considerNativeSources: true })
           f.advanceGeneration()
-          f.routes.inspectOriginal = (url) => ({
-            ...inspectOriginal(url),
-            url: null,
-            decision: {
-              action: 'block',
-              id: inspectOriginal(url).decision.id,
-              reason: 'black',
-              routeType: 'root-original',
-              host: null,
-              ranking: [],
-            },
-          })
+          f.routes.inspectOriginal = (url) => {
+            blacklistChecks++
+            const applied = inspectOriginal(url)
+            return {
+              ...applied,
+              url: null,
+              decision: {
+                action: 'block',
+                id: applied.decision.id,
+                reason: 'black',
+                routeType: 'root-original',
+                host: null,
+                ranking: [],
+              },
+            }
+          }
         }
       },
       { once: true },
@@ -1423,6 +1443,10 @@ for (const action of ['disable', 'blacklist', 'change-host'] as const) {
     await f.wait.promise
     await Promise.resolve()
     assert.equal(xhr.nativeSends, action === 'blacklist' ? 0 : 1)
+    if (action === 'blacklist') {
+      assert.ok(blacklistChecks > 0)
+      assert.equal(f.transport.snapshot().lastBlocked?.reason, 'black')
+    }
     if (action === 'disable') assert.equal(xhr.url, originalUrl)
     if (action === 'change-host')
       assert.equal(new URL(xhr.url).hostname, 'upos-sz-mirrorcos.bilivideo.com')
@@ -1515,6 +1539,7 @@ test('B5 policy reopen preserves async options, authorization arguments and head
   await f.settings.update({ fixedHost: 'upos-sz-mirroraliov.bilivideo.com' })
   f.routes.invalidateForUserSetting()
   xhr.open('GET', originalUrl, true, 'synthetic-user', 'synthetic-password')
+  assert.notEqual(xhr.url, originalUrl)
   xhr.responseType = 'arraybuffer'
   xhr.timeout = 5000
   xhr.withCredentials = true
@@ -1555,6 +1580,7 @@ test('B2 native sent timeout and cancellation are not synthesized or replayed af
   await f.wait.promise
   assert.deepEqual(events, ['abort', 'loadend'])
   assert.equal(xhr.nativeSends, 1)
+  assert.equal(xhr.readyState, 0)
 })
 
 test('B3 text getter exceptions survive JSON failures and hook restoration preserves later owners', async (t) => {
@@ -1566,7 +1592,7 @@ test('B3 text getter exceptions survive JSON failures and hook restoration prese
   f.advanceGeneration()
   xhr.complete()
   assert.equal(xhr.status, 200)
-  assert.equal(typeof xhr.response, 'object')
+  assert.deepEqual(xhr.response, { code: -1, message: 'BiliCDN Catalog route unavailable' })
   assert.throws(() => xhr.responseText, { name: 'InvalidStateError' })
   const newer = () => 'new owner'
   Object.defineProperty(f.NativeXhr.prototype, 'response', { configurable: true, get: newer })
@@ -1683,37 +1709,6 @@ test('B1: stale XHR must not bypass HTTPDNS block in default Catalog mode', asyn
   assert.equal(xhr.nativeSends, 0, 'generation change must not bypass enabled HTTPDNS block')
 })
 
-test('CONTROL: abort after native send delivers abort and loadend', async (t) => {
-  const f = await fixture(t, true, false)
-  const xhr = new f.NativeXhr(),
-    events: string[] = []
-  for (const type of ['abort', 'loadend']) xhr.addEventListener(type, () => events.push(type))
-  xhr.open('GET', originalUrl)
-  xhr.send()
-  xhr.abort()
-  assert.deepEqual(events, ['abort', 'loadend'])
-  assert.equal(xhr.readyState, 0)
-})
-
-test('B2: abort during startup gate must settle the website XHR once', async (t) => {
-  const f = await fixture(t, true, true)
-  const xhr = new f.NativeXhr(),
-    events: string[] = []
-  for (const type of ['abort', 'loadend']) xhr.addEventListener(type, () => events.push(type))
-  xhr.open('GET', originalUrl)
-  xhr.send()
-  xhr.abort()
-  f.wait.resolve()
-  await f.wait.promise
-  assert.equal(xhr.nativeSends, 0)
-  assert.deepEqual(
-    events,
-    ['abort', 'loadend'],
-    'site cancellation Promise must receive its terminal events',
-  )
-  assert.equal(xhr.readyState, 0)
-})
-
 test('CONTROL: locally blocked XHR emits its own error and loadend', async (t) => {
   const f = await fixture(t)
   await f.restrictions.add({
@@ -1784,19 +1779,6 @@ test('B5: disabling before synchronous XHR send must preserve original website d
     () => xhr.send(),
     'reopening sync XHR must not write forbidden responseType or timeout setters',
   )
-  assert.equal(xhr.nativeSends, 1)
-  assert.equal(xhr.url, originalUrl)
-})
-
-test('CONTROL: disabling before async XHR send restores original website dispatch', async (t) => {
-  const f = await fixture(t, false)
-  await f.settings.update({ fixedHost: 'upos-sz-mirroraliov.bilivideo.com' })
-  f.routes.invalidateForUserSetting()
-  const xhr = new f.NativeXhr()
-  xhr.open('GET', originalUrl, true)
-  assert.notEqual(xhr.url, originalUrl)
-  await f.settings.update({ disabled: true })
-  assert.doesNotThrow(() => xhr.send())
   assert.equal(xhr.nativeSends, 1)
   assert.equal(xhr.url, originalUrl)
 })

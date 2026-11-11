@@ -182,18 +182,26 @@ for (const rate of [1, 2]) {
   })
   test(`SR2-I10 a new operation in the SDK play getter blocks the stale call rate=${rate}`, (t) => {
     const f = fixture(t, rate, 'none')
-    let called = 0
-    Object.defineProperty(f.site, 'play', {
-      configurable: true,
-      get() {
-        f.pointer()
-        return () => {
-          called++
-          f.video().paused = false
-        }
-      },
-    })
+    let called = 0,
+      reads = 0
+    const setRate = f.site.setPlaybackRate
+    f.site.setPlaybackRate = (value) => {
+      setRate(value)
+      // Install after the tick's observer rebinding, at the actual restore boundary.
+      Object.defineProperty(f.site, 'play', {
+        configurable: true,
+        get() {
+          reads++
+          f.pointer()
+          return () => {
+            called++
+            f.video().paused = false
+          }
+        },
+      })
+    }
     f.tick()
+    assert.ok(reads > 0, 'the SDK play getter must run before cancellation is accepted')
     assert.equal(called, 0)
     assert.equal(f.video().paused, true)
     assert.equal(f.recovery.isRecovering(), false)
@@ -352,8 +360,14 @@ for (const rate of [1, 2]) {
   test(`SR2-I07 pending SDK seek cannot force a native write or survive reset rate=${rate}`, async (t) => {
     const f = fixture(t, rate, 'seek'),
       pending = deferred<void>()
-    f.site.seek = () => pending.promise
+    let started = 0
+    f.site.seek = () => {
+      started++
+      return pending.promise
+    }
     f.tick()
+    assert.equal(started, 1)
+    assert.equal(f.recovery.isRecovering(), true)
     f.advance(1000)
     f.advance(5000)
     assert.deepEqual(f.writes, [])

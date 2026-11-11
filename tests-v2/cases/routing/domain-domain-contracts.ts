@@ -12,10 +12,10 @@ import { TRUSTED_CATALOG } from '../../../src-v2/domain/catalog.ts'
 import { parseMediaUrl, replaceUrlHost } from '../../../src-v2/domain/url-policy.ts'
 
 test('V221 overview demand headroom retains threshold semantics', () => {
-  assert.strictEqual(assessDemandRatio(0.55), 'below-required')
-  assert.strictEqual(assessDemandRatio(1.2), 'meets-headroom') // V227: demand already includes the 25% margin.
-  assert.strictEqual(assessDemandRatio(1.35), 'meets-headroom')
+  assert.strictEqual(assessDemandRatio(0.999), 'below-required')
+  assert.strictEqual(assessDemandRatio(1), 'meets-headroom') // Demand already includes the 25% margin.
   assert.strictEqual(assessDemandRatio(null), 'unknown')
+  assert.strictEqual(assessDemandRatio(NaN), 'unknown')
 })
 
 // Named scenarios create only their prerequisite state; resources belong to this test.
@@ -66,7 +66,7 @@ async function checkOneSampleUses70Percent1(t: TestContext): Promise<void> {
   assert.strictEqual(
     evidenceMetrics(second, base.now + 1).safeThroughputMbps,
     6,
-    'two samples use minimum',
+    'latest low bounds smoothed throughput',
   )
   assert.strictEqual(
     evidenceMetrics(second, base.now + 1).state,
@@ -305,9 +305,10 @@ async function checkColdStartRewritesToCatalogDefault2(t: TestContext): Promise<
     'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/a/b/1.m4s?token=x',
   )
   assert.strictEqual(parsed?.kind, 'normal', 'media URL recognized')
-  assert.ok(
-    replaceUrlHost(parsed?.url.href ?? '', TRUSTED_CATALOG[3])?.includes(TRUSTED_CATALOG[3]),
-    'catalog replacement preserves a valid media URL',
+  assert.strictEqual(
+    replaceUrlHost(parsed?.url.href ?? '', TRUSTED_CATALOG[3]),
+    `https://${TRUSTED_CATALOG[3]}/upgcxcode/a/b/1.m4s?token=x`,
+    'catalog replacement preserves the exact path and query in a valid media URL',
   )
   assert.strictEqual(
     parseMediaUrl('https://1.2.3.4:8080/a.m4s')?.kind,

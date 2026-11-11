@@ -126,41 +126,6 @@ for (const format of ['mp4', 'flv'] as const)
     assert.equal(f.vault.resolve(handle, identity), null)
   })
 
-test('CR-01/02 unchanged progressive source set in a different backup order preserves authority', (t) => {
-  const f = fixture(testScope(t))
-  const root = media('review-A', 'segment.mp4')
-  const b1 = root.replace('upos-hz-mirrorakam.akamaized.net', 'upos-sz-mirrorali.bilivideo.com')
-  const b2 = root.replace('upos-hz-mirrorakam.akamaized.net', 'upos-sz-mirroralib.bilivideo.com')
-  const before = progressive(root)
-  before.data.durl[0]!.backup_url = [b1, b2]
-  assert.equal(f.adapter.transform(before).accepted, true)
-  const identity = f.vault.match(root).context
-  assert.ok(identity)
-  const after = progressive(root)
-  after.data.durl[0]!.backup_url = [b2, b1]
-  assert.equal(f.adapter.transform(after).accepted, true)
-  assert.equal(
-    f.vault.identity(identity.representation),
-    identity,
-    'reordering unchanged backup URLs must not revoke in-flight transfer authority',
-  )
-})
-
-test('CR-01/02 control unchanged progressive source order preserves authority', (t) => {
-  const f = fixture(testScope(t))
-  const root = media('review-A', 'segment.mp4')
-  const backup = root.replace('upos-hz-mirrorakam.akamaized.net', 'upos-sz-mirrorali.bilivideo.com')
-  const before = progressive(root)
-  before.data.durl[0]!.backup_url = [backup]
-  assert.equal(f.adapter.transform(before).accepted, true)
-  const identity = f.vault.match(root).context
-  assert.ok(identity)
-  const after = progressive(root)
-  after.data.durl[0]!.backup_url = [backup]
-  assert.equal(f.adapter.transform(after).accepted, true)
-  assert.equal(f.vault.identity(identity.representation), identity)
-})
-
 for (const changed of [false, true])
   test(`CR-01/02 ${changed ? 'control new signature rejects obsolete' : 'unchanged backup permutation retains in-flight'} completion evidence`, async (t) => {
     const f = fixture(testScope(t))
@@ -197,9 +162,24 @@ for (const changed of [false, true])
       hostChanged: true,
       startedAt: f.clock.now(),
     }
+    if (!changed) {
+      const unchanged = progressive(root)
+      unchanged.data.durl[0]!.backup_url = [b1, b2]
+      assert.equal(f.adapter.transform(unchanged).accepted, true)
+      assert.strictEqual(
+        f.vault.identity(identity.representation),
+        identity,
+        'unchanged source order retains authority',
+      )
+    }
     const after = progressive(changed ? media('review-A', 'segment.mp4', 'renewed') : root)
     after.data.durl[0]!.backup_url = changed ? [] : [b2, b1]
     assert.equal(f.adapter.transform(after).accepted, true)
+    assert.equal(
+      f.vault.identity(identity.representation) === identity,
+      !changed,
+      'only a changed source set revokes authority',
+    )
     await f.routes.observe({
       request,
       generation: identity.generation,

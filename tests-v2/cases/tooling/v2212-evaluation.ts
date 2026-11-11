@@ -26,10 +26,9 @@ test('V2212 optimization model is deterministic with explicit source and input i
   assert.match(a.inputSha256, /^[a-f0-9]{64}$/)
   assert.ok(Object.hasOwn(a.sourceSha256, 'scripts/lib/toolchain.mts'))
   for (const [path, hash] of Object.entries(a.sourceSha256)) {
-    if (path === 'scripts/lib/toolchain.mts')
-      assert.equal(hash, createHash('sha256').update(readFileSync(path)).digest('hex'))
-    else assert.match(path, /^(src-v2\/domain\/|scripts\/evaluation\/)/)
-    assert.match(hash, /^[a-f0-9]{64}$/)
+    if (path !== 'scripts/lib/toolchain.mts')
+      assert.match(path, /^(src-v2\/domain\/|scripts\/evaluation\/)/)
+    assert.equal(hash, createHash('sha256').update(readFileSync(path)).digest('hex'), path)
   }
 })
 
@@ -63,6 +62,16 @@ test('V2212 optimization grid agrees with an independent budget inequality', asy
 
 test('V2212 counterfactuals retain harm, wasted bytes and unknown outcomes without future leakage', async () => {
   const rows = (await evaluateOptimization()).retry.counterfactuals
+  assert.deepEqual(
+    rows.map((row) => row.id),
+    [
+      'sustained-slow',
+      'immediate-recovery',
+      'alternative-collapses',
+      'unknown-alternative',
+      'handoff-unconfirmed',
+    ],
+  )
   for (const row of rows) assert.deepEqual(row.decision, rows[0]!.decision)
   assert.deepEqual(
     rows.slice(0, 3).map((r) => r.savedStallSec),
@@ -89,6 +98,7 @@ test('V2212 VBR traces conserve bytes and media time without multiplying bitrate
   assert.equal(traces.length, 4)
   const expected = [0, 4.1, 4.4, 6.1]
   for (const [i, trace] of traces.entries()) {
+    assert.equal(trace.rows.length, 4)
     assert.ok(Math.abs(trace.stallSec - expected[i]!) < 1e-8)
     assert.equal(trace.downloadedBytes, 12000000)
     for (const row of trace.rows) {

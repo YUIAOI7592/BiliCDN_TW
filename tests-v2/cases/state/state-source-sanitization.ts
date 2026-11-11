@@ -165,73 +165,6 @@ async function checkNativeOnPageHintInitiallyPreservesItsOriginalURL15(
     ),
     'OFF-to-ON-to-OFF transition without intermediate transform cannot reuse unsafe responseKey cache',
   )
-}
-
-async function checkMutatedSameObjectTrustedPayloadIsReSanitizedDespiteAnAlready(
-  t: TestContext,
-): Promise<void> {
-  const base = await createNativeOnPageHintInitiallyPreservesItsOriginalURL15Context13(t)
-
-  await base.reuseSettings.update({ considerNativeSources: false })
-  base.reuseRoutes.invalidateForUserSetting()
-  base.reusePlayurl.transform(base.reusedPagePayload, 'page-hint')
-  void TRUSTED_CATALOG.includes(
-    new URL(base.reusedPagePayload.data.dash.video[0]?.base_url ?? '')
-      .host as (typeof TRUSTED_CATALOG)[number],
-  )
-  await base.reuseSettings.update({ considerNativeSources: true })
-  await base.reuseSettings.update({ considerNativeSources: false })
-  base.reusedPagePayload.data.dash.video[0]!.base_url = base.reusedPageRoot
-  base.reusePlayurl.transform(base.reusedPagePayload, 'page-hint')
-  void TRUSTED_CATALOG.includes(
-    new URL(base.reusedPagePayload.data.dash.video[0]?.base_url ?? '')
-      .host as (typeof TRUSTED_CATALOG)[number],
-  )
-  const mutatedPageRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/reuse/page-mutated.m4s?signature=changed'
-  base.reusedPagePayload.data.dash.video[0]!.base_url = mutatedPageRoot
-  base.reusePlayurl.transform(base.reusedPagePayload, 'page-hint')
-  void TRUSTED_CATALOG.includes(
-    new URL(base.reusedPagePayload.data.dash.video[0]?.base_url ?? '')
-      .host as (typeof TRUSTED_CATALOG)[number],
-  )
-  await base.reuseSettings.update({ considerNativeSources: true })
-  base.reuseRoutes.invalidateForUserSetting()
-  const reusedApiRoot =
-    'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/reuse/api.m4s?signature=api'
-  const reusedApiPayload = {
-    data: {
-      dash: {
-        video: [
-          {
-            id: 64,
-            codecid: 13,
-            height: 720,
-            bandwidth: 1_000_000,
-            base_url: reusedApiRoot,
-            backup_url: [] as string[],
-          },
-        ],
-        audio: [],
-      },
-    },
-  }
-  base.reusePlayurl.transform(reusedApiPayload, 'trusted-api', 'reuse-api-response')
-  await base.reuseSettings.update({ considerNativeSources: false })
-  base.reuseRoutes.invalidateForUserSetting()
-  base.reusePlayurl.transform(reusedApiPayload, 'trusted-api', 'reuse-api-response')
-  void TRUSTED_CATALOG.includes(
-    new URL(reusedApiPayload.data.dash.video[0]?.base_url ?? '')
-      .host as (typeof TRUSTED_CATALOG)[number],
-  )
-  await base.reuseSettings.update({ considerNativeSources: true })
-  await base.reuseSettings.update({ considerNativeSources: false })
-  reusedApiPayload.data.dash.video[0]!.base_url = reusedApiRoot
-  base.reusePlayurl.transform(reusedApiPayload, 'trusted-api', 'reuse-api-response')
-  void TRUSTED_CATALOG.includes(
-    new URL(reusedApiPayload.data.dash.video[0]?.base_url ?? '')
-      .host as (typeof TRUSTED_CATALOG)[number],
-  )
   const mutatedApiRoot =
     'https://upos-hz-mirrorakam.akamaized.net/upgcxcode/reuse/api-mutated.m4s?signature=changed-api'
   reusedApiPayload.data.dash.video[0]!.base_url = mutatedApiRoot
@@ -244,18 +177,24 @@ async function checkMutatedSameObjectTrustedPayloadIsReSanitizedDespiteAnAlready
     ),
     'mutated same-object trusted payload is re-sanitized despite an already-seen responseKey',
   )
+}
+
+async function checkOldPayloadCannotInheritLaterEpoch(t: TestContext): Promise<void> {
+  const scope = testScope(t),
+    now = 2_000_000_000_000,
+    clock = { now: () => now }
   const epochReuseStorage = new FakeStorage(),
-    epochReuseSettings = base.scope.own(new CatalogSettingsStore(epochReuseStorage, () => base.now))
+    epochReuseSettings = scope.own(new CatalogSettingsStore(epochReuseStorage, () => now))
   const epochReuseSession = new SessionStore(),
     epochReuseState = epochReuseSession.beginGeneration(false)
   const epochReuseVault = new SignedRouteVault()
   epochReuseVault.reset(epochReuseState.generation, epochReuseState.epoch)
   const epochReuseRoutes = new RouteCoordinator(
-    base.clock,
+    clock,
     epochReuseSession,
     epochReuseSettings,
-    base.scope.own(new RestrictionStore(epochReuseStorage, () => base.now)),
-    base.scope.own(new EvidenceStore(epochReuseStorage, () => base.now)),
+    scope.own(new RestrictionStore(epochReuseStorage, () => now)),
+    scope.own(new EvidenceStore(epochReuseStorage, () => now)),
     epochReuseVault,
     createRuntimeIds(),
   )
@@ -322,7 +261,7 @@ async function checkMutatedSameObjectTrustedPayloadIsReSanitizedDespiteAnAlready
 }
 
 test(
-  'Native-on page hint initially preserves its original URL [15]',
+  'Native settings changes and same-object mutations re-sanitize cached playurl [15]',
   { timeout: 5000 },
   async (t) => {
     await checkNativeOnPageHintInitiallyPreservesItsOriginalURL15(t)
@@ -330,9 +269,9 @@ test(
 )
 
 test(
-  'mutated same-object trusted payload is re-sanitized despite an already-seen responseKey [16]',
+  'reused old trusted payload cannot inherit a later epoch identity [16]',
   { timeout: 5000 },
   async (t) => {
-    await checkMutatedSameObjectTrustedPayloadIsReSanitizedDespiteAnAlready(t)
+    await checkOldPayloadCannotInheritLaterEpoch(t)
   },
 )

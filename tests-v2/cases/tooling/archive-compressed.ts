@@ -80,7 +80,7 @@ for (const name of [
     const bundle = writePackedArchive(f.root, [[logical, body]], {
       tarEntries: [archiveTarFile(name, body)],
     })
-    await assert.rejects(() => ArchiveStorage.open(f.root, parseArchiveBundles([bundle])))
+    await assert.rejects(() => ArchiveStorage.open(f.root, parseArchiveBundles([bundle])), /Unsafe/)
   })
 
 for (const type of ['1', '2'])

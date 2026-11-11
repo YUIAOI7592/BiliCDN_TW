@@ -151,8 +151,10 @@ test('CR-03 rejected startup probes clean timers and cannot reopen the tab budge
   const payload = media(100),
     url = payload.data.dash.video[0]!.base_url
   f.playurl.transform(payload, 'trusted-api')
+  const pendingBefore = f.clock.pendingCount
   await f.measurement.prepareStartup(url)
   assert.equal(f.measurement.snapshot().startup?.reason, 'preflight-error')
+  assert.equal(f.clock.pendingCount, pendingBefore, 'rejected startup removes its deadline timer')
   const count = probes
   f.measurement.reset()
   await f.measurement.prepareStartup(url)

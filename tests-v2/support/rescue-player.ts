@@ -53,19 +53,5 @@ export function rescuePlayerFixture(t: TestContext, rate: number) {
     const position = recovery.snapshot().savedPositionSec
     return position === undefined ? [] : [position]
   }
-  const trace = (id: string) =>
-    console.log(
-      JSON.stringify({
-        id,
-        rate,
-        saved: saved(),
-        state: recovery.snapshot(),
-        controls: player.controls(),
-        effects: f.effects.map((e) => ({
-          method: e.method,
-          value: typeof e.args[0] === 'number' ? e.args[0] : null,
-        })),
-      }),
-    )
-  return { ...f, player, recovery, tick, advance, healthy, pause, dead, saved, trace }
+  return { ...f, player, recovery, tick, advance, healthy, pause, dead, saved }
 }

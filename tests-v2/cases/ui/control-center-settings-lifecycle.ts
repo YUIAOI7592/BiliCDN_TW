@@ -39,21 +39,6 @@ test('UP141-RETRY retained switch rejects synthetic changes and suppresses off b
   assert.equal(f.toggle('慢請求提前重試'), input)
 })
 
-test('CC39-UI removed controls cannot be reached from any page', (t) => {
-  const f = ui(t)
-  for (const tab of ['總覽', 'CDN', '播放設定']) {
-    f.button(tab).emit('click')
-    const text = f.doc
-      .flatten()
-      .map((e) => e.textContent)
-      .join(' ')
-    assert.doesNotMatch(
-      text,
-      /偏好的影片格式|記錄更多診斷細節|安排測速|安排香港候選|封鎖最近|UP141 測試功能|起播提前放行|健康中段探測|備援家族分散/,
-    )
-  }
-})
-
 test('CC39-UI three tabs separate CDN from three retained settings', async (t) => {
   const f = ui(t)
   assert.ok(f.doc.flatten().some((e) => e.textContent === 'BiliCDN 控制中心'))

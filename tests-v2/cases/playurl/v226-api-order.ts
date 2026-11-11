@@ -118,6 +118,7 @@ test('V226 L01: older same-cid data adds a missing representation without adding
     extra = media('same', 'extra.m4s')
   f.adapter.transform(dash(newer), 'trusted-api', 'api-2', { contentId: '7', requestSequence: 2 })
   const original = f.vault.contextForUrl(newer)!
+  assert.ok(original)
   const payload = dash(older)
   payload.data.dash.video.push({
     ...payload.data.dash.video[0]!,

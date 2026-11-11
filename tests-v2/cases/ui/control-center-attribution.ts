@@ -118,6 +118,11 @@ for (const [label, safe, bandwidth, rate, ratio] of [
     const summary = readSummary(f).textContent
     assert.doesNotMatch(summary, /Infinity|NaN|需求 0\.00 Mbps/)
     if (speedValid) assert.ok(summary.includes('保守吞吐 ' + safe.toFixed(2) + ' Mbps'))
+    else {
+      assert.doesNotMatch(summary, /保守吞吐/)
+      assert.match(summary, /速度樣本不足/)
+    }
+    if (!demandValid) assert.doesNotMatch(summary, /｜需求 .* Mbps｜餘裕 /)
     if (speedValid && !demandValid) assert.match(summary, /尚無有效需求估計/)
   })
 }

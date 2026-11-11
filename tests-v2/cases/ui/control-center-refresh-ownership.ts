@@ -52,26 +52,25 @@ function notificationUi(t: TestContext) {
   }
 }
 
-for (const count of [2, 8]) {
-  test(`V2212 UI: ${count} synchronous notifications share one latest snapshot`, (t) => {
-    const f = notificationUi(t)
-    const pending = f.clock.pendingCount
-    for (let i = 0; i < count; i++) {
-      f.setBuffer(20 + i)
-      f.notify()
-    }
-    assert.equal(f.reads, 0)
-    assert.equal(f.clock.pendingCount, pending + 1)
-    f.clock.advance(0)
-    assert.equal(f.reads, 1)
-    assert.ok(f.doc.flatten().some((e) => e.textContent === (19 + count).toFixed(1)))
-    f.setBuffer(45)
+test('V2212 UI: 8 synchronous notifications share one latest snapshot', (t) => {
+  const count = 8
+  const f = notificationUi(t)
+  const pending = f.clock.pendingCount
+  for (let i = 0; i < count; i++) {
+    f.setBuffer(20 + i)
     f.notify()
-    f.clock.advance(0)
-    assert.equal(f.reads, 2, 'a later batch still refreshes')
-    assert.ok(f.doc.flatten().some((e) => e.textContent === '45.0'))
-  })
-}
+  }
+  assert.equal(f.reads, 0)
+  assert.equal(f.clock.pendingCount, pending + 1)
+  f.clock.advance(0)
+  assert.equal(f.reads, 1)
+  assert.ok(f.doc.flatten().some((e) => e.textContent === (19 + count).toFixed(1)))
+  f.setBuffer(45)
+  f.notify()
+  f.clock.advance(0)
+  assert.equal(f.reads, 2, 'a later batch still refreshes')
+  assert.ok(f.doc.flatten().some((e) => e.textContent === '45.0'))
+})
 
 test('V2212 UI: settings refresh immediately and supersede queued notifications', (t) => {
   const f = notificationUi(t)

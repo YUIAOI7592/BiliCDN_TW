@@ -7,64 +7,10 @@ import { MeasurementMetaStore } from '../../../../src-v2/state/measurement-meta-
 import { deferred } from '../../../support/deferred.ts'
 import { type RangeProbeResult } from '../../../../src-v2/application/measurement/measurement-contracts.ts'
 import { start, finish } from '../../../support/route-dispatch.ts'
-import { SETTINGS_KEY } from '../../../../src-v2/state/settings-store.ts'
 import { TRUSTED_CATALOG } from '../../../../src-v2/domain/catalog.ts'
-for (const native of [false, true])
-  test(`V2218 fixed early release native=${native} legacy=false`, async (t) => {
-    const scope = testScope(t),
-      f = fixture(scope),
-      url = media('v230-early', 'video.m4s')
-    await f.settings.update({ considerNativeSources: native })
-    f.storage.remote(SETTINGS_KEY, {
-      ...f.settings.get(),
-      startupEarlyReleaseEnabled: false,
-      updatedAt: f.clock.now() + 1,
-    })
-    assert.equal(f.adapter.transform(dash(url)).accepted, true)
-    const pending = new Map<string, ReturnType<typeof deferred<RangeProbeResult>>>(),
-      controller = scope.own(
-        new MeasurementController(
-          f.routes,
-          new MeasurementMetaStore(f.storage, f.clock.now),
-          {
-            read: async (input) => {
-              const d = deferred<RangeProbeResult>()
-              pending.set(input.host!, d)
-              return d.promise
-            },
-          },
-          f.clock.now,
-          f.clock,
-          undefined,
-          () => 0,
-          f.settings,
-          f.clock.now,
-        ),
-      )
-    let done = false
-    const gate = controller.prepareStartup(url).then(() => {
-      done = true
-    })
-    assert.equal(pending.size, 3)
-    const first = [...pending.values()][0]!
-    first.resolve({
-      bytes: 262144,
-      elapsedMs: 50,
-      ttfbMs: 1,
-      status: 206,
-      directRange: true,
-      reason: 'measured',
-      timingBasis: 'probe-reader',
-      speedEligible: true,
-    })
-    for (let i = 0; i < 16; i++) await Promise.resolve()
-    assert.equal(done, true)
-    await gate
-    assert.equal(controller.snapshot().startup?.reason, 'qualified-early')
-  })
-
-for (const type of ['root-original', 'native-signed', 'catalog-generated'] as const)
-  test(`V230 first adequate ${type} seals the shared startup window`, async (t) => {
+for (const mode of ['root-original', 'native-signed', 'catalog-generated', 'catalog-only'] as const)
+  test(`V230 first adequate ${mode} seals the shared startup window`, async (t) => {
+    const type = mode === 'catalog-only' ? 'catalog-generated' : mode
     const scope = testScope(t),
       f = fixture(scope),
       url = media('v230-source', 'video.m4s'),
@@ -72,7 +18,7 @@ for (const type of ['root-original', 'native-signed', 'catalog-generated'] as co
       backup = new URL(url)
     backup.hostname = 'upos-sz-mirrorbos.bilivideo.com'
     body.data.dash.video[0]!.backup_url.push(backup.href)
-    await f.settings.update({ considerNativeSources: true })
+    await f.settings.update({ considerNativeSources: mode !== 'catalog-only' })
     assert.equal(f.adapter.transform(body).accepted, true)
     const candidate = f.routes.startupOptions(url)!.candidates.find((c) => c.type === type)
     assert.ok(candidate)
@@ -102,6 +48,8 @@ for (const type of ['root-original', 'native-signed', 'catalog-generated'] as co
     const gate = controller.prepareStartup(url).then(() => {
       done = true
     })
+    assert.equal(pending.size, 3)
+    assert.equal(signals.length, 3)
     pending.get(candidate.host)!.resolve({
       bytes: 262144,
       elapsedMs: 50,
@@ -116,6 +64,7 @@ for (const type of ['root-original', 'native-signed', 'catalog-generated'] as co
     assert.equal(done, true)
     await gate
     assert.equal(controller.snapshot().startup?.selectedHost, candidate.host)
+    assert.equal(controller.snapshot().startup?.reason, 'qualified-early')
     assert.ok(signals.every((s) => s.aborted))
     assert.equal(f.clock.pendingCount, 0)
     const saved = controller.snapshot()

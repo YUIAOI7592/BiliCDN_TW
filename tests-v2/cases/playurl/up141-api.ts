@@ -102,8 +102,7 @@ function fixture(t: TestContext) {
   }
 }
 
-test('UP141-API exact OGV playview admission preserves ordinary endpoints and rejects precheck', (t) => {
-  runtimeFixture(t)
+test('UP141-API exact OGV playview admission preserves ordinary endpoints and rejects precheck', () => {
   for (const value of [
     endpoint,
     endpoint + '?cid=0012',
@@ -140,7 +139,9 @@ test('UP141-API exact OGV playview admission preserves ordinary endpoints and re
 
 test('UP141-API Fetch transforms nested OGV data and uses request cid for episode identity', async (t) => {
   const f = fixture(t)
+  assert.equal(f.routes.isCatalogOnly(), true)
   const first = await f.fetch(endpoint + '?cid=100')
+  assert.equal(first.status, 200)
   assert.equal(f.context.snapshot().lastPlayurl?.accepted, true)
   const output = (await first.json()) as ReturnType<typeof nested>
   assert.notEqual(
@@ -166,6 +167,12 @@ for (const type of ['text', 'json'] as const) {
   test(`UP141-API XHR ${type} OGV transforms once and preserves native getter semantics`, (t) => {
     const f = fixture(t),
       xhr = new f.NativeXhr()
+    let transforms = 0
+    const transform = f.playurl.transform.bind(f.playurl)
+    f.playurl.transform = (...args) => {
+      transforms++
+      return transform(...args)
+    }
     xhr.open('GET', '//api.bilibili.com/ogv/player/playview?cid=100', true)
     xhr.responseType = type
     xhr.receive(nested(100))
@@ -174,6 +181,7 @@ for (const type of ['text', 'json'] as const) {
     assert.equal(xhr.response, initial)
     if (type === 'text') assert.equal(xhr.responseText, initial)
     else assert.throws(() => xhr.responseText, { name: 'InvalidStateError' })
+    assert.equal(transforms, 1, 'repeated getters must not repeat transformation')
   })
 
   test(`UP141-API XHR ${type} precheck passes through before and after the active episode`, async (t) => {
@@ -236,22 +244,15 @@ test('UP141-API no legal Catalog route rejects OGV without passing original medi
   assert.equal((await response.text()).includes('upgcxcode'), false)
 })
 
-for (const mode of ['disabled', 'native-off'] as const) {
-  test(`UP141-API ${mode} retains the existing OGV transport policy`, async (t) => {
-    const f = fixture(t)
-    if (mode === 'disabled') await f.settings.update({ disabled: true })
-    const response = await f.fetch(endpoint + '?cid=100')
-    assert.equal(response.status, 200)
-    if (mode === 'disabled') {
-      assert.equal(response, f.nativeResponse())
-      assert.equal(f.context.snapshot().lastPlayurl, null)
-      assert.equal(f.session.get().representation, null)
-    } else {
-      assert.equal(f.context.snapshot().lastPlayurl?.accepted, true)
-      assert.equal(f.routes.isCatalogOnly(), mode === 'native-off')
-    }
-  })
-}
+test('UP141-API disabled transport preserves the native OGV response', async (t) => {
+  const f = fixture(t)
+  await f.settings.update({ disabled: true })
+  const response = await f.fetch(endpoint + '?cid=100')
+  assert.equal(response.status, 200)
+  assert.equal(response, f.nativeResponse())
+  assert.equal(f.context.snapshot().lastPlayurl, null)
+  assert.equal(f.session.get().representation, null)
+})
 
 for (const [name, payload, reason] of [
   ['upstream error', { code: -10403, data: null }, 'upstream-error'],

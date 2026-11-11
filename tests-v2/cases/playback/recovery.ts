@@ -28,7 +28,7 @@ import { monitorRoutes, monitorMeasurement } from '../../support/controllers.ts'
 
 const rootUrl = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/c/d/2.m4s?k=synthetic'
 
-function recoveryFixture(t: TestContext) {
+function recoveryFixture(t: TestContext, initial: Partial<VideoSnapshot> = {}) {
   const scope = testScope(t),
     clock = scope.own(new FakeClock())
   let video: VideoSnapshot = {
@@ -50,6 +50,7 @@ function recoveryFixture(t: TestContext) {
     mediaError: false,
     coreInitialized: true,
     manifestHasVideo: true,
+    ...initial,
   }
   const effects: { seeks: number[]; rates: number[]; plays: number; reloads: number } = {
     seeks: [],
@@ -87,7 +88,13 @@ function recoveryFixture(t: TestContext) {
   }
   recovery.tick(video)
   recovery.armRouteFailure('route-failure', video)
-  set({ readyState: 0, width: 0, height: 0, coreInitialized: false, playableBufferSec: 0 })
+  set({
+    readyState: 0,
+    width: 0,
+    height: 0,
+    coreInitialized: false,
+    playableBufferSec: initial.playableBufferSec ?? 0,
+  })
   clock.advance(4000)
   recovery.tick(video)
   assert.equal(effects.reloads, 1, 'fixture reached a genuine controller reload')
@@ -105,17 +112,29 @@ function recoveryFixture(t: TestContext) {
 }
 
 test('C-01 control: healthy core recovery restores saved position and user rate', (t) => {
-  const f = recoveryFixture(t)
-  f.set({ readyState: 3, width: 1920, height: 1080, coreInitialized: true })
-  f.tick()
-  assert.deepEqual(f.effects.seeks, [120])
-  assert.deepEqual(f.effects.rates, [1.5])
-  assert.equal(f.effects.plays, 1)
-  assert.equal(f.recovery.snapshot().state, 'waiting')
-  f.set({ currentTime: 121, frames: 130 })
+  const f = recoveryFixture(t, {
+    currentTime: 349.434,
+    playbackRate: 2,
+    effectiveRate: 2,
+    frames: 1000,
+    bufferAheadSec: 30,
+    playableBufferSec: 15,
+    duration: 900,
+  })
   f.clock.advance(1000)
   f.tick()
-  f.set({ currentTime: 122, frames: 160 })
+  assert.equal(f.effects.reloads, 1, 'a still-dead core does not loop reload')
+  f.set({ readyState: 3, width: 1920, height: 1080, coreInitialized: true, frames: 1 })
+  f.clock.advance(1000)
+  f.tick()
+  assert.deepEqual(f.effects.seeks, [349.434])
+  assert.deepEqual(f.effects.rates, [2])
+  assert.equal(f.effects.plays, 1)
+  assert.equal(f.recovery.snapshot().state, 'waiting')
+  f.set({ currentTime: 350.434, frames: 130 })
+  f.clock.advance(1000)
+  f.tick()
+  f.set({ currentTime: 351.434, frames: 160 })
   f.clock.advance(1000)
   f.tick()
   assert.equal(f.recovery.snapshot().state, 'recovered')
@@ -455,8 +474,10 @@ test('C-02 startup and challenge samples deduplicate one work item and preserve 
   assert.equal(second.evidence.get(b.decision.host!, 'video')?.samples.length, 2)
   const startup = second.routes.startupOptions(rootUrl)?.candidates[0]
   assert.ok(startup)
+  const before = second.evidence.get(startup.host, 'video')?.samples.length ?? 0
   await second.routes.recordStartupSuccess(startup, 128 * 1024, 100, 10)
   const count = second.evidence.get(startup.host, 'video')?.samples.length
+  assert.equal(count, before + 1)
   await second.routes.recordStartupSuccess(startup, 128 * 1024, 100, 10)
   assert.equal(second.evidence.get(startup.host, 'video')?.samples.length, count)
 })
@@ -473,6 +494,13 @@ test('C-02 runtime IDs use opaque bounded namespaces for every work kind', () =>
   ]
   assert.equal(new Set(ids).size, ids.length)
   assert.ok(ids.every((id) => id.length <= 64 && /^[rsc]:[0-9a-f]{32}:[0-9a-z]+$/.test(id)))
+  assert.deepEqual(ids, [
+    `r:${'01'.repeat(16)}:1`,
+    `s:${'01'.repeat(16)}:2`,
+    `c:${'01'.repeat(16)}:3`,
+    `r:${'01'.repeat(16)}:4`,
+    `r:${'02'.repeat(16)}:1`,
+  ])
 })
 
 test('C-01 media error on first healthy snapshot prevents all restore side effects', (t) => {

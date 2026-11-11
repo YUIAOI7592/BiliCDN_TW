@@ -3,29 +3,21 @@ import assert from 'node:assert/strict'
 import { PlayerAdapter } from '../../../src-v2/adapters/player/player.ts'
 import { testScope } from '../../support/scope.ts'
 import { FakeClock } from '../../support/clock.ts'
+import { CaptureEventTarget } from '../../support/event-target.ts'
+import { getEventListeners } from 'node:events'
 
-class Target extends EventTarget {
-  readonly listeners = new Map<string, Set<EventListenerOrEventListenerObject | null>>()
+class Target extends CaptureEventTarget {
+  readonly types = new Set<string>()
   override addEventListener(
     type: string,
     listener: EventListenerOrEventListenerObject | null,
     options?: boolean | AddEventListenerOptions,
   ): void {
+    this.types.add(type)
     super.addEventListener(type, listener, options)
-    const entries = this.listeners.get(type) ?? new Set()
-    entries.add(listener)
-    this.listeners.set(type, entries)
-  }
-  override removeEventListener(
-    type: string,
-    listener: EventListenerOrEventListenerObject | null,
-    options?: boolean | EventListenerOptions,
-  ): void {
-    super.removeEventListener(type, listener, options)
-    this.listeners.get(type)?.delete(listener)
   }
   count(): number {
-    return [...this.listeners.values()].reduce((sum, entries) => sum + entries.size, 0)
+    return [...this.types].reduce((sum, type) => sum + getEventListeners(this, type).length, 0)
   }
 }
 
@@ -149,6 +141,7 @@ test('BR-01 adapter marks its own replacement and revokes marker for external re
   assert.equal(f.player.reload(), f.marker)
   const own = f.player.controls()
   assert.notEqual(own.coreId, initial.coreId)
+  assert.equal(own.reloadRevision, initial.reloadRevision + 1)
   assert.equal(own.coreReloadRevision, own.reloadRevision)
   f.site.reload()
   const external = f.player.controls()

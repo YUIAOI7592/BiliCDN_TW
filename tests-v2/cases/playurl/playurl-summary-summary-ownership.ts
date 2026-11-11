@@ -1,163 +1,18 @@
-import { installProgressEvent } from '../../support/progress-event.ts'
-import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
-import { test } from 'node:test'
+import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
-import { type TestContext } from 'node:test'
-import { TransportAdapter } from '../../../src-v2/adapters/transport/transport.ts'
-import { SessionStore } from '../../../src-v2/state/session-store.ts'
-import { testScope } from '../../support/scope.ts'
-import { createSummaryHookPrimitives } from './playurl-summary-resources.ts'
+import { createSummaryTransportResources } from './playurl-summary-resources.ts'
 
-async function createNativeEnabledXHRPreservesRejectedUpstreamPayload5Context4(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const session = new SessionStore()
-  session.beginGeneration(false)
-  const block1 = createSummaryHookPrimitives()
-  const { windowFixture, settings, routes, playurl, measurement, secret, accepted } = block1
-  scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
-  scope.defineGlobal('location', {
-    configurable: true,
-    value: new URL('https://www.bilibili.com/'),
-  })
-  const transport = scope.own(
-    new TransportAdapter(
-      session,
-      settings,
-      routes,
-      playurl,
-      measurement,
-      () => block1.now,
-      createRuntimeIds(),
-      undefined,
-      () => block1.now,
-    ),
-  )
-  transport.install()
-  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
-  void transport.snapshot().lastPlayurl
-  const makeXhr = (type: XMLHttpRequestResponseType, value: unknown = { code: 0 }) => {
-    const xhr = new windowFixture.XMLHttpRequest()
-    xhr.responseType = type
-    xhr.payload = value
-    xhr.open('GET', endpoint)
-    xhr.send()
-    return xhr
-  }
-  block1.body = '{malformed:' + secret
-  void (await windowFixture.fetch(endpoint)).status
-  const malformedXhr = makeXhr('text')
-  malformedXhr.rawText = block1.body
-  block1.body = '{"code":0}'
-  block1.throws = true
-  await windowFixture.fetch(endpoint)
-  block1.throws = false
-  block1.strict = false
-  block1.result = { ...accepted, accepted: false, reason: 'no-legal-route' }
-  block1.body = JSON.stringify({ code: 0, data: { url: secret } })
-  void (await (await windowFixture.fetch(endpoint)).text())
-  const nativeXhr = makeXhr('json', { code: 0, data: { url: secret } })
-  return {
-    accepted,
-    get calls() {
-      return block1.calls
-    },
-    set calls(value: typeof block1.calls) {
-      block1.calls = value
-    },
-    endpoint,
-    makeXhr,
-    nativeXhr,
-    get responseOverride() {
-      return block1.responseOverride
-    },
-    set responseOverride(value: typeof block1.responseOverride) {
-      block1.responseOverride = value
-    },
-    get result() {
-      return block1.result
-    },
-    set result(value: typeof block1.result) {
-      block1.result = value
-    },
-    secret,
-    session,
-    get strict(): boolean {
-      return block1.strict
-    },
-    set strict(value: boolean) {
-      block1.strict = value
-    },
-    transport,
-    windowFixture,
-  }
-}
-
-function createSummaryTransportResources(t: TestContext) {
-  const scope = testScope(t)
-  installProgressEvent(scope)
-  const session = new SessionStore()
-  session.beginGeneration(false)
-  const block1 = createSummaryHookPrimitives()
-  const { windowFixture, settings, routes, playurl, measurement, secret, accepted } = block1
-  scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
-  scope.defineGlobal('location', {
-    configurable: true,
-    value: new URL('https://www.bilibili.com/'),
-  })
-  const transport = scope.own(
-    new TransportAdapter(
-      session,
-      settings,
-      routes,
-      playurl,
-      measurement,
-      () => block1.now,
-      createRuntimeIds(),
-      undefined,
-      () => block1.now,
-    ),
-  )
-  transport.install()
-  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl?token=summary-secret'
-  return { block1, transport, endpoint, accepted, secret, windowFixture }
-}
-
-async function createNonFinitePlayurlSummaryCountsContext5(t: TestContext) {
-  const { block1, transport, endpoint, accepted, secret, windowFixture } =
-    createSummaryTransportResources(t)
-  block1.result = {
-    ...accepted,
+async function checkNonFinitePlayurlSummaryCountsAreNormalized6(t: TestContext): Promise<void> {
+  const base = createSummaryTransportResources(t)
+  base.block1.result = {
+    ...base.accepted,
     videoCount: Infinity,
     audioCount: -1,
     segmentCount: 1_000_000,
     upstreamCode: Infinity,
     formats: ['dash', 'dash', 'mp4', 'flv', 'mp4'],
   }
-  await windowFixture.fetch(endpoint)
-  return {
-    accepted,
-    endpoint,
-    get now() {
-      return block1.now
-    },
-    set now(value: typeof block1.now) {
-      block1.now = value
-    },
-    get result() {
-      return block1.result
-    },
-    set result(value: typeof block1.result) {
-      block1.result = value
-    },
-    secret,
-    transport,
-    windowFixture,
-  }
-}
-
-async function checkNonFinitePlayurlSummaryCountsAreNormalized6(t: TestContext): Promise<void> {
-  const base = await createNonFinitePlayurlSummaryCountsContext5(t)
+  await base.windowFixture.fetch(base.endpoint)
 
   assert.strictEqual(
     base.transport.snapshot().lastPlayurl?.videoCount,
@@ -190,11 +45,11 @@ async function checkNonFinitePlayurlSummaryCountsAreNormalized6(t: TestContext):
     token: 'summary-secret',
     payload: { raw: base.secret },
   }
-  base.result = augmented
-  base.now++
+  base.block1.result = augmented
+  base.block1.now++
   await base.windowFixture.fetch(base.endpoint)
   const safe = base.transport.snapshot().lastPlayurl
-  assert.strictEqual(safe?.observedAt, base.now, 'recent summary reflects observation time')
+  assert.strictEqual(safe?.observedAt, base.block1.now, 'recent summary reflects observation time')
   assert.ok(
     !JSON.stringify(base.transport.snapshot()).includes('summary-secret'),
     'summary copies only safe fields from result',
@@ -220,17 +75,20 @@ async function checkDisabledTransportPreservesTheRecentPlayurlSummary7(
 async function checkNativeEnabledXHRPreservesRejectedUpstreamPayload5(
   t: TestContext,
 ): Promise<void> {
-  const base = await createNativeEnabledXHRPreservesRejectedUpstreamPayload5Context4(t)
+  const base = createSummaryTransportResources(t)
+  base.block1.strict = false
+  base.block1.result = { ...base.accepted, accepted: false, reason: 'no-legal-route' }
+  const nativeXhr = base.makeXhr('json', { code: 0, data: { url: base.secret } })
 
   assert.ok(
-    JSON.stringify(base.nativeXhr.response).includes('summary-secret'),
+    JSON.stringify(nativeXhr.response).includes('summary-secret'),
     'Native-enabled XHR preserves rejected upstream payload',
   )
   assert.ok(
     base.transport.snapshot().lastPlayurl?.accepted === false,
     'pass-through rejection remains visible as unaccepted',
   )
-  base.strict = true
+  base.block1.strict = true
   const stale = base.makeXhr('text', { data: { url: base.secret } })
   base.session.beginGeneration(false)
   assert.ok(!stale.responseText.includes('summary-secret'), 'old-generation XHR remains blocked')
@@ -240,7 +98,7 @@ async function checkNativeEnabledXHRPreservesRejectedUpstreamPayload5(
     'stale response summary does not claim acceptance',
   )
   let releaseBody = (): void => {}
-  base.responseOverride = new Response(
+  base.block1.responseOverride = new Response(
     new ReadableStream<Uint8Array>({
       start(controller) {
         releaseBody = () => {
@@ -251,9 +109,9 @@ async function checkNativeEnabledXHRPreservesRejectedUpstreamPayload5(
     }),
     { status: 201 },
   )
-  base.result = base.accepted
+  base.block1.result = base.accepted
   const pending = base.windowFixture.fetch(base.endpoint),
-    beforeStale = base.calls
+    beforeStale = base.block1.calls
   base.session.beginGeneration(false)
   releaseBody()
   assert.strictEqual(
@@ -261,7 +119,11 @@ async function checkNativeEnabledXHRPreservesRejectedUpstreamPayload5(
     503,
     'late Fetch playurl response cannot use old generation acceptance',
   )
-  assert.strictEqual(base.calls, beforeStale, 'old-generation Fetch response is not transformed')
+  assert.strictEqual(
+    base.block1.calls,
+    beforeStale,
+    'old-generation Fetch response is not transformed',
+  )
   assert.strictEqual(
     base.transport.snapshot().lastPlayurl?.reason,
     'inactive',

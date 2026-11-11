@@ -7,11 +7,21 @@ test('V227 evaluation: frozen evidence and delivery produce reproducible finite 
     second = await evaluateRouting()
   assert.deepEqual(first, second)
   assert.equal(first.baselineRevision, '048b0f94e6bb98922ee5bcc0d1b30003cf3b12a9')
-  assert.ok(first.scenarios.length >= 8)
+  assert.equal(first.scenarios.length, 10)
   for (const row of first.scenarios)
     for (const metrics of [row.baseline, row.current]) {
-      for (const value of Object.values(metrics))
-        if (typeof value === 'number') assert.ok(Number.isFinite(value) && value >= 0)
+      for (const key of [
+        'startupMs',
+        'stallMs',
+        'switches',
+        'downloadBytes',
+        'probeCount',
+        'probeBytes',
+        'reloadCount',
+      ] as const) {
+        const value = metrics[key]
+        assert.ok(Number.isFinite(value) && value >= 0, `${row.id}: ${key}`)
+      }
       assert.ok(metrics.probeCount <= 3)
       assert.ok(metrics.probeBytes <= 3 * 192 * 1024)
       assert.equal(metrics.reloadCount, 0)

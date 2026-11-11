@@ -6,8 +6,8 @@ import { type TransportObservation } from '../../../src-v2/domain/transport-mode
 import { fixture, media } from '../routing/routing-fixture.ts'
 import { testScope } from '../../support/scope.ts'
 import { start } from '../../support/route-dispatch.ts'
-for (const status of [400, 404, 408, 410, 429]) {
-  test(`V226 T03: Catalog ${status} is an explicit bounded resource result`, () => {
+test('V226 T03: Catalog resource-status table classifies failure and abort distinctly', () => {
+  for (const status of [400, 404, 408, 410, 429]) {
     const observation: TransportObservation = {
       generation: generationId(1),
       epoch: epochId(1),
@@ -29,10 +29,11 @@ for (const status of [400, 404, 408, 410, 429]) {
     assert.equal(
       classifyTransportResult(observation).type,
       [404, 410].includes(status) ? 'catalog-resource-missing' : 'request-rejected',
+      `status=${status}`,
     )
     assert.equal(classifyTransportResult({ ...observation, outcome: 'abort' }).type, 'ignore')
-  })
-}
+  }
+})
 
 for (const status of [404, 410, 429])
   test(`V226 T03: resource status ${status} cannot kill an unrelated resource on the same host`, async (t) => {

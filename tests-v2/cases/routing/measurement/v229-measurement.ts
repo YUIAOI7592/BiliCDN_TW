@@ -174,8 +174,11 @@ test('V229 playback invalidation owns media listeners without granting a user op
   const before = player.controls().userRevision
   for (const type of ['pause', 'play', 'ratechange', 'seeking', 'emptied', 'ended']) {
     const n = player.playbackRevision()
+    const count = revisions.length
     video.dispatchEvent(new Event(type))
     assert.ok(player.playbackRevision() > n)
+    assert.equal(revisions.length, count + 1, `${type} notifies its observer once`)
+    assert.equal(revisions.at(-1), player.playbackRevision())
   }
   assert.equal(
     player.controls().userRevision,
@@ -184,6 +187,8 @@ test('V229 playback invalidation owns media listeners without granting a user op
   )
   stop()
   const count = revisions.length
+  video.dispatchEvent(new Event('pause'))
+  assert.equal(revisions.length, count, 'unsubscribe alone stops delivery')
   player.reset()
   video.dispatchEvent(new Event('pause'))
   assert.equal(revisions.length, count)

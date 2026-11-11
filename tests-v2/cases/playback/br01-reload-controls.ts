@@ -5,17 +5,18 @@ import { type PlayerPort } from '../../../src-v2/application/playback/player-con
 import { FakeClock } from '../../support/clock.ts'
 import { testScope } from '../../support/scope.ts'
 import { deferred } from '../../support/deferred.ts'
+import { CaptureEventTarget } from '../../support/event-target.ts'
 
 // Node models the browser dispatch boundary; Chrome separately proves trusted
 // BODY Space changes paused during keydown. Native media getters remain intact.
 function fixture(t: TestContext) {
   const scope = testScope(t),
     clock = scope.own(new FakeClock())
-  const document = new EventTarget(),
-    window = new EventTarget()
+  const document = new CaptureEventTarget(),
+    window = new CaptureEventTarget()
   let visible = true,
     lifecycle = '1:0'
-  class ElementBoundary extends EventTarget {
+  class ElementBoundary extends CaptureEventTarget {
     parentElement: ElementBoundary | null = null
     tagName = 'DIV'
     role = ''
@@ -291,7 +292,7 @@ for (const key of ['ArrowUp', 'ArrowDown']) {
     const f = fixture(t),
       revision = f.player.controls().userRevision
     f.key(key)
-    assert.notEqual(f.video.playbackRate, 1)
+    assert.equal(f.video.playbackRate, key === 'ArrowUp' ? 1.25 : 0.75)
     assert.equal(f.player.controls().userRevision, revision + 1)
   })
 }
@@ -522,6 +523,7 @@ for (const invalidation of [
     const revision = f.player.controls().reloadRevision
     f.replaceCore()
     f.player.controls()
+    assert.equal(f.owned(revision), true, 'the first replacement has a live reload proof')
     if (invalidation === 'second-core') f.replaceCore()
     if (invalidation === 'external-reload') f.site.reload()
     if (invalidation === 'media') f.replaceVideo()

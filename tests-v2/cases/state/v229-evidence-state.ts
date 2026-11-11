@@ -11,7 +11,7 @@ for (const basis of [
   'invalid',
   undefined,
 ] as const)
-  test(`V229 evidence timing basis round trip: ${basis ?? 'legacy'}`, async (t) => {
+  test(`V229 evidence timing basis parsing preserves stored payload: ${basis ?? 'legacy'}`, (t) => {
     const scope = testScope(t),
       storage = new FakeStorage(),
       now = 2000000000000

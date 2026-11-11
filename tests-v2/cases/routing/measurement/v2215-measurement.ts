@@ -68,8 +68,10 @@ test('V2215 startup evaluation breaks equal results by original candidate order 
     safePayloadMbps: null,
     predictionTtfbMs: null,
   }))
-  const ranked = rankStartupResults(rows, [second, first], null, 1000)
-  assert.strictEqual(ranked.ranked[0], first)
+  const qualified = [second, first],
+    before = structuredClone({ rows, qualified }),
+    ranked = rankStartupResults(rows, qualified, null, 1000)
+  assert.deepEqual(ranked.ranked, [first, second])
   assert.strictEqual(ranked.fastestValid, first.candidate)
-  assert.strictEqual(rows[0]!.result, second)
+  assert.deepEqual({ rows, qualified }, before)
 })

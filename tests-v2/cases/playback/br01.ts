@@ -37,7 +37,13 @@ function fixture(t: TestContext) {
     coreInitialized: true,
     manifestHasVideo: true,
   }
-  const effects = { fallbacks: 0, reloads: 0, seeks: [] as number[], plays: 0 }
+  const effects = {
+    fallbacks: 0,
+    reloads: 0,
+    seeks: [] as number[],
+    rates: [] as number[],
+    plays: 0,
+  }
   let controls = idleControls(),
     visible = true,
     disabled = false,
@@ -63,7 +69,9 @@ function fixture(t: TestContext) {
       effects.seeks.push(value)
       onSeek()
     },
-    setRate() {},
+    setRate(value: number) {
+      effects.rates.push(value)
+    },
     play() {
       effects.plays++
       return onPlay()
@@ -284,6 +292,7 @@ test('BR-01 synchronous user input during restore prevents rate/play side effect
   f.onSeek(() => f.controls({ userRevision: 2, seekRevision: 2 }))
   f.set({ seeking: false, readyState: 3 })
   f.monitor.tick()
+  assert.deepEqual(f.effects.rates, [])
   assert.equal(f.effects.plays, 0)
   assert.equal(f.recovery.isRecovering(), false)
 })
@@ -296,11 +305,13 @@ test('BR-01 external core replacement invalidates a pending restore', (t) => {
   assert.deepEqual(f.effects.seeks, [])
   assert.equal(f.effects.plays, 0)
 })
-test('BR-01 pause or disable after reload cannot replay old intent', (t) => {
+test('BR-01 pause followed by disable after reload cannot replay old intent', (t) => {
   const f = longSeek(t)
   f.ticks(30)
   f.set({ paused: true })
   f.monitor.tick()
+  assert.equal(f.recovery.isRecovering(), false)
+  assert.equal(f.recovery.snapshot().reason, 'ownership-ended')
   f.disabled(true)
   f.set({ paused: false, seeking: false, readyState: 4 })
   f.ticks(30)
@@ -316,6 +327,7 @@ test('BR-01 a marked replacement from this reload can restore once', (t) => {
   f.set({ seeking: false, readyState: 3 })
   f.monitor.tick()
   assert.deepEqual(f.effects.seeks, [978])
+  assert.deepEqual(f.effects.rates, [2])
   assert.equal(f.effects.plays, 1)
 })
 
@@ -378,6 +390,7 @@ test('BR-01 rate command during reload invalidates the saved speed', (t) => {
   f.set({ seeking: false, readyState: 3, playbackRate: 1 })
   f.monitor.tick()
   assert.deepEqual(f.effects.seeks, [])
+  assert.deepEqual(f.effects.rates, [])
   assert.equal(f.effects.plays, 0)
 })
 test('BR-01 missing legal authority fails explicitly and does not report health', (t) => {
@@ -467,8 +480,11 @@ test('BR-01 B: initialized stalled core must release recovery intent', (t) => {
   const f = fixture(t)
   f.set({ readyState: 1, playableBufferSec: 0, bufferAheadSec: 0 })
   f.recovery.armRouteFailure('route-failure', f.video())
+  assert.equal(f.recovery.isRecovering(), true)
   f.ticks(300)
   assert.equal(f.recovery.isRecovering(), false)
+  assert.equal(f.effects.reloads, 1)
+  assert.equal(f.recovery.snapshot().reason, 'reload-timeout')
 })
 test('BR-01 C: retained dimensions after interrupted seek do not prove recovery', (t) => {
   const f = fixture(t)
