@@ -65,6 +65,7 @@ export async function build({ write = true }: BuildOptions = {}) {
     .filter((path) => path.startsWith('src-v2/'))
     .sort()
   for (const path of [
+    'src-v2/metadata.txt',
     'scripts/build.mts',
     'scripts/lib/lib.mts',
     'scripts/lib/toolchain.mts',

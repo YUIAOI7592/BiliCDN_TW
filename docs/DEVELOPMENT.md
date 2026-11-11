@@ -156,7 +156,7 @@ npm run verify        # 自動檢查及暫存封裝驗證
 
 [verify.mts](../scripts/verify.mts) 檢查 Node 必要能力、唯讀格式、公開封存、文件、typecheck、來源架構、全部測試、兩次建置的輸出／資訊清單一致性、JavaScript 語法、指定舊版／Worker 標記清單、必要儲存標記及封裝 SHA-256。封裝步驟會再建置一次。命令寫入 `dist/`，於新的 `dist/verify-package-*` 目錄封裝，確認解析後位置及前綴再刪除該目錄；不寫入 `Release/v<version>/`。
 
-verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安全敏感變更或使用者明確要求時，另行執行安全差異掃描；不要求每版掃描。上一版通過報告不能作為新本機變更的證據。
+verify CLI 以失敗套件、階段及原因摘要呈現彙總錯誤，退出碼仍為 1；不再次傾印附帶的完整測試 outcome。verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安全敏感變更或使用者明確要求時，另行執行安全差異掃描；不要求每版掃描。上一版通過報告不能作為新本機變更的證據。
 
 UP141／CC39 契約依能力分開：npm test -- application --name CC39、npm test -- control-center --name CC39，另保留 UP141-API／START／PROBE／ROUTE／RETRY 回歸。總覽吞吐、起播等待、探測及播放入口摘要由 `control-center` 套件的現行案例驗證，只讀功能狀態，不要求診斷歷程或報告。新版六個設定與 HK 預設開啟、明確 false 保留；codec／verbose／手動及定向能力完整移除。先紅色契約再執行期修改，離線效用與必要安全掃描獨立於 verify。舊操作表僅適用 v2.1.38，不是新版入口或續跑授權。
 
@@ -301,7 +301,7 @@ metadata.txt 的 `@version` 使用唯一的 `__VERSION__` 占位符，由 releas
 - `BUILD_MANIFEST_v<version>.json`
 - `SHA256SUMS_v<version>.txt`
 
-[package.mts](../scripts/package.mts) 覆寫這些具名檔案，不清空既有 Release 目錄。校驗值清單納入該目錄已存在的全部檔案，校驗值本身除外。封裝前檢查目標目錄；不得為了驗證已發布版本而執行此命令。暫存封裝驗證使用 `npm run verify`。
+[package.mts](../scripts/package.mts) 在建置前拒絕非空目標目錄，五項產物以獨占建立寫入；不提供覆寫選項。只接受新目錄或既有空目錄，失敗保留當時內容供核對，不自動清除既存資料。不得為了驗證已發布版本而執行此命令；暫存封裝驗證使用 `npm run verify`。
 
 依 [AGENTS 發行規則](../AGENTS.md#發行規則)，本專案功能修復完成並通過必要自動及安全驗證後，預設自主提交、遞增修補版本、封裝、推送 main／標籤及發布 GitHub Release，不再等待使用者重複要求；當次明確限定只調查、文件整理或保留本機修改時遵守該範圍。完成後核對公開 latest 更新的版本、大小與 SHA-256。不得加入修補、CI/CD 或 GitHub Actions。本機封裝不等於發布。GitHub Release 附件只有使用者腳本，更新 URL 保持指向本儲存庫最新 Release。發布前執行 `npm run typecheck`、`npm run architecture`、`npm test`、`npm run verify` 及必要安全驗證。內建瀏覽器／Tampermonkey 驗收另行記錄，未執行的瀏覽器檢查不得寫成通過。
 

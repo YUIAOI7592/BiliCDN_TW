@@ -8,7 +8,7 @@ import { checkDocumentation } from './checks/docs-check.mts'
 import { checkArchive } from './checks/archive-check.mts'
 import { checkProjectConfiguration } from './checks/project-config.mts'
 import { packageRelease } from './package.mts'
-import { command, readRelease, sha256 } from './lib/lib.mts'
+import { command, readRelease, sha256, errorMessage } from './lib/lib.mts'
 import { assertRuntimeCapabilities } from './lib/toolchain.mts'
 
 export async function verify() {
@@ -96,4 +96,13 @@ export async function verify() {
   )
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/verify.mts')) await verify()
+if (process.argv[1] && resolve(process.argv[1]) === resolve('scripts/verify.mts')) {
+  try {
+    await verify()
+  } catch (error) {
+    console.error(errorMessage(error))
+    if (error instanceof AggregateError)
+      for (const cause of error.errors) console.error(errorMessage(cause))
+    process.exitCode = 1
+  }
+}
