@@ -1570,3 +1570,5 @@ TODO 將功能問題、政策／程式優化及驗收證據缺口分開，更新
 ## 2026-11-11：v2.2.18 簡化與交付文件
 
 更新 README、ARCHITECTURE、DEVELOPMENT 的原政策／工作流程章節，工作與本輪有界驗收集中 TODO，實際結果集中 TEST_REPORT。SECURITY 釐清退役欄位不形成授權；測試對照記入 MIGRATION 與 TEST_TOOLING_REPORT。v2.2.17 完整報告含 R1／R2 原樣追加 TEST_REPORT_HISTORY，原錨點保留導引；五份 Release 原件壓縮並獨立還原核對，原始雜湊不變。沒有回寫歷史 FAIL／INVALID、安全原件或已發布快照。
+
+本輪交付結案：v2.2.18 正式 Release 與公開下載已核對；IAB 一次公開更新嘗試後仍載入舊版，依原範圍停止並清理，未宣稱新版安裝通過。十一件本機證據完成壓縮、獨立還原、逐位元組及既有本機封存核對；.work 散件與還原副本清除。後續只更新現行驗證報告、TODO 與封存索引，不回寫 Release 原件或重啟舊窗口。

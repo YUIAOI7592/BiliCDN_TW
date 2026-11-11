@@ -53,13 +53,19 @@ RecoveryController 明確區分 waiting／prepared／submitted，還原以位置
 
 ## 來源隔離與實際安裝
 
-封裝前尚未啟動本輪 IAB／Tampermonkey 安裝驗收；自動結果不能替代實機。發布後只在 TODO 凍結的新有界範圍執行，不恢復歷史窗口。舊 v2.2.17 R1／R2 原文與所有 FAIL／INVALID 保存在下方歷史入口。
+本輪依 TODO 凍結範圍，23:52:45（Asia/Taipei）起算，總上限十五分鐘、最後三分鐘只清理；23:54:50 前結束。唯一自有 IAB 分頁先開公開 latest 更新入口，抵達 Tampermonkey 安裝中繼頁；同分頁新載入 BV1tFZZBQE57／P1／Auto 後，Debugger 讀到的完整 userscript 來源仍含 @version 2.2.17。因此新版安裝身分前提未成立，L0 窗口列 INVALID，S1 新版設定頁未執行；不能算產品功能失敗或新版通過。沒有驗證新版本的完整本體相等、GM_info、singleton 或 hooks。
+
+頁面起播後立即將真正 video 靜音並讀回，稍後暫停；清理前 muted=true、paused=true。Debugger／Runtime 停用，自有分頁關閉並核對為零，Z0 通過。沒有設定寫入、故障注入、訂閱或採樣計時器，也沒有開新播放窗口。第一次跨導覽 scriptParsed 游標有截斷；其後只重新啟用 Debugger 枚舉已載入腳本，第二次清單無截斷，沒有刷新產品或重跑驗收。
+
+公開更新入口已嘗試但未完成安裝更新；需先在 Tampermonkey 完成新版更新，之後若另獲驗收授權，再建立新有界窗口。本輪至此結案，不自動補跑。來源隔離、提前重試介入與實際播放效益未新增驗證；舊 v2.2.17 R1／R2 原文與所有 FAIL／INVALID 保存在下方歷史入口。
 
 ## 公開交付與安裝結案
 
 v2.2.17 五份 Release 原件已與固定基準逐位元組相符，完成 TAR＋gzip、獨立解壓與原始雜湊核對。上一版完整報告（含 R1／R2）原樣追加至歷史；既有封存內容保持。
 
-公開封存 524 個搬移項目、三份追加日誌與完整六個公開壓縮包的系統 tar 獨立還原及 --restore-root 核對通過。此刻尚未包含公開下載核對或本輪安裝結果；封裝快照保留封裝當時文字。發布後只更新現行報告，不回寫 Release 原件或移動版本標籤。
+公開封存 524 個搬移項目、三份追加日誌與完整六個公開壓縮包的系統 tar 獨立還原及 --restore-root 核對通過。23:52:45 公開核對：發行 main 與 v2.2.18 標籤解參照均為 c2ce4f5b37f3f736d256dbe3160c3a8ee10562cd；[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.18) 非草稿／預覽版且為 latest，唯一附件 BiliCDN_TW.user.js。版本下載與既有精確 latest 網址均 GET／HTTP 200、@version 2.2.18、543,678 bytes、SHA-256 bb50cce1420c120066f1b7366d039604e97bc04a8d6867f8cdb7d6c8f8f2cf33，與本機、可重現建置及 GitHub asset digest 一致。
+
+封裝快照保留封裝當時文字；後續只更新現行報告，不回寫 Release 原件或移動版本標籤。本機原有 9,480 件加本輪十一件證據，共 9,491 件封存核對通過。本輪測試、軌跡對照、公開下載與安裝限制原件由系統 tar 獨立還原，再經 ArchiveStorage 及逐位元組核對；散件與還原副本清除，.work 回到空目錄。安全 canonical 原件留在 Codex Security 管理的持久掃描目錄。結案文件檢查通過 301 份 Markdown／5,033 個本機或儲存庫連結；歷史斷鏈與未核對外部連結仍依原分類保留。
 
 <a name="v2217-r1-採樣與抑制專項2026-11-11"></a>
 
