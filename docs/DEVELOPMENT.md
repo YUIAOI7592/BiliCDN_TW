@@ -170,7 +170,7 @@ v2.2.12 的 `--optimization` 補充模式、提前重試資格對照及私有取
 
 `archive:check` 的公開模式納入 verify，核對公開壓縮包、原件、歷史閱讀版 URL 編輯、三份日誌及當前 Release；公開封存檢查不要求 Git 或私有資料。`--local` 額外核對私有包、原位保留檔與本輪已保存的重建證明，需要 Git 追蹤／忽略狀態。`--restore-root` 逐檔唯讀核對已解壓的 payload 與包內清單；結果仍使用 schemaVersion 1，另列 packedFiles、reconstructedFiles、reconstructedChecksumTargets 及 restoreChecked，重建證明與新讀到的原件不混稱。退出碼仍為 0／1／2；檢查器不解壓、刪除或改寫資料。
 
-封存清單 schema 2 以 bundles 登記壓縮檔大小／SHA-256、TAR 輸出大小、包內索引及各成員原件證明；邏輯路徑保持，位置改為實體檔或包成員。原 schema 1 與舊清單原件仍可核對；原本 `archive/retired/releases/Release/`、`originals/` 及日期私有目錄可只存在於清單與還原內容中。新私有索引的原始雜湊由公開清單固定，`--local` 先核對該證明再解析，不能改回 schema 1 略過壓縮成員；預設公開模式不讀私有索引或檔名。跨輪整理先保存舊清單，歷史刪除表不當成永久新增的資料保留義務。
+封存清單 schema 2 以 bundles 登記壓縮檔大小／SHA-256、TAR 輸出大小、包內索引及各成員原件證明；邏輯路徑保持，位置改為實體檔或包成員。原 schema 1 與舊清單原件仍可核對；原本 `archive/retired/releases/Release/`、`originals/` 及日期私有目錄可只存在於清單與還原內容中。公開 schema 2 清單以 `localManifestProof` 固定主私有清單 `localManifest` 的大小與 SHA-256；`--local` 先核對該證明再解析，且不允許主私有清單降回 schema 1。額外輪次清單由 `additionalLocalManifests` 登記路徑，依各自 schema 核對內容；目前不逐份提供上述公開雜湊證明或同一降級限制。預設公開模式不讀私有索引或檔名。跨輪整理先保存舊清單，歷史刪除表不當成永久新增的資料保留義務。
 
 ### 壓縮、清理與還原
 
