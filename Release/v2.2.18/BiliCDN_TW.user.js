@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili CDN 台灣優化
 // @namespace    BiliCDN_TW
-// @version      2.2.17
+// @version      2.2.18
 // @description  台灣 CDN 與播放整合：自動選路、香港節點、起播與健康量測、慢請求重試及三頁控制中心
 // @author       jiyunshi <chocosensei214@gmail.com>
 // @license      MIT
@@ -979,7 +979,7 @@
   }
   __name(sameRouteSettings, "sameRouteSettings");
   function sameMeasurementSettings(a, b) {
-    return sameRouteSettings(a, b) && a.disabled === b.disabled && a.startupEarlyReleaseEnabled === b.startupEarlyReleaseEnabled && a.healthMiddleRangeEnabled === b.healthMiddleRangeEnabled;
+    return sameRouteSettings(a, b) && a.disabled === b.disabled;
   }
   __name(sameMeasurementSettings, "sameMeasurementSettings");
 
@@ -1780,9 +1780,6 @@
     disabled: false,
     considerNativeSources: true,
     earlyRetryEnabled: true,
-    startupEarlyReleaseEnabled: true,
-    healthMiddleRangeEnabled: true,
-    backupFamilyDiversityEnabled: true,
     blockWebRtc: true,
     blockHttpDns: true
   });
@@ -1792,13 +1789,7 @@
       return [key, typeof value === "boolean" ? value : fallback];
     })
   ), "booleanSettings");
-  var SUPPRESSED_SETTINGS = [
-    "startupEarlyReleaseEnabled",
-    "healthMiddleRangeEnabled",
-    "backupFamilyDiversityEnabled",
-    "earlyRetryEnabled",
-    "considerNativeSources"
-  ];
+  var SUPPRESSED_SETTINGS = ["earlyRetryEnabled", "considerNativeSources"];
   var defaultSettings = /* @__PURE__ */ __name((now) => Object.freeze({
     schema: 2,
     ...BOOLEAN_DEFAULTS,
@@ -1843,9 +1834,6 @@
       __name(this, "SettingsStore");
     }
     #pendingOff = {
-      startupEarlyReleaseEnabled: 0,
-      healthMiddleRangeEnabled: 0,
-      backupFamilyDiversityEnabled: 0,
       earlyRetryEnabled: 0,
       considerNativeSources: 0
     };
@@ -1886,9 +1874,6 @@
       return () => this.#listeners.delete(listener);
     }
     async update(change) {
-      const releaseAutomation = this.#holdOff(
-        SUPPRESSED_SETTINGS.slice(0, 3).filter((key) => change[key] === false)
-      );
       const releaseEarlyRetry = this.#holdOff(
         change.earlyRetryEnabled === false ? ["earlyRetryEnabled"] : []
       );
@@ -1902,7 +1887,6 @@
           return this.#publish(this.#save({ ...current, ...change }, current, now));
         });
       } finally {
-        releaseAutomation();
         releaseEarlyRetry();
         releaseNative();
       }
@@ -3724,7 +3708,7 @@
     return [...selected, ...candidates.filter((candidate) => candidate.meetsHeadroom !== true)];
   }
   __name(measuredBackupOrder, "measuredBackupOrder");
-  function backupOutputPlan(primaryHost, candidates, locked, diversityEnabled = true) {
+  function backupOutputPlan(primaryHost, candidates, locked) {
     if (locked) return [];
     const used = new Set(primaryHost ? [primaryHost] : []), distinct = [], same = [];
     for (const candidate of candidates) {
@@ -3736,16 +3720,14 @@
       }
     }
     return [
-      ...(diversityEnabled ? measuredBackupOrder(primaryHost, distinct) : distinct).map(
-        (candidate) => candidate.index
-      ),
+      ...measuredBackupOrder(primaryHost, distinct).map((candidate) => candidate.index),
       ...same
     ].slice(0, 5);
   }
   __name(backupOutputPlan, "backupOutputPlan");
-  function catalogOutputPlan(primaryHost, preferred, unavailable, measuredSufficient = /* @__PURE__ */ new Set(), diversityEnabled = true) {
+  function catalogOutputPlan(primaryHost, preferred, unavailable, measuredSufficient = /* @__PURE__ */ new Set()) {
     const candidates = [.../* @__PURE__ */ new Set([...preferred, ...TRUSTED_CATALOG])].filter((host) => isCatalogHost(host) && host !== primaryHost && !unavailable.has(host)).map((host) => ({ host, meetsHeadroom: measuredSufficient.has(host) }));
-    return (diversityEnabled ? measuredBackupOrder(primaryHost, candidates) : candidates).map((candidate) => candidate.host).slice(0, 5);
+    return measuredBackupOrder(primaryHost, candidates).map((candidate) => candidate.host).slice(0, 5);
   }
   __name(catalogOutputPlan, "catalogOutputPlan");
 
@@ -3773,7 +3755,7 @@
     return { primary: permitted[0] ?? "", backups: permitted.slice(1, 6) };
   }
   __name(opaquePlayerOutput, "opaquePlayerOutput");
-  function catalogPlayerOutput(sourceUrl, decision, allowed, incompatible, diversityEnabled = true) {
+  function catalogPlayerOutput(sourceUrl, decision, allowed, incompatible) {
     if (!sourceUrl || decision.action !== "rewrite" || decision.candidate.type !== "catalog-generated" || !isCatalogHost(decision.host))
       return null;
     const primary = replaceUrlHost(sourceUrl, decision.host);
@@ -3788,8 +3770,7 @@
       decision.host,
       preferred,
       unavailable,
-      measuredSufficientHosts(decision),
-      diversityEnabled
+      measuredSufficientHosts(decision)
     ).flatMap((host) => {
       const url = replaceUrlHost(sourceUrl, host);
       return url ? [url] : [];
@@ -3797,7 +3778,7 @@
     return { primary, backups };
   }
   __name(catalogPlayerOutput, "catalogPlayerOutput");
-  function normalPlayerOutput(representation, original, decision, originals, stream, policy, allowed, hostLocked, materialize, diversityEnabled = true) {
+  function normalPlayerOutput(representation, original, decision, originals, stream, policy, allowed, hostLocked, materialize) {
     const lockedOriginal = stream && hostLocked(stream) ? policy.vault.rootUrl(representation) : null;
     const primary = lockedOriginal && allowed(lockedOriginal) ? lockedOriginal : materialize();
     if (!primary || !allowed(primary)) return null;
@@ -3815,12 +3796,9 @@
       const host = parseMediaUrl(url)?.host ?? "";
       return { index, host, allowed: allowed(url), meetsHeadroom: sufficient.has(host) };
     });
-    const backups = backupOutputPlan(
-      primaryHost ?? null,
-      candidates,
-      !!lockedOriginal,
-      diversityEnabled
-    ).map((index) => urls[index]);
+    const backups = backupOutputPlan(primaryHost ?? null, candidates, !!lockedOriginal).map(
+      (index) => urls[index]
+    );
     return { primary, backups };
   }
   __name(normalPlayerOutput, "normalPlayerOutput");
@@ -4912,8 +4890,7 @@
           sourceUrl,
           decision,
           allowed,
-          (url, host) => this.#incompatible(url, host),
-          this.settings.get().backupFamilyDiversityEnabled
+          (url, host) => this.#incompatible(url, host)
         );
         if (!output2 || !sourceUrl) return { primary: "", backups: [] };
         const { primary: primary2, backups: backups2 } = output2;
@@ -4940,8 +4917,7 @@
         policy,
         allowed,
         (key) => this.#hostLockedStreams.has(key),
-        () => this.#materialize(original, decision, context),
-        this.settings.get().backupFamilyDiversityEnabled
+        () => this.#materialize(original, decision, context)
       );
       if (!output) return { primary: "", backups: [] };
       const { primary, backups } = output;
@@ -5698,7 +5674,6 @@
       this.scheduler = scheduler;
       this.rangeMetadata = rangeMetadata;
       this.random = random;
-      this.settings = settings;
       this.monotonicNow = monotonicNow;
       this.ids = ids;
       if (settings) {
@@ -5720,7 +5695,6 @@
     scheduler;
     rangeMetadata;
     random;
-    settings;
     monotonicNow;
     ids;
     static {
@@ -5948,7 +5922,7 @@
               ...this.#startupState,
               remainingProbes: options.candidates.length - results.length
             });
-            if (this.settings?.get().startupEarlyReleaseEnabled !== false && result2.valid && (result2.safeMbps ?? 0) / (this.routes.startupDemand(candidate)?.requiredMbps ?? Infinity) >= ROUTE_HEADROOM && accepting())
+            if (result2.valid && (result2.safeMbps ?? 0) / (this.routes.startupDemand(candidate)?.requiredMbps ?? Infinity) >= ROUTE_HEADROOM && accepting())
               finish("qualified-early");
             else if (--remaining === 0) finish("complete");
           },
@@ -6239,7 +6213,7 @@
         handle,
         sizeKnown: totalBytes !== null,
         startByte: probeStartByte(
-          this.settings?.get().healthMiddleRangeEnabled === false ? null : totalBytes,
+          totalBytes,
           status.demand.highDemand ? 768 * 1024 : 384 * 1024,
           totalBytes === null ? 0 : this.random()
         )
@@ -6420,7 +6394,7 @@
 
   // src-v2/application/playback/recovery-controller.ts
   function restored(token) {
-    return token?.restore?.phase === "progress";
+    return token?.restore?.step.phase === "progress";
   }
   __name(restored, "restored");
   var RecoveryController = class {
@@ -6467,14 +6441,14 @@
         ...this.#state,
         ...restoration ? { restoration } : {},
         remainingReloads: Math.max(0, 2 - this.#reloadCount),
-        deadlineAt: token ? token.firstProgressAt !== null ? token.firstProgressAt + 15e3 : token.reloadingAt ? token.reloadingAt + 15e3 : token.stall ? token.stall.startedAt + (token.stall.reloadAfterMs ?? 3e4) : token.startedAt + (token.source === "startup-failure" ? 4e3 : 3e4) : void 0,
-        nextAction: token ? token.restore?.phase === "play" ? "await-play" : token.restore ? "verify-restore" : token.reloadingAt ? "await-core" : "await-reload-deadline" : "none"
+        deadlineAt: token ? token.firstProgressAt !== null ? token.firstProgressAt + 15e3 : token.reload.phase === "submitted" ? token.reload.at + 15e3 : token.stall ? token.stall.startedAt + (token.stall.reloadAfterMs ?? 3e4) : token.startedAt + (token.source === "startup-failure" ? 4e3 : 3e4) : void 0,
+        nextAction: token ? token.restore?.step.phase === "play" ? "await-play" : token.restore ? "verify-restore" : token.reload.phase === "submitted" ? "await-core" : "await-reload-deadline" : "none"
       });
     }
     #restoration() {
       const token = this.#token, plan = token?.restore;
       return plan ? Object.freeze({
-        phase: plan.phase,
+        phase: plan.step.phase,
         channel: plan.channel,
         result: plan.result
       }) : void 0;
@@ -6549,11 +6523,11 @@
       if (this.#failedRestore && comparePlaybackControls(controls, this.#failedRestore.controls) !== "same")
         this.#failedRestore = null;
       const token = this.#token, plan = token?.restore;
-      const observation = restored(token) && plan?.attempt && token.restore?.progress ? {
-        attempt: plan.attempt,
+      const observation = restored(token) ? {
+        attempt: token.restore.step.attempt,
         controls: token.controls,
-        positionSec: token.restore?.progress.positionSec,
-        at: token.restore?.progress.at,
+        positionSec: token.restore.step.progress.positionSec,
+        at: token.restore.step.progress.at,
         rate: token.savedRate
       } : this.#failedRestore;
       const native = observation ? this.player.readRestore(observation.attempt, "progress") : null;
@@ -6598,7 +6572,7 @@
         );
         return true;
       }
-      if (this.#token?.reloadingAt && this.#token.firstProgressAt === null && now - this.#token.reloadingAt >= 15e3) {
+      if (this.#token?.reload.phase === "submitted" && this.#token.firstProgressAt === null && now - this.#token.reload.at >= 15e3) {
         this.#breakerUntil = now + 9e4;
         this.#finish("failed", "reload-timeout");
         return true;
@@ -6621,10 +6595,10 @@
         this.#finish("recovered", "playback-progress-observed");
       if (this.#token) {
         const ownedReload = this.#ownedReload(this.#token, controls);
-        const restoreReady = (!this.#token.positionCapture.proof || !snapshot.seeking) && (!ownedReload || controls.coreId !== 0 && controls.coreReloadRevision === this.#token.reloadRevision && snapshot.coreInitialized !== false);
-        if (this.#token.reloadingAt && !restored(this.#token) && restoreReady)
+        const restoreReady = (!this.#token.positionCapture.proof || !snapshot.seeking) && (!ownedReload || controls.coreId !== 0 && controls.coreReloadRevision === this.#token.reload.revision && snapshot.coreInitialized !== false);
+        if (this.#token.reload.phase === "submitted" && !restored(this.#token) && restoreReady)
           this.#restore(this.#token, snapshot);
-        else if (this.#progressTicks >= 2 && (!this.#token.reloadingAt || restored(this.#token)) && this.#restoredProgressValid(this.#token, snapshot))
+        else if (this.#progressTicks >= 2 && (this.#token.reload.phase !== "submitted" || restored(this.#token)) && this.#restoredProgressValid(this.#token, snapshot))
           this.#finish("recovered");
       }
     }
@@ -6674,13 +6648,13 @@
         this.#finish("failed", "paused");
         return;
       }
-      if (restored(token) && now <= token.restore.progress.restoredAt) return;
-      if (token.reloadingAt && !restored(token)) progress = false;
+      if (restored(token) && now <= token.restore.step.progress.restoredAt) return;
+      if (token.reload.phase === "submitted" && !restored(token)) progress = false;
       if (restored(token) && restoreKnown && !this.#restoredProgressValid(token, snapshot)) {
         this.#finish("failed", "restore-mismatch");
         return;
       }
-      if (progress && (!restored(token) || now > token.restore.progress.restoredAt)) {
+      if (progress && (!restored(token) || now > token.restore.step.progress.restoredAt)) {
         token.firstProgressAt ??= now;
         return;
       }
@@ -6690,9 +6664,9 @@
       }
       const dead = snapshot.readyState === 0 && snapshot.width === 0 && snapshot.height === 0 && snapshot.manifestHasVideo && snapshot.coreInitialized === false;
       const startupStalled = token.source === "startup-failure" && snapshot.playableBufferSec < 1 && snapshot.currentTime <= token.baselinePositionSec + 0.05 && (snapshot.frames === null || token.baselineFrames === null || snapshot.frames <= token.baselineFrames);
-      if (!token.reloadingAt && (token.stall ? now - token.stall.startedAt >= (token.stall.reloadAfterMs ?? 3e4) : (dead || startupStalled) && now - token.startedAt >= 4e3 || now - token.startedAt >= 3e4))
+      if (token.reload.phase !== "submitted" && (token.stall ? now - token.stall.startedAt >= (token.stall.reloadAfterMs ?? 3e4) : (dead || startupStalled) && now - token.startedAt >= 4e3 || now - token.startedAt >= 3e4))
         this.#reload(token);
-      if (token.reloadingAt && now - token.reloadingAt >= 15e3) {
+      if (token.reload.phase === "submitted" && now - token.reload.at >= 15e3) {
         this.#breakerUntil = now + 9e4;
         this.#finish("failed", "reload-timeout");
       }
@@ -6730,13 +6704,12 @@
         wasPlaying,
         baselinePositionSec: snapshot.currentTime,
         baselineFrames: snapshot.frames,
-        reloadingAt: 0,
+        reload: { phase: "waiting", revision: null },
         controls,
         valid,
         stall,
         firstProgressAt: null,
         initiallyPaused: snapshot.paused,
-        reloadRevision: null,
         restorePosition: true,
         restore: null
       };
@@ -6789,11 +6762,14 @@
       try {
         const before = this.player.controls();
         if (!this.#owns(token, before)) return;
-        token.reloadRevision = Number.isSafeInteger(before.reloadRevision) ? before.reloadRevision + 1 : null;
+        token.reload = {
+          phase: "prepared",
+          revision: Number.isSafeInteger(before.reloadRevision) ? before.reloadRevision + 1 : null
+        };
         const result = prepared.dispatch(() => {
           if (!this.#owns(token, this.player.controls()) || !this.isActive() || !ready() || this.#token !== token)
             return false;
-          token.reloadingAt = this.now();
+          token.reload = { phase: "submitted", revision: token.reload.revision, at: this.now() };
           this.#reloadCount++;
           if (token.source === "startup-failure") this.#startupReloaded = true;
           this.#breakerUntil = this.now() + 9e4;
@@ -6824,7 +6800,8 @@
         });
     }
     #restoreReady(token) {
-      if (this.now() - token.reloadingAt >= 15e3) {
+      if (token.reload.phase !== "submitted") return false;
+      if (this.now() - token.reload.at >= 15e3) {
         this.#breakerUntil = this.now() + 9e4;
         this.#finish("failed", "reload-timeout");
         return false;
@@ -6836,114 +6813,110 @@
       return true;
     }
     #advanceRestore(plan, next) {
-      const transition = restoreTransition(plan.phase, "verified");
-      if (transition.reason !== "accepted" || transition.next !== next) return false;
-      plan.phase = next;
+      const transition = restoreTransition(plan.step.phase, "verified");
+      if (transition.reason !== "accepted" || transition.next !== next.phase) return false;
+      plan.step = next;
       return true;
     }
     #positionMatches(reading, plan) {
-      const anchor = plan?.positionBaseline;
-      return restorePositionMatches(
-        reading,
-        anchor && plan?.phase === "rate" ? anchor : null,
-        () => this.now()
-      );
+      const anchor = plan?.step.phase === "rate" ? plan.step.positionBaseline : null;
+      return restorePositionMatches(reading, anchor, () => this.now());
     }
     #restore(token, snapshot) {
       if (!this.#restoreReady(token)) return;
       token.restore ??= {
         targetSec: snapshot.duration ? Math.min(token.savedPositionSec, Math.max(0, snapshot.duration - 0.1)) : token.savedPositionSec,
-        phase: token.restorePosition ? "position" : "rate",
-        attempt: null,
-        positionAttempt: null,
-        positionBaseline: null,
-        issuedAt: 0,
-        progress: null,
+        step: {
+          phase: token.restorePosition ? "position" : "rate",
+          attempt: null,
+          positionAttempt: null,
+          positionBaseline: null,
+          issuedAt: 0
+        },
         nativeUsed: { position: false, rate: false },
         channel: "none",
         result: "unknown"
       };
       const plan = token.restore;
-      if (plan.phase === "progress" || plan.phase === "play") return;
-      const valid = /* @__PURE__ */ __name(() => this.#token === token && this.isActive() && this.now() - token.reloadingAt < 15e3 && this.#owns(token, this.player.controls()), "valid");
+      if (plan.step.phase === "progress" || plan.step.phase === "play") return;
+      const valid = /* @__PURE__ */ __name(() => this.#token === token && this.isActive() && token.reload.phase === "submitted" && this.now() - token.reload.at < 15e3 && this.#owns(token, this.player.controls()), "valid");
       try {
         for (let step = 0; step < 2; step++) {
           if (!this.#restoreReady(token)) return;
-          if (!token.restorePosition && plan.phase === "position") {
-            if (!this.#advanceRestore(plan, "rate")) return;
-            plan.attempt = null;
+          if (plan.step.phase !== "position" && plan.step.phase !== "rate") return;
+          if (!token.restorePosition && plan.step.phase === "position") {
+            if (!this.#advanceRestore(plan, { ...plan.step, phase: "rate", attempt: null })) return;
           }
-          if (!plan.attempt) {
-            if (plan.phase === "rate" && plan.positionAttempt) {
-              const beforeRate = this.player.readRestore(plan.positionAttempt);
+          if (!plan.step.attempt) {
+            if (plan.step.phase === "rate" && plan.step.positionAttempt) {
+              const beforeRate = this.player.readRestore(plan.step.positionAttempt);
               if (!beforeRate.owned || !this.#positionMatches(beforeRate, plan) || !this.#restoreReady(token) || beforeRate.positionSec === null || beforeRate.rate === null || beforeRate.paused === null)
                 return;
-              plan.positionBaseline = {
+              plan.step.positionBaseline = {
                 positionSec: beforeRate.positionSec,
                 at: this.now(),
                 rate: beforeRate.rate,
                 paused: beforeRate.paused
               };
             }
-            plan.issuedAt = this.now();
-            plan.attempt = this.player.performRestore(
+            plan.step.issuedAt = this.now();
+            plan.step.attempt = this.player.performRestore(
               {
-                kind: plan.phase,
-                value: plan.phase === "position" ? plan.targetSec : token.savedRate,
-                at: plan.issuedAt
+                kind: plan.step.phase,
+                value: plan.step.phase === "position" ? plan.targetSec : token.savedRate,
+                at: plan.step.issuedAt
               },
-              { reloadRevision: token.reloadRevision ?? -1, valid, now: this.now }
+              { reloadRevision: token.reload.revision ?? -1, valid, now: this.now }
             );
-            if (plan.phase === "position") plan.positionAttempt = plan.attempt;
+            if (plan.step.phase === "position") plan.step.positionAttempt = plan.step.attempt;
           }
           if (!this.#restoreReady(token)) return;
-          let reading = this.player.readRestore(plan.attempt);
+          let reading = this.player.readRestore(plan.step.attempt);
           plan.channel = reading.channel;
           plan.result = reading.status === "pending" ? "pending" : "unknown";
           if (!reading.owned || !this.#restoreReady(token)) return;
-          const correct = /* @__PURE__ */ __name(() => plan.phase === "position" ? this.#positionMatches(reading) : reading.rate === token.savedRate && reading.seeking === false && reading.positionSec !== null, "correct");
+          const correct = /* @__PURE__ */ __name(() => plan.step.phase === "position" ? this.#positionMatches(reading) : reading.rate === token.savedRate && reading.seeking === false && reading.positionSec !== null, "correct");
           if (!correct()) {
             if (reading.positionSec !== null && reading.rate !== null && reading.status !== "pending")
               plan.result = "mismatch";
             if (reading.channel === "native") {
-              plan.nativeUsed[plan.phase] = true;
+              plan.nativeUsed[plan.step.phase] = true;
             }
-            const used = plan.nativeUsed[plan.phase];
-            const known = plan.phase === "position" ? restorePositionMismatch(reading, plan.targetSec, () => this.now()) : reading.rate !== null && reading.rate !== token.savedRate;
-            if (!used && known && (plan.phase === "position" || this.#positionMatches(reading, plan)) && reading.status !== "pending" && reading.seeking === false && reading.readyState !== null && reading.readyState >= 1 && this.now() - plan.issuedAt >= 1e3) {
-              plan.nativeUsed[plan.phase] = true;
+            const used = plan.nativeUsed[plan.step.phase];
+            const known = plan.step.phase === "position" ? restorePositionMismatch(reading, plan.targetSec, () => this.now()) : reading.rate !== null && reading.rate !== token.savedRate;
+            if (!used && known && (plan.step.phase === "position" || this.#positionMatches(reading, plan)) && reading.status !== "pending" && reading.seeking === false && reading.readyState !== null && reading.readyState >= 1 && this.now() - plan.step.issuedAt >= 1e3) {
+              plan.nativeUsed[plan.step.phase] = true;
               if (!this.#restoreReady(token)) return;
-              this.player.correctRestore(plan.attempt);
+              this.player.correctRestore(plan.step.attempt);
               if (!this.#restoreReady(token)) return;
-              reading = this.player.readRestore(plan.attempt);
+              reading = this.player.readRestore(plan.step.attempt);
               plan.channel = reading.channel;
             }
             if (!reading.owned || !correct()) return;
           }
           plan.result = "verified";
-          if (plan.phase === "position") {
+          if (plan.step.phase === "position") {
             if (reading.positionSec === null || reading.rate === null || reading.paused === null)
               return;
-            plan.positionBaseline = {
+            plan.step.positionBaseline = {
               positionSec: reading.positionSec,
               at: this.now(),
               rate: reading.rate,
               paused: reading.paused
             };
-            if (!this.#advanceRestore(plan, "rate")) return;
-            plan.attempt = null;
+            if (!this.#advanceRestore(plan, { ...plan.step, phase: "rate", attempt: null })) return;
             continue;
           }
-          if (plan.positionAttempt && !this.#positionMatches(this.player.readRestore(plan.positionAttempt), plan))
+          if (plan.step.positionAttempt && !this.#positionMatches(this.player.readRestore(plan.step.positionAttempt), plan))
             return;
           if (reading.positionSec === null || reading.rate === null || reading.paused === null) return;
-          plan.positionBaseline = {
+          plan.step.positionBaseline = {
             positionSec: reading.positionSec,
             at: this.now(),
             rate: reading.rate,
             paused: reading.paused
           };
-          this.#resumeVerified(token, plan.attempt);
+          this.#resumeVerified(token, plan.step.attempt);
           return;
         }
       } catch {
@@ -6956,7 +6929,12 @@
       if (!beforePlay.owned || beforePlay.positionSec === null || beforePlay.rate !== token.savedRate || beforePlay.paused === null || beforePlay.seeking !== false || !this.#restoreReady(token))
         return;
       const beforePosition = beforePlay.positionSec;
-      if (!this.#advanceRestore(token.restore, "play")) return;
+      if (!this.#advanceRestore(token.restore, {
+        phase: "play",
+        attempt: rateAttempt,
+        issuedAt: token.restore.step.issuedAt
+      }))
+        return;
       const playAt = this.now();
       const lifecycle = this.#lifecycleSerial;
       let playResult;
@@ -6972,7 +6950,7 @@
         }
       }
       const complete = /* @__PURE__ */ __name(() => {
-        if (token.restore?.phase !== "play" || !this.#restoreReady(token)) return;
+        if (token.restore?.step.phase !== "play" || !this.#restoreReady(token)) return;
         const reading = this.player.readRestore(rateAttempt);
         if (!reading.owned || reading.rate !== null && reading.rate !== token.savedRate || reading.positionSec !== null && Math.abs(
           reading.positionSec - beforePosition - (reading.paused ? 0 : token.savedRate * Math.max(0, this.now() - playAt) / 1e3)
@@ -6982,9 +6960,14 @@
         }
         const baseline = this.player.snapshot(), controls = this.player.controls();
         if (!this.#restoreReady(token)) return;
-        if (!this.#advanceRestore(token.restore, "progress")) return;
         const restoredAt = this.now();
-        token.restore.progress = { positionSec: beforePosition, at: playAt, restoredAt };
+        if (!this.#advanceRestore(token.restore, {
+          phase: "progress",
+          attempt: rateAttempt,
+          issuedAt: token.restore.step.issuedAt,
+          progress: { positionSec: beforePosition, at: playAt, restoredAt }
+        }))
+          return;
         token.restore.result = reading.positionSec === null || reading.rate === null ? "unknown" : "verified";
         this.#lastSnapshot = {
           ...baseline,
@@ -7025,13 +7008,13 @@
       complete();
     }
     #restoredProgressValid(token, snapshot) {
-      if (!restored(token) || !token.restore?.progress) return true;
+      if (!restored(token)) return true;
       return this.#matchesRestoreProgress(
         {
-          attempt: token.restore.attempt,
+          attempt: token.restore.step.attempt,
           controls: token.controls,
-          positionSec: token.restore?.progress.positionSec,
-          at: token.restore?.progress.at,
+          positionSec: token.restore.step.progress.positionSec,
+          at: token.restore.step.progress.at,
           rate: token.savedRate
         },
         snapshot
@@ -7058,24 +7041,24 @@
       return this.#token === token && eligible && !controls.dragging && !snapshot.ended && !snapshot.mediaError && (!snapshot.paused || token.initiallyPaused || ownedReload) && controls.mediaId === token.controls.mediaId && (controls.coreId === token.controls.coreId || ownedReload) && controls.userRevision === token.controls.userRevision && controls.seekRevision === token.controls.seekRevision;
     }
     #ownedReload(token, controls) {
-      const revision2 = token.reloadRevision;
-      return this.#token === token && !!token.reloadingAt && revision2 !== null && controls.reloadRevision === revision2 && controls.mediaId === token.controls.mediaId && controls.userRevision === token.controls.userRevision && !controls.dragging && (controls.coreId === token.controls.coreId || controls.coreId === 0 || controls.coreReloadRevision === revision2) && this.player.ownedReload?.(revision2) === true && this.#token === token;
+      const revision2 = token.reload.revision;
+      return this.#token === token && token.reload.phase === "submitted" && revision2 !== null && controls.reloadRevision === revision2 && controls.mediaId === token.controls.mediaId && controls.userRevision === token.controls.userRevision && !controls.dragging && (controls.coreId === token.controls.coreId || controls.coreId === 0 || controls.coreReloadRevision === revision2) && this.player.ownedReload?.(revision2) === true && this.#token === token;
     }
     #initializationOwned(token, controls) {
-      return token.positionCapture.proof !== null && token.reloadRevision !== null && this.#ownedReload(token, controls) && this.player.validateResumePosition(token.positionCapture, token.reloadRevision);
+      return token.positionCapture.proof !== null && token.reload.revision !== null && this.#ownedReload(token, controls) && this.player.validateResumePosition(token.positionCapture, token.reload.revision);
     }
     #acceptedReloadProgress(token, snapshot, controls) {
-      return this.#token === token && restored(token) && token.firstProgressAt !== null && token.reloadRevision !== null && this.now() - token.firstProgressAt <= 15e3 && snapshot.available && !snapshot.paused && !snapshot.seeking && !snapshot.ended && !snapshot.mediaError && !controls.dragging && controls.coreId !== 0 && controls.mediaId === token.controls.mediaId && controls.coreId === token.controls.coreId && controls.userRevision === token.controls.userRevision && controls.seekRevision === token.controls.seekRevision && controls.reloadRevision === token.reloadRevision;
+      return this.#token === token && restored(token) && token.firstProgressAt !== null && token.reload.revision !== null && this.now() - token.firstProgressAt <= 15e3 && snapshot.available && !snapshot.paused && !snapshot.seeking && !snapshot.ended && !snapshot.mediaError && !controls.dragging && controls.coreId !== 0 && controls.mediaId === token.controls.mediaId && controls.coreId === token.controls.coreId && controls.userRevision === token.controls.userRevision && controls.seekRevision === token.controls.seekRevision && controls.reloadRevision === token.reload.revision;
     }
     #finish(state, reason = state) {
       const token = this.#token;
       const observedRestoration = this.#restoration();
       const restoration = observedRestoration && reason === "restore-mismatch" ? Object.freeze({ ...observedRestoration, result: "mismatch" }) : observedRestoration;
-      this.#failedRestore = state === "failed" && token?.restore?.attempt ? Object.freeze({
-        attempt: token.restore.attempt,
+      this.#failedRestore = state === "failed" && token?.restore?.step.attempt ? Object.freeze({
+        attempt: token.restore.step.attempt,
         controls: Object.freeze({ ...token.controls }),
-        positionSec: token.restore?.progress?.positionSec ?? token.restore.targetSec,
-        at: token.restore?.progress?.at ?? token.restore.issuedAt,
+        positionSec: token.restore.step.phase === "progress" ? token.restore.step.progress.positionSec : token.restore.targetSec,
+        at: token.restore.step.phase === "progress" ? token.restore.step.progress.at : token.restore.step.issuedAt,
         rate: token.savedRate
       }) : null;
       this.#token = null;
@@ -7898,28 +7881,34 @@
     static {
       __name(this, "PlayerControlObserver");
     }
+    #seek = {
+      revision: 0,
+      drag: null,
+      pointerRevision: 0,
+      targetSec: null,
+      internalDepth: 0,
+      pending: null,
+      keyboard: null,
+      goal: null,
+      nativePosition: null
+    };
+    #reload = {
+      revision: 0,
+      coreRevision: 0,
+      internalDepth: 0,
+      core: null,
+      awaitCore: false,
+      owned: null
+    };
+    #restores = { position: null, rate: null };
     #objects = /* @__PURE__ */ new WeakMap();
     #objectSerial = 0;
-    #seekRevision = 0;
     #userRevision = 0;
-    #drag = null;
-    #pointerRevision = 0;
-    #targetSec = null;
-    #internalSeek = 0;
-    #pendingSeek = null;
     #inputs = new PlayerInputBindings();
     #controlVideo = null;
     #seekOwner = null;
-    #reloadRevision = 0;
-    #coreReloadRevision = 0;
-    #internalReload = 0;
-    #reloadCore = null;
-    #awaitReloadCore = false;
-    #keyboardSeek = null;
     #keyboardPlayback = null;
     #keyboardRevision = 0;
-    #ownedReload = null;
-    #nativePosition = null;
     #controlRevision = 0;
     #playbackRevision = 0;
     #playbackListeners = /* @__PURE__ */ new Set();
@@ -7940,11 +7929,8 @@
         }
       }
     }
-    #goal = null;
-    #positionRestore = null;
-    #rateRestore = null;
     controls() {
-      const reloadOwner = this.#ownedReload;
+      const reloadOwner = this.#reload.owned;
       const video = this.sources.video(), player = this.sources.player(), core = safeCall(player, "__core");
       if (video !== this.#controlVideo || player !== this.#seekOwner)
         this.#observeControls(video, player);
@@ -7952,10 +7938,10 @@
       this.#confirmKeyboardSeek();
       this.#confirmKeyboardPlayback();
       if (video) this.#observeNativePosition(video, player);
-      if (video?.seeking && Number.isFinite(video.currentTime) && video.currentTime !== this.#targetSec) {
-        this.#targetSec = video.currentTime;
-        if (!this.#internalSeek && this.#pendingSeek !== video.currentTime && !this.#pendingRestoreSeek(video.currentTime))
-          this.#seekRevision++;
+      if (video?.seeking && Number.isFinite(video.currentTime) && video.currentTime !== this.#seek.targetSec) {
+        this.#seek.targetSec = video.currentTime;
+        if (!this.#seek.internalDepth && this.#seek.pending !== video.currentTime && !this.#pendingRestoreSeek(video.currentTime))
+          this.#seek.revision++;
       }
       const identity = /* @__PURE__ */ __name((object) => {
         if (!object || typeof object !== "object" && typeof object !== "function") return 0;
@@ -7967,27 +7953,27 @@
         return id2;
       }, "identity");
       if (reloadOwner) this.#validateOwnedReload(video, player, core, reloadOwner);
-      else if (!this.#ownedReload && !this.#awaitReloadCore && core !== this.#reloadCore)
-        this.#coreReloadRevision = 0;
-      this.#reloadCore = core;
+      else if (!this.#reload.owned && !this.#reload.awaitCore && core !== this.#reload.core)
+        this.#reload.coreRevision = 0;
+      this.#reload.core = core;
       return Object.freeze({
         mediaId: identity(video),
         coreId: identity(core),
-        seekRevision: this.#seekRevision,
+        seekRevision: this.#seek.revision,
         userRevision: this.#userRevision,
-        dragging: this.#drag !== null,
-        targetSec: this.#targetSec,
-        pendingSeekGoal: !!this.#goal && !this.#goal.completed,
-        reloadRevision: this.#reloadRevision,
-        coreReloadRevision: this.#coreReloadRevision
+        dragging: this.#seek.drag !== null,
+        targetSec: this.#seek.targetSec,
+        pendingSeekGoal: !!this.#seek.goal && !this.#seek.goal.completed,
+        reloadRevision: this.#reload.revision,
+        coreReloadRevision: this.#reload.coreRevision
       });
     }
     captureResumePosition(readCurrent) {
       this.controls();
-      const before = this.#goal;
+      const before = this.#seek.goal;
       const current = readCurrent();
       this.controls();
-      const goal = this.#goal;
+      const goal = this.#seek.goal;
       return Object.freeze(
         goal && goal === before && !goal.completed && this.#goalCurrent(goal) ? { positionSec: goal.position, proof: goal.proof } : { positionSec: current, proof: null }
       );
@@ -7995,25 +7981,25 @@
     validateResumePosition(capture, initializationRevision) {
       this.controls();
       if (capture.proof === null) return initializationRevision === void 0;
-      const goal = this.#goal;
+      const goal = this.#seek.goal;
       return !!goal && goal.proof === capture.proof && goal.position === capture.positionSec && this.#goalCurrent(goal) && (initializationRevision === void 0 || goal.initialization?.revision === initializationRevision);
     }
     #goalCurrent(goal) {
       const video = this.sources.video(), player = this.sources.player(), lifecycle = this.sources.lifecycleKey(), core = safeCall(player, "__core");
-      const reload = this.#ownedReload;
+      const reload = this.#reload.owned;
       if (reload) this.#validateOwnedReload(video, player, core, reload);
-      return this.#goal === goal && goal.video === video && goal.player === player && goal.lifecycle === lifecycle && goal.userRevision === this.#userRevision && this.environment.isActuallyVisible() && (core === goal.core || !!reload && this.#ownedReload === reload && (core === null || core === void 0 || core === reload.replacement)) && video === this.sources.video() && player === this.sources.player() && lifecycle === this.sources.lifecycleKey() && this.#goal === goal && goal.userRevision === this.#userRevision;
+      return this.#seek.goal === goal && goal.video === video && goal.player === player && goal.lifecycle === lifecycle && goal.userRevision === this.#userRevision && this.environment.isActuallyVisible() && (core === goal.core || !!reload && this.#reload.owned === reload && (core === null || core === void 0 || core === reload.replacement)) && video === this.sources.video() && player === this.sources.player() && lifecycle === this.sources.lifecycleKey() && this.#seek.goal === goal && goal.userRevision === this.#userRevision;
     }
     #setGoal(video, position) {
       if (!Number.isFinite(position)) return;
       const revision2 = this.#userRevision, controlRevision = this.#controlRevision;
-      const old = this.#goal;
+      const old = this.#seek.goal;
       if (old && old.position === position && old.video === video && old.userRevision === this.#userRevision && this.#goalCurrent(old))
         return;
       const player = this.sources.player(), lifecycle = this.sources.lifecycleKey(), core = safeCall(player, "__core");
       if (video !== this.sources.video() || player !== this.sources.player() || lifecycle !== this.sources.lifecycleKey() || revision2 !== this.#userRevision || controlRevision !== this.#controlRevision)
         return;
-      this.#goal = {
+      this.#seek.goal = {
         proof: Object.freeze({}),
         video,
         player,
@@ -8028,29 +8014,29 @@
       };
     }
     #pointerGoal(video) {
-      const drag = this.#drag, revision2 = this.#pointerRevision, position = video.currentTime;
-      if (drag && drag.video === video && drag.player === this.sources.player() && drag.lifecycle === this.sources.lifecycleKey() && this.environment.isActuallyVisible() && Number.isFinite(position) && position !== drag.position && this.#drag === drag && revision2 === this.#pointerRevision)
+      const drag = this.#seek.drag, revision2 = this.#seek.pointerRevision, position = video.currentTime;
+      if (drag && drag.video === video && drag.player === this.sources.player() && drag.lifecycle === this.sources.lifecycleKey() && this.environment.isActuallyVisible() && Number.isFinite(position) && position !== drag.position && this.#seek.drag === drag && revision2 === this.#seek.pointerRevision)
         this.#setGoal(video, position);
     }
     #initializationSeek(position) {
-      const goal = this.#goal, reload = this.#ownedReload;
-      if (!goal || goal.completed || !Number.isFinite(position) || !reload || reload.stable || goal.initialization || !this.#goalCurrent(goal) || !this.#internalReload && !reload.replacement)
+      const goal = this.#seek.goal, reload = this.#reload.owned;
+      if (!goal || goal.completed || !Number.isFinite(position) || !reload || reload.stable || goal.initialization || !this.#goalCurrent(goal) || !this.#reload.internalDepth && !reload.replacement)
         return false;
-      goal.initialization = { revision: reload.revision, seekRevision: this.#seekRevision, position };
+      goal.initialization = { revision: reload.revision, seekRevision: this.#seek.revision, position };
       goal.baseline = null;
       goal.progress = 0;
       return true;
     }
     #sampleGoal(video, position) {
-      const goal = this.#goal;
+      const goal = this.#seek.goal;
       if (!goal) return;
       if (!this.#goalCurrent(goal)) {
-        if (this.#goal === goal) this.#goal = null;
+        if (this.#seek.goal === goal) this.#seek.goal = null;
         return;
       }
       if (goal.completed || video.readyState < 2 || video.seeking || video.ended || video.error)
         return;
-      const reload = this.#ownedReload;
+      const reload = this.#reload.owned;
       if (reload?.replacement && !video.paused) reload.stable = true;
       let frames = null;
       try {
@@ -8059,18 +8045,19 @@
       } catch {
       }
       const at = this.environment.now?.() ?? Date.now(), before = goal.baseline;
-      if (this.#goal !== goal || !this.#goalCurrent(goal)) return;
+      if (this.#seek.goal !== goal || !this.#goalCurrent(goal)) return;
       if (!before) {
         if (Math.abs(position - goal.position) <= 1) goal.baseline = { position, frames, at };
-        else if (position !== goal.initialization?.position && this.#goal === goal) this.#goal = null;
+        else if (position !== goal.initialization?.position && this.#seek.goal === goal)
+          this.#seek.goal = null;
         return;
       }
       if (at <= before.at) return;
       const delta = position - before.position, maxAdvance = Math.max(1, Math.max(0, video.playbackRate) * (at - before.at) / 1e3 + 1);
       const progress = !video.paused && playbackTimeAdvanced(position, before.position) && (frames === null || before.frames !== null && playbackFramesAdvanced(frames, before.frames));
-      if (this.#goal !== goal || !this.#goalCurrent(goal)) return;
-      if (delta < 0 || delta > maxAdvance || video.paused && delta !== 0 && !this.#internalSeek) {
-        this.#goal = null;
+      if (this.#seek.goal !== goal || !this.#goalCurrent(goal)) return;
+      if (delta < 0 || delta > maxAdvance || video.paused && delta !== 0 && !this.#seek.internalDepth) {
+        this.#seek.goal = null;
         return;
       }
       goal.progress = progress ? goal.progress + 1 : 0;
@@ -8078,28 +8065,28 @@
       if (goal.progress >= 2) goal.completed = true;
     }
     #observeNativePosition(video, player, knownReloadZero = false) {
-      const before = this.#nativePosition, revision2 = this.#controlRevision;
-      const seekRevision = this.#seekRevision, userRevision = this.#userRevision, pendingSeek = this.#pendingSeek;
+      const before = this.#seek.nativePosition, revision2 = this.#controlRevision;
+      const seekRevision = this.#seek.revision, userRevision = this.#userRevision, pendingSeek = this.#seek.pending;
       const lifecycle = this.sources.lifecycleKey(), position = video.currentTime, readyState = video.readyState;
       const currentVideo = this.sources.video(), currentPlayer = this.sources.player(), currentLifecycle = this.sources.lifecycleKey();
-      if (revision2 !== this.#controlRevision || this.#nativePosition !== before || video !== this.#controlVideo || player !== this.#seekOwner || currentVideo !== video || currentPlayer !== player || lifecycle !== currentLifecycle || seekRevision !== this.#seekRevision || userRevision !== this.#userRevision || pendingSeek !== this.#pendingSeek || !Number.isFinite(position))
+      if (revision2 !== this.#controlRevision || this.#seek.nativePosition !== before || video !== this.#controlVideo || player !== this.#seekOwner || currentVideo !== video || currentPlayer !== player || lifecycle !== currentLifecycle || seekRevision !== this.#seek.revision || userRevision !== this.#userRevision || pendingSeek !== this.#seek.pending || !Number.isFinite(position))
         return;
-      this.#nativePosition = { video, player, lifecycle, position, readyState };
+      this.#seek.nativePosition = { video, player, lifecycle, position, readyState };
       this.#pointerGoal(video);
       this.#sampleGoal(video, position);
       if (!before || before.video !== video || before.player !== player || before.lifecycle !== lifecycle || readyState !== 0 || before.position === position)
         return;
-      const owner = this.#ownedReload;
-      const initialReloadZero = position === 0 && owner?.video === video && owner.player === player && owner.lifecycle === lifecycle && (knownReloadZero || this.#internalReload > 0 && before.readyState !== 0);
+      const owner = this.#reload.owned;
+      const initialReloadZero = position === 0 && owner?.video === video && owner.player === player && owner.lifecycle === lifecycle && (knownReloadZero || this.#reload.internalDepth > 0 && before.readyState !== 0);
       if (initialReloadZero) return;
-      const goal = this.#goal;
-      if (goal && position !== goal.position && !(position === 0 && before.readyState !== 0 && !this.#ownedReload) && position !== goal.initialization?.position)
-        this.#goal = null;
-      const alreadyObserved = this.#targetSec === position;
-      this.#targetSec = position;
-      if (!this.#internalSeek && position !== this.#pendingSeek) {
-        this.#pendingSeek = null;
-        if (!alreadyObserved) this.#seekRevision++;
+      const goal = this.#seek.goal;
+      if (goal && position !== goal.position && !(position === 0 && before.readyState !== 0 && !this.#reload.owned) && position !== goal.initialization?.position)
+        this.#seek.goal = null;
+      const alreadyObserved = this.#seek.targetSec === position;
+      this.#seek.targetSec = position;
+      if (!this.#seek.internalDepth && position !== this.#seek.pending) {
+        this.#seek.pending = null;
+        if (!alreadyObserved) this.#seek.revision++;
       }
     }
     #observeControls(video, player) {
@@ -8119,8 +8106,8 @@
     }
     #bindPointerControls(video, player, region, inRegion) {
       this.#inputs.trusted(document, "pointerdown", (event) => {
-        const revision2 = ++this.#pointerRevision;
-        if (!this.environment.isActuallyVisible() || !inRegion(event) || revision2 !== this.#pointerRevision)
+        const revision2 = ++this.#seek.pointerRevision;
+        if (!this.environment.isActuallyVisible() || !inRegion(event) || revision2 !== this.#seek.pointerRevision)
           return;
         this.#clearKeyboardSeek();
         this.#clearKeyboardPlayback();
@@ -8130,30 +8117,30 @@
         const pointerId = progressPointerId(event, region);
         if (pointerId === null) return;
         const current = video === this.sources.video() && player === this.sources.player() && lifecycle === this.sources.lifecycleKey() && this.environment.isActuallyVisible();
-        if (!current || video !== this.#controlVideo || player !== this.#seekOwner || revision2 !== this.#pointerRevision)
+        if (!current || video !== this.#controlVideo || player !== this.#seekOwner || revision2 !== this.#seek.pointerRevision)
           return;
-        this.#drag = { pointerId, video, player, lifecycle, position: video.currentTime };
+        this.#seek.drag = { pointerId, video, player, lifecycle, position: video.currentTime };
       });
       const release = /* @__PURE__ */ __name((event) => {
-        const drag = this.#drag;
+        const drag = this.#seek.drag;
         if (!drag || !event.isTrusted || typeof PointerEvent !== "function" || !(event instanceof PointerEvent) || event.pointerId !== drag.pointerId)
           return;
-        if (this.#drag === drag) {
+        if (this.#seek.drag === drag) {
           this.#pointerGoal(video);
-          this.#drag = null;
-          this.#pointerRevision++;
+          this.#seek.drag = null;
+          this.#seek.pointerRevision++;
         }
       }, "release");
       this.#inputs.pointerRelease(release);
     }
     #bindControlLoss() {
       const controlLoss = /* @__PURE__ */ __name(() => {
-        this.#drag = null;
-        this.#pointerRevision++;
+        this.#seek.drag = null;
+        this.#seek.pointerRevision++;
         this.#clearKeyboardSeek();
         this.#clearKeyboardPlayback();
         this.#clearOwnedReload();
-        this.#goal = null;
+        this.#seek.goal = null;
       }, "controlLoss");
       this.#inputs.trusted(window, "blur", (event) => {
         if (event.target === window) controlLoss();
@@ -8182,17 +8169,17 @@
     #bindMediaControls(video) {
       this.#inputs.listen(video, "seeking", () => {
         const position = Number.isFinite(video.currentTime) ? video.currentTime : null;
-        if (!this.#internalSeek && position !== this.#pendingSeek && !this.#pendingRestoreSeek(position))
-          this.#seekRevision++;
-        this.#targetSec = position;
+        if (!this.#seek.internalDepth && position !== this.#seek.pending && !this.#pendingRestoreSeek(position))
+          this.#seek.revision++;
+        this.#seek.targetSec = position;
         this.#confirmKeyboardSeek();
         this.#pointerGoal(video);
-        const goal = this.#goal;
-        if (!this.#internalSeek && !this.#pendingRestoreSeek(position) && goal && position !== goal.position && position !== goal.initialization?.position)
-          this.#goal = null;
+        const goal = this.#seek.goal;
+        if (!this.#seek.internalDepth && !this.#pendingRestoreSeek(position) && goal && position !== goal.position && position !== goal.initialization?.position)
+          this.#seek.goal = null;
       });
       this.#inputs.listen(video, "seeked", () => {
-        this.#pendingSeek = null;
+        this.#seek.pending = null;
         this.#sampleGoal(video, video.currentTime);
         this.#noteRestoreLanding();
       });
@@ -8202,10 +8189,10 @@
       const reload = player?.reload;
       if (player && typeof reload === "function") {
         const wrapped = /* @__PURE__ */ __name(function(...args) {
-          if (!observer.#internalReload) {
-            observer.#seekRevision++;
+          if (!observer.#reload.internalDepth) {
+            observer.#seek.revision++;
             observer.#clearOwnedReload();
-            observer.#goal = null;
+            observer.#seek.goal = null;
           }
           return Reflect.apply(reload, this, args);
         }, "wrapped");
@@ -8216,11 +8203,12 @@
       }
       if (player && typeof original === "function") {
         const wrapped = /* @__PURE__ */ __name(function(...args) {
-          if (!observer.#internalSeek) {
-            observer.#seekRevision++;
-            observer.#pendingSeek = null;
-            observer.#targetSec = typeof args[0] === "number" && Number.isFinite(args[0]) ? Math.max(0, args[0]) : null;
-            if (!observer.#initializationSeek(observer.#targetSec ?? NaN)) observer.#goal = null;
+          if (!observer.#seek.internalDepth) {
+            observer.#seek.revision++;
+            observer.#seek.pending = null;
+            observer.#seek.targetSec = typeof args[0] === "number" && Number.isFinite(args[0]) ? Math.max(0, args[0]) : null;
+            if (!observer.#initializationSeek(observer.#seek.targetSec ?? NaN))
+              observer.#seek.goal = null;
           }
           try {
             return Reflect.apply(original, this, args);
@@ -8251,14 +8239,14 @@
         stop: /* @__PURE__ */ __name(() => void 0, "stop")
       };
       if (lifecycle !== candidate.lifecycle || revision2 !== this.#keyboardRevision) return;
-      this.#keyboardSeek = candidate;
+      this.#seek.keyboard = candidate;
       const type = event.type;
       const finish = /* @__PURE__ */ __name((observed) => {
-        if (observed === event && this.#keyboardSeek === candidate) this.#confirmKeyboardSeek();
+        if (observed === event && this.#seek.keyboard === candidate) this.#confirmKeyboardSeek();
       }, "finish");
       window.addEventListener(type, finish);
       const cancel = this.environment.scheduler.timeout(() => {
-        if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek();
+        if (this.#seek.keyboard === candidate) this.#clearKeyboardSeek();
       }, 0);
       candidate.stop = () => {
         cancel();
@@ -8266,35 +8254,35 @@
       };
     }
     #confirmKeyboardSeek() {
-      const candidate = this.#keyboardSeek;
+      const candidate = this.#seek.keyboard;
       if (!candidate) return;
       try {
         if (candidate.event.eventPhase === Event.NONE || candidate.revision !== this.#keyboardRevision || candidate.video !== this.#controlVideo || candidate.player !== this.#seekOwner || candidate.video !== this.sources.video() || candidate.player !== this.sources.player() || candidate.lifecycle !== this.sources.lifecycleKey() || !this.environment.isActuallyVisible()) {
-          if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek();
+          if (this.#seek.keyboard === candidate) this.#clearKeyboardSeek();
           return;
         }
         const position = candidate.video.currentTime, seeking = candidate.video.seeking, readyState = candidate.video.readyState;
         const core = safeCall(candidate.player, "__core");
-        const actualSeek = seeking || readyState === 0 && core === candidate.core && !this.#internalReload;
-        if (this.#keyboardSeek !== candidate || candidate.revision !== this.#keyboardRevision) return;
+        const actualSeek = seeking || readyState === 0 && core === candidate.core && !this.#reload.internalDepth;
+        if (this.#seek.keyboard !== candidate || candidate.revision !== this.#keyboardRevision) return;
         if (candidate.event.eventPhase === Event.NONE || candidate.video !== this.#controlVideo || candidate.player !== this.#seekOwner || candidate.video !== this.sources.video() || candidate.player !== this.sources.player() || candidate.lifecycle !== this.sources.lifecycleKey() || !this.environment.isActuallyVisible()) {
-          if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek();
+          if (this.#seek.keyboard === candidate) this.#clearKeyboardSeek();
           return;
         }
-        if (this.#keyboardSeek !== candidate || candidate.revision !== this.#keyboardRevision || this.#internalSeek || !actualSeek || !Number.isFinite(position) || position === candidate.position || position === this.#pendingSeek)
+        if (this.#seek.keyboard !== candidate || candidate.revision !== this.#keyboardRevision || this.#seek.internalDepth || !actualSeek || !Number.isFinite(position) || position === candidate.position || position === this.#seek.pending)
           return;
-        if (this.#targetSec !== position) this.#seekRevision++;
-        this.#targetSec = position;
+        if (this.#seek.targetSec !== position) this.#seek.revision++;
+        this.#seek.targetSec = position;
         if (!this.#advanceUser()) return;
         this.#setGoal(candidate.video, position);
         this.#clearKeyboardSeek();
       } catch {
-        if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek();
+        if (this.#seek.keyboard === candidate) this.#clearKeyboardSeek();
       }
     }
     #clearKeyboardSeek() {
-      const candidate = this.#keyboardSeek;
-      this.#keyboardSeek = null;
+      const candidate = this.#seek.keyboard;
+      this.#seek.keyboard = null;
       candidate?.stop();
     }
     #beginKeyboardPlayback(event, video, player, revision2) {
@@ -8352,27 +8340,27 @@
       candidate?.stop();
     }
     #advanceUser(keepGoal = false) {
-      const goal = this.#goal, revision2 = this.#userRevision;
+      const goal = this.#seek.goal, revision2 = this.#userRevision;
       const valid = keepGoal && !!goal && !goal.completed && this.#goalCurrent(goal);
       if (revision2 !== this.#userRevision) return false;
       this.#userRevision++;
       this.#invalidatePlayback();
       this.#clearOwnedReload();
-      if (valid && this.#goal === goal) goal.userRevision = this.#userRevision;
-      else this.#goal = null;
+      if (valid && this.#seek.goal === goal) goal.userRevision = this.#userRevision;
+      else this.#seek.goal = null;
       return true;
     }
     #clearOwnedReload() {
-      const owner = this.#ownedReload;
-      this.#ownedReload = null;
-      this.#awaitReloadCore = false;
-      this.#coreReloadRevision = 0;
+      const owner = this.#reload.owned;
+      this.#reload.owned = null;
+      this.#reload.awaitCore = false;
+      this.#reload.coreRevision = 0;
       owner?.cancel();
     }
     #validateOwnedReload(video, player, core, owner) {
-      if (this.#ownedReload !== owner) return;
-      const valid = video === owner.video && player === owner.player && owner.revision === this.#reloadRevision && owner.lifecycle === this.sources.lifecycleKey() && owner.userRevision === this.#userRevision && this.environment.isActuallyVisible();
-      if (this.#ownedReload !== owner) return;
+      if (this.#reload.owned !== owner) return;
+      const valid = video === owner.video && player === owner.player && owner.revision === this.#reload.revision && owner.lifecycle === this.sources.lifecycleKey() && owner.userRevision === this.#userRevision && this.environment.isActuallyVisible();
+      if (this.#reload.owned !== owner) return;
       if (!valid) {
         this.#clearOwnedReload();
         return;
@@ -8390,12 +8378,12 @@
         return;
       }
       owner.replacement = core;
-      this.#coreReloadRevision = owner.revision;
-      this.#awaitReloadCore = false;
+      this.#reload.coreRevision = owner.revision;
+      this.#reload.awaitCore = false;
     }
     ownedReload(revision2) {
       this.#confirmKeyboardPlayback();
-      const owner = this.#ownedReload;
+      const owner = this.#reload.owned;
       if (!owner || owner.revision !== revision2) return false;
       this.#validateOwnedReload(
         this.sources.video(),
@@ -8403,24 +8391,24 @@
         safeCall(owner.player, "__core"),
         owner
       );
-      return this.#ownedReload === owner;
+      return this.#reload.owned === owner;
     }
     #validateDrag() {
-      const drag = this.#drag;
+      const drag = this.#seek.drag;
       if (!drag) return;
       if (drag.video !== this.#controlVideo || drag.player !== this.#seekOwner || drag.video !== this.sources.video() || drag.player !== this.sources.player() || drag.lifecycle !== this.sources.lifecycleKey() || !this.environment.isActuallyVisible()) {
-        if (this.#drag === drag) {
-          this.#drag = null;
-          this.#pointerRevision++;
+        if (this.#seek.drag === drag) {
+          this.#seek.drag = null;
+          this.#seek.pointerRevision++;
         }
       }
     }
     #clearControls() {
-      this.#positionRestore = null;
-      this.#rateRestore = null;
-      this.#goal = null;
+      this.#restores.position = null;
+      this.#restores.rate = null;
+      this.#seek.goal = null;
       this.#controlRevision++;
-      this.#nativePosition = null;
+      this.#seek.nativePosition = null;
       this.#clearKeyboardSeek();
       this.#clearKeyboardPlayback();
       this.#keyboardRevision++;
@@ -8428,9 +8416,9 @@
       this.#inputs.clear();
       this.#controlVideo = null;
       this.#seekOwner = null;
-      this.#drag = null;
-      this.#pointerRevision++;
-      this.#pendingSeek = null;
+      this.#seek.drag = null;
+      this.#seek.pointerRevision++;
+      this.#seek.pending = null;
     }
     observePlayIntent(listener) {
       const target = this.sources.player(), original = target?.play;
@@ -8485,17 +8473,17 @@
       return prepared.dispatch(() => true);
     }
     prepareReload() {
-      const userRevision = this.#userRevision, beforeRevision = this.#reloadRevision, seekRevision = this.#seekRevision, controlRevision = this.#controlRevision;
+      const userRevision = this.#userRevision, beforeRevision = this.#reload.revision, seekRevision = this.#seek.revision, controlRevision = this.#controlRevision;
       const player = this.sources.player(), video = this.sources.video(), lifecycle = this.sources.lifecycleKey();
       const sourceCore = safeCall(player, "__core"), reload = player?.reload;
       if (!player || typeof reload !== "function") return null;
       let dispatched = false;
-      const revisionsMatch = /* @__PURE__ */ __name(() => userRevision === this.#userRevision && beforeRevision === this.#reloadRevision && seekRevision === this.#seekRevision && controlRevision === this.#controlRevision, "revisionsMatch");
+      const revisionsMatch = /* @__PURE__ */ __name(() => userRevision === this.#userRevision && beforeRevision === this.#reload.revision && seekRevision === this.#seek.revision && controlRevision === this.#controlRevision, "revisionsMatch");
       const valid = /* @__PURE__ */ __name(() => {
         if (dispatched || !revisionsMatch()) return false;
         const currentPlayer = this.sources.player(), currentVideo = this.sources.video(), currentCore = safeCall(player, "__core");
         const visible = this.environment.isActuallyVisible(), currentLifecycle = this.sources.lifecycleKey();
-        if (userRevision !== this.#userRevision || beforeRevision !== this.#reloadRevision || currentPlayer !== player || currentVideo !== video || currentCore !== sourceCore || currentLifecycle !== lifecycle || !visible)
+        if (userRevision !== this.#userRevision || beforeRevision !== this.#reload.revision || currentPlayer !== player || currentVideo !== video || currentCore !== sourceCore || currentLifecycle !== lifecycle || !visible)
           return false;
         return revisionsMatch();
       }, "valid");
@@ -8508,58 +8496,62 @@
           dispatched = true;
           this.#clearKeyboardPlayback();
           this.#clearOwnedReload();
-          this.#reloadCore = sourceCore;
-          const revision2 = ++this.#reloadRevision;
+          this.#reload.core = sourceCore;
+          const revision2 = ++this.#reload.revision;
           const owner = video ? {
             revision: revision2,
             video,
             player,
             lifecycle,
             userRevision,
-            sourceCore: this.#reloadCore,
+            sourceCore: this.#reload.core,
             replacement: null,
             sawNull: false,
             stable: false,
             cancel: /* @__PURE__ */ __name(() => void 0, "cancel")
           } : null;
-          this.#ownedReload = owner;
-          this.#awaitReloadCore = owner !== null;
+          this.#reload.owned = owner;
+          this.#reload.awaitCore = owner !== null;
           if (owner)
             owner.cancel = this.environment.scheduler.timeout(() => {
-              if (this.#ownedReload === owner) this.#clearOwnedReload();
+              if (this.#reload.owned === owner) this.#clearOwnedReload();
             }, 15e3);
-          if (this.#ownedReload !== owner || this.#reloadRevision !== revision2 || this.#seekRevision !== seekRevision || this.#controlRevision !== controlRevision || this.#userRevision !== userRevision) {
-            if (this.#ownedReload === owner) this.#clearOwnedReload();
+          if (this.#reload.owned !== owner || this.#reload.revision !== revision2 || this.#seek.revision !== seekRevision || this.#controlRevision !== controlRevision || this.#userRevision !== userRevision) {
+            if (this.#reload.owned === owner) this.#clearOwnedReload();
             throw new Error("player.reload ownership ended");
           }
-          this.#internalReload++;
-          const beforePosition = this.#nativePosition;
+          this.#reload.internalDepth++;
+          const beforePosition = this.#seek.nativePosition;
           try {
             const result = Reflect.apply(reload, player, []);
             if (result && (typeof result === "object" || typeof result === "function"))
               void Promise.resolve(result).catch(() => {
-                if (this.#ownedReload === owner) this.#clearOwnedReload();
+                if (this.#reload.owned === owner) this.#clearOwnedReload();
               });
             return result;
           } catch (error) {
-            if (this.#ownedReload === owner) this.#clearOwnedReload();
+            if (this.#reload.owned === owner) this.#clearOwnedReload();
             throw error;
           } finally {
             try {
-              if (video && this.#ownedReload === owner)
-                this.#observeNativePosition(video, player, this.#nativePosition === beforePosition);
+              if (video && this.#reload.owned === owner)
+                this.#observeNativePosition(
+                  video,
+                  player,
+                  this.#seek.nativePosition === beforePosition
+                );
             } catch {
-              if (this.#ownedReload === owner) this.#seekRevision++;
+              if (this.#reload.owned === owner) this.#seek.revision++;
             } finally {
-              this.#internalReload--;
+              this.#reload.internalDepth--;
             }
           }
         }, "dispatch")
       });
     }
     #nativeWriteGuard(canCommit) {
-      const revision2 = this.#controlRevision, user = this.#userRevision, seek = this.#seekRevision, reload = this.#reloadRevision, video = this.sources.video(), player = this.sources.player(), lifecycle = this.sources.lifecycleKey(), core = safeCall(player, "__core");
-      const revisionsMatch = /* @__PURE__ */ __name(() => revision2 === this.#controlRevision && user === this.#userRevision && seek === this.#seekRevision && reload === this.#reloadRevision, "revisionsMatch");
+      const revision2 = this.#controlRevision, user = this.#userRevision, seek = this.#seek.revision, reload = this.#reload.revision, video = this.sources.video(), player = this.sources.player(), lifecycle = this.sources.lifecycleKey(), core = safeCall(player, "__core");
+      const revisionsMatch = /* @__PURE__ */ __name(() => revision2 === this.#controlRevision && user === this.#userRevision && seek === this.#seek.revision && reload === this.#reload.revision, "revisionsMatch");
       return () => {
         try {
           if (!canCommit() || !revisionsMatch()) return false;
@@ -8578,12 +8570,12 @@
       this.#clearKeyboardSeek();
       this.#clearKeyboardPlayback();
       const nativeCurrent = this.#nativeWriteGuard(canCommit);
-      if (this.#goal?.position === value) {
-        this.#goal.baseline = null;
-        this.#goal.progress = 0;
+      if (this.#seek.goal?.position === value) {
+        this.#seek.goal.baseline = null;
+        this.#seek.goal.progress = 0;
       }
-      this.#internalSeek++;
-      this.#pendingSeek = value;
+      this.#seek.internalDepth++;
+      this.#seek.pending = value;
       try {
         const player = this.sources.player(), method = player?.seek;
         const dispatched = this.#sdkCommand(player, method, value, nativeCurrent);
@@ -8595,7 +8587,7 @@
         }
         return { channel: "none", result: void 0 };
       } finally {
-        this.#internalSeek--;
+        this.#seek.internalDepth--;
       }
     }
     setRate(value, canCommit = () => true) {
@@ -8625,7 +8617,7 @@
       return { channel: "sdk", result: Reflect.apply(method, player, [value]) };
     }
     #restoreRecord(attempt) {
-      const record = attempt.kind === "position" ? this.#positionRestore : this.#rateRestore;
+      const record = attempt.kind === "position" ? this.#restores.position : this.#restores.rate;
       return record?.attempt.proof === attempt.proof ? record : null;
     }
     #restoreCurrent(record, policy = true) {
@@ -8637,7 +8629,7 @@
         record.status = rejected ? "rejected" : "settled";
     }
     #pendingRestoreSeek(position) {
-      const record = this.#positionRestore;
+      const record = this.#restores.position;
       return !!record && (record.inCall || record.status === "pending") && (position === record.originPosition || position === record.command.value) && this.#restoreCurrent(record, false);
     }
     #watchRestoreResult(attempt, result) {
@@ -8667,8 +8659,8 @@
         originPosition: typeof origin === "number" && Number.isFinite(origin) ? origin : null,
         inCall: true
       };
-      if (command.kind === "position") this.#positionRestore = record;
-      else this.#rateRestore = record;
+      if (command.kind === "position") this.#restores.position = record;
+      else this.#restores.rate = record;
       const current = /* @__PURE__ */ __name(() => this.#restoreCurrent(record), "current");
       let applied;
       try {
@@ -8687,7 +8679,7 @@
       return attempt;
     }
     #noteRestoreLanding() {
-      const record = this.#positionRestore;
+      const record = this.#restores.position;
       if (!record || record.landing || !this.#restoreCurrent(record, false)) return;
       try {
         const video = this.sources.video(), at = record.guard.now();
@@ -8751,13 +8743,13 @@
       record.status = "settled";
       if (record.command.kind === "position") {
         record.landing = null;
-        this.#pendingSeek = record.command.value;
-        this.#internalSeek++;
+        this.#seek.pending = record.command.value;
+        this.#seek.internalDepth++;
         try {
           if (this.#restoreCurrent(record)) video.currentTime = record.command.value;
         } catch {
         } finally {
-          this.#internalSeek--;
+          this.#seek.internalDepth--;
         }
       } else {
         try {
@@ -8778,11 +8770,11 @@
     reset() {
       this.#invalidatePlayback();
       this.#clearControls();
-      this.#awaitReloadCore = false;
-      this.#coreReloadRevision = 0;
-      this.#seekRevision++;
+      this.#reload.awaitCore = false;
+      this.#reload.coreRevision = 0;
+      this.#seek.revision++;
       this.#userRevision++;
-      this.#targetSec = null;
+      this.#seek.targetSec = null;
     }
   };
 
@@ -11593,13 +11585,6 @@ ${label}備用路線：${row.plannedHost}｜${stage}` + (row.responseHost ? `｜
     rows.className = "grid";
     const toggles = [
       [
-        "startupEarlyReleaseEnabled",
-        "起播提前放行",
-        "所有合法模式找到首個足夠快的候選後提早放行；不表示已找出全輪最快。"
-      ],
-      ["healthMiddleRangeEnabled", "健康中段探測", "檔案大小可靠時，從中段量測速度。"],
-      ["backupFamilyDiversityEnabled", "備援家族分散", "速度足夠的備援優先分散至不同主機家族。"],
-      [
         "earlyRetryEnabled",
         "慢請求提前重試",
         "緩衝不足且替代路線證據充足時，讓網站提早重試。效用評估仍未達原定門檻。"
@@ -11653,7 +11638,7 @@ ${label}備用路線：${row.plannedHost}｜${stage}` + (row.responseHost ? `｜
       ),
       createButton(
         "還原預設設定（不清除測速紀錄）",
-        () => ask("還原所有設定？六個自動功能與香港節點將使用新版預設。", () => commands.resetSettings()),
+        () => ask("還原所有設定？三個功能開關與節點將使用新版預設。", () => commands.resetSettings()),
         "danger"
       ),
       confirm

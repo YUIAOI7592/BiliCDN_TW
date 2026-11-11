@@ -1566,3 +1566,7 @@ TODO 將功能問題、政策／程式優化及驗收證據缺口分開，更新
 依使用者要求，將 [TODO](../../../docs/TODO.md) 收斂為目前狀態、未完成工作、條件式證據及簡短結案導引。已完成的 v2.2.17 修復、R1／R2、工具鏈與工作區清理不再占用待辦正文；黑畫面更正及已取消的 playerReady 獨立重測移入結案表。提前重試方法、效益研究、安裝證據及可延後重構分開列管，沒有新啟動的測試或修復。
 
 清理前全部正文、原優先順序及停止決策由 [86fec91 固定快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/86fec9115842c5278df4788b32b44a0a1241789d/docs/TODO.md) 保存；原執行邊界及舊錨點保持，TEST_REPORT 與歷史 FAIL／INVALID 不改寫。持續維護的 TODO 清單登記改為無固定版本／日期，產品版本仍由正式設定及現行正文核對。文件與公開封存檢查通過後主動提交推送 main，不升版、發布或重測產品。
+
+## 2026-11-11：v2.2.18 簡化與交付文件
+
+更新 README、ARCHITECTURE、DEVELOPMENT 的原政策／工作流程章節，工作與本輪有界驗收集中 TODO，實際結果集中 TEST_REPORT。SECURITY 釐清退役欄位不形成授權；測試對照記入 MIGRATION 與 TEST_TOOLING_REPORT。v2.2.17 完整報告含 R1／R2 原樣追加 TEST_REPORT_HISTORY，原錨點保留導引；五份 Release 原件壓縮並獨立還原核對，原始雜湊不變。沒有回寫歷史 FAIL／INVALID、安全原件或已發布快照。
