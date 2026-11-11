@@ -7,11 +7,11 @@ import { type TestContext } from 'node:test'
 import { RouteCoordinator } from '../../../src-v2/application/routing/route-coordinator.ts'
 import { RecoveryController } from '../../../src-v2/application/playback/recovery-controller.ts'
 import { createRouteStateResources } from './application-resources.ts'
+import { testScope } from '../../support/scope.ts'
 
 async function createHostLockNeverRestoresADeadRootAndMayChooseAContext14(t: TestContext) {
   const resources = await createRouteStateResources(t)
-  const { liveVault, state, clock, session, settings, restrictions, evidenceStore, now, scope } =
-    resources
+  const { liveVault, state, clock, session, settings, restrictions, evidenceStore, now } = resources
 
   const liveRep = liveVault.register({
     generation: state.generation,
@@ -33,29 +33,20 @@ async function createHostLockNeverRestoresADeadRootAndMayChooseAContext14(t: Tes
     liveVault,
     createRuntimeIds(),
   )
-  const block1 = createMutablePlaybackResources()
-  const { recoveryPlayer } = block1
   return {
     coordinator,
     liveRep,
     liveVault,
     now,
-    get playerSnapshot() {
-      return block1.playerSnapshot
-    },
-    set playerSnapshot(value: typeof block1.playerSnapshot) {
-      block1.playerSnapshot = value
-    },
-    recoveryPlayer,
     restrictions,
-    scope,
   }
 }
 
 async function checkHostLockNeverRestoresADeadRootAndMayChooseA(t: TestContext): Promise<void> {
   const base = await createHostLockNeverRestoresADeadRootAndMayChooseAContext14(t)
 
-  if (base.liveRep) {
+  assert.ok(base.liveRep, 'behavior requires its fixture prerequisites')
+  {
     const root = base.liveVault.rootUrl(base.liveRep)!,
       lockedHost = new URL(root).host
     await base.restrictions.add({
@@ -83,27 +74,10 @@ async function checkHostLockNeverRestoresADeadRootAndMayChooseA(t: TestContext):
 }
 
 async function checkNormalShortResumeReturnsHealthyState16(t: TestContext): Promise<void> {
-  const base = await createHostLockNeverRestoresADeadRootAndMayChooseAContext14(t)
-
-  if (base.liveRep) {
-    const root = base.liveVault.rootUrl(base.liveRep)!,
-      lockedHost = new URL(root).host
-    await base.restrictions.add({
-      host: lockedHost,
-      type: 'dead',
-      kind: 'all',
-      reason: 'host-lock-test',
-      expireAt: base.now + 60_000,
-    })
-    base.coordinator.apply(root)
-    base.coordinator.plan(
-      base.liveRep,
-      { kind: 'video', requiredMbps: 3, highDemand: false },
-      'startup',
-    )
-  }
-  let shortResumeNow = base.now
-  const shortResume = base.scope.own(
+  const base = createMutablePlaybackResources(),
+    scope = testScope(t)
+  let shortResumeNow = 2_000_000_000_000
+  const shortResume = scope.own(
     new RecoveryController(currentResumePlayer(base.recoveryPlayer), () => shortResumeNow),
   )
   shortResume.tick({ ...base.playerSnapshot, paused: false })

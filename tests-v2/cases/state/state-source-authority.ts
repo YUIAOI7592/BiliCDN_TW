@@ -751,7 +751,8 @@ async function checkPCDNCatalogSourceHandleResolvesOnlyTheCurrentExactSignedURL(
 ): Promise<void> {
   const base = await createPCDNCatalogSourceHandleResolvesOnlyTheCurrentExactSignedURLContext9(t)
 
-  if (base.pcdnRep) {
+  assert.ok(base.pcdnRep, 'behavior requires its fixture prerequisites')
+  {
     const identity = base.vault.identity(base.pcdnRep),
       handle = base.vault.catalogSourceHandle(base.pcdnRep)
     assert.strictEqual(
@@ -805,7 +806,8 @@ async function checkSignedRouteNeverCrossesGeneration10(t: TestContext): Promise
 async function checkOpaqueHandleResolvesInsideVault9(t: TestContext): Promise<void> {
   const base = await createProtectedUrlContext7(t)
 
-  if (base.rep && base.native) {
+  assert.ok(base.rep && base.native, 'behavior requires its fixture prerequisites')
+  {
     assert.strictEqual(
       base.vault.resolve(base.native.handle, base.native.route)?.includes('token=secret'),
       true,
@@ -881,7 +883,8 @@ async function checkRetiredPageHintTransportDoesNotPunishItsOldHostAfter(
 ): Promise<void> {
   const base = await createRetiredPageHintTransportDoesNotPunishItsOldHostAfterContext5(t)
 
-  if (base.plannedRep) {
+  assert.ok(base.plannedRep, 'behavior requires its fixture prerequisites')
+  {
     const staleRequest = {
       requestId: requestId('retired-hint'),
       generation: base.authorityState.generation,
@@ -938,7 +941,8 @@ async function checkLateChallengerResultFromTheRetiredHintCannotCreateHealthEvid
   const base =
     await createLateChallengerResultFromTheRetiredHintCannotCreateHealthEvidenceContext4(t)
 
-  if (base.staleChallenge) {
+  assert.ok(base.staleChallenge, 'behavior requires its fixture prerequisites')
+  {
     await base.plannedRoutes.recordChallenge(
       base.staleChallenge,
       70 * 1024,
@@ -970,7 +974,8 @@ async function checkLatePreflightResultFromTheRetiredHintCannotCreateHealthEvide
 ): Promise<void> {
   const base = await createLateLowerTrustPageHintDoesNotRewriteOrMergeIntoContext3(t)
 
-  if (base.staleStartup) {
+  assert.ok(base.staleStartup, 'behavior requires its fixture prerequisites')
+  {
     await base.plannedRoutes.recordStartupSuccess(base.staleStartup, 70 * 1024, 100, 10)
     assert.strictEqual(
       base.authorityEvidence.get(base.staleStartup.host, 'video'),

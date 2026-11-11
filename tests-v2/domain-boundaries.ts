@@ -134,6 +134,18 @@ async function checkCatalogBackupOrder(t: TestContext): Promise<void> {
     new Set([primary]),
   )
   assert.strictEqual(catalog[0], next, 'Catalog backup preferences retain stable first occurrence')
+  const same = 'upos-sz-mirrorali.bilivideo.com',
+    diverse = 'upos-sz-mirrorbos.bilivideo.com',
+    unavailable = 'upos-sz-mirrorhw.bilivideo.com'
+  const measured = catalogOutputPlan(
+    'upos-sz-mirroraliov.bilivideo.com',
+    [same, diverse, unavailable],
+    new Set([unavailable]),
+    new Set([same, diverse]),
+  )
+  assert.deepEqual(measured.slice(0, 2), [diverse, same])
+  assert.equal(measured.length, 5)
+  assert.equal(measured.includes(unavailable), false)
   assert.strictEqual(
     catalog.length <= 5 && catalog.every((host) => host !== primary && isCatalogHost(host)),
     true,

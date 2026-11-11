@@ -575,7 +575,8 @@ async function checkCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7(
 ): Promise<void> {
   const base = await createCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7Context6(t)
 
-  if (base.pcdnRep) {
+  assert.ok(base.pcdnRep, 'behavior requires its fixture prerequisites')
+  {
     const identity = base.pcdnVault.identity(base.pcdnRep)!
     assert.strictEqual(
       base.pcdnVault.resolve(base.pcdnVault.catalogSourceHandle(base.pcdnRep)!, identity),

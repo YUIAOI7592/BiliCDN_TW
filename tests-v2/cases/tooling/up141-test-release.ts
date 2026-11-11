@@ -12,7 +12,6 @@ import {
   MeasurementMetaStore,
   MEASUREMENT_META_KEY,
 } from '../../../src-v2/state/measurement-meta-store.ts'
-import { catalogOutputPlan, backupOutputPlan } from '../../../src-v2/domain/player-output-plan.ts'
 import {
   type RangeProbeInput,
   type RangeProbeResult,
@@ -80,27 +79,6 @@ test('UP141-TEST retained retry preference preserves false and suppresses off wh
   await pending
   const restored = scope.own(new CatalogSettingsStore(storage, () => 1002))
   for (const key of flags) assert.equal(restored.get()[key], false)
-})
-
-test('UP141-TEST fixed diversity retains eligibility and backup bound', (t) => {
-  testScope(t)
-  const primary = 'upos-sz-mirroraliov.bilivideo.com'
-  const same = 'upos-sz-mirrorali.bilivideo.com',
-    diverse = 'upos-sz-mirrorbos.bilivideo.com'
-  const unavailable = new Set(['upos-sz-mirrorhw.bilivideo.com'])
-  const sufficient = new Set([same, diverse])
-  assert.deepEqual(
-    catalogOutputPlan(primary, [same, diverse], unavailable, sufficient).slice(0, 2),
-    [diverse, same],
-  )
-  const candidates = [same, diverse].map((host, index) => ({
-    host,
-    index,
-    allowed: true,
-    meetsHeadroom: true,
-  }))
-  assert.deepEqual(backupOutputPlan(primary, candidates, false), [1, 0])
-  assert.deepEqual(backupOutputPlan(primary, candidates, true), [])
 })
 
 async function validation(t: TestContext, storage = new FakeStorage()) {

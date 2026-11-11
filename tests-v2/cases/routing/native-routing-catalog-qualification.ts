@@ -105,38 +105,6 @@ async function createNativeRoutingScenario(t: TestContext) {
   }
 }
 
-async function createCatalogOnlyFixtureRetainsBothOriginalURLsPrivatelyForAttribution2Context1(
-  t: TestContext,
-) {
-  const resources = await createRoutingResources(t)
-  const { catalogVideoRoot, catalogVideoBackup, catalogAudioRoot, catalogAdapter, catalogVault } =
-    resources
-
-  const catalogVideo = {
-    id: 80,
-    codecid: 13,
-    height: 1080,
-    bandwidth: 2_000_000,
-    base_url: catalogVideoRoot,
-    backup_url: [catalogVideoBackup],
-  }
-  const catalogAudio = {
-    id: 30280,
-    bandwidth: 192_000,
-    base_url: catalogAudioRoot,
-    backup_url: [] as string[],
-  }
-  void catalogAdapter.transform({
-    data: { dash: { video: [catalogVideo], audio: [catalogAudio] } },
-  }).accepted
-  const catalogVideoRep = catalogVault.contextForUrl(catalogVideoRoot)?.representation
-  const catalogAudioRep = catalogVault.contextForUrl(catalogAudioRoot)?.representation
-  return {
-    catalogAudioRep,
-    catalogVideoRep,
-  }
-}
-
 async function createCatalogDemandContext2(t: TestContext) {
   const resources = await createRoutingResources(t)
   const {
@@ -400,12 +368,13 @@ async function checkNoLegalCatalogCandidateEmitsNoPlayerPrimary6(t: TestContext)
 async function checkNoLegalCatalogCandidateStartsNoHealthyProbe5(t: TestContext): Promise<void> {
   const base = await createNoLegalCatalogCandidateStartsNoHealthyProbe5Context4(t)
 
-  if (base.catalogVideoRep)
-    assert.strictEqual(
-      base.catalogRoutes.challenge(base.catalogVideoRep, base.catalogDemand, true),
-      null,
-      'no legal Catalog candidate starts no healthy probe',
-    )
+  assert.ok(base.catalogVideoRep, 'behavior requires its fixture prerequisites')
+
+  assert.strictEqual(
+    base.catalogRoutes.challenge(base.catalogVideoRep, base.catalogDemand, true),
+    null,
+    'no legal Catalog candidate starts no healthy probe',
+  )
 }
 
 async function checkOpaqueSignedBStationAudioIsRemovedFromCatalogOnlyPlayer(
@@ -461,7 +430,11 @@ async function checkOpaqueSignedBStationAudioIsRemovedFromCatalogOnlyPlayer(
 async function checkCatalogOnlyStartupHasLegalCandidates3(t: TestContext): Promise<void> {
   const base = await createCatalogDemandContext2(t)
 
-  if (base.catalogVideoRep && base.catalogAudioRep) {
+  assert.ok(
+    base.catalogVideoRep && base.catalogAudioRep,
+    'behavior requires its fixture prerequisites',
+  )
+  {
     const options = base.catalogRoutes.startupOptions(base.catalogVideoRoot)
     assert.ok(options && options.candidates.length > 0, 'Catalog-only startup has legal candidates')
     assert.ok(
@@ -559,18 +532,6 @@ async function checkCatalogOnlyStartupHasLegalCandidates3(t: TestContext): Promi
       )
     }
   }
-}
-
-async function checkCatalogOnlyFixtureRetainsBothOriginalURLsPrivatelyForAttribution2(
-  t: TestContext,
-): Promise<void> {
-  const base =
-    await createCatalogOnlyFixtureRetainsBothOriginalURLsPrivatelyForAttribution2Context1(t)
-
-  assert.ok(
-    base.catalogVideoRep && base.catalogAudioRep,
-    'Catalog-only fixture retains both original URLs privately for attribution',
-  )
 }
 
 async function checkFirstGroupEstablishesObservedNativeAffinity1(t: TestContext): Promise<void> {
@@ -707,14 +668,6 @@ async function checkFirstGroupEstablishesObservedNativeAffinity1(t: TestContext)
 test('first group establishes observed Native affinity [1]', { timeout: 5000 }, async (t) => {
   await checkFirstGroupEstablishesObservedNativeAffinity1(t)
 })
-
-test(
-  'Catalog-only fixture retains both original URLs privately for attribution [2]',
-  { timeout: 5000 },
-  async (t) => {
-    await checkCatalogOnlyFixtureRetainsBothOriginalURLsPrivatelyForAttribution2(t)
-  },
-)
 
 test('Catalog-only startup has legal candidates [3]', { timeout: 5000 }, async (t) => {
   await checkCatalogOnlyStartupHasLegalCandidates3(t)

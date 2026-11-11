@@ -2,9 +2,6 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { type TestContext } from 'node:test'
 import { TRUSTED_CATALOG, DEFAULT_UNAVAILABLE_HOSTS } from '../../../src-v2/domain/catalog.ts'
-import { SignedRouteVault } from '../../../src-v2/state/signed-route-vault.ts'
-import { SessionStore } from '../../../src-v2/state/session-store.ts'
-import { testScope } from '../../support/scope.ts'
 import {
   createProgressiveSourceUrls,
   createRoutingResources,
@@ -49,57 +46,6 @@ async function createProgressiveRoutingResources(t: TestContext) {
     segment2,
     settings,
     vault,
-  }
-}
-
-async function createAResourcePrimaryWithALegalSameSegmentBackupRegisters3Context2(
-  _t: TestContext,
-) {
-  const session = new SessionStore()
-  const state = session.beginGeneration(false)
-  const vault = new SignedRouteVault()
-  vault.reset(state.generation, state.epoch)
-  const block1 = createProgressiveSourceUrls()
-  const { opaque, segment1, segment2 } = block1
-  void vault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: 'durl:q80:0',
-    height: 0,
-    codec: 'mp4',
-    bandwidth: 0,
-    urls: [opaque, segment1],
-    source: 'trusted-api',
-  })
-  void vault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: 'durl:q80:1',
-    height: 0,
-    codec: 'flv',
-    bandwidth: 0,
-    urls: [segment2],
-    source: 'trusted-api',
-  })
-  const resource =
-    'https://upos-hz-mirrorakam.akamaized.net/v1/resource/progressive-segment?token=resource'
-  const resourceBackup =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/resource-backup.mp4?token=valid'
-  const resourceRep = vault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: 'durl:q64:0',
-    height: 0,
-    codec: 'mp4',
-    bandwidth: 0,
-    urls: [resource, resourceBackup],
-    source: 'trusted-api',
-  })
-  return {
-    resourceRep,
   }
 }
 
@@ -163,7 +109,8 @@ async function checkResourcePrimaryIsReplacedUsingItsExactLegalBackupSource4(
 ): Promise<void> {
   const base = await createResourcePrimaryIsReplacedUsingItsExactLegalBackupSource4Context3(t)
 
-  if (base.resourceRep) {
+  assert.ok(base.resourceRep, 'behavior requires its fixture prerequisites')
+  {
     const resourcePlan = base.routes.plan(base.resourceRep, base.demand, 'startup')
     const resourceOutput = base.routes.playerOutput(base.resourceRep, base.resource, resourcePlan, [
       base.resource,
@@ -188,20 +135,13 @@ async function checkResourcePrimaryIsReplacedUsingItsExactLegalBackupSource4(
   }
 }
 
-async function checkAResourcePrimaryWithALegalSameSegmentBackupRegisters3(
-  t: TestContext,
-): Promise<void> {
-  const base = await createAResourcePrimaryWithALegalSameSegmentBackupRegisters3Context2(t)
-
-  assert.ok(base.resourceRep, 'a resource primary with a legal same-segment backup registers')
-}
-
 async function checkCatalogSourceResolvesTheFirstLegalSameSegmentBackupWhenThe(
   t: TestContext,
 ): Promise<void> {
   const base = await createProgressiveRoutingResources(t)
 
-  if (base.rep1 && base.rep2) {
+  assert.ok(base.rep1 && base.rep2, 'behavior requires its fixture prerequisites')
+  {
     const handle = base.vault.catalogSourceHandle(base.rep1)
     assert.strictEqual(
       handle && base.vault.resolve(handle, base.vault.identity(base.rep1)!),
@@ -357,68 +297,11 @@ async function checkCatalogSourceResolvesTheFirstLegalSameSegmentBackupWhenThe(
   }
 }
 
-async function checkTwoProgressiveSegmentsRegisterAsSeparateVideoRepresentations1(
-  t: TestContext,
-): Promise<void> {
-  testScope(t)
-
-  const session = new SessionStore()
-  const state = session.beginGeneration(false)
-  const vault = new SignedRouteVault()
-  vault.reset(state.generation, state.epoch)
-  const opaque =
-    'https://upos-hz-mirrorakam.akamaized.net/opaque/progressive/segment-1?token=opaque'
-  const segment1 =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/segment-1.mp4?token=backup&part=1'
-  const segment2 =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/progressive/segment-2.flv?token=backup&part=2'
-  const rep1 = vault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: 'durl:q80:0',
-    height: 0,
-    codec: 'mp4',
-    bandwidth: 0,
-    urls: [opaque, segment1],
-    source: 'trusted-api',
-  })
-  const rep2 = vault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: 'durl:q80:1',
-    height: 0,
-    codec: 'flv',
-    bandwidth: 0,
-    urls: [segment2],
-    source: 'trusted-api',
-  })
-
-  assert.ok(rep1 && rep2, 'two progressive segments register as separate video representations')
-}
-
-test(
-  'two progressive segments register as separate video representations [1]',
-  { timeout: 5000 },
-  async (t) => {
-    await checkTwoProgressiveSegmentsRegisterAsSeparateVideoRepresentations1(t)
-  },
-)
-
 test(
   'Catalog source resolves the first legal same-segment backup when the declared root is opaque [2]',
   { timeout: 5000 },
   async (t) => {
     await checkCatalogSourceResolvesTheFirstLegalSameSegmentBackupWhenThe(t)
-  },
-)
-
-test(
-  'a resource primary with a legal same-segment backup registers [3]',
-  { timeout: 5000 },
-  async (t) => {
-    await checkAResourcePrimaryWithALegalSameSegmentBackupRegisters3(t)
   },
 )
 

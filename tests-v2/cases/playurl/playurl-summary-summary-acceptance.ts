@@ -279,43 +279,31 @@ async function checkXHRResponseTextAcceptsATypedAcceptedResult4(t: TestContext):
 
 async function checkStrictXHRParameterRejectsAnUnacceptedTypedResult3ParameterParameter(
   t: TestContext,
-  parameter = 0,
+  type: 'text' | 'json',
 ): Promise<void> {
   const base = await createRejectedBodyContext2(t)
 
-  let iteration = 0
-  for (const type of ['text', 'json'] as const) {
-    if (iteration++ === parameter) {
-      const xhr = base.makeXhr(type, { code: 0, data: { url: base.secret } })
-      const output = type === 'json' ? JSON.stringify(xhr.response) : xhr.responseText
-      assert.ok(
-        !output.includes('summary-secret'),
-        `strict XHR ${type} rejects an unaccepted typed result`,
-      )
-      assert.strictEqual(xhr.status, 200, `strict XHR ${type} retains native HTTP status`)
-      assert.strictEqual(
-        base.transport.snapshot().lastPlayurl?.transport,
-        'xhr',
-        `XHR ${type} updates summary`,
-      )
-      assert.strictEqual(
-        base.transport.snapshot().lastPlayurl?.reason,
-        'upstream-error',
-        `XHR ${type} reports rejection reason`,
-      )
-      const transformedAt = base.calls
-      void xhr.response
-      if (type === 'text') void xhr.responseText
-      assert.strictEqual(
-        base.calls,
-        transformedAt,
-        `XHR ${type} reads reuse the cached transformation`,
-      )
-
-      return
-    }
-  }
-  throw Error('Unknown fixture parameter')
+  const xhr = base.makeXhr(type, { code: 0, data: { url: base.secret } })
+  const output = type === 'json' ? JSON.stringify(xhr.response) : xhr.responseText
+  assert.ok(
+    !output.includes('summary-secret'),
+    `strict XHR ${type} rejects an unaccepted typed result`,
+  )
+  assert.strictEqual(xhr.status, 200, `strict XHR ${type} retains native HTTP status`)
+  assert.strictEqual(
+    base.transport.snapshot().lastPlayurl?.transport,
+    'xhr',
+    `XHR ${type} updates summary`,
+  )
+  assert.strictEqual(
+    base.transport.snapshot().lastPlayurl?.reason,
+    'upstream-error',
+    `XHR ${type} reports rejection reason`,
+  )
+  const transformedAt = base.calls
+  void xhr.response
+  if (type === 'text') void xhr.responseText
+  assert.strictEqual(base.calls, transformedAt, `XHR ${type} reads reuse the cached transformation`)
 }
 
 async function checkARejectedResultObjectCannotTruthilyPassStrictFetch2(
@@ -401,7 +389,7 @@ test(
         ` / ${String(type)} / ${selected}`,
       { timeout: 5000 },
       async (t) => {
-        await checkStrictXHRParameterRejectsAnUnacceptedTypedResult3ParameterParameter(t, selected)
+        await checkStrictXHRParameterRejectsAnUnacceptedTypedResult3ParameterParameter(t, type)
       },
     )
   }

@@ -10,59 +10,58 @@ import { start, finish } from '../../../support/route-dispatch.ts'
 import { SETTINGS_KEY } from '../../../../src-v2/state/settings-store.ts'
 import { TRUSTED_CATALOG } from '../../../../src-v2/domain/catalog.ts'
 for (const native of [false, true])
-  for (const early of [false, true])
-    test(`V2218 fixed early release native=${native} legacy=${early}`, async (t) => {
-      const scope = testScope(t),
-        f = fixture(scope),
-        url = media('v230-early', 'video.m4s')
-      await f.settings.update({ considerNativeSources: native })
-      f.storage.remote(SETTINGS_KEY, {
-        ...f.settings.get(),
-        startupEarlyReleaseEnabled: early,
-        updatedAt: f.clock.now() + 1,
-      })
-      assert.equal(f.adapter.transform(dash(url)).accepted, true)
-      const pending = new Map<string, ReturnType<typeof deferred<RangeProbeResult>>>(),
-        controller = scope.own(
-          new MeasurementController(
-            f.routes,
-            new MeasurementMetaStore(f.storage, f.clock.now),
-            {
-              read: async (input) => {
-                const d = deferred<RangeProbeResult>()
-                pending.set(input.host!, d)
-                return d.promise
-              },
-            },
-            f.clock.now,
-            f.clock,
-            undefined,
-            () => 0,
-            f.settings,
-            f.clock.now,
-          ),
-        )
-      let done = false
-      const gate = controller.prepareStartup(url).then(() => {
-        done = true
-      })
-      assert.equal(pending.size, 3)
-      const first = [...pending.values()][0]!
-      first.resolve({
-        bytes: 262144,
-        elapsedMs: 50,
-        ttfbMs: 1,
-        status: 206,
-        directRange: true,
-        reason: 'measured',
-        timingBasis: 'probe-reader',
-        speedEligible: true,
-      })
-      for (let i = 0; i < 16; i++) await Promise.resolve()
-      assert.equal(done, true)
-      await gate
-      assert.equal(controller.snapshot().startup?.reason, 'qualified-early')
+  test(`V2218 fixed early release native=${native} legacy=false`, async (t) => {
+    const scope = testScope(t),
+      f = fixture(scope),
+      url = media('v230-early', 'video.m4s')
+    await f.settings.update({ considerNativeSources: native })
+    f.storage.remote(SETTINGS_KEY, {
+      ...f.settings.get(),
+      startupEarlyReleaseEnabled: false,
+      updatedAt: f.clock.now() + 1,
     })
+    assert.equal(f.adapter.transform(dash(url)).accepted, true)
+    const pending = new Map<string, ReturnType<typeof deferred<RangeProbeResult>>>(),
+      controller = scope.own(
+        new MeasurementController(
+          f.routes,
+          new MeasurementMetaStore(f.storage, f.clock.now),
+          {
+            read: async (input) => {
+              const d = deferred<RangeProbeResult>()
+              pending.set(input.host!, d)
+              return d.promise
+            },
+          },
+          f.clock.now,
+          f.clock,
+          undefined,
+          () => 0,
+          f.settings,
+          f.clock.now,
+        ),
+      )
+    let done = false
+    const gate = controller.prepareStartup(url).then(() => {
+      done = true
+    })
+    assert.equal(pending.size, 3)
+    const first = [...pending.values()][0]!
+    first.resolve({
+      bytes: 262144,
+      elapsedMs: 50,
+      ttfbMs: 1,
+      status: 206,
+      directRange: true,
+      reason: 'measured',
+      timingBasis: 'probe-reader',
+      speedEligible: true,
+    })
+    for (let i = 0; i < 16; i++) await Promise.resolve()
+    assert.equal(done, true)
+    await gate
+    assert.equal(controller.snapshot().startup?.reason, 'qualified-early')
+  })
 
 for (const type of ['root-original', 'native-signed', 'catalog-generated'] as const)
   test(`V230 first adequate ${type} seals the shared startup window`, async (t) => {

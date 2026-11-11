@@ -278,7 +278,8 @@ async function checkColdStartupPreservesTheLegalOriginalUntilPreflightCompletes2
 ): Promise<void> {
   const base = await createCoordinatorContext3(t)
 
-  if (base.liveRep) {
+  assert.ok(base.liveRep, 'behavior requires its fixture prerequisites')
+  {
     const plan = base.coordinator.plan(
       base.liveRep,
       { kind: 'video', requiredMbps: 7.5, highDemand: false },

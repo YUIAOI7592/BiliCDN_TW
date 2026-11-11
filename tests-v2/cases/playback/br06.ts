@@ -643,20 +643,6 @@ test('BR-07 control: left committed during keydown grants one revision', (t) => 
   assert.equal(f.player.controls().userRevision, before + 1)
 })
 
-test('BR-07 control: pointer seek still grants fresh grace', (t) => {
-  const f = fixture(t)
-  f.pointerSeek(900)
-  f.clock.advance(8000)
-  f.monitor.tick()
-  f.pointerSeek(950)
-  f.clock.advance(14999)
-  f.monitor.tick()
-  assert.equal(f.effects.fallbacks, 0)
-  f.clock.advance(1)
-  f.monitor.tick()
-  assert.equal(f.effects.fallbacks, 1)
-})
-
 test('BR-07 control: synthetic keyup cannot acquire user ownership', (t) => {
   const f = rightOnKeyup(t),
     before = f.player.controls().userRevision

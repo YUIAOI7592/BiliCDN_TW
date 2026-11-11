@@ -389,6 +389,8 @@
 
 ### 測試工具
 
+- [v2.2.18 發布後斷言審核、案例去向與有界反例 — 2026-11-12](TEST_REPORT.md#斷言審核與精簡2026-11-12)
+
 - [v2.1.35 實際緩衝效用第一輪 — 2026-10-25](../archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md)
 - [v2.1.35 實際緩衝效用第二輪 — 2026-10-25](../archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md)
 - [風險覆蓋與可介入性評估 — 2026-10-25](../archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md)
@@ -400,6 +402,8 @@
 - [測試工具驗證紀錄](TEST_TOOLING_REPORT.md)
 
 ## 日期
+
+- 2026-11-12：[v2.2.18 發布後測試精簡](TEST_REPORT.md#斷言審核與精簡2026-11-12)。
 
 - 2026-11-11：[v2.2.17 R1 專項與證據限制](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2217-r1-採樣與抑制專項2026-11-11)。
 

@@ -878,7 +878,8 @@ async function checkCatalogDecisionMayYieldTheExactSameURLAsTheOriginal(
 ): Promise<void> {
   const base = await createCatalogDecisionMayYieldTheExactSameURLAsTheOriginalContext7(t)
 
-  if (base.overlapRep) {
+  assert.ok(base.overlapRep, 'behavior requires its fixture prerequisites')
+  {
     const sameUrlCatalog = base.overlapRoutes.apply(base.overlapRoot)
     assert.strictEqual(
       sameUrlCatalog.url,
@@ -923,7 +924,8 @@ async function checkEnablingNativeSourcesPreservesColdStartOriginalRoute7(
 ): Promise<void> {
   const base = await createEnablingNativeSourcesPreservesColdStartOriginalRoute7Context6(t)
 
-  if (base.catalogVideoRep) {
+  assert.ok(base.catalogVideoRep, 'behavior requires its fixture prerequisites')
+  {
     const legacyPlan = base.catalogRoutes.plan(base.catalogVideoRep, base.catalogDemand, 'startup')
     assert.strictEqual(
       legacyPlan.routeType,

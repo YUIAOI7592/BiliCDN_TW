@@ -1810,6 +1810,12 @@ for (const type of ['', 'text', 'json'] as const) {
     xhr.send()
     xhr.complete()
     assert.equal(typeof xhr.response, type === 'json' ? 'object' : 'string')
+    const body = type === 'json' ? xhr.response : JSON.parse(String(xhr.response))
+    assert.ok(body && typeof body === 'object')
+    assert.equal(Reflect.get(body, 'code'), 0)
+    assert.equal(Reflect.get(body, 'data').dash.video.length, 1)
+    assert.equal(xhr.nativeSends, 1)
+    assert.equal(xhr.status, 200)
   })
   test(`B3: stale playurl response preserves ${type || 'default'} type`, async (t) => {
     const f = await fixture(t, false)
@@ -1824,6 +1830,10 @@ for (const type of ['', 'text', 'json'] as const) {
       type === 'json' ? 'object' : 'string',
       'safe failure payload must respect responseType',
     )
+    const body = type === 'json' ? xhr.response : JSON.parse(String(xhr.response))
+    assert.ok(body && typeof body === 'object')
+    assert.equal(Reflect.get(body, 'code'), -1)
+    assert.equal(JSON.stringify(body).includes(originalUrl), false)
     if (type !== 'json') assert.equal(xhr.response, xhr.responseText)
   })
 }

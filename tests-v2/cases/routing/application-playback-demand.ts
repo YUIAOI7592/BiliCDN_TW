@@ -170,42 +170,31 @@ async function createRateAdapterContext13(t: TestContext) {
 
 async function checkAdapterUsesRealParameterXForDemand13ParameterParameter(
   t: TestContext,
-  parameter = 0,
+  rate: number,
 ): Promise<void> {
   const base = await createRateAdapterContext13(t)
 
-  let iteration = 0
-  for (const rate of [1, 1.5, 2, 0.75]) {
-    if (iteration++ === parameter) {
-      base.adapterVideo.playbackRate = rate
-      assert.strictEqual(
-        base.rateAdapter.snapshot().effectiveRate,
-        rate,
-        `adapter uses real ${rate}x for demand`,
-      )
-      assert.strictEqual(
-        base.rateAdapter.snapshot().playableBufferSec,
-        60 / rate,
-        `buffer duration respects ${rate}x`,
-      )
-      assert.strictEqual(
-        base.rateAdapter.playbackRate(),
-        rate,
-        'unavailable player API falls back to video rate',
-      )
-
-      return
-    }
-  }
-  throw Error('Unknown fixture parameter')
+  base.adapterVideo.playbackRate = rate
+  assert.strictEqual(
+    base.rateAdapter.snapshot().effectiveRate,
+    rate,
+    `adapter uses real ${rate}x for demand`,
+  )
+  assert.strictEqual(
+    base.rateAdapter.snapshot().playableBufferSec,
+    60 / rate,
+    `buffer duration respects ${rate}x`,
+  )
+  assert.strictEqual(
+    base.rateAdapter.playbackRate(),
+    rate,
+    'unavailable player API falls back to video rate',
+  )
 }
 
 async function check2xIsOnlyTheUnknownRatePlanningFallback14(t: TestContext): Promise<void> {
   const base = await createRateAdapterContext13(t)
 
-  for (const rate of [1, 1.5, 2, 0.75]) {
-    base.adapterVideo.playbackRate = rate
-  }
   base.adapterVideo.playbackRate = Number.NaN
 
   assert.strictEqual(
@@ -258,33 +247,25 @@ async function checkRepeatedMonitoringNeverWritesPlaybackSpeed12(t: TestContext)
 
 async function checkMonitorObservesSelectedParameterX11ParameterParameter(
   t: TestContext,
-  parameter = 0,
+  rate: number,
 ): Promise<void> {
   const base = await createRateMonitorResources(t)
 
-  let iteration = 0
-  for (const rate of [1, 1.5, 0.75, 2, 1]) {
-    if (iteration++ === parameter) {
-      base.selectedRate = rate
-      base.rateMonitor.tick()
-      base.rateMonitor.tick()
-      assert.strictEqual(base.observedRate, rate, `monitor observes selected ${rate}x`)
-
-      return
-    }
-  }
-  throw Error('Unknown fixture parameter')
+  base.selectedRate = rate
+  base.rateMonitor.tick()
+  base.rateMonitor.tick()
+  assert.strictEqual(base.observedRate, rate, `monitor observes selected ${rate}x`)
 }
 
 {
   let parameter = 0
-  for (const rate of [1, 1.5, 0.75, 2, 1]) {
+  for (const rate of [1, 1.5, 0.75, 2]) {
     const selected = parameter++
     test(
       '`monitor observes selected ${rate}x` [11]' + ` / ${String(rate)} / ${selected}`,
       { timeout: 5000 },
       async (t) => {
-        await checkMonitorObservesSelectedParameterX11ParameterParameter(t, selected)
+        await checkMonitorObservesSelectedParameterX11ParameterParameter(t, rate)
       },
     )
   }
@@ -302,7 +283,7 @@ test('repeated monitoring never writes playback speed [12]', { timeout: 5000 }, 
       '`adapter uses real ${rate}x for demand` [13]' + ` / ${String(rate)} / ${selected}`,
       { timeout: 5000 },
       async (t) => {
-        await checkAdapterUsesRealParameterXForDemand13ParameterParameter(t, selected)
+        await checkAdapterUsesRealParameterXForDemand13ParameterParameter(t, rate)
       },
     )
   }

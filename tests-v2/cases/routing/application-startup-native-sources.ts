@@ -15,120 +15,12 @@ import { testScope } from '../../support/scope.ts'
 import {
   createStallEvidenceResources,
   createStartupVaultResources,
-  createRouteStateResources,
 } from './application-resources.ts'
 
-async function createStartupSessionAndstartupGenerationContext5(t: TestContext) {
-  const resources = await createRouteStateResources(t)
-  const { liveVault, state, clock, session, settings, restrictions, evidenceStore } = resources
-
-  void liveVault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: '80:av1',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 3_000_000,
-    urls: ['https://upos-sz-mirrorali.bilivideo.com/upgcxcode/c/d/2.m4s?k=1'],
-    source: 'page-hint',
-  })
-  const coordinator = new RouteCoordinator(
-    clock,
-    session,
-    settings,
-    restrictions,
-    evidenceStore,
-    liveVault,
-    createRuntimeIds(),
-  )
-  void Array.from({ length: 40 }, (_, index) => {
-    const group = liveVault.register({
-      generation: state.generation,
-      epoch: state.epoch,
-      kind: 'video',
-      key: `quality-group:${index}`,
-      height: 1080,
-      codec: 'av1',
-      bandwidth: 3_000_000,
-      urls: [`https://upos-sz-mirrorali.bilivideo.com/upgcxcode/c/d/${index + 100}.m4s?k=1`],
-      source: 'page-hint',
-    })
-    assert.ok(group)
-    const decision = coordinator.plan(
-      group,
-      { kind: 'video', requiredMbps: 7.5, highDemand: false },
-      'startup',
-    )
-    return { representation: group, decision }
-  })
-  void coordinator.snapshot()
-  const block3 = createStartupVaultResources()
-  const { startupVault, startupGeneration } = block3
-  startupVault.reset(startupGeneration.generation, startupGeneration.epoch)
-  const startupRoot = 'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/startup/video.m4s?k=1'
-  const startupRep = startupVault.register({
-    generation: startupGeneration.generation,
-    epoch: startupGeneration.epoch,
-    kind: 'video',
-    key: 'startup:80',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 3_000_000,
-    urls: [startupRoot],
-    source: 'trusted-api',
-  })
-  return {
-    startupRep,
-  }
-}
-
 async function createStallNowAndstartupReloadsContext6(t: TestContext) {
-  const resources = await createRouteStateResources(t)
-  const { liveVault, state, clock, session, settings, restrictions, evidenceStore, now, scope } =
-    resources
-
-  void liveVault.register({
-    generation: state.generation,
-    epoch: state.epoch,
-    kind: 'video',
-    key: '80:av1',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 3_000_000,
-    urls: ['https://upos-sz-mirrorali.bilivideo.com/upgcxcode/c/d/2.m4s?k=1'],
-    source: 'page-hint',
-  })
-  const coordinator = new RouteCoordinator(
-    clock,
-    session,
-    settings,
-    restrictions,
-    evidenceStore,
-    liveVault,
-    createRuntimeIds(),
-  )
-  void Array.from({ length: 40 }, (_, index) => {
-    const group = liveVault.register({
-      generation: state.generation,
-      epoch: state.epoch,
-      kind: 'video',
-      key: `quality-group:${index}`,
-      height: 1080,
-      codec: 'av1',
-      bandwidth: 3_000_000,
-      urls: [`https://upos-sz-mirrorali.bilivideo.com/upgcxcode/c/d/${index + 100}.m4s?k=1`],
-      source: 'page-hint',
-    })
-    assert.ok(group)
-    const decision = coordinator.plan(
-      group,
-      { kind: 'video', requiredMbps: 7.5, highDemand: false },
-      'startup',
-    )
-    return { representation: group, decision }
-  })
-  void coordinator.snapshot()
+  const scope = testScope(t),
+    now = 2_000_000_000_000,
+    clock = { now: () => now }
   const block3 = createStartupVaultResources()
   const { startupVault, startupGeneration, startupSession } = block3
   startupVault.reset(startupGeneration.generation, startupGeneration.epoch)
@@ -181,7 +73,8 @@ async function checkCatalogHostSignedBackupCompetesAsItsOwnExactNativeURL(
 ): Promise<void> {
   const base = await createStallNowAndstartupReloadsContext6(t)
 
-  if (base.startupRep) {
+  assert.ok(base.startupRep, 'startup behavior requires its registered representation')
+  {
     const exactCatalogBackup = `https://${TRUSTED_CATALOG[0]}/upgcxcode/startup/video.m4s?k=backup-exact`
     base.startupVault.register({
       generation: base.startupGeneration.generation,
@@ -210,7 +103,8 @@ async function checkCatalogHostSignedBackupCompetesAsItsOwnExactNativeURL(
     const incompatibleCatalog = base.stallRoutes
       .startupOptions(base.startupRoot)
       ?.candidates.find((candidate) => candidate.type === 'catalog-generated')
-    if (incompatibleCatalog) {
+    assert.ok(incompatibleCatalog, 'startup behavior requires a Catalog candidate')
+    {
       base.stallRoutes.noteStartupProbeResult(incompatibleCatalog, 403)
       assert.ok(
         !base.stallRoutes
@@ -386,131 +280,9 @@ async function checkCatalogHostSignedBackupCompetesAsItsOwnExactNativeURL(
 }
 
 async function checkACatalogURLCanBeCheckedForThisStream7(t: TestContext): Promise<void> {
-  const base = await createStallNowAndstartupReloadsContext6(t)
+  const now = 2_000_000_000_000,
+    base = { scope: testScope(t), now, clock: { now: () => now } }
 
-  if (base.startupRep) {
-    const exactCatalogBackup = `https://${TRUSTED_CATALOG[0]}/upgcxcode/startup/video.m4s?k=backup-exact`
-    base.startupVault.register({
-      generation: base.startupGeneration.generation,
-      epoch: base.startupGeneration.epoch,
-      kind: 'video',
-      key: 'startup:80',
-      height: 1080,
-      codec: 'av1',
-      bandwidth: 3_000_000,
-      urls: [exactCatalogBackup],
-      source: 'trusted-api',
-    })
-    base.stallRoutes
-      .startupOptions(base.startupRoot)
-      ?.candidates.find((candidate) => candidate.host === TRUSTED_CATALOG[0])
-    const incompatibleCatalog = base.stallRoutes
-      .startupOptions(base.startupRoot)
-      ?.candidates.find((candidate) => candidate.type === 'catalog-generated')
-    if (incompatibleCatalog) {
-      base.stallRoutes.noteStartupProbeResult(incompatibleCatalog, 403)
-      await base.stallEvidence.record(incompatibleCatalog.host, 'video', {
-        requestId: 'prior-fast-stream',
-        at: base.stallNow,
-        source: 'transport',
-        outcome: 'success',
-        throughputMbps: 100,
-        ttfbMs: 10,
-        failureKind: null,
-      })
-      base.stallRoutes.plan(
-        base.startupRep,
-        { kind: 'video', requiredMbps: 8, highDemand: false },
-        'new-epoch',
-      )
-    }
-    base.stallRoutes.apply(
-      'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/startup/unmatched.m4s?k=1',
-    )
-    const initial = base.stallRoutes.apply(base.startupRoot)
-    const fallback = base.stallRoutes.recoverStartup(
-      base.startupRep,
-      { kind: 'video', requiredMbps: 8, highDemand: false },
-      initial.decision.host ?? '',
-      [],
-    )
-    const firstFairProbe = base.stallRoutes.challenge(
-      base.startupRep,
-      { kind: 'video', requiredMbps: 8, highDemand: false },
-      false,
-    )
-    base.stallRoutes.challenge(
-      base.startupRep,
-      { kind: 'video', requiredMbps: 8, highDemand: false },
-      false,
-    )
-    if (firstFairProbe) {
-      await base.stallRoutes.recordChallenge(firstFairProbe, 0, 100, 50, 'failure', null)
-    }
-    base.stallRoutes.snapshot().fallback.video
-    const nextFallback = base.stallRoutes.apply(base.startupRoot)
-    const fallbackRequest = {
-      routePolicyRevision: base.stallRoutes.policyRevision(),
-      requestId: requestId('fallback-next'),
-      generation: base.startupGeneration.generation,
-      epoch: base.startupGeneration.epoch,
-      decisionId: nextFallback.decision.id,
-      representation: base.startupRep,
-      kind: 'video' as const,
-      attributionStatus: 'matched' as const,
-      attributionSource: 'exact' as const,
-      decisionStage: 'request' as const,
-      routeType: nextFallback.decision.routeType,
-      originalHost: 'upos-sz-mirrorali.bilivideo.com',
-      targetHost: fallback!.host!,
-      sourceHost: 'upos-sz-mirrorali.bilivideo.com',
-      playurlHostChanged: false,
-      playurlOutput: null,
-      urlChanged: true,
-      hostChanged: true,
-      startedAt: base.stallNow,
-    }
-    base.stallRoutes.requestStarted({
-      ...fallbackRequest,
-      requestId: requestId('unrelated-same-host'),
-      decisionId: decisionId('unrelated'),
-    })
-    base.stallRoutes.requestStarted(fallbackRequest)
-    await base.stallRoutes.observe({
-      request: fallbackRequest,
-      generation: base.startupGeneration.generation,
-      epoch: base.startupGeneration.epoch,
-      decisionId: fallbackRequest.decisionId,
-      representation: base.startupRep,
-      kind: 'video',
-      routeType: nextFallback.decision.routeType,
-      originalHost: fallbackRequest.originalHost,
-      targetHost: fallbackRequest.targetHost,
-      finalHost: fallbackRequest.targetHost,
-      streamKey: nextFallback.streamKey,
-      status: 206,
-      bytes: 100_000,
-      ttfbMs: 20,
-      elapsedMs: 250,
-      completedAt: base.stallNow + 250,
-      outcome: 'success',
-    })
-    for (const host of TRUSTED_CATALOG)
-      await base.stallRestrictions.add({
-        host,
-        type: 'black',
-        kind: 'all',
-        reason: 'no-route',
-        expireAt: base.stallNow + 60_000,
-      })
-    base.stallRoutes.recover(
-      base.startupRep,
-      { kind: 'video', requiredMbps: 8, highDemand: false },
-      'verified-failure',
-      fallback!.host,
-    )
-    for (const host of TRUSTED_CATALOG) await base.stallRestrictions.remove(host, 'black')
-  }
   const incompatibleSession = new SessionStore(),
     incompatibleState = incompatibleSession.beginGeneration(false)
   const incompatibleVault = new SignedRouteVault()
@@ -538,7 +310,8 @@ async function checkACatalogURLCanBeCheckedForThisStream7(t: TestContext): Promi
     createRuntimeIds(),
   )
 
-  if (incompatibleRep) {
+  assert.ok(incompatibleRep, 'Catalog incompatibility behavior requires its representation')
+  {
     const badCatalog = incompatibleRoutes
       .startupOptions(incompatibleRoot)
       ?.candidates.find((candidate) => candidate.type === 'catalog-generated')
@@ -586,42 +359,6 @@ async function checkACatalogURLCanBeCheckedForThisStream7(t: TestContext): Promi
   }
 }
 
-async function checkStartupStallFixtureHasARepresentation4(t: TestContext): Promise<void> {
-  const base = await createStartupSessionAndstartupGenerationContext5(t)
-
-  assert.ok(base.startupRep, 'startup stall fixture has a representation')
-}
-
-async function checkCatalogIncompatibilityFixtureHasARepresentation6(
-  t: TestContext,
-): Promise<void> {
-  testScope(t)
-
-  const incompatibleSession = new SessionStore(),
-    incompatibleState = incompatibleSession.beginGeneration(false)
-  const incompatibleVault = new SignedRouteVault()
-  incompatibleVault.reset(incompatibleState.generation, incompatibleState.epoch)
-  const incompatibleRoot =
-    'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/incompatible/segment.m4s?sig=clip'
-  const incompatibleRep = incompatibleVault.register({
-    generation: incompatibleState.generation,
-    epoch: incompatibleState.epoch,
-    kind: 'video',
-    key: 'incompatible:80',
-    height: 1080,
-    codec: 'av1',
-    bandwidth: 2_000_000,
-    urls: [incompatibleRoot],
-    source: 'trusted-api',
-  })
-
-  assert.ok(incompatibleRep, 'Catalog incompatibility fixture has a representation')
-}
-
-test('startup stall fixture has a representation [4]', { timeout: 5000 }, async (t) => {
-  await checkStartupStallFixtureHasARepresentation4(t)
-})
-
 test(
   'Catalog-host signed backup competes as its own exact Native URL [5]',
   { timeout: 5000 },
@@ -629,10 +366,6 @@ test(
     await checkCatalogHostSignedBackupCompetesAsItsOwnExactNativeURL(t)
   },
 )
-
-test('Catalog incompatibility fixture has a representation [6]', { timeout: 5000 }, async (t) => {
-  await checkCatalogIncompatibilityFixtureHasARepresentation6(t)
-})
 
 test('a Catalog URL can be checked for this stream [7]', { timeout: 5000 }, async (t) => {
   await checkACatalogURLCanBeCheckedForThisStream7(t)

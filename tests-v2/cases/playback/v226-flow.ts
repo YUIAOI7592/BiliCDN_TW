@@ -4,6 +4,7 @@ import {
   startupTransition,
   type StartupStage,
   type StartupEvent,
+  type StartupEffect,
 } from '../../../src-v2/domain/startup-policy.ts'
 import {
   restoreTransition,
@@ -12,17 +13,27 @@ import {
 } from '../../../src-v2/domain/restore-policy.ts'
 import { stallProgressTransition } from '../../../src-v2/domain/playback-progress.ts'
 
-for (const stage of [
-  'available',
-  'reserved',
-  'probing',
-  'adequate',
-  'insufficient',
-  'unverified',
-  'exhausted',
-  'cancelled',
-] satisfies StartupStage[])
-  test(`V226 startup transition table is total and terminal-safe stage=${stage}`, () => {
+test('V226 startup transition table enforces exact results for every stage and event', () => {
+  const accepted: Readonly<Record<string, readonly [StartupStage, readonly StartupEffect[]]>> = {
+    'available/reserve': ['reserved', ['reserve-window']],
+    'reserved/probe': ['probing', ['probe-window']],
+    'reserved/cancel': ['cancelled', ['seal-window']],
+    'probing/adequate': ['adequate', ['commit-selection', 'seal-window']],
+    'probing/insufficient': ['insufficient', ['commit-selection', 'seal-window']],
+    'probing/unverified': ['unverified', ['commit-selection', 'seal-window']],
+    'probing/exhausted': ['exhausted', ['seal-window']],
+    'probing/cancel': ['cancelled', ['seal-window']],
+  }
+  for (const stage of [
+    'available',
+    'reserved',
+    'probing',
+    'adequate',
+    'insufficient',
+    'unverified',
+    'exhausted',
+    'cancelled',
+  ] satisfies StartupStage[]) {
     for (const event of [
       'reserve',
       'probe',
@@ -32,40 +43,73 @@ for (const stage of [
       'exhausted',
       'cancel',
     ] satisfies StartupEvent[]) {
-      const result = startupTransition(stage, event)
-      if (!['available', 'reserved', 'probing'].includes(stage))
-        assert.deepEqual(result, { next: stage, effects: [], reason: 'terminal' })
-      if (result.reason !== 'accepted') assert.deepEqual(result.effects, [])
-      if (result.effects.includes('probe-window')) assert.equal(stage, 'reserved')
-      if (result.effects.includes('commit-selection')) assert.equal(stage, 'probing')
+      const expected = accepted[`${stage}/${event}`]
+      assert.deepEqual(
+        startupTransition(stage, event),
+        expected
+          ? { next: expected[0], effects: expected[1], reason: 'accepted' }
+          : {
+              next: stage,
+              effects: [],
+              reason: ['adequate', 'insufficient', 'unverified', 'exhausted', 'cancelled'].includes(
+                stage,
+              )
+                ? 'terminal'
+                : 'illegal-event',
+            },
+        `${stage}/${event}`,
+      )
     }
-  })
+  }
+})
 
-for (const stage of [
-  'position',
-  'rate',
-  'play',
-  'progress',
-  'complete',
-  'failed',
-  'cancelled',
-] satisfies RestoreStage[])
-  test(`V226 restoration transition table is total and terminal-safe stage=${stage}`, () => {
+test('V226 restoration transition table enforces exact results for every stage and event', () => {
+  const accepted: Readonly<Record<string, readonly [RestoreStage, readonly string[]]>> = {
+    'position/verified': ['rate', ['restore-rate']],
+    'rate/verified': ['play', ['play']],
+    'play/verified': ['progress', ['confirm-progress']],
+    'progress/progress-confirmed': ['complete', ['finish']],
+    'position/fail': ['failed', ['finish']],
+    'rate/fail': ['failed', ['finish']],
+    'play/fail': ['failed', ['finish']],
+    'progress/fail': ['failed', ['finish']],
+    'position/cancel': ['cancelled', ['finish']],
+    'rate/cancel': ['cancelled', ['finish']],
+    'play/cancel': ['cancelled', ['finish']],
+    'progress/cancel': ['cancelled', ['finish']],
+  }
+  for (const stage of [
+    'position',
+    'rate',
+    'play',
+    'progress',
+    'complete',
+    'failed',
+    'cancelled',
+  ] satisfies RestoreStage[]) {
     for (const event of [
       'verified',
       'progress-confirmed',
       'fail',
       'cancel',
     ] satisfies RestoreEvent[]) {
-      const result = restoreTransition(stage, event)
-      if (['complete', 'failed', 'cancelled'].includes(stage))
-        assert.deepEqual(result, { next: stage, effects: [], reason: 'terminal' })
-      if (result.reason !== 'accepted') assert.deepEqual(result.effects, [])
-      if (result.effects.includes('play')) assert.equal(stage, 'rate')
-      if (result.next === 'complete' && result.reason === 'accepted')
-        assert.equal(stage, 'progress')
+      const expected = accepted[`${stage}/${event}`]
+      assert.deepEqual(
+        restoreTransition(stage, event),
+        expected
+          ? { next: expected[0], effects: expected[1], reason: 'accepted' }
+          : {
+              next: stage,
+              effects: [],
+              reason: ['complete', 'failed', 'cancelled'].includes(stage)
+                ? 'terminal'
+                : 'illegal-event',
+            },
+        `${stage}/${event}`,
+      )
     }
-  })
+  }
+})
 
 test('V226 stall progress transition preserves a bounded confirmation count', () => {
   let state = stallProgressTransition({ phase: 'stalled', ticks: 0 }, 'progress', 0, 1000).next
