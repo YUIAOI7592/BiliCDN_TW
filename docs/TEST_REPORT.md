@@ -59,6 +59,20 @@ RecoveryController 明確區分 waiting／prepared／submitted，還原以位置
 
 公開更新入口已嘗試但未完成安裝更新；需先在 Tampermonkey 完成新版更新，之後若另獲驗收授權，再建立新有界窗口。本輪至此結案，不自動補跑。來源隔離、提前重試介入與實際播放效益未新增驗證；舊 v2.2.17 R1／R2 原文與所有 FAIL／INVALID 保存在下方歷史入口。
 
+## v2.2.18 R1 安裝身分與設定頁（2026-11-12）
+
+使用者確認更新後授權續行 L0／S1／Z0，沿用十五分鐘上限、最後三分鐘只清理。T0 為 00:00:21（Asia/Taipei），00:04:19 已結束；固定 BV1tFZZBQE57／P1／Auto／1 倍與一個自有 IAB 分頁，不重新下載／安裝、不重跑播放或故障窗口。基準 main／71eab777ee3cd8b77ac454d2e809707f5901fcfb，版本與發行原件保持。
+
+| 案例 | 判定 | 證據與界線 |
+| --- | --- | --- |
+| L0 安裝身分 | PASS | 實際 GM_info：Tampermonkey 5.5.1、腳本 2.2.18。Debugger 取得完整執行來源，排除管理器包裝後與本機發行原件逐字相同：543,678 bytes、SHA-256 bb50cce1420c120066f1b7366d039604e97bc04a8d6867f8cdb7d6c8f8f2cf33。Runtime、ControlCenter、Monitor、EarlyRetry、Transport 各一個實例；真實 Transport snapshot 的 fetchInstalled／xhrInstalled 均 true、hookState=installed |
+| S1 設定頁內容 | PASS，限內容與偏好保持 | 播放設定完整畫面只保留提前重試、WebRTC、HTTPDNS 三個開關，均勾選；退役三項不再顯示。整體停用按鈕、Native、CDN 選擇欄（目前 Auto）、逐台設定及展開後的清除／還原維護工具可見。前後設定快照（包含 updatedAt）完全相同，沒有操作保存、重設或清除；未展開 CDN 選項清單或驗證其切換 |
+| Z0 清理 | PASS | 真正媒體 muted=true、paused=true、rate=1；關閉控制中心，釋放工具物件群組、停用 Debugger／Runtime，關閉自有分頁並核對為零。沒有新增斷點、攔截、訂閱或採樣計時器 |
+
+方法限制：播放器設定浮層的 AX／locator 點擊未開啟控制中心，命中位置讀回為底下 video／浮層，因此入口點擊不算通過；過程曾使影片前進，立即再次靜音暫停，沒有把它當播放驗收。改由同一個既有 ControlCenter.show() 開啟，未重建控制器。closed ShadowRoot 不在一般 AX 中，通用 CUA click 回報不能點入；以截圖座標及受支援 CDP Input 切換播放設定／CDN、展開維護工具，畫面核對完成。這證明安裝版設定內容與可信分頁操作，不替代播放器入口驗收。
+
+Debugger 已載入腳本枚舉無截斷；完整本體與 GM_info 由實際 hook 閉包取得。FetchHookAdapter 額外 queryObjects 回傳零不作唯一所有權證據；採用已確認唯一 Transport 的 hook snapshot。沒有持久化簽名 URL、播放器或核心物件，只保存窄結果與三張畫面。前輪 INVALID 原判保持，本輪不新增來源隔離、恢復／提前重試實機效益或保存設定的驗收。
+
 ## 公開交付與安裝結案
 
 v2.2.17 五份 Release 原件已與固定基準逐位元組相符，完成 TAR＋gzip、獨立解壓與原始雜湊核對。上一版完整報告（含 R1／R2）原樣追加至歷史；既有封存內容保持。
