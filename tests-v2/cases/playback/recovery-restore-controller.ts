@@ -12,9 +12,11 @@ import { FakeClock } from '../../support/clock.ts'
 import { testScope } from '../../support/scope.ts'
 import { idleControls } from '../../support/player.ts'
 
-function fixture(t: TestContext, rate: number, target = 120) {
+function fixture(t: TestContext, rate: number, target = 120, reloadAtZero = false) {
   const scope = testScope(t),
     clock = scope.own(new FakeClock())
+  const origin = reloadAtZero ? clock.now() : 0,
+    now = () => clock.now() - origin
   let active = true,
     pending = false,
     nativeUsed = false,
@@ -107,7 +109,7 @@ function fixture(t: TestContext, rate: number, target = 120) {
         !video.seeking &&
         Math.abs(video.currentTime - record.command.value) <= 1
       )
-        record.landing ??= { positionSec: video.currentTime, at: clock.now() }
+        record.landing ??= { positionSec: video.currentTime, at: now() }
       return {
         owned: active,
         channel: nativeUsed ? 'native' : 'sdk',
@@ -128,7 +130,7 @@ function fixture(t: TestContext, rate: number, target = 120) {
       if (effect && attempt.kind === 'rate') video.playbackRate = record.command.value
     },
   } satisfies RecoveryPlayerPort
-  const recovery = scope.own(new RecoveryController(player, clock.now, () => active))
+  const recovery = scope.own(new RecoveryController(player, now, () => active))
   scope.defer(() => {
     recovery.dispose()
     assert.equal(clock.pendingCount, 0)
@@ -136,12 +138,12 @@ function fixture(t: TestContext, rate: number, target = 120) {
   recovery.tick(video)
   recovery.armStall(video, {
     id: 1,
-    startedAt: clock.now(),
+    startedAt: now() - (reloadAtZero ? 12000 : 0),
     targetSec: target,
     reloadAfterMs: 12000,
     valid: () => active,
   })
-  clock.advance(12000)
+  clock.advance(reloadAtZero ? 0 : 12000)
   recovery.tick(video)
   assert.deepEqual(calls, ['reload'])
   Object.assign(video, { readyState: 4, width: 1280, height: 720, coreInitialized: true })
@@ -299,3 +301,25 @@ for (const position of [NaN, 123])
     assert.equal(f.calls.filter((call) => call === 'native:rate').length, 1)
     assert.equal(f.video.playbackRate, 2)
   })
+
+test('V2218 recovery: a submitted reload at time zero keeps ownership and restores in order', (t) => {
+  const f = fixture(t, 2, 0, true)
+  assert.equal(f.recovery.snapshot().state, 'reloading')
+  assert.equal(f.recovery.snapshot().deadlineAt, 15000)
+  assert.equal(f.recovery.snapshot().nextAction, 'await-core')
+  f.tick()
+  assert.deepEqual(f.calls, ['reload', 'sdk:position:0', 'sdk:rate:2', 'play'])
+  assert.equal(f.recovery.snapshot().restoration?.phase, 'progress')
+  assert.equal(f.recovery.snapshot().remainingReloads, 1)
+})
+
+test('V2218 recovery: a submitted reload at time zero retains the fifteen second deadline', (t) => {
+  const f = fixture(t, 1, 120, true)
+  f.pending(true)
+  f.tick(14999)
+  assert.equal(f.recovery.isRecovering(), true)
+  f.tick(1)
+  assert.equal(f.recovery.snapshot().reason, 'reload-timeout')
+  assert.equal(f.recovery.snapshot().remainingReloads, 1)
+  assert.deepEqual(f.calls, ['reload', 'sdk:position:120'])
+})

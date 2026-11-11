@@ -102,30 +102,60 @@ interface RestoreRecord {
   inCall: boolean
 }
 
+interface SeekState {
+  revision: number
+  drag: ProgressDrag | null
+  pointerRevision: number
+  targetSec: number | null
+  internalDepth: number
+  pending: number | null
+  keyboard: KeyboardSeek | null
+  goal: PendingGoal | null
+  nativePosition: NativePosition | null
+}
+interface ReloadOwnershipState {
+  revision: number
+  coreRevision: number
+  internalDepth: number
+  core: unknown
+  awaitCore: boolean
+  owned: OwnedReload | null
+}
+interface RestoreRecords {
+  position: RestoreRecord | null
+  rate: RestoreRecord | null
+}
+
 // One owner coordinates input revisions, observation and bounded reload proof.
 export class PlayerControlObserver {
+  readonly #seek: SeekState = {
+    revision: 0,
+    drag: null,
+    pointerRevision: 0,
+    targetSec: null,
+    internalDepth: 0,
+    pending: null,
+    keyboard: null,
+    goal: null,
+    nativePosition: null,
+  }
+  readonly #reload: ReloadOwnershipState = {
+    revision: 0,
+    coreRevision: 0,
+    internalDepth: 0,
+    core: null,
+    awaitCore: false,
+    owned: null,
+  }
+  readonly #restores: RestoreRecords = { position: null, rate: null }
   #objects = new WeakMap<object, number>()
   #objectSerial = 0
-  #seekRevision = 0
   #userRevision = 0
-  #drag: ProgressDrag | null = null
-  #pointerRevision = 0
-  #targetSec: number | null = null
-  #internalSeek = 0
-  #pendingSeek: number | null = null
   #inputs = new PlayerInputBindings()
   #controlVideo: HTMLVideoElement | null = null
   #seekOwner: UnknownRecord | null = null
-  #reloadRevision = 0
-  #coreReloadRevision = 0
-  #internalReload = 0
-  #reloadCore: unknown = null
-  #awaitReloadCore = false
-  #keyboardSeek: KeyboardSeek | null = null
   #keyboardPlayback: KeyboardPlayback | null = null
   #keyboardRevision = 0
-  #ownedReload: OwnedReload | null = null
-  #nativePosition: NativePosition | null = null
   #controlRevision = 0
   #playbackRevision = 0
   readonly #playbackListeners = new Set<(revision: number) => void>()
@@ -147,16 +177,13 @@ export class PlayerControlObserver {
       }
     }
   }
-  #goal: PendingGoal | null = null
-  #positionRestore: RestoreRecord | null = null
-  #rateRestore: RestoreRecord | null = null
   constructor(
     private readonly sources: ControlSources,
     private readonly environment: PlayerControlEnvironment,
   ) {}
 
   controls(): PlayerControlSnapshot {
-    const reloadOwner = this.#ownedReload
+    const reloadOwner = this.#reload.owned
     const video = this.sources.video(),
       player = this.sources.player(),
       core = safeCall(player, '__core')
@@ -169,15 +196,15 @@ export class PlayerControlObserver {
     if (
       video?.seeking &&
       Number.isFinite(video.currentTime) &&
-      video.currentTime !== this.#targetSec
+      video.currentTime !== this.#seek.targetSec
     ) {
-      this.#targetSec = video.currentTime
+      this.#seek.targetSec = video.currentTime
       if (
-        !this.#internalSeek &&
-        this.#pendingSeek !== video.currentTime &&
+        !this.#seek.internalDepth &&
+        this.#seek.pending !== video.currentTime &&
         !this.#pendingRestoreSeek(video.currentTime)
       )
-        this.#seekRevision++
+        this.#seek.revision++
     }
     const identity = (object: unknown): number => {
       if (!object || (typeof object !== 'object' && typeof object !== 'function')) return 0
@@ -189,28 +216,28 @@ export class PlayerControlObserver {
       return id
     }
     if (reloadOwner) this.#validateOwnedReload(video, player, core, reloadOwner)
-    else if (!this.#ownedReload && !this.#awaitReloadCore && core !== this.#reloadCore)
-      this.#coreReloadRevision = 0
-    this.#reloadCore = core
+    else if (!this.#reload.owned && !this.#reload.awaitCore && core !== this.#reload.core)
+      this.#reload.coreRevision = 0
+    this.#reload.core = core
     return Object.freeze({
       mediaId: identity(video),
       coreId: identity(core),
-      seekRevision: this.#seekRevision,
+      seekRevision: this.#seek.revision,
       userRevision: this.#userRevision,
-      dragging: this.#drag !== null,
-      targetSec: this.#targetSec,
-      pendingSeekGoal: !!this.#goal && !this.#goal.completed,
-      reloadRevision: this.#reloadRevision,
-      coreReloadRevision: this.#coreReloadRevision,
+      dragging: this.#seek.drag !== null,
+      targetSec: this.#seek.targetSec,
+      pendingSeekGoal: !!this.#seek.goal && !this.#seek.goal.completed,
+      reloadRevision: this.#reload.revision,
+      coreReloadRevision: this.#reload.coreRevision,
     })
   }
 
   captureResumePosition(readCurrent: () => number): ResumePositionCapture {
     this.controls()
-    const before = this.#goal
+    const before = this.#seek.goal
     const current = readCurrent()
     this.controls()
-    const goal = this.#goal
+    const goal = this.#seek.goal
     return Object.freeze(
       goal && goal === before && !goal.completed && this.#goalCurrent(goal)
         ? { positionSec: goal.position, proof: goal.proof }
@@ -221,7 +248,7 @@ export class PlayerControlObserver {
   validateResumePosition(capture: ResumePositionCapture, initializationRevision?: number): boolean {
     this.controls()
     if (capture.proof === null) return initializationRevision === undefined
-    const goal = this.#goal
+    const goal = this.#seek.goal
     return (
       !!goal &&
       goal.proof === capture.proof &&
@@ -237,10 +264,10 @@ export class PlayerControlObserver {
       player = this.sources.player(),
       lifecycle = this.sources.lifecycleKey(),
       core = safeCall(player, '__core')
-    const reload = this.#ownedReload
+    const reload = this.#reload.owned
     if (reload) this.#validateOwnedReload(video, player, core, reload)
     return (
-      this.#goal === goal &&
+      this.#seek.goal === goal &&
       goal.video === video &&
       goal.player === player &&
       goal.lifecycle === lifecycle &&
@@ -248,12 +275,12 @@ export class PlayerControlObserver {
       this.environment.isActuallyVisible() &&
       (core === goal.core ||
         (!!reload &&
-          this.#ownedReload === reload &&
+          this.#reload.owned === reload &&
           (core === null || core === undefined || core === reload.replacement))) &&
       video === this.sources.video() &&
       player === this.sources.player() &&
       lifecycle === this.sources.lifecycleKey() &&
-      this.#goal === goal &&
+      this.#seek.goal === goal &&
       goal.userRevision === this.#userRevision
     )
   }
@@ -262,7 +289,7 @@ export class PlayerControlObserver {
     if (!Number.isFinite(position)) return
     const revision = this.#userRevision,
       controlRevision = this.#controlRevision
-    const old = this.#goal
+    const old = this.#seek.goal
     if (
       old &&
       old.position === position &&
@@ -282,7 +309,7 @@ export class PlayerControlObserver {
       controlRevision !== this.#controlRevision
     )
       return
-    this.#goal = {
+    this.#seek.goal = {
       proof: Object.freeze({}),
       video,
       player,
@@ -298,8 +325,8 @@ export class PlayerControlObserver {
   }
 
   #pointerGoal(video: HTMLVideoElement): void {
-    const drag = this.#drag,
-      revision = this.#pointerRevision,
+    const drag = this.#seek.drag,
+      revision = this.#seek.pointerRevision,
       position = video.currentTime
     if (
       drag &&
@@ -309,15 +336,15 @@ export class PlayerControlObserver {
       this.environment.isActuallyVisible() &&
       Number.isFinite(position) &&
       position !== drag.position &&
-      this.#drag === drag &&
-      revision === this.#pointerRevision
+      this.#seek.drag === drag &&
+      revision === this.#seek.pointerRevision
     )
       this.#setGoal(video, position)
   }
 
   #initializationSeek(position: number): boolean {
-    const goal = this.#goal,
-      reload = this.#ownedReload
+    const goal = this.#seek.goal,
+      reload = this.#reload.owned
     if (
       !goal ||
       goal.completed ||
@@ -326,25 +353,25 @@ export class PlayerControlObserver {
       reload.stable ||
       goal.initialization ||
       !this.#goalCurrent(goal) ||
-      (!this.#internalReload && !reload.replacement)
+      (!this.#reload.internalDepth && !reload.replacement)
     )
       return false
-    goal.initialization = { revision: reload.revision, seekRevision: this.#seekRevision, position }
+    goal.initialization = { revision: reload.revision, seekRevision: this.#seek.revision, position }
     goal.baseline = null
     goal.progress = 0
     return true
   }
 
   #sampleGoal(video: HTMLVideoElement, position: number): void {
-    const goal = this.#goal
+    const goal = this.#seek.goal
     if (!goal) return
     if (!this.#goalCurrent(goal)) {
-      if (this.#goal === goal) this.#goal = null
+      if (this.#seek.goal === goal) this.#seek.goal = null
       return
     }
     if (goal.completed || video.readyState < 2 || video.seeking || video.ended || video.error)
       return
-    const reload = this.#ownedReload
+    const reload = this.#reload.owned
     if (reload?.replacement && !video.paused) reload.stable = true
     let frames: number | null = null
     try {
@@ -355,10 +382,11 @@ export class PlayerControlObserver {
     }
     const at = this.environment.now?.() ?? Date.now(),
       before = goal.baseline
-    if (this.#goal !== goal || !this.#goalCurrent(goal)) return
+    if (this.#seek.goal !== goal || !this.#goalCurrent(goal)) return
     if (!before) {
       if (Math.abs(position - goal.position) <= 1) goal.baseline = { position, frames, at }
-      else if (position !== goal.initialization?.position && this.#goal === goal) this.#goal = null
+      else if (position !== goal.initialization?.position && this.#seek.goal === goal)
+        this.#seek.goal = null
       return
     }
     if (at <= before.at) return
@@ -368,9 +396,13 @@ export class PlayerControlObserver {
       !video.paused &&
       playbackTimeAdvanced(position, before.position) &&
       (frames === null || (before.frames !== null && playbackFramesAdvanced(frames, before.frames)))
-    if (this.#goal !== goal || !this.#goalCurrent(goal)) return
-    if (delta < 0 || delta > maxAdvance || (video.paused && delta !== 0 && !this.#internalSeek)) {
-      this.#goal = null
+    if (this.#seek.goal !== goal || !this.#goalCurrent(goal)) return
+    if (
+      delta < 0 ||
+      delta > maxAdvance ||
+      (video.paused && delta !== 0 && !this.#seek.internalDepth)
+    ) {
+      this.#seek.goal = null
       return
     }
     goal.progress = progress ? goal.progress + 1 : 0
@@ -383,11 +415,11 @@ export class PlayerControlObserver {
     player: UnknownRecord | null,
     knownReloadZero = false,
   ): void {
-    const before = this.#nativePosition,
+    const before = this.#seek.nativePosition,
       revision = this.#controlRevision
-    const seekRevision = this.#seekRevision,
+    const seekRevision = this.#seek.revision,
       userRevision = this.#userRevision,
-      pendingSeek = this.#pendingSeek
+      pendingSeek = this.#seek.pending
     const lifecycle = this.sources.lifecycleKey(),
       position = video.currentTime,
       readyState = video.readyState
@@ -396,19 +428,19 @@ export class PlayerControlObserver {
       currentLifecycle = this.sources.lifecycleKey()
     if (
       revision !== this.#controlRevision ||
-      this.#nativePosition !== before ||
+      this.#seek.nativePosition !== before ||
       video !== this.#controlVideo ||
       player !== this.#seekOwner ||
       currentVideo !== video ||
       currentPlayer !== player ||
       lifecycle !== currentLifecycle ||
-      seekRevision !== this.#seekRevision ||
+      seekRevision !== this.#seek.revision ||
       userRevision !== this.#userRevision ||
-      pendingSeek !== this.#pendingSeek ||
+      pendingSeek !== this.#seek.pending ||
       !Number.isFinite(position)
     )
       return
-    this.#nativePosition = { video, player, lifecycle, position, readyState }
+    this.#seek.nativePosition = { video, player, lifecycle, position, readyState }
     this.#pointerGoal(video)
     this.#sampleGoal(video, position)
     if (
@@ -420,7 +452,7 @@ export class PlayerControlObserver {
       before.position === position
     )
       return
-    const owner = this.#ownedReload
+    const owner = this.#reload.owned
     // Native load() resets to zero without seeking. Only this call's initial
     // reset is exempt; an observed later target (including zero) revokes restore.
     const initialReloadZero =
@@ -428,21 +460,21 @@ export class PlayerControlObserver {
       owner?.video === video &&
       owner.player === player &&
       owner.lifecycle === lifecycle &&
-      (knownReloadZero || (this.#internalReload > 0 && before.readyState !== 0))
+      (knownReloadZero || (this.#reload.internalDepth > 0 && before.readyState !== 0))
     if (initialReloadZero) return
-    const goal = this.#goal
+    const goal = this.#seek.goal
     if (
       goal &&
       position !== goal.position &&
-      !(position === 0 && before.readyState !== 0 && !this.#ownedReload) &&
+      !(position === 0 && before.readyState !== 0 && !this.#reload.owned) &&
       position !== goal.initialization?.position
     )
-      this.#goal = null
-    const alreadyObserved = this.#targetSec === position
-    this.#targetSec = position
-    if (!this.#internalSeek && position !== this.#pendingSeek) {
-      this.#pendingSeek = null
-      if (!alreadyObserved) this.#seekRevision++
+      this.#seek.goal = null
+    const alreadyObserved = this.#seek.targetSec === position
+    this.#seek.targetSec = position
+    if (!this.#seek.internalDepth && position !== this.#seek.pending) {
+      this.#seek.pending = null
+      if (!alreadyObserved) this.#seek.revision++
     }
   }
 
@@ -470,11 +502,11 @@ export class PlayerControlObserver {
     inRegion: (event: Event) => boolean,
   ): void {
     this.#inputs.trusted(document, 'pointerdown', (event) => {
-      const revision = ++this.#pointerRevision
+      const revision = ++this.#seek.pointerRevision
       if (
         !this.environment.isActuallyVisible() ||
         !inRegion(event) ||
-        revision !== this.#pointerRevision
+        revision !== this.#seek.pointerRevision
       )
         return
       this.#clearKeyboardSeek()
@@ -494,13 +526,13 @@ export class PlayerControlObserver {
         !current ||
         video !== this.#controlVideo ||
         player !== this.#seekOwner ||
-        revision !== this.#pointerRevision
+        revision !== this.#seek.pointerRevision
       )
         return
-      this.#drag = { pointerId, video, player, lifecycle, position: video.currentTime }
+      this.#seek.drag = { pointerId, video, player, lifecycle, position: video.currentTime }
     })
     const release: EventListener = (event) => {
-      const drag = this.#drag
+      const drag = this.#seek.drag
       if (
         !drag ||
         !event.isTrusted ||
@@ -509,10 +541,10 @@ export class PlayerControlObserver {
         event.pointerId !== drag.pointerId
       )
         return
-      if (this.#drag === drag) {
+      if (this.#seek.drag === drag) {
         this.#pointerGoal(video)
-        this.#drag = null
-        this.#pointerRevision++
+        this.#seek.drag = null
+        this.#seek.pointerRevision++
       }
     }
     this.#inputs.pointerRelease(release)
@@ -520,12 +552,12 @@ export class PlayerControlObserver {
 
   #bindControlLoss(): void {
     const controlLoss = (): void => {
-      this.#drag = null
-      this.#pointerRevision++
+      this.#seek.drag = null
+      this.#seek.pointerRevision++
       this.#clearKeyboardSeek()
       this.#clearKeyboardPlayback()
       this.#clearOwnedReload()
-      this.#goal = null
+      this.#seek.goal = null
     }
     this.#inputs.trusted(window, 'blur', (event) => {
       if (event.target === window) controlLoss()
@@ -567,26 +599,26 @@ export class PlayerControlObserver {
     this.#inputs.listen(video, 'seeking', () => {
       const position = Number.isFinite(video.currentTime) ? video.currentTime : null
       if (
-        !this.#internalSeek &&
-        position !== this.#pendingSeek &&
+        !this.#seek.internalDepth &&
+        position !== this.#seek.pending &&
         !this.#pendingRestoreSeek(position)
       )
-        this.#seekRevision++
-      this.#targetSec = position
+        this.#seek.revision++
+      this.#seek.targetSec = position
       this.#confirmKeyboardSeek()
       this.#pointerGoal(video)
-      const goal = this.#goal
+      const goal = this.#seek.goal
       if (
-        !this.#internalSeek &&
+        !this.#seek.internalDepth &&
         !this.#pendingRestoreSeek(position) &&
         goal &&
         position !== goal.position &&
         position !== goal.initialization?.position
       )
-        this.#goal = null
+        this.#seek.goal = null
     })
     this.#inputs.listen(video, 'seeked', () => {
-      this.#pendingSeek = null
+      this.#seek.pending = null
       this.#sampleGoal(video, video.currentTime)
       this.#noteRestoreLanding()
     })
@@ -598,10 +630,10 @@ export class PlayerControlObserver {
     const reload = player?.reload
     if (player && typeof reload === 'function') {
       const wrapped = function (this: unknown, ...args: unknown[]): unknown {
-        if (!observer.#internalReload) {
-          observer.#seekRevision++
+        if (!observer.#reload.internalDepth) {
+          observer.#seek.revision++
           observer.#clearOwnedReload()
-          observer.#goal = null
+          observer.#seek.goal = null
         }
         return Reflect.apply(reload, this, args)
       }
@@ -613,12 +645,13 @@ export class PlayerControlObserver {
     }
     if (player && typeof original === 'function') {
       const wrapped = function (this: unknown, ...args: unknown[]): unknown {
-        if (!observer.#internalSeek) {
-          observer.#seekRevision++
-          observer.#pendingSeek = null
-          observer.#targetSec =
+        if (!observer.#seek.internalDepth) {
+          observer.#seek.revision++
+          observer.#seek.pending = null
+          observer.#seek.targetSec =
             typeof args[0] === 'number' && Number.isFinite(args[0]) ? Math.max(0, args[0]) : null
-          if (!observer.#initializationSeek(observer.#targetSec ?? NaN)) observer.#goal = null
+          if (!observer.#initializationSeek(observer.#seek.targetSec ?? NaN))
+            observer.#seek.goal = null
         }
         try {
           return Reflect.apply(original, this, args)
@@ -663,15 +696,15 @@ export class PlayerControlObserver {
       stop: () => undefined,
     }
     if (lifecycle !== candidate.lifecycle || revision !== this.#keyboardRevision) return
-    this.#keyboardSeek = candidate
+    this.#seek.keyboard = candidate
     // A late bubble observer covers direct currentTime writes without wrapping media accessors.
     const type = event.type
     const finish = (observed: Event): void => {
-      if (observed === event && this.#keyboardSeek === candidate) this.#confirmKeyboardSeek()
+      if (observed === event && this.#seek.keyboard === candidate) this.#confirmKeyboardSeek()
     }
     window.addEventListener(type, finish)
     const cancel = this.environment.scheduler.timeout(() => {
-      if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek()
+      if (this.#seek.keyboard === candidate) this.#clearKeyboardSeek()
     }, 0)
     candidate.stop = () => {
       cancel()
@@ -680,7 +713,7 @@ export class PlayerControlObserver {
   }
 
   #confirmKeyboardSeek(): void {
-    const candidate = this.#keyboardSeek
+    const candidate = this.#seek.keyboard
     if (!candidate) return
     try {
       // A timer only releases references. Dispatch ownership, not elapsed time, grants attribution.
@@ -694,7 +727,7 @@ export class PlayerControlObserver {
         candidate.lifecycle !== this.sources.lifecycleKey() ||
         !this.environment.isActuallyVisible()
       ) {
-        if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek()
+        if (this.#seek.keyboard === candidate) this.#clearKeyboardSeek()
         return
       }
       const position = candidate.video.currentTime,
@@ -705,8 +738,8 @@ export class PlayerControlObserver {
       // Only the same trusted dispatch and unchanged core can attribute that
       // target; playback increments and SDK reload resets are not user seeks.
       const actualSeek =
-        seeking || (readyState === 0 && core === candidate.core && !this.#internalReload)
-      if (this.#keyboardSeek !== candidate || candidate.revision !== this.#keyboardRevision) return
+        seeking || (readyState === 0 && core === candidate.core && !this.#reload.internalDepth)
+      if (this.#seek.keyboard !== candidate || candidate.revision !== this.#keyboardRevision) return
       if (
         candidate.event.eventPhase === Event.NONE ||
         candidate.video !== this.#controlVideo ||
@@ -716,32 +749,32 @@ export class PlayerControlObserver {
         candidate.lifecycle !== this.sources.lifecycleKey() ||
         !this.environment.isActuallyVisible()
       ) {
-        if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek()
+        if (this.#seek.keyboard === candidate) this.#clearKeyboardSeek()
         return
       }
       if (
-        this.#keyboardSeek !== candidate ||
+        this.#seek.keyboard !== candidate ||
         candidate.revision !== this.#keyboardRevision ||
-        this.#internalSeek ||
+        this.#seek.internalDepth ||
         !actualSeek ||
         !Number.isFinite(position) ||
         position === candidate.position ||
-        position === this.#pendingSeek
+        position === this.#seek.pending
       )
         return
-      if (this.#targetSec !== position) this.#seekRevision++
-      this.#targetSec = position
+      if (this.#seek.targetSec !== position) this.#seek.revision++
+      this.#seek.targetSec = position
       if (!this.#advanceUser()) return
       this.#setGoal(candidate.video, position)
       this.#clearKeyboardSeek()
     } catch {
-      if (this.#keyboardSeek === candidate) this.#clearKeyboardSeek()
+      if (this.#seek.keyboard === candidate) this.#clearKeyboardSeek()
     }
   }
 
   #clearKeyboardSeek(): void {
-    const candidate = this.#keyboardSeek
-    this.#keyboardSeek = null
+    const candidate = this.#seek.keyboard
+    this.#seek.keyboard = null
     candidate?.stop()
   }
 
@@ -825,23 +858,23 @@ export class PlayerControlObserver {
   }
 
   #advanceUser(keepGoal = false): boolean {
-    const goal = this.#goal,
+    const goal = this.#seek.goal,
       revision = this.#userRevision
     const valid = keepGoal && !!goal && !goal.completed && this.#goalCurrent(goal)
     if (revision !== this.#userRevision) return false
     this.#userRevision++
     this.#invalidatePlayback()
     this.#clearOwnedReload()
-    if (valid && this.#goal === goal) goal.userRevision = this.#userRevision
-    else this.#goal = null
+    if (valid && this.#seek.goal === goal) goal.userRevision = this.#userRevision
+    else this.#seek.goal = null
     return true
   }
 
   #clearOwnedReload(): void {
-    const owner = this.#ownedReload
-    this.#ownedReload = null
-    this.#awaitReloadCore = false
-    this.#coreReloadRevision = 0
+    const owner = this.#reload.owned
+    this.#reload.owned = null
+    this.#reload.awaitCore = false
+    this.#reload.coreRevision = 0
     owner?.cancel()
   }
 
@@ -851,15 +884,15 @@ export class PlayerControlObserver {
     core: unknown,
     owner: OwnedReload,
   ): void {
-    if (this.#ownedReload !== owner) return
+    if (this.#reload.owned !== owner) return
     const valid =
       video === owner.video &&
       player === owner.player &&
-      owner.revision === this.#reloadRevision &&
+      owner.revision === this.#reload.revision &&
       owner.lifecycle === this.sources.lifecycleKey() &&
       owner.userRevision === this.#userRevision &&
       this.environment.isActuallyVisible()
-    if (this.#ownedReload !== owner) return
+    if (this.#reload.owned !== owner) return
     if (!valid) {
       this.#clearOwnedReload()
       return
@@ -877,13 +910,13 @@ export class PlayerControlObserver {
       return
     }
     owner.replacement = core
-    this.#coreReloadRevision = owner.revision
-    this.#awaitReloadCore = false
+    this.#reload.coreRevision = owner.revision
+    this.#reload.awaitCore = false
   }
 
   ownedReload(revision: number): boolean {
     this.#confirmKeyboardPlayback()
-    const owner = this.#ownedReload
+    const owner = this.#reload.owned
     if (!owner || owner.revision !== revision) return false
     this.#validateOwnedReload(
       this.sources.video(),
@@ -891,11 +924,11 @@ export class PlayerControlObserver {
       safeCall(owner.player, '__core'),
       owner,
     )
-    return this.#ownedReload === owner
+    return this.#reload.owned === owner
   }
 
   #validateDrag(): void {
-    const drag = this.#drag
+    const drag = this.#seek.drag
     if (!drag) return
     if (
       drag.video !== this.#controlVideo ||
@@ -905,19 +938,19 @@ export class PlayerControlObserver {
       drag.lifecycle !== this.sources.lifecycleKey() ||
       !this.environment.isActuallyVisible()
     ) {
-      if (this.#drag === drag) {
-        this.#drag = null
-        this.#pointerRevision++
+      if (this.#seek.drag === drag) {
+        this.#seek.drag = null
+        this.#seek.pointerRevision++
       }
     }
   }
 
   #clearControls(): void {
-    this.#positionRestore = null
-    this.#rateRestore = null
-    this.#goal = null
+    this.#restores.position = null
+    this.#restores.rate = null
+    this.#seek.goal = null
     this.#controlRevision++
-    this.#nativePosition = null
+    this.#seek.nativePosition = null
     this.#clearKeyboardSeek()
     this.#clearKeyboardPlayback()
     this.#keyboardRevision++
@@ -925,9 +958,9 @@ export class PlayerControlObserver {
     this.#inputs.clear()
     this.#controlVideo = null
     this.#seekOwner = null
-    this.#drag = null
-    this.#pointerRevision++
-    this.#pendingSeek = null
+    this.#seek.drag = null
+    this.#seek.pointerRevision++
+    this.#seek.pending = null
   }
 
   observePlayIntent(listener: () => void): () => void {
@@ -1018,8 +1051,8 @@ export class PlayerControlObserver {
 
   prepareReload(): { valid(): boolean; dispatch(commit: () => boolean): unknown } | null {
     const userRevision = this.#userRevision,
-      beforeRevision = this.#reloadRevision,
-      seekRevision = this.#seekRevision,
+      beforeRevision = this.#reload.revision,
+      seekRevision = this.#seek.revision,
       controlRevision = this.#controlRevision
     const player = this.sources.player(),
       video = this.sources.video(),
@@ -1030,8 +1063,8 @@ export class PlayerControlObserver {
     let dispatched = false
     const revisionsMatch = () =>
       userRevision === this.#userRevision &&
-      beforeRevision === this.#reloadRevision &&
-      seekRevision === this.#seekRevision &&
+      beforeRevision === this.#reload.revision &&
+      seekRevision === this.#seek.revision &&
       controlRevision === this.#controlRevision
     const valid = (): boolean => {
       if (dispatched || !revisionsMatch()) return false
@@ -1042,7 +1075,7 @@ export class PlayerControlObserver {
         currentLifecycle = this.sources.lifecycleKey()
       if (
         userRevision !== this.#userRevision ||
-        beforeRevision !== this.#reloadRevision ||
+        beforeRevision !== this.#reload.revision ||
         currentPlayer !== player ||
         currentVideo !== video ||
         currentCore !== sourceCore ||
@@ -1061,8 +1094,8 @@ export class PlayerControlObserver {
         dispatched = true
         this.#clearKeyboardPlayback()
         this.#clearOwnedReload()
-        this.#reloadCore = sourceCore
-        const revision = ++this.#reloadRevision
+        this.#reload.core = sourceCore
+        const revision = ++this.#reload.revision
         const owner: OwnedReload | null = video
           ? {
               revision,
@@ -1070,51 +1103,55 @@ export class PlayerControlObserver {
               player,
               lifecycle,
               userRevision,
-              sourceCore: this.#reloadCore,
+              sourceCore: this.#reload.core,
               replacement: null,
               sawNull: false,
               stable: false,
               cancel: () => undefined,
             }
           : null
-        this.#ownedReload = owner
-        this.#awaitReloadCore = owner !== null
+        this.#reload.owned = owner
+        this.#reload.awaitCore = owner !== null
         if (owner)
           owner.cancel = this.environment.scheduler.timeout(() => {
-            if (this.#ownedReload === owner) this.#clearOwnedReload()
+            if (this.#reload.owned === owner) this.#clearOwnedReload()
           }, 15_000)
         if (
-          this.#ownedReload !== owner ||
-          this.#reloadRevision !== revision ||
-          this.#seekRevision !== seekRevision ||
+          this.#reload.owned !== owner ||
+          this.#reload.revision !== revision ||
+          this.#seek.revision !== seekRevision ||
           this.#controlRevision !== controlRevision ||
           this.#userRevision !== userRevision
         ) {
-          if (this.#ownedReload === owner) this.#clearOwnedReload()
+          if (this.#reload.owned === owner) this.#clearOwnedReload()
           throw new Error('player.reload ownership ended')
         }
-        this.#internalReload++
-        const beforePosition = this.#nativePosition
+        this.#reload.internalDepth++
+        const beforePosition = this.#seek.nativePosition
         try {
           const result: unknown = Reflect.apply(reload, player, [])
           if (result && (typeof result === 'object' || typeof result === 'function'))
             void Promise.resolve(result).catch(() => {
-              if (this.#ownedReload === owner) this.#clearOwnedReload()
+              if (this.#reload.owned === owner) this.#clearOwnedReload()
             })
           return result
         } catch (error) {
-          if (this.#ownedReload === owner) this.#clearOwnedReload()
+          if (this.#reload.owned === owner) this.#clearOwnedReload()
           throw error
         } finally {
           try {
-            if (video && this.#ownedReload === owner)
-              this.#observeNativePosition(video, player, this.#nativePosition === beforePosition)
+            if (video && this.#reload.owned === owner)
+              this.#observeNativePosition(
+                video,
+                player,
+                this.#seek.nativePosition === beforePosition,
+              )
           } catch {
             // An observation failure must not replace the SDK's result/exception
             // or retain our method-source marker. The saved position is uncertain.
-            if (this.#ownedReload === owner) this.#seekRevision++
+            if (this.#reload.owned === owner) this.#seek.revision++
           } finally {
-            this.#internalReload--
+            this.#reload.internalDepth--
           }
         }
       },
@@ -1124,8 +1161,8 @@ export class PlayerControlObserver {
   #nativeWriteGuard(canCommit: () => boolean): () => boolean {
     const revision = this.#controlRevision,
       user = this.#userRevision,
-      seek = this.#seekRevision,
-      reload = this.#reloadRevision,
+      seek = this.#seek.revision,
+      reload = this.#reload.revision,
       video = this.sources.video(),
       player = this.sources.player(),
       lifecycle = this.sources.lifecycleKey(),
@@ -1133,8 +1170,8 @@ export class PlayerControlObserver {
     const revisionsMatch = () =>
       revision === this.#controlRevision &&
       user === this.#userRevision &&
-      seek === this.#seekRevision &&
-      reload === this.#reloadRevision
+      seek === this.#seek.revision &&
+      reload === this.#reload.revision
     return () => {
       try {
         if (!canCommit() || !revisionsMatch()) return false
@@ -1163,12 +1200,12 @@ export class PlayerControlObserver {
     this.#clearKeyboardSeek()
     this.#clearKeyboardPlayback()
     const nativeCurrent = this.#nativeWriteGuard(canCommit)
-    if (this.#goal?.position === value) {
-      this.#goal.baseline = null
-      this.#goal.progress = 0
+    if (this.#seek.goal?.position === value) {
+      this.#seek.goal.baseline = null
+      this.#seek.goal.progress = 0
     }
-    this.#internalSeek++
-    this.#pendingSeek = value
+    this.#seek.internalDepth++
+    this.#seek.pending = value
     try {
       const player = this.sources.player(),
         method = player?.seek
@@ -1181,7 +1218,7 @@ export class PlayerControlObserver {
       }
       return { channel: 'none', result: undefined }
     } finally {
-      this.#internalSeek--
+      this.#seek.internalDepth--
     }
   }
 
@@ -1225,7 +1262,7 @@ export class PlayerControlObserver {
   }
 
   #restoreRecord(attempt: RestoreAttempt): RestoreRecord | null {
-    const record = attempt.kind === 'position' ? this.#positionRestore : this.#rateRestore
+    const record = attempt.kind === 'position' ? this.#restores.position : this.#restores.rate
     return record?.attempt.proof === attempt.proof ? record : null
   }
 
@@ -1246,7 +1283,7 @@ export class PlayerControlObserver {
   }
 
   #pendingRestoreSeek(position: number | null): boolean {
-    const record = this.#positionRestore
+    const record = this.#restores.position
     return (
       !!record &&
       (record.inCall || record.status === 'pending') &&
@@ -1288,8 +1325,8 @@ export class PlayerControlObserver {
       originPosition: typeof origin === 'number' && Number.isFinite(origin) ? origin : null,
       inCall: true,
     }
-    if (command.kind === 'position') this.#positionRestore = record
-    else this.#rateRestore = record
+    if (command.kind === 'position') this.#restores.position = record
+    else this.#restores.rate = record
     const current = () => this.#restoreCurrent(record)
     let applied: { channel: RestoreReadback['channel']; result: unknown }
     try {
@@ -1312,7 +1349,7 @@ export class PlayerControlObserver {
   }
 
   #noteRestoreLanding(): void {
-    const record = this.#positionRestore
+    const record = this.#restores.position
     if (!record || record.landing || !this.#restoreCurrent(record, false)) return
     try {
       const video = this.sources.video(),
@@ -1406,14 +1443,14 @@ export class PlayerControlObserver {
     record.status = 'settled'
     if (record.command.kind === 'position') {
       record.landing = null
-      this.#pendingSeek = record.command.value
-      this.#internalSeek++
+      this.#seek.pending = record.command.value
+      this.#seek.internalDepth++
       try {
         if (this.#restoreCurrent(record)) video.currentTime = record.command.value
       } catch {
         /* consumed correction remains unverified until the original deadline */
       } finally {
-        this.#internalSeek--
+        this.#seek.internalDepth--
       }
     } else {
       try {
@@ -1438,10 +1475,10 @@ export class PlayerControlObserver {
   reset(): void {
     this.#invalidatePlayback()
     this.#clearControls()
-    this.#awaitReloadCore = false
-    this.#coreReloadRevision = 0
-    this.#seekRevision++
+    this.#reload.awaitCore = false
+    this.#reload.coreRevision = 0
+    this.#seek.revision++
     this.#userRevision++
-    this.#targetSec = null
+    this.#seek.targetSec = null
   }
 }
