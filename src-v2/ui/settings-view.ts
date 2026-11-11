@@ -18,13 +18,6 @@ export function renderSettings(
   const toggles = (
     [
       [
-        'startupEarlyReleaseEnabled',
-        '起播提前放行',
-        '所有合法模式找到首個足夠快的候選後提早放行；不表示已找出全輪最快。',
-      ],
-      ['healthMiddleRangeEnabled', '健康中段探測', '檔案大小可靠時，從中段量測速度。'],
-      ['backupFamilyDiversityEnabled', '備援家族分散', '速度足夠的備援優先分散至不同主機家族。'],
-      [
         'earlyRetryEnabled',
         '慢請求提前重試',
         '緩衝不足且替代路線證據充足時，讓網站提早重試。效用評估仍未達原定門檻。',
@@ -79,8 +72,7 @@ export function renderSettings(
     ),
     createButton(
       '還原預設設定（不清除測速紀錄）',
-      () =>
-        ask('還原所有設定？六個自動功能與香港節點將使用新版預設。', () => commands.resetSettings()),
+      () => ask('還原所有設定？三個功能開關與節點將使用新版預設。', () => commands.resetSettings()),
       'danger',
     ),
     confirm,

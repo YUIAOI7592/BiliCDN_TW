@@ -243,7 +243,7 @@ Catalog-only 健康輪次有目前來源 handle 的可靠總大小時，使用�
 
 Catalog 含 14 個主機、原四台預設不可用；三台 HK 預設可用並保留 hk-eq-01 家族，既有 catalogOverrides 仍優先。備援最多五個，先採近期有效成功速度證據且達 1 倍需求，再在其中分散已知家族；未知或不足的異家族不超越合格同家族。家族不保證物理機房獨立。固定與 Native 授權語意保持。
 
-schema 2 保留六個自動功能開關，缺值全部為 true；明確 false 保留。起播、中段、備援分散與提前重試的關閉沿用儲存等待期間的立即抑制；WebRTC／HTTPDNS 沿用設定提交後的生效路徑。關閉起播提前放行仍等全部候選或三秒期限；關閉中段改用首段；關閉分散恢復原排序。測速政策切換取消受影響探測，不重開起播／冷卻或恢復預算。codec／verbose 已移除，舊欄位忽略並在正常保存時淘汰。
+schema 2 與四個儲存鍵保持；播放設定只保留提前重試、WebRTC、HTTPDNS 三個開關，缺值為 true，明確 false 保留。起播提前放行、健康中段探測與備援家族分散固定啟用，仍受足速、可靠大小及合格備援資格約束；沒有可靠大小時使用首段。退役三欄位與舊 codec／verbose 一律忽略，讀取不寫回，下次正常保存時淘汰。提前重試關閉仍在儲存等待期間立即抑制；WebRTC／HTTPDNS 保持提交後生效。
 
 手動測速、手動封鎖及香港定向驗證入口與其執行路徑已移除。現行量測只有起播及一般自動健康探索；勾選或固定節點不安排額外驗證。
 
@@ -367,7 +367,7 @@ RestrictionStore 的遠端通知只提示重讀目前持久值，不直接接納
 
 證據通知僅提示重讀目前持久值，不以通知 payload 或 updatedAt 決定控制新舊。清除寫入空紀錄與新世代，保留標記；舊通知、快照及降級提案不能復活資料。仍合法抵達的普通結果依原健康資格處理。讀失敗不當成空資料覆寫；寫入結果未知時重讀確認，無法確認不重試同一憑證、不給信用。完整新政策只保證新版分頁協作；舊版分頁仍可能按舊規則寫入，偵測版本遺失會撤銷本頁觀察，不強制重新載入。
 
-SettingsStore 的單節點命令在 settings 鎖內合併；update／reset 保留各自鎖範圍及發布時機。五組 pending-off 是私有固定鍵計數，共用取得／釋放；重疊、拒絕、遠端通知與原通知順序保持。正規化、時間戳及保存共用一步，讀取沒有寫入副作用。
+SettingsStore 的單節點命令在 settings 鎖內合併；update／reset 保留各自鎖範圍及發布時機。兩組 pending-off 是私有固定鍵計數，共用取得／釋放；重疊、拒絕、遠端通知與原通知順序保持。正規化、時間戳及保存共用一步，讀取沒有寫入副作用。
 
 ### 設定失效
 
@@ -375,13 +375,12 @@ SettingsStore 的單節點命令在 settings 鎖內合併；update／reset 保�
 | --- | --- | --- |
 | disabled | 提交後由 Lifecycle 開新世代，Runtime 更新可見性與工作資格 | 不取消網站已送出請求 |
 | fixedHost／considerNativeSources／catalogOverrides | Runtime 失效路線計畫並重設量測／恢復；Measurement 取消受影響的探測 | 最終送出及等待後核對新政策，不重開起播預算 |
-| startupEarlyReleaseEnabled／healthMiddleRangeEnabled | Measurement 取消當輪及起播探測；關閉在等待 settings 鎖時先抑制 | 原冷卻與已用預算保留 |
-| backupFamilyDiversityEnabled | 關閉等待期間先抑制，下一次輸出規劃使用新排序 | 不主動更換親和 |
+| 退役的起播／中段／家族分散欄位 | 解析時忽略，不構成設定差異 | 不取消已開始工作，不重開起播／冷卻或恢復預算 |
 | earlyRetryEnabled | 關閉等待期間先抑制，Runtime 取消提前重試 | 不取消網站已送出請求 |
 | blockWebRtc／blockHttpDns | 設定提交後由現有適配器／傳輸路徑讀取 | 保留原生差異與按所有權清理 |
 | updatedAt | 不構成路線或量測政策差異 | 不因通知時間變動重設預算 |
 
-Runtime 使用 sameRouteSettings，Measurement 使用 sameMeasurementSettings 逐欄比較，不建立 JSON 字串簽章；catalogOverrides 保留既有項目順序比較語意。測速／備援／提前重試缺值預設及舊 codec／verbose 淘汰方式見模式與預設及 README。
+Runtime 使用 sameRouteSettings，Measurement 使用 sameMeasurementSettings 逐欄比較，不建立 JSON 字串簽章；catalogOverrides 保留既有項目順序比較語意。固定測速／備援政策、提前重試缺值預設與退役欄位淘汰方式見模式與預設及 README。
 
 ### 生命週期與提交
 

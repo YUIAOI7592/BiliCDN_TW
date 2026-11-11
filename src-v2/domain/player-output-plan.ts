@@ -59,7 +59,6 @@ export function backupOutputPlan(
   primaryHost: string | null,
   candidates: readonly OutputCandidate[],
   locked: boolean,
-  diversityEnabled = true,
 ): readonly number[] {
   if (locked) return []
   const used = new Set(primaryHost ? [primaryHost] : []),
@@ -74,9 +73,7 @@ export function backupOutputPlan(
     }
   }
   return [
-    ...(diversityEnabled ? measuredBackupOrder(primaryHost, distinct) : distinct).map(
-      (candidate) => candidate.index,
-    ),
+    ...measuredBackupOrder(primaryHost, distinct).map((candidate) => candidate.index),
     ...same,
   ].slice(0, 5)
 }
@@ -85,12 +82,11 @@ export function catalogOutputPlan(
   preferred: readonly string[],
   unavailable: ReadonlySet<string>,
   measuredSufficient: ReadonlySet<string> = new Set(),
-  diversityEnabled = true,
 ): readonly string[] {
   const candidates = [...new Set([...preferred, ...TRUSTED_CATALOG])]
     .filter((host) => isCatalogHost(host) && host !== primaryHost && !unavailable.has(host))
     .map((host) => ({ host, meetsHeadroom: measuredSufficient.has(host) }))
-  return (diversityEnabled ? measuredBackupOrder(primaryHost, candidates) : candidates)
+  return measuredBackupOrder(primaryHost, candidates)
     .map((candidate) => candidate.host)
     .slice(0, 5)
 }

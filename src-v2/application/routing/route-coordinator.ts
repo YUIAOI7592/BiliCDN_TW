@@ -1583,12 +1583,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     const stream = mediaIdentity(original)
     if (this.isCatalogOnly()) {
       const sourceUrl = this.#catalogSource(context, original)
-      const output = catalogPlayerOutput(
-        sourceUrl,
-        decision,
-        allowed,
-        (url, host) => this.#incompatible(url, host),
-        this.settings.get().backupFamilyDiversityEnabled,
+      const output = catalogPlayerOutput(sourceUrl, decision, allowed, (url, host) =>
+        this.#incompatible(url, host),
       )
       if (!output || !sourceUrl) return { primary: '', backups: [] }
       const { primary, backups } = output
@@ -1616,7 +1612,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       allowed,
       (key) => this.#hostLockedStreams.has(key),
       () => this.#materialize(original, decision, context),
-      this.settings.get().backupFamilyDiversityEnabled,
     )
     if (!output) return { primary: '', backups: [] }
     const { primary, backups } = output

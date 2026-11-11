@@ -100,15 +100,14 @@ test('UP141-START qualified Catalog releases 2500ms before hanging tail and seal
   assert.equal(f.pending.length, 2, 'reset must not replenish the per-tab budget')
 })
 
-test('UP141-START Native mode waits for comparison and preserves the common deadline', async (t) => {
+test('UP141-START Native without adequate results preserves the common deadline', async (t) => {
   const f = startup(t, false)
-  await f.f.settings.update({ startupEarlyReleaseEnabled: false })
   let released = false
   const wait = f.controller.prepareStartup(f.url).then(() => {
     released = true
   })
   f.f.clock.advance(500)
-  f.pending[0]!.resolve(f.measured())
+  f.pending[0]!.resolve(f.measured(65536, 2000))
   await nextTurn()
   assert.equal(released, false)
   f.f.clock.advance(2500)
@@ -119,15 +118,14 @@ test('UP141-START Native mode waits for comparison and preserves the common dead
   assert.equal(f.recorded.length, 1)
 })
 
-test('UP141-TEST startup toggle off waits full comparison without adding probes', async (t) => {
+test('V2218 startup below demand waits full comparison without adding probes', async (t) => {
   const f = startup(t)
-  await f.f.settings.update({ startupEarlyReleaseEnabled: false })
   let released = false
   const wait = f.controller.prepareStartup(f.url).then(() => {
     released = true
   })
   f.f.clock.advance(500)
-  f.pending[0]!.resolve(f.measured())
+  f.pending[0]!.resolve(f.measured(65536, 2000))
   await nextTurn()
   assert.equal(released, false)
   f.f.clock.advance(2500)
@@ -140,12 +138,12 @@ test('UP141-TEST startup toggle off waits full comparison without adding probes'
 test('UP141-TEST startup policy change releases owned gate but never renews startup budget', async (t) => {
   const f = startup(t)
   const wait = f.controller.prepareStartup(f.url)
-  await f.f.settings.update({ startupEarlyReleaseEnabled: false })
+  await f.f.settings.update({ considerNativeSources: true })
   await wait
   for (const p of f.pending) p.resolve(f.measured())
   await nextTurn()
   assert.equal(f.recorded.length, 0)
-  await f.f.settings.update({ startupEarlyReleaseEnabled: true })
+  await f.f.settings.update({ considerNativeSources: false })
   await f.controller.prepareStartup(f.url)
   assert.equal(f.pending.length, 2)
 })

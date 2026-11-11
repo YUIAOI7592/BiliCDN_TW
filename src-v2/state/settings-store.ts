@@ -7,9 +7,6 @@ const BOOLEAN_DEFAULTS = Object.freeze({
   disabled: false,
   considerNativeSources: true,
   earlyRetryEnabled: true,
-  startupEarlyReleaseEnabled: true,
-  healthMiddleRangeEnabled: true,
-  backupFamilyDiversityEnabled: true,
   blockWebRtc: true,
   blockHttpDns: true,
 })
@@ -22,13 +19,7 @@ const booleanSettings = (raw: Record<string, unknown>) =>
     }),
   ) as Record<BooleanSetting, boolean>
 
-const SUPPRESSED_SETTINGS = [
-  'startupEarlyReleaseEnabled',
-  'healthMiddleRangeEnabled',
-  'backupFamilyDiversityEnabled',
-  'earlyRetryEnabled',
-  'considerNativeSources',
-] as const
+const SUPPRESSED_SETTINGS = ['earlyRetryEnabled', 'considerNativeSources'] as const
 type SuppressedSetting = (typeof SUPPRESSED_SETTINGS)[number]
 
 export const defaultSettings = (now: number): SettingsState =>
@@ -65,9 +56,6 @@ const parseSettings = (value: unknown, now: number): SettingsState => {
 
 export class SettingsStore implements SettingsPort {
   #pendingOff: Record<SuppressedSetting, number> = {
-    startupEarlyReleaseEnabled: 0,
-    healthMiddleRangeEnabled: 0,
-    backupFamilyDiversityEnabled: 0,
     earlyRetryEnabled: 0,
     considerNativeSources: 0,
   }
@@ -127,10 +115,7 @@ export class SettingsStore implements SettingsPort {
   }
 
   async update(change: SettingsChange): Promise<SettingsState> {
-    // Preserve the three historical notification groups and their order.
-    const releaseAutomation = this.#holdOff(
-      SUPPRESSED_SETTINGS.slice(0, 3).filter((key) => change[key] === false),
-    )
+    // Retained restrictive settings keep their notification order.
     const releaseEarlyRetry = this.#holdOff(
       change.earlyRetryEnabled === false ? ['earlyRetryEnabled'] : [],
     )
@@ -144,7 +129,6 @@ export class SettingsStore implements SettingsPort {
         return this.#publish(this.#save({ ...current, ...change }, current, now))
       })
     } finally {
-      releaseAutomation()
       releaseEarlyRetry()
       releaseNative()
     }

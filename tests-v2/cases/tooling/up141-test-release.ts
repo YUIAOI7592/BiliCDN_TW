@@ -47,11 +47,7 @@ for (const kind of ['health', 'startup'] as const)
       await nextTurn()
       assert.ok(storage.releases.length > 0)
       const before = v.f.evidence.list()
-      await v.f.settings.update(
-        kind === 'health'
-          ? { healthMiddleRangeEnabled: false }
-          : { startupEarlyReleaseEnabled: false },
-      )
+      await v.f.settings.update({ disabled: true })
       storage.release()
       await nextTurn()
       assert.deepEqual(v.f.evidence.list(), before)
@@ -63,13 +59,9 @@ const hk = [
   'cn-hk-eq-01-05.bilivideo.com',
   'cn-hk-eq-01-01.bilivideo.com',
 ]
-const flags = [
-  'startupEarlyReleaseEnabled',
-  'healthMiddleRangeEnabled',
-  'backupFamilyDiversityEnabled',
-] as const
+const flags = ['earlyRetryEnabled'] as const
 
-test('UP141-TEST settings migrate automatic features on, preserve false, and suppress off while locked', async (t) => {
+test('UP141-TEST retained retry preference preserves false and suppresses off while locked', async (t) => {
   const scope = testScope(t),
     storage = new DelayedSettingsStorage()
   const settings = scope.own(new CatalogSettingsStore(storage, () => 1000))
@@ -90,7 +82,7 @@ test('UP141-TEST settings migrate automatic features on, preserve false, and sup
   for (const key of flags) assert.equal(restored.get()[key], false)
 })
 
-test('UP141-TEST diversity off restores original order without dropping eligibility or backup bound', (t) => {
+test('UP141-TEST fixed diversity retains eligibility and backup bound', (t) => {
   testScope(t)
   const primary = 'upos-sz-mirroraliov.bilivideo.com'
   const same = 'upos-sz-mirrorali.bilivideo.com',
@@ -98,8 +90,8 @@ test('UP141-TEST diversity off restores original order without dropping eligibil
   const unavailable = new Set(['upos-sz-mirrorhw.bilivideo.com'])
   const sufficient = new Set([same, diverse])
   assert.deepEqual(
-    catalogOutputPlan(primary, [same, diverse], unavailable, sufficient, false).slice(0, 2),
-    [same, diverse],
+    catalogOutputPlan(primary, [same, diverse], unavailable, sufficient).slice(0, 2),
+    [diverse, same],
   )
   const candidates = [same, diverse].map((host, index) => ({
     host,
@@ -107,8 +99,8 @@ test('UP141-TEST diversity off restores original order without dropping eligibil
     allowed: true,
     meetsHeadroom: true,
   }))
-  assert.deepEqual(backupOutputPlan(primary, candidates, false, false), [0, 1])
-  assert.deepEqual(backupOutputPlan(primary, candidates, true, false), [])
+  assert.deepEqual(backupOutputPlan(primary, candidates, false), [1, 0])
+  assert.deepEqual(backupOutputPlan(primary, candidates, true), [])
 })
 
 async function validation(t: TestContext, storage = new FakeStorage()) {
@@ -229,7 +221,7 @@ for (const condition of ['hidden', 'seeking', 'recovering', 'disabled', 'represe
     )
   })
 
-test('UP141-TEST changing measurement flags cancels owned work and refuses late learning', async (t) => {
+test('UP141-TEST disabling cancels owned work and refuses late learning', async (t) => {
   const v = await validation(t)
   v.setHold()
 
@@ -238,7 +230,7 @@ test('UP141-TEST changing measurement flags cancels owned work and refuses late 
   await nextTurn()
   assert.equal(v.calls.length, 1)
   const evidence = v.f.evidence.list()
-  await v.f.settings.update({ healthMiddleRangeEnabled: false })
+  await v.f.settings.update({ disabled: true })
   assert.equal(v.calls[0]!.signal.aborted, true)
   v.pending[0]!.resolve(v.result())
   await nextTurn()
@@ -276,16 +268,55 @@ test('UP141-TEST source revoked during automatic round refuses late learning', a
   assert.equal(v.calls.length, 1)
 })
 
-test('UP141-TEST middle toggle off requests head while retaining validated source size', async (t) => {
+test('UP141-TEST retired middle false still requests middle with validated source size', async (t) => {
   const v = await validation(t)
   const handle = v.f.vault.catalogSourceHandle(v.context.representation)!
   v.f.vault.recordRangeSize(v.context, handle, 8 * 1024 * 1024)
-  await v.f.settings.update({ healthMiddleRangeEnabled: false })
+  v.f.storage.remote(SETTINGS_KEY, {
+    ...v.f.settings.get(),
+    healthMiddleRangeEnabled: false,
+    updatedAt: v.f.clock.now() + 1,
+  })
 
   v.f.clock.advance(600001)
   v.controller.tick(v.status)
   await nextTurn()
   assert.equal(v.calls.length, 3)
-  assert.ok(v.calls.every((row) => row.startByte === 0))
+  assert.ok(v.calls.every((row) => row.startByte! > 0))
   assert.equal(v.f.vault.rangeSize(v.context, handle), 8 * 1024 * 1024)
 })
+
+for (const kind of ['health', 'startup'] as const)
+  test('V2218 retired notifications retain active ' + kind + ' work and budget', async (t) => {
+    const v = await validation(t)
+    v.setHold()
+    let gate: Promise<void> | undefined
+    if (kind === 'health') {
+      v.f.clock.advance(600001)
+      v.controller.tick(v.status)
+    } else gate = v.controller.prepareStartup(media('up141-test', 'video.m4s'))
+    await nextTurn()
+    const started = v.calls.length
+    assert.equal(started, kind === 'health' ? 1 : 3)
+    const notify = () =>
+      v.f.storage.remote(SETTINGS_KEY, {
+        ...v.f.settings.get(),
+        startupEarlyReleaseEnabled: false,
+        healthMiddleRangeEnabled: false,
+        backupFamilyDiversityEnabled: false,
+        updatedAt: v.f.clock.now() + 1,
+      })
+    notify()
+    assert.ok(v.calls.every((row) => !row.signal.aborted))
+    for (let i = 0; i < 3; i++) {
+      v.pending[i]?.resolve(v.result())
+      await nextTurn()
+    }
+    await gate
+    assert.equal(v.calls.length, 3)
+    notify()
+    if (kind === 'health') v.controller.tick(v.status)
+    else await v.controller.prepareStartup(media('up141-test', 'video.m4s'))
+    await nextTurn()
+    assert.equal(v.calls.length, 3, 'retired fields cannot reopen consumed work')
+  })

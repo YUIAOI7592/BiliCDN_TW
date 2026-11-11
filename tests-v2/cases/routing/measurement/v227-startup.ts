@@ -13,7 +13,6 @@ async function setup(t: TestContext) {
     f = fixture(scope),
     url = media('v227-startup', 'video.m4s')
   await f.settings.update({
-    startupEarlyReleaseEnabled: false,
     catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, true])),
   })
   assert.equal(f.adapter.transform(dash(url)).accepted, true)
@@ -80,7 +79,7 @@ test('V227 startup: a reachability update cannot refresh an old cached speed', a
   assert.equal(c.cachedSafeMbps, null)
 })
 for (const reverse of [false, true]) {
-  test(`V227 startup: equal completed speeds use candidate order reverse=${reverse}`, async (t) => {
+  test(`V227 startup: equal inadequate completed speeds use candidate order reverse=${reverse}`, async (t) => {
     const { f, url, scope } = await setup(t),
       options = f.routes.startupOptions(url)!
     const waiting = new Map<string, ReturnType<typeof deferred<RangeProbeResult>>>()
@@ -109,7 +108,7 @@ for (const reverse of [false, true]) {
     for (const candidate of order) {
       waiting.get(candidate.host)!.resolve({
         bytes: 262144,
-        elapsedMs: 100,
+        elapsedMs: 2000,
         ttfbMs: 10,
         status: 206,
         directRange: true,
@@ -235,8 +234,8 @@ for (const elapsed of [2999, 3000, 3001]) {
       })
     await done
     assert.equal(controller.snapshot().startup?.result, elapsed < 3000 ? 'adequate' : 'unverified')
-    assert.equal(controller.snapshot().startup?.results?.length, elapsed < 3000 ? 3 : 0)
-    assert.equal(records, elapsed < 3000 ? 3 : 0)
+    assert.equal(controller.snapshot().startup?.results?.length, elapsed < 3000 ? 1 : 0)
+    assert.equal(records, elapsed < 3000 ? 1 : 0)
     assert.equal(commits, 1)
     assert.equal(f.clock.pendingCount, 0)
     f.clock.advance(4000)

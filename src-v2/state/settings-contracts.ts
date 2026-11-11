@@ -4,9 +4,6 @@ export interface SettingsState {
   readonly fixedHost: string | null
   readonly considerNativeSources: boolean
   readonly earlyRetryEnabled: boolean
-  readonly startupEarlyReleaseEnabled: boolean
-  readonly healthMiddleRangeEnabled: boolean
-  readonly backupFamilyDiversityEnabled: boolean
   readonly catalogOverrides: Readonly<Record<string, boolean>>
   readonly blockWebRtc: boolean
   readonly blockHttpDns: boolean

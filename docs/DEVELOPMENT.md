@@ -158,7 +158,7 @@ npm run verify        # 自動檢查及暫存封裝驗證
 
 verify CLI 以失敗套件、階段及原因摘要呈現彙總錯誤，退出碼仍為 1；不再次傾印附帶的完整測試 outcome。verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安全敏感變更或使用者明確要求時，另行執行安全差異掃描；不要求每版掃描。上一版通過報告不能作為新本機變更的證據。
 
-UP141／CC39 契約依能力分開：npm test -- application --name CC39、npm test -- control-center --name CC39，另保留 UP141-API／START／PROBE／ROUTE／RETRY 回歸。總覽吞吐、起播等待、探測及播放入口摘要由 `control-center` 套件的現行案例驗證，只讀功能狀態，不要求診斷歷程或報告。新版六個設定與 HK 預設開啟、明確 false 保留；codec／verbose／手動及定向能力完整移除。先紅色契約再執行期修改，離線效用與必要安全掃描獨立於 verify。舊操作表僅適用 v2.1.38，不是新版入口或續跑授權。
+UP141／CC39 契約依能力分開：npm test -- application --name CC39、npm test -- control-center --name CC39，另保留 UP141-API／START／PROBE／ROUTE／RETRY 回歸。總覽吞吐、起播等待、探測及播放入口摘要由 `control-center` 套件的現行案例驗證，只讀功能狀態，不要求診斷歷程或報告。三個保留功能開關與 HK 預設開啟、明確 false 保留；起播提前放行、中段探測及家族分散固定啟用，舊三欄位忽略且正常保存時淘汰。codec／verbose／手動及定向能力完整移除。先紅色契約再執行期修改，離線效用與必要安全掃描獨立於 verify。舊操作表僅適用 v2.1.38，不是新版入口或續跑授權。
 
 選路固定合成場景以 `npm run evaluate:routing` 執行，範圍、最壞上限記帳及結果限制見[選路模型對照](../scripts/evaluation/README.md#選路模型對照)。
 
@@ -281,7 +281,7 @@ XHR 變更須以原生對照核對送出前後 abort、ByteString／USVString �
 
 ## 建置輸出
 
-[build.mts](../scripts/build.mts) 將 `src-v2/entry.ts` 打包成單一瀏覽器 IIFE，以 Chrome 120 為目標，不分割程式碼；前置 [使用者腳本中繼資料](../src-v2/metadata.txt) 並填入設定版本。輸出為 `dist/BiliCDN_TW.user.js`、外部原始碼對照及 `dist/build-manifest.json`。資訊清單記錄建置選項、輸入雜湊及使用者腳本雜湊。建置不會上傳產物。v2 來源不得加入執行期依賴、遠端程式載入、Worker 攔截或歷史 v1 匯入。
+[build.mts](../scripts/build.mts) 將 `src-v2/entry.ts` 打包成單一瀏覽器 IIFE，以 Chrome 120 為目標，不分割程式碼；前置 [使用者腳本中繼資料](../src-v2/metadata.txt) 並填入設定版本。輸出為 `dist/BiliCDN_TW.user.js`、外部原始碼對照及 `dist/build-manifest.json`。資訊清單記錄建置選項、輸入雜湊（包含實際前置的 metadata.txt）及使用者腳本雜湊。建置不會上傳產物。v2 來源不得加入執行期依賴、遠端程式載入、Worker 攔截或歷史 v1 匯入。
 
 metadata.txt 的 `@version` 使用唯一的 `__VERSION__` 占位符，由 release.json 注入；缺少、重複或混用數字版本宣告時拒絕建置。版本標頭不能單獨證明已發布／已安裝身分；核對時使用完整附件及實際載入本體的雜湊。
 

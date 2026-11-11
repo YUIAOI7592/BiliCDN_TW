@@ -1,6 +1,7 @@
 // Stable suite selector. Keep import order aligned with the recorded case inventory.
 import '../cases/state/v220-settings.ts'
 import '../cases/state/v220-settings-policy.ts'
+import '../cases/state/v2218-fixed-policy.ts'
 import '../cases/state/v227-evidence-state.ts'
 import '../cases/state/v229-evidence-state.ts'
 import '../cases/state/v2211-circuit-state.ts'

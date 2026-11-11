@@ -70,7 +70,6 @@ export function catalogPlayerOutput(
   decision: RouteDecision,
   allowed: OutputEligibility,
   incompatible: (url: string, host: string) => boolean,
-  diversityEnabled = true,
 ): PlayerOutputUrls | null {
   if (
     !sourceUrl ||
@@ -94,7 +93,6 @@ export function catalogPlayerOutput(
     preferred,
     unavailable,
     measuredSufficientHosts(decision),
-    diversityEnabled,
   ).flatMap((host) => {
     const url = replaceUrlHost(sourceUrl, host)
     return url ? [url] : []
@@ -112,7 +110,6 @@ export function normalPlayerOutput(
   allowed: OutputEligibility,
   hostLocked: (stream: string) => boolean,
   materialize: () => string | null,
-  diversityEnabled = true,
 ): PlayerOutputUrls | null {
   const lockedOriginal = stream && hostLocked(stream) ? policy.vault.rootUrl(representation) : null
   const primary = lockedOriginal && allowed(lockedOriginal) ? lockedOriginal : materialize()
@@ -139,11 +136,8 @@ export function normalPlayerOutput(
     const host = parseMediaUrl(url)?.host ?? ''
     return { index, host, allowed: allowed(url), meetsHeadroom: sufficient.has(host) }
   })
-  const backups = backupOutputPlan(
-    primaryHost ?? null,
-    candidates,
-    !!lockedOriginal,
-    diversityEnabled,
-  ).map((index) => urls[index]!)
+  const backups = backupOutputPlan(primaryHost ?? null, candidates, !!lockedOriginal).map(
+    (index) => urls[index]!,
+  )
   return { primary, backups }
 }

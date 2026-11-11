@@ -821,7 +821,6 @@ async function checkAlreadyAbortedPlayerRequestRejectsStartupGate10(t: TestConte
   const preflightSettings = base.scope.own(
     new CatalogSettingsStore(new FakeStorage(), () => base.now),
   )
-  await preflightSettings.update({ startupEarlyReleaseEnabled: false })
   const preflightOptions = base.preflightOptions
   assert.ok(preflightOptions)
 
@@ -884,8 +883,8 @@ async function checkAlreadyAbortedPlayerRequestRejectsStartupGate10(t: TestConte
     await preflight.prepareStartup(base.startupRoot)
     assert.strictEqual(
       committedHost,
-      preflightOptions.candidates.find((candidate) => candidate.type === 'catalog-generated')?.host,
-      'faster qualified Catalog wins bounded preflight',
+      preflightOptions.candidates[0]?.host,
+      'first qualified candidate releases bounded preflight',
     )
     assert.strictEqual(
       preflightFetches,

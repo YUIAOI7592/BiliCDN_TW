@@ -102,7 +102,7 @@ export class MeasurementController implements MeasurementPort {
     private readonly scheduler: SchedulerPort,
     private readonly rangeMetadata?: MeasurementRangeMetadataPort,
     private readonly random: () => number = () => 0,
-    private readonly settings?: SettingsReader & SettingsObserver,
+    settings?: SettingsReader & SettingsObserver,
     private readonly monotonicNow: () => number | null = () => null,
     private readonly ids?: RuntimeIdPort,
   ) {
@@ -349,7 +349,6 @@ export class MeasurementController implements MeasurementPort {
             remainingProbes: options.candidates.length - results.length,
           })
           if (
-            this.settings?.get().startupEarlyReleaseEnabled !== false &&
             result.valid &&
             (result.safeMbps ?? 0) /
               (this.routes.startupDemand(candidate)?.requiredMbps ?? Infinity) >=
@@ -747,7 +746,7 @@ export class MeasurementController implements MeasurementPort {
             handle,
             sizeKnown: totalBytes !== null,
             startByte: probeStartByte(
-              this.settings?.get().healthMiddleRangeEnabled === false ? null : totalBytes,
+              totalBytes,
               status.demand!.highDemand ? 768 * 1024 : 384 * 1024,
               totalBytes === null ? 0 : this.random(),
             ),

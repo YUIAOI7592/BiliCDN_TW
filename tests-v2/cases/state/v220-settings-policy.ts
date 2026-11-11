@@ -7,7 +7,7 @@ import {
 } from '../../../src-v2/state/settings-policy.ts'
 import { type SettingsChange } from '../../../src-v2/state/settings-contracts.ts'
 
-const cases: readonly [string, SettingsChange, boolean, boolean][] = [
+const cases: readonly [string, SettingsChange & Record<string, unknown>, boolean, boolean][] = [
   ['Native permission', { considerNativeSources: false }, false, false],
   ['fixed host', { fixedHost: 'upos-sz-mirrorali.bilivideo.com' }, false, false],
   [
@@ -17,9 +17,9 @@ const cases: readonly [string, SettingsChange, boolean, boolean][] = [
     false,
   ],
   ['disable', { disabled: true }, true, false],
-  ['early release', { startupEarlyReleaseEnabled: false }, true, false],
-  ['middle probe', { healthMiddleRangeEnabled: false }, true, false],
-  ['backup diversity', { backupFamilyDiversityEnabled: false }, true, true],
+  ['retired early release', { startupEarlyReleaseEnabled: false }, true, true],
+  ['retired middle probe', { healthMiddleRangeEnabled: false }, true, true],
+  ['retired backup diversity', { backupFamilyDiversityEnabled: false }, true, true],
   ['early retry', { earlyRetryEnabled: false }, true, true],
   ['WebRTC', { blockWebRtc: false }, true, true],
   ['HTTPDNS', { blockHttpDns: false }, true, true],

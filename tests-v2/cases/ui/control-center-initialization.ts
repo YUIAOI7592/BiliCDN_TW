@@ -86,11 +86,8 @@ test('V223 navigation initializes all three pages once from the current model', 
     )
   assert.ok(restrictions.some((node) => /黑名單.*影片＋音訊/.test(node.textContent)))
   f.button('播放設定').emit('click')
-  assert.equal(f.doc.flatten().filter((e) => e.type === 'checkbox').length, 6)
+  assert.equal(f.doc.flatten().filter((e) => e.type === 'checkbox').length, 3)
   for (const [key, label] of [
-    ['startupEarlyReleaseEnabled', '起播提前放行'],
-    ['healthMiddleRangeEnabled', '健康中段探測'],
-    ['backupFamilyDiversityEnabled', '備援家族分散'],
     ['earlyRetryEnabled', '慢請求提前重試'],
     ['blockWebRtc', '阻止網頁使用 WebRTC'],
     ['blockHttpDns', '阻止網頁使用 HTTPDNS'],

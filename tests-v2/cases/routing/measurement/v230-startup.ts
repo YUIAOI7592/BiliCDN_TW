@@ -7,14 +7,20 @@ import { MeasurementMetaStore } from '../../../../src-v2/state/measurement-meta-
 import { deferred } from '../../../support/deferred.ts'
 import { type RangeProbeResult } from '../../../../src-v2/application/measurement/measurement-contracts.ts'
 import { start, finish } from '../../../support/route-dispatch.ts'
+import { SETTINGS_KEY } from '../../../../src-v2/state/settings-store.ts'
 import { TRUSTED_CATALOG } from '../../../../src-v2/domain/catalog.ts'
 for (const native of [false, true])
   for (const early of [false, true])
-    test(`V230 startup early release native=${native} enabled=${early}`, async (t) => {
+    test(`V2218 fixed early release native=${native} legacy=${early}`, async (t) => {
       const scope = testScope(t),
         f = fixture(scope),
         url = media('v230-early', 'video.m4s')
-      await f.settings.update({ considerNativeSources: native, startupEarlyReleaseEnabled: early })
+      await f.settings.update({ considerNativeSources: native })
+      f.storage.remote(SETTINGS_KEY, {
+        ...f.settings.get(),
+        startupEarlyReleaseEnabled: early,
+        updatedAt: f.clock.now() + 1,
+      })
       assert.equal(f.adapter.transform(dash(url)).accepted, true)
       const pending = new Map<string, ReturnType<typeof deferred<RangeProbeResult>>>(),
         controller = scope.own(
@@ -53,13 +59,9 @@ for (const native of [false, true])
         speedEligible: true,
       })
       for (let i = 0; i < 16; i++) await Promise.resolve()
-      assert.equal(done, early)
-      if (early) assert.equal(controller.snapshot().startup?.reason, 'qualified-early')
-      else {
-        f.clock.advance(3000)
-        await gate
-        assert.equal(done, true)
-      }
+      assert.equal(done, true)
+      await gate
+      assert.equal(controller.snapshot().startup?.reason, 'qualified-early')
     })
 
 for (const type of ['root-original', 'native-signed', 'catalog-generated'] as const)

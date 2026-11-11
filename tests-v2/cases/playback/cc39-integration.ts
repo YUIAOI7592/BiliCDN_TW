@@ -9,21 +9,14 @@ import { DEFAULT_UNAVAILABLE_HOSTS } from '../../../src-v2/domain/catalog.ts'
 import { ControlCommands } from '../../../src-v2/application/control-commands.ts'
 import { MeasurementController } from '../../../src-v2/application/measurement/measurement-controller.ts'
 import { RouteCoordinator } from '../../../src-v2/application/routing/route-coordinator.ts'
-const flags = [
-  'startupEarlyReleaseEnabled',
-  'healthMiddleRangeEnabled',
-  'backupFamilyDiversityEnabled',
-  'earlyRetryEnabled',
-  'blockWebRtc',
-  'blockHttpDns',
-] as const
+const flags = ['earlyRetryEnabled', 'blockWebRtc', 'blockHttpDns'] as const
 const hk = [
   'cn-hk-eq-01-03.bilivideo.com',
   'cn-hk-eq-01-05.bilivideo.com',
   'cn-hk-eq-01-01.bilivideo.com',
 ]
 
-test('CC39-SETTINGS new and missing settings enable all six real capabilities', (t) => {
+test('CC39-SETTINGS new and missing settings enable all three retained capabilities', (t) => {
   const scope = testScope(t)
   for (const value of [null, { schema: 2, updatedAt: 1 }]) {
     const storage = new FakeStorage()
@@ -62,7 +55,7 @@ test('CC39-SETTINGS pending off wins over a remote on until the locked write com
   const scope = testScope(t),
     storage = new DelayedSettingsStorage()
   const settings = scope.own(new CatalogSettingsStore(storage, () => 1000))
-  const controlled = flags.slice(0, 4)
+  const controlled = ['earlyRetryEnabled'] as const
   storage.holdNextSettingsLock = true
   scope.defer(() => storage.releaseSettingsLock())
   const pending = settings.update(Object.fromEntries(controlled.map((key) => [key, false])))

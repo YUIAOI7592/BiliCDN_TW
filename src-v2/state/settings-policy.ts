@@ -16,10 +16,5 @@ export function sameRouteSettings(a: SettingsState, b: SettingsState): boolean {
   )
 }
 export function sameMeasurementSettings(a: SettingsState, b: SettingsState): boolean {
-  return (
-    sameRouteSettings(a, b) &&
-    a.disabled === b.disabled &&
-    a.startupEarlyReleaseEnabled === b.startupEarlyReleaseEnabled &&
-    a.healthMiddleRangeEnabled === b.healthMiddleRangeEnabled
-  )
+  return sameRouteSettings(a, b) && a.disabled === b.disabled
 }
