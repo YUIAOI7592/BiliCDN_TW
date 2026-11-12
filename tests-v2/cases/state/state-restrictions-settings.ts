@@ -12,6 +12,57 @@ import { RouteCoordinator } from '../../../src-v2/application/routing/route-coor
 import { FakeStorage, DelayedSettingsStorage } from '../../support/storage.ts'
 import { testScope } from '../../support/scope.ts'
 
+for (const [label, value, expected] of [
+  ['case and whitespace', '  CDN.Example  ', 'cdn.example'],
+  ['coercion', { toString: () => ' CDN.Example ' }, 'cdn.example'],
+  ['permitted punctuation', '.-example.', '.-example.'],
+  ['length boundary', 'a'.repeat(251) + '.x', 'a'.repeat(251) + '.x'],
+  ['too long', 'a'.repeat(252) + '.x', null],
+  ['empty', null, null],
+  ['missing dot', 'localhost', null],
+  ['forbidden separator', 'cdn.example/path', null],
+  [
+    'throwing coercion',
+    {
+      toString: () => {
+        throw Error('coercion failed')
+      },
+    },
+    null,
+  ],
+] as const) {
+  test(`cleanup contract: stored host ${label} preserves both parser results`, (t) => {
+    const scope = testScope(t),
+      storage = new FakeStorage(),
+      now = 2_000_000_000_000
+    const record = {
+      host: value,
+      kind: 'video',
+      samples: [],
+      updatedAt: now,
+      type: 'black',
+      reason: 'test',
+      expireAt: now + 1000,
+    }
+    storage.values.set('bilicdn.v2.routeEvidence', {
+      schema: 2,
+      records: { row: record },
+      updatedAt: now,
+    })
+    storage.values.set('bilicdn.v2.restrictions', { schema: 2, records: [record], updatedAt: now })
+    const evidence = scope.own(new EvidenceStore(storage, () => now))
+    const restrictions = scope.own(new RestrictionStore(storage, () => now))
+    assert.deepEqual(
+      evidence.list().map((row) => row.host),
+      expected ? [expected] : [],
+    )
+    assert.deepEqual(
+      restrictions.list().map((row) => row.host),
+      expected ? [expected] : [],
+    )
+  })
+}
+
 async function createRestrictionAppliesToAudio12Context10(t: TestContext) {
   const scope = testScope(t)
   const now = 2_000_000_000_000

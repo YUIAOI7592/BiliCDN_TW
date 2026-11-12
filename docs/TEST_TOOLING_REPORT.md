@@ -1445,3 +1445,7 @@ Recovery 的兩個時間值 0 重載反例先失敗，明確階段實作後通�
 當次依賴工具取得 Codex Node 24.22.1，實際路徑為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1111-574-0_26.1111.574.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe`；以此檔案明確執行 `scripts/checks/docs-check.mts` 與 `scripts/checks/archive-check.mts`，沒有啟動網站服務。文件與封存檢查通過，`git diff --check` 通過；文件修正及實體盤點範圍見[維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-12過時文件與版本導覽清理)。逐檔可讀性與關鍵詞計數留在忽略的本機工作資料，483 份實體 Markdown 均可讀，計數不視為語意判定。
 
 公開封存核對 529 個搬移項目、三份追加日誌、154 個未變檔案及 87 份校驗清單／390 筆資料。既有不可變斷鏈、已搬移原網址、私有證據與未連網的外部 URL 仍按檢查器原分類保留；本輪沒有私有搬移，不執行 local／restore 核對，也不宣稱重跑完整產品測試。
+
+## 2026-11-12 v2.2.20 清理與啟動器路徑契約
+
+Windows PowerShell 啟動器 cwd 改以目錄的 dev／ino 身分核對，不把等價路徑大小寫差異判為失敗；非零身分、空白路徑、參數及退出碼斷言保持。初次沙箱完整測試的五項工具失敗保留：符號連結 EPERM、cwd 大小寫差異及三項 MSYS 權限限制。修正後以批准的沙箱外執行完整十八套件／2,200 案，全數通過，沒有略過或取消案例。Node 24.22.1 由當次內建依賴工具取得；沒有啟動網站服務或瀏覽器。

@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { execFileSync } from 'node:child_process'
@@ -64,7 +64,14 @@ if (process.platform === 'win32') {
     assert.equal(result.code, 0, result.stderr)
     const value = JSON.parse(result.stdout)
     assert.equal(value.id, 'explicit path with spaces')
-    assert.equal(realpathSync(value.cwd), realpathSync(root))
+    const actualDirectory = statSync(value.cwd, { bigint: true }),
+      expectedDirectory = statSync(root, { bigint: true })
+    assert.equal(actualDirectory.isDirectory(), true)
+    assert.notEqual(expectedDirectory.ino, 0n, 'directory identity must be available')
+    assert.deepEqual(
+      [actualDirectory.dev, actualDirectory.ino],
+      [expectedDirectory.dev, expectedDirectory.ino],
+    )
     assert.deepEqual(value.args, ['scripts/verify.mts'])
   })
   test('TOOLCHAIN PowerShell environment path is selected without an explicit argument', async (t) => {

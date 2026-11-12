@@ -1,3 +1,4 @@
+import { storedHost } from './stored-host.ts'
 import { type MediaKind } from '../domain/model.ts'
 import { type StoragePort } from '../platform/storage-port.ts'
 import {
@@ -50,13 +51,6 @@ const savedPayloadMatches = (raw: unknown, expected: RestrictionPayload): boolea
   })
 }
 
-const safeHost = (value: unknown): string | null => {
-  const host = String(value ?? '')
-    .trim()
-    .toLowerCase()
-  return /^[a-z0-9.-]{1,253}$/.test(host) && host.includes('.') ? host : null
-}
-
 const parsePayload = (value: unknown, now: number): RestrictionPayload => {
   const raw = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
   const rows = Array.isArray(raw.records) ? raw.records : []
@@ -64,7 +58,7 @@ const parsePayload = (value: unknown, now: number): RestrictionPayload => {
   for (const item of rows.slice(0, 128)) {
     if (!item || typeof item !== 'object') continue
     const row = item as Record<string, unknown>
-    const host = safeHost(row.host)
+    const host = storedHost(row.host)
     const type = row.type === 'black' || row.type === 'dead' ? row.type : null
     const storedKind =
       row.kind === 'video' || row.kind === 'audio' || row.kind === 'all' ? row.kind : 'all'

@@ -1236,6 +1236,19 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     }
   }
 
+  #reuseObservedAffinity(
+    context: RouteIdentity | null,
+    outputRole: { readonly role: 'primary' | 'backup' } | null,
+  ): context is RouteIdentity {
+    return (
+      context?.kind === 'video' &&
+      !this.#requestedRepresentations.has(context.representation) &&
+      !!this.session.get().affinity &&
+      outputRole?.role !== 'backup' &&
+      !this.settings.get().fixedHost
+    )
+  }
+
   #applyNormal(
     url: string,
     parsed: NonNullable<ReturnType<typeof parseMediaUrl>>,
@@ -1261,13 +1274,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     // Playurl preplans every quality before any route has proved successful.
     // On first use, prefer the now-observed video affinity, not that cold plan.
     // Explicit player backups and already-requested group recovery stay local.
-    if (
-      context?.kind === 'video' &&
-      !this.#requestedRepresentations.has(context.representation) &&
-      this.session.get().affinity &&
-      outputRole?.role !== 'backup' &&
-      !this.settings.get().fixedHost
-    ) {
+    if (this.#reuseObservedAffinity(context, outputRole)) {
       decision = this.#choose(context, playbackDemand, 'representation', null)
     }
     if (
@@ -1447,13 +1454,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       : streamKey
         ? this.#streamPlans.get(streamKey)
         : null
-    if (
-      context?.kind === 'video' &&
-      !this.#requestedRepresentations.has(context.representation) &&
-      this.session.get().affinity &&
-      outputRole?.role !== 'backup' &&
-      !this.settings.get().fixedHost
-    ) {
+    if (this.#reuseObservedAffinity(context, outputRole)) {
       decision = this.#choose(context, playbackDemand, 'representation', null, url)
     }
     if (

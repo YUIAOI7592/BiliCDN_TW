@@ -1,3 +1,4 @@
+import { storedHost } from './stored-host.ts'
 import {
   addEvidenceSample,
   emptyEvidence,
@@ -55,13 +56,6 @@ const parseControl = (value: unknown): CircuitRecordControl | undefined => {
   })
 }
 
-const safeHost = (value: unknown): string | null => {
-  const host = String(value ?? '')
-    .trim()
-    .toLowerCase()
-  return /^[a-z0-9.-]{1,253}$/.test(host) && host.includes('.') ? host : null
-}
-
 const parsePayload = (value: unknown, now: number): EvidencePayload => {
   const raw = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
   const source =
@@ -70,7 +64,7 @@ const parsePayload = (value: unknown, now: number): EvidencePayload => {
   for (const item of Object.values(source).slice(0, MAX_VIDEO_HOSTS + MAX_AUDIO_HOSTS)) {
     if (!item || typeof item !== 'object') continue
     const row = item as Record<string, unknown>,
-      host = safeHost(row.host),
+      host = storedHost(row.host),
       kind = row.kind
     if (!host || (kind !== 'video' && kind !== 'audio')) continue
     const samples: EvidenceSample[] = []
