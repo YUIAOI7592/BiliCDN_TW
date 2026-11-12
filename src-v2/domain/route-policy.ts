@@ -40,11 +40,10 @@ export const catalogCandidates = (
   kind: MediaKind,
   excluded: ReadonlySet<string> = new Set(),
 ): CatalogCandidate[] =>
-  TRUSTED_CATALOG.map((host, catalogIndex) => ({
+  TRUSTED_CATALOG.map((host) => ({
     type: 'catalog-generated' as const,
     host,
     kind,
-    catalogIndex,
   })).filter((candidate) => !excluded.has(candidate.host))
 
 export function hardRestriction(

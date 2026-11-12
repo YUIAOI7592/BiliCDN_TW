@@ -171,7 +171,6 @@ export function createXhrCompletion(
         sameUrl(finalUrl, meta.targetUrl),
         meta.measurement,
       ),
-      ...(controlledTimeout ? { terminationReason: 'early-retry-timeout' as const } : {}),
       ...(verifiedBytes !== null ? { retryVerifiedBytes: verifiedBytes } : {}),
     })
   }

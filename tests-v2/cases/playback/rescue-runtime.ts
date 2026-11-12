@@ -34,7 +34,6 @@ function fixture(t: TestContext, rate: number) {
       representation: rep,
       affinity: null,
       disabled: false,
-      recovering: false,
       lastDecisionId: null,
     }),
   }
@@ -58,14 +57,12 @@ function fixture(t: TestContext, rate: number) {
     kind: 'video',
     attributionStatus: 'matched',
     attributionSource: 'exact',
-    decisionStage: 'request',
     routeType: 'catalog-generated',
     originalHost: 'upos-sz-mirrorali.bilivideo.com',
     targetHost: 'upos-sz-mirrorcos.bilivideo.com',
     sourceHost: null,
     playurlHostChanged: false,
     playurlOutput: null,
-    urlChanged: true,
     hostChanged: true,
     startedAt: f.clock.now(),
   }
@@ -91,7 +88,7 @@ function fixture(t: TestContext, rate: number) {
           host: request.targetHost,
           routeType: 'catalog-generated',
           ranking: [],
-          candidate: { type: 'catalog-generated', host: request.targetHost, kind, catalogIndex: 0 },
+          candidate: { type: 'catalog-generated', host: request.targetHost, kind },
         },
       },
     }

@@ -201,7 +201,6 @@ export interface RouteCoordinatorPort {
   observePlaybackRate(rate: number): void
   playbackRate(): number
   firstMediaAt(kind?: MediaKind): number
-  pendingMediaCount(): number
   latestRequested(kind: MediaKind): RequestContext | null
   recoveryEligible(
     request: Pick<

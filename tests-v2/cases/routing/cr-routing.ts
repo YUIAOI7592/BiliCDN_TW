@@ -32,7 +32,6 @@ async function failedNativeBackup(t: TestContext) {
     kind: identity.kind,
     attributionStatus: 'matched' as const,
     attributionSource: 'exact' as const,
-    decisionStage: 'request' as const,
     decisionId: applied.decision.id,
     routeType: applied.decision.routeType,
     originalHost: host,
@@ -40,7 +39,6 @@ async function failedNativeBackup(t: TestContext) {
     sourceHost: applied.sourceHost,
     playurlHostChanged: false,
     playurlOutput: null,
-    urlChanged: false,
     hostChanged: false,
     startedAt: f.clock.now(),
   }
@@ -150,7 +148,6 @@ for (const changed of [false, true])
       kind: identity.kind,
       attributionStatus: 'matched' as const,
       attributionSource: 'exact' as const,
-      decisionStage: 'request' as const,
       decisionId: applied.decision.id,
       routeType: applied.decision.routeType,
       originalHost: host,
@@ -158,7 +155,6 @@ for (const changed of [false, true])
       sourceHost: applied.sourceHost,
       playurlHostChanged: true,
       playurlOutput: null,
-      urlChanged: true,
       hostChanged: true,
       startedAt: f.clock.now(),
     }

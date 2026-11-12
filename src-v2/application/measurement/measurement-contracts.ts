@@ -22,18 +22,15 @@ export interface MeasurementStatus {
 export interface MeasurementSnapshot {
   readonly state: 'idle' | 'waiting' | 'running' | 'complete' | 'failed' | 'cancelled'
   readonly reason: string
-  readonly lastAttemptAt: number
   readonly host: string | null
   readonly range?: { readonly mode: 'head' | 'middle'; readonly sizeKnown: boolean }
   readonly startup?: {
     readonly state: 'idle' | 'reserved' | 'running' | 'complete' | 'skipped' | 'cancelled'
     readonly result?: 'adequate' | 'insufficient' | 'unverified' | 'none'
     readonly deadlineAt?: number
-    readonly remainingProbes?: number
     readonly reason: string
     readonly candidates: number
     readonly selectedHost: string | null
-    readonly delayed: boolean
     readonly elapsedMs?: number
     readonly results?: readonly {
       readonly host: string

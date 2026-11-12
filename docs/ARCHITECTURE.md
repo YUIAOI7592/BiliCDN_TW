@@ -426,7 +426,7 @@ Vault 的輸出對照及來源大小只附著於既有 handle 與 RouteIdentity�
 
 ControlCenter 只提供總覽、CDN、播放設定三頁，經 ControlReadModelPort 訂閱並取得當次快照。每次建構／刷新共用單份模型，CDN 開關不各自取快照；snapshot() 沒有詳細證據參數。
 
-`createControlReadModel(sources)` 只組合畫面使用的功能來源，不接收版本或時鐘；版本與顯示時間仍由入口直接注入 ControlCenter。快照不包含未使用的 version／releaseStage，亦不展開其他表示的 recentPlans。RouteCoordinator 保留私有計畫集合、目前影音請求與回應摘要；健康學習由 EvidenceStore 保存，不另維護沒有產品消費者的最後成功主機索引。
+`createControlReadModel(sources)` 只組合畫面使用的功能來源，不接收版本或時鐘；版本與顯示時間仍由入口直接注入 ControlCenter。量測快照不投影未使用的 lastAttemptAt、remainingProbes、delayed，恢復快照不投影 pauseSec／breakerSec；內部期限與預算繼續由原控制器持有。Session 不另保存 recovering；Monitor 直接取得恢復狀態，noteDecision 仍更換 Session 快照身分以隔離晚到播放事實。快照不包含未使用的 version／releaseStage，亦不展開其他表示的 recentPlans。RouteCoordinator 保留私有計畫集合、目前影音請求與回應摘要；健康學習由 EvidenceStore 保存，不另維護沒有產品消費者的最後成功主機索引。
 
 總覽與 CDN 視圖保留初始模型供閉包及開關初始化，完整首次刷新統一由 ControlCenter 在建構視圖後執行一次；播放設定也使用同一中心流程。讀模型以 settings／monitor／routes 分類通知。ControlCenter 將同批 monitor／routes 通知合併為一個 microtask，執行時才取得最新快照；settings、換頁及命令完成仍立即刷新。排隊工作綁定視圖修訂，關閉、重開或明確刷新撤銷舊工作；快照讀取期間的新通知保留到下一次刷新，讀回後再次核對視圖所有權。此合併只作用於 UI，功能事件與 Runtime 的影片恢復交接維持同步。
 

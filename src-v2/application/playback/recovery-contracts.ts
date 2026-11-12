@@ -38,9 +38,7 @@ export interface RecoverySnapshot {
     | 'failed'
     | 'breaker'
   readonly source: RecoverySource | null
-  readonly pauseSec: number
   readonly reloadCount: number
-  readonly breakerSec: number
   readonly reason?: string
   readonly savedPositionSec?: number
   readonly savedRate?: number

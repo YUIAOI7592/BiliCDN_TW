@@ -59,7 +59,6 @@ test('UP141-DIAG qualified early release displays measured waiting and an unambi
       reason: 'qualified-early',
       candidates: 3,
       selectedHost: TRUSTED_CATALOG[0],
-      delayed: true,
       elapsedMs: 375.6,
     },
   })
@@ -88,7 +87,6 @@ for (const [reason, elapsedMs, expected] of [
         elapsedMs,
         candidates: 3,
         selectedHost: TRUSTED_CATALOG[0],
-        delayed: true,
       },
     })
     f.center.show()

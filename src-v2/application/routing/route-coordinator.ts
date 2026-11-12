@@ -138,7 +138,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     readonly source: 'current-transport' | 'current-probe'
   } | null = null
   #startupExhausted = new Set<RepresentationId>()
-  #pendingMedia = new Set<string>()
   #fallbacks = new Map<MediaKind, FallbackProgress>()
   #retryEvidence = new RetryEvidence()
   #retryPermits = new RetryPermitState()
@@ -183,7 +182,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#firstVideoAt = 0
     this.#lastVideoEvidence = null
     this.#startupExhausted.clear()
-    this.#pendingMedia.clear()
     this.#fallbacks.clear()
   }
   invalidateForUserSetting(): void {
@@ -263,7 +261,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#ownership.started(stamped)
     if (request.kind && !this.#firstMediaAt) this.#firstMediaAt = request.startedAt
     if (request.kind === 'video' && !this.#firstVideoAt) this.#firstVideoAt = request.startedAt
-    if (request.kind) this.#pendingMedia.add(request.requestId)
     const key = request.kind ?? 'unknown'
     this.#requested.set(key, stamped)
     this.#stepCircuits()
@@ -448,7 +445,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       type: 'catalog-generated',
       host: pending.host,
       kind: 'video',
-      catalogIndex: TRUSTED_CATALOG.indexOf(pending.host as (typeof TRUSTED_CATALOG)[number]),
     }
     const decision: RouteDecision = this.#retryPermits.applied(pending)?.decision ?? {
       action: 'rewrite',
@@ -526,9 +522,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
   firstMediaAt(kind?: MediaKind): number {
     return kind === 'video' ? this.#firstVideoAt : this.#firstMediaAt
-  }
-  pendingMediaCount(): number {
-    return this.#pendingMedia.size
   }
   latestRequested(kind: MediaKind): RequestContext | null {
     return this.#requested.get(kind) ?? null
@@ -952,7 +945,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         type: 'catalog-generated',
         host: selected.host,
         kind: context.kind,
-        catalogIndex,
       }
       decision = {
         action: 'rewrite',
@@ -1304,7 +1296,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
               type: 'catalog-generated' as const,
               host: parsed.host,
               kind: context.kind,
-              catalogIndex,
             }
           : native
       if (candidate) {
@@ -1480,7 +1471,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         type: 'catalog-generated' as const,
         host: parsed.host,
         kind: context.kind,
-        catalogIndex: TRUSTED_CATALOG.indexOf(parsed.host),
       }
       decision = this.#planPlayerFallback(candidate)
     }
@@ -1925,7 +1915,6 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     let releaseFailure: (() => void) | null = null
     let confirmed = true
     try {
-      if (observation.request) this.#pendingMedia.delete(observation.request.requestId)
       const valid = (): boolean =>
         observation.generation === this.session.get().generation &&
         observation.epoch === this.session.get().epoch &&

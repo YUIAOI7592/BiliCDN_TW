@@ -175,7 +175,6 @@ async function checkOneSampleUses70Percent1(t: TestContext): Promise<void> {
     type: 'catalog-generated' as const,
     host: TRUSTED_CATALOG[0],
     kind: 'video' as const,
-    catalogIndex: 0,
   }
   const restrictionInput = {
     candidates: [candidate],
@@ -209,7 +208,6 @@ async function checkColdStartRewritesToCatalogDefault2(t: TestContext): Promise<
     type: 'catalog-generated' as const,
     host: TRUSTED_CATALOG[0],
     kind: 'video' as const,
-    catalogIndex: 0,
   }
   const restrictionInput = {
     candidates: [candidate],
@@ -240,7 +238,7 @@ async function checkColdStartRewritesToCatalogDefault2(t: TestContext): Promise<
     type: 'root-original' as const,
     host: 'upos-hz-mirrorakam.akamaized.net',
     kind: 'video' as const,
-    catalogIndex: Number.MAX_SAFE_INTEGER,
+
     route: null,
     handle: null,
   }
@@ -258,7 +256,6 @@ async function checkColdStartRewritesToCatalogDefault2(t: TestContext): Promise<
     type: 'catalog-generated' as const,
     host: TRUSTED_CATALOG[1],
     kind: 'video' as const,
-    catalogIndex: 1,
   }
   const measured = new Map<string, ReturnType<typeof addEvidenceSample>>([
     [

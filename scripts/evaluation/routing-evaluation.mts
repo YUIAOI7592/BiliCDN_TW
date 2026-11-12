@@ -147,11 +147,11 @@ function facts(scenario: Scenario) {
             type: 'root-original',
             host: hosts[index]!,
             kind: 'video',
-            catalogIndex: index,
+
             route: null,
             handle: null,
           }
-        : { type: 'catalog-generated', host: hosts[index]!, kind: 'video', catalogIndex: index },
+        : { type: 'catalog-generated', host: hosts[index]!, kind: 'video' },
     ),
     evidenceFor: (host: string) => records.find((row) => row.host === host) ?? null,
     restrictions: {

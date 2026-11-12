@@ -92,7 +92,6 @@ function playbackFixture(t: TestContext) {
           representation: null,
           affinity: null,
           disabled: false,
-          recovering: false,
           lastDecisionId: null,
         }),
       },

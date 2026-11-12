@@ -1,9 +1,9 @@
 import { type CircuitControlStamp } from './evidence-model.ts'
 export const CIRCUIT_OBSERVATION_MS = 300_000
 export const CIRCUIT_SUCCESS_GAP_MS = 120_000
-export const CIRCUIT_SETTLEMENT_GRACE_MS = 60_000
+const CIRCUIT_SETTLEMENT_GRACE_MS = 60_000
 export const CIRCUIT_PENDING_LIMIT = 64
-export const CIRCUIT_BACKOFF_MS = Object.freeze([600_000, 1_800_000, 7_200_000, 21_600_000])
+const CIRCUIT_BACKOFF_MS = Object.freeze([600_000, 1_800_000, 7_200_000, 21_600_000])
 
 export interface CircuitWindow {
   readonly id: string

@@ -334,6 +334,48 @@ function register(f: ReturnType<typeof fixture>, kind: MediaKind = 'video') {
   return { original, representation }
 }
 
+for (const change of ['none', 'policy', 'content'] as const) {
+  test(`cleanup contract: requestless completion after ${change} only confirms current control`, async (t) => {
+    const scope = testScope(t),
+      f = fixture(scope)
+    const { original } = register(f)
+    const applied = f.routes.apply(original)
+    const observation = completion(f, applied, 1)
+    delete (observation as { request?: unknown }).request
+    const confirmed: string[] = []
+    scope.defer(f.routes.subscribe((event) => confirmed.push(event.type)))
+    if (change === 'policy') f.routes.invalidateForUserSetting()
+    if (change === 'content') f.routes.resetEpoch()
+    confirmed.length = 0
+    await f.routes.observe(observation)
+    assert.equal(confirmed.includes('route-confirmed'), change === 'none')
+    assert.equal(f.session.get().affinity, null, 'requestless observations cannot bind affinity')
+  })
+}
+
+for (const newer of [255, 256]) {
+  test(`cleanup contract: requestless control retains only 256 decisions with ${newer} newer entries`, async (t) => {
+    const scope = testScope(t),
+      f = fixture(scope)
+    const { original } = register(f)
+    const applied = f.routes.apply(original)
+    let confirmations = 0
+    scope.defer(
+      f.routes.subscribe((event) => {
+        if (event.type === 'route-confirmed') confirmations++
+      }),
+    )
+    for (let i = 0; i < newer; i++) {
+      f.routes.apply(media(`cache-${i}`, 'video.m4s'))
+      if (i === 128) assert.equal(f.routes.apply(original).decision, applied.decision)
+    }
+    const observation = completion(f, applied, 1)
+    delete (observation as { request?: unknown }).request
+    await f.routes.observe(observation)
+    assert.equal(confirmations, newer === 255 ? 1 : 0)
+  })
+}
+
 function completion(
   f: ReturnType<typeof fixture>,
   applied: AppliedRouteDecision,
@@ -355,7 +397,6 @@ function completion(
       kind: identity.kind,
       attributionStatus: 'matched',
       attributionSource: 'exact',
-      decisionStage: 'request',
       decisionId: applied.decision.id,
       routeType: applied.decision.routeType,
       originalHost: applied.sourceHost ?? host,
@@ -363,7 +404,6 @@ function completion(
       sourceHost: applied.sourceHost,
       playurlHostChanged: false,
       playurlOutput: null,
-      urlChanged: false,
       hostChanged: false,
       startedAt: f.clock.now() - 100,
     },

@@ -37,7 +37,6 @@ export function start(
     kind,
     attributionStatus: 'matched',
     attributionSource: 'exact',
-    decisionStage: 'request',
     decisionId: applied.decision.id,
     routeType: applied.decision.routeType,
     originalHost: applied.sourceHost ?? applied.decision.host!,
@@ -45,7 +44,6 @@ export function start(
     sourceHost: applied.sourceHost,
     playurlHostChanged: false,
     playurlOutput: null,
-    urlChanged: false,
     hostChanged: false,
     startedAt: f.clock.now(),
   }

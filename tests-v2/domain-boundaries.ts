@@ -60,11 +60,10 @@ async function checkExplicitUrlBases(t: TestContext): Promise<void> {
   )
   assert.deepEqual(
     catalogCandidates('audio', new Set([primary])),
-    TRUSTED_CATALOG.slice(1).map((host, index) => ({
+    TRUSTED_CATALOG.slice(1).map((host) => ({
       type: 'catalog-generated',
       host,
       kind: 'audio',
-      catalogIndex: index + 1,
     })),
     'candidate construction preserves the complete inventory, media kind, order and exclusions',
   )

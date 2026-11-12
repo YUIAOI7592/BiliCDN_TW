@@ -74,9 +74,7 @@ export const monitorRecovery = (overrides: Partial<MonitorRecovery> = {}): Monit
     snapshot: () => ({
       state: 'healthy',
       source: null,
-      pauseSec: 0,
       reloadCount: 0,
-      breakerSec: 0,
     }),
     ...overrides,
   }) satisfies MonitorRecovery

@@ -14,7 +14,6 @@ export class SessionStore implements SessionPort {
     representation: null,
     affinity: null,
     disabled: false,
-    recovering: false,
     lastDecisionId: null,
   })
 
@@ -32,7 +31,6 @@ export class SessionStore implements SessionPort {
       representation: null,
       affinity: null,
       disabled,
-      recovering: false,
       lastDecisionId: null,
     })
     return this.#state
@@ -44,7 +42,6 @@ export class SessionStore implements SessionPort {
       epoch: epochId(Number(this.#state.epoch) + 1),
       representation: null,
       affinity: null,
-      recovering: false,
       lastDecisionId: null,
     })
     return this.#state
@@ -55,9 +52,6 @@ export class SessionStore implements SessionPort {
   }
   setAffinity(affinity: RouteAffinity | null): void {
     this.#state = Object.freeze({ ...this.#state, affinity })
-  }
-  setRecovering(recovering: boolean): void {
-    this.#state = Object.freeze({ ...this.#state, recovering })
   }
   noteDecision(id: DecisionId): void {
     this.#state = Object.freeze({ ...this.#state, lastDecisionId: id })

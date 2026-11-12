@@ -86,14 +86,12 @@ export interface RequestContext {
   readonly kind: MediaKind | null
   readonly attributionStatus: AttributionStatus
   readonly attributionSource: AttributionSource
-  readonly decisionStage: 'request'
   readonly routeType: RouteType
   readonly originalHost: string
   readonly targetHost: string
   readonly sourceHost: string | null
   readonly playurlHostChanged: boolean
   readonly playurlOutput: PlayurlOutputSummary | null
-  readonly urlChanged: boolean
   readonly hostChanged: boolean
   readonly startedAt: number
 }
@@ -104,7 +102,6 @@ export interface TransportObservation {
   readonly timingBasis?: TimingBasis
   readonly speedEligible?: boolean
   readonly retryVerifiedBytes?: number
-  readonly terminationReason?: 'early-retry-timeout'
   readonly request?: RequestContext
   readonly generation: GenerationId
   readonly epoch: EpochId

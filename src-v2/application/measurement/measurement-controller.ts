@@ -83,12 +83,10 @@ export class MeasurementController implements MeasurementPort {
     reason: 'not-requested',
     candidates: 0,
     selectedHost: null,
-    delayed: false,
   })
   #snapshot: MeasurementSnapshot = Object.freeze({
     state: 'idle',
     reason: 'startup',
-    lastAttemptAt: 0,
     host: null,
   })
 
@@ -132,7 +130,6 @@ export class MeasurementController implements MeasurementPort {
     this.#snapshot = Object.freeze({
       state: 'idle',
       reason: 'generation',
-      lastAttemptAt: 0,
       host: null,
     })
   }
@@ -152,7 +149,6 @@ export class MeasurementController implements MeasurementPort {
       reason: lease.phase === 'reserved' || lease.phase === 'probing' ? reason : 'budget-consumed',
       candidates: 0,
       selectedHost: null,
-      delayed: false,
     })
     if (lease.phase === 'reserved' || lease.phase === 'probing') lease.controller.abort(reason)
   }
@@ -203,10 +199,8 @@ export class MeasurementController implements MeasurementPort {
         state: 'running',
         reason: 'player-media-request',
         deadlineAt,
-        remainingProbes: options.candidates.length,
         candidates: options.candidates.length,
         selectedHost: null,
-        delayed: true,
       })
       let release!: () => void
       const pending = new Promise<void>((resolve) => {
@@ -229,7 +223,6 @@ export class MeasurementController implements MeasurementPort {
               reason: 'preflight-error',
               candidates: options.candidates.length,
               selectedHost: null,
-              delayed: true,
             })
         })
         .finally(() => {
@@ -273,7 +266,6 @@ export class MeasurementController implements MeasurementPort {
       reason: reason.slice(0, 48),
       candidates: 0,
       selectedHost: null,
-      delayed: false,
     })
   }
 
@@ -342,7 +334,6 @@ export class MeasurementController implements MeasurementPort {
           results.push(result)
           this.#startupState = Object.freeze({
             ...this.#startupState!,
-            remainingProbes: options.candidates.length - results.length,
           })
           if (
             result.valid &&
@@ -455,7 +446,6 @@ export class MeasurementController implements MeasurementPort {
             : 'inconclusive',
       candidates: options.candidates.length,
       selectedHost: decision?.host ?? null,
-      delayed: true,
       elapsedMs: Math.max(0, (readMonotonic(this.monotonicNow) ?? startedTick) - startedTick),
       results: Object.freeze(
         results.slice(0, 3).map((result) =>
@@ -633,7 +623,6 @@ export class MeasurementController implements MeasurementPort {
           ...this.#snapshot,
           state: 'failed',
           reason: 'measurement-error',
-          lastAttemptAt: this.#failedAt,
         })
       }
     } finally {
@@ -774,8 +763,8 @@ export class MeasurementController implements MeasurementPort {
       this.#snapshot = Object.freeze({
         state: 'running',
         reason: 'candidate-' + (index + 1),
-        lastAttemptAt: this.now(),
-        host: applied.decision.host,
+        // Preserve the injected clock read before publishing the running snapshot.
+        host: (this.now(), applied.decision.host),
         range: {
           mode: range?.startByte ? ('middle' as const) : ('head' as const),
           sizeKnown: range?.sizeKnown ?? false,
@@ -828,8 +817,9 @@ export class MeasurementController implements MeasurementPort {
     marker: number,
     range: RoundRange | null,
   ): Promise<void> {
-    const startedAt = this.now(),
-      limit = demand.highDemand ? 768 * 1024 : 384 * 1024
+    // Retain the injected clock evaluation before demand and probe setup.
+    this.now()
+    const limit = demand.highDemand ? 768 * 1024 : 384 * 1024
     const controller = new AbortController()
     const cancel = (): void => controller.abort(round.signal.reason)
     round.signal.addEventListener('abort', cancel, { once: true })
@@ -893,7 +883,6 @@ export class MeasurementController implements MeasurementPort {
     this.#snapshot = Object.freeze({
       state: ok ? 'complete' : 'failed',
       reason: ok ? 'sample-recorded' : result.directRange ? 'short-response' : result.reason,
-      lastAttemptAt: startedAt,
       host: applied.decision.host,
       range: {
         mode: startByte > 0 ? ('middle' as const) : ('head' as const),

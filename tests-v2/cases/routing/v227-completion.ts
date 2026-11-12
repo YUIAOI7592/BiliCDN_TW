@@ -31,9 +31,9 @@ function facts(incomplete = false, age = 0, requestBytes: number | null = 65536)
     ]),
   )
   return {
-    candidates: [...rows.keys()].map((host, catalogIndex) => ({
+    candidates: [...rows.keys()].map((host) => ({
       host,
-      catalogIndex,
+
       type: 'catalog-generated' as const,
       kind: 'video' as const,
     })),

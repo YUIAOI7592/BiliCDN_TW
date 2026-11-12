@@ -21,7 +21,6 @@ export interface RouteIdentity {
 interface CandidateBase {
   readonly host: string
   readonly kind: MediaKind
-  readonly catalogIndex: number
 }
 
 export interface CatalogCandidate extends CandidateBase {

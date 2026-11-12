@@ -11,7 +11,6 @@ export interface SessionSnapshot {
   readonly representation: RepresentationId | null
   readonly affinity: RouteAffinity | null
   readonly disabled: boolean
-  readonly recovering: boolean
   readonly lastDecisionId: DecisionId | null
 }
 
@@ -22,6 +21,5 @@ export interface SessionPort {
   beginEpoch(): SessionSnapshot
   setRepresentation(representation: RepresentationId | null): void
   setAffinity(affinity: RouteAffinity | null): void
-  setRecovering(recovering: boolean): void
   noteDecision(id: DecisionId): void
 }

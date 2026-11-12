@@ -1331,11 +1331,6 @@ test('BR-04 deferred native send exception terminates once while immediate send 
   assert.equal(xhr.nativeSends, 0)
   assert.throws(() => xhr.send(), { name: 'InvalidStateError' })
   assert.equal(
-    f.routes.pendingMediaCount(),
-    0,
-    'failed native dispatch releases pending media attribution',
-  )
-  assert.equal(
     f.evidence.list().length,
     0,
     'a local dispatch exception is not a CDN failure sample',

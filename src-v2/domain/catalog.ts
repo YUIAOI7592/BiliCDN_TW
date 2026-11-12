@@ -1,5 +1,5 @@
 import { type PlayurlEndpointKind } from './playurl-model.ts'
-export const HK_CATALOG_HOSTS = Object.freeze([
+const HK_CATALOG_HOSTS = Object.freeze([
   'cn-hk-eq-01-03.bilivideo.com',
   'cn-hk-eq-01-05.bilivideo.com',
   'cn-hk-eq-01-01.bilivideo.com',
@@ -20,7 +20,7 @@ export const TRUSTED_CATALOG = Object.freeze([
 ] as const)
 
 export type CatalogHost = (typeof TRUSTED_CATALOG)[number]
-export const TRUSTED_CATALOG_SET: ReadonlySet<string> = new Set(TRUSTED_CATALOG)
+const TRUSTED_CATALOG_SET: ReadonlySet<string> = new Set(TRUSTED_CATALOG)
 
 export const DEFAULT_UNAVAILABLE_HOSTS: ReadonlySet<string> = new Set([
   'upos-sz-mirrorcosov.bilivideo.com',
@@ -32,12 +32,7 @@ export const DEFAULT_UNAVAILABLE_HOSTS: ReadonlySet<string> = new Set([
 export const isCatalogHost = (host: string): host is CatalogHost =>
   TRUSTED_CATALOG_SET.has(host.toLowerCase())
 
-export const catalogIndex = (host: string): number => {
-  const index = TRUSTED_CATALOG.indexOf(host.toLowerCase() as CatalogHost)
-  return index < 0 ? Number.MAX_SAFE_INTEGER : index
-}
-
-export const PLAYURL_PATH = /\/player\/.*playurl/i
+const PLAYURL_PATH = /\/player\/.*playurl/i
 export const classifyPlayurlApi = (value: string, baseUrl?: string): PlayurlEndpointKind | null => {
   try {
     const url = new URL(value, baseUrl)

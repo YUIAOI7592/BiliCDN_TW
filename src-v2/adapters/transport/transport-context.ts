@@ -39,7 +39,7 @@ export interface DispatchCheck {
   readonly targetUrl: string
   readonly managedMedia: boolean
 }
-export const hostOf = (value: string): string => {
+const hostOf = (value: string): string => {
   try {
     return new URL(value, location.href).hostname.toLowerCase()
   } catch {
@@ -56,7 +56,7 @@ export const sameUrl = (responseUrl: string, requestUrl: string): boolean => {
     return false
   }
 }
-export const catalogTarget = (applied: AppliedRouteDecision | null): boolean =>
+const catalogTarget = (applied: AppliedRouteDecision | null): boolean =>
   !!applied?.url &&
   applied.decision.action === 'rewrite' &&
   applied.decision.routeType === 'catalog-generated' &&
@@ -252,14 +252,12 @@ export class TransportContext {
         kind: applied.context?.kind ?? null,
         attributionStatus: matched,
         attributionSource: applied.attributionSource ?? (applied.context ? 'exact' : 'none'),
-        decisionStage: 'request',
         routeType: applied.decision.routeType,
         originalHost: hostOf(originalUrl),
         targetHost: hostOf(targetUrl),
         sourceHost: applied.sourceHost,
         playurlHostChanged: applied.playurlHostChanged ?? false,
         playurlOutput: applied.playurlOutput ?? null,
-        urlChanged: originalUrl !== targetUrl,
         hostChanged: hostOf(originalUrl) !== hostOf(targetUrl),
         startedAt,
         expectedBytes:

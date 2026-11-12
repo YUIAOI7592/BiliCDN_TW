@@ -229,10 +229,10 @@ export async function evaluateDeadlines() {
             : null
           : (s.buffer ?? 4) / rate
       const input = {
-        candidates: hosts.map((host, catalogIndex) => ({
+        candidates: hosts.map((host) => ({
           type: 'catalog-generated',
           host,
-          catalogIndex,
+
           kind: 'video',
         })),
         evidenceFor: (host: string) => evidence.find((e) => e.host === host) ?? null,

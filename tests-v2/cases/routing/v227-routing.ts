@@ -12,13 +12,12 @@ const catalog: RouteCandidate = {
   type: 'catalog-generated',
   kind: 'video',
   host: 'catalog.example',
-  catalogIndex: 0,
 }
 const original: RouteCandidate = {
   type: 'root-original',
   kind: 'video',
   host: 'original.example',
-  catalogIndex: 1,
+
   route: null,
   handle: null,
 }

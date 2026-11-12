@@ -128,10 +128,14 @@ test('V2211 routing: observation capacity overflow discards credit without cance
   const f = await createObservation(t)
   await finish(f, start(f, f.url, 1))
   const work = Array.from({ length: 65 }, (_, i) => start(f, f.url, i + 2))
-  assert.equal(f.routes.pendingMediaCount(), 65)
+  const overflow = f.routes
+    .snapshot()
+    .circuits.find((row) => row.host === f.host && row.kind === 'video')!
+  assert.equal(overflow.phase, 'awaiting')
+  assert.equal(overflow.progressSec, 0)
   for (const request of work) await finish(f, request)
   assert.equal(f.evidence.get(f.host, 'video')!.circuitLevel, 1)
-  assert.equal(f.routes.pendingMediaCount(), 0)
+  assert.ok(f.evidence.get(f.host, 'video')!.samples.some((row) => row.outcome === 'success'))
 })
 test('V2211 routing: snapshot reads cannot commit, mutate a decision or start work', async (t) => {
   const f = await createObservation(t)

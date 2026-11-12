@@ -90,7 +90,6 @@ function fixture(t: TestContext) {
           representation: representationId('video:fixture'),
           affinity: null,
           disabled: false,
-          recovering: false,
           lastDecisionId: null,
         }),
       },

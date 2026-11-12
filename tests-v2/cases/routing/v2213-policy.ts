@@ -10,7 +10,7 @@ test('V2213 policy: ranking and dispatch share restriction precedence', () => {
     deadHosts = new Set([host])
   const ranking = rankRoutes(
     {
-      candidates: [{ type: 'catalog-generated', host, kind: 'video', catalogIndex: 0 }],
+      candidates: [{ type: 'catalog-generated', host, kind: 'video' }],
       evidenceFor: () => ({ ...emptyEvidence(host, 'video'), circuitUntil: 2000 }),
       restrictions: {
         blackHosts,

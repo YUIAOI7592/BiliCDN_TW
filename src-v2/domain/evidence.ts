@@ -8,12 +8,11 @@ import {
 import { type MediaKind } from './model.ts'
 import { type TimingBasis } from './measurement-time.ts'
 import { failedCircuit } from './circuit-policy.ts'
-export { CIRCUIT_BACKOFF_MS } from './circuit-policy.ts'
 
 export const EVIDENCE_TTL_MS = 24 * 60 * 60 * 1000
-export const FRESH_EVIDENCE_MS = 5 * 60 * 1000
+const FRESH_EVIDENCE_MS = 5 * 60 * 1000
 export const MAX_EVIDENCE_SAMPLES = 12
-export const MIN_THROUGHPUT_BYTES = 64 * 1024
+const MIN_THROUGHPUT_BYTES = 64 * 1024
 const PROVEN_FAILURE_QUIET_MS = 30 * 60 * 1000
 const positive = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value > 0
@@ -42,10 +41,7 @@ export const emptyEvidence = (host: string, kind: MediaKind): RouteEvidence => (
   circuitUntil: 0,
   updatedAt: 0,
 })
-export const pruneSamples = (
-  samples: readonly EvidenceSample[],
-  now: number,
-): readonly EvidenceSample[] =>
+const pruneSamples = (samples: readonly EvidenceSample[], now: number): readonly EvidenceSample[] =>
   Object.freeze(
     samples
       .filter(
@@ -82,7 +78,7 @@ export const addEvidenceSample = (
 }
 
 /** Sample-count half lives; idle time is freshness, never a fabricated rate. */
-export function conservativeEwma(values: readonly number[]): number | null {
+function conservativeEwma(values: readonly number[]): number | null {
   if (!values.length) return null
   let fast = values[0]!,
     slow = fast

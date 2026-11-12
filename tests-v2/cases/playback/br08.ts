@@ -169,7 +169,6 @@ function fixture(t: TestContext, options: { prime?: boolean; firstMediaAt?: numb
           representation: representationId('video:br08'),
           affinity: null,
           disabled: false,
-          recovering: false,
           lastDecisionId: null,
         }),
       },

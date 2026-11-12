@@ -171,7 +171,6 @@ async function healthyProbeFixture(t: TestContext) {
         type: 'catalog-generated',
         host: TRUSTED_CATALOG[1],
         kind: 'video',
-        catalogIndex: 1,
       },
       ranking: [],
     },

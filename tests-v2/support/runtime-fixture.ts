@@ -143,7 +143,6 @@ export function fixture(
         snapshot: () => ({
           state: 'idle' as const,
           reason: 'fixture',
-          lastAttemptAt: 0,
           host: null,
         }),
       }

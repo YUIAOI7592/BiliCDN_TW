@@ -230,7 +230,6 @@ test('META U healthy round advances each candidate cursor safely through rollove
         type: 'catalog-generated',
         host: 'synthetic.example',
         kind: 'video',
-        catalogIndex: 0,
       },
     },
   } satisfies AppliedRouteDecision

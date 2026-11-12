@@ -110,9 +110,7 @@ export class RecoveryController implements RecoveryPort {
   #state: RecoverySnapshot = Object.freeze({
     state: 'healthy',
     source: null,
-    pauseSec: 0,
     reloadCount: 0,
-    breakerSec: 0,
   })
 
   constructor(
@@ -201,9 +199,7 @@ export class RecoveryController implements RecoveryPort {
     this.#state = Object.freeze({
       state: 'healthy',
       source: null,
-      pauseSec: 0,
       reloadCount: 0,
-      breakerSec: 0,
     })
   }
 
@@ -458,14 +454,11 @@ export class RecoveryController implements RecoveryPort {
         this.#state = Object.freeze({
           state: 'pause-armed',
           source: null,
-          pauseSec: Math.floor((now - this.#pauseAt) / 1000),
           reloadCount: this.#reloadCount,
-          breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - now) / 1000)),
         })
       else
         this.#state = Object.freeze({
           ...this.#state,
-          breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - now) / 1000)),
         })
     } else if (!snapshot.paused && this.#pauseAt && !this.#token) {
       const wasLong = now - this.#pauseAt >= 30_000
@@ -476,9 +469,7 @@ export class RecoveryController implements RecoveryPort {
         this.#state = Object.freeze({
           state: 'healthy',
           source: null,
-          pauseSec: 0,
           reloadCount: this.#reloadCount,
-          breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - now) / 1000)),
         })
     }
   }
@@ -634,9 +625,7 @@ export class RecoveryController implements RecoveryPort {
     this.#state = Object.freeze({
       state: 'play-intent',
       source,
-      pauseSec: this.#pauseAt ? Math.floor((now - this.#pauseAt) / 1000) : 0,
       reloadCount: this.#reloadCount,
-      breakerSec: 0,
     })
   }
 
@@ -722,9 +711,7 @@ export class RecoveryController implements RecoveryPort {
         savedPositionSec: token.savedPositionSec,
         savedRate: token.savedRate,
         source: token.source,
-        pauseSec: 0,
         reloadCount: this.#reloadCount,
-        breakerSec: 0,
       })
   }
 
@@ -967,9 +954,7 @@ export class RecoveryController implements RecoveryPort {
       this.#state = Object.freeze({
         state: 'waiting',
         source: token.source,
-        pauseSec: 0,
         reloadCount: this.#reloadCount,
-        breakerSec: 0,
         savedPositionSec: token.savedPositionSec,
         savedRate: token.savedRate,
       })
@@ -1162,15 +1147,16 @@ export class RecoveryController implements RecoveryPort {
     this.#token = null
     this.#pauseAt = 0
     this.#unhook()
-    this.#state = Object.freeze({
+    const snapshot: RecoverySnapshot = {
       state,
       reason,
       ...(token ? { savedPositionSec: token.savedPositionSec, savedRate: token.savedRate } : {}),
       ...(restoration ? { restoration } : {}),
       source: token?.source ?? null,
-      pauseSec: 0,
       reloadCount: this.#reloadCount,
-      breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - this.now()) / 1000)),
-    })
+    }
+    // Preserve the injected clock read before publishing the terminal snapshot.
+    this.now()
+    this.#state = Object.freeze(snapshot)
   }
 }

@@ -40,10 +40,8 @@ function playback(t: Parameters<typeof rescuePlayerFixture>[0], buffer = 5) {
     authorityRevision: 1,
     attributionStatus: 'matched',
     attributionSource: 'exact',
-    decisionStage: 'request',
     playurlHostChanged: false,
     playurlOutput: null,
-    urlChanged: false,
     hostChanged: false,
     startedAt: f.clock.now() - 3000,
   }

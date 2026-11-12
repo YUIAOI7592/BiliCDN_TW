@@ -1,4 +1,4 @@
-import { catalogIndex, TRUSTED_CATALOG } from '../domain/catalog.ts'
+import { TRUSTED_CATALOG } from '../domain/catalog.ts'
 import { declaredFrameRate } from '../domain/frame-rate.ts'
 import { parseMediaUrl, replaceUrlHost } from '../domain/url-policy.ts'
 import { admitSources, MAX_EXACT_SOURCES } from '../domain/source-admission.ts'
@@ -382,7 +382,7 @@ export class SignedRouteVault implements SignedRouteVaultPort {
           type: 'native-signed' as const,
           host: route.host,
           kind: group.identity.kind,
-          catalogIndex: catalogIndex(route.host),
+
           route: group.identity,
           handle: route.handle,
           activelyExplorable: route.activelyExplorable,
@@ -394,7 +394,7 @@ export class SignedRouteVault implements SignedRouteVaultPort {
           type: 'root-original' as const,
           host: first.host,
           kind: group.identity.kind,
-          catalogIndex: Number.MAX_SAFE_INTEGER,
+
           route: group.identity,
           handle: first.handle,
         })

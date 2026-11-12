@@ -15,7 +15,7 @@ export const routeLabel = (type: unknown): string =>
     'root-original': 'B 站原本的 CDN',
   })
 
-export const playbackLabel = (state: unknown): string =>
+const playbackLabel = (state: unknown): string =>
   plain(state, {
     'no-video': '還沒找到影片',
     paused: '已暫停',

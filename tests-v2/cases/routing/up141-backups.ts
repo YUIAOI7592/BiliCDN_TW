@@ -33,7 +33,6 @@ function ranked(host: string, ratio: number | null, eligible = true): RouteRanki
       type: 'catalog-generated',
       host,
       kind: 'video',
-      catalogIndex: TRUSTED_CATALOG.indexOf(host as (typeof TRUSTED_CATALOG)[number]),
     },
     state: ratio === null ? 'unknown' : 'proven',
     eligible,
@@ -53,7 +52,7 @@ function decision(rows: readonly RouteRankingEntry[]): RouteDecision {
     reason: 'healthy-affinity',
     routeType: 'catalog-generated',
     host: ali,
-    candidate: { type: 'catalog-generated', host: ali, kind: 'video', catalogIndex: 0 },
+    candidate: { type: 'catalog-generated', host: ali, kind: 'video' },
     ranking: rows,
   }
 }

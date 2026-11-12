@@ -89,7 +89,6 @@ function fixture(t: TestContext, rate: number, realRecovery: boolean) {
         representation: rep,
         affinity: null,
         disabled: false,
-        recovering: false,
         lastDecisionId: null,
       }),
     },
