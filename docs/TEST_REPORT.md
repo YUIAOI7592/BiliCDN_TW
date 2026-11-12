@@ -48,7 +48,9 @@ v2.2.18 五項發行原件與 fb1d57d 的 Git 位元組逐項相同，已移至�
 
 正式封裝完成，五項產物獨占建立；117 項建置輸入雜湊、重建腳本與四筆 SHA256SUMS 逐項相同。腳本 542,470 bytes，SHA-256 `3db831468fe2fc616ebea5325c157a5c39ccf31a5478ac3a92409aa67fa11764`。Release 內報告保留封裝前時點，後續驗證只更新本現行報告，不覆寫快照。
 
-推送及公開下載核對尚待完成；GitHub Release 僅附 BiliCDN_TW.user.js。安裝版未驗證，既有窗口保持結案；工作狀態由 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md) 維護。
+2026-11-12 21:34（Asia/Taipei）公開核對通過：main 與 v2.2.19 標籤指向發行提交 ba17af7571e7b9890659ead31f3a9fe27454a3e1；[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.19) 為 latest、非草稿、非預發行，只有 BiliCDN_TW.user.js 一個附件。匿名 latest 與固定版本下載均為 HTTP 200，版本、542,470 bytes、SHA-256 及完整位元組都與本機原件相同，GitHub 附件 digest 亦一致。後續文件結案提交不移動標籤或重封裝。
+
+文件結案前 docs:check 通過 303 份 Markdown／5,240 個本機或儲存庫連結，git diff --check 通過。既有七個不可變斷鏈、672 個封存後原網址、18 個私有證據引用與未抓取外部連結均依原規則分列；結構通過不取代人工語意核對。安裝版未驗證，既有窗口保持結案；工作狀態由 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md) 維護。
 
 <a name="來源隔離與實際安裝"></a>
 
