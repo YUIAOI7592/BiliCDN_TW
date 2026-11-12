@@ -1606,3 +1606,7 @@ TODO 移除已結案兩輪驗收方案與結案表的重複正文，保留停止
 ## 2026-11-13 v2.2.20 程式清理文件同步
 
 同步 ARCHITECTURE 內部契約、DEVELOPMENT 啟動器核對、CHANGELOG、TODO、HISTORY 及最新版 TEST_REPORT。v2.2.19 完整正文以原位元組追加保存，原 R1／FAIL／INVALID 與相容錨點保持。上一版五份發行原件完成 Git／校驗清單／ArchiveStorage／獨立 tar 還原比對後封存；不回寫舊 Release。檢查結果由現行 TEST_REPORT 維護；INDEX 繼續只導覽既有權威文件。
+
+## 2026-11-13 v2.2.20 授權取證路徑紀錄
+
+依使用者要求調查當次公開工具與一般頁面取證能力，TEST_REPORT 保存各入口的實測結果、來源資料流對照、原要求覆蓋表及中斷窗口；IAB_TESTING 維護證據分類方法，TODO 保留未完成範圍。沒有刪減原測試、降低判定門檻、修改產品或改寫原 FAIL／INVALID；沒有新增版本、封裝或 Release。INDEX 沿用既有權威入口。
