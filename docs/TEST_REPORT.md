@@ -134,6 +134,49 @@ pageAssets／WebMCP／console 實測在 2026-11-13 01:48:49 前完成；不作�
 
 本次沒有找到能在現有限制下補足完整本體與私有協定時序的新入口；這是目前公開工具與產品接口的調查結果，不是宣稱所有可能方法永遠不可行。外部瀏覽器、原生 DevTools、直接協定客戶端、瀏覽器設定檔／快取讀取、管理器資料、注入或私有閉包探查都不是本次授權替代路徑，沒有嘗試。新增產品證明欄位或取證接口會變更腳本，所得證據屬新版本，不能反證目前已安裝的 v2.2.20；本次未修改產品以製造取證能力。
 
+### v2.2.20 設定操作接線（2026-11-13）
+
+使用者恢復原安裝身分與接線目標後，續做此前只有讀取、尚未實測的設定往返。02:00:53（Asia/Taipei）凍結單一案例：BV1tFZZBQE57 P1、Auto／1 倍、單一隱藏 IAB 分頁，只切換慢請求提前重試並恢復，02:06 截止、02:05 起只清理；02:04:22 前完成並關閉分頁。沒有 CDP 命令、額外權限要求、管理器探索、重新安裝、故障注入或效益研究。
+
+| 步驟 | 實測結果 |
+| --- | --- |
+| 新文件與原值 | 控制中心顯示 v2.2.20；提前重試、WebRTC、HTTPDNS 均勾選。播放器音量文字 0、音量圖示隱藏、靜音圖示顯示 |
+| 關閉 | 一般鍵盤 Tab 定位提前重試核取方塊，Space 切換為未勾選；另外兩項保持勾選 |
+| 跨視圖確認 | 返回總覽後顯示「提前重試：關閉」；再次進設定頁仍為未勾選 |
+| 恢復 | 同一核取方塊恢復勾選，返回總覽顯示「提前重試：觀察中・0 次」；另外兩項保持原值 |
+| 清理 | Escape 關閉控制中心，再讀回音量 0 與靜音圖示，關閉分頁後 IAB 清單為空。沒有自有攔截、包裝、計時器或需還原的其他設定 |
+
+此案例 PASS 僅證明一般可信 UI 操作、設定狀態及跨視圖顯示的往返接線。正式來源對應 settingToggle → ControlCommands.updateSettings → SettingsStore，以及 ControlReadModel 的設定／提前重試快照；此來源對照不能代替已載入本體雜湊。沒有查詢 GM 資料、重新載入確認持久保存、觀察正在認領的許可取消或取得 proposal／commit 時序，不外推這些契約通過。畫面自然出現健康探測「等待設定儲存鎖」，只記當時狀態，不推論鎖停滯或協定完成。
+
+本機證據在 .work/v2220-setting-wiring/：before.jpg、disabled.jpg、overview-disabled.jpg、restored.jpg、overview-restored.jpg。鍵盤動作後同次截圖曾落在畫面更新前，採後續獨立截圖核對焦點與結果，沒有把舊畫面當新狀態或靠重複切換猜測。完整安裝身分與原內部契約要求保持，沒有以本案例結案整體目標。
+
+使用者同日後續已明確允許 CDP，附帶禁止追加權限彈窗的條件；先前拒絕紀錄仍描述當時設定。工具文件的 CDP timeoutMs 僅記載命令等待期限，未提供無彈窗授權預查或權限逾時拒絕保證；本次沒有發起 CDP 命令，也沒有更改權限設定。
+
+### v2.2.20 CDP 載入本體與實例接線（2026-11-13）
+
+使用者進一步明確「完全允許使用任意 CDP」後，先在同站 robots.txt 無播放頁執行 Runtime.evaluate（1 + 1），直接返回 2，沒有工具回報追加授權或等待。02:12:13（Asia/Taipei）凍結本輪產品查證：同一分頁導覽 BV1tFZZBQE57 P1、Auto／1 倍，02:32 截止、02:29 起清理；02:25:31 前已完成清理並關閉。沒有管理器介面或資料查詢、重新安裝、強制探測、冷卻／預算重設或網路故障注入。
+
+| 核對項目 | 直接證據與判定 |
+| --- | --- |
+| 完整載入本體 | PASS。Debugger.scriptParsed 共 339 筆、無截斷、已排空，辨識到一個產品腳本。其載入來源包含正式 Release 全部文字且僅出現一次，包含 metadata；正式檔 538,970 bytes，SHA-256 為 f5ec98a6b3503d1ac9260127719f14ab18a64df3f4828367a3f0983206c75403。執行本體部分兩側 SHA-256 同為 46ffbce5aedb787f82c6dc4ad2052094cc6a1be4f741aae67ae087d6bbe09f6d。外層載入包裝沒有當成發行檔，也未輸出其內容 |
+| 唯一實例 | PASS。從產品入口 click 監聽器取得產品模組作用域，以各類別 prototype 查詢：RuntimeController、ControlCenter、RouteCoordinator、MeasurementController、SessionStore、TransportAdapter、PlayerPanel 各一個；這次是實際物件數，與前輪 DOM 宿主計數分開 |
+| 實際引用 | PASS。Runtime.routes、Measurement.routes、TransportContext.routes 為同一物件；Runtime.measurement 與 TransportContext.measurement 同一物件，Routes.session 與 TransportContext.session 同一物件。量測使用的 proposeChallenge／commitChallenge 與實際 Routes prototype 方法相同，其 FunctionLocation 指向已比對的產品腳本 |
+| 舊介面及 Session | PASS。challenge、decisionRecord、pendingMediaCount、setRecovering 均不存在；Session 實際快照無 recovering，保留 lastDecisionId 與 noteDecision。Routes 私有欄位有 decisionPolicies、無 decisions／pendingMedia，獨立 circuits 所有者仍存在 |
+| 決策索引 | 直接讀到 25 筆且值全為數字政策修訂；已比對載入程式碼保留 256 筆淘汰迴圈及獨立 CIRCUIT_PENDING_LIMIT=64。此為實際形狀及載入實作證據，不冒充超限、淘汰次序或晚到完成的動態壓力案例 |
+| 真實請求與完成觀察 | PASS。影音當前 RequestContext 均保留 hostChanged、無 decisionStage／urlChanged。自然影片 HTTP 206 成功進入 Routes.observe 時，直接讀取參數鍵名確認無 terminationReason，沒有輸出媒體 URL 或原始物件 |
+| 候選排序 | PASS。24 個當前計畫所含 391 筆排序列之 candidateOrder 全為有限數字，候選無 catalogIndex。初次把 candidateOrder 查在 candidate 上得到 undefined；依實際型別改查 ranking entry 後確認，沒有把檢查位置錯誤當產品缺陷 |
+| 精簡快照及 UI | PASS。量測快照無 lastAttemptAt／remainingProbes／delayed，恢復快照保有 deadlineAt／remainingReloads、無 pauseSec／breakerSec；ControlCenter 的讀取模型提供同樣精簡形狀，deps.version 為 2.2.20 |
+| 共用解析與親和判斷 | 產品模組只有一個 storedHost 綁定，兩個載入中的 parsePayload 函式均引用它；完整載入來源包含共用首次影片親和判斷的一個定義與兩處呼叫。未呼叫解析器讀取或改寫管理器資料，也未以合成資料觸發正式 Store |
+| Fetch／XHR | 實際 TransportAdapter.snapshot 回報 installed、fetchInstalled=true、xhrInstalled=true，請求與回應計數有值；結合實例及已比對來源確認自檢接線。這不是獨立完整 Network 流量稽核或所有第三方 hook 鏈來源認證 |
+
+自然健康探索的動態部分沒有補算通過：先在尚待穩定進度時觀察提案入口 40 秒未命中；後續有 stableProgressMs 約 139 秒、paused=false、緩衝約 73 秒且產品顯示 no-stale-candidate 的新狀態，再觀察 5 秒仍未命中。斷點均已移除，沒有強制呼叫 propose／commit、重置冷卻、修改時鐘或放寬候選資格。兩階段方法引用已確認，但提案、認領、提交、取消的完整自然時序仍未驗證；既有 Node 契約與安裝動態證據保持分列。管理器名稱／版本依禁令未查詢，不宣稱完整管理器安裝身分通過。
+
+介面收尾時，DOM 快照列出的產品入口最初仍被播放器設定面板的 bui-panel-move 遮住；一般 click／Return 沒有開啟控制中心。直接命中核對發現按鈕中心落在遮擋層，監聽器仍為原產品腳本且按鈕未被替換；展開「更多播放設定」後命中按鈕並成功開啟，ControlCenter.open=true，畫面顯示 v2.2.20。這是入口定位前提的修正，不判為產品介面失效，也不以程式直接呼叫 show 冒充可信操作。
+
+初始及收尾均以真正執行環境讀回 muted=true、volume=0、rate=1；沒有解除靜音。四個臨時函式斷點均明確移除，Debugger.disable 與 Runtime.releaseObjectGroup 成功；控制中心關閉，IAB 分頁清單為空。沒有網路攔截、自有計時器、產品設定寫入或持續包裝。一次自然完成觀察曾短暫 debugger 暫停，只用來查參數形狀，不把該區段當計時、吞吐或播放效益證據。
+
+脫敏證據保存在 .work/v2220-cdp-wiring/evidence.json，含比對雜湊、實例數、鍵名、引用結果、限制與清理；部分短暫作用域回傳值按工具原結果轉錄，已在檔內標明。verified-overview.jpg 保存成功開啟後的實際畫面。原本體未另行輸出，沒有保存簽名媒體 URL、Cookie、權杖或播放器物件；本輪只有查證及文件更新，未修改產品或重寫 Release。
+
 ## 歷史驗證導覽
 
 <a name="v2218-r1-安裝身分與設定頁2026-11-12"></a>
