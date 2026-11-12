@@ -1,65 +1,64 @@
-# BiliCDN_TW v2.2.18 完整驗證報告
+# BiliCDN_TW v2.2.19 完整驗證報告
 
-發行驗證日期：2026-11-11（Asia/Taipei）。基準 main／33565b2、v2.2.17；三批實作提交為 9e52184、1ef8b08、5f61b93。採離線建置與自動驗證，安裝版另行判定。
+驗證日期：2026-11-12（Asia/Taipei）。基準 main／fb1d57d、v2.2.18；三批來源提交為 5279bbb、cea2af3、049c545。範圍為已批准的正式來源精簡；功能、政策及暫緩項目保持。
 
 ## 驗收結論
 
-三項政策固定啟用、控制器狀態整理及建置／封裝護欄已完成。十八套件／2,432 案通過，包含型別、109 個模組架構、格式、文件、公開封存、可重現建置、語法及空暫存目錄五項封裝。安全差異掃描完成，沒有可報告漏洞或未結案候選。正式封裝與公開下載另見下方交付狀態。
+三批實作與來源驗證已完成：移除無消費者的私有資料及參數、共用既有純判斷、集中 playurl 登記。完整 verify 通過十八套件／2,186 案，包含型別、109 個正式模組架構、格式、文件、公開封存、可重現建置、語法及空暫存目錄五項封裝。安全差異掃描已完成並封印，沒有可報告漏洞或待查候選。版本與正式封裝的最終驗證、公開交付結果見下方。
 
-本次可驗收收益是減少政策組合、讓恢復階段明確，以及阻止誤覆寫與縮短失敗輸出；不宣稱播放速度或卡頓改善。提前重試六情境效用 FAIL 與歷史實機證據缺口保持。
+可驗收收益是移除重複資料與判斷、集中登記責任；不宣稱播放速度、卡頓或提前重試效用改善。原六情境效用 FAIL、歷史 INVALID 及實機證據缺口保留。本輪沒有啟動瀏覽器、重新安裝或重跑舊窗口；v2.2.18 安裝通過不能外推為本版通過。
 
-## 自動驗證
+## 三批實作與功能保持
 
-當次依賴工具取得 Codex 內建 Node 24.22.1，明確執行且父子 Runtime 一致。實際路徑與原始日誌保留於本輪本機證據；沒有改動工具鏈、開發依賴或版本鎖定政策。執行期最終來源的完整 verify 為 2,432 案、29,153.5 ms；failed／skipped／todo／cancelled 均為零。沒有啟動網站服務。
+| 批次 | 完成範圍 | 保留的契約 |
+| --- | --- | --- |
+| 一 | 移除 startup lease 未使用的牆鐘副本、RetrySuccess.bytes、pending serial 副本、page-playinfo.current()、manual- 測速文案與未使用的傳輸觀察 URL 參數 | UI deadlineAt、單調期限、生命週期回呼、實際速度計算、請求身分、直接回應證明與取消 |
+| 二 | 播放器備援篩選沿用 adequateCapacity；媒體路徑四個判斷共用本模組助手 | 足速／eligible／成功筆數、16 KiB 邊界、不同主機集合、協定及 getter 讀取順序 |
+| 三 | PlayurlController 私有登記助手共用 Vault.register 與 trusted identity 記錄 | 原 opaque／normal 呼叫位置、bandwidth 捕獲時點、來源上限、低信任返回、可信提升撤銷、最後所有權檢查與原子寫回 |
 
-| 套件 | 案例 | 結果 |
-| --- | ---: | --- |
-| architecture | 52 | PASS |
-| imports | 1 | PASS |
-| domain-boundaries | 3 | PASS |
-| domain | 111 | PASS |
-| state | 86 | PASS |
-| application | 878 | PASS |
-| adapters | 214 | PASS |
-| native-routing | 13 | PASS |
-| native-transport | 222 | PASS |
-| orchestration | 40 | PASS |
-| adapter-boundaries | 84 | PASS |
-| measurement-state | 135 | PASS |
-| progressive-playurl | 64 | PASS |
-| progressive-routing | 71 | PASS |
-| progressive-transport | 4 | PASS |
-| playurl-summary | 22 | PASS |
-| control-center | 112 | PASS |
-| tooling | 320 | PASS |
-
-相較基準新增十六案：七個交付工具、五個舊設定相容、兩個退役欄位通知、兩個零時間重載案例。工具契約先出現五個預期失敗；零時間重載兩個反例也先失敗，修改後通過。沙箱內 Git／Bash／連結暫存操作限制與產品失敗分開，相同來源在允許所需暫存操作的環境通過，沒有放寬斷言。
-
-控制器整理前凍結第二批的 2,430 案。第三批完整保留原 876 個應用案例並新增兩案，十八組既有 JSON 副作用／快照軌跡逐項相同；PlayerControlObserver 方法經欄位反向映射及格式正規化後與第二批相同。一般停滯 6／12 秒、長 seek 15／30 秒、死核心 4 秒、重載後 15 秒、真正位置零、SDK getter 重入、使用者操作、晚到 Promise、一次補正與已用額度保持皆由既有及新增契約覆蓋。
-
-## 安全差異
-
-Codex Security 已完成並讀回 33565b2→5f61b93 的 canonical 封印，scan ID 6fe384c6-86e0-4ef5-a732-7bf682717ef4。二十七個來源／測試／工具變更檔案與五份隨附文件已審閱；可報告漏洞、候選及 deferred 均為零。掃描設定為 gpt-6-astra／xhigh；後續版本、文件與封裝管理另行核對，沒有在掃描後修改執行期。
-
-重點為 Native 精確授權、設定失效與取消、主動探測及重載唯一所有者、getter 重入、晚到結果、預算與恢復 token。這是固定差異的安全審查，不是全儲存庫逐行審計或 Tampermonkey 實機驗收；既有效用 FAIL 不轉寫為漏洞。
+來源共十三檔，新增 42 行、移除 88 行；另調整五個測試檔。行數只描述差異，不作效能或品質指標。沒有新增狀態所有者、Native URL 索引、公開 API、儲存鍵、依賴或通用框架。
 
 ## 功能與政策保持
 
-起播提前放行、健康中段探測與合格備援家族分散固定啟用，內部停用參數及三個 UI 控制項一起移除。起播仍要求有效足速結果；中段仍要求目前來源的可靠大小，否則使用首段；分散只排序合格備援。來源失效、全部不足速、禁止規則與截止到期的退路保持。
+三項固定政策及其原資格、提前重試開關與正數 timeout 排除、恢復門檻／額度、999 ms 採樣與 stable-retained 保持。Session 欄位／身分、pending 計數、RouteCoordinator normal／Catalog 分支、safeHost 儲存抽象及 RecoveryController／PlayerControlObserver 再整理均暫緩。沒有為了精簡刪除 getter 前後的所有權檢查，也沒有合併 Fetch／XHR 的不同時序。
 
-舊設定三欄的 true／false／缺值／非法值都不再控制政策；schema 2 與四個儲存鍵不變，載入不強制寫回，下次正常保存才淘汰退役欄位。提前重試、WebRTC、HTTPDNS、整體停用、Native、固定 CDN 與逐台設定保持；退役欄位通知不取消已開始工作或重開額度。
+## 自動驗證
 
-RecoveryController 明確區分 waiting／prepared／submitted，還原以位置、倍速、播放、進度具名階段表達；保留同一 token 身分及自然恢復獨立路徑。PlayerControlObserver 只收斂私有尋位、重載與還原紀錄。PlayerMonitor 未修改；999 ms 採樣、低緩衝 stable-retained、提前重試交接及獨立健康額度重開契約保持。
+基準完整執行為十八套件／2,183 案；先建立並通過 URL 邊界與 normal／opaque 登記的三個契約，再修改對應正式來源。新增案例驗證精確邊界、metadata、可信提升、舊 identity 失效與低信任不能擴充；原案例及斷言全部保留。三個傳輸測試只適配被刪參數，不改預期值。
 
-## 來源隔離與實際安裝
+分批通過 application、adapters、control-center、domain、native-transport、progressive-playurl 與型別檢查。固定來源完整 verify 為 2,186 案、27,568.1 ms；更新版本及文件後 verify 仍為 2,186 案、27,392.2 ms；failed／skipped／todo／cancelled 均為零。正式封裝後的最終核對另記於現行報告。
 
-封裝前尚未啟動本輪 IAB／Tampermonkey 安裝驗收；自動結果不能替代實機。發布後只在 TODO 凍結的新有界範圍執行，不恢復歷史窗口。舊 v2.2.17 R1／R2 原文與所有 FAIL／INVALID 保存在下方歷史入口。
+首輪沙箱內工具套件受暫存 Git／Bash 權限限制；同一基準在允許必要操作後通過，沒有放寬斷言。opaque 新案例初稿錯把 weak match 當 matched，改用實際 match.context 並明確驗證兩者差異後，於正式來源修改前通過；這是案例前提修正，不是產品修復或抓錯證據。
 
-## 公開交付與安裝結案
+當次依賴工具提供 Node 24.22.1，明確執行路徑為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1110-778-0_26.1110.778.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe`；父子 Runtime 一致。沒有改工具鏈或啟動本機網站服務；原始日誌保存在本機 `.work/source-cleanup-v2219/`。
 
-v2.2.17 五份 Release 原件已與固定基準逐位元組相符，完成 TAR＋gzip、獨立解壓與原始雜湊核對。上一版完整報告（含 R1／R2）原樣追加至歷史；既有封存內容保持。
+## 安全差異
 
-此封裝快照尚未包含公開下載核對或本輪安裝結果。發布後只更新現行報告，不回寫 Release 原件或移動版本標籤。
+Codex Security scan `39e893e9-5b85-46f9-a70a-46e9e0e6c43c` 已完成並讀回 canonical 封印。固定基準 fb1d57d，來源／測試差異 digest 為 `989498197951ce0feb76e2074f1e73bbce8bb87f1137e12a710d4103ecac07b3`；十八檔全部覆蓋，候選、可報告漏洞及 deferred 均為零。掃描設定記錄為 gpt-6-astra／high；未提供可核對的 token 用量，不另估算。
+
+審查追入 Native 精確授權、trusted identity、低信任來源限制、getter／重入順序、Fetch 單讀取器、XHR 身分與取消、起播單調期限及提前重試帳本。這是單次固定差異審查，不是全庫逐行漏洞審計或實機驗收。後續只有版本、文件與封裝管理；執行期及測試未再修改。掃描產物由 Codex Security 保存，沒有重寫既有安全原件。
+
+<a name="公開交付與安裝結案"></a>
+
+## 封存與公開交付
+
+v2.2.18 五項發行原件與 fb1d57d 的 Git 位元組逐項相同，已移至公開壓縮封存；ArchiveStorage 與獨立系統 tar 解壓後逐項核對通過。壓縮檔 154,046 bytes，SHA-256 `f40778455a12715f9e58fe4711cec71dca729218a72f67fe4a179a0b3230cd06`。上一版完整報告含 R1、測試審核及原 FAIL／INVALID，以原正文追加保存於[完整歷史](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2218-完整正文保存2026-11-12)。
+
+七份公開壓縮檔已完整解壓至隔離目錄，archive:check --restore-root 通過逐檔核對；公開清單 529 項搬移、三份追加日誌及 149 項原件保護通過。
+
+本報告在正式封裝前寫入；推送及公開下載核對尚待完成，完成後只更新本現行報告，不覆寫 Release 快照。GitHub Release 僅附 BiliCDN_TW.user.js。安裝版未驗證，既有窗口保持結案；工作狀態由 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md) 維護。
+
+<a name="來源隔離與實際安裝"></a>
+
+<a name="v2218-r1-安裝身分與設定頁2026-11-12"></a>
+
+<a name="文件與測試清查整理2026-11-12"></a>
+
+<a name="斷言審核與精簡2026-11-12"></a>
+
+<a name="全量逐案語意審核與最終精簡2026-11-12"></a>
+
+[v2.2.18 原始發行、R1、文件與逐案測試審核全文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2218-完整正文保存2026-11-12)。
 
 <a name="v2217-r1-採樣與抑制專項2026-11-11"></a>
 

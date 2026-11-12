@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili CDN 台灣優化
 // @namespace    BiliCDN_TW
-// @version      2.2.18
+// @version      2.2.19
 // @description  台灣 CDN 與播放整合：自動選路、香港節點、起播與健康量測、慢請求重試及三頁控制中心
 // @author       jiyunshi <chocosensei214@gmail.com>
 // @license      MIT
@@ -460,6 +460,7 @@
   var hasSuffix = /* @__PURE__ */ __name((host, suffix) => host === suffix || host.endsWith(`.${suffix}`), "hasSuffix");
   var isKnownPcdnHost = /* @__PURE__ */ __name((host) => PCDN_SUFFIXES.some((suffix) => hasSuffix(host, suffix)), "isKnownPcdnHost");
   var isKnownNativeFamily = /* @__PURE__ */ __name((host) => /\.bilivideo\.(?:com|cn|net)$/i.test(host) || host.endsWith(".akamaized.net"), "isKnownNativeFamily");
+  var hasMediaPath = /* @__PURE__ */ __name((url) => MEDIA_PATH_RE.test(url.pathname) || url.pathname.includes("/upgcxcode/") || url.pathname.startsWith("/v1/resource") || url.pathname.includes("/live-bvc/"), "hasMediaPath");
   var parseMediaUrl = /* @__PURE__ */ __name((value) => {
     if (!value || value.length > MEDIA_URL_MAX_LENGTH) return null;
     let url;
@@ -470,8 +471,7 @@
     }
     if (url.protocol !== "https:" && url.protocol !== "http:") return null;
     const host = url.hostname.toLowerCase();
-    const mediaPath = MEDIA_PATH_RE.test(url.pathname) || url.pathname.includes("/upgcxcode/") || url.pathname.startsWith("/v1/resource") || url.pathname.includes("/live-bvc/");
-    if (!mediaPath) return { url, host, kind: "unknown", replaceable: false };
+    if (!hasMediaPath(url)) return { url, host, kind: "unknown", replaceable: false };
     if (url.pathname.includes("/live-bvc/")) return { url, host, kind: "live", replaceable: false };
     if (url.pathname.startsWith("/v1/resource"))
       return { url, host, kind: "resource", replaceable: false };
@@ -493,8 +493,7 @@
     }
     if (url.protocol !== "https:" && url.protocol !== "http:") return false;
     const host = url.hostname.toLowerCase(), path = url.pathname;
-    const mediaPath = MEDIA_PATH_RE.test(path) || path.includes("/upgcxcode/") || path.startsWith("/v1/resource") || path.includes("/live-bvc/");
-    if (!mediaPath) return false;
+    if (!hasMediaPath({ pathname: path })) return false;
     if (/\.bilivideo\.(?:com|cn|net)$/.test(host)) return true;
     if (host.startsWith("upos-") && host.endsWith(".akamaized.net")) return true;
     return isKnownPcdnHost(host);
@@ -839,23 +838,7 @@
           }
           const primary = item.primary, urls = item.urls;
           if (!item.progressive && parseMediaUrl(primary)?.kind === "unknown") {
-            const rep2 = this.vault.register({
-              generation: state.generation,
-              epoch: state.epoch,
-              kind,
-              key: item.key,
-              height: item.height,
-              codec: item.codec,
-              bandwidth: item.bandwidth,
-              ...item.frameRate !== void 0 ? { frameRate: item.frameRate } : {},
-              urls,
-              source,
-              refreshTrustedSources: source === "trusted-api"
-            });
-            if (rep2 && source === "trusted-api") {
-              const identity = this.vault.identity(rep2);
-              if (identity) this.#trustedItems.set(item.token, identity);
-            }
+            const rep2 = this.#registerItem(item, kind, state, urls, source, () => item.bandwidth);
             if (rep2 && source !== "trusted-api" && this.vault.source(rep2) === "trusted-api") {
               if (source === "page-hint" && catalogOnly)
                 this.#sanitizeKnownItem(item, rep2, kind, "page-hint", false, rewriteItem2);
@@ -868,23 +851,7 @@
             return;
           }
           const bandwidth = item.bandwidth;
-          const rep = this.vault.register({
-            generation: state.generation,
-            epoch: state.epoch,
-            kind,
-            key: item.key,
-            height: item.height,
-            codec: item.codec,
-            bandwidth,
-            ...item.frameRate !== void 0 ? { frameRate: item.frameRate } : {},
-            urls,
-            source,
-            refreshTrustedSources: source === "trusted-api"
-          });
-          if (rep && source === "trusted-api") {
-            const identity = this.vault.identity(rep);
-            if (identity) this.#trustedItems.set(item.token, identity);
-          }
+          const rep = this.#registerItem(item, kind, state, urls, source, () => bandwidth);
           if (rep && source !== "trusted-api" && this.vault.source(rep) === "trusted-api") {
             if (source === "page-hint" && catalogOnly)
               this.#sanitizeKnownItem(item, rep, kind, "page-hint", false, rewriteItem2);
@@ -934,6 +901,28 @@
       if (ordered && context)
         this.#apiCandidate = { context, generation: state.generation, epoch: state.epoch };
       return outputs;
+    }
+    // Called at each original branch boundary. Normal input already captured its
+    // demand bandwidth; opaque input reads it in the registration field order.
+    #registerItem(item, kind, state, urls, source, readBandwidth) {
+      const rep = this.vault.register({
+        generation: state.generation,
+        epoch: state.epoch,
+        kind,
+        key: item.key,
+        height: item.height,
+        codec: item.codec,
+        bandwidth: readBandwidth(),
+        ...item.frameRate !== void 0 ? { frameRate: item.frameRate } : {},
+        urls,
+        source,
+        refreshTrustedSources: source === "trusted-api"
+      });
+      if (rep && source === "trusted-api") {
+        const identity = this.vault.identity(rep);
+        if (identity) this.#trustedItems.set(item.token, identity);
+      }
+      return rep;
     }
     acceptResponse(context) {
       const candidate = this.#apiCandidate, state = this.session.get();
@@ -2923,7 +2912,6 @@
       this.#successes.push({
         request,
         at: observation.completedAt,
-        bytes: observation.retryVerifiedBytes,
         timingBasis: observation.timingBasis,
         mbps: observation.retryVerifiedBytes * 8 / observation.elapsedMs / 1e3,
         payloadMbps: sampleTiming(
@@ -3734,9 +3722,7 @@
   // src-v2/application/routing/player-output.ts
   function measuredSufficientHosts(decision) {
     return new Set(
-      decision.ranking.filter(
-        (row) => row.eligible && row.successCount > 0 && adequateCapacity(row) && Number.isFinite(row.safeThroughputMbps) && (row.safeThroughputMbps ?? 0) > 0 && Number.isFinite(row.demandRatio) && (row.demandRatio ?? 0) >= 1
-      ).map((row) => row.candidate.host)
+      decision.ranking.filter((row) => row.eligible && row.successCount > 0 && adequateCapacity(row)).map((row) => row.candidate.host)
     );
   }
   __name(measuredSufficientHosts, "measuredSufficientHosts");
@@ -5811,8 +5797,6 @@
           phase: "reserved",
           controller,
           pending: pending2,
-          startedAt,
-          deadlineAt,
           startedTick,
           deadlineTick: startedTick + TIMEOUT_MS
         };
@@ -7549,11 +7533,10 @@
         })
       );
     }
-    acceptPageAssignment(payload, serial) {
+    acceptPageAssignment(payload, _serial) {
       if (!this.#active) return false;
       this.#pending = {
         payload,
-        serial,
         assignedAt: this.now(),
         pageKey: this.#pageKey,
         appliedGeneration: -1
@@ -9120,13 +9103,6 @@
       };
       if (value !== void 0) this.#adopt(value);
     }
-    current() {
-      try {
-        return unsafeWindow.__playinfo__;
-      } catch {
-        return this.#current;
-      }
-    }
     dispose() {
       this.#restore?.();
       this.#restore = null;
@@ -9351,7 +9327,7 @@
         this.#lastMedia.status = status;
       }
     }
-    async observeFetch(request, applied, originalUrl, targetUrl, response, startedAt, responseAt, bytes, outcome, failureKind, measurement) {
+    async observeFetch(request, applied, targetUrl, response, startedAt, responseAt, bytes, outcome, failureKind, measurement) {
       const finalUrl = response?.url || "";
       if (measurement && response) {
         let valid = false;
@@ -9369,8 +9345,6 @@
         this.observation(
           request,
           applied,
-          originalUrl,
-          targetUrl,
           finalUrl,
           response?.status ?? 0,
           bytes,
@@ -9383,7 +9357,7 @@
         )
       );
     }
-    observation(request, applied, _originalUrl, _targetUrl, finalUrl, status, bytes, startedAt, responseAt, outcome, failureKind, responseUrlMatchesRequest = false, measurement) {
+    observation(request, applied, finalUrl, status, bytes, startedAt, responseAt, outcome, failureKind, responseUrlMatchesRequest = false, measurement) {
       const completedAt = measurement?.completedAt ?? this.now(), kind = request.kind;
       const routeType = applied.decision.routeType;
       return {
@@ -9569,7 +9543,6 @@
           void self.observeFetch(
             request,
             applied,
-            originalUrl,
             applied.url,
             null,
             startedAt,
@@ -9587,7 +9560,6 @@
           void self.observeFetch(
             request,
             applied,
-            originalUrl,
             applied.url,
             response,
             startedAt,
@@ -9608,7 +9580,6 @@
           void self.observeFetch(
             request,
             applied,
-            originalUrl,
             applied.url ?? originalUrl,
             response,
             startedAt,
@@ -9874,8 +9845,6 @@
         ...self.observation(
           meta.request,
           meta.applied,
-          meta.originalUrl,
-          meta.targetUrl,
           finalUrl,
           Number(xhr.status) || 0,
           meta.bytes,
@@ -10249,8 +10218,6 @@
             this.context.observation(
               meta.request,
               meta.applied,
-              meta.originalUrl,
-              meta.targetUrl,
               "",
               0,
               meta.bytes,
@@ -10557,8 +10524,6 @@
                   self.observation(
                     meta.request,
                     meta.applied,
-                    meta.originalUrl,
-                    meta.targetUrl,
                     "",
                     0,
                     0,
@@ -11148,7 +11113,6 @@ h2,h3,p{margin:0}h2{font-size:21px;font-weight:600}h3{font-size:15px;font-weight
   ), "recoveryReasonLabel");
   var measurementLabel = /* @__PURE__ */ __name((state, reason) => {
     const why = String(reason);
-    if (why.startsWith("manual-")) return `已安排測速，${measurementLabel("waiting", why.slice(7))}`;
     if (why.startsWith("candidate-")) return "正在測試 CDN 速度";
     if (why.startsWith("http-")) return `測試網址收到 HTTP ${why.slice(5)}，沒有取得有效速度`;
     return plain(

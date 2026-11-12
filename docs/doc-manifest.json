@@ -2946,9 +2946,9 @@
         "verification"
       ],
       "versions": [
-        "v2.2.18"
+        "v2.2.19"
       ],
-      "date": "2026-11-11",
+      "date": "2026-11-12",
       "requiredAnchors": [
         "驗收結論",
         "v2216-r1-載入身分與選路提交接線2026-11-09",
@@ -3994,7 +3994,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.18/CHANGELOG_v2.2.18.md",
+      "path": "archive/retired/releases/Release/v2.2.18/CHANGELOG_v2.2.18.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -4006,7 +4006,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.18/TEST_REPORT_v2.2.18.md",
+      "path": "archive/retired/releases/Release/v2.2.18/TEST_REPORT_v2.2.18.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -4015,6 +4015,30 @@
         "v2.2.18"
       ],
       "date": "2026-11-11",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.19/CHANGELOG_v2.2.19.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.19"
+      ],
+      "date": "2026-11-12",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.19/TEST_REPORT_v2.2.19.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.19"
+      ],
+      "date": "2026-11-12",
       "requiredAnchors": []
     }
   ],
@@ -8346,38 +8370,73 @@
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.18/BiliCDN_TW.user.js",
+      "path": "archive/retired/releases/Release/v2.2.18/BiliCDN_TW.user.js",
       "encoding": "raw",
       "bytes": 543678,
       "sha256": "bb50cce1420c120066f1b7366d039604e97bc04a8d6867f8cdb7d6c8f8f2cf33",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.18/BUILD_MANIFEST_v2.2.18.json",
+      "path": "archive/retired/releases/Release/v2.2.18/BUILD_MANIFEST_v2.2.18.json",
       "encoding": "raw",
       "bytes": 13477,
       "sha256": "4931ddeaec46a02fc6ef372d728ed6a8aacb59234f1af2bdd9e810fea51a6608",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.18/CHANGELOG_v2.2.18.md",
+      "path": "archive/retired/releases/Release/v2.2.18/CHANGELOG_v2.2.18.md",
       "encoding": "raw",
       "bytes": 73376,
       "sha256": "06ef0fa6db74b86912c86af91d4beb2830b7606cdab215943851d5a2f96a79ea",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.18/SHA256SUMS_v2.2.18.txt",
+      "path": "archive/retired/releases/Release/v2.2.18/SHA256SUMS_v2.2.18.txt",
       "encoding": "raw",
       "bytes": 419,
       "sha256": "7665580daa9957088f05246b50549f5d4c10bee4163ff4a570d3747d782c848e",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.18/TEST_REPORT_v2.2.18.md",
+      "path": "archive/retired/releases/Release/v2.2.18/TEST_REPORT_v2.2.18.md",
       "encoding": "raw",
       "bytes": 15864,
       "sha256": "d7aa363d11543fb1393fd1011044f19986b68d3bcacefcc9433311e9cb8d1ea1",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.19/BiliCDN_TW.user.js",
+      "encoding": "raw",
+      "bytes": 542470,
+      "sha256": "3db831468fe2fc616ebea5325c157a5c39ccf31a5478ac3a92409aa67fa11764",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.19/BUILD_MANIFEST_v2.2.19.json",
+      "encoding": "raw",
+      "bytes": 13477,
+      "sha256": "434bef5a3c916dc042cacf90c258ea254817a1f570299130fdf3ebd00d20af18",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.19/CHANGELOG_v2.2.19.md",
+      "encoding": "raw",
+      "bytes": 74196,
+      "sha256": "b892b45460b6e775d82afe2a2ae4b7b26ba3c9ef8822d1a127877aba3781d219",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.19/SHA256SUMS_v2.2.19.txt",
+      "encoding": "raw",
+      "bytes": 419,
+      "sha256": "8c219d3b75fc5f7e416349a7fa4940d24dd362d1ddbd29daa9dd7930fe4a92f8",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.19/TEST_REPORT_v2.2.19.md",
+      "encoding": "raw",
+      "bytes": 17090,
+      "sha256": "4f16187446bdff9f7d27a93b8e75ec48fd4e01f3ca4a706a05a704e462850a82",
       "mode": "exact"
     }
   ],
