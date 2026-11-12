@@ -3000,8 +3000,7 @@
         "licenses"
       ],
       "versions": [
-        "v0.28.2",
-        "v26.8.1"
+        "v0.28.2"
       ],
       "date": null,
       "requiredAnchors": [

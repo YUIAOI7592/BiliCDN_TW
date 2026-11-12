@@ -126,7 +126,7 @@ Codex 作業每次先使用內建依賴工具 `load_workspace_dependencies` 取�
 
 [toolchain.mts](../scripts/lib/toolchain.mts) 共用能力判定、測試選項與 `node24` 語法目標；後者不是執行器版本閘門，也不隨目前 Node 自動提高。verify 與完整測試入口以所選 Node 啟動一個最多五秒的隔離 mts 探測，核對具名成功、位置、完整報告、退出及父子版本一致；探測不計入正式案例。同一程序共用已完成 Promise，匯入不啟動探測，成功與失敗均檢查並清理專屬暫存目錄。能力不足明確失敗，不下載或切換 runtime，也沒有略過開關。通過探測只代表可進入驗證，完整 verify 才是本次環境的完成門檻；未來版本與其他平台不因一次通過便自動取得相容結論。
 
-準備所選 Node／npm 後，日常乾淨安裝仍使用 `npm ci` 與 [package-lock.json](../package-lock.json)；本次工具鏈整理沒有重新安裝根目錄依賴，也沒有新增乾淨安裝證據。[release.json](../release.json) 只保存產品版本、附件名稱及鎖定 TypeScript／esbuild 版本。verify 核對產品版本、九項直接依賴宣告、lock 根目錄／解析版本及已安裝版本的一致性；[project-config.mts](../scripts/checks/project-config.mts) 唯讀、不執行套件、不連網，不能證明整個 node_modules 內容未被修改。build 檢查載入的 esbuild 及已安裝 TypeScript 精確版本；建置清單保存實際 Node、載入 esbuild 與核對後 TypeScript 資訊，不宣稱 build 已執行型別檢查，也不填入未使用的 npm。npm 的實際使用另記當輪工具日誌，歷史清單不回寫。[package.json](../package.json) 沒有執行期依賴。
+準備所選 Node／npm 後，日常乾淨安裝仍使用 `npm ci` 與 [package-lock.json](../package-lock.json)。乾淨安裝的實際驗證範圍見 [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md)，不能由設定一致性檢查推定。[release.json](../release.json) 只保存產品版本、附件名稱及鎖定 TypeScript／esbuild 版本。verify 核對產品版本、九項直接依賴宣告、lock 根目錄／解析版本及已安裝版本的一致性；[project-config.mts](../scripts/checks/project-config.mts) 唯讀、不執行套件、不連網，不能證明整個 node_modules 內容未被修改。build 檢查載入的 esbuild 及已安裝 TypeScript 精確版本；建置清單保存實際 Node、載入 esbuild 與核對後 TypeScript 資訊，不宣稱 build 已執行型別檢查，也不填入未使用的 npm。npm 的實際使用另記當輪工具日誌，歷史清單不回寫。[package.json](../package.json) 沒有執行期依賴。
 
 ## 命令
 

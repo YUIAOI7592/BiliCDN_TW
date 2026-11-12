@@ -75,7 +75,7 @@ AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查�
 | PlayerMonitor／RecoveryController | domain/playback-progress 的純控制身分、時間及影格比較 | Monitor 保有停滯段；Recovery 保有 token、額度、breaker、reload／restore；兩者各自保留資格、基準、計數與終止檢查順序 |
 | XhrHookAdapter | xhr-values／xhr-dispatch／xhr-request／xhr-response | 唯一 metadata WeakMap、原生 getter／guards、send 派送、安裝與按所有權還原；dispatch 只處理本次原生準備，request 管理當筆終止，response 只轉換及快取當筆狀態 |
 
-助手沒有第二份 Native 授權索引或可獨立變更親和的能力。詳見[本版模組歸屬紀錄](../archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md)。
+助手沒有第二份 Native 授權索引或可獨立變更親和的能力。詳見 [v2.2.15 模組歸屬紀錄](../archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md)。
 
 RequestOwnership 集中請求身分、送出／選擇序號、表示確認進度及單次結果憑證；計畫修訂透過窄回呼在原讀取點取得，Session／Vault 與所有控制副作用仍由 Coordinator 操作。RetryPermitState 只保存一份 prepared／materialized 許可及選定目標，不讀取時鐘或判定資格；準備、物化與接受均由 Coordinator 在當次邊界重驗，原生接受後才提交親和。兩個助手只允許 Coordinator 匯入，不取得 Store、播放器或派送能力。
 

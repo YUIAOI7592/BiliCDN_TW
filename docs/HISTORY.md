@@ -117,7 +117,7 @@
 | 適用版本 | 原始紀錄 |
 | --- | --- |
 | 未單列／跨版 | [新增 B 站 CDN 節點的驗證方案（2026-09-25）](../archive/retired/docs/CDN_CANDIDATE_TEST_PLAN_2026-09-25.md)、[B 站 CDN 全量初篩與比較測試報告](../archive/retired/docs/CDN_NODE_FULL_SCREENING_2026-09-25.md)、[B 站 CDN 優化公開專案調查（2026-09-25）](../archive/retired/docs/CDN_OPEN_SOURCE_SURVEY_2026-09-25.md)、[內建瀏覽器 Range 與實際播放對照（2026-09-25）](../archive/retired/docs/CDN_RANGE_PLAYBACK_EXPERIMENT_2026-09-25.md)、[B 站 CDN 節點測試結果（2026-09-25）](../archive/retired/docs/CDN_TEST_RESULTS_2026-09-25.md)、[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)、[歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[測試工具驗證紀錄](TEST_TOOLING_REPORT.md) |
-| v2.2.8 | [最終驗收結論](TEST_REPORT.md#驗收結論)、[R2 專項與原生校準](TEST_REPORT.md#v228-r2-專項完成2026-11-0304)、[離線修復驗證](TEST_REPORT.md#修復結果與證據邊界) |
+| v2.2.8 | [最終驗收結論](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)、[R2 專項與原生校準](TEST_REPORT.md#v228-r2-專項完成2026-11-0304)、[離線修復驗證](TEST_REPORT.md#修復結果與證據邊界) |
 | v2.2.7 | [選路、容量與探索完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#研究項目完成對照)、[R1 基本安裝驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v227-r1-基本安裝驗收2026-11-03)、[XHR timeout 起播覆蓋調查](../archive/retired/docs/TEST_REPORT_HISTORY.md#v227-xhr-timeout-起播分支調查2026-11-03) |
 | v2.2.6 | [確定性選路、狀態機與提交所有權完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#三十五項閉環對照)、[R1 基本安裝驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v226-r1-安裝驗收2026-11-02) |
 | v2.2.5 | [完整容量、倍率、時效驗證與 R1 原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v225-完整正文保存2026-11-02)、[起播逐步調查](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md) |
@@ -181,7 +181,7 @@
 
 ### 提前重試現場適用率與成本
 
-[方法校準](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md#方法校準與偏差)、[自然請求分母](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md#自然請求與逐層分母)、[交接及反例](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md#交接成本預測與離線反例)；工作狀態回到 [TODO](TODO.md#v2212-提前重試適用率研究)。
+[方法校準](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md#方法校準與偏差)、[自然請求分母](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md#自然請求與逐層分母)、[交接及反例](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md#交接成本預測與離線反例)；工作狀態回到 [TODO](TODO.md#暫緩項目)。
 
 ### 剩餘 TODO 優化研究
 
@@ -409,6 +409,8 @@
 
 - 2026-11-12：[v2.2.18 發布後測試精簡](TEST_REPORT.md#斷言審核與精簡2026-11-12)。
 
+- 2026-11-12：[v2.2.19 來源精簡與交付](TEST_REPORT.md#驗收結論)、[R1 安裝身分與接線](TEST_REPORT.md#v2219-r1-安裝身分與變更接線2026-11-12)、[過時文件整理](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-12過時文件與版本導覽清理)。
+
 - 2026-11-11：[v2.2.17 R1 專項與證據限制](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2217-r1-採樣與抑制專項2026-11-11)。
 
 - 2026-11-10：[recovering 抑制離線調查與歷史數字重分析](../archive/retired/docs/RECOVERING_SUPPRESSION_v2.2.16_2026-11-10.md)。
@@ -437,7 +439,7 @@
 | 2026-11-08 | [現行文件去重與更新規則](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#現行文件去重與更新規則整理2026-11-08)；[重複段落檢查契約](TEST_TOOLING_REPORT.md#2026-11-08現行文件重複段落檢查) |
 | 2026-11-08 | [v2.2.12 R1 三頁、設定與 UI 刷新專項](TEST_REPORT.md#v2212-r1-三頁與刷新專項2026-11-08) |
 | 2026-11-08 | [v2.2.12 觀察校準與提前重試適用率研究](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md) |
-| 2026-11-07 | [v2.2.12 程式整理與離線評估](TEST_REPORT.md#驗收結論)；[v2.2.11 原報告保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-完整正文保存2026-11-07) |
+| 2026-11-07 | [v2.2.12 程式整理與離線評估](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2212-完整正文保存2026-11-08)；[v2.2.11 原報告保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-完整正文保存2026-11-07) |
 | 2026-11-07 | [剩餘 TODO 六類優化研究與離線反例](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md) |
 | 2026-11-07 | [v2.2.11 文件狀態核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#v2211-文件狀態核對2026-11-07)；只整理導覽與狀態，不新增執行證據 |
 | 2026-11-06 | [v2.2.11 R1](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-r1-熔斷安裝驗收2026-11-06)與 [R2 雙層驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-r2-受控熔斷與安裝接線2026-11-06) |
@@ -546,6 +548,6 @@
 
 ## v2.2.8 正數 timeout 專項導覽（2026-11-03）
 
-現行判定見 [驗收結論](TEST_REPORT.md#驗收結論)，2026-11-03／04 補足的逐項證據與原生校準見 [R2 完整紀錄](TEST_REPORT.md#v228-r2-專項完成2026-11-0304)。現行工作與停止狀態仍由 [TODO](TODO.md) 維護。
+當版判定見 [驗收結論](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)，2026-11-03／04 補足的逐項證據與原生校準見 [R2 完整紀錄](TEST_REPORT.md#v228-r2-專項完成2026-11-0304)。現行工作與停止狀態仍由 [TODO](TODO.md) 維護。
 
 2026-11-03 更新後首輪觀察與當時限制保存在 [R1 完整紀錄](TEST_REPORT.md#v228-r1-正數-timeout-專項2026-11-03)，原判定保留。2026-11-04 文件狀態核對見 [維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-04v228-驗收通過狀態一致性核對)；發行快照及舊版調查保持原件。
