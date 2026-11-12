@@ -240,23 +240,7 @@ export class PlayurlController implements PlayurlControllerPort {
         const primary = item.primary,
           urls = item.urls
         if (!item.progressive && parseMediaUrl(primary)?.kind === 'unknown') {
-          const rep = this.vault.register({
-            generation: state.generation,
-            epoch: state.epoch,
-            kind,
-            key: item.key,
-            height: item.height,
-            codec: item.codec,
-            bandwidth: item.bandwidth,
-            ...(item.frameRate !== undefined ? { frameRate: item.frameRate } : {}),
-            urls,
-            source,
-            refreshTrustedSources: source === 'trusted-api',
-          })
-          if (rep && source === 'trusted-api') {
-            const identity = this.vault.identity(rep)
-            if (identity) this.#trustedItems.set(item.token, identity)
-          }
+          const rep = this.#registerItem(item, kind, state, urls, source, () => item.bandwidth)
           if (rep && source !== 'trusted-api' && this.vault.source(rep) === 'trusted-api') {
             if (source === 'page-hint' && catalogOnly)
               this.#sanitizeKnownItem(item, rep, kind, 'page-hint', false, rewriteItem)
@@ -271,23 +255,7 @@ export class PlayurlController implements PlayurlControllerPort {
           return
         }
         const bandwidth = item.bandwidth
-        const rep = this.vault.register({
-          generation: state.generation,
-          epoch: state.epoch,
-          kind,
-          key: item.key,
-          height: item.height,
-          codec: item.codec,
-          bandwidth,
-          ...(item.frameRate !== undefined ? { frameRate: item.frameRate } : {}),
-          urls,
-          source,
-          refreshTrustedSources: source === 'trusted-api',
-        })
-        if (rep && source === 'trusted-api') {
-          const identity = this.vault.identity(rep)
-          if (identity) this.#trustedItems.set(item.token, identity)
-        }
+        const rep = this.#registerItem(item, kind, state, urls, source, () => bandwidth)
         if (rep && source !== 'trusted-api' && this.vault.source(rep) === 'trusted-api') {
           if (source === 'page-hint' && catalogOnly)
             this.#sanitizeKnownItem(item, rep, kind, 'page-hint', false, rewriteItem)
@@ -348,6 +316,36 @@ export class PlayurlController implements PlayurlControllerPort {
     if (ordered && context)
       this.#apiCandidate = { context, generation: state.generation, epoch: state.epoch }
     return outputs
+  }
+
+  // Called at each original branch boundary. Normal input already captured its
+  // demand bandwidth; opaque input reads it in the registration field order.
+  #registerItem(
+    item: PlayurlItem,
+    kind: MediaKind,
+    state: { readonly generation: GenerationId; readonly epoch: EpochId },
+    urls: readonly string[],
+    source: 'trusted-api' | 'player-mpd' | 'page-hint',
+    readBandwidth: () => number,
+  ): RepresentationId | null {
+    const rep = this.vault.register({
+      generation: state.generation,
+      epoch: state.epoch,
+      kind,
+      key: item.key,
+      height: item.height,
+      codec: item.codec,
+      bandwidth: readBandwidth(),
+      ...(item.frameRate !== undefined ? { frameRate: item.frameRate } : {}),
+      urls,
+      source,
+      refreshTrustedSources: source === 'trusted-api',
+    })
+    if (rep && source === 'trusted-api') {
+      const identity = this.vault.identity(rep)
+      if (identity) this.#trustedItems.set(item.token, identity)
+    }
+    return rep
   }
 
   acceptResponse(context?: PlayurlRequestContext): void {

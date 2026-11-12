@@ -6,6 +6,71 @@ import { TRUSTED_CATALOG } from '../../../src-v2/domain/catalog.ts'
 import { PlayurlAdapter } from '../../../src-v2/adapters/playurl/playurl.ts'
 import { fixture } from '../routing/routing-fixture.ts'
 import { testScope } from '../../support/scope.ts'
+import { type RegisterRepresentationInput } from '../../../src-v2/state/vault-contracts.ts'
+
+for (const opaque of [false, true])
+  test(`V2219 registration: opaque=${opaque} preserves metadata and trusted promotion`, async (t) => {
+    const scope = testScope(t),
+      f = fixture(scope)
+    await f.settings.update({ considerNativeSources: true })
+    const original = opaque ? 'https://opaque.example.invalid/signed' : url(hosts[0]!, 'first')
+    const replacement = opaque
+      ? 'https://opaque.example.invalid/new-signed'
+      : url(hosts[0]!, 'next')
+    const registrations: RegisterRepresentationInput[] = []
+    const register = f.vault.register.bind(f.vault)
+    const previous = f.vault.register
+    scope.defer(() => {
+      f.vault.register = previous
+    })
+    f.vault.register = (input) => {
+      registrations.push(input)
+      return register(input)
+    }
+    const make = (sourceUrl: string) => {
+      const value = payload([sourceUrl])
+      Object.assign(value.data.dash.video[0]!, { frame_rate: '60000/1001' })
+      return value
+    }
+    assert.equal(f.adapter.transform(make(original), 'page-hint').accepted, true)
+    const provisional = f.vault.match(original).context
+    assert.ok(provisional)
+    assert.equal(f.vault.match(original).status, opaque ? 'weak' : 'matched')
+    assert.equal(f.adapter.transform(make(replacement), 'trusted-api').accepted, true)
+    const trusted = f.vault.match(replacement).context
+    assert.ok(trusted)
+    assert.equal(f.vault.match(replacement).status, opaque ? 'weak' : 'matched')
+    assert.equal(f.vault.isCurrentIdentity(provisional), false)
+    assert.equal(f.vault.source(trusted.representation), 'trusted-api')
+    assert.deepEqual(f.vault.sourceURLs(trusted.representation), [replacement])
+    assert.equal(f.adapter.transform(make(original), 'page-hint').accepted, true)
+    assert.deepEqual(f.vault.sourceURLs(trusted.representation), [replacement])
+    assert.equal(f.vault.isCurrentIdentity(trusted), true)
+    assert.deepEqual(
+      registrations.map(
+        ({ source, refreshTrustedSources, kind, key, height, codec, bandwidth, frameRate }) => ({
+          source,
+          refreshTrustedSources,
+          kind,
+          key,
+          height,
+          codec,
+          bandwidth,
+          frameRate,
+        }),
+      ),
+      ['page-hint', 'trusted-api', 'page-hint'].map((source) => ({
+        source,
+        refreshTrustedSources: source === 'trusted-api',
+        kind: 'video',
+        key: '80:avc:1080',
+        height: 1080,
+        codec: 'avc',
+        bandwidth: 4_000_000,
+        frameRate: 60000 / 1001,
+      })),
+    )
+  })
 
 const url = (host: string, variant = '') =>
   `https://${host}/upgcxcode/v2213/video.m4s?synthetic=${variant}`
