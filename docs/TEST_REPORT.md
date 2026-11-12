@@ -6,7 +6,7 @@
 
 三批實作與來源驗證已完成：移除無消費者的私有資料及參數、共用既有純判斷、集中 playurl 登記。完整 verify 通過十八套件／2,186 案，包含型別、109 個正式模組架構、格式、文件、公開封存、可重現建置、語法及空暫存目錄五項封裝。安全差異掃描已完成並封印，沒有可報告漏洞或待查候選。版本與正式封裝的最終驗證、公開交付結果見下方。
 
-可驗收收益是移除重複資料與判斷、集中登記責任；不宣稱播放速度、卡頓或提前重試效用改善。原六情境效用 FAIL、歷史 INVALID 及實機證據缺口保留。本輪沒有啟動瀏覽器、重新安裝或重跑舊窗口；v2.2.18 安裝通過不能外推為本版通過。
+可驗收收益是移除重複資料與判斷、集中登記責任；不宣稱播放速度、卡頓或提前重試效用改善。原六情境效用 FAIL、歷史 INVALID 及實機證據缺口保留。發行工作未啟動瀏覽器；使用者確認更新後另獲授權的 [R1 安裝身分與變更接線](#v2219-r1-安裝身分與變更接線2026-11-12)已完成，未重新安裝或重跑舊窗口；通過範圍不外推至未實測分支。
 
 ## 三批實作與功能保持
 
@@ -50,7 +50,25 @@ v2.2.18 五項發行原件與 fb1d57d 的 Git 位元組逐項相同，已移至�
 
 2026-11-12 21:34（Asia/Taipei）公開核對通過：main 與 v2.2.19 標籤指向發行提交 ba17af7571e7b9890659ead31f3a9fe27454a3e1；[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.19) 為 latest、非草稿、非預發行，只有 BiliCDN_TW.user.js 一個附件。匿名 latest 與固定版本下載均為 HTTP 200，版本、542,470 bytes、SHA-256 及完整位元組都與本機原件相同，GitHub 附件 digest 亦一致。後續文件結案提交不移動標籤或重封裝。
 
-文件結案前 docs:check 通過 303 份 Markdown／5,240 個本機或儲存庫連結，git diff --check 通過。既有七個不可變斷鏈、672 個封存後原網址、18 個私有證據引用與未抓取外部連結均依原規則分列；結構通過不取代人工語意核對。安裝版未驗證，既有窗口保持結案；工作狀態由 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md) 維護。
+發行文件結案前 docs:check 通過 303 份 Markdown／5,240 個本機或儲存庫連結，git diff --check 通過。既有七個不可變斷鏈、672 個封存後原網址、18 個私有證據引用與未抓取外部連結均依原規則分列；結構通過不取代人工語意核對。當時安裝版未驗證，後續 R1 結果如下；工作狀態由 [TODO](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TODO.md) 維護。
+
+## v2.2.19 R1 安裝身分與變更接線（2026-11-12）
+
+使用者確認已更新後授權執行；基準 main／bcac8c5。T0 為 21:51:20（Asia/Taipei），21:55:31 前完成清理，外層上限 4 分 11 秒，未使用十五分鐘全部預算。首次單調 T0 未取得，不作精確耗時或連續播放期限判定。只開一個 type=iab 自有分頁至 BV1tFZZBQE57／P1；導覽後立即對真正 video 靜音並暫停，首次 readyState 0、稍後 4，兩次均讀回成功。1 倍已核對，未更動畫質；本輪未另取得 Auto 選項讀值，不能將凍結設定當成畫質 UI 驗收。
+
+| 案例 | 判定 | 實際證據與範圍 |
+| --- | --- | --- |
+| L0 完整安裝身分 | PASS | 實際 GM_info 為 Tampermonkey 5.5.1／script 2.2.19。Debugger 清單無截斷；排除管理器包裝後完整本體為 536,977 個 UTF-16 字元、542,470 bytes，SHA-256 與本版原件相同。Runtime、ControlCenter、Transport、PlayurlController、Measurement、Lifecycle、PagePlayinfo、EarlyRetry 各一個實例；Fetch／XHR 均 installed |
+| L1a 私有資料與傳輸接線 | PASS，限本列 | 實際 Fetch 閉包 self 與 Transport 私有 context 相同，XHR adapter 亦使用同一 context；measurement 參照為唯一實例。觀察方法仍取 RequestContext 主機，observation／observeFetch 的 arity 為 9／10。頁面 assignment 已套用 generation 1，pending 無 serial；PagePlayinfo current 方法不存在而 callback 保持。自然起播狀態 complete／measured、3 候選、delayed=true，lease 已 closed；不能用 closed 狀態證明執行中期限欄位或所有取消分支 |
+| L1b 共用純判斷 | PASS，限已載入函式的受控呼叫 | 直接呼叫安裝實例閉包中的 measuredSufficientHosts，合格、零吞吐、不合格三列只返回合格列；hasMediaPath 對 m4s、mp4、upgcxcode、無關路徑回傳 true／true／true／false。沒有網路或狀態修改；這不是自然備援切換或所有 URL 邊界的實機證明 |
+| L1c playurl 登記接線 | PASS，限既有接線與自然低信任登記 | Transport 與 Lifecycle 指向同一 PlayurlAdapter，該 adapter 指向唯一 PlayurlController，Lifecycle 指向唯一 PagePlayinfo。完整本體確認兩處私有登記呼叫及共用方法；Vault 有 24 組自然登記（page-hint 4、player-mpd 20；video 21、audio 3），bandwidth 皆為有限值。沒有重建控制器、重設額度或餵入偽造 playurl |
+| Z0 清理 | PASS | 真正媒體 muted=true、paused=true、rate=1、readyState=4、error=null；釋放工具物件群組，停用 Debugger／Runtime，關閉自有分頁並核對為零。沒有新增斷點、攔截、訂閱或採樣計時器 |
+
+自然傳輸快照曾顯示 enteredFetch 55、enteredXhr 95、mediaRecognized 40，最近音訊請求有 nativeCalled／responseObserved 與 HTTP 206；這是產品快照，沒有本輪完整 Network 請求配對，不能代算 Fetch／XHR 每條觀察終止路徑。trusted-api 水位為 0，快照未見 API playurl；可信提升、opaque、取消／晚到、過大 URL、提前重試與恢復分支本輪未實測，仍沿用離線契約而不新增安裝 PASS。沒有執行持續播放、設定保存、故障注入或效用窗口。
+
+檢查方法錯誤另記：呼叫不存在的 startupSnapshot 產生 TypeError，改讀已存在的私有狀態；一個函式文字正規表示式逸出錯誤產生 SyntaxError；公開 ingest 本身沒有直接登記呼叫，最終以完整已驗證本體核對私有 #ingest 中的兩處呼叫。這些是工具檢查錯誤，沒有修改產品或拿失敗結果當 PASS，也不宣稱本輪零例外。未持久化簽名 URL、播放器或核心物件；完整本體只在工具記憶體比對。初始導覽至首次靜音讀回區間不宣稱已全程量測。
+
+本輪只更新文件，不改來源、版本、依賴或 Release 原件；沒有重跑完整 2,186 案或安全掃描，前節自動證據仍屬發行輪次。當次依賴工具提供 Node 24.22.1；docs:check 通過 303 份 Markdown／5,246 個本機或儲存庫連結，git diff --check 通過。逐案窄結果與當次 Runtime 路徑保存在本機 `.work/v2219-r1/`，不含敏感原件。R1 已結案，不因剩餘時間或工具能力可用自行擴張。
 
 <a name="來源隔離與實際安裝"></a>
 
