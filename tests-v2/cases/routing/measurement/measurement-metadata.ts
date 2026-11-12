@@ -1,3 +1,4 @@
+import { stubChallengeRoutes } from '../../../support/challenge.ts'
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { setImmediate as nextTurn } from 'node:timers/promises'
@@ -216,7 +217,13 @@ test('META U healthy round advances each candidate cursor safely through rollove
   } satisfies MeasurementMetadataPort
   const applied = {
     url: 'https://synthetic.example/media',
-    context: null,
+    context: {
+      generation: generationId(1),
+      epoch: epochId(1),
+      representation: representationId('metadata-test'),
+      kind: 'video',
+      authorityRevision: 1,
+    },
     streamKey: null,
     sourceHost: null,
     decision: {
@@ -236,10 +243,10 @@ test('META U healthy round advances each candidate cursor safely through rollove
   const controller = scope.own(
     new MeasurementController(
       measurementRoutes({
-        challenge: (_representation, _demand, _prefer, _excluded, cursor) => {
+        ...stubChallengeRoutes((_representation, _prefer, _excluded, cursor) => {
           cursors.push(cursor!)
           return applied
-        },
+        }),
       }),
       meta,
       {
@@ -460,10 +467,10 @@ test('META I healthy planning retains exact ten-minute cooldown after startup cu
   const b = f.scope.own(
     new MeasurementController(
       measurementRoutes({
-        challenge: () => {
+        ...stubChallengeRoutes(() => {
           challenges++
           return null
-        },
+        }),
       }),
       f.meta,
       {

@@ -1,3 +1,4 @@
+import { challengeOnce } from '../../support/challenge.ts'
 import { test } from 'node:test'
 import type { TestContext } from 'node:test'
 import assert from 'node:assert/strict'
@@ -9,8 +10,7 @@ import { TRUSTED_CATALOG } from '../../../src-v2/domain/catalog.ts'
 import { EVIDENCE_KEY } from '../../../src-v2/state/evidence-store.ts'
 import { type ChallengeProposal } from '../../../src-v2/application/routing/route-contracts.ts'
 
-const target = TRUSTED_CATALOG[2],
-  demand = { kind: 'video' as const, requiredMbps: 5, highDemand: false }
+const target = TRUSTED_CATALOG[2]
 
 async function createExpiredCircuit(t: TestContext, advance = 600_000, shared = true) {
   const f = fixture(testScope(t), shared ? new SharedEvidenceStorage() : new FakeStorage())
@@ -36,15 +36,15 @@ async function createExpiredCircuit(t: TestContext, advance = 600_000, shared = 
 type HealthFixture = Awaited<ReturnType<typeof createExpiredCircuit>>
 const propose = (
   f: HealthFixture,
-  claims: Parameters<typeof f.routes.proposeChallenge>[5] = {
+  claims: Parameters<typeof f.routes.proposeChallenge>[4] = {
     claims: [],
     allowNative: false,
   },
-) => f.routes.proposeChallenge(f.context.representation, demand, false, f.excluded, 0, claims)
+) => f.routes.proposeChallenge(f.context.representation, false, f.excluded, 0, claims)
 
 test('V2213 health routing: an expired L1 circuit is eligible before the ordinary six-hour age', async (t) => {
   const f = await createExpiredCircuit(t)
-  assert.equal(f.routes.challenge(f.context.representation, demand, false, f.excluded), null)
+  assert.equal(challengeOnce(f.routes, f.context.representation, false, f.excluded), null)
   const proposal = propose(f)
   assert.ok(proposal)
   assert.equal(proposal.candidate.host, target)
@@ -152,13 +152,13 @@ test('V2213 health routing: Native candidates respect allowNative and exact-sour
   f.routes.invalidateForUserSetting()
   const excluded = new Set<string>(TRUSTED_CATALOG)
   assert.equal(
-    f.routes.proposeChallenge(f.context.representation, demand, true, excluded, 0, {
+    f.routes.proposeChallenge(f.context.representation, true, excluded, 0, {
       claims: [],
       allowNative: false,
     }),
     null,
   )
-  const proposal = f.routes.proposeChallenge(f.context.representation, demand, true, excluded)!
+  const proposal = f.routes.proposeChallenge(f.context.representation, true, excluded)!
   assert.ok(proposal)
   assert.equal(proposal.candidate.type, 'native-signed')
   f.vault.register({

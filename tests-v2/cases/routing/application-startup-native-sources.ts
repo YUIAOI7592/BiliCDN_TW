@@ -1,3 +1,4 @@
+import { challengeOnce } from '../../support/challenge.ts'
 import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
 import { test } from 'node:test'
@@ -149,16 +150,8 @@ async function checkCatalogHostSignedBackupCompetesAsItsOwnExactNativeURL(
       fallback?.host,
       'next startup request uses committed fallback',
     )
-    const firstFairProbe = base.stallRoutes.challenge(
-      base.startupRep,
-      { kind: 'video', requiredMbps: 8, highDemand: false },
-      false,
-    )
-    const secondFairProbe = base.stallRoutes.challenge(
-      base.startupRep,
-      { kind: 'video', requiredMbps: 8, highDemand: false },
-      false,
-    )
+    const firstFairProbe = challengeOnce(base.stallRoutes, base.startupRep, false)
+    const secondFairProbe = challengeOnce(base.stallRoutes, base.startupRep, false)
     assert.ok(
       firstFairProbe &&
         secondFairProbe &&

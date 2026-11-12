@@ -1,3 +1,4 @@
+import { challengeOnce } from '../../support/challenge.ts'
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
 import { createMutablePlaybackResources, currentResumePlayer } from '../../support/player.ts'
@@ -396,11 +397,7 @@ async function checkFallbackObservation(t: TestContext): Promise<void> {
     ttfbMs: 1,
     failureKind: null,
   })
-  const challenger = base.outputRoutes.challenge(
-    base.outputRep,
-    { kind: 'video', requiredMbps: 3, highDemand: false },
-    false,
-  )
+  const challenger = challengeOnce(base.outputRoutes, base.outputRep, false)
   assert.ok(challenger, 'automatic routing reaches an eligible challenger')
   assert.notEqual(
     challenger.decision.host,

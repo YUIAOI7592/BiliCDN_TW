@@ -77,13 +77,6 @@ export interface StartupOptions {
   readonly deferredToVideo?: boolean
 }
 
-export interface DecisionRecord {
-  readonly decision: RouteDecision
-  readonly context: RouteIdentity | null
-  readonly kind: MediaKind
-  readonly representation: RepresentationId | null
-  readonly policyRevision: number
-}
 export interface FallbackProgress {
   readonly actionId: RecoveryActionId
   readonly representation: RepresentationId
@@ -274,7 +267,6 @@ export interface RouteCoordinatorPort {
     requestBytes?: number | null,
     timingBasis?: TimingBasis,
   ): AppliedRouteDecision
-  decisionRecord(id: DecisionId | null): DecisionRecord | null
   opaqueOutput(
     representation: RepresentationId,
     original: string,
@@ -289,16 +281,8 @@ export interface RouteCoordinatorPort {
     source?: 'trusted-api' | 'page-hint',
     recordOutput?: boolean,
   ): { primary: string; backups: readonly string[] }
-  challenge(
-    representation: RepresentationId,
-    _demand: PlaybackDemand,
-    preferNative: boolean,
-    excludedHosts?: ReadonlySet<string>,
-    catalogCursor?: number,
-  ): AppliedRouteDecision | null
   proposeChallenge(
     representation: RepresentationId,
-    demand: PlaybackDemand,
     preferNative: boolean,
     excludedHosts?: ReadonlySet<string>,
     catalogCursor?: number,

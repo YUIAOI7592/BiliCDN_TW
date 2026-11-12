@@ -361,7 +361,7 @@ Recovery 透過必要的 captureResumePosition／validateResumePosition 內部�
 
 到期版本認領保存在同一 meta 鍵，最多 96 筆主機／影音記錄，各含熔斷控制戳記、不透明 claimId／roundId；不含 URL、內容或表示索引。協定初始化、認領與保存確認都要求當前真正共同鎖，讀取快照不初始化。保存認領前，由 EvidenceStore 權威重讀目前熔斷控制，確認同步、戳記相同且隔離已到期，再重驗協調世代；不能以通知尚未抵達的本頁快取覆蓋較新認領。相同戳記已認領便拒絕再次認領；滿額不淘汰既有憑證來增加名額。偵測協定遺失／回退便停止該頁的優先認領，清除則寫入新協調世代及空清單。新版分頁只在共同儲存／鎖作用域內協作，舊版可丟棄可選欄位，因此不保證新舊版混用時共享一次。
 
-`MeasurementController` 仍唯一啟動探測，Routes 保有候選提案及提交所有權。起播選擇維持原同步快照與三秒共用期限；延後取得 `measurement` 鎖後重新讀游標，再檢查生命週期標記才遞增，不以等待前的值覆蓋其他分頁。游標到最大安全整數時回到零，同輪候選也使用相同安全遞增。健康量測的提案、認領、嘗試與十分鐘冷卻在鎖內協調。`get()`、`update()` 不自行取鎖；`clear()` 自行取得 measurement 鎖，確認空游標／冷卻及新協調世代已保存，不能巢狀持有同一鎖。沒有新增快取、訂閱或計時器；平台沒有 Web Locks 時不能保證跨分頁序列化，也不發放優先再驗證認領。
+`MeasurementController` 仍唯一啟動探測，Routes 保有候選提案及提交所有權。proposeChallenge／commitChallenge 是量測端必要的兩階段能力；提案不接收未使用的 demand，產品不再提供舊 challenge 包裝。共同鎖不可用、認領失敗及協定退回仍保留一般探索退路。起播選擇維持原同步快照與三秒共用期限；延後取得 `measurement` 鎖後重新讀游標，再檢查生命週期標記才遞增，不以等待前的值覆蓋其他分頁。游標到最大安全整數時回到零，同輪候選也使用相同安全遞增。健康量測的提案、認領、嘗試與十分鐘冷卻在鎖內協調。`get()`、`update()` 不自行取鎖；`clear()` 自行取得 measurement 鎖，確認空游標／冷卻及新協調世代已保存，不能巢狀持有同一鎖。沒有新增快取、訂閱或計時器；平台沒有 Web Locks 時不能保證跨分頁序列化，也不發放優先再驗證認領。
 
 RestrictionStore 的遠端通知只提示重讀目前持久值，不直接接納通知 payload，也不以 updatedAt 決定新舊。add／remove／clear 在 restrictions 鎖內先確認讀取，再保存及讀回核對；只有確認後才發布本頁狀態。讀失敗保留最近已確認的快取，不能當空資料覆寫；寫入拋錯仍以讀回判斷是否已保存，結果不符或未知則回報失敗。clear 寫入確認的 schema 2 空 records，不依賴可能吞掉例外的刪除 API。這些操作不保證四個儲存鍵的共同交易或舊版分頁不寫回舊資料。
 
@@ -426,7 +426,7 @@ Vault 的輸出對照及來源大小只附著於既有 handle 與 RouteIdentity�
 
 ControlCenter 只提供總覽、CDN、播放設定三頁，經 ControlReadModelPort 訂閱並取得當次快照。每次建構／刷新共用單份模型，CDN 開關不各自取快照；snapshot() 沒有詳細證據參數。
 
-`createControlReadModel(sources)` 只組合畫面使用的功能來源，不接收版本或時鐘；版本與顯示時間仍由入口直接注入 ControlCenter。量測快照不投影未使用的 lastAttemptAt、remainingProbes、delayed，恢復快照不投影 pauseSec／breakerSec；內部期限與預算繼續由原控制器持有。Session 不另保存 recovering；Monitor 直接取得恢復狀態，noteDecision 仍更換 Session 快照身分以隔離晚到播放事實。快照不包含未使用的 version／releaseStage，亦不展開其他表示的 recentPlans。RouteCoordinator 保留私有計畫集合、目前影音請求與回應摘要；健康學習由 EvidenceStore 保存，不另維護沒有產品消費者的最後成功主機索引。
+`createControlReadModel(sources)` 只組合畫面使用的功能來源，不接收版本或時鐘；版本與顯示時間仍由入口直接注入 ControlCenter。量測快照不投影未使用的 lastAttemptAt、remainingProbes、delayed，恢復快照不投影 pauseSec／breakerSec；內部期限與預算繼續由原控制器持有。Session 不另保存 recovering；Monitor 直接取得恢復狀態，noteDecision 仍更換 Session 快照身分以隔離晚到播放事實。快照不包含未使用的 version／releaseStage，亦不展開其他表示的 recentPlans。RouteCoordinator 保留私有計畫集合、目前影音請求與回應摘要；無 request 觀察的政策檢查使用私有決策 ID → 政策修訂索引，最多 256 筆並保持插入淘汰順序，不再另存完整決策紀錄或公開測試查詢；健康學習由 EvidenceStore 保存，不另維護沒有產品消費者的最後成功主機索引。
 
 總覽與 CDN 視圖保留初始模型供閉包及開關初始化，完整首次刷新統一由 ControlCenter 在建構視圖後執行一次；播放設定也使用同一中心流程。讀模型以 settings／monitor／routes 分類通知。ControlCenter 將同批 monitor／routes 通知合併為一個 microtask，執行時才取得最新快照；settings、換頁及命令完成仍立即刷新。排隊工作綁定視圖修訂，關閉、重開或明確刷新撤銷舊工作；快照讀取期間的新通知保留到下一次刷新，讀回後再次核對視圖所有權。此合併只作用於 UI，功能事件與 Runtime 的影片恢復交接維持同步。
 

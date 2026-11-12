@@ -57,12 +57,11 @@ export interface MeasurementRoutes extends Pick<
   | 'startupFallback'
   | 'noteStartupProbeResult'
   | 'recordStartupSuccess'
-  | 'challenge'
+  | 'proposeChallenge'
+  | 'commitChallenge'
   | 'isCatalogOnly'
   | 'recordChallenge'
 > {
-  proposeChallenge?: RouteCoordinatorPort['proposeChallenge']
-  commitChallenge?: RouteCoordinatorPort['commitChallenge']
   commitStartupChoice(
     ...args: Parameters<RouteCoordinatorPort['commitStartupChoice']>
   ): { readonly host: string | null } | null

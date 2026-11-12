@@ -1,3 +1,4 @@
+import { challengeOnce } from '../../support/challenge.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -158,7 +159,7 @@ async function createPromotedRouting(
   const staleStartup =
     pending === 'startup' ? plannedRoutes.startupOptions(hintedUrl)?.candidates[0] : undefined
   const staleChallenge =
-    pending === 'challenge' ? plannedRoutes.challenge(plannedRep, plannedDemand, false) : undefined
+    pending === 'challenge' ? challengeOnce(plannedRoutes, plannedRep, false) : undefined
   const plannedAdapter = new PlayurlAdapter(
     new PlayurlController(authoritySession, plannedVault, plannedRoutes),
   )
@@ -774,7 +775,7 @@ async function checkTrustedAPIReplacesInvalidatedProvisionalRouteOnTheSameHost3(
     'provisional startup initially follows its signed root',
   )
   plannedRoutes.startupOptions(base.hintedUrl)?.candidates[0] ?? null
-  plannedRep ? plannedRoutes.challenge(plannedRep, plannedDemand, false) : null
+  plannedRep ? challengeOnce(plannedRoutes, plannedRep, false) : null
   const plannedAdapter = new PlayurlAdapter(
     new PlayurlController(authoritySession, plannedVault, plannedRoutes),
   )

@@ -1,3 +1,4 @@
+import { stubChallengeRoutes } from '../../support/challenge.ts'
 import { createMutablePlaybackResources, currentResumePlayer } from '../../support/player.ts'
 import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { FakeClock } from '../../support/clock.ts'
@@ -187,10 +188,10 @@ async function healthyProbeFixture(t: TestContext) {
   }
   const challengeRoutes = {
     isCatalogOnly: () => false,
-    challenge: () => {
+    ...stubChallengeRoutes(() => {
       challengeCalls++
       return challengeApplied
-    },
+    }),
     recordChallenge: async () => {
       challengeRecords++
       challengeDone.complete()
@@ -539,7 +540,7 @@ async function checkSafePlaybackConsidersUpToThreeFairChallengers9(t: TestContex
   let redirectedChallengeSamples = 0
   const redirectChallengeRoutes = {
     isCatalogOnly: () => false,
-    challenge: () => base.challengeApplied,
+    ...stubChallengeRoutes(() => base.challengeApplied),
     recordChallenge: async (
       _route: unknown,
       _bytes: number,
@@ -577,7 +578,7 @@ async function checkSafePlaybackConsidersUpToThreeFairChallengers9(t: TestContex
     new MeasurementController(
       measurementRoutes({
         isCatalogOnly: () => false,
-        challenge: () => base.challengeApplied,
+        ...stubChallengeRoutes(() => base.challengeApplied),
         recordChallenge: async (
           _route: unknown,
           _bytes: number,
@@ -610,7 +611,7 @@ async function checkSafePlaybackConsidersUpToThreeFairChallengers9(t: TestContex
     new MeasurementController(
       measurementRoutes({
         isCatalogOnly: () => false,
-        challenge: () => base.challengeApplied,
+        ...stubChallengeRoutes(() => base.challengeApplied),
         recordChallenge: async (
           _route: unknown,
           _bytes: number,

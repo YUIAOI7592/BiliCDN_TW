@@ -146,7 +146,6 @@ test('many quality groups retain plans across snapshot reads [3]', (t) => {
       f.routes.plan(rep, { kind: 'video', requiredMbps: 7.5, highDemand: false }, 'startup'),
       decision,
     )
-    assert.equal(f.routes.decisionRecord(decision.id)?.representation, rep)
   }
   const snapshot = f.routes.snapshot()
   for (const key of ['planCount', 'recentPlans', 'lastSuccess'])

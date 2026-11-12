@@ -1,3 +1,4 @@
+import { challengeOnce } from '../../support/challenge.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { TRUSTED_CATALOG, DEFAULT_UNAVAILABLE_HOSTS } from '../../../src-v2/domain/catalog.ts'
@@ -116,7 +117,7 @@ test('routing Native startup preserves exact source order while challenge and ou
   assert.equal(options?.candidates[0]?.type, 'root-original')
   assert.equal(options?.candidates[1]?.type, 'native-signed')
   const demand = { kind: 'video' as const, requiredMbps: 8, highDemand: false }
-  assert.ok(f.routes.challenge(representation, demand, true))
+  assert.ok(challengeOnce(f.routes, representation, true))
   const plan = f.routes.plan(representation, demand, 'startup')
   assert.equal(
     f.routes.playerOutput(representation, original, plan, [original, backup]).primary,

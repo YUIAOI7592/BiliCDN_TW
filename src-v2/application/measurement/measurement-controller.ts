@@ -648,27 +648,12 @@ export class MeasurementController implements MeasurementPort {
       return null
     if (coordination) round.generation ??= coordination.generation
     else round.priorityUnavailable = true
-    if (!this.routes.proposeChallenge || !this.routes.commitChallenge)
-      return this.routes.challenge(
-        status.representation,
-        status.demand,
-        preferNative,
-        excluded,
-        cursor,
-      )
     const ordinary = () =>
       valid()
-        ? this.routes.proposeChallenge!(
-            status.representation!,
-            status.demand!,
-            preferNative,
-            excluded,
-            cursor,
-          )
+        ? this.routes.proposeChallenge(status.representation!, preferNative, excluded, cursor)
         : null
     let proposal = this.routes.proposeChallenge(
       status.representation,
-      status.demand,
       preferNative,
       excluded,
       cursor,

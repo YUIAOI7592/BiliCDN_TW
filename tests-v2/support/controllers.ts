@@ -36,7 +36,8 @@ export const measurementRoutes = (
     noteStartupProbeResult: () => undefined,
     commitStartupChoice: () => null,
     recordStartupSuccess: async () => undefined,
-    challenge: () => null,
+    proposeChallenge: () => null,
+    commitChallenge: () => null,
     recordChallenge: async () => undefined,
     ...rest,
   } satisfies MeasurementRoutes

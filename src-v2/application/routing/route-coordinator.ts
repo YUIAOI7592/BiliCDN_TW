@@ -62,7 +62,6 @@ import {
   type ChallengeProposal,
   type ChallengePriority,
   type CurrentRouteCapacity,
-  type DecisionRecord,
   type FallbackProgress,
   type RouteSnapshot,
   type RouteTransferSnapshot,
@@ -111,7 +110,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #measurementIds = new WeakMap<object, string>()
   #serial = 0
   #recoverySerial = 0
-  #decisions = new Map<DecisionId, DecisionRecord>()
+  #decisionPolicies = new Map<DecisionId, number>()
   #plans = new Map<RepresentationId, RouteDecision>()
   #planIdentities = new Map<RepresentationId, RouteIdentity>()
   #requestedRepresentations = new Set<RepresentationId>()
@@ -167,7 +166,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#ownership.reset('content')
     this.#planIdentities.clear()
     this.#unlockedNative.clear()
-    this.#decisions.clear()
+    this.#decisionPolicies.clear()
     this.#hostLockedStreams.clear()
     this.#startupIncompatible.clear()
     this.#requestedRepresentations.clear()
@@ -457,7 +456,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     }
     const output = this.#materialize(url, decision, matched.context)
     if (!output) return null
-    this.#remember(decision, matched.context, 'video')
+    this.#remember(decision.id)
     return this.#retryPermits.materialize(pending, {
       decision,
       url: output,
@@ -979,7 +978,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     }
     this.#savePlan(context.representation, decision)
     this.session.noteDecision(decision.id)
-    this.#remember(decision, context, context.kind)
+    this.#remember(decision.id)
     this.#emit({ type: 'route-planned', at: this.clock.now(), decision })
     return decision
   }
@@ -1357,7 +1356,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       decision = this.#block(finalRestriction, finalHost)
       applied = null
     }
-    this.#saveAppliedPlan(decision, context, streamKey, kind ?? 'video')
+    this.#saveAppliedPlan(decision, context, streamKey)
     const sourceHost = context
       ? (parseMediaUrl(this.vault.rootUrl(context.representation) ?? url)?.host ?? parsed.host)
       : parsed.host
@@ -1398,7 +1397,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     const decision = hard
       ? this.#block(hard, originalHost)
       : this.#pass('host-locked', originalHost, kind ?? 'video')
-    this.#remember(decision, context, kind ?? 'video')
+    this.#remember(decision.id)
     return { decision, url: hard ? null : original, context, streamKey, sourceHost: originalHost }
   }
 
@@ -1520,13 +1519,9 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       this.#incompatible(url, decision.host)
     )
       return blocked('catalog-unavailable')
-    this.#saveAppliedPlan(decision, context, streamKey, kind ?? 'video')
+    this.#saveAppliedPlan(decision, context, streamKey)
     if (context) this.vault.registerAlias(context.representation, target)
     return appliedRoute(decision, target, context, streamKey, sourceHost, match, outputRole)
-  }
-
-  decisionRecord(id: DecisionId | null): DecisionRecord | null {
-    return id ? (this.#decisions.get(id) ?? null) : null
   }
 
   opaqueOutput(
@@ -1551,7 +1546,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         host,
         context.kind,
       )
-      this.#remember(decision, context, context.kind)
+      this.#remember(decision.id)
       this.#emit({ type: 'route-planned', at: this.clock.now(), decision })
       this.vault.registerOutput(representation, original, primary, backups, decision.id, source)
     }
@@ -1615,26 +1610,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       : { primary: '', backups: [] }
   }
 
-  challenge(
-    representation: RepresentationId,
-    demand: PlaybackDemand,
-    preferNative: boolean,
-    excludedHosts: ReadonlySet<string> = new Set(),
-    catalogCursor = 0,
-  ): AppliedRouteDecision | null {
-    const proposal = this.proposeChallenge(
-      representation,
-      demand,
-      preferNative,
-      excludedHosts,
-      catalogCursor,
-    )
-    return proposal ? this.commitChallenge(proposal) : null
-  }
-
   proposeChallenge(
     representation: RepresentationId,
-    _demand: PlaybackDemand,
     preferNative: boolean,
     excludedHosts: ReadonlySet<string> = new Set(),
     catalogCursor = 0,
@@ -1828,7 +1805,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       ranking: Object.freeze([]),
     }
     this.#challengeAttempts.set(`${context.representation}:${candidate.host}`, now)
-    this.#remember(decision, context, context.kind)
+    this.#remember(decision.id)
     this.#emit({ type: 'route-planned', at: now, decision })
     const applied = {
       decision,
@@ -1931,7 +1908,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         (observation.request
           ? observation.request.routePolicyRevision === this.#policyRevision
           : !!observation.decisionId &&
-            this.#decisions.get(observation.decisionId)?.policyRevision === this.#policyRevision)
+            this.#decisionPolicies.get(observation.decisionId) === this.#policyRevision)
       if (
         controlsCurrent() &&
         this.isCatalogOnly() &&
@@ -2455,7 +2432,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     const id = this.#nextId()
     const decision = chooseRoute(input, this.clock, id, ranking)
     this.session.noteDecision(id)
-    this.#remember(decision, context, context.kind)
+    this.#remember(decision.id)
     this.#emit({ type: 'route-planned', at: this.clock.now(), decision })
     return decision
   }
@@ -2624,9 +2601,8 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     decision: RouteDecision,
     context: RouteIdentity | null,
     streamKey: string | null,
-    kind: MediaKind,
   ): void {
-    this.#remember(decision, context, kind)
+    this.#remember(decision.id)
     if (context) {
       this.#savePlan(context.representation, decision)
       this.#requestedRepresentations.add(context.representation)
@@ -2666,16 +2642,10 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     while (this.#startupIncompatible.size > 256)
       this.#startupIncompatible.delete(this.#startupIncompatible.keys().next().value as string)
   }
-  #remember(decision: RouteDecision, context: RouteIdentity | null, kind: MediaKind): void {
-    this.#decisions.set(decision.id, {
-      decision,
-      context,
-      kind,
-      representation: context?.representation ?? null,
-      policyRevision: this.#policyRevision,
-    })
-    while (this.#decisions.size > 256)
-      this.#decisions.delete(this.#decisions.keys().next().value as DecisionId)
+  #remember(id: DecisionId): void {
+    this.#decisionPolicies.set(id, this.#policyRevision)
+    while (this.#decisionPolicies.size > 256)
+      this.#decisionPolicies.delete(this.#decisionPolicies.keys().next().value as DecisionId)
   }
   #emit(event: DomainEvent): void {
     for (const listener of this.#listeners) listener(event)

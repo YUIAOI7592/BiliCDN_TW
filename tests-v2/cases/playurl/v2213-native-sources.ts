@@ -1,3 +1,4 @@
+import { challengeOnce } from '../../support/challenge.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { SignedRouteVault } from '../../../src-v2/state/signed-route-vault.ts'
@@ -337,11 +338,7 @@ test('V2213 DASH: a late probe from the replaced source cannot create health evi
     requestSequence: 1,
   })
   const rep = f.vault.match(original).context!.representation
-  const applied = f.routes.challenge(
-    rep,
-    { kind: 'video', requiredMbps: 5, highDemand: false },
-    true,
-  )!
+  const applied = challengeOnce(f.routes, rep, true)!
   assert.ok(applied)
   f.adapter.transform(payload([replacement]), 'trusted-api', 'two', {
     contentId: '42',

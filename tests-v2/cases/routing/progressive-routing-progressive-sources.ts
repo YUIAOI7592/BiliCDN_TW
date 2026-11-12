@@ -1,3 +1,4 @@
+import { challengeOnce } from '../../support/challenge.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { type TestContext } from 'node:test'
@@ -205,7 +206,7 @@ async function checkCatalogSourceResolvesTheFirstLegalSameSegmentBackupWhenThe(
       ),
       'all startup probes use the promoted segment path',
     )
-    const challenge = base.routes.challenge(base.rep1, base.demand, false)
+    const challenge = challengeOnce(base.routes, base.rep1, false)
     assert.ok(
       challenge?.url && new URL(challenge.url).pathname === new URL(base.segment1).pathname,
       'healthy Catalog challenge uses the promoted segment source',

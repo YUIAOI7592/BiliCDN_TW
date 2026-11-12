@@ -1,3 +1,4 @@
+import { challengeOnce } from '../../support/challenge.ts'
 import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { currentResumePlayer } from '../../support/player.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
@@ -442,7 +443,7 @@ for (const patch of [
     assert.equal(f.meta.get().lastChallengeAt, 0)
     assert.equal(f.meta.get().catalogCursor, 0)
     assert.ok(
-      f.routes.challenge(f.representation, f.status.demand, false),
+      challengeOnce(f.routes, f.representation, false),
       'candidate remains available after cancelled planning',
     )
   })
@@ -454,16 +455,8 @@ test('C-02 startup and challenge samples deduplicate one work item and preserve 
     storage = new FakeStorage()
   const first = routeFixture(scope, clock, storage),
     second = routeFixture(scope, clock, storage)
-  const a = first.routes.challenge(
-    first.representation,
-    { kind: 'video', requiredMbps: 4, highDemand: false },
-    false,
-  )
-  const b = second.routes.challenge(
-    second.representation,
-    { kind: 'video', requiredMbps: 4, highDemand: false },
-    false,
-  )
+  const a = challengeOnce(first.routes, first.representation, false)
+  const b = challengeOnce(second.routes, second.representation, false)
   assert.ok(a && b)
   assert.equal(a.decision.host, b.decision.host)
   await first.routes.recordChallenge(a, 128 * 1024, 100, 10, 'success', null)

@@ -587,7 +587,7 @@ for (const resumes of [false, true]) {
   })
 }
 
-test('routing convergence keeps source branch decision IDs and decision-record ownership', async (t) => {
+test('routing convergence keeps source branch decision IDs and blocking results', async (t) => {
   const f = fixture(testScope(t))
   await f.settings.update({ considerNativeSources: true })
   const invalid = f.routes.apply('invalid:source')
@@ -603,9 +603,6 @@ test('routing convergence keeps source branch decision IDs and decision-record o
       ['decision-4', 'unattributed-original-no-preflight'],
     ],
   )
-  for (const applied of [invalid, opaque, resource])
-    assert.equal(f.routes.decisionRecord(applied.decision.id), null)
-  assert.equal(f.routes.decisionRecord(normal.decision.id)?.decision, normal.decision)
   await f.restrictions.add({
     host: 'media.example.invalid',
     type: 'black',
@@ -617,7 +614,6 @@ test('routing convergence keeps source branch decision IDs and decision-record o
   assert.equal(blocked.decision.id, 'decision-5')
   assert.equal(blocked.decision.reason, 'black')
   assert.equal(blocked.url, null)
-  assert.equal(f.routes.decisionRecord(blocked.decision.id), null)
 })
 
 test('routing convergence route-planned reentry preserves nested IDs and outer plan commit order', async (t) => {
@@ -652,7 +648,6 @@ test('routing convergence route-planned reentry preserves nested IDs and outer p
   assert.equal(outer.id, 'decision-1')
   assert.equal(f.session.get().lastDecisionId, 'decision-2')
   f.routes.snapshot()
-  assert.strictEqual(f.routes.decisionRecord(outer.id)?.decision, outer)
   assert.strictEqual(
     f.routes.plan(representation, { kind: 'video', requiredMbps: 8, highDemand: false }, 'startup'),
     outer,

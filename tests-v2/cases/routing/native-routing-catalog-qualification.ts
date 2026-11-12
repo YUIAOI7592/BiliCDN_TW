@@ -1,3 +1,4 @@
+import { challengeOnce } from '../../support/challenge.ts'
 import { CatalogSettingsStore } from '../../support/catalog-settings.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
 import { test } from 'node:test'
@@ -186,7 +187,7 @@ async function checkFixedCatalogStartsNoHealthyProbe(t: TestContext): Promise<vo
   assert.ok(base.catalogVideoRep, 'behavior requires its fixture prerequisites')
 
   assert.strictEqual(
-    base.catalogRoutes.challenge(base.catalogVideoRep, base.catalogDemand, true),
+    challengeOnce(base.catalogRoutes, base.catalogVideoRep, true),
     null,
     'fixed Catalog selection starts no healthy probe',
   )
@@ -338,7 +339,7 @@ async function checkCatalogOnlyStartupHasLegalCandidates3(t: TestContext): Promi
         'delivered Catalog backup stays on the URL the player requested',
       )
     }
-    const challenger = base.catalogRoutes.challenge(base.catalogVideoRep, base.catalogDemand, true)
+    const challenger = challengeOnce(base.catalogRoutes, base.catalogVideoRep, true)
     assert.strictEqual(
       challenger?.decision.routeType,
       'catalog-generated',
