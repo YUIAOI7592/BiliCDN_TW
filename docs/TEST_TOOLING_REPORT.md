@@ -1455,3 +1455,9 @@ Windows PowerShell 啟動器 cwd 改以目錄的 dev／ino 身分核對，不把
 當次 load_workspace_dependencies 取得 Codex Node 24.22.1，實際執行檔為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1111-574-0_26.1111.574.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe`；明確執行 docs-check.mts 與 archive-check.mts，未使用本機網站服務。文件檢查通過，涵蓋 305 份 Markdown 的 GFM、連結、導覽與保護；公開封存檢查通過，534 項搬移、三份追加日誌、159 項未變原件及 88 份清單／394 筆校驗；git diff --check 通過。
 
 人工核對各門檻的斷言、證據層級與阻擋範圍，修正依據見 [門檻檢討](TEST_REPORT.md#驗收門檻檢討2026-11-13)。既有七筆不可變斷鏈、672 筆搬移後原網址不可用、18 筆私有證據未核對及外部連結未連網仍保留原分類。本次沒有本機私有搬移，不執行 local／restore；沒有新增產品測試、安全掃描或瀏覽器通過宣稱，原版本、測試與發行產物未修改。
+
+## 2026-11-13 安裝身分與接線重新判定文件檢查
+
+使用當次 load_workspace_dependencies 取得的 Codex Node 24.22.1，路徑為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1111-574-0_26.1111.574.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe`。本次只檢查新的重判文件差異；已通過的產品、安全與瀏覽器測試不重跑。現有脫敏 JSON、正式發行檔大小／SHA-256 及從發行標籤至重判基準 b6e739b 的產品／測試／工具／版本／Release 無差異已核對，判定見 [重新判定](TEST_REPORT.md#v2220-安裝身分與變更接線重新判定2026-11-13)。
+
+明確執行 docs-check.mts 與 archive-check.mts 均通過：305 份 Markdown、5,460 個本機／儲存庫連結；534 項公開搬移、三份追加日誌、159 項未變原件、88 份清單／394 筆校驗。git diff --check 通過，差異僅四份文件；既有七筆不可變斷鏈、672 筆搬移後原網址、18 筆私有證據未核對及 973 個外部連結未連網不變。沒有啟動本機服務或執行 local／restore 核對。
