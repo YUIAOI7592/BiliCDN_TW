@@ -8,16 +8,7 @@ import { type RoutingPolicyReader } from './routing-ports.ts'
 function measuredSufficientHosts(decision: RouteDecision): ReadonlySet<string> {
   return new Set(
     decision.ranking
-      .filter(
-        (row) =>
-          row.eligible &&
-          row.successCount > 0 &&
-          adequateCapacity(row) &&
-          Number.isFinite(row.safeThroughputMbps) &&
-          (row.safeThroughputMbps ?? 0) > 0 &&
-          Number.isFinite(row.demandRatio) &&
-          (row.demandRatio ?? 0) >= 1,
-      )
+      .filter((row) => row.eligible && row.successCount > 0 && adequateCapacity(row))
       .map((row) => row.candidate.host),
   )
 }

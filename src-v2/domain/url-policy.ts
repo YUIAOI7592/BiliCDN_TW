@@ -25,6 +25,12 @@ export const isKnownPcdnHost = (host: string): boolean =>
 export const isKnownNativeFamily = (host: string): boolean =>
   /\.bilivideo\.(?:com|cn|net)$/i.test(host) || host.endsWith('.akamaized.net')
 
+const hasMediaPath = (url: Pick<URL, 'pathname'>): boolean =>
+  MEDIA_PATH_RE.test(url.pathname) ||
+  url.pathname.includes('/upgcxcode/') ||
+  url.pathname.startsWith('/v1/resource') ||
+  url.pathname.includes('/live-bvc/')
+
 export const parseMediaUrl = (value: string): ParsedMediaUrl | null => {
   if (!value || value.length > MEDIA_URL_MAX_LENGTH) return null
   let url: URL
@@ -35,12 +41,7 @@ export const parseMediaUrl = (value: string): ParsedMediaUrl | null => {
   }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return null
   const host = url.hostname.toLowerCase()
-  const mediaPath =
-    MEDIA_PATH_RE.test(url.pathname) ||
-    url.pathname.includes('/upgcxcode/') ||
-    url.pathname.startsWith('/v1/resource') ||
-    url.pathname.includes('/live-bvc/')
-  if (!mediaPath) return { url, host, kind: 'unknown', replaceable: false }
+  if (!hasMediaPath(url)) return { url, host, kind: 'unknown', replaceable: false }
   if (url.pathname.includes('/live-bvc/')) return { url, host, kind: 'live', replaceable: false }
   if (url.pathname.startsWith('/v1/resource'))
     return { url, host, kind: 'resource', replaceable: false }
@@ -72,12 +73,7 @@ export const isOversizedBilibiliMedia = (value: string): boolean => {
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return false
   const host = url.hostname.toLowerCase(),
     path = url.pathname
-  const mediaPath =
-    MEDIA_PATH_RE.test(path) ||
-    path.includes('/upgcxcode/') ||
-    path.startsWith('/v1/resource') ||
-    path.includes('/live-bvc/')
-  if (!mediaPath) return false
+  if (!hasMediaPath({ pathname: path })) return false
   if (/\.bilivideo\.(?:com|cn|net)$/.test(host)) return true
   if (host.startsWith('upos-') && host.endsWith('.akamaized.net')) return true
   return isKnownPcdnHost(host)

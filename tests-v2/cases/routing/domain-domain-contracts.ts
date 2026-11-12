@@ -9,7 +9,45 @@ import {
 import { assessDemandRatio, chooseRoute, rankRoutes } from '../../../src-v2/domain/routing.ts'
 import { decisionId } from '../../../src-v2/domain/model.ts'
 import { TRUSTED_CATALOG } from '../../../src-v2/domain/catalog.ts'
-import { parseMediaUrl, replaceUrlHost } from '../../../src-v2/domain/url-policy.ts'
+import {
+  parseMediaUrl,
+  replaceUrlHost,
+  isOversizedBilibiliMedia,
+  MEDIA_URL_MAX_LENGTH,
+} from '../../../src-v2/domain/url-policy.ts'
+
+test('V2219 media path recognition preserves the rewrite limit and oversized host boundary', () => {
+  for (const [path, kind] of [
+    ['/video.M4S', 'normal'],
+    ['/video.mp4', 'normal'],
+    ['/video.flv', 'normal'],
+    ['/video.m3u8', 'normal'],
+    ['/upgcxcode/segment', 'normal'],
+    ['/v1/resource/segment', 'resource'],
+    ['/live-bvc/segment', 'live'],
+    ['/unrecognized', 'unknown'],
+  ] as const) {
+    const prefix = `https://upos-test.bilivideo.com${path}?padding=`
+    const bounded = prefix + 'x'.repeat(MEDIA_URL_MAX_LENGTH - prefix.length)
+    assert.equal(parseMediaUrl(bounded)?.kind, kind, path)
+    assert.equal(isOversizedBilibiliMedia(bounded), false, path)
+    assert.equal(parseMediaUrl(bounded + 'x'), null, path)
+    assert.equal(isOversizedBilibiliMedia(bounded + 'x'), kind !== 'unknown', path)
+  }
+  for (const [prefix, expected] of [
+    ['//upos-test.bilivideo.com/video.mp4', true],
+    ['http://upos-test.bilivideo.com/video.mp4', true],
+    ['https://upos-test.akamaized.net/video.mp4', true],
+    ['https://test.szbdyd.com/video.mp4', true],
+    ['https://third-party.example/video.mp4', false],
+    ['https://other.akamaized.net/video.mp4', false],
+    ['ftp://upos-test.bilivideo.com/video.mp4', false],
+  ] as const)
+    assert.equal(
+      isOversizedBilibiliMedia(prefix + '?' + 'x'.repeat(MEDIA_URL_MAX_LENGTH)),
+      expected,
+    )
+})
 
 test('V221 overview demand headroom retains threshold semantics', () => {
   assert.strictEqual(assessDemandRatio(0.999), 'below-required')
