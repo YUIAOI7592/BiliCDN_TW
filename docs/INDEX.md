@@ -12,6 +12,7 @@
 | 理解選路、熔斷、恢復與資料顯示 | [ARCHITECTURE](ARCHITECTURE.md)；使用者操作回到 README，安全要求見 SECURITY |
 | 研究選路、Auto、熔斷或提前重試效益 | [HISTORY 議題](HISTORY.md#議題) → 該議題的原始研究與限制；是否已採用或啟動只看 TODO |
 | 開始修改程式 | [TODO](TODO.md) → [AGENTS](../AGENTS.md) → [ARCHITECTURE](ARCHITECTURE.md) → [SECURITY](../SECURITY.md) → [DEVELOPMENT](DEVELOPMENT.md) |
+| 維護代理指引或純文件 | [AGENTS](../AGENTS.md) → [DEVELOPMENT 文件維護](DEVELOPMENT.md#文件維護與結案) → 受影響議題的權威文件與事實來源 |
 | 撰寫或執行測試 | [TODO](TODO.md) → [DEVELOPMENT 測試套件與隔離](DEVELOPMENT.md#測試套件與隔離)；涉及瀏覽器時再讀 [IAB_TESTING](IAB_TESTING.md)；結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
 | 判斷驗證門檻是否適用 | [DEVELOPMENT 驗證範圍](DEVELOPMENT.md#依變更選擇驗證範圍) → [IAB 門檻適用表](IAB_TESTING.md#門檻的適用範圍)；每項要求對應斷言、證據及受影響範圍 |
 | 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#發行規則) → [DEVELOPMENT 封裝與發行](DEVELOPMENT.md#封裝與發行)，並依 [發布文件更新順序](DEVELOPMENT.md#發布文件更新順序) 準備文件 |

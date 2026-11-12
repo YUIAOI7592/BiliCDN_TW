@@ -1461,3 +1461,11 @@ Windows PowerShell 啟動器 cwd 改以目錄的 dev／ino 身分核對，不把
 使用當次 load_workspace_dependencies 取得的 Codex Node 24.22.1，路徑為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1111-574-0_26.1111.574.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe`。本次只檢查新的重判文件差異；已通過的產品、安全與瀏覽器測試不重跑。現有脫敏 JSON、正式發行檔大小／SHA-256 及從發行標籤至重判基準 b6e739b 的產品／測試／工具／版本／Release 無差異已核對，判定見 [重新判定](TEST_REPORT.md#v2220-安裝身分與變更接線重新判定2026-11-13)。
 
 明確執行 docs-check.mts 與 archive-check.mts 均通過：305 份 Markdown、5,460 個本機／儲存庫連結；534 項公開搬移、三份追加日誌、159 項未變原件、88 份清單／394 筆校驗。git diff --check 通過，差異僅四份文件；既有七筆不可變斷鏈、672 筆搬移後原網址、18 筆私有證據未核對及 973 個外部連結未連網不變。沒有啟動本機服務或執行 local／restore 核對。
+
+## 2026-11-13 AGENTS 指引檢討檢查
+
+當次 load_workspace_dependencies 取得的 Node 實際版本為 24.22.1，執行路徑為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1111-574-0_26.1111.574.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe`。npm CLI 由當次 npm.cmd 位置解析為 `C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js`，實讀版本 11.20.0；以所選 Codex Node 明確執行，僅調整當次程序 PATH，子命令沿用相同 Node。
+
+檢查範圍為 [指引檢討差異](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-agents-正確性與必要性檢討)。先核對 docs／archive 檢查入口與依賴，使用離線檔案／解析／Git 唯讀操作，不啟動本機網站服務。沒有產品或工具變更，不執行完整 verify、安全掃描或瀏覽器案例；未處置本機私有封存，不執行 local／restore。
+
+以所選 Node 執行 npm run docs:check 與 npm run archive:check 均通過：305 份 Markdown、5,483 個本機／儲存庫連結；534 項公開搬移、三份追加日誌、159 項未變原件及 88 份清單／394 筆校驗。git diff --check 通過。既有七筆不可變斷鏈、672 筆搬移後原網址不可用、18 筆私有證據未核對及 973 個外部連結未連網分開保留，不宣稱全部網址或私有原件本次已核對。
