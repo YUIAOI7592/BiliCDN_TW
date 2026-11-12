@@ -122,7 +122,7 @@ v2.2.15 的 application 依 routing／measurement／playback／playurl 歸屬控
 
 Codex 作業每次先使用內建依賴工具 `load_workspace_dependencies` 取得當前 Node 路徑，再以該檔案啟動命令；取得失敗就記錄受影響工作，不默默改用系統 Node 或 `.work/up141`。需要 npm 時將所選 Node 目錄放在當次程序 PATH 首項，再以明確選定的 CLI 執行；不修改全域 PATH。Python 目前沒有正式程式、依賴配置或版本鎖定，需要時同樣取得 Codex 內建路徑。
 
-一般使用者仍可從自己的 PATH 執行原 npm 命令，工具在 stderr 顯示實際 Node 版本與執行路徑，不冒稱為 Codex Runtime。`scripts/verify.ps1` 選擇順序為 `-NodePath`、`BILICDN_NODE`、PATH；`scripts/verify.sh` 為 `BILICDN_NODE`、PATH。路徑以獨立引數處理，支援空白；子程序退出碼傳回，工作目錄由啟動器管理。純 `test --list` 及其用法錯誤保留既有文字／退出碼契約，不啟動能力探測或增加身分列；JSON stdout 不混入環境文字。
+一般使用者仍可從自己的 PATH 執行原 npm 命令，工具在 stderr 顯示實際 Node 版本與執行路徑，不冒稱為 Codex Runtime。`scripts/verify.ps1` 選擇順序為 `-NodePath`、`BILICDN_NODE`、PATH；`scripts/verify.sh` 為 `BILICDN_NODE`、PATH。路徑以獨立引數處理，支援空白；子程序退出碼傳回，工作目錄由啟動器管理。Windows 啟動器契約以目錄 dev／ino 身分核對 cwd，避免等價路徑大小寫造成誤判；空白路徑、參數及退出碼斷言保持。純 `test --list` 及其用法錯誤保留既有文字／退出碼契約，不啟動能力探測或增加身分列；JSON stdout 不混入環境文字。
 
 [toolchain.mts](../scripts/lib/toolchain.mts) 共用能力判定、測試選項與 `node24` 語法目標；後者不是執行器版本閘門，也不隨目前 Node 自動提高。verify 與完整測試入口以所選 Node 啟動一個最多五秒的隔離 mts 探測，核對具名成功、位置、完整報告、退出及父子版本一致；探測不計入正式案例。同一程序共用已完成 Promise，匯入不啟動探測，成功與失敗均檢查並清理專屬暫存目錄。能力不足明確失敗，不下載或切換 runtime，也沒有略過開關。通過探測只代表可進入驗證，完整 verify 才是本次環境的完成門檻；未來版本與其他平台不因一次通過便自動取得相容結論。
 

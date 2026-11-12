@@ -1,5 +1,12 @@
 # BiliCDN_TW 變更紀錄
 
+## v2.2.20
+
+- 清除無消費的 Session、請求、候選與快照欄位及測試專用 pending 計數，保留實際取消、熔斷屏障、恢復預算與時鐘求值。
+- 決策紀錄縮為最多 256 筆的私有政策修訂索引；健康量測統一必要的提案／提交協定，保留共同認領與一般探索退路。
+- 兩個 Store 共用原有主機解析，normal／Catalog 共用首次影片親和判斷；來源、備援及最終授權仍獨立。Windows 啟動器測試以目錄身分核對 cwd。
+- 十八套件／2,200 案與固定差異安全審查完成；功能、UI、schema 2、四鍵與更新網址保持。本次未執行瀏覽器驗收，完整交付狀態見[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+
 ## v2.2.19
 
 - 移除未使用的私有狀態副本、傳輸觀察參數、頁面資料讀取方法與退役測速原因文案；起播期限、請求歸因與取消契約保持。
@@ -13,35 +20,35 @@
 - 舊三項 false 不再生效；schema 2／四鍵不變，載入不強制保存，下次正常保存淘汰退役欄位。提前重試、WebRTC、HTTPDNS 與其他偏好保持。
 - 恢復控制器以具名階段區分等待、準備與已提交重載，正確辨識時間零；播放器操作收斂私有狀態群，保留所有權重查、自然恢復、晚到結果及額度契約。
 - 建置來源雜湊納入 metadata.txt；封裝拒絕非空目錄且五項產物獨占建立；verify 失敗顯示精簡套件／階段／原因並保留非零退出碼。
-- 十八套件／2,432 案與安全差異審查完成；本輪不宣稱播放效益，原提前重試效用 FAIL 與實機限制保留。完整結果見[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論)。
+- 十八套件／2,432 案與安全差異審查完成；本輪不宣稱播放效益，原提前重試效用 FAIL 與實機限制保留。完整結果見[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2218-完整正文保存2026-11-12)。
 
 ## v2.2.17
 
 - 修正正常前進遇到略短採樣間隔時被判為停滯；穩定資格同時要求有效觀察次數與單調時間，重複、未知及長缺口不補造信用。
 - 分開實際恢復動作與停滯段額度保留；低緩衝下確認十次／十秒穩定後，可進入原有提前重試資格評估，原段期限、已用額度與獨立健康重開條件保持。
 - 總覽與詳細狀態區分恢復、等待穩定、穩定但保留額度及觀察不足；沒有新增設定、探測、計時器或持久資料。
-- 保留原 2,387 案，新增 29 案與九組固定輸入對照。正數 timeout 的提前重試排除及其他選路／授權政策保持；完整驗證與實機限制見[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論)。
+- 保留原 2,387 案，新增 29 案與九組固定輸入對照。正數 timeout 的提前重試排除及其他選路／授權政策保持；完整驗證與實機限制見[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2217-完整正文保存2026-11-11)。
 
 ## v2.2.16
 
 - 集中請求身分、表示選擇與兩筆成功確認進度，保留並行、回切、重設與舊結果的原有資格。
 - 將一次性重試許可整理為準備／物化狀態，選定主機、期限重驗及原生接受後的親和提交仍由 RouteCoordinator 管理。
 - 分開普通傳輸、重試證明與熔斷信用的靜態前提，縮窄健康保存與降級回傳型別；儲存格式、控制政策及使用者操作保持。
-- 原 2,292 案名稱、參數與順序保留，新增契約與固定基準軌跡對照；離線與安裝版結果分列於[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論)。
+- 原 2,292 案名稱、參數與順序保留，新增契約與固定基準軌跡對照；離線與安裝版結果分列於[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2216-完整正文保存2026-11-10)。
 
 ## v2.2.15
 
 - 控制器與窄契約依選路、量測、播放恢復及播放資料歸位；傳輸、播放器與播放資料適配器分組，移除跨功能共用 ports 與單消費者轉接檔。
 - 整合請求分類／URL 物化，抽出私有重試帳本及純畫面投影；集中量測決勝、還原驗證、可信輸入綁定及 XHR 準備／終止，唯一副作用所有者與重驗時機保持。
 - 測試按功能整理，保留十八套件與原 2,269 案名稱／參數／順序；新增 23 個邊界與助手／工具契約。歷史來源 URL 登記與追加日誌證明同步更新。
-- 使用者操作、設定、儲存、選路及熔斷政策保持。本版離線交付，完整結果見[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論)。
+- 使用者操作、設定、儲存、選路及熔斷政策保持。本版離線交付，完整結果見[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2215-完整正文保存2026-11-09)。
 
 ## v2.2.14
 
 - 建置使用唯一版本占位符，由 release.json 注入；缺少或重複宣告會拒絕建置，避免把模板舊數字誤認為產品版本。
 - 封存檢查支援追加日期私有清單；公開模式不讀私有內容，本機模式核對全部清單的路徑、原始位元組與忽略狀態。
 - 精簡 TODO 已結案長篇副本，保留固定全文、原始判定與停止決策；封存一次性工作並刪除有精確重建證明的快取。
-- 產品政策及原 2,261 案保持，新增八案工具契約；本版沒有新增瀏覽器驗收。完整結果見[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論)。
+- 產品政策及原 2,261 案保持，新增八案工具契約；本版沒有新增瀏覽器驗收。完整結果見[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2214-完整正文保存2026-11-09)。
 
 ## v2.2.13
 
@@ -71,13 +78,13 @@
 ## v2.2.9
 
 - 以 304c631 為基準，修正傳輸與探測單調計時、清理前凍結、有效 bytes 核對，以及實際倍率／快照年齡與播放事實失效；保留原選路與 Catalog-only 起播早放政策。
-- 完整離線、安全與交付範圍見[報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)，安裝版未驗證。
+- 完整離線、安全與交付範圍見[報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v229-完整正文保存2026-11-05)，安裝版未驗證。
 
 ## v2.2.8
 
 - 修復合格非同步媒體 XHR 因正數 timeout 而未啟動起播測速；沿用共用三秒窗口，保留網站最新 timeout，不設六秒門檻或自動延長。
 - 保護重新 open 時的網站 timeout 更新，補上同世代換片的 Catalog 等待者隔離；絕對截止後的探測結果不回填。
-- 原 1,931 案名稱與參數展開保留，新增 51 案；離線驗證、安全差異及後續安裝專項結果見[完整報告的驗收結論](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論)。測速等待另計，不能宣稱網站端到端期限保持不變。
+- 原 1,931 案名稱與參數展開保留，新增 51 案；離線驗證、安全差異及後續安裝專項結果見[完整報告的驗收結論](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)。測速等待另計，不能宣稱網站端到端期限保持不變。
 
 ## v2.2.7
 
@@ -85,7 +92,7 @@
 - 容量改用二／五筆快慢 EWMA，區分五分鐘近期充分、單筆試用、歷史及待再驗證；24 小時 TTL 與十二筆上限保持。
 - 起播三候選中保留探索名額；短驗證只證可達性，同速結果依候選序號。
 - 有精確請求大小及有效緩衝時使用本文速度／TTFB 完成期限，資料不足整組回退吞吐；不增加請求、探測或重載上限。
-- 原 1,856 案完整保留，新增 75 案；離線模型結果及安全差異見[完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。本版安裝驗收未執行。
+- 原 1,856 案完整保留，新增 75 案；離線模型結果及安全差異見[完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v227-完整正文保存2026-11-03)。本版安裝驗收未執行。
 
 ## v2.2.6
 
@@ -93,21 +100,21 @@
 - 整合需求計算、請求／路線／表示修訂與 API 接納順序；舊完成可保存合法健康證據，但不能奪回新親和或表示。
 - 停滯與恢復使用同段額度、固定期限及明確還原階段；SDK 不可用不扣派送額度，補正核對原生位置／倍率。
 - Native 開啟時合格 Catalog 請求可提前重試；保留實際傳輸成功門檻、探測／重載上限與三頁控制中心。
-- 原 1,675 案完整保留，新增 181 案；35 項規則與安全修正見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。本版離線交付，未執行安裝版驗收。
+- 原 1,675 案完整保留，新增 181 案；35 項規則與安全修正見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v226-完整正文保存2026-11-03)。本版離線交付，未執行安裝版驗收。
 
 ## v2.2.5
 
 - 安全吞吐改讀目前有效計畫主機的影片證據，修正冷啟動後沿用缺值排名、播放器備援空排名及排名裁切造成的缺值；讀取不改選路或親和。
 - 需求餘裕使用已確認碼率與實際倍率，下一次既有刷新即更新；缺碼率或倍率時保留有效速度，需求不套預設值。
 - 每次快照依原 24 小時 TTL 排除過期樣本，區分全部過期與尚無有效樣本；速度提示標明主機，共用冷卻不再推定來自其他分頁。
-- 保留原 1,634 案，新增 41 案；Native、schema 2、四鍵、採樣算法、探測／恢復額度不變。本版離線交付，不恢復已結束瀏覽器窗口；完整證據見 [TEST_REPORT](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 保留原 1,634 案，新增 41 案；Native、schema 2、四鍵、採樣算法、探測／恢復額度不變。本版離線交付，不恢復已結束瀏覽器窗口；完整證據見 [TEST_REPORT](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v225-完整正文保存2026-11-02)。
 
 ## v2.2.4
 
 - 修正同片追蹤參數、等價分 P 與末尾斜線誤觸生命週期重設，保留當前選路及影音摘要；完整比較長網址，真正內容變更仍撤銷舊資料與授權。
 - 總覽與詳細狀態共用純衍生顯示：播放器尺寸可先顯示，安全吞吐獨立於需求，缺值說明依實際狀態區分；待回應目標及舊世代資料不當成目前回應主機。
 - 原 1,599 案名稱及參數展開保留，新增 35 案回歸。Native 設定、schema 2、四個儲存鍵與量測／恢復額度保持，無遷移；未增加探測或恢復已撤除功能。
-- 本次採離線交付；使用者截圖的實際觸發尚未完整重現。完整檢查、安全與安裝狀態見 [TEST_REPORT](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 本次採離線交付；使用者截圖的實際觸發尚未完整重現。完整檢查、安全與安裝狀態見 [TEST_REPORT](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v224-完整正文保存2026-11-01)。
 
 各節只描述標示版本的變更；舊版診斷、分頁原線對照及掉幀用途不構成現行功能或規則。現行契約與撤除說明見 [產品與架構指南](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/ARCHITECTURE.md)。
 
@@ -116,7 +123,7 @@
 - 重整十三個現役套件，移除繼承式情境支援、跨情境前置重播與無作用敘述；原 1,598 案名稱及參數展開完整保留，新增三頁初始化契約。
 - 移除未用的模型版本／階段／時鐘依賴、重試抑制介面及 recentPlans／lastSuccess 快照投影；保留私有選路計畫、成功資料與實際抑制方法。
 - 由控制中心統一首次完整刷新，總覽與 CDN 不再各自重做同一遍；每次建構／刷新仍共用單份快照，詳細狀態按需建立。
-- 使用者功能、Native 預設及保存值、schema 2 與四鍵保持；通知合併、latestVideoHost 退役與重試抑制重封裝延後。離線驗證及安裝限制見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 使用者功能、Native 預設及保存值、schema 2 與四鍵保持；通知合併、latestVideoHost 退役與重試抑制重封裝延後。離線驗證及安裝限制見 [完整報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v223-完整正文保存2026-11-01)。
 
 ## v2.2.2
 

@@ -10,9 +10,11 @@
 
 ## 版本
 
-- [v2.2.19 R1 安裝身分與變更接線（2026-11-12）](TEST_REPORT.md#v2219-r1-安裝身分與變更接線2026-11-12)。
+- [v2.2.20 程式清理與結構收斂（2026-11-12–13）](TEST_REPORT.md#驗收結論)。
 
-- [v2.2.19 正式來源三批精簡（2026-11-12）](TEST_REPORT.md#驗收結論)。
+- [v2.2.19 R1 安裝身分與變更接線（2026-11-12）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2219-r1-安裝身分與變更接線2026-11-12)。
+
+- [v2.2.19 正式來源三批精簡（2026-11-12）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2219-完整正文保存2026-11-12)。
 
 - [v2.2.18 R1 安裝身分與設定內容（2026-11-12）](TEST_REPORT.md#v2218-r1-安裝身分與設定頁2026-11-12)。
 
@@ -407,9 +409,11 @@
 
 ## 日期
 
+- 2026-11-13：[v2.2.20 程式清理交付](TEST_REPORT.md#驗收結論)。
+
 - 2026-11-12：[v2.2.18 發布後測試精簡](TEST_REPORT.md#斷言審核與精簡2026-11-12)。
 
-- 2026-11-12：[v2.2.19 來源精簡與交付](TEST_REPORT.md#驗收結論)、[R1 安裝身分與接線](TEST_REPORT.md#v2219-r1-安裝身分與變更接線2026-11-12)、[過時文件整理](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-12過時文件與版本導覽清理)。
+- 2026-11-12：[v2.2.19 來源精簡與交付](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2219-完整正文保存2026-11-12)、[R1 安裝身分與接線](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2219-r1-安裝身分與變更接線2026-11-12)、[過時文件整理](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-12過時文件與版本導覽清理)。
 
 - 2026-11-11：[v2.2.17 R1 專項與證據限制](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2217-r1-採樣與抑制專項2026-11-11)。
 

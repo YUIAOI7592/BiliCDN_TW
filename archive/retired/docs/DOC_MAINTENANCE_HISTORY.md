@@ -1601,3 +1601,8 @@ TODO 移除已結案兩輪驗收方案與結案表的重複正文，保留停止
 歷史 FAIL／INVALID、發行原件、既有日誌正文、產品與測試保持；本輪不重跑瀏覽器、安全掃描或完整執行期測試，不升版、封裝或發布 Release。
 
 文件、公開封存與差異檢查通過，工具及保護範圍見[本輪工具紀錄](../../../docs/TEST_TOOLING_REPORT.md#過時文件整理檢查2026-11-12)。結構與連結檢查不能代替語意核對，也不能證明外部網址或私有證據本輪已驗證。
+
+
+## 2026-11-13 v2.2.20 程式清理文件同步
+
+同步 ARCHITECTURE 內部契約、DEVELOPMENT 啟動器核對、CHANGELOG、TODO、HISTORY 及最新版 TEST_REPORT。v2.2.19 完整正文以原位元組追加保存，原 R1／FAIL／INVALID 與相容錨點保持。上一版五份發行原件完成 Git／校驗清單／ArchiveStorage／獨立 tar 還原比對後封存；不回寫舊 Release。檢查結果由現行 TEST_REPORT 維護；INDEX 繼續只導覽既有權威文件。

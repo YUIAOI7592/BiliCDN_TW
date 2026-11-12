@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili CDN 台灣優化
 // @namespace    BiliCDN_TW
-// @version      2.2.19
+// @version      2.2.20
 // @description  台灣 CDN 與播放整合：自動選路、香港節點、起播與健康量測、慢請求重試及三頁控制中心
 // @author       jiyunshi <chocosensei214@gmail.com>
 // @license      MIT
@@ -547,10 +547,6 @@
     "upos-hz-mirroraliov.bilivideo.com"
   ]);
   var isCatalogHost = /* @__PURE__ */ __name((host) => TRUSTED_CATALOG_SET.has(host.toLowerCase()), "isCatalogHost");
-  var catalogIndex = /* @__PURE__ */ __name((host) => {
-    const index = TRUSTED_CATALOG.indexOf(host.toLowerCase());
-    return index < 0 ? Number.MAX_SAFE_INTEGER : index;
-  }, "catalogIndex");
   var PLAYURL_PATH = /\/player\/.*playurl/i;
   var classifyPlayurlApi = /* @__PURE__ */ __name((value, baseUrl2) => {
     try {
@@ -1915,6 +1911,12 @@
     }
   };
 
+  // src-v2/state/stored-host.ts
+  var storedHost = /* @__PURE__ */ __name((value) => {
+    const host = String(value ?? "").trim().toLowerCase();
+    return /^[a-z0-9.-]{1,253}$/.test(host) && host.includes(".") ? host : null;
+  }, "storedHost");
+
   // src-v2/state/restriction-store.ts
   var RESTRICTIONS_KEY = "bilicdn.v2.restrictions";
   var savedPayloadMatches = /* @__PURE__ */ __name((raw, expected) => {
@@ -1928,10 +1930,6 @@
       return actual.host === row.host && actual.type === row.type && actual.kind === row.kind && actual.reason === row.reason && actual.createdAt === row.createdAt && actual.expireAt === row.expireAt && actual.updatedAt === row.updatedAt;
     });
   }, "savedPayloadMatches");
-  var safeHost = /* @__PURE__ */ __name((value) => {
-    const host = String(value ?? "").trim().toLowerCase();
-    return /^[a-z0-9.-]{1,253}$/.test(host) && host.includes(".") ? host : null;
-  }, "safeHost");
   var parsePayload = /* @__PURE__ */ __name((value, now) => {
     const raw = value && typeof value === "object" ? value : {};
     const rows = Array.isArray(raw.records) ? raw.records : [];
@@ -1939,7 +1937,7 @@
     for (const item of rows.slice(0, 128)) {
       if (!item || typeof item !== "object") continue;
       const row = item;
-      const host = safeHost(row.host);
+      const host = storedHost(row.host);
       const type = row.type === "black" || row.type === "dead" ? row.type : null;
       const storedKind = row.kind === "video" || row.kind === "audio" || row.kind === "all" ? row.kind : "all";
       const reason = String(row.reason ?? "").slice(0, 64);
@@ -2189,17 +2187,13 @@
       lastCommitId: row.lastCommitId
     });
   }, "parseControl");
-  var safeHost2 = /* @__PURE__ */ __name((value) => {
-    const host = String(value ?? "").trim().toLowerCase();
-    return /^[a-z0-9.-]{1,253}$/.test(host) && host.includes(".") ? host : null;
-  }, "safeHost");
   var parsePayload2 = /* @__PURE__ */ __name((value, now) => {
     const raw = value && typeof value === "object" ? value : {};
     const source = raw.records && typeof raw.records === "object" ? raw.records : {};
     const records = {};
     for (const item of Object.values(source).slice(0, MAX_VIDEO_HOSTS + MAX_AUDIO_HOSTS)) {
       if (!item || typeof item !== "object") continue;
-      const row = item, host = safeHost2(row.host), kind = row.kind;
+      const row = item, host = storedHost(row.host), kind = row.kind;
       if (!host || kind !== "video" && kind !== "audio") continue;
       const samples = [];
       for (const rawSample of (Array.isArray(row.samples) ? row.samples : []).slice(
@@ -2469,7 +2463,6 @@
       representation: null,
       affinity: null,
       disabled: false,
-      recovering: false,
       lastDecisionId: null
     });
     get() {
@@ -2485,7 +2478,6 @@
         representation: null,
         affinity: null,
         disabled,
-        recovering: false,
         lastDecisionId: null
       });
       return this.#state;
@@ -2496,7 +2488,6 @@
         epoch: epochId(Number(this.#state.epoch) + 1),
         representation: null,
         affinity: null,
-        recovering: false,
         lastDecisionId: null
       });
       return this.#state;
@@ -2506,9 +2497,6 @@
     }
     setAffinity(affinity) {
       this.#state = Object.freeze({ ...this.#state, affinity });
-    }
-    setRecovering(recovering) {
-      this.#state = Object.freeze({ ...this.#state, recovering });
     }
     noteDecision(id2) {
       this.#state = Object.freeze({ ...this.#state, lastDecisionId: id2 });
@@ -2804,7 +2792,6 @@
           type: "native-signed",
           host: route.host,
           kind: group.identity.kind,
-          catalogIndex: catalogIndex(route.host),
           route: group.identity,
           handle: route.handle,
           activelyExplorable: route.activelyExplorable
@@ -2815,7 +2802,6 @@
         type: "root-original",
         host: first.host,
         kind: group.identity.kind,
-        catalogIndex: Number.MAX_SAFE_INTEGER,
         route: group.identity,
         handle: first.handle
       }) : null;
@@ -3329,11 +3315,10 @@
       )
     )
   }), "catalogRestrictions");
-  var catalogCandidates = /* @__PURE__ */ __name((kind, excluded = /* @__PURE__ */ new Set()) => TRUSTED_CATALOG.map((host, catalogIndex2) => ({
+  var catalogCandidates = /* @__PURE__ */ __name((kind, excluded = /* @__PURE__ */ new Set()) => TRUSTED_CATALOG.map((host) => ({
     type: "catalog-generated",
     host,
-    kind,
-    catalogIndex: catalogIndex2
+    kind
   })).filter((candidate) => !excluded.has(candidate.host)), "catalogCandidates");
   function hardRestriction(host, input, now) {
     return orderedRestrictions({
@@ -3902,7 +3887,7 @@
     #measurementIds = /* @__PURE__ */ new WeakMap();
     #serial = 0;
     #recoverySerial = 0;
-    #decisions = /* @__PURE__ */ new Map();
+    #decisionPolicies = /* @__PURE__ */ new Map();
     #plans = /* @__PURE__ */ new Map();
     #planIdentities = /* @__PURE__ */ new Map();
     #requestedRepresentations = /* @__PURE__ */ new Set();
@@ -3921,7 +3906,6 @@
     #firstVideoAt = 0;
     #lastVideoEvidence = null;
     #startupExhausted = /* @__PURE__ */ new Set();
-    #pendingMedia = /* @__PURE__ */ new Set();
     #fallbacks = /* @__PURE__ */ new Map();
     #retryEvidence = new RetryEvidence();
     #retryPermits = new RetryPermitState();
@@ -3939,7 +3923,7 @@
       this.#ownership.reset("content");
       this.#planIdentities.clear();
       this.#unlockedNative.clear();
-      this.#decisions.clear();
+      this.#decisionPolicies.clear();
       this.#hostLockedStreams.clear();
       this.#startupIncompatible.clear();
       this.#requestedRepresentations.clear();
@@ -3953,7 +3937,6 @@
       this.#firstVideoAt = 0;
       this.#lastVideoEvidence = null;
       this.#startupExhausted.clear();
-      this.#pendingMedia.clear();
       this.#fallbacks.clear();
     }
     invalidateForUserSetting() {
@@ -4013,7 +3996,6 @@
       this.#ownership.started(stamped);
       if (request.kind && !this.#firstMediaAt) this.#firstMediaAt = request.startedAt;
       if (request.kind === "video" && !this.#firstVideoAt) this.#firstVideoAt = request.startedAt;
-      if (request.kind) this.#pendingMedia.add(request.requestId);
       const key = request.kind ?? "unknown";
       this.#requested.set(key, stamped);
       this.#stepCircuits();
@@ -4120,8 +4102,7 @@
       const candidate = {
         type: "catalog-generated",
         host: pending.host,
-        kind: "video",
-        catalogIndex: TRUSTED_CATALOG.indexOf(pending.host)
+        kind: "video"
       };
       const decision = this.#retryPermits.applied(pending)?.decision ?? {
         action: "rewrite",
@@ -4134,7 +4115,7 @@
       };
       const output = this.#materialize(url, decision, matched.context);
       if (!output) return null;
-      this.#remember(decision, matched.context, "video");
+      this.#remember(decision.id);
       return this.#retryPermits.materialize(pending, {
         decision,
         url: output,
@@ -4186,9 +4167,6 @@
     }
     firstMediaAt(kind) {
       return kind === "video" ? this.#firstVideoAt : this.#firstMediaAt;
-    }
-    pendingMediaCount() {
-      return this.#pendingMedia.size;
     }
     latestRequested(kind) {
       return this.#requested.get(kind) ?? null;
@@ -4445,16 +4423,15 @@
           ranking: []
         };
       } else if (selected.type === "catalog-generated") {
-        const catalogIndex2 = TRUSTED_CATALOG.indexOf(
+        const catalogIndex = TRUSTED_CATALOG.indexOf(
           selected.host
         );
-        if (catalogIndex2 < 0 || replaceUrlHost(source, selected.host) !== selected.url || parseMediaUrl(selected.url)?.kind !== "normal")
+        if (catalogIndex < 0 || replaceUrlHost(source, selected.host) !== selected.url || parseMediaUrl(selected.url)?.kind !== "normal")
           return null;
         const candidate = {
           type: "catalog-generated",
           host: selected.host,
-          kind: context.kind,
-          catalogIndex: catalogIndex2
+          kind: context.kind
         };
         decision = {
           action: "rewrite",
@@ -4485,7 +4462,7 @@
       }
       this.#savePlan(context.representation, decision);
       this.session.noteDecision(decision.id);
-      this.#remember(decision, context, context.kind);
+      this.#remember(decision.id);
       this.#emit({ type: "route-planned", at: this.clock.now(), decision });
       return decision;
     }
@@ -4666,6 +4643,9 @@
         sourceHost: parsed.host
       };
     }
+    #reuseObservedAffinity(context, outputRole) {
+      return context?.kind === "video" && !this.#requestedRepresentations.has(context.representation) && !!this.session.get().affinity && outputRole?.role !== "backup" && !this.settings.get().fixedHost;
+    }
     #applyNormal(url, parsed, kindHint, streamKey, demand, requestBytes = null, timingBasis2) {
       const match = this.vault.match(url);
       const context = match.status === "matched" ? match.context : null;
@@ -4675,22 +4655,21 @@
       const playbackDemand = demand ?? this.#demandFor(context?.representation ?? null, kind ?? "video");
       let decision = context ? this.#currentPlan(context.representation) : streamKey ? this.#streamPlans.get(streamKey) : null;
       const outputRole = context ? this.vault.outputRole(context.representation, url) : null;
-      if (context?.kind === "video" && !this.#requestedRepresentations.has(context.representation) && this.session.get().affinity && outputRole?.role !== "backup" && !this.settings.get().fixedHost) {
+      if (this.#reuseObservedAffinity(context, outputRole)) {
         decision = this.#choose(context, playbackDemand, "representation", null);
       }
       if (context && outputRole?.role === "backup" && (!decision || outputRole.decisionId === decision.id) && decision?.host !== parsed.host && !this.settings.get().fixedHost && !this.#hardRestriction(parsed.host, kind)) {
-        const catalogIndex2 = TRUSTED_CATALOG.indexOf(parsed.host);
+        const catalogIndex = TRUSTED_CATALOG.indexOf(parsed.host);
         const native = this.vault.candidates(
           context.representation,
           this.#unlockedNative.get(context.representation) ?? /* @__PURE__ */ new Set()
         ).native.find(
           (candidate2) => candidate2.host === parsed.host && this.vault.resolve(candidate2.handle, context) === parsed.url.href
         );
-        const candidate = catalogIndex2 >= 0 ? {
+        const candidate = catalogIndex >= 0 ? {
           type: "catalog-generated",
           host: parsed.host,
-          kind: context.kind,
-          catalogIndex: catalogIndex2
+          kind: context.kind
         } : native;
         if (candidate) {
           decision = this.#planPlayerFallback(candidate);
@@ -4736,7 +4715,7 @@
         decision = this.#block(finalRestriction, finalHost);
         applied = null;
       }
-      this.#saveAppliedPlan(decision, context, streamKey, kind ?? "video");
+      this.#saveAppliedPlan(decision, context, streamKey);
       const sourceHost = context ? parseMediaUrl(this.vault.rootUrl(context.representation) ?? url)?.host ?? parsed.host : parsed.host;
       if (applied && context) this.vault.registerAlias(context.representation, applied);
       return appliedRoute(decision, applied, context, streamKey, sourceHost, match, outputRole);
@@ -4760,7 +4739,7 @@
         }
       }
       const decision = hard ? this.#block(hard, originalHost) : this.#pass("host-locked", originalHost, kind ?? "video");
-      this.#remember(decision, context, kind ?? "video");
+      this.#remember(decision.id);
       return { decision, url: hard ? null : original, context, streamKey, sourceHost: originalHost };
     }
     #applyCatalogOnly(url, parsed, kindHint, demand, requestBytes = null, timingBasis2) {
@@ -4791,15 +4770,14 @@
       const kind = context?.kind ?? kindHint;
       const playbackDemand = demand ?? this.#demandFor(context?.representation ?? null, kind ?? "video");
       let decision = context ? this.#currentPlan(context.representation) : streamKey ? this.#streamPlans.get(streamKey) : null;
-      if (context?.kind === "video" && !this.#requestedRepresentations.has(context.representation) && this.session.get().affinity && outputRole?.role !== "backup" && !this.settings.get().fixedHost) {
+      if (this.#reuseObservedAffinity(context, outputRole)) {
         decision = this.#choose(context, playbackDemand, "representation", null, url);
       }
       if (context && outputRole?.role === "backup" && (!decision || outputRole.decisionId === decision.id) && outputRole.catalogGenerated && isCatalogHost(parsed.host) && !this.settings.get().fixedHost && !this.#hardRestriction(parsed.host, kind) && !this.#incompatible(url, parsed.host)) {
         const candidate = {
           type: "catalog-generated",
           host: parsed.host,
-          kind: context.kind,
-          catalogIndex: TRUSTED_CATALOG.indexOf(parsed.host)
+          kind: context.kind
         };
         decision = this.#planPlayerFallback(candidate);
       }
@@ -4834,12 +4812,9 @@
       const parsedTarget = target ? parseMediaUrl(target) : null;
       if (!target || parsedTarget?.kind !== "normal" || parsedTarget?.host !== decision.host || this.#hardRestriction(decision.host, kind) || this.#incompatible(url, decision.host))
         return blocked("catalog-unavailable");
-      this.#saveAppliedPlan(decision, context, streamKey, kind ?? "video");
+      this.#saveAppliedPlan(decision, context, streamKey);
       if (context) this.vault.registerAlias(context.representation, target);
       return appliedRoute(decision, target, context, streamKey, sourceHost, match, outputRole);
-    }
-    decisionRecord(id2) {
-      return id2 ? this.#decisions.get(id2) ?? null : null;
     }
     opaqueOutput(representation, original, originals, source) {
       const context = this.vault.identity(representation);
@@ -4858,7 +4833,7 @@
           host,
           context.kind
         );
-        this.#remember(decision, context, context.kind);
+        this.#remember(decision.id);
         this.#emit({ type: "route-planned", at: this.clock.now(), decision });
         this.vault.registerOutput(representation, original, primary, backups, decision.id, source);
       }
@@ -4912,17 +4887,7 @@
       this.vault.registerOutput(representation, original, primary, backups, decision.id, source);
       return this.isBilibiliMedia(primary) ? { primary, backups: backups.filter((url) => this.isBilibiliMedia(url)) } : { primary: "", backups: [] };
     }
-    challenge(representation, demand, preferNative, excludedHosts = /* @__PURE__ */ new Set(), catalogCursor = 0) {
-      const proposal = this.proposeChallenge(
-        representation,
-        demand,
-        preferNative,
-        excludedHosts,
-        catalogCursor
-      );
-      return proposal ? this.commitChallenge(proposal) : null;
-    }
-    proposeChallenge(representation, _demand, preferNative, excludedHosts = /* @__PURE__ */ new Set(), catalogCursor = 0, priority) {
+    proposeChallenge(representation, preferNative, excludedHosts = /* @__PURE__ */ new Set(), catalogCursor = 0, priority) {
       const revision2 = this.#policyRevision;
       const context = this.vault.identity(representation);
       const root = context && this.isCatalogOnly() ? this.#catalogSource(context) : this.vault.rootUrl(representation);
@@ -5011,7 +4976,7 @@
         ranking: Object.freeze([])
       };
       this.#challengeAttempts.set(`${context.representation}:${candidate.host}`, now);
-      this.#remember(decision, context, context.kind);
+      this.#remember(decision.id);
       this.#emit({ type: "route-planned", at: now, decision });
       const applied = {
         decision,
@@ -5067,10 +5032,9 @@
       let releaseFailure = null;
       let confirmed = true;
       try {
-        if (observation.request) this.#pendingMedia.delete(observation.request.requestId);
         const valid = /* @__PURE__ */ __name(() => observation.generation === this.session.get().generation && observation.epoch === this.session.get().epoch && !this.session.get().disabled && (observation.request?.authorityRevision == null || !observation.representation || this.vault.identity(observation.representation)?.authorityRevision === observation.request.authorityRevision), "valid");
         const catalogObserved = /* @__PURE__ */ __name(() => catalogObservationAllowed(this.isCatalogOnly(), observation), "catalogObserved");
-        const controlsCurrent = /* @__PURE__ */ __name(() => valid() && this.#controlCurrent(observation) && (observation.request ? observation.request.routePolicyRevision === this.#policyRevision : !!observation.decisionId && this.#decisions.get(observation.decisionId)?.policyRevision === this.#policyRevision), "controlsCurrent");
+        const controlsCurrent = /* @__PURE__ */ __name(() => valid() && this.#controlCurrent(observation) && (observation.request ? observation.request.routePolicyRevision === this.#policyRevision : !!observation.decisionId && this.#decisionPolicies.get(observation.decisionId) === this.#policyRevision), "controlsCurrent");
         if (controlsCurrent() && this.isCatalogOnly() && observation.routeType === "catalog-generated" && isCatalogHost(observation.targetHost) && observation.finalHost && observation.finalHost !== observation.targetHost && observation.streamKey)
           this.#markIncompatibleKey(observation.streamKey, observation.targetHost);
         if (!valid() || !catalogObserved()) return;
@@ -5420,7 +5384,7 @@
       const id2 = this.#nextId();
       const decision = chooseRoute(input, this.clock, id2, ranking);
       this.session.noteDecision(id2);
-      this.#remember(decision, context, context.kind);
+      this.#remember(decision.id);
       this.#emit({ type: "route-planned", at: this.clock.now(), decision });
       return decision;
     }
@@ -5549,8 +5513,8 @@
       this.#emit({ type: "route-planned", at: this.clock.now(), decision });
       return decision;
     }
-    #saveAppliedPlan(decision, context, streamKey, kind) {
-      this.#remember(decision, context, kind);
+    #saveAppliedPlan(decision, context, streamKey) {
+      this.#remember(decision.id);
       if (context) {
         this.#savePlan(context.representation, decision);
         this.#requestedRepresentations.add(context.representation);
@@ -5588,16 +5552,10 @@
       while (this.#startupIncompatible.size > 256)
         this.#startupIncompatible.delete(this.#startupIncompatible.keys().next().value);
     }
-    #remember(decision, context, kind) {
-      this.#decisions.set(decision.id, {
-        decision,
-        context,
-        kind,
-        representation: context?.representation ?? null,
-        policyRevision: this.#policyRevision
-      });
-      while (this.#decisions.size > 256)
-        this.#decisions.delete(this.#decisions.keys().next().value);
+    #remember(id2) {
+      this.#decisionPolicies.set(id2, this.#policyRevision);
+      while (this.#decisionPolicies.size > 256)
+        this.#decisionPolicies.delete(this.#decisionPolicies.keys().next().value);
     }
     #emit(event) {
       for (const listener of this.#listeners) listener(event);
@@ -5700,13 +5658,11 @@
       state: "idle",
       reason: "not-requested",
       candidates: 0,
-      selectedHost: null,
-      delayed: false
+      selectedHost: null
     });
     #snapshot = Object.freeze({
       state: "idle",
       reason: "startup",
-      lastAttemptAt: 0,
       host: null
     });
     snapshot() {
@@ -5724,7 +5680,6 @@
       this.#snapshot = Object.freeze({
         state: "idle",
         reason: "generation",
-        lastAttemptAt: 0,
         host: null
       });
     }
@@ -5743,8 +5698,7 @@
         result: "none",
         reason: lease.phase === "reserved" || lease.phase === "probing" ? reason : "budget-consumed",
         candidates: 0,
-        selectedHost: null,
-        delayed: false
+        selectedHost: null
       });
       if (lease.phase === "reserved" || lease.phase === "probing") lease.controller.abort(reason);
     }
@@ -5783,10 +5737,8 @@
           state: "running",
           reason: "player-media-request",
           deadlineAt,
-          remainingProbes: options.candidates.length,
           candidates: options.candidates.length,
-          selectedHost: null,
-          delayed: true
+          selectedHost: null
         });
         let release;
         const pending2 = new Promise((resolve) => {
@@ -5807,8 +5759,7 @@
               state: "skipped",
               reason: "preflight-error",
               candidates: options.candidates.length,
-              selectedHost: null,
-              delayed: true
+              selectedHost: null
             });
         }).finally(() => {
           if (this.#startupLease === lease) this.#startupLease = { phase: "closed" };
@@ -5847,8 +5798,7 @@
         state: "skipped",
         reason: reason.slice(0, 48),
         candidates: 0,
-        selectedHost: null,
-        delayed: false
+        selectedHost: null
       });
     }
     async #runStartup(url, options, controller, marker) {
@@ -5903,8 +5853,7 @@
             if (!accepting()) return;
             results.push(result2);
             this.#startupState = Object.freeze({
-              ...this.#startupState,
-              remainingProbes: options.candidates.length - results.length
+              ...this.#startupState
             });
             if (result2.valid && (result2.safeMbps ?? 0) / (this.routes.startupDemand(candidate)?.requiredMbps ?? Infinity) >= ROUTE_HEADROOM && accepting())
               finish("qualified-early");
@@ -5983,7 +5932,6 @@
         reason: releaseReason === "qualified-early" ? releaseReason : valid.length ? "measured" : "inconclusive",
         candidates: options.candidates.length,
         selectedHost: decision?.host ?? null,
-        delayed: true,
         elapsedMs: Math.max(0, (readMonotonic(this.monotonicNow) ?? startedTick) - startedTick),
         results: Object.freeze(
           results.slice(0, 3).map(
@@ -6123,8 +6071,7 @@
           this.#snapshot = Object.freeze({
             ...this.#snapshot,
             state: "failed",
-            reason: "measurement-error",
-            lastAttemptAt: this.#failedAt
+            reason: "measurement-error"
           });
         }
       } finally {
@@ -6140,24 +6087,9 @@
         return null;
       if (coordination) round.generation ??= coordination.generation;
       else round.priorityUnavailable = true;
-      if (!this.routes.proposeChallenge || !this.routes.commitChallenge)
-        return this.routes.challenge(
-          status.representation,
-          status.demand,
-          preferNative,
-          excluded,
-          cursor
-        );
-      const ordinary = /* @__PURE__ */ __name(() => valid() ? this.routes.proposeChallenge(
-        status.representation,
-        status.demand,
-        preferNative,
-        excluded,
-        cursor
-      ) : null, "ordinary");
+      const ordinary = /* @__PURE__ */ __name(() => valid() ? this.routes.proposeChallenge(status.representation, preferNative, excluded, cursor) : null, "ordinary");
       let proposal = this.routes.proposeChallenge(
         status.representation,
-        status.demand,
         preferNative,
         excluded,
         cursor,
@@ -6223,8 +6155,8 @@
         this.#snapshot = Object.freeze({
           state: "running",
           reason: "candidate-" + (index + 1),
-          lastAttemptAt: this.now(),
-          host: applied.decision.host,
+          // Preserve the injected clock read before publishing the running snapshot.
+          host: (this.now(), applied.decision.host),
           range: {
             mode: range?.startByte ? "middle" : "head",
             sizeKnown: range?.sizeKnown ?? false
@@ -6257,7 +6189,8 @@
         });
     }
     async #runCandidate(applied, demand, round, marker, range) {
-      const startedAt = this.now(), limit = demand.highDemand ? 768 * 1024 : 384 * 1024;
+      this.now();
+      const limit = demand.highDemand ? 768 * 1024 : 384 * 1024;
       const controller = new AbortController();
       const cancel = /* @__PURE__ */ __name(() => controller.abort(round.signal.reason), "cancel");
       round.signal.addEventListener("abort", cancel, { once: true });
@@ -6303,7 +6236,6 @@
       this.#snapshot = Object.freeze({
         state: ok ? "complete" : "failed",
         reason: ok ? "sample-recorded" : result.directRange ? "short-response" : result.reason,
-        lastAttemptAt: startedAt,
         host: applied.decision.host,
         range: {
           mode: startByte > 0 ? "middle" : "head",
@@ -6414,9 +6346,7 @@
     #state = Object.freeze({
       state: "healthy",
       source: null,
-      pauseSec: 0,
-      reloadCount: 0,
-      breakerSec: 0
+      reloadCount: 0
     });
     snapshot() {
       const restoration = this.#restoration();
@@ -6464,9 +6394,7 @@
       this.#state = Object.freeze({
         state: "healthy",
         source: null,
-        pauseSec: 0,
-        reloadCount: 0,
-        breakerSec: 0
+        reloadCount: 0
       });
     }
     armRouteFailure(source, snapshot, valid = () => true) {
@@ -6594,14 +6522,11 @@
           this.#state = Object.freeze({
             state: "pause-armed",
             source: null,
-            pauseSec: Math.floor((now - this.#pauseAt) / 1e3),
-            reloadCount: this.#reloadCount,
-            breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - now) / 1e3))
+            reloadCount: this.#reloadCount
           });
         else
           this.#state = Object.freeze({
-            ...this.#state,
-            breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - now) / 1e3))
+            ...this.#state
           });
       } else if (!snapshot.paused && this.#pauseAt && !this.#token) {
         const wasLong = now - this.#pauseAt >= 3e4;
@@ -6612,9 +6537,7 @@
           this.#state = Object.freeze({
             state: "healthy",
             source: null,
-            pauseSec: 0,
-            reloadCount: this.#reloadCount,
-            breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - now) / 1e3))
+            reloadCount: this.#reloadCount
           });
       }
     }
@@ -6700,9 +6623,7 @@
       this.#state = Object.freeze({
         state: "play-intent",
         source,
-        pauseSec: this.#pauseAt ? Math.floor((now - this.#pauseAt) / 1e3) : 0,
-        reloadCount: this.#reloadCount,
-        breakerSec: 0
+        reloadCount: this.#reloadCount
       });
     }
     #reload(token) {
@@ -6778,9 +6699,7 @@
           savedPositionSec: token.savedPositionSec,
           savedRate: token.savedRate,
           source: token.source,
-          pauseSec: 0,
-          reloadCount: this.#reloadCount,
-          breakerSec: 0
+          reloadCount: this.#reloadCount
         });
     }
     #restoreReady(token) {
@@ -6964,9 +6883,7 @@
         this.#state = Object.freeze({
           state: "waiting",
           source: token.source,
-          pauseSec: 0,
           reloadCount: this.#reloadCount,
-          breakerSec: 0,
           savedPositionSec: token.savedPositionSec,
           savedRate: token.savedRate
         });
@@ -7048,16 +6965,16 @@
       this.#token = null;
       this.#pauseAt = 0;
       this.#unhook();
-      this.#state = Object.freeze({
+      const snapshot = {
         state,
         reason,
         ...token ? { savedPositionSec: token.savedPositionSec, savedRate: token.savedRate } : {},
         ...restoration ? { restoration } : {},
         source: token?.source ?? null,
-        pauseSec: 0,
-        reloadCount: this.#reloadCount,
-        breakerSec: Math.max(0, Math.ceil((this.#breakerUntil - this.now()) / 1e3))
-      });
+        reloadCount: this.#reloadCount
+      };
+      this.now();
+      this.#state = Object.freeze(snapshot);
     }
   };
 
@@ -9289,14 +9206,12 @@
           kind: applied.context?.kind ?? null,
           attributionStatus: matched,
           attributionSource: applied.attributionSource ?? (applied.context ? "exact" : "none"),
-          decisionStage: "request",
           routeType: applied.decision.routeType,
           originalHost: hostOf(originalUrl),
           targetHost: hostOf(targetUrl),
           sourceHost: applied.sourceHost,
           playurlHostChanged: applied.playurlHostChanged ?? false,
           playurlOutput: applied.playurlOutput ?? null,
-          urlChanged: originalUrl !== targetUrl,
           hostChanged: hostOf(originalUrl) !== hostOf(targetUrl),
           startedAt,
           expectedBytes: Number.isSafeInteger(expectedBytes) && (expectedBytes ?? 0) > 0 ? expectedBytes : null,
@@ -9855,7 +9770,6 @@
           sameUrl(finalUrl, meta.targetUrl),
           meta.measurement
         ),
-        ...controlledTimeout ? { terminationReason: "early-retry-timeout" } : {},
         ...verifiedBytes !== null ? { retryVerifiedBytes: verifiedBytes } : {}
       });
     }, "settle");
