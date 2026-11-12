@@ -297,7 +297,6 @@ export class TransportContext {
   async observeFetch(
     request: RequestContext,
     applied: AppliedRouteDecision,
-    originalUrl: string,
     targetUrl: string,
     response: Response | null,
     startedAt: number,
@@ -325,8 +324,6 @@ export class TransportContext {
       this.observation(
         request,
         applied,
-        originalUrl,
-        targetUrl,
         finalUrl,
         response?.status ?? 0,
         bytes,
@@ -343,8 +340,6 @@ export class TransportContext {
   observation(
     request: RequestContext,
     applied: AppliedRouteDecision,
-    _originalUrl: string,
-    _targetUrl: string,
     finalUrl: string,
     status: number,
     bytes: number,

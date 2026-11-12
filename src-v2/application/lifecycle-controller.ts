@@ -8,7 +8,6 @@ import { type SessionPort } from '../state/session-contracts.ts'
 import { type SignedRouteVaultPort } from '../state/vault-contracts.ts'
 interface PendingAssignment {
   readonly payload: unknown
-  readonly serial: number
   readonly assignedAt: number
   readonly pageKey: string
   appliedGeneration: number
@@ -47,11 +46,10 @@ export class LifecycleController implements LifecyclePort {
     )
   }
 
-  acceptPageAssignment(payload: unknown, serial: number): boolean {
+  acceptPageAssignment(payload: unknown, _serial: number): boolean {
     if (!this.#active) return false
     this.#pending = {
       payload,
-      serial,
       assignedAt: this.now(),
       pageKey: this.#pageKey,
       appliedGeneration: -1,

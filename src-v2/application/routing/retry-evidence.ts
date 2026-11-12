@@ -5,7 +5,6 @@ import { sampleTiming } from '../../domain/evidence.ts'
 interface RetrySuccess {
   readonly request: RequestContext
   readonly at: number
-  readonly bytes: number
   readonly mbps: number
   readonly payloadMbps: number | null
   readonly timingBasis: TimingBasis | undefined
@@ -52,7 +51,6 @@ export class RetryEvidence {
     this.#successes.push({
       request,
       at: observation.completedAt,
-      bytes: observation.retryVerifiedBytes!,
       timingBasis: observation.timingBasis,
       mbps: (observation.retryVerifiedBytes! * 8) / observation.elapsedMs / 1000,
       payloadMbps: sampleTiming(

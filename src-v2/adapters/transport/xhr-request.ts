@@ -161,8 +161,6 @@ export function createXhrCompletion(
       ...self.observation(
         meta.request,
         meta.applied,
-        meta.originalUrl,
-        meta.targetUrl,
         finalUrl,
         Number(xhr.status) || 0,
         meta.bytes,

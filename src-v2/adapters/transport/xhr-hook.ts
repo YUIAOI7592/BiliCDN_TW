@@ -344,8 +344,6 @@ export class XhrHookAdapter {
                 self.observation(
                   meta.request,
                   meta.applied,
-                  meta.originalUrl,
-                  meta.targetUrl,
                   '',
                   0,
                   0,

@@ -204,8 +204,6 @@ for (const late of [false, true]) {
           context.observation(
             request,
             applied,
-            url,
-            applied.url!,
             applied.url!,
             206,
             256 * 1024,

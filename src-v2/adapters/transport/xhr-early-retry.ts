@@ -449,8 +449,6 @@ export class XhrEarlyRetry implements InFlightVideoPort {
           this.context.observation(
             meta.request,
             meta.applied,
-            meta.originalUrl,
-            meta.targetUrl,
             '',
             0,
             meta.bytes,

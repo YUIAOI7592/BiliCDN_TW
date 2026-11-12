@@ -74,8 +74,6 @@ export class MeasurementController implements MeasurementPort {
         phase: 'reserved' | 'probing'
         controller: AbortController
         pending: Promise<void>
-        startedAt: number
-        deadlineAt: number
         startedTick: number
         deadlineTick: number
       } = { phase: 'available' }
@@ -219,8 +217,6 @@ export class MeasurementController implements MeasurementPort {
         phase: 'reserved' as 'reserved' | 'probing',
         controller,
         pending,
-        startedAt,
-        deadlineAt,
         startedTick,
         deadlineTick: startedTick + TIMEOUT_MS,
       }

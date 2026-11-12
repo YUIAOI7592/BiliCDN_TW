@@ -97,8 +97,6 @@ function createNavigationPlayback(t: TestContext) {
         work.request,
         work.applied,
         work.url,
-        work.url,
-        work.url,
         206,
         128 * 1024,
         work.request.startedAt,

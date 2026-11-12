@@ -244,8 +244,6 @@ async function success(f: ReturnType<typeof routeFixture>, clock: FakeClock, byt
     f.transport.observation(
       request,
       applied,
-      rootUrl,
-      applied.url,
       applied.url,
       206,
       bytes,

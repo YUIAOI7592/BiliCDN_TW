@@ -68,7 +68,6 @@ export const recoveryReasonLabel = (reason: unknown): string =>
 
 export const measurementLabel = (state: unknown, reason: unknown): string => {
   const why = String(reason)
-  if (why.startsWith('manual-')) return `已安排測速，${measurementLabel('waiting', why.slice(7))}`
   if (why.startsWith('candidate-')) return '正在測試 CDN 速度'
   if (why.startsWith('http-')) return `測試網址收到 HTTP ${why.slice(5)}，沒有取得有效速度`
   return plain(

@@ -181,7 +181,6 @@ export class FetchHookAdapter {
         void self.observeFetch(
           request,
           applied,
-          originalUrl,
           applied.url,
           null,
           startedAt,
@@ -199,7 +198,6 @@ export class FetchHookAdapter {
         void self.observeFetch(
           request,
           applied,
-          originalUrl,
           applied.url,
           response,
           startedAt,
@@ -221,7 +219,6 @@ export class FetchHookAdapter {
         void self.observeFetch(
           request,
           applied,
-          originalUrl,
           applied.url ?? originalUrl,
           response,
           startedAt,

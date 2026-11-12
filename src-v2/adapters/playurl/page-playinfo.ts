@@ -96,14 +96,6 @@ export class PagePlayinfoAdapter {
     if (value !== undefined) this.#adopt(value)
   }
 
-  current(): unknown {
-    try {
-      return (unsafeWindow as Window & typeof globalThis & { __playinfo__?: unknown }).__playinfo__
-    } catch {
-      return this.#current
-    }
-  }
-
   dispose(): void {
     this.#restore?.()
     this.#restore = null
