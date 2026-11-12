@@ -1647,3 +1647,24 @@ TEST_REPORT 新增實際提前重試設定往返、總覽交叉確認與原值�
 同步 DEVELOPMENT 的重複驗證及管理器規則、IAB_TESTING 的環境／證據／更新段落，INDEX 加入代理指引與純文件閱讀路徑。TEST_REPORT 只新增禁令撤銷的日期註記，較早禁止、未讀取與 FAIL／INVALID 證據原文保留；未查證的管理器資訊不因撤銷自動變成通過。
 
 沒有新增文件、依賴或工具，也沒有修改產品、測試、版本、Release、封存清單或保護雜湊。實際文件／封存／差異檢查見 [工具紀錄](../../../docs/TEST_TOOLING_REPORT.md#2026-11-13-agents-指引檢討檢查)。
+
+## 2026-11-13 IAB_TESTING 全文檢討
+
+依使用者接續要求，逐節檢討 IAB_TESTING 的正確性與必要性；原文由 [0d11ca4 固定快照](https://github.com/YUIAOI7592/BiliCDN_TW/blob/0d11ca4cf14e2ad6feeeea4149865c14faa4168d/docs/IAB_TESTING.md) 保存。比對當前 AGENTS、TODO、ARCHITECTURE、SECURITY、DEVELOPMENT、正式來源與 OpenAI 官方 Browser 說明後，精簡約四分之一，保留既有必要錨點及歷史入口。
+
+| 範圍 | 核對與處理 |
+| --- | --- |
+| 環境、靜音及授權 | 保留 IAB＋Tampermonkey、單分頁、禁止本機服務／前景干擾及起播後立即靜音；管理器禁令撤銷與 CDP 授權沿用，不新增起播前或重複批准要求 |
+| 第 1 節證據與樣片 | 保留 N／S／I／E，按斷言取證，設定操作與持久、載入本體與管理器副本各自判定；三分鐘僅屬新樣片校準，兩秒無進度屬觀察分類，不改產品時間契約 |
+| 第 2 節工具與入口 | 不再假定每種工具都有 type=iab 或完整 script 匯出；依當次文件識別 IAB。entry.ts 與 player-panel.ts 確認兩個控制中心入口，網站巢狀選單路徑改為歷史觀察 |
+| 第 3 節可見性 | visibility.ts 可能覆寫失敗，保存 getter 不等於原生證明，Runtime 的 fallback／例外／解除狀態可能回報 visible；狀態資格與 E04 全程轉換分開，不要求所有查證預先通過 E04 或預注入 |
+| 第 4 節案例 | 「固定」明確指當輪凍結範圍，精確產品邊界連回 ARCHITECTURE，舊矩陣保留追溯而非通用前置 |
+| 第 5 節故障、資料與清理 | 按注入前、執行中與收束整理，Request 攔截限定相應網路案例，影音目標各自匹配；保留隔離、晚到抑制、方法／設定所有權及完整清理要求 |
+| 第 5 節技術修正 | route-coordinator.ts 的 evidence.commit 先於提前重試抑制判定；suppressEarlyRetryEvidence 不能替代完整學習隔離。閉包讀同一詞法綁定與複製舊物件參照分開；hasMore、registry 與事件游標依實際 API 使用，不虛構共同游標或完整性保證 |
+| 第 6 節判定與期限 | 五種結果、核心門檻、硬截止、清理保留及無效窗重跑限制保持；P01／P02、BR-01 的工作狀態回到 TODO，沒有恢復輪次 |
+| 第 7 節證據 | 簡單查證可單份報告，欄位按斷言選擇；必要時序、原始證據、脫敏、連續性及舊格式保護不省略 |
+| 第 8、9 節交付與權責 | 發布門檻連回 DEVELOPMENT／AGENTS，更新與已更新查證分開；官方 Browser 與 WPT 頁面只核對文件內容，不算當次工具或產品能力通過 |
+
+AGENTS 修正故障／清理的導向章節，DEVELOPMENT 將「固定矩陣」改為當輪案例範圍；其餘入口沿用唯一 IAB 方法來源。TEST_REPORT、TODO、產品、測試、工具、版本、Release、封存清單及保護雜湊保持。兩份維護／工具日誌僅追加，沒有改寫舊 FAIL／INVALID 或管理器禁令仍生效時的歷史敘述。
+
+本次不啟動瀏覽器、故障、背景或效益窗口，不新增安裝通過宣稱；檢查結果見[工具紀錄](../../../docs/TEST_TOOLING_REPORT.md#2026-11-13-iab-方法文件檢查)。純文件依既有授權提交推送，不升版或發布。

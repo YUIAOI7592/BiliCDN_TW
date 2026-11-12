@@ -1,6 +1,6 @@
 # 開發、測試與發行流程
 
-本指南適用目前 `src-v2/`（版本以 [release.json](../release.json) 為準），瀏覽器測試**只使用 Codex 內建瀏覽器＋Tampermonkey**。具體操作、固定矩陣、背景校準與停止條件統一見 [IAB_TESTING](IAB_TESTING.md)，不維護另一份外部 Chrome 流程。
+本指南適用目前 `src-v2/`（版本以 [release.json](../release.json) 為準），瀏覽器測試**只使用 Codex 內建瀏覽器＋Tampermonkey**。具體操作、當輪案例範圍、背景校準與停止條件統一見 [IAB_TESTING](IAB_TESTING.md)，不維護另一份外部 Chrome 流程。
 
 所有開發與驗證先遵守 [AGENTS 永久執行禁令](../AGENTS.md#使用者永久執行禁令)。既有命令若會啟動本機網站服務，不得執行；預覽直接開本機 HTML，不要求切換前景，測試保持無聲。歷史快照或封存中的工具不構成現行入口，前提不足依 IAB_TESTING 記錄限制。
 
