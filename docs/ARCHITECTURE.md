@@ -2,6 +2,8 @@
 
 本文件是現行產品契約與內部架構的共同來源；正式來源為 `src-v2/`、入口為 `src-v2/entry.ts`，版本以 [release.json](../release.json) 為準。工作與停止決策只看 [TODO](TODO.md)，自動驗證及安裝版證據分列於 [TEST_REPORT](TEST_REPORT.md)。舊產品入口由 [PROJECT_CONTEXT](PROJECT_CONTEXT.md) 保留錨點導引。
 
+依問題查閱：[模式與預設](#模式與預設)、[依賴與所有權](#模組與所有權)、[選路與傳輸](#選路與傳輸)、[量測與恢復](#量測與恢復)、[狀態與生命週期](#狀態與生命週期)、[控制中心](#控制中心與狀態)。產品契約不代表已完成相同範圍的瀏覽器驗收。
+
 ## 模式與預設
 
 面向台灣網路環境的 Bilibili Tampermonkey 腳本，提供合法 CDN 選路、有界主動量測、有限核心恢復。支援 DASH 與已辨識的 MP4／FLV 分段資料。產品不控制網站 Worker，不加入執行期第三方依賴或遠端程式載入。
@@ -16,9 +18,7 @@
 | 正常／Native 開啟 | Catalog 及當前內容的合法精確 Native 來源 | 同樣受限制與授權檢查 |
 | 整體停用 | 網站原請求 | 停止腳本改寫與主動工作，不取消已送出請求 |
 
-整體停用停止腳本改寫與主動工作。原生來源開關是持久設定；v2.2.1 已撤除分頁原線對照。
-
-「允許參考 B 站原生來源」預設啟用：新安裝、缺值、非法欄位及還原預設均使用 true，既有布林 true／false 保留。schema 2 與四個儲存鍵不變，讀取不強制升級寫入。布林預設只由 SettingsStore 的 BOOLEAN_DEFAULTS 定義；其他預設及使用者操作見 [README](../README.md#預設設定)。
+原生來源開關是持久設定；新安裝、缺值、非法欄位及還原預設均使用 true，既有布林 true／false 保留。schema 2 讀取不強制升級寫入，布林預設由 SettingsStore 的 BOOLEAN_DEFAULTS 定義。v2.2.1 已撤除分頁原線對照。
 
 ## 模組與所有權
 
@@ -44,7 +44,9 @@ application 的 routing、measurement、playback、playurl 群組將控制器與
 | `ui` | `ui`、`application`、`state`、`domain`、`platform` |
 | `entry.ts` | 所有組合層 |
 
-此表列出可以匯入的層，並不要求全部匯入。狀態儲存元件從 `platform/storage-port.ts` 匯入 `StoragePort` 型別；`platform/storage.ts` 實作 Tampermonkey 儲存。執行識別碼介面也獨立於產生器。同功能模型與具名介面共置於 `*-contracts.ts`；量測、監控、playurl、恢復、選路、提前重試、設定、Session、Restriction、Vault 及控制中心已合併。提前重試控制與傳輸許可仍是不同窄介面。消費端直接匯入契約，實作不轉匯出型別；設定讀取共用 `SettingsReader`／`SettingsObserver`，不傳入完整 Store。契約不得依賴具體 Store、控制器或適配器。`SettingsChange` 唯一定義於狀態模型；三個視圖使用具名唯讀快照，經 ControlCommandPort 修改設定或執行保留命令。UI 匯入應用層／狀態層型別與領域輔助函式，消費快照，透過 `ControlCommandPort` 執行產品變更；UI 不匯入瀏覽器適配器。[entry.ts](../src-v2/entry.ts) 建立、連接這些物件並啟動執行環境。
+此表列出可以匯入的層，並不要求全部匯入。`StoragePort` 與執行識別碼介面分別獨立於儲存實作及產生器；同功能模型與具名介面共置於 `*-contracts.ts`，消費端直接匯入契約，實作不轉匯出型別。契約不得依賴具體 Store、控制器或適配器；設定讀取使用 `SettingsReader`／`SettingsObserver`，不傳入完整 Store，`SettingsChange` 唯一定義於狀態模型。提前重試控制與傳輸許可是不同窄介面。
+
+UI 消費具名唯讀快照，透過 `ControlCommandPort` 修改設定或執行產品命令；可匯入應用層／狀態層型別與領域輔助函式，不匯入瀏覽器適配器。[entry.ts](../src-v2/entry.ts) 建立、接線並啟動這些物件。
 
 AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、`import type` 及 `import-equals` 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環與契約對實作的依賴。唯一寫入者依完整相對路徑辨識，不能以同名檔案繞過；只有 `application/measurement/measurement-controller.ts` 可以呼叫 `probe.read()`。額外語法規則拒絕領域層／應用層中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、路線協調器以外的點號 `setAffinity()` 呼叫、恢復控制器以外應用層的點號 `reload()` 呼叫，以及命令接收器以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
 
@@ -400,13 +402,13 @@ Vault 的輸出對照及來源大小只附著於既有 handle 與 RouteIdentity�
 
 ### 網站前景偽裝與內部可見性
 
-[VisibilityAdapter](../src-v2/adapters/visibility.ts) 安裝時保存 Document.prototype 的 hidden getter，再於 document 實例覆寫 hidden=false、visibilityState=visible。網站因此看到前景；`isActuallyVisible()` 透過保存的 getter 查詢內部資格。Runtime／監控／量測使用此資格，不從被覆寫的頁面值推斷前景。
+[VisibilityAdapter](../src-v2/adapters/visibility.ts) 安裝時取得 Document.prototype.hidden 描述子，再嘗試於 document 實例覆寫 hidden=false、visibilityState=visible；各項覆寫可能失敗。成功時網站看到偽裝的前景，Runtime／監控／量測則使用 `isActuallyVisible()` 判斷內部資格。
 
 真正 hidden 與可信且 `event.target === window` 的 blur guard 在阻擋事件前通知控制失效，供 `PlayerAdapter` 清理手勢及所有權。子元素 blur 經 window 捕捉不取得視窗失焦資格；既有事件遮蔽保留。背景播放本身可持續；背景停止的是不合資格的主動量測／救援與舊還原提交。
 
-保存 getter 缺失時會退回 visibilityState；讀取拋錯時按現有 fail-open 行為視為未隱藏，dispose 後查詢也回傳可見。因此可見性查詢本身不是原生 getter 來源或背景能力的保證，測試仍須先校準。
+內部查詢優先使用保存的 getter；缺失時讀取 document.visibilityState，例外或未安裝／已解除時回傳可見。保存的 getter 可能已被其他程式包裝，fallback 也可能讀到偽裝值，因此 true 不保證真正前景。共用同一 getter 的 prototype 讀值與 Runtime 判定不能算成兩份獨立證據。
 
-測試需要校準保存的 getter 來源與真正分頁切換。prototype 讀值與 Runtime 若共用 getter，並非兩份獨立原生證明；面板隱藏或工具選取 ID 也不是原生 hidden 的證據。步驟與無效窗口判定見 [IAB_TESTING 的 E04](IAB_TESTING.md#3-前景偽裝與真正背景的校準)。可見性清理的描述子所有權限制見 [SECURITY](../SECURITY.md#瀏覽器行為)。
+測試依斷言校準 getter 來源及必要狀態；完整切換斷言才要求 E04，不作一般查證的通用前置。面板隱藏或工具選取 ID 不證明原生 hidden。方法見 [IAB 可見性校準](IAB_TESTING.md#3-前景偽裝與真正背景的校準)，描述子所有權限制見 [SECURITY](../SECURITY.md#瀏覽器行為)。
 
 可見性覆寫的原始描述子、安裝目標與本次 accessor 只由 VisibilityAdapter 保存；dispose 先比較目前 getter／setter 身分及 enumerable／configurable，仍相符才還原原件或刪除自有屬性。較新描述子與刪除狀態不覆寫，失敗項目不重試；不執行屬性 getter。監聽器維持原反向釋放順序，control-loss 訂閱不隨停用清空，重新啟用取得新的還原基準。完全相同描述子的重新安裝來源不可辨識。
 
@@ -442,7 +444,7 @@ ControlCenter 只提供總覽、CDN、播放設定三頁，經 ControlReadModelP
 
 `TransportSnapshot.lastPlayurl` 保存一筆不可變的最近結果：Fetch／XHR、觀察時間、原生 HTTP 狀態、接納結果、辨識出的 DASH／MP4／FLV 格式、影片／音訊／分段數量、數字上游 `code` 及拒絕原因。`TransportContext` 複製固定欄位清單，去重後最多三種格式，數量限制為 0–65,535，丟棄非有限值或非安全整數的上游 `code`。不複製原始資料內容、URL、路徑、權杖或例外文字。控制中心消費此摘要；接納結果不證明實際網路目的地或播放成功。
 
-非同步命令完成後重讀新快照；晚到回呼不更新失效視圖。ControlCenter 保管宿主、封閉 ShadowRoot、視圖版本與訂閱；一秒 tick 刷新既有欄位，不新增輪詢。入口只注入版本，UI 不派送 GM／剪貼簿 API。可信鍵盤事件在 ShadowRoot 冒泡邊界隔離，保留表單原生操作；Escape 關閉，關閉時清理監聽器。
+非同步命令完成後重讀新快照；晚到回呼不更新失效視圖。ControlCenter 保管宿主、封閉 ShadowRoot、視圖版本與訂閱；沿既有一秒 tick 通知刷新，不新增輪詢。入口注入版本、顯示時鐘、讀模型與命令埠；UI 不直接派送 GM／剪貼簿 API。可信鍵盤事件在 ShadowRoot 冒泡邊界隔離，保留表單原生操作；Escape 關閉，關閉時清理監聽器。
 
 功能事件僅服務路線狀態更新及影片備援轉交恢復；音訊備援不觸發影片恢復。Runtime 不再訂閱診斷採樣、恢復歷程或提前重試歷程。
 

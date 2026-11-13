@@ -26,6 +26,8 @@
 
 ## 現行指南
 
+以下列出指南及持續維護的入口、狀態與紀錄；歷史日誌中的規則按當時日期閱讀。
+
 | 文件 | 唯一維護內容 |
 | --- | --- |
 | [README](../README.md) | 安裝、操作、預設設定、排查與使用者可見功能 |
@@ -41,13 +43,16 @@
 | [CHANGELOG](CHANGELOG.md) | 各版行為差異與證據入口 |
 | [UPSTREAM_MANIFEST](UPSTREAM_MANIFEST.md) | 上游、來源基準及 v1／v2 關係 |
 | [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md) | 作者、授權及工具用途 |
+| [HISTORY](HISTORY.md) | 版本、議題、日期與封存導覽 |
+| [TEST_TOOLING_REPORT](TEST_TOOLING_REPORT.md) | 按日期追加的實際工具環境、驗證結果與方法限制 |
+| [doc-manifest.json](doc-manifest.json) | 文件分類、權威歸屬、必要錨點、版本欄位與原文保護基準；維護方式見 DEVELOPMENT |
 | [測試遷移](../tests-v2/MIGRATION.md) | 原測試行為與遷移對照 |
 
 ## 證據與歷史
 
 [歷史索引](HISTORY.md) 涵蓋原始版本報告、議題、日期、[工具驗證](TEST_TOOLING_REPORT.md)、[完整歷史驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md) 與封存。歷史原文中的「目前」「待完成」只描述當時版本，不構成新工作授權。
 
-多階段報告中的未發布／阻塞段落與後續完成段落屬不同檢查點；查現況先回到 TODO 與 TEST_REPORT。發行快照只保存封裝當時，後續安裝結果寫入現行報告；工具、來源隔離、安裝行為與效用結論按各自範圍閱讀。歷史證據不因文件整理改寫，全文快照、後續追加與各次逐檔核對由 [文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) 追溯。
+多階段報告中的未發布／阻塞段落與後續完成段落屬不同檢查點；查現況先回到 TODO 與 TEST_REPORT。工具日誌並非全篇依日期排序，早期導言中的「最新」亦屬原檢查點，不能代替後續日期紀錄。發行快照只保存封裝當時，後續安裝結果寫入現行報告；工具、來源隔離、安裝行為與效用結論按各自範圍閱讀。歷史證據不因文件整理改寫，全文快照、後續追加與各次逐檔核對由 [文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md) 追溯。
 
 ## 檔案配置
 

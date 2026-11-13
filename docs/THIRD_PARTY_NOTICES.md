@@ -1,19 +1,22 @@
 # 授權與建置工具
 
-本文件集中現行 v2 的作者、授權與開發工具用途；來源基準及 v1／v2 關係見 [來源基準](UPSTREAM_MANIFEST.md)。工具精確版本及平台套件以 [release.json](../release.json) 與 [package-lock.json](../package-lock.json) 為準。文件用途見 [索引](INDEX.md)。
+本文件集中現行 v2 的作者、授權與開發工具用途；來源基準及 v1／v2 關係見 [UPSTREAM_MANIFEST](UPSTREAM_MANIFEST.md)。直接依賴及完整解析版本由 [package.json](../package.json)／[package-lock.json](../package-lock.json) 維護，[release.json](../release.json) 另核對 TypeScript／esbuild 版本，不在多份指南重列版本清單。
 
-原始使用者腳本：jiyunshi，MIT。保留中繼資料中的 `author`／`license` 及 [LICENSE](../LICENSE)；固定來源見 [來源基準](UPSTREAM_MANIFEST.md)。
+原始腳本作者為 jiyunshi；客製修改由 YUIAOI7592 及貢獻者維護，均依儲存庫 [MIT LICENSE](../LICENSE) 所列著作權與條款。使用者腳本中繼資料保留原作者及 `license`，上游原件保持原始位元組。
 
-TypeScript 7.0.2：Microsoft Corp.，Apache-2.0。用於型別檢查，並由本機架構／測試工具使用其 AST API。TypeScript 及依賴鎖定檔鎖定的平台套件不進入使用者腳本執行環境。安裝後的 `node_modules/typescript/LICENSE`、`NOTICE.txt` 與各平台套件的授權聲明是本機授權核對來源。
+下表列套件本身的授權與用途；不是全部間接依賴的授權清單。本機核對以已安裝套件的 `package.json`、授權及第三方通知為準，平台套件也須保留各自聲明。
 
-esbuild 0.28.2：Evan Wallace，MIT。只用於本機建置與測試打包；esbuild、其平台執行檔及 Node 不進入使用者腳本執行環境。平台套件依依賴鎖定檔安裝，不提交工具本體。
+| 工具 | 套件授權／歸屬 | 開發用途及本機核對來源 |
+| --- | --- | --- |
+| TypeScript | Apache-2.0／Microsoft | 型別檢查與架構／測試 AST；`node_modules/typescript/LICENSE`、`NOTICE.txt` 及鎖定的平台套件聲明 |
+| esbuild | MIT／Evan Wallace | 建置與測試打包；`node_modules/esbuild/LICENSE.md` 及所用平台套件聲明 |
+| `@types/node` | MIT／DefinitelyTyped 貢獻者 | Node 測試與工具型別；`node_modules/@types/node/LICENSE` |
+| `undici-types` | MIT | 間接開發型別依賴；`node_modules/undici-types/LICENSE` |
+| Prettier | MIT／Prettier 貢獻者 | 維護來源／設定格式化及唯讀檢查；`node_modules/prettier/LICENSE`、`THIRD-PARTY-NOTICES.md` |
+| unified、remark-parse、remark-gfm | MIT | GFM 解析；各套件根目錄的 `license` |
+| markdownlint | MIT | Markdown 格式檢查；`node_modules/markdownlint/LICENSE` |
+| github-slugger | ISC | GitHub 標題錨點；`node_modules/github-slugger/LICENSE` |
 
-官方資料：[發行紀錄](https://github.com/evanw/esbuild/releases/tag/v0.28.2)、[MIT 授權](https://github.com/evanw/esbuild/blob/v0.28.2/LICENSE.md)、[API 文件](https://esbuild.github.io/api/)。
+TypeScript 的 NOTICE 與 Prettier 的第三方通知另列內含元件；不能把套件主授權當成全部內含程式的唯一授權。依賴只作本機開發，不進入單一 IIFE 使用者腳本；文件檢查不在執行時連網。
 
-`@types/node` 26.6.4：DefinitelyTyped 貢獻者，MIT；`undici-types` 8.9.0：MIT。兩者只供 Node 測試及本機工具的開發型別檢查，精確解析版本由依賴鎖定檔鎖定，不進入使用者腳本。安裝後的 `node_modules/@types/node/LICENSE`、`node_modules/undici-types/LICENSE` 與其 `package.json` 是本機核對來源。
-
-所選 Node 的內建 `node:test`、斷言及報告產生器 API 用於本機測試，不新增測試框架或執行期依賴；參考 [Node 測試 API 文件](https://nodejs.org/api/test.html)。Node 不固定版本號，依 [開發指南](DEVELOPMENT.md#環境需求) 的能力探測與完整驗證判定；實際版本與來源另記工具日誌，npm 不再由 release 設定冒充實測版本。
-
-Prettier 3.9.10：Prettier 貢獻者，MIT。只作本機來源、測試、工具與維護設定格式化及唯讀檢查，不進入使用者腳本；精確版本由 package.json 與依賴鎖定檔固定。授權來源為 node_modules/prettier/LICENSE，工具說明見 [官方文件](https://prettier.io/docs/)；不加入 ESLint 或執行期依賴。
-
-文件檢查開發依賴：unified 11.0.5、remark-parse 11.0.0、remark-gfm 4.0.1（MIT），markdownlint 0.41.1（MIT），github-slugger 2.0.0（ISC）。只供本機唯讀 GFM、格式、連結與錨點檢查；不進入使用者腳本，不在執行檢查時連網。直接及間接解析版本、授權與完整性由 package-lock.json 及安裝後各套件的 package.json／license 檔核對。
+Node 以內建 `node:test`、斷言與報告 API 執行契約，npm 提供既有命令及依賴安裝。Runtime 選擇與能力判定由 [環境需求](DEVELOPMENT.md#環境需求) 維護，實際使用路徑與版本記於當輪工具日誌；型別套件版本不代表所用 Node 版本，也不證明其執行相容性。

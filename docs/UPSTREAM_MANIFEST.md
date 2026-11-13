@@ -1,6 +1,6 @@
 # 上游與歷史來源
 
-本文件是 v2 系列的現行來源歸屬與建置指南。下列版本化來源是歷史基準；現行來源為 `src-v2/`，版本／工具設定以 `release.json` 及依賴鎖定檔為準。文件用途見 [文件索引](INDEX.md)，授權與作者資訊見 [第三方聲明](THIRD_PARTY_NOTICES.md)。
+本文件維護來源歸屬、上游保存與 v1／v2 界線。現行來源為 `src-v2/`，下列版本化來源只作歷史基準；建置流程見 [DEVELOPMENT](DEVELOPMENT.md#建置輸出)，授權與作者資訊見 [第三方聲明](THIRD_PARTY_NOTICES.md)。
 
 ## 來源歸屬基準
 
@@ -18,7 +18,7 @@ SHA-256 清單為 [baseline/SHA256SUMS.txt](../baseline/SHA256SUMS.txt)，內容
 
 ### v2 建置界線
 
-v2 系列從 v2.0.0 的 TypeScript 架構重整開始；v1.9.6 僅作使用者可見不變量的行為參考。現行 v2 建置、測試及封裝不得匯入：
+v2 系列從 v2.0.0 的 TypeScript 架構重整開始；v1.9.6 僅作使用者可見不變量的行為參考。現行 v2 建置、正式契約測試及封裝不得匯入：
 
 - v1 原始碼樹；
 - v1 正式打包產物；
@@ -27,14 +27,8 @@ v2 系列從 v2.0.0 的 TypeScript 架構重整開始；v1.9.6 僅作使用者�
 
 沒有 v1 儲存遷移或執行期相容層；既有 v1 Tampermonkey 值既不讀取，也不刪除。
 
+[獨立離線比較](../scripts/evaluation/README.md#原版與-v2-的獨立離線比較)可在隔離模型載入雜湊固定的兩版完整腳本；它不屬正式 v2 套件，也不將歷史來源加入產品建置。比較結果只適用所列版本與模型。
+
 ## 第三方工具
 
-- TypeScript 7.0.2 及依賴鎖定檔鎖定的平台套件：開發型別檢查及本機 AST 架構／測試 API。
-- esbuild 0.28.2 及依賴鎖定檔鎖定的平台套件：只作建置／測試打包。
-- Prettier 3.9.10：只作本機格式化與唯讀格式檢查。
-- unified、remark-parse、remark-gfm、markdownlint、github-slugger：只作本機離線文件檢查，版本與授權見 [第三方聲明](THIRD_PARTY_NOTICES.md)。
-- `@types/node` 26.6.4 及依賴鎖定檔鎖定的 `undici-types`：只供開發型別檢查。所選 Node 的內建測試 API 執行本機契約，依 [Runtime 能力要求](DEVELOPMENT.md#環境需求) 驗證，不固定 Node 版本或以型別版本號代替執行相容性。
-
-`archive:check` 使用上述既有工具與 Node 內建檔案／雜湊 API 作離線維護檢查，不新增依賴，也不把封存來源加入產品建置。
-
-發行使用者腳本為單一 IIFE，沒有執行期第三方依賴。授權聲明集中於 `docs/THIRD_PARTY_NOTICES.md`。
+工具用途與授權集中於 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)，精確依賴由 [package.json](../package.json) 與 [package-lock.json](../package-lock.json) 維護；Node 選擇及能力驗證見 [環境需求](DEVELOPMENT.md#環境需求)。發行使用者腳本為單一 IIFE，沒有執行期第三方依賴，封存來源不加入產品建置。

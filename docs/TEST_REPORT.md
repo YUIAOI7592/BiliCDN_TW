@@ -2,6 +2,8 @@
 
 驗證日期：2026-11-12–13（Asia/Taipei）。基準 main／b656d7a、v2.2.19；三批來源提交為 b19ffe8、37f7624、719c888。範圍為使用者批准的程式清理與結構收斂。
 
+閱讀順序：[最終結論](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#驗收結論) → 所需證據章節。各輪原判保留，身分／接線以 [2026-11-13 重新判定](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#v2220-安裝身分與變更接線重新判定2026-11-13)界定；較早的管理器禁止敘述另讀[禁令撤銷註記](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#管理器探索禁令撤銷註記2026-11-13)。方法變更不補算未驗證項目通過。
+
 ## 驗收結論
 
 三批實作、型別、架構、格式及完整十八套件／2,200 案通過；安全差異審查已完成並封印，候選、可報告漏洞及 deferred 均為零。版本同步後整輪 verify、正式封裝、推送及公開下載核對均已完成，結果見下方。

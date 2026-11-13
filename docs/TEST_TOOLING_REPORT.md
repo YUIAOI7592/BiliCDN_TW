@@ -1477,3 +1477,13 @@ Windows PowerShell 啟動器 cwd 改以目錄的 dev／ino 身分核對，不把
 檢查範圍見 [IAB 全文檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-iab_testing-全文檢討)。先核對既有 docs／archive 入口及依賴為離線檔案、解析與 Git 唯讀操作，不啟動本機網站服務。npm run docs:check、npm run archive:check 與 git diff --check 通過；文件檢查涵蓋 305 份 Markdown 的 GFM、連結、既有錨點及保護，封存核對 534 個搬移項目、三份追加日誌、159 個未變原件及 88 份清單／394 筆校驗。
 
 人工核對原文各節與現行實作／操作限制，既有日誌前綴及產品／驗收／發行檔案另以當輪 HEAD 比對保持。七筆不可變歷史斷鏈、672 筆搬移後原網址不可用、18 筆私有證據未核對及檢查器未連網的外部 URL 保留原分類；另行閱讀官方 Browser／WPT 說明不等於全站連結檢查或瀏覽器執行。本輪沒有私有資料處置，不執行 local／restore，沒有重跑正式測試、verify、安全掃描或 IAB 驗收。
+
+## 2026-11-13 docs 全面檢討檢查
+
+使用當次 load_workspace_dependencies 取得的 Codex Node，實讀 24.22.1，路徑為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1111-574-0_26.1111.574.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe`。npm CLI 依當次 npm.cmd 解析為 `C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js`，實讀 11.20.0；由所選 Node 明確執行，僅於當次程序 PATH 前置相同 Node 目錄。
+
+檢討範圍與逐檔取捨見[維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-docs-正確性與必要性檢討)。既有 docs／archive 命令及依賴已核對為離線檔案、解析與 Git 唯讀操作，不啟動網站服務。本次只作文件、公開封存、差異與完整性檢查；沒有本機私有處置，不執行 local／restore，也不重跑產品測試、verify、安全掃描或瀏覽器。
+
+npm run docs:check、npm run archive:check 與 git diff --check 通過。文件檢查涵蓋 305 份 Markdown、5,513 個本機／儲存庫連結與 633 項正文保護；封存檢查涵蓋 534 個搬移項目、三份追加日誌、159 項未變原件及 88 份清單／394 筆校驗。七筆不可變歷史斷鏈、672 筆搬移後原網址不可用、18 筆私有證據未核對及 969 個外部連結未連網分開保留，不宣稱已檢查公開網址或私有原件。
+
+當輪基準的 506 個追蹤檔案逐一比對，變更限於十二個預期文件／登記路徑，其餘 494 個原始位元組保持；三份日誌的既有正文前綴完整、TEST_REPORT 自驗收結論起的正文完整，機器清單除現行文件條目外的所有配置與保護保持。人工事實與必要性核對不由自動檢查取代，沒有新增產品、安全、安裝或實機效益通過宣稱。

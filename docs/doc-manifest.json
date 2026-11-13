@@ -2999,9 +2999,7 @@
       "topics": [
         "licenses"
       ],
-      "versions": [
-        "v0.28.2"
-      ],
+      "versions": [],
       "date": null,
       "requiredAnchors": [
         "授權與建置工具"

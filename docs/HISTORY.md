@@ -1,8 +1,8 @@
 # 歷史文件導覽
 
-- [v2.2.9–v2.2.10 量測方法、期限與選路優化執行紀錄](../archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md)
-
 本頁按版本、議題與日期提供原始紀錄連結，不複製通過數或工作狀態。適用版本可同時包含基準與交付版本；日期來自檔名或文首，不代表單次工具純執行時間。現行入口見 [INDEX](INDEX.md)，工作只看 [TODO](TODO.md)，最新完整結果見 [TEST_REPORT](TEST_REPORT.md)。
+
+查閱：[版本](#版本)、[議題](#議題)、[日期](#日期)、[封存與快照](#封存與快照)。舊版直接連向原報告；TEST_REPORT 的相容錨點只供尚未遷移的既有連結使用。
 
 過往版本紀錄的閱讀版集中於 `archive/retired/docs/`，搬移時只調整已登記的連結 URL；原始正文另有固定提交及 TAR 快照可追溯。當時的 FAIL、無效窗口、未執行及限制不改寫。舊 Chrome 紀錄保留原環境；已撤銷 CDN 研究及停止的 BR-01 矩陣不構成新授權。
 
@@ -12,11 +12,13 @@
 
 - [v2.2.20 程式清理與結構收斂（2026-11-12–13）](TEST_REPORT.md#驗收結論)。
 
+- [v2.2.20 安裝身分與變更接線重新判定（2026-11-13）](TEST_REPORT.md#v2220-安裝身分與變更接線重新判定2026-11-13)。
+
 - [v2.2.19 R1 安裝身分與變更接線（2026-11-12）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2219-r1-安裝身分與變更接線2026-11-12)。
 
 - [v2.2.19 正式來源三批精簡（2026-11-12）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2219-完整正文保存2026-11-12)。
 
-- [v2.2.18 R1 安裝身分與設定內容（2026-11-12）](TEST_REPORT.md#v2218-r1-安裝身分與設定頁2026-11-12)。
+- [v2.2.18 R1 安裝身分與設定內容（2026-11-12）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2218-r1-安裝身分與設定頁2026-11-12)。
 
 - [v2.2.18 固定政策、控制器狀態與交付護欄（2026-11-11）及後續測試審核完整正文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2218-完整正文保存2026-11-12)。
 
@@ -32,11 +34,11 @@
 
 - [v2.2.16 基準的工具鏈相容性與版本鎖定評估（2026-11-09）](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md)。
 
-- [v2.2.16 更新後載入身分與選路／提交接線（2026-11-09）](TEST_REPORT.md#v2216-r1-載入身分與選路提交接線2026-11-09)。
+- [v2.2.16 更新後載入身分與選路／提交接線（2026-11-09）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2216-r1-載入身分與選路提交接線2026-11-09)。
 
 - [v2.2.16 選路狀態與證據提交契約整理](../archive/retired/docs/ROUTING_OWNERSHIP_v2.2.16_2026-11-09.md)。
 
-- [v2.2.15 更新後載入身分與模組初始化（2026-11-09）](TEST_REPORT.md#v2215-r1-載入身分與模組初始化2026-11-09)。
+- [v2.2.15 更新後載入身分與模組初始化（2026-11-09）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2215-r1-載入身分與模組初始化2026-11-09)。
 
 - [v2.2.15 模組歸屬整合與大型控制器精簡](../archive/retired/docs/MODULARIZATION_v2.2.15_2026-11-08.md)。
 
@@ -119,7 +121,7 @@
 | 適用版本 | 原始紀錄 |
 | --- | --- |
 | 未單列／跨版 | [新增 B 站 CDN 節點的驗證方案（2026-09-25）](../archive/retired/docs/CDN_CANDIDATE_TEST_PLAN_2026-09-25.md)、[B 站 CDN 全量初篩與比較測試報告](../archive/retired/docs/CDN_NODE_FULL_SCREENING_2026-09-25.md)、[B 站 CDN 優化公開專案調查（2026-09-25）](../archive/retired/docs/CDN_OPEN_SOURCE_SURVEY_2026-09-25.md)、[內建瀏覽器 Range 與實際播放對照（2026-09-25）](../archive/retired/docs/CDN_RANGE_PLAYBACK_EXPERIMENT_2026-09-25.md)、[B 站 CDN 節點測試結果（2026-09-25）](../archive/retired/docs/CDN_TEST_RESULTS_2026-09-25.md)、[文件維護歷史](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md)、[內建瀏覽器方案改寫前的指南快照 — 2026-10-11](../archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md)、[歷史驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md)、[測試工具驗證紀錄](TEST_TOOLING_REPORT.md) |
-| v2.2.8 | [最終驗收結論](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)、[R2 專項與原生校準](TEST_REPORT.md#v228-r2-專項完成2026-11-0304)、[離線修復驗證](TEST_REPORT.md#修復結果與證據邊界) |
+| v2.2.8 | [最終驗收結論](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)、[R2 專項與原生校準](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-r2-專項完成2026-11-0304)、[離線修復驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#修復結果與證據邊界) |
 | v2.2.7 | [選路、容量與探索完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#研究項目完成對照)、[R1 基本安裝驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v227-r1-基本安裝驗收2026-11-03)、[XHR timeout 起播覆蓋調查](../archive/retired/docs/TEST_REPORT_HISTORY.md#v227-xhr-timeout-起播分支調查2026-11-03) |
 | v2.2.6 | [確定性選路、狀態機與提交所有權完整驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#三十五項閉環對照)、[R1 基本安裝驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v226-r1-安裝驗收2026-11-02) |
 | v2.2.5 | [完整容量、倍率、時效驗證與 R1 原文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v225-完整正文保存2026-11-02)、[起播逐步調查](../archive/retired/docs/STARTUP_CDN_REVIEW_v2.2.5_2026-11-02.md) |
@@ -219,6 +221,8 @@
 - [本次文件狀態一致性核對](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#v2210-驗收通過狀態一致性核對2026-11-05)
 
 ### 選路演算法研究
+
+- [v2.2.9–v2.2.10 量測方法、期限與選路優化執行紀錄](../archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md)
 
 - [Auto、碼率／FPS、影音緩衝與共享網路的數學模型及反例](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#研究結論)
 
@@ -320,6 +324,10 @@
 
 ### 文件維護與指南快照
 
+- [docs 全文正確性與必要性檢討 — 2026-11-13](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-docs-正確性與必要性檢討)
+- [AGENTS 檢討與管理器探索禁令撤銷 — 2026-11-13](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-agents-正確性與必要性檢討)
+- [IAB 方法全文檢討 — 2026-11-13](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-iab_testing-全文檢討)
+- [v2.2.20 驗收門檻檢討與證據範圍更正 — 2026-11-13](TEST_REPORT.md#驗收門檻檢討2026-11-13)
 - [README 去重、現行導覽與更新規則整理 — 2026-11-08](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#現行文件去重與更新規則整理2026-11-08)
 - [現行文件與歷史狀態全面對齊 — 2026-10-31](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-31現行文件與歷史狀態全面對齊)
 - [本次整理前 TODO 全文 — 固定提交 fede700](https://github.com/YUIAOI7592/BiliCDN_TW/blob/fede7003e7c5056b9ca1a713dbee7266370e45e0/docs/TODO.md)
@@ -395,7 +403,7 @@
 
 ### 測試工具
 
-- [v2.2.18 發布後斷言審核、案例去向與有界反例 — 2026-11-12](TEST_REPORT.md#斷言審核與精簡2026-11-12)
+- [v2.2.18 發布後斷言審核、案例去向與有界反例 — 2026-11-12](../archive/retired/docs/TEST_REPORT_HISTORY.md#斷言審核與精簡2026-11-12)
 
 - [v2.1.35 實際緩衝效用第一輪 — 2026-10-25](../archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md)
 - [v2.1.35 實際緩衝效用第二輪 — 2026-10-25](../archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md)
@@ -409,9 +417,9 @@
 
 ## 日期
 
-- 2026-11-13：[v2.2.20 程式清理交付](TEST_REPORT.md#驗收結論)。
+- 2026-11-13：[v2.2.20 交付](TEST_REPORT.md#驗收結論)、[安裝身分／接線重判](TEST_REPORT.md#v2220-安裝身分與變更接線重新判定2026-11-13)、[管理器探索禁令撤銷](TEST_REPORT.md#管理器探索禁令撤銷註記2026-11-13)、[AGENTS 檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-agents-正確性與必要性檢討)、[IAB 方法檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-iab_testing-全文檢討)、[docs 全文檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-docs-正確性與必要性檢討)。
 
-- 2026-11-12：[v2.2.18 發布後測試精簡](TEST_REPORT.md#斷言審核與精簡2026-11-12)。
+- 2026-11-12：[v2.2.18 發布後測試精簡](../archive/retired/docs/TEST_REPORT_HISTORY.md#斷言審核與精簡2026-11-12)。
 
 - 2026-11-12：[v2.2.19 來源精簡與交付](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2219-完整正文保存2026-11-12)、[R1 安裝身分與接線](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2219-r1-安裝身分與變更接線2026-11-12)、[過時文件整理](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-12過時文件與版本導覽清理)。
 
@@ -441,7 +449,7 @@
 | --- | --- |
 | 2026-11-09 | [七日舊副本清理](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#七日舊副本清理2026-11-09)；[還原證明與檢查](TEST_TOOLING_REPORT.md#七日舊副本清理驗證2026-11-09) |
 | 2026-11-08 | [現行文件去重與更新規則](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#現行文件去重與更新規則整理2026-11-08)；[重複段落檢查契約](TEST_TOOLING_REPORT.md#2026-11-08現行文件重複段落檢查) |
-| 2026-11-08 | [v2.2.12 R1 三頁、設定與 UI 刷新專項](TEST_REPORT.md#v2212-r1-三頁與刷新專項2026-11-08) |
+| 2026-11-08 | [v2.2.12 R1 三頁、設定與 UI 刷新專項](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2212-r1-三頁與刷新專項2026-11-08) |
 | 2026-11-08 | [v2.2.12 觀察校準與提前重試適用率研究](../archive/retired/docs/EARLY_RETRY_APPLICABILITY_RESEARCH_v2.2.12_2026-11-08.md) |
 | 2026-11-07 | [v2.2.12 程式整理與離線評估](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2212-完整正文保存2026-11-08)；[v2.2.11 原報告保存](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2211-完整正文保存2026-11-07) |
 | 2026-11-07 | [剩餘 TODO 六類優化研究與離線反例](../archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md) |
@@ -552,6 +560,6 @@
 
 ## v2.2.8 正數 timeout 專項導覽（2026-11-03）
 
-當版判定見 [驗收結論](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)，2026-11-03／04 補足的逐項證據與原生校準見 [R2 完整紀錄](TEST_REPORT.md#v228-r2-專項完成2026-11-0304)。現行工作與停止狀態仍由 [TODO](TODO.md) 維護。
+當版判定見 [驗收結論](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)，2026-11-03／04 補足的逐項證據與原生校準見 [R2 完整紀錄](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-r2-專項完成2026-11-0304)。現行工作與停止狀態仍由 [TODO](TODO.md) 維護。
 
-2026-11-03 更新後首輪觀察與當時限制保存在 [R1 完整紀錄](TEST_REPORT.md#v228-r1-正數-timeout-專項2026-11-03)，原判定保留。2026-11-04 文件狀態核對見 [維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-04v228-驗收通過狀態一致性核對)；發行快照及舊版調查保持原件。
+2026-11-03 更新後首輪觀察與當時限制保存在 [R1 完整紀錄](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-r1-正數-timeout-專項2026-11-03)，原判定保留。2026-11-04 文件狀態核對見 [維護紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-04v228-驗收通過狀態一致性核對)；發行快照及舊版調查保持原件。

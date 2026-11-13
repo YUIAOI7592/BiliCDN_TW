@@ -117,7 +117,7 @@ v2.2.15 的 application 依 routing／measurement／playback／playurl 歸屬控
 
 - Node：原生 mts／ESM／型別移除、必要測試 API／選項與來源映射能力成立；不固定版本號或使用版本白名單。
 - npm：保留既有命令與 package-lock，實際使用時記錄 CLI 路徑、版本與所選 Node；不假設 Codex bundle 一定附帶 npm，也不自動改用 pnpm。
-- TypeScript 7.0.2、esbuild 0.28.2 及 `@types/node@26.6.4`（鎖定的開發依賴）
+- 開發依賴使用 [package.json](../package.json) 與 [package-lock.json](../package-lock.json) 的精確版本；用途與授權見 [第三方聲明](THIRD_PARTY_NOTICES.md)
 - 瀏覽器驗證只使用 Codex 內建瀏覽器及其中的既有腳本；管理器識別按任務需要查證，未取得的資訊明列未驗證，不作產品載入與接線查證的通用前置
 
 Codex 作業每次先使用內建依賴工具 `load_workspace_dependencies` 取得當前 Node 路徑，再以該檔案啟動命令；取得失敗就記錄受影響工作，不默默改用系統 Node 或 `.work/up141`。需要 npm 時將所選 Node 目錄放在當次程序 PATH 首項，再以明確選定的 CLI 執行；不修改全域 PATH。Python 目前沒有正式程式、依賴配置或版本鎖定，需要時同樣取得 Codex 內建路徑。
@@ -158,7 +158,7 @@ npm run verify        # 自動檢查及暫存封裝驗證
 
 verify CLI 以失敗套件、階段及原因摘要呈現彙總錯誤，退出碼仍為 1；不再次傾印附帶的完整測試 outcome。verify 不執行 Codex Security 或內建瀏覽器／Tampermonkey 驗收。安全敏感變更或使用者明確要求時，另行執行安全差異掃描；不要求每版掃描。上一版通過報告不能作為新本機變更的證據。
 
-UP141／CC39 契約依能力分開：npm test -- application --name CC39、npm test -- control-center --name CC39，另保留 UP141-API／START／PROBE／ROUTE／RETRY 回歸。總覽吞吐、起播等待、探測及播放入口摘要由 `control-center` 套件的現行案例驗證，只讀功能狀態，不要求診斷歷程或報告。三個保留功能開關與 HK 預設開啟、明確 false 保留；起播提前放行、中段探測及家族分散固定啟用，舊三欄位忽略且正常保存時淘汰。codec／verbose／手動及定向能力完整移除。修復先重現失敗，重構先固定原行為；離線效用與必要安全掃描獨立於 verify。舊操作表僅適用 v2.1.38，不是新版入口或續跑授權。
+定向回歸先依下方[套件清單](#測試套件與隔離)選入口，再以實際案例名稱篩選；例如 `npm test -- application --name CC39` 或 `npm test -- control-center --name CC39`。歷史 UP141／CC39 名稱仍可追溯原契約，現行功能、預設及撤除範圍以 [ARCHITECTURE](ARCHITECTURE.md) 為準，不用舊操作表安排新驗收。
 
 選路固定合成場景以 `npm run evaluate:routing` 執行，範圍、最壞上限記帳及結果限制見[選路模型對照](../scripts/evaluation/README.md#選路模型對照)。
 
@@ -203,9 +203,9 @@ npm run archive:check -- --restore-root $archiveRestore
 
 ### 原始碼格式與靜態規則
 
-Prettier 3.9.10 只作開發工具。固定格式為兩空格、單引號、無分號、100 字元行寬、LF 與尾端逗號；關閉嵌入語言格式化，保留測試字串及模板內容。格式工具使用明確維護清單，只遍歷正式來源、測試與工具，另含根目錄維護 JSON 設定；Release、封存、基準、私有證據、生成 JS 與依賴鎖定檔不寫入。輸出最多四次格式計算取得穩定內容，無法穩定時失敗；check 模式不寫入。
+Prettier 只作開發工具，設定由 [.prettierrc.json](../.prettierrc.json) 維護：兩空格、單引號、無分號、100 字元行寬、LF 與尾端逗號，關閉嵌入語言格式化以保留測試字串及模板。格式工具使用明確維護清單，只遍歷正式來源、測試與工具，另含根目錄維護 JSON 設定；Release、封存、基準、私有證據、生成 JS 與依賴鎖定檔不寫入。最多四次格式計算取得穩定內容，無法穩定時失敗；check 模式不寫入。
 
-三個型別專案沿用 strict，並檢查未使用宣告／參數及明確型別匯入。移除多餘綁定仍保留初始化的副作用；既有位置參數使用明確未用名稱而不變更呼叫介面。不加入 ESLint／typescript-eslint，TypeScript 7 保持既有精確版本，架構規則仍使用本機 AST。
+三個型別專案沿用 strict，並檢查未使用宣告／參數及明確型別匯入。移除多餘綁定仍保留初始化的副作用；既有位置參數使用明確未用名稱而不變更呼叫介面。不加入 ESLint／typescript-eslint，架構規則使用鎖定 TypeScript 的本機 AST。
 
 ## 新增行為
 
@@ -213,8 +213,8 @@ Prettier 3.9.10 只作開發工具。固定格式為兩空格、單引號、無�
 2. 持久或工作階段資料放在型別化狀態儲存元件。
 3. 可改變選路、量測或恢復的動作透過控制器方法提供。
 4. 瀏覽器差異留在適配器，GM 儲存透過 `platform/storage.ts`；UI 管理自己的 DOM 及呈現生命週期。
-5. 功能協作使用型別化事件；UI 只讀當前狀態快照。
-6. 在 `tests-v2/suites/` 對應獨立套件，或不依賴瀏覽器的 `tests-v2/domain-boundaries.ts` 新增具名 `node:test` 契約。新套件登記於 `scripts/testing/test-registry.mts`。
+5. 功能協作使用型別化事件；UI 消費當前狀態快照，產品變更經 `ControlCommandPort`。
+6. 在 `tests-v2/cases/` 對應功能群組新增具名 `node:test` 契約，由既有 `tests-v2/suites/` 入口匯入；不依賴瀏覽器的領域邊界另由 `tests-v2/domain-boundaries.ts` 維護。新套件登記於 `scripts/testing/test-registry.mts`。
 
 修改執行期邏輯前，先以領域層、控制器或適配器契約固定預期行為：修復缺陷先重現失敗，保持行為的重構先確認原實作通過，不為重構虛構失敗。親和主機變更只由 `RouteCoordinator` 執行，主動探測只由 `MeasurementController` 啟動，核心重載只由 `RecoveryController` 執行。等待後及儲存鎖回呼函式內保留生命週期檢查；只使用計時器介面不能避免舊工作提交。
 
