@@ -1,0 +1,4 @@
+interface:
+  display_name: "BiliCDN 離線評估"
+  short_description: "執行指定 BiliCDN 離線模型，核對固定基準並說明效用限制"
+  default_prompt: "使用 $bilicdn-offline-evaluation 執行已指定的離線比較。"

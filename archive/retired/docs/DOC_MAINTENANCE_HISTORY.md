@@ -1694,3 +1694,101 @@ AGENTS 修正故障／清理的導向章節，DEVELOPMENT 將「固定矩陣」�
 十三項均有獨立權責，沒有為減少檔案數刪除相容入口、完整報告或機器清單。歷史證據、三份日誌舊正文、Release、安全產物、產品／測試／工具／版本與依賴均保持；無新增文件登記或保護例外。工具日誌舊導言與中間更正依日期閱讀，現行規則仍只由權威指南維護。
 
 實際檢查與限制見[工具紀錄](../../../docs/TEST_TOOLING_REPORT.md#2026-11-13-docs-全面檢討檢查)，本機閱讀／差異／完整性資料位於 .work/docs-review-2026-11-13/。本次不啟動瀏覽器、研究、故障或舊矩陣，不新增產品通過結論；純文件按既有授權提交推送 main，不升版、封裝或發布。
+
+
+## 2026-11-14 操作文件轉換專案 Skills
+
+依使用者已批准計畫，以 main／e4933138e90727f3acd497976e64b42a90c2b6d3 為基準，將 DEVELOPMENT、IAB_TESTING 與 evaluation README 完整轉成六個專案 Skills，刪除三個原路徑。沒有新增原文備份、封存包、重新命名副本或導引空殼；既有 Git 歷史保留。產品版本、來源、API、依賴及正式 Release 原件未變更。
+
+六個入口及十份參考皆登記於文件清單，INDEX 一次到 Skill、再一次到參考；其他現行入口改指唯一流程。AGENTS 保留常駐授權、禁令與不變量，架構／安全保留產品契約，報告／TODO 保留事實及停止狀態。僅開放 .agents/skills 納入 Git。
+
+### 原章節去向
+
+下表涵蓋原文全部 70 個章節／自訂錨點，使用原錨點以便精確核對。表內「移入」包含按任務重組與精簡；產品數值、版本、權限及停止狀態與既有權威去重，改讀 ARCHITECTURE、SECURITY、release.json、AGENTS 與 TODO。退役操作只留歷史查找用途，不保留其執行指令。
+
+| 原文件／章節錨點 | 決定與承接位置 |
+| --- | --- |
+| docs/DEVELOPMENT.md／開發測試與發行流程 | 移入 [bilicdn-verify-change/SKILL.md](../../../.agents/skills/bilicdn-verify-change/SKILL.md) |
+| docs/DEVELOPMENT.md／儲存庫配置與封存維護 | 移入 [bilicdn-archive-workspace/references/layout-and-retention.md](../../../.agents/skills/bilicdn-archive-workspace/references/layout-and-retention.md#儲存庫配置) |
+| docs/DEVELOPMENT.md／目錄結構 | 移入 [bilicdn-archive-workspace/references/layout-and-retention.md](../../../.agents/skills/bilicdn-archive-workspace/references/layout-and-retention.md#儲存庫配置) |
+| docs/DEVELOPMENT.md／檔案分類 | 移入 [bilicdn-archive-workspace/references/layout-and-retention.md](../../../.agents/skills/bilicdn-archive-workspace/references/layout-and-retention.md#分類與保存) |
+| docs/DEVELOPMENT.md／工作資料與結案 | 移入 [bilicdn-archive-workspace/references/layout-and-retention.md](../../../.agents/skills/bilicdn-archive-workspace/references/layout-and-retention.md#工作資料與結案) |
+| docs/DEVELOPMENT.md／markdown-格式gfm | 移入 [bilicdn-maintain-docs/references/document-registry.md](../../../.agents/skills/bilicdn-maintain-docs/references/document-registry.md#markdown-格式gfm) |
+| docs/DEVELOPMENT.md／環境需求 | 移入 [bilicdn-verify-change/references/runtime-and-commands.md](../../../.agents/skills/bilicdn-verify-change/references/runtime-and-commands.md#環境需求) |
+| docs/DEVELOPMENT.md／命令 | 移入 [bilicdn-verify-change/references/runtime-and-commands.md](../../../.agents/skills/bilicdn-verify-change/references/runtime-and-commands.md#命令與範圍) |
+| docs/DEVELOPMENT.md／壓縮清理與還原 | 移入 [bilicdn-archive-workspace/references/packing-and-restore.md](../../../.agents/skills/bilicdn-archive-workspace/references/packing-and-restore.md) |
+| docs/DEVELOPMENT.md／原版與-v2-的獨立離線比較 | 移入 [bilicdn-offline-evaluation/references/models.md](../../../.agents/skills/bilicdn-offline-evaluation/references/models.md#原版與-v2-獨立比較) |
+| docs/DEVELOPMENT.md／原始碼格式與靜態規則 | 移入 [bilicdn-verify-change/references/runtime-and-commands.md](../../../.agents/skills/bilicdn-verify-change/references/runtime-and-commands.md#原始碼格式與靜態規則) |
+| docs/DEVELOPMENT.md／新增行為 | 移入 [bilicdn-verify-change/SKILL.md](../../../.agents/skills/bilicdn-verify-change/SKILL.md#實作與輸出) |
+| docs/DEVELOPMENT.md／依變更選擇驗證範圍 | 移入 [bilicdn-verify-change/SKILL.md](../../../.agents/skills/bilicdn-verify-change/SKILL.md#依變更選擇驗證範圍) |
+| docs/DEVELOPMENT.md／測試套件與隔離 | 移入 [bilicdn-verify-change/references/test-contracts.md](../../../.agents/skills/bilicdn-verify-change/references/test-contracts.md) |
+| docs/DEVELOPMENT.md／test-suites-and-isolation | 移入 [bilicdn-verify-change/references/test-contracts.md](../../../.agents/skills/bilicdn-verify-change/references/test-contracts.md) |
+| docs/DEVELOPMENT.md／原生校準與回歸 | 移入 [bilicdn-verify-change/references/test-contracts.md](../../../.agents/skills/bilicdn-verify-change/references/test-contracts.md#依修改保護的邊界) |
+| docs/DEVELOPMENT.md／救援還原驗證 | 移入 [bilicdn-verify-change/references/test-contracts.md](../../../.agents/skills/bilicdn-verify-change/references/test-contracts.md#依修改保護的邊界) |
+| docs/DEVELOPMENT.md／建置輸出 | 移入 [bilicdn-verify-change/references/runtime-and-commands.md](../../../.agents/skills/bilicdn-verify-change/references/runtime-and-commands.md#建置輸出) |
+| docs/DEVELOPMENT.md／內建瀏覽器驗證 | 移入 [bilicdn-iab-validation/SKILL.md](../../../.agents/skills/bilicdn-iab-validation/SKILL.md) |
+| docs/DEVELOPMENT.md／封裝與發行 | 移入 [bilicdn-release/SKILL.md](../../../.agents/skills/bilicdn-release/SKILL.md) |
+| docs/DEVELOPMENT.md／發布文件更新順序 | 移入 [bilicdn-release/SKILL.md](../../../.agents/skills/bilicdn-release/SKILL.md) |
+| docs/DEVELOPMENT.md／release-documentation | 移入 [bilicdn-release/SKILL.md](../../../.agents/skills/bilicdn-release/SKILL.md) |
+| docs/DEVELOPMENT.md／文件維護與結案 | 移入 [bilicdn-maintain-docs/SKILL.md](../../../.agents/skills/bilicdn-maintain-docs/SKILL.md) |
+| docs/DEVELOPMENT.md／文件更新對照表 | 移入 [bilicdn-maintain-docs/references/update-map.md](../../../.agents/skills/bilicdn-maintain-docs/references/update-map.md#依變更選擇權威) |
+| docs/DEVELOPMENT.md／documentation-update-map | 移入 [bilicdn-maintain-docs/references/update-map.md](../../../.agents/skills/bilicdn-maintain-docs/references/update-map.md#依變更選擇權威) |
+| docs/DEVELOPMENT.md／更新現有段落避免累積副本 | 移入 [bilicdn-maintain-docs/references/update-map.md](../../../.agents/skills/bilicdn-maintain-docs/references/update-map.md#維護既有段落) |
+| docs/DEVELOPMENT.md／文件登記與保護 | 移入 [bilicdn-maintain-docs/references/document-registry.md](../../../.agents/skills/bilicdn-maintain-docs/references/document-registry.md#文件登記與唯一權威) |
+| docs/DEVELOPMENT.md／狀態與矛盾核對 | 移入 [bilicdn-maintain-docs/SKILL.md](../../../.agents/skills/bilicdn-maintain-docs/SKILL.md#全面檢討) |
+| docs/DEVELOPMENT.md／文件檢查與結案 | 移入 [bilicdn-maintain-docs/SKILL.md](../../../.agents/skills/bilicdn-maintain-docs/SKILL.md#檢查與結案) |
+| docs/DEVELOPMENT.md／慢請求提前重試原型重現分支限定 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| docs/DEVELOPMENT.md／已撤除工具的舊入口 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| docs/DEVELOPMENT.md／安裝版還原觀察工具 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| docs/DEVELOPMENT.md／實際緩衝效用與採用判定工具 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| docs/DEVELOPMENT.md／緩衝影子效用與成本評估 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| docs/DEVELOPMENT.md／診斷成本基準 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| docs/DEVELOPMENT.md／唯讀緩衝趨勢診斷 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| docs/DEVELOPMENT.md／剪貼簿驗證 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| docs/DEVELOPMENT.md／風險覆蓋與可介入性離線評估 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| docs/IAB_TESTING.md／codex-內建瀏覽器測試方案 | 移入 [bilicdn-iab-validation/SKILL.md](../../../.agents/skills/bilicdn-iab-validation/SKILL.md) |
+| docs/IAB_TESTING.md／1-範圍與證據層級 | 移入 [bilicdn-iab-validation/references/assertions-and-evidence.md](../../../.agents/skills/bilicdn-iab-validation/references/assertions-and-evidence.md#證據層級) |
+| docs/IAB_TESTING.md／門檻的適用範圍 | 移入 [bilicdn-iab-validation/references/assertions-and-evidence.md](../../../.agents/skills/bilicdn-iab-validation/references/assertions-and-evidence.md#門檻的適用範圍) |
+| docs/IAB_TESTING.md／原生-api-的官方測試校準 | 移入 [bilicdn-iab-validation/references/assertions-and-evidence.md](../../../.agents/skills/bilicdn-iab-validation/references/assertions-and-evidence.md#原生-api-校準) |
+| docs/IAB_TESTING.md／9-依據與文件責任 | 移入 [bilicdn-iab-validation/references/assertions-and-evidence.md](../../../.agents/skills/bilicdn-iab-validation/references/assertions-and-evidence.md#原生-api-校準) |
+| docs/IAB_TESTING.md／展示樣片選擇與唯讀窗口 | 移入 [bilicdn-iab-validation/references/playback-and-visibility.md](../../../.agents/skills/bilicdn-iab-validation/references/playback-and-visibility.md#展示樣片選擇與唯讀窗口) |
+| docs/IAB_TESTING.md／2-開始前只做一次的環境確認 | 移入 [bilicdn-iab-validation/SKILL.md](../../../.agents/skills/bilicdn-iab-validation/SKILL.md#開始前) |
+| docs/IAB_TESTING.md／3-前景偽裝與真正背景的校準 | 移入 [bilicdn-iab-validation/references/playback-and-visibility.md](../../../.agents/skills/bilicdn-iab-validation/references/playback-and-visibility.md#前景偽裝與真正背景) |
+| docs/IAB_TESTING.md／e04-的實際步驟 | 移入 [bilicdn-iab-validation/references/playback-and-visibility.md](../../../.agents/skills/bilicdn-iab-validation/references/playback-and-visibility.md#e04-的適用條件) |
+| docs/IAB_TESTING.md／4-固定驗收矩陣 | 移入 [bilicdn-iab-validation/SKILL.md](../../../.agents/skills/bilicdn-iab-validation/SKILL.md#有界執行) |
+| docs/IAB_TESTING.md／5-故障注入資料與清理 | 移入 [bilicdn-iab-validation/references/fault-injection-and-cleanup.md](../../../.agents/skills/bilicdn-iab-validation/references/fault-injection-and-cleanup.md) |
+| docs/IAB_TESTING.md／注入前目標與學習隔離 | 移入 [bilicdn-iab-validation/references/fault-injection-and-cleanup.md](../../../.agents/skills/bilicdn-iab-validation/references/fault-injection-and-cleanup.md#注入前目標與學習隔離) |
+| docs/IAB_TESTING.md／執行中事件與所有權 | 移入 [bilicdn-iab-validation/references/fault-injection-and-cleanup.md](../../../.agents/skills/bilicdn-iab-validation/references/fault-injection-and-cleanup.md#事件與資源所有權) |
+| docs/IAB_TESTING.md／操作與收束 | 移入 [bilicdn-iab-validation/references/fault-injection-and-cleanup.md](../../../.agents/skills/bilicdn-iab-validation/references/fault-injection-and-cleanup.md#操作與收束) |
+| docs/IAB_TESTING.md／解除受控延遲 | 移入 [bilicdn-iab-validation/references/fault-injection-and-cleanup.md](../../../.agents/skills/bilicdn-iab-validation/references/fault-injection-and-cleanup.md#操作與收束) |
+| docs/IAB_TESTING.md／解除延遲與剪貼簿寫入 | 移入 [bilicdn-iab-validation/references/fault-injection-and-cleanup.md](../../../.agents/skills/bilicdn-iab-validation/references/fault-injection-and-cleanup.md#操作與收束) |
+| docs/IAB_TESTING.md／6-結果期限與停止規則 | 移入 [bilicdn-iab-validation/SKILL.md](../../../.agents/skills/bilicdn-iab-validation/SKILL.md#判定與交付) |
+| docs/IAB_TESTING.md／7-證據目錄與重跑入口 | 移入 [bilicdn-iab-validation/references/assertions-and-evidence.md](../../../.agents/skills/bilicdn-iab-validation/references/assertions-and-evidence.md#證據記錄) |
+| docs/IAB_TESTING.md／8-修復發布與後續執行 | 移入 [bilicdn-iab-validation/references/assertions-and-evidence.md](../../../.agents/skills/bilicdn-iab-validation/references/assertions-and-evidence.md#安裝更新與已更新查證) |
+| docs/IAB_TESTING.md／剪貼簿校準與保護 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| scripts/evaluation/README.md／離線評估工具 | 移入 [bilicdn-offline-evaluation/SKILL.md](../../../.agents/skills/bilicdn-offline-evaluation/SKILL.md) |
+| scripts/evaluation/README.md／原版與-v2-的獨立離線比較 | 移入 [bilicdn-offline-evaluation/references/models.md](../../../.agents/skills/bilicdn-offline-evaluation/references/models.md#原版與-v2-獨立比較) |
+| scripts/evaluation/README.md／慢請求提前重試 | 移入 [bilicdn-offline-evaluation/references/models.md](../../../.agents/skills/bilicdn-offline-evaluation/references/models.md#提前重試效用) |
+| scripts/evaluation/README.md／選路模型對照 | 移入 [bilicdn-offline-evaluation/references/models.md](../../../.agents/skills/bilicdn-offline-evaluation/references/models.md#選路模型對照) |
+| scripts/evaluation/README.md／v2212-優化補充模型 | 移入 [bilicdn-offline-evaluation/references/models.md](../../../.agents/skills/bilicdn-offline-evaluation/references/models.md#選路模型對照) |
+| scripts/evaluation/README.md／提前重試資格與覆蓋 | 移入 [bilicdn-offline-evaluation/references/models.md](../../../.agents/skills/bilicdn-offline-evaluation/references/models.md#資格與取證邊界) |
+| scripts/evaluation/README.md／後續取證方法契約 | 移入 [bilicdn-offline-evaluation/references/models.md](../../../.agents/skills/bilicdn-offline-evaluation/references/models.md#資格與取證邊界) |
+| scripts/evaluation/README.md／已撤除的專用評估 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| scripts/evaluation/README.md／實際緩衝效用與採用判定工具 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| scripts/evaluation/README.md／緩衝影子效用與成本評估 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| scripts/evaluation/README.md／診斷成本基準 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+| scripts/evaluation/README.md／唯讀緩衝趨勢診斷 | 刪除已退役操作；[歷史入口](../../../docs/HISTORY.md#封存與快照) |
+
+### 歷史證明與情境演練
+
+43 筆受保護歷史引用新增精確登記；retiredSources 使用完整基準提交與原始 Git blob SHA-256，解析該原文錨點。沒有改寫歷史正文，原網址不可用另列 archivedReferences；現行指南不能使用此例外。既有保護、公開包與其校驗不變，manifest schema 不變。
+
+| 桌上情境 | 按 Skill 逐步判斷的結果 |
+| --- | --- |
+| 只修文件 | maintain-docs 定位權威、docs／必要 archive 檢查、提交推送；release 不啟動，不升版 |
+| 使用者已更新，只查身分 | iab-validation 直接核對當前載入本體／接線所需證據，不下載重裝 |
+| 只驗一般播放 | 僅取真實播放、錯誤與 UI 證據；不強制故障矩陣或完整 Network |
+| 離線模型完成 | offline-evaluation 分列執行、效用及實機限制；退出 0 不代算現場改善 |
+| 封存還原核對失敗 | archive-workspace 保留來源與失敗紀錄，停止相依刪除，不改保護雜湊 |
+
+以上是指令與決策的桌上演練，不是新代理行為統計、瀏覽器驗收、效用研究或實際封存處置。實際格式、Codex 專案清單與工具契約結果見[工具日誌](../../../docs/TEST_TOOLING_REPORT.md#2026-11-14-skills-遷移檢查)。本輪不恢復已停止目標，不發布產品 Release。

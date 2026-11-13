@@ -1487,3 +1487,23 @@ Windows PowerShell 啟動器 cwd 改以目錄的 dev／ino 身分核對，不把
 npm run docs:check、npm run archive:check 與 git diff --check 通過。文件檢查涵蓋 305 份 Markdown、5,513 個本機／儲存庫連結與 633 項正文保護；封存檢查涵蓋 534 個搬移項目、三份追加日誌、159 項未變原件及 88 份清單／394 筆校驗。七筆不可變歷史斷鏈、672 筆搬移後原網址不可用、18 筆私有證據未核對及 969 個外部連結未連網分開保留，不宣稱已檢查公開網址或私有原件。
 
 當輪基準的 506 個追蹤檔案逐一比對，變更限於十二個預期文件／登記路徑，其餘 494 個原始位元組保持；三份日誌的既有正文前綴完整、TEST_REPORT 自驗收結論起的正文完整，機器清單除現行文件條目外的所有配置與保護保持。人工事實與必要性核對不由自動檢查取代，沒有新增產品、安全、安裝或實機效益通過宣稱。
+
+## 2026-11-14 Skills 遷移檢查
+
+範圍與逐章去向見[遷移紀錄](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-操作文件轉換專案-skills)。基準 e4933138e90727f3acd497976e64b42a90c2b6d3；只更動 Skills、文件／清單、忽略規則、文件檢查器與其契約，產品仍為 v2.2.20。
+
+本輪 load_workspace_dependencies 取得 Node，實讀 24.22.1，路徑為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1111-574-0_26.1111.574.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe`；npm CLI 從 npm.cmd 解析為 `C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js`，實讀 11.20.0，明確由所選 Node 執行，僅調整當次程序 PATH。Python 同次取得路徑為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1111-574-0_26.1111.574.0_x64__3k8sg7r9htsxt\dependencies\python\python.exe`，實讀 3.12.14；為 skill-creator 隔離安裝 PyYAML 6.0.3 至 .work/skills-migration-2026-11-13/python-deps，以程序 PYTHONPATH 載入，未修改專案依賴或 lock。
+
+新增十一個檢查器契約，涵蓋 Git／無 Git Skills 掃描、私有代理檔排除、frontmatter 不作正文／錨點且維持錯誤行號、漏登記／遺失參考、退役 Markdown 精確 Git 證明、閱讀版相對引用、錯誤錨點／雜湊、現行指南禁止例外、原文改動及來源仍存在。先重現掃描及 frontmatter 缺口；歷史 fixture 的封存目標配置錯誤先修正，另以相對閱讀版重現真正判定缺口，再取得十一案全綠，不把 fixture 錯誤算成產品紅燈。
+
+六個 Skills 由 skill-creator 的 generate_openai_yaml.py 產生精簡 UI 中繼資料，quick_validate.py 全數通過。使用當次 Codex 執行檔生成本機協定型別，再以 stdio 的 initialize／skills/list（forceReload）實際查詢；六個均回傳 scope repo、enabled true，errors 空陣列。僅啟動 stdio 程序，不開網站服務、模型任務或新對話。受限環境最初無法開啟 Codex state DB，經核准執行環境完成查詢，未改持久設定。
+
+tooling 初次 329 案中四案失敗：一案建立暫存 symlink 回 EPERM，三案既有 Git Shell 子程序回 3221225794；沒有將其改成略過或改測試斷言。使用可正常執行這些操作的核准環境重跑，329 案通過，無 failed／cancelled／skipped／todo。完整 npm run verify 隨後通過 2,211 案及型別、架構、格式、文件、公開封存、確定性建置、語法與暫存封裝校驗；未執行正式 package 或寫入 Release。
+
+初次遷移文件檢查為 318 份 Markdown、5,453 個本機／儲存庫連結及 633 項正文保護，格式修正後無 findings；715 筆歷史原網址不可用包含新增 43 筆退役指南引用，另外保留七筆不可變斷鏈、18 筆私有證據未核對與 959 個外部連結未連網。最後追加本節及維護紀錄後另重驗 docs／archive／差異，不以較早的連結數代表追加後數量。
+
+驗證資料位於 .work/skills-migration-2026-11-13/，任務跨午夜於 2026-11-14 完成。情境演練只核對指令決策，未執行 IAB、離線研究或本機資料封存；安全審查與自動 verify 分開判定，不新增產品或實際安裝通過宣稱。
+
+Codex Security diff scan `0e42e1d1-9a5e-479b-9cde-feab215bf32a` 已完成並封存，固定差異摘要為 `codex-security-snapshot/v1:sha256:a96190a12a8fcb98cc6aae8a6c7951535e6fa8ffb4342ead4dac31c12e5c822d`。九個程式／設定清單項目及相關文件遷移均已核對，無安全候選或未完成範圍；未重審未改動的產品執行期。預檢 ready，沒有修改持久設定。工具回報兩個執行緒的總用量 3,670,702 tokens，其中 cached input 3,546,112、output 10,473；這是工具記錄的用量，不是新增功能或效益量測。
+
+審查後僅修正兩處現行導覽名稱、上述 Python 暫存路徑、文末空行並追加本結果；檢查器、測試、Skills、清單與保護判定均保持受審內容。最終文件／公開封存檢查及 git diff --check 通過；現行引用均已切換，三份原操作文件不存在，沒有新增其備份、封存或導引副本。633 項保護、舊歷史引用、三份日誌既有前綴、產品／版本／依賴及正式 Release 原件保持。

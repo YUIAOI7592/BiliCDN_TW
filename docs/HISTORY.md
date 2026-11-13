@@ -6,7 +6,7 @@
 
 過往版本紀錄的閱讀版集中於 `archive/retired/docs/`，搬移時只調整已登記的連結 URL；原始正文另有固定提交及 TAR 快照可追溯。當時的 FAIL、無效窗口、未執行及限制不改寫。舊 Chrome 紀錄保留原環境；已撤銷 CDN 研究及停止的 BR-01 矩陣不構成新授權。
 
-同版也可能有發布前、自動驗證、公開交付與後續安裝等多個時點。Release 內快照只描述封裝當時；最新版的後續結果集中 TEST_REPORT，舊版則查當版完整歷史正文。新預設與當輪保留的使用者設定可不同；功能測試、工具有效性及效用結果也不互相覆蓋。核對方法見 [狀態與矛盾核對](DEVELOPMENT.md#狀態與矛盾核對)。
+同版也可能有發布前、自動驗證、公開交付與後續安裝等多個時點。Release 內快照只描述封裝當時；最新版的後續結果集中 TEST_REPORT，舊版則查當版完整歷史正文。新預設與當輪保留的使用者設定可不同；功能測試、工具有效性及效用結果也不互相覆蓋。核對方法見 [狀態與矛盾核對](../.agents/skills/bilicdn-maintain-docs/SKILL.md#全面檢討)。
 
 ## 版本
 
@@ -177,7 +177,7 @@
 
 ### 工具鏈、Runtime 與版本限制
 
-[固定環境與輸入](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#固定環境與輸入)、[相容性矩陣](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#比較方法與結果)、[逐項鎖定建議](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#版本鎖定建議與優先順序)、[後續實作與完整驗證](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#工具鏈整理實作銜接)；現行操作要求仍由 [DEVELOPMENT](DEVELOPMENT.md#環境需求) 維護，工作由 TODO 管理。
+[固定環境與輸入](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#固定環境與輸入)、[相容性矩陣](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#比較方法與結果)、[逐項鎖定建議](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#版本鎖定建議與優先順序)、[後續實作與完整驗證](../archive/retired/docs/TOOLCHAIN_COMPATIBILITY_v2.2.16_2026-11-09.md#工具鏈整理實作銜接)；現行操作要求仍由 [Runtime 與命令](../.agents/skills/bilicdn-verify-change/references/runtime-and-commands.md#環境需求) 維護，工作由 TODO 管理。
 
 ### 黑畫面、媒體讀值與原生終止
 
@@ -324,6 +324,7 @@
 
 ### 文件維護與指南快照
 
+- [操作文件轉換六個專案 Skills — 2026-11-14](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-操作文件轉換專案-skills)
 - [docs 全文正確性與必要性檢討 — 2026-11-13](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-docs-正確性與必要性檢討)
 - [AGENTS 檢討與管理器探索禁令撤銷 — 2026-11-13](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-agents-正確性與必要性檢討)
 - [IAB 方法全文檢討 — 2026-11-13](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-iab_testing-全文檢討)
@@ -417,6 +418,7 @@
 
 ## 日期
 
+- 2026-11-14：[操作文件轉換 Skills](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-操作文件轉換專案-skills)、[檢查器與 Skills 驗證](TEST_TOOLING_REPORT.md#2026-11-14-skills-遷移檢查)。
 - 2026-11-13：[v2.2.20 交付](TEST_REPORT.md#驗收結論)、[安裝身分／接線重判](TEST_REPORT.md#v2220-安裝身分與變更接線重新判定2026-11-13)、[管理器探索禁令撤銷](TEST_REPORT.md#管理器探索禁令撤銷註記2026-11-13)、[AGENTS 檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-agents-正確性與必要性檢討)、[IAB 方法檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-iab_testing-全文檢討)、[docs 全文檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-docs-正確性與必要性檢討)。
 
 - 2026-11-12：[v2.2.18 發布後測試精簡](../archive/retired/docs/TEST_REPORT_HISTORY.md#斷言審核與精簡2026-11-12)。
@@ -495,7 +497,7 @@
 - [整理前固定提交](https://github.com/YUIAOI7592/BiliCDN_TW/tree/0f4cb8d669a144cf6876575a979fd98e4b586300) 保留原始儲存庫路徑；[原始文件 TAR](https://github.com/YUIAOI7592/BiliCDN_TW/blob/2077805b9a55731e205a4206fb9aa8bdcd53d69b/archive/retired/originals/PRE_CLEANUP_2026-10-20_0f4cb8d.tar) 保存本輪搬移前正文及完整日誌基準。
 - [搬移清單](../archive/relocation-manifest.json) 登記舊／新路徑、雜湊、閱讀版 URL 編輯及精確歷史引用限制。舊 `main` 網址不因 Git 搬移自動取得新入口；這些限制與有效現行連結分開報告，不宣稱原歷史網址仍全部有效。
 - 舊矩陣、TODO 及舊索引的完整原文見 [重整前快照](../archive/retired/docs/DOCS_BEFORE_REORGANIZATION_2026-10-17.md)。
-- [2026-11-10 archive 精簡與還原報告](../archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md) 記錄壓縮、可重建副本、保留項目與驗證界線，另含[原 34 項的後續處置](../archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md#原-34-項的後續處置)及[.work 全面整理與工具歸位](../archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md#work-全面整理與工具歸位)；還原指令由 [開發指南](DEVELOPMENT.md#壓縮清理與還原) 維護。
+- [2026-11-10 archive 精簡與還原報告](../archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md) 記錄壓縮、可重建副本、保留項目與驗證界線，另含[原 34 項的後續處置](../archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md#原-34-項的後續處置)及[.work 全面整理與工具歸位](../archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md#work-全面整理與工具歸位)；還原指令由 [開發指南](../.agents/skills/bilicdn-archive-workspace/references/packing-and-restore.md) 維護。
 
 ## 私有證據邊界
 

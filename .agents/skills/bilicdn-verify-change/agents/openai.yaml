@@ -1,0 +1,4 @@
+interface:
+  display_name: "BiliCDN 變更驗證"
+  short_description: "依 BiliCDN 變更選擇契約與驗證範圍，記錄實際結果及限制"
+  default_prompt: "使用 $bilicdn-verify-change 驗證這次 BiliCDN 變更。"

@@ -142,13 +142,13 @@ CDN 是否可用取決於當時的網路、媒體與網站回應；指定節點�
 
 [TEST_REPORT 驗收結論](docs/TEST_REPORT.md#驗收結論) 是最新版完整結果的入口，正文分列自動、安全、來源隔離、發布及實際安裝證據與歷次原始判定；各層證據分開判定，未執行項目不算通過。
 
-本專案瀏覽器測試固定使用 **Codex 內建瀏覽器＋Tampermonkey**，方法見 [IAB_TESTING](docs/IAB_TESTING.md)；不將該環境的結果外推為所有瀏覽器已驗證。
+本專案瀏覽器測試固定使用 **Codex 內建瀏覽器＋Tampermonkey**，方法見 [IAB Skill](.agents/skills/bilicdn-iab-validation/SKILL.md)；不將該環境的結果外推為所有瀏覽器已驗證。
 
 目前工作與結案範圍只看 [TODO](docs/TODO.md)；歷史修復、失敗、無效窗口與限制由 [HISTORY](docs/HISTORY.md) 追溯。
 
 ## 開發與專案結構
 
-正式來源 `src-v2/`、契約測試 `tests-v2/`；詳細配置、命令及發布統一見 [DEVELOPMENT](docs/DEVELOPMENT.md)。產品與內部契約見 [ARCHITECTURE](docs/ARCHITECTURE.md)，安全界線見 [SECURITY](SECURITY.md)，所有文件由 [INDEX](docs/INDEX.md) 導覽。
+正式來源 `src-v2/`、契約測試 `tests-v2/`；配置、驗證、維護與發布由[專案 Skills](docs/INDEX.md#專案-skills)按任務提供流程。產品與內部契約見 [ARCHITECTURE](docs/ARCHITECTURE.md)，安全界線見 [SECURITY](SECURITY.md)，所有文件由 [INDEX](docs/INDEX.md) 導覽。
 
 ## 授權
 

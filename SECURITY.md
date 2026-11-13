@@ -2,7 +2,7 @@
 
 本指南描述目前 `src-v2/` 的安全要求、實際防護及平台限制，版本以 [release.json](release.json) 為準。已執行的版本別安全審查見 [TEST_REPORT](docs/TEST_REPORT.md) 與 [歷史索引](docs/HISTORY.md)，不把歷史掃描當成新差異的驗證。
 
-瀏覽器驗證只使用 **Codex 內建瀏覽器＋Tampermonkey**，資料隔離、送出前攔截與清理依 [IAB_TESTING](docs/IAB_TESTING.md)。來源隔離、環境校準與實際安裝各自判定；版本別證據由 [HISTORY](docs/HISTORY.md) 追溯。
+瀏覽器驗證只使用 **Codex 內建瀏覽器＋Tampermonkey**，資料隔離、送出前攔截與清理依 [IAB Skill](.agents/skills/bilicdn-iab-validation/SKILL.md)。來源隔離、環境校準與實際安裝各自判定；版本別證據由 [HISTORY](docs/HISTORY.md) 追溯。
 
 ## 不可信輸入
 

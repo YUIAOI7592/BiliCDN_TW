@@ -1,6 +1,6 @@
 # 上游與歷史來源
 
-本文件維護來源歸屬、上游保存與 v1／v2 界線。現行來源為 `src-v2/`，下列版本化來源只作歷史基準；建置流程見 [DEVELOPMENT](DEVELOPMENT.md#建置輸出)，授權與作者資訊見 [第三方聲明](THIRD_PARTY_NOTICES.md)。
+本文件維護來源歸屬、上游保存與 v1／v2 界線。現行來源為 `src-v2/`，下列版本化來源只作歷史基準；建置流程見[變更驗證 Skill](../.agents/skills/bilicdn-verify-change/references/runtime-and-commands.md#建置輸出)，授權與作者資訊見 [第三方聲明](THIRD_PARTY_NOTICES.md)。
 
 ## 來源歸屬基準
 
@@ -27,8 +27,8 @@ v2 系列從 v2.0.0 的 TypeScript 架構重整開始；v1.9.6 僅作使用者�
 
 沒有 v1 儲存遷移或執行期相容層；既有 v1 Tampermonkey 值既不讀取，也不刪除。
 
-[獨立離線比較](../scripts/evaluation/README.md#原版與-v2-的獨立離線比較)可在隔離模型載入雜湊固定的兩版完整腳本；它不屬正式 v2 套件，也不將歷史來源加入產品建置。比較結果只適用所列版本與模型。
+[獨立離線比較](../.agents/skills/bilicdn-offline-evaluation/references/models.md#原版與-v2-獨立比較)可在隔離模型載入雜湊固定的兩版完整腳本；它不屬正式 v2 套件，也不將歷史來源加入產品建置。比較結果只適用所列版本與模型。
 
 ## 第三方工具
 
-工具用途與授權集中於 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)，精確依賴由 [package.json](../package.json) 與 [package-lock.json](../package-lock.json) 維護；Node 選擇及能力驗證見 [環境需求](DEVELOPMENT.md#環境需求)。發行使用者腳本為單一 IIFE，沒有執行期第三方依賴，封存來源不加入產品建置。
+工具用途與授權集中於 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)，精確依賴由 [package.json](../package.json) 與 [package-lock.json](../package-lock.json) 維護；Node 選擇及能力驗證見 [環境需求](../.agents/skills/bilicdn-verify-change/references/runtime-and-commands.md#環境需求)。發行使用者腳本為單一 IIFE，沒有執行期第三方依賴，封存來源不加入產品建置。

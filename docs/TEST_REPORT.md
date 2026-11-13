@@ -198,7 +198,7 @@ pageAssets／WebMCP／console 實測在 2026-11-13 01:48:49 前完成；不作�
 | 所有執行期整理都要求先有失敗測試 | 缺陷修復先重現失敗；保持行為的重構先在原實作固定通過契約。修改後相應套件及正式完整檢查不減少 |
 | 工具 timeout 或缺少無彈窗保證被當成全流程能力門檻 | 只報當次實際工具結果；沿用既有授權，不保證工具未提供的權限逾時功能，不重複發起已受阻操作，也不因此否定其他可用方法 |
 
-先前以管理器禁令阻塞整體身分／接線查證的推論不成立；本更正不把歷史 INVALID 改為 PASS，也不宣稱未觀察的協定、容量壓力或持久保存已通過。對已批准的具體案例，不因困難事後降級或刪行；修正的是錯誤適用範圍。現行方法由 [IAB 門檻表](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/IAB_TESTING.md#門檻的適用範圍) 與 [開發驗證範圍](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/DEVELOPMENT.md#依變更選擇驗證範圍) 唯一維護。
+先前以管理器禁令阻塞整體身分／接線查證的推論不成立；本更正不把歷史 INVALID 改為 PASS，也不宣稱未觀察的協定、容量壓力或持久保存已通過。對已批准的具體案例，不因困難事後降級或刪行；修正的是錯誤適用範圍。現行方法由 [IAB 門檻表](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/.agents/skills/bilicdn-iab-validation/references/assertions-and-evidence.md#門檻的適用範圍) 與 [開發驗證範圍](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/.agents/skills/bilicdn-verify-change/SKILL.md#依變更選擇驗證範圍) 唯一維護。
 
 保留的必要要求包括永久禁令、敏感資料保護、可信操作、故障前精確攔截及學習隔離、自有資源清理、證據與斷言相符、已批准完整測試、按風險安全審查及正式發布校驗。沒有降低產品數值門檻、測試退出碼或封存保護；舊 FAIL／INVALID、Release 與安全原件保持。
 
@@ -238,7 +238,7 @@ pageAssets／WebMCP／console 實測在 2026-11-13 01:48:49 前完成；不作�
 
 ## 管理器探索禁令撤銷註記（2026-11-13）
 
-使用者在上述重新判定結案後，於 AGENTS 檢討工作中明確撤銷「禁止探索 Tampermonkey」。本報告較早各檢查點的「依禁令未讀取」描述當時限制，保留原文；現行操作依 [AGENTS 瀏覽器界線](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/AGENTS.md#瀏覽器工作界線) 與 IAB_TESTING。撤銷本身沒有補出管理器證據，本次未開啟瀏覽器或重新驗收，既有結果與未驗證項目保持。
+使用者在上述重新判定結案後，於 AGENTS 檢討工作中明確撤銷「禁止探索 Tampermonkey」。本報告較早各檢查點的「依禁令未讀取」描述當時限制，保留原文；現行操作依 [AGENTS 瀏覽器界線](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/AGENTS.md#瀏覽器工作界線) 與 [IAB Skill](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/.agents/skills/bilicdn-iab-validation/SKILL.md)。撤銷本身沒有補出管理器證據，本次未開啟瀏覽器或重新驗收，既有結果與未驗證項目保持。
 
 ## 歷史驗證導覽
 

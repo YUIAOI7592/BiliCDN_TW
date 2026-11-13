@@ -19,4 +19,4 @@
 
 TypeScript 的 NOTICE 與 Prettier 的第三方通知另列內含元件；不能把套件主授權當成全部內含程式的唯一授權。依賴只作本機開發，不進入單一 IIFE 使用者腳本；文件檢查不在執行時連網。
 
-Node 以內建 `node:test`、斷言與報告 API 執行契約，npm 提供既有命令及依賴安裝。Runtime 選擇與能力判定由 [環境需求](DEVELOPMENT.md#環境需求) 維護，實際使用路徑與版本記於當輪工具日誌；型別套件版本不代表所用 Node 版本，也不證明其執行相容性。
+Node 以內建 `node:test`、斷言與報告 API 執行契約，npm 提供既有命令及依賴安裝。Runtime 選擇與能力判定由 [環境需求](../.agents/skills/bilicdn-verify-change/references/runtime-and-commands.md#環境需求) 維護，實際使用路徑與版本記於當輪工具日誌；型別套件版本不代表所用 Node 版本，也不證明其執行相容性。

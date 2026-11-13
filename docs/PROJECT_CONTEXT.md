@@ -44,7 +44,7 @@
 
 ## 交付規則
 
-強制流程見 [AGENTS](../AGENTS.md)，開發與交付見 [DEVELOPMENT](DEVELOPMENT.md)；工作與停止決策只看 [TODO](TODO.md)，結果見 [TEST_REPORT](TEST_REPORT.md)。
+強制流程見 [AGENTS](../AGENTS.md)，開發與交付依[專案 Skills](INDEX.md#專案-skills)選擇；工作與停止決策只看 [TODO](TODO.md)，結果見 [TEST_REPORT](TEST_REPORT.md)。
 
 ## 診斷
 
@@ -52,7 +52,7 @@
 
 ## 唯讀緩衝趨勢
 
-此舊功能與專用評估已撤除；見 [撤除說明與歷史入口](../scripts/evaluation/README.md#已撤除的專用評估)。
+此舊功能與專用評估已撤除；見 [撤除說明與歷史入口](HISTORY.md#封存與快照)。
 
 ## 播放進度
 

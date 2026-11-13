@@ -1,0 +1,4 @@
+interface:
+  display_name: "BiliCDN IAB 查證"
+  short_description: "在已授權 IAB 中取得 BiliCDN 必要證據，完成判定及資源清理"
+  default_prompt: "使用 $bilicdn-iab-validation 查證指定 BiliCDN 安裝行為。"

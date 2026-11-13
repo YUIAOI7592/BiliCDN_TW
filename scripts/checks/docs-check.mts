@@ -214,8 +214,14 @@ function proseParagraphs(node: MarkdownNode): MarkdownNode[] {
   if (node.type === 'paragraph') return [node]
   return (node.children ?? []).flatMap(proseParagraphs)
 }
+function markdownBody(source: string): string {
+  // YAML metadata is not Markdown. Preserve offsets and line numbers for findings.
+  return source.replace(/^---\r?\n[\s\S]*?\r?\n---(?=\r?\n|$)/, (header) =>
+    header.replace(/[^\r\n]/g, ' '),
+  )
+}
 export function markdownAnchors(source: string): ReadonlySet<string> {
-  const tree = unified().use(remarkParse).use(remarkGfm).parse(source)
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(markdownBody(source))
   const slugger = new GithubSlugger(),
     result = new Set<string>()
   for (const node of descendants(tree)) {
@@ -236,7 +242,7 @@ function markdownFiles(root: string, manifest: DocumentationManifest): string[] 
           { cwd: root, encoding: 'utf8' },
         )
           .split('\0')
-          .filter(Boolean),
+          .filter((file) => file && existsSync(resolve(root, file))),
       ),
     ].sort()
   const result: string[] = []
@@ -254,7 +260,8 @@ function markdownFiles(root: string, manifest: DocumentationManifest): string[] 
     }
   }
   visit('', false)
-  for (const directory of ['docs', 'tests-v2', 'archive/retired/docs']) visit(directory, true)
+  for (const directory of ['docs', 'tests-v2', 'archive/retired/docs', '.agents/skills'])
+    visit(directory, true)
   // Root-level v1 local files are ignored, not public release snapshots.
   for (const directory of new Set(
     manifest.documents
@@ -334,7 +341,7 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
   for (const file of files) {
     if (!entries.has(file)) add(file, 'classification', 'Public Markdown is not classified')
     const source = read(file)
-    const tree = unified().use(remarkParse).use(remarkGfm).parse(source)
+    const tree = unified().use(remarkParse).use(remarkGfm).parse(markdownBody(source))
     trees.set(file, tree)
     // CommonMark leaves undefined full/collapsed references as text, not link nodes.
     // Inspect only those text spans; escaped syntax, code and HTML stay excluded.
@@ -440,6 +447,8 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
       })
       if (digest(original) !== item.sha256) throw Error('Retired source hash differs')
       retiredSources.add(item.path)
+      if (item.path.endsWith('.md'))
+        anchors.set(item.path, markdownAnchors(normalize(original.toString('utf8'))))
     } catch {
       add(
         item.path,
@@ -474,6 +483,8 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
     archive?.entries.filter((item) => item.kind === 'record').map((item) => item.archivedPath) ??
       [],
   )
+  const retiredDocument = (path: string): boolean =>
+    path.endsWith('.md') && retiredSources.has(path)
   const originalSources = new Map(
     archive?.entries.map((item) => [item.archivedPath, item.originalPath]) ?? [],
   )
@@ -640,7 +651,10 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
           item.line === line &&
           item.url === original &&
           archiveSourceMatches(file, node, item.sha256, item.sourceRevision) &&
-          item.originalTarget === historicalTarget &&
+          (item.originalTarget === historicalTarget ||
+            (readingCopies.has(file) &&
+              retiredDocument(item.archivedTarget) &&
+              item.originalTarget === originalTarget)) &&
           (item.targetRevision === undefined || frozenDirectory(item)) &&
           (relocations.get(item.originalTarget) === item.archivedTarget || frozenDirectory(item)) &&
           (frozenDirectory(item) ||
@@ -650,7 +664,9 @@ export async function checkDocumentation(root = process.cwd()): Promise<Document
             !item.archivedTarget.endsWith('.md') ||
             anchors.get(item.archivedTarget)?.has(originalFragment)) &&
           ['immutable', 'record', 'journal'].includes(entries.get(file)?.kind ?? '') &&
-          (!readingCopies.has(file) || storage.isPacked(item.archivedTarget)) &&
+          (!readingCopies.has(file) ||
+            storage.isPacked(item.archivedTarget) ||
+            retiredDocument(item.archivedTarget)) &&
           protectedPaths.has(file),
       )
       if (archivedIndex >= 0) {

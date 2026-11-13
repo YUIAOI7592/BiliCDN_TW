@@ -1,0 +1,4 @@
+interface:
+  display_name: "BiliCDN 正式發行"
+  short_description: "依既有授權準備 BiliCDN 正式版本並核對封裝與公開交付"
+  default_prompt: "使用 $bilicdn-release 完成已授權的 BiliCDN 正式交付。"

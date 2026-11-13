@@ -235,6 +235,180 @@ test('documentation accepts Chinese headings, emphasis and duplicate heading suf
   assert.deepEqual([...anchors], ['中文標題', '操作-seek', '操作-seek-1'])
 })
 
+function skillFixture(t: TestContext, gitCheckout: boolean) {
+  const f = fixture(t),
+    skill = '.agents/skills/example/SKILL.md',
+    reference = '.agents/skills/example/references/contracts.md'
+  f.write(
+    skill,
+    '---\nname: example\ndescription: |\n  # Metadata is not a heading\n  [Metadata](missing-metadata.md)\n---\n\n# 工作流程\n\n[契約](references/contracts.md#契約)\n',
+  )
+  f.write(reference, '# 契約\n\n有效契約。\n')
+  f.write('.agents/local-private.md', '# 不公開的代理資料\n')
+  f.write('.agents/skills/example/.private/note.md', '# 隱藏本機資料\n')
+  for (const [path, topic] of [
+    [skill, 'skill'],
+    [reference, 'contracts'],
+  ] as const) {
+    f.manifest.documents.push({
+      path,
+      kind: 'guide',
+      topics: [topic],
+      versions: [],
+      date: null,
+      requiredAnchors: [],
+    })
+    f.manifest.owners.push({ topic, path })
+  }
+  f.write(
+    'docs/INDEX.md',
+    '# 文件入口\n\n[指南](guide.md)\n\n[流程](../.agents/skills/example/SKILL.md)\n',
+  )
+  if (gitCheckout) {
+    const git = (...args: string[]) => execFileSync('git', args, { cwd: f.root })
+    git('init', '--quiet')
+    f.write('.gitignore', '/.agents/*\n!/.agents/skills/\n/.agents/skills/**/.private/\n')
+    git('add', '.')
+  }
+  return { ...f, skill, reference }
+}
+
+for (const gitCheckout of [false, true]) {
+  test(`documentation discovers skill references without private agent files: git=${gitCheckout}`, async (t) => {
+    const f = skillFixture(t, gitCheckout)
+    const report = await f.check()
+    assert.equal(report.success, true, JSON.stringify(report.findings))
+    assert.equal(report.files, 4)
+    assert.equal(report.links, 3)
+  })
+}
+
+test('documentation ignores skill frontmatter anchors while retaining body error locations', async (t) => {
+  const f = skillFixture(t, false)
+  assert.deepEqual([...markdownAnchors(readFileSync(join(f.root, f.skill), 'utf8'))], ['工作流程'])
+  f.write(f.reference, '# 契約\n\n[缺失](absent.md)\n')
+  f.write(f.skill, readFileSync(join(f.root, f.skill), 'utf8').replace('#契約', '#不存在'))
+  const report = await f.check()
+  const links = report.findings.filter((item) => item.rule === 'link')
+  assert.equal(links.length, 2)
+  assert.equal(links.find((item) => item.file === f.skill)?.line, 10)
+  assert.equal(links.find((item) => item.file === f.reference)?.line, 3)
+})
+
+test('documentation rejects an unregistered skill reference and a missing registered reference', async (t) => {
+  const f = skillFixture(t, false)
+  f.write('.agents/skills/example/references/unlisted.md', '# 未登記\n')
+  rmSync(join(f.root, f.reference))
+  const report = await f.check()
+  assert.ok(
+    report.findings.some(
+      (item) => item.file.endsWith('unlisted.md') && item.rule === 'classification',
+    ),
+  )
+  assert.ok(
+    report.findings.some((item) => item.file === f.reference && item.rule === 'classification'),
+  )
+  assert.ok(report.findings.some((item) => item.file === f.skill && item.rule === 'link'))
+})
+
+function retiredDocumentFixture(t: TestContext, relativeUrl = false) {
+  const f = archiveFixture(
+    t,
+    relativeUrl
+      ? '../../../docs/%E8%88%8A%20%E5%A0%B1%E5%91%8A.md#中文章節'
+      : 'https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/%E8%88%8A%20%E5%A0%B1%E5%91%8A.md#中文章節',
+  )
+  const body = readFileSync(join(f.root, f.archivedTarget))
+  f.write(f.originalTarget, body.toString('utf8'))
+  const git = (...args: string[]) =>
+    execFileSync('git', args, { cwd: f.root, encoding: 'utf8' }).trim()
+  git('init', '--quiet')
+  git('add', f.originalTarget)
+  git(
+    '-c',
+    'user.name=Fixture',
+    '-c',
+    'user.email=fixture@example.test',
+    'commit',
+    '--quiet',
+    '-m',
+    'baseline',
+  )
+  f.manifest.retiredSources = [
+    {
+      path: f.originalTarget,
+      revision: git('rev-parse', 'HEAD'),
+      sha256: createHash('sha256').update(body).digest('hex'),
+    },
+  ]
+  rmSync(join(f.root, f.originalTarget))
+  rmSync(join(f.root, f.archivedTarget))
+  f.manifest.documents = f.manifest.documents.filter((item) => item.path !== f.archivedTarget)
+  f.manifest.protections = f.manifest.protections.filter((item) => item.path !== f.archivedTarget)
+  // The source is a historical reading copy; the deleted target has no saved copy.
+  const sourceBytes = readFileSync(join(f.root, f.source))
+  const source = 'archive/retired/docs/history.md'
+  f.write(source, sourceBytes.toString('utf8'))
+  rmSync(join(f.root, f.source))
+  f.manifest.documents.find((item) => item.path === f.source)!.path = source
+  f.manifest.protections.find((item) => item.path === f.source)!.path = source
+  f.archive.historicalReferences[0]!.source = source
+  f.archive.entries = [
+    {
+      originalPath: f.source,
+      archivedPath: source,
+      kind: 'record',
+      encoding: 'lf',
+      bytes: sourceBytes.length,
+      archivedBytes: sourceBytes.length,
+      sha256: createHash('sha256').update(sourceBytes).digest('hex'),
+      archivedSha256: createHash('sha256').update(sourceBytes).digest('hex'),
+    },
+  ]
+  f.archive.historicalReferences[0]!.archivedTarget = f.originalTarget
+  f.write(
+    'docs/INDEX.md',
+    '# 文件入口\n\n[指南](guide.md)\n\n[歷史來源](../archive/retired/docs/history.md)\n',
+  )
+  return { ...f, source }
+}
+
+for (const condition of [
+  'valid',
+  'relative-reading-copy',
+  'wrong-anchor',
+  'wrong-hash',
+  'current-guide',
+  'changed-source',
+  'retained-target',
+] as const) {
+  test(`documentation retired Markdown requires exact historical proof: ${condition}`, async (t) => {
+    const f = retiredDocumentFixture(t, condition === 'relative-reading-copy')
+    if (condition === 'wrong-anchor') {
+      const url = f.archive.historicalReferences[0]!.url.replace('#中文章節', '#不存在')
+      const body = '# 歷史來源\n\n[原報告](' + url + ')\n'
+      f.write(f.source, body)
+      f.manifest.protections = []
+      f.protect(f.source)
+      f.archive.historicalReferences[0]!.url = url
+      f.archive.historicalReferences[0]!.sha256 = createHash('sha256').update(body).digest('hex')
+    }
+    if (condition === 'wrong-hash') f.manifest.retiredSources![0]!.sha256 = '0'.repeat(64)
+    if (condition === 'current-guide') {
+      f.manifest.documents.find((item) => item.path === f.source)!.kind = 'guide'
+      f.manifest.owners.push({ topic: 'history', path: f.source })
+    }
+    if (condition === 'changed-source')
+      f.write(f.source, readFileSync(join(f.root, f.source), 'utf8') + '\n修改過的來源。\n')
+    if (condition === 'retained-target') f.write(f.originalTarget, '# 原報告\n')
+    const report = await f.check()
+    const valid = condition === 'valid' || condition === 'relative-reading-copy'
+    assert.equal(report.success, valid, JSON.stringify(report.findings))
+    assert.equal(report.archivedReferences.length, valid ? 1 : 0)
+    if (!valid) assert.ok(report.findings.some((item) => item.rule === 'link'))
+  })
+}
+
 for (const kind of ['guide', 'navigation', 'status']) {
   test(`documentation duplicate paragraphs: reports visible copies in ${kind}`, async (t) => {
     const f = fixture(t)

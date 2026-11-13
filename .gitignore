@@ -27,7 +27,8 @@ coverage/
 !/Release/v*/**
 /.work/
 /tools/
-/.agents/
+/.agents/*
+!/.agents/skills/
 /.codex/
 /scripts/package-v*.cjs
 /scripts/prepare-security-*.cjs

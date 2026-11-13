@@ -50,7 +50,7 @@ UI 消費具名唯讀快照，透過 `ControlCommandPort` 修改設定或執行�
 
 AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、`import type` 及 `import-equals` 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環與契約對實作的依賴。唯一寫入者依完整相對路徑辨識，不能以同名檔案繞過；只有 `application/measurement/measurement-controller.ts` 可以呼叫 `probe.read()`。額外語法規則拒絕領域層／應用層中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、路線協調器以外的點號 `setAffinity()` 呼叫、恢復控制器以外應用層的點號 `reload()` 呼叫，以及命令接收器以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
 
-獨立的匯入純度測試將全部非入口、非宣告模組打包在一起，停用未使用程式碼移除（tree shaking）並忽略打包最佳化註記，再於不載入 `node:test` 的獨立 Node 子程序匯入，期限為 3 秒。外層具名案例監督結果，框架不受全域陷阱干擾。測試攔截固定清單中的瀏覽器、網路、GM、計時器全域與 `Date.now`／`Math.random`，檢查匯入時行為；建構函式及方法仍須契約測試。架構規則期待各自使用具名 `node:test` 案例；命令、期限與實際保障範圍見 [測試流程](DEVELOPMENT.md#測試套件與隔離)。
+獨立的匯入純度測試將全部非入口、非宣告模組打包在一起，停用未使用程式碼移除（tree shaking）並忽略打包最佳化註記，再於不載入 `node:test` 的獨立 Node 子程序匯入，期限為 3 秒。外層具名案例監督結果，框架不受全域陷阱干擾。測試攔截固定清單中的瀏覽器、網路、GM、計時器全域與 `Date.now`／`Math.random`，檢查匯入時行為；建構函式及方法仍須契約測試。架構規則期待各自使用具名 `node:test` 案例；命令、期限與實際保障範圍見 [測試流程](../.agents/skills/bilicdn-verify-change/references/test-contracts.md)。
 
 ### 領域層
 
@@ -408,7 +408,7 @@ Vault 的輸出對照及來源大小只附著於既有 handle 與 RouteIdentity�
 
 內部查詢優先使用保存的 getter；缺失時讀取 document.visibilityState，例外或未安裝／已解除時回傳可見。保存的 getter 可能已被其他程式包裝，fallback 也可能讀到偽裝值，因此 true 不保證真正前景。共用同一 getter 的 prototype 讀值與 Runtime 判定不能算成兩份獨立證據。
 
-測試依斷言校準 getter 來源及必要狀態；完整切換斷言才要求 E04，不作一般查證的通用前置。面板隱藏或工具選取 ID 不證明原生 hidden。方法見 [IAB 可見性校準](IAB_TESTING.md#3-前景偽裝與真正背景的校準)，描述子所有權限制見 [SECURITY](../SECURITY.md#瀏覽器行為)。
+測試依斷言校準 getter 來源及必要狀態；完整切換斷言才要求 E04，不作一般查證的通用前置。面板隱藏或工具選取 ID 不證明原生 hidden。方法見 [IAB 可見性校準](../.agents/skills/bilicdn-iab-validation/references/playback-and-visibility.md#前景偽裝與真正背景)，描述子所有權限制見 [SECURITY](../SECURITY.md#瀏覽器行為)。
 
 可見性覆寫的原始描述子、安裝目標與本次 accessor 只由 VisibilityAdapter 保存；dispose 先比較目前 getter／setter 身分及 enumerable／configurable，仍相符才還原原件或刪除自有屬性。較新描述子與刪除狀態不覆寫，失敗項目不重試；不執行屬性 getter。監聽器維持原反向釋放順序，control-loss 訂閱不隨停用清空，重新啟用取得新的還原基準。完全相同描述子的重新安裝來源不可辨識。
 

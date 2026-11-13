@@ -1,0 +1,4 @@
+interface:
+  display_name: "BiliCDN 文件維護"
+  short_description: "維護 BiliCDN 文件與 Skills 的唯一權威、引用及證據界線"
+  default_prompt: "使用 $bilicdn-maintain-docs 核對並更新這次變更涉及的文件。"

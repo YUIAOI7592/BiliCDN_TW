@@ -14072,6 +14072,407 @@
       "archivedTarget": "archive/retired/docs/evidence/UPSTREAM_V1_4_1_EARLY_RETRY_EFFICACY_2026-10-30.json",
       "reason": "Original historical URL is unavailable after verified TAR+gzip storage; original content remains preserved",
       "sourceRevision": "2077805b9a55731e205a4206fb9aa8bdcd53d69b"
+    },
+    {
+      "source": "archive/retired/docs/UP141_TEST_RELEASE_2026-10-30.md",
+      "line": 7,
+      "url": "../../../docs/IAB_TESTING.md",
+      "sha256": "a7338faedc1506daf3b29949059b17bff697a43452466daf47212500ac3c6c1a",
+      "originalTarget": "docs/IAB_TESTING.md",
+      "archivedTarget": "docs/IAB_TESTING.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/DIAGNOSTICS_COST_2026-10-25.md",
+      "line": 3,
+      "url": "../../../docs/DEVELOPMENT.md#診斷成本基準",
+      "sha256": "2887c038c992d44b06d4c8029631eb89d48fe62a51c81d28115f6a561ac2f03b",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/RESTORE_VERIFICATION_2026-10-25.md",
+      "line": 3,
+      "url": "../../../docs/DEVELOPMENT.md#救援還原驗證",
+      "sha256": "58bdd56a02b06b3ba1c527338f69b72cc1564038f2c67db1ad2063090b65d40c",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_ADOPTION_DECISION_2026-10-25.md",
+      "line": 3,
+      "url": "../../../docs/DEVELOPMENT.md#風險覆蓋與可介入性離線評估",
+      "sha256": "153a2e1e71a8a209d30baf10b5dd6bf029345bb5e380f6bfbbcdb6c9c224e3a1",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_RISK_EVALUATION_2026-10-25.md",
+      "line": 3,
+      "url": "../../../docs/DEVELOPMENT.md#風險覆蓋與可介入性離線評估",
+      "sha256": "9f09359a9017f8d122cc5d60d8b9453a7c935927d70eda5bcec3517e9e8c185c",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_LIVE_EVALUATION_R2_2026-10-25.md",
+      "line": 3,
+      "url": "../../../docs/DEVELOPMENT.md#實際緩衝效用與採用判定工具",
+      "sha256": "ea69fa80d1a0a15b5ff20de2f8ad01639fce0c846f165cb96e457c5f1177a341",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_LIVE_EVALUATION_2026-10-25.md",
+      "line": 3,
+      "url": "../../../docs/DEVELOPMENT.md#實際緩衝效用與採用判定工具",
+      "sha256": "2af93c965589a57ca24eb9800a7a9178227f88bdedbb6ff027e68a7e91010456",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/BUFFER_TREND_2026-10-23.md",
+      "line": 5,
+      "url": "../../../docs/DEVELOPMENT.md#唯讀緩衝趨勢診斷",
+      "sha256": "73f3a27e2731a689e1ef901abbaec15d123a11ad83e99896b87a54b1bf35a5eb",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_RESCUE_COMPARISON_2026-10-23.md",
+      "line": 14,
+      "url": "../../../docs/DEVELOPMENT.md#原版與-v2-的獨立離線比較",
+      "sha256": "730c2cd3998af49609fb038c29e8ef7dcd8c7a8286943d7f7784a1ece1ce1280",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/PROJECT_FILE_OPTIMIZATION_2026-10-22.md",
+      "line": 3,
+      "url": "../../../docs/DEVELOPMENT.md#儲存庫配置與封存維護",
+      "sha256": "d5b31dd3e35b231643aca583fecdbd80d955a769127be0c1c7dc70bb55fed603",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/DOC_MAINTENANCE_HISTORY.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 492,
+      "url": "../../../docs/DEVELOPMENT.md#documentation-update-map",
+      "sha256": "cf5fadfc08075d3d1b09667e99aa66202cc7d824594f039a5ead979e0c13994e",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/DOC_MAINTENANCE_HISTORY.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 492,
+      "url": "../../../docs/DEVELOPMENT.md#release-documentation",
+      "sha256": "cf5fadfc08075d3d1b09667e99aa66202cc7d824594f039a5ead979e0c13994e",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/DOC_MAINTENANCE_HISTORY.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 514,
+      "url": "../../../docs/DEVELOPMENT.md#儲存庫配置與封存維護",
+      "sha256": "cf5fadfc08075d3d1b09667e99aa66202cc7d824594f039a5ead979e0c13994e",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/IAB_GUIDES_BEFORE_2026-10-11.md",
+      "line": 3,
+      "url": "../../../docs/IAB_TESTING.md",
+      "sha256": "8396635e37e97ed93064630dec23426ebf6bd5bb60a9fd5771b4d640d0cdd9a3",
+      "originalTarget": "docs/IAB_TESTING.md",
+      "archivedTarget": "docs/IAB_TESTING.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 1323,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/IAB_TESTING.md",
+      "sha256": "2e6974e7a0da760699e34ccf14564b18a6d8fb1237c3c4c860755dc423c364b1",
+      "originalTarget": "docs/IAB_TESTING.md",
+      "archivedTarget": "docs/IAB_TESTING.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 3002,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/scripts/evaluation/README.md",
+      "sha256": "2e6974e7a0da760699e34ccf14564b18a6d8fb1237c3c4c860755dc423c364b1",
+      "originalTarget": "scripts/evaluation/README.md",
+      "archivedTarget": "scripts/evaluation/README.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 5038,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/scripts/evaluation/README.md#選路模型對照",
+      "sha256": "2e6974e7a0da760699e34ccf14564b18a6d8fb1237c3c4c860755dc423c364b1",
+      "originalTarget": "scripts/evaluation/README.md",
+      "archivedTarget": "scripts/evaluation/README.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 5166,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/scripts/evaluation/README.md#選路模型對照",
+      "sha256": "2e6974e7a0da760699e34ccf14564b18a6d8fb1237c3c4c860755dc423c364b1",
+      "originalTarget": "scripts/evaluation/README.md",
+      "archivedTarget": "scripts/evaluation/README.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/TEST_REPORT_HISTORY.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 5659,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/scripts/evaluation/README.md#v2212-優化補充模型",
+      "sha256": "2e6974e7a0da760699e34ccf14564b18a6d8fb1237c3c4c860755dc423c364b1",
+      "originalTarget": "scripts/evaluation/README.md",
+      "archivedTarget": "scripts/evaluation/README.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/BR01_NATIVE_KEYBOARD_FIX_REPORT.md",
+      "line": 17,
+      "url": "../../../docs/DEVELOPMENT.md",
+      "sha256": "3678bf3a643ff1fe32dd2ec008edcec71f7f73357cfff6f094d97fe9e7591694",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md",
+      "line": 3,
+      "url": "../../../docs/IAB_TESTING.md",
+      "sha256": "cf11bc1a67f50a9b6287263f71dce0d3045f5944f457581a72b6bb98b8b31406",
+      "originalTarget": "docs/IAB_TESTING.md",
+      "archivedTarget": "docs/IAB_TESTING.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/IAB_TAMPERMONKEY_CAPABILITY_2026-10-11.md",
+      "line": 37,
+      "url": "../../../docs/DEVELOPMENT.md#內建瀏覽器驗證",
+      "sha256": "cf11bc1a67f50a9b6287263f71dce0d3045f5944f457581a72b6bb98b8b31406",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/IAB_v2.1.20_BR01_R1_2026-10-11.md",
+      "line": 3,
+      "url": "../../../docs/IAB_TESTING.md",
+      "sha256": "b77886a6d35d9d9bc6d93c1423b7c3a2468047d73698193d299245e0ccf2113d",
+      "originalTarget": "docs/IAB_TESTING.md",
+      "archivedTarget": "docs/IAB_TESTING.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/IAB_v2.1.20_BR01_R2_2026-10-11.md",
+      "line": 7,
+      "url": "../../../docs/IAB_TESTING.md",
+      "sha256": "d5951984564d451cfe3531d7e410f84e0b02575dbc37c2769ada1b0f05abe29d",
+      "originalTarget": "docs/IAB_TESTING.md",
+      "archivedTarget": "docs/IAB_TESTING.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/IAB_v2.1.20_BR10_CONTROL_CENTER_KEYBOARD.md",
+      "line": 3,
+      "url": "../../../docs/IAB_TESTING.md",
+      "sha256": "773b03de5e3992b5e3757e95303583cba7cbd40329f20d1c33da8b128b7d1e3d",
+      "originalTarget": "docs/IAB_TESTING.md",
+      "archivedTarget": "docs/IAB_TESTING.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/IAB_v2.1.20_COLLECTOR_R5_2026-10-11.md",
+      "line": 3,
+      "url": "../../../docs/IAB_TESTING.md",
+      "sha256": "1b5d2420fba1db6d0dee2dc3e9c0ddfd745f73a862fc7ce835df572d78c7ab65",
+      "originalTarget": "docs/IAB_TESTING.md",
+      "archivedTarget": "docs/IAB_TESTING.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/IAB_v2.1.20_TODO_R3_2026-10-11.md",
+      "line": 3,
+      "url": "../../../docs/IAB_TESTING.md",
+      "sha256": "5134abbdbd98c0326469c54d67eebe56cb17a5f1e0b736fdfdee9bbaf29395a8",
+      "originalTarget": "docs/IAB_TESTING.md",
+      "archivedTarget": "docs/IAB_TESTING.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/IAB_v2.1.20_TODO_R4_2026-10-11.md",
+      "line": 3,
+      "url": "../../../docs/IAB_TESTING.md",
+      "sha256": "9f7f41492ac8ecc248d6f52aebaf262f3dab3e3b3e900f5c13f130635b128b1d",
+      "originalTarget": "docs/IAB_TESTING.md",
+      "archivedTarget": "docs/IAB_TESTING.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/P05_COPY_CHANNEL_REPORT_2026-10-12.md",
+      "line": 3,
+      "url": "../../../docs/IAB_TESTING.md",
+      "sha256": "c650f4ae5fc980e237011b6b85f60e93ca87c654af9f4fec7ea8940a621b2e9c",
+      "originalTarget": "docs/IAB_TESTING.md",
+      "archivedTarget": "docs/IAB_TESTING.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 5,
+      "url": "DEVELOPMENT.md#test-suites-and-isolation",
+      "sha256": "9480274d01ead5c2493a71398e6c37d13c3a8a5d9065b4e2f39f391f185e8709",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 79,
+      "url": "DEVELOPMENT.md#test-suites-and-isolation",
+      "sha256": "9480274d01ead5c2493a71398e6c37d13c3a8a5d9065b4e2f39f391f185e8709",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 499,
+      "url": "DEVELOPMENT.md#實際緩衝效用與採用判定工具",
+      "sha256": "9480274d01ead5c2493a71398e6c37d13c3a8a5d9065b4e2f39f391f185e8709",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 672,
+      "url": "DEVELOPMENT.md#慢請求提前重試原型重現分支限定",
+      "sha256": "9480274d01ead5c2493a71398e6c37d13c3a8a5d9065b4e2f39f391f185e8709",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 1148,
+      "url": "../scripts/evaluation/README.md#v2212-優化補充模型",
+      "sha256": "9480274d01ead5c2493a71398e6c37d13c3a8a5d9065b4e2f39f391f185e8709",
+      "originalTarget": "scripts/evaluation/README.md",
+      "archivedTarget": "scripts/evaluation/README.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "docs/TEST_TOOLING_REPORT.md",
+      "sourceRevision": "e4933138e90727f3acd497976e64b42a90c2b6d3",
+      "line": 1176,
+      "url": "DEVELOPMENT.md#更新現有段落避免累積副本",
+      "sha256": "9480274d01ead5c2493a71398e6c37d13c3a8a5d9065b4e2f39f391f185e8709",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/TODO_CLOSURE_2026-10-13.md",
+      "line": 40,
+      "url": "../../../docs/IAB_TESTING.md#4-固定驗收矩陣",
+      "sha256": "5a56673e1881bd380957bee1291581ba756a90985484cf1367a0a943e563ab42",
+      "originalTarget": "docs/IAB_TESTING.md",
+      "archivedTarget": "docs/IAB_TESTING.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/UPSTREAM_V1_4_1_EARLY_RETRY_PROTOTYPE_2026-10-30.md",
+      "line": 9,
+      "url": "../../../docs/DEVELOPMENT.md#慢請求提前重試原型重現分支限定",
+      "sha256": "c3b0871e6ca841132ef8a7be53a42c44c665f059ae2d0778e20f8fcb0b4a8dbe",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.0/TEST_REPORT_v2.2.0.md",
+      "line": 17,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/scripts/evaluation/README.md",
+      "sha256": "5ff6510f893bb657ee833a6d2838fd703e3ba01857c70eee52279104fc2c6da2",
+      "originalTarget": "scripts/evaluation/README.md",
+      "archivedTarget": "scripts/evaluation/README.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.9/TEST_REPORT_v2.2.9.md",
+      "line": 38,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/scripts/evaluation/README.md#選路模型對照",
+      "sha256": "3f600386fadaf7437c8b5d7502f8186aa4e74187b7f61887bde810cb83a58d5e",
+      "originalTarget": "scripts/evaluation/README.md",
+      "archivedTarget": "scripts/evaluation/README.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.10/TEST_REPORT_v2.2.10.md",
+      "line": 38,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/scripts/evaluation/README.md#選路模型對照",
+      "sha256": "a09cc4a16eb40f6f51ffc169a0ccc4c254e205e0a36a1e89374abad667396ead",
+      "originalTarget": "scripts/evaluation/README.md",
+      "archivedTarget": "scripts/evaluation/README.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/TODO_OPTIMIZATION_RESEARCH_v2.2.11_2026-11-07.md",
+      "line": 20,
+      "url": "../../../docs/DEVELOPMENT.md",
+      "sha256": "588b9aeb8e91e065101c4c9a1679de73e4a1f155dcd527df37869ef36de55e69",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/releases/Release/v2.2.12/TEST_REPORT_v2.2.12.md",
+      "line": 52,
+      "url": "https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/scripts/evaluation/README.md#v2212-優化補充模型",
+      "sha256": "c0965c0513f44e2b2edc2be379054e30f300cc525a94898febae53577538db7d",
+      "originalTarget": "scripts/evaluation/README.md",
+      "archivedTarget": "scripts/evaluation/README.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
+    },
+    {
+      "source": "archive/retired/docs/ARCHIVE_COMPACTION_2026-11-10.md",
+      "line": 38,
+      "url": "../../../docs/DEVELOPMENT.md#壓縮清理與還原",
+      "sha256": "8c6fa57d5ba974b2155e8320c0a1e3e0b384446e8063720445ed8ff15a82b7eb",
+      "originalTarget": "docs/DEVELOPMENT.md",
+      "archivedTarget": "docs/DEVELOPMENT.md",
+      "reason": "操作指南已完整轉為專案 Skills 並刪除；固定 Git 原文及錨點已核對，原網址不再有效，未另存原文件副本。"
     }
   ],
   "additionalLocalManifests": [

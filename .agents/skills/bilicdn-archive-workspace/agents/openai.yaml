@@ -1,0 +1,4 @@
+interface:
+  display_name: "BiliCDN 工作區封存"
+  short_description: "分類並處置已授權的 BiliCDN 工作資料，核對封存及獨立還原"
+  default_prompt: "使用 $bilicdn-archive-workspace 完成指定範圍的封存清理。"

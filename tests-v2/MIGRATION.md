@@ -10,7 +10,7 @@
 
 2026-11-09／v2.2.16：RouteCoordinator 的請求身分與表示確認集中於 RequestOwnership，單次重試許可集中於 RetryPermitState；普通證據保存與降級結果分型，靜態前提共置於傳輸分類。原 2,292 案名稱、參數與相對註冊順序保持，新增八個助手／前提與六個架構拒絕契約；96 組固定 Git 基準軌跡逐欄比較決策、修訂、事件、保存及重複完成，不以案例數代替副作用對照。
 
-本文保存 2026-10-07／v2.1.8 的原遷移對照及其後按版本追加的說明。現行套件及命令見 [開發流程](../docs/DEVELOPMENT.md#測試套件與隔離)，後續新增契約見 [測試工具紀錄](../docs/TEST_TOOLING_REPORT.md)，最新版完整結果見 [TEST_REPORT](../docs/TEST_REPORT.md)。下方舊斷言數、名稱與行號只描述原遷移版本，不代表目前案例數或仍可執行的套件。
+本文保存 2026-10-07／v2.1.8 的原遷移對照及其後按版本追加的說明。現行套件及命令見 [開發流程](../.agents/skills/bilicdn-verify-change/references/test-contracts.md)，後續新增契約見 [測試工具紀錄](../docs/TEST_TOOLING_REPORT.md)，最新版完整結果見 [TEST_REPORT](../docs/TEST_REPORT.md)。下方舊斷言數、名稱與行號只描述原遷移版本，不代表目前案例數或仍可執行的套件。
 
 2026-11-01／v2.2.0 追記：13 份套件改以具名情境直接建立必要前置狀態，移除數字 scenario 分派；套件選擇器、116 個測試宣告及其參數展開保留，仍使用 testScope 清理。唯一有意變更的原案例是 `existing schema 2 settings without Native toggle default off [13]` 改為 `default on [13]`；其餘 Catalog-only 案例明確關閉 Native。下面的 v2.1.8 對照保留當時名稱與數值，不回寫為新版結果。
 
@@ -187,7 +187,7 @@
 | `state.ts` | 265–317 | 啟用 Native 的頁面提示初始保留原始 URL。 | `Native-on page hint initially preserves its original URL [15]` |
 | `state.ts` | 317–347 | 即使 responseKey 已看過，同一物件的可信資料被修改後仍重新清理。 | `mutated same-object trusted payload is re-sanitized despite an already-seen responseKey [16]` |
 
-工具的新增契約與實際驗證結果見 [測試工具驗證紀錄](../docs/TEST_TOOLING_REPORT.md)；命令與清理規則見 [開發流程](../docs/DEVELOPMENT.md#測試套件與隔離)。
+工具的新增契約與實際驗證結果見 [測試工具驗證紀錄](../docs/TEST_TOOLING_REPORT.md)；命令與清理規則見 [開發流程](../.agents/skills/bilicdn-verify-change/references/test-contracts.md)。
 
 ## v2.2.1 撤除與名稱對齊（2026-11-01）
 
@@ -265,7 +265,7 @@
 
 `CC39-UI opened view consumes existing notifications` 對 monitor 通知改為等待指定 microtask，再保留原畫面及清理斷言；settings 仍同步。新增同批 2／8 次、不同批、同步設定、關閉／換頁／重開、快照內通知、重入及命令成功／失敗的所有權契約。詳細狀態保持按需，功能路線事件仍同步。
 
-新增 15 案適配器提前重試資格及 6 案補充評估工具契約；產品政策未改。7,680 組合成輸入與五案私有取證方法不計入正式案例數。原六情境效用 FAIL 獨立保留，詳見[評估指南](../scripts/evaluation/README.md#v2212-優化補充模型)。
+新增 15 案適配器提前重試資格及 6 案補充評估工具契約；產品政策未改。7,680 組合成輸入與五案私有取證方法不計入正式案例數。原六情境效用 FAIL 獨立保留，詳見[評估指南](../.agents/skills/bilicdn-offline-evaluation/references/models.md#選路模型對照)。
 
 ## v2.2.13 選路、限制與 Native 來源
 
