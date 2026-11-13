@@ -1507,3 +1507,28 @@ tooling 初次 329 案中四案失敗：一案建立暫存 symlink 回 EPERM，�
 Codex Security diff scan `0e42e1d1-9a5e-479b-9cde-feab215bf32a` 已完成並封存，固定差異摘要為 `codex-security-snapshot/v1:sha256:a96190a12a8fcb98cc6aae8a6c7951535e6fa8ffb4342ead4dac31c12e5c822d`。九個程式／設定清單項目及相關文件遷移均已核對，無安全候選或未完成範圍；未重審未改動的產品執行期。預檢 ready，沒有修改持久設定。工具回報兩個執行緒的總用量 3,670,702 tokens，其中 cached input 3,546,112、output 10,473；這是工具記錄的用量，不是新增功能或效益量測。
 
 審查後僅修正兩處現行導覽名稱、上述 Python 暫存路徑、文末空行並追加本結果；檢查器、測試、Skills、清單與保護判定均保持受審內容。最終文件／公開封存檢查及 git diff --check 通過；現行引用均已切換，三份原操作文件不存在，沒有新增其備份、封存或導引副本。633 項保護、舊歷史引用、三份日誌既有前綴、產品／版本／依賴及正式 Release 原件保持。
+
+## 2026-11-14 Skills 內容檢討檢查
+
+範圍及逐 Skill 取捨見[全文檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-六個-skills-內容檢討)。本輪只修 Skills／參考／IAB 提示、一句 AGENTS 模式說明與日誌／導覽；沒有改動工具程式、契約測試或產品。依純文件範圍執行格式、引用、公開封存與完整性核對，沒有重跑完整 verify、安全掃描或 IAB，不把前輪 2,211 案算成本輪新增結果。
+
+當次 load_workspace_dependencies 取得 Node，實讀 24.22.1，路徑為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1111-574-0_26.1111.574.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe`。npm CLI 從當次 npm.cmd 解析為 `C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js`，實讀 11.20.0，由所選 Node 明確執行，僅前置當次 PATH。Python 同次取得的路徑為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1111-574-0_26.1111.574.0_x64__3k8sg7r9htsxt\dependencies\python\python.exe`，實讀 3.12.14；沿用前輪隔離的 PyYAML 6.0.3，僅設定當次 PYTHONPATH，沒有新增依賴或修改 lock。
+
+skill-creator quick_validate 六份均通過；IAB 的 openai.yaml 由官方 generator 更新提示。另以目前 Codex 執行檔的 stdio initialize／skills/list（forceReload）實際查詢：六份均為 repo、enabled true、errors 空陣列，IAB 新提示已可讀取。未建立模型任務或瀏覽器，也未開網站服務。
+
+獨立評估者未取得本輪發現或建議，只讀 AGENTS 與依題選取的 Skills／參考，提出六種情境的步驟與判定；這是桌上決策評估，不是實際操作：
+
+| 情境 | 實際推演結果 |
+| --- | --- |
+| README 一處修正並交付 | 文件檢查及追加日誌所需 archive 檢查後提交推送，不發布產品 |
+| 已更新後查載入身分 | 直接核對當前本體／必要接線，不下載重裝，不追加矩陣 |
+| 只驗正常播放 | 只取播放範圍所需證據，不加入故障／背景窗口 |
+| 改 Enter 來源契約且不開瀏覽器 | 保護 N 契約、對應套件及 verify；S／I 明列未驗證，不自行開窗 |
+| measurement 有當前函式但無舊 Git 物件 | 該模式可做公式核對，不補抓舊基準，也不推論實機效益 |
+| 公開包解壓後一檔雜湊不符並要求清原位置 | 核對失敗即保留來源，不改雜湊或刪除；不宣稱還原／清理完成 |
+
+首次評估提出 local 適用範圍歧義；再核對舊 DEVELOPMENT「本機私有處置」與 archive-check 的獨立選項後，澄清 AGENTS。未以情境演練觸發模型、解壓、資料刪除或新瀏覽器驗收。三組原文／實作複核也已逐項核對採納差異，未發現新增必要遺漏。
+
+初步 docs:check 已通過 318 份 Markdown；最終追加內容另核對 docs／archive 與 git diff --check。七筆不可變舊斷鏈、715 筆歷史原網址不可用、18 筆私有證據未核對及外部連結未連網保持分類；私有模式／restore 未執行。前綴保護依 LF 正常化核對，CRLF 與 Git blob 換行差異不當作正文改寫；不宣稱逐檔原位元組等同 Git LF。工作資料位於 .work/skills-review-2026-11-14/。
+
+追加紀錄後 docs:check、archive:check 與 git diff --check 均通過：318 份 Markdown、5,539 個本機／儲存庫連結、633 項正文保護；公開封存核對 534 項、56 份閱讀版、三份追加日誌、159 項未變原件及 88 份清單／394 筆校驗。獨立評估者重讀澄清句後確認 local 歧義已解決，六個情境可依現行指引作出一致決策。最後差異僅十八個預期文件／Skill 路徑，三份既有日誌前綴、TODO、清單及版本設定保持；本段只追加核對結果，不改已驗證的指令內容。

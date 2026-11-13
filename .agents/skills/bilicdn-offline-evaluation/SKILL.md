@@ -9,7 +9,7 @@ description: 在明確要求時執行 BiliCDN 上游比較、選路或提前重�
 
 ## 選擇模式
 
-先讀[模型、來源與限制](references/models.md)的相應章節；按[當次 Runtime](../bilicdn-verify-change/references/runtime-and-commands.md#環境需求)從根目錄執行，只選能回答已授權問題的模式。
+先讀[模型、來源與限制](references/models.md)的相應章節；按[當次 Runtime](../bilicdn-verify-change/references/runtime-and-commands.md#環境需求)從根目錄執行，只選能回答已授權問題的模式。選路入口只用下表的無參數或單一選項，另核對輸出的模式／scope，不依退出 0 推論參數已被嚴格驗證。
 
 | 目的 | 入口 |
 | --- | --- |

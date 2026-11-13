@@ -76,7 +76,7 @@
 
 - 依 [更新對照表](.agents/skills/bilicdn-maintain-docs/references/update-map.md#依變更選擇權威) 修正權威原章節與相關現行提及，其他入口使用連結；不累積重複狀態或相反規則。README 面向使用者，版本研究集中 HISTORY。
 - 遵守 [GFM 約定](.agents/skills/bilicdn-maintain-docs/references/document-registry.md#markdown-格式gfm)，核對實際解析、連結及既有錨點；新增文件登記 `docs/doc-manifest.json` 並加入現行入口或 HISTORY。
-- 純文件執行 `npm run docs:check`、人工事實／範圍核對及 `git diff --check`；涉及封存配置、位置、保護或追加日誌時另執行 `npm run archive:check`。本機處置另加 `-- --local`，完整解壓後以 `--restore-root` 唯讀核對；讀取失敗不能算通過。
+- 純文件執行 `npm run docs:check`、人工事實／範圍核對及 `git diff --check`；涉及封存配置、位置、保護或追加日誌時另執行 `npm run archive:check`。實際處置本機私有資料另加 `-- --local`；公開／私有包完整解壓後皆以 `--restore-root` 唯讀核對，私有還原同時保留 `--local`；讀取失敗不能算通過。
 - 發行快照、安全產物與原始證據保持原始位元組；歷史閱讀版只允許登記且可重建的 URL 調整。保留原 FAIL／INVALID、限制與停止決定，不把歷史未完成文字轉成新待辦。移除原位置或可重建副本前，須完成授權、來源、壓縮及獨立還原核對，不能刪保護登記或改雜湊掩蓋失敗。
 - `TEST_REPORT_HISTORY`、`DOC_MAINTENANCE_HISTORY`、`TEST_TOOLING_REPORT` 全部既有正文只追加。換版保存上一版完整 TEST_REPORT；文件整理記入維護歷史，工具驗證按日期記入工具日誌，不回寫已發布報告。
 - 保留 `docs/CHANGELOG.md` 與 `docs/TEST_REPORT.md` 封裝輸入路徑；兩者的儲存庫文件連結使用完整 URL。文件檢查不代表新增執行期、安全或瀏覽器驗收通過。

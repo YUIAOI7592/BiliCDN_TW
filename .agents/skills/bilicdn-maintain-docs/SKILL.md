@@ -11,11 +11,13 @@ description: 維護或全面檢討 BiliCDN 文件、Skills、導航與驗收紀�
 
 1. 依[更新對照](references/update-map.md)定位受影響權威章節及所有現行提及，對照正式來源、設定、工具及證據後改原段落。其他入口改連結，不追加相反規則或重複狀態。
 2. 新增文件、Skill、標題或調整歸屬時，讀[文件登記與保護](references/document-registry.md)，同步清單、導航、錨點與引用。永久限制不能只放在可能未被載入的 Skill；AGENTS 保留常駐規則。
-3. 只因文件與實作不符而修正文句，不把未驗證條件當成必須補跑的理由。結果、停止決定、產品規格與操作方法保持各自權責。
+3. 文件敘述須同時符合實作、當次要求與 AGENTS；發現不符先判斷是文件過時或實作違約，不把有缺陷的實作改寫成規格。結果、停止決定、產品規格與操作方法保持各自權責；未驗證條件不自動成為補跑要求。
 
 ## 全面檢討
 
 明確要求全文複核時逐檔讀至末尾，長文按連續範圍，確認沒有截斷；關鍵詞、雜湊及程式讀檔不能代替語意判讀。若要求所有 Markdown，實體盤點包含隱藏及忽略目錄，再對照 Git 與分類；區分現行公開、歷史、發行快照、本機證據及第三方依賴，不只掃 guide 清單就聲稱全庫完成。
+
+複核文件拆分或轉成 Skills 時，直接讀固定提交的原文，逐項核對必要方法的承接、去重或退役依據；章節／錨點有去向仍須核對正文。Skills 之間依實際任務引用，不要求每次載入全部參考；常駐規則只由 AGENTS 定義，必要的操作提醒須與它一致。
 
 搜尋「目前」「本輪」「下一步」「尚未實作」、舊版名稱、預設及撤除功能，再依上下文判讀：
 
@@ -29,7 +31,7 @@ description: 維護或全面檢討 BiliCDN 文件、Skills、導航與驗收紀�
 
 ## 檢查與結案
 
-依[當次 Runtime](../bilicdn-verify-change/references/runtime-and-commands.md#環境需求)執行 `npm run docs:check`，人工核對事實、範圍與 GFM，再執行 git diff --check。涉及封存配置、位置、保護或追加日誌時另執行 `npm run archive:check`；實際處置私有資料才按[封存流程](../bilicdn-archive-workspace/SKILL.md)加 local／restore 檢查。
+依[當次 Runtime](../bilicdn-verify-change/references/runtime-and-commands.md#環境需求)執行 `npm run docs:check`，人工核對事實、範圍與 GFM，再執行 `git diff --check`。涉及封存配置、位置、保護或追加日誌時另執行 `npm run archive:check`；實際處置私有資料加 `--local`，公開或私有包完整解壓後皆以 `--restore-root` 唯讀核對，操作見[封存流程](../bilicdn-archive-workspace/SKILL.md)。
 
 Skill 新建或大改另用 skill-creator 驗證 frontmatter、名稱、描述、引用及實際任務判斷，確認專案清單可發現；自動選用不提供額外授權。現行指南使用繁體中文，方法依任務載入，不要求每次讀全部 Skills。
 

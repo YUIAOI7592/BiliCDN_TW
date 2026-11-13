@@ -2,11 +2,11 @@
 
 ## Markdown 格式（GFM）
 
-指南使用真正標題、段落、清單與表格，不以大量粗體冒充章節。清單、表格及程式區塊前後保留空行；表格有標題及分隔列，欄位數一致，管線字元須跳脫，不能把多列字串誤當表格。跨行說明使用正文或清單，不把整段流程塞進單格；程式及路徑適當使用 inline code 或 fenced code。
+指南使用真正標題、段落、清單與表格，不以大量粗體冒充章節。清單、表格及程式區塊前後保留空行；表格有標題及分隔列，欄位數一致，管線字元即使位於 inline code 也須跳脫。跨行說明使用正文或清單，不把整段流程塞進單格；程式及路徑適當使用 inline code 或 fenced code。
 
 標題與自訂錨點須符合 GitHub 解析；改標題前查引用，保留仍有用途的錨點。核對實際 GFM 解析、相對連結、URL 編碼、reference definitions 與 HTML 錨點，不只目測。Skill 的 YAML frontmatter 是中繼資料，正文檢查忽略其內容但保留原行號；name／description 另由 Skill 格式驗證核對。
 
-現行文件維持單一 H1；歷史合併日誌保留原標題。表格中的管線字元即使位於 inline code 也須跳脫；核對粗體緊鄰中英文標點時的解析。保留既有 GitHub Alerts、必要 HTML 錨點及程式區塊；格式整理不變更程式、雜湊或 URL 的值。
+現行文件維持單一 H1；歷史合併日誌保留原標題。核對粗體緊鄰中英文標點時的解析；保留既有 GitHub Alerts、必要 HTML 錨點及程式區塊。純格式整理不變更程式、雜湊或 URL 的值。
 
 ## 文件登記與唯一權威
 
@@ -20,7 +20,7 @@ Skill 主入口及維護參考可用 guide，各自登記明確子主題。INDEX
 
 protections 的 exact 保護全文，prefix 只許追加；文字按 LF，二進位按原位元組。三份日誌 TEST_REPORT_HISTORY、DOC_MAINTENANCE_HISTORY、TEST_TOOLING_REPORT 的全部既有正文只追加，完整基準補足較短 prefix 的尾段。發行原件、baseline 與安全產物不回寫，不刪基準或改雜湊掩蓋失敗。
 
-歷史閱讀版只作已登記且可重建的 URL 編輯。原件移出實體位置前仍需授權與來源／完整性證明；已批准廢棄的操作指南使用精確 Git 原文證明，不新增封存副本或重新發布過時方法。
+歷史閱讀版只作已登記且可重建的 URL 編輯。原件移出實體位置依 AGENTS 及[封存流程](../../bilicdn-archive-workspace/SKILL.md)處理；僅當次明確要求「刪除原操作文件且不留副本」的遷移，才以精確 Git 原文證明處理其歷史引用。這不授權刪除其他受保護原件，也不恢復已退役方法。
 
 - immutableLinkExceptions 僅適用雜湊相符的 immutable 原檔，逐筆 source、line、url、sha256、reason；修復後刪失效例外。
 - privateEvidenceReferences 僅登記受保護 record 的精確私有引用，無論本機是否存在都列未核對，不讀私有內容。
@@ -33,6 +33,6 @@ unchangedFiles 表示既定輪次未改產品；後續已授權變更先保留�
 
 ## 檢查器的證據界線
 
-docs:check 掃描 Git 已追蹤及未忽略的新 Markdown；沒有 Git 時使用明確公開目錄，包括 .agents/skills 與登記的發行目錄。不掃私有 .work、其他代理本機資料或依賴。檢查 GFM、引用、權威、導航、錨點、版本／命令及原文保護；對 guide／navigation／status 的可見長段落檢查重複，忽略程式、表格、引文及歷史紀錄的重複。
+docs:check 掃描 Git 已追蹤及未忽略的新 Markdown；沒有 Git 時使用明確公開目錄，包括 .agents/skills 與登記的發行目錄。不掃私有 .work、其他代理本機資料或依賴；沒有 Git 物件時仍不能通過依賴 Git 的退役來源證明。檢查 GFM、引用、權威、導航、錨點、版本／命令及原文保護；對 guide／navigation／status 檢查同檔至少 32 字元的完全重複可見段落，忽略空白與連結目的地差異，程式、表格、引文及歷史紀錄不適用此規則。
 
 JSON 結果 schemaVersion 2，分列 findings、legacyLinks、archivedReferences、privateEvidenceNotChecked、externalLinksNotFetched；外部 URL 不連網。自動檢查不證明語意一致、全部網站可達或私有證據已核對。

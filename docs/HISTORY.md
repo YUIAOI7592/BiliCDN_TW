@@ -324,6 +324,7 @@
 
 ### 文件維護與指南快照
 
+- [六個 Skills 全文與遷移承接檢討 — 2026-11-14](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-六個-skills-內容檢討)
 - [操作文件轉換六個專案 Skills — 2026-11-14](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-操作文件轉換專案-skills)
 - [docs 全文正確性與必要性檢討 — 2026-11-13](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-docs-正確性與必要性檢討)
 - [AGENTS 檢討與管理器探索禁令撤銷 — 2026-11-13](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-agents-正確性與必要性檢討)
@@ -418,7 +419,7 @@
 
 ## 日期
 
-- 2026-11-14：[操作文件轉換 Skills](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-操作文件轉換專案-skills)、[檢查器與 Skills 驗證](TEST_TOOLING_REPORT.md#2026-11-14-skills-遷移檢查)。
+- 2026-11-14：[操作文件轉換 Skills](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-操作文件轉換專案-skills)、[檢查器與 Skills 驗證](TEST_TOOLING_REPORT.md#2026-11-14-skills-遷移檢查)、[六個 Skills 內容檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-六個-skills-內容檢討)。
 - 2026-11-13：[v2.2.20 交付](TEST_REPORT.md#驗收結論)、[安裝身分／接線重判](TEST_REPORT.md#v2220-安裝身分與變更接線重新判定2026-11-13)、[管理器探索禁令撤銷](TEST_REPORT.md#管理器探索禁令撤銷註記2026-11-13)、[AGENTS 檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-agents-正確性與必要性檢討)、[IAB 方法檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-iab_testing-全文檢討)、[docs 全文檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-docs-正確性與必要性檢討)。
 
 - 2026-11-12：[v2.2.18 發布後測試精簡](../archive/retired/docs/TEST_REPORT_HISTORY.md#斷言審核與精簡2026-11-12)。

@@ -2,7 +2,7 @@
 
 ## 套件與新增案例
 
-套件選擇器、來源及順序以 [test-registry](../../../../scripts/testing/test-registry.mts) 為準；使用 npm test -- --list 取得當次清單，不在指南重列另一份登記。案例置於 tests-v2/cases 的 routing、playurl、transport、playback、state、ui、tooling 群組，由 suites 入口明確匯入；純領域邊界另由 domain-boundaries 維護。新增套件須登記，支援工具及調查資料不以 glob 執行。
+套件選擇器、入口及順序以 [test-registry](../../../../scripts/testing/test-registry.mts) 為準；使用 `npm test -- --list` 取得當次清單，不在指南重列另一份登記。功能案例置於 tests-v2/cases 的 routing、playurl、transport、playback、state、ui、tooling 群組，由 registry 登記的入口明確匯入；另有 architecture、imports、domain-boundaries 等專用入口。新增套件須登記，支援工具及調查資料不以 glob 執行。
 
 使用具名 node:test；每案以本地建立函式重建可變狀態，同一情境的多個斷言可以留在同案。不使用數字 scenario 分派、不讓完整案例呼叫另一完整案例，也不透過原型繼承可變情境。閉包可變欄位使用存取器轉交，不以物件展開凍結 getter。
 
@@ -37,4 +37,4 @@
 
 救援還原可選 adapters 的 SR1／SR2、application 的 SR2；SR1 保護 SDK 例外後原生寫入，SR2 分開單元與真實元件整合。state 以外核對 action 的 source、保存目標與 reason；普通 playback-progress-observed 不代算原操作成功。SR2-I-F01 保護 Monitor／Runtime／Routes 閉環；補正等待不算播放，後續十五秒觀察不延後產品原有成功判定。
 
-修改 Enter／Space 或明確要求瀏覽器驗收時，依 [IAB 方法](../../bilicdn-iab-validation/SKILL.md)分開來源隔離與指定影片可信輸入；來源 UI 使用記憶體依賴，不替換安裝 singleton。正式產物不加入測試橋接；測試從 TypeScript 獨立打包，停止狀態仍以 TODO 為準。
+修改 Enter／Space 時保護上述 N 契約；若當次已授權相應瀏覽器驗收，再依 [IAB 方法](../../bilicdn-iab-validation/SKILL.md)分開來源隔離與指定影片可信輸入，否則明列尚無 S／I 證據，不自行開窗口。來源 UI 使用記憶體依賴，不替換安裝 singleton。正式產物不加入測試橋接；測試從 TypeScript 獨立打包，停止狀態仍以 TODO 為準。

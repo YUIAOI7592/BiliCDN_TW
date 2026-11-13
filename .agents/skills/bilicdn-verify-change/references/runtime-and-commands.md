@@ -6,9 +6,9 @@ Codex 執行 Node 或必要的 Python 前，以 load_workspace_dependencies 取�
 
 需要 npm 時記錄實際 npm CLI 路徑與版本，以選定 Node 執行，僅在當次程序 PATH 前置該 Node 目錄，保持父子版本一致。不假定 Codex 附帶 npm，不自動換 pnpm，也不改全域 PATH。一般使用者可沿用自己的 PATH；verify.ps1 依 -NodePath、BILICDN_NODE、PATH 選擇，verify.sh 依 BILICDN_NODE、PATH 選擇。啟動器管理 cwd、含空白引數及子程序退出碼，不能以版本字串假稱來自 Codex。
 
-直接依賴與解析版本由 [package.json](../../../../package.json)／[lock](../../../../package-lock.json) 固定；所選 Runtime 下以 npm ci 乾淨安裝。專案無執行期依賴；Python 沒有正式來源或依賴鎖定。授權見[第三方聲明](../../../../docs/THIRD_PARTY_NOTICES.md)。一次相容結果不外推其他平台或未來版本，型別套件版本也不是 Node 版本。
+直接依賴與解析版本由 [package.json](../../../../package.json)／[lock](../../../../package-lock.json) 固定；需要建立或重建開發依賴時，以所選 Runtime 執行 `npm ci`，既有依賴檢查不自動重裝。專案無執行期依賴；Python 沒有正式來源或依賴鎖定。授權見[第三方聲明](../../../../docs/THIRD_PARTY_NOTICES.md)。一次相容結果不外推其他平台或未來版本，型別套件版本也不是 Node 版本。
 
-[toolchain](../../../../scripts/lib/toolchain.mts) 的 node24 語法目標不代表 Runtime 白名單。verify 與完整測試以選定 Node 執行最多五秒的隔離 mts 探測，核對成功、位置、完整報告、退出碼及父子版本；同程序共用完成 Promise，成功與失敗均清理，不提供略過或自動下載替代。探測不計入正式案例，完整 verify 才支持當次相容結論。純 test --list 及用法錯誤不啟探測；環境訊息在 stderr，JSON stdout 不混入文字。
+[toolchain](../../../../scripts/lib/toolchain.mts) 的 node24 語法目標不代表 Runtime 白名單。verify 及實際執行測試（含套件／名稱篩選）以選定 Node 執行最多五秒的隔離 mts 探測，核對成功、位置、完整報告、退出碼及父子版本；同程序共用完成 Promise，成功與失敗均清理，不提供略過或自動下載替代。探測不計入正式案例，完整 verify 才支持當次相容結論。純 test --list 及用法錯誤不啟探測；環境訊息在 stderr，JSON stdout 不混入文字。
 
 ## 命令與範圍
 

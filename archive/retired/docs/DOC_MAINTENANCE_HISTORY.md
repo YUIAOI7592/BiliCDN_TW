@@ -1792,3 +1792,24 @@ AGENTS 修正故障／清理的導向章節，DEVELOPMENT 將「固定矩陣」�
 | 封存還原核對失敗 | archive-workspace 保留來源與失敗紀錄，停止相依刪除，不改保護雜湊 |
 
 以上是指令與決策的桌上演練，不是新代理行為統計、瀏覽器驗收、效用研究或實際封存處置。實際格式、Codex 專案清單與工具契約結果見[工具日誌](../../../docs/TEST_TOOLING_REPORT.md#2026-11-14-skills-遷移檢查)。本輪不恢復已停止目標，不發布產品 Release。
+
+## 2026-11-14 六個 Skills 內容檢討
+
+基準 main／69362734abf23d7ce9a6a1e082a230ddc062f7b2。依使用者要求，全文讀完六份 SKILL、十份 references 與六份 openai.yaml，對照現行 AGENTS／TODO、遷移前 e4933138 的三份操作原文及既有七十個章節／錨點去向。三組唯讀複核分別查驗證／發行、IAB、封存／離線，主代理查文件維護與跨 Skill 一致性；章節有去向不代替正文承接核對，沒有新增舊指南副本。
+
+| Skill | 正確性修正與必要性取捨 |
+| --- | --- |
+| bilicdn-verify-change | 入口改依 registry，避免把 tooling 等概稱 suites；明說定向測試也做 Runtime 探測。tooling 修復使用所屬契約；npm ci 僅在建立／重建依賴時使用。保留來源契約及最終 verify，Enter／Space 修改本身不授權新 IAB 窗口 |
+| bilicdn-iab-validation | 補回 S 同來源正常／失敗對照、自然起因不是所有救援修復的通用前置，以及可定位的既有原生靜音方法。常駐禁令連 AGENTS，保留操作摘要；UI 提示涵蓋全部已授權 IAB 查證，不限安裝行為 |
+| bilicdn-release | 補回 CHANGELOG 舊條目與未執行／FAIL／INVALID／跳過的保留要求；發布前提涵蓋已授權產品變更，移除只限修復或特定遷移的措辭。獨占封裝、遠端附件核對與安裝分判仍有必要 |
+| bilicdn-maintain-docs | 公開與私有完整解壓都需 restore-root，只有 local 另依私有處置。文件不符實作時先判違約／過時，不把有缺陷實作寫成規格。補正文承接複核與無 Git 證明限制，合併 GFM 重述；保留唯一權威與原文保護 |
+| bilicdn-archive-workspace | 將「不強制推送」更正為不使用 force push，交付仍依 AGENTS。原操作文件不留副本只適用當次明確要求且非受保護原件；補 tar 獨立變數引數及退出碼。分類、失敗保留、獨立還原仍必要 |
+| bilicdn-offline-evaluation | 更正 routing 非所有模式都嚴格拒絕參數的誤述，要求精確單一模式及輸出核對；measurement 的 304c631 僅為輸出標記，實際不載入舊 Git 模組。保留模型完成／效用／實機證據的區別 |
+
+必要事實核對來源包含 test-registry、test／toolchain、verify／build／package、project-config、文件／封存檢查器、routing／measurement 模型與 IAB 相關實作。既有靜音方法直接查歷史原紀錄；沒有操作瀏覽器、執行模型、解壓或搬刪資料。
+
+六種任務各有不同觸發、輸入與完成判準，保留六個分工及十份條件式參考；沒有增設路由 Skill 或把退役研究搬回。產品數值與所有權維持連 ARCHITECTURE／SECURITY，套件及依賴查正式登記，不複製會變動的清單。保留必要的安全操作提醒，重複的完整常駐禁令與單次遷移語境改回權威連結或明確適用條件。
+
+獨立情境評估另指出 AGENTS「本機處置」未明寫私有範圍，與 Skills 的 local 模式有歧義。對照遷移前原文及 archive-check 的獨立 local／restoreRoot 分支，同步澄清 AGENTS 僅此一句：私有處置加 local，公開／私有完整解壓皆需 restore-root，私有還原同時保留 local。這是既有模式說明，不改資料處置或存取授權。
+
+本輪完成已發現的必要承接缺口、事實錯誤、推送措辭矛盾與 local 範圍歧義；逐項核對後未發現其他必要規則遺漏或與 AGENTS 相反的規則。這是全文與來源的人工複核，不是自動檢查對語意完整性的證明。TODO、產品與工具、版本／依賴、清單及保護不變；三份已刪操作文件仍不存在，舊 FAIL／INVALID 與日誌正文保留。檢查與獨立情境評估見[工具紀錄](../../../docs/TEST_TOOLING_REPORT.md#2026-11-14-skills-內容檢討檢查)。
