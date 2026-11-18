@@ -50,7 +50,9 @@ UI 消費具名唯讀快照，透過 `ControlCommandPort` 修改設定或執行�
 
 AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、`import type` 及 `import-equals` 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環與契約對實作的依賴。唯一寫入者依完整相對路徑辨識，不能以同名檔案繞過；只有 `application/measurement/measurement-controller.ts` 可以呼叫 `probe.read()`。額外語法規則拒絕領域層／應用層中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、路線協調器以外的點號 `setAffinity()` 呼叫、恢復控制器以外應用層的點號 `reload()` 呼叫，以及命令接收器以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
 
-UI 修改檢查依方法名辨識，目前也可能拒絕區域集合的 `Map.set()` 或 `Map.delete()`。
+功能群組匯入白名單目前涵蓋 `application/routing/`、`application/measurement/`、`adapters/player/` 及 `adapters/transport/`。依賴層級仍由上表與各群組的實際入口核對。
+
+UI 寫入規則檢查點號呼叫的接收器名稱與列出的修改方法名稱。區域集合的 `Map.set()` 或 `Map.delete()` 也可能符合這個語法模式。
 
 獨立的匯入純度測試將全部非入口、非宣告模組打包在一起，停用未使用程式碼移除（tree shaking）並忽略打包最佳化註記，再於不載入 `node:test` 的獨立 Node 子程序匯入，期限為 3 秒。外層具名案例監督結果，框架不受全域陷阱干擾。測試攔截固定清單中的瀏覽器、網路、GM、計時器全域與 `Date.now`／`Math.random`，檢查匯入時行為；建構函式及方法仍須契約測試。架構規則期待各自使用具名 `node:test` 案例；命令、期限與實際保障範圍見 [測試流程](../.agents/skills/bilicdn-verify-change/references/test-contracts.md)。
 
