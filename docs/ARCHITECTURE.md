@@ -50,6 +50,8 @@ UI 消費具名唯讀快照，透過 `ControlCommandPort` 修改設定或執行�
 
 AST 檢查涵蓋 `src-v2/` 下除宣告檔以外的執行期 `.ts`。它檢查值／型別匯入、重新匯出、`import type` 及 `import-equals` 宣告，拒絕非相對匯入與動態 `import()`，並偵測依賴循環與契約對實作的依賴。唯一寫入者依完整相對路徑辨識，不能以同名檔案繞過；只有 `application/measurement/measurement-controller.ts` 可以呼叫 `probe.read()`。額外語法規則拒絕領域層／應用層中列出的瀏覽器／GM 全域及直接時鐘／亂數呼叫、路線協調器以外的點號 `setAffinity()` 呼叫、恢復控制器以外應用層的點號 `reload()` 呼叫，以及命令接收器以外列出的 UI 修改操作。這些是語法及依賴檢查，不能完整證明執行期效果或所有權。
 
+UI 修改檢查依方法名辨識，目前也可能拒絕區域集合的 `Map.set()` 或 `Map.delete()`。
+
 獨立的匯入純度測試將全部非入口、非宣告模組打包在一起，停用未使用程式碼移除（tree shaking）並忽略打包最佳化註記，再於不載入 `node:test` 的獨立 Node 子程序匯入，期限為 3 秒。外層具名案例監督結果，框架不受全域陷阱干擾。測試攔截固定清單中的瀏覽器、網路、GM、計時器全域與 `Date.now`／`Math.random`，檢查匯入時行為；建構函式及方法仍須契約測試。架構規則期待各自使用具名 `node:test` 案例；命令、期限與實際保障範圍見 [測試流程](../.agents/skills/bilicdn-verify-change/references/test-contracts.md)。
 
 ### 領域層
@@ -134,7 +136,7 @@ DomainEvent 只保留有產生者與功能消費者的事件；TransportObservat
 
 所有已辨識的漸進式或混合格式輸出，先完成規劃才寫回 URL。必要分段若沒有合法主線，拒絕整個回應，不部分取代 URL 或丟棄失敗分段。此原子性限於資料內容寫回，不回滾 Vault／控制器登記。既有僅含 DASH 清空欄位處理另行維持。[PlayurlTransformResult](../src-v2/domain/playurl-model.ts) 表達結果；每個消費端都檢查 `accepted`，不能只判斷結果物件是否為真值。
 
-僅使用 Catalog 模式下，Fetch 拒絕的 playurl 變成安全 HTTP 503 回應。XHR `text`（文字）／`json`（JSON）讀取存取器提供安全失敗內容，保留原生 HTTP 狀態；嚴格模式不支援的 XHR 回應類型在送出前拒絕。允許 Native 及整體停用原樣放行的政策維持各自語意。Fetch／XHR 等待後仍重查設定與生命週期有效性。
+僅使用 Catalog 模式下，Fetch 拒絕的 playurl 變成安全 HTTP 503 回應。允許 Native 時，無本文的 playurl 保留原生 `Response` 與 HTTP 狀態。XHR `text`（文字）／`json`（JSON）讀取存取器提供安全失敗內容，保留原生 HTTP 狀態；嚴格模式不支援的 XHR 回應類型在送出前拒絕。整體停用原樣放行。Fetch／XHR 等待後仍重查設定與生命週期有效性。
 
 ### 路線生命週期
 
@@ -373,7 +375,7 @@ RestrictionStore 的遠端通知只提示重讀目前持久值，不直接接納
 
 證據通知僅提示重讀目前持久值，不以通知 payload 或 updatedAt 決定控制新舊。清除寫入空紀錄與新世代，保留標記；舊通知、快照及降級提案不能復活資料。仍合法抵達的普通結果依原健康資格處理。讀失敗不當成空資料覆寫；寫入結果未知時重讀確認，無法確認不重試同一憑證、不給信用。完整新政策只保證新版分頁協作；舊版分頁仍可能按舊規則寫入，偵測版本遺失會撤銷本頁觀察，不強制重新載入。
 
-SettingsStore 的單節點命令在 settings 鎖內合併；update／reset 保留各自鎖範圍及發布時機。EvidenceStore／RestrictionStore 共用狀態層 storedHost 純解析助手，沿用字串轉換、trim、小寫、合法字元及長度邊界，例外仍由各 Store 原有讀取邊界處理。兩組 pending-off 是私有固定鍵計數，共用取得／釋放；重疊、拒絕、遠端通知與原通知順序保持。正規化、時間戳及保存共用一步，讀取沒有寫入副作用。
+SettingsStore 的單節點命令在 settings 鎖內合併；update／reset 保留各自鎖範圍及發布時機。三種寫入都區分讀取失敗與缺值，讀取失敗時保留儲存內容。EvidenceStore／RestrictionStore 共用狀態層 storedHost 純解析助手，沿用字串轉換、trim、小寫、合法字元及長度邊界，例外仍由各 Store 原有讀取邊界處理。兩組 pending-off 是私有固定鍵計數，共用取得／釋放。個別訂閱者的例外不阻礙其他通知或釋放。正規化、時間戳及保存共用一步，讀取沒有寫入副作用。
 
 ### 設定失效
 

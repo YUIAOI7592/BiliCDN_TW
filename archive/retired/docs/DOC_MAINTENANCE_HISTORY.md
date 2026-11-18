@@ -1813,3 +1813,9 @@ AGENTS 修正故障／清理的導向章節，DEVELOPMENT 將「固定矩陣」�
 獨立情境評估另指出 AGENTS「本機處置」未明寫私有範圍，與 Skills 的 local 模式有歧義。對照遷移前原文及 archive-check 的獨立 local／restoreRoot 分支，同步澄清 AGENTS 僅此一句：私有處置加 local，公開／私有完整解壓皆需 restore-root，私有還原同時保留 local。這是既有模式說明，不改資料處置或存取授權。
 
 本輪完成已發現的必要承接缺口、事實錯誤、推送措辭矛盾與 local 範圍歧義；逐項核對後未發現其他必要規則遺漏或與 AGENTS 相反的規則。這是全文與來源的人工複核，不是自動檢查對語意完整性的證明。TODO、產品與工具、版本／依賴、清單及保護不變；三份已刪操作文件仍不存在，舊 FAIL／INVALID 與日誌正文保留。檢查與獨立情境評估見[工具紀錄](../../../docs/TEST_TOOLING_REPORT.md#2026-11-14-skills-內容檢討檢查)。
+
+## 2026-11-18 契約驗證門檻與版本引用
+
+核對六個專案 Skills、十份參考與六份代理提示。AGENTS 與變更驗證 Skill 說明最終 verify 可作為修改後套件證據，並為已批准的等價斷言合併保留去向和反例要求。IAB Skill 依斷言決定詳盡時序欄位，短查證保留目標、版本、必要證據、截止及清理。README 修正可見性與 playurl 摘要措辭，架構記載 UI 語法檢查對區域集合的限制。MIGRATION 的七處歷史引用改連各版固定全文。
+
+絕對 playurl 分類由 `up141-api.ts` 承接，host-lock 空備援由 `up141-backups.ts` 承接。領域案例保留相對 URL base 與限制順序，並精確比對去重後的 Catalog 順序。PCDN 案例用空備援反例核對新增的非空斷言。

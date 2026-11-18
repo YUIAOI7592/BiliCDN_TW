@@ -18,7 +18,7 @@ export async function packageRelease({ directory }: PackageOptions = {}) {
   writeFileSync(script, result.output, { flag: 'wx' })
   writeFileSync(
     `${dir}/BUILD_MANIFEST_v${version}.json`,
-    readFileSync('dist/build-manifest.json'),
+    `${JSON.stringify(result.manifest, null, 2)}\n`,
     { flag: 'wx' },
   )
   writeFileSync(`${dir}/CHANGELOG_v${version}.md`, readFileSync('docs/CHANGELOG.md', 'utf8'), {

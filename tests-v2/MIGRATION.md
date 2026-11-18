@@ -1,8 +1,8 @@
 # Node 內建測試遷移對照
 
-2026-11-12／v2.2.19：正式來源精簡保留前輪全部案例；domain-domain-contracts 新增一個媒體路徑／16 KiB 邊界案例，v2213-native-sources 新增 normal／opaque 兩個登記與可信提升案例。navigation／recovery／runtime 只移除未使用的傳輸觀察實參，斷言保持；不回寫 v2.2.18 審核紀錄的來源雜湊。完整驗證與限制見 [TEST_REPORT](../docs/TEST_REPORT.md#自動驗證)。
+2026-11-12／v2.2.19：正式來源精簡保留前輪全部案例；domain-domain-contracts 新增一個媒體路徑／16 KiB 邊界案例，v2213-native-sources 新增 normal／opaque 兩個登記與可信提升案例。navigation／recovery／runtime 只移除未使用的傳輸觀察實參，斷言保持；不回寫 v2.2.18 審核紀錄的來源雜湊。完整驗證與限制見 [TEST_REPORT](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2219-完整正文保存2026-11-12)。
 
-2026-11-12／v2.2.18 發布後逐案斷言精簡已完成：以 b12c0e1 的十八套件為基準，將純建置前提移入行為案例，收斂無獨立分支的倍速／退役政策組合與無狀態參數表，移除未消費的遷移支架；補強非空前提、精確內容、數量、副作用、所有權及工具錯誤原因。各輸入、時序、觀察契約、helper、原始至最終案例去向與有界反例集中於唯一[機器可讀審核紀錄（gzip JSON）](ASSERTION_AUDIT_v2.2.18_2026-11-12.json.gz)。本節不重貼完整清單；實際數量、結果與限制見 [TEST_REPORT](../docs/TEST_REPORT.md#斷言審核與精簡2026-11-12)。下方歷史遷移數字保持各原輪次意義。
+2026-11-12／v2.2.18 發布後逐案斷言精簡已完成：以 b12c0e1 的十八套件為基準，將純建置前提移入行為案例，收斂無獨立分支的倍速／退役政策組合與無狀態參數表，移除未消費的遷移支架；補強非空前提、精確內容、數量、副作用、所有權及工具錯誤原因。各輸入、時序、觀察契約、helper、原始至最終案例去向與有界反例集中於唯一[機器可讀審核紀錄（gzip JSON）](ASSERTION_AUDIT_v2.2.18_2026-11-12.json.gz)。本節不重貼完整清單；實際數量、結果與限制見 [TEST_REPORT](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2218-完整正文保存2026-11-12)。下方歷史遷移數字保持各原輪次意義。
 
 2026-11-11／v2.2.18：起播提前放行、中段探測與家族分散固定啟用，原退役開關案例轉為舊 true／false／缺值／非法值相容與固定政策；以不足速結果繼續驗證完整比較，以 Native／停用變動繼續驗證取消與晚到提交。UI 只移除三個退役控制項。第二批完成後凍結 18／2,430 案；控制器整理保留全部名稱與相對順序，另加兩案確認時間值 0 的已提交重載及十五秒期限。應用層原 876 案與 18 筆副作用／快照 trace 對照一致，Observer 方法正文經欄位映射逆轉後一致；不是只以案例總數判定行為保持。結果由 [v2.2.18 原報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2218-完整正文保存2026-11-12) 與[工具紀錄](../docs/TEST_TOOLING_REPORT.md#v2218-工具護欄準備2026-11-11)集中維護。
 
@@ -201,7 +201,7 @@
 
 ## v2.2.5 容量資料來源補充
 
-保留 v2.2.4 的 1,634 案名稱及展開案例。容量格式替身改注入 currentCapacity 與明確碼率／原生倍率，保留有效速度獨立、缺需求、非有限及溢位／下溢斷言；不再把歷史排名的 ratio 當成目前需求。新增路線 20 案與 UI 21 案，涵蓋合法提交、TTL、身分／主機／影音隔離、倍率及表示更新、遠端學習、清除與按需詳細狀態。完整結果只在 [TEST_REPORT](../docs/TEST_REPORT.md) 維護。
+保留 v2.2.4 的 1,634 案名稱及展開案例。容量格式替身改注入 currentCapacity 與明確碼率／原生倍率，保留有效速度獨立、缺需求、非有限及溢位／下溢斷言；不再把歷史排名的 ratio 當成目前需求。新增路線 20 案與 UI 21 案，涵蓋合法提交、TTL、身分／主機／影音隔離、倍率及表示更新、遠端學習、清除與按需詳細狀態。完整結果見[當版報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v225-完整正文保存2026-11-02)。
 
 ## v2.2.6 確定性流程與交錯契約
 
@@ -221,7 +221,7 @@
 
 ### v2.2.7 完成映射
 
-原 1,856 案（名稱、kind、參數展開）無缺漏，新增 domain 44、state 2、application 15、native-transport 6、control-center 4、tooling 4，共 75。政策與替身調整逐項見[完整驗證報告](../docs/TEST_REPORT.md#政策映射與契約保留)。正式新案例集中 v227-evidence／evidence-state／routing／route-owner／startup／completion／completion-owner／capacity-ui／evaluation；原清理與全域替換方法保持。
+原 1,856 案（名稱、kind、參數展開）無缺漏，新增 domain 44、state 2、application 15、native-transport 6、control-center 4、tooling 4，共 75。政策與替身調整逐項見[完整驗證報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v227-完整正文保存2026-11-03)。正式新案例集中 v227-evidence／evidence-state／routing／route-owner／startup／completion／completion-owner／capacity-ui／evaluation；原清理與全域替換方法保持。
 
 ## v2.2.8 正數 XHR timeout 起播契約
 
@@ -234,11 +234,11 @@
 | B2 native sent timeout and cancellation are not synthesized or replayed after policy change | 正數請求先等待；實際送出後才驗政策變更、取消事件與不重播 |
 | V226 UI：xhr-explicit-timeout 原因 | 名稱與輸入保留，改為負向確認退役原因只走一般缺省文案 |
 
-新 V228 案用真實 Routes／Vault／Measurement／Transport，核對零至 19,000 ms、網站改值、重新準備、並行 Fetch／XHR、影音優先、模式、取消與內容隔離；延遲排程在 2,999／3,000／3,001 ms 驗絕對截止。替身的原生計時紀錄不是實際瀏覽器計時證明。完整結果見[最新版報告](../docs/TEST_REPORT.md)。
+新 V228 案用真實 Routes／Vault／Measurement／Transport，核對零至 19,000 ms、網站改值、重新準備、並行 Fetch／XHR、影音優先、模式、取消與內容隔離；延遲排程在 2,999／3,000／3,001 ms 驗絕對截止。替身的原生計時紀錄不是實際瀏覽器計時證明。完整結果見[當版報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v228-完整正文保存2026-11-05)。
 
 ## v2.2.9 量測與期限契約
 
-以 304c631 為基準，修正傳輸與探測單調計時、清理前凍結、有效 bytes 核對，以及實際倍率／快照年齡與播放事實失效；保留原選路與 Catalog-only 起播早放政策。 原 1,982 案保留；本版總計 2021 案。測試時鐘改為明確提供單調讀值，零起點有效、零耗時不虛構一毫秒；播放器 listener 新增失效通知但維持原可信操作與逆序清理。原 already-aborted 起播案例改用有實際耗時的探測替身，原主機／事件／bytes 斷言保留。完整政策差異與結果見[報告](../docs/TEST_REPORT.md)。
+以 304c631 為基準，修正傳輸與探測單調計時、清理前凍結、有效 bytes 核對，以及實際倍率／快照年齡與播放事實失效；保留原選路與 Catalog-only 起播早放政策。 原 1,982 案保留；本版總計 2021 案。測試時鐘改為明確提供單調讀值，零起點有效、零耗時不虛構一毫秒；播放器 listener 新增失效通知但維持原可信操作與逆序清理。原 already-aborted 起播案例改用有實際耗時的探測替身，原主機／事件／bytes 斷言保留。完整政策差異與結果見[報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v229-完整正文保存2026-11-05)。
 
 ## v2.2.10 量測與期限契約
 
@@ -253,7 +253,7 @@
 | V227 early retry adds TTFB only to body transfer time | 原 3 秒交付加 2 秒交接改拒絕；仍驗 TTFB 恰加一次，另合法對照保留 remainingSec=90 與總替代 3 秒 |
 | META I lock waiters | 需求替身保存當輪需求，避免重播 startupOptions；原游標、鎖及提交順序斷言不變 |
 
-新增真實失敗重選回歸核對提示貫穿三個錯誤入口；原片／表示／政策、影音隔離、取消、重入、過期與晚到契約保持。數值模型與安裝效益的界線見[完整報告](../docs/TEST_REPORT.md)。
+新增真實失敗重選回歸核對提示貫穿三個錯誤入口；原片／表示／政策、影音隔離、取消、重入、過期與晚到契約保持。數值模型與安裝效益的界線見[完整報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2210-完整正文保存2026-11-06)。
 
 ## v2.2.11 熔斷降級與觀察契約
 

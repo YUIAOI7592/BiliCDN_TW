@@ -1,13 +1,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
-import { isPlayurlApi } from '../src-v2/domain/catalog.ts'
-import { isHttpDnsUrl } from '../src-v2/domain/url-policy.ts'
 import {
+  isPlayurlApi,
   TRUSTED_CATALOG,
   DEFAULT_UNAVAILABLE_HOSTS,
-  isCatalogHost,
 } from '../src-v2/domain/catalog.ts'
+import { isHttpDnsUrl } from '../src-v2/domain/url-policy.ts'
 import {
   catalogRestrictions,
   catalogCandidates,
@@ -19,11 +18,6 @@ import { testScope } from './support/scope.ts'
 async function checkExplicitUrlBases(t: TestContext): Promise<void> {
   testScope(t)
   assert.strictEqual(typeof location, 'undefined', 'domain suite has no browser location')
-  assert.strictEqual(
-    isPlayurlApi('https://api.bilibili.com/x/player/wbi/playurl'),
-    true,
-    'absolute playurl classification is independent of browser globals',
-  )
   assert.strictEqual(
     isHttpDnsUrl('https://httpdns.bilivideo.com/resolve'),
     true,
@@ -118,11 +112,6 @@ async function checkRestrictionPrecedence(t: TestContext): Promise<void> {
     '1,2,3',
     'backup policy prioritizes distinct hosts before same-host entries',
   )
-  assert.strictEqual(
-    backupOutputPlan(primary, candidates, true).length,
-    0,
-    'host-locked stream has no generated backup candidates',
-  )
 }
 
 async function checkCatalogBackupOrder(t: TestContext): Promise<void> {
@@ -134,7 +123,7 @@ async function checkCatalogBackupOrder(t: TestContext): Promise<void> {
     ['not-catalog.example', next, next],
     new Set([primary]),
   )
-  assert.strictEqual(catalog[0], next, 'Catalog backup preferences retain stable first occurrence')
+  assert.deepEqual(catalog, [next, ...TRUSTED_CATALOG.slice(2, 6)])
   const same = 'upos-sz-mirrorali.bilivideo.com',
     diverse = 'upos-sz-mirrorbos.bilivideo.com',
     unavailable = 'upos-sz-mirrorhw.bilivideo.com'
@@ -147,11 +136,6 @@ async function checkCatalogBackupOrder(t: TestContext): Promise<void> {
   assert.deepEqual(measured.slice(0, 2), [diverse, same])
   assert.equal(measured.length, 5)
   assert.equal(measured.includes(unavailable), false)
-  assert.strictEqual(
-    catalog.length <= 5 && catalog.every((host) => host !== primary && isCatalogHost(host)),
-    true,
-    'Catalog output plan is bounded and only returns built-in hosts',
-  )
 }
 
 test('domain suite has no browser location [1]', { timeout: 5000 }, async (t) => {

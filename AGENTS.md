@@ -24,7 +24,7 @@
 1. 先核對工作樹與 [TODO](docs/TODO.md)，保留使用者無關變更；依 [INDEX 閱讀路徑](docs/INDEX.md#閱讀路徑) 選擇所需指南與 Skill。修改程式前必讀 [ARCHITECTURE](docs/ARCHITECTURE.md)、[SECURITY](SECURITY.md) 與[變更驗證 Skill](.agents/skills/bilicdn-verify-change/SKILL.md)；純文件依受影響議題核對事實。
 2. 執行期修改先以領域層、控制器或適配器契約固定行為：修復先重現失敗，保持行為的重構先確認原實作通過。原始碼修改使用 `apply_patch`。
 3. Codex 執行 Node／必要時 Python 前，使用 `load_workspace_dependencies` 取得當次路徑並明確執行；不硬寫安裝位置、bundle 或版本，不默默退回系統／歷史 up141 工具鏈。需要 npm 時只調整當次程序 PATH，維持父子 Node 一致，記錄實際路徑與版本。專案不固定 Node／Python 版本；能力探測與完整 verify 才能支持當次 Node 相容結論。開發依賴與 lock 保持精確版本，啟動器及一般 Shell 相容性見 [環境需求](.agents/skills/bilicdn-verify-change/references/runtime-and-commands.md#環境需求)。
-4. 按 [驗證範圍](.agents/skills/bilicdn-verify-change/SKILL.md#依變更選擇驗證範圍) 執行檢查。來源、測試或工具變更完成對應套件及完整 `npm run verify`；正式發布亦須通過 verify。它已包含 typecheck、architecture、全部測試、格式、文件、公開封存、建置及暫存封裝檢查；同一最終差異不必再逐項重跑。單項命令仍供開發定位使用，失敗後須修正並重驗受影響範圍。
+4. 按 [驗證範圍](.agents/skills/bilicdn-verify-change/SKILL.md#依變更選擇驗證範圍) 執行檢查。來源、測試或工具變更先完成修改前相應契約，最終差異須通過完整 `npm run verify`，正式發布亦適用。verify 包含 typecheck、architecture、全部測試、格式、文件、公開封存、建置及暫存封裝檢查，可直接作為同一最終差異的修改後套件證據。單項命令供開發定位使用，失敗後須修正並重驗受影響範圍。
 5. 契約使用具名 `node:test`，每案重建可變狀態；`testScope(t)` 登記清理，全域替換經 `defineGlobal()`。計時器、攔截、訂閱與取消函式由所屬資源管理，完整執行不得有 only／skipped／todo／cancelled。新測試套件登記 `scripts/testing/test-registry.mts`；細節見 [測試隔離](.agents/skills/bilicdn-verify-change/references/test-contracts.md)。
 6. 自動驗證、安全審查、來源隔離與實際安裝結果分開記錄；verify 不包含安全掃描或瀏覽器驗收。Codex Security 僅於安全敏感變更或使用者明確要求時執行。
 

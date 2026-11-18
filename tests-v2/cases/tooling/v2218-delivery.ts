@@ -47,6 +47,10 @@ for (const existing of [true, false])
       [...artifacts, `SHA256SUMS_v${version}.txt`].sort(),
     )
     assert.equal(readFileSync(result.script, 'utf8'), (await build({ write: false })).output)
+    const manifest = JSON.parse(
+      readFileSync(`${destination}/BUILD_MANIFEST_v${version}.json`, 'utf8'),
+    )
+    assert.equal(manifest.userscriptSha256, sha256(readFileSync(result.script)))
     const rows = readFileSync(`${destination}/SHA256SUMS_v${version}.txt`, 'utf8')
       .trim()
       .split('\n')

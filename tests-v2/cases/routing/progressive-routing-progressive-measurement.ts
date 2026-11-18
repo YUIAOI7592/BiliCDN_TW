@@ -463,10 +463,14 @@ async function checkCatalogSourceHandleResolvesExactCurrentEpochPCDNSource7(
         ),
       'PCDN source yields a normal built-in Catalog player destination',
     )
-    assert.ok(
-      output.backups.every((url) => parseMediaUrl(url)?.kind === 'normal'),
-      'PCDN source yields only normal Catalog backups',
-    )
+    const backupHosts = output.backups.map((url) => {
+      const backup = parseMediaUrl(url)
+      assert.equal(backup?.kind, 'normal')
+      assert.ok(TRUSTED_CATALOG.some((host) => host === backup.host))
+      return backup.host
+    })
+    assert.ok(backupHosts.length > 0, 'PCDN source yields available Catalog backups')
+    assert.equal(new Set(backupHosts).size, backupHosts.length)
     const dispatched = base.pcdnRoutes.apply(base.pcdnSource)
     assert.ok(
       dispatched.url &&
