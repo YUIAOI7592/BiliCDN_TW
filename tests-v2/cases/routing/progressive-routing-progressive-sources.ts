@@ -2,7 +2,11 @@ import { challengeOnce } from '../../support/challenge.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { type TestContext } from 'node:test'
-import { TRUSTED_CATALOG, DEFAULT_UNAVAILABLE_HOSTS } from '../../../src-v2/domain/catalog.ts'
+import {
+  TRUSTED_CATALOG,
+  DEFAULT_UNAVAILABLE_HOSTS,
+  isCatalogHost,
+} from '../../../src-v2/domain/catalog.ts'
 import {
   createProgressiveSourceUrls,
   createRoutingResources,
@@ -247,9 +251,17 @@ async function checkCatalogSourceResolvesTheFirstLegalSameSegmentBackupWhenThe(
         ),
       'Catalog player primary excludes all three tested 403 stream-host pairs',
     )
+    const remainingHosts = afterThreeOutput.backups.map((url) => new URL(url).hostname)
+    assert.equal(remainingHosts.length, 5, 'legal alternatives remain after three 403 responses')
+    assert.equal(
+      new Set([new URL(afterThreeOutput.primary).hostname, ...remainingHosts]).size,
+      6,
+      'Catalog primary and backups use distinct hosts',
+    )
     assert.ok(
-      afterThreeOutput.backups.every(
-        (url) => !startup?.candidates.some((candidate) => candidate.host === new URL(url).hostname),
+      remainingHosts.every(
+        (host) =>
+          isCatalogHost(host) && !startup?.candidates.some((candidate) => candidate.host === host),
       ),
       'Catalog player backups exclude all three tested 403 stream-host pairs',
     )

@@ -119,6 +119,12 @@ for (const [name, mutate] of [
       report.cases = []
     },
   ],
+  [
+    'extra terminal case with a one-case summary',
+    (report: ReturnType<typeof probeReport>) => {
+      report.cases.push({ ...report.cases[0]!, name: 'additional contract' })
+    },
+  ],
 ] as const) {
   test('TOOLCHAIN rejects probe ' + name, () => {
     const report = probeReport()

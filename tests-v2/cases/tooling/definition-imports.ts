@@ -54,3 +54,46 @@ test('V2215 type-only case imports cannot make an empty suite pass definition va
   )
   assert.throws(() => validateTestDefinitions(f.source, f.dir), /Suite registered no named cases/)
 })
+
+test('namespace test registrations execute all cases in a full suite', async (t) => {
+  const f = resources(t)
+  writeFileSync(
+    f.source,
+    "import * as nt from 'node:test'; nt.test('first', () => {}); nt.it('second', () => {})\n",
+  )
+  const {
+    results: [result],
+  } = await executeSuites([{ name: 'namespace', source: f.source }], {
+    emit: false,
+  })
+  assert.equal(result!.success, true)
+  assert.deepEqual(
+    result!.report!.cases.map(({ name, status }) => [name, status]),
+    [
+      ['first', 'passed'],
+      ['second', 'passed'],
+    ],
+  )
+})
+
+for (const focused of ['nt.test.only', "nt['test']['only']"] as const) {
+  test('full-suite validation rejects a focused namespace registration: ' + focused, async (t) => {
+    const f = resources(t)
+    writeFileSync(f.source, "import './cases.ts'\n")
+    writeFileSync(
+      f.child,
+      "import { test } from 'node:test'; import * as nt from 'node:test'; " +
+        "test('ordinary', () => {}); " +
+        focused +
+        "('focused', () => {})\n",
+    )
+    const {
+      results: [result],
+    } = await executeSuites([{ name: 'focused-namespace', source: f.source }], {
+      emit: false,
+    })
+    assert.equal(result!.success, false)
+    assert.equal(result!.phase, 'build')
+    assert.match(result!.error!, /Focused test registration/)
+  })
+}

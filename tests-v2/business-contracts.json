@@ -1,0 +1,1443 @@
+{
+  "設定、限制與停用": [
+    {
+      "id": "settings-defaults",
+      "rule": "新安裝與缺欄位保存值套用目前預設，讀取時無遷移寫入並保留明指停用的偏好。",
+      "tests": [
+        ["application", "CC39-SETTINGS new and missing settings enable all three retained capabilities"],
+        ["application", "CC39-SETTINGS migration drops codec and verbose while preserving explicit choices"],
+        ["state", "existing schema 2 settings without Native toggle default on [13]"]
+      ]
+    },
+    {
+      "id": "settings-retired",
+      "rule": "歷史已撤除的設定值不恢復舊策略，也不因讀取寫回。",
+      "tests": [
+        ["state", "V2218 retired policies ignore legacy values without read-time writes"]
+      ]
+    },
+    {
+      "id": "settings-store-read-failure",
+      "rule": "一般更新、單主機編輯及還原在鎖內讀取失敗時拒絕零寫入，讀取恢復後可重試；確知缺資料才用預設建立。",
+      "tests": [
+        ["state", "V2221 settings update preserves stored settings when the locked read fails"],
+        ["state", "V2221 settings catalog preserves stored settings when the locked read fails"],
+        ["state", "V2221 settings reset preserves stored settings when the locked read fails"],
+        ["state", "V2221 settings can save a genuinely missing record"]
+      ]
+    },
+    {
+      "id": "settings-store-notify",
+      "rule": "訂閱者失敗仍發布給其他訂閱者，限制性的暫時抑制可解除。",
+      "tests": [
+        ["state", "V2221 a settings subscriber failure cannot strand restrictive updates or hide notifications"]
+      ]
+    },
+    {
+      "id": "settings-reset-order",
+      "rule": "完成寫入但尚未發布的還原不能覆蓋更新的本機編輯或遠端通知，命令、保存、快取、訂閱及 WebRTC 採同一值。",
+      "tests": [
+        ["state", "V2222 reset preserves a newer local update after saving"],
+        ["state", "V2222 reset preserves a newer remote notification after saving"]
+      ]
+    },
+    {
+      "id": "settings-single-host-merge",
+      "rule": "單主機命令在鎖內合併最新設定，連續的不同主機編輯各自保留。",
+      "tests": [
+        ["control-center", "R02 a pending single-host edit merges the latest remote settings under lock"],
+        ["control-center", "R02 separate Catalog checkbox edits survive queued settings locks"]
+      ]
+    },
+    {
+      "id": "settings-invalidation",
+      "rule": "Native、固定偏好、Catalog、停用、提前重試、WebRTC 和 HTTPDNS 依欄位分別失效，時間戳本身不刷新路線。",
+      "tests": [
+        ["state", "V220 field comparisons preserve Native permission invalidation scope"],
+        ["state", "V220 field comparisons preserve fixed host invalidation scope"],
+        ["state", "V220 field comparisons preserve Catalog policy invalidation scope"],
+        ["state", "V220 field comparisons preserve disable invalidation scope"],
+        ["state", "V220 field comparisons preserve retired early release invalidation scope"],
+        ["state", "V220 field comparisons preserve retired middle probe invalidation scope"],
+        ["state", "V220 field comparisons preserve retired backup diversity invalidation scope"],
+        ["state", "V220 field comparisons preserve early retry invalidation scope"],
+        ["state", "V220 field comparisons preserve WebRTC invalidation scope"],
+        ["state", "V220 field comparisons preserve HTTPDNS invalidation scope"],
+        ["state", "V220 field comparisons ignore timestamps and preserve override order semantics"]
+      ]
+    },
+    {
+      "id": "settings-restrictions-order",
+      "rule": "黑名單、死亡與各類限制以同一優先規則影響排名及派送，覆蓋音訊與原線。",
+      "tests": [
+        ["domain-boundaries", "blacklist takes priority over other restrictions [2]"],
+        ["domain", "V2213 policy: ranking and dispatch share restriction precedence"],
+        ["state", "restriction applies to audio [12]"]
+      ]
+    },
+    {
+      "id": "settings-restrictions-storage",
+      "rule": "清除限制保存空資料，寫入例外以讀回對帳，不重送結果未知的寫入。",
+      "tests": [
+        ["state", "V2213 restrictions: clear confirms a saved empty payload without deleting the key"],
+        ["state", "V2213 restrictions: before write outcome is reconciled without retry"],
+        ["state", "V2213 restrictions: after write outcome is reconciled without retry"]
+      ]
+    },
+    {
+      "id": "settings-disabled",
+      "rule": "整體停用不主動探測、不發起路線或核心恢復，網站傳輸保留原生並維持最近處理摘要。",
+      "tests": [
+        ["application", "disabled mode neither probes nor initiates script route/core recovery [8]"],
+        ["adapters", "disabled mode passes site fetch through [2]"],
+        ["playurl-summary", "disabled transport preserves the recent playurl summary [7]"]
+      ]
+    },
+    {
+      "id": "settings-clear-learning",
+      "rule": "清除學習依序等待各保存層，避免後續 Store 在前一步完成之前改動。",
+      "tests": [
+        ["orchestration", "clear learning awaits each store before starting the next [2]"]
+      ]
+    },
+    {
+      "id": "settings-httpdns",
+      "rule": "啟用 HTTPDNS 封鎖時 Fetch 零派送並回安全回應，解除後恢復原生；過世代的 XHR 也無法繞過目前限制。",
+      "tests": [
+        ["adapters", "HTTPDNS Fetch preference blocks locally and re-enables native dispatch"],
+        ["native-transport", "CONTROL: current-generation XHR blocks HTTPDNS in default Catalog mode"],
+        ["native-transport", "B1: stale XHR must not bypass HTTPDNS block in default Catalog mode"]
+      ]
+    }
+  ],
+  "啟動、同頁導覽與瀏覽器控制": [
+    {
+      "id": "entry-transport-installation",
+      "rule": "Fetch 與 XHR 包裝必須驗證實際安裝結果，不完整安裝還原。",
+      "tests": [
+        ["adapters", "Fetch and XHR hook assignments are verified [1]"],
+        ["adapters", "failed XHR hook installation rolls back Fetch and keeps native XHR descriptors"]
+      ]
+    },
+    {
+      "id": "entry-history-rollback",
+      "rule": "第二個 History 包裝安裝失敗時，正式入口恢復原生傳輸與描述子，釋放多種可見性監聽、儲存訂閱、計時器及 WebRTC，且不登記 UI 或選單。",
+      "tests": [
+        ["orchestration", "V2222 entry restores native APIs when lifecycle startup fails"]
+      ]
+    },
+    {
+      "id": "navigation-callbacks",
+      "rule": "History 同頁操作走微任務，popstate 同步通知，失敗與取消清掉當前所有權的包裝且不回收後裝包裝。",
+      "tests": [
+        ["adapter-boundaries", "navigation observes history and popstate [4]"],
+        ["adapter-boundaries", "V2222 navigation rolls back a failed replaceState installation"],
+        ["adapter-boundaries", "V2222 navigation rolls back a failed popstate installation"]
+      ]
+    },
+    {
+      "id": "navigation-equivalence",
+      "rule": "追蹤參數和順序變化保留正規化身分，分集、未知參數與非通用路徑保守區分。",
+      "tests": [
+        ["adapter-boundaries", "V224 navigation identity: tracking and ordering"],
+        ["adapter-boundaries", "V224 navigation identity: duplicate order"],
+        ["adapter-boundaries", "V224 navigation identity: duplicate p"],
+        ["adapter-boundaries", "V224 navigation identity: different part"],
+        ["adapter-boundaries", "V224 navigation identity: content parameter"],
+        ["adapter-boundaries", "V224 navigation identity: unknown parameter"],
+        ["adapter-boundaries", "V224 navigation identity: OGV tracking"],
+        ["adapter-boundaries", "V224 navigation identity: OGV p remains significant"],
+        ["adapter-boundaries", "V224 navigation identity: unknown path"],
+        ["adapter-boundaries", "V224 navigation identity: long query suffix"],
+        ["orchestration", "V224 tracking navigation after page expiry preserves confirmed decisions and independent media summaries"]
+      ]
+    },
+    {
+      "id": "navigation-content-change",
+      "rule": "真正換 P 時撤銷舊傳輸與摘要並由新內容重建，導覽啟動失敗取消訂閱和已排程工作。",
+      "tests": [
+        ["orchestration", "V224 real part change clears old summaries, rejects late work and rebuilds from new transfers"],
+        ["orchestration", "V2222 failed lifecycle startup abandons subscriptions and queued work"]
+      ]
+    },
+    {
+      "id": "navigation-lifecycle",
+      "rule": "安裝、導航、停用與解除的所有權由 Lifecycle 管理；Native 設定改變先失效選路，再取消量測和恢復。",
+      "tests": [
+        ["orchestration", "lifecycle installation, navigation, disable and disposal retain ownership [3]"],
+        ["orchestration", "Native switch invalidates plans before cancelling probe and recovery work [1]"]
+      ]
+    },
+    {
+      "id": "visibility-native",
+      "rule": "前景偽裝仍保留實際隱藏狀態，停用時恢復原生可見性及屬性描述子。",
+      "tests": [
+        ["adapter-boundaries", "CONTROL visibility: foreground spoof retains actual hidden state and disable restores native state"],
+        ["adapter-boundaries", "VIS-OWN normal hidden restores complete inherited descriptor"],
+        ["adapter-boundaries", "VIS-OWN normal hidden restores complete accessor descriptor"],
+        ["adapter-boundaries", "VIS-OWN normal hidden restores complete data descriptor"]
+      ]
+    },
+    {
+      "id": "webrtc-ownership",
+      "rule": "WebRTC 封鎖可逆，卸載時保留後來的屬性所有者。",
+      "tests": [
+        ["adapter-boundaries", "CONTROL WebRTC: disable restores original APIs and newer owner is preserved"]
+      ]
+    },
+    {
+      "id": "playinfo-hint",
+      "rule": "嚴格模式拒絕輸出不能送入網站原 setter，後裝描述子屬於網站。",
+      "tests": [
+        ["adapter-boundaries", "CONTROL page hint: strict rejection cannot enter page setter; newer property owner survives dispose"],
+        ["native-transport", "page setter and initial getter reject unsupported Catalog-only values but preserve Native values [6]"]
+      ]
+    }
+  ],
+  "播放資料接納、內容身分與授權": [
+    {
+      "id": "playurl-admission",
+      "rule": "識別普通 playurl 與符合主機、路徑、協定的 OGV playview，precheck 不改寫或授權。",
+      "tests": [
+        ["playurl-summary", "UP141-API exact OGV playview admission preserves ordinary endpoints and rejects precheck"],
+        ["playurl-summary", "UP141-API Fetch transforms nested OGV data and uses request cid for episode identity"]
+      ]
+    },
+    {
+      "id": "playurl-cid",
+      "rule": "只從請求網址擷取精確 cid，長度、重複值及數值格式不合視為缺失；同 cid 換畫質或編碼保持內容週期，異 cid 撤銷原授權。",
+      "tests": [
+        ["domain", "BR-03 request cid parsing preserves precision and existing API admission boundaries"],
+        ["orchestration", "BR-03 same request cid permits an entirely different quality and codec inventory"],
+        ["orchestration", "BR-03 different cid revokes authority despite identical paths and shared audio"]
+      ]
+    },
+    {
+      "id": "playurl-cidless",
+      "rule": "缺 cid 時以合法父目錄交集維持週期，主機、簽名與順序不影響，影音分別有界且共用音軌不能掩蓋換片。",
+      "tests": [
+        ["domain", "BR-03 all permutations use exact normalized parents independent of host and signature"],
+        ["domain", "BR-03 video history is bounded at 128, prioritizes current directories and deterministically evicts old entries"],
+        ["domain", "BR-03 audio history is bounded at 64, prioritizes current directories and deterministically evicts old entries"],
+        ["domain", "BR-03 absent directories do not mutate a cidless baseline; first cid must align if a baseline exists"],
+        ["orchestration", "BR-03 shared audio cannot hide a video change; pure audio uses its own directories"]
+      ]
+    },
+    {
+      "id": "playurl-accepted-order",
+      "rule": "晚到的異 cid 或缺 cid 不推進週期或授權，已確認同 cid 可補新表示，拒絕回應不推進已接納水位。",
+      "tests": [
+        ["application", "V226 L01: reverse API responses cannot restore an older cid"],
+        ["application", "V226 L01: older same-cid data adds a missing representation without adding stale sources"],
+        ["application", "V226 L01: an old response without a cid cannot introduce Native authority"],
+        ["application", "V226 L01: rejected newer output does not advance the accepted API watermark"]
+      ]
+    },
+    {
+      "id": "playurl-reentry",
+      "rule": "API 接納同步重入仍只有一位所有者，低可信提示及世代重設不能完成過時接納。",
+      "tests": [
+        ["application", "V226 L01: API epoch reentry native=false nested=2 preserves one ingestion owner"],
+        ["application", "V226 L01: API epoch reentry native=false nested=4 preserves one ingestion owner"],
+        ["application", "V226 L01: API epoch reentry native=true nested=2 preserves one ingestion owner"],
+        ["application", "V226 L01: API epoch reentry native=true nested=4 preserves one ingestion owner"],
+        ["application", "V226 L01: low-trust epoch reentry cannot add an inventory to an API transaction"],
+        ["application", "V226 L01: generation change during epoch cleanup cancels outer ingestion"]
+      ]
+    },
+    {
+      "id": "playurl-cycle",
+      "rule": "只由可信 API 擴展內容基準，真正換片同步撤銷舊控制與接納權限，不重開每分頁起播預算。",
+      "tests": [
+        ["orchestration", "BR-03 page-hint cannot bind cid or expand fallback directories"],
+        ["orchestration", "BR-03 player-mpd cannot bind cid or expand fallback directories"],
+        ["orchestration", "R01 epoch notification resets runtime synchronously before registration; quality changes preserve the epoch"],
+        ["orchestration", "CR-03 content reset during startup must not reopen the per-tab probe budget"]
+      ]
+    },
+    {
+      "id": "playurl-vault-exact",
+      "rule": "Vault 控制 Native 精確來源與當前週期的 handle，page-hint 不可擴充既有可信群組，舊世代無法解析。",
+      "tests": [
+        ["state", "late page hints cannot replace the trusted root [2]"],
+        ["state", "exact signed route maps to current epoch [8]"],
+        ["state", "opaque handle resolves inside vault [9]"],
+        ["state", "signed route never crosses generation [10]"],
+        ["adapters", "weak query match is not a backup capability [13]"]
+      ]
+    },
+    {
+      "id": "playurl-source-bounds",
+      "rule": "可信 API 與低可信來源分別掃描 16 和 4 個原始位置，先截取再驗證，空值不讓後方網址遞補。",
+      "tests": [
+        ["progressive-playurl", "V2213 sources: trusted raw position 16 respects the sixteen-position scan"],
+        ["progressive-playurl", "V2213 sources: trusted raw position 17 respects the sixteen-position scan"],
+        ["progressive-playurl", "V2213 sources: page-hint retains its four-raw-position authority bound"],
+        ["progressive-playurl", "V2213 sources: player-mpd retains its four-raw-position authority bound"],
+        ["progressive-playurl", "V2213 parser: invalid raw positions are not compressed before the trusted scan bound"]
+      ]
+    },
+    {
+      "id": "playurl-source-order",
+      "rule": "先保留原始 primary，再優先合法不同主機；PCDN 或 opaque 只有對應 Catalog 生成或觀察資格，沒有 Native 選用權。",
+      "tests": [
+        ["progressive-playurl", "V2213 sources: primary and different selectable hosts precede same-host variants"],
+        ["progressive-playurl", "V2213 sources: selectable hosts precede extra opaque or PCDN observations without granting them Native rights"],
+        ["adapters", "opaque signed output remains observation-only [7]"]
+      ]
+    },
+    {
+      "id": "playurl-source-rotation",
+      "rule": "可信精確集合相同時保留 handle 但更新 primary，集合改變時撤銷舊來源及晚到證據。",
+      "tests": [
+        ["progressive-playurl", "V2213 DASH: reordered identical exact sources preserve handles and update primary"],
+        ["progressive-playurl", "V2213 DASH: a newer trusted source set replaces old hosts and revokes old handles"],
+        ["progressive-playurl", "V2213 DASH: a late probe from the replaced source cannot create health evidence"],
+        ["progressive-routing", "A01 repeated progressive refresh revokes old handles and preserves unchanged normalized sources"]
+      ]
+    },
+    {
+      "id": "playurl-source-fallback",
+      "rule": "Vault 滿額無法經 fallback 或 alias 引回未接納路線，非法的新回應不得復用舊簽名。",
+      "tests": [
+        ["progressive-playurl", "V2213 DASH: a full Vault cannot reintroduce unadmitted backups through fallback output"],
+        ["progressive-playurl", "V2213 DASH: player output cannot grant aliases to non-admitted raw sources"],
+        ["progressive-playurl", "V2213 sources: a trusted refresh with no admitted source revokes old exact authority"],
+        ["progressive-routing", "A01 invalid progressive refresh cannot reuse earlier signed output"]
+      ]
+    },
+    {
+      "id": "playurl-source-trust-upgrade",
+      "rule": "可信來源可替換 provisional 提示，提示退役後不得新增健康樣本或處罰舊主機。",
+      "tests": [
+        ["state", "trusted API replaces invalidated provisional route on the same host [3]"],
+        ["state", "late preflight result from the retired hint cannot create health evidence [5]"],
+        ["state", "late challenger result from the retired hint cannot create health evidence [6]"],
+        ["state", "retired page-hint transport does not punish its old host after API adoption [7]"]
+      ]
+    },
+    {
+      "id": "playurl-preflight",
+      "rule": "計算整個 payload 的影片與音訊清冊，超限在讀成員前拒絕，讀取器引發的陣列增長也不能超出額度。",
+      "tests": [
+        ["progressive-playurl", "V2213 parser: rejects video overflow before reading member fields"],
+        ["progressive-playurl", "V2213 parser: rejects audio overflow before reading member fields"],
+        ["progressive-playurl", "V2213 parser: rejects combined-video overflow before reading member fields"],
+        ["progressive-playurl", "V2213 parser: rejects mixed-video overflow before reading member fields"],
+        ["progressive-playurl", "V2213 parser: rejects audio-variant overflow before reading member fields"],
+        ["progressive-playurl", "V2213 parser: page-hint video getter cannot extend preflighted inventory"],
+        ["progressive-playurl", "V2213 parser: page-hint audio getter cannot extend preflighted inventory"],
+        ["progressive-playurl", "129 progressive groups exceed the per-payload limit [12]"]
+      ]
+    },
+    {
+      "id": "playurl-formats",
+      "rule": "DASH、MP4、FLV 和混合格式依已辨識容器接納，重複或缺少 order 保持分段，不合法 code、durl 或格式拒絕。",
+      "tests": [
+        ["progressive-playurl", "HTTP 200/code 0 MP4 durl is accepted [1]"],
+        ["progressive-playurl", "multi-segment FLV is accepted [2]"],
+        ["progressive-playurl", "missing or duplicate order is accepted without merging segments [3] / undefined"],
+        ["progressive-playurl", "missing or duplicate order is accepted without merging segments [3] / 1"],
+        ["progressive-playurl", "mixed data/result/video_info DASH and durl are accepted together [4]"],
+        ["progressive-playurl", "nonzero upstream code prevents rewriting [8]"],
+        ["progressive-playurl", "required durl null is malformed even with valid DASH data [7]"],
+        ["progressive-playurl", "unsupported progressive format is rejected [9]"]
+      ]
+    },
+    {
+      "id": "playurl-atomic-output",
+      "rule": "必要分段沒有合法輸出時拒絕整體內容，有合法同分段備援時才生成並保留原分段對應。",
+      "tests": [
+        ["progressive-playurl", "a bad middle segment rejects the complete mixed payload [10]"],
+        ["progressive-playurl", "unreplaceable middle segment rejects the complete payload [11]"],
+        ["progressive-playurl", "a legal same-segment backup supplies Catalog materialization [14]"],
+        ["progressive-routing", "Catalog source resolves the first legal same-segment backup when the declared root is opaque [2]"]
+      ]
+    },
+    {
+      "id": "playurl-transport-acceptance",
+      "rule": "Fetch、XHR text 和 JSON 都檢查明確 accepted，嚴格模式拒絕輸出保持各傳輸的安全失敗型態。",
+      "tests": [
+        ["playurl-summary", "a rejected result object cannot truthily pass strict Fetch [2]"],
+        ["playurl-summary", "strict XHR text rejects an unaccepted typed result [3]"],
+        ["playurl-summary", "strict XHR json rejects an unaccepted typed result [3]"],
+        ["playurl-summary", "XHR response text accepts a typed accepted result [4]"],
+        ["progressive-transport", "successful MP4 API remains HTTP 200 through Fetch [1]"]
+      ]
+    },
+    {
+      "id": "playurl-bodyless",
+      "rule": "無本文 204、205、304 在 Native 模式原生直通，Catalog 模式安全拒絕，停用不改摘要。",
+      "tests": [
+        ["playurl-summary", "playurl Fetch preserves native 204 without a body in normal mode"],
+        ["playurl-summary", "playurl Fetch preserves native 205 without a body in normal mode"],
+        ["playurl-summary", "playurl Fetch preserves native 304 without a body in normal mode"],
+        ["playurl-summary", "playurl Fetch without a body returns a local rejection in Catalog mode"],
+        ["playurl-summary", "playurl Fetch without a body leaves the prior summary intact while disabled"]
+      ]
+    },
+    {
+      "id": "playurl-summary-privacy",
+      "rule": "最新處理摘要保留端點和接納資訊，範圍有限且畫面不含 URL 或 payload。",
+      "tests": [
+        ["playurl-summary", "playurl summary starts empty [1]"],
+        ["playurl-summary", "non-finite playurl summary counts are normalized [6]"],
+        ["control-center", "UP141-DIAG playurl summary renders endpoint kind without URL or payload"],
+        ["control-center", "UP141-DIAG ogv-playview summary renders endpoint kind without URL or payload"],
+        ["control-center", "UP141-DIAG ogv-precheck summary renders endpoint kind without URL or payload"]
+      ]
+    },
+    {
+      "id": "playurl-navigation-privacy",
+      "rule": "內容辨識 cid 和父目錄不進入持久偏好或對外通知。",
+      "tests": [
+        ["orchestration", "BR-03 cid and directories never enter persistent settings or content notifications"]
+      ]
+    }
+  ],
+  "選路、傳輸歸因與熔斷": [
+    {
+      "id": "route-native-priority",
+      "rule": "預設 Native 冷啟動保留合法原線，原線不再合法時可選用同一資源的精確備援，保留當次 DASH 查詢字串。",
+      "tests": [
+        ["native-routing", "enabling Native sources preserves cold-start original route [7]"],
+        ["progressive-routing", "CR-01/02 root fallback sends the selected legal original after a Native backup fails"],
+        ["progressive-routing", "CR-01 selected original keeps same-host DASH query strings and rejects a forbidden root"]
+      ]
+    },
+    {
+      "id": "route-catalog-pcdn",
+      "rule": "Catalog-only 優先選合法安全目標，PCDN 不直接派送，多次拒絕後仍保留完整、去重的可信主備清單。",
+      "tests": [
+        ["native-routing", "Catalog-only startup has legal candidates [3]"],
+        ["progressive-routing", "resource primary is replaced using its exact legal backup source [4]"],
+        ["adapters", "XHR does not send default-unavailable PCDN-marked media [15]"]
+      ]
+    },
+    {
+      "id": "route-catalog-policy",
+      "rule": "等待中改為 Catalog-only 時，Fetch 與 XHR 在派送前重新評估並阻止舊 Native 備援及 opaque 路線。",
+      "tests": [
+        ["native-transport", "startup waiters recheck Native-to-Catalog switch in Fetch and XHR [1]"],
+        ["native-transport", "old Native backups and opaque requests obey Catalog dispatch restrictions [2]"],
+        ["native-transport", "admitted third-party Native backup is blocked after Native is disabled [3]"]
+      ]
+    },
+    {
+      "id": "route-restriction-coverage",
+      "rule": "禁止規則也覆蓋 playurl 主備、未歸類媒體、已快取備援和非 GET，禁止目標在送出前拒絕。",
+      "tests": [
+        ["adapters", "forbidden original cannot remain in playurl primary or backup [6]"],
+        ["progressive-routing", "routing unattributed originals apply the union of video and audio host restrictions"],
+        ["adapters", "black invalidates cached fallback on next request [9]"],
+        ["adapters", "dead invalidates cached fallback on next request [9]"],
+        ["adapters", "blacklisted non-GET Fetch never reaches native fetch [4]"]
+      ]
+    },
+    {
+      "id": "route-rank",
+      "rule": "新鮮且足夠的容量優先於暫定容量，健康現用路線有黏著性，合法固定主機優先但黑名單仍生效。",
+      "tests": [
+        ["domain", "V227 routing: a faster equally qualified original wins without a source-type downgrade"],
+        ["domain", "V227 routing: sufficient fresh capacity precedes faster one-sample provisional capacity"],
+        ["domain", "V227 routing: a 1.2 ratio is adequate and retains the healthy current host"],
+        ["domain", "V227 routing: insufficient current capacity stays when no recent adequate replacement exists"],
+        ["domain", "V227 routing: aging evidence alone does not displace the current host"],
+        ["domain", "V227 routing: fresh inadequacy yields to a fresh adequate alternative"],
+        ["domain", "V227 routing: provisional inadequacy reselects only when a recent adequate alternative exists"],
+        ["domain", "V227 routing: legal fixed selection precedes fresh evidence and black restriction still wins"]
+      ]
+    },
+    {
+      "id": "route-backup-diversity",
+      "rule": "足夠且合格的備援以家族分散，同家族的充裕容量仍優先於未知或不足的新家族。",
+      "tests": [
+        ["application", "UP141-ROUTE measured sufficient backups diversify families before same-family headroom"],
+        ["application", "UP141-ROUTE unmeasured or insufficient diverse host cannot outrank sufficient same-family host"],
+        ["application", "UP141-ROUTE forbidden and incompatible rows never gain diversity admission"]
+      ]
+    },
+    {
+      "id": "route-fixed-recovery",
+      "rule": "固定主機失敗後，目前同媒體合法備援仍能建立恢復資格，舊成功完成不得奪回固定政策。",
+      "tests": [
+        ["progressive-routing", "CC40 fixed failure retains recovery authority for its current legal Catalog fallback"],
+        ["progressive-routing", "A03 fixed CDN remains authoritative after late old transfer completion"]
+      ]
+    },
+    {
+      "id": "route-selection-revision",
+      "rule": "兩個不同成功才確認新表示；舊請求在交錯完成時不能奪回選擇或親和，失效內容不得提交新控制。",
+      "tests": [
+        ["application", "V2216 ownership: distinct success proposals settle only after owner confirmation"],
+        ["application", "V2216 ownership: policy, content and source invalidation retain distinct cleanup scopes"],
+        ["application", "V226 ownership: two hosts two representations order=0123 boundary=none"]
+      ]
+    },
+    {
+      "id": "route-evidence-before-publish",
+      "rule": "現用路線只在證據確定保存後確認；鎖或同步回呼失效時可留合格學習但不得發布舊控制。",
+      "tests": [
+        ["progressive-routing", "routing convergence confirms only after evidence persistence"],
+        ["progressive-routing", "routing convergence evidence persistence reentry records learning without confirming control"],
+        ["progressive-routing", "A03 policy change during success evidence lock cannot publish control state"],
+        ["progressive-routing", "A03 policy change during failure evidence lock cannot publish control state"]
+      ]
+    },
+    {
+      "id": "route-request-context",
+      "rule": "準備可重用且維持遞增修訂，連結媒體、請求與決策，不藉同主機或無請求的完成取得其他決策所有權。",
+      "tests": [
+        ["application", "V2216 ownership: idempotent preparation preserves lazy plan reads and monotonic revisions"],
+        ["progressive-routing", "cleanup contract: requestless completion after none only confirms current control"],
+        ["progressive-routing", "cleanup contract: requestless completion after policy only confirms current control"],
+        ["progressive-routing", "cleanup contract: requestless completion after content only confirms current control"],
+        ["progressive-routing", "cleanup contract: requestless control retains only 256 decisions with 255 newer entries"],
+        ["progressive-routing", "cleanup contract: requestless control retains only 256 decisions with 256 newer entries"]
+      ]
+    },
+    {
+      "id": "route-media-isolation",
+      "rule": "影音確認、親和和恢復資格互不污染。",
+      "tests": [
+        ["progressive-routing", "routing convergence audio successes remain separate from video confirmation and affinity"],
+        ["application", "I-R04 Runtime audio fallback eligibility is isolated rate=2"],
+        ["application", "I-R04 Runtime video fallback eligibility is isolated rate=2"]
+      ]
+    },
+    {
+      "id": "route-attribution-reset",
+      "rule": "撤銷當前歸因和容量時保留已提交的歷史證據。",
+      "tests": [
+        ["application", "V2212 routes: reset clears current attribution and capacity without erasing committed learning"]
+      ]
+    },
+    {
+      "id": "route-output-preview",
+      "rule": "預覽只登記有界 alias，與挑戰或起播規劃同樣不推進當前親和。",
+      "tests": [
+        ["progressive-routing", "routing output preview registers bounded aliases without publishing output roles"],
+        ["progressive-routing", "routing Native startup preserves exact source order while challenge and output planning leave affinity unchanged"]
+      ]
+    },
+    {
+      "id": "route-http-outcomes",
+      "rule": "資源層 HTTP 403、404、410 不形成全域懲罰，其他請求拒絕、取消與 CDN 傳輸失敗各有判定。",
+      "tests": [
+        ["application", "V226 T03: Catalog resource-status table classifies failure and abort distinctly"],
+        ["application", "V226 T03: resource status 404 cannot kill an unrelated resource on the same host"],
+        ["application", "V226 T03: resource status 410 cannot kill an unrelated resource on the same host"],
+        ["application", "V226 T03: resource status 429 cannot kill an unrelated resource on the same host"],
+        ["progressive-routing", "routing convergence keeps Catalog 403 incompatibility separate from health evidence"]
+      ]
+    },
+    {
+      "id": "route-status-snapshot",
+      "rule": "讀取快照不提交、改變決策或啟動工作，容量只在瀏覽到的當前授權有效時提供。",
+      "tests": [
+        ["application", "V2211 routing: snapshot reads cannot commit, mutate a decision or start work"],
+        ["progressive-routing", "V225 capacity discards a synchronous evidence read that changes ownership"],
+        ["progressive-routing", "V225 capacity discards a synchronous policy read that changes ownership"],
+        ["progressive-routing", "V225 capacity rejects disabled invalidation without cleaning the old plan"],
+        ["progressive-routing", "V225 capacity rejects black invalidation without cleaning the old plan"],
+        ["progressive-routing", "V225 capacity rejects dead invalidation without cleaning the old plan"],
+        ["progressive-routing", "V225 capacity rejects catalog invalidation without cleaning the old plan"],
+        ["progressive-routing", "V225 capacity rejects policy invalidation without cleaning the old plan"],
+        ["progressive-routing", "V225 capacity rejects generation invalidation without cleaning the old plan"],
+        ["progressive-routing", "V225 capacity rejects epoch invalidation without cleaning the old plan"],
+        ["progressive-routing", "V225 capacity rejects authority invalidation without cleaning the old plan"]
+      ]
+    },
+    {
+      "id": "route-current-capacity",
+      "rule": "主線、備援與起播規劃後的已確認學習可更新容量；TTL、媒體隔離、過期完成與排名截斷仍各自適用。",
+      "tests": [
+        ["progressive-routing", "V225 current capacity learns after primary planning without changing routing"],
+        ["progressive-routing", "V225 current capacity learns after backup planning without changing routing"],
+        ["progressive-routing", "V225 current capacity learns after startup planning without changing routing"],
+        ["progressive-routing", "V225 capacity refresh respects inclusive TTL without deleting stored evidence"],
+        ["progressive-routing", "V225 current capacity survives a selected host outside the twelve ranking rows"],
+        ["progressive-routing", "V225 capacity isolates media and host evidence, clear and remote updates"],
+        ["progressive-routing", "V225 failed evidence writes and stale completions do not create current capacity"]
+      ]
+    },
+    {
+      "id": "route-demand",
+      "rule": "需求與畫質、實際播放倍速和影音資訊相關，足夠門檻具明確邊界；缺少播放事實不憑空取得所有權。",
+      "tests": [
+        ["domain", "V226 shared demand video bandwidth=4000000 rate=1"],
+        ["domain", "V226 shared demand video bandwidth=4000000 rate=2"],
+        ["domain", "V221 overview demand headroom retains threshold semantics"],
+        ["application", "V227 completion owner: fresh playback facts do not invent ownership"],
+        ["application", "V227 completion owner: expired playback facts do not invent ownership"],
+        ["application", "V227 completion owner: policy playback facts do not invent ownership"],
+        ["application", "V227 completion owner: selection playback facts do not invent ownership"],
+        ["application", "V227 completion owner: real monitor and runtime forward buffer facts and stop revokes them"],
+        ["application", "V227 completion owner: forced recovery ranks actual evidence using the owned playback budget"]
+      ]
+    },
+    {
+      "id": "route-deadline-facts",
+      "rule": "完成期限只使用有界的新鮮單調時鐘事實，時鐘跳動與更新觀察修訂不沿用舊預估。",
+      "tests": [
+        ["application", "V229 playback deadline projects 1x through the two-second expiry boundary"],
+        ["application", "V229 playback deadline projects 2x through the two-second expiry boundary"],
+        ["application", "V229 playback deadline ignores a wall-clock jump and invalidates on a newer observation revision"],
+        ["application", "V229 playback deadline rejects missing monotonic input and unknown actual rate"]
+      ]
+    },
+    {
+      "id": "route-completion-model",
+      "rule": "只有有界的單一閉區間能推導精確大小，完整證據以首位元組和下載估完成時間，不足時回到吞吐比較。",
+      "tests": [
+        ["domain", "V227 completion: closed Range bytes=0-0 yields only a bounded exact length"],
+        ["domain", "V227 completion: closed Range bytes=10-65545 yields only a bounded exact length"],
+        ["domain", "V227 completion: closed Range  bytes=0-99  yields only a bounded exact length"],
+        ["domain", "V227 completion: closed Range bytes=1- yields only a bounded exact length"],
+        ["domain", "V227 completion: closed Range bytes=-100 yields only a bounded exact length"],
+        ["domain", "V227 completion: closed Range bytes=0-1,3-4 yields only a bounded exact length"],
+        ["domain", "V227 completion: closed Range bytes=10-9 yields only a bounded exact length"],
+        ["domain", "V227 completion: closed Range bytes=0-9007199254740992 yields only a bounded exact length"],
+        ["domain", "V227 completion: closed Range bytes=0-9007199254740991 yields only a bounded exact length"],
+        ["domain", "V227 completion: closed Range  yields only a bounded exact length"],
+        ["domain", "V227 completion: a small request prefers fast response over greater body capacity"],
+        ["domain", "V227 completion: an incomplete candidate switches its entire cohort to throughput comparison"],
+        ["domain", "V227 completion: missing size keeps throughput ordering without fabricating bytes"],
+        ["domain", "V227 completion: early retry adds TTFB only to body transfer time"]
+      ]
+    },
+    {
+      "id": "route-evidence-learning",
+      "rule": "雙 EWMA 低值立即反映、高值有限回復，一筆樣本折扣，舊資料的選填 timing 不會因讀取擴充。",
+      "tests": [
+        ["domain", "V227 evidence: dual EWMA permits a slow bounded recovery instead of retaining the minimum"],
+        ["domain", "V227 evidence: a new low immediately bounds both EWMA lines"],
+        ["domain", "V227 evidence: one sample retains the seventy percent discount and provisional capacity"],
+        ["state", "V227 evidence storage: optional timing round trips without upgrading old samples or adding a key"],
+        ["state", "V227 evidence storage: malformed optional timing is discarded without deleting valid legacy throughput"],
+        ["state", "V229 evidence timing basis parsing preserves stored payload: fetch-consumer"],
+        ["state", "V229 evidence timing basis parsing preserves stored payload: xhr-terminal"],
+        ["state", "V229 evidence timing basis parsing preserves stored payload: probe-reader"],
+        ["state", "V229 evidence timing basis parsing preserves stored payload: invalid"],
+        ["state", "V229 evidence timing basis parsing preserves stored payload: legacy"]
+      ]
+    },
+    {
+      "id": "route-admission-separation",
+      "rule": "一般學習、熔斷信用、重試證明分開判定，短路不增加儲存或政策讀取。",
+      "tests": [
+        ["application", "V2216 admission: health samples, circuit credit and retry proof have separate qualifications"],
+        ["application", "V2216 admission: static predicates preserve short-circuit reads"]
+      ]
+    },
+    {
+      "id": "circuit-state",
+      "rule": "斷路器保留既有債務與較長隔離，速度樣本過期不抹除，請求收據與共享版本只能提交一次。",
+      "tests": [
+        ["domain", "V2211 circuit: ordinary and probe successes retain the failure level"],
+        ["domain", "V2211 circuit: a failure cannot shorten a legacy longer isolation"],
+        ["state", "V2211 storage: speed history expiry does not erase circuit debt"],
+        ["state", "V2211 storage: one receipt can commit only one failure even concurrently"],
+        ["state", "V2211 storage: two stores cannot lower the same shared version twice"]
+      ]
+    },
+    {
+      "id": "circuit-downgrade",
+      "rule": "降級需完整且新鮮的真實持續傳輸觀察，每期一階；逾時、暫停、倍速、政策、內容或晚到證明不沿用。",
+      "tests": [
+        ["application", "V2211 routing: real ordinary transfers lower exactly one level after five observed minutes"],
+        ["application", "V2211 routing: pre-cutoff pending transfer settles at 359999ms"],
+        ["application", "V2211 routing: pre-cutoff pending transfer settles at 360000ms"],
+        ["application", "V2211 routing: four complete observation periods gradually clear level four"],
+        ["application", "V2211 routing: pause invalidation cannot reuse earlier observation credit"],
+        ["application", "V2211 routing: rate invalidation cannot reuse earlier observation credit"],
+        ["application", "V2211 routing: policy invalidation cannot reuse earlier observation credit"],
+        ["application", "V2211 routing: content invalidation cannot reuse earlier observation credit"],
+        ["application", "V2211 routing: authority while a downgrade awaits submission rejects its old proof"]
+      ]
+    },
+    {
+      "id": "circuit-outcomes",
+      "rule": "取消不加成功信用，重複完成不處罰兩次，缺單調時鐘不新增主機失敗，未驗證的 XHR 交付只可學習。",
+      "tests": [
+        ["application", "V2211 routing: a cancellation unblocks existing evidence without adding success credit"],
+        ["application", "V2211 routing: repeated completion cannot punish one dispatched request twice"],
+        ["application", "V2211 routing: clock loss discards observation without creating a host failure"],
+        ["application", "V2211 routing: unverified XHR delivery can learn but cannot earn recovery credit"]
+      ]
+    }
+  ],
+  "Fetch、XHR 與受控讀取": [
+    {
+      "id": "fetch-request-semantics",
+      "rule": "改寫 Request 時保留 headers，init.method 遵守原生覆蓋，嚴格模式禁止非允許派送。",
+      "tests": [
+        ["adapters", "rewritten Request preserves request headers [3]"],
+        ["adapters", "init.method override is preserved for native Fetch [5]"],
+        ["adapters", "blacklisted non-GET Fetch never reaches native fetch [4]"]
+      ]
+    },
+    {
+      "id": "fetch-xhr-catalog-dispatch",
+      "rule": "有權限的 playurl 和媒體才轉換派送，PCDN 在 Catalog-only 由 Fetch 和 XHR 擋下。",
+      "tests": [
+        ["native-transport", "Catalog-only Fetch and XHR block known PCDN suffix szbdyd.com [14]"],
+        ["native-transport", "Catalog-only Fetch and XHR block known PCDN suffix mountaintoys.cn [14]"],
+        ["native-transport", "Catalog-only Fetch and XHR block known PCDN suffix nexusedgeio.com [14]"],
+        ["native-transport", "Catalog-only Fetch and XHR block known PCDN suffix ahdohpiechei.com [14]"],
+        ["playurl-summary", "UP141-API XHR text OGV transforms once and preserves native getter semantics"]
+      ]
+    },
+    {
+      "id": "fetch-response-reader",
+      "rule": "受控 Fetch 只取得一次原生 response reader，呼叫者取消原物件傳給原讀取器且只記一次取消，空的 response.url 不能推定來源。",
+      "tests": [
+        ["adapters", "managed Fetch uses one response reader and reports caller cancellation once"]
+      ]
+    },
+    {
+      "id": "fetch-precheck-and-redirect",
+      "rule": "OGV precheck 原回應維持未讀；嚴格 Catalog 的媒體 Fetch 拒絕重新導向。",
+      "tests": [
+        ["playurl-summary", "UP141-API Fetch precheck preserves native response and unread body without content authority"],
+        ["progressive-transport", "MP4 Catalog-only Fetch rejects redirects [3]"]
+      ]
+    },
+    {
+      "id": "xhr-prepare-and-terminate",
+      "rule": "兩次以內的原生準備足夠才派送；延後原生 send 錯誤以單一終止序列交給當前請求，立即 send 則保留例外。",
+      "tests": [
+        ["native-transport", "BR-04 preparation callback syntax has bounded dispatch and termination"],
+        ["native-transport", "BR-04 preparation callback sync-once has bounded dispatch and termination"],
+        ["native-transport", "BR-04 preparation callback sync-always has bounded dispatch and termination"],
+        ["native-transport", "BR-04 preparation callback rechecks disable before native dispatch"],
+        ["native-transport", "BR-04 preparation callback rechecks blacklist before native dispatch"],
+        ["native-transport", "BR-04 preparation callback rechecks change-host before native dispatch"],
+        ["native-transport", "BR-04 deferred native send exception terminates once while immediate send throws unchanged"]
+      ]
+    },
+    {
+      "id": "xhr-terminal-state",
+      "rule": "等待中取消先有虛擬 DONE 且回傳空值，再回 UNSENT。舊終止回呼重開後不得終止新請求；已送出的原生超時不重播。",
+      "tests": [
+        ["native-transport", "B2 gated abort exposes DONE then UNSENT with empty response and exactly one terminal sequence"],
+        ["native-transport", "B4 queued error is owned by its request even when error callback reopens"],
+        ["native-transport", "B2 native sent timeout and cancellation are not synthesized or replayed after policy change"]
+      ]
+    },
+    {
+      "id": "xhr-hook-ownership",
+      "rule": "XHR 抑制與還原保留新安裝的第三方 getter、原生讀取例外和傳輸本身的選項。",
+      "tests": [
+        ["native-transport", "B3 text getter exceptions survive JSON failures and hook restoration preserves later owners"],
+        ["native-transport", "B5 policy reopen preserves async options, authorization arguments and headers"]
+      ]
+    },
+    {
+      "id": "xhr-response-type",
+      "rule": "Catalog-only 在送出前擋下不支援的 XHR responseType，Native-on 保留網站使用。",
+      "tests": [
+        ["native-transport", "XHR blob playurl dispatch respects Catalog-only policy [9/11/13]"],
+        ["native-transport", "XHR blob playurl dispatch respects Native-on policy [9/11/13]"],
+        ["native-transport", "XHR blob playurl dispatch respects disabled policy [9/11/13]"],
+        ["native-transport", "XHR arraybuffer playurl dispatch respects Catalog-only policy [9/11/13]"],
+        ["native-transport", "XHR arraybuffer playurl dispatch respects Native-on policy [9/11/13]"],
+        ["native-transport", "XHR arraybuffer playurl dispatch respects disabled policy [9/11/13]"]
+      ]
+    },
+    {
+      "id": "xhr-body-and-reuse",
+      "rule": "重用 XHR text／json 會轉換新內容，response 與 responseText 共用一次轉換並保留原始 JSON 物件。",
+      "tests": [
+        ["progressive-transport", "XHR text transforms fresh MP4 body on reuse [2]"],
+        ["progressive-transport", "XHR json transforms fresh MP4 body on reuse [2]"],
+        ["native-transport", "XHR response convergence: response first shares one completed text conversion"],
+        ["native-transport", "XHR response convergence: responseText first shares one completed text conversion"],
+        ["native-transport", "XHR response convergence: JSON retains its native object identity and transforms once"]
+      ]
+    },
+    {
+      "id": "xhr-open-ownership",
+      "rule": "原生 open 錯誤保持先前 waiting、opened、sent、done 或終止階段；同步重入成功的新 open 取得所有權。",
+      "tests": [
+        ["native-transport", "BR-02 failed open preserves startup waiter with abort=false"],
+        ["native-transport", "BR-02 failed open preserves startup waiter with abort=true"],
+        ["native-transport", "BR-02 failed open preserves opened native request and its observation"],
+        ["native-transport", "BR-02 failed open preserves sent native request and its observation"],
+        ["native-transport", "BR-02 failed open preserves done native request and its observation"],
+        ["native-transport", "BR-02 successful open synchronous callback owns send"],
+        ["native-transport", "BR-02 successful open synchronous callback owns abort"],
+        ["native-transport", "BR-02 successful open synchronous callback owns reopen"],
+        ["native-transport", "BR-02 successful open synchronous callback owns failed-reopen"],
+        ["native-transport", "BR-02 contract: failed open after virtual DONE preserves DONE"]
+      ]
+    },
+    {
+      "id": "xhr-conversions",
+      "rule": "open、設定 header 和 send 轉換只做一次；例外、同步重入及取消保留原生例外與新所有權，無效派送不消耗重送。",
+      "tests": [
+        ["native-transport", "BR-02 throwing method conversion preserves the prior owner and exception"],
+        ["native-transport", "BR-02 throwing url conversion preserves the prior owner and exception"],
+        ["native-transport", "S-01: policy reopen preserves the once-converted request header value"],
+        ["native-transport", "S-01 ByteString validation and conversion reentry preserve the current request"],
+        ["native-transport", "S-03: body conversion failure must preserve native retry capability"],
+        ["native-transport", "S-03 body conversion reentrant open sends the new request once"],
+        ["native-transport", "S-03 abort during conversion before native send preserves native OPENED behavior"]
+      ]
+    },
+    {
+      "id": "xhr-startup-timeout",
+      "rule": "起播等待使用實際網站 timeout，等待期間修改或重開重入使用最新值，舊 waiter 在更換、停用或世代改變時無權送出。",
+      "tests": [
+        ["native-transport", "V228 startup: real XHR gate retains timeout boundaries native=false"],
+        ["native-transport", "V228 startup: real XHR gate retains timeout boundaries native=true"],
+        ["native-transport", "V228 startup: website timeout 0->5000 during wait survives reopen"],
+        ["native-transport", "V228 startup: website timeout 5000->0 during wait survives reopen"],
+        ["native-transport", "V228 startup: website timeout 10000->1 during wait survives reopen"],
+        ["native-transport", "V228 startup: website timeout 1->19000 during wait survives reopen"],
+        ["native-transport", "V228 startup: timeout changed inside native reopen is not overwritten by an earlier snapshot"],
+        ["native-transport", "V228 startup: finite waiter preserves replace native=false"],
+        ["native-transport", "V228 startup: finite waiter preserves failed-open native=false"],
+        ["native-transport", "V228 startup: finite waiter preserves disabled native=false"],
+        ["native-transport", "V228 startup: finite waiter preserves content native=false"],
+        ["native-transport", "V228 startup: finite waiter preserves generation native=false"],
+        ["native-transport", "V228 startup: finite waiter preserves forbidden native=false"],
+        ["native-transport", "V228 startup: finite waiter preserves send-error native=false"],
+        ["native-transport", "V228 startup: finite waiter preserves probe-error native=false"],
+        ["native-transport", "V228 startup: finite waiter preserves replace native=true"],
+        ["native-transport", "V228 startup: finite waiter preserves failed-open native=true"],
+        ["native-transport", "V228 startup: finite waiter preserves disabled native=true"],
+        ["native-transport", "V228 startup: finite waiter preserves content native=true"],
+        ["native-transport", "V228 startup: finite waiter preserves generation native=true"],
+        ["native-transport", "V228 startup: finite waiter preserves forbidden native=true"],
+        ["native-transport", "V228 startup: finite waiter preserves send-error native=true"],
+        ["native-transport", "V228 startup: finite waiter preserves probe-error native=true"]
+      ]
+    },
+    {
+      "id": "transport-gate-cancellation",
+      "rule": "起播三個邊界保留取消原值與身分；只撤銷相應等待者，其他等待者與已消耗預算保持有效。",
+      "tests": [
+        ["measurement-state", "BR-05 pre-aborted startup preserves object cancellation reason"],
+        ["measurement-state", "BR-05 pre-aborted startup preserves Error cancellation reason"],
+        ["measurement-state", "BR-05 pre-aborted startup preserves TimeoutError cancellation reason"],
+        ["measurement-state", "BR-05 pre-aborted startup preserves string cancellation reason"],
+        ["measurement-state", "BR-05 pre-aborted startup preserves zero cancellation reason"],
+        ["measurement-state", "BR-05 pre-aborted startup preserves false cancellation reason"],
+        ["measurement-state", "BR-05 pre-aborted startup preserves empty-string cancellation reason"],
+        ["measurement-state", "BR-05 pre-aborted startup preserves null cancellation reason"],
+        ["measurement-state", "BR-05 pre-aborted startup preserves default cancellation reason"],
+        ["measurement-state", "BR-05 before-listener startup preserves object cancellation reason"],
+        ["measurement-state", "BR-05 before-listener startup preserves Error cancellation reason"],
+        ["measurement-state", "BR-05 before-listener startup preserves TimeoutError cancellation reason"],
+        ["measurement-state", "BR-05 before-listener startup preserves string cancellation reason"],
+        ["measurement-state", "BR-05 before-listener startup preserves zero cancellation reason"],
+        ["measurement-state", "BR-05 before-listener startup preserves false cancellation reason"],
+        ["measurement-state", "BR-05 before-listener startup preserves empty-string cancellation reason"],
+        ["measurement-state", "BR-05 before-listener startup preserves null cancellation reason"],
+        ["measurement-state", "BR-05 before-listener startup preserves default cancellation reason"],
+        ["measurement-state", "BR-05 waiting startup preserves object cancellation reason"],
+        ["measurement-state", "BR-05 waiting startup preserves Error cancellation reason"],
+        ["measurement-state", "BR-05 waiting startup preserves TimeoutError cancellation reason"],
+        ["measurement-state", "BR-05 waiting startup preserves string cancellation reason"],
+        ["measurement-state", "BR-05 waiting startup preserves zero cancellation reason"],
+        ["measurement-state", "BR-05 waiting startup preserves false cancellation reason"],
+        ["measurement-state", "BR-05 waiting startup preserves empty-string cancellation reason"],
+        ["measurement-state", "BR-05 waiting startup preserves null cancellation reason"],
+        ["measurement-state", "BR-05 waiting startup preserves default cancellation reason"],
+        ["orchestration", "CR-03 pending gate remains joinable after reservation and one abort preserves other waiters"]
+      ]
+    },
+    {
+      "id": "probe-direct-range",
+      "rule": "探測只接納直接授權 HTTPS 206、受限 bytes 和合法 Content-Range，讀取失敗釋放，不納入有效證據。",
+      "tests": [
+        ["adapter-boundaries", "probe caps consumed bytes at its declared limit [1]"],
+        ["adapter-boundaries", "probe rejects status/response authority: 200, https://upos-sz-mirrorcos.bilivideo.com/test.m4s, false [2] / 0"],
+        ["adapter-boundaries", "probe rejects status/response authority: 206, https://other.example/test, false [2] / 1"],
+        ["adapter-boundaries", "probe rejects status/response authority: 206, , false [2] / 2"],
+        ["adapter-boundaries", "probe rejects status/response authority: 206, https://upos-sz-mirrorcos.bilivideo.com/test.m4s, true [2] / 3"],
+        ["adapter-boundaries", "probe rejects status/response authority: 206, http://upos-sz-mirrorcos.bilivideo.com/test, false [2] / 4"],
+        ["adapter-boundaries", "probe rejects status/response authority: 206, https://upos-sz-mirrorcos.bilivideo.com:444/test, false [2] / 5"],
+        ["adapter-boundaries", "CONTROL range: native body read failure is rejected as evidence and lock released"],
+        ["measurement-state", "UP141-PROBE shifted Range uses exact validated Content-Range"],
+        ["measurement-state", "UP141-PROBE shifted response rejects missing"],
+        ["measurement-state", "UP141-PROBE shifted response rejects wrong start"],
+        ["measurement-state", "UP141-PROBE shifted response rejects wrong end"],
+        ["measurement-state", "UP141-PROBE shifted response rejects unsafe total"],
+        ["measurement-state", "UP141-PROBE shifted response rejects not range"]
+      ]
+    },
+    {
+      "id": "probe-middle-policy",
+      "rule": "中段選擇對齊且保守，沒有已驗證大小維持 head，無效 Range 零請求。",
+      "tests": [
+        ["measurement-state", "UP141-PROBE middle selection is aligned, bounded, deterministic and conservative"],
+        ["measurement-state", "UP141-PROBE head without exposed range preserves direct 206 but learns no size"],
+        ["measurement-state", "UP141-PROBE invalid outgoing range never starts a fetch"]
+      ]
+    },
+    {
+      "id": "transport-timing",
+      "rule": "傳輸和探測只接納符合來源、有界且一致的 payload 與單調計時；timing basis 異質樣本不混算。",
+      "tests": [
+        ["adapter-boundaries", "V229 completed payload validates consistent"],
+        ["adapter-boundaries", "V229 completed payload validates invisible"],
+        ["adapter-boundaries", "V229 completed payload validates short"],
+        ["adapter-boundaries", "V229 completed payload validates range conflict"],
+        ["adapter-boundaries", "V229 completed payload validates unsafe length"],
+        ["adapter-boundaries", "V229 monotonic timing zero origin"],
+        ["adapter-boundaries", "V229 monotonic timing zero duration"],
+        ["adapter-boundaries", "V229 monotonic timing backward"],
+        ["adapter-boundaries", "V229 monotonic timing late response"],
+        ["adapter-boundaries", "V229 monotonic timing unavailable"],
+        ["domain", "V230 completion samples match only fetch-consumer"],
+        ["domain", "V230 completion samples match only xhr-terminal"],
+        ["domain", "V230 completion samples match only probe-reader"]
+      ]
+    }
+  ],
+  "起播、健康探測與提前重試": [
+    {
+      "id": "startup-media-ownership",
+      "rule": "混合內容優先影片，可信純音訊可接住同一個起播預算，暫定影片不能搶占。",
+      "tests": [
+        ["application", "V226 S07 mixed inventory reserves the single startup window for video"],
+        ["application", "V226 S07 trusted audio-only inventory can use the same single budget"],
+        ["application", "V226 S07: trusted audio-only ownership overrides a provisional video inventory"]
+      ]
+    },
+    {
+      "id": "startup-bounded-policy",
+      "rule": "合法待測路線與已到期隔離可保留探索席次，舊速度過期，實際無候選不消耗一次預算。",
+      "tests": [
+        ["application", "V227 startup: two known adequate hosts leave one slot for legal exploration"],
+        ["application", "V227 startup: expired circuits get the reserved revalidation slot before untested hosts"],
+        ["application", "V227 startup: a reachability update cannot refresh an old cached speed"],
+        ["orchestration", "CR-03 no legal candidate does not consume the startup budget"],
+        ["progressive-routing", "routing startup cursor wraps eligible Catalog order and expires cached throughput after five minutes"]
+      ]
+    },
+    {
+      "id": "startup-early-close",
+      "rule": "起播共用窗口的第一個合格結果能結束等待，重檢需求不重開期限，較晚放行不得突破窗口。",
+      "tests": [
+        ["application", "V230 first adequate root-original seals the shared startup window"],
+        ["application", "V230 first adequate native-signed seals the shared startup window"],
+        ["application", "V230 first adequate catalog-generated seals the shared startup window"],
+        ["application", "V230 first adequate catalog-only seals the shared startup window"],
+        ["application", "V230 startup rechecks changed playback demand without reopening its deadline"],
+        ["progressive-routing", "startup gate remains bounded but open before its deadline [9]"]
+      ]
+    },
+    {
+      "id": "startup-no-reopen",
+      "rule": "內容重設、探測拒絕及已完成窗口都不返還分頁起播預算，等待者可分別取消。",
+      "tests": [
+        ["orchestration", "CR-03 content reset during startup must not reopen the per-tab probe budget"],
+        ["orchestration", "CR-03 control: completed startup keeps its consumed budget after content reset"],
+        ["orchestration", "CR-03 rejected startup probes clean timers and cannot reopen the tab budget"],
+        ["orchestration", "CR-03 pending gate remains joinable after reservation and one abort preserves other waiters"]
+      ]
+    },
+    {
+      "id": "measurement-context-safety",
+      "rule": "實際隱藏、尋位、恢復、停用或缺表示時不展開健康探測，政策變更與停用拒絕晚到學習。",
+      "tests": [
+        ["application", "CC39-MEASURE automatic exploration rejects unsafe state: hidden"],
+        ["application", "CC39-MEASURE automatic exploration rejects unsafe state: seeking"],
+        ["application", "CC39-MEASURE automatic exploration rejects unsafe state: recovering"],
+        ["application", "CC39-MEASURE automatic exploration rejects unsafe state: disabled"],
+        ["application", "CC39-MEASURE automatic exploration rejects unsafe state: representation"],
+        ["application", "UP141-TEST health rejects evidence queued behind storage after policy cancellation"],
+        ["application", "UP141-TEST startup rejects evidence queued behind storage after policy cancellation"],
+        ["application", "UP141-TEST disabling cancels owned work and refuses late learning"]
+      ]
+    },
+    {
+      "id": "measurement-cooldown",
+      "rule": "健康探測共用冷卻與輪次上限，失敗維持已使用額度，已有新鮮證據的候選跳過。",
+      "tests": [
+        ["application", "UP141-TEST automatic exploration shares cooldown, caps rounds and skips fresh evidence"],
+        ["application", "UP141-TEST failed automatic probe respects its consumed cooldown"],
+        ["measurement-state", "V2213 health controller: two controllers share the existing round cooldown"]
+      ]
+    },
+    {
+      "id": "measurement-claims",
+      "rule": "過期熔斷可在六小時前取得持久共享 claim，使用後不返還。未過期、缺共鎖、錯媒體或已使用不能取得。",
+      "tests": [
+        ["measurement-state", "V2213 health routing: an expired L1 circuit is eligible before the ordinary six-hour age"],
+        ["measurement-state", "V2213 health routing: an unexpired isolation cannot acquire priority"],
+        ["measurement-state", "V2213 health routing: priority requires synchronized control storage"],
+        ["measurement-state", "V2213 health routing: video priority cannot borrow an audio circuit stamp"],
+        ["measurement-state", "V2213 health routing: the same host-kind circuit claim cannot be selected again"],
+        ["measurement-state", "V2213 meta: shared priority claim survives reload and cannot be reclaimed"],
+        ["measurement-state", "V2213 health controller: cancellation after reservation does not return the claimed opportunity"]
+      ]
+    },
+    {
+      "id": "measurement-ordinary-fallback",
+      "rule": "優先協定不足時仍可嘗試有界的一般六小時候選，已使用共享額度或取消不產生額外輪次。",
+      "tests": [
+        ["measurement-state", "V2213 health fallback: full shared claims allow ordinary six-hour candidates"],
+        ["measurement-state", "V2213 health fallback: full shared claims cannot bypass six-hour freshness"],
+        ["measurement-state", "V2213 health fallback: two controllers still consume one ordinary round cooldown"],
+        ["measurement-state", "V2213 health fallback: cancellation during failed claim cannot start ordinary work"],
+        ["measurement-state", "V2213 health fallback: before-save disables priority but keeps ordinary bounded work"],
+        ["measurement-state", "V2213 health fallback: unknown-save disables priority but keeps ordinary bounded work"],
+        ["measurement-state", "V2213 health fallback: protocol-loss disables priority but keeps ordinary bounded work"]
+      ]
+    },
+    {
+      "id": "measurement-authority-before-send",
+      "rule": "健康候選離開鎖後在每次送出前重驗候選權限，來源、政策、媒體或限制變更不得派送已撤銷候選。",
+      "tests": [
+        ["measurement-state", "V2221 health source: reservation 1 is rechecked immediately before dispatch"],
+        ["measurement-state", "V2221 health source: reservation 2 is rechecked immediately before dispatch"],
+        ["measurement-state", "V2213 health routing: source invalidation rejects a claimed proposal"],
+        ["measurement-state", "V2213 health routing: forged proposals and changed media identities cannot commit"]
+      ]
+    },
+    {
+      "id": "measurement-storage",
+      "rule": "成功探測只在有效保存確認後回報樣本，寫入失敗、鎖內撤銷或拒絕都釋放工作，不生成播放熔斷失敗。",
+      "tests": [
+        ["measurement-state", "V2221 health source: UI reports a sample only after a confirmed write, renew=false"],
+        ["measurement-state", "V2221 health source: UI reports a sample only after a confirmed write, renew=true"],
+        ["measurement-state", "CR-04 measurement storage failure releases its round and permits a later qualified attempt"],
+        ["measurement-state", "CR-04 failed evidence persistence cannot publish an in-memory successful sample"],
+        ["measurement-state", "CR-04 measurement rejection releases ownership without immediate retry or CDN failure"]
+      ]
+    },
+    {
+      "id": "measurement-no-control-effects",
+      "rule": "重複健康提議不改目前親和、不提交路線、不發事件、不寫入或消耗機會。",
+      "tests": [
+        ["measurement-state", "V2213 health routing: repeated proposals have no decisions, events, writes or attempt side effects"],
+        ["progressive-routing", "routing Native startup preserves exact source order while challenge and output planning leave affinity unchanged"]
+      ]
+    },
+    {
+      "id": "retry-policy",
+      "rule": "提前重試以即時緩衝、完整重下成本、有效證據及門檻比較所有合法 Catalog 備援，無資料、已晚、實際 Native 或不安全播放排除。",
+      "tests": [
+        ["application", "UP141-RETRY policy uses current buffer seconds once and full redownload cost"],
+        ["application", "UP141-RETRY policy rejects threshold boundaries and unknown or stale evidence"],
+        ["application", "V2213 retry compares all eligible alternatives by full completion time"],
+        ["application", "V2213 retry selects an on-time alternative after the higher-throughput host is late"],
+        ["application", "UP141-RETRY controller respects all playback and mode exclusions"],
+        ["application", "V226 H04: an actual Native request never receives a Catalog retry permit"]
+      ]
+    },
+    {
+      "id": "retry-permit",
+      "rule": "事先準備、實體化和接受的重試許可持有請求與決策身分，證據撤銷不替換成其他主機。",
+      "tests": [
+        ["application", "V2216 permit: prepared and materialized stages retain request and decision identity"],
+        ["application", "V2216 permit: old revocation, materialization and acceptance cannot replace a new permit"],
+        ["application", "V2213 retry route prepares and claims the selected slower host without re-ranking"],
+        ["application", "V2213 retry route cannot substitute a different host after selected proof is revoked"],
+        ["application", "V2213 retry reentry while assessing a later candidate cannot arm an earlier result"]
+      ]
+    },
+    {
+      "id": "retry-episode",
+      "rule": "每次低緩衝事件只啟用一次，需足夠獨立健康 ticks 才解鎖，失敗交接或換所有者不返還舊狀態。",
+      "tests": [
+        ["application", "UP141-RETRY controller arms once and observes successful website retry"],
+        ["application", "UP141-RETRY owner changes revoke without restoring stale operations"],
+        ["application", "UP141-RETRY missing or failed handoff suspends the document across reset"],
+        ["application", "UP141-RETRY low-buffer episode needs ten separate healthy ticks before another action"],
+        ["application", "UP141-RETRY reset never reopens a consumed low-buffer episode"],
+        ["application", "UP141-RETRY unknown healthy readings cannot reopen a consumed episode"]
+      ]
+    },
+    {
+      "id": "retry-transport-lease",
+      "rule": "只有真實可驗證的進度與原生 timeout 能交接同一請求，網站覆寫 timeout、重新 open 或政策撤銷時保留其所有權，正數 timeout 仍不納入。",
+      "tests": [
+        ["application", "UP141-RETRY native timeout hands matching website retry to alternative only after native send"],
+        ["application", "UP141-RETRY same-value website timeout write revokes lease and survives cancellation"],
+        ["application", "UP141-RETRY timeout reuse restores zero before next open and keeps one native send per request"],
+        ["application", "UP141-RETRY synthetic progress and malformed Content-Range cannot authorize early timeout"],
+        ["application", "UP141-RETRY synthetic timeout and load cannot become native retry handoff evidence"]
+      ]
+    },
+    {
+      "id": "retry-proof",
+      "rule": "重試帳本保存請求身分、有界 TTL 與重疊抑制，重設撤銷。",
+      "tests": [
+        ["application", "V2215 retry ledger preserves request identity, TTL, overlapping suppression and reset"]
+      ]
+    }
+  ],
+  "播放器、操作權與恢復": [
+    {
+      "id": "player-binding",
+      "rule": "畫面離開 DOM 後重找可用影片，保留仍連接的暫時零面積影片，buffer 按實際倍速調整。",
+      "tests": [
+        ["adapter-boundaries", "CONTROL player: disconnecting cached video changes snapshot and buffer accounts for playback rate"],
+        ["adapter-boundaries", "CONTROL player: a connected zero-area cache is retained until a visible replacement exists"],
+        ["application", "player convergence: bindings, SDK reads, exact results and reverse cleanup keep their order"]
+      ]
+    },
+    {
+      "id": "player-manifest",
+      "rule": "資訊清單接納只複製有界媒體欄位，拒絕可重試，接受後的指紋依生命週期和重設作廢。",
+      "tests": [
+        ["adapter-boundaries", "CONTROL player: manifest observation clones bounded media without exposing SDK extra fields"],
+        ["adapter-boundaries", "CONTROL player: rejected manifests retry while accepted fingerprints follow lifecycle and reset"]
+      ]
+    },
+    {
+      "id": "player-site-input",
+      "rule": "網站 SDK seek 保留原 receiver、參數、例外與回傳，網站觀察、可信操作及內部還原分開標記。",
+      "tests": [
+        ["adapters", "BR-01 adapter preserves site seek arguments, receiver, result and exact exception"],
+        ["adapters", "BR-01 adapter separates synthetic seek observation from user and internal restore revisions"]
+      ]
+    },
+    {
+      "id": "player-progress",
+      "rule": "監控分開判定時間、畫面、尋位及所有權，重複 ticks 不累加穩定，時間抖動的連續播放不誤判停滯。",
+      "tests": [
+        ["application", "player convergence: monitor keeps initial, exact time, missing frame and seeking baselines"],
+        ["application", "player convergence: each control identity change rejects one monitor progress sample"],
+        ["application", "V226 H03: progress ticks are time-qualified and duplicate calls do not accumulate stability"],
+        ["application", "V2217 progress: continuous playback at 999/1001 ms never creates a stall"],
+        ["application", "V2217 progress: continuous playback at 999 ms never creates a stall"]
+      ]
+    },
+    {
+      "id": "recovery-ordinary-stall",
+      "rule": "一般停滯與長 seek 有不同精確寬限；只用一次合法備援和重載並在期限後終止，單一前進樣本或已有畫面尺寸不能假造穩定。",
+      "tests": [
+        ["application", "U-T02 ordinary stall fallback at 5999/6000 rate=1"],
+        ["application", "U-T02 ordinary stall fallback at 5999/6000 rate=2"],
+        ["application", "U-T03 long seek grace 14999/15000 pending=false rate=1"],
+        ["application", "U-T03 long seek grace 14999/15000 pending=true rate=1"],
+        ["application", "U-T03 long seek grace 14999/15000 pending=false rate=2"],
+        ["application", "U-T03 long seek grace 14999/15000 pending=true rate=2"],
+        ["application", "I-T01 ordinary 6/12/15 ends once at 27000 rate=1"],
+        ["application", "I-T01 ordinary 6/12/15 ends once at 27000 rate=2"],
+        ["application", "U-T05 one progress blip retains the original stall deadline rate=1"],
+        ["application", "U-T05 one progress blip retains the original stall deadline rate=2"],
+        ["application", "V226 R03: readyState two and existing dimensions do not hide a cold-start stall"]
+      ]
+    },
+    {
+      "id": "recovery-early-auto",
+      "rule": "影音資格分開，沒有合法候選不消耗額度，後續加入合法來源可在原截止前採用一次，已撤銷工作無權啟動。",
+      "tests": [
+        ["application", "V226 R01: audio dispatch does not start the cold-video rescue clock"],
+        ["application", "V226 R02: no candidate waits for a changed qualification without consuming a commit"],
+        ["application", "V226 R02: newly admitted sources permit one preparation under the original cold deadline"],
+        ["application", "V226 R02: a revoked dispatched request cannot prepare a cold rescue"]
+      ]
+    },
+    {
+      "id": "recovery-quota",
+      "rule": "預先傳輸回退與同一次恢復共用額度；死核心期限保持，提升流程不再次備援。",
+      "tests": [
+        ["application", "I-T05 later dead-core route intent retains its four-second deadline rate=1"],
+        ["application", "I-T05 later dead-core route intent retains its four-second deadline rate=2"],
+        ["application", "I-T02 early transport fallback shares episode and reload quota rate=1"],
+        ["application", "I-T02 early transport fallback shares episode and reload quota rate=2"],
+        ["application", "I-T03 already armed ordinary stall promotes without another fallback rate=1"],
+        ["application", "I-T03 already armed ordinary stall promotes without another fallback rate=2"]
+      ]
+    },
+    {
+      "id": "recovery-long-pause",
+      "rule": "長暫停後只有合格且可信的播放意圖喚醒死核心，無輸入及短暫停保留正常路徑。",
+      "tests": [
+        ["adapters", "BR-01 play intent: trusted play control reaches recovery when a dead SDK ignores the click"],
+        ["adapters", "BR-01 play intent: no input and short pauses cannot create a recovery action"],
+        ["application", "normal short resume returns to healthy recovery state [16]"]
+      ]
+    },
+    {
+      "id": "recovery-website-control",
+      "rule": "可信暫停、速率、尋位或拖曳擁有新操作，覆寫舊復原意圖。預覽即抑制，釋放或取消後有新寬限。",
+      "tests": [
+        ["application", "BR-08 control: inner progress descendant acquires drag ownership and suppresses rescue"],
+        ["application", "BR-08 control: pointercancel ends a known drag and grants a fresh grace after release"],
+        ["adapters", "BR-08 child progress hit protects an uncommitted preview immediately"],
+        ["application", "BR-09 correct contract: an uninitialized native target change revokes stale position restoration"],
+        ["application", "BR-09 normal control: public SDK seek during initialization revokes stale restoration"],
+        ["application", "BR-09 normal control: native seeking observation revokes stale restoration"],
+        ["application", "BR-09 normal control: unchanged reload target still permits the existing restoration"],
+        ["application", "I-R05 seek inside restore seek protects newer intent rate=2"],
+        ["application", "I-R05 pause inside restore seek protects newer intent rate=2"],
+        ["application", "I-R05 rate inside restore seek protects newer intent rate=2"],
+        ["application", "I-R05 seek inside restore rate protects newer intent rate=2"],
+        ["application", "I-R05 pause inside restore rate protects newer intent rate=2"],
+        ["application", "I-R05 rate inside restore rate protects newer intent rate=2"],
+        ["application", "I-R05 seek inside restore play protects newer intent rate=2"],
+        ["application", "I-R05 pause inside restore play protects newer intent rate=2"],
+        ["application", "I-R05 rate inside restore play protects newer intent rate=2"]
+      ]
+    },
+    {
+      "id": "recovery-own-reload",
+      "rule": "自己的 SDK 重載才可恢復位置、速率與播放，15/30/15 預算固定，網站暫停或新目標保留所有權。",
+      "tests": [
+        ["application", "BR-01 exact 15/30/15 boundaries perform one fallback, one reload and one terminal failure"],
+        ["application", "BR-01 website target adjustments and Auto representation replacement retain the original deadline and budget"],
+        ["application", "BR-01 followthrough: the marked own core must restore current target, speed and play after SDK pause"],
+        ["application", "BR-01 followthrough control: website pause before our reload ends the stalled action safely"]
+      ]
+    },
+    {
+      "id": "recovery-closed-loop",
+      "rule": "還原需原生讀回，控制錯誤可有界補正，並確認 15 秒穩定；跳躍、暫停、速率或所有者變更打斷成功。",
+      "tests": [
+        ["adapters", "SR2-U01 native readback confirms the actual SDK landing and detached proof rate=2"],
+        ["application", "SR2-I01 native verified restoration corrects seek within six ticks and sustains fifteen seconds rate=1"],
+        ["application", "SR2-I01 native verified restoration corrects rate within six ticks and sustains fifteen seconds rate=1"],
+        ["application", "SR2-I01 native verified restoration corrects both within six ticks and sustains fifteen seconds rate=1"],
+        ["application", "SR2-I01 native verified restoration corrects none within six ticks and sustains fifteen seconds rate=1"],
+        ["application", "SR2-I01 native verified restoration corrects seek within six ticks and sustains fifteen seconds rate=2"],
+        ["application", "SR2-I01 native verified restoration corrects rate within six ticks and sustains fifteen seconds rate=2"],
+        ["application", "SR2-I01 native verified restoration corrects both within six ticks and sustains fifteen seconds rate=2"],
+        ["application", "SR2-I01 native verified restoration corrects none within six ticks and sustains fifteen seconds rate=2"],
+        ["application", "TOOL-SP relapse time rejects sustained acceptance rate=2"],
+        ["application", "TOOL-SP relapse frames rejects sustained acceptance rate=2"],
+        ["application", "TOOL-SP relapse rate rejects sustained acceptance rate=2"],
+        ["application", "TOOL-SP relapse owner rejects sustained acceptance rate=2"],
+        ["application", "TOOL-SP relapse pause rejects sustained acceptance rate=2"],
+        ["application", "TOOL-SP relapse seeking rejects sustained acceptance rate=2"],
+        ["application", "TOOL-SP relapse ended rejects sustained acceptance rate=2"],
+        ["application", "TOOL-SP relapse error rejects sustained acceptance rate=2"],
+        ["application", "TOOL-SP relapse reload rejects sustained acceptance rate=2"],
+        ["application", "TOOL-SP relapse gap rejects sustained acceptance rate=2"],
+        ["application", "TOOL-SP relapse NaN rejects sustained acceptance rate=2"],
+        ["application", "TOOL-SP relapse tail rejects sustained acceptance rate=2"],
+        ["application", "U-P02 restored seek jump is not a playback progress sample rate=1"],
+        ["application", "U-P02 restored seek jump is not a playback progress sample rate=2"]
+      ]
+    },
+    {
+      "id": "recovery-position-basis",
+      "rule": "0 是合法位置，倍速及位置捕獲後不重讀出新基準；真實 Runtime 於 1 倍及 2 倍能讀回並持續。",
+      "tests": [
+        ["application", "U-R01 captured position 0 and rate read once rate=1"],
+        ["application", "U-R01 captured position 0 and rate read once rate=2"],
+        ["application", "I-R03 full Runtime seek 0 initializes and sustains 15 seconds rate=1"],
+        ["application", "I-R03 full Runtime seek 2811.002824 initializes and sustains 15 seconds rate=1"],
+        ["application", "I-R03 full Runtime seek 0 initializes and sustains 15 seconds rate=2"],
+        ["application", "I-R03 full Runtime seek 2811.002824 initializes and sustains 15 seconds rate=2"],
+        ["domain", "V2215 restoration validates old and new rate travel without moving its baseline: 1"],
+        ["domain", "V2215 restoration validates old and new rate travel without moving its baseline: 2"]
+      ]
+    },
+    {
+      "id": "recovery-stale-sdk",
+      "rule": "SDK play 或 reload 的成功／拒絕不能扭轉同步重設的新生命週期，終局原因各自保持。",
+      "tests": [
+        ["application", "SDK play can reset recovery synchronously before its promise will resolve"],
+        ["application", "SDK play can reset recovery synchronously before its promise will reject"],
+        ["application", "player convergence: synchronous reset and late rejected reload cannot revive an action"],
+        ["application", "player convergence: pending play rejection after reset does not overwrite a new lifecycle"],
+        ["application", "player convergence: recovery terminal order preserves media-error"],
+        ["application", "player convergence: recovery terminal order preserves reload-timeout"],
+        ["application", "player convergence: recovery terminal order preserves ownership-ended"]
+      ]
+    }
+  ],
+  "控制中心與資料呈現": [
+    {
+      "id": "ui-supported-views",
+      "rule": "控制中心只提供總覽、CDN 與播放設定，沒有已撤除的診斷命令；已開視圖訂閱改動，關閉釋放。",
+      "tests": [
+        ["control-center", "V221 control center exposes only overview, CDN and settings without diagnostic actions"],
+        ["control-center", "CC39-UI three tabs separate CDN from three retained settings"],
+        ["control-center", "CC39-UI opened view consumes existing notifications and releases all subscriptions"]
+      ]
+    },
+    {
+      "id": "ui-trusted-actions",
+      "rule": "合成 keyboard、click 和 change 不執行命令，可信鍵盤保留控制項預設並避免頁面 bubble 快捷鍵，關閉清除監聽。",
+      "tests": [
+        ["control-center", "BR-10 synthetic keyboard click and change cannot close or execute settings commands"],
+        ["control-center", "BR-10 Enter activation contract preserves no-shortcut control"],
+        ["control-center", "BR-10 Enter activation contract isolates page bubble shortcuts"],
+        ["control-center", "BR-10 Space activation contract preserves no-shortcut control"],
+        ["control-center", "BR-10 Space activation contract isolates page bubble shortcuts"],
+        ["control-center", "BR-10 reopen installs one boundary and Escape removes all three listeners"]
+      ]
+    },
+    {
+      "id": "ui-commands-order",
+      "rule": "設定命令完成只刷新當前開啟視圖，舊命令不能關閉、重開或奪得焦點，遠端更新保留相同聚焦輸入。",
+      "tests": [
+        ["control-center", "CONTROL R03 completing a settings action refreshes open UI"],
+        ["control-center", "R03 completing a settings action keeps closed UI closed"],
+        ["control-center", "R03 completing an older command cannot replace the settings view or take focus"],
+        ["control-center", "CC39-UI remote settings update the same focused inputs without rebuilding reports"],
+        ["control-center", "R03 a queued initial focus cannot steal focus after close"]
+      ]
+    },
+    {
+      "id": "ui-refresh-ownership",
+      "rule": "通知合併成一次最新快照，立即設定讀取可先取代隊列，重入或導航不能渲染過期視圖，細節按需讀取。",
+      "tests": [
+        ["control-center", "V2212 UI: 8 synchronous notifications share one latest snapshot"],
+        ["control-center", "V2212 UI: settings refresh immediately and supersede queued notifications"],
+        ["control-center", "V2212 UI: navigate revokes old queued work"],
+        ["control-center", "V2212 UI: synchronous reopen during snapshot cannot paint an obsolete model"],
+        ["control-center", "V2212 UI: a notification during snapshot survives the current flush"],
+        ["control-center", "V2212 UI: details remain on demand while queued refresh updates the current model"]
+      ]
+    },
+    {
+      "id": "ui-display-capacity",
+      "rule": "總覽使用目前媒體的容量與證據級別，舊世代或週期拒絕顯示，正常候選學習在現有 tick 更新。",
+      "tests": [
+        ["control-center", "V224 display rejects media rows from an older generation"],
+        ["control-center", "V224 display rejects media rows from an older epoch"],
+        ["control-center", "V225 primary successful learning updates the real read model and overview on the existing tick"],
+        ["control-center", "V225 backup successful learning updates the real read model and overview on the existing tick"],
+        ["control-center", "V227 overview: recent capacity retains numbers and identifies its evidence"],
+        ["control-center", "V227 overview: provisional capacity retains numbers and identifies its evidence"]
+      ]
+    },
+    {
+      "id": "ui-shared-header",
+      "rule": "三個控制中心頁籤的共用頁首都依目前整體停用狀態顯示唯一對應命令。",
+      "tests": [
+        ["control-center", "control-center shared header reflects the enabled state on all three tabs"]
+      ]
+    },
+    {
+      "id": "ui-mode-and-startup",
+      "rule": "沒有可選路線明確顯示等待或無合法路線，起播呈現有限等待時間及具體結束原因。",
+      "tests": [
+        ["control-center", "V226 UI: exhausted startup states explicitly show no legal selection"],
+        ["control-center", "UP141-DIAG qualified early release displays measured waiting and an unambiguous reason"],
+        ["control-center", "UP141-DIAG inconclusive release reports only a finite waiting duration"]
+      ]
+    },
+    {
+      "id": "ui-circuits",
+      "rule": "CDN 表和細節共用相同的隔離、等待、觀察和結算狀態投影。",
+      "tests": [
+        ["control-center", "V2211 UI: isolated uses the same current circuit projection in CDN and details"],
+        ["control-center", "V2211 UI: awaiting uses the same current circuit projection in CDN and details"],
+        ["control-center", "V2211 UI: observing uses the same current circuit projection in CDN and details"],
+        ["control-center", "V2211 UI: settling uses the same current circuit projection in CDN and details"]
+      ]
+    },
+    {
+      "id": "ui-progress-state",
+      "rule": "穩定保留額度、過渡及健康狀態分開顯示。",
+      "tests": [
+        ["control-center", "V2217 UI: stable-retained/false/healthy separates action from retained budget"],
+        ["control-center", "V2217 UI: settling/false/healthy separates action from retained budget"]
+      ]
+    },
+    {
+      "id": "ui-preserve-privacy",
+      "rule": "總覽只顯示有界的探測與 playurl 摘要，有效狀態不增加背景診斷。",
+      "tests": [
+        ["control-center", "UP141-DIAG middle probe summary exposes bounded facts without request details"],
+        ["control-center", "UP141-DIAG head probe summary exposes bounded facts without request details"],
+        ["control-center", "UP141-DIAG summaries are read on opening and add no periodic rendering or commands"]
+      ]
+    },
+    {
+      "id": "ui-retry-switch",
+      "rule": "提前重試開關拒絕合成操作，可信停用在鎖完成前先抑制功能。",
+      "tests": [
+        ["control-center", "UP141-RETRY retained switch rejects synthetic changes and suppresses off before lock completion"]
+      ]
+    }
+  ],
+  "資料邊界與儲存協作": [
+    {
+      "id": "data-restrictions-authority",
+      "rule": "限制通知只觸發權威重讀，回退時間、晚到通知或重入不恢復舊設定，讀不到時保留最後確認值。",
+      "tests": [
+        ["state", "V2213 restrictions: old same-millisecond notifications cannot revive a confirmed clear"],
+        ["state", "V2213 restrictions: authoritative changes apply after wall-clock rollback"],
+        ["state", "V2213 restrictions: failed notification reads retain the last confirmed cache until recovery"],
+        ["state", "V2213 restrictions: a reentrant newer read cannot be overwritten by an older read result"]
+      ]
+    },
+    {
+      "id": "data-restrictions-concurrency",
+      "rule": "真正共同鎖序列化兩個 Store 的合併，替代路徑保留本機讀回，釋放後停止接受通知。",
+      "tests": [
+        ["state", "V2213 restrictions: two stores serialize merges through the existing shared lock"],
+        ["state", "V2213 restrictions: fallback locks retain confirmed local operation without atomicity claims"],
+        ["state", "V2213 restrictions: disposed stores no longer accept notifications"]
+      ]
+    },
+    {
+      "id": "data-meta-sanitization",
+      "rule": "量測中繼資料只採 schema 2 的自有已驗證欄位，不呼叫 getter、不保存未知欄位，讀取無寫入。",
+      "tests": [
+        ["measurement-state", "META U schema missing defaults without writing"],
+        ["measurement-state", "META U schema array defaults without writing"],
+        ["measurement-state", "META U schema wrong-schema defaults without writing"],
+        ["measurement-state", "META U schema missing-schema defaults without writing"],
+        ["measurement-state", "META U schema inherited defaults without writing"],
+        ["measurement-state", "META U invalid cursor string defaults independently"],
+        ["measurement-state", "META U invalid cursor negative defaults independently"],
+        ["measurement-state", "META U invalid cursor fraction defaults independently"],
+        ["measurement-state", "META U invalid cursor NaN defaults independently"],
+        ["measurement-state", "META U invalid cursor Infinity defaults independently"],
+        ["measurement-state", "META U invalid cursor unsafe-integer defaults independently"],
+        ["measurement-state", "META U invalid cursor coercible-object defaults independently"],
+        ["measurement-state", "META U invalid cooldown string defaults independently"],
+        ["measurement-state", "META U invalid cooldown negative defaults independently"],
+        ["measurement-state", "META U invalid cooldown NaN defaults independently"],
+        ["measurement-state", "META U invalid cooldown Infinity defaults independently"],
+        ["measurement-state", "META U invalid cooldown future defaults independently"],
+        ["measurement-state", "META U invalid cooldown unsafe defaults independently"],
+        ["measurement-state", "META U read and update never invoke getters or repersist unknown payload"],
+        ["measurement-state", "META U invalid partial fields and accessor patch preserve validated current fields"]
+      ]
+    },
+    {
+      "id": "data-meta-concurrency",
+      "rule": "共同鎖保留跨等待累加與冷卻，失效量測不能寫入；共同認領保留上限，不逐出仍有效資料或用舊輪次復活清除值。",
+      "tests": [
+        ["measurement-state", "META I concurrent startup lock waiters preserve both increments and latest cooldown"],
+        ["measurement-state", "META I startup reset while-waiting prevents stale metadata commit"],
+        ["measurement-state", "META I startup reset during-fresh-read prevents stale metadata commit"],
+        ["measurement-state", "META I healthy planning retains exact ten-minute cooldown after startup cursor update"],
+        ["measurement-state", "V2213 meta: full claim capacity cannot evict an existing live control stamp"],
+        ["measurement-state", "V2213 meta: concurrent stores reserve one priority claim for the same control stamp"],
+        ["measurement-state", "V2213 meta: a queued clear prevents a stale round from resurrecting its old claim"]
+      ]
+    },
+    {
+      "id": "data-meta-unavailable",
+      "rule": "無共同鎖、權威讀取中斷、保存未確認或世代失效時，不授予優先量測認領。",
+      "tests": [
+        ["measurement-state", "V2213 meta: missing common lock cannot grant priority and protocol rollback cannot reset claims"],
+        ["measurement-state", "V2213 meta: a confirmed failed write cannot grant priority or erase the current claim set"],
+        ["measurement-state", "V2213 meta: unavailable authoritative reads cannot initialize priority coordination"],
+        ["measurement-state", "V2213 meta: an unconfirmed saved claim stays consumed after authoritative reads recover"]
+      ]
+    },
+    {
+      "id": "data-xhr-circuit-proof",
+      "rule": "真實 XHR 終止及可信進度才授予降級信用，與正數 timeout 或提前重試資格獨立。",
+      "tests": [
+        ["application", "V2211 ordinary XHR synthetic-terminal has independent native circuit proof with positive timeout"],
+        ["application", "V2211 ordinary XHR synthetic-bytes has independent native circuit proof with positive timeout"],
+        ["application", "V2211 ordinary XHR native has independent native circuit proof with positive timeout"]
+      ]
+    },
+    {
+      "id": "data-url-limits",
+      "rule": "媒體路徑辨識維持 URL 改寫長度及主機正規化上限。",
+      "tests": [
+        ["domain", "V2219 media path recognition preserves the rewrite limit and oversized host boundary"]
+      ]
+    }
+  ]
+}

@@ -1,31 +1,37 @@
 import { test } from 'node:test'
-for (const [file, source] of [
+for (const [scenario, file, source] of [
   [
+    'retry permit import',
     'application/routing/early-retry-controller.ts',
     "import { RetryPermitState } from './retry-permit-state.ts'",
   ],
   [
+    'route coordinator type import',
     'application/routing/retry-permit-state.ts',
     "import type { RouteCoordinator } from './route-coordinator.ts'",
   ],
   [
+    'clock parameter read',
     'application/routing/retry-permit-state.ts',
     'export const run = (clock: {now(): number}) => clock.now()',
   ],
   [
+    'request ownership import',
     'application/routing/early-retry-controller.ts',
     "import { RequestOwnership } from './request-ownership.ts'",
   ],
   [
+    'session store type import',
     'application/routing/request-ownership.ts',
     "import type { SessionStore } from '../../state/session-store.ts'",
   ],
   [
+    'session parameter read',
     'application/routing/request-ownership.ts',
     'export const run = (session: {get(): void}) => session.get()',
   ],
 ] as const)
-  test(`V2216 request bookkeeping rejects capability leak: ${file}`, () => {
+  test(`V2216 request bookkeeping rejects capability leak: ${scenario} in ${file}`, () => {
     const modules = architectureFixture({ [file]: source })
     assert.throws(() => validateGraph([modules.get(file)!]), /private bookkeeping/)
   })

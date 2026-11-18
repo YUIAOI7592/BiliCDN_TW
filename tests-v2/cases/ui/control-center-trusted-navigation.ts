@@ -36,6 +36,30 @@ test('control-center pages preserve settings and CDN defaults', (t) => {
   assert.equal(f.storage.tasks.length, 0)
 })
 
+test('control-center shared header reflects the enabled state on all three tabs', (t) => {
+  const f = ui(t)
+  for (const disabled of [false, true]) {
+    if (disabled)
+      f.storage.remote('bilicdn.v2.settings', {
+        ...f.settings.get(),
+        disabled,
+        updatedAt: f.clock.now() + 1,
+      })
+    for (const tab of ['總覽', 'CDN', '播放設定']) {
+      f.button(tab).emit('click')
+      const labels = f.doc.flatten().filter((element) => element.tag === 'button')
+      assert.equal(
+        labels.filter((button) => button.textContent === '停用腳本').length,
+        disabled ? 0 : 1,
+      )
+      assert.equal(
+        labels.filter((button) => button.textContent === '啟用腳本').length,
+        disabled ? 1 : 0,
+      )
+    }
+  }
+})
+
 for (const key of ['Enter', ' ']) {
   for (const interferes of [false, true]) {
     test(`BR-10 ${key === ' ' ? 'Space' : key} activation contract ${interferes ? 'isolates page bubble shortcuts' : 'preserves no-shortcut control'}`, (t) => {

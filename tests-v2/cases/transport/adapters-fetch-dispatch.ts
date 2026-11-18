@@ -70,6 +70,7 @@ async function createFetchRequestResources() {
     get: () => ({ disabled: disabled, blockHttpDns: blockHttpDns, considerNativeSources: true }),
   }
   let nativeFetchCalls = 0
+  let readerAcquisitions = 0
   let cancelReason: unknown = null
   let playurlFetchBody = JSON.stringify({ code: 0, data: { dash: { video: [], audio: [] } } })
   let playurlFetchOverride: Response | null = null
@@ -96,7 +97,7 @@ async function createFetchRequestResources() {
     if (url.includes('/player/wbi/playurl'))
       return playurlFetchOverride ?? new Response(playurlFetchBody, { status: 200 })
     let emitted = false
-    return new Response(
+    const response = new Response(
       new ReadableStream<Uint8Array>({
         pull(controller) {
           if (!emitted) {
@@ -110,6 +111,15 @@ async function createFetchRequestResources() {
       }),
       { status: 206, headers: { 'content-type': 'video/mp4' } },
     )
+    const body = response.body!
+    const getReader = body.getReader.bind(body)
+    Object.defineProperty(body, 'getReader', {
+      value(...args: unknown[]) {
+        readerAcquisitions++
+        return Reflect.apply(getReader, body, args)
+      },
+    })
+    return response
   }
   class FakeXhr extends EventTarget {
     #state = 0
@@ -214,6 +224,12 @@ async function createFetchRequestResources() {
       disabled = value
     },
     settingsStub,
+    set blockHttpDns(value: boolean) {
+      blockHttpDns = value
+    },
+    get readerAcquisitions() {
+      return readerAcquisitions
+    },
     get nativeFetchCalls() {
       return nativeFetchCalls
     },
@@ -242,7 +258,7 @@ async function createFetchRequestResources() {
   }
 }
 
-async function createTransportFixture(t: TestContext) {
+async function createTransportFixture(t: TestContext, beforeInstall?: (xhr: object) => void) {
   const scope = testScope(t)
   installProgressEvent(scope)
   const now = 2_000_000_000_000,
@@ -275,6 +291,7 @@ async function createTransportFixture(t: TestContext) {
       () => now,
     ),
   )
+  beforeInstall?.(resources.FakeXhr.prototype)
   transport.install()
   return Object.assign(resources, {
     scope,
@@ -724,14 +741,31 @@ async function checkDisabledModePassesSiteFetchThrough2(t: TestContext): Promise
   )
 }
 
-async function checkFetchAndXHRHookAssignmentsAreVerified1(t: TestContext): Promise<void> {
+test('Fetch and XHR hook assignments are verified [1]', { timeout: 5000 }, async (t) => {
   const base = await createTransportFixture(t)
+  const state = base.transport.snapshot()
+  assert.equal(state.hookState, 'installed')
+  assert.equal(state.fetchInstalled, true)
+  assert.equal(state.xhrInstalled, true)
+})
 
-  assert.strictEqual(
-    base.transport.snapshot().hookState,
-    'installed',
-    'Fetch and XHR hook assignments are verified',
-  )
+test('failed XHR hook installation rolls back Fetch and keeps native XHR descriptors', async (t) => {
+  let nativeDescriptors: PropertyDescriptorMap = {}
+  const base = await createTransportFixture(t, (prototype) => {
+    Object.defineProperty(prototype, 'open', { writable: false, configurable: false })
+    nativeDescriptors = Object.getOwnPropertyDescriptors(prototype)
+  })
+  const state = base.transport.snapshot()
+  assert.equal(state.hookState, 'failed')
+  assert.equal(state.hookReason, 'xhr-install-unavailable')
+  assert.equal(state.fetchInstalled, false)
+  assert.equal(state.xhrInstalled, false)
+  assert.equal(base.fakeWindow.fetch, base.nativeFetch)
+  assert.deepEqual(Object.getOwnPropertyDescriptors(base.FakeXhr.prototype), nativeDescriptors)
+})
+
+test('managed Fetch uses one response reader and reports caller cancellation once', async (t) => {
+  const base = await createTransportFixture(t)
   const mediaResponse = await base.fakeWindow.fetch(base.passDecision.url ?? '')
   const firstIntercept = base.transport.snapshot().lastMediaRequest
   assert.ok(
@@ -743,14 +777,19 @@ async function checkFetchAndXHRHookAssignmentsAreVerified1(t: TestContext): Prom
   )
   const mediaReader = mediaResponse.body?.getReader()
   assert.ok(mediaReader, 'fetch wrapper returns a readable body')
-  await mediaReader.read()
-  await mediaReader.cancel('caller-cancel')
-  assert.strictEqual(
-    base.cancelReason,
-    'caller-cancel',
-    'fetch cancel reason reaches original reader',
-  )
-  mediaReader.releaseLock()
+  base.scope.defer(async () => {
+    try {
+      await mediaReader.cancel()
+    } finally {
+      mediaReader.releaseLock()
+    }
+  })
+  const chunk = await mediaReader.read()
+  assert.equal(chunk.value?.byteLength, 70 * 1024)
+  const reason = { origin: 'caller' }
+  await mediaReader.cancel(reason)
+  assert.equal(base.cancelReason, reason)
+  assert.equal(base.readerAcquisitions, 1)
   assert.equal(base.observations.length, 1, 'cancel settles exactly one observation')
   assert.strictEqual(base.observations[0]?.outcome, 'abort')
   assert.strictEqual(
@@ -758,18 +797,19 @@ async function checkFetchAndXHRHookAssignmentsAreVerified1(t: TestContext): Prom
     null,
     'empty response URL never invents a response host',
   )
-  const beforeHttpDns = base.nativeFetchCalls
-  const blockedDns = await base.fakeWindow.fetch('https://httpdns.bilivideo.com/resolve')
-  assert.strictEqual(blockedDns.status, 503, 'HTTPDNS manual block returns local response')
-  assert.strictEqual(
-    base.nativeFetchCalls,
-    beforeHttpDns,
-    'HTTPDNS block performs no native request',
-  )
-}
+})
 
-test('Fetch and XHR hook assignments are verified [1]', { timeout: 5000 }, async (t) => {
-  await checkFetchAndXHRHookAssignmentsAreVerified1(t)
+test('HTTPDNS Fetch preference blocks locally and re-enables native dispatch', async (t) => {
+  const base = await createTransportFixture(t)
+  const url = 'https://httpdns.bilivideo.com/resolve'
+  const blocked = await base.fakeWindow.fetch(url)
+  assert.equal(blocked.status, 503)
+  assert.equal(base.nativeFetchCalls, 0)
+  base.blockHttpDns = false
+  const allowed = await base.fakeWindow.fetch(url)
+  t.after(() => allowed.body?.cancel())
+  assert.equal(allowed.status, 206)
+  assert.deepEqual(base.nativeFetchUrls, [url])
 })
 
 test('disabled mode passes site fetch through [2]', { timeout: 5000 }, async (t) => {

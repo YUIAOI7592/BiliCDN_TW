@@ -13,7 +13,7 @@
 | 研究選路、Auto、熔斷或提前重試效益 | [HISTORY 議題](HISTORY.md#議題) → 該議題的原始研究與限制；是否已採用或啟動只看 TODO |
 | 開始修改程式 | [TODO](TODO.md) → [AGENTS](../AGENTS.md) → [ARCHITECTURE](ARCHITECTURE.md) → [SECURITY](../SECURITY.md) → [變更驗證 Skill](../.agents/skills/bilicdn-verify-change/SKILL.md) |
 | 維護代理指引或純文件 | [AGENTS](../AGENTS.md) → [文件維護 Skill](../.agents/skills/bilicdn-maintain-docs/SKILL.md) → 受影響議題的權威文件與事實來源 |
-| 撰寫或執行測試 | [TODO](TODO.md) → [測試契約與隔離](../.agents/skills/bilicdn-verify-change/references/test-contracts.md)；涉及瀏覽器時讀 [IAB Skill](../.agents/skills/bilicdn-iab-validation/SKILL.md)，結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
+| 撰寫或執行測試 | [TODO](TODO.md) → [業務規則與測試對照](../tests-v2/business-contracts.json) → [測試契約與隔離](../.agents/skills/bilicdn-verify-change/references/test-contracts.md)；涉及瀏覽器時讀 [IAB Skill](../.agents/skills/bilicdn-iab-validation/SKILL.md)，結果與限制看 [TEST_REPORT](TEST_REPORT.md) |
 | 判斷驗證門檻是否適用 | [變更驗證範圍](../.agents/skills/bilicdn-verify-change/SKILL.md#依變更選擇驗證範圍) → [IAB 門檻適用表](../.agents/skills/bilicdn-iab-validation/references/assertions-and-evidence.md#門檻的適用範圍)；每項要求對應斷言、證據及受影響範圍 |
 | 準備發布 | [TODO](TODO.md) → [AGENTS 發行規則](../AGENTS.md#發行規則) → [發行 Skill](../.agents/skills/bilicdn-release/SKILL.md) |
 | 查舊版或舊議題 | [HISTORY](HISTORY.md) → 依版本、議題或日期進入原始報告 |
@@ -21,6 +21,8 @@
 | 核對文件是否落後或矛盾 | [TODO](TODO.md) → [TEST_REPORT](TEST_REPORT.md) → [狀態與矛盾核對](../.agents/skills/bilicdn-maintain-docs/SKILL.md#全面檢討) → [HISTORY](HISTORY.md)；修正權威內容，其他入口維持導引 |
 
 修改時需要更新哪些文件，直接查 [文件更新對照表](../.agents/skills/bilicdn-maintain-docs/references/update-map.md#依變更選擇權威)。
+
+業務對照的每筆規則使用穩定的 `id`，引用 `[套件, 完整案例名稱]`。完整 `npm test` 與 `npm run verify` 以正式執行結果檢查每一項引用恰好有一筆通過的案例。新增或調整產品規則時，先依變更驗證 Skill 建立會檢出違規的案例，再更新對照。對照用來定位具體斷言，產品規格仍由架構及安全文件維護。待修的紅燈案例入口與狀態見 [TODO](TODO.md#另案處理的產品契約)。
 
 新版本或研究只在 HISTORY 登記版本、議題與日期入口；本表不逐版累積第二份報告目錄。避免重複與過時規則的操作方式見[更新現有段落](../.agents/skills/bilicdn-maintain-docs/references/update-map.md#維護既有段落)。
 

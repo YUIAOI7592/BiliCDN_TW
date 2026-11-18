@@ -35,11 +35,17 @@ export const suites: readonly TestSuite[] = Object.freeze(
   ].map((row) => Object.freeze(row)),
 )
 
+const deferredProductSuite: TestSuite = Object.freeze({
+  name: 'deferred-product',
+  source: 'tests-v2/deferred-product-contracts.ts',
+})
+
 export class UsageError extends Error {
   exitCode = 2
 }
 export function selection(filter = '') {
   const name = filter.replace(/^suites\//, '')
+  if (name === deferredProductSuite.name) return [deferredProductSuite]
   const selected = suites.filter((row) => !name || row.name === name)
   if (!selected.length) throw new UsageError(`Unknown test suite: ${filter}`)
   return selected

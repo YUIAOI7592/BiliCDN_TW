@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url'
 import { selection, parseArgs, UsageError } from './testing/test-registry.mts'
 import { supervise } from './testing/test-process.mts'
 import { validateTestDefinitions } from './testing/test-contracts.mts'
+import { validateBusinessContracts } from './testing/business-contracts.mts'
 import { isRecord, errorMessage } from './lib/lib.mts'
 import { type ProcessResult } from './testing/test-process.mts'
 import { type TestSuite } from './testing/test-registry.mts'
@@ -322,6 +323,11 @@ export async function runTests(filter = '', options: RunnerOptions = {}): Promis
   await assertRuntimeCapabilities()
   const outcome = await executeSuites(selected, options)
   const executed = finishOutcome(outcome)
+  if (!filter && options.name === undefined) {
+    const index: unknown = JSON.parse(readFileSync('tests-v2/business-contracts.json', 'utf8'))
+    const contracts = validateBusinessContracts(index, outcome.results)
+    process.stdout.write(`Business contracts linked to passing cases: ${contracts}\n`)
+  }
   process.stdout.write(`Contract cases: ${executed}; total ${outcome.durationMs.toFixed(1)} ms\n`)
   return outcome
 }

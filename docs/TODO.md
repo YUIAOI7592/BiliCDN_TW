@@ -8,6 +8,17 @@ v2.2.22 設定回退、啟動清理、文件引用與快照投影已完成正式
 
 管理器識別、自然健康完整協定、安裝壓力與跨重載保存等未驗證項目保留於報告，不列為身分／接線的阻塞或自動待辦。原 FAIL／INVALID 不改判，缺口不補算 PASS；門檻依 [IAB 適用表](../.agents/skills/bilicdn-iab-validation/references/assertions-and-evidence.md#門檻的適用範圍) 與 [開發驗證範圍](../.agents/skills/bilicdn-verify-change/SKILL.md#依變更選擇驗證範圍)。已清除的自主目標及舊輪次保持停止，低緩衝與提前重試效益研究維持暫緩。
 
+## 另案處理的產品契約
+
+本輪已建立具名反例。需修復產品時，執行 `npm test -- deferred-product`，可用 `--name` 選相應紅燈案例。該套件依明確名稱執行，保留正常對照；修復完成後，將已通過的契約移入相應正式套件並更新 [業務規則對照](../tests-v2/business-contracts.json)。案例位於 [待修產品契約](../tests-v2/deferred-product-contracts.ts)。
+
+| 問題 | 紅燈契約涵蓋範圍 |
+| --- | --- |
+| 設定還原遇到大幅牆鐘回退 | 核對持久值、兩個 Store、還原回傳值及 WebRTC 的一致性 |
+| 可見性啟動中途拋錯 | 核對正式入口回到原生 Fetch／XHR，清除監聽、儲存訂閱及可見性描述子 |
+| History 安裝回退覆蓋網站最新的 `__playinfo__` | 保持網站最後一次賦值和原描述子，且釋放產品資源 |
+| 選路與總覽快照跨內容週期 | 分別在容量、熔斷清單與鎖能力讀取中重入，核對當前週期、歸因、親和、計畫及畫面吞吐 |
+
 <a name="未完成工作"></a>
 
 ## 暫緩項目

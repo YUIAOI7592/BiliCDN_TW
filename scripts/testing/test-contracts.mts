@@ -2,15 +2,27 @@ import { writeFileSync } from 'node:fs'
 import { resolve, join, dirname } from 'node:path'
 import { withProjectAst, visit, SyntaxKind } from '../lib/typescript-ast.mts'
 import {
+  type Node,
   isImportDeclaration,
   isStringLiteral,
   isNamedImports,
+  isNamespaceImport,
   isCallExpression,
+  isElementAccessExpression,
   isPropertyAccessExpression,
   isIdentifier,
   isObjectLiteralExpression,
   isExportDeclaration,
 } from 'typescript/unstable/ast'
+
+const testExports = new Set(['test', 'it', 'describe', 'suite'])
+
+function staticMember(node: Node) {
+  if (isPropertyAccessExpression(node)) return { base: node.expression, name: node.name.text }
+  if (isElementAccessExpression(node) && isStringLiteral(node.argumentExpression))
+    return { base: node.expression, name: node.argumentExpression.text }
+  return null
+}
 
 // Catch accidental focused runs and Node's synthetic "empty file passed" result.
 // Inspect syntax; strings/comments containing sample tests are not registrations.
@@ -35,6 +47,7 @@ export function validateTestDefinitions(source: string, scratch: string): void {
       const ast = program.getSourceFile(current)
       if (!ast) throw Error(`Cannot read test source: ${current}`)
       const names = new Set<string>()
+      const namespaces = new Set<string>()
       for (const node of ast.statements) {
         if (
           isImportDeclaration(node) &&
@@ -71,23 +84,34 @@ export function validateTestDefinitions(source: string, scratch: string): void {
           node.moduleSpecifier.text !== 'node:test'
         )
           continue
-        if (node.importClause?.name) names.add(node.importClause.name.text)
-        const bindings = node.importClause?.namedBindings
+        const clause = node.importClause
+        if (clause?.phaseModifier === SyntaxKind.TypeKeyword) continue
+        if (clause?.name) names.add(clause.name.text)
+        const bindings = clause?.namedBindings
+        if (bindings && isNamespaceImport(bindings)) namespaces.add(bindings.name.text)
         for (const member of bindings && isNamedImports(bindings) ? bindings.elements : []) {
-          if (['test', 'it', 'describe'].includes(member.propertyName?.text ?? member.name.text))
+          if (!member.isTypeOnly && testExports.has(member.propertyName?.text ?? member.name.text))
             names.add(member.name.text)
         }
+      }
+      function isRegistration(target: Node): boolean {
+        if (isIdentifier(target)) return names.has(target.text)
+        const member = staticMember(target)
+        return (
+          member !== null &&
+          isIdentifier(member.base) &&
+          ((namespaces.has(member.base.text) &&
+            (testExports.has(member.name) || member.name === 'default')) ||
+            (names.has(member.base.text) && testExports.has(member.name)))
+        )
       }
       visit(ast, (node) => {
         if (!isCallExpression(node)) return
         const call = node.expression
-        const focused =
-          isPropertyAccessExpression(call) &&
-          call.name.text === 'only' &&
-          isIdentifier(call.expression) &&
-          names.has(call.expression.text)
-        if (focused) throw Error('Focused test registration (only) is forbidden')
-        if (!isIdentifier(call) || !names.has(call.text)) return
+        const member = staticMember(call)
+        if (member?.name === 'only' && isRegistration(member.base))
+          throw Error('Focused test registration (only) is forbidden')
+        if (!isRegistration(call)) return
         registered++
         const options = node.arguments[1]
         if (
