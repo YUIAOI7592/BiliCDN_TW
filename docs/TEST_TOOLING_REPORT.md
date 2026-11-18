@@ -1540,3 +1540,11 @@ skill-creator quick_validate 六份均通過；IAB 的 openai.yaml 由官方 gen
 首輪 verify 於格式檢查中止。另一次獨立文件檢查指出 TODO 版本欄位格式有誤。修正後 `npm run verify` 退出 0，18 套件／2,227 案全數通過，failed／skipped／todo／cancelled 均為零，含兩個既有目的地封裝契約。六個已登記 Skills 的 `skill-creator` 格式檢查通過。
 
 正式本機封裝的五份產物、四筆 SHA-256 校驗列、建置清單的腳本雜湊及重建腳本位元組一致。腳本 540,300 bytes，SHA-256 `2202170b1837534e2636f456e9b702e2466d4efad611c496a145f9fb327ebc7d`。v2.2.20 五個原件先與原標籤／校驗比對，再經九包系統 tar 獨立解壓和公開還原檢查，後移除散件。當版 TEST_REPORT 全文按原位元組追加至歷史日誌。安全、公開交付與安裝狀態見[本版報告](TEST_REPORT.md)。
+
+## 2026-11-18 v2.2.22 整合與發行驗證
+
+工作區依賴工具提供 Node 24.22.3，執行檔為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1117-1425-0_26.1117.1425.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe`。npm CLI 11.20.0 從當次 npm.cmd 解析為 `C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js`，由所選 Node 執行並只修改當次 PATH。完整驗證使用具備 Windows 暫存連結及 Git Bash 能力的環境。
+
+設定 2 案及導覽／正式入口 4 案先在原實作重現失敗。選路快照 1 案在重構前後均通過。完整 `npm run verify` 退出 0，18 套件／2,234 案均通過。公開封存核對 544 項、56 份閱讀版。獨立還原含十個公開包與 v2.2.21 五件原件。測試日誌及產物校驗位於本機忽略目錄 `.work/v2222-delivery/`。本版安全與驗收證據見[現行報告](TEST_REPORT.md)。
+
+上一節 v2.2.21 的完整驗證、公開交付與安裝原判已轉入[當版歷史報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2221-完整正文保存2026-11-18)。

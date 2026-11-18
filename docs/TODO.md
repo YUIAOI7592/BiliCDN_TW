@@ -1,10 +1,10 @@
 # 目前工作
 
-現行版本 **v2.2.21**。本頁只維護工作狀態、未完成項目及停止邊界；驗收結果見 [TEST_REPORT](TEST_REPORT.md)，歷史證據由 [HISTORY](HISTORY.md) 追溯。
+現行版本 **v2.2.22**。本頁只維護工作狀態、未完成項目及停止邊界；驗收結果見 [TEST_REPORT](TEST_REPORT.md)，歷史證據由 [HISTORY](HISTORY.md) 追溯。
 
 ## 目前狀態
 
-v2.2.21 四組產品缺陷已修正，自動驗證、安全差異審查與公開交付均已結案。已手動更新的安裝通過身分、接線、播放與設定驗收。IAB 拒絕開啟本機檔案，來源隔離未執行，本輪已收尾。各案判定見[本版報告](TEST_REPORT.md#來源隔離與實際安裝)。v2.2.20 的公開交付與裝載身分／接線重判見[該版完整正文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-完整正文保存2026-11-18)。
+v2.2.22 設定回退、啟動清理、文件引用與快照投影已實作。驗證及公開交付狀態見[本版報告](TEST_REPORT.md)。v2.2.21 的既有安裝驗收、來源隔離限制及原判保存在[該版全文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2221-完整正文保存2026-11-18)。
 
 管理器識別、自然健康完整協定、安裝壓力與跨重載保存等未驗證項目保留於報告，不列為身分／接線的阻塞或自動待辦。原 FAIL／INVALID 不改判，缺口不補算 PASS；門檻依 [IAB 適用表](../.agents/skills/bilicdn-iab-validation/references/assertions-and-evidence.md#門檻的適用範圍) 與 [開發驗證範圍](../.agents/skills/bilicdn-verify-change/SKILL.md#依變更選擇驗證範圍)。已清除的自主目標及舊輪次保持停止，低緩衝與提前重試效益研究維持暫緩。
 

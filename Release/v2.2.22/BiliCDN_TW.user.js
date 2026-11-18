@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili CDN 台灣優化
 // @namespace    BiliCDN_TW
-// @version      2.2.21
+// @version      2.2.22
 // @description  台灣 CDN 與播放整合：自動選路、香港節點、起播與健康量測、慢請求重試及三頁控制中心
 // @author       jiyunshi <chocosensei214@gmail.com>
 // @license      MIT
@@ -1901,6 +1901,7 @@
           const now = this.now(), current = this.#readForWrite(now);
           return this.#save(defaultSettings(now), current, now);
         });
+        if (next.updatedAt < this.#state.updatedAt) return this.#state;
         return this.#publish(next);
       } finally {
         release();
@@ -3097,6 +3098,22 @@
     );
   }
   __name(rankingSummary, "rankingSummary");
+  function selectionSummary(selection, pendingSampleCount) {
+    if (!selection) return null;
+    const confirmed = selection.phase === "confirmed";
+    return {
+      phase: selection.phase,
+      sampleCount: confirmed ? 2 : pendingSampleCount,
+      nextAction: confirmed ? "observe-playback" : "await-video-success",
+      revision: selection.revision
+    };
+  }
+  __name(selectionSummary, "selectionSummary");
+  function activePlanSummary(decision) {
+    if (!decision) return null;
+    return Object.freeze({ ...planSummary(decision), ranking: rankingSummary(decision.ranking) });
+  }
+  __name(activePlanSummary, "activePlanSummary");
   function capacityNumbers(evidence, metrics, now, budget, requestBytes) {
     const speed2 = metrics.safeThroughputMbps;
     const estimatedCompletionMs = budget ? predictCompletionMs(budget.requestBytes, metrics.safePayloadMbps, metrics.predictionTtfbMs) : null;
@@ -5250,29 +5267,26 @@
     }
     snapshot() {
       const session = this.session.get(), pending = this.#ownership.selection?.phase === "pending", activeRepresentation = this.#ownership.selection?.representation ?? session.representation, active = activeRepresentation ? this.#plans.get(activeRepresentation) : null, representation = !pending && session.representation ? this.vault.groupSummary(session.representation) : null, currentCapacity = this.#capacity(session, active);
+      const circuits = Object.freeze(
+        this.evidence.list().filter((row) => row.circuitLevel > 0 || row.circuitUntil > this.clock.now()).map(
+          (row) => this.#circuits.snapshot(
+            row.host,
+            row.kind,
+            this.evidence.control(row.host, row.kind),
+            this.clock.now(),
+            this.#circuitTick()
+          )
+        )
+      );
+      const selection = this.#ownership.selection;
       return Object.freeze({
         currentCapacity,
-        circuits: Object.freeze(
-          this.evidence.list().filter((row) => row.circuitLevel > 0 || row.circuitUntil > this.clock.now()).map(
-            (row) => this.#circuits.snapshot(
-              row.host,
-              row.kind,
-              this.evidence.control(row.host, row.kind),
-              this.clock.now(),
-              this.#circuitTick()
-            )
-          )
+        circuits,
+        selection: selectionSummary(
+          selection,
+          selection?.phase === "pending" ? this.#ownership.sampleCount : 0
         ),
-        selection: this.#ownership.selection ? {
-          phase: this.#ownership.selection.phase,
-          sampleCount: this.#ownership.selection.phase === "confirmed" ? 2 : this.#ownership.sampleCount,
-          nextAction: this.#ownership.selection.phase === "confirmed" ? "observe-playback" : "await-video-success",
-          revision: this.#ownership.selection.revision
-        } : null,
-        activePlan: active ? Object.freeze({
-          ...planSummary(active),
-          ranking: rankingSummary(active.ranking)
-        }) : null,
+        activePlan: activePlanSummary(active),
         affinity: session.affinity,
         latest: Object.freeze(Object.fromEntries(this.#latest)),
         requested: Object.freeze(Object.fromEntries(this.#requested)),
@@ -7467,17 +7481,25 @@
     #pageKey = "";
     #active = false;
     start() {
-      if (this.#restores.length) return;
+      if (this.#active) return;
       this.#active = true;
-      this.#pageKey = this.navigation.key();
-      this.#beginGeneration();
-      this.pagePlayinfo.install();
-      this.#restores.push(this.navigation.subscribe(() => this.#checkNavigation()));
-      this.#restores.push(
-        this.settings.subscribe((state) => {
-          if (state.disabled !== this.session.get().disabled) this.#beginGeneration();
-        })
-      );
+      try {
+        this.#pageKey = this.navigation.key();
+        this.#restores.push(() => this.monitor.stop());
+        this.#beginGeneration();
+        this.#restores.push(() => this.pagePlayinfo.dispose());
+        this.pagePlayinfo.install();
+        this.#restores.push(this.navigation.subscribe(() => this.#checkNavigation()));
+        this.#restores.push(
+          this.settings.subscribe((state) => {
+            if (this.#active && state.disabled !== this.session.get().disabled)
+              this.#beginGeneration();
+          })
+        );
+      } catch (error) {
+        this.dispose();
+        throw error;
+      }
     }
     acceptPageAssignment(payload, _serial) {
       if (!this.#active) return false;
@@ -7500,10 +7522,9 @@
         } catch {
         }
       }
-      this.pagePlayinfo.dispose();
-      this.monitor.stop();
     }
     #checkNavigation() {
+      if (!this.#active) return;
       const key = this.navigation.key();
       if (key === this.#pageKey) return;
       this.#pageKey = key;
@@ -11967,28 +11988,54 @@ ${label}備用路線：${row.plannedHost}｜${stage}` + (row.responseHost ? `｜
       return navigationKey(location.pathname, location.search);
     }
     subscribe(listener) {
-      const push = history.pushState, replace = history.replaceState;
+      const target = history, push = target.pushState, replace = target.replaceState;
+      const restores = [];
       let active = true;
-      const after = /* @__PURE__ */ __name(() => queueMicrotask(() => {
+      const notify = /* @__PURE__ */ __name(() => {
         if (active) listener();
-      }), "after");
+      }, "notify");
       const wrappedPush = /* @__PURE__ */ __name(function(...args) {
         Reflect.apply(push, this, args);
-        after();
+        queueMicrotask(notify);
       }, "wrappedPush");
       const wrappedReplace = /* @__PURE__ */ __name(function(...args) {
         Reflect.apply(replace, this, args);
-        after();
+        queueMicrotask(notify);
       }, "wrappedReplace");
-      history.pushState = wrappedPush;
-      history.replaceState = wrappedReplace;
-      addEventListener("popstate", listener);
-      return () => {
+      const install = /* @__PURE__ */ __name((key, original, wrapper) => {
+        const descriptor = Object.getOwnPropertyDescriptor(target, key);
+        restores.push(() => {
+          if (target[key] !== wrapper) return;
+          const current = Object.getOwnPropertyDescriptor(target, key);
+          if (current && "value" in current) {
+            if (descriptor) Object.defineProperty(target, key, descriptor);
+            else Reflect.deleteProperty(target, key);
+          } else {
+            target[key] = original;
+          }
+        });
+        target[key] = wrapper;
+        if (target[key] !== wrapper) throw new TypeError("History wrapper was not installed");
+      }, "install");
+      const stop = /* @__PURE__ */ __name(() => {
         active = false;
-        if (history.pushState === wrappedPush) history.pushState = push;
-        if (history.replaceState === wrappedReplace) history.replaceState = replace;
-        removeEventListener("popstate", listener);
-      };
+        for (const restore of restores.splice(0).reverse()) {
+          try {
+            restore();
+          } catch {
+          }
+        }
+      }, "stop");
+      try {
+        install("pushState", push, wrappedPush);
+        install("replaceState", replace, wrappedReplace);
+        restores.push(() => removeEventListener("popstate", notify));
+        addEventListener("popstate", notify);
+      } catch (error) {
+        stop();
+        throw error;
+      }
+      return stop;
     }
   };
 
@@ -12134,7 +12181,29 @@ ${label}備用路線：${row.plannedHost}｜${stage}` + (row.responseHost ? `｜
     const panel = new PlayerPanel(center, settings, session, monitor);
     runtime.install();
     webRtc.install();
-    lifecycle.start();
+    try {
+      lifecycle.start();
+    } catch {
+      for (const release of [
+        () => runtime.dispose(),
+        () => transport.dispose(),
+        () => webRtc.dispose(),
+        () => monitor.dispose(),
+        () => measurement.dispose(),
+        () => recovery.dispose(),
+        () => player.reset(),
+        () => visibility.dispose(),
+        () => evidence.dispose(),
+        () => restrictions.dispose(),
+        () => settings.dispose()
+      ]) {
+        try {
+          release();
+        } catch {
+        }
+      }
+      return;
+    }
     panel.start();
     try {
       GM_registerMenuCommand("⚙️ 開啟 BiliCDN 控制中心", () => center.show());

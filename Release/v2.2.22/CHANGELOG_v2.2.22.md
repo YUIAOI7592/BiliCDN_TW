@@ -2,12 +2,18 @@
 
 各節記錄標示版本或維護日期的變更與當時驗證範圍；後續安裝結果及更正請沿該版報告查閱。「未執行瀏覽器驗收」不代表往後從未驗收。舊版診斷、分頁原線對照及掉幀用途不構成現行功能或規則；現行契約見 [ARCHITECTURE](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/ARCHITECTURE.md)。
 
+## v2.2.22
+
+- 還原預設完成時保留已生效的較新設定，讓頁面、訂閱者及已保存偏好一致。
+- 導覽或生命週期啟動中途失敗時，解除本次攔截與訂閱，忽略晚到回呼，後續由網站原生 API 處理。
+- 集中選路快照的表示選擇及計畫投影，補上交錯、啟動清理與快照契約。控制中心操作與換版引用已對齊。完整驗證見[本版報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+
 ## v2.2.21
 
 - 設定寫入先在鎖內確認儲存可讀。暫時讀取失敗會保留原偏好，個別通知例外也不會影響已保存的設定。
 - 健康探測在送出及保存前重驗候選授權；控制中心僅在樣本確認保存後顯示已記錄。
 - 正常模式保留無本文的 playurl Fetch 原生回應，僅 Catalog 模式沿用安全 503。SDK 播放回呼同步重設時保留較新的恢復狀態。
-- 補強 PCDN 備援、設定、探測、傳輸、恢復及封裝契約；完整驗證與交付狀態見[本版報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 補強 PCDN 備援、設定、探測、傳輸、恢復及封裝契約；完整驗證與交付狀態見[當版報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2221-完整正文保存2026-11-18)。
 
 ## v2.2.20
 

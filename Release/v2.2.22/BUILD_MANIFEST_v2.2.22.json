@@ -1,7 +1,7 @@
 {
-  "version": "2.2.21",
+  "version": "2.2.22",
   "tools": {
-    "node": "24.22.1",
+    "node": "24.22.3",
     "typescript": "7.0.2",
     "esbuild": "0.28.2"
   },
@@ -22,13 +22,13 @@
     "write": false
   },
   "sources": {
-    "package-lock.json": "6908feee34fa3f01790635b2108121acdd34c00d074405e2c1ef678ceab0d130",
-    "package.json": "10768ba1c9fe63f4fb1da2fcdb7f29bc4d3deffadd0500967e7a6b6196151e94",
-    "release.json": "1c3fe337d0bedecd10b065f9b426c3dd1a74d721e7f03a2414ac4d96d6d07a5c",
+    "package-lock.json": "11d6b183db3982896da19a58c152239d986e15c9814636f2e4266132dcc133c1",
+    "package.json": "29b6657c7137ee26aba3721545c7dfc752900122d3f7785bbd6688d23913f81d",
+    "release.json": "19d6e60efcdbb284f0c266aba462b6cf8c2b5185d2bb9afb78d53a0f28931932",
     "scripts/build.mts": "51f93f30f232b5c22710c0ff11d0727717f1a06fc941dfef829717bab614e1a2",
     "scripts/lib/lib.mts": "56b4ffef7073a9ee64a619ac5c8c11cdf02422065c3ea3b3e4b02dbde743c345",
     "scripts/lib/toolchain.mts": "37ba8cd306c24628d202bea6753b5d38e0c0975b0b2b5152c69601d37b3d2ae6",
-    "src-v2/adapters/navigation.ts": "e0c709d54e413559f677b3dcc972a4f2c9282ccc7fe8b4e7865edc9b9ce76133",
+    "src-v2/adapters/navigation.ts": "0ca5fbac7cd11b3ad32a9a6f05b496f6f78998a9933b4bef50c8be6ff6434fd8",
     "src-v2/adapters/player/input-bindings.ts": "b7c5762fa889af82b0524d5acf23d9bd1db854750ef6609629feafcebca4210b",
     "src-v2/adapters/player/player-controls.ts": "cea281005a07c24fd57b42e3a46a679f0bec31334825658e23c04122d923c509",
     "src-v2/adapters/player/player-media.ts": "0eccbd30a97101c5eeda208608ffe99f643d5feab77e8e6eeec76937f58889de",
@@ -53,7 +53,7 @@
     "src-v2/application/control-commands.ts": "ce01b7e3e2f665b9e3c1891c3906394ce6aa753ab309647a4c385b2433e0fc6f",
     "src-v2/application/control-ports.ts": "756695caa5b7af82616cee183e853be2dbafaae9df23ff9b5149e7d058473160",
     "src-v2/application/lifecycle-contracts.ts": "d03ffbb4d1d1dfb1b20dc5c5029cff5edb119a8e4b2998fc7f8ab8e97119f384",
-    "src-v2/application/lifecycle-controller.ts": "750779e89655ff0d580f0026fee72b7fc3bcceabbe71c57588803651a99982d9",
+    "src-v2/application/lifecycle-controller.ts": "d9bd3a8b02099b8a553bbd05c661028ef6d7fef140853df5459faa4f7a6fd797",
     "src-v2/application/measurement/measurement-contracts.ts": "263fb12907463fb4a484ef07a3068bf7f351861c49d28e545bf0575033e4e16a",
     "src-v2/application/measurement/measurement-controller.ts": "324f1eec61090a894131dd1e6b74ae62b92550d44a0bf4fe6f34ae83b668576e",
     "src-v2/application/measurement/startup-evaluation.ts": "5ff5b74b5b95ed4dfcd7bbb05ebeea3b8fab3d4b889e4ac437fb5b5f867c4dc3",
@@ -74,8 +74,8 @@
     "src-v2/application/routing/retry-evidence.ts": "a3a95c1bd9aed6aef47984101881eed5153da9331300e85ff9e5ee24fa096844",
     "src-v2/application/routing/retry-permit-state.ts": "9f14bb38c4d01d5e9f13c7f78ed4be0910c39c8ef488f2e11bfad5238a357e5d",
     "src-v2/application/routing/route-contracts.ts": "dd8fc48566adb4754f62b52bb2346f27f7292ea8f491626dc9270aef8d837320",
-    "src-v2/application/routing/route-coordinator.ts": "a0f6c6116fc167eb2033468a38e3a4e2b2dc5a224278cbb9a31ddf3611529878",
-    "src-v2/application/routing/route-projection.ts": "d97c4033d52983f1adc2a9afc71295733a98973e856839226229f0f468052d5c",
+    "src-v2/application/routing/route-coordinator.ts": "1249d8e2d2e7081d360fc1ff0666beb981d735cbac79f9189d2e81d0d88b5a95",
+    "src-v2/application/routing/route-projection.ts": "079b70785d54c4af3d0b78796ed55bcf5417314c3e99c263f84172f3c3071cd2",
     "src-v2/application/routing/route-restrictions.ts": "98f4ffb955df1035daed5ff64bd7f510b34200592d09806885c174e7f9d4e6d0",
     "src-v2/application/routing/routing-ports.ts": "e946adf9927e792a10c472ab1167052c89f97d9f07738c84c417cc458a047aba",
     "src-v2/application/routing/transport-result.ts": "22dc49ee336d792e716f20ab545289c144f24980e5d821a8d33d1d814506e1b4",
@@ -105,7 +105,7 @@
     "src-v2/domain/startup-policy.ts": "fe2bbb05c956aa64ee640882c5d2b54265aeb3065320428158d3ecc356b52061",
     "src-v2/domain/transport-model.ts": "9d1a4cdefb0f2a73b4956725a70a290320ec1fdb465944223f82cf721e8a5f9a",
     "src-v2/domain/url-policy.ts": "faf09d87740c16fc56c22145481e738bddaeffa5be045dbb42a9622b1011db2e",
-    "src-v2/entry.ts": "24870439b7010471ddd1681bcaeeb4888028194313d2819343ca8665fc8127ef",
+    "src-v2/entry.ts": "40d69f97764b6f3ac32a87010306e45426884fe57d9a850b115ae24183d26e8e",
     "src-v2/metadata.txt": "023565962040fbccf1de11f7354e8fd95b16601d5271f96d72eb7a4c29fb7b81",
     "src-v2/platform/runtime-id-port.ts": "79e3cbf3852bcd035f3b63df04e6b8bedae58d592ab5a348f5976567f6b7cc35",
     "src-v2/platform/runtime-ids.ts": "d4eea203771758dcd3acc2d13f5130524d2810a550edcbd75aa8095c8eddce09",
@@ -121,7 +121,7 @@
     "src-v2/state/session-store.ts": "767753b7cf842eea61af15d525eeadba488c73f6784db035abac8922b2f0899f",
     "src-v2/state/settings-contracts.ts": "d893633d9f6bb72b2a4cf703e56004544933f0c7034772fc79f91e92397ee995",
     "src-v2/state/settings-policy.ts": "b9795b3e3df3fb8b3a656c12f16012a71271ed790cc330d03cca4af3a6646f1e",
-    "src-v2/state/settings-store.ts": "5b21a5af83c5a83c77dcbd99fae66c6befa954ea085c76a56def1f3579d8b6ab",
+    "src-v2/state/settings-store.ts": "58643c32d0f2cb803f87c41ef6f03c09899e9ec110d22270a736f03a5e7c0863",
     "src-v2/state/signed-route-vault.ts": "636b388b6244f16adaa3aee28bb3ddf3d8fe4f16a0970f35e7a855d8c5e0ff64",
     "src-v2/state/stored-host.ts": "2a4f9bd851fba3c5387fc8b4bbeef4b38c4fc2f22afb5dedd53d0cece3d8345a",
     "src-v2/state/vault-contracts.ts": "bbc408368907750793695f77cc94f282129168c2e55176fea57ac4f71e595ceb",
@@ -141,5 +141,5 @@
     "src-v2/ui/styles.ts": "5e15f6ad9faa3f4b86f02fc73d45eed61fcc7ae3472de9cdca427cf63965112c",
     "tsconfig.json": "c1df0987ac0ad4dba6796254807f1a464fe7dee6a8a54e6b8533ecb92bc76938"
   },
-  "userscriptSha256": "2202170b1837534e2636f456e9b702e2466d4efad611c496a145f9fb327ebc7d"
+  "userscriptSha256": "9ecda13768287397a645f431a1534e95f35dd95b220c44d4d60e305ea78aa6c4"
 }
