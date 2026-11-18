@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { TRUSTED_CATALOG } from '../../../src-v2/domain/catalog.ts'
 import { TampermonkeyStorage } from '../../../src-v2/platform/storage.ts'
+import { WebRtcAdapter } from '../../../src-v2/adapters/webrtc.ts'
 import {
   defaultSettings,
   SettingsStore,
@@ -9,6 +10,7 @@ import {
 } from '../../../src-v2/state/settings-store.ts'
 import { type SettingsState } from '../../../src-v2/state/settings-contracts.ts'
 import { FakeStorage, DelayedSettingsStorage } from '../../support/storage.ts'
+import { deferred } from '../../support/deferred.ts'
 import { testScope } from '../../support/scope.ts'
 
 for (const [label, value, expected] of [
@@ -167,3 +169,65 @@ test('V2221 settings can save a genuinely missing record', async (t) => {
   assert.deepEqual(saved, { ...defaultSettings(1000), blockWebRtc: false, updatedAt: 1001 })
   assert.deepEqual(storage.get(SETTINGS_KEY, null), saved)
 })
+
+for (const change of ['local update', 'remote notification'] as const) {
+  test(`V2222 reset preserves a newer ${change} after saving`, async (t) => {
+    const scope = testScope(t)
+    const committed = deferred<void>(),
+      resumeReset = deferred<void>()
+    const storage = new FakeStorage()
+    storage.set(SETTINGS_KEY, { ...defaultSettings(900), blockWebRtc: false })
+    const withLock = storage.withLock.bind(storage)
+    let hold = true,
+      writes = 0
+    const set = storage.set.bind(storage)
+    storage.set = (key, value) => {
+      writes++
+      set(key, value)
+    }
+    storage.withLock = async (name, task) => {
+      const wait = hold && name === 'settings'
+      if (wait) hold = false
+      const result = await withLock(name, task)
+      if (wait) {
+        committed.resolve()
+        await resumeReset.promise
+      }
+      return result
+    }
+    const settings = scope.own(new SettingsStore(storage, () => 1000))
+    class NativePeerConnection {}
+    const page = { RTCPeerConnection: NativePeerConnection }
+    scope.defineGlobal('unsafeWindow', { configurable: true, value: page })
+    scope.own(new WebRtcAdapter(settings)).install()
+    const observed: SettingsState[] = []
+    scope.defer(settings.subscribe((value) => observed.push(value)))
+    const pending = settings.reset()
+    scope.defer(async () => {
+      resumeReset.resolve()
+      await pending
+    })
+
+    await committed.promise
+    assert.deepEqual(storage.get(SETTINGS_KEY, null), defaultSettings(1000))
+    assert.equal(settings.get().considerNativeSources, false)
+    assert.equal(settings.get().earlyRetryEnabled, false)
+    const newer = { ...defaultSettings(1001), blockWebRtc: false }
+    if (change === 'local update') await settings.update({ blockWebRtc: false })
+    else storage.remote(SETTINGS_KEY, newer)
+    assert.equal(settings.get().updatedAt, 1001)
+    assert.equal(page.RTCPeerConnection, NativePeerConnection)
+
+    resumeReset.resolve()
+    assert.deepEqual(await pending, newer)
+    assert.deepEqual(settings.get(), newer)
+    assert.deepEqual(storage.get(SETTINGS_KEY, null), newer)
+    assert.deepEqual(observed.at(-1), newer)
+    assert.equal(
+      observed.some((value) => value.updatedAt === 1000),
+      false,
+    )
+    assert.equal(page.RTCPeerConnection, NativePeerConnection)
+    assert.equal(writes, change === 'local update' ? 2 : 1)
+  })
+}

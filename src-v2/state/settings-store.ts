@@ -166,6 +166,7 @@ export class SettingsStore implements SettingsPort {
         return this.#save(defaultSettings(now), current, now)
       })
       // Reset publishes after lock completion, unlike the update commands.
+      if (next.updatedAt < this.#state.updatedAt) return this.#state
       return this.#publish(next)
     } finally {
       release()
