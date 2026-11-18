@@ -20,7 +20,9 @@ Codex Security 已完成 `0b8e25d..497f328` 的固定差異審查（`f84c960e-a3
 
 ## 封存與公開交付
 
-v2.2.22 五項原件與標籤和原校驗一致，獨立解壓後逐項驗證。封存包 SHA-256 為 `39636c5e3da0ce0bbfe817cb583d0196754875e99cbc0ca3dd4b151f47364faa`。前版的發布與安裝原判已保存在[完整歷史報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2222-完整正文保存2026-11-19)。正式公開下載核對待發布後追加。
+v2.2.22 五項原件與標籤和原校驗一致，獨立解壓後逐項驗證。封存包 SHA-256 為 `39636c5e3da0ce0bbfe817cb583d0196754875e99cbc0ca3dd4b151f47364faa`。前版的發布與安裝原判已保存在[完整歷史報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2222-完整正文保存2026-11-19)。
+
+2026-11-19 02:48（Asia/Taipei）核對 GitHub 正式 Release 與公開 API，latest 指向 `v2.2.23`，唯一附件為 `BiliCDN_TW.user.js`。公開標籤解析至 `1ff266b9d75608ddc2c848d704af84824b72af29`。latest 與固定版本下載均回傳 HTTP 200，版本皆為 v2.2.23，與該提交的封裝逐位元組相同，皆為 554,918 bytes，SHA-256 為 `fd5d30dfe1a7a1249d2211b3879392221baa852071d65a4ed0cfad8902c8e924`。 [GitHub Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.23) · [latest 下載](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js) · [固定版本下載](https://github.com/YUIAOI7592/BiliCDN_TW/releases/download/v2.2.23/BiliCDN_TW.user.js)
 
 ## 來源隔離與實際安裝
 
