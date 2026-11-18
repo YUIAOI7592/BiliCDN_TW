@@ -377,6 +377,83 @@ test('V226 L02 concurrent requests share selection ownership and a genuine later
   assert.equal(f.session.get().representation, return2.request.representation)
 })
 
+test('V2222 route snapshots project selection and ranking without changing route ownership', async (t) => {
+  const scope = testScope(t)
+  const f = fixture(scope)
+  let events = 0
+  scope.defer(f.routes.subscribe(() => events++))
+  const read = () => {
+    const before = f.session.get(),
+      saved = structuredClone([...f.storage.values]),
+      previouslyEmitted = events
+    const snapshot = f.routes.snapshot()
+    assert.equal(f.session.get(), before)
+    assert.deepEqual([...f.storage.values], saved)
+    assert.equal(events, previouslyEmitted)
+    assert.equal(Object.isFrozen(snapshot), true)
+    return snapshot
+  }
+  const initial = read()
+  assert.equal(initial.selection, null)
+  assert.equal(initial.activePlan, null)
+  assert.equal(initial.currentCapacity, null)
+  assert.equal(initial.attribution, 'awaiting-matched-video')
+
+  const body = dash(media('snapshot', 'video.m4s'))
+  assert.equal(f.adapter.transform(body).accepted, true)
+  const url = body.data.dash.video[0]!.base_url
+  const first = start(f, url, 1),
+    second = start(f, url, 2)
+  const decision = first.applied.decision
+  assert.ok(decision.ranking.length > 12)
+  const ranking = decision.ranking.slice(0, 12).map((row) => ({
+    host: row.candidate.host,
+    type: row.candidate.type,
+    state: row.state,
+    eligible: row.eligible,
+    reasons: row.reasons,
+    safeMbps: row.safeThroughputMbps,
+    ratio: row.demandRatio,
+    ttfbMs: row.medianTtfbMs,
+  }))
+  const pending = read()
+  assert.deepEqual(pending.selection, {
+    phase: 'pending',
+    sampleCount: 0,
+    nextAction: 'await-video-success',
+    revision: 1,
+  })
+  assert.equal(Object.isFrozen(pending.selection), false)
+  assert.equal(pending.currentCapacity, null)
+  assert.deepEqual(pending.activePlan, {
+    id: decision.id,
+    action: decision.action,
+    reason: decision.reason,
+    routeType: decision.routeType,
+    host: decision.host,
+    ranking,
+  })
+  assert.equal(Object.isFrozen(pending.activePlan), true)
+  assert.equal(Object.isFrozen(pending.activePlan?.ranking), true)
+  assert.equal(pending.activePlan?.ranking.every(Object.isFrozen), true)
+
+  await finish(f, first)
+  const tentative = read()
+  assert.equal(tentative.selection?.sampleCount, 1)
+  assert.equal(tentative.attribution, 'awaiting-second-video-transfer')
+  await finish(f, second)
+  const confirmed = read()
+  assert.deepEqual(confirmed.selection, {
+    phase: 'confirmed',
+    sampleCount: 2,
+    nextAction: 'observe-playback',
+    revision: 1,
+  })
+  assert.equal(confirmed.attribution, 'confirmed')
+  assert.equal(confirmed.currentCapacity?.host, decision.host)
+  assert.deepEqual(confirmed.activePlan?.ranking, ranking)
+})
+
 test('V226 L02: A returning before pending B confirms still needs two fresh successes', async (t) => {
   const f = fixture(testScope(t)),
     body = dash(media('pending-return', 'a.m4s'))

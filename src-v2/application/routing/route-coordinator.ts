@@ -1,7 +1,7 @@
 import { RetryEvidence } from './retry-evidence.ts'
 import { RequestOwnership } from './request-ownership.ts'
 import { RetryPermitState } from './retry-permit-state.ts'
-import { capacityNumbers, planSummary, rankingSummary } from './route-projection.ts'
+import { activePlanSummary, capacityNumbers, selectionSummary } from './route-projection.ts'
 import { type CompletionBudget } from '../../domain/route-completion.ts'
 import {
   controlPlaybackDemand,
@@ -2193,40 +2193,29 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       representation =
         !pending && session.representation ? this.vault.groupSummary(session.representation) : null,
       currentCapacity = this.#capacity(session, active)
+    const circuits = Object.freeze(
+      this.evidence
+        .list()
+        .filter((row) => row.circuitLevel > 0 || row.circuitUntil > this.clock.now())
+        .map((row) =>
+          this.#circuits.snapshot(
+            row.host,
+            row.kind,
+            this.evidence.control(row.host, row.kind),
+            this.clock.now(),
+            this.#circuitTick(),
+          ),
+        ),
+    )
+    const selection = this.#ownership.selection
     return Object.freeze({
       currentCapacity,
-      circuits: Object.freeze(
-        this.evidence
-          .list()
-          .filter((row) => row.circuitLevel > 0 || row.circuitUntil > this.clock.now())
-          .map((row) =>
-            this.#circuits.snapshot(
-              row.host,
-              row.kind,
-              this.evidence.control(row.host, row.kind),
-              this.clock.now(),
-              this.#circuitTick(),
-            ),
-          ),
+      circuits,
+      selection: selectionSummary(
+        selection,
+        selection?.phase === 'pending' ? this.#ownership.sampleCount : 0,
       ),
-      selection: this.#ownership.selection
-        ? {
-            phase: this.#ownership.selection.phase,
-            sampleCount:
-              this.#ownership.selection.phase === 'confirmed' ? 2 : this.#ownership.sampleCount,
-            nextAction:
-              this.#ownership.selection.phase === 'confirmed'
-                ? ('observe-playback' as const)
-                : ('await-video-success' as const),
-            revision: this.#ownership.selection.revision,
-          }
-        : null,
-      activePlan: active
-        ? Object.freeze({
-            ...planSummary(active),
-            ranking: rankingSummary(active.ranking),
-          })
-        : null,
+      activePlan: activePlanSummary(active),
       affinity: session.affinity,
       latest: Object.freeze(Object.fromEntries(this.#latest)),
       requested: Object.freeze(Object.fromEntries(this.#requested)),

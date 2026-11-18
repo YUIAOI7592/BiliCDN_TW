@@ -6,9 +6,9 @@ import {
   predictCompletionMs,
   type CompletionBudget,
 } from '../../domain/route-completion.ts'
-import type { CurrentRouteCapacity, RoutePlanSummary } from './route-contracts.ts'
+import type { CurrentRouteCapacity, RoutePlanSummary, RouteSnapshot } from './route-contracts.ts'
 
-export function planSummary(decision: RouteDecision): RoutePlanSummary {
+function planSummary(decision: RouteDecision): RoutePlanSummary {
   return Object.freeze({
     id: decision.id,
     action: decision.action,
@@ -18,7 +18,7 @@ export function planSummary(decision: RouteDecision): RoutePlanSummary {
   })
 }
 
-export function rankingSummary(ranking: readonly RouteRankingEntry[]) {
+function rankingSummary(ranking: readonly RouteRankingEntry[]) {
   return Object.freeze(
     ranking.slice(0, 12).map((row) =>
       Object.freeze({
@@ -33,6 +33,29 @@ export function rankingSummary(ranking: readonly RouteRankingEntry[]) {
       }),
     ),
   )
+}
+
+type SelectionSummary = NonNullable<RouteSnapshot['selection']>
+
+export function selectionSummary(
+  selection: Pick<SelectionSummary, 'phase' | 'revision'> | null,
+  pendingSampleCount: number,
+): SelectionSummary | null {
+  if (!selection) return null
+  const confirmed = selection.phase === 'confirmed'
+  return {
+    phase: selection.phase,
+    sampleCount: confirmed ? 2 : pendingSampleCount,
+    nextAction: confirmed ? 'observe-playback' : 'await-video-success',
+    revision: selection.revision,
+  }
+}
+
+export function activePlanSummary(
+  decision: RouteDecision | null | undefined,
+): RouteSnapshot['activePlan'] {
+  if (!decision) return null
+  return Object.freeze({ ...planSummary(decision), ranking: rankingSummary(decision.ranking) })
 }
 
 /** Numeric assembly only; ownership checks and fresh external reads stay with the coordinator. */
