@@ -1,23 +1,14 @@
 # 目前工作
 
-現行版本 **v2.2.22**。本頁只維護工作狀態、未完成項目及停止邊界；驗收結果見 [TEST_REPORT](TEST_REPORT.md)，歷史證據由 [HISTORY](HISTORY.md) 追溯。
+現行版本 **v2.2.23**。本頁只維護工作狀態、未完成項目及停止邊界；驗收結果見 [TEST_REPORT](TEST_REPORT.md)，歷史證據由 [HISTORY](HISTORY.md) 追溯。
+
+<a name="另案處理的產品契約"></a>
 
 ## 目前狀態
 
-v2.2.22 設定回退、啟動清理、文件引用與快照投影已完成正式交付。本版 [R1 安裝與正常回歸](TEST_REPORT.md#v2222-r1-安裝驗收-2026-11-19)已通過並結案。v2.2.21 的既有安裝驗收、來源隔離限制及原判保存在[該版全文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2221-完整正文保存2026-11-18)。
+四組待修缺陷與 v1.4.2 吸收已進入發行驗證。原六個紅燈及兩個對照已移入正式套件。公開交付與安裝證據以當版報告為準。v2.2.22 已完成的安裝結果保存在[前版完整報告](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2222-完整正文保存2026-11-19)。
 
-管理器識別、自然健康完整協定、安裝壓力與跨重載保存等未驗證項目保留於報告，不列為身分／接線的阻塞或自動待辦。原 FAIL／INVALID 不改判，缺口不補算 PASS；門檻依 [IAB 適用表](../.agents/skills/bilicdn-iab-validation/references/assertions-and-evidence.md#門檻的適用範圍) 與 [開發驗證範圍](../.agents/skills/bilicdn-verify-change/SKILL.md#依變更選擇驗證範圍)。已清除的自主目標及舊輪次保持停止，低緩衝與提前重試效益研究維持暫緩。
-
-## 另案處理的產品契約
-
-本輪已建立具名反例。需修復產品時，執行 `npm test -- deferred-product`，可用 `--name` 選相應紅燈案例。該套件依明確名稱執行，保留正常對照；修復完成後，將已通過的契約移入相應正式套件並更新 [業務規則對照](../tests-v2/business-contracts.json)。案例位於 [待修產品契約](../tests-v2/deferred-product-contracts.ts)。
-
-| 問題 | 紅燈契約涵蓋範圍 |
-| --- | --- |
-| 設定還原遇到大幅牆鐘回退 | 核對持久值、兩個 Store、還原回傳值及 WebRTC 的一致性 |
-| 可見性啟動中途拋錯 | 核對正式入口回到原生 Fetch／XHR，清除監聽、儲存訂閱及可見性描述子 |
-| History 安裝回退覆蓋網站最新的 `__playinfo__` | 保持網站最後一次賦值和原描述子，且釋放產品資源 |
-| 選路與總覽快照跨內容週期 | 分別在容量、熔斷清單與鎖能力讀取中重入，核對當前週期、歸因、親和、計畫及畫面吞吐 |
+管理器識別、自然健康完整協定、安裝壓力與跨重載保存等未驗證項目保留於原報告。原 FAIL／INVALID 與停止決定保留，低緩衝與提前重試效益研究維持暫緩。
 
 <a name="未完成工作"></a>
 

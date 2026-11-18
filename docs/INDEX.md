@@ -22,7 +22,7 @@
 
 修改時需要更新哪些文件，直接查 [文件更新對照表](../.agents/skills/bilicdn-maintain-docs/references/update-map.md#依變更選擇權威)。
 
-業務對照的每筆規則使用穩定的 `id`，引用 `[套件, 完整案例名稱]`。完整 `npm test` 與 `npm run verify` 以正式執行結果檢查每一項引用恰好有一筆通過的案例。新增或調整產品規則時，先依變更驗證 Skill 建立會檢出違規的案例，再更新對照。對照用來定位具體斷言，產品規格仍由架構及安全文件維護。待修的紅燈案例入口與狀態見 [TODO](TODO.md#另案處理的產品契約)。
+業務對照的每筆規則使用穩定的 `id`，引用 `[套件, 完整案例名稱]`。完整 `npm test` 與 `npm run verify` 以正式執行結果檢查每一項引用恰好有一筆通過的案例。新增或調整產品規則時，先依變更驗證 Skill 建立會檢出違規的案例，再更新對照。對照用來定位具體斷言，產品規格仍由架構及安全文件維護。缺陷契約的驗證結果見 [TEST_REPORT](TEST_REPORT.md#自動驗證)。
 
 新版本或研究只在 HISTORY 登記版本、議題與日期入口；本表不逐版累積第二份報告目錄。避免重複與過時規則的操作方式見[更新現有段落](../.agents/skills/bilicdn-maintain-docs/references/update-map.md#維護既有段落)。
 

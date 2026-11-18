@@ -1,39 +1,34 @@
-# BiliCDN_TW v2.2.22 完整驗證報告
+# BiliCDN_TW v2.2.23 完整驗證報告
 
-驗證日期為 2026-11-18（Asia/Taipei）。基準 main／2ed2bae。四批提交依序為 e24684a、d82f2ff、cd5c1df、9eb0967。
+驗證日期為 2026-11-19（Asia/Taipei）。產品基準為 `0b8e25d`，上游基準為 v1.4.1 至 v1.4.2 的固定差異。
 
 ## 驗收結論
 
-本版修復較舊的設定還原結果覆蓋已生效偏好，以及導覽與生命週期啟動失敗留下本次包裝與回呼。同步修正控制中心操作與換版引用，並集中選路快照的選擇與計畫投影。完整驗證與公開核對按各節記錄。
+本版修復牆鐘回退下的設定生效順序、部分啟動清理、網站播放資料還原與選路快照換期，並吸收 v1.4.2 的語系頁、主片導航配對、輔助請求隔離及尋位期間的起播保護。發布狀態依下列驗收分段。
 
 ## 自動驗證
 
-| 契約 | 修改前證據 | 修改後定向驗證 |
-| --- | --- | --- |
-| 設定發布 | 同一 Store 更新與遠端通知各重現一案，舊還原結果覆回頁面 | state 98 案通過。確認回傳、持久值、快取、通知及 WebRTC 一致 |
-| 導覽與啟動回退 | History 與監聽安裝各一案、生命週期一案、正式入口一案失敗 | adapter-boundaries 84 案與 orchestration 39 案通過。原生 API 及描述子回復，自有訂閱、計時器與晚到回呼收束 |
-| 選路快照 | 原來源的無選擇、待確認與已確認快照通過 | application 765 案與 control-center 106 案通過。排名順序、上限、快照凍結與唯讀行為保持 |
-| 文件 | 核對 README 的操作位置與歷史結論落點 | docs:check、archive:check 與 git diff --check 通過 |
+修復前六個缺陷案例各自在預期斷言失敗，兩個對照通過，八案保留具名身分移入正式套件。上游變更以合成 Fetch／XHR、URL、播放器狀態及時鐘驗證。原來源重現語系中繼資料、導航等價、API 先到、預載隔離及尋位資格缺口。 [上游與驗收去向](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/UPSTREAM_MANIFEST.md#v142-與-v2223)
 
-完整 `npm run verify` 通過 18 套件／2,234 案，失敗、跳過、取消及待辦均為零。型別、架構、格式、文件、公開封存、確定性建置、語法與暫存封裝校驗通過。實際工具環境見[工具紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_TOOLING_REPORT.md#2026-11-18-v2222-整合與發行驗證)。
+在 Windows 使用工作區提供的 Node 24.22.3 及 npm 11.20.0 執行 `npm run verify`，18 個正式套件共 2,279 案全數通過，失敗、跳過、取消及待辦均為零。131 條業務規則的具名案例均通過。檢查另包含型別、架構、格式、文件、公開封存、決定性建置及暫存封裝。
 
 ## 安全差異
 
-2026-11-18 23:26（Asia/Taipei）完成 Codex Security 固定差異審查。掃描 ID 為 `03776ed4-770d-4da3-955a-f0d0ddde2f8d`，範圍為 `2ed2baecb1b2652b1194042e6169ffbadf114380..d82f2ff0c006b2be13f0c56d13606c37a39074e7`，9 檔全部覆蓋，候選、可報告問題及未解項目均為零。
-
-審查以固定差異、相依來源及記憶體契約為依據，涵蓋設定發布順序、History 包裝所有權及啟動回退。初次工作台入口無法解析 Git 工作樹，指定可信 Git 後由官方工作台啟動，並由 Codex Security 讀回封存結果。
+Codex Security 已完成 `0b8e25d..497f328` 的固定差異審查（`f84c960e-a399-4f1b-a15b-c6cac50a5131`），涵蓋 36 個變更檔案，無可報告的安全發現。首輪檢視後，換片配對改採同一單調時鐘，要求直接播放頁的路徑身分相符，保留同片刷新之前的原期限，並讓嚴格模式的輔助 XHR 擁有獨立 JSON 輸出。相關回歸案例在最終差異通過。審查採靜態程式與離線契約證據。
 
 <a name="公開交付與安裝結案"></a>
 
 ## 封存與公開交付
 
-v2.2.21 五項發行原件與當版標籤、原始校驗及獨立 tar 解壓比對一致。公開 TAR＋gzip 為 152,670 bytes，SHA-256 `e8984cd3cb10bfdb79dbd665f01a269c641fe020c32be8d2708b77b38ca3360d`。十個公開包解壓至同一還原根後，`archive:check --restore-root` 通過。換版前的完整現行報告已追加至[歷史原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2221-完整正文保存2026-11-18)。
-
-正式封裝及公開下載核對完成後追加交付證據。Release 快照記錄封裝當時的驗證狀態。
+v2.2.22 五項原件與標籤和原校驗一致，獨立解壓後逐項驗證。封存包 SHA-256 為 `39636c5e3da0ce0bbfe817cb583d0196754875e99cbc0ca3dd4b151f47364faa`。前版的發布與安裝原判已保存在[完整歷史報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2222-完整正文保存2026-11-19)。正式公開下載核對待發布後追加。
 
 ## 來源隔離與實際安裝
 
-本版採自動契約、安全差異及公開產物核對。正式入口記憶體模型已有啟動失敗回退證據。本輪 IAB 來源隔離與 Tampermonkey 安裝驗收未執行。v2.2.21 的安裝與來源隔離判定見[當版原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2221-完整正文保存2026-11-18)。
+本次驗收採 Node 自動契約與公開產物核對，未執行 v2.2.23 的 IAB 來源隔離或已安裝驗收。原作者的實機證據只適用 v1.4.2。
+
+<a name="v2222-r1-安裝驗收-2026-11-19"></a>
+
+[v2.2.22 R1 安裝結果](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2222-r1-安裝驗收-2026-11-19)。
 
 ## 歷史驗證導覽
 

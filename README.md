@@ -18,6 +18,8 @@ BiliCDN_TW 是針對台灣網路環境維護的 Bilibili Tampermonkey 腳本，�
 3. 核對管理器內腳本版本。
 4. 重新載入 Bilibili 影片分頁，讓新版本生效。
 
+一般影片、清單與稍後再看支援 `zh-Hant`、`zh-Hans`、`en`、`ja` 語系前綴。
+
 腳本的自動更新網址固定指向本儲存庫的最新 Release。從 v2 更新會沿用既有 v2 設定與學習資料；v1 設定不會遷移，使用 v1 的使用者請停用舊腳本後安裝 v2。
 
 手動更新使用同一連結及步驟。GitHub Release 只提供 `BiliCDN_TW.user.js`；建置資訊與校驗碼保存在儲存庫的 [Release 目錄](Release)。實際測試環境與驗證範圍見[驗證紀錄](#目前版本的驗證紀錄)。

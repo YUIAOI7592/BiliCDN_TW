@@ -2,11 +2,17 @@
 
 各節記錄標示版本或維護日期的變更與當時驗證範圍；後續安裝結果及更正請沿該版報告查閱。「未執行瀏覽器驗收」不代表往後從未驗收。舊版診斷、分頁原線對照及掉幀用途不構成現行功能或規則；現行契約見 [ARCHITECTURE](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/ARCHITECTURE.md)。
 
+## v2.2.23
+
+- 支援繁中、簡中、英語及日語前綴的影片、清單與稍後再看。可確認屬於同一換片的主播放資訊與導覽只重設一次。
+- 預載及懸停預覽不再覆蓋主片播放資訊。續播尋位及拖曳保護期間保留尚未使用的起播測速窗口。
+- 修復設定還原遇到牆鐘回退、啟動途中監聽殘留、History 回退覆蓋網站賦值，以及總覽混用新舊播放內容。驗證與交付見[本版報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+
 ## v2.2.22
 
 - 還原預設完成時保留已生效的較新設定，讓頁面、訂閱者及已保存偏好一致。
 - 導覽或生命週期啟動中途失敗時，解除本次攔截與訂閱，忽略晚到回呼，後續由網站原生 API 處理。
-- 集中選路快照的表示選擇及計畫投影，補上交錯、啟動清理與快照契約。控制中心操作與換版引用已對齊。完整驗證見[本版報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 集中選路快照的表示選擇及計畫投影，補上交錯、啟動清理與快照契約。控制中心操作與換版引用已對齊。完整驗證見[本版報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2222-完整正文保存2026-11-19)。
 
 ## v2.2.21
 

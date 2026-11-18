@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili CDN 台灣優化
 // @namespace    BiliCDN_TW
-// @version      2.2.22
+// @version      2.2.23
 // @description  台灣 CDN 與播放整合：自動選路、香港節點、起播與健康量測、慢請求重試及三頁控制中心
 // @author       jiyunshi <chocosensei214@gmail.com>
 // @license      MIT
@@ -17,6 +17,18 @@
 // @match        https://www.bilibili.com/festival/*
 // @match        https://www.bilibili.com/medialist/play/*
 // @match        https://www.bilibili.com/watchlater/*
+// @match        https://www.bilibili.com/zh-Hant/video/*
+// @match        https://www.bilibili.com/zh-Hant/list/*
+// @match        https://www.bilibili.com/zh-Hant/watchlater/*
+// @match        https://www.bilibili.com/zh-Hans/video/*
+// @match        https://www.bilibili.com/zh-Hans/list/*
+// @match        https://www.bilibili.com/zh-Hans/watchlater/*
+// @match        https://www.bilibili.com/en/video/*
+// @match        https://www.bilibili.com/en/list/*
+// @match        https://www.bilibili.com/en/watchlater/*
+// @match        https://www.bilibili.com/ja/video/*
+// @match        https://www.bilibili.com/ja/list/*
+// @match        https://www.bilibili.com/ja/watchlater/*
 // @match        https://www.bilibili.com/blackboard/*
 // @match        https://www.bilibili.com/mooc/*
 // @match        https://www.bilibili.com/cheese/*
@@ -133,6 +145,20 @@
     ) ?? observedPlaybackDemand(kind, kind === "audio" ? 192e3 : 4e6, 2);
   }
   __name(controlPlaybackDemand, "controlPlaybackDemand");
+
+  // src-v2/application/routing/route-contracts.ts
+  var EMPTY_ROUTE_SNAPSHOT = Object.freeze({
+    circuits: Object.freeze([]),
+    selection: null,
+    currentCapacity: null,
+    activePlan: null,
+    affinity: null,
+    latest: Object.freeze({}),
+    requested: Object.freeze({}),
+    attribution: "awaiting-matched-video",
+    representation: null,
+    fallback: Object.freeze({})
+  });
 
   // src-v2/domain/probe-range.ts
   function parseProbeRange(value, startByte, limit) {
@@ -292,18 +318,36 @@
 
   // src-v2/ui/control-read-model.ts
   function createControlReadModel(sources) {
+    const read = /* @__PURE__ */ __name(() => Object.freeze({
+      settings: sources.settings.get(),
+      session: sources.session.get(),
+      monitor: sources.monitor.snapshot(),
+      recovery: sources.recovery.snapshot(),
+      measurement: sources.measurement.snapshot(),
+      interception: sources.transport.snapshot(),
+      routes: sources.routes.snapshot(),
+      restrictions: sources.restrictions.list(),
+      ...sources.earlyRetry ? { earlyRetry: sources.earlyRetry.snapshot() } : {}
+    }), "read");
     return {
       snapshot() {
+        const first = read();
+        let session = sources.session.get();
+        if (first.session.generation === session.generation && first.session.epoch === session.epoch)
+          return first;
+        const second = read();
+        session = sources.session.get();
+        if (second.session.generation === session.generation && second.session.epoch === session.epoch)
+          return second;
         return Object.freeze({
-          settings: sources.settings.get(),
-          session: sources.session.get(),
-          monitor: sources.monitor.snapshot(),
-          recovery: sources.recovery.snapshot(),
-          measurement: sources.measurement.snapshot(),
-          interception: sources.transport.snapshot(),
-          routes: sources.routes.snapshot(),
-          restrictions: sources.restrictions.list(),
-          ...sources.earlyRetry ? { earlyRetry: sources.earlyRetry.snapshot() } : {}
+          ...second,
+          session: Object.freeze({
+            ...session,
+            representation: null,
+            affinity: null,
+            lastDecisionId: null
+          }),
+          routes: EMPTY_ROUTE_SNAPSHOT
         });
       },
       subscribe(listener) {
@@ -612,15 +656,79 @@
   __name(admitSources, "admitSources");
 
   // src-v2/domain/playurl-content.ts
+  var numericId = /* @__PURE__ */ __name((value) => /^[0-9]{1,20}$/.test(value) ? value.replace(/^0+/, "") || null : null, "numericId");
+  var bvid = /* @__PURE__ */ __name((value) => /^BV[0-9A-Za-z]{10}$/.test(value) ? value : null, "bvid");
+  var aidKeys = ["aid", "avid", "oid"];
+  var episodeKeys = ["ep_id", "epid"];
+  function checkedIdentity(query, pathId = {}) {
+    const read = /* @__PURE__ */ __name((keys, parse2, path) => {
+      const values = keys.flatMap((key) => query.getAll(key));
+      if (!values.length) return path ?? null;
+      const value = values.length === 1 ? parse2(values[0]) : null;
+      return value && (!path || value === path) ? value : void 0;
+    }, "read");
+    const video = read(["bvid"], bvid, pathId.bvid);
+    const aid = read(aidKeys, numericId, pathId.aid);
+    const episode = read(episodeKeys, numericId, pathId.episode);
+    const part = read(["p"], numericId);
+    if (video === void 0 || aid === void 0 || episode === void 0 || part === void 0)
+      return null;
+    return { bvid: video, aid, episode, part };
+  }
+  __name(checkedIdentity, "checkedIdentity");
+  var navigationIds = ["bvid", "aid", "episode"];
+  function hasSameId(left, right) {
+    const shared = navigationIds.filter((id2) => left[id2] && right[id2]);
+    return shared.length > 0 && shared.every((id2) => left[id2] === right[id2]);
+  }
+  __name(hasSameId, "hasSameId");
+  function navigationPage(key) {
+    const [path = "", search] = key.split(/\?(.*)/s, 2);
+    const query = new URLSearchParams(search);
+    const video = /^\/video\/([^/]+)\/?$/.exec(path)?.[1];
+    const episode = /^\/bangumi\/play\/ep([0-9]+)\/?$/.exec(path)?.[1];
+    const list = /^\/(?:list|watchlater)(?:\/|$)/.test(path);
+    if (!video && !episode && !list) return null;
+    const pathId = episode ? "episode" : video?.startsWith("av") ? "aid" : video ? "bvid" : null;
+    const canonical = episode ? numericId(episode) : video?.startsWith("av") ? numericId(video.slice(2)) : video ? bvid(video) : null;
+    if (pathId && !canonical) return null;
+    const identity = checkedIdentity(query, pathId ? { [pathId]: canonical } : {});
+    const cids = query.getAll("cid");
+    const cid = cids.length === 1 ? numericId(cids[0]) : null;
+    if (!identity || cids.length && !cid) return null;
+    for (const key2 of ["bvid", ...aidKeys, ...episodeKeys, "cid", "p"]) query.delete(key2);
+    return { path, pathId, identity, cid, list, remainingQuery: query.toString() };
+  }
+  __name(navigationPage, "navigationPage");
+  function matchesPlayurlNavigation(previousKey, key, context, changedContent) {
+    const previous = navigationPage(previousKey), next = navigationPage(key), target = context.navigation;
+    if (!next || !target || !context.contentId || !hasSameId(next.identity, target)) return false;
+    if (next.pathId && target[next.pathId] !== next.identity[next.pathId]) return false;
+    if (previous && previous.remainingQuery !== next.remainingQuery) return false;
+    if (next.cid && next.cid !== context.contentId) return false;
+    const nextPart = next.identity.part ?? "1";
+    if (target.part && target.part !== nextPart) return false;
+    if (previous && hasSameId(previous.identity, next.identity)) {
+      if ((previous.identity.part ?? "1") === nextPart) return false;
+      if (!target.part && !next.cid) return false;
+    } else if (nextPart !== "1" && !target.part && !next.cid) return false;
+    if (changedContent) return true;
+    return !!previous?.list && previous.path === next.path && !navigationIds.some((id2) => previous.identity[id2]) && (previous.identity.part ?? "1") === nextPart;
+  }
+  __name(matchesPlayurlNavigation, "matchesPlayurlNavigation");
   function playurlRequestContext(value, base) {
-    let contentId = null;
-    if (isPlayurlApi(value, base)) {
-      const values = new URL(value, base).searchParams.getAll("cid");
-      if (values.length === 1 && /^[0-9]{1,20}$/.test(values[0])) {
-        contentId = values[0].replace(/^0+/, "") || null;
-      }
-    }
-    return Object.freeze({ contentId });
+    if (!isPlayurlApi(value, base)) return Object.freeze({ contentId: null });
+    const url = new URL(value, base), query = url.searchParams;
+    const values = query.getAll("cid");
+    const contentId = values.length === 1 ? numericId(values[0]) : null;
+    const main = query.getAll("is_main_page"), sources = query.getAll("gaia_source");
+    if (main.includes("false") || sources.some((kind) => kind === "pre-load" || kind === "view-card"))
+      return Object.freeze({ contentId, auxiliary: true });
+    const navigation = url.protocol === "https:" && !url.port && !url.username && !url.password && /^\/(?:x\/player\/(?:wbi\/)?playurl|ogv\/player\/playview)$/.test(url.pathname) && main.length === 1 && main[0] === "true" && sources.every((kind) => !kind) ? checkedIdentity(query) : null;
+    return Object.freeze({
+      contentId,
+      ...navigation && navigationIds.some((id2) => navigation[id2]) ? { navigation: Object.freeze(navigation) } : {}
+    });
   }
   __name(playurlRequestContext, "playurlRequestContext");
   var directories = /* @__PURE__ */ __name((urls) => {
@@ -685,6 +793,7 @@
     #apiWatermark = 0;
     #ingestion = null;
     #apiCandidate = null;
+    #navigationClaim = null;
     #contentIdentity = null;
     catalogOnly() {
       return this.routes.isCatalogOnly();
@@ -705,6 +814,7 @@
       const sequence = source === "trusted-api" && Number.isSafeInteger(context?.requestSequence) && context.requestSequence > 0 ? context.requestSequence : void 0;
       if (state.disabled || context?.generation !== void 0 && context.generation !== Number(state.generation))
         return null;
+      if (source === "trusted-api" && context?.auxiliary) return this.#auxiliaryOutput(payload);
       if (active && active.generation === state.generation && (sequence === void 0 || active.sequence === void 0 || sequence <= active.sequence))
         return null;
       const owner = { generation: state.generation, epoch: state.epoch, sequence };
@@ -720,6 +830,22 @@
         if (this.#ingestion === owner) this.#ingestion = null;
       }
     }
+    #auxiliaryOutput(payload) {
+      if (!this.routes.isCatalogOnly()) return [];
+      if (!payload) return null;
+      const state = this.session.get(), revision2 = this.routes.policyRevision();
+      const outputs = [];
+      for (const kind of ["video", "audio"]) {
+        for (const item of payload[kind]) {
+          const urls = admitSources(item.urls, true).map((source) => source.url);
+          const output = this.routes.previewCatalogOutput(urls, kind);
+          if (!output) return null;
+          outputs.push({ token: item.token, ...output });
+        }
+      }
+      const current = this.session.get();
+      return !current.disabled && current.generation === state.generation && current.epoch === state.epoch && revision2 === this.routes.policyRevision() ? outputs : null;
+    }
     #ingest(payload, source, responseKey, context, owner, valid) {
       const outputs = [];
       const rewriteItem2 = /* @__PURE__ */ __name((item, primary, backups) => {
@@ -731,6 +857,7 @@
         this.#responses.clear();
         this.#apiWatermark = 0;
         this.#apiCandidate = null;
+        this.#navigationClaim = null;
         this.#contentIdentity = null;
         this.#seenTrusted = /* @__PURE__ */ new WeakSet();
         this.#trustedItems = /* @__PURE__ */ new WeakMap();
@@ -778,6 +905,7 @@
           this.#seenPage.set(payload.token, generation);
         }
       }
+      let changedContent = false;
       if (source === "trusted-api" && !older) {
         const next = observePlayurlContent(
           this.#contentIdentity,
@@ -787,6 +915,7 @@
         );
         this.#contentIdentity = next.identity;
         if (next.changed) {
+          changedContent = true;
           this.session.beginEpoch();
           const state2 = this.session.get();
           if (this.#ingestion !== owner || state2.disabled || state2.generation !== owner.generation)
@@ -895,7 +1024,12 @@
       }
       if (!valid()) return null;
       if (ordered && context)
-        this.#apiCandidate = { context, generation: state.generation, epoch: state.epoch };
+        this.#apiCandidate = {
+          context,
+          generation: state.generation,
+          epoch: state.epoch,
+          changedContent
+        };
       return outputs;
     }
     // Called at each original branch boundary. Normal input already captured its
@@ -925,8 +1059,23 @@
       if (!context || candidate?.context !== context || state.disabled || state.generation !== candidate.generation || state.epoch !== candidate.epoch)
         return;
       this.#apiCandidate = null;
-      if (Number.isSafeInteger(context.requestSequence) && context.requestSequence > 0)
-        this.#apiWatermark = Math.max(this.#apiWatermark, context.requestSequence);
+      const sequence = context.requestSequence;
+      if (sequence !== void 0 && Number.isSafeInteger(sequence) && sequence > this.#apiWatermark) {
+        this.#apiWatermark = sequence;
+        const current = this.#navigationClaim;
+        const before = current?.context.navigation;
+        const after = context.navigation;
+        if (current?.changedContent && !candidate.changedContent && current.generation === candidate.generation && current.epoch === candidate.epoch && current.context.contentId === context.contentId && before && after && before.bvid === after.bvid && before.aid === after.aid && before.episode === after.episode && before.part === after.part)
+          return;
+        this.#navigationClaim = after && context.contentId ? candidate : null;
+      }
+    }
+    claimNavigation(previous, next, now) {
+      const claim = this.#navigationClaim;
+      this.#navigationClaim = null;
+      const state = this.session.get();
+      const dispatchedAt = claim?.context.dispatchedAt;
+      return !!claim && !state.disabled && claim.generation === state.generation && claim.epoch === state.epoch && dispatchedAt !== void 0 && Number.isFinite(dispatchedAt) && now >= dispatchedAt && now - dispatchedAt <= 5e3 && matchesPlayurlNavigation(previous, next, claim.context, claim.changedContent);
     }
     #sanitizeKnownItem(item, representation, kind, source, recordOutput, rewriteItem2) {
       const original = this.vault.rootUrl(representation);
@@ -1003,9 +1152,9 @@
             (revision2) => this.routes.observePlaybackFacts(null, revision2)
           )
         );
+      this.#stops.push(this.content.subscribeEpoch(() => this.reset()));
+      this.#stops.push(this.routes.subscribe((event) => this.handleRouteEvent(event)));
       this.#stops.push(
-        this.content.subscribeEpoch(() => this.reset()),
-        this.routes.subscribe((event) => this.handleRouteEvent(event)),
         this.monitor.subscribe((snapshot) => {
           if (this.#stops.length && this.#running)
             this.routes.observePlaybackFacts(snapshot.routingPlayback ?? null);
@@ -1056,9 +1205,16 @@
     }
     dispose() {
       this.#running = false;
-      this.routes.observePlaybackFacts(null);
-      this.earlyRetry?.dispose();
-      for (const stop of this.#stops.splice(0).reverse()) stop();
+      for (const stop of [
+        ...this.#stops.splice(0).reverse(),
+        () => this.routes.observePlaybackFacts(null),
+        () => this.earlyRetry?.dispose()
+      ]) {
+        try {
+          stop();
+        } catch {
+        }
+      }
     }
   };
 
@@ -1806,11 +1962,8 @@
       this.storage = storage;
       this.now = now;
       this.#state = parseSettings(storage.get(SETTINGS_KEY, null), now());
-      this.#stopRemote = storage.listen(SETTINGS_KEY, (value, remote) => {
-        if (!remote) return;
-        const next = parseSettings(value, this.now());
-        if (next.updatedAt < this.#state.updatedAt) return;
-        this.#publish(next);
+      this.#stopRemote = storage.listen(SETTINGS_KEY, (_value, remote) => {
+        if (remote) this.#reconcile();
       });
     }
     storage;
@@ -1823,6 +1976,7 @@
       considerNativeSources: 0
     };
     #state;
+    #revision = 0;
     #listeners = /* @__PURE__ */ new Set();
     #stopRemote;
     get() {
@@ -1851,10 +2005,25 @@
         { ...value, schema: 2, updatedAt: Math.max(now, current.updatedAt + 1) },
         now
       );
+      const revision2 = ++this.#revision;
       this.storage.set(SETTINGS_KEY, next);
-      return next;
+      return { next, revision: revision2 };
+    }
+    #reconcile() {
+      const revision2 = this.#revision;
+      let current;
+      try {
+        current = this.#readForWrite();
+      } catch {
+        return this.#state;
+      }
+      return revision2 === this.#revision ? this.#publish(current) : this.#state;
+    }
+    #publishSaved(saved) {
+      return saved.revision === this.#revision ? this.#publish(saved.next) : this.#reconcile();
     }
     #publish(next) {
+      this.#revision++;
       this.#state = next;
       this.#emit();
       return next;
@@ -1874,7 +2043,7 @@
         return await this.storage.withLock("settings", () => {
           const current = this.#readForWrite();
           const now = this.now();
-          return this.#publish(this.#save({ ...current, ...change }, current, now));
+          return this.#publishSaved(this.#save({ ...current, ...change }, current, now));
         });
       } finally {
         releaseEarlyRetry();
@@ -1885,7 +2054,7 @@
       if (!isCatalogHost(host)) throw new TypeError("Unknown Catalog host");
       return await this.storage.withLock("settings", () => {
         const now = this.now(), current = this.#readForWrite(now);
-        return this.#publish(
+        return this.#publishSaved(
           this.#save(
             { ...current, catalogOverrides: { ...current.catalogOverrides, [host]: enabled } },
             current,
@@ -1897,12 +2066,11 @@
     async reset() {
       const release = this.#holdOff(["considerNativeSources", "earlyRetryEnabled"]);
       try {
-        const next = await this.storage.withLock("settings", () => {
+        const saved = await this.storage.withLock("settings", () => {
           const now = this.now(), current = this.#readForWrite(now);
           return this.#save(defaultSettings(now), current, now);
         });
-        if (next.updatedAt < this.#state.updatedAt) return this.#state;
-        return this.#publish(next);
+        return this.#publishSaved(saved);
       } finally {
         release();
       }
@@ -4843,6 +5011,23 @@
       if (context) this.vault.registerAlias(context.representation, target);
       return appliedRoute(decision, target, context, streamKey, sourceHost, match, outputRole);
     }
+    previewCatalogOutput(urls, kind) {
+      const fixed = this.settings.get().fixedHost;
+      const hosts = fixed && isCatalogHost(fixed) ? [fixed, ...TRUSTED_CATALOG.filter((host) => host !== fixed)] : TRUSTED_CATALOG;
+      for (const source of urls) {
+        const parsed = parseMediaUrl(source);
+        if (!parsed?.replaceable || parsed.url.protocol !== "https:" || parsed.url.username || parsed.url.password || parsed.url.port)
+          continue;
+        const outputs = hosts.flatMap((host) => {
+          if (this.#hardRestriction(host, kind) || this.#incompatible(source, host)) return [];
+          const output = replaceUrlHost(source, host);
+          return output && parseMediaUrl(output)?.kind === "normal" ? [output] : [];
+        });
+        const [primary, ...backups] = outputs.slice(0, 6);
+        if (primary) return { primary, backups };
+      }
+      return null;
+    }
     opaqueOutput(representation, original, originals, source) {
       const context = this.vault.identity(representation);
       if (!context) return { primary: "", backups: [] };
@@ -5266,7 +5451,18 @@
       this.#emit({ type: "route-confirmed", at: observation.completedAt, observation });
     }
     snapshot() {
-      const session = this.session.get(), pending = this.#ownership.selection?.phase === "pending", activeRepresentation = this.#ownership.selection?.representation ?? session.representation, active = activeRepresentation ? this.#plans.get(activeRepresentation) : null, representation = !pending && session.representation ? this.vault.groupSummary(session.representation) : null, currentCapacity = this.#capacity(session, active);
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const before = this.session.get();
+        const revision2 = this.#policyRevision;
+        const snapshot = this.#snapshot(before);
+        const after = this.session.get();
+        if (before.generation === after.generation && before.epoch === after.epoch && revision2 === this.#policyRevision)
+          return snapshot;
+      }
+      return EMPTY_ROUTE_SNAPSHOT;
+    }
+    #snapshot(session) {
+      const pending = this.#ownership.selection?.phase === "pending", activeRepresentation = this.#ownership.selection?.representation ?? session.representation, active = activeRepresentation ? this.#plans.get(activeRepresentation) : null, representation = !pending && session.representation ? this.vault.groupSummary(session.representation) : null, currentCapacity = this.#capacity(session, active);
       const circuits = Object.freeze(
         this.evidence.list().filter((row) => row.circuitLevel > 0 || row.circuitUntil > this.clock.now()).map(
           (row) => this.#circuits.snapshot(
@@ -5705,6 +5901,7 @@
       this.#closeStartup("generation");
       this.#startupQualifiedHosts = [];
       this.#marker++;
+      this.#lastStatus = null;
       this.#failedAt = null;
       this.#snapshot = Object.freeze({
         state: "idle",
@@ -5741,13 +5938,17 @@
       running?.controller.abort(reason);
     }
     willGateStartup(url) {
-      return this.#startupLease.phase !== "closed" && !!this.routes.startupOptions(url)?.candidates.length;
+      return this.#startupLease.phase !== "closed" && !(this.#startupLease.phase === "available" && this.#lastStatus?.seeking) && !!this.routes.startupOptions(url)?.candidates.length;
     }
     /** The player request, never a page hint, authorizes this one bounded startup window. */
     async prepareStartup(url, signal = null, requestBytes = null) {
       if (signal?.aborted) throw cancellationReason(signal);
       if (this.#startupLease.phase === "closed") return;
       if (this.#startupLease.phase === "available") {
+        if (this.#lastStatus?.seeking) {
+          this.noteUnpreflighted("seeking");
+          return;
+        }
         const cursor = Math.max(0, Number(this.meta.get().catalogCursor) || 0);
         const options = this.routes.startupOptions(url, cursor, requestBytes);
         if (!options?.candidates.length) {
@@ -7182,7 +7383,7 @@
         progressObservation: this.#observation,
         playableBufferSec: video.playableBufferSec,
         visible,
-        seeking: video.seeking || now < this.#seekGraceUntil,
+        seeking: video.seeking || controls.dragging || now < this.#seekGraceUntil,
         recovering: this.recovery.isRecovering(),
         disabled
       });
@@ -7451,7 +7652,7 @@
 
   // src-v2/application/lifecycle-controller.ts
   var LifecycleController = class {
-    constructor(session, settings, vault, routes, playurl, pagePlayinfo, monitor, now, navigation, scheduler) {
+    constructor(session, settings, vault, routes, playurl, pagePlayinfo, monitor, now, navigation, scheduler, monotonicNow = () => null) {
       this.session = session;
       this.settings = settings;
       this.vault = vault;
@@ -7462,6 +7663,7 @@
       this.now = now;
       this.navigation = navigation;
       this.scheduler = scheduler;
+      this.monotonicNow = monotonicNow;
     }
     session;
     settings;
@@ -7473,6 +7675,7 @@
     now;
     navigation;
     scheduler;
+    monotonicNow;
     static {
       __name(this, "LifecycleController");
     }
@@ -7527,7 +7730,13 @@
       if (!this.#active) return;
       const key = this.navigation.key();
       if (key === this.#pageKey) return;
+      const previous = this.#pageKey;
       this.#pageKey = key;
+      const now = readMonotonic(this.monotonicNow);
+      if (now !== null && this.playurl.claimNavigation?.(previous, key, now)) {
+        this.#pending = null;
+        return;
+      }
       this.#beginGeneration();
       this.#applyPending();
     }
@@ -7585,6 +7794,9 @@
     }
     lifecycleKey() {
       return this.controller.lifecycleKey();
+    }
+    claimNavigation(previous, next, now) {
+      return this.controller.claimNavigation?.(previous, next, now) ?? false;
     }
     transform(payload, source = "trusted-api", responseKey, context) {
       const root = isRecord(payload) ? payload : null;
@@ -9011,6 +9223,17 @@
       }
       this.#current = value;
       const adapter = this;
+      let active = true;
+      let lastAssigned = value;
+      let assigned = false;
+      let assignment = 0;
+      let savedAssignment = 0;
+      const remember = /* @__PURE__ */ __name((serial, next) => {
+        if (serial <= savedAssignment) return;
+        savedAssignment = serial;
+        assigned = true;
+        lastAssigned = next;
+      }, "remember");
       const getter = /* @__PURE__ */ __name(() => {
         let current;
         if (descriptor?.get) {
@@ -9020,7 +9243,7 @@
             current = adapter.#current;
           }
         } else current = adapter.#current;
-        if (!adapter.rewriteBeforePageSetter()) return current;
+        if (!active || !adapter.rewriteBeforePageSetter()) return current;
         try {
           return adapter.#adopt(current) ? current : void 0;
         } catch {
@@ -9028,6 +9251,8 @@
         }
       }, "getter");
       const setter = /* @__PURE__ */ __name((next) => {
+        if (!active) return;
+        const serial = ++assignment;
         if (adapter.rewriteBeforePageSetter()) {
           const previous = adapter.#current;
           try {
@@ -9040,10 +9265,14 @@
             return;
           }
           if (descriptor?.set) descriptor.set.call(target, next);
+          else remember(serial, next);
           return;
         }
         if (descriptor?.set) descriptor.set.call(target, next);
-        else adapter.#current = next;
+        else {
+          adapter.#current = next;
+          remember(serial, next);
+        }
         adapter.#adopt(next);
       }, "setter");
       try {
@@ -9057,13 +9286,20 @@
         return;
       }
       this.#restore = () => {
+        active = false;
         try {
           const current = Object.getOwnPropertyDescriptor(target, "__playinfo__");
-          if (current?.get !== getter || current.set !== setter) return;
-          if (descriptor) Object.defineProperty(target, "__playinfo__", descriptor);
+          if (current?.get !== getter || current.set !== setter || !current.configurable || current.enumerable !== (descriptor?.enumerable ?? true))
+            return;
+          if (descriptor)
+            Object.defineProperty(
+              target,
+              "__playinfo__",
+              descriptor.writable && assigned ? { ...descriptor, value: lastAssigned } : descriptor
+            );
           else {
             delete target.__playinfo__;
-            if (adapter.#current !== void 0) target.__playinfo__ = adapter.#current;
+            if (assigned) target.__playinfo__ = lastAssigned;
           }
         } catch {
         }
@@ -9071,8 +9307,9 @@
       if (value !== void 0) this.#adopt(value);
     }
     dispose() {
-      this.#restore?.();
+      const restore = this.#restore;
       this.#restore = null;
+      restore?.();
     }
     #adopt(payload) {
       this.#current = payload;
@@ -9192,10 +9429,13 @@
       this.#lastBlocked = Object.freeze({ method, host: hostOf(url), reason });
     }
     apiDispatch(url, captured) {
+      const context = captured ?? playurlRequestContext(url);
+      const dispatchedAt = context.navigation ? this.tick() : null;
       return Object.freeze({
-        ...captured ?? playurlRequestContext(url),
+        ...context,
         generation: Number(this.session.get().generation),
-        requestSequence: ++this.#apiDispatchSerial
+        requestSequence: ++this.#apiDispatchSerial,
+        ...dispatchedAt !== null ? { dispatchedAt } : {}
       });
     }
     nextResponseKey(prefix) {
@@ -9398,6 +9638,7 @@
           const requestContext = self.apiDispatch(originalUrl);
           const response2 = await native(sourceRequest, false);
           if (self.settings.get().disabled) return response2;
+          if (requestContext.auxiliary && !self.routes.isCatalogOnly()) return response2;
           const catalogOnly = /* @__PURE__ */ __name(() => !self.settings.get().disabled && self.routes.isCatalogOnly(), "catalogOnly");
           const blocked = /* @__PURE__ */ __name(() => copyResponseSurface(
             new Response(blockedPlayurlText(), {
@@ -9833,6 +10074,7 @@
 
   // src-v2/adapters/transport/xhr-response.ts
   function transformXhrText(context, state, raw, strict, status) {
+    if (state.requestContext.auxiliary && !strict) return raw;
     if (state.transformedText === null) {
       try {
         const payload = JSON.parse(raw), result = context.playurl.transform(
@@ -9857,16 +10099,18 @@
   }
   __name(transformXhrText, "transformXhrText");
   function transformXhrJson(context, state, raw, strict, status) {
+    if (state.requestContext.auxiliary && !strict) return raw;
     if (state.transformedJson === void 0) {
       try {
+        const payload = state.requestContext.auxiliary ? structuredClone(raw) : raw;
         const result = context.playurl.transform(
-          raw,
+          payload,
           "trusted-api",
           state.responseKey,
           state.requestContext
         );
         context.notePlayurl("xhr", status(), result, state.apiEndpoint ?? "playurl");
-        state.transformedJson = strict && !result.accepted ? blockedPlayurl() : raw;
+        state.transformedJson = strict && !result.accepted ? blockedPlayurl() : payload;
       } catch {
         context.notePlayurl(
           "xhr",
@@ -10796,6 +11040,7 @@
     }
     #restores = [];
     #nativeHidden = null;
+    #deactivate = null;
     #controlLoss = /* @__PURE__ */ new Set();
     subscribeControlLoss(listener) {
       this.#controlLoss.add(listener);
@@ -10804,7 +11049,7 @@
       };
     }
     install() {
-      if (this.#restores.length) return;
+      if (this.#deactivate) return;
       const hidden = Object.getOwnPropertyDescriptor(Document.prototype, "hidden");
       Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState");
       this.#nativeHidden = () => {
@@ -10814,23 +11059,34 @@
           return false;
         }
       };
-      this.#spoof("hidden", false);
-      this.#spoof("visibilityState", "visible");
+      let active = true;
+      this.#deactivate = () => {
+        active = false;
+      };
       const guard = /* @__PURE__ */ __name((event) => {
-        if (!this.#nativeHidden?.()) return;
+        if (!active || !this.#nativeHidden?.()) return;
         if (event.isTrusted) this.#notifyControlLoss();
         event.stopImmediatePropagation();
       }, "guard");
-      document.addEventListener("visibilitychange", guard, true);
-      document.addEventListener("webkitvisibilitychange", guard, true);
       const blurGuard = /* @__PURE__ */ __name((event) => {
+        if (!active) return;
         if (event.isTrusted && event.target === window) this.#notifyControlLoss();
         event.stopImmediatePropagation();
       }, "blurGuard");
-      window.addEventListener("blur", blurGuard, true);
-      this.#restores.push(() => document.removeEventListener("visibilitychange", guard, true));
-      this.#restores.push(() => document.removeEventListener("webkitvisibilitychange", guard, true));
-      this.#restores.push(() => window.removeEventListener("blur", blurGuard, true));
+      try {
+        const page = document, view = window;
+        this.#spoof("hidden", false);
+        this.#spoof("visibilityState", "visible");
+        for (const type of ["visibilitychange", "webkitvisibilitychange"]) {
+          this.#restores.push(() => page.removeEventListener(type, guard, true));
+          page.addEventListener(type, guard, true);
+        }
+        this.#restores.push(() => view.removeEventListener("blur", blurGuard, true));
+        view.addEventListener("blur", blurGuard, true);
+      } catch (error) {
+        this.dispose();
+        throw error;
+      }
     }
     setEnabled(enabled) {
       if (enabled) this.install();
@@ -10840,13 +11096,15 @@
       return !(this.#nativeHidden?.() ?? false);
     }
     dispose() {
+      this.#deactivate?.();
+      this.#deactivate = null;
+      this.#nativeHidden = null;
       for (const restore of this.#restores.splice(0).reverse()) {
         try {
           restore();
         } catch {
         }
       }
-      this.#nativeHidden = null;
     }
     #notifyControlLoss() {
       for (const listener of [...this.#controlLoss]) {
@@ -11968,13 +12226,17 @@ ${label}備用路線：${row.plannedHost}｜${stage}` + (row.responseHost ? `｜
 
   // src-v2/adapters/navigation.ts
   function navigationKey(pathname, search) {
-    if (!/^\/(?:video\/[^/]+|bangumi\/play\/[^/]+)\/?$/.test(pathname)) return pathname + search;
+    pathname = pathname.replace(/^\/(?:zh-Hant|zh-Hans|en|ja)(?=\/(?:video|list|watchlater)\/)/, "");
+    const list = /^\/(?:list|watchlater)(?:\/|$)/.test(pathname);
+    if (!list && !/^\/(?:video\/[^/]+|bangumi\/play\/[^/]+)\/?$/.test(pathname))
+      return pathname + search;
     const path = pathname.replace(/\/$/, "");
     const query = new URLSearchParams(search);
     query.delete("vd_source");
     query.delete("spm_id_from");
     const parts = query.getAll("p");
-    if (path.startsWith("/video/") && parts.length === 1 && parts[0] === "1") query.delete("p");
+    if ((list || path.startsWith("/video/")) && parts.length === 1 && parts[0] === "1")
+      query.delete("p");
     query.sort();
     const suffix = query.toString();
     return path + (suffix ? "?" + suffix : "");
@@ -12107,7 +12369,6 @@ ${label}備用路線：${row.plannedHost}｜${stage}` + (row.responseHost ? `｜
       routes,
       monotonicNow
     );
-    transport.install();
     const earlyRetry = new EarlyRetryController(
       {
         alternatives: /* @__PURE__ */ __name((request, demand) => routes.earlyRetryAlternatives(request, demand), "alternatives"),
@@ -12157,7 +12418,8 @@ ${label}備用路線：${row.plannedHost}｜${stage}` + (row.responseHost ? `｜
       runtime,
       now,
       new BrowserNavigation(),
-      scheduler
+      scheduler,
+      monotonicNow
     );
     const webRtc = new WebRtcAdapter(settings);
     const commands = new ControlCommands(settings, restrictions, evidence, meta, routes);
@@ -12179,12 +12441,14 @@ ${label}備用路線：${row.plannedHost}｜${stage}` + (row.responseHost ? `｜
       })
     });
     const panel = new PlayerPanel(center, settings, session, monitor);
-    runtime.install();
-    webRtc.install();
     try {
+      transport.install();
+      runtime.install();
+      webRtc.install();
       lifecycle.start();
     } catch {
       for (const release of [
+        () => lifecycle.dispose(),
         () => runtime.dispose(),
         () => transport.dispose(),
         () => webRtc.dispose(),

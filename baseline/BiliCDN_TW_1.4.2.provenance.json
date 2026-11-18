@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-11-18T18:23:34.076Z",
+  "upstream": {
+    "version": "1.4.2",
+    "author": "jiyunshi",
+    "license": "MIT",
+    "commit": "182f9b2e1571dd2ddd662d8bc1f609ae83c1fde6",
+    "previousCommit": "b32f949d216dc92cd1efa0b0d023f650b126fcb8",
+    "sourceUrl": "https://raw.githubusercontent.com/jiyunshi/Bilibili-CDN-TW/182f9b2e1571dd2ddd662d8bc1f609ae83c1fde6/bilibili-cdn-tw.user.js",
+    "downloadUrl": "https://update.greasyfork.org/scripts/579776/Bilibili%20CDN%20%E5%8F%B0%E7%81%A3%E5%84%AA%E5%8C%96.user.js",
+    "path": "baseline/BiliCDN_TW_1.4.2.original.user.js",
+    "bytes": 374668,
+    "sha256": "c7012c447bac3ad1c2d6113e9ebd69d6dcae89ca6b2653ffb7c83e1eeac78489",
+    "gitBlob": "ec188f912699167d8bd728cebc2cbd4e412a9403",
+    "greasyFork": {
+      "bytes": 374668,
+      "sha256": "c7012c447bac3ad1c2d6113e9ebd69d6dcae89ca6b2653ffb7c83e1eeac78489",
+      "byteIdentical": true
+    }
+  },
+  "comparison": {
+    "localCommit": "0b8e25d0af507ed17333f2b9acdf0ea2114361a0",
+    "version": "2.2.22",
+    "scope": "Pinned upstream source comparison and synthetic v2 contracts"
+  }
+}
