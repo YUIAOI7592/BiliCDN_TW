@@ -144,6 +144,7 @@ export const start = (): void => {
     now,
     new BrowserNavigation(),
     scheduler,
+    monotonicNow,
   )
   const webRtc = new WebRtcAdapter(settings)
   const commands = new ControlCommands(settings, restrictions, evidence, meta, routes)

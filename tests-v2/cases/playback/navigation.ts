@@ -4,11 +4,17 @@ import { fixture } from '../../support/runtime-fixture.ts'
 import { BrowserNavigation } from '../../../src-v2/adapters/navigation.ts'
 import { LifecycleController } from '../../../src-v2/application/lifecycle-controller.ts'
 import { TransportContext } from '../../../src-v2/adapters/transport/transport-context.ts'
+import { FetchHookAdapter } from '../../../src-v2/adapters/transport/fetch-hook.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
-import { playurlRequestContext } from '../../../src-v2/domain/playurl-content.ts'
 
 function createNavigationPlayback(t: TestContext) {
   const f = fixture(t)
+  let wallOffset = 0
+  let clockAvailable = true
+  const wallNow = () => f.clock.now() + wallOffset
+  const monotonicNow = () => (clockAvailable ? f.clock.now() : null)
+  const nativeMicrotask = globalThis.queueMicrotask
+  let replacingHistory = false
   f.lifecycle.dispose()
   const location = new URL('https://www.bilibili.com/video/test/?p=1&vd_source=initial')
   const target = new EventTarget()
@@ -25,7 +31,10 @@ function createNavigationPlayback(t: TestContext) {
     history,
     addEventListener: target.addEventListener.bind(target),
     removeEventListener: target.removeEventListener.bind(target),
-    queueMicrotask: (fn: () => void) => f.clock.microtask(fn),
+    queueMicrotask: (fn: () => void) => {
+      if (replacingHistory) f.clock.microtask(fn)
+      else nativeMicrotask(fn)
+    },
   }))
     f.scope.defineGlobal(name, { configurable: true, value })
   const lifecycle = f.scope.own(
@@ -37,9 +46,10 @@ function createNavigationPlayback(t: TestContext) {
       f.playurl,
       { install: () => undefined, dispose: () => undefined },
       f.runtime,
-      f.clock.now,
+      wallNow,
       new BrowserNavigation(),
       f.clock,
+      monotonicNow,
     ),
   )
   lifecycle.start()
@@ -55,9 +65,9 @@ function createNavigationPlayback(t: TestContext) {
       prepareStartup: async () => undefined,
       noteUnpreflighted: () => undefined,
     },
-    f.clock.now,
+    wallNow,
     createRuntimeIds(),
-    f.clock.now,
+    monotonicNow,
   )
   const payload = (content: string) => ({
     code: 0,
@@ -107,10 +117,29 @@ function createNavigationPlayback(t: TestContext) {
     )
   }
   const navigate = (url: string) => {
-    history.replaceState(null, '', url)
+    replacingHistory = true
+    try {
+      history.replaceState(null, '', url)
+    } finally {
+      replacingHistory = false
+    }
     f.clock.advance(0)
   }
-  return { ...f, lifecycle, payload, start, finish, navigate }
+  return {
+    ...f,
+    lifecycle,
+    context,
+    payload,
+    start,
+    finish,
+    navigate,
+    correctWallClock: (offset: number) => {
+      wallOffset = offset
+    },
+    loseMonotonicClock: () => {
+      clockAvailable = false
+    },
+  }
 }
 
 test('V224 tracking navigation after page expiry preserves confirmed decisions and independent media summaries', async (t) => {
@@ -161,43 +190,56 @@ for (const order of [
   'api-first',
   'url-first',
   'expired',
+  'wall-clock-correction',
+  'clock-unavailable',
   'unrelated',
   'missing-part',
   'exact-part',
   'rapid',
+  'matching-refresh',
+  'refresh-does-not-extend-lease',
+  'requires-canonical-id',
 ] as const) {
   test(`UP142 navigation pairs accepted primary responses only when eligible: ${order}`, (t) => {
     const f = createNavigationPlayback(t)
     f.navigate('/video/BV1111111111')
     const before = f.session.get()
     let sequence = 0
-    const accept = (cid: string, bvid: string, part = '') => {
+    const accept = (cid: string, identity: string, part = '') => {
       const value = f.payload(cid)
-      const url = `https://api.bilibili.com/x/player/wbi/playurl?is_main_page=true&cid=${cid}&bvid=${bvid}${part}`
-      const context = {
-        ...playurlRequestContext(url),
-        generation: Number(f.session.get().generation),
-        requestSequence: ++sequence,
-        dispatchedAt: f.clock.now(),
-      }
+      const url = `https://api.bilibili.com/x/player/wbi/playurl?is_main_page=true&cid=${cid}&${identity}${part}`
+      const context = f.context.apiDispatch(url)
       assert.equal(
-        f.playurl.transform(value, 'trusted-api', String(sequence), context).accepted,
+        f.playurl.transform(value, 'trusted-api', String(++sequence), context).accepted,
         true,
       )
       return value.data.dash.video[0]!.base_url
     }
-    accept('101', 'BV1111111111')
+    accept('101', 'bvid=BV1111111111')
     const part = order === 'missing-part' || order === 'exact-part'
     const nextBvid = part ? 'BV1111111111' : 'BV2222222222'
-    const destination = `/video/${nextBvid}${part ? '?p=2' : ''}`
+    const query = part ? '?p=2' : order === 'requires-canonical-id' ? '?aid=202' : ''
+    const destination = `/video/${nextBvid}${query}`
     if (order === 'url-first') f.navigate(destination)
-    const newUrl = accept('102', nextBvid, order === 'exact-part' ? '&p=2' : '')
+    if (order === 'clock-unavailable') f.loseMonotonicClock()
+    const nextIdentity = order === 'requires-canonical-id' ? 'aid=202' : `bvid=${nextBvid}`
+    const newUrl = accept('102', nextIdentity, order === 'exact-part' ? '&p=2' : '')
     if (order === 'expired') f.clock.advance(5001)
-    if (order === 'rapid') accept('103', 'BV3333333333')
+    if (order === 'wall-clock-correction') {
+      f.clock.advance(5001)
+      f.correctWallClock(-4000)
+    }
+    if (order === 'matching-refresh' || order === 'refresh-does-not-extend-lease') {
+      f.clock.advance(2500)
+      accept('102', nextIdentity)
+      if (order === 'refresh-does-not-extend-lease') f.clock.advance(2501)
+    }
+    if (order === 'rapid') accept('103', 'bvid=BV3333333333')
     if (order !== 'url-first')
       f.navigate(order === 'unrelated' ? '/video/BV4444444444' : destination)
     const current = f.session.get()
-    const apiPaired = order === 'api-first' || order === 'exact-part'
+    const apiPaired =
+      order === 'api-first' || order === 'exact-part' || order === 'matching-refresh'
     const kept = apiPaired || order === 'url-first'
     assert.equal(Boolean(f.vault.match(newUrl).context), kept)
     assert.equal(Number(current.generation), Number(before.generation) + (apiPaired ? 0 : 1))
@@ -205,28 +247,76 @@ for (const order of [
   })
 }
 
-test('UP142 watchlater can complete the address of the accepted main video once', (t) => {
+test('UP142 actual Fetch accepts the new response and ignores a late old response during pairing', async (t) => {
+  const f = createNavigationPlayback(t)
+  f.navigate('/video/BV1111111111')
+  const before = f.session.get()
+  const pending = new Map<string, (response: Response) => void>()
+  const windowFixture = {
+    fetch: (input: RequestInfo | URL) => {
+      const request = new Request(input)
+      return new Promise<Response>((resolve) => pending.set(new URL(request.url).search, resolve))
+    },
+  }
+  f.scope.defineGlobal('unsafeWindow', { configurable: true, value: windowFixture })
+  const hook = new FetchHookAdapter(f.context).install()
+  assert.ok(hook)
+  f.scope.defer(() => hook.restore())
+  const endpoint = 'https://api.bilibili.com/x/player/wbi/playurl'
+  const main = (cid: string, bvid: string) => `?is_main_page=true&cid=${cid}&bvid=${bvid}`
+  const first = main('101', 'BV1111111111')
+  const next = main('102', 'BV2222222222')
+  const send = (query: string) => windowFixture.fetch(endpoint + query)
+  const finish = (query: string, cid: string) => {
+    const deliver = pending.get(query)
+    assert.ok(deliver)
+    deliver(new Response(JSON.stringify(f.payload(cid))))
+  }
+  const seeded = send(first)
+  finish(first, '101')
+  await seeded
+  const late = send(first)
+  const fresh = send(next)
+  finish(next, '102')
+  const response = (await (await fresh).json()) as ReturnType<typeof f.payload>
+  assert.equal(f.context.snapshot().lastPlayurl?.accepted, true)
+  const saved = response.data.dash.video[0]!.base_url
+  assert.ok(f.vault.match(saved).context)
+  finish(first, '101')
+  await late
+  assert.equal(f.context.snapshot().lastPlayurl?.accepted, false)
+  f.navigate('/video/BV2222222222')
+  assert.equal(f.session.get().generation, before.generation)
+  assert.equal(Number(f.session.get().epoch), Number(before.epoch) + 1)
+  assert.ok(f.vault.match(saved).context)
+})
+
+function acceptedWatchlater(t: TestContext) {
   const f = createNavigationPlayback(t)
   f.navigate('/watchlater/')
   const before = f.session.get()
   const body = f.payload('101')
-  const request = playurlRequestContext(
+  const request = f.context.apiDispatch(
     'https://api.bilibili.com/x/player/wbi/playurl?cid=101&bvid=BV1111111111&is_main_page=true',
   )
-  assert.equal(
-    f.playurl.transform(body, 'trusted-api', 'watchlater-101', {
-      ...request,
-      generation: Number(before.generation),
-      requestSequence: 1,
-      dispatchedAt: f.clock.now(),
-    }).accepted,
-    true,
-  )
+  assert.equal(f.playurl.transform(body, 'trusted-api', 'watchlater-101', request).accepted, true)
+  return { ...f, before, body }
+}
+
+test('UP142 watchlater can complete the address of the accepted main video once', (t) => {
+  const f = acceptedWatchlater(t)
   f.navigate('/watchlater/?bvid=BV1111111111')
-  assert.equal(f.session.get().generation, before.generation)
-  assert.ok(f.vault.match(body.data.dash.video[0]!.base_url).context)
+  assert.equal(f.session.get().generation, f.before.generation)
+  assert.ok(f.vault.match(f.body.data.dash.video[0]!.base_url).context)
   f.navigate('/watchlater/?bvid=BV2222222222')
-  assert.equal(Number(f.session.get().generation), Number(before.generation) + 1)
+  assert.equal(Number(f.session.get().generation), Number(f.before.generation) + 1)
+})
+
+test('UP142 watchlater keeps the ordinary reset when other query state changes', (t) => {
+  const f = acceptedWatchlater(t)
+  f.navigate('/watchlater/?bvid=BV1111111111&view=archive')
+  assert.equal(Number(f.session.get().generation), Number(f.before.generation) + 1)
+  assert.equal(f.vault.match(f.body.data.dash.video[0]!.base_url).context, null)
 })
 
 test('V224 real part change clears old summaries, rejects late work and rebuilds from new transfers', async (t) => {

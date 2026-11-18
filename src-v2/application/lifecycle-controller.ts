@@ -6,6 +6,7 @@ import { type MonitorPort } from './playback/monitor-contracts.ts'
 import { type RouteCoordinatorPort } from './routing/route-contracts.ts'
 import { type SessionPort } from '../state/session-contracts.ts'
 import { type SignedRouteVaultPort } from '../state/vault-contracts.ts'
+import { readMonotonic } from '../domain/measurement-time.ts'
 interface PendingAssignment {
   readonly payload: unknown
   readonly assignedAt: number
@@ -30,6 +31,7 @@ export class LifecycleController implements LifecyclePort {
     private readonly now: () => number,
     private readonly navigation: NavigationPort,
     private readonly scheduler: SchedulerPort,
+    private readonly monotonicNow: () => number | null = () => null,
   ) {}
 
   start(): void {
@@ -85,7 +87,8 @@ export class LifecycleController implements LifecyclePort {
     if (key === this.#pageKey) return
     const previous = this.#pageKey
     this.#pageKey = key
-    if (this.playurl.claimNavigation?.(previous, key, this.now())) {
+    const now = readMonotonic(this.monotonicNow)
+    if (now !== null && this.playurl.claimNavigation?.(previous, key, now)) {
       this.#pending = null
       return
     }

@@ -18,7 +18,6 @@ test('visibility registration failure rolls back all resources acquired by the e
       ...result.resources,
       escaped: result.escaped,
       fetchRestored: result.window.fetch === result.nativeFetch,
-      xhrRestored: result.NativeXhr.prototype.send === result.native.send?.value,
       webRtcRestored: result.window.RTCPeerConnection === result.NativePeer,
     },
     {
@@ -32,10 +31,10 @@ test('visibility registration failure rolls back all resources acquired by the e
       visibilityShadow: false,
       escaped: undefined,
       fetchRestored: true,
-      xhrRestored: true,
       webRtcRestored: true,
     },
   )
+  assert.deepEqual(Object.getOwnPropertyDescriptors(result.NativeXhr.prototype), result.native)
 })
 
 test('visibility rollback continues after a listener removal throws', async (t) => {

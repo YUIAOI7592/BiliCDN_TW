@@ -171,11 +171,12 @@ export class TransportContext {
   }
   apiDispatch(url: string, captured?: PlayurlRequestContext): PlayurlRequestContext {
     const context = captured ?? playurlRequestContext(url)
+    const dispatchedAt = context.navigation ? this.tick() : null
     return Object.freeze({
       ...context,
       generation: Number(this.session.get().generation),
       requestSequence: ++this.#apiDispatchSerial,
-      ...(context.navigation ? { dispatchedAt: this.now() } : {}),
+      ...(dispatchedAt !== null ? { dispatchedAt } : {}),
     })
   }
   nextResponseKey(prefix: string): string {

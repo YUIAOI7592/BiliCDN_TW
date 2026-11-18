@@ -5,6 +5,8 @@ import { type PlaybackNavigationIdentity, type PlayurlRequestContext } from './p
 const numericId = (value: string): string | null =>
   /^[0-9]{1,20}$/.test(value) ? value.replace(/^0+/, '') || null : null
 const bvid = (value: string): string | null => (/^BV[0-9A-Za-z]{10}$/.test(value) ? value : null)
+const aidKeys = ['aid', 'avid', 'oid']
+const episodeKeys = ['ep_id', 'epid']
 
 function checkedIdentity(query: URLSearchParams, pathId: Partial<PlaybackNavigationIdentity> = {}) {
   const read = (
@@ -18,8 +20,8 @@ function checkedIdentity(query: URLSearchParams, pathId: Partial<PlaybackNavigat
     return value && (!path || value === path) ? value : undefined
   }
   const video = read(['bvid'], bvid, pathId.bvid)
-  const aid = read(['aid', 'avid', 'oid'], numericId, pathId.aid)
-  const episode = read(['ep_id', 'epid'], numericId, pathId.episode)
+  const aid = read(aidKeys, numericId, pathId.aid)
+  const episode = read(episodeKeys, numericId, pathId.episode)
   const part = read(['p'], numericId)
   if (video === undefined || aid === undefined || episode === undefined || part === undefined)
     return null
@@ -39,17 +41,27 @@ function navigationPage(key: string) {
   const episode = /^\/bangumi\/play\/ep([0-9]+)\/?$/.exec(path)?.[1]
   const list = /^\/(?:list|watchlater)(?:\/|$)/.test(path)
   if (!video && !episode && !list) return null
-  const pathId: Partial<PlaybackNavigationIdentity> = video
-    ? { bvid: bvid(video), aid: video.startsWith('av') ? numericId(video.slice(2)) : null }
-    : episode
-      ? { episode: numericId(episode) }
-      : {}
-  if ((video || episode) && !Object.values(pathId).some(Boolean)) return null
-  const identity = checkedIdentity(query, pathId)
+  const pathId: (typeof navigationIds)[number] | null = episode
+    ? 'episode'
+    : video?.startsWith('av')
+      ? 'aid'
+      : video
+        ? 'bvid'
+        : null
+  const canonical = episode
+    ? numericId(episode)
+    : video?.startsWith('av')
+      ? numericId(video.slice(2))
+      : video
+        ? bvid(video)
+        : null
+  if (pathId && !canonical) return null
+  const identity = checkedIdentity(query, pathId ? { [pathId]: canonical } : {})
   const cids = query.getAll('cid')
   const cid = cids.length === 1 ? numericId(cids[0]!) : null
   if (!identity || (cids.length && !cid)) return null
-  return { path, identity, cid, list }
+  for (const key of ['bvid', ...aidKeys, ...episodeKeys, 'cid', 'p']) query.delete(key)
+  return { path, pathId, identity, cid, list, remainingQuery: query.toString() }
 }
 
 export function matchesPlayurlNavigation(
@@ -62,6 +74,8 @@ export function matchesPlayurlNavigation(
     next = navigationPage(key),
     target = context.navigation
   if (!next || !target || !context.contentId || !hasSameId(next.identity, target)) return false
+  if (next.pathId && target[next.pathId] !== next.identity[next.pathId]) return false
+  if (previous && previous.remainingQuery !== next.remainingQuery) return false
   if (next.cid && next.cid !== context.contentId) return false
   const nextPart = next.identity.part ?? '1'
   if (target.part && target.part !== nextPart) return false

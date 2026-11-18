@@ -1478,11 +1478,18 @@
         ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: api-first"],
         ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: url-first"],
         ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: expired"],
+        ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: wall-clock-correction"],
+        ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: clock-unavailable"],
         ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: unrelated"],
         ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: missing-part"],
         ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: exact-part"],
         ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: rapid"],
-        ["orchestration", "UP142 watchlater can complete the address of the accepted main video once"]
+        ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: matching-refresh"],
+        ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: refresh-does-not-extend-lease"],
+        ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: requires-canonical-id"],
+        ["orchestration", "UP142 actual Fetch accepts the new response and ignores a late old response during pairing"],
+        ["orchestration", "UP142 watchlater can complete the address of the accepted main video once"],
+        ["orchestration", "UP142 watchlater keeps the ordinary reset when other query state changes"]
       ]
     },
     {

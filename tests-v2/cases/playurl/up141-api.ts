@@ -140,7 +140,34 @@ test('UP141-API exact OGV playview admission preserves ordinary endpoints and re
 for (const mode of ['native', 'catalog'] as const) {
   test(`UP142 ${mode} auxiliary Fetch and XHR preserve the main epoch and accepted watermark`, async (t) => {
     const f = fixture(t)
-    await f.settings.update({ considerNativeSources: mode === 'native' })
+    const originalHost = 'upos-sz-mirrorali.bilivideo.com'
+    await f.settings.update({
+      considerNativeSources: mode === 'native',
+      ...(mode === 'catalog' ? { catalogOverrides: { [originalHost]: false } } : {}),
+    })
+    const withAliases = (content: number) => {
+      const body = media(content)
+      const video = body.data.dash.video.map((item) => ({
+        ...item,
+        baseUrl: item.base_url,
+        backup_url: [item.base_url],
+        backupUrl: [item.base_url],
+      }))
+      return { ...body, data: { dash: { ...body.data.dash, video } } }
+    }
+    const checkOutput = (value: ReturnType<typeof withAliases>) => {
+      const item = value.data.dash.video[0]!
+      assert.equal(item.baseUrl, item.base_url)
+      assert.deepEqual(item.backupUrl, item.backup_url)
+      for (const url of [item.base_url, ...item.backup_url]) {
+        const host = new URL(url).host
+        if (mode === 'native') assert.equal(host, originalHost)
+        else {
+          assert.notEqual(host, originalHost)
+          assert.ok(TRUSTED_CATALOG.some((catalogHost) => host === catalogHost))
+        }
+      }
+    }
     const api = 'https://api.bilibili.com/x/player/wbi/playurl?cid='
     f.setPayload(media(100))
     await f.fetch(api + '100&is_main_page=true')
@@ -149,21 +176,25 @@ for (const mode of ['native', 'catalog'] as const) {
     earlier.send()
     const before = f.session.get()
     const route = f.routes.snapshot()
-    const preload = media(200)
+    const preload = withAliases(200)
     f.setPayload(preload)
     const response = await f.fetch(api + '200&gaia_source=pre-load&is_main_page=true')
     if (mode === 'native') assert.equal(response, f.nativeResponse())
-    const output = (await response.json()) as ReturnType<typeof media>
+    const output = (await response.json()) as ReturnType<typeof withAliases>
     const auxUrl = output.data.dash.video[0]!.base_url
-    if (mode === 'catalog') assert.ok(TRUSTED_CATALOG.some((host) => host === new URL(auxUrl).host))
+    checkOutput(output)
     assert.equal(f.vault.match(auxUrl).context, null)
     const hover = new f.NativeXhr()
     hover.open('GET', api + '300&gaia_source=view-card', true)
     hover.responseType = 'json'
     hover.send()
-    const hoverBody = media(300)
+    const hoverBody = withAliases(300)
+    const original = JSON.stringify(hoverBody)
     hover.receive(hoverBody)
-    assert.equal(hover.response, hoverBody)
+    const hoverOutput = hover.response as ReturnType<typeof withAliases>
+    checkOutput(hoverOutput)
+    if (mode === 'native') assert.equal(hoverOutput, hoverBody)
+    else assert.notEqual(hoverOutput, hoverBody)
     assert.equal(f.session.get(), before)
     assert.deepEqual(f.routes.snapshot(), route)
     await (await f.fetch(auxUrl)).arrayBuffer()
@@ -176,6 +207,11 @@ for (const mode of ['native', 'catalog'] as const) {
     earlier.receive(media(101))
     void earlier.response
     assert.equal(Number(f.session.get().epoch), Number(before.epoch) + 1)
+    if (mode === 'catalog') {
+      await f.settings.update({ considerNativeSources: true, catalogOverrides: {} })
+      assert.equal(hover.response, hoverBody)
+      assert.equal(JSON.stringify(hover.response), original)
+    }
   })
 }
 

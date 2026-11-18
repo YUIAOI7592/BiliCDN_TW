@@ -402,7 +402,25 @@ export class PlayurlController implements PlayurlControllerPort {
     const sequence = context.requestSequence
     if (sequence !== undefined && Number.isSafeInteger(sequence) && sequence > this.#apiWatermark) {
       this.#apiWatermark = sequence
-      this.#navigationClaim = context.navigation && context.contentId ? candidate : null
+      const current = this.#navigationClaim
+      const before = current?.context.navigation
+      const after = context.navigation
+      // A same-target refresh cannot erase an applied content change or renew its lease.
+      if (
+        current?.changedContent &&
+        !candidate.changedContent &&
+        current.generation === candidate.generation &&
+        current.epoch === candidate.epoch &&
+        current.context.contentId === context.contentId &&
+        before &&
+        after &&
+        before.bvid === after.bvid &&
+        before.aid === after.aid &&
+        before.episode === after.episode &&
+        before.part === after.part
+      )
+        return
+      this.#navigationClaim = after && context.contentId ? candidate : null
     }
   }
 

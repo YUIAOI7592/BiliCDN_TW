@@ -68,14 +68,15 @@ export function transformXhrJson(
   if (state.requestContext.auxiliary && !strict) return raw
   if (state.transformedJson === undefined) {
     try {
+      const payload = state.requestContext.auxiliary ? structuredClone(raw) : raw
       const result = context.playurl.transform(
-        raw,
+        payload,
         'trusted-api',
         state.responseKey,
         state.requestContext,
       )
       context.notePlayurl('xhr', status(), result, state.apiEndpoint ?? 'playurl')
-      state.transformedJson = strict && !result.accepted ? blockedPlayurl() : raw
+      state.transformedJson = strict && !result.accepted ? blockedPlayurl() : payload
     } catch {
       context.notePlayurl(
         'xhr',
