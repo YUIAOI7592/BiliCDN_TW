@@ -31,7 +31,9 @@ Codex Security 已於 2026-11-18 22:06（Asia/Taipei）完成固定差異審查�
 
 v2.2.20 五份原件已與來源標籤及原始校驗核對。公開 TAR＋gzip 為 153,579 bytes，SHA-256 `9a514a7f6963cb4ad6e6c703a0d5ad3521eac2731972cb21cea8bc2571a4f310`。九包已用系統 tar 獨立解壓，再以 `archive:check --restore-root` 核對通過。當版報告保存在[完整歷史](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-完整正文保存2026-11-18)。
 
-公開交付準備完成。初次預檢的憑證失效已透過 GitHub CLI 裝置登入恢復，並核對帳號與儲存庫推送權限。封裝附帶的報告保存封裝當時的狀態。
+初次預檢的憑證失效已透過 GitHub CLI 裝置登入恢復。發行時遠端 main 與 `v2.2.21` 標籤均指向 `95853b07782af9db39bcc6bb015152c00fd5a217`。2026-11-18 22:11:38（Asia/Taipei）發布 [v2.2.21](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.21) 為正式最新版，唯一附件為 `BiliCDN_TW.user.js`。
+
+公開 latest 與固定版本下載均為 HTTP 200。兩者的版本 v2.2.21、540,300 bytes 與 SHA-256 `2202170b1837534e2636f456e9b702e2466d4efad611c496a145f9fb327ebc7d` 均與本機封裝及 GitHub 附件摘要相符。追加此核對後，版本標籤及封裝快照維持原件。
 
 ## 來源隔離與實際安裝
 

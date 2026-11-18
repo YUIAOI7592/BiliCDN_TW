@@ -4,7 +4,7 @@
 
 ## 目前狀態
 
-v2.2.21 四組產品缺陷已修正，自動驗證與安全差異審查已完成。GitHub CLI 登入已恢復，公開交付進行中，見[本版報告](TEST_REPORT.md)。v2.2.20 的公開交付與裝載身分／接線重判已結案，依據見[該版完整正文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-完整正文保存2026-11-18)。
+v2.2.21 四組產品缺陷已修正，自動驗證、安全差異審查與公開交付均已完成，見[本版報告](TEST_REPORT.md)。本次交付範圍已結案。v2.2.20 的公開交付與裝載身分／接線重判見[該版完整正文](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-完整正文保存2026-11-18)。
 
 管理器識別、自然健康完整協定、安裝壓力與跨重載保存等未驗證項目保留於報告，不列為身分／接線的阻塞或自動待辦。原 FAIL／INVALID 不改判，缺口不補算 PASS；門檻依 [IAB 適用表](../.agents/skills/bilicdn-iab-validation/references/assertions-and-evidence.md#門檻的適用範圍) 與 [開發驗證範圍](../.agents/skills/bilicdn-verify-change/SKILL.md#依變更選擇驗證範圍)。已清除的自主目標及舊輪次保持停止，低緩衝與提前重試效益研究維持暫緩。
 
