@@ -29,7 +29,9 @@
 
 v2.2.21 五項發行原件與當版標籤、原始校驗及獨立 tar 解壓比對一致。公開 TAR＋gzip 為 152,670 bytes，SHA-256 `e8984cd3cb10bfdb79dbd665f01a269c641fe020c32be8d2708b77b38ca3360d`。十個公開包解壓至同一還原根後，`archive:check --restore-root` 通過。換版前的完整現行報告已追加至[歷史原文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2221-完整正文保存2026-11-18)。
 
-正式封裝及公開下載核對完成後追加交付證據。Release 快照記錄封裝當時的驗證狀態。
+2026-11-18 23:35:34（Asia/Taipei）發布 [v2.2.22](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.22) 為正式最新版。發行時遠端 main 與 v2.2.22 標籤解參照均為 `8e2bd6070c13051477df2c3c235e82dae86adee0`。唯一附件為 `BiliCDN_TW.user.js`。
+
+公開 latest 與固定版本下載均回傳 HTTP 200，版本均為 v2.2.22，大小均為 542,386 bytes。SHA-256 `9ecda13768287397a645f431a1534e95f35dd95b220c44d4d60e305ea78aa6c4` 與本機封裝、重建結果及 GitHub 附件摘要一致。Release 快照保留封裝當時的驗證狀態。
 
 ## 來源隔離與實際安裝
 
