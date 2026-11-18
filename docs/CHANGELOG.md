@@ -2,12 +2,19 @@
 
 各節記錄標示版本或維護日期的變更與當時驗證範圍；後續安裝結果及更正請沿該版報告查閱。「未執行瀏覽器驗收」不代表往後從未驗收。舊版診斷、分頁原線對照及掉幀用途不構成現行功能或規則；現行契約見 [ARCHITECTURE](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/ARCHITECTURE.md)。
 
+## v2.2.21
+
+- 設定寫入先在鎖內確認儲存可讀。暫時讀取失敗會保留原偏好，個別通知例外也不會影響已保存的設定。
+- 健康探測在送出及保存前重驗候選授權；控制中心僅在樣本確認保存後顯示已記錄。
+- 正常模式保留無本文的 playurl Fetch 原生回應，僅 Catalog 模式沿用安全 503。SDK 播放回呼同步重設時保留較新的恢復狀態。
+- 補強 PCDN 備援、設定、探測、傳輸、恢復及封裝契約；完整驗證與交付狀態見[本版報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+
 ## v2.2.20
 
 - 清除無消費的 Session、請求、候選與快照欄位及測試專用 pending 計數，保留實際取消、熔斷屏障、恢復預算與時鐘求值。
 - 決策紀錄縮為最多 256 筆的私有政策修訂索引；健康量測統一必要的提案／提交協定，保留共同認領與一般探索退路。
 - 兩個 Store 共用原有主機解析，normal／Catalog 共用首次影片親和判斷；來源、備援及最終授權仍獨立。Windows 啟動器測試以目錄身分核對 cwd。
-- 十八套件／2,200 案與固定差異安全審查完成；功能、UI、schema 2、四鍵與更新網址保持。本次未執行瀏覽器驗收，完整交付狀態見[驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)。
+- 十八套件／2,200 案與固定差異安全審查完成；功能、UI、schema 2、四鍵與更新網址保持。本次未執行瀏覽器驗收，完整交付狀態見[當版驗證報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-完整正文保存2026-11-18)。
 
 ## v2.2.19
 

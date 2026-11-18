@@ -1,5 +1,5 @@
 {
-  "version": "2.2.20",
+  "version": "2.2.21",
   "tools": {
     "node": "24.22.1",
     "typescript": "7.0.2",
@@ -22,9 +22,9 @@
     "write": false
   },
   "sources": {
-    "package-lock.json": "46919b4ec8ad73b8fccb6a280193f73dc5597b20777ac3abb2e483319aee4d96",
-    "package.json": "7332df2b9d2a16f4bd37327cb9797a730938b3d6b120b0cb5bc29aefa03a0adf",
-    "release.json": "1e8123efe508489bd080d91e2b32823d9811e40b34b524511727be9372e4f465",
+    "package-lock.json": "6908feee34fa3f01790635b2108121acdd34c00d074405e2c1ef678ceab0d130",
+    "package.json": "10768ba1c9fe63f4fb1da2fcdb7f29bc4d3deffadd0500967e7a6b6196151e94",
+    "release.json": "1c3fe337d0bedecd10b065f9b426c3dd1a74d721e7f03a2414ac4d96d6d07a5c",
     "scripts/build.mts": "51f93f30f232b5c22710c0ff11d0727717f1a06fc941dfef829717bab614e1a2",
     "scripts/lib/lib.mts": "56b4ffef7073a9ee64a619ac5c8c11cdf02422065c3ea3b3e4b02dbde743c345",
     "scripts/lib/toolchain.mts": "37ba8cd306c24628d202bea6753b5d38e0c0975b0b2b5152c69601d37b3d2ae6",
@@ -37,7 +37,7 @@
     "src-v2/adapters/playurl/page-playinfo.ts": "abcf4d996c1c89329afd6a718e49f2958e4dddabe811e139fc1fe82747c9a36d",
     "src-v2/adapters/playurl/playurl.ts": "baf8d22bc5d3622b8e9fc31f5f28defaab6455774d341dd27d4912242e4cfe18",
     "src-v2/adapters/scheduler.ts": "7bf62e737ce8d69fc2aaf931759838d9e587bdb26988e7804e341110ede2a7a8",
-    "src-v2/adapters/transport/fetch-hook.ts": "8495b782c871319adb22f77e5c568058110621098d5722cbf17eb9a76810081a",
+    "src-v2/adapters/transport/fetch-hook.ts": "17db33f6bf017af1350b911a0d25f8538329054a3af57ac1533a0f1826f948b0",
     "src-v2/adapters/transport/range-probe.ts": "f3c2cf5a1b4a493a9556049d8eab528ef2824464ab912c43158db60fee4a4edc",
     "src-v2/adapters/transport/transport-context.ts": "d57aa62c1e143040fd99e9591f004e3f90fe54e62ec42a6120447b1c04c16245",
     "src-v2/adapters/transport/transport-ports.ts": "db6bab3dd4b2a5ec299234db5fd0b5fd1401ac4a1ef4b79ffec2d93e04b21d3e",
@@ -55,13 +55,13 @@
     "src-v2/application/lifecycle-contracts.ts": "d03ffbb4d1d1dfb1b20dc5c5029cff5edb119a8e4b2998fc7f8ab8e97119f384",
     "src-v2/application/lifecycle-controller.ts": "750779e89655ff0d580f0026fee72b7fc3bcceabbe71c57588803651a99982d9",
     "src-v2/application/measurement/measurement-contracts.ts": "263fb12907463fb4a484ef07a3068bf7f351861c49d28e545bf0575033e4e16a",
-    "src-v2/application/measurement/measurement-controller.ts": "d930326b68a0b38a9a69c2165d42a8d42e50c88e7bf864afc9acd36fbc5ec886",
+    "src-v2/application/measurement/measurement-controller.ts": "324f1eec61090a894131dd1e6b74ae62b92550d44a0bf4fe6f34ae83b668576e",
     "src-v2/application/measurement/startup-evaluation.ts": "5ff5b74b5b95ed4dfcd7bbb05ebeea3b8fab3d4b889e4ac437fb5b5f867c4dc3",
     "src-v2/application/playback/monitor-contracts.ts": "dd47567ff562abe1bd422f89d31965f4a301345c1f919c867e4e0d5a3361d793",
     "src-v2/application/playback/player-contracts.ts": "2cf4113ad76bfc0bb56d43f9003e9c93992852fb351fa8e3cc8454139ea46d69",
     "src-v2/application/playback/player-monitor.ts": "6e477fb87bd36ef7789af1719d6be4b2dbe4387ca8cbeb8824dc45b045fec911",
     "src-v2/application/playback/recovery-contracts.ts": "eb2fdd89e1d7a50226199eead673047322c4e4298a9f708e6bca62a4e031c229",
-    "src-v2/application/playback/recovery-controller.ts": "3e374d351f54208a6271cc8eda5f6bf387ac44dd4af0dd8cd2a09e97628ef5cb",
+    "src-v2/application/playback/recovery-controller.ts": "efdd2c8de2c16f65a18f9044b28d43f1e8cbc8aa2fbc2cb9450ed406397440f1",
     "src-v2/application/playurl/playurl-contracts.ts": "50d2d51fc166a6001789c4df5e375fc57bba334ef7ea29fb5f06d3b0bc8181fd",
     "src-v2/application/playurl/playurl-controller.ts": "c3ce41add5de87e8194bd150f722eb0c874d846afd79c9f68f66bee9f50ad9eb",
     "src-v2/application/routing/candidate-planning.ts": "f2d66d1183b6009645a75e15c2cb53af2bf2433eb1eaeae4443e2bbaf91a000f",
@@ -73,8 +73,8 @@
     "src-v2/application/routing/request-policy.ts": "613e3c53c4211b1f530a36eff3311bc16c3fcb0d85cb250843155b34ac63e3c4",
     "src-v2/application/routing/retry-evidence.ts": "a3a95c1bd9aed6aef47984101881eed5153da9331300e85ff9e5ee24fa096844",
     "src-v2/application/routing/retry-permit-state.ts": "9f14bb38c4d01d5e9f13c7f78ed4be0910c39c8ef488f2e11bfad5238a357e5d",
-    "src-v2/application/routing/route-contracts.ts": "9d6cc13113f6467f756098c764402bb4b672c1011086b00973ce0ed07eecc0f1",
-    "src-v2/application/routing/route-coordinator.ts": "d5b1a3a3adc79f3a220e483230be577a518defc810a6449a9a8ca3b687c3ae20",
+    "src-v2/application/routing/route-contracts.ts": "dd8fc48566adb4754f62b52bb2346f27f7292ea8f491626dc9270aef8d837320",
+    "src-v2/application/routing/route-coordinator.ts": "a0f6c6116fc167eb2033468a38e3a4e2b2dc5a224278cbb9a31ddf3611529878",
     "src-v2/application/routing/route-projection.ts": "d97c4033d52983f1adc2a9afc71295733a98973e856839226229f0f468052d5c",
     "src-v2/application/routing/route-restrictions.ts": "98f4ffb955df1035daed5ff64bd7f510b34200592d09806885c174e7f9d4e6d0",
     "src-v2/application/routing/routing-ports.ts": "e946adf9927e792a10c472ab1167052c89f97d9f07738c84c417cc458a047aba",
@@ -121,7 +121,7 @@
     "src-v2/state/session-store.ts": "767753b7cf842eea61af15d525eeadba488c73f6784db035abac8922b2f0899f",
     "src-v2/state/settings-contracts.ts": "d893633d9f6bb72b2a4cf703e56004544933f0c7034772fc79f91e92397ee995",
     "src-v2/state/settings-policy.ts": "b9795b3e3df3fb8b3a656c12f16012a71271ed790cc330d03cca4af3a6646f1e",
-    "src-v2/state/settings-store.ts": "bda740e64e8867c7d5064b90a3de061fa93a3e2cb45d30fa9da745f5a399088d",
+    "src-v2/state/settings-store.ts": "5b21a5af83c5a83c77dcbd99fae66c6befa954ea085c76a56def1f3579d8b6ab",
     "src-v2/state/signed-route-vault.ts": "636b388b6244f16adaa3aee28bb3ddf3d8fe4f16a0970f35e7a855d8c5e0ff64",
     "src-v2/state/stored-host.ts": "2a4f9bd851fba3c5387fc8b4bbeef4b38c4fc2f22afb5dedd53d0cece3d8345a",
     "src-v2/state/vault-contracts.ts": "bbc408368907750793695f77cc94f282129168c2e55176fea57ac4f71e595ceb",
@@ -141,5 +141,5 @@
     "src-v2/ui/styles.ts": "5e15f6ad9faa3f4b86f02fc73d45eed61fcc7ae3472de9cdca427cf63965112c",
     "tsconfig.json": "c1df0987ac0ad4dba6796254807f1a464fe7dee6a8a54e6b8533ecb92bc76938"
   },
-  "userscriptSha256": "f5ec98a6b3503d1ac9260127719f14ab18a64df3f4828367a3f0983206c75403"
+  "userscriptSha256": "2202170b1837534e2636f456e9b702e2466d4efad611c496a145f9fb327ebc7d"
 }

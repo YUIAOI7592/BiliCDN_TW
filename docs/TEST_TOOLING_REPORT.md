@@ -1532,3 +1532,11 @@ skill-creator quick_validate 六份均通過；IAB 的 openai.yaml 由官方 gen
 初步 docs:check 已通過 318 份 Markdown；最終追加內容另核對 docs／archive 與 git diff --check。七筆不可變舊斷鏈、715 筆歷史原網址不可用、18 筆私有證據未核對及外部連結未連網保持分類；私有模式／restore 未執行。前綴保護依 LF 正常化核對，CRLF 與 Git blob 換行差異不當作正文改寫；不宣稱逐檔原位元組等同 Git LF。工作資料位於 .work/skills-review-2026-11-14/。
 
 追加紀錄後 docs:check、archive:check 與 git diff --check 均通過：318 份 Markdown、5,539 個本機／儲存庫連結、633 項正文保護；公開封存核對 534 項、56 份閱讀版、三份追加日誌、159 項未變原件及 88 份清單／394 筆校驗。獨立評估者重讀澄清句後確認 local 歧義已解決，六個情境可依現行指引作出一致決策。最後差異僅十八個預期文件／Skill 路徑，三份既有日誌前綴、TODO、清單及版本設定保持；本段只追加核對結果，不改已驗證的指令內容。
+
+## 2026-11-18 v2.2.21 自動驗證與本機封裝
+
+基準 abd0ace。使用 `load_workspace_dependencies` 提供的 Node 24.22.1（`C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-611-0_26.1112.611.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe`）執行 npm CLI 11.20.0（`C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js`），只在當次程序 PATH 前置所選 Node 目錄。因基線 Windows 沙箱的暫存連結與 Git Bash 限制，完整驗證使用有相應權限的環境。
+
+首輪 verify 於格式檢查中止。另一次獨立文件檢查指出 TODO 版本欄位格式有誤。修正後 `npm run verify` 退出 0，18 套件／2,227 案全數通過，failed／skipped／todo／cancelled 均為零，含兩個既有目的地封裝契約。六個已登記 Skills 的 `skill-creator` 格式檢查通過。
+
+正式本機封裝的五份產物、四筆 SHA-256 校驗列、建置清單的腳本雜湊及重建腳本位元組一致。腳本 540,300 bytes，SHA-256 `2202170b1837534e2636f456e9b702e2466d4efad611c496a145f9fb327ebc7d`。v2.2.20 五個原件先與原標籤／校驗比對，再經九包系統 tar 獨立解壓和公開還原檢查，後移除散件。當版 TEST_REPORT 全文按原位元組追加至歷史日誌。安全、公開交付與安裝狀態見[本版報告](TEST_REPORT.md)。

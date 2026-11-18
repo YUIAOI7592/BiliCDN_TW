@@ -1,57 +1,55 @@
-# BiliCDN_TW v2.2.20 完整驗證報告
+# BiliCDN_TW v2.2.21 完整驗證報告
 
-驗證日期：2026-11-12–13（Asia/Taipei）。基準 main／b656d7a、v2.2.19；三批來源提交為 b19ffe8、37f7624、719c888。範圍為使用者批准的程式清理與結構收斂。
+驗證日期為 2026-11-18（Asia/Taipei）。基準 main／abd0ace，產品修復提交為 51f00da。
 
 ## 驗收結論
 
-三批實作、型別、架構、格式及完整十八套件／2,200 案通過；安全差異審查已完成並封印，候選、可報告漏洞及 deferred 均為零。版本同步後整輪 verify 已通過；正式封裝與公開核對的完成結果追加於本報告。
-
-可確認收益是減少無消費資料及重複介面，集中相同解析與判斷。不宣稱播放速度、卡頓或提前重試效益改善。使用者設定、UI、schema 2、四個持久鍵與更新網址保持；歷史效用 FAIL、INVALID 及實機證據限制維持原判。
-
-## 三批實作與功能保持
-
-| 批次／提交 | 完成範圍 | 保留契約 |
-| --- | --- | --- |
-| 一／b19ffe8 | 移除 Session recovering、請求與候選冗餘欄位、未消費量測／恢復快照、pendingMedia 集合及內部多餘匯出 | 真正恢復狀態、hostChanged、取消分類、Catalog 成員檢查、candidateOrder、64 筆熔斷屏障、私有期限與時鐘求值 |
-| 二／37f7624 | 決策 ID 對政策修訂的私有索引取代完整紀錄；量測強制 proposeChallenge／commitChallenge，移除舊 challenge 包裝與未使用 demand 參數 | 256 筆上限及更新／淘汰順序、無 request 過期控制隔離、共同認領及一般探索退路、名額／取消／冷卻 |
-| 三／719c888 | 兩個 Store 共用 storedHost；normal／Catalog 共用首次影片親和判斷；Windows cwd 比較目錄身分 | 字串轉換與例外、短路 getter 順序、分開的來源參數／備援／最終授權與提交、空白路徑／參數／退出碼 |
-
-lastDecisionId／noteDecision 保留 Session 快照身分變更；提前重試樣本抑制、Vault 測試查詢、Native 相容分支及恢復還原證明保持。沒有拆分大型播放器／恢復狀態所有權，沒有新增執行期依賴、CI、遠端載入或持久鍵。
+本版修復設定讀取失敗導致的覆寫、健康探測候選授權失效、無本文的 playurl Fetch 回應及 SDK 播放同步重設。原重現與修後契約見自動驗證。正式交付與安裝分別判定。
 
 ## 自動驗證
 
-基準 2,186 案，新增五個無 request 觀察／決策容量契約及九個兩 Store 主機解析邊界契約，總計 2,200 案；現有熔斷容量、重複完成、原生派送例外、備援、同步重入、量測認領與取消契約繼續通過。新契約在相應執行期修改前先驗證；測試替身改用兩階段協定，移除內部計數／完整紀錄斷言，保留產品結果斷言。
+完整 verify 通過 18 套件／2,227 案，失敗、跳過、取消及待辦皆為零。型別、架構、格式、文件、公開封存、確定性建置、語法與暫存封裝校驗均通過。
 
-| 檢查 | 結果 |
-| --- | --- |
-| typecheck | PASS，來源、測試及工具 |
-| architecture | PASS，110 個正式模組、無循環匯入 |
-| format:check | PASS |
-| 完整測試 | PASS，18 套件／2,200 案；failed、skipped、todo、cancelled 全為 0 |
-| verify | PASS，含全套測試、可重現建置、語法、v2-only 與暫存五項封裝校驗 |
-| 文件、公開封存及差異 | PASS；相容錨點補回後整輪檢查通過，既有歷史限制分列 |
+| 受影響契約 | 修正前 | 修正後 |
+| --- | --- | --- |
+| 設定鎖內讀取與通知 | 4 個缺陷重現，1 個無資料對照通過 | state 96 案通過 |
+| 健康探測與保存 | 3 個鎖邊界缺陷重現，1 個保存對照通過 | measurement-state 138 案通過 |
+| Fetch 無本文回應 | 204、205、304 共 3 案失敗 | playurl-summary 26 案通過 |
+| SDK 播放返回時的生命週期 | Promise 成功與拒絕共 2 案失敗 | 恢復相關篩選 18 案通過 |
 
-初次沙箱測試保留五項工具失敗：符號連結 EPERM、cwd 等價路徑大小寫差異、三項 MSYS 權限限制。cwd 改以目錄 dev／ino 身分核對後，批准在沙箱外重跑完整測試，318 個工具案例全數通過；沒有跳過或降低門檻。一次新增契約原先誤假設無 request 成功會綁定親和，基準結果顯示不會，已修正為驗證原有控制／親和語意；這不是產品修復。詳見[工具紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_TOOLING_REPORT.md#2026-11-12-v2220-清理與啟動器路徑契約)。
-
-當次內建依賴工具提供 Node 24.22.1，明確執行路徑為 `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1111-574-0_26.1111.574.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe`。沒有啟動本機網站服務、瀏覽器或音訊；本機交付核對資料保存於 .work/source-cleanup-v2220/。
+PCDN 案例核對備援清單非空、主機去重且皆在可信 Catalog。封裝案例核對建置清單記載的腳本 SHA-256 與同一次封裝的腳本一致。整輪結果與實際工具環境見[工具紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_TOOLING_REPORT.md)。
 
 ## 安全差異
 
-Codex Security scan `a92d1486-a6c0-4261-aa2c-4460bcaaf17b` 已完成並讀回 canonical 封印。固定範圍 `b656d7afeee774b443d8798a6a7f8efd1dbba7d9..719c888c1ba25354a8b59925fb1bdb9aa5c98f1d`，64 個來源／測試／工具檔完整覆蓋；候選、漏洞及未解項目均為零。
+固定產品差異為 `abd0ace7ed2b7f05534fa718c5403c12308a9101..51f00da63409fa0c93037f4a82ac5d77f8c056c8`。Codex Security 啟動時回報工作樹或 HEAD 無法識別，Git CLI 可解析該差異。獨立掃描結果尚未取得。
 
-審查涵蓋決策政策與所有權、提案私有證明及共同認領、一般探索退路、Host 解析及例外邊界、Native 精確授權、候選同分規則、XHR 終止分類、恢復期限及 getter 順序。這是固定差異審查，不是全庫逐行漏洞審計或安裝版驗收。工具回報三個關聯執行緒累計 6,401,677 tokens（其中快取輸入 6,267,008）；此為工具的累計計量，不當作本次掃描新增用量。掃描產物由插件管理，既有安全原件保持。
+人工複核同一差異的設定寫入與通知、健康探測及授權重驗、Fetch 無本文分支、恢復狀態所有權及相應契約，未確認額外的安全回歸。
 
 <a name="公開交付與安裝結案"></a>
 
 ## 封存與公開交付
 
-v2.2.19 五項發行原件已與 b656d7a Git 位元組、原 SHA256SUMS、ArchiveStorage 及獨立系統 tar 解壓逐項核對，再移除原位置。公開壓縮檔 154,730 bytes，SHA-256 `f1b2f935552c76afbe7ca221fda4daaa8290a1baa33ebefdff7fd0ea46bd7ff7`。八份公開壓縮檔完整解壓後，archive:check --restore-root 通過；534 項搬移、三份追加日誌、154 項原件保護、87 份校驗清單／390 筆校驗通過。本版正式封裝及公開核對尚待完成；Release 快照描述封裝當時，後續只更新本現行報告。
+v2.2.20 五份原件已與來源標籤及原始校驗核對。公開 TAR＋gzip 為 153,579 bytes，SHA-256 `9a514a7f6963cb4ad6e6c703a0d5ad3521eac2731972cb21cea8bc2571a4f310`。九包已用系統 tar 獨立解壓，再以 `archive:check --restore-root` 核對通過。當版報告保存在[完整歷史](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-完整正文保存2026-11-18)。
+
+公開交付待完成。GitHub CLI 與 Git 憑證管理員在交付預檢時回報憑證失效。
 
 ## 來源隔離與實際安裝
 
-本次未啟動 Codex 內建瀏覽器來源隔離或 Tampermonkey 安裝版驗收，也未重啟低緩衝補驗及提前重試效益研究。自動驗證不代表安裝版通過。上一版完整正文、R1 與原限制保存於[歷史報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2219-完整正文保存2026-11-12)。
+本版未執行 IAB 來源隔離、安裝驗收或離線效益研究。各項歷史原判仍由[歷史報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md)追溯。
 
 ## 歷史驗證導覽
+
+<a name="v2220-安裝身分與變更接線重新判定2026-11-13"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-安裝身分與變更接線重新判定2026-11-13)。
+
+<a name="驗收門檻檢討2026-11-13"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#驗收門檻檢討2026-11-13)。
+
+<a name="管理器探索禁令撤銷註記2026-11-13"></a>
+
+[原始紀錄](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#管理器探索禁令撤銷註記2026-11-13)。
 
 <a name="v2218-r1-安裝身分與設定頁2026-11-12"></a>
 

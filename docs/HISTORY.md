@@ -10,9 +10,11 @@
 
 ## 版本
 
-- [v2.2.20 程式清理與結構收斂（2026-11-12–13）](TEST_REPORT.md#驗收結論)。
+- [v2.2.21 設定、探測、傳輸與恢復修復（2026-11-18）](TEST_REPORT.md#驗收結論)。
 
-- [v2.2.20 安裝身分與變更接線重新判定（2026-11-13）](TEST_REPORT.md#v2220-安裝身分與變更接線重新判定2026-11-13)。
+- [v2.2.20 程式清理與結構收斂（2026-11-12–13）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-完整正文保存2026-11-18)。
+
+- [v2.2.20 安裝身分與變更接線重新判定（2026-11-13）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-安裝身分與變更接線重新判定2026-11-13)。
 
 - [v2.2.19 R1 安裝身分與變更接線（2026-11-12）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2219-r1-安裝身分與變更接線2026-11-12)。
 
@@ -329,7 +331,7 @@
 - [docs 全文正確性與必要性檢討 — 2026-11-13](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-docs-正確性與必要性檢討)
 - [AGENTS 檢討與管理器探索禁令撤銷 — 2026-11-13](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-agents-正確性與必要性檢討)
 - [IAB 方法全文檢討 — 2026-11-13](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-iab_testing-全文檢討)
-- [v2.2.20 驗收門檻檢討與證據範圍更正 — 2026-11-13](TEST_REPORT.md#驗收門檻檢討2026-11-13)
+- [v2.2.20 驗收門檻檢討與證據範圍更正 — 2026-11-13](../archive/retired/docs/TEST_REPORT_HISTORY.md#驗收門檻檢討2026-11-13)
 - [README 去重、現行導覽與更新規則整理 — 2026-11-08](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#現行文件去重與更新規則整理2026-11-08)
 - [現行文件與歷史狀態全面對齊 — 2026-10-31](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-10-31現行文件與歷史狀態全面對齊)
 - [本次整理前 TODO 全文 — 固定提交 fede700](https://github.com/YUIAOI7592/BiliCDN_TW/blob/fede7003e7c5056b9ca1a713dbee7266370e45e0/docs/TODO.md)
@@ -420,7 +422,8 @@
 ## 日期
 
 - 2026-11-14：[操作文件轉換 Skills](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-操作文件轉換專案-skills)、[檢查器與 Skills 驗證](TEST_TOOLING_REPORT.md#2026-11-14-skills-遷移檢查)、[六個 Skills 內容檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-六個-skills-內容檢討)。
-- 2026-11-13：[v2.2.20 交付](TEST_REPORT.md#驗收結論)、[安裝身分／接線重判](TEST_REPORT.md#v2220-安裝身分與變更接線重新判定2026-11-13)、[管理器探索禁令撤銷](TEST_REPORT.md#管理器探索禁令撤銷註記2026-11-13)、[AGENTS 檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-agents-正確性與必要性檢討)、[IAB 方法檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-iab_testing-全文檢討)、[docs 全文檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-docs-正確性與必要性檢討)。
+- 2026-11-18：[v2.2.21 四組修復與驗證](TEST_REPORT.md#驗收結論)、[契約驗證門檻與版本引用](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-18-契約驗證門檻與版本引用)。
+- 2026-11-13：[v2.2.20 交付](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-完整正文保存2026-11-18)、[安裝身分／接線重判](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-安裝身分與變更接線重新判定2026-11-13)、[管理器探索禁令撤銷](../archive/retired/docs/TEST_REPORT_HISTORY.md#管理器探索禁令撤銷註記2026-11-13)、[AGENTS 檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-agents-正確性與必要性檢討)、[IAB 方法檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-iab_testing-全文檢討)、[docs 全文檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-docs-正確性與必要性檢討)。
 
 - 2026-11-12：[v2.2.18 發布後測試精簡](../archive/retired/docs/TEST_REPORT_HISTORY.md#斷言審核與精簡2026-11-12)。
 

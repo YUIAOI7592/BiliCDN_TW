@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili CDN 台灣優化
 // @namespace    BiliCDN_TW
-// @version      2.2.20
+// @version      2.2.21
 // @description  台灣 CDN 與播放整合：自動選路、香港節點、起播與健康量測、慢請求重試及三頁控制中心
 // @author       jiyunshi <chocosensei214@gmail.com>
 // @license      MIT
@@ -1841,6 +1841,11 @@
         if (keys.length) this.#emit();
       };
     }
+    #readForWrite(now) {
+      const result = this.storage.readResult(SETTINGS_KEY, null);
+      if (!result.ok) throw new Error("Unable to read persisted settings");
+      return parseSettings(result.value, now ?? this.now());
+    }
     #save(value, current, now) {
       const next = parseSettings(
         { ...value, schema: 2, updatedAt: Math.max(now, current.updatedAt + 1) },
@@ -1867,7 +1872,7 @@
       );
       try {
         return await this.storage.withLock("settings", () => {
-          const current = parseSettings(this.storage.get(SETTINGS_KEY, null), this.now());
+          const current = this.#readForWrite();
           const now = this.now();
           return this.#publish(this.#save({ ...current, ...change }, current, now));
         });
@@ -1879,7 +1884,7 @@
     async setCatalogEnabled(host, enabled) {
       if (!isCatalogHost(host)) throw new TypeError("Unknown Catalog host");
       return await this.storage.withLock("settings", () => {
-        const now = this.now(), current = parseSettings(this.storage.get(SETTINGS_KEY, null), now);
+        const now = this.now(), current = this.#readForWrite(now);
         return this.#publish(
           this.#save(
             { ...current, catalogOverrides: { ...current.catalogOverrides, [host]: enabled } },
@@ -1893,7 +1898,7 @@
       const release = this.#holdOff(["considerNativeSources", "earlyRetryEnabled"]);
       try {
         const next = await this.storage.withLock("settings", () => {
-          const now = this.now(), current = parseSettings(this.storage.get(SETTINGS_KEY, null), now);
+          const now = this.now(), current = this.#readForWrite(now);
           return this.#save(defaultSettings(now), current, now);
         });
         return this.#publish(next);
@@ -1907,7 +1912,12 @@
     }
     #emit() {
       const state = this.get();
-      for (const listener of this.#listeners) listener(state);
+      for (const listener of this.#listeners) {
+        try {
+          listener(state);
+        } catch {
+        }
+      }
     }
   };
 
@@ -4978,28 +4988,29 @@
       this.#challengeAttempts.set(`${context.representation}:${candidate.host}`, now);
       this.#remember(decision.id);
       this.#emit({ type: "route-planned", at: now, decision });
-      const applied = {
+      const applied = Object.freeze({
         decision,
         url: proposal.url,
         context,
         streamKey: proposal.streamKey,
-        sourceHost: parseMediaUrl(proof.root)?.host ?? null
-      };
+        sourceHost: parseMediaUrl(proof.root)?.host ?? null,
+        isCurrent: /* @__PURE__ */ __name(() => this.#challengeCurrent(proposal, proof), "isCurrent")
+      });
       this.#measurementId(applied, "challenge");
-      return this.#challengeCurrent(proposal, proof) ? applied : null;
+      return applied.isCurrent() ? applied : null;
     }
     async recordChallenge(applied, bytes, elapsedMs, ttfbMs, outcome, failureKind, workCurrent = () => true, measurement) {
       const context = applied.context;
-      if (!context || applied.decision.action !== "rewrite") return;
-      if (this.isCatalogOnly() && applied.decision.routeType !== "catalog-generated") return;
+      if (!context || applied.decision.action !== "rewrite") return false;
+      if (this.isCatalogOnly() && applied.decision.routeType !== "catalog-generated") return false;
       const valid = /* @__PURE__ */ __name(() => workCurrent() && context.generation === this.session.get().generation && context.epoch === this.session.get().epoch && !this.session.get().disabled && this.vault.isCurrentIdentity(context) && (!this.isCatalogOnly() || applied.decision.routeType === "catalog-generated"), "valid");
-      if (!valid()) return;
+      if (!valid()) return false;
       if (failureKind === "native-invalid" && applied.decision.routeType === "native-signed") {
         this.vault.invalidate(context.representation, applied.decision.host);
-        return;
+        return false;
       }
-      if (outcome === "failure") return;
-      await this.evidence.record(
+      if (outcome === "failure") return false;
+      const saved = await this.evidence.commit(
         applied.decision.host,
         context.kind,
         {
@@ -5008,20 +5019,24 @@
           at: this.clock.now(),
           source: "challenge",
           outcome,
-          throughputMbps: measurement?.speedEligible !== false && outcome === "success" && bytes >= 64 * 1024 && elapsedMs > 0 ? bytes * 8 / elapsedMs / 1e3 : null,
+          throughputMbps: measurement?.speedEligible !== false && bytes >= 64 * 1024 && elapsedMs > 0 ? bytes * 8 / elapsedMs / 1e3 : null,
           ttfbMs,
           failureKind,
           ...sampleTiming(bytes, elapsedMs, ttfbMs) ?? {}
         },
+        applied,
         valid
       );
-      if (outcome === "success" && context.kind === "video" && valid() && applied.decision.host && this.#plans.get(context.representation)?.host === applied.decision.host)
+      if (saved.status === "unconfirmed") throw saved.error ?? Error("Evidence write unconfirmed");
+      if (saved.status !== "committed") return false;
+      if (context.kind === "video" && valid() && applied.decision.host && this.#plans.get(context.representation)?.host === applied.decision.host)
         this.#lastVideoEvidence = {
           host: applied.decision.host,
           requestId: this.#measurementId(applied, "challenge"),
           identity: context,
           source: "current-probe"
         };
+      return true;
     }
     async observe(observation) {
       const receipt = this.#ownership.beginObservation(observation);
@@ -6199,9 +6214,15 @@
       const source = range ? this.rangeMetadata?.resolve(range.handle, range.identity) : null;
       const usesRange = !!source && !!applied.url && applied.decision.routeType === "catalog-generated" && mediaIdentity(source) === mediaIdentity(applied.url);
       const startByte = usesRange ? range.startByte : 0;
+      const workCurrent = /* @__PURE__ */ __name(() => !this.#disposed && marker === this.#marker && this.#running?.controller === round && !round.signal.aborted, "workCurrent");
       try {
+        if (!applied.isCurrent()) {
+          round.abort("source-changed");
+          return;
+        }
+        if (!workCurrent() || controller.signal.aborted) return;
         result = await this.probe.read({
-          url: applied.url ?? "",
+          url: applied.url,
           host: applied.decision.host,
           limit,
           startByte,
@@ -6212,7 +6233,7 @@
         stopTimeout();
         round.signal.removeEventListener("abort", cancel);
       }
-      if (marker !== this.#marker || this.#running?.controller !== round || round.signal.aborted || controller.signal.aborted && controller.signal.reason !== "timeout")
+      if (!workCurrent() || controller.signal.aborted && controller.signal.reason !== "timeout")
         return;
       if (usesRange && range && this.rangeMetadata?.resolve(range.handle, range.identity) && this.rangeMetadata.catalogSourceHandle(range.identity.representation) === range.handle) {
         if (result.status === 416)
@@ -6221,21 +6242,25 @@
           this.rangeMetadata.recordRangeSize(range.identity, range.handle, result.range.totalBytes);
       }
       const { ok, failure } = classifyProbeOutcome(applied, result);
-      await this.routes.recordChallenge(
+      const saved = await this.routes.recordChallenge(
         applied,
         result.bytes,
         result.elapsedMs,
         result.ttfbMs,
         ok ? "success" : "failure",
         failure,
-        () => !this.#disposed && marker === this.#marker && this.#running?.controller === round && !round.signal.aborted,
+        () => workCurrent() && applied.isCurrent() && workCurrent(),
         result
       );
-      if (marker !== this.#marker || this.#running?.controller !== round || round.signal.aborted)
+      if (!workCurrent()) return;
+      if (ok && !saved && !applied.isCurrent()) {
+        round.abort("source-changed");
         return;
+      }
+      if (!workCurrent()) return;
       this.#snapshot = Object.freeze({
-        state: ok ? "complete" : "failed",
-        reason: ok ? "sample-recorded" : result.directRange ? "short-response" : result.reason,
+        state: saved ? "complete" : "failed",
+        reason: saved ? "sample-recorded" : ok ? "measurement-error" : result.directRange ? "short-response" : result.reason,
         host: applied.decision.host,
         range: {
           mode: startByte > 0 ? "middle" : "head",
@@ -6852,9 +6877,12 @@
           this.#suppress = false;
         }
       }
+      const ownsPlayPhase = /* @__PURE__ */ __name(() => this.#lifecycleSerial === lifecycle && this.#token === token && token.restore?.step.phase === "play", "ownsPlayPhase");
+      const playCurrent = /* @__PURE__ */ __name(() => ownsPlayPhase() && this.#restoreReady(token) && ownsPlayPhase(), "playCurrent");
       const complete = /* @__PURE__ */ __name(() => {
-        if (token.restore?.step.phase !== "play" || !this.#restoreReady(token)) return;
+        if (!playCurrent()) return;
         const reading = this.player.readRestore(rateAttempt);
+        if (!ownsPlayPhase()) return;
         if (!reading.owned || reading.rate !== null && reading.rate !== token.savedRate || reading.positionSec !== null && Math.abs(
           reading.positionSec - beforePosition - (reading.paused ? 0 : token.savedRate * Math.max(0, this.now() - playAt) / 1e3)
         ) > 1) {
@@ -6862,7 +6890,7 @@
           return;
         }
         const baseline = this.player.snapshot(), controls = this.player.controls();
-        if (!this.#restoreReady(token)) return;
+        if (!playCurrent()) return;
         const restoredAt = this.now();
         if (!this.#advanceRestore(token.restore, {
           phase: "progress",
@@ -6889,18 +6917,19 @@
         });
       }, "complete");
       if (playResult !== null && (typeof playResult === "object" || typeof playResult === "function")) {
-        token.restore.result = "pending";
-        this.#state = Object.freeze({ ...this.#state, state: "waiting" });
         void Promise.resolve(playResult).then(
           () => {
             if (this.#lifecycleSerial === lifecycle && this.#token === token && this.#owns(token, this.player.controls()))
               complete();
           },
           () => {
-            if (this.#lifecycleSerial === lifecycle && this.#token === token && this.#owns(token, this.player.controls()))
+            if (this.#lifecycleSerial === lifecycle && this.#token === token && this.#owns(token, this.player.controls()) && this.#token === token)
               this.#finish("recovered-paused", "play-rejected");
           }
         );
+        if (!playCurrent()) return;
+        token.restore.result = "pending";
+        this.#state = Object.freeze({ ...this.#state, state: "waiting" });
         const actual = this.player.readRestore(rateAttempt);
         if (actual.owned && actual.paused === false && actual.rate === token.savedRate && actual.positionSec !== null)
           complete();
@@ -9356,10 +9385,7 @@
             }),
             response2
           ), "blocked");
-          let text3;
-          try {
-            text3 = await response2.text();
-          } catch {
+          const unreadable = /* @__PURE__ */ __name(() => {
             self.notePlayurl(
               "fetch",
               response2.status,
@@ -9369,6 +9395,13 @@
               endpoint
             );
             return catalogOnly() ? blocked() : response2;
+          }, "unreadable");
+          if (response2.body === null) return unreadable();
+          let text3;
+          try {
+            text3 = await response2.text();
+          } catch {
+            return unreadable();
           }
           if (self.settings.get().disabled) {
             self.notePlayurl("fetch", response2.status, rejectedPlayurl("inactive"), endpoint);
