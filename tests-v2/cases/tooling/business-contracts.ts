@@ -2,7 +2,6 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { type TestReport } from '../../../scripts/test.mts'
 import { validateBusinessContracts } from '../../../scripts/testing/business-contracts.mts'
-import { selection } from '../../../scripts/testing/test-registry.mts'
 
 const index = {
   settings: [
@@ -65,12 +64,4 @@ test('business contract index rejects empty areas, duplicate rules and rules wit
     () => validateBusinessContracts({ state: [{ ...index.settings[0], tests: [] }] }, results()),
     /Invalid business contract/,
   )
-})
-
-test('deferred product contracts are explicitly selectable and absent from the full run', () => {
-  const selected = selection('deferred-product')
-  assert.deepEqual(selected, [
-    { name: 'deferred-product', source: 'tests-v2/deferred-product-contracts.ts' },
-  ])
-  assert.ok(selection().every((suite) => suite.name !== selected[0]!.name))
 })

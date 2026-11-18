@@ -218,7 +218,7 @@ export class PlayerMonitor implements MonitorPort {
       progressObservation: this.#observation,
       playableBufferSec: video.playableBufferSec,
       visible,
-      seeking: video.seeking || now < this.#seekGraceUntil,
+      seeking: video.seeking || controls.dragging || now < this.#seekGraceUntil,
       recovering: this.recovery.isRecovering(),
       disabled,
     })

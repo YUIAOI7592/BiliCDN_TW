@@ -55,6 +55,7 @@ export class FetchHookAdapter {
         const requestContext = self.apiDispatch(originalUrl)
         const response = await native(sourceRequest, false)
         if (self.settings.get().disabled) return response
+        if (requestContext.auxiliary && !self.routes.isCatalogOnly()) return response
         const catalogOnly = (): boolean =>
           !self.settings.get().disabled && self.routes.isCatalogOnly()
         const blocked = (): Response =>

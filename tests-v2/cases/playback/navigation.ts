@@ -5,6 +5,7 @@ import { BrowserNavigation } from '../../../src-v2/adapters/navigation.ts'
 import { LifecycleController } from '../../../src-v2/application/lifecycle-controller.ts'
 import { TransportContext } from '../../../src-v2/adapters/transport/transport-context.ts'
 import { createRuntimeIds } from '../../../src-v2/platform/runtime-ids.ts'
+import { playurlRequestContext } from '../../../src-v2/domain/playurl-content.ts'
 
 function createNavigationPlayback(t: TestContext) {
   const f = fixture(t)
@@ -137,6 +138,95 @@ test('V224 tracking navigation after page expiry preserves confirmed decisions a
     assert.equal(f.routes.apply(video, 'video').decision, decision)
     assert.deepEqual(f.routes.snapshot(), routes)
   }
+})
+
+test('UP142 locale navigation preserves the active part and distinguishes actual media changes', (t) => {
+  const f = createNavigationPlayback(t)
+  const generation = Number(f.session.get().generation)
+  f.navigate('/zh-Hant/video/test?p=1&spm_id_from=feed')
+  assert.equal(Number(f.session.get().generation), generation)
+  f.navigate('/en/video/test?p=2')
+  assert.equal(Number(f.session.get().generation), generation + 1)
+  f.navigate('/ja/list/watchlater?bvid=BV1111111111')
+  assert.equal(Number(f.session.get().generation), generation + 2)
+  f.navigate('/zh-Hans/list/watchlater?bvid=BV2222222222')
+  assert.equal(Number(f.session.get().generation), generation + 3)
+  f.navigate('/en/list/watchlater?p=1&bvid=BV2222222222')
+  assert.equal(Number(f.session.get().generation), generation + 3)
+  f.navigate('/fr/list/watchlater?bvid=BV2222222222')
+  assert.equal(Number(f.session.get().generation), generation + 4)
+})
+
+for (const order of [
+  'api-first',
+  'url-first',
+  'expired',
+  'unrelated',
+  'missing-part',
+  'exact-part',
+  'rapid',
+] as const) {
+  test(`UP142 navigation pairs accepted primary responses only when eligible: ${order}`, (t) => {
+    const f = createNavigationPlayback(t)
+    f.navigate('/video/BV1111111111')
+    const before = f.session.get()
+    let sequence = 0
+    const accept = (cid: string, bvid: string, part = '') => {
+      const value = f.payload(cid)
+      const url = `https://api.bilibili.com/x/player/wbi/playurl?is_main_page=true&cid=${cid}&bvid=${bvid}${part}`
+      const context = {
+        ...playurlRequestContext(url),
+        generation: Number(f.session.get().generation),
+        requestSequence: ++sequence,
+        dispatchedAt: f.clock.now(),
+      }
+      assert.equal(
+        f.playurl.transform(value, 'trusted-api', String(sequence), context).accepted,
+        true,
+      )
+      return value.data.dash.video[0]!.base_url
+    }
+    accept('101', 'BV1111111111')
+    const part = order === 'missing-part' || order === 'exact-part'
+    const nextBvid = part ? 'BV1111111111' : 'BV2222222222'
+    const destination = `/video/${nextBvid}${part ? '?p=2' : ''}`
+    if (order === 'url-first') f.navigate(destination)
+    const newUrl = accept('102', nextBvid, order === 'exact-part' ? '&p=2' : '')
+    if (order === 'expired') f.clock.advance(5001)
+    if (order === 'rapid') accept('103', 'BV3333333333')
+    if (order !== 'url-first')
+      f.navigate(order === 'unrelated' ? '/video/BV4444444444' : destination)
+    const current = f.session.get()
+    const apiPaired = order === 'api-first' || order === 'exact-part'
+    const kept = apiPaired || order === 'url-first'
+    assert.equal(Boolean(f.vault.match(newUrl).context), kept)
+    assert.equal(Number(current.generation), Number(before.generation) + (apiPaired ? 0 : 1))
+    assert.equal(Number(current.epoch), apiPaired ? Number(before.epoch) + 1 : 0)
+  })
+}
+
+test('UP142 watchlater can complete the address of the accepted main video once', (t) => {
+  const f = createNavigationPlayback(t)
+  f.navigate('/watchlater/')
+  const before = f.session.get()
+  const body = f.payload('101')
+  const request = playurlRequestContext(
+    'https://api.bilibili.com/x/player/wbi/playurl?cid=101&bvid=BV1111111111&is_main_page=true',
+  )
+  assert.equal(
+    f.playurl.transform(body, 'trusted-api', 'watchlater-101', {
+      ...request,
+      generation: Number(before.generation),
+      requestSequence: 1,
+      dispatchedAt: f.clock.now(),
+    }).accepted,
+    true,
+  )
+  f.navigate('/watchlater/?bvid=BV1111111111')
+  assert.equal(f.session.get().generation, before.generation)
+  assert.ok(f.vault.match(body.data.dash.video[0]!.base_url).context)
+  f.navigate('/watchlater/?bvid=BV2222222222')
+  assert.equal(Number(f.session.get().generation), Number(before.generation) + 1)
 })
 
 test('V224 real part change clears old summaries, rejects late work and rebuilds from new transfers', async (t) => {

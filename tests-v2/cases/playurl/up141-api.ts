@@ -137,6 +137,67 @@ test('UP141-API exact OGV playview admission preserves ordinary endpoints and re
   )
 })
 
+for (const mode of ['native', 'catalog'] as const) {
+  test(`UP142 ${mode} auxiliary Fetch and XHR preserve the main epoch and accepted watermark`, async (t) => {
+    const f = fixture(t)
+    await f.settings.update({ considerNativeSources: mode === 'native' })
+    const api = 'https://api.bilibili.com/x/player/wbi/playurl?cid='
+    f.setPayload(media(100))
+    await f.fetch(api + '100&is_main_page=true')
+    const earlier = new f.NativeXhr()
+    earlier.open('GET', api + '101&is_main_page=true', true)
+    earlier.send()
+    const before = f.session.get()
+    const route = f.routes.snapshot()
+    const preload = media(200)
+    f.setPayload(preload)
+    const response = await f.fetch(api + '200&gaia_source=pre-load&is_main_page=true')
+    if (mode === 'native') assert.equal(response, f.nativeResponse())
+    const output = (await response.json()) as ReturnType<typeof media>
+    const auxUrl = output.data.dash.video[0]!.base_url
+    if (mode === 'catalog') assert.ok(TRUSTED_CATALOG.some((host) => host === new URL(auxUrl).host))
+    assert.equal(f.vault.match(auxUrl).context, null)
+    const hover = new f.NativeXhr()
+    hover.open('GET', api + '300&gaia_source=view-card', true)
+    hover.responseType = 'json'
+    hover.send()
+    const hoverBody = media(300)
+    hover.receive(hoverBody)
+    assert.equal(hover.response, hoverBody)
+    assert.equal(f.session.get(), before)
+    assert.deepEqual(f.routes.snapshot(), route)
+    await (await f.fetch(auxUrl)).arrayBuffer()
+    const foreign = f.routes.snapshot()
+    assert.equal(f.session.get().representation, before.representation)
+    assert.equal(f.routes.firstMediaAt('video'), 0)
+    assert.equal(foreign.requested.video, route.requested.video)
+    assert.equal(foreign.latest.video, route.latest.video)
+    assert.equal(foreign.fallback.video, route.fallback.video)
+    earlier.receive(media(101))
+    void earlier.response
+    assert.equal(Number(f.session.get().epoch), Number(before.epoch) + 1)
+  })
+}
+
+test('UP142 Catalog-only auxiliary API rejects when all Catalog hosts are disabled', async (t) => {
+  const f = fixture(t)
+  await f.settings.update({
+    catalogOverrides: Object.fromEntries(TRUSTED_CATALOG.map((host) => [host, false])),
+  })
+  const before = f.session.get()
+  const api = 'https://api.bilibili.com/x/player/wbi/playurl?cid=200&is_main_page=false'
+  f.setPayload(media(200))
+  const reply = await f.fetch(api)
+  assert.equal(reply.status, 503)
+  assert.equal(f.context.snapshot().lastPlayurl?.accepted, false)
+  const xhr = new f.NativeXhr()
+  xhr.open('GET', api, true)
+  xhr.send()
+  xhr.receive(media(200))
+  assert.ok(JSON.parse(xhr.responseText).code !== 0)
+  assert.equal(f.session.get(), before)
+})
+
 test('UP141-API Fetch transforms nested OGV data and uses request cid for episode identity', async (t) => {
   const f = fixture(t)
   assert.equal(f.routes.isCatalogOnly(), true)

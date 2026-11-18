@@ -14,7 +14,7 @@ import { parseMediaUrl } from '../../domain/url-policy.ts'
 import { PROVISIONAL_SOURCE_SCAN, TRUSTED_SOURCE_SCAN } from '../../domain/source-admission.ts'
 export interface PlayurlIngestionPort extends Pick<
   PlayurlControllerPort,
-  'lifecycleKey' | 'catalogOnly' | 'ingest' | 'active' | 'acceptResponse'
+  'lifecycleKey' | 'catalogOnly' | 'ingest' | 'active' | 'acceptResponse' | 'claimNavigation'
 > {}
 
 type UnknownRecord = Record<string, unknown>
@@ -52,6 +52,9 @@ export class PlayurlAdapter {
   constructor(private readonly controller: PlayurlIngestionPort) {}
   lifecycleKey(): string {
     return this.controller.lifecycleKey()
+  }
+  claimNavigation(previous: string, next: string, now: number): boolean {
+    return this.controller.claimNavigation?.(previous, next, now) ?? false
   }
   transform(
     payload: unknown,

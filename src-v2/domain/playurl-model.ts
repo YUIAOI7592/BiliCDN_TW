@@ -1,10 +1,19 @@
 export type PlayurlFormat = 'dash' | 'mp4' | 'flv'
 export type PlayurlEndpointKind = 'playurl' | 'ogv-playview' | 'ogv-precheck'
+export interface PlaybackNavigationIdentity {
+  readonly bvid: string | null
+  readonly aid: string | null
+  readonly episode: string | null
+  readonly part: string | null
+}
 /** Request-owned content correlation only; never a route authorization. */
 export interface PlayurlRequestContext {
   readonly contentId: string | null
   readonly requestSequence?: number
   readonly generation?: number
+  readonly auxiliary?: true
+  readonly navigation?: PlaybackNavigationIdentity
+  readonly dispatchedAt?: number
 }
 export type PlayurlRejection =
   | 'upstream-error'

@@ -126,6 +126,7 @@ export class MeasurementController implements MeasurementPort {
     this.#closeStartup('generation')
     this.#startupQualifiedHosts = []
     this.#marker++
+    this.#lastStatus = null
     this.#failedAt = null
     this.#snapshot = Object.freeze({
       state: 'idle',
@@ -164,7 +165,9 @@ export class MeasurementController implements MeasurementPort {
   }
   willGateStartup(url: string): boolean {
     return (
-      this.#startupLease.phase !== 'closed' && !!this.routes.startupOptions(url)?.candidates.length
+      this.#startupLease.phase !== 'closed' &&
+      !(this.#startupLease.phase === 'available' && this.#lastStatus?.seeking) &&
+      !!this.routes.startupOptions(url)?.candidates.length
     )
   }
 
@@ -177,6 +180,10 @@ export class MeasurementController implements MeasurementPort {
     if (signal?.aborted) throw cancellationReason(signal)
     if (this.#startupLease.phase === 'closed') return
     if (this.#startupLease.phase === 'available') {
+      if (this.#lastStatus?.seeking) {
+        this.noteUnpreflighted('seeking')
+        return
+      }
       const cursor = Math.max(0, Number(this.meta.get().catalogCursor) || 0)
       const options = this.routes.startupOptions(url, cursor, requestBytes)
       if (!options?.candidates.length) {

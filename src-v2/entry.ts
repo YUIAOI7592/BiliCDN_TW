@@ -94,7 +94,6 @@ export const start = (): void => {
     routes,
     monotonicNow,
   )
-  transport.install()
   const earlyRetry = new EarlyRetryController(
     {
       alternatives: (request, demand) => routes.earlyRetryAlternatives(request, demand),
@@ -167,13 +166,15 @@ export const start = (): void => {
   })
   const panel = new PlayerPanel(center, settings, session, monitor)
 
-  runtime.install()
-  webRtc.install()
   try {
+    transport.install()
+    runtime.install()
+    webRtc.install()
     lifecycle.start()
   } catch {
     // Without content lifecycle tracking, withdraw all installed product hooks.
     for (const release of [
+      () => lifecycle.dispose(),
       () => runtime.dispose(),
       () => transport.dispose(),
       () => webRtc.dispose(),

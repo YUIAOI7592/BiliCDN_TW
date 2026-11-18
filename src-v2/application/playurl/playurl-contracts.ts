@@ -50,10 +50,13 @@ export interface PlayurlRoutesPort extends Pick<
   | 'plan'
   | 'playbackRate'
   | 'playerOutput'
+  | 'policyRevision'
+  | 'previewCatalogOutput'
   | 'resetEpoch'
 > {}
 export interface PlayurlControllerPort {
   acceptResponse(context?: PlayurlRequestContext): void
+  claimNavigation?(previous: string, next: string, now: number): boolean
   catalogOnly(): boolean
   subscribeEpoch(
     listener: (state: { readonly generation: GenerationId; readonly epoch: EpochId }) => void,
@@ -69,6 +72,7 @@ export interface PlayurlControllerPort {
 }
 
 export interface PlayurlPort {
+  claimNavigation?(previous: string, next: string, now: number): boolean
   transform(
     payload: unknown,
     source: 'trusted-api' | 'player-mpd' | 'page-hint',

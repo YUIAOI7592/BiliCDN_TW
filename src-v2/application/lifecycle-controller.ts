@@ -83,7 +83,12 @@ export class LifecycleController implements LifecyclePort {
     if (!this.#active) return
     const key = this.navigation.key()
     if (key === this.#pageKey) return
+    const previous = this.#pageKey
     this.#pageKey = key
+    if (this.playurl.claimNavigation?.(previous, key, this.now())) {
+      this.#pending = null
+      return
+    }
     this.#beginGeneration()
     this.#applyPending()
   }

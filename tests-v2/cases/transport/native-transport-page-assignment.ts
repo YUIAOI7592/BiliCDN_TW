@@ -201,3 +201,44 @@ for (const native of [false, true]) {
     }
   })
 }
+
+test('page playinfo rollback keeps an explicit undefined and does not replay an accessor', async (t) => {
+  const f = fixture(t)
+  await f.settings.update({ considerNativeSources: true })
+  const original = {
+    configurable: true,
+    enumerable: false,
+    writable: true,
+    value: { before: true },
+  }
+  Object.defineProperty(f.page, '__playinfo__', original)
+  const adapter = f.pageAdapter()
+  adapter.install()
+  f.page.__playinfo__ = undefined
+  adapter.dispose()
+  assert.deepEqual(Object.getOwnPropertyDescriptor(f.page, '__playinfo__'), {
+    ...original,
+    value: undefined,
+  })
+
+  let reads = 0
+  const writes: unknown[] = []
+  const descriptor = {
+    configurable: true,
+    get: () => {
+      reads++
+      return undefined
+    },
+    set: (value: unknown) => {
+      writes.push(value)
+    },
+  }
+  Object.defineProperty(f.page, '__playinfo__', descriptor)
+  adapter.install()
+  const next = { next: true }
+  f.page.__playinfo__ = next
+  adapter.dispose()
+  assert.equal(reads, 1)
+  assert.deepEqual(writes, [next])
+  assert.equal(Object.getOwnPropertyDescriptor(f.page, '__playinfo__')?.set, descriptor.set)
+})

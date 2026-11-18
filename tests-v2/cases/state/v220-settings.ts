@@ -30,6 +30,68 @@ for (const [label, value, expected] of [
   })
 }
 
+test('reset after a wall-clock correction converges in storage, both stores and WebRTC', async (t) => {
+  const scope = testScope(t)
+  let now = 2_000_000
+  const storage = new FakeStorage()
+  storage.set(SETTINGS_KEY, { ...defaultSettings(now), blockWebRtc: false })
+  let writes = 0
+  const save = storage.set.bind(storage)
+  storage.set = (key, value) => {
+    writes++
+    save(key, value)
+  }
+
+  const local = scope.own(new SettingsStore(storage, () => now))
+  const remote = scope.own(new SettingsStore(storage, () => now))
+  class NativePeerConnection {}
+  const page = { RTCPeerConnection: NativePeerConnection }
+  scope.defineGlobal('unsafeWindow', { configurable: true, value: page })
+  scope.own(new WebRtcAdapter(local)).install()
+  assert.equal(page.RTCPeerConnection, NativePeerConnection)
+
+  now -= 1_800_000
+  const returned = await local.reset()
+  const persisted = storage.get(SETTINGS_KEY, defaultSettings(now))
+  storage.remote(SETTINGS_KEY, persisted)
+  assert.equal(writes, 1)
+  assert.equal(persisted.blockWebRtc, true)
+  assert.deepEqual(
+    {
+      returned,
+      local: local.get(),
+      remote: remote.get(),
+      blocked: page.RTCPeerConnection === undefined,
+    },
+    { returned: persisted, local: persisted, remote: persisted, blocked: true },
+  )
+})
+
+test('late settings notifications reread authority and preserve the cache on read failure', (t) => {
+  const storage = new FakeStorage()
+  const old = { ...defaultSettings(2_000_000), blockWebRtc: false }
+  const current = defaultSettings(200_000)
+  storage.set(SETTINGS_KEY, old)
+  let now = old.updatedAt
+  const settings = testScope(t).own(new SettingsStore(storage, () => now))
+  const notifications: SettingsState[] = []
+  settings.subscribe((value) => notifications.push(value))
+  now = current.updatedAt
+  storage.set(SETTINGS_KEY, current)
+  const notify = () => {
+    for (const listener of storage.listeners.get(SETTINGS_KEY) ?? []) listener(old, true)
+  }
+  const read = storage.readResult.bind(storage)
+  storage.readResult = () => ({ ok: false })
+  notify()
+  assert.deepEqual(settings.get(), old)
+  assert.deepEqual(notifications, [])
+  storage.readResult = read
+  notify()
+  assert.deepEqual(settings.get(), current)
+  assert.deepEqual(notifications, [current])
+})
+
 test('V220 reset enables Native only after its storage lock commits', async (t) => {
   const storage = new DelayedSettingsStorage()
   storage.set(SETTINGS_KEY, { schema: 2, considerNativeSources: false })
@@ -170,13 +232,14 @@ test('V2221 settings can save a genuinely missing record', async (t) => {
   assert.deepEqual(storage.get(SETTINGS_KEY, null), saved)
 })
 
-for (const change of ['local update', 'remote notification'] as const) {
+for (const change of ['local update', 'remote notification', 'wall-clock correction'] as const) {
   test(`V2222 reset preserves a newer ${change} after saving`, async (t) => {
     const scope = testScope(t)
     const committed = deferred<void>(),
       resumeReset = deferred<void>()
     const storage = new FakeStorage()
-    storage.set(SETTINGS_KEY, { ...defaultSettings(900), blockWebRtc: false })
+    let now = change === 'wall-clock correction' ? 2_000_000 : 1_000
+    storage.set(SETTINGS_KEY, { ...defaultSettings(now === 1_000 ? 900 : now), blockWebRtc: false })
     const withLock = storage.withLock.bind(storage)
     let hold = true,
       writes = 0
@@ -195,13 +258,14 @@ for (const change of ['local update', 'remote notification'] as const) {
       }
       return result
     }
-    const settings = scope.own(new SettingsStore(storage, () => 1000))
+    const settings = scope.own(new SettingsStore(storage, () => now))
     class NativePeerConnection {}
     const page = { RTCPeerConnection: NativePeerConnection }
     scope.defineGlobal('unsafeWindow', { configurable: true, value: page })
     scope.own(new WebRtcAdapter(settings)).install()
     const observed: SettingsState[] = []
     scope.defer(settings.subscribe((value) => observed.push(value)))
+    now = 1_000
     const pending = settings.reset()
     scope.defer(async () => {
       resumeReset.resolve()
@@ -209,7 +273,8 @@ for (const change of ['local update', 'remote notification'] as const) {
     })
 
     await committed.promise
-    assert.deepEqual(storage.get(SETTINGS_KEY, null), defaultSettings(1000))
+    const savedAt = change === 'wall-clock correction' ? 301_000 : 1000
+    assert.deepEqual(storage.get(SETTINGS_KEY, null), defaultSettings(savedAt))
     assert.equal(settings.get().considerNativeSources, false)
     assert.equal(settings.get().earlyRetryEnabled, false)
     const newer = { ...defaultSettings(1001), blockWebRtc: false }
@@ -224,7 +289,7 @@ for (const change of ['local update', 'remote notification'] as const) {
     assert.deepEqual(storage.get(SETTINGS_KEY, null), newer)
     assert.deepEqual(observed.at(-1), newer)
     assert.equal(
-      observed.some((value) => value.updatedAt === 1000),
+      observed.some((value) => value.updatedAt === savedAt),
       false,
     )
     assert.equal(page.RTCPeerConnection, NativePeerConnection)

@@ -32,6 +32,7 @@ export function transformXhrText(
   strict: boolean,
   status: () => number,
 ): string {
+  if (state.requestContext.auxiliary && !strict) return raw
   if (state.transformedText === null) {
     try {
       const payload: unknown = JSON.parse(raw),
@@ -64,6 +65,7 @@ export function transformXhrJson(
   strict: boolean,
   status: () => number,
 ): unknown {
+  if (state.requestContext.auxiliary && !strict) return raw
   if (state.transformedJson === undefined) {
     try {
       const result = context.playurl.transform(

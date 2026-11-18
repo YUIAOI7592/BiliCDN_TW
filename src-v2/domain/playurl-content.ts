@@ -1,15 +1,110 @@
 import { isPlayurlApi } from './catalog.ts'
 import { parseMediaUrl } from './url-policy.ts'
-import { type PlayurlRequestContext } from './playurl-model.ts'
-export function playurlRequestContext(value: string, base?: string): PlayurlRequestContext {
-  let contentId: string | null = null
-  if (isPlayurlApi(value, base)) {
-    const values = new URL(value, base).searchParams.getAll('cid')
-    if (values.length === 1 && /^[0-9]{1,20}$/.test(values[0]!)) {
-      contentId = values[0]!.replace(/^0+/, '') || null
-    }
+import { type PlaybackNavigationIdentity, type PlayurlRequestContext } from './playurl-model.ts'
+
+const numericId = (value: string): string | null =>
+  /^[0-9]{1,20}$/.test(value) ? value.replace(/^0+/, '') || null : null
+const bvid = (value: string): string | null => (/^BV[0-9A-Za-z]{10}$/.test(value) ? value : null)
+
+function checkedIdentity(query: URLSearchParams, pathId: Partial<PlaybackNavigationIdentity> = {}) {
+  const read = (
+    keys: readonly string[],
+    parse: (value: string) => string | null,
+    path?: string | null,
+  ) => {
+    const values = keys.flatMap((key) => query.getAll(key))
+    if (!values.length) return path ?? null
+    const value = values.length === 1 ? parse(values[0]!) : null
+    return value && (!path || value === path) ? value : undefined
   }
-  return Object.freeze({ contentId })
+  const video = read(['bvid'], bvid, pathId.bvid)
+  const aid = read(['aid', 'avid', 'oid'], numericId, pathId.aid)
+  const episode = read(['ep_id', 'epid'], numericId, pathId.episode)
+  const part = read(['p'], numericId)
+  if (video === undefined || aid === undefined || episode === undefined || part === undefined)
+    return null
+  return { bvid: video, aid, episode, part }
+}
+
+const navigationIds = ['bvid', 'aid', 'episode'] as const
+function hasSameId(left: PlaybackNavigationIdentity, right: PlaybackNavigationIdentity): boolean {
+  const shared = navigationIds.filter((id) => left[id] && right[id])
+  return shared.length > 0 && shared.every((id) => left[id] === right[id])
+}
+
+function navigationPage(key: string) {
+  const [path = '', search] = key.split(/\?(.*)/s, 2)
+  const query = new URLSearchParams(search)
+  const video = /^\/video\/([^/]+)\/?$/.exec(path)?.[1]
+  const episode = /^\/bangumi\/play\/ep([0-9]+)\/?$/.exec(path)?.[1]
+  const list = /^\/(?:list|watchlater)(?:\/|$)/.test(path)
+  if (!video && !episode && !list) return null
+  const pathId: Partial<PlaybackNavigationIdentity> = video
+    ? { bvid: bvid(video), aid: video.startsWith('av') ? numericId(video.slice(2)) : null }
+    : episode
+      ? { episode: numericId(episode) }
+      : {}
+  if ((video || episode) && !Object.values(pathId).some(Boolean)) return null
+  const identity = checkedIdentity(query, pathId)
+  const cids = query.getAll('cid')
+  const cid = cids.length === 1 ? numericId(cids[0]!) : null
+  if (!identity || (cids.length && !cid)) return null
+  return { path, identity, cid, list }
+}
+
+export function matchesPlayurlNavigation(
+  previousKey: string,
+  key: string,
+  context: PlayurlRequestContext,
+  changedContent: boolean,
+): boolean {
+  const previous = navigationPage(previousKey),
+    next = navigationPage(key),
+    target = context.navigation
+  if (!next || !target || !context.contentId || !hasSameId(next.identity, target)) return false
+  if (next.cid && next.cid !== context.contentId) return false
+  const nextPart = next.identity.part ?? '1'
+  if (target.part && target.part !== nextPart) return false
+  if (previous && hasSameId(previous.identity, next.identity)) {
+    if ((previous.identity.part ?? '1') === nextPart) return false
+    if (!target.part && !next.cid) return false
+  } else if (nextPart !== '1' && !target.part && !next.cid) return false
+  if (changedContent) return true
+  return (
+    !!previous?.list &&
+    previous.path === next.path &&
+    !navigationIds.some((id) => previous.identity[id]) &&
+    (previous.identity.part ?? '1') === nextPart
+  )
+}
+
+export function playurlRequestContext(value: string, base?: string): PlayurlRequestContext {
+  if (!isPlayurlApi(value, base)) return Object.freeze({ contentId: null })
+  const url = new URL(value, base),
+    query = url.searchParams
+  const values = query.getAll('cid')
+  const contentId = values.length === 1 ? numericId(values[0]!) : null
+  const main = query.getAll('is_main_page'),
+    sources = query.getAll('gaia_source')
+  if (main.includes('false') || sources.some((kind) => kind === 'pre-load' || kind === 'view-card'))
+    return Object.freeze({ contentId, auxiliary: true })
+  const navigation =
+    url.protocol === 'https:' &&
+    !url.port &&
+    !url.username &&
+    !url.password &&
+    /^\/(?:x\/player\/(?:wbi\/)?playurl|ogv\/player\/playview)$/.test(url.pathname) &&
+    main.length === 1 &&
+    main[0] === 'true' &&
+    sources.every((kind) => !kind)
+      ? checkedIdentity(query)
+      : null
+  return Object.freeze({
+    contentId,
+    ...(navigation && navigationIds.some((id) => navigation[id])
+      ? { navigation: Object.freeze(navigation) }
+      : {}),
+  })
 }
 
 /** Private controller memory. These directories must not be exported or persisted. */

@@ -23,6 +23,26 @@ import './cases/tooling/definition-imports.ts'
 import './cases/tooling/archive-compressed.ts'
 import './cases/tooling/v2218-delivery.ts'
 
+test('UP142 built metadata covers the four supported locale prefixes on playback pages', () => {
+  const header = renderMetadata(readFileSync('src-v2/metadata.txt', 'utf8'), '2.2.23')
+  const localizedMatches = header.split(/\r?\n/).flatMap((line) => {
+    const match = /^\/\/ @match\s+https:\/\/www\.bilibili\.com\/(.+)$/.exec(line)?.[1]
+    return match?.split('/').length === 3 &&
+      !match.startsWith('bangumi/') &&
+      !match.startsWith('medialist/')
+      ? [match]
+      : []
+  })
+  assert.deepEqual(
+    localizedMatches.sort(),
+    ['zh-Hant', 'zh-Hans', 'en', 'ja']
+      .flatMap((locale) =>
+        ['video', 'list', 'watchlater'].map((category) => `${locale}/${category}/*`),
+      )
+      .sort(),
+  )
+})
+
 test('V2214 metadata injects exactly one explicit release version placeholder', () => {
   assert.equal(
     renderMetadata('// @version      __VERSION__\n', '2.2.14'),

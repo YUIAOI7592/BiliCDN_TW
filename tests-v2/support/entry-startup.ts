@@ -43,6 +43,7 @@ function trackedTarget() {
 export async function exerciseEntryStartup(
   t: TestContext,
   failure: 'visibility' | 'page-assignment' | 'history' | 'none',
+  throwDuringRemoval = false,
 ) {
   const scope = testScope(t)
   const { outputFiles } = await build({
@@ -137,6 +138,17 @@ export async function exerciseEntryStartup(
         throw Error('controlled visibility registration failure')
     }
   }
+  let removalThrew = false
+  if (throwDuringRemoval) {
+    const remove = doc.removeEventListener
+    doc.removeEventListener = (type, listener, options) => {
+      remove(type, listener, options)
+      if (type === 'webkitvisibilitychange') {
+        removalThrew = true
+        throw Error('controlled visibility removal failure')
+      }
+    }
+  }
   const expectedHistory = Object.getOwnPropertyDescriptors(history)
   scope.defer(() => {
     pending.clear()
@@ -179,6 +191,7 @@ export async function exerciseEntryStartup(
   tasks.forEach((task) => task())
   return {
     escaped,
+    removalThrew,
     installedBeforeFailure,
     documentEventsBeforeFailure,
     windowEventsBeforeFailure,

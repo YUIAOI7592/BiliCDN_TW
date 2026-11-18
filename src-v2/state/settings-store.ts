@@ -62,6 +62,7 @@ export class SettingsStore implements SettingsPort {
     considerNativeSources: 0,
   }
   #state: SettingsState
+  #revision = 0
   #listeners = new Set<(state: SettingsState) => void>()
   #stopRemote: () => void
 
@@ -70,11 +71,8 @@ export class SettingsStore implements SettingsPort {
     private readonly now: () => number,
   ) {
     this.#state = parseSettings(storage.get<unknown>(SETTINGS_KEY, null), now())
-    this.#stopRemote = storage.listen<unknown>(SETTINGS_KEY, (value, remote) => {
-      if (!remote) return
-      const next = parseSettings(value, this.now())
-      if (next.updatedAt < this.#state.updatedAt) return
-      this.#publish(next)
+    this.#stopRemote = storage.listen<unknown>(SETTINGS_KEY, (_value, remote) => {
+      if (remote) this.#reconcile()
     })
   }
 
@@ -102,16 +100,33 @@ export class SettingsStore implements SettingsPort {
     return parseSettings(result.value, now ?? this.now())
   }
 
-  #save(value: SettingsState, current: SettingsState, now: number): SettingsState {
+  #save(value: SettingsState, current: SettingsState, now: number) {
     const next = parseSettings(
       { ...value, schema: 2, updatedAt: Math.max(now, current.updatedAt + 1) },
       now,
     )
+    const revision = ++this.#revision
     this.storage.set(SETTINGS_KEY, next)
-    return next
+    return { next, revision }
+  }
+
+  #reconcile(): SettingsState {
+    const revision = this.#revision
+    let current: SettingsState
+    try {
+      current = this.#readForWrite()
+    } catch {
+      return this.#state
+    }
+    return revision === this.#revision ? this.#publish(current) : this.#state
+  }
+
+  #publishSaved(saved: { next: SettingsState; revision: number }): SettingsState {
+    return saved.revision === this.#revision ? this.#publish(saved.next) : this.#reconcile()
   }
 
   #publish(next: SettingsState): SettingsState {
+    this.#revision++
     this.#state = next
     this.#emit()
     return next
@@ -134,7 +149,7 @@ export class SettingsStore implements SettingsPort {
       return await this.storage.withLock('settings', () => {
         const current = this.#readForWrite()
         const now = this.now()
-        return this.#publish(this.#save({ ...current, ...change }, current, now))
+        return this.#publishSaved(this.#save({ ...current, ...change }, current, now))
       })
     } finally {
       releaseEarlyRetry()
@@ -147,7 +162,7 @@ export class SettingsStore implements SettingsPort {
     return await this.storage.withLock('settings', () => {
       const now = this.now(),
         current = this.#readForWrite(now)
-      return this.#publish(
+      return this.#publishSaved(
         this.#save(
           { ...current, catalogOverrides: { ...current.catalogOverrides, [host]: enabled } },
           current,
@@ -160,14 +175,13 @@ export class SettingsStore implements SettingsPort {
   async reset(): Promise<SettingsState> {
     const release = this.#holdOff(['considerNativeSources', 'earlyRetryEnabled'])
     try {
-      const next = await this.storage.withLock('settings', () => {
+      const saved = await this.storage.withLock('settings', () => {
         const now = this.now(),
           current = this.#readForWrite(now)
         return this.#save(defaultSettings(now), current, now)
       })
       // Reset publishes after lock completion, unlike the update commands.
-      if (next.updatedAt < this.#state.updatedAt) return this.#state
-      return this.#publish(next)
+      return this.#publishSaved(saved)
     } finally {
       release()
     }

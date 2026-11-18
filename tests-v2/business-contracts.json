@@ -37,6 +37,9 @@
       "id": "settings-reset-order",
       "rule": "完成寫入但尚未發布的還原不能覆蓋更新的本機編輯或遠端通知，命令、保存、快取、訂閱及 WebRTC 採同一值。",
       "tests": [
+        ["state", "reset after a wall-clock correction converges in storage, both stores and WebRTC"],
+        ["state", "late settings notifications reread authority and preserve the cache on read failure"],
+        ["state", "V2222 reset preserves a newer wall-clock correction after saving"],
         ["state", "V2222 reset preserves a newer local update after saving"],
         ["state", "V2222 reset preserves a newer remote notification after saving"]
       ]
@@ -121,8 +124,11 @@
     },
     {
       "id": "entry-history-rollback",
-      "rule": "第二個 History 包裝安裝失敗時，正式入口恢復原生傳輸與描述子，釋放多種可見性監聽、儲存訂閱、計時器及 WebRTC，且不登記 UI 或選單。",
+      "rule": "可見性或 History 部分安裝失敗時，正式入口恢復原生傳輸與描述子，釋放監聽、訂閱、計時器及 WebRTC，面板與選單只在成功啟動後登記。",
       "tests": [
+        ["orchestration", "startup control installs transport, document listeners and the control menu"],
+        ["orchestration", "visibility registration failure rolls back all resources acquired by the entry"],
+        ["orchestration", "visibility rollback continues after a listener removal throws"],
         ["orchestration", "V2222 entry restores native APIs when lifecycle startup fails"]
       ]
     },
@@ -189,6 +195,8 @@
       "id": "playinfo-hint",
       "rule": "嚴格模式拒絕輸出不能送入網站原 setter，後裝描述子屬於網站。",
       "tests": [
+        ["orchestration", "entry rollback keeps the latest website playinfo assignment"],
+        ["native-transport", "page playinfo rollback keeps an explicit undefined and does not replay an accessor"],
         ["adapter-boundaries", "CONTROL page hint: strict rejection cannot enter page setter; newer property owner survives dispose"],
         ["native-transport", "page setter and initial getter reject unsupported Catalog-only values but preserve Native values [6]"]
       ]
@@ -535,6 +543,9 @@
       "id": "route-status-snapshot",
       "rule": "讀取快照不提交、改變決策或啟動工作，容量只在瀏覽到的當前授權有效時提供。",
       "tests": [
+        ["control-center", "route and overview snapshot stay in the current epoch during capacity read"],
+        ["control-center", "route and overview snapshot stay in the current epoch during circuit-list read"],
+        ["control-center", "route and overview snapshot stay in the current epoch during circuit-lock read"],
         ["application", "V2211 routing: snapshot reads cannot commit, mutate a decision or start work"],
         ["progressive-routing", "V225 capacity discards a synchronous evidence read that changes ownership"],
         ["progressive-routing", "V225 capacity discards a synchronous policy read that changes ownership"],
@@ -1295,6 +1306,8 @@
       "id": "ui-display-capacity",
       "rule": "總覽使用目前媒體的容量與證據級別，舊世代或週期拒絕顯示，正常候選學習在現有 tick 更新。",
       "tests": [
+        ["control-center", "route and overview snapshot stay in the current epoch during none read"],
+        ["control-center", "route and overview snapshot discard a frame after two invalidations"],
         ["control-center", "V224 display rejects media rows from an older generation"],
         ["control-center", "V224 display rejects media rows from an older epoch"],
         ["control-center", "V225 primary successful learning updates the real read model and overview on the existing tick"],
@@ -1437,6 +1450,47 @@
       "rule": "媒體路徑辨識維持 URL 改寫長度及主機正規化上限。",
       "tests": [
         ["domain", "V2219 media path recognition preserves the rewrite limit and oversized host boundary"]
+      ]
+    }
+  ],
+  "上游 v1.4.2 行為吸收": [
+    {
+      "id": "upstream142-localized-playback",
+      "rule": "四種已確認語系的影片、清單及稍後再看依精確中繼資料載入，同片等價導覽保留現有世代。",
+      "tests": [
+        ["tooling", "UP142 built metadata covers the four supported locale prefixes on playback pages"],
+        ["orchestration", "UP142 locale navigation preserves the active part and distinguishes actual media changes"]
+      ]
+    },
+    {
+      "id": "upstream142-auxiliary",
+      "rule": "預載與預覽 API 維持主片週期、授權、接納序號與選路，嚴格模式只提供合法 Catalog 輸出。",
+      "tests": [
+        ["playurl-summary", "UP142 native auxiliary Fetch and XHR preserve the main epoch and accepted watermark"],
+        ["playurl-summary", "UP142 catalog auxiliary Fetch and XHR preserve the main epoch and accepted watermark"],
+        ["playurl-summary", "UP142 Catalog-only auxiliary API rejects when all Catalog hosts are disabled"]
+      ]
+    },
+    {
+      "id": "upstream142-navigation-pair",
+      "rule": "主 API 與 URL 經現有可信請求身分配對一次，過期、缺少分 P 證明或無關導航維持保守重設。",
+      "tests": [
+        ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: api-first"],
+        ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: url-first"],
+        ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: expired"],
+        ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: unrelated"],
+        ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: missing-part"],
+        ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: exact-part"],
+        ["orchestration", "UP142 navigation pairs accepted primary responses only when eligible: rapid"],
+        ["orchestration", "UP142 watchlater can complete the address of the accepted main video once"]
+      ]
+    },
+    {
+      "id": "upstream142-seek-cooldown",
+      "rule": "尋位保留尚未使用的起播窗口，共同冷卻在換片與解除尋位後持續生效。",
+      "tests": [
+        ["orchestration", "UP142 seek protection leaves the per-tab startup window for the next eligible request"],
+        ["measurement-state", "UP142 seek and content reset preserve the shared health cooldown"]
       ]
     }
   ]

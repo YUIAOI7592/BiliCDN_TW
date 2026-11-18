@@ -162,6 +162,27 @@ test('V2213 health controller: two controllers share the existing round cooldown
   assert.equal(f.clock.pendingCount, 0)
 })
 
+test('UP142 seek and content reset preserve the shared health cooldown', async (t) => {
+  const f = await createPriorityRound(t)
+  const first = f.controller()
+  const second = f.controller(
+    undefined,
+    new MeasurementMetaStore(f.storage, f.clock.now, createRuntimeIds(), f.readControl),
+  )
+  first.tick(f.status)
+  await nextTurn()
+  const at = f.meta.get().lastChallengeAt
+  const count = f.calls.length
+  assert.ok(at > 0 && count > 0)
+  first.reset()
+  first.tick({ ...f.status, seeking: true })
+  second.tick(f.status)
+  await nextTurn()
+  assert.equal(f.meta.get().lastChallengeAt, at)
+  assert.equal(f.calls.length, count)
+  assert.equal(second.snapshot().reason, 'cross-tab-cooldown')
+})
+
 class HealthInterleavingStorage extends SharedEvidenceStorage {
   afterMeasurementLock?: () => void
   beforeEvidenceWrite?: () => void

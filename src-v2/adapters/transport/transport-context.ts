@@ -170,10 +170,12 @@ export class TransportContext {
     this.#lastBlocked = Object.freeze({ method, host: hostOf(url), reason })
   }
   apiDispatch(url: string, captured?: PlayurlRequestContext): PlayurlRequestContext {
+    const context = captured ?? playurlRequestContext(url)
     return Object.freeze({
-      ...(captured ?? playurlRequestContext(url)),
+      ...context,
       generation: Number(this.session.get().generation),
       requestSequence: ++this.#apiDispatchSerial,
+      ...(context.navigation ? { dispatchedAt: this.now() } : {}),
     })
   }
   nextResponseKey(prefix: string): string {

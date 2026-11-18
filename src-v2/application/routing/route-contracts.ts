@@ -161,6 +161,19 @@ export interface RouteSnapshot {
   readonly fallback: Readonly<Partial<Record<MediaKind, Readonly<FallbackProgress>>>>
 }
 
+export const EMPTY_ROUTE_SNAPSHOT: RouteSnapshot = Object.freeze({
+  circuits: Object.freeze([]),
+  selection: null,
+  currentCapacity: null,
+  activePlan: null,
+  affinity: null,
+  latest: Object.freeze({}),
+  requested: Object.freeze({}),
+  attribution: 'awaiting-matched-video',
+  representation: null,
+  fallback: Object.freeze({}),
+})
+
 export interface RouteSessionPort extends Pick<
   SessionPort,
   'get' | 'noteDecision' | 'setAffinity' | 'setRepresentation'
@@ -195,6 +208,10 @@ export interface RouteCoordinatorPort {
   invalidateForUserSetting(): void
   policyRevision(): number
   isCatalogOnly(): boolean
+  previewCatalogOutput(
+    urls: readonly string[],
+    kind: MediaKind,
+  ): { primary: string; backups: readonly string[] } | null
   prepareRequest(request: RequestContext): RequestContext
   requestStarted(request: RequestContext): void
   observePlaybackRate(rate: number): void

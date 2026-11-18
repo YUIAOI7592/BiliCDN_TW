@@ -35,6 +35,17 @@ export class PagePlayinfoAdapter {
     }
     this.#current = value
     const adapter = this
+    let active = true
+    let lastAssigned = value
+    let assigned = false
+    let assignment = 0
+    let savedAssignment = 0
+    const remember = (serial: number, next: unknown): void => {
+      if (serial <= savedAssignment) return
+      savedAssignment = serial
+      assigned = true
+      lastAssigned = next
+    }
     const getter = (): unknown => {
       let current: unknown
       if (descriptor?.get) {
@@ -44,7 +55,7 @@ export class PagePlayinfoAdapter {
           current = adapter.#current
         }
       } else current = adapter.#current
-      if (!adapter.rewriteBeforePageSetter()) return current
+      if (!active || !adapter.rewriteBeforePageSetter()) return current
       try {
         return adapter.#adopt(current) ? current : undefined
       } catch {
@@ -52,6 +63,8 @@ export class PagePlayinfoAdapter {
       }
     }
     const setter = (next: unknown): void => {
+      if (!active) return
+      const serial = ++assignment
       if (adapter.rewriteBeforePageSetter()) {
         const previous = adapter.#current
         try {
@@ -64,10 +77,14 @@ export class PagePlayinfoAdapter {
           return
         }
         if (descriptor?.set) descriptor.set.call(target, next)
+        else remember(serial, next)
         return
       }
       if (descriptor?.set) descriptor.set.call(target, next)
-      else adapter.#current = next
+      else {
+        adapter.#current = next
+        remember(serial, next)
+      }
       adapter.#adopt(next)
     }
     try {
@@ -81,13 +98,25 @@ export class PagePlayinfoAdapter {
       return
     }
     this.#restore = () => {
+      active = false
       try {
         const current = Object.getOwnPropertyDescriptor(target, '__playinfo__')
-        if (current?.get !== getter || current.set !== setter) return
-        if (descriptor) Object.defineProperty(target, '__playinfo__', descriptor)
+        if (
+          current?.get !== getter ||
+          current.set !== setter ||
+          !current.configurable ||
+          current.enumerable !== (descriptor?.enumerable ?? true)
+        )
+          return
+        if (descriptor)
+          Object.defineProperty(
+            target,
+            '__playinfo__',
+            descriptor.writable && assigned ? { ...descriptor, value: lastAssigned } : descriptor,
+          )
         else {
           delete target.__playinfo__
-          if (adapter.#current !== undefined) target.__playinfo__ = adapter.#current
+          if (assigned) target.__playinfo__ = lastAssigned
         }
       } catch {
         /* page owns property */
@@ -97,8 +126,9 @@ export class PagePlayinfoAdapter {
   }
 
   dispose(): void {
-    this.#restore?.()
+    const restore = this.#restore
     this.#restore = null
+    restore?.()
   }
 
   #adopt(payload: unknown): boolean {

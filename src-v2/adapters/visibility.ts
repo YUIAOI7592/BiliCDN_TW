@@ -1,6 +1,7 @@
 export class VisibilityAdapter {
   #restores: (() => void)[] = []
   #nativeHidden: (() => boolean) | null = null
+  #deactivate: (() => void) | null = null
   #controlLoss = new Set<() => void>()
 
   subscribeControlLoss(listener: () => void): () => void {
@@ -11,7 +12,7 @@ export class VisibilityAdapter {
   }
 
   install(): void {
-    if (this.#restores.length) return
+    if (this.#deactivate) return
     const hidden = Object.getOwnPropertyDescriptor(Document.prototype, 'hidden')
     Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState')
     this.#nativeHidden = () => {
@@ -23,23 +24,35 @@ export class VisibilityAdapter {
         return false
       }
     }
-    this.#spoof('hidden', false)
-    this.#spoof('visibilityState', 'visible')
+    let active = true
+    this.#deactivate = () => {
+      active = false
+    }
     const guard = (event: Event): void => {
-      if (!this.#nativeHidden?.()) return
+      if (!active || !this.#nativeHidden?.()) return
       if (event.isTrusted) this.#notifyControlLoss()
       event.stopImmediatePropagation()
     }
-    document.addEventListener('visibilitychange', guard, true)
-    document.addEventListener('webkitvisibilitychange', guard, true)
     const blurGuard = (event: Event): void => {
+      if (!active) return
       if (event.isTrusted && event.target === window) this.#notifyControlLoss()
       event.stopImmediatePropagation()
     }
-    window.addEventListener('blur', blurGuard, true)
-    this.#restores.push(() => document.removeEventListener('visibilitychange', guard, true))
-    this.#restores.push(() => document.removeEventListener('webkitvisibilitychange', guard, true))
-    this.#restores.push(() => window.removeEventListener('blur', blurGuard, true))
+    try {
+      const page = document,
+        view = window
+      this.#spoof('hidden', false)
+      this.#spoof('visibilityState', 'visible')
+      for (const type of ['visibilitychange', 'webkitvisibilitychange']) {
+        this.#restores.push(() => page.removeEventListener(type, guard, true))
+        page.addEventListener(type, guard, true)
+      }
+      this.#restores.push(() => view.removeEventListener('blur', blurGuard, true))
+      view.addEventListener('blur', blurGuard, true)
+    } catch (error) {
+      this.dispose()
+      throw error
+    }
   }
 
   setEnabled(enabled: boolean): void {
@@ -52,6 +65,9 @@ export class VisibilityAdapter {
   }
 
   dispose(): void {
+    this.#deactivate?.()
+    this.#deactivate = null
+    this.#nativeHidden = null
     for (const restore of this.#restores.splice(0).reverse()) {
       try {
         restore()
@@ -59,7 +75,6 @@ export class VisibilityAdapter {
         /* fail-open */
       }
     }
-    this.#nativeHidden = null
   }
 
   #notifyControlLoss(): void {

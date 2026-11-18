@@ -29,9 +29,9 @@ export class RuntimeController implements RuntimePort {
           this.routes.observePlaybackFacts(null, revision),
         ),
       )
+    this.#stops.push(this.content.subscribeEpoch(() => this.reset()))
+    this.#stops.push(this.routes.subscribe((event) => this.handleRouteEvent(event)))
     this.#stops.push(
-      this.content.subscribeEpoch(() => this.reset()),
-      this.routes.subscribe((event) => this.handleRouteEvent(event)),
       this.monitor.subscribe((snapshot) => {
         if (this.#stops.length && this.#running)
           this.routes.observePlaybackFacts(snapshot.routingPlayback ?? null)
@@ -89,9 +89,17 @@ export class RuntimeController implements RuntimePort {
   }
   dispose(): void {
     this.#running = false
-    this.routes.observePlaybackFacts(null)
-    this.earlyRetry?.dispose()
-    for (const stop of this.#stops.splice(0).reverse()) stop()
+    for (const stop of [
+      ...this.#stops.splice(0).reverse(),
+      () => this.routes.observePlaybackFacts(null),
+      () => this.earlyRetry?.dispose(),
+    ]) {
+      try {
+        stop()
+      } catch {
+        /* release other subscriptions */
+      }
+    }
   }
 }
 

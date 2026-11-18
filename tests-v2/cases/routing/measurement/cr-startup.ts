@@ -79,6 +79,30 @@ test('CR-03 content reset during startup must not reopen the per-tab probe budge
   )
 })
 
+test('UP142 seek protection leaves the per-tab startup window for the next eligible request', async (t) => {
+  const probe = controlledProbe()
+  const f = fixture(t, undefined, probe.probe)
+  assert.ok(f.measurement instanceof MeasurementController)
+  const first = media(100)
+  const url = first.data.dash.video[0]!.base_url
+  assert.equal(f.playurl.transform(first, 'trusted-api').accepted, true)
+  f.setVideo({ ...f.video(), seeking: true })
+  f.deps.monitor.tick()
+  assert.equal(f.measurement.willGateStartup(url), false)
+  await f.measurement.prepareStartup(url)
+  assert.equal(probe.pending.length, 0)
+  f.setVideo({ ...f.video(), seeking: false })
+  f.deps.monitor.tick()
+  assert.equal(f.measurement.willGateStartup(url), true)
+  const wait = f.measurement.prepareStartup(url)
+  const used = probe.pending.length
+  assert.ok(used > 0)
+  probe.succeed()
+  await wait
+  await f.measurement.prepareStartup(url)
+  assert.equal(probe.pending.length, used)
+})
+
 test('CR-03 control: completed startup keeps its consumed budget after content reset', async (t) => {
   const probe = controlledProbe(),
     f = fixture(t, undefined, probe.probe)

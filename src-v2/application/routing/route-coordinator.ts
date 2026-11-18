@@ -57,6 +57,7 @@ import {
   type RouteIdentity,
 } from '../../domain/route-model.ts'
 import {
+  EMPTY_ROUTE_SNAPSHOT,
   type DomainEvent,
   type AppliedRouteDecision,
   type ChallengeProposal,
@@ -1526,6 +1527,33 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     return appliedRoute(decision, target, context, streamKey, sourceHost, match, outputRole)
   }
 
+  previewCatalogOutput(urls: readonly string[], kind: MediaKind) {
+    const fixed = this.settings.get().fixedHost
+    const hosts =
+      fixed && isCatalogHost(fixed)
+        ? [fixed, ...TRUSTED_CATALOG.filter((host) => host !== fixed)]
+        : TRUSTED_CATALOG
+    for (const source of urls) {
+      const parsed = parseMediaUrl(source)
+      if (
+        !parsed?.replaceable ||
+        parsed.url.protocol !== 'https:' ||
+        parsed.url.username ||
+        parsed.url.password ||
+        parsed.url.port
+      )
+        continue
+      const outputs = hosts.flatMap((host) => {
+        if (this.#hardRestriction(host, kind) || this.#incompatible(source, host)) return []
+        const output = replaceUrlHost(source, host)
+        return output && parseMediaUrl(output)?.kind === 'normal' ? [output] : []
+      })
+      const [primary, ...backups] = outputs.slice(0, 6)
+      if (primary) return { primary, backups }
+    }
+    return null
+  }
+
   opaqueOutput(
     representation: RepresentationId,
     original: string,
@@ -2186,8 +2214,23 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   snapshot(): RouteSnapshot {
-    const session = this.session.get(),
-      pending = this.#ownership.selection?.phase === 'pending',
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const before = this.session.get()
+      const revision = this.#policyRevision
+      const snapshot = this.#snapshot(before)
+      const after = this.session.get()
+      if (
+        before.generation === after.generation &&
+        before.epoch === after.epoch &&
+        revision === this.#policyRevision
+      )
+        return snapshot
+    }
+    return EMPTY_ROUTE_SNAPSHOT
+  }
+
+  #snapshot(session: ReturnType<RouteSessionPort['get']>): RouteSnapshot {
+    const pending = this.#ownership.selection?.phase === 'pending',
       activeRepresentation = this.#ownership.selection?.representation ?? session.representation,
       active = activeRepresentation ? this.#plans.get(activeRepresentation) : null,
       representation =

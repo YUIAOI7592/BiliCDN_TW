@@ -8,7 +8,11 @@ import { type RouteIdentity } from '../../domain/route-model.ts'
 import { controlPlaybackDemand } from '../../domain/playback-demand.ts'
 import { parseMediaUrl } from '../../domain/url-policy.ts'
 import { admitSources } from '../../domain/source-admission.ts'
-import { observePlayurlContent, type PlayurlContentIdentity } from '../../domain/playurl-content.ts'
+import {
+  matchesPlayurlNavigation,
+  observePlayurlContent,
+  type PlayurlContentIdentity,
+} from '../../domain/playurl-content.ts'
 import { type PlayurlRequestContext } from '../../domain/playurl-model.ts'
 import {
   type PlayurlControllerPort,
@@ -26,6 +30,12 @@ type IngestionOwner = {
   epoch: EpochId
   readonly sequence: number | undefined
 }
+type AcceptedCandidate = {
+  readonly context: PlayurlRequestContext
+  readonly generation: GenerationId
+  readonly epoch: EpochId
+  readonly changedContent: boolean
+}
 
 export class PlayurlController implements PlayurlControllerPort {
   #epochListeners = new Set<
@@ -38,11 +48,8 @@ export class PlayurlController implements PlayurlControllerPort {
   #generation = -1
   #apiWatermark = 0
   #ingestion: IngestionOwner | null = null
-  #apiCandidate: {
-    readonly context: PlayurlRequestContext
-    readonly generation: GenerationId
-    readonly epoch: EpochId
-  } | null = null
+  #apiCandidate: AcceptedCandidate | null = null
+  #navigationClaim: AcceptedCandidate | null = null
   #contentIdentity: PlayurlContentIdentity | null = null
   constructor(
     private readonly session: PlayurlSessionPort,
@@ -86,6 +93,7 @@ export class PlayurlController implements PlayurlControllerPort {
       (context?.generation !== undefined && context.generation !== Number(state.generation))
     )
       return null
+    if (source === 'trusted-api' && context?.auxiliary) return this.#auxiliaryOutput(payload)
     // Only a newer ordered API response may supersede synchronous ingestion.
     // This reservation is not the accepted-response watermark.
     if (
@@ -113,6 +121,29 @@ export class PlayurlController implements PlayurlControllerPort {
     }
   }
 
+  #auxiliaryOutput(payload: PlayurlInput | null): readonly PlayurlOutput[] | null {
+    if (!this.routes.isCatalogOnly()) return []
+    if (!payload) return null
+    const state = this.session.get(),
+      revision = this.routes.policyRevision()
+    const outputs: PlayurlOutput[] = []
+    for (const kind of ['video', 'audio'] as const) {
+      for (const item of payload[kind]) {
+        const urls = admitSources(item.urls, true).map((source) => source.url)
+        const output = this.routes.previewCatalogOutput(urls, kind)
+        if (!output) return null
+        outputs.push({ token: item.token, ...output })
+      }
+    }
+    const current = this.session.get()
+    return !current.disabled &&
+      current.generation === state.generation &&
+      current.epoch === state.epoch &&
+      revision === this.routes.policyRevision()
+      ? outputs
+      : null
+  }
+
   #ingest(
     payload: PlayurlInput | null,
     source: 'trusted-api' | 'player-mpd' | 'page-hint',
@@ -131,6 +162,7 @@ export class PlayurlController implements PlayurlControllerPort {
       this.#responses.clear()
       this.#apiWatermark = 0
       this.#apiCandidate = null
+      this.#navigationClaim = null
       this.#contentIdentity = null
       this.#seenTrusted = new WeakSet()
       this.#trustedItems = new WeakMap()
@@ -183,6 +215,7 @@ export class PlayurlController implements PlayurlControllerPort {
         this.#seenPage.set(payload.token, generation)
       }
     }
+    let changedContent = false
     if (source === 'trusted-api' && !older) {
       const next = observePlayurlContent(
         this.#contentIdentity,
@@ -192,6 +225,7 @@ export class PlayurlController implements PlayurlControllerPort {
       )
       this.#contentIdentity = next.identity
       if (next.changed) {
+        changedContent = true
         this.session.beginEpoch()
         const state = this.session.get()
         if (this.#ingestion !== owner || state.disabled || state.generation !== owner.generation)
@@ -314,7 +348,12 @@ export class PlayurlController implements PlayurlControllerPort {
     }
     if (!valid()) return null
     if (ordered && context)
-      this.#apiCandidate = { context, generation: state.generation, epoch: state.epoch }
+      this.#apiCandidate = {
+        context,
+        generation: state.generation,
+        epoch: state.epoch,
+        changedContent,
+      }
     return outputs
   }
 
@@ -360,8 +399,29 @@ export class PlayurlController implements PlayurlControllerPort {
     )
       return
     this.#apiCandidate = null
-    if (Number.isSafeInteger(context.requestSequence) && context.requestSequence! > 0)
-      this.#apiWatermark = Math.max(this.#apiWatermark, context.requestSequence!)
+    const sequence = context.requestSequence
+    if (sequence !== undefined && Number.isSafeInteger(sequence) && sequence > this.#apiWatermark) {
+      this.#apiWatermark = sequence
+      this.#navigationClaim = context.navigation && context.contentId ? candidate : null
+    }
+  }
+
+  claimNavigation(previous: string, next: string, now: number): boolean {
+    const claim = this.#navigationClaim
+    this.#navigationClaim = null
+    const state = this.session.get()
+    const dispatchedAt = claim?.context.dispatchedAt
+    return (
+      !!claim &&
+      !state.disabled &&
+      claim.generation === state.generation &&
+      claim.epoch === state.epoch &&
+      dispatchedAt !== undefined &&
+      Number.isFinite(dispatchedAt) &&
+      now >= dispatchedAt &&
+      now - dispatchedAt <= 5000 &&
+      matchesPlayurlNavigation(previous, next, claim.context, claim.changedContent)
+    )
   }
 
   #sanitizeKnownItem(
