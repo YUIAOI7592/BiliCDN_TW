@@ -21,9 +21,9 @@ PCDN 案例核對備援清單非空、主機去重且皆在可信 Catalog。封�
 
 ## 安全差異
 
-固定產品差異為 `abd0ace7ed2b7f05534fa718c5403c12308a9101..51f00da63409fa0c93037f4a82ac5d77f8c056c8`。Codex Security 啟動時回報工作樹或 HEAD 無法識別，Git CLI 可解析該差異。獨立掃描結果尚未取得。
+Codex Security 已於 2026-11-18 22:06（Asia/Taipei）完成固定差異審查並核對封存結果，掃描 ID 為 `a0f16b24-1ad3-422b-b722-4cb588f6ab19`。差異為 `abd0ace7ed2b7f05534fa718c5403c12308a9101..51f00da63409fa0c93037f4a82ac5d77f8c056c8`，13 個變更檔案全部完成審查，候選、可報告漏洞與未解項目均為零。
 
-人工複核同一差異的設定寫入與通知、健康探測及授權重驗、Fetch 無本文分支、恢復狀態所有權及相應契約，未確認額外的安全回歸。
+審查涵蓋設定寫入與通知、健康探測和證據保存的路線授權、Fetch 無本文分支、SDK 播放重設後的狀態所有權與相應契約。審查以固定差異、相依原始碼與現有自動契約為證據。工作台初始啟動無法解析 Git 工作樹，改在官方本機工作台入口指定可信 Git 後完成，封存結果由 Codex Security 讀回。
 
 <a name="公開交付與安裝結案"></a>
 
@@ -31,7 +31,7 @@ PCDN 案例核對備援清單非空、主機去重且皆在可信 Catalog。封�
 
 v2.2.20 五份原件已與來源標籤及原始校驗核對。公開 TAR＋gzip 為 153,579 bytes，SHA-256 `9a514a7f6963cb4ad6e6c703a0d5ad3521eac2731972cb21cea8bc2571a4f310`。九包已用系統 tar 獨立解壓，再以 `archive:check --restore-root` 核對通過。當版報告保存在[完整歷史](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-完整正文保存2026-11-18)。
 
-公開交付待完成。GitHub CLI 與 Git 憑證管理員在交付預檢時回報憑證失效。
+公開交付準備完成。初次預檢的憑證失效已透過 GitHub CLI 裝置登入恢復，並核對帳號與儲存庫推送權限。封裝附帶的報告保存封裝當時的狀態。
 
 ## 來源隔離與實際安裝
 
