@@ -69,6 +69,12 @@ export interface ChallengeProposal {
   readonly priorityStamp: CircuitControlStamp | null
 }
 
+export interface CommittedChallenge extends AppliedRouteDecision {
+  readonly url: string
+  readonly context: RouteIdentity
+  readonly isCurrent: () => boolean
+}
+
 export interface StartupOptions {
   readonly requestBytes?: number | null
   readonly candidates: readonly StartupCandidate[]
@@ -288,10 +294,7 @@ export interface RouteCoordinatorPort {
     catalogCursor?: number,
     priority?: ChallengePriority,
   ): ChallengeProposal | null
-  commitChallenge(
-    proposal: ChallengeProposal,
-    priorityClaimed?: boolean,
-  ): AppliedRouteDecision | null
+  commitChallenge(proposal: ChallengeProposal, priorityClaimed?: boolean): CommittedChallenge | null
   recordChallenge(
     applied: AppliedRouteDecision,
     bytes: number,
@@ -301,7 +304,7 @@ export interface RouteCoordinatorPort {
     failureKind: FailureKind | null,
     workCurrent?: () => boolean,
     measurement?: Pick<TransportObservation, 'timingBasis' | 'speedEligible'>,
-  ): Promise<void>
+  ): Promise<boolean>
   observe(observation: TransportObservation): Promise<void>
   snapshot(): RouteSnapshot
 }

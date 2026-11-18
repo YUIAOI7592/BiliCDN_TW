@@ -60,6 +60,7 @@ import {
   type DomainEvent,
   type AppliedRouteDecision,
   type ChallengeProposal,
+  type CommittedChallenge,
   type ChallengePriority,
   type CurrentRouteCapacity,
   type FallbackProgress,
@@ -1775,10 +1776,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     )
   }
 
-  commitChallenge(
-    proposal: ChallengeProposal,
-    priorityClaimed = false,
-  ): AppliedRouteDecision | null {
+  commitChallenge(proposal: ChallengeProposal, priorityClaimed = false): CommittedChallenge | null {
     const proof = this.#challengeProposals.get(proposal)
     if (!proof || !this.#challengeCurrent(proposal, proof)) return null
     const { context, candidate } = proposal,
@@ -1808,15 +1806,16 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#challengeAttempts.set(`${context.representation}:${candidate.host}`, now)
     this.#remember(decision.id)
     this.#emit({ type: 'route-planned', at: now, decision })
-    const applied = {
+    const applied: CommittedChallenge = Object.freeze({
       decision,
       url: proposal.url,
       context,
       streamKey: proposal.streamKey,
       sourceHost: parseMediaUrl(proof.root)?.host ?? null,
-    }
+      isCurrent: () => this.#challengeCurrent(proposal, proof),
+    })
     this.#measurementId(applied, 'challenge')
-    return this.#challengeCurrent(proposal, proof) ? applied : null
+    return applied.isCurrent() ? applied : null
   }
 
   async recordChallenge(
@@ -1828,10 +1827,10 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     failureKind: FailureKind | null,
     workCurrent: () => boolean = () => true,
     measurement?: Pick<TransportObservation, 'timingBasis' | 'speedEligible'>,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const context = applied.context
-    if (!context || applied.decision.action !== 'rewrite') return
-    if (this.isCatalogOnly() && applied.decision.routeType !== 'catalog-generated') return
+    if (!context || applied.decision.action !== 'rewrite') return false
+    if (this.isCatalogOnly() && applied.decision.routeType !== 'catalog-generated') return false
     const valid = (): boolean =>
       workCurrent() &&
       context.generation === this.session.get().generation &&
@@ -1839,15 +1838,15 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       !this.session.get().disabled &&
       this.vault.isCurrentIdentity(context) &&
       (!this.isCatalogOnly() || applied.decision.routeType === 'catalog-generated')
-    if (!valid()) return
+    if (!valid()) return false
     if (failureKind === 'native-invalid' && applied.decision.routeType === 'native-signed') {
       this.vault.invalidate(context.representation, applied.decision.host)
-      return
+      return false
     }
     // Active measurement cannot establish a playback circuit. A failed candidate
     // is skipped by the bounded attempt ledger; only player Transport can punish a host.
-    if (outcome === 'failure') return
-    await this.evidence.record(
+    if (outcome === 'failure') return false
+    const saved = await this.evidence.commit(
       applied.decision.host,
       context.kind,
       {
@@ -1857,20 +1856,19 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         source: 'challenge',
         outcome,
         throughputMbps:
-          measurement?.speedEligible !== false &&
-          outcome === 'success' &&
-          bytes >= 64 * 1024 &&
-          elapsedMs > 0
+          measurement?.speedEligible !== false && bytes >= 64 * 1024 && elapsedMs > 0
             ? (bytes * 8) / elapsedMs / 1000
             : null,
         ttfbMs,
         failureKind,
         ...(sampleTiming(bytes, elapsedMs, ttfbMs) ?? {}),
       },
+      applied,
       valid,
     )
+    if (saved.status === 'unconfirmed') throw saved.error ?? Error('Evidence write unconfirmed')
+    if (saved.status !== 'committed') return false
     if (
-      outcome === 'success' &&
       context.kind === 'video' &&
       valid() &&
       applied.decision.host &&
@@ -1882,6 +1880,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         identity: context,
         source: 'current-probe',
       }
+    return true
   }
 
   async observe(observation: TransportObservation): Promise<void> {

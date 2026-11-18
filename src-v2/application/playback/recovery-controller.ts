@@ -912,9 +912,16 @@ export class RecoveryController implements RecoveryPort {
         this.#suppress = false
       }
     }
+    const ownsPlayPhase = (): boolean =>
+      this.#lifecycleSerial === lifecycle &&
+      this.#token === token &&
+      token.restore?.step.phase === 'play'
+    const playCurrent = (): boolean =>
+      ownsPlayPhase() && this.#restoreReady(token) && ownsPlayPhase()
     const complete = (): void => {
-      if (token.restore?.step.phase !== 'play' || !this.#restoreReady(token)) return
+      if (!playCurrent()) return
       const reading = this.player.readRestore(rateAttempt)
+      if (!ownsPlayPhase()) return
       if (
         !reading.owned ||
         (reading.rate !== null && reading.rate !== token.savedRate) ||
@@ -930,7 +937,7 @@ export class RecoveryController implements RecoveryPort {
       }
       const baseline = this.player.snapshot(),
         controls = this.player.controls()
-      if (!this.#restoreReady(token)) return
+      if (!playCurrent()) return
       const restoredAt = this.now()
       if (
         !this.#advanceRestore(token.restore!, {
@@ -963,8 +970,7 @@ export class RecoveryController implements RecoveryPort {
       playResult !== null &&
       (typeof playResult === 'object' || typeof playResult === 'function')
     ) {
-      token.restore!.result = 'pending'
-      this.#state = Object.freeze({ ...this.#state, state: 'waiting' })
+      // Observe the result even if SDK play synchronously ended this recovery.
       void Promise.resolve(playResult).then(
         () => {
           if (
@@ -978,11 +984,15 @@ export class RecoveryController implements RecoveryPort {
           if (
             this.#lifecycleSerial === lifecycle &&
             this.#token === token &&
-            this.#owns(token, this.player.controls())
+            this.#owns(token, this.player.controls()) &&
+            this.#token === token
           )
             this.#finish('recovered-paused', 'play-rejected')
         },
       )
+      if (!playCurrent()) return
+      token.restore!.result = 'pending'
+      this.#state = Object.freeze({ ...this.#state, state: 'waiting' })
       const actual = this.player.readRestore(rateAttempt)
       if (
         actual.owned &&

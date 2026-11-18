@@ -24,6 +24,7 @@ function fixture(t: TestContext, rate: number, target = 120, reloadAtZero = fals
     rateEffect = true
   let onRead = () => {}
   let onCommand = (_command: RestoreCommand) => {}
+  let onPlay: () => unknown = () => undefined
   const calls: string[] = [],
     controls = { ...idleControls() }
   const video: { -readonly [K in keyof VideoSnapshot]: VideoSnapshot[K] } = {
@@ -92,6 +93,7 @@ function fixture(t: TestContext, rate: number, target = 120, reloadAtZero = fals
     play() {
       calls.push('play')
       video.paused = false
+      return onPlay()
     },
     performRestore(command) {
       onCommand(command)
@@ -175,11 +177,36 @@ function fixture(t: TestContext, rate: number, target = 120, reloadAtZero = fals
     onRead: (fn: () => void) => {
       onRead = fn
     },
+    onPlay: (fn: () => unknown) => {
+      onPlay = fn
+    },
     revoke: () => {
       active = false
     },
   }
 }
+
+for (const outcome of ['resolve', 'reject'] as const)
+  test(`SDK play can reset recovery synchronously before its promise will ${outcome}`, async (t) => {
+    const f = fixture(t, 1)
+    let readsAfterReset = 0
+    f.onPlay(() => {
+      f.recovery.reset()
+      f.onRead(() => {
+        readsAfterReset++
+      })
+      return outcome === 'resolve' ? Promise.resolve() : Promise.reject(Error('SDK play failed'))
+    })
+    f.tick()
+    f.tick(1000)
+    const stateAfterPlay = f.recovery.snapshot().state
+    await Promise.resolve()
+    assert.equal(f.calls.at(-1), 'play')
+    assert.equal(stateAfterPlay, 'healthy')
+    assert.equal(f.recovery.snapshot().state, 'healthy')
+    assert.equal(f.recovery.isRecovering(), false)
+    assert.equal(readsAfterReset, 0)
+  })
 
 for (const rate of [1, 2]) {
   test(`SR2-U-R01 Recovery waits 999/1000 ms then confirms native position before rate and play rate=${rate}`, (t) => {

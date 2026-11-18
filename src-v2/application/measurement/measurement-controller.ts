@@ -10,7 +10,7 @@ import { startupTransition } from '../../domain/startup-policy.ts'
 import { ROUTE_HEADROOM } from '../../domain/route-capacity.ts'
 import { sameMeasurementSettings } from '../../state/settings-policy.ts'
 import {
-  type AppliedRouteDecision,
+  type CommittedChallenge,
   type StartupCandidate,
   type StartupOptions,
 } from '../routing/route-contracts.ts'
@@ -548,7 +548,7 @@ export class MeasurementController implements MeasurementPort {
     let running: MeasurementWork | null = null
     try {
       let at = this.now()
-      let first: AppliedRouteDecision | null = null,
+      let first: CommittedChallenge | null = null,
         cursor = 0
       await this.meta.withLock((lock) => {
         if (planningMarker !== this.#marker || this.#planning !== planning) return
@@ -590,7 +590,7 @@ export class MeasurementController implements MeasurementPort {
         current.representation !== status.representation
       )
         return
-      const planned = first as AppliedRouteDecision | null
+      const planned = first as CommittedChallenge | null
       if (
         planned &&
         this.routes.isCatalogOnly() &&
@@ -640,7 +640,7 @@ export class MeasurementController implements MeasurementPort {
     round: HealthRound,
     valid: () => boolean,
     allowNative = true,
-  ): AppliedRouteDecision | null {
+  ): CommittedChallenge | null {
     if (!valid() || this.#unsafeReason(status) || !status.representation || !status.demand)
       return null
     const coordination = this.ids ? this.meta.coordination?.(lock) : null
@@ -695,7 +695,7 @@ export class MeasurementController implements MeasurementPort {
   }
 
   async #runRound(
-    first: AppliedRouteDecision,
+    first: CommittedChallenge,
     status: MeasurementStatus,
     controller: AbortController,
     marker: number,
@@ -725,7 +725,7 @@ export class MeasurementController implements MeasurementPort {
     const excluded = new Set<string>()
     let catalogCount = 0,
       nativeCount = 0
-    let next: AppliedRouteDecision | null = first
+    let next: CommittedChallenge | null = first
     for (let index = 0; index < 3 && next?.url && !controller.signal.aborted; index++) {
       const current = this.#lastStatus ?? status
       const unsafe = this.#unsafeReason(current)
@@ -733,7 +733,7 @@ export class MeasurementController implements MeasurementPort {
         controller.abort(unsafe ?? 'representation-changed')
         break
       }
-      const applied: AppliedRouteDecision = next
+      const applied: CommittedChallenge = next
       if (
         range &&
         (!this.rangeMetadata?.resolve(range.handle, range.identity) ||
@@ -796,7 +796,7 @@ export class MeasurementController implements MeasurementPort {
   }
 
   async #runCandidate(
-    applied: AppliedRouteDecision,
+    applied: CommittedChallenge,
     demand: PlaybackDemand,
     round: AbortController,
     marker: number,
@@ -817,9 +817,19 @@ export class MeasurementController implements MeasurementPort {
       applied.decision.routeType === 'catalog-generated' &&
       mediaIdentity(source) === mediaIdentity(applied.url!)
     const startByte = usesRange ? range!.startByte : 0
+    const workCurrent = (): boolean =>
+      !this.#disposed &&
+      marker === this.#marker &&
+      this.#running?.controller === round &&
+      !round.signal.aborted
     try {
+      if (!applied.isCurrent()) {
+        round.abort('source-changed')
+        return
+      }
+      if (!workCurrent() || controller.signal.aborted) return
       result = await this.probe.read({
-        url: applied.url ?? '',
+        url: applied.url,
         host: applied.decision.host,
         limit,
         startByte,
@@ -830,12 +840,7 @@ export class MeasurementController implements MeasurementPort {
       stopTimeout()
       round.signal.removeEventListener('abort', cancel)
     }
-    if (
-      marker !== this.#marker ||
-      this.#running?.controller !== round ||
-      round.signal.aborted ||
-      (controller.signal.aborted && controller.signal.reason !== 'timeout')
-    )
+    if (!workCurrent() || (controller.signal.aborted && controller.signal.reason !== 'timeout'))
       return
     if (
       usesRange &&
@@ -849,25 +854,31 @@ export class MeasurementController implements MeasurementPort {
         this.rangeMetadata.recordRangeSize(range.identity, range.handle, result.range.totalBytes)
     }
     const { ok, failure } = classifyProbeOutcome(applied, result)
-    await this.routes.recordChallenge(
+    const saved = await this.routes.recordChallenge(
       applied,
       result.bytes,
       result.elapsedMs,
       result.ttfbMs,
       ok ? 'success' : 'failure',
       failure,
-      () =>
-        !this.#disposed &&
-        marker === this.#marker &&
-        this.#running?.controller === round &&
-        !round.signal.aborted,
+      () => workCurrent() && applied.isCurrent() && workCurrent(),
       result,
     )
-    if (marker !== this.#marker || this.#running?.controller !== round || round.signal.aborted)
+    if (!workCurrent()) return
+    if (ok && !saved && !applied.isCurrent()) {
+      round.abort('source-changed')
       return
+    }
+    if (!workCurrent()) return
     this.#snapshot = Object.freeze({
-      state: ok ? 'complete' : 'failed',
-      reason: ok ? 'sample-recorded' : result.directRange ? 'short-response' : result.reason,
+      state: saved ? 'complete' : 'failed',
+      reason: saved
+        ? 'sample-recorded'
+        : ok
+          ? 'measurement-error'
+          : result.directRange
+            ? 'short-response'
+            : result.reason,
       host: applied.decision.host,
       range: {
         mode: startByte > 0 ? ('middle' as const) : ('head' as const),

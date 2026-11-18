@@ -195,6 +195,7 @@ async function healthyProbeFixture(t: TestContext) {
     recordChallenge: async () => {
       challengeRecords++
       challengeDone.complete()
+      return true
     },
   }
   const challengeFetch = async (): Promise<Response> => {
@@ -550,6 +551,7 @@ async function checkSafePlaybackConsidersUpToThreeFairChallengers9(t: TestContex
     ) => {
       if (outcome === 'success') redirectedChallengeSamples++
       base.redirectDone.complete()
+      return outcome === 'success'
     },
   }
   const redirectChallenge = base.scope.own(
@@ -588,6 +590,7 @@ async function checkSafePlaybackConsidersUpToThreeFairChallengers9(t: TestContex
         ) => {
           if (outcome === 'success') mismatchedChallengeSuccesses++
           base.mismatchedDone.complete()
+          return outcome === 'success'
         },
       }),
       new MeasurementMetaStore(new FakeStorage(), () => base.now),
@@ -621,6 +624,7 @@ async function checkSafePlaybackConsidersUpToThreeFairChallengers9(t: TestContex
         ) => {
           if (outcome === 'success') mismatchedChallengeSuccesses++
           base.missingDone.complete()
+          return outcome === 'success'
         },
       }),
       new MeasurementMetaStore(new FakeStorage(), () => base.now),

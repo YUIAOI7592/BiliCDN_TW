@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import type {
   AppliedRouteDecision,
   ChallengeProposal,
+  CommittedChallenge,
   RouteCoordinatorPort,
 } from '../../src-v2/application/routing/route-contracts.ts'
 
@@ -18,7 +19,7 @@ export function challengeOnce(
 export function stubChallengeRoutes(
   select: (...args: Parameters<ChallengeRoutes['proposeChallenge']>) => AppliedRouteDecision | null,
 ): ChallengeRoutes {
-  const pending = new WeakMap<ChallengeProposal, AppliedRouteDecision>()
+  const pending = new WeakMap<ChallengeProposal, CommittedChallenge>()
   return {
     proposeChallenge: (...args) => {
       const applied = select(...args)
@@ -34,7 +35,12 @@ export function stubChallengeRoutes(
         streamKey: applied.streamKey,
         priorityStamp: null,
       }
-      pending.set(proposal, applied)
+      pending.set(proposal, {
+        ...applied,
+        context: proposal.context,
+        url: proposal.url,
+        isCurrent: () => true,
+      })
       return proposal
     },
     commitChallenge: (proposal) => {

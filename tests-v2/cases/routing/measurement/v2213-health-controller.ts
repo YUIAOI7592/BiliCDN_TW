@@ -14,9 +14,13 @@ import {
   type RevalidationClaim,
 } from '../../../../src-v2/state/measurement-meta-ports.ts'
 import { createRuntimeIds } from '../../../../src-v2/platform/runtime-ids.ts'
-import { type StoragePort } from '../../../../src-v2/platform/storage-port.ts'
+import { type StorageLock, type StoragePort } from '../../../../src-v2/platform/storage-port.ts'
 import { TRUSTED_CATALOG } from '../../../../src-v2/domain/catalog.ts'
-import { type MeasurementStatus } from '../../../../src-v2/application/measurement/measurement-contracts.ts'
+import {
+  type MeasurementStatus,
+  type RangeProbeInput,
+  type RangeProbeResult,
+} from '../../../../src-v2/application/measurement/measurement-contracts.ts'
 
 async function createPriorityRound(t: TestContext, storage = new SharedEvidenceStorage()) {
   const scope = testScope(t),
@@ -157,6 +161,149 @@ test('V2213 health controller: two controllers share the existing round cooldown
   assert.equal(f.calls.length, 3)
   assert.equal(f.clock.pendingCount, 0)
 })
+
+class HealthInterleavingStorage extends SharedEvidenceStorage {
+  afterMeasurementLock?: () => void
+  beforeEvidenceWrite?: () => void
+
+  override async withLock<T>(
+    name: string,
+    task: (lock?: StorageLock) => T | Promise<T>,
+  ): Promise<T> {
+    const result = await super.withLock(name, (lock) => {
+      if (name === 'routeEvidence') this.beforeEvidenceWrite?.()
+      return task(lock)
+    })
+    if (name === 'measurement') this.afterMeasurementLock?.()
+    return result
+  }
+}
+
+async function createHealthSourceRenewal(t: TestContext, catalogFirst = false) {
+  const scope = testScope(t),
+    storage = new HealthInterleavingStorage(),
+    f = fixture(scope, storage)
+  const url = media('health-source-renewal', 'video.m4s'),
+    replacement = media('health-source-renewal', 'video.m4s', 'renewed'),
+    sourceHost = new URL(url).hostname,
+    catalogHost = TRUSTED_CATALOG.find((host) => host !== sourceHost)!
+  await f.settings.update({
+    considerNativeSources: true,
+    catalogOverrides: Object.fromEntries(
+      TRUSTED_CATALOG.map((host) => [host, catalogFirst && host === catalogHost]),
+    ),
+  })
+  assert.equal(
+    f.adapter.transform(dash(url), 'trusted-api', 'initial-health', {
+      contentId: '55',
+      requestSequence: 1,
+    }).accepted,
+    true,
+  )
+  const identity = f.vault.contextForUrl(url)
+  assert.ok(identity)
+  const renewSource = () => {
+    assert.equal(
+      f.adapter.transform(dash(replacement), 'trusted-api', 'renewed-health', {
+        contentId: '55',
+        requestSequence: 2,
+      }).accepted,
+      true,
+    )
+    assert.equal(f.vault.contextForUrl(replacement)?.representation, identity.representation)
+    assert.notEqual(f.vault.match(url).status, 'matched', 'the old exact URL lost authorization')
+  }
+  const probeUrls: string[] = [],
+    reservedTypes: string[] = []
+  scope.defer(
+    f.routes.subscribe((event) => {
+      if (event.type === 'route-planned' && event.decision.reason === 'safe-challenger')
+        reservedTypes.push(event.decision.routeType)
+    }),
+  )
+  const meta = new MeasurementMetaStore(storage, f.clock.now)
+  const runner = (read: (input: RangeProbeInput) => RangeProbeResult) => {
+    const controller = scope.own(
+      new MeasurementController(
+        f.routes,
+        meta,
+        {
+          read: async (input) => {
+            probeUrls.push(input.url)
+            return read(input)
+          },
+        },
+        f.clock.now,
+        f.clock,
+      ),
+    )
+    controller.tick({
+      generationActive: true,
+      representation: identity.representation,
+      demand: { kind: 'video', requiredMbps: 5, highDemand: false },
+      stableProgressTicks: 25,
+      stableProgressMs: 25_000,
+      progressObservation: 'progress',
+      playableBufferSec: 40,
+      visible: true,
+      seeking: false,
+      recovering: false,
+      disabled: false,
+    })
+    return controller
+  }
+  return { ...f, storage, meta, url, catalogHost, probeUrls, reservedTypes, renewSource, runner }
+}
+
+const directHealthProbe = (bytes: number): RangeProbeResult => ({
+  bytes,
+  elapsedMs: 100,
+  ttfbMs: 10,
+  status: 206,
+  directRange: true,
+  reason: 'sample-complete',
+})
+
+for (const ordinal of [1, 2]) {
+  test(`V2221 health source: reservation ${ordinal} is rechecked immediately before dispatch`, async (t) => {
+    const f = await createHealthSourceRenewal(t, ordinal === 2)
+    let locks = 0
+    f.storage.afterMeasurementLock = () => {
+      if (++locks === ordinal) f.renewSource()
+    }
+    const controller = f.runner(() => directHealthProbe(1024))
+    await nextTurn()
+    assert.deepEqual(
+      f.reservedTypes,
+      ordinal === 2 ? ['catalog-generated', 'native-signed'] : ['native-signed'],
+    )
+    assert.deepEqual(
+      f.probeUrls.map((url) => new URL(url).hostname),
+      ordinal === 2 ? [f.catalogHost] : [],
+      'the revoked exact URL is never passed to the probe',
+    )
+    assert.equal(controller.snapshot().reason, 'source-changed')
+    assert.equal(f.meta.get().lastChallengeAt, f.clock.now(), 'round cooldown remains consumed')
+    assert.equal(f.clock.pendingCount, 0)
+  })
+}
+
+for (const renew of [false, true]) {
+  test(`V2221 health source: UI reports a sample only after a confirmed write, renew=${renew}`, async (t) => {
+    const f = await createHealthSourceRenewal(t)
+    let evidenceLocks = 0
+    f.storage.beforeEvidenceWrite = () => {
+      if (++evidenceLocks === 1 && renew) f.renewSource()
+    }
+    const controller = f.runner(() => directHealthProbe(128 * 1024))
+    await nextTurn()
+    assert.deepEqual(f.probeUrls, [f.url])
+    assert.equal(evidenceLocks, 1)
+    const host = new URL(f.url).hostname
+    assert.equal(f.evidence.get(host, 'video')?.samples.length ?? 0, renew ? 0 : 1)
+    assert.equal(controller.snapshot().reason, renew ? 'source-changed' : 'sample-recorded')
+  })
+}
 
 class CountedMetadata extends MeasurementMetaStore {
   claimCalls = 0

@@ -21,6 +21,8 @@ const booleanSettings = (raw: Record<string, unknown>) =>
 
 const SUPPRESSED_SETTINGS = ['earlyRetryEnabled', 'considerNativeSources'] as const
 type SuppressedSetting = (typeof SUPPRESSED_SETTINGS)[number]
+type SettingsStorage = Pick<StoragePort, 'get' | 'set' | 'listen' | 'withLock'> &
+  Required<Pick<StoragePort, 'readResult'>>
 
 export const defaultSettings = (now: number): SettingsState =>
   Object.freeze({
@@ -64,7 +66,7 @@ export class SettingsStore implements SettingsPort {
   #stopRemote: () => void
 
   constructor(
-    private readonly storage: StoragePort,
+    private readonly storage: SettingsStorage,
     private readonly now: () => number,
   ) {
     this.#state = parseSettings(storage.get<unknown>(SETTINGS_KEY, null), now())
@@ -92,6 +94,12 @@ export class SettingsStore implements SettingsPort {
       for (const key of keys) this.#pendingOff[key]--
       if (keys.length) this.#emit()
     }
+  }
+
+  #readForWrite(now?: number): SettingsState {
+    const result = this.storage.readResult<unknown>(SETTINGS_KEY, null)
+    if (!result.ok) throw new Error('Unable to read persisted settings')
+    return parseSettings(result.value, now ?? this.now())
   }
 
   #save(value: SettingsState, current: SettingsState, now: number): SettingsState {
@@ -124,7 +132,7 @@ export class SettingsStore implements SettingsPort {
     )
     try {
       return await this.storage.withLock('settings', () => {
-        const current = parseSettings(this.storage.get<unknown>(SETTINGS_KEY, null), this.now())
+        const current = this.#readForWrite()
         const now = this.now()
         return this.#publish(this.#save({ ...current, ...change }, current, now))
       })
@@ -138,7 +146,7 @@ export class SettingsStore implements SettingsPort {
     if (!isCatalogHost(host)) throw new TypeError('Unknown Catalog host')
     return await this.storage.withLock('settings', () => {
       const now = this.now(),
-        current = parseSettings(this.storage.get<unknown>(SETTINGS_KEY, null), now)
+        current = this.#readForWrite(now)
       return this.#publish(
         this.#save(
           { ...current, catalogOverrides: { ...current.catalogOverrides, [host]: enabled } },
@@ -154,7 +162,7 @@ export class SettingsStore implements SettingsPort {
     try {
       const next = await this.storage.withLock('settings', () => {
         const now = this.now(),
-          current = parseSettings(this.storage.get<unknown>(SETTINGS_KEY, null), now)
+          current = this.#readForWrite(now)
         return this.#save(defaultSettings(now), current, now)
       })
       // Reset publishes after lock completion, unlike the update commands.
@@ -170,6 +178,12 @@ export class SettingsStore implements SettingsPort {
   }
   #emit(): void {
     const state = this.get()
-    for (const listener of this.#listeners) listener(state)
+    for (const listener of this.#listeners) {
+      try {
+        listener(state)
+      } catch {
+        // A failed observer cannot interrupt other notifications or settings cleanup.
+      }
+    }
   }
 }

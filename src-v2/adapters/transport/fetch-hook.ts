@@ -65,10 +65,7 @@ export class FetchHookAdapter {
             }),
             response,
           )
-        let text: string
-        try {
-          text = await response.text()
-        } catch {
+        const unreadable = (): Response => {
           self.notePlayurl(
             'fetch',
             response.status,
@@ -80,6 +77,13 @@ export class FetchHookAdapter {
             endpoint,
           )
           return catalogOnly() ? blocked() : response
+        }
+        if (response.body === null) return unreadable()
+        let text: string
+        try {
+          text = await response.text()
+        } catch {
+          return unreadable()
         }
         if (self.settings.get().disabled) {
           self.notePlayurl('fetch', response.status, rejectedPlayurl('inactive'), endpoint)

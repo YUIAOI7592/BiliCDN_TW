@@ -205,3 +205,61 @@ for (const type of ['text', 'json'] as const) {
 test('XHR response text accepts a typed accepted result [4]', { timeout: 5000 }, async (t) => {
   await checkXHRResponseTextAcceptsATypedAcceptedResult4(t)
 })
+
+for (const status of [204, 205, 304]) {
+  test(`playurl Fetch preserves native ${status} without a body in normal mode`, async (t) => {
+    const base = createSummaryTransportResources(t)
+    const native = new Response(null, { status })
+    base.block1.strict = false
+    base.block1.responseOverride = native
+
+    const response = await base.windowFixture.fetch(base.endpoint)
+
+    assert.strictEqual(response, native)
+    assert.strictEqual(response.status, status)
+    assert.strictEqual(response.body, null)
+    assert.strictEqual(base.block1.calls, 0)
+    const summary = base.transport.snapshot().lastPlayurl
+    assert.strictEqual(summary?.status, status)
+    assert.strictEqual(summary?.accepted, false)
+    assert.strictEqual(summary?.reason, 'malformed-payload')
+  })
+}
+
+test('playurl Fetch without a body returns a local rejection in Catalog mode', async (t) => {
+  const base = createSummaryTransportResources(t)
+  const native = new Response(null, { status: 204 })
+  base.block1.responseOverride = native
+
+  const response = await base.windowFixture.fetch(base.endpoint)
+
+  assert.notStrictEqual(response, native)
+  assert.strictEqual(response.status, 503)
+  const blocked: unknown = await response.json()
+  assert.ok(typeof blocked === 'object' && blocked !== null)
+  assert.strictEqual(Reflect.get(blocked, 'code'), -1)
+  assert.strictEqual(base.block1.calls, 0)
+  const summary = base.transport.snapshot().lastPlayurl
+  assert.strictEqual(summary?.status, 204)
+  assert.strictEqual(summary?.accepted, false)
+  assert.strictEqual(summary?.reason, 'malformed-payload')
+})
+
+test('playurl Fetch without a body leaves the prior summary intact while disabled', async (t) => {
+  const base = createSummaryTransportResources(t)
+  await base.windowFixture.fetch(base.endpoint)
+  const previous = base.transport.snapshot().lastPlayurl
+  assert.strictEqual(previous?.accepted, true)
+  const transformed = base.block1.calls
+  const native = new Response(null, { status: 205 })
+  base.block1.disabled = true
+  base.block1.responseOverride = native
+
+  const response = await base.windowFixture.fetch(base.endpoint)
+
+  assert.strictEqual(response, native)
+  assert.strictEqual(response.status, 205)
+  assert.strictEqual(response.body, null)
+  assert.strictEqual(base.block1.calls, transformed)
+  assert.strictEqual(base.transport.snapshot().lastPlayurl, previous)
+})
