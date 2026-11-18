@@ -412,6 +412,69 @@ async function checkNativeSwitchInvalidatesPlansBeforeCancellingProbeAndRecovery
   assert.strictEqual(base.calls.length, 0, 'runtime disposal removes routing subscription')
 }
 
+test('V2222 failed lifecycle startup abandons subscriptions and queued work', (t) => {
+  const { scope, clock, settings, session, calls, monitor } = createLifecycleResources(t)
+  const failure = new Error('settings subscription failed during startup')
+  const disposeFailure = new Error('page playinfo cleanup failed')
+  let navigate = () => {},
+    path = '/video/old',
+    transformations = 0
+  const lifecycle = scope.own(
+    new LifecycleController(
+      session,
+      {
+        get: () => settings.get(),
+        subscribe: () => {
+          throw failure
+        },
+      },
+      { reset: () => calls.push('vault.reset') },
+      { resetEpoch: () => calls.push('routes.reset') },
+      {
+        transform: () => {
+          transformations++
+          return playurlResult(false)
+        },
+      },
+      {
+        install: () => {
+          lifecycle.acceptPageAssignment({}, 1)
+        },
+        dispose: () => {
+          calls.push('playinfo.dispose')
+          if (calls.filter((call) => call === 'playinfo.dispose').length === 1) throw disposeFailure
+        },
+      },
+      monitor,
+      clock.now,
+      {
+        key: () => path,
+        subscribe(listener) {
+          navigate = listener
+          return () => {
+            calls.push('navigation.unsubscribe')
+          }
+        },
+      },
+      clock,
+    ),
+  )
+  assert.throws(
+    () => lifecycle.start(),
+    (error) => error === failure,
+  )
+  assert.deepEqual(calls.slice(-3), ['navigation.unsubscribe', 'playinfo.dispose', 'monitor.stop'])
+  const before = session.get()
+  const started = calls.filter((call) => call === 'monitor.start').length
+  path = '/video/new'
+  navigate()
+  clock.advance(0)
+  assert.equal(session.get(), before)
+  assert.equal(calls.filter((call) => call === 'monitor.start').length, started)
+  assert.equal(lifecycle.acceptPageAssignment({}, 2), false)
+  assert.equal(transformations, 1)
+})
+
 test(
   'Native switch invalidates plans before cancelling probe and recovery work [1]',
   { timeout: 5000 },

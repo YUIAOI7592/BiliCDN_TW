@@ -169,7 +169,31 @@ export const start = (): void => {
 
   runtime.install()
   webRtc.install()
-  lifecycle.start()
+  try {
+    lifecycle.start()
+  } catch {
+    // Without content lifecycle tracking, withdraw all installed product hooks.
+    for (const release of [
+      () => runtime.dispose(),
+      () => transport.dispose(),
+      () => webRtc.dispose(),
+      () => monitor.dispose(),
+      () => measurement.dispose(),
+      () => recovery.dispose(),
+      () => player.reset(),
+      () => visibility.dispose(),
+      () => evidence.dispose(),
+      () => restrictions.dispose(),
+      () => settings.dispose(),
+    ]) {
+      try {
+        release()
+      } catch {
+        /* release the remaining owners */
+      }
+    }
+    return
+  }
   panel.start()
   try {
     GM_registerMenuCommand('⚙️ 開啟 BiliCDN 控制中心', () => center.show())

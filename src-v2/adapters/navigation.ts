@@ -17,29 +17,61 @@ export class BrowserNavigation implements NavigationPort {
     return navigationKey(location.pathname, location.search)
   }
   subscribe(listener: () => void): () => void {
-    const push = history.pushState,
-      replace = history.replaceState
+    const target = history,
+      push = target.pushState,
+      replace = target.replaceState
+    const restores: (() => void)[] = []
     let active = true
-    const after = (): void =>
-      queueMicrotask(() => {
-        if (active) listener()
-      })
+    const notify = (): void => {
+      if (active) listener()
+    }
     const wrappedPush: History['pushState'] = function (this: History, ...args): void {
       Reflect.apply(push, this, args)
-      after()
+      queueMicrotask(notify)
     }
     const wrappedReplace: History['replaceState'] = function (this: History, ...args): void {
       Reflect.apply(replace, this, args)
-      after()
+      queueMicrotask(notify)
     }
-    history.pushState = wrappedPush
-    history.replaceState = wrappedReplace
-    addEventListener('popstate', listener)
-    return () => {
+    const install = (
+      key: 'pushState' | 'replaceState',
+      original: History['pushState'],
+      wrapper: History['pushState'],
+    ): void => {
+      const descriptor = Object.getOwnPropertyDescriptor(target, key)
+      restores.push(() => {
+        if (target[key] !== wrapper) return
+        const current = Object.getOwnPropertyDescriptor(target, key)
+        if (current && 'value' in current) {
+          if (descriptor) Object.defineProperty(target, key, descriptor)
+          else Reflect.deleteProperty(target, key)
+        } else {
+          // Accessor-backed methods may store the wrapper without defining an own property.
+          target[key] = original
+        }
+      })
+      target[key] = wrapper
+      if (target[key] !== wrapper) throw new TypeError('History wrapper was not installed')
+    }
+    const stop = (): void => {
       active = false
-      if (history.pushState === wrappedPush) history.pushState = push
-      if (history.replaceState === wrappedReplace) history.replaceState = replace
-      removeEventListener('popstate', listener)
+      for (const restore of restores.splice(0).reverse()) {
+        try {
+          restore()
+        } catch {
+          /* host owns the property or listener */
+        }
+      }
     }
+    try {
+      install('pushState', push, wrappedPush)
+      install('replaceState', replace, wrappedReplace)
+      restores.push(() => removeEventListener('popstate', notify))
+      addEventListener('popstate', notify)
+    } catch (error) {
+      stop()
+      throw error
+    }
+    return stop
   }
 }

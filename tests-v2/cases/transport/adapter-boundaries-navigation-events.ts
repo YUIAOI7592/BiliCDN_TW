@@ -67,3 +67,50 @@ test('navigation observes history and popstate [4]', { timeout: 5000 }, (t) => {
   assert.equal(historyFixture.pushState, newerHook, 'cleanup preserves a newer owner')
   assert.equal(historyFixture.replaceState, originalReplace)
 })
+
+for (const failedStep of ['replaceState', 'popstate'] as const) {
+  test(`V2222 navigation rolls back a failed ${failedStep} installation`, (t) => {
+    const scope = testScope(t)
+    const original = { pushState() {}, replaceState() {} }
+    const historyFixture: typeof original = Object.create(original)
+    const failure = new Error('controlled navigation installation failure')
+    const tasks: (() => void)[] = []
+    let registered: EventListenerOrEventListenerObject | null = null,
+      notifications = 0
+    if (failedStep === 'replaceState') {
+      Object.defineProperty(historyFixture, 'replaceState', {
+        get: () => original.replaceState,
+        set: () => {
+          historyFixture.pushState()
+          throw failure
+        },
+      })
+    }
+    const before = Object.getOwnPropertyDescriptors(historyFixture)
+    for (const [name, value] of Object.entries({
+      history: historyFixture,
+      queueMicrotask: (task: () => void) => tasks.push(task),
+      addEventListener: (_type: string, listener: EventListenerOrEventListenerObject) => {
+        registered = listener
+        historyFixture.pushState()
+        throw failure
+      },
+      removeEventListener: (_type: string, listener: EventListenerOrEventListenerObject) => {
+        if (registered === listener) registered = null
+      },
+    }))
+      scope.defineGlobal(name, { configurable: true, value })
+
+    assert.throws(
+      () => new BrowserNavigation().subscribe(() => notifications++),
+      (e) => e === failure,
+    )
+    assert.equal(tasks.length, 1)
+    tasks.forEach((task) => task())
+    assert.equal(notifications, 0)
+    assert.equal(registered, null)
+    assert.equal(historyFixture.pushState, original.pushState)
+    assert.equal(historyFixture.replaceState, original.replaceState)
+    assert.deepEqual(Object.getOwnPropertyDescriptors(historyFixture), before)
+  })
+}

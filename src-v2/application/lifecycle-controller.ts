@@ -33,17 +33,25 @@ export class LifecycleController implements LifecyclePort {
   ) {}
 
   start(): void {
-    if (this.#restores.length) return
+    if (this.#active) return
     this.#active = true
-    this.#pageKey = this.navigation.key()
-    this.#beginGeneration()
-    this.pagePlayinfo.install()
-    this.#restores.push(this.navigation.subscribe(() => this.#checkNavigation()))
-    this.#restores.push(
-      this.settings.subscribe((state) => {
-        if (state.disabled !== this.session.get().disabled) this.#beginGeneration()
-      }),
-    )
+    try {
+      this.#pageKey = this.navigation.key()
+      this.#restores.push(() => this.monitor.stop())
+      this.#beginGeneration()
+      this.#restores.push(() => this.pagePlayinfo.dispose())
+      this.pagePlayinfo.install()
+      this.#restores.push(this.navigation.subscribe(() => this.#checkNavigation()))
+      this.#restores.push(
+        this.settings.subscribe((state) => {
+          if (this.#active && state.disabled !== this.session.get().disabled)
+            this.#beginGeneration()
+        }),
+      )
+    } catch (error) {
+      this.dispose()
+      throw error
+    }
   }
 
   acceptPageAssignment(payload: unknown, _serial: number): boolean {
@@ -69,11 +77,10 @@ export class LifecycleController implements LifecyclePort {
         /* site owns API */
       }
     }
-    this.pagePlayinfo.dispose()
-    this.monitor.stop()
   }
 
   #checkNavigation(): void {
+    if (!this.#active) return
     const key = this.navigation.key()
     if (key === this.#pageKey) return
     this.#pageKey = key
