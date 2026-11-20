@@ -70,6 +70,8 @@ for (const [index, [status, target, redirected]] of (
     [206, url, true],
     [206, `http://${host}/test`, false],
     [206, `https://${host}:444/test`, false],
+    [404, url, true],
+    [410, 'https://other.example/test', false],
   ] as const
 ).entries()) {
   test(
@@ -82,6 +84,7 @@ for (const [index, [status, target, redirected]] of (
           () => 10,
         ).read(input())
       assert.equal(result.directRange, false)
+      assert.equal(result.status, status === 200 ? 200 : null)
       assert.equal(result.reason, status === 200 ? 'http-200' : 'redirected-response')
       assert.equal(f.reads, 0, 'rejected response cannot be consumed')
       assert.deepEqual(f.cancelReasons, [status === 200 ? 'range-required' : 'redirected-response'])

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili CDN 台灣優化
 // @namespace    BiliCDN_TW
-// @version      2.2.23
+// @version      2.2.24
 // @description  台灣 CDN 與播放整合：自動選路、香港節點、起播與健康量測、慢請求重試及三頁控制中心
 // @author       jiyunshi <chocosensei214@gmail.com>
 // @license      MIT
@@ -4570,7 +4570,7 @@
       return current() ? metrics : null;
     }
     noteStartupProbeResult(candidate, status) {
-      if (status !== 403 || candidate.type !== "catalog-generated") return;
+      if (candidate.type !== "catalog-generated" || ![403, 404, 410].includes(status ?? 0)) return;
       const context = candidate.context, current = this.session.get();
       if (context.generation !== current.generation || context.epoch !== current.epoch || !this.vault.isCurrentIdentity(context))
         return;

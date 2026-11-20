@@ -10,7 +10,9 @@
 
 ## 版本
 
-- [v2.2.23 產品修復與上游 v1.4.2 吸收（2026-11-19）](TEST_REPORT.md#驗收結論)。
+- [v2.2.24 起播探測與缺檔備援（2026-11-20）](TEST_REPORT.md#驗收結論)。
+
+- [v2.2.23 產品修復與上游 v1.4.2 吸收（2026-11-19）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2223-完整正文保存2026-11-20)。
 
 - [v2.2.22 設定、生命週期與選路快照（2026-11-18）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2222-完整正文保存2026-11-19)。
 
@@ -228,6 +230,8 @@
 
 ### 選路演算法研究
 
+- [起播探測回報缺檔後的備援重選，v2.2.24](TEST_REPORT.md#自動驗證)
+
 - [v2.2.9–v2.2.10 量測方法、期限與選路優化執行紀錄](../archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md)
 
 - [Auto、碼率／FPS、影音緩衝與共享網路的數學模型及反例](../archive/retired/docs/AUTO_CDN_MATHEMATICAL_MODEL_v2.2.8_2026-11-04.md#研究結論)
@@ -426,8 +430,10 @@
 
 ## 日期
 
+- 2026-11-20：[v2.2.24 起播缺檔修復與交付](TEST_REPORT.md#驗收結論)。
+
 - 2026-11-14：[操作文件轉換 Skills](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-操作文件轉換專案-skills)、[檢查器與 Skills 驗證](TEST_TOOLING_REPORT.md#2026-11-14-skills-遷移檢查)、[六個 Skills 內容檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-六個-skills-內容檢討)。
-- 2026-11-19：[v2.2.23 修復與驗證](TEST_REPORT.md#驗收結論)、[v2.2.23 R1 安裝驗收](TEST_REPORT.md#v2223-r1-安裝驗收-2026-11-19)、[v1.4.2 吸收對照](UPSTREAM_MANIFEST.md#v142-與-v2223)、[v2.2.22 安裝原判](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2222-r1-安裝驗收-2026-11-19)。
+- 2026-11-19：[v2.2.23 修復與驗證](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2223-完整正文保存2026-11-20)、[v2.2.23 R1 安裝驗收](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2223-r1-安裝驗收-2026-11-19)、[v1.4.2 吸收對照](UPSTREAM_MANIFEST.md#v142-與-v2223)、[v2.2.22 安裝原判](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2222-r1-安裝驗收-2026-11-19)。
 - 2026-11-18：[v2.2.22 整合修復與快照對照](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2222-完整正文保存2026-11-19)、[v2.2.21 修復與安裝原判](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2221-完整正文保存2026-11-18)、[控制中心說明與換版引用](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-18-控制中心說明與換版引用)、[契約驗證門檻與版本引用](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-18-契約驗證門檻與版本引用)。
 - 2026-11-13：[v2.2.20 交付](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-完整正文保存2026-11-18)、[安裝身分／接線重判](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2220-安裝身分與變更接線重新判定2026-11-13)、[管理器探索禁令撤銷](../archive/retired/docs/TEST_REPORT_HISTORY.md#管理器探索禁令撤銷註記2026-11-13)、[AGENTS 檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-agents-正確性與必要性檢討)、[IAB 方法檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-iab_testing-全文檢討)、[docs 全文檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-13-docs-正確性與必要性檢討)。
 

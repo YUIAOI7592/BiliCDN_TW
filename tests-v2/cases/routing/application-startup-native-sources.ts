@@ -13,6 +13,7 @@ import { SessionStore } from '../../../src-v2/state/session-store.ts'
 import { RouteCoordinator } from '../../../src-v2/application/routing/route-coordinator.ts'
 import { FakeStorage } from '../../support/storage.ts'
 import { testScope } from '../../support/scope.ts'
+import { dash, fixture, media } from './routing-fixture.ts'
 import {
   createStallEvidenceResources,
   createStartupVaultResources,
@@ -94,6 +95,18 @@ async function checkCatalogHostSignedBackupCompetesAsItsOwnExactNativeURL(
       exactCatalogBackup,
       'signed backup retains its original query instead of synthesizing a URL',
     )
+    assert.ok(signedBackup)
+    for (const status of [404, 410]) {
+      base.stallRoutes.noteStartupProbeResult(signedBackup, status)
+      const stillSigned = base.stallRoutes
+        .startupOptions(base.startupRoot)
+        ?.candidates.find((candidate) => candidate.url === exactCatalogBackup)
+      assert.equal(
+        stillSigned?.type,
+        'native-signed',
+        `Native ${status} leaves the signed route eligible`,
+      )
+    }
     const incompatibleCatalog = base.stallRoutes
       .startupOptions(base.startupRoot)
       ?.candidates.find((candidate) => candidate.type === 'catalog-generated')
@@ -352,3 +365,51 @@ test(
 test('a Catalog URL can be checked for this stream [7]', { timeout: 5000 }, async (t) => {
   await checkACatalogURLCanBeCheckedForThisStream7(t)
 })
+
+for (const boundary of ['generation', 'epoch', 'authority'] as const)
+  test(`late startup Catalog status cannot exclude a resource after ${boundary} changes`, (t) => {
+    const f = fixture(testScope(t))
+    const url = media('startup-status-owner', 'v.m4s')
+    assert.equal(f.adapter.transform(dash(url)).accepted, true)
+    const stale = f.routes.startupOptions(url)?.candidates[0]
+    assert.ok(stale && stale.type === 'catalog-generated')
+
+    const fresh = dash(url)
+    if (boundary === 'authority') {
+      fresh.data.dash.video[0]!.backup_url.push(media('startup-status-owner', 'backup.m4s'))
+    } else {
+      const state = boundary === 'generation' ? f.session.beginGeneration() : f.session.beginEpoch()
+      f.vault.reset(state.generation, state.epoch)
+      f.routes.resetEpoch()
+    }
+    assert.equal(f.adapter.transform(fresh).accepted, true)
+    assert.equal(f.vault.isCurrentIdentity(stale.context), false)
+    for (const status of [403, 404, 410]) {
+      f.routes.noteStartupProbeResult(stale, status)
+      assert.ok(f.routes.startupOptions(url)?.candidates.some((row) => row.host === stale.host))
+    }
+  })
+
+for (const status of [404, 410])
+  test(`startup Catalog ${status} excludes a healthy challenge only for the missing resource`, (t) => {
+    const f = fixture(testScope(t))
+    const current = media('startup-challenge', 'current.m4s')
+    const other = media('startup-challenge', 'other.m4s')
+    const body = dash(current)
+    body.data.dash.video.push({ ...body.data.dash.video[0]!, id: 120, base_url: other })
+    assert.equal(f.adapter.transform(body).accepted, true)
+    const candidate = f.routes.startupOptions(current)?.candidates[0]
+    const otherContext = f.vault.contextForUrl(other)
+    assert.ok(candidate && candidate.type === 'catalog-generated')
+    assert.ok(otherContext)
+    assert.notEqual(candidate.context.representation, otherContext.representation)
+    const excluded = new Set<string>(TRUSTED_CATALOG.filter((host) => host !== candidate.host))
+    const propose = (representation: typeof otherContext.representation) =>
+      f.routes.proposeChallenge(representation, false, excluded)
+    assert.equal(propose(candidate.context.representation)?.candidate.host, candidate.host)
+    assert.equal(propose(otherContext.representation)?.candidate.host, candidate.host)
+
+    f.routes.noteStartupProbeResult(candidate, status)
+    assert.equal(propose(candidate.context.representation), null)
+    assert.equal(propose(otherContext.representation)?.candidate.host, candidate.host)
+  })

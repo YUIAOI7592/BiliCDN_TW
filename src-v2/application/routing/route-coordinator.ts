@@ -866,7 +866,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   }
 
   noteStartupProbeResult(candidate: StartupCandidate, status: number | null): void {
-    if (status !== 403 || candidate.type !== 'catalog-generated') return
+    if (candidate.type !== 'catalog-generated' || ![403, 404, 410].includes(status ?? 0)) return
     const context = candidate.context,
       current = this.session.get()
     if (
