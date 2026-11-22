@@ -11,6 +11,7 @@
 ## 版本
 
 - [v2.2.25 起播測速與即時尋位（2026-11-22）](TEST_REPORT.md#驗收結論)。
+- [v2.2.25 R1 安裝驗收與供片調查（2026-11-22）](TEST_REPORT.md#v2225-r1-安裝驗收與供片調查)。
 - [v2.2.24 起播探測與缺檔備援（2026-11-20）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2224-完整正文保存2026-11-22)。
 - [v2.2.24 R1 安裝驗收與供片調查（2026-11-20）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2224-r1-安裝驗收與供片調查)。
 
