@@ -34,7 +34,7 @@ Windows 完整 `npm run verify` 通過，18 個正式套件共 2,325 案，失�
 
 v2.2.25 的五個發行原件已與 Git 標籤、原校驗清單及獨立解壓副本逐檔核對，依授權轉入公開封存。封存 SHA-256 為 `f34af2e49b16d63a916cd1b2ae81267f9a0308331d2285ff621aaf9692515f1c`。全部公開包獨立解壓後通過 `archive:check -- --restore-root`。原 Git 標籤與 GitHub Release 保留。[v2.2.25 完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2225-完整正文保存2026-11-22)
 
-封裝時已完成 Node 驗證。發布後將把遠端標籤、唯一附件及公開下載的版本、大小與 SHA-256 記入現行報告。
+2026-11-22 16:00（Asia/Taipei）發布。發布時遠端 `main` 與 `v2.2.26` 標籤均指向 `a5b112b49937370d28c54c9d20833587cf52f2b5`。GitHub latest 為 v2.2.26，唯一附件為 `BiliCDN_TW.user.js`。未帶憑證取得 latest 與固定版本均回傳 HTTP 200，腳本標頭版本均為 2.2.26。兩個公開檔案與正式封裝逐位元組相同，皆為 562,498 bytes，SHA-256 為 `74e9bec4f6558c4126a9082aa440ef1428508abdee36aae35b8c6f975bb676a4`，與 GitHub 附件登記一致。[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.26) · [latest 下載](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js) · [固定版下載](https://github.com/YUIAOI7592/BiliCDN_TW/releases/download/v2.2.26/BiliCDN_TW.user.js)
 
 ## 來源隔離與實際安裝
 
