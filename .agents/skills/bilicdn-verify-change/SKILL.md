@@ -13,7 +13,7 @@ description: 修改 BiliCDN 的來源、測試或維護工具時，選擇契約�
 
 1. 產品修復先用領域層、控制器或適配器契約重現失敗，維護工具修復使用相應 tooling 契約；保持行為的重構先讓原實作通過具名契約，不虛構紅燈。
 2. 依變更選擇所屬案例及下表門檻；新增測試、全域替換、計時器或非同步交錯時讀[測試契約](references/test-contracts.md)。
-3. 執行命令前讀 [Runtime 與命令](references/runtime-and-commands.md)，確認入口不啟動本機網站服務。使用 apply_patch 修改來源。
+3. 執行命令前讀 [Runtime 與命令](references/runtime-and-commands.md)，確認當次驗證所需的環境。使用 apply_patch 修改來源。
 4. 開發時以對應套件定位問題。對最終差異執行完整 verify，並採用其中的套件結果作為同一差異的修改後證據；失敗先修正並重驗受影響範圍。
 
 ## 依變更選擇驗證範圍
