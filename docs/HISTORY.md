@@ -11,6 +11,7 @@
 ## 版本
 
 - [v2.2.26 影片 XHR 逾時備援（2026-11-22）](TEST_REPORT.md#驗收結論)。
+- [v2.2.26 R1 安裝驗收與供片調查（2026-11-22）](TEST_REPORT.md#v2226-r1-安裝驗收與供片調查)。
 - [v2.2.25 起播測速與即時尋位（2026-11-22）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2225-完整正文保存2026-11-22)。
 - [v2.2.25 R1 安裝驗收與供片調查（2026-11-22）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2225-r1-安裝驗收與供片調查)。
 - [v2.2.24 起播探測與缺檔備援（2026-11-20）](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2224-完整正文保存2026-11-22)。
@@ -237,6 +238,7 @@
 - [起播探測回報缺檔後的備援重選，v2.2.24](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2224-完整正文保存2026-11-22)
 - [尋位期間的首次派送與起播測速，v2.2.25](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2225-完整正文保存2026-11-22)
 - [影片 XHR 逾時與證據提交前的備援，v2.2.26](TEST_REPORT.md#自動驗證)
+- [自然逾時後的同資源改派時序，v2.2.26 R1](TEST_REPORT.md#v2226-r1-自然逾時改派)
 
 - [v2.2.9–v2.2.10 量測方法、期限與選路優化執行紀錄](../archive/retired/docs/MEASUREMENT_ROUTING_OPTIMIZATION_v2.2.9-v2.2.10_2026-11-05.md)
 
@@ -436,7 +438,7 @@
 
 ## 日期
 
-- 2026-11-22：[v2.2.26 影片 XHR 逾時備援](TEST_REPORT.md#驗收結論)、[v2.2.25 起播尋位修復](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2225-完整正文保存2026-11-22)。
+- 2026-11-22：[v2.2.26 影片 XHR 逾時備援](TEST_REPORT.md#驗收結論)、[v2.2.26 R1 安裝驗收](TEST_REPORT.md#v2226-r1-安裝驗收與供片調查)、[v2.2.25 起播尋位修復](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2225-完整正文保存2026-11-22)。
 - 2026-11-20：[v2.2.24 起播缺檔修復與交付](../archive/retired/docs/TEST_REPORT_HISTORY.md#v2224-完整正文保存2026-11-22)。
 
 - 2026-11-14：[操作文件轉換 Skills](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-操作文件轉換專案-skills)、[檢查器與 Skills 驗證](TEST_TOOLING_REPORT.md#2026-11-14-skills-遷移檢查)、[六個 Skills 內容檢討](../archive/retired/docs/DOC_MAINTENANCE_HISTORY.md#2026-11-14-六個-skills-內容檢討)。
