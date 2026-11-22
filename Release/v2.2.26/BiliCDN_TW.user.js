@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili CDN 台灣優化
 // @namespace    BiliCDN_TW
-// @version      2.2.25
+// @version      2.2.26
 // @description  台灣 CDN 與播放整合：自動選路、香港節點、起播與健康量測、慢請求重試及三頁控制中心
 // @author       jiyunshi <chocosensei214@gmail.com>
 // @license      MIT
@@ -4054,6 +4054,8 @@
   __name(classifyTransportResult, "classifyTransportResult");
 
   // src-v2/application/routing/route-coordinator.ts
+  var PENDING_XHR_TIMEOUT_MS = 3e3;
+  var MAX_PENDING_XHR_TIMEOUTS = 32;
   var RouteCoordinator = class {
     constructor(clock, session, settings, restrictions, evidence, vault, ids) {
       this.clock = clock;
@@ -4104,6 +4106,7 @@
     #fallbacks = /* @__PURE__ */ new Map();
     #retryEvidence = new RetryEvidence();
     #retryPermits = new RetryPermitState();
+    #pendingXhrTimeouts = /* @__PURE__ */ new Map();
     subscribe(listener) {
       this.#listeners.add(listener);
       return () => this.#listeners.delete(listener);
@@ -4112,6 +4115,7 @@
       this.#circuits.reset("content-changed");
       this.#retryEvidence.reset();
       this.#retryPermits.clear();
+      this.#pendingXhrTimeouts.clear();
       this.#policyRevision++;
       this.#plans.clear();
       this.#planRevisions.clear();
@@ -4139,6 +4143,7 @@
       this.#playbackFacts = null;
       this.#startupExhausted.clear();
       this.#retryPermits.clear();
+      this.#pendingXhrTimeouts.clear();
       this.#policyRevision++;
       this.#plans.clear();
       this.#planRevisions.clear();
@@ -5316,8 +5321,11 @@
           );
           return;
         }
-        if (result.type === "failure")
+        if (result.type === "failure") {
+          if (observation.nativeXhrTimeout === true && observation.status === 0 && result.kind === "video" && result.sample.failureKind === "timeout" && result.host === observation.targetHost && terminalTick !== null && controlsCurrent())
+            this.#notePendingXhrTimeout(observation, receipt, result.host, terminalTick);
           releaseFailure = this.#circuits.failure(result.host, result.kind);
+        }
         const saved = await this.evidence.commit(
           result.host,
           result.kind,
@@ -5367,6 +5375,7 @@
           );
         }
       } finally {
+        this.#pendingXhrTimeouts.delete(receipt);
         releaseFailure?.();
         this.#stepCircuits();
         const tick = this.#circuitTick();
@@ -5381,6 +5390,34 @@
         );
         if (kind) await this.#settleCircuit(kind);
       }
+    }
+    #notePendingXhrTimeout(observation, receipt, host, startedTick) {
+      const request = observation.request;
+      const owner = request ? this.#ownership.owner(request) : null;
+      if (!owner?.representation || owner.kind !== "video" || owner.timingBasis !== "xhr-terminal" || owner.attributionStatus !== "matched" || owner.targetHost !== host || owner.representation !== observation.representation || owner.selectionRevision === void 0)
+        return;
+      const identity = this.vault.identity(owner.representation);
+      if (!identity || identity.authorityRevision !== owner.authorityRevision || owner.routePolicyRevision !== this.#policyRevision || this.#ownership.selection?.revision !== owner.selectionRevision)
+        return;
+      this.#pendingXhrTimeouts.set(receipt, {
+        identity,
+        host,
+        selectionRevision: owner.selectionRevision,
+        policyRevision: owner.routePolicyRevision,
+        startedTick
+      });
+      if (this.#pendingXhrTimeouts.size > MAX_PENDING_XHR_TIMEOUTS)
+        this.#pendingXhrTimeouts.delete(this.#pendingXhrTimeouts.keys().next().value);
+    }
+    #pendingXhrTimeoutHosts(context) {
+      const hosts = /* @__PURE__ */ new Set();
+      const tick = this.#circuitTick();
+      for (const [receipt, pending] of this.#pendingXhrTimeouts) {
+        if (tick === null || tick < pending.startedTick || tick - pending.startedTick >= PENDING_XHR_TIMEOUT_MS || pending.policyRevision !== this.#policyRevision || pending.selectionRevision !== this.#ownership.selection?.revision || !this.vault.isCurrentIdentity(pending.identity))
+          this.#pendingXhrTimeouts.delete(receipt);
+        else if (pending.identity === context) hosts.add(pending.host);
+      }
+      return hosts;
     }
     #circuitTick() {
       return readMonotonic(() => this.clock.monotonicNow?.() ?? null);
@@ -5604,14 +5641,41 @@
         failedHost
       };
       const ranking = rankRoutes(input, this.clock.now());
-      if (reuse && this.#decisionAllowed(reuse, context, demand.kind) && retainedRoute(input, ranking)?.candidate.host === reuse.host)
-        return reuse;
+      const reusable = reuse && this.#decisionAllowed(reuse, context, demand.kind) && retainedRoute(input, ranking)?.candidate.host === reuse.host ? reuse : null;
+      const pending = sourceUrl && boundary === "request" && timingBasis2 === "xhr-terminal" && context.kind === "video" && this.#pendingXhrTimeouts.size ? this.#pendingXhrTimeoutHosts(context) : null;
+      if (reusable && !pending?.has(reusable.host ?? "")) return reusable;
       const id2 = this.#nextId();
-      const decision = chooseRoute(input, this.clock, id2, ranking);
+      const ordinary = reusable ?? chooseRoute(input, this.clock, id2, ranking);
+      const decision = sourceUrl && ordinary.action !== "block" && ordinary.host && pending?.has(ordinary.host) ? this.#choosePendingXhrAlternative(
+        context,
+        sourceUrl,
+        input,
+        ranking.filter((row) => !pending.has(row.candidate.host)),
+        id2,
+        reuse
+      ) ?? ordinary : ordinary;
+      if (decision === reuse) return decision;
       this.session.noteDecision(id2);
       this.#remember(decision.id);
       this.#emit({ type: "route-planned", at: this.clock.now(), decision });
       return decision;
+    }
+    #choosePendingXhrAlternative(context, url, input, ranking, id2, reuse) {
+      let remaining = ranking;
+      while (remaining.length) {
+        const choice = chooseRoute(input, this.clock, id2, remaining);
+        if (choice.action === "block") return null;
+        if (this.#decisionAllowed(choice, context, context.kind)) {
+          const output = this.#materialize(url, choice, context);
+          const parsed = output ? parseMediaUrl(output) : null;
+          if (parsed?.kind === "normal" && parsed.host === choice.host && (choice.routeType !== "catalog-generated" || !this.#incompatible(url, parsed.host)))
+            return reuse && reuse.host === choice.host && reuse.routeType === choice.routeType && this.#decisionAllowed(reuse, context, context.kind) && this.#materialize(url, reuse, context) === output ? reuse : choice;
+        }
+        const candidate = choice.action === "rewrite" ? choice.candidate : choice.target.type === "selected-original" ? choice.target.candidate : null;
+        if (!candidate) return null;
+        remaining = remaining.filter((row) => row.candidate !== candidate);
+      }
+      return null;
     }
     #catalogOnly(demand, originalHost, knownKind, sourceUrl) {
       const settings = this.settings.get(), restriction = this.#restrictionSnapshot(knownKind);
@@ -10050,12 +10114,28 @@
     }
   }
   __name(resetXhrTransform, "resetXhrTransform");
-  function createXhrCompletion(xhr, meta, self, retry, current) {
+  function createXhrCompletion(xhr, meta, self, retry, current, accepted, responseUrlGetter) {
     let nativeBytes = 0;
+    const timeoutTarget = meta.async && meta.method === "GET" && meta.request?.kind === "video" && meta.request.attributionStatus === "matched" ? meta.request.targetHost : null;
+    let timeoutHeadersMatch;
+    const timeoutSourceMatches = /* @__PURE__ */ __name(() => {
+      try {
+        const url = responseUrlGetter?.call(xhr);
+        return url === "" || typeof url === "string" && new URL(url).hostname === timeoutTarget;
+      } catch {
+        return false;
+      }
+    }, "timeoutSourceMatches");
     const noteHeaders = /* @__PURE__ */ __name(() => {
-      if (current() && meta.responseTick === null && xhr.readyState >= 2) {
+      if (!current() || meta.responseTick !== null) return;
+      const readyState = xhr.readyState;
+      if (readyState >= 2) {
         meta.responseAt = self.now();
         meta.responseTick = self.tick();
+        if (timeoutTarget && readyState < 4 && timeoutHeadersMatch === void 0) {
+          timeoutHeadersMatch = false;
+          timeoutHeadersMatch = timeoutSourceMatches();
+        }
       }
     }, "noteHeaders");
     const progress = /* @__PURE__ */ __name((event) => {
@@ -10104,21 +10184,26 @@
           return "";
         }
       })();
+      const status = xhr.status;
+      const observation = self.observation(
+        meta.request,
+        meta.applied,
+        finalUrl,
+        Number(status) || 0,
+        meta.bytes,
+        meta.startedAt,
+        meta.responseAt,
+        outcome,
+        failure,
+        sameUrl(finalUrl, meta.targetUrl),
+        meta.measurement
+      );
+      const trustedTerminal = event?.isTrusted === true;
+      const nativeXhrTimeout = nativeTimeout && outcome === "failure" && trustedTerminal && event.target === xhr && timeoutTarget !== null && status === 0 && timeoutHeadersMatch !== false && timeoutSourceMatches() && meta.phase === "sent" && accepted() && current();
       void self.routes.observe({
-        circuitVerified: event?.isTrusted === true && nativeBytes === meta.bytes && nativeBytes >= 65536,
-        ...self.observation(
-          meta.request,
-          meta.applied,
-          finalUrl,
-          Number(xhr.status) || 0,
-          meta.bytes,
-          meta.startedAt,
-          meta.responseAt,
-          outcome,
-          failure,
-          sameUrl(finalUrl, meta.targetUrl),
-          meta.measurement
-        ),
+        circuitVerified: trustedTerminal && nativeBytes === meta.bytes && nativeBytes >= 65536,
+        ...observation,
+        ...nativeXhrTimeout ? { nativeXhrTimeout: true } : {},
         ...verifiedBytes !== null ? { retryVerifiedBytes: verifiedBytes } : {}
       });
     }, "settle");
@@ -10562,6 +10647,7 @@
       const originalOpen = proto.open, originalSend = proto.send, originalAbort = proto.abort, originalSetHeader = proto.setRequestHeader;
       const responseDescriptor = Object.getOwnPropertyDescriptor(proto, "response");
       const responseTextDescriptor = Object.getOwnPropertyDescriptor(proto, "responseText");
+      const responseUrlGetter = Object.getOwnPropertyDescriptor(proto, "responseURL")?.get;
       const readyStateDescriptor = Object.getOwnPropertyDescriptor(proto, "readyState");
       const bodyValue = createXhrBodyConverter();
       const self = this.context, xhrMeta = this.#xhrMeta;
@@ -10748,7 +10834,9 @@
             meta,
             self,
             retry,
-            () => xhrMeta.get(this) === meta
+            () => xhrMeta.get(this) === meta,
+            () => nativeAccepted,
+            responseUrlGetter
           );
           const load = /* @__PURE__ */ __name((event) => {
             settle(

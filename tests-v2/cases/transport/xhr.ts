@@ -14,6 +14,7 @@ import { SignedRouteVault } from '../../../src-v2/state/signed-route-vault.ts'
 import { testScope } from '../../support/scope.ts'
 import { deferred } from '../../support/deferred.ts'
 import { FakeStorage } from '../../support/storage.ts'
+import { SharedEvidenceStorage } from '../../support/shared-evidence-storage.ts'
 import { startupAbortFixture } from '../../support/startup-abort.ts'
 import { type StartupGate } from '../../../src-v2/adapters/transport/transport-ports.ts'
 import { MeasurementController } from '../../../src-v2/application/measurement/measurement-controller.ts'
@@ -30,7 +31,7 @@ import { TRUSTED_CATALOG } from '../../../src-v2/domain/catalog.ts'
 const originalUrl =
   'https://upos-sz-mirrorali.bilivideo.com/upgcxcode/11/22/1000/1000-1-30080.m4s?test=synthetic'
 const apiUrl = 'https://api.bilibili.com/x/player/wbi/playurl?cid=1000'
-const payload = () => ({
+const payload = (sourceUrl = originalUrl) => ({
   code: 0,
   data: {
     dash: {
@@ -40,7 +41,7 @@ const payload = () => ({
           codecid: 7,
           height: 1080,
           bandwidth: 1_000_000,
-          base_url: originalUrl,
+          base_url: sourceUrl,
           backup_url: [],
         },
       ],
@@ -49,9 +50,16 @@ const payload = () => ({
   },
 })
 
+interface TimeoutRetryCase {
+  readonly native: boolean
+  readonly sourceUrl: string
+  readonly storage: SharedEvidenceStorage
+  readonly alternative: string
+}
+
 async function fixture(
   t: TestContext,
-  native = true,
+  mode: boolean | TimeoutRetryCase = true,
   gate = false,
   fetchResponse?: () => Promise<Response>,
   startup?: StartupGate,
@@ -59,9 +67,16 @@ async function fixture(
   readStartupSeeking?: () => boolean | null,
 ) {
   const scope = testScope(t),
-    clock = probe ? scope.own(new FakeClock()) : null,
+    timeoutCase = typeof mode === 'boolean' ? null : mode,
+    native = typeof mode === 'boolean' ? mode : mode.native,
+    clock = probe || timeoutCase ? scope.own(new FakeClock()) : null,
     now = clock?.now ?? (() => 2_000_000_000_000)
   installProgressEvent(scope)
+  class NativeNetworkEvent extends Event {
+    override get isTrusted() {
+      return true
+    }
+  }
   // Minimal native state model follows https://xhr.spec.whatwg.org/#the-abort()-method.
   // Unlike existing FakeXhr, abort() before native send does not invent terminal events.
   class NativeXhr extends EventTarget {
@@ -74,10 +89,17 @@ async function fixture(
       return this.#state
     }
     status = 0
-    responseURL = ''
+    #responseURL = ''
+    get responseURL() {
+      return this.#responseURL
+    }
+    set responseURL(value: string) {
+      this.#responseURL = value
+    }
     syncMode = false
     #responseType: XMLHttpRequestResponseType = ''
     #timeout = 0
+    #cancelNativeTimeout: (() => void) | undefined
     #credentials = false
     onRestore: ((option: 'responseType' | 'timeout' | 'credentials' | 'header') => void) | null =
       null
@@ -115,6 +137,7 @@ async function fixture(
     url = ''
     nativeSends = 0
     sentTimeouts: number[] = []
+    sentUrls: string[] = []
     sentAt: number[] = []
     onOpen: (() => void) | null = null
     sendInvoked = false
@@ -154,6 +177,7 @@ async function fixture(
         throw new DOMException('synchronous options', 'InvalidAccessError')
       }
       const changed = this.#state !== 1
+      this.#cancelNativeTimeout?.()
       this.successfulOpens++
       this.method = /^(DELETE|GET|HEAD|OPTIONS|POST|PUT)$/i.test(normalizedMethod)
         ? normalizedMethod.toUpperCase()
@@ -177,9 +201,22 @@ async function fixture(
       this.sendInvoked = true
       this.nativeSends++
       this.sentTimeouts.push(this.timeout)
+      this.sentUrls.push(this.url)
       this.sentAt.push(now())
+      if (timeoutCase && clock && this.timeout > 0) {
+        this.#cancelNativeTimeout = clock.timeout(() => {
+          this.#state = 4
+          this.sendInvoked = false
+          this.status = 0
+          this.responseURL = ''
+          this.dispatchEvent(new NativeNetworkEvent('readystatechange'))
+          this.dispatchEvent(new NativeNetworkEvent('timeout'))
+          this.dispatchEvent(new NativeNetworkEvent('loadend'))
+        }, this.timeout)
+      }
     }
     abort() {
+      this.#cancelNativeTimeout?.()
       if (
         (this.readyState === 1 && this.sendInvoked) ||
         this.readyState === 2 ||
@@ -201,6 +238,7 @@ async function fixture(
       this.onRestore?.('header')
     }
     complete() {
+      this.#cancelNativeTimeout?.()
       this.#state = 4
       this.sendInvoked = false
       this.status = 200
@@ -212,7 +250,7 @@ async function fixture(
     receiveHeaders() {
       this.#state = 2
       this.status = 200
-      this.dispatchEvent(new Event('readystatechange'))
+      this.dispatchEvent(new NativeNetworkEvent('readystatechange'))
     }
     get response(): unknown {
       return this.responseType === 'json' ? JSON.parse(this.raw) : this.raw
@@ -223,9 +261,24 @@ async function fixture(
       return this.raw
     }
   }
-  const storage = new FakeStorage(),
+  const storage = timeoutCase?.storage ?? new FakeStorage(),
     settings = scope.own(new CatalogSettingsStore(storage, now))
-  await settings.update({ considerNativeSources: native })
+  const sourceHost = timeoutCase ? new URL(timeoutCase.sourceUrl).hostname : null
+  await settings.update({
+    considerNativeSources: native,
+    ...(timeoutCase
+      ? {
+          earlyRetryEnabled: native,
+          fixedHost: native ? null : sourceHost,
+          catalogOverrides: Object.fromEntries(
+            TRUSTED_CATALOG.map((host) => [
+              host,
+              host === timeoutCase.alternative || host === sourceHost,
+            ]),
+          ),
+        }
+      : {}),
+  })
   const session = new SessionStore(),
     state = session.beginGeneration(false),
     vault = new SignedRouteVault()
@@ -242,7 +295,7 @@ async function fixture(
     createRuntimeIds(),
   )
   const playurl = new PlayurlAdapter(new PlayurlController(session, vault, routes))
-  const accepted = playurl.transform(payload(), 'trusted-api', 'initial')
+  const accepted = playurl.transform(payload(timeoutCase?.sourceUrl), 'trusted-api', 'initial')
   assert.equal(accepted.accepted, true)
   const wait = deferred<void>(),
     fetchCalls: string[] = []
@@ -291,7 +344,7 @@ async function fixture(
       measurement,
       now,
       createRuntimeIds(),
-      undefined,
+      timeoutCase ? routes : undefined,
       now,
     ),
   )
@@ -328,6 +381,125 @@ async function fixture(
 
 const blockedUrl = 'https://httpdns.bilivideo.com/bilicdn-browser-contract'
 const ordinaryUrl = 'https://example.invalid/synthetic-control'
+
+async function timeoutRetryFixture(t: TestContext, native: boolean) {
+  const first = native ? 'upos-hz-mirrorakam.akamaized.net' : TRUSTED_CATALOG[0]
+  const alternative = 'upos-sz-mirrorbos.bilivideo.com'
+  const source = new URL(originalUrl)
+  source.hostname = first
+  const storage = new SharedEvidenceStorage()
+  const f = await fixture(t, { native, sourceUrl: source.href, alternative, storage })
+  if (native) {
+    const chosen = f.routes
+      .startupOptions(source.href)
+      ?.candidates.find((row) => row.host === first)
+    assert.ok(chosen?.original)
+    assert.ok(f.routes.commitStartupChoice(source.href, chosen, 'test-original-at-startup'))
+  }
+  const range = 'bytes=65536-131071'
+  const open = (timeout: number) => {
+    const xhr = new f.NativeXhr()
+    xhr.open('GET', source.href)
+    xhr.setRequestHeader('Range', range)
+    xhr.timeout = timeout
+    return xhr
+  }
+  const entered = deferred<void>()
+  const release = deferred<void>()
+  const blocker = storage.withLock('routeEvidence', async () => {
+    entered.resolve()
+    await release.promise
+  })
+  const finishWrite = async () => {
+    release.resolve()
+    await blocker
+    await storage.withLock('routeEvidence', () => undefined)
+  }
+  f.scope.defer(finishWrite)
+  await entered.promise
+  return { ...f, clock: f.clock!, first, alternative, range, open, finishWrite }
+}
+
+for (const native of [true, false]) {
+  const scenario = native ? 'Native immediate website retry' : 'fixed Catalog preopened 3ms retry'
+  test(`pending XHR timeout routes the ${scenario} away from its failed host before persistence`, async (t) => {
+    const f = await timeoutRetryFixture(t, native)
+    const { first, alternative, clock, range, open } = f
+    const failed = open(13_000)
+    failed.send()
+    assert.equal(failed.nativeSends, 1)
+    assert.equal(new URL(failed.sentUrls[0]!).hostname, first)
+    assert.equal(f.routes.latestRequested('video')?.attributionStatus, 'matched')
+    let retry = native ? null : open(16_000)
+    if (retry) {
+      assert.equal(new URL(retry.url).hostname, first)
+      // A different path on the same responding host still attributes the timeout to that host.
+      failed.responseURL = new URL('/same-origin/video.m4s', failed.url).href
+      failed.receiveHeaders()
+    }
+    let terminalEvents = 0
+    let trusted = false
+    failed.addEventListener('timeout', (event) => {
+      terminalEvents++
+      trusted = event.isTrusted
+      const resend = () => {
+        retry ??= open(16_000)
+        retry.send()
+      }
+      if (native) resend()
+      else clock.timeout(resend, 3)
+    })
+    const started = clock.now()
+    clock.advance(12_999)
+    assert.equal(terminalEvents, 0)
+    assert.equal(retry?.nativeSends ?? 0, 0)
+    clock.advance(1)
+    if (!native) {
+      assert.equal(retry?.nativeSends, 0)
+      clock.advance(3)
+    }
+    assert.equal(terminalEvents, 1)
+    assert.equal(trusted, true)
+    assert.deepEqual(failed.sentTimeouts, [13_000])
+    assert.deepEqual(failed.headers, [['Range', range]])
+    assert.equal(f.evidence.get(first, 'video'), null)
+    assert.ok(retry)
+    assert.deepEqual(retry.sentTimeouts, [16_000])
+    assert.deepEqual(retry.headers, [['Range', range]])
+    assert.deepEqual(retry.sentAt, [started + (native ? 13_000 : 13_003)])
+    assert.equal(retry.nativeSends, 1)
+    assert.equal(new URL(retry.sentUrls[0]!).hostname, alternative)
+    await f.finishWrite()
+    const evidence = f.evidence.get(first, 'video')
+    assert.equal(evidence?.samples.filter((s) => s.failureKind === 'timeout').length, 1)
+    assert.ok(evidence.circuitUntil > clock.now())
+    assert.equal(f.settings.get().fixedHost, native ? null : first)
+  })
+}
+
+for (const terminal of ['synthetic timeout', 'redirected native timeout'] as const) {
+  test(`pending XHR timeout keeps the ordinary route on a ${terminal}`, async (t) => {
+    const f = await timeoutRetryFixture(t, false)
+    const failed = f.open(13_000)
+    failed.send()
+    const retry = f.open(16_000)
+    failed.addEventListener('timeout', () => retry.send(), { once: true })
+    if (terminal === 'synthetic timeout') {
+      failed.dispatchEvent(new Event('timeout'))
+    } else {
+      const redirected = new URL(failed.url)
+      redirected.hostname = f.alternative
+      failed.responseURL = redirected.href
+      failed.receiveHeaders()
+      f.clock.advance(13_000)
+      assert.equal(failed.responseURL, '')
+    }
+    assert.equal(retry.nativeSends, 1)
+    assert.equal(new URL(retry.sentUrls[0]!).hostname, f.first)
+    assert.deepEqual(retry.sentTimeouts, [16_000])
+    assert.equal(f.evidence.get(f.first, 'video'), null)
+  })
+}
 
 function startupProbe() {
   const pending: {

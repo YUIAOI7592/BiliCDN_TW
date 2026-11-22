@@ -55,6 +55,7 @@ import {
   type NativeCandidate,
   type RouteDecision,
   type RouteIdentity,
+  type RouteRankingEntry,
 } from '../../domain/route-model.ts'
 import {
   EMPTY_ROUTE_SNAPSHOT,
@@ -103,6 +104,18 @@ import {
   transportSnapshot,
 } from './transport-result.ts'
 import { type RuntimeIdPort } from '../../platform/runtime-id-port.ts'
+
+const PENDING_XHR_TIMEOUT_MS = 3000
+const MAX_PENDING_XHR_TIMEOUTS = 32
+
+interface PendingXhrTimeout {
+  readonly identity: RouteIdentity
+  readonly host: string
+  readonly selectionRevision: number
+  readonly policyRevision: number
+  readonly startedTick: number
+}
+
 export class RouteCoordinator implements RouteCoordinatorPort {
   #circuits = new CircuitObservations()
   #ownership = new RequestOwnership()
@@ -142,6 +155,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
   #fallbacks = new Map<MediaKind, FallbackProgress>()
   #retryEvidence = new RetryEvidence()
   #retryPermits = new RetryPermitState()
+  #pendingXhrTimeouts = new Map<object, PendingXhrTimeout>()
 
   constructor(
     private readonly clock: Clock,
@@ -162,6 +176,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#circuits.reset('content-changed')
     this.#retryEvidence.reset()
     this.#retryPermits.clear()
+    this.#pendingXhrTimeouts.clear()
     this.#policyRevision++
     this.#plans.clear()
     this.#planRevisions.clear()
@@ -190,6 +205,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
     this.#playbackFacts = null
     this.#startupExhausted.clear()
     this.#retryPermits.clear()
+    this.#pendingXhrTimeouts.clear()
     this.#policyRevision++
     this.#plans.clear()
     this.#planRevisions.clear()
@@ -2012,8 +2028,19 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         )
         return
       }
-      if (result.type === 'failure')
+      if (result.type === 'failure') {
+        if (
+          observation.nativeXhrTimeout === true &&
+          observation.status === 0 &&
+          result.kind === 'video' &&
+          result.sample.failureKind === 'timeout' &&
+          result.host === observation.targetHost &&
+          terminalTick !== null &&
+          controlsCurrent()
+        )
+          this.#notePendingXhrTimeout(observation, receipt, result.host, terminalTick)
         releaseFailure = this.#circuits.failure(result.host, result.kind)
+      }
       const saved = await this.evidence.commit(
         result.host,
         result.kind,
@@ -2083,6 +2110,7 @@ export class RouteCoordinator implements RouteCoordinatorPort {
         )
       }
     } finally {
+      this.#pendingXhrTimeouts.delete(receipt)
       releaseFailure?.()
       this.#stepCircuits()
       const tick = this.#circuitTick()
@@ -2101,6 +2129,61 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       )
       if (kind) await this.#settleCircuit(kind)
     }
+  }
+
+  #notePendingXhrTimeout(
+    observation: TransportObservation,
+    receipt: object,
+    host: string,
+    startedTick: number,
+  ): void {
+    const request = observation.request
+    const owner = request ? this.#ownership.owner(request) : null
+    if (
+      !owner?.representation ||
+      owner.kind !== 'video' ||
+      owner.timingBasis !== 'xhr-terminal' ||
+      owner.attributionStatus !== 'matched' ||
+      owner.targetHost !== host ||
+      owner.representation !== observation.representation ||
+      owner.selectionRevision === undefined
+    )
+      return
+    const identity = this.vault.identity(owner.representation)
+    if (
+      !identity ||
+      identity.authorityRevision !== owner.authorityRevision ||
+      owner.routePolicyRevision !== this.#policyRevision ||
+      this.#ownership.selection?.revision !== owner.selectionRevision
+    )
+      return
+    this.#pendingXhrTimeouts.set(receipt, {
+      identity,
+      host,
+      selectionRevision: owner.selectionRevision,
+      policyRevision: owner.routePolicyRevision,
+      startedTick,
+    })
+    if (this.#pendingXhrTimeouts.size > MAX_PENDING_XHR_TIMEOUTS)
+      this.#pendingXhrTimeouts.delete(this.#pendingXhrTimeouts.keys().next().value!)
+  }
+
+  #pendingXhrTimeoutHosts(context: RouteIdentity): ReadonlySet<string> {
+    const hosts = new Set<string>()
+    const tick = this.#circuitTick()
+    for (const [receipt, pending] of this.#pendingXhrTimeouts) {
+      if (
+        tick === null ||
+        tick < pending.startedTick ||
+        tick - pending.startedTick >= PENDING_XHR_TIMEOUT_MS ||
+        pending.policyRevision !== this.#policyRevision ||
+        pending.selectionRevision !== this.#ownership.selection?.revision ||
+        !this.vault.isCurrentIdentity(pending.identity)
+      )
+        this.#pendingXhrTimeouts.delete(receipt)
+      else if (pending.identity === context) hosts.add(pending.host)
+    }
+    return hosts
   }
 
   #circuitTick(): number | null {
@@ -2455,18 +2538,79 @@ export class RouteCoordinator implements RouteCoordinatorPort {
       failedHost,
     }
     const ranking = rankRoutes(input, this.clock.now())
-    if (
+    const reusable =
       reuse &&
       this.#decisionAllowed(reuse, context, demand.kind) &&
       retainedRoute(input, ranking)?.candidate.host === reuse.host
-    )
-      return reuse
+        ? reuse
+        : null
+    const pending =
+      sourceUrl &&
+      boundary === 'request' &&
+      timingBasis === 'xhr-terminal' &&
+      context.kind === 'video' &&
+      this.#pendingXhrTimeouts.size
+        ? this.#pendingXhrTimeoutHosts(context)
+        : null
+    if (reusable && !pending?.has(reusable.host ?? '')) return reusable
     const id = this.#nextId()
-    const decision = chooseRoute(input, this.clock, id, ranking)
+    const ordinary = reusable ?? chooseRoute(input, this.clock, id, ranking)
+    const decision =
+      sourceUrl && ordinary.action !== 'block' && ordinary.host && pending?.has(ordinary.host)
+        ? (this.#choosePendingXhrAlternative(
+            context,
+            sourceUrl,
+            input,
+            ranking.filter((row) => !pending.has(row.candidate.host)),
+            id,
+            reuse,
+          ) ?? ordinary)
+        : ordinary
+    if (decision === reuse) return decision
     this.session.noteDecision(id)
     this.#remember(decision.id)
     this.#emit({ type: 'route-planned', at: this.clock.now(), decision })
     return decision
+  }
+
+  #choosePendingXhrAlternative(
+    context: RouteIdentity,
+    url: string,
+    input: RankRoutesInput,
+    ranking: readonly RouteRankingEntry[],
+    id: DecisionId,
+    reuse?: RouteDecision,
+  ): RouteDecision | null {
+    let remaining = ranking
+    while (remaining.length) {
+      const choice = chooseRoute(input, this.clock, id, remaining)
+      if (choice.action === 'block') return null
+      if (this.#decisionAllowed(choice, context, context.kind)) {
+        const output = this.#materialize(url, choice, context)
+        const parsed = output ? parseMediaUrl(output) : null
+        if (
+          parsed?.kind === 'normal' &&
+          parsed.host === choice.host &&
+          (choice.routeType !== 'catalog-generated' || !this.#incompatible(url, parsed.host))
+        )
+          return reuse &&
+            reuse.host === choice.host &&
+            reuse.routeType === choice.routeType &&
+            this.#decisionAllowed(reuse, context, context.kind) &&
+            this.#materialize(url, reuse, context) === output
+            ? reuse
+            : choice
+      }
+      const candidate =
+        choice.action === 'rewrite'
+          ? choice.candidate
+          : choice.target.type === 'selected-original'
+            ? choice.target.candidate
+            : null
+      if (!candidate) return null
+      remaining = remaining.filter((row) => row.candidate !== candidate)
+    }
+    return null
   }
 
   #catalogOnly(

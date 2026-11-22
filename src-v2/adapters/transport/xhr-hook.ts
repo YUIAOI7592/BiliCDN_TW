@@ -58,6 +58,7 @@ export class XhrHookAdapter {
       originalSetHeader = proto.setRequestHeader
     const responseDescriptor = Object.getOwnPropertyDescriptor(proto, 'response')
     const responseTextDescriptor = Object.getOwnPropertyDescriptor(proto, 'responseText')
+    const responseUrlGetter = Object.getOwnPropertyDescriptor(proto, 'responseURL')?.get
     const readyStateDescriptor = Object.getOwnPropertyDescriptor(proto, 'readyState')
     const bodyValue = createXhrBodyConverter()
     const self = this.context,
@@ -299,6 +300,8 @@ export class XhrHookAdapter {
           self,
           retry,
           () => xhrMeta.get(this) === meta,
+          () => nativeAccepted,
+          responseUrlGetter,
         )
         const load = (event: Event): void => {
           settle(

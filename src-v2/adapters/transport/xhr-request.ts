@@ -95,12 +95,38 @@ export function createXhrCompletion(
   self: TransportContext,
   retry: XhrCompletionRetry,
   current: () => boolean,
+  accepted: () => boolean,
+  responseUrlGetter: PropertyDescriptor['get'],
 ) {
   let nativeBytes = 0
+  const timeoutTarget =
+    meta.async &&
+    meta.method === 'GET' &&
+    meta.request?.kind === 'video' &&
+    meta.request.attributionStatus === 'matched'
+      ? meta.request.targetHost
+      : null
+  // A native timeout can clear responseURL after a redirect was visible at headers.
+  let timeoutHeadersMatch: boolean | undefined
+  const timeoutSourceMatches = (): boolean => {
+    try {
+      const url: unknown = responseUrlGetter?.call(xhr)
+      return url === '' || (typeof url === 'string' && new URL(url).hostname === timeoutTarget)
+    } catch {
+      return false
+    }
+  }
   const noteHeaders = (): void => {
-    if (current() && meta.responseTick === null && xhr.readyState >= 2) {
+    if (!current() || meta.responseTick !== null) return
+    const readyState = xhr.readyState
+    if (readyState >= 2) {
       meta.responseAt = self.now()
       meta.responseTick = self.tick()
+      if (timeoutTarget && readyState < 4 && timeoutHeadersMatch === undefined) {
+        // A terminal event reentering the getter cannot use its unfinished read.
+        timeoutHeadersMatch = false
+        timeoutHeadersMatch = timeoutSourceMatches()
+      }
     }
   }
   const progress = (event: ProgressEvent): void => {
@@ -155,22 +181,37 @@ export function createXhrCompletion(
         return ''
       }
     })()
+    const status = xhr.status
+    const observation = self.observation(
+      meta.request,
+      meta.applied,
+      finalUrl,
+      Number(status) || 0,
+      meta.bytes,
+      meta.startedAt,
+      meta.responseAt,
+      outcome,
+      failure,
+      sameUrl(finalUrl, meta.targetUrl),
+      meta.measurement,
+    )
+    const trustedTerminal = event?.isTrusted === true
+    const nativeXhrTimeout =
+      nativeTimeout &&
+      outcome === 'failure' &&
+      trustedTerminal &&
+      event.target === xhr &&
+      timeoutTarget !== null &&
+      status === 0 &&
+      timeoutHeadersMatch !== false &&
+      timeoutSourceMatches() &&
+      meta.phase === 'sent' &&
+      accepted() &&
+      current()
     void self.routes.observe({
-      circuitVerified:
-        event?.isTrusted === true && nativeBytes === meta.bytes && nativeBytes >= 65536,
-      ...self.observation(
-        meta.request,
-        meta.applied,
-        finalUrl,
-        Number(xhr.status) || 0,
-        meta.bytes,
-        meta.startedAt,
-        meta.responseAt,
-        outcome,
-        failure,
-        sameUrl(finalUrl, meta.targetUrl),
-        meta.measurement,
-      ),
+      circuitVerified: trustedTerminal && nativeBytes === meta.bytes && nativeBytes >= 65536,
+      ...observation,
+      ...(nativeXhrTimeout ? { nativeXhrTimeout: true } : {}),
       ...(verifiedBytes !== null ? { retryVerifiedBytes: verifiedBytes } : {}),
     })
   }

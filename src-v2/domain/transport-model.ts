@@ -97,6 +97,8 @@ export interface RequestContext {
 }
 
 export interface TransportObservation {
+  /** Trusted website timeout on the current, accepted video GET XHR. */
+  readonly nativeXhrTimeout?: true
   /** XHR native terminal and trusted byte evidence; independent of early-retry eligibility. */
   readonly circuitVerified?: boolean
   readonly timingBasis?: TimingBasis

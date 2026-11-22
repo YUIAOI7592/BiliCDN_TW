@@ -466,6 +466,23 @@
       ]
     },
     {
+      "id": "route-pending-xhr-timeout",
+      "rule": "已歸屬的影片 XHR 原生逾時後，證據提交前的下一筆同資源網站重送可使用合法備援；暫時避讓有期限與所有權，保留原生 timeout 與網站送出次數。",
+      "tests": [
+        ["native-transport", "pending XHR timeout routes the Native immediate website retry away from its failed host before persistence"],
+        ["native-transport", "pending XHR timeout routes the fixed Catalog preopened 3ms retry away from its failed host before persistence"],
+        ["native-transport", "pending XHR timeout keeps the ordinary route on a synthetic timeout"],
+        ["native-transport", "pending XHR timeout keeps the ordinary route on a redirected native timeout"],
+        ["application", "pending XHR timeout expires at three monotonic seconds while the evidence lock is held"],
+        ["application", "pending XHR timeout keeps the remaining owner when an overlapping write fails"],
+        ["application", "pending XHR timeout reuses the sole legal source until the write settles"],
+        ["application", "pending XHR timeout keeps Fetch, audio and other video representations on their ordinary routes"],
+        ["application", "pending XHR timeout releases the replaced authority and ignores its late completion"],
+        ["application", "pending XHR timeout evicts only the oldest of more than 32 live observations"],
+        ["application", "pending XHR timeout requires a trusted marker, an owned request and a readable monotonic clock"]
+      ]
+    },
+    {
       "id": "route-fixed-recovery",
       "rule": "固定主機失敗後，目前同媒體合法備援仍能建立恢復資格，舊成功完成不得奪回固定政策。",
       "tests": [

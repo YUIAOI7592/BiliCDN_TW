@@ -2,9 +2,13 @@
 
 各節記錄標示版本或維護日期的變更與當時驗證範圍；後續安裝結果及更正請沿該版報告查閱。「未執行瀏覽器驗收」不代表往後從未驗收。舊版診斷、分頁原線對照及掉幀用途不構成現行功能或規則；現行契約見 [ARCHITECTURE](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/ARCHITECTURE.md)。
 
+## v2.2.26
+
+- 影片 XHR 原生逾時後，若失敗證據仍待寫入，同一影片資源的下一筆網站 XHR 會在送出前優先採用合法替代 CDN。預先開啟的請求也適用，保留網站設定的 timeout、Range 與固定 CDN 偏好。[本版驗收](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)
+
 ## v2.2.25
 
-- 開始尋位或拖曳進度條時，第一筆播放請求按既有路線直接送出。起播測速額度留給尋位結束後下一筆合格請求。[本版驗收](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)
+- 開始尋位或拖曳進度條時，第一筆播放請求按既有路線直接送出。起播測速額度留給尋位結束後下一筆合格請求。[本版驗收](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2225-完整正文保存2026-11-22)
 
 ## v2.2.24
 

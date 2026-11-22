@@ -1,5 +1,5 @@
 {
-  "version": "2.2.25",
+  "version": "2.2.26",
   "tools": {
     "node": "24.22.3",
     "typescript": "7.0.2",
@@ -22,9 +22,9 @@
     "write": false
   },
   "sources": {
-    "package-lock.json": "bf35a33e401aa3f29383c37e83833f2543c4fde6207165c8e7ffc56ad4f8f1cd",
-    "package.json": "e4b8d23b9c0781d378245a095c9f1a9bcee856505324db1290e730f4f23035ac",
-    "release.json": "599cbd3399b714f88470ea801e63b3b3bd8f4e3367a719803afc23bd34aaf01f",
+    "package-lock.json": "eb35038f038ce1c5b4484adfe306ff8089ba674cca5e90dff81149d9618f7ded",
+    "package.json": "0b3809d04d1451612c824c1ae8514f59314fc595f2eb7e4696b951ba3eb01652",
+    "release.json": "e89dd24f39581042063a8c0f1540394f6d93cdf072bde1bb1aca9a855e4d72a6",
     "scripts/build.mts": "51f93f30f232b5c22710c0ff11d0727717f1a06fc941dfef829717bab614e1a2",
     "scripts/lib/lib.mts": "56b4ffef7073a9ee64a619ac5c8c11cdf02422065c3ea3b3e4b02dbde743c345",
     "scripts/lib/toolchain.mts": "37ba8cd306c24628d202bea6753b5d38e0c0975b0b2b5152c69601d37b3d2ae6",
@@ -44,8 +44,8 @@
     "src-v2/adapters/transport/transport.ts": "06bc8d45e667db183b2c5bea15ad76fd6a9801fa44ab9105e528da683a8c7f30",
     "src-v2/adapters/transport/xhr-dispatch.ts": "970d8d16e78cb09455a9168c4175432a62c19c887bd86f220662cdff70c9df9b",
     "src-v2/adapters/transport/xhr-early-retry.ts": "a1c99337b1e98ccd8bd475806ccfe90d412b1053195a2ff075d7836c5259a7f9",
-    "src-v2/adapters/transport/xhr-hook.ts": "08f1d8346e0b251d3af5cd70007145def18536701c9cecd1b8edc3382ed8a463",
-    "src-v2/adapters/transport/xhr-request.ts": "06dde0bf835e1af884aec47b04c59680f93133b1c95fa587f97623ea25f49c9d",
+    "src-v2/adapters/transport/xhr-hook.ts": "5966797de33a6abfecdb1f36ec16614464252b1b93f7232df9ea748b257ebbec",
+    "src-v2/adapters/transport/xhr-request.ts": "1851739e04f4e27a11fe6c7964023a2cc09cf6705b9902de00115bb5803d1ff7",
     "src-v2/adapters/transport/xhr-response.ts": "8375ff69f8f425fb9569365fcec21781f57fbc282298a5e71f6fe2bdfd63db54",
     "src-v2/adapters/transport/xhr-values.ts": "279e619587cd96b3ef93df642de10f14af6ca62826cfb088c397d567ce76096e",
     "src-v2/adapters/visibility.ts": "081c346c13270ad979233c3e9546b35eae80cbb8c1101418380994077fb32af5",
@@ -74,7 +74,7 @@
     "src-v2/application/routing/retry-evidence.ts": "a3a95c1bd9aed6aef47984101881eed5153da9331300e85ff9e5ee24fa096844",
     "src-v2/application/routing/retry-permit-state.ts": "9f14bb38c4d01d5e9f13c7f78ed4be0910c39c8ef488f2e11bfad5238a357e5d",
     "src-v2/application/routing/route-contracts.ts": "19b4026ac4e62ca638781d9102e7f018975618161c9edba5f9a294ae2f9fbcc8",
-    "src-v2/application/routing/route-coordinator.ts": "52278ecf0249e5c29820d981bcc472d918ccfea5931f2041e942cae92c36a20b",
+    "src-v2/application/routing/route-coordinator.ts": "98f6a5209a9d14b1e98756a6ea2b79bd6bbd04913b8ef89966c0971852bf127d",
     "src-v2/application/routing/route-projection.ts": "079b70785d54c4af3d0b78796ed55bcf5417314c3e99c263f84172f3c3071cd2",
     "src-v2/application/routing/route-restrictions.ts": "98f4ffb955df1035daed5ff64bd7f510b34200592d09806885c174e7f9d4e6d0",
     "src-v2/application/routing/routing-ports.ts": "e946adf9927e792a10c472ab1167052c89f97d9f07738c84c417cc458a047aba",
@@ -103,7 +103,7 @@
     "src-v2/domain/routing.ts": "80dc1510f0ad79fadbe4aa6218bf065b034123660029252dfb188f09f8358a0b",
     "src-v2/domain/source-admission.ts": "f225be7fb1e1c2d2c7d2a27f8adb65614418dd4f976b0851886a75740e867d4a",
     "src-v2/domain/startup-policy.ts": "fe2bbb05c956aa64ee640882c5d2b54265aeb3065320428158d3ecc356b52061",
-    "src-v2/domain/transport-model.ts": "9d1a4cdefb0f2a73b4956725a70a290320ec1fdb465944223f82cf721e8a5f9a",
+    "src-v2/domain/transport-model.ts": "8e68b176ed07bea879b3d3b936e4f6d40ca0f19d93942b795bcf595e71e6fbf1",
     "src-v2/domain/url-policy.ts": "faf09d87740c16fc56c22145481e738bddaeffa5be045dbb42a9622b1011db2e",
     "src-v2/entry.ts": "a5a97cf04db9ad21d4c31f161f602c4ec829a46072ed184139d92787e5d89885",
     "src-v2/metadata.txt": "00136fc1aeb4cf54fa169805b6d7274ba6f408712db27e2a7f23e04e143167a0",
@@ -141,5 +141,5 @@
     "src-v2/ui/styles.ts": "5e15f6ad9faa3f4b86f02fc73d45eed61fcc7ae3472de9cdca427cf63965112c",
     "tsconfig.json": "c1df0987ac0ad4dba6796254807f1a464fe7dee6a8a54e6b8533ecb92bc76938"
   },
-  "userscriptSha256": "7f59515504b9bd28e3a0901b2be8bbfeba10065351a73fde9a0f155624e6e689"
+  "userscriptSha256": "74e9bec4f6558c4126a9082aa440ef1428508abdee36aae35b8c6f975bb676a4"
 }
