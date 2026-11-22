@@ -2,9 +2,13 @@
 
 各節記錄標示版本或維護日期的變更與當時驗證範圍；後續安裝結果及更正請沿該版報告查閱。「未執行瀏覽器驗收」不代表往後從未驗收。舊版診斷、分頁原線對照及掉幀用途不構成現行功能或規則；現行契約見 [ARCHITECTURE](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/ARCHITECTURE.md)。
 
+## v2.2.25
+
+- 開始尋位或拖曳進度條時，第一筆播放請求按既有路線直接送出。起播測速額度留給尋位結束後下一筆合格請求。[本版驗收](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)
+
 ## v2.2.24
 
-- 起播測速時，內建 CDN 若直接回報該資源不存在（HTTP 404 或 410），後續選路與故障備援會避開該台的這份資源。該台仍可供應其他資源。[本版驗收](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md)
+- 起播測速時，內建 CDN 若直接回報該資源不存在（HTTP 404 或 410），後續選路與故障備援會避開該台的這份資源。該台仍可供應其他資源。[本版驗收](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2224-完整正文保存2026-11-22)
 
 ## v2.2.23
 

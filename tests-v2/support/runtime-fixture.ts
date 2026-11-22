@@ -71,6 +71,7 @@ export function fixture(
   storage: FakeStorage = new FakeStorage(),
   probe?: RangeProbePort,
   visibility: { setEnabled(enabled: boolean): void } = { setEnabled: () => undefined },
+  readStartupSeeking?: () => boolean | null,
 ) {
   const scope = testScope(t),
     clock = scope.own(new FakeClock())
@@ -133,6 +134,8 @@ export function fixture(
           undefined,
           undefined,
           clock.now,
+          undefined,
+          readStartupSeeking,
         ),
       )
     : {

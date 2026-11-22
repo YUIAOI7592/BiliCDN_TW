@@ -67,6 +67,7 @@ export class MeasurementController implements MeasurementPort {
   #preferNative = false
   #marker = 0
   #lastStatus: MeasurementStatus | null = null
+  #readingStartupSeeking = false
   #startupLease:
     | { phase: 'available' }
     | { phase: 'closed' }
@@ -101,6 +102,7 @@ export class MeasurementController implements MeasurementPort {
     settings?: SettingsReader & SettingsObserver,
     private readonly monotonicNow: () => number | null = () => null,
     private readonly ids?: RuntimeIdPort,
+    private readonly readStartupSeeking?: () => boolean | null,
   ) {
     if (settings) {
       let previous = settings.get()
@@ -164,11 +166,115 @@ export class MeasurementController implements MeasurementPort {
     running?.controller.abort(reason)
   }
   willGateStartup(url: string): boolean {
-    return (
-      this.#startupLease.phase !== 'closed' &&
-      !(this.#startupLease.phase === 'available' && this.#lastStatus?.seeking) &&
-      !!this.routes.startupOptions(url)?.candidates.length
+    const marker = this.#marker
+    if (!this.#startupCurrent(marker)) return false
+    if (
+      this.#startupLease.phase === 'available' &&
+      this.#startupSeeking() &&
+      this.#startupLease.phase === 'available'
     )
+      return false
+    return (
+      this.#startupCurrent(marker) &&
+      !!this.routes.startupOptions(url)?.candidates.length &&
+      this.#startupCurrent(marker)
+    )
+  }
+
+  #startupCurrent(marker: number): boolean {
+    return !this.#disposed && marker === this.#marker && this.#startupLease.phase !== 'closed'
+  }
+
+  #startupSeeking(): boolean {
+    // A reentrant request cannot acquire a fresh window while the current read is incomplete.
+    if (this.#readingStartupSeeking) return true
+    this.#readingStartupSeeking = true
+    try {
+      const live = this.readStartupSeeking?.()
+      if (typeof live === 'boolean') return live
+    } catch {
+      /* fall back to the last monitor sample */
+    } finally {
+      this.#readingStartupSeeking = false
+    }
+    return this.#lastStatus?.seeking ?? false
+  }
+
+  #startupAvailable(marker: number): boolean {
+    return this.#startupCurrent(marker) && this.#startupLease.phase === 'available'
+  }
+
+  #canReserveStartup(marker: number): boolean {
+    if (!this.#startupAvailable(marker)) return false
+    const seeking = this.#startupSeeking()
+    if (!this.#startupAvailable(marker)) return false
+    if (seeking) this.noteUnpreflighted('seeking')
+    return !seeking
+  }
+
+  #reserveStartup(url: string, requestBytes: number | null, marker: number): void {
+    if (!this.#canReserveStartup(marker)) return
+    const cursor = Math.max(0, Number(this.meta.get().catalogCursor) || 0)
+    if (!this.#startupAvailable(marker)) return
+    const options = this.routes.startupOptions(url, cursor, requestBytes)
+    if (!this.#startupAvailable(marker)) return
+    if (!options?.candidates.length) {
+      this.noteUnpreflighted(
+        options?.deferredToVideo ? 'video-priority' : 'unsupported-or-no-legal-candidate',
+      )
+      return
+    }
+    const controller = new AbortController(),
+      deadlineAt = this.now() + TIMEOUT_MS,
+      startedTick = readMonotonic(this.monotonicNow)
+    // Candidate selection and the clock can reenter the transport or start a seek.
+    if (!this.#canReserveStartup(marker)) return
+    if (startedTick === null) {
+      this.noteUnpreflighted('monotonic-unavailable')
+      return
+    }
+    if (startupTransition('available', 'reserve').reason !== 'accepted') return
+    this.#startupState = Object.freeze({
+      state: 'running',
+      reason: 'player-media-request',
+      deadlineAt,
+      candidates: options.candidates.length,
+      selectedHost: null,
+    })
+    let release!: () => void
+    const pending = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const lease = {
+      phase: 'reserved' as 'reserved' | 'probing',
+      controller,
+      pending,
+      startedTick,
+      deadlineTick: startedTick + TIMEOUT_MS,
+    }
+    this.#startupLease = lease
+    void this.#runStartup(url, options, controller, marker)
+      .catch(() => {
+        if (marker === this.#marker)
+          this.#startupState = Object.freeze({
+            state: 'skipped',
+            reason: 'preflight-error',
+            candidates: options.candidates.length,
+            selectedHost: null,
+          })
+      })
+      .finally(() => {
+        if (this.#startupLease === lease) this.#startupLease = { phase: 'closed' }
+        release()
+      })
+    void this.meta
+      .withLock(() => {
+        if (marker !== this.#marker) return
+        const currentCursor = this.meta.get().catalogCursor
+        if (marker !== this.#marker) return
+        this.meta.update({ catalogCursor: nextCursor(currentCursor) })
+      })
+      .catch(() => undefined)
   }
 
   /** The player request, never a page hint, authorizes this one bounded startup window. */
@@ -178,80 +284,17 @@ export class MeasurementController implements MeasurementPort {
     requestBytes: number | null = null,
   ): Promise<void> {
     if (signal?.aborted) throw cancellationReason(signal)
-    if (this.#startupLease.phase === 'closed') return
-    if (this.#startupLease.phase === 'available') {
-      if (this.#lastStatus?.seeking) {
-        this.noteUnpreflighted('seeking')
-        return
-      }
-      const cursor = Math.max(0, Number(this.meta.get().catalogCursor) || 0)
-      const options = this.routes.startupOptions(url, cursor, requestBytes)
-      if (!options?.candidates.length) {
-        this.noteUnpreflighted(
-          options?.deferredToVideo ? 'video-priority' : 'unsupported-or-no-legal-candidate',
-        )
-        return
-      }
-      const controller = new AbortController(),
-        marker = this.#marker,
-        startedAt = this.now(),
-        deadlineAt = startedAt + TIMEOUT_MS
-      const startedTick = readMonotonic(this.monotonicNow)
-      if (startedTick === null) {
-        this.noteUnpreflighted('monotonic-unavailable')
-        return
-      }
-
-      this.#startupState = Object.freeze({
-        state: 'running',
-        reason: 'player-media-request',
-        deadlineAt,
-        candidates: options.candidates.length,
-        selectedHost: null,
-      })
-      let release!: () => void
-      const pending = new Promise<void>((resolve) => {
-        release = resolve
-      })
-      if (startupTransition('available', 'reserve').reason !== 'accepted') return
-      const lease = {
-        phase: 'reserved' as 'reserved' | 'probing',
-        controller,
-        pending,
-        startedTick,
-        deadlineTick: startedTick + TIMEOUT_MS,
-      }
-      this.#startupLease = lease
-      void this.#runStartup(url, options, controller, marker)
-        .catch(() => {
-          if (marker === this.#marker)
-            this.#startupState = Object.freeze({
-              state: 'skipped',
-              reason: 'preflight-error',
-              candidates: options.candidates.length,
-              selectedHost: null,
-            })
-        })
-        .finally(() => {
-          if (this.#startupLease === lease) this.#startupLease = { phase: 'closed' }
-          release()
-        })
-      void this.meta
-        .withLock(() => {
-          if (marker !== this.#marker) return
-          const currentCursor = this.meta.get().catalogCursor
-          if (marker !== this.#marker) return
-          this.meta.update({ catalogCursor: nextCursor(currentCursor) })
-        })
-        .catch(() => undefined)
-    }
+    const marker = this.#marker
+    if (this.#startupLease.phase === 'available') this.#reserveStartup(url, requestBytes, marker)
+    // An abort during setup ends this waiter while leaving shared startup work intact.
+    if (signal?.aborted) throw cancellationReason(signal)
+    if (!this.#startupCurrent(marker)) return
     const pending = 'pending' in this.#startupLease ? this.#startupLease.pending : null
     if (!pending) return
     if (!signal) {
       await pending
       return
     }
-    if (signal.aborted) throw cancellationReason(signal)
     let onAbort: (() => void) | null = null
     try {
       await Promise.race([

@@ -2139,7 +2139,8 @@
       "requiredAnchors": [
         "v2221-完整正文保存2026-11-18",
         "v2222-完整正文保存2026-11-19",
-        "v2223-完整正文保存2026-11-20"
+        "v2223-完整正文保存2026-11-20",
+        "v2224-完整正文保存2026-11-22"
       ]
     },
     {
@@ -2948,9 +2949,9 @@
         "verification"
       ],
       "versions": [
-        "v2.2.24"
+        "v2.2.25"
       ],
-      "date": "2026-11-20",
+      "date": "2026-11-22",
       "requiredAnchors": [
         "驗收結論",
         "v2216-r1-載入身分與選路提交接線2026-11-09",
@@ -4314,7 +4315,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.24/CHANGELOG_v2.2.24.md",
+      "path": "archive/retired/releases/Release/v2.2.24/CHANGELOG_v2.2.24.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -4326,7 +4327,7 @@
       "requiredAnchors": []
     },
     {
-      "path": "Release/v2.2.24/TEST_REPORT_v2.2.24.md",
+      "path": "archive/retired/releases/Release/v2.2.24/TEST_REPORT_v2.2.24.md",
       "kind": "immutable",
       "topics": [
         "history"
@@ -4335,6 +4336,30 @@
         "v2.2.24"
       ],
       "date": "2026-11-20",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.25/CHANGELOG_v2.2.25.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.25"
+      ],
+      "date": "2026-11-22",
+      "requiredAnchors": []
+    },
+    {
+      "path": "Release/v2.2.25/TEST_REPORT_v2.2.25.md",
+      "kind": "immutable",
+      "topics": [
+        "history"
+      ],
+      "versions": [
+        "v2.2.25"
+      ],
+      "date": "2026-11-22",
       "requiredAnchors": []
     }
   ],
@@ -8897,38 +8922,73 @@
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.24/BUILD_MANIFEST_v2.2.24.json",
+      "path": "archive/retired/releases/Release/v2.2.24/BUILD_MANIFEST_v2.2.24.json",
       "encoding": "raw",
       "bytes": 13580,
       "sha256": "023b8914b806b2ba2e61d7c48fe12c54a55fcb6ab1124aadfba59b1cb8498b21",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.24/BiliCDN_TW.user.js",
+      "path": "archive/retired/releases/Release/v2.2.24/BiliCDN_TW.user.js",
       "encoding": "raw",
       "bytes": 554942,
       "sha256": "4d27ce1d5729f130942799639dfd7e2680f64eab621a04b6703cdecaf77da0c1",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.24/CHANGELOG_v2.2.24.md",
+      "path": "archive/retired/releases/Release/v2.2.24/CHANGELOG_v2.2.24.md",
       "encoding": "raw",
       "bytes": 77978,
       "sha256": "6685b79b175a5bf338d8c6f7acae58861b3cfb27e0aaaad8b20ec520634d55fc",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.24/SHA256SUMS_v2.2.24.txt",
+      "path": "archive/retired/releases/Release/v2.2.24/SHA256SUMS_v2.2.24.txt",
       "encoding": "raw",
       "bytes": 419,
       "sha256": "2937f4d7e68998548989a538d55bd3e220153bef6a2e6da32fcbc369e7cad990",
       "mode": "exact"
     },
     {
-      "path": "Release/v2.2.24/TEST_REPORT_v2.2.24.md",
+      "path": "archive/retired/releases/Release/v2.2.24/TEST_REPORT_v2.2.24.md",
       "encoding": "raw",
       "bytes": 16265,
       "sha256": "0bf9ec01861cd1a59c283446d03678858b8c18c3dd0eeff1c31349f88071f4f6",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.25/BiliCDN_TW.user.js",
+      "encoding": "raw",
+      "bytes": 556978,
+      "sha256": "7f59515504b9bd28e3a0901b2be8bbfeba10065351a73fde9a0f155624e6e689",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.25/BUILD_MANIFEST_v2.2.25.json",
+      "encoding": "raw",
+      "bytes": 13580,
+      "sha256": "f28d28a8f7812aecaaef00d798fede71ab04fe005aa1b4140afe759bd950d2a8",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.25/CHANGELOG_v2.2.25.md",
+      "encoding": "raw",
+      "bytes": 78289,
+      "sha256": "ea277f92ab30f70c43e5e0a77d18cb77622f6e1379bbb5655db1543cfc1c01e7",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.25/SHA256SUMS_v2.2.25.txt",
+      "encoding": "raw",
+      "bytes": 419,
+      "sha256": "1dcd898704c7775f130ceca8f9d5b5b6f1877374bf2da885e6ecfd39bb53becb",
+      "mode": "exact"
+    },
+    {
+      "path": "Release/v2.2.25/TEST_REPORT_v2.2.25.md",
+      "encoding": "raw",
+      "bytes": 16484,
+      "sha256": "3afe6ec25cd23ed59f7f3e93efa0a46a08f7d319f1df56b2d091026cd200dd00",
       "mode": "exact"
     }
   ],

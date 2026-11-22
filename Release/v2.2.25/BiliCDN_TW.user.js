@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bilibili CDN 台灣優化
 // @namespace    BiliCDN_TW
-// @version      2.2.24
+// @version      2.2.25
 // @description  台灣 CDN 與播放整合：自動選路、香港節點、起播與健康量測、慢請求重試及三頁控制中心
 // @author       jiyunshi <chocosensei214@gmail.com>
 // @license      MIT
@@ -5835,7 +5835,7 @@
   var nextCursor = /* @__PURE__ */ __name((cursor) => Number.isSafeInteger(cursor) && cursor >= 0 && cursor < Number.MAX_SAFE_INTEGER ? cursor + 1 : 0, "nextCursor");
   var cancellationReason = /* @__PURE__ */ __name((signal) => "reason" in signal ? signal.reason : new DOMException("Aborted", "AbortError"), "cancellationReason");
   var MeasurementController = class {
-    constructor(routes, meta, probe, now, scheduler, rangeMetadata, random = () => 0, settings, monotonicNow = () => null, ids) {
+    constructor(routes, meta, probe, now, scheduler, rangeMetadata, random = () => 0, settings, monotonicNow = () => null, ids, readStartupSeeking) {
       this.routes = routes;
       this.meta = meta;
       this.probe = probe;
@@ -5845,6 +5845,7 @@
       this.random = random;
       this.monotonicNow = monotonicNow;
       this.ids = ids;
+      this.readStartupSeeking = readStartupSeeking;
       if (settings) {
         let previous = settings.get();
         this.#stopSettings = settings.subscribe(() => {
@@ -5866,6 +5867,7 @@
     random;
     monotonicNow;
     ids;
+    readStartupSeeking;
     static {
       __name(this, "MeasurementController");
     }
@@ -5877,6 +5879,7 @@
     #preferNative = false;
     #marker = 0;
     #lastStatus = null;
+    #readingStartupSeeking = false;
     #startupLease = { phase: "available" };
     #startupQualifiedHosts = [];
     #startupState = Object.freeze({
@@ -5938,77 +5941,107 @@
       running?.controller.abort(reason);
     }
     willGateStartup(url) {
-      return this.#startupLease.phase !== "closed" && !(this.#startupLease.phase === "available" && this.#lastStatus?.seeking) && !!this.routes.startupOptions(url)?.candidates.length;
+      const marker = this.#marker;
+      if (!this.#startupCurrent(marker)) return false;
+      if (this.#startupLease.phase === "available" && this.#startupSeeking() && this.#startupLease.phase === "available")
+        return false;
+      return this.#startupCurrent(marker) && !!this.routes.startupOptions(url)?.candidates.length && this.#startupCurrent(marker);
+    }
+    #startupCurrent(marker) {
+      return !this.#disposed && marker === this.#marker && this.#startupLease.phase !== "closed";
+    }
+    #startupSeeking() {
+      if (this.#readingStartupSeeking) return true;
+      this.#readingStartupSeeking = true;
+      try {
+        const live = this.readStartupSeeking?.();
+        if (typeof live === "boolean") return live;
+      } catch {
+      } finally {
+        this.#readingStartupSeeking = false;
+      }
+      return this.#lastStatus?.seeking ?? false;
+    }
+    #startupAvailable(marker) {
+      return this.#startupCurrent(marker) && this.#startupLease.phase === "available";
+    }
+    #canReserveStartup(marker) {
+      if (!this.#startupAvailable(marker)) return false;
+      const seeking = this.#startupSeeking();
+      if (!this.#startupAvailable(marker)) return false;
+      if (seeking) this.noteUnpreflighted("seeking");
+      return !seeking;
+    }
+    #reserveStartup(url, requestBytes, marker) {
+      if (!this.#canReserveStartup(marker)) return;
+      const cursor = Math.max(0, Number(this.meta.get().catalogCursor) || 0);
+      if (!this.#startupAvailable(marker)) return;
+      const options = this.routes.startupOptions(url, cursor, requestBytes);
+      if (!this.#startupAvailable(marker)) return;
+      if (!options?.candidates.length) {
+        this.noteUnpreflighted(
+          options?.deferredToVideo ? "video-priority" : "unsupported-or-no-legal-candidate"
+        );
+        return;
+      }
+      const controller = new AbortController(), deadlineAt = this.now() + TIMEOUT_MS, startedTick = readMonotonic(this.monotonicNow);
+      if (!this.#canReserveStartup(marker)) return;
+      if (startedTick === null) {
+        this.noteUnpreflighted("monotonic-unavailable");
+        return;
+      }
+      if (startupTransition("available", "reserve").reason !== "accepted") return;
+      this.#startupState = Object.freeze({
+        state: "running",
+        reason: "player-media-request",
+        deadlineAt,
+        candidates: options.candidates.length,
+        selectedHost: null
+      });
+      let release;
+      const pending = new Promise((resolve) => {
+        release = resolve;
+      });
+      const lease = {
+        phase: "reserved",
+        controller,
+        pending,
+        startedTick,
+        deadlineTick: startedTick + TIMEOUT_MS
+      };
+      this.#startupLease = lease;
+      void this.#runStartup(url, options, controller, marker).catch(() => {
+        if (marker === this.#marker)
+          this.#startupState = Object.freeze({
+            state: "skipped",
+            reason: "preflight-error",
+            candidates: options.candidates.length,
+            selectedHost: null
+          });
+      }).finally(() => {
+        if (this.#startupLease === lease) this.#startupLease = { phase: "closed" };
+        release();
+      });
+      void this.meta.withLock(() => {
+        if (marker !== this.#marker) return;
+        const currentCursor = this.meta.get().catalogCursor;
+        if (marker !== this.#marker) return;
+        this.meta.update({ catalogCursor: nextCursor(currentCursor) });
+      }).catch(() => void 0);
     }
     /** The player request, never a page hint, authorizes this one bounded startup window. */
     async prepareStartup(url, signal = null, requestBytes = null) {
       if (signal?.aborted) throw cancellationReason(signal);
-      if (this.#startupLease.phase === "closed") return;
-      if (this.#startupLease.phase === "available") {
-        if (this.#lastStatus?.seeking) {
-          this.noteUnpreflighted("seeking");
-          return;
-        }
-        const cursor = Math.max(0, Number(this.meta.get().catalogCursor) || 0);
-        const options = this.routes.startupOptions(url, cursor, requestBytes);
-        if (!options?.candidates.length) {
-          this.noteUnpreflighted(
-            options?.deferredToVideo ? "video-priority" : "unsupported-or-no-legal-candidate"
-          );
-          return;
-        }
-        const controller = new AbortController(), marker = this.#marker, startedAt = this.now(), deadlineAt = startedAt + TIMEOUT_MS;
-        const startedTick = readMonotonic(this.monotonicNow);
-        if (startedTick === null) {
-          this.noteUnpreflighted("monotonic-unavailable");
-          return;
-        }
-        this.#startupState = Object.freeze({
-          state: "running",
-          reason: "player-media-request",
-          deadlineAt,
-          candidates: options.candidates.length,
-          selectedHost: null
-        });
-        let release;
-        const pending2 = new Promise((resolve) => {
-          release = resolve;
-        });
-        if (startupTransition("available", "reserve").reason !== "accepted") return;
-        const lease = {
-          phase: "reserved",
-          controller,
-          pending: pending2,
-          startedTick,
-          deadlineTick: startedTick + TIMEOUT_MS
-        };
-        this.#startupLease = lease;
-        void this.#runStartup(url, options, controller, marker).catch(() => {
-          if (marker === this.#marker)
-            this.#startupState = Object.freeze({
-              state: "skipped",
-              reason: "preflight-error",
-              candidates: options.candidates.length,
-              selectedHost: null
-            });
-        }).finally(() => {
-          if (this.#startupLease === lease) this.#startupLease = { phase: "closed" };
-          release();
-        });
-        void this.meta.withLock(() => {
-          if (marker !== this.#marker) return;
-          const currentCursor = this.meta.get().catalogCursor;
-          if (marker !== this.#marker) return;
-          this.meta.update({ catalogCursor: nextCursor(currentCursor) });
-        }).catch(() => void 0);
-      }
+      const marker = this.#marker;
+      if (this.#startupLease.phase === "available") this.#reserveStartup(url, requestBytes, marker);
+      if (signal?.aborted) throw cancellationReason(signal);
+      if (!this.#startupCurrent(marker)) return;
       const pending = "pending" in this.#startupLease ? this.#startupLease.pending : null;
       if (!pending) return;
       if (!signal) {
         await pending;
         return;
       }
-      if (signal.aborted) throw cancellationReason(signal);
       let onAbort = null;
       try {
         await Promise.race([
@@ -8091,6 +8124,24 @@
         }
       }
     }
+    readStartupSeeking() {
+      try {
+        const lifecycle = this.sources.lifecycleKey();
+        const video = this.sources.video();
+        let seeking = null;
+        try {
+          const native = video?.isConnected ? video.seeking : null;
+          if (typeof native === "boolean") seeking = native;
+        } catch {
+        }
+        this.#validateDrag();
+        if (video !== this.sources.video() || !video?.isConnected || lifecycle !== this.sources.lifecycleKey())
+          return null;
+        return this.#seek.drag?.video === video || seeking;
+      } catch {
+        return null;
+      }
+    }
     controls() {
       const reloadOwner = this.#reload.owned;
       const video = this.sources.video(), player = this.sources.player(), core = safeCall(player, "__core");
@@ -8558,7 +8609,7 @@
     #validateDrag() {
       const drag = this.#seek.drag;
       if (!drag) return;
-      if (drag.video !== this.#controlVideo || drag.player !== this.#seekOwner || drag.video !== this.sources.video() || drag.player !== this.sources.player() || drag.lifecycle !== this.sources.lifecycleKey() || !this.environment.isActuallyVisible()) {
+      if (drag.video !== this.#controlVideo || drag.player !== this.#seekOwner || !this.environment.isActuallyVisible() || drag.video.isConnected === false || drag.video !== this.sources.video() || drag.player !== this.sources.player() || drag.lifecycle !== this.sources.lifecycleKey()) {
         if (this.#seek.drag === drag) {
           this.#seek.drag = null;
           this.#seek.pointerRevision++;
@@ -9093,6 +9144,9 @@
     }
     controls() {
       return this.#controls.controls();
+    }
+    readStartupSeeking() {
+      return this.#controls.readStartupSeeking();
     }
     captureResumePosition() {
       return this.#controls.captureResumePosition(() => this.currentTime());
@@ -12356,7 +12410,8 @@ ${label}備用路線：${row.plannedHost}｜${stage}` + (row.responseHost ? `｜
       Math.random,
       settings,
       monotonicNow,
-      ids
+      ids,
+      () => player.readStartupSeeking()
     );
     const transport = new TransportAdapter(
       session,

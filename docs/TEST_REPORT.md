@@ -1,88 +1,48 @@
-# BiliCDN_TW v2.2.24 完整驗證報告
+# BiliCDN_TW v2.2.25 完整驗證報告
 
-驗證日期為 2026-11-20（Asia/Taipei）。修復前使用 v2.2.23 標籤（`1ff266b`）的產品來源。
+驗證日期為 2026-11-22（Asia/Taipei）。修復前以 v2.2.24 標籤的產品來源及正式 Fetch／XHR 掛鉤重現。
 
 ## 驗收結論
 
-起播探測收到內建 CDN 對當前資源的直接 HTTP 404 或 410 後，後續備援會避開該主機與資源的配對。四個離線重現案例的下一筆播放請求從四次選回缺檔主機降至零次，四案皆找到其他合法來源。同一主機仍可供應另一份資源。
+實際尋位或仍有效的進度條拖曳期間，第一筆媒體請求直接走正常選路。尚未使用的起播測速額度留給尋位結束後的下一筆合格請求。
 
 ## 自動驗證
 
-正式案例以記憶體 HTTP 回應驅動 Range 探測、起播控制器與選路器。A 有近期高速紀錄，這次回傳表列狀態。B 回應足速，起播選中 B。B 的普通傳輸隨後發生網路錯誤，案例核對同一內容週期下一筆請求選定的主機與派送網址。[回歸案例](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/cases/routing/measurement/startup-catalog-status.ts)
+受控時鐘在兩次監測之間切換尋位。當探測不回應時，v2.2.24 的 Fetch 與非同步 XHR 均啟動三次探測，至第 2,999 ms 仍未送出，於第 3,000 ms 派送。兩個具名回歸在修復前均在「立即原生派送一次」的斷言失敗。
 
-| 起播時 A 的回應 | v2.2.23 後續備援 | v2.2.24 後續備援 |
+| 情境 | v2.2.24 | v2.2.25 |
 | --- | --- | --- |
-| 404、410，各測預設與僅使用內建 CDN 模式 | 4/4 選回 A | 0/4 選回 A |
-| 403，兩種模式 | 0/2 選回 A | 0/2 選回 A |
-| 416、429，各測兩種模式 | 4/4 選回 A | 4/4 選回 A |
+| 尋位中第一筆 Fetch | 原生派送在模擬時鐘 3,000 ms | 同一模擬時間派送一次，零探測、游標為 0 |
+| 尋位中第一筆非同步 XHR | 原生派送在模擬時鐘 3,000 ms | 同一模擬時間派送一次，零探測、游標為 0 |
 
-十案每次只探測三個不同主機，重入起播不新增探測。A 的全域速度證據與限制維持原值，另一份資源的請求仍能派往 A。其他案例核對精確 Native 來源、內容或來源授權更換後的晚到結果、轉址、回應主機不符，以及既有三秒截止與取消行為。
+兩案在尋位結束、監測仍保留舊狀態時立即允許下一筆合格請求認領一次。每案三次探測，游標進至 1，第三筆請求直接派送。XHR 所設 13 秒 timeout 維持原值。另核對無影片、原生讀值失敗、可信拖曳、媒體更換、候選選取期間開始尋位或換片、同內容重入以及既有等待者個別取消。案例已登記至[業務契約](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/business-contracts.json)，正式傳輸斷言見[Fetch／XHR 回歸案例](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/cases/transport/xhr.ts)。
 
-另兩案直接核對健康探測候選。缺檔前 A 可供兩份資源挑戰。起播探測回報 404 或 410 後，舊版仍對缺檔資源提議 A，修正版只在另一份資源保留 A。兩案均在原判定失敗、修後通過。
+Windows `npm run verify` 通過，18 個正式套件共 2,314 案，失敗、取消、跳過與待辦均為零，131 條業務規則皆有通過的具名案例。驗證另含型別、架構、格式、文件、公開封存、建置及暫存封裝。初次完整驗證發現過早檢查個別取消會改變共用探測的既有合約。修正後保留原測試斷言，31 個取消對照通過。執行環境為工作區提供的 Node 24.22.3，並用同一 Node 執行系統 npm CLI 11.20.0。
 
-Windows 的完整 `npm run verify` 通過。18 個套件共 2,296 案全部通過，失敗、取消、跳過及待辦均為零。131 條業務規則全部連到通過的具名案例。驗證涵蓋型別、架構、文件、公開封存、可重現建置及暫存封裝。首輪受限程序無法建立測試連結及 Git Bash 所需的系統物件，解除該環境限制後重跑完整驗證，未調整測試斷言。
-
-| 工具 | 版本 | 本輪執行路徑 |
-| --- | --- | --- |
-| Node | 24.22.3 | `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1119-907-0_26.1119.907.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe` |
-| npm | 11.20.0 | `C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js` |
+| 工具 | 執行位置 |
+| --- | --- |
+| Node | `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1119-907-0_26.1119.907.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe` |
+| npm CLI | `C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js` |
 
 ## 安全差異
 
-產品差異只將 404 與 410 納入起播探測既有的資源級排除判定，沿用原有的回應歸屬與來源授權檢查。本版未另執行安全掃描。
+即時尋位與拖曳資料只提供測速資格訊號。一般選路、精確來源授權與主機限制仍在原路徑執行。控制器在認領前重新檢查內容與租期，個別取消維持原始原因與共用工作所有權。未另執行安全掃描。
 
 <a name="公開交付與安裝結案"></a>
 
 ## 封存與公開交付
 
-v2.2.23 的五項發行原件已對照標籤及原校驗，獨立解壓後均逐位元組相符。公開封存包 SHA-256 為 `2f56cbde0b40fa43bb9e5e365ea996b87c701e8384fd95ce9499641eaa45a000`。[v2.2.23 完整報告及安裝驗收](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2223-完整正文保存2026-11-20)
+v2.2.24 的五個發行原件與標籤、校驗清單及獨立解壓副本相符，已轉入公開封存。封存 SHA-256 為 `1206a31ed426e48a39c7c8047f47acd4202760ab2804d7a0650f370dcacc7c4f`。[v2.2.24 完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2224-完整正文保存2026-11-22)
 
-2026-11-20 22:50（Asia/Taipei）核對 GitHub 正式 Release。latest 指向 v2.2.24，唯一附件為 `BiliCDN_TW.user.js`。發行時遠端 main 與版本標籤均解析到 `62c251990324d40cdaa99c6b7615fbd5a1e625c8`。未帶憑證下載 latest 與固定版本，兩者均回傳 HTTP 200，標頭版本為 2.2.24，內容與正式封裝逐位元組相同，皆為 554,942 bytes，SHA-256 為 `4d27ce1d5729f130942799639dfd7e2680f64eab621a04b6703cdecaf77da0c1`。[正式 Release](https://github.com/YUIAOI7592/BiliCDN_TW/releases/tag/v2.2.24) · [latest 下載](https://github.com/YUIAOI7592/BiliCDN_TW/releases/latest/download/BiliCDN_TW.user.js) · [固定版下載](https://github.com/YUIAOI7592/BiliCDN_TW/releases/download/v2.2.24/BiliCDN_TW.user.js)
+公開下載於上傳後核對，結果寫入現行報告。
 
 ## 來源隔離與實際安裝
 
-正式發布時未執行瀏覽器來源隔離或安裝版播放驗收。使用者更新後的環境另於下列 R1 驗收。
+本版使用 Node 驗收。來源隔離、IAB 安裝驗收及真站節省秒數均未量測。v2.2.24 在真站曾觀察到原生尋位與監測狀態不同步，當時起播測速已結束。[v2.2.24 安裝 R1](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2224-r1-安裝驗收與供片調查)
 
 <a name="v2224-r1-安裝驗收與供片調查"></a>
 
-### v2.2.24 R1 安裝驗收與供片調查
-
-2026-11-20（Asia/Taipei），在單一隱藏 IAB 分頁及現有 Tampermonkey 執行。最初同源校準的工具連線中斷，重新接回同一 `robots.txt` 分頁後確認 CDP 可用。兩個影片的新文件分別於 23:11:48.927 與 23:16:27.650 建立。CDP 在導覽前開啟 Network 與 Debugger。工具拒絕 `Page.addScriptToEvaluateOnNewDocument`，因此改在每次導覽後立即確認主媒體靜音，當時均為 `readyState=0`。第二個文件可沿已定位的正式程式行取得不中斷執行的起播事件。
-
-| 案例 | 結果與證據 |
-| --- | --- |
-| I-01 載入本體與接線 | **PASS**。兩個文件均從實際 Fetch、XHR `open`／`send` 的函式位置找到當前執行的完整來源。取出 Tampermonkey 外層中的本體，兩份均為 554,942 bytes，SHA-256 與上方正式附件一致。Fetch 與 XHR 閉包共用同一傳輸實例、起播控制器和選路器。 |
-| I-02 正常播放 | **PASS**。四個窗口皆以原生 `playbackRate` 設定並讀回倍率，維持網站原有 Auto，取樣總數 964，最大間隔 515.8 ms。各窗均持續靜音且畫面有進度，未觀察到連續兩秒無合格進度、媒體錯誤、非預期暫停或窗內尋位。 |
-| I-03 已安裝實例受控缺檔排除 | **PASS**。第二片取樣結束後暫停播放器並確認靜音。在仍暫停的 JavaScript 執行緒中，由實際傳輸閉包取得選路器。兩份當期 `player-mpd` 影片資源 X（2160p AV1／60 fps）、Y（1080p AV1／60 fps）均有 `upos-sz-mirrorali.bilivideo.com` 與 `upos-sz-mirrorbos.bilivideo.com` 兩個合法內建候選。分別向 X 的候選輸入 404 與 410 後，X 的兩對皆由可選變為排除，Y 的兩對仍可選。只操作記憶體排除表與合法候選查詢，保持執行緒暫停直到關頁。 |
-| O-01 自然缺檔備援 | **證據不足**。基準片起播快照有三個候選及一筆截止前採納的內建 206。第二片有三筆實際探測開始，其中兩筆是內建候選，截止前採納一筆原始來源 206。兩片共兩筆正式採納結果，其中內建 404／410 為 0，同資源雙故障後備援的有效機會為 0。 |
-| O-02 起播遇上自然尋位 | **證據不足**。第二片有一筆可配對的首次認領。主影片原生 `seeking` 與最近一次監測狀態在 `832.8 ms` 均為 false。XHR `834.8 ms` 進入等待，`836.6 ms` 認領並啟動三次探測，`989.4 ms` 接納原始來源的 206，`990.3 ms` 解除同一筆 XHR 的等待，合計 `155.5 ms`。在 `1150.1 ms` 首次觀察到真正尋位與最近監測的 false 同時出現，此時額度已結束。首次認領遇到尋位的有效機會為 0。以上以同文件單調時間量測到等待解除，原生送出後及伺服器等待另計。 |
-
-**播放窗口。** 各窗有 241 筆原生樣本。可播緩衝以當前連續緩衝的媒體秒數除以實際倍速計算。秒數四捨五入到小數點後兩位。
-
-| P1 樣片 | 倍率 | 窗長／進度（秒） | 實際畫面 | 最低可播緩衝（秒） | 停滯 |
-| --- | --- | --- | --- | --- | --- |
-| `BV1tFZZBQE57` | 1× | 120.00／120.00 | 2160p | 11.39 | 0 |
-| `BV1tFZZBQE57` | 2× | 120.00／239.91 | 2160p | 3.39 | 0 |
-| `BV1BDVzzZEg4` | 2× | 120.00／239.91 | 1080p → 2160p | 13.48 | 0 |
-| `BV1BDVzzZEg4` | 1× | 120.01／120.12 | 2160p | 68.07 | 0 |
-
-第二片轉為 2160p 後，已歸因的當前影片表示為 AV1／60 fps。基準片窗口沒有同等編碼讀值。網站兩片均顯示 Auto，實際尺寸取自原生播放器。
-
-**現場供片。** 第二片的站方主文件內嵌 `__playinfo__` 宣告 DASH（18 個影片表示、3 個音訊表示）。兩類媒體均列出 `upos-hz-mirrorakam.akamaized.net` 與 `upos-sz-mirrorcosov.bilivideo.com`。這輪未取得兩片可配對的原始 `playurl` HTTP 正文，基準片的站方來源清單保留未知。
-
-| 樣片／證據 | 媒體 | 完成回應主機 | 成功 206 | 首位元組（ms） | 位元組 |
-| --- | --- | --- | --- | --- | --- |
-| 基準片／Network 可配對子集 | 影片 | `upos-sz-mirroralib.bilivideo.com` | 57 | 78–710 | 432,105,966 |
-| 基準片／Network 可配對子集 | 影片 | `upos-sz-mirroraliov.bilivideo.com` | 3 | 19–140 | 21,279,318 |
-| 基準片／Network 可配對子集 | 音訊 | `upos-sz-mirroraliov.bilivideo.com` | 54 | 8–18 | 2,926,450 |
-| 第二片／選路器歸因至窗口結束 | 影片 | `upos-sz-mirroralib.bilivideo.com` | 91 | 7–912 | 564,944,851 |
-| 第二片／選路器歸因至窗口結束 | 音訊 | `upos-sz-mirroraliov.bilivideo.com` | 91 | 8–59 | 2,433,465 |
-
-基準片 Network 游標曾截斷。表中只計開始、回應與完成可配對且沒有快取標記的普通請求，位元組為 Network 的編碼傳輸量。另見三筆健康探測回 206 後取消。`upos-hz-mirrorakam.akamaized.net` 有影片 206、取消或未取得完成證據，其中一筆在約 2,291 ms 收到回應後取消。本輪未將該筆歸為卡頓原因。
-
-第二片表內數值是選路器觀察到的完成與媒體位元組。目標和回應主機一致，影片 4 筆使用內建改寫、87 筆使用 Native 簽名來源，音訊 91 筆使用內建改寫。另有一筆影片、一筆音訊取消。一倍速後段另由 Network 配對確認同兩台主機有 18 筆影片、17 筆音訊 206 完成，均無快取標記。早期 Network 事件鏈有缺口，第二片全窗的快取分母未知。
-
-**清理與下一案。** 恢復兩片進入時的 1×，播放器保持靜音並暫停。解除自有採樣、監聽、13 個程式觀測點及 Network 收集，確認測試分頁已關閉。起播與尋位交錯仍是最窄的產品候選。第二片確實出現原生尋位和較舊監測狀態不同步，但發生在測速結束後。下一案可先鎖定「首次請求撞上尋位、監測尚未更新」的受控回歸。這輪的正常起播等待與兩片供片結果只代表當次連線，缺檔發生率與節省秒數仍未知。[起播判定來源](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/src-v2/application/measurement/measurement-controller.ts#L166)
+[v2.2.24 R1 安裝驗收與供片調查](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2224-r1-安裝驗收與供片調查)。
 
 <a name="v2223-r1-安裝驗收-2026-11-19"></a>
 

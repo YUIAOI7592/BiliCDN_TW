@@ -17,7 +17,10 @@ import { FakeStorage } from '../../support/storage.ts'
 import { startupAbortFixture } from '../../support/startup-abort.ts'
 import { type StartupGate } from '../../../src-v2/adapters/transport/transport-ports.ts'
 import { MeasurementController } from '../../../src-v2/application/measurement/measurement-controller.ts'
-import { MeasurementMetaStore } from '../../../src-v2/state/measurement-meta-store.ts'
+import {
+  MEASUREMENT_META_KEY,
+  MeasurementMetaStore,
+} from '../../../src-v2/state/measurement-meta-store.ts'
 import {
   type RangeProbePort,
   type RangeProbeResult,
@@ -53,6 +56,7 @@ async function fixture(
   fetchResponse?: () => Promise<Response>,
   startup?: StartupGate,
   probe?: RangeProbePort,
+  readStartupSeeking?: () => boolean | null,
 ) {
   const scope = testScope(t),
     clock = probe ? scope.own(new FakeClock()) : null,
@@ -269,6 +273,8 @@ async function fixture(
           () => 0,
           settings,
           now,
+          undefined,
+          readStartupSeeking,
         ),
       )
     : (startup ?? {
@@ -366,6 +372,74 @@ function startupProbe() {
     )
   return { probe, pending, complete }
 }
+
+for (const transport of ['Fetch', 'XHR'] as const)
+  test(`startup ${transport} dispatches a live seek immediately and reserves one later gate`, async (t) => {
+    let seeking = false
+    const probes = startupProbe()
+    const f = await fixture(t, true, false, undefined, undefined, probes.probe, () => seeking)
+    f.scope.defer(probes.complete)
+    const measurement = f.measurement
+    assert.ok(measurement instanceof MeasurementController)
+    const sampled = {
+      generationActive: true,
+      representation: f.vault.contextForUrl(originalUrl)!.representation,
+      demand: { kind: 'video', requiredMbps: 2, highDemand: false },
+      stableProgressTicks: 0,
+      stableProgressMs: 0,
+      progressObservation: 'insufficient',
+      playableBufferSec: 0,
+      visible: true,
+      seeking: false,
+      recovering: false,
+      disabled: false,
+    } as const
+    measurement.tick(sampled)
+    const xhr = new f.NativeXhr()
+    const send = () => {
+      if (transport === 'Fetch') return f.fakeWindow.fetch(originalUrl)
+      xhr.open('GET', originalUrl)
+      xhr.timeout = 13_000
+      xhr.send()
+    }
+    const nativeSends = () => (transport === 'Fetch' ? f.fetchCalls.length : xhr.nativeSends)
+    const cursor = () => f.storage.get(MEASUREMENT_META_KEY, { catalogCursor: 0 }).catalogCursor
+
+    seeking = true
+    const first = send()
+    const firstSends = nativeSends()
+    const firstProbes = probes.pending.length
+    probes.complete()
+    await first
+    assert.equal(firstSends, 1, 'the seek request enters native transport before any probe settles')
+    assert.equal(firstProbes, 0)
+    assert.equal(cursor(), 0)
+    if (transport === 'XHR') xhr.complete()
+
+    measurement.tick({ ...sampled, seeking: true })
+    seeking = false
+    const second = send()
+    assert.equal(nativeSends(), 1)
+    assert.equal(measurement.snapshot().startup?.state, 'running')
+    assert.equal(probes.pending.length, 3)
+    assert.equal(cursor(), 1)
+    const gate = measurement.prepareStartup(originalUrl)
+    probes.complete()
+    await Promise.all([second, gate])
+    assert.equal(nativeSends(), 2)
+    assert.equal(measurement.snapshot().startup?.state, 'complete')
+    if (transport === 'XHR') xhr.complete()
+
+    await send()
+    assert.equal(nativeSends(), 3)
+    assert.equal(probes.pending.length, 3)
+    assert.equal(cursor(), 1)
+    assert.equal(f.clock!.pendingCount, 0)
+    if (transport === 'XHR') {
+      assert.deepEqual(xhr.sentTimeouts, [13_000, 13_000, 13_000])
+      xhr.complete()
+    }
+  })
 
 for (const native of [false, true]) {
   test(`V228 startup: real XHR gate retains timeout boundaries native=${native}`, async (t) => {

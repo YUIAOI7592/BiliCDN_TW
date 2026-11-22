@@ -103,6 +103,125 @@ test('UP142 seek protection leaves the per-tab startup window for the next eligi
   assert.equal(probe.pending.length, used)
 })
 
+test('startup unknown live seek observation preserves the monitor fallback', async (t) => {
+  const probe = controlledProbe()
+  let live: boolean | null = null
+  let failRead = false
+  const f = fixture(t, undefined, probe.probe, undefined, () => {
+    if (failRead) throw new Error('synthetic seek read failure')
+    return live
+  })
+  assert.ok(f.measurement instanceof MeasurementController)
+  const payload = media(100),
+    url = payload.data.dash.video[0]!.base_url
+  assert.equal(f.playurl.transform(payload, 'trusted-api').accepted, true)
+  f.setVideo({ ...f.video(), seeking: true })
+  f.deps.monitor.tick()
+  assert.equal(f.measurement.willGateStartup(url), false)
+  await f.measurement.prepareStartup(url)
+  failRead = true
+  assert.equal(f.measurement.willGateStartup(url), false)
+  await f.measurement.prepareStartup(url)
+  assert.equal(probe.pending.length, 0)
+
+  failRead = false
+  live = false
+  assert.equal(f.measurement.willGateStartup(url), true, 'current false supersedes the old seek')
+  const pending = f.measurement.prepareStartup(url)
+  assert.ok(probe.pending.length > 0)
+  probe.succeed()
+  await pending
+})
+
+test('startup rereads seeking after candidate selection before acquiring the budget', async (t) => {
+  const probe = controlledProbe()
+  let seeking = false
+  const f = fixture(t, undefined, probe.probe, undefined, () => seeking)
+  assert.ok(f.measurement instanceof MeasurementController)
+  const payload = media(100),
+    url = payload.data.dash.video[0]!.base_url
+  assert.equal(f.playurl.transform(payload, 'trusted-api').accepted, true)
+  const startupOptions = f.routes.startupOptions.bind(f.routes)
+  f.routes.startupOptions = (...args) => {
+    const options = startupOptions(...args)
+    seeking = true
+    return options
+  }
+  await f.measurement.prepareStartup(url)
+  assert.equal(probe.pending.length, 0)
+  assert.equal(f.measurement.snapshot().startup?.reason, 'seeking')
+
+  f.routes.startupOptions = startupOptions
+  seeking = false
+  const pending = f.measurement.prepareStartup(url)
+  assert.ok(probe.pending.length > 0)
+  probe.succeed()
+  await pending
+})
+
+test('startup candidate selection cannot reserve a window for replaced content', async (t) => {
+  const probe = controlledProbe(),
+    f = fixture(t, undefined, probe.probe, undefined, () => false)
+  assert.ok(f.measurement instanceof MeasurementController)
+  const before = media(100),
+    after = media(200)
+  assert.equal(f.playurl.transform(before, 'trusted-api').accepted, true)
+  const epoch = f.session.get().epoch
+  const startupOptions = f.routes.startupOptions.bind(f.routes)
+  f.routes.startupOptions = (...args) => {
+    const options = startupOptions(...args)
+    assert.equal(f.playurl.transform(after, 'trusted-api').accepted, true)
+    return options
+  }
+  await f.measurement.prepareStartup(before.data.dash.video[0]!.base_url)
+  assert.notEqual(f.session.get().epoch, epoch)
+  assert.equal(probe.pending.length, 0)
+
+  f.routes.startupOptions = startupOptions
+  const pending = f.measurement.prepareStartup(after.data.dash.video[0]!.base_url)
+  assert.ok(probe.pending.length > 0)
+  probe.succeed()
+  await pending
+})
+
+test('startup reentrant candidate selection joins one existing window without rereading live seeking', async (t) => {
+  const probe = controlledProbe()
+  let reads = 0
+  const f = fixture(t, undefined, probe.probe, undefined, () => {
+    reads++
+    return false
+  })
+  const measurement = f.measurement
+  assert.ok(measurement instanceof MeasurementController)
+  const payload = media(100),
+    url = payload.data.dash.video[0]!.base_url
+  assert.equal(f.playurl.transform(payload, 'trusted-api').accepted, true)
+  const startupOptions = f.routes.startupOptions.bind(f.routes)
+  let nested: Promise<void> | null = null
+  let nestedStarts = 0
+  f.routes.startupOptions = (...args) => {
+    f.routes.startupOptions = startupOptions
+    const options = startupOptions(...args)
+    nested = measurement.prepareStartup(url)
+    nestedStarts = probe.pending.length
+    return options
+  }
+  let outerReleased = false
+  const outer = measurement.prepareStartup(url).then(() => {
+    outerReleased = true
+  })
+  const previousReads = reads
+  assert.ok(nested && nestedStarts > 0)
+  assert.equal(probe.pending.length, nestedStarts)
+  assert.equal(measurement.willGateStartup(url), true)
+  assert.equal(reads, previousReads)
+  await Promise.resolve()
+  assert.equal(outerReleased, false)
+  probe.succeed()
+  await Promise.all([outer, nested])
+  assert.equal(outerReleased, true)
+})
+
 test('CR-03 control: completed startup keeps its consumed budget after content reset', async (t) => {
   const probe = controlledProbe(),
     f = fixture(t, undefined, probe.probe)

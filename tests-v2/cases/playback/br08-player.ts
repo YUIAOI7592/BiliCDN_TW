@@ -44,6 +44,7 @@ function fixture(t: TestContext) {
   class Element extends Target {
     currentTime = 0
     seeking = false
+    isConnected = true
     parentElement: Element | null = null
     readonly classes = new Set<string>()
     role = ''
@@ -115,7 +116,7 @@ function fixture(t: TestContext) {
   const child = new Element('', wrapper),
     outside = new Element('', body),
     nonProgress = new Element('', region)
-  let currentVideo = video,
+  let currentVideo: Element | null = video,
     owner = { __core: () => core, seek() {}, reload() {} },
     core: object = {}
   for (const [name, value] of Object.entries({
@@ -139,8 +140,8 @@ function fixture(t: TestContext) {
     protected override player() {
       return owner
     }
-    override video(): HTMLVideoElement {
-      return currentVideo as unknown as HTMLVideoElement
+    override video(): HTMLVideoElement | null {
+      return currentVideo as unknown as HTMLVideoElement | null
     }
   }
   const environment = {
@@ -197,8 +198,8 @@ function fixture(t: TestContext) {
     lifecycle: (value: string) => {
       lifecycle = value
     },
-    replaceVideo: () => {
-      currentVideo = new Element('', region)
+    replaceVideo: (next: Element | null = new Element('', region)) => {
+      currentVideo = next
     },
     replacePlayer: () => {
       owner = { ...owner }
@@ -208,6 +209,112 @@ function fixture(t: TestContext) {
       scope.defer(() => target.removeEventListener(type, listener))
     },
   }
+}
+
+test('BR-08 startup reads live native seeking without binding controls or reading playback position', (t) => {
+  const f = fixture(t)
+  f.player.reset()
+  const revision = f.player.playbackRevision()
+  Object.defineProperty(f.video, 'currentTime', {
+    get() {
+      throw new Error('startup must not read playback position')
+    },
+  })
+  assert.equal(f.player.readStartupSeeking(), false)
+  f.hidden(true)
+  f.video.seeking = true
+  assert.equal(f.player.readStartupSeeking(), true)
+  f.video.seeking = false
+  assert.equal(f.player.readStartupSeeking(), false)
+  assert.equal(f.video.count(), 0)
+  assert.equal(f.player.playbackRevision(), revision)
+})
+
+test('BR-08 startup reports unknown for missing, detached or unreadable media', (t) => {
+  const f = fixture(t)
+  f.replaceVideo(null)
+  assert.equal(f.player.readStartupSeeking(), null)
+  f.replaceVideo(f.video)
+  f.video.seeking = true
+  f.video.isConnected = false
+  assert.equal(f.player.readStartupSeeking(), null)
+  f.video.isConnected = true
+  Object.defineProperty(f.video, 'seeking', { configurable: true, value: 'false' })
+  assert.equal(f.player.readStartupSeeking(), null)
+  Object.defineProperty(f.video, 'seeking', {
+    get() {
+      throw new Error('seeking unavailable')
+    },
+  })
+  assert.equal(f.player.readStartupSeeking(), null)
+})
+
+for (const change of ['video', 'lifecycle'] as const) {
+  test(`BR-08 startup discards a native reading when the ${change} changes during the getter`, (t) => {
+    const f = fixture(t)
+    Object.defineProperty(f.video, 'seeking', {
+      get() {
+        if (change === 'video') f.replaceVideo()
+        else f.lifecycle('2:0')
+        return true
+      },
+    })
+    assert.equal(f.player.readStartupSeeking(), null)
+  })
+}
+
+test('BR-08 startup reads only the held trusted progress pointer and sees its release immediately', (t) => {
+  const f = fixture(t)
+  f.pointer('pointerdown', f.wrapper, 1, false)
+  f.pointer('pointerdown', f.nonProgress)
+  assert.equal(f.player.readStartupSeeking(), false)
+  f.pointer('pointerdown', f.child, 7)
+  assert.equal(f.player.readStartupSeeking(), true)
+  f.pointer('pointerup', f.outside, 8)
+  assert.equal(f.player.readStartupSeeking(), true)
+  f.pointer('pointerup', f.outside, 7)
+  assert.equal(f.player.readStartupSeeking(), false)
+})
+
+test('BR-08 startup keeps a verified held drag when native seeking is unavailable', (t) => {
+  const f = fixture(t)
+  f.pointer('pointerdown', f.child)
+  Object.defineProperty(f.video, 'seeking', {
+    get() {
+      throw new Error('seeking unavailable')
+    },
+  })
+  assert.equal(f.player.readStartupSeeking(), true)
+  f.pointer('pointerup', f.outside)
+  assert.equal(f.player.readStartupSeeking(), null)
+})
+
+test('BR-08 startup rejects an old drag when visibility sampling replaces its player', (t) => {
+  const f = fixture(t)
+  f.pointer('pointerdown', f.wrapper)
+  f.onVisibility(() => {
+    f.onVisibility(() => undefined)
+    f.replacePlayer()
+  })
+  assert.equal(f.player.readStartupSeeking(), false)
+})
+
+for (const change of ['lifecycle', 'video', 'player', 'hidden', 'detached'] as const) {
+  test(`BR-08 startup retires a stale drag after ${change} changes`, (t) => {
+    const f = fixture(t)
+    f.pointer('pointerdown', f.wrapper)
+    if (change === 'lifecycle') f.lifecycle('1:1')
+    if (change === 'video') f.replaceVideo()
+    if (change === 'player') f.replacePlayer()
+    if (change === 'hidden') f.hidden(true)
+    if (change === 'detached') f.video.isConnected = false
+    assert.equal(f.player.readStartupSeeking(), change === 'detached' ? null : false)
+    f.lifecycle('1:0')
+    f.replaceVideo(f.video)
+    f.hidden(false)
+    f.video.isConnected = true
+    assert.equal(f.player.readStartupSeeking(), false)
+  })
 }
 
 for (const hit of ['wrapper', 'child', 'inner'] as const) {

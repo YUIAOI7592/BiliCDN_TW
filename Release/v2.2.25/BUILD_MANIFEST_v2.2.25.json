@@ -1,5 +1,5 @@
 {
-  "version": "2.2.24",
+  "version": "2.2.25",
   "tools": {
     "node": "24.22.3",
     "typescript": "7.0.2",
@@ -22,18 +22,18 @@
     "write": false
   },
   "sources": {
-    "package-lock.json": "4c4077d25b3f0aa226be49d1b733daa9bd2dc5d61d562023ddd21abb864461e7",
-    "package.json": "9b448c004fb0246265f56de0b115db49f579c6f0f1028f153997dbdf84560fa1",
-    "release.json": "9b384a4f5ba612dd761cab535c8f750a7c5e80d817e2c1905cb39efcac3f336d",
+    "package-lock.json": "bf35a33e401aa3f29383c37e83833f2543c4fde6207165c8e7ffc56ad4f8f1cd",
+    "package.json": "e4b8d23b9c0781d378245a095c9f1a9bcee856505324db1290e730f4f23035ac",
+    "release.json": "599cbd3399b714f88470ea801e63b3b3bd8f4e3367a719803afc23bd34aaf01f",
     "scripts/build.mts": "51f93f30f232b5c22710c0ff11d0727717f1a06fc941dfef829717bab614e1a2",
     "scripts/lib/lib.mts": "56b4ffef7073a9ee64a619ac5c8c11cdf02422065c3ea3b3e4b02dbde743c345",
     "scripts/lib/toolchain.mts": "37ba8cd306c24628d202bea6753b5d38e0c0975b0b2b5152c69601d37b3d2ae6",
     "src-v2/adapters/navigation.ts": "0d670229acf6e9bc995e6d8bab13dd83cb454a73675894ff3b170a50bc420b8b",
     "src-v2/adapters/player/input-bindings.ts": "b7c5762fa889af82b0524d5acf23d9bd1db854750ef6609629feafcebca4210b",
-    "src-v2/adapters/player/player-controls.ts": "cea281005a07c24fd57b42e3a46a679f0bec31334825658e23c04122d923c509",
+    "src-v2/adapters/player/player-controls.ts": "8a79c5c3fa73e605dee0014670a2acc7e597964e29d7b309932efb11d4fcdf7e",
     "src-v2/adapters/player/player-media.ts": "0eccbd30a97101c5eeda208608ffe99f643d5feab77e8e6eeec76937f58889de",
     "src-v2/adapters/player/player-sdk.ts": "3b51e4527d89afff7ff59d80d255d4d4f454b46962d473382e3bb50799890bd5",
-    "src-v2/adapters/player/player.ts": "138df26fb65e7a802fceb93ca0ddcfd7cc631b784f88701f144c2fc02a0a6a10",
+    "src-v2/adapters/player/player.ts": "f23b5b12c6148f90b2bfd1bcc074fdb23a9f25e58036c9ade63996c2323f70d7",
     "src-v2/adapters/playurl/page-playinfo.ts": "ee2cfffa676ca701e0cd4de31ad37df149166b40a1bbbd6dd57fe43a055b78c6",
     "src-v2/adapters/playurl/playurl.ts": "220235418c555dd85d73cabe729ab5c11c92226c16f5637ae12a2cf53e6bf24a",
     "src-v2/adapters/scheduler.ts": "7bf62e737ce8d69fc2aaf931759838d9e587bdb26988e7804e341110ede2a7a8",
@@ -55,7 +55,7 @@
     "src-v2/application/lifecycle-contracts.ts": "d03ffbb4d1d1dfb1b20dc5c5029cff5edb119a8e4b2998fc7f8ab8e97119f384",
     "src-v2/application/lifecycle-controller.ts": "31235ea16f5b6af9ac1a5a82e1002034dd66003a8d963006b7bac6b97375ebf0",
     "src-v2/application/measurement/measurement-contracts.ts": "263fb12907463fb4a484ef07a3068bf7f351861c49d28e545bf0575033e4e16a",
-    "src-v2/application/measurement/measurement-controller.ts": "08bcd87e729dce8a44b2a0e05e9ffdb27f8ebb11413984e7166be9f1589bccdb",
+    "src-v2/application/measurement/measurement-controller.ts": "0d7c193b21867a205e787af341485b691e827a42c4b2094b7da8039a31a5020f",
     "src-v2/application/measurement/startup-evaluation.ts": "5ff5b74b5b95ed4dfcd7bbb05ebeea3b8fab3d4b889e4ac437fb5b5f867c4dc3",
     "src-v2/application/playback/monitor-contracts.ts": "dd47567ff562abe1bd422f89d31965f4a301345c1f919c867e4e0d5a3361d793",
     "src-v2/application/playback/player-contracts.ts": "2cf4113ad76bfc0bb56d43f9003e9c93992852fb351fa8e3cc8454139ea46d69",
@@ -105,7 +105,7 @@
     "src-v2/domain/startup-policy.ts": "fe2bbb05c956aa64ee640882c5d2b54265aeb3065320428158d3ecc356b52061",
     "src-v2/domain/transport-model.ts": "9d1a4cdefb0f2a73b4956725a70a290320ec1fdb465944223f82cf721e8a5f9a",
     "src-v2/domain/url-policy.ts": "faf09d87740c16fc56c22145481e738bddaeffa5be045dbb42a9622b1011db2e",
-    "src-v2/entry.ts": "9952b9da368e2492757b5a5e3e058d1c2641170188662a1311c743cd7dbb999f",
+    "src-v2/entry.ts": "a5a97cf04db9ad21d4c31f161f602c4ec829a46072ed184139d92787e5d89885",
     "src-v2/metadata.txt": "00136fc1aeb4cf54fa169805b6d7274ba6f408712db27e2a7f23e04e143167a0",
     "src-v2/platform/runtime-id-port.ts": "79e3cbf3852bcd035f3b63df04e6b8bedae58d592ab5a348f5976567f6b7cc35",
     "src-v2/platform/runtime-ids.ts": "d4eea203771758dcd3acc2d13f5130524d2810a550edcbd75aa8095c8eddce09",
@@ -141,5 +141,5 @@
     "src-v2/ui/styles.ts": "5e15f6ad9faa3f4b86f02fc73d45eed61fcc7ae3472de9cdca427cf63965112c",
     "tsconfig.json": "c1df0987ac0ad4dba6796254807f1a464fe7dee6a8a54e6b8533ecb92bc76938"
   },
-  "userscriptSha256": "4d27ce1d5729f130942799639dfd7e2680f64eab621a04b6703cdecaf77da0c1"
+  "userscriptSha256": "7f59515504b9bd28e3a0901b2be8bbfeba10065351a73fde9a0f155624e6e689"
 }

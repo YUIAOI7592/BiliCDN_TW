@@ -1,47 +1,48 @@
-# BiliCDN_TW v2.2.24 完整驗證報告
+# BiliCDN_TW v2.2.25 完整驗證報告
 
-驗證日期為 2026-11-20（Asia/Taipei）。修復前使用 v2.2.23 標籤（`1ff266b`）的產品來源。
+驗證日期為 2026-11-22（Asia/Taipei）。修復前以 v2.2.24 標籤的產品來源及正式 Fetch／XHR 掛鉤重現。
 
 ## 驗收結論
 
-起播探測收到內建 CDN 對當前資源的直接 HTTP 404 或 410 後，後續備援會避開該主機與資源的配對。四個離線重現案例的下一筆播放請求從四次選回缺檔主機降至零次，四案皆找到其他合法來源。同一主機仍可供應另一份資源。
+實際尋位或仍有效的進度條拖曳期間，第一筆媒體請求直接走正常選路。尚未使用的起播測速額度留給尋位結束後的下一筆合格請求。
 
 ## 自動驗證
 
-正式案例以記憶體 HTTP 回應驅動 Range 探測、起播控制器與選路器。A 有近期高速紀錄，這次回傳表列狀態。B 回應足速，起播選中 B。B 的普通傳輸隨後發生網路錯誤，案例核對同一內容週期下一筆請求選定的主機與派送網址。[回歸案例](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/cases/routing/measurement/startup-catalog-status.ts)
+受控時鐘在兩次監測之間切換尋位。當探測不回應時，v2.2.24 的 Fetch 與非同步 XHR 均啟動三次探測，至第 2,999 ms 仍未送出，於第 3,000 ms 派送。兩個具名回歸在修復前均在「立即原生派送一次」的斷言失敗。
 
-| 起播時 A 的回應 | v2.2.23 後續備援 | v2.2.24 後續備援 |
+| 情境 | v2.2.24 | v2.2.25 |
 | --- | --- | --- |
-| 404、410，各測預設與僅使用內建 CDN 模式 | 4/4 選回 A | 0/4 選回 A |
-| 403，兩種模式 | 0/2 選回 A | 0/2 選回 A |
-| 416、429，各測兩種模式 | 4/4 選回 A | 4/4 選回 A |
+| 尋位中第一筆 Fetch | 原生派送在模擬時鐘 3,000 ms | 同一模擬時間派送一次，零探測、游標為 0 |
+| 尋位中第一筆非同步 XHR | 原生派送在模擬時鐘 3,000 ms | 同一模擬時間派送一次，零探測、游標為 0 |
 
-十案每次只探測三個不同主機，重入起播不新增探測。A 的全域速度證據與限制維持原值，另一份資源的請求仍能派往 A。其他案例核對精確 Native 來源、內容或來源授權更換後的晚到結果、轉址、回應主機不符，以及既有三秒截止與取消行為。
+兩案在尋位結束、監測仍保留舊狀態時立即允許下一筆合格請求認領一次。每案三次探測，游標進至 1，第三筆請求直接派送。XHR 所設 13 秒 timeout 維持原值。另核對無影片、原生讀值失敗、可信拖曳、媒體更換、候選選取期間開始尋位或換片、同內容重入以及既有等待者個別取消。案例已登記至[業務契約](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/business-contracts.json)，正式傳輸斷言見[Fetch／XHR 回歸案例](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/tests-v2/cases/transport/xhr.ts)。
 
-另兩案直接核對健康探測候選。缺檔前 A 可供兩份資源挑戰。起播探測回報 404 或 410 後，舊版仍對缺檔資源提議 A，修正版只在另一份資源保留 A。兩案均在原判定失敗、修後通過。
+Windows `npm run verify` 通過，18 個正式套件共 2,314 案，失敗、取消、跳過與待辦均為零，131 條業務規則皆有通過的具名案例。驗證另含型別、架構、格式、文件、公開封存、建置及暫存封裝。初次完整驗證發現過早檢查個別取消會改變共用探測的既有合約。修正後保留原測試斷言，31 個取消對照通過。執行環境為工作區提供的 Node 24.22.3，並用同一 Node 執行系統 npm CLI 11.20.0。
 
-Windows 的完整 `npm run verify` 通過。18 個套件共 2,296 案全部通過，失敗、取消、跳過及待辦均為零。131 條業務規則全部連到通過的具名案例。驗證涵蓋型別、架構、文件、公開封存、可重現建置及暫存封裝。首輪受限程序無法建立測試連結及 Git Bash 所需的系統物件，解除該環境限制後重跑完整驗證，未調整測試斷言。
-
-| 工具 | 版本 | 本輪執行路徑 |
-| --- | --- | --- |
-| Node | 24.22.3 | `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1119-907-0_26.1119.907.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe` |
-| npm | 11.20.0 | `C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js` |
+| 工具 | 執行位置 |
+| --- | --- |
+| Node | `C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1119-907-0_26.1119.907.0_x64__3k8sg7r9htsxt\dependencies\node\bin\node.exe` |
+| npm CLI | `C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js` |
 
 ## 安全差異
 
-產品差異只將 404 與 410 納入起播探測既有的資源級排除判定，沿用原有的回應歸屬與來源授權檢查。本版未另執行安全掃描。
+即時尋位與拖曳資料只提供測速資格訊號。一般選路、精確來源授權與主機限制仍在原路徑執行。控制器在認領前重新檢查內容與租期，個別取消維持原始原因與共用工作所有權。未另執行安全掃描。
 
 <a name="公開交付與安裝結案"></a>
 
 ## 封存與公開交付
 
-v2.2.23 的五項發行原件已對照標籤及原校驗，獨立解壓後均逐位元組相符。公開封存包 SHA-256 為 `2f56cbde0b40fa43bb9e5e365ea996b87c701e8384fd95ce9499641eaa45a000`。[v2.2.23 完整報告及安裝驗收](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2223-完整正文保存2026-11-20)
+v2.2.24 的五個發行原件與標籤、校驗清單及獨立解壓副本相符，已轉入公開封存。封存 SHA-256 為 `1206a31ed426e48a39c7c8047f47acd4202760ab2804d7a0650f370dcacc7c4f`。[v2.2.24 完整正文](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2224-完整正文保存2026-11-22)
 
-此版封裝快照記錄發布前驗證。公開下載核對結果於發布後記入[儲存庫驗收報告](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/docs/TEST_REPORT.md#封存與公開交付)。
+公開下載於上傳後核對，結果寫入現行報告。
 
 ## 來源隔離與實際安裝
 
-本輪未執行瀏覽器來源隔離或安裝版播放驗收。台灣實際播放中發生這組故障的頻率、等待秒數與卡頓改善尚未量測。
+本版使用 Node 驗收。來源隔離、IAB 安裝驗收及真站節省秒數均未量測。v2.2.24 在真站曾觀察到原生尋位與監測狀態不同步，當時起播測速已結束。[v2.2.24 安裝 R1](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2224-r1-安裝驗收與供片調查)
+
+<a name="v2224-r1-安裝驗收與供片調查"></a>
+
+[v2.2.24 R1 安裝驗收與供片調查](https://github.com/YUIAOI7592/BiliCDN_TW/blob/main/archive/retired/docs/TEST_REPORT_HISTORY.md#v2224-r1-安裝驗收與供片調查)。
 
 <a name="v2223-r1-安裝驗收-2026-11-19"></a>
 

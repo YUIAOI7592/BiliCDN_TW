@@ -182,6 +182,30 @@ export class PlayerControlObserver {
     private readonly environment: PlayerControlEnvironment,
   ) {}
 
+  readStartupSeeking(): boolean | null {
+    try {
+      const lifecycle = this.sources.lifecycleKey()
+      const video = this.sources.video()
+      let seeking: boolean | null = null
+      try {
+        const native = video?.isConnected ? video.seeking : null
+        if (typeof native === 'boolean') seeking = native
+      } catch {
+        // A held progress drag can still establish seeking independently.
+      }
+      this.#validateDrag()
+      if (
+        video !== this.sources.video() ||
+        !video?.isConnected ||
+        lifecycle !== this.sources.lifecycleKey()
+      )
+        return null
+      return this.#seek.drag?.video === video || seeking
+    } catch {
+      return null
+    }
+  }
+
   controls(): PlayerControlSnapshot {
     const reloadOwner = this.#reload.owned
     const video = this.sources.video(),
@@ -933,10 +957,11 @@ export class PlayerControlObserver {
     if (
       drag.video !== this.#controlVideo ||
       drag.player !== this.#seekOwner ||
+      !this.environment.isActuallyVisible() ||
+      drag.video.isConnected === false ||
       drag.video !== this.sources.video() ||
       drag.player !== this.sources.player() ||
-      drag.lifecycle !== this.sources.lifecycleKey() ||
-      !this.environment.isActuallyVisible()
+      drag.lifecycle !== this.sources.lifecycleKey()
     ) {
       if (this.#seek.drag === drag) {
         this.#seek.drag = null

@@ -44,6 +44,9 @@ export class PlayerAdapter {
   controls(): PlayerControlSnapshot {
     return this.#controls.controls()
   }
+  readStartupSeeking(): boolean | null {
+    return this.#controls.readStartupSeeking()
+  }
   captureResumePosition(): ResumePositionCapture {
     return this.#controls.captureResumePosition(() => this.currentTime())
   }

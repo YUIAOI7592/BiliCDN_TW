@@ -1511,8 +1511,16 @@
     },
     {
       "id": "upstream142-seek-cooldown",
-      "rule": "尋位保留尚未使用的起播窗口，共同冷卻在換片與解除尋位後持續生效。",
+      "rule": "主影片正在尋位或有效拖曳時，首筆 Fetch 與非同步 XHR 直接派送並保留起播窗口。結束後下一筆合格請求可認領一次；共同冷卻在換片與解除尋位後持續生效。",
       "tests": [
+        ["native-transport", "startup Fetch dispatches a live seek immediately and reserves one later gate"],
+        ["native-transport", "startup XHR dispatches a live seek immediately and reserves one later gate"],
+        ["adapters", "BR-08 startup reads live native seeking without binding controls or reading playback position"],
+        ["adapters", "BR-08 startup reads only the held trusted progress pointer and sees its release immediately"],
+        ["orchestration", "startup unknown live seek observation preserves the monitor fallback"],
+        ["orchestration", "startup rereads seeking after candidate selection before acquiring the budget"],
+        ["orchestration", "startup candidate selection cannot reserve a window for replaced content"],
+        ["orchestration", "startup reentrant candidate selection joins one existing window without rereading live seeking"],
         ["orchestration", "UP142 seek protection leaves the per-tab startup window for the next eligible request"],
         ["measurement-state", "UP142 seek and content reset preserve the shared health cooldown"]
       ]

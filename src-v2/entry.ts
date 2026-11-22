@@ -82,6 +82,7 @@ export const start = (): void => {
     settings,
     monotonicNow,
     ids,
+    () => player.readStartupSeeking(),
   )
   const transport = new TransportAdapter(
     session,
